@@ -79,11 +79,10 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 .preset-reset{margin-left:auto;white-space:nowrap;flex:0 0 auto;padding:6px 12px;min-height:32px;border-radius:14px;border:1px solid var(--orange);background:var(--panel);color:var(--orange);font-size:12px;letter-spacing:0;text-transform:none;font-weight:600}
 .preset-reset[hidden]{display:none}
 #pSort button{flex:1 1 40%}
-.sec>h2:has(.preset-reset){display:flex;align-items:center;gap:8px}
-.sec>h2:has(.preset-reset) .cnt{flex:1 1 auto;min-width:0}
 #presetAcc .accb{padding-top:10px}
-#presetAcc .presets{margin:0 -12px 8px;padding-left:12px;padding-right:12px}
+#presetAcc .presets{margin:0 -12px 8px;padding-left:12px;padding-right:12px;scroll-padding-inline:12px}
 #presetAcc .preset,#presetAcc .chip{background:var(--panel2)}
+:root[data-theme=light] #presetAcc .preset{background:var(--panel)}
 .pbar{display:flex;align-items:center;gap:8px;min-height:32px;margin:-4px 0 4px}
 .pbar .cnt{flex:1 1 auto;min-width:0;font-family:var(--mono);font-size:12px;color:var(--dim)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -10944,7 +10943,7 @@ $("soloSeg").addEventListener("click",e=>{const b=e.target.closest("[data-solo]"
   ENGINE_SOUND.solo(b.dataset.solo);document.querySelectorAll("#soloSeg button").forEach(x=>x.classList.toggle("on",x.dataset.solo===b.dataset.solo));toast(`SOLO · ${b.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("sdPeak");if(!el||curTab!=="shop")return;const pk=ENGINE_SOUND.peak();el.textContent=pk?`${pk.hz} Hz @ ${pk.db} dB · low ${pk.lo} dB · ${pk.state} ${pk.sr/1000}k`:"—";},400);
 function renderDev(){$("devBox").style.display=career()?"":"none";if(!career())return;document.querySelectorAll("#devSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.dev==="1")===dev()));$("devRow").style.display=dev()?"":"none";}
-$("devSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dev]");if(!b||!career())return;C().dev=b.dataset.dev==="1";toast(C().dev?"DEV MODE ON — everything unlocked, tests free":"Dev mode off");renderDev();hud();recompute();save();renderBuild();renderShop();renderTest();});
+$("devSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dev]");if(!b||!career())return;C().dev=b.dataset.dev==="1";toast(C().dev?"DEV MODE ON — everything unlocked, tests free":"Dev mode off");renderDev();hud();recompute();save();renderBuild();renderPresets();renderShop();renderTest();});
 $("devCash").addEventListener("click",()=>{if(!career())return;C().cash+=1e6;hud();save();toast("+$1,000,000");});
 $("devRep").addEventListener("click",()=>{if(!career())return;C().rep+=500;hud();save();toast("+500 rep");});
 $("devWeek").addEventListener("click",()=>{if(!career()||typeof advanceWeek!=="function")return;advanceWeek();save();hud();renderShop();recompute();});
@@ -11014,7 +11013,7 @@ function renderPresets(){
   $("presets").innerHTML=h||`<p class="hint">Nothing matches those filters.</p>`;
   $("presetCnt").textContent=`${list.length} of ${PRESETS.length} · ${PRESETS.filter(p=>p.starter).length} starter`;
   const avail=career()?PRESETS.filter(p=>!presetLocked(p.cfg)).length:PRESETS.length;
-  $("presetSum").textContent=(career()?`${avail} of ${PRESETS.length} buildable`:`${PRESETS.length} engines`)+($("pReset").hidden?"":" · filtered");
+  $("presetSum").textContent=(career()?`${avail} of ${PRESETS.length} buildable`:`${PRESETS.length} engines`)+(fam!=="all"||cls!=="all"?" · filtered":"");
 }
 $("pSort").addEventListener("click",e=>{const b=e.target.closest("[data-ps]");if(!b)return;S.pSort=b.dataset.ps;renderPresets();save();});
 $("pFam").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(!b)return;S.pFam=b.dataset.pf;renderPresets();save();});
@@ -11067,7 +11066,8 @@ function renderBuild(){
 // Base engines and the FORM sections share one accordion: opening one closes the rest
 function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
     document.querySelectorAll("#tab-build .acc").forEach(el=>{const k=el.querySelector("[data-sec]").dataset.sec;el.classList.toggle("open",!!openSec[k]);});
-    if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),pr=pn.getBoundingClientRect(),ar=a.getBoundingClientRect();if(ar.top<pr.top+8)pn.scrollTop+=ar.top-pr.top-8;}}
+    if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),ar=a.getBoundingClientRect(),top=(document.querySelector("#tab-build .strip")||pn).getBoundingClientRect().bottom+8;if(ar.top<top)pn.scrollTop+=ar.top-top;}
+    if(tourStep>=0)requestAnimationFrame(tourPlace);}
 $("presetAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
 $("buildForm").addEventListener("click",e=>{
   const a=e.target.closest("[data-sec]");if(a){toggleSec(a);return;}
@@ -11779,7 +11779,7 @@ const TOUR=[
   {tab:"market",sel:"#tabs [data-tab=market]",title:"Sell it in Market",text:"Pick a category, take a job that your build fits (10% deposit up front), ship it, then close the week — and watch the warranty ledger."}
 ];
 let tourStep=-1;
-function tourPlace(){const st=TOUR[tourStep];if(!st)return;const el=document.querySelector(st.sel);const app=$("app").getBoundingClientRect();const spot=$("tourSpot"),box=$("tourBox");
+function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.querySelector(st.sel);if(el&&!el.offsetParent)el=null;const app=$("app").getBoundingClientRect();const spot=$("tourSpot"),box=$("tourBox");
   if(el){const r=el.getBoundingClientRect();spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
     const below=r.bottom-app.top+16;const boxH=box.offsetHeight||170;if(below+boxH<app.height-70){box.style.top=below+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-(r.top-app.top)+16)+"px";}}
   else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}}
