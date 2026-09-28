@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.6.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.6.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -990,8 +990,12 @@ const ENGINE_SIM = (function () {
 
   const FORM = [
     {
-      title: "Block geometry", fields: [
-        { key: "layout", type: "seg", label: "Layout", optTable: "layout" },
+      title: "Engine layout", fields: [
+        { key: "layout", type: "seg", label: "Layout", optTable: "layout" }
+      ]
+    },
+    {
+      title: "Bore & stroke", fields: [
         { key: "bore", type: "slider", label: "Bore", min: 68, max: 110, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
         { key: "stroke", type: "slider", label: "Stroke", min: 58, max: 120, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
         { key: "rodRatio", type: "slider", label: "Rod ratio L/r", min: 1.45, max: 2.10, step: 0.01, nudge: 0.01, unit: "", fmt: f2 },
@@ -10853,7 +10857,7 @@ const SEGMENTS=[
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.6.0.0";
+const VERSION="1.6.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -11043,7 +11047,7 @@ function sliderRow(f){const v=S.cfg[f.key],lo=fMin(f),hi=fMax(f);
   const unlocked=f.maxIf&&hi>f.max;
   return `<div class="lbl"><span>${f.label}${unlocked?' <em class="unl">billet</em>':""}</span><b id="v-${f.key}" class="tap" data-num="${f.key}" title="Tap to type">${f.fmt?f.fmt(v):v}${f.unit?" "+f.unit:""}</b></div><div class="srow"><button class="nud" data-nud="-1" data-nk="${f.key}" aria-label="Decrease">−</button><input type="range" id="r-${f.key}" data-k="${f.key}" min="${lo}" max="${hi}" step="${f.step}" value="${v}"><button class="nud" data-nud="1" data-nk="${f.key}" aria-label="Increase">+</button></div>`;}
 function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"><span>${f.label}</span></div><div class="swatches">`+Object.keys(opts).map(k=>`<button data-k="${f.key}" data-v="${k}" class="${S.cfg[f.key]===k?"on":""}" style="background:${opts[k].hex}" aria-label="${opts[k].name}"></button>`).join("")+"</div>";}
-const openSec={"Block geometry":true};
+const openSec={"Bore & stroke":true};
 function secSummary(sec){return sec.fields.filter(f=>!f.showIf||f.showIf(S.cfg)).map(f=>{const v=S.cfg[f.key];if(f.type==="slider")return (f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");const o=OPT[f.optTable||f.key][v];return o?o.name:v;}).join(" · ");}
 function renderBuild(){
   let h="";
