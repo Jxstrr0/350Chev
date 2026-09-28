@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.6.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.6.2.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -81,6 +81,11 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #pSort button{flex:1 1 40%}
 .sec>h2:has(.preset-reset){display:flex;align-items:center;gap:8px}
 .sec>h2:has(.preset-reset) .cnt{flex:1 1 auto;min-width:0}
+#presetAcc .accb{padding-top:10px}
+#presetAcc .presets{margin:0 -12px 8px;padding-left:12px;padding-right:12px}
+#presetAcc .preset,#presetAcc .chip{background:var(--panel2)}
+.pbar{display:flex;align-items:center;gap:8px;min-height:32px;margin:-4px 0 4px}
+.pbar .cnt{flex:1 1 auto;min-width:0;font-family:var(--mono);font-size:12px;color:var(--dim)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 #catSeg button:disabled{opacity:.42}
@@ -372,11 +377,12 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
         <div><b id="sKg">0</b><span>kg</span></div>
         <div><b id="sCost">$0</b><span>unit cost</span></div>
       </div>
-      <div class="sec"><h2>Base engines <span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></h2>
+      <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
         <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
         <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button></div>
         <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button></div>
-        <div id="presets"></div></div>
+        <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
+        <div id="presets"></div></div></div>
       <div id="buildForm"></div>
       <div class="sec">
         <h2>Blueprints</h2>
@@ -10857,7 +10863,7 @@ const SEGMENTS=[
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.6.1.0";
+const VERSION="1.6.2.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -11007,6 +11013,8 @@ function renderPresets(){
   flush();
   $("presets").innerHTML=h||`<p class="hint">Nothing matches those filters.</p>`;
   $("presetCnt").textContent=`${list.length} of ${PRESETS.length} · ${PRESETS.filter(p=>p.starter).length} starter`;
+  const avail=career()?PRESETS.filter(p=>!presetLocked(p.cfg)).length:PRESETS.length;
+  $("presetSum").textContent=(career()?`${avail} of ${PRESETS.length} buildable`:`${PRESETS.length} engines`)+($("pReset").hidden?"":" · filtered");
 }
 $("pSort").addEventListener("click",e=>{const b=e.target.closest("[data-ps]");if(!b)return;S.pSort=b.dataset.ps;renderPresets();save();});
 $("pFam").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(!b)return;S.pFam=b.dataset.pf;renderPresets();save();});
@@ -11056,10 +11064,13 @@ function renderBuild(){
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);
 }
+// Base engines and the FORM sections share one accordion: opening one closes the rest
+function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
+    document.querySelectorAll("#tab-build .acc").forEach(el=>{const k=el.querySelector("[data-sec]").dataset.sec;el.classList.toggle("open",!!openSec[k]);});
+    if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),pr=pn.getBoundingClientRect(),ar=a.getBoundingClientRect();if(ar.top<pr.top+8)pn.scrollTop+=ar.top-pr.top-8;}}
+$("presetAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
 $("buildForm").addEventListener("click",e=>{
-  const a=e.target.closest("[data-sec]");if(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
-    document.querySelectorAll("#buildForm .acc").forEach(el=>{const k=el.querySelector("[data-sec]").dataset.sec;el.classList.toggle("open",!!openSec[k]);});
-    if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),pr=pn.getBoundingClientRect(),ar=a.getBoundingClientRect();if(ar.top<pr.top+8)pn.scrollTop+=ar.top-pr.top-8;}return;}
+  const a=e.target.closest("[data-sec]");if(a){toggleSec(a);return;}
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
@@ -11773,6 +11784,7 @@ function tourPlace(){const st=TOUR[tourStep];if(!st)return;const el=document.que
     const below=r.bottom-app.top+16;const boxH=box.offsetHeight||170;if(below+boxH<app.height-70){box.style.top=below+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-(r.top-app.top)+16)+"px";}}
   else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}}
 function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);
+  {const ac=document.querySelector(st.sel)?.closest(".acc");if(ac&&!ac.classList.contains("open"))toggleSec(ac.querySelector("[data-sec]"));}
   const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){setTimeout(()=>{const pr=$("panel").getBoundingClientRect(),tr=target.getBoundingClientRect();$("panel").scrollTop+= (tr.top-pr.top)-(pr.height*0.38);tourPlace();setTimeout(tourPlace,380);setTimeout(tourPlace,700);},60);}
   $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text;$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
   requestAnimationFrame(()=>requestAnimationFrame(tourPlace));}
