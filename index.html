@@ -41,16 +41,28 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #app.mini #hud .brand small{display:none}
 #app.mini #rpmbox b{font-size:24px}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-#hud{position:absolute;left:0;right:0;top:0;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;background:linear-gradient(180deg,rgba(15,17,20,.85),rgba(15,17,20,0))}
-#hud .brand{font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);line-height:1}
+#hud{position:absolute;left:0;right:0;top:0;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:space-between;align-items:flex-start;pointer-events:none;background:linear-gradient(180deg,rgba(15,17,20,.85),rgba(15,17,20,0))}
+#hud .brand{flex:none;font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);line-height:1}
 #hud .brand small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.14em;color:var(--muted);margin-top:3px}
-#hud .right{text-align:right;pointer-events:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-#hud .cash b{display:block;font-family:var(--display);font-size:19px;font-weight:700;color:var(--orange2);font-variant-numeric:tabular-nums;line-height:1}
-#hud .cash span{white-space:nowrap;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.hudbtns{display:flex;gap:6px}
-.hudbtns button{width:34px;height:34px;border-radius:50%;background:rgba(15,17,20,.7);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:var(--chalk)}
-.hudbtns button.on{border-color:var(--orange);color:var(--orange2)}
-.hudbtns svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#hud .right{flex:1 1 0;min-width:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+#hud .cash b{display:block;white-space:nowrap;font-family:var(--display);font-size:19px;font-weight:700;color:var(--orange2);font-variant-numeric:tabular-nums;line-height:1}
+#hud .cash span{display:block;text-wrap:balance;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+/* HUD controls: SOUND and START labelled on the second row; size, x-ray and heat map sit in the VIEW tray */
+.hudbtns{flex:1 0 100%;display:flex;gap:6px}
+.hudbtns>button{pointer-events:auto;height:44px;padding:0 13px 0 10px;border-radius:22px;background:rgba(15,17,20,.74);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;gap:6px;color:var(--chalk);font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;line-height:1;white-space:nowrap}
+.hudbtns>button.on,#viewBtn.open{border-color:var(--orange);color:var(--orange2);background:rgba(38,22,9,.84)}
+.hudbtns svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#sndBtn:not(.on){color:var(--muted)}#sndBtn:not(.on) .wv,#sndBtn.on .mx{display:none}
+#idleBtn.on svg{animation:idlepulse 1.1s ease-in-out infinite}@keyframes idlepulse{50%{opacity:.35}}
+#viewBtn.lit::after{content:"";width:6px;height:6px;margin-left:1px;border-radius:50%;background:var(--orange2);box-shadow:0 0 6px var(--orange)}
+.hudtray{position:fixed;z-index:28;width:206px;padding:5px;border-radius:12px;background:rgba(18,20,24,.97);border:1px solid rgba(255,255,255,.14);box-shadow:0 12px 32px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:2px;pointer-events:auto}
+.hudtray button{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 10px;border-radius:8px;color:var(--chalk);font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.05em;text-transform:uppercase;text-align:left}
+.hudtray button:hover{background:rgba(255,255,255,.06)}
+.hudtray button::after{content:"";flex:none;margin-left:auto;width:34px;height:20px;border-radius:10px;background:radial-gradient(circle at 10px 50%,#d9d4c8 6px,transparent 7px),rgba(255,255,255,.16)}
+.hudtray button.on{color:var(--orange2)}
+.hudtray button.on::after{background:radial-gradient(circle at 24px 50%,#fff 6px,transparent 7px),var(--orange)}
+#app.mini .hudbtns>button{height:40px;padding:0 10px 0 8px;gap:5px;font-size:12px}
+@media (max-width:374px){#hud .brand{font-size:14px}}
 /* engine card: the one object that represents "this engine" everywhere */
 .ecard{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:rgba(15,17,20,.72);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:6px 10px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .ecard .nm{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.03em;line-height:1.05;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
@@ -353,12 +365,15 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
       <div class="brand">Prairie Engine Works<small id="weekLbl">TEST CELL</small></div>
       <div class="right">
         <div class="cash"><b id="cashLbl">$20,000</b><span id="repLbl">Rep 0</span></div>
-        <div class="hudbtns">
-          <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
-          <button id="idleBtn" aria-label="Start engine"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></button>
-          <button id="sizeBtn" aria-label="Shrink or grow the engine view"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M12 7V4M12 17v3"/><path d="M8 20h8"/><path d="M5 12h14"/><path d="M9 9l3-3 3 3"/><path d="M9 15l3 3 3-3"/></svg></button>
-          <button id="xrayBtn" aria-label="X-ray internals"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V6M12 18v-3"/></svg></button>
-          <button id="heatBtn" aria-label="Stress heat-map"><svg viewBox="0 0 24 24"><path d="M10 4a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 9v6"/></svg></button>
+      </div>
+      <div class="hudbtns">
+        <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
+        <button id="idleBtn" aria-label="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
+        <button id="viewBtn" aria-label="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
+        <div class="hudtray" id="viewTray" role="group" aria-label="View options" hidden>
+          <button id="sizeBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M12 7V4M12 17v3"/><path d="M8 20h8"/><path d="M5 12h14"/><path d="M9 9l3-3 3 3"/><path d="M9 15l3 3 3-3"/></svg><span>Small view</span></button>
+          <button id="xrayBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V6M12 18v-3"/></svg><span>X-ray</span></button>
+          <button id="heatBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M10 4a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 9v6"/></svg><span>Heat map</span></button>
         </div>
       </div>
     </div>
@@ -12100,8 +12115,22 @@ document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
-function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);$("sizeBtn").setAttribute("aria-label",miniView?"Grow the engine view":"Shrink the engine view");}
+function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);}
 $("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;save();buzz(8);});
+/* HUD toggles mirror their .on class into aria-pressed however they get flipped; START reads STOP
+   while the engine idles, and VIEW wears a dot when anything in its tray is on */
+function hudSync(){const on=id=>$(id).classList.contains("on");["sndBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>$(id).setAttribute("aria-pressed",on(id)));
+  const idling=on("idleBtn");$("idleBtn").querySelector(".lb").textContent=idling?"Stop":"Start";$("idleBtn").setAttribute("aria-label",idling?"Stop engine":"Start engine");
+  $("viewBtn").classList.toggle("lit",on("sizeBtn")||on("xrayBtn")||on("heatBtn"));}
+{const mo=new MutationObserver(hudSync);["sndBtn","idleBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:["class"]}));hudSync();}
+/* VIEW tray: hangs under its button (fixed, so it can drop past a small view); outside tap or Escape closes it */
+function viewTray(open){const t=$("viewTray"),b=$("viewBtn");open=open==null?t.hidden:!!open;t.hidden=!open;b.setAttribute("aria-expanded",open);b.classList.toggle("open",open);if(!open)return;
+  const r=b.getBoundingClientRect(),a=$("app").getBoundingClientRect();t.style.top=Math.round(r.bottom+6)+"px";t.style.left=Math.round(Math.max(a.left+8,Math.min(r.left,a.right-t.offsetWidth-8)))+"px";}
+$("viewBtn").addEventListener("click",()=>{viewTray();buzz(6);});
+document.addEventListener("pointerdown",e=>{if(!$("viewTray").hidden&&!e.target.closest("#viewTray,#viewBtn"))viewTray(false);},true);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("viewTray").hidden){viewTray(false);$("viewBtn").focus();}});
+$("viewTray").addEventListener("focusout",e=>{if(e.relatedTarget&&!e.relatedTarget.closest("#viewTray,#viewBtn"))viewTray(false);});
+window.addEventListener("resize",()=>{if(!$("viewTray").hidden)viewTray(true);});
 if(window.ResizeObserver){let rt=null;new ResizeObserver(()=>{ENGINE_VIS.resize();clearTimeout(rt);rt=setTimeout(()=>{ENGINE_VIS.resize();ENGINE_VIS.reframe();},320);}).observe($("view"));}
 let visReady=false;
 function boot(){
