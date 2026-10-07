@@ -209,6 +209,20 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .tele{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tele div{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;display:flex;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 .tele b{font-family:var(--mono);font-weight:500;color:var(--chalk);font-size:13px;white-space:nowrap}
+/* records card (Analysis) */
+.recs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rec{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 12px;min-width:0}
+.rec.big{grid-column:1/-1;border-color:rgba(200,107,255,.45)}
+.rec>span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rec b{display:block;font-family:var(--display);font-size:22px;font-weight:700;line-height:1.1;color:var(--chalk);font-variant-numeric:tabular-nums;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec.big b{font-size:30px}
+.rec b i{font-style:normal;font-size:14px;font-weight:600;color:var(--muted);margin-left:4px}
+.rec small{display:block;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rtop{grid-column:1/-1;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 12px 4px}
+.rtop>span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.rtop div{display:grid;grid-template-columns:14px 50px 60px minmax(0,1fr) auto;gap:8px;align-items:baseline;font-family:var(--mono);font-size:13px;color:var(--muted);padding:6px 0;border-top:1px dashed var(--rule)}
+.rtop div b{color:var(--orange2);font-weight:500}.rtop div .et{color:var(--chalk)}
+.rtop div .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* combos */
 .combo{background:var(--panel);border:1px solid var(--rule);border-left:4px solid var(--info);border-radius:4px;padding:9px 12px;margin-bottom:6px}
 .combo.good{border-left-color:var(--good)}.combo.warn{border-left-color:var(--warn)}.combo.bad{border-left-color:var(--crit)}
@@ -440,6 +454,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
       <div class="sec"><h2>Material &amp; combo interactions <span class="cnt" id="comboCnt"></span></h2><div id="combos"></div></div>
       <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
+      <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><div id="recBox"></div></div>
     </section>
 
     <!-- MARKET -->
@@ -10337,7 +10352,7 @@ function stripMark(a, b, w){
 function stripBoardDraw(d, force){
   var B=STRIP.board; if(!B) return;
   ["p","o"].forEach(function(tag){ var L=d[tag]||{}, bd=B[tag];
-    var key=[L.et,L.mph,L.rt,L.win,L.foul,L.off,STRIP.night].join("|"); if(!force && key===bd.key) return; bd.key=key;
+    var key=[L.et,L.mph,L.rt,L.win,L.foul,L.off,L.pb,STRIP.night].join("|"); if(!force && key===bd.key) return; bd.key=key;
     var x=bd.cv.getContext("2d"), MONO="'IBM Plex Mono','Courier New',monospace", F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
     x.fillStyle="#060607"; x.fillRect(0,0,512,256); x.strokeStyle="#34373c"; x.lineWidth=10; x.strokeRect(5,5,502,246);
     x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#9aa0a8"; x.font="700 28px "+F; x.fillText(tag==="p"?"RIGHT LANE":"LEFT LANE", 24, 36);
@@ -10350,13 +10365,15 @@ function stripBoardDraw(d, force){
       x.fillStyle=amber; x.font="700 104px "+MONO; x.fillText(L.et!=null?(+L.et).toFixed(3):"--.---", 494, 150);
       x.fillStyle=dim; x.font="700 58px "+MONO; x.fillText((L.mph!=null?(+L.mph).toFixed(2):"---.--"), 400, 220);
       x.font="700 30px "+F; x.fillText("MPH", 488, 226); x.textAlign="left"; x.font="700 30px "+F; x.fillText("ET", 24, 136);
+      /* personal best: purple for the all-time quickest, green for this engine's best */
+      if(L.pb){ x.fillStyle=L.pb>1?"#c86bff":"#44ff72"; x.fillRect(24,188,116,54); x.fillStyle="#060607"; x.font="700 44px "+F; x.textAlign="center"; x.fillText("PB", 82, 217); }
     }
     bd.tex.needsUpdate=true; });
 }
 function stripTmLane(){ return {px:null, pv:0, start:null, et:null, mph:null, cross:null}; }
 function stripTiming(o, rdt){
   var ph=o.phase||"run";
-  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
+  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; STRIP.pb=0; STRIP.pbCut=0; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
   var tm=STRIP.tm||(STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()});
   tm.used=true; tm.clock+=rdt;
   function lane(L, x, v){
@@ -10368,6 +10385,7 @@ function stripTiming(o, rdt){
   if(o.et!=null) tm.p.et=o.et; if(o.mph!=null) tm.p.mph=o.mph; if(o.oet!=null) tm.o.et=o.oet; if(o.omph!=null) tm.o.mph=o.omph;
   if(ph==="shutdown"||ph==="done"){
     var pd={et:o.failed?null:tm.p.et, mph:o.failed?null:tm.p.mph, rt:o.rt, foul:!!o.foul}, od={off:!o.race, et:tm.o.et, mph:tm.o.mph, rt:o.ort, foul:!!o.ofoul};
+    pd.pb=pd.et!=null?STRIP.pb||0:0;
     if(o.race){ var pc=o.failed||o.foul?null:tm.p.cross, oc=tm.o.cross;
       if(o.win!=null){ pd.win=!!o.win; od.win=!o.win && (oc!=null||o.foul); }
       else { pd.win=pc!=null && (oc==null||pc<=oc); od.win=oc!=null && (pc==null||oc<pc) || (!!o.foul && !o.ofoul); } }
@@ -10514,9 +10532,11 @@ function stripCrowd(dt){
   var C=STRIP.crowd; if(!C) return; STRIP.cheer=Math.max(0,STRIP.cheer-dt*0.28);
   if(STRIP.cheer<0.02 && !C.live) return;
   var t=STRIP.t, amp=STRIP.cheer, i;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>0.3?Math.abs(Math.sin(t*8+C.phase[i]))*0.18*amp*e:0;
+  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.04:0.3)?Math.abs(Math.sin(t*(amp>1?10:8)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
     _crM.makeTranslation(p[0],p[1]+0.31+y,p[2]); C.body.setMatrixAt(i,_crM); _crM.makeTranslation(p[0],p[1]+0.75+y*1.15,p[2]); C.head.setMatrixAt(i,_crM); }
   C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=STRIP.cheer>=0.02;
+  if(amp>1 && STRIP.fxAdd){ var fr=(amp>1.8?70:35)*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);   /* a PB: phones and flashes going off in the stands */
+    while(nf-->0){ var q=C.base[(Math.random()*C.n)|0]; STRIP.fxAdd.emit(q[0], q[1]+1.0, q[2]+0.3, 0,0,0, 0.16, 0.8, 1.1, 1, 0.97, 0.9, 1, {drag:0, fin:0.01}); } }
 }
 
 /* --- camera direction: a cut list, not a lerp between distant spots --- */
@@ -10535,8 +10555,9 @@ function stripDirect(o, dt, P, O){
     if(s==="pan" && (px>STRIP_PAN_X+18 || (STRIP.shot==="pan" && STRIP.shotT>4.5))) s="chase";
     if((s==="pan"||s==="chase") && lead>=338) s="finish";
   } else if(ph==="shutdown"){
-    if(s!=="finish"&&s!=="shutdown") s="shutdown";
-    else if(s==="finish" && (px>STRIP_Q+70 || (STRIP.shotT>2.4 && px>STRIP_Q+12))) s="shutdown";
+    if(s!=="finish"&&s!=="shutdown"&&s!=="crowd") s="shutdown";
+    else if(s==="finish" && (px>STRIP_Q+70 || (STRIP.shotT>2.4 && px>STRIP_Q+12))) s=STRIP.pb&&!STRIP.pbCut?"crowd":"shutdown";
+    else if(s==="crowd" && (STRIP.pbCut>1 || STRIP.shotT>(STRIP.pb>1?2.3:1.7))) s="shutdown";
   } else if(ph==="done"){ s=(s==="shutdown"&&STRIP.shotT<0.8)?"shutdown":"board"; }
   stripCut(s);
   STRIP.shotT+=dt; STRIP.cutT+=dt;
@@ -10556,6 +10577,7 @@ function stripDirect(o, dt, P, O){
       /* rear three-quarter from well out beside the lane, so the chute blossoms between us and the car instead of over the lens */
       _cw.set(-bk, 2.6, cz3+8.0); _ct.set((b3?lead-ax:0)-1.5, 1.1, cz3*0.6); fov=44; sm=4; break; }
     case "board": _cw.set(STRIP_Q+1.5+Math.min(2,T*0.7), 3.0, 0); _ct.set(STRIP_Q+26, 6.0, 0); fov=58; break;
+    case "crowd": { if(!STRIP.pbCut) STRIP.pbCut=1; var cp=smoothstep(0,2.3,T); _cw.set(78-cp*6, 1.4+cp*0.5, 2.4); _ct.set(52-cp*4, 3.4, -13.5); fov=40-cp*5; break; }
     case "fail": { rel=true; ax=px; _cw.set(8.5+v*0.04, 1.5, pz+4.2); _ct.set(-3.5, 1.2, pz-0.6); fov=50; sm=8; STRIP.shake=Math.max(STRIP.shake, 0.16); break; }
   }
   if(rel){ if(STRIP.snap||!STRIP.relOn){ _cr.copy(_cw); _crt.copy(_ct); } else { var k=1-Math.exp(-sm*dt); _cr.lerp(_cw,k); _crt.lerp(_ct,k); }
@@ -10614,7 +10636,7 @@ function stripReset(){
   if(STRIP.fx) STRIP.fx.clear(); if(STRIP.fxFire) STRIP.fxFire.clear(); if(STRIP.fxAdd) STRIP.fxAdd.clear();
   if(STRIP.marks){ STRIP.marks.n=0; STRIP.marks.i=0; STRIP.marks.mesh.count=0; }
   STRIP.shot=null; STRIP.prev={}; STRIP.tm=null; STRIP.shake=0; STRIP.flashI=0; if(STRIP.flash) STRIP.flash.intensity=0; if(STRIP.heatPass) STRIP.heatPass.enabled=false;
-  STRIP.cheer=0; if(STRIP.crowd && STRIP.crowd.live) stripCrowd(0);
+  STRIP.cheer=0; STRIP.pb=0; STRIP.pbCut=0; if(STRIP.crowd && STRIP.crowd.live) stripCrowd(0);
   ["p","o"].forEach(function(k){ var c=STRIP.cars[k]; if(c){ c.userData._markLast=[]; } });
 }
 
@@ -10779,6 +10801,10 @@ const ENGINE_VIS = {
     var rdt=Math.max(0, +o.dt||0.016); stripUpdate(o, Math.min(0.1, rdt), Math.min(0.5, rdt));
     return STRIP.stats||null;
   },
+  /* a personal best on this pass: PB on the board, the stands come up and the camera cuts to them (1 = this engine, 2 = all-time) */
+  stripPb: function(k){ if(k!==undefined){ STRIP.pb=k||0; STRIP.pbCut=0; if(k) STRIP.cheer=Math.max(STRIP.cheer, k>1?2.4:1.7); }
+    return {pb:STRIP.pb||0, shot:STRIP.shot, cheer:+STRIP.cheer.toFixed(2)}; },   /* no argument: just report (harness) */
+  skipCut: function(){ if(STRIP.shot==="crowd") STRIP.pbCut=2; },   /* a tap during the crowd cut goes back to the car */
   setXray: function(on){
     XRAY=!!on;
     if(!engineRoot) return;
@@ -11555,6 +11581,26 @@ function addWear(n){if(!career())return;const h=hKey(cfgHash(S.cfg));C().wear=C(
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
 function oppX(now){const R=DR&&DR.race;if(!R||R.green==null)return 0;const tt=((now-R.green)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+/* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
+function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
+function engBest(h){return career()?(C().dragBest||{})[h]:recs().eng[h];}
+function allBest(){const t=recs().top[0];return Math.min(t?t.et:Infinity,career()&&C().bestEt||Infinity);}
+function recTag(){const e={n:engineName().slice(0,28),d:Date.now()};if(career())e.w=C().week;return e;}
+const etFix=(a,b)=>a.toFixed(2)===b.toFixed(2)?3:2;   // two decimals unless that hides the gain
+/* a pass counts when nothing broke, no red light, and (career) it wasn't black-flagged at tech */
+function dragPbCheck(q){if(!q||DR.failed||(DR.race&&DR.race.foul)||(career()&&q.mph>150&&!DR.veh.chute))return null;const all=allBest(),eb=engBest(DR.hk);
+  if(all<Infinity&&q.t<all)return{kind:2,was:all};if(eb!=null&&q.t<eb)return{kind:1,was:eb};return null;}
+function pbPass(r,failed){if(failed||r.et==null||(r.race&&r.race.foul)||(career()&&r.mph>150&&!r.chute))return;const R=recs(),h=DR.hk;
+  R.top.push(Object.assign({et:r.et,mph:r.mph},recTag()));R.top.sort((a,b)=>a.et-b.et);if(R.top.length>5)R.top.length=5;
+  if(career()){const m=C().dragBest=C().dragBest||{};if(!(m[h]<=r.et))m[h]=r.et;if(!(C().bestEt<=r.et))C().bestEt=r.et;}
+  else{const m=R.eng;if(!(m[h]<=r.et)){delete m[h];m[h]=r.et;const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}
+  const pb=DR.pb;if(!pb)return;r.pb={was:pb.was,all:pb.kind>1};const f=etFix(r.et,pb.was);
+  // after the pass's own toast: the PB first, then the purse line again in career
+  setTimeout(()=>{const prev=career()?$("toast").textContent:"";toast(`${pb.kind>1?"PERSONAL BEST":"ENGINE PB"} · ${r.et.toFixed(f)} s (was ${pb.was.toFixed(f)})`);buzz([20,40,20,40,60]);if(prev)setTimeout(()=>toast(prev),2700);},0);}
+/* dyno: highest certified (career) / clean pulled (sandbox) hp and the best reliability; a new top hp gets a toast */
+function pbPull(res){const R=recs(),hp=Math.round(res.peakHp),was=career()?Math.round(C().bestHp||0):R.hp?R.hp.v:0,rw=career()?C().bestRel||0:R.rel?R.rel.v:0;
+  if(hp>was){R.hp=Object.assign({v:hp},recTag());if(was>0)setTimeout(()=>toast(`New record: ${hp.toLocaleString("en-CA")} hp (was ${was.toLocaleString("en-CA")})`),2700);}
+  if(res.rel>rw||(!R.rel&&res.rel>=rw))R.rel=Object.assign({v:res.rel,hp},recTag());}
 function dragBreak(){DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 function dragStart(){
   $("app").classList.add("onstrip");
@@ -11577,6 +11623,7 @@ function dragStart(){
     const dtT=R&&R.tree0!=null?(now-R.tree0)/1000:-1;if(R&&dtT>=1.5&&R.green==null)R.green=R.tree0+1500;
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
     if(st.phase==="run"&&!DR.failed&&(st.t>DR.breakAt||(st.overrev>1.12&&res.overrev&&!res.overrev.survived))){dragBreak();st.done=true;st.phase="done";}
+    if(DR.pb===undefined&&(st.phase==="shutdown"||st.phase==="done")){DR.pb=dragPbCheck(st.marks.find(m=>m.n==="1/4 mi"));if(DR.pb)ENGINE_VIS.stripPb(DR.pb.kind);}
     {const pre=st.phase==="burnout"||(st.phase==="staged"&&!st.rolled);const ox=R?(pre?st.x:oppX(now)):0;const ov=dt>0?Math.max(0,(ox-DR.lox)/dt):0;const acc=dt>0?(st.v-DR.lv)/dt:0;DR.lv=st.v;DR.lox=ox;
       ENGINE_VIS.setStrip({on:true,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
         tree:{staged:!!st.rolled&&st.phase!=="burnout",a1:dtT>=0,a2:dtT>=0.5,a3:dtT>=1.0,green:!!(R&&R.green!=null)},
@@ -11599,7 +11646,7 @@ function dragStart(){
         const gap=(st.x-ox)*3.281;lane=`<div class="peak" style="grid-column:1/-1"><b style="color:${R.foul?"var(--crit)":gap>=0?"var(--good)":"var(--crit)"}">${R.foul?"RED LIGHT":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>"}</b><span>${R.name} · RT ${R.rt0!=null?R.rt0.toFixed(3):"—"}</span></div>`;}
       $("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.onBars?" · on the bars":""}</span></div>`:""}`;
       if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":"BROKE");
-      else if(st.phase==="shutdown")dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");
+      else if(st.phase==="shutdown"){if(DR.pb&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText(DR.pb.kind>1?"PERSONAL BEST":"ENGINE PB","tap to go back to the car");else dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");}
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
     if(!st.done||(DR.failed&&run.rpm>0))requestAnimationFrame(step);else dragFinish();};
   requestAnimationFrame(step);
@@ -11615,6 +11662,7 @@ function dragGo(now){const d=DR.d;if(d.st.phase!=="staged")return;const R=DR.rac
 function dragPress(){if(!DR||!DR.d||DR.failed)return;const d=DR.d,st=d.st,now=performance.now();
   if(st.phase==="burnout"){DR.downAt=now;d.burn(true);buzz([15]);return;}
   if(st.phase==="staged"){if(!st.rolled)return;if(d.canArm){if(d.arm())buzz([20]);return;}dragGo(now);return;}
+  if(st.phase==="shutdown"&&DR.pb){ENGINE_VIS.skipCut();return;}
   if(st.phase==="run")d.shift();}
 function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=performance.now();
   if(st.phase==="burnout"&&DR.downAt!=null){const held=now-DR.downAt;DR.downAt=null;d.burn(false);if(held<300&&!cancel)dragStage();return;}
@@ -11625,7 +11673,7 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
   b.addEventListener("pointercancel",e=>{DR&&(DR.lastPtr=performance.now());dragRelease(true);});
   b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("click",()=>{if(!DR||!DR.d||performance.now()-(DR.lastPtr||0)<800)return;const st=DR.d.st;
-    if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();});})();
+    if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();else if(st.phase==="shutdown"&&DR.pb)ENGINE_VIS.skipCut();});})();
 function dragFinish(){
   const {d,res,env}=DR;const r=d.result();const failed=DR.failed;
   setTimeout(()=>{if(!testing){ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");}},2200);
@@ -11634,6 +11682,7 @@ function dragFinish(){
     const won=!failed&&mine!=null&&(theirs==null||mine<theirs);r.race={name:R.name,rt:R.rt0,oppRt:+R.rt.toFixed(3),oppEt:R.et,oppMph:R.mph,foul:R.foul,won,margin:mine!=null&&theirs!=null?+(theirs-mine).toFixed(3):null};}
   if(failed&&!r.broke&&(DR.failKind==="turbo"||DR.failKind==="manifold"))r.broke=DR.failKind;
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
+  pbPass(r,failed);
   res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
   const abuse=r.heat?r.heat.abuse:0;
   if(career()){addWear(1+abuse);const h=hKey(cfgHash(S.cfg));C().dragBest=C().dragBest||{};
@@ -11653,6 +11702,10 @@ async function shareSlip(l){const r=l.res.drag,res=l.res;const W=1080,H=1350,c=d
   x.fillStyle="#ff7a1a";x.font=F(34,700);x.fillText("PRAIRIE ENGINE WORKS",100,130);x.fillStyle="#8e887b";x.font=F(26);x.fillText("TIMING SLIP · 1/4 MILE",100,170);
   x.fillStyle="#f0ece2";x.font=F(44,700);x.fillText((S.name||SIM.cfgLabel(l.cfg).split(" · ").slice(0,2).join(" ")).toUpperCase().slice(0,26),100,250);
   x.fillStyle="#b8b2a3";x.font=F(28);x.fillText(`${Math.round(res.peakHp)} hp · ${Math.round(res.peakTq)} Nm · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg`,100,295);
+  if(r.pb&&r.et!=null){const f=etFix(r.et,+r.pb.was),t1=r.pb.all?"PERSONAL BEST":"ENGINE BEST",was=(+r.pb.was).toFixed(f),now=r.et.toFixed(f)+" s";   // the stamp: old time struck through
+    x.save();x.translate(800,135);x.rotate(-0.07);x.globalAlpha=0.92;x.strokeStyle=x.fillStyle="#ef5a44";x.lineWidth=6;x.strokeRect(-170,-55,340,110);x.lineWidth=2;x.strokeRect(-160,-45,320,90);x.textAlign="center";
+    let fs=42;do{x.font=F(fs,700);fs-=2;}while(x.measureText(t1).width>292&&fs>20);x.fillText(t1,0,-4);
+    x.font=F(30,600);const ww=x.measureText(was).width,wn=x.measureText(now).width,x0=-(ww+22+wn)/2;x.textAlign="left";x.fillText(was,x0,34);x.fillText(now,x0+ww+22,34);x.lineWidth=4;x.beginPath();x.moveTo(x0-5,24);x.lineTo(x0+ww+5,24);x.stroke();x.restore();}
   x.fillStyle="#4fc08d";x.font=F(150,700);x.fillText(r.et!=null?r.et.toFixed(2):"DNF",100,470);x.fillStyle="#f0ece2";x.font=F(54);x.fillText(r.et!=null?`s @ ${Math.round(r.mph)} mph`:"",100+x.measureText(r.et!=null?r.et.toFixed(2):"DNF").width*2.78,470);
   let y=580;x.strokeStyle="#343941";for(const m of r.marks){x.beginPath();x.moveTo(100,y-40);x.lineTo(W-100,y-40);x.stroke();x.fillStyle="#8e887b";x.font=F(30);x.fillText(m.n.toUpperCase(),100,y);x.fillStyle="#f0ece2";x.font=`600 40px "IBM Plex Mono",Menlo,monospace`;x.textAlign="right";x.fillText(m.t.toFixed(3)+" s",W-100-(m.n==="1/8 mi"||m.n==="1/4 mi"?260:0),y);if(m.n==="1/8 mi"||m.n==="1/4 mi"){x.fillStyle="#b8b2a3";x.fillText(Math.round(m.mph)+" mph",W-100,y);}x.textAlign="left";y+=80;}
   x.fillStyle="#8e887b";x.font=F(26);const sh=r.shifts.length?"Shifts "+r.shifts.map(s=>s.rpm.toLocaleString()).join(" · "):"No shifts";x.fillText(sh,100,y+20);x.fillText(`${r.ratios.join(" · ")} × ${r.veh.final} · ${r.veh.tyreDia}" · ${r.spinTime>0.3?"spun "+r.spinTime.toFixed(1)+" s":"hooked"}`,100,y+60);
@@ -11753,8 +11806,10 @@ $("runTest").addEventListener("click",()=>{
     else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
       const offStd=career()&&!isStdCell(env);if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
+      if(!career()&&env.testType==="pull"&&!failing)pbPull(res);
       if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(S.cfg);const overCap=res.peakHp>cap.hp||S.cfg.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:cfgHash(S.cfg),ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
+        if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(S.cfg.asp!=="na")C().boostedCert=true;}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
       if(career())addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40);
@@ -11776,7 +11831,18 @@ function renderAnalysis(){
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
+  renderRecords();
 }
+function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
+  const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
+  const top=R.top,best=top[0]||(cr&&C().bestEt?{et:C().bestEt}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
+  $("recCnt").textContent=cr?"career":"sandbox";
+  if(!best&&!hp&&!rel){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
+  box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
+    +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
+    +`<div class="rec"><span>${cr?"Best certified rel":"Best reliability"}</span>${rel?`<b>${rel.v}<i>${rel.hp?"@ "+rel.hp+" hp":"rel"}</i></b>${sub(rel)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
+    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm">${esc(e.n)}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+`</div>`;}
 
 /* ===================== SHOP: career ===================== */
 function catOpen(cat){return C().rep>=cat.rep&&(!cat.needs||has(cat.needs));}
