@@ -11644,6 +11644,7 @@ function dragFinish(){
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
   save();recompute();renderTest();
+  revealVerdict();
 }
 $("testExtra").addEventListener("click",e=>{if(e.target.closest("#freshen")){const l=S.last;if(!l||!career())return;const c=freshenCost(l.res);if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} — ${fmt$(c)}`);hud();save();renderTest();toast("Rings, bearings and a hone — like new");return;}
   if(!e.target.closest("#shareSlip"))return;const l=S.last;if(!l||!l.res.drag)return;shareSlip(l);});
@@ -11761,6 +11762,7 @@ $("runTest").addEventListener("click",()=>{
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career())checkGoals();
       save();recompute();renderTest();
+      revealVerdict();
       if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
   };
   requestAnimationFrame(step);
@@ -12094,9 +12096,18 @@ function tick(now){
 
 /* ===================== TABS & BOOT ===================== */
 let curTab="build";
-function showTab(t){curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
-  if(t==="test")renderTest();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
-document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+/* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
+const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
+function showTab(t){tabScroll[curTab]=$("panel").scrollTop;curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+  if(t==="test")renderTest();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
+/* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
+   If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
+function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(curTab!=="test"||!v)return;
+  const pr=pn.getBoundingClientRect(),vr=v.getBoundingClientRect(),st=document.querySelector(".tabpage.on .strip"),sc=st&&st.offsetParent&&getComputedStyle(st);
+  const top=pr.top+pn.clientTop+(sc&&sc.position==="sticky"?parseFloat(getComputedStyle(pn).paddingTop)+(parseFloat(sc.top)||0)+st.offsetHeight:0)+8;
+  const bot=Math.min(pr.bottom,$("tabs").getBoundingClientRect().top)-8;
+  if(vr.top>=top&&vr.bottom<=bot)return;pn.scrollTo({top:pn.scrollTop+vr.top-top,behavior:calmScroll()});}
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
@@ -12106,6 +12117,7 @@ if(window.ResizeObserver){let rt=null;new ResizeObserver(()=>{ENGINE_VIS.resize(
 let visReady=false;
 function boot(){
   if(!S.mode)S.mode="sandbox";
+  for(const k in tabScroll)delete tabScroll[k];$("panel").scrollTop=0; // new shop, new pages: every tab starts at the top
   if(!visReady){ENGINE_VIS.init($("gl"));visReady=true;requestAnimationFrame(tick);}
   ENGINE_VIS.buildGarage(garageOwned());ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
