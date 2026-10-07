@@ -69,6 +69,8 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #rpmbox b{display:block;font-family:var(--display);font-size:28px;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 #rpmbox span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange2)}
 #flash{position:absolute;inset:0;pointer-events:none;background:rgba(226,71,60,0);transition:background .15s}
+#fpsHud{position:absolute;left:12px;top:47px;pointer-events:none;display:none;font-family:var(--mono);font-size:11px;line-height:1;color:var(--chalk);background:rgba(15,17,20,.55);padding:3px 6px;border-radius:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#fpsHud.on{display:block}#app.mini #fpsHud{top:30px}#fpsHud b{font-weight:500}#fpsHud b.warn{color:var(--warn)}#fpsHud b.crit{color:var(--crit)}#fpsHud i{font-style:normal;color:var(--muted)}
 /* panel */
 #panel{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px 16px calc(var(--tabh) + 24px);border-top:1px solid var(--rule)}
 .tabpage{display:none}.tabpage.on{display:block}
@@ -363,6 +365,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
       </div>
     </div>
     <div id="tag">—</div>
+    <div id="fpsHud" aria-hidden="true"></div>
     <div id="rpmbox"><b id="rpmLbl">0</b><span>RPM</span></div>
     <div id="flash"></div>
   </div>
@@ -490,6 +493,13 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
           <div class="seg n2" id="devSeg"><button data-dev="0">Off<small>play it straight</small></button><button data-dev="1">On<small>every part, upgrade and staff · tests free</small></button></div>
           <div class="row" id="devRow" style="display:none;margin-bottom:8px"><button class="btn sm info" id="devCash" style="flex:1">+ $1,000,000</button><button class="btn sm info" id="devRep" style="flex:1">+ 500 rep</button><button class="btn sm info" id="devWeek" style="flex:1">Skip week</button></div>
           <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
+        </div>
+        <div id="fpsBox">
+          <div class="lbl"><span>Show FPS</span><b id="fpsLbl">—</b></div>
+          <div class="seg n2" id="fpsSeg"><button data-fps="1">On<small>in the engine view</small></button><button data-fps="0">Off</button></div>
+          <div class="lbl"><span>Frame-rate cap</span></div>
+          <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
+          <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
       </div>
       <div class="sec"><h2>Saves <span class="cnt" id="autoLbl">autosave on</span></h2>
@@ -9157,9 +9167,33 @@ function exhaustPoint(){
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
 }
 
-function loop(){
+/* frame pacing. rAF fires at the display rate: 120 Hz on a ProMotion iPad or a gaming phone.
+   With a cap set, a vsync that comes too soon after the last drawn frame is skipped and the clock
+   keeps running, so the next frame's dt covers the gap. The drawn frames follow a 1/cap grid, so a
+   90 or 144 Hz screen still averages the cap instead of dropping to half. Every rAF loop that asks
+   in the same vsync gets the same answer (they share the timestamp), so the app's tick skips with it. */
+var capMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
+function frameDue(now){
+  if(now===gateT) return gateOk;
+  gateT=now; var el=now-lastDraw;
+  gateOk = !capMs || el<0 || el>=capMs-1;
+  if(gateOk) lastDraw = (!capMs || el<0 || el>2*capMs) ? now : Math.min(now, lastDraw+capMs);
+  return gateOk;
+}
+/* fps meter: drawn frames over ~0.5 s of rAF timestamps; a gap over 3 s (hidden tab) restarts it */
+function fpsCount(now){
+  var w=fpsWin;
+  if(!w.t0 || now<w.last || now-w.last>3000){ w.t0=w.last=now; w.n=0; return; }
+  w.n++; w.last=now;
+  if(now-w.t0>=500){ fpsStat={fps:w.n*1000/(now-w.t0), ms:(now-w.t0)/w.n}; w.t0=now; w.n=0; }
+}
+
+function loop(now){
   rafId=requestAnimationFrame(loop);
   if(!renderer) return;
+  now = now>0 ? now : performance.now();
+  if(!frameDue(now)) return;
+  fpsCount(now);
   var dt=Math.min(clock.getDelta(), 0.05);
   tick(dt, clock.elapsedTime);
   if(STRIP.on && STRIP.built){ stripRender(); return; }
@@ -10909,6 +10943,10 @@ const ENGINE_VIS = {
   },
   start: function(){ if(!running){ running=true; clock.getDelta(); loop(); } },
   stop:  function(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=0; },
+  /* frame-rate cap (0 = whatever the display runs); frameDue(t) lets another rAF loop skip the same vsyncs */
+  setFpsCap: function(f){ capMs = f>0 ? 1000/f : 0; },
+  frameDue: function(t){ return frameDue(t); },
+  fps: function(){ return fpsStat; },
   info:  function(){
     var tris=0, calls=0;
     scene.traverse(function(o){
@@ -11128,6 +11166,12 @@ $("tag").addEventListener("keydown",e=>{if(e.target.id==="nameIn"&&e.key==="Ente
 $("soloSeg").addEventListener("click",e=>{const b=e.target.closest("[data-solo]");if(!b)return;if(b.dataset.solo==="rebuild"){ENGINE_SOUND.rebuild();toast("SOUND GRAPH REBUILT");return;}
   ENGINE_SOUND.solo(b.dataset.solo);document.querySelectorAll("#soloSeg button").forEach(x=>x.classList.toggle("on",x.dataset.solo===b.dataset.solo));toast(`SOLO · ${b.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("sdPeak");if(!el||curTab!=="shop")return;const pk=ENGINE_SOUND.peak();el.textContent=pk?`${pk.hz} Hz @ ${pk.db} dB · low ${pk.lo} dB · ${pk.state} ${pk.sr/1000}k`:"—";},400);
+/* frame rate: S.showFps puts a readout in the view; S.fpsCap 60 has ENGINE_VIS (and tick) skip the extra vsyncs of a 90/120 Hz screen */
+function applyFps(){const cap=S.fpsCap===60?60:0;ENGINE_VIS.setFpsCap(cap);$("fpsHud").classList.toggle("on",!!S.showFps);document.querySelectorAll("#fpsSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.fps==="1")===!!S.showFps));document.querySelectorAll("#capSeg button").forEach(b=>b.classList.toggle("on",+b.dataset.cap===cap));fpsShow();}
+function fpsShow(){const f=ENGINE_VIS.fps(),r=Math.round(f.fps);if(S.showFps)$("fpsHud").innerHTML=r?`<b class="${r<30?"crit":r<50?"warn":""}">${r}</b> fps <i>· ${f.ms.toFixed(1)} ms</i>`:"— fps";if(curTab==="shop")$("fpsLbl").textContent=r?`${r} fps · ${f.ms.toFixed(1)} ms`:"—";}
+setInterval(fpsShow,500);
+$("fpsSeg").addEventListener("click",e=>{const b=e.target.closest("[data-fps]");if(!b)return;S.showFps=b.dataset.fps==="1";applyFps();save();});
+$("capSeg").addEventListener("click",e=>{const b=e.target.closest("[data-cap]");if(!b)return;S.fpsCap=+b.dataset.cap===60?60:0;applyFps();save();toast(S.fpsCap?"CAPPED AT 60 FPS":"FRAME RATE · DISPLAY MAX");});
 function renderDev(){$("devBox").style.display=career()?"":"none";if(!career())return;document.querySelectorAll("#devSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.dev==="1")===dev()));$("devRow").style.display=dev()?"":"none";}
 $("devSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dev]");if(!b||!career())return;C().dev=b.dataset.dev==="1";toast(C().dev?"DEV MODE ON — everything unlocked, tests free":"Dev mode off");renderDev();hud();recompute();save();renderBuild();renderPresets();renderShop();renderTest();});
 $("devCash").addEventListener("click",()=>{if(!career())return;C().cash+=1e6;hud();save();toast("+$1,000,000");});
@@ -12041,6 +12085,7 @@ $("abSec").addEventListener("input",e=>{
   else if(e.target.id==="abLoad"){AB.load=+e.target.value/100;abRender();}});
 
 function tick(now){
+  if(!ENGINE_VIS.frameDue(now)){requestAnimationFrame(tick);return;}
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
   const L=LAYOUTS[S.cfg.layout];
   let rpm=run.rpm,load=run.load,on=run.on;
@@ -12108,6 +12153,7 @@ function boot(){
   if(!S.mode)S.mode="sandbox";
   if(!visReady){ENGINE_VIS.init($("gl"));visReady=true;requestAnimationFrame(tick);}
   ENGINE_VIS.buildGarage(garageOwned());ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);
+  applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
   applyTheme();applySoundQuality();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
