@@ -7370,7 +7370,24 @@ function buildAspiration(B, p, extras){
       cz = 0;
       vy = (pl ? pl.top : (p.deckH + p.headH*0.92)*Math.cos(p.a) + bore*0.55) + caseH2*0.5 - bore*0.02;
     }
-    B.add(screw?"palu":"malu", RBOX(caseL, caseH2, caseW2, 0.05), cx, vy, cz);
+    if(screw) B.add("palu", RBOX(caseL, caseH2, caseW2, 0.05), cx, vy, cz);
+    else {
+      /* Roots: a figure-8 case round the two side-by-side rotor bores, thicker end plates, ribbed flanks */
+      var rr=caseH2*0.5, rz=caseW2*0.5-rr, sg=DET?28:18, ept=bore*0.09;
+      B.add("malu", CYL(rr,rr,caseL-ept*2,sg,false,2.0), cx, vy, cz+rz, 0,0,PI/2);
+      B.add("malu", CYL(rr,rr,caseL-ept*2,sg,false,2.0), cx, vy, cz-rz, 0,0,PI/2);
+      B.add("malu", BOX(caseL-ept*2, caseH2*0.86, rz*2, 2.0), cx, vy, cz);
+      for(var ep=-1; ep<=1; ep+=2){                       /* end plates, a little proud of the case all round */
+        var ex2=cx+ep*(caseL*0.5-ept*0.5);
+        B.add("malu", CYL(rr*1.07,rr*1.07,ept,sg,false,2.0), ex2, vy, cz+rz, 0,0,PI/2);
+        B.add("malu", CYL(rr*1.07,rr*1.07,ept,sg,false,2.0), ex2, vy, cz-rz, 0,0,PI/2);
+        B.add("malu", BOX(ept, caseH2*1.0, rz*2, 2.0), ex2, vy, cz);
+      }
+      if(DET) for(var rb=0; rb<3; rb++){ var rh=(rb-1)*rr*0.52, rzo=rz+Math.sqrt(rr*rr-rh*rh);   /* longitudinal ribs on both flanks */
+        B.add("malu", RBOX(caseL-ept*2.4, bore*0.035, bore*0.06, 0.012), cx, vy+rh, cz+rzo);
+        B.add("malu", RBOX(caseL-ept*2.4, bore*0.035, bore*0.06, 0.012), cx, vy+rh, cz-rzo); }
+      if(!inl) B.add("malu", RBOX(caseL*1.02, bore*0.08, caseW2*1.06, 0.02), cx, vy-caseH2*0.5-bore*0.02, cz);   /* manifold adapter plate */
+    }
     var topY = vy + caseH2*0.5;
     if(lid && !inl){
       B.add("malu", RBOX(caseL*0.92, lid, caseW2*0.96, 0.03), cx, topY + lid*0.5, cz);
@@ -7390,7 +7407,15 @@ function buildAspiration(B, p, extras){
     }
     /* snout: points forward (+X) to the blower belt plane in buildFAD */
     var snX = caseL*0.5 + bore*0.34;
-    B.add("malu", RBOX(bore*0.70, bore*0.42, bore*0.44, 0.04), cx+snX-bore*0.05, vy, cz);
+    if(screw) B.add("malu", RBOX(bore*0.70, bore*0.42, bore*0.44, 0.04), cx+snX-bore*0.05, vy, cz);
+    else {
+      /* Roots gear case: an oval cover on the front plate, then a tapered snout to the pulley bearing */
+      B.add("malu", RBOX(bore*0.20, caseH2*0.84, caseW2*0.78, 0.05), cx+caseL*0.5+bore*0.10, vy, cz);
+      B.add("malu", CONE(bore*0.17, bore*0.27, bore*0.44, DET?20:14, 2.0), cx+caseL*0.5+bore*0.42, vy, cz, 0,0,-PI/2);
+      B.add("malu", CYL(bore*0.19,bore*0.19,bore*0.06,DET?20:14,false,2.0), cx+snX+bore*0.22, vy, cz, 0,0,PI/2);
+      if(DET) for(var gb=0; gb<6; gb++){ var ag=gb/6*TAU;
+        B.hw("hex", cx+caseL*0.5+bore*0.21, vy+Math.cos(ag)*caseH2*0.34, cz+Math.sin(ag)*caseW2*0.33, 0,0,-PI/2, bore*0.07); }
+    }
     out.crankDriven={ kind:"blower", y:vy, z:cz, snoutX:cx+snX+bore*0.30, ratio:(screw?3.2:2.6) };
     var rearIn = screw || inl, rx0 = cx-caseL*0.5, iy = vy+caseH2*0.08;
     if(p.intake==="carb"){
