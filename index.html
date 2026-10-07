@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.6.2.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.6.4.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -5166,14 +5166,13 @@ function fnCastExh(u,v,o){          /* rusty cast-iron exhaust manifold */
   o[4]=clamp(0.74+rust*0.16,0,1);
   o[5]=0.45*(1-rust*0.8);
 }
-function fnTurbine(u,v,o){          /* heat-stained cast turbine housing */
-  var g=fbm(u,v,4,22,901), stain=fbm(u,v,3,6,911);
-  var l=78+(g-0.5)*20;
-  var blue=smoothstep(0.52,0.78,stain), gold=smoothstep(0.30,0.50,stain)*(1-blue);
-  o[0]=l+gold*54+blue*4; o[1]=l+gold*32+blue*10; o[2]=l+gold*2+blue*34;
-  o[3]=g;
-  o[4]=clamp(0.62+(1-g)*0.16,0,1);
-  o[5]=0.5;
+function fnTurbine(u,v,o){          /* clean sand-cast turbine housing: even grey, fine grain, no stain */
+  var g=fbm(u,v,4,30,901), fine=fbm(u,v,2,120,911);
+  var l=118+(g-0.5)*12+(fine-0.5)*10;
+  o[0]=l+3; o[1]=l+1; o[2]=l;
+  o[3]=g*0.55+fine*0.45;
+  o[4]=clamp(0.58+(1-g)*0.10,0,1);
+  o[5]=0.6;
 }
 function fnRubberBelt(u,v,o){       /* ribbed serpentine belt */
   var rib=Math.abs(Math.sin(v*PI*26));
@@ -5367,13 +5366,11 @@ function fnInconelCast(u,v,o){      /* investment-cast Inconel turbine housing: 
   o[0]=l+gold*40-blue*6; o[1]=l+gold*24+blue*2; o[2]=l-gold*6+blue*24;
   o[3]=g; o[4]=clamp(0.46+(1-g)*0.12,0,1); o[5]=0.8;
 }
-function fnTurbineHi(u,v,o){        /* Ni-resist housing: dark sand-cast iron, oxide in the grain, a faint heat bloom */
-  var g=fbm(u,v,4,28,2521), fine=fbm(u,v,2,120,2527), bloom=fbm(u,v,3,3,2533);
-  var l=74+(g-0.5)*18+(fine-0.5)*12;
-  var ox=clamp((1-smoothstep(0.30,0.56,g))*(fbm(u,v,3,9,2539)-0.42)*2.2,0,1);
-  var b=smoothstep(0.45,0.85,bloom);
-  o[0]=l+ox*30+b*10; o[1]=l+ox*8+b*4; o[2]=l-ox*4+b*16;
-  o[3]=g*0.6+fine*0.4; o[4]=clamp(0.66+(1-g)*0.14+ox*0.1,0,1); o[5]=0.55*(1-ox*0.6);
+function fnTurbineHi(u,v,o){        /* Ni-resist housing, fresh: even cast grey, crisp sand grain, satin sheen */
+  var g=fbm(u,v,4,30,2521), fine=fbm(u,v,2,140,2527), pit=smoothstep(0.84,0.96,fbm(u,v,2,70,2533));
+  var l=116+(g-0.5)*12+(fine-0.5)*12-pit*24;
+  o[0]=l+3; o[1]=l+1; o[2]=l;
+  o[3]=g*0.5+fine*0.5-pit*0.4; o[4]=clamp(0.56+(1-g)*0.10+pit*0.12,0,1); o[5]=0.62;
 }
 function fnLoom(u,v,o){             /* split corrugated wiring conduit: ribs along u (uv scaled to length) */
   var rib=0.5+0.5*Math.cos(u*TAU*24);
@@ -5715,6 +5712,65 @@ function CONE(rt,rb,h,seg,k){ return CYL(rt,rb,h,seg,true,k); }
 function TUBE(pts,rad,tubular,radial,closed){
   var curve=new THREE.CatmullRomCurve3(pts, !!closed, "catmullrom", 0.25);
   return new THREE.TubeGeometry(curve, tubular||18, rad, radial||9, !!closed);
+}
+/* spiral volute ("snail") round the X axis: the tube centre walks out from Ra to Rb while its section grows from
+   ra to rb over `sweep` radians, starting at angle 0 in the YZ plane and winding toward +Z */
+function VOLUTE(Ra,Rb,ra,rb,sweep,nT,nR,k){
+  k=k===undefined?TK:k;
+  var key=gkey("vo",r3(Ra),r3(Rb),r3(ra),r3(rb),r3(sweep),nT,nR,k);
+  if(GEO[key]) return GEO[key];
+  var pos=[], nor=[], uv=[], idx=[], i, j;
+  for(i=0;i<=nT;i++){
+    var t=i/nT, th=t*sweep, R=Ra+(Rb-Ra)*t, r=ra+(rb-ra)*Math.pow(t,0.85), c=Math.cos(th), sn=Math.sin(th);
+    for(j=0;j<=nR;j++){
+      var ph=j/nR*TAU, cp=Math.cos(ph), sp=Math.sin(ph);
+      pos.push(r*sp, (R+r*cp)*c, (R+r*cp)*sn);
+      nor.push(sp, cp*c, cp*sn);
+      uv.push(th*R*k, ph*r*k);
+    }
+  }
+  for(i=0;i<nT;i++) for(j=0;j<nR;j++){
+    var a=i*(nR+1)+j, b=a+nR+1;
+    idx.push(a,b,a+1, b,b+1,a+1);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute("normal",   new THREE.Float32BufferAttribute(nor,3));
+  g.setAttribute("uv",       new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx);
+  return cache(key,g);
+}
+/* square turbine-inlet flange (T3/T4 style): w x w plate, h x h port, thickness along Y */
+function SQFLANGE(w,h,t,k){
+  k=k===undefined?TK:k;
+  var key=gkey("sf",r3(w),r3(h),r3(t),k);
+  if(GEO[key]) return GEO[key];
+  var W=w/2, H=h/2, cr=w*0.12, sh=new THREE.Shape();
+  sh.moveTo(-W+cr,-W); sh.lineTo(W-cr,-W); sh.quadraticCurveTo(W,-W,W,-W+cr); sh.lineTo(W,W-cr); sh.quadraticCurveTo(W,W,W-cr,W);
+  sh.lineTo(-W+cr,W); sh.quadraticCurveTo(-W,W,-W,W-cr); sh.lineTo(-W,-W+cr); sh.quadraticCurveTo(-W,-W,-W+cr,-W);
+  var hole=new THREE.Path(); hole.moveTo(-H,-H); hole.lineTo(-H,H); hole.lineTo(H,H); hole.lineTo(H,-H); hole.lineTo(-H,-H);
+  sh.holes.push(hole);
+  var g=new THREE.ExtrudeGeometry(sh, {depth:t, bevelEnabled:false, curveSegments:3});
+  g.translate(0,0,-t/2); g.rotateX(-PI/2);
+  return cache(key, planarUV(g.toNonIndexed(),k));
+}
+/* open bore seen from inside (normals and winding turned in), axis Y */
+function BORE(r,h,seg,k){
+  k=k===undefined?TK:k;
+  var key=gkey("bo",r3(r),r3(h),seg,k);
+  if(GEO[key]) return GEO[key];
+  var g=new THREE.CylinderGeometry(r,r,h,seg,1,true), ix=g.index.array, n=g.attributes.normal;
+  for(var i=0;i<ix.length;i+=3){ var t=ix[i+1]; ix[i+1]=ix[i+2]; ix[i+2]=t; }
+  for(i=0;i<n.count;i++) n.setXYZ(i,-n.getX(i),-n.getY(i),-n.getZ(i));
+  scaleUV(g, TAU*r*k, h*k);
+  return cache(key,g);
+}
+/* flat annulus facing +Z */
+function RING(ri,ro,seg,k){
+  k=k===undefined?TK:k;
+  var key=gkey("rg",r3(ri),r3(ro),seg,k);
+  if(GEO[key]) return GEO[key];
+  return cache(key, planarUV(new THREE.RingGeometry(ri,ro,seg,1),k));
 }
 function V3(x,y,z){ return new THREE.Vector3(x,y,z); }
 function mkM(x,y,z,rx,ry,rz,sx,sy,sz){
@@ -7314,7 +7370,24 @@ function buildAspiration(B, p, extras){
       cz = 0;
       vy = (pl ? pl.top : (p.deckH + p.headH*0.92)*Math.cos(p.a) + bore*0.55) + caseH2*0.5 - bore*0.02;
     }
-    B.add(screw?"palu":"malu", RBOX(caseL, caseH2, caseW2, 0.05), cx, vy, cz);
+    if(screw) B.add("palu", RBOX(caseL, caseH2, caseW2, 0.05), cx, vy, cz);
+    else {
+      /* Roots: a figure-8 case round the two side-by-side rotor bores, thicker end plates, ribbed flanks */
+      var rr=caseH2*0.5, rz=caseW2*0.5-rr, sg=DET?28:18, ept=bore*0.09;
+      B.add("malu", CYL(rr,rr,caseL-ept*2,sg,false,2.0), cx, vy, cz+rz, 0,0,PI/2);
+      B.add("malu", CYL(rr,rr,caseL-ept*2,sg,false,2.0), cx, vy, cz-rz, 0,0,PI/2);
+      B.add("malu", BOX(caseL-ept*2, caseH2*0.86, rz*2, 2.0), cx, vy, cz);
+      for(var ep=-1; ep<=1; ep+=2){                       /* end plates, a little proud of the case all round */
+        var ex2=cx+ep*(caseL*0.5-ept*0.5);
+        B.add("malu", CYL(rr*1.07,rr*1.07,ept,sg,false,2.0), ex2, vy, cz+rz, 0,0,PI/2);
+        B.add("malu", CYL(rr*1.07,rr*1.07,ept,sg,false,2.0), ex2, vy, cz-rz, 0,0,PI/2);
+        B.add("malu", BOX(ept, caseH2*1.0, rz*2, 2.0), ex2, vy, cz);
+      }
+      if(DET) for(var rb=0; rb<3; rb++){ var rh=(rb-1)*rr*0.52, rzo=rz+Math.sqrt(rr*rr-rh*rh);   /* longitudinal ribs on both flanks */
+        B.add("malu", RBOX(caseL-ept*2.4, bore*0.035, bore*0.06, 0.012), cx, vy+rh, cz+rzo);
+        B.add("malu", RBOX(caseL-ept*2.4, bore*0.035, bore*0.06, 0.012), cx, vy+rh, cz-rzo); }
+      if(!inl) B.add("malu", RBOX(caseL*1.02, bore*0.08, caseW2*1.06, 0.02), cx, vy-caseH2*0.5-bore*0.02, cz);   /* manifold adapter plate */
+    }
     var topY = vy + caseH2*0.5;
     if(lid && !inl){
       B.add("malu", RBOX(caseL*0.92, lid, caseW2*0.96, 0.03), cx, topY + lid*0.5, cz);
@@ -7334,7 +7407,15 @@ function buildAspiration(B, p, extras){
     }
     /* snout: points forward (+X) to the blower belt plane in buildFAD */
     var snX = caseL*0.5 + bore*0.34;
-    B.add("malu", RBOX(bore*0.70, bore*0.42, bore*0.44, 0.04), cx+snX-bore*0.05, vy, cz);
+    if(screw) B.add("malu", RBOX(bore*0.70, bore*0.42, bore*0.44, 0.04), cx+snX-bore*0.05, vy, cz);
+    else {
+      /* Roots gear case: an oval cover on the front plate, then a tapered snout to the pulley bearing */
+      B.add("malu", RBOX(bore*0.20, caseH2*0.84, caseW2*0.78, 0.05), cx+caseL*0.5+bore*0.10, vy, cz);
+      B.add("malu", CONE(bore*0.17, bore*0.27, bore*0.44, DET?20:14, 2.0), cx+caseL*0.5+bore*0.42, vy, cz, 0,0,-PI/2);
+      B.add("malu", CYL(bore*0.19,bore*0.19,bore*0.06,DET?20:14,false,2.0), cx+snX+bore*0.22, vy, cz, 0,0,PI/2);
+      if(DET) for(var gb=0; gb<6; gb++){ var ag=gb/6*TAU;
+        B.hw("hex", cx+caseL*0.5+bore*0.21, vy+Math.cos(ag)*caseH2*0.34, cz+Math.sin(ag)*caseW2*0.33, 0,0,-PI/2, bore*0.07); }
+    }
     out.crankDriven={ kind:"blower", y:vy, z:cz, snoutX:cx+snX+bore*0.30, ratio:(screw?3.2:2.6) };
     var rearIn = screw || inl, rx0 = cx-caseL*0.5, iy = vy+caseH2*0.08;
     if(p.intake==="carb"){
@@ -7375,33 +7456,74 @@ function buildAspiration(B, p, extras){
 }
 
 function buildCompressorSnail(B, extras, p, x, y, z, s, matKey, zs, dir){
-  var d=(dir===undefined)?1:dir;   /* 1 = inlet toward -X, -1 = inlet facing forward */
-  /* squat volute disc that grows toward the tangential outlet */
-  B.add(matKey, CYL(s*0.80, s*0.80, s*0.34, 26, false, 2.0), x, y, z, 0,0,PI/2);
-  B.add(matKey, CYL(s*0.62, s*0.62, s*0.52, 24, false, 2.0), x-d*s*0.06, y, z, 0,0,PI/2);
-  /* inlet bell on the axis */
-  B.add(matKey, CYL(s*0.44, s*0.44, s*0.34, 22, false, 2.0), x-d*s*0.34, y, z, 0,0,PI/2);
-  B.add(matKey, CONE(s*0.54, s*0.42, s*0.22, 22, 2.0), x-d*s*0.56, y, z, 0,0,d*PI/2);
-  B.add(matKey, TOR(s*0.54, s*0.05, 6, 22, 2.0), x-d*s*0.66, y, z, 0, PI/2, 0);
-  /* tangential outlet snout climbing off the volute */
-  B.add(matKey, CONE(s*0.30, s*0.42, s*0.46, 18, 2.0), x, y+s*0.78, z);
-  B.add(matKey, CYL(s*0.30, s*0.30, s*0.22, 18, false, 2.0), x, y+s*1.10, z);
-  B.add(matKey, TOR(s*0.31, s*0.05, 6, 20, 2.0), x, y+s*1.20, z, PI/2,0,0);
+  var d=(dir===undefined)?1:dir, e=-d;   /* d = 1: inlet toward -X; -1: inlet facing forward. e points out of the inlet */
+  var VT=DET?44:26, VR=DET?14:9, SW=PI*1.86, cR=s*0.62, cr=s*0.27, al=PI/2+SW;
+  /* back plate on the drive side, then the scroll; turned half round so it leaves straight up on the outboard side */
+  B.add(matKey, CYL(s*0.62,s*0.62,s*0.10,24,false,2.0), x-e*s*0.20, y, z, 0,0,PI/2);
+  B.add(matKey, VOLUTE(s*0.50, cR, s*0.11, cr, SW, VT, VR, 2.0), x, y, z, al, PI, 0);
+  B.add(matKey, CYL(s*0.46,s*0.46,s*0.28,26,false,2.0), x, y, z, 0,0,PI/2);
+  B.add(matKey, SPH(s*0.11, 10, 2.0), x, y+s*0.50*Math.cos(al), z+s*0.50*Math.sin(al));
+  /* stepped open inlet with the wheel inside, as on the turbo compressor */
+  B.add(matKey, CYL(s*0.50,s*0.54,s*0.16,26,false,2.0), x+e*s*0.22, y, z, 0,0,PI/2);
+  B.add(matKey, CONE(s*0.46,s*0.48,s*0.26,24,2.0), x+e*s*0.43, y, z, 0,0,e*PI/2);
+  B.add(matKey, CONE(s*0.49,s*0.49,s*0.06,24,2.0), x+e*s*0.50, y, z, 0,0,PI/2);
+  B.add(matKey, RING(s*0.46,s*0.49,24,2.0), x+e*s*0.53, y, z, 0,e*PI/2,0);
+  B.add(matKey, RING(s*0.46,s*0.49,24,2.0), x+e*s*0.47, y, z, 0,-e*PI/2,0);
+  B.add(matKey, CONE(s*0.44,s*0.48,s*0.17,24,2.0), x+e*s*0.615, y, z, 0,0,-e*PI/2);
+  B.add(matKey, BORE(s*0.37, s*0.30, 24, 2.0), x+e*s*0.55, y, z, 0,0,PI/2);
+  B.add(matKey, BORE(s*0.33, s*0.16, 24, 2.0), x+e*s*0.34, y, z, 0,0,PI/2);
+  B.add(matKey, RING(s*0.33,s*0.37,24,2.0), x+e*s*0.40, y, z, 0,e*PI/2,0);
+  B.add(matKey, RING(s*0.37,s*0.44,24,2.0), x+e*s*0.70, y, z, 0,e*PI/2,0);
+  B.add(matKey, TOR(s*0.405, s*0.03, 6, 24, 2.0), x+e*s*0.70, y, z, 0,PI/2,0);
+  /* tangential discharge climbing off the scroll, with a hose bead */
+  var dL=s*0.70;
+  B.add(matKey, CYL(cr,cr*1.02,dL,18,false,2.0), x, y+dL*0.5, z+cR);
+  B.add(matKey, TOR(cr*0.98, s*0.035, 6, 18, 2.0), x, y+dL*0.86, z+cR, PI/2,0,0);
   /* compressor wheel (spins), nose toward the inlet */
-  var wheel=makeWheelMesh(s*0.40, 9, MAT.palu);
-  wheel.position.copy(B.pt(x-d*s*0.26, y, z)); wheel.rotation.z=d*PI/2;
+  var wheel=makeWheelMesh(s*0.32, 6, MAT.palu);
+  wheel.position.copy(B.pt(x+e*s*0.39, y, z)); wheel.rotation.z=d*PI/2;
   extras.push(wheel); anim.turbos.push(wheel);
+  return {pt:V3(x, y+dL, z+cR), dir:V3(0,1,0)};
 }
 
+/* one impeller blade along the wheel axis (Y, nose at +Y): root on the hub, tip out to the shroud line, the
+   leading edge swept round like a real compressor inducer. `len` < 1 makes a shorter splitter blade. */
+function BLADE(r, len, nU){
+  var key=gkey("bl",r3(r),r3(len),nU);
+  if(GEO[key]) return GEO[key];
+  var nV=3, th=r*0.045, pos=[], idx=[], sides=[1,-1], q, i, j;
+  var y0=-r*0.42, y1=y0+(r*0.86)*len;
+  for(q=0;q<2;q++){
+    var base=pos.length/3;
+    for(i=0;i<=nU;i++){
+      var u=i/nU, y=y0+(y1-y0)*u;
+      var hubR=r*(0.62-0.40*Math.pow(u*len,1.1)), tipR=r*(1.0-0.30*Math.pow(u*len,1.4));
+      var phi=0.95*Math.pow(u*len,2.0);              /* inducer sweep */
+      for(j=0;j<=nV;j++){
+        var rr=hubR+(tipR-hubR)*(j/nV), a=phi+sides[q]*th/(2*rr);
+        pos.push(Math.cos(a)*rr, y, Math.sin(a)*rr);
+      }
+    }
+    for(i=0;i<nU;i++) for(j=0;j<nV;j++){
+      var A=base+i*(nV+1)+j, B2=A+nV+1;
+      if(q===0) idx.push(A,B2,A+1, B2,B2+1,A+1); else idx.push(A,A+1,B2, B2,A+1,B2+1);
+    }
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  var uv=new Float32Array(pos.length/3*2); g.setAttribute("uv", new THREE.BufferAttribute(uv,2));
+  return cache(key,g);
+}
 function makeWheelMesh(r, blades, mat){
-  var items=[{g:CONE(r*0.30, r*0.55, r*0.75, 12, 3.0), m:new THREE.Matrix4()}];
-  for(var i=0;i<blades;i++){
-    var ang=i/blades*TAU;
-    var m=new THREE.Matrix4().compose(
-      new THREE.Vector3(Math.cos(ang)*r*0.55, 0, Math.sin(ang)*r*0.55),
-      new THREE.Quaternion().setFromEuler(new THREE.Euler(0.35, -ang, 0.32)),
-      new THREE.Vector3(1,1,1));
-    items.push({g:BOX(r*0.10, r*0.72, r*0.80, 3.0), m:m});
+  var nU=DET?7:4, half=DET?blades:Math.max(5,blades-3);
+  var items=[{g:CONE(r*0.24, r*0.66, r*0.86, 16, 3.0), m:new THREE.Matrix4()},
+             {g:CYL(r*0.70, r*0.70, r*0.10, 18, false, 3.0), m:mkM(0,-r*0.46,0)},
+             {g:SPH(r*0.13, 10, 3.0), m:mkM(0,r*0.45,0)}];                       /* back disc + nose nut */
+  for(var i=0;i<half;i++){
+    var ang=i/half*TAU;
+    items.push({g:BLADE(r, 1.0, nU), m:mkM(0,0,0, 0,-ang,0)});
+    if(DET) items.push({g:BLADE(r, 0.62, nU), m:mkM(0,0,0, 0,-ang-PI/half,0)});  /* splitter */
   }
   var mesh=new THREE.Mesh(mergeGeos(items), mat);
   mesh.castShadow=true;
@@ -7423,16 +7545,29 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
   var dO=coDir.clone().setX(0).normalize();
   var li=loc(di), lo=loc(dO), ai=Math.atan2(li.z, li.y), ao=Math.atan2(lo.z, lo.y);
   /* turbine housing (hot side) with its inlet neck + flange aimed at the manifold */
-  B.add(hot, TOR(s*0.50, s*0.27, 10, 24, 2.0), 0,0,0, 0,PI/2,0);
-  B.add(hot, CYL(s*0.50,s*0.50,s*0.40,22,false,2.0), 0,0,0, 0,0,PI/2);
-  B.add(hot, CYL(s*0.27,s*0.36,s*0.46,16,false,2.0), 0, li.y*s*0.76, li.z*s*0.76, ai,0,0);
-  B.add(hot, BOX(s*0.60, s*0.07, s*0.60, 2.0), 0, li.y*s*1.01, li.z*s*1.01, ai,0,0);
+  var VT=DET?44:26, VR=DET?14:9, SW=PI*1.86;
+  /* scroll winds down from the inlet neck: fat where the exhaust enters, tight where it reaches the tongue */
+  B.add(hot, VOLUTE(s*0.40, s*0.50, s*0.10, s*0.27, SW, VT, VR, 2.0), 0,0,0, ai-SW,0,0);
+  B.add(hot, CYL(s*0.36,s*0.36,s*0.30,26,false,2.0), 0,0,0, 0,0,PI/2);
+  B.add(hot, SPH(s*0.10, 10, 2.0), 0, s*0.40*Math.cos(ai-SW), s*0.40*Math.sin(ai-SW));
+  B.add(hot, CYL(s*0.27,s*0.36,s*0.62,18,false,2.0), 0, li.y*s*0.67, li.z*s*0.67, ai,0,0);
+  B.add(hot, SQFLANGE(s*0.66, s*0.40, s*0.08, 2.0), 0, li.y*s*1.01, li.z*s*1.01, ai,0,0);
+  if(DET){                                   /* four studs and nuts on the flange corners */
+    for(var fq=0; fq<4; fq++){
+      var ex=(fq&1?1:-1)*s*0.245, et=(fq&2?1:-1)*s*0.245;
+      B.hw("hex", ex, -li.z*et + li.y*s*1.08, li.y*et + li.z*s*1.08, ai,0,0, s*0.09);
+    }
+  }
   /* axial turbine outlet + v-band */
   B.add(hot, CYL(s*0.36,s*0.34,s*0.34,18,false,2.0), -s*0.36,0,0, 0,0,PI/2);
   B.add(hot, TOR(s*0.37, s*0.045, 6, 20, 2.0), -s*0.53,0,0, 0,PI/2,0);
   /* internal wastegate: flapper lever on the turbine housing, actuator can bracketed off the compressor cover */
   if(!o.extWG){
-    B.add("steel", CYL(s*0.19,s*0.19,s*0.22,16,false,2.4), s*0.66, -s*0.72, 0, 0,0,PI/2);
+    /* actuator can: two pressed dishes crimped together, a boost nipple on the cap */
+    B.add("steel", CYL(s*0.20,s*0.20,s*0.10,20,false,2.4), s*0.61, -s*0.72, 0, 0,0,PI/2);
+    B.add("steel", CYL(s*0.13,s*0.20,s*0.10,20,false,2.4), s*0.72, -s*0.72, 0, 0,0,-PI/2);
+    B.add("steel", TOR(s*0.205, s*0.022, 5, 22, 2.4), s*0.665, -s*0.72, 0, 0,PI/2,0);
+    B.add("steel", CYL(s*0.035,s*0.035,s*0.10,8,false,2.4), s*0.81, -s*0.72, 0, 0,0,PI/2);
     B.add("steel", CYL(s*0.03,s*0.03,s*0.56,8), s*0.28, -s*0.72, 0, 0,0,PI/2);
     B.add("steel", BOX(s*0.06, s*0.26, s*0.06), 0.0, -s*0.62, 0);
     B.add("malu", BOX(s*0.06, s*0.20, s*0.12), s*0.70, -s*0.56, 0);
@@ -7450,27 +7585,46 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
     extras.push(hoseMesh([B.pt(s*0.34,0,inb*s*0.30), B.pt(s*0.28,-s*0.10,inb*s*0.60), B.pt(s*0.18,-s*0.30,inb*s*0.95)], bore*0.022, MAT.steel));
     extras.push(hoseMesh([B.pt(s*0.52,0,inb*s*0.30), B.pt(s*0.58,s*0.14,inb*s*0.62), B.pt(s*0.62,s*0.40,inb*s*0.95)], bore*0.022, MAT.steel));
     /* casting parting line round the turbine volute, and the compressor back-plate bolts */
-    B.add(hot, TOR(s*0.77, s*0.026, 5, 36, 2.0), 0,0,0, 0,PI/2,0);
-    B.add(hot, TOR(s*0.505, s*0.022, 5, 30, 2.0), s*0.21,0,0, 0,PI/2,0);
-    B.add("palu", TOR(s*0.80, s*0.022, 5, 36, 2.0), s*0.86,0,0, 0,PI/2,0);
+    B.add(hot, TOR(s*0.36, s*0.022, 5, 30, 2.0), s*0.16,0,0, 0,PI/2,0);
     for(var cb=0; cb<6; cb++){ var ac=cb/6*TAU+0.26; B.hw("hex", s*0.60, Math.cos(ac)*s*0.56, Math.sin(ac)*s*0.56, 0,0,PI/2, s*0.10); }
-    if(!o.extWG && DET>=2){
-      /* boost reference hose from the compressor cover to the wastegate can */
-      extras.push(hoseMesh([B.pt(s*1.12,-s*0.66,0), B.pt(s*1.02,-s*0.92,s*0.06), B.pt(s*0.84,-s*0.86,0)], bore*0.022));
-      B.add("malu", CYL(s*0.04,s*0.04,s*0.10,8), s*1.12,-s*0.62,0);
+    if(!o.extWG){
+      /* boost reference line: a hard copper line off the cover that loops round the compressor to the can */
+      var rl=[], a0=-0.45, a1=PI+0.15, nA=9;
+      rl.push(B.pt(s*1.00, Math.cos(a0)*s*0.62, Math.sin(a0)*s*0.62));
+      for(var ra=0; ra<=nA; ra++){ var aa=a0+(a1-a0)*ra/nA, rr2=s*0.70;
+        rl.push(B.pt(s*1.14, Math.cos(aa)*rr2, Math.sin(aa)*rr2)); }
+      rl.push(B.pt(s*1.00, -s*0.78, -s*0.06)); rl.push(B.pt(s*0.86, -s*0.72, 0));
+      extras.push(hoseMesh(rl, s*0.035, MAT.copper));
+      B.add("palu", CYL(s*0.05,s*0.06,s*0.08,8), s*0.98, Math.cos(a0)*s*0.62, Math.sin(a0)*s*0.62, 0,0,PI/2);
     }
     if(!o.extWG){ B.add("steel", CYL(s*0.05,s*0.05,s*0.05,8), s*0.02,-s*0.72,0, 0,0,PI/2); B.add("steel", BOX(s*0.04,s*0.10,s*0.10), -s*0.02,-s*0.66,0); }  /* rod end + clip */
   }
   /* compressor cover (cold side), inlet facing away from the turbine */
+  /* back plate, then the scroll: it grows round the wheel and leaves tangentially along the discharge direction */
   B.add("palu", CYL(s*0.62,s*0.62,s*0.10,24,false,2.0), s*0.66,0,0, 0,0,PI/2);
-  B.add("palu", CYL(s*0.80,s*0.80,s*0.36,28,false,2.0), s*0.86,0,0, 0,0,PI/2);
-  B.add("palu", CYL(s*0.60,s*0.66,s*0.20,24,false,2.0), s*1.12,0,0, 0,0,PI/2);
-  B.add("palu", CYL(s*0.42,s*0.42,s*0.30,22,false,2.0), s*1.34,0,0, 0,0,PI/2);
-  B.add("palu", CONE(s*0.50,s*0.42,s*0.12,22,2.0), s*1.53,0,0, 0,0,-PI/2);
-  B.add("palu", TOR(s*0.50, s*0.04, 6, 22, 2.0), s*1.59,0,0, 0,PI/2,0);
-  /* tangential discharge */
-  B.add("palu", CYL(s*0.27,s*0.36,s*0.46,16,false,2.0), s*0.86, lo.y*s*0.84, lo.z*s*0.84, ao,0,0);
-  B.add("palu", TOR(s*0.28, s*0.04, 6, 18, 2.0), s*0.86, lo.y*s*1.08, lo.z*s*1.08, ao-PI/2,0,0);
+  var cE=Math.atan2(-lo.y, lo.z), cA=cE-SW, cR=s*0.62, cr=s*0.25;
+  B.add("palu", VOLUTE(s*0.50, cR, s*0.11, cr, SW, VT, VR, 2.0), s*0.86,0,0, cA,0,0);
+  B.add("palu", CYL(s*0.46,s*0.46,s*0.28,26,false,2.0), s*0.86,0,0, 0,0,PI/2);
+  B.add("palu", SPH(s*0.11, 10, 2.0), s*0.86, s*0.50*Math.cos(cA), s*0.50*Math.sin(cA));
+  /* stepped inlet: shroud, a raised ring and a rolled lip like a cast cover */
+  B.add("palu", CYL(s*0.50,s*0.54,s*0.16,26,false,2.0), s*1.08,0,0, 0,0,PI/2);
+  B.add("palu", CONE(s*0.46,s*0.48,s*0.26,24,2.0), s*1.29,0,0, 0,0,PI/2);
+  B.add("palu", CONE(s*0.49,s*0.49,s*0.06,24,2.0), s*1.36,0,0, 0,0,PI/2);
+  B.add("palu", RING(s*0.46,s*0.49,24,2.0), s*1.39,0,0, 0,PI/2,0);
+  B.add("palu", RING(s*0.46,s*0.49,24,2.0), s*1.33,0,0, 0,-PI/2,0);
+  B.add("palu", CONE(s*0.44,s*0.48,s*0.17,24,2.0), s*1.475,0,0, 0,0,-PI/2);
+  /* open inlet: the bore, a step ring part way down and the wheel sitting inside it */
+  B.add("palu", BORE(s*0.37, s*0.30, 24, 2.0), s*1.41,0,0, 0,0,PI/2);
+  B.add("palu", BORE(s*0.33, s*0.16, 24, 2.0), s*1.20,0,0, 0,0,PI/2);
+  B.add("palu", RING(s*0.33,s*0.37,24,2.0), s*1.26,0,0, 0,PI/2,0);
+  B.add("palu", RING(s*0.37,s*0.44,24,2.0), s*1.56,0,0, 0,PI/2,0);
+  B.add("palu", TOR(s*0.405, s*0.03, 6, 24, 2.0), s*1.56,0,0, 0,PI/2,0);
+  if(DET){ for(var bs=0; bs<3; bs++){ var ab=cA+0.9+bs*1.7;          /* cast bosses on the cover face */
+    B.add("palu", CYL(s*0.045,s*0.05,s*0.05,10,false,2.0), s*1.05, Math.cos(ab)*s*0.60, Math.sin(ab)*s*0.60, 0,0,PI/2); } }
+  /* tangential discharge: straight off the end of the scroll, with a hose bead */
+  var cEy=Math.cos(cE)*cR, cEz=Math.sin(cE)*cR, dL=s*0.50;
+  B.add("palu", CYL(cr,cr*1.02,dL,18,false,2.0), s*0.86, cEy+lo.y*dL*0.5, cEz+lo.z*dL*0.5, ao,0,0);
+  B.add("palu", TOR(cr*0.98, s*0.035, 6, 18, 2.0), s*0.86, cEy+lo.y*dL*0.86, cEz+lo.z*dL*0.86, ao-PI/2,0,0);
   if(o.filter){
     B.add("blackPlast", CYL(s*0.50,s*0.54,s*0.62,20,false,2.0), s*1.95,0,0, 0,0,PI/2);
     B.add("chrome", CYL(s*0.55,s*0.55,s*0.06,20), s*2.28,0,0, 0,0,PI/2);
@@ -7479,14 +7633,14 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
   var tw=makeWheelMesh(s*0.30, 10, MAT.steel);
   tw.position.copy(B.pt(-s*0.08,0,0)); tw.rotation.z=cdir*PI/2;
   extras.push(tw); anim.turbos.push(tw);
-  var cw=makeWheelMesh(s*0.38, 9, MAT.palu);
-  cw.position.copy(B.pt(s*1.28,0,0)); cw.rotation.z=-cdir*PI/2;
+  var cw=makeWheelMesh(s*0.32, 6, MAT.palu);
+  cw.position.copy(B.pt(s*1.25,0,0)); cw.rotation.z=-cdir*PI/2;
   extras.push(cw); anim.turbos.push(cw);
   var r = {
     ti:B.pt(0, li.y*s*1.05, li.z*s*1.05), tiDir:di.clone(),
     to:B.pt(-s*0.56,0,0),  toDir:V3(-cdir,0,0),
     ci:B.pt(s*1.60,0,0),   ciDir:V3(cdir,0,0),
-    co:B.pt(s*0.86, lo.y*s*1.10, lo.z*s*1.10), coDir:dO.clone(), tip:null
+    co:B.pt(s*0.86, cEy+lo.y*dL, cEz+lo.z*dL), coDir:dO.clone(), tip:null
   };
   B.pop();
   if(o.downpipe!==false){
@@ -7851,8 +8005,8 @@ function buildFAD(B, p, extras){
     var vx=tcF+s*0.22, vy=hy+cpR+bore*0.12+s*0.56;
     B.add("malu", RBOX(bore*0.30, vy-hy+bore*0.40, bore*0.66, 0.04), beltX-bore*0.24, (vy+hy)/2, hz);   /* gearbox */
     B.add("malu", BOX(bore*0.08, bore*0.30, hz*0.55), tcF+bore*0.04, hy, hz*0.62);                       /* bracket to the front cover */
-    buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
-    if(cd.cout) cd.cout.push({pt:V3(vx, vy+s*1.22, hz), dir:V3(0,1,0)});
+    var sOut=buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
+    if(cd.cout) cd.cout.push(sOut);
     var cp=pulleyMesh(cpR, bore*0.15); cp.position.set(beltX, hy, hz);
     extras.push(cp); anim.spin.push({o:cp, axis:"x", k:spinK(cpR)});
     serp.push({y:hy, z:hz, r:cpR, side:1});
@@ -10777,7 +10931,7 @@ const UPGRADES=[
   {id:"boost",name:"Boost bench",desc:"Turbochargers, superchargers, intercoolers and the fuels that like them.",price:22000},
   {id:"bay1",name:"Second bay",desc:"Room for inline-5, inline-6, V8 and flat-6 blocks.",price:30000},
   {id:"shop2",name:"Machine shop II",desc:"Billet cranks, titanium, 300M, coated bearings, dry sumps, exotic fuels.",price:45000,needs:"shop1"},
-  {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm with climate control.",price:60000,needs:"dyno2"},
+  {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:60000,needs:"dyno2"},
   {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:90000,needs:"bay1"},
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:180000,needs:"shop2"},
   {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:150000,needs:"dyno3"}
@@ -10862,7 +11016,7 @@ const SEGMENTS=[
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.6.2.0";
+const VERSION="1.6.4.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -10870,11 +11024,14 @@ function applyTheme(){const t=S.theme||"dark";const eff=t==="auto"?(window.match
   document.querySelectorAll("#themeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.theme===t));document.querySelectorAll("#hapSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.hap==="1")===(S.haptics!==false)));
   if(curTab==="test")drawChart(lastForChart(),null);}
 function buzz(ms){if(S.haptics===false||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
-function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:false,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false};}
+function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false};}
 function save(){try{const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
 function snapshot(){return Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});}
-function hydrate(o){if(!o||!o.cfg)return false;S=freshState();Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];return true;}
+function hydrate(o){if(!o||!o.cfg)return false;S=freshState();Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
+  if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
+    S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
+      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];return true;}
 function load(){S=freshState();try{const j=localStorage.getItem("pew2-save");if(j)hydrate(JSON.parse(j));}catch(e){}}
 /* manual save slots + portable save codes */
 const SLOTS=3,slotKey=i=>"pew2-slot"+i;
@@ -10901,7 +11058,18 @@ function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?st.wag
 function dynoCap(){if(!career())return{hp:5000,rpm:14000,n:"Test cell dyno"};return has("dyno4")?{hp:3500,rpm:12500,n:"Outlaw cell"}:has("dyno3")?{hp:2000,rpm:12500,n:"Pro cell"}:has("dyno2")?{hp:1000,rpm:10000,n:"Engine dyno"}:{hp:400,rpm:8000,n:"Chassis dyno"};}
 function repTier(){let t=REP_TIERS[0];for(const r of REP_TIERS)if(C().rep>=r[0])t=r;return t;}
 function repTierIdx(){let i=0;REP_TIERS.forEach((r,k)=>{if(C().rep>=r[0])i=k;});return i;}
-function envHash(){const e=S.env;return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
+/* test-cell climate. Sandbox: whatever S.env says. Career: the standard cell (20 °C, 500 m), unless the Pro dyno
+   cell's climate control is installed, in which case the career's own cell settings (C().cell). Only a pull in
+   the standard cell certifies for contracts, and the strip runs in standard weather. */
+const CELL_KEYS=["ambientC","altitudeM","coolantC","oilC"];
+function stdCell(){const d=SIM.DEFAULT_ENV,o={};CELL_KEYS.forEach(k=>o[k]=d[k]);return o;}
+function careerCell(){const c=C();if(!c.cell||typeof c.cell!=="object")c.cell=stdCell();return c.cell;}
+function climateCtl(){return career()&&has("dyno3");}
+function simEnv(extra){return Object.assign({},S.env,career()?(climateCtl()&&S.env.testType!=="drag"?careerCell():stdCell()):{},extra||{});}
+function stdEnv(extra){return Object.assign({},S.env,career()?stdCell():{},extra||{});}
+function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===+d[k]);}
+function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
+function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
 function cfgHash(c){return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))).sort().map(k=>c[k]));}
 function fuelBill(){if(!career()||dev())return 0;const fu=SIM.OPT.fuel[S.cfg.fuel]||SIM.OPT.fuel.r91;const hp=quick&&isFinite(quick.peakHp)?quick.peakHp:300;
@@ -10973,7 +11141,7 @@ function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.quer
   if(!d){t.classList.remove("show");return;}t.textContent=(d>0?"▲":"▼")+fmt(Math.abs(d));t.classList.toggle("dn",lowGood?d>0:d<0);t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
 function recompute(){
   prevQuick=quick;
-  quick=SIM.simulate(S.cfg,Object.assign({},S.env,{testType:"pull"}));
+  quick=SIM.simulate(S.cfg,simEnv({testType:"pull"}));
   if(prevQuick&&prevQuick!==quick){stripFlash("sHp",Math.round(quick.peakHp-prevQuick.peakHp),v=>v);stripFlash("sKg",Math.round(quick.kg-prevQuick.kg),v=>v,true);stripFlash("sCost",Math.round(quick.cost-prevQuick.cost),v=>"$"+v.toLocaleString("en-CA"),true);stripFlash("sDisp",+(quick.Vd/1000-prevQuick.Vd/1000).toFixed(1),v=>v.toFixed(1));}
   combosNow=SIM.combos(S.cfg);
   if(S.heat)applyHeat();
@@ -11024,7 +11192,7 @@ $("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");i
 /* live deltas: what each option would do to hp / reliability / unit cost, from a real simulate() call (cached) */
 const deltaCache=new Map();
 function probe(k,v){const key=cfgHash(S.cfg)+"|"+envHash()+"|"+k+"="+v;let r=deltaCache.get(key);if(r)return r;
-  const cfg=Object.assign({},S.cfg,{[k]:v});const q=SIM.simulate(cfg,Object.assign({},S.env,{testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
+  const cfg=Object.assign({},S.cfg,{[k]:v});const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
   if(deltaCache.size>1500)deltaCache.clear();deltaCache.set(key,r);return r;}
 const money=n=>{const a=Math.abs(n);return (n<0?"−$":"+$")+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+"k":String(Math.round(a)));};
 function fmtDelta(r,base){if(!base)return"";const dh=Math.round(r.hp-base.peakHp),dr=Math.round(r.rel-base.rel),dc=Math.round(r.cost-base.cost);
@@ -11237,7 +11405,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 function closeSheet(){$("sheet").classList.remove("on");$("scrim").classList.remove("on");}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
-function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,Object.assign({},S.env,{testType:"pull"}));
+function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
   if(l){const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}
@@ -11246,10 +11414,13 @@ $("saveBp").addEventListener("click",()=>{if(S.blueprints.length>=12){toast("Blu
 
 /* ===================== TEST ===================== */
 const chart=$("chart");const curves={power:true,torque:true,boost:false,ve:false,egt:false,base:false};
+let envStdShown=null;
 function renderEnv(){
   const e=S.env,t=e.testType;let h="";
-  const sl=(k,l,min,max,step,unit,val)=>`<div class="env"><div class="lbl"><span>${l}</span><b id="ev-${k}" class="tap" data-enum="${k}" data-unit="${unit}">${val}${unit}</b></div><div class="srow"><button class="nud" data-enud="-1" data-ek="${k}">−</button><input type="range" id="er-${k}" data-e="${k}" min="${min}" max="${max}" step="${step}" value="${e[k]}"><button class="nud" data-enud="1" data-ek="${k}">+</button></div></div>`;
-  if(career()&&t!=="drag"){h+=`<p class="hint">Cell conditions: ${e.ambientC} °C · ${e.altitudeM} m · coolant ${e.coolantC} °C. ${t==="endurance"?`Endurance runs ${e.hours} h on a ${e.loadProfile} profile.`:t==="overrev"?"A missed downshift to 115% of redline for half a second.":"A full-throttle sweep to redline, then held there under load."}</p>`;}
+  const sl=(k,l,min,max,step,unit,val)=>`<div class="env"><div class="lbl"><span>${l}</span><b id="ev-${k}" class="tap" data-enum="${k}" data-unit="${unit}">${val}${unit}</b></div><div class="srow"><button class="nud" data-enud="-1" data-ek="${k}">−</button><input type="range" id="er-${k}" data-e="${k}" min="${min}" max="${max}" step="${step}" value="${val}"><button class="nud" data-enud="1" data-ek="${k}">+</button></div></div>`;
+  if(career()&&t!=="drag"){const ce=simEnv(),std=isStdCell(ce);envStdShown=std;
+    h+=`<p class="hint">${climateCtl()?`<b>Climate control</b> · ${std?"standard cell — a clean pull certifies for contracts.":`<b>off-standard</b> — test only. Contracts certify at 20 °C · 500 m · coolant 90 °C · oil 100 °C. <button class="chip" data-stdcell style="margin-top:6px">Reset to standard</button>`}`:`Cell conditions: ${ce.ambientC} °C · ${ce.altitudeM} m · coolant ${ce.coolantC} °C · oil ${ce.oilC} °C.`} ${t==="endurance"?`Endurance runs ${e.hours} h on a ${e.loadProfile} profile.`:t==="overrev"?"A missed downshift to 115% of redline for half a second.":"A full-throttle sweep to redline, then held there under load."}</p>`;
+    if(climateCtl())h+=`<div class="envgrid">${sl("ambientC","Ambient",-25,45,1," °C",ce.ambientC)}${sl("altitudeM","Altitude",0,3500,50," m",ce.altitudeM)}${sl("coolantC","Coolant",70,118,1," °C",ce.coolantC)}${sl("oilC","Oil temp",70,150,1," °C",ce.oilC)}</div>`;}
   else if(t!=="drag"){
     h+=`<div class="envgrid">${sl("ambientC","Ambient",-25,45,1," °C",e.ambientC)}${sl("altitudeM","Altitude",0,3500,50," m",e.altitudeM)}${sl("coolantC","Coolant",70,118,1," °C",e.coolantC)}${sl("oilC","Oil temp",70,150,1," °C",e.oilC)}</div>`;
   }
@@ -11264,18 +11435,18 @@ function renderEnv(){
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;
 }
-function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));S.env[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();}
-function commitEnv(){save();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else drawChart(quickForChart(),null);}
+function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();}
+function commitEnv(){save();if(climateCtl()&&S.env.testType!=="drag"&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else drawChart(quickForChart(),null);}
 $("envBox").addEventListener("input",e=>{const r=e.target;if(!r.dataset.e||r.type!=="range")return;applyEnv(r.dataset.e,parseFloat(r.value));});
 $("envBox").addEventListener("change",e=>{if(e.target.type==="range")commitEnv();});
 (()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
-  const step=(k,dir)=>{const r=$("er-"+k);if(!r)return;applyEnv(k,S.env[k]+dir*(parseFloat(r.step)||1));buzz(3);};
+  const step=(k,dir)=>{const r=$("er-"+k);if(!r)return;applyEnv(k,envStore(k)[k]+dir*(parseFloat(r.step)||1));buzz(3);};
   $("envBox").addEventListener("pointerdown",e=>{const b=e.target.closest("[data-enud]");if(!b)return;e.preventDefault();const k=b.dataset.ek,dir=+b.dataset.enud;stop();step(k,dir);hold={t:setTimeout(()=>{hold.i=setInterval(()=>step(k,dir),110);},420)};});
   window.addEventListener("pointerup",()=>{if(hold){stop();commitEnv();}});window.addEventListener("blur",()=>{if(hold){stop();commitEnv();}});})();
 let lastENudge=0;$("envBox").addEventListener("pointerdown",e=>{if(e.target.closest("[data-enud]"))lastENudge=performance.now();},true);
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("b[data-enum]");if(!b||b.querySelector("input")||performance.now()-lastENudge<600)return;const k=b.dataset.enum,r=$("er-"+k);if(!r)return;
-  const inp=document.createElement("input");inp.type="number";inp.className="num";inp.inputMode="decimal";inp.min=r.min;inp.max=r.max;inp.step=r.step;inp.value=S.env[k];inp.setAttribute("enterkeyhint","done");
-  const init=inp.value;let done=false;const finish=ok=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."));if(isFinite(v)&&v!==S.env[k]){b.textContent="";applyEnv(k,v);commitEnv();}}b.textContent=S.env[k]+(b.dataset.unit||"");};
+  const inp=document.createElement("input");inp.type="number";inp.className="num";inp.inputMode="decimal";inp.min=r.min;inp.max=r.max;inp.step=r.step;inp.value=envStore(k)[k];inp.setAttribute("enterkeyhint","done");
+  const init=inp.value;let done=false;const finish=ok=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."));if(isFinite(v)&&v!==envStore(k)[k]){b.textContent="";applyEnv(k,v);commitEnv();}}b.textContent=envStore(k)[k]+(b.dataset.unit||"");};
   inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();finish(true);inp.blur();}else if(ev.key==="Escape"){finish(false);inp.blur();}});
   inp.addEventListener("blur",()=>finish(true));b.textContent="";b.appendChild(inp);inp.focus();inp.select();});
 function carVeh(car){const b=BODY_SETUP[(car&&car.body)||"street"]||BODY_SETUP.street;const v=Object.assign({},b,car||{});v.chute=v.chute==="yes"||v.chute===true;v.body=(car&&car.body)||"street";return v;}
@@ -11283,10 +11454,11 @@ const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"
   outlaw:{gears:3,first:2.1,top:1.0,final:3.25,tyreDia:30,tyre:"radial",chute:"yes",launchRpm:4500,rearBias:0.6,mass:1450},
   promod:{gears:3,first:1.8,top:1.0,final:3.2,tyreDia:33,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.62,mass:1150},
   rail:{gears:2,first:1.6,top:1.0,final:3.0,tyreDia:36,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.8,mass:1000}};
+$("envBox").addEventListener("click",e=>{if(e.target.closest("[data-stdcell]")){C().cell=stdCell();renderEnv();recompute();commitEnv();renderTest();toast("Cell reset to standard");}});
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-lp]");if(!b)return;const k=b.dataset.ek||"loadProfile";S.env[k]=b.dataset.lp;
   if(k==="body"&&BODY_SETUP[b.dataset.lp]){const bs=Object.assign({},BODY_SETUP[b.dataset.lp]);bs.launchRpm=Math.min(bs.launchRpm,S.cfg.redline);Object.assign(S.env,bs);toast(`${SIM.AERO[b.dataset.lp].n} — typical gearing filled in, edit anything`);}
   renderEnv();save();});
-$("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;S.env.testType=b.dataset.t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===b.dataset.t));renderEnv();renderTest();save();});
+$("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;S.env.testType=b.dataset.t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===b.dataset.t));renderEnv();if(climateCtl())recompute();renderTest();save();});
 $("curveChips").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;curves[b.dataset.c]=!curves[b.dataset.c];b.classList.toggle("on",curves[b.dataset.c]);drawChart(lastForChart(),null);});
 function quickForChart(){return quick;}
 function drawDragTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
@@ -11340,7 +11512,7 @@ function renderTest(){
   $("runTest").disabled=testing;const cost=testCost();
   $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
-  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the Race program. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
+  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
     : `<b>${dc.n}</b> · no limits in the test cell. Figures update as you change the build; run a test to lock a result and pin it as a baseline.`;
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
@@ -11365,10 +11537,10 @@ function addWear(n){if(!career())return;const h=hKey(cfgHash(S.cfg));C().wear=C(
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
 function oppX(now){const R=DR&&DR.race;if(!R||R.green==null)return 0;const tt=((now-R.green)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
-function dragBreak(){DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);ENGINE_SOUND.event("fail");buzz([80,40,120]);}
+function dragBreak(){DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 function dragStart(){
   $("app").classList.add("onstrip");
-  const env=Object.assign({},S.env);const res=SIM.dragPrep(S.cfg,env);const veh=dragVeh();
+  const env=stdEnv();const res=SIM.dragPrep(S.cfg,env);const veh=dragVeh();
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const hk=hKey(cfgHash(S.cfg)),soak=soakFor(hk);
   const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,last:performance.now(),failed:false,downAt:null,lastPtr:0};
@@ -11377,7 +11549,7 @@ function dragStart(){
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
     DR.race={trace:opp.trace,k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};}
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("dragCtl").style.display="";$("dragBtn").dataset.k="";dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");$("dragBtn").disabled=false;$("dragLive").innerHTML="";
-  $("testProg").classList.remove("done");ENGINE_SOUND.event("start");
+  $("testProg").classList.remove("done");sfx("start");
   // fresh-engine budget: passes beyond what the build can take start to break parts
   DR.breakAt=(wi&&wi.w>=1)?(2+Math.random()*4):Infinity;
   DR.failKind=failKindOf(res,env)||"rod";
@@ -11439,7 +11611,7 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
 function dragFinish(){
   const {d,res,env}=DR;const r=d.result();const failed=DR.failed;
   setTimeout(()=>{if(!testing){ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");}},2200);
-  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)ENGINE_SOUND.event("bov");
+  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)sfx("bov");
   if(DR.race){const R=DR.race;const mine=r.et!=null&&!R.foul?r.et+Math.max(0,R.rt0||0):null;const theirs=R.et!=null?R.et+R.rt:null;
     const won=!failed&&mine!=null&&(theirs==null||mine<theirs);r.race={name:R.name,rt:R.rt0,oppRt:+R.rt.toFixed(3),oppEt:R.et,oppMph:R.mph,foul:R.foul,won,margin:mine!=null&&theirs!=null?+(theirs-mine).toFixed(3):null};}
   if(failed&&!r.broke&&(DR.failKind==="turbo"||DR.failKind==="manifold"))r.broke=DR.failKind;
@@ -11447,10 +11619,10 @@ function dragFinish(){
   res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
   const abuse=r.heat?r.heat.abuse:0;
   if(career()){addWear(1+abuse);const h=hKey(cfgHash(S.cfg));C().dragBest=C().dragBest||{};
-    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);if(DR.failKind==="manifold"||DR.failKind==="turbo")C().log.push(`W${C().week}: ${DR.failKind==="turbo"?"cooked the turbo":"cracked the exhaust manifold"} on the line — held the ${r.launch&&r.launch.ctl!=="none"?"two-step":"brake"} ${r.launch?r.launch.held.toFixed(1):"?"} s`);toast(DR.failKind==="turbo"?"COOKED THE TURBO · pass over":DR.failKind==="manifold"?"CRACKED MANIFOLD · pass over":`BROKE ON THE PASS · ${String(DR.failKind).toUpperCase()}`);}
-    else if(r.et!=null&&r.mph>150&&!r.chute){C().rep=Math.max(0,C().rep-1);C().log.push(`W${C().week}: ${r.et.toFixed(2)} s @ ${r.mph} mph — BLACK-FLAGGED, no parachute`);toast("BLACK-FLAGGED · no parachute over 150 mph");}
-    else if(r.race&&!r.race.won){C().rep=Math.max(0,C().rep-1);C().log.push(`W${C().week}: ${r.et!=null?r.et.toFixed(2)+" s":"DNF"} — ${r.race.foul?"red light":"lost to "+r.race.name+" by "+Math.abs(r.race.margin||0).toFixed(3)+" s"}`);toast(r.race.foul?"RED LIGHT · entry gone":`LOST by ${Math.abs(r.race.margin||0).toFixed(3)} s`);}
-    else if(r.et!=null){const purse=(r.et<7?25000:r.et<8?9000:r.et<9?3500:r.et<10?1500:r.et<11?600:r.et<13?200:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;C().log.push(`W${C().week}: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`);if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
+    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);if(DR.failKind==="manifold"||DR.failKind==="turbo")logEvent(`Strip: ${DR.failKind==="turbo"?"cooked the turbo":"cracked the exhaust manifold"} on the line — held the ${r.launch&&r.launch.ctl!=="none"?"two-step":"brake"} ${r.launch?r.launch.held.toFixed(1):"?"} s`,"bad");toast(DR.failKind==="turbo"?"COOKED THE TURBO · pass over":DR.failKind==="manifold"?"CRACKED MANIFOLD · pass over":`BROKE ON THE PASS · ${String(DR.failKind).toUpperCase()}`);}
+    else if(r.et!=null&&r.mph>150&&!r.chute){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — BLACK-FLAGGED, no parachute`,"bad");toast("BLACK-FLAGGED · no parachute over 150 mph");}
+    else if(r.race&&!r.race.won){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et!=null?r.et.toFixed(2)+" s":"DNF"} — ${r.race.foul?"red light":"lost to "+r.race.name+" by "+Math.abs(r.race.margin||0).toFixed(3)+" s"}`,"bad");toast(r.race.foul?"RED LIGHT · entry gone":`LOST by ${Math.abs(r.race.margin||0).toFixed(3)} s`);}
+    else if(r.et!=null){const purse=(r.et<7?25000:r.et<8?9000:r.et<9?3500:r.et<10?1500:r.et<11?600:r.et<13?200:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`,purse>0?"good":"");if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
   save();recompute();renderTest();
@@ -11492,6 +11664,7 @@ function showResult(res,env){
   else if(env.testType==="drag"&&res.drag){const r=res.drag,R=r.race;v=`<div class="verdict ${R?(R.won?"pass":"fail"):r.et==null?"fail":r.et<10?"pass":"marg"}"><div style="flex:1"><div class="big">${R?(R.foul?"RED LIGHT":R.won?"WON by "+Math.abs(R.margin||0).toFixed(3)+" s":"LOST by "+Math.abs(R.margin||0).toFixed(3)+" s"):""}${R?"<br><span style=\"font-size:.7em;opacity:.85\">":""}${r.et!=null?r.et.toFixed(2)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R?"</span>":""}</div>
     ${R?`<p>RT ${R.rt!=null?R.rt.toFixed(3):"—"} vs ${R.name} ${R.oppRt.toFixed(3)} · they ran ${R.oppEt!=null?R.oppEt.toFixed(2)+" @ "+Math.round(R.oppMph):"DNF"}${R.foul?" · you left before the green":""}</p>`:""}
     <div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
+  else if(career()&&env.testOnly)v=`<div class="verdict marg"><div style="flex:1"><div class="big">${env.testType==="endurance"?"SURVIVED":"PASSED"} · TEST ONLY</div><p>Run at ${env.ambientC} °C · ${env.altitudeM} m · coolant ${env.coolantC} °C · oil ${env.oilC} °C. ${env.testType==="endurance"?"Off-standard hours don't count toward the 100 h goal":"Contracts certify in the standard cell"} — 20 °C · 500 m · coolant 90 °C · oil 100 °C. Reset the cell and run it again${env.testType==="endurance"?"":" to certify"}.</p></div></div>`;
   else v=`<div class="verdict ${res.rel>=85?"pass":"marg"}"><div style="flex:1"><div class="big">${res.rel>=85?"CERTIFIED":"CERTIFIED · MARGINAL"}</div>
     <div class="vstats"><div><b>${res.rel}</b><span>Reliability</span></div><div><b>${res.raceSpec?res.racePasses:res.econ.toFixed(1)}</b><span>${res.raceSpec?"Passes to freshen":"L/100 km"}</span></div><div><b>${Math.round(res.smooth)}</b><span>Smoothness</span></div><div><b>${Math.round(res.kg)}</b><span>kg</span></div><div><b>${fmt$(res.cost)}</b><span>Unit cost</span></div><div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div></div></div></div>`;
   $("verdict").innerHTML=v;
@@ -11536,11 +11709,11 @@ function failKindOf(res,env){
 }
 $("runTest").addEventListener("click",()=>{
   if(testing)return;const cost=testCost();if(career()&&C().cash<cost){toast("Not enough cash for dyno time");return;}
-  if(S.env.testType==="drag"){if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(career()&&!has("race")){toast("Needs the Race program upgrade");return;}}
+  if(S.env.testType==="drag"){if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(career()&&!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;renderTest();ensureSound();
   if(S.env.testType==="drag"){dragStart();return;}
-  const env=Object.assign({},S.env);const res=SIM.simulate(S.cfg,env);const N=res.rpms.length;const t0=performance.now();
+  const env=simEnv();const res=SIM.simulate(S.cfg,env);const N=res.rpms.length;const t0=performance.now();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";
   let failed=false,failAt=Infinity,dur,hold,label="";
   const failKind=failKindOf(res,env);const rpmDecay={rod:420,crank:520,valve:360,seize:80,knock:45,steam:30,turbo:70}[failKind]||160;
@@ -11548,28 +11721,29 @@ $("runTest").addEventListener("click",()=>{
   if(env.testType==="pull"){dur=2800;hold=1400;if(res.fails.length)failAt=dur+hold*0.5;}
   else if(env.testType==="endurance"){dur=4200;hold=600;if(failing)failAt=dur*Math.max(0.15,Math.min(0.95,(res.endurance.failedAtHour||env.hours)/env.hours));}
   else{dur=1800;hold=1200;if(failing)failAt=dur+hold*0.45;}
-  ENGINE_SOUND.event("start");
+  sfx("start");
   $("testProg").classList.remove("done");
   const step=()=>{const t=performance.now()-t0;let i=N;$("testProg").style.width=Math.min(100,100*t/(dur+hold))+"%";
     if(env.testType==="pull"){if(t<dur){i=Math.floor(N*(t/dur));run.rpm=res.rpms[Math.min(N-1,i)];}else run.rpm=S.cfg.redline+Math.sin(t/40)*40;run.load=1;}
     else if(env.testType==="endurance"){const ph=t/dur;const prof={highway:.35,mixed:.6,track:.95}[env.loadProfile];run.rpm=1500+(S.cfg.redline-1500)*prof*(0.55+0.45*Math.abs(Math.sin(t/230)));run.load=prof*(0.6+0.4*Math.abs(Math.sin(t/230+1)));i=N;label=`${Math.min(env.hours,Math.round(env.hours*Math.min(1,ph)))} h`;}
     else{if(t<dur*0.5)run.rpm=1000+(S.cfg.redline-1000)*(t/(dur*0.5));else if(t<dur)run.rpm=S.cfg.redline*(1+0.15*Math.min(1,(t-dur*0.5)/120));else run.rpm=Math.max(1000,S.cfg.redline*1.15-(t-dur)*4);run.load=t<dur*0.5?1:0.2;}
-    if(t>failAt&&!failed){failed=true;run.fail=true;run.failKind=failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);ENGINE_SOUND.event("fail");buzz([80,40,120]);}
+    if(t>failAt&&!failed){failed=true;run.fail=true;run.failKind=failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
     if(failed){const since=t-failAt;const d=failKind==="seize"?(since>1600?900:rpmDecay):failKind==="knock"?(since>1200?140:rpmDecay):rpmDecay;run.rpm=Math.max(0,run.rpm-d);if(failKind==="knock"||failKind==="steam")run.rpm+=(Math.random()-0.5)*120;}
     run.on=true;$("rpmLbl").textContent=label||Math.round(run.rpm/10)*10;
     if(env.testType==="pull")drawChart(res,Math.min(N,i+1));
     if(t<dur+hold)requestAnimationFrame(step);
-    else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")ENGINE_SOUND.event("bov");
+    else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
-      if(career()&&env.testType==="pull"){const cap=dynoCap(),lk=presetLocked(S.cfg);const overCap=res.peakHp>cap.hp||S.cfg.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:cfgHash(S.cfg),ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
+      const offStd=career()&&!isStdCell(env);if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
+      if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(S.cfg);const overCap=res.peakHp>cap.hp||S.cfg.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:cfgHash(S.cfg),ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(S.cfg.asp!=="na")C().boostedCert=true;}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
       if(career())addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40);
-      if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing)C().enduranceOk=true;
+      if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career())checkGoals();
       save();recompute();renderTest();
-      if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · REL ${res.rel}`);}
+      if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
   };
   requestAnimationFrame(step);
 });
@@ -11652,7 +11826,7 @@ function fits(k,res,cfg){
 const FIX_KEYS=["fuel","piston","rings","rod","rodBolts","crank","bearings","oilGrade","cooling","head","springs","valveMat","intake","exhaust","gasket","studs","damper","pistonClearance","oilSystem","oilSquirters","ic","asp","blockMat","headMat"];
 const fixCache=new Map();
 function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.keys(C().owned).join(","):"sb");if(fixCache.has(key))return fixCache.get(key);
-  const env=Object.assign({},S.env,{testType:"pull"});let best=null;const tryCfg=(cfg,label)=>{const r=SIM.simulate(cfg,env);if(r.fails.length)return;const f=fits(k,r,cfg);if(f.ok){const gain=f.bonus;if(!best||gain>best.gain)best={label,cfg,gain};}};
+  const env=stdEnv({testType:"pull"});let best=null;const tryCfg=(cfg,label)=>{const r=SIM.simulate(cfg,env);if(r.fails.length)return;const f=fits(k,r,cfg);if(f.ok){const gain=f.bonus;if(!best||gain>best.gain)best={label,cfg,gain};}};
   for(const key2 of FIX_KEYS){const opts=OPT[key2];if(!opts)continue;for(const v in opts){if(v===S.cfg[key2]||locked(opts[v]))continue;tryCfg(Object.assign({},S.cfg,{[key2]:v}),`switch to ${opts[v].name}`);}}
   const sl=[["redline",-500,"drop the redline 500 rpm"],["redline",-1000,"drop the redline 1,000 rpm"],["cam",-15,"a milder cam"],["cam",15,"a bigger cam"],["cr",-1,"a point less compression"],["cr",1,"a point more compression"],["timing",-3,"pull 3° of timing"],["boost",-0.3,"0.3 bar less boost"],["lambda",0.05,"lean it out a touch"]];
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);const v=clamp(S.cfg[kk]+d,f?f.min:-1e9,f?f.max:1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
@@ -11699,7 +11873,7 @@ function renderShop(){
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
   $("goals").innerHTML=GOALS.map(g=>`<div class="goal ${C().goals[g.id]?"done":""}"><div><h3>${g.name}</h3><p>${g.desc}</p></div><div class="price">${C().goals[g.id]?"✓ wk "+C().goals[g.id]:fmt$(g.cash)}</div></div>`).join("");
   const inField=C().fleet.filter(f=>C().week-f.week<=10&&C().week-f.week>=1);$("fleetHint").textContent=inField.length?`${inField.reduce((a,f)=>a+f.units,0)} engines in the field under warranty · ${fmt$(C().warranty)} paid out to date · ${C().cleanWeeks} clean week${C().cleanWeeks===1?"":"s"}. Reliability and life hours set the claim rate.`:"Engines you deliver stay under warranty for ten weeks. Low reliability comes back to bite.";
-  const live=quick;const liveFit=k=>fits(k,live,S.cfg);
+  const live=career()&&!isStdCell(simEnv())?SIM.simulate(S.cfg,stdEnv({testType:"pull"})):quick;const liveFit=k=>fits(k,live,S.cfg);
   if(!C().cat||!catOpen(CATS.find(c=>c.id===C().cat)||CATS[0]))C().cat="prod";
   const cardH=(k,mode)=>{const lf=liveFit(k);const failing=lf.o.filter(q=>!q.ok).length;const fix=(!lf.ok&&failing<=3)?oneChange(k):null;
     const f=cert?fits(k,cert.res):null;const unit=Math.round(k.price*priceBoost()*(1+(f?f.bonus:lf.bonus)));const cost=live.cost;const profit=(unit-cost)*k.units;
@@ -11804,9 +11978,11 @@ document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.ad
 
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
+/* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */
+function sfx(n){if(soundReady&&S.sound)ENGINE_SOUND.event(n);}
 function ensureSound(){try{ENGINE_SOUND.init();ENGINE_SOUND.setVolume(S.vol/100);soundReady=true;if(S.sound)ENGINE_SOUND.start();}catch(e){console.warn(e);}}
 $("sndBtn").addEventListener("click",()=>{S.sound=!S.sound;ensureSound();if(S.sound){ENGINE_SOUND.start();setTimeout(applySoundQuality,50);}else ENGINE_SOUND.stop();$("sndBtn").classList.toggle("on",S.sound);save();toast(S.sound?"SOUND ON":"SOUND OFF");});
-$("idleBtn").addEventListener("click",()=>{run.idle=!run.idle;$("idleBtn").classList.toggle("on",run.idle);if(run.idle){ensureSound();if(!S.sound){S.sound=true;$("sndBtn").classList.add("on");ENGINE_SOUND.start();}ENGINE_SOUND.event("start");}});
+$("idleBtn").addEventListener("click",()=>{run.idle=!run.idle;$("idleBtn").classList.toggle("on",run.idle);if(run.idle){ensureSound();if(!S.sound){S.sound=true;$("sndBtn").classList.add("on");ENGINE_SOUND.start();}sfx("start");}});
 let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0;
 /* ---------- sound bench: hold two builds and switch between them ----------
    Differences in an engine note are almost impossible to judge from memory
@@ -11815,7 +11991,7 @@ let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0;
    with it, so what you see matches what you hear. */
 const AB={A:null,B:null,playing:null,rpm:4000,load:1};
 function abLabel(cfg){if(!cfg)return"empty";
-  const r=SIM.simulate(cfg,Object.assign({},S.env,{testType:"pull"}));
+  const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `${cfg.layout} ${(r.Vd/1000).toFixed(1)}L · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
 function abRender(){
   $("abAname").textContent=AB.A?abLabel(AB.A):"empty";
@@ -11859,7 +12035,7 @@ function tick(now){
   if(AB.playing&&AB[AB.playing]){
     const c=AB[AB.playing];
     if(soundReady&&S.sound){
-      const r=SIM.simulate(c,Object.assign({},S.env,{testType:"pull"}));
+      const r=SIM.simulate(c,simEnv({testType:"pull"}));
       const rp=r.rpms,bc=r.boostCurve;
       let bb=0;
       if(c.asp!=="na"&&bc&&rp&&rp.length>1){
@@ -11869,7 +12045,7 @@ function tick(now){
       ENGINE_SOUND.set({rpm:AB.rpm,load:AB.load,cfg:c,layout:LAYOUTS[c.layout],boostBar:bb,
         knock:r.knock.retardDeg,profileId:undefined});
     }
-    const cl=LAYOUTS[c.layout],cq=SIM.simulate(c,Object.assign({},S.env,{testType:"pull"}));
+    const cl=LAYOUTS[c.layout],cq=SIM.simulate(c,simEnv({testType:"pull"}));
     ENGINE_VIS.setRun({on:true,rpm:AB.rpm,load:AB.load,fail:null,failKind:null,redline:c.redline,
       smooth:cq.smooth,first:cl.firstOrder,second:cl.secondOrder,n:cl.n,angle:cl.angle,
       stroke:c.stroke,rodRatio:c.rodRatio,cam:c.cam});
