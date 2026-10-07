@@ -5166,14 +5166,13 @@ function fnCastExh(u,v,o){          /* rusty cast-iron exhaust manifold */
   o[4]=clamp(0.74+rust*0.16,0,1);
   o[5]=0.45*(1-rust*0.8);
 }
-function fnTurbine(u,v,o){          /* heat-stained cast turbine housing */
-  var g=fbm(u,v,4,22,901), stain=fbm(u,v,3,6,911);
-  var l=78+(g-0.5)*20;
-  var blue=smoothstep(0.52,0.78,stain), gold=smoothstep(0.30,0.50,stain)*(1-blue);
-  o[0]=l+gold*54+blue*4; o[1]=l+gold*32+blue*10; o[2]=l+gold*2+blue*34;
-  o[3]=g;
-  o[4]=clamp(0.62+(1-g)*0.16,0,1);
-  o[5]=0.5;
+function fnTurbine(u,v,o){          /* clean sand-cast turbine housing: even grey, fine grain, no stain */
+  var g=fbm(u,v,4,30,901), fine=fbm(u,v,2,120,911);
+  var l=118+(g-0.5)*12+(fine-0.5)*10;
+  o[0]=l+3; o[1]=l+1; o[2]=l;
+  o[3]=g*0.55+fine*0.45;
+  o[4]=clamp(0.58+(1-g)*0.10,0,1);
+  o[5]=0.6;
 }
 function fnRubberBelt(u,v,o){       /* ribbed serpentine belt */
   var rib=Math.abs(Math.sin(v*PI*26));
@@ -5367,13 +5366,11 @@ function fnInconelCast(u,v,o){      /* investment-cast Inconel turbine housing: 
   o[0]=l+gold*40-blue*6; o[1]=l+gold*24+blue*2; o[2]=l-gold*6+blue*24;
   o[3]=g; o[4]=clamp(0.46+(1-g)*0.12,0,1); o[5]=0.8;
 }
-function fnTurbineHi(u,v,o){        /* Ni-resist housing: dark sand-cast iron, oxide in the grain, a faint heat bloom */
-  var g=fbm(u,v,4,28,2521), fine=fbm(u,v,2,120,2527), bloom=fbm(u,v,3,3,2533);
-  var l=74+(g-0.5)*18+(fine-0.5)*12;
-  var ox=clamp((1-smoothstep(0.30,0.56,g))*(fbm(u,v,3,9,2539)-0.42)*2.2,0,1);
-  var b=smoothstep(0.45,0.85,bloom);
-  o[0]=l+ox*30+b*10; o[1]=l+ox*8+b*4; o[2]=l-ox*4+b*16;
-  o[3]=g*0.6+fine*0.4; o[4]=clamp(0.66+(1-g)*0.14+ox*0.1,0,1); o[5]=0.55*(1-ox*0.6);
+function fnTurbineHi(u,v,o){        /* Ni-resist housing, fresh: even cast grey, crisp sand grain, satin sheen */
+  var g=fbm(u,v,4,30,2521), fine=fbm(u,v,2,140,2527), pit=smoothstep(0.84,0.96,fbm(u,v,2,70,2533));
+  var l=116+(g-0.5)*12+(fine-0.5)*12-pit*24;
+  o[0]=l+3; o[1]=l+1; o[2]=l;
+  o[3]=g*0.5+fine*0.5-pit*0.4; o[4]=clamp(0.56+(1-g)*0.10+pit*0.12,0,1); o[5]=0.62;
 }
 function fnLoom(u,v,o){             /* split corrugated wiring conduit: ribs along u (uv scaled to length) */
   var rib=0.5+0.5*Math.cos(u*TAU*24);
@@ -7434,22 +7431,34 @@ function buildAspiration(B, p, extras){
 }
 
 function buildCompressorSnail(B, extras, p, x, y, z, s, matKey, zs, dir){
-  var d=(dir===undefined)?1:dir;   /* 1 = inlet toward -X, -1 = inlet facing forward */
-  /* squat volute disc that grows toward the tangential outlet */
-  B.add(matKey, CYL(s*0.80, s*0.80, s*0.34, 26, false, 2.0), x, y, z, 0,0,PI/2);
-  B.add(matKey, CYL(s*0.62, s*0.62, s*0.52, 24, false, 2.0), x-d*s*0.06, y, z, 0,0,PI/2);
-  /* inlet bell on the axis */
-  B.add(matKey, CYL(s*0.44, s*0.44, s*0.34, 22, false, 2.0), x-d*s*0.34, y, z, 0,0,PI/2);
-  B.add(matKey, CONE(s*0.54, s*0.42, s*0.22, 22, 2.0), x-d*s*0.56, y, z, 0,0,d*PI/2);
-  B.add(matKey, TOR(s*0.54, s*0.05, 6, 22, 2.0), x-d*s*0.66, y, z, 0, PI/2, 0);
-  /* tangential outlet snout climbing off the volute */
-  B.add(matKey, CONE(s*0.30, s*0.42, s*0.46, 18, 2.0), x, y+s*0.78, z);
-  B.add(matKey, CYL(s*0.30, s*0.30, s*0.22, 18, false, 2.0), x, y+s*1.10, z);
-  B.add(matKey, TOR(s*0.31, s*0.05, 6, 20, 2.0), x, y+s*1.20, z, PI/2,0,0);
+  var d=(dir===undefined)?1:dir, e=-d;   /* d = 1: inlet toward -X; -1: inlet facing forward. e points out of the inlet */
+  var VT=DET?44:26, VR=DET?14:9, SW=PI*1.86, cR=s*0.62, cr=s*0.27, al=PI/2+SW;
+  /* back plate on the drive side, then the scroll; turned half round so it leaves straight up on the outboard side */
+  B.add(matKey, CYL(s*0.62,s*0.62,s*0.10,24,false,2.0), x-e*s*0.20, y, z, 0,0,PI/2);
+  B.add(matKey, VOLUTE(s*0.50, cR, s*0.11, cr, SW, VT, VR, 2.0), x, y, z, al, PI, 0);
+  B.add(matKey, CYL(s*0.46,s*0.46,s*0.28,26,false,2.0), x, y, z, 0,0,PI/2);
+  B.add(matKey, SPH(s*0.11, 10, 2.0), x, y+s*0.50*Math.cos(al), z+s*0.50*Math.sin(al));
+  /* stepped open inlet with the wheel inside, as on the turbo compressor */
+  B.add(matKey, CYL(s*0.50,s*0.54,s*0.16,26,false,2.0), x+e*s*0.22, y, z, 0,0,PI/2);
+  B.add(matKey, CONE(s*0.46,s*0.48,s*0.26,24,2.0), x+e*s*0.43, y, z, 0,0,e*PI/2);
+  B.add(matKey, CONE(s*0.49,s*0.49,s*0.06,24,2.0), x+e*s*0.50, y, z, 0,0,PI/2);
+  B.add(matKey, RING(s*0.46,s*0.49,24,2.0), x+e*s*0.53, y, z, 0,e*PI/2,0);
+  B.add(matKey, RING(s*0.46,s*0.49,24,2.0), x+e*s*0.47, y, z, 0,-e*PI/2,0);
+  B.add(matKey, CONE(s*0.44,s*0.48,s*0.17,24,2.0), x+e*s*0.615, y, z, 0,0,-e*PI/2);
+  B.add(matKey, BORE(s*0.37, s*0.30, 24, 2.0), x+e*s*0.55, y, z, 0,0,PI/2);
+  B.add(matKey, BORE(s*0.33, s*0.16, 24, 2.0), x+e*s*0.34, y, z, 0,0,PI/2);
+  B.add(matKey, RING(s*0.33,s*0.37,24,2.0), x+e*s*0.40, y, z, 0,e*PI/2,0);
+  B.add(matKey, RING(s*0.37,s*0.44,24,2.0), x+e*s*0.70, y, z, 0,e*PI/2,0);
+  B.add(matKey, TOR(s*0.405, s*0.03, 6, 24, 2.0), x+e*s*0.70, y, z, 0,PI/2,0);
+  /* tangential discharge climbing off the scroll, with a hose bead */
+  var dL=s*0.70;
+  B.add(matKey, CYL(cr,cr*1.02,dL,18,false,2.0), x, y+dL*0.5, z+cR);
+  B.add(matKey, TOR(cr*0.98, s*0.035, 6, 18, 2.0), x, y+dL*0.86, z+cR, PI/2,0,0);
   /* compressor wheel (spins), nose toward the inlet */
-  var wheel=makeWheelMesh(s*0.40, 9, MAT.palu);
-  wheel.position.copy(B.pt(x-d*s*0.26, y, z)); wheel.rotation.z=d*PI/2;
+  var wheel=makeWheelMesh(s*0.32, 6, MAT.palu);
+  wheel.position.copy(B.pt(x+e*s*0.39, y, z)); wheel.rotation.z=d*PI/2;
   extras.push(wheel); anim.turbos.push(wheel);
+  return {pt:V3(x, y+dL, z+cR), dir:V3(0,1,0)};
 }
 
 /* one impeller blade along the wheel axis (Y, nose at +Y): root on the hub, tip out to the shroud line, the
@@ -7971,8 +7980,8 @@ function buildFAD(B, p, extras){
     var vx=tcF+s*0.22, vy=hy+cpR+bore*0.12+s*0.56;
     B.add("malu", RBOX(bore*0.30, vy-hy+bore*0.40, bore*0.66, 0.04), beltX-bore*0.24, (vy+hy)/2, hz);   /* gearbox */
     B.add("malu", BOX(bore*0.08, bore*0.30, hz*0.55), tcF+bore*0.04, hy, hz*0.62);                       /* bracket to the front cover */
-    buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
-    if(cd.cout) cd.cout.push({pt:V3(vx, vy+s*1.22, hz), dir:V3(0,1,0)});
+    var sOut=buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
+    if(cd.cout) cd.cout.push(sOut);
     var cp=pulleyMesh(cpR, bore*0.15); cp.position.set(beltX, hy, hz);
     extras.push(cp); anim.spin.push({o:cp, axis:"x", k:spinK(cpR)});
     serp.push({y:hy, z:hz, r:cpR, side:1});
