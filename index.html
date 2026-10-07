@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.6.4.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.6.5.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -5359,12 +5359,11 @@ function fnInconel(u,v,o){          /* thin-wall Inconel / titanium header: dark
   o[3]=grain*0.7+weld*0.3;
   o[4]=clamp(0.30+(grain-0.5)*0.16,0.12,0.6); o[5]=1.0;
 }
-function fnInconelCast(u,v,o){      /* investment-cast Inconel turbine housing: finer grain, straw / blue heat stain */
-  var g=fbm(u,v,4,34,2441), stain=fbm(u,v,3,3,2447);
-  var l=104+(g-0.5)*14;
-  var blue=smoothstep(0.58,0.85,stain)*0.6, gold=smoothstep(0.30,0.55,stain)*(1-blue)*0.55;
-  o[0]=l+gold*40-blue*6; o[1]=l+gold*24+blue*2; o[2]=l-gold*6+blue*24;
-  o[3]=g; o[4]=clamp(0.46+(1-g)*0.12,0,1); o[5]=0.8;
+function fnInconelCast(u,v,o){      /* investment-cast Inconel turbine housing, fresh: fine grain, bright nickel grey, a faint even straw tint */
+  var g=fbm(u,v,4,40,2441), fine=fbm(u,v,2,160,2443), tint=smoothstep(0.35,0.75,fbm(u,v,2,2,2447));
+  var l=132+(g-0.5)*8+(fine-0.5)*8;
+  o[0]=l+6+tint*8; o[1]=l+3+tint*4; o[2]=l-tint*4;
+  o[3]=g*0.5+fine*0.5; o[4]=clamp(0.40+(1-g)*0.08,0,1); o[5]=0.85;
 }
 function fnTurbineHi(u,v,o){        /* Ni-resist housing, fresh: even cast grey, crisp sand grain, satin sheen */
   var g=fbm(u,v,4,30,2521), fine=fbm(u,v,2,140,2527), pit=smoothstep(0.84,0.96,fbm(u,v,2,70,2533));
@@ -5475,6 +5474,7 @@ function buildMaterials(){
   MAT.blackPlast =new THREE.MeshStandardMaterial({color:sc(0x232529), roughness:0.66, metalness:0.06, envMapIntensity:0.5});
   MAT.chrome     =new THREE.MeshStandardMaterial({color:sc(0xbcc2c8), roughness:0.16, metalness:1.0});
   MAT.copper     =new THREE.MeshStandardMaterial({color:sc(0xc07434), roughness:0.34, metalness:1.0});
+  MAT.filterRed  =new THREE.MeshStandardMaterial({color:sc(0xa3241d), roughness:0.86, metalness:0.0, envMapIntensity:0.4});   /* oiled cotton filter element */
 
   /* signage */
   MAT.sign = drawMat(1024,256,function(x,w,h){
@@ -5753,6 +5753,20 @@ function SQFLANGE(w,h,t,k){
   var g=new THREE.ExtrudeGeometry(sh, {depth:t, bevelEnabled:false, curveSegments:3});
   g.translate(0,0,-t/2); g.rotateX(-PI/2);
   return cache(key, planarUV(g.toNonIndexed(),k));
+}
+/* pleated cone filter element along Y: base radius r0 at -Y, tip r1 at +Y, nP pleats of depth d, hard pleat edges */
+function PLEATCONE(r0,r1,L,nP,d){
+  var key=gkey("pc",r3(r0),r3(r1),r3(L),nP,r3(d));
+  if(GEO[key]) return GEO[key];
+  var nA=nP*2, nL=2, pos=[], idx=[], i, j;
+  for(j=0;j<=nL;j++){ var y=-L/2+L*j/nL, R=r0+(r1-r0)*j/nL;
+    for(i=0;i<=nA;i++){ var th=i/nA*TAU, rr=R-((i&1)?d:0); pos.push(Math.cos(th)*rr, y, Math.sin(th)*rr); } }
+  for(j=0;j<nL;j++) for(i=0;i<nA;i++){ var a=j*(nA+1)+i, c=a+nA+1; idx.push(a,c,a+1, a+1,c,c+1); }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx);
+  g=g.toNonIndexed(); g.computeVertexNormals();
+  g.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(g.attributes.position.count*2),2));
+  return cache(key,g);
 }
 /* open bore seen from inside (normals and winding turned in), axis Y */
 function BORE(r,h,seg,k){
@@ -7626,8 +7640,14 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
   B.add("palu", CYL(cr,cr*1.02,dL,18,false,2.0), s*0.86, cEy+lo.y*dL*0.5, cEz+lo.z*dL*0.5, ao,0,0);
   B.add("palu", TOR(cr*0.98, s*0.035, 6, 18, 2.0), s*0.86, cEy+lo.y*dL*0.86, cEz+lo.z*dL*0.86, ao-PI/2,0,0);
   if(o.filter){
-    B.add("blackPlast", CYL(s*0.50,s*0.54,s*0.62,20,false,2.0), s*1.95,0,0, 0,0,PI/2);
-    B.add("chrome", CYL(s*0.55,s*0.55,s*0.06,20), s*2.28,0,0, 0,0,PI/2);
+    /* cone filter: rubber coupler and clamp over the inlet lip, moulded base, pleated cotton element, capped tip */
+    B.add("rubberFlat", CYL(s*0.495,s*0.50,s*0.20,24,false,2.0), s*1.58,0,0, 0,0,PI/2);
+    if(DET){ B.add("steel", TOR(s*0.505, s*0.018, 6, 28, 2.4), s*1.53,0,0, 0,PI/2,0);
+             B.add("steel", BOX(s*0.06, s*0.07, s*0.11, 2.4), s*1.53, s*0.53, 0); }
+    B.add("blackPlast", CYL(s*0.55,s*0.55,s*0.06,26,false,2.0), s*1.71,0,0, 0,0,PI/2);
+    B.add("filterRed", PLEATCONE(s*0.55, s*0.40, s*0.52, DET?30:16, s*0.045), s*2.00,0,0, 0,0,-PI/2);
+    B.add("blackPlast", CYL(s*0.41,s*0.43,s*0.05,24,false,2.0), s*2.28,0,0, 0,0,PI/2);
+    B.add("chrome", CYL(s*0.17,s*0.17,s*0.02,18,false,2.0), s*2.31,0,0, 0,0,PI/2);
   }
   /* wheels (turbine first, so turboPoint() lands on the hot side) */
   var tw=makeWheelMesh(s*0.30, 10, MAT.steel);
@@ -11016,7 +11036,7 @@ const SEGMENTS=[
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.6.4.0";
+const VERSION="1.6.5.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
