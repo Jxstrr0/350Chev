@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.6.5.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.6.6.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -5156,15 +5156,13 @@ function fnStainless(u,v,o){        /* heat-tinted header: u = along the tube */
   o[4]=clamp(0.26+(grain-0.5)*0.16,0.1,0.6);
   o[5]=1.0;
 }
-function fnCastExh(u,v,o){          /* rusty cast-iron exhaust manifold */
-  var g=fbm(u,v,4,20,801), fine=fbm(u,v,2,120,811);
-  var rustField=fbm(u,v,3,7,821);
-  var l=92+(g-0.5)*22+(fine-0.5)*16;
-  var rust=clamp((rustField-0.34)*2.2 + (1-smoothstep(0.3,0.7,g))*0.4,0,1);
-  o[0]=lerp(l*1.02,132,rust); o[1]=lerp(l,74,rust); o[2]=lerp(l*1.03,46,rust);
-  o[3]=g*0.6+fine*0.4;
-  o[4]=clamp(0.74+rust*0.16,0,1);
-  o[5]=0.45*(1-rust*0.8);
+function fnCastExh(u,v,o){          /* fresh cast-iron exhaust manifold: even dark grey, sand-cast grain, no rust */
+  var g=fbm(u,v,4,24,801), fine=fbm(u,v,2,120,811), pit=smoothstep(0.84,0.96,fbm(u,v,2,64,821));
+  var l=100+(g-0.5)*12+(fine-0.5)*10-pit*20;
+  o[0]=l+2; o[1]=l+1; o[2]=l+2;
+  o[3]=g*0.55+fine*0.45-pit*0.4;
+  o[4]=clamp(0.66+(1-g)*0.10+pit*0.10,0,1);
+  o[5]=0.5;
 }
 function fnTurbine(u,v,o){          /* clean sand-cast turbine housing: even grey, fine grain, no stain */
   var g=fbm(u,v,4,30,901), fine=fbm(u,v,2,120,911);
@@ -11036,7 +11034,7 @@ const SEGMENTS=[
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.6.5.0";
+const VERSION="1.6.6.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
