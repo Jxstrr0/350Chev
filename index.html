@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.8.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.8.1.1 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -7521,6 +7521,24 @@ var TURBO_MM = { small:46, medium:54, large:64, huge:76, f88:88, f98:98 };      
 var FLOW_LB  = { small:26, medium:40, large:58, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
 function turboScale(tsz){ return (TURBO_MM[tsz]||54)*0.019; }   /* housing unit s (scene units): compressor cover OD = 1.6 s, absolute size */
 
+/* a pipe must not run through a cone filter: sample its route, push every sample out of the filter's cylinder
+   (axis a-b, radius r + gap), smooth, and push again so the pipe arcs round the filter instead of cutting it */
+function clearOfFilters(pts, flts, gap){
+  if(!flts || !flts.length) return pts;
+  var cv=new THREE.CatmullRomCurve3(pts, false, "centripetal"), n=Math.max(32, pts.length*10), q=[], k, m, f, hit=false;
+  for(k=0;k<=n;k++) q.push(cv.getPoint(k/n));
+  var push=function(v){
+    for(m=0;m<flts.length;m++){ f=flts[m];
+      var ab=f.b.clone().sub(f.a), t=clamp(v.clone().sub(f.a).dot(ab)/ab.lengthSq(), 0, 1), c=f.a.clone().addScaledVector(ab, t), d=v.clone().sub(c), L2=d.length(), need=f.r+gap;
+      if(L2<need){ if(L2<1e-4) d.set(0,1,0); else d.multiplyScalar(1/L2); v.copy(c).addScaledVector(d, need); hit=true; } } };
+  for(k=1;k<n;k++) push(q[k]);
+  if(!hit) return pts;
+  for(var it=0; it<3; it++){
+    for(k=1;k<n;k++) q[k].lerpVectors(q[k], q[k-1].clone().add(q[k+1]).multiplyScalar(0.5), 0.5);
+    for(k=1;k<n;k++) push(q[k]);
+  }
+  return q;
+}
 function buildAspiration(B, p, extras){
   var asp=p.asp, bore=p.bore, bankLen=p.bankLen, L=p.L;
   var out = { crankDriven:null, pulleys:[], cout:[], tb:p.tb, tip:null, rc:bore*0.20 };
@@ -7562,6 +7580,7 @@ function buildAspiration(B, p, extras){
       extras.push(pipeMesh(B, pts, X.r, key, 48));
     };
 
+    var dps=[];
     for(var u=0; u<units.length; u++){
       var U=units[u], C=U.C, sd=U.side, s1=cmpd ? s0*0.72 : s0, cdir=1, T;
       if(L.boxer){
@@ -7594,8 +7613,11 @@ function buildAspiration(B, p, extras){
         t1.tip = t2.tip;
       }
       out.cout.push({pt:t1.co, dir:t1.coDir});
+      dps.push(t1); if(t1.filt) (out.filt=out.filt||[]).push(t1.filt);
+      if(cmpd){ dps.push(t2); if(t2.filt) (out.filt=out.filt||[]).push(t2.filt); }
       if(!out.tip) out.tip = t1.tip;
     }
+    for(q=0;q<dps.length;q++) if(dps[q].dp){ var dq=dps[q].dp; extras.push(pipeMesh(B, clearOfFilters(dq.pts, out.filt, dq.rad+0.04), dq.rad, "stainless", 18)); }
     addIntercooler(B,p,extras,true,out);
     return out;
   }
@@ -7899,18 +7921,22 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
     ti:B.pt(0, li.y*s*1.05, li.z*s*1.05), tiDir:di.clone(),
     to:B.pt(-s*0.56,0,0),  toDir:V3(-cdir,0,0),
     ci:B.pt(s*1.60,0,0),   ciDir:V3(cdir,0,0),
-    co:B.pt(s*0.86, cEy+lo.y*dL, cEz+lo.z*dL), coDir:dO.clone(), tip:null
+    co:B.pt(s*0.86, cEy+lo.y*dL, cEz+lo.z*dL), coDir:dO.clone(), tip:null,
+    filt:o.filter ? {a:B.pt(s*1.68,0,0), b:B.pt(s*2.32,0,0), r:s*0.55} : null
   };
   B.pop();
   if(o.downpipe!==false){
     var xd=-cdir, y0=r.to.y, yF=(p.panBot===undefined?-1e9:p.panBot)+s*0.32, zo=(o.side||1)*s*0.75, pts;
-    if(cdir>0) pts=[ r.to, V3(r.to.x+xd*bore*0.30, y0-s*0.15, r.to.z),
-                     V3(r.to.x+xd*bore*0.62, Math.max(yF, y0-s*1.1), r.to.z+zo*0.5),
-                     V3(r.to.x+xd*bore*1.40, Math.max(yF, y0-s*1.8), r.to.z+zo) ];
+    var st=s*0.55;                          /* straight stub out of the v-band: the bend must start clear of the housing */
+    var x2=Math.max(bore*0.30, st+bore*0.08), x3=Math.max(bore*0.62, x2+bore*0.16), x4=Math.max(bore*1.40, x3+bore*0.30);
+    if(cdir>0) pts=[ r.to, V3(r.to.x+xd*st, y0, r.to.z),
+                     V3(r.to.x+xd*x2, y0-s*0.40, r.to.z),
+                     V3(r.to.x+xd*x3, Math.max(yF, y0-s*1.1), r.to.z+zo*0.5),
+                     V3(r.to.x+xd*x4, Math.max(yF, y0-s*1.8), r.to.z+zo) ];
     else       pts=[ r.to, V3(r.to.x+bore*0.14, y0-s*0.30, r.to.z),
                      V3(r.to.x-bore*0.05, Math.max(yF, y0-s*1.05), r.to.z+zo*0.5),
                      V3(r.to.x-bore*1.40, Math.max(yF, y0-s*1.45), r.to.z+zo) ];
-    extras.push(pipeMesh(B, pts, s*0.30, "stainless", 18));
+    r.dp={pts:pts, rad:s*0.30};          /* built once every filter is known, so it can keep clear of the neighbour's */
     r.tip=pts[pts.length-1].clone();
     if(DET){
       /* wideband O2 in the downpipe, square to the pipe and leaning up */
@@ -7993,7 +8019,8 @@ function buildChargeAir(B, p, extras, ai){
   var bore=p.bore, bankLen=p.bankLen, rc=ai.rc, F=ai.fmic, i, c, a, pts;
   var fx=bankLen*0.5+bore*0.45;
   var tIn=ai.tb.pt.clone(), tA=tIn.clone().addScaledVector(ai.tb.dir, bore*0.55), tB=tIn.clone().addScaledVector(ai.tb.dir, bore*1.10);
-  var pipe=function(pts){ extras.push(pipeMesh(B, pts, rc, "palu", Math.max(24, pts.length*10))); };
+  var flts=ai.filt||[], clear=function(pts){ return clearOfFilters(pts, flts, rc+bore*0.06); };
+  var pipe=function(pts){ pts=clear(pts); extras.push(pipeMesh(B, pts, rc, "palu", Math.max(24, pts.length*(pts.length>20?2:10)))); };
   if(F){
     var top=F.y0+F.h+bore*0.10, lo=F.y0-bore*0.50, fr=F.x+F.t*0.5+bore*0.55;
     var both=false, pos=false, neg=false;
@@ -11329,7 +11356,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.8.1.0";
+const VERSION="1.8.1.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
