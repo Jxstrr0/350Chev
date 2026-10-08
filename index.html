@@ -332,6 +332,15 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
 #tourBox .step{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--orange2);text-transform:uppercase}
 #tourBox h3{font-size:18px;font-weight:700;margin:2px 0 4px}
 #tourBox p{margin:0 0 10px;font-size:15px;color:var(--chalk);line-height:1.45}
+/* First Fire coach: the tour's spotlight look, one layer up, with its own card */
+#ff{position:absolute;inset:0;z-index:46;pointer-events:none}
+#ffSpot{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(8,9,11,.6);border:2px solid var(--orange);transition:all .3s ease;pointer-events:none;animation:ffPulse 1.8s ease-in-out infinite}
+@keyframes ffPulse{50%{border-color:var(--orange2);box-shadow:0 0 0 9999px rgba(8,9,11,.6),0 0 16px 3px rgba(255,122,26,.5)}}
+#ffBox{position:absolute;left:16px;right:16px;background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--orange);border-radius:8px;padding:12px 14px;pointer-events:auto;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:top .3s ease,bottom .3s ease}
+#ffBox .step{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--orange2);text-transform:uppercase}
+#ffBox h3{font-size:18px;font-weight:700;margin:2px 0 4px}
+#ffBox p{margin:0 0 10px;font-size:15px;color:var(--chalk);line-height:1.45}
+#ffBox .btn{min-height:46px}
 /* toast */
 #toast{position:absolute;left:50%;bottom:calc(var(--tabh) + 14px);transform:translateX(-50%) translateY(20px);background:var(--chalk);color:var(--soot);padding:10px 16px;border-radius:5px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;z-index:40}
 #toast.on{opacity:1;transform:translateX(-50%)}
@@ -474,6 +483,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
         <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
         <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
+        <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
         <div class="lbl"><span>Graphics</span></div>
         <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
         <div class="lbl"><span>Camera follows edits</span></div>
@@ -514,6 +524,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
   </nav>
 
   <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
+  <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
   <div id="scrim"></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="toast"></div>
@@ -11993,6 +12004,92 @@ function setMode(m){
   save();boot();
 }
 document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);}));
+/* ---- First Fire: a ninety-second scratch run for new players. Fire a V6, rev it past where its
+   springs give up, fit a stiffer spring, certify it. It runs in the test cell on a borrowed engine,
+   so the career books never see it; the player's own build, name, bench and tab go back after. ---- */
+let ff=null;
+const FF_STEPS=["fire","limit","fix","cert"];
+function ffRig(){const p=PRESETS.find(x=>x.id==="l36")||PRESETS.find(x=>x.cfg.layout==="V6");const env=Object.assign({},SIM.DEFAULT_ENV,{testType:"pull"});
+  const base=Object.assign({},SIM.DEFAULT_CFG,p.cfg,{springs:"single"}),stiffer=Object.keys(OPT.springs).filter(k=>OPT.springs[k].rate>OPT.springs.single.rate);let cfg=Object.assign({},base,{redline:6600});
+  // lowest redline where single springs float, nothing else breaks, and any stiffer spring holds it
+  for(let rl=6400;rl<=7400;rl+=100){const c=Object.assign({},base,{redline:rl}),a=SIM.simulate(c,env),vf=a.tests.find(t=>t.id==="valve_float");
+    if(a.fails.length===1&&vf&&vf.status==="crit"&&vf.util>=1.015&&stiffer.every(k=>!SIM.simulate(Object.assign({},c,{springs:k}),env).fails.length)){cfg=c;break;}}
+  return{p,cfg};}
+function ffFloat(res,cfg){const vf=res&&res.tests.find(t=>t.id==="valve_float");return vf?(Math.round(cfg.redline/vf.util/50)*50).toLocaleString():"—";}
+function ffFailed(l){const r=l.res,e=l.env;return r.fails.length>0||(e.testType==="endurance"&&r.endurance&&r.endurance.failedAtHour!=null)||(e.testType==="overrev"&&r.overrev&&!r.overrev.survived)||(e.testType==="drag"&&!!r.dragFailed);}
+function ffRect(el){if(!el||!el.getClientRects().length)return null;const r=el.getBoundingClientRect();return r.width&&r.height?r:null;}
+const FFT={idle:{under:"view",get:()=>ffRect($("idleBtn"))},view:{get:()=>ffRect($("view"))},
+  run:{tab:"test",get:()=>ffRect($("runTest"))},verdict:{tab:"test",get:()=>ffRect(document.querySelector("#verdict .verdict"))},
+  springs:{tab:"build",sec:"Valvetrain",get:()=>{const b=document.querySelector('#buildForm button[data-k="springs"]'),sg=b&&b.parentElement,a=ffRect(sg&&sg.previousElementSibling),c=ffRect(sg);if(!a||!c)return c;
+    const l=Math.min(a.left,c.left),r=Math.max(a.right,c.right);return{left:l,right:r,width:r-l,top:a.top,bottom:c.bottom,height:c.bottom-a.top};}}};
+const FF_RUN={t:"Find the limit",x:()=>"Watch the tach — it's going all the way to redline.",tgt:"view",d:1e9};
+const FF={
+  fire:{go:{t:"Fire it up",x:()=>`${ff.rig.p.name}, straight off the stand. Tap START up top to turn it over.`,tgt:"idle",d:2500},
+    ok:{t:"Fire it up",x:()=>"It's alive. Now let's find out where it breaks.",tgt:"view",auto:2600}},
+  limit:{go:{t:"Find the limit",x:()=>`The redline's at ${S.cfg.redline.toLocaleString()} rpm on the stock single valve springs. Arm the dyno and pull it.`,tgt:"run",d:3000},run:FF_RUN,
+    broke:{t:"Valve float",x:()=>`Past about ${ffFloat(S.last.res,S.last.cfg)} rpm the springs can't close the valves in time — they float and hit the pistons.`,tgt:"verdict",n:"Fix it"},
+    held:{t:"It held",x:()=>"You changed something and it survived. Next shows the one-part fix anyway.",tgt:"verdict"}},
+  fix:{go:{t:"Fix it with one change",x:()=>"Valve float is a spring problem. Under Valve springs, fit a stiffer one — try the Beehive.",tgt:"springs",d:3500},
+    ok:{t:"Fix it with one change",x:()=>`${S.cfg.springs!=="single"?OPT.springs[S.cfg.springs].name+" fitted. ":""}The valves now follow the cam to about ${ffFloat(quick,S.cfg)} rpm — past the ${S.cfg.redline.toLocaleString()} redline.`,tgt:"springs",auto:2600}},
+  cert:{go:{t:"Certify it",x:()=>"Same pull, one part changed. Arm the dyno and run it again.",tgt:"run",d:3000},run:Object.assign({},FF_RUN,{t:"Certify it"}),
+    done:{t:"Build, break, fix",x:()=>`${S.last&&S.last.res.rel<85?"Certified — marginal, but it holds. ":"Certified. "}That's the game — build it, break it on the dyno, fix the weak link.`,tgt:"verdict",n:()=>ff.to==="career"?"Open my shop":"Open the test cell",last:1},
+    still:{t:"Still breaking",x:()=>"Something else let go — the red bars in the stress report say what. Fix it and pull again, or finish here.",tgt:"verdict",n:"Finish"}}};
+const ffCur=()=>FF[FF_STEPS[ff.step]][ff.phase];
+function ffSet(ph){ff.phase=ph;ff.t0=performance.now();const P=ffCur();
+  $("ffStep").textContent=P.last?"First Fire · done":`First Fire · ${ff.step+1} of ${FF_STEPS.length}`;$("ffTitle").textContent=P.t;$("ffText").textContent=P.x();
+  $("ffNext").textContent=typeof P.n==="function"?P.n():P.n||"Next";$("ffSkip").style.display=P.last?"none":"";ffTick();}
+function ffStep(i){ff.step=i;ff.ref=S.last;ffSet(i===0&&run.idle?"ok":"go");ffShow();}
+function ffNext(){if(!ff)return;if(ff.step>=FF_STEPS.length-1)ffEnd();else ffStep(ff.step+1);}
+// bring the current target back: its tab, its accordion section, then scroll it into the top third
+function ffShow(){if(!ff)return;const t=FFT[ffCur().tgt];if(t.tab&&curTab!==t.tab)showTab(t.tab);
+  if(t.sec){const a=document.querySelector(`#buildForm [data-sec="${t.sec}"]`);if(a&&!openSec[t.sec])toggleSec(a);}
+  if(t===FFT.run&&!testing&&S.env.testType!=="pull"){S.env.testType="pull";renderTest();}
+  setTimeout(()=>{if(!ff)return;const r=t.tab&&t.get();if(r){const pn=$("panel"),pr=pn.getBoundingClientRect();pn.scrollTop+=(r.top-pr.top)-pr.height*0.3;}ffPlace();},60);}
+function ffPlace(){if(!ff||ff.ending)return;const app=$("app").getBoundingClientRect(),spot=$("ffSpot"),box=$("ffBox"),t=FFT[ffCur().tgt];
+  const tabT=$("tabs").getBoundingClientRect().top-app.top;let r=t.get();
+  if(r&&t.tab){const pr=$("panel").getBoundingClientRect(),top=Math.max(r.top,pr.top),bot=Math.min(r.bottom,app.top+tabT);r=bot-top>=Math.min(28,r.height*0.5)?{left:r.left,width:r.width,top,bottom:bot,height:bot-top}:null;}
+  $("ff").style.visibility=$("sheet").classList.contains("on")?"hidden":"";$("ffShow").style.display=!r&&t.tab?"":"none";
+  const w=$("weekLbl");if(w&&w.textContent!=="FIRST FIRE")w.textContent="FIRST FIRE";
+  const boxH=box.offsetHeight||150;let top=null;
+  if(r){spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
+    const below=(t.under?$(t.under).getBoundingClientRect():r).bottom-app.top+14,above=r.top-app.top-14-boxH;top=below+boxH<tabT-8?below:above>=8?above:null;}
+  else spot.style.display="none";
+  if(top!=null){box.style.top=top+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-tabT+10)+"px";}}
+function ffTick(){if(!ff)return;if(ff.ending){if(!testing)ffFinish(true);return;}
+  const st=FF_STEPS[ff.step],ph=ff.phase;
+  if(st==="fire"){if(ph==="go"&&run.idle){ffSet("ok");return;}}
+  else if(st==="limit"||st==="cert"){
+    if(testing){if(ph!=="run"){ffSet("run");return;}}
+    else if(S.last&&S.last!==ff.ref){ff.ref=S.last;const bad=ffFailed(S.last);if(!bad)buzz(20);ffSet(st==="limit"?(bad?"broke":"held"):(bad?"still":"done"));ffShow();return;}
+    else if(ph==="run"){ffSet("go");return;}}
+  else if(st==="fix"){const ok=!!quick&&!quick.fails.length;if(ph==="go"&&ok){buzz(20);ffSet("ok");return;}if(ph==="ok"&&!ok){ffSet("go");return;}}
+  const P=ffCur(),dt=performance.now()-ff.t0;if(P.auto&&dt>P.auto){ffNext();return;}
+  $("ffNext").style.display=dt>=(P.d||0)?"":"none";ffPlace();}
+function ffStart(to){if(ff)return;if(testing){toast("Let the dyno finish first");return;}
+  closeSheet();if(tourStep>=0){tourStep=-1;$("tour").hidden=true;}
+  const rig=ffRig();ff={to:to||S.mode||"sandbox",rig,step:0,phase:"go",t0:0,ref:null,back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle}};
+  S.cfg=Object.assign({},rig.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,{testType:"pull"});S.profileId=rig.p.soundProfile;S.name=rig.p.name;S.last=null;curTab="build";resetBase();
+  if(S.mode!=="sandbox"){S.mode="sandbox";boot();}else{afterCfgChange(true);hud();showTab("build");}
+  $("ff").hidden=false;ff.iv=setInterval(ffTick,200);ffStep(0);}
+// Skip or finish. Mid-pull it waits for the dyno to stop so the result lands on the scratch engine.
+function ffEnd(){if(!ff)return;$("ff").hidden=true;if(testing){ff.ending=true;return;}ffFinish(true);}
+function ffFinish(hand){const f=ff;if(!f)return;ff=null;clearInterval(f.iv);$("ff").hidden=true;const b=f.back;
+  run.idle=b.idle;$("idleBtn").classList.toggle("on",run.idle);
+  Object.assign(S,{cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,mode:f.to,firstFireDone:true});curTab=b.tab;
+  if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;}
+  resetBase();save();boot();if(hand&&career()&&!S.tourDone)setTimeout(startTour,350);}
+// if the page goes away mid-run, leave the player's own game in storage, not the scratch V6
+function ffSafeSave(){if(!ff)return;const keep={mode:S.mode,cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last},b=ff.back;
+  Object.assign(S,{mode:ff.to,cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last});save();Object.assign(S,keep);}
+$("ffSkip").addEventListener("click",ffEnd);$("ffNext").addEventListener("click",ffNext);$("ffShow").addEventListener("click",ffShow);
+$("replayFF").addEventListener("click",()=>{ensureSound();ffStart(S.mode);});
+// a new player's first tap on the intro runs First Fire before the mode they picked (capture beats the handler above)
+$("intro").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b||S.firstFireDone)return;e.stopPropagation();$("intro").style.display="none";S.seen=true;ensureSound();ffStart(b.dataset.mode);},true);
+// buttons that swap the whole game end First Fire first, so they act on the player's own save
+$("panel").addEventListener("click",e=>{if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
+  if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));},true);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)ffSafeSave();});window.addEventListener("pagehide",ffSafeSave);
+window.addEventListener("resize",()=>{if(ff)ffPlace();});$("panel").addEventListener("scroll",()=>{if(ff)ffPlace();},{passive:true});
 
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
