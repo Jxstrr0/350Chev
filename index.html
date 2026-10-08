@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.8.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.8.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -545,6 +545,8 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
         <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
         <div class="lbl"><span>Haptics</span></div>
         <div class="seg n2" id="hapSeg"><button data-hap="1">On<small>slider ticks, bangs</small></button><button data-hap="0">Off</button></div>
+        <div class="lbl"><span>Pressure units</span></div>
+        <div class="seg n2" id="puSeg"><button data-pu="bar">Bar<small>boost, cylinder pressure</small></button><button data-pu="psi">PSI<small>pounds per square inch</small></button></div>
         <div id="devBox">
           <div class="lbl"><span>Career dev mode</span></div>
           <div class="seg n2" id="devSeg"><button data-dev="0">Off<small>play it straight</small></button><button data-dev="1">On<small>every part, upgrade and staff · tests free</small></button></div>
@@ -11327,15 +11329,28 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.8.0.0";
+const VERSION="1.8.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
+/* pressure units: everything is stored and simulated in bar. PSI is a display layer — text nodes that read "N bar"
+   (also "A of B bar", "A–B bar", "A / B bar") are rewritten in place and remembered, so switching back restores them. */
+const BAR_PSI=14.5038;
+const pU=()=>S&&S.psi?"psi":"bar";
+const bv=b=>{if(!(S&&S.psi))return b.toFixed(1);const v=b*BAR_PSI;return v.toFixed(v<100?1:0);};
+const P_RE=/((?:\d+(?:\.\d+)?\s?(?:–|-|\/|of|to)\s?)*)(\d+(?:\.\d+)?)\s?bar\b(?!s)/g;
+const toPsiTxt=t=>t.replace(P_RE,m=>m.replace(/\s?bar$/,"").replace(/\d+(?:\.\d+)?/g,n=>{const v=+n*BAR_PSI;return v.toFixed(v<100?1:0);})+" psi");
+function psiNode(n){const t=n.nodeValue;if(!t||t.indexOf("bar")<0){return;}if(n.__psi!==undefined&&t===n.__psi)return;const c=toPsiTxt(t);if(c!==t){n.__bar=t;n.nodeValue=c;n.__psi=c;}}
+function psiWalk(root,on){if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;return p&&(p.nodeName==="SCRIPT"||p.nodeName==="STYLE"||p.nodeName==="TEXTAREA")?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;}});const ns=[];let n;while((n=w.nextNode()))ns.push(n);
+  for(const x of ns){if(on)psiNode(x);else if(x.__bar!==undefined){if(x.nodeValue===x.__psi)x.nodeValue=x.__bar;delete x.__bar;delete x.__psi;}}}
+let psiBusy=false;
+new MutationObserver(ms=>{if(!S||!S.psi||psiBusy)return;psiBusy=true;try{for(const m of ms){if(m.type==="characterData")psiNode(m.target);else for(const a of m.addedNodes){if(a.nodeType===3)psiNode(a);else if(a.nodeType===1)psiWalk(a,true);}}}finally{psiBusy=false;}}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+function applyPU(){psiWalk(document.body,!!(S&&S.psi));applyTheme();}
 function applyTheme(){const t=S.theme||"dark";const eff=t==="auto"?(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):t;document.documentElement.setAttribute("data-theme",eff);
-  document.querySelectorAll("#themeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.theme===t));document.querySelectorAll("#hapSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.hap==="1")===(S.haptics!==false)));
+  document.querySelectorAll("#themeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.theme===t));document.querySelectorAll("#hapSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.hap==="1")===(S.haptics!==false)));document.querySelectorAll("#puSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.pu==="psi")===!!S.psi));
   if(curTab==="test")drawChart(lastForChart(),null);}
 function buzz(ms){if(S.haptics===false||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
-function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false};}
+function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false,psi:false};}
 function save(){try{const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
 function snapshot(){return Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});}
@@ -11453,6 +11468,7 @@ $("devRep").addEventListener("click",()=>{if(!career())return;C().rep+=500;hud()
 $("devWeek").addEventListener("click",()=>{if(!career()||typeof advanceWeek!=="function")return;advanceWeek();save();hud();renderShop();recompute();});
 $("sqSeg").addEventListener("click",e=>{const b=e.target.closest("[data-sq]");if(!b)return;S.soundQ=b.dataset.sq;applySoundQuality();save();});
 $("themeSeg").addEventListener("click",e=>{const b=e.target.closest("[data-theme]");if(!b)return;S.theme=b.dataset.theme;applyTheme();save();});
+$("puSeg").addEventListener("click",e=>{const b=e.target.closest("[data-pu]");if(!b)return;S.psi=b.dataset.pu==="psi";applyPU();save();});
 $("hapSeg").addEventListener("click",e=>{const b=e.target.closest("[data-hap]");if(!b)return;S.haptics=b.dataset.hap==="1";applyTheme();save();if(S.haptics)buzz(12);});
 if(window.matchMedia)window.matchMedia("(prefers-color-scheme: light)").addEventListener?.("change",()=>{if(S.theme==="auto")applyTheme();});
 $("heatBtn").addEventListener("click",()=>{S.heat=!S.heat;applyHeat();save();toast(S.heat?"HEAT-MAP ON · TAP A ZONE":"HEAT-MAP OFF");});
@@ -11633,9 +11649,9 @@ $("buildForm").addEventListener("change",e=>{if(e.target.type==="range")commitSl
 let lastNudge=0;
 $("buildForm").addEventListener("pointerdown",e=>{if(e.target.closest(".nud"))lastNudge=performance.now();},true);
 $("buildForm").addEventListener("click",e=>{const b=e.target.closest("b[data-num]");if(!b||b.querySelector("input")||performance.now()-lastNudge<600)return;const k=b.dataset.num,f=sliderField(k);if(!f)return;
-  const cur=S.cfg[k];const inp=document.createElement("input");inp.type="number";inp.className="num";inp.inputMode="decimal";inp.min=f.min;inp.max=f.max;inp.step=f.step;inp.value=cur;inp.setAttribute("enterkeyhint","done");
+  const cur=S.cfg[k];const inp=document.createElement("input");inp.type="number";inp.className="num";inp.inputMode="decimal";const pm=S.psi&&f.unit==="bar"?BAR_PSI:1;inp.min=+(f.min*pm).toFixed(2);inp.max=+(f.max*pm).toFixed(2);inp.step=pm===1?f.step:"any";inp.value=pm===1?cur:+(cur*pm).toFixed(1);inp.setAttribute("enterkeyhint","done");
   const restore=()=>{const v=S.cfg[k];b.innerHTML=(f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");};
-  const init=inp.value;let done=false;const finish=(ok)=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."));if(isFinite(v)){const nv=snapVal(f,v);if(nv!==S.cfg[k]){holdBase(k);applySlider(k,nv,$("r-"+k));commitSlider();}}}restore();};
+  const init=inp.value;let done=false;const finish=(ok)=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."))/pm;if(isFinite(v)){const nv=snapVal(f,v);if(nv!==S.cfg[k]){holdBase(k);applySlider(k,nv,$("r-"+k));commitSlider();}}}restore();};
   inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();finish(true);inp.blur();}else if(ev.key==="Escape"){finish(false);inp.blur();}});
   inp.addEventListener("blur",()=>finish(true));
   b.textContent="";b.appendChild(inp);inp.focus();inp.select();});
@@ -11852,7 +11868,7 @@ function drawChart(res,upto){const INK=getComputedStyle(document.documentElement
   if(N>1&&curves.torque){x.fillStyle="rgba(255,122,26,.10)";x.beginPath();x.moveTo(X(res.rpms[0]),padT+ch);for(let i=0;i<N;i++)x.lineTo(X(res.rpms[i]),YT(res.torque[i]));x.lineTo(X(res.rpms[N-1]),padT+ch);x.closePath();x.fill();}
   if(curves.torque)line(res,res.torque,YT,"#ff7a1a",2.2,N);
   if(curves.power)line(res,res.power,YP,INK,2.2,N);
-  const aux=[["boost",res.boostCurve,3.5,"#5fa8e6","bar",v=>v.toFixed(2)],["ve",res.veCurve,1.3,"#4fc08d","VE",v=>Math.round(v*100)+"%"],["egt",res.egtCurve,1200,"#e5b73b","°C",v=>Math.round(v)]];
+  const aux=[["boost",res.boostCurve,3.5,"#5fa8e6",pU(),v=>S.psi?bv(v):v.toFixed(2)],["ve",res.veCurve,1.3,"#4fc08d","VE",v=>Math.round(v*100)+"%"],["egt",res.egtCurve,1200,"#e5b73b","°C",v=>Math.round(v)]];
   for(const [k,arr,mx,col,unit,f] of aux){if(!curves[k]||!arr)continue;line(res,arr.map(v=>v/mx),YN,col,1.4,N);if(N>0){x.fillStyle=col;x.textAlign="right";x.fillText(f(arr[N-1])+" "+unit,X(res.rpms[N-1])-3,YN(arr[N-1]/mx)-7);}}
   if(N>0&&N<res.rpms.length){x.fillStyle=INK;x.beginPath();x.arc(X(res.rpms[N-1]),YP(res.power[N-1]),3,0,7);x.fill();}
   x.fillStyle="#ffa04d";x.textAlign="left";x.fillText("Nm",padL+2,padT+6);x.fillStyle=INK;x.textAlign="right";x.fillText("hp",padL+cw-2,padT+6);x.lineWidth=1;
@@ -11947,7 +11963,7 @@ function dragStart(){
     else if(st.phase==="staged"){const bT=st.boostTarget;let h="";
       if(R){const bulbs=[dtT>=0,dtT>=0.5,dtT>=1.0,dtT>=1.5];h+=`<div class="peak" style="grid-column:1/-1"><b style="letter-spacing:6px">${bulbs.slice(0,3).map(b=>b?"🟠":"⚫").join("")}${bulbs[3]?"🟢":"⚫"}</b><span>${!st.rolled?"rolling into the beams":dtT<0?"staged — wait for the ambers":dtT<1.5?"…":"GO"}</span></div>`;}
       else h+=`<div class="peak" style="grid-column:1/-1"><b>${st.rolled?"STAGED":"…"}</b><span>${st.rolled?"time trial — leave when you like":"rolling into the beams"}</span></div>`;
-      if(d.canArm)h+=`<div class="peak"><b>${bT>0?st.boost.toFixed(1):"—"}<i>${bT>0?"bar":""}</i></b><span>${bT>0?"of "+bT.toFixed(1)+" on the line":"no boost to build"}</span></div><div class="peak"><b>${st.launch.held.toFixed(1)}<i>s</i></b><span>${st.launch.armed?(st.launch.twoStep?"on the two-step":"on the trans-brake"):"not armed"}</span></div><div class="peak"><b style="color:${st.egt>950?"var(--crit)":st.egt>850?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>turbine inlet</span></div>`;
+      if(d.canArm)h+=`<div class="peak"><b>${bT>0?bv(st.boost):"—"}<i>${bT>0?pU():""}</i></b><span>${bT>0?"of "+bv(bT)+" on the line":"no boost to build"}</span></div><div class="peak"><b>${st.launch.held.toFixed(1)}<i>s</i></b><span>${st.launch.armed?(st.launch.twoStep?"on the two-step":"on the trans-brake"):"not armed"}</span></div><div class="peak"><b style="color:${st.egt>950?"var(--crit)":st.egt>850?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>turbine inlet</span></div>`;
       $("dragLive").innerHTML=h;
       if(!st.rolled)dragBtnText("ROLLING IN…");else if(d.canArm)dragBtnText(st.launch.armed?"RELEASE ON GREEN":"HOLD · RELEASE ON GREEN",st.launch.armed?(st.launch.twoStep?`two-step ${d.holdRpm.toLocaleString()} rpm`:"on the brake"):"arm it on the ambers — every second holding is heat");else dragBtnText("LAUNCH",R?"tap on the green":"tap to go");}
     run.on=true;run.rpm=DR.failed?Math.max(0,run.rpm-380):st.rpm;run.load=DR.failed?0:st.load;
@@ -12659,7 +12675,7 @@ function boot(){
   applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  applyTheme();applySoundQuality();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
   $("intro").style.display=S.seen?"none":"flex";
 }
 function start(hot){
