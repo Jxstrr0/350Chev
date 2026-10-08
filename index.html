@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.6.6.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.7.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -81,7 +81,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #rpmbox b{display:block;font-family:var(--display);font-size:28px;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 #rpmbox span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange2)}
 #flash{position:absolute;inset:0;pointer-events:none;background:rgba(226,71,60,0);transition:background .15s}
-#fpsHud{position:absolute;left:12px;top:47px;pointer-events:none;display:none;font-family:var(--mono);font-size:11px;line-height:1;color:var(--chalk);background:rgba(15,17,20,.55);padding:3px 6px;border-radius:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#fpsHud{position:absolute;left:12px;top:min(119px,calc(100% - 105px));pointer-events:none;display:none;font-family:var(--mono);font-size:11px;line-height:1;color:var(--chalk);background:rgba(15,17,20,.72);padding:3px 6px;border-radius:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
 #fpsHud.on{display:block}#app.mini #fpsHud{top:30px}#fpsHud b{font-weight:500}#fpsHud b.warn{color:var(--warn)}#fpsHud b.crit{color:var(--crit)}#fpsHud i{font-style:normal;color:var(--muted)}
 /* panel */
 #panel{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px 16px calc(var(--tabh) + 24px);border-top:1px solid var(--rule)}
@@ -1003,7 +1003,7 @@ const ENGINE_SIM = (function () {
     p190: { name: "Stock pump", sub: "190 L/h in-tank", info: "The factory pump in the tank: enough for the engine it came with and a little more. Under boost the rail pressure rises with the manifold, and it flows less.", lph: 190, dropBar: 0.13, cost: 0, massKg: 0, short: "stock pump" },
     p255: { name: "255 L/h pump", sub: "255 L/h in-tank", info: "The classic in-tank upgrade, good for around five hundred horsepower on petrol. Its flow falls off as boost raises the pressure it has to push against.", lph: 255, dropBar: 0.13, cost: 140, massKg: 0, short: "255 L/h pump" },
     p340: { name: "340 L/h pump", sub: "340 L/h in-tank", info: "A high-flow in-tank pump with a bigger motor. Around six hundred horsepower on petrol, or four and a half on E85 at moderate boost.", lph: 340, dropBar: 0.14, cost: 230, massKg: 0, short: "340 L/h pump" },
-    twin450: { name: "Twin 450 pumps", sub: "900 L/h \u00b7 surge tank", info: "Two 450 L/h pumps in a surge tank, the second one switched in under boost. Four-figure power on E85, as long as the wiring can carry the current.", lph: 900, dropBar: 0.14, cost: 950, massKg: 0, req: "boost", short: "twin 450s" },
+    twin450: { name: "Twin 450 pumps", sub: "900 L/h \u00b7 surge tank", info: "Two 450 L/h pumps in a surge tank, the second one switched in under boost. Four-figure power on E85, as long as the wiring can carry the current.", lph: 900, dropBar: 0.14, cost: 950, massKg: 0, req: "shop2", short: "twin 450s" },
     mech: { name: "Belt-drive pump", sub: "4000 L/h at 8000 rpm", info: "A gear pump driven off the crank, the way alcohol drag engines are fed. Its flow rises with engine speed and barely notices rail pressure, so it never runs dry at the top of the pull.", lph: 4000, dropBar: 0.02, rpmRef: 8000, cost: 2600, massKg: 3, req: "shop2", short: "belt pump" }
   };
 
@@ -11317,7 +11317,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.6.6.0";
+const VERSION="1.7.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -11343,7 +11343,7 @@ function fuelFit(c){if(!c||typeof c!=="object"||(c.injectors&&c.fuelPump))return
   const fit=SIM.fitFuel(full);if(!c.injectors)c.injectors=fit.injectors;if(!c.fuelPump)c.fuelPump=fit.fuelPump;
   return [oh,cfgHash(Object.assign({},SIM.DEFAULT_CFG,c)),c];}
 function fuelMigrate(){const m={},fitted=[];
-  for(const c of [S.cfg,S.last&&S.last.cfg,S.base&&S.base.cfg].concat(Array.isArray(S.blueprints)?S.blueprints.map(b=>b&&b.cfg):[])){const r=fuelFit(c);if(r){m[r[0]]=r[1];fitted.push(r[2]);}}
+  for(const c of [S.cfg,S.last&&S.last.cfg,S.base&&S.base.cfg].concat(Array.isArray(S.blueprints)?S.blueprints.map(b=>b&&b.cfg):[])){try{const r=fuelFit(c);if(r){m[r[0]]=r[1];fitted.push(r[2]);}}catch(e){}}
   if(!fitted.length)return;
   if(S.last&&m[S.last.hash])S.last.hash=m[S.last.hash];
   const K=S.career;if(K.cert&&m[K.cert.hash])K.cert.hash=m[K.cert.hash];
@@ -11725,7 +11725,7 @@ const SPECS={
 };
 function chipsFor(tbl,o){const d=SPECS[tbl];if(!d)return [];
   return d.specs.map(([l,f])=>{let v=null;try{v=f(o);}catch(e){}return v==null?null:[l,v];}).filter(Boolean);}
-function priceOf(tbl,o){const d=SPECS[tbl];if(d&&d.price){const v=d.price(o);return typeof v==="number"?fmt$(v):"$"+v;}
+function priceOf(tbl,o){if((tbl==="injectors"||tbl==="fuelPump")&&!o.cost)return"stock";const d=SPECS[tbl];if(d&&d.price){const v=d.price(o);return typeof v==="number"?fmt$(v):"$"+v;}
   return (o.cost||o.cost===0)?fmt$(o.cost):"";}
 function specLine(tbl,o){const d=SPECS[tbl];if(d&&d.line){const v=d.line(o);if(v)return v;}
   const c=chipsFor(tbl,o);return c.length?c[0][0]+" "+c[0][1]:"details";}
@@ -11888,9 +11888,9 @@ function allBest(){const t=recs().top[0];return Math.min(t?t.et:Infinity,career(
 function recTag(){const e={n:engineName().slice(0,28),d:Date.now()};if(career())e.w=C().week;return e;}
 const etFix=(a,b)=>a.toFixed(2)===b.toFixed(2)?3:2;   // two decimals unless that hides the gain
 /* a pass counts when nothing broke, no red light, and (career) it wasn't black-flagged at tech */
-function dragPbCheck(q){if(!q||DR.failed||(DR.race&&DR.race.foul)||(career()&&q.mph>150&&!DR.veh.chute))return null;const all=allBest(),eb=engBest(DR.hk);
+function dragPbCheck(q){if(ff||!q||DR.failed||(DR.race&&DR.race.foul)||(career()&&q.mph>150&&!DR.veh.chute))return null;const all=allBest(),eb=engBest(DR.hk);
   if(all<Infinity&&q.t<all)return{kind:2,was:all};if(eb!=null&&q.t<eb)return{kind:1,was:eb};return null;}
-function pbPass(r,failed){if(failed||r.et==null||(r.race&&r.race.foul)||(career()&&r.mph>150&&!r.chute))return;const R=recs(),h=DR.hk;
+function pbPass(r,failed){if(ff||failed||r.et==null||(r.race&&r.race.foul)||(career()&&r.mph>150&&!r.chute))return;const R=recs(),h=DR.hk;
   R.top.push(Object.assign({et:r.et,mph:r.mph},recTag()));R.top.sort((a,b)=>a.et-b.et);if(R.top.length>5)R.top.length=5;
   if(career()){const m=C().dragBest=C().dragBest||{};if(!(m[h]<=r.et))m[h]=r.et;if(!(C().bestEt<=r.et))C().bestEt=r.et;}
   else{const m=R.eng;if(!(m[h]<=r.et)){delete m[h];m[h]=r.et;const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}
@@ -11925,7 +11925,8 @@ function dragStart(){
     if(st.phase==="run"&&!DR.failed&&(st.t>DR.breakAt||(st.overrev>1.12&&res.overrev&&!res.overrev.survived))){dragBreak();st.done=true;st.phase="done";}
     if(DR.pb===undefined&&(st.phase==="shutdown"||st.phase==="done")){DR.pb=dragPbCheck(st.marks.find(m=>m.n==="1/4 mi"));if(DR.pb)ENGINE_VIS.stripPb(DR.pb.kind);}
     {const pre=st.phase==="burnout"||(st.phase==="staged"&&!st.rolled);const ox=R?(pre?st.x:oppX(now)):0;const ov=dt>0?Math.max(0,(ox-DR.lox)/dt):0;const acc=dt>0?(st.v-DR.lv)/dt:0;DR.lv=st.v;DR.lox=ox;
-      ENGINE_VIS.setStrip({on:true,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
+      const m4=st.phase==="shutdown"||st.phase==="done"?st.marks.find(m=>m.n==="1/4 mi"):null;
+      ENGINE_VIS.setStrip({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
         tree:{staged:!!st.rolled&&st.phase!=="burnout",a1:dtT>=0,a2:dtT>=0.5,a3:dtT>=1.0,green:!!(R&&R.green!=null)},
         shifting:st.shiftT>0,boost:st.boost,boostTarget:st.boostTarget,rpm:st.rpm,redline:veh.redline,gear:st.gear,
         launch:{armed:!!st.launch.armed,twoStep:st.launch.twoStep,transBrake:st.launch.transBrake,held:st.launch.held,retard:st.launch.retard,pops:st.launch.pops},
@@ -12108,7 +12109,7 @@ $("runTest").addEventListener("click",()=>{
     else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
       const offStd=career()&&!isStdCell(env);if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
-      if(!career()&&env.testType==="pull"&&!failing)pbPull(res);
+      if(!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
       if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(S.cfg);const overCap=res.peakHp>cap.hp||S.cfg.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:cfgHash(S.cfg),ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
         if(ok)pbPull(res);
@@ -12119,7 +12120,7 @@ $("runTest").addEventListener("click",()=>{
       if(career())checkGoals();
       save();recompute();renderTest();
       revealVerdict();
-      if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
+      if(ff&&ff.ending);else if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
   };
   requestAnimationFrame(step);
 });
@@ -12139,7 +12140,7 @@ function renderAnalysis(){
 function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
-  const top=R.top,best=top[0]||(cr&&C().bestEt?{et:C().bestEt}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
+  const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
   if(!best&&!hp&&!rel){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
@@ -12195,7 +12196,7 @@ function siteTxt(s){return `${degC(s.ambientC)} · ${(+s.altitudeM).toLocaleStri
 function siteAt(s){return Math.abs(s.ambientC-20)>=15||s.altitudeM<1500?degC(s.ambientC):`${(+s.altitudeM).toLocaleString()} m`;}   // the condition that bites
 function siteEnv(s){return stdEnv(Object.assign(stdCell(),{testType:"pull",ambientC:s.ambientC,altitudeM:s.altitudeM}));}
 const siteCache=new Map();
-function siteRun(s,c){const e=siteEnv(s);const key=cfgHash(c)+"|"+JSON.stringify(e);let r=siteCache.get(key);if(!r){if(siteCache.size>400)siteCache.clear();r=SIM.simulate(c,e);siteCache.set(key,r);}return r;}
+function siteRun(s,c){const e=siteEnv(s);const key=cfgHash(c)+"|"+JSON.stringify(e);let r=siteCache.get(key);if(!r){if(siteCache.size>1200){let n=300;for(const k of siteCache.keys()){siteCache.delete(k);if(!--n)break;}}r=SIM.simulate(c,e);siteCache.set(key,r);}return r;}
 function siteCard(k,lf){const s=k.site;if(!s)return{top:"",brk:""};const b=lf.o.find(q=>q.q==="site"&&!q.ok);
   return{top:`<div class="sitebar"><b>Judged at ${siteTxt(s)}</b><span>${s.name} · site premium +${Math.round(s.prem*100)}%</span>${has("dyno3")?`<button class="chip" data-siteprev="${k.id}">Preview it: set the cell to these conditions</button>`:`<small>The Pro dyno cell can preview site conditions.</small>`}</div>`,
     brk:b?`<div class="cstat brk">✗ Breaks at ${siteAt(s)}: ${b.why}</div>`:""};}
@@ -12441,7 +12442,7 @@ function ffTick(){if(!ff)return;if(ff.ending){if(!testing)ffFinish(true);return;
   $("ffNext").style.display=dt>=(P.d||0)?"":"none";ffPlace();}
 function ffStart(to){if(ff)return;if(testing){toast("Let the dyno finish first");return;}
   closeSheet();if(tourStep>=0){tourStep=-1;$("tour").hidden=true;}
-  const rig=ffRig();ff={to:to||S.mode||"sandbox",rig,step:0,phase:"go",t0:0,ref:null,back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle}};
+  const rig=ffRig();ff={to:to||S.mode||"sandbox",rig,step:0,phase:"go",t0:0,ref:null,back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle,sound:S.sound,tabs:Object.assign({},tabScroll,{[curTab]:$("panel").scrollTop})}};tabScroll.build=0;
   S.cfg=Object.assign({},rig.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,{testType:"pull"});S.profileId=rig.p.soundProfile;S.name=rig.p.name;S.last=null;curTab="build";resetBase();
   if(S.mode!=="sandbox"){S.mode="sandbox";boot();}else{afterCfgChange(true);hud();showTab("build");}
   $("ff").hidden=false;ff.iv=setInterval(ffTick,200);ffStep(0);}
@@ -12451,10 +12452,11 @@ function ffFinish(hand){const f=ff;if(!f)return;ff=null;clearInterval(f.iv);$("f
   run.idle=b.idle;$("idleBtn").classList.toggle("on",run.idle);
   Object.assign(S,{cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,mode:f.to,firstFireDone:true});curTab=b.tab;
   if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;}
-  resetBase();save();boot();if(hand&&career()&&!S.tourDone)setTimeout(startTour,350);}
+  if(S.sound!==b.sound){S.sound=b.sound;$("sndBtn").classList.toggle("on",S.sound);if(!S.sound)ENGINE_SOUND.stop();}
+  resetBase();save();boot();Object.assign(tabScroll,b.tabs);$("panel").scrollTop=b.tabs[curTab]||0;if(hand&&career()&&!S.tourDone)setTimeout(startTour,350);}
 // if the page goes away mid-run, leave the player's own game in storage, not the scratch V6
-function ffSafeSave(){if(!ff)return;const keep={mode:S.mode,cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last},b=ff.back;
-  Object.assign(S,{mode:ff.to,cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last});save();Object.assign(S,keep);}
+function ffSafeSave(){if(!ff)return;const keep={mode:S.mode,cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,sound:S.sound},b=ff.back;
+  Object.assign(S,{mode:ff.to,cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,sound:b.sound});save();Object.assign(S,keep);}
 $("ffSkip").addEventListener("click",ffEnd);$("ffNext").addEventListener("click",ffNext);$("ffShow").addEventListener("click",ffShow);
 $("replayFF").addEventListener("click",()=>{ensureSound();ffStart(S.mode);});
 // a new player's first tap on the intro runs First Fire before the mode they picked (capture beats the handler above)
@@ -12572,7 +12574,7 @@ function showTab(t){tabScroll[curTab]=$("panel").scrollTop;curTab=t;document.que
   if(t==="test")renderTest();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
-function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(curTab!=="test"||!v)return;
+function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(ff||curTab!=="test"||!v)return;
   const pr=pn.getBoundingClientRect(),vr=v.getBoundingClientRect(),st=document.querySelector(".tabpage.on .strip"),sc=st&&st.offsetParent&&getComputedStyle(st);
   const top=pr.top+pn.clientTop+(sc&&sc.position==="sticky"?parseFloat(getComputedStyle(pn).paddingTop)+(parseFloat(sc.top)||0)+st.offsetHeight:0)+8;
   const bot=Math.min(pr.bottom,$("tabs").getBoundingClientRect().top)-8;
@@ -12581,7 +12583,7 @@ document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
-function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);}
+function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
 $("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;save();buzz(8);});
 /* HUD toggles mirror their .on class into aria-pressed however they get flipped; START reads STOP
    while the engine idles, and VIEW wears a dot when anything in its tray is on */
