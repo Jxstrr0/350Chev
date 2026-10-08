@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.7.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.8.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -293,6 +293,16 @@ div.up.owned .price{color:var(--good)}
 .cstat{font-size:13px;line-height:1.4;padding:6px 10px;border-radius:4px;margin-bottom:10px;background:var(--soot);color:var(--muted)}
 .cstat.ok{color:var(--good)}.cstat.one{color:var(--warn)}.cstat.one b{color:var(--chalk);font-weight:500}.cstat.far{color:var(--dim)}
 .cstat.brk{color:var(--crit)}
+.cstat.off{color:var(--warn)}.cstat.off small{display:block;font-family:var(--mono);font-size:12px;color:var(--muted)}.cstat.off span{display:block;color:var(--muted)}.cstat.off span b{color:var(--chalk);font-weight:500}
+.cgroup.g-mkt h3{color:var(--info)}
+.buyer{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;margin-bottom:6px}
+.buyer .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.buyer .bh>span:first-child{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.buyer .bh b{font-weight:600;color:var(--chalk);font-size:14px}.buyer .bh i{font-style:normal;font-size:12px;color:var(--dim)}
+.buyer .bfit{font-family:var(--mono);font-size:12px;white-space:nowrap;padding:2px 6px;border-radius:3px;background:var(--soot)}.bfit.ok{color:var(--good)}.bfit.mid{color:var(--warn)}.bfit.low{color:var(--crit)}
+.buyer .bmiss{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px}
+.buyer .bdeal{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;margin-top:8px}.buyer .bdeal>span{font-family:var(--mono);font-size:13px;color:var(--chalk)}
+.buyer .bdeal b{font-family:var(--display);font-size:16px}.buyer .bdeal b.pos{color:var(--good)}.buyer .bdeal b.neg{color:var(--crit)}.buyer .bdeal .btn{min-height:44px;min-width:86px}
+.moreb summary{cursor:pointer;color:var(--muted);font-size:13px;padding:10px 2px;min-height:44px;display:flex;align-items:center}
 .sitebar{border-left:3px solid var(--info);background:var(--soot);border-radius:0 4px 4px 0;padding:7px 10px;margin:-2px 0 10px;display:flex;flex-direction:column;gap:2px}
 .sitebar b{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--info)}
 .sitebar span{font-size:13px;color:var(--chalk)}.sitebar small{font-size:12px;color:var(--dim)}
@@ -496,7 +506,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
       <div id="marketBox">
         <div class="stats" id="gStats"></div>
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
-        <div class="sec"><h2>Contracts</h2><p class="hint" id="mktHint"></p><div id="contracts"></div><button class="btn pri" id="nextWeek">Close the week</button><p class="hint" id="overheadHint"></p></div>
+        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><div id="contracts"></div><button class="btn pri" id="nextWeek">Close the week</button><p class="hint" id="overheadHint"></p></div>
         <div class="sec"><h2>Warranty &amp; ledger</h2><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div>
         <div class="sec"><h2>Shop goals <span class="cnt" id="goalCnt"></span></h2><div id="goals"></div></div>
       </div>
@@ -11317,7 +11327,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.7.0.0";
+const VERSION="1.8.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -12224,6 +12234,31 @@ function fits(k,res,cfg){
   let bonus=0;if(ok){if(r.hp)bonus+=clamp(res.peakHp/r.hp-1,0,0.3)*0.5;if(r.rel)bonus+=clamp((res.rel-r.rel)/100,0,0.15);if(r.tq)bonus+=clamp(res.peakTq/r.tq-1,0,0.3)*0.4;}
   return{ok,o,bonus,res};
 }
+/* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
+   Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit. */
+const MISS_W={hp:1.8,tq:1.8,et:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2};
+function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?0.7:q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
+  miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
+  return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
+const MKT_MIN=0.2;
+function missTxt(d){return d.miss.slice(0,3).map(x=>`${x.name.toLowerCase()} −${Math.round(x.cut*100)}%`).join(" · ");}
+// same engine, same word of mouth: contract or open market, rep follows units, class and how well it suits the buyer
+function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*6+(d.ok?bonus*20:0)+(repeat?4:0))*1.4*(d.ok?1:d.m));}
+/* buyer groups: every segment the shop can reach bids on the certified engine on the spot market — no deposit, no deadline,
+   a little under contract money. A crate-engine dealer takes anything that certified, at a thin margin. */
+const MKT_COOL=3;
+function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
+  if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car"])if(R[k]!=null)req[k]=R[k];
+  const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
+  return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
+function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
+const buyCache=new Map();
+function buyers(cert){const key=cert.hash+"|"+C().week+"|"+C().rep+"|"+Object.keys(C().owned).join(",")+"|"+JSON.stringify(C().mkt||{})+"|"+priceBoost();if(buyCache.has(key))return buyCache.get(key);
+  const tier=repTierIdx();const segs=[];for(const c of CATS)if(catOpen(c))for(const id of c.segs){const sg=SEGMENTS.find(x=>x.id===id);if(sg&&sg.tier<=tier&&(sg.tier<5||has("race")))segs.push(Object.assign({cat:c.name},sg));}
+  const out=segs.map(sg=>{const k=buyerK(sg,cert.res);k.cat=sg.cat;const f=fits(k,cert.res,cert.cfg);const d=deal(k,f);return{k,f,d,profit:(d.unit-cert.res.cost)*d.units};});
+  const cr=crateK(cert.res);const cf=fits(cr,cert.res,cert.cfg);out.push({k:Object.assign(cr,{cat:"Trade"}),f:cf,d:deal(cr,cf),profit:0});out[out.length-1].profit=(out[out.length-1].d.unit-cert.res.cost)*out[out.length-1].d.units;
+  const keep=out.filter(b=>b.d.want);keep.sort((a,b)=>b.profit-a.profit);out.length=0;out.push(...keep);if(buyCache.size>60)buyCache.clear();buyCache.set(key,out);return out;}
 /* "one change away": search single part swaps (and a few slider nudges) that would make the current build fit a contract */
 const FIX_KEYS=["fuel","piston","rings","rod","rodBolts","crank","bearings","oilGrade","cooling","head","springs","valveMat","intake","exhaust","gasket","studs","damper","pistonClearance","oilSystem","oilSquirters","ic","asp","blockMat","headMat"];
 FIX_KEYS.push("injectors","fuelPump");   // a build that only leans out can be one part away from a contract
@@ -12279,22 +12314,29 @@ function renderShop(){
   const live=career()&&!isStdCell(simEnv())?SIM.simulate(S.cfg,stdEnv({testType:"pull"})):quick;const liveFit=k=>fits(k,live,S.cfg);
   if(!C().cat||!catOpen(CATS.find(c=>c.id===C().cat)||CATS[0]))C().cat="prod";
   const cardH=(k,mode)=>{const lf=liveFit(k);const failing=lf.o.filter(q=>!q.ok).length;const fix=(!lf.ok&&failing<=3)?oneChange(k):null;
-    const f=cert?fits(k,cert.res):null;const unit=Math.round(k.price*priceBoost()*(1+(f?f.bonus:lf.bonus)));const cost=live.cost;const profit=(unit-cost)*k.units;
+    const f=cert?fits(k,cert.res,cert.cfg):null;const d=deal(k,f||lf);const unit=d.unit;const cost=f?cert.res.cost:live.cost;const profit=(unit-cost)*d.units;
     const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
-    const status=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):fix?`<div class="cstat one">◐ ONE CHANGE: <b>${fix.label}</b></div>`:`<div class="cstat far">○ OUT OF REACH</div>`;
+    const status=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):`<div class="cstat off">◐ OFF BRIEF · ${d.want?`they'd take ${d.units} of ${k.units} at ${Math.round(Math.pow(d.m,0.7)*100)}%`:"too far off — they'd walk"} <small>${missTxt(d)}</small>${fix?`<span>Full price with one change: <b>${fix.label}</b></span>`:""}</div>`;
     const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;const sc=siteCard(k,lf);
     const btn=mode==="active"
-      ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&f.ok&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&f.ok?"Ship "+k.units+" units":lf.ok?"Cert required":"Out of spec"}</button>`
+      ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${k.repeat?"repeat order":"offer"} · open till wk ${k.expires}`;
     return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +15%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}
-      <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${(f&&f.bonus>0)||(lf.ok&&lf.bonus>0)?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
+      <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
+  const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
+    const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
+    const row=b=>{const d=b.d,k=b.k;const fit=Math.round(Math.min(1,d.ok?1:d.m)*100);const full=C().shipped>=MAX_ACTIVE;
+      return `<div class="buyer"><div class="bh"><span><b>${k.name}</b><i>${k.cat}${k.recent?" · supplied recently":""}</i></span><span class="bfit ${d.ok?"ok":fit>=60?"mid":"low"}">${k.crate?"any engine":d.ok?"fits brief":fit+"% fit"}</span></div>
+        ${d.ok||k.crate?"":`<div class="bmiss">${missTxt(d)}</div>`}<div class="bdeal"><span>${d.units} × ${fmt$(d.unit)}</span><b class="${b.profit>=0?"pos":"neg"}">${fmt$(b.profit)}</b><button class="btn sm ${b.profit>0&&!full?"pri":""}" data-sell="${k.seg}" ${full?"disabled":""}>${full?"Week full":"Sell "+d.units}</button></div></div>`;};
+    return `<div class="cgroup g-mkt"><h3>Open market<span>who wants this engine</span></h3>${top.map(row).join("")}${rest.length?`<details class="moreb"><summary>All buyer groups (${all.length})</summary>${rest.map(row).join("")}</details>`:""}</div>`;};
   const tier=repTierIdx();
   const catSeg=`<div class="seg" id="catSeg">${CATS.map(c=>{const open=catOpen(c);return `<button data-cat="${c.id}" class="${C().cat===c.id?"on":""}" ${open?"":"disabled"}>${c.name}<small>${open?c.sub:c.needs&&!has(c.needs)?"needs the Outlaw shop":"rep "+c.rep+" · "+REP_TIERS.find(r=>r[0]===c.rep)[1]}</small></button>`;}).join("")}</div>`;
   const offers=offersFor(C().cat);
   const inbox=(C().inbox||[]).filter(k=>k.expires>=C().week);
   $("contracts").innerHTML=
     `<div class="cgroup g-now"><h3>On the board<span>${C().contracts.length} / ${MAX_ACTIVE}</span></h3>${C().contracts.length?C().contracts.map(k=>cardH(k,"active")).join(""):`<p class="hint">Nothing accepted. Pick a category below and take a job — two at a time, ten percent down, three weeks to ship.</p>`}</div>`+
+    buyersH()+
     (inbox.length?`<div class="cgroup g-one"><h3>Repeat orders<span>${inbox.length}</span></h3>${inbox.map(k=>cardH(k,"inbox")).join("")}</div>`:"")+
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`;
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
@@ -12312,14 +12354,22 @@ $("contracts").addEventListener("click",e=>{
   const cb=e.target.closest("[data-cat]");if(cb){if(cb.disabled)return;C().cat=cb.dataset.cat;save();renderShop();return;}
   const sp=e.target.closest("[data-siteprev]");if(sp){const k=C().contracts.concat(C().inbox||[],offersFor(C().cat)).find(x=>x.id==sp.dataset.siteprev);if(k&&k.site)previewSite(k.site);return;}
   const ab=e.target.closest("[data-accept]");if(ab){if(ab.disabled)return;const from=ab.dataset.from;const list=from==="inbox"?(C().inbox||[]):offersFor(C().cat);const k=list.find(x=>x.id==ab.dataset.accept);if(!k)return;if(acceptContract(k,from)){save();hud();renderShop();toast(`${k.name.toUpperCase()} · ${fmt$(k.deposit)} DEPOSIT IN`);buzz(20);}return;}
-  const b=e.target.closest("[data-deliver]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}const k=C().contracts.find(x=>x.id==b.dataset.deliver);const cert=C().cert;if(!k||!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const f=fits(k,cert.res);if(!f.ok)return;
-  const unit=Math.round(k.price*priceBoost()*(1+f.bonus));const profit=Math.round((unit-cert.res.cost)*k.units);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=k.units;C().shipped=(C().shipped||0)+1;const repGain=Math.round((2+k.units*0.6+SEGMENTS.find(s=>s.id===k.seg).tier*6+f.bonus*20+(k.repeat?4:0))*1.4);C().rep+=repGain;
+  const b=e.target.closest("[data-deliver]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}const k=C().contracts.find(x=>x.id==b.dataset.deliver);const cert=C().cert;if(!k||!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const f=fits(k,cert.res,cert.cfg);const d=deal(k,f);if(!d.want)return;const units=d.units;
+  const unit=d.unit;const profit=Math.round((unit-cert.res.cost)*units);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(SEGMENTS.find(s=>s.id===k.seg).tier,units,d,f.bonus,k.repeat);C().rep+=repGain;
   const weak=(f.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
-  C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units:k.units,hash:cfgHash(S.cfg),engine:engineName(),rel:f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:!!k.repeat,...(k.site?{site:k.site}:{})});
+  C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units,hash:cfgHash(S.cfg),engine:engineName(),rel:k.site&&f.res.fails.length?Math.min(f.res.rel,55):f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:!!k.repeat||!f.ok,...(k.site?{site:k.site}:{})});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
-  logEvent(`Delivered ${k.units} × ${engineName()} (${k.name}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}`,"good");
+  logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}`,f.ok?"good":"");
   if(tourStep>=0)tourEnd();
-  C().contracts=C().contracts.filter(x=>x.id!==k.id);save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*k.units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  C().contracts=C().contracts.filter(x=>x.id!==k.id);save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+$("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}
+  const cert=C().cert;if(!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const o=buyers(cert).find(x=>x.k.seg===b.dataset.sell);if(!o)return;const k=o.k,d=o.d,units=d.units,unit=d.unit;
+  const profit=Math.round((unit-cert.res.cost)*units);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
+  (C().mkt=C().mkt||{})[k.seg]=C().week;const weak=(cert.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
+  C().fleet.push({week:C().week,client:k.name,name:k.name,seg:k.seg,req:k.req,units,hash:cert.hash,engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:true});
+  if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
+  logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep`,profit>=0?"good":"");
+  if(tourStep>=0)tourEnd();save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
@@ -12354,7 +12404,7 @@ function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbo
 const TOUR=[
   {tab:"build",sel:"#presets",title:"Pick a starter engine",text:"The five green-tagged base engines use only parts your bay already has. Tap one — the Two-four truck four is a safe first sale."},
   {tab:"test",sel:"#runTest",title:"Certify it on the dyno",text:"Buyers only look at engines with a certified pull. Arm the dyno and pull ($75). No failures and under the dyno's cap means it's certified."},
-  {tab:"market",sel:"#tabs [data-tab=market]",title:"Sell it in Market",text:"Pick a category, take a job that your build fits (10% deposit up front), ship it, then close the week — and watch the warranty ledger."}
+  {tab:"market",sel:"#tabs [data-tab=market]",title:"Sell it in Market",text:"Sell to a buyer group on the open market, or take a contract (10% deposit up front) and ship it. Engines that miss a brief still sell — for less. Then close the week and watch the warranty ledger."}
 ];
 let tourStep=-1;
 function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.querySelector(st.sel);if(el&&!el.offsetParent)el=null;const app=$("app").getBoundingClientRect();const spot=$("tourSpot"),box=$("tourBox");
