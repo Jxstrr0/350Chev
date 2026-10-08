@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.6.6.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.7.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -41,16 +41,28 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #app.mini #hud .brand small{display:none}
 #app.mini #rpmbox b{font-size:24px}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-#hud{position:absolute;left:0;right:0;top:0;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;background:linear-gradient(180deg,rgba(15,17,20,.85),rgba(15,17,20,0))}
-#hud .brand{font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);line-height:1}
+#hud{position:absolute;left:0;right:0;top:0;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:space-between;align-items:flex-start;pointer-events:none;background:linear-gradient(180deg,rgba(15,17,20,.85),rgba(15,17,20,0))}
+#hud .brand{flex:none;font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);line-height:1}
 #hud .brand small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.14em;color:var(--muted);margin-top:3px}
-#hud .right{text-align:right;pointer-events:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-#hud .cash b{display:block;font-family:var(--display);font-size:19px;font-weight:700;color:var(--orange2);font-variant-numeric:tabular-nums;line-height:1}
-#hud .cash span{white-space:nowrap;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.hudbtns{display:flex;gap:6px}
-.hudbtns button{width:34px;height:34px;border-radius:50%;background:rgba(15,17,20,.7);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:var(--chalk)}
-.hudbtns button.on{border-color:var(--orange);color:var(--orange2)}
-.hudbtns svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#hud .right{flex:1 1 0;min-width:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+#hud .cash b{display:block;white-space:nowrap;font-family:var(--display);font-size:19px;font-weight:700;color:var(--orange2);font-variant-numeric:tabular-nums;line-height:1}
+#hud .cash span{display:block;text-wrap:balance;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+/* HUD controls: SOUND and START labelled on the second row; size, x-ray and heat map sit in the VIEW tray */
+.hudbtns{flex:1 0 100%;display:flex;gap:6px}
+.hudbtns>button{pointer-events:auto;height:44px;padding:0 13px 0 10px;border-radius:22px;background:rgba(15,17,20,.74);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;gap:6px;color:var(--chalk);font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;line-height:1;white-space:nowrap}
+.hudbtns>button.on,#viewBtn.open{border-color:var(--orange);color:var(--orange2);background:rgba(38,22,9,.84)}
+.hudbtns svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#sndBtn:not(.on){color:var(--muted)}#sndBtn:not(.on) .wv,#sndBtn.on .mx{display:none}
+#idleBtn.on svg{animation:idlepulse 1.1s ease-in-out infinite}@keyframes idlepulse{50%{opacity:.35}}
+#viewBtn.lit::after{content:"";width:6px;height:6px;margin-left:1px;border-radius:50%;background:var(--orange2);box-shadow:0 0 6px var(--orange)}
+.hudtray{position:fixed;z-index:28;width:206px;padding:5px;border-radius:12px;background:rgba(18,20,24,.97);border:1px solid rgba(255,255,255,.14);box-shadow:0 12px 32px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:2px;pointer-events:auto}
+.hudtray button{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 10px;border-radius:8px;color:var(--chalk);font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.05em;text-transform:uppercase;text-align:left}
+.hudtray button:hover{background:rgba(255,255,255,.06)}
+.hudtray button::after{content:"";flex:none;margin-left:auto;width:34px;height:20px;border-radius:10px;background:radial-gradient(circle at 10px 50%,#d9d4c8 6px,transparent 7px),rgba(255,255,255,.16)}
+.hudtray button.on{color:var(--orange2)}
+.hudtray button.on::after{background:radial-gradient(circle at 24px 50%,#fff 6px,transparent 7px),var(--orange)}
+#app.mini .hudbtns>button{height:40px;padding:0 10px 0 8px;gap:5px;font-size:12px}
+@media (max-width:374px){#hud .brand{font-size:14px}}
 /* engine card: the one object that represents "this engine" everywhere */
 .ecard{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:rgba(15,17,20,.72);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:6px 10px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .ecard .nm{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.03em;line-height:1.05;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
@@ -69,6 +81,8 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #rpmbox b{display:block;font-family:var(--display);font-size:28px;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 #rpmbox span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange2)}
 #flash{position:absolute;inset:0;pointer-events:none;background:rgba(226,71,60,0);transition:background .15s}
+#fpsHud{position:absolute;left:12px;top:min(119px,calc(100% - 105px));pointer-events:none;display:none;font-family:var(--mono);font-size:11px;line-height:1;color:var(--chalk);background:rgba(15,17,20,.72);padding:3px 6px;border-radius:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#fpsHud.on{display:block}#app.mini #fpsHud{top:30px}#fpsHud b{font-weight:500}#fpsHud b.warn{color:var(--warn)}#fpsHud b.crit{color:var(--crit)}#fpsHud i{font-style:normal;color:var(--muted)}
 /* panel */
 #panel{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px 16px calc(var(--tabh) + 24px);border-top:1px solid var(--rule)}
 .tabpage{display:none}.tabpage.on{display:block}
@@ -92,6 +106,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 .seg button small{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
 .seg.n11 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
+.seg.n8 button{flex:1 1 22%}
 .seg button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06));color:#fff}
 .seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center;hyphens:none;overflow-wrap:normal}
 .seg button .d{display:block;width:100%;height:14px;flex:0 0 14px;font-family:var(--mono);font-size:10px;line-height:14px;margin-top:4px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:clip;letter-spacing:0}
@@ -209,6 +224,20 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .tele{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tele div{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;display:flex;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 .tele b{font-family:var(--mono);font-weight:500;color:var(--chalk);font-size:13px;white-space:nowrap}
+/* records card (Analysis) */
+.recs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rec{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 12px;min-width:0}
+.rec.big{grid-column:1/-1;border-color:rgba(200,107,255,.45)}
+.rec>span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rec b{display:block;font-family:var(--display);font-size:22px;font-weight:700;line-height:1.1;color:var(--chalk);font-variant-numeric:tabular-nums;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec.big b{font-size:30px}
+.rec b i{font-style:normal;font-size:14px;font-weight:600;color:var(--muted);margin-left:4px}
+.rec small{display:block;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rtop{grid-column:1/-1;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 12px 4px}
+.rtop>span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.rtop div{display:grid;grid-template-columns:14px 50px 60px minmax(0,1fr) auto;gap:8px;align-items:baseline;font-family:var(--mono);font-size:13px;color:var(--muted);padding:6px 0;border-top:1px dashed var(--rule)}
+.rtop div b{color:var(--orange2);font-weight:500}.rtop div .et{color:var(--chalk)}
+.rtop div .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* combos */
 .combo{background:var(--panel);border:1px solid var(--rule);border-left:4px solid var(--info);border-radius:4px;padding:9px 12px;margin-bottom:6px}
 .combo.good{border-left-color:var(--good)}.combo.warn{border-left-color:var(--warn)}.combo.bad{border-left-color:var(--crit)}
@@ -263,6 +292,12 @@ div.up.owned .price{color:var(--good)}
 .card.brief .req.no .rv{color:var(--crit)}
 .cstat{font-size:13px;line-height:1.4;padding:6px 10px;border-radius:4px;margin-bottom:10px;background:var(--soot);color:var(--muted)}
 .cstat.ok{color:var(--good)}.cstat.one{color:var(--warn)}.cstat.one b{color:var(--chalk);font-weight:500}.cstat.far{color:var(--dim)}
+.cstat.brk{color:var(--crit)}
+.sitebar{border-left:3px solid var(--info);background:var(--soot);border-radius:0 4px 4px 0;padding:7px 10px;margin:-2px 0 10px;display:flex;flex-direction:column;gap:2px}
+.sitebar b{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--info)}
+.sitebar span{font-size:13px;color:var(--chalk)}.sitebar small{font-size:12px;color:var(--dim)}
+.sitebar .chip{margin-top:6px;min-height:44px;align-self:flex-start;color:var(--chalk);border-color:var(--info);text-align:left}
+:root[data-theme=light] .sitebar{background:var(--panel2)}
 /* career extras */
 .card.repeat{border-color:rgba(79,192,141,.5)}
 .card.repeat .client{color:var(--good)}
@@ -332,6 +367,15 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
 #tourBox .step{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--orange2);text-transform:uppercase}
 #tourBox h3{font-size:18px;font-weight:700;margin:2px 0 4px}
 #tourBox p{margin:0 0 10px;font-size:15px;color:var(--chalk);line-height:1.45}
+/* First Fire coach: the tour's spotlight look, one layer up, with its own card */
+#ff{position:absolute;inset:0;z-index:46;pointer-events:none}
+#ffSpot{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(8,9,11,.6);border:2px solid var(--orange);transition:all .3s ease;pointer-events:none;animation:ffPulse 1.8s ease-in-out infinite}
+@keyframes ffPulse{50%{border-color:var(--orange2);box-shadow:0 0 0 9999px rgba(8,9,11,.6),0 0 16px 3px rgba(255,122,26,.5)}}
+#ffBox{position:absolute;left:16px;right:16px;background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--orange);border-radius:8px;padding:12px 14px;pointer-events:auto;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:top .3s ease,bottom .3s ease}
+#ffBox .step{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--orange2);text-transform:uppercase}
+#ffBox h3{font-size:18px;font-weight:700;margin:2px 0 4px}
+#ffBox p{margin:0 0 10px;font-size:15px;color:var(--chalk);line-height:1.45}
+#ffBox .btn{min-height:46px}
 /* toast */
 #toast{position:absolute;left:50%;bottom:calc(var(--tabh) + 14px);transform:translateX(-50%) translateY(20px);background:var(--chalk);color:var(--soot);padding:10px 16px;border-radius:5px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;z-index:40}
 #toast.on{opacity:1;transform:translateX(-50%)}
@@ -353,16 +397,20 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
       <div class="brand">Prairie Engine Works<small id="weekLbl">TEST CELL</small></div>
       <div class="right">
         <div class="cash"><b id="cashLbl">$20,000</b><span id="repLbl">Rep 0</span></div>
-        <div class="hudbtns">
-          <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
-          <button id="idleBtn" aria-label="Start engine"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></button>
-          <button id="sizeBtn" aria-label="Shrink or grow the engine view"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M12 7V4M12 17v3"/><path d="M8 20h8"/><path d="M5 12h14"/><path d="M9 9l3-3 3 3"/><path d="M9 15l3 3 3-3"/></svg></button>
-          <button id="xrayBtn" aria-label="X-ray internals"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V6M12 18v-3"/></svg></button>
-          <button id="heatBtn" aria-label="Stress heat-map"><svg viewBox="0 0 24 24"><path d="M10 4a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 9v6"/></svg></button>
+      </div>
+      <div class="hudbtns">
+        <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
+        <button id="idleBtn" aria-label="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
+        <button id="viewBtn" aria-label="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
+        <div class="hudtray" id="viewTray" role="group" aria-label="View options" hidden>
+          <button id="sizeBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M12 7V4M12 17v3"/><path d="M8 20h8"/><path d="M5 12h14"/><path d="M9 9l3-3 3 3"/><path d="M9 15l3 3 3-3"/></svg><span>Small view</span></button>
+          <button id="xrayBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V6M12 18v-3"/></svg><span>X-ray</span></button>
+          <button id="heatBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M10 4a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 9v6"/></svg><span>Heat map</span></button>
         </div>
       </div>
     </div>
     <div id="tag">—</div>
+    <div id="fpsHud" aria-hidden="true"></div>
     <div id="rpmbox"><b id="rpmLbl">0</b><span>RPM</span></div>
     <div id="flash"></div>
   </div>
@@ -440,6 +488,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
       <div class="sec"><h2>Material &amp; combo interactions <span class="cnt" id="comboCnt"></span></h2><div id="combos"></div></div>
       <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
+      <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><div id="recBox"></div></div>
     </section>
 
     <!-- MARKET -->
@@ -474,6 +523,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
         <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
         <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
+        <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
         <div class="lbl"><span>Graphics</span></div>
         <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
         <div class="lbl"><span>Camera follows edits</span></div>
@@ -490,6 +540,13 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
           <div class="seg n2" id="devSeg"><button data-dev="0">Off<small>play it straight</small></button><button data-dev="1">On<small>every part, upgrade and staff · tests free</small></button></div>
           <div class="row" id="devRow" style="display:none;margin-bottom:8px"><button class="btn sm info" id="devCash" style="flex:1">+ $1,000,000</button><button class="btn sm info" id="devRep" style="flex:1">+ 500 rep</button><button class="btn sm info" id="devWeek" style="flex:1">Skip week</button></div>
           <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
+        </div>
+        <div id="fpsBox">
+          <div class="lbl"><span>Show FPS</span><b id="fpsLbl">—</b></div>
+          <div class="seg n2" id="fpsSeg"><button data-fps="1">On<small>in the engine view</small></button><button data-fps="0">Off</button></div>
+          <div class="lbl"><span>Frame-rate cap</span></div>
+          <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
+          <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
       </div>
       <div class="sec"><h2>Saves <span class="cnt" id="autoLbl">autosave on</span></h2>
@@ -514,6 +571,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
   </nav>
 
   <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
+  <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
   <div id="scrim"></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="toast"></div>
@@ -920,8 +978,33 @@ const ENGINE_SIM = (function () {
     r91: { name: "91 pump premium", sub: "R95/M85  14.7  43.4MJ", info: "Premium pump fuel. The step up from regular is worth roughly a point of compression, or a little more boost.", ron: 95, mon: 85, afr: 14.7, lhv: 43.4e6, hov: 350e3, gamma: 1.30, corrosive: 0, costL: 1.65 },
     r94: { name: "98 RON super", sub: "R98/M88  14.7  43.4MJ", info: "The best pump fuel most places sell. It keeps its knock resistance when the charge gets hot, which is exactly when it matters.", ron: 98, mon: 88, afr: 14.7, lhv: 43.4e6, hov: 350e3, gamma: 1.30, corrosive: 0, costL: 1.95, req: "shop1" },
     race100: { name: "Leaded race 100", sub: "R104/M96 14.5 43.5MJ", info: "Leaded race gasoline that stays stable under sustained boost and heat. It poisons catalysts and oxygen sensors.", ron: 104, mon: 96, afr: 14.5, lhv: 43.5e6, hov: 340e3, gamma: 1.30, corrosive: 0, costL: 6.50, req: "shop2" },
-    e85: { name: "E85 ethanol blend", sub: "R105/M88 9.8 29.2MJ", info: "Ethanol takes a lot of heat to evaporate, so it cools the charge on the way in and resists knock beautifully. You have to burn a third more of it.", ron: 105, mon: 88, afr: 9.8, lhv: 29.2e6, hov: 760e3, gamma: 1.32, corrosive: 0.4, costL: 1.25, req: "shop1" },
+    e85: { name: "E85 ethanol blend", sub: "R105/M88 9.8 29.2MJ", info: "Ethanol takes a lot of heat to evaporate, so it cools the charge on the way in and resists knock beautifully. You have to flow about forty percent more of it, so the injectors and the pump have to grow.", ron: 105, mon: 88, afr: 9.8, lhv: 29.2e6, hov: 760e3, gamma: 1.32, corrosive: 0.4, costL: 1.25, req: "shop1" },
     methanol: { name: "Methanol M100", sub: "R109/M89 6.45 19.9MJ", info: "That enormous evaporative cooling is where most of the power comes from. It pulls water out of the air and corrodes aluminium, magnesium and lead overlays.", ron: 109, mon: 89, afr: 6.45, lhv: 19.9e6, hov: 1100e3, gamma: 1.34, corrosive: 1.0, costL: 1.10, req: "shop2" }
+  };
+
+  /* ---- fuel injectors (cc/min at 3 bar across the nozzle, one per port unless noted) ----
+     The regulator is boost-referenced, so the pressure across the nozzle and the flow
+     hold under boost. cost is per injector.                                          */
+  OPT.injectors = {
+    i240: { name: "240 cc stock", sub: "240 cc/min", info: "The small high-impedance injectors an economy engine leaves the factory with. Plenty for a hundred-odd horsepower on pump fuel, nowhere near enough for alcohol.", cc: 240, cost: 0 },
+    i440: { name: "440 cc", sub: "440 cc/min", info: "The size a factory turbo four or a hot six runs: about fifty-five horsepower a cylinder on petrol with the duty cycle still comfortable.", cc: 440, cost: 55 },
+    i650: { name: "650 cc", sub: "650 cc/min", info: "The usual first upgrade: the flow for a boosted four on petrol, or a healthy naturally aspirated engine on E85.", cc: 650, cost: 75 },
+    i1000: { name: "1000 cc", sub: "1000 cc/min", info: "The injector half the tuning world runs. It still idles cleanly on a modern driver, and it is where E85 on a boosted engine starts to make sense.", cc: 1000, cost: 110 },
+    i1650: { name: "1650 cc", sub: "1650 cc/min", info: "High-flow injectors for serious boost on E85. Idle and cold start take careful calibration, because the shortest pulse is already a lot of fuel.", cc: 1650, cost: 150, req: "boost" },
+    i2200: { name: "2200 cc", sub: "2200 cc/min", info: "The largest port injector that still behaves at part load. Four-figure E85 engines and methanol engines live here.", cc: 2200, cost: 190, req: "boost" },
+    i2200x2: { name: "2 \u00d7 2200 cc", sub: "2 a port \u00b7 4400 cc", info: "Two 2200s per cylinder, one at the port and one up the runner, staged in as the load builds. This is how an injected methanol engine gets more than twice a petrol engine's fuel into the cylinder.", cc: 2200, perCyl: 2, cost: 190, req: "shop2" },
+    i2200x4: { name: "4 \u00d7 2200 cc", sub: "4 a port \u00b7 8800 cc", info: "Two at the port and two more in the hat above the blower or throttle, sixteen or more on a V8. Only a three-thousand horsepower alcohol door car needs this much.", cc: 2200, perCyl: 4, cost: 190, req: "race" }
+  };
+
+  /* ---- fuel pump (L/h free flow at 3 bar). An in-tank pump pushes against base
+     pressure plus boost and flows less as boost rises (dropBar per bar); the belt
+     pump is a gear pump whose flow follows engine speed (rpmRef).             ---- */
+  OPT.fuelPump = {
+    p190: { name: "Stock pump", sub: "190 L/h in-tank", info: "The factory pump in the tank: enough for the engine it came with and a little more. Under boost the rail pressure rises with the manifold, and it flows less.", lph: 190, dropBar: 0.13, cost: 0, massKg: 0, short: "stock pump" },
+    p255: { name: "255 L/h pump", sub: "255 L/h in-tank", info: "The classic in-tank upgrade, good for around five hundred horsepower on petrol. Its flow falls off as boost raises the pressure it has to push against.", lph: 255, dropBar: 0.13, cost: 140, massKg: 0, short: "255 L/h pump" },
+    p340: { name: "340 L/h pump", sub: "340 L/h in-tank", info: "A high-flow in-tank pump with a bigger motor. Around six hundred horsepower on petrol, or four and a half on E85 at moderate boost.", lph: 340, dropBar: 0.14, cost: 230, massKg: 0, short: "340 L/h pump" },
+    twin450: { name: "Twin 450 pumps", sub: "900 L/h \u00b7 surge tank", info: "Two 450 L/h pumps in a surge tank, the second one switched in under boost. Four-figure power on E85, as long as the wiring can carry the current.", lph: 900, dropBar: 0.14, cost: 950, massKg: 0, req: "shop2", short: "twin 450s" },
+    mech: { name: "Belt-drive pump", sub: "4000 L/h at 8000 rpm", info: "A gear pump driven off the crank, the way alcohol drag engines are fed. Its flow rises with engine speed and barely notices rail pressure, so it never runs dry at the top of the pull.", lph: 4000, dropBar: 0.02, rpmRef: 8000, cost: 2600, massKg: 3, req: "shop2", short: "belt pump" }
   };
 
   /* ---- engine oil (kinematic viscosity at 100 C, viscosity index) ---- */
@@ -1056,6 +1139,8 @@ const ENGINE_SIM = (function () {
     {
       title: "Fuel & tune", fields: [
         { key: "fuel", type: "seg", label: "Fuel", optTable: "fuel" },
+        { key: "injectors", type: "seg", label: "Injectors", optTable: "injectors", showIf: (c) => c.intake !== "carb" },
+        { key: "fuelPump", type: "seg", label: "Fuel pump", optTable: "fuelPump" },
         { key: "nitrous", type: "seg", label: "Nitrous", optTable: "nitrous" },
         { key: "timing", type: "slider", label: "Ignition vs MBT", min: -10, max: 15, step: 0.25, nudge: 0.25, unit: "°", fmt: fq },
         { key: "lambda", type: "slider", label: "Lambda", min: 0.75, max: 1.05, step: 0.01, nudge: 0.01, unit: "λ", fmt: f2 }
@@ -1104,6 +1189,7 @@ const ENGINE_SIM = (function () {
     bearings: "bimetal", gasket: "composite", studs: "bolts_tty",
     intake: "single_tb", asp: "na", turboSize: "medium", turbineMat: "cast_iron",
     ic: "none", boost: 0.6, nitrous: "none", fuel: "r91", timing: 0, lambda: 0.93,
+    injectors: "i240", fuelPump: "p190",
     oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "none",
     cooling: "std", exhaust: "cast_tubular", cover: "black",
     launchCtl: "none", twoStepRpm: 4000, launchRetard: 20, transBrake: "none"
@@ -1254,6 +1340,8 @@ const ENGINE_SIM = (function () {
   const K_PMAX   = 1.40;    // Pmax = K_PMAX * IMEP * sqrt(CR)
   const K_CROWN  = 21.9;    // crown temperature rise coefficient
   const CP_AIR   = 1005;    // J/kg/K
+  const K_FUEL   = 1.30;    // fuel flow per unit of modelled air: real WOT BSFC (cylinder spread,
+                            //   wall film, transient enrichment) - ~0.5 lb/hp/h NA petrol
 
   function ottoEta(cr, gamma) { return 1 - Math.pow(cr, 1 - gamma); }
 
@@ -1262,6 +1350,21 @@ const ENGINE_SIM = (function () {
     const fuelPerAir = 1 / (fu.afr * lambda);
     return 0.55 * fu.hov * fuelPerAir / CP_AIR;
   }
+
+  /* Fuel delivery. Fuel density in kg/L (methanol / E85 / petrol). A pump pushes against
+     base pressure plus boost, so an in-tank pump flows less as boost rises; a belt pump
+     flows with engine speed. Past the knee an injector is all but static (or the rail
+     pressure sags) and the extra fuel the tune asks for never arrives.            */
+  function fuelDensity(fu) { return fu.afr < 8 ? 0.792 : fu.afr < 12 ? 0.782 : 0.745; }
+  function pumpLphAt(fp, rpm, bBar) {
+    return fp.lph * (fp.rpmRef ? clamp(rpm / fp.rpmRef, 0.15, 1.5) : 1) * clamp(1 - fp.dropBar * Math.max(0, bBar), 0.3, 1);
+  }
+  function deliveredFrac(x, knee) {
+    if (x <= knee) return 1;
+    return (knee + (1 - knee) * (1 - Math.exp(-(x - knee) / (1 - knee)))) / x;
+  }
+  const INJ_KNEE = 0.88, PUMP_KNEE = 0.95;     // where delivery starts to fall behind demand
+  const INJ_MAX = 0.90, PUMP_MAX = 0.95;       // test limits: duty and pump load
 
   /* Combustion efficiency vs lambda: best power near 0.87, best economy lean */
   function etaComb(lambda) {
@@ -1329,6 +1432,15 @@ const ENGINE_SIM = (function () {
     let maxPmax = 0, maxPmaxRpm = 0, maxImep = 0, maxEgt = 0, maxRetard = 0;
     let maxChargeC = -273, maxBoost = 0, maxFlowLb = 0, flowAtPeak = 0;
     let fuelUsedProxy = 0, ptsProxy = 0;
+    /* ---- fuel system: what reaches the cylinder, not just what the tune asks for ---- */
+    const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240;
+    const fpump = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
+    const portInj = cfg.intake !== "carb";                  // a carburettor meters through jets
+    const injCc = inj.cc * (inj.perCyl || 1);               // cc/min per cylinder
+    const fuelRho = fuelDensity(O.fu);
+    const lamCurve = [], fuelLph = [];
+    let dutyPk = 0, dutyRpm = 0, ccCylPk = 0, pumpPk = 0, pumpRpm = 0, pumpCapPk = 0, pumpNeedPk = 0;
+    let lamTop = cfg.lambda, fdTop = 1, leanRpm = 0;
 
     for (let rpm = 1000; rpm <= redline + 0.5; rpm += 100) {
       /* ---- charge path ---------------------------------------------- */
@@ -1364,11 +1476,31 @@ const ENGINE_SIM = (function () {
       /* ---- breathing -------------------------------------------------- */
       const ve = veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
 
+      /* ---- fuel delivery ------------------------------------------------
+         The tune asks for air x fuel/air at the commanded lambda; nitrous
+         fuel comes off the same pump. What the injectors and pump cannot
+         deliver leans the mixture: lamE is what the cylinder actually burns. */
+      const airKgS = ve * rhoCharge * g.Vd * rpm / 120;
+      const needLph = K_FUEL * airKgS / (O.fu.afr * cfg.lambda) * 3600 / fuelRho;
+      const n2oLph = (n2oOn && rpm >= n2oWin)
+        ? n2oHp * 745.7 * (O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1) / (0.26 * O.fu.lhv) * 3600 / fuelRho : 0;
+      const ccCyl = needLph * 1000 / 60 / L.n;
+      const duty = portInj ? ccCyl / injCc : 0;
+      const pumpCap = pumpLphAt(fpump, rpm, bBar);
+      const pumpLoad = (needLph + n2oLph) / pumpCap;
+      const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : 1, deliveredFrac(pumpLoad, PUMP_KNEE));
+      const lamE = Math.min(1.5, cfg.lambda / fd);
+      lamCurve.push(lamE); fuelLph.push(needLph + n2oLph);
+      if (ccCyl > ccCylPk) ccCylPk = ccCyl;
+      if (duty > dutyPk) { dutyPk = duty; dutyRpm = rpm; }
+      if (pumpLoad > pumpPk) { pumpPk = pumpLoad; pumpRpm = rpm; pumpCapPk = pumpCap; pumpNeedPk = needLph + n2oLph; }
+      if (lamE > lamTop) { lamTop = lamE; fdTop = fd; leanRpm = rpm; }
+
       /* ---- knock ------------------------------------------------------ */
       // dynamic compression falls with cam overlap (late intake valve closing)
       const dyn = 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
-      const chargeC = Tcharge - 273.15;
+      const chargeC = (fd < 1 ? Math.max(air.T - 5, Tc3 - evapK * fd) : Tcharge) - 273.15;   // less fuel, less evaporative cooling
       let onReq = 89.6 + 3.0 * (crEff - 10.55)
         + 0.095 * (g.b - 86)
         + 0.135 * (chargeC - 35)
@@ -1376,7 +1508,7 @@ const ENGINE_SIM = (function () {
         + 0.85 * cfg.timing
         - O.headMat.octane
         - 5.5 * (O.hd.burn - 1)
-        - 6.0 * clamp(1.0 - cfg.lambda, -0.05, 0.22);
+        - 6.0 * clamp(1.0 - lamE, -0.05, 0.22);
       onReq -= O.block.k > 100 ? 0.4 : 0;                 // alu block pulls heat too
       if (n2oOn && rpm >= n2oWin) onReq += clamp(9.0 * n2oBite, 2, 15) * (O.n2o.prog ? 0.85 : 1);  // oxygen in the chamber, not just air
       const margin = fuelON - onReq;
@@ -1390,8 +1522,8 @@ const ENGINE_SIM = (function () {
         * (1 + (O.hd.burn - 1) * 0.55)
         * (1 - 0.0011 * (g.b - 86))
         / (1 + 0.0018 * sq(effTiming));
-      const fuelPerAir = 1 / (O.fu.afr * cfg.lambda);
-      let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * etaComb(cfg.lambda) * eta_th * (1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring seal sets blow-by
+      const fuelPerAir = 1 / (O.fu.afr * lamE);
+      let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * etaComb(lamE) * eta_th * (1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring seal sets blow-by
       /* nitrous: a fixed power addition above the window, so it appears as a
          fixed torque that falls away with rpm exactly as a real shot does   */
       let n2oFrac = 0;
@@ -1441,10 +1573,10 @@ const ENGINE_SIM = (function () {
       const hp = pw / 745.7;
 
       /* ---- exhaust gas temperature -------------------------------------- */
-      const lamT = clamp((cfg.lambda - 0.75) / 0.28, 0, 1.12);
+      const lamT = clamp((lamE - 0.75) / 0.28, 0, 1.12);
       let egt = 620 + 340 * lamT + 13 * retard + 0.010 * (rpm - 3000)
         + 5.5 * clamp(bmepPa / 1e5 - 11, -6, 22) + 40 * bBar + 8 * (11 - cfg.cr)
-        - 0.35 * (evapK) - 0.10 * (chargeC - 35) + 260 * n2oFrac;
+        - 0.35 * (evapK * fd) - 0.10 * (chargeC - 35) + 260 * n2oFrac;
       egt = clamp(egt, 380, 1150);
 
       rpms.push(rpm);
@@ -1471,20 +1603,21 @@ const ENGINE_SIM = (function () {
     let knockOnReq = 0, knockMargin = 0;
     {
       const rpm = maxPmaxRpm || peakTqRpm || 3000;
+      const lamK = lamCurve[rpms.indexOf(rpm)] || cfg.lambda, fdK = cfg.lambda / lamK;
       const bBar = boostAt(rpm, bm, cfg, g);
       const pManAbs0 = air.p + bBar * 1e5;
       const PR = pManAbs0 / air.p;
       let etaC = bm.kind === "roots" ? 0.58 : bm.kind === "screw" ? 0.70 : bm.kind === "centrifugal" ? 0.745 : 0.72;
       const Tc2 = bBar > 0.001 ? air.T * (1 + (Math.pow(PR, 0.2857) - 1) / etaC) : air.T;
       const Tc3 = bBar > 0.001 ? Tc2 - O.icc.eff * (Tc2 - air.T) : air.T;
-      const Tcharge = Math.max(air.T - 5, Tc3 - evapK);
+      const Tcharge = Math.max(air.T - 5, Tc3 - evapK * fdK);
       const pMan = boosted ? pManAbs0 - O.icc.dp * 1e5 : air.p;
       const dyn = 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
       const chargeC = Tcharge - 273.15;
       knockOnReq = 89.6 + 3.0 * (crEff - 10.55) + 0.095 * (g.b - 86) + 0.135 * (chargeC - 35)
         + 0.10 * (env.coolantC - 90) + 0.85 * cfg.timing - O.headMat.octane
-        - 5.5 * (O.hd.burn - 1) - 6.0 * clamp(1.0 - cfg.lambda, -0.05, 0.22);
+        - 5.5 * (O.hd.burn - 1) - 6.0 * clamp(1.0 - lamK, -0.05, 0.22);
       knockOnReq -= O.block.k > 100 ? 0.4 : 0;
       knockMargin = fuelON - knockOnReq + (shop.octane || 0) - 0.8 * (O.ink.wet || 0);
     }
@@ -1559,8 +1692,9 @@ const ENGINE_SIM = (function () {
     const heatIdx = Math.pow(bmepPk * Math.sqrt(peakHpRpm / 1000), 0.62);
     let crownC = env.coolantC + K_CROWN * heatIdx * (140 / O.pis.k)
       * Math.pow(g.b / 86, 0.55) - O.sq.crownC - (O.pis.crownCool || 0);
-    crownC -= 0.22 * evapK;                                        // alcohols cool the crown too
-    crownC -= 150 * clamp(1 - cfg.lambda, 0, 0.25);                // enrichment is crown cooling
+    crownC -= 0.22 * evapK * fdTop;                                // alcohols cool the crown too
+    crownC -= 150 * clamp(1 - lamTop, 0, 0.25);                    // enrichment is crown cooling (what arrived, at the leanest point)
+    crownC += 200 * clamp(lamTop - cfg.lambda, 0, 0.35);           // a starved rail leans the cylinders unevenly; the worst one melts
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
     crownC = clamp(crownC, env.coolantC + 40, 900);
     const skirtC = 0.22 * crownC + 0.78 * (env.coolantC + 15);
@@ -1653,6 +1787,18 @@ const ENGINE_SIM = (function () {
       tests.push({ id: id, name: name, sub: sub, util: util, status: status, physics: physics, fix: fix });
     }
 
+    /* fuel delivery: injector duty and pump load against what the tune asks for */
+    const injUtil = portInj ? dutyPk / INJ_MAX : 0, pumpUtil = pumpPk / PUMP_MAX;
+    const leanTop = lamTop > cfg.lambda + 0.005;
+    T("fuel_delivery", "Fuel delivery", injUtil >= pumpUtil ? Math.round(dutyPk * 100) + "% duty \u00b7 max " + Math.round(INJ_MAX * 100)
+        : Math.round(pumpNeedPk) + " / " + Math.round(pumpCapPk) + " L/h",
+      Math.max(injUtil, pumpUtil),
+      (portInj ? "At " + dutyRpm + " rpm each cylinder wants " + Math.round(ccCylPk) + " cc/min of " + O.fu.name + " at \u03bb " + cfg.lambda.toFixed(2) + "; the " + inj.name.replace(" stock", "") + " injectors " + (dutyPk > 1 ? "would have to be open " + Math.round(dutyPk * 100) + "% of the time, which they cannot" : "are open " + Math.round(dutyPk * 100) + "% of the time") + ", and past about " + Math.round(INJ_MAX * 100) + "% an injector is all but static. "
+        : "A carburettor meters through its jets, so only the pump counts here. ")
+      + "At " + pumpRpm + " rpm the " + fpump.short + " can supply about " + Math.round(pumpCapPk) + " L/h" + (maxBoost > 0.05 && !fpump.rpmRef ? " against the extra rail pressure that boost adds" : "") + ", and the engine burns " + Math.round(pumpNeedPk) + " L/h there."
+      + (leanTop ? " The top of the pull goes lean: \u03bb " + lamTop.toFixed(2) + " at " + leanRpm + " rpm where the tune asked for " + cfg.lambda.toFixed(2) + " \u2014 the exhaust and the piston crowns take the heat." : ""),
+      "Fit bigger injectors or a bigger pump. Alcohol needs far more fuel than petrol for the same air, and boost makes an in-tank pump's job harder.");
+
     const detUtil = (0.95 - knockMargin * 0.062) * (1 + 0.45 * (O.pis.brittle || 0) * clamp(-knockMargin / 4, 0, 1));
     T("detonation", "Detonation margin", (knockMargin >= 0 ? "+" : "") + knockMargin.toFixed(1) + " ON margin",
       detUtil,
@@ -1665,7 +1811,7 @@ const ENGINE_SIM = (function () {
     const hotSpotLimit = 640 + 4.0 * (fuelON - 91) + (O.sq.crownC > 0 ? 15 : 0);
     T("preignition_egt", "Pre-ignition / EGT", hotSpotC.toFixed(0) + " / " + hotSpotLimit.toFixed(0) + " °C",
       hotSpotC / hotSpotLimit,
-      "Peak EGT is " + maxEgt.toFixed(0) + " °C at λ " + cfg.lambda.toFixed(2) + " with " + maxRetard.toFixed(1) + "° of knock retard; the hottest chamber surface works out at " + hotSpotC.toFixed(0) + " °C against a " + hotSpotLimit.toFixed(0) + " °C surface-ignition threshold for this fuel.",
+      "Peak EGT is " + maxEgt.toFixed(0) + " °C at λ " + lamTop.toFixed(2) + " with " + maxRetard.toFixed(1) + "° of knock retard; the hottest chamber surface works out at " + hotSpotC.toFixed(0) + " °C against a " + hotSpotLimit.toFixed(0) + " °C surface-ignition threshold for this fuel.",
       "Richen the mixture, remove retard by fixing the knock problem, or fit piston cooling jets.");
 
     const mpsLimit = O.rod.mpsLim || (O.rod.E < 150 ? 27.5 : O.rod.fatigue >= 620 ? 27.0 : O.rod.fatigue >= 430 ? 25.0 : O.rod.fatigue >= 330 ? 21.5 : 19.5);
@@ -1895,6 +2041,7 @@ const ENGINE_SIM = (function () {
     kg += O.headMat.massFac * O.hd.massFac * L.n * 3.4;
     kg += (bm.kind === "turbo" ? bm.units * 9 * (O.ts.maxFlow > 100 ? 1.8 : 1) : bm.kind === "roots" ? 22 : bm.kind === "screw" ? 26 : bm.kind === "centrifugal" ? 11 : 0);
     kg += O.icc.massKg + O.osys.massKg + O.cool.massKg + O.exh.massKg * (L.banks) + 14;
+    kg += fpump.massKg || 0;                                         // a belt pump hangs off the engine; in-tank ones live in the car
     kg = Math.round(kg);
 
     const perCyl = O.pis.cost + O.ring.cost + O.rod.cost + O.rb.cost
@@ -1904,7 +2051,8 @@ const ENGINE_SIM = (function () {
       + L.n * perCyl + O.crk.cost + O.dmp.cost + O.brg.cost + O.gsk.cost + O.std.cost
       + O.ink.cost + O.asp.cost + (boosted ? O.ts.cost + O.tm.cost + O.icc.cost : 0)
       + O.oil.cost + O.osys.cost + O.sq.cost + O.cool.cost + O.exh.cost * L.banks + O.cov.cost
-      + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost);
+      + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
+      + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + fpump.cost;
     const cost = Math.round((0.155 * rawCost + 120 * L.n + 250) * (shop.costFac || 1));
 
     /* WOT indicated work at the cruise point, used as the 100%-load reference */
@@ -1970,6 +2118,7 @@ const ENGINE_SIM = (function () {
     if (!boosted && vm.rpmCam > redline * 0.95) notes.push("The cam is timed for more rpm than the redline allows — you are paying for duration you never use.");
     if (inRes) notes.push("A " + majorOrder + "th-order torsional resonance sits at " + resRpm.toFixed(0) + " rpm, inside the rev range.");
     if (hotMm < 0.030) notes.push("Running clearance is only " + (hotMm * 1000).toFixed(0) + " µm — a cold-start full-throttle pull will scuff it.");
+    if (leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
     if (env.altitudeM > 1500) notes.push("At " + env.altitudeM + " m the air is " + ((1 - air.rho / 1.2) * 100).toFixed(0) + "% thinner than sea level; correctedHp is the SAE-normalised figure.");
 
     const correctedHp = peakHp * j1349(air.pd, env.ambientC);
@@ -1989,6 +2138,8 @@ const ENGINE_SIM = (function () {
         torsionalMarginPct: 100 * (1 - torUtil), wallThicknessMm: wallThicknessMm
       },
       knock: { onRequired: knockOnReq, margin: knockMargin, retardDeg: maxRetard },
+      fuel: { duty: dutyPk, dutyRpm: dutyRpm, ccCyl: ccCylPk, load: pumpPk, loadRpm: pumpRpm, capLph: pumpCapPk, needLph: pumpNeedPk,
+        injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph },
       tests: tests, fails: fails, rel: Math.round(rel * 10) / 10,
       lifeHours: Math.round(lifeHours), firstToFail: firstToFail,
       racePasses: racePasses, raceSpec: raceSpec,
@@ -2242,7 +2393,31 @@ const ENGINE_SIM = (function () {
     }
     if (cfg.fuel === "e85" && boost > 1.2) {
       add("good", "E85 is a boosted engine's cheat code",
-        "105 RON equivalent plus 760 kJ/kg of evaporative cooling means you can run 2 bar on an iron block without retarding a degree. Budget 30% more fuel flow and ethanol-safe seals.");
+        "105 RON equivalent plus 760 kJ/kg of evaporative cooling means you can run 2 bar on an iron block without retarding a degree. Budget over 40% more fuel flow through the injectors and pump, and ethanol-safe seals.");
+    }
+    /* --- fuel delivery: injectors and pump against what the tune asks for --- */
+    const fq = quick.fuel;
+    if (fq) {
+      const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240, pmp = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
+      const injWord = "the " + (inj.perCyl > 1 ? inj.perCyl + " \u00d7 " : "") + inj.cc + "s";
+      const vol = (14.7 / fu.afr) * (0.745 / fuelDensity(fu));        // fuel volume per unit of air, against petrol
+      const alky = vol < 1.2 ? "" : cfg.fuel === "methanol" ? "Methanol needs about " + vol.toFixed(1) + "\u00d7 the fuel of petrol for the same air"
+        : fu.name.split(" ")[0] + " needs about " + Math.round((vol - 1) * 100) + "% more fuel than petrol for the same air";
+      const short = fq.injUtil > 0.8 || fq.pumpUtil > 0.8;
+      const fit = short ? fitFuel(cfg) : null;
+      const fitWord = fit ? " The smallest set that feeds it with margin: " + (fq.portInj ? OPT.injectors[fit.injectors].name.replace(" stock", "") + " injectors and " : "") + "the " + OPT.fuelPump[fit.fuelPump].short + "." : "";
+      if (fq.injUtil > 1) add("bad", "Out of injector",
+        (alky ? alky + " \u2014 " : "At " + fq.dutyRpm + " rpm ") + injWord + (fq.duty > 1 ? " would need " : " are at ") + Math.round(fq.duty * 100) + "% duty" + (alky ? " at " + fq.dutyRpm + " rpm" : "") + ". Past about 90% an injector is all but static, so the top of the pull goes lean (\u03bb " + fq.lamTop.toFixed(2) + " where the tune asks for " + cfg.lambda.toFixed(2) + "), and lean under load is how pistons melt." + fitWord);
+      else if (fq.injUtil > 0.8) add("warn", "Injectors near their limit",
+        (alky ? alky + "; " : "") + injWord + " are at " + Math.round(fq.duty * 100) + "% duty at " + fq.dutyRpm + " rpm. A cold day or a little more boost and they run out \u2014 the next size up costs very little." + fitWord);
+      if (fq.pumpUtil > 1) add("bad", "The fuel pump can't keep up",
+        (boosted && !pmp.rpmRef ? "With " + boost.toFixed(1) + " bar of boost on top of the base pressure, the " : "The ") + pmp.short + " can only supply about " + Math.round(fq.capLph) + " L/h against the " + Math.round(fq.needLph) + " L/h this engine burns at " + fq.loadRpm + " rpm. The rail pressure sags and every cylinder leans out together." + fitWord);
+      else if (fq.pumpUtil > 0.8) add("warn", "Fuel pump near its limit",
+        "The " + pmp.short + " is supplying " + Math.round(fq.load * 100) + "% of what it can at " + fq.loadRpm + " rpm" + (boosted && !pmp.rpmRef ? ", and every extra bar of boost takes flow away from it" : "") + "." + fitWord);
+      if (alky && !short) add("good", "Fuel system sized for alcohol",
+        alky + ", and " + (fq.portInj ? injWord + " at " + Math.round(fq.duty * 100) + "% duty with " : "") + "the " + pmp.short + " behind them have room for it.");
+      if (fq.portInj && fq.duty < 0.12 && inj.cc * (inj.perCyl || 1) >= 1650) add("info", "A lot of injector for this engine",
+        "At full load " + injWord + " are open only " + Math.round(fq.duty * 100) + "% of the time, so at idle the pulse is barely longer than the time the injector takes to open. A modern driver copes, but low-speed fuelling gets coarse.");
     }
     if (cfg.fuel === "methanol" && cfg.cr < 12 && !boosted) {
       add("info", "Methanol without the compression to use it",
@@ -2352,6 +2527,31 @@ const ENGINE_SIM = (function () {
     if (cfg.transBrake === "trans_brake" && OPT.asp[cfg.asp].kind === "turbo")
       add("good", "Trans-brake on a turbo engine", "Held on the converter at full load, the engine drives the turbo as if the car were already moving, so it leaves on boost without needing as much retard.");
     return out;
+  }
+
+  /* =====================================================================
+     15b. fitFuel() — the smallest injectors and pump that feed a build with
+          margin (fuel test at or under 0.8: duty under 72%, pump under 76%).
+          Sizes presets that carry no fuel parts, and fits builds saved
+          before the fuel system existed so they don't suddenly lean out.
+     ===================================================================== */
+  function fitFuel(cfg, env) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const ik = Object.keys(OPT.injectors), pk = Object.keys(OPT.fuelPump);
+    // what the tune asks for does not depend on the parts, so one run with the biggest set sizes both
+    const r = simulate(Object.assign({}, cfg, { injectors: ik[ik.length - 1], fuelPump: pk[pk.length - 1] }), env || DEFAULT_ENV);
+    const f = r.fuel, lim = 0.8;
+    let injectors = ik[ik.length - 1], fuelPump = pk[pk.length - 1];
+    for (const k of ik) {
+      const o = OPT.injectors[k];
+      if (!f.portInj || f.ccCyl / (o.cc * (o.perCyl || 1)) / INJ_MAX <= lim) { injectors = k; break; }
+    }
+    for (const k of pk) {
+      let worst = 0;
+      for (let i = 0; i < r.rpms.length; i++) worst = Math.max(worst, f.lph[i] / pumpLphAt(OPT.fuelPump[k], r.rpms[i], r.boostCurve[i]));
+      if (worst / PUMP_MAX <= lim) { fuelPump = k; break; }
+    }
+    return { injectors: injectors, fuelPump: fuelPump };
   }
 
   /* =====================================================================
@@ -3217,6 +3417,32 @@ const ENGINE_SIM = (function () {
     })
   ];
 
+  /* ---- fuel hardware for the presets: [injectors, pump]. The smallest set that feeds each one with
+     margin (duty under ~72%, pump under ~76%), which lands on the real part where it is well known:
+     RB26 444s and early 2JZ 440s, 565 cc on the EJ257 and 560s on the Evo (650 here), the Hellcat's
+     twin pumps, and belt pumps on the alcohol and nitrous drag engines. A preset that carries its
+     own fuel parts keeps them; one missing from this list is sized by fitFuel() as it loads. ---- */
+  const PRESET_FUEL = {
+    g10: ["i240", "p190"], "4ac": ["i240", "p190"], "22re": ["i240", "p190"], ea82: ["i240", "p190"],
+    l36: ["i440", "p190"], k20a: ["i440", "p190"], "2jzgte": ["i440", "p190"], rb26: ["i440", "p190"],
+    ls3: ["i440", "p255"], coyote: ["i440", "p190"], ej257: ["i650", "p190"], f6_38: ["i650", "p190"],
+    s54: ["i440", "p190"], v8fp45: ["i650", "p255"], v12_65: ["i650", "p340"], v10_52: ["i440", "p255"],
+    i3_1000: ["i440", "p190"], ea888: ["i650", "p190"], m133: ["i1000", "p255"], hemi64: ["i650", "p255"],
+    i5_25t: ["i650", "p255"], outlaw_radial: ["i2200x2", "mech"], outlaw_promod: ["i2200x4", "mech"], d15b: ["i240", "p190"],
+    ea211: ["i440", "p190"], "2zr": ["i240", "p190"], skyg25: ["i440", "p190"], kent: ["i240", "p190"],
+    lima23: ["i240", "p190"], ford300: ["i440", "p190"], vortec43: ["i440", "p190"], "1gr": ["i440", "p190"],
+    godzilla73: ["i440", "p190"], sbc350: ["i240", "p190"], f20c: ["i440", "p190"], "4age20v": ["i440", "p190"],
+    "4g63": ["i650", "p190"], b58: ["i650", "p190"], vr38: ["i1000", "p340"], "9a2tt": ["i650", "p255"],
+    m156: ["i440", "p190"], voodoo: ["i650", "p255"], hellcat: ["i1000", "twin450"], lt4: ["i650", "p340"],
+    s85: ["i440", "p255"], "1lr": ["i440", "p255"], dfv: ["i440", "p190"], wrc16: ["i1000", "p255"],
+    gt3r: ["i650", "p255"], valkyrie: ["i650", "p340"], k24_1000: ["i2200x2", "mech"], jz_1500: ["i2200x2", "mech"],
+    n2o632: ["i240", "mech"], pro540: ["i2200x2", "mech"], compound402: ["i2200x4", "mech"]
+  };
+  for (const p of PRESETS) {
+    const f = PRESET_FUEL[p.id];
+    if (!p.cfg.injectors || !p.cfg.fuelPump) Object.assign(p.cfg, f ? { injectors: f[0], fuelPump: f[1] } : fitFuel(p.cfg));
+  }
+
   /* =====================================================================
      18.  Export
      ===================================================================== */
@@ -3559,6 +3785,7 @@ const ENGINE_SIM = (function () {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
     DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, TYRES: TYRES, AERO: AERO,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
+    fitFuel: fitFuel,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel
   };
 })();
@@ -6728,11 +6955,13 @@ function buildBank(B, p, extras){
   setZone(0);
   var inZ = Z(-headW*0.52);
   if(p.intake!=="carb"){
-    B.add("malu", CYL(bore*0.055,bore*0.055,bankLen*0.94,12,false,3.0), 0, headY+headH*0.72, inZ+Z(-bore*0.16), 0,0,PI/2);
+    /* bigger injectors are fatter bodies on a fatter rail */
+    var injK = ({i440:1.06, i650:1.12, i1000:1.2, i1650:1.3, i2200:1.38, i2200x2:1.38, i2200x4:1.38})[p.cfg && p.cfg.injectors] || 1, railK = 1 + (injK-1)*0.9;
+    B.add("malu", CYL(bore*0.055*railK,bore*0.055*railK,bankLen*0.94,12,false,3.0), 0, headY+headH*0.72, inZ+Z(-bore*0.16), 0,0,PI/2);
     for(i=0;i<per;i++){
       var ix=-bankLen/2 + bspace*(i+0.5);
-      B.add("blackPlast", CYL(bore*0.048,bore*0.038,bore*0.20,10), ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0);   /* nozzle tipped toward the port */
-      B.add("dark", BOX(bore*0.09,bore*0.07,bore*0.06), ix, headY+headH*0.78, inZ+Z(-bore*0.16));
+      B.add("blackPlast", CYL(bore*0.048*injK,bore*0.038*injK,bore*0.20*injK,10), ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0);   /* nozzle tipped toward the port */
+      B.add("dark", BOX(bore*0.09*injK,bore*0.07,bore*0.06*injK), ix, headY+headH*0.78, inZ+Z(-bore*0.16));
       if(DET>=2){
         B.add("steel", BOX(bore*0.022, bore*0.05, bore*0.075), ix+bore*0.055, headY+headH*0.70, inZ+Z(-bore*0.15));    /* retaining clip */
         B.add("connGrey", BOX(bore*0.07, bore*0.035, bore*0.05), ix, headY+headH*0.78+bore*0.045, inZ+Z(-bore*0.16));    /* connector latch */
@@ -9157,9 +9386,33 @@ function exhaustPoint(){
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
 }
 
-function loop(){
+/* frame pacing. rAF fires at the display rate: 120 Hz on a ProMotion iPad or a gaming phone.
+   With a cap set, a vsync that comes too soon after the last drawn frame is skipped and the clock
+   keeps running, so the next frame's dt covers the gap. The drawn frames follow a 1/cap grid, so a
+   90 or 144 Hz screen still averages the cap instead of dropping to half. Every rAF loop that asks
+   in the same vsync gets the same answer (they share the timestamp), so the app's tick skips with it. */
+var capMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
+function frameDue(now){
+  if(now===gateT) return gateOk;
+  gateT=now; var el=now-lastDraw;
+  gateOk = !capMs || el<0 || el>=capMs-1;
+  if(gateOk) lastDraw = (!capMs || el<0 || el>2*capMs) ? now : Math.min(now, lastDraw+capMs);
+  return gateOk;
+}
+/* fps meter: drawn frames over ~0.5 s of rAF timestamps; a gap over 3 s (hidden tab) restarts it */
+function fpsCount(now){
+  var w=fpsWin;
+  if(!w.t0 || now<w.last || now-w.last>3000){ w.t0=w.last=now; w.n=0; return; }
+  w.n++; w.last=now;
+  if(now-w.t0>=500){ fpsStat={fps:w.n*1000/(now-w.t0), ms:(now-w.t0)/w.n}; w.t0=now; w.n=0; }
+}
+
+function loop(now){
   rafId=requestAnimationFrame(loop);
   if(!renderer) return;
+  now = now>0 ? now : performance.now();
+  if(!frameDue(now)) return;
+  fpsCount(now);
   var dt=Math.min(clock.getDelta(), 0.05);
   tick(dt, clock.elapsedTime);
   if(STRIP.on && STRIP.built){ stripRender(); return; }
@@ -10337,7 +10590,7 @@ function stripMark(a, b, w){
 function stripBoardDraw(d, force){
   var B=STRIP.board; if(!B) return;
   ["p","o"].forEach(function(tag){ var L=d[tag]||{}, bd=B[tag];
-    var key=[L.et,L.mph,L.rt,L.win,L.foul,L.off,STRIP.night].join("|"); if(!force && key===bd.key) return; bd.key=key;
+    var key=[L.et,L.mph,L.rt,L.win,L.foul,L.off,L.pb,STRIP.night].join("|"); if(!force && key===bd.key) return; bd.key=key;
     var x=bd.cv.getContext("2d"), MONO="'IBM Plex Mono','Courier New',monospace", F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
     x.fillStyle="#060607"; x.fillRect(0,0,512,256); x.strokeStyle="#34373c"; x.lineWidth=10; x.strokeRect(5,5,502,246);
     x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#9aa0a8"; x.font="700 28px "+F; x.fillText(tag==="p"?"RIGHT LANE":"LEFT LANE", 24, 36);
@@ -10350,13 +10603,15 @@ function stripBoardDraw(d, force){
       x.fillStyle=amber; x.font="700 104px "+MONO; x.fillText(L.et!=null?(+L.et).toFixed(3):"--.---", 494, 150);
       x.fillStyle=dim; x.font="700 58px "+MONO; x.fillText((L.mph!=null?(+L.mph).toFixed(2):"---.--"), 400, 220);
       x.font="700 30px "+F; x.fillText("MPH", 488, 226); x.textAlign="left"; x.font="700 30px "+F; x.fillText("ET", 24, 136);
+      /* personal best: purple for the all-time quickest, green for this engine's best */
+      if(L.pb){ x.fillStyle=L.pb>1?"#c86bff":"#44ff72"; x.fillRect(24,188,116,54); x.fillStyle="#060607"; x.font="700 44px "+F; x.textAlign="center"; x.fillText("PB", 82, 217); }
     }
     bd.tex.needsUpdate=true; });
 }
 function stripTmLane(){ return {px:null, pv:0, start:null, et:null, mph:null, cross:null}; }
 function stripTiming(o, rdt){
   var ph=o.phase||"run";
-  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
+  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; STRIP.pb=0; STRIP.pbCut=0; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
   var tm=STRIP.tm||(STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()});
   tm.used=true; tm.clock+=rdt;
   function lane(L, x, v){
@@ -10368,6 +10623,7 @@ function stripTiming(o, rdt){
   if(o.et!=null) tm.p.et=o.et; if(o.mph!=null) tm.p.mph=o.mph; if(o.oet!=null) tm.o.et=o.oet; if(o.omph!=null) tm.o.mph=o.omph;
   if(ph==="shutdown"||ph==="done"){
     var pd={et:o.failed?null:tm.p.et, mph:o.failed?null:tm.p.mph, rt:o.rt, foul:!!o.foul}, od={off:!o.race, et:tm.o.et, mph:tm.o.mph, rt:o.ort, foul:!!o.ofoul};
+    pd.pb=pd.et!=null?STRIP.pb||0:0;
     if(o.race){ var pc=o.failed||o.foul?null:tm.p.cross, oc=tm.o.cross;
       if(o.win!=null){ pd.win=!!o.win; od.win=!o.win && (oc!=null||o.foul); }
       else { pd.win=pc!=null && (oc==null||pc<=oc); od.win=oc!=null && (pc==null||oc<pc) || (!!o.foul && !o.ofoul); } }
@@ -10514,9 +10770,11 @@ function stripCrowd(dt){
   var C=STRIP.crowd; if(!C) return; STRIP.cheer=Math.max(0,STRIP.cheer-dt*0.28);
   if(STRIP.cheer<0.02 && !C.live) return;
   var t=STRIP.t, amp=STRIP.cheer, i;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>0.3?Math.abs(Math.sin(t*8+C.phase[i]))*0.18*amp*e:0;
+  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.04:0.3)?Math.abs(Math.sin(t*(amp>1?10:8)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
     _crM.makeTranslation(p[0],p[1]+0.31+y,p[2]); C.body.setMatrixAt(i,_crM); _crM.makeTranslation(p[0],p[1]+0.75+y*1.15,p[2]); C.head.setMatrixAt(i,_crM); }
   C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=STRIP.cheer>=0.02;
+  if(amp>1 && STRIP.fxAdd){ var fr=(amp>1.8?70:35)*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);   /* a PB: phones and flashes going off in the stands */
+    while(nf-->0){ var q=C.base[(Math.random()*C.n)|0]; STRIP.fxAdd.emit(q[0], q[1]+1.0, q[2]+0.3, 0,0,0, 0.16, 0.8, 1.1, 1, 0.97, 0.9, 1, {drag:0, fin:0.01}); } }
 }
 
 /* --- camera direction: a cut list, not a lerp between distant spots --- */
@@ -10535,8 +10793,9 @@ function stripDirect(o, dt, P, O){
     if(s==="pan" && (px>STRIP_PAN_X+18 || (STRIP.shot==="pan" && STRIP.shotT>4.5))) s="chase";
     if((s==="pan"||s==="chase") && lead>=338) s="finish";
   } else if(ph==="shutdown"){
-    if(s!=="finish"&&s!=="shutdown") s="shutdown";
-    else if(s==="finish" && (px>STRIP_Q+70 || (STRIP.shotT>2.4 && px>STRIP_Q+12))) s="shutdown";
+    if(s!=="finish"&&s!=="shutdown"&&s!=="crowd") s="shutdown";
+    else if(s==="finish" && (px>STRIP_Q+70 || (STRIP.shotT>2.4 && px>STRIP_Q+12))) s=STRIP.pb&&!STRIP.pbCut?"crowd":"shutdown";
+    else if(s==="crowd" && (STRIP.pbCut>1 || STRIP.shotT>(STRIP.pb>1?2.3:1.7))) s="shutdown";
   } else if(ph==="done"){ s=(s==="shutdown"&&STRIP.shotT<0.8)?"shutdown":"board"; }
   stripCut(s);
   STRIP.shotT+=dt; STRIP.cutT+=dt;
@@ -10556,6 +10815,7 @@ function stripDirect(o, dt, P, O){
       /* rear three-quarter from well out beside the lane, so the chute blossoms between us and the car instead of over the lens */
       _cw.set(-bk, 2.6, cz3+8.0); _ct.set((b3?lead-ax:0)-1.5, 1.1, cz3*0.6); fov=44; sm=4; break; }
     case "board": _cw.set(STRIP_Q+1.5+Math.min(2,T*0.7), 3.0, 0); _ct.set(STRIP_Q+26, 6.0, 0); fov=58; break;
+    case "crowd": { if(!STRIP.pbCut) STRIP.pbCut=1; var cp=smoothstep(0,2.3,T); _cw.set(78-cp*6, 1.4+cp*0.5, 2.4); _ct.set(52-cp*4, 3.4, -13.5); fov=40-cp*5; break; }
     case "fail": { rel=true; ax=px; _cw.set(8.5+v*0.04, 1.5, pz+4.2); _ct.set(-3.5, 1.2, pz-0.6); fov=50; sm=8; STRIP.shake=Math.max(STRIP.shake, 0.16); break; }
   }
   if(rel){ if(STRIP.snap||!STRIP.relOn){ _cr.copy(_cw); _crt.copy(_ct); } else { var k=1-Math.exp(-sm*dt); _cr.lerp(_cw,k); _crt.lerp(_ct,k); }
@@ -10614,7 +10874,7 @@ function stripReset(){
   if(STRIP.fx) STRIP.fx.clear(); if(STRIP.fxFire) STRIP.fxFire.clear(); if(STRIP.fxAdd) STRIP.fxAdd.clear();
   if(STRIP.marks){ STRIP.marks.n=0; STRIP.marks.i=0; STRIP.marks.mesh.count=0; }
   STRIP.shot=null; STRIP.prev={}; STRIP.tm=null; STRIP.shake=0; STRIP.flashI=0; if(STRIP.flash) STRIP.flash.intensity=0; if(STRIP.heatPass) STRIP.heatPass.enabled=false;
-  STRIP.cheer=0; if(STRIP.crowd && STRIP.crowd.live) stripCrowd(0);
+  STRIP.cheer=0; STRIP.pb=0; STRIP.pbCut=0; if(STRIP.crowd && STRIP.crowd.live) stripCrowd(0);
   ["p","o"].forEach(function(k){ var c=STRIP.cars[k]; if(c){ c.userData._markLast=[]; } });
 }
 
@@ -10779,6 +11039,10 @@ const ENGINE_VIS = {
     var rdt=Math.max(0, +o.dt||0.016); stripUpdate(o, Math.min(0.1, rdt), Math.min(0.5, rdt));
     return STRIP.stats||null;
   },
+  /* a personal best on this pass: PB on the board, the stands come up and the camera cuts to them (1 = this engine, 2 = all-time) */
+  stripPb: function(k){ if(k!==undefined){ STRIP.pb=k||0; STRIP.pbCut=0; if(k) STRIP.cheer=Math.max(STRIP.cheer, k>1?2.4:1.7); }
+    return {pb:STRIP.pb||0, shot:STRIP.shot, cheer:+STRIP.cheer.toFixed(2)}; },   /* no argument: just report (harness) */
+  skipCut: function(){ if(STRIP.shot==="crowd") STRIP.pbCut=2; },   /* a tap during the crowd cut goes back to the car */
   setXray: function(on){
     XRAY=!!on;
     if(!engineRoot) return;
@@ -10909,6 +11173,10 @@ const ENGINE_VIS = {
   },
   start: function(){ if(!running){ running=true; clock.getDelta(); loop(); } },
   stop:  function(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=0; },
+  /* frame-rate cap (0 = whatever the display runs); frameDue(t) lets another rAF loop skip the same vsyncs */
+  setFpsCap: function(f){ capMs = f>0 ? 1000/f : 0; },
+  frameDue: function(t){ return frameDue(t); },
+  fps: function(){ return fpsStat; },
   info:  function(){
     var tris=0, calls=0;
     scene.traverse(function(o){
@@ -11031,10 +11299,25 @@ const SEGMENTS=[
   {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:165000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
   {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:88000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}}
 ];
+/* site briefs: some clients say where the engine will live and re-run your certified engine in that air before they pay.
+   [name, ambient °C, altitude m, premium]. Cold air packs the cylinder (more load, boost overshoots), heat eats knock margin,
+   thin air costs an NA engine over a quarter of its torque at 3,000 m. All inside the Pro dyno cell's range so it can be previewed. */
+const SITE_P=0.3;
+const SITES={
+  sedan:[["Winnipeg winter commuter",-25,250,.14],["Phoenix commuter car",44,350,.12],["Denver family car",22,1600,.14],["Mexico City family car",18,2250,.18]],
+  taxi:[["Yellowknife winter taxi",-25,200,.16],["Las Vegas airport taxi",43,650,.12],["Bogotá city taxi",14,2600,.18],["Quito city taxi",13,2850,.20]],
+  van:[["Iqaluit courier van",-25,50,.16],["Mojave parcel van",42,300,.12],["Calgary winter courier",-20,1050,.14],["Mexico City courier van",18,2250,.18]],
+  pump:[["Imperial Valley canal pump",45,0,.12],["Andean terrace pump",12,2800,.18],["Altiplano well pump",8,3500,.20]],
+  truck:[["Ice-road pickup",-25,300,.16],["Death Valley pickup",45,0,.14],["Rockies mine pickup",5,2400,.18]],
+  genset:[["Andean mine genset",8,3200,.20],["Arctic camp genset",-25,100,.16],["Desert telecom genset",45,300,.14]],
+  tractor:[["Harvest tractor",42,300,.12],["Ethiopian highland tractor",24,2400,.18],["Andean potato tractor",14,3400,.20]],
+  rally:[["Swedish snow stage",-20,200,.16],["Greek gravel stage",38,600,.14],["Kenyan safari stage",32,1900,.16],["Mexican mountain stage",22,2700,.18]],
+  endur:[["Desert 24-hour",40,300,.16],["Winter 24-hour",-10,400,.14],["Mexico City 6-hour",24,2250,.18]]
+};
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.6.6.0";
+const VERSION="1.7.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -11047,9 +11330,27 @@ function save(){try{const o=Object.assign({},S,{last:S.last?slimRes(S.last):null
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
 function snapshot(){return Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});}
 function hydrate(o){if(!o||!o.cfg)return false;S=freshState();Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
+  try{fuelMigrate();}catch(e){}
   if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
     S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
       .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];return true;}
+/* fuel system: a build saved before injectors and pumps existed gets the smallest set that feeds it (SIM.fitFuel), so a
+   600 hp save doesn't suddenly lean out. Certs, strip bests, wear and the fleet are keyed by the cfg hash, so they follow
+   it. In career a fitted part the shop hasn't unlocked comes with the build (an R&D-style unlock), so nothing certified
+   turns up locked. Runs on the raw save inside hydrate(), before the cfg is merged with the defaults. */
+function fuelFit(c){if(!c||typeof c!=="object"||(c.injectors&&c.fuelPump))return null;
+  const full=Object.assign({},SIM.DEFAULT_CFG,c);if(!c.injectors)delete full.injectors;if(!c.fuelPump)delete full.fuelPump;const oh=cfgHash(full);
+  const fit=SIM.fitFuel(full);if(!c.injectors)c.injectors=fit.injectors;if(!c.fuelPump)c.fuelPump=fit.fuelPump;
+  return [oh,cfgHash(Object.assign({},SIM.DEFAULT_CFG,c)),c];}
+function fuelMigrate(){const m={},fitted=[];
+  for(const c of [S.cfg,S.last&&S.last.cfg,S.base&&S.base.cfg].concat(Array.isArray(S.blueprints)?S.blueprints.map(b=>b&&b.cfg):[])){try{const r=fuelFit(c);if(r){m[r[0]]=r[1];fitted.push(r[2]);}}catch(e){}}
+  if(!fitted.length)return;
+  if(S.last&&m[S.last.hash])S.last.hash=m[S.last.hash];
+  const K=S.career;if(K.cert&&m[K.cert.hash])K.cert.hash=m[K.cert.hash];
+  if(Array.isArray(K.fleet))K.fleet.forEach(f=>{if(f&&m[f.hash])f.hash=m[f.hash];});
+  for(const fld of ["wear","dragBest"]){const w=K[fld];if(!w||typeof w!=="object")continue;
+    for(const o in m)for(const [a,b] of [[o,m[o]],[hKey(o),hKey(m[o])]])if(a in w&&!(b in w)){w[b]=w[a];delete w[a];}}
+  if(S.mode==="career")for(const c of fitted)for(const k of ["injectors","fuelPump"]){const o=OPT[k][c[k]];if(locked(o))(K.unlocks=K.unlocks||{})[o._id]=true;}}
 function load(){S=freshState();try{const j=localStorage.getItem("pew2-save");if(j)hydrate(JSON.parse(j));}catch(e){}}
 /* manual save slots + portable save codes */
 const SLOTS=3,slotKey=i=>"pew2-slot"+i;
@@ -11104,6 +11405,7 @@ function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");c
 const ZONE_OF={rod_tension:1,rod_buckling:1,rod_bolts:1,crank_fatigue:1,bearing_load:1,oil_film:1,
   detonation:2,preignition_egt:2,piston_speed:2,crown_temp:2,crown_pressure:2,hot_clearance:2,slap_blowby:2,ring_gap:2,bore_distortion:2,wall_thickness:2,
   head_lift:3,gasket_shear:3,valve_float:3,valve_piston:3,cooling:3,valve_temp:4,turbine_temp:5,compressor_map:5,oil_starvation:6,torsional:7};
+ZONE_OF.fuel_delivery=2;
 const ZONE_NAME={1:"Crankcase & rotating assembly",2:"Cylinders & pistons",3:"Head, gasket & valvetrain",4:"Exhaust",5:"Turbocharger",6:"Sump & oiling",7:"Front drive & damper"};
 function heatZones(){if(!quick)return null;const worst={};for(const t of quick.tests){const z=ZONE_OF[t.id];if(!z)continue;if(t.id==="turbine_temp"||t.id==="compressor_map"){if(S.cfg.asp==="na")continue;}
     if(!worst[z]||t.util>worst[z])worst[z]=t.util;}
@@ -11128,6 +11430,12 @@ $("tag").addEventListener("keydown",e=>{if(e.target.id==="nameIn"&&e.key==="Ente
 $("soloSeg").addEventListener("click",e=>{const b=e.target.closest("[data-solo]");if(!b)return;if(b.dataset.solo==="rebuild"){ENGINE_SOUND.rebuild();toast("SOUND GRAPH REBUILT");return;}
   ENGINE_SOUND.solo(b.dataset.solo);document.querySelectorAll("#soloSeg button").forEach(x=>x.classList.toggle("on",x.dataset.solo===b.dataset.solo));toast(`SOLO · ${b.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("sdPeak");if(!el||curTab!=="shop")return;const pk=ENGINE_SOUND.peak();el.textContent=pk?`${pk.hz} Hz @ ${pk.db} dB · low ${pk.lo} dB · ${pk.state} ${pk.sr/1000}k`:"—";},400);
+/* frame rate: S.showFps puts a readout in the view; S.fpsCap 60 has ENGINE_VIS (and tick) skip the extra vsyncs of a 90/120 Hz screen */
+function applyFps(){const cap=S.fpsCap===60?60:0;ENGINE_VIS.setFpsCap(cap);$("fpsHud").classList.toggle("on",!!S.showFps);document.querySelectorAll("#fpsSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.fps==="1")===!!S.showFps));document.querySelectorAll("#capSeg button").forEach(b=>b.classList.toggle("on",+b.dataset.cap===cap));fpsShow();}
+function fpsShow(){const f=ENGINE_VIS.fps(),r=Math.round(f.fps);if(S.showFps)$("fpsHud").innerHTML=r?`<b class="${r<30?"crit":r<50?"warn":""}">${r}</b> fps <i>· ${f.ms.toFixed(1)} ms</i>`:"— fps";if(curTab==="shop")$("fpsLbl").textContent=r?`${r} fps · ${f.ms.toFixed(1)} ms`:"—";}
+setInterval(fpsShow,500);
+$("fpsSeg").addEventListener("click",e=>{const b=e.target.closest("[data-fps]");if(!b)return;S.showFps=b.dataset.fps==="1";applyFps();save();});
+$("capSeg").addEventListener("click",e=>{const b=e.target.closest("[data-cap]");if(!b)return;S.fpsCap=+b.dataset.cap===60?60:0;applyFps();save();toast(S.fpsCap?"CAPPED AT 60 FPS":"FRAME RATE · DISPLAY MAX");});
 function renderDev(){$("devBox").style.display=career()?"":"none";if(!career())return;document.querySelectorAll("#devSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.dev==="1")===dev()));$("devRow").style.display=dev()?"":"none";}
 $("devSeg").addEventListener("click",e=>{const b=e.target.closest("[data-dev]");if(!b||!career())return;C().dev=b.dataset.dev==="1";toast(C().dev?"DEV MODE ON — everything unlocked, tests free":"Dev mode off");renderDev();hud();recompute();save();renderBuild();renderPresets();renderShop();renderTest();});
 $("devCash").addEventListener("click",()=>{if(!career())return;C().cash+=1e6;hud();save();toast("+$1,000,000");});
@@ -11168,6 +11476,7 @@ function recompute(){
   const worst=Math.max(...quick.tests.map(t=>t.util));$("sHp").className=worst>1?"critc":worst>.8?"warnc":"";
   const cert=C().cert;
   $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));
+  fuelHdr();
 }
 function hud(){
   if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0]}${dev()?" · DEV":""}`;}
@@ -11248,6 +11557,7 @@ function renderBuild(){
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);
+  fuelHdr();
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
 function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
@@ -11292,6 +11602,7 @@ const FOCUS_OF={bore:"engine",stroke:"engine",cr:"engine",rodRatio:"engine",bloc
   head:"top",headMat:"top",valveMat:"top",springs:"top",cam:"top",lift:"top",gasket:"top",studs:"top",cover:"top",redline:"top",
   intake:"intake",nitrous:"intake",fuel:"intake",lambda:"intake",timing:"intake",asp:"turbo",turboSize:"turbo",turbineMat:"turbo",ic:"turbo",boost:"turbo",exhaust:"exhaust",damper:"front",cooling:"front",layout:"engine"};
 Object.assign(FOCUS_OF,{launchCtl:"exhaust",launchRetard:"exhaust",twoStepRpm:"exhaust"});Object.assign(NOTCH,{twoStepRpm:500,launchRetard:5});
+Object.assign(FOCUS_OF,{injectors:"intake",fuelPump:"intake"});
 let lastFocus=null;
 function autoFocus(key){if(testing||S.followCam===false)return;let part=FOCUS_OF[key];if(!part)return;if(part==="turbo"&&S.cfg.asp==="na")part="intake";if(part===lastFocus)return;lastFocus=part;ENGINE_VIS.focus(part);}
 function commitSlider(){S.profileId=null;ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);}
@@ -11385,6 +11696,15 @@ const SPECS={
     ["Octane",o=>o.ron+" RON / "+o.mon+" MON"],["Energy",o=>(o.lhv/1e6).toFixed(1)+" MJ/kg"],
     ["Air per fuel",o=>x1(o.afr)+":1"],["Charge cooling",o=>Math.round(o.hov/1000)+" kJ/kg"],
     ["Corrosion",o=>o.corrosive>=1?"attacks alu and lead":o.corrosive>0?"mildly corrosive":null]]},
+  injectors:{price:o=>o.cost?o.cost+" each":0,line:o=>fuelLine("injectors",o),specs:[
+    ["Flow",o=>(o.perCyl>1?o.perCyl+" × ":"")+o.cc+" cc/min at 3 bar"],
+    ["Petrol",o=>"~"+fuelHp(o.cc*(o.perCyl||1)*0.72*0.06,1).toLocaleString("en-CA")+" hp a cylinder"],["E85",o=>"~"+fuelHp(o.cc*(o.perCyl||1)*0.72*0.06,1.43).toLocaleString("en-CA")+" hp a cylinder"],
+    ["Methanol",o=>"~"+fuelHp(o.cc*(o.perCyl||1)*0.72*0.06,2.14).toLocaleString("en-CA")+" hp a cylinder"]]},
+  fuelPump:{line:o=>fuelLine("fuelPump",o),specs:[
+    ["Flow",o=>o.lph+" L/h "+(o.rpmRef?"at "+o.rpmRef+" rpm":"at 3 bar")],
+    ["Under 1.5 bar boost",o=>o.rpmRef?"no loss":"~"+Math.round(o.lph*(1-o.dropBar*1.5))+" L/h"],
+    ["Petrol",o=>o.rpmRef?null:"~"+fuelHp(o.lph*(1-o.dropBar)*0.76,1).toLocaleString("en-CA")+" hp at 1 bar"],["Methanol",o=>"~"+fuelHp(o.lph*(1-o.dropBar)*0.76,2.14).toLocaleString("en-CA")+" hp"+(o.rpmRef?" at "+o.rpmRef+" rpm":" at 1 bar")],
+    ["Weight",o=>o.massKg?"+"+o.massKg+" kg on the engine":null]]},
   oilGrade:{specs:[
     ["Viscosity",o=>x1(o.kv100)+" cSt at 100 °C"],["Film strength",o=>x1(o.hths)+" HTHS"],
     ["Drag",o=>fac(o.fricFac)],["Cold flow",o=>o.vi>=160?"excellent":o.vi>=145?"good":o.vi>=130?"fair":"poor"]]},
@@ -11405,10 +11725,16 @@ const SPECS={
 };
 function chipsFor(tbl,o){const d=SPECS[tbl];if(!d)return [];
   return d.specs.map(([l,f])=>{let v=null;try{v=f(o);}catch(e){}return v==null?null:[l,v];}).filter(Boolean);}
-function priceOf(tbl,o){const d=SPECS[tbl];if(d&&d.price){const v=d.price(o);return typeof v==="number"?fmt$(v):"$"+v;}
+function priceOf(tbl,o){if((tbl==="injectors"||tbl==="fuelPump")&&!o.cost)return"stock";const d=SPECS[tbl];if(d&&d.price){const v=d.price(o);return typeof v==="number"?fmt$(v):"$"+v;}
   return (o.cost||o.cost===0)?fmt$(o.cost):"";}
 function specLine(tbl,o){const d=SPECS[tbl];if(d&&d.line){const v=d.line(o);if(v)return v;}
   const c=chipsFor(tbl,o);return c.length?c[0][0]+" "+c[0][1]:"details";}
+/* fuel parts: hp a flow of L/h supports with margin (petrol ~0.55 lb/hp/h, k = alcohol's extra volume), and the live duty / pump load in the field header */
+function fuelHp(lph,k){return Math.round(lph*0.745*2.2046/0.55/k/5)*5;}
+function fuelLine(tbl,o){const f=quick&&quick.fuel;if(!f||S.cfg[tbl]!==o._id.split(":")[1])return tbl==="injectors"?o.cc+" cc/min":o.lph+" L/h";
+  return tbl==="injectors"?(f.portInj?Math.round(f.duty*100)+"% duty":"not used"):Math.round(f.load*100)+"% of its flow";}
+function fuelHdr(){const f=quick&&quick.fuel;for(const k of ["injectors","fuelPump"]){const b=document.querySelector(`#buildForm .q[data-ckey="${k}"]`);if(!b)continue;
+  const u=f?(k==="injectors"?f.injUtil:f.pumpUtil):0;b.textContent=specLine(k,OPT[k][S.cfg[k]])+" ›";b.style.color=u>1?"var(--crit)":u>0.8?"var(--warn)":"";}}
 function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S.cfg[cfgKey]:null;
   $("sheetTitle").textContent=title;
   $("sheetBody").innerHTML=Object.keys(opts).map(k=>{const o=opts[k];const lk=locked(o);
@@ -11555,6 +11881,26 @@ function addWear(n){if(!career())return;const h=hKey(cfgHash(S.cfg));C().wear=C(
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
 function oppX(now){const R=DR&&DR.race;if(!R||R.green==null)return 0;const tt=((now-R.green)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+/* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
+function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
+function engBest(h){return career()?(C().dragBest||{})[h]:recs().eng[h];}
+function allBest(){const t=recs().top[0];return Math.min(t?t.et:Infinity,career()&&C().bestEt||Infinity);}
+function recTag(){const e={n:engineName().slice(0,28),d:Date.now()};if(career())e.w=C().week;return e;}
+const etFix=(a,b)=>a.toFixed(2)===b.toFixed(2)?3:2;   // two decimals unless that hides the gain
+/* a pass counts when nothing broke, no red light, and (career) it wasn't black-flagged at tech */
+function dragPbCheck(q){if(ff||!q||DR.failed||(DR.race&&DR.race.foul)||(career()&&q.mph>150&&!DR.veh.chute))return null;const all=allBest(),eb=engBest(DR.hk);
+  if(all<Infinity&&q.t<all)return{kind:2,was:all};if(eb!=null&&q.t<eb)return{kind:1,was:eb};return null;}
+function pbPass(r,failed){if(ff||failed||r.et==null||(r.race&&r.race.foul)||(career()&&r.mph>150&&!r.chute))return;const R=recs(),h=DR.hk;
+  R.top.push(Object.assign({et:r.et,mph:r.mph},recTag()));R.top.sort((a,b)=>a.et-b.et);if(R.top.length>5)R.top.length=5;
+  if(career()){const m=C().dragBest=C().dragBest||{};if(!(m[h]<=r.et))m[h]=r.et;if(!(C().bestEt<=r.et))C().bestEt=r.et;}
+  else{const m=R.eng;if(!(m[h]<=r.et)){delete m[h];m[h]=r.et;const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}
+  const pb=DR.pb;if(!pb)return;r.pb={was:pb.was,all:pb.kind>1};const f=etFix(r.et,pb.was);
+  // after the pass's own toast: the PB first, then the purse line again in career
+  setTimeout(()=>{const prev=career()?$("toast").textContent:"";toast(`${pb.kind>1?"PERSONAL BEST":"ENGINE PB"} · ${r.et.toFixed(f)} s (was ${pb.was.toFixed(f)})`);buzz([20,40,20,40,60]);if(prev)setTimeout(()=>toast(prev),2700);},0);}
+/* dyno: highest certified (career) / clean pulled (sandbox) hp and the best reliability; a new top hp gets a toast */
+function pbPull(res){const R=recs(),hp=Math.round(res.peakHp),was=career()?Math.round(C().bestHp||0):R.hp?R.hp.v:0,rw=career()?C().bestRel||0:R.rel?R.rel.v:0;
+  if(hp>was){R.hp=Object.assign({v:hp},recTag());if(was>0)setTimeout(()=>toast(`New record: ${hp.toLocaleString("en-CA")} hp (was ${was.toLocaleString("en-CA")})`),2700);}
+  if(res.rel>rw||(!R.rel&&res.rel>=rw))R.rel=Object.assign({v:res.rel,hp},recTag());}
 function dragBreak(){DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 function dragStart(){
   $("app").classList.add("onstrip");
@@ -11577,8 +11923,10 @@ function dragStart(){
     const dtT=R&&R.tree0!=null?(now-R.tree0)/1000:-1;if(R&&dtT>=1.5&&R.green==null)R.green=R.tree0+1500;
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
     if(st.phase==="run"&&!DR.failed&&(st.t>DR.breakAt||(st.overrev>1.12&&res.overrev&&!res.overrev.survived))){dragBreak();st.done=true;st.phase="done";}
+    if(DR.pb===undefined&&(st.phase==="shutdown"||st.phase==="done")){DR.pb=dragPbCheck(st.marks.find(m=>m.n==="1/4 mi"));if(DR.pb)ENGINE_VIS.stripPb(DR.pb.kind);}
     {const pre=st.phase==="burnout"||(st.phase==="staged"&&!st.rolled);const ox=R?(pre?st.x:oppX(now)):0;const ov=dt>0?Math.max(0,(ox-DR.lox)/dt):0;const acc=dt>0?(st.v-DR.lv)/dt:0;DR.lv=st.v;DR.lox=ox;
-      ENGINE_VIS.setStrip({on:true,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
+      const m4=st.phase==="shutdown"||st.phase==="done"?st.marks.find(m=>m.n==="1/4 mi"):null;
+      ENGINE_VIS.setStrip({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
         tree:{staged:!!st.rolled&&st.phase!=="burnout",a1:dtT>=0,a2:dtT>=0.5,a3:dtT>=1.0,green:!!(R&&R.green!=null)},
         shifting:st.shiftT>0,boost:st.boost,boostTarget:st.boostTarget,rpm:st.rpm,redline:veh.redline,gear:st.gear,
         launch:{armed:!!st.launch.armed,twoStep:st.launch.twoStep,transBrake:st.launch.transBrake,held:st.launch.held,retard:st.launch.retard,pops:st.launch.pops},
@@ -11599,7 +11947,7 @@ function dragStart(){
         const gap=(st.x-ox)*3.281;lane=`<div class="peak" style="grid-column:1/-1"><b style="color:${R.foul?"var(--crit)":gap>=0?"var(--good)":"var(--crit)"}">${R.foul?"RED LIGHT":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>"}</b><span>${R.name} · RT ${R.rt0!=null?R.rt0.toFixed(3):"—"}</span></div>`;}
       $("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.onBars?" · on the bars":""}</span></div>`:""}`;
       if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":"BROKE");
-      else if(st.phase==="shutdown")dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");
+      else if(st.phase==="shutdown"){if(DR.pb&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText(DR.pb.kind>1?"PERSONAL BEST":"ENGINE PB","tap to go back to the car");else dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");}
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
     if(!st.done||(DR.failed&&run.rpm>0))requestAnimationFrame(step);else dragFinish();};
   requestAnimationFrame(step);
@@ -11615,6 +11963,7 @@ function dragGo(now){const d=DR.d;if(d.st.phase!=="staged")return;const R=DR.rac
 function dragPress(){if(!DR||!DR.d||DR.failed)return;const d=DR.d,st=d.st,now=performance.now();
   if(st.phase==="burnout"){DR.downAt=now;d.burn(true);buzz([15]);return;}
   if(st.phase==="staged"){if(!st.rolled)return;if(d.canArm){if(d.arm())buzz([20]);return;}dragGo(now);return;}
+  if(st.phase==="shutdown"&&DR.pb){ENGINE_VIS.skipCut();return;}
   if(st.phase==="run")d.shift();}
 function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=performance.now();
   if(st.phase==="burnout"&&DR.downAt!=null){const held=now-DR.downAt;DR.downAt=null;d.burn(false);if(held<300&&!cancel)dragStage();return;}
@@ -11625,7 +11974,7 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
   b.addEventListener("pointercancel",e=>{DR&&(DR.lastPtr=performance.now());dragRelease(true);});
   b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("click",()=>{if(!DR||!DR.d||performance.now()-(DR.lastPtr||0)<800)return;const st=DR.d.st;
-    if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();});})();
+    if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();else if(st.phase==="shutdown"&&DR.pb)ENGINE_VIS.skipCut();});})();
 function dragFinish(){
   const {d,res,env}=DR;const r=d.result();const failed=DR.failed;
   setTimeout(()=>{if(!testing){ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");}},2200);
@@ -11634,6 +11983,7 @@ function dragFinish(){
     const won=!failed&&mine!=null&&(theirs==null||mine<theirs);r.race={name:R.name,rt:R.rt0,oppRt:+R.rt.toFixed(3),oppEt:R.et,oppMph:R.mph,foul:R.foul,won,margin:mine!=null&&theirs!=null?+(theirs-mine).toFixed(3):null};}
   if(failed&&!r.broke&&(DR.failKind==="turbo"||DR.failKind==="manifold"))r.broke=DR.failKind;
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
+  pbPass(r,failed);
   res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
   const abuse=r.heat?r.heat.abuse:0;
   if(career()){addWear(1+abuse);const h=hKey(cfgHash(S.cfg));C().dragBest=C().dragBest||{};
@@ -11644,6 +11994,7 @@ function dragFinish(){
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
   save();recompute();renderTest();
+  revealVerdict();
 }
 $("testExtra").addEventListener("click",e=>{if(e.target.closest("#freshen")){const l=S.last;if(!l||!career())return;const c=freshenCost(l.res);if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} — ${fmt$(c)}`);hud();save();renderTest();toast("Rings, bearings and a hone — like new");return;}
   if(!e.target.closest("#shareSlip"))return;const l=S.last;if(!l||!l.res.drag)return;shareSlip(l);});
@@ -11653,6 +12004,10 @@ async function shareSlip(l){const r=l.res.drag,res=l.res;const W=1080,H=1350,c=d
   x.fillStyle="#ff7a1a";x.font=F(34,700);x.fillText("PRAIRIE ENGINE WORKS",100,130);x.fillStyle="#8e887b";x.font=F(26);x.fillText("TIMING SLIP · 1/4 MILE",100,170);
   x.fillStyle="#f0ece2";x.font=F(44,700);x.fillText((S.name||SIM.cfgLabel(l.cfg).split(" · ").slice(0,2).join(" ")).toUpperCase().slice(0,26),100,250);
   x.fillStyle="#b8b2a3";x.font=F(28);x.fillText(`${Math.round(res.peakHp)} hp · ${Math.round(res.peakTq)} Nm · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg`,100,295);
+  if(r.pb&&r.et!=null){const f=etFix(r.et,+r.pb.was),t1=r.pb.all?"PERSONAL BEST":"ENGINE BEST",was=(+r.pb.was).toFixed(f),now=r.et.toFixed(f)+" s";   // the stamp: old time struck through
+    x.save();x.translate(800,135);x.rotate(-0.07);x.globalAlpha=0.92;x.strokeStyle=x.fillStyle="#ef5a44";x.lineWidth=6;x.strokeRect(-170,-55,340,110);x.lineWidth=2;x.strokeRect(-160,-45,320,90);x.textAlign="center";
+    let fs=42;do{x.font=F(fs,700);fs-=2;}while(x.measureText(t1).width>292&&fs>20);x.fillText(t1,0,-4);
+    x.font=F(30,600);const ww=x.measureText(was).width,wn=x.measureText(now).width,x0=-(ww+22+wn)/2;x.textAlign="left";x.fillText(was,x0,34);x.fillText(now,x0+ww+22,34);x.lineWidth=4;x.beginPath();x.moveTo(x0-5,24);x.lineTo(x0+ww+5,24);x.stroke();x.restore();}
   x.fillStyle="#4fc08d";x.font=F(150,700);x.fillText(r.et!=null?r.et.toFixed(2):"DNF",100,470);x.fillStyle="#f0ece2";x.font=F(54);x.fillText(r.et!=null?`s @ ${Math.round(r.mph)} mph`:"",100+x.measureText(r.et!=null?r.et.toFixed(2):"DNF").width*2.78,470);
   let y=580;x.strokeStyle="#343941";for(const m of r.marks){x.beginPath();x.moveTo(100,y-40);x.lineTo(W-100,y-40);x.stroke();x.fillStyle="#8e887b";x.font=F(30);x.fillText(m.n.toUpperCase(),100,y);x.fillStyle="#f0ece2";x.font=`600 40px "IBM Plex Mono",Menlo,monospace`;x.textAlign="right";x.fillText(m.t.toFixed(3)+" s",W-100-(m.n==="1/8 mi"||m.n==="1/4 mi"?260:0),y);if(m.n==="1/8 mi"||m.n==="1/4 mi"){x.fillStyle="#b8b2a3";x.fillText(Math.round(m.mph)+" mph",W-100,y);}x.textAlign="left";y+=80;}
   x.fillStyle="#8e887b";x.font=F(26);const sh=r.shifts.length?"Shifts "+r.shifts.map(s=>s.rpm.toLocaleString()).join(" · "):"No shifts";x.fillText(sh,100,y+20);x.fillText(`${r.ratios.join(" · ")} × ${r.veh.final} · ${r.veh.tyreDia}" · ${r.spinTime>0.3?"spun "+r.spinTime.toFixed(1)+" s":"hooked"}`,100,y+60);
@@ -11718,6 +12073,7 @@ const FAIL_VISUAL={rod_tension:"rod",rod_buckling:"rod",rod_bolts:"rod",bearing_
   head_lift:"steam",gasket_shear:"steam",cooling:"steam",
   valve_float:"valve",valve_piston:"valve",valve_temp:"valve",
   oil_starvation:"seize",compressor_map:"turbo",turbine_temp:"turbo"};
+FAIL_VISUAL.fuel_delivery="knock";   // a lean cylinder rattles, then the crown lets go and it smokes
 function failKindOf(res,env){
   let id=null;
   if(env.testType==="overrev"&&res.overrev&&!res.overrev.survived){const e=(res.overrev.events||[]).join(" ");id=/Valve float/.test(e)?"valve_piston":/Rod beam/.test(e)?"rod_tension":/Rod bolts/.test(e)?"rod_bolts":/oil pressure/.test(e)?"bearing_load":null;}
@@ -11753,15 +12109,18 @@ $("runTest").addEventListener("click",()=>{
     else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
       const offStd=career()&&!isStdCell(env);if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
+      if(!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
       if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(S.cfg);const overCap=res.peakHp>cap.hp||S.cfg.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:cfgHash(S.cfg),ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
+        if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(S.cfg.asp!=="na")C().boostedCert=true;}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
       if(career())addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40);
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career())checkGoals();
       save();recompute();renderTest();
-      if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
+      revealVerdict();
+      if(ff&&ff.ending);else if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
   };
   requestAnimationFrame(step);
 });
@@ -11776,7 +12135,18 @@ function renderAnalysis(){
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
+  renderRecords();
 }
+function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
+  const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
+  const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
+  $("recCnt").textContent=cr?"career":"sandbox";
+  if(!best&&!hp&&!rel){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
+  box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
+    +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
+    +`<div class="rec"><span>${cr?"Best certified rel":"Best reliability"}</span>${rel?`<b>${rel.v}<i>${rel.hp?"@ "+rel.hp+" hp":"rel"}</i></b>${sub(rel)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
+    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm">${esc(e.n)}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+`</div>`;}
 
 /* ===================== SHOP: career ===================== */
 function catOpen(cat){return C().rep>=cat.rep&&(!cat.needs||has(cat.needs));}
@@ -11800,7 +12170,9 @@ function genContract(seg){
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
   const units=seg.units[0]+Math.floor(rng()*(seg.units[1]-seg.units[0]));
   const price=Math.round(seg.price*(0.9+rng()*0.25)*(1+(req.hp?(req.hp-R.hp[0])/(R.hp[1]-R.hp[0])*0.35:0))/10)*10;
-  return{id:Math.floor(rng()*1e9),seg:seg.id,name:seg.name,client,req,units,price,expires:C().week+2+Math.floor(rng()*3)};
+  const k={id:Math.floor(rng()*1e9),seg:seg.id,name:seg.name,client,req,units,price,expires:C().week+2+Math.floor(rng()*3)};
+  const sites=SITES[seg.id];if(sites&&rng()<SITE_P){const s=sites[Math.floor(rng()*sites.length)];k.site={name:s[0],ambientC:s[1],altitudeM:s[2],prem:s[3]};k.price=Math.round(k.price*(1+s[3])/10)*10;}
+  return k;
 }
 function refillContracts(){
   // accepted work that ran out of time: the client keeps the deposit and word gets around
@@ -11819,8 +12191,19 @@ const REQ_LABEL={hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tq
 function describeReq(q,v){const m=REQ_LABEL[q];return m?`${m[0]} ${m[1](v)}`:q;}
 function reqName(q){return (REQ_LABEL[q]||[q])[0];}
 function reqTarget(q,v){const m=REQ_LABEL[q];return m?m[1](v):"";}
+const degC=t=>`${t<0?"−"+(-t):t} °C`;
+function siteTxt(s){return `${degC(s.ambientC)} · ${(+s.altitudeM).toLocaleString()} m`;}
+function siteAt(s){return Math.abs(s.ambientC-20)>=15||s.altitudeM<1500?degC(s.ambientC):`${(+s.altitudeM).toLocaleString()} m`;}   // the condition that bites
+function siteEnv(s){return stdEnv(Object.assign(stdCell(),{testType:"pull",ambientC:s.ambientC,altitudeM:s.altitudeM}));}
+const siteCache=new Map();
+function siteRun(s,c){const e=siteEnv(s);const key=cfgHash(c)+"|"+JSON.stringify(e);let r=siteCache.get(key);if(!r){if(siteCache.size>1200){let n=300;for(const k of siteCache.keys()){siteCache.delete(k);if(!--n)break;}}r=SIM.simulate(c,e);siteCache.set(key,r);}return r;}
+function siteCard(k,lf){const s=k.site;if(!s)return{top:"",brk:""};const b=lf.o.find(q=>q.q==="site"&&!q.ok);
+  return{top:`<div class="sitebar"><b>Judged at ${siteTxt(s)}</b><span>${s.name} · site premium +${Math.round(s.prem*100)}%</span>${has("dyno3")?`<button class="chip" data-siteprev="${k.id}">Preview it: set the cell to these conditions</button>`:`<small>The Pro dyno cell can preview site conditions.</small>`}</div>`,
+    brk:b?`<div class="cstat brk">✗ Breaks at ${siteAt(s)}: ${b.why}</div>`:""};}
+function previewSite(s){if(testing){toast("Let the run finish first");return;}C().cell=Object.assign(stdCell(),{ambientC:s.ambientC,altitudeM:s.altitudeM});S.env.testType="pull";save();recompute();showTab("test");toast(`Cell set to ${siteTxt(s)} — a pull here is test only`);}
 function fits(k,res,cfg){
   const r=k.req,c=cfg||S.cfg,o=[];let ok=true;
+  if(k.site)res=siteRun(k.site,c);   // a site brief ignores the cell figures: the client re-runs the engine in their own air
   const add=(q,cond,val,prog)=>{o.push({q,name:reqName(q),target:reqTarget(q,r[q]),label:describeReq(q,r[q]),val,ok:cond,prog});if(!cond)ok=false;};
   const ge=(v,t)=>clamp(v/Math.max(1e-6,t),0,1.25), le=(v,t)=>clamp(t/Math.max(1e-6,v),0,1.25);
   if(r.hp!=null)add("hp",res.peakHp>=r.hp,Math.round(res.peakHp),ge(res.peakHp,r.hp));
@@ -11837,11 +12220,13 @@ function fits(k,res,cfg){
   if(r.passes!=null)add("passes",res.racePasses>=r.passes,res.racePasses,ge(res.racePasses,r.passes));
   if(r.car)add("car",true,"",1);
   if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
+  if(k.site){const br=res.fails[0];o.push({q:"site",name:"At the site",target:siteTxt(k.site),label:`Holds at ${siteTxt(k.site)}`,val:br?"breaks":"holds",ok:!br,prog:br?0:1,why:br});if(br)ok=false;}
   let bonus=0;if(ok){if(r.hp)bonus+=clamp(res.peakHp/r.hp-1,0,0.3)*0.5;if(r.rel)bonus+=clamp((res.rel-r.rel)/100,0,0.15);if(r.tq)bonus+=clamp(res.peakTq/r.tq-1,0,0.3)*0.4;}
-  return{ok,o,bonus};
+  return{ok,o,bonus,res};
 }
 /* "one change away": search single part swaps (and a few slider nudges) that would make the current build fit a contract */
 const FIX_KEYS=["fuel","piston","rings","rod","rodBolts","crank","bearings","oilGrade","cooling","head","springs","valveMat","intake","exhaust","gasket","studs","damper","pistonClearance","oilSystem","oilSquirters","ic","asp","blockMat","headMat"];
+FIX_KEYS.push("injectors","fuelPump");   // a build that only leans out can be one part away from a contract
 const fixCache=new Map();
 function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.keys(C().owned).join(","):"sb");if(fixCache.has(key))return fixCache.get(key);
   const env=stdEnv({testType:"pull"});let best=null;const tryCfg=(cfg,label)=>{const r=SIM.simulate(cfg,env);if(r.fails.length)return;const f=fits(k,r,cfg);if(f.ok){const gain=f.bonus;if(!best||gain>best.gain)best={label,cfg,gain};}};
@@ -11866,7 +12251,7 @@ function warrantyPass(){let claims=0,cost=0,active=0;
   return claims;}
 function repeatPass(){for(const f of C().fleet){if(f.repeated||(f.claims||0)>0||C().week!==f.week+4)continue;f.repeated=true;
     const units=Math.max(1,Math.round(f.units*1.4));const price=Math.round(f.unitPrice*1.15/10)*10;
-    (C().inbox=C().inbox||[]).push({id:Math.floor(rng()*1e9),seg:f.seg,name:f.name,client:f.client,req:Object.assign({},f.req),units,price,expires:C().week+3,repeat:true});
+    (C().inbox=C().inbox||[]).push({id:Math.floor(rng()*1e9),seg:f.seg,name:f.name,client:f.client,req:Object.assign({},f.req),units,price,expires:C().week+3,repeat:true,...(f.site?{site:Object.assign({},f.site)}:{})});
     logEvent(`${f.client} is back for ${units} more ${f.name} engines at +15%`,"good");toast(`${f.client} wants a repeat order`);}}
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   if(C().loan>0){const i=Math.round(C().loan*LOAN_RATE);C().loan+=i;t+=` · loan interest ${fmt$(i)}`;}
@@ -11897,12 +12282,12 @@ function renderShop(){
     const f=cert?fits(k,cert.res):null;const unit=Math.round(k.price*priceBoost()*(1+(f?f.bonus:lf.bonus)));const cost=live.cost;const profit=(unit-cost)*k.units;
     const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
     const status=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):fix?`<div class="cstat one">◐ ONE CHANGE: <b>${fix.label}</b></div>`:`<div class="cstat far">○ OUT OF REACH</div>`;
-    const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;
+    const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;const sc=siteCard(k,lf);
     const btn=mode==="active"
       ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&f.ok&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&f.ok?"Ship "+k.units+" units":lf.ok?"Cert required":"Out of spec"}</button>`
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${k.repeat?"repeat order":"offer"} · open till wk ${k.expires}`;
-    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +15%":""}</div><h3>${k.name}<span>${meta}</span></h3><div class="reqs">${rows}</div>${status}
+    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +15%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}
       <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${(f&&f.bonus>0)||(lf.ok&&lf.bonus>0)?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
   const tier=repTierIdx();
   const catSeg=`<div class="seg" id="catSeg">${CATS.map(c=>{const open=catOpen(c);return `<button data-cat="${c.id}" class="${C().cat===c.id?"on":""}" ${open?"":"disabled"}>${c.name}<small>${open?c.sub:c.needs&&!has(c.needs)?"needs the Outlaw shop":"rep "+c.rep+" · "+REP_TIERS.find(r=>r[0]===c.rep)[1]}</small></button>`;}).join("")}</div>`;
@@ -11925,11 +12310,12 @@ function renderShop(){
 }
 $("contracts").addEventListener("click",e=>{
   const cb=e.target.closest("[data-cat]");if(cb){if(cb.disabled)return;C().cat=cb.dataset.cat;save();renderShop();return;}
+  const sp=e.target.closest("[data-siteprev]");if(sp){const k=C().contracts.concat(C().inbox||[],offersFor(C().cat)).find(x=>x.id==sp.dataset.siteprev);if(k&&k.site)previewSite(k.site);return;}
   const ab=e.target.closest("[data-accept]");if(ab){if(ab.disabled)return;const from=ab.dataset.from;const list=from==="inbox"?(C().inbox||[]):offersFor(C().cat);const k=list.find(x=>x.id==ab.dataset.accept);if(!k)return;if(acceptContract(k,from)){save();hud();renderShop();toast(`${k.name.toUpperCase()} · ${fmt$(k.deposit)} DEPOSIT IN`);buzz(20);}return;}
   const b=e.target.closest("[data-deliver]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}const k=C().contracts.find(x=>x.id==b.dataset.deliver);const cert=C().cert;if(!k||!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const f=fits(k,cert.res);if(!f.ok)return;
   const unit=Math.round(k.price*priceBoost()*(1+f.bonus));const profit=Math.round((unit-cert.res.cost)*k.units);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=k.units;C().shipped=(C().shipped||0)+1;const repGain=Math.round((2+k.units*0.6+SEGMENTS.find(s=>s.id===k.seg).tier*6+f.bonus*20+(k.repeat?4:0))*1.4);C().rep+=repGain;
-  const weak=(cert.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
-  C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units:k.units,hash:cfgHash(S.cfg),engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:!!k.repeat});
+  const weak=(f.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
+  C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units:k.units,hash:cfgHash(S.cfg),engine:engineName(),rel:f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:!!k.repeat,...(k.site?{site:k.site}:{})});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
   logEvent(`Delivered ${k.units} × ${engineName()} (${k.name}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}`,"good");
   if(tourStep>=0)tourEnd();
@@ -11993,6 +12379,93 @@ function setMode(m){
   save();boot();
 }
 document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);}));
+/* ---- First Fire: a ninety-second scratch run for new players. Fire a V6, rev it past where its
+   springs give up, fit a stiffer spring, certify it. It runs in the test cell on a borrowed engine,
+   so the career books never see it; the player's own build, name, bench and tab go back after. ---- */
+let ff=null;
+const FF_STEPS=["fire","limit","fix","cert"];
+function ffRig(){const p=PRESETS.find(x=>x.id==="l36")||PRESETS.find(x=>x.cfg.layout==="V6");const env=Object.assign({},SIM.DEFAULT_ENV,{testType:"pull"});
+  const base=Object.assign({},SIM.DEFAULT_CFG,p.cfg,{springs:"single"}),stiffer=Object.keys(OPT.springs).filter(k=>OPT.springs[k].rate>OPT.springs.single.rate);let cfg=Object.assign({},base,{redline:6600});
+  // lowest redline where single springs float, nothing else breaks, and any stiffer spring holds it
+  for(let rl=6400;rl<=7400;rl+=100){const c=Object.assign({},base,{redline:rl}),a=SIM.simulate(c,env),vf=a.tests.find(t=>t.id==="valve_float");
+    if(a.fails.length===1&&vf&&vf.status==="crit"&&vf.util>=1.015&&stiffer.every(k=>!SIM.simulate(Object.assign({},c,{springs:k}),env).fails.length)){cfg=c;break;}}
+  return{p,cfg};}
+function ffFloat(res,cfg){const vf=res&&res.tests.find(t=>t.id==="valve_float");return vf?(Math.round(cfg.redline/vf.util/50)*50).toLocaleString():"—";}
+function ffFailed(l){const r=l.res,e=l.env;return r.fails.length>0||(e.testType==="endurance"&&r.endurance&&r.endurance.failedAtHour!=null)||(e.testType==="overrev"&&r.overrev&&!r.overrev.survived)||(e.testType==="drag"&&!!r.dragFailed);}
+function ffRect(el){if(!el||!el.getClientRects().length)return null;const r=el.getBoundingClientRect();return r.width&&r.height?r:null;}
+const FFT={idle:{under:"view",get:()=>ffRect($("idleBtn"))},view:{get:()=>ffRect($("view"))},
+  run:{tab:"test",get:()=>ffRect($("runTest"))},verdict:{tab:"test",get:()=>ffRect(document.querySelector("#verdict .verdict"))},
+  springs:{tab:"build",sec:"Valvetrain",get:()=>{const b=document.querySelector('#buildForm button[data-k="springs"]'),sg=b&&b.parentElement,a=ffRect(sg&&sg.previousElementSibling),c=ffRect(sg);if(!a||!c)return c;
+    const l=Math.min(a.left,c.left),r=Math.max(a.right,c.right);return{left:l,right:r,width:r-l,top:a.top,bottom:c.bottom,height:c.bottom-a.top};}}};
+const FF_RUN={t:"Find the limit",x:()=>"Watch the tach — it's going all the way to redline.",tgt:"view",d:1e9};
+const FF={
+  fire:{go:{t:"Fire it up",x:()=>`${ff.rig.p.name}, straight off the stand. Tap START up top to turn it over.`,tgt:"idle",d:2500},
+    ok:{t:"Fire it up",x:()=>"It's alive. Now let's find out where it breaks.",tgt:"view",auto:2600}},
+  limit:{go:{t:"Find the limit",x:()=>`The redline's at ${S.cfg.redline.toLocaleString()} rpm on the stock single valve springs. Arm the dyno and pull it.`,tgt:"run",d:3000},run:FF_RUN,
+    broke:{t:"Valve float",x:()=>`Past about ${ffFloat(S.last.res,S.last.cfg)} rpm the springs can't close the valves in time — they float and hit the pistons.`,tgt:"verdict",n:"Fix it"},
+    held:{t:"It held",x:()=>"You changed something and it survived. Next shows the one-part fix anyway.",tgt:"verdict"}},
+  fix:{go:{t:"Fix it with one change",x:()=>"Valve float is a spring problem. Under Valve springs, fit a stiffer one — try the Beehive.",tgt:"springs",d:3500},
+    ok:{t:"Fix it with one change",x:()=>`${S.cfg.springs!=="single"?OPT.springs[S.cfg.springs].name+" fitted. ":""}The valves now follow the cam to about ${ffFloat(quick,S.cfg)} rpm — past the ${S.cfg.redline.toLocaleString()} redline.`,tgt:"springs",auto:2600}},
+  cert:{go:{t:"Certify it",x:()=>"Same pull, one part changed. Arm the dyno and run it again.",tgt:"run",d:3000},run:Object.assign({},FF_RUN,{t:"Certify it"}),
+    done:{t:"Build, break, fix",x:()=>`${S.last&&S.last.res.rel<85?"Certified — marginal, but it holds. ":"Certified. "}That's the game — build it, break it on the dyno, fix the weak link.`,tgt:"verdict",n:()=>ff.to==="career"?"Open my shop":"Open the test cell",last:1},
+    still:{t:"Still breaking",x:()=>"Something else let go — the red bars in the stress report say what. Fix it and pull again, or finish here.",tgt:"verdict",n:"Finish"}}};
+const ffCur=()=>FF[FF_STEPS[ff.step]][ff.phase];
+function ffSet(ph){ff.phase=ph;ff.t0=performance.now();const P=ffCur();
+  $("ffStep").textContent=P.last?"First Fire · done":`First Fire · ${ff.step+1} of ${FF_STEPS.length}`;$("ffTitle").textContent=P.t;$("ffText").textContent=P.x();
+  $("ffNext").textContent=typeof P.n==="function"?P.n():P.n||"Next";$("ffSkip").style.display=P.last?"none":"";ffTick();}
+function ffStep(i){ff.step=i;ff.ref=S.last;ffSet(i===0&&run.idle?"ok":"go");ffShow();}
+function ffNext(){if(!ff)return;if(ff.step>=FF_STEPS.length-1)ffEnd();else ffStep(ff.step+1);}
+// bring the current target back: its tab, its accordion section, then scroll it into the top third
+function ffShow(){if(!ff)return;const t=FFT[ffCur().tgt];if(t.tab&&curTab!==t.tab)showTab(t.tab);
+  if(t.sec){const a=document.querySelector(`#buildForm [data-sec="${t.sec}"]`);if(a&&!openSec[t.sec])toggleSec(a);}
+  if(t===FFT.run&&!testing&&S.env.testType!=="pull"){S.env.testType="pull";renderTest();}
+  setTimeout(()=>{if(!ff)return;const r=t.tab&&t.get();if(r){const pn=$("panel"),pr=pn.getBoundingClientRect();pn.scrollTop+=(r.top-pr.top)-pr.height*0.3;}ffPlace();},60);}
+function ffPlace(){if(!ff||ff.ending)return;const app=$("app").getBoundingClientRect(),spot=$("ffSpot"),box=$("ffBox"),t=FFT[ffCur().tgt];
+  const tabT=$("tabs").getBoundingClientRect().top-app.top;let r=t.get();
+  if(r&&t.tab){const pr=$("panel").getBoundingClientRect(),top=Math.max(r.top,pr.top),bot=Math.min(r.bottom,app.top+tabT);r=bot-top>=Math.min(28,r.height*0.5)?{left:r.left,width:r.width,top,bottom:bot,height:bot-top}:null;}
+  $("ff").style.visibility=$("sheet").classList.contains("on")?"hidden":"";$("ffShow").style.display=!r&&t.tab?"":"none";
+  const w=$("weekLbl");if(w&&w.textContent!=="FIRST FIRE")w.textContent="FIRST FIRE";
+  const boxH=box.offsetHeight||150;let top=null;
+  if(r){spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
+    const below=(t.under?$(t.under).getBoundingClientRect():r).bottom-app.top+14,above=r.top-app.top-14-boxH;top=below+boxH<tabT-8?below:above>=8?above:null;}
+  else spot.style.display="none";
+  if(top!=null){box.style.top=top+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-tabT+10)+"px";}}
+function ffTick(){if(!ff)return;if(ff.ending){if(!testing)ffFinish(true);return;}
+  const st=FF_STEPS[ff.step],ph=ff.phase;
+  if(st==="fire"){if(ph==="go"&&run.idle){ffSet("ok");return;}}
+  else if(st==="limit"||st==="cert"){
+    if(testing){if(ph!=="run"){ffSet("run");return;}}
+    else if(S.last&&S.last!==ff.ref){ff.ref=S.last;const bad=ffFailed(S.last);if(!bad)buzz(20);ffSet(st==="limit"?(bad?"broke":"held"):(bad?"still":"done"));ffShow();return;}
+    else if(ph==="run"){ffSet("go");return;}}
+  else if(st==="fix"){const ok=!!quick&&!quick.fails.length;if(ph==="go"&&ok){buzz(20);ffSet("ok");return;}if(ph==="ok"&&!ok){ffSet("go");return;}}
+  const P=ffCur(),dt=performance.now()-ff.t0;if(P.auto&&dt>P.auto){ffNext();return;}
+  $("ffNext").style.display=dt>=(P.d||0)?"":"none";ffPlace();}
+function ffStart(to){if(ff)return;if(testing){toast("Let the dyno finish first");return;}
+  closeSheet();if(tourStep>=0){tourStep=-1;$("tour").hidden=true;}
+  const rig=ffRig();ff={to:to||S.mode||"sandbox",rig,step:0,phase:"go",t0:0,ref:null,back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle,sound:S.sound,tabs:Object.assign({},tabScroll,{[curTab]:$("panel").scrollTop})}};tabScroll.build=0;
+  S.cfg=Object.assign({},rig.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,{testType:"pull"});S.profileId=rig.p.soundProfile;S.name=rig.p.name;S.last=null;curTab="build";resetBase();
+  if(S.mode!=="sandbox"){S.mode="sandbox";boot();}else{afterCfgChange(true);hud();showTab("build");}
+  $("ff").hidden=false;ff.iv=setInterval(ffTick,200);ffStep(0);}
+// Skip or finish. Mid-pull it waits for the dyno to stop so the result lands on the scratch engine.
+function ffEnd(){if(!ff)return;$("ff").hidden=true;if(testing){ff.ending=true;return;}ffFinish(true);}
+function ffFinish(hand){const f=ff;if(!f)return;ff=null;clearInterval(f.iv);$("ff").hidden=true;const b=f.back;
+  run.idle=b.idle;$("idleBtn").classList.toggle("on",run.idle);
+  Object.assign(S,{cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,mode:f.to,firstFireDone:true});curTab=b.tab;
+  if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;}
+  if(S.sound!==b.sound){S.sound=b.sound;$("sndBtn").classList.toggle("on",S.sound);if(!S.sound)ENGINE_SOUND.stop();}
+  resetBase();save();boot();Object.assign(tabScroll,b.tabs);$("panel").scrollTop=b.tabs[curTab]||0;if(hand&&career()&&!S.tourDone)setTimeout(startTour,350);}
+// if the page goes away mid-run, leave the player's own game in storage, not the scratch V6
+function ffSafeSave(){if(!ff)return;const keep={mode:S.mode,cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,sound:S.sound},b=ff.back;
+  Object.assign(S,{mode:ff.to,cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,sound:b.sound});save();Object.assign(S,keep);}
+$("ffSkip").addEventListener("click",ffEnd);$("ffNext").addEventListener("click",ffNext);$("ffShow").addEventListener("click",ffShow);
+$("replayFF").addEventListener("click",()=>{ensureSound();ffStart(S.mode);});
+// a new player's first tap on the intro runs First Fire before the mode they picked (capture beats the handler above)
+$("intro").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b||S.firstFireDone)return;e.stopPropagation();$("intro").style.display="none";S.seen=true;ensureSound();ffStart(b.dataset.mode);},true);
+// buttons that swap the whole game end First Fire first, so they act on the player's own save
+$("panel").addEventListener("click",e=>{if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
+  if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));},true);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)ffSafeSave();});window.addEventListener("pagehide",ffSafeSave);
+window.addEventListener("resize",()=>{if(ff)ffPlace();});$("panel").addEventListener("scroll",()=>{if(ff)ffPlace();},{passive:true});
 
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
@@ -12030,7 +12503,7 @@ function abStop(){AB.playing=null;abRender();}
 $("abSec").addEventListener("click",e=>{
   const cap=e.target.closest("[data-abcap]");if(cap){AB[cap.dataset.abcap]=Object.assign({},S.cfg);abRender();toast(`Captured into ${cap.dataset.abcap}`);buzz(10);return;}
   const ld=e.target.closest("[data-abload]");if(ld){const c=AB[ld.dataset.abload];if(!c){toast("That slot is empty");return;}
-    S.cfg=Object.assign({},c);S.profileId=null;resetBase();afterCfgChange(true);toast(`${ld.dataset.abload} loaded into the build`);return;}
+    fuelFit(c);S.cfg=Object.assign({},c);S.profileId=null;resetBase();afterCfgChange(true);toast(`${ld.dataset.abload} loaded into the build`);return;}
   const pl=e.target.closest("[data-abplay]");if(pl){abPlay(pl.dataset.abplay);return;}
   if(e.target.closest("#abStop")){abStop();return;}
   const nr=e.target.closest("[data-abr]");if(nr){AB.rpm=Math.max(900,Math.min(9000,AB.rpm+ +nr.dataset.abr*250));$("abRpm").value=AB.rpm;abRender();return;}
@@ -12041,6 +12514,7 @@ $("abSec").addEventListener("input",e=>{
   else if(e.target.id==="abLoad"){AB.load=+e.target.value/100;abRender();}});
 
 function tick(now){
+  if(!ENGINE_VIS.frameDue(now)){requestAnimationFrame(tick);return;}
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
   const L=LAYOUTS[S.cfg.layout];
   let rpm=run.rpm,load=run.load,on=run.on;
@@ -12094,20 +12568,45 @@ function tick(now){
 
 /* ===================== TABS & BOOT ===================== */
 let curTab="build";
-function showTab(t){curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
-  if(t==="test")renderTest();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
-document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+/* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
+const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
+function showTab(t){tabScroll[curTab]=$("panel").scrollTop;curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+  if(t==="test")renderTest();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
+/* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
+   If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
+function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(ff||curTab!=="test"||!v)return;
+  const pr=pn.getBoundingClientRect(),vr=v.getBoundingClientRect(),st=document.querySelector(".tabpage.on .strip"),sc=st&&st.offsetParent&&getComputedStyle(st);
+  const top=pr.top+pn.clientTop+(sc&&sc.position==="sticky"?parseFloat(getComputedStyle(pn).paddingTop)+(parseFloat(sc.top)||0)+st.offsetHeight:0)+8;
+  const bot=Math.min(pr.bottom,$("tabs").getBoundingClientRect().top)-8;
+  if(vr.top>=top&&vr.bottom<=bot)return;pn.scrollTo({top:pn.scrollTop+vr.top-top,behavior:calmScroll()});}
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
-function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);$("sizeBtn").setAttribute("aria-label",miniView?"Grow the engine view":"Shrink the engine view");}
+function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
 $("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;save();buzz(8);});
+/* HUD toggles mirror their .on class into aria-pressed however they get flipped; START reads STOP
+   while the engine idles, and VIEW wears a dot when anything in its tray is on */
+function hudSync(){const on=id=>$(id).classList.contains("on");["sndBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>$(id).setAttribute("aria-pressed",on(id)));
+  const idling=on("idleBtn");$("idleBtn").querySelector(".lb").textContent=idling?"Stop":"Start";$("idleBtn").setAttribute("aria-label",idling?"Stop engine":"Start engine");
+  $("viewBtn").classList.toggle("lit",on("sizeBtn")||on("xrayBtn")||on("heatBtn"));}
+{const mo=new MutationObserver(hudSync);["sndBtn","idleBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:["class"]}));hudSync();}
+/* VIEW tray: hangs under its button (fixed, so it can drop past a small view); outside tap or Escape closes it */
+function viewTray(open){const t=$("viewTray"),b=$("viewBtn");open=open==null?t.hidden:!!open;t.hidden=!open;b.setAttribute("aria-expanded",open);b.classList.toggle("open",open);if(!open)return;
+  const r=b.getBoundingClientRect(),a=$("app").getBoundingClientRect();t.style.top=Math.round(r.bottom+6)+"px";t.style.left=Math.round(Math.max(a.left+8,Math.min(r.left,a.right-t.offsetWidth-8)))+"px";}
+$("viewBtn").addEventListener("click",()=>{viewTray();buzz(6);});
+document.addEventListener("pointerdown",e=>{if(!$("viewTray").hidden&&!e.target.closest("#viewTray,#viewBtn"))viewTray(false);},true);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("viewTray").hidden){viewTray(false);$("viewBtn").focus();}});
+$("viewTray").addEventListener("focusout",e=>{if(e.relatedTarget&&!e.relatedTarget.closest("#viewTray,#viewBtn"))viewTray(false);});
+window.addEventListener("resize",()=>{if(!$("viewTray").hidden)viewTray(true);});
 if(window.ResizeObserver){let rt=null;new ResizeObserver(()=>{ENGINE_VIS.resize();clearTimeout(rt);rt=setTimeout(()=>{ENGINE_VIS.resize();ENGINE_VIS.reframe();},320);}).observe($("view"));}
 let visReady=false;
 function boot(){
   if(!S.mode)S.mode="sandbox";
+  for(const k in tabScroll)delete tabScroll[k];$("panel").scrollTop=0; // new shop, new pages: every tab starts at the top
   if(!visReady){ENGINE_VIS.init($("gl"));visReady=true;requestAnimationFrame(tick);}
   ENGINE_VIS.buildGarage(garageOwned());ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);
+  applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
   applyTheme();applySoundQuality();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
