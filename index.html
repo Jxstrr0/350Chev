@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.8.1.1 — major.minor.feature.hotfix -->
+<!-- VERSION 1.8.1.2 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -6456,7 +6456,7 @@ function buildEngineMesh(cfg, layoutObj){
   /* ---------- banks ---------- */
   setZone(2);
   var bankInfo=[];
-  EXH_COLL=[]; CRACK=null;
+  EXH_COLL=[]; PIPE_LOG=[]; CRACK=null;
   var tFeed = (asp==="turbo"||asp==="twin_turbo"||asp==="compound") ? ((banks===1 && asp==="twin_turbo") ? 2 : 1) : 0;
   for(var bk=0; bk<banks; bk++){
     var zs = (bk===0) ? 1 : -1;
@@ -7230,6 +7230,7 @@ function pipeMesh(B, localPts, rad, matKey, seg){
   var world=[], i;
   for(i=0;i<localPts.length;i++) world.push(localPts[i].clone().applyMatrix4(B.top()));
   LAST_PIPE_END = world[world.length-1].clone();
+  PIPE_LOG.push({pts:world, rad:rad});
   if(CUR_B){
     var tg=TUBE(world, rad, seg||18, 10);
     if(DET && (matKey==="palu" || matKey==="castexh")) tubeUV(tg, rad);   /* stainless keeps u 0..1: its heat tint runs from the flange */
@@ -7514,6 +7515,7 @@ function buildIntake(B, p, extras){
 /* ===========================================================================
    7d. ASPIRATION (turbo / twin / compound / roots / screw / centrifugal + intercooler)
    ==========================================================================*/
+var PIPE_LOG=[];          /* every pipe built so far this engine (world points + radius): turbos are placed clear of the headers */
 var EXH_COLL=[];          /* turbo feed flanges, engine space: {pt, dir, bank, r, cast} (filled by buildExhaust) */
 var LAST_TB=null;         /* throttle inlet {pt, dir(upstream)} (filled by buildIntake) */
 var LAST_PLEN=null;       /* plenum / blower-manifold box {x, z, top, bot, len, w} (filled by buildIntake) */
@@ -7521,14 +7523,15 @@ var TURBO_MM = { small:46, medium:54, large:64, huge:76, f88:88, f98:98 };      
 var FLOW_LB  = { small:26, medium:40, large:58, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
 function turboScale(tsz){ return (TURBO_MM[tsz]||54)*0.019; }   /* housing unit s (scene units): compressor cover OD = 1.6 s, absolute size */
 
-/* a pipe must not run through a cone filter: sample its route, push every sample out of the filter's cylinder
-   (axis a-b, radius r + gap), smooth, and push again so the pipe arcs round the filter instead of cutting it */
+/* a pipe must not run through a cone filter or a compressor cover: sample its route, push every sample out of each
+   obstacle cylinder (axis a-b, radius r + gap), smooth, and push again so the pipe arcs round it instead of cutting it */
 function clearOfFilters(pts, flts, gap){
   if(!flts || !flts.length) return pts;
   var cv=new THREE.CatmullRomCurve3(pts, false, "centripetal"), n=Math.max(32, pts.length*10), q=[], k, m, f, hit=false;
   for(k=0;k<=n;k++) q.push(cv.getPoint(k/n));
-  var push=function(v){
+  var p0=pts[0], push=function(v){
     for(m=0;m<flts.length;m++){ f=flts[m];
+      if(f.co && p0.distanceTo(f.co)<f.s*0.25 && v.distanceTo(f.co)<f.s*0.85) continue;   /* a charge pipe leaving this compressor's own outlet */
       var ab=f.b.clone().sub(f.a), t=clamp(v.clone().sub(f.a).dot(ab)/ab.lengthSq(), 0, 1), c=f.a.clone().addScaledVector(ab, t), d=v.clone().sub(c), L2=d.length(), need=f.r+gap;
       if(L2<need){ if(L2<1e-4) d.set(0,1,0); else d.multiplyScalar(1/L2); v.copy(c).addScaledVector(d, need); hit=true; } } };
   for(k=1;k<n;k++) push(q[k]);
@@ -7538,6 +7541,18 @@ function clearOfFilters(pts, flts, gap){
     for(k=1;k<n;k++) push(q[k]);
   }
   return q;
+}
+/* does a compressor scroll (turbo centre T, scale s, inlet toward cdir*x) sit on any pipe already built? */
+function cmpHits(T, s, cdir){
+  var a=V3(T.x+cdir*s*0.62, T.y, T.z), b=V3(T.x+cdir*s*1.08, T.y, T.z), ab=b.clone().sub(a), L2=ab.lengthSq(), i, k;
+  for(i=0;i<PIPE_LOG.length;i++){
+    var P=PIPE_LOG[i], cv=new THREE.CatmullRomCurve3(P.pts, false, "centripetal"), q=cv.getSpacedPoints(40);
+    for(k=1;k<q.length-1;k++){
+      var t=q[k].clone().sub(a).dot(ab)/L2; if(t<0||t>1) continue;
+      if(q[k].distanceTo(a.clone().addScaledVector(ab,t)) < s*0.80+P.rad) return true;
+    }
+  }
+  return false;
 }
 function buildAspiration(B, p, extras){
   var asp=p.asp, bore=p.bore, bankLen=p.bankLen, L=p.L;
@@ -7559,7 +7574,7 @@ function buildAspiration(B, p, extras){
 
     var upPipe = function(C, t, key){
       var d=C.pt.distanceTo(t.ti), k=Math.min(bore*0.45, Math.max(bore*0.22, d*0.34));
-      extras.push(pipeMesh(B, [C.pt, C.pt.clone().addScaledVector(C.dir,k), t.ti.clone().addScaledVector(t.tiDir,k), t.ti], C.r, key, 18));
+      extras.push(pipeMesh(B, clearOfFilters([C.pt, C.pt.clone().addScaledVector(C.dir,k), t.ti.clone().addScaledVector(t.tiDir,k), t.ti], out.filt, C.r+bore*0.04), C.r, key, 18));
     };
     var extWG = function(C, t, sd){   /* external wastegate teed off the feed pipe, with a screamer pipe */
       var M0=C.pt.clone().lerp(t.ti, 0.5), dW=(L.boxer ? V3(0,-0.55,sd*0.83) : V3(0,0.6,sd*0.8)).normalize(), ang=Math.atan2(dW.z,dW.y);
@@ -7580,7 +7595,7 @@ function buildAspiration(B, p, extras){
       extras.push(pipeMesh(B, pts, X.r, key, 48));
     };
 
-    var dps=[];
+    var dps=[], ups=[];
     for(var u=0; u<units.length; u++){
       var U=units[u], C=U.C, sd=U.side, s1=cmpd ? s0*0.72 : s0, cdir=1, T;
       if(L.boxer){
@@ -7590,6 +7605,8 @@ function buildAspiration(B, p, extras){
         /* hung off the manifold flange, outboard and a little low; never below the sump */
         T=C.pt.clone().add(V3(0, -s1*0.55, sd*(s1*0.95 + bore*0.15)));
         T.y=Math.max(T.y, yF + s1*0.95);
+        /* big turbos on a vee: the compressor scroll can land on the header runners. Step the turbo outboard until it clears */
+        for(var nud=0; nud<8 && cmpHits(T, s1, cdir); nud++) T.z += sd*bore*0.08;
         var tipX = T.x + s1*2.35, zIn = Math.abs(T.z) - s1*0.6;
         if((p.ic==="air_air" && tipX > bankLen*0.5 + bore*1.05 && zIn < fmicZ) ||
            (tipX > bankLen*0.5 + bore*0.10 && zIn < p.caseW*0.52 + bore*0.70)) cdir=-1;   /* filter would hit the FMIC / belt drive: inlet to the rear */
@@ -7597,7 +7614,6 @@ function buildAspiration(B, p, extras){
       var coD = L.boxer ? V3(0,1,0) : V3(0,0.82,sd*0.57);
       var t1 = buildTurbo(B, extras, p, T, s1, cdir, C.pt, coD, {side:sd, filter:!cmpd, extWG:ext, downpipe:!cmpd});
       var hk = C.cast ? "castexh" : "stainless";
-      upPipe(C, t1, hk);
       if(ext) extWG(C, t1, sd);
       if(U.X) cross(U.X, C, hk);
       if(cmpd){
@@ -7613,10 +7629,11 @@ function buildAspiration(B, p, extras){
         t1.tip = t2.tip;
       }
       out.cout.push({pt:t1.co, dir:t1.coDir});
-      dps.push(t1); if(t1.filt) (out.filt=out.filt||[]).push(t1.filt);
-      if(cmpd){ dps.push(t2); if(t2.filt) (out.filt=out.filt||[]).push(t2.filt); }
+      dps.push(t1); if(t1.filt) (out.filt=out.filt||[]).push(t1.filt); out.filt=(out.filt||[]).concat(t1.cmp); ups.push([C, t1, hk]);
+      if(cmpd){ dps.push(t2); if(t2.filt) out.filt.push(t2.filt); out.filt=out.filt.concat(t2.cmp); }
       if(!out.tip) out.tip = t1.tip;
     }
+    for(q=0;q<ups.length;q++) upPipe(ups[q][0], ups[q][1], ups[q][2]);
     for(q=0;q<dps.length;q++) if(dps[q].dp){ var dq=dps[q].dp; extras.push(pipeMesh(B, clearOfFilters(dq.pts, out.filt, dq.rad+0.04), dq.rad, "stainless", 18)); }
     addIntercooler(B,p,extras,true,out);
     return out;
@@ -7924,6 +7941,8 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
     co:B.pt(s*0.86, cEy+lo.y*dL, cEz+lo.z*dL), coDir:dO.clone(), tip:null,
     filt:o.filter ? {a:B.pt(s*1.68,0,0), b:B.pt(s*2.32,0,0), r:s*0.55} : null
   };
+  r.cmp=[{a:B.pt(s*0.62,0,0), b:B.pt(s*1.08,0,0), r:s*0.80, co:r.co, s:s},
+         {a:B.pt(s*1.08,0,0), b:B.pt(s*1.58,0,0), r:s*0.52, co:r.co, s:s}];
   B.pop();
   if(o.downpipe!==false){
     var xd=-cdir, y0=r.to.y, yF=(p.panBot===undefined?-1e9:p.panBot)+s*0.32, zo=(o.side||1)*s*0.75, pts;
@@ -11356,7 +11375,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.8.1.1";
+const VERSION="1.8.1.2";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
