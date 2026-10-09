@@ -6276,7 +6276,7 @@ var composer=null, bloomPass=null, GFX="lite", XRAY=false;
 var GRIME_UNIFORM={ value:0 };
 var heatZones=null, _ndc=new THREE.Vector2(), _ray=new THREE.Raycaster();
 var engBox = new THREE.Box3(new THREE.Vector3(-3,6,-2), new THREE.Vector3(3,12,2));
-var run = { on:false, rpm:0, load:0, fail:false, redline:7000, smooth:70, first:0.05, second:0.85, n:4, angle:0, stroke:86, rodRatio:1.7, cam:40 };
+var run = { on:false, rpm:0, load:0, fail:false, redline:7000, smooth:70, first:0.05, second:0.85, n:4, angle:0, stroke:86, rodRatio:1.7, cam:40, smoke:0 };
 /* mount dynamics state: roll about the crank axis is a real spring-damper so blips rock and settle */
 var mnt = { roll:0, rollV:0, lope:0, lopeT:0, nz:[0,0,0], buzz:[0,0,0] };
 var particles=[];
@@ -6474,6 +6474,8 @@ function buildEngineMesh(cfg, layoutObj){
     bankInfo.push(info);
     B.pop();
   }
+
+  if(isDieselCfg(cfg)){ setZone(0); dieselFuel(B, { cfg:cfg, L:L, bore:bore, bankLen:bankLen, bankW:bankW, deckH:deckH, skirt:skirt, bspace:bspace, per:per }, bankInfo, extras); }
 
   /* ---------- internals: crank, rods, pistons (X-ray) ---------- */
   setZone(1);
@@ -6750,6 +6752,248 @@ function hoseEnds(g, rad, type){
 }
 
 /* ===========================================================================
+   7a-d. DIESEL FUEL HARDWARE: injectors, glow plugs, injection pump and its lines. Petrol builds never reach it.
+   ==========================================================================*/
+function isDieselCfg(c){
+  var E=(typeof ENGINE_SIM!=="undefined")?ENGINE_SIM:null; if(!c||!E) return false;
+  if(E.isDiesel) return !!E.isDiesel(c);
+  return !!(((E.OPT||{}).fuel||{})[c.fuel]||{}).ci;
+}
+/* hex nut / fitting at a line end, axis along `dir` */
+function dzNut(B, pos, dir, r, len){
+  var q=new THREE.Quaternion().setFromUnitVectors(_UP, dir.clone().normalize());
+  B.addM("steel", CYL(r,r,len,6,false,3.0), new THREE.Matrix4().compose(pos, q, new THREE.Vector3(1,1,1)));
+}
+/* a steel pressure line through engine-space points, with a nut at each end in Ultra */
+function dzLine(B, pts, rad, key){
+  B.addW(key||"steel", TUBE(pts, rad, 10*pts.length+8, 6));
+  if(DET>=2){
+    var n=pts.length;
+    dzNut(B, pts[0].clone().lerp(pts[1],0.06), pts[1].clone().sub(pts[0]), rad*1.9, rad*3.4);
+    dzNut(B, pts[n-1].clone().lerp(pts[n-2],0.06), pts[n-2].clone().sub(pts[n-1]), rad*1.9, rad*3.4);
+  }
+}
+/* per cylinder: an injector (stubby steel body, HP inlet on the intake side, return nipple or connector on top) and a
+   glow plug in the exhaust-side head flank with a bus bar across the terminals. Returns the HP inlets (bank-local). */
+function dieselHead(B, p, g){
+  var bore=p.bore, per=p.per, bspace=p.bspace, zs=p.zs, Z=g.Z, di=(p.cfg&&p.cfg.dInj)||"rotary_ve", i, RX=function(r){ return r*zs; };
+  var elec=(di==="heui"||di==="cr_gen1"||di==="cr_piezo"), slim=(di==="cr_piezo")?0.8:1;
+  var by, iz;
+  if(p.pushrod){ by=g.covY+g.coverH*0.90; iz=Z(-g.covW*0.20); }
+  else if(p.sohc){ by=g.covY+g.coverH*0.92; iz=Z(-g.covW*0.22); }
+  else if(p.head==="billet_hemi"){ by=g.covY+g.coverH*1.15; iz=0; }
+  else { by=g.covY+g.coverH*0.72; iz=0; }
+  var hI=bore*0.38, rI=bore*0.072*slim, yIn=by+hI*0.80, out=[], retPts=[];
+  for(i=0;i<per;i++){
+    var x=-p.bankLen/2 + bspace*(i+0.5);
+    B.add("steel", CYL(rI*1.6,rI*1.7,bore*0.07,6,false,3.0), x, by, iz);                      /* clamp boss */
+    B.add("steel", CYL(rI,rI*1.12,hI,10,false,2.4), x, by+hI*0.5, iz);                        /* body */
+    B.add(elec?"dark":"malu", CYL(rI*1.18,rI*1.18,bore*0.07,10,false,2.4), x, by+hI+bore*0.02, iz);
+    B.add("steel", CYL(rI*0.5,rI*0.55,bore*0.11,8,false,3.0), x, yIn, iz-zs*(rI+bore*0.04), RX(PI/2),0,0);   /* HP inlet nipple, intake side */
+    out.push({x:x, y:yIn, z:iz-zs*(rI+bore*0.095)});
+    if(elec){
+      B.add("blackPlast", BOX(bore*0.10, bore*0.075, bore*0.12), x, by+hI+bore*0.085, iz+zs*bore*0.01);   /* connector body */
+      if(DET) B.add("connGrey", BOX(bore*0.07, bore*0.035, bore*0.08), x, by+hI+bore*0.13, iz+zs*bore*0.01);
+    }
+    if(di!=="heui"){
+      B.add("malu", CYL(rI*0.42,rI*0.46,bore*0.10,8,false,3.0), x, by+hI*0.95, iz+zs*(rI+bore*0.04), RX(-PI/2),0,0);   /* return-line nipple */
+      retPts.push(B.pt(x, by+hI*0.95, iz+zs*(rI+bore*0.11)));
+      if(DET>=2) B.hw("clamp", x, by+hI*0.95, iz+zs*(rI+bore*0.085), 0,0,0, rI*0.55);
+    }
+  }
+  var retEnd=null;
+  if(DET && retPts.length){   /* return line: one rubber hose along the row, dropping off the rear end */
+    var q0=B.pt(-p.bankLen/2-bore*0.20, by+hI*0.95, iz+zs*(rI+bore*0.11)), q1=B.pt(-p.bankLen/2-bore*0.28, by-bore*0.12, iz+zs*(rI+bore*0.16));
+    B.addW("hose", TUBE([B.pt(p.bankLen/2-bspace*0.25, by+hI*0.95, iz+zs*(rI+bore*0.11))].concat(retPts, [q0, q1]), bore*0.022, 40, 6)); retEnd=q1;
+  }
+  /* glow plugs tilt out of the exhaust-side head flank between the ports; a bus bar ties the terminals */
+  var hy=g.headY+g.headH*0.86, hz=Z(g.headW*0.5), tl=0.55, d=V3(0, Math.cos(tl), zs*Math.sin(tl)), tips=[], gx, rxg=zs*tl;
+  for(i=0;i<per;i++){
+    gx=-p.bankLen/2 + bspace*(i+0.5) - bspace*0.26;
+    var b0=V3(gx,hy,hz);
+    B.add("steel", CYL(bore*0.05,bore*0.055,bore*0.06,6,false,3.0), gx, hy, hz, rxg,0,0);
+    var c1=b0.clone().addScaledVector(d, bore*0.17);
+    B.add("steel", CYL(bore*0.026,bore*0.03,bore*0.22,8,false,3.0), c1.x, c1.y, c1.z, rxg,0,0);
+    var tip=b0.clone().addScaledVector(d, bore*0.31);
+    B.add("chrome", CYL(bore*0.012,bore*0.012,bore*0.08,6,false,3.0), tip.x, tip.y, tip.z, rxg,0,0);
+    B.add(DET?"connGrey":"blackPlast", CYL(bore*0.03,bore*0.03,bore*0.03,8,false,3.0), tip.x, tip.y, tip.z, rxg,0,0);
+    tips.push(tip);
+  }
+  var glowEnd=null;
+  if(DET){
+    var gy=tips[0].y+bore*0.01, gz=tips[0].z;
+    B.add("copper", BOX(p.bankLen*0.86, bore*0.02, bore*0.045), -bspace*0.26, gy+bore*0.02, gz);
+    for(i=0;i<per;i++) B.add("steel", CYL(bore*0.028,bore*0.028,bore*0.025,6,false,3.0), tips[i].x, gy+bore*0.04, gz);
+    if(DET>=2){
+      for(i=0;i<per;i++) B.hw("hex", tips[i].x, gy+bore*0.032, gz, 0,0,0, bore*0.045);
+      glowEnd=B.pt(-p.bankLen/2-bore*0.30, gy-bore*0.25, gz+zs*bore*0.05);
+      B.addW("wireRed", TUBE([B.pt(-p.bankLen*0.43-bspace*0.26, gy+bore*0.03, gz), B.pt(-p.bankLen/2-bore*0.08, gy+bore*0.02, gz), glowEnd], bore*0.016, 14, 5));
+    } else glowEnd=B.pt(-p.bankLen/2-bore*0.20, gy-bore*0.12, gz);
+  }
+  return {inl:out, yIn:yIn, by:by, hI:hI, iz:iz, retEnd:retEnd, glowEnd:glowEnd, rI:rI};
+}
+/* injection pump + lines for the whole engine (all banks), engine space. X = {cfg,L,bore,bankLen,bankW,deckH,skirt,bspace,per}. */
+function dieselFuel(B, X, bankInfo, extras){
+  var cfg=X.cfg, di=cfg.dInj||"rotary_ve", bore=X.bore, bl=X.bankLen, per=X.per, bsp=X.bspace, L=X.L, i, k, b, info, nb=bankInfo.length;
+  var piezo=(di==="cr_piezo"), off=bsp*0.34;
+  var W=function(inf,x,y,z){ return V3(x,y,z).applyMatrix4(inf.matrix); };
+  /* pump seat: on the intake flank of the block (inline), in the valley (vee) or on top of the case (boxer) */
+  var R = bore*(di==="inline_mech"?0.31:di==="rotary_ve"?0.30:di==="heui"?0.36:0.26)*(piezo?1.1:1);
+  var cy = L.boxer ? bore*0.75+R+bore*0.20 : L.vee ? X.deckH*0.80 : X.skirt+(X.deckH-X.skirt)*0.40;
+  var cz = (L.boxer||L.vee) ? 0 : -(X.bankW*0.5 + R + bore*0.12);
+  var cx = 0;
+  if(di==="rotary_ve"||di==="cr_gen1"||di==="cr_piezo") cx = bl*0.5 - bore*(L.vee?0.0:0.62);
+  else if(di==="heui") cx = -bl*0.5 + bore*(L.vee?0.1:0.62);
+  else cx = bl*0.02;
+  /* mounting bracket from the pump down to the block flank */
+  var seat=function(x, len){
+    if(L.boxer||L.vee) return;
+    var gap = (-X.bankW*0.5) - (cz + R*0.85);
+    for(var s=-1;s<=1;s+=2) B.add("calu", BOX(bore*0.20, R*1.1, Math.max(0.02, gap)+bore*0.05), x+s*len*0.4, cy-R*0.1, cz+R*0.85+gap/2);
+    for(var s2=-1;s2<=1;s2+=2) B.hw("hex", x+s2*len*0.4, cy-R*0.1, -X.bankW*0.5-bore*0.02, -PI/2,0,0, bore*0.08);
+  };
+  var outs=[[],[]];          /* [bank][cyl] world outlet points */
+  var top=null;              /* a pump fitting the rail / return line can use */
+  if(di==="inline_mech"){
+    /* P7100: a long finned inline pump on the intake flank, driven from the front gear case, governor at the rear */
+    var len=bl*0.88, xr=-bl*0.5+bore*0.34, xf=xr+len, xm=(xr+xf)/2;
+    B.add("calu", RBOX(len, R*2, R*1.9, bore*0.03), xm, cy, cz);
+    B.add("calu", CYL(R*1.0,R*1.0,bore*0.16,18,false,2.4), xf+bore*0.07, cy, cz, 0,0,PI/2);                    /* drive flange on the gear case */
+    B.add("steel", CYL(R*0.5,R*0.5,bore*0.08,12,false,2.4), xf+bore*0.17, cy, cz, 0,0,PI/2);
+    B.add("calu", RBOX(len*0.98, R*0.5, R*2.0, bore*0.02), xm, cy+R*0.95, cz);                                 /* delivery housing on top */
+    if(DET){ var nf=Math.round(len/(bore*0.19));
+      for(i=0;i<nf;i++) B.add("calu", BOX(bore*0.035, R*2.12, R*1.98), xr+bore*0.3+i*(len-bore*0.4)/(nf-1), cy-R*0.04, cz); }
+    var gx=xr-bore*0.08;
+    B.add("calu", CYL(R*1.28,R*1.28,bore*0.42,18,false,2.4), gx, cy, cz, 0,0,PI/2);                             /* governor housing */
+    B.add("calu", CYL(R*0.92,R*0.92,bore*0.30,14,false,2.4), gx, cy+R*1.34, cz);
+    B.add("dark", CYL(R*0.42,R*0.42,bore*0.20,12,false,2.4), gx, cy+R*1.34+bore*0.22, cz);                      /* fuel shut-off solenoid */
+    B.add("steel", CYL(R*0.14,R*0.14,bore*0.10,8,false,2.4), gx, cy+R*1.34+bore*0.37, cz);
+    if(DET){ B.add("connGrey", BOX(bore*0.10, bore*0.07, bore*0.10), gx+bore*0.10, cy+R*1.34+bore*0.24, cz+R*0.10);
+      B.add("steel", BOX(bore*0.035, R*1.5, bore*0.05), gx-bore*0.02, cy+R*0.1, cz-R*1.30);                      /* throttle lever */
+      B.add("chrome", SPH(bore*0.04,8), gx-bore*0.02, cy+R*0.85, cz-R*1.30); }
+    seat(xm, len);
+    for(b=0;b<nb;b++) for(i=0;i<per;i++){
+      var ox=-bl/2 + bsp*(i+0.5), oz=cz + (nb>1 ? bankInfo[b].zs*R*0.6 : 0), oy=cy+R*1.2+(nb>1?-R*0.2:0);
+      B.add("steel", CYL(bore*0.055,bore*0.06,bore*0.13,8,false,3.0), ox, oy-bore*0.01, oz);                    /* delivery valve holder */
+      outs[b][i]=V3(ox, oy+bore*0.08, oz);
+    }
+    top = V3(gx, cy+R*1.0, cz);
+  } else if(di==="rotary_ve"){
+    /* VE rotary: a compact barrel with the distributor head at the rear and a cold-start lever */
+    var vl=bore*0.80;
+    B.add("calu", CYL(R,R,vl,20,false,2.4), cx, cy, cz, 0,0,PI/2);
+    B.add("calu", CYL(R*1.15,R*1.15,bore*0.16,20,false,2.4), cx+vl/2+bore*0.03, cy, cz, 0,0,PI/2);                 /* drive-end flange */
+    B.add("steel", CYL(R*0.45,R*0.45,bore*0.12,10,false,2.4), cx+vl/2+bore*0.14, cy, cz, 0,0,PI/2);
+    var hxv=cx-vl/2-bore*0.12;
+    B.add("steel", CYL(R*0.98,R*0.98,bore*0.26,20,false,2.4), hxv, cy, cz, 0,0,PI/2);                             /* distributor head */
+    B.add("calu", CYL(R*1.02,R*1.02,bore*0.07,20,false,2.4), cx-vl/2+bore*0.01, cy, cz, 0,0,PI/2);
+    B.add("calu", RBOX(vl*0.7, R*0.5, R*1.2, bore*0.02), cx+bore*0.05, cy+R*0.92, cz);                            /* governor cover on top */
+    B.add("dark", CYL(R*0.34,R*0.34,bore*0.16,12,false,2.4), cx+bore*0.12, cy+R*1.2+bore*0.04, cz);               /* shut-off solenoid */
+    if(DET){ B.add("connGrey", BOX(bore*0.09, bore*0.06, bore*0.09), cx+bore*0.12, cy+R*1.2+bore*0.15, cz);
+      B.add("steel", BOX(bore*0.03, bore*0.30, bore*0.04), cx-bore*0.05, cy-R*0.3, cz-R*1.1);                    /* cold-start lever on the side */
+      B.add("chrome", SPH(bore*0.035,8), cx-bore*0.05, cy-R*0.3+bore*0.15, cz-R*1.1);
+      B.add("steel", CYL(bore*0.04,bore*0.04,bore*0.10,8,false,2.4), cx-bore*0.05, cy-R*0.3, cz-R*0.98, PI/2,0,0); }
+    seat(cx, vl);
+    var nOut=per*nb;
+    for(b=0;b<nb;b++) for(i=0;i<per;i++){
+      var kk = (b*per+i), ang = (nOut>1 ? (kk/(nOut-1)-0.5) : 0) * 2.0;        /* fan of outlets round the head, rad */
+      var px=hxv, py=cy+Math.cos(ang)*(R*1.0), pz=cz+Math.sin(ang)*(R*1.0);
+      B.add("steel", CYL(bore*0.05,bore*0.055,bore*0.11,8,false,3.0), px, py+Math.cos(ang)*bore*0.04, pz+Math.sin(ang)*bore*0.04, ang,0,0);
+      outs[b][i]=V3(px, py+Math.cos(ang)*bore*0.12, pz+Math.sin(ang)*bore*0.12);
+    }
+    top = V3(cx+bore*0.12, cy+R*1.2, cz);
+  } else if(di==="cr_gen1"||di==="cr_piezo"){
+    /* CP3 / CP4: round housing, flange on the gear case, metering valve and a high-pressure head with the outlet */
+    var pl=bore*0.62;
+    B.add("calu", CYL(R,R,pl,18,false,2.4), cx, cy, cz, 0,0,PI/2);
+    B.add("calu", CYL(R*1.12,R*1.12,bore*0.10,18,false,2.4), cx+pl/2+bore*0.04, cy, cz, 0,0,PI/2);
+    B.add("steel", CYL(R*0.42,R*0.42,bore*0.12,10,false,2.4), cx+pl/2+bore*0.14, cy, cz, 0,0,PI/2);
+    B.add("steel", RBOX(pl*0.7, R*0.9, R*1.5, bore*0.02), cx-pl*0.06, cy+R*0.86, cz);                              /* pump head */
+    B.add("paintBlue", CYL(R*0.34,R*0.34,bore*0.20,12,false,2.4), cx-pl*0.06, cy+R*1.3+bore*0.04, cz-R*0.35);      /* metering valve */
+    if(DET) B.add("connGrey", BOX(bore*0.09, bore*0.07, bore*0.09), cx-pl*0.06, cy+R*1.3+bore*0.17, cz-R*0.35);
+    B.add("steel", CYL(bore*0.06,bore*0.06,bore*0.16,8,false,3.0), cx+pl*0.18, cy+R*1.3+bore*0.04, cz+R*0.2);     /* HP outlet */
+    seat(cx, pl);
+    top = V3(cx+pl*0.18, cy+R*1.3+bore*0.12, cz+R*0.2);
+  } else if(di==="heui"){
+    /* high-pressure oil pump: a squat canister at the back of the valley (or the intake flank on an inline) */
+    B.add("calu", CYL(R,R*1.06,bore*0.55,20,false,2.4), cx, cy, cz);
+    B.add("calu", CYL(R*1.12,R*1.12,bore*0.08,20,false,2.4), cx, cy+bore*0.30, cz);
+    B.add("steel", CYL(R*0.55,R*0.6,bore*0.22,14,false,2.4), cx, cy+bore*0.44, cz);
+    B.add("dark", CYL(R*0.30,R*0.30,bore*0.18,10,false,2.4), cx, cy+bore*0.60, cz);
+    if(DET){ B.add("connGrey", BOX(bore*0.09, bore*0.07, bore*0.09), cx+bore*0.1, cy+bore*0.64, cz);
+      for(i=0;i<8;i++) B.hw("hex", cx+Math.cos(i*PI/4)*R*0.88, cy+bore*0.345, cz+Math.sin(i*PI/4)*R*0.88, 0,0,0, bore*0.07); }
+    seat(cx, bore*0.6);
+    top = V3(cx, cy+bore*0.45, cz);
+  }
+  /* ---------- lines, rails and wiring per bank (bank-local drawing) ---------- */
+  for(b=0;b<nb;b++){
+    info=bankInfo[b]; var dz=info.dz, zs=info.zs, Z=function(z){ return z*zs; };
+    var zf = -zs*(info.headW*0.5 + bore*0.17);
+    if(di==="inline_mech"||di==="rotary_ve"){
+      /* one pressure line per cylinder: pump outlet, up the head flank, across the cover to the injector */
+      for(i=0;i<per;i++){
+        var q=dz.inl[i], I=W(info,q.x,dz.yIn,q.z), A=W(info,q.x,dz.yIn,q.z-zs*bore*0.10), M=W(info,q.x+off*0.4,dz.yIn,(zf+q.z)/2);
+        var F1=W(info,q.x+off,dz.yIn,zf), O=outs[b][i], pts;
+        if(di==="inline_mech"){
+          var F0=W(info,q.x+off,info.headY+info.headH*0.10,zf);
+          pts=[O, O.clone().add(V3(0,bore*0.34,0)), F0, F1, M, A, I];
+        } else {      /* VE: a nested ladder, the farthest cylinder runs lowest, so the bundle never crosses */
+          var rank=Math.abs(q.x-cx)/(bl*0.5), runY=O.y+bore*0.30+(1-rank)*bore*0.55+i*bore*0.0;
+          var F0b=W(info,q.x+off,runY,zf);
+          pts=[O, V3(O.x,runY,O.z), F0b, F1, M, A, I];
+        }
+        dzLine(B, pts, bore*0.03);
+      }
+      if(DET && dz.retEnd && top){   /* return line from the injector row to the pump */
+        extras.push(hoseMesh([dz.retEnd, dz.retEnd.clone().add(V3(-bore*0.08,-bore*0.5,-zs*bore*0.1)), top.clone().add(V3(0,bore*0.12,0))], bore*0.02, MAT.hose));
+      }
+    } else if(di==="cr_gen1"||di==="cr_piezo"){
+      B.push(info.matrix);
+      var ry=info.covY+info.coverH*0.38, rz=-zs*(info.covW*0.5+bore*0.17), rl=bl*0.94;
+      B.add("steel", CYL(bore*0.058,bore*0.058,rl,12,false,3.0), 0, ry, rz, 0,0,PI/2);                               /* forged common rail */
+      B.add("steel", CYL(bore*0.075,bore*0.075,bore*0.05,12,false,3.0), rl/2, ry, rz, 0,0,PI/2);
+      B.add("steel", CYL(bore*0.075,bore*0.075,bore*0.05,12,false,3.0), -rl/2, ry, rz, 0,0,PI/2);
+      B.add("dark", CYL(bore*0.045,bore*0.045,bore*0.12,10,false,2.4), -rl*0.40, ry+bore*0.09, rz);                    /* rail pressure sensor */
+      if(DET) B.add("connGrey", BOX(bore*0.08, bore*0.06, bore*0.08), -rl*0.40, ry+bore*0.17, rz);
+      for(i=0;i<per;i++){
+        var q2=dz.inl[i], xi=q2.x;
+        B.add("steel", CYL(bore*0.03,bore*0.036,bore*0.09,8,false,3.0), xi, ry+bore*0.07, rz);                       /* outlet stub */
+        var S=B.pt(xi, ry+bore*0.10, rz), P1=B.pt(xi, (ry+dz.yIn)/2, rz), P2=B.pt(xi, dz.yIn, rz+Z(-bore*0.0));
+        var Mm=B.pt(xi, dz.yIn, (rz+q2.z)/2), A2=B.pt(xi, dz.yIn, q2.z-zs*bore*0.10), I2=B.pt(xi, dz.yIn, q2.z);
+        dzLine(B, [S, P1, P2, Mm, A2, I2], bore*0.03);
+      }
+      if(DET){   /* rail brackets */
+        for(i=0;i<=per;i+=Math.max(1,Math.floor(per/2))){ var rbx=clamp(-bl/2+bsp*i, -bl*0.44, bl*0.44);
+          B.add("steel", BOX(bore*0.08, bore*0.05, bore*0.14), rbx, ry-bore*0.02, rz+Z(bore*0.08));
+          B.hw("hex", rbx, ry+bore*0.0, rz+Z(bore*0.18), 0,0,0, bore*0.06); }
+      }
+      var rEnd=B.pt(rl/2+bore*0.05, ry, rz);
+      B.pop();
+      dzLine(B, [top.clone(), top.clone().add(V3(bore*0.12, bore*0.35, 0)), V3(rEnd.x+bore*0.15, rEnd.y+(L.vee?bore*0.1:bore*0.45), rEnd.z+(rEnd.z>top.z?-1:1)*bore*0.2*(L.vee?1:0)), rEnd], bore*0.034);
+    } else if(di==="heui"){
+      B.push(info.matrix);
+      /* oil rail block on the rear of the head, standpipe into the cover, injector connectors strung on a loom */
+      var rbz=Z(-info.covW*0.0), rby=info.covY+info.coverH*0.40, rbx2=-bl/2-bore*0.14;
+      B.add("anod", BOX(bore*0.22, bore*0.20, bore*0.34), rbx2, rby, rbz);
+      B.add("steel", CYL(bore*0.06,bore*0.06,bore*0.18,10,false,3.0), rbx2+bore*0.19, rby, rbz, 0,0,PI/2);
+      B.add("steel", CYL(bore*0.07,bore*0.07,bore*0.06,8,false,3.0), rbx2-bore*0.13, rby+bore*0.02, rbz+Z(bore*0.1), 0,0,PI/2);
+      if(DET){
+        B.add("connGrey", BOX(bore*0.10, bore*0.08, bore*0.10), rbx2, rby+bore*0.14, rbz+Z(bore*0.08));
+        var lp=[], lyy=dz.by+dz.hI+bore*0.13;
+        for(i=per-1;i>=0;i--) lp.push(B.pt(dz.inl[i].x, lyy, dz.iz+Z(bore*0.03)));
+        lp.push(B.pt(-bl/2-bore*0.04, lyy, dz.iz+Z(bore*0.03))); lp.push(B.pt(rbx2, rby+bore*0.2, rbz+Z(bore*0.08)));
+        B.addW("loom", uvByLength(TUBE(lp, bore*0.03, 30, 6), 1/1.4));
+      }
+      var tail=B.pt(rbx2-bore*0.13, rby+bore*0.02, rbz+Z(bore*0.1));
+      B.pop();
+      var o1=top.clone().add(V3(0,bore*0.05,0));
+      dzLine(B, [o1, o1.clone().add(V3(-bore*0.1, bore*0.25, 0)), V3(tail.x-bore*0.35, tail.y-(L.vee?0:bore*0.2), tail.z + (b===0?1:-1)*(L.vee?bore*0.25:0)), tail], bore*0.04, "steel");
+    }
+  }
+  return true;
+}
+
+/* ===========================================================================
    7a. ONE CYLINDER BANK
    ==========================================================================*/
 function buildBank(B, p, extras){
@@ -6761,6 +7005,7 @@ function buildBank(B, p, extras){
 
   var deckTop = deckH;
   var barrelH = deckH - skirt;
+  var DZ = isDieselCfg(p.cfg), dzInfo = null;
   var coilLoom = null, injLoomEnd = null;       /* wiring ends (engine space) for the harness trunk (Full / Ultra) */
 
   /* cylinder barrel / block deck */
@@ -6889,7 +7134,7 @@ function buildBank(B, p, extras){
     B.add("wrinkle", BOX(covL*1.04, coverH*0.10, covW*1.10), 0, covY+coverH*0.05, 0);
     B.addM("palu", CYL(covW*0.50, covW*0.50, covL, 26, false), mkM(0, covY+coverH*0.36, 0, 0,0,PI/2, 0.62,1,0.98));   /* sx squashes world Y: a low, full-width dome */
     B.add("palu", BOX(covL, coverH*0.34, covW*0.98), 0, covY+coverH*0.20, 0);
-    for(var hp=0; hp<p.per; hp++){
+    for(var hp=0; hp<(DZ?0:p.per); hp++){
       var hx=-bankLen/2 + bspace*(hp+0.5);
       B.add("malu", CYL(bore*0.11,bore*0.11,coverH*0.30,12), hx, covY+coverH*1.30, 0);     /* plug tube standing out of the dome crown */
       B.add("dark", CYL(bore*0.06,bore*0.06,coverH*0.12,10), hx, covY+coverH*1.50, 0);
@@ -6913,7 +7158,7 @@ function buildBank(B, p, extras){
     /* cast rib + name pad running down the saddle */
     B.add("wrinkle", BOX(covL*0.90, coverH*0.10, covW*0.30), 0, covY+coverH*0.70, 0);
     /* coil-on-plug packs sunk into the saddle */
-    for(i=0;i<per;i++){
+    for(i=0;i<per && !DZ;i++){
       var cx=-bankLen/2 + bspace*(i+0.5);
       B.add("blackPlast", BOX(bspace*0.34, coverH*0.34, covW*0.24), cx, covY+coverH*0.84, 0);
       B.add("blackPlast", BOX(bspace*0.16, coverH*0.16, covW*0.30), cx+bspace*0.10, covY+coverH*0.92, Z(covW*0.06));
@@ -6966,7 +7211,7 @@ function buildBank(B, p, extras){
   /* ---------- fuel rail + injectors (intake flank) ---------- */
   setZone(0);
   var inZ = Z(-headW*0.52);
-  if(p.intake!=="carb"){
+  if(p.intake!=="carb" && !DZ){
     /* bigger injectors are fatter bodies on a fatter rail */
     var injK = ({i440:1.06, i650:1.12, i1000:1.2, i1650:1.3, i2200:1.38, i2200x2:1.38, i2200x4:1.38})[p.cfg && p.cfg.injectors] || 1, railK = 1 + (injK-1)*0.9;
     B.add("malu", CYL(bore*0.055*railK,bore*0.055*railK,bankLen*0.94,12,false,3.0), 0, headY+headH*0.72, inZ+Z(-bore*0.16), 0,0,PI/2);
@@ -7009,7 +7254,7 @@ function buildBank(B, p, extras){
   /* ---------- plug leads for 2-valve heads: coil-near-plug (GM LS style) ----------
      one coil per cylinder on a bracket along the outboard shoulder of the cover; a short
      lead runs down the outside of the cover to the plug boot in the head flank */
-  if(p.pushrod || p.sohc){
+  if((p.pushrod || p.sohc) && !DZ){
     var shY = covY + (p.pushrod ? coverH*0.82 : coverH*0.55);   /* cover body top beside the crown / cam hump */
     var cpZ = covW*0.40;
     B.add("steel", BOX(bankLen*0.88, bore*0.035, bore*0.24), 0, shY+bore*0.018, Z(cpZ));
@@ -7030,8 +7275,9 @@ function buildBank(B, p, extras){
     }
     if(DET) coilLoom = [B.pt(bankLen*0.45, shY+bore*0.33, Z(cpZ-bore*0.17)), B.pt(0, shY+bore*0.34, Z(cpZ-bore*0.17)), B.pt(-bankLen*0.45, shY+bore*0.33, Z(cpZ-bore*0.17))];
   }
+  if(DZ){ setZone(3); dzInfo = dieselHead(B, p, { covY:covY, covW:covW, coverH:coverH, headY:headY, headH:headH, headW:headW, Z:Z }); if(dzInfo.glowEnd) coilLoom = [dzInfo.glowEnd, dzInfo.glowEnd]; }
   if(DET) setZone(3);     /* cover-top wiring and lettering belong to the head zone (tap / heat map) */
-  if(DET && p.dohc && p.head!=="billet_hemi"){
+  if(DET && p.dohc && p.head!=="billet_hemi" && !DZ){
     /* coil-on-plug: a connector on every coil, pigtails into a loom along the saddle */
     for(i=0;i<per;i++){
       var ccx=-bankLen/2 + bspace*(i+0.5);
@@ -7041,7 +7287,7 @@ function buildBank(B, p, extras){
     }
     coilLoom = [B.pt(bankLen*0.46, covY+coverH*1.0+bore*0.04, Z(-covW*0.19)), B.pt(0, covY+coverH*1.0+bore*0.045, Z(-covW*0.19)), B.pt(-bankLen*0.46, covY+coverH*1.0+bore*0.04, Z(-covW*0.19))];
   }
-  if(DET && p.head==="billet_hemi"){
+  if(DET && p.head==="billet_hemi" && !DZ){
     for(i=0;i<per;i++){
       var hcx=-bankLen/2 + bspace*(i+0.5);
       B.add("connGrey", BOX(bore*0.10, bore*0.05, bore*0.10), hcx, covY+coverH*1.56+bore*0.025, 0);
@@ -7050,7 +7296,7 @@ function buildBank(B, p, extras){
     for(i=0;i<per;i+=2) B.add("steel", BOX(bore*0.03, coverH*0.30, bore*0.03), -bankLen/2 + bspace*(i+1), covY+coverH*1.40, Z(bore*0.16));
     coilLoom = [B.pt(bankLen*0.46, covY+coverH*1.56+bore*0.02, Z(bore*0.16)), B.pt(0, covY+coverH*1.57+bore*0.02, Z(bore*0.16)), B.pt(-bankLen*0.46, covY+coverH*1.56+bore*0.02, Z(bore*0.16))];
   }
-  if(DET && coilLoom){
+  if(DET && coilLoom && !DZ){
     var rearDrop = coilLoom[2].clone().add(V3(-bore*0.30, -coverH*0.9, 0));
     coilLoom.push(rearDrop);
     B.addW("loom", uvByLength(TUBE(coilLoom, bore*0.036, 30, 6), 1/1.4));
@@ -7061,7 +7307,7 @@ function buildBank(B, p, extras){
     zs:zs, headW:headW, covW:covW, covY:covY, coverH:coverH, headY:headY, headH:headH,
     covTop: covY + (p.pushrod ? coverH*1.07 : p.sohc ? coverH*0.50+covW*0.30 : p.head==="billet_hemi" ? coverH*1.56 : coverH*1.10),
     exhZ:exhZ, inZ:inZ, matrix:p.matrix, bankLen:bankLen, exhaustTip:exhaustTip,
-    coilLoomEnd: coilLoom ? coilLoom[coilLoom.length-1] : null, injLoomEnd: injLoomEnd
+    coilLoomEnd: coilLoom ? coilLoom[coilLoom.length-1] : null, injLoomEnd: injLoomEnd, dz: dzInfo
   };
 }
 
@@ -8995,6 +9241,7 @@ var PKIND = {
   steam:     {color:0xf2f4f6, opacity:0.55, life:1.4, scale:0.8, vy:7.5, grow:3.8},
   flame:     {color:0xffb040, opacity:1.0,  life:0.28, scale:1.1, vy:2.0, grow:1.8, add:true, spark:true},
   oil:       {color:0x0c0a08, opacity:0.95, life:1.6, scale:0.16, vy:3.0, grow:0.9, drop:true, spread:4.5},
+  smokeBlack:{color:0x0a0a0b, opacity:0.62, life:2.6, scale:0.9, vy:3.0, grow:3.4},
   coolant:   {color:0x59d98a, opacity:0.85, life:1.5, scale:0.13, vy:5.0, grow:0.9, drop:true, spread:5.0}
 };
 function emit(kind, pos){
@@ -9433,12 +9680,23 @@ function tick(dt, t){
       _tmpV.copy(ep); _tmpV.x+=(Math.random()-0.5)*1.4; _tmpV.z+=(Math.random()-0.5)*1.4;
       emit("haze", _tmpV);
     }
+    /* diesel black smoke: rate and puff size follow the opacity; capped for phones */
+    smokeP.copy(ep);
+    if(run.on && run.smoke>0.03 && !run.fail && particles.length<(GFX==="lite"?260:520)){
+      smokeAcc += dt*(10+70*run.smoke*run.smoke)*Math.min(1,frac*2.2+0.3);
+      while(smokeAcc>=1){
+        smokeAcc-=1; _tmpV2.copy(smokeP); _tmpV2.x+=(Math.random()-0.5)*0.5; _tmpV2.z+=(Math.random()-0.5)*0.5;
+        emit("smokeBlack", _tmpV2);
+        var bs=particles[particles.length-1], bk=0.55+run.smoke*1.2;
+        bs.userData.s0*=bk; bs.userData.op*=0.45+run.smoke*0.55; bs.userData.vy*=1+run.smoke*0.4;
+      }
+    } else smokeAcc=0;
     if(run.fail) stepFail(dt);
     else if(failFx.debris.length) stepDebris(dt);
     stepParticles(dt);
   }
 }
-var exhaustTipW=null;
+var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
@@ -11173,6 +11431,7 @@ const ENGINE_VIS = {
     if(s.rodRatio!==undefined) run.rodRatio=s.rodRatio;
     if(s.cam!==undefined) run.cam=s.cam;
     if(s.wear!==undefined) run.wear=s.wear;
+    if(s.smoke!==undefined) run.smoke=clamp(+s.smoke||0,0,1);    /* diesel exhaust opacity 0..1 */
     if(!run.on){ run.rpm=0; run.load=0; }
   },
 
@@ -12625,6 +12884,14 @@ $("abSec").addEventListener("input",e=>{
   if(e.target.id==="abRpm"){AB.rpm=+e.target.value;abRender();}
   else if(e.target.id==="abLoad"){AB.load=+e.target.value/100;abRender();}});
 
+/* diesel exhaust opacity at this rpm: the sim's smoke curve, scaled by how hard the pedal is down */
+function dieselSmoke(q,rpm,load){
+  const isD=SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci;
+  if(!isD||!q||!q.smokeCurve||!q.rpms)return 0;
+  const R=q.rpms,C=q.smokeCurve;let i=0;while(i<R.length-1&&R[i+1]<rpm)i++;
+  const k=R[i+1]>R[i]?Math.min(1,Math.max(0,(rpm-R[i])/(R[i+1]-R[i]))):0,v=C[i]+((C[Math.min(i+1,C.length-1)]??C[i])-C[i])*k;
+  return (v||0)*Math.min(1,load);
+}
 function tick(now){
   if(!ENGINE_VIS.frameDue(now)){requestAnimationFrame(tick);return;}
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
@@ -12635,7 +12902,7 @@ function tick(now){
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
   rpm=visRpm;load=visLoad;on=visRpm>40;
-  ENGINE_VIS.setRun({on,rpm,load,fail:run.fail,failKind:run.failKind,redline:S.cfg.redline,smooth:quick?quick.smooth:L.smooth,first:L.firstOrder,second:L.secondOrder,n:L.n,angle:L.angle,stroke:S.cfg.stroke,rodRatio:S.cfg.rodRatio,cam:S.cfg.cam,wear:quick&&wearInfo(quick)?wearInfo(quick).w:0});
+  ENGINE_VIS.setRun({on,rpm,load,fail:run.fail,failKind:run.failKind,redline:S.cfg.redline,smooth:quick?quick.smooth:L.smooth,first:L.firstOrder,second:L.secondOrder,n:L.n,angle:L.angle,stroke:S.cfg.stroke,rodRatio:S.cfg.rodRatio,cam:S.cfg.cam,wear:quick&&wearInfo(quick)?wearInfo(quick).w:0,smoke:dieselSmoke(quick,rpm,load)});
   if(AB.playing&&AB[AB.playing]){
     const c=AB[AB.playing];
     if(soundReady&&S.sound){
