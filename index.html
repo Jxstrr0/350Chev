@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.8.1.2 — major.minor.feature.hotfix -->
+<!-- VERSION 1.9.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -13085,7 +13085,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.8.1.2";
+const VERSION="1.9.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -13959,7 +13959,7 @@ function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C
   h+=`<p class="hint">A higher hitch plants the rear tyres but lifts the nose — past a point the front hops and the grip goes with it. Weight on the front bracket holds it down${V.drive==="rwd"?", though on a two-wheel-drive tractor it takes a little off the rear":" and the front axle pulls too"}. A tall gear carries speed into the heavy end; a short one digs if you stay flat on it.</p>`;
   return h;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-pk]");if(!b)return;const k=b.dataset.pk,v=b.dataset.pv;
-  if(k==="pullCls"){const l=pullClsLocked(v);if(l){toast(`${SIM.PULL_CLASSES[v].n} opens at ${l} rep`);return;}}
+  if(k==="pullCls"){const l=pullClsLocked(v);if(l){toast(`${SIM.PULL_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.pullCls)S.env.pullGear=null;}   /* each class has its own gear ladder: start from its default, not the old button position */
   S.env[k]=k==="pullGear"?+v:v;pullEnvFix();renderEnv();save();buzz(6);});
 /* the pull sheet's trace: speed and slip against distance, the sweet spot shaded */
 function drawPullTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
