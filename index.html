@@ -453,6 +453,27 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
 /* toast */
 #toast{position:absolute;left:50%;bottom:calc(var(--tabh) + 14px);transform:translateX(-50%) translateY(20px);background:var(--chalk);color:var(--soot);padding:10px 16px;border-radius:5px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;z-index:40}
 #toast.on{opacity:1;transform:translateX(-50%)}
+/* achievements */
+#achToast{position:absolute;left:50%;bottom:calc(var(--tabh) + 66px);transform:translateX(-50%) translateY(20px);display:flex;gap:12px;align-items:center;background:var(--panel2);color:var(--chalk);border:1px solid var(--rule);border-left:3px solid var(--orange);padding:10px 16px 10px 12px;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.35);opacity:0;transition:.3s;pointer-events:none;width:max-content;max-width:min(92%,420px);z-index:41}
+#achToast.on{opacity:1;transform:translateX(-50%)}
+#achToast .at{min-width:0}#achToast small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}#achToast b{display:block;font-family:var(--display);font-size:17px;line-height:1.2}#achToast span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.ai{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:2px solid currentColor;background:color-mix(in srgb,currentColor 14%,transparent)}
+.ai svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.t-bronze{color:#b9763a}.t-silver{color:#8e9fb0}.t-gold{color:#d9a21b}
+:root[data-theme=light] .t-gold{color:#b88400}:root[data-theme=light] .t-silver{color:#6d7f92}
+.achhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}.achhead b{font-family:var(--display);font-size:28px;font-weight:700}.achhead b i{font-style:normal;font-size:16px;color:var(--muted)}
+.achhead span{display:flex;gap:10px;font-size:12px}.achhead em{font-style:normal;font-family:var(--mono);font-weight:600}
+.achg{border-top:1px solid var(--rule)}.achg summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:44px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.achg summary::-webkit-details-marker{display:none}.achg summary span{font-family:var(--mono);color:var(--chalk)}
+.achg summary::after{content:"+";margin-left:10px;color:var(--dim)}.achg[open] summary::after{content:"\2212"}
+.achs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:10px}
+.ach{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;min-width:0}
+.ach .at{min-width:0}.ach b{display:block;font-size:13.5px;line-height:1.2;color:var(--chalk)}.ach span{display:block;font-size:11.5px;line-height:1.3;color:var(--muted);margin-top:2px}.ach small{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px}
+.ach.off{border-style:dashed}.ach.off .ai{color:var(--dim);background:none;border-style:dashed;opacity:.6}.ach.off b{color:var(--muted)}.ach.on small{color:var(--good)}
+.ach .ai{width:34px;height:34px}.ach .ai svg{width:18px;height:18px}
+@media(max-width:380px){.achs{grid-template-columns:1fr}}
+html.desk #achToast{left:calc((100% - var(--sbw))/2);bottom:auto;top:140px}
+html.desk .achs{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 /* intro */
 #intro{position:absolute;inset:0;background:rgba(15,17,20,.94);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
 #intro .box{max-width:380px}
@@ -629,6 +650,7 @@ html:not(.desk) #kbHelpBtn{display:none}
       <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
       <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><div id="recBox"></div></div>
+      <div class="sec" id="achSec"><h2>Achievements <span class="cnt" id="achCnt"></span></h2><div id="achBox"></div></div>
       <div class="sec" id="dlSec" style="display:none"><h2>Last pass datalog</h2><div id="dlBox"></div></div>
     </section>
 
@@ -660,6 +682,7 @@ html:not(.desk) #kbHelpBtn{display:none}
       </div>
       <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
       <div class="sec"><h2>Settings</h2>
+        <button class="btn sm ghost" id="achBtn" style="margin:0 0 10px;display:flex;justify-content:space-between;width:100%"><span>Achievements</span><b id="achSet"></b></button>
         <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
         <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
@@ -721,6 +744,7 @@ html:not(.desk) #kbHelpBtn{display:none}
   <div id="scrim"></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="toast"></div>
+  <div id="achToast"></div>
 
   <div id="intro">
     <div class="box">
@@ -14226,6 +14250,7 @@ function dragFinish(){
     else if(r.et!=null){const purse=(r.et<7?25000:r.et<8?9000:r.et<9?3500:r.et<10?1500:r.et<11?600:r.et<13?200:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`,purse>0?"good":"");if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
+  achCheck({type:"drag",r,failed,res,env});
   save();recompute();renderTest();
   revealVerdict();
 }
@@ -14607,7 +14632,7 @@ function pullFinish(){
       logEvent(`Pull: ${C0.n} — ${dist}${po!=null?" (pull-off "+po.toFixed(1)+" ft)":""}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
     hud();checkGoals();}
   else toast(failed?`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`:`${dist} · ${pl}`);
-  PR.p=null;save();recompute();renderTest();
+  PR.p=null;achCheck({type:"pull",r,failed});save();recompute();renderTest();
   revealVerdict();
 }
 /* records: the longest clean pull per class */
@@ -14850,12 +14875,127 @@ $("runTest").addEventListener("click",()=>{
       if(career())addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40);
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career())checkGoals();
+      achCheck({type:"dyno",res,env,failing,offStd});
       save();recompute();renderTest();
       revealVerdict();
       if(ff&&ff.ending);else if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
   };
   requestAnimationFrame(step);
 });
+
+/* ===================== ACHIEVEMENTS =====================
+   One table, one checker. Every hook is a single achCheck({type,...}) call at the end of an event; the checker turns the event
+   into flat facts (hp, et, rt ...), runs every locked badge's check(f) and unlocks the ones that pass. Unlocks live in S.ach
+   ({id:{d:ms,w:week|null}}) - shared by sandbox and career. Shop badges read the career state directly. */
+const ACH_ICONS={flame:"M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",bolt:"M13 2 5 14h6l-1 8 8-12h-6z",gauge:"M4 17a8 8 0 1 1 16 0M12 17l4-6",clock:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",flag:"M5 21V4M5 4h11l-2 4 2 4H5",shield:"M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z",coin:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M9 10c0-2 6-2 6 0s-6 2-6 4 6 2 6 0",star:"M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",cloud:"M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.5-1A4.5 4.5 0 0 1 17 18z",snow:"M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7",drop:"M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z",hook:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",trophy:"M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8",chev:"M6 7l6 5-6 5M12 7l6 5-6 5",wheel:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 3v6.5M12 14.5V21M3.5 8l6.5 4M14 12l6.5 4",tree:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",cal:"M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",tick:"M5 12l5 5 9-10",engine:"M4 9h14l2 3v5H4zM8 9V6h6v3",target:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",people:"M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 10a2.5 2.5 0 1 0 0-5M18 15c2 .5 3 2.5 3 5"};
+const ACH_TIER={bronze:"Bronze",silver:"Silver",gold:"Gold"};
+const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["shop","Shop & career"]];
+const ACH=[
+  {g:"dyno",id:"firstfire",name:"First fire",desc:"Light an engine for the first time.",ic:"flame",tier:"bronze",check:x=>!!x.firstfire},
+  {g:"dyno",id:"certified",name:"Certified",desc:"Pull a clean engine (career: certify one).",ic:"tick",tier:"bronze",check:x=>!!x.ok},
+  {g:"dyno",id:"hp100",name:"Triple digits",desc:"A clean 100 hp pull.",ic:"gauge",tier:"bronze",check:x=>x.hp>=100},
+  {g:"dyno",id:"hp200",name:"Two hundred",desc:"A clean 200 hp pull.",ic:"gauge",tier:"bronze",check:x=>x.hp>=200},
+  {g:"dyno",id:"hp500",name:"Five hundred",desc:"A clean 500 hp pull.",ic:"gauge",tier:"silver",check:x=>x.hp>=500},
+  {g:"dyno",id:"hp750",name:"Three-quarter grand",desc:"A clean 750 hp pull.",ic:"gauge",tier:"silver",check:x=>x.hp>=750},
+  {g:"dyno",id:"hp1000",name:"Four figures",desc:"A clean 1,000 hp pull.",ic:"gauge",tier:"gold",check:x=>x.hp>=1000},
+  {g:"dyno",id:"hp1500",name:"Fifteen hundred",desc:"A clean 1,500 hp pull.",ic:"gauge",tier:"gold",check:x=>x.hp>=1500},
+  {g:"dyno",id:"rel90",name:"Dependable",desc:"Reliability 90 or better on a clean pull.",ic:"shield",tier:"bronze",check:x=>x.rel>=90},
+  {g:"dyno",id:"rel98",name:"Bulletproof",desc:"Reliability 98 or better on a clean pull.",ic:"shield",tier:"silver",check:x=>x.rel>=98},
+  {g:"dyno",id:"endur100",name:"Hundred-hour man",desc:"Finish a 100 h endurance run with nothing broken.",ic:"clock",tier:"silver",check:x=>x.hours>=100},
+  {g:"dyno",id:"endur500",name:"Half a thousand",desc:"Finish a 500 h endurance run with nothing broken.",ic:"clock",tier:"gold",check:x=>x.hours>=500},
+  {g:"dyno",id:"boost",name:"Under pressure",desc:"A clean pull with forced induction.",ic:"cloud",tier:"bronze",check:x=>!!x.boosted},
+  {g:"dyno",id:"screamer",name:"Screamer",desc:"A clean pull with a 9,000 rpm redline or higher.",ic:"gauge",tier:"silver",check:x=>x.redline>=9000},
+  {g:"dyno",id:"overrev",name:"Missed shift",desc:"Survive the over-rev test.",ic:"bolt",tier:"silver",check:x=>!!x.overrevOk},
+  {g:"diesel",id:"dsl",name:"Compression ignition",desc:"A clean pull on a diesel.",ic:"drop",tier:"bronze",check:x=>!!x.dsl},
+  {g:"diesel",id:"coal",name:"Rolling coal",desc:"Hit 100% smoke on a diesel pull.",ic:"cloud",tier:"bronze",check:x=>x.smoke>=99.5},
+  {g:"diesel",id:"cleandsl",name:"Clean diesel",desc:"400 hp or more from a diesel with smoke at 5% or less.",ic:"drop",tier:"silver",check:x=>!!x.dsl&&x.hp>=400&&x.smoke<=5},
+  {g:"diesel",id:"dsl1000",name:"Thousand-horse diesel",desc:"A clean 1,000 hp diesel pull.",ic:"drop",tier:"gold",check:x=>!!x.dsl&&x.hp>=1000},
+  {g:"diesel",id:"cold",name:"Cold-blooded",desc:"A clean diesel pull with the cell at -25 °C.",ic:"snow",tier:"silver",check:x=>!!x.cold},
+  {g:"strip",id:"pass",name:"Down the track",desc:"Complete a quarter-mile pass.",ic:"flag",tier:"bronze",check:x=>x.et!=null},
+  {g:"strip",id:"et12",name:"Twelve-second car",desc:"A clean pass under 12 s.",ic:"clock",tier:"bronze",check:x=>x.et<12},
+  {g:"strip",id:"et10",name:"Ten-second car",desc:"A clean pass under 10 s.",ic:"clock",tier:"silver",check:x=>x.et<10},
+  {g:"strip",id:"et9",name:"Nine-second car",desc:"A clean pass under 9 s.",ic:"clock",tier:"silver",check:x=>x.et<9},
+  {g:"strip",id:"et8",name:"Eight-second pass",desc:"A clean pass under 8 s.",ic:"clock",tier:"gold",check:x=>x.et<8},
+  {g:"strip",id:"et6",name:"Six-second pass",desc:"A clean pass under 6 s.",ic:"bolt",tier:"gold",check:x=>x.et<6},
+  {g:"strip",id:"mph200",name:"Double ton",desc:"Cross the stripe at 200 mph or more.",ic:"chev",tier:"gold",check:x=>x.mph>=200},
+  {g:"strip",id:"twostep",name:"Two-step",desc:"A clean pass launched on a two-step or line lock.",ic:"flag",tier:"bronze",check:x=>!!x.twostep},
+  {g:"strip",id:"sixty",name:"Hooked up",desc:"A 60-foot time of 1.40 s or quicker.",ic:"wheel",tier:"silver",check:x=>x.sixty<=1.4},
+  {g:"strip",id:"wheelie",name:"Wheelie",desc:"Lift the front wheels off the track.",ic:"wheel",tier:"bronze",check:x=>!!x.wheelie},
+  {g:"strip",id:"win",name:"Won the lane",desc:"Win a heads-up race.",ic:"trophy",tier:"bronze",check:x=>!!x.win},
+  {g:"strip",id:"holeshot",name:"Holeshot",desc:"Win heads-up with the slower ET.",ic:"tree",tier:"silver",check:x=>!!x.holeshot},
+  {g:"strip",id:"perfect",name:"Perfect light",desc:"A reaction time of 0.010 s or better.",ic:"tree",tier:"gold",check:x=>x.rt>=0&&x.rt<=0.010},
+  {g:"strip",id:"show",name:"Made the show",desc:"Qualify for a race-night ladder.",ic:"flag",tier:"bronze",check:x=>!!x.qualified},
+  {g:"strip",id:"night",name:"Won the night",desc:"Win a race night.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=1},
+  {g:"strip",id:"night3",name:"Regular",desc:"Win three race nights.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=3},
+  {g:"strip",id:"deadon",name:"Dead on",desc:"Bracket round: run within 0.010 s of your dial.",ic:"target",tier:"silver",check:x=>x.deadOn<=0.010},
+  {g:"n2o",id:"shot",name:"First shot",desc:"Hit the button on a nitrous pass.",ic:"bolt",tier:"bronze",check:x=>!!x.n2oOn},
+  {g:"n2o",id:"purged",name:"Purged",desc:"Hit the shot with the line full of liquid.",ic:"drop",tier:"silver",check:x=>!!x.n2oPurged},
+  {g:"n2o",id:"bigshot",name:"Big bottle",desc:"Run a 300 hp shot or more without breaking anything.",ic:"bolt",tier:"gold",check:x=>x.shotHp>=300},
+  {g:"pull",id:"hook",name:"On the hook",desc:"Take the sled for a ride.",ic:"hook",tier:"bronze",check:x=>!!x.pullDone},
+  {g:"pull",id:"full",name:"Full pull",desc:"Drag the sled the full 300 ft.",ic:"hook",tier:"silver",check:x=>!!x.full},
+  {g:"pull",id:"ribbon",name:"Blue ribbon",desc:"Win a pulling class.",ic:"trophy",tier:"silver",check:x=>!!x.pullWin},
+  {g:"pull",id:"puller",name:"Pull-off winner",desc:"Win a pull-off against other full pulls.",ic:"trophy",tier:"gold",check:x=>!!x.pullOff},
+  {g:"pull",id:"hotfarm",name:"Hot Farm hero",desc:"Win the Hot Farm class.",ic:"flame",tier:"gold",check:x=>!!x.hotfarm},
+  {g:"shop",id:"sale",name:"First sale",desc:"Deliver a contract or sell on the open market.",ic:"coin",tier:"bronze",check:()=>career()&&C().sold>0},
+  {g:"shop",id:"repeat",name:"Repeat customer",desc:"Deliver a repeat order from a happy client.",ic:"people",tier:"silver",check:()=>career()&&C().repeats>0},
+  {g:"shop",id:"sold50",name:"Fifty out the door",desc:"Sell 50 engines.",ic:"engine",tier:"silver",check:()=>career()&&C().sold>=50},
+  {g:"shop",id:"sold200",name:"Production line",desc:"Sell 200 engines.",ic:"engine",tier:"gold",check:()=>career()&&C().sold>=200},
+  {g:"shop",id:"legend",name:"Legend",desc:"Reach the Legend reputation tier.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=REP_TIERS.length-1},
+  {g:"shop",id:"zero",name:"Zero defects",desc:"Ten straight weeks in the field with no warranty claim.",ic:"shield",tier:"silver",check:()=>career()&&C().cleanWeeks>=10},
+  {g:"shop",id:"debtfree",name:"Debt-free",desc:"Take a loan, then pay the bank back in full.",ic:"coin",tier:"bronze",check:()=>career()&&!!(S.achN||{}).loan&&C().loan<=0},
+  {g:"shop",id:"cash100",name:"Six figures",desc:"Hold $100,000 in cash.",ic:"coin",tier:"silver",check:()=>career()&&C().cash>=1e5},
+  {g:"shop",id:"year",name:"A full year",desc:"Survive to week 52.",ic:"cal",tier:"silver",check:()=>career()&&C().week>=52}
+];
+let achQ=[],achBusy=false,achOpen=null;
+const achN=()=>ACH.filter(a=>S.ach&&S.ach[a.id]).length;
+function achFacts(x){
+  const f={};const R=recs();
+  if(x.type==="dyno"){const res=x.res,env=x.env,pull=env.testType==="pull";
+    if(x.ok){f.ok=true;f.rel=res.rel;f.boosted=S.cfg.asp!=="na";f.redline=S.cfg.redline;if(pull)f.hp=res.peakHp;if(env.testType==="endurance")f.hours=env.hours;
+      if(res.diesel){f.dsl=true;if(pull){const t=(res.tests||[]).find(q=>q.id==="cold_start");if(env.ambientC<=-25&&t&&t.util<=1)f.cold=true;}}}
+    if(res.diesel&&pull)f.smoke=res.smoke;
+    if(env.testType==="overrev"&&res.overrev&&res.overrev.survived&&!res.fails.length)f.overrevOk=true;}
+  else if(x.type==="drag"){const r=x.r,ra=r.race,nt=r.night,ok=!x.failed&&r.et!=null&&!(ra&&ra.foul)&&!(career()&&r.mph>150&&!r.chute);
+    if(ok){f.et=r.et;f.mph=r.mph;if(r.sixty)f.sixty=r.sixty.t;if(r.launch&&r.launch.ctl&&r.launch.ctl!=="none")f.twostep=true;if(r.wheelieT>=0.2||r.liftMax>=0.6)f.wheelie=true;
+      if(ra&&ra.rt!=null)f.rt=ra.rt;if(nt&&nt.fmt==="bracket"&&nt.dialP!=null&&nt.stage>=2)f.deadOn=Math.abs(r.et-nt.dialP);
+      if(r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;f.shotHp=r.n2o.shotHp;}}
+    else if(!x.failed&&r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;}
+    if(ra&&ra.won&&!ra.foul){f.win=true;if(r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
+    if(nt&&nt.stage>=2)f.qualified=true;}
+  else if(x.type==="pull"){const r=x.r;if(!x.failed){f.pullDone=true;if(r.full)f.full=true;if(r.place===1){f.pullWin=true;if(r.cls==="hotfarm")f.hotfarm=true;if(r.full&&r.pullOff!=null)f.pullOff=true;}}}
+  else if(x.type==="retro"){const hp=R.hp?R.hp.v:career()&&C().bestHp>0?C().bestHp:0,rel=R.rel?R.rel.v:career()&&C().bestRel>0?C().bestRel:0,et=allBest(),P=R.pull&&typeof R.pull==="object"?Object.values(R.pull):[];
+    if(hp>0){f.ok=true;f.hp=hp;}if(rel>0)f.rel=rel;if(et<Infinity)f.et=et;if(R.top&&R.top[0])f.mph=Math.max.apply(null,R.top.map(e=>e.mph||0));
+    if(career()&&C().enduranceOk)f.hours=100;if(career()&&C().boostedCert)f.boosted=true;
+    if(P.length){f.pullDone=true;if(P.some(e=>e.full))f.full=true;}if(R.bestFinish<=5)f.qualified=true;
+    if(S.firstFireDone)f.firstfire=true;}
+  else if(x.type==="ff")f.firstfire=true;
+  f.nightsWon=R.nightsWon||0;
+  return f;}
+function achCheck(x){
+  if(!S||ff||!S.mode)return;
+  try{
+    if(x.type==="dyno"){const res=x.res,env=x.env;x.ok=!x.failing&&!res.fails.length&&!x.offStd&&!(career()&&env.testType==="pull"&&!(C().cert&&C().cert.ok));}
+    if(career()&&C().loan>0)(S.achN=S.achN||{}).loan=1;
+    const f=achFacts(x);if(!S.ach||typeof S.ach!=="object")S.ach={};const got=[];
+    for(const a of ACH){if(S.ach[a.id])continue;let ok=false;try{ok=!!a.check(f);}catch(e){}
+      if(ok){S.ach[a.id]={d:Date.now(),w:career()?C().week:null};got.push(a);}}
+    if(got.length){if(x.type==="retro")achQ.push({sum:got.length});else got.forEach(a=>achQ.push(a));achShow();}
+    achRefresh();
+  }catch(e){if(window.ACHDBG)throw e;}}
+function achShow(){if(achBusy||!achQ.length)return;const a=achQ.shift(),el=$("achToast");if(!el)return;achBusy=true;
+  el.innerHTML=a.sum?`<div class="ai t-gold"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS.star}"/></svg></div><div class="at"><small>Achievements</small><b>${a.sum} unlocked from your records</b></div>`
+    :`<div class="ai t-${a.tier}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[a.ic]}"/></svg></div><div class="at"><small>Achievement · ${ACH_TIER[a.tier]}</small><b>${a.name}</b><span>${a.desc}</span></div>`;
+  el.classList.add("on");
+  setTimeout(()=>{el.classList.remove("on");setTimeout(()=>{achBusy=false;achShow();},350);},achQ.length?2200:3400);}
+function achRefresh(){const s=$("achSet");if(s)s.textContent=achN()+" / "+ACH.length;const c=$("achCnt");if(c)c.textContent=achN()+" / "+ACH.length;}
+function achWhen(e){return e.w!=null?"week "+e.w:new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"});}
+function renderAch(){const box=$("achBox");if(!box)return;const have=S.ach||{};
+  if(!achOpen)achOpen=new Set(ACH_GROUPS.filter(([g])=>ACH.some(a=>a.g===g&&have[a.id])).map(g=>g[0]));
+  const card=a=>{const e=have[a.id];return `<div class="ach ${e?"on":"off"}"><div class="ai t-${a.tier}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[a.ic]}"/></svg></div><div class="at"><b>${a.name}</b><span>${a.desc}</span><small>${e?achWhen(e):ACH_TIER[a.tier]}</small></div></div>`;};
+  box.innerHTML=`<div class="achhead"><b>${achN()}<i> / ${ACH.length}</i></b><span>${["gold","silver","bronze"].map(t=>`<em class="t-${t}">${ACH.filter(a=>a.tier===t&&have[a.id]).length}/${ACH.filter(a=>a.tier===t).length} ${t}</em>`).join("")}</span></div>`
+    +ACH_GROUPS.map(([g,n])=>{const L=ACH.filter(a=>a.g===g),k=L.filter(a=>have[a.id]).length;return `<details class="achg" data-g="${g}"${achOpen.has(g)?" open":""}><summary>${n}<span>${k} / ${L.length}</span></summary><div class="achs">${L.map(card).join("")}</div></details>`;}).join("");
+  achRefresh();}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("achg")&&achOpen){if(d.open)achOpen.add(d.dataset.g);else achOpen.delete(d.dataset.g);}},true);
 
 /* ===================== ANALYSIS ===================== */
 function renderAnalysis(){
@@ -14867,7 +15007,7 @@ function renderAnalysis(){
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
-  renderRecords();dlAnalysis();
+  renderRecords();renderAch();dlAnalysis();
 }
 function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
@@ -15024,7 +15164,7 @@ function repeatPass(){for(const f of C().fleet){if(f.repeated||(f.claims||0)>0||
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   if(C().loan>0){const i=Math.round(C().loan*LOAN_RATE);C().loan+=i;t+=` · loan interest ${fmt$(i)}`;}
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();rndPass();prestigePass();refillContracts();checkGoals();
+  logEvent(t,"");warrantyPass();repeatPass();rndPass();prestigePass();refillContracts();checkGoals();achCheck({type:"week"});
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 function renderShop(){
@@ -15094,7 +15234,7 @@ $("contracts").addEventListener("click",e=>{
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
   logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}`,f.ok?"good":"");
   if(tourStep>=0)tourEnd();
-  C().contracts=C().contracts.filter(x=>x.id!==k.id);save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  C().contracts=C().contracts.filter(x=>x.id!==k.id);achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}
   const cert=C().cert;if(!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const o=buyers(cert).find(x=>x.k.seg===b.dataset.sell);if(!o)return;const k=o.k,d=o.d,units=d.units,unit=d.unit;
   const profit=Math.round((unit-cert.res.cost)*units);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
@@ -15102,7 +15242,8 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   C().fleet.push({week:C().week,client:k.name,name:k.name,seg:k.seg,req:k.req,units,hash:cert.hash,engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:true});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep`,profit>=0?"good":"");
-  if(tourStep>=0)tourEnd();save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  if(tourStep>=0)tourEnd();achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+$("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
 $("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
@@ -15112,7 +15253,7 @@ $("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(
 $("prestige").addEventListener("click",e=>{const b=e.target.closest("[data-prestige]");if(!b)return;const pp=PRESTIGE.find(x=>x.id===b.dataset.prestige);if(C().cash<pp.price){toast(`Need ${fmt$(pp.price-C().cash)} more`);return;}
   C().cash-=pp.price;C().prestige[pp.id]=C().week;C().rep+=pp.rep*2;logEvent(`Bought the ${pp.name.toLowerCase()}`,"good");save();hud();renderShop();ENGINE_VIS.buildGarage(garageOwned());toast(`${pp.name.toUpperCase()} · INSTALLED`);buzz(30);});
 $("borrow").addEventListener("click",()=>{if(C().loan+LOAN_STEP>LOAN_MAX)return;C().loan+=LOAN_STEP;C().cash+=LOAN_STEP;logEvent(`Borrowed ${fmt$(LOAN_STEP)} from the bank`,"");save();hud();renderShop();toast(`${fmt$(LOAN_STEP)} in the account. It costs ${fmt$(LOAN_STEP*LOAN_RATE)} a week.`);});
-$("repay").addEventListener("click",()=>{const amt=Math.min(C().loan,Math.max(0,C().cash));if(amt<=0)return;C().loan-=amt;C().cash-=amt;logEvent(`Repaid ${fmt$(amt)} to the bank`,"good");save();hud();renderShop();toast(C().loan>0?`${fmt$(C().loan)} still owed`:"Loan cleared");});
+$("repay").addEventListener("click",()=>{const amt=Math.min(C().loan,Math.max(0,C().cash));if(amt<=0)return;C().loan-=amt;C().cash-=amt;logEvent(`Repaid ${fmt$(amt)} to the bank`,"good");achCheck({type:"loan"});save();hud();renderShop();toast(C().loan>0?`${fmt$(C().loan)} still owed`:"Loan cleared");});
 $("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();save();boot();toast("New shop, same dream. $20,000.");});
 $("upgrades").addEventListener("click",e=>{const b=e.target.closest("[data-buy]");if(!b||b.disabled)return;const u=UPGRADES.find(x=>x.id===b.dataset.buy);if(C().cash<u.price){toast(`Need ${fmt$(u.price-C().cash)} more`);return;}
   C().cash-=u.price;C().owned[u.id]=true;C().rep+=5;save();hud();renderShop();renderBuild();renderPresets();recompute();ENGINE_VIS.buildGarage(garageOwned());toast(`${u.name.toUpperCase()} · INSTALLED`);buzz(30);});
@@ -15238,7 +15379,7 @@ function ffFinish(hand){const f=ff;if(!f)return;ff=null;clearInterval(f.iv);$("f
   Object.assign(S,{cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,mode:f.to,firstFireDone:true});curTab=b.tab;
   if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;}
   if(S.sound!==b.sound){S.sound=b.sound;$("sndBtn").classList.toggle("on",S.sound);if(!S.sound)ENGINE_SOUND.stop();}
-  resetBase();save();boot();Object.assign(tabScroll,b.tabs);$("panel").scrollTop=b.tabs[curTab]||0;if(hand&&career()&&!S.tourDone)setTimeout(startTour,350);}
+  resetBase();achCheck({type:"ff"});save();boot();Object.assign(tabScroll,b.tabs);$("panel").scrollTop=b.tabs[curTab]||0;if(hand&&career()&&!S.tourDone)setTimeout(startTour,350);}
 // if the page goes away mid-run, leave the player's own game in storage, not the scratch V6
 function ffSafeSave(){if(!ff)return;const keep={mode:S.mode,cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,sound:S.sound},b=ff.back;
   Object.assign(S,{mode:ff.to,cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,sound:b.sound});save();Object.assign(S,keep);}
@@ -15511,6 +15652,7 @@ function boot(){
   $("sndBtn").classList.toggle("on",!!S.sound);
   if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
   $("intro").style.display=S.seen?"none":"flex";
+  if(S.seen)achCheck({type:"retro"});achRefresh();
 }
 function start(hot){
   load();
