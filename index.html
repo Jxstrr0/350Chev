@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.10.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.11.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -241,6 +241,11 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .log{font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--muted);background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px}
 .log div{padding:2px 0;border-bottom:1px dashed var(--rule)}.log div:last-child{border:0}
 .log b{color:var(--orange2);font-weight:500;margin-right:8px}
+/* datalog */
+.dlbox{margin-top:2px}.dlchips{margin-bottom:6px}.dlch{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px}.dlch i{width:10px;height:10px;border-radius:50%;display:inline-block;opacity:.45}.dlch.on i{opacity:1}
+.dlcv{width:100%;height:230px;display:block;touch-action:pan-y;cursor:crosshair;background:var(--panel);border:1px solid var(--rule);border-radius:4px}html.desk .dlcv{height:310px}
+.dlread{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:12px;color:var(--muted);margin:6px 0;min-height:34px}.dlread b{color:var(--orange2);font-weight:500}.dlread .sw{color:var(--crit);font-weight:600}
+.dldiag{font-size:14px;line-height:1.45;color:var(--chalk);border-left:3px solid var(--good);padding:2px 0 2px 10px}.dldiag.bad{border-color:var(--crit)}
 /* telemetry grid */
 .tele{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tele div{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;display:flex;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
@@ -254,6 +259,44 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .rec.big b{font-size:30px}
 .rec b i{font-style:normal;font-size:14px;font-weight:600;color:var(--muted);margin-left:4px}
 .rec small{display:block;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* race night (drag): ladder, qualifying sheet, pits, summary */
+#envBox .seg button small{max-width:100%}   /* centred column buttons: a long subtitle ellipsizes instead of pushing the page sideways */
+.rn{border:1px solid var(--rule);border-radius:8px;background:var(--panel);padding:10px;margin-bottom:12px;min-width:0}
+.rnhd{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.rnhd b{display:block;font-family:var(--display);font-size:17px;letter-spacing:.04em;color:var(--chalk)}.rnhd span{display:block;font-size:12px;color:var(--muted);margin-top:2px}.rnhd .btn{flex:0 0 auto;min-height:40px}
+.rnsteps{display:flex;gap:4px;margin-bottom:10px}
+.rnsteps i{flex:1;font-style:normal;text-align:center;font-family:var(--mono);font-size:11px;padding:4px 0;border-radius:4px;background:var(--panel2);color:var(--dim);border:1px solid var(--rule)}
+.rnsteps i.d{color:var(--good);border-color:var(--good)}.rnsteps i.on{color:var(--orange-ink);background:var(--orange);border-color:var(--orange)}
+.rnnext{background:var(--panel2);border-left:3px solid var(--orange);border-radius:4px;padding:8px 10px;margin-bottom:10px}
+.rnnext span{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--orange2)}.rnnext b{display:block;font-family:var(--display);font-size:18px;color:var(--chalk);margin-top:2px}.rnnext small{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+.rnlad{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.rnc{display:flex;flex-direction:column;justify-content:space-around;gap:6px;min-width:0}
+.rnc h4{margin:0;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:center}
+.rnm{border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--panel2)}
+.rnp{display:flex;align-items:center;gap:4px;padding:4px 5px;font-size:11.5px;line-height:1.25;color:var(--muted);min-width:0}
+.rnp+.rnp{border-top:1px solid var(--rule)}
+.rnp i{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--dim);flex:0 0 9px}
+.rnp span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rnp b{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap}
+.rnp.you span{color:var(--orange2);font-weight:600}.rnp.w span{color:var(--chalk);font-weight:600}
+.rnp.w::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 6px var(--good);flex:0 0 7px}
+.rnp.l{opacity:.5}.rnp.tbd span{color:var(--dim)}
+.rnr{color:var(--crit)}
+.rnq{margin-bottom:10px}
+.rnq div{display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px dashed var(--rule);font-size:13px;min-width:0}.rnq div:last-child{border:0}
+.rnq i{font-style:normal;font-family:var(--mono);font-size:11px;flex:0 0 14px;color:var(--dim)}
+.rnq span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--chalk)}.rnq small{margin-left:6px;color:var(--dim);font-size:11px}
+.rnq b{font-family:var(--mono);font-weight:500;font-size:12.5px;color:var(--muted)}.rnq .you span{color:var(--orange2);font-weight:600}
+.rnpits{border-top:1px solid var(--rule);padding-top:8px}
+.rnpits h3{margin:0 0 6px;font-family:var(--display);font-size:15px;letter-spacing:.05em;text-transform:uppercase;color:var(--chalk)}
+.rnlast{margin-bottom:4px}.rnlast .peak b{font-size:18px}
+.rnt{display:flex;align-items:center;gap:8px;padding:4px 0;min-width:0}
+.rnt>span{flex:1;min-width:0;font-size:14px;color:var(--chalk)}.rnt>span small{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.rnt>b{min-width:76px;text-align:center;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--chalk)}
+.rnt .nud{flex:0 0 44px;height:44px}.rnt.dial>b{font-size:17px;color:var(--orange2)}
+.rnsum{border:1px solid var(--rule);border-radius:6px;padding:12px;margin-bottom:10px;background:var(--panel2)}
+.rnsum .big{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:.04em;line-height:1;color:var(--warn)}.rnsum.won .big{color:var(--good);text-shadow:0 0 10px rgba(79,192,141,.5)}
+.rnsum p{margin:4px 0 0;font-size:13px;color:var(--muted)}
 .rtop{grid-column:1/-1;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 12px 4px}
 .rtop>span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .rtop div{display:grid;grid-template-columns:14px 50px 60px minmax(0,1fr) auto;gap:8px;align-items:baseline;font-family:var(--mono);font-size:13px;color:var(--muted);padding:6px 0;border-top:1px dashed var(--rule)}
@@ -586,6 +629,7 @@ html:not(.desk) #kbHelpBtn{display:none}
       <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
       <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><div id="recBox"></div></div>
+      <div class="sec" id="dlSec" style="display:none"><h2>Last pass datalog</h2><div id="dlBox"></div></div>
     </section>
 
     <!-- MARKET -->
@@ -1034,10 +1078,17 @@ const ENGINE_SIM = (function () {
      against air's 23.2%, and roughly 15 hp per lb/min with the fuel to match).  */
   OPT.nitrous = {
     none: { name: "No nitrous", sub: "\u2014", info: "No power adder beyond whatever is feeding the intake.", shotHp: 0, prog: 0, cost: 0 },
-    wet150: { name: "150 shot, wet", sub: "one stage", info: "A single wet fogger plate under the carb or throttle body, jetted for a hundred and fifty. Simple, cheap, and it arrives all at once the moment the button closes.", shotHp: 150, prog: 0, cost: 1400, req: "boost" },
-    direct250: { name: "250 direct port", sub: "one stage", info: "A nozzle and a fuel jet in every runner, so every cylinder gets the same shot instead of whichever one is nearest the plate. Still switched on and off in one hit.", shotHp: 250, prog: 0, cost: 4200, req: "shop2" },
-    prog400: { name: "400 progressive", sub: "ramped on a timer", info: "Direct port fed through a progressive controller that ramps the solenoids in over a second or two, so the tyres get a chance and the rods survive the hit.", shotHp: 400, prog: 1, cost: 9500, req: "race" },
-    prog700: { name: "700 progressive", sub: "two stages, ramped", info: "Two stages of direct port on a progressive controller. This is a second engine's worth of power arriving through the same rods, and it is only survivable because it comes on gradually.", shotHp: 700, prog: 1, cost: 18000, req: "race" }
+    /* kind: dry = nitrous only, the engine's own injectors find the fuel (the ECU or a pressure riser adds it);
+       wet = a plate or fogger meters its own fuel off the pump; direct = a nozzle per runner; diesel = oxygen into a diesel intake.
+       plate: the fuel and nitrous mix in the intake tract (backfire risk). fam: "si" spark engines only, "ci" diesels only. */
+    dry75: { name: "75 shot, dry", sub: "nozzle only", info: "One nitrous nozzle in the intake tube and nothing else: the extra fuel has to come out of the engine's own injectors, so the ECU raises the rail pressure and the injector table while the button is closed. Cheap and tidy, and only as safe as the injectors and the pump behind it.", shotHp: 75, prog: 0, cost: 550, req: "boost", kind: "dry", stages: 1, fam: "si" },
+    dry125: { name: "125 shot, dry", sub: "nozzle only", info: "The same single nozzle jetted bigger. A hundred and twenty-five horsepower of oxygen asks the stock fuel system for a third more fuel all at once — if the injectors are already near the end of their duty, the mixture goes lean the instant the shot comes in, and a lean nitrous mixture melts pistons.", shotHp: 125, prog: 0, cost: 750, req: "boost", kind: "dry", stages: 1, fam: "si" },
+    wet150: { name: "150 shot, wet", sub: "one stage", info: "A single wet fogger plate under the carb or throttle body, jetted for a hundred and fifty. Simple, cheap, and it arrives all at once the moment the button closes.", shotHp: 150, prog: 0, cost: 1400, req: "boost", kind: "wet", stages: 1, plate: true },
+    wet2stage: { name: "100 + 150 plates", sub: "two-stage, wet", info: "Two plates stacked under the throttle: a hundred on the first stage, another hundred and fifty on the second once the car is hooked up. Lots of shot for the money — and a plenum full of fuel and oxygen waiting for a single misfire to light it.", shotHp: 250, prog: 0, cost: 2600, req: "shop1", kind: "wet", stages: 2, stageHp: [100, 150], plate: true },
+    direct250: { name: "250 direct port", sub: "one stage", info: "A nozzle and a fuel jet in every runner, so every cylinder gets the same shot instead of whichever one is nearest the plate. Still switched on and off in one hit.", shotHp: 250, prog: 0, cost: 4200, req: "shop2", kind: "direct", stages: 1 },
+    prog400: { name: "400 progressive", sub: "ramped on a timer", info: "Direct port fed through a progressive controller that ramps the solenoids in over a second or two, so the tyres get a chance and the rods survive the hit.", shotHp: 400, prog: 1, cost: 9500, req: "race", kind: "direct", stages: 1 },
+    prog700: { name: "700 progressive", sub: "two stages, ramped", info: "Two stages of direct port on a progressive controller. This is a second engine's worth of power arriving through the same rods, and it is only survivable because it comes on gradually.", shotHp: 700, prog: 1, cost: 18000, req: "race", kind: "direct", stages: 2 },
+    diesel100: { name: "Diesel kit, 100", sub: "dry, into the intake", info: "Nitrous into a diesel's intake with no fuel of its own: the extra oxygen burns fuel that was going out as smoke, and the pump is turned up to use the rest. A moderate shot actually cools the exhaust; a big one sends cylinder pressure through the roof.", shotHp: 100, prog: 0, cost: 900, req: "boost", kind: "diesel", stages: 1, fam: "ci" }
   };
 
   /* ---- aspiration ---- */
@@ -1596,6 +1647,17 @@ const ENGINE_SIM = (function () {
     const n2oWin = n2oOn ? (O.n2o.prog ? 0.42 : 0.55) * redline : 0;   // window switch
     // how big the shot is relative to what the engine already makes
     const n2oBite = n2oOn ? clamp(n2oHp / (60 * (g.Vd * 1000)), 0, 2.2) : 0;
+    /* kit plumbing. A dry kit's fuel comes through the engine's own injectors (rail pressure raised by the
+       kit), so a fuel system already near its limit goes lean the moment the shot arrives. A diesel kit is
+       oxygen only: the injection pump finds the fuel, and a pump on its stop just makes less of the shot.
+       Stacked plates bring their second stage in later in the pull. The original four kits are untouched. */
+    const n2oKind = O.n2o.kind || "";
+    const n2oDry = n2oOn && !dsl && (n2oKind === "dry" || n2oKind === "diesel");
+    const n2oDsl = n2oOn && dsl && (n2oKind === "diesel" || n2oKind === "dry");
+    const n2oSt = n2oOn && O.n2o.stageHp ? O.n2o.stageHp : null;
+    const n2oWin2 = n2oSt ? n2oWin + 0.15 * redline : 0;
+    const N2O_RAIL = 1.18;                  // injector flow with the rail pressure raised ~40% while the shot is on
+    let n2oLeanPk = 0;
     const rpms = [], torque = [], power = [], boostCurve = [], veCurve = [], egtCurve = [], bmepArr = [];
     let peakHp = 0, peakHpRpm = 0, peakTq = 0, peakTqRpm = 0;
     let maxPmax = 0, maxPmaxRpm = 0, maxImep = 0, maxEgt = 0, maxRetard = 0;
@@ -1672,23 +1734,26 @@ const ENGINE_SIM = (function () {
       // diesel: lambda follows the smoke limiter while the boost is not yet there
       const lamSet = dsl && boosted ? cfg.lambda * Math.pow(clamp(rhoCharge / rhoFull, 0.05, 1), 1 - dInj.smokeLim) : cfg.lambda;
       const needLph = kFuel * airKgS / (O.fu.afr * lamSet) * 3600 / fuelRho;
+      const n2oStK = n2oSt && rpm < n2oWin2 ? n2oSt[0] / n2oHp : 1;   // first stage only, until the second arms
       const n2oLph = (n2oOn && rpm >= n2oWin)
-        ? n2oHp * 745.7 * (O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1) / (0.26 * O.fu.lhv) * 3600 / fuelRho : 0;
-      const ccCyl = needLph * 1000 / 60 / L.n;
-      const duty = portInj ? ccCyl / injCc : 0;
+        ? n2oHp * 745.7 * (O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1) / (0.26 * O.fu.lhv) * 3600 / fuelRho * n2oStK : 0;
+      const ccCyl = (needLph + (n2oDry ? n2oLph : 0)) * 1000 / 60 / L.n;
+      const duty = portInj ? ccCyl / (injCc * (n2oDry && n2oLph > 0 ? N2O_RAIL : 1)) : 0;
       // diesel: mm3 per stroke asked of the injection system against what pump + nozzles can push
-      const qDem = dsl ? needLph * 1e6 / (L.n * rpm * 30) : 0;
+      const qDem = dsl ? (needLph + (n2oDsl ? n2oLph : 0)) * 1e6 / (L.n * rpm * 30) : 0;
       const qCap = dsl ? dInj.qL * g.Vcyl * 1000 * dNoz.mult * (rpm <= dInj.rpmMax ? 1 : Math.exp(-sq((rpm - dInj.rpmMax) / (0.22 * dInj.rpmMax)))) : 1;
       const qUtil = qDem / qCap;
-      const pumpCap = pumpLphAt(fpump, rpm, dsl ? 0 : bBar);   // a diesel lift pump does not push against boost
+      const pumpCap = pumpLphAt(fpump, rpm, dsl ? 0 : bBar) * (n2oDry && n2oLph > 0 ? 0.92 : 1);   // a diesel lift pump does not push against boost; a dry kit's raised rail costs the pump flow
       const pumpLoad = (needLph * (dsl ? DSL_RETURN : 1) + n2oLph) / pumpCap;
-      const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE));
+      const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE))
+        * (n2oDry && !portInj && n2oLph > 0 ? needLph / (needLph + n2oLph) : 1);   // a carburettor has no injector table to add the dry shot's fuel
       const lamE = dsl ? Math.min(6, lamSet / fd) : Math.min(1.5, cfg.lambda / fd);
       if (dsl) {
         if (qUtil > qUtilPk) { qUtilPk = qUtil; qDemPk = qDem; qCapPk = qCap; qRpm = rpm; }
         if (lamE < lamMin) lamMin = lamE;
         // black smoke: unburnt carbon once the spray runs short of air
-        const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -cfg.timing)), 0, 1);
+        const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -cfg.timing)), 0, 1)
+          * (n2oDsl && n2oLph > 0 ? clamp(1 - 1.6 * n2oBite, 0.2, 1) : 1);   // the shot's oxygen burns the soot
         smokeCurve.push(sm);
         if (sm > smokePk) smokePk = sm;
       }
@@ -1697,6 +1762,7 @@ const ENGINE_SIM = (function () {
       if (duty > dutyPk) { dutyPk = duty; dutyRpm = rpm; }
       if (pumpLoad > pumpPk) { pumpPk = pumpLoad; pumpRpm = rpm; pumpCapPk = pumpCap; pumpNeedPk = needLph + n2oLph; }
       if (lamE > lamTop) { lamTop = lamE; fdTop = fd; leanRpm = rpm; }
+      if (n2oDry && n2oLph > 0) n2oLeanPk = Math.max(n2oLeanPk, lamE - cfg.lambda);
 
       /* ---- knock ------------------------------------------------------ */
       // dynamic compression falls with cam overlap (late intake valve closing)
@@ -1713,6 +1779,7 @@ const ENGINE_SIM = (function () {
         - 6.0 * clamp(1.0 - lamE, -0.05, 0.22);
       onReq -= O.block.k > 100 ? 0.4 : 0;                 // alu block pulls heat too
       if (n2oOn && rpm >= n2oWin) onReq += clamp(9.0 * n2oBite, 2, 15) * (O.n2o.prog ? 0.85 : 1);  // oxygen in the chamber, not just air
+      if (n2oDry && n2oLph > 0) onReq += 30 * Math.max(0, lamE - cfg.lambda);   // lean on nitrous: the burn runs away
       const margin = fuelON - onReq;
       let retard = 0;
       if (!dsl && margin < 0) retard = clamp(-margin * 1.55, 0, 14);
@@ -1743,7 +1810,7 @@ const ENGINE_SIM = (function () {
       let n2oFrac = 0;
       if (n2oOn && rpm >= n2oWin) {
         const ramp = O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1;
-        const n2oW = n2oHp * 745.7 * ramp;                       // crank watts asked of the bottle
+        const n2oW = n2oHp * 745.7 * ramp * n2oStK * (n2oDsl ? Math.min(1, fd) : 1);   // crank watts asked of the bottle
         // a cylinder can only hold so much oxidiser: cap the shot's contribution
         const addPa = Math.min(n2oW / (g.Vd * (rpm / 120)), 1.8 * imep);  // P = imep * Vd * (rpm/120)
         imep += addPa;
@@ -1769,7 +1836,7 @@ const ENGINE_SIM = (function () {
       const mps = 2 * (g.s / 1000) * rpm / 60;
       /* diesel: compression pressure plus the combustion rise; advance puts it nearer TDC. Boost
          heat shortens the delay, so less fuel goes off at once and the rise gets gentler.  */
-      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * cfg.timing) / (1 + 0.08 * bBar)) * (1 + 0.30 * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
+      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * cfg.timing) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
         * (1 + (O.n2o.prog ? 0.16 : 0.30) * n2oFrac);    // nitrous burns faster and peaks earlier
       let fmepBar = FM_C + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps;
       fmepBar *= (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac;
@@ -1796,6 +1863,8 @@ const ENGINE_SIM = (function () {
         - 0.35 * (evapK * fd) - 0.10 * (chargeC - 35) + 260 * n2oFrac;
       // diesel: hottest near lambda 1; past that the extra fuel cannot burn and only soaks up heat
       if (dsl) egt = 220 + 650 / Math.pow(Math.max(lamE, 0.95), 1.2) - 250 * Math.max(0, 0.95 - lamE) + 0.03 * (rpm - 2000) - 12 * cfg.timing + 260 * n2oFrac;
+      if (n2oDsl) egt += -560 * n2oFrac + 700 * n2oFrac * n2oFrac;   // a moderate shot cools a diesel's exhaust; a big one heats it again
+      if (n2oDry) egt += 900 * Math.max(0, lamE - cfg.lambda) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
       egt = clamp(egt, 380, 1150);
 
       rpms.push(rpm);
@@ -1921,6 +1990,7 @@ const ENGINE_SIM = (function () {
     if (dsl) crownC += 0.30 * clamp(maxEgt - 700, -200, 500);     // diesel: overfuelling is what cooks the bowl rim
     else crownC -= 150 * clamp(1 - lamTop, 0, 0.25);               // enrichment is crown cooling (what arrived, at the leanest point)
     if (!dsl) crownC += 200 * clamp(lamTop - cfg.lambda, 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
+    if (n2oDry) crownC += 1600 * clamp(n2oLeanPk, 0, 0.3) * clamp(n2oBite, 0.25, 1.5);   // a lean nitrous cylinder: the crown edge goes first
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
     crownC = clamp(crownC, env.coolantC + 40, 900);
     const skirtC = 0.22 * crownC + 0.78 * (env.coolantC + 15);
@@ -2389,6 +2459,23 @@ const ENGINE_SIM = (function () {
     if (!dsl && leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
     if (env.altitudeM > 1500) notes.push("At " + env.altitudeM + " m the air is " + ((1 - air.rho / 1.2) * 100).toFixed(0) + "% thinner than sea level; correctedHp is the SAE-normalised figure.");
 
+    /* nitrous: what the kit does on a pass that a pull does not show — the chance of a lean spike when the shot
+       hits (dry kits), and of a backfire through a fuel-laden intake (plates; long runners hold the most mixture) */
+    let n2oInfo = null;
+    if (n2oOn) {
+      const plate = !!O.n2o.plate, leanX = Math.max(0, lamTop - cfg.lambda);
+      const runner = cfg.intake === "plenum_long" ? 2.6 : cfg.intake === "carb" ? 1.4 : cfg.intake === "plenum_short" ? 0.8 : cfg.intake === "itb" ? 0.6 : 1;
+      const bf = plate ? clamp(0.012 * (O.n2o.stages || 1) * runner * (0.5 + n2oBite) * (boosted ? 1.5 : 1) * (1 + 0.25 * Math.max(0, cfg.timing - 2)) + 0.6 * leanX * runner, 0, 0.5)
+        : n2oKind === "direct" ? clamp(0.002 * (0.5 + n2oBite) + 0.1 * leanX, 0, 0.2) : 0;
+      const hotU = Math.max(crownC / O.pis.maxCrownC, dsl ? 0 : hotSpotC / hotSpotLimit);
+      n2oInfo = { kind: n2oKind || "wet", shotHp: n2oHp, stages: O.n2o.stages || 1, stageHp: n2oSt, plate: plate, prog: !!O.n2o.prog,
+        winRpm: Math.round(n2oWin), win2Rpm: n2oSt ? Math.round(n2oWin2) : null, bite: n2oBite, dry: n2oDry, diesel: n2oDsl,
+        lean: n2oDry ? +n2oLeanPk.toFixed(3) : 0, backfire: +bf.toFixed(3),
+        leanRisk: n2oDry ? +clamp(1.5 * n2oLeanPk + 1.5 * Math.max(0, hotU - 0.92) + 0.8 * Math.max(0, injUtil - 0.85) + 0.01, 0, 0.7).toFixed(3) : 0 };
+      if (n2oDry && n2oLeanPk > 0.01) notes.push("When the " + n2oHp + " shot comes in, the fuel system cannot add its fuel: \u03bb goes to " + (cfg.lambda + n2oLeanPk).toFixed(2) + " on the bottle. A lean nitrous mixture is how pistons melt.");
+      if (n2oDsl) notes.push("The diesel kit adds oxygen only; the injection pump has to find the fuel" + (qUtilPk > 1 ? ", and it is already on its stop \u2014 part of the shot goes unused." : "."));
+    }
+
     const correctedHp = peakHp * j1349(air.pd, env.ambientC);
 
     return {
@@ -2410,6 +2497,7 @@ const ENGINE_SIM = (function () {
       fuel: { duty: dutyPk, dutyRpm: dutyRpm, ccCyl: ccCylPk, load: pumpPk, loadRpm: pumpRpm, capLph: pumpCapPk, needLph: pumpNeedPk,
         injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph,
         qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : litresPerHour },
+      nitrous: n2oInfo,
       tests: tests, fails: fails, rel: Math.round(rel * 10) / 10,
       lifeHours: Math.round(lifeHours), firstToFail: firstToFail,
       racePasses: racePasses, raceSpec: raceSpec,
@@ -2869,6 +2957,28 @@ const ENGINE_SIM = (function () {
       add("warn", "Heavy launch retard on a cast manifold", "At " + Math.round(cfg.launchRetard) + "° the turbine inlet climbs past " + (cfg.exhaust === "cast_log" ? 900 : 930) + " °C within a couple of seconds on the limiter, and cast manifolds crack from exactly that heat cycling. Keep the holds short, or fit tubular headers.");
     if (cfg.launchCtl === "two_step_retard" && OPT.asp[cfg.asp].kind === "turbo" && cfg.turbineMat === "cast_iron" && cfg.launchRetard >= 25)
       add("warn", "Ni-resist turbine behind a hot two-step", "The cast turbine housing is good to about 950 °C. Launch retard this heavy gets there in about two seconds on the line — an Inconel hot side takes another hundred degrees.");
+    /* --- nitrous kits (the newer kits: dry, stacked plates, diesel) ------ */
+    const nk = OPT.nitrous[cfg.nitrous], nz = quick.nitrous;
+    if (nk && nz && (nk.kind === "dry" || nk.kind === "diesel" || nk.stageHp)) {
+      if (nz.dry && cfg.intake === "carb")
+        add("bad", "Dry shot on a carburettor", "A dry kit leaves the fuel to the engine's injectors and an ECU that adds it while the button is closed. A carburettor has neither: the shot arrives with no fuel at all, and a lean nitrous cylinder melts its piston in a second. Use a wet plate under the carb.");
+      else if (nz.dry && (nz.lean > 0.01 || quick.fuel.injUtil > 0.85))
+        add("bad", "Dry shot on stock injectors", "With the " + nk.shotHp + " shot on, the injectors have to find about " + Math.round(nk.shotHp / (quick.peakHp || 1) * 100) + "% more fuel at once; they are already at " + Math.round(quick.fuel.duty * 100) + "% duty with the rail pressure raised" + (nz.lean > 0.01 ? ", and the mixture goes to \u03bb " + (cfg.lambda + nz.lean).toFixed(2) + " on the bottle" : "") + ". Bigger injectors and a pump with room to spare, or a wet kit that brings its own fuel.");
+      else if (nz.dry)
+        add("good", "Dry kit with fuel to spare", "The injectors and pump can carry the " + nk.shotHp + " shot's fuel with margin left over, so the mixture stays where the tune put it when the button closes.");
+      if (nk.plate && (cfg.intake === "plenum_long" || boosted))
+        add("warn", "Wet plate on a " + (cfg.intake === "plenum_long" ? "long-runner intake" : "boosted intake") + " (backfire)", "A plate fills the " + (cfg.intake === "plenum_long" ? "long runners" : "intake tract") + " with fuel and nitrous; one misfire or a lean cylinder lights the lot and it comes back up the intake. About " + Math.round(nz.backfire * 100) + "% a pass here. Short runners, direct port, or a burst panel and a good ignition system.");
+      else if (nk.plate && nz.backfire > 0.03)
+        add("warn", "Wet plate backfire risk", "About " + Math.round(nz.backfire * 100) + "% of passes light the intake: the mixture is " + (quick.fuel.lamTop > cfg.lambda + 0.005 ? "going lean on the bottle" : "sitting in the plenum") + ". Purge on the line, keep the timing honest, and fit a burst panel.");
+      if ((cfg.piston === "cast_alu" || cfg.piston === "hyper") && !dsl)
+        add(nk.shotHp >= 125 ? "bad" : "warn", "Nitrous and " + (cfg.piston === "hyper" ? "hypereutectic" : "cast") + " pistons", "Nitrous burns fast and hot, and a cast or hypereutectic crown cracks rather than bends when the pressure spikes. Seventy-five on a healthy engine is usually fine; past that, forged pistons are the rule.");
+      if (nk.stageHp || nk.shotHp >= 125)
+        add("info", "Progressive saves the tyres", "This kit hits all at once. A progressive controller (or bringing the shot in after the 1-2 shift on the strip) feeds it in as the tyres take it, instead of spinning them off the line.");
+      add("info", "Bottle heater", "Nitrous pressure follows the bottle's temperature: about 735 psi at 20 \u00b0C and 950 at 32 \u00b0C. A heater blanket holds it near 950 so the shot is the same every pass; without one a cool bottle flows less and less as the night goes on. Purge before every pass so the line is full of liquid.");
+      if (nz.diesel) add("info", "Nitrous on a diesel", "The kit adds oxygen only. A moderate shot lets the injection pump turn its fuel up without smoke and actually cools the exhaust; a big one sends peak cylinder pressure through the roof \u2014 the head studs and gasket go before anything melts" + (quick.fuel.injUtil > 1 ? ". The injection pump is already on its stop, so part of the shot has nothing to burn." : "."));
+      if (dsl && !nz.diesel) add("warn", "A petrol kit on a diesel", "This kit's fuel side is meant for petrol. The diesel kit just sprays nitrous into the intake and lets the injection pump find the fuel.");
+      if (!dsl && nk.kind === "diesel") add("bad", "A diesel kit on a petrol engine", "The diesel kit has no fuel of its own and no ECU table behind it: on a spark engine it is a dry shot with nothing to burn it rich.");
+    }
     if (cfg.transBrake === "trans_brake" && OPT.asp[cfg.asp].kind === "turbo")
       add("good", "Trans-brake on a turbo engine", "Held on the converter at full load, the engine drives the turbo as if the car were already moving, so it leaves on boost without needing as much retard.");
     return out;
@@ -3947,6 +4057,7 @@ const ENGINE_SIM = (function () {
   /* ---- Drag strip: real-time vehicle pass ---- */
   // heat: how much extra grip a proper burnout is worth on that compound (fraction of μ)
   const TYRES = { street: { mu: 1.18, n: "Street radial", heat: 0.02 }, radial: { mu: 1.7, n: "Drag radial", heat: 0.08 }, slick: { mu: 2.4, n: "Slick", heat: 0.08 } };
+  TYRES.street.psi = 32; TYRES.radial.psi = 16; TYRES.slick.psi = 8;   // where each tyre is set up to run (psi); veh.tyrePsi moves off it
   const AERO = {
     street: { cdA: 0.82, bite: 1.00, wb: 2.70, n: "Street body", d: "stock shell · no bars" },
     outlaw: { cdA: 1.05, bite: 1.22, wb: 2.80, n: "Outlaw", d: "big tyre, wheelie bar, spoiler", bars: 1 },
@@ -3986,7 +4097,18 @@ const ENGINE_SIM = (function () {
       const na = simulate(Object.assign({}, cfg, { asp: "na" }), env);
       res.naTorque = res.rpms.map(r => { const i = na.rpms.indexOf(r); return i >= 0 ? na.torque[i] : 0; });
     }
+    // nitrous: the shot's own share of the curve, so a pass can bring it in late, soft or not at all
+    if (res.nitrous && OPT.nitrous[cfg.nitrous] && cfg.nitrous !== "none") { const nn = simulate(Object.assign({}, cfg, { nitrous: "none" }), env); res.n2oTq = res.torque.map((t, i) => Math.max(0, t - (nn.torque[i] || 0))); }
     return res;
+  }
+
+  /* nitrous bottle pressure: N2O is a liquid sitting on its own vapour, so the pressure is set by the bottle's
+     temperature (about 735 psi at 20 °C, 950 at 32 °C; past 36 °C it is no longer a liquid at all). A heater
+     blanket holds it near 950; without one the bottle follows the weather and cools as it empties.          */
+  function n2oBottle(heater, ambientC, cooledK) {
+    const T = heater ? 31.5 : ambientC - (cooledK || 0);
+    const bar = 31.3 * Math.exp(0.0236 * T);
+    return { psi: Math.round(Math.min(1100, bar * 14.5038)), tempC: Math.round(T) };
   }
 
   /* launch tech a car carries, from the build (ECU / driveline parts, not engine parts) */
@@ -4001,11 +4123,19 @@ const ENGINE_SIM = (function () {
   function dragRun(res, veh) {
     const v = Object.assign({ mass: 1400, rearBias: 0.55, wheelbase: 2.7, cgH: 0.5, tyre: "street", tyreDia: 27, gears: 4, first: 2.9, top: 1.0, final: 3.7, launchRpm: 3500, shiftRpm: 0, auto: true, redline: 7000, idle: 900, body: "street", chute: false,
       launchCtl: "none", twoStepRpm: 0, launchRetard: 0, transBrake: "none", burnout: false, tyreTemp: 0, soakC: 0, noFail: false }, veh || {});
+    /* pits tuning: tyre pressure and rear shock valving. Neutral (no effect at all) unless veh.tyrePsi / veh.shocks are set.
+       Less pressure = a longer, softer footprint (more bite) on a tyre that squats a little shorter (rolls out less per turn);
+       too little and the sidewall wraps up and shakes. Soft shocks let the body squat and hit the tyre harder (more bite, more lift);
+       firm ones hold it flat (less lift, less bite, so it spins). */
+    const psiNom = (TYRES[v.tyre] || TYRES.street).psi || 16, psiD = v.tyrePsi > 0 ? clamp((v.tyrePsi - psiNom) / psiNom, -0.6, 0.6) : 0;
+    const shockK = v.shocks === "soft" ? 1 : v.shocks === "firm" ? -1 : 0, rollK = 1 + 0.035 * psiD;
+    const psiBite = psiD < 0 ? Math.min(0.07, -psiD * 0.25) : -psiD * 0.18, psiShake = clamp((-psiD - 0.25) / 0.25, 0, 1);
+    const tuneGrip = t => (1 + psiBite) * (1 + 0.05 * shockK * Math.exp(-t / 0.9)), tuneLift = t => 1 + 0.22 * shockK * Math.exp(-t / 1.2);
     const rpms = res.rpms, tq = res.torque, N = rpms.length;
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const torqueAt = r => { if (r <= rpms[0]) return tq[0] * Math.max(0.3, r / rpms[0]); if (r >= rpms[N - 1]) return tq[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return tq[i - 1] + f * (tq[i] - tq[i - 1]); };
     const ratios = []; for (let i = 0; i < v.gears; i++) ratios.push(v.gears === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (v.gears - 1)));
-    const rw = v.tyreDia * 0.0254 / 2, g = 9.81, eta = 0.90, TY = TYRES[v.tyre] || TYRES.street;
+    const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = 0.90, TY = TYRES[v.tyre] || TYRES.street;
     let mu = TY.mu;
     if (veh && veh.body && !(veh.wheelbase > 0)) v.wheelbase = (AERO[veh.body] || AERO.street).wb;
     const I = 0.12 + 0.06 * (res.Vd / 1000), peakTq = res.peakTq, clutchCap = peakTq * 1.8;
@@ -4017,6 +4147,13 @@ const ENGINE_SIM = (function () {
     const retard = retardOn ? clamp(+v.launchRetard || 0, 0, 35) : 0;
     const holdRpm = twoStep && v.twoStepRpm > 0 ? Math.min(v.redline, v.twoStepRpm) : v.launchRpm;
     const canArm = twoStep || transBrake;
+    /* ---- nitrous: only when the app hands over the bottle (veh.n2o = {act, psi, line}); otherwise the shot is
+       whatever the dyno curve says, exactly as before. act: "window" (the rpm window switch), "mph40", "mph60",
+       "shift2" (after the 1-2 shift). line 0..1: how much of the feed line is liquid (purging fills it). ---- */
+    const NZ = v.n2o && res.nitrous && Array.isArray(res.n2oTq) && res.n2oTq.length === N ? res.nitrous : null;
+    const nzAct = NZ ? (v.n2o.act || "window") : "window";
+    const nzPsi = NZ ? clamp(+v.n2o.psi || 950, 300, 1100) : 950;
+    const nzPsiK = clamp(Math.pow(nzPsi / 950, 0.85), 0.3, 1.1);       // jet flow follows bottle pressure
 
     /* ---- transient boost: torque = atmospheric curve + what the manifold pressure is worth right now ---- */
     const kind = res.aspKind || "na", bT = +res.boostTarget || 0;
@@ -4083,6 +4220,8 @@ const ENGINE_SIM = (function () {
       armedT: 0, egt: 420 + (+v.soakC || 0), egtPeak: 0, egtLine: 0, turbDose: 0, manDose: 0, lineHeat: 0, launchBoost: 0, launchRpmAct: 0,
       lift: 0, liftMax: 0, onBars: false, wheelieT: 0, conv: false, failKind: null, failAt: Infinity, broke: null, risk: null, gripGain: 0, boost0T: null };
     st.egtPeak = st.egt;
+    st.n2oS = NZ ? { line: clamp(v.n2o.line == null ? 0.15 : +v.n2o.line, 0, 1), psi: nzPsi, on: false, onT: null, onMph: 0, onGear: 0, onX: 0, frac: 0, stage2: false, purging: false, purged: 0, puff: 0, event: null, cut: false, lineAtOn: 0, popT: 0 } : null;
+    st.n2o = 0;   // the shot's flow right now, 0..1 (the datalog reads it)
     let acc = 0, lastTrace = 0, popT = 0;
     function pops(dt, rate, amp) { st.launch.pops *= Math.exp(-dt / 0.06); popT -= dt; if (rate > 0 && popT <= 0) { popT = (0.4 + Math.random() * 1.2) / rate; st.launch.pops = Math.max(st.launch.pops, amp * (0.6 + Math.random() * 0.4)); } }
     function heat(dt, target, tau) {
@@ -4098,6 +4237,8 @@ const ENGINE_SIM = (function () {
     function step(dt) { dt = Math.min(1, dt); while (dt > 0 && !st.done) { const h = Math.min(0.004, dt); dt -= h; sub(h); } return st; }
     function sub(dt) {
       if (st.done) return st;
+      if (NZ) n2oStep(dt);
+      else if (res.nitrous && Array.isArray(res.n2oTq) && res.n2oTq.length === N) st.n2o = st.phase === "run" && st.shiftT <= 0 && interp(res.n2oTq, st.rpm) > 1 ? 1 : 0;   // no bottle model: the window switch decides
       if (st.phase === "shutdown") {
         st.t += dt;
         const cdAs = st.chuteOut ? cdA0 + 9.2 : cdA0;
@@ -4151,6 +4292,7 @@ const ENGINE_SIM = (function () {
       if (trans && st.boost0T == null && st.boost >= 0.75 * bT) st.boost0T = st.t;
       if (st.failKind && st.t >= st.failAt) { st.broke = st.failKind; st.phase = "done"; st.done = true; st.load = 0; return st; }
       let Teng = inShift ? 0 : engTq(st.rpm);
+      if (NZ && !inShift && st.n2oS.frac < 1) Teng -= (1 - st.n2oS.frac) * interp(res.n2oTq, st.rpm);   // the part of the shot that is not in
       if (st.rpm >= limiter) { Teng = Teng * 0.15; st.limiterTime += dt; }
       let Ttrans;
       const driveRpm0 = wheelRpm + st.wSpin;
@@ -4166,14 +4308,15 @@ const ENGINE_SIM = (function () {
         else if (st.slipping) { Ttrans = st.bite * clutchCap; if (st.dump && st.rpm < 0.85 * holdRpm) Ttrans = Math.min(Ttrans, Teng * 0.98); if (st.rpm <= wheelRpm + st.wSpin + 15) st.slipping = false; }   // off a two-step the clutch slips to keep the engine up near the launch rpm instead of bogging
         if (!st.slipping) Ttrans = Teng;
       }
-      const muE = mu * (1 + st.gripGain);
+      const muE = mu * (1 + st.gripGain) * tuneGrip(st.t);
       const Fmax = bite * muE * v.mass * g * v.rearBias / Math.max(0.3, 1 - muE * v.cgH / v.wheelbase);
       let Fdemand = Ttrans * ratio * eta / rw, F;
       st.spin = false;
       if (Fdemand > Fmax) { st.spin = true; st.spinTime += dt; F = Fmax * 0.85; st.wSpin += (Ttrans - F * rw / (ratio * eta)) / (I * 2.2) * dt * 60 / (2 * Math.PI); }
       else { F = Fdemand; st.wSpin = Math.max(0, st.wSpin - st.wSpin * dt / 0.15); }
+      if (psiShake > 0 && st.v > 6 && st.v < 45 && F > 0.5 * Fmax) { st.shakeT = (st.shakeT || 0) + dt * psiShake; F *= 1 - 0.38 * psiShake * (0.5 + 0.5 * Math.sin(st.t * 60)); }   // tyre shake: the soft sidewall winds up and lets go
       // front-end lift: share of the static front-axle load the launch force takes off the nose
-      const lift = F * v.cgH / (v.mass * g * v.wheelbase * Math.max(0.05, 1 - v.rearBias));
+      const lift = F * v.cgH / (v.mass * g * v.wheelbase * Math.max(0.05, 1 - v.rearBias)) * tuneLift(st.t);
       st.lift = clamp(lift, 0, 1); st.liftMax = Math.max(st.liftMax, lift); st.onBars = false;
       if (lift >= 1 && st.v < 60) {
         if (BODY.bars) { st.onBars = true; F *= 1 - Math.min(0.04, (lift - 1) * 0.03); }
@@ -4189,10 +4332,10 @@ const ENGINE_SIM = (function () {
       if (st.rpm > limiter + 40) st.rpm = Math.min(st.rpm, limiter + 300);
       if (st.rpm > v.redline * 1.06) st.overrev = Math.max(st.overrev, st.rpm / v.redline);
       if (!inShift && st.rpm < st.minRpm && st.t < 1) { st.minRpm = st.rpm; if (st.rpm < v.launchRpm * 0.55) st.bog = true; }
-      if (v.auto && !inShift && st.rpm >= shiftAt && st.gear < v.gears) shift();
+      if (v.auto && !inShift && st.rpm >= shiftAt && st.gear < v.gears && (!st.slipping || driveRpm >= shiftAt * 0.85)) shift();   // a slipping clutch revs the engine, not the car: no shifting through the box at walking pace
       for (const sh of st.shifts) if (sh.min == null || st.t - sh.t < 0.7) sh.min = Math.min(sh.min == null ? 99 : sh.min, st.boost);
       for (const [d, n] of DRAG_MARKS) if (st.x >= d && !st.marks.find(m => m.n === n)) st.marks.push({ n: n, d: d, t: +st.t.toFixed(3), mph: +(st.v * 2.23694).toFixed(1) });
-      if (st.t - lastTrace >= 0.05) { lastTrace = st.t; st.trace.push([+st.t.toFixed(2), Math.round(st.x), +(st.v * 2.23694).toFixed(1), Math.round(st.rpm), st.gear, st.spin ? 1 : 0, +st.boost.toFixed(2)]); }
+      if (st.t - lastTrace >= 0.05) { lastTrace = st.t; st.trace.push([+st.t.toFixed(2), Math.round(st.x), +(st.v * 2.23694).toFixed(1), Math.round(st.rpm), st.gear, st.spin ? 1 : 0, +st.boost.toFixed(2), +(driveRpm / ratio * 2 * Math.PI * rw / 60 * 2.23694).toFixed(1), Math.round(st.egt), inShift ? 0 : 1, +(st.n2o || 0).toFixed(2)]); }   // [7] driveshaft speed as mph (above [2] = tyres spinning), [8] EGT C, [9] throttle, [10] nitrous flow 0..1 (datalog)
       if (st.x >= 402.336) { st.trap = st.v * 2.23694; st.trapRpm = st.rpm; st.trapGear = st.gear; st.phase = "shutdown"; st.chuteOut = !!v.chute; st.load = 0; }
       else if (st.t > 40) { st.done = true; st.phase = "done"; st.load = 0.1; }
       return st;
@@ -4202,6 +4345,36 @@ const ENGINE_SIM = (function () {
     function stage() { if (st.phase !== "burnout") return; st.burning = false; st.spin = false; st.phase = "staged"; st.t = 0; st.v = 0; st.rollIn = Math.max(0.3, Math.min(1.4, -st.x * 0.16)); if (st.x >= -0.01) { st.rollIn = 0; st.rolled = true; st.x = 0; } }
     function arm() { if (st.phase !== "staged" || !canArm || st.launch.armed) return false; st.launch.armed = true; return true; }
     function disarm() { if (st.phase !== "staged") return; st.launch.armed = false; }
+    /* what can go wrong when the shot hits: a dry kit leans out if the bottle is hotter than the fuel table
+       assumes; a wet plate full of mixture lights off a misfire — worse with a line still full of gas */
+    function n2oRisk() {
+      const lean = NZ.dry ? clamp((NZ.leanRisk || 0) * clamp(1 + 4 * (nzPsiK - 1), 0.3, 1.6) + (nzPsiK > 1.02 ? 0.04 : 0), 0, 0.8) : 0;
+      const backfire = clamp((NZ.backfire || 0) * (st.n2oS.line < 0.5 ? 1.4 : 1) * (nzPsiK < 0.9 ? 1.2 : 1), 0, 0.6);
+      return { lean: +lean.toFixed(3), backfire: +backfire.toFixed(3) };
+    }
+    function n2oStep(dt) {
+      const z = st.n2oS;
+      if (z.purging && (st.phase === "burnout" || st.phase === "staged")) { z.line = Math.min(1, z.line + dt / 0.7); z.purged += dt; z.psi = Math.max(300, z.psi - dt * 3); z.puff = 1; }
+      else { z.purging = false; z.puff = Math.max(0, z.puff - dt / 0.3); if (!z.on) z.line = Math.max(0.15, z.line - dt / 45); }   // the line warms and boils back to gas
+      if (st.phase !== "run" || z.cut) { z.frac = 0; st.n2o = 0; return; }
+      const mph = st.v * 2.23694;
+      const arm = nzAct === "mph40" ? mph >= 40 : nzAct === "mph60" ? mph >= 60 : nzAct === "shift2" ? st.gear >= 2 && st.shiftT <= 0 : st.rpm >= (NZ.winRpm || 0);
+      if (arm && !z.on) {
+        z.on = true; z.onT = st.t; z.onMph = mph; z.onGear = st.gear; z.onX = st.x; z.lineAtOn = z.line; z.shifts0 = st.shifts.length;
+        if (z.event === "lean" || z.event === "backfire") { st.failKind = z.event; st.failAt = st.t + (z.event === "lean" ? 0.35 + Math.random() * 0.5 : 0.04 + Math.random() * 0.2); }
+        else if (z.event === "panel") z.panelAt = st.t + 0.05 + Math.random() * 0.25;
+      }
+      if (!z.on) { z.frac = 0; st.n2o = 0; return; }
+      if (z.panelAt != null && st.t >= z.panelAt) { z.cut = true; z.frac = 0; st.n2o = 0; z.panelAt = null; st.launch.pops = 1; return; }   // the burst panel blows, the controller kills the shot
+      const since = st.t - z.onT;
+      z.line = Math.min(1, z.line + dt / 0.5);             // vapour first, then liquid at the jets
+      let k = nzPsiK * (0.35 + 0.65 * z.line);
+      if (nzAct !== "window" && NZ.prog) k *= clamp(since / 1.0, 0.25, 1);   // the controller ramps from the moment it is switched
+      if (NZ.stageHp && nzAct !== "window") { if (!z.stage2 && (st.shifts.length > z.shifts0 || since > 1.2)) z.stage2 = true; if (!z.stage2) k *= NZ.stageHp[0] / NZ.shotHp; }
+      z.frac = k;
+      st.n2o = +(k * (interp(res.n2oTq, st.rpm) > 1 ? 1 : 0)).toFixed(3);   // in only above the window switch
+    }
+    function purge(on) { if (!NZ || (st.phase !== "burnout" && st.phase !== "staged")) return false; st.n2oS.purging = !!on; return true; }
     function launch() {
       if (st.phase !== "staged") return;
       if (st.rollIn > 0) { st.rollIn = 0; st.x = 0; st.rolled = true; }
@@ -4216,6 +4389,8 @@ const ENGINE_SIM = (function () {
       const pM = MH ? clamp((st.manDose - 0.5) / 2.5, 0, 0.9) : 0;
       st.risk = { turbo: +pT.toFixed(2), manifold: +pM.toFixed(2) };
       if (!v.noFail) { const rnd = typeof v.rng === "function" ? v.rng : Math.random; if (rnd() < pT) st.failKind = "turbo"; else if (rnd() < pM) st.failKind = "manifold"; if (st.failKind) st.failAt = 0.15 + rnd() * 0.6; }
+      if (NZ) { const r = n2oRisk(); st.risk.lean = r.lean; st.risk.backfire = r.backfire;
+        if (!v.noFail && !st.failKind) { const rnd = typeof v.rng === "function" ? v.rng : Math.random; if (rnd() < r.lean) st.n2oS.event = "lean"; else if (rnd() < r.backfire) st.n2oS.event = rnd() < 0.5 ? "panel" : "backfire"; } }
     }
     function result() {
       const q = st.marks.find(m => m.n === "1/4 mi"), e = st.marks.find(m => m.n === "1/8 mi"), s = st.marks.find(m => m.n === "60 ft");
@@ -4247,6 +4422,7 @@ const ENGINE_SIM = (function () {
         else if (!lineLock && st.burnT > 1) reasons.push(`Without a line lock the burnout only half-worked — the car crept out of the box and the fronts took some of it.`);
       }
       if (st.spinTime > 0.25) reasons.push(`Wheelspin for ${st.spinTime.toFixed(1)} s — ${TY.n.toLowerCase()}s can only plant about ${Math.round(Fmax0() / 1000)} kN. Softer tyre, taller first gear, more rear weight, or a lower launch rpm.`);
+      if ((st.shakeT || 0) > 0.1) reasons.push(`Tyre shake for ${st.shakeT.toFixed(1)} s — ${v.tyrePsi} psi is too soft for ${TY.n.toLowerCase()}s (they're set up around ${psiNom}); the sidewall winds up and lets go. A pound or two more.`);
       if (st.bog) reasons.push(`Bogged off the line — rpm fell to ${Math.round(st.minRpm)}. Launch higher or shorten first gear.`);
       if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — a street shell has no wheelie bars, so the driver had to pedal it straight. Less rear weight bias, or a body with bars.`);
       if (st.limiterTime > 0.3) reasons.push(`${st.limiterTime.toFixed(1)} s on the rev limiter. Shift sooner or lengthen the gearing.`);
@@ -4259,14 +4435,26 @@ const ENGINE_SIM = (function () {
       if (q && q.mph > 150 && !v.chute) reasons.push(`Trapped ${Math.round(q.mph)} mph with no parachute. Anything over 150 gets black-flagged at tech, and it took ${Math.round(st.shutFt)} ft of brakes alone to pull up.`);
       else if (st.shutFt > 1800) reasons.push(`Used ${Math.round(st.shutFt)} ft of shutdown — more road than most strips give you.`);
       if (q && v.body === "street" && q.mph > 160) reasons.push("A full street body is its own parachute at this speed — a slicker shell is worth several mph of trap.");
+      if (NZ) {
+        const z = st.n2oS, shot = NZ.shotHp, C1 = n => Math.round(n).toLocaleString("en-CA");
+        if (st.broke === "lean") reasons.unshift(`The ${shot} shot came in lean${nzPsi > 980 ? ` — the bottle was at ${C1(nzPsi)} psi, more nitrous than the fuel table was written for` : ""}. ${NZ.dry ? "A dry kit is only as rich as the injectors and the pump behind it: " : ""}a cylinder went lean on the bottle and melted the crown.`);
+        else if (st.broke === "backfire") reasons.unshift(`Intake backfire: the ${NZ.plate ? "plate" : "nozzle"} had the intake full of fuel and nitrous, and a misfire lit it. It split the intake. Plates hate long runners, lean mixtures and a line full of gas.`);
+        else if (z.cut) reasons.push(`Intake backfire on the hit — the burst panel blew and the controller killed the shot. The pass was finished on the motor alone.`);
+        if (!z.on && !st.broke) reasons.push(nzAct === "window" ? `The nitrous never came on — the window switch arms at ${C1(NZ.winRpm)} rpm.` : `The nitrous never came on — it was set for ${nzAct === "shift2" ? "after the 1-2 shift" : nzAct === "mph40" ? "40 mph" : "60 mph"}.`);
+        else if (z.on && z.lineAtOn < 0.5 && !st.broke) reasons.push(`The line was not purged: the first of the shot was gas, not liquid, so the hit came in soft. Hold PURGE on the line until it spits white.`);
+        if (nzPsi < 880 && z.on) reasons.push(`Bottle at ${C1(nzPsi)} psi — a cool bottle flows ${Math.round((1 - nzPsiK) * 100)}% less shot, and a different amount every pass. A heater blanket holds it near 950.`);
+        if (z.on && nzAct !== "window" && st.spinTime < 0.1 && z.onGear <= 1 && z.onMph < 45) reasons.push(`The shot came on at ${Math.round(z.onMph)} mph and the tyres held it.`);
+        if (z.on && st.spinTime > 0.25 && z.onGear === 1 && nzAct === "window") reasons.push(`The shot came on in first gear and spun the tyres — set it to come on after the 1-2 shift, or at 40 mph.`);
+      }
       const thousand = st.marks.find(m => m.n === "1000 ft"), three = st.marks.find(m => m.n === "330 ft");
       return { et: q ? q.t : null, mph: q ? q.mph : null, eighth: e || null, sixty: s || null, ft330: three || null, ft1000: thousand || null, marks: st.marks, trace: st.trace, shifts: st.shifts, spinTime: +st.spinTime.toFixed(2), limiterTime: +st.limiterTime.toFixed(2), overrev: +st.overrev.toFixed(3), bog: st.bog, shutFt: Math.round(st.shutFt), chute: !!v.chute, body: v.body, reasons: reasons, veh: v, ratios: ratios.map(r => +r.toFixed(2)),
         launch: { ctl: lc, brake: tbk, holdRpm: twoStep ? holdRpm : 0, retard: retard, held: +st.armedT.toFixed(2), boost: +st.launchBoost.toFixed(2), boostTarget: bT, rpm: st.launchRpmAct, tyreTemp: +st.tyreTemp.toFixed(2), burnT: +st.burnT.toFixed(1), grip: +(st.gripGain * 100).toFixed(1), egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), boostT: st.boost0T != null ? +st.boost0T.toFixed(2) : null },
         heat: { egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), turbDose: +st.turbDose.toFixed(2), manDose: +st.manDose.toFixed(2), risk: st.risk, lineHeat: +st.lineHeat.toFixed(2), abuse: +clamp(st.lineHeat * 0.5, 0, 2.5).toFixed(2), limitC: egtLimit || null, manifold: MH ? MH.n : null },
+        n2o: NZ ? { kit: NZ.kind, shotHp: NZ.shotHp, act: nzAct, psi: Math.round(st.n2oS.psi), psiK: +nzPsiK.toFixed(3), on: st.n2oS.on, onT: st.n2oS.on ? +st.n2oS.onT.toFixed(2) : null, onMph: Math.round(st.n2oS.onMph), onGear: st.n2oS.onGear, onFt: Math.round(st.n2oS.onX * 3.28084), purged: +st.n2oS.purged.toFixed(1), lineAtOn: +st.n2oS.lineAtOn.toFixed(2), cut: st.n2oS.cut, risk: st.risk ? { lean: st.risk.lean, backfire: st.risk.backfire } : null } : null,
         broke: st.broke, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2) };
     }
-    function Fmax0() { const m = mu * (1 + st.gripGain); return bite * m * v.mass * g * v.rearBias / Math.max(0.3, 1 - m * v.cgH / v.wheelbase); }
-    return { st: st, step: step, launch: launch, shift: shift, result: result, ratios: ratios, burn: burn, stage: stage, arm: arm, disarm: disarm, canArm: canArm, holdRpm: holdRpm };
+    function Fmax0() { const m = mu * (1 + st.gripGain) * tuneGrip(0.3); return bite * m * v.mass * g * v.rearBias / Math.max(0.3, 1 - m * v.cgH / v.wheelbase); }
+    return { st: st, step: step, launch: launch, shift: shift, result: result, ratios: ratios, burn: burn, stage: stage, arm: arm, disarm: disarm, canArm: canArm, holdRpm: holdRpm, purge: purge, n2o: NZ };
   }
   /* A whole pass with no human in it: contract ET checks, the rival in the other lane, the node harness.
      veh.holdTime: seconds on the two-step / trans-brake before the release (default 1.2 when fitted). */
@@ -4275,6 +4463,7 @@ const ENGINE_SIM = (function () {
     if (d.st.phase === "burnout") d.stage();
     while (d.st.phase === "staged" && d.st.rollIn > 0) d.step(0.01);
     if (d.canArm) { const ht = veh && veh.holdTime != null ? +veh.holdTime : 1.2; if (ht > 0 && d.arm()) { let t = 0; while (t < ht) { d.step(0.01); t += 0.01; } } }
+    if (d.n2o && veh.n2o.purge > 0) { d.purge(true); let t = 0; while (t < veh.n2o.purge) { d.step(0.01); t += 0.01; } d.purge(false); }   // a headless car purges before it leaves
     d.launch(); while (!d.st.done) d.step(0.002); return d.result();
   }
   /* ---- Truck & tractor pulling: a weight-transfer sled on a dirt track ----
@@ -4505,7 +4694,7 @@ const ENGINE_SIM = (function () {
         else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : "piston";
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
       }
-      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2) }); }
+      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2), egt: Math.round(st.egt), boost: +(st.boost || 0).toFixed(2) }); }
       st.thrNow = thr;
       if (st.x >= PULL_FULL) { st.x = PULL_FULL; st.full = true; st.stopWhy = "full"; finish(); return; }
       if (st.broke) { finish(); return; }
@@ -4553,6 +4742,7 @@ const ENGINE_SIM = (function () {
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
     isDiesel: isDiesel,
+    n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel
   };
@@ -4624,7 +4814,7 @@ const ENGINE_SOUND = (function () {
   };
 
   // shot size in crank hp, mirroring OPT.nitrous in the sim
-  var OPTN2O = { none: 0, wet150: 150, direct250: 250, prog400: 400, prog700: 700 };
+  var OPTN2O = { none: 0, wet150: 150, direct250: 250, prog400: 400, prog700: 700, dry75: 75, dry125: 125, wet2stage: 250, diesel100: 100 };
 
   var TURBO_SIZE = { small:{ base:5200, spool:0.85, wg:0.8 }, medium:{ base:4200, spool:0.70, wg:1.0 },
                      large:{ base:3300, spool:0.55, wg:1.3 }, s66:{ base:2850, spool:0.46, wg:1.5 }, huge:{ base:2500, spool:0.42, wg:1.7 },
@@ -5524,10 +5714,12 @@ const ENGINE_SOUND = (function () {
     var n2oHp = p.n2o || 0;
     var n2oWin = n2oHp ? (p.n2oProg ? 0.42 : 0.55) * (p.redline || 7000) : 0;
     var n2oOn = (n2oHp > 0 && live && rpm >= n2oWin && load > 0.55) ? 1 : 0;
+    if (st.n2oGate != null) n2oOn = (n2oHp > 0 && live && st.n2oGate > 0.05 && load > 0.55) ? 1 : 0;   // the strip says when the shot is actually in
     var n2oBite = n2oOn ? clamp(n2oHp / Math.max(600, (p.cyl || 500) * n * 1.2), 0, 1.3)
                         * (p.n2oProg ? clamp((rpm - n2oWin) / (0.28 * (p.redline || 7000)), 0.25, 1) : 1) : 0;
     if (n2oOn && !st.n2oWas) { solenoid(); }
     st.n2oWas = n2oOn;
+    if (st.n2oGate != null && n2oBite > 0) n2oBite *= clamp(st.n2oGate, 0.3, 1.1) * 1.15;   // a fatter bark while the shot is in
     if (n2oBite > 0) {
       ap(N.pre.gain, (0.8 + drive * 2.4) * (1 + 0.55 * n2oBite), 0.05);
       ap(N.lp.frequency, clamp(lpf * (1 + 0.30 * n2oBite), 700, 9000), 0.04);
@@ -5850,6 +6042,25 @@ const ENGINE_SOUND = (function () {
         reap([o, bp, g], 0.4);
         break;
       }
+      case "purge": {
+        /* nitrous purge: a hard, wide hiss of liquid flashing to gas at the nozzle, with a little whistle on top */
+        noiseVoice(0.75, "highpass", 2600 + Math.random() * 500, 0.5, 0.20);
+        noiseVoice(0.65, "bandpass", 6200, 1.6, 0.07);
+        var tp = ctx.currentTime, po = ctx.createOscillator(); po.type = "sine";
+        po.frequency.setValueAtTime(5200, tp); po.frequency.linearRampToValueAtTime(4700, tp + 0.6);
+        var pg = ctx.createGain(); pg.gain.setValueAtTime(0, tp); pg.gain.linearRampToValueAtTime(0.012, tp + 0.04); pg.gain.exponentialRampToValueAtTime(0.0001, tp + 0.65);
+        po.connect(pg); pg.connect(bus); po.start(tp); po.stop(tp + 0.7); reap([po, pg], 0.7);
+        if (!st.purgeT || tp - st.purgeT > 1.2) solenoid();      // the purge solenoid clacks open
+        st.purgeT = tp;
+        break;
+      }
+      case "intakeBang": {
+        /* a backfire through the intake: one deep thump and the burst panel letting go */
+        pop(1.0);
+        noiseVoice(0.35, "lowpass", 420, 0.9, 0.30);
+        setTimeout(function () { if (ctx) noiseVoice(0.5, "highpass", 1800, 0.6, 0.10); }, 40);
+        break;
+      }
       case "backfire": {
         if (st.diesel) return;
         pop(0.9);
@@ -5898,6 +6109,7 @@ const ENGINE_SOUND = (function () {
     stop: stop,
     set: set,
     event: event,
+    nitrous: function (g) { st.n2oGate = (g == null) ? null : +g; },   // strip: null = the rpm window decides, 0..1 = the shot actually in
     setVolume: setVolume,
     setQuality: setQuality,
     rebuild: function () { rebuildGraph("manual"); },
@@ -7366,9 +7578,10 @@ function buildEngineMesh(cfg, layoutObj){
 
   /* ---------- nitrous: bottle(s) strapped down on a stand rail, solenoids at the throttle, lines to a plate or port nozzles ---------- */
   setZone(3);
-  var n2o = pick(cfg.nitrous,"none");
+  var n2o = pick(cfg.nitrous,"none"); N2O_PURGE=null;
   if(n2o!=="none"){
-    var big = (n2o==="prog400"||n2o==="prog700"), two=(n2o==="prog700"), wet=(n2o==="wet150");
+    var nk = (typeof ENGINE_SIM!=="undefined" && ENGINE_SIM.OPT.nitrous[n2o]) || {};
+    var big = (n2o==="prog400"||n2o==="prog700"), two=(n2o==="prog700"), wet=(n2o==="wet150")||!!nk.plate, dry=(nk.kind==="dry"||nk.kind==="diesel");
     var bR = bore*(big?0.36:0.30), bL = bore*(big?2.1:1.7), nBot = panTop-panH;
     /* stand pads run along X at z = +/-2.34 and x = +/-3.4 (buildStand); a boxer's exhausts fill the rails under the heads, so its bottle goes ahead of the engine */
     var bX = L.boxer ? Math.min(bankLen*0.5 + bL*0.5 + bore*0.6, 3.3 - bL*0.5) : -Math.min(bankLen*0.30, 3.3 - bL*0.5);
@@ -7381,6 +7594,11 @@ function buildEngineMesh(cfg, layoutObj){
       B.add("chrome", CYL(bR*0.22, bR*0.22, bR*0.5, 10), vX, bY, zz, 0,0,PI/2);
       B.add("dark", BOX(bore*0.10, bR*2.1, bR*2.3), bX-bL*0.28, bY, zz);
       B.add("dark", BOX(bore*0.10, bR*2.1, bR*2.3), bX+bL*0.28, bY, zz);
+      /* heater blanket round the middle of the bottle, its thermostat box, and a pressure gauge on the valve */
+      B.add("rubberFlat", CYL(bR*1.06, bR*1.06, bL*0.36, 22, true), bX, bY, zz, 0,0,PI/2);
+      B.add("wireRed", BOX(bR*0.55, bR*0.30, bR*0.40), bX, bY+bR*1.12, zz);
+      B.add("chrome", CYL(bR*0.36, bR*0.36, bR*0.16, 16), vX+bR*0.05, bY+bR*0.62, zz, PI/2,0,0);
+      B.add("blackPlast", CYL(bR*0.30, bR*0.30, bR*0.17, 16), vX+bR*0.05, bY+bR*0.62, zz+bR*0.01, PI/2,0,0);
     }
     var ntb = (aspInfo && aspInfo.tb) || LAST_TB;
     var sP;
@@ -7389,16 +7607,30 @@ function buildEngineMesh(cfg, layoutObj){
                          : ntb.pt.clone().addScaledVector(ntb.dir, -bore*0.25).add(V3(0, bore*0.45, 0));
     } else sP = V3(-(bankLen/2)+bore*0.4, deckH + headH*0.9, -(caseW*0.5 + bore*0.1));
     B.add("anod", BOX(bore*0.22, bore*0.30, bore*0.22), sP.x, sP.y, sP.z-bore*0.16);
-    B.add("anod", BOX(bore*0.22, bore*0.30, bore*0.22), sP.x, sP.y, sP.z+bore*0.16);
+    if(!dry) B.add("anod", BOX(bore*0.22, bore*0.30, bore*0.22), sP.x, sP.y, sP.z+bore*0.16);   /* a dry kit has no fuel solenoid */
+    /* purge solenoid on a tee off the feed, and its nozzle pointing up and out of the bay */
+    var pgP = V3(sP.x, sP.y+bore*0.42, sP.z-bore*0.42);
+    B.add("chrome", BOX(bore*0.16, bore*0.20, bore*0.16), pgP.x, pgP.y, pgP.z);
+    B.add("steel", CYL(bore*0.025, bore*0.025, bore*0.34, 8), pgP.x, pgP.y+bore*0.10, pgP.z-bore*0.16, -0.75,0,0);
+    var pgM = new THREE.Object3D(); pgM.position.set(pgP.x, pgP.y+bore*0.24, pgP.z-bore*0.30); pgM.userData.n2oPurge = V3(0, 0.75, -0.66); extras.push(pgM); N2O_PURGE = pgM;
     /* feed line: up in front of the heads, or behind them when the throttle is at the back */
     var xUp = (sP.x > 0) ? Math.max(bankLen*0.5 + bore*0.45, vX + bore*0.3) : Math.min(sP.x, -bankLen*0.5) - bore*0.45;
     extras.push(hoseMesh([ V3(vX, bY, bZ), V3(vX+bore*0.25, bY+bore*0.30, bZ), V3(xUp, bY+bore*0.50, bZ),
                            V3(xUp, sP.y+bore*0.50, bZ*0.9), V3(sP.x+(sP.x>0?bore*0.6:-bore*0.3), sP.y+bore*0.50, sP.z), V3(sP.x, sP.y+bore*0.15, sP.z+bore*0.16) ], bore*0.035, MAT.steel));
-    if(ntb && wet){
+    if(ntb && dry){
+      /* dry kit (or a diesel kit): one nozzle in the intake tube ahead of the throttle, nitrous only */
+      var dp = ntb.pt.clone().addScaledVector(ntb.dir, bore*0.55), dax = Math.abs(ntb.dir.x)>0.5;
+      B.add("chrome", CYL(bore*0.05, bore*0.05, bore*0.20, 10), dp.x, dp.y+(dax?bore*0.30:0), dp.z+(dax?0:bore*0.30), dax?0:PI/2, 0, 0);
+      B.add("anod", BOX(bore*0.09, bore*0.09, bore*0.09), dp.x, dp.y+(dax?bore*0.40:0), dp.z+(dax?0:bore*0.40));
+      extras.push(hoseMesh([ V3(sP.x, sP.y+bore*0.15, sP.z-bore*0.16), V3((sP.x+dp.x)/2, Math.max(sP.y, dp.y)+bore*0.55, (sP.z+dp.z)/2), V3(dp.x, dp.y+(dax?bore*0.42:0), dp.z+(dax?0:bore*0.42)) ], bore*0.03, MAT.steel));
+    } else if(ntb && wet){
       /* fogger plate sandwiched under the throttle */
       var fp = ntb.pt.clone().addScaledVector(ntb.dir, -bore*0.40);
       var ax = Math.abs(ntb.dir.x)>0.5;
       B.add("anod", ax ? BOX(bore*0.05, bore*0.78, bore*0.78) : BOX(bore*0.78, bore*0.05, bore*0.78), fp.x, fp.y, fp.z);
+      if(nk.stages===2){ var fp2 = fp.clone().addScaledVector(ntb.dir, -bore*0.09);   /* the second stage's plate stacked under the first */
+        B.add("anod", ax ? BOX(bore*0.05, bore*0.82, bore*0.82) : BOX(bore*0.82, bore*0.05, bore*0.82), fp2.x, fp2.y, fp2.z);
+        extras.push(hoseMesh([ V3(sP.x, sP.y-bore*0.10, sP.z+bore*0.16), V3((sP.x+fp2.x)/2, (sP.y+fp2.y)/2, sP.z+bore*0.40), V3(fp2.x, fp2.y, fp2.z+bore*0.40) ], bore*0.03, MAT.steel)); }
       extras.push(hoseMesh([ V3(sP.x, sP.y-bore*0.10, sP.z-bore*0.16), V3((sP.x+fp.x)/2, (sP.y+fp.y)/2, sP.z-bore*0.40), V3(fp.x, fp.y, fp.z-bore*0.40) ], bore*0.03, MAT.steel));
     } else {
       /* direct port: a nozzle in every runner, fed by a distribution line per bank */
@@ -8563,6 +8795,7 @@ function buildIntake(B, p, extras){
 var PIPE_LOG=[];          /* every pipe built so far this engine (world points + radius): turbos are placed clear of the headers */
 var EXH_COLL=[];          /* turbo feed flanges, engine space: {pt, dir, bank, r, cast} (filled by buildExhaust) */
 var LAST_TB=null;         /* throttle inlet {pt, dir(upstream)} (filled by buildIntake) */
+var N2O_PURGE=null;       /* nitrous purge nozzle marker (an Object3D in the engine group; userData.n2oPurge = local spray direction) */
 var LAST_PLEN=null;       /* plenum / blower-manifold box {x, z, top, bot, len, w} (filled by buildIntake) */
 var TURBO_MM = { small:46, medium:54, large:64, s66:66, huge:76, f88:88, f98:98 };        /* compressor inducer, mm */
 var FLOW_LB  = { small:26, medium:40, large:58, s66:115, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
@@ -10041,8 +10274,19 @@ var PKIND = {
   flame:     {color:0xffb040, opacity:1.0,  life:0.28, scale:1.1, vy:2.0, grow:1.8, add:true, spark:true},
   oil:       {color:0x0c0a08, opacity:0.95, life:1.6, scale:0.16, vy:3.0, grow:0.9, drop:true, spread:4.5},
   smokeBlack:{color:0x0a0a0b, opacity:0.62, life:2.6, scale:0.9, vy:3.0, grow:3.4},
-  coolant:   {color:0x59d98a, opacity:0.85, life:1.5, scale:0.13, vy:5.0, grow:0.9, drop:true, spread:5.0}
+  coolant:   {color:0x59d98a, opacity:0.85, life:1.5, scale:0.13, vy:5.0, grow:0.9, drop:true, spread:5.0},
+  purge:     {color:0xffffff, opacity:0.72, life:0.75, scale:0.30, vy:0.0, grow:7.5, spread:2.2}
 };
+/* nitrous purge in the engine view: a white jet from the purge nozzle that blooms and is gone in under a second */
+var N2O_FX = {t:0, acc:0}, _n2oA = new THREE.Vector3(), _n2oB = new THREE.Vector3();
+function n2oPurgeStep(dt){
+  if(N2O_FX.t<=0 || !N2O_PURGE || !N2O_PURGE.parent){ N2O_FX.t=0; return; }
+  N2O_FX.t-=dt; N2O_FX.acc+=dt*(GFX==="lite"?38:70);
+  N2O_PURGE.updateMatrixWorld(true); N2O_PURGE.getWorldPosition(_n2oA);
+  _n2oB.copy(N2O_PURGE.userData.n2oPurge).transformDirection(N2O_PURGE.parent.matrixWorld);
+  while(N2O_FX.acc>=1){ N2O_FX.acc-=1; emit("purge", _n2oA); var q=particles[particles.length-1], u=q.userData, sp=9+Math.random()*7;
+    u.vx=_n2oB.x*sp+(Math.random()-0.5)*2.2; u.vy=_n2oB.y*sp+(Math.random()-0.5)*1.6; u.vz=_n2oB.z*sp+(Math.random()-0.5)*2.2; u.life=0.45+Math.random()*0.45; }
+}
 function emit(kind, pos){
   var mat, life, scale, vy;
   var K2 = PKIND[kind];
@@ -10160,6 +10404,13 @@ function startFail(kind){
     failFx.glow=0.2; oilPoolStart();
   } else if(kind==="steam"){
     p=enginePoint(0.5,0.62,0.5).clone(); burst("steam", p, 22, 2.8); burst("coolant", p, 14, 1.2);
+  } else if(kind==="lean"){
+    /* lean on the bottle: it rattles, then the crown lets go — the knock sequence */
+    failFx.kind="knock"; failFx.rattle=1;
+  } else if(kind==="backfire"){
+    /* intake backfire on nitrous: a ball of flame out of the throttle and the burst panel, then smoke */
+    if(N2O_PURGE && N2O_PURGE.parent){ N2O_PURGE.getWorldPosition(_n2oA); p=_n2oA.clone(); } else p=enginePoint(0.5,1.0,0.5).clone();
+    burst("flame", p, 18, 1.2); burst("smokeGrey", p, 6, 1.0); burst("spark", p, 10, 0.8); flashAt(p, 0xffa040, 16); camState.shake=Math.max(camState.shake, 0.45);
   } else if(kind==="manifold"){
     /* cracked exhaust manifold: a glowing split in the collector, gas and sparks jetting out of it, the hot side
        flaring, then soot spreading round the crack */
@@ -10505,6 +10756,7 @@ function tick(dt, t){
     } else smokeAcc=0;
     if(run.fail) stepFail(dt);
     else if(failFx.debris.length) stepDebris(dt);
+    n2oPurgeStep(dt);
     stepParticles(dt);
   }
 }
@@ -11717,18 +11969,19 @@ function stripMark(a, b, w){
 
 /* --- scoreboards: redrawn only when what they show changes --- */
 function stripBoardDraw(d, force){
-  var B=STRIP.board; if(!B) return;
-  ["p","o"].forEach(function(tag){ var L=d[tag]||{}, bd=B[tag];
-    var key=[L.et,L.mph,L.rt,L.win,L.foul,L.off,L.pb,STRIP.night].join("|"); if(!force && key===bd.key) return; bd.key=key;
+  var B=STRIP.board; if(!B) return; var X=STRIP.rn||{};
+  ["p","o"].forEach(function(tag){ var L=d[tag]||{}, bd=B[tag], dl=tag==="p"?X.pdial:X.odial;
+    var key=[L.et,L.mph,L.rt,L.win,L.foul,L.off,L.pb,STRIP.night,X.round,dl].join("|"); if(!force && key===bd.key) return; bd.key=key;
     var x=bd.cv.getContext("2d"), MONO="'IBM Plex Mono','Courier New',monospace", F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
     x.fillStyle="#060607"; x.fillRect(0,0,512,256); x.strokeStyle="#34373c"; x.lineWidth=10; x.strokeRect(5,5,502,246);
-    x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#9aa0a8"; x.font="700 28px "+F; x.fillText(tag==="p"?"RIGHT LANE":"LEFT LANE", 24, 36);
+    x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#9aa0a8"; x.font="700 "+(X.round?24:28)+"px "+F; x.fillText((tag==="p"?"RIGHT":"LEFT")+(X.round?" · "+X.round:" LANE"), 24, 36);
     x.beginPath(); x.arc(468,36,17,0,TAU); x.fillStyle=L.win?"#44ff72":"#16241a"; x.fill();
     if(L.win){ x.fillStyle="#44ff72"; x.font="700 28px "+F; x.textAlign="right"; x.fillText("WIN", 440, 37); }
     var amber=L.off?"#3a2a12":"#ffb22c", dim=L.off?"#2c220f":"#ffcf73";
     if(L.foul){ x.fillStyle="#ff3b30"; x.font="700 70px "+F; x.textAlign="center"; x.fillText("RED LIGHT", 256, 150); }
     else {
       x.textAlign="right"; x.fillStyle=dim; x.font="600 30px "+MONO; x.fillText("RT "+(L.rt!=null?(+L.rt).toFixed(3):"-.---"), 488, 80);
+      if(dl!=null){ var bo=L.et!=null && +L.et<dl; x.textAlign="left"; x.fillStyle=bo?"#ff3b30":dim; x.fillText("DIAL "+(+dl).toFixed(2)+(bo?" BO":""), 24, 80); }   /* bracket: the dial-in, red when it broke out */
       x.fillStyle=amber; x.font="700 104px "+MONO; x.fillText(L.et!=null?(+L.et).toFixed(3):"--.---", 494, 150);
       x.fillStyle=dim; x.font="700 58px "+MONO; x.fillText((L.mph!=null?(+L.mph).toFixed(2):"---.--"), 400, 220);
       x.font="700 30px "+F; x.fillText("MPH", 488, 226); x.textAlign="left"; x.font="700 30px "+F; x.fillText("ET", 24, 136);
@@ -11740,7 +11993,7 @@ function stripBoardDraw(d, force){
 function stripTmLane(){ return {px:null, pv:0, start:null, et:null, mph:null, cross:null}; }
 function stripTiming(o, rdt){
   var ph=o.phase||"run";
-  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; STRIP.pb=0; STRIP.pbCut=0; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
+  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; STRIP.pb=0; STRIP.pbCut=0; STRIP.win=0; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
   var tm=STRIP.tm||(STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()});
   tm.used=true; tm.clock+=rdt;
   function lane(L, x, v){
@@ -11843,6 +12096,25 @@ function stripFlames(car, amt, shift, carV){
     STRIP.flash.position.copy(_sfA).addScaledVector(_sfD,0.4); STRIP.flash.position.y+=0.25; }
   STRIP.flashI=Math.max(STRIP.flashI||0, amt*(shift?1.5:3)*(STRIP.night?0.5:1));
 }
+/* nitrous on the strip car: the purge cloud from the nozzle in the nose, a little flame at the pipes while the
+   shot is in, and a fireball from the intake if a plate backfires (the burst panel) */
+function stripN2O(o, dt, P){
+  var u=P.userData, FX=STRIP.fx, lite=(GFX==="lite"), v=Math.max(0,o.v||0), pv=STRIP.prevN2O||(STRIP.prevN2O={});
+  o=STRIP.n2oSt||{}; o.phase=o.phase||"staged";
+  if(!u._eng) return;
+  if((o.purge||0)>0.02){
+    var n=(lite?26:52)*dt*o.purge; u._pgAcc=(u._pgAcc||0)+n; var k=Math.floor(u._pgAcc); u._pgAcc-=k;
+    _sfA.set(u._eng.x+(u._len||4)*0.17, u._eng.y+0.08, u._eng.z+0.22); P.localToWorld(_sfA);
+    for(var i=0;i<k;i++){ var sp=5+Math.random()*6;
+      FX.emit(_sfA.x, _sfA.y, _sfA.z, v+sp*0.30+(Math.random()-0.5)*1.2, sp*0.38+Math.random()*0.8, (Math.random()-0.35)*2.6,
+        0.45+Math.random()*0.4, 0.12, 1.3+Math.random()*1.0, 0.98, 0.99, 1.0, 0.85, {drag:4.0, buoy:0.4, fin:0.08, spin:0.8}); }
+  }
+  if(o.phase==="run" && (o.n2o||0)>0.3 && Math.random()<dt*(lite?3:6)) stripFlames(P, 0.12+0.15*o.n2o, false, v);
+  if(o.cut && !pv.cut){ P.localToWorld(_sfA.copy(u._eng)); _sfA.y+=0.3;
+    for(var j=0;j<(lite?8:16);j++) STRIP.fxFire.emit(_sfA.x+(Math.random()-0.5)*0.4, _sfA.y, _sfA.z+(Math.random()-0.5)*0.4, v*0.9+(Math.random()-0.5)*3, 2+Math.random()*3, (Math.random()-0.5)*2, 0.25+Math.random()*0.2, 0.4, 1.4, 1.0, 0.5+Math.random()*0.2, 0.1, 0.9, {drag:1.5, buoy:2, fin:0.05, spin:3});
+    STRIP.flashI=Math.max(STRIP.flashI||0, 6); STRIP.flash.position.copy(_sfA); STRIP.shake=Math.max(STRIP.shake||0, 0.35); }
+  pv.cut=!!o.cut;
+}
 function stripEffects(o, dt, P, O){
   var FX=STRIP.fx, FA=STRIP.fxAdd, lite=(GFX==="lite"), rate=lite?0.55:1, ph=o.phase||"run", v=Math.max(0,o.v||0), u=P.userData, prev=STRIP.prev;
   var temp=o.tyreTemp==null?0.6:clamp(o.tyreTemp,0,1), race=!!(o.race&&O&&O.visible);
@@ -11892,6 +12164,7 @@ function stripTreeLights(o){
   set("pa1", tr.a1); set("pa2", tr.a2); set("pa3", tr.a3); set("pg", tr.green&&!o.foul); set("pr", !!o.foul);
   set("opre", race && (tr.opre!=null?tr.opre&&ox<0.9:near(ox))); set("ostage", race && !!(tr.ostaged!=null?tr.ostaged:tr.staged) && ph!=="burnout" && ox<0.4);
   set("oa1", race&&tr.a1); set("oa2", race&&tr.a2); set("oa3", race&&tr.a3); set("og", race&&tr.green&&!o.ofoul); set("or", race&&!!o.ofoul);
+  if(o.otree){ var ot=o.otree; set("oa1", race&&ot.a1); set("oa2", race&&ot.a2); set("oa3", race&&ot.a3); set("og", race&&ot.green&&!o.ofoul); }   /* bracket: the slower dial's tree counts down first */
 }
 /* --- crowd gets up for the launch and the finish --- */
 var _crM=new THREE.Matrix4();
@@ -11923,8 +12196,8 @@ function stripDirect(o, dt, P, O){
     if((s==="pan"||s==="chase") && lead>=338) s="finish";
   } else if(ph==="shutdown"){
     if(s!=="finish"&&s!=="shutdown"&&s!=="crowd") s="shutdown";
-    else if(s==="finish" && (px>STRIP_Q+70 || (STRIP.shotT>2.4 && px>STRIP_Q+12))) s=STRIP.pb&&!STRIP.pbCut?"crowd":"shutdown";
-    else if(s==="crowd" && (STRIP.pbCut>1 || STRIP.shotT>(STRIP.pb>1?2.3:1.7))) s="shutdown";
+    else if(s==="finish" && (px>STRIP_Q+70 || (STRIP.shotT>2.4 && px>STRIP_Q+12))) s=(STRIP.pb||STRIP.win)&&!STRIP.pbCut?"crowd":"shutdown";
+    else if(s==="crowd" && (STRIP.pbCut>1 || STRIP.shotT>(STRIP.win?2.8:STRIP.pb>1?2.3:1.7))) s="shutdown";
   } else if(ph==="done"){ s=(s==="shutdown"&&STRIP.shotT<0.8)?"shutdown":"board"; }
   stripCut(s);
   STRIP.shotT+=dt; STRIP.cutT+=dt;
@@ -12004,6 +12277,7 @@ function stripReset(){
   if(STRIP.marks){ STRIP.marks.n=0; STRIP.marks.i=0; STRIP.marks.mesh.count=0; }
   STRIP.shot=null; STRIP.prev={}; STRIP.tm=null; STRIP.shake=0; STRIP.flashI=0; if(STRIP.flash) STRIP.flash.intensity=0; if(STRIP.heatPass) STRIP.heatPass.enabled=false;
   STRIP.cheer=0; STRIP.pb=0; STRIP.pbCut=0; if(STRIP.crowd && STRIP.crowd.live) stripCrowd(0);
+  STRIP.win=0; STRIP.rn=null;
   ["p","o"].forEach(function(k){ var c=STRIP.cars[k]; if(c){ c.userData._markLast=[]; } });
 }
 
@@ -12033,6 +12307,7 @@ function stripUpdate(o, dt, rdt){
   P.updateMatrixWorld(true); if(O) O.updateMatrixWorld(true);
   stripTiming(o, rdt);
   stripEffects(o, dt, P, O);
+  stripN2O(o, dt, P);
   stripTreeLights(o);
   stripCrowd(dt);
   stripDirect(o, dt, P, O);
@@ -12860,13 +13135,20 @@ const ENGINE_VIS = {
     if(!renderer) return;
     if(!o || o.on===false){ if(STRIP.on){ STRIP.on=false; stripReset(); } return; }
     if(!STRIP.on){ STRIP.on=true; if(!STRIP.built) buildStripScene(); STRIP.shot=null; STRIP.snap=true; ENGINE_VIS.resize(); }
+    if(STRIP.rn) for(var rk in STRIP.rn) if(o[rk]===undefined) o[rk]=STRIP.rn[rk];   /* race night extras: round, dials, the other lane's tree/RT/ET, win */
     var rdt=Math.max(0, +o.dt||0.016); stripUpdate(o, Math.min(0.1, rdt), Math.min(0.5, rdt));
     return STRIP.stats||null;
   },
   /* a personal best on this pass: PB on the board, the stands come up and the camera cuts to them (1 = this engine, 2 = all-time) */
   stripPb: function(k){ if(k!==undefined){ STRIP.pb=k||0; STRIP.pbCut=0; if(k) STRIP.cheer=Math.max(STRIP.cheer, k>1?2.4:1.7); }
     return {pb:STRIP.pb||0, shot:STRIP.shot, cheer:+STRIP.cheer.toFixed(2)}; },   /* no argument: just report (harness) */
+  purge: function(sec){ N2O_FX.t=Math.max(N2O_FX.t, sec==null?0.6:+sec); },
+  stripN2O: function(s){ STRIP.n2oSt=s||null; },   /* strip car nitrous: {purge 0..1, n2o 0..1, cut, phase} */   /* engine view: puff the nitrous purge for sec seconds */
+  hasPurge: function(){ return !!(N2O_PURGE && N2O_PURGE.parent); },
   skipCut: function(){ if(STRIP.shot==="crowd") STRIP.pbCut=2; },   /* a tap during the crowd cut goes back to the car */
+  /* race night: extra fields merged into every setStrip frame {round, pdial, odial, otree:{a1,a2,a3,green}, ort, oet, omph, ofoul, win}; null clears */
+  stripRace: function(x){ STRIP.rn=x||null; },
+  stripWin: function(){ STRIP.win=1; STRIP.pbCut=0; STRIP.cheer=Math.max(STRIP.cheer, 2.6); },   /* won the night: the stands come up and the camera cuts to them */
   /* DIESEL pulling scene: fed every frame {on, phase:"stage"|"pull"|"done", x, v, boxFrac, slip, hop, smoke, rpm, vehicle, full, night, cls, distFt, color?, dt?}; {on:false} leaves */
   setPull: function(o){
     if(!renderer) return;
@@ -13166,7 +13448,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.10.0.0";
+const VERSION="1.11.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -13264,7 +13546,7 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.OPT.fuel[S.cfg.fue
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="overrev"?0.008:0.02;
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev())return 0;const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:250,pull_sled:150}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev())return 0;const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
 
 /* ===================== live compute ===================== */
@@ -13401,8 +13683,9 @@ function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
 const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).length}">`;
-  for(const k in opts){const o=opts[k];const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k;   // nitrous kits for the other fuel family stay out of the way
+  let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).filter(k=>famOK(opts[k],k)).length}">`;
+  for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
   return h+"</div>";
 }
@@ -13608,7 +13891,10 @@ const SPECS={
   nitrous:{price:o=>o.cost,line:o=>o.shotHp?o.shotHp+" hp shot":"none",specs:[
     ["Shot",o=>o.shotHp?o.shotHp+" hp at the jet":"none"],
     ["Delivery",o=>o.shotHp?(o.prog?"ramped in on a controller":"all at once"):null],
-    ["Arms at",o=>o.shotHp?(o.prog?"42% of redline":"55% of redline"):null]]},
+    ["Arms at",o=>o.shotHp?(o.prog?"42% of redline":"55% of redline")+(o.stageHp?` · stage 2 (${o.stageHp[1]}) at 70%`:""):null],
+    ["Kit",o=>({dry:"dry · nozzle only",wet:o.stages===2?"wet · two plates":"wet · plate",direct:"direct port · nozzle per runner",diesel:"diesel · oxygen only"})[o.kind]||null],
+    ["Fuel from",o=>o.kind==="dry"?"your injectors (rail raised)":o.kind==="diesel"?"the injection pump":o.kind?"its own jets, off your pump":null],
+    ["Watch for",o=>o.kind==="dry"?"lean spike":o.plate?"intake backfire":o.kind==="diesel"?"peak pressure":o.kind?"rod and gasket load":null]]},
   cover:{specs:[]},
   launchCtl:{line:o=>o.sub,specs:[["Holds",o=>o.cost?"a set launch rpm":"whatever your foot does"],["Boost on the line",o=>o._id==="launchCtl:two_step_retard"?"most of it, with heat":o.cost?"a little":"none"],["Dyno",o=>"no effect"]]},
   transBrake:{line:o=>o.sub,specs:[["Launch",o=>o._id==="transBrake:trans_brake"?"torque converter":"clutch"],["Burnout",o=>o._id==="transBrake:none"?"creeps, fronts smoke":"clean, rears only"],["Dyno",o=>"no effect"]]}
@@ -13660,14 +13946,17 @@ function renderEnv(){
   else if(!trackEvt(t)){
     h+=`<div class="envgrid">${sl("ambientC","Ambient",-25,45,1," °C",e.ambientC)}${sl("altitudeM","Altitude",0,3500,50," m",e.altitudeM)}${sl("coolantC","Coolant",70,118,1," °C",e.coolantC)}${sl("oilC","Oil temp",70,150,1," °C",e.oilC)}</div>`;
   }
-  if(t==="drag"){h+=`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
+  if(t==="drag"&&rnCur()){h+=rnPanel();$("envBox").innerHTML=h;return;}
+  if(t==="drag"){h+=rnFmtHtml()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>
     <div class="lbl"><span>Body &amp; aero</span></div><div class="seg">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
-    <div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
+    ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
+    ${rnTuneEnvHtml(sl)}
     <p class="hint">Rear-drive on a prepped strip. Gears are spaced evenly between 1st and top. Wheel force is the engine's torque × gear × final ÷ tyre radius; grip is μ × rear weight, with weight transfer helping the launch. Tyres, body and launch rpm are what a ${career()?"racer":"tuner"} actually changes between rounds. Body sets aero drag and how hard the chassis can plant the tyre — bars and a four-link put the power down; a stock shell cannot.</p>`;}
+  if(t==="drag"&&n2oKit())h+=n2oEnvHtml();
   if(t==="pull_sled")h+=pullEnvHtml(sl);
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;
@@ -13752,6 +14041,7 @@ function renderTest(){
   const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
     : `<b>${dc.n}</b> · no limits in the test cell. Figures update as you change the build; run a test to lock a result and pin it as a baseline.`;
+  if(S.env.testType==="drag")rnRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
 }
 function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.abs(d)<0.5)return"";return `<span class="delta ${d>0?"up":"dn"}">${d>0?"+":""}${f(d)}</span>`;}
@@ -13772,7 +14062,7 @@ function wearBudget(res){return res.raceSpec?res.racePasses:Math.max(2,Math.roun
 function wearInfo(res){const p=dragWear();if(p==null||!res)return null;const b=wearBudget(res);return{passes:+p.toFixed(1),budget:b,w:Math.min(1.5,p/Math.max(1,b))};}
 function addWear(n){if(!career())return;const h=hKey(cfgHash(S.cfg));C().wear=C().wear||{};C().wear[h]=+((C().wear[h]||0)+n).toFixed(2);}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
-function oppX(now){const R=DR&&DR.race;if(!R||R.green==null)return 0;const tt=((now-R.green)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
+function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
 function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
@@ -13798,6 +14088,8 @@ function dragBreak(){DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("fl
 function dragStart(){
   $("app").classList.add("onstrip");
   const env=stdEnv();const res=SIM.dragPrep(S.cfg,env);const veh=dragVeh();
+  if(res.nitrous&&res.n2oTq)veh.n2o=n2oVeh(env);
+  rnPrep(veh,res,env);   // tyre pressure / shocks; on a race night the class lock and the air
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const hk=hKey(cfgHash(S.cfg)),soak=soakFor(hk);
   const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,last:performance.now(),failed:false,downAt:null,lastPtr:0};
@@ -13805,6 +14097,8 @@ function dragStart(){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
     DR.race={trace:opp.trace,k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};}
+  n2oStart();
+  if(env.race==="night")rnRace();   // race night: the rival in the other lane
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("dragCtl").style.display="";$("dragBtn").dataset.k="";dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");$("dragBtn").disabled=false;$("dragLive").innerHTML="";
   $("testProg").classList.remove("done");sfx("start");
   // fresh-engine budget: passes beyond what the build can take start to break parts
@@ -13817,6 +14111,7 @@ function dragStart(){
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
     if(st.phase==="run"&&!DR.failed&&(st.t>DR.breakAt||(st.overrev>1.12&&res.overrev&&!res.overrev.survived))){dragBreak();st.done=true;st.phase="done";}
     if(DR.pb===undefined&&(st.phase==="shutdown"||st.phase==="done")){DR.pb=dragPbCheck(st.marks.find(m=>m.n==="1/4 mi"));if(DR.pb)ENGINE_VIS.stripPb(DR.pb.kind);}
+    if(DR.night)rnFrame(now,st,dtT);
     {const pre=st.phase==="burnout"||(st.phase==="staged"&&!st.rolled);const ox=R?(pre?st.x:oppX(now)):0;const ov=dt>0?Math.max(0,(ox-DR.lox)/dt):0;const acc=dt>0?(st.v-DR.lv)/dt:0;DR.lv=st.v;DR.lox=ox;
       const m4=st.phase==="shutdown"||st.phase==="done"?st.marks.find(m=>m.n==="1/4 mi"):null;
       ENGINE_VIS.setStrip({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
@@ -13839,9 +14134,11 @@ function dragStart(){
       const m=st.marks.slice(-1)[0];let lane="";if(R){const ox=oppX(now);
         const gap=(st.x-ox)*3.281;lane=`<div class="peak" style="grid-column:1/-1"><b style="color:${R.foul?"var(--crit)":gap>=0?"var(--good)":"var(--crit)"}">${R.foul?"RED LIGHT":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>"}</b><span>${R.name} · RT ${R.rt0!=null?R.rt0.toFixed(3):"—"}</span></div>`;}
       $("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.onBars?" · on the bars":""}</span></div>`:""}`;
-      if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":"BROKE");
+      if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":DR.failKind==="backfire"?"INTAKE BACKFIRE":DR.failKind==="lean"?"MELTED A PISTON":"BROKE");
       else if(st.phase==="shutdown"){if(DR.pb&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText(DR.pb.kind>1?"PERSONAL BEST":"ENGINE PB","tap to go back to the car");else dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");}
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
+    if(DR.n2o)n2oFrame(st,dt);
+    if(DR.night)rnHud(st);
     if(!st.done||(DR.failed&&run.rpm>0))requestAnimationFrame(step);else dragFinish();};
   requestAnimationFrame(step);
 }
@@ -13857,6 +14154,7 @@ function dragPress(){if(!DR||!DR.d||DR.failed)return;const d=DR.d,st=d.st,now=pe
   if(st.phase==="burnout"){DR.downAt=now;d.burn(true);buzz([15]);return;}
   if(st.phase==="staged"){if(!st.rolled)return;if(d.canArm){if(d.arm())buzz([20]);return;}dragGo(now);return;}
   if(st.phase==="shutdown"&&DR.pb){ENGINE_VIS.skipCut();return;}
+  if(st.phase==="shutdown"&&DR.night&&DR.night.cheer){ENGINE_VIS.skipCut();return;}
   if(st.phase==="run")d.shift();}
 function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=performance.now();
   if(st.phase==="burnout"&&DR.downAt!=null){const held=now-DR.downAt;DR.downAt=null;d.burn(false);if(held<300&&!cancel)dragStage();return;}
@@ -13868,6 +14166,46 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
   b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("click",()=>{if(!DR||!DR.d||performance.now()-(DR.lastPtr||0)<800)return;const st=DR.d.st;
     if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();else if(st.phase==="shutdown"&&DR.pb)ENGINE_VIS.skipCut();});})();
+/* ---- nitrous on the strip: bottle pressure (heater or weather), when the shot comes on, and a purge on the line ---- */
+const N2O_ACT=[["window","Window switch","at the rpm window"],["mph40","At 40 mph","once it's hooked"],["mph60","At 60 mph","late, safe"],["shift2","After the 1-2","second gear on"]];
+const N2OB={cooled:0,t:0};   // a bottle without a heater cools a little every pass and warms back over ~20 min (session only)
+function n2oKit(){const k=SIM.OPT.nitrous[S.cfg.nitrous];return k&&k.shotHp?k:null;}
+function n2oBottleNow(env){const e=env||stdEnv(),heat=(S.env.n2oHeater||"on")==="on";const cool=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000);return SIM.n2oBottle(heat,e.ambientC,heat?0:cool);}
+function n2oVeh(env){const b=n2oBottleNow(env);const heat=(S.env.n2oHeater||"on")==="on";
+  const psi=heat?b.psi+Math.round((Math.random()-0.5)*16):b.psi+Math.round((Math.random()-0.5)*50);   // a heater's thermostat holds it within a few psi; a bare bottle wanders
+  return{act:S.env.n2oAct||"window",psi,line:0.15,purge:1};}
+function n2oEnvHtml(){const k=n2oKit(),e=S.env,b=n2oBottleNow(),heat=(e.n2oHeater||"on")==="on",act=e.n2oAct||"window",q=quick&&quick.nitrous;
+  return `<div class="lbl" style="margin-top:6px"><span>Nitrous · ${k.name}</span><b style="color:${b.psi<850||b.psi>1000?"var(--warn)":"var(--good)"}">${b.psi.toLocaleString("en-CA")} psi</b></div>
+    <p class="hint" style="margin-top:-2px">Bottle at ${b.tempC} °C. ${heat?"The heater blanket holds it near 950 psi, so the shot is the same every pass.":b.psi<850?`Without a heater a ${b.tempC} °C bottle flows about ${Math.round((1-Math.pow(b.psi/950,0.85))*100)}% less shot, and less again every pass as it empties.`:b.psi>1000?"A hot bottle flows more nitrous than the kit was jetted for — that is how a dry kit goes lean.":"Close to where the kit was jetted."}${q&&q.backfire>0.02?` Backfire odds about ${Math.round(q.backfire*100)}% a pass.`:""}${q&&q.leanRisk>0.03?` Lean-spike odds about ${Math.round(q.leanRisk*100)}% a pass.`:""}</p>
+    <div class="lbl"><span>Bottle heater</span></div><div class="seg">${[["on","On","holds ~950 psi"],["off","Off","follows the weather"]].map(([v,n,d])=>`<button data-lp="${v}" data-ek="n2oHeater" class="${(heat?"on":"off")===v?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
+    <div class="lbl"><span>Shot comes on</span></div><div class="seg n4">${N2O_ACT.map(([v,n,d])=>`<button data-lp="${v}" data-ek="n2oAct" class="${act===v?"on":""}" style="flex:1 1 40%">${n}<small>${v==="window"&&q?Math.round(q.winRpm).toLocaleString("en-CA")+" rpm":d}</small></button>`).join("")}</div>
+    <p class="hint">Purge on the line: hold <b>PURGE</b> (or <kbd>P</kbd>) while staged until it spits white — that fills the line with liquid so the hit is full strength. An unpurged line sends gas first and the shot comes in soft.</p>`;}
+function n2oStart(){let b=$("n2oPurge");const on=!!(DR.d&&DR.d.n2o);
+  if(!on){if(b)b.style.display="none";DR.n2o=null;return;}
+  if(!b){b=document.createElement("button");b.id="n2oPurge";b.className="btn sm";b.style.cssText="width:100%;min-height:44px;margin-top:8px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none";
+    $("dragBtn").insertAdjacentElement("afterend",b);
+    const up=()=>n2oPurge(false);b.addEventListener("pointerdown",e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch(x){}n2oPurge(true);});b.addEventListener("pointerup",up);b.addEventListener("pointercancel",up);b.addEventListener("lostpointercapture",up);b.addEventListener("contextmenu",e=>e.preventDefault());}
+  b.style.display="";b.dataset.k="";DR.n2o={hiss:0,cut:false,ended:false,shotWas:0};if(soundReady)ENGINE_SOUND.nitrous(0);}
+function n2oPurge(on){if(!DR||!DR.n2o||!DR.d)return;if(DR.d.purge(on)&&on){DR.n2o.hiss=0;buzz([10]);}}
+function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
+  const pre=st.phase==="burnout"||st.phase==="staged";
+  if(z.purging){N.hiss-=dt;if(N.hiss<=0){sfx("purge");N.hiss=0.55;}}
+  if(b){b.style.display=pre?"":"none";const lp=Math.round(z.psi*(0.55+0.45*z.line)),k=(z.purging?"P":"")+lp;if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=z.purging?`PURGING · ${lp} psi at the solenoid`:`HOLD TO PURGE · ${lp} psi${z.line<0.5?" · line full of gas":" · line purged"}`;}}
+  const live=$("dragLive");
+  if(pre)live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${z.line>=0.5?"var(--good)":"var(--warn)"}">${Math.round(z.psi*(0.55+0.45*z.line))}<i>psi</i></b><span>nitrous · ${z.purging?"purging":z.line>=0.5?"purged":"purge the line"} · bottle ${Math.round(z.psi)}</span></div>`);
+  else if(st.phase==="run")live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${st.n2o>0.05?"var(--info)":""}">${z.cut?"CUT":st.n2o>0.05?"ON":z.on?"window":"armed"}</b><span>nitrous${z.on&&!z.cut?" · "+Math.round(z.psi)+" psi":""}</span></div>`);
+  ENGINE_VIS.stripN2O({purge:z.purging?1:z.puff,n2o:st.n2o,cut:z.cut,phase:st.phase});
+  if(soundReady)ENGINE_SOUND.nitrous(st.phase==="run"&&!DR.failed?st.n2o:0);
+  if(z.cut&&!N.cut){N.cut=true;sfx("intakeBang");toast("BACKFIRE · burst panel blew, shot's off");buzz([60,30,60]);}
+  if(DR.failed&&DR.failKind==="backfire"&&!N.bang){N.bang=true;sfx("intakeBang");}
+  if(st.done&&!N.ended){N.ended=true;if((S.env.n2oHeater||"on")!=="on"&&z.on){N2OB.cooled=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000)+1.8;N2OB.t=Date.now();}if(soundReady)ENGINE_SOUND.nitrous(null);ENGINE_VIS.stripN2O(null);if(b)b.style.display="none";}}
+function n2oSlip(n){const g=["1st","2nd","3rd","4th","5th","6th","7th"][Math.max(0,(n.onGear||1)-1)];
+  return `${n.shotHp} shot ${n.cut?"cut by a backfire":n.on?`on ${n.act==="window"?"at the window":"at "+n.onMph+" mph"} in ${g}`:"never came on"} · ${n.psi.toLocaleString("en-CA")} psi${n.purged>0.3?` · purged ${n.purged.toFixed(1)} s`:" · not purged"}`;}
+/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay */
+document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target)||e.key.toLowerCase()!=="p"||e.repeat)return;
+  if(holdKind()==="drag"&&DR&&DR.n2o){n2oPurge(true);e.preventDefault();return;}
+  if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
+document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
 function dragFinish(){
   const {d,res,env}=DR;const r=d.result();const failed=DR.failed;
   setTimeout(()=>{if(!testing){ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");}},2200);
@@ -13875,6 +14213,7 @@ function dragFinish(){
   if(DR.race){const R=DR.race;const mine=r.et!=null&&!R.foul?r.et+Math.max(0,R.rt0||0):null;const theirs=R.et!=null?R.et+R.rt:null;
     const won=!failed&&mine!=null&&(theirs==null||mine<theirs);r.race={name:R.name,rt:R.rt0,oppRt:+R.rt.toFixed(3),oppEt:R.et,oppMph:R.mph,foul:R.foul,won,margin:mine!=null&&theirs!=null?+(theirs-mine).toFixed(3):null};}
   if(failed&&!r.broke&&(DR.failKind==="turbo"||DR.failKind==="manifold"))r.broke=DR.failKind;
+  if(DR.night)rnAfterPass(r,failed);
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
   pbPass(r,failed);
   res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
@@ -13882,6 +14221,7 @@ function dragFinish(){
   if(career()){addWear(1+abuse);const h=hKey(cfgHash(S.cfg));C().dragBest=C().dragBest||{};
     if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);if(DR.failKind==="manifold"||DR.failKind==="turbo")logEvent(`Strip: ${DR.failKind==="turbo"?"cooked the turbo":"cracked the exhaust manifold"} on the line — held the ${r.launch&&r.launch.ctl!=="none"?"two-step":"brake"} ${r.launch?r.launch.held.toFixed(1):"?"} s`,"bad");toast(DR.failKind==="turbo"?"COOKED THE TURBO · pass over":DR.failKind==="manifold"?"CRACKED MANIFOLD · pass over":`BROKE ON THE PASS · ${String(DR.failKind).toUpperCase()}`);}
     else if(r.et!=null&&r.mph>150&&!r.chute){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — BLACK-FLAGGED, no parachute`,"bad");toast("BLACK-FLAGGED · no parachute over 150 mph");}
+    else if(DR.night){}   // race night: purse and rep are settled when the night ends (rnFinish)
     else if(r.race&&!r.race.won){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et!=null?r.et.toFixed(2)+" s":"DNF"} — ${r.race.foul?"red light":"lost to "+r.race.name+" by "+Math.abs(r.race.margin||0).toFixed(3)+" s"}`,"bad");toast(r.race.foul?"RED LIGHT · entry gone":`LOST by ${Math.abs(r.race.margin||0).toFixed(3)} s`);}
     else if(r.et!=null){const purse=(r.et<7?25000:r.et<8?9000:r.et<9?3500:r.et<10?1500:r.et<11?600:r.et<13?200:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`,purse>0?"good":"");if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
     hud();checkGoals();}
@@ -13891,6 +14231,254 @@ function dragFinish(){
 }
 $("testExtra").addEventListener("click",e=>{if(e.target.closest("#freshen")){const l=S.last;if(!l||!career())return;const c=freshenCost(l.res);if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} — ${fmt$(c)}`);hud();save();renderTest();toast("Rings, bearings and a hone — like new");return;}
   if(!e.target.closest("#shareSlip"))return;const l=S.last;if(!l||!l.res.drag)return;shareSlip(l);});
+/* ---- race night: heads-up eliminations and bracket racing ----
+   Two qualifying passes (time trials in bracket), then an 8-car ladder: quarter, semi, final against AI rivals of the
+   same body class. The night lives on C().rn (career) / S.rnSb (sandbox), so a reload keeps it. Rivals are a calibrated
+   ET / reaction-time model seeded per career week (per entry in sandbox); the car in the other lane replays the player's
+   own baseline pass, time-scaled so it crosses the stripe on the rival's ET. */
+const RN_CARS={street:["'69 Camaro","Fox-body Mustang","'72 Nova","Civic hatch","'87 Grand National","'71 Duster","'99 Trans Am","S10 pickup","'66 Chevelle","Supra Mk IV","'70 Challenger","'95 Impala SS"],
+  outlaw:["Outlaw Camaro","Big-tyre Fox","Radial Nova","Outlaw S10","'68 Dart","Turbo Mustang","Outlaw Corvette","'70 Chevelle","Radial Supra","Outlaw Firebird","'63 Falcon","Nitrous Duster"],
+  promod:["Pro-mod '68 Camaro","Pro-mod Corvette","Pro-mod '41 Willys","Pro-mod Mustang","Pro-mod GTO","Pro-mod Camaro","Pro-mod '53 Corvette","Pro-mod Firebird","Pro-mod Dart","Pro-mod Cuda"],
+  rail:["Front-engine dragster","Rear-engine rail","Top dragster","Alcohol dragster","Junior-built rail","Swingarm rail","Long-wheelbase rail","Nostalgia digger","Top sportsman rail","Turbo rail"]};
+const RN_DRV=["Dale Kowalchuk","Marie Lavoie","Tyler Sorensen","Wes Bouchard","Kim Nakamura","Rhett Dyck","Jo Fehr","Sam Okafor","Lena Penner","Cody Gauthier","Ana Petrova","Reggie Thiessen","Bo Lindqvist","Nora Wiebe","Gus Halvorsen","Priya Sandhu"];
+const RN_FMT={elim:"Heads-up eliminations",bracket:"Bracket racing"};
+const RN_STAGE=["QUALIFYING 1","QUALIFYING 2","QUARTER-FINAL","SEMI-FINAL","FINAL"],RN_TT=["TIME TRIAL 1","TIME TRIAL 2"];
+const RN_PLACE={1:"Won the night",2:"Runner-up",3:"Semi-final",5:"Quarter-final",9:"Did not qualify"},RN_PAY={1:1,2:0.45,3:0.2,5:0.08,9:0};
+function rnRng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function rnHash(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function rnGauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307*r());}
+/* the field: heads-up has one dominant car and the rest spread either side of what you run; at a bracket race every speed shows up */
+function rnField(seed,body,fmt,et0,mph0){const r=rnRng(seed),br=fmt==="bracket",cars=(RN_CARS[body]||RN_CARS.street).slice(),drv=RN_DRV.slice(),pick=a=>a.splice(Math.floor(r()*a.length),1)[0];
+  const f=br?[0.86,0.92,0.97,1.02,1.08,1.15,1.24].map(x=>x*(0.97+r()*0.06)):[0.925+r()*0.015,0.965+r()*0.02,0.985+r()*0.02,1.0+r()*0.02,1.015+r()*0.025,1.035+r()*0.03,1.06+r()*0.04];
+  return f.map((k,i)=>{const sk=i===0&&!br?0.75+r()*0.25:r(),mean=+(et0*k).toFixed(3);
+    return{name:pick(drv),car:pick(cars),mean,mph:+(mph0*et0/mean).toFixed(1),
+      sd:br?+(0.02+0.045*(1-sk)).toFixed(3):+(mean*(0.003+0.006*(1-sk))).toFixed(3),   // bracket: holds its number within about ±0.03–0.10
+      rt:+(0.035+0.07*(1-sk*0.6-r()*0.4)).toFixed(3),rtSd:+(0.012+0.02*(1-sk)).toFixed(3),brk:+(0.012+0.04*r()).toFixed(3),red:+(0.01+0.035*r()).toFixed(3),
+      dial:br?Math.floor((mean-0.01-0.03*r())*100)/100:null,skill:+sk.toFixed(2)};});}   // bracket racers dial a hair under what they run so they don't break out
+/* one pass by a rival: a light under .000 is a red light; sometimes the car breaks */
+function rnRivalPass(rv,r,air){const rt=r()<(rv.red||0)?-+(0.002+0.04*r()).toFixed(3):+(rv.rt+rnGauss(r)*rv.rtSd).toFixed(3),broke=r()<rv.brk,et=broke?null:+((rv.mean+rnGauss(r)*rv.sd)*(1-(air||0)/3)).toFixed(3);
+  return{rt,et,mph:et!=null?+(rv.mph*rv.mean/et*(1+rnGauss(r)*0.004)).toFixed(1):null,broke,at:broke?+(0.15+r()*0.6).toFixed(2):null,dial:rv.dial};}
+/* who won: a = {rt, et, dial, dq, x}. Red light first (both red: the earlier one loses), then the centreline, then a car that
+   broke or never got there, then — bracket — a breakout (both: the smaller one wins), then first to the stripe. */
+function rnJudge(a,b,br){const fa=a.rt!=null&&a.rt<0,fb=b.rt!=null&&b.rt<0;
+  if(fa||fb)return{w:fa&&fb?(a.rt<b.rt?1:0):fa?1:0,why:"red"};
+  if(a.dq!==b.dq)return{w:a.dq?1:0,why:"line"};
+  const da=a.et==null,db=b.et==null;
+  if(da||db)return{w:da&&db?((a.x||0)>=(b.x||0)?0:1):da?1:0,why:da&&db?"dnf2":"dnf"};
+  if(br){const ba=a.et<a.dial,bb=b.et<b.dial;
+    if(ba&&bb){const ma=a.dial-a.et,mb=b.dial-b.et;return{w:ma<=mb?0:1,why:"bo2",margin:+Math.abs(ma-mb).toFixed(3)};}
+    if(ba||bb)return{w:ba?1:0,why:"bo",margin:+(ba?a.dial-a.et:b.dial-b.et).toFixed(3)};
+    const pa=a.rt+a.et-a.dial,pb=b.rt+b.et-b.dial;return{w:pa<=pb?0:1,why:"stripe",margin:+Math.abs(pa-pb).toFixed(3)};}
+  const pa=a.rt+a.et,pb=b.rt+b.et,w=pa<=pb?0:1;return{w,why:"stripe",margin:+Math.abs(pa-pb).toFixed(3),holeshot:w===0?a.et>b.et:b.et>a.et};}
+/* bracket handicap: the slower dial gets the tree first; each lane's countdown starts (slow dial − own dial) later */
+function rnTreeOffsets(dp,dO){const s=Math.max(dp,dO);return{p:+(s-dp).toFixed(3),o:+(s-dO).toFixed(3)};}
+/* the ladder: 1v8 and 4v5 in the top half, 2v7 and 3v6 in the bottom, so the top two can only meet in the final */
+function rnPairs(seeds){return[[seeds[0],seeds[7]],[seeds[3],seeds[4]],[seeds[1],seeds[6]],[seeds[2],seeds[5]]];}
+function rnNextPairs(prev){const w=prev.map(m=>m.win);const out=[];for(let i=0;i<w.length;i+=2)out.push([w[i],w[i+1]]);return out.map(([a,b])=>({a,b,win:null}));}
+function rnSeeds(N){if(N.fmt==="bracket"){const r=rnRng(rnHash(N.seed+":draw")),a=[0,1,2,3,4,5,6,7];for(let i=7;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+  const best=i=>{const t=[0,1].map(q=>N.q[q][i]).filter(p=>p&&p.et!=null).map(p=>p.et);return t.length?Math.min.apply(null,t):Infinity;};
+  return[0,1,2,3,4,5,6,7].sort((a,b)=>best(a)-best(b)||a-b);}
+/* a rival's pass for a stage: fixed by the night's seed, so a reload (or the node harness) sees the same night */
+function rnRivalAt(N,stage,i){N.rp=N.rp||{};const k=stage+":"+i;if(!N.rp[k])N.rp[k]=rnRivalPass(N.field[i-1],rnRng(rnHash(N.seed+":"+k)),N.air[stage]||0);return N.rp[k];}
+function rnPart(N,i){return i===0?{name:"You",car:engineName().slice(0,22),you:true}:N.field[i-1];}
+function rnQualBest(N,i){const t=[0,1].map(q=>N.q[q]&&N.q[q][i]).filter(p=>p&&p.et!=null);return t.length?t.reduce((a,b)=>a.et<=b.et?a:b):null;}
+/* play out the AI-vs-AI matches of a round */
+function rnResolve(N,ri){const br=N.fmt==="bracket";for(const m of N.rounds[ri]){if(m.win!=null||m.a===0||m.b===0)continue;
+  const pa=rnRivalAt(N,ri+2,m.a),pb=rnRivalAt(N,ri+2,m.b),j=rnJudge(Object.assign({x:pa.broke?402*pa.at:402},pa),Object.assign({x:pb.broke?402*pb.at:402},pb),br);
+  m.pa=pa;m.pb=pb;m.win=j.w===0?m.a:m.b;m.why=j.why;m.margin=j.margin;}}
+function rnPurseEt(et){return et<7?25000:et<8?9000:et<9?3500:et<10?1500:et<11?600:et<13?200:100;}
+function rnCur(){const n=career()?C().rn:S.rnSb;return n&&n.v===1?n:null;}
+function rnSetN(n){if(career())C().rn=n;else S.rnSb=n;}
+function rnLive(){const n=rnCur();return n&&!n.done?n:null;}
+/* pits tuning on top of the Test-tab car: pressure and shocks (always), and on a night the class-locked parts */
+function rnVeh(veh){const e=S.env;if(e.tyrePsi>0)veh.tyrePsi=e.tyrePsi;if(e.shocks==="soft"||e.shocks==="firm")veh.shocks=e.shocks;
+  const N=rnLive();if(N){Object.assign(veh,N.lock);if(veh.tyrePsi>0&&!(e.tyrePsi>0))delete veh.tyrePsi;}return veh;}
+function rnBaseline(veh){const res=SIM.dragPrep(S.cfg,stdEnv());const b=SIM.dragPass(res,Object.assign({},veh,{auto:true,noFail:true,tyreTemp:veh.tyre==="street"?0.3:0.8,holdTime:1.0}));
+  if(b.et!=null)return{et:b.et,mph:b.mph,trace:b.trace.map(p=>[p[0],p[1]])};
+  const lb=veh.mass*2.2046,hp=Math.max(30,res.peakHp),et=Math.min(39,5.825*Math.cbrt(lb/hp)),mph=234*Math.cbrt(hp/lb),tr=[];for(let t=0.05;t<=et+0.001;t+=0.05)tr.push([+t.toFixed(2),Math.round(402.336*Math.pow(t/et,1.7))]);return{et:+et.toFixed(3),mph:+mph.toFixed(1),trace:tr};}
+/* the other lane's trace: the baseline, cut where the rival broke, then a coast to a stop past the stripe */
+function rnOppTrace(N,op){const tr=N.trace,et0=N.et0,out=[];const cut=op.broke?op.at*et0:Infinity;let last=null,prev=null;
+  for(const p of tr){if(p[0]>cut)break;out.push(p);prev=last;last=p;}
+  if(!last)return[[0.05,0],[1,0]];let v=prev?(last[1]-prev[1])/Math.max(0.01,last[0]-prev[0]):10,x=last[1],t=last[0];const dec=op.broke?2.5:N.lock.chute?9:6;
+  while(v>1&&t<et0+40){t+=0.1;v=Math.max(0,v-dec*0.1);x+=v*0.1;out.push([+t.toFixed(2),+x.toFixed(1)]);}return out;}
+function rnStageName(N,s){return N.fmt==="bracket"&&s<2?RN_TT[s]:RN_STAGE[s];}
+function rnOppIdx(N){if(N.stage<2)return N.qopp[N.stage];const m=N.rounds[N.stage-2].find(x=>x.a===0||x.b===0);return m?(m.a===0?m.b:m.a):1;}
+function rnSuggest(N){const p=(N.passes||[]).filter(x=>x.et!=null&&!x.dq).slice(-1)[0];const et=p?p.et:N.et0;return Math.floor((et-0.01)*100)/100;}
+function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
+  if(career()){if(!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
+  const veh=rnVeh(dragVeh()),b=rnBaseline(veh),body=veh.body||"street";
+  if(career()&&b.mph>150&&!veh.chute){toast("Tech won't take it — over 150 mph needs a parachute");return;}
+  const br=fmt==="bracket",purse=Math.round(Math.max(1500,6*rnPurseEt(b.et))*(br?0.8:1)/50)*50,entry=career()?Math.max(500,Math.round(purse*0.08/50)*50):0;
+  if(career()&&C().cash<entry){toast(`Entry is ${fmt$(entry)} — not enough cash`);return;}
+  const seed=career()?rnHash([C().seed,C().week,body,fmt].join(":")):rnHash(Date.now()+":"+Math.random()),r=rnRng(rnHash(seed+":air"));
+  const air=[0];for(let i=1;i<5;i++)air.push(+(air[i-1]+0.002+0.006*r()-0.002*(r()<0.25?1:0)).toFixed(4));   // the air gets better as the night cools
+  const qr=rnRng(rnHash(seed+":q")),q0=1+Math.floor(qr()*7);let q1=1+Math.floor(qr()*6);if(q1>=q0)q1++;
+  const lt=SIM.launchTech(S.cfg);
+  const N={v:1,fmt,seed,body,hash:cfgHash(S.cfg),week:career()?C().week:null,entry,purse,et0:b.et,mph0:b.mph,trace:b.trace,air,
+    lock:{mass:veh.mass,rearBias:veh.rearBias,tyre:veh.tyre,tyreDia:veh.tyreDia,gears:veh.gears,top:veh.top,body,chute:veh.chute},
+    t0:{first:S.env.first,final:S.env.final,launch:lt.launchCtl!=="none"?lt.twoStepRpm:S.env.launchRpm},
+    field:rnField(seed,body,fmt,b.et,b.mph),stage:0,qopp:[q0,q1],q:[[],[]],rounds:[],passes:[],hist:[],dial:br?Math.floor((b.et-0.01)*100)/100:null,done:false,place:null,won:0};
+  if(career()){C().cash-=entry;logEvent(`Race night: entered ${RN_FMT[fmt].toLowerCase()} (${SIM.AERO[body].n}) — ${fmt$(entry)} entry`);hud();}
+  rnSetN(N);save();renderTest();toast(`${RN_FMT[fmt].toUpperCase()} · ${SIM.AERO[body].n.toUpperCase()} · 8 CARS`);buzz([20,30,20]);}
+/* runTest on the drag tab: true when the race night took the click */
+function rnGate(){const N=rnCur();
+  if(!N){if(RN_FMT[S.env.dragFmt]){rnEnter();return true;}return false;}
+  if(N.done){rnSetN(null);save();renderTest();return true;}
+  if(cfgHash(S.cfg)!==N.hash){toast("That's not the engine you entered with — put it back, or leave the night");return true;}
+  return false;}
+/* dragStart, before the runner is built: tuning on the car; on a night the class lock, and the air (cooler air through the
+   night is a few tenths of a percent more power — boost hides most of it) */
+function rnPrep(veh,res,env){rnVeh(veh);const N=rnLive();if(!N)return;env.race="night";const a=1-(N.air[N.stage]||0)*(res.aspKind==="turbo"?0.4:1);
+  if(a!==1){res.torque=res.torque.map(t=>t/a);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t/a);res.peakTq/=a;}}
+/* set up the pass against the rival in the other lane (called from dragStart instead of the mirror opponent) */
+function rnRace(){const N=rnLive();if(!N)return;const i=rnOppIdx(N),rv=N.field[i-1],op=rnRivalAt(N,N.stage,i),br=N.fmt==="bracket"&&N.stage>=2;
+  const k=op.et!=null?op.et/N.et0:rv.mean/N.et0;
+  DR.race={trace:rnOppTrace(N,op),k,rt:op.rt,et:op.et,mph:op.mph,foul:false,rt0:null,tree0:null,green:null,name:rv.name,ofoul:op.rt<0};
+  DR.night={stage:N.stage,label:rnStageName(N,N.stage),opp:i,op,dialP:br?N.dial:null,dialO:br?op.dial:null,verdict:null};
+  if(br){const h=rnTreeOffsets(N.dial,op.dial);DR.race.hcP=h.p;DR.race.hcO=h.o;}
+  if(!document.documentElement.classList.contains("desk"))setTimeout(()=>{try{$("dragCtl").scrollIntoView({block:"nearest",behavior:"smooth"});}catch(e){}},60);}
+/* every frame: the other lane's tree, lights and numbers on the boards, and the round's verdict once you're past the stripe */
+function rnFrame(now,st,dtT){const R=DR.race,n=DR.night;if(!R||!n)return;
+  if(R.hcP!=null&&R.tree0!=null&&R.otree0==null){R.otree0=R.tree0+R.hcO*1000;R.tree0+=R.hcP*1000;R.ogreen=R.otree0+1500;}
+  else if(R.hcP==null&&R.tree0!=null&&R.ogreen==null)R.ogreen=R.tree0+1500;   // heads-up: one tree; a rival who red-lights leaves before it goes green
+  const g0=R.ogreen!=null?R.ogreen:R.green,dO=R.otree0!=null?(now-R.otree0)/1000:dtT,ox=oppX(now),left=g0!=null&&(now-g0)/1000>=R.rt||(R.ofoul&&ox>0.3);
+  if(n.verdict==null&&(st.phase==="shutdown"||st.phase==="done")&&st.t>0){n.verdict=rnJudgePass(n,st);
+    if(n.stage>=2&&n.verdict.win&&n.stage===4){n.cheer=true;ENGINE_VIS.stripWin&&ENGINE_VIS.stripWin();buzz([30,40,30,40,90]);}}
+  ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace({round:n.label,pdial:n.dialP,odial:n.dialO,otree:R.otree0!=null?{a1:dO>=0,a2:dO>=0.5,a3:dO>=1.0,green:dO>=1.5}:undefined,
+    ort:left?R.rt:undefined,ofoul:!!(R.ofoul&&left),oet:R.et!=null&&ox>=402.336?R.et:undefined,omph:R.et!=null&&ox>=402.336?R.mph:undefined,win:n.verdict&&n.stage>=2?!!n.verdict.win:undefined});}
+function rnJudgePass(n,st){const R=DR.race,q=st.marks.find(m=>m.n==="1/4 mi"),bars=(SIM.AERO[DR.veh.body]||{}).bars;
+  const rr=rnRng(rnHash(n.label+":"+(R.rt0||0)+":"+Math.round(st.x)));const pq=Math.min(0.8,(bars?0:Math.max(0,(st.wheelieT-0.35)*1.2))+Math.max(0,((st.shakeT||0)-0.25)*1.0));
+  const dq=!DR.failed&&!R.foul&&pq>0&&rr()<pq;   // pedalling a wheelie or riding out tyre shake can put it over the centreline
+  const a={rt:R.rt0,et:DR.failed||!q?null:q.t,dial:n.dialP,dq,x:st.x},b={rt:R.rt,et:R.et,dial:n.dialO,dq:false,x:n.op.broke?402*n.op.at:402};
+  const j=rnJudge(a,b,n.dialP!=null);return{win:j.w===0,why:j.why,margin:j.margin,holeshot:!!j.holeshot&&j.w===0,dq,a,b};}
+function rnLabelWhy(v,name,br){const A=v.a,B=v.b,m=v.margin!=null?v.margin.toFixed(3):"";
+  switch(v.why){
+    case "red":return v.win?`${name} red-lit (${B.rt.toFixed(3)}) — the round is yours`:A.rt!=null&&B.rt!=null&&B.rt<0?`Both red — you went first (${A.rt.toFixed(3)})`:`Red light (${A.rt!=null?A.rt.toFixed(3):"early"}) — you left before the green`;
+    case "line":return v.win?`${name} crossed the centreline`:`Crossed the centreline — ${v.dq?"pedalling it":"disqualified"}; the round goes the other way`;
+    case "dnf":return v.win?`${name} broke — a single, and you made a clean pass`:`Didn't make it to the stripe — ${name} takes the round`;
+    case "dnf2":return v.win?"Neither car finished — you got further":"Neither car finished — they got further";
+    case "bo":return v.win?`${name} broke out by ${m} (ran ${B.et.toFixed(3)} on a ${B.dial.toFixed(2)})`:`Broke out by ${m} — ran ${A.et.toFixed(3)} on a ${A.dial.toFixed(2)} dial`;
+    case "bo2":return v.win?`Both broke out — yours was smaller by ${m}`:`Both broke out — theirs was smaller by ${m}`;
+    default:return br?`${v.win?"Won":"Lost"} on the package by ${m} — RT ${A.rt.toFixed(3)}, ${(A.et-A.dial>=0?"+":"")+(A.et-A.dial).toFixed(3)} on the dial vs ${B.rt.toFixed(3)}, ${(B.et-B.dial>=0?"+":"")+(B.et-B.dial).toFixed(3)}`
+      :v.win?(v.holeshot?`Holeshot win by ${m} — they ran ${B.et.toFixed(3)}, quicker than your ${A.et.toFixed(3)}, but your ${A.rt.toFixed(3)} light beat their ${B.rt.toFixed(3)}`:`Won by ${m} to the stripe`)
+      :(B.et>A.et?`Holeshot by ${name} — you were quicker on the clock but their ${B.rt.toFixed(3)} light beat your ${A.rt.toFixed(3)}; lost by ${m}`:`Lost by ${m} to the stripe`);}}
+/* after the pass: record it, settle the round, play the AI matches, move the night on */
+function rnAfterPass(r,failed){const N=rnLive(),n=DR.night;if(!N||!n||n.stage!==N.stage)return;const st=DR.d.st,R=DR.race,rv=N.field[n.opp-1];
+  if(n.verdict==null)n.verdict=rnJudgePass(n,st);const v=n.verdict,bf=career()&&r.et!=null&&r.mph>150&&!r.chute;
+  const p={stage:N.stage,rt:R.rt0,et:failed?null:r.et,mph:failed?null:r.mph,sixty:r.sixty?r.sixty.t:null,spin:r.spinTime,shake:+(st.shakeT||0).toFixed(2),foul:!!R.foul,dq:v.dq,dial:n.dialP,
+    tune:{launch:DR.veh.launchRpm,first:DR.veh.first,final:DR.veh.final,psi:DR.veh.tyrePsi||null,shocks:DR.veh.shocks||"medium"}};
+  N.passes.push(p);N.last=p;const br=N.fmt==="bracket",opName=rv.name;let text,win=null,out=failed||bf;
+  if(N.stage<2){N.q[N.stage][0]=p;for(let i=1;i<8;i++)N.q[N.stage][i]=rnRivalAt(N,N.stage,i);
+    text=failed?"Broke on the qualifying pass — out of the night":bf?"Black-flagged at tech — no parachute over 150 mph":`${p.et!=null?p.et.toFixed(3)+" @ "+Math.round(p.mph):"no time"}${br?"":" — "+(p.et!=null?"it counts toward your seed":"keep the other run")}`;
+    N.hist.push({stage:N.stage,label:n.label,opp:n.opp,p,o:n.op,text});
+    if(out){rnFinish(N,9);}
+    else if(++N.stage===2){N.seeds=rnSeeds(N);if(br)N.dial=rnSuggest(N);N.rounds=[rnPairs(N.seeds).map(([a,b])=>({a,b,win:null}))];rnResolve(N,0);}}
+  else{const ri=N.stage-2,m=N.rounds[ri].find(x=>x.a===0||x.b===0);win=!out&&v.win;if(out&&!v.win)win=false;
+    text=failed?`Broke — ${opName} takes the round`:bf?"Black-flagged at tech — no parachute over 150 mph":rnLabelWhy(v,opName,br);
+    const pp=m.a===0?"pa":"pb",po=m.a===0?"pb":"pa";m[pp]=p;m[po]=n.op;m.win=win?0:n.opp;m.why=v.why;m.margin=v.margin;m.text=text;
+    N.hist.push({stage:N.stage,label:n.label,opp:n.opp,p,o:n.op,win,text});
+    if(win)N.won++;
+    if(!win||out){for(let k=ri;k<3;k++){rnResolve(N,k);if(k<2&&!N.rounds[k+1])N.rounds[k+1]=rnNextPairs(N.rounds[k]);}rnFinish(N,ri===0?5:ri===1?3:2);}
+    else if(ri===2)rnFinish(N,1);
+    else{N.stage++;N.rounds[ri+1]=rnNextPairs(N.rounds[ri]);rnResolve(N,ri+1);if(br)N.dial=N.dial||rnSuggest(N);}}
+  r.night={fmt:N.fmt,stage:p.stage,label:n.label,opp:opName,car:rv.car,win,text,dialP:n.dialP,dialO:n.dialO,oppRt:n.op.rt,oppEt:n.op.et,oppMph:n.op.mph,oppBroke:!!n.op.broke,place:N.done?N.place:null};
+  if(r.race){r.race.won=win===true;if(v.margin!=null)r.race.margin=win?v.margin:-v.margin;}
+  rnSetN(N);const msg=N.done?`${RN_PLACE[N.place].toUpperCase()}${N.paid?" · "+fmt$(N.paid):""}`:p.stage<2?`${n.label} · ${p.et!=null?p.et.toFixed(3):"NO TIME"}`:`${win?"WON":"OUT"} · ${n.label}`;
+  setTimeout(()=>{if(r.pb)setTimeout(()=>toast(msg),2800);else toast(msg);},0);}   // after the pass's own toast (and a PB's)
+function rnFinish(N,place){if(N.done)return;N.done=true;N.place=place;N.out=place!==1;
+  const rep=N.won+(place===1?2:0)+(N.fmt==="elim"&&N.seeds&&N.seeds[0]===0?1:0),paid=Math.round(N.purse*RN_PAY[place]/50)*50;N.paid=paid;N.rep=rep;
+  const best=(N.passes||[]).filter(p=>p.et!=null).reduce((a,p)=>a&&a.et<=p.et?a:p,null);N.best=best?{et:best.et,mph:best.mph}:null;
+  const R=recs();R.nightsRun=(R.nightsRun||0)+1;if(place===1)R.nightsWon=(R.nightsWon||0)+1;if(!(R.bestFinish<=place))R.bestFinish=place;
+  const cls=SIM.AERO[N.body].n,last=N.hist[N.hist.length-1];
+  if(career()){C().cash+=paid;C().rep+=rep;logEvent(`Race night · ${cls} ${N.fmt==="bracket"?"bracket":"heads-up"}: ${place===1?"WON — beat "+(rnPart(N,last.opp).name)+" in the final":(N.left?"left the night":RN_PLACE[place].toLowerCase()+(last&&last.text?", "+last.text.split(" — ")[0].toLowerCase():""))}${best?", best "+best.et.toFixed(2):""} — purse ${fmt$(paid)}${rep?", +"+rep+" rep":""}`,place<=2?"good":paid>0?"":"bad");hud();checkGoals();}}
+function rnLeave(){const N=rnLive();if(!N||testing)return;if(!confirm(N.stage<2?"Leave the night? Your entry is gone and you go home without a seed.":"Leave the night? You forfeit this round and take the purse for going out here."))return;
+  if(N.stage>=2){const ri=N.stage-2,m=N.rounds[ri].find(x=>x.a===0||x.b===0);m.win=m.a===0?m.b:m.a;m.why="left";m.text="Didn't come to the line";N.hist.push({stage:N.stage,label:rnStageName(N,N.stage),opp:m.win,win:false,text:"Left the night — forfeit"});
+    N.left=true;for(let k=ri;k<3;k++){rnResolve(N,k);if(k<2&&!N.rounds[k+1])N.rounds[k+1]=rnNextPairs(N.rounds[k]);}rnFinish(N,ri===0?5:ri===1?3:2);}
+  else{N.left=true;N.hist.push({stage:N.stage,label:rnStageName(N,N.stage),text:"Left the night"});rnFinish(N,9);}
+  rnSetN(N);save();renderTest();toast("Loaded up and went home");}
+/* ---- race-night panel (replaces the drag set-up on the Test tab while a night is on) ---- */
+const rnEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function rnPT(p,br){if(!p)return"—";if(p.rt!=null&&p.rt<0)return`<span class="rnr">RED</span>`;if(p.dq)return`<span class="rnr">X-LINE</span>`;if(p.et==null)return`<span class="rnr">${p.broke?"BROKE":"DNF"}</span>`;return p.et.toFixed(3)+(br&&p.dial!=null&&p.et<p.dial?`<span class="rnr"> BO</span>`:"");}
+function rnLadderHtml(N){const br=N.fmt==="bracket",seedOf=i=>N.seeds?N.seeds.indexOf(i)+1:"";
+  const row=(m,i,pk)=>{if(i==null)return`<div class="rnp tbd"><i></i><span>—</span><b></b></div>`;const P=rnPart(N,i),p=m[pk],done=m.win!=null;
+    return`<div class="rnp${i===0?" you":""}${done&&m.win===i?" w":done?" l":""}"><i>${seedOf(i)}</i><span title="${rnEsc(P.name)}">${rnEsc(i===0?P.name:P.name.replace(/^(\S)\S*\s+/,"$1. "))}</span><b>${done&&p?rnPT(p,br):""}</b></div>`;};
+  const col=(ri,name)=>{const ms=N.rounds[ri]||(ri===1?[{},{}]:[{}]);return`<div class="rnc"><h4>${name}</h4>${ms.map(m=>`<div class="rnm">${row(m,m.a,"pa")}${row(m,m.b,"pb")}</div>`).join("")}</div>`;};
+  return`<div class="rnlad">${col(0,"Quarter")}${col(1,"Semi")}${col(2,"Final")}</div>`;}
+function rnQualHtml(N){const br=N.fmt==="bracket",ids=[0,1,2,3,4,5,6,7],q=N.stage,best=i=>{const b=rnQualBest(N,i);return b?b.et:Infinity;};
+  const ord=q>0?ids.slice().sort((a,b)=>best(a)-best(b)||a-b):ids;
+  return`<div class="rnq">${ord.map((i,k)=>{const P=rnPart(N,i),rv=i?N.field[i-1]:null,b=rnQualBest(N,i);
+    return`<div class="${i===0?"you":""}"><i>${q>0&&!br?k+1:""}</i><span>${rnEsc(P.name)}<small>${rnEsc(P.car)}</small></span><b>${b?b.et.toFixed(3):q>0?"—":br&&rv?"dial "+rv.dial.toFixed(2):""}</b></div>`;}).join("")}</div>`;}
+function rnTuneRows(N){const lt=SIM.launchTech(S.cfg),two=lt.launchCtl!=="none",t0=N.t0,psi0=SIM.TYRES[N.lock.tyre].psi||16,psi=S.env.tyrePsi>0?S.env.tyrePsi:psi0,sh=S.env.shocks||"medium";
+  const L=two?lt.twoStepRpm:Math.min(S.env.launchRpm,S.cfg.redline);
+  const row=(k,lbl,val,sub)=>`<div class="rnt"><span>${lbl}<small>${sub||""}</small></span><button class="nud" data-rn="tune" data-k="${k}" data-d="-1" aria-label="less">−</button><b>${val}</b><button class="nud" data-rn="tune" data-k="${k}" data-d="1" aria-label="more">+</button></div>`;
+  return row("launch",two?"Two-step rpm":"Launch rpm",L.toLocaleString(),two?"sets the hold on the line":"where you feed the clutch")
+    +row("first","1st gear",(+S.env.first).toFixed(2)+":1",`was ${(+t0.first).toFixed(2)} · shorter = harder hit`)
+    +row("final","Final drive",(+S.env.final).toFixed(2)+":1",`was ${(+t0.final).toFixed(2)}`)
+    +row("psi","Tyre pressure",psi.toFixed(1)+" psi",psi<psi0*0.75?`<span style="color:var(--warn)">shake risk under ${(psi0*0.75).toFixed(1)}</span>`:psi<psi0?"more bite, rolls out shorter":psi>psi0?"harder: less bite":`${SIM.TYRES[N.lock.tyre].n.toLowerCase()} baseline`)
+    +`<div class="lbl" style="margin-top:6px"><span>Shocks</span></div><div class="seg n3">${[["soft","Soft","more bite · lifts"],["medium","Medium","as delivered"],["firm","Firm","flat · may spin"]].map(([k,n,d])=>`<button data-rn="shock" data-k="${k}" class="${sh===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;}
+function rnPitsHtml(N){const br=N.fmt==="bracket",p=N.last,i=rnOppIdx(N),rv=N.field[i-1],rd=N.stage>=2;let h=`<div class="rnpits"><h3>Pits${p?" · last pass":""}</h3>`;
+  if(p)h+=`<div class="peaks rnlast"><div class="peak"><b>${p.sixty!=null?p.sixty.toFixed(3):"—"}</b><span>60 ft</span></div><div class="peak"><b>${p.et!=null?p.et.toFixed(3):"—"}</b><span>ET${p.mph?" · "+Math.round(p.mph)+" mph":""}</span></div><div class="peak"><b>${p.spin.toFixed(2)}<i>s</i></b><span>spin${p.shake>0.1?" · shake "+p.shake.toFixed(1):""}</span></div></div>`;
+  const da=((N.air[N.stage]||0)-(N.air[Math.max(0,N.stage-1)]||0))*100;
+  h+=`<p class="hint" style="margin:4px 0 8px">${N.stage>0?`Air ${da>=0.05?"is "+da.toFixed(1)+"% better than last round — cars will pick up a little":da<=-0.05?"has gone off "+(-da).toFixed(1)+"% — expect it to slow down":"about the same as last round"}. `:""}Body, tyre and weight are locked for the night; this is what a racer changes between rounds.</p>`;
+  h+=rnTuneRows(N);
+  if(br&&rd){const sug=rnSuggest(N);h+=`<div class="rnt dial"><span>Your dial-in<small>${p&&p.et!=null?"last ran "+p.et.toFixed(3)+" · ":""}under it is a breakout</small></span><button class="nud" data-rn="dial" data-d="-1" aria-label="quicker">−</button><b>${N.dial.toFixed(2)}</b><button class="nud" data-rn="dial" data-d="1" aria-label="slower">+</button></div>${Math.abs(sug-N.dial)>0.004?`<button class="chip" data-rn="dialsug" style="margin:0 0 8px">Use ${sug.toFixed(2)} (a hundredth under your last)</button>`:""}`;}
+  const wi=wearInfo(quick);if(wi){const c=freshenCost(quick);h+=`<div class="rnt"><span>Wear<small>${wi.passes} of ${wi.budget} passes${wi.w>=1?" · past budget, parts start letting go":""}</small></span><b style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</b>${wi.w>0?`<button class="btn sm" data-rn="freshen">Freshen · ${fmt$(c)}</button>`:""}</div>`;}
+  else if(!career())h+=`<p class="hint" style="margin:6px 0 0">Sandbox: no wear on the parts.</p>`;
+  return h+`</div>`;}
+function rnNextHtml(N){const br=N.fmt==="bracket",i=rnOppIdx(N),rv=N.field[i-1],qb=rnQualBest(N,i),rd=N.stage>=2,ri=N.stage-2;
+  const win=rd?Math.round(N.purse*(ri===2?1:ri===1?0.45:0.2)/50)*50:0,lose=rd?Math.round(N.purse*RN_PAY[ri===0?5:ri===1?3:2]/50)*50:0;
+  const h=rd&&br?rnTreeOffsets(N.dial,rv.dial):null;
+  return`<div class="rnnext"><span>NEXT · ${rnStageName(N,N.stage)}</span><b>${rd&&N.seeds?"#"+(N.seeds.indexOf(i)+1)+" ":""}${rnEsc(rv.name)}</b><small>${rnEsc(rv.car)}${br?` · dial ${rv.dial.toFixed(2)}`:qb&&qb.et!=null?` · qualified ${qb.et.toFixed(3)}`:` · runs about ${rv.mean.toFixed(2)}`}${rd?` · win ${fmt$(win)} / out ${fmt$(lose)}${career()?"":" (sandbox)"}`:""}</small>${h?`<small>${h.p>0?`Their tree starts first — you go ${h.p.toFixed(2)} s after them`:h.o>0?`Your tree starts first — ${h.o.toFixed(2)} s head start`:"Same dial — the trees come down together"}</small>`:""}</div>`;}
+function rnSummaryHtml(N){const br=N.fmt==="bracket",b=N.best,rts=(N.passes||[]).filter(p=>p.rt!=null&&p.rt>=0).map(p=>p.rt);
+  return`<div class="rnsum ${N.place===1?"won":""}"><div class="big">${N.left&&N.place===9?"LEFT THE NIGHT":RN_PLACE[N.place].toUpperCase()}</div><p>${RN_FMT[N.fmt]} · ${SIM.AERO[N.body].n}${N.week!=null?" · week "+N.week:""}</p>
+  <div class="vstats"><div><b>${N.won}</b><span>rounds won</span></div><div><b>${b?b.et.toFixed(3):"—"}</b><span>best ET${b&&b.mph?" · "+Math.round(b.mph):""}</span></div><div><b>${rts.length?Math.min.apply(null,rts).toFixed(3):"—"}</b><span>best light</span></div><div><b>${fmt$(N.paid||0)}</b><span>purse${career()?"":" (sandbox)"}</span></div><div><b>${career()?"+"+(N.rep||0):"—"}</b><span>rep</span></div></div>
+  <div class="log" style="margin-top:8px">${N.hist.map(x=>`<div><b>${x.label}</b>${x.opp?"vs "+rnEsc(rnPart(N,x.opp).name)+" · ":""}${rnEsc(x.text||"")}</div>`).join("")}</div>
+  <button class="btn pri" data-rn="done" style="width:100%;margin-top:10px">Done — back to the pits</button></div>`;}
+function rnPanel(){const N=rnCur();if(!N)return"";const br=N.fmt==="bracket";
+  let h=`<div class="rn"><div class="rnhd"><div><b>${RN_FMT[N.fmt].toUpperCase()}</b><span>${SIM.AERO[N.body].n} · 8 cars · winner ${fmt$(N.purse)}${career()?"":" (sandbox)"}</span></div>${N.done?"":`<button class="btn sm ghost" data-rn="leave">Leave the night</button>`}</div>`;
+  h+=`<div class="rnsteps">${[0,1,2,3,4].map(s=>`<i class="${s<N.stage||N.done&&s<=N.stage?"d":s===N.stage&&!N.done?"on":""}">${br&&s<2?"TT"+(s+1):["Q1","Q2","QF","SF","F"][s]}</i>`).join("")}</div>`;
+  if(testing&&!N.done)return h+rnNextHtml(N)+`</div>`;   // during the pass: just who's in the other lane
+  if(N.done)return h+rnSummaryHtml(N)+(N.rounds.length?rnLadderHtml(N):rnQualHtml(N))+`</div>`;
+  h+=rnNextHtml(N);
+  h+=N.stage<2?`<div class="lbl"><span>${br?"The field — time trials to learn your number":"Qualifying — best of two sets the seed"}</span></div>`+rnQualHtml(N):rnLadderHtml(N);
+  return h+rnPitsHtml(N)+`</div>`;}
+function rnFmtHtml(){const f=RN_FMT[S.env.dragFmt]?S.env.dragFmt:"test";
+  let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  if(f!=="test")h+=`<p class="hint" style="margin-top:-4px"><b>${RN_FMT[f]}</b> · ${f==="elim"?"two qualifying passes set your seed, then quarter-final, semi and final against seven cars of your class. First to the stripe wins — a quick light beats a quick car. Red light or crossing the centreline loses.":"dial in the ET you expect. The slower dial leaves first; first to the stripe wins unless they ran under their dial (a breakout). Both under: the smaller breakout wins. Consistency beats horsepower."} ${career()?`Entry about 8% of the winner's purse (from $500), fuel per pass. Same rules as a pass: certified engine, ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade.`:"Free in the sandbox."} Set the car up below — body, tyre and weight lock when you enter.</p>`;
+  return h;}
+function rnTuneEnvHtml(sl){const e=S.env,psi0=(SIM.TYRES[e.tyre]||SIM.TYRES.street).psi||16,sh=e.shocks||"medium";
+  return`<div class="envgrid">${sl("tyrePsi","Tyre pressure",+(psi0*0.5).toFixed(1),+(psi0*1.4).toFixed(1),0.5," psi",e.tyrePsi>0?e.tyrePsi:psi0)}</div><div class="lbl"><span>Shocks</span></div><div class="seg n3">${[["soft","Soft","more bite · lifts"],["medium","Medium","as delivered"],["firm","Firm","flat · may spin"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shocks" class="${sh===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;}
+function rnRunBtn(){const N=rnCur(),b=$("runTest");if(testing)return;
+  if(!N){if(RN_FMT[S.env.dragFmt]){b.textContent=`Enter the night · ${RN_FMT[S.env.dragFmt].toLowerCase()}${career()?" · entry":""}`;$("dynoHint").innerHTML=`<b>Race night</b> · ${career()?"the entry is charged when you go in; ":""}two ${S.env.dragFmt==="bracket"?"time trials":"qualifying passes"}, then up to three rounds. Space or the big button drives every pass, same as a single run.`;}return;}
+  if(N.done){b.textContent="Close the night";$("dynoHint").innerHTML="";return;}
+  const i=rnOppIdx(N),fb=fuelBill();b.textContent=`Stage · ${rnStageName(N,N.stage).toLowerCase().replace(/^./,c=>c.toUpperCase())} vs ${N.field[i-1].name.split(" ")[0]}${career()&&fb?" · fuel "+fmt$(fb):""}`;
+  $("dynoHint").innerHTML=N.fmt==="bracket"?`<b>Bracket</b> · your dial ${N.stage>=2?N.dial.toFixed(2):"— set after the time trials"}. Leave on the green of <i>your</i> tree; a red light loses outright.`:`<b>Heads-up</b> · first to the stripe. Your reaction time counts — a good light is under 0.100.`;}
+function rnRecHtml(){const R=recs();if(!R.nightsRun)return"";return`<div class="rec"><span>Race nights</span><b>${R.nightsWon||0}<i>of ${R.nightsRun} won</i></b><small>best finish: ${(RN_PLACE[R.bestFinish]||"—").toLowerCase()}</small></div>`;}
+function rnSlipHtml(r){const n=r.night;if(!n)return"";return`<div class="sec"><h2>${n.label}${n.win===true?" · won":n.win===false?" · out":""}</h2><div class="log"><div><b>vs</b>${rnEsc(n.opp)} · ${rnEsc(n.car)} — RT ${n.oppRt!=null?n.oppRt.toFixed(3):"—"}${n.oppBroke?" · broke":n.oppEt!=null?" · "+n.oppEt.toFixed(3)+" @ "+Math.round(n.oppMph):""}${n.dialO!=null?" on a "+n.dialO.toFixed(2):""}</div>${n.dialP!=null?`<div><b>Dial</b>${n.dialP.toFixed(2)}${r.et!=null?" · ran "+(r.et-n.dialP>=0?"+":"")+(r.et-n.dialP).toFixed(3):""}</div>`:""}<div>${rnEsc(n.text)}</div></div></div>`;}
+function rnVerdict(r){const n=r.night,R=r.race;const cls=n.win===true?"pass":n.win===false?"fail":r.et==null?"fail":"marg";
+  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${rnEsc(n.text)}</p>${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
+function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive");let s=`${n.label} · vs ${rnEsc(R.name)}`;
+  if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
+  if(st.phase==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";
+  if(n.verdict&&n.stage>=2)s+=` · <b style="color:${n.verdict.win?"var(--good)":"var(--crit)"}">${n.verdict.win?"WIN":"LOSS"}</b>`;
+  L.insertAdjacentHTML("afterbegin",`<div class="peak rnhud" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">${s}</span></div>`);
+  if(n.cheer&&st.phase==="shutdown"&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText("WON THE NIGHT","tap to go back to the car");}
+$("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rn]");if(!b)return;const a=b.dataset.rn,N=rnCur();
+  if(a==="done"){rnSetN(null);save();renderTest();return;}
+  if(a==="leave"){rnLeave();return;}
+  if(!N||N.done||testing)return;
+  if(a==="tune"){const k=b.dataset.k,d=+b.dataset.d,lt=SIM.launchTech(S.cfg),t0=N.t0,cl=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+    if(k==="launch"){if(lt.launchCtl!=="none")S.cfg.twoStepRpm=cl(lt.twoStepRpm+100*d,2000,S.cfg.redline);else S.env.launchRpm=cl(Math.min(S.env.launchRpm,S.cfg.redline)+100*d,1500,S.cfg.redline);}
+    else if(k==="first")S.env.first=+cl(+S.env.first+0.05*d,Math.min(+S.env.first,t0.first*0.8),Math.max(+S.env.first,t0.first*1.25)).toFixed(2);
+    else if(k==="final")S.env.final=+cl(+S.env.final+0.05*d,Math.min(+S.env.final,t0.final*0.85),Math.max(+S.env.final,t0.final*1.2)).toFixed(2);
+    else if(k==="psi"){const p0=SIM.TYRES[N.lock.tyre].psi||16;S.env.tyrePsi=+cl((S.env.tyrePsi>0?S.env.tyrePsi:p0)+0.5*d,+(p0*0.5).toFixed(1),+(p0*1.4).toFixed(1)).toFixed(1);}
+    buzz(3);}
+  else if(a==="shock"){S.env.shocks=b.dataset.k;}
+  else if(a==="dial"){N.dial=+(N.dial+0.01*+b.dataset.d).toFixed(2);rnSetN(N);}
+  else if(a==="dialsug"){N.dial=rnSuggest(N);rnSetN(N);}
+  else if(a==="freshen"){const c=freshenCost(quick);if(!career())return;if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} between rounds — ${fmt$(c)}`);hud();toast("Rings, bearings and a hone — like new");}
+  save();const sc=$("panel").scrollTop;renderEnv();$("panel").scrollTop=sc;});
+$("envBox").addEventListener("click",e=>{if(e.target.closest('[data-ek="tyre"],[data-ek="body"]')&&S.env.tyrePsi!=null){delete S.env.tyrePsi;renderEnv();save();}});
 async function shareSlip(l){const r=l.res.drag,res=l.res;const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
   x.fillStyle="#15171b";x.fillRect(0,0,W,H);x.fillStyle="#1e2126";x.fillRect(60,60,W-120,H-120);
   const F=(sz,w)=>`${w||600} ${sz}px "Chakra Petch","Barlow Condensed","Arial Narrow",sans-serif`;
@@ -14052,7 +14640,8 @@ function drawPullTrace(r){const INK=getComputedStyle(document.documentElement).g
   const sw=r.sweet||[0.15,0.3];x.fillStyle="rgba(79,192,141,.12)";x.fillRect(padL,padT+ch*(1-sw[1]),cw,ch*(sw[1]-sw[0]));
   const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
   line(p=>p.boxFrac,soft,1,[4,4]);line(p=>p.slip,"rgba(95,168,230,.9)",1.5);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
-  x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("slip",padL+34,padT+12);x.fillStyle=soft;x.fillText("box",padL+62,padT+12);x.textAlign="right";x.fillText(mx+" mph",W-padR,padT+12);}
+  const rm=Math.max(4000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000),em=Math.max(800,Math.ceil(Math.max(...tr.map(p=>p.egt||0))/100)*100),hasE=tr[0].egt!=null;if(hasE&&PL.rpm)line(p=>p.rpm/rm,"#e8c14a",1.3,[2,3]);if(hasE&&PL.egt)line(p=>p.egt/em,"#c58be0",1.3);
+  x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("slip",padL+34,padT+12);x.fillStyle=soft;x.fillText("box",padL+62,padT+12);if(hasE&&PL.rpm){x.fillStyle="#e8c14a";x.fillText("rpm",padL+88,padT+12);}if(hasE&&PL.egt){x.fillStyle="#c58be0";x.fillText("EGT",padL+116,padT+12);}x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,padT+12);pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK);}
 function pullVerdict(res){const r=res.pull;
   if(res.pullFailed)return `<div class="verdict fail"><div><div class="big">${r.broke==="turbo"?"TURBO LET GO":r.broke==="piston"?"MELTED A PISTON":"BROKE UNDER THE SLED"}</div><p>${r.distFt.toFixed(1)} ft before it let go${career()?" — certification is void and reputation took a hit":""}.</p></div></div>`;
   const cls=r.full||r.place===1?"pass":r.place<=PULL_PURSE.length?"marg":"fail";   // in the money is not a loss
@@ -14063,8 +14652,97 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
   return `<div class="sec"><h2>Pull sheet</h2><div class="log"><div><b>Pull</b>${r.full?"FULL · 300 ft":r.distFt.toFixed(1)+" ft"} · ${r.maxMph} mph top · ${r.time.toFixed(1)} s · ${why}</div>
     <div><b>Setup</b>${r.clsName} · ${r.gearName} (${r.mphGear} mph) · ${v.trans==="clutch"?"clutch":"converter"} · ${r.tyre.toLowerCase()} · ${v.hitch} in hitch · ${v.ballast} kg front · ${r.ratio}:1 overall</div>
     <div><b>Tyres</b>peak slip ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s spinning${r.hopT>0?" · hopped "+r.hopT.toFixed(1)+" s":""}</div>
-    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>
+    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>`;}
+
+/* ---- datalog: the pass, channel by channel. Trace rows: [t, m, mph, rpm, gear, spin, bar, wheel mph, EGT C, throttle, n2o] ---- */
+const DL={on:{rpm:1,spd:1,whl:1,boost:1,egt:0,n2o:1},mode:"t"},DLM={},DLC={rpm:["rpm","rgba(95,168,230,.95)"],spd:["ground","#ff7a1a"],whl:["wheel","INK"],boost:["boost","#4fc08d"],egt:["EGT","#c58be0"],n2o:["N₂O","#e8c14a"]};
+const dlCache=new WeakMap();
+function dlPrep(r,res){if(!r||!r.trace||r.trace.length<4||r.trace[0].length<8)return null;let D=dlCache.get(r.trace);if(D)return D;
+  const T=r.trace,n=T.length,col=i=>T.map(p=>p[i]==null?0:p[i]);
+  D={n,t:col(0),x:col(1),mph:col(2),rpm:col(3),gear:col(4),spin:col(5),boost:col(6),whl:col(7),egt:col(8),thr:col(9),n2o:col(10)};
+  D.tEnd=D.t[n-1];D.hasB=D.boost.some(v=>v>0.05);D.hasN=D.n2o.some(v=>v>0.02);
+  D.rpmMax=Math.max(4000,Math.ceil(Math.max(...D.rpm,(r.veh&&r.veh.redline)||0)/1000)*1000);D.mphMax=Math.max(60,Math.ceil(Math.max(...D.mph,...D.whl)/20)*20);
+  D.bMax=Math.max(1,Math.ceil(Math.max(...D.boost)*2)/2);D.eMax=Math.max(800,Math.ceil(Math.max(...D.egt)/100)*100);
+  const tq=res&&res.peakTqRpm||0,reg=(f,minDur)=>{const o=[];let a=-1;for(let i=0;i<=n;i++){const on=i<n&&f(i);if(on&&a<0)a=i;if(!on&&a>=0){const e=i-1;if(D.t[e]-D.t[a]+0.05>=minDur)o.push({a,e});a=-1;}}return o;};
+  D.spinR=reg(i=>D.whl[i]>D.mph[i]*1.09+1.5,0.1).map(g=>{let pk=g.a,gap=0,pc=0;for(let i=g.a;i<=g.e;i++){const d=D.whl[i]-D.mph[i];if(d>gap){gap=d;pk=i;}pc=Math.max(pc,D.mph[i]>=20?D.whl[i]/D.mph[i]-1:0);}return Object.assign(g,{pk,gap,pc,dur:D.t[g.e]-D.t[g.a]+0.05});});
+  D.bogR=tq?reg(i=>D.thr[i]>0.5&&D.t[i]>0.1&&D.rpm[i]<0.7*tq,0.15).map(g=>{let m=1e9;for(let i=g.a;i<=g.e;i++)m=Math.min(m,D.rpm[i]);return Object.assign(g,{min:m,tq});}):[];
+  D.sh=(r.shifts||[]).map(s=>({t:s.t,x:s.x,g:s.gear}));D.mk=(r.marks||[]).map(m=>({t:m.t,x:m.d,n:m.n}));
+  dlCache.set(r.trace,D);return D;}
+function dlWhen(D,i){const ts=D.t[i];let s=null;for(const h of D.sh)if(h.t<=ts&&ts-h.t<=1.2)s=h;if(s)return {k:"shift",txt:`${(ts-s.t).toFixed(2)} s after the ${s.g}–${s.g+1} shift`};if(ts<0.7)return {k:"launch",txt:"off the line"};return {k:"run",txt:`${Math.round(D.x[i]*3.28084)} ft down the track`};}
+function dlDiag(r,res){const D=dlPrep(r,res);if(!D)return "";const o=[],v=r.veh||{};
+  if(D.spinR.length){const g=D.spinR.slice().sort((a,b)=>b.gap*b.dur-a.gap*a.dur)[0],w=dlWhen(D,g.a),tot=D.spinR.reduce((s,q)=>s+q.dur,0),nit=D.hasN&&D.n2o[g.a]>0.3;
+    const fix=w.k==="launch"?`${v.tyre&&v.tyre!=="slick"?"a stickier tyre, ":""}less launch rpm or a softer shock`:w.k==="shift"?`${nit?"bring the nitrous in later, ":""}shift a little later so the next gear isn't hit so hard, or a softer shock`:`${nit?"bring the nitrous in later, ":""}ease the power in or add rear weight`;
+    o.push(`Spun ${g.dur.toFixed(2)} s ${w.txt}, wheels up to ${Math.round(g.gap)} mph over the car${g.pc>0?` (${Math.round(g.pc*100)}%)`:""}${D.spinR.length>1?` (${D.spinR.length} spins, ${tot.toFixed(2)} s in all)`:""} — try ${fix}.`);}
+  if(D.bogR.length){const g=D.bogR[0],w=dlWhen(D,g.a);o.push(w.k==="launch"?`Bogged off the line — rpm fell to ${Math.round(g.min).toLocaleString()} against a ${g.tq.toLocaleString()} rpm torque peak: more launch rpm or a looser converter.`:`Fell to ${Math.round(g.min).toLocaleString()} rpm ${w.txt}, well under the ${g.tq.toLocaleString()} rpm torque peak — closer ratios or shift later.`);}
+  return o.length?o.join(" "):`Clean log: wheel speed tracked the car all the way — ${D.tEnd.toFixed(1)} s with nothing lost to spin or bog.`;}
+function dlHtml(id,r,res){const D=dlPrep(r,res);if(!D)return `<p class="hint">This pass was logged before the datalog existed — run another.</p>`;
+  const sp=D.spinR.slice().sort((a,b)=>b.gap-a.gap)[0];DLM[id]={r,res,cur:sp?sp.pk:null};
+  const chips=Object.keys(DLC).filter(k=>k==="boost"?D.hasB:k==="n2o"?D.hasN:true).map(k=>`<button class="chip dlch${DL.on[k]?" on":""}" data-dlch="${k}"><i style="background:${DLC[k][1]==="INK"?"var(--ink)":DLC[k][1]}"></i>${DLC[k][0]}</button>`).join("")+`<button class="chip dlch" data-dlx="1">x: ${DL.mode==="t"?"time":"distance"}</button>`;
+  return `<div class="dlbox"><div class="chips dlchips">${chips}</div><canvas class="dlcv" id="${id}Cv"></canvas><div class="dlread" id="${id}Rd"></div><div class="dldiag${D.spinR.length||D.bogR.length?" bad":""}">${dlDiag(r,res)}</div></div>`;}
+function dlCard(id,res){return `<div class="sec"><h2>Datalog</h2>${dlHtml(id,res.drag,res)}</div>`;}
+function dlDraw(id){const M=DLM[id],cv=$(id+"Cv");if(!M||!cv||!cv.isConnected)return;const D=dlPrep(M.r,M.res);if(!D)return;
+  const cs=getComputedStyle(cv),INK=cs.getPropertyValue("--ink").trim()||"#e8e3d6",soft=INK.startsWith("#1")?"rgba(27,26,23,.5)":"rgba(232,227,214,.5)",crit=cs.getPropertyValue("--crit").trim()||"#e2473c",grid=cs.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)",ff=getComputedStyle(document.body).fontFamily;
+  const dpr=Math.min(devicePixelRatio||1,2),W=cv.clientWidth,H=cv.clientHeight;if(!W||!H)return;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+  const padL=8,padR=8,padT=38,padB=32,cw=W-padL-padR,ch=H-padT-padB,byT=DL.mode==="t",xs=byT?D.t:D.x,xEnd=byT?D.tEnd:402.336,X=v=>padL+cw*Math.min(1,v/xEnd),Y=(v,m)=>padT+ch*(1-Math.max(0,Math.min(1,v/m)));
+  const col=k=>DLC[k][1]==="INK"?INK:DLC[k][1];
+  x.lineWidth=1;x.strokeStyle=grid;for(let i=0;i<=4;i++){const y=padT+ch*i/4;x.beginPath();x.moveTo(padL,y);x.lineTo(padL+cw,y);x.stroke();}
+  x.font="10px "+ff;x.textBaseline="alphabetic";x.textAlign="center";x.fillStyle=soft;
+  if(byT){const st=xEnd>14?2:1;for(let t=0;t<=xEnd;t+=st){x.beginPath();x.moveTo(X(t),padT);x.lineTo(X(t),padT+ch);x.stroke();x.fillText(t+"s",X(t),H-3);}}else{for(let f=0;f<=1320;f+=330){x.beginPath();x.moveTo(X(f*0.3048),padT);x.lineTo(X(f*0.3048),padT+ch);x.stroke();x.fillText(f+"'",X(f*0.3048),H-3);}}
+  // spin and bog zones, then the gap between wheel and ground speed
+  const zone=(g,c)=>{x.fillStyle=c;const a=X(xs[g.a]),b=X(xs[g.e]);x.fillRect(a,padT,Math.max(2,b-a),ch);};
+  if(DL.on.whl)D.spinR.forEach(g=>zone(g,"rgba(226,71,60,.10)"));D.bogR.forEach(g=>zone(g,"rgba(232,193,74,.12)"));
+  if(DL.on.n2o&&D.hasN){x.fillStyle="rgba(232,193,74,.35)";for(let i=1;i<D.n;i++)if(D.n2o[i]>0.02){const a=X(xs[i-1]),b=X(xs[i]);x.fillRect(a,padT+ch-5,Math.max(1,b-a),5);}}
+  if(DL.on.whl&&DL.on.spd){x.fillStyle=crit;x.globalAlpha=.55;const run=[];for(let i=0;i<D.n;i++)run.push(D.whl[i]>D.mph[i]*1.03+0.5);
+    for(let i=0;i<D.n;i++){if(!run[i]||(i>0&&run[i-1]))continue;let e=i;while(e+1<D.n&&run[e+1])e++;x.beginPath();for(let j=i;j<=e;j++){const px=X(xs[j]),py=Y(D.whl[j],D.mphMax);j===i?x.moveTo(px,py):x.lineTo(px,py);}for(let j=e;j>=i;j--)x.lineTo(X(xs[j]),Y(D.mph[j],D.mphMax));x.closePath();x.fill();}x.globalAlpha=1;}
+  const line=(arr,m,c,w,dash)=>{x.strokeStyle=c;x.lineWidth=w;x.lineJoin="round";x.setLineDash(dash||[]);x.beginPath();for(let i=0;i<D.n;i++){const px=X(xs[i]),py=Y(arr[i],m);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.setLineDash([]);};
+  if(DL.on.egt)line(D.egt,D.eMax,col("egt"),1.3);if(DL.on.boost&&D.hasB)line(D.boost,D.bMax,col("boost"),1.5);if(DL.on.rpm)line(D.rpm,D.rpmMax,col("rpm"),1.4);
+  if(DL.on.spd)line(D.mph,D.mphMax,col("spd"),2.2);if(DL.on.whl)line(D.whl,D.mphMax,INK,1.3,[4,3]);
+  // markers: shifts on top, distance marks along the bottom (staggered so phones don't pile up)
+  x.textAlign="center";x.font="9px "+ff;x.strokeStyle=soft;x.lineWidth=1;x.setLineDash([2,3]);x.fillStyle=soft;
+  const mark=(v,lab,row)=>{const px=X(v);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.textAlign=px<padL+26?"left":px>W-padR-26?"right":"center";x.fillText(lab,px,padT+ch+9+row*10);};
+  mark(0,"launch",0);D.mk.forEach((m,i)=>mark(byT?m.t:m.x,{"60 ft":"60'","330 ft":"330'","1/8 mi":"1/8","1000 ft":"1000'","1/4 mi":"finish"}[m.n]||m.n,(i+1)%2));
+  x.setLineDash([]);D.sh.forEach(h=>{const px=X(byT?h.t:h.x);x.fillStyle=INK;x.beginPath();x.moveTo(px,padT-1);x.lineTo(px-4,padT-8);x.lineTo(px+4,padT-8);x.closePath();x.fill();x.fillStyle=soft;x.textAlign="center";x.fillText(h.g+"–"+(h.g+1),px,padT-11);});
+  // scales
+  x.textAlign="left";x.font="10px "+ff;let sx=padL+2;
+  [["rpm",DL.on.rpm,D.rpmMax/1000+"k rpm"],["spd",DL.on.spd||DL.on.whl,D.mphMax+" mph"],["boost",DL.on.boost&&D.hasB,D.bMax+" bar"],["egt",DL.on.egt,D.eMax+"°C"]].forEach(([k,on,t])=>{if(!on)return;x.fillStyle=col(k);x.fillText(t,sx,10);sx+=x.measureText(t).width+9;});
+  // cursor
+  const i=M.cur;if(i!=null&&i>=0&&i<D.n){const px=X(xs[i]);x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,padT-12);x.lineTo(px,padT+ch);x.stroke();
+    const dot=(arr,m,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,Y(arr[i],m),3.2,0,7);x.fill();};if(DL.on.rpm)dot(D.rpm,D.rpmMax,col("rpm"));if(DL.on.spd)dot(D.mph,D.mphMax,col("spd"));if(DL.on.whl)dot(D.whl,D.mphMax,INK);if(DL.on.boost&&D.hasB)dot(D.boost,D.bMax,col("boost"));if(DL.on.egt)dot(D.egt,D.eMax,col("egt"));}
+  const rd=$(id+"Rd");if(rd){if(i==null||i<0||i>=D.n)rd.innerHTML=`<span class="hint">Touch or hover the chart to read every channel at that instant.</span>`;
+    else{const sp=D.mph[i]>=20?D.whl[i]/D.mph[i]-1:0,sw=D.whl[i]>D.mph[i]*1.09+1.5;rd.innerHTML=`<b>${D.t[i].toFixed(2)} s</b><b>${Math.round(D.x[i]*3.28084)} ft</b><span style="color:${col("rpm")}">${Math.round(D.rpm[i]).toLocaleString()} rpm</span><span>gear ${D.gear[i]}</span><span style="color:${col("spd")}">${D.mph[i].toFixed(0)} mph</span><span class="${sw?"sw":""}">wheel ${D.whl[i].toFixed(0)} mph${D.mph[i]>=20?` (${sp>=0?"+":""}${Math.round(sp*100)}%)`:""}${sw?" SPIN":""}</span>${D.hasB?`<span style="color:${col("boost")}">${D.boost[i].toFixed(2)} bar</span>`:""}<span style="color:${col("egt")}">${D.egt[i]} °C</span><span>throttle ${Math.round(D.thr[i]*100)}%</span>${D.hasN&&D.n2o[i]>0.02?`<span style="color:${col("n2o")}">N₂O on</span>`:""}`;}}}
+function dlAll(){for(const id in DLM)dlDraw(id);}
+let dlRaf=0;function dlSched(){if(!dlRaf)dlRaf=requestAnimationFrame(()=>{dlRaf=0;dlAll();});}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-dlch],[data-dlx]");if(!b)return;if(b.dataset.dlx){DL.mode=DL.mode==="t"?"x":"t";document.querySelectorAll("[data-dlx]").forEach(q=>q.textContent="x: "+(DL.mode==="t"?"time":"distance"));}else{const k=b.dataset.dlch;DL.on[k]=DL.on[k]?0:1;document.querySelectorAll(`[data-dlch="${k}"]`).forEach(q=>q.classList.toggle("on",!!DL.on[k]));}dlAll();});
+function dlScrub(e){const cv=e.target.closest&&e.target.closest(".dlcv");if(!cv||(e.type==="pointermove"&&e.pointerType!=="mouse"&&!(e.buttons&1)))return;const id=cv.id.slice(0,-2),M=DLM[id];if(!M)return;const D=dlPrep(M.r,M.res);if(!D)return;
+  const rc=cv.getBoundingClientRect(),f=Math.max(0,Math.min(1,(e.clientX-rc.left-8)/(rc.width-16))),xs=DL.mode==="t"?D.t:D.x,v=f*(DL.mode==="t"?D.tEnd:402.336);let lo=0,hi=D.n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(xs[m]<v)lo=m;else hi=m;}M.cur=Math.abs(xs[lo]-v)<Math.abs(xs[hi]-v)?lo:hi;dlSched();}
+document.addEventListener("pointerdown",e=>{if(e.target.closest&&e.target.closest(".dlcv")){try{e.target.setPointerCapture(e.pointerId);}catch(_){}dlScrub(e);}});document.addEventListener("pointermove",dlScrub);
+addEventListener("resize",dlSched);new MutationObserver(dlSched).observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});
+function dlMount(){for(const id in DLM)if(!$(id+"Cv"))delete DLM[id];dlAll();}
+function dlAnalysis(){const sec=$("dlSec");if(!sec)return;const l=S.last,ok=l&&l.res&&l.res.drag&&dlPrep(l.res.drag,l.res);sec.style.display=ok?"":"none";if(!ok){delete DLM.dlA;return;}$("dlBox").innerHTML=dlHtml("dlA",l.res.drag,l.res);requestAnimationFrame(dlAll);}
+/* ---- pull datalog: the same scrub cursor on the pull sheet's chart, plus rpm and EGT ---- */
+const PL={rpm:1,egt:1,cur:null};
+function pullRedraw(){const l=lastForChart();if(S.env.testType==="pull_sled"&&l&&l.pull)drawPullTrace(l.pull);}
+function pullDiag(r){const tr=r.trace||[],sw=r.sweet||[0.15,0.3];if(tr.length<3)return "";let best=null,a=-1,low=0,lowA=-1,lowB=0;
+  for(let i=0;i<=tr.length;i++){const on=i<tr.length&&tr[i].slip>sw[1]+0.02;if(on&&a<0)a=i;if(!on&&a>=0){const d=tr[i-1].t-tr[a].t+0.1;if(!best||d>best.d)best={a,e:i-1,d};a=-1;}}
+  for(let i=0;i<tr.length;i++)if(tr[i].t>1&&tr[i].throttle>0.8&&tr[i].slip<sw[0]-0.03&&tr[i].v>0.5)low+=0.1;
+  const pos=f=>f<0.33?"early":f<0.66?"mid-pull":"late in the pull",ft=i=>Math.round(tr[i].x*3.28084);
+  if(best&&best.d>=0.4)return `Wheel speed ran above the sweet spot (over ${Math.round(sw[1]*100)}% slip) for ${best.d.toFixed(1)} s ${pos(tr[best.a].x/SIM.PULL_FULL)}, ${ft(best.a)}–${ft(best.e)} ft — feather earlier.`;
+  if(r.stopWhy==="bogged")return `Bogged at ${(r.distFt||0).toFixed(0)} ft with the tyres under the band — a lower gear or more rpm at the hook.`;
+  if(low>=1)return `Wheels ran under the sweet spot for ${low.toFixed(1)} s with the throttle open — the truck was lugging; a lower gear or a bit more tyre spin would get more out of the dirt.`;
+  return `Wheel speed stayed in the sweet band — ${r.sweetT.toFixed(1)} s where the dirt bites best.`;}
+function pullLog(r){PL.cur=null;const tr=r.trace||[];if(!tr.length||tr[0].egt==null)return "";
+  return `<div class="dlbox" style="margin-top:10px"><div class="chips dlchips"><button class="chip dlch${PL.rpm?" on":""}" data-plch="rpm"><i style="background:#e8c14a"></i>rpm</button><button class="chip dlch${PL.egt?" on":""}" data-plch="egt"><i style="background:#c58be0"></i>EGT</button></div><div class="dlread" id="plRd"><span class="hint">Touch or hover the chart above to read the pull at that instant.</span></div><div class="dldiag${/above|Bogged|lugging/.test(pullDiag(r))?" bad":""}">${pullDiag(r)}</div></div>`;}
+function pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK){const i=PL.cur,p=tr[i];if(i==null||!p)return;const px=X(p.x);x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();
+  const dot=(f,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,padT+ch*(1-Math.max(0,Math.min(1,f))),3.2,0,7);x.fill();};dot(p.v*2.23694/mx,"#ff7a1a");dot(p.slip,"rgba(95,168,230,.95)");if(PL.rpm)dot(p.rpm/rm,"#e8c14a");if(PL.egt&&p.egt!=null)dot(p.egt/em,"#c58be0");
+  const sw=r.sweet||[0.15,0.3],st=p.slip>sw[1]+0.02?"over the band":p.slip<sw[0]?"under the band":"in the band",W=chart.clientWidth,rt=px<W/2,l1=`${p.t.toFixed(1)} s · ${Math.round(p.x*3.28084)} ft · ${(p.v*2.23694).toFixed(1)} mph`,l2=`slip ${Math.round(p.slip*100)}% ${st} · ${p.rpm.toLocaleString()} rpm${p.egt!=null?" · "+p.egt+"°C":""}`;
+  x.font="10px "+getComputedStyle(document.body).fontFamily;x.textAlign=rt?"left":"right";x.fillStyle=INK;x.fillText(l1,px+(rt?6:-6),padT+28);x.fillText(l2,px+(rt?6:-6),padT+40);
+  const rd=$("plRd");if(rd){rd.innerHTML=`<b>${p.t.toFixed(1)} s</b><b>${Math.round(p.x*3.28084)} ft</b><span style="color:#ff7a1a">${(p.v*2.23694).toFixed(1)} mph</span><span style="color:rgba(95,168,230,.95)">slip ${Math.round(p.slip*100)}% · ${st}</span><span style="color:#e8c14a">${p.rpm.toLocaleString()} rpm</span>${p.egt!=null?`<span style="color:#c58be0">${p.egt} °C</span>`:""}<span>throttle ${Math.round(p.throttle*100)}%</span>`;}}
+function pullScrub(e){if(S.env.testType!=="pull_sled"||testing||(e.type==="pointermove"&&e.pointerType!=="mouse"&&!(e.buttons&1)))return;const l=lastForChart(),r=l&&l.pull,tr=r&&r.trace;if(!tr||!tr.length)return;
+  const rc=chart.getBoundingClientRect(),d=Math.max(0,Math.min(1,(e.clientX-rc.left-34)/(rc.width-68)))*SIM.PULL_FULL;let b=0;for(let i=1;i<tr.length;i++)if(Math.abs(tr[i].x-d)<Math.abs(tr[b].x-d))b=i;PL.cur=b;pullRedraw();}
+chart.style.touchAction="pan-y";chart.addEventListener("pointerdown",e=>{try{chart.setPointerCapture(e.pointerId);}catch(_){}pullScrub(e);});chart.addEventListener("pointermove",pullScrub);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-plch]");if(!b)return;const k=b.dataset.plch;PL[k]=PL[k]?0:1;b.classList.toggle("on",!!PL[k]);pullRedraw();});
 
 function showResult(res,env){
   const b=S.base&&S.base.res;
@@ -14078,6 +14756,7 @@ function showResult(res,env){
   else if(env.testType==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)v=`<div class="verdict fail"><div><div class="big">FAILED AT ${res.endurance.failedAtHour} H</div><p>First to go: ${(res.tests.find(t=>t.id===res.firstToFail)||{}).name||res.firstToFail}. It passed the pull but not the hours.</p></div></div>`;
   else if(env.testType==="overrev"&&res.overrev&&!res.overrev.survived)v=`<div class="verdict fail"><div><div class="big">DID NOT SURVIVE</div><p>The missed shift found the weak link.</p></div></div>`;
   else if(env.testType==="drag"&&res.dragFailed)v=`<div class="verdict fail"><div><div class="big">${res.dragFailKind==="turbo"?"COOKED THE TURBO":res.dragFailKind==="manifold"?"CRACKED THE MANIFOLD":"BROKE ON THE PASS"}</div><p>${res.dragFailKind==="turbo"||res.dragFailKind==="manifold"?"Too long on the two-step — the heat that built the boost found the weakest part of the hot side":"The engine let go on the strip"}${career()?" — certification is void and reputation took a hit":""}.</p></div></div>`;
+  else if(env.testType==="drag"&&res.drag&&res.drag.night)v=rnVerdict(res.drag);
   else if(env.testType==="drag"&&res.drag){const r=res.drag,R=r.race;v=`<div class="verdict ${R?(R.won?"pass":"fail"):r.et==null?"fail":r.et<10?"pass":"marg"}"><div style="flex:1"><div class="big">${R?(R.foul?"RED LIGHT":R.won?"WON by "+Math.abs(R.margin||0).toFixed(3)+" s":"LOST by "+Math.abs(R.margin||0).toFixed(3)+" s"):""}${R?"<br><span style=\"font-size:.7em;opacity:.85\">":""}${r.et!=null?r.et.toFixed(2)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R?"</span>":""}</div>
     ${R?`<p>RT ${R.rt!=null?R.rt.toFixed(3):"—"} vs ${R.name} ${R.oppRt.toFixed(3)} · they ran ${R.oppEt!=null?R.oppEt.toFixed(2)+" @ "+Math.round(R.oppMph):"DNF"}${R.foul?" · you left before the green":""}</p>`:""}
     <div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
@@ -14089,10 +14768,13 @@ function showResult(res,env){
   if(env.testType==="endurance"&&res.endurance){const d=res.endurance.damage||{};const top=Object.entries(d).sort((a,b)=>b[1]-a[1]).slice(0,5);
     extra+=`<div class="sec"><h2>Fatigue damage after ${res.endurance.failedAtHour!=null?res.endurance.failedAtHour:env.hours} h</h2><div class="stress">${top.map(([id,f])=>{const t=res.tests.find(x=>x.id===id)||{name:id};const p=Math.min(1,f);return `<div class="st ${p>=1?"crit":p>.6?"warn":"good"}"><div class="n">${t.name}</div><div class="bar"><i style="width:${Math.min(100,p*80)}%"></i></div><div class="p">${Math.round(p*100)}%</div></div>`;}).join("")}</div>`;
     if(res.endurance.log&&res.endurance.log.length)extra+=`<div class="log" style="margin-top:8px">${res.endurance.log.map(l=>`<div><b>${l.hour} h</b>${l.event}</div>`).join("")}</div>`;extra+=`</div>`;}
+  if(env.testType==="drag"&&res.drag&&res.drag.night)extra+=rnSlipHtml(res.drag);
   if(env.testType==="drag"&&res.drag){const r=res.drag;extra+=`<div class="sec"><h2>Timing slip</h2><div class="log">${slipLine(r)?`<div><b>Slip</b>${slipLine(r)}</div>`:""}${launchSlip(r)?`<div><b>Launch</b>${launchSlip(r)}</div>`:""}${r.race&&r.race.rt!=null&&!r.race.foul&&r.race.rt>0.25?`<div>Reaction time ${r.race.rt.toFixed(3)} — a good light is under 0.100. That is ${(r.race.rt-0.1).toFixed(2)} s given away before the car moved.</div>`:""}${r.reasons.length?r.reasons.map(x=>`<div>${x}</div>`).join(""):"<div>Clean pass. Nothing left on the table that the driveline can fix — the rest is horsepower.</div>"}${r.shifts.length?`<div><b>Shifts</b>${r.shifts.map(x=>x.gear+"→"+(x.gear+1)+" at "+x.rpm.toLocaleString()).join(", ")}</div>`:""}<div><b>Ratios</b>${r.ratios.join(" · ")} × ${r.veh.final} final · ${r.veh.tyreDia}" ${SIM.TYRES[r.veh.tyre].n.toLowerCase()}</div><div><b>Shutdown</b>${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${r.chute?"chute out":"brakes only"} · pulled up in ${r.shutFt.toLocaleString()} ft</div><div style="margin-top:8px"><button class="btn sm info" id="shareSlip">Share timing slip</button></div>${(()=>{const wi=wearInfo(res);if(!wi)return"";const pct=Math.round(wi.w*100);return `<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${pct}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0.3?" · listen for the slap at idle":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`;})()}</div></div>`;}
+  if(env.testType==="drag"&&res.drag&&res.drag.n2o)extra=extra.replace("<div><b>Ratios</b>",`<div><b>Nitrous</b>${n2oSlip(res.drag.n2o)}</div><div><b>Ratios</b>`);
   if(env.testType==="pull_sled"&&res.pull)extra+=pullSheet(res);
+  if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
-  $("testExtra").innerHTML=extra;
+  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
@@ -14108,7 +14790,7 @@ function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
   if(L.ctl!=="none")b.push(`two-step ${L.held.toFixed(1)} s @ ${L.holdRpm.toLocaleString()}${L.retard?` · ${Math.round(L.retard)}° retard`:""}`);else if(L.brake==="trans_brake")b.push(`trans-brake ${L.held.toFixed(1)} s`);
   if(L.brake==="trans_brake")b.push("off the trans-brake");else if(L.brake==="line_lock")b.push("line lock");
   if(r.heat&&r.heat.egtLine>=850)b.push(`${r.heat.egtLine.toLocaleString()} °C on the line`);
-  if(r.broke)b.push(`<span style="color:var(--crit)">${r.broke==="turbo"?"turbo cooked":"manifold cracked"}</span>`);
+  if(r.broke)b.push(`<span style="color:var(--crit)">${r.broke==="turbo"?"turbo cooked":r.broke==="lean"?"lean on the bottle — melted a piston":r.broke==="backfire"?"intake backfire":"manifold cracked"}</span>`);
   else if(r.heat&&r.heat.abuse>=0.05)b.push(`+${r.heat.abuse.toFixed(1)} pass of wear from the heat`);
   return b.join(" · ");}
 /* run animation */
@@ -14129,6 +14811,7 @@ function failKindOf(res,env){
   return FAIL_VISUAL[id]||"rod";
 }
 $("runTest").addEventListener("click",()=>{
+  if(!testing&&S.env.testType==="drag"&&rnGate())return;   // race night: enter, close, or the wrong engine
   if(testing)return;const cost=testCost();if(career()&&C().cash<cost){toast("Not enough cash for dyno time");return;}
   if(S.env.testType==="drag"){if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(career()&&!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
@@ -14184,7 +14867,7 @@ function renderAnalysis(){
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
-  renderRecords();
+  renderRecords();dlAnalysis();
 }
 function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
@@ -14196,7 +14879,7 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Best certified rel":"Best reliability"}</span>${rel?`<b>${rel.v}<i>${rel.hp?"@ "+rel.hp+" hp":"rel"}</i></b>${sub(rel)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
-    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm">${esc(e.n)}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+pr+`</div>`;}
+    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm">${esc(e.n)}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+pr+rnRecHtml()+`</div>`;}
 
 /* ===================== SHOP: career ===================== */
 function catOpen(cat){return C().rep>=cat.rep&&(!cat.needs||has(cat.needs));}
@@ -14790,7 +15473,7 @@ document.addEventListener("wheel",e=>{const r=e.target;if(!wheelArm||r!==wheelAr
 /* keyboard, alongside touch and mouse: Space is the hold button on the strip and the sled */
 function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySelector(".kbd")){closeSheet();return;}
   const K=(k,t)=>`<kbd>${k}</kbd><span>${t}</span>`;$("sheetTitle").textContent="Keyboard & mouse";
-  $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}
+  $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}
     <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test (Test tab)")}${K("V","view options")}
     <h3>Panel</h3>${K("1 – 5","Build · Test · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("?","this list")}
     <h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}</div>`;
