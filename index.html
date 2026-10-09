@@ -437,7 +437,7 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
       <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
         <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
         <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button></div>
-        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button></div>
+        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button></div>
         <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
         <div id="presets"></div></div></div>
       <div id="buildForm"></div>
@@ -3677,6 +3677,148 @@ const ENGINE_SIM = (function () {
         intake: "plenum_short", asp: "compound", turboSize: "f98", turbineMat: "inconel", ic: "ice_tank", boost: 2.3,
         nitrous: "none", fuel: "methanol", timing: 0, lambda: 0.8, oilGrade: "w10_40", oilSystem: "dry",
         oilSquirters: "fitted", cooling: "race", exhaust: "headers_merge", cover: "black"
+      }
+    }),
+    /* ---- diesels: compression ignition, so no plugs and no octane. Truck engines are fuelled lean (λ 1.6–2.1)
+       for a clean stack; the pullers run λ 1.2 and live with the smoke. ---- */
+    P({
+      id: "p4236", name: "Three-nine farm four", basedOn: "Perkins 4.236", starter: true, cls: "diesel",
+      blurb: "98.4×127 iron pushrod four with a rotary pump and no turbo. Seventy-odd horsepower at a lazy 2,500 rpm, torque from just off idle, and it runs on whatever the farm tank holds.",
+      soundProfile: null, realHp: 72, realRpm: 2500, realNm: 260,
+      cfg: {
+        layout: "I4", bore: 98.4, stroke: 127, rodRatio: 1.6, cr: 20, blockMat: "grey_iron",
+        deck: "open", headMat: "iron", head: "pushrod2v", valveMat: "steel", springs: "single", cam: 5,
+        lift: 40, redline: 2500, piston: "hyper", pistonClearance: "standard", rings: "moly", rod: "pm_forged",
+        rodBolts: "oem", crank: "cast_nodular", damper: "rubber", bearings: "bimetal", gasket: "composite", studs: "bolts_tty",
+        intake: "single_tb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6,
+        nitrous: "none", fuel: "diesel", dInj: "rotary_ve", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 1.6,
+        oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none", cooling: "std", exhaust: "cast_log", cover: "blue"
+      }
+    }),
+    P({
+      id: "c59_12v", name: "Five-nine twelve-valve", basedOn: "Cummins 6BT 5.9 12v", cls: "diesel",
+      blurb: "102×120 iron six with two valves a cylinder and a Bosch P7100 the size of a toolbox on the side. Gear-driven everything, and the bottom end will take three times the fuel it left the factory with.",
+      soundProfile: null, realHp: 215, realRpm: 2500, realNm: 597,
+      cfg: {
+        layout: "I6", bore: 102, stroke: 120, rodRatio: 1.6, cr: 17.5, blockMat: "grey_iron",
+        deck: "open", headMat: "iron", head: "pushrod2v", valveMat: "steel", springs: "single", cam: 5,
+        lift: 45, redline: 2800, piston: "cast_alu", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls", studs: "bolts_tty",
+        intake: "single_tb", asp: "turbo", turboSize: "large", turbineMat: "cast_iron", ic: "air_air", boost: 1.35,
+        nitrous: "none", fuel: "diesel", dInj: "inline_mech", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 2.1,
+        oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "std", exhaust: "cast_log", cover: "red"
+      }
+    }),
+    P({
+      id: "lb7", name: "Six-six common rail V8", basedOn: "Duramax LB7 6.6", cls: "diesel",
+      blurb: "103×99 iron V8 with aluminium four-valve heads and a 1,350-bar common rail. The pilot shot takes the rattle out, and the ECU only adds fuel as fast as the turbo brings air.",
+      soundProfile: null, realHp: 300, realRpm: 3100, realNm: 705,
+      cfg: {
+        layout: "V8", bore: 103, stroke: 99, rodRatio: 1.65, cr: 17.5, blockMat: "grey_iron",
+        deck: "open", headMat: "alu", head: "dohc4v", valveMat: "steel", springs: "single", cam: 10,
+        lift: 45, redline: 3250, piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls", studs: "bolts_tty",
+        intake: "single_tb", asp: "turbo", turboSize: "large", turbineMat: "cast_iron", ic: "air_air", boost: 1.2,
+        nitrous: "none", fuel: "diesel", dInj: "cr_gen1", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 2,
+        oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "fitted", cooling: "std", exhaust: "cast_log", cover: "orange"
+      }
+    }),
+    P({
+      id: "psd73", name: "Seven-three HEUI V8", basedOn: "Ford/Navistar 7.3 Power Stroke", cls: "diesel",
+      blurb: "104.4×106 iron pushrod V8 whose injectors are fired by engine oil at 200 bar. Slow-revving, loud at idle and famously hard to kill.",
+      soundProfile: null, realHp: 275, realRpm: 2800, realNm: 705,
+      cfg: {
+        layout: "V8", bore: 104.4, stroke: 106, rodRatio: 1.65, cr: 17.5, blockMat: "grey_iron",
+        deck: "open", headMat: "iron", head: "pushrod2v", valveMat: "steel", springs: "single", cam: 5,
+        lift: 45, redline: 3300, piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls", studs: "bolts_tty",
+        intake: "single_tb", asp: "turbo", turboSize: "large", turbineMat: "cast_iron", ic: "air_air", boost: 1.1,
+        nitrous: "none", fuel: "diesel", dInj: "heui", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 2,
+        oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "fitted", cooling: "std", exhaust: "cast_log", cover: "blue"
+      }
+    }),
+    P({
+      id: "alh", name: "One-nine TDI", basedOn: "VW 1.9 TDI ALH", cls: "diesel",
+      blurb: "79.5×95.5 iron four with a direct-injection bowl in the piston, a VE pump and a small turbo. Half the fuel of the petrol car it replaced and enough torque to tow it.",
+      soundProfile: null, realHp: 90, realRpm: 3750, realNm: 210,
+      cfg: {
+        layout: "I4", bore: 79.5, stroke: 95.5, rodRatio: 1.52, cr: 19.5, blockMat: "grey_iron",
+        deck: "open", headMat: "alu", head: "sohc2v", valveMat: "steel", springs: "single", cam: 15,
+        lift: 45, redline: 4500, piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "pm_forged",
+        rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "bimetal", gasket: "mls", studs: "bolts_tty",
+        intake: "single_tb", asp: "turbo", turboSize: "small", turbineMat: "cast_iron", ic: "air_air", boost: 1,
+        nitrous: "none", fuel: "diesel", dInj: "rotary_ve", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 1.45,
+        oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "fitted", cooling: "std", exhaust: "cast_log", cover: "black"
+      }
+    }),
+    P({
+      id: "om606", name: "Three-litre inline-six diesel", basedOn: "Mercedes-Benz OM606 3.0", cls: "diesel",
+      blurb: "87×84 iron six, four valves a cylinder, a prechamber and an inline pump. Revs like a petrol engine for a diesel and runs a million kilometres in a taxi rank.",
+      soundProfile: null, realHp: 134, realRpm: 5000, realNm: 210,
+      cfg: {
+        layout: "I6", bore: 87, stroke: 84, rodRatio: 1.7, cr: 22, blockMat: "grey_iron",
+        deck: "open", headMat: "alu", head: "dohc4v", valveMat: "steel", springs: "single", cam: 60,
+        lift: 55, redline: 5200, piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "pm_forged",
+        rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "bimetal", gasket: "mls", studs: "bolts_tty",
+        intake: "single_tb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6,
+        nitrous: "none", fuel: "diesel", dInj: "inline_mech", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 1.45,
+        oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "fitted", cooling: "std", exhaust: "cast_log", cover: "silver"
+      }
+    }),
+    P({
+      id: "s60", name: "Twelve-seven big-rig six", basedOn: "Detroit Diesel Series 60 12.7", cls: "diesel",
+      blurb: "A 12.7 L iron six with an overhead cam working electronic unit injectors. Built to pull eighty thousand pounds for a million miles at eighteen hundred rpm.",
+      soundProfile: null, realHp: 470, realRpm: 1800, realNm: 2200,
+      cfg: {
+        layout: "I6", bore: 125, stroke: 172, rodRatio: 1.7, cr: 16.5, blockMat: "cgi",
+        deck: "open", headMat: "iron", head: "sohc2v", valveMat: "steel", springs: "single", cam: 5,
+        lift: 40, redline: 1800, piston: "forged_2618", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "copper_oring", studs: "l19",
+        intake: "single_tb", asp: "twin_turbo", turboSize: "medium", turbineMat: "cast_iron", ic: "air_air", boost: 2.1,
+        nitrous: "none", fuel: "diesel", dInj: "heui", dNoz: "n30", injectors: "i240", fuelPump: "p340", timing: 0, lambda: 1.6,
+        oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "uprated", exhaust: "cast_log", cover: "gold"
+      }
+    }),
+    P({
+      id: "1kd", name: "Twin-cam three-litre common rail", basedOn: "Toyota 1KD-FTV 3.0 D-4D", cls: "diesel",
+      blurb: "96×103.6 iron four with a twin-cam sixteen-valve head, a variable-vane turbo and a piezo rail. The engine under every Hilux and Land Cruiser from Perth to the Sahel.",
+      soundProfile: null, realHp: 170, realRpm: 3400, realNm: 410,
+      cfg: {
+        layout: "I4", bore: 96, stroke: 103.6, rodRatio: 1.6, cr: 17.9, blockMat: "grey_iron",
+        deck: "open", headMat: "alu", head: "dohc4v", valveMat: "steel", springs: "single", cam: 10,
+        lift: 45, redline: 4000, piston: "cast_alu", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "trimetal", gasket: "mls", studs: "arp_studs",
+        intake: "single_tb", asp: "turbo", turboSize: "medium", turbineMat: "cast_iron", ic: "air_air", boost: 1.5,
+        nitrous: "none", fuel: "diesel", dInj: "cr_piezo", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 1.8,
+        oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "fitted", cooling: "std", exhaust: "cast_log", cover: "black"
+      }
+    }),
+    P({
+      id: "smoker26", name: "Smoker 2.6 Cummins", basedOn: "2.6 smoker-class 5.9 Cummins", cls: "pulling",
+      blurb: "A 5.9 on a single turbo with a 2.6-inch inducer, a cranked P-pump and 150 hp sticks. Black smoke from the line to the stop and about four times the factory fuel.",
+      soundProfile: null, realHp: 850, realRpm: 4000, realNm: 1700,
+      cfg: {
+        layout: "I6", bore: 102, stroke: 120, rodRatio: 1.6, cr: 16, blockMat: "cgi",
+        deck: "closed", headMat: "iron", head: "pushrod2v", valveMat: "inconel", springs: "dual", cam: 20,
+        lift: 70, redline: 3500, piston: "billet_tbc", pistonClearance: "loose", rings: "steel_drag", rod: "forged_300m",
+        rodBolts: "arp2000", crank: "billet_300m", damper: "viscous", bearings: "coated", gasket: "copper_oring", studs: "studs_916",
+        intake: "single_tb", asp: "turbo", turboSize: "large", turbineMat: "inconel", ic: "air_air", boost: 1.9,
+        nitrous: "none", fuel: "diesel", dInj: "inline_mech", dNoz: "n150", injectors: "i240", fuelPump: "twin450", timing: -2, lambda: 1.2,
+        oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "race", exhaust: "cast_log", cover: "red"
+      }
+    }),
+    P({
+      id: "ss_triple", name: "Super Stock triple-turbo", basedOn: "Super Stock diesel pulling truck", cls: "pulling",
+      blurb: "A billet-everything 5.9 under three turbos at a hundred psi, 14:1 and pulling sticks. Fifteen hundred horsepower for three hundred feet, then a full teardown.",
+      soundProfile: null, realHp: 1500, realRpm: 4800, realNm: 2500,
+      cfg: {
+        layout: "I6", bore: 102, stroke: 120, rodRatio: 1.6, cr: 14, blockMat: "cgi",
+        deck: "closed", headMat: "iron", head: "pushrod2v", valveMat: "inconel", springs: "dual", cam: 60,
+        lift: 85, redline: 4800, piston: "billet_tbc", pistonClearance: "loose", rings: "steel_drag", rod: "forged_300m",
+        rodBolts: "arp2000", crank: "billet_300m", damper: "viscous", bearings: "coated", gasket: "copper_oring", studs: "studs_916",
+        intake: "single_tb", asp: "compound", turboSize: "huge", turbineMat: "inconel", ic: "air_air", boost: 7,
+        nitrous: "none", fuel: "diesel", dInj: "inline_mech", dNoz: "n250", injectors: "i240", fuelPump: "twin450", timing: -5, lambda: 1.22,
+        oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "race", exhaust: "cast_log", cover: "black"
       }
     })
   ];
@@ -11615,6 +11757,7 @@ const CATS=[
   {id:"prod",name:"Production run",sub:"volume · economy · warranty",segs:["hatch","sedan","taxi","flagship"],rep:0},
   {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
   {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","sport","gt","super","hyper"],rep:40},
+  {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
   {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","endur","attack"],rep:120},
   {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod"],rep:700,needs:"race"}
 ];
@@ -11624,20 +11767,20 @@ const SEGMENTS=[
   /* tier 0 — Backyard: everything here is reachable with the five starter engines and base-shop parts */
   {id:"hatch",name:"City hatchback",tier:0,units:[12,30],price:2100,req:{hp:[50,75],econ:[6.2,5.6],fuel:"r87",rel:85,kg:140}},
   {id:"sedan",name:"Family sedan",tier:0,units:[8,22],price:2900,req:{hp:[90,125],econ:[6.8,6.2],fuel:"r87",rel:82,smooth:45,kg:175}},
-  {id:"van",name:"Delivery van",tier:0,units:[6,16],price:3100,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0]}},
-  {id:"pump",name:"Irrigation pump set",tier:0,units:[6,14],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
+  {id:"van",name:"Delivery van",tier:0,dsl:true,units:[6,16],price:3100,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0]}},
+  {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,units:[6,14],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
   /* tier 1 — Local shop */
-  {id:"truck",name:"Half-ton pickup",tier:1,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86}},
+  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86}},
   {id:"hot",name:"Hot hatch",tier:1,units:[5,14],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80}},
-  {id:"taxi",name:"Taxi fleet",tier:1,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87"}},
+  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87"}},
   {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78}},
   /* tier 2 — Known builder */
   {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[2,6],price:13500,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
   {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5]}},
   {id:"rally",name:"Rally car · 1.6 T",tier:2,units:[2,6],price:16000,req:{hp:[280,340],tq:[320,400],disp:1.6,rel:70,fuel:"race100"}},
   {id:"drift",name:"Drift car",tier:2,units:[2,6],price:15000,req:{tq:[500,700],smooth:55,rel:65,fuel:"e85"}},
-  {id:"genset",name:"Standby generator set",tier:2,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
-  {id:"tractor",name:"Row-crop tractor",tier:3,units:[3,8],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
+  {id:"genset",name:"Standby generator set",tier:2,dsl:true,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
+  {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,units:[3,8],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
   /* tier 3 — Regional supplier */
   {id:"super",name:"Supercar",tier:3,units:[2,5],price:26000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75}},
   {id:"endur",name:"Endurance prototype",tier:3,units:[1,4],price:42000,req:{hp:[500,700],rel:92,fuel:"race100",kg:210,life:300}},
@@ -11651,7 +11794,15 @@ const SEGMENTS=[
   {id:"grudge",name:"Grudge car · no time",tier:5,units:[1,2],price:70000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
   {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:105000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
   {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:165000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
-  {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:88000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}}
+  {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:88000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
+  /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't */
+  {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[6,16],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel"}},
+  {id:"mdtruck",name:"Medium-duty delivery truck",tier:1,units:[5,12],price:6200,req:{tq:[450,650],tqrpm:2400,rel:88,life:3000,econ:[9.5,8.5],smoke:30,fuel:"diesel"}},
+  {id:"workboat",name:"Marine workboat",tier:2,units:[3,8],price:9400,req:{tq:[600,900],tqrpm:2600,life:4000,rel:92,fuel:"diesel"}},
+  {id:"dtractor",name:"Four-wheel-drive farm tractor",tier:2,units:[3,8],price:11800,req:{tq:[800,1200],tqrpm:1900,life:3000,rel:88,fuel:"diesel"}},
+  {id:"minegen",name:"Mine standby genset · prime power",tier:3,units:[2,6],price:21000,req:{tq:[1200,1800],tqrpm:1900,life:4500,rel:92,fuel:"diesel"}},
+  {id:"class8",name:"Class-8 highway truck",tier:3,units:[4,10],price:24000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel"}},
+  {id:"puller",name:"Pulling truck · sled-ready",tier:3,units:[1,3],price:38000,req:{hp:[700,1200],passes:150,rel:55,fuel:"diesel"}}
 ];
 /* site briefs: some clients say where the engine will live and re-run your certified engine in that air before they pay.
    [name, ambient °C, altitude m, premium]. Cold air packs the cylinder (more load, boost overshoots), heat eats knock margin,
@@ -11666,7 +11817,13 @@ const SITES={
   genset:[["Andean mine genset",8,3200,.20],["Arctic camp genset",-25,100,.16],["Desert telecom genset",45,300,.14]],
   tractor:[["Harvest tractor",42,300,.12],["Ethiopian highland tractor",24,2400,.18],["Andean potato tractor",14,3400,.20]],
   rally:[["Swedish snow stage",-20,200,.16],["Greek gravel stage",38,600,.14],["Kenyan safari stage",32,1900,.16],["Mexican mountain stage",22,2700,.18]],
-  endur:[["Desert 24-hour",40,300,.16],["Winter 24-hour",-10,400,.14],["Mexico City 6-hour",24,2250,.18]]
+  endur:[["Desert 24-hour",40,300,.16],["Winter 24-hour",-10,400,.14],["Mexico City 6-hour",24,2250,.18]],
+  hdpickup:[["Yukon ice-road pickup",-25,600,.16],["Atacama mine pickup",30,3000,.20],["Texas oilfield pickup",42,800,.12]],
+  mdtruck:[["Winnipeg winter route",-25,250,.14],["Phoenix summer route",44,350,.12],["La Paz city route",12,3500,.20]],
+  workboat:[["Gulf of Mexico crew boat",35,0,.12],["Bering Sea crabber",-15,0,.16]],
+  dtractor:[["Saskatchewan spring seeding",-10,550,.12],["Altiplano quinoa farm",10,3500,.20]],
+  minegen:[["Andean copper mine",8,3500,.20],["Arctic diamond mine",-25,450,.18],["Pilbara iron mine",45,400,.14]],
+  class8:[["Alaska Highway hauler",-25,700,.16],["Death Valley hauler",45,0,.14],["Rockies grade hauler",5,2400,.18]]
 };
 
 /* ===================== state ===================== */
@@ -11757,10 +11914,14 @@ function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===
 function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
 function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
-function cfgHash(c){return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))).sort().map(k=>c[k]));}
+function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))).sort().map(k=>c[k]));}
+// fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
+function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
+function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.name.split(" ")[0];}
+const INJ_SHORT={rotary_ve:"VE",inline_mech:"P-pump",heui:"HEUI",cr_gen1:"CR",cr_piezo:"CR"};
 function fuelBill(){if(!career()||dev())return 0;const fu=SIM.OPT.fuel[S.cfg.fuel]||SIM.OPT.fuel.r91;const hp=quick&&isFinite(quick.peakHp)?quick.peakHp:300;
   // WOT burn: ~0.32 L/hp/h on gasoline, more on low-energy fuels (per-litre energy vs pump gas)
-  const lph=hp*0.32*(44e6/fu.lhv);const t=S.env.testType;
+  const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv));const t=S.env.testType;   // diesel ~0.23 L/hp/h at full load
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="overrev"?0.008:0.02;
   return Math.round(lph*hours*fu.costL);}
@@ -11772,7 +11933,7 @@ function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");c
 const ZONE_OF={rod_tension:1,rod_buckling:1,rod_bolts:1,crank_fatigue:1,bearing_load:1,oil_film:1,
   detonation:2,preignition_egt:2,piston_speed:2,crown_temp:2,crown_pressure:2,hot_clearance:2,slap_blowby:2,ring_gap:2,bore_distortion:2,wall_thickness:2,
   head_lift:3,gasket_shear:3,valve_float:3,valve_piston:3,cooling:3,valve_temp:4,turbine_temp:5,compressor_map:5,oil_starvation:6,torsional:7};
-ZONE_OF.fuel_delivery=2;
+ZONE_OF.fuel_delivery=2;ZONE_OF.cold_start=2;
 const ZONE_NAME={1:"Crankcase & rotating assembly",2:"Cylinders & pistons",3:"Head, gasket & valvetrain",4:"Exhaust",5:"Turbocharger",6:"Sump & oiling",7:"Front drive & damper"};
 function heatZones(){if(!quick)return null;const worst={};for(const t of quick.tests){const z=ZONE_OF[t.id];if(!z)continue;if(t.id==="turbine_temp"||t.id==="compressor_map"){if(S.cfg.asp==="na")continue;}
     if(!worst[z]||t.util>worst[z])worst[z]=t.util;}
@@ -11821,7 +11982,7 @@ const ASP_SYM={na:"NA",turbo:"T",twin_turbo:"TT",roots:"SC",centrifugal:"SC",scr
 function engineName(){return S.name||autoName();}
 function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${S.cfg.layout} ${(quick?quick.Vd/1000:0).toFixed(1)}`;}
 function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==="na"?"NA":(ASP_SYM[cfg.asp]||cfg.asp.toUpperCase())+(cfg.asp!=="na"?" "+cfg.boost.toFixed(1)+"bar":"");
-  return `<b>${cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${OPT.fuel[cfg.fuel].name.split(" ")[0]}`;}
+  return `<b>${cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
   if(res.fails&&res.fails.length)return{cls:"bad",txt:"✗ BREAKS"};
   if(career()){const inField=C().fleet.filter(f=>f.hash===h&&C().week-f.week<=10).reduce((a,f)=>a+f.units,0);if(inField)return{cls:"fld",txt:`◆ ${inField} IN FIELD`};
@@ -11853,7 +12014,7 @@ function hud(){
 
 /* ===================== BUILD ===================== */
 const CLS_DEFAULT={g10:"economy","4ac":"economy","22re":"truck",ea82:"economy",l36:"truck",k20a:"performance","2jzgte":"performance",rb26:"performance",ls3:"performance",coyote:"performance",ej257:"performance",f6_38:"performance",s54:"performance",v8fp45:"performance",v12_65:"performance",v10_52:"performance",i3_1000:"economy",ea888:"economy",m133:"performance",hemi64:"performance",i5_25t:"performance",outlaw_radial:"outlaw",outlaw_promod:"outlaw"};
-const CLS_LABEL={economy:"Economy",truck:"Truck & industrial",classic:"Classic",performance:"Performance",motorsport:"Motorsport",outlaw:"Outlaw"};
+const CLS_LABEL={economy:"Economy",truck:"Truck & industrial",classic:"Classic",performance:"Performance",motorsport:"Motorsport",outlaw:"Outlaw",diesel:"Diesel",pulling:"Pulling"};
 const FAM_OF=l=>l[0]==="I"?"inline":l[0]==="F"?"flat":"vee";
 function presetCls(p){return p.cls||CLS_DEFAULT[p.id]||"performance";}
 function presetDisp(p){const L=SIM.LAYOUTS[p.cfg.layout]||{n:4};return L.n*Math.PI/4*p.cfg.bore*p.cfg.bore*p.cfg.stroke/1e6;}
@@ -11887,7 +12048,7 @@ $("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");i
 /* live deltas: what each option would do to hp / reliability / unit cost, from a real simulate() call (cached) */
 const deltaCache=new Map();
 function probe(k,v){const key=cfgHash(S.cfg)+"|"+envHash()+"|"+k+"="+v;let r=deltaCache.get(key);if(r)return r;
-  const cfg=Object.assign({},S.cfg,{[k]:v});const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
+  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel));const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
   if(deltaCache.size>1500)deltaCache.clear();deltaCache.set(key,r);return r;}
 const money=n=>{const a=Math.abs(n);return (n<0?"−$":"+$")+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+"k":String(Math.round(a)));};
 function fmtDelta(r,base){if(!base)return"";const dh=Math.round(r.hp-base.peakHp),dr=Math.round(r.rel-base.rel),dc=Math.round(r.cost-base.cost);
@@ -11899,8 +12060,9 @@ function fmtDelta(r,base){if(!base)return"";const dh=Math.round(r.hp-base.peakHp
 function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]").forEach(b=>{const d=b.querySelector(".d");if(!d)return;
   if(b.classList.contains("on")){d.innerHTML="<i style=\"color:var(--orange2)\">fitted</i>";return;}if(b.classList.contains("lock")){d.innerHTML="";return;}
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
+const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key];let h=`<div class="lbl"><span>${f.label}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${f.label}" aria-label="About ${f.label}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).length}">`;
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).length}">`;
   for(const k in opts){const o=opts[k];const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
   return h+"</div>";
@@ -11914,8 +12076,15 @@ function clampCfgLimits(){let moved=null;
     if(v>hi+1e-9){S.cfg[f.key]=hi;moved=moved||f;}else if(v<lo-1e-9){S.cfg[f.key]=lo;moved=moved||f;}}
   return moved;}
 function sliderRow(f){const v=S.cfg[f.key],lo=fMin(f),hi=fMax(f);
-  const unlocked=f.maxIf&&hi>f.max;
-  return `<div class="lbl"><span>${f.label}${unlocked?' <em class="unl">billet</em>':""}</span><b id="v-${f.key}" class="tap" data-num="${f.key}" title="Tap to type">${f.fmt?f.fmt(v):v}${f.unit?" "+f.unit:""}</b></div><div class="srow"><button class="nud" data-nud="-1" data-nk="${f.key}" aria-label="Decrease">−</button><input type="range" id="r-${f.key}" data-k="${f.key}" min="${lo}" max="${hi}" step="${f.step}" value="${v}"><button class="nud" data-nud="1" data-nk="${f.key}" aria-label="Increase">+</button></div>`;}
+  const unlocked=f.maxIf&&hi>f.max&&fMax(f,Object.assign({},S.cfg,{fuel:"r91"}))>f.max;   // "billet" only when the outlaw parts raised it, not the diesel limits
+  return `<div class="lbl"><span>${fLabel(f)}${unlocked?' <em class="unl">billet</em>':""}</span><b id="v-${f.key}" class="tap" data-num="${f.key}" title="Tap to type">${f.fmt?f.fmt(v):v}${f.unit?" "+f.unit:""}</b></div><div class="srow"><button class="nud" data-nud="-1" data-nk="${f.key}" aria-label="Decrease">−</button><input type="range" id="r-${f.key}" data-k="${f.key}" min="${lo}" max="${hi}" step="${f.step}" value="${v}"><button class="nud" data-nud="1" data-nk="${f.key}" aria-label="Increase">+</button></div>`;}
+/* petrol <-> diesel: a petrol map on a diesel (or the reverse) is nonsense, so switching family drops in a tune that runs.
+   Returns the toast, or null when the family didn't change. clampCfgLimits() then pulls the rest inside the new limits. */
+function fuelFamilyDefaults(c,wasD){const d=isCI(c.fuel);if(d===wasD)return null;const boosted=c.asp!=="na";
+  if(d){c.cr=17.5;c.lambda=1.8;c.timing=0;c.redline=Math.min(c.redline,4200);c.cam=Math.min(c.cam,30);if(c.intake==="carb")c.intake="single_tb";
+    return `Diesel: compression 17.5:1, λ 1.8, redline ${c.redline.toLocaleString()} to start`;}
+  c.cr=boosted?9.0:10.5;c.lambda=boosted?0.82:0.9;c.timing=0;if(c.redline<=4200)c.redline=6000;   // a diesel governor speed is no petrol redline
+  return `Petrol: compression ${c.cr.toFixed(1)}:1, λ ${c.lambda.toFixed(2)}, redline ${c.redline.toLocaleString()} to start`;}
 function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"><span>${f.label}</span></div><div class="swatches">`+Object.keys(opts).map(k=>`<button data-k="${f.key}" data-v="${k}" class="${S.cfg[f.key]===k?"on":""}" style="background:${opts[k].hex}" aria-label="${opts[k].name}"></button>`).join("")+"</div>";}
 const openSec={"Bore & stroke":true};
 function secSummary(sec){return sec.fields.filter(f=>!f.showIf||f.showIf(S.cfg)).map(f=>{const v=S.cfg[f.key];if(f.type==="slider")return (f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");const o=OPT[f.optTable||f.key][v];return o?o.name:v;}).join(" · ");}
@@ -11938,9 +12107,10 @@ $("buildForm").addEventListener("click",e=>{
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
-  S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
+  const wasD=isCI(S.cfg.fuel);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
+  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD):null;
   const moved=clampCfgLimits();
-  if(moved)toast(`${moved.label} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
+  if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
   afterCfgChange(true);});
 let dragBase=null,baseTimer=null,baseField=null;
 const HOLD_MS=2000;                       // how long the reading stays up after you stop
@@ -11991,7 +12161,7 @@ $("buildForm").addEventListener("change",e=>{if(e.target.type==="range")commitSl
 let lastNudge=0;
 $("buildForm").addEventListener("pointerdown",e=>{if(e.target.closest(".nud"))lastNudge=performance.now();},true);
 $("buildForm").addEventListener("click",e=>{const b=e.target.closest("b[data-num]");if(!b||b.querySelector("input")||performance.now()-lastNudge<600)return;const k=b.dataset.num,f=sliderField(k);if(!f)return;
-  const cur=S.cfg[k];const inp=document.createElement("input");inp.type="number";inp.className="num";inp.inputMode="decimal";const pm=S.psi&&f.unit==="bar"?BAR_PSI:1;inp.min=+(f.min*pm).toFixed(2);inp.max=+(f.max*pm).toFixed(2);inp.step=pm===1?f.step:"any";inp.value=pm===1?cur:+(cur*pm).toFixed(1);inp.setAttribute("enterkeyhint","done");
+  const cur=S.cfg[k];const inp=document.createElement("input");inp.type="number";inp.className="num";inp.inputMode="decimal";const pm=S.psi&&f.unit==="bar"?BAR_PSI:1;inp.min=+(fMin(f)*pm).toFixed(2);inp.max=+(fMax(f)*pm).toFixed(2);inp.step=pm===1?f.step:"any";inp.value=pm===1?cur:+(cur*pm).toFixed(1);inp.setAttribute("enterkeyhint","done");
   const restore=()=>{const v=S.cfg[k];b.innerHTML=(f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");};
   const init=inp.value;let done=false;const finish=(ok)=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."))/pm;if(isFinite(v)){const nv=snapVal(f,v);if(nv!==S.cfg[k]){holdBase(k);applySlider(k,nv,$("r-"+k));commitSlider();}}}restore();};
   inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();finish(true);inp.blur();}else if(ev.key==="Escape"){finish(false);inp.blur();}});
@@ -12012,7 +12182,7 @@ const SPECS={
     ["Growth",o=>(+(o.alpha*1e6).toFixed(1))+" µm/m·K"]]},
   deck:{specs:[["Bore stiffness",o=>fac(o.stiff)],["Coolant flow",o=>fac(o.cool)]]},
   headMat:{specs:[
-    ["Heat flow",o=>o.k+" W/mK"],["Knock margin",o=>(o.octane?"+"+(o.octane%1?x1(o.octane):o.octane)+" octane":"baseline")],
+    ["Heat flow",o=>o.k+" W/mK"],["Knock margin",o=>isCI(S.cfg.fuel)?null:(o.octane?"+"+(o.octane%1?x1(o.octane):o.octane)+" octane":"baseline")],
     ["Weight",o=>fac(o.massFac)],["Growth",o=>(+(o.alpha*1e6).toFixed(1))+" µm/m·K"]]},
   head:{specs:[
     ["Valves",o=>(o.nIV*2)+" per cylinder"],["Airflow",o=>fac(o.veBase)],
@@ -12061,9 +12231,21 @@ const SPECS={
     ["Heat soak",o=>o.soak>=1?"soaks quickly":o.soak>0?"soaks slowly":"none"],
     ["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
   fuel:{price:o=>o.costL+"/L",specs:[
-    ["Octane",o=>o.ron+" RON / "+o.mon+" MON"],["Energy",o=>(o.lhv/1e6).toFixed(1)+" MJ/kg"],
-    ["Air per fuel",o=>x1(o.afr)+":1"],["Charge cooling",o=>Math.round(o.hov/1000)+" kJ/kg"],
-    ["Corrosion",o=>o.corrosive>=1?"attacks alu and lead":o.corrosive>0?"mildly corrosive":null]]},
+    ["Cetane",o=>o.ci?"CN "+o.cetane:null],
+    ["Octane",o=>o.ci?null:o.ron+" RON / "+o.mon+" MON"],["Energy",o=>(o.lhv/1e6).toFixed(1)+" MJ/kg"],
+    ["Air per fuel",o=>x1(o.afr)+":1"],["Charge cooling",o=>o.ci?null:Math.round(o.hov/1000)+" kJ/kg"],
+    ["Cloud point",o=>o.ci&&o.cloudC!=null?degC(o.cloudC):null],
+    ["Corrosion",o=>o.ci?(o.corrosive>0?"eats old rubber seals":null):o.corrosive>=1?"attacks alu and lead":o.corrosive>0?"mildly corrosive":null]]},
+  dInj:{line:o=>fuelLine("dInj",o),specs:[
+    ["Injection pressure",o=>o.bar.toLocaleString("en-CA")+" bar"],
+    ["Fuel per stroke",o=>quick&&quick.n?"~"+Math.round(o.qL*quick.Vd/1000/quick.n*((OPT.dNoz[S.cfg.dNoz]||{mult:1}).mult))+" mm³ a cylinder":o.qL+" mm³ per litre"],
+    ["Pump keeps up to",o=>o.rpmMax.toLocaleString("en-CA")+" rpm"],
+    ["Smoke control",o=>o.smokeLim>=0.9?"ECU holds λ":o.smokeLim>=0.5?"boost aneroid":"barely — smokes on spool"],
+    ["Pilot injection",o=>o.pilot>=0.8?"yes — quiet":o.pilot>0?"partial":"none — it clatters"],
+    ["Weight",o=>o.massKg?o.massKg+" kg":null]]},
+  dNoz:{price:o=>o.cost?o.cost+" each":0,specs:[
+    ["Flow vs stock",o=>o.mult===1?"standard":"×"+o.mult.toFixed(1)],
+    ["Fuel per stroke",o=>{const di=OPT.dInj[S.cfg.dInj];return di&&quick&&quick.n?"~"+Math.round(di.qL*quick.Vd/1000/quick.n*o.mult)+" mm³ on the "+(INJ_SHORT[S.cfg.dInj]||"pump"):null;}]]},
   injectors:{price:o=>o.cost?o.cost+" each":0,line:o=>fuelLine("injectors",o),specs:[
     ["Flow",o=>(o.perCyl>1?o.perCyl+" × ":"")+o.cc+" cc/min at 3 bar"],
     ["Petrol",o=>"~"+fuelHp(o.cc*(o.perCyl||1)*0.72*0.06,1).toLocaleString("en-CA")+" hp a cylinder"],["E85",o=>"~"+fuelHp(o.cc*(o.perCyl||1)*0.72*0.06,1.43).toLocaleString("en-CA")+" hp a cylinder"],
@@ -12071,7 +12253,8 @@ const SPECS={
   fuelPump:{line:o=>fuelLine("fuelPump",o),specs:[
     ["Flow",o=>o.lph+" L/h "+(o.rpmRef?"at "+o.rpmRef+" rpm":"at 3 bar")],
     ["Under 1.5 bar boost",o=>o.rpmRef?"no loss":"~"+Math.round(o.lph*(1-o.dropBar*1.5))+" L/h"],
-    ["Petrol",o=>o.rpmRef?null:"~"+fuelHp(o.lph*(1-o.dropBar)*0.76,1).toLocaleString("en-CA")+" hp at 1 bar"],["Methanol",o=>"~"+fuelHp(o.lph*(1-o.dropBar)*0.76,2.14).toLocaleString("en-CA")+" hp"+(o.rpmRef?" at "+o.rpmRef+" rpm":" at 1 bar")],
+    ["Diesel",o=>isCI(S.cfg.fuel)?"~"+fuelHp(o.lph*(1-o.dropBar)*0.76,K_DSL).toLocaleString("en-CA")+" hp of lift":null],
+    ["Petrol",o=>o.rpmRef||isCI(S.cfg.fuel)?null:"~"+fuelHp(o.lph*(1-o.dropBar)*0.76,1).toLocaleString("en-CA")+" hp at 1 bar"],["Methanol",o=>isCI(S.cfg.fuel)?null:"~"+fuelHp(o.lph*(1-o.dropBar)*0.76,2.14).toLocaleString("en-CA")+" hp"+(o.rpmRef?" at "+o.rpmRef+" rpm":" at 1 bar")],
     ["Weight",o=>o.massKg?"+"+o.massKg+" kg on the engine":null]]},
   oilGrade:{specs:[
     ["Viscosity",o=>x1(o.kv100)+" cSt at 100 °C"],["Film strength",o=>x1(o.hths)+" HTHS"],
@@ -12093,16 +12276,18 @@ const SPECS={
 };
 function chipsFor(tbl,o){const d=SPECS[tbl];if(!d)return [];
   return d.specs.map(([l,f])=>{let v=null;try{v=f(o);}catch(e){}return v==null?null:[l,v];}).filter(Boolean);}
-function priceOf(tbl,o){if((tbl==="injectors"||tbl==="fuelPump")&&!o.cost)return"stock";const d=SPECS[tbl];if(d&&d.price){const v=d.price(o);return typeof v==="number"?fmt$(v):"$"+v;}
+function priceOf(tbl,o){if((tbl==="injectors"||tbl==="fuelPump"||tbl==="dNoz")&&!o.cost)return"stock";const d=SPECS[tbl];if(d&&d.price){const v=d.price(o);return typeof v==="number"?fmt$(v):"$"+v;}
   return (o.cost||o.cost===0)?fmt$(o.cost):"";}
 function specLine(tbl,o){const d=SPECS[tbl];if(d&&d.line){const v=d.line(o);if(v)return v;}
   const c=chipsFor(tbl,o);return c.length?c[0][0]+" "+c[0][1]:"details";}
 /* fuel parts: hp a flow of L/h supports with margin (petrol ~0.55 lb/hp/h, k = alcohol's extra volume), and the live duty / pump load in the field header */
 function fuelHp(lph,k){return Math.round(lph*0.745*2.2046/0.55/k/5)*5;}
-function fuelLine(tbl,o){const f=quick&&quick.fuel;if(!f||S.cfg[tbl]!==o._id.split(":")[1])return tbl==="injectors"?o.cc+" cc/min":o.lph+" L/h";
+const K_DSL=0.62;   // diesel: denser (0.835) and a far better BSFC (~0.38 lb/hp/h at full load), so each litre is worth ~1.6× petrol
+function fuelLine(tbl,o){const f=quick&&quick.fuel;if(tbl==="dInj")return f&&S.cfg.dInj===o._id.split(":")[1]?Math.round(f.injUtil*100)+"% of its fuel":o.bar.toLocaleString("en-CA")+" bar";
+  if(!f||S.cfg[tbl]!==o._id.split(":")[1])return tbl==="injectors"?o.cc+" cc/min":o.lph+" L/h";
   return tbl==="injectors"?(f.portInj?Math.round(f.duty*100)+"% duty":"not used"):Math.round(f.load*100)+"% of its flow";}
-function fuelHdr(){const f=quick&&quick.fuel;for(const k of ["injectors","fuelPump"]){const b=document.querySelector(`#buildForm .q[data-ckey="${k}"]`);if(!b)continue;
-  const u=f?(k==="injectors"?f.injUtil:f.pumpUtil):0;b.textContent=specLine(k,OPT[k][S.cfg[k]])+" ›";b.style.color=u>1?"var(--crit)":u>0.8?"var(--warn)":"";}}
+function fuelHdr(){const f=quick&&quick.fuel;for(const k of ["injectors","fuelPump","dInj"]){const b=document.querySelector(`#buildForm .q[data-ckey="${k}"]`);if(!b)continue;
+  const u=f?(k==="fuelPump"?f.pumpUtil:f.injUtil):0;b.textContent=specLine(k,OPT[k][S.cfg[k]])+" ›";b.style.color=u>1?"var(--crit)":u>0.8?"var(--warn)":"";}}
 function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S.cfg[cfgKey]:null;
   $("sheetTitle").textContent=title;
   $("sheetBody").innerHTML=Object.keys(opts).map(k=>{const o=opts[k];const lk=locked(o);
@@ -12407,7 +12592,7 @@ function showResult(res,env){
     <div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
   else if(career()&&env.testOnly)v=`<div class="verdict marg"><div style="flex:1"><div class="big">${env.testType==="endurance"?"SURVIVED":"PASSED"} · TEST ONLY</div><p>Run at ${env.ambientC} °C · ${env.altitudeM} m · coolant ${env.coolantC} °C · oil ${env.oilC} °C. ${env.testType==="endurance"?"Off-standard hours don't count toward the 100 h goal":"Contracts certify in the standard cell"} — 20 °C · 500 m · coolant 90 °C · oil 100 °C. Reset the cell and run it again${env.testType==="endurance"?"":" to certify"}.</p></div></div>`;
   else v=`<div class="verdict ${res.rel>=85?"pass":"marg"}"><div style="flex:1"><div class="big">${res.rel>=85?"CERTIFIED":"CERTIFIED · MARGINAL"}</div>
-    <div class="vstats"><div><b>${res.rel}</b><span>Reliability</span></div><div><b>${res.raceSpec?res.racePasses:res.econ.toFixed(1)}</b><span>${res.raceSpec?"Passes to freshen":"L/100 km"}</span></div><div><b>${Math.round(res.smooth)}</b><span>Smoothness</span></div><div><b>${Math.round(res.kg)}</b><span>kg</span></div><div><b>${fmt$(res.cost)}</b><span>Unit cost</span></div><div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div></div></div></div>`;
+    <div class="vstats"><div><b>${res.rel}</b><span>Reliability</span></div><div><b>${res.raceSpec?res.racePasses:res.econ.toFixed(1)}</b><span>${res.raceSpec?"Passes to freshen":"L/100 km"}</span></div><div><b>${Math.round(res.smooth)}</b><span>Smoothness</span></div><div><b>${Math.round(res.kg)}</b><span>kg</span></div><div><b>${fmt$(res.cost)}</b><span>Unit cost</span></div>${res.diesel?`<div><b>${Math.round(res.smoke||0)}%</b><span>Smoke · ${smokeWord(res,1)}</span></div>`:`<div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div>`}</div></div></div>`;
   $("verdict").innerHTML=v;
   let extra="";
   if(env.testType==="endurance"&&res.endurance){const d=res.endurance.damage||{};const top=Object.entries(d).sort((a,b)=>b[1]-a[1]).slice(0,5);
@@ -12420,6 +12605,7 @@ function showResult(res,env){
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
 }
+function smokeWord(r,short){const s=r.smoke||0,lm=r.fuel&&r.fuel.lamMin,lam=S.cfg.lambda;if(short)return s<8?"clean":s<35?"haze":"black";return s<8?"clean stack":s<35?"light haze":(lm&&lm<lam-0.05?"black under spool":"black at full load");}
 $("stressList").addEventListener("click",e=>{const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
 $("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${SIM.cfgLabel(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
 
@@ -12442,6 +12628,7 @@ const FAIL_VISUAL={rod_tension:"rod",rod_buckling:"rod",rod_bolts:"rod",bearing_
   valve_float:"valve",valve_piston:"valve",valve_temp:"valve",
   oil_starvation:"seize",compressor_map:"turbo",turbine_temp:"turbo"};
 FAIL_VISUAL.fuel_delivery="knock";   // a lean cylinder rattles, then the crown lets go and it smokes
+FAIL_VISUAL.cold_start="seize";      // a diesel that won't light just winds down on the starter
 function failKindOf(res,env){
   let id=null;
   if(env.testType==="overrev"&&res.overrev&&!res.overrev.survived){const e=(res.overrev.events||[]).join(" ");id=/Valve float/.test(e)?"valve_piston":/Rod beam/.test(e)?"rod_tension":/Rod bolts/.test(e)?"rod_bolts":/oil pressure/.test(e)?"bearing_load":null;}
@@ -12499,7 +12686,7 @@ function renderAnalysis(){
   const order={bad:0,warn:1,good:2,info:3};
   $("combos").innerHTML=combosNow.slice().sort((a,b)=>order[a.severity]-order[b.severity]).map(c=>`<div class="combo ${c.severity}"><h3>${c.title}</h3><p>${c.text}</p></div>`).join("")||`<p class="hint">Nothing notable — a conventional combination.</p>`;
   const r=(S.last&&S.last.hash===cfgHash(S.cfg))?S.last.res:quick;const T=r.thermals,L=r.loads,Cl=r.clearances,K=r.knock;
-  const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Knock retard",`${K.retardDeg.toFixed(1)}°`],["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
+  const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],...(r.diesel?[["Smoke (peak)",`${Math.round(r.smoke||0)}% · ${smokeWord(r)}`],["Clatter",`${Math.round((r.clatter||0)*100)}% · ${r.clatter>0.66?"loud":r.clatter>0.4?"audible":"quiet"}`],["Full-load λ (leanest / spool)",r.fuel?`${(+S.cfg.lambda).toFixed(2)} / ${(r.fuel.lamMin||0).toFixed(2)}`:"—"],["Injection used",r.fuel?`${Math.round(r.fuel.injUtil*100)}%`:"—"]]:[["Knock retard",`${K.retardDeg.toFixed(1)}°`]]),["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
@@ -12534,7 +12721,7 @@ function genContract(seg){
   if(R.hp)req.hp=R.hp[0]+Math.round(rng()*(R.hp[1]-R.hp[0])/10)*10;
   if(R.tq)req.tq=R.tq[0]+Math.round(rng()*(R.tq[1]-R.tq[0])/10)*10;
   if(R.econ)req.econ=+(R.econ[0]-rng()*(R.econ[0]-R.econ[1])).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke"])if(R[k]!=null)req[k]=R[k];
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
   const units=seg.units[0]+Math.floor(rng()*(seg.units[1]-seg.units[0]));
   const price=Math.round(seg.price*(0.9+rng()*0.25)*(1+(req.hp?(req.hp-R.hp[0])/(R.hp[1]-R.hp[0])*0.35:0))/10)*10;
@@ -12552,13 +12739,16 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
 function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
-  econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",v=>`${OPT.fuel[v].name.split(" ")[0]} or lower`],rel:["Reliability",v=>`≥ ${v}`],
+  econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
   passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`]};
-function describeReq(q,v){const m=REQ_LABEL[q];return m?`${m[0]} ${m[1](v)}`:q;}
+function describeReq(q,v,x){const m=REQ_LABEL[q];return m?`${m[0]} ${m[1](v,x)}`:q;}
 function reqName(q){return (REQ_LABEL[q]||[q])[0];}
-function reqTarget(q,v){const m=REQ_LABEL[q];return m?m[1](v):"";}
+function reqTarget(q,v,x){const m=REQ_LABEL[q];return m?m[1](v,x):"";}
+/* fuel by family: a petrol brief ("r87") keeps its octane ladder; a diesel only passes one if the buyer takes diesel (seg.dsl);
+   "diesel" wants any compression-ignition fuel (No. 2 or B100) */
+function fuelOk(have,want,dsl){if(want==="diesel")return isCI(have);if(isCI(have))return !!dsl;return FUEL_RANK[have]<=FUEL_RANK[want];}
 const degC=t=>`${t<0?"−"+(-t):t} °C`;
 function siteTxt(s){return `${degC(s.ambientC)} · ${(+s.altitudeM).toLocaleString()} m`;}
 function siteAt(s){return Math.abs(s.ambientC-20)>=15||s.altitudeM<1500?degC(s.ambientC):`${(+s.altitudeM).toLocaleString()} m`;}   // the condition that bites
@@ -12572,13 +12762,15 @@ function previewSite(s){if(testing){toast("Let the run finish first");return;}C(
 function fits(k,res,cfg){
   const r=k.req,c=cfg||S.cfg,o=[];let ok=true;
   if(k.site)res=siteRun(k.site,c);   // a site brief ignores the cell figures: the client re-runs the engine in their own air
-  const add=(q,cond,val,prog)=>{o.push({q,name:reqName(q),target:reqTarget(q,r[q]),label:describeReq(q,r[q]),val,ok:cond,prog});if(!cond)ok=false;};
+  const x={dsl:!!(SEGMENTS.find(s=>s.id===k.seg)||{}).dsl},dsl=isCI(c.fuel);
+  const add=(q,cond,val,prog)=>{o.push({q,name:reqName(q),target:reqTarget(q,r[q],x),label:describeReq(q,r[q],x),val,ok:cond,prog});if(!cond)ok=false;};
   const ge=(v,t)=>clamp(v/Math.max(1e-6,t),0,1.25), le=(v,t)=>clamp(t/Math.max(1e-6,v),0,1.25);
   if(r.hp!=null)add("hp",res.peakHp>=r.hp,Math.round(res.peakHp),ge(res.peakHp,r.hp));
   if(r.tq!=null)add("tq",res.peakTq>=r.tq,Math.round(res.peakTq),ge(res.peakTq,r.tq));
   if(r.tqrpm!=null)add("tqrpm",res.peakTqRpm<=r.tqrpm,res.peakTqRpm.toLocaleString(),le(res.peakTqRpm,r.tqrpm));
   if(r.econ!=null)add("econ",res.econ<=r.econ,res.econ.toFixed(1),le(res.econ,r.econ));
-  if(r.fuel!=null)add("fuel",FUEL_RANK[c.fuel]<=FUEL_RANK[r.fuel],OPT.fuel[c.fuel].name.split(" ")[0],FUEL_RANK[c.fuel]<=FUEL_RANK[r.fuel]?1:0.3);
+  if(r.fuel!=null){const fo=fuelOk(c.fuel,r.fuel,x.dsl);add("fuel",fo,fuelShort(c.fuel),fo?1:0.3);if(!fo&&(r.fuel==="diesel"||dsl))o[o.length-1].fam=true;}
+  if(r.smoke!=null){const sm=dsl?(res.smoke||0):0;add("smoke",sm<=r.smoke,Math.round(sm)+"%",le(Math.max(1,sm),Math.max(1,r.smoke)));}
   if(r.rel!=null)add("rel",res.rel>=r.rel,res.rel,ge(res.rel,r.rel));
   if(r.smooth!=null)add("smooth",res.smooth>=r.smooth,Math.round(res.smooth),ge(res.smooth,r.smooth));
   if(r.kg!=null)add("kg",res.kg<=r.kg,Math.round(res.kg),le(res.kg,r.kg));
@@ -12589,13 +12781,15 @@ function fits(k,res,cfg){
   if(r.car)add("car",true,"",1);
   if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if(k.site){const br=res.fails[0];o.push({q:"site",name:"At the site",target:siteTxt(k.site),label:`Holds at ${siteTxt(k.site)}`,val:br?"breaks":"holds",ok:!br,prog:br?0:1,why:br});if(br)ok=false;}
-  let bonus=0;if(ok){if(r.hp)bonus+=clamp(res.peakHp/r.hp-1,0,0.3)*0.5;if(r.rel)bonus+=clamp((res.rel-r.rel)/100,0,0.15);if(r.tq)bonus+=clamp(res.peakTq/r.tq-1,0,0.3)*0.4;}
+  let bonus=0;if(ok){if(r.hp)bonus+=clamp(res.peakHp/r.hp-1,0,0.3)*0.5;if(r.rel)bonus+=clamp((res.rel-r.rel)/100,0,0.15);if(r.tq)bonus+=clamp(res.peakTq/r.tq-1,0,0.3)*0.4;
+    if(x.dsl&&dsl)bonus+=0.06;}   // fleet and farm buyers pay a little extra for diesel: low-down torque, fuel bills, a long life
   return{ok,o,bonus,res};
 }
 /* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
-   Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit. */
-const MISS_W={hp:1.8,tq:1.8,et:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2};
-function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?0.7:q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
+   Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit,
+   and the wrong fuel family (a diesel for a petrol car, or the reverse) sends them away. */
+const MISS_W={hp:1.8,tq:1.8,et:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5};
+function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
   return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
 const MKT_MIN=0.2;
@@ -12607,7 +12801,7 @@ function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*6
 const MKT_COOL=3;
 function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
   if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke"])if(R[k]!=null)req[k]=R[k];
   const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
   return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
 function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
@@ -12620,12 +12814,15 @@ function buyers(cert){const key=cert.hash+"|"+C().week+"|"+C().rep+"|"+Object.ke
 /* "one change away": search single part swaps (and a few slider nudges) that would make the current build fit a contract */
 const FIX_KEYS=["fuel","piston","rings","rod","rodBolts","crank","bearings","oilGrade","cooling","head","springs","valveMat","intake","exhaust","gasket","studs","damper","pistonClearance","oilSystem","oilSquirters","ic","asp","blockMat","headMat"];
 FIX_KEYS.push("injectors","fuelPump");   // a build that only leans out can be one part away from a contract
+FIX_KEYS.push("dInj","dNoz");   // diesel: a common-rail pump or bigger nozzles can be the one change
 const fixCache=new Map();
 function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.keys(C().owned).join(","):"sb");if(fixCache.has(key))return fixCache.get(key);
   const env=stdEnv({testType:"pull"});let best=null;const tryCfg=(cfg,label)=>{const r=SIM.simulate(cfg,env);if(r.fails.length)return;const f=fits(k,r,cfg);if(f.ok){const gain=f.bonus;if(!best||gain>best.gain)best={label,cfg,gain};}};
-  for(const key2 of FIX_KEYS){const opts=OPT[key2];if(!opts)continue;for(const v in opts){if(v===S.cfg[key2]||locked(opts[v]))continue;tryCfg(Object.assign({},S.cfg,{[key2]:v}),`switch to ${opts[v].name}`);}}
+  const dsl=isCI(S.cfg.fuel);
+  for(const key2 of FIX_KEYS){const opts=OPT[key2];if(!opts)continue;if(!dsl&&(key2==="dInj"||key2==="dNoz"))continue;if(dsl&&key2==="injectors")continue;for(const v in opts){if(v===S.cfg[key2]||locked(opts[v]))continue;if(key2==="fuel"&&isCI(v)!==dsl)continue;tryCfg(Object.assign({},S.cfg,{[key2]:v}),`switch to ${opts[v].name}`);}}
   const sl=[["redline",-500,"drop the redline 500 rpm"],["redline",-1000,"drop the redline 1,000 rpm"],["cam",-15,"a milder cam"],["cam",15,"a bigger cam"],["cr",-1,"a point less compression"],["cr",1,"a point more compression"],["timing",-3,"pull 3° of timing"],["boost",-0.3,"0.3 bar less boost"],["lambda",0.05,"lean it out a touch"]];
-  for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);const v=clamp(S.cfg[kk]+d,f?f.min:-1e9,f?f.max:1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
+  if(dsl)sl.push(["lambda",0.1,"lean the full-load λ 0.1"],["lambda",-0.1,"richen the full-load λ 0.1"],["timing",-2,"retard the injection 2°"]);
+  for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
 function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=(r.mach&&staffed("machinist"))?1.25:1;
