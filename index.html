@@ -4270,13 +4270,14 @@ const ENGINE_SOUND = (function () {
    * ------------------------------------------------------------------ */
   var DERIVE_CACHE = { key: "", prof: null };
 
-  function deriveProfile(cfg, layoutKey) {
+  function deriveProfile(cfg, layoutKey, diesel) {
     cfg = cfg || {};
     var lk = layoutKey || cfg.layout || "I4";
     var L = LAY[lk] || LAY.I4;
     var key = [lk, cfg.intake, cfg.asp, cfg.turboSize, cfg.exhaust, cfg.head,
                cfg.cam, cfg.lift, cfg.redline, cfg.crank, cfg.nitrous,
                Math.round(num(cfg.bore, 86) / 4), Math.round(num(cfg.stroke, 86) / 4)].join("|");
+    var dz = !!diesel; if (dz) key += "|dz";
     if (DERIVE_CACHE.key === key && DERIVE_CACHE.prof) return DERIVE_CACHE.prof;
 
     var exh = EXH[cfg.exhaust] ? cfg.exhaust : "cast_tubular";
@@ -4297,6 +4298,9 @@ const ENGINE_SOUND = (function () {
     var spread = clamp(1.70 - (cam - 0.45) * 0.55 - (n - 3) * 0.045
                        + (stroke / 86 - 1) * 0.30, 0.92, 1.85);
     var decay = clamp(3.0 + (cam - 0.45) * 7.0 + (n - 3) * 0.30 - (big - 1) * 0.9, 3.0, 10.0);
+    // compression ignition: pressure rises almost instantly (hard edge), and the pipe is a duller,
+    // heavier, lower note (big slow cylinders, a muffler and often a turbine in the way)
+    if (dz) { tilt = clamp(tilt * 0.62, 0.18, 0.55); spread = clamp(spread * 1.08, 0.92, 1.9); decay = clamp(decay * 0.82, 2.6, 8.0); }
 
     // bank asymmetry: only V/F engines have two pipes at all
     var bg = [1, 1], bp = [0, 0], bdel = 0;
@@ -4344,8 +4348,8 @@ const ENGINE_SOUND = (function () {
       cylJitter: jit, lope: lope, intake: iv, vvl: vvl, ind: ind,
       mech: { tick: tick, whine: whine },
       n2o: num((OPTN2O[cfg.nitrous] || 0), 0), n2oProg: (cfg.nitrous === "prog400" || cfg.nitrous === "prog700") ? 1 : 0,
-      cyl: cc,
-      sub: clamp(0.34 + 0.62 * Math.min(1.35, big) - cam * 0.42, 0.30, 1.10),
+      cyl: cc, dz: dz, attack: dz ? 75 : 0,
+      sub: clamp(0.34 + 0.62 * Math.min(1.35, big) - cam * 0.42 + (dz ? 0.16 : 0), 0.30, 1.25),
       level: clamp(1.06 - n * 0.017 + (big - 1) * 0.07, 0.84, 1.14),
       wet: 0.19, redline: num(cfg.redline, 7000)
     });
@@ -4373,7 +4377,7 @@ const ENGINE_SOUND = (function () {
     return [p.layout, q(p.pulseSpread, 0.04), q(p.pulseDecay, 0.25),
             p.bankGain.map(function (x) { return q(x, 0.03); }).join(","),
             p.bankPhase.map(function (x) { return q(x, 1.5); }).join(","),
-            p.cylJitter ? p.cylJitter.join(",") : "-", q(p.tilt, 0.03)].join("|");
+            p.cylJitter ? p.cylJitter.join(",") : "-", q(p.tilt, 0.03)].join("|") + (p.attack ? "|a" + p.attack : "");
   }
 
   // Returns {real:Float32Array, imag:Float32Array} for createPeriodicWave
@@ -4405,7 +4409,7 @@ const ENGINE_SOUND = (function () {
       for (var j = 0; j < wN; j++) {
         var x = j / wN;
         // fast blowdown edge, exponential tail
-        var env = (1 - Math.exp(-x * 26)) * Math.exp(-x * p.pulseDecay);
+        var env = (1 - Math.exp(-x * (p.attack || 26))) * Math.exp(-x * p.pulseDecay);
         s[(start + j) % NSAMP] += amp * env;
       }
     }
@@ -4506,6 +4510,20 @@ const ENGINE_SOUND = (function () {
     for (var k = 1; k <= K; k++) { r[k] = Math.pow(k, -0.85) * 0.1; im[k] = 0; }
     mechWave = ctx.createPeriodicWave(r, im, { disableNormalization: false });
     return mechWave;
+  }
+
+  // diesel clack: one sharp spike per combustion (instant rise, fast decay), peak 1.
+  // Its DC term is dropped by the periodic wave, so buildGraph/set() add it back as a gain offset
+  var clatWave = null, CLAT_MEAN = 0;
+  function buildClatterWave(ctx) {
+    if (clatWave) return clatWave;
+    var M = 512, K = 64, s = new Float32Array(M), r = new Float32Array(K + 1), im = new Float32Array(K + 1), i, k, t;
+    for (i = 0; i < M; i++) { s[i] = Math.exp(-i / M * 26); CLAT_MEAN += s[i] / M; }
+    for (k = 1; k <= K; k++) { var a = 0, b = 0, w = 2 * Math.PI * k / M;
+      for (t = 0; t < M; t++) { a += s[t] * Math.cos(w * t); b += s[t] * Math.sin(w * t); }
+      r[k] = 2 / M * a; im[k] = 2 / M * b; }
+    clatWave = ctx.createPeriodicWave(r, im, { disableNormalization: true });
+    return clatWave;
   }
 
   // roots blower: strong lobe fundamental + harmonics
@@ -4753,6 +4771,18 @@ const ENGINE_SOUND = (function () {
     g.gearG = ctx.createGain(); g.gearG.gain.value = 0;
     g.gearOsc.connect(g.gearG); g.gearG.connect(bus);
 
+    /* --- diesel clatter: noise burst gated by a spike train at the firing rate (silent unless diesel) --- */
+    g.clOsc = ctx.createOscillator(); g.clOsc.setPeriodicWave(buildClatterWave(ctx));
+    g.clNoise = ctx.createBufferSource(); g.clNoise.buffer = makeNoise(ctx); g.clNoise.loop = true;
+    g.clNoise.playbackRate.value = 1.3;
+    g.clHP = ctx.createBiquadFilter(); g.clHP.type = "highpass"; g.clHP.frequency.value = 900; g.clHP.Q.value = 0.7;
+    g.clBP = ctx.createBiquadFilter(); g.clBP.type = "bandpass"; g.clBP.frequency.value = 2300; g.clBP.Q.value = 1.1;
+    g.clAm = ctx.createGain(); g.clAm.gain.value = 0;        // base = spike-train mean, spikes add on top
+    g.clD = ctx.createGain(); g.clD.gain.value = 0;          // spike depth
+    g.clG = ctx.createGain(); g.clG.gain.value = 0;
+    g.clNoise.connect(g.clHP); g.clHP.connect(g.clBP); g.clBP.connect(g.clAm); g.clAm.connect(g.clG); g.clG.connect(bus);
+    g.clOsc.connect(g.clD); g.clD.connect(g.clAm.gain);
+
     /* --- forced induction ---------------------------------------------- */
     g.blowA = ctx.createOscillator(); g.blowA.type = "sine"; g.blowA.frequency.value = 700;
     g.blowB = ctx.createOscillator(); g.blowB.type = "sine"; g.blowB.frequency.value = 705;
@@ -4779,7 +4809,7 @@ const ENGINE_SOUND = (function () {
 
     var t = nowT();
     g.exhOsc.start(t); g.subOsc.start(t); g.noise.start(t);
-    g.mechOsc.start(t); g.gearOsc.start(t);
+    g.mechOsc.start(t); g.gearOsc.start(t); g.clOsc.start(t); g.clNoise.start(t);
     g.blowA.start(t); g.blowB.start(t); g.lfo.start(t);
 
     N = g;
@@ -4791,7 +4821,7 @@ const ENGINE_SOUND = (function () {
     if (!N) return;
     var g = N; N = null;
     var t = nowT();
-    ["exhOsc", "subOsc", "noise", "mechOsc", "gearOsc", "blowA", "blowB", "lfo"]
+    ["exhOsc", "subOsc", "noise", "mechOsc", "gearOsc", "clOsc", "clNoise", "blowA", "blowB", "lfo"]
       .forEach(function (k) { try { g[k].stop(t + 0.02); } catch (e) {} });
     setTimeout(function () {
       for (var k in g) { try { g[k].disconnect(); } catch (e) {} }
@@ -4911,6 +4941,7 @@ const ENGINE_SOUND = (function () {
     if (dead) { if (num(o.rpm, 0) > 400) dead = false; else return; }
 
     var cfg = o.cfg || null;
+    var dz = !!o.diesel; st.diesel = dz;                 // compression ignition: clatter, no blow-off, no pops
     var lk = (o.layout && o.layout.name && o.layout.n)
       ? (keyForLayoutObj(o.layout, cfg && cfg.layout) || (cfg && cfg.layout) || curLayoutKey)
       : ((cfg && cfg.layout) || curLayoutKey || "I4");
@@ -4918,7 +4949,7 @@ const ENGINE_SOUND = (function () {
     // --- profile selection (cheap: only re-applies when it actually changes)
     var want = null;
     if (o.profileId && profiles[o.profileId]) want = profiles[o.profileId];
-    else if (cfg) want = deriveProfile(cfg, lk);
+    else if (cfg) want = deriveProfile(cfg, lk, !!o.diesel);
     else if (!curProf) want = profiles.i4_turbo;
     if (want && want !== curProf) applyProfile(want);
     var p = curProf; if (!p) return;
@@ -4933,7 +4964,7 @@ const ENGINE_SOUND = (function () {
     // still pumping. Latched so it fires once per lift, not once per frame.
     if (boost > 0.25) { st.boostPeak = Math.max(st.boostPeak || 0, boost); st.bovArmed = 1; }
     else if (st.bovArmed && (st.boostPeak || 0) > 0.30 && num(o.load, 1) < 0.18) {
-      st.bovArmed = 0; st.boostPeak = 0; event("bov");
+      st.bovArmed = 0; st.boostPeak = 0; if (!dz) event("bov");
     }
     if (cfg) { st.lambda = num(cfg.lambda, 0.98); st.exhaust = cfg.exhaust || p.exh; }
     // o.knock is the WOT retard the sim asked for. Detonation needs cylinder pressure, so it is
@@ -4974,13 +5005,13 @@ const ENGINE_SOUND = (function () {
     var muff = 1 - clamp(boost, 0, 4) * 0.115 * turbined;
     // retarded timing dumps burning charge into the pipe: hotter, flatter, harsher
     var drive = ex.drive * (0.55 + load * 1.9 + rn * 0.35) * (vvlOn ? 1.12 : 1)
-                * clamp(muff, 0.45, 1) * (1 + knock * 0.45);
+                * clamp(muff, 0.45, 1) * (1 + knock * 0.45) * (dz ? 0.55 : 1);
     ap(N.pre.gain, 0.8 + drive * 2.4, 0.05);
     ap(N.post.gain, 0.62 / (1 + drive * 0.55), 0.05);
 
     // brightness: low load = closed throttle = muffled
     var lpf = clamp((900 + fire * 9 * (0.35 + 0.85 * load) * (0.35 + 1.1 * ex.tilt)) * vBright
-                    * clamp(muff + 0.10, 0.5, 1.1), 700, 7500);
+                    * clamp(muff + 0.10, 0.5, 1.1) * (dz ? 0.62 : 1), dz ? 520 : 700, 7500);
     ap(N.lp.frequency, lpf, 0.04);
     ap(N.hp.frequency, clamp(38 + rn * 30, 35, 90), 0.08);
 
@@ -5012,13 +5043,13 @@ const ENGINE_SOUND = (function () {
       ap(N.exhG.gain, live * exhLvl * (1 + 0.30 * n2oBite) * 0.55 * soloGain("exhaust"), 0.03);
     /* two-step: the limiter cuts spark on random cycles, so the note stutters; retard makes the
        unburnt charge light off in the pipe as pops (fired from the sim's own bang envelope) */
-    var ts2 = (o.twoStep && o.twoStep.on && live) ? o.twoStep : null;
+    var ts2 = (o.twoStep && o.twoStep.on && live && !dz) ? o.twoStep : null;
     if (ts2) {
       var cut = Math.random() < 0.42;
       ap(N.exhG.gain, exhLvl * 0.55 * soloGain("exhaust") * (cut ? 0.2 : 1.12), 0.006);
     }
     var popV = clamp(num(o.pops, 0), 0, 1), tNow = ctx.currentTime;
-    if (live && popV > (st.popV || 0) + 0.12 && tNow - (st.popT || -9) > (LITE ? 0.2 : 0.12)) { st.popT = tNow; pop(0.22 + 0.55 * popV); }
+    if (live && !dz && popV > (st.popV || 0) + 0.12 && tNow - (st.popT || -9) > (LITE ? 0.2 : 0.12)) { st.popT = tNow; pop(0.22 + 0.55 * popV); }
     st.popV = popV;
     /* tyre scream: a burnout is loud, wheelspin on the run less so */
     var tyre = live ? clamp(num(o.tyre, 0), 0, 1) : 0;
@@ -5058,6 +5089,16 @@ const ENGINE_SOUND = (function () {
     ap(N.mechHP.frequency, clamp(1400 + rn * 1400, 1200, 3200), 0.08);
     ap(N.gearOsc.frequency, clamp(rpm / 60 * 12, 60, 3600), 0.03);
     ap(N.gearG.gain, live * (LITE ? 0.0001 : p.mech.whine * clamp(rpm / 7000, 0.1, 1.0) * 0.016) * soloGain("mech"), 0.06);
+    // diesel clack: loudest at idle and light load, gone by ~2,700 rpm and as load (and boost) rises.
+    // A continuous spike train at the firing rate, so it costs no per-combustion voices at any rpm.
+    var clat = (dz && live) ? clamp(num(o.clatter, 0.5), 0, 1) * clamp(1.12 - load * 0.85, 0.22, 1) * clamp((2700 - rpm) / 900, 0, 1) * (1 + 0.5 * wear) : 0;
+    st.clat = clat;
+    var clDepth = clat * 1.8 * (0.82 + 0.36 * Math.random()) * soloGain("mech");     // cycle-to-cycle ragged
+    ap(N.clOsc.frequency, clamp(fire, 6, 400), 0.02);
+    ap(N.clD.gain, clDepth, 0.04);
+    ap(N.clAm.gain, clDepth * CLAT_MEAN, 0.04);
+    ap(N.clBP.frequency, clamp(2100 + 500 * rn + 350 * Math.random(), 1800, 3400), 0.05);
+    ap(N.clG.gain, clat > 0.002 ? 1 : 0.0001, 0.05);
 
     /* --- forced induction --------------------------------------------- */
     // the profile supplies the exhaust and intake voicing; what is actually
@@ -5096,7 +5137,7 @@ const ENGINE_SOUND = (function () {
       // turbo / twin / compound — whine tracks a turbo-speed proxy
       var ts = TURBO_SIZE[ind.size] || TURBO_SIZE.medium;
       var proxy = clamp(rpm * (1 + boost * 0.55) / 8000, 0, 1.8);
-      var wf = clamp(ts.base * (0.42 + 0.72 * proxy), 900, 9500);
+      var wf = clamp(ts.base * (0.42 + 0.72 * proxy) * (dz ? 0.82 : 1), 900, 9500);
       if (N.blowA.type === "custom") { N.blowA.type = "sine"; }
       ap(N.blowA.frequency, wf, 0.05);
       // a compound pair is two stages in series: the small high-pressure wheel
@@ -5104,7 +5145,7 @@ const ENGINE_SOUND = (function () {
       var detune = bt === "comp" ? 0.38 : (bt === "twin" ? 1.03 : 1);
       ap(N.blowB.frequency, clamp(wf * 1.011 * detune, 400, 9500), 0.05);
       ap(N.blowBP.frequency, bt === "comp" ? clamp(wf * 0.62, 500, 9000) : wf, 0.06);
-      var wq = bt === "comp" ? 1.6 : 3.0; if (N.blowBP.Q.value !== wq) N.blowBP.Q.value = wq;
+      var wq = bt === "comp" ? 1.6 : (dz ? 1.9 : 3.0); if (N.blowBP.Q.value !== wq) N.blowBP.Q.value = wq;
       var spooled = clamp(boost / (0.5 / Math.max(0.3, ts.spool / 0.7)), 0, 1);
       ap(N.blowG.gain, (0.018 * clamp(boost / 0.15, 0, 1) + 0.075 * spooled + 0.05 * load * spooled)
                         * clamp(rpm / 4000, 0.15, 1.3) * 0.6 * (bt === "comp" ? 1.25 : 1)
@@ -5126,7 +5167,7 @@ const ENGINE_SOUND = (function () {
     var ex2 = st.exhaust || p.exh;
     var freeExh = (ex2 === "headers_equal" || ex2 === "headers_merge") ? 1
                 : (ex2 === "cast_tubular") ? 0.55 : 0.3;
-    if (load < 0.18 && rpm > 2000 && (richness * 0.8 + freeExh * 0.4) > 0.3) {
+    if (!dz && load < 0.18 && rpm > 2000 && (richness * 0.8 + freeExh * 0.4) > 0.3) {
       // mean interval between pops, as a rate rather than a switch
       var mean = 0.085 / (clamp(rpm / 6000, 0.35, 1.5) * (0.45 + 1.7 * richness) * freeExh);
       if (t >= st.crackleT) {
@@ -5283,6 +5324,7 @@ const ENGINE_SOUND = (function () {
         break;
       }
       case "bov": {
+        if (st.diesel) return;                      // diesels have no throttle plate to slam: no blow-off
         var bp = Math.max(st.boost, st.boostPeak || 0);
         if (bp <= 0.08) return;                    // only when actually boosted
         if (ctx.currentTime - (st.bovT || -9) < 0.45) return;   // one per lift
@@ -5306,6 +5348,7 @@ const ENGINE_SOUND = (function () {
         break;
       }
       case "backfire": {
+        if (st.diesel) return;
         pop(0.9);
         setTimeout(function () { if (ctx) pop(0.5); }, 70 + Math.random() * 60);
         setTimeout(function () { if (ctx) pop(0.35); }, 170 + Math.random() * 90);
@@ -5336,7 +5379,7 @@ const ENGINE_SOUND = (function () {
         // engine dies
         dead = true;
         ap(N.exhG.gain, 0.0001, 0.28); ap(N.subG.gain, 0.0001, 0.28); ap(N.inG.gain, 0.0001, 0.22);
-        ap(N.blowG.gain, 0.0001, 0.5); ap(N.wgG.gain, 0.0001, 0.5); ap(N.mechG.gain, 0.0001, 0.6); ap(N.gearG.gain, 0.0001, 0.4);
+        ap(N.blowG.gain, 0.0001, 0.5); ap(N.wgG.gain, 0.0001, 0.5); ap(N.mechG.gain, 0.0001, 0.6); ap(N.gearG.gain, 0.0001, 0.4); ap(N.clG.gain, 0.0001, 0.3);
         if (N.tyreG) ap(N.tyreG.gain, 0.0001, 0.3);
         break;
       }
@@ -12883,7 +12926,7 @@ function tick(now){
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
   const L=LAYOUTS[S.cfg.layout];
   let rpm=run.rpm,load=run.load,on=run.on;
-  if(!testing){const idleBase=S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+S.cfg.cam/50)+(S.cfg.cam>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
+  if(!testing){const idleBase=(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+S.cfg.cam/50)+(S.cfg.cam>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
   /* the picture follows the rpm with inertia: a test ending or a stall spins down instead of freezing */
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
@@ -12900,7 +12943,7 @@ function tick(now){
         bb=bc[i]*AB.load;
       }
       ENGINE_SOUND.set({rpm:AB.rpm,load:AB.load,cfg:c,layout:LAYOUTS[c.layout],boostBar:bb,
-        knock:r.knock.retardDeg,profileId:undefined});
+        knock:r.knock.retardDeg,profileId:undefined,diesel:(SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci),clatter:r.clatter||0});
     }
     const cl=LAYOUTS[c.layout],cq=SIM.simulate(c,simEnv({testType:"pull"}));
     ENGINE_VIS.setRun({on:true,rpm:AB.rpm,load:AB.load,fail:null,failKind:null,redline:c.redline,
@@ -12927,7 +12970,7 @@ function tick(now){
     if(testing&&DR&&DR.d&&S.env.testType==="drag"&&!DR.failed){const st=DR.d.st;boostBar=st.boost*(on?1:0);
       dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
     ENGINE_SOUND.set(Object.assign({rpm:on?rpm:0,load,cfg:S.cfg,layout:L,boostBar,wear:wi?wi.w:0,
-      knock:quick?quick.knock.retardDeg:0,profileId:S.profileId||undefined},dx||{}));}
+      knock:quick?quick.knock.retardDeg:0,profileId:S.profileId||undefined,diesel:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci),clatter:(quick&&quick.clatter)||0},dx||{}));}
   requestAnimationFrame(tick);
 }
 
