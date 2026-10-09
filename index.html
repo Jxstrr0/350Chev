@@ -524,6 +524,28 @@ html.desk input[type=range]{cursor:pointer}
 .kbd span{color:var(--muted)}.kbd h3{grid-column:1/-1;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:6px}
 #introLay{margin:16px 0 12px}#introLay>span{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
 #introLay .seg button{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.16);color:var(--chalk)}#introLay .seg button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}#introLay .seg small{color:var(--muted)}
+/* tune map editor (Test tab) */
+.mapwrap{isolation:isolate;position:relative;overflow-x:auto;overflow-y:hidden;border:1px solid var(--rule);border-radius:5px;background:var(--panel);outline:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:var(--rule) transparent}
+.mapwrap:focus-visible{box-shadow:0 0 0 2px var(--orange)}
+.mapt{border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:12.5px;user-select:none;-webkit-user-select:none}
+.mapt th{position:sticky;top:0;background:var(--panel2);color:var(--muted);font-weight:500;font-size:11px;padding:0 2px;min-width:48px;height:28px;z-index:1;border-bottom:1px solid var(--rule)}
+.mapt .ax{position:sticky;left:0;z-index:2;background:var(--panel2);color:var(--muted);min-width:50px;width:50px;text-align:right;padding:0 7px 0 2px;border-right:1px solid var(--rule);font-size:11px}
+.mapt th.ax{z-index:3}
+.mapt td.c{width:48px;min-width:48px;height:44px;text-align:center;color:var(--chalk);cursor:pointer;position:relative;padding:0;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);touch-action:manipulation}
+.mapt td.c b{display:block;font-weight:600;font-size:12.5px;line-height:1.15}
+.mapt td.c i{display:block;font-style:normal;font-size:10px;color:var(--muted);line-height:1.1;margin-top:1px}
+.mapt td.c.sel{box-shadow:inset 0 0 0 2px var(--orange)}
+.mapt td.c.anc{box-shadow:inset 0 0 0 3px var(--orange2)}
+.mapt td.c.cr::after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--info)}
+.mapleg{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--dim);margin:6px 0 2px}
+.mapleg span:first-child{color:var(--muted);min-width:86px}.mapleg .g{flex:1;height:8px;border-radius:4px;border:1px solid var(--rule)}
+.mapfb{font-family:var(--mono);font-size:12.5px;color:var(--chalk);background:var(--panel2);border:1px solid var(--rule);border-radius:5px;padding:9px 10px;margin:8px 0;line-height:1.5;min-height:42px}
+.mapfb .w{color:var(--warn)}.mapfb .c{color:var(--crit)}.mapfb .g{color:var(--good)}
+.mapbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.mapbar .nud{flex:0 0 56px;height:46px;font-size:24px}
+.mapbar .btn.sm{min-height:46px;flex:1 1 auto}
+.mapbar .btn.sm.on{box-shadow:inset 0 0 0 2px var(--orange);color:var(--orange2)}
+#mapSec .seg button{min-height:46px}
 html:not(.desk) #kbHelpBtn{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -596,6 +618,7 @@ html:not(.desk) #kbHelpBtn{display:none}
         <button class="btn sm" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button>
       </div>
       <p class="hint" id="dynoHint"></p>
+      <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
       <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
       <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
 
@@ -1595,6 +1618,36 @@ const ENGINE_SIM = (function () {
     return oil.kv100 * Math.exp(k * (100 - tempC));
   }
 
+  /* ---- tune map: an rpm x load table (rows = load %, columns = rpm) that replaces the single
+     timing / lambda values, plus an optional per-rpm boost target. No map = the sliders. ---- */
+  function mapOk(m) {
+    return !!(m && Array.isArray(m.rpm) && m.rpm.length > 1 && Array.isArray(m.load) && m.load.length > 1
+      && Array.isArray(m.ign) && m.ign.length === m.load.length && Array.isArray(m.lam) && m.lam.length === m.load.length);
+  }
+  function mapSeg(ax, v) {                       // [i, t] with ax[i] <= v <= ax[i+1]; flat outside the axis
+    const n = ax.length;
+    if (v <= ax[0]) return [0, 0];
+    if (v >= ax[n - 1]) return [n - 2, 1];
+    let i = 0;
+    while (i < n - 2 && v > ax[i + 1]) i++;
+    return [i, (v - ax[i]) / (ax[i + 1] - ax[i])];
+  }
+  const mapMix = (a, b, t) => t <= 0 || a === b ? a : t >= 1 ? b : a + (b - a) * t;   // exact at the breakpoints
+  function mapLook(m, tbl, rpm, load) {
+    const r = mapSeg(m.rpm, rpm), l = mapSeg(m.load, load);
+    const row = j => mapMix(tbl[j][r[0]], tbl[j][r[0] + 1], r[1]);
+    return mapMix(row(l[0]), row(l[0] + 1), l[1]);
+  }
+  /* part-load (cruise) cell: leaner than the stock closed loop burns a thinner, hotter-gamma charge (and
+     throttles less), until the flame stops lighting it; away from MBT costs work like at full load */
+  const mapMisLam = burn => 1.10 + 0.25 * (burn - 1);
+  function mapCruiseEta(lam, lamStock, ign, burn) {
+    const gain = l => 1 + 0.30 * (clamp(l, 1, 1.3) - 1);
+    const mis = Math.max(0, lam - mapMisLam(burn));
+    return gain(lam) / gain(lamStock) * Math.max(0.4, 1 - 6 * mis * mis - 0.6 * mis) / (1 + 0.0018 * sq(ign));
+  }
+  function mapRow(m, arr, rpm) { const r = mapSeg(m.rpm, rpm); return mapMix(arr[r[0]], arr[r[0] + 1], r[1]); }
+
   /* =====================================================================
      10.  simulate()
      ===================================================================== */
@@ -1638,6 +1691,13 @@ const ENGINE_SIM = (function () {
     const kvOil = kvAt(O.oil, env.oilC);
 
     const redline = clamp(cfg.redline, dsl ? 1800 : 4000, 12500);
+    /* ---- tune map: the WOT row (or, for the map editor's part-load probe, env.mapLoad's row) per rpm ---- */
+    const MAP = mapOk(cfg.map) ? cfg.map : null;
+    const mapLd = MAP && env.mapLoad > 0 && env.mapLoad < 1 ? Math.max(0.1, env.mapLoad) : 1;
+    const MAPB = MAP && boosted && Array.isArray(MAP.boost) && MAP.boost.length === MAP.rpm.length;
+    const tmgAt = rpm => MAP ? mapLook(MAP, MAP.ign, rpm, 100 * mapLd) : cfg.timing;
+    const lamAt = rpm => MAP ? mapLook(MAP, MAP.lam, rpm, 100 * mapLd) : cfg.lambda;
+    const mgnCurve = [], rtdCurve = [];
     /* ---- nitrous ----------------------------------------------------
        The shot is quoted in crank hp. Convert to the extra indicated work
        per cycle it puts in the cylinder, then let every downstream number
@@ -1671,7 +1731,7 @@ const ENGINE_SIM = (function () {
     const fuelRho = fuelDensity(O.fu);
     const lamCurve = [], fuelLph = [];
     let dutyPk = 0, dutyRpm = 0, ccCylPk = 0, pumpPk = 0, pumpRpm = 0, pumpCapPk = 0, pumpNeedPk = 0;
-    let lamTop = cfg.lambda, fdTop = 1, leanRpm = 0;
+    let lamTop = MAP ? 0 : cfg.lambda, fdTop = 1, leanRpm = 0;
     const kFuel = dsl ? K_FUEL_D : K_FUEL;
     /* diesel: the pump meters fuel per stroke for full-boost air. rhoFull is the charge
        density at full boost; below it the smoke limiter (or the lack of one) decides
@@ -1693,7 +1753,9 @@ const ENGINE_SIM = (function () {
 
     for (let rpm = 1000; rpm <= redline + 0.5; rpm += 100) {
       /* ---- charge path ---------------------------------------------- */
-      const bBar = boostAt(rpm, bm, cfg, g);
+      const tmg = MAP ? tmgAt(rpm) : cfg.timing, lamC = !MAP ? cfg.lambda : dsl && mapLd < 1 ? Math.max(lamAt(rpm), mapLook(MAP, MAP.lam, rpm, 100) / mapLd) : lamAt(rpm), evapKr = MAP && !dsl ? evapCoolK(O.fu, lamC) : evapK;
+      const bFull = MAPB ? boostAt(rpm, Object.assign({}, bm, { target: mapRow(MAP, MAP.boost, rpm) }), cfg, g) : boostAt(rpm, bm, cfg, g);
+      const bBar = mapLd < 1 ? (dsl ? bFull * mapLd : Math.max(0, (air.p + bFull * 1e5) * mapLd - air.p) / 1e5) : bFull;
       const pManAbs0 = air.p + bBar * 1e5;
       const PR = pManAbs0 / air.p;
       let etaC = 0.72;
@@ -1719,8 +1781,9 @@ const ENGINE_SIM = (function () {
       if (boosted) pMan = pManAbs0 - O.icc.dp * 1e5;
       else if (dsl) pMan = air.p * (1 - clamp(0.005 * O.ink.loss * sq(rpm / 4000), 0, 0.05));   // no throttle, only the runners
       else pMan = air.p * (1 - clamp(0.014 * O.ink.loss * sq(rpm / 6000), 0, 0.11));
+      if (mapLd < 1 && !dsl) pMan = Math.min(pMan, (air.p + bFull * 1e5) * mapLd);   // map probe: throttled to the row's load
       // fuel evaporation cools the charge (this is where alcohol makes its power)
-      const Tcharge = Math.max(air.T - 5, Tc3 - evapK);
+      const Tcharge = Math.max(air.T - 5, Tc3 - evapKr);
       const rhoCharge = pMan / (R_AIR * Tcharge);
 
       /* ---- breathing -------------------------------------------------- */
@@ -1732,7 +1795,7 @@ const ENGINE_SIM = (function () {
          deliver leans the mixture: lamE is what the cylinder actually burns. */
       const airKgS = ve * rhoCharge * g.Vd * rpm / 120;
       // diesel: lambda follows the smoke limiter while the boost is not yet there
-      const lamSet = dsl && boosted ? cfg.lambda * Math.pow(clamp(rhoCharge / rhoFull, 0.05, 1), 1 - dInj.smokeLim) : cfg.lambda;
+      const lamSet = dsl && boosted ? lamC * Math.pow(clamp(rhoCharge / rhoFull, 0.05, 1), 1 - dInj.smokeLim) : lamC;
       const needLph = kFuel * airKgS / (O.fu.afr * lamSet) * 3600 / fuelRho;
       const n2oStK = n2oSt && rpm < n2oWin2 ? n2oSt[0] / n2oHp : 1;   // first stage only, until the second arms
       const n2oLph = (n2oOn && rpm >= n2oWin)
@@ -1747,12 +1810,12 @@ const ENGINE_SIM = (function () {
       const pumpLoad = (needLph * (dsl ? DSL_RETURN : 1) + n2oLph) / pumpCap;
       const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE))
         * (n2oDry && !portInj && n2oLph > 0 ? needLph / (needLph + n2oLph) : 1);   // a carburettor has no injector table to add the dry shot's fuel
-      const lamE = dsl ? Math.min(6, lamSet / fd) : Math.min(1.5, cfg.lambda / fd);
+      const lamE = dsl ? Math.min(6, lamSet / fd) : Math.min(1.5, lamC / fd);
       if (dsl) {
         if (qUtil > qUtilPk) { qUtilPk = qUtil; qDemPk = qDem; qCapPk = qCap; qRpm = rpm; }
         if (lamE < lamMin) lamMin = lamE;
         // black smoke: unburnt carbon once the spray runs short of air
-        const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -cfg.timing)), 0, 1)
+        const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -tmg)), 0, 1)
           * (n2oDsl && n2oLph > 0 ? clamp(1 - 1.6 * n2oBite, 0.2, 1) : 1);   // the shot's oxygen burns the soot
         smokeCurve.push(sm);
         if (sm > smokePk) smokePk = sm;
@@ -1762,29 +1825,29 @@ const ENGINE_SIM = (function () {
       if (duty > dutyPk) { dutyPk = duty; dutyRpm = rpm; }
       if (pumpLoad > pumpPk) { pumpPk = pumpLoad; pumpRpm = rpm; pumpCapPk = pumpCap; pumpNeedPk = needLph + n2oLph; }
       if (lamE > lamTop) { lamTop = lamE; fdTop = fd; leanRpm = rpm; }
-      if (n2oDry && n2oLph > 0) n2oLeanPk = Math.max(n2oLeanPk, lamE - cfg.lambda);
+      if (n2oDry && n2oLph > 0) n2oLeanPk = Math.max(n2oLeanPk, lamE - lamC);
 
       /* ---- knock ------------------------------------------------------ */
       // dynamic compression falls with cam overlap (late intake valve closing)
       const dyn = 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
-      const chargeC = (fd < 1 ? Math.max(air.T - 5, Tc3 - evapK * fd) : Tcharge) - 273.15;   // less fuel, less evaporative cooling
+      const chargeC = (fd < 1 ? Math.max(air.T - 5, Tc3 - evapKr * fd) : Tcharge) - 273.15;   // less fuel, less evaporative cooling
       let onReq = 89.6 + 3.0 * (crEff - 10.55)
         + 0.095 * (g.b - 86)
         + 0.135 * (chargeC - 35)
         + 0.10 * (env.coolantC - 90)
-        + 0.85 * cfg.timing
+        + 0.85 * tmg
         - O.headMat.octane
         - 5.5 * (O.hd.burn - 1)
         - 6.0 * clamp(1.0 - lamE, -0.05, 0.22);
       onReq -= O.block.k > 100 ? 0.4 : 0;                 // alu block pulls heat too
       if (n2oOn && rpm >= n2oWin) onReq += clamp(9.0 * n2oBite, 2, 15) * (O.n2o.prog ? 0.85 : 1);  // oxygen in the chamber, not just air
-      if (n2oDry && n2oLph > 0) onReq += 30 * Math.max(0, lamE - cfg.lambda);   // lean on nitrous: the burn runs away
+      if (n2oDry && n2oLph > 0) onReq += 30 * Math.max(0, lamE - lamC);   // lean on nitrous: the burn runs away
       const margin = fuelON - onReq;
       let retard = 0;
       if (!dsl && margin < 0) retard = clamp(-margin * 1.55, 0, 14);
       const phaseRetard = !dsl && bBar > 0.001 ? K_PHASE0 * clamp(bBar / 0.5, 0, 1) + K_PHASE1 * bBar : 0;
-      const effTiming = cfg.timing - retard - phaseRetard;
+      const effTiming = tmg - retard - phaseRetard;
 
       /* ---- diesel ignition delay: fixed in ms (shorter with CR, cetane, boost heat and
          spray pressure), so it eats more crank degrees as the revs rise ------------ */
@@ -1799,7 +1862,7 @@ const ENGINE_SIM = (function () {
         * clamp(1 - 0.20 / lamE, 0.55, 1)                   // more fuel, longer cut-off, less expansion
         * (1 + (O.hd.burn - 1) * 0.30)
         * (1 + 0.0008 * (g.b - 86))                         // bigger bore, less wall per unit of charge
-        / (1 + 0.0018 * sq(cfg.timing - lateDeg)) : ottoEta(cfg.cr, O.fu.gamma) * K_QUAL
+        / (1 + 0.0018 * sq(tmg - lateDeg)) : ottoEta(cfg.cr, O.fu.gamma) * K_QUAL
         * (1 + (O.hd.burn - 1) * 0.55)
         * (1 - 0.0011 * (g.b - 86))
         / (1 + 0.0018 * sq(effTiming));
@@ -1836,7 +1899,7 @@ const ENGINE_SIM = (function () {
       const mps = 2 * (g.s / 1000) * rpm / 60;
       /* diesel: compression pressure plus the combustion rise; advance puts it nearer TDC. Boost
          heat shortens the delay, so less fuel goes off at once and the rise gets gentler.  */
-      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * cfg.timing) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
+      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * tmg) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
         * (1 + (O.n2o.prog ? 0.16 : 0.30) * n2oFrac);    // nitrous burns faster and peaks earlier
       let fmepBar = FM_C + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps;
       fmepBar *= (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac;
@@ -1860,14 +1923,15 @@ const ENGINE_SIM = (function () {
       const lamT = clamp((lamE - 0.75) / 0.28, 0, 1.12);
       let egt = 620 + 340 * lamT + 13 * retard + 0.010 * (rpm - 3000)
         + 5.5 * clamp(bmepPa / 1e5 - 11, -6, 22) + 40 * bBar + 8 * (11 - cfg.cr)
-        - 0.35 * (evapK * fd) - 0.10 * (chargeC - 35) + 260 * n2oFrac;
+        - 0.35 * (evapKr * fd) - 0.10 * (chargeC - 35) + 260 * n2oFrac;
       // diesel: hottest near lambda 1; past that the extra fuel cannot burn and only soaks up heat
-      if (dsl) egt = 220 + 650 / Math.pow(Math.max(lamE, 0.95), 1.2) - 250 * Math.max(0, 0.95 - lamE) + 0.03 * (rpm - 2000) - 12 * cfg.timing + 260 * n2oFrac;
+      if (dsl) egt = 220 + 650 / Math.pow(Math.max(lamE, 0.95), 1.2) - 250 * Math.max(0, 0.95 - lamE) + 0.03 * (rpm - 2000) - 12 * tmg + 260 * n2oFrac;
       if (n2oDsl) egt += -560 * n2oFrac + 700 * n2oFrac * n2oFrac;   // a moderate shot cools a diesel's exhaust; a big one heats it again
-      if (n2oDry) egt += 900 * Math.max(0, lamE - cfg.lambda) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
+      if (n2oDry) egt += 900 * Math.max(0, lamE - lamC) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
       egt = clamp(egt, 380, 1150);
 
       rpms.push(rpm);
+      mgnCurve.push(dsl ? 99 : margin); rtdCurve.push(retard);
       torque.push(Math.max(0, tq));
       power.push(Math.max(0, hp));
       boostCurve.push(bBar);
@@ -1891,20 +1955,20 @@ const ENGINE_SIM = (function () {
     let knockOnReq = 0, knockMargin = 0;
     if (!dsl) {
       const rpm = maxPmaxRpm || peakTqRpm || 3000;
-      const lamK = lamCurve[rpms.indexOf(rpm)] || cfg.lambda, fdK = cfg.lambda / lamK;
-      const bBar = boostAt(rpm, bm, cfg, g);
+      const lamK = lamCurve[rpms.indexOf(rpm)] || lamAt(rpm), fdK = lamAt(rpm) / lamK;
+      const bBar = MAPB ? boostCurve[rpms.indexOf(rpm)] || 0 : boostAt(rpm, bm, cfg, g);
       const pManAbs0 = air.p + bBar * 1e5;
       const PR = pManAbs0 / air.p;
       let etaC = bm.kind === "roots" ? 0.58 : bm.kind === "screw" ? 0.70 : bm.kind === "centrifugal" ? 0.745 : 0.72;
       const Tc2 = bBar > 0.001 ? air.T * (1 + (Math.pow(PR, 0.2857) - 1) / etaC) : air.T;
       const Tc3 = bBar > 0.001 ? Tc2 - O.icc.eff * (Tc2 - air.T) : air.T;
-      const Tcharge = Math.max(air.T - 5, Tc3 - evapK * fdK);
+      const Tcharge = Math.max(air.T - 5, Tc3 - (MAP ? evapCoolK(O.fu, lamAt(rpm)) : evapK) * fdK);
       const pMan = boosted ? pManAbs0 - O.icc.dp * 1e5 : air.p;
       const dyn = 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
       const chargeC = Tcharge - 273.15;
       knockOnReq = 89.6 + 3.0 * (crEff - 10.55) + 0.095 * (g.b - 86) + 0.135 * (chargeC - 35)
-        + 0.10 * (env.coolantC - 90) + 0.85 * cfg.timing - O.headMat.octane
+        + 0.10 * (env.coolantC - 90) + 0.85 * tmgAt(rpm) - O.headMat.octane
         - 5.5 * (O.hd.burn - 1) - 6.0 * clamp(1.0 - lamK, -0.05, 0.22);
       knockOnReq -= O.block.k > 100 ? 0.4 : 0;
       knockMargin = fuelON - knockOnReq + (shop.octane || 0) - 0.8 * (O.ink.wet || 0);
@@ -1912,7 +1976,7 @@ const ENGINE_SIM = (function () {
 
     /* diesel combustion noise: the fuel that piles up during the ignition delay all
        goes off at once. High CR, good cetane and a pilot shot soften it. */
-    const clatter = dsl ? clamp(0.80 * (17.5 / cfg.cr) * Math.pow(48 / cetane, 0.8) * (1 + 0.05 * cfg.timing)
+    const clatter = dsl ? clamp(0.80 * (17.5 / cfg.cr) * Math.pow(48 / cetane, 0.8) * (1 + 0.05 * tmgAt(peakTqRpm))
       * (1 - 0.68 * dInj.pilot) * (1 + 0.006 * (20 - env.ambientC)), 0, 1) : 0;
 
     /* =================================================================
@@ -1989,7 +2053,7 @@ const ENGINE_SIM = (function () {
     crownC -= 0.22 * evapK * fdTop;                                // alcohols cool the crown too
     if (dsl) crownC += 0.30 * clamp(maxEgt - 700, -200, 500);     // diesel: overfuelling is what cooks the bowl rim
     else crownC -= 150 * clamp(1 - lamTop, 0, 0.25);               // enrichment is crown cooling (what arrived, at the leanest point)
-    if (!dsl) crownC += 200 * clamp(lamTop - cfg.lambda, 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
+    if (!dsl) crownC += 200 * clamp(lamTop - lamAt(leanRpm), 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
     if (n2oDry) crownC += 1600 * clamp(n2oLeanPk, 0, 0.3) * clamp(n2oBite, 0.25, 1.5);   // a lean nitrous cylinder: the crown edge goes first
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
     crownC = clamp(crownC, env.coolantC + 40, 900);
@@ -2085,7 +2149,7 @@ const ENGINE_SIM = (function () {
 
     /* fuel delivery: injector duty and pump load against what the tune asks for */
     const injUtil = dsl ? qUtilPk : portInj ? dutyPk / INJ_MAX : 0, pumpUtil = pumpPk / PUMP_MAX;
-    const leanTop = lamTop > cfg.lambda + 0.005;
+    const leanTop = lamTop > lamAt(leanRpm) + 0.005;
     // diesel: a pump on its stop just makes less power (leaner is cooler); a starved lift pump wrecks the injection pump
     const injTestD = dsl ? (injUtil <= 1 ? 0.78 * injUtil : Math.min(0.95, 0.78 + 0.1 * (injUtil - 1))) : 0;
     if (dsl) T("fuel_delivery", "Fuel delivery", injTestD >= pumpUtil ? Math.round(qDemPk) + " / " + Math.round(qCapPk) + " mm\u00b3" : Math.round(pumpNeedPk) + " / " + Math.round(pumpCapPk) + " L/h",
@@ -2392,7 +2456,8 @@ const ENGINE_SIM = (function () {
     if (bm.kind === "centrifugal") fmepCrBar += 0.04;
     const fmepCr = fmepCrBar * 1e5;
     const veCrWot = veAt(nCr, cfg, g, vm, O.ink, O.hd, TchargeCr, 0);  // WOT breathing at that rpm
-    const lamCr = clamp(cfg.lambda + 0.07, 0.92, 1.05);              // closed loop pulls back to stoich
+    const lamCrStock = clamp(cfg.lambda + 0.07, 0.92, 1.05);         // closed loop pulls back to stoich
+    let lamCr = lamCrStock, ignCr = 0, loadCr = 0;                    // a map: the cruise cell's own lambda and timing
     const pExhCr = air.p * (1 + (boosted ? 0.06 : 0.03) * O.exh.backP);
     const camNorm = cfg.cam / 100;
     let imepCr = bmepCr + fmepCr + 0.35e5, mapCr = air.p * 0.35, etaCr = 0.30;
@@ -2400,6 +2465,10 @@ const ENGINE_SIM = (function () {
       /* how far open the throttle has to be for this much indicated work */
       const load = clamp(imepCr / Math.max(1e4, imepWotRef), 0.04, 1);
       mapCr = clamp(air.p * load, air.p * 0.06, air.p);
+      if (MAP && !dsl) {
+        loadCr = load; lamCr = mapLook(MAP, MAP.lam, nCr, 100 * load); ignCr = mapLook(MAP, MAP.ign, nCr, 100 * load);
+        mapCr = Math.min(air.p, mapCr * lamCr / lamCrStock);           // leaner: more air for the same fuel, less throttling
+      }
       /* residual gas left by valve overlap scales with how deep the vacuum is */
       let resid = 0.05 + 0.55 * camNorm * (1 - mapCr / air.p);
       if (O.hd.vvt) resid *= 0.58;                                   // phasers close the overlap at cruise
@@ -2407,7 +2476,7 @@ const ENGINE_SIM = (function () {
       etaCr = ottoEta(cfg.cr, O.fu.gamma) * K_QUAL
         * (1 + (O.hd.burn - 1) * 0.55)
         * (1 - 1.5 * Math.max(0, resid - 0.12))                      // dilute charge burns badly
-        * etaComb(lamCr);
+        * etaComb(lamCr) * (MAP ? mapCruiseEta(lamCr, lamCrStock, ignCr, O.hd.burn) : 1);
       etaCr = clamp(etaCr, 0.12, 0.45);
       const pmepCr = pExhCr - mapCr;                                 // throttling loss
       imepCr = bmepCr + fmepCr + pmepCr;
@@ -2434,7 +2503,7 @@ const ENGINE_SIM = (function () {
       for (let it = 0; it < 4; it++) {
         etaD = ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * K_DSL * clamp(1 - 0.20 / lamCrD, 0.55, 1)
           * (1 + (O.hd.burn - 1) * 0.30) * (1 + 0.0008 * (g.b - 86)) * etaCombD(lamCrD, dInj.etaB)
-          / (1 + 0.0018 * sq(cfg.timing)) * 0.95;                     // light load: proportionally more heat into the walls
+          / (1 + 0.0018 * sq(MAP ? mapLook(MAP, MAP.ign, nCr, 100 * clamp(bmepCr / Math.max(1e4, peakTq * 4 * PI / g.Vd), 0, 1)) : cfg.timing)) * 0.95;   // light load: proportionally more heat into the walls
         fKg = imepD * g.Vd * (nCr / 120) / etaD / O.fu.lhv;
         lamCrD = clamp(airCr / (fKg * O.fu.afr), 1.3, 8);
       }
@@ -2445,6 +2514,8 @@ const ENGINE_SIM = (function () {
     let smooth = L.smooth * (1 - 0.10 * L.secondOrder * (g.s / 86))
       - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" ? 2 : 0)
       - (cfg.intake === "itb" ? 3 : 0) + 5;
+    const misCr = MAP && !dsl ? Math.max(0, lamCr - mapMisLam(O.hd.burn)) : 0;   // a map leaned past the misfire limit at cruise
+    if (misCr > 0) smooth -= 160 * misCr;
     smooth = Math.round(clamp(smooth, 5, 99));
 
     /* --- notes --------------------------------------------------------- */
@@ -2454,16 +2525,17 @@ const ENGINE_SIM = (function () {
     if (!boosted && vm.rpmCam > redline * 0.95) notes.push("The cam is timed for more rpm than the redline allows — you are paying for duration you never use.");
     if (inRes) notes.push("A " + majorOrder + "th-order torsional resonance sits at " + resRpm.toFixed(0) + " rpm, inside the rev range.");
     if (hotMm < 0.030) notes.push("Running clearance is only " + (hotMm * 1000).toFixed(0) + " µm — a cold-start full-throttle pull will scuff it.");
-    if (dsl && leanTop) notes.push("The injection system runs out at " + leanRpm + " rpm: \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ". A diesel just makes less power there \u2014 it runs cooler, not hotter.");
+    if (misCr > 0) notes.push("The map's cruise cell asks for \u03bb " + lamCr.toFixed(2) + " at " + Math.round(nCr) + " rpm and " + Math.round(loadCr * 100) + "% load: past about \u03bb " + mapMisLam(O.hd.burn).toFixed(2) + " the charge stops lighting every time. It misfires, surges and runs the exhaust hot.");
+    if (dsl && leanTop) notes.push("The injection system runs out at " + leanRpm + " rpm: \u03bb " + lamTop.toFixed(2) + " instead of " + lamAt(leanRpm).toFixed(2) + ". A diesel just makes less power there \u2014 it runs cooler, not hotter.");
     if (dsl && smokePk > 0.35) notes.push("Peak smoke is about " + Math.round(smokePk * 100) + "% opacity: there is more fuel going in than air to burn it" + (lamMin < cfg.lambda - 0.05 ? ", worst while the turbo is still spooling (\u03bb " + lamMin.toFixed(2) + ")" : "") + ".");
-    if (!dsl && leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
+    if (!dsl && leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + lamAt(leanRpm).toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
     if (env.altitudeM > 1500) notes.push("At " + env.altitudeM + " m the air is " + ((1 - air.rho / 1.2) * 100).toFixed(0) + "% thinner than sea level; correctedHp is the SAE-normalised figure.");
 
     /* nitrous: what the kit does on a pass that a pull does not show — the chance of a lean spike when the shot
        hits (dry kits), and of a backfire through a fuel-laden intake (plates; long runners hold the most mixture) */
     let n2oInfo = null;
     if (n2oOn) {
-      const plate = !!O.n2o.plate, leanX = Math.max(0, lamTop - cfg.lambda);
+      const plate = !!O.n2o.plate, leanX = Math.max(0, lamTop - lamAt(leanRpm));
       const runner = cfg.intake === "plenum_long" ? 2.6 : cfg.intake === "carb" ? 1.4 : cfg.intake === "plenum_short" ? 0.8 : cfg.intake === "itb" ? 0.6 : 1;
       const bf = plate ? clamp(0.012 * (O.n2o.stages || 1) * runner * (0.5 + n2oBite) * (boosted ? 1.5 : 1) * (1 + 0.25 * Math.max(0, cfg.timing - 2)) + 0.6 * leanX * runner, 0, 0.5)
         : n2oKind === "direct" ? clamp(0.002 * (0.5 + n2oBite) + 0.1 * leanX, 0, 0.2) : 0;
@@ -2494,6 +2566,7 @@ const ENGINE_SIM = (function () {
       },
       knock: dsl ? { onRequired: null, margin: 99, retardDeg: 0, cetane: cetane } : { onRequired: knockOnReq, margin: knockMargin, retardDeg: maxRetard },
       diesel: dsl, smoke: Math.round(smokePk * 1000) / 10, smokeCurve: smokeCurve, clatter: clatter, lamCurve: lamCurve,
+      knockCurve: mgnCurve, retardCurve: rtdCurve, mapCruise: MAP ? { rpm: nCr, load: dsl ? 0 : loadCr, lam: dsl ? lamCrD : lamCr, ign: dsl ? 0 : ignCr, misfire: misCr } : null,
       fuel: { duty: dutyPk, dutyRpm: dutyRpm, ccCyl: ccCylPk, load: pumpPk, loadRpm: pumpRpm, capLph: pumpCapPk, needLph: pumpNeedPk,
         injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph,
         qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : litresPerHour },
@@ -4736,8 +4809,128 @@ const ENGINE_SIM = (function () {
   }
 
 
+  /* =====================================================================
+     Tune map tools (the dyno's map editor). A map lives on cfg.map:
+       { rpm:[8-12 breakpoints], load:[% of full-load manifold pressure], ign:[[...]], lam:[[...]], boost:[...] }
+     ign / lam are rows by load, columns by rpm. simulate() reads the 100% row for the WOT sweep and the
+     cruise cell for economy; mapGrid() probes every row so the editor can colour the cells.
+     ===================================================================== */
+  const MAP_LOADS = [20, 30, 40, 50, 60, 70, 85, 100];
+  function mapAxis(cfg) {
+    const red = Math.floor(clamp(cfg.redline, isDiesel(cfg) ? 1800 : 4000, 12500) / 100) * 100;
+    const n = clamp(Math.round((red - 1000) / 700) + 1, 8, 12);
+    const out = [];
+    for (let i = 0; i < n; i++) { const v = Math.round((1000 + (red - 1000) * i / (n - 1)) / 100) * 100; if (!out.length || v > out[out.length - 1]) out.push(v); }
+    return out;
+  }
+  const mR1 = v => Math.round(v * 10) / 10, mR2 = v => Math.round(v * 100) / 100;
+  /* the map that runs exactly like today's sliders: WOT row = the sliders; petrol part load = what the stock
+     ECU does there anyway (closed-loop lambda, MBT timing); a diesel's sliders apply everywhere */
+  function mapFromSliders(cfg) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const dsl = isDiesel(cfg), rpm = mapAxis(cfg), load = MAP_LOADS.slice();
+    const lamCr = clamp(cfg.lambda + 0.07, 0.92, 1.05);
+    const ign = load.map(l => rpm.map(() => dsl || l >= 100 ? cfg.timing : 0));
+    const lam = load.map(l => rpm.map(() => dsl || l >= 100 ? cfg.lambda : mR2(lamCr)));
+    const m = { rpm: rpm, load: load, ign: ign, lam: lam };
+    if (cfg.asp !== "na") m.boost = rpm.map(() => cfg.boost);
+    return m;
+  }
+  /* re-space a map onto a new rpm axis (redline changed) by interpolating its own cells */
+  function mapRespace(m, rpm) {
+    const col = arr => rpm.map(r => mR2(mapRow(m, arr, r)));
+    const o = { rpm: rpm.slice(), load: m.load.slice(), ign: m.ign.map(row => col(row).map(mR1)), lam: m.lam.map(col) };
+    if (Array.isArray(m.boost)) o.boost = col(m.boost);
+    return o;
+  }
+  /* one row of the map as the dyno would see it: a sweep at that row's load */
+  function mapRowEval(cfg, env, j) {
+    const m = cfg.map, dsl = isDiesel(cfg);
+    const r = simulate(cfg, Object.assign({}, env || DEFAULT_ENV, { testType: "pull", mapLoad: m.load[j] / 100 }));
+    return m.rpm.map((rpm, i) => {
+      const k = clamp(Math.round((rpm - 1000) / 100), 0, r.rpms.length - 1);
+      return { rpm: rpm, load: m.load[j], ign: m.ign[j][i], cmd: m.lam[j][i], tq: r.torque[k], hp: r.power[k], egt: r.egtCurve[k], lam: r.lamCurve[k],
+        margin: dsl ? null : r.knockCurve[k], retard: dsl ? 0 : r.retardCurve[k], smoke: dsl ? r.smokeCurve[k] : 0, boost: r.boostCurve[k] };
+    });
+  }
+  function mapGrid(cfg, env) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    if (!mapOk(cfg.map)) return null;
+    return cfg.map.load.map((l, j) => mapRowEval(cfg, env, j));
+  }
+  function mapCell(cfg, env, ri, li) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    if (!mapOk(cfg.map)) return null;
+    return mapRowEval(cfg, env, li)[ri];
+  }
+  /* Auto-tune for safety: for every column of the WOT row search timing x lambda for the most torque that keeps
+     the knock margin, EGT and (diesel) smoke inside the targets; part-load rows get their timing the same way.
+     opt: { margin: ON of knock margin to keep, ignStep, lamStep, egtMax, smokeMax }. Then a full pull checks that
+     no test fails that did not fail before, and backs the whole WOT row off until none does. */
+  function mapAutoTune(cfg, env, opt) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    env = Object.assign({}, DEFAULT_ENV, env || {}, { testType: "pull" });
+    opt = Object.assign({ margin: 1.0, ignStep: 1, lamStep: 0.02, smokeMax: 0.15 }, opt || {});
+    const dsl = isDiesel(cfg), boosted = cfg.asp !== "na";
+    const tm = OPT.turbineMat[cfg.turbineMat];
+    const egtMax = opt.egtMax || (dsl ? 720 : Math.min(950, boosted && tm && tm.maxEgtC ? tm.maxEgtC - 40 : 950));
+    const m = JSON.parse(JSON.stringify(mapOk(cfg.map) ? cfg.map : mapFromSliders(cfg)));
+    const nR = m.rpm.length, top = m.load.length - 1;
+    const steps = (a, b, st) => { const o = []; for (let v = a; v <= b + 1e-9; v += st) o.push(Math.round(v * 100) / 100); return o; };
+    const ignC = steps(dsl ? -8 : -12, dsl ? 6 : 8, 2);
+    const lamC = dsl ? steps(1.15, 2.4, Math.max(0.05, opt.lamStep * 2.5)) : steps(cfg.fuel === "methanol" ? 0.70 : 0.76, 0.98, Math.max(0.02, opt.lamStep));
+    let sims = 0;
+    const run = (j, ignRow, lamRow) => { const t = JSON.parse(JSON.stringify(m)); t.ign[j] = ignRow; if (lamRow) t.lam[j] = lamRow; sims++; return mapRowEval(Object.assign({}, cfg, { map: t }), env, j); };
+    const viol = c => Math.max(0, opt.margin - (dsl ? 99 : c.margin)) * 40 + Math.max(0, c.egt - egtMax) + Math.max(0, c.smoke - opt.smokeMax) * 400;
+    // feasible beats infeasible; then torque; a near tie (0.05%) goes to the smaller change from the cell as it was
+    const moved = (c, j, i) => Math.abs(c.cmd - m.lam[j][i]) * (dsl ? 2 : 10) + Math.abs(c.ign - m.ign[j][i]) * 0.1;
+    const better = (c, b, j, i) => { if (!b) return true; const vc = viol(c), vb = viol(b); if (vc > 0 || vb > 0) return vc < vb - 1e-9 || (vc <= vb + 1e-9 && c.tq > b.tq);
+      return c.tq > b.tq * 1.0005 || (c.tq > b.tq * 0.9995 && moved(c, j, i) < moved(b, j, i)); };
+    const fill = v => Array(nR).fill(v);
+    const snap = v => Math.floor(v / opt.ignStep + 1e-6) * opt.ignStep;
+    for (let j = top; j >= 0; j--) {
+      const wot = j === top;
+      if (!wot && dsl) continue;                              // a diesel's part load has no knock to trade against
+      // 1. best timing per column as the dyno sees it (MBT, or where the knock control starts taking it away),
+      //    swept at the cell's own lambda, then refined
+      const mbt = fill(ignC[0]), mbtTq = fill(-1);
+      const take = (row, ig) => row.forEach((c, i) => { if (c.tq > mbtTq[i] * 1.0001) { mbtTq[i] = c.tq; mbt[i] = ig[i]; } });
+      for (const iv of ignC) take(run(j, fill(iv), null), fill(iv));
+      for (const d of [-1, 1, -0.5, 0.5]) { if (Math.abs(d) < opt.ignStep - 1e-9) continue; const ig = mbt.map(v => v + d); take(run(j, ig, null), ig); }
+      // 2. for each lambda: measure the knock line (margin falls linearly with advance) and take the lesser of
+      //    MBT and the timing that keeps the target margin; check it on the dyno and step back where it missed
+      const best = fill(null);
+      for (const lv of wot ? lamC : [null]) {
+        const lr = lv == null ? null : fill(lv);
+        let ig = mbt.slice();
+        if (!dsl) {
+          const A = run(j, fill(0), lr), B = run(j, fill(-6), lr);
+          ig = A.map((c, i) => { const slope = Math.max(0.2, (B[i].margin - c.margin) / 6); return clamp(snap(Math.min(mbt[i], (c.margin - opt.margin) / slope)), -16, 12); });
+        }
+        let row = run(j, ig, lr);
+        for (let k = 0; k < 3 && !dsl; k++) {
+          const miss = row.map(c => c.margin < opt.margin - 1e-6);
+          if (!miss.some(x => x)) break;
+          ig = ig.map((v, i) => miss[i] ? Math.max(-16, v - opt.ignStep) : v); row = run(j, ig, lr);
+        }
+        row.forEach((c, i) => { const k = Object.assign({}, c, { ign: ig[i], cmd: lv == null ? m.lam[j][i] : lv }); if (better(k, best[i], j, i)) best[i] = k; });
+      }
+      m.ign[j] = best.map(c => mR1(c.ign));
+      if (wot) m.lam[j] = best.map(c => mR2(c.cmd));
+    }
+    // a whole pull: anything the tune newly breaks gets the WOT row backed off
+    const before = simulate(cfg, env), failsBefore = before.fails.slice();
+    let after = simulate(Object.assign({}, cfg, { map: m }), env), backed = 0;
+    while (after.fails.some(f => failsBefore.indexOf(f) < 0) && backed < 8) {
+      m.ign[top] = m.ign[top].map(v => mR1(v - 1)); if (!dsl) m.lam[top] = m.lam[top].map(v => mR2(Math.max(0.70, v - 0.02))); else m.lam[top] = m.lam[top].map(v => mR2(v + 0.05));
+      after = simulate(Object.assign({}, cfg, { map: m }), env); backed++;
+    }
+    return { map: m, before: before, after: after, sims: sims, backedOff: backed, egtMax: egtMax };
+  }
+
   return {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
+    mapFromSliders: mapFromSliders, mapGrid: mapGrid, mapCell: mapCell, mapAutoTune: mapAutoTune, mapRespace: mapRespace, mapAxis: mapAxis, mapOk: mapOk, mapLook: mapLook, MAP_LOADS: MAP_LOADS,
     DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, TYRES: TYRES, AERO: AERO,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
@@ -13535,7 +13728,7 @@ function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===
 function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
 function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
-function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))).sort().map(k=>c[k]));}
+function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
 function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.name.split(" ")[0];}
@@ -13699,7 +13892,7 @@ function clampCfgLimits(){let moved=null;
   return moved;}
 function sliderRow(f){const v=S.cfg[f.key],lo=fMin(f),hi=fMax(f);
   const unlocked=f.maxIf&&hi>f.max&&fMax(f,Object.assign({},S.cfg,{fuel:"r91"}))>f.max;   // "billet" only when the outlaw parts raised it, not the diesel limits
-  return `<div class="lbl"><span>${fLabel(f)}${unlocked?' <em class="unl">billet</em>':""}</span><b id="v-${f.key}" class="tap" data-num="${f.key}" title="Tap to type">${f.fmt?f.fmt(v):v}${f.unit?" "+f.unit:""}</b></div><div class="srow"><button class="nud" data-nud="-1" data-nk="${f.key}" aria-label="Decrease">−</button><input type="range" id="r-${f.key}" data-k="${f.key}" min="${lo}" max="${hi}" step="${f.step}" value="${v}"><button class="nud" data-nud="1" data-nk="${f.key}" aria-label="Increase">+</button></div>`;}
+  return `<div class="lbl"><span>${fLabel(f)}${unlocked?' <em class="unl">billet</em>':""}${mapTagFor(f.key)}</span><b id="v-${f.key}" class="tap" data-num="${f.key}" title="Tap to type">${f.fmt?f.fmt(v):v}${f.unit?" "+f.unit:""}</b></div><div class="srow"><button class="nud" data-nud="-1" data-nk="${f.key}" aria-label="Decrease">−</button><input type="range" id="r-${f.key}" data-k="${f.key}" min="${lo}" max="${hi}" step="${f.step}" value="${v}"><button class="nud" data-nud="1" data-nk="${f.key}" aria-label="Increase">+</button></div>`;}
 /* petrol <-> diesel: a petrol map on a diesel (or the reverse) is nonsense, so switching family drops in a tune that runs.
    Returns the toast, or null when the family didn't change. clampCfgLimits() then pulls the rest inside the new limits. */
 function fuelFamilyDefaults(c,wasD){const d=isCI(c.fuel);if(d===wasD)return null;const boosted=c.asp!=="na";
@@ -13730,7 +13923,7 @@ $("buildForm").addEventListener("click",e=>{
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
   const wasD=isCI(S.cfg.fuel);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
-  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD):null;
+  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD):null;if(fam)delete S.cfg.map;
   const moved=clampCfgLimits();
   if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
   afterCfgChange(true);});
@@ -13751,7 +13944,7 @@ function releaseBase(){                   // finished adjusting: hold the readin
 $("buildForm").addEventListener("pointerdown",e=>{if(e.target.type==="range")holdBase(e.target.dataset.k);},{passive:true});
 const NOTCH={bore:1,stroke:1,rodRatio:0.05,cr:0.5,cam:5,lift:5,redline:250,timing:1,lambda:0.02,boost:0.1};
 const lastNotch={};
-function applySlider(k,v,r){S.cfg[k]=v;if(r&&parseFloat(r.value)!==v)r.value=v;
+function applySlider(k,v,r){mapShiftTo(k,v);S.cfg[k]=v;if(r&&parseFloat(r.value)!==v)r.value=v;
   const nt=NOTCH[k]||1;const ni=Math.floor(v/nt+1e-6);if(lastNotch[k]!==undefined&&ni!==lastNotch[k])buzz(4);lastNotch[k]=ni;
   const f=FORM.flatMap(s=>s.fields).find(x=>x.key===k);const lab=$("v-"+k);if(lab)lab.textContent=(f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");
   recompute();
@@ -13765,7 +13958,7 @@ Object.assign(FOCUS_OF,{launchCtl:"exhaust",launchRetard:"exhaust",twoStepRpm:"e
 Object.assign(FOCUS_OF,{injectors:"intake",fuelPump:"intake"});
 let lastFocus=null;
 function autoFocus(key){if(testing||S.followCam===false)return;let part=FOCUS_OF[key];if(!part)return;if(part==="turbo"&&S.cfg.asp==="na")part="intake";if(part===lastFocus)return;lastFocus=part;ENGINE_VIS.focus(part);}
-function commitSlider(){S.profileId=null;ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);}
+function commitSlider(){S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);}
 function sliderField(k){return FORM.flatMap(s=>s.fields).find(x=>x.key===k);}
 function snapVal(f,v){const st=f.step||1,lo=fMin(f),hi=fMax(f);v=Math.round((v-lo)/st)*st+lo;v=Math.min(hi,Math.max(lo,v));return +v.toFixed(4);}
 $("buildForm").addEventListener("input",e=>{const r=e.target;if(!r.dataset||!r.dataset.k||r.type!=="range")return;autoFocus(r.dataset.k);applySlider(r.dataset.k,parseFloat(r.value),r);});
@@ -13774,7 +13967,7 @@ $("buildForm").addEventListener("change",e=>{if(e.target.type==="range")commitSl
 (()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
   let n=0;
   const step=(k,dir,light)=>{const f=sliderField(k);if(!f)return;const r=$("r-"+k);const nv=snapVal(f,S.cfg[k]+dir*(f.nudge||f.step||1));if(nv===S.cfg[k])return;holdBase(k);
-    if(light&&(++n%4)){S.cfg[k]=nv;if(r)r.value=nv;const lab=$("v-"+k);if(lab)lab.textContent=(f.fmt?f.fmt(nv):nv)+(f.unit?" "+f.unit:"");}else applySlider(k,nv,r);buzz(3);};
+    if(light&&(++n%4)){mapShiftTo(k,nv);S.cfg[k]=nv;if(r)r.value=nv;const lab=$("v-"+k);if(lab)lab.textContent=(f.fmt?f.fmt(nv):nv)+(f.unit?" "+f.unit:"");}else applySlider(k,nv,r);buzz(3);};
   $("buildForm").addEventListener("pointerdown",e=>{const b=e.target.closest(".nud");if(!b)return;e.preventDefault();const k=b.dataset.nk,dir=+b.dataset.nud;stop();step(k,dir);n=0;hold={k,t:setTimeout(()=>{hold.i=setInterval(()=>step(k,dir,true),110);},420)};});
   const end=e=>{if(!hold)return;const k=hold.k;stop();applySlider(k,S.cfg[k],$("r-"+k));commitSlider();};
   ["pointerup","pointercancel","pointerleave"].forEach(ev=>$("buildForm").addEventListener(ev,e=>{if(e.target.closest&&e.target.closest(".nud"))end(e);}));
@@ -14043,7 +14236,171 @@ function renderTest(){
     : `<b>${dc.n}</b> · no limits in the test cell. Figures update as you change the build; run a test to lock a result and pin it as a baseline.`;
   if(S.env.testType==="drag")rnRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
+  renderMap();
 }
+/* ===================== TUNE MAP (dyno) =====================
+   S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,
+   a per-rpm boost target). The sim reads its 100% row for the WOT pull and the cruise cell for economy; SIM.mapGrid
+   probes each load row so every cell can show its knock margin, EGT, smoke and torque. A map is never edited in
+   place: blueprints and S.last hold the same object, so every edit swaps in a fresh copy. */
+const MV={mode:"ign",over:"val",a:null,b:null,block:false,grid:null,key:"",drag:false,busy:false,wheel:0};
+const mapHas=()=>!!(S.cfg.map&&SIM.mapOk(S.cfg.map));
+const MAP_STEP={ign:0.5,lam:0.01,boost:0.05};
+const MAP_SLIDE={timing:"ign",lambda:"lam",boost:"boost"};
+function mapLim(mode){const d=isCI(S.cfg.fuel);return mode==="ign"?[-20,15]:mode==="lam"?(d?[1.0,4.0]:[0.65,1.6]):[0,fMax(sliderField("boost"))];}
+function mapRnd(mode,v){const l=mapLim(mode);v=Math.min(l[1],Math.max(l[0],v));return mode==="ign"?Math.round(v*10)/10:Math.round(v*100)/100;}
+function mapFmt(mode,v){if(mode!=="ign")return v.toFixed(2);const a=Math.abs(v);return (v>0?"+":v<0?"−":"")+(a%1?a.toFixed(1):a.toFixed(0));}
+function mapTbl(m,mode){return mode==="ign"?m.ign:mode==="lam"?m.lam:[m.boost||m.rpm.map(()=>S.cfg.boost)];}
+function mapSet(m,mode,li,ri,v){if(mode==="boost"){if(!m.boost)m.boost=m.rpm.map(()=>S.cfg.boost);m.boost[ri]=v;}else (mode==="ign"?m.ign:m.lam)[li][ri]=v;}
+function mapTagFor(k){return S.cfg.map&&MAP_SLIDE[k]&&(k!=="boost"||S.cfg.map.boost)?' <em class="unl">mapped</em>':"";}
+/* the sliders, with a map: they move the whole map by the same offset */
+function mapShiftTo(k,v){const mode=MAP_SLIDE[k];if(!mapHas()||!mode||v===S.cfg[k])return;if(mode==="boost"&&!S.cfg.map.boost)return;
+  const d=v-S.cfg[k],m=JSON.parse(JSON.stringify(S.cfg.map));
+  if(mode==="boost")m.boost=m.boost.map(x=>mapRnd("boost",x+d));else{const t=mode==="ign"?m.ign:m.lam;t.forEach((row,j)=>t[j]=row.map(x=>mapRnd(mode,x+d)));}
+  S.cfg.map=m;}
+/* the redline moved: lay the rpm axis out again over the new range, keeping the shape */
+function mapFitAxis(){if(!mapHas())return false;const ax=SIM.mapAxis(S.cfg),m=S.cfg.map;if(ax.join()===m.rpm.join())return false;S.cfg.map=SIM.mapRespace(m,ax);MV.a=MV.b=null;return true;}
+function mapGridNow(){const env=simEnv({testType:"pull"});const k=cfgHash(S.cfg)+JSON.stringify(env);if(MV.key!==k){MV.grid=SIM.mapGrid(S.cfg,env);MV.key=k;}return MV.grid;}
+function tuneLevel(){if(!career()||dev())return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Full calibration"};const t=staffed("tuner"),c=!!(C().rnd&&C().rnd.calib);
+  if(t&&c)return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Calibration engineer + suite"};if(t)return{margin:1.0,ignStep:1,lamStep:0.02,name:"Calibration engineer"};
+  if(c)return{margin:1.5,ignStep:2,lamStep:0.04,name:"Calibration suite"};return null;}
+function tuneCost(){if(!career()||dev())return 0;return (staffed("dynotech")?0:300)+4*fuelBill();}   // about four pulls of dyno time
+/* cell colour: by value, or by the overlay's feedback (green safe, amber close, red past it) */
+function mapBg(mode,over,v,c,tqMax,bMax){
+  const hs=(h,a)=>`hsla(${Math.round(h)},72%,48%,${a})`;
+  if(over==="knock")return hs(Math.min(1,Math.max(0,(c.margin+1)/4))*120,.5);
+  if(over==="egt")return hs(120-Math.min(1,Math.max(0,(c.egt-650)/330))*120,.5);
+  if(over==="smoke")return hs(120-Math.min(1,Math.max(0,c.smoke/0.35))*120,.5);
+  if(over==="tq")return `rgba(255,122,26,${(0.06+0.62*Math.max(0,c.tq)/Math.max(1,tqMax)).toFixed(3)})`;
+  const d=isCI(S.cfg.fuel);
+  if(mode==="ign"){const t=Math.max(-1,Math.min(1,v/8));return t>=0?`rgba(255,122,26,${(0.06+0.5*t).toFixed(3)})`:`rgba(95,168,230,${(0.06-0.5*t).toFixed(3)})`;}
+  if(mode==="lam"){const t=d?Math.max(-1,Math.min(1,(v-1.7)/0.5)):Math.max(-1,Math.min(1,(v-1.0)/0.14));return t<0?`rgba(95,168,230,${(0.06-0.5*t).toFixed(3)})`:`rgba(226,71,60,${(0.06+0.5*t).toFixed(3)})`;}
+  return `rgba(255,122,26,${(0.06+0.55*v/Math.max(0.1,bMax)).toFixed(3)})`;}
+function mapSub(over,c){if(over==="knock")return (c.margin>=0?"+":"−")+Math.abs(c.margin).toFixed(1);if(over==="egt")return Math.round(c.egt)+"";if(over==="smoke")return Math.round(c.smoke*100)+"%";if(over==="tq")return Math.round(c.tq)+"";return "";}
+const MAP_LEG={knock:["knock margin","−1","+3 ON","hsla(0,72%,48%,.6),hsla(60,72%,48%,.6),hsla(120,72%,48%,.6)"],egt:["EGT","650","980 °C","hsla(120,72%,48%,.6),hsla(60,72%,48%,.6),hsla(0,72%,48%,.6)"],
+  smoke:["smoke","0","35%","hsla(120,72%,48%,.6),hsla(60,72%,48%,.6),hsla(0,72%,48%,.6)"],tq:["torque","0","max","rgba(255,122,26,.06),rgba(255,122,26,.68)"]};
+function mapSelRect(){if(!MV.a)return null;const b=MV.b||MV.a;return{l0:Math.min(MV.a[0],b[0]),l1:Math.max(MV.a[0],b[0]),r0:Math.min(MV.a[1],b[1]),r1:Math.max(MV.a[1],b[1])};}
+function renderMap(){
+  const sec=$("mapSec");if(!sec)return;
+  const show=["pull","endurance","overrev"].includes(S.env.testType);sec.style.display=show?"":"none";if(!show)return;
+  const box=$("mapBox"),d=isCI(S.cfg.fuel),boosted=S.cfg.asp!=="na";
+  if(!mapHas()){$("mapCnt").textContent="sliders";
+    box.dataset.sk="";box.innerHTML=`<p class="hint" style="margin-top:-4px">The tune is one ${d?"injection timing":"ignition timing"} and one λ for the whole rev range. A map gives every rpm and load its own cell, with ${d?"smoke":"knock"}, EGT and torque read back per cell — pull timing only where it ${d?"smokes":"knocks"}, ${d?"fuel":"enrich"} only where it needs it, lean the cruise cells for economy.</p>
+      <button class="btn sm" data-map="create" style="width:100%"${testing?" disabled":""}>Start a map from the sliders</button>`;return;}
+  if(mapFitAxis())recompute();
+  if(MV.mode==="boost"&&!boosted)MV.mode="ign";
+  if(MV.over==="knock"&&d)MV.over="smoke";if(MV.over==="smoke"&&!d)MV.over="knock";
+  const m=S.cfg.map,G=mapGridNow(),nL=m.load.length,nR=m.rpm.length,bm=MV.mode==="boost";
+  if(MV.a&&(MV.a[0]>=nL||MV.a[1]>=nR))MV.a=MV.b=null;
+  if(bm&&MV.a){MV.a=[nL-1,MV.a[1]];MV.b=[nL-1,(MV.b||MV.a)[1]];}
+  const T=mapTbl(m,MV.mode),tqMax=Math.max(...G.flat().map(c=>c.tq)),bMax=Math.max(0.1,...(m.boost||[S.cfg.boost]));
+  $("mapCnt").textContent=`${nR} × ${bm?1:nL} · ${d?"diesel":"spark"}`;
+  const cr=quick&&quick.mapCruise&&!d?quick.mapCruise:null;
+  const near=(ax,v)=>ax.reduce((bi,x,i)=>Math.abs(x-v)<Math.abs(ax[bi]-v)?i:bi,0);
+  const crCell=cr?[near(m.load,cr.load*100),near(m.rpm,cr.rpm)]:null;
+  let h=`<table class="mapt"><thead><tr><th class="ax">${bm?"bar":"load"}</th>${m.rpm.map(r=>`<th>${r>=10000?(r/1000).toFixed(1)+"k":r.toLocaleString("en-CA")}</th>`).join("")}</tr></thead><tbody>`;
+  const rows=bm?[nL-1]:m.load.map((_,j)=>nL-1-j);
+  for(const li of rows){h+=`<tr><td class="ax">${bm?"target":m.load[li]+"%"}</td>`;
+    for(let ri=0;ri<nR;ri++){const v=bm?T[0][ri]:T[li][ri],c=G[li][ri];const sub=MV.over==="val"?(bm?c.boost.toFixed(2):""):mapSub(MV.over,c);
+      h+=`<td class="c${crCell&&!bm&&crCell[0]===li&&crCell[1]===ri?" cr":""}" data-li="${li}" data-ri="${ri}" style="background:${mapBg(MV.mode,MV.over,v,c,tqMax,bMax)}"><b>${mapFmt(MV.mode,v)}</b>${sub?`<i>${sub}</i>`:""}</td>`;}
+    h+=`</tr>`;}
+  h+=`</tbody></table>`;
+  const leg=MV.over==="val"?(MV.mode==="ign"?["timing vs MBT","retard","advance","rgba(95,168,230,.56),rgba(255,255,255,0),rgba(255,122,26,.56)"]:MV.mode==="lam"?["commanded λ","rich","lean","rgba(95,168,230,.56),rgba(255,255,255,0),rgba(226,71,60,.56)"]:["boost target","0","max","rgba(255,122,26,.06),rgba(255,122,26,.61)"]):MAP_LEG[MV.over];
+  const lvl=tuneLevel(),cost=tuneCost(),wrapOld=$("mapWrap"),sl=wrapOld?wrapOld.scrollLeft:0,foc=document.activeElement===wrapOld;
+  const modeBtns=[["ign",d?"Injection":"Ignition",d?"° timing":"° vs MBT"],["lam",d?"Fuel limiter":"Fuel λ",d?"min λ":"commanded"]].concat(boosted?[["boost","Boost","bar target"]]:[]);
+  const overBtns=[["val","Values"],[d?"smoke":"knock",d?"Smoke":"Knock"],["egt","EGT"],["tq","Torque"]];
+  const note=`${lvl?`<b>${lvl.name}</b>: auto-tune keeps ${d?"smoke under 15% and EGT in check":`${lvl.margin.toFixed(1)} ON of knock margin and EGT in check`}, in ${lvl.ignStep}° / λ ${lvl.lamStep.toFixed(2)} steps.`:"Auto-tune needs a <b>Calibration engineer</b> (staff) or the <b>Calibration suite</b> (R&amp;D)."} ${html_desk()?"Drag to select a block · ↑↓ or wheel nudge · ←→ move · Shift+arrows extend.":"Tap a cell, <b>Block</b> then a far corner for a block, ± to nudge."}${cr?` Blue dot: the cruise cell (${Math.round(cr.rpm).toLocaleString("en-CA")} rpm, ${Math.round(cr.load*100)}%) that sets the economy figure.`:""}`;
+  /* a nudge only changes the cells: swap the table, keep the buttons (a finger may still be on one) */
+  const sk=[MV.mode,MV.over,d,boosted,lvl&&lvl.name,cost,MV.busy,testing,MV.block].join("|");
+  if(wrapOld&&box.dataset.sk===sk){wrapOld.innerHTML=h;$("mapNote").innerHTML=note;mapPaintSel();return;}
+  box.dataset.sk=sk;
+  box.innerHTML=`<div class="seg n${modeBtns.length}" id="mapMode">${modeBtns.map(x=>`<button data-mm="${x[0]}" class="${MV.mode===x[0]?"on":""}">${x[1]}<small>${x[2]}</small></button>`).join("")}</div>
+    <div class="chips" id="mapOver" style="margin-bottom:8px">${overBtns.map(x=>`<button class="chip${MV.over===x[0]?" on":""}" data-mo="${x[0]}">${x[1]}</button>`).join("")}</div>
+    <div class="mapwrap" id="mapWrap" tabindex="0" aria-label="Tune map grid">${h}</div>
+    <div class="mapleg"><span>${leg[0]}</span><span>${leg[1]}</span><span class="g" style="background:linear-gradient(90deg,${leg[3]})"></span><span>${leg[2]}</span></div>
+    <div class="mapfb" id="mapFb"></div>
+    <div class="mapbar"><button class="nud" data-mn="-1" aria-label="Nudge down">−</button><button class="nud" data-mn="1" aria-label="Nudge up">+</button>
+      <button class="btn sm ghost${MV.block?" on":""}" data-map="block" title="Then tap the far corner of the block">Block</button><button class="btn sm ghost" data-map="smooth">Smooth</button><button class="btn sm ghost" data-map="interp">Interpolate</button></div>
+    <div class="mapbar"><button class="btn sm${lvl?" pri":""}" data-map="auto" style="flex:2 1 100%"${!lvl||testing||MV.busy?" disabled":""}>${MV.busy?"Tuning…":"Auto-tune for safety"}${lvl&&cost?" · "+fmt$(cost):""}</button>
+      <button class="btn sm ghost" data-map="copy">Copy from sliders</button><button class="btn sm ghost" data-map="reset">Reset map</button></div>
+    <p class="hint" id="mapNote">${note}</p>`;
+  const w=$("mapWrap");w.scrollLeft=sl;if(foc)w.focus({preventScroll:true});
+  mapPaintSel();}
+function html_desk(){return document.documentElement.classList.contains("desk");}
+function mapPaintSel(){const w=$("mapWrap");if(!w)return;const R=mapSelRect();
+  w.querySelectorAll("td.c").forEach(td=>{const li=+td.dataset.li,ri=+td.dataset.ri;const inR=R&&ri>=R.r0&&ri<=R.r1&&(MV.mode==="boost"||li>=R.l0&&li<=R.l1);td.classList.toggle("sel",!!inR);td.classList.toggle("anc",!!(MV.a&&MV.a[0]===li&&MV.a[1]===ri));});
+  mapFeedback();}
+function mapFeedback(){const fb=$("mapFb");if(!fb)return;const m=S.cfg.map,G=MV.grid,d=isCI(S.cfg.fuel);
+  if(!MV.a||!G){fb.innerHTML=`Tap a cell to read it back${quick?` · this map pulls ${Math.round(quick.peakHp)} hp, ${Math.round(quick.peakTq)} N·m, ${quick.econ} L/100 km`:""}.`;return;}
+  const [li,ri]=MV.a,c=G[li][ri],R=mapSelRect(),nSel=(R.r1-R.r0+1)*(MV.mode==="boost"?1:R.l1-R.l0+1);
+  const head=`<b>${m.rpm[ri].toLocaleString("en-CA")} rpm · ${MV.mode==="boost"?"boost":m.load[li]+"%"}</b>: `;
+  let t;
+  if(MV.mode==="boost")t=`target ${(m.boost?m.boost[ri]:S.cfg.boost).toFixed(2)} bar → makes ${c.boost.toFixed(2)} bar`;
+  else t=`${mapFmt("ign",m.ign[li][ri])}° → ${d?`smoke <span class="${c.smoke>0.25?"c":c.smoke>0.12?"w":"g"}">${Math.round(c.smoke*100)}%</span>`:`knock margin <span class="${c.margin<0?"c":c.margin<1?"w":"g"}">${c.margin>=0?"+":"−"}${Math.abs(c.margin).toFixed(1)}</span>${c.retard>0.05?` <span class="c">(ECU retard ${c.retard.toFixed(1)}°)</span>`:""}`}`;
+  t+=`, EGT <span class="${c.egt>950?"c":c.egt>880?"w":""}">${Math.round(c.egt)} °C</span>, λ ${c.lam.toFixed(2)}${Math.abs(c.lam-c.cmd)>0.005&&MV.mode!=="boost"?` <span class="w">(asked ${c.cmd.toFixed(2)})</span>`:""}, ${Math.round(c.tq)} N·m`;
+  if(!d&&m.load[li]<100&&MV.mode==="lam"&&c.cmd>1.1)t+=` <span class="w">· lean: misfire risk at cruise</span>`;
+  fb.innerHTML=head+t+(nSel>1?`<br><span style="color:var(--dim)">${nSel} cells selected</span>`:"");}
+let mapSaveT=null;
+function mapCommit(){clearTimeout(mapSaveT);mapSaveT=setTimeout(()=>{save();if(curTab==="analysis")renderAnalysis();},400);}
+function mapEdit(fn){if(!mapHas()||testing)return;const m=JSON.parse(JSON.stringify(S.cfg.map));if(fn(m)===false)return;S.cfg.map=m;
+  if(m.boost&&S.cfg.asp!=="na")S.cfg.boost=Math.max(...m.boost);   // the turbo is sized and spooled for the highest target
+  S.profileId=null;recompute();renderMap();mapCommit();}
+function mapNudge(dir,mult){const R=mapSelRect();if(!R){toast("Tap a cell first");return;}const mode=MV.mode,st=MAP_STEP[mode]*(mult||1);
+  mapEdit(m=>{const T=mapTbl(m,mode);for(let li=R.l0;li<=R.l1;li++)for(let ri=R.r0;ri<=R.r1;ri++){if(mode==="boost"&&li!==m.load.length-1)continue;const v=mode==="boost"?T[0][ri]:T[li][ri];mapSet(m,mode,li,ri,mapRnd(mode,v+dir*st));}});buzz(3);}
+function mapSmooth(){const R=mapSelRect(),mode=MV.mode;mapEdit(m=>{const T=JSON.parse(JSON.stringify(mapTbl(m,mode))),nl=T.length,nr=T[0].length;
+  const all=!R||(R.r0===R.r1&&R.l0===R.l1);const inR=(li,ri)=>all||ri>=R.r0&&ri<=R.r1&&(mode==="boost"||li>=R.l0&&li<=R.l1);
+  for(let j=0;j<nl;j++)for(let i=0;i<nr;i++){const li=mode==="boost"?m.load.length-1:j;if(!inR(li,i))continue;let s=2*T[j][i],n=2;for(const [dj,di] of [[0,1],[0,-1],[1,0],[-1,0]]){const a=T[j+dj];if(a&&a[i+di]!=null){s+=a[i+di];n++;}}mapSet(m,mode,li,i,mapRnd(mode,s/n));}});
+  toast(R&&!(R.r0===R.r1&&R.l0===R.l1)?"Smoothed the selection":"Smoothed the whole table");}
+function mapInterp(){const R=mapSelRect(),mode=MV.mode;if(!R||(R.r0===R.r1&&(mode==="boost"||R.l0===R.l1))){toast("Select a block first: drag, or Block then the far corner");return;}
+  mapEdit(m=>{const T=mapTbl(m,mode),g=(li,ri)=>mode==="boost"?T[0][ri]:T[li][ri];
+    if(R.r1>R.r0){for(let li=(mode==="boost"?m.load.length-1:R.l0);li<=(mode==="boost"?m.load.length-1:R.l1);li++){const a=g(li,R.r0),b=g(li,R.r1),x0=m.rpm[R.r0],x1=m.rpm[R.r1];for(let ri=R.r0+1;ri<R.r1;ri++)mapSet(m,mode,li,ri,mapRnd(mode,a+(b-a)*(m.rpm[ri]-x0)/(x1-x0)));}}
+    else{for(let ri=R.r0;ri<=R.r1;ri++){const a=g(R.l0,ri),b=g(R.l1,ri),y0=m.load[R.l0],y1=m.load[R.l1];for(let li=R.l0+1;li<R.l1;li++)mapSet(m,mode,li,ri,mapRnd(mode,a+(b-a)*(m.load[li]-y0)/(y1-y0)));}}});
+  toast(R.r1>R.r0?"Interpolated across rpm":"Interpolated across load");}
+function mapAuto(){const lvl=tuneLevel();if(!lvl||MV.busy||testing)return;const cost=tuneCost();if(career()&&C().cash<cost){toast("Not enough cash for dyno time");return;}
+  MV.busy=true;renderMap();
+  setTimeout(()=>{try{const before=quick;const r=SIM.mapAutoTune(S.cfg,simEnv({testType:"pull"}),lvl);
+      if(career()&&cost){C().cash-=cost;hud();}
+      S.cfg.map=r.map;S.profileId=null;MV.busy=false;recompute();renderMap();save();
+      const avg=x=>x.torque.reduce((s,v)=>s+v,0)/x.torque.length,dh=Math.round(r.after.peakHp-r.before.peakHp),dq=Math.round(avg(r.after)-avg(r.before));
+      toast(`Auto-tune: ${dh>=0?"+":"−"}${Math.abs(dh)} hp, ${dq>=0?"+":"−"}${Math.abs(dq)} N·m average · ${isCI(S.cfg.fuel)?"smoke ≤ 15%":"knock margin ≥ "+lvl.margin.toFixed(1)}, EGT ≤ ${r.egtMax} °C${r.backedOff?" · backed off "+r.backedOff+"° to stay in one piece":""}`);buzz([10,30,10]);
+      if(before)void 0;}
+    catch(e){MV.busy=false;renderMap();throw e;}},40);}
+$("mapBox").addEventListener("click",e=>{
+  const b=e.target.closest("[data-map],[data-mm],[data-mo]");if(!b||b.disabled)return;
+  if(b.dataset.mm){MV.mode=b.dataset.mm;renderMap();return;}
+  if(b.dataset.mo){MV.over=b.dataset.mo;renderMap();return;}
+  const a=b.dataset.map;if(testing&&a!=="block")return;
+  if(a==="create"||a==="copy"){if(a==="copy"&&!confirm("Replace the map with the slider values? Your cell edits will be lost."))return;
+    S.cfg.map=SIM.mapFromSliders(S.cfg);S.profileId=null;MV.a=MV.b=null;recompute();renderBuild();renderMap();save();toast(a==="create"?"Map started from the sliders — it runs exactly like them until you change a cell":"Map reset to the slider values");return;}
+  if(a==="reset"){if(!confirm("Delete the map and go back to the sliders?"))return;delete S.cfg.map;MV.a=MV.b=null;recompute();renderBuild();renderMap();save();toast("Map removed — the sliders run the engine again");return;}
+  if(a==="block"){MV.block=!MV.block;b.classList.toggle("on",MV.block);if(MV.block&&!MV.a)toast("Tap the first corner, then the far corner");return;}
+  if(a==="smooth")mapSmooth();else if(a==="interp")mapInterp();else if(a==="auto")mapAuto();});
+/* ± with hold-to-repeat */
+(()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
+  $("mapBox").addEventListener("pointerdown",e=>{const b=e.target.closest("[data-mn]");if(!b)return;e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch(x){}const dir=+b.dataset.mn;stop();mapNudge(dir);hold={t:setTimeout(()=>{hold.i=setInterval(()=>mapNudge(dir),140);},420)};});
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>$("mapBox").addEventListener(ev,e=>{if(e.target.closest&&e.target.closest("[data-mn]"))stop();}));
+  window.addEventListener("pointerup",stop);window.addEventListener("pointercancel",stop);window.addEventListener("touchend",stop);window.addEventListener("blur",stop);})();
+/* cells: tap / shift-click / Block-mode corner, mouse drag-select */
+$("mapBox").addEventListener("pointerdown",e=>{const td=e.target.closest("#mapWrap td.c");if(!td)return;const p=[+td.dataset.li,+td.dataset.ri];
+  if((e.shiftKey||MV.block)&&MV.a){MV.b=p;MV.block=false;const bb=$("mapBox").querySelector('[data-map="block"]');if(bb)bb.classList.remove("on");}else{MV.a=p;MV.b=p;}
+  if(e.pointerType==="mouse"){MV.drag=true;e.preventDefault();$("mapWrap").focus({preventScroll:true});}
+  mapPaintSel();});
+$("mapBox").addEventListener("pointermove",e=>{if(!MV.drag)return;const el=document.elementFromPoint(e.clientX,e.clientY),td=el&&el.closest&&el.closest("#mapWrap td.c");if(!td)return;const p=[+td.dataset.li,+td.dataset.ri];if(!MV.b||p[0]!==MV.b[0]||p[1]!==MV.b[1]){MV.b=p;mapPaintSel();}});
+window.addEventListener("pointerup",()=>{MV.drag=false;});
+$("mapBox").addEventListener("keydown",e=>{if(e.target.id!=="mapWrap"||!mapHas())return;const k=e.key,m=S.cfg.map,nL=m.load.length,nR=m.rpm.length;
+  if(!MV.a){if(k.startsWith("Arrow")){MV.a=MV.b=[nL-1,0];mapPaintSel();e.preventDefault();}return;}
+  const mv=(dl,dr)=>{const p=e.shiftKey?(MV.b||MV.a).slice():MV.a.slice();p[0]=Math.max(0,Math.min(nL-1,p[0]+dl));p[1]=Math.max(0,Math.min(nR-1,p[1]+dr));if(MV.mode==="boost")p[0]=nL-1;if(e.shiftKey)MV.b=p;else{MV.a=p;MV.b=p;}mapPaintSel();
+    const td=$("mapWrap").querySelector(`td[data-li="${p[0]}"][data-ri="${p[1]}"]`);if(td)td.scrollIntoView({block:"nearest",inline:"nearest"});};
+  if(k==="ArrowUp"||k==="ArrowDown"){if(e.shiftKey||e.altKey||e.ctrlKey)mv(k==="ArrowUp"?1:-1,0);else mapNudge(k==="ArrowUp"?1:-1);}
+  else if(k==="ArrowLeft"||k==="ArrowRight")mv(0,k==="ArrowRight"?1:-1);
+  else if(k==="+"||k==="="||k==="PageUp")mapNudge(1,k==="PageUp"?4:1);
+  else if(k==="-"||k==="_"||k==="PageDown")mapNudge(-1,k==="PageDown"?4:1);
+  else if(k==="Escape"){MV.a=MV.b=null;mapPaintSel();}
+  else return;
+  e.preventDefault();e.stopPropagation();});
+/* wheel over the selection nudges it; anywhere else the grid scrolls as usual */
+$("mapBox").addEventListener("wheel",e=>{const td=e.target.closest&&e.target.closest("#mapWrap td.c.sel");if(!td||testing)return;e.preventDefault();MV.wheel+=e.deltaY;
+  if(Math.abs(MV.wheel)>=50){mapNudge(MV.wheel<0?1:-1);MV.wheel=0;}},{passive:false});
 function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.abs(d)<0.5)return"";return `<span class="delta ${d>0?"up":"dn"}">${d>0?"+":""}${f(d)}</span>`;}
 /* ---- drag pass driver ---- */
 let DR=null;
