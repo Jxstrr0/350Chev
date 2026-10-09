@@ -107,6 +107,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
 .seg.n11 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .seg.n8 button{flex:1 1 22%}
+.seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .seg button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06));color:#fff}
 .seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center;hyphens:none;overflow-wrap:normal}
 .seg button .d{display:block;width:100%;height:14px;flex:0 0 14px;font-family:var(--mono);font-size:10px;line-height:14px;margin-top:4px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:clip;letter-spacing:0}
@@ -1132,13 +1133,36 @@ const ENGINE_SIM = (function () {
     r87: { name: "87 pump regular", sub: "R91/M82  14.7  43.4MJ", info: "Ordinary regular unleaded. The cheapest thing in the pump, and the first thing holding your compression back.", ron: 91, mon: 82.5, afr: 14.7, lhv: 43.4e6, hov: 350e3, gamma: 1.30, corrosive: 0, costL: 1.45 },
     r91: { name: "91 pump premium", sub: "R95/M85  14.7  43.4MJ", info: "Premium pump fuel. The step up from regular is worth roughly a point of compression, or a little more boost.", ron: 95, mon: 85, afr: 14.7, lhv: 43.4e6, hov: 350e3, gamma: 1.30, corrosive: 0, costL: 1.65 },
     r94: { name: "98 RON super", sub: "R98/M88  14.7  43.4MJ", info: "The best pump fuel most places sell. It keeps its knock resistance when the charge gets hot, which is exactly when it matters.", ron: 98, mon: 88, afr: 14.7, lhv: 43.4e6, hov: 350e3, gamma: 1.30, corrosive: 0, costL: 1.95, req: "shop1" },
-    race100: { name: "Leaded race 100", sub: "R104/M96 14.5 43.5MJ", info: "Leaded race gasoline that stays stable under sustained boost and heat. It poisons catalysts and oxygen sensors.", ron: 104, mon: 96, afr: 14.5, lhv: 43.5e6, hov: 340e3, gamma: 1.30, corrosive: 0, costL: 6.50, req: "shop2" },
+    race100: { name: "Leaded race 100", sub: "R104/M96 14.5 43.5MJ", info: "Leaded race gasoline that stays stable under sustained boost and heat. It poisons catalysts and oxygen sensors.", lead: true, ron: 104, mon: 96, afr: 14.5, lhv: 43.5e6, hov: 340e3, gamma: 1.30, corrosive: 0, costL: 6.50, req: "shop2" },
     e85: { name: "E85 ethanol blend", sub: "R105/M88 9.8 29.2MJ", info: "Ethanol takes a lot of heat to evaporate, so it cools the charge on the way in and resists knock beautifully. You have to flow about forty percent more of it, so the injectors and the pump have to grow.", ron: 105, mon: 88, afr: 9.8, lhv: 29.2e6, hov: 760e3, gamma: 1.32, corrosive: 0.4, costL: 1.25, req: "shop1" },
     methanol: { name: "Methanol M100", sub: "R109/M89 6.45 19.9MJ", info: "That enormous evaporative cooling is where most of the power comes from. It pulls water out of the air and corrodes aluminium, magnesium and lead overlays.", ron: 109, mon: 89, afr: 6.45, lhv: 19.9e6, hov: 1100e3, gamma: 1.34, corrosive: 1.0, costL: 1.10, req: "shop2" },
     /* compression ignition: no spark and no octane. Cetane is how readily it lights off
        in hot compressed air; cloudC is where the wax starts to come out of it. */
     diesel: { name: "No. 2 diesel", sub: "CN48  14.5  42.8MJ", info: "Ordinary road diesel. Sprayed into air that compression has already made hot enough to light it, so there is nothing to knock \u2014 compression and boost are limited by the head bolts, not the fuel.", ci: true, cetane: 48, afr: 14.5, lhv: 42.8e6, hov: 250e3, gamma: 1.33, dens: 0.835, cloudC: -12, corrosive: 0, costL: 1.60 },
-    b100: { name: "B100 biodiesel", sub: "CN55  12.5  37.2MJ", info: "Straight methyl ester from vegetable oil. It lights off more readily and smokes less, carries about 13% less energy, eats the nitrile seals in older pumps and turns to jelly near freezing.", ci: true, cetane: 55, afr: 12.5, lhv: 37.2e6, hov: 300e3, gamma: 1.33, dens: 0.880, cloudC: 2, corrosive: 0.25, costL: 1.75, req: "shop1" }
+    b100: { name: "B100 biodiesel", sub: "CN55  12.5  37.2MJ", info: "Straight methyl ester from vegetable oil. It lights off more readily and smokes less, carries about 13% less energy, eats the nitrile seals in older pumps and turns to jelly near freezing.", ci: true, cetane: 55, afr: 12.5, lhv: 37.2e6, hov: 300e3, gamma: 1.33, dens: 0.880, cloudC: 2, corrosive: 0.25, costL: 1.75, req: "shop1" },
+    /* ---- MORE FUELS. Race gas grades: grade marks a race fuel (no "pump fuel" knock warning), lead poisons
+       catalysts and oxygen sensors, oxy is oxygen by mass (%) — an oxygenated fuel carries part of its own
+       oxidiser, so it wants a richer jet and puts a few percent more energy into each kilogram of air. */
+    race104u: { name: "104 unleaded race", short: "U104", sub: "R104/M92 14.6 43.2MJ", info: "Unleaded race gasoline for classes that run catalysts or ban lead. Octane close to the leaded 100 on the road number, a little softer on the motor number, so it gives up some margin when the charge is hot.", grade: 1, ron: 104, mon: 92, afr: 14.6, lhv: 43.2e6, hov: 350e3, gamma: 1.30, dens: 0.740, oxy: 0, corrosive: 0, costL: 5.40, req: "shop1" },
+    race110: { name: "Leaded 110 race", short: "L110", sub: "R113/M107 14.7 43.6MJ", info: "The classic heavy-leaded grade for big compression and boost: its motor octane barely drops when the charge is hot, which is exactly what a blown or high-compression engine needs. The lead coats plugs, kills a catalyst in a tank or two and poisons oxygen sensors.", grade: 1, lead: true, ron: 113, mon: 107, afr: 14.7, lhv: 43.6e6, hov: 330e3, gamma: 1.30, dens: 0.720, oxy: 0, corrosive: 0, costL: 9.20, req: "shop2" },
+    ox112: { name: "Oxygenated 112", short: "Ox112", sub: "R115/M109 13.5 40.6MJ", info: "Unleaded, with about 4.5% oxygen carried in the fuel itself. The jets go about 10% richer, and every kilogram of air burns a few percent more energy \u2014 E85's trick in a petrol that still has race-gas octane.", grade: 1, ron: 115, mon: 109, afr: 13.5, lhv: 40.6e6, hov: 390e3, gamma: 1.31, dens: 0.750, oxy: 4.5, corrosive: 0, costL: 11.50, req: "shop2" },
+    ox116: { name: "Oxygenated leaded 116", short: "Ox116", sub: "R119/M113 13.0 39.4MJ", info: "The strongest race gasoline there is: leaded for octane and about 8% oxygen for power. It needs about 13% more fuel flow than petrol, it absorbs water once the drum is open and it costs like a fine wine. Catalysts and oxygen sensors do not survive it.", grade: 1, lead: true, ron: 119, mon: 113, afr: 13.0, lhv: 39.4e6, hov: 410e3, gamma: 1.31, dens: 0.760, oxy: 8.0, corrosive: 0.1, costL: 14.50, req: "shop2" },
+    /* flex fuel: a sensor in the fuel line reads the ethanol content and the ECU moves fuel and timing to suit.
+       The figures here are E85's; simulate() blends pump 91 and E85 at cfg.ethanolPct (fuelOf / flexBlend). */
+    flex: { name: "Flex fuel sensor", short: "Flex", sub: "E0\u2013E85 \u00b7 sensor", info: "Anything from pump premium to E85 in the same tank. An ethanol-content sensor in the line tells the ECU what it is burning, and it moves the fuel and the timing to suit. Pump E85 is not always 85%: in winter it can be as low as E70, and the tune has to live with that too.", flex: true, ron: 105, mon: 88, afr: 9.8, lhv: 29.2e6, hov: 760e3, gamma: 1.32, dens: 0.782, corrosive: 0.4, costL: 1.25, req: "shop1" },
+    /* gaseous fuels: they arrive as vapour (no evaporative cooling), take up some of the cylinder that air would
+       have filled (displace), are metered by a gasSys rather than injectors and a pump, and are counted in
+       litres of liquid propane or kilograms of CNG (unit). vapor: propane needs tank pressure to flow. */
+    lpg: { name: "Propane (LPG)", short: "LPG", sub: "R106/M96 15.7 46.4MJ gas", info: "Propane: high octane, burns clean, cheap by the litre and kind to the oil. It arrives in the manifold as vapour, so there is no evaporative cooling and it takes up about 4% of the cylinder that air would have filled. Forklifts, irrigation pumps, school buses and fleets run on it. Below about \u221230 \u00b0C the tank barely has the pressure to feed it.", gas: true, vapor: true, ron: 106, mon: 96, afr: 15.7, lhv: 46.4e6, hov: 426e3, gamma: 1.30, dens: 0.51, displace: 0.040, tankKg: 34, tankL: 80, corrosive: 0, costL: 0.85 },
+    cng: { name: "CNG methane", short: "CNG", sub: "R120/M118 17.2 50.0MJ gas", info: "Compressed natural gas at 200 bar. Methane is about as knock-proof as a fuel gets and the cleanest-burning, but it fills nearly a tenth of the cylinder and burns slowly, so a petrol engine loses around a tenth of its power. The tank is heavy steel for not much energy: buses, city fleets and well-site engines that refuel at the depot.", gas: true, unit: "kg", ron: 120, mon: 118, afr: 17.2, lhv: 50.0e6, hov: 510e3, gamma: 1.31, dens: 1.0, displace: 0.095, etaK: 0.99, tankKg: 95, tankL: 20, corrosive: 0, costL: 1.25, req: "shop1" }
+  };
+
+  /* ---- gaseous fuel systems (MORE FUELS): what meters propane or CNG into the engine. kgh is the fuel mass flow
+     it can meter, veK the airflow left by the mixer's venturi, dropBar how much boost costs it. ---- */
+  OPT.gasSys = {
+    mixer: { name: "Vaporiser + mixer", sub: "45 kg/h \u00b7 venturi", info: "A coolant-heated vaporiser boils the liquid off the tank and a regulator feeds a venturi mixer under the air cleaner: the forklift and irrigation-pump set-up. Cheap and simple; the venturi costs a few percent of airflow and it runs out of flow above a couple of hundred horsepower.", kgh: 45, veK: 0.97, dropBar: 0.15, needBar: 1.6, cost: 650, massKg: 8 },
+    vapinj: { name: "Vapour injection", sub: "90 kg/h \u00b7 sequential", info: "A vaporiser and a rail of gas injectors, one at each port, fired by the ECU like petrol injectors. No venturi in the way and proper per-cylinder metering: the modern fleet conversion.", kgh: 90, veK: 1.0, dropBar: 0.06, needBar: 1.4, cost: 1400, massKg: 7, req: "shop1" },
+    hdvap: { name: "Twin vaporisers + rail", sub: "180 kg/h \u00b7 high flow", info: "Two big vaporisers in parallel feeding high-flow gas injectors, for big displacement or boost. It needs plenty of coolant flow to keep the vaporisers from icing at full load.", kgh: 180, veK: 1.0, dropBar: 0.04, needBar: 1.5, cost: 2600, massKg: 13, req: "shop2" }
   };
 
   /* ---- fuel injectors (cc/min at 3 bar across the nozzle, one per port unless noted) ----
@@ -1262,6 +1286,24 @@ const ENGINE_SIM = (function () {
   const isTurbo = (c) => OPT.asp[c.asp].kind === "turbo";
   /* compression ignition: every diesel branch in the physics hangs off this */
   function isDiesel(c) { const f = c && OPT.fuel[c.fuel]; return !!(f && f.ci); }
+  /* MORE FUELS: gaseous fuels (propane, CNG) and the flex blend. fuelOf() is the fuel the engine actually burns:
+     the table entry, or for flex the pump-91 / E85 blend at cfg.ethanolPct (E85 when it is unset). */
+  function isGas(c) { const f = c && OPT.fuel[c.fuel]; return !!(f && f.gas); }
+  const FLEX_DEF = 85;
+  function flexBlend(pct) {
+    const a = OPT.fuel.r91, b = OPT.fuel.e85, v = clamp((pct == null || !isFinite(+pct) ? FLEX_DEF : +pct) / 85, 0, 1);
+    const m = v * 0.782 / (v * 0.782 + (1 - v) * 0.745);      // mass fraction of the E85 part: AFR, energy and latent heat mix by mass
+    const k = 1 - Math.pow(1 - v, 1.5);                        // octane is not linear: the first splash of ethanol buys the most
+    const L = (x, y, t) => x + (y - x) * t;
+    return Object.assign({}, OPT.fuel.flex, { ePct: Math.round(v * 85), ron: L(a.ron, b.ron, k), mon: L(a.mon, b.mon, k),
+      afr: L(a.afr, b.afr, m), lhv: L(a.lhv, b.lhv, m), hov: L(a.hov, b.hov, m), gamma: L(a.gamma, b.gamma, m),
+      dens: L(0.745, 0.782, v), corrosive: L(0, b.corrosive, v), costL: Math.round(L(a.costL, b.costL, v) * 100) / 100 });
+  }
+  function fuelOf(c) { const f = OPT.fuel[c && c.fuel]; return f && f.flex ? flexBlend(c.ethanolPct) : f; }
+  /* pump E85 is not always 85%: the winter blend can be fifteen points weaker (E70); a blender-pump mix wanders less */
+  function flexWinterPct(pct) { pct = pct == null || !isFinite(+pct) ? FLEX_DEF : +pct; return pct >= 51 ? Math.max(51, pct - 15) : Math.max(0, pct - 5); }
+  /* propane vapour pressure, bar absolute: what pushes it out of the tank (8.2 bar at 20 \u00b0C, 1 bar at its -42 \u00b0C boiling point) */
+  function propaneBar(tC) { return Math.exp(10.33 - 2410 / (tC + 273.15)); }
 
   const FORM = [
     {
@@ -1326,10 +1368,12 @@ const ENGINE_SIM = (function () {
     {
       title: "Fuel & tune", fields: [
         { key: "fuel", type: "seg", label: "Fuel", optTable: "fuel" },
+        { key: "ethanolPct", type: "slider", label: "Ethanol content (sensor)", min: 0, max: 85, step: 1, nudge: 1, unit: "", fmt: (v) => "E" + Math.round(v == null ? 85 : v), showIf: (c) => c.fuel === "flex" },
+        { key: "gasSys", type: "seg", label: "Gas system", optTable: "gasSys", showIf: isGas },
         { key: "dInj", type: "seg", label: "Injection system", optTable: "dInj", showIf: isDiesel },
         { key: "dNoz", type: "seg", label: "Injector nozzles", optTable: "dNoz", showIf: isDiesel },
-        { key: "injectors", type: "seg", label: "Injectors", optTable: "injectors", showIf: (c) => c.intake !== "carb" && !isDiesel(c) },
-        { key: "fuelPump", type: "seg", label: "Fuel pump", optTable: "fuelPump" },
+        { key: "injectors", type: "seg", label: "Injectors", optTable: "injectors", showIf: (c) => c.intake !== "carb" && !isDiesel(c) && !isGas(c) },
+        { key: "fuelPump", type: "seg", label: "Fuel pump", optTable: "fuelPump", showIf: (c) => !isGas(c) },
         { key: "nitrous", type: "seg", label: "Nitrous", optTable: "nitrous" },
         { key: "timing", type: "slider", label: "Ignition vs MBT", labelIf: c => isDiesel(c) ? "Injection timing vs optimal" : null, min: -10, max: 15, step: 0.25, nudge: 0.25, unit: "°", fmt: fq },
         { key: "lambda", type: "slider", label: "Lambda", labelIf: c => isDiesel(c) ? "Full-load \u03bb (smoke limit)" : null, min: 0.75, max: 1.05, minIf: c => isDiesel(c) ? 1.05 : 0.75, maxIf: c => isDiesel(c) ? 2.4 : 1.05, step: 0.01, nudge: 0.01, unit: "λ", fmt: f2 }
@@ -1612,7 +1656,7 @@ const ENGINE_SIM = (function () {
       gsk: OPT.gasket[cfg.gasket], std: OPT.studs[cfg.studs], ink: OPT.intake[cfg.intake],
       asp: OPT.asp[cfg.asp], ts: OPT.turboSize[cfg.turboSize], tm: OPT.turbineMat[cfg.turbineMat],
       icc: OPT.ic[cfg.ic], n2o: OPT.nitrous[cfg.nitrous] || OPT.nitrous.none,
-      fu: OPT.fuel[cfg.fuel], oil: OPT.oilGrade[cfg.oilGrade],
+      fu: fuelOf(cfg), oil: OPT.oilGrade[cfg.oilGrade],
       osys: OPT.oilSystem[cfg.oilSystem], sq: OPT.oilSquirters[cfg.oilSquirters],
       cool: OPT.cooling[cfg.cooling], exh: OPT.exhaust[cfg.exhaust], cov: OPT.cover[cfg.cover],
       lay: OPT.layout[cfg.layout]
@@ -1634,7 +1678,11 @@ const ENGINE_SIM = (function () {
     const dsl = isDiesel(cfg);
     const dInj = dsl ? (OPT.dInj[cfg.dInj] || OPT.dInj.rotary_ve) : null;
     const dNoz = dsl ? (OPT.dNoz[cfg.dNoz] || OPT.dNoz.stock) : null;
-    const evapK = dsl ? 0 : evapCoolK(O.fu, cfg.lambda);    // a diesel sprays into the cylinder after the air is trapped
+    /* MORE FUELS: propane / CNG, and what meters it. The vapour takes up cylinder that air would have filled, and a venturi
+       mixer costs a little more on top; a gas arrives already evaporated, so there is no charge cooling from it. */
+    const gasF = !dsl && !!O.fu.gas, gs = gasF ? (OPT.gasSys[cfg.gasSys] || OPT.gasSys.mixer) : null;
+    const gasVeK = gasF ? (1 - O.fu.displace) * gs.veK : 1;
+    const evapK = dsl ? 0 : gasF ? 0 : evapCoolK(O.fu, cfg.lambda);    // a diesel sprays into the cylinder after the air is trapped
     const kvOil = kvAt(O.oil, env.oilC);
 
     const redline = clamp(cfg.redline, dsl ? 1800 : 4000, 12500);
@@ -1666,7 +1714,7 @@ const ENGINE_SIM = (function () {
     /* ---- fuel system: what reaches the cylinder, not just what the tune asks for ---- */
     const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240;
     const fpump = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
-    const portInj = !dsl && cfg.intake !== "carb";          // a carburettor meters through jets
+    const portInj = !dsl && !gasF && cfg.intake !== "carb";          // a carburettor meters through jets (a gas system has its own meter)
     const injCc = inj.cc * (inj.perCyl || 1);               // cc/min per cylinder
     const fuelRho = fuelDensity(O.fu);
     const lamCurve = [], fuelLph = [];
@@ -1724,7 +1772,8 @@ const ENGINE_SIM = (function () {
       const rhoCharge = pMan / (R_AIR * Tcharge);
 
       /* ---- breathing -------------------------------------------------- */
-      const ve = veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
+      const ve0 = veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
+      const ve = gasF ? ve0 * gasVeK : ve0;
 
       /* ---- fuel delivery ------------------------------------------------
          The tune asks for air x fuel/air at the commanded lambda; nitrous
@@ -1743,7 +1792,8 @@ const ENGINE_SIM = (function () {
       const qDem = dsl ? (needLph + (n2oDsl ? n2oLph : 0)) * 1e6 / (L.n * rpm * 30) : 0;
       const qCap = dsl ? dInj.qL * g.Vcyl * 1000 * dNoz.mult * (rpm <= dInj.rpmMax ? 1 : Math.exp(-sq((rpm - dInj.rpmMax) / (0.22 * dInj.rpmMax)))) : 1;
       const qUtil = qDem / qCap;
-      const pumpCap = pumpLphAt(fpump, rpm, dsl ? 0 : bBar) * (n2oDry && n2oLph > 0 ? 0.92 : 1);   // a diesel lift pump does not push against boost; a dry kit's raised rail costs the pump flow
+      const pumpCap = gasF ? gs.kgh / fuelRho * clamp(1 - gs.dropBar * Math.max(0, bBar), 0.3, 1)   // a gas system: kg/h it can meter, as L/h of this fuel
+        : pumpLphAt(fpump, rpm, dsl ? 0 : bBar) * (n2oDry && n2oLph > 0 ? 0.92 : 1);   // a diesel lift pump does not push against boost; a dry kit's raised rail costs the pump flow
       const pumpLoad = (needLph * (dsl ? DSL_RETURN : 1) + n2oLph) / pumpCap;
       const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE))
         * (n2oDry && !portInj && n2oLph > 0 ? needLph / (needLph + n2oLph) : 1);   // a carburettor has no injector table to add the dry shot's fuel
@@ -1805,6 +1855,7 @@ const ENGINE_SIM = (function () {
         / (1 + 0.0018 * sq(effTiming));
       const fuelPerAir = 1 / (O.fu.afr * lamE);
       let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * (dsl ? etaCombD(lamE, dInj.etaB) : etaComb(lamE)) * eta_th * (1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring seal sets blow-by
+      if (O.fu.etaK) imep *= O.fu.etaK;                     // methane burns slowly: a little more of the work is lost to the walls
       /* nitrous: a fixed power addition above the window, so it appears as a
          fixed torque that falls away with rpm exactly as a real shot does   */
       let n2oFrac = 0;
@@ -1888,7 +1939,7 @@ const ENGINE_SIM = (function () {
     }
 
     /* recompute the knock state at the peak-pressure point for reporting */
-    let knockOnReq = 0, knockMargin = 0;
+    let knockOnReq = 0, knockMargin = 0, flexW = null;
     if (!dsl) {
       const rpm = maxPmaxRpm || peakTqRpm || 3000;
       const lamK = lamCurve[rpms.indexOf(rpm)] || cfg.lambda, fdK = cfg.lambda / lamK;
@@ -1908,6 +1959,17 @@ const ENGINE_SIM = (function () {
         - 5.5 * (O.hd.burn - 1) - 6.0 * clamp(1.0 - lamK, -0.05, 0.22);
       knockOnReq -= O.block.k > 100 ? 0.4 : 0;
       knockMargin = fuelON - knockOnReq + (shop.octane || 0) - 0.8 * (O.ink.wet || 0);
+      /* flex: the same point on the winter blend. Less ethanol means a little less octane and less evaporative
+         cooling; the sensor tells the ECU, which pulls timing for it — power, or knock if it runs out of room. */
+      if (O.fu.flex) {
+        const fw = flexBlend(flexWinterPct(cfg.ethanolPct)), onW0 = 0.60 * fw.ron + 0.40 * fw.mon;
+        const chW = Math.max(air.T - 5, Tc3 - evapCoolK(fw, cfg.lambda) * fdK) - 273.15;
+        const onW = knockOnReq + 0.135 * (chW - chargeC);
+        const mW = onW0 - onW + (shop.octane || 0) - 0.8 * (O.ink.wet || 0);
+        const rNow = clamp(-knockMargin * 1.55, 0, 14), rW = clamp(-mW * 1.55, 0, 14);
+        flexW = { pct: fw.ePct, nowPct: O.fu.ePct, onReq: onW, fuelON: onW0, margin: mW, retardDeg: rW,
+          lossPct: Math.max(0, 100 * (1 - (1 + 0.0018 * sq(cfg.timing - rNow)) / (1 + 0.0018 * sq(cfg.timing - rW))) + 100 * (chW - chargeC) / (chW + 273.15)) };
+      }
     }
 
     /* diesel combustion noise: the fuel that piles up during the ignition delay all
@@ -2094,6 +2156,11 @@ const ENGINE_SIM = (function () {
       + (injUtil > 1 ? ", so it sits on its stop and the cylinders burn leaner than the tune asks (\u03bb " + lamTop.toFixed(2) + " at " + leanRpm + " rpm) \u2014 less power, not a melted piston. " : ". ")
       + "The " + fpump.short + " can lift about " + Math.round(pumpCapPk) + " L/h to it at " + pumpRpm + " rpm and has to supply " + Math.round(pumpNeedPk) + " L/h, burn plus the return flow that cools the pump.",
       "Bigger nozzles or a bigger injection pump for more fuel; a bigger lift pump if it is starving \u2014 a dry injection pump is a dead one.");
+    else if (gasF) T("fuel_delivery", "Fuel delivery", Math.round(pumpNeedPk * fuelRho) + " / " + Math.round(pumpCapPk * fuelRho) + " kg/h",
+      pumpUtil,
+      "At " + pumpRpm + " rpm the engine burns about " + Math.round(pumpNeedPk * fuelRho) + " kg/h of " + O.fu.name.split(" (")[0].toLowerCase() + ", and the " + gs.name.toLowerCase() + " can meter about " + Math.round(pumpCapPk * fuelRho) + " kg/h there" + (maxBoost > 0.05 ? " against the boost in the manifold" : "") + "."
+      + (leanTop ? " The top of the pull goes lean: \u03bb " + lamTop.toFixed(2) + " at " + leanRpm + " rpm where the tune asked for " + cfg.lambda.toFixed(2) + "." : ""),
+      "A vapour-injection system or twin vaporisers meter more gas; a mixer is a forklift part.");
     else T("fuel_delivery", "Fuel delivery", injUtil >= pumpUtil ? Math.round(dutyPk * 100) + "% duty \u00b7 max " + Math.round(INJ_MAX * 100)
         : Math.round(pumpNeedPk) + " / " + Math.round(pumpCapPk) + " L/h",
       Math.max(injUtil, pumpUtil),
@@ -2108,6 +2175,10 @@ const ENGINE_SIM = (function () {
       detUtil,
       "Octane requirement " + knockOnReq.toFixed(0) + " from " + (cfg.cr).toFixed(1) + ":1 static (" + (cfg.cr * Math.pow((air.p + maxBoost * 1e5) / 101325, 0.24)).toFixed(1) + ":1 effective at " + maxBoost.toFixed(2) + " bar), " + maxChargeC.toFixed(0) + " °C charge and " + g.b.toFixed(0) + " mm bore; the fuel supplies " + fuelON.toFixed(0) + ".",
       knockMargin < 0 ? "Raise the fuel's octane, drop compression or boost, or cool the charge." : "Margin is adequate — keep charge temperature down.");
+    if (flexW) T("flex_blend", "Winter blend", "E" + flexW.pct + " \u00b7 " + (flexW.margin >= 0 ? "+" : "") + flexW.margin.toFixed(1) + " ON",
+      0.95 - (flexW.margin + 1) * 0.062,
+      "Tuned at E" + flexW.nowPct + ", but the pump's winter blend can be as weak as E" + flexW.pct + ": less ethanol, a little less octane and less evaporative cooling, so the build needs " + flexW.onReq.toFixed(0) + " and gets " + flexW.fuelON.toFixed(0) + ". The sensor moves the timing" + (flexW.retardDeg > 0.5 ? ", pulling about " + flexW.retardDeg.toFixed(1) + "\u00b0 and " + (flexW.lossPct < 1 ? "under 1%" : flexW.lossPct.toFixed(0) + "%") + " of the power" + (flexW.margin < -1.8 ? " \u2014 and past that it runs out of timing to pull" : "") : ", and nothing has to give") + ".",
+      "Leave margin at E" + flexW.pct + ": a point less compression or a little less boost, or tune it at the weaker blend.");
 
     // Pre-ignition is started by the HOTTEST SURFACE in the chamber (crown edge,
     // exhaust valve, plug nose), not by the gas temperature on its own.
@@ -2123,6 +2194,12 @@ const ENGINE_SIM = (function () {
       cold.util,
       "Cranking at " + env.ambientC + " \u00b0C, " + cfg.cr.toFixed(1) + ":1 squeezes the air to about " + Math.round(cold.T2C) + " \u00b0C" + (dInj.pilot > 0.5 ? " (pilot shots help)" : "") + "; " + O.fu.name + " at cetane " + cetane + " needs about " + Math.round(cold.needC) + " \u00b0C to light." + (cold.gel > 0.001 ? " Below its cloud point the fuel is waxing up in the filter as well." : ""),
       "Raise the compression ratio, use a higher-cetane fuel, or a common rail whose pilot shots warm the chamber.");
+    /* propane: the tank's own vapour pressure feeds the regulator, and a cold vaporiser wants more of it */
+    const lpgBar = gasF && O.fu.vapor ? propaneBar(env.ambientC) : 0;
+    if (gasF && O.fu.vapor) T("cold_start", "Cold start", lpgBar.toFixed(1) + " / " + gs.needBar.toFixed(1) + " bar",
+      gs.needBar / lpgBar,
+      "At " + env.ambientC + " \u00b0C propane in the tank sits at about " + lpgBar.toFixed(1) + " bar absolute, and the " + gs.name.toLowerCase() + " wants about " + gs.needBar.toFixed(1) + " bar to feed the regulator while the vaporiser is still cold. Propane boils at \u221242 \u00b0C, so in deep cold there is hardly any pressure to push it out of the tank.",
+      "Keep the tank warm (a blanket or a heated shed), use injection rather than a mixer, or run CNG, which is stored at 200 bar.");
 
     const mpsLimit = O.rod.mpsLim || (O.rod.E < 150 ? 27.5 : O.rod.fatigue >= 620 ? 27.0 : O.rod.fatigue >= 430 ? 25.0 : O.rod.fatigue >= 330 ? 21.5 : 19.5);
     T("piston_speed", "Mean piston speed", mpsRed.toFixed(1) + " / " + mpsLimit.toFixed(1) + " m/s",
@@ -2352,7 +2429,7 @@ const ENGINE_SIM = (function () {
     kg += O.headMat.massFac * O.hd.massFac * L.n * 3.4;
     kg += (bm.kind === "turbo" ? bm.units * 9 * (O.ts.maxFlow > 100 ? 1.8 : 1) : bm.kind === "roots" ? 22 : bm.kind === "screw" ? 26 : bm.kind === "centrifugal" ? 11 : 0);
     kg += O.icc.massKg + O.osys.massKg + O.cool.massKg + O.exh.massKg * (L.banks) + 14;
-    kg += fpump.massKg || 0;                                         // a belt pump hangs off the engine; in-tank ones live in the car
+    kg += gasF ? gs.massKg : (fpump.massKg || 0);                    // a belt pump hangs off the engine; in-tank ones live in the car
     kg = Math.round(kg);
 
     const perCyl = O.pis.cost + O.ring.cost + O.rod.cost + O.rb.cost
@@ -2363,7 +2440,7 @@ const ENGINE_SIM = (function () {
       + O.ink.cost + O.asp.cost + (boosted ? O.ts.cost + O.tm.cost + O.icc.cost : 0)
       + O.oil.cost + O.osys.cost + O.sq.cost + O.cool.cost + O.exh.cost * L.banks + O.cov.cost
       + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
-      + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + fpump.cost
+      + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + (gasF ? gs.cost : fpump.cost)
       + (dsl ? dInj.cost + L.n * dNoz.cost : 0);
     const cost = Math.round((0.155 * rawCost + 120 * L.n + 250) * (shop.costFac || 1));
 
@@ -2440,7 +2517,8 @@ const ENGINE_SIM = (function () {
       }
       lphD = fKg * 3600 / O.fu.dens;
     }
-    const econ = dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : Math.round(clamp(litresPerHour / 100 * 100, 2, 60) * 10) / 10;  // L/100 km at 100 km/h
+    const econ = dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : gasF ? Math.round(clamp(fuelPow * 3600 / (43.4e6 * 0.745), 2, 60) * 10) / 10   // gas: petrol-equivalent litres by energy
+      : Math.round(clamp(litresPerHour / 100 * 100, 2, 60) * 10) / 10;  // L/100 km at 100 km/h
 
     let smooth = L.smooth * (1 - 0.10 * L.secondOrder * (g.s / 86))
       - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" ? 2 : 0)
@@ -2457,6 +2535,7 @@ const ENGINE_SIM = (function () {
     if (dsl && leanTop) notes.push("The injection system runs out at " + leanRpm + " rpm: \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ". A diesel just makes less power there \u2014 it runs cooler, not hotter.");
     if (dsl && smokePk > 0.35) notes.push("Peak smoke is about " + Math.round(smokePk * 100) + "% opacity: there is more fuel going in than air to burn it" + (lamMin < cfg.lambda - 0.05 ? ", worst while the turbo is still spooling (\u03bb " + lamMin.toFixed(2) + ")" : "") + ".");
     if (!dsl && leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
+    if (gasF) notes.push(O.fu.name.split(" (")[0] + " arrives as vapour: it fills about " + (O.fu.displace * 100).toFixed(1) + "% of the cylinder" + (gs.veK < 1 ? ", the mixer's venturi takes " + Math.round((1 - gs.veK) * 100) + "% more of the airflow" : "") + ", and there is no evaporative cooling. Economy is quoted in petrol-equivalent litres.");
     if (env.altitudeM > 1500) notes.push("At " + env.altitudeM + " m the air is " + ((1 - air.rho / 1.2) * 100).toFixed(0) + "% thinner than sea level; correctedHp is the SAE-normalised figure.");
 
     /* nitrous: what the kit does on a pass that a pull does not show — the chance of a lean spike when the shot
@@ -2498,6 +2577,10 @@ const ENGINE_SIM = (function () {
         injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph,
         qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : litresPerHour },
       nitrous: n2oInfo,
+      /* MORE FUELS: gas system load and native consumption (L of propane or kg of CNG per 100 km), flex winter blend */
+      alt: gasF ? { gas: true, sys: cfg.gasSys && OPT.gasSys[cfg.gasSys] ? cfg.gasSys : "mixer", displacePct: Math.round((1 - gasVeK) * 1000) / 10, unit: O.fu.unit || "L",
+          econNative: Math.round(clamp(fuelKgS * 3600 / O.fu.dens, 0.5, 80) * 10) / 10, kgh: pumpNeedPk * fuelRho, capKgh: pumpCapPk * fuelRho, coldBar: lpgBar || null }
+        : O.fu.flex ? { flex: true, ePct: O.fu.ePct, winter: flexW } : null,
       tests: tests, fails: fails, rel: Math.round(rel * 10) / 10,
       lifeHours: Math.round(lifeHours), firstToFail: firstToFail,
       racePasses: racePasses, raceSpec: raceSpec,
@@ -2519,7 +2602,7 @@ const ENGINE_SIM = (function () {
     const boosted = cfg.asp !== "na";
     const boost = boosted ? cfg.boost : 0;
     const g = geometry(cfg);
-    const fu = OPT.fuel[cfg.fuel];
+    const fu = fuelOf(cfg);   // flex: the blend at cfg.ethanolPct
     const fuelON = 0.60 * fu.ron + 0.40 * fu.mon;
     const quick = simulate(cfg, DEFAULT_ENV);
     const detMargin = quick.knock.margin;
@@ -2746,7 +2829,7 @@ const ENGINE_SIM = (function () {
       add("good", "Steel top rings for boost",
         "A 1.0-1.2 mm gas-nitrided steel ring tolerates 450 °C and is specified with a bigger end gap, which is exactly what a boosted bore needs as it heats up.");
     }
-    if (detMargin < 2 && cfg.fuel !== "e85" && cfg.fuel !== "methanol" && cfg.fuel !== "race100") {
+    if (detMargin < 2 && cfg.fuel !== "e85" && cfg.fuel !== "methanol" && cfg.fuel !== "race100" && !fu.grade && !fu.gas) {
       add("warn", "Almost no detonation margin on pump fuel",
         "The tune needs " + quick.knock.onRequired.toFixed(0) + " octane and the fuel supplies " + fuelON.toFixed(0) + ". A hot day, a hill or a tank of bad fuel and the knock sensor will be pulling timing all the way home.");
     }
@@ -2756,7 +2839,7 @@ const ENGINE_SIM = (function () {
     }
     /* --- fuel delivery: injectors and pump against what the tune asks for --- */
     const fq = quick.fuel;
-    if (fq && !dsl) {
+    if (fq && !dsl && !fu.gas) {
       const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240, pmp = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
       const injWord = "the " + (inj.perCyl > 1 ? inj.perCyl + " \u00d7 " : "") + inj.cc + "s";
       const vol = (14.7 / fu.afr) * (0.745 / fuelDensity(fu));        // fuel volume per unit of air, against petrol
@@ -2777,6 +2860,35 @@ const ENGINE_SIM = (function () {
         alky + ", and " + (fq.portInj ? injWord + " at " + Math.round(fq.duty * 100) + "% duty with " : "") + "the " + pmp.short + " behind them have room for it.");
       if (fq.portInj && fq.duty < 0.12 && inj.cc * (inj.perCyl || 1) >= 1650) add("info", "A lot of injector for this engine",
         "At full load " + injWord + " are open only " + Math.round(fq.duty * 100) + "% of the time, so at idle the pulse is barely longer than the time the injector takes to open. A modern driver copes, but low-speed fuelling gets coarse.");
+    }
+    /* --- MORE FUELS: race gas grades, the flex blend, propane and CNG --- */
+    const leadCat = OPT.cat ? !!(cfg.cat && cfg.cat !== "none" && OPT.cat[cfg.cat]) : false;   // the exhaust builder's catalyst, when there is one
+    if (fu.lead && (leadCat || fu.grade)) add(leadCat ? "bad" : "info", "Leaded fuel kills cats",
+      leadCat ? "The lead in " + fu.name + " glazes the catalyst's washcoat within a tank or two and poisons the oxygen sensors: the converter clogs, back-pressure climbs and closed-loop fuelling goes blind. Run an unleaded grade, or leave the cat off the race car."
+        : fu.name + " gets its octane from tetraethyl lead. That is fine on a race engine with no catalyst, but it glazes a cat within a tank or two, fouls oxygen sensors and leaves grey deposits on the plugs \u2014 use an unleaded grade if the car has to keep either.");
+    if (fu.oxy > 0) add("good", "Oxygen in the fuel",
+      fu.name + " carries about " + fu.oxy + "% oxygen by weight, so it is jetted about " + Math.round((14.7 / fu.afr - 1) * 100) + "% richer than petrol and each kilogram of air burns roughly " + Math.round((fu.lhv / fu.afr / (43.4e6 / 14.7) - 1) * 100) + "% more energy \u2014 E85's trick without E85's fuel volume. Keep the drum sealed: it takes up water once it is open.");
+    if (fu.flex && quick.alt && quick.alt.winter) {
+      const w = quick.alt.winter;
+      if (w.margin < 0.5) add(w.margin < -1.8 ? "bad" : "warn", "Flex at E" + w.pct + " in winter",
+        "Tuned at E" + w.nowPct + " with " + detMargin.toFixed(1) + " of margin, but the pump's winter blend can be as weak as E" + w.pct + ". There the build needs " + w.onReq.toFixed(0) + " and gets " + w.fuelON.toFixed(0) + ": the sensor pulls about " + w.retardDeg.toFixed(1) + "\u00b0 and " + (w.lossPct < 1 ? "under 1%" : "roughly " + w.lossPct.toFixed(0) + "%") + " of the power" + (w.margin < -1.8 ? ", and past that it is out of timing to pull and the engine knocks." : ". Leave a point or two of margin for the weak blend."));
+      else add("good", "Flex sensor covers the winter blend",
+        "Even at E" + w.pct + " the build keeps " + w.margin.toFixed(1) + " octane of margin. The sensor moves the fuel and the timing with the blend, so whatever the pump had that week just works" + (w.nowPct >= 51 ? "" : " \u2014 and a home blend at E" + w.nowPct + " barely wanders") + ".");
+    }
+    if (fu.gas && fq) {
+      const al = quick.alt || {}, gso = OPT.gasSys[al.sys] || OPT.gasSys.mixer;
+      const gf = fq.pumpUtil > 0.8 ? fitFuel(cfg) : null;
+      const gasFit = gf && gf.gasSys !== al.sys ? " The smallest system that feeds it with margin: " + OPT.gasSys[gf.gasSys].name.toLowerCase() + "." : "";
+      if (cfg.fuel === "lpg") add(cfg.cr < 11 && !boosted ? "info" : "good", "Propane: no charge cooling",
+        "Propane arrives in the manifold as vapour, so there is none of the evaporative cooling a liquid fuel gives, and it fills about " + (fu.displace * 100).toFixed(0) + "% of the cylinder" + (gso.veK < 1 ? " (plus " + Math.round((1 - gso.veK) * 100) + "% for the mixer's venturi)" : "") + ": expect 5\u201310% less power at the same compression. What you get back is " + fu.ron + " RON" + (cfg.cr < 11 && !boosted ? ", and at " + cfg.cr.toFixed(1) + ":1 you are not using it \u2014 a dedicated propane engine runs 11\u201312:1." : ", and this build is using it."));
+      if (cfg.fuel === "cng") add("warn", "CNG costs top-end power",
+        "Methane fills about " + (fu.displace * 100).toFixed(1) + "% of the cylinder and burns slowly, so a petrol engine loses around a tenth of its power on it; the " + fu.ron + " RON is there so you can win it back with 12\u201313:1 compression or boost. And the tank is about " + fu.tankKg + " kg of steel for " + fu.tankL + " kg of gas \u2014 roughly a third of a petrol tank's range.");
+      if (fu.vapor) add("info", "Propane in the cold",
+        "Propane boils at \u221242 \u00b0C and the tank's own pressure is what feeds the regulator: about 8 bar on a mild day, under 2 bar at \u221225 \u00b0C. Below about \u221230 \u00b0C a cold vaporiser struggles to start the engine, so northern fleets keep their tanks warm or run CNG.");
+      if (fq.pumpUtil > 1) add("bad", "The gas system can't keep up",
+        "The " + gso.name.toLowerCase() + " meters about " + Math.round(al.capKgh) + " kg/h at " + fq.loadRpm + " rpm and the engine wants " + Math.round(al.kgh) + " kg/h. The mixture leans out at the top of the pull (\u03bb " + fq.lamTop.toFixed(2) + ")." + gasFit);
+      else if (fq.pumpUtil > 0.8) add("warn", "Gas system near its limit",
+        "The " + gso.name.toLowerCase() + " is metering " + Math.round(fq.load * 100) + "% of what it can at " + fq.loadRpm + " rpm" + (boosted ? ", and boost takes flow away from it" : "") + "." + gasFit);
     }
     if (cfg.fuel === "methanol" && cfg.cr < 12 && !boosted) {
       add("info", "Methanol without the compression to use it",
@@ -2943,7 +3055,7 @@ const ENGINE_SIM = (function () {
     if (dsl) add("info", "Fuel choice",
       fu.name + ": cetane " + fu.cetane + ", stoichiometric " + fu.afr + ":1, " + (fu.lhv / 1e6).toFixed(1) + " MJ/kg at " + fu.dens.toFixed(3) + " kg/L. There is no octane to worry about: a diesel lights from the heat of compression, so the fuel's job is to light quickly (cetane) and carry energy by the litre.");
     else add("info", "Fuel choice",
-      OPT.fuel[cfg.fuel].name + ": " + OPT.fuel[cfg.fuel].ron + " RON / " + OPT.fuel[cfg.fuel].mon + " MON, stoichiometric " + OPT.fuel[cfg.fuel].afr + ":1, " + (OPT.fuel[cfg.fuel].lhv / 1e6).toFixed(1) + " MJ/kg. This build needs " + quick.knock.onRequired.toFixed(0) + " and the fuel offers " + fuelON.toFixed(0) + ".");
+      fu.name + (fu.flex ? " at E" + fu.ePct : "") + ": " + +fu.ron.toFixed(1) + " RON / " + +fu.mon.toFixed(1) + " MON, stoichiometric " + +fu.afr.toFixed(2) + ":1, " + (fu.lhv / 1e6).toFixed(1) + " MJ/kg. This build needs " + quick.knock.onRequired.toFixed(0) + " and the fuel offers " + fuelON.toFixed(0) + ".");
     add(L.n >= 8 ? "info" : "info", "Layout character",
       LAYOUTS[cfg.layout].name + ", firing " + LAYOUTS[cfg.layout].firingOrder.join("-") + ". Inherent balance rates " + LAYOUTS[cfg.layout].smooth + "/100 before you add a damper or balance shafts.");
     if (quick.rel === 0 && quick.fails.length) {
@@ -3003,6 +3115,19 @@ const ENGINE_SIM = (function () {
         if (worst / PUMP_MAX <= 0.8) { lp = k; break; }
       }
       return { injectors: cfg.injectors, fuelPump: lp };
+    }
+    if (isGas(cfg)) {
+      // propane / CNG: the injectors and pump are not in the circuit; size the gas system that meters it
+      const gk = Object.keys(OPT.gasSys), rho = fuelDensity(fuelOf(cfg));
+      const rg = simulate(Object.assign({}, cfg, { gasSys: gk[gk.length - 1] }), env || DEFAULT_ENV);
+      let gasSys = gk[gk.length - 1];
+      for (const k of gk) {
+        const o = OPT.gasSys[k];
+        let worst = 0;
+        for (let i = 0; i < rg.rpms.length; i++) worst = Math.max(worst, rg.fuel.lph[i] / (o.kgh / rho * clamp(1 - o.dropBar * Math.max(0, rg.boostCurve[i]), 0.3, 1)));
+        if (worst / PUMP_MAX <= 0.8) { gasSys = k; break; }
+      }
+      return { injectors: cfg.injectors, fuelPump: cfg.fuelPump, gasSys: gasSys };
     }
     // what the tune asks for does not depend on the parts, so one run with the biggest set sizes both
     const r = simulate(Object.assign({}, cfg, { injectors: ik[ik.length - 1], fuelPump: pk[pk.length - 1] }), env || DEFAULT_ENV);
@@ -4741,6 +4866,7 @@ const ENGINE_SIM = (function () {
     DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, TYRES: TYRES, AERO: AERO,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
+    isGas: isGas, fuelOf: fuelOf, flexBlend: flexBlend, flexWinterPct: flexWinterPct, propaneBar: propaneBar,
     isDiesel: isDiesel,
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
@@ -7487,6 +7613,7 @@ function buildEngineMesh(cfg, layoutObj){
   }
 
   if(isDieselCfg(cfg)){ setZone(0); dieselFuel(B, { cfg:cfg, L:L, bore:bore, bankLen:bankLen, bankW:bankW, deckH:deckH, skirt:skirt, bspace:bspace, per:per }, bankInfo, extras); }
+  if(isGasCfg(cfg)){ setZone(0); gasHardware(B, { cfg:cfg, bore:bore, bankLen:bankLen, caseW:caseW, deckH:deckH, floorY:panTop-panH }); }
 
   /* ---------- internals: crank, rods, pistons (X-ray) ---------- */
   setZone(1);
@@ -7789,6 +7916,29 @@ function isDieselCfg(c){
   var E=(typeof ENGINE_SIM!=="undefined")?ENGINE_SIM:null; if(!c||!E) return false;
   if(E.isDiesel) return !!E.isDiesel(c);
   return !!(((E.OPT||{}).fuel||{})[c.fuel]||{}).ci;
+}
+/* MORE FUELS: propane / CNG hardware. A coolant-heated vaporiser on the front of the intake flank and the fuel tank
+   lying beside the stand (white propane cylinder with its valve guard, or a grey 200-bar CNG bottle), joined by a hose. */
+function isGasCfg(c){ var E=(typeof ENGINE_SIM!=="undefined")?ENGINE_SIM:null; return !!(c&&E&&E.OPT&&E.OPT.fuel[c.fuel]&&E.OPT.fuel[c.fuel].gas); }
+function gasHardware(B, p){
+  var bore=p.bore, cng=p.cfg.fuel==="cng", tr=cng?1.30:1.55, tl=cng?9.0:7.2;
+  var tz=-(p.caseW*0.5+tr+bore*0.9), ty=p.floorY+tr, tx=-p.bankLen*0.10;
+  var key=cng?"paintGrey":"blockWhite";
+  B.add(key, CYL(tr,tr,tl,DET?28:16), tx, ty, tz, 0,0,PI/2);
+  B.add(key, SPH(tr,DET?24:14), tx+tl/2, ty, tz, 0,0,0, 0.45,1,1);   /* dished ends */
+  B.add(key, SPH(tr,DET?24:14), tx-tl/2, ty, tz, 0,0,0, 0.45,1,1);
+  var vx=tx+tl/2+tr*0.40;                                          /* valve end */
+  B.add("steel", CYL(bore*0.10,bore*0.10,bore*0.55,10), vx, ty, tz, 0,0,PI/2);
+  B.add("wireRed", CYL(bore*0.16,bore*0.16,bore*0.08,12), vx+bore*0.30, ty, tz, 0,0,PI/2);   /* service valve handwheel */
+  if(!cng){ B.add("steel", TOR(tr*0.55, bore*0.06, 6, 22), vx+bore*0.05, ty, tz, 0,PI/2,0); }   /* forklift-bottle guard collar round the valve */
+  else { for(var b=-1;b<=1;b+=2) B.add("dark", BOX(bore*0.12, tr*2.06, tr*2.06), tx+b*tl*0.30, ty, tz); }   /* mounting straps */
+  /* vaporiser / regulator: an aluminium drum with coolant stubs, on the front of the intake flank */
+  var rx=p.bankLen*0.5-bore*0.55, ry=p.deckH*0.55, rz=-(p.caseW*0.5+bore*0.75);
+  B.add("malu", CYL(bore*0.55,bore*0.55,bore*0.42,DET?24:14), rx, ry, rz, PI/2,0,0);
+  B.add("calu", CYL(bore*0.30,bore*0.30,bore*0.20,12), rx, ry, rz-bore*0.30, PI/2,0,0);
+  B.add("steel", CYL(bore*0.06,bore*0.06,bore*0.40,8), rx+bore*0.45, ry+bore*0.25, rz, 0,0,PI/2);
+  B.add("steel", CYL(bore*0.06,bore*0.06,bore*0.40,8), rx+bore*0.45, ry-bore*0.25, rz, 0,0,PI/2);
+  B.addW("hose", TUBE([B.pt(vx+bore*0.25, ty, tz), B.pt(vx+bore*1.2, ty+tr*0.8, tz+tr*0.4), B.pt(rx+bore*0.2, ry-bore*1.2, rz-bore*0.4), B.pt(rx, ry-bore*0.55, rz)], bore*0.07, 24, 6));
 }
 /* hex nut / fitting at a line end, axis along `dir` */
 function dzNut(B, pos, dir, r, len){
@@ -13378,29 +13528,31 @@ const CATS=[
   {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
   {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","sport","gt","super","hyper"],rep:40},
   {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
-  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","endur","attack"],rep:120},
+  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb"],rep:120},
+  {id:"altfuel",name:"Fleet & alt-fuel",sub:"propane · CNG · depot-fuelled fleets",segs:["forklift","cngvan","lpgbus","wellsite"],rep:20},
   {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod"],rep:700,needs:"race"}
 ];
 const CLIENTS=["Kestrel Automotive","Bison Truck Co.","Aurora Compact","Northwind Racing","Meridian Motors","Tamarack Vans","Saskatoon Speed Shop","Halcyon GT","Coulee Ag Equipment","Prairie Fire Motorsport","Redwater Fleet","Glacier Coachworks"];
-const FUEL_RANK={r87:0,r91:1,r94:2,race100:3,e85:4,methanol:5};
+const FUEL_RANK={r87:0,r91:1,r94:2,race100:3,e85:4,methanol:5,
+  race104u:2.5,race110:3.2,ox112:3.4,ox116:3.6};   // race grades sit between pump premium and alcohol; flex ranks by its blend (fuelRank)
 const SEGMENTS=[
   /* tier 0 — Backyard: everything here is reachable with the five starter engines and base-shop parts */
   {id:"hatch",name:"City hatchback",tier:0,units:[12,30],price:2100,req:{hp:[50,75],econ:[6.2,5.6],fuel:"r87",rel:85,kg:140}},
   {id:"sedan",name:"Family sedan",tier:0,units:[8,22],price:2900,req:{hp:[90,125],econ:[6.8,6.2],fuel:"r87",rel:82,smooth:45,kg:175}},
-  {id:"van",name:"Delivery van",tier:0,dsl:true,units:[6,16],price:3100,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0]}},
-  {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,units:[6,14],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
+  {id:"van",name:"Delivery van",tier:0,dsl:true,gas:true,units:[6,16],price:3100,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0]}},
+  {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,gas:true,units:[6,14],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
   /* tier 1 — Local shop */
-  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86}},
+  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86}},
   {id:"hot",name:"Hot hatch",tier:1,units:[5,14],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80}},
-  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87"}},
+  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87"}},
   {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78}},
   /* tier 2 — Known builder */
   {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[2,6],price:13500,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
   {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5]}},
   {id:"rally",name:"Rally car · 1.6 T",tier:2,units:[2,6],price:16000,req:{hp:[280,340],tq:[320,400],disp:1.6,rel:70,fuel:"race100"}},
   {id:"drift",name:"Drift car",tier:2,units:[2,6],price:15000,req:{tq:[500,700],smooth:55,rel:65,fuel:"e85"}},
-  {id:"genset",name:"Standby generator set",tier:2,dsl:true,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
-  {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,units:[3,8],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
+  {id:"genset",name:"Standby generator set",tier:2,dsl:true,gas:true,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
+  {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,gas:true,units:[3,8],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
   /* tier 3 — Regional supplier */
   {id:"super",name:"Supercar",tier:3,units:[2,5],price:26000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75}},
   {id:"endur",name:"Endurance prototype",tier:3,units:[1,4],price:42000,req:{hp:[500,700],rel:92,fuel:"race100",kg:210,life:300}},
@@ -13422,6 +13574,16 @@ const SEGMENTS=[
   {id:"dtractor",name:"Four-wheel-drive farm tractor",tier:2,units:[3,8],price:11800,req:{tq:[800,1200],tqrpm:1900,life:3000,rel:88,fuel:"diesel"}},
   {id:"minegen",name:"Mine standby genset · prime power",tier:3,units:[2,6],price:21000,req:{tq:[1200,1800],tqrpm:1900,life:4500,rel:92,fuel:"diesel"}},
   {id:"class8",name:"Class-8 highway truck",tier:3,units:[4,10],price:24000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel"}},
+  /* Fleet & alt-fuel (rep 20+): buyers who fuel at their own depot and want propane or CNG only (fuel "lpg"/"cng" is
+     an exact family). gas:true on the truck & industrial segments means a gas engine is welcome there too. */
+  {id:"forklift",name:"Warehouse forklift · propane",tier:0,units:[10,24],price:2300,req:{tq:[110,160],tqrpm:3200,life:3000,rel:88,fuel:"lpg"}},
+  {id:"cngvan",name:"City fleet van · CNG",tier:1,units:[8,20],price:4200,req:{tq:[220,300],tqrpm:4000,rel:88,econ:[9.0,8.0],fuel:"cng"}},
+  {id:"lpgbus",name:"Propane school bus",tier:2,units:[4,10],price:9800,req:{tq:[450,600],tqrpm:3600,life:3000,rel:90,fuel:"lpg"}},
+  {id:"wellsite",name:"Wellsite compressor drive · CNG",tier:2,units:[2,6],price:12500,req:{tq:[350,500],tqrpm:3000,life:5000,rel:92,fuel:"cng"}},
+  /* race gas: a control-fuel series where everyone runs the same drum (spec:true = exactly that fuel), and a hill climb
+     that allows anything up to oxygenated 116 */
+  {id:"specgt",name:"Spec GT series · control fuel",tier:2,spec:true,units:[3,8],price:15500,req:{hp:[300,380],rel:75,life:400,fuel:"race104u"}},
+  {id:"hillclimb",name:"Hill-climb special",tier:3,units:[1,3],price:34000,req:{hp:[450,650],kg:190,rel:65,fuel:"ox116"}},
   {id:"puller",name:"Pulling truck · sled-ready",tier:3,units:[1,3],price:38000,req:{hp:[700,1200],passes:150,rel:55,fuel:"diesel"}}
 ];
 /* site briefs: some clients say where the engine will live and re-run your certified engine in that air before they pay.
@@ -13535,14 +13697,15 @@ function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===
 function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
 function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
-function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))).sort().map(k=>c[k]));}
+function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
-function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.name.split(" ")[0];}
+function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.short||o.name.split(" ")[0];}
+function isGasF(f){const o=OPT.fuel[f];return !!(o&&o.gas);}
 const INJ_SHORT={rotary_ve:"VE",inline_mech:"P-pump",heui:"HEUI",cr_gen1:"CR",cr_piezo:"CR"};
-function fuelBill(){if(!career()||dev())return 0;const fu=SIM.OPT.fuel[S.cfg.fuel]||SIM.OPT.fuel.r91;const hp=quick&&isFinite(quick.peakHp)?quick.peakHp:300;
+function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM.OPT.fuel.r91;const hp=quick&&isFinite(quick.peakHp)?quick.peakHp:300;
   // WOT burn: ~0.32 L/hp/h on gasoline, more on low-energy fuels (per-litre energy vs pump gas)
-  const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv));const t=S.env.testType;   // diesel ~0.23 L/hp/h at full load
+  const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv))*(fu.gas?0.745/fu.dens:1);const t=S.env.testType;   // gas: litres of liquid propane / kg of CNG   // diesel ~0.23 L/hp/h at full load
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="overrev"?0.008:0.02;
   return Math.round(lph*hours*fu.costL);}
@@ -13616,6 +13779,7 @@ let prevQuick=null;
 function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.querySelector(".d");if(!t){t=document.createElement("span");t.className="d";el.appendChild(t);}
   if(!d){t.classList.remove("show");return;}t.textContent=(d>0?"▲":"▼")+fmt(Math.abs(d));t.classList.toggle("dn",lowGood?d>0:d<0);t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
 function recompute(){
+  altFuelFill(S.cfg);   // flex needs a blend and a gas fuel a gas system before the engine is run
   prevQuick=quick;
   quick=SIM.simulate(S.cfg,simEnv({testType:"pull"}));
   if(prevQuick&&prevQuick!==quick){stripFlash("sHp",Math.round(quick.peakHp-prevQuick.peakHp),v=>v);stripFlash("sKg",Math.round(quick.kg-prevQuick.kg),v=>v,true);stripFlash("sCost",Math.round(quick.cost-prevQuick.cost),v=>"$"+v.toLocaleString("en-CA"),true);stripFlash("sDisp",+(quick.Vd/1000-prevQuick.Vd/1000).toFixed(1),v=>v.toFixed(1));}
@@ -13669,7 +13833,7 @@ $("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");i
 /* live deltas: what each option would do to hp / reliability / unit cost, from a real simulate() call (cached) */
 const deltaCache=new Map();
 function probe(k,v){const key=cfgHash(S.cfg)+"|"+envHash()+"|"+k+"="+v;let r=deltaCache.get(key);if(r)return r;
-  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel));const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
+  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel),S.cfg.fuel);const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
   if(deltaCache.size>1500)deltaCache.clear();deltaCache.set(key,r);return r;}
 const money=n=>{const a=Math.abs(n);return (n<0?"−$":"+$")+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+"k":String(Math.round(a)));};
 function fmtDelta(r,base){if(!base)return"";const dh=Math.round(r.hp-base.peakHp),dr=Math.round(r.rel-base.rel),dc=Math.round(r.cost-base.cost);
@@ -13702,7 +13866,14 @@ function sliderRow(f){const v=S.cfg[f.key],lo=fMin(f),hi=fMax(f);
   return `<div class="lbl"><span>${fLabel(f)}${unlocked?' <em class="unl">billet</em>':""}</span><b id="v-${f.key}" class="tap" data-num="${f.key}" title="Tap to type">${f.fmt?f.fmt(v):v}${f.unit?" "+f.unit:""}</b></div><div class="srow"><button class="nud" data-nud="-1" data-nk="${f.key}" aria-label="Decrease">−</button><input type="range" id="r-${f.key}" data-k="${f.key}" min="${lo}" max="${hi}" step="${f.step}" value="${v}"><button class="nud" data-nud="1" data-nk="${f.key}" aria-label="Increase">+</button></div>`;}
 /* petrol <-> diesel: a petrol map on a diesel (or the reverse) is nonsense, so switching family drops in a tune that runs.
    Returns the toast, or null when the family didn't change. clampCfgLimits() then pulls the rest inside the new limits. */
-function fuelFamilyDefaults(c,wasD){const d=isCI(c.fuel);if(d===wasD)return null;const boosted=c.asp!=="na";
+/* MORE FUELS: flex gets a blend to read and a gas fuel a system to meter it (the smallest one that feeds it and is unlocked) */
+function altFuelFill(c){if(c.fuel==="flex"&&c.ethanolPct==null)c.ethanolPct=85;
+  if(isGasF(c.fuel)&&!(c.gasSys&&OPT.gasSys[c.gasSys])){let g="mixer";try{const f=SIM.fitFuel(c).gasSys;if(f&&!locked(OPT.gasSys[f]))g=f;}catch(e){}c.gasSys=g;}}
+function fuelFamilyDefaults(c,wasD,was){const fam=fuelFamilyDefaults0(c,wasD);let t=fam;
+  if(isGasF(c.fuel)&&!isGasF(was)&&!isCI(c.fuel)){const cr0=c.cr;c.cr=Math.min(13,Math.round((c.cr+(c.asp==="na"?1:0.5))*2)/2);
+    if(c.cr!==cr0)t=(fam?fam.replace(/ to start$/,"")+"; ":"")+`${OPT.fuel[c.fuel].short}: compression ${c.cr.toFixed(1)}:1 to use the octane`;}
+  altFuelFill(c);return t;}
+function fuelFamilyDefaults0(c,wasD){const d=isCI(c.fuel);if(d===wasD)return null;const boosted=c.asp!=="na";
   if(d){c.cr=17.5;c.lambda=1.8;c.timing=0;c.redline=Math.min(c.redline,4200);c.cam=Math.min(c.cam,30);if(c.intake==="carb")c.intake="single_tb";
     return `Diesel: compression 17.5:1, λ 1.8, redline ${c.redline.toLocaleString()} to start`;}
   c.cr=boosted?9.0:10.5;c.lambda=boosted?0.82:0.9;c.timing=0;if(c.redline<=4200)c.redline=6000;   // a diesel governor speed is no petrol redline
@@ -13711,6 +13882,7 @@ function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"
 const openSec={"Bore & stroke":true};
 function secSummary(sec){return sec.fields.filter(f=>!f.showIf||f.showIf(S.cfg)).map(f=>{const v=S.cfg[f.key];if(f.type==="slider")return (f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");const o=OPT[f.optTable||f.key][v];return o?o.name:v;}).join(" · ");}
 function renderBuild(){
+  altFuelFill(S.cfg);
   let h="";
   for(const sec of FORM){const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}"><span class="t">${sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
@@ -13729,8 +13901,8 @@ $("buildForm").addEventListener("click",e=>{
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
-  const wasD=isCI(S.cfg.fuel);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
-  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD):null;
+  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel;S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
+  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):null;
   const moved=clampCfgLimits();
   if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
   afterCfgChange(true);});
@@ -13852,12 +14024,21 @@ const SPECS={
     ["Pressure drop",o=>o.dp?Math.round(o.dp*100)+"%":"none"],
     ["Heat soak",o=>o.soak>=1?"soaks quickly":o.soak>0?"soaks slowly":"none"],
     ["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
-  fuel:{price:o=>o.costL+"/L",specs:[
+  fuel:{line:o=>{if(!o.flex||S.cfg.fuel!=="flex")return null;const b=SIM.fuelOf(S.cfg);return "E"+b.ePct+" · "+Math.round(b.ron)+" RON / "+Math.round(b.mon)+" MON";},price:o=>o.flex?OPT.fuel.e85.costL+"–"+OPT.fuel.r91.costL+"/L":o.costL+"/"+(o.unit||"L"),specs:[
     ["Cetane",o=>o.ci?"CN "+o.cetane:null],
-    ["Octane",o=>o.ci?null:o.ron+" RON / "+o.mon+" MON"],["Energy",o=>(o.lhv/1e6).toFixed(1)+" MJ/kg"],
-    ["Air per fuel",o=>x1(o.afr)+":1"],["Charge cooling",o=>o.ci?null:Math.round(o.hov/1000)+" kJ/kg"],
+    ["Blend",o=>o.flex?"E0–E85, read by the sensor"+(S.cfg.fuel==="flex"?" · now E"+Math.round(S.cfg.ethanolPct==null?85:S.cfg.ethanolPct):""):null],
+    ["Octane",o=>o.ci?null:o.flex?OPT.fuel.r91.ron+"–"+o.ron+" RON by blend":o.ron+" RON / "+o.mon+" MON"],["Energy",o=>(o.flex?(OPT.fuel.r91.lhv/1e6).toFixed(1)+"–":"")+(o.lhv/1e6).toFixed(1)+" MJ/kg"],
+    ["Air per fuel",o=>o.flex?x1(OPT.fuel.r91.afr)+"–"+x1(o.afr)+":1":x1(o.afr)+":1"],["Charge cooling",o=>o.ci?null:o.gas?"none — arrives as vapour":Math.round(o.hov/1000)+" kJ/kg"],
+    ["Oxygen",o=>o.oxy?o.oxy+"% by weight":null],["Lead",o=>o.lead?"leaded — kills cats and O₂ sensors":null],
+    ["Air displaced",o=>o.displace?"~"+x1(o.displace*100)+"% of the cylinder":null],
+    ["Tank",o=>o.tankKg?o.tankKg+" kg for "+o.tankL+" "+(o.unit||"L")+" ≈ "+Math.round(o.tankL*o.dens*o.lhv/(43.4e6*0.745))+" L of petrol":null],
+    ["Cold start",o=>o.vapor?"weak below −30 °C":null],
     ["Cloud point",o=>o.ci&&o.cloudC!=null?degC(o.cloudC):null],
     ["Corrosion",o=>o.ci?(o.corrosive>0?"eats old rubber seals":null):o.corrosive>=1?"attacks alu and lead":o.corrosive>0?"mildly corrosive":null]]},
+  gasSys:{line:o=>fuelLine("gasSys",o),specs:[
+    ["Meters",o=>o.kgh+" kg/h of gas"],["Propane",o=>"~"+(Math.round(o.kgh*0.76/0.25/10)*10).toLocaleString("en-CA")+" hp with margin"],
+    ["Airflow",o=>o.veK<1?"−"+Math.round((1-o.veK)*100)+"% (venturi)":"no loss"],["Under 1 bar boost",o=>"~"+Math.round(o.kgh*(1-o.dropBar))+" kg/h"],
+    ["Cold start",o=>"needs "+x1(o.needBar)+" bar in the tank"],["Weight",o=>"+"+o.massKg+" kg on the engine"]]},
   dInj:{line:o=>fuelLine("dInj",o),specs:[
     ["Injection pressure",o=>o.bar.toLocaleString("en-CA")+" bar"],
     ["Fuel per stroke",o=>quick&&quick.n?"~"+Math.round(o.qL*quick.Vd/1000/quick.n*((OPT.dNoz[S.cfg.dNoz]||{mult:1}).mult))+" mm³ a cylinder":o.qL+" mm³ per litre"],
@@ -13908,11 +14089,11 @@ function specLine(tbl,o){const d=SPECS[tbl];if(d&&d.line){const v=d.line(o);if(v
 /* fuel parts: hp a flow of L/h supports with margin (petrol ~0.55 lb/hp/h, k = alcohol's extra volume), and the live duty / pump load in the field header */
 function fuelHp(lph,k){return Math.round(lph*0.745*2.2046/0.55/k/5)*5;}
 const K_DSL=0.62;   // diesel: denser (0.835) and a far better BSFC (~0.38 lb/hp/h at full load), so each litre is worth ~1.6× petrol
-function fuelLine(tbl,o){const f=quick&&quick.fuel;if(tbl==="dInj")return f&&S.cfg.dInj===o._id.split(":")[1]?Math.round(f.injUtil*100)+"% of its fuel":o.bar.toLocaleString("en-CA")+" bar";
+function fuelLine(tbl,o){const f=quick&&quick.fuel;if(tbl==="gasSys")return f&&quick.alt&&quick.alt.gas&&quick.alt.sys===o._id.split(":")[1]?Math.round(f.load*100)+"% of its flow":o.kgh+" kg/h";if(tbl==="dInj")return f&&S.cfg.dInj===o._id.split(":")[1]?Math.round(f.injUtil*100)+"% of its fuel":o.bar.toLocaleString("en-CA")+" bar";
   if(!f||S.cfg[tbl]!==o._id.split(":")[1])return tbl==="injectors"?o.cc+" cc/min":o.lph+" L/h";
   return tbl==="injectors"?(f.portInj?Math.round(f.duty*100)+"% duty":"not used"):Math.round(f.load*100)+"% of its flow";}
-function fuelHdr(){const f=quick&&quick.fuel;for(const k of ["injectors","fuelPump","dInj"]){const b=document.querySelector(`#buildForm .q[data-ckey="${k}"]`);if(!b)continue;
-  const u=f?(k==="fuelPump"?f.pumpUtil:f.injUtil):0;b.textContent=specLine(k,OPT[k][S.cfg[k]])+" ›";b.style.color=u>1?"var(--crit)":u>0.8?"var(--warn)":"";}}
+function fuelHdr(){const f=quick&&quick.fuel;for(const k of ["injectors","fuelPump","dInj","gasSys"]){const b=document.querySelector(`#buildForm .q[data-ckey="${k}"]`);if(!b||!OPT[k][S.cfg[k]])continue;
+  const u=f?(k==="fuelPump"||k==="gasSys"?f.pumpUtil:f.injUtil):0;b.textContent=specLine(k,OPT[k][S.cfg[k]])+" ›";b.style.color=u>1?"var(--crit)":u>0.8?"var(--warn)":"";}}
 function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S.cfg[cfgKey]:null;
   $("sheetTitle").textContent=title;
   $("sheetBody").innerHTML=Object.keys(opts).map(k=>{const o=opts[k];const lk=locked(o);
@@ -14864,6 +15045,8 @@ function renderAnalysis(){
   $("combos").innerHTML=combosNow.slice().sort((a,b)=>order[a.severity]-order[b.severity]).map(c=>`<div class="combo ${c.severity}"><h3>${c.title}</h3><p>${c.text}</p></div>`).join("")||`<p class="hint">Nothing notable — a conventional combination.</p>`;
   const r=(S.last&&S.last.hash===cfgHash(S.cfg))?S.last.res:quick;const T=r.thermals,L=r.loads,Cl=r.clearances,K=r.knock;
   const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],...(r.diesel?[["Smoke (peak)",`${Math.round(r.smoke||0)}% · ${smokeWord(r)}`],["Clatter",`${Math.round((r.clatter||0)*100)}% · ${r.clatter>0.66?"loud":r.clatter>0.4?"audible":"quiet"}`],["Full-load λ (leanest / spool)",r.fuel?`${(+S.cfg.lambda).toFixed(2)} / ${(r.fuel.lamMin||0).toFixed(2)}`:"—"],["Injection used",r.fuel?`${Math.round(r.fuel.injUtil*100)}%`:"—"]]:[["Knock retard",`${K.retardDeg.toFixed(1)}°`]]),["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
+  if(r.alt&&r.alt.gas)rows.push(["Gas system load",`${Math.round(r.fuel.load*100)}% · ${Math.round(r.alt.capKgh)} kg/h`],["Air displaced",`${r.alt.displacePct}%`],[r.alt.unit==="kg"?"CNG use":"Propane use",`${r.alt.econNative} ${r.alt.unit==="kg"?"kg":"L"}/100km`]);
+  if(r.alt&&r.alt.flex&&r.alt.winter){const w=r.alt.winter;rows.push(["Winter E"+w.pct+" margin",`${w.margin>=0?"+":"−"}${Math.abs(w.margin).toFixed(1)}`]);}
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
@@ -14917,7 +15100,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
 function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
-  econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],
+  econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
   passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`]};
@@ -14926,7 +15109,12 @@ function reqName(q){return (REQ_LABEL[q]||[q])[0];}
 function reqTarget(q,v,x){const m=REQ_LABEL[q];return m?m[1](v,x):"";}
 /* fuel by family: a petrol brief ("r87") keeps its octane ladder; a diesel only passes one if the buyer takes diesel (seg.dsl);
    "diesel" wants any compression-ignition fuel (No. 2 or B100) */
-function fuelOk(have,want,dsl){if(want==="diesel")return isCI(have);if(isCI(have))return !!dsl;return FUEL_RANK[have]<=FUEL_RANK[want];}
+function fuelOk(have,want,dsl,x,c){x=x||{};if(x.spec)return have===want;   // a control-fuel series: everybody runs the same drum
+  if(want==="diesel")return isCI(have);if(isCI(have))return !!dsl;
+  if(isGasF(want))return have===want;if(isGasF(have))return !!x.gas;   // a propane or CNG fleet buys only that; a gas engine only goes where gas is welcome
+  return fuelRank(have,c)<=FUEL_RANK[want];}
+/* flex sells on the blend it was certified on: a pump-gas buyer takes it at E15 or less, otherwise it is an E85 engine */
+function fuelRank(f,c){const o=OPT.fuel[f];if(o&&o.flex){const e=c&&c.ethanolPct!=null?+c.ethanolPct:85;return e<=15?FUEL_RANK.r91:FUEL_RANK.e85;}return FUEL_RANK[f];}
 const degC=t=>`${t<0?"−"+(-t):t} °C`;
 function siteTxt(s){return `${degC(s.ambientC)} · ${(+s.altitudeM).toLocaleString()} m`;}
 function siteAt(s){return Math.abs(s.ambientC-20)>=15||s.altitudeM<1500?degC(s.ambientC):`${(+s.altitudeM).toLocaleString()} m`;}   // the condition that bites
@@ -14940,14 +15128,14 @@ function previewSite(s){if(testing){toast("Let the run finish first");return;}C(
 function fits(k,res,cfg){
   const r=k.req,c=cfg||S.cfg,o=[];let ok=true;
   if(k.site)res=siteRun(k.site,c);   // a site brief ignores the cell figures: the client re-runs the engine in their own air
-  const x={dsl:!!(SEGMENTS.find(s=>s.id===k.seg)||{}).dsl},dsl=isCI(c.fuel);
+  const sg=SEGMENTS.find(s=>s.id===k.seg)||{},x={dsl:!!sg.dsl,gas:!!sg.gas,spec:!!sg.spec},dsl=isCI(c.fuel);
   const add=(q,cond,val,prog)=>{o.push({q,name:reqName(q),target:reqTarget(q,r[q],x),label:describeReq(q,r[q],x),val,ok:cond,prog});if(!cond)ok=false;};
   const ge=(v,t)=>clamp(v/Math.max(1e-6,t),0,1.25), le=(v,t)=>clamp(t/Math.max(1e-6,v),0,1.25);
   if(r.hp!=null)add("hp",res.peakHp>=r.hp,Math.round(res.peakHp),ge(res.peakHp,r.hp));
   if(r.tq!=null)add("tq",res.peakTq>=r.tq,Math.round(res.peakTq),ge(res.peakTq,r.tq));
   if(r.tqrpm!=null)add("tqrpm",res.peakTqRpm<=r.tqrpm,res.peakTqRpm.toLocaleString(),le(res.peakTqRpm,r.tqrpm));
   if(r.econ!=null)add("econ",res.econ<=r.econ,res.econ.toFixed(1),le(res.econ,r.econ));
-  if(r.fuel!=null){const fo=fuelOk(c.fuel,r.fuel,x.dsl);add("fuel",fo,fuelShort(c.fuel),fo?1:0.3);if(!fo&&(r.fuel==="diesel"||dsl))o[o.length-1].fam=true;}
+  if(r.fuel!=null){const fo=fuelOk(c.fuel,r.fuel,x.dsl,x,c);add("fuel",fo,fuelShort(c.fuel)+(OPT.fuel[c.fuel]&&OPT.fuel[c.fuel].flex?" E"+Math.round(c.ethanolPct==null?85:c.ethanolPct):""),fo?1:0.3);if(!fo&&(r.fuel==="diesel"||dsl||isGasF(r.fuel)||isGasF(c.fuel)))o[o.length-1].fam=true;}
   if(r.smoke!=null){const sm=dsl?(res.smoke||0):0;add("smoke",sm<=r.smoke,Math.round(sm)+"%",le(Math.max(1,sm),Math.max(1,r.smoke)));}
   if(r.rel!=null)add("rel",res.rel>=r.rel,res.rel,ge(res.rel,r.rel));
   if(r.smooth!=null)add("smooth",res.smooth>=r.smooth,Math.round(res.smooth),ge(res.smooth,r.smooth));
@@ -14960,7 +15148,7 @@ function fits(k,res,cfg){
   if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if(k.site){const br=res.fails[0];o.push({q:"site",name:"At the site",target:siteTxt(k.site),label:`Holds at ${siteTxt(k.site)}`,val:br?"breaks":"holds",ok:!br,prog:br?0:1,why:br});if(br)ok=false;}
   let bonus=0;if(ok){if(r.hp)bonus+=clamp(res.peakHp/r.hp-1,0,0.3)*0.5;if(r.rel)bonus+=clamp((res.rel-r.rel)/100,0,0.15);if(r.tq)bonus+=clamp(res.peakTq/r.tq-1,0,0.3)*0.4;
-    if(x.dsl&&dsl)bonus+=0.06;}   // fleet and farm buyers pay a little extra for diesel: low-down torque, fuel bills, a long life
+    if(x.dsl&&dsl)bonus+=0.06;if(x.gas&&isGasF(c.fuel))bonus+=0.08;}   // ...and more for propane or CNG: cheap fuel, clean oil, indoor-safe   // fleet and farm buyers pay a little extra for diesel: low-down torque, fuel bills, a long life
   return{ok,o,bonus,res};
 }
 /* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
