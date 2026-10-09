@@ -15123,7 +15123,7 @@ function svcBayH(){const c=SV();const cap=svcCap(),free=cap-c.svcUsed;const jobs
 function coreStockH(cert){const c=SV();const by={};for(const x of c.cores)by[x.lay]=(by[x.lay]||0)+1;const lay=S.cfg.layout;
   const rows=Object.keys(by).sort().map(l=>{const ok=l===lay;const per=ok&&cert?Math.min(Math.round(cert.res.cost*CORE_FRAC/10)*10,coreBook(l)):coreBook(l);
     return `<div class="buyer corerow"><div class="bh"><span><b>${by[l]} × ${l} core${by[l]>1?"s":""}</b><i>${(OPT.layout[l]||{}).name||l} · block, crank and rods</i></span><span class="bfit ${ok?"ok":""}">${ok?"fits this build":"other layout"}</span></div>
-      <div class="bdeal"><span>${ok&&cert?`−${fmt$(per)} a unit on this build`:`worth up to ${fmt$(coreBook(l))} on a ${l}`}</span><b>${fmt$(coreScrapVal(l))}</b><button class="btn sm" data-corescrap="${l}">Scrap 1</button></div></div>`;}).join("");
+      <div class="bdeal"><span>${ok&&cert?`−${fmt$(per)} a unit on this build`:`worth up to ${fmt$(coreBook(l))} a unit on ${l} builds`}</span><b>${fmt$(coreScrapVal(l))}</b><button class="btn sm" data-corescrap="${l}">Scrap 1</button></div></div>`;}).join("");
   return `<div class="cgroup g-core"><h3>Core stock<span>${c.cores.length} / ${CORE_MAX}</span></h3>${rows||`<p class="hint">Empty. Buyers sometimes trade in an old engine; a core of your build's layout knocks ${Math.round(CORE_FRAC*100)}% off a unit's cost, the rest wait here.</p>`}
     ${c.coresUsed||c.coreScrap?`<p class="hint">${c.coresUsed} core${c.coresUsed===1?"":"s"} re-used · ${fmt$(c.coreCredit)} saved · ${fmt$(c.coreScrap)} scrap</p>`:""}</div>`;}
 GOALS.push({id:"svc5",name:"Back in service",desc:"Complete 5 rebuild jobs in the service bay.",cash:6000,check:c=>(c.rebuildJobs||0)>=5},
