@@ -241,6 +241,11 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .log{font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--muted);background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px}
 .log div{padding:2px 0;border-bottom:1px dashed var(--rule)}.log div:last-child{border:0}
 .log b{color:var(--orange2);font-weight:500;margin-right:8px}
+/* datalog */
+.dlbox{margin-top:2px}.dlchips{margin-bottom:6px}.dlch{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px}.dlch i{width:10px;height:10px;border-radius:50%;display:inline-block;opacity:.45}.dlch.on i{opacity:1}
+.dlcv{width:100%;height:230px;display:block;touch-action:pan-y;cursor:crosshair;background:var(--panel);border:1px solid var(--rule);border-radius:4px}html.desk .dlcv{height:310px}
+.dlread{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:12px;color:var(--muted);margin:6px 0;min-height:34px}.dlread b{color:var(--orange2);font-weight:500}.dlread .sw{color:var(--crit);font-weight:600}
+.dldiag{font-size:14px;line-height:1.45;color:var(--chalk);border-left:3px solid var(--good);padding:2px 0 2px 10px}.dldiag.bad{border-color:var(--crit)}
 /* telemetry grid */
 .tele{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tele div{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;display:flex;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
@@ -586,6 +591,7 @@ html:not(.desk) #kbHelpBtn{display:none}
       <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
       <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><div id="recBox"></div></div>
+      <div class="sec" id="dlSec" style="display:none"><h2>Last pass datalog</h2><div id="dlBox"></div></div>
     </section>
 
     <!-- MARKET -->
@@ -4192,7 +4198,7 @@ const ENGINE_SIM = (function () {
       if (v.auto && !inShift && st.rpm >= shiftAt && st.gear < v.gears) shift();
       for (const sh of st.shifts) if (sh.min == null || st.t - sh.t < 0.7) sh.min = Math.min(sh.min == null ? 99 : sh.min, st.boost);
       for (const [d, n] of DRAG_MARKS) if (st.x >= d && !st.marks.find(m => m.n === n)) st.marks.push({ n: n, d: d, t: +st.t.toFixed(3), mph: +(st.v * 2.23694).toFixed(1) });
-      if (st.t - lastTrace >= 0.05) { lastTrace = st.t; st.trace.push([+st.t.toFixed(2), Math.round(st.x), +(st.v * 2.23694).toFixed(1), Math.round(st.rpm), st.gear, st.spin ? 1 : 0, +st.boost.toFixed(2)]); }
+      if (st.t - lastTrace >= 0.05) { lastTrace = st.t; st.trace.push([+st.t.toFixed(2), Math.round(st.x), +(st.v * 2.23694).toFixed(1), Math.round(st.rpm), st.gear, st.spin ? 1 : 0, +st.boost.toFixed(2), +(driveRpm / ratio * 2 * Math.PI * rw / 60 * 2.23694).toFixed(1), Math.round(st.egt), inShift ? 0 : 1, +(st.n2o || 0).toFixed(2)]); }   // [7] driveshaft speed as mph (above [2] = tyres spinning), [8] EGT C, [9] throttle, [10] nitrous flow 0..1 (datalog)
       if (st.x >= 402.336) { st.trap = st.v * 2.23694; st.trapRpm = st.rpm; st.trapGear = st.gear; st.phase = "shutdown"; st.chuteOut = !!v.chute; st.load = 0; }
       else if (st.t > 40) { st.done = true; st.phase = "done"; st.load = 0.1; }
       return st;
@@ -4505,7 +4511,7 @@ const ENGINE_SIM = (function () {
         else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : "piston";
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
       }
-      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2) }); }
+      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2), egt: Math.round(st.egt), boost: +(st.boost || 0).toFixed(2) }); }
       st.thrNow = thr;
       if (st.x >= PULL_FULL) { st.x = PULL_FULL; st.full = true; st.stopWhy = "full"; finish(); return; }
       if (st.broke) { finish(); return; }
@@ -14052,7 +14058,8 @@ function drawPullTrace(r){const INK=getComputedStyle(document.documentElement).g
   const sw=r.sweet||[0.15,0.3];x.fillStyle="rgba(79,192,141,.12)";x.fillRect(padL,padT+ch*(1-sw[1]),cw,ch*(sw[1]-sw[0]));
   const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
   line(p=>p.boxFrac,soft,1,[4,4]);line(p=>p.slip,"rgba(95,168,230,.9)",1.5);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
-  x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("slip",padL+34,padT+12);x.fillStyle=soft;x.fillText("box",padL+62,padT+12);x.textAlign="right";x.fillText(mx+" mph",W-padR,padT+12);}
+  const rm=Math.max(4000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000),em=Math.max(800,Math.ceil(Math.max(...tr.map(p=>p.egt||0))/100)*100),hasE=tr[0].egt!=null;if(hasE&&PL.rpm)line(p=>p.rpm/rm,"#e8c14a",1.3,[2,3]);if(hasE&&PL.egt)line(p=>p.egt/em,"#c58be0",1.3);
+  x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("slip",padL+34,padT+12);x.fillStyle=soft;x.fillText("box",padL+62,padT+12);if(hasE&&PL.rpm){x.fillStyle="#e8c14a";x.fillText("rpm",padL+88,padT+12);}if(hasE&&PL.egt){x.fillStyle="#c58be0";x.fillText("EGT",padL+116,padT+12);}x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,padT+12);pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK);}
 function pullVerdict(res){const r=res.pull;
   if(res.pullFailed)return `<div class="verdict fail"><div><div class="big">${r.broke==="turbo"?"TURBO LET GO":r.broke==="piston"?"MELTED A PISTON":"BROKE UNDER THE SLED"}</div><p>${r.distFt.toFixed(1)} ft before it let go${career()?" — certification is void and reputation took a hit":""}.</p></div></div>`;
   const cls=r.full||r.place===1?"pass":r.place<=PULL_PURSE.length?"marg":"fail";   // in the money is not a loss
@@ -14063,8 +14070,97 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
   return `<div class="sec"><h2>Pull sheet</h2><div class="log"><div><b>Pull</b>${r.full?"FULL · 300 ft":r.distFt.toFixed(1)+" ft"} · ${r.maxMph} mph top · ${r.time.toFixed(1)} s · ${why}</div>
     <div><b>Setup</b>${r.clsName} · ${r.gearName} (${r.mphGear} mph) · ${v.trans==="clutch"?"clutch":"converter"} · ${r.tyre.toLowerCase()} · ${v.hitch} in hitch · ${v.ballast} kg front · ${r.ratio}:1 overall</div>
     <div><b>Tyres</b>peak slip ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s spinning${r.hopT>0?" · hopped "+r.hopT.toFixed(1)+" s":""}</div>
-    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>
+    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>`;}
+
+/* ---- datalog: the pass, channel by channel. Trace rows: [t, m, mph, rpm, gear, spin, bar, wheel mph, EGT C, throttle, n2o] ---- */
+const DL={on:{rpm:1,spd:1,whl:1,boost:1,egt:0,n2o:1},mode:"t"},DLM={},DLC={rpm:["rpm","rgba(95,168,230,.95)"],spd:["ground","#ff7a1a"],whl:["wheel","INK"],boost:["boost","#4fc08d"],egt:["EGT","#c58be0"],n2o:["N₂O","#e8c14a"]};
+const dlCache=new WeakMap();
+function dlPrep(r,res){if(!r||!r.trace||r.trace.length<4||r.trace[0].length<8)return null;let D=dlCache.get(r.trace);if(D)return D;
+  const T=r.trace,n=T.length,col=i=>T.map(p=>p[i]==null?0:p[i]);
+  D={n,t:col(0),x:col(1),mph:col(2),rpm:col(3),gear:col(4),spin:col(5),boost:col(6),whl:col(7),egt:col(8),thr:col(9),n2o:col(10)};
+  D.tEnd=D.t[n-1];D.hasB=D.boost.some(v=>v>0.05);D.hasN=D.n2o.some(v=>v>0.02);
+  D.rpmMax=Math.max(4000,Math.ceil(Math.max(...D.rpm,(r.veh&&r.veh.redline)||0)/1000)*1000);D.mphMax=Math.max(60,Math.ceil(Math.max(...D.mph,...D.whl)/20)*20);
+  D.bMax=Math.max(1,Math.ceil(Math.max(...D.boost)*2)/2);D.eMax=Math.max(800,Math.ceil(Math.max(...D.egt)/100)*100);
+  const tq=res&&res.peakTqRpm||0,reg=(f,minDur)=>{const o=[];let a=-1;for(let i=0;i<=n;i++){const on=i<n&&f(i);if(on&&a<0)a=i;if(!on&&a>=0){const e=i-1;if(D.t[e]-D.t[a]+0.05>=minDur)o.push({a,e});a=-1;}}return o;};
+  D.spinR=reg(i=>D.whl[i]>D.mph[i]*1.09+1.5,0.1).map(g=>{let pk=g.a,gap=0,pc=0;for(let i=g.a;i<=g.e;i++){const d=D.whl[i]-D.mph[i];if(d>gap){gap=d;pk=i;}pc=Math.max(pc,D.mph[i]>=20?D.whl[i]/D.mph[i]-1:0);}return Object.assign(g,{pk,gap,pc,dur:D.t[g.e]-D.t[g.a]+0.05});});
+  D.bogR=tq?reg(i=>D.thr[i]>0.5&&D.t[i]>0.1&&D.rpm[i]<0.7*tq,0.15).map(g=>{let m=1e9;for(let i=g.a;i<=g.e;i++)m=Math.min(m,D.rpm[i]);return Object.assign(g,{min:m,tq});}):[];
+  D.sh=(r.shifts||[]).map(s=>({t:s.t,x:s.x,g:s.gear}));D.mk=(r.marks||[]).map(m=>({t:m.t,x:m.d,n:m.n}));
+  dlCache.set(r.trace,D);return D;}
+function dlWhen(D,i){const ts=D.t[i];let s=null;for(const h of D.sh)if(h.t<=ts&&ts-h.t<=1.2)s=h;if(s)return {k:"shift",txt:`${(ts-s.t).toFixed(2)} s after the ${s.g}–${s.g+1} shift`};if(ts<0.7)return {k:"launch",txt:"off the line"};return {k:"run",txt:`${Math.round(D.x[i]*3.28084)} ft down the track`};}
+function dlDiag(r,res){const D=dlPrep(r,res);if(!D)return "";const o=[],v=r.veh||{};
+  if(D.spinR.length){const g=D.spinR.slice().sort((a,b)=>b.gap*b.dur-a.gap*a.dur)[0],w=dlWhen(D,g.a),tot=D.spinR.reduce((s,q)=>s+q.dur,0),nit=D.hasN&&D.n2o[g.a]>0.3;
+    const fix=w.k==="launch"?`${v.tyre&&v.tyre!=="slick"?"a stickier tyre, ":""}less launch rpm or a softer shock`:w.k==="shift"?`${nit?"bring the nitrous in later, ":""}shift a little later so the next gear isn't hit so hard, or a softer shock`:`${nit?"bring the nitrous in later, ":""}ease the power in or add rear weight`;
+    o.push(`Spun ${g.dur.toFixed(2)} s ${w.txt}, wheels up to ${Math.round(g.gap)} mph over the car${g.pc>0?` (${Math.round(g.pc*100)}%)`:""}${D.spinR.length>1?` (${D.spinR.length} spins, ${tot.toFixed(2)} s in all)`:""} — try ${fix}.`);}
+  if(D.bogR.length){const g=D.bogR[0],w=dlWhen(D,g.a);o.push(w.k==="launch"?`Bogged off the line — rpm fell to ${Math.round(g.min).toLocaleString()} against a ${g.tq.toLocaleString()} rpm torque peak: more launch rpm or a looser converter.`:`Fell to ${Math.round(g.min).toLocaleString()} rpm ${w.txt}, well under the ${g.tq.toLocaleString()} rpm torque peak — closer ratios or shift later.`);}
+  return o.length?o.join(" "):`Clean log: wheel speed tracked the car all the way — ${D.tEnd.toFixed(1)} s with nothing lost to spin or bog.`;}
+function dlHtml(id,r,res){const D=dlPrep(r,res);if(!D)return `<p class="hint">This pass was logged before the datalog existed — run another.</p>`;
+  const sp=D.spinR.slice().sort((a,b)=>b.gap-a.gap)[0];DLM[id]={r,res,cur:sp?sp.pk:null};
+  const chips=Object.keys(DLC).filter(k=>k==="boost"?D.hasB:k==="n2o"?D.hasN:true).map(k=>`<button class="chip dlch${DL.on[k]?" on":""}" data-dlch="${k}"><i style="background:${DLC[k][1]==="INK"?"var(--ink)":DLC[k][1]}"></i>${DLC[k][0]}</button>`).join("")+`<button class="chip dlch" data-dlx="1">x: ${DL.mode==="t"?"time":"distance"}</button>`;
+  return `<div class="dlbox"><div class="chips dlchips">${chips}</div><canvas class="dlcv" id="${id}Cv"></canvas><div class="dlread" id="${id}Rd"></div><div class="dldiag${D.spinR.length||D.bogR.length?" bad":""}">${dlDiag(r,res)}</div></div>`;}
+function dlCard(id,res){return `<div class="sec"><h2>Datalog</h2>${dlHtml(id,res.drag,res)}</div>`;}
+function dlDraw(id){const M=DLM[id],cv=$(id+"Cv");if(!M||!cv||!cv.isConnected)return;const D=dlPrep(M.r,M.res);if(!D)return;
+  const cs=getComputedStyle(cv),INK=cs.getPropertyValue("--ink").trim()||"#e8e3d6",soft=INK.startsWith("#1")?"rgba(27,26,23,.5)":"rgba(232,227,214,.5)",crit=cs.getPropertyValue("--crit").trim()||"#e2473c",grid=cs.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)",ff=getComputedStyle(document.body).fontFamily;
+  const dpr=Math.min(devicePixelRatio||1,2),W=cv.clientWidth,H=cv.clientHeight;if(!W||!H)return;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+  const padL=8,padR=8,padT=38,padB=32,cw=W-padL-padR,ch=H-padT-padB,byT=DL.mode==="t",xs=byT?D.t:D.x,xEnd=byT?D.tEnd:402.336,X=v=>padL+cw*Math.min(1,v/xEnd),Y=(v,m)=>padT+ch*(1-Math.max(0,Math.min(1,v/m)));
+  const col=k=>DLC[k][1]==="INK"?INK:DLC[k][1];
+  x.lineWidth=1;x.strokeStyle=grid;for(let i=0;i<=4;i++){const y=padT+ch*i/4;x.beginPath();x.moveTo(padL,y);x.lineTo(padL+cw,y);x.stroke();}
+  x.font="10px "+ff;x.textBaseline="alphabetic";x.textAlign="center";x.fillStyle=soft;
+  if(byT){const st=xEnd>14?2:1;for(let t=0;t<=xEnd;t+=st){x.beginPath();x.moveTo(X(t),padT);x.lineTo(X(t),padT+ch);x.stroke();x.fillText(t+"s",X(t),H-3);}}else{for(let f=0;f<=1320;f+=330){x.beginPath();x.moveTo(X(f*0.3048),padT);x.lineTo(X(f*0.3048),padT+ch);x.stroke();x.fillText(f+"'",X(f*0.3048),H-3);}}
+  // spin and bog zones, then the gap between wheel and ground speed
+  const zone=(g,c)=>{x.fillStyle=c;const a=X(xs[g.a]),b=X(xs[g.e]);x.fillRect(a,padT,Math.max(2,b-a),ch);};
+  if(DL.on.whl)D.spinR.forEach(g=>zone(g,"rgba(226,71,60,.10)"));D.bogR.forEach(g=>zone(g,"rgba(232,193,74,.12)"));
+  if(DL.on.n2o&&D.hasN){x.fillStyle="rgba(232,193,74,.35)";for(let i=1;i<D.n;i++)if(D.n2o[i]>0.02){const a=X(xs[i-1]),b=X(xs[i]);x.fillRect(a,padT+ch-5,Math.max(1,b-a),5);}}
+  if(DL.on.whl&&DL.on.spd){x.fillStyle=crit;x.globalAlpha=.55;const run=[];for(let i=0;i<D.n;i++)run.push(D.whl[i]>D.mph[i]*1.03+0.5);
+    for(let i=0;i<D.n;i++){if(!run[i]||(i>0&&run[i-1]))continue;let e=i;while(e+1<D.n&&run[e+1])e++;x.beginPath();for(let j=i;j<=e;j++){const px=X(xs[j]),py=Y(D.whl[j],D.mphMax);j===i?x.moveTo(px,py):x.lineTo(px,py);}for(let j=e;j>=i;j--)x.lineTo(X(xs[j]),Y(D.mph[j],D.mphMax));x.closePath();x.fill();}x.globalAlpha=1;}
+  const line=(arr,m,c,w,dash)=>{x.strokeStyle=c;x.lineWidth=w;x.lineJoin="round";x.setLineDash(dash||[]);x.beginPath();for(let i=0;i<D.n;i++){const px=X(xs[i]),py=Y(arr[i],m);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.setLineDash([]);};
+  if(DL.on.egt)line(D.egt,D.eMax,col("egt"),1.3);if(DL.on.boost&&D.hasB)line(D.boost,D.bMax,col("boost"),1.5);if(DL.on.rpm)line(D.rpm,D.rpmMax,col("rpm"),1.4);
+  if(DL.on.spd)line(D.mph,D.mphMax,col("spd"),2.2);if(DL.on.whl)line(D.whl,D.mphMax,INK,1.3,[4,3]);
+  // markers: shifts on top, distance marks along the bottom (staggered so phones don't pile up)
+  x.textAlign="center";x.font="9px "+ff;x.strokeStyle=soft;x.lineWidth=1;x.setLineDash([2,3]);x.fillStyle=soft;
+  const mark=(v,lab,row)=>{const px=X(v);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.textAlign=px<padL+26?"left":px>W-padR-26?"right":"center";x.fillText(lab,px,padT+ch+9+row*10);};
+  mark(0,"launch",0);D.mk.forEach((m,i)=>mark(byT?m.t:m.x,{"60 ft":"60'","330 ft":"330'","1/8 mi":"1/8","1000 ft":"1000'","1/4 mi":"finish"}[m.n]||m.n,(i+1)%2));
+  x.setLineDash([]);D.sh.forEach(h=>{const px=X(byT?h.t:h.x);x.fillStyle=INK;x.beginPath();x.moveTo(px,padT-1);x.lineTo(px-4,padT-8);x.lineTo(px+4,padT-8);x.closePath();x.fill();x.fillStyle=soft;x.textAlign="center";x.fillText(h.g+"–"+(h.g+1),px,padT-11);});
+  // scales
+  x.textAlign="left";x.font="10px "+ff;let sx=padL+2;
+  [["rpm",DL.on.rpm,D.rpmMax/1000+"k rpm"],["spd",DL.on.spd||DL.on.whl,D.mphMax+" mph"],["boost",DL.on.boost&&D.hasB,D.bMax+" bar"],["egt",DL.on.egt,D.eMax+"°C"]].forEach(([k,on,t])=>{if(!on)return;x.fillStyle=col(k);x.fillText(t,sx,10);sx+=x.measureText(t).width+9;});
+  // cursor
+  const i=M.cur;if(i!=null&&i>=0&&i<D.n){const px=X(xs[i]);x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,padT-12);x.lineTo(px,padT+ch);x.stroke();
+    const dot=(arr,m,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,Y(arr[i],m),3.2,0,7);x.fill();};if(DL.on.rpm)dot(D.rpm,D.rpmMax,col("rpm"));if(DL.on.spd)dot(D.mph,D.mphMax,col("spd"));if(DL.on.whl)dot(D.whl,D.mphMax,INK);if(DL.on.boost&&D.hasB)dot(D.boost,D.bMax,col("boost"));if(DL.on.egt)dot(D.egt,D.eMax,col("egt"));}
+  const rd=$(id+"Rd");if(rd){if(i==null||i<0||i>=D.n)rd.innerHTML=`<span class="hint">Touch or hover the chart to read every channel at that instant.</span>`;
+    else{const sp=D.mph[i]>=20?D.whl[i]/D.mph[i]-1:0,sw=D.whl[i]>D.mph[i]*1.09+1.5;rd.innerHTML=`<b>${D.t[i].toFixed(2)} s</b><b>${Math.round(D.x[i]*3.28084)} ft</b><span style="color:${col("rpm")}">${Math.round(D.rpm[i]).toLocaleString()} rpm</span><span>gear ${D.gear[i]}</span><span style="color:${col("spd")}">${D.mph[i].toFixed(0)} mph</span><span class="${sw?"sw":""}">wheel ${D.whl[i].toFixed(0)} mph${D.mph[i]>=20?` (${sp>=0?"+":""}${Math.round(sp*100)}%)`:""}${sw?" SPIN":""}</span>${D.hasB?`<span style="color:${col("boost")}">${D.boost[i].toFixed(2)} bar</span>`:""}<span style="color:${col("egt")}">${D.egt[i]} °C</span><span>throttle ${Math.round(D.thr[i]*100)}%</span>${D.hasN&&D.n2o[i]>0.02?`<span style="color:${col("n2o")}">N₂O on</span>`:""}`;}}}
+function dlAll(){for(const id in DLM)dlDraw(id);}
+let dlRaf=0;function dlSched(){if(!dlRaf)dlRaf=requestAnimationFrame(()=>{dlRaf=0;dlAll();});}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-dlch],[data-dlx]");if(!b)return;if(b.dataset.dlx){DL.mode=DL.mode==="t"?"x":"t";document.querySelectorAll("[data-dlx]").forEach(q=>q.textContent="x: "+(DL.mode==="t"?"time":"distance"));}else{const k=b.dataset.dlch;DL.on[k]=DL.on[k]?0:1;document.querySelectorAll(`[data-dlch="${k}"]`).forEach(q=>q.classList.toggle("on",!!DL.on[k]));}dlAll();});
+function dlScrub(e){const cv=e.target.closest&&e.target.closest(".dlcv");if(!cv||(e.type==="pointermove"&&e.pointerType!=="mouse"&&!(e.buttons&1)))return;const id=cv.id.slice(0,-2),M=DLM[id];if(!M)return;const D=dlPrep(M.r,M.res);if(!D)return;
+  const rc=cv.getBoundingClientRect(),f=Math.max(0,Math.min(1,(e.clientX-rc.left-8)/(rc.width-16))),xs=DL.mode==="t"?D.t:D.x,v=f*(DL.mode==="t"?D.tEnd:402.336);let lo=0,hi=D.n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(xs[m]<v)lo=m;else hi=m;}M.cur=Math.abs(xs[lo]-v)<Math.abs(xs[hi]-v)?lo:hi;dlSched();}
+document.addEventListener("pointerdown",e=>{if(e.target.closest&&e.target.closest(".dlcv")){try{e.target.setPointerCapture(e.pointerId);}catch(_){}dlScrub(e);}});document.addEventListener("pointermove",dlScrub);
+addEventListener("resize",dlSched);new MutationObserver(dlSched).observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});
+function dlMount(){for(const id in DLM)if(!$(id+"Cv"))delete DLM[id];dlAll();}
+function dlAnalysis(){const sec=$("dlSec");if(!sec)return;const l=S.last,ok=l&&l.res&&l.res.drag&&dlPrep(l.res.drag,l.res);sec.style.display=ok?"":"none";if(!ok){delete DLM.dlA;return;}$("dlBox").innerHTML=dlHtml("dlA",l.res.drag,l.res);requestAnimationFrame(dlAll);}
+/* ---- pull datalog: the same scrub cursor on the pull sheet's chart, plus rpm and EGT ---- */
+const PL={rpm:1,egt:1,cur:null};
+function pullRedraw(){const l=lastForChart();if(S.env.testType==="pull_sled"&&l&&l.pull)drawPullTrace(l.pull);}
+function pullDiag(r){const tr=r.trace||[],sw=r.sweet||[0.15,0.3];if(tr.length<3)return "";let best=null,a=-1,low=0,lowA=-1,lowB=0;
+  for(let i=0;i<=tr.length;i++){const on=i<tr.length&&tr[i].slip>sw[1]+0.02;if(on&&a<0)a=i;if(!on&&a>=0){const d=tr[i-1].t-tr[a].t+0.1;if(!best||d>best.d)best={a,e:i-1,d};a=-1;}}
+  for(let i=0;i<tr.length;i++)if(tr[i].t>1&&tr[i].throttle>0.8&&tr[i].slip<sw[0]-0.03&&tr[i].v>0.5)low+=0.1;
+  const pos=f=>f<0.33?"early":f<0.66?"mid-pull":"late in the pull",ft=i=>Math.round(tr[i].x*3.28084);
+  if(best&&best.d>=0.4)return `Wheel speed ran above the sweet spot (over ${Math.round(sw[1]*100)}% slip) for ${best.d.toFixed(1)} s ${pos(tr[best.a].x/SIM.PULL_FULL)}, ${ft(best.a)}–${ft(best.e)} ft — feather earlier.`;
+  if(r.stopWhy==="bogged")return `Bogged at ${(r.distFt||0).toFixed(0)} ft with the tyres under the band — a lower gear or more rpm at the hook.`;
+  if(low>=1)return `Wheels ran under the sweet spot for ${low.toFixed(1)} s with the throttle open — the truck was lugging; a lower gear or a bit more tyre spin would get more out of the dirt.`;
+  return `Wheel speed stayed in the sweet band — ${r.sweetT.toFixed(1)} s where the dirt bites best.`;}
+function pullLog(r){PL.cur=null;const tr=r.trace||[];if(!tr.length||tr[0].egt==null)return "";
+  return `<div class="dlbox" style="margin-top:10px"><div class="chips dlchips"><button class="chip dlch${PL.rpm?" on":""}" data-plch="rpm"><i style="background:#e8c14a"></i>rpm</button><button class="chip dlch${PL.egt?" on":""}" data-plch="egt"><i style="background:#c58be0"></i>EGT</button></div><div class="dlread" id="plRd"><span class="hint">Touch or hover the chart above to read the pull at that instant.</span></div><div class="dldiag${/above|Bogged|lugging/.test(pullDiag(r))?" bad":""}">${pullDiag(r)}</div></div>`;}
+function pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK){const i=PL.cur,p=tr[i];if(i==null||!p)return;const px=X(p.x);x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();
+  const dot=(f,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,padT+ch*(1-Math.max(0,Math.min(1,f))),3.2,0,7);x.fill();};dot(p.v*2.23694/mx,"#ff7a1a");dot(p.slip,"rgba(95,168,230,.95)");if(PL.rpm)dot(p.rpm/rm,"#e8c14a");if(PL.egt&&p.egt!=null)dot(p.egt/em,"#c58be0");
+  const sw=r.sweet||[0.15,0.3],st=p.slip>sw[1]+0.02?"over the band":p.slip<sw[0]?"under the band":"in the band",W=chart.clientWidth,rt=px<W/2,l1=`${p.t.toFixed(1)} s · ${Math.round(p.x*3.28084)} ft · ${(p.v*2.23694).toFixed(1)} mph`,l2=`slip ${Math.round(p.slip*100)}% ${st} · ${p.rpm.toLocaleString()} rpm${p.egt!=null?" · "+p.egt+"°C":""}`;
+  x.font="10px "+getComputedStyle(document.body).fontFamily;x.textAlign=rt?"left":"right";x.fillStyle=INK;x.fillText(l1,px+(rt?6:-6),padT+28);x.fillText(l2,px+(rt?6:-6),padT+40);
+  const rd=$("plRd");if(rd){rd.innerHTML=`<b>${p.t.toFixed(1)} s</b><b>${Math.round(p.x*3.28084)} ft</b><span style="color:#ff7a1a">${(p.v*2.23694).toFixed(1)} mph</span><span style="color:rgba(95,168,230,.95)">slip ${Math.round(p.slip*100)}% · ${st}</span><span style="color:#e8c14a">${p.rpm.toLocaleString()} rpm</span>${p.egt!=null?`<span style="color:#c58be0">${p.egt} °C</span>`:""}<span>throttle ${Math.round(p.throttle*100)}%</span>`;}}
+function pullScrub(e){if(S.env.testType!=="pull_sled"||testing||(e.type==="pointermove"&&e.pointerType!=="mouse"&&!(e.buttons&1)))return;const l=lastForChart(),r=l&&l.pull,tr=r&&r.trace;if(!tr||!tr.length)return;
+  const rc=chart.getBoundingClientRect(),d=Math.max(0,Math.min(1,(e.clientX-rc.left-34)/(rc.width-68)))*SIM.PULL_FULL;let b=0;for(let i=1;i<tr.length;i++)if(Math.abs(tr[i].x-d)<Math.abs(tr[b].x-d))b=i;PL.cur=b;pullRedraw();}
+chart.style.touchAction="pan-y";chart.addEventListener("pointerdown",e=>{try{chart.setPointerCapture(e.pointerId);}catch(_){}pullScrub(e);});chart.addEventListener("pointermove",pullScrub);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-plch]");if(!b)return;const k=b.dataset.plch;PL[k]=PL[k]?0:1;b.classList.toggle("on",!!PL[k]);pullRedraw();});
 
 function showResult(res,env){
   const b=S.base&&S.base.res;
@@ -14091,8 +14187,9 @@ function showResult(res,env){
     if(res.endurance.log&&res.endurance.log.length)extra+=`<div class="log" style="margin-top:8px">${res.endurance.log.map(l=>`<div><b>${l.hour} h</b>${l.event}</div>`).join("")}</div>`;extra+=`</div>`;}
   if(env.testType==="drag"&&res.drag){const r=res.drag;extra+=`<div class="sec"><h2>Timing slip</h2><div class="log">${slipLine(r)?`<div><b>Slip</b>${slipLine(r)}</div>`:""}${launchSlip(r)?`<div><b>Launch</b>${launchSlip(r)}</div>`:""}${r.race&&r.race.rt!=null&&!r.race.foul&&r.race.rt>0.25?`<div>Reaction time ${r.race.rt.toFixed(3)} — a good light is under 0.100. That is ${(r.race.rt-0.1).toFixed(2)} s given away before the car moved.</div>`:""}${r.reasons.length?r.reasons.map(x=>`<div>${x}</div>`).join(""):"<div>Clean pass. Nothing left on the table that the driveline can fix — the rest is horsepower.</div>"}${r.shifts.length?`<div><b>Shifts</b>${r.shifts.map(x=>x.gear+"→"+(x.gear+1)+" at "+x.rpm.toLocaleString()).join(", ")}</div>`:""}<div><b>Ratios</b>${r.ratios.join(" · ")} × ${r.veh.final} final · ${r.veh.tyreDia}" ${SIM.TYRES[r.veh.tyre].n.toLowerCase()}</div><div><b>Shutdown</b>${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${r.chute?"chute out":"brakes only"} · pulled up in ${r.shutFt.toLocaleString()} ft</div><div style="margin-top:8px"><button class="btn sm info" id="shareSlip">Share timing slip</button></div>${(()=>{const wi=wearInfo(res);if(!wi)return"";const pct=Math.round(wi.w*100);return `<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${pct}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0.3?" · listen for the slap at idle":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`;})()}</div></div>`;}
   if(env.testType==="pull_sled"&&res.pull)extra+=pullSheet(res);
+  if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
-  $("testExtra").innerHTML=extra;
+  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
@@ -14184,7 +14281,7 @@ function renderAnalysis(){
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
-  renderRecords();
+  renderRecords();dlAnalysis();
 }
 function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
