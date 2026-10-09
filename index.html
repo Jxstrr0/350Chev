@@ -991,7 +991,11 @@ const ENGINE_SIM = (function () {
     r94: { name: "98 RON super", sub: "R98/M88  14.7  43.4MJ", info: "The best pump fuel most places sell. It keeps its knock resistance when the charge gets hot, which is exactly when it matters.", ron: 98, mon: 88, afr: 14.7, lhv: 43.4e6, hov: 350e3, gamma: 1.30, corrosive: 0, costL: 1.95, req: "shop1" },
     race100: { name: "Leaded race 100", sub: "R104/M96 14.5 43.5MJ", info: "Leaded race gasoline that stays stable under sustained boost and heat. It poisons catalysts and oxygen sensors.", ron: 104, mon: 96, afr: 14.5, lhv: 43.5e6, hov: 340e3, gamma: 1.30, corrosive: 0, costL: 6.50, req: "shop2" },
     e85: { name: "E85 ethanol blend", sub: "R105/M88 9.8 29.2MJ", info: "Ethanol takes a lot of heat to evaporate, so it cools the charge on the way in and resists knock beautifully. You have to flow about forty percent more of it, so the injectors and the pump have to grow.", ron: 105, mon: 88, afr: 9.8, lhv: 29.2e6, hov: 760e3, gamma: 1.32, corrosive: 0.4, costL: 1.25, req: "shop1" },
-    methanol: { name: "Methanol M100", sub: "R109/M89 6.45 19.9MJ", info: "That enormous evaporative cooling is where most of the power comes from. It pulls water out of the air and corrodes aluminium, magnesium and lead overlays.", ron: 109, mon: 89, afr: 6.45, lhv: 19.9e6, hov: 1100e3, gamma: 1.34, corrosive: 1.0, costL: 1.10, req: "shop2" }
+    methanol: { name: "Methanol M100", sub: "R109/M89 6.45 19.9MJ", info: "That enormous evaporative cooling is where most of the power comes from. It pulls water out of the air and corrodes aluminium, magnesium and lead overlays.", ron: 109, mon: 89, afr: 6.45, lhv: 19.9e6, hov: 1100e3, gamma: 1.34, corrosive: 1.0, costL: 1.10, req: "shop2" },
+    /* compression ignition: no spark and no octane. Cetane is how readily it lights off
+       in hot compressed air; cloudC is where the wax starts to come out of it. */
+    diesel: { name: "No. 2 diesel", sub: "CN48  14.5  42.8MJ", info: "Ordinary road diesel. Sprayed into air that compression has already made hot enough to light it, so there is nothing to knock \u2014 compression and boost are limited by the head bolts, not the fuel.", ci: true, cetane: 48, afr: 14.5, lhv: 42.8e6, hov: 250e3, gamma: 1.33, dens: 0.835, cloudC: -12, corrosive: 0, costL: 1.60 },
+    b100: { name: "B100 biodiesel", sub: "CN55  12.5  37.2MJ", info: "Straight methyl ester from vegetable oil. It lights off more readily and smokes less, carries about 13% less energy, eats the nitrile seals in older pumps and turns to jelly near freezing.", ci: true, cetane: 55, afr: 12.5, lhv: 37.2e6, hov: 300e3, gamma: 1.33, dens: 0.880, cloudC: 2, corrosive: 0.25, costL: 1.75, req: "shop1" }
   };
 
   /* ---- fuel injectors (cc/min at 3 bar across the nozzle, one per port unless noted) ----
@@ -1017,6 +1021,32 @@ const ENGINE_SIM = (function () {
     p340: { name: "340 L/h pump", sub: "340 L/h in-tank", info: "A high-flow in-tank pump with a bigger motor. Around six hundred horsepower on petrol, or four and a half on E85 at moderate boost.", lph: 340, dropBar: 0.14, cost: 230, massKg: 0, short: "340 L/h pump" },
     twin450: { name: "Twin 450 pumps", sub: "900 L/h \u00b7 surge tank", info: "Two 450 L/h pumps in a surge tank, the second one switched in under boost. Four-figure power on E85, as long as the wiring can carry the current.", lph: 900, dropBar: 0.14, cost: 950, massKg: 0, req: "shop2", short: "twin 450s" },
     mech: { name: "Belt-drive pump", sub: "4000 L/h at 8000 rpm", info: "A gear pump driven off the crank, the way alcohol drag engines are fed. Its flow rises with engine speed and barely notices rail pressure, so it never runs dry at the top of the pull.", lph: 4000, dropBar: 0.02, rpmRef: 8000, cost: 2600, massKg: 3, req: "shop2", short: "belt pump" }
+  };
+
+  /* ---- diesel injection system (only fitted when the fuel is compression ignition) ----
+     bar = injection pressure at the nozzle (atomisation), qL = full-load fuel per stroke
+     per litre of cylinder with stock nozzles (mm3), rpmMax = speed the pump or rail keeps
+     up to, smokeLim = how well fuelling follows boost (1 = the ECU holds lambda, 0 = full
+     fuel whether the turbo is lit or not), pilot = pilot injection (softens the bang),
+     etaB = combustion efficiency gained from finer spray. kind: mech | unit | cr.      */
+  OPT.dInj = {
+    rotary_ve: { name: "Rotary VE pump", sub: "600 bar  mech  aneroid", info: "One plunger spinning inside a distributor head, feeding every cylinder in turn \u2014 the pump on a 1.9 TDI or an early 5.9. Cheap and compact, with a boost aneroid that only roughly follows the turbo.", kind: "mech", bar: 600, qL: 135, rpmMax: 4400, smokeLim: 0.6, pilot: 0, etaB: 0, cost: 650, massKg: 6 },
+    inline_mech: { name: "Inline P-pump", sub: "900 bar  huge fuel", info: "A plunger and barrel per cylinder in a cast-iron case the size of a toolbox, the pump on a 12-valve Cummins. Turn the fuel plate and it flows more than the engine can burn \u2014 the boost compensator barely holds it back, so it smokes until the turbo lights.", kind: "mech", bar: 900, qL: 170, rpmMax: 4400, smokeLim: 0.2, pilot: 0, etaB: 0.005, cost: 2400, massKg: 16, req: "shop1" },
+    heui: { name: "HEUI unit injectors", sub: "1500 bar  oil driven", info: "Engine oil at up to 200 bar from a high-pressure pump pushes an intensifier piston in each injector, as on the 7.3 Powerstroke. Proper pressure and an electronic smoke map, but the oil pump runs short at high revs.", kind: "unit", bar: 1500, qL: 140, rpmMax: 3600, smokeLim: 0.65, pilot: 0.3, etaB: 0.012, cost: 3200, massKg: 12, req: "shop1" },
+    cr_gen1: { name: "Common rail 1,350", sub: "1350 bar  pilot  ECU", info: "A pump holds a rail at pressure and solenoid injectors open when the ECU says, as on the LB7 Duramax. A pilot shot before the main one takes the knock out of the combustion, and the ECU only adds fuel as fast as the boost arrives.", kind: "cr", bar: 1350, qL: 130, rpmMax: 4000, smokeLim: 0.9, pilot: 0.85, etaB: 0.015, cost: 3800, massKg: 9, req: "flow" },
+    cr_piezo: { name: "Piezo common rail", sub: "2000 bar  multi-shot", info: "Piezo stacks open the needle in a tenth of a millisecond, so one cycle can carry several pilot, main and post shots at 2,000 bar. The finest spray there is: the least smoke, the least noise and the most work per drop.", kind: "cr", bar: 2000, qL: 150, rpmMax: 5000, smokeLim: 1.0, pilot: 1.0, etaB: 0.025, cost: 6500, massKg: 9, req: "shop2" }
+  };
+
+  /* ---- diesel nozzles ("sticks"), named the way the trade sells them: by the
+     horsepower they add on a stock truck. mult scales the fuel per stroke the
+     injection system can push; cost is per nozzle.                         ---- */
+  OPT.dNoz = {
+    stock: { name: "Stock nozzles", sub: "x1.0 flow", info: "The holes the factory drilled, sized for a clean exhaust and the warranty.", mult: 1.0, cost: 0 },
+    n30: { name: "30 hp nozzles", sub: "x1.3 flow", info: "Slightly larger holes. A touch more fuel at the top and barely any extra smoke \u2014 the towing upgrade.", mult: 1.3, cost: 70 },
+    n60: { name: "60 hp nozzles", sub: "x1.6 flow", info: "The usual first step on a turned-up truck. It wants a bigger turbo, or the extra fuel comes out of the stack.", mult: 1.6, cost: 95 },
+    n100: { name: "100 hp nozzles", sub: "x2.0 flow", info: "Twice the stock flow per stroke. Hot exhaust and a lot of soot unless there is the air to burn it.", mult: 2.0, cost: 140, req: "shop1" },
+    n150: { name: "150 hp nozzles", sub: "x2.5 flow", info: "Competition street nozzles. They only make sense with twin turbos, a pyrometer in the manifold and studs in the head.", mult: 2.5, cost: 210, req: "shop2" },
+    n250: { name: "250 hp sticks", sub: "x3.5 flow  pulling", info: "Pulling sticks: enough fuel to black out the grandstand. A built bottom end, compound turbos and a fire-ringed head, or it will not see the end of the track.", mult: 3.5, cost: 340, req: "race" }
   };
 
   /* ---- engine oil (kinematic viscosity at 100 C, viscosity index) ---- */
@@ -1087,6 +1117,8 @@ const ENGINE_SIM = (function () {
   const fq = (v) => { const t = v.toFixed(2); return t.endsWith("0") ? t.slice(0, -1) : t; }; // 83.0 / 83.25 / 83.5
   const isBoosted = (c) => c.asp !== "na";
   const isTurbo = (c) => OPT.asp[c.asp].kind === "turbo";
+  /* compression ignition: every diesel branch in the physics hangs off this */
+  function isDiesel(c) { const f = c && OPT.fuel[c.fuel]; return !!(f && f.ci); }
 
   const FORM = [
     {
@@ -1096,10 +1128,10 @@ const ENGINE_SIM = (function () {
     },
     {
       title: "Bore & stroke", fields: [
-        { key: "bore", type: "slider", label: "Bore", min: 68, max: 110, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
-        { key: "stroke", type: "slider", label: "Stroke", min: 58, max: 120, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "bore", type: "slider", label: "Bore", min: 68, max: 110, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 140 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "stroke", type: "slider", label: "Stroke", min: 58, max: 120, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 180 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
         { key: "rodRatio", type: "slider", label: "Rod ratio L/r", min: 1.45, max: 2.10, step: 0.01, nudge: 0.01, unit: "", fmt: f2 },
-        { key: "cr", type: "slider", label: "Compression ratio", min: 7, max: 15, step: 0.25, nudge: 0.25, unit: ":1", fmt: fq }
+        { key: "cr", type: "slider", label: "Compression ratio", min: 7, max: 15, minIf: c => isDiesel(c) ? 14 : 7, maxIf: c => isDiesel(c) ? 24 : 15, step: 0.25, nudge: 0.25, unit: ":1", fmt: fq }
       ]
     },
     {
@@ -1132,7 +1164,7 @@ const ENGINE_SIM = (function () {
         { key: "springs", type: "seg", label: "Valve springs", optTable: "springs" },
         { key: "cam", type: "slider", label: "Cam duration / overlap", min: 0, max: 100, maxIf: c => OPT.head[c.head].camMax || 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)) },
         { key: "lift", type: "slider", label: "Valve lift", min: 0, max: 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)) },
-        { key: "redline", type: "slider", label: "Redline", min: 4000, max: 12500, step: 100, nudge: 100, unit: "rpm", fmt: (v) => String(Math.round(v)) }
+        { key: "redline", type: "slider", label: "Redline", min: 4000, max: 12500, minIf: c => isDiesel(c) ? 1800 : 4000, step: 100, nudge: 100, unit: "rpm", fmt: (v) => String(Math.round(v)) }
       ]
     },
     {
@@ -1140,7 +1172,7 @@ const ENGINE_SIM = (function () {
         { key: "intake", type: "seg", label: "Intake system", optTable: "intake" },
         { key: "asp", type: "seg", label: "Aspiration", optTable: "asp" },
         { key: "boost", type: "slider", label: "Boost pressure", min: 0.2, max: 3.5, step: 0.05, nudge: 0.05,
-          maxIf: c => (OPT.turboSize[c.turboSize].maxFlow >= 125 || OPT.asp[c.asp].compound || OPT.asp[c.asp].kind === "screw") ? 5.5 : 3.5,
+          maxIf: c => (isDiesel(c) && OPT.asp[c.asp].compound) ? 7.0 : (OPT.turboSize[c.turboSize].maxFlow >= 125 || OPT.asp[c.asp].compound || OPT.asp[c.asp].kind === "screw") ? 5.5 : 3.5,
           unit: "bar", fmt: f2, showIf: isBoosted },
         { key: "turboSize", type: "seg", label: "Turbo size", optTable: "turboSize", showIf: (c) => isBoosted(c) && (OPT.asp[c.asp].kind === "turbo" || OPT.asp[c.asp].kind === "centrifugal") },
         { key: "turbineMat", type: "seg", label: "Hot-side material", optTable: "turbineMat", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" },
@@ -1151,11 +1183,13 @@ const ENGINE_SIM = (function () {
     {
       title: "Fuel & tune", fields: [
         { key: "fuel", type: "seg", label: "Fuel", optTable: "fuel" },
-        { key: "injectors", type: "seg", label: "Injectors", optTable: "injectors", showIf: (c) => c.intake !== "carb" },
+        { key: "dInj", type: "seg", label: "Injection system", optTable: "dInj", showIf: isDiesel },
+        { key: "dNoz", type: "seg", label: "Injector nozzles", optTable: "dNoz", showIf: isDiesel },
+        { key: "injectors", type: "seg", label: "Injectors", optTable: "injectors", showIf: (c) => c.intake !== "carb" && !isDiesel(c) },
         { key: "fuelPump", type: "seg", label: "Fuel pump", optTable: "fuelPump" },
         { key: "nitrous", type: "seg", label: "Nitrous", optTable: "nitrous" },
-        { key: "timing", type: "slider", label: "Ignition vs MBT", min: -10, max: 15, step: 0.25, nudge: 0.25, unit: "°", fmt: fq },
-        { key: "lambda", type: "slider", label: "Lambda", min: 0.75, max: 1.05, step: 0.01, nudge: 0.01, unit: "λ", fmt: f2 }
+        { key: "timing", type: "slider", label: "Ignition vs MBT", labelIf: c => isDiesel(c) ? "Injection timing vs optimal" : null, min: -10, max: 15, step: 0.25, nudge: 0.25, unit: "°", fmt: fq },
+        { key: "lambda", type: "slider", label: "Lambda", labelIf: c => isDiesel(c) ? "Full-load \u03bb (smoke limit)" : null, min: 0.75, max: 1.05, minIf: c => isDiesel(c) ? 1.05 : 0.75, maxIf: c => isDiesel(c) ? 2.4 : 1.05, step: 0.01, nudge: 0.01, unit: "λ", fmt: f2 }
       ]
     },
     {
@@ -1201,7 +1235,7 @@ const ENGINE_SIM = (function () {
     bearings: "bimetal", gasket: "composite", studs: "bolts_tty",
     intake: "single_tb", asp: "na", turboSize: "medium", turbineMat: "cast_iron",
     ic: "none", boost: 0.6, nitrous: "none", fuel: "r91", timing: 0, lambda: 0.93,
-    injectors: "i240", fuelPump: "p190",
+    injectors: "i240", fuelPump: "p190", dInj: "rotary_ve", dNoz: "stock",
     oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "none",
     cooling: "std", exhaust: "cast_tubular", cover: "black",
     launchCtl: "none", twoStepRpm: 4000, launchRetard: 20, transBrake: "none"
@@ -1265,7 +1299,7 @@ const ENGINE_SIM = (function () {
     const cf = 0.70 * (1 - Math.exp(-6.2 * liftRatio));
     const Aeff = nIV * (PI / 4 * dv * dv) * cf;
     const plateau = clamp(hd.veBase + ink.veBonus + exh.veBonus, 0.60, 1.22);
-    const rpmCam = 2550 + cfg.cam * 64;                  // rpm the cam timing is centred on
+    const rpmCam = isDiesel(cfg) ? 0.7 * (2550 + cfg.cam * 64) : 2550 + cfg.cam * 64;   // rpm the cam timing is centred on (a diesel's lives low)
     return { dv: dv, Aeff: Aeff, plateau: plateau, rpmCam: rpmCam, liftRatio: liftRatio };
   }
 
@@ -1293,7 +1327,8 @@ const ENGINE_SIM = (function () {
     let widen = 1;
     if (hd.vvl) widen = 1 + 0.11 * (1 - fCam);
     else if (hd.vvt) widen = 1 + 0.065 * (1 - fCam);
-    const trap = (bBar > 0.001) ? 1 / (1 + K_TRAP0 * clamp(bBar / 0.5, 0, 1) + K_TRAP1 * bBar) : 1;
+    // a diesel has no throttle, almost no overlap and runs boost above drive pressure, so it keeps no extra residual
+    const trap = (bBar > 0.001 && !isDiesel(cfg)) ? 1 / (1 + K_TRAP0 * clamp(bBar / 0.5, 0, 1) + K_TRAP1 * bBar) : 1;
     return clamp(vm.plateau * fCam * fMach * fRun * widen * trap * K_VE, 0.15, 1.30);
   }
 
@@ -1308,6 +1343,7 @@ const ENGINE_SIM = (function () {
     const compound = asp.compound ? 1 : 0;
     // spool point: turbine has to be fed by exhaust mass flow, which scales with Vd*rpm
     let spool = 2150 * ts.spoolFac * Math.pow(2.0 / Math.max(0.5, VdL), 0.48);
+    if (isDiesel(cfg)) spool *= 0.75;                     // unthrottled: full exhaust mass flow from just off idle
     if (units === 2) spool *= 0.78;                       // half the flow per unit
     if (compound) spool *= 0.70;                          // the small stage lights first
     spool *= Math.pow(1 + cfg.boost * 0.30, 0.55);         // more boost = later spool
@@ -1357,6 +1393,32 @@ const ENGINE_SIM = (function () {
 
   function ottoEta(cr, gamma) { return 1 - Math.pow(cr, 1 - gamma); }
 
+  /* ---- compression ignition ----
+     A diesel never throttles the air: load is the amount of fuel, so lambda swings
+     from ~1.2 at full load to 3+ at a cruise. It burns well only with spare air
+     (droplets need oxygen around them), its heat release stretches with the fuel
+     quantity (the cut-off), and it lights after an ignition delay that is fixed in
+     milliseconds, so it costs more crank degrees the faster the engine turns.      */
+  const K_DSL   = 1.00;    // diesel indicated efficiency vs ideal (heat loss, mixing-controlled burn)
+  const K_FUEL_D = 1.04;   // diesel fuel per unit of modelled air (cylinder-to-cylinder spread only)
+  const DSL_RETURN = 1.8;  // a diesel lift pump also feeds the pump's return/cooling flow
+  const DSL_CLAMP = 1.6;   // diesel heads are drawn down by M14-class bolts, not M11
+  const DSL_GASKET = 1.3;  // a diesel gasket of the same type carries a wider steel fire ring
+  function etaCombD(lambda, bonus) {
+    const short = Math.max(0, 1.5 - lambda);
+    // very lean (a light cruise) the flame is cold and wall-quenched: slow, incomplete burn
+    return clamp(0.98 - 1.556 * short * short + (bonus || 0), 0.30, 0.995) / (1 + 0.05 * Math.pow(Math.max(0, lambda - 2.0), 1.3));
+  }
+  /* cranking compression temperature against what the fuel needs to light */
+  function coldStart(cfg, ambientC) {
+    const fu = OPT.fuel[cfg.fuel], di = OPT.dInj[cfg.dInj] || OPT.dInj.rotary_ve;
+    const T2C = (ambientC + 273.15) * Math.pow(cfg.cr, 0.30) - 273.15
+      + 30 * di.pilot - (di.kind === "unit" ? 20 : 0);       // pilot shots warm the chamber; HEUI cranks on cold, thick oil
+    const needC = 300 - 3 * ((fu.cetane || 48) - 48);
+    const gel = 0.012 * Math.max(0, (fu.cloudC != null ? fu.cloudC : -12) - ambientC);
+    return { util: Math.max(0.05, 1 + (needC - T2C) / 80 + gel), T2C: T2C, needC: needC, gel: gel };
+  }
+
   /* Fuel evaporative charge cooling (port injection: ~55% evaporates upstream) */
   function evapCoolK(fu, lambda) {
     const fuelPerAir = 1 / (fu.afr * lambda);
@@ -1367,7 +1429,7 @@ const ENGINE_SIM = (function () {
      base pressure plus boost, so an in-tank pump flows less as boost rises; a belt pump
      flows with engine speed. Past the knee an injector is all but static (or the rail
      pressure sags) and the extra fuel the tune asks for never arrives.            */
-  function fuelDensity(fu) { return fu.afr < 8 ? 0.792 : fu.afr < 12 ? 0.782 : 0.745; }
+  function fuelDensity(fu) { return fu.dens ? fu.dens : fu.afr < 8 ? 0.792 : fu.afr < 12 ? 0.782 : 0.745; }
   function pumpLphAt(fp, rpm, bBar) {
     return fp.lph * (fp.rpmRef ? clamp(rpm / fp.rpmRef, 0.15, 1.5) : 1) * clamp(1 - fp.dropBar * Math.max(0, bBar), 0.3, 1);
   }
@@ -1423,13 +1485,16 @@ const ENGINE_SIM = (function () {
     const bm = boostModel(cfg, g);
     const boosted = bm.kind !== "na";
     const deckStiff = (cfg.blockMat === "alu_liners" || cfg.blockMat === "alu_nikasil") ? O.deck.stiff : 1.0;
-    const blockStiff = O.block.stiff * deckStiff;
+    const blockStiff = O.block.stiff * deckStiff * (isDiesel(cfg) ? 1.5 : 1);   // a diesel block is a thicker casting with a deep skirt
 
     const fuelON = 0.60 * O.fu.ron + 0.40 * O.fu.mon;   // road-weighted anti-knock index
-    const evapK = evapCoolK(O.fu, cfg.lambda);
+    const dsl = isDiesel(cfg);
+    const dInj = dsl ? (OPT.dInj[cfg.dInj] || OPT.dInj.rotary_ve) : null;
+    const dNoz = dsl ? (OPT.dNoz[cfg.dNoz] || OPT.dNoz.stock) : null;
+    const evapK = dsl ? 0 : evapCoolK(O.fu, cfg.lambda);    // a diesel sprays into the cylinder after the air is trapped
     const kvOil = kvAt(O.oil, env.oilC);
 
-    const redline = clamp(cfg.redline, 4000, 12500);
+    const redline = clamp(cfg.redline, dsl ? 1800 : 4000, 12500);
     /* ---- nitrous ----------------------------------------------------
        The shot is quoted in crank hp. Convert to the extra indicated work
        per cycle it puts in the cylinder, then let every downstream number
@@ -1447,12 +1512,30 @@ const ENGINE_SIM = (function () {
     /* ---- fuel system: what reaches the cylinder, not just what the tune asks for ---- */
     const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240;
     const fpump = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
-    const portInj = cfg.intake !== "carb";                  // a carburettor meters through jets
+    const portInj = !dsl && cfg.intake !== "carb";          // a carburettor meters through jets
     const injCc = inj.cc * (inj.perCyl || 1);               // cc/min per cylinder
     const fuelRho = fuelDensity(O.fu);
     const lamCurve = [], fuelLph = [];
     let dutyPk = 0, dutyRpm = 0, ccCylPk = 0, pumpPk = 0, pumpRpm = 0, pumpCapPk = 0, pumpNeedPk = 0;
     let lamTop = cfg.lambda, fdTop = 1, leanRpm = 0;
+    const kFuel = dsl ? K_FUEL_D : K_FUEL;
+    /* diesel: the pump meters fuel per stroke for full-boost air. rhoFull is the charge
+       density at full boost; below it the smoke limiter (or the lack of one) decides
+       how much of that fuel still arrives while the turbo spools.                   */
+    let rhoFull = 0, qUtilPk = 0, qDemPk = 0, qCapPk = 0, qRpm = 0, lamMin = 9, smokePk = 0;
+    const smokeCurve = [];
+    if (dsl && boosted) {
+      const PRf = (air.p + cfg.boost * 1e5) / air.p;
+      const etaCf = bm.kind === "roots" ? 0.58 : bm.kind === "screw" ? 0.70 : bm.kind === "centrifugal" ? 0.745 : 0.72;
+      let T2f;
+      if (bm.compound) {
+        const T1 = air.T * (1 + (Math.pow(Math.sqrt(PRf), 0.2857) - 1) / 0.76);
+        T2f = (T1 - 0.55 * (T1 - air.T)) * (1 + (Math.pow(Math.sqrt(PRf), 0.2857) - 1) / 0.76);
+      } else T2f = air.T * (1 + (Math.pow(PRf, 0.2857) - 1) / etaCf);
+      rhoFull = (air.p + cfg.boost * 1e5 - O.icc.dp * 1e5) / (R_AIR * (T2f - O.icc.eff * (T2f - air.T)));
+    }
+    const atomise = dsl ? clamp(1.15 - dInj.bar / 2600, 0.35, 1) * (1 + 0.06 * (dNoz.mult - 1)) : 1;   // finer spray, less soot; big holes, bigger drops
+    const cetane = dsl ? (O.fu.cetane || 48) : 0;
 
     for (let rpm = 1000; rpm <= redline + 0.5; rpm += 100) {
       /* ---- charge path ---------------------------------------------- */
@@ -1480,6 +1563,7 @@ const ENGINE_SIM = (function () {
       // manifold pressure: charge cooler dP for boost, throttle+runner loss for NA
       let pMan;
       if (boosted) pMan = pManAbs0 - O.icc.dp * 1e5;
+      else if (dsl) pMan = air.p * (1 - clamp(0.005 * O.ink.loss * sq(rpm / 4000), 0, 0.05));   // no throttle, only the runners
       else pMan = air.p * (1 - clamp(0.014 * O.ink.loss * sq(rpm / 6000), 0, 0.11));
       // fuel evaporation cools the charge (this is where alcohol makes its power)
       const Tcharge = Math.max(air.T - 5, Tc3 - evapK);
@@ -1493,15 +1577,29 @@ const ENGINE_SIM = (function () {
          fuel comes off the same pump. What the injectors and pump cannot
          deliver leans the mixture: lamE is what the cylinder actually burns. */
       const airKgS = ve * rhoCharge * g.Vd * rpm / 120;
-      const needLph = K_FUEL * airKgS / (O.fu.afr * cfg.lambda) * 3600 / fuelRho;
+      // diesel: lambda follows the smoke limiter while the boost is not yet there
+      const lamSet = dsl && boosted ? cfg.lambda * Math.pow(clamp(rhoCharge / rhoFull, 0.05, 1), 1 - dInj.smokeLim) : cfg.lambda;
+      const needLph = kFuel * airKgS / (O.fu.afr * lamSet) * 3600 / fuelRho;
       const n2oLph = (n2oOn && rpm >= n2oWin)
         ? n2oHp * 745.7 * (O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1) / (0.26 * O.fu.lhv) * 3600 / fuelRho : 0;
       const ccCyl = needLph * 1000 / 60 / L.n;
       const duty = portInj ? ccCyl / injCc : 0;
-      const pumpCap = pumpLphAt(fpump, rpm, bBar);
-      const pumpLoad = (needLph + n2oLph) / pumpCap;
-      const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : 1, deliveredFrac(pumpLoad, PUMP_KNEE));
-      const lamE = Math.min(1.5, cfg.lambda / fd);
+      // diesel: mm3 per stroke asked of the injection system against what pump + nozzles can push
+      const qDem = dsl ? needLph * 1e6 / (L.n * rpm * 30) : 0;
+      const qCap = dsl ? dInj.qL * g.Vcyl * 1000 * dNoz.mult * (rpm <= dInj.rpmMax ? 1 : Math.exp(-sq((rpm - dInj.rpmMax) / (0.22 * dInj.rpmMax)))) : 1;
+      const qUtil = qDem / qCap;
+      const pumpCap = pumpLphAt(fpump, rpm, dsl ? 0 : bBar);   // a diesel lift pump does not push against boost
+      const pumpLoad = (needLph * (dsl ? DSL_RETURN : 1) + n2oLph) / pumpCap;
+      const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE));
+      const lamE = dsl ? Math.min(6, lamSet / fd) : Math.min(1.5, cfg.lambda / fd);
+      if (dsl) {
+        if (qUtil > qUtilPk) { qUtilPk = qUtil; qDemPk = qDem; qCapPk = qCap; qRpm = rpm; }
+        if (lamE < lamMin) lamMin = lamE;
+        // black smoke: unburnt carbon once the spray runs short of air
+        const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -cfg.timing)), 0, 1);
+        smokeCurve.push(sm);
+        if (sm > smokePk) smokePk = sm;
+      }
       lamCurve.push(lamE); fuelLph.push(needLph + n2oLph);
       if (ccCyl > ccCylPk) ccCylPk = ccCyl;
       if (duty > dutyPk) { dutyPk = duty; dutyRpm = rpm; }
@@ -1525,17 +1623,29 @@ const ENGINE_SIM = (function () {
       if (n2oOn && rpm >= n2oWin) onReq += clamp(9.0 * n2oBite, 2, 15) * (O.n2o.prog ? 0.85 : 1);  // oxygen in the chamber, not just air
       const margin = fuelON - onReq;
       let retard = 0;
-      if (margin < 0) retard = clamp(-margin * 1.55, 0, 14);
-      const phaseRetard = bBar > 0.001 ? K_PHASE0 * clamp(bBar / 0.5, 0, 1) + K_PHASE1 * bBar : 0;
+      if (!dsl && margin < 0) retard = clamp(-margin * 1.55, 0, 14);
+      const phaseRetard = !dsl && bBar > 0.001 ? K_PHASE0 * clamp(bBar / 0.5, 0, 1) + K_PHASE1 * bBar : 0;
       const effTiming = cfg.timing - retard - phaseRetard;
 
+      /* ---- diesel ignition delay: fixed in ms (shorter with CR, cetane, boost heat and
+         spray pressure), so it eats more crank degrees as the revs rise ------------ */
+      let lateDeg = 0;
+      if (dsl) {
+        const tauMs = 0.50 * Math.pow(17.5 / cfg.cr, 1.2) * Math.pow(48 / cetane, 0.7) / (1 + 0.25 * bBar) * (1.15 - dInj.bar / 4000);
+        lateDeg = Math.max(0, tauMs * rpm * 0.006 - 6);
+      }
+
       /* ---- indicated work --------------------------------------------- */
-      const eta_th = ottoEta(cfg.cr, O.fu.gamma) * K_QUAL
+      const eta_th = dsl ? ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * K_DSL
+        * clamp(1 - 0.20 / lamE, 0.55, 1)                   // more fuel, longer cut-off, less expansion
+        * (1 + (O.hd.burn - 1) * 0.30)
+        * (1 + 0.0008 * (g.b - 86))                         // bigger bore, less wall per unit of charge
+        / (1 + 0.0018 * sq(cfg.timing - lateDeg)) : ottoEta(cfg.cr, O.fu.gamma) * K_QUAL
         * (1 + (O.hd.burn - 1) * 0.55)
         * (1 - 0.0011 * (g.b - 86))
         / (1 + 0.0018 * sq(effTiming));
       const fuelPerAir = 1 / (O.fu.afr * lamE);
-      let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * etaComb(lamE) * eta_th * (1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring seal sets blow-by
+      let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * (dsl ? etaCombD(lamE, dInj.etaB) : etaComb(lamE)) * eta_th * (1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring seal sets blow-by
       /* nitrous: a fixed power addition above the window, so it appears as a
          fixed torque that falls away with rpm exactly as a real shot does   */
       let n2oFrac = 0;
@@ -1552,7 +1662,7 @@ const ENGINE_SIM = (function () {
       let pmep;
       if (boosted && (bm.kind === "turbo")) {
         // turbine backpressure: exhaust manifold pressure ratio vs compressor
-        const backFac = O.ts.backP * O.exh.backP * (bm.units === 2 ? 0.82 : 1.0) * (bm.compound ? 1.30 : 1.0);
+        const backFac = O.ts.backP * O.exh.backP * (bm.units === 2 ? 0.82 : 1.0) * (bm.compound ? 1.30 : 1.0) * (dsl ? 0.75 : 1);   // diesel turbos run near-matched drive pressure
         const pExh = air.p + bBar * 1e5 * backFac;
         pmep = (pExh - pMan);
       } else if (boosted) {
@@ -1565,7 +1675,9 @@ const ENGINE_SIM = (function () {
 
       /* ---- friction (Chen-Flynn + viscosity) ---------------------------- */
       const mps = 2 * (g.s / 1000) * rpm / 60;
-      const pmaxBar = K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
+      /* diesel: compression pressure plus the combustion rise; advance puts it nearer TDC. Boost
+         heat shortens the delay, so less fuel goes off at once and the rise gets gentler.  */
+      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * cfg.timing) / (1 + 0.08 * bBar)) * (1 + 0.30 * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
         * (1 + (O.n2o.prog ? 0.16 : 0.30) * n2oFrac);    // nitrous burns faster and peaks earlier
       let fmepBar = FM_C + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps;
       fmepBar *= (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac;
@@ -1573,6 +1685,7 @@ const ENGINE_SIM = (function () {
       fmepBar *= O.osys.windage + (O.osys.windage < 1 ? 0 : 0);
       fmepBar *= (1 + 0.025 * (O.spr.rate - 1)) * (L.n > 8 ? 1.03 : 1.0);
       let fmep = fmepBar * 1e5;
+      if (dsl) fmep += 0.10e5;                              // injection pump drive
       // supercharger parasitic drive power appears as extra FMEP
       if (bm.kind === "roots" || bm.kind === "screw" || bm.kind === "centrifugal") {
         // the crank pays the compressor's actual work: mdot*cp*dT over the drive
@@ -1589,6 +1702,8 @@ const ENGINE_SIM = (function () {
       let egt = 620 + 340 * lamT + 13 * retard + 0.010 * (rpm - 3000)
         + 5.5 * clamp(bmepPa / 1e5 - 11, -6, 22) + 40 * bBar + 8 * (11 - cfg.cr)
         - 0.35 * (evapK * fd) - 0.10 * (chargeC - 35) + 260 * n2oFrac;
+      // diesel: hottest near lambda 1; past that the extra fuel cannot burn and only soaks up heat
+      if (dsl) egt = 220 + 650 / Math.pow(Math.max(lamE, 0.95), 1.2) - 250 * Math.max(0, 0.95 - lamE) + 0.03 * (rpm - 2000) - 12 * cfg.timing + 260 * n2oFrac;
       egt = clamp(egt, 380, 1150);
 
       rpms.push(rpm);
@@ -1606,14 +1721,14 @@ const ENGINE_SIM = (function () {
       if (retard > maxRetard) maxRetard = retard;
       if (chargeC > maxChargeC) maxChargeC = chargeC;
       if (bBar > maxBoost) maxBoost = bBar;
-      const lbmin = Math.max(0, hp / 10);
+      const lbmin = dsl ? airKgS * 132.28 : Math.max(0, hp / 10);   // a diesel moves far more air per hp
       if (lbmin > maxFlowLb) maxFlowLb = lbmin;
       fuelUsedProxy += (hp > 0 ? hp : 0); ptsProxy++;
     }
 
     /* recompute the knock state at the peak-pressure point for reporting */
     let knockOnReq = 0, knockMargin = 0;
-    {
+    if (!dsl) {
       const rpm = maxPmaxRpm || peakTqRpm || 3000;
       const lamK = lamCurve[rpms.indexOf(rpm)] || cfg.lambda, fdK = cfg.lambda / lamK;
       const bBar = boostAt(rpm, bm, cfg, g);
@@ -1633,6 +1748,11 @@ const ENGINE_SIM = (function () {
       knockOnReq -= O.block.k > 100 ? 0.4 : 0;
       knockMargin = fuelON - knockOnReq + (shop.octane || 0) - 0.8 * (O.ink.wet || 0);
     }
+
+    /* diesel combustion noise: the fuel that piles up during the ignition delay all
+       goes off at once. High CR, good cetane and a pilot shot soften it. */
+    const clatter = dsl ? clamp(0.80 * (17.5 / cfg.cr) * Math.pow(48 / cetane, 0.8) * (1 + 0.05 * cfg.timing)
+      * (1 - 0.68 * dInj.pilot) * (1 + 0.006 * (20 - env.ambientC)), 0, 1) : 0;
 
     /* =================================================================
        11.  Component loads, temperatures and clearances
@@ -1654,7 +1774,7 @@ const ENGINE_SIM = (function () {
 
     // --- rod ---
     const Frec = mRecip * aTdc;                                   // N, TDC exhaust
-    const aRod = 0.0125 * g.b * g.b * (O.rod.areaFac || (O.rod.E < 150 ? 1.25 : 1.0));  // mm^2 beam area
+    const aRod = 0.0125 * g.b * g.b * (O.rod.areaFac || (O.rod.E < 150 ? 1.25 : 1.0)) * (dsl ? 1.25 : 1);  // mm^2 beam area (a diesel rod is sized for firing load)
     const sigRodT = Frec / aRod;                                  // MPa
     const Igyr = aRod * aRod / 2.1;                               // mm^4 (H-beam proxy)
     const lRodMm = g.l * 1000;
@@ -1675,7 +1795,7 @@ const ENGINE_SIM = (function () {
     const boltStretchPct = 100 * sigBolt / 200000;
 
     // --- bearings ---
-    const djPin = 0.55 * g.b, wPin = 0.21 * g.b * (O.rod.brgW || 1);
+    const djPin = (dsl ? 0.68 : 0.55) * g.b, wPin = (dsl ? 0.30 : 0.21) * g.b * (O.rod.brgW || 1);   // diesel journals are sized for the firing load
     const Aproj = djPin * wPin;                                   // mm^2
     const bearMPa = Fcomp / Aproj;
     const filmUm = 0.19 * Math.sqrt(kvOil) * Math.pow(O.oil.hths / 3.6, 0.6)
@@ -1702,11 +1822,13 @@ const ENGINE_SIM = (function () {
     // --- thermals ---
     const bmepPk = peakTq * 4 * PI / g.Vd / 1e5;                  // bar at peak torque
     const heatIdx = Math.pow(bmepPk * Math.sqrt(peakHpRpm / 1000), 0.62);
-    let crownC = env.coolantC + K_CROWN * heatIdx * (140 / O.pis.k)
-      * Math.pow(g.b / 86, 0.55) - O.sq.crownC - (O.pis.crownCool || 0);
+    // a diesel's extra BMEP comes with extra air, so its bowl rim follows gas temperature (fuelling) more than load
+    let crownC = env.coolantC + (dsl ? 100 * Math.pow(bmepPk * Math.sqrt(peakHpRpm / 1000), 0.25) : K_CROWN * heatIdx) * (140 / O.pis.k)
+      * Math.pow(g.b / 86, 0.55) - O.sq.crownC * (dsl ? 2 : 1) - (O.pis.crownCool || 0);   // diesel jets feed a cooling gallery
     crownC -= 0.22 * evapK * fdTop;                                // alcohols cool the crown too
-    crownC -= 150 * clamp(1 - lamTop, 0, 0.25);                    // enrichment is crown cooling (what arrived, at the leanest point)
-    crownC += 200 * clamp(lamTop - cfg.lambda, 0, 0.35);           // a starved rail leans the cylinders unevenly; the worst one melts
+    if (dsl) crownC += 0.30 * clamp(maxEgt - 700, -200, 500);     // diesel: overfuelling is what cooks the bowl rim
+    else crownC -= 150 * clamp(1 - lamTop, 0, 0.25);               // enrichment is crown cooling (what arrived, at the leanest point)
+    if (!dsl) crownC += 200 * clamp(lamTop - cfg.lambda, 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
     crownC = clamp(crownC, env.coolantC + 40, 900);
     const skirtC = 0.22 * crownC + 0.78 * (env.coolantC + 15);
@@ -1721,7 +1843,7 @@ const ENGINE_SIM = (function () {
     const hotMm = coldMm + growBore - growPis;
 
     // --- ring gap ---
-    const egtApp = 1.0 + 0.18 * maxBoost + clamp((maxEgt - 850) / 500, 0, 0.50)
+    const egtApp = 1.0 + (dsl ? 0.12 : 0.18) * maxBoost + clamp((maxEgt - 850) / 500, 0, 0.50)
       + (O.fu.corrosive > 0.5 ? 0.05 : 0);
     const ringGapMm = g.b * O.ring.gapSet;
     const ringGapNeededMm = g.b * 0.0035 * egtApp;
@@ -1730,19 +1852,19 @@ const ENGINE_SIM = (function () {
     const boltsPerCyl = O.std.bolts || 4;        // fasteners around each bore
     const castAlu = (cfg.blockMat === "alu_liners" || cfg.blockMat === "alu_nikasil");
     const pullOut = castAlu ? Math.pow(O.std.pullOut || 1, 0.6) : 1;   // thread pull-out in cast aluminium
-    const clampKn = boltsPerCyl * O.std.clampKn / pullOut;
+    const clampKn = boltsPerCyl * O.std.clampKn / pullOut * (dsl ? DSL_CLAMP : 1);
     const clampWorkKn = 0.50 * clampKn;          // sealing practice: clamp >= 2x gas load
     const headLiftUtil = (Fgas / 1000) / clampWorkKn;
-    const bayDeck = [520, 700, 790][L.bay];   // a 2JZ block is ~690 mm; the old 640 pinched every inline-six past a 90 mm bore
+    const bayDeck = [520, 700, 790][L.bay] * (dsl ? 1.25 : 1);   // a 2JZ block is ~690 mm; the old 640 pinched every inline-six past a 90 mm bore. Truck and tractor bays take a longer block
     const cylPerBank = L.n / L.banks;
     const pitchWant = Math.max(1.145 * (0.48 * g.b + 0.55 * g.s), g.b * 1.115) * O.block.spacingAdj;
     const borePitch = Math.min(pitchWant, bayDeck / (cylPerBank + 0.65));
     const dAlpha = Math.abs(O.headMat.alpha - O.block.alpha);
     const deckDT = (env.coolantC - 20) + 0.10 * Math.max(0, crownC - 200);
     const scrubUm = dAlpha * deckDT * (0.55 * borePitch) * 1000
-      * (1 + 0.004 * (maxPmax - 60));
+      * (1 + 0.004 * ((dsl ? maxPmax / DSL_CLAMP : maxPmax) - 60));
     const gasketShearUtil = scrubUm / O.gsk.shearUm;
-    const gasketPmaxBar = O.gsk.maxPmaxBar * (O.gsk.maxPmaxBar >= 200 ? (O.std.oring || 1) : 1);
+    const gasketPmaxBar = O.gsk.maxPmaxBar * (O.gsk.maxPmaxBar >= 200 ? (O.std.oring || 1) : 1) * (dsl ? DSL_GASKET : 1);
     const gasketPmaxUtil = maxPmax / gasketPmaxBar;
     // MLS needs a ground deck; a composite-era rough deck defeats it
     const deckRough = (cfg.blockMat === "grey_iron" && cfg.gasket === "mls") ? 1.0 : 1.0;
@@ -1762,7 +1884,7 @@ const ENGINE_SIM = (function () {
     const dvMm = O.hd.kv * g.b;
     const maxLiftMm = vm.liftRatio * dvMm;
     const liftAtOverlap = maxLiftMm * (0.10 + 0.55 * sq(cfg.cam / 100));
-    const domeMm = Math.max(0, (cfg.cr - 10.5) * 0.35 * (86 / g.b));
+    const domeMm = dsl ? 0 : Math.max(0, (cfg.cr - 10.5) * 0.35 * (86 / g.b));   // a diesel gets its CR from a flat top and a bowl in the piston
     const pistonDrop = g.r * 1000 * (1 - Math.cos(12 * PI / 180))
       + sq(g.r * 1000 * Math.sin(12 * PI / 180)) / (2 * lRodMm);
     const pocketMm = 4.4 + (O.hd.nIV === 2 ? 1.3 : 0);
@@ -1800,9 +1922,17 @@ const ENGINE_SIM = (function () {
     }
 
     /* fuel delivery: injector duty and pump load against what the tune asks for */
-    const injUtil = portInj ? dutyPk / INJ_MAX : 0, pumpUtil = pumpPk / PUMP_MAX;
+    const injUtil = dsl ? qUtilPk : portInj ? dutyPk / INJ_MAX : 0, pumpUtil = pumpPk / PUMP_MAX;
     const leanTop = lamTop > cfg.lambda + 0.005;
-    T("fuel_delivery", "Fuel delivery", injUtil >= pumpUtil ? Math.round(dutyPk * 100) + "% duty \u00b7 max " + Math.round(INJ_MAX * 100)
+    // diesel: a pump on its stop just makes less power (leaner is cooler); a starved lift pump wrecks the injection pump
+    const injTestD = dsl ? (injUtil <= 1 ? 0.78 * injUtil : Math.min(0.95, 0.78 + 0.1 * (injUtil - 1))) : 0;
+    if (dsl) T("fuel_delivery", "Fuel delivery", injTestD >= pumpUtil ? Math.round(qDemPk) + " / " + Math.round(qCapPk) + " mm\u00b3" : Math.round(pumpNeedPk) + " / " + Math.round(pumpCapPk) + " L/h",
+      Math.max(injTestD, pumpUtil),
+      "At " + qRpm + " rpm each cylinder asks the " + dInj.name + " for " + Math.round(qDemPk) + " mm\u00b3 a stroke of " + O.fu.name + "; with " + dNoz.name.toLowerCase() + " it can push about " + Math.round(qCapPk) + " mm\u00b3"
+      + (injUtil > 1 ? ", so it sits on its stop and the cylinders burn leaner than the tune asks (\u03bb " + lamTop.toFixed(2) + " at " + leanRpm + " rpm) \u2014 less power, not a melted piston. " : ". ")
+      + "The " + fpump.short + " can lift about " + Math.round(pumpCapPk) + " L/h to it at " + pumpRpm + " rpm and has to supply " + Math.round(pumpNeedPk) + " L/h, burn plus the return flow that cools the pump.",
+      "Bigger nozzles or a bigger injection pump for more fuel; a bigger lift pump if it is starving \u2014 a dry injection pump is a dead one.");
+    else T("fuel_delivery", "Fuel delivery", injUtil >= pumpUtil ? Math.round(dutyPk * 100) + "% duty \u00b7 max " + Math.round(INJ_MAX * 100)
         : Math.round(pumpNeedPk) + " / " + Math.round(pumpCapPk) + " L/h",
       Math.max(injUtil, pumpUtil),
       (portInj ? "At " + dutyRpm + " rpm each cylinder wants " + Math.round(ccCylPk) + " cc/min of " + O.fu.name + " at \u03bb " + cfg.lambda.toFixed(2) + "; the " + inj.name.replace(" stock", "") + " injectors " + (dutyPk > 1 ? "would have to be open " + Math.round(dutyPk * 100) + "% of the time, which they cannot" : "are open " + Math.round(dutyPk * 100) + "% of the time") + ", and past about " + Math.round(INJ_MAX * 100) + "% an injector is all but static. "
@@ -1812,7 +1942,7 @@ const ENGINE_SIM = (function () {
       "Fit bigger injectors or a bigger pump. Alcohol needs far more fuel than petrol for the same air, and boost makes an in-tank pump's job harder.");
 
     const detUtil = (0.95 - knockMargin * 0.062) * (1 + 0.45 * (O.pis.brittle || 0) * clamp(-knockMargin / 4, 0, 1));
-    T("detonation", "Detonation margin", (knockMargin >= 0 ? "+" : "") + knockMargin.toFixed(1) + " ON margin",
+    if (!dsl) T("detonation", "Detonation margin", (knockMargin >= 0 ? "+" : "") + knockMargin.toFixed(1) + " ON margin",
       detUtil,
       "Octane requirement " + knockOnReq.toFixed(0) + " from " + (cfg.cr).toFixed(1) + ":1 static (" + (cfg.cr * Math.pow((air.p + maxBoost * 1e5) / 101325, 0.24)).toFixed(1) + ":1 effective at " + maxBoost.toFixed(2) + " bar), " + maxChargeC.toFixed(0) + " °C charge and " + g.b.toFixed(0) + " mm bore; the fuel supplies " + fuelON.toFixed(0) + ".",
       knockMargin < 0 ? "Raise the fuel's octane, drop compression or boost, or cool the charge." : "Margin is adequate — keep charge temperature down.");
@@ -1821,10 +1951,16 @@ const ENGINE_SIM = (function () {
     // exhaust valve, plug nose), not by the gas temperature on its own.
     const hotSpotC = 0.42 * maxEgt + 0.58 * crownC + (O.headMat.k < 100 ? 25 : 0);
     const hotSpotLimit = 640 + 4.0 * (fuelON - 91) + (O.sq.crownC > 0 ? 15 : 0);
-    T("preignition_egt", "Pre-ignition / EGT", hotSpotC.toFixed(0) + " / " + hotSpotLimit.toFixed(0) + " °C",
+    if (!dsl) T("preignition_egt", "Pre-ignition / EGT", hotSpotC.toFixed(0) + " / " + hotSpotLimit.toFixed(0) + " °C",
       hotSpotC / hotSpotLimit,
       "Peak EGT is " + maxEgt.toFixed(0) + " °C at λ " + lamTop.toFixed(2) + " with " + maxRetard.toFixed(1) + "° of knock retard; the hottest chamber surface works out at " + hotSpotC.toFixed(0) + " °C against a " + hotSpotLimit.toFixed(0) + " °C surface-ignition threshold for this fuel.",
       "Richen the mixture, remove retard by fixing the knock problem, or fit piston cooling jets.");
+
+    const cold = dsl ? coldStart(cfg, env.ambientC) : null;
+    if (dsl) T("cold_start", "Cold start", Math.round(cold.T2C) + " / " + Math.round(cold.needC) + " \u00b0C",
+      cold.util,
+      "Cranking at " + env.ambientC + " \u00b0C, " + cfg.cr.toFixed(1) + ":1 squeezes the air to about " + Math.round(cold.T2C) + " \u00b0C" + (dInj.pilot > 0.5 ? " (pilot shots help)" : "") + "; " + O.fu.name + " at cetane " + cetane + " needs about " + Math.round(cold.needC) + " \u00b0C to light." + (cold.gel > 0.001 ? " Below its cloud point the fuel is waxing up in the filter as well." : ""),
+      "Raise the compression ratio, use a higher-cetane fuel, or a common rail whose pilot shots warm the chamber.");
 
     const mpsLimit = O.rod.mpsLim || (O.rod.E < 150 ? 27.5 : O.rod.fatigue >= 620 ? 27.0 : O.rod.fatigue >= 430 ? 25.0 : O.rod.fatigue >= 330 ? 21.5 : 19.5);
     T("piston_speed", "Mean piston speed", mpsRed.toFixed(1) + " / " + mpsLimit.toFixed(1) + " m/s",
@@ -1837,7 +1973,7 @@ const ENGINE_SIM = (function () {
       "Heat flux scales with BMEP × √rpm; at " + bmepPk.toFixed(1) + " bar and " + peakHpRpm + " rpm the crown sits at " + crownC.toFixed(0) + " °C against a " + O.pis.maxCrownC + " °C alloy limit (" + O.pis.k + " W/mK conductivity).",
       "Fit piston cooling jets, move to a 2618 forging, or run a fuel with more latent heat.");
 
-    const crownStressMPa = maxPmax / 10 * 6.5 * Math.pow(g.b / 86, 0.8) * (O.pis.crownFac || 1);
+    const crownStressMPa = maxPmax / 10 * 6.5 * Math.pow(g.b / 86, 0.8) * (O.pis.crownFac || 1) * (dsl ? 0.65 : 1);   // bowl-in-piston crowns are far thicker
     const crownHotMPa = clamp(O.pis.hot250 * (1 - (O.pis.hotSlope || 0.0055) * (crownC - 230)), 25, 400);
     T("crown_pressure", "Crown strength", crownStressMPa.toFixed(0) + " / " + crownHotMPa.toFixed(0) + " MPa",
       crownStressMPa / crownHotMPa,
@@ -1888,7 +2024,7 @@ const ENGINE_SIM = (function () {
       "First torsional mode is about " + f1.toFixed(0) + " Hz; the " + majorOrder + (majorOrder === 1 ? "st" : "th") + "-order firing harmonic crosses it at " + resRpm.toFixed(0) + " rpm" + (inRes ? " — inside the operating range" : " — outside the operating range") + ". Damper absorbs " + (O.dmp.damping * 100).toFixed(0) + "%.",
       "Fit a viscous damper, use a stiffer crank, or keep the resonant order out of the rev range.");
 
-    const brgLimit = Math.round(O.brg.limitMPa * ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? 0.80 : 1));
+    const brgLimit = Math.round(O.brg.limitMPa * ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? 0.80 : 1) * (dsl ? 1.4 : 1));   // diesel shells: thicker steel back, harder overlay
     T("bearing_load", "Bearing specific load", bearMPa.toFixed(0) + " / " + brgLimit + " MPa",
       bearMPa / brgLimit,
       "Peak rod load " + (Fcomp / 1000).toFixed(0) + " kN over a " + djPin.toFixed(0) + " × " + wPin.toFixed(0) + " mm projected area is " + bearMPa.toFixed(0) + " MPa; the overlay is rated " + brgLimit + ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? " (derated 20% — " + O.fu.name + " corrodes a bimetal overlay)" : "") + " MPa.",
@@ -2050,6 +2186,7 @@ const ENGINE_SIM = (function () {
        ================================================================= */
     const refVd = { I3: 1.0, I4: 2.0, I5: 2.5, I6: 3.0, V6: 3.5, V8: 5.0, V8F: 4.5, V10: 5.2, V12: 6.0, F4: 2.0, F6: 3.4 }[cfg.layout] || 2.0;
     let kg = O.lay.massKg * Math.pow((g.Vd * 1000) / refVd, 0.42) * (0.55 + 0.45 * O.block.massFac);
+    if (dsl) kg = kg * 1.35 + dInj.massKg;                            // thicker decks, bigger mains, a heavier head for the pressure
     kg += O.headMat.massFac * O.hd.massFac * L.n * 3.4;
     kg += (bm.kind === "turbo" ? bm.units * 9 * (O.ts.maxFlow > 100 ? 1.8 : 1) : bm.kind === "roots" ? 22 : bm.kind === "screw" ? 26 : bm.kind === "centrifugal" ? 11 : 0);
     kg += O.icc.massKg + O.osys.massKg + O.cool.massKg + O.exh.massKg * (L.banks) + 14;
@@ -2064,7 +2201,8 @@ const ENGINE_SIM = (function () {
       + O.ink.cost + O.asp.cost + (boosted ? O.ts.cost + O.tm.cost + O.icc.cost : 0)
       + O.oil.cost + O.osys.cost + O.sq.cost + O.cool.cost + O.exh.cost * L.banks + O.cov.cost
       + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
-      + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + fpump.cost;
+      + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + fpump.cost
+      + (dsl ? dInj.cost + L.n * dNoz.cost : 0);
     const cost = Math.round((0.155 * rawCost + 120 * L.n + 250) * (shop.costFac || 1));
 
     /* WOT indicated work at the cruise point, used as the 100%-load reference */
@@ -2116,7 +2254,31 @@ const ENGINE_SIM = (function () {
     const fuelKgS = fuelPow / O.fu.lhv;
     const fuelDens = O.fu.afr < 8 ? 792 : O.fu.afr < 12 ? 782 : 745; // methanol / E85 / gasoline
     const litresPerHour = fuelKgS * 3600 / fuelDens * 1000;
-    const econ = Math.round(clamp(litresPerHour / 100 * 100, 2, 60) * 10) / 10;  // L/100 km at 100 km/h
+    /* diesel cruise: no throttle, so no pumping loss; the same air every stroke and only as much
+       fuel as the work needs, which leaves lambda well past 2 at a cruise                  */
+    let lphD = 0, lamCrD = 0;
+    if (dsl) {
+      let fmD = FM_C + FM_P * 65 + FM_S * mpsCr + FM_S2 * mpsCr * mpsCr;
+      fmD *= (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac * O.ring.fric;
+      fmD *= (1 + 0.025 * (O.spr.rate - 1)) * (L.n > 8 ? 1.03 : 1.0) * (L.n > 5 ? 1.02 : 1.0);
+      if (bm.kind === "roots") fmD += 0.12;
+      if (bm.kind === "screw") fmD += 0.09;
+      if (bm.kind === "centrifugal") fmD += 0.04;
+      const imepD = bmepCr + (fmD + 0.10) * 1e5 + air.p * 0.035 * O.exh.backP * (boosted ? 1.4 : 1);
+      const rhoCr = (air.p + (bm.kind === "turbo" ? 0.15e5 : 0)) / (R_AIR * TchargeCr);   // a little boost even at a cruise
+      const airCr = veCrWot * rhoCr * g.Vd * nCr / 120;               // kg/s, unthrottled
+      let etaD = 0.40, fKg = 0;
+      lamCrD = 2.5;
+      for (let it = 0; it < 4; it++) {
+        etaD = ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * K_DSL * clamp(1 - 0.20 / lamCrD, 0.55, 1)
+          * (1 + (O.hd.burn - 1) * 0.30) * (1 + 0.0008 * (g.b - 86)) * etaCombD(lamCrD, dInj.etaB)
+          / (1 + 0.0018 * sq(cfg.timing)) * 0.95;                     // light load: proportionally more heat into the walls
+        fKg = imepD * g.Vd * (nCr / 120) / etaD / O.fu.lhv;
+        lamCrD = clamp(airCr / (fKg * O.fu.afr), 1.3, 8);
+      }
+      lphD = fKg * 3600 / O.fu.dens;
+    }
+    const econ = dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : Math.round(clamp(litresPerHour / 100 * 100, 2, 60) * 10) / 10;  // L/100 km at 100 km/h
 
     let smooth = L.smooth * (1 - 0.10 * L.secondOrder * (g.s / 86))
       - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" ? 2 : 0)
@@ -2130,7 +2292,9 @@ const ENGINE_SIM = (function () {
     if (!boosted && vm.rpmCam > redline * 0.95) notes.push("The cam is timed for more rpm than the redline allows — you are paying for duration you never use.");
     if (inRes) notes.push("A " + majorOrder + "th-order torsional resonance sits at " + resRpm.toFixed(0) + " rpm, inside the rev range.");
     if (hotMm < 0.030) notes.push("Running clearance is only " + (hotMm * 1000).toFixed(0) + " µm — a cold-start full-throttle pull will scuff it.");
-    if (leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
+    if (dsl && leanTop) notes.push("The injection system runs out at " + leanRpm + " rpm: \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ". A diesel just makes less power there \u2014 it runs cooler, not hotter.");
+    if (dsl && smokePk > 0.35) notes.push("Peak smoke is about " + Math.round(smokePk * 100) + "% opacity: there is more fuel going in than air to burn it" + (lamMin < cfg.lambda - 0.05 ? ", worst while the turbo is still spooling (\u03bb " + lamMin.toFixed(2) + ")" : "") + ".");
+    if (!dsl && leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
     if (env.altitudeM > 1500) notes.push("At " + env.altitudeM + " m the air is " + ((1 - air.rho / 1.2) * 100).toFixed(0) + "% thinner than sea level; correctedHp is the SAE-normalised figure.");
 
     const correctedHp = peakHp * j1349(air.pd, env.ambientC);
@@ -2149,9 +2313,11 @@ const ENGINE_SIM = (function () {
         pistonSpeedMs: mpsRed, pistonAccelG: aTdc / 9.81,
         torsionalMarginPct: 100 * (1 - torUtil), wallThicknessMm: wallThicknessMm
       },
-      knock: { onRequired: knockOnReq, margin: knockMargin, retardDeg: maxRetard },
+      knock: dsl ? { onRequired: null, margin: 99, retardDeg: 0, cetane: cetane } : { onRequired: knockOnReq, margin: knockMargin, retardDeg: maxRetard },
+      diesel: dsl, smoke: Math.round(smokePk * 1000) / 10, smokeCurve: smokeCurve, clatter: clatter, lamCurve: lamCurve,
       fuel: { duty: dutyPk, dutyRpm: dutyRpm, ccCyl: ccCylPk, load: pumpPk, loadRpm: pumpRpm, capLph: pumpCapPk, needLph: pumpNeedPk,
-        injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph },
+        injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph,
+        qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : litresPerHour },
       tests: tests, fails: fails, rel: Math.round(rel * 10) / 10,
       lifeHours: Math.round(lifeHours), firstToFail: firstToFail,
       racePasses: racePasses, raceSpec: raceSpec,
@@ -2177,6 +2343,7 @@ const ENGINE_SIM = (function () {
     const fuelON = 0.60 * fu.ron + 0.40 * fu.mon;
     const quick = simulate(cfg, DEFAULT_ENV);
     const detMargin = quick.knock.margin;
+    const dsl = isDiesel(cfg);
 
     /* --- expansion / sealing ------------------------------------------ */
     if (cfg.headMat === "alu" && cfg.blockMat === "grey_iron" && cfg.gasket === "composite") {
@@ -2213,7 +2380,7 @@ const ENGINE_SIM = (function () {
       add("good", "Hypereutectic likes a tight bore",
         "At 18e-6/K it barely grows, so 0.0018-0.0020 in is correct. That is why OEMs use it: quiet cold, low oil consumption, and cheap.");
     }
-    if (cfg.piston === "cast_alu" && boost > 0.5) {
+    if (!dsl && cfg.piston === "cast_alu" && boost > 0.5) {
       add("bad", "Cast pistons and boost do not mix",
         "A gravity-cast A332 crown holds about 130 MPa at 250 °C and it will be well past that under boost. The failure is a hole melted through the crown between the exhaust valves.");
     }
@@ -2359,7 +2526,7 @@ const ENGINE_SIM = (function () {
       add("warn", "Centrifugal blower on a low-revving engine",
         "Impeller pressure rise goes with tip speed squared, so boost goes with rpm squared. With a 6,000 rpm ceiling you get almost nothing until the last 1,500 rpm and the torque curve looks like a ski jump.");
     }
-    if (cfg.asp === "roots" && cfg.cr > 10.5) {
+    if (!dsl && cfg.asp === "roots" && cfg.cr > 10.5) {
       add("bad", "Roots blower on high compression",
         "A Roots pump is internally-compression-free, so it dumps hot air into the manifold at low adiabatic efficiency. Stack that on 10.5:1 static and the octane requirement goes through the roof.");
     }
@@ -2367,7 +2534,7 @@ const ENGINE_SIM = (function () {
       add("good", "Low compression for the blower",
         "Dropping static compression is how you make room for the pressure ratio. 8.5-9.0:1 with 0.7 bar of Roots boost is a proven, driveable combination.");
     }
-    if (boosted && cfg.ic === "none" && boost > 0.5) {
+    if (!dsl && boosted && cfg.ic === "none" && boost > 0.5) {
       add("bad", "No intercooler above 0.5 bar",
         "At 72% compressor efficiency a 1.5 pressure ratio puts the charge at 90-110 °C. That is straight off your knock margin and straight off your air density — you lose twice.");
     }
@@ -2409,7 +2576,7 @@ const ENGINE_SIM = (function () {
     }
     /* --- fuel delivery: injectors and pump against what the tune asks for --- */
     const fq = quick.fuel;
-    if (fq) {
+    if (fq && !dsl) {
       const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240, pmp = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
       const injWord = "the " + (inj.perCyl > 1 ? inj.perCyl + " \u00d7 " : "") + inj.cc + "s";
       const vol = (14.7 / fu.afr) * (0.745 / fuelDensity(fu));        // fuel volume per unit of air, against petrol
@@ -2439,9 +2606,79 @@ const ENGINE_SIM = (function () {
       add("warn", "Very rich on a naturally aspirated engine",
         "Below about λ 0.85 you are past best power and the extra fuel is only there to cool. On an NA engine that just washes the bores and dilutes the oil.");
     }
-    if (cfg.lambda > 1.0 && boosted) {
+    if (!dsl && cfg.lambda > 1.0 && boosted) {
       add("bad", "Lean under boost",
         "Every point of lambda above 1.0 adds roughly 30 °C to exhaust gas temperature and takes octane margin away at the same time. This is how turbine wheels and exhaust valves die.");
+    }
+    /* --- diesel: smoke, fuel, pressure, noise, cold ---------------------------- */
+    if (dsl) {
+      const di = OPT.dInj[cfg.dInj] || OPT.dInj.rotary_ve, nz = OPT.dNoz[cfg.dNoz] || OPT.dNoz.stock;
+      const pmax = quick.loads.pmaxMPa * 10, egt = quick.thermals.egtPeakC, dfq = quick.fuel;
+      const turbo = OPT.asp[cfg.asp].kind === "turbo";
+      if (turbo && di.smokeLim < 0.7 && quick.smoke > 30 && dfq.lamMin < cfg.lambda - 0.1)
+        add("warn", "Black smoke under spool",
+          "The " + di.name + " meters fuel for full boost whether the turbo has lit or not. Below the spool point the cylinders get \u03bb " + dfq.lamMin.toFixed(2) + " and the surplus leaves as soot \u2014 about " + Math.round(quick.smoke) + "% opacity. A smaller turbo, an injection system with a proper boost map, or a leaner fuel setting cleans it up.");
+      if (cfg.studs === "bolts_tty" && pmax > 150)
+        add(pmax > 190 ? "bad" : "warn", "Head studs for boost",
+          "Peak pressure is " + Math.round(pmax) + " bar. Torque-to-yield bolts were stretched past yield when they went in, and at this pressure the head lifts off the fire ring every cycle until the gasket lets go. Studs keep the clamp ahead of the firing load.");
+      if (cfg.lambda < 1.2)
+        add(egt > 820 ? "bad" : "warn", "Too lean to smoke, too rich to live",
+          "\u03bb " + cfg.lambda.toFixed(2) + " at full load is past the smoke limit: there is not enough air to burn the fuel properly, so the extra makes soot and heat instead of torque. Best power is around \u03bb 1.25\u20131.3; richer than that only raises the exhaust temperature.");
+      else if (cfg.lambda > 1.9)
+        add("info", "Clean, and leaving torque behind",
+          "\u03bb " + cfg.lambda.toFixed(2) + " at full load is how a factory truck passes its emissions test. There is air for a good deal more fuel before the stack shows it \u2014 bigger nozzles or more on the fuel setting.");
+      else if (quick.smoke < 20)
+        add("good", "Fuelled to the smoke limit",
+          "\u03bb " + cfg.lambda.toFixed(2) + " at full load uses most of the air without blacking out the road behind you. This is where a diesel makes its torque.");
+      if (cfg.piston === "cast_alu" && pmax > 185)
+        add("warn", "Cast pistons past factory pressure",
+          "A cast diesel piston with a cooling gallery is fine at factory boost, but at " + Math.round(pmax) + " bar the bowl rim starts to crack. A forged piston is the first thing a hot-rodded diesel needs after studs.");
+      if (egt > 800)
+        add(egt > 870 ? "bad" : "warn", "Overfuelled: EGT",
+          "Peak exhaust is " + Math.round(egt) + " \u00b0C. On a diesel the extra fuel cools nothing \u2014 it burns late, down the stroke and into the manifold. Much past 700 \u00b0C held for long, the bowl rim softens and the turbine housing cracks; a puller lives with it for ten seconds, a tow truck cannot.");
+      const cs = coldStart(cfg, -20);
+      if (cs.util > 0.85)
+        add(cs.util > 1 ? "warn" : "info", "Cold start",
+          "At -20 \u00b0C, " + cfg.cr.toFixed(1) + ":1 only gets the air to about " + Math.round(cs.T2C) + " \u00b0C on the starter and the fuel needs " + Math.round(cs.needC) + " \u00b0C. It will crank, puff white smoke and maybe catch. Low compression makes room for boost, but you pay for it on winter mornings.");
+      if (cfg.fuel === "b100" && di.kind === "mech")
+        add("warn", "B100 on old seals",
+          "Biodiesel is a solvent. It softens the nitrile O-rings and diaphragms in a mechanical pump of this era and lifts years of varnish into the filter. Viton seals and a spare filter first \u2014 and it gels just above freezing.");
+      else if (cfg.fuel === "b100")
+        add("info", "Biodiesel",
+          "B100 lights quickly and smokes less, but carries about 13% less energy a kilo, so the same nozzles make a little less power. It turns to jelly near 0 \u00b0C.");
+      if (di.kind === "cr")
+        add("good", "Common rail quiets the clatter",
+          "A pilot shot just ahead of the main one lights a small flame that the main charge burns into, instead of a pile of fuel going off at once. Clatter index " + quick.clatter.toFixed(2) + ", against 0.7\u20130.9 for a mechanical pump.");
+      else if (quick.clatter > 0.7)
+        add("info", "That diesel clatter",
+          "With no pilot injection the fuel that arrives during the ignition delay all lights at once: a sharp pressure rise that rings through the block (clatter index " + quick.clatter.toFixed(2) + "). Higher compression, better cetane or a common rail soften it.");
+      if (cfg.redline > di.rpmMax * 1.05)
+        add("warn", "Revs past the pump",
+          "The " + di.name + " keeps up to about " + di.rpmMax.toLocaleString("en-US") + " rpm; above that every stroke gets less fuel and the burn runs out of time, so the power falls away. The last " + Math.round(cfg.redline - di.rpmMax) + " rpm is mostly noise.");
+      if (dfq.injUtil > 1)
+        add("info", "Injection pump on its stop",
+          "At " + dfq.qRpm + " rpm the tune asks for " + Math.round(dfq.qDem) + " mm\u00b3 a stroke and the " + di.name + " with " + nz.name.toLowerCase() + " can push about " + Math.round(dfq.qCap) + ". On a diesel that just caps the power \u2014 bigger nozzles are how you get past it.");
+      if (dfq.pumpUtil > 1)
+        add("bad", "The lift pump can't keep up",
+          "The " + OPT.fuelPump[cfg.fuelPump].short + " lifts about " + Math.round(dfq.capLph) + " L/h and the injection pump wants " + Math.round(dfq.needLph) + " L/h, burn plus return. A starved injection pump runs dry and scores its plungers." + " The smallest one that feeds it: the " + OPT.fuelPump[fitFuel(cfg).fuelPump].short + ".");
+      else if (dfq.pumpUtil > 0.8)
+        add("warn", "Lift pump near its limit",
+          "The " + OPT.fuelPump[cfg.fuelPump].short + " is supplying " + Math.round(dfq.load * 100) + "% of what it can at " + dfq.loadRpm + " rpm.");
+      if (boosted && cfg.ic === "none" && boost > 0.8)
+        add("warn", "No intercooler on a diesel",
+          "There is no knock to worry about, but hot charge is thin charge: the same fuel meets less air, so it runs smokier and hotter. An intercooler is worth 15\u201320% more air at full boost.");
+      if (cfg.intake === "carb")
+        add("info", "A carburettor on a diesel",
+          "There is no fuel in the intake of a diesel, so a carburettor is just a restriction with a choke flap in it. Any open intake does the same job.");
+      if (nz.mult >= 2.5 && !(OPT.asp[cfg.asp].compound) && boost < 3)
+        add("warn", "Sticks bigger than the air",
+          nz.name + " flow " + nz.mult.toFixed(1) + "\u00d7 stock, and without compound turbos and serious boost there is nowhere near the air to burn it. That fuel comes out as smoke and heat.");
+      if (cfg.timing > 4)
+        add("warn", "Injection timing well advanced",
+          "Advance moves the burn toward TDC: about 3% more peak pressure per degree and a sharper clatter, while the exhaust runs cooler. Past a few degrees the head studs and the gasket pay for it.");
+      if (cfg.timing < -4)
+        add("info", "Retarded injection",
+          "Retard pushes the burn down the stroke: lower peak pressure, about 12 \u00b0C hotter exhaust per degree and more smoke. Pullers retard on purpose to keep the head on at big boost.");
     }
 
     /* --- lubrication and cooling ---------------------------------------------- */
@@ -2499,11 +2736,11 @@ const ENGINE_SIM = (function () {
       add("bad", "Regular fuel at high compression",
         "You are asking for well over 100 octane and buying 86.5 AKI. The knock control will retard everything it can and you will still be detonating at low rpm under load.");
     }
-    if (cfg.timing > 6) {
+    if (!dsl && cfg.timing > 6) {
       add("warn", "Timing advanced well past MBT",
         "Past minimum-advance-for-best-torque you gain nothing and each extra degree adds roughly one octane number to the requirement. All you buy is peak pressure earlier in the stroke and heat into the piston.");
     }
-    if (cfg.timing < -6) {
+    if (!dsl && cfg.timing < -6) {
       add("info", "Heavily retarded tune",
         "Retard is the safe direction but it is expensive: work moves out of the cylinder and into the exhaust, so you lose torque and gain 12 °C of EGT per degree.");
     }
@@ -2515,13 +2752,17 @@ const ENGINE_SIM = (function () {
           : " — near square, the all-round compromise most modern engines settle on."));
     add("info", "Peak cylinder pressure path",
       "Peak pressure runs about " + (quick.loads.pmaxMPa * 10).toFixed(0) + " bar, which is what the crown, the rod, the bearings, the head studs and the gasket all have to carry. Every part choice in this build is really a choice about that one number.");
-    add(quick.thermals.egtPeakC > 980 ? "warn" : "info", "Exhaust gas temperature",
+    if (dsl) add("info", "Exhaust gas temperature",
+      "Peak EGT is " + quick.thermals.egtPeakC.toFixed(0) + " \u00b0C with \u03bb " + cfg.lambda.toFixed(2) + " at full load. A diesel runs cool because of all the spare air it carries; the exhaust heats up as the fuel creeps toward the smoke limit, and by about 12 \u00b0C for every degree of injection retard.");
+    else add(quick.thermals.egtPeakC > 980 ? "warn" : "info", "Exhaust gas temperature",
       "Peak EGT is " + quick.thermals.egtPeakC.toFixed(0) + " °C at λ " + cfg.lambda.toFixed(2) + ". Exhaust valves, turbine wheels and the gasket fire ring all live off this number, and every degree of knock retard adds about 13 °C.");
     add(quick.clearances.hotMm < 0.030 ? "warn" : "good", "Running clearance",
       "Cold at " + (quick.clearances.coldMm * 1000).toFixed(0) + " µm, the " + OPT.piston[cfg.piston].name + " ends up at " + (quick.clearances.hotMm * 1000).toFixed(0) + " µm hot once the " + OPT.blockMat[cfg.blockMat].name + " bore and the skirt have both grown. The useful window is roughly 20-100 µm.");
     add("info", "Where the friction goes",
       "At " + quick.peakHpRpm + " rpm the mean piston speed is " + quick.loads.pistonSpeedMs.toFixed(1) + " m/s. Friction mean effective pressure climbs with the square of that, which is why a long stroke costs power twice: once in inertia and once in drag.");
-    add("info", "Fuel choice",
+    if (dsl) add("info", "Fuel choice",
+      fu.name + ": cetane " + fu.cetane + ", stoichiometric " + fu.afr + ":1, " + (fu.lhv / 1e6).toFixed(1) + " MJ/kg at " + fu.dens.toFixed(3) + " kg/L. There is no octane to worry about: a diesel lights from the heat of compression, so the fuel's job is to light quickly (cetane) and carry energy by the litre.");
+    else add("info", "Fuel choice",
       OPT.fuel[cfg.fuel].name + ": " + OPT.fuel[cfg.fuel].ron + " RON / " + OPT.fuel[cfg.fuel].mon + " MON, stoichiometric " + OPT.fuel[cfg.fuel].afr + ":1, " + (OPT.fuel[cfg.fuel].lhv / 1e6).toFixed(1) + " MJ/kg. This build needs " + quick.knock.onRequired.toFixed(0) + " and the fuel offers " + fuelON.toFixed(0) + ".");
     add(L.n >= 8 ? "info" : "info", "Layout character",
       LAYOUTS[cfg.layout].name + ", firing " + LAYOUTS[cfg.layout].firingOrder.join("-") + ". Inherent balance rates " + LAYOUTS[cfg.layout].smooth + "/100 before you add a damper or balance shafts.");
@@ -2550,6 +2791,17 @@ const ENGINE_SIM = (function () {
   function fitFuel(cfg, env) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     const ik = Object.keys(OPT.injectors), pk = Object.keys(OPT.fuelPump);
+    if (isDiesel(cfg)) {
+      // a diesel has no port injectors: size the lift pump (burn plus return flow) and leave the rest alone
+      const rd = simulate(Object.assign({}, cfg, { fuelPump: pk[pk.length - 1] }), env || DEFAULT_ENV);
+      let lp = pk[pk.length - 1];
+      for (const k of pk) {
+        let worst = 0;
+        for (let i = 0; i < rd.rpms.length; i++) worst = Math.max(worst, rd.fuel.lph[i] * DSL_RETURN / pumpLphAt(OPT.fuelPump[k], rd.rpms[i], 0));
+        if (worst / PUMP_MAX <= 0.8) { lp = k; break; }
+      }
+      return { injectors: cfg.injectors, fuelPump: lp };
+    }
     // what the tune asks for does not depend on the parts, so one run with the biggest set sizes both
     const r = simulate(Object.assign({}, cfg, { injectors: ik[ik.length - 1], fuelPump: pk[pk.length - 1] }), env || DEFAULT_ENV);
     const f = r.fuel, lim = 0.8;
@@ -2577,7 +2829,7 @@ const ENGINE_SIM = (function () {
     const aspName = { na: "NA", turbo: "Turbo", twin_turbo: "Twin-turbo", roots: "Supercharged", centrifugal: "Centrifugal" }[cfg.asp];
     const lay = { I3: "I3", I4: "I4", I5: "I5", I6: "I6", V6: "V6", V8: "V8", V8F: "V8 FP", V10: "V10", V12: "V12", F4: "F4", F6: "F6" }[cfg.layout];
     return lay + " · " + Vd.toFixed(1) + " L · " + Math.round(cfg.bore) + "×" + Math.round(cfg.stroke)
-      + " · " + headName + " · " + aspName;
+      + " · " + headName + " · " + (isDiesel(cfg) ? (cfg.asp === "na" ? "NA diesel" : (aspName || "Boosted") + " diesel") : aspName);
   }
 
   /* =====================================================================
@@ -3798,6 +4050,7 @@ const ENGINE_SIM = (function () {
     DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, TYRES: TYRES, AERO: AERO,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
+    isDiesel: isDiesel,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel
   };
 })();
@@ -12203,7 +12456,7 @@ function renderAnalysis(){
   const order={bad:0,warn:1,good:2,info:3};
   $("combos").innerHTML=combosNow.slice().sort((a,b)=>order[a.severity]-order[b.severity]).map(c=>`<div class="combo ${c.severity}"><h3>${c.title}</h3><p>${c.text}</p></div>`).join("")||`<p class="hint">Nothing notable — a conventional combination.</p>`;
   const r=(S.last&&S.last.hash===cfgHash(S.cfg))?S.last.res:quick;const T=r.thermals,L=r.loads,Cl=r.clearances,K=r.knock;
-  const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Knock retard",`${K.retardDeg.toFixed(1)}°`],["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
+  const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Knock retard",`${K.retardDeg.toFixed(1)}°`],["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
