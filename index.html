@@ -211,6 +211,10 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .ph-lbl b{color:var(--chalk);font-weight:500}
 .ph-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
 .ph-row .peak{padding:8px 10px}.ph-row .peak b{font-size:20px}
+.saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;min-width:0}
+.saltcls span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
+.saltcls small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-bar .zone{position:absolute;top:0;bottom:0;background:rgba(232,193,74,.22);border-left:1px solid var(--warn);border-right:1px solid var(--warn)}
+.rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}
 .pfield{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .pfield b{color:var(--orange2);font-weight:500}.pfield .me{color:var(--chalk);font-weight:600}.pfield .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* stress list */
@@ -584,6 +588,7 @@ html:not(.desk) #kbHelpBtn{display:none}
         <button data-t="overrev">Over-rev<small>missed shift</small></button>
         <button data-t="drag">Drag pass<small>1/4 mile</small></button>
         <button data-t="pull_sled">Truck pull<small>sled · 300 ft</small></button>
+        <button data-t="salt">Salt flats<small>Bonneville · timed mile</small></button>
       </div>
       <div id="envBox"></div>
       <div id="chartwrap"><canvas id="chart"></canvas></div>
@@ -598,6 +603,7 @@ html:not(.desk) #kbHelpBtn{display:none}
       <p class="hint" id="dynoHint"></p>
       <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
       <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
+      <div id="saltCtl" style="display:none"><div id="saltLive"></div><div class="row" style="gap:8px"><button class="btn pri" id="saltBtn" style="flex:3;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO RUN</button><button class="btn" id="saltShiftBtn" style="flex:1;min-height:72px;font-size:18px;touch-action:none">SHIFT</button></div><div class="chips" id="saltWarp" style="margin-top:8px"><span class="hint" style="margin:0 4px 0 0;align-self:center">Run-up</span><button class="chip on" data-warp="1">×1</button><button class="chip" data-warp="2">×2</button><button class="chip" data-warp="4">×4</button></div></div>
 
       <div class="sec" id="abSec"><h2>Sound bench <span class="cnt" id="abCnt">A / B</span></h2>
         <p class="hint" style="margin-top:-4px">Hold two builds at the same rpm and switch between them. Small differences only show up back to back.</p>
@@ -4735,6 +4741,311 @@ const ENGINE_SIM = (function () {
     return p.result();
   }
 
+  /* =====================================================================
+     BONNEVILLE — land-speed runs on the salt.
+     A push truck rolls the car to ~27 mph, then the driver has a run-up (one mile on the
+     short course, two on the long) to the timed mile, then shuts off and pulls the chute.
+     The run is straight-line physics at the event's air: the engine curve comes from
+     simulate() re-run at 1,290 m and 32 °C (lsrPrep), so an atmospheric engine is down
+     about 13% on its cell figure and a blown one much less.
+       drive  = engine torque × gear × efficiency ÷ tyre radius, until the tyre lets go:
+                salt grips about μ 0.55 against a tyre slipping ~8%, less once it spins,
+                so the early gears are traction-limited and the driver feathers them
+       drag   = ½ ρ CdA v²  (a streamliner's CdA is a third of a street body's)
+       lift   = ½ ρ ClA v², mostly over the front: past half the front's static load the
+                car wanders, near none of it the car is flying — the driver has to lift
+       roll   = Crr (salt, rising with speed) × weight
+     A minute or more at full load is what Bonneville asks of an engine: coolant heat
+     builds against a radiator (or soaks into an ice tank), the exhaust heat-soaks, and
+     every second near the redline is a small chance for the build's weakest part to let
+     go — larger the closer the sim's own tests put that part to its limit.
+     ===================================================================== */
+  const SALT_ENV = { ambientC: 32, altitudeM: 1290, humidity: 20 };
+  const LSR_MILE = 1609.344;
+  const LSR_COURSES = {
+    short: { n: "Short course", runup: 1, shut: 1.5, d: "1-mile run-up · timed mile 1–2" },
+    long: { n: "Long course", runup: 3, shut: 2, d: "3-mile run-up · timed mile 3–4" }
+  };
+  // body classes in the SCTA spirit. mass is the car without its engine; ClA lift (+) per unit dynamic pressure;
+  // liftF the share of the lift over the front axle; kRad the radiator's kW per °C at speed
+  const LSR_BODIES = {
+    altered: { n: "Altered", code: "ALT", d: "street body · big radiator · lifts at speed", mass: 1250, cdA: 0.78, clA: 1.0, liftF: 0.7, rear: 0.50, wb: 2.70, cgH: 0.50, tyreDia: 26.5, kRad: 3.0, radDrag: 0, rep: 0, course: "short",
+      aero: { n: "Rear spoiler", cl: -0.55, cd: 0.07 } },
+    roadster: { n: "Modified roadster", code: "MR", d: "open roadster · long nose · radiator", mass: 950, cdA: 0.62, clA: 0.7, liftF: 0.60, rear: 0.56, wb: 2.75, cgH: 0.45, tyreDia: 27, kRad: 2.6, radDrag: 0, rep: 0, course: "short",
+      aero: { n: "Rear spoiler", cl: -0.40, cd: 0.06 } },
+    lakester: { n: "Lakester", code: "L", d: "belly-tank body · open wheels", mass: 760, cdA: 0.36, clA: 0.12, liftF: 0.55, rear: 0.58, wb: 2.90, cgH: 0.38, tyreDia: 26, kRad: 1.3, radDrag: 0.02, rep: 60, course: "long",
+      aero: { n: "Nose canards", cl: -0.15, cd: 0.02 } },
+    streamliner: { n: "Streamliner", code: "S", d: "wheels enclosed · lowest drag · twitchy", mass: 1150, cdA: 0.26, clA: 0.06, liftF: 0.55, rear: 0.55, wb: 4.60, cgH: 0.34, tyreDia: 27, kRad: 0.6, radDrag: 0.025, rep: 200, course: "long", narrow: true,
+      aero: { n: "Trim tabs", cl: -0.08, cd: 0.012 } }
+  };
+  for (const k in LSR_BODIES) LSR_BODIES[k].id = k;
+  // engine classes by displacement, SCTA-style letters (upper bound in litres; AA is unlimited)
+  const LSR_DISP = [["J", 0.75], ["I", 1.0], ["H", 1.5], ["G", 2.0], ["F", 3.0], ["E", 4.25], ["D", 5.0], ["C", 6.1], ["B", 7.2], ["A", 8.2], ["AA", Infinity]];
+  const LSR_FUELS = { G: "gas", F: "fuel", D: "diesel" };
+  const LSR_CHUTES = { none: { n: "No chute", cdA: 0, rated: 0, kg: 0 }, single: { n: "Single chute", cdA: 1.5, rated: 112, kg: 9 }, dual: { n: "Dual chutes", cdA: 2.6, rated: 190, kg: 18 } };
+  const LSR_RATIOS = [2.45, 1.70, 1.30, 1.0];   // four-speed, relative to top gear
+  function lsrDispClass(L) { for (const d of LSR_DISP) if (L <= d[1] + 1e-9) return d[0]; return "AA"; }
+  /* the class an engine runs in: displacement letter / (B = blown) fuel letter + body code, e.g. "C/BGALT" */
+  function lsrClass(cfg, res, body) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const fu = OPT.fuel[cfg.fuel] || {}, asp = OPT.asp[cfg.asp] || OPT.asp.na;
+    const L = res && res.Vd ? res.Vd / 1000 : geometry(cfg).Vd * 1000;
+    const n2o = cfg.nitrous && cfg.nitrous !== "none";
+    const fuel = fu.ci ? "D" : (cfg.fuel === "e85" || cfg.fuel === "methanol" || n2o) ? "F" : "G";
+    const blown = asp.kind !== "na";
+    const disp = lsrDispClass(L), B = LSR_BODIES[body] || LSR_BODIES.altered;
+    return { disp: disp, fuel: fuel, blown: blown, body: B.id, litres: +L.toFixed(2), key: disp + "/" + (blown ? "B" : "") + fuel + B.code, fuelName: LSR_FUELS[fuel], n2o: !!n2o };
+  }
+  function lsrRng(seed) { let a = (seed >>> 0) || 1; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function lsrHash(s) { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  /* the engine curve at the salt: simulate() again in Bonneville's thin, hot air (plus what a pass needs from dragPrep) */
+  function lsrPrep(cfg, env) {
+    const e = Object.assign({}, DEFAULT_ENV, env || {}, SALT_ENV, { testType: "pull" });
+    const res = dragPrep(cfg, e);
+    res.saltEnv = { ambientC: e.ambientC, altitudeM: e.altitudeM, rho: ambient(e).rho };
+    return res;
+  }
+
+  /* veh: { body, course "short"|"long", topMph (road speed at the redline in top gear), redline, shiftRpm, shift "auto"|"manual",
+     aero (spoiler/canards/tabs on), ballast kg, cooling "radiator"|"ice", chute "none"|"single"|"dual", seed, noFail, rho, wornAt, h (step s) }.
+     step(dt, throttle) takes the driver's foot 0..1; shift() asks for the next gear; chute() pulls the chute after the mile. */
+  function lsrRun(res, veh) {
+    const B = LSR_BODIES[veh && veh.body] || LSR_BODIES.altered;
+    const v = Object.assign({ body: B.id, course: B.course, topMph: 200, redline: 7000, shiftRpm: 0, shift: "auto", aero: false, ballast: 0, cooling: B.id === "streamliner" ? "ice" : "radiator", chute: "single",
+      seed: 1, noFail: false, rho: res.saltEnv ? res.saltEnv.rho : 1.0, ambientC: res.saltEnv ? res.saltEnv.ambientC : SALT_ENV.ambientC, idle: 900, h: 0.002, autoChute: true }, veh || {});
+    const CO = LSR_COURSES[v.course] || LSR_COURSES.short, CH = LSR_CHUTES[v.chute] || LSR_CHUTES.none, rng = lsrRng(v.seed);
+    const rpms = res.rpms, tq = res.torque, N = rpms.length, g = 9.81;
+    const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
+    const torqueAt = r => r <= rpms[0] ? tq[0] * clamp(r / rpms[0], 0.35, 1) : interp(tq, r);
+    v.topMph = isFinite(+v.topMph) && +v.topMph > 0 ? clamp(+v.topMph, 40, 650) : 200;
+    v.redline = isFinite(+v.redline) && +v.redline > 1000 ? +v.redline : 7000; v.ballast = clamp(+v.ballast || 0, 0, 500);
+    const rw = B.tyreDia * 0.0254 / 2, red = v.redline, wRed = red * 2 * Math.PI / 60;
+    const topMs = Math.max(20, v.topMph * 0.44704), Gtop = wRed / (topMs / rw);   // overall engine : wheel ratio in top
+    const ratios = LSR_RATIOS.map(r => r * Gtop), NG = ratios.length;
+    const shiftRpm = v.shiftRpm > 0 ? Math.min(red, v.shiftRpm) : Math.min(red * 0.985, Math.max(res.peakHpRpm || red, red * 0.9));
+    const eta = 0.90, engKg = res.kg || 200, m = B.mass + engKg + (+v.ballast || 0) + CH.kg;
+    const ice = v.cooling === "ice";
+    const cdA = B.cdA + (v.aero ? B.aero.cd : 0) + (ice ? 0 : B.radDrag), clA = B.clA + (v.aero ? B.aero.cl : 0);
+    const VdL = Math.max(0.5, (res.Vd || 2000) / 1000), Ie = 0.12 + 0.07 * VdL, Iw = 2 * 1.3;
+    const Nf0 = m * g * (1 - B.rear) - (+v.ballast || 0) * g * 0.4;   // ballast rides over the rear axle
+    const rearStatic = m * g - Nf0;
+    const peakW = Math.max(1, (res.peakHp || 100) * 745.7), coolKw = (res.thermals && res.thermals.coolantLoadKw) || 0.37 * (res.peakHp || 100);
+    const capKJ = 0.45 * engKg + 50 + (ice ? 420 : 0), kRad = ice ? 0.12 : B.kRad;
+    const hasEgt = Array.isArray(res.egtCurve) && res.egtCurve.length === N;
+    const isTurbo = (res.aspKind || "na") === "turbo", egtLimit = res.egtLimitC || (res.diesel ? 900 : 0);
+    const worst = (res.tests || []).reduce((a, t) => Math.max(a, +t.util || 0), 0);
+    const hazK = 0.0003 * Math.exp((clamp(worst, 0.5, 1.2) - 0.85) * 14);
+    const muPk = 0.60, sPk = 0.08, muSlide = 0.43;
+    function mu(s) { const a = Math.abs(s); return (a < sPk ? muPk * Math.sin(Math.PI / 2 * a / sPk) : muSlide + (muPk - muSlide) * Math.exp(-(a - sPk) / 0.18)) * Math.sign(s || 1); }
+    const x0 = CO.runup * LSR_MILE, x1 = x0 + LSR_MILE, k0 = (x0 + x1) / 2 - 500, k1 = k0 + 1000, xEnd = x1 + CO.shut * LSR_MILE;
+    const st = { t: 0, x: 0, v: 0, w: 0, rpm: v.idle, gear: 0, thr: 0, foot: 0, phase: "stage", done: false, slip: 0, light: 1, loose: 0, Nf: Nf0, Nr: rearStatic, lift: 0, drag: 0, acc: 0,
+      shiftT: 0, shifts: 0, shiftReq: false, limiter: 0, limT: 0, clutch: true, coolC: ice ? 45 : 85, coolMax: 0, egt: 450, egtPeak: 450, egtDose: 0, loadT: 0, fullT: 0,
+      chuteOut: false, chuteAt: null, chuteMph: null, chuteBlown: false, chuteK: 0, braking: false, broke: null, failKind: null, failAt: Infinity, haz: 0, hazRoll: rng(), stopWhy: null,
+      tIn: null, tOut: null, tK0: null, tK1: null, vIn: null, vOut: null, peakV: 0, peakRpm: 0, spinT: 0, wanderT: 0, lightMin: 1, trace: [], pushT: 0, offEnd: false,
+      x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd, gears: NG, mileMph: null, kmMph: null, overRev: 0, lifted: 0 };
+    if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(q => q.name === res.fails[0]); st.failKind = t0 ? t0.id : "rod_tension"; st.failAt = 3 + rng() * 16; }
+    const egtTrip = 1.5 + rng() * 2.5;
+    let lastTrace = -1;
+    function engT(r, thr) {
+      let T = thr * torqueAt(r) - (1 - thr) * 0.08 * (res.peakTq || 300) * clamp(r / red, 0.3, 1);
+      if (r > red) { T = Math.min(T, thr * torqueAt(red) * clamp((red * 1.015 - r) / (red * 0.015), 0, 1)); }
+      if (st.coolC > 112) T *= 1 - 0.008 * Math.min(25, st.coolC - 112);   // hot water: the knock sensor pulls timing
+      return T;
+    }
+    function cross(xa, xb, ta, tb, X) { return ta + (tb - ta) * (X - xa) / Math.max(1e-9, xb - xa); }
+    function sub(h) {
+      st.foot += (clamp(st.thr, 0, 1) > st.foot ? 1 / 0.35 : -1 / 0.2) * h; st.foot = clamp(st.foot, 0, 1);
+      const thrIn = st.phase === "run" ? st.foot : 0;
+      if (st.phase === "stage") { st.rpm += (v.idle + 300 * st.foot - st.rpm) * Math.min(1, h * 4); if (st.thr > 0.05) st.phase = "push"; return; }
+      st.t += h;
+      const q = 0.5 * v.rho * st.v * st.v;
+      const Lf = q * clA;                      // lift (+) / downforce (-)
+      const Fd = q * cdA + (st.chuteOut ? q * CH.cdA * st.chuteK : 0);
+      const crr = 0.012 + 3.5e-7 * st.v * st.v;
+      let Nr = rearStatic + m * st.acc * B.cgH / B.wb - Lf * (1 - B.liftF);
+      let Nf = Nf0 - m * st.acc * B.cgH / B.wb - Lf * B.liftF;
+      Nr = Math.max(0, Nr); Nf = Math.max(0, Nf); st.Nr = Nr; st.Nf = Nf; st.lift = Lf; st.drag = Fd;
+      st.light = clamp(Nf / Math.max(1, Nf0), 0, 1.5);
+      const Froll = crr * Math.max(0, m * g - Lf);
+      if (st.phase === "push") {
+        // the push truck: about 0.25 g up to 27 mph, engine in neutral warming up, then the driver lets the clutch out
+        st.pushT += h; st.v += (2.5 - (Fd + Froll) / m) * h; st.x += st.v * h; st.w = st.v / rw; st.acc = 2.5;
+        st.rpm += (v.idle + 500 - st.rpm) * Math.min(1, h * 3);
+        if (st.v >= 12) { st.phase = "run"; st.gear = 0; st.clutch = true; }
+        return;
+      }
+      let Tw = 0, I = Iw;
+      if (st.phase === "run" && !st.broke) {
+        if (st.shiftT > 0) st.shiftT -= h;
+        const G = ratios[st.gear];
+        const wRpm = st.w * G * 60 / (2 * Math.PI);
+        const floor = Math.max(v.idle + 400, 0.32 * red);
+        if (st.clutch && wRpm >= floor) st.clutch = false;
+        if (st.shiftT > 0) { Tw = 0; st.rpm += (wRpm - st.rpm) * Math.min(1, h * 12); }
+        else if (st.clutch) { st.rpm += (floor - st.rpm) * Math.min(1, h * 6); Tw = Math.max(0, engT(st.rpm, thrIn)) * G * eta; }
+        else { st.rpm = wRpm; Tw = engT(st.rpm, thrIn) * G * eta; I = Iw + Ie * G * G; }
+        if (st.rpm > red * 1.005) { st.limT += h; if (st.rpm > red * 1.03) st.overRev++; }
+        // shifting: the auto box at the shift point; a manual driver asks with shift()
+        const want = v.shift === "auto" ? (st.rpm >= shiftRpm && thrIn > 0.5) : st.shiftReq;
+        if (want && st.gear < NG - 1 && st.shiftT <= 0 && !st.clutch) { st.gear++; st.shiftT = 0.25; st.shifts++; }
+        st.shiftReq = false;
+      } else {
+        // after the mile (or a broken engine): clutch in, coasting
+        st.rpm += ((st.broke ? 0 : v.idle) - st.rpm) * Math.min(1, h * 2.5);
+      }
+      // tyre on the salt
+      const vw = st.w * rw, den = Math.max(Math.abs(st.v), 3);
+      const s = (vw - st.v) / den; st.slip = clamp(s, -1, 3);
+      let Ft = mu(s) * Nr;
+      if (st.phase === "spin") Ft = 0;
+      st.w += (Tw - Ft * rw) / I * h; if (st.w < 0) st.w = 0;
+      if (st.phase !== "run" || st.broke) { st.w = st.v / rw; Ft = 0; }   // free-rolling
+      // brakes come on once the chute has the speed down, or alone if there is no chute
+      st.braking = (st.phase === "shutdown" || st.phase === "spin" || (st.broke && st.phase === "run")) && (st.v < 70 || !st.chuteOut);
+      const Fb = st.braking ? m * g * (st.phase === "spin" ? 0.45 : st.v < 70 ? 0.28 : 0.08) : 0;
+      let acc = (Ft - Fd - Froll - Fb) / m;
+      if (st.v <= 0 && acc < 0) acc = 0;
+      const xPrev = st.x, tPrev = st.t - h;
+      st.v = Math.max(0, st.v + acc * h); st.x += st.v * h; st.acc = acc;
+      // timing traps: the clocks start on the mile's first light and stop on its last
+      if (st.tIn == null && st.x >= x0) { st.tIn = cross(xPrev, st.x, tPrev, st.t, x0); st.vIn = st.v; }
+      if (st.tK0 == null && st.x >= k0) st.tK0 = cross(xPrev, st.x, tPrev, st.t, k0);
+      if (st.tK1 == null && st.x >= k1) { st.tK1 = cross(xPrev, st.x, tPrev, st.t, k1); st.kmMph = 1000 / Math.max(1e-6, st.tK1 - st.tK0) * 2.23694; }
+      if (st.tOut == null && st.x >= x1) { st.tOut = cross(xPrev, st.x, tPrev, st.t, x1); st.vOut = st.v; st.mileMph = LSR_MILE / Math.max(1e-6, st.tOut - st.tIn) * 2.23694; if (st.phase === "run") st.phase = "shutdown"; }
+      st.peakV = Math.max(st.peakV, st.v); st.peakRpm = Math.max(st.peakRpm, st.rpm);
+      // stability: wheelspin at speed or a light front end make the car loose; the driver gets one warning
+      if (st.phase === "run") {
+        const sp = st.v > 25 && s > 0.22 ? (s - 0.22) * 3 * (B.narrow ? 1.6 : 1) * clamp(st.v / 60, 0.4, 1.6) : 0;
+        const lt = st.light < 0.45 ? (0.45 - st.light) * 7 : 0;
+        if (s > 0.22 && st.v > 25) st.spinT += h;
+        if (st.light < 0.5) st.wanderT += h;
+        st.lightMin = Math.min(st.lightMin, st.light);
+        st.loose = sp + lt > 0 ? st.loose + (sp + lt) * h : Math.max(0, st.loose - 0.6 * h);
+        if (st.loose >= 1 && !v.noSpin) { st.phase = "spin"; st.stopWhy = "spun"; st.spinV = st.v; }
+      }
+      // heat: coolant against the radiator (or soaking into the ice), the exhaust soaking at full load
+      const P = Math.max(0, st.phase === "run" && !st.broke ? engT(st.rpm, thrIn) * st.rpm * 2 * Math.PI / 60 : 0);
+      const qIn = coolKw * Math.max(0.06, P / peakW), qOut = kRad * (st.coolC - v.ambientC) * clamp(Math.sqrt(st.v / 40), 0.25, 1.4);
+      st.coolC += (qIn - qOut) / capKJ * h; st.coolMax = Math.max(st.coolMax, st.coolC);
+      const full = st.phase === "run" && thrIn > 0.6;
+      if (full) { st.loadT += h; if (st.rpm > 0.8 * red) st.fullT += h; }
+      const egtT = (hasEgt ? interp(res.egtCurve, st.rpm) : 820) * (0.45 + 0.55 * thrIn) + 55 * thrIn * clamp(st.loadT / 40, 0, 1);
+      st.egt += (egtT - st.egt) * (1 - Math.exp(-h / 4)); st.egtPeak = Math.max(st.egtPeak, st.egt);
+      if (egtLimit && st.egt > egtLimit) st.egtDose += h * (st.egt - egtLimit) / 60;
+      // pushing it: every second near the redline is a chance for the weakest part to go
+      if (full && !v.noFail) st.haz += h * hazK * Math.pow(st.rpm / red, 3) * (1 + 3 * Math.max(0, (st.coolC - 112) / 15)) * (st.limT > 0 ? 1.3 : 1);
+      if (!v.noFail && !st.broke && st.phase === "run") {
+        const hot = st.coolC > 128;
+        if (st.failKind && st.loadT >= st.failAt) st.broke = st.failKind;
+        else if (v.wornAt && st.loadT >= v.wornAt) st.broke = "worn";
+        else if (hot) st.broke = "steam";
+        else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : "piston";
+        else if (1 - Math.exp(-st.haz) > st.hazRoll && st.haz > 0) { const t0 = (res.tests || []).slice().sort((a, b) => b.util - a.util)[0]; st.broke = t0 ? t0.id : "rod_tension"; }
+        if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; st.brokeX = st.x; }
+      }
+      // the chute: the driver pulls it once the clocks are behind him (or when it all goes wrong past 150 mph)
+      if (!st.chuteOut && CH.cdA > 0 && ((v.autoChute && st.phase === "shutdown" && st.x > x1 + 60) || st.chuteReq || ((st.broke || st.phase === "spin") && st.v > 45))) {
+        st.chuteOut = true; st.chuteAt = st.x; st.chuteMph = st.v * 2.23694; if (st.v > CH.rated) st.chuteBlown = true;
+      }
+      st.chuteReq = false;
+      if (st.chuteOut) st.chuteK = st.chuteBlown ? Math.max(0, st.chuteK - h * 3) : Math.min(1, st.chuteK + h / 0.6);
+      if (st.t - lastTrace >= 0.25) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(2), x: Math.round(st.x), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), g: st.gear + 1, thr: +thrIn.toFixed(2), slip: +clamp(st.slip, 0, 1).toFixed(3), egt: Math.round(st.egt), tc: Math.round(st.coolC), light: +st.light.toFixed(2) }); }
+      if (st.x > xEnd && st.v > 3) st.offEnd = true;
+      if ((st.phase === "shutdown" || st.phase === "spin" || st.broke) && st.v < 0.5 && st.t > 2) finish();
+      if (st.phase === "run" && !st.broke && st.v < 0.8 && st.t > 6 && st.foot < 0.05) { st.stopWhy = "lifted"; finish(); }
+      if (st.phase === "run" && st.t > 240) { st.stopWhy = "time"; finish(); }
+    }
+    function finish() { st.done = true; if (!st.stopWhy) st.stopWhy = st.mileMph != null ? "done" : "lifted"; st.phase = "done"; }
+    function step(dt, throttle) {
+      if (throttle != null) st.thr = clamp(+throttle || 0, 0, 1);
+      dt = Math.min(0.25, Math.max(0, dt));
+      while (dt > 1e-9 && !st.done) { const hh = Math.min(v.h, dt); dt -= hh; sub(hh); }
+      return st;
+    }
+    function shift() { if (st.phase === "run") st.shiftReq = true; }
+    function autoShift() { v.shift = "auto"; }
+    function chute() { if (st.phase !== "stage" && st.phase !== "push" && (st.tOut != null || st.broke || st.phase === "spin")) st.chuteReq = true; }
+    function result() {
+      const mph = x => x * 2.23694, reasons = [];
+      const lim = st.limT, B2 = B, aeroN = B2.aero.n.toLowerCase();
+      if (st.broke) reasons.push(st.broke === "steam" ? `Coolant hit ${Math.round(st.coolMax)} °C and blew past the head gasket. ${ice ? "Even the ice tank ran out" : "The radiator can't shed that much heat for that long"} — ${ice ? "less power for the run, or a bigger tank" : "try an ice tank, or a body with more radiator"}.`
+        : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C for a minute — past what the hot side takes. The turbo let go on the salt.`
+        : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for too long and melted a piston. Leaner on fuel, more air, or less boost for the long haul.`
+        : st.broke === "worn" ? "Something tired gave up at full load — the build was past its run budget. Freshen it first."
+        : `The ${(res.tests || []).find(q => q.id === st.broke) ? (res.tests.find(q => q.id === st.broke).name || "").toLowerCase() : "weakest part"} let go ${(st.x / LSR_MILE).toFixed(2)} miles out, after ${Math.round(st.loadT)} s at full load. A minute near the redline is a lot to ask.`);
+      if (st.stopWhy === "spun") reasons.push(st.light < 0.45 || st.wanderT > 1 ? `The front got light (${Math.round(st.lightMin * 100)}% of its weight left) and the car got away from the driver. ${v.aero ? "Even with the " + aeroN + " it lifts" : "Fit the " + aeroN} — or add ballast.` : `Spun on the salt — the tyres broke loose at ${Math.round(mph(st.spinV || st.v))} mph. Feather it in the low gears, or taller gearing.`);
+      if (st.mileMph != null && st.vOut != null && st.vIn != null && st.vOut > st.vIn * 1.04) reasons.push(`Still pulling through the mile: ${Math.round(mph(st.vIn))} mph in, ${Math.round(mph(st.vOut))} out. ${v.course === "long" ? "It needs to get there sooner — more grip early (ballast), more power through the gears, or less drag." : "More run-up (the long course) or more power low down would show up on the clocks."}`);
+      if (lim > 2) reasons.push(`On the rev limiter for ${lim.toFixed(1)} s — the top gear is too short. Taller gearing would let it pull further.`);
+      else if (st.mileMph != null && st.gear === NG - 1 && st.rpm < 0.8 * (res.peakHpRpm || red) && st.vOut != null && Math.abs(st.vOut - st.vIn) < 2) reasons.push(`Top gear too tall: it ran out of power at ${Math.round(st.rpm).toLocaleString()} rpm, well under the ${(res.peakHpRpm || red).toLocaleString()} rpm power peak. Shorter gearing would be faster.`);
+      if (st.spinT > 2 && st.stopWhy !== "spun") reasons.push(`${st.spinT.toFixed(1)} s of wheelspin at speed — salt is about μ 0.55. Ballast on the rear, or ease into the low gears.`);
+      if (st.wanderT > 1 && st.stopWhy !== "spun") reasons.push(`The front was light for ${st.wanderT.toFixed(1)} s (down to ${Math.round(st.lightMin * 100)}%) — the car wanders when the nose lifts. ${v.aero ? "" : "The " + aeroN + " would hold it down."}`);
+      if (st.coolMax > 112 && st.broke !== "steam") reasons.push(`Coolant peaked at ${Math.round(st.coolMax)} °C — hot enough to pull timing and cost power.`);
+      if (st.chuteBlown) reasons.push(`The chute came out at ${Math.round(st.chuteMph)} mph — past its ${Math.round(CH.rated * 2.23694)} mph rating — and tore off. Brakes only from there.`);
+      if (!st.chuteOut && CH.cdA === 0 && st.peakV * 2.23694 > 175) reasons.push("No parachute over 175 mph — tech will not accept the run. Fit a chute.");
+      if (st.offEnd) reasons.push("Ran out of course before it stopped — off the end into the soft salt.");
+      return { mileMph: st.mileMph != null ? +st.mileMph.toFixed(3) : null, kmMph: st.kmMph != null ? +st.kmMph.toFixed(3) : null, peakMph: +mph(st.peakV).toFixed(1), inMph: st.vIn != null ? +mph(st.vIn).toFixed(1) : null, outMph: st.vOut != null ? +mph(st.vOut).toFixed(1) : null,
+        mileT: st.tOut != null ? +(st.tOut - st.tIn).toFixed(3) : null, kmT: st.tK1 != null ? +(st.tK1 - st.tK0).toFixed(3) : null, time: +st.t.toFixed(1), stopWhy: st.stopWhy, broke: st.broke, failKind: st.broke ? st.failKind : null, brokeX: st.brokeX != null ? Math.round(st.brokeX) : null,
+        coolMax: Math.round(st.coolMax), peakEgt: Math.round(st.egtPeak), lightMin: +st.lightMin.toFixed(2), spinT: +st.spinT.toFixed(1), wanderT: +st.wanderT.toFixed(1), limT: +lim.toFixed(1), shifts: st.shifts, peakRpm: Math.round(st.peakRpm),
+        chute: { out: st.chuteOut, mph: st.chuteMph != null ? Math.round(st.chuteMph) : null, blown: st.chuteBlown }, offEnd: st.offEnd, noChuteFast: CH.cdA === 0 && st.peakV * 2.23694 > 175,
+        trace: st.trace, reasons: reasons, body: B.id, course: v.course, topMph: v.topMph, ratios: ratios.map(r => +r.toFixed(2)), mass: Math.round(m), cdA: +cdA.toFixed(3), clA: +clA.toFixed(3), x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd, veh: v };
+    }
+    return { st: st, step: step, shift: shift, autoShift: autoShift, chute: chute, result: result, ratios: ratios, shiftRpm: shiftRpm, mass: m, x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd };
+  }
+  /* a run with a sensible driver: flat out, feathering wheelspin and a light front end; the node harness and the record book use it */
+  function lsrPass(res, veh) {
+    const p = lsrRun(res, Object.assign({}, veh, { shift: "auto" })); let thr = 1;
+    while (!p.st.done) {
+      const s = p.st;
+      if (s.phase === "run") {
+        const bad = s.slip > 0.13 || s.light < 0.5 || s.loose > 0.3;
+        thr = bad ? Math.max(0.04, thr * (s.slip > 0.2 || s.loose > 0.5 ? 0.7 : 0.88)) : Math.min(1, thr + 0.03);
+      } else thr = 1;
+      p.step(0.02, thr);
+    }
+    return p.result();
+  }
+  /* the top gear that gets the most out of the timed mile: balance-speed estimate, then a short search */
+  function lsrGearing(res, veh) {
+    const B = LSR_BODIES[veh && veh.body] || LSR_BODIES.altered, red = (veh && veh.redline) || 7000, rho = res.saltEnv ? res.saltEnv.rho : 1.0;
+    const cdA = B.cdA + (veh && veh.aero ? B.aero.cd : 0) + ((veh && veh.cooling) === "ice" ? 0 : B.radDrag), m = B.mass + (res.kg || 200), P = 0.9 * (res.peakHp || 100) * 745.7;
+    let vb = 20; for (let i = 0; i < 40; i++) vb = Math.pow(Math.max(1, P - 0.015 * m * 9.81 * vb) / (0.5 * rho * cdA), 1 / 3);
+    const base = vb * 2.23694 * red / Math.max(1, res.peakHpRpm || red * 0.85);
+    let best = null;
+    for (const f of [0.94, 1.0, 1.06, 1.12]) {
+      const top = Math.round(base * f / 5) * 5;
+      const r = lsrPass(res, Object.assign({}, veh, { topMph: top, noFail: true, noSpin: true, h: 0.004 }));
+      const sc = r.mileMph || 0; if (!best || sc > best.mph) best = { topMph: top, mph: sc };
+    }
+    return best ? best.topMph : Math.round(base / 5) * 5;
+  }
+  /* the record book: every class has a standing record, seeded from what a well-built entry of that class
+     runs on this same physics, discounted by how contested the class is (some are soft, some are stout) */
+  const LSR_HOLDERS = ["Wendover Flyers", "Silver Island Speed", "Blue Mist Racing", "Salt Shaker Garage", "Floating Island Team", "Prairie Lakester Co.", "Northwind Racing", "Bitter Lake Hot Rods", "Coulee Fuels Special", "Old Ironsides Racing", "Tamarack Speed Shop", "Glacier Streamliner Group", "Kestrel Salt Racing", "Halcyon GT", "Redwater Rodders", "Mile Seven Motorsport"];
+  const lsrRecCache = {};
+  function lsrSynth(L, fuel, blown) {
+    const hpL = fuel === "D" ? (blown ? 125 : 42) : fuel === "F" ? (blown ? 290 : 135) : (blown ? 190 : 108);
+    const hp0 = Math.min(fuel === "D" ? 1500 : 2300, hpL * L), salt = blown ? 0.93 : 0.87, hp = hp0 * salt;
+    const red = fuel === "D" ? clamp(5200 - 180 * L, 2600, 4800) : clamp(9800 - 420 * L, 6200, 9500), pk = 0.9 * red;
+    const rpms = [], torque = []; for (let r = 1000; r <= red + 1e-6; r += 250) { rpms.push(r); const x = (r - pk * 0.75) / (pk * 0.75); torque.push(Math.max(0.3, 1 - 0.28 * x * x)); }
+    let best = 0, bi = 0; rpms.forEach((r, i) => { const p = torque[i] * r; if (p > best) { best = p; bi = i; } });
+    const k = hp * 745.7 / (best * 2 * Math.PI / 60); for (let i = 0; i < torque.length; i++) torque[i] *= k;
+    const kg = (fuel === "D" ? 110 + 60 * L : 60 + 30 * L) * (blown ? 1.15 : 1);
+    return { rpms: rpms, torque: torque, peakHp: hp, peakHpRpm: rpms[bi], peakTq: Math.max.apply(null, torque), kg: kg, Vd: L * 1000, thermals: { coolantLoadKw: 0.37 * hp }, tests: [], fails: [], saltEnv: { rho: ambient(Object.assign({}, DEFAULT_ENV, SALT_ENV)).rho, ambientC: SALT_ENV.ambientC }, red: red };
+  }
+  function lsrRecord(key) {
+    if (lsrRecCache[key]) return lsrRecCache[key];
+    const mt = /^(AA|[A-J])\/(B?)([GFD])(ALT|MR|L|S)$/.exec(key); if (!mt) return null;
+    const di = LSR_DISP.findIndex(d => d[0] === mt[1]), lo = di > 0 ? LSR_DISP[di - 1][1] : 0.5, hi = LSR_DISP[di][1];
+    const L = hi === Infinity ? 9.0 : lo + (hi - lo) * 0.9, body = Object.keys(LSR_BODIES).find(k => LSR_BODIES[k].code === mt[4]);
+    const res = lsrSynth(L, mt[3], !!mt[2]), veh = { body: body, redline: res.red, aero: body === "altered" || body === "roadster", ballast: 60, cooling: body === "streamliner" || body === "lakester" ? "ice" : "radiator", chute: "dual", course: LSR_BODIES[body].course };
+    veh.topMph = lsrGearing(res, veh);
+    const r = lsrPass(res, Object.assign({}, veh, { noFail: true, noSpin: true, h: 0.004 }));
+    const hsh = lsrHash(key), soft = 0.70 + 0.27 * ((hsh % 1000) / 1000);
+    const mph = Math.round((r.mileMph || r.peakMph) * soft * 1000) / 1000;
+    const rec = { key: key, mph: mph, holder: LSR_HOLDERS[(hsh >>> 10) % LSR_HOLDERS.length], year: 1958 + ((hsh >>> 4) % 67), seeded: true };
+    lsrRecCache[key] = rec; return rec;
+  }
+
 
   return {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
@@ -4744,6 +5055,7 @@ const ENGINE_SIM = (function () {
     isDiesel: isDiesel,
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
+    lsrRun: lsrRun, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel
   };
 })();
@@ -10795,6 +11107,7 @@ function loop(now){
   fpsCount(now);
   var dt=Math.min(clock.getDelta(), 0.05);
   tick(dt, clock.elapsedTime);
+  if(SALT.on && SALT.built){ saltRender(); return; }
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ stripRender(); return; }
   if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
@@ -13015,6 +13328,413 @@ function pullUpdate(o, dt){
   PULL.prev={phase:ph, full:!!o.full};
 }
 
+/* ===========================================================================
+   SALT FLATS SCENE — Bonneville land-speed runs, a fourth world the view cuts
+   to while ENGINE_VIS.setSalt({on:true, ...}) is fed every frame.
+   Units metres. x = distance down the course from the start line (the timed
+   mile sits a mile or three out), y up, z across: pits and timing stands on
+   the left (z < 0), the black line down the middle at z = 0. The ground is one
+   big plane that follows the camera; its salt crust, tyre tracks, the black
+   line and the start line are drawn by a world-space shader, so a 10 km course
+   costs nothing. Mountains ring the flats 9–15 km out, hazed by the fog; a
+   full-screen pass adds the heat shimmer and the mirage band at the horizon
+   (Full/Ultra). Cars are built here (streamliner, lakester, roadster) or reuse
+   the strip's street car for the Altered class. Built on first use.
+   ==========================================================================*/
+var LSR_MILE_V=1609.344;
+var SALT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
+  camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:46, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false, horLin:null,
+  t:0, runT:0, doneT:0, prev:{}, composer:null, shimmer:null, exposure:0.74, stats:null, tier:null, fx:null, flags:[], fixX:0, fixZ:0, seq:0,
+  course:null, crowd:null, shake:0, pushX:0, pushZ:0, pushV:0 };
+SALT.course={x0:LSR_MILE_V, x1:2*LSR_MILE_V, k0:1.5*LSR_MILE_V-500, k1:1.5*LSR_MILE_V+500, xEnd:3.5*LSR_MILE_V};
+var _sA=new THREE.Vector3(), _sB=new THREE.Vector3(), _sC=new THREE.Vector3(), _sw=new THREE.Vector3(), _st=new THREE.Vector3(), _sr=new THREE.Vector3(), _srt=new THREE.Vector3(), _sM=new THREE.Matrix4(), _sQ=new THREE.Quaternion(), _sS=new THREE.Vector3();
+var SALT_SUN=new THREE.Vector3(0.42,0.66,0.62).normalize(), SALT_HOR=[0.56,0.64,0.74], SALT_WIND=new THREE.Vector3(-1.6,0,0.7);
+/* salt: a crust of low polygon ridges, damp grey patches far off, the graded course with old tyre tracks, the black line, the start line */
+var SALT_GLSL_GROUND=[
+  "vec2 saltVor(vec2 p){ vec2 i=floor(p), f=fract(p); float d1=8.0, d2=8.0; for(int y=-1;y<=1;y++) for(int x=-1;x<=1;x++){ vec2 g=vec2(float(x),float(y)); vec2 r=g+vec2(sh(i+g),sh(i+g+19.7))*0.85-f; float dd=dot(r,r); if(dd<d1){ d2=d1; d1=dd; } else if(dd<d2) d2=dd; } return vec2(sqrt(d1),sqrt(d2)); }",
+  "vec3 stripSurf(vec3 w, out float rough){",
+  "  vec2 p=w.xz; float d=length(w-cameraPosition); float fine=1.0-smoothstep(12.0,70.0,d), mid=1.0-smoothstep(60.0,1400.0,d);",
+  "  float n2=sn(p*0.21+7.0), n3=sn(p*3.7), n4=sn(p*0.017+2.0);",
+  "  vec2 q=p*0.42; float r1=1.0-abs(sn(q)*2.0-1.0), r2=1.0-abs(sn(q*1.9+5.0)*2.0-1.0);",
+  "  float ridge=(pow(r1,7.0)+0.6*pow(r2,9.0))*(1.0-fine)*mid*0.5;",
+  "  vec3 c=vec3(0.76,0.765,0.75)*(0.95+0.08*(n2-0.5)*mid+0.06*(n3-0.5)*fine+0.07*(n4-0.5));",
+  "  if(fine>0.0){ vec2 vv=saltVor(p*0.75); float e=1.0-smoothstep(0.0,0.09,vv.y-vv.x); vec2 v2=saltVor(p*0.75+vec2(0.035,0.02)); float e2=1.0-smoothstep(0.0,0.09,v2.y-v2.x);",
+  "    c*=1.0-fine*(0.16*e2-0.07*e); c*=1.0-fine*0.05*smoothstep(0.2,0.6,vv.x); }",
+  "  c-=vec3(0.10,0.09,0.07)*ridge;",
+  "  float damp=smoothstep(0.6,0.82,sn(p*0.0019+3.0))*smoothstep(60.0,400.0,abs(w.z));",
+  "  c=mix(c,vec3(0.50,0.49,0.46),damp*0.5);",
+  "  float az=abs(w.z), crs=(1.0-smoothstep(13.0,18.0,az))*smoothstep(-260.0,-200.0,w.x)*(1.0-smoothstep(10200.0,10500.0,w.x));",
+  "  float tr=exp(-pow((az-0.75)/0.32,2.0))+0.55*exp(-pow((az-2.6)/0.5,2.0))+0.35*exp(-pow((az-5.2)/0.9,2.0));",
+  "  c*=1.0-crs*0.17*tr*(0.55+0.45*sn(vec2(w.x*0.04,w.z*2.5)));",
+  "  c*=1.0+crs*0.03;",
+  "  float bl=(1.0-smoothstep(0.10,0.15,az))*step(-40.0,w.x)*(1.0-step(10150.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
+  "  c=mix(c,vec3(0.03,0.03,0.035),bl);",
+  "  float sl=(1.0-smoothstep(0.08,0.13,abs(w.x)))*(1.0-smoothstep(5.0,5.4,az));",
+  "  c=mix(c,vec3(0.04,0.04,0.05),sl*0.9);",
+  "  float pit=smoothstep(-260.0,-240.0,w.x)*(1.0-smoothstep(110.0,130.0,w.x))*smoothstep(-160.0,-150.0,w.z)*(1.0-smoothstep(-32.0,-26.0,w.z));",
+  "  c*=1.0-pit*0.08*(0.6+0.4*sn(p*0.8));",
+  "  rough=0.93-crs*0.05; return c; }"].join("\n");
+/* sky: deep desert blue overhead to a pale hazy horizon, the sun, no clouds to speak of */
+function saltSkyMat(){
+  return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:SALT_SUN.clone()}, uHor:{value:new THREE.Vector3().fromArray(SALT_HOR)} },
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    fragmentShader:["uniform vec3 uSun; uniform vec3 uHor; varying vec3 vDir;", STRIP_GLSL_NOISE,
+      "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
+      " vec3 zen=vec3(0.045,0.14,0.42); vec3 col=mix(uHor,zen,pow(up,0.42)); col=mix(col,uHor*0.97,smoothstep(0.0,-0.04,h));",
+      " float sd=max(dot(d,uSun),0.0); col+=vec3(1.0,0.86,0.62)*(pow(sd,6.0)*0.14+pow(sd,60.0)*0.35);",
+      " col+=vec3(1.0,0.95,0.85)*smoothstep(0.99955,0.9998,sd)*6.0;",
+      " vec2 cp=d.xz/(max(h,0.0)+0.08)*0.7+vec2(5.0,2.0); float n=sfbm(cp*0.9)-0.5;",
+      " col=mix(col,vec3(0.86,0.88,0.92),smoothstep(0.22,0.4,n)*smoothstep(0.02,0.1,h)*smoothstep(0.5,0.2,h)*0.45);",
+      " gl_FragColor=vec4(col,1.0); gl_FragColor=linearToOutputTexel(gl_FragColor); }"].join("\n"),
+    side:THREE.BackSide, depthWrite:false, fog:false, toneMapped:false });
+}
+/* heat: the air over the salt boils — a wobble that grows toward the horizon and a mirage band just under it, mirrored like water */
+var SALT_SHIMMER_SHADER={ uniforms:{ tDiffuse:{value:null}, uHorY:{value:0.5}, uAmt:{value:1}, uT:{value:0}, uMir:{value:1}, uAsp:{value:1} },
+  vertexShader:"varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+  fragmentShader:["uniform sampler2D tDiffuse; uniform float uHorY; uniform float uAmt; uniform float uT; uniform float uMir; uniform float uAsp; varying vec2 vUv;",
+    "void main(){ float d=vUv.y-uHorY; float band=exp(-pow(d/0.06,2.0))*uAmt;",
+    " vec2 o=vec2(sin(vUv.y*620.0+uT*9.0)+0.6*sin(vUv.y*231.0-uT*6.3+vUv.x*40.0), 0.6*cos(vUv.x*180.0*uAsp+uT*7.0))*0.0011*band;",
+    " vec4 c=texture2D(tDiffuse,vUv+o);",
+    " float mb=uMir*(1.0-smoothstep(0.0,0.016,-d))*step(d,0.0);",
+    " if(mb>0.001){ vec2 mu=vec2(vUv.x+o.x*2.0, uHorY+(uHorY-vUv.y)*1.6+0.002); vec4 m=texture2D(tDiffuse,clamp(mu,0.0,1.0)); c=mix(c,m*vec4(0.92,0.95,1.0,1.0),mb*0.55); }",
+    " gl_FragColor=c; }"].join("\n") };
+function saltBuild(B, key, mat, shadow){ var keep=STRIP.scene; STRIP.scene=SALT.scene; var m=B.build(key, mat, shadow); STRIP.scene=keep; return m; }
+/* sign atlas: mile boards 1–7, START, TIMING, 1 KM, the meet banner, two trailer liveries */
+function saltAtlas(){
+  var c=newCanvas(1024,512), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
+  function board(x0,y0,w,h,bg,fg,big,small){ x.fillStyle="#1a1a1a"; x.fillRect(x0,y0,w,h); x.fillStyle=bg; x.fillRect(x0+5,y0+5,w-10,h-10); x.fillStyle=fg; x.textAlign="center"; x.textBaseline="middle";
+    x.font="700 "+(big.length>2?Math.round(h*0.34):Math.round(h*0.55))+"px "+F; x.fillText(big, x0+w/2, y0+h*(small?0.42:0.52), w-16); if(small){ x.font="700 "+Math.round(h*0.17)+"px "+F; x.fillText(small, x0+w/2, y0+h*0.82, w-16); } }
+  for(i=0;i<7;i++) board(i*146,0,144,180,"#f4efe2","#141414",String(i+1),"MILE");
+  board(0,182,250,120,"#f4efe2","#b7261d","START","");
+  board(252,182,250,120,"#ff7a1a","#141414","TIMING","");
+  board(504,182,250,120,"#f4efe2","#1d4787","1 KM","");
+  board(756,182,268,120,"#141414","#ff7a1a","TIMED","MILE");
+  x.fillStyle="#f4efe2"; x.fillRect(0,304,1024,72); x.fillStyle="#1d4787"; x.fillRect(0,366,1024,10);
+  x.fillStyle="#1d4787"; x.font="700 44px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText("SALT FLATS SPEED TRIALS · PRAIRIE ENGINE WORKS", 512, 336, 1000);
+  x.fillStyle="#1b1d20"; x.fillRect(0,380,510,130); x.fillStyle="#ff7a1a"; x.font="700 60px "+F; x.fillText("COULEE FUELS", 255, 445, 480);
+  x.fillStyle="#e9e6dc"; x.fillRect(512,380,512,130); x.fillStyle="#1d4787"; x.font="700 52px "+F; x.fillText("WENDOVER FLYERS", 768, 445, 490);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
+}
+var SALT_UV={ mile:function(i){ i=Math.max(0,Math.min(6,i)); return [i*146/1024, 1-180/512, (i*146+144)/1024, 1]; },
+  start:[0,1-302/512,250/1024,1-182/512], timing:[252/1024,1-302/512,502/1024,1-182/512], km:[504/1024,1-302/512,754/1024,1-182/512], timed:[756/1024,1-302/512,1,1-182/512],
+  banner:[0,1-376/512,1,1-304/512], liv:[[0,0,510/1024,1-380/512],[512/1024,0,1,1-380/512]] };
+
+/* --- the flats --- */
+function buildSaltScene(){
+  var S4=new THREE.Scene(); SALT.scene=S4; SALT.tier=GFX;
+  var lite=(GFX==="lite"), i, k, x, z, side, M=SALT.mats;
+  var rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); };
+  SALT.g={ box:new THREE.BoxGeometry(1,1,1), cyl:new THREE.CylinderGeometry(0.5,0.5,1,12), sph:new THREE.SphereGeometry(0.5,12,8) };
+  var hemi=new THREE.HemisphereLight(0xd6e2f2, 0xe8e2d4, 0.42); S4.add(hemi); SALT.hemi=hemi;
+  var sun=new THREE.DirectionalLight(0xfff0dc, 1.6); sun.castShadow=!lite; sun.shadow.mapSize.set(GFX==="ultra"?4096:2048, GFX==="ultra"?4096:2048);
+  var shc=sun.shadow.camera; shc.left=-24; shc.right=24; shc.top=24; shc.bottom=-24; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
+  S4.add(sun); S4.add(sun.target); SALT.sun=sun;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), saltSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S4.add(sky); SALT.sky=sky;
+  SALT.horLin=new THREE.Color(SALT_HOR[0], SALT_HOR[1], SALT_HOR[2]);
+  S4.fog=new THREE.Fog(0xffffff, 1800, 30000);
+  S4.environment=stripEnv(false);
+  var gm=stripSurfMat(SALT_GLSL_GROUND); gm.customProgramCacheKey=function(){ return "salt_ground"; };
+  var ground=new THREE.Mesh(new THREE.PlaneGeometry(64000, 64000, 96, 96), gm); ground.rotation.x=-PI/2; ground.receiveShadow=true; S4.add(ground); SALT.ground=ground;
+  /* mountains: Silver Island-ish ranges close on the left, long low ranges across the flats on the right */
+  (function(){ var seg=lite?120:220, pos=[], col=[], idx=[], cB=sc(0x8a96a6), cP=sc(0x6f6a64), cS=sc(0xb9c2cc), cx=4800;
+    for(var s=0;s<=seg;s++){ var a=s/seg*TAU, ca=Math.cos(a), sa=Math.sin(a);
+      var near=Math.pow(Math.max(0,Math.cos(a+1.75)),2.0), R=lerp(15500,9000,near)+900*Math.sin(a*7.0+0.4);
+      var hg=Math.max(40, 140+520*near*Math.pow(0.5+0.5*Math.sin(a*13.0+1.3),1.5)+260*Math.pow(0.5+0.5*Math.sin(a*5.0+2.2),3.0)+120*Math.sin(a*31.0)*Math.sin(a*3.0)+(1-near)*180*Math.pow(0.5+0.5*Math.sin(a*9.0),2.0));
+      pos.push(cx+ca*(R-1800),-4,sa*(R-1800), cx+ca*R,hg,sa*R, cx+ca*(R+2400),hg*0.55,sa*(R+2400));
+      var c2=hg>520?cS:cP; col.push(cB.r,cB.g,cB.b, c2.r,c2.g,c2.b, cP.r,cP.g,cP.b); }
+    for(s=0;s<seg;s++){ var a0=s*3, b0=(s+1)*3; idx.push(a0,b0,a0+1, b0,b0+1,a0+1, a0+1,b0+1,a0+2, b0+1,b0+2,a0+2); }
+    var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("color",new THREE.Float32BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals();
+    var hm=new THREE.Mesh(g, new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, side:THREE.DoubleSide})); hm.frustumCulled=false; S4.add(hm); SALT.mtn=hm; })();
+  M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.82});
+  M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.4, metalness:0.65});
+  M.sign=new THREE.MeshStandardMaterial({map:saltAtlas(), roughness:0.7, side:THREE.DoubleSide});
+  M.cloth=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.85, side:THREE.DoubleSide});
+  var B=new StripBatch(), ORANGE=0xff6a14, WHITE=0xeeeae0, STEEL=0x8d9296, DARK=0x232528;
+  SALT.static=B;
+  saltCourseProps(B, SALT.course, true);
+  /* pits: rigs, canopies, a starter's stand at the line, the meet banner */
+  var tc=[0xe9e6dc,0x1b1d20,0x9e2a22,0x22488f,0xd0d3d6,0x2c6b3a,0xd9a52b], P0=-230;
+  for(i=0;i<(lite?8:14);i++){ var px=P0+i*24+rng(i)*8, pz=-48-rng(i+3)*70, rot=(rng(i+7)-0.5)*0.5, cc=tc[i%tc.length];
+    B.box("solid", px, 1.75, pz, 9.5, 2.9, 2.5, cc, rot); B.box("solid", px, 0.25, pz, 9.5, 0.4, 2.3, DARK, rot);
+    var cx2=px+Math.cos(rot)*7.6, cz2=pz-Math.sin(rot)*7.6; B.box("solid", cx2, 1.1, cz2, 5.4, 1.2, 2.0, tc[(i+3)%tc.length], rot); B.box("solid", cx2+Math.cos(rot)*0.6, 1.95, cz2-Math.sin(rot)*0.6, 2.2, 0.75, 1.85, 0x22262b, rot);
+    if(i%3===1) B.add("sign","plane",[px-Math.sin(rot)*1.27, 1.9, pz-Math.cos(rot)*1.27],[7,1.8,1],0xffffff,[0,PI+rot,0],SALT_UV.liv[i%2]);
+    if(i%2===0){ var ax=px+Math.sin(rot)*4.5, az=pz+Math.cos(rot)*4.5, cw=tc[(i+1)%tc.length]; B.box("solid", ax, 2.85, az, 4.2, 0.1, 4.2, cw, rot);
+      for(k=0;k<4;k++) B.box("metal", ax+((k>>1)?1.95:-1.95), 1.42, az+((k&1)?1.95:-1.95), 0.05, 2.84, 0.05, STEEL, rot); } }
+  B.add("sign","plane",[-40, 3.0, -30.5],[22,1.55,1],0xffffff,null,SALT_UV.banner); B.box("metal", -51, 1.9, -30.6, 0.12, 3.8, 0.12, STEEL); B.box("metal", -29, 1.9, -30.6, 0.12, 3.8, 0.12, STEEL);
+  B.box("solid", -6, 2.55, 11, 3.6, 0.1, 3.6, ORANGE); for(k=0;k<4;k++) B.box("metal", -6+((k>>1)?1.7:-1.7), 1.28, 11+((k&1)?1.7:-1.7), 0.05, 2.56, 0.05, STEEL);
+  B.add("sign","plane",[-2, 1.6, 8.6],[2.4,1.15,1],0xffffff,[0,-PI/2+0.5,0],SALT_UV.start); B.box("metal", -2.05, 0.6, 8.6, 0.08, 1.2, 0.08, STEEL);
+  saltBuild(B,"solid", M.solid, !lite); saltBuild(B,"metal", M.metal, !lite); saltBuild(B,"sign", M.sign, false); saltBuild(B,"cloth", M.cloth, false);
+  /* flags on poles at the pits and the start: they flap in the wind */
+  (function(){ var fc=[0xff7a1a,0x1d4787,0xd9a52b,0xb7261d,0xf4efe2,0x2c6b3a], spots=[[-8,9],[-60,-34],[-110,-36],[-170,-40],[-20,-36],[40,-34],[-140,-120]];
+    spots.forEach(function(sp,q){ var pole=new THREE.Mesh(SALT.g.cyl, sc_mats().alu); pole.scale.set(0.06,6.5,0.06); pole.position.set(sp[0],3.25,sp[1]); S4.add(pole);
+      var g=new THREE.PlaneGeometry(2.0,1.25,10,1); g.translate(1.0,0,0); var fl=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(fc[q%fc.length]), roughness:0.8, side:THREE.DoubleSide})); fl.position.set(sp[0],5.8,sp[1]); fl.rotation.y=-2.7; S4.add(fl);
+      SALT.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.3}); }); })();
+  /* people in the pits and along the start (instanced) */
+  if(!lite) (function(){ var n=46, body=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.2,0.17,1.2,8), new THREE.MeshStandardMaterial({roughness:0.8}), n), head=new THREE.InstancedMesh(new THREE.SphereGeometry(0.13,10,8), new THREE.MeshStandardMaterial({color:sc(0xc89a78), roughness:0.7}), n), cc=new THREE.Color(), sh=[0xff7a1a,0x1d4787,0xf4efe2,0xb7261d,0x2c6b3a,0x3b3f45,0xd9a52b];
+    for(var q=0;q<n;q++){ var px=q<10?-14+rng(q)*10:-220+rng(q*3)*300, pz=q<10?6+rng(q+1)*8:-34-rng(q*5)*40;
+      _sM.makeTranslation(px,0.6,pz); body.setMatrixAt(q,_sM); _sM.makeTranslation(px,1.36,pz); head.setMatrixAt(q,_sM); cc.set(sh[q%sh.length]).convertSRGBToLinear(); body.setColorAt(q,cc); }
+    body.castShadow=true; S4.add(body); S4.add(head); })();
+  /* the push truck: an old pickup with a padded push bar */
+  SALT.push=saltPushTruck(); S4.add(SALT.push);
+  /* effects: salt thrown off the tyres and hanging behind the car; exhaust */
+  SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1100:760), "smoke", stripPuffTex()); S4.add(SALT.fx.mesh);
+  SALT.fx.mat.uniforms.uFogN.value=S4.fog.near; SALT.fx.mat.uniforms.uFogF.value=S4.fog.far;
+  SALT.cam=new THREE.PerspectiveCamera(46, 1, 0.4, 34000); SALT.built=true;
+  SALT.sunDir=SALT_SUN.clone();
+}
+/* everything that hangs off the course layout (mile boards, timing traps, cones); rebuilt when the course length changes */
+function saltCourseProps(B, C, first){
+  var i, k, side, x, M=SALT.mats, ORANGE=0xff6a14, WHITE=0xeeeae0, STEEL=0x8d9296, DARK=0x232528, MILE=LSR_MILE_V;
+  var B2=first?B:new StripBatch();
+  for(i=1;i<=6;i++){ x=i*MILE; if(x>C.xEnd+50) break;
+    B2.box("cmetal", x, 1.15, -17, 0.12, 2.3, 0.12, STEEL); B2.add("csign","plane",[x+0.07, 2.65, -17],[1.6,2.0,1],0xffffff,[0,-PI/2+0.45,0],SALT_UV.mile(i-1)); }
+  /* the traps: an electronic eye on a tripod each side, a flag, and a timing stand at the start and end of the mile */
+  [C.x0, C.k0, C.k1, C.x1].forEach(function(tx, q){ var main=(q===0||q===3);
+    for(side=-1; side<=1; side+=2){ var tz=side*13;
+      for(k=0;k<3;k++){ var a=k/3*TAU; B2.add("cmetal","cyl",[tx+Math.cos(a)*0.22, 0.55, tz+Math.sin(a)*0.22],[0.04,1.15,0.04],DARK,[Math.sin(a)*0.2,0,-Math.cos(a)*0.2]); }
+      B2.box("cmetal", tx, 1.15, tz, 0.3, 0.22, 0.24, main?0xffd23a:0xd9dde2); B2.box("csolid", tx, 1.15, tz-side*0.13, 0.12, 0.12, 0.02, 0x111111);
+      if(main){ B2.box("cmetal", tx, 1.8, tz+side*1.6, 0.05, 3.6, 0.05, STEEL); B2.add("ccloth","plane",[tx+0.5, 3.3, tz+side*1.6],[1.0,0.65,1],ORANGE,null); } }
+    if(main){ B2.box("csolid", tx-6, 1.4, -26, 6.5, 2.4, 2.4, WHITE); B2.box("csolid", tx-6, 2.75, -26, 6.8, 0.15, 2.7, 0xb7261d);
+      B2.add("csign","plane",[tx-6, 1.7, -24.78],[4.2,1.4,1],0xffffff,null,SALT_UV.timing); B2.add("csign","plane",[tx-6, 2.2, -27.22],[4.2,1.4,1],0xffffff,[0,PI,0],SALT_UV.timing);
+      B2.box("csolid", tx-14, 1.0, -27, 5.2, 1.3, 2.0, 0xd0d3d6); B2.box("csolid", tx-13.4, 1.85, -27, 2.2, 0.7, 1.85, 0x22262b);
+      B2.add("csign","plane",[tx-0.6, 2.4, -18],[2.2,1.05,1],0xffffff,[0,-PI/2+0.45,0],q===0?SALT_UV.timed:SALT_UV.timing); B2.box("cmetal", tx-0.66, 1.0, -18, 0.08, 2.0, 0.08, STEEL); }
+    else B2.add("csign","plane",[tx, 2.0, -17],[1.6,0.77,1],0xffffff,[0,-PI/2+0.45,0],SALT_UV.km); });
+  /* cones every quarter mile along the course, and every 100 m through the timed mile */
+  for(x=MILE/4; x<C.xEnd; x+=MILE/4) for(side=-1; side<=1; side+=2){ B2.add("csolid","cone",[x, 0.36, side*16],[0.42,0.72,0.42],ORANGE); B2.box("csolid", x, 0.42, side*16, 0.2, 0.08, 0.2, WHITE); }
+  for(x=C.x0+100; x<C.x1; x+=100) for(side=-1; side<=1; side+=2) B2.add("csolid","cone",[x, 0.36, side*14],[0.42,0.72,0.42],ORANGE);
+  if(SALT.courseMeshes) SALT.courseMeshes.forEach(function(m){ SALT.scene.remove(m); m.geometry.dispose(); });
+  SALT.courseMeshes=[]; var lite=GFX==="lite";
+  [["csolid",M.solid,!lite],["cmetal",M.metal,!lite],["csign",M.sign,false],["ccloth",M.cloth,false]].forEach(function(a){ var m=saltBuild(B2,a[0],a[1],a[2]); if(m) SALT.courseMeshes.push(m); });
+  SALT.courseKey=[C.x0,C.x1,C.xEnd].join(",");
+}
+function saltPushTruck(){
+  var M=sc_mats(), g=new THREE.Group(), P=sc_paint(0x2c6b3a), bx=SALT.g.box;
+  function box(m, x,y,z, w,h,d){ var q=new THREE.Mesh(bx, m); q.position.set(x,y,z); q.scale.set(w,h,d); q.castShadow=true; q.receiveShadow=true; g.add(q); return q; }
+  box(P, -2.6, 0.95, 0, 2.6, 0.7, 1.9); box(P, -0.55, 0.95, 0, 1.7, 0.7, 1.9); box(P, -1.25, 1.62, 0, 1.6, 0.66, 1.8); box(M.glass, -0.55, 1.62, 0, 0.18, 0.5, 1.6);
+  box(M.black, 0.5, 0.75, 0, 0.35, 0.45, 1.6); box(M.rubber, 0.72, 0.75, 0, 0.1, 0.5, 1.3);
+  box(M.black, -2.0, 0.48, 0, 4.8, 0.2, 1.7);
+  var wh=[]; [[-3.0,-0.82],[-3.0,0.82],[-0.3,-0.82],[-0.3,0.82]].forEach(function(p){ var w=sc_wheel({x:p[0], z:p[1], r:0.38, w:0.24, rimR:0.2, style:"star", rimMat:"alu"}, M); w.position.set(p[0],0.38,p[1]); g.add(w); wh.push(w.userData.spin); });
+  g.userData={wheels:wh, front:0.8}; return g;
+}
+function saltNumMat(num, color){
+  var c=newCanvas(256,256), x=c.getContext("2d"); x.clearRect(0,0,256,256); x.fillStyle="#f4efe2"; x.beginPath(); x.arc(128,128,120,0,TAU); x.fill();
+  x.lineWidth=10; x.strokeStyle="#141414"; x.stroke(); x.fillStyle="#141414"; x.font="700 "+(num.length>3?92:120)+"px 'Chakra Petch','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(num,128,136,220);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; return new THREE.MeshStandardMaterial({map:t, transparent:true, roughness:0.6, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+}
+/* a body of revolution along x: profile [t 0 (tail) .. 1 (nose), radius fraction] */
+function saltLathe(len, R, prof, seg){
+  var pts=prof.map(function(p){ return new THREE.Vector2(Math.max(0.002,p[1]*R), p[0]*len); });
+  var g=new THREE.LatheGeometry(pts, seg||32); g.rotateZ(-PI/2); g.computeVertexNormals(); return g;
+}
+/* --- the cars. Origin of every car = its rear axle on the salt, +x forward. userData: wheels (spin groups + radius), chute anchor(s), body pivot --- */
+function saltCar(body, color, aero){
+  var M=sc_mats(), paint=sc_paint(color), g=new THREE.Group(), piv=new THREE.Group(), bx=SALT.g.box, cy=SALT.g.cyl, sp=SALT.g.sph, wheels=[], tips=[];
+  g.add(piv);
+  function mesh(geo, mat, x,y,z, sx,sy,sz, rx,ry,rz, par){ var q=new THREE.Mesh(geo, mat); q.position.set(x,y,z); if(sx!=null) q.scale.set(sx,sy,sz); if(rx||ry||rz) q.rotation.set(rx||0,ry||0,rz||0); q.castShadow=true; q.receiveShadow=true; (par||piv).add(q); return q; }
+  function wheel(x,z,r,w,style,rear){ var c=sc_wheel({x:x, z:z, r:r, w:w, rimR:r*0.6, style:style||"weld", rimMat:"alu", rear:rear}, M); c.position.set(x,r,z); g.add(c); wheels.push({s:c.userData.spin, r:r, rear:rear}); return c; }
+  var num=String(((color>>>0)%377)+11), nm=saltNumMat(num, color), me;
+  if(body==="streamliner"){
+    var L=9.6, R=0.6, X0=-2.35, yc=0.64;
+    var hull=mesh(saltLathe(L, R, [[0,0.1],[0.04,0.3],[0.13,0.58],[0.28,0.84],[0.45,0.97],[0.6,1.0],[0.74,0.96],[0.85,0.82],[0.93,0.6],[0.975,0.34],[1,0.02]], 36), paint, X0, yc, 0, 1, 0.86, 1.04);
+    mesh(saltLathe(2.2, 0.36, [[0,0.0],[0.15,0.7],[0.5,1.0],[0.85,0.75],[1,0.05]], 20), M.glass, 1.0, yc+R*0.8, 0, 1, 0.55, 0.85);
+    var fs=new THREE.Shape(); fs.moveTo(0,0); fs.lineTo(2.0,0); fs.lineTo(0.35,1.25); fs.lineTo(-0.05,1.25); fs.lineTo(0,0);
+    var fg=new THREE.ExtrudeGeometry(fs, {depth:0.05, bevelEnabled:false}); fg.translate(0,0,-0.025); mesh(fg, paint, X0+0.15, yc+0.2, 0);
+    mesh(cy, M.satin, X0-0.08, yc, 0, 0.26, 0.22, 0.26, 0, 0, PI/2);
+    [-1,1].forEach(function(sd){ var d=mesh(new THREE.PlaneGeometry(0.75,0.75), nm, 3.2, yc+0.05, sd*0.66, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false;
+      mesh(bx, M.black, 1.5, yc-0.16, sd*0.6, 4.0, 0.07, 0.01); });
+    if(aero) [-1,1].forEach(function(sd){ mesh(bx, M.black, X0+0.5, yc+0.05, sd*0.5, 0.6, 0.03, 0.28, 0, 0, -0.06); });
+    wheel(0, -0.3, 0.343, 0.18, "weld", true); wheel(0, 0.3, 0.343, 0.18, "weld", true); wheel(4.6, -0.27, 0.33, 0.14, "weld", false); wheel(4.6, 0.27, 0.33, 0.14, "weld", false);
+    [[0,0.3],[4.6,0.27]].forEach(function(a){ [-1,1].forEach(function(sd){ mesh(sp, paint, a[0], 0.36, sd*a[1], 1.15, 0.5, 0.3); }); });
+    tips.push(new THREE.Vector3(-0.6, yc-0.42, -0.45), new THREE.Vector3(-0.6, yc-0.42, 0.45));
+    me={rr:0.343, anchor:new THREE.Vector3(X0-0.12, yc, 0), chuteLen:9, chuteRise:0.7, chuteR:1.15, len:L, tail:X0, nose:X0+L, top:yc+R, wb:4.6};
+  } else if(body==="lakester"){
+    var L2=5.7, R2=0.44, X2=-1.75, y2=0.56;
+    mesh(saltLathe(L2, R2, [[0,0.03],[0.14,0.42],[0.32,0.82],[0.52,1.0],[0.72,0.96],[0.86,0.8],[0.94,0.56],[0.985,0.28],[1,0.0]], 32), paint, X2, y2, 0, 1, 0.92, 1);
+    mesh(saltLathe(1.0, 0.2, [[0,0.0],[0.4,0.9],[0.8,1.0],[1,0.2]], 14), paint, -0.55, y2+0.36, 0, 1, 1.3, 0.9);
+    mesh(sp, sc_paint(0xf4efe2), 0.32, y2+0.56, 0, 0.3, 0.32, 0.3); mesh(bx, M.visor, 0.47, y2+0.57, 0, 0.04, 0.09, 0.2);
+    mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 16, PI), M.chrome, 0.05, y2+0.38, 0, 1,1,1, 0, PI/2, 0);
+    mesh(bx, M.glass, 0.82, y2+0.47, 0, 0.03, 0.18, 0.42, 0, 0, -0.5);
+    [-1,1].forEach(function(sd){ mesh(cy, M.tube, 2.9, 0.33, sd*0.45, 0.06, 0.7, 0.06, PI/2, 0, 0); mesh(cy, M.tube, 0.0, 0.36, sd*0.45, 0.06, 0.7, 0.06, PI/2, 0, 0);
+      mesh(cy, M.chrome, 1.55, y2+0.05, sd*0.43, 0.07, 0.6, 0.07, 0, 0, PI/2+0.15);
+      var d=mesh(new THREE.PlaneGeometry(0.55,0.55), nm, 1.6, y2+0.2, sd*0.425, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false; });
+    if(aero) [-1,1].forEach(function(sd){ mesh(bx, M.black, 3.5, y2-0.05, sd*0.42, 0.35, 0.025, 0.22, 0, 0, 0.12); });
+    wheel(0, -0.88, 0.33, 0.22, "weld", true); wheel(0, 0.88, 0.33, 0.22, "weld", true); wheel(2.9, -0.86, 0.3, 0.14, "weld", false); wheel(2.9, 0.86, 0.3, 0.14, "weld", false);
+    tips.push(new THREE.Vector3(1.25, y2+0.02, -0.5), new THREE.Vector3(1.25, y2+0.02, 0.5));
+    me={rr:0.33, anchor:new THREE.Vector3(X2-0.05, y2, 0), chuteLen:6.5, chuteRise:0.5, chuteR:0.9, len:L2, tail:X2, nose:X2+L2, top:y2+0.8, wb:2.9};
+  } else {   /* modified roadster: a channelled tub, long hood, exposed front end */
+    mesh(bx, paint, 0.2, 0.68, 0, 2.3, 0.62, 1.2);
+    mesh(bx, paint, -1.15, 0.62, 0, 0.6, 0.5, 1.15, 0, 0, 0.25);
+    mesh(bx, paint, 2.2, 0.72, 0, 1.9, 0.48, 0.74);
+    mesh(bx, paint, 2.25, 0.98, 0, 1.8, 0.06, 0.6, 0, 0, -0.04);
+    mesh(bx, M.chrome, 3.18, 0.72, 0, 0.07, 0.62, 0.64); mesh(bx, M.black, 3.2, 0.72, 0, 0.05, 0.5, 0.52);
+    mesh(bx, M.black, 0.2, 0.36, 0, 2.7, 0.12, 0.9);
+    mesh(bx, M.glass, 1.15, 1.12, 0, 0.04, 0.24, 1.0, 0, 0, -0.35);
+    mesh(sp, sc_paint(0xf4efe2), 0.35, 1.22, -0.2, 0.3, 0.32, 0.3); mesh(bx, M.visor, 0.5, 1.23, -0.2, 0.04, 0.09, 0.2);
+    mesh(new THREE.TorusGeometry(0.42, 0.03, 6, 16, PI), M.chrome, 0.05, 0.98, 0, 1,1,1, 0, PI/2, 0);
+    mesh(cy, M.tube, 2.75, 0.32, 0, 0.07, 1.5, 0.07, PI/2, 0, 0);
+    [-1,1].forEach(function(sd){ for(var h=0;h<4;h++) mesh(cy, M.chrome, 1.65+h*0.3, 0.6, sd*0.44, 0.05, 0.3, 0.05, PI/2*sd*0.6, 0, 0);
+      mesh(cy, M.chrome, 1.6, 0.47, sd*0.6, 0.08, 1.8, 0.08, 0, 0, PI/2);
+      var d=mesh(new THREE.PlaneGeometry(0.5,0.5), nm, 0.2, 0.7, sd*0.605, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false; });
+    if(aero){ mesh(bx, M.black, -1.35, 1.12, 0, 0.4, 0.04, 1.25, 0, 0, 0.15); [-1,1].forEach(function(sd){ mesh(bx, M.black, -1.3, 0.98, sd*0.55, 0.3, 0.3, 0.03); }); }
+    wheel(0, -0.72, 0.343, 0.3, "weld", true); wheel(0, 0.72, 0.343, 0.3, "weld", true); wheel(2.75, -0.78, 0.31, 0.15, "star", false); wheel(2.75, 0.78, 0.31, 0.15, "star", false);
+    tips.push(new THREE.Vector3(0.6, 0.47, -0.62), new THREE.Vector3(0.6, 0.47, 0.62));
+    me={rr:0.343, anchor:new THREE.Vector3(-1.45, 0.75, 0), chuteLen:5.5, chuteRise:0.45, chuteR:0.85, len:4.7, tail:-1.5, nose:3.22, top:1.3, wb:2.75};
+  }
+  var chutes=[];
+  g.userData={body:body, me:me, piv:piv, wheels:wheels, tips:tips, chutes:chutes, A:[{chT:0,chC:0,chS:0,pitch:0},{chT:0,chC:0,chS:0.7,pitch:0}], pitch:0, pv:0, strip:false};
+  return g;
+}
+/* the Altered class runs the strip's street car with a spoiler bolted on when the aero is fitted */
+function saltAltered(color, aero){
+  var car=stripCar("street", color, 26.5), U=car.userData, me=U.meta, g=new THREE.Group(); car.position.x=-me.xr; g.add(car);
+  if(aero){ var wing=new THREE.Mesh(SALT.g.box, sc_mats().black); wing.scale.set(0.35,0.04,1.45); wing.position.set(me.xr-0.95, 1.32, 0); wing.rotation.z=0.18; U.bodyGroup.children[0].add(wing); }
+  g.userData={body:"altered", me:{rr:me.rr, anchor:me.anchor.clone().add(new THREE.Vector3(-me.xr,0,0)), len:4.6, tail:-2.3-me.xr, nose:2.3-me.xr, top:1.4, wb:me.xf-me.xr}, strip:true, car:car, chutes:[], A:[], tips:[]};
+  return g;
+}
+function saltChutes(car, n){
+  var U=car.userData; if(U.strip || U.chutes.length===n) return;
+  U.chutes.forEach(function(c){ U.piv.remove(c); }); U.chutes.length=0;
+  for(var i=0;i<n;i++){ var c=sc_chute(U.me, sc_mats()); c.position.copy(U.me.anchor); if(n>1) c.position.z+= (i?1:-1)*0.14; c.visible=false; U.piv.add(c); U.chutes.push(c); }
+}
+/* --- effects: salt spray off the rear tyres, a long rooster tail hanging over the course at speed, exhaust --- */
+function saltEffects(o, dt, V){
+  var U=V.userData, me=U.me, FX=SALT.fx, lite=GFX==="lite", rate=lite?0.45:(GFX==="ultra"?1.3:1), R=Math.random, i, t;
+  var v=Math.max(0,+o.v||0), slip=clamp(+o.slip||0,0,1), ph=o.phase||"stage", x=V.position.x, run=(ph==="run"||ph==="shutdown"||ph==="spin");
+  if(run && v>3){ var k=clamp(v/60,0,1.6)+slip*2.5+(ph==="spin"?2:0), nc=k*rate*55*dt, n=Math.floor(nc)+(R()<nc%1?1:0);
+    for(i=0;i<n;i++){ var s=R()<0.5?-1:1, wz=(U.strip?0.75:(me.wb>3?0.34:0.8))*s;
+      FX.emit(x-0.2-R()*0.4, 0.15+R()*0.25, wz+(R()-0.5)*0.3, v*(0.25+R()*0.3), 0.4+R()*1.8*(0.3+slip), s*(0.3+R()*1.2), 1.2+R()*1.6, 0.35, 1.6+R()*2.4+v*0.02, 0.93, 0.93, 0.9, 0.55, {drag:0.9, buoy:0.05, fin:0.06, spin:0.6}); }
+    var nr=rate*clamp((v-25)/50,0,1)*22*dt, m=Math.floor(nr)+(R()<nr%1?1:0);
+    for(i=0;i<m;i++) FX.emit(x-2-R()*3, 0.4+R()*0.8, (R()-0.5)*1.2, v*0.55, 0.2+R()*0.5, (R()-0.5)*0.8, 3+R()*3, 1.2, 5+R()*5, 0.92, 0.92, 0.9, 0.32, {drag:0.55, buoy:0.08, fin:0.15, spin:0.2}); }
+  /* exhaust: heat puffs at full load; black for a smoky diesel */
+  if(run && U.tips.length && !o.failed){ var sm=clamp(+o.smoke||0,0,1), ne=rate*(6+18*sm)*clamp(+o.throttle||0,0,1)*dt;
+    for(t=0;t<U.tips.length;t++){ U.piv.localToWorld(_sA.copy(U.tips[t])); var nn=Math.floor(ne)+(R()<ne%1?1:0);
+      for(i=0;i<nn;i++){ var cc=lerp(0.7,0.05,sm); FX.emit(_sA.x, _sA.y, _sA.z+(_sA.z>V.position.z?0.1:-0.1), v*0.8-2, 0.3, (_sA.z>V.position.z?1:-1)*0.8, 0.6+sm*1.2, 0.2, 0.9+sm*2, cc, cc, cc, 0.12+0.5*sm, {drag:1.2, buoy:0.2, fin:0.05, spin:0.5}); } } }
+  if(o.failed && v>1){ var nf=rate*30*dt, mf=Math.floor(nf)+(R()<nf%1?1:0); for(i=0;i<mf;i++) FX.emit(x+(me.nose-me.tail)*0.35+me.tail, 0.8, (R()-0.5)*0.5, v*0.7, 1+R(), (R()-0.5), 2+R()*2, 0.5, 3+R()*3, 0.22, 0.22, 0.24, 0.5, {drag:0.8, buoy:0.25, fin:0.1, spin:0.4}); }
+  FX.step(dt, SALT_WIND);
+}
+/* --- camera direction: the push, chase, the helicopter, an on-board nose cam, trackside and the traps, the chute, the stop --- */
+function saltCut(name){ if(SALT.shot!==name){ SALT.shot=name; SALT.shotT=0; SALT.cutT=0; SALT.snap=true; SALT.seq++; } }
+function saltDirect(o, dt, V){
+  var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, me=U.me, x=V.position.x, C=SALT.course, s=SALT.shot, T, sTo=function(X){ return (X-x)/Math.max(8,v); };
+  if(o.shot){ s=o.shot; if(o.fixX!=null){ SALT.fixX=+o.fixX; SALT.fixZ=o.fixZ!=null?+o.fixZ:12; } }
+  else if(SALT.skip) s="stop";
+  else if(ph==="stage") s="stage";
+  else if(ph==="push") s="push";
+  else if(ph==="run"){
+    var cycle=["chase","heli","nose","track","chase","low"];
+    if(s===null||s==="stage"||s==="push"&&SALT.shotT>1.2||s==="stop") s="chase";
+    var trap=(x<C.x0 && sTo(C.x0)<2.6 && sTo(C.x0)>0.4) ? C.x0 : (x<C.x1 && x>C.x0+50 && sTo(C.x1)<2.6 && sTo(C.x1)>0.4) ? C.x1 : null;
+    if(trap!=null && s!=="traps"){ s="traps"; SALT.fixX=trap; }
+    else if(s==="traps" && x>SALT.fixX+Math.max(60,v*1.6)) s=cycle[SALT.seq%cycle.length];
+    else if(s!=="traps" && s!=="push" && SALT.shotT>(s==="heli"?6:s==="track"?3.2:4.5)){ s=cycle[(SALT.seq+1)%cycle.length]; if(s==="track"){ SALT.fixX=x+Math.max(40,v*2.2); SALT.fixZ=(SALT.seq%2?1:-1)*(9+rng01(SALT.seq)*6); } }
+  } else if(ph==="shutdown"){ if(o.chute && s!=="chute" && s!=="stop" && SALT.prev.chute!==true) s="chute"; else if(s==="chute" && (SALT.shotT>6 || v<12)) s="stop"; else if(s!=="chute" && s!=="stop" && s!=="traps" && v<20) s="stop"; else if(s==="traps" && x>SALT.fixX+Math.max(60,v*1.6)) s="chase"; }
+  else if(ph==="spin"){ s="spin"; }
+  else { if(s!=="stop") s="stop"; }
+  saltCut(s);
+  SALT.shotT+=dt; SALT.cutT+=dt; T=SALT.shotT;
+  var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, mid=(me.tail+me.nose)/2;
+  switch(s){
+    case "stage": { var a=0.8+T*0.05; _sw.set(Math.cos(a)*9+mid, 1.6, Math.sin(a)*9); _st.set(mid, 0.6, 0); fov=42; break; }
+    case "push": rel=true; _sw.set(me.tail-3.5, 1.4, 6.8); _st.set(me.tail-1.0, 0.8, 0); fov=52; sm=3; break;
+    case "chase": rel=true; _sw.set(me.tail-5.5-v*0.025, 1.15+v*0.004, 1.9); _st.set(me.nose+5, 0.75, 0); fov=clamp(50-v*0.05,38,50); sm=2.4; SALT.shake=Math.max(SALT.shake, clamp(v/130,0,1)*0.08); break;
+    case "heli": rel=true; _sw.set(-26+T*2.0, 8, 30); _st.set(mid+4, 0.5, 0); fov=30; sm=1.5; break;
+    case "nose": rel=true; _sw.set(me.nose-1.2, top+0.18, -0.45); _st.set(me.nose+60, 0.3, -0.45); fov=62; sm=12; SALT.shake=Math.max(SALT.shake, clamp(v/120,0,1)*0.05); break;
+    case "low": rel=true; _sw.set(me.nose+2.5, 0.35, 2.2); _st.set(me.tail, 0.6, 0); fov=58; sm=6; break;
+    case "track": _sw.set(SALT.fixX, 1.4, SALT.fixZ); _st.set(x+mid+v*0.08, 0.7, 0); fov=clamp(28+Math.abs(SALT.fixX-x)*0.12,24,50); break;
+    case "traps": _sw.set(SALT.fixX+14, 1.0, -18.5); _st.set(x+mid, 0.7, 0); fov=clamp(26+Math.abs(SALT.fixX-x)*0.08,22,56); break;
+    case "chute": rel=true; _sw.set(me.tail-18, 2.6, 4.5); _st.set(me.tail-4, 0.9, 0); fov=44; sm=3; break;
+    case "spin": rel=true; _sw.set(-12, 5, 10); _st.set(0, 0.5, 0); fov=50; sm=2; break;
+    case "stop": { var dr=Math.min(4,T*0.3), a2=-0.5+T*0.04; _sw.set(x+mid+Math.cos(a2)*(12-dr), 2.2-dr*0.15, 8+Math.sin(a2)*4); _st.set(x+mid, 0.8, -1.5); fov=40; break; }
+  }
+  if(rel){ if(SALT.snap||!SALT.relOn){ _sr.copy(_sw); _srt.copy(_st); } else { var kk=1-Math.exp(-sm*dt); _sr.lerp(_sw,kk); _srt.lerp(_st,kk); }
+    _sw.copy(_sr); _st.copy(_srt); _sw.x+=ax; _st.x+=ax; SALT.relOn=true; } else SALT.relOn=false;
+  if(SALT.snap){ SALT.fov=fov; SALT.snap=false; SALT.camTgt.copy(_st); } else SALT.fov+=(fov-SALT.fov)*(1-Math.exp(-5*dt));
+  SALT.camPos.copy(_sw); if(rel) SALT.camTgt.copy(_st); else SALT.camTgt.lerp(_st, 1-Math.exp(-9*dt));
+  if(SALT.camPos.y<0.25) SALT.camPos.y=0.25;
+  SALT.shake*=Math.exp(-dt*4); var sh=SALT.shake; if(sh>0.002){ SALT.camPos.y+=(Math.random()-0.5)*sh*0.25; SALT.camPos.z+=(Math.random()-0.5)*sh*0.25; }
+  var cam=SALT.cam; cam.position.copy(SALT.camPos); cam.lookAt(SALT.camTgt); cam.fov=SALT.fov; cam.updateProjectionMatrix();
+}
+function rng01(s){ var t=Math.sin(s*91.7+1.3)*43758.5453; return t-Math.floor(t); }
+function saltComposer(){
+  if(SALT.composer===false) return null;
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=SALT.composer;
+  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.addPass(new THREE.RenderPass(SALT.scene, SALT.cam));
+      var hp=new THREE.ShaderPass(SALT_SHIMMER_SHADER); C.addPass(hp); SALT.shimmer=hp;
+      var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.22, 0.4, 0.93); C.addPass(bp); SALT.bloom=bp;
+      if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+      SALT.composer=C; SALT.cSize=""; }catch(e){ SALT.composer=false; return null; } }
+  var key=sz.x+"x"+sz.y+"@"+pr; if(SALT.cSize!==key){ if(C.setPixelRatio) C.setPixelRatio(pr); C.setSize(sz.x, sz.y); SALT.cSize=key; }
+  return C;
+}
+function saltRender(){
+  var S4=SALT.scene, cam=SALT.cam; if(!S4||!cam) return;
+  var C=(GFX!=="lite" && THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass) ? saltComposer() : null;
+  if(C) S4.fog.color.copy(SALT.horLin); else S4.fog.color.copy(SALT.horLin).convertLinearToSRGB();
+  SALT.sky.position.copy(cam.position);
+  SALT.fx.mat.uniforms.uFog.value.copy(SALT.horLin);
+  if(C && SALT.shimmer){ /* the horizon's height on screen: a point far out along the view, down on the salt */
+    _sA.set(cam.position.x, 0, cam.position.z); _sB.copy(SALT.camTgt).sub(cam.position); _sB.y=0; if(_sB.lengthSq()<1e-6) _sB.set(1,0,0); _sB.normalize();
+    _sA.addScaledVector(_sB, 20000); _sA.project(cam); var hy=clamp(_sA.y*0.5+0.5, -0.5, 1.5);
+    var U2=SALT.shimmer.uniforms; U2.uHorY.value=hy; U2.uT.value=SALT.t; U2.uAmt.value=GFX==="ultra"?1.25:1; U2.uMir.value=cam.position.y<6?(GFX==="ultra"?1:0.75):0.25; U2.uAsp.value=cam.aspect; }
+  var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=SALT.exposure;
+  var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  if(C) C.render(); else renderer.render(S4, cam);
+  SALT.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, shot:SALT.shot, parts:SALT.fx.P.length}; inf.autoReset=ar;
+  renderer.toneMappingExposure=ex;
+}
+function saltReset(){
+  if(SALT.fx) SALT.fx.clear(); SALT.shot=null; SALT.prev={}; SALT.shake=0; SALT.skip=false; SALT.runT=0; SALT.doneT=0; SALT.seq=0;
+  SALT.pushX=0; SALT.pushZ=0; SALT.pushV=0; SALT.spinA=0;
+  for(var k in SALT.cars){ var U=SALT.cars[k].userData; U.chutes.forEach(function(c){ c.visible=false; }); U.A.forEach(function(A){ A.chT=0; A.chC=0; }); if(U.strip && U.car.userData.chute) U.car.userData.chute.visible=false; }
+}
+function saltUpdate(o, dt){
+  if(!SALT.built) buildSaltScene();
+  var S4=SALT.scene; SALT.t+=dt; var i;
+  /* course layout: rebuild the traps and boards if a different course was picked */
+  if(o.course && [o.course.x0,o.course.x1,o.course.xEnd].join(",")!==SALT.courseKey){ SALT.course=o.course; saltCourseProps(null, o.course, false); }
+  var body=o.body||"streamliner", col=o.color!=null?o.color:0xd9a52b, aero=!!o.aero, key=body+":"+col+":"+(aero?1:0);
+  if(!SALT.cars[key]){ SALT.cars[key]=body==="altered"?saltAltered(col, aero):saltCar(body, col, aero); S4.add(SALT.cars[key]); }
+  for(var k2 in SALT.cars) SALT.cars[k2].visible=(k2===key);
+  var V=SALT.cars[key], U=V.userData, me=U.me; SALT.cur=V;
+  saltChutes(V, o.chutes==null?1:o.chutes);
+  var ph=o.phase||"stage", x=+o.x||0, v=Math.max(0,+o.v||0);
+  if(ph==="stage" && SALT.prev.phase && SALT.prev.phase!=="stage") saltReset();
+  if(ph==="run"||ph==="shutdown") SALT.runT+=dt; if(ph==="done") SALT.doneT+=dt;
+  V.position.set(x, 0, 0);
+  /* spin: the car swaps ends and slides, kicking up salt */
+  if(ph==="spin"){ SALT.spinA=(SALT.spinA||0)+dt*clamp(v/12,0.2,3.5); V.rotation.y=SALT.spinA; V.position.z=Math.sin(SALT.spinA*0.5)*2; } else if(ph!=="done"){ V.rotation.y=0; V.position.z=0; SALT.spinA=0; }
+  /* pitch: squat under power, nose-down under the chute, a little float at speed */
+  var acc=+o.acc||0, tgt=clamp(acc/40,-0.25,0.3)*0.02+clamp(+o.lightness||0,0,1)*0.006;
+  if(U.strip){ stripCarAnim(U.car, {v:v, acc:acc, spin:(+o.slip||0)>0.2, chute:!!o.chute, brake:ph==="shutdown"&&v<60, night:false}, dt, true); }
+  else {
+    var n=Math.min(8, Math.ceil(dt/0.012)), h=n?dt/n:0; for(i=0;i<n;i++){ U.pv+=(60*(tgt-U.pitch)-2*0.5*7.7*U.pv)*h; U.pitch+=U.pv*h; }
+    U.piv.position.set(0, Math.sin(SALT.t*43)*0.0015*Math.min(1,v/40), 0); U.piv.rotation.z=U.pitch;
+    var wr=v*(1+clamp(+o.slip||0,0,1)*1.2);
+    for(i=0;i<U.wheels.length;i++){ var W=U.wheels[i], w=(W.rear?wr:v)/W.r; W.s.rotation.y=(W.s.rotation.y-w*dt)%TAU; }
+    for(i=0;i<U.chutes.length;i++){ var ch=U.chutes[i], A=U.A[i], on=!!o.chute && !(o.chuteBlown && SALT.prev.blownT>0.8);
+      if(on && !ch.visible){ ch.visible=true; A.chT=0; A.chC=0; } else if(!on && ch.visible) ch.visible=false;
+      if(ch.visible){ A.pitch=U.pitch; sc_chuteAnim(ch, A, me, v, dt); } }
+  }
+  if(o.chuteBlown) SALT.prev.blownT=(SALT.prev.blownT||0)+dt;
+  V.updateMatrixWorld(true);
+  /* push truck: nose on the car's tail until the car fires and pulls away, then it peels off and stops */
+  var PT=SALT.push, pu=PT.userData;
+  if(ph==="stage"||ph==="push"){ SALT.pushX=x+me.tail-pu.front-0.05; SALT.pushV=v; SALT.pushZ=0; }
+  else { SALT.pushV=Math.max(0, SALT.pushV-dt*3.2); SALT.pushX+=SALT.pushV*dt; SALT.pushZ=Math.max(-7, SALT.pushZ-dt*1.4*Math.min(1,SALT.pushV/4+0.2)); }
+  PT.position.set(SALT.pushX, 0, SALT.pushZ); PT.rotation.y=Math.min(0.35, -SALT.pushZ*0.06)*(SALT.pushV>0.3?1:0);
+  for(i=0;i<pu.wheels.length;i++) pu.wheels[i].rotation.y=(pu.wheels[i].rotation.y-SALT.pushV/0.38*dt)%TAU;
+  PT.visible=SALT.pushX>x-400;
+  saltEffects(o, dt, V);
+  /* flags in the wind */
+  SALT.flags.forEach(function(f){ var p=f.m.geometry.attributes.position, b=f.base; for(var j=0;j<p.count;j++){ var fx=b[j*3]; p.setZ(j, Math.sin(fx*2.6-SALT.t*6+f.ph)*0.13*fx/2.0); } p.needsUpdate=true; });
+  saltDirect(o, dt, V);
+  /* the ground follows the camera; the sun and its shadow box ride with the car */
+  SALT.ground.position.set(Math.round(SALT.camPos.x/200)*200, 0, Math.round(SALT.camPos.z/200)*200);
+  var c=_sC.set(x+(me.tail+me.nose)/2, 0, 0);
+  SALT.sun.position.copy(c).addScaledVector(SALT.sunDir, 150); SALT.sun.target.position.copy(c); SALT.sun.target.updateMatrixWorld();
+  SALT.prev.phase=ph; SALT.prev.chute=!!o.chute;
+}
+
 const ENGINE_VIS = {
 
   init: function(canvas){
@@ -13105,6 +13825,7 @@ const ENGINE_VIS = {
     camera.updateProjectionMatrix();
     if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); }
     if(PULL.cam){ PULL.cam.aspect=w/h; PULL.cam.updateProjectionMatrix(); }
+    if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); }
     frameEngine();
   },
   setQuality: function(q){
@@ -13158,6 +13879,18 @@ const ENGINE_VIS = {
     return PULL.stats||null;
   },
   pullSkip: function(){ if(PULL.on) PULL.skip=true; },   /* cut straight to the stop framing (sled + board) */
+  /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
+     failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
+  setSalt: function(o){
+    if(!renderer) return;
+    if(!o || o.on===false){ if(SALT.on){ SALT.on=false; saltReset(); } return; }
+    var now=performance.now(); if(!SALT.on){ SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
+    if(SALT.tier!==GFX && SALT.sun){ SALT.tier=GFX; SALT.sun.castShadow=GFX!=="lite"; if(SALT.sun.shadow.map){ SALT.sun.shadow.map.dispose(); SALT.sun.shadow.map=null; } }
+    var rdt=o.dt!=null ? +o.dt : (now-SALT.lastT)/1000; SALT.lastT=now; saltUpdate(o, clamp(rdt||0, 0, 0.1));
+    return SALT.stats||null;
+  },
+  saltSkip: function(){ if(SALT.on) SALT.skip=true; },   /* cut straight to the stopped car */
+  saltState: function(){ return {on:SALT.on, built:SALT.built, shot:SALT.shot, cam:SALT.cam?SALT.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null, cars:Object.keys(SALT.cars), parts:SALT.fx?SALT.fx.P.length:0, fx:SALT.fx?SALT.fx.mesh:null}; },   /* harness */
   setXray: function(on){
     XRAY=!!on;
     if(!engineRoot) return;
@@ -13378,7 +14111,7 @@ const CATS=[
   {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
   {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","sport","gt","super","hyper"],rep:40},
   {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
-  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","endur","attack"],rep:120},
+  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","endur","attack","lsr"],rep:120},
   {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod"],rep:700,needs:"race"}
 ];
 const CLIENTS=["Kestrel Automotive","Bison Truck Co.","Aurora Compact","Northwind Racing","Meridian Motors","Tamarack Vans","Saskatoon Speed Shop","Halcyon GT","Coulee Ag Equipment","Prairie Fire Motorsport","Redwater Fleet","Glacier Coachworks"];
@@ -13422,7 +14155,9 @@ const SEGMENTS=[
   {id:"dtractor",name:"Four-wheel-drive farm tractor",tier:2,units:[3,8],price:11800,req:{tq:[800,1200],tqrpm:1900,life:3000,rel:88,fuel:"diesel"}},
   {id:"minegen",name:"Mine standby genset · prime power",tier:3,units:[2,6],price:21000,req:{tq:[1200,1800],tqrpm:1900,life:4500,rel:92,fuel:"diesel"}},
   {id:"class8",name:"Class-8 highway truck",tier:3,units:[4,10],price:24000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel"}},
-  {id:"puller",name:"Pulling truck · sled-ready",tier:3,units:[1,3],price:38000,req:{hp:[700,1200],passes:150,rel:55,fuel:"diesel"}}
+  {id:"puller",name:"Pulling truck · sled-ready",tier:3,units:[1,3],price:38000,req:{hp:[700,1200],passes:150,rel:55,fuel:"diesel"}},
+  /* land speed: their car on the salt, your engine — they want a mile speed in it (estimated with a steady driver, long course) */
+  {id:"lsr",name:"Land-speed team · lakester",tier:3,units:[1,2],price:44000,req:{hp:[450,800],rel:55,lsr:{body:"lakester"},mph:[215,250]}}
 ];
 /* site briefs: some clients say where the engine will live and re-run your certified engine in that air before they pay.
    [name, ambient °C, altitude m, premium]. Cold air packs the cylinder (more load, boost overshoots), heat eats knock margin,
@@ -13528,7 +14263,7 @@ const CELL_KEYS=["ambientC","altitudeM","coolantC","oilC"];
 function stdCell(){const d=SIM.DEFAULT_ENV,o={};CELL_KEYS.forEach(k=>o[k]=d[k]);return o;}
 function careerCell(){const c=C();if(!c.cell||typeof c.cell!=="object")c.cell=stdCell();return c.cell;}
 function climateCtl(){return career()&&has("dyno3");}
-function trackEvt(t){return t==="drag"||t==="pull_sled";}   // out on the strip or the dirt: the cell's climate control stays home
+function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt";}   // out on the strip or the dirt: the cell's climate control stays home
 function simEnv(extra){return Object.assign({},S.env,career()?(climateCtl()&&!trackEvt(S.env.testType)?careerCell():stdCell()):{},extra||{});}
 function stdEnv(extra){return Object.assign({},S.env,career()?stdCell():{},extra||{});}
 function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===+d[k]);}
@@ -13544,9 +14279,9 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.OPT.fuel[S.cfg.fue
   // WOT burn: ~0.32 L/hp/h on gasoline, more on low-energy fuels (per-litre energy vs pump gas)
   const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv));const t=S.env.testType;   // diesel ~0.23 L/hp/h at full load
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
-  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="overrev"?0.008:0.02;
+  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="salt"?0.03:t==="overrev"?0.008:0.02;
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev())return 0;const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev())return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
 
 /* ===================== live compute ===================== */
@@ -13958,11 +14693,12 @@ function renderEnv(){
     <p class="hint">Rear-drive on a prepped strip. Gears are spaced evenly between 1st and top. Wheel force is the engine's torque × gear × final ÷ tyre radius; grip is μ × rear weight, with weight transfer helping the launch. Tyres, body and launch rpm are what a ${career()?"racer":"tuner"} actually changes between rounds. Body sets aero drag and how hard the chassis can plant the tyre — bars and a four-link put the power down; a stock shell cannot.</p>`;}
   if(t==="drag"&&n2oKit())h+=n2oEnvHtml();
   if(t==="pull_sled")h+=pullEnvHtml(sl);
+  if(t==="salt")h+=saltEnvHtml(sl);
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;
 }
 function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();}
-function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else drawChart(quickForChart(),null);}
+function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else drawChart(quickForChart(),null);}
 $("envBox").addEventListener("input",e=>{const r=e.target;if(!r.dataset.e||r.type!=="range")return;applyEnv(r.dataset.e,parseFloat(r.value));});
 $("envBox").addEventListener("change",e=>{if(e.target.type==="range")commitEnv();});
 (()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
@@ -14034,11 +14770,11 @@ function renderTest(){
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.env.testType===S.env.testType?S.last:null;
-  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else drawChart(last?last.res:null,null);
+  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else drawChart(last?last.res:null,null);
   $("runTest").disabled=testing;const cost=testCost();
-  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
+  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
-  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
+  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="salt"?saltHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
     : `<b>${dc.n}</b> · no limits in the test cell. Figures update as you change the build; run a test to lock a result and pin it as a baseline.`;
   if(S.env.testType==="drag")rnRunBtn();
@@ -14655,6 +15391,227 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>`;}
 
+/* ---- Bonneville: salt-flat land-speed runs. A push off the line, a run-up, the timed mile, the chute.
+   A class record (body × displacement letter × fuel, B for blown) stands until a run beats it AND the backup run
+   at the same meet does too: the record is the average of the two. Career meet = the week; sandbox meet = until "New meet". ---- */
+let SR=null;
+const SALT_FEE={short:350,long:600},SALT_PURSE={altered:1500,roadster:2000,lakester:3500,streamliner:6000},SALT_REP={altered:6,roadster:8,lakester:12,streamliner:18};
+const SALT_COLORS={altered:0x2c6b3a,roadster:0xb7261d,lakester:0xd9a52b,streamliner:0x1d4787};
+const saltEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function saltBodyLocked(k){const b=SIM.LSR_BODIES[k];return b&&career()&&!dev()&&C().rep<b.rep?b.rep:0;}
+/* the run setup lives on S.env beside the strip's and the sled's; anything out of range is pulled back in */
+function saltEnvFix(){const e=S.env,B=SIM.LSR_BODIES;if(!B[e.saltBody])e.saltBody="altered";const k=e.saltBody;
+  if(!SIM.LSR_COURSES[e.saltCourse])e.saltCourse=B[k].course;
+  if(!SIM.LSR_CHUTES[e.saltChute])e.saltChute="single";
+  if(e.saltCool!=="ice"&&e.saltCool!=="radiator")e.saltCool=k==="streamliner"?"ice":"radiator";
+  if(e.saltShift!=="manual")e.saltShift="auto";if(e.saltDrive!=="auto")e.saltDrive="you";
+  e.saltAero=e.saltAero==="on"?"on":"off";
+  e.saltBallast=Math.max(0,Math.min(300,isFinite(+e.saltBallast)&&e.saltBallast!==""&&e.saltBallast!=null?Math.round(+e.saltBallast/10)*10:0));
+  e.saltTop=isFinite(+e.saltTop)&&+e.saltTop>0?Math.max(100,Math.min(520,Math.round(+e.saltTop/5)*5)):0;
+  return k;}
+const saltCache=new Map();
+/* the engine at Bonneville's 1,290 m and 32 °C — simulate() re-run in that air, cached per build */
+function saltRes(){const h=cfgHash(S.cfg);let r=saltCache.get(h);if(!r){if(saltCache.size>24)saltCache.clear();r=SIM.lsrPrep(S.cfg,stdEnv());saltCache.set(h,r);}return r;}
+function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCourse,redline:S.cfg.redline,aero:e.saltAero==="on",ballast:+e.saltBallast,cooling:e.saltCool,chute:e.saltChute,shift:e.saltDrive==="auto"?"auto":e.saltShift,idle:SIM.isDiesel(S.cfg)?720:Math.max(800,S.cfg.cam>70?1100:850)};
+  if(!e.saltTop){e.saltTop=SIM.lsrGearing(res,v);}v.topMph=+e.saltTop;return v;}
+function saltCls(k){const r=quick||saltRes();return SIM.lsrClass(S.cfg,r,k||S.env.saltBody);}
+function saltBook(){const R=recs();if(!R.lsr||typeof R.lsr!=="object")R.lsr={};const L=R.lsr;if(!L.rec||typeof L.rec!=="object")L.rec={};if(!L.pb||typeof L.pb!=="object")L.pb={};return L;}
+/* the standing record for a class: yours if you set it, otherwise the seeded book */
+function saltRecord(key){const L=saltBook(),mine=L.rec[key],seed=SIM.lsrRecord(key);return mine&&(!seed||mine.mph>seed.mph)?Object.assign({mine:true,holder:mine.n},mine):seed;}
+function saltMeet(){const L=saltBook(),id=career()?"w"+C().week:"s"+(S.saltMeetId||(S.saltMeetId=1));if(!L.meet||L.meet.id!==id)L.meet={id,runs:0,best:{},imp:null};return L.meet;}
+function saltFee(){return career()&&!dev()?SALT_FEE[S.env.saltCourse==="long"?"long":"short"]:0;}
+function saltBtnText(t,sub){const b=$("saltBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+function saltBreak(kind){SR.failed=true;SR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":kind==="steam"?"steam":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function saltStart(){
+  $("app").classList.add("onstrip");
+  const k=saltEnvFix(),env=stdEnv(),base=saltRes();
+  const res=Object.assign({},base);const wi=wearInfo(res);
+  if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=base.torque.map(t=>t*f);res.peakTq=base.peakTq*f;res.peakHp=base.peakHp*f;res.wornBy=Math.round((1-f)*100);}
+  const veh=saltVeh(k),hk=hKey(cfgHash(S.cfg));veh.seed=Math.floor(Math.random()*1e9);if(wi&&wi.w>=1)veh.wornAt=8+Math.random()*30;
+  const p=SIM.lsrRun(res,veh),cls=SIM.lsrClass(S.cfg,res,k),meet=saltMeet();
+  if(meet.imp&&(meet.imp.key!==cls.key||meet.imp.hk!==hk)){toast("Left impound — that record attempt is void");meet.imp=null;}
+  const backup=!!meet.imp;
+  SR={p,res,env,veh,k,hk,cls,rec:saltRecord(cls.key),backup,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,warp:1,auto:S.env.saltDrive==="auto",thrAI:1,color:SALT_COLORS[k]};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("saltCtl").style.display="";$("saltBtn").dataset.k="";$("saltBtn").disabled=false;
+  $("saltShiftBtn").style.display=!SR.auto&&veh.shift==="manual"?"":"none";saltWarpUi();
+  saltBtnText(SR.auto?"START THE PUSH":"HOLD TO RUN",SR.auto?"the driver takes it from here":"push off · hold for throttle, let go to feather");
+  $("testProg").classList.remove("done");sfx("start");saltHud(p.st);
+  requestAnimationFrame(()=>{const pn=$("panel"),r=$("saltCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  const course={x0:p.x0,x1:p.x1,k0:p.k0,k1:p.k1,xEnd:p.xEnd};
+  const step=()=>{if(!SR||SR.finished)return;const now=performance.now();const rdt=Math.min(0.25,(now-SR.last)/1000);SR.last=now;const st=p.st;
+    const wp=st.phase==="run"||st.phase==="shutdown"?SR.warp:1;let left=rdt*wp;
+    while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,saltThr(st));}
+    if(st.broke&&!SR.failed)saltBreak(st.broke);
+    if(st.phase==="spin"&&!SR.spun){SR.spun=true;buzz([60,30,60]);sfx("fail");}
+    if(st.tOut!=null&&!SR.miled){SR.miled=true;buzz([20,30,20]);}
+    if(st.done&&SR.doneAt==null){SR.doneAt=now;buzz([40]);}
+    if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:true,phase:st.phase,x:st.x,v:st.v,acc:st.acc,slip:Math.max(0,st.slip),rpm:SR.failed?run.rpm:st.rpm,throttle:st.foot,body:k,aero:veh.aero,color:SR.color,
+      chute:st.chuteOut,chutes:veh.chute==="dual"?2:veh.chute==="single"?1:0,chuteBlown:st.chuteBlown,failed:SR.failed,smoke:SR.res.diesel?Math.min(1,(SR.res.smoke||0)/60)*st.foot:0,course,lightness:1-Math.min(1,st.light),dt:rdt*wp});
+    saltHud(st);
+    run.on=true;
+    if(SR.failed)run.rpm=Math.max(0,run.rpm-380);else if(st.done)run.rpm+=(veh.idle-run.rpm)*Math.min(1,rdt*3);else run.rpm=st.rpm;
+    run.load=SR.failed||st.done?0:(st.phase==="run"?st.foot:0.1);
+    $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*st.x/p.xEnd)+"%";
+    if(!st.done||(now-SR.doneAt<2200&&!SR.skip))requestAnimationFrame(step);else saltFinish();};
+  requestAnimationFrame(step);
+}
+/* the driver's foot: yours (the button), or the auto driver feathering wheelspin and a light nose every 20 ms */
+function saltThr(st){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="stage")return SR.go?1:0;if(st.phase!=="run")return 1;
+  const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;SR.thrAI=bad?Math.max(0.04,SR.thrAI*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,SR.thrAI+0.03);return SR.thrAI;}
+function saltWarpUi(){document.querySelectorAll("#saltWarp [data-warp]").forEach(b=>b.classList.toggle("on",+b.dataset.warp===(SR?SR.warp:1)));}
+/* the live card: speed first, then the course with the timed mile on it, then what the driver is managing */
+function saltHud(st){if(!SR)return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
+  const stat=SR.failed?"broke":st.phase==="spin"?"broke":st.tOut!=null&&!SR.failed?"full":"";
+  const say=SR.failed?"BROKE":st.phase==="spin"?"SPUN":st.phase==="stage"?"on the line":st.phase==="push"?"push truck":st.phase==="run"?(st.x<p.x0?`${((p.x0-st.x)/SIM.LSR_MILE).toFixed(2)} mi to the clocks`:"IN THE MILE"):st.phase==="shutdown"?(st.chuteOut?(st.chuteBlown?"chute tore off":"chute out"):"shut off"):"stopped";
+  const split=st.tIn!=null&&st.tOut==null&&st.t>st.tIn?`${(SIM.LSR_MILE*Math.min(1,(st.x-p.x0)/SIM.LSR_MILE)/Math.max(0.01,st.t-st.tIn)*2.23694).toFixed(1)} avg`:st.mileMph!=null?`<b>${st.mileMph.toFixed(3)}</b>`:"—";
+  const rec=SR.rec,need=SR.backup?"backup run":"record";
+  const lt=Math.round(st.light*100),sp=Math.round(Math.max(0,st.slip)*100),loose=Math.min(100,Math.round(st.loose*100));
+  $("saltLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${mph.toFixed(1)}<i>mph</i></b><span>${say}<br>${st.phase==="stage"?SR.cls.key:mi.toFixed(2)+" mi · gear "+(st.gear+1)}</span></div>
+    <div class="ph-bar"><i class="zone" style="left:${pc(p.x0)}%;width:${pc(p.x1)-pc(p.x0)}%"></i><i class="fill" style="width:${pc(st.x)}%"></i>${[1,2,3,4,5,6].filter(m=>m*SIM.LSR_MILE<xe).map(m=>`<i class="mk" style="left:${pc(m*SIM.LSR_MILE)}%"></i>`).join("")}</div>
+    <div class="ph-lbl"><span>start</span><span>mile ${split}</span><span>${need} <b>${rec?rec.mph.toFixed(3):"—"}</b></span></div></div>
+    <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>Wheelspin <b>${sp}%</b></span><span>${loose>30?`<b style="color:var(--crit)">LOOSE ${loose}%</b>`:lt<55&&st.phase==="run"?`<b style="color:var(--warn)">FRONT LIGHT ${lt}%</b>`:`front ${lt}%`}</span></div>
+    <div class="ph-bar"><i class="sw" style="left:0;width:13%"></i><i class="nd ${sp>22?"hot":sp<=13?"ok":""}" style="left:${Math.min(99,sp*2)}%"></i></div></div>
+    <div class="ph-row"><div class="peak"><b>${Math.round(st.rpm/10)*10}</b><span>rpm</span></div><div class="peak"><b style="color:${st.coolC>118?"var(--crit)":st.coolC>108?"var(--warn)":""}">${Math.round(st.coolC)}<i>°C</i></b><span>water</span></div><div class="peak"><b style="color:${st.egt>950?"var(--crit)":st.egt>880?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>EGT</span></div></div>`;
+  if(SR.failed)saltBtnText(SR.failKind==="steam"?"BLEW THE HEAD GASKET":SR.failKind==="turbo"?"TURBO GONE":SR.failKind==="piston"?"MELTED A PISTON":"BROKE","tap to skip");
+  else if(st.phase==="spin")saltBtnText("SPUN","tap to skip");
+  else if(st.done)saltBtnText(st.mileMph!=null?`${st.mileMph.toFixed(3)} MPH`:"NO TIME","tap to skip");
+  else if(SR.auto)saltBtnText(st.phase==="stage"?"START THE PUSH":"AUTO DRIVER",st.phase==="stage"?"the driver takes it from here":"tap to skip to the result");
+  else if(st.phase==="stage")saltBtnText("HOLD TO RUN","push off · hold for throttle, let go to feather");
+  else if(st.phase==="push")saltBtnText("PUSHING","hold — the clutch goes out at 27 mph");
+  else if(st.phase==="shutdown")saltBtnText(st.chuteOut?"CHUTE OUT":"SHUT OFF",st.chuteOut?"tap to skip":"tap for the chute");
+  else if(SR.down)saltBtnText(st.loose>0.3?"LOOSE — LIFT":st.light<0.5?"FRONT LIGHT — LIFT":sp>15?"SPINNING — FEATHER":"FLAT OUT",SR.veh.shift==="manual"?"SHIFT with ↑ or G":"let go to feather");
+  else saltBtnText("FEATHERED","hold to get back on it");}
+function saltPress(){if(!SR||SR.finished)return;const st=SR.p.st;if(st.done||SR.failed||st.phase==="spin"){saltSkip();return;}
+  if(SR.auto){if(st.phase==="stage"){SR.go=true;buzz([20]);}else saltSkip();return;}
+  if(st.phase==="shutdown"){if(!st.chuteOut)SR.p.chute();else saltSkip();return;}
+  SR.down=true;if(st.phase==="stage")buzz([20]);}
+function saltRelease(){if(!SR)return;SR.down=false;}
+function saltShift(){if(!SR||SR.finished||!SR.p)return;SR.p.shift();buzz([8]);}
+/* skip: the rest of the run is simulated at once (same seed, same driver's foot) */
+function saltSkip(){if(!SR||SR.finished)return;const p=SR.p,st=p.st;if(st.phase==="stage"&&!SR.auto)return;
+  if(!st.done){p.autoShift();let thr=1,n=0;while(!st.done&&n++<20000){if(st.phase==="run"){const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;thr=bad?Math.max(0.04,thr*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,thr+0.03);}else thr=1;p.step(0.02,thr);}
+    if(st.broke&&!SR.failed)saltBreak(st.broke);}
+  if(ENGINE_VIS.saltSkip)ENGINE_VIS.saltSkip();SR.skip=true;if(SR.doneAt==null)SR.doneAt=performance.now()-2000;}
+(()=>{const b=$("saltBtn");
+  b.addEventListener("pointerdown",e=>{e.preventDefault();SR&&(SR.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}saltPress();});
+  b.addEventListener("pointerup",()=>{SR&&(SR.lastPtr=performance.now());saltRelease();});
+  b.addEventListener("pointercancel",()=>{SR&&(SR.lastPtr=performance.now());saltRelease();});
+  b.addEventListener("contextmenu",e=>e.preventDefault());
+  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();saltPress();}});
+  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();saltRelease();}});
+  b.addEventListener("click",()=>{if(!SR||!SR.p||performance.now()-(SR.lastPtr||0)<800)return;saltPress();setTimeout(saltRelease,60);});
+  $("saltShiftBtn").addEventListener("pointerdown",e=>{e.preventDefault();saltShift();});
+  $("saltWarp").addEventListener("click",e=>{const w=e.target.closest("[data-warp]");if(!w||!SR)return;SR.warp=+w.dataset.warp;saltWarpUi();buzz(6);});
+  document.addEventListener("keydown",e=>{if(!SR||SR.finished||e.repeat||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;if(e.key==="ArrowUp"||e.key.toLowerCase()==="g"){e.preventDefault();saltShift();}});})();
+function saltFinish(){
+  if(!SR||SR.finished)return;SR.finished=true;const {p,res,env,k,cls,hk}=SR;const r=p.result();const failed=SR.failed,B=SIM.LSR_BODIES[k];
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});$("app").classList.remove("onstrip");}},2200);
+  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("saltCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const L=saltBook(),meet=saltMeet(),rec=saltRecord(cls.key),dq=r.noChuteFast;
+  const valid=r.mileMph!=null&&!dq&&!(r.brokeX!=null&&r.brokeX<r.x1);   // broke before the last light: no time
+  r.cls=cls;r.rec=rec?{mph:rec.mph,holder:rec.holder,year:rec.year,mine:!!rec.mine}:null;r.clsName=B.n;r.courseName=SIM.LSR_COURSES[r.course].n;r.dq=dq;r.valid=valid;r.backup=SR.backup;
+  meet.runs++;if(valid&&(!meet.best[cls.key]||r.mileMph>meet.best[cls.key]))meet.best[cls.key]=r.mileMph;r.meetBest=meet.best[cls.key]||null;r.meetRuns=meet.runs;
+  // the record book: a qualifying run over the record goes to impound; the backup run decides it
+  let outcome="run";
+  if(SR.backup&&meet.imp){const a=meet.imp.mph;if(valid){const avg=(a+r.mileMph)/2;r.avg=+avg.toFixed(3);r.firstMph=a;
+      if(rec&&avg>rec.mph){outcome="record";L.rec[cls.key]=Object.assign({mph:+avg.toFixed(3),runs:[a,r.mileMph],was:rec.mph,wasHolder:rec.holder},recTag());}
+      else outcome="backupslow";}
+    else outcome="backupfail";
+    meet.imp=null;}
+  else if(valid&&rec&&r.mileMph>rec.mph){outcome="impound";meet.imp={key:cls.key,hk,mph:r.mileMph};}
+  r.outcome=outcome;
+  // personal best for the class
+  const pb=L.pb[cls.key];if(valid&&(!pb||r.mileMph>pb.mph)){L.pb[cls.key]=Object.assign({mph:r.mileMph,km:r.kmMph,peak:r.peakMph},recTag());r.pb=pb?{was:pb.mph}:{first:true};}
+  if(failed){r.broke=r.broke||SR.failKind;r.failKind=r.failKind||SR.failKind;}
+  res.salt=r;res.saltFailed=failed;res.saltFailKind=failed?SR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  const mphTxt=r.mileMph!=null?r.mileMph.toFixed(3)+" mph":"no time";
+  if(career()){addWear(1+Math.min(1.5,r.time/60));let cash=0,rep=0;
+    if(failed){C().cert=null;rep-=2;logEvent(`Salt: ${cls.key} — ${r.broke==="steam"?"cooked it":r.broke==="turbo"?"turbo let go":"broke"} at ${(r.trace.length?(r.trace[r.trace.length-1].x/SIM.LSR_MILE).toFixed(1):"0")} mi`,"bad");}
+    if(r.stopWhy==="spun"){cash-=800;rep-=1;logEvent(`Salt: ${cls.key} — spun at ${Math.round(r.peakMph)} mph, $800 in body repairs`,"bad");}
+    if(r.offEnd||r.chute.blown){cash-=500;}
+    if(outcome==="record"){const club=r.avg>=200&&!C().club200;cash+=Math.round(SALT_PURSE[k]*(1+r.avg/300)/10)*10;rep+=SALT_REP[k]+(club?15:0);if(club)C().club200=C().week;r.purse=cash;r.club=club;
+      logEvent(`RECORD · ${cls.key} at ${r.avg.toFixed(3)} mph (was ${r.rec.mph.toFixed(3)})${club?" — into the 200 MPH Club":""}`,"good");}
+    else if(outcome==="impound")logEvent(`Salt: ${cls.key} — ${mphTxt}, over the record. Impounded for a backup run`,"good");
+    else if(!failed&&r.stopWhy!=="spun")logEvent(`Salt: ${cls.key} — ${mphTxt}${r.pb&&!r.pb.first?" (class best)":""}`,"");
+    if(r.pb&&!r.pb.first&&outcome!=="record")rep+=1;
+    C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;hud();checkGoals();}
+  toast(outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)} MPH`:outcome==="impound"?`${mphTxt} · OVER THE RECORD — IMPOUND`:failed?"BROKE ON THE SALT":r.stopWhy==="spun"?"SPUN ON THE SALT":dq?`${mphTxt} · NOT ACCEPTED — NO CHUTE`:`${mphTxt}`);
+  SR.p=null;save();recompute();renderTest();
+  revealVerdict();
+}
+function saltHint(){const fee=SALT_FEE;return career()?`<b>Speed trials</b> · $${fee.short} entry on the short course, $${fee.long} on the long. Needs a certified engine. ${SIM.LSR_BODIES.lakester.n} opens at ${SIM.LSR_BODIES.lakester.rep} rep, ${SIM.LSR_BODIES.streamliner.n} at ${SIM.LSR_BODIES.streamliner.rep}. Beat a class record and back it up on your next run the same week — the record is the average of the two. Records pay contingency money and reputation; a long run is real wear.`
+  :`<b>Salt</b> · hold the button for the push, then for throttle — let go to feather the wheelspin. Salt grips about half as well as a prepped strip. The clocks time the mile ${S.env.saltCourse==="long"?"three":"one"} mile${S.env.saltCourse==="long"?"s":""} out; the chute comes out after it.`;}
+function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=SIM.LSR_BODIES[k],cls=saltCls(k),rec=saltRecord(cls.key),L=saltBook(),pb=L.pb[cls.key],meet=saltMeet(),res=saltRes(),cell=quick,lk=saltBodyLocked(k);
+  const loss=cell&&cell.peakHp>0?Math.round((1-res.peakHp/cell.peakHp)*100):0;
+  let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+saltEsc(rec.holder||""):saltEsc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
+  h+=`<p class="hint">At Bonneville — ${SIM.SALT_ENV.altitudeM.toLocaleString("en-CA")} m and ${SIM.SALT_ENV.ambientC} °C — this engine makes <b>${Math.round(res.peakHp)} hp</b>${loss>0?`, ${loss}% down on the cell`:""}${cls.blown?" (boost makes up most of the thin air)":" (no boost to make up the thin air)"}.</p>`;
+  h+=`<div class="lbl"><span>Body</span></div><div class="seg wide">${Object.entries(SIM.LSR_BODIES).map(([id,b])=>{const l=saltBodyLocked(id);return `<button data-sk="saltBody" data-sv="${id}" class="${k===id?"on":""}${l?" lock":""}">${b.n}<small>${l?l+" rep":b.d}</small></button>`;}).join("")}</div>`;
+  h+=`<div class="lbl"><span>Course</span></div><div class="seg">${Object.entries(SIM.LSR_COURSES).map(([id,c])=>`<button data-sk="saltCourse" data-sv="${id}" class="${e.saltCourse===id?"on":""}">${c.n}<small>${c.d}${career()?" · $"+SALT_FEE[id]:""}</small></button>`).join("")}</div>`;
+  h+=`<div class="envgrid">${sl("saltTop","Top gear",100,520,5," mph",e.saltTop||saltVeh(k).topMph)}${sl("saltBallast","Rear ballast",0,300,10," kg",e.saltBallast)}</div><div class="row" style="margin:-2px 0 8px"><button class="chip" data-saltgear>Suggest gearing</button></div>`;
+  h+=`<div class="lbl"><span>Aero</span></div><div class="seg">${[["off","Clean","least drag"],["on",B.aero.n,"holds the nose down · more drag"]].map(([id,n,d])=>`<button data-sk="saltAero" data-sv="${id}" class="${e.saltAero===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Cooling</span></div><div class="seg">${[["radiator","Radiator",B.radDrag?"costs drag in this body":"sheds heat at speed"],["ice","Ice tank","sealed nose · soaks a run's heat"]].map(([id,n,d])=>`<button data-sk="saltCool" data-sv="${id}" class="${e.saltCool===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Parachute</span></div><div class="seg">${Object.entries(SIM.LSR_CHUTES).map(([id,c])=>`<button data-sk="saltChute" data-sv="${id}" class="${e.saltChute===id?"on":""}">${c.n}<small>${id==="none"?"tech says 175 mph max":"rated "+Math.round(c.rated*2.23694)+" mph"}</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold to run, let go to feather"],["auto","Auto","a steady hand · watch the run"]].map(([id,n,d])=>`<button data-sk="saltDrive" data-sv="${id}" class="${e.saltDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  if(e.saltDrive!=="auto")h+=`<div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts at the power peak"],["manual","Manual","SHIFT, ↑ or G — four gears"]].map(([id,n,d])=>`<button data-sk="saltShift" data-sv="${id}" class="${e.saltShift===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=`<p class="hint">${B.n}: ${B.d}. Car ${Math.round(B.mass+res.kg)} kg with this engine · CdA ${(B.cdA+(e.saltAero==="on"?B.aero.cd:0)+(e.saltCool==="ice"?0:B.radDrag)).toFixed(2)} m². Top gear is the road speed at the redline in fourth. Tall gearing is free speed only if the engine can pull it — too tall and it runs out of power below the peak; too short and it sits on the limiter. Lift at speed unloads the front: past half its weight the car wanders. Ballast plants the rear tyres but has to be pushed through the air like everything else.${lk?` <b>Opens at ${lk} rep.</b>`:""}${career()?"":` <button class="chip" data-saltmeet style="margin-left:4px">New meet</button>`}</p>`;
+  return h;}
+$("envBox").addEventListener("click",e=>{const g=e.target.closest("[data-saltgear]");if(g){const k=saltEnvFix();S.env.saltTop=0;const v=saltVeh(k);S.env.saltTop=SIM.lsrGearing(saltRes(),v);renderEnv();save();toast(`Gearing set: ${S.env.saltTop} mph at redline in top`);return;}
+  if(e.target.closest("[data-saltmeet]")){S.saltMeetId=(S.saltMeetId||1)+1;renderEnv();save();toast("New meet — impound cleared");return;}
+  const b=e.target.closest("[data-sk]");if(!b)return;const k=b.dataset.sk,v=b.dataset.sv;
+  if(k==="saltBody"){const l=saltBodyLocked(v);if(l){toast(`${SIM.LSR_BODIES[v].n} opens at ${l} rep`);return;}if(v!==S.env.saltBody){S.env.saltCourse=SIM.LSR_BODIES[v].course;S.env.saltCool=v==="streamliner"?"ice":"radiator";S.env.saltChute=v==="streamliner"||v==="lakester"?"dual":"single";S.env.saltTop=0;}}
+  S.env[k]=v;saltEnvFix();renderEnv();save();buzz(6);});
+/* the run sheet's trace: speed and rpm against distance, the timed mile shaded */
+function drawSaltTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+  const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
+  const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=r.trace||[];if(!tr.length)return;
+  const MI=SIM.LSR_MILE,xe=r.xEnd||tr[tr.length-1].x,padL=34,padR=34,padT=16,padB=22,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*Math.min(1,Math.max(0,d/xe));
+  const mx=Math.max(50,Math.ceil((r.peakMph||50)/50)*50),rm=Math.max(3000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000),font=getComputedStyle(document.body).fontFamily;
+  x.fillStyle="rgba(255,122,26,.10)";x.fillRect(X(r.x0),padT,X(r.x1)-X(r.x0),ch);
+  x.strokeStyle=css.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;x.font="10px "+font;x.textAlign="center";
+  for(let m=0;m*MI<=xe+1;m++){const px=X(m*MI);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText(m+" mi",px,H-6);}
+  for(let v=50;v<mx;v+=50){const py=padT+ch*(1-v/mx);x.beginPath();x.moveTo(padL,py);x.lineTo(padL+cw,py);x.stroke();}
+  const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
+  line(p=>p.rpm/rm,"#e8c14a",1.2,[2,3]);line(p=>(p.tc-20)/120,"#c58be0",1.2);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
+  x.textAlign="left";x.font="11px "+font;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+10);x.fillStyle="#e8c14a";x.fillText("rpm",padL+34,padT+10);x.fillStyle="#c58be0";x.fillText("water",padL+62,padT+10);
+  x.textAlign="right";x.fillStyle=soft;x.fillText(mx+" mph",W-padR,padT+10);
+  if(r.mileMph!=null){x.textAlign="center";x.fillStyle=INK;x.font="600 12px "+font;x.fillText(r.mileMph.toFixed(2)+" mph",(X(r.x0)+X(r.x1))/2,padT+ch*(1-Math.min(1,r.mileMph/mx))-8);}}
+function saltRedraw(){const l=lastForChart();if(S.env.testType==="salt"&&l&&l.salt)drawSaltTrace(l.salt);}
+function saltVerdict(res){const r=res.salt,c=r.cls||{},R=r.rec;
+  const mph=r.mileMph!=null?r.mileMph.toFixed(3):"—";
+  if(res.saltFailed)return `<div class="verdict fail"><div><div class="big">${r.broke==="steam"?"BLEW THE HEAD GASKET":r.broke==="turbo"?"TURBO LET GO":r.broke==="piston"?"MELTED A PISTON":"BROKE ON THE SALT"}</div><p>${c.key||""} · ${r.mileMph!=null?"it made the clocks first: "+mph+" mph":"before the timed mile"}${career()?" — certification is void":""}.</p></div></div>`;
+  if(r.stopWhy==="spun")return `<div class="verdict fail"><div><div class="big">SPUN AT ${Math.round(r.peakMph)} MPH</div><p>${c.key||""} · no time. ${career()?"$800 to straighten the body.":""}</p></div></div>`;
+  const big=r.outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)}`:r.outcome==="impound"?`${mph} · IMPOUND`:r.dq?`${mph} · NOT ACCEPTED`:r.mileMph!=null?`${mph} MPH`:"NO TIME";
+  const cls=r.outcome==="record"||r.outcome==="impound"?"pass":r.valid?"marg":"fail";
+  const sub=r.outcome==="record"?`${c.key} · ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — the old mark was ${R.mph.toFixed(3)} (${saltEsc(R.holder)}).${r.club?" Welcome to the 200 MPH Club.":""}${career()&&r.purse?" Contingency "+fmt$(r.purse)+".":""}`
+    :r.outcome==="impound"?`${c.key} · over the ${R.mph.toFixed(3)} record. The car goes to impound — back it up on your next run this ${career()?"week":"meet"} and the average stands.`
+    :r.outcome==="backupslow"?`${c.key} · backup run: ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — short of the ${R.mph.toFixed(3)} record. It stands.`
+    :r.outcome==="backupfail"?`${c.key} · no backup time — the record attempt is over.`
+    :r.dq?"Over 175 mph without a parachute — tech won't accept the run."
+    :`${c.key} · record ${R?R.mph.toFixed(3):"—"}${R?` (${R.mph>r.mileMph?"−"+(R.mph-r.mileMph).toFixed(2):"+"+(r.mileMph-R.mph).toFixed(2)} mph)`:""}${r.pb&&!r.pb.first?` · class best (was ${r.pb.was.toFixed(3)})`:""}`;
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${big}</div><p>${sub}</p>
+    <div class="vstats"><div><b>${mph}</b><span>timed mile</span></div><div><b>${r.kmMph!=null?r.kmMph.toFixed(2):"—"}</b><span>timed km</span></div><div><b>${r.peakMph.toFixed(1)}</b><span>peak mph</span></div><div><b>${r.meetBest!=null?r.meetBest.toFixed(2):"—"}</b><span>best of meet</span></div><div><b>${r.coolMax}</b><span>peak water °C</span></div><div><b>${r.time.toFixed(0)}</b><span>seconds</span></div></div></div></div>`;}
+function saltSheet(res){const r=res.salt,v=r.veh||{},c=r.cls||{};
+  const why={done:"chute out, stopped",spun:"spun",broke:"broke",lifted:"lifted before the clocks",time:"flagged"}[r.stopWhy]||"stopped";
+  const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
+  return `<div class="sec"><h2>Time slip · ${saltEsc(c.key||"")}</h2><div class="log"><div><b>Mile</b>${r.mileMph!=null?r.mileMph.toFixed(3)+" mph · "+r.mileT.toFixed(3)+" s · in "+r.inMph+" out "+r.outMph+" mph":"no time"}</div>
+    <div><b>Km</b>${r.kmMph!=null?r.kmMph.toFixed(3)+" mph · "+r.kmT.toFixed(3)+" s":"—"} · peak ${r.peakMph} mph · ${r.time.toFixed(1)} s · ${why}</div>
+    <div><b>Setup</b>${r.clsName} · ${r.courseName} · ${v.topMph} mph top gear (${r.ratios.map(x=>x.toFixed(2)).join(" / ")}:1) · ${v.aero?"aero on":"clean"} · ${v.ballast} kg ballast · ${v.cooling==="ice"?"ice tank":"radiator"} · ${(SIM.LSR_CHUTES[v.chute]||{}).n||""} · ${r.mass} kg · CdA ${r.cdA}</div>
+    <div><b>Car</b>front down to ${Math.round(r.lightMin*100)}% · ${r.spinT.toFixed(1)} s of wheelspin · ${r.shifts} shift${r.shifts===1?"":"s"}${r.limT>0?" · "+r.limT.toFixed(1)+" s on the limiter":""} · water ${r.coolMax} °C · EGT ${r.peakEgt} °C${r.chute.out?` · chute at ${r.chute.mph} mph${r.chute.blown?" (tore off)":""}`:""}</div>
+    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div></div>`;}
+/* records: the class records you have set or are chasing, and your best per class */
+function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).concat(Object.keys(L.pb)));let cur=[];try{cur=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){}cur.forEach(k=>keys.add(k));if(!keys.size)return"";
+  const rows=[...keys].map(k=>{const r=saltRecord(k),pb=L.pb[k];return{k,r,pb};}).filter(o=>o.r).sort((a,b)=>(b.pb?1:0)-(a.pb?1:0)||(b.r.mph-a.r.mph)).slice(0,10);
+  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${saltEsc(o.k)}</span><span class="nm" title="${saltEsc(o.r.holder)}">${o.r.mine?"you":saltEsc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
+/* land-speed buyers: their car, your engine, the same salt — the mile they need, estimated with a steady driver */
+const lsrFitCache=new Map();
+function lsrFitMph(res,cfg,body){const key=cfgHash(cfg)+"|"+body;if(lsrFitCache.has(key))return lsrFitCache.get(key);
+  const asp=(SIM.OPT.asp[cfg.asp]||{}).kind||"na",f=asp==="na"?0.87:0.92;const r=Object.assign({},res,{torque:res.torque.map(t=>t*f),peakHp:res.peakHp*f,peakTq:res.peakTq*f,saltEnv:{rho:1.0,ambientC:32}});
+  const veh={body,redline:cfg.redline,course:"long",cooling:body==="streamliner"||body==="lakester"?"ice":"radiator",chute:"dual",aero:body==="altered"||body==="roadster",noFail:true,noSpin:true,h:0.005};
+  const B=SIM.LSR_BODIES[body],m=B.mass+(r.kg||200),P=0.9*r.peakHp*745.7;let vb=20;for(let i=0;i<30;i++)vb=Math.pow(Math.max(1,P-0.015*m*9.81*vb)/(0.5*1.0*B.cdA),1/3);
+  veh.topMph=Math.round(vb*2.23694*cfg.redline/Math.max(1,r.peakHpRpm||cfg.redline*0.85));
+  const out=SIM.lsrPass(r,veh).mileMph||0;if(lsrFitCache.size>300)lsrFitCache.clear();lsrFitCache.set(key,out);return out;}
+
 /* ---- datalog: the pass, channel by channel. Trace rows: [t, m, mph, rpm, gear, spin, bar, wheel mph, EGT C, throttle, n2o] ---- */
 const DL={on:{rpm:1,spd:1,whl:1,boost:1,egt:0,n2o:1},mode:"t"},DLM={},DLC={rpm:["rpm","rgba(95,168,230,.95)"],spd:["ground","#ff7a1a"],whl:["wheel","INK"],boost:["boost","#4fc08d"],egt:["EGT","#c58be0"],n2o:["N₂O","#e8c14a"]};
 const dlCache=new WeakMap();
@@ -14751,6 +15708,7 @@ function showResult(res,env){
   const over=career()&&(res.peakHp>dynoCap().hp||S.cfg.redline>dynoCap().rpm);
   let v;
   if(env.testType==="pull_sled"&&res.pull)v=pullVerdict(res);
+  else if(env.testType==="salt"&&res.salt)v=saltVerdict(res);
   else if(over)v=`<div class="verdict fail"><div><div class="big">DYNO OVERLOADED</div><p>${dynoCap().n} can't hold ${Math.round(res.peakHp)} hp / ${S.cfg.redline} rpm. It cannot be certified here — upgrade the dyno in the Shop.</p></div></div>`;
   else if(res.fails.length)v=`<div class="verdict fail"><div><div class="big">FAILED</div><p>${res.fails.length===1?"One subsystem":res.fails.length+" subsystems"} went past its limit.</p>${res.fails.map(n=>{const t=res.tests.find(x=>x.name===n)||{};return `<div class="failnote"><b>${n}</b>${t.sub?` <small>${t.sub}</small>`:""} — ${t.physics||""} <i>${t.fix||""}</i></div>`;}).join("")}</div></div>`;
   else if(env.testType==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)v=`<div class="verdict fail"><div><div class="big">FAILED AT ${res.endurance.failedAtHour} H</div><p>First to go: ${(res.tests.find(t=>t.id===res.firstToFail)||{}).name||res.firstToFail}. It passed the pull but not the hours.</p></div></div>`;
@@ -14772,9 +15730,10 @@ function showResult(res,env){
   if(env.testType==="drag"&&res.drag){const r=res.drag;extra+=`<div class="sec"><h2>Timing slip</h2><div class="log">${slipLine(r)?`<div><b>Slip</b>${slipLine(r)}</div>`:""}${launchSlip(r)?`<div><b>Launch</b>${launchSlip(r)}</div>`:""}${r.race&&r.race.rt!=null&&!r.race.foul&&r.race.rt>0.25?`<div>Reaction time ${r.race.rt.toFixed(3)} — a good light is under 0.100. That is ${(r.race.rt-0.1).toFixed(2)} s given away before the car moved.</div>`:""}${r.reasons.length?r.reasons.map(x=>`<div>${x}</div>`).join(""):"<div>Clean pass. Nothing left on the table that the driveline can fix — the rest is horsepower.</div>"}${r.shifts.length?`<div><b>Shifts</b>${r.shifts.map(x=>x.gear+"→"+(x.gear+1)+" at "+x.rpm.toLocaleString()).join(", ")}</div>`:""}<div><b>Ratios</b>${r.ratios.join(" · ")} × ${r.veh.final} final · ${r.veh.tyreDia}" ${SIM.TYRES[r.veh.tyre].n.toLowerCase()}</div><div><b>Shutdown</b>${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${r.chute?"chute out":"brakes only"} · pulled up in ${r.shutFt.toLocaleString()} ft</div><div style="margin-top:8px"><button class="btn sm info" id="shareSlip">Share timing slip</button></div>${(()=>{const wi=wearInfo(res);if(!wi)return"";const pct=Math.round(wi.w*100);return `<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${pct}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0.3?" · listen for the slap at idle":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`;})()}</div></div>`;}
   if(env.testType==="drag"&&res.drag&&res.drag.n2o)extra=extra.replace("<div><b>Ratios</b>",`<div><b>Nitrous</b>${n2oSlip(res.drag.n2o)}</div><div><b>Ratios</b>`);
   if(env.testType==="pull_sled"&&res.pull)extra+=pullSheet(res);
+  if(env.testType==="salt"&&res.salt)extra+=saltSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
-  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();
+  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
@@ -14815,10 +15774,12 @@ $("runTest").addEventListener("click",()=>{
   if(testing)return;const cost=testCost();if(career()&&C().cash<cost){toast("Not enough cash for dyno time");return;}
   if(S.env.testType==="drag"){if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(career()&&!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
+  if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;renderTest();ensureSound();
   if(S.env.testType==="drag"){dragStart();return;}
   if(S.env.testType==="pull_sled"){pullStart();return;}
+  if(S.env.testType==="salt"){saltStart();return;}
   const env=simEnv();const res=SIM.simulate(S.cfg,env);const N=res.rpms.length;const t0=performance.now();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";
   let failed=false,failAt=Infinity,dur,hold,label="";
@@ -14874,7 +15835,7 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
-  const pr=pullRecHtml();
+  const pr=pullRecHtml()+saltRecHtml();
   if(!best&&!hp&&!rel&&!pr){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
@@ -14899,8 +15860,9 @@ function genContract(seg){
   if(R.hp)req.hp=R.hp[0]+Math.round(rng()*(R.hp[1]-R.hp[0])/10)*10;
   if(R.tq)req.tq=R.tq[0]+Math.round(rng()*(R.tq[1]-R.tq[0])/10)*10;
   if(R.econ)req.econ=+(R.econ[0]-rng()*(R.econ[0]-R.econ[1])).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr"])if(R[k]!=null)req[k]=R[k];
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
+  if(R.mph)req.mph=Math.round(R.mph[0]+rng()*(R.mph[1]-R.mph[0]));
   const units=seg.units[0]+Math.floor(rng()*(seg.units[1]-seg.units[0]));
   const price=Math.round(seg.price*(0.9+rng()*0.25)*(1+(req.hp?(req.hp-R.hp[0])/(R.hp[1]-R.hp[0])*0.35:0))/10)*10;
   const k={id:Math.floor(rng()*1e9),seg:seg.id,name:seg.name,client,req,units,price,expires:C().week+2+Math.floor(rng()*3)};
@@ -14920,7 +15882,7 @@ const REQ_LABEL={hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tq
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
-  passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`]};
+  passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`],lsr:["Their car",v=>`${(SIM.LSR_BODIES[v.body]||{}).n||"car"} · long course`],mph:["Timed mile",v=>`≥ ${v} mph`]};
 function describeReq(q,v,x){const m=REQ_LABEL[q];return m?`${m[0]} ${m[1](v,x)}`:q;}
 function reqName(q){return (REQ_LABEL[q]||[q])[0];}
 function reqTarget(q,v,x){const m=REQ_LABEL[q];return m?m[1](v,x):"";}
@@ -14957,6 +15919,8 @@ function fits(k,res,cfg){
   if(r.life!=null)add("life",res.lifeHours>=r.life,res.lifeHours.toLocaleString(),ge(res.lifeHours,r.life));
   if(r.passes!=null)add("passes",res.racePasses>=r.passes,res.racePasses,ge(res.racePasses,r.passes));
   if(r.car)add("car",true,"",1);
+  if(r.lsr)add("lsr",true,"",1);
+  if(r.mph!=null&&res.rpms){const m=lsrFitMph(res,c,(r.lsr&&r.lsr.body)||"lakester");add("mph",m>=r.mph,m?m.toFixed(1)+" mph":"no time",ge(m,r.mph));}
   if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if(k.site){const br=res.fails[0];o.push({q:"site",name:"At the site",target:siteTxt(k.site),label:`Holds at ${siteTxt(k.site)}`,val:br?"breaks":"holds",ok:!br,prog:br?0:1,why:br});if(br)ok=false;}
   let bonus=0;if(ok){if(r.hp)bonus+=clamp(res.peakHp/r.hp-1,0,0.3)*0.5;if(r.rel)bonus+=clamp((res.rel-r.rel)/100,0,0.15);if(r.tq)bonus+=clamp(res.peakTq/r.tq-1,0,0.3)*0.4;
@@ -14966,7 +15930,7 @@ function fits(k,res,cfg){
 /* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
    Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit,
    and the wrong fuel family (a diesel for a petrol car, or the reverse) sends them away. */
-const MISS_W={hp:1.8,tq:1.8,et:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5};
+const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
   return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
@@ -14978,8 +15942,8 @@ function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*6
    a little under contract money. A crate-engine dealer takes anything that certified, at a thin margin. */
 const MKT_COOL=3;
 function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
-  if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke"])if(R[k]!=null)req[k]=R[k];
+  if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);if(R.mph)req.mph=Math.round(mid(R.mph,0.3));
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr"])if(R[k]!=null)req[k]=R[k];
   const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
   return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
 function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
@@ -15354,6 +16318,7 @@ function tick(now){
     const wi=quick?wearInfo(quick):null;let dx=null;
     if(testing&&DR&&DR.d&&S.env.testType==="drag"&&!DR.failed){const st=DR.d.st;boostBar=st.boost*(on?1:0);
       dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
+    if(testing&&SR&&SR.p&&S.env.testType==="salt"&&!SR.failed){const st=SR.p.st;dx={tyre:st.phase==="run"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*3)):st.phase==="spin"?0.8:0};}
     if(testing&&PR&&PR.p&&S.env.testType==="pull_sled"&&!PR.failed){const st=PR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase==="pull"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.1)*1.5)):0};}   // the sled: load from the run, tyre noise from the slip
     ENGINE_SOUND.set(Object.assign({rpm:on?rpm:0,load,cfg:S.cfg,layout:L,boostBar,wear:wi?wi.w:0,
       knock:quick?quick.knock.retardDeg:0,profileId:S.profileId||undefined,diesel:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci),clatter:(quick&&quick.clatter)||0},dx||{}));}
@@ -15480,12 +16445,12 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
 const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
-function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";return null;}
+function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";return null;}
 let spaceHeld=null;
-function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}}
+function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}}
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;const k=e.key;
   if(k===" "||k==="Spacebar"){const h=holdKind();if(!h)return;e.preventDefault();if(e.repeat||spaceHeld)return;spaceHeld=h;
-    if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
+    if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
   if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
   if(k==="ArrowLeft"||k==="ArrowRight"){const a=document.activeElement,r=a&&a.matches&&a.matches("input[type=range]")?a:kbSlider&&kbSlider.offsetParent?kbSlider:null;if(r&&nudgeSlider(r,k==="ArrowRight"?1:-1))e.preventDefault();return;}
