@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.9.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.10.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -418,6 +418,70 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
 #intro p{color:var(--chalk);font-size:16px;line-height:1.5;max-width:36ch}
 #intro .credit{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:14px}
 #intro .modebox button{padding:14px}
+/* desktop: the engine view fills the window, the panel becomes a sidebar with its tabs on top. Everything is
+   scoped under html.desk so the phone column is untouched; below 900 px wide the phone layout comes back. */
+html.desk #app{--sbw:min(var(--sbw-user,clamp(400px,30vw,520px)),60vw);max-width:none;display:grid;grid-template-columns:minmax(0,1fr) var(--sbw);grid-template-rows:52px minmax(0,1fr)}
+html.desk #app.mini{--sbw:min(60vw,780px)}
+html.desk #view,html.desk #app.mini #view{grid-column:1;grid-row:1/3;min-height:0;transition:none}
+html.desk #tabs{position:relative;grid-column:2;grid-row:1;height:52px;border-top:0;border-bottom:1px solid var(--rule);border-left:1px solid var(--rule);padding:0}
+html.desk #tabs button{flex-direction:row;gap:7px;font-size:12px;letter-spacing:.06em}
+html.desk #tabs svg{width:18px;height:18px}
+html.desk #tabs button.on::before{top:auto;bottom:-1px;left:14%;right:14%}
+html.desk #tabs .dot{top:10px;right:6px}
+html.desk #testProg{top:auto;bottom:-1px;z-index:1}
+html.desk #panel{grid-column:2;grid-row:2;border-top:0;border-left:1px solid var(--rule);padding:16px 16px 28px;scrollbar-width:thin;scrollbar-color:var(--rule) transparent}
+html.desk #hud{padding:14px 18px;align-items:center;gap:10px 18px}
+html.desk #hud .brand{font-size:18px}
+html.desk .hudbtns{flex:0 0 auto;order:1;margin-right:auto}
+html.desk #hud .right{flex:0 0 auto;order:2}
+html.desk #hud .cash b{font-size:22px}
+html.desk #app.mini #tag{display:block}html.desk #app.mini #hud .brand small{display:block}html.desk #app.mini #rpmbox b{font-size:28px}html.desk #app.mini #fpsHud{top:76px}
+html.desk #app.mini .hudbtns>button{height:44px;padding:0 13px 0 10px;gap:6px;font-size:13px}
+html.desk #fpsHud{top:76px;left:18px}
+html.desk #tag{left:18px;bottom:16px;right:auto;width:min(460px,calc(100% - 160px));max-width:none}
+html.desk #rpmbox{right:18px;bottom:16px}html.desk #rpmbox b{font-size:34px}
+html.desk #app.onstrip #rpmbox{bottom:auto;top:80px}
+html.desk #chart{height:260px}
+html.desk #toast{left:calc((100% - var(--sbw))/2);bottom:auto;top:84px;max-width:min(560px,calc(100% - var(--sbw) - 40px))}
+/* drag strip and truck pull: their controls dock bottom-centre over the big view, in the view's dark ink */
+html.desk #dragCtl,html.desk #pullCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
+html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
+html.desk #pullLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row{grid-column:1/-1}
+/* the sheet becomes a centred dialog */
+html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
+html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
+html.desk #sheet header{padding:14px 20px 10px}html.desk #sheet .body{padding:12px 20px 20px}
+html.desk #tourBox,html.desk #ffBox{width:400px}
+html.desk #intro .modebox button{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.16);color:var(--chalk)}html.desk #intro .modebox small{color:var(--muted)}
+:root[data-theme=light] #intro .modebox button{background:#1d2026;border-color:rgba(255,255,255,.16);color:var(--chalk)}:root[data-theme=light] #intro .modebox small{color:var(--muted)}   /* the intro stays dark in light theme: keep its cards dark too */
+html.desk #intro .box{max-width:600px}html.desk #intro h1{font-size:54px}html.desk #intro p{font-size:17px;max-width:52ch}
+#sbGrip{display:none}
+html.desk #sbGrip{display:block;position:absolute;top:0;bottom:0;right:var(--sbw);width:10px;margin-right:-5px;z-index:14;cursor:col-resize;touch-action:none}
+html.desk #sbGrip::after{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:var(--orange);opacity:0;transition:opacity .15s}
+html.desk #sbGrip:hover::after,html.desk #sbGrip.on::after{opacity:.7}
+/* mouse: hover states (desktop only, so a phone's sticky :hover never shows) */
+@media (hover:hover){
+html.desk .seg button:not(.on):not(:disabled):hover,html.desk .chip:not(.on):hover,html.desk .preset:hover,html.desk .modebox button:not(.on):hover,html.desk .nud:hover{border-color:var(--steel);background:var(--panel2)}
+html.desk .accb .seg button:not(.on):hover{background:var(--panel)}
+html.desk .acch:hover .t,html.desk .lbl .q:hover{color:var(--orange2)}
+html.desk .acch:hover{background:var(--panel2)}
+html.desk .btn:not([disabled]):hover{filter:brightness(1.12)}
+html.desk #tabs button:not(.on):hover{color:var(--chalk);background:var(--panel)}
+html.desk .hudbtns>button:hover{border-color:rgba(255,255,255,.34);background:rgba(30,33,38,.9)}
+html.desk .st:hover,html.desk .card:hover,html.desk .buyer:hover,html.desk div.up:hover,html.desk .goal:hover,html.desk .slot:hover{border-color:var(--steel)}
+html.desk .lbl b.tap:hover{background:var(--panel2)}
+html.desk input[type=range]{cursor:pointer}
+}
+#tip{position:fixed;z-index:60;max-width:300px;padding:7px 10px;border-radius:5px;background:#0b0c0e;color:#f0ece2;border:1px solid rgba(255,255,255,.14);font-size:13px;line-height:1.4;pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 8px 22px rgba(0,0,0,.4)}
+#tip.on{opacity:1}#tip b{color:#ffa04d;font-weight:600}#tip kbd,.kbd kbd{font-family:var(--mono);font-size:11px;padding:1px 5px;border-radius:3px;border:1px solid rgba(255,255,255,.25);margin-left:6px}
+/* keyboard help */
+.kbd{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:baseline;font-size:14.5px}
+.kbd kbd{justify-self:end;margin:0;white-space:nowrap;color:var(--chalk);border-color:var(--steel);background:var(--panel2);font-size:12.5px;padding:2px 7px}
+.kbd span{color:var(--muted)}.kbd h3{grid-column:1/-1;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+#introLay{margin:16px 0 12px}#introLay>span{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+#introLay .seg button{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.16);color:var(--chalk)}#introLay .seg button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}#introLay .seg small{color:var(--muted)}
+html:not(.desk) #kbHelpBtn{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -557,6 +621,9 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
         <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
         <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
+        <div id="layBox"><div class="lbl"><span>Layout</span></div>
+        <div class="seg n2" id="laySeg"><button data-lay="phone">Phone<small>one column, thumb-sized</small></button><button data-lay="desktop">Desktop<small>wide view + sidebar</small></button></div>
+        <button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
         <div class="lbl"><span>Graphics</span></div>
         <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
         <div class="lbl"><span>Camera follows edits</span></div>
@@ -614,7 +681,8 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
   <div id="intro">
     <div class="box">
       <h1>Prairie<br>Engine <em>Works</em></h1>
-      <p>Design an engine down to the piston alloy and rod bolts, then find out what breaks. Fifty-five base engines modelled on real ones, twenty-six measured failure modes, and every material interaction spelled out.</p>
+      <p>Design an engine down to the piston alloy and rod bolts, then find out what breaks. Sixty-five base engines modelled on real ones, twenty-six measured failure modes, and every material interaction spelled out.</p>
+      <div id="introLay" hidden><span>Play on</span><div class="seg n2"><button data-lay="phone">Phone<small>portrait, touch</small></button><button data-lay="desktop">Desktop<small>wide screen, mouse + keys</small></button></div></div>
       <div class="modebox">
         <button data-mode="sandbox"><b>Test cell</b><small>Sandbox — everything unlocked, no money. For testing theories.</small></button>
         <button data-mode="career"><b>Career</b><small>$20,000, a chassis dyno, five stock starter engines. Sell certified engines, survive the warranty claims, grow.</small></button>
@@ -10235,20 +10303,31 @@ function flashAt(pos, color, intensity){
    10. ORBIT CONTROLS (touch + mouse, no examples/)
    ==========================================================================*/
 function setupOrbit(cv){
-  var ptrs={}, nptr=0, lastDist=0, idleTimer=0;
+  var ptrs={}, nptr=0, lastDist=0, idleTimer=0, pan=false;
   function markActive(){ camState.idle=0; camState.auto=false; }
+  /* mouse pan: right / middle drag (or shift + drag) slides the target across the screen plane, a pixel per pixel
+     at the target's distance; kept within reach of the engine so it can't be lost off-screen */
+  function panBy(dx,dy){
+    var k=2*camState.r*Math.tan(camera.fov*Math.PI/360)/(cv.clientHeight||600), th=camState.theta, ph=camState.phi, cp=Math.cos(ph), T=camState.target;
+    T.x=clamp(T.x-dx*k*Math.cos(th)-dy*k*cp*Math.sin(th), -7, 7);
+    T.y=clamp(T.y+dy*k*Math.sin(ph), 1, 15);
+    T.z=clamp(T.z+dx*k*Math.sin(th)-dy*k*cp*Math.cos(th), -7, 7);
+  }
   function pos(e){ return {x:e.clientX, y:e.clientY}; }
   cv.style.touchAction="none";
 
   cv.addEventListener("pointerdown", function(e){
     if(!ptrs[e.pointerId]) nptr++;
     ptrs[e.pointerId]=pos(e); camState.dragging=true; markActive();
+    pan = e.pointerType==="mouse" && (e.button===1 || e.button===2 || e.shiftKey);
+    if(e.button===1) e.preventDefault();
     try{ cv.setPointerCapture(e.pointerId); }catch(err){}
   });
   cv.addEventListener("pointermove", function(e){
     var p=ptrs[e.pointerId]; if(!p) return;
     var np=pos(e);
-    if(nptr===1){
+    if(nptr===1 && pan) panBy(np.x-p.x, np.y-p.y);
+    else if(nptr===1){
       camState.theta -= (np.x-p.x)*0.0085;
       camState.phi    = clamp(camState.phi - (np.y-p.y)*0.0065, 0.22, 1.52);
     }
@@ -10276,6 +10355,8 @@ function setupOrbit(cv){
     camState.idle=0; camState.auto=false;
     e.preventDefault();
   }, {passive:false});
+  cv.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  cv.addEventListener("dblclick", function(){ frameEngine(); camState.idle=0; camState.auto=false; });
 }
 
 /* ===========================================================================
@@ -13085,10 +13166,10 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.9.0.0";
+const VERSION="1.10.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
-function applySoundQuality(){const q=S.soundQ||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
+function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
 /* pressure units: everything is stored and simulated in bar. PSI is a display layer — text nodes that read "N bar"
    (also "A of B bar", "A–B bar", "A / B bar") are rewritten in place and remembered, so switching back restores them. */
 const BAR_PSI=14.5038;
@@ -13197,7 +13278,7 @@ function heatZones(){if(!quick)return null;const worst={};for(const t of quick.t
     if(!worst[z]||t.util>worst[z])worst[z]=t.util;}
   return Object.keys(worst).map(z=>{const u=worst[z];let c,a,pulse=false;if(u>1){c=[0.95,0.18,0.12];a=0.62;pulse=true;}else if(u>0.8){c=[1,0.66,0.15];a=0.28+0.3*(u-0.8)/0.2;}else{c=[0.25,0.85,0.5];a=0.10+0.18*Math.max(0,(u-0.4)/0.4);}
     return{zone:+z,r:c[0],g:c[1],b:c[2],amount:a,pulse};});}
-function applyGfx(){const q=S.gfx||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_VIS.setQuality(q);document.querySelectorAll("#gfxSeg button").forEach(b=>b.classList.toggle("on",b.dataset.gfx===q));}
+function applyGfx(){const q=S.gfx||deskGfx()||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_VIS.setQuality(q);document.querySelectorAll("#gfxSeg button").forEach(b=>b.classList.toggle("on",b.dataset.gfx===q));}
 (()=>{const cs=$("camSeg");if(cs&&!$("nightSeg"))cs.insertAdjacentHTML("afterend",`<div class="lbl"><span>Night racing</span></div><div class="seg n2" id="nightSeg"><button data-night="0">Day<small>afternoon at the strip</small></button><button data-night="1">Night<small>under the lights</small></button></div>`);})();
 function applyNight(){document.querySelectorAll("#nightSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.night==="1")===!!S.night));}
 $("nightSeg").addEventListener("click",e=>{const b=e.target.closest("[data-night]");if(!b)return;S.night=b.dataset.night==="1";applyNight();save();toast(S.night?"NIGHT RACING · strip lights on":"DAY RACING");});
@@ -13234,7 +13315,7 @@ $("hapSeg").addEventListener("click",e=>{const b=e.target.closest("[data-hap]");
 if(window.matchMedia)window.matchMedia("(prefers-color-scheme: light)").addEventListener?.("change",()=>{if(S.theme==="auto")applyTheme();});
 $("heatBtn").addEventListener("click",()=>{S.heat=!S.heat;applyHeat();save();toast(S.heat?"HEAT-MAP ON · TAP A ZONE":"HEAT-MAP OFF");});
 (()=>{let d=null;const gl=$("gl");gl.addEventListener("pointerdown",e=>{d={x:e.clientX,y:e.clientY,t:performance.now()};},{passive:true});
-  gl.addEventListener("pointerup",e=>{if(!d||!S.heat)return;const mv=Math.hypot(e.clientX-d.x,e.clientY-d.y),dt=performance.now()-d.t;d=null;if(mv>9||dt>400)return;const z=ENGINE_VIS.zoneAt(e.clientX,e.clientY);if(z)zoneSheet(z);},{passive:true});})();
+  gl.addEventListener("pointerup",e=>{if(!d||!S.heat||e.button)return;const mv=Math.hypot(e.clientX-d.x,e.clientY-d.y),dt=performance.now()-d.t;d=null;if(mv>9||dt>400)return;const z=ENGINE_VIS.zoneAt(e.clientX,e.clientY);if(z)zoneSheet(z);},{passive:true});})();
 /* ---- engine card: name + headline numbers + status, reused everywhere an engine is shown ---- */
 const ASP_SYM={na:"NA",turbo:"T",twin_turbo:"TT",roots:"SC",centrifugal:"SC",screw:"SCREW",compound:"CT"};
 function engineName(){return S.name||autoName();}
@@ -13872,7 +13953,7 @@ function pullStart(){
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("pullCtl").style.display="";$("pullBtn").dataset.k="";pullBtnText("HOLD TO PULL","let go to ease off — keep the slip in the green");$("pullBtn").disabled=false;
   $("testProg").classList.remove("done");sfx("start");pullHud(p.st);
   // the button and the card have to be under the thumb: bring them up above the tab bar
-  requestAnimationFrame(()=>{const pn=$("panel"),r=$("pullCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,$("tabs").getBoundingClientRect().top)-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  requestAnimationFrame(()=>{const pn=$("panel"),r=$("pullCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
   const step=()=>{if(!PR||PR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-PR.last)/1000);PR.last=now;
     const st=p.step(dt,PR.down&&!PR.failed?1:0);
     if(st.broke&&!PR.failed)pullBreak(st.broke);
@@ -14379,7 +14460,8 @@ let tourStep=-1;
 function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.querySelector(st.sel);if(el&&!el.offsetParent)el=null;const app=$("app").getBoundingClientRect();const spot=$("tourSpot"),box=$("tourBox");
   if(el){const r=el.getBoundingClientRect();spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
     const below=r.bottom-app.top+16;const boxH=box.offsetHeight||170;if(below+boxH<app.height-70){box.style.top=below+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-(r.top-app.top)+16)+"px";}}
-  else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}}
+  else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}
+  deskBox(box,el&&el.getBoundingClientRect());}
 function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);
   {const ac=document.querySelector(st.sel)?.closest(".acc");if(ac&&!ac.classList.contains("open"))toggleSec(ac.querySelector("[data-sec]"));}
   const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){setTimeout(()=>{const pr=$("panel").getBoundingClientRect(),tr=target.getBoundingClientRect();$("panel").scrollTop+= (tr.top-pr.top)-(pr.height*0.38);tourPlace();setTimeout(tourPlace,380);setTimeout(tourPlace,700);},60);}
@@ -14440,7 +14522,7 @@ function ffShow(){if(!ff)return;const t=FFT[ffCur().tgt];if(t.tab&&curTab!==t.ta
   if(t===FFT.run&&!testing&&S.env.testType!=="pull"){S.env.testType="pull";renderTest();}
   setTimeout(()=>{if(!ff)return;const r=t.tab&&t.get();if(r){const pn=$("panel"),pr=pn.getBoundingClientRect();pn.scrollTop+=(r.top-pr.top)-pr.height*0.3;}ffPlace();},60);}
 function ffPlace(){if(!ff||ff.ending)return;const app=$("app").getBoundingClientRect(),spot=$("ffSpot"),box=$("ffBox"),t=FFT[ffCur().tgt];
-  const tabT=$("tabs").getBoundingClientRect().top-app.top;let r=t.get();
+  const tabT=tabsTop()-app.top;let r=t.get();
   if(r&&t.tab){const pr=$("panel").getBoundingClientRect(),top=Math.max(r.top,pr.top),bot=Math.min(r.bottom,app.top+tabT);r=bot-top>=Math.min(28,r.height*0.5)?{left:r.left,width:r.width,top,bottom:bot,height:bot-top}:null;}
   $("ff").style.visibility=$("sheet").classList.contains("on")?"hidden":"";$("ffShow").style.display=!r&&t.tab?"":"none";
   const w=$("weekLbl");if(w&&w.textContent!=="FIRST FIRE")w.textContent="FIRST FIRE";
@@ -14448,7 +14530,8 @@ function ffPlace(){if(!ff||ff.ending)return;const app=$("app").getBoundingClient
   if(r){spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
     const below=(t.under?$(t.under).getBoundingClientRect():r).bottom-app.top+14,above=r.top-app.top-14-boxH;top=below+boxH<tabT-8?below:above>=8?above:null;}
   else spot.style.display="none";
-  if(top!=null){box.style.top=top+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-tabT+10)+"px";}}
+  if(top!=null){box.style.top=top+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-tabT+10)+"px";}
+  deskBox(box,r);}
 function ffTick(){if(!ff)return;if(ff.ending){if(!testing)ffFinish(true);return;}
   const st=FF_STEPS[ff.step],ph=ff.phase;
   if(st==="fire"){if(ph==="go"&&run.idle){ffSet("ok");return;}}
@@ -14605,7 +14688,7 @@ function showTab(t){tabScroll[curTab]=$("panel").scrollTop;curTab=t;document.que
 function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(ff||curTab!=="test"||!v)return;
   const pr=pn.getBoundingClientRect(),vr=v.getBoundingClientRect(),st=document.querySelector(".tabpage.on .strip"),sc=st&&st.offsetParent&&getComputedStyle(st);
   const top=pr.top+pn.clientTop+(sc&&sc.position==="sticky"?parseFloat(getComputedStyle(pn).paddingTop)+(parseFloat(sc.top)||0)+st.offsetHeight:0)+8;
-  const bot=Math.min(pr.bottom,$("tabs").getBoundingClientRect().top)-8;
+  const bot=Math.min(pr.bottom,tabsTop())-8;
   if(vr.top>=top&&vr.bottom<=bot)return;pn.scrollTo({top:pn.scrollTop+vr.top-top,behavior:calmScroll()});}
 document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
@@ -14628,9 +14711,115 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("viewTray").hidd
 $("viewTray").addEventListener("focusout",e=>{if(e.relatedTarget&&!e.relatedTarget.closest("#viewTray,#viewBtn"))viewTray(false);});
 window.addEventListener("resize",()=>{if(!$("viewTray").hidden)viewTray(true);});
 if(window.ResizeObserver){let rt=null;new ResizeObserver(()=>{ENGINE_VIS.resize();clearTimeout(rt);rt=setTimeout(()=>{ENGINE_VIS.resize();ENGINE_VIS.reframe();},320);}).observe($("view"));}
+/* ===================== DESKTOP: wide layout, keyboard, mouse ===================== */
+/* Layout is "phone" (the portrait column) or "desktop" (the engine view fills the window, the panel is a sidebar).
+   Picked on the intro or in Settings; a save that never picked gets the auto-detect once. Under 900 px wide the
+   phone column comes back whatever was picked. */
+const DESK_MIN=900;
+const bigScreen=()=>Math.max(screen.width||0,screen.height||0,innerWidth)>=DESK_MIN;
+function detectLayout(){const fine=matchMedia("(pointer: fine) and (hover: hover)").matches,touch=("ontouchstart" in window)||navigator.maxTouchPoints>0;
+  return Math.max(screen.width||0,innerWidth)>=1024&&(fine||!touch)?"desktop":"phone";}
+const deskOn=()=>document.documentElement.classList.contains("desk");
+// graphics a desktop gets when the player never picked: Ultra on a real GPU with a big texture limit, Full otherwise
+let gpuTier=null;
+function deskGfx(){if(S.layoutMode!=="desktop")return null;if(gpuTier)return gpuTier;gpuTier="full";
+  try{const g=document.createElement("canvas").getContext("webgl");if(g){const x=g.getExtension("WEBGL_debug_renderer_info"),rn=String(x?g.getParameter(x.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER));
+    if(g.getParameter(g.MAX_TEXTURE_SIZE)>=16384&&(navigator.hardwareConcurrency||4)>=8&&(devicePixelRatio||1)<=2&&!/swiftshader|llvmpipe|softpipe|software|basic render|(hd|uhd) graphics( [0-9]{3,4})?$/i.test(rn))gpuTier="ultra";
+    const lc=g.getExtension("WEBGL_lose_context");if(lc)lc.loseContext();}}catch(e){}
+  return gpuTier;}
+function applyLayout(fromResize){const want=S.layoutMode==="desktop"&&innerWidth>=DESK_MIN,was=deskOn();document.documentElement.classList.toggle("desk",want);
+  document.querySelectorAll("[data-lay]").forEach(b=>b.classList.toggle("on",b.dataset.lay===(S.layoutMode||"phone")));
+  $("layBox").hidden=!bigScreen()&&S.layoutMode!=="desktop";$("introLay").hidden=!bigScreen();
+  if(S.sbw)document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");else document.documentElement.style.removeProperty("--sbw-user");
+  if(want!==was){tipHide();if(!$("viewTray").hidden)viewTray(false);if(!fromResize)window.dispatchEvent(new Event("resize"));}}
+function setLayout(m){if(S.layoutMode===m)return;S.layoutMode=m;applyLayout();applyGfx();applySoundQuality();save();
+  if(m==="desktop"&&innerWidth<DESK_MIN)toast("Desktop layout needs a window 900 px wide");}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-lay]");if(b){setLayout(b.dataset.lay);buzz(6);}});
+window.addEventListener("resize",()=>applyLayout(true));
+// panel bottom edge: on the phone the tab bar covers the panel's foot, on desktop the tabs sit on top
+function tabsTop(){return deskOn()?$("panel").getBoundingClientRect().bottom:$("tabs").getBoundingClientRect().top;}
+// tour and First Fire cards on a wide screen: a 400 px card beside its target instead of a full-width strip
+function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
+  const a=$("app").getBoundingClientRect(),w=box.offsetWidth||400,h=box.offsetHeight||160;box.style.right="auto";
+  if(!r){box.style.left=Math.round((a.width-$("panel").offsetWidth-w)/2)+"px";return;}
+  const sb=$("panel").getBoundingClientRect().left-a.left,cl=(v,lo,hi)=>Math.round(Math.max(lo,Math.min(hi,v)));let top,left;
+  if(r.left-a.left>=sb-2){top=cl(r.top-a.top,12,a.height-h-12);left=sb-w-24;}   // a sidebar target: the card waits beside the sidebar
+  else{top=r.bottom-a.top+14;if(r.height>a.height*0.5)top=Math.min(r.bottom,a.bottom)-a.top-h-24;else if(top+h>a.height-12)top=Math.max(12,r.top-a.top-h-14);left=r.left-a.left+r.width/2-w/2;}
+  box.style.top=Math.round(top)+"px";box.style.bottom="auto";box.style.left=cl(left,12,a.width-w-12)+"px";}
+// sidebar width: drag its edge, double-click to put it back
+(()=>{const g=document.createElement("div");g.id="sbGrip";g.dataset.tip="Drag to resize the sidebar · double-click to reset";$("app").appendChild(g);let on=false;
+  g.addEventListener("pointerdown",e=>{e.preventDefault();try{g.setPointerCapture(e.pointerId);}catch(x){}on=true;g.classList.add("on");tipHide();});
+  g.addEventListener("pointermove",e=>{if(!on)return;S.sbw=Math.round(Math.max(360,Math.min(innerWidth*0.6,innerWidth-e.clientX)));document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");});
+  const end=()=>{if(!on)return;on=false;g.classList.remove("on");save();window.dispatchEvent(new Event("resize"));};
+  g.addEventListener("pointerup",end);g.addEventListener("pointercancel",end);
+  g.addEventListener("dblclick",()=>{S.sbw=null;applyLayout(true);save();window.dispatchEvent(new Event("resize"));});})();
+/* tooltips for the mouse: part options say what they are, HUD buttons and tabs say their key */
+const tipEl=document.createElement("div");tipEl.id="tip";tipEl.setAttribute("role","tooltip");document.body.appendChild(tipEl);
+let tipT=null,tipOn=null;
+function tipHide(){clearTimeout(tipT);tipT=null;tipOn=null;tipEl.classList.remove("on");}
+const TAB_KEYS=["build","test","analysis","market","shop"];
+const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
+  dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
+function tipText(el){if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
+  if(el.matches("#tabs button")){const i=TAB_KEYS.indexOf(el.dataset.tab);return i<0?"":`${el.textContent.trim()} <kbd>${i+1}</kbd>`;}
+  if(el.matches("#buildForm .seg button[data-k][data-v]")){const f=sliderField(el.dataset.k),o=f&&(OPT[f.optTable||f.key]||{})[el.dataset.v];if(!o)return "";
+    return `<b>${o.name}</b>${o.cost?` · $${o.cost.toLocaleString("en-CA")}`:""}${o.info?"<br>"+o.info:o.sub?"<br>"+o.sub:""}${el.dataset.req?`<br><b>Needs ${el.dataset.req}</b>`:""}`;}
+  if(el.matches(".lbl .q"))return "Every option side by side";
+  if(el.matches(".nud"))return "Hold to repeat";
+  if(el.matches("input[type=range]"))return "Click it, then <kbd>←</kbd><kbd>→</kbd> or the wheel to nudge";
+  if(el.matches("b.tap"))return "Click to type a value";
+  return "";}
+document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const el=e.target.closest&&e.target.closest("[data-tip],#sndBtn,#idleBtn,#viewBtn,#runTest,#dragBtn,#pullBtn,#gl,#kbHelpBtn,#tabs button,#buildForm .seg button,.lbl .q,.nud,input[type=range],b.tap");
+  if(el===tipOn)return;tipHide();if(!el)return;tipOn=el;
+  tipT=setTimeout(()=>{if(tipOn!==el||!el.isConnected)return;const t=tipText(el);if(!t)return;tipEl.innerHTML=t;const r=el.getBoundingClientRect(),w=tipEl.offsetWidth,h=tipEl.offsetHeight;
+    const top=r.bottom+8+h<innerHeight?r.bottom+8:r.top-8-h;tipEl.style.left=Math.round(Math.max(8,Math.min(innerWidth-w-8,el.id==="gl"?e.clientX-w/2:r.left+r.width/2-w/2)))+"px";tipEl.style.top=Math.round(el.id==="gl"?e.clientY+18:top)+"px";tipEl.classList.add("on");},el.id==="gl"?1200:450);});
+["pointerdown","wheel","keydown"].forEach(ev=>document.addEventListener(ev,tipHide,{capture:true,passive:true}));document.addEventListener("scroll",tipHide,true);
+document.addEventListener("pointerout",e=>{if(tipOn&&(!e.relatedTarget||!tipOn.contains(e.relatedTarget)))tipHide();});
+/* sliders: the arrow keys and the wheel nudge the slider you last touched, by its own nudge step, through the same
+   path the ± buttons use. The wheel only takes a slider you clicked and are still pointing at, so it never
+   steals the panel's scroll. */
+let kbSlider=null,wheelArm=null,kbCommit=null,wheelAcc=0;
+function nudgeSlider(r,dir){if(!r||r.disabled||!r.isConnected)return false;const later=fn=>{clearTimeout(kbCommit);kbCommit=setTimeout(fn,450);};
+  if(r.dataset.k&&$("buildForm").contains(r)){const k=r.dataset.k,f=sliderField(k);if(!f)return false;const nv=snapVal(f,S.cfg[k]+dir*(f.nudge||f.step||1));if(nv!==S.cfg[k]){holdBase(k);autoFocus(k);applySlider(k,nv,r);buzz(3);later(commitSlider);}return true;}
+  if(r.dataset.e&&$("envBox").contains(r)){const k=r.dataset.e;applyEnv(k,envStore(k)[k]+dir*(parseFloat(r.step)||1));later(commitEnv);return true;}
+  const v=r.value;if(dir>0)r.stepUp();else r.stepDown();if(r.value!==v){r.dispatchEvent(new Event("input",{bubbles:true}));later(()=>r.dispatchEvent(new Event("change",{bubbles:true})));}return true;}
+document.addEventListener("pointerdown",e=>{const t=e.target.closest?e.target:null;if(!t)return;const r=t.closest("input[type=range]"),n=t.closest(".srow .nud");
+  wheelArm=r;if(r)kbSlider=r;else if(n)kbSlider=n.parentElement.querySelector("input[type=range]");},true);
+document.addEventListener("pointerout",e=>{if(wheelArm&&e.target===wheelArm)wheelArm=null;},true);
+document.addEventListener("wheel",e=>{const r=e.target;if(!wheelArm||r!==wheelArm)return;e.preventDefault();wheelAcc+=e.deltaY||e.deltaX;if(Math.abs(wheelAcc)<40)return;nudgeSlider(r,wheelAcc<0?1:-1);wheelAcc=0;},{passive:false});
+/* keyboard, alongside touch and mouse: Space is the hold button on the strip and the sled */
+function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySelector(".kbd")){closeSheet();return;}
+  const K=(k,t)=>`<kbd>${k}</kbd><span>${t}</span>`;$("sheetTitle").textContent="Keyboard & mouse";
+  $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}
+    <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test (Test tab)")}${K("V","view options")}
+    <h3>Panel</h3>${K("1 – 5","Build · Test · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("?","this list")}
+    <h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}</div>`;
+  $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
+$("kbHelpBtn").addEventListener("click",kbHelp);
+const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
+function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";return null;}
+let spaceHeld=null;
+function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}}
+document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;const k=e.key;
+  if(k===" "||k==="Spacebar"){const h=holdKind();if(!h)return;e.preventDefault();if(e.repeat||spaceHeld)return;spaceHeld=h;
+    if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
+  if($("intro").style.display!=="none")return;
+  if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
+  if(k==="ArrowLeft"||k==="ArrowRight"){const a=document.activeElement,r=a&&a.matches&&a.matches("input[type=range]")?a:kbSlider&&kbSlider.offsetParent?kbSlider:null;if(r&&nudgeSlider(r,k==="ArrowRight"?1:-1))e.preventDefault();return;}
+  if(e.repeat)return;
+  if(k==="?"){kbHelp();e.preventDefault();return;}
+  const lk=k.toLowerCase();
+  if(/^[1-5]$/.test(k)){const b=document.querySelector(`#tabs [data-tab="${TAB_KEYS[+k-1]}"]`);if(b){b.click();e.preventDefault();}}
+  else if(lk==="s")$("sndBtn").click();
+  else if(lk==="i"||lk==="e")$("idleBtn").click();
+  else if(lk==="v")$("viewBtn").click();
+  else if(lk==="r"&&curTab==="test"&&!testing&&!$("runTest").disabled)$("runTest").click();});
+document.addEventListener("keyup",e=>{if((e.key===" "||e.key==="Spacebar")&&spaceHeld){e.preventDefault();spaceUp(false);}});
+window.addEventListener("blur",()=>{if(spaceHeld)spaceUp(true);});
 let visReady=false;
 function boot(){
   if(!S.mode)S.mode="sandbox";
+  if(S.layoutMode==null)S.layoutMode=detectLayout();applyLayout(true);
   for(const k in tabScroll)delete tabScroll[k];$("panel").scrollTop=0; // new shop, new pages: every tab starts at the top
   if(!visReady){ENGINE_VIS.init($("gl"));visReady=true;requestAnimationFrame(tick);}
   ENGINE_VIS.buildGarage(garageOwned());ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);
