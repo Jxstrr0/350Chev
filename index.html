@@ -120,6 +120,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 .seg button.lock{opacity:.45}
 .seg button.lock::after{content:"🔒";position:absolute;top:3px;right:5px;font-size:10px}
 .seg.wide button{flex:1 1 30%}
+.seg.wide button small{max-width:100%}   /* a long tech-card reason ellipsizes inside its button */
 .lbl{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--chalk);margin:8px 0 3px;letter-spacing:.02em}
 .lbl b{font-family:var(--mono);font-weight:500;color:var(--orange2);font-size:14px;white-space:nowrap;flex:0 0 auto}.lbl>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lbl .q{font-family:var(--mono);font-size:12px;color:var(--orange2);padding:2px 0 2px 8px;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -987,6 +988,7 @@ const ENGINE_SIM = (function () {
     small: { name: "Small turbo", sub: "26 lb/min  spool 0.82", info: "A small wheel that lights instantly and fills the mid-range, then runs out of breath and corks the engine up top.", maxFlow: 26, spoolFac: 0.82, chokeFac: 0.85, backP: 2.40, cost: 0 },
     medium: { name: "Medium turbo", sub: "40 lb/min  spool 1.10", info: "The all-rounder. Enough flow for a strong road engine, with boost arriving around three thousand on a two-litre.", maxFlow: 40, spoolFac: 1.10, chokeFac: 1.00, backP: 1.95, cost: 400 },
     large: { name: "Large turbo", sub: "58 lb/min  spool 1.52", info: "A big wheel with the flow for serious power, behind a housing large enough that nothing happens down low on a small engine.", maxFlow: 58, spoolFac: 1.52, chokeFac: 1.15, backP: 1.50, cost: 900 },
+    s66: { name: "66 mm smoker wheel", sub: "115 lb/min  spool 2.20", info: "The 2.6-inch pulling turbo: a 66 mm inducer to pass the tech card, a big exducer behind it and a ported map-width cover so it keeps flowing at 60 psi. Lazy off the line on anything but a big diesel.", maxFlow: 115, spoolFac: 2.20, chokeFac: 1.40, backP: 1.30, cost: 3800, req: "boost" },
     huge: { name: "Huge turbo", sub: "84 lb/min  spool 2.05", info: "A competition wheel: enormous top-end flow and almost no backpressure once lit. On the street it is dead weight.", maxFlow: 84, spoolFac: 2.05, chokeFac: 1.30, backP: 1.20, cost: 2600, req: "shop2" },
     f88: { name: "88 mm frame", sub: "125 lb/min", info: "A billet 88 mm wheel in a T6 frame — the size that shows up under the bumper of every fast radial car. Nothing at all happens below four thousand.", maxFlow: 125, spoolFac: 2.75, chokeFac: 1.42, backP: 1.10, cost: 7200, req: "race" },
     f98: { name: "98 mm frame", sub: "165 lb/min", info: "A pair of these is what a three-thousand horsepower door car runs. The wheel takes a moment to come alive and then the tyres are the problem.", maxFlow: 165, spoolFac: 3.45, chokeFac: 1.55, backP: 1.02, cost: 14500, req: "race" }
@@ -1194,7 +1196,7 @@ const ENGINE_SIM = (function () {
         { key: "intake", type: "seg", label: "Intake system", optTable: "intake" },
         { key: "asp", type: "seg", label: "Aspiration", optTable: "asp" },
         { key: "boost", type: "slider", label: "Boost pressure", min: 0.2, max: 3.5, step: 0.05, nudge: 0.05,
-          maxIf: c => (isDiesel(c) && OPT.asp[c.asp].compound) ? 7.0 : (OPT.turboSize[c.turboSize].maxFlow >= 125 || OPT.asp[c.asp].compound || OPT.asp[c.asp].kind === "screw") ? 5.5 : 3.5,
+          maxIf: c => (isDiesel(c) && OPT.asp[c.asp].compound) ? 7.0 : (OPT.turboSize[c.turboSize].maxFlow >= 100 || OPT.asp[c.asp].compound || OPT.asp[c.asp].kind === "screw") ? 5.5 : 3.5,
           unit: "bar", fmt: f2, showIf: isBoosted },
         { key: "turboSize", type: "seg", label: "Turbo size", optTable: "turboSize", showIf: (c) => isBoosted(c) && (OPT.asp[c.asp].kind === "turbo" || OPT.asp[c.asp].kind === "centrifugal") },
         { key: "turbineMat", type: "seg", label: "Hot-side material", optTable: "turbineMat", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" },
@@ -3817,14 +3819,14 @@ const ENGINE_SIM = (function () {
     }),
     P({
       id: "smoker26", name: "Smoker 2.6 Cummins", basedOn: "2.6 smoker-class 5.9 Cummins", cls: "pulling",
-      blurb: "A 5.9 on a single turbo with a 2.6-inch inducer, a cranked P-pump and 150 hp sticks. Black smoke from the line to the stop and about four times the factory fuel.",
-      soundProfile: null, realHp: 850, realRpm: 4000, realNm: 1700,
+      blurb: "A 5.9 on a single turbo with a 2.6-inch inducer, a cranked P-pump and 150 hp sticks. Sixty-five psi from a map-width wheel, black smoke from the line to the stop and about four times the factory fuel.",
+      soundProfile: null, realHp: 850, realRpm: 4000, realNm: 1650,
       cfg: {
         layout: "I6", bore: 102, stroke: 120, rodRatio: 1.6, cr: 16, blockMat: "cgi",
-        deck: "closed", headMat: "iron", head: "pushrod2v", valveMat: "inconel", springs: "dual", cam: 20,
-        lift: 70, redline: 3500, piston: "billet_tbc", pistonClearance: "loose", rings: "steel_drag", rod: "forged_300m",
+        deck: "closed", headMat: "iron", head: "pushrod2v", valveMat: "inconel", springs: "dual", cam: 25,
+        lift: 70, redline: 4000, piston: "billet_tbc", pistonClearance: "loose", rings: "steel_drag", rod: "forged_300m",
         rodBolts: "arp2000", crank: "billet_300m", damper: "viscous", bearings: "coated", gasket: "copper_oring", studs: "studs_916",
-        intake: "single_tb", asp: "turbo", turboSize: "large", turbineMat: "inconel", ic: "air_air", boost: 1.9,
+        intake: "single_tb", asp: "turbo", turboSize: "s66", turbineMat: "inconel", ic: "air_air", boost: 4.5,
         nitrous: "none", fuel: "diesel", dInj: "inline_mech", dNoz: "n150", injectors: "i240", fuelPump: "twin450", timing: -2, lambda: 1.2,
         oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "race", exhaust: "cast_log", cover: "red"
       }
@@ -3884,7 +3886,7 @@ const ENGINE_SIM = (function () {
     rail: { cdA: 0.45, bite: 1.62, wb: 4.20, n: "Dragster", d: "long rail, wing, huge bite", bars: 1 }
   };
   // compressor inducer size for each turbo option — sets how fast the wheel can be brought up to speed
-  const TURBO_MM = { small: 46, medium: 54, large: 62, huge: 76, f88: 88, f98: 98 };
+  const TURBO_MM = { small: 46, medium: 54, large: 62, s66: 66, huge: 76, f88: 88, f98: 98 };
   // what the hot side of each exhaust manifold tolerates before it starts to crack (°C at the turbine inlet / collector)
   const MANIFOLD_HEAT = {
     cast_log: { crackC: 900, cast: 1, n: "cast log manifold", where: "at the collector" },
@@ -4218,7 +4220,9 @@ const ENGINE_SIM = (function () {
   const PULL_TYRES = {
     dot: { n: "DOT mud tyre", d: "street-legal lugs", mu: 0.72, sp: 0.16, fall: 0.36, dig: 0.7 },
     ag: { n: "Ag bar tyre", d: "farm lugs · forgiving", mu: 0.80, sp: 0.22, fall: 0.28, dig: 0.6 },
-    cut: { n: "Cut pulling tyre", d: "hand-cut lugs · bites, then digs", mu: 0.95, sp: 0.25, fall: 0.42, dig: 1 }
+    cut: { n: "Cut pulling tyre", d: "hand-cut lugs · bites, then digs", mu: 0.95, sp: 0.25, fall: 0.42, dig: 1 },
+    // wide flotation carcass, every lug cut back to a paddle: enough bite that the engine, not the dirt, sets the speed
+    wide: { n: "Wide full-cut tyre", d: "Super Stock · paddles, needs power", mu: 1.20, sp: 0.28, fall: 0.45, dig: 1 }
   };
   const PULL_TRUCK_GEARS = [["2nd", 10], ["3rd", 14], ["4th", 19], ["5th", 25], ["6th", 32]];
   const PULL_TRACTOR_GEARS = [["B2", 6], ["B3", 8], ["C1", 11], ["C2", 14], ["C3", 18]];
@@ -4250,15 +4254,18 @@ const ENGINE_SIM = (function () {
       } },
     smoker26: { n: "2.6 Smoker", d: "diesel · 66 mm single · any injection", tier: 2, rep: 40, diesel: true,
       veh: { kind: "truck", drive: "4x4", mass: 3350, maxMass: 3630, wb: 3.70, cgH: 0.82, front: 0.56, tyreDia: 35, tyres: ["dot", "cut"], hitchMax: 26, flyK: 1 },
-      sled: { base: 1500, box: 4300, mu: 0.62, travel: 84 }, field: { med: 246, sd: 24, full: 0.15 },
+      sled: { base: 1500, box: 4300, mu: 0.62, travel: 84 }, field: { med: 250, sd: 22, full: 0.18 },
+      gears: [["3rd", 14], ["4th", 19], ["5th", 25], ["6th", 32], ["OD", 40]],   // geared to run: the power is only worth having at speed
       legal: function (c) {
         if (!pullIsD(c)) return { ok: false, why: "diesel only" };
         const t = pullSingleMax(66, "2.6")(c); if (!t.ok) return t;
         return { ok: true, why: t.why + " · any pump and nozzles" };
       } },
     superstock: { n: "Super Stock diesel", d: "compounds allowed · no limits", tier: 4, rep: 300, diesel: true,
-      veh: { kind: "truck", drive: "4x4", mass: 3500, maxMass: 3900, wb: 3.75, cgH: 0.80, front: 0.56, tyreDia: 35, tyres: ["cut"], hitchMax: 26, flyK: 1.1 },
-      sled: { base: 1600, box: 4700, mu: 0.62, travel: 84 }, field: { med: 266, sd: 20, full: 0.22 },
+      veh: { kind: "truck", drive: "4x4", mass: 3500, maxMass: 3900, wb: 3.75, cgH: 0.80, front: 0.56, tyreDia: 35, tyres: ["cut", "wide"], hitchMax: 26, flyK: 1.1 },
+      // a heavy sled whose box keeps travelling past the line: on paddle tyres the grip is there, so the horsepower decides
+      sled: { base: 2000, box: 9000, mu: 0.62, travel: 110 }, field: { med: 266, sd: 20, full: 0.22 },
+      gears: [["4th", 25], ["5th", 32], ["6th", 40], ["OD", 48], ["OD+", 56]],
       legal: function (c) {
         if (!pullIsD(c)) return { ok: false, why: "diesel only" };
         const t = pullTurbo(c);
@@ -4267,7 +4274,8 @@ const ENGINE_SIM = (function () {
       } },
     hotfarm: { n: "Hot Farm tractor", d: "2WD tractor · ag tyres · 3.0\" single", tier: 3, rep: 120, diesel: true,
       veh: { kind: "tractor", drive: "rwd", mass: 4000, maxMass: 4540, wb: 2.75, cgH: 1.05, front: 0.36, tyreDia: 64, tyres: ["ag"], hitchMax: 20, flyK: 2.2 },
-      sled: { base: 1400, box: 3300, mu: 0.62, travel: 84 }, field: { med: 254, sd: 22, full: 0.15 },
+      sled: { base: 1400, box: 5000, mu: 0.62, travel: 110 }, field: { med: 254, sd: 22, full: 0.15 },
+      gears: [["C1", 11], ["C2", 14], ["C3", 18], ["D1", 21], ["D2", 24]],   // road gears only: nobody crawls a hot-farm sled in low range
       legal: function (c) {
         if (!pullIsD(c)) return { ok: false, why: "diesel only" };
         const t = pullSingleMax(76, "3.0")(c); if (!t.ok) return t;
@@ -4280,7 +4288,7 @@ const ENGINE_SIM = (function () {
   };
   for (const k in PULL_CLASSES) PULL_CLASSES[k].id = k;
   // the gear ladder a class pulls in: name and road speed at the governor with no slip
-  function pullGears(cls) { return (PULL_CLASSES[cls] || PULL_CLASSES.street).veh.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS; }
+  function pullGears(cls) { const c = PULL_CLASSES[cls] || PULL_CLASSES.street; return c.gears || (c.veh.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS); }
   function pullRng(seed) { let a = (seed >>> 0) || 1; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   /* veh: { cls, mass (kg, without ballast), ballast (kg on the front weight bracket), wb (m), cgH (m), front (static share on
@@ -4295,7 +4303,7 @@ const ENGINE_SIM = (function () {
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const torqueAt = r => r <= rpms[0] ? tq[0] * Math.max(0.35, r / rpms[0]) : interp(tq, r);
     const TY = PULL_TYRES[v.tyre] || PULL_TYRES.dot, g = 9.81, rw = v.tyreDia * 0.0254 / 2;
-    const gears = v.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS;
+    const gears = C0.gears || (v.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS);
     const mph = v.mph || (gears[clamp(Math.round(v.gear), 0, gears.length - 1)] || gears[1])[1];
     const G = (v.redline * 2 * Math.PI / 60) / (mph * 0.44704 / rw);          // overall ratio, engine : wheel
     const conv = v.trans !== "clutch", etaL = conv ? 0.91 : 0.95;
@@ -4551,7 +4559,7 @@ const ENGINE_SOUND = (function () {
   var OPTN2O = { none: 0, wet150: 150, direct250: 250, prog400: 400, prog700: 700 };
 
   var TURBO_SIZE = { small:{ base:5200, spool:0.85, wg:0.8 }, medium:{ base:4200, spool:0.70, wg:1.0 },
-                     large:{ base:3300, spool:0.55, wg:1.3 }, huge:{ base:2500, spool:0.42, wg:1.7 },
+                     large:{ base:3300, spool:0.55, wg:1.3 }, s66:{ base:2850, spool:0.46, wg:1.5 }, huge:{ base:2500, spool:0.42, wg:1.7 },
                      f88:{ base:1950, spool:0.32, wg:2.3 },  f98:{ base:1650, spool:0.26, wg:2.8 } };
 
   /* ------------------------------------------------------------------ *
@@ -8488,8 +8496,8 @@ var PIPE_LOG=[];          /* every pipe built so far this engine (world points +
 var EXH_COLL=[];          /* turbo feed flanges, engine space: {pt, dir, bank, r, cast} (filled by buildExhaust) */
 var LAST_TB=null;         /* throttle inlet {pt, dir(upstream)} (filled by buildIntake) */
 var LAST_PLEN=null;       /* plenum / blower-manifold box {x, z, top, bot, len, w} (filled by buildIntake) */
-var TURBO_MM = { small:46, medium:54, large:64, huge:76, f88:88, f98:98 };        /* compressor inducer, mm */
-var FLOW_LB  = { small:26, medium:40, large:58, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
+var TURBO_MM = { small:46, medium:54, large:64, s66:66, huge:76, f88:88, f98:98 };        /* compressor inducer, mm */
+var FLOW_LB  = { small:26, medium:40, large:58, s66:115, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
 function turboScale(tsz){ return (TURBO_MM[tsz]||54)*0.019; }   /* housing unit s (scene units): compressor cover OD = 1.6 s, absolute size */
 
 /* a pipe must not run through a cone filter or a compressor cover: sample its route, push every sample out of each
