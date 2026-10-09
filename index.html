@@ -1040,10 +1040,17 @@ const ENGINE_SIM = (function () {
      against air's 23.2%, and roughly 15 hp per lb/min with the fuel to match).  */
   OPT.nitrous = {
     none: { name: "No nitrous", sub: "\u2014", info: "No power adder beyond whatever is feeding the intake.", shotHp: 0, prog: 0, cost: 0 },
-    wet150: { name: "150 shot, wet", sub: "one stage", info: "A single wet fogger plate under the carb or throttle body, jetted for a hundred and fifty. Simple, cheap, and it arrives all at once the moment the button closes.", shotHp: 150, prog: 0, cost: 1400, req: "boost" },
-    direct250: { name: "250 direct port", sub: "one stage", info: "A nozzle and a fuel jet in every runner, so every cylinder gets the same shot instead of whichever one is nearest the plate. Still switched on and off in one hit.", shotHp: 250, prog: 0, cost: 4200, req: "shop2" },
-    prog400: { name: "400 progressive", sub: "ramped on a timer", info: "Direct port fed through a progressive controller that ramps the solenoids in over a second or two, so the tyres get a chance and the rods survive the hit.", shotHp: 400, prog: 1, cost: 9500, req: "race" },
-    prog700: { name: "700 progressive", sub: "two stages, ramped", info: "Two stages of direct port on a progressive controller. This is a second engine's worth of power arriving through the same rods, and it is only survivable because it comes on gradually.", shotHp: 700, prog: 1, cost: 18000, req: "race" }
+    /* kind: dry = nitrous only, the engine's own injectors find the fuel (the ECU or a pressure riser adds it);
+       wet = a plate or fogger meters its own fuel off the pump; direct = a nozzle per runner; diesel = oxygen into a diesel intake.
+       plate: the fuel and nitrous mix in the intake tract (backfire risk). fam: "si" spark engines only, "ci" diesels only. */
+    dry75: { name: "75 shot, dry", sub: "nozzle only", info: "One nitrous nozzle in the intake tube and nothing else: the extra fuel has to come out of the engine's own injectors, so the ECU raises the rail pressure and the injector table while the button is closed. Cheap and tidy, and only as safe as the injectors and the pump behind it.", shotHp: 75, prog: 0, cost: 550, req: "boost", kind: "dry", stages: 1, fam: "si" },
+    dry125: { name: "125 shot, dry", sub: "nozzle only", info: "The same single nozzle jetted bigger. A hundred and twenty-five horsepower of oxygen asks the stock fuel system for a third more fuel all at once — if the injectors are already near the end of their duty, the mixture goes lean the instant the shot comes in, and a lean nitrous mixture melts pistons.", shotHp: 125, prog: 0, cost: 750, req: "boost", kind: "dry", stages: 1, fam: "si" },
+    wet150: { name: "150 shot, wet", sub: "one stage", info: "A single wet fogger plate under the carb or throttle body, jetted for a hundred and fifty. Simple, cheap, and it arrives all at once the moment the button closes.", shotHp: 150, prog: 0, cost: 1400, req: "boost", kind: "wet", stages: 1, plate: true },
+    wet2stage: { name: "100 + 150 plates", sub: "two-stage, wet", info: "Two plates stacked under the throttle: a hundred on the first stage, another hundred and fifty on the second once the car is hooked up. Lots of shot for the money — and a plenum full of fuel and oxygen waiting for a single misfire to light it.", shotHp: 250, prog: 0, cost: 2600, req: "shop1", kind: "wet", stages: 2, stageHp: [100, 150], plate: true },
+    direct250: { name: "250 direct port", sub: "one stage", info: "A nozzle and a fuel jet in every runner, so every cylinder gets the same shot instead of whichever one is nearest the plate. Still switched on and off in one hit.", shotHp: 250, prog: 0, cost: 4200, req: "shop2", kind: "direct", stages: 1 },
+    prog400: { name: "400 progressive", sub: "ramped on a timer", info: "Direct port fed through a progressive controller that ramps the solenoids in over a second or two, so the tyres get a chance and the rods survive the hit.", shotHp: 400, prog: 1, cost: 9500, req: "race", kind: "direct", stages: 1 },
+    prog700: { name: "700 progressive", sub: "two stages, ramped", info: "Two stages of direct port on a progressive controller. This is a second engine's worth of power arriving through the same rods, and it is only survivable because it comes on gradually.", shotHp: 700, prog: 1, cost: 18000, req: "race", kind: "direct", stages: 2 },
+    diesel100: { name: "Diesel kit, 100", sub: "dry, into the intake", info: "Nitrous into a diesel's intake with no fuel of its own: the extra oxygen burns fuel that was going out as smoke, and the pump is turned up to use the rest. A moderate shot actually cools the exhaust; a big one sends cylinder pressure through the roof.", shotHp: 100, prog: 0, cost: 900, req: "boost", kind: "diesel", stages: 1, fam: "ci" }
   };
 
   /* ---- aspiration ---- */
@@ -1602,6 +1609,17 @@ const ENGINE_SIM = (function () {
     const n2oWin = n2oOn ? (O.n2o.prog ? 0.42 : 0.55) * redline : 0;   // window switch
     // how big the shot is relative to what the engine already makes
     const n2oBite = n2oOn ? clamp(n2oHp / (60 * (g.Vd * 1000)), 0, 2.2) : 0;
+    /* kit plumbing. A dry kit's fuel comes through the engine's own injectors (rail pressure raised by the
+       kit), so a fuel system already near its limit goes lean the moment the shot arrives. A diesel kit is
+       oxygen only: the injection pump finds the fuel, and a pump on its stop just makes less of the shot.
+       Stacked plates bring their second stage in later in the pull. The original four kits are untouched. */
+    const n2oKind = O.n2o.kind || "";
+    const n2oDry = n2oOn && !dsl && (n2oKind === "dry" || n2oKind === "diesel");
+    const n2oDsl = n2oOn && dsl && (n2oKind === "diesel" || n2oKind === "dry");
+    const n2oSt = n2oOn && O.n2o.stageHp ? O.n2o.stageHp : null;
+    const n2oWin2 = n2oSt ? n2oWin + 0.15 * redline : 0;
+    const N2O_RAIL = 1.18;                  // injector flow with the rail pressure raised ~40% while the shot is on
+    let n2oLeanPk = 0;
     const rpms = [], torque = [], power = [], boostCurve = [], veCurve = [], egtCurve = [], bmepArr = [];
     let peakHp = 0, peakHpRpm = 0, peakTq = 0, peakTqRpm = 0;
     let maxPmax = 0, maxPmaxRpm = 0, maxImep = 0, maxEgt = 0, maxRetard = 0;
@@ -1678,23 +1696,26 @@ const ENGINE_SIM = (function () {
       // diesel: lambda follows the smoke limiter while the boost is not yet there
       const lamSet = dsl && boosted ? cfg.lambda * Math.pow(clamp(rhoCharge / rhoFull, 0.05, 1), 1 - dInj.smokeLim) : cfg.lambda;
       const needLph = kFuel * airKgS / (O.fu.afr * lamSet) * 3600 / fuelRho;
+      const n2oStK = n2oSt && rpm < n2oWin2 ? n2oSt[0] / n2oHp : 1;   // first stage only, until the second arms
       const n2oLph = (n2oOn && rpm >= n2oWin)
-        ? n2oHp * 745.7 * (O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1) / (0.26 * O.fu.lhv) * 3600 / fuelRho : 0;
-      const ccCyl = needLph * 1000 / 60 / L.n;
-      const duty = portInj ? ccCyl / injCc : 0;
+        ? n2oHp * 745.7 * (O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1) / (0.26 * O.fu.lhv) * 3600 / fuelRho * n2oStK : 0;
+      const ccCyl = (needLph + (n2oDry ? n2oLph : 0)) * 1000 / 60 / L.n;
+      const duty = portInj ? ccCyl / (injCc * (n2oDry && n2oLph > 0 ? N2O_RAIL : 1)) : 0;
       // diesel: mm3 per stroke asked of the injection system against what pump + nozzles can push
-      const qDem = dsl ? needLph * 1e6 / (L.n * rpm * 30) : 0;
+      const qDem = dsl ? (needLph + (n2oDsl ? n2oLph : 0)) * 1e6 / (L.n * rpm * 30) : 0;
       const qCap = dsl ? dInj.qL * g.Vcyl * 1000 * dNoz.mult * (rpm <= dInj.rpmMax ? 1 : Math.exp(-sq((rpm - dInj.rpmMax) / (0.22 * dInj.rpmMax)))) : 1;
       const qUtil = qDem / qCap;
-      const pumpCap = pumpLphAt(fpump, rpm, dsl ? 0 : bBar);   // a diesel lift pump does not push against boost
+      const pumpCap = pumpLphAt(fpump, rpm, dsl ? 0 : bBar) * (n2oDry && n2oLph > 0 ? 0.92 : 1);   // a diesel lift pump does not push against boost; a dry kit's raised rail costs the pump flow
       const pumpLoad = (needLph * (dsl ? DSL_RETURN : 1) + n2oLph) / pumpCap;
-      const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE));
+      const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE))
+        * (n2oDry && !portInj && n2oLph > 0 ? needLph / (needLph + n2oLph) : 1);   // a carburettor has no injector table to add the dry shot's fuel
       const lamE = dsl ? Math.min(6, lamSet / fd) : Math.min(1.5, cfg.lambda / fd);
       if (dsl) {
         if (qUtil > qUtilPk) { qUtilPk = qUtil; qDemPk = qDem; qCapPk = qCap; qRpm = rpm; }
         if (lamE < lamMin) lamMin = lamE;
         // black smoke: unburnt carbon once the spray runs short of air
-        const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -cfg.timing)), 0, 1);
+        const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -cfg.timing)), 0, 1)
+          * (n2oDsl && n2oLph > 0 ? clamp(1 - 1.6 * n2oBite, 0.2, 1) : 1);   // the shot's oxygen burns the soot
         smokeCurve.push(sm);
         if (sm > smokePk) smokePk = sm;
       }
@@ -1703,6 +1724,7 @@ const ENGINE_SIM = (function () {
       if (duty > dutyPk) { dutyPk = duty; dutyRpm = rpm; }
       if (pumpLoad > pumpPk) { pumpPk = pumpLoad; pumpRpm = rpm; pumpCapPk = pumpCap; pumpNeedPk = needLph + n2oLph; }
       if (lamE > lamTop) { lamTop = lamE; fdTop = fd; leanRpm = rpm; }
+      if (n2oDry && n2oLph > 0) n2oLeanPk = Math.max(n2oLeanPk, lamE - cfg.lambda);
 
       /* ---- knock ------------------------------------------------------ */
       // dynamic compression falls with cam overlap (late intake valve closing)
@@ -1719,6 +1741,7 @@ const ENGINE_SIM = (function () {
         - 6.0 * clamp(1.0 - lamE, -0.05, 0.22);
       onReq -= O.block.k > 100 ? 0.4 : 0;                 // alu block pulls heat too
       if (n2oOn && rpm >= n2oWin) onReq += clamp(9.0 * n2oBite, 2, 15) * (O.n2o.prog ? 0.85 : 1);  // oxygen in the chamber, not just air
+      if (n2oDry && n2oLph > 0) onReq += 30 * Math.max(0, lamE - cfg.lambda);   // lean on nitrous: the burn runs away
       const margin = fuelON - onReq;
       let retard = 0;
       if (!dsl && margin < 0) retard = clamp(-margin * 1.55, 0, 14);
@@ -1749,7 +1772,7 @@ const ENGINE_SIM = (function () {
       let n2oFrac = 0;
       if (n2oOn && rpm >= n2oWin) {
         const ramp = O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1;
-        const n2oW = n2oHp * 745.7 * ramp;                       // crank watts asked of the bottle
+        const n2oW = n2oHp * 745.7 * ramp * n2oStK * (n2oDsl ? Math.min(1, fd) : 1);   // crank watts asked of the bottle
         // a cylinder can only hold so much oxidiser: cap the shot's contribution
         const addPa = Math.min(n2oW / (g.Vd * (rpm / 120)), 1.8 * imep);  // P = imep * Vd * (rpm/120)
         imep += addPa;
@@ -1775,7 +1798,7 @@ const ENGINE_SIM = (function () {
       const mps = 2 * (g.s / 1000) * rpm / 60;
       /* diesel: compression pressure plus the combustion rise; advance puts it nearer TDC. Boost
          heat shortens the delay, so less fuel goes off at once and the rise gets gentler.  */
-      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * cfg.timing) / (1 + 0.08 * bBar)) * (1 + 0.30 * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
+      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * cfg.timing) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
         * (1 + (O.n2o.prog ? 0.16 : 0.30) * n2oFrac);    // nitrous burns faster and peaks earlier
       let fmepBar = FM_C + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps;
       fmepBar *= (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac;
@@ -1802,6 +1825,8 @@ const ENGINE_SIM = (function () {
         - 0.35 * (evapK * fd) - 0.10 * (chargeC - 35) + 260 * n2oFrac;
       // diesel: hottest near lambda 1; past that the extra fuel cannot burn and only soaks up heat
       if (dsl) egt = 220 + 650 / Math.pow(Math.max(lamE, 0.95), 1.2) - 250 * Math.max(0, 0.95 - lamE) + 0.03 * (rpm - 2000) - 12 * cfg.timing + 260 * n2oFrac;
+      if (n2oDsl) egt += -560 * n2oFrac + 700 * n2oFrac * n2oFrac;   // a moderate shot cools a diesel's exhaust; a big one heats it again
+      if (n2oDry) egt += 900 * Math.max(0, lamE - cfg.lambda) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
       egt = clamp(egt, 380, 1150);
 
       rpms.push(rpm);
@@ -1927,6 +1952,7 @@ const ENGINE_SIM = (function () {
     if (dsl) crownC += 0.30 * clamp(maxEgt - 700, -200, 500);     // diesel: overfuelling is what cooks the bowl rim
     else crownC -= 150 * clamp(1 - lamTop, 0, 0.25);               // enrichment is crown cooling (what arrived, at the leanest point)
     if (!dsl) crownC += 200 * clamp(lamTop - cfg.lambda, 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
+    if (n2oDry) crownC += 1600 * clamp(n2oLeanPk, 0, 0.3) * clamp(n2oBite, 0.25, 1.5);   // a lean nitrous cylinder: the crown edge goes first
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
     crownC = clamp(crownC, env.coolantC + 40, 900);
     const skirtC = 0.22 * crownC + 0.78 * (env.coolantC + 15);
@@ -2395,6 +2421,23 @@ const ENGINE_SIM = (function () {
     if (!dsl && leanTop) notes.push("The fuel system runs out at " + leanRpm + " rpm: the cylinders get \u03bb " + lamTop.toFixed(2) + " instead of " + cfg.lambda.toFixed(2) + ", and the extra heat goes into the exhaust and the pistons.");
     if (env.altitudeM > 1500) notes.push("At " + env.altitudeM + " m the air is " + ((1 - air.rho / 1.2) * 100).toFixed(0) + "% thinner than sea level; correctedHp is the SAE-normalised figure.");
 
+    /* nitrous: what the kit does on a pass that a pull does not show — the chance of a lean spike when the shot
+       hits (dry kits), and of a backfire through a fuel-laden intake (plates; long runners hold the most mixture) */
+    let n2oInfo = null;
+    if (n2oOn) {
+      const plate = !!O.n2o.plate, leanX = Math.max(0, lamTop - cfg.lambda);
+      const runner = cfg.intake === "plenum_long" ? 2.6 : cfg.intake === "carb" ? 1.4 : cfg.intake === "plenum_short" ? 0.8 : cfg.intake === "itb" ? 0.6 : 1;
+      const bf = plate ? clamp(0.012 * (O.n2o.stages || 1) * runner * (0.5 + n2oBite) * (boosted ? 1.5 : 1) * (1 + 0.25 * Math.max(0, cfg.timing - 2)) + 0.6 * leanX * runner, 0, 0.5)
+        : n2oKind === "direct" ? clamp(0.002 * (0.5 + n2oBite) + 0.1 * leanX, 0, 0.2) : 0;
+      const hotU = Math.max(crownC / O.pis.maxCrownC, dsl ? 0 : hotSpotC / hotSpotLimit);
+      n2oInfo = { kind: n2oKind || "wet", shotHp: n2oHp, stages: O.n2o.stages || 1, stageHp: n2oSt, plate: plate, prog: !!O.n2o.prog,
+        winRpm: Math.round(n2oWin), win2Rpm: n2oSt ? Math.round(n2oWin2) : null, bite: n2oBite, dry: n2oDry, diesel: n2oDsl,
+        lean: n2oDry ? +n2oLeanPk.toFixed(3) : 0, backfire: +bf.toFixed(3),
+        leanRisk: n2oDry ? +clamp(1.5 * n2oLeanPk + 1.5 * Math.max(0, hotU - 0.92) + 0.8 * Math.max(0, injUtil - 0.85) + 0.01, 0, 0.7).toFixed(3) : 0 };
+      if (n2oDry && n2oLeanPk > 0.01) notes.push("When the " + n2oHp + " shot comes in, the fuel system cannot add its fuel: \u03bb goes to " + (cfg.lambda + n2oLeanPk).toFixed(2) + " on the bottle. A lean nitrous mixture is how pistons melt.");
+      if (n2oDsl) notes.push("The diesel kit adds oxygen only; the injection pump has to find the fuel" + (qUtilPk > 1 ? ", and it is already on its stop \u2014 part of the shot goes unused." : "."));
+    }
+
     const correctedHp = peakHp * j1349(air.pd, env.ambientC);
 
     return {
@@ -2416,6 +2459,7 @@ const ENGINE_SIM = (function () {
       fuel: { duty: dutyPk, dutyRpm: dutyRpm, ccCyl: ccCylPk, load: pumpPk, loadRpm: pumpRpm, capLph: pumpCapPk, needLph: pumpNeedPk,
         injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph,
         qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : litresPerHour },
+      nitrous: n2oInfo,
       tests: tests, fails: fails, rel: Math.round(rel * 10) / 10,
       lifeHours: Math.round(lifeHours), firstToFail: firstToFail,
       racePasses: racePasses, raceSpec: raceSpec,
@@ -2875,6 +2919,28 @@ const ENGINE_SIM = (function () {
       add("warn", "Heavy launch retard on a cast manifold", "At " + Math.round(cfg.launchRetard) + "° the turbine inlet climbs past " + (cfg.exhaust === "cast_log" ? 900 : 930) + " °C within a couple of seconds on the limiter, and cast manifolds crack from exactly that heat cycling. Keep the holds short, or fit tubular headers.");
     if (cfg.launchCtl === "two_step_retard" && OPT.asp[cfg.asp].kind === "turbo" && cfg.turbineMat === "cast_iron" && cfg.launchRetard >= 25)
       add("warn", "Ni-resist turbine behind a hot two-step", "The cast turbine housing is good to about 950 °C. Launch retard this heavy gets there in about two seconds on the line — an Inconel hot side takes another hundred degrees.");
+    /* --- nitrous kits (the newer kits: dry, stacked plates, diesel) ------ */
+    const nk = OPT.nitrous[cfg.nitrous], nz = quick.nitrous;
+    if (nk && nz && (nk.kind === "dry" || nk.kind === "diesel" || nk.stageHp)) {
+      if (nz.dry && cfg.intake === "carb")
+        add("bad", "Dry shot on a carburettor", "A dry kit leaves the fuel to the engine's injectors and an ECU that adds it while the button is closed. A carburettor has neither: the shot arrives with no fuel at all, and a lean nitrous cylinder melts its piston in a second. Use a wet plate under the carb.");
+      else if (nz.dry && (nz.lean > 0.01 || quick.fuel.injUtil > 0.85))
+        add("bad", "Dry shot on stock injectors", "With the " + nk.shotHp + " shot on, the injectors have to find about " + Math.round(nk.shotHp / (quick.peakHp || 1) * 100) + "% more fuel at once; they are already at " + Math.round(quick.fuel.duty * 100) + "% duty with the rail pressure raised" + (nz.lean > 0.01 ? ", and the mixture goes to \u03bb " + (cfg.lambda + nz.lean).toFixed(2) + " on the bottle" : "") + ". Bigger injectors and a pump with room to spare, or a wet kit that brings its own fuel.");
+      else if (nz.dry)
+        add("good", "Dry kit with fuel to spare", "The injectors and pump can carry the " + nk.shotHp + " shot's fuel with margin left over, so the mixture stays where the tune put it when the button closes.");
+      if (nk.plate && (cfg.intake === "plenum_long" || boosted))
+        add("warn", "Wet plate on a " + (cfg.intake === "plenum_long" ? "long-runner intake" : "boosted intake") + " (backfire)", "A plate fills the " + (cfg.intake === "plenum_long" ? "long runners" : "intake tract") + " with fuel and nitrous; one misfire or a lean cylinder lights the lot and it comes back up the intake. About " + Math.round(nz.backfire * 100) + "% a pass here. Short runners, direct port, or a burst panel and a good ignition system.");
+      else if (nk.plate && nz.backfire > 0.03)
+        add("warn", "Wet plate backfire risk", "About " + Math.round(nz.backfire * 100) + "% of passes light the intake: the mixture is " + (quick.fuel.lamTop > cfg.lambda + 0.005 ? "going lean on the bottle" : "sitting in the plenum") + ". Purge on the line, keep the timing honest, and fit a burst panel.");
+      if ((cfg.piston === "cast_alu" || cfg.piston === "hyper") && !dsl)
+        add(nk.shotHp >= 125 ? "bad" : "warn", "Nitrous and " + (cfg.piston === "hyper" ? "hypereutectic" : "cast") + " pistons", "Nitrous burns fast and hot, and a cast or hypereutectic crown cracks rather than bends when the pressure spikes. Seventy-five on a healthy engine is usually fine; past that, forged pistons are the rule.");
+      if (nk.stageHp || nk.shotHp >= 125)
+        add("info", "Progressive saves the tyres", "This kit hits all at once. A progressive controller (or bringing the shot in after the 1-2 shift on the strip) feeds it in as the tyres take it, instead of spinning them off the line.");
+      add("info", "Bottle heater", "Nitrous pressure follows the bottle's temperature: about 735 psi at 20 \u00b0C and 950 at 32 \u00b0C. A heater blanket holds it near 950 so the shot is the same every pass; without one a cool bottle flows less and less as the night goes on. Purge before every pass so the line is full of liquid.");
+      if (nz.diesel) add("info", "Nitrous on a diesel", "The kit adds oxygen only. A moderate shot lets the injection pump turn its fuel up without smoke and actually cools the exhaust; a big one sends peak cylinder pressure through the roof \u2014 the head studs and gasket go before anything melts" + (quick.fuel.injUtil > 1 ? ". The injection pump is already on its stop, so part of the shot has nothing to burn." : "."));
+      if (dsl && !nz.diesel) add("warn", "A petrol kit on a diesel", "This kit's fuel side is meant for petrol. The diesel kit just sprays nitrous into the intake and lets the injection pump find the fuel.");
+      if (!dsl && nk.kind === "diesel") add("bad", "A diesel kit on a petrol engine", "The diesel kit has no fuel of its own and no ECU table behind it: on a spark engine it is a dry shot with nothing to burn it rich.");
+    }
     if (cfg.transBrake === "trans_brake" && OPT.asp[cfg.asp].kind === "turbo")
       add("good", "Trans-brake on a turbo engine", "Held on the converter at full load, the engine drives the turbo as if the car were already moving, so it leaves on boost without needing as much retard.");
     return out;
@@ -3992,7 +4058,18 @@ const ENGINE_SIM = (function () {
       const na = simulate(Object.assign({}, cfg, { asp: "na" }), env);
       res.naTorque = res.rpms.map(r => { const i = na.rpms.indexOf(r); return i >= 0 ? na.torque[i] : 0; });
     }
+    // nitrous: the shot's own share of the curve, so a pass can bring it in late, soft or not at all
+    if (res.nitrous && OPT.nitrous[cfg.nitrous] && cfg.nitrous !== "none") { const nn = simulate(Object.assign({}, cfg, { nitrous: "none" }), env); res.n2oTq = res.torque.map((t, i) => Math.max(0, t - (nn.torque[i] || 0))); }
     return res;
+  }
+
+  /* nitrous bottle pressure: N2O is a liquid sitting on its own vapour, so the pressure is set by the bottle's
+     temperature (about 735 psi at 20 °C, 950 at 32 °C; past 36 °C it is no longer a liquid at all). A heater
+     blanket holds it near 950; without one the bottle follows the weather and cools as it empties.          */
+  function n2oBottle(heater, ambientC, cooledK) {
+    const T = heater ? 31.5 : ambientC - (cooledK || 0);
+    const bar = 31.3 * Math.exp(0.0236 * T);
+    return { psi: Math.round(Math.min(1100, bar * 14.5038)), tempC: Math.round(T) };
   }
 
   /* launch tech a car carries, from the build (ECU / driveline parts, not engine parts) */
@@ -4023,6 +4100,13 @@ const ENGINE_SIM = (function () {
     const retard = retardOn ? clamp(+v.launchRetard || 0, 0, 35) : 0;
     const holdRpm = twoStep && v.twoStepRpm > 0 ? Math.min(v.redline, v.twoStepRpm) : v.launchRpm;
     const canArm = twoStep || transBrake;
+    /* ---- nitrous: only when the app hands over the bottle (veh.n2o = {act, psi, line}); otherwise the shot is
+       whatever the dyno curve says, exactly as before. act: "window" (the rpm window switch), "mph40", "mph60",
+       "shift2" (after the 1-2 shift). line 0..1: how much of the feed line is liquid (purging fills it). ---- */
+    const NZ = v.n2o && res.nitrous && Array.isArray(res.n2oTq) && res.n2oTq.length === N ? res.nitrous : null;
+    const nzAct = NZ ? (v.n2o.act || "window") : "window";
+    const nzPsi = NZ ? clamp(+v.n2o.psi || 950, 300, 1100) : 950;
+    const nzPsiK = clamp(Math.pow(nzPsi / 950, 0.85), 0.3, 1.1);       // jet flow follows bottle pressure
 
     /* ---- transient boost: torque = atmospheric curve + what the manifold pressure is worth right now ---- */
     const kind = res.aspKind || "na", bT = +res.boostTarget || 0;
@@ -4089,6 +4173,8 @@ const ENGINE_SIM = (function () {
       armedT: 0, egt: 420 + (+v.soakC || 0), egtPeak: 0, egtLine: 0, turbDose: 0, manDose: 0, lineHeat: 0, launchBoost: 0, launchRpmAct: 0,
       lift: 0, liftMax: 0, onBars: false, wheelieT: 0, conv: false, failKind: null, failAt: Infinity, broke: null, risk: null, gripGain: 0, boost0T: null };
     st.egtPeak = st.egt;
+    st.n2oS = NZ ? { line: clamp(v.n2o.line == null ? 0.15 : +v.n2o.line, 0, 1), psi: nzPsi, on: false, onT: null, onMph: 0, onGear: 0, onX: 0, frac: 0, stage2: false, purging: false, purged: 0, puff: 0, event: null, cut: false, lineAtOn: 0, popT: 0 } : null;
+    st.n2o = 0;   // the shot's flow right now, 0..1 (the datalog reads it)
     let acc = 0, lastTrace = 0, popT = 0;
     function pops(dt, rate, amp) { st.launch.pops *= Math.exp(-dt / 0.06); popT -= dt; if (rate > 0 && popT <= 0) { popT = (0.4 + Math.random() * 1.2) / rate; st.launch.pops = Math.max(st.launch.pops, amp * (0.6 + Math.random() * 0.4)); } }
     function heat(dt, target, tau) {
@@ -4104,6 +4190,8 @@ const ENGINE_SIM = (function () {
     function step(dt) { dt = Math.min(1, dt); while (dt > 0 && !st.done) { const h = Math.min(0.004, dt); dt -= h; sub(h); } return st; }
     function sub(dt) {
       if (st.done) return st;
+      if (NZ) n2oStep(dt);
+      else if (res.nitrous && Array.isArray(res.n2oTq) && res.n2oTq.length === N) st.n2o = st.phase === "run" && st.shiftT <= 0 && interp(res.n2oTq, st.rpm) > 1 ? 1 : 0;   // no bottle model: the window switch decides
       if (st.phase === "shutdown") {
         st.t += dt;
         const cdAs = st.chuteOut ? cdA0 + 9.2 : cdA0;
@@ -4157,6 +4245,7 @@ const ENGINE_SIM = (function () {
       if (trans && st.boost0T == null && st.boost >= 0.75 * bT) st.boost0T = st.t;
       if (st.failKind && st.t >= st.failAt) { st.broke = st.failKind; st.phase = "done"; st.done = true; st.load = 0; return st; }
       let Teng = inShift ? 0 : engTq(st.rpm);
+      if (NZ && !inShift && st.n2oS.frac < 1) Teng -= (1 - st.n2oS.frac) * interp(res.n2oTq, st.rpm);   // the part of the shot that is not in
       if (st.rpm >= limiter) { Teng = Teng * 0.15; st.limiterTime += dt; }
       let Ttrans;
       const driveRpm0 = wheelRpm + st.wSpin;
@@ -4208,6 +4297,36 @@ const ENGINE_SIM = (function () {
     function stage() { if (st.phase !== "burnout") return; st.burning = false; st.spin = false; st.phase = "staged"; st.t = 0; st.v = 0; st.rollIn = Math.max(0.3, Math.min(1.4, -st.x * 0.16)); if (st.x >= -0.01) { st.rollIn = 0; st.rolled = true; st.x = 0; } }
     function arm() { if (st.phase !== "staged" || !canArm || st.launch.armed) return false; st.launch.armed = true; return true; }
     function disarm() { if (st.phase !== "staged") return; st.launch.armed = false; }
+    /* what can go wrong when the shot hits: a dry kit leans out if the bottle is hotter than the fuel table
+       assumes; a wet plate full of mixture lights off a misfire — worse with a line still full of gas */
+    function n2oRisk() {
+      const lean = NZ.dry ? clamp((NZ.leanRisk || 0) * clamp(1 + 4 * (nzPsiK - 1), 0.3, 1.6) + (nzPsiK > 1.02 ? 0.04 : 0), 0, 0.8) : 0;
+      const backfire = clamp((NZ.backfire || 0) * (st.n2oS.line < 0.5 ? 1.4 : 1) * (nzPsiK < 0.9 ? 1.2 : 1), 0, 0.6);
+      return { lean: +lean.toFixed(3), backfire: +backfire.toFixed(3) };
+    }
+    function n2oStep(dt) {
+      const z = st.n2oS;
+      if (z.purging && (st.phase === "burnout" || st.phase === "staged")) { z.line = Math.min(1, z.line + dt / 0.7); z.purged += dt; z.psi = Math.max(300, z.psi - dt * 3); z.puff = 1; }
+      else { z.purging = false; z.puff = Math.max(0, z.puff - dt / 0.3); if (!z.on) z.line = Math.max(0.15, z.line - dt / 45); }   // the line warms and boils back to gas
+      if (st.phase !== "run" || z.cut) { z.frac = 0; st.n2o = 0; return; }
+      const mph = st.v * 2.23694;
+      const arm = nzAct === "mph40" ? mph >= 40 : nzAct === "mph60" ? mph >= 60 : nzAct === "shift2" ? st.gear >= 2 && st.shiftT <= 0 : st.rpm >= (NZ.winRpm || 0);
+      if (arm && !z.on) {
+        z.on = true; z.onT = st.t; z.onMph = mph; z.onGear = st.gear; z.onX = st.x; z.lineAtOn = z.line; z.shifts0 = st.shifts.length;
+        if (z.event === "lean" || z.event === "backfire") { st.failKind = z.event; st.failAt = st.t + (z.event === "lean" ? 0.35 + Math.random() * 0.5 : 0.04 + Math.random() * 0.2); }
+        else if (z.event === "panel") z.panelAt = st.t + 0.05 + Math.random() * 0.25;
+      }
+      if (!z.on) { z.frac = 0; st.n2o = 0; return; }
+      if (z.panelAt != null && st.t >= z.panelAt) { z.cut = true; z.frac = 0; st.n2o = 0; z.panelAt = null; st.launch.pops = 1; return; }   // the burst panel blows, the controller kills the shot
+      const since = st.t - z.onT;
+      z.line = Math.min(1, z.line + dt / 0.5);             // vapour first, then liquid at the jets
+      let k = nzPsiK * (0.35 + 0.65 * z.line);
+      if (nzAct !== "window" && NZ.prog) k *= clamp(since / 1.0, 0.25, 1);   // the controller ramps from the moment it is switched
+      if (NZ.stageHp && nzAct !== "window") { if (!z.stage2 && (st.shifts.length > z.shifts0 || since > 1.2)) z.stage2 = true; if (!z.stage2) k *= NZ.stageHp[0] / NZ.shotHp; }
+      z.frac = k;
+      st.n2o = +(k * (interp(res.n2oTq, st.rpm) > 1 ? 1 : 0)).toFixed(3);   // in only above the window switch
+    }
+    function purge(on) { if (!NZ || (st.phase !== "burnout" && st.phase !== "staged")) return false; st.n2oS.purging = !!on; return true; }
     function launch() {
       if (st.phase !== "staged") return;
       if (st.rollIn > 0) { st.rollIn = 0; st.x = 0; st.rolled = true; }
@@ -4222,6 +4341,8 @@ const ENGINE_SIM = (function () {
       const pM = MH ? clamp((st.manDose - 0.5) / 2.5, 0, 0.9) : 0;
       st.risk = { turbo: +pT.toFixed(2), manifold: +pM.toFixed(2) };
       if (!v.noFail) { const rnd = typeof v.rng === "function" ? v.rng : Math.random; if (rnd() < pT) st.failKind = "turbo"; else if (rnd() < pM) st.failKind = "manifold"; if (st.failKind) st.failAt = 0.15 + rnd() * 0.6; }
+      if (NZ) { const r = n2oRisk(); st.risk.lean = r.lean; st.risk.backfire = r.backfire;
+        if (!v.noFail && !st.failKind) { const rnd = typeof v.rng === "function" ? v.rng : Math.random; if (rnd() < r.lean) st.n2oS.event = "lean"; else if (rnd() < r.backfire) st.n2oS.event = rnd() < 0.5 ? "panel" : "backfire"; } }
     }
     function result() {
       const q = st.marks.find(m => m.n === "1/4 mi"), e = st.marks.find(m => m.n === "1/8 mi"), s = st.marks.find(m => m.n === "60 ft");
@@ -4265,14 +4386,26 @@ const ENGINE_SIM = (function () {
       if (q && q.mph > 150 && !v.chute) reasons.push(`Trapped ${Math.round(q.mph)} mph with no parachute. Anything over 150 gets black-flagged at tech, and it took ${Math.round(st.shutFt)} ft of brakes alone to pull up.`);
       else if (st.shutFt > 1800) reasons.push(`Used ${Math.round(st.shutFt)} ft of shutdown — more road than most strips give you.`);
       if (q && v.body === "street" && q.mph > 160) reasons.push("A full street body is its own parachute at this speed — a slicker shell is worth several mph of trap.");
+      if (NZ) {
+        const z = st.n2oS, shot = NZ.shotHp, C1 = n => Math.round(n).toLocaleString("en-CA");
+        if (st.broke === "lean") reasons.unshift(`The ${shot} shot came in lean${nzPsi > 980 ? ` — the bottle was at ${C1(nzPsi)} psi, more nitrous than the fuel table was written for` : ""}. ${NZ.dry ? "A dry kit is only as rich as the injectors and the pump behind it: " : ""}a cylinder went lean on the bottle and melted the crown.`);
+        else if (st.broke === "backfire") reasons.unshift(`Intake backfire: the ${NZ.plate ? "plate" : "nozzle"} had the intake full of fuel and nitrous, and a misfire lit it. It split the intake. Plates hate long runners, lean mixtures and a line full of gas.`);
+        else if (z.cut) reasons.push(`Intake backfire on the hit — the burst panel blew and the controller killed the shot. The pass was finished on the motor alone.`);
+        if (!z.on && !st.broke) reasons.push(nzAct === "window" ? `The nitrous never came on — the window switch arms at ${C1(NZ.winRpm)} rpm.` : `The nitrous never came on — it was set for ${nzAct === "shift2" ? "after the 1-2 shift" : nzAct === "mph40" ? "40 mph" : "60 mph"}.`);
+        else if (z.on && z.lineAtOn < 0.5 && !st.broke) reasons.push(`The line was not purged: the first of the shot was gas, not liquid, so the hit came in soft. Hold PURGE on the line until it spits white.`);
+        if (nzPsi < 880 && z.on) reasons.push(`Bottle at ${C1(nzPsi)} psi — a cool bottle flows ${Math.round((1 - nzPsiK) * 100)}% less shot, and a different amount every pass. A heater blanket holds it near 950.`);
+        if (z.on && nzAct !== "window" && st.spinTime < 0.1 && z.onGear <= 1 && z.onMph < 45) reasons.push(`The shot came on at ${Math.round(z.onMph)} mph and the tyres held it.`);
+        if (z.on && st.spinTime > 0.25 && z.onGear === 1 && nzAct === "window") reasons.push(`The shot came on in first gear and spun the tyres — set it to come on after the 1-2 shift, or at 40 mph.`);
+      }
       const thousand = st.marks.find(m => m.n === "1000 ft"), three = st.marks.find(m => m.n === "330 ft");
       return { et: q ? q.t : null, mph: q ? q.mph : null, eighth: e || null, sixty: s || null, ft330: three || null, ft1000: thousand || null, marks: st.marks, trace: st.trace, shifts: st.shifts, spinTime: +st.spinTime.toFixed(2), limiterTime: +st.limiterTime.toFixed(2), overrev: +st.overrev.toFixed(3), bog: st.bog, shutFt: Math.round(st.shutFt), chute: !!v.chute, body: v.body, reasons: reasons, veh: v, ratios: ratios.map(r => +r.toFixed(2)),
         launch: { ctl: lc, brake: tbk, holdRpm: twoStep ? holdRpm : 0, retard: retard, held: +st.armedT.toFixed(2), boost: +st.launchBoost.toFixed(2), boostTarget: bT, rpm: st.launchRpmAct, tyreTemp: +st.tyreTemp.toFixed(2), burnT: +st.burnT.toFixed(1), grip: +(st.gripGain * 100).toFixed(1), egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), boostT: st.boost0T != null ? +st.boost0T.toFixed(2) : null },
         heat: { egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), turbDose: +st.turbDose.toFixed(2), manDose: +st.manDose.toFixed(2), risk: st.risk, lineHeat: +st.lineHeat.toFixed(2), abuse: +clamp(st.lineHeat * 0.5, 0, 2.5).toFixed(2), limitC: egtLimit || null, manifold: MH ? MH.n : null },
+        n2o: NZ ? { kit: NZ.kind, shotHp: NZ.shotHp, act: nzAct, psi: Math.round(st.n2oS.psi), psiK: +nzPsiK.toFixed(3), on: st.n2oS.on, onT: st.n2oS.on ? +st.n2oS.onT.toFixed(2) : null, onMph: Math.round(st.n2oS.onMph), onGear: st.n2oS.onGear, onFt: Math.round(st.n2oS.onX * 3.28084), purged: +st.n2oS.purged.toFixed(1), lineAtOn: +st.n2oS.lineAtOn.toFixed(2), cut: st.n2oS.cut, risk: st.risk ? { lean: st.risk.lean, backfire: st.risk.backfire } : null } : null,
         broke: st.broke, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2) };
     }
     function Fmax0() { const m = mu * (1 + st.gripGain); return bite * m * v.mass * g * v.rearBias / Math.max(0.3, 1 - m * v.cgH / v.wheelbase); }
-    return { st: st, step: step, launch: launch, shift: shift, result: result, ratios: ratios, burn: burn, stage: stage, arm: arm, disarm: disarm, canArm: canArm, holdRpm: holdRpm };
+    return { st: st, step: step, launch: launch, shift: shift, result: result, ratios: ratios, burn: burn, stage: stage, arm: arm, disarm: disarm, canArm: canArm, holdRpm: holdRpm, purge: purge, n2o: NZ };
   }
   /* A whole pass with no human in it: contract ET checks, the rival in the other lane, the node harness.
      veh.holdTime: seconds on the two-step / trans-brake before the release (default 1.2 when fitted). */
@@ -4281,6 +4414,7 @@ const ENGINE_SIM = (function () {
     if (d.st.phase === "burnout") d.stage();
     while (d.st.phase === "staged" && d.st.rollIn > 0) d.step(0.01);
     if (d.canArm) { const ht = veh && veh.holdTime != null ? +veh.holdTime : 1.2; if (ht > 0 && d.arm()) { let t = 0; while (t < ht) { d.step(0.01); t += 0.01; } } }
+    if (d.n2o && veh.n2o.purge > 0) { d.purge(true); let t = 0; while (t < veh.n2o.purge) { d.step(0.01); t += 0.01; } d.purge(false); }   // a headless car purges before it leaves
     d.launch(); while (!d.st.done) d.step(0.002); return d.result();
   }
   /* ---- Truck & tractor pulling: a weight-transfer sled on a dirt track ----
@@ -4559,6 +4693,7 @@ const ENGINE_SIM = (function () {
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
     isDiesel: isDiesel,
+    n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel
   };
@@ -4630,7 +4765,7 @@ const ENGINE_SOUND = (function () {
   };
 
   // shot size in crank hp, mirroring OPT.nitrous in the sim
-  var OPTN2O = { none: 0, wet150: 150, direct250: 250, prog400: 400, prog700: 700 };
+  var OPTN2O = { none: 0, wet150: 150, direct250: 250, prog400: 400, prog700: 700, dry75: 75, dry125: 125, wet2stage: 250, diesel100: 100 };
 
   var TURBO_SIZE = { small:{ base:5200, spool:0.85, wg:0.8 }, medium:{ base:4200, spool:0.70, wg:1.0 },
                      large:{ base:3300, spool:0.55, wg:1.3 }, s66:{ base:2850, spool:0.46, wg:1.5 }, huge:{ base:2500, spool:0.42, wg:1.7 },
@@ -5530,10 +5665,12 @@ const ENGINE_SOUND = (function () {
     var n2oHp = p.n2o || 0;
     var n2oWin = n2oHp ? (p.n2oProg ? 0.42 : 0.55) * (p.redline || 7000) : 0;
     var n2oOn = (n2oHp > 0 && live && rpm >= n2oWin && load > 0.55) ? 1 : 0;
+    if (st.n2oGate != null) n2oOn = (n2oHp > 0 && live && st.n2oGate > 0.05 && load > 0.55) ? 1 : 0;   // the strip says when the shot is actually in
     var n2oBite = n2oOn ? clamp(n2oHp / Math.max(600, (p.cyl || 500) * n * 1.2), 0, 1.3)
                         * (p.n2oProg ? clamp((rpm - n2oWin) / (0.28 * (p.redline || 7000)), 0.25, 1) : 1) : 0;
     if (n2oOn && !st.n2oWas) { solenoid(); }
     st.n2oWas = n2oOn;
+    if (st.n2oGate != null && n2oBite > 0) n2oBite *= clamp(st.n2oGate, 0.3, 1.1) * 1.15;   // a fatter bark while the shot is in
     if (n2oBite > 0) {
       ap(N.pre.gain, (0.8 + drive * 2.4) * (1 + 0.55 * n2oBite), 0.05);
       ap(N.lp.frequency, clamp(lpf * (1 + 0.30 * n2oBite), 700, 9000), 0.04);
@@ -5856,6 +5993,25 @@ const ENGINE_SOUND = (function () {
         reap([o, bp, g], 0.4);
         break;
       }
+      case "purge": {
+        /* nitrous purge: a hard, wide hiss of liquid flashing to gas at the nozzle, with a little whistle on top */
+        noiseVoice(0.75, "highpass", 2600 + Math.random() * 500, 0.5, 0.20);
+        noiseVoice(0.65, "bandpass", 6200, 1.6, 0.07);
+        var tp = ctx.currentTime, po = ctx.createOscillator(); po.type = "sine";
+        po.frequency.setValueAtTime(5200, tp); po.frequency.linearRampToValueAtTime(4700, tp + 0.6);
+        var pg = ctx.createGain(); pg.gain.setValueAtTime(0, tp); pg.gain.linearRampToValueAtTime(0.012, tp + 0.04); pg.gain.exponentialRampToValueAtTime(0.0001, tp + 0.65);
+        po.connect(pg); pg.connect(bus); po.start(tp); po.stop(tp + 0.7); reap([po, pg], 0.7);
+        if (!st.purgeT || tp - st.purgeT > 1.2) solenoid();      // the purge solenoid clacks open
+        st.purgeT = tp;
+        break;
+      }
+      case "intakeBang": {
+        /* a backfire through the intake: one deep thump and the burst panel letting go */
+        pop(1.0);
+        noiseVoice(0.35, "lowpass", 420, 0.9, 0.30);
+        setTimeout(function () { if (ctx) noiseVoice(0.5, "highpass", 1800, 0.6, 0.10); }, 40);
+        break;
+      }
       case "backfire": {
         if (st.diesel) return;
         pop(0.9);
@@ -5904,6 +6060,7 @@ const ENGINE_SOUND = (function () {
     stop: stop,
     set: set,
     event: event,
+    nitrous: function (g) { st.n2oGate = (g == null) ? null : +g; },   // strip: null = the rpm window decides, 0..1 = the shot actually in
     setVolume: setVolume,
     setQuality: setQuality,
     rebuild: function () { rebuildGraph("manual"); },
@@ -7372,9 +7529,10 @@ function buildEngineMesh(cfg, layoutObj){
 
   /* ---------- nitrous: bottle(s) strapped down on a stand rail, solenoids at the throttle, lines to a plate or port nozzles ---------- */
   setZone(3);
-  var n2o = pick(cfg.nitrous,"none");
+  var n2o = pick(cfg.nitrous,"none"); N2O_PURGE=null;
   if(n2o!=="none"){
-    var big = (n2o==="prog400"||n2o==="prog700"), two=(n2o==="prog700"), wet=(n2o==="wet150");
+    var nk = (typeof ENGINE_SIM!=="undefined" && ENGINE_SIM.OPT.nitrous[n2o]) || {};
+    var big = (n2o==="prog400"||n2o==="prog700"), two=(n2o==="prog700"), wet=(n2o==="wet150")||!!nk.plate, dry=(nk.kind==="dry"||nk.kind==="diesel");
     var bR = bore*(big?0.36:0.30), bL = bore*(big?2.1:1.7), nBot = panTop-panH;
     /* stand pads run along X at z = +/-2.34 and x = +/-3.4 (buildStand); a boxer's exhausts fill the rails under the heads, so its bottle goes ahead of the engine */
     var bX = L.boxer ? Math.min(bankLen*0.5 + bL*0.5 + bore*0.6, 3.3 - bL*0.5) : -Math.min(bankLen*0.30, 3.3 - bL*0.5);
@@ -7387,6 +7545,11 @@ function buildEngineMesh(cfg, layoutObj){
       B.add("chrome", CYL(bR*0.22, bR*0.22, bR*0.5, 10), vX, bY, zz, 0,0,PI/2);
       B.add("dark", BOX(bore*0.10, bR*2.1, bR*2.3), bX-bL*0.28, bY, zz);
       B.add("dark", BOX(bore*0.10, bR*2.1, bR*2.3), bX+bL*0.28, bY, zz);
+      /* heater blanket round the middle of the bottle, its thermostat box, and a pressure gauge on the valve */
+      B.add("rubberFlat", CYL(bR*1.06, bR*1.06, bL*0.36, 22, true), bX, bY, zz, 0,0,PI/2);
+      B.add("wireRed", BOX(bR*0.55, bR*0.30, bR*0.40), bX, bY+bR*1.12, zz);
+      B.add("chrome", CYL(bR*0.36, bR*0.36, bR*0.16, 16), vX+bR*0.05, bY+bR*0.62, zz, PI/2,0,0);
+      B.add("blackPlast", CYL(bR*0.30, bR*0.30, bR*0.17, 16), vX+bR*0.05, bY+bR*0.62, zz+bR*0.01, PI/2,0,0);
     }
     var ntb = (aspInfo && aspInfo.tb) || LAST_TB;
     var sP;
@@ -7395,16 +7558,30 @@ function buildEngineMesh(cfg, layoutObj){
                          : ntb.pt.clone().addScaledVector(ntb.dir, -bore*0.25).add(V3(0, bore*0.45, 0));
     } else sP = V3(-(bankLen/2)+bore*0.4, deckH + headH*0.9, -(caseW*0.5 + bore*0.1));
     B.add("anod", BOX(bore*0.22, bore*0.30, bore*0.22), sP.x, sP.y, sP.z-bore*0.16);
-    B.add("anod", BOX(bore*0.22, bore*0.30, bore*0.22), sP.x, sP.y, sP.z+bore*0.16);
+    if(!dry) B.add("anod", BOX(bore*0.22, bore*0.30, bore*0.22), sP.x, sP.y, sP.z+bore*0.16);   /* a dry kit has no fuel solenoid */
+    /* purge solenoid on a tee off the feed, and its nozzle pointing up and out of the bay */
+    var pgP = V3(sP.x, sP.y+bore*0.42, sP.z-bore*0.42);
+    B.add("chrome", BOX(bore*0.16, bore*0.20, bore*0.16), pgP.x, pgP.y, pgP.z);
+    B.add("steel", CYL(bore*0.025, bore*0.025, bore*0.34, 8), pgP.x, pgP.y+bore*0.10, pgP.z-bore*0.16, -0.75,0,0);
+    var pgM = new THREE.Object3D(); pgM.position.set(pgP.x, pgP.y+bore*0.24, pgP.z-bore*0.30); pgM.userData.n2oPurge = V3(0, 0.75, -0.66); extras.push(pgM); N2O_PURGE = pgM;
     /* feed line: up in front of the heads, or behind them when the throttle is at the back */
     var xUp = (sP.x > 0) ? Math.max(bankLen*0.5 + bore*0.45, vX + bore*0.3) : Math.min(sP.x, -bankLen*0.5) - bore*0.45;
     extras.push(hoseMesh([ V3(vX, bY, bZ), V3(vX+bore*0.25, bY+bore*0.30, bZ), V3(xUp, bY+bore*0.50, bZ),
                            V3(xUp, sP.y+bore*0.50, bZ*0.9), V3(sP.x+(sP.x>0?bore*0.6:-bore*0.3), sP.y+bore*0.50, sP.z), V3(sP.x, sP.y+bore*0.15, sP.z+bore*0.16) ], bore*0.035, MAT.steel));
-    if(ntb && wet){
+    if(ntb && dry){
+      /* dry kit (or a diesel kit): one nozzle in the intake tube ahead of the throttle, nitrous only */
+      var dp = ntb.pt.clone().addScaledVector(ntb.dir, bore*0.55), dax = Math.abs(ntb.dir.x)>0.5;
+      B.add("chrome", CYL(bore*0.05, bore*0.05, bore*0.20, 10), dp.x, dp.y+(dax?bore*0.30:0), dp.z+(dax?0:bore*0.30), dax?0:PI/2, 0, 0);
+      B.add("anod", BOX(bore*0.09, bore*0.09, bore*0.09), dp.x, dp.y+(dax?bore*0.40:0), dp.z+(dax?0:bore*0.40));
+      extras.push(hoseMesh([ V3(sP.x, sP.y+bore*0.15, sP.z-bore*0.16), V3((sP.x+dp.x)/2, Math.max(sP.y, dp.y)+bore*0.55, (sP.z+dp.z)/2), V3(dp.x, dp.y+(dax?bore*0.42:0), dp.z+(dax?0:bore*0.42)) ], bore*0.03, MAT.steel));
+    } else if(ntb && wet){
       /* fogger plate sandwiched under the throttle */
       var fp = ntb.pt.clone().addScaledVector(ntb.dir, -bore*0.40);
       var ax = Math.abs(ntb.dir.x)>0.5;
       B.add("anod", ax ? BOX(bore*0.05, bore*0.78, bore*0.78) : BOX(bore*0.78, bore*0.05, bore*0.78), fp.x, fp.y, fp.z);
+      if(nk.stages===2){ var fp2 = fp.clone().addScaledVector(ntb.dir, -bore*0.09);   /* the second stage's plate stacked under the first */
+        B.add("anod", ax ? BOX(bore*0.05, bore*0.82, bore*0.82) : BOX(bore*0.82, bore*0.05, bore*0.82), fp2.x, fp2.y, fp2.z);
+        extras.push(hoseMesh([ V3(sP.x, sP.y-bore*0.10, sP.z+bore*0.16), V3((sP.x+fp2.x)/2, (sP.y+fp2.y)/2, sP.z+bore*0.40), V3(fp2.x, fp2.y, fp2.z+bore*0.40) ], bore*0.03, MAT.steel)); }
       extras.push(hoseMesh([ V3(sP.x, sP.y-bore*0.10, sP.z-bore*0.16), V3((sP.x+fp.x)/2, (sP.y+fp.y)/2, sP.z-bore*0.40), V3(fp.x, fp.y, fp.z-bore*0.40) ], bore*0.03, MAT.steel));
     } else {
       /* direct port: a nozzle in every runner, fed by a distribution line per bank */
@@ -8569,6 +8746,7 @@ function buildIntake(B, p, extras){
 var PIPE_LOG=[];          /* every pipe built so far this engine (world points + radius): turbos are placed clear of the headers */
 var EXH_COLL=[];          /* turbo feed flanges, engine space: {pt, dir, bank, r, cast} (filled by buildExhaust) */
 var LAST_TB=null;         /* throttle inlet {pt, dir(upstream)} (filled by buildIntake) */
+var N2O_PURGE=null;       /* nitrous purge nozzle marker (an Object3D in the engine group; userData.n2oPurge = local spray direction) */
 var LAST_PLEN=null;       /* plenum / blower-manifold box {x, z, top, bot, len, w} (filled by buildIntake) */
 var TURBO_MM = { small:46, medium:54, large:64, s66:66, huge:76, f88:88, f98:98 };        /* compressor inducer, mm */
 var FLOW_LB  = { small:26, medium:40, large:58, s66:115, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
@@ -10047,8 +10225,19 @@ var PKIND = {
   flame:     {color:0xffb040, opacity:1.0,  life:0.28, scale:1.1, vy:2.0, grow:1.8, add:true, spark:true},
   oil:       {color:0x0c0a08, opacity:0.95, life:1.6, scale:0.16, vy:3.0, grow:0.9, drop:true, spread:4.5},
   smokeBlack:{color:0x0a0a0b, opacity:0.62, life:2.6, scale:0.9, vy:3.0, grow:3.4},
-  coolant:   {color:0x59d98a, opacity:0.85, life:1.5, scale:0.13, vy:5.0, grow:0.9, drop:true, spread:5.0}
+  coolant:   {color:0x59d98a, opacity:0.85, life:1.5, scale:0.13, vy:5.0, grow:0.9, drop:true, spread:5.0},
+  purge:     {color:0xffffff, opacity:0.72, life:0.75, scale:0.30, vy:0.0, grow:7.5, spread:2.2}
 };
+/* nitrous purge in the engine view: a white jet from the purge nozzle that blooms and is gone in under a second */
+var N2O_FX = {t:0, acc:0}, _n2oA = new THREE.Vector3(), _n2oB = new THREE.Vector3();
+function n2oPurgeStep(dt){
+  if(N2O_FX.t<=0 || !N2O_PURGE || !N2O_PURGE.parent){ N2O_FX.t=0; return; }
+  N2O_FX.t-=dt; N2O_FX.acc+=dt*(GFX==="lite"?38:70);
+  N2O_PURGE.updateMatrixWorld(true); N2O_PURGE.getWorldPosition(_n2oA);
+  _n2oB.copy(N2O_PURGE.userData.n2oPurge).transformDirection(N2O_PURGE.parent.matrixWorld);
+  while(N2O_FX.acc>=1){ N2O_FX.acc-=1; emit("purge", _n2oA); var q=particles[particles.length-1], u=q.userData, sp=9+Math.random()*7;
+    u.vx=_n2oB.x*sp+(Math.random()-0.5)*2.2; u.vy=_n2oB.y*sp+(Math.random()-0.5)*1.6; u.vz=_n2oB.z*sp+(Math.random()-0.5)*2.2; u.life=0.45+Math.random()*0.45; }
+}
 function emit(kind, pos){
   var mat, life, scale, vy;
   var K2 = PKIND[kind];
@@ -10166,6 +10355,13 @@ function startFail(kind){
     failFx.glow=0.2; oilPoolStart();
   } else if(kind==="steam"){
     p=enginePoint(0.5,0.62,0.5).clone(); burst("steam", p, 22, 2.8); burst("coolant", p, 14, 1.2);
+  } else if(kind==="lean"){
+    /* lean on the bottle: it rattles, then the crown lets go — the knock sequence */
+    failFx.kind="knock"; failFx.rattle=1;
+  } else if(kind==="backfire"){
+    /* intake backfire on nitrous: a ball of flame out of the throttle and the burst panel, then smoke */
+    if(N2O_PURGE && N2O_PURGE.parent){ N2O_PURGE.getWorldPosition(_n2oA); p=_n2oA.clone(); } else p=enginePoint(0.5,1.0,0.5).clone();
+    burst("flame", p, 18, 1.2); burst("smokeGrey", p, 6, 1.0); burst("spark", p, 10, 0.8); flashAt(p, 0xffa040, 16); camState.shake=Math.max(camState.shake, 0.45);
   } else if(kind==="manifold"){
     /* cracked exhaust manifold: a glowing split in the collector, gas and sparks jetting out of it, the hot side
        flaring, then soot spreading round the crack */
@@ -10511,6 +10707,7 @@ function tick(dt, t){
     } else smokeAcc=0;
     if(run.fail) stepFail(dt);
     else if(failFx.debris.length) stepDebris(dt);
+    n2oPurgeStep(dt);
     stepParticles(dt);
   }
 }
@@ -11849,6 +12046,25 @@ function stripFlames(car, amt, shift, carV){
     STRIP.flash.position.copy(_sfA).addScaledVector(_sfD,0.4); STRIP.flash.position.y+=0.25; }
   STRIP.flashI=Math.max(STRIP.flashI||0, amt*(shift?1.5:3)*(STRIP.night?0.5:1));
 }
+/* nitrous on the strip car: the purge cloud from the nozzle in the nose, a little flame at the pipes while the
+   shot is in, and a fireball from the intake if a plate backfires (the burst panel) */
+function stripN2O(o, dt, P){
+  var u=P.userData, FX=STRIP.fx, lite=(GFX==="lite"), v=Math.max(0,o.v||0), pv=STRIP.prevN2O||(STRIP.prevN2O={});
+  o=STRIP.n2oSt||{}; o.phase=o.phase||"staged";
+  if(!u._eng) return;
+  if((o.purge||0)>0.02){
+    var n=(lite?26:52)*dt*o.purge; u._pgAcc=(u._pgAcc||0)+n; var k=Math.floor(u._pgAcc); u._pgAcc-=k;
+    _sfA.set(u._eng.x+(u._len||4)*0.17, u._eng.y+0.08, u._eng.z+0.22); P.localToWorld(_sfA);
+    for(var i=0;i<k;i++){ var sp=5+Math.random()*6;
+      FX.emit(_sfA.x, _sfA.y, _sfA.z, v+sp*0.30+(Math.random()-0.5)*1.2, sp*0.38+Math.random()*0.8, (Math.random()-0.35)*2.6,
+        0.45+Math.random()*0.4, 0.12, 1.3+Math.random()*1.0, 0.98, 0.99, 1.0, 0.85, {drag:4.0, buoy:0.4, fin:0.08, spin:0.8}); }
+  }
+  if(o.phase==="run" && (o.n2o||0)>0.3 && Math.random()<dt*(lite?3:6)) stripFlames(P, 0.12+0.15*o.n2o, false, v);
+  if(o.cut && !pv.cut){ P.localToWorld(_sfA.copy(u._eng)); _sfA.y+=0.3;
+    for(var j=0;j<(lite?8:16);j++) STRIP.fxFire.emit(_sfA.x+(Math.random()-0.5)*0.4, _sfA.y, _sfA.z+(Math.random()-0.5)*0.4, v*0.9+(Math.random()-0.5)*3, 2+Math.random()*3, (Math.random()-0.5)*2, 0.25+Math.random()*0.2, 0.4, 1.4, 1.0, 0.5+Math.random()*0.2, 0.1, 0.9, {drag:1.5, buoy:2, fin:0.05, spin:3});
+    STRIP.flashI=Math.max(STRIP.flashI||0, 6); STRIP.flash.position.copy(_sfA); STRIP.shake=Math.max(STRIP.shake||0, 0.35); }
+  pv.cut=!!o.cut;
+}
 function stripEffects(o, dt, P, O){
   var FX=STRIP.fx, FA=STRIP.fxAdd, lite=(GFX==="lite"), rate=lite?0.55:1, ph=o.phase||"run", v=Math.max(0,o.v||0), u=P.userData, prev=STRIP.prev;
   var temp=o.tyreTemp==null?0.6:clamp(o.tyreTemp,0,1), race=!!(o.race&&O&&O.visible);
@@ -12039,6 +12255,7 @@ function stripUpdate(o, dt, rdt){
   P.updateMatrixWorld(true); if(O) O.updateMatrixWorld(true);
   stripTiming(o, rdt);
   stripEffects(o, dt, P, O);
+  stripN2O(o, dt, P);
   stripTreeLights(o);
   stripCrowd(dt);
   stripDirect(o, dt, P, O);
@@ -12872,6 +13089,9 @@ const ENGINE_VIS = {
   /* a personal best on this pass: PB on the board, the stands come up and the camera cuts to them (1 = this engine, 2 = all-time) */
   stripPb: function(k){ if(k!==undefined){ STRIP.pb=k||0; STRIP.pbCut=0; if(k) STRIP.cheer=Math.max(STRIP.cheer, k>1?2.4:1.7); }
     return {pb:STRIP.pb||0, shot:STRIP.shot, cheer:+STRIP.cheer.toFixed(2)}; },   /* no argument: just report (harness) */
+  purge: function(sec){ N2O_FX.t=Math.max(N2O_FX.t, sec==null?0.6:+sec); },
+  stripN2O: function(s){ STRIP.n2oSt=s||null; },   /* strip car nitrous: {purge 0..1, n2o 0..1, cut, phase} */   /* engine view: puff the nitrous purge for sec seconds */
+  hasPurge: function(){ return !!(N2O_PURGE && N2O_PURGE.parent); },
   skipCut: function(){ if(STRIP.shot==="crowd") STRIP.pbCut=2; },   /* a tap during the crowd cut goes back to the car */
   /* DIESEL pulling scene: fed every frame {on, phase:"stage"|"pull"|"done", x, v, boxFrac, slip, hop, smoke, rpm, vehicle, full, night, cls, distFt, color?, dt?}; {on:false} leaves */
   setPull: function(o){
@@ -13407,8 +13627,9 @@ function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
 const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).length}">`;
-  for(const k in opts){const o=opts[k];const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k;   // nitrous kits for the other fuel family stay out of the way
+  let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).filter(k=>famOK(opts[k],k)).length}">`;
+  for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
   return h+"</div>";
 }
@@ -13614,7 +13835,10 @@ const SPECS={
   nitrous:{price:o=>o.cost,line:o=>o.shotHp?o.shotHp+" hp shot":"none",specs:[
     ["Shot",o=>o.shotHp?o.shotHp+" hp at the jet":"none"],
     ["Delivery",o=>o.shotHp?(o.prog?"ramped in on a controller":"all at once"):null],
-    ["Arms at",o=>o.shotHp?(o.prog?"42% of redline":"55% of redline"):null]]},
+    ["Arms at",o=>o.shotHp?(o.prog?"42% of redline":"55% of redline")+(o.stageHp?` · stage 2 (${o.stageHp[1]}) at 70%`:""):null],
+    ["Kit",o=>({dry:"dry · nozzle only",wet:o.stages===2?"wet · two plates":"wet · plate",direct:"direct port · nozzle per runner",diesel:"diesel · oxygen only"})[o.kind]||null],
+    ["Fuel from",o=>o.kind==="dry"?"your injectors (rail raised)":o.kind==="diesel"?"the injection pump":o.kind?"its own jets, off your pump":null],
+    ["Watch for",o=>o.kind==="dry"?"lean spike":o.plate?"intake backfire":o.kind==="diesel"?"peak pressure":o.kind?"rod and gasket load":null]]},
   cover:{specs:[]},
   launchCtl:{line:o=>o.sub,specs:[["Holds",o=>o.cost?"a set launch rpm":"whatever your foot does"],["Boost on the line",o=>o._id==="launchCtl:two_step_retard"?"most of it, with heat":o.cost?"a little":"none"],["Dyno",o=>"no effect"]]},
   transBrake:{line:o=>o.sub,specs:[["Launch",o=>o._id==="transBrake:trans_brake"?"torque converter":"clutch"],["Burnout",o=>o._id==="transBrake:none"?"creeps, fronts smoke":"clean, rears only"],["Dyno",o=>"no effect"]]}
@@ -13674,6 +13898,7 @@ function renderEnv(){
     <div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     <p class="hint">Rear-drive on a prepped strip. Gears are spaced evenly between 1st and top. Wheel force is the engine's torque × gear × final ÷ tyre radius; grip is μ × rear weight, with weight transfer helping the launch. Tyres, body and launch rpm are what a ${career()?"racer":"tuner"} actually changes between rounds. Body sets aero drag and how hard the chassis can plant the tyre — bars and a four-link put the power down; a stock shell cannot.</p>`;}
+  if(t==="drag"&&n2oKit())h+=n2oEnvHtml();
   if(t==="pull_sled")h+=pullEnvHtml(sl);
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;
@@ -13804,6 +14029,7 @@ function dragBreak(){DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("fl
 function dragStart(){
   $("app").classList.add("onstrip");
   const env=stdEnv();const res=SIM.dragPrep(S.cfg,env);const veh=dragVeh();
+  if(res.nitrous&&res.n2oTq)veh.n2o=n2oVeh(env);
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const hk=hKey(cfgHash(S.cfg)),soak=soakFor(hk);
   const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,last:performance.now(),failed:false,downAt:null,lastPtr:0};
@@ -13811,6 +14037,7 @@ function dragStart(){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
     DR.race={trace:opp.trace,k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};}
+  n2oStart();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("dragCtl").style.display="";$("dragBtn").dataset.k="";dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");$("dragBtn").disabled=false;$("dragLive").innerHTML="";
   $("testProg").classList.remove("done");sfx("start");
   // fresh-engine budget: passes beyond what the build can take start to break parts
@@ -13845,9 +14072,10 @@ function dragStart(){
       const m=st.marks.slice(-1)[0];let lane="";if(R){const ox=oppX(now);
         const gap=(st.x-ox)*3.281;lane=`<div class="peak" style="grid-column:1/-1"><b style="color:${R.foul?"var(--crit)":gap>=0?"var(--good)":"var(--crit)"}">${R.foul?"RED LIGHT":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>"}</b><span>${R.name} · RT ${R.rt0!=null?R.rt0.toFixed(3):"—"}</span></div>`;}
       $("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.onBars?" · on the bars":""}</span></div>`:""}`;
-      if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":"BROKE");
+      if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":DR.failKind==="backfire"?"INTAKE BACKFIRE":DR.failKind==="lean"?"MELTED A PISTON":"BROKE");
       else if(st.phase==="shutdown"){if(DR.pb&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText(DR.pb.kind>1?"PERSONAL BEST":"ENGINE PB","tap to go back to the car");else dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");}
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
+    if(DR.n2o)n2oFrame(st,dt);
     if(!st.done||(DR.failed&&run.rpm>0))requestAnimationFrame(step);else dragFinish();};
   requestAnimationFrame(step);
 }
@@ -13874,6 +14102,46 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
   b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("click",()=>{if(!DR||!DR.d||performance.now()-(DR.lastPtr||0)<800)return;const st=DR.d.st;
     if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();else if(st.phase==="shutdown"&&DR.pb)ENGINE_VIS.skipCut();});})();
+/* ---- nitrous on the strip: bottle pressure (heater or weather), when the shot comes on, and a purge on the line ---- */
+const N2O_ACT=[["window","Window switch","at the rpm window"],["mph40","At 40 mph","once it's hooked"],["mph60","At 60 mph","late, safe"],["shift2","After the 1-2","second gear on"]];
+const N2OB={cooled:0,t:0};   // a bottle without a heater cools a little every pass and warms back over ~20 min (session only)
+function n2oKit(){const k=SIM.OPT.nitrous[S.cfg.nitrous];return k&&k.shotHp?k:null;}
+function n2oBottleNow(env){const e=env||stdEnv(),heat=(S.env.n2oHeater||"on")==="on";const cool=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000);return SIM.n2oBottle(heat,e.ambientC,heat?0:cool);}
+function n2oVeh(env){const b=n2oBottleNow(env);const heat=(S.env.n2oHeater||"on")==="on";
+  const psi=heat?b.psi+Math.round((Math.random()-0.5)*16):b.psi+Math.round((Math.random()-0.5)*50);   // a heater's thermostat holds it within a few psi; a bare bottle wanders
+  return{act:S.env.n2oAct||"window",psi,line:0.15,purge:1};}
+function n2oEnvHtml(){const k=n2oKit(),e=S.env,b=n2oBottleNow(),heat=(e.n2oHeater||"on")==="on",act=e.n2oAct||"window",q=quick&&quick.nitrous;
+  return `<div class="lbl" style="margin-top:6px"><span>Nitrous · ${k.name}</span><b style="color:${b.psi<850||b.psi>1000?"var(--warn)":"var(--good)"}">${b.psi.toLocaleString("en-CA")} psi</b></div>
+    <p class="hint" style="margin-top:-2px">Bottle at ${b.tempC} °C. ${heat?"The heater blanket holds it near 950 psi, so the shot is the same every pass.":b.psi<850?`Without a heater a ${b.tempC} °C bottle flows about ${Math.round((1-Math.pow(b.psi/950,0.85))*100)}% less shot, and less again every pass as it empties.`:b.psi>1000?"A hot bottle flows more nitrous than the kit was jetted for — that is how a dry kit goes lean.":"Close to where the kit was jetted."}${q&&q.backfire>0.02?` Backfire odds about ${Math.round(q.backfire*100)}% a pass.`:""}${q&&q.leanRisk>0.03?` Lean-spike odds about ${Math.round(q.leanRisk*100)}% a pass.`:""}</p>
+    <div class="lbl"><span>Bottle heater</span></div><div class="seg">${[["on","On","holds ~950 psi"],["off","Off","follows the weather"]].map(([v,n,d])=>`<button data-lp="${v}" data-ek="n2oHeater" class="${(heat?"on":"off")===v?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
+    <div class="lbl"><span>Shot comes on</span></div><div class="seg n4">${N2O_ACT.map(([v,n,d])=>`<button data-lp="${v}" data-ek="n2oAct" class="${act===v?"on":""}" style="flex:1 1 40%">${n}<small>${v==="window"&&q?Math.round(q.winRpm).toLocaleString("en-CA")+" rpm":d}</small></button>`).join("")}</div>
+    <p class="hint">Purge on the line: hold <b>PURGE</b> (or <kbd>P</kbd>) while staged until it spits white — that fills the line with liquid so the hit is full strength. An unpurged line sends gas first and the shot comes in soft.</p>`;}
+function n2oStart(){let b=$("n2oPurge");const on=!!(DR.d&&DR.d.n2o);
+  if(!on){if(b)b.style.display="none";DR.n2o=null;return;}
+  if(!b){b=document.createElement("button");b.id="n2oPurge";b.className="btn sm";b.style.cssText="width:100%;min-height:44px;margin-top:8px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none";
+    $("dragBtn").insertAdjacentElement("afterend",b);
+    const up=()=>n2oPurge(false);b.addEventListener("pointerdown",e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch(x){}n2oPurge(true);});b.addEventListener("pointerup",up);b.addEventListener("pointercancel",up);b.addEventListener("lostpointercapture",up);b.addEventListener("contextmenu",e=>e.preventDefault());}
+  b.style.display="";b.dataset.k="";DR.n2o={hiss:0,cut:false,ended:false,shotWas:0};if(soundReady)ENGINE_SOUND.nitrous(0);}
+function n2oPurge(on){if(!DR||!DR.n2o||!DR.d)return;if(DR.d.purge(on)&&on){DR.n2o.hiss=0;buzz([10]);}}
+function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
+  const pre=st.phase==="burnout"||st.phase==="staged";
+  if(z.purging){N.hiss-=dt;if(N.hiss<=0){sfx("purge");N.hiss=0.55;}}
+  if(b){b.style.display=pre?"":"none";const lp=Math.round(z.psi*(0.55+0.45*z.line)),k=(z.purging?"P":"")+lp;if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=z.purging?`PURGING · ${lp} psi at the solenoid`:`HOLD TO PURGE · ${lp} psi${z.line<0.5?" · line full of gas":" · line purged"}`;}}
+  const live=$("dragLive");
+  if(pre)live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${z.line>=0.5?"var(--good)":"var(--warn)"}">${Math.round(z.psi*(0.55+0.45*z.line))}<i>psi</i></b><span>nitrous · ${z.purging?"purging":z.line>=0.5?"purged":"purge the line"} · bottle ${Math.round(z.psi)}</span></div>`);
+  else if(st.phase==="run")live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${st.n2o>0.05?"var(--info)":""}">${z.cut?"CUT":st.n2o>0.05?"ON":z.on?"window":"armed"}</b><span>nitrous${z.on&&!z.cut?" · "+Math.round(z.psi)+" psi":""}</span></div>`);
+  ENGINE_VIS.stripN2O({purge:z.purging?1:z.puff,n2o:st.n2o,cut:z.cut,phase:st.phase});
+  if(soundReady)ENGINE_SOUND.nitrous(st.phase==="run"&&!DR.failed?st.n2o:0);
+  if(z.cut&&!N.cut){N.cut=true;sfx("intakeBang");toast("BACKFIRE · burst panel blew, shot's off");buzz([60,30,60]);}
+  if(DR.failed&&DR.failKind==="backfire"&&!N.bang){N.bang=true;sfx("intakeBang");}
+  if(st.done&&!N.ended){N.ended=true;if((S.env.n2oHeater||"on")!=="on"&&z.on){N2OB.cooled=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000)+1.8;N2OB.t=Date.now();}if(soundReady)ENGINE_SOUND.nitrous(null);ENGINE_VIS.stripN2O(null);if(b)b.style.display="none";}}
+function n2oSlip(n){const g=["1st","2nd","3rd","4th","5th","6th","7th"][Math.max(0,(n.onGear||1)-1)];
+  return `${n.shotHp} shot ${n.cut?"cut by a backfire":n.on?`on ${n.act==="window"?"at the window":"at "+n.onMph+" mph"} in ${g}`:"never came on"} · ${n.psi.toLocaleString("en-CA")} psi${n.purged>0.3?` · purged ${n.purged.toFixed(1)} s`:" · not purged"}`;}
+/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay */
+document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target)||e.key.toLowerCase()!=="p"||e.repeat)return;
+  if(holdKind()==="drag"&&DR&&DR.n2o){n2oPurge(true);e.preventDefault();return;}
+  if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
+document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
 function dragFinish(){
   const {d,res,env}=DR;const r=d.result();const failed=DR.failed;
   setTimeout(()=>{if(!testing){ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");}},2200);
@@ -14186,6 +14454,7 @@ function showResult(res,env){
     extra+=`<div class="sec"><h2>Fatigue damage after ${res.endurance.failedAtHour!=null?res.endurance.failedAtHour:env.hours} h</h2><div class="stress">${top.map(([id,f])=>{const t=res.tests.find(x=>x.id===id)||{name:id};const p=Math.min(1,f);return `<div class="st ${p>=1?"crit":p>.6?"warn":"good"}"><div class="n">${t.name}</div><div class="bar"><i style="width:${Math.min(100,p*80)}%"></i></div><div class="p">${Math.round(p*100)}%</div></div>`;}).join("")}</div>`;
     if(res.endurance.log&&res.endurance.log.length)extra+=`<div class="log" style="margin-top:8px">${res.endurance.log.map(l=>`<div><b>${l.hour} h</b>${l.event}</div>`).join("")}</div>`;extra+=`</div>`;}
   if(env.testType==="drag"&&res.drag){const r=res.drag;extra+=`<div class="sec"><h2>Timing slip</h2><div class="log">${slipLine(r)?`<div><b>Slip</b>${slipLine(r)}</div>`:""}${launchSlip(r)?`<div><b>Launch</b>${launchSlip(r)}</div>`:""}${r.race&&r.race.rt!=null&&!r.race.foul&&r.race.rt>0.25?`<div>Reaction time ${r.race.rt.toFixed(3)} — a good light is under 0.100. That is ${(r.race.rt-0.1).toFixed(2)} s given away before the car moved.</div>`:""}${r.reasons.length?r.reasons.map(x=>`<div>${x}</div>`).join(""):"<div>Clean pass. Nothing left on the table that the driveline can fix — the rest is horsepower.</div>"}${r.shifts.length?`<div><b>Shifts</b>${r.shifts.map(x=>x.gear+"→"+(x.gear+1)+" at "+x.rpm.toLocaleString()).join(", ")}</div>`:""}<div><b>Ratios</b>${r.ratios.join(" · ")} × ${r.veh.final} final · ${r.veh.tyreDia}" ${SIM.TYRES[r.veh.tyre].n.toLowerCase()}</div><div><b>Shutdown</b>${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${r.chute?"chute out":"brakes only"} · pulled up in ${r.shutFt.toLocaleString()} ft</div><div style="margin-top:8px"><button class="btn sm info" id="shareSlip">Share timing slip</button></div>${(()=>{const wi=wearInfo(res);if(!wi)return"";const pct=Math.round(wi.w*100);return `<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${pct}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0.3?" · listen for the slap at idle":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`;})()}</div></div>`;}
+  if(env.testType==="drag"&&res.drag&&res.drag.n2o)extra=extra.replace("<div><b>Ratios</b>",`<div><b>Nitrous</b>${n2oSlip(res.drag.n2o)}</div><div><b>Ratios</b>`);
   if(env.testType==="pull_sled"&&res.pull)extra+=pullSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
@@ -14205,7 +14474,7 @@ function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
   if(L.ctl!=="none")b.push(`two-step ${L.held.toFixed(1)} s @ ${L.holdRpm.toLocaleString()}${L.retard?` · ${Math.round(L.retard)}° retard`:""}`);else if(L.brake==="trans_brake")b.push(`trans-brake ${L.held.toFixed(1)} s`);
   if(L.brake==="trans_brake")b.push("off the trans-brake");else if(L.brake==="line_lock")b.push("line lock");
   if(r.heat&&r.heat.egtLine>=850)b.push(`${r.heat.egtLine.toLocaleString()} °C on the line`);
-  if(r.broke)b.push(`<span style="color:var(--crit)">${r.broke==="turbo"?"turbo cooked":"manifold cracked"}</span>`);
+  if(r.broke)b.push(`<span style="color:var(--crit)">${r.broke==="turbo"?"turbo cooked":r.broke==="lean"?"lean on the bottle — melted a piston":r.broke==="backfire"?"intake backfire":"manifold cracked"}</span>`);
   else if(r.heat&&r.heat.abuse>=0.05)b.push(`+${r.heat.abuse.toFixed(1)} pass of wear from the heat`);
   return b.join(" · ");}
 /* run animation */
@@ -14887,7 +15156,7 @@ document.addEventListener("wheel",e=>{const r=e.target;if(!wheelArm||r!==wheelAr
 /* keyboard, alongside touch and mouse: Space is the hold button on the strip and the sled */
 function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySelector(".kbd")){closeSheet();return;}
   const K=(k,t)=>`<kbd>${k}</kbd><span>${t}</span>`;$("sheetTitle").textContent="Keyboard & mouse";
-  $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}
+  $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}
     <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test (Test tab)")}${K("V","view options")}
     <h3>Panel</h3>${K("1 – 5","Build · Test · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("?","this list")}
     <h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}</div>`;
