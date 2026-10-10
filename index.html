@@ -6396,9 +6396,9 @@ const ENGINE_SIM = (function () {
   const e24Clock = t => { const h = e24Hour(t), hh = Math.floor(h), mm = Math.floor((h - hh) * 60); return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm; };
   /* a car crosses the line at c.tNext */
   function e24Cross(R, c) {
-    const t = c.tNext, dt = c.lapDur, P = c.P, me = c.me, wasPit = c.pitIn;
+    const t = c.tNext, dt = c.lapDur, P = c.P, me = c.me, wasPit = c.pitIn, wasSc = c.scLap;
     c.laps++; c.tLast = t;
-    const green = !wasPit && !(R.sc && R.sc.lapT && c.scLap) && !c.slow;
+    const green = !wasPit && !wasSc && !c.slow;
     if (green && !c.tyre.cold && (c.best == null || dt < c.best)) { c.best = dt; c.bestLap = c.laps; }
     c.last = dt; c.slow = false; c.wasPit = !!wasPit; c.scLap = false; c.tyre.cold = false; c.pitIn = null;
     // fuel, tyres, damage over the lap just done
@@ -6406,7 +6406,7 @@ const ENGINE_SIM = (function () {
     c.fuel = Math.max(0, c.fuel - burn); c.fuelUsed += burn; c.tyre.km += R.len / 1000 * (R.sc ? 0.5 : 1);
     const sky = e24Sky(t), rt = e24Rates(P, sky.amb, c.mode), hrs = dt / 3600;
     for (let i = 0; i < rt.r.length; i++) c.dmg[i] += rt.r[i] * hrs * scK;
-    c.drvT += dt; c.stintLaps++; if (me) { const st = c.stints[c.stints.length - 1]; st.laps++; st.fuel += burn; st.modeT[c.mode] += dt; c.lapLog.push([Math.round(t), +dt.toFixed(2), wasPit ? 1 : R.sc ? 2 : 0]); }
+    c.drvT += dt; c.stintLaps++; if (me) { const st = c.stints[c.stints.length - 1]; st.laps++; st.fuel += burn; st.modeT[c.mode] += dt; c.lapLog.push([Math.round(t), +dt.toFixed(2), wasPit ? 1 : wasSc || R.sc ? 2 : 0]); }
     if (t >= R.dur) { c.fin = true; c.tNext = Infinity; if (me) e24Feed(R, t, "flag", `Chequered flag — ${c.laps} laps`, true, true); e24Check(R, c); return; }
     // engine: does something let go this lap?
     let fail = null;
@@ -20090,11 +20090,11 @@ function e24Hint(){return career()?`<b>24 Hours of Prairie Sky</b> · ${fmt$(E24
 /* strategy seg rows: pre-race they edit S.env.e24*, live they edit the race plan (mode at once, the rest from the next stop) */
 function e24Seg(k,cur,opts,cls){return `<div class="seg ${cls||""}">${opts.map(([v,n,d])=>`<button data-e24k="${k}" data-e24v="${v}" class="${String(cur)===String(v)?"on":""}">${n}${d?`<small>${d}</small>`:""}</button>`).join("")}</div>`;}
 function e24StratHtml(live,P){const e=S.env,pl=live?ER.R.plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg},M=SIM.E24_MODES,Ty=SIM.E24_TYRES;
-  const md=k=>{if(!P)return M[k].d;const m=P.modes[k],b=P.modes.race;return `${k==="race"?fmtLap(m.lap):(m.lap>=b.lap?"+":"−")+Math.abs(m.lap-b.lap).toFixed(1)+" s"} · ${m.fuel.toFixed(2)} L`;};
+  const md=k=>{if(!P)return M[k].d;const m=P.modes[k],b=P.modes.race;return `${k==="race"?fmtLap(m.lap):(m.lap>=b.lap?"+":"−")+Math.abs(m.lap-b.lap).toFixed(1)+" s"} · ${m.fuel.toFixed(1)} L`;};
   let h=`<div class="lbl"><span>Engine mode${live?" · now":""}</span></div>${e24Seg("e24Mode",pl.mode,["push","race","save"].map(k=>[k,M[k].n,md(k)]),"n3")}`;
   h+=`<div class="lbl"><span>Stint length${live?" · next stint":""}</span></div>${e24Seg("e24Stint",pl.stint,E24_STINTS,"n4")}`;
   h+=`<div class="lbl"><span>Fuel at the stops</span></div>${e24Seg("e24Fuel",pl.fuel,[["full","Full tank",`${SIM.E24_TANK} L`],["stint","Just enough","for the stint, lighter"]])}`;
-  h+=`<div class="lbl"><span>Tyres${live?" · next set":""}</span></div>${e24Seg("e24Tyre",pl.tyre,Object.entries(Ty).map(([k,t])=>[k,t.n,`${t.mu>1?"grip +":t.mu<1?"grip −":"grip "}${Math.round(Math.abs(t.mu-1)*1000)/10||""}${t.mu===1?"base":"%"} · ${t.km} km`]),"n3")}`;
+  h+=`<div class="lbl"><span>Tyres${live?" · next set":""}</span></div>${e24Seg("e24Tyre",pl.tyre,Object.entries(Ty).map(([k,t])=>[k,t.n,`${t.mu>1?"+":t.mu<1?"−":""}${Math.round(Math.abs(t.mu-1)*1000)/10||""}${t.mu===1?"base":"%"} · ${t.km} km`]),"n3")}`;
   h+=`<div class="lbl"><span>Tyre changes</span></div>${e24Seg("e24Chg",pl.chg,[["every","Every stop","fresh rubber"],["double","Double-stint","save 22 s every other stop"]])}`;
   if(!live)h+=`<div class="lbl"><span>Safety cars</span></div>${e24Seg("e24SC",String(e.e24SC),[["true","On","debris, crashes, bunched field"],["false","Off","green all day"]])}`;
   return h;}
@@ -20252,8 +20252,8 @@ function e24Verdict(res){const r=res.e24,cls=r.dnf&&r.dnf.id?"fail":r.classified
     <div class="vstats"><div><b>${r.laps}</b><span>laps</span></div><div><b>${fmtLap(r.best,2)}</b><span>fastest lap</span></div><div><b>${r.avg?fmtLap(r.avg,1):"—"}</b><span>avg green lap</span></div>
     <div><b>${r.pits}</b><span>pit stops</span></div><div><b>${r.fuel.toLocaleString("en-CA")}</b><span>litres</span></div><div><b>${r.win-r.laps>0?"−"+(r.win-r.laps):"0"}</b><span>to class win</span></div></div></div></div>`;}
 function e24Sheet(res){const r=res.e24,TY=SIM.E24_TYRES,MO=SIM.E24_MODES;
-  const fieldRows=r.field.map((f,i)=>`<div class="${f.me?"me":""}${f.out?" out":""}"><b>${i+1}</b><span class="c${SIM.E24_CLS_ORDER.indexOf(f.cls)}">${e24Cls(f.cls)}${f.cl?" "+f.pc:""}</span><span class="nm">${f.me?"▶ ":""}#${f.no} ${rdEsc(f.team)}${f.eng?` <i>${rdEsc(f.eng)}</i>`:""}</span><span>${f.out?(f.dnf?"DNF "+f.dnf.h+" h":"DNF"):f.laps+" L"}</span><span>${f.out?f.laps+" L":fmtLap(f.best,1)}</span></div>`).join("");
-  const st=r.stints.map((s,i)=>`<div><b>${i+1}</b><span>${rdEsc(s.drv)}</span><span>${TY[s.c]?TY[s.c].n:s.c}</span><span>${MO[s.mode]?MO[s.mode].n:""}</span><span>${s.laps} L</span><span>${s.fuel} L</span><span>${SIM.e24Clock(s.t0)}</span></div>`).join("");
+  const fieldRows=r.field.map((f,i)=>`<div class="${f.me?"me":""}${f.out?" out":""}"><b>${i+1}</b><span class="c${SIM.E24_CLS_ORDER.indexOf(f.cls)}">${e24Cls(f.cls)}${f.cl?" "+f.pc:""}</span><span class="nm">${f.me?"▶ ":""}#${f.no} ${rdEsc(f.team)}${f.eng?` <i>${rdEsc(f.eng)}</i>`:""}</span><span>${f.out?(f.dnf?"DNF "+f.dnf.h+" h":"DNF"):f.laps}</span><span>${f.out?f.laps+" laps":fmtLap(f.best,1)}</span></div>`).join("");
+  const st=r.stints.map((s,i)=>`<div><b>${i+1}</b><span>${rdEsc(s.drv)}</span><span>${TY[s.c]?TY[s.c].n:s.c}</span><span>${MO[s.mode]?MO[s.mode].n:""}</span><span>${s.laps}</span><span>${s.fuel} L</span><span>${SIM.e24Clock(s.t0)}</span></div>`).join("");
   return `<div class="sec"><h2>Race report</h2><div class="log"><div><b>Distance</b>${r.laps} laps · ${r.km.toLocaleString("en-CA")} km of ${rdEsc(r.trkName)} (${(r.len/1000).toFixed(2)} km a lap) · ${r.hrs} h on track</div>
     <div><b>Pace</b>fastest ${fmtLap(r.best,2)} on lap ${r.bestLap||"—"}${r.avg?` · average green lap ${fmtLap(r.avg,2)}`:""} · class best ${fmtLap(r.clsBest,2)}</div>
     <div><b>Pits</b>${r.pits} stops · ${e24Min(r.pitT)} lost in the lane and the box · ${r.stints.length} stints · ${r.sc} safety car${r.sc===1?"":"s"}</div>
