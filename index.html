@@ -15528,6 +15528,8 @@ function stripPayoffs(o, dt, P, O){
   if(burn){ sh.x=Math.min(1, sh.x+dt*0.45); if(o.race && O && O.visible && Math.abs(O.position.x-P.position.x)<5) sh.y=Math.min(1, sh.y+dt*0.4); }
   STRIP_U.uRip.value+=((burn?1:0)-STRIP_U.uRip.value)*Math.min(1, dt*(burn?4:0.8));
   if(STRIP.honour) STRIP.honourT=(STRIP.honourT||0)+dt;
+  /* staged: the big burnout puffs (they grow to 4.8 m+) age 3x faster so the tree shot clears on every tier; the purge cloud is small and keeps its time */
+  if(ph==="staged" && STRIP.fx){ var FP=STRIP.fx.P; for(i=0;i<FP.length;i++) if(FP[i].s1>=4.5) FP[i].t+=dt*2; }
   stripTitleDraw(false);
   /* the wave: the final's burnout and staging, and the lap of honour */
   var rd=STRIP.rn&&STRIP.rn.round, want=!!C && (!!STRIP.honour || (rd==="FINAL" && (ph==="burnout"||ph==="staged")));
