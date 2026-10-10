@@ -934,7 +934,7 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
       </div>
       <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
         <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
-        <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button><button class="chip" data-pf="rotary">Rotary</button></div>
+        <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button><button class="chip" data-pf="rotary">Rotary</button><button class="chip" data-pf="two">Two-stroke</button></div>
         <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
         <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
         <div id="presets"></div></div></div>
@@ -1255,7 +1255,17 @@ const ENGINE_SIM = (function () {
     R3: { n: 3, banks: 1, angle: 0, smooth: 93, bay: 1, name: "3-rotor Wankel", rotary: 1,
       firingOrder: [1, 3, 2], evenFire: true, crossplane: false, firstOrder: 0.01, secondOrder: 0.0 },
     R4: { n: 4, banks: 1, angle: 0, smooth: 96, bay: 1, name: "4-rotor Wankel", rotary: 1,
-      firingOrder: [1, 3, 2, 4], evenFire: true, crossplane: false, firstOrder: 0.0, secondOrder: 0.0 }
+      firingOrder: [1, 3, 2, 4], evenFire: true, crossplane: false, firstOrder: 0.0, secondOrder: 0.0 },
+    /* two-stroke-only layouts (two: 1): a single, a 180-degree twin, a 60-degree V4 and the Napier Deltic's
+       triangle of three opposed-piston banks (n = cylinders, two pistons each, three crankshafts) */
+    I1: { n: 1, banks: 1, angle: 0, smooth: 18, bay: 0, name: "Single", two: 1,
+      firingOrder: [1], evenFire: true, crossplane: false, firstOrder: 1.0, secondOrder: 0.30 },
+    I2: { n: 2, banks: 1, angle: 0, smooth: 44, bay: 0, name: "Parallel twin", two: 1,
+      firingOrder: [1, 2], evenFire: true, crossplane: false, firstOrder: 0.45, secondOrder: 0.05 },
+    V4: { n: 4, banks: 2, angle: 60, smooth: 66, bay: 0, name: "V4 60\u00b0", two: 1,
+      firingOrder: [1, 3, 2, 4], evenFire: true, crossplane: false, firstOrder: 0.20, secondOrder: 0.20 },
+    D18: { n: 18, banks: 3, angle: 120, smooth: 97, bay: 2, name: "Deltic triangle", two: 1, opposed: 1,
+      firingOrder: [1, 7, 13, 2, 8, 14, 3, 9, 15, 4, 10, 16, 5, 11, 17, 6, 12, 18], evenFire: true, crossplane: false, firstOrder: 0.0, secondOrder: 0.0 }
   };
 
   /* =====================================================================
@@ -1283,7 +1293,11 @@ const ENGINE_SIM = (function () {
     R1: { name: "1-rotor Wankel", sub: "1 rotor · bal 62 · bay S", info: "One triangular rotor orbiting in a peanut-shaped housing: three combustion chambers, one bang per turn of the eccentric shaft. Tiny and light, and the only rotary that shakes.", cost: 900, massKg: 55 },
     R2: { name: "2-rotor Wankel", sub: "2 rotor · bal 86 · bay S", info: "The 12A and 13B: two rotors phased 180° apart on one eccentric shaft. Fires like a four, revs like nothing else of its size and sits low and far back in the bay.", cost: 1300, massKg: 100 },
     R3: { name: "3-rotor Wankel", sub: "3 rotor · bal 93 · bay M", info: "The 20B: a third rotor housing and a longer eccentric shaft. Six-cylinder smoothness out of two litres, and a shaft long enough that it bends.", cost: 2600, massKg: 140, req: "bay1" },
-    R4: { name: "4-rotor Wankel", sub: "4 rotor · bal 96 · bay M", info: "The R26B that won Le Mans: four rotors on a split eccentric shaft with a centre main bearing. A scream you can hear from the next county.", cost: 6800, massKg: 178, req: "bay2" }
+    R4: { name: "4-rotor Wankel", sub: "4 rotor · bal 96 · bay M", info: "The R26B that won Le Mans: four rotors on a split eccentric shaft with a centre main bearing. A scream you can hear from the next county.", cost: 6800, massKg: 178, req: "bay2" },
+    I1: { name: "Single", sub: "1 cyl \u00b7 two-stroke only", info: "One cylinder and one crank throw: the dirt bike, the chainsaw and the outboard on a dinghy. Light and simple, and it shakes like nothing else \u2014 a two-stroke single fires every turn, so there is no rest between beats.", cost: 300, massKg: 14, two: 1 },
+    I2: { name: "Parallel twin", sub: "2 cyl \u00b7 two-stroke only", info: "Two cylinders on a 180\u00b0 crank, so a two-stroke twin fires evenly every half turn. The Trabant, the sled engine and the 350 road-racer.", cost: 500, massKg: 24, two: 1 },
+    V4: { name: "V4 60\u00b0", sub: "4 cyl \u00b7 two-stroke only", info: "Two twins on one crank in a narrow vee: the 500 cc Grand Prix engine and the mid-size outboard. Compact, smooth and every cylinder gets its own pipe.", cost: 1100, massKg: 45, two: 1 },
+    D18: { name: "Deltic triangle", sub: "18 cyl \u00b7 36 pistons \u00b7 bay L", info: "Napier's answer for a light, enormous diesel: three banks of opposed-piston cylinders arranged in a triangle, a crankshaft at each corner, one of them turning backwards. Every cylinder fires every turn with no valves at all.", cost: 30000, massKg: 900, req: "bay2", two: 1 }
   };
 
   /* ---- block material ---- */
@@ -1622,6 +1636,7 @@ const ENGINE_SIM = (function () {
     inline_mech: { name: "Inline P-pump", sub: "900 bar  huge fuel", info: "A plunger and barrel per cylinder in a cast-iron case the size of a toolbox, the pump on a 12-valve Cummins. Turn the fuel plate and it flows more than the engine can burn \u2014 the boost compensator barely holds it back, so it smokes until the turbo lights.", kind: "mech", bar: 900, qL: 170, rpmMax: 4400, smokeLim: 0.2, pilot: 0, etaB: 0.005, cost: 2400, massKg: 16, req: "shop1" },
     heui: { name: "HEUI unit injectors", sub: "1500 bar  oil driven", info: "Engine oil at up to 200 bar from a high-pressure pump pushes an intensifier piston in each injector, as on the 7.3 Powerstroke. Proper pressure and an electronic smoke map, but the oil pump runs short at high revs.", kind: "unit", bar: 1500, qL: 140, rpmMax: 3600, smokeLim: 0.65, pilot: 0.3, etaB: 0.012, cost: 3200, massKg: 12, req: "shop1" },
     cr_gen1: { name: "Common rail 1,350", sub: "1350 bar  pilot  ECU", info: "A pump holds a rail at pressure and solenoid injectors open when the ECU says, as on the LB7 Duramax. A pilot shot before the main one takes the knock out of the combustion, and the ECU only adds fuel as fast as the boost arrives.", kind: "cr", bar: 1350, qL: 130, rpmMax: 4000, smokeLim: 0.9, pilot: 0.85, etaB: 0.015, cost: 3800, massKg: 9, req: "flow" },
+    unit_dd: { name: "Detroit unit injectors", sub: "1400 bar  torque rise", info: "A cam-driven plunger inside every injector body, metered by a rack along the head: Detroit Diesel's design since the 1930s. The helix gives a little more fuel per stroke as the revs fall, so the torque climbs as a truck lugs down a hill.", kind: "unit", bar: 1400, qL: 175, rpmMax: 3000, smokeLim: 0.30, pilot: 0, etaB: 0.008, rise: 0.20, cost: 2800, massKg: 10, req: "shop1" },
     cr_piezo: { name: "Piezo common rail", sub: "2000 bar  multi-shot", info: "Piezo stacks open the needle in a tenth of a millisecond, so one cycle can carry several pilot, main and post shots at 2,000 bar. The finest spray there is: the least smoke, the least noise and the most work per drop.", kind: "cr", bar: 2000, qL: 150, rpmMax: 5000, smokeLim: 1.0, pilot: 1.0, etaB: 0.025, cost: 6500, massKg: 9, req: "shop2" }
   };
 
@@ -1684,6 +1699,46 @@ const ENGINE_SIM = (function () {
     emop: { name: "Electronic OMP", sub: "cap 1.30  ECU metered", info: "A stepper-motor pump the ECU meters by load as well as revs, as on the RX-8: more oil under boost, less at a light cruise.", cap: 1.30, carbon: 0.85, oilL: 0.45, cost: 240, req: "shop1" },
     omp_premix: { name: "OMP + premix", sub: "cap 2.00  1:200", info: "The pump left in and two-stroke oil added to the tank at about 1:200. The seals never go short, at the price of a smokier exhaust and a little more carbon.", cap: 2.00, carbon: 1.25, oilL: 0.9, cost: 60 },
     premix: { name: "Premix only", sub: "cap 2.60  1:100", info: "Pump deleted, two-stroke oil in the fuel at 1:100: every drop of fuel carries its oil, so the seals are oiled exactly as hard as the engine is working. The race-car answer, and it smells like one.", cap: 2.60, carbon: 1.55, oilL: 1.4, cost: 30 }
+  };
+
+  /* ---- TWO-STROKE parts: only fitted when cfg.cycle is "two" ----
+     cycle: the engine type. scav: how the fresh charge pushes the exhaust out (te = trapping efficiency at a
+     delivery ratio of 1, flow = port flow vs a loop-scavenged barrel). induct: what lets the charge into the
+     crankcase (lowK / topK = delivery below / above the port rpm, back = blow-back at low rpm). tsFuel: where the
+     fuel goes in (sc = share of the short-circuited charge that carries fuel). xpipe: the exhaust (amp / w =
+     the tuned pipe's resonance height / width as a fraction of its rpm, dip = the flat spot below it).        */
+  OPT.cycle = {
+    four: { name: "Four-stroke", sub: "fires every 2nd turn", info: "Intake, compression, power, exhaust: one power stroke for every two turns of the crank, with valves to time the gas exchange. Everything in the shop is a four-stroke unless you say otherwise.", cost: 0 },
+    two: { name: "Two-stroke", sub: "fires every turn \u00b7 ports", info: "Compression and power on the way up and down, with the piston itself uncovering ports in the cylinder wall to let the exhaust out and the fresh charge in. Twice the power strokes, no valvetrain, and a fresh charge that partly runs straight out of the exhaust.", cost: 0 }
+  };
+  OPT.scav = {
+    loop: { name: "Loop (Schn\u00fcrle)", sub: "TE .74  flat crown", info: "Transfer ports aimed away from the exhaust so the fresh charge loops up the far wall and back down, pushing the exhaust ahead of it. Every modern dirt bike and outboard is loop-scavenged.", te: 0.74, flow: 1.00, crownK: 1.00, cost: 0 },
+    cross: { name: "Cross (deflector)", sub: "TE .64  hot deflector", info: "The old way: the transfers face the exhaust across the bore and a hump on the piston crown deflects the charge upward. Cheap, but the deflector runs hot, the chamber is a poor shape and more charge escapes.", te: 0.64, flow: 0.92, crownK: 1.10, on: 2.0, cost: 0 },
+    uniflow: { name: "Uniflow", sub: "TE .86  exhaust valves", info: "Air enters through a ring of ports at the bottom of the liner and leaves through exhaust valves in the head (or a second piston), sweeping straight up the bore. The best scavenging there is \u2014 Detroit Diesel and Napier built empires on it \u2014 but it needs a blower to push the air through.", te: 0.86, flow: 1.06, crownK: 0.95, valves: 1, cost: 900, req: "shop1" }
+  };
+  OPT.induct = {
+    piston: { name: "Piston port", sub: "symmetric \u00b7 blows back", info: "The piston skirt opens and closes the intake port, so the timing is the same either side of TDC. Simple, and strong at the rpm it is timed for; below that the crankcase blows fresh charge back out of the carburettor.", lowK: 0.80, topK: 1.00, back: 0.18, cost: 0 },
+    reed: { name: "Reed valve", sub: "one-way \u00b7 torque", info: "Fibreglass or carbon petals that only open inward. No blow-back, so the bottom end and the midrange fill in; at the very top the petals start to flutter.", lowK: 1.00, topK: 0.96, back: 0.0, cost: 120 },
+    disc: { name: "Rotary disc valve", sub: "asymmetric \u00b7 top end", info: "A slotted disc on the crank opens the intake straight into the crankcase, and the timing can be anything you cut. The 125 GP and Rotax answer: early opening, early closing, power everywhere \u2014 with the carburettor hung off the side.", lowK: 0.95, topK: 1.05, back: 0.04, cost: 450, req: "shop1" },
+    blower: { name: "Roots scavenge blower", sub: "gear-driven \u00b7 air box", info: "A gear-driven Roots blower fills an air box around the liner ports, so the crankcase plays no part in it. It is what lets a two-stroke diesel breathe at all, it costs crank power to drive, and it screams.", lowK: 1.15, topK: 1.00, back: 0.0, blower: 1, cost: 2600 }
+  };
+  OPT.tsFuel = {
+    carb: { name: "Carburettor", sub: "fuel in every leak", info: "A carburettor on the crankcase: the fuel arrives with the air, so whatever short-circuits out of the exhaust takes fuel with it. That is where a two-stroke's thirst and its blue haze come from.", sc: 1.00, cost: 0 },
+    efi: { name: "Transfer-port EFI", sub: "injected \u00b7 still leaks", info: "Injectors firing into the transfer ports or the crankcase. Better metering than a carburettor, but the fuel still travels with the charge, so most of the short-circuit loss is still there.", sc: 0.85, cost: 500 },
+    di: { name: "Direct injection", sub: "E-TEC / Optimax", info: "Fuel sprayed straight into the cylinder after the exhaust port has closed, so the charge that short-circuits is only air. Clean and economical \u2014 the reason the two-stroke outboard and sled survived the emission rules.", sc: 0.10, cost: 1600, req: "shop1" }
+  };
+  OPT.xpipe = {
+    chamber: { name: "Expansion chamber", sub: "tuned \u00b7 hits on the pipe", info: "A header, a long diverging cone, a belly and a converging cone: the reflected waves suck the cylinder empty, then push the escaping charge back in just before the port closes. A big lump of power in a narrow band around the rpm it is tuned to.", amp: 0.42, w: 0.13, dip: 0.10, backP: 0.85, veBonus: 0.0, massKg: 2.6, cost: 260, db: 3 },
+    straight: { name: "Straight pipe / stinger", sub: "open \u00b7 untuned", info: "A plain pipe or a short stinger: almost no back-pressure and almost no tuning. Flat, wide, very loud, and nothing like a race engine on a pipe.", amp: 0.06, w: 0.45, dip: 0.0, backP: 0.80, veBonus: 0.0, massKg: 1.0, cost: 60, db: 6 },
+    muffled: { name: "Header + muffler", sub: "quiet \u00b7 stock", info: "A manifold or short header into a box muffler, as on the Saab, the Trabant and a road-going outboard. Quiet and durable; the back-pressure costs some charge at the top.", amp: 0.0, w: 0.5, dip: 0.0, backP: 1.10, veBonus: -0.02, massKg: 1.6, cost: 40, db: -4 }
+  };
+  OPT.pv = {
+    none: { name: "No power valve", sub: "fixed exhaust port", info: "The exhaust port is where it was cut: the timing that suits the top end is the same timing the bottom end has to live with.", cost: 0 },
+    fitted: { name: "Exhaust power valve", sub: "YPVS / RAVE \u00b7 wider band", info: "A guillotine or drum in the exhaust port that lowers its roof at low rpm and opens it fully on the pipe. Low-down torque from a race port timing \u2014 Yamaha's YPVS, Rotax's RAVE.", wide: 1.35, cost: 380, req: "shop1" }
+  };
+  OPT.lube = {
+    premix: { name: "Premix", sub: "oil in the tank", info: "Two-stroke oil mixed into the fuel at a fixed ratio: the bearings, the rings and the skirt are oiled by whatever the crankcase mist leaves behind. Rich ratios smoke and foul plugs; lean ones seize.", cost: 0 },
+    inject: { name: "Oil injection", sub: "pump metered by load", info: "A separate oil tank and a metering pump that feeds oil by throttle and rpm, from about 200:1 at idle to 40:1 flat out. No mixing at the pump, less smoke, and no seizure from a forgotten jerrycan.", cost: 300 }
   };
 
   /* ---- engine oil (kinematic viscosity at 100 C, viscosity index) ---- */
@@ -1790,6 +1845,14 @@ const ENGINE_SIM = (function () {
   function isDiesel(c) { const f = c && OPT.fuel[c.fuel]; return !!(f && f.ci); }
   function isRotary(c) { const L = c && LAYOUTS[c.layout]; return !!(L && L.rotary); }
   const notRotary = (c) => !isRotary(c);
+  /* two-stroke: the cycle key, never on a Wankel. tsValves: uniflow (exhaust valves in the head); tsCase: the crankcase is the
+     scavenge pump (no blower), so it holds no oil and premix or an oil pump lubricates it */
+  function isTwoStroke(c) { return !!(c && c.cycle === "two" && !isRotary(c)); }
+  const tsValves = (c) => isTwoStroke(c) && c.scav === "uniflow" && !(LAYOUTS[c.layout] || {}).opposed;   // opposed pistons: no valves at all
+  const tsCase = (c) => isTwoStroke(c) && c.induct !== "blower";
+  const fourPiston = (c) => !isRotary(c) && !isTwoStroke(c);
+  const notTwoStroke = (c) => !isTwoStroke(c), notTsCase = (c) => !tsCase(c);
+  const pistonValves = (c) => !isRotary(c) && (!isTwoStroke(c) || tsValves(c));
   /* MORE FUELS: gaseous fuels (propane, CNG) and the flex blend. fuelOf() is the fuel the engine actually burns:
      the table entry, or for flex the pump-91 / E85 blend at cfg.ethanolPct (E85 when it is unset). */
   function isGas(c) { const f = c && OPT.fuel[c.fuel]; return !!(f && f.gas); }
@@ -1812,16 +1875,18 @@ const ENGINE_SIM = (function () {
   const FORM = [
     {
       title: "Engine layout", fields: [
-        { key: "layout", type: "seg", label: "Layout", optTable: "layout" }
+        { key: "layout", type: "seg", label: "Layout", optTable: "layout" },
+        { key: "cycle", type: "seg", label: "Cycle", optTable: "cycle", showIf: notRotary }
       ]
     },
     {
       title: "Bore & stroke", titleIf: c => isRotary(c) ? "Rotor geometry" : null, fields: [
-        { key: "bore", type: "slider", label: "Bore", labelIf: c => isRotary(c) ? "Rotor width B" : null, min: 68, max: 110, minIf: c => isRotary(c) ? 50 : 68, maxIf: c => isRotary(c) ? 100 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 140 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
-        { key: "stroke", type: "slider", label: "Stroke", labelIf: c => isRotary(c) ? "Generating radius R" : null, min: 58, max: 120, minIf: c => isRotary(c) ? 85 : 58, maxIf: c => isRotary(c) ? 125 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 180 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "bore", type: "slider", label: "Bore", labelIf: c => isRotary(c) ? "Rotor width B" : null, min: 68, max: 110, minIf: c => isRotary(c) ? 50 : isTwoStroke(c) ? 38 : 68, maxIf: c => isRotary(c) ? 100 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 140 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "stroke", type: "slider", label: "Stroke", labelIf: c => isRotary(c) ? "Generating radius R" : null, min: 58, max: 120, minIf: c => isRotary(c) ? 85 : isTwoStroke(c) ? 38 : 58, maxIf: c => isRotary(c) ? 125 : isTwoStroke(c) && isDiesel(c) ? 200 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 180 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
         { key: "ecc", type: "slider", label: "Eccentricity e", min: 11, max: 19, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq, showIf: isRotary },
         { key: "rodRatio", type: "slider", label: "Rod ratio L/r", min: 1.45, max: 2.10, step: 0.01, nudge: 0.01, unit: "", fmt: f2, showIf: notRotary },
-        { key: "cr", type: "slider", label: "Compression ratio", min: 7, max: 15, minIf: c => isDiesel(c) ? 14 : 7, maxIf: c => isDiesel(c) ? 24 : isRotary(c) ? 11.5 : 15, step: 0.25, nudge: 0.25, unit: ":1", fmt: fq }
+        { key: "cr", type: "slider", label: "Compression ratio", labelIf: c => isTwoStroke(c) && !isDiesel(c) ? "Trapped compression ratio" : null, min: 7, max: 15, minIf: c => isDiesel(c) ? 14 : isTwoStroke(c) ? 5.5 : 7, maxIf: c => isDiesel(c) ? 24 : isRotary(c) ? 11.5 : isTwoStroke(c) ? 12 : 15, step: 0.25, nudge: 0.25, unit: ":1", fmt: fq },
+        { key: "ccr", type: "slider", label: "Crankcase compression", min: 1.15, max: 1.70, step: 0.01, nudge: 0.01, unit: ":1", fmt: f2, showIf: tsCase }
       ]
     },
     {
@@ -1837,7 +1902,7 @@ const ENGINE_SIM = (function () {
         { key: "blockMat", type: "seg", label: "Block material", optTable: "blockMat", showIf: notRotary },
         { key: "deck", type: "seg", label: "Deck construction", optTable: "deck", showIf: (c) => !isRotary(c) && (c.blockMat === "alu_liners" || c.blockMat === "alu_nikasil") },
         { key: "headMat", type: "seg", label: "Head material", optTable: "headMat", showIf: notRotary },
-        { key: "head", type: "seg", label: "Valvetrain layout", optTable: "head", showIf: notRotary }
+        { key: "head", type: "seg", label: "Valvetrain layout", optTable: "head", showIf: fourPiston }
       ]
     },
     {
@@ -1857,18 +1922,24 @@ const ENGINE_SIM = (function () {
       ]
     },
     {
-      title: "Valvetrain", titleIf: c => isRotary(c) ? "Porting & revs" : null, fields: [
-        { key: "valveMat", type: "seg", label: "Valve material", optTable: "valveMat", showIf: notRotary },
-        { key: "springs", type: "seg", label: "Valve springs", optTable: "springs", showIf: notRotary },
-        { key: "cam", type: "slider", label: "Cam duration / overlap", min: 0, max: 100, maxIf: c => OPT.head[c.head].camMax || 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)), showIf: notRotary },
-        { key: "lift", type: "slider", label: "Valve lift", min: 0, max: 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)), showIf: notRotary },
+      title: "Valvetrain", titleIf: c => isRotary(c) ? "Porting & revs" : isTwoStroke(c) ? (tsValves(c) ? "Ports, exhaust valves & revs" : "Ports & revs") : null, fields: [
+        { key: "valveMat", type: "seg", label: "Valve material", labelIf: c => tsValves(c) ? "Exhaust valve material" : null, optTable: "valveMat", showIf: pistonValves },
+        { key: "springs", type: "seg", label: "Valve springs", optTable: "springs", showIf: pistonValves },
+        { key: "cam", type: "slider", label: "Cam duration / overlap", min: 0, max: 100, maxIf: c => OPT.head[c.head].camMax || 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)), showIf: fourPiston },
+        { key: "lift", type: "slider", label: "Valve lift", min: 0, max: 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)), showIf: fourPiston },
         { key: "rotPort", type: "seg", label: "Intake porting", optTable: "rotPort", showIf: isRotary },
-        { key: "redline", type: "slider", label: "Redline", min: 4000, max: 12500, minIf: c => isDiesel(c) ? 1800 : 4000, step: 100, nudge: 100, unit: "rpm", fmt: (v) => String(Math.round(v)) }
+        { key: "scav", type: "seg", label: "Scavenging", optTable: "scav", showIf: isTwoStroke },
+        { key: "ePort", type: "slider", label: "Exhaust port duration", labelIf: c => tsValves(c) ? "Exhaust valve duration" : null, min: 110, max: 210, step: 1, nudge: 1, unit: "\u00b0", fmt: (v) => String(Math.round(v)), showIf: isTwoStroke },
+        { key: "tPort", type: "slider", label: "Transfer port duration", labelIf: c => tsValves(c) ? "Intake port duration" : null, min: 90, max: 145, step: 1, nudge: 1, unit: "\u00b0", fmt: (v) => String(Math.round(v)), showIf: isTwoStroke },
+        { key: "pv", type: "seg", label: "Power valve", optTable: "pv", showIf: (c) => isTwoStroke(c) && !tsValves(c) },
+        { key: "redline", type: "slider", label: "Redline", min: 4000, max: 12500, minIf: c => isDiesel(c) ? (isTwoStroke(c) ? 1200 : 1800) : 4000, step: 100, nudge: 100, unit: "rpm", fmt: (v) => String(Math.round(v)) }
       ]
     },
     {
       title: "Induction & boost", fields: [
-        { key: "intake", type: "seg", label: "Intake system", optTable: "intake" },
+        { key: "intake", type: "seg", label: "Intake system", optTable: "intake", showIf: notTwoStroke },
+        { key: "induct", type: "seg", label: "Induction", optTable: "induct", showIf: isTwoStroke },
+        { key: "tsFuel", type: "seg", label: "Fuel delivery", optTable: "tsFuel", showIf: (c) => isTwoStroke(c) && !isDiesel(c) && !isGas(c) },
         { key: "asp", type: "seg", label: "Aspiration", optTable: "asp" },
         { key: "boost", type: "slider", label: "Boost pressure", min: 0.2, max: 3.5, step: 0.05, nudge: 0.05,
           maxIf: c => (isDiesel(c) && OPT.asp[c.asp].compound) ? 7.0 : (OPT.turboSize[c.turboSize].maxFlow >= 100 || OPT.asp[c.asp].compound || OPT.asp[c.asp].kind === "screw") ? 5.5 : 3.5,
@@ -1878,11 +1949,13 @@ const ENGINE_SIM = (function () {
         { key: "turbine", type: "seg", label: "Turbine geometry", optTable: "turbine", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" },
         { key: "als", type: "seg", label: "Anti-lag", optTable: "als", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" && !isDiesel(c) },
         { key: "ic", type: "seg", label: "Charge cooler", optTable: "ic", showIf: isBoosted },
-        { key: "exhaust", type: "seg", label: "Exhaust manifold", optTable: "exhaust" }
+        { key: "exhaust", type: "seg", label: "Exhaust manifold", optTable: "exhaust", showIf: notTwoStroke }
       ]
     },
     {
       title: "Exhaust system", fields: [
+        { key: "xpipe", type: "seg", label: "Two-stroke exhaust", optTable: "xpipe", showIf: isTwoStroke },
+        { key: "pipeRpm", type: "slider", label: "Pipe tuned to", min: 1500, max: 13500, minIf: c => isDiesel(c) ? 1200 : 3000, step: 100, nudge: 100, unit: "rpm", fmt: (v) => String(Math.round(v)), showIf: (c) => isTwoStroke(c) && c.xpipe === "chamber" },
         { key: "pipe", type: "seg", label: "Pipe size", optTable: "pipe" },
         { key: "muffler", type: "seg", label: "Muffler", optTable: "muffler", showIf: (c) => c.pipe !== "open" },
         { key: "cat", type: "seg", label: "Catalyst", labelIf: c => isDiesel(c) ? "Diesel aftertreatment" : null, optTable: "cat", showIf: (c) => c.pipe !== "open" },
@@ -1896,10 +1969,10 @@ const ENGINE_SIM = (function () {
         { key: "gasSys", type: "seg", label: "Gas system", optTable: "gasSys", showIf: isGas },
         { key: "dInj", type: "seg", label: "Injection system", optTable: "dInj", showIf: isDiesel },
         { key: "dNoz", type: "seg", label: "Injector nozzles", optTable: "dNoz", showIf: isDiesel },
-        { key: "injectors", type: "seg", label: "Injectors", optTable: "injectors", showIf: (c) => c.intake !== "carb" && !isDiesel(c) && !isGas(c) },
+        { key: "injectors", type: "seg", label: "Injectors", optTable: "injectors", showIf: (c) => (isTwoStroke(c) ? c.tsFuel !== "carb" : c.intake !== "carb") && !isDiesel(c) && !isGas(c) },
         { key: "fuelPump", type: "seg", label: "Fuel pump", optTable: "fuelPump", showIf: (c) => !isGas(c) },
         { key: "nitrous", type: "seg", label: "Nitrous", optTable: "nitrous" },
-        { key: "timing", type: "slider", label: "Ignition vs MBT", labelIf: c => isDiesel(c) ? "Injection timing vs optimal" : null, min: -10, max: 15, step: 0.25, nudge: 0.25, unit: "°", fmt: fq },
+        { key: "timing", type: "slider", label: "Ignition vs MBT", labelIf: c => isDiesel(c) ? "Injection timing vs optimal" : isTwoStroke(c) ? "CDI timing vs MBT" : null, min: -10, max: 15, step: 0.25, nudge: 0.25, unit: "°", fmt: fq },
         { key: "lambda", type: "slider", label: "Lambda", labelIf: c => isDiesel(c) ? "Full-load \u03bb (smoke limit)" : null, min: 0.75, max: 1.05, minIf: c => isDiesel(c) ? 1.05 : 0.75, maxIf: c => isDiesel(c) ? 2.4 : 1.05, step: 0.01, nudge: 0.01, unit: "λ", fmt: f2 }
       ]
     },
@@ -1913,9 +1986,11 @@ const ENGINE_SIM = (function () {
     },
     {
       title: "Lubrication & cooling", fields: [
-        { key: "oilGrade", type: "seg", label: "Oil grade", optTable: "oilGrade" },
-        { key: "oilSystem", type: "seg", label: "Oil system", optTable: "oilSystem" },
-        { key: "oilSquirters", type: "seg", label: "Piston cooling jets", optTable: "oilSquirters", showIf: notRotary },
+        { key: "oilGrade", type: "seg", label: "Oil grade", optTable: "oilGrade", showIf: notTsCase },
+        { key: "oilSystem", type: "seg", label: "Oil system", optTable: "oilSystem", showIf: notTsCase },
+        { key: "oilSquirters", type: "seg", label: "Piston cooling jets", optTable: "oilSquirters", showIf: (c) => notRotary(c) && !tsCase(c) },
+        { key: "lube", type: "seg", label: "Two-stroke oiling", optTable: "lube", showIf: tsCase },
+        { key: "premix", type: "slider", label: "Premix ratio", min: 16, max: 120, step: 1, nudge: 1, unit: ":1", fmt: (v) => String(Math.round(v)), showIf: (c) => tsCase(c) && c.lube !== "inject" },
         { key: "oilMeter", type: "seg", label: "Seal oiling", optTable: "oilMeter", showIf: isRotary },
         { key: "cooling", type: "seg", label: "Cooling package", optTable: "cooling" }
       ]
@@ -1953,7 +2028,8 @@ const ENGINE_SIM = (function () {
     launchCtl: "none", twoStepRpm: 4000, launchRetard: 20, transBrake: "none",
     ecc: 15, rotPort: "side", apexSeal: "oem3", rotHousing: "chrome", sidePlate: "iron", eshaft: "stock", oilMeter: "omp",
     pipe: "stock", muffler: "stock", cat: "none", cutout: "none",
-    turbine: "fixed", als: "off"
+    turbine: "fixed", als: "off",
+    cycle: "four", scav: "loop", induct: "reed", tsFuel: "carb", xpipe: "chamber", pipeRpm: 8000, ePort: 185, tPort: 125, pv: "none", lube: "premix", premix: 40, ccr: 1.40
   };
 
   const DEFAULT_ENV = {
@@ -1997,6 +2073,10 @@ const ENGINE_SIM = (function () {
     const rodLen = r * cfg.rodRatio * 2;         // rod length, m (rodRatio = l/s ... see note)
     // rodRatio here is l/crank-radius convention normalised: l = rodRatio * stroke
     const l = (s / 1000) * cfg.rodRatio;
+    if (isTwoStroke(cfg)) {   // every cylinder fires every turn: Vd is the four-stroke equivalent, VdNom the swept volume quoted
+      const k = L.opposed ? 2 : 1;   // opposed pistons: two pistons share each cylinder
+      return { L: L, b: b, s: s, Ap: Ap, Vcyl: Vcyl * k, Vd: 2 * Vd * k, VdNom: Vd * k, r: r, l: l, lam: r / l, ts: true };
+    }
     return { L: L, b: b, s: s, Ap: Ap, Vcyl: Vcyl, Vd: Vd, r: r, l: l, lam: r / l };
   }
 
@@ -2276,6 +2356,69 @@ const ENGINE_SIM = (function () {
   }
 
   /* =====================================================================
+     9t.  TWO-STROKE cycle. Only cfg.cycle === "two" on a piston layout reaches these.
+          Every cylinder fires every turn, so over 720 deg a two-stroke breathes and burns
+          like a four-stroke of twice its swept volume: g.Vd is that equivalent (torque, air
+          flow, BMEP) and g.VdNom the swept volume quoted (res.Vd). The piston opens the ports,
+          so "VE" here is the charging efficiency: the delivery ratio (fresh charge pushed
+          through per swept volume) times the trapping efficiency (the share of it still in the
+          cylinder when the exhaust port closes). The rest short-circuits straight out of the
+          exhaust, taking its fuel with it unless the fuel goes in after the port closes.
+     ===================================================================== */
+  const TS_ETA = 1.00;       // indicated efficiency vs a four-stroke at the same trapped CR (no pumping loop, a compact squish chamber)
+  const TS_ETA_EP = 0.0015;  //   but every degree of exhaust duration over 150 opens the port earlier and leaves less expansion
+  const TS_ETA_D = 0.97;     // a uniflow diesel loses little: the valves open late and the air sweeps the bore clean
+  const TS_CRUISE = 0.84;    // part load: a throttled two-stroke keeps its exhaust and misfires ("four-stroking")
+  const TS_FC = 0.20;        // friction constant [bar]: no valvetrain, rolling-element bearings (crankcase-scavenged)
+  const TS_PMAX = 0.95;
+  const TS_CROWN = 1.30;     // crown heat: a power stroke every turn, and the exhaust side never sees a cool charge
+  const TS_ON = 1.5;         // octane: hot residual left in the cylinder
+  const TS_EGT = -30;        // the short-circuited charge cools the pipe a little
+  const TS_PIPE_T0 = 560;    // degC: the pipe gas temperature a tuned rpm is quoted at
+  const TS_SKIP = { valve_float: 1, valve_piston: 1, valve_temp: 1 };   // a ported engine has no valves (uniflow keeps float and temperature)
+  const TS_SKIP_CASE = { oil_starvation: 1, oil_film: 1, rod_bolts: 1 };   // and a pressed-up crank with one-piece rods: no rod bolts            // crankcase-scavenged: no sump, needle-roller bearings fed by the premix
+  const TS_HEAD = { name: "Ported head", nIV: 1, kv: 0.40, veBase: 0.93, floatBase: 5600, camMax: 100, cost: 0, massFac: 0.55, vvt: 0, vvl: 0, burn: 1.04 };
+  const TS_INK = { name: "Crankcase intake", veBonus: 0, rTune: 5000, amp: 0, loss: 0.35, wet: 0, cost: 0 };
+  function tsModel(cfg, g, O, dsl) {
+    const sc = O.scv, ind = O.ind2, xp = O.xp;
+    const ep = clamp(+cfg.ePort || 185, 100, 220), tp = clamp(+cfg.tPort || 125, 80, 150);
+    // the ports breathe best where their time-area matches the piston speed: longer durations, more rpm
+    const durEff = 0.65 * ep + 0.35 * (tp + 60);
+    const rpmP = 257000 / Math.max(30, g.s) * Math.exp((durEff - 150) / 50) * sc.flow;
+    const ccr = clamp(+cfg.ccr || 1.4, 1.1, 1.8);
+    const mild = clamp((205 - ep) / 80, 0, 1);   // 1 = a road engine's low, narrow ports; 0 = a race port
+    return { ep: ep, tp: tp, rpmP: rpmP, wLo: (0.50 + 0.45 * mild) * (O.pvO.wide || 1), wHi: 0.40 + 0.35 * mild,
+      ccr: ccr, caseDR: 0.55 + 0.90 * (ccr - 1), blower: !!ind.blower, valves: !!sc.valves && !g.L.opposed, dsl: dsl,
+      amp: xp.amp * (dsl || sc.valves ? 0.30 : 1), w: xp.w, dip: xp.dip, te0: sc.te, chamber: cfg.xpipe === "chamber",
+      pipeRpm: clamp(+cfg.pipeRpm || 8000, 800, 16000), lowK: ind.lowK, topK: ind.topK, back: ind.back, sc: dsl ? 0 : O.tsf.sc,
+      etaK: dsl ? TS_ETA_D : TS_ETA * (1 - TS_ETA_EP * Math.max(0, ep - 150)) };
+  }
+  /* scavenge-air pressure in a blower's air box: rises with piston speed (port flow) squared */
+  function tsBoxBar(mps, dr) { return clamp(0.30 * sq(mps / 9) * sq(dr / 1.35), 0, 0.8); }
+  /* delivery ratio, trapping and charging efficiency at an rpm. pipeT: pipe gas temperature (degC), which moves the tune */
+  function tsBreathe(rpm, tm, bBar, pipeT) {
+    const x = rpm / tm.rpmP;
+    const fPort = Math.exp(-0.5 * sq((x - 1) / (x < 1 ? tm.wLo : tm.wHi)));
+    let dr;
+    if (tm.blower) dr = 1.35 * (0.80 + 0.20 * fPort) * (x > 1 ? 1 - 0.25 * clamp(x - 1, 0, 1) : 1);   // positive displacement: flat until the ports choke it
+    else {
+      dr = tm.caseDR * fPort * (x < 1 ? tm.lowK + (1 - tm.lowK) * x : tm.topK) * (1 - tm.back * clamp(1 - x, 0, 1));
+      dr *= (1 - 0.6 * Math.max(0, tm.ccr - 1.40) * clamp(x - 0.8, 0, 1.5)) * (1 + 0.5 * Math.max(0, 1.40 - tm.ccr) * clamp(x - 0.8, 0, 1));   // a small crankcase runs out of charge at the top
+      if (tm.dsl) dr *= 0.45 + 0.85 * clamp((bBar || 0) / 0.35, 0, 1);   // a crankcase cannot push air through a diesel's cylinder; a turbo alone gives nothing at idle
+    }
+    let bump = 0, rTune = 0;
+    if (tm.amp > 0) {
+      rTune = tm.pipeRpm * Math.sqrt((pipeT + 273) / (TS_PIPE_T0 + 273));   // a hotter pipe carries its waves faster: the tune moves up
+      const ampEff = tm.amp / (1 + 2.5 * (bBar || 0));                          // a turbine in the pipe swallows the waves
+      bump = ampEff * Math.exp(-0.5 * sq((rpm - rTune) / (tm.w * rTune)))
+        - tm.dip * (ampEff / Math.max(1e-6, tm.amp)) * clamp((0.82 * rTune - rpm) / (0.30 * rTune), 0, 1) * clamp(rpm / (0.4 * rTune), 0, 1);
+    }
+    dr *= 1 + 0.75 * bump;                                                      // the diverging cone's suction pulls charge through
+    const te = clamp(tm.te0 * (1.12 - 0.15 * dr) * (1 + 0.45 * Math.max(0, bump)), 0.30, 0.97);   // the plug pulse pushes the escaping charge back
+    return { dr: dr, te: te, ce: dr * te, rTune: rTune, bump: bump, x: x };
+  }
+
+  /* =====================================================================
      10.  simulate()
      ===================================================================== */
   /* ---- exhaust system after the manifold -------------------------------------------------
@@ -2352,6 +2495,7 @@ const ENGINE_SIM = (function () {
     env = Object.assign({}, DEFAULT_ENV, env || {});
     const rot = isRotary(cfg);
     if (rot && (!OPT.fuel[cfg.fuel] || OPT.fuel[cfg.fuel].ci)) cfg.fuel = "r91";   // a Wankel is a spark engine
+    const ts = isTwoStroke(cfg), tsCaseB = ts && tsCase(cfg);
 
     const O = {
       block: OPT.blockMat[cfg.blockMat], deck: OPT.deck[cfg.deck],
@@ -2375,11 +2519,19 @@ const ENGINE_SIM = (function () {
     if (rot) Object.assign(O, { port: OPT.rotPort[cfg.rotPort] || OPT.rotPort.side, apex: OPT.apexSeal[cfg.apexSeal] || OPT.apexSeal.oem3,
       rh: OPT.rotHousing[cfg.rotHousing] || OPT.rotHousing.chrome, rsp: OPT.sidePlate[cfg.sidePlate] || OPT.sidePlate.iron,
       esh: OPT.eshaft[cfg.eshaft] || OPT.eshaft.stock, omp: OPT.oilMeter[cfg.oilMeter] || OPT.oilMeter.omp });
+    if (ts) Object.assign(O, { scv: OPT.scav[cfg.scav] || OPT.scav.loop, ind2: OPT.induct[cfg.induct] || OPT.induct.reed,
+      tsf: OPT.tsFuel[cfg.tsFuel] || OPT.tsFuel.carb, xp: OPT.xpipe[cfg.xpipe] || OPT.xpipe.chamber, pvO: OPT.pv[cfg.pv] || OPT.pv.none,
+      lubeO: OPT.lube[cfg.lube] || OPT.lube.premix, hd: TS_HEAD, ink: TS_INK, exh: OPT.xpipe[cfg.xpipe] || OPT.xpipe.chamber });
     const g = geometry(cfg);
     const L = g.L;
     const air = ambient(env);
     const vm = veModel(cfg, g, O.hd, O.ink, O.exh);
     const rv = rot ? rotVeModel(cfg, g, O.ink, O.exh, O.port) : null;
+    const tm = ts ? tsModel(cfg, g, O, isDiesel(cfg)) : null;
+    const tsLubR = tsCaseB ? (cfg.lube === "inject" ? 50 : clamp(+cfg.premix || 40, 10, 200)) : 0;
+    const tsLubeK = !tsCaseB ? 1 : cfg.lube === "inject" ? 0.99 : 0.92 + 0.12 * Math.pow(40 / tsLubR, 0.8);   // oil in the mix is drag; lean premix is less of it
+    const tsDr = [], tsTe = [], tsTune = [];
+    let tsPipeT = 0.82 * 680, tsBoxPk = 0;
     const bm = boostModel(cfg, g);
     const boosted = bm.kind !== "na";
     const deckStiff = (cfg.blockMat === "alu_liners" || cfg.blockMat === "alu_nikasil") ? O.deck.stiff : 1.0;
@@ -2396,7 +2548,7 @@ const ENGINE_SIM = (function () {
     const evapK = dsl ? 0 : gasF ? 0 : evapCoolK(O.fu, cfg.lambda);    // a diesel sprays into the cylinder after the air is trapped
     const kvOil = kvAt(O.oil, env.oilC);
 
-    const redline = clamp(cfg.redline, dsl ? 1800 : 4000, 12500);
+    const redline = clamp(cfg.redline, dsl ? (ts ? 1200 : 1800) : 4000, 12500);   // a big two-stroke diesel (the Deltic) is rated slower
     /* ---- tune map: the WOT row (or, for the map editor's part-load probe, env.mapLoad's row) per rpm ---- */
     const MAP = mapOk(cfg.map) ? cfg.map : null;
     const mapLd = MAP && env.mapLoad > 0 && env.mapLoad < 1 ? Math.max(0.1, env.mapLoad) : 1;
@@ -2437,7 +2589,7 @@ const ENGINE_SIM = (function () {
     /* ---- fuel system: what reaches the cylinder, not just what the tune asks for ---- */
     const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240;
     const fpump = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
-    const portInj = !dsl && !gasF && cfg.intake !== "carb";          // a carburettor meters through jets (a gas system has its own meter)
+    const portInj = !dsl && !gasF && (ts ? cfg.tsFuel !== "carb" : cfg.intake !== "carb");          // a carburettor meters through jets (a gas system has its own meter)
     const injCc = inj.cc * (inj.perCyl || 1) * (isRotary(cfg) ? 2 : 1);   // cc/min per cylinder (a rotary stages a primary and a secondary per rotor)
     const fuelRho = fuelDensity(O.fu);
     const lamCurve = [], fuelLph = [];
@@ -2501,14 +2653,19 @@ const ENGINE_SIM = (function () {
       const rhoCharge = pMan / (R_AIR * Tcharge);
 
       /* ---- breathing -------------------------------------------------- */
-      const ve0 = rot ? rotVeAt(rpm, rv, O.ink, Tcharge, bBar) : veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
+      const tb = ts ? tsBreathe(rpm, tm, bBar, tsPipeT) : null;
+      let tsBox = 0;
+      if (ts && tm.blower) { tsBox = tsBoxBar(2 * (g.s / 1000) * rpm / 60, tb.dr); if (tsBox > tsBoxPk) tsBoxPk = tsBox; }
+      const ve0 = ts ? tb.ce * (tm.blower ? 1 + (tm.valves ? 0.3 : 0.15) * tsBox * 1e5 / air.p : 1)   // a blower traps the charge above atmospheric
+        : rot ? rotVeAt(rpm, rv, O.ink, Tcharge, bBar) : veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
+      if (ts) { tsDr.push(tb.dr); tsTe.push(tb.te); tsTune.push(tb.rTune); }
       /* exhaust system: the extra pressure after the manifold. A turbine passes it upstream multiplied by its own
          expansion ratio; behind the exhaust valve it raises residual gas and, with overlap, pushes exhaust back
          into the intake, so a high-rpm, big-cam engine loses breathing as well as pumping work. */
-      const exM = ve0 * rhoCharge * g.Vd * rpm / 120 * (1 + 1 / (O.fu.afr * cfg.lambda));
+      const exM = (ts ? tb.dr : ve0) * rhoCharge * g.Vd * rpm / 120 * (1 + 1 / (O.fu.afr * cfg.lambda));
       let exDp = 0;
       if (exS) exDp = exS.delta(exM, air.p) * (bm.kind === "turbo" ? pManAbs0 / air.p : 1);
-      const ve = (gasF ? ve0 * gasVeK : ve0) * (exS ? clamp(1 - (0.10 + 0.25 * (rot ? clamp(rv.overlap / 0.4, 0, 1) : cfg.cam / 100)) * exDp / pMan, 0.75, 1.04) : 1);
+      const ve = (gasF ? ve0 * gasVeK : ve0) * (exS ? clamp(1 - (0.10 + 0.25 * (ts ? 0.6 : rot ? clamp(rv.overlap / 0.4, 0, 1) : cfg.cam / 100)) * exDp / pMan, 0.75, 1.04) : 1);
 
       /* ---- fuel delivery ------------------------------------------------
          The tune asks for air x fuel/air at the commanded lambda; nitrous
@@ -2516,19 +2673,19 @@ const ENGINE_SIM = (function () {
          deliver leans the mixture: lamE is what the cylinder actually burns. */
       const airKgS = ve * rhoCharge * g.Vd * rpm / 120;
       // diesel: lambda follows the smoke limiter while the boost is not yet there
-      const lamSet = dsl && boosted ? lamC * Math.pow(clamp(rhoCharge / rhoFull, 0.05, 1), 1 - dInj.smokeLim) : lamC;
-      const needLph = kFuel * airKgS / (O.fu.afr * lamSet) * 3600 / fuelRho;
+      const lamSet = (dsl && boosted ? lamC * Math.pow(clamp(rhoCharge / rhoFull, 0.05, 1), 1 - dInj.smokeLim) : lamC) * (dsl && dInj.rise ? 1 - dInj.rise * clamp(1 - rpm / redline, 0, 0.6) : 1);   // unit injectors: more fuel per stroke as the revs fall
+      const needLph = kFuel * airKgS * (ts ? 1 + tm.sc * (1 / tb.te - 1) : 1) / (O.fu.afr * lamSet) * 3600 / fuelRho;   // two-stroke: the short-circuited charge carries its fuel out too
       const n2oStK = n2oSt && rpm < n2oWin2 ? n2oSt[0] / n2oHp : 1;   // first stage only, until the second arms
       const n2oLph = (n2oOn && rpm >= n2oWin)
         ? n2oHp * 745.7 * (O.n2o.prog ? clamp((rpm - n2oWin) / (0.28 * redline), 0.25, 1) : 1) / (0.26 * O.fu.lhv) * 3600 / fuelRho * n2oStK : 0;
       const ccCyl = (needLph + (n2oDry ? n2oLph : 0)) * 1000 / 60 / L.n;
       const duty = portInj ? ccCyl / (injCc * (n2oDry && n2oLph > 0 ? N2O_RAIL : 1)) : 0;
       // diesel: mm3 per stroke asked of the injection system against what pump + nozzles can push
-      const qDem = dsl ? (needLph + (n2oDsl ? n2oLph : 0)) * 1e6 / (L.n * rpm * 30) : 0;
+      const qDem = dsl ? (needLph + (n2oDsl ? n2oLph : 0)) * 1e6 / (L.n * rpm * 30) / (ts ? 2 : 1) : 0;   // a two-stroke injects every turn
       const qCap = dsl ? dInj.qL * g.Vcyl * 1000 * dNoz.mult * (rpm <= dInj.rpmMax ? 1 : Math.exp(-sq((rpm - dInj.rpmMax) / (0.22 * dInj.rpmMax)))) : 1;
       const qUtil = qDem / qCap;
       const pumpCap = gasF ? gs.kgh / fuelRho * clamp(1 - gs.dropBar * Math.max(0, bBar), 0.3, 1)   // a gas system: kg/h it can meter, as L/h of this fuel
-        : pumpLphAt(fpump, rpm, dsl ? 0 : bBar) * (n2oDry && n2oLph > 0 ? 0.92 : 1);   // a diesel lift pump does not push against boost; a dry kit's raised rail costs the pump flow
+        : pumpLphAt(fpump, ts && fpump.rpmRef ? rpm * clamp(8000 / redline, 1, 4) : rpm, dsl ? 0 : bBar) * (n2oDry && n2oLph > 0 ? 0.92 : 1);   // a diesel lift pump does not push against boost; a dry kit's raised rail costs the pump flow
       const pumpLoad = (needLph * (dsl ? DSL_RETURN : 1) + n2oLph) / pumpCap;
       const fd = Math.min(portInj ? deliveredFrac(duty, INJ_KNEE) : dsl ? Math.min(1, 1 / Math.max(1e-9, qUtil)) : 1, deliveredFrac(pumpLoad, PUMP_KNEE))
         * (n2oDry && !portInj && n2oLph > 0 ? needLph / (needLph + n2oLph) : 1);   // a carburettor has no injector table to add the dry shot's fuel
@@ -2552,7 +2709,7 @@ const ENGINE_SIM = (function () {
 
       /* ---- knock ------------------------------------------------------ */
       // dynamic compression falls with cam overlap (late intake valve closing)
-      const dyn = rot ? rv.dyn(rpm) : 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
+      const dyn = ts ? 1 : rot ? rv.dyn(rpm) : 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
       const chargeC = (fd < 1 ? Math.max(air.T - 5, Tc3 - evapKr * fd) : Tcharge) - 273.15;   // less fuel, less evaporative cooling
       let onReq = 89.6 + 3.0 * (crEff - 10.55)
@@ -2565,6 +2722,7 @@ const ENGINE_SIM = (function () {
         - 6.0 * clamp(1.0 - lamE, -0.05, 0.22);
       onReq -= O.block.k > 100 ? 0.4 : 0;                 // alu block pulls heat too
       if (rot) onReq = rotOnReq(crEff, chargeC, env.coolantC, cfg.timing, lamE, bBar);
+      if (ts) onReq += TS_ON + (O.scv.on || 0);
       if (n2oOn && rpm >= n2oWin) onReq += clamp(9.0 * n2oBite, 2, 15) * (O.n2o.prog ? 0.85 : 1);  // oxygen in the chamber, not just air
       if (n2oDry && n2oLph > 0) onReq += 30 * Math.max(0, lamE - lamC);   // lean on nitrous: the burn runs away
       const margin = fuelON - onReq;
@@ -2587,10 +2745,10 @@ const ENGINE_SIM = (function () {
         * clamp(1 - 0.20 / lamE, 0.55, 1)                   // more fuel, longer cut-off, less expansion
         * (1 + (O.hd.burn - 1) * 0.30)
         * (1 + 0.0008 * (g.b - 86))                         // bigger bore, less wall per unit of charge
-        / (1 + 0.0018 * sq(tmg - lateDeg)) : ottoEta(cfg.cr, O.fu.gamma) * K_QUAL
+        / (1 + 0.0018 * sq(tmg - lateDeg)) * (ts ? tm.etaK : 1) : ottoEta(cfg.cr, O.fu.gamma) * K_QUAL
         * (1 + (O.hd.burn - 1) * 0.55)
         * (1 - 0.0011 * (g.b - 86))
-        / (1 + 0.0018 * sq(effTiming));
+        / (1 + 0.0018 * sq(effTiming)) * (ts ? tm.etaK : 1);
       const fuelPerAir = 1 / (O.fu.afr * lamE);
       let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * (dsl ? etaCombD(lamE, dInj.etaB) : etaComb(lamE)) * eta_th * (rot ? 1 + 0.5 * (O.apex.seal - 1) : 1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring (apex) seal sets blow-by
       if (O.fu.etaK) imep *= O.fu.etaK;                     // methane burns slowly: a little more of the work is lost to the walls
@@ -2620,13 +2778,14 @@ const ENGINE_SIM = (function () {
         const pExh = air.p * (1 + 0.20 * O.exh.backP * sq(rpm / redline));
         pmep = (pExh - pMan);
       }
+      if (ts && bm.kind !== "turbo") pmep = air.p * 0.10 * O.xp.backP * sq(rpm / redline) + (tm.blower ? 0 : 0.06e5 * tb.dr);   // no gas-exchange strokes: the pipe's back-pressure and the crankcase pumping
       if (exS) pmep += exDp;                                  // pipe, cat and muffler, on top of the manifold
 
       /* ---- friction (Chen-Flynn + viscosity) ---------------------------- */
       const mps = 2 * (g.s / 1000) * rpm / 60;
       /* diesel: compression pressure plus the combustion rise; advance puts it nearer TDC. Boost
          heat shortens the delay, so less fuel goes off at once and the rise gets gentler.  */
-      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * tmg) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : (rot ? ROT_PMAX : 1) * K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
+      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * tmg) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : (rot ? ROT_PMAX : ts ? TS_PMAX : 1) * K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
         * (1 + (O.n2o.prog ? 0.16 : 0.30) * n2oFrac);    // nitrous burns faster and peaks earlier
       let fmepBar = rot ? rotFmepBar(rpm, pmaxBar, g, O.apex) : FM_C + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps;
       fmepBar *= (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac;
@@ -2634,6 +2793,11 @@ const ENGINE_SIM = (function () {
       fmepBar *= O.osys.windage + (O.osys.windage < 1 ? 0 : 0);
       if (!rot) fmepBar *= (1 + 0.025 * (O.spr.rate - 1)) * (L.n > 8 ? 1.03 : 1.0);
       let fmep = fmepBar * 1e5;
+      if (ts) {   // no valvetrain (uniflow: a light one), rolling bearings and premix on a crankcase engine; a scavenge blower to drive
+        fmep = ((tsCaseB ? TS_FC : FM_C) + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps) * O.ring.fric
+          * (tsCaseB ? tsLubeK : (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac * O.osys.windage) * (tm.valves ? 1 + 0.025 * (O.spr.rate - 1) : 1) * 1e5;
+        if (tm.blower) fmep += tsBox * 1e5 * tb.dr / 0.55;
+      }
       if (dsl) fmep += 0.10e5;                              // injection pump drive
       // supercharger parasitic drive power appears as extra FMEP
       if (bm.kind === "roots" || bm.kind === "screw" || bm.kind === "centrifugal") {
@@ -2656,7 +2820,9 @@ const ENGINE_SIM = (function () {
       if (n2oDsl) egt += -560 * n2oFrac + 700 * n2oFrac * n2oFrac;   // a moderate shot cools a diesel's exhaust; a big one heats it again
       if (n2oDry) egt += 900 * Math.max(0, lamE - lamC) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
       if (rot) egt += ROT_EGT + O.rh.egtC;
+      if (ts) egt += TS_EGT - (dsl ? 0 : 30 * tm.sc * (1 / tb.te - 1));
       egt = clamp(egt, 380, 1150);
+      if (ts) tsPipeT = 0.82 * egt;                         // the pipe runs a little cooler than the port: the next rpm's tune
 
       rpms.push(rpm);
       mgnCurve.push(dsl ? 99 : margin); rtdCurve.push(retard);
@@ -2674,7 +2840,7 @@ const ENGINE_SIM = (function () {
       if (retard > maxRetard) maxRetard = retard;
       if (chargeC > maxChargeC) maxChargeC = chargeC;
       if (bBar > maxBoost) maxBoost = bBar;
-      const lbmin = dsl ? airKgS * 132.28 : Math.max(0, hp / 10);   // a diesel moves far more air per hp
+      const lbmin = dsl ? airKgS * (ts ? 1 / tb.te : 1) * 132.28 : Math.max(0, hp / 10);   // a diesel moves far more air per hp (a two-stroke blows some straight through)
       if (lbmin > maxFlowLb) maxFlowLb = lbmin;
       fuelUsedProxy += (hp > 0 ? hp : 0); ptsProxy++;
     }
@@ -2692,7 +2858,7 @@ const ENGINE_SIM = (function () {
       const Tc3 = bBar > 0.001 ? Tc2 - O.icc.eff * (Tc2 - air.T) : air.T;
       const Tcharge = Math.max(air.T - 5, Tc3 - (MAP ? evapCoolK(O.fu, lamAt(rpm)) : evapK) * fdK);
       const pMan = boosted ? pManAbs0 - O.icc.dp * 1e5 : air.p;
-      const dyn = rot ? rv.dyn(rpm) : 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
+      const dyn = ts ? 1 : rot ? rv.dyn(rpm) : 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
       const chargeC = Tcharge - 273.15;
       knockOnReq = 89.6 + 3.0 * (crEff - 10.55) + 0.095 * (g.b - 86) + 0.135 * (chargeC - 35)
@@ -2700,6 +2866,7 @@ const ENGINE_SIM = (function () {
         - 5.5 * (O.hd.burn - 1) - 6.0 * clamp(1.0 - lamK, -0.05, 0.22);
       knockOnReq -= O.block.k > 100 ? 0.4 : 0;
       if (rot) knockOnReq = rotOnReq(crEff, chargeC, env.coolantC, cfg.timing, lamK, bBar);
+      if (ts) knockOnReq += TS_ON + (O.scv.on || 0);
       knockMargin = fuelON - knockOnReq + (shop.octane || 0) - 0.8 * (O.ink.wet || 0);
       /* flex: the same point on the winter blend. Less ethanol means a little less octane and less evaporative
          cooling; the sensor tells the ECU, which pulls timing for it — power, or knock if it runs out of room. */
@@ -2738,7 +2905,7 @@ const ENGINE_SIM = (function () {
     const mRecip = mPis + mPin + mRings + 0.31 * mRod;
 
     // --- rod ---
-    const Frec = mRecip * aTdc;                                   // N, TDC exhaust
+    const Frec = mRecip * aTdc * (ts ? (1 - g.lam) / (1 + g.lam) : 1);   // N, TDC exhaust (a two-stroke always compresses at TDC: its worst pull is at BDC)
     const aRod = 0.0125 * g.b * g.b * (O.rod.areaFac || (O.rod.E < 150 ? 1.25 : 1.0)) * (dsl ? 1.25 : 1);  // mm^2 beam area (a diesel rod is sized for firing load)
     const sigRodT = Frec / aRod;                                  // MPa
     const Igyr = aRod * aRod / 2.1;                               // mm^4 (H-beam proxy)
@@ -2776,7 +2943,7 @@ const ENGINE_SIM = (function () {
     const nEff = L.n / L.banks + 1;
     const f1 = 2600 * O.crk.stiffFac / Math.pow(nEff, 1.15)
       * Math.pow(80 / g.s, 0.35) * Math.pow(86 / g.b, 0.15);
-    const majorOrder = L.n / 2;
+    const majorOrder = ts ? L.n : L.n / 2;   // a two-stroke fires every cylinder every turn
     const resRpm = f1 * 60 / majorOrder;
     const inRes = resRpm > 1200 && resRpm < redline * 1.03;
     const torAmp = 0.30 * (peakTq * 4 * PI / g.Vd / 1e5 / 12) * Math.pow(nEff / 5, 1.6)
@@ -2796,6 +2963,7 @@ const ENGINE_SIM = (function () {
     if (!dsl) crownC += 200 * clamp(lamTop - lamAt(leanRpm), 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
     if (n2oDry) crownC += 1600 * clamp(n2oLeanPk, 0, 0.3) * clamp(n2oBite, 0.25, 1.5);   // a lean nitrous cylinder: the crown edge goes first
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
+    if (ts) crownC = env.coolantC + (crownC - env.coolantC) * TS_CROWN * O.scv.crownK;   // a power stroke every turn
     crownC = clamp(crownC, env.coolantC + 40, 900);
     const skirtC = 0.22 * crownC + 0.78 * (env.coolantC + 15);
     const boreWallC = env.coolantC + 26;
@@ -2929,12 +3097,51 @@ const ENGINE_SIM = (function () {
         idleRpm: pt.idle, overlap: pt.overlap, egtC: maxEgt, oilL: om.oilL * (1 + 0.5 * maxBoost) * Math.pow(redline / 7000, 0.5) };
     }
 
+    /* ---- two-stroke: delivery and trapping at peak power, the pipe, and what the ports, the oil and the pipe ask of the parts ---- */
+    let TSI = null;
+    if (ts) {
+      const iP = Math.max(0, rpms.indexOf(peakHpRpm));
+      // where it comes on the pipe: the steepest climb in torque below peak power; the band is where it holds 70% of peak power
+      let onPipe = rpms[0], climb = -1;
+      for (let i = 2; i < torque.length; i++) { const d = torque[i] - torque[i - 2]; if (d > climb && rpms[i] <= peakHpRpm) { climb = d; onPipe = rpms[i - 1]; } }
+      const pw70 = rpms.filter((r, i) => power[i] >= 0.7 * peakHp);
+      const drP = tsDr[iP] || 0, teP = tsTe[iP] || 0;
+      const lubK = !tsCaseB ? 0.70 : cfg.lube === "inject" ? 0.85 : Math.pow(tsLubR / 50, 0.5);
+      const leanK = dsl ? 1 : 1 + 4 * Math.max(0, lamTop - 0.88);
+      const clrK = Math.pow(0.0009 / O.pc.fac, 0.25);
+      const pipeTpk = 0.82 * maxEgt;
+      const lamIdle = MAP ? mapLook(MAP, MAP.lam, Math.min(redline, 1500), 20) : cfg.lambda;
+      const tbLow = tsBreathe(1000, tm, boostCurve[0] || 0, 0.82 * 600);
+      const sealMs = PI * (0.42 * g.b / 1000 + 0.010) * redline / 60;
+      TSI = { firingHz: L.n * redline / 60, swept: g.VdNom * 1000, eq: g.Vd * 1000, rpmP: Math.round(tm.rpmP), ep: tm.ep, tp: tm.tp, ccr: tsCaseB ? tm.ccr : null,
+        drPk: drP, tePk: teP, cePk: drP * teP, scChargePct: Math.round((1 - teP) * 100),
+        scFuelPct: Math.round(tm.sc * (1 - teP) / Math.max(0.05, teP + tm.sc * (1 - teP)) * 100),
+        pipe: cfg.xpipe, pipeRpm: tm.chamber ? Math.round(tm.pipeRpm) : 0, pipeTune: Math.round(tsTune[iP] || 0), pipeT: pipeTpk,
+        onPipe: onPipe, band: pw70.length ? [pw70[0], pw70[pw70.length - 1]] : [peakHpRpm, peakHpRpm],
+        // piston seizure: a hot exhaust side, the oil in the charge and the clearance it has to grow into
+        seize: 0.62 * (crownC / O.pis.maxCrownC) * lubK * leanK * clrK / Math.pow(O.cool.cap, 0.15),
+        // rings and port bridges: a wide, tall exhaust port and piston speed wear the ring ends that brush its edges
+        portW: (mpsRed / 20.5) * sq(tm.ep / 185) * (tm.valves ? 0.6 : 1) * 0.72 * (O.ring.gapSet > 0.005 ? 0.92 : 1),
+        // crankcase seals: lip speed on the main journals and the pressure the crankcase pumps to
+        sealMs: sealMs, seals: sealMs / 30 * (tsCaseB ? 1 + Math.max(0, tm.ccr - 1.30) : 0.6) * (1 + 0.002 * Math.max(0, maxEgt - 700)),
+        // the chamber: heat and the engine's own shake work-harden the welds and the mounts
+        pipeU: tm.chamber ? (pipeTpk / 820) * (0.5 + 0.4 * Math.min(1, L.firstOrder)) * Math.sqrt(redline / 9000) : 0,
+        // plug fouling: rich at idle, oil in the mix, a carburettor wetting the plug
+        foul: dsl ? 0 : clamp(0.35 + 2.2 * Math.max(0, 0.92 - lamIdle) + (tsCaseB && cfg.lube !== "inject" ? 0.25 * (40 / tsLubR - 0.8) : 0)
+          + (cfg.tsFuel === "carb" ? 0.05 : cfg.tsFuel === "di" ? -0.08 : 0) - 0.01 * clamp(cfg.timing, -10, 15), 0.05, 3),
+        // scavenge air at idle: what is left to push the exhaust out at 1,000 rpm
+        drLow: tbLow.dr, scav: 0.55 / Math.max(0.02, tbLow.dr),
+        lube: tsCaseB ? cfg.lube : "sump", lubR: tsLubR, oilLph: tsCaseB ? (fuelLph[iP] || 0) / (cfg.lube === "inject" ? 70 : tsLubR) : 0,
+        boxBar: tsBoxPk, blower: tm.blower, valves: tm.valves, opposed: !!L.opposed, idleRpm: tm.chamber && tm.ep > 180 ? 1600 : tm.blower ? 600 : 1100 };
+    }
+
     /* =================================================================
        12.  Tests
        ================================================================= */
     const tests = [];
     function T(id, name, sub, util, physics, fix, rotOwn) {
       if (rot && !rotOwn && ROT_SKIP[id]) return;   // a rotary has no pistons, rods, valves or head gasket
+      if (ts && !rotOwn && ((TS_SKIP[id] && !(tm.valves && id !== "valve_piston")) || (tsCaseB && TS_SKIP_CASE[id]))) return;   // ports, not valves; premix, not a sump
       util = (isFinite(util) && util > 0) ? util : 0.01;
       const status = util > 1.0 ? "crit" : util > 0.8 ? "warn" : "good";
       tests.push({ id: id, name: name, sub: sub, util: util, status: status, physics: physics, fix: fix });
@@ -2996,7 +3203,7 @@ const ENGINE_SIM = (function () {
       "At " + env.ambientC + " \u00b0C propane in the tank sits at about " + lpgBar.toFixed(1) + " bar absolute, and the " + gs.name.toLowerCase() + " wants about " + gs.needBar.toFixed(1) + " bar to feed the regulator while the vaporiser is still cold. Propane boils at \u221242 \u00b0C, so in deep cold there is hardly any pressure to push it out of the tank.",
       "Keep the tank warm (a blanket or a heated shed), use injection rather than a mixer, or run CNG, which is stored at 200 bar.");
 
-    const mpsLimit = O.rod.mpsLim || (O.rod.E < 150 ? 27.5 : O.rod.fatigue >= 620 ? 27.0 : O.rod.fatigue >= 430 ? 25.0 : O.rod.fatigue >= 330 ? 21.5 : 19.5);
+    const mpsLimit = (O.rod.mpsLim || (O.rod.E < 150 ? 27.5 : O.rod.fatigue >= 620 ? 27.0 : O.rod.fatigue >= 430 ? 25.0 : O.rod.fatigue >= 330 ? 21.5 : 19.5)) * (tsCaseB ? 1.08 : 1);   // a two-stroke's short, one-ring piston
     T("piston_speed", "Mean piston speed", mpsRed.toFixed(1) + " / " + mpsLimit.toFixed(1) + " m/s",
       mpsRed / mpsLimit,
       "Mean piston speed is " + mpsRed.toFixed(1) + " m/s (2 × " + g.s.toFixed(0) + " mm × " + redline + " rpm) against " + mpsLimit.toFixed(1) + " m/s for this rod. Ring flutter, skirt wear and rod inertia all scale from this number.",
@@ -3058,7 +3265,7 @@ const ENGINE_SIM = (function () {
       "First torsional mode is about " + f1.toFixed(0) + " Hz; the " + majorOrder + (majorOrder === 1 ? "st" : "th") + "-order firing harmonic crosses it at " + resRpm.toFixed(0) + " rpm" + (inRes ? " — inside the operating range" : " — outside the operating range") + ". Damper absorbs " + (O.dmp.damping * 100).toFixed(0) + "%.",
       "Fit a viscous damper, use a stiffer crank, or keep the resonant order out of the rev range.");
 
-    const brgLimit = Math.round(O.brg.limitMPa * ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? 0.80 : 1) * (dsl ? 1.4 : 1));   // diesel shells: thicker steel back, harder overlay
+    const brgLimit = Math.round(O.brg.limitMPa * ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? 0.80 : 1) * (dsl ? 1.4 : 1) * (tsCaseB ? 1.6 : 1));   // a crankcase two-stroke runs needle rollers   // diesel shells: thicker steel back, harder overlay
     T("bearing_load", "Bearing specific load", bearMPa.toFixed(0) + " / " + brgLimit + " MPa",
       bearMPa / brgLimit,
       "Peak rod load " + (Fcomp / 1000).toFixed(0) + " kN over a " + djPin.toFixed(0) + " × " + wPin.toFixed(0) + " mm projected area is " + bearMPa.toFixed(0) + " MPa; the overlay is rated " + brgLimit + ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? " (derated 20% — " + O.fu.name + " corrodes a bimetal overlay)" : "") + " MPa.",
@@ -3186,6 +3393,31 @@ const ENGINE_SIM = (function () {
         "Richen the mixture, cool the housings, or run a fuel with more octane.", true);
     }
 
+    /* ---- two-stroke tests: the ports, the oil in the fuel, the crankcase and the pipe ---- */
+    if (ts) {
+      const R = TSI;
+      T("ts_seize", "Piston seizure", Math.round(R.seize * 100) + "% of the edge", R.seize,
+        "The exhaust side of a two-stroke piston never sees a cool charge and fires every turn: the crown runs at " + crownC.toFixed(0) + " \u00b0C against a " + O.pis.maxCrownC + " \u00b0C alloy limit, "
+        + (tsCaseB ? (cfg.lube === "inject" ? "oiled by an injection pump" : "oiled only by " + Math.round(tsLubR) + ":1 premix") : "oiled from a pressure-fed sump")
+        + (dsl ? "" : ", at \u03bb " + lamTop.toFixed(2)) + " with " + O.pc.name.toLowerCase().replace(/ [0-9.]+ in$/, "") + " clearance. Lean, hot or short of oil, the skirt picks up the bore and it seizes \u2014 usually with the throttle wide open.",
+        "Richer jetting, a richer premix (40:1 rather than 80:1), looser piston clearance, more cooling, or a forged piston.", true);
+      T("port_wear", "Rings & port bridges", (mpsRed).toFixed(1) + " m/s \u00b7 " + Math.round(R.ep) + "\u00b0", R.portW,
+        "The rings sweep across the port windows " + Math.round(redline / 60) + " times a second at " + mpsRed.toFixed(1) + " m/s. A " + Math.round(R.ep) + "\u00b0 exhaust port is tall and wide, and the ring ends flex out into it and wear on its edges and the bridge between its windows. This is the top end a racer replaces every few weekends.",
+        "Shorter exhaust duration, a bridged exhaust port, fewer revs or a shorter stroke.", true);
+      if (tsCaseB) T("crank_seals", "Crankcase seals", R.sealMs.toFixed(1) + " m/s \u00b7 " + R.ccr.toFixed(2) + ":1", R.seals,
+        "The crankcase is the scavenge pump, so its main-bearing seals have to hold " + R.ccr.toFixed(2) + ":1 of pumping pressure with the lips running at " + R.sealMs.toFixed(1) + " m/s. A hardened seal leaks air: the engine idles high, runs lean on that cylinder and seizes.",
+        "Less crankcase compression, fewer revs, or PTFE seals at the next rebuild.", true);
+      if (tm.chamber) T("pipe_crack", "Expansion chamber", Math.round(R.pipeT) + " \u00b0C \u00b7 shake " + Math.round(Math.min(1, L.firstOrder) * 100) + "%", R.pipeU,
+        "The pipe runs at about " + Math.round(R.pipeT) + " \u00b0C and the engine shakes it " + Math.round(redline / 60) + " times a second; the welds at the header and the stinger work-harden and crack, and a cracked pipe loses its tune at once.",
+        "Richer jetting to cool it, spring mounts instead of rigid brackets, or a smoother layout.", true);
+      if (!dsl) T("plug_foul", "Plug fouling", "\u03bb " + (MAP ? mapLook(MAP, MAP.lam, Math.min(redline, 1500), 20) : cfg.lambda).toFixed(2) + (tsCaseB && cfg.lube !== "inject" ? " \u00b7 " + Math.round(tsLubR) + ":1" : ""), R.foul,
+        "At idle a two-stroke four-strokes: it only fires every other turn and the charge sits wet in the crankcase. A rich mixture" + (tsCaseB && cfg.lube !== "inject" ? " and oily premix" : "") + " leave carbon and oil on the plug nose until it shorts out and the engine dies on the starting line.",
+        "Leaner low-speed jetting, less oil in the premix, a hotter plug, or direct injection.", true);
+      if (dsl || tm.blower) T("scav_air", "Scavenging air", "DR " + R.drLow.toFixed(2) + " at 1,000 rpm", R.scav,
+        "A two-stroke has no intake stroke: something has to push the fresh air in and the exhaust out. At 1,000 rpm this " + (tm.blower ? "blower" : dsl && bm.kind === "turbo" ? "turbo alone" : "crankcase") + " delivers a ratio of " + R.drLow.toFixed(2) + " (fresh air per swept volume)" + (R.scav > 1 ? " \u2014 not enough to clear the cylinder, so it will not idle, or even start." : "."),
+        "A gear-driven Roots blower: a two-stroke diesel needs one to start, with or without a turbo.", true);
+    }
+
     /* =================================================================
        13.  Reliability, life, endurance, over-rev
        ================================================================= */
@@ -3254,7 +3486,7 @@ const ENGINE_SIM = (function () {
       const k = sq(orRpm / redline);
       const ev = [];
       let survived = true;
-      const fUtil = orRpm / floatRpm;
+      const fUtil = ts && !tm.valves ? 0 : orRpm / floatRpm;
       if (fUtil > 1.0) { survived = false; ev.push("Valve float at " + orRpm.toFixed(0) + " rpm (control lost at " + floatRpm.toFixed(0) + ") — valves kissed the pistons."); }
       else if (fUtil > 0.93) ev.push("Springs on the edge of surge at " + orRpm.toFixed(0) + " rpm but the valves stayed on the cam.");
       const sigT2 = sigRodT * k, boltU = (preload + 0.35 * (Frec * k / 2) / aBolt) / (0.90 * O.rb.uts);
@@ -3262,8 +3494,9 @@ const ENGINE_SIM = (function () {
       else if (sigT2 > O.rod.fatigue * 0.92) ev.push("Rod beam reached " + sigT2.toFixed(0) + " MPa against a " + O.rod.fatigue + " MPa endurance limit — it survived, but that is one cycle off the S-N curve you will not get back.");
       if (boltU > 1.0) { survived = false; ev.push("Rod bolts yielded: " + (preload + 0.35 * (Frec * k / 2) / aBolt).toFixed(0) + " MPa against " + O.rb.uts + " MPa."); }
       else if (boltU > 0.9) ev.push("Rod bolts reached " + (boltU * 100).toFixed(0) + "% of tensile — replace them.");
-      if (orRpm > pumpLimit) ev.push("Oil pump cavitated above " + pumpLimit + " rpm; pressure dropped for a fraction of a second.");
-      if (orRpm > pumpLimit * 1.10) { survived = false; ev.push("Sustained loss of oil pressure wiped the rod bearings."); }
+      if (!tsCaseB && orRpm > pumpLimit) ev.push("Oil pump cavitated above " + pumpLimit + " rpm; pressure dropped for a fraction of a second.");
+      if (!tsCaseB && orRpm > pumpLimit * 1.10) { survived = false; ev.push("Sustained loss of oil pressure wiped the rod bearings."); }
+      if (ts && TSI && TSI.pipeRpm && orRpm > TSI.pipeRpm * 1.12) ev.push("Way over the pipe at " + orRpm.toFixed(0) + " rpm: the power fell off a cliff, which is what saved it.");
       if (ev.length === 0) ev.push("Nothing complained — the valvetrain, rods and oil system all had margin at " + orRpm.toFixed(0) + " rpm.");
       overrev = { survived: survived, events: ev };
     }
@@ -3303,6 +3536,14 @@ const ENGINE_SIM = (function () {
       kg += O.icc.massKg + O.osys.massKg + O.cool.massKg + O.exh.massKg + 10 + (gasF ? gs.massKg : (fpump.massKg || 0));
       kg += exP.pipe.massKg + (exOpenH ? 0 : exRuns * (exP.muf.massKg + exP.cat.massKg) + exP.cut.massKg);
     }
+    if (ts) {   // a crankcase two-stroke is a light thing with no head to speak of; a Detroit is still a diesel
+      const VdL = g.VdNom * 1000;
+      kg = dsl ? 128 * Math.pow(VdL, 0.86) * (L.opposed ? 0.62 : 1) : (12 + 30 * VdL + 4 * L.n) * (0.70 + 0.30 * O.block.massFac);
+      kg += (bm.kind === "turbo" ? bm.units * 9 * (O.ts.maxFlow > 100 ? 1.8 : 1) : bm.kind === "roots" ? 22 : bm.kind === "screw" ? 26 : bm.kind === "centrifugal" ? 11 : 0);
+      kg += (tm.blower ? (dsl ? 30 + 5 * VdL : 12) : 0) + O.xp.massKg * (tm.chamber ? L.n : Math.max(1, L.banks)) + O.icc.massKg + O.cool.massKg + (tsCaseB ? 0 : O.osys.massKg);
+      kg += (gasF ? gs.massKg : (fpump.massKg || 0)) + (dsl ? dInj.massKg * 0.5 : 0);
+      kg += exP.pipe.massKg + (exOpenH ? 0 : exRuns * (exP.muf.massKg + exP.cat.massKg) + exP.cut.massKg);
+    }
     kg = Math.round(kg);
 
     const perCyl = O.pis.cost + O.ring.cost + O.rod.cost + O.rb.cost
@@ -3324,6 +3565,14 @@ const ENGINE_SIM = (function () {
       + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
       + (portInj ? L.n * 2 * (inj.perCyl || 1) * inj.cost : 0) + (gasF ? gs.cost : fpump.cost)   // primary and secondary injectors on every rotor
       + (vgtO ? vgtO.costPetrol * bm.units : 0) + (alsO ? alsO.cost : 0)
+      + exP.pipe.cost + (exOpenH ? 0 : exRuns * (exP.muf.cost + exP.cat.cost) + exP.cut.cost);
+    if (ts) rawCost = O.lay.cost + O.block.costPerL * (g.VdNom * 1000) * 2 + O.headMat.cost * 0.4 + (tm.valves ? (O.valve.cost + O.spr.cost) * 2 * L.n + 800 : 0)
+      + L.n * (L.opposed ? 2 : 1) * (O.pis.cost + O.ring.cost + O.rod.cost + O.rb.cost) + O.crk.cost * (L.opposed ? 3 : 1) + O.dmp.cost + O.brg.cost + O.gsk.cost + O.std.cost
+      + O.scv.cost + O.ind2.cost * (tm.blower ? 1 : Math.max(1, L.n / 2)) + (dsl ? 0 : O.tsf.cost) + O.pvO.cost * L.n + (tsCaseB ? O.lubeO.cost : O.oil.cost + O.osys.cost + O.sq.cost)
+      + O.asp.cost + (boosted ? O.ts.cost + O.tm.cost + O.icc.cost : 0) + O.cool.cost + O.xp.cost * (tm.chamber ? L.n : 1) + O.cov.cost
+      + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
+      + (vgtO ? (dsl ? vgtO.cost : vgtO.costPetrol) * bm.units : 0) + (alsO ? alsO.cost : 0)
+      + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + (gasF ? gs.cost : fpump.cost) + (dsl ? dInj.cost + L.n * dNoz.cost : 0)
       + exP.pipe.cost + (exOpenH ? 0 : exRuns * (exP.muf.cost + exP.cat.cost) + exP.cut.cost);
     const cost = Math.round((0.155 * rawCost + 120 * L.n + 250) * (shop.costFac || 1));
 
@@ -3424,13 +3673,51 @@ const ENGINE_SIM = (function () {
       }
       lphD = fKg * 3600 / O.fu.dens;
     }
-    const econ = rot ? Math.round(clamp(lphRot * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10 : dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : gasF ? Math.round(clamp(fuelPow * 3600 / (43.4e6 * 0.745), 2, 60) * 10) / 10   // gas: petrol-equivalent litres by energy
+    /* two-stroke cruise: no valvetrain to drag, but a throttled two-stroke keeps most of its exhaust and misfires, and with
+       the fuel in the charge the share that short-circuits goes out unburnt. A diesel's blower still has to be driven.   */
+    let lphTs = 0;
+    if (ts) {
+      const tbC = tsBreathe(nCr, tm, 0, 0.82 * TS_PIPE_T0);
+      let fmT = ((tsCaseB ? TS_FC : FM_C) + FM_P * (dsl ? 65 : 22) + FM_S * mpsCr + FM_S2 * mpsCr * mpsCr) * O.ring.fric
+        * (tsCaseB ? tsLubeK : (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac);
+      if (tm.blower) fmT += tsBoxBar(mpsCr, tbC.dr) * tbC.dr / 0.55;
+      if (bm.kind === "roots") fmT += 0.12;
+      if (bm.kind === "screw") fmT += 0.09;
+      if (bm.kind === "centrifugal") fmT += 0.04;
+      if (dsl) {
+        const imepD = bmepCr + (fmT + 0.10) * 1e5 + air.p * 0.03 * O.xp.backP;
+        const rhoCr = (air.p + (bm.kind === "turbo" ? 0.15e5 : 0)) / (R_AIR * TchargeCr);
+        const airCr = Math.max(0.05, tbC.ce) * rhoCr * g.Vd * nCr / 120;
+        let etaD = 0.40, fKg = 0, lamD = 2.5;
+        for (let it = 0; it < 4; it++) {
+          etaD = ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * K_DSL * TS_ETA_D * clamp(1 - 0.20 / lamD, 0.55, 1) * (1 + (O.hd.burn - 1) * 0.30)
+            * (1 + 0.0008 * (g.b - 86)) * etaCombD(lamD, dInj.etaB) / (1 + 0.0018 * sq(cfg.timing)) * 0.95;
+          fKg = imepD * g.Vd * (nCr / 120) / etaD / O.fu.lhv;
+          lamD = clamp(airCr / (fKg * O.fu.afr), 1.3, 8);
+        }
+        lphTs = fKg * 3600 / O.fu.dens; lamCrD = lamD;
+      } else {
+        const eta0 = ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * tm.etaK * (1 + (TS_HEAD.burn - 1) * 0.55) * (1 - 0.0011 * (g.b - 86));
+        const imepRef = Math.max(0.05, tbC.ce) * air.rho * O.fu.lhv / O.fu.afr * etaComb(1.0) * eta0;
+        let imepT = bmepCr + fmT * 1e5, etaT = 0.22, load = 0.5;
+        for (let it = 0; it < 4; it++) {
+          load = clamp(imepT / Math.max(1e4, imepRef), 0.04, 1);
+          const resid = clamp(0.12 + 0.45 * (1 - load), 0.10, 0.60);
+          etaT = clamp(eta0 * TS_CRUISE * (1 - 1.1 * Math.max(0, resid - 0.18)) * etaComb(lamCr), 0.08, 0.40);
+          imepT = bmepCr + fmT * 1e5 + 0.10 * air.p * (1 - load);   // the crankcase throttles more gently than a four-stroke's manifold
+        }
+        const teCr = clamp(tm.te0 * (1.12 - 0.15 * tbC.dr * load), 0.3, 0.97);
+        lphTs = imepT * g.Vd * (nCr / 120) / etaT / O.fu.lhv * (1 + tm.sc * (1 / teCr - 1)) * 3600 / fuelDens * 1000;
+      }
+    }
+    const econ = ts ? Math.round(clamp(lphTs * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10 : rot ? Math.round(clamp(lphRot * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10 : dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : gasF ? Math.round(clamp(fuelPow * 3600 / (43.4e6 * 0.745), 2, 60) * 10) / 10   // gas: petrol-equivalent litres by energy
       : Math.round(clamp(litresPerHour / 100 * 100 * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10;  // anti-lag burns fuel on every lift  // L/100 km at 100 km/h
 
     let smooth = L.smooth * (1 - 0.10 * L.secondOrder * (g.s / 86))
       - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" ? 2 : 0)
       - (cfg.intake === "itb" ? 3 : 0) + 5;
     if (rot) smooth = L.smooth - 18 * O.port.overlap + (cfg.oilSystem === "dry" ? 2 : 0) - (cfg.intake === "itb" ? 2 : 0) + 4;
+    if (ts) smooth = L.smooth + 6 - (tm.chamber ? 14 * tm.amp : 0) + 9 * O.dmp.damping - (cfg.induct === "piston" ? 3 : 0) + (tm.blower ? 2 : 0);   // a power stroke every turn evens the torque out
     const misCr = MAP && !dsl ? Math.max(0, lamCr - mapMisLam(O.hd.burn)) : 0;   // a map leaned past the misfire limit at cruise
     if (misCr > 0) smooth -= 160 * misCr;
     smooth = Math.round(clamp(smooth, 5, 99));
@@ -3473,6 +3760,14 @@ const ENGINE_SIM = (function () {
       if (RT.oilUtil > 0.8) notes.push("The " + O.omp.name.toLowerCase() + " is only just keeping the apex seals wet at this boost and rpm.");
     }
 
+    if (ts) {
+      notes.push("Two-stroke: every cylinder fires every turn \u2014 " + Math.round(TSI.firingHz).toLocaleString("en-US") + " power strokes a second at " + redline + " rpm" + (L.opposed ? ", two pistons meeting in every cylinder" : "") + ". It sweeps " + (g.VdNom * 1000).toFixed(g.VdNom < 0.001 ? 3 : 2) + " L and breathes like a " + (g.Vd * 1000).toFixed(g.Vd < 0.002 ? 2 : 1) + " L four-stroke.");
+      if (tm.chamber && tm.amp > 0.2) notes.push("Comes on the pipe at about " + TSI.onPipe.toLocaleString("en-US") + " rpm. The chamber is cut for " + TSI.pipeRpm.toLocaleString("en-US") + " rpm; with " + Math.round(TSI.pipeT) + " \u00b0C in it the wave arrives at " + TSI.pipeTune.toLocaleString("en-US") + " rpm (richer runs it cooler and lower, leaner hotter and higher). Usable band " + TSI.band[0].toLocaleString("en-US") + "\u2013" + TSI.band[1].toLocaleString("en-US") + " rpm.");
+      if (!dsl && tm.sc > 0.5) notes.push("About " + TSI.scFuelPct + "% of the fuel at peak power leaves with the " + TSI.scChargePct + "% of the charge that short-circuits out of the exhaust \u2014 the blue haze and the thirst.");
+      if (tsCaseB && cfg.lube !== "inject") notes.push("Premix at " + Math.round(tsLubR) + ":1 burns about " + TSI.oilLph.toFixed(2) + " L of oil an hour flat out.");
+      if (tm.blower) notes.push("The scavenge blower holds about " + tsBoxPk.toFixed(2) + " bar in the air box at redline, and the crank pays to drive it.");
+      if (!dsl && tm.rpmP > redline * 1.10) notes.push("The ports are timed for about " + Math.round(tm.rpmP / 100) * 100 + " rpm, past the redline: duration it never gets to use.");
+    }
     const correctedHp = peakHp * j1349(air.pd, env.ambientC);
     const exNoise = exhaustNoise(cfg);
     // the stock system's own loss at the same flow (what the manifold's backP already carries)
@@ -3483,7 +3778,7 @@ const ENGINE_SIM = (function () {
       veCurve: veCurve, egtCurve: egtCurve, bmep: bmepArr,
       peakHp: peakHp, peakHpRpm: peakHpRpm, peakTq: peakTq, peakTqRpm: peakTqRpm,
       correctedHp: correctedHp,
-      Vd: (rot ? g.VdNom : g.Vd) * 1e6, n: L.n, kg: kg, cost: cost, econ: econ, smooth: smooth,
+      Vd: (rot || ts ? g.VdNom : g.Vd) * 1e6, n: L.n, kg: kg, cost: cost, econ: econ, smooth: smooth,
       thermals: { crownC: crownC, egtPeakC: maxEgt, coolantLoadKw: Qkw, chargeC: chargeCOut, oilC: oilCOut },
       clearances: { coldMm: coldMm, hotMm: hotMm, ringGapMm: ringGapMm, ringGapNeededMm: ringGapNeededMm, valvePistonMm: valvePistonMm },
       loads: {
@@ -3497,7 +3792,7 @@ const ENGINE_SIM = (function () {
       knockCurve: mgnCurve, retardCurve: rtdCurve, mapCruise: MAP ? { rpm: nCr, load: dsl ? 0 : loadCr, lam: dsl ? lamCrD : lamCr, ign: dsl ? 0 : ignCr, misfire: misCr } : null,
       fuel: { duty: dutyPk, dutyRpm: dutyRpm, ccCyl: ccCylPk, load: pumpPk, loadRpm: pumpRpm, capLph: pumpCapPk, needLph: pumpNeedPk,
         injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph,
-        qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : rot ? lphRot : litresPerHour },
+        qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: ts ? lphTs : dsl ? lphD : rot ? lphRot : litresPerHour },
       nitrous: n2oInfo,
       /* MORE FUELS: gas system load and native consumption (L of propane or kg of CNG per 100 km), flex winter blend */
       alt: gasF ? { gas: true, sys: cfg.gasSys && OPT.gasSys[cfg.gasSys] ? cfg.gasSys : "mixer", displacePct: Math.round((1 - gasVeK) * 1000) / 10, unit: O.fu.unit || "L",
@@ -3516,6 +3811,7 @@ const ENGINE_SIM = (function () {
       out.loads.bearingMPa = RT.brgMPa; out.loads.filmUm = RT.filmUm;
       out.thermals.housingC = RT.housingC;
     }
+    if (ts) { out.twoStroke = TSI; out.VdEq = g.Vd * 1e6; }
     return out;
   }
 
@@ -3538,7 +3834,8 @@ const ENGINE_SIM = (function () {
     const quick = q || simulate(cfg, env || DEFAULT_ENV);   // the app passes its own env (cell, climate, shop) and the run it already has
     const detMargin = quick.knock.margin;
     const dsl = isDiesel(cfg);
-    if (isRotary(cfg)) { rotaryCombos(cfg, quick, add, L); return out; }   // none of the piston interactions apply
+    if (isRotary(cfg)) { rotaryCombos(cfg, quick, add, L); return out; }
+    if (isTwoStroke(cfg)) { twoStrokeCombos(cfg, quick, add, L); return out; }   // ports, premix and pipes, not cams and valve springs   // none of the piston interactions apply
 
     /* --- expansion / sealing ------------------------------------------ */
     if (cfg.headMat === "alu" && cfg.blockMat === "grey_iron" && cfg.gasket === "composite") {
@@ -4072,6 +4369,43 @@ const ENGINE_SIM = (function () {
     return out;
   }
 
+  /* two-stroke interactions: the pipe against the ports, the oil in the fuel, the crankcase and the blower */
+  function twoStrokeCombos(cfg, quick, add, L) {
+    const R = quick.twoStroke || {}, dsl = isDiesel(cfg), boosted = cfg.asp !== "na", crankcase = cfg.induct !== "blower";
+    const red = cfg.redline, pr = +cfg.pipeRpm || 0, ep = +cfg.ePort || 0, rpmP = R.rpmP || 0;
+    if (cfg.xpipe === "chamber" && !dsl) {
+      if (pr > red * 1.04) add("bad", "The pipe is tuned past the redline", "The chamber is cut for " + Math.round(pr).toLocaleString("en-US") + " rpm and the engine stops at " + red.toLocaleString("en-US") + ": it never reaches the pipe. A longer header or belly brings the tune down to where the engine lives.");
+      else if (rpmP && Math.abs(pr - rpmP) > 0.18 * rpmP) add("warn", "Pipe and ports disagree", "The ports breathe best near " + (Math.round(rpmP / 100) * 100).toLocaleString("en-US") + " rpm but the pipe is tuned to " + Math.round(pr).toLocaleString("en-US") + ". Each helps on its own; together they make two small humps instead of one big hit. Match the pipe to the port timing.");
+      else add("good", "Pipe matched to the ports", "The chamber's return wave arrives as the ports are working hardest, so the delivery ratio and the trapping both peak together: that is the hit as it comes on the pipe at " + (R.onPipe || 0).toLocaleString("en-US") + " rpm.");
+      if (cfg.induct === "piston") add("info", "Piston port on a pipe", "A piston-port intake closes as late as it opens, so below the pipe the crankcase spits charge back out of the carburettor. Strong on the pipe, soggy under it \u2014 a reed or a disc valve fills the bottom in.");
+    }
+    if (crankcase && cfg.lube !== "inject") {
+      const r = +cfg.premix || 40;
+      if (r >= 80) add(r >= 100 ? "bad" : "warn", "Lean premix", "At " + Math.round(r) + ":1 there is very little oil reaching the big end and the skirt. It frees up a little power, right up to the moment the piston picks up the bore on a long full-throttle run.");
+      else if (r <= 25) add("warn", "Rich premix", "At " + Math.round(r) + ":1 the bearings never go short, but the plugs foul, the exhaust ports carbon up and the pipe drips black oil.");
+      else add("good", "Sensible premix", "Around " + Math.round(r) + ":1 the bearings and the skirt get their oil and the plugs stay clean.");
+    }
+    if (crankcase && cfg.lube === "inject") add("good", "Oil injection", "The pump meters oil by throttle and rpm: rich when it is working, lean at idle, so less smoke and no seizure from a forgotten premix can.");
+    if (!dsl && cfg.lambda > 0.92) add("bad", "Lean on a two-stroke", "The fuel is also what cools the piston crown and carries the oil. At \u03bb " + cfg.lambda.toFixed(2) + " the exhaust side of the piston runs hot enough to seize \u2014 two-strokes are jetted rich for a reason.");
+    if (!dsl && cfg.tsFuel === "di") add("good", "Direct injection", "The fuel goes in after the exhaust port has closed, so only air short-circuits: most of a two-stroke's thirst, smoke and unburnt fuel disappear.");
+    else if (!dsl && (R.scFuelPct || 0) >= 15) add("info", "Fuel out of the exhaust", "About " + R.scFuelPct + "% of the fuel at peak power short-circuits straight into the pipe with the charge. That is the price of fuel in the charge: direct injection is the fix.");
+    if (cfg.pv === "fitted" && ep >= 180) add("good", "Power valve", "The valve drops the exhaust port roof at low rpm and opens it on the pipe, so the " + ep + "\u00b0 race timing does not cost the bottom end.");
+    else if (cfg.pv !== "fitted" && ep >= 192 && !dsl) add("warn", "Race port, no power valve", "A " + ep + "\u00b0 exhaust port opens early enough to bleed the bottom end dry. Without a power valve it is all or nothing.");
+    if (crankcase && (+cfg.ccr || 1.4) > 1.5) add("warn", "A lot of crankcase compression", "At " + (+cfg.ccr).toFixed(2) + ":1 the crankcase pumps hard low down, but it cannot hold enough charge for the top end and the main seals live under more pressure.");
+    else if (crankcase && (+cfg.ccr || 1.4) < 1.25) add("info", "Soft crankcase compression", "A big crankcase volume loses low-down pumping but leaves room for the pipe to pull charge through at the top.");
+    if (dsl && cfg.induct !== "blower") add("bad", "A two-stroke diesel needs a blower", boosted ? "A turbo alone makes nothing at idle, so there is no air to scavenge the cylinder and it will not start. Detroit and EMD gear a blower in for exactly this." : "The crankcase cannot push air through an 18:1 cylinder. Fit a gear-driven Roots blower.");
+    if (cfg.induct === "blower" && boosted && OPT.asp[cfg.asp].kind === "turbo") add("good", "Turbo feeding the blower", "The turbo packs the blower's inlet, so the air box carries boost on top of the scavenge pressure: the Detroit TA recipe.");
+    if (cfg.scav === "uniflow" && cfg.induct !== "blower" && !L.opposed) add("warn", "Uniflow without a blower", "Air in at the bottom, out through the valves at the top only works if something pushes it. A crankcase barely manages.");
+    if (cfg.scav === "cross") add("info", "Deflector piston", "The deflector hump turns the charge upward, but it is a lump of aluminium in the flame: hot, heavy, and the chamber burns badly.");
+    if (crankcase && !dsl && boosted) add("warn", "Boost on a crankcase two-stroke", "A turbine in the exhaust swallows the waves the pipe works with, and the crankcase still has to pump the charge. A blower-scavenged engine takes boost far better.");
+    if (cfg.pistonClearance === "tight" && !dsl) add("warn", "Tight piston on a two-stroke", "The exhaust side of the piston grows more than the rest. Two-stroke builders run them loose and accept the rattle.");
+    if (cfg.nitrous && cfg.nitrous !== "none") add("warn", "Nitrous on a two-stroke", "The shot lands on a piston that is already the hottest in the shop. Keep it small and rich.");
+    if (L.n === 1) add("info", "A single shakes", "One cylinder firing every turn with nothing to cancel it: the frame, the mounts and the pipe hangers all take it.");
+    if (cfg.xpipe === "muffled" && !dsl && ep >= 175) add("warn", "Race ports through a muffler", "Ports timed this hot want an expansion chamber to stuff the charge back in; through a box muffler most of it short-circuits and the top end goes nowhere.");
+    if ((quick.econ || 0) >= 12 && !dsl) add("info", "Thirsty by design", "About " + (quick.econ || 0).toFixed(1) + " L/100 km at the cruise point: some of every charge goes straight out of the exhaust and a throttled two-stroke burns badly.");
+    if (cfg.transBrake === "trans_brake" && OPT.asp[cfg.asp].kind === "turbo") add("good", "Trans-brake on a turbo engine", "Held on the converter at full load, the engine drives the turbo as if the car were already moving, so it leaves on boost.");
+  }
+
   /* rotary interactions: seals, ports, oiling, the long shaft and the heat */
   function rotaryCombos(cfg, quick, add, L) {
     const boosted = cfg.asp !== "na", boost = boosted ? cfg.boost : 0, R = quick.rotary || {};
@@ -4197,6 +4531,14 @@ const ENGINE_SIM = (function () {
       const Lr = LAYOUTS[cfg.layout], g = rotGeometry(cfg, Lr);
       const asp = { na: "NA", turbo: "Turbo", twin_turbo: "Sequential twin-turbo", roots: "Supercharged", centrifugal: "Centrifugal", screw: "Screw-blown", compound: "Compound turbo" }[cfg.asp] || "Boosted";
       return Lr.n + "-rotor · " + (g.VdNom * 1000).toFixed(1) + " L · " + Math.round(cfg.bore) + "×" + Math.round(cfg.stroke) + " e" + (+(cfg.ecc || 15).toFixed(2)) + " · " + (PORT_SHORT[cfg.rotPort] || "side port") + " · " + asp;
+    }
+    if (isTwoStroke(cfg)) {
+      const Lt = LAYOUTS[cfg.layout] || LAYOUTS.I4, gt = geometry(cfg);
+      const lay = { V8F: "V8 FP", D18: "Deltic" }[cfg.layout] || cfg.layout;
+      const how = { loop: "loop", cross: "cross", uniflow: "uniflow" }[cfg.scav] || "loop";
+      const ind = { piston: "piston port", reed: "reed", disc: "disc valve", blower: "blower" }[cfg.induct] || "reed";
+      return "2-stroke " + lay + " · " + (gt.VdNom * 1000).toFixed(gt.VdNom < 0.0002 ? 3 : gt.VdNom < 0.001 ? 2 : 1) + " L · " + Math.round(cfg.bore) + "×" + Math.round(cfg.stroke) + " · " + how + " · " + ind
+        + (isDiesel(cfg) ? " diesel" + (cfg.asp !== "na" ? " + turbo" : "") : cfg.xpipe === "chamber" ? " · pipe " + (Math.round((+cfg.pipeRpm || 0) / 100) / 10).toFixed(1) + "k" : "") + (Lt.n ? "" : "");
     }
     const L = LAYOUTS[cfg.layout] || LAYOUTS.I4;
     const Vd = PI / 4 * cfg.bore * cfg.bore * cfg.stroke * L.n / 1e6; // litres
@@ -5302,6 +5644,119 @@ const ENGINE_SIM = (function () {
         intake: "itb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none",
         fuel: "race100", timing: 0, lambda: 0.88, oilGrade: "w15_50", oilSystem: "dry", cooling: "race", exhaust: "headers_merge", cover: "orange"
       }
+    }),
+    /* ---- two-strokes: every cylinder fires every turn. Port durations in crank degrees, compression quoted trapped
+       (from exhaust-port closing), the pipe's tuned rpm at about 560 C of pipe gas. ---- */
+    P({
+      id: "ktm250sx", name: "Two-fifty motocross single", basedOn: "KTM 250 SX", cls: "motorsport",
+      blurb: "66.4\u00d772 on a reed valve, a power valve and a Nikasil barrel, with a big expansion chamber cut for 8,400 rpm. Flat and docile until about seven thousand, then it comes on the pipe like a light switch.",
+      soundProfile: null, realHp: 47, realRpm: 8500, realNm: 41,
+      cfg: {
+        cycle: "two", layout: "I1", bore: 66.4, stroke: 72, rodRatio: 1.75, cr: 8.8, ccr: 1.40, blockMat: "alu_nikasil", deck: "open", headMat: "alu",
+        piston: "forged_4032", pistonClearance: "standard", rings: "moly", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340", damper: "none", bearings: "trimetal",
+        gasket: "copper_oring", studs: "arp_studs", scav: "loop", ePort: 190, tPort: 128, pv: "fitted", redline: 9800, induct: "reed", tsFuel: "carb",
+        asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "chamber", pipeRpm: 8400,
+        fuel: "r94", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.86, lube: "premix", premix: 60, cooling: "std", cover: "orange",
+        head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
+    }),
+    P({
+      id: "yz125", name: "One-twenty-five screamer", basedOn: "Yamaha YZ125", cls: "motorsport",
+      blurb: "54\u00d754.5, 196 degrees of exhaust port and YPVS: nothing much happens below nine thousand, and then it screams to twelve. Rebuild the top end every few race weekends and never let it fall off the pipe.",
+      soundProfile: null, realHp: 36, realRpm: 11000, realNm: 24,
+      cfg: {
+        cycle: "two", layout: "I1", bore: 54, stroke: 54.5, rodRatio: 1.83, cr: 9.6, ccr: 1.38, blockMat: "alu_nikasil", deck: "open", headMat: "alu",
+        piston: "forged_4032", pistonClearance: "standard", rings: "moly", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340", damper: "none", bearings: "trimetal",
+        gasket: "copper_oring", studs: "arp_studs", scav: "loop", ePort: 196, tPort: 131, pv: "fitted", redline: 12000, induct: "reed", tsFuel: "carb",
+        asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "chamber", pipeRpm: 10800,
+        fuel: "r94", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.85, lube: "premix", premix: 40, cooling: "std", cover: "blue",
+        head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
+    }),
+    P({
+      id: "rotax800", name: "Eight-hundred sled twin", basedOn: "Rotax 800R E-TEC (Ski-Doo)", cls: "performance",
+      blurb: "An 800 cc parallel twin with direct injection, RAVE power valves and an oil pump: the charge that short-circuits is only air, so it sips where a carburetted sled drinks. Pinned at eight thousand across a frozen lake.",
+      soundProfile: null, realHp: 164, realRpm: 8100, realNm: 145,
+      cfg: {
+        cycle: "two", layout: "I2", bore: 82, stroke: 75.7, rodRatio: 1.72, cr: 8.8, ccr: 1.40, blockMat: "alu_nikasil", deck: "open", headMat: "alu",
+        piston: "forged_4032", pistonClearance: "standard", rings: "moly", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340", damper: "none", bearings: "trimetal",
+        gasket: "copper_oring", studs: "arp_studs", scav: "loop", ePort: 190, tPort: 128, pv: "fitted", redline: 8300, induct: "reed", tsFuel: "di",
+        asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "chamber", pipeRpm: 7600,
+        fuel: "r91", injectors: "i650", fuelPump: "p255", timing: 0, lambda: 0.86, lube: "inject", premix: 50, cooling: "uprated", cover: "black",
+        head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "single_tb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
+    }),
+    P({
+      id: "merc25", name: "Two-and-a-half litre outboard V6", basedOn: "Mercury 2.5 L V6 EFI 200", cls: "performance",
+      blurb: "A 60-degree V6 powerhead, reed-fed with transfer-port injection and an oil pump, exhausting through the prop hub. Mild ports and a quiet exhaust: torque from the hole and two hundred horsepower at wide-open throttle all day.",
+      soundProfile: null, realHp: 200, realRpm: 5500, realNm: 285,
+      cfg: {
+        cycle: "two", layout: "V6", bore: 88.9, stroke: 67.3, rodRatio: 1.75, cr: 6.6, ccr: 1.36, blockMat: "alu_liners", deck: "open", headMat: "alu",
+        piston: "forged_4032", pistonClearance: "standard", rings: "cast", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "trimetal",
+        gasket: "copper_oring", studs: "arp_studs", scav: "loop", ePort: 160, tPort: 120, pv: "none", redline: 5800, induct: "reed", tsFuel: "efi",
+        asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 5500,
+        fuel: "r91", injectors: "i440", fuelPump: "p255", timing: 0, lambda: 0.86, lube: "inject", premix: 50, cooling: "uprated", cover: "black",
+        head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "single_tb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
+    }),
+    P({
+      id: "saab96", name: "Three-cylinder Swedish two-stroke", basedOn: "Saab 96 841 cc", cls: "classic",
+      blurb: "Three loop-scavenged cylinders on a piston-port crankcase, one Solex carburettor and 33:1 in the tank. It rallied, it smoked, and it goes 'ring-ding-ding' at idle like nothing else on four wheels.",
+      soundProfile: null, realHp: 38, realRpm: 5000, realNm: 79,
+      cfg: {
+        cycle: "two", layout: "I3", bore: 70, stroke: 72.9, rodRatio: 1.85, cr: 5.8, ccr: 1.25, blockMat: "grey_iron", deck: "open", headMat: "alu",
+        piston: "cast_alu", pistonClearance: "standard", rings: "cast", rod: "cast_steel", rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "bimetal",
+        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 126, tPort: 112, pv: "none", redline: 5500, induct: "piston", tsFuel: "carb",
+        asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 5000,
+        fuel: "r87", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.90, lube: "premix", premix: 33, cooling: "std", cover: "silver",
+        head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
+    }),
+    P({
+      id: "trabant601", name: "People's car twin", basedOn: "Trabant 601", cls: "economy",
+      blurb: "594 cc, two air-cooled cylinders, a piston-port crankcase and a single carburettor, built for thirty years with hardly a change. Twenty-six horsepower, a cloud of blue and a sound like a two-stroke lawnmower with ambition.",
+      soundProfile: null, realHp: 26, realRpm: 4200, realNm: 54,
+      cfg: {
+        cycle: "two", layout: "I2", bore: 72, stroke: 73, rodRatio: 1.85, cr: 5.8, ccr: 1.25, blockMat: "grey_iron", deck: "open", headMat: "alu",
+        piston: "cast_alu", pistonClearance: "standard", rings: "cast", rod: "cast_steel", rodBolts: "oem", crank: "cast_nodular", damper: "rubber", bearings: "bimetal",
+        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 118, tPort: 108, pv: "none", redline: 4500, induct: "piston", tsFuel: "carb",
+        asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 4200,
+        fuel: "r87", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.92, lube: "premix", premix: 33, cooling: "std", cover: "blue",
+        head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
+    }),
+    P({
+      id: "dd671", name: "Six-seventy-one Jimmy", basedOn: "Detroit Diesel 6-71N", cls: "truck",
+      blurb: "Seventy-one cubic inches a cylinder, six in a row, a Roots blower bolted to the side filling the air box and four exhaust valves in every head. Uniflow-scavenged, governed at 2,100 and it screams like a jet at every shift.",
+      soundProfile: null, realHp: 238, realRpm: 2100, realNm: 834,
+      cfg: {
+        cycle: "two", layout: "I6", bore: 108, stroke: 127, rodRatio: 2.0, cr: 18.7, blockMat: "grey_iron", deck: "open", headMat: "iron",
+        piston: "forged_4032", pistonClearance: "standard", rings: "moly", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal",
+        gasket: "composite", studs: "studs_916", valveMat: "steel", springs: "single", scav: "uniflow", ePort: 140, tPort: 100, pv: "none", redline: 2100, induct: "blower",
+        asp: "na", turboSize: "medium", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 2100,
+        fuel: "diesel", dInj: "unit_dd", dNoz: "stock", injectors: "i240", fuelPump: "mech", timing: 0, lambda: 1.95, lube: "premix", premix: 50, ccr: 1.40,
+        oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "uprated", cover: "black",
+        head: "sohc2v", cam: 20, lift: 40, intake: "single_tb", exhaust: "cast_log" }
+    }),
+    P({
+      id: "dd8v92", name: "Eight-V-ninety-two TA", basedOn: "Detroit Diesel 8V-92TA", cls: "diesel",
+      blurb: "Twelve litres of 90-degree V8 two-stroke with the blower in the valley and a turbo feeding it, electronic unit injectors and torque that climbs as the revs fall. The highway tractor and the tractor puller's favourite noise.",
+      soundProfile: null, realHp: 445, realRpm: 2100, realNm: 1830,
+      cfg: {
+        cycle: "two", layout: "V8", bore: 123, stroke: 127, rodRatio: 2.0, cr: 17.0, blockMat: "grey_iron", deck: "open", headMat: "iron",
+        piston: "forged_4032", pistonClearance: "standard", rings: "moly", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal",
+        gasket: "composite", studs: "studs_916", valveMat: "steel", springs: "single", scav: "uniflow", ePort: 140, tPort: 100, pv: "none", redline: 2100, induct: "blower",
+        asp: "turbo", turboSize: "f98", turbineMat: "cast_iron", ic: "water_air", boost: 0.3, nitrous: "none", xpipe: "muffled", pipeRpm: 2100,
+        fuel: "diesel", dInj: "unit_dd", dNoz: "stock", injectors: "i240", fuelPump: "twin450", timing: 0, lambda: 2.1, lube: "premix", premix: 50, ccr: 1.40,
+        oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "uprated", cover: "silver",
+        head: "sohc2v", cam: 20, lift: 40, intake: "single_tb", exhaust: "cast_log" }
+    }),
+    P({
+      id: "deltic", name: "Deltic triangle", basedOn: "Napier Deltic D18-25", cls: "diesel",
+      blurb: "Eighteen cylinders in three banks arranged as a triangle, two pistons meeting in each and a crankshaft at every corner: 88 litres, no valves, a gear-driven scavenge blower and 1,650 horsepower at 1,500 rpm. Twice over in every Deltic locomotive.",
+      soundProfile: null, realHp: 1650, realRpm: 1500, realNm: 7830,
+      cfg: {
+        cycle: "two", layout: "D18", bore: 130.2, stroke: 184.2, rodRatio: 2.2, cr: 17.9, blockMat: "alu_liners", deck: "open", headMat: "iron",
+        piston: "forged_4032", pistonClearance: "tight", rings: "moly", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal",
+        gasket: "composite", studs: "studs_916", valveMat: "steel", springs: "single", scav: "uniflow", ePort: 140, tPort: 100, pv: "none", redline: 1500, induct: "blower",
+        asp: "na", turboSize: "medium", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 1500,
+        fuel: "diesel", dInj: "inline_mech", dNoz: "n100", injectors: "i240", fuelPump: "mech", timing: 0, lambda: 2.25, lube: "premix", premix: 50, ccr: 1.40,
+        oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "uprated", cover: "black",
+        head: "sohc2v", cam: 20, lift: 40, intake: "single_tb", exhaust: "cast_log" }
     })
   ];
 
@@ -7014,7 +7469,7 @@ const ENGINE_SIM = (function () {
      ===================================================================== */
   const MAP_LOADS = [20, 30, 40, 50, 60, 70, 85, 100];
   function mapAxis(cfg) {
-    const red = Math.floor(clamp(cfg.redline, isDiesel(cfg) ? 1800 : 4000, 12500) / 100) * 100;
+    const red = Math.floor(clamp(cfg.redline, isDiesel(cfg) ? (isTwoStroke(cfg) ? 1200 : 1800) : 4000, 12500) / 100) * 100;
     const n = clamp(Math.round((red - 1000) / 700) + 1, 8, 12);
     const out = [];
     for (let i = 0; i < n; i++) { const v = Math.round((1000 + (red - 1000) * i / (n - 1)) / 100) * 100; if (!out.length || v > out[out.length - 1]) out.push(v); }
@@ -7133,7 +7588,7 @@ const ENGINE_SIM = (function () {
     fitFuel: fitFuel,
     isGas: isGas, fuelOf: fuelOf, flexBlend: flexBlend, flexWinterPct: flexWinterPct, propaneBar: propaneBar,
     isDiesel: isDiesel,
-    isRotary: isRotary,
+    isRotary: isRotary, isTwoStroke: isTwoStroke,
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     pullTrackK: pullTrackK, pullTrackName: pullTrackName, pullRunaway: pullRunaway,
@@ -7205,6 +7660,20 @@ const ENGINE_SOUND = (function () {
     R4:  { n:8,  banks:1, angle:0, smooth:97, rotors:4, firingOrder:[1,2,3,4,5,6,7,8], bankOf:[0,1,2,3,4,5,6,7] }
   };
   var ROT_OVERLAP = { side: 0.05, sidex: 0.0, street: 0.14, bridge: 0.48, peri: 0.72 };   // mirrors OPT.rotPort
+  /* two-stroke: every cylinder fires every turn, so over the 720-degree table it has two events per cylinder (the
+     Deltic one per cylinder per turn too, two pistons meeting in it). Each event is its own "bank" so the profile can
+     make single combustions weak or missing: a two-stroke idling four-strokes, the ring-ding. Made on demand. */
+  function tsLayKey(cfg, lk) {
+    var n = (LAY[lk] && !LAY[lk].rotors && !LAY[lk].ts) ? LAY[lk].n : ({ I1: 1, I2: 2, V4: 4, D18: 18 })[cfg.layout] || 2;
+    var k = "TS" + n;
+    if (!LAY[k]) {
+      var ev = 2 * n, fo = [], bo = [];
+      for (var i = 0; i < ev; i++) { fo.push(i + 1); bo.push(i); }
+      LAY[k] = { n: ev, banks: 1, angle: 0, smooth: clamp(20 + 10 * n, 18, 98), ts: n, firingOrder: fo, bankOf: bo };
+    }
+    return k;
+  }
+  function isTwoCfg(cfg) { return !!(cfg && cfg.cycle === "two" && !/^R[1-4]$/.test(cfg.layout || "")); }
 
   /* ------------------------------------------------------------------ *
    * 2. Exhaust-system voicing tables
@@ -7399,6 +7868,7 @@ const ENGINE_SOUND = (function () {
   function deriveProfile(cfg, layoutKey, diesel) {
     cfg = cfg || {};
     var lk = layoutKey || cfg.layout || "I4";
+    var two = isTwoCfg(cfg); if (two) lk = tsLayKey(cfg, lk);
     var L = LAY[lk] || LAY.I4;
     var key = [lk, cfg.intake, cfg.asp, cfg.turboSize, cfg.exhaust, cfg.head,
                cfg.cam, cfg.lift, cfg.redline, cfg.crank, cfg.nitrous,
@@ -7406,6 +7876,7 @@ const ENGINE_SOUND = (function () {
                cfg.pipe, cfg.muffler, cfg.cat, cfg.cutout].join("|");
     var dz = !!diesel; if (dz) key += "|dz";
     var rot = !!L.rotors; if (rot) key += "|rotary|" + cfg.rotPort + "|" + num(cfg.ecc, 15);
+    if (two) key += "|2t|" + [cfg.xpipe, cfg.pipeRpm, cfg.induct, cfg.scav, cfg.ePort, cfg.tsFuel, cfg.layout].join("|");
     if (DERIVE_CACHE.key === key && DERIVE_CACHE.prof) return DERIVE_CACHE.prof;
 
     var exh = EXH[cfg.exhaust] ? cfg.exhaust : "cast_tubular";
@@ -7500,6 +7971,29 @@ const ENGINE_SOUND = (function () {
       prof.mech = { tick: 0.05, whine: 0.16 + (cfg.oilSystem === "dry" ? 0.08 : 0) };      // no valvetrain: gears and the oil pump
       prof.sub = clamp(0.28 + 0.22 * rbig, 0.28, 0.70);
       prof.level = clamp(1.10 + 0.03 * (n / 2 - 2) + 0.06 * ov, 1.0, 1.22);               // loud
+    }
+    if (two) {
+      /* two-stroke: the exhaust port is uncovered all at once by the piston crown, so each pulse has a hard edge and a
+         short, buzzing body, twice as many of them as a four-stroke of the same cylinders. No valvetrain to tick; a
+         piston that rattles in its bore instead. The expansion chamber is a resonator the firing harmonics sweep
+         through as the revs rise (set() moves a formant with it), and at idle it four-strokes: whole combustions go
+         missing (the ring-ding). A uniflow Detroit screams through its blower and its valves instead. */
+      var ncyl = L.ts, chamber = cfg.xpipe === "chamber", blower = cfg.induct === "blower", unif = cfg.scav === "uniflow";
+      var rg2 = [], ksk = dz ? 0.03 : 0.10;
+      for (var e2 = 0; e2 < n; e2++) rg2.push(1 - ksk * (((e2 * 5) % 3) / 2));
+      prof.ts = ncyl; prof.name = "Custom two-stroke " + (cfg.layout || lk); prof.tsBlower = blower ? 1 : 0;
+      prof.tilt = clamp((dz ? 0.50 : 0.84) + (chamber ? 0.08 : cfg.xpipe === "straight" ? 0.10 : -0.10) + (num(cfg.ePort, 185) - 170) * 0.002, 0.45, 0.99);
+      prof.pulseSpread = clamp((dz ? 1.05 : 0.82) - (chamber ? 0.06 : 0), 0.7, 1.2);
+      prof.pulseDecay = clamp((dz ? 6.5 : 8.5) + (chamber ? 1.5 : 0), 5, 11);
+      prof.attack = dz ? 70 : 80; prof.bankGain = rg2; prof.bankPhase = [0, 0]; prof.bankDelayMs = 0; prof.cylJitter = null;
+      prof.lope = dz ? 0 : clamp(0.35 + (chamber ? 0.25 : 0), 0, 0.8);
+      prof.ringding = dz ? 0 : clamp(0.45 + (cfg.induct === "piston" ? 0.15 : 0) + (chamber ? 0.15 : 0) - (cfg.tsFuel === "di" ? 0.25 : 0), 0.15, 0.85);
+      prof.pipe = chamber && !dz ? { rpm: num(cfg.pipeRpm, 8000), amp: 1 } : cfg.xpipe === "straight" && !dz ? { rpm: num(cfg.pipeRpm, 8000), amp: 0.3 } : null;
+      if (!dz && cfg.induct !== "blower") prof.intake = { type: "carb", lo: 260, hi: 900, q: 2.2, g: cfg.induct === "piston" ? 0.50 : 0.42 };   // the carburettor bellmouth rasps
+      prof.mech = { tick: dz && unif ? 0.20 : 0.07, whine: blower ? 0.30 : 0.05 };     // no cams on a ported engine; a uniflow Detroit has its rockers
+      prof.sub = clamp(0.20 + 0.40 * Math.min(1.3, big) + (dz ? 0.20 : 0), 0.20, 1.0);
+      prof.level = clamp((dz ? 1.08 : 1.12) + (cfg.xpipe === "straight" ? 0.06 : cfg.xpipe === "muffled" ? -0.08 : 0), 0.95, 1.22);
+      prof.redline = num(cfg.redline, 7000);
     }
     DERIVE_CACHE.key = key; DERIVE_CACHE.prof = prof;
     return prof;
@@ -7905,7 +8399,8 @@ const ENGINE_SOUND = (function () {
     g.exhOsc.connect(g.pre); g.pre.connect(g.shaper); g.shaper.connect(g.post);
     g.rawG = ctx.createGain(); g.rawG.gain.value = 0; g.exhOsc.connect(g.rawG); g.rawG.connect(master);
     g.post.connect(g.f1); g.f1.connect(g.f2); g.f2.connect(g.f3);
-    g.f3.connect(g.lp); g.lp.connect(g.hp); g.hp.connect(g.exhG); g.exhG.connect(bus);
+    g.pf = ctx.createBiquadFilter(); g.pf.type = "peaking"; g.pf.frequency.value = 900; g.pf.Q.value = 2.4; g.pf.gain.value = 0;   // two-stroke pipe resonance (0 dB = not there)
+    g.f3.connect(g.pf); g.pf.connect(g.lp); g.lp.connect(g.hp); g.hp.connect(g.exhG); g.exhG.connect(bus);
 
     /* --- sub thump ---------------------------------------------------- */
     g.subOsc = ctx.createOscillator(); g.subOsc.type = "sine";
@@ -8210,8 +8705,21 @@ const ENGINE_SOUND = (function () {
        combustions go missing. A gate with eight uneven slots per period, its rate wandering around an
        eighth of the firing rate, chops the note; it fades as the revs and the throttle come up. */
     var brap = (p.rotary && live) ? clamp(0.12 + p.rot * 1.5, 0, 0.95) * clamp(1 - (rpm - 1000) / 2800, 0, 1) * clamp(1 - load * 1.7, 0, 1) : 0;
+    /* two-stroke ring-ding: off the pipe and off the throttle it fires only now and then (four-stroking) */
+    if (p.ts && live && p.ringding) brap = clamp(p.ringding * clamp(1 - (rpm - 1200) / 3200, 0, 1) * clamp(1 - load * 2.2, 0, 1), 0, 0.9);
     st.brap = brap;
-    if (p.rotary) ap(N.brOsc.frequency, clamp(fire / 8 * (0.82 + 0.36 * Math.random()), 1, 40), 0.06);
+    if (p.rotary || (p.ts && p.ringding)) ap(N.brOsc.frequency, clamp(fire / 8 * (0.82 + 0.36 * Math.random()), 1, 40), 0.06);
+    /* the expansion chamber: a resonance fixed by the pipe, which the firing harmonics sweep through. On the pipe it
+       sings and the whole note gets louder and harder: the hit you hear as it comes on the pipe. */
+    var onPipe = 0;
+    if (p.pipe && N.pf) {
+      var pr = p.pipe.rpm;
+      onPipe = p.pipe.amp * Math.exp(-0.5 * Math.pow((rpm - pr) / (0.13 * pr), 2)) * (0.35 + 0.65 * load);
+      ap(N.pf.frequency, clamp(pr / 60 * 3.1 * (1 + 0.08 * (rpm / pr - 1)), 120, 6000), 0.05);
+      ap(N.pf.gain, 2 + 10 * onPipe, 0.06);
+      exhLvl *= 1 + 0.45 * onPipe;
+    } else if (N.pf && N.pf.gain.value !== 0) ap(N.pf.gain, 0, 0.1);
+    st.onPipe = onPipe;
     // lope: a big cam breathes unevenly at low load and smooths out as it comes
     // on the cam, so the wander dies away with rpm and with throttle
     var lopeAmt = ((p.lope || 0) + 0.25 * wear) * clamp(1 - rpm / 2600, 0, 1) * clamp(1 - load * 1.3, 0, 1);
@@ -8311,7 +8819,8 @@ const ENGINE_SOUND = (function () {
       ap(N.blowBP.frequency, clamp(lobe * (screw ? 1.6 : 2.2) * (1 + boost * 0.10), 200, 11000), 0.04);
       if (N.blowBP.Q.value !== (screw ? 5.5 : 0.8)) N.blowBP.Q.value = screw ? 5.5 : 0.8;
       var pd = clamp(0.45 + boost * 0.40, 0.45, 1.9);   // it screams harder with boost
-      ap(N.blowG.gain, (0.10 + 0.22 * load) * clamp(rpm / 5000, 0.25, 1.1) * (screw ? 0.72 : 0.5) * pd, 0.05);
+      var dd = p.tsBlower ? 1 : 0;                         // a Detroit's scavenge blower: geared high, always working, the scream
+      ap(N.blowG.gain, (0.10 + 0.22 * load) * clamp(rpm / (dd ? 2300 : 5000), 0.25, 1.1) * (screw ? 0.72 : 0.5) * pd * (dd ? 2.4 : 1), 0.05);
       // a blower has a relief valve, not a wastegate, but it does bark on a lift
       ap(N.wgG.gain, screw ? 0.004 + 0.012 * clamp(boost / 2, 0, 1) * (1 - load) : 0.0001, 0.1);
       ap(N.lfoG.gain, 0, 0.1);
@@ -8371,6 +8880,7 @@ const ENGINE_SOUND = (function () {
      a preset's voice describes its exhaust and intake, not what blows into it. */
   function indFor(cfg) {
     var asp = (cfg && cfg.asp) || "na", sz = (cfg && cfg.turboSize) || "medium";
+    if (isTwoCfg(cfg) && cfg.induct === "blower" && (asp === "na" || asp === "roots")) return { type: "roots", size: "medium", pulley: 2.0 };
     if (asp === "turbo")       return { type: "turbo",  size: sz, pulley: 0 };
     if (asp === "twin_turbo")  return { type: "twin",   size: sz, pulley: 0 };
     if (asp === "compound")    return { type: "comp",   size: sz, pulley: 0 };
@@ -8728,7 +9238,7 @@ const ENGINE_SAMPLES = (function () {
      band (log distance), matching aspiration. Returns {a, b, w, fit} — b/w = the neighbouring size
      band to interpolate toward, fit = how much of the voice the recording may carry (stand-ins less). */
   function choose(cfg, lk, diesel) {
-    var n = NCYL[lk]; if (!n) return null;                       // unknown layout (rotary, future ones): synth only
+    var n = NCYL[lk]; if (!n || (cfg && cfg.cycle === "two")) return null;   // unknown layout (rotary, future ones) or a two-stroke: synth only
     var L = litres(cfg, n), asp = aspOf(cfg), fuel = diesel ? "diesel" : "gas";
     var best = null, bs = 1e9, list = [];
     for (var i = 0; i < SETS.length; i++) {
@@ -8856,7 +9366,7 @@ const ENGINE_SAMPLES = (function () {
     var dt = lastT ? clamp((now - lastT) / 1000, 0.001, 0.1) : 0.016; lastT = now;
     if (MODE === "synth" || !H.running) { ENGINE_SOUND.setSynthMix(1); stat.mix = 1; fadeOut(dt); return; }
     var cfg = o.cfg || null, lk = (cfg && cfg.layout) || null, n = NCYL[lk] || 4;
-    var key = cfg ? [lk, cfg.bore, cfg.stroke, cfg.asp, !!o.diesel, H.lite ? 1 : 0, (+cfg.redline || 0) >= 7800 ? 1 : 0, (+cfg.cam || 0) >= 60 ? 1 : 0].join("|") : pickKey;   // + the redline/cam gates choose() scores on
+    var key = cfg ? [lk, cfg.cycle, cfg.bore, cfg.stroke, cfg.asp, !!o.diesel, H.lite ? 1 : 0, (+cfg.redline || 0) >= 7800 ? 1 : 0, (+cfg.cam || 0) >= 60 ? 1 : 0].join("|") : pickKey;   // + the redline/cam gates choose() scores on
     if (key !== pickKey) { pickKey = key; pick = cfg ? choose(cfg, lk, !!o.diesel) : null; }
     var A = pick && pick.a, B = pick && !H.lite ? pick.b : null;
     var lazyOk = !SLOW || MODE === "real";
@@ -10206,6 +10716,7 @@ function buildEngineMesh(cfg, layoutObj){
   var boltXf = [];                         /* instanced bolt transforms    */
   var a = deg(L.angle/2);
   if(isRotaryCfg(cfg)) return buildRotaryMesh(cfg, L, B, G, extras, t0);   /* Wankel: housings and rotors, no block at all */
+  if(isTwoStrokeCfg(cfg)) return buildTwoStrokeMesh(cfg, L, B, G, extras, t0);   /* two-stroke: ported barrels, pipes, reeds or a blower */
 
   /* ---------- crankcase / block skirt ---------- */
   var caseSpan = caseTop - caseBot;
@@ -10899,6 +11410,398 @@ function buildRotaryMesh(cfg, L, B, G, extras, t0){
   G.userData.exhaustTip = (aspInfo && aspInfo.tip) || exhaustTip || null;
   G.userData.rotary = true;
   return G;
+}
+
+/* ===========================================================================
+   7t. TWO-STROKE: ported barrels with transfer bulges and an exhaust spigot, no cams and no valvetrain (a uniflow
+       Detroit keeps its exhaust valves under a rocker cover); expansion chambers; a reed block and carburettor, a
+       Roots blower for a Detroit; the Deltic's triangle. X-ray: the piston crown uncovering the exhaust (orange)
+       and transfer (blue) ports as it passes them.
+   ==========================================================================*/
+function isTwoStrokeCfg(c){
+  if(!c) return false;
+  var E=(typeof ENGINE_SIM!=="undefined")?ENGINE_SIM:null;
+  if(E&&E.isTwoStroke) return !!E.isTwoStroke(c);
+  return c.cycle==="two" && !/^R[1-4]$/.test(c.layout||"");
+}
+/* crown height above the crank axis at a crank angle from TDC (degrees) */
+function tsCrownY(r, Lr, ch, thDeg){ var t=deg(thDeg), q=r*Math.sin(t); return r*Math.cos(t)+Math.sqrt(Math.max(0, Lr*Lr-q*q))+ch; }
+function tsPortMat(hex){ var m=new THREE.MeshBasicMaterial({color:sc(hex), transparent:true, opacity:0.25, depthWrite:false, toneMapped:false}); m.userData.perBuild=true; return m; }
+/* an expansion chamber in the current builder frame, running along -X from (x0,y,z): diffuser, belly, baffle cone, stinger */
+function tsChamber(B, x0, y, z, len, rH, rB, rS, key){
+  var lD=len*0.36, lB=len*0.16, lC=len*0.26, lS=len*0.22, x=x0;
+  B.add(key, CONE(rB, rH, lD, 22), x-lD/2, y, z, 0,0,PI/2); x-=lD;
+  B.add(key, CYL(rB, rB, lB, 22, true), x-lB/2, y, z, 0,0,PI/2); x-=lB;
+  B.add(key, CONE(rS, rB, lC, 22), x-lC/2, y, z, 0,0,PI/2); x-=lC;
+  B.add(key, CYL(rS, rS, lS, 12, true), x-lS/2, y, z, 0,0,PI/2); x-=lS;
+  return x;
+}
+function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
+  if(cfg.layout==="D18") return buildDelticMesh(cfg, L, B, G, extras, t0);
+  var n=L.n, banks=L.banks, per=Math.max(1, Math.round(n/banks)), i, k, bk, ci;
+  var bore=pick(cfg.bore,66)*K, stroke=pick(cfg.stroke,72)*K, rr=pick(cfg.rodRatio,1.75);
+  var dsl=isDieselCfg(cfg), xp=pick(cfg.xpipe,"chamber"), ind=pick(cfg.induct,"reed"), tsf=pick(cfg.tsFuel,"carb");
+  var asp=pick(cfg.asp,"na"), ep=pick(cfg.ePort,185), tp=pick(cfg.tPort,125), pipeRpm=pick(cfg.pipeRpm,8000);
+  var blower=(ind==="blower"), unif=(pick(cfg.scav,"loop")==="uniflow"), coverCol=COVER_COLORS[pick(cfg.cover,"red")]||COVER_COLORS.red;
+  var blockMat=pick(cfg.blockMat,"alu_nikasil"), blockKey=(blockMat==="cgi")?"cgi":(blockMat.indexOf("alu")===0?"calu":"iron");
+  var headKey=(pick(cfg.headMat,"alu")==="iron")?"iron":"calu";
+  var big=(n>=3||dsl), finned=(!dsl && blockKey==="iron" && n<=2);
+  var r=stroke/2, ch=bore*0.34, Lr=stroke*rr, deckH=r+Lr+ch;
+  var bspace=bore*1.34+0.05, bankLen=per*bspace+bore*0.30, vee=banks>1, a=deg(L.angle/2);
+  var caseR=r+bore*0.42, caseW=vee?bore*2.2:bore*1.6;
+  var cx=function(c){ return -bankLen/2 + bspace*(c+0.5); };
+  var portTop=tsCrownY(r,Lr,ch,180-ep/2), trTop=tsCrownY(r,Lr,ch,180-tp/2), bdc=tsCrownY(r,Lr,ch,180);
+  DCTX.bore=bore;
+  EXH_COLL=[]; EXH_TAILS=[]; PIPE_LOG=[]; CRACK=null; LAST_PIPE_END=null;
+  var exhaustTip=null;
+
+  /* ---------- crankcase ---------- */
+  setZone(1);
+  var panBot=-caseR;
+  if(!big){
+    /* a bike or sled motor: split cases round the flywheels, the gearbox lump behind, ignition and clutch covers */
+    B.add(blockKey, CYL(caseR, caseR, bankLen, 30), 0, 0, 0, 0,0,PI/2);
+    B.add(blockKey, RBOX(bankLen*0.94, caseR*1.25, caseR*1.7, 0.04), 0, -caseR*0.30, -caseR*0.95);
+    B.add("wrinkle", CYL(caseR*0.92, caseR*0.98, bore*0.26, 28), bankLen/2+bore*0.12, -caseR*0.05, -caseR*0.10, 0,0,PI/2);   /* ignition (flywheel) cover */
+    B.add("wrinkle", CYL(caseR*1.02, caseR*1.06, bore*0.26, 28), -bankLen/2-bore*0.12, -caseR*0.25, -caseR*0.55, 0,0,PI/2);  /* clutch cover */
+    B.add("steel", CYL(bore*0.10, bore*0.10, bore*0.14, 10), bankLen/2+bore*0.30, -caseR*0.05, -caseR*0.10, 0,0,PI/2);
+    panBot=-caseR*1.0;
+  } else {
+    B.add(blockKey, RBOX(bankLen+bore*0.30, caseR*2.0, caseW, 0.04), 0, -caseR*0.05, 0);
+    B.add(blockKey, BOX(bore*0.16, caseR*2.1, caseW*1.05), -(bankLen+bore*0.30)/2-bore*0.06, -caseR*0.05, 0);
+    if(dsl){ setZone(6); var panH=stroke*0.9; B.add("steel", RBOX(bankLen*0.94, panH, caseW*0.86, 0.03), 0, -caseR*1.05-panH/2, 0); panBot=-caseR*1.05-panH; setZone(1); }
+    else panBot=-caseR*1.05;
+  }
+
+  /* ---------- banks: barrels, ports, heads ---------- */
+  var exPorts=[], inPorts=[], heads=[];
+  for(bk=0; bk<banks; bk++){
+    var zs=(bk===0)?1:-1, ang=vee?(bk===0?a:-a):0;
+    B.push(new THREE.Matrix4().makeRotationX(ang));
+    setZone(2);
+    var y0=vee?caseR*0.55:caseR*0.78, y1=deckH;
+    if(big) B.add(blockKey, RBOX(bankLen, y1-y0, bore*1.42, 0.03), 0, (y0+y1)/2, 0);
+    if(blower) B.add(blockKey, BOX(bankLen*0.97, (trTop-bdc)+bore*0.30, bore*1.62), 0, (bdc+trTop)/2, 0);   /* the air box round the liner ports */
+    for(ci=0; ci<per; ci++){
+      var x=cx(ci);
+      if(!big){
+        B.add(blockKey, CYL(bore*0.66, bore*0.70, y1-y0, 26), x, (y0+y1)/2, 0);
+        if(finned) for(k=0;k<7;k++) B.add(blockKey, CYL(bore*1.00, bore*1.00, bore*0.032, 26), x, y0+(y1-y0)*(0.18+k*0.12), 0);
+        else B.add(blockKey, CYL(bore*0.11, bore*0.11, bore*0.30, 10), x, y1-bore*0.30, -zs*bore*0.70, PI/2,0,0);   /* water outlet */
+      }
+      /* transfer ports: cast bulges either side of the bore, reaching up to the transfer timing */
+      if(!unif) for(k=-1;k<=1;k+=2) B.add(blockKey, RBOX(bore*0.22, Math.max(bore*0.3, trTop-y0+bore*0.10), bore*0.80, 0.02), x+k*bore*0.70, (y0+trTop)/2, -zs*bore*0.06);
+      if(!unif){
+        /* exhaust port: a spigot on the outside flank at the port's height, then a flange */
+        var ey=(portTop+bdc)/2, eh=(portTop-bdc)+bore*0.16;
+        B.add(blockKey, BOX(bore*0.64, eh, bore*0.40), x, ey, zs*bore*0.70);
+        B.add("steel", CYL(bore*0.27, bore*0.27, bore*0.07, 18), x, ey, zs*bore*0.92, PI/2,0,0);
+        exPorts.push({bk:bk, ci:ci, x:x, y:ey, z:zs*bore*0.96, zs:zs, M:B.top().clone()});
+      }
+      /* head: a squish-band dome with a central plug (diesel: an injector), finned on an air-cooled engine */
+      setZone(3);
+      if(!unif){
+        B.add(headKey, CYL(bore*0.62, bore*0.70, bore*0.30, 26), x, y1+bore*0.15, 0);
+        if(finned) for(k=0;k<4;k++) B.add(headKey, BOX(bore*1.70, bore*0.03, bore*1.50), x, y1+bore*(0.06+k*0.075), 0);
+        if(!dsl){
+          B.add("steel", CYL(bore*0.075, bore*0.075, bore*0.12, 6), x, y1+bore*0.35, 0);
+          B.add("wireRed", CYL(bore*0.065, bore*0.075, bore*0.22, 10), x, y1+bore*0.50, 0);
+          if(DET) extras.push(hoseMesh([B.pt(x, y1+bore*0.60, 0), B.pt(x+bore*0.3, y1+bore*0.80, -zs*bore*0.3), B.pt(x+bore*0.5, y1+bore*0.55, -zs*bore*0.9)], bore*0.025, MAT.dark));
+          if(tsf==="di") B.add("blackPlast", CYL(bore*0.07, bore*0.07, bore*0.26, 10), x+bore*0.28, y1+bore*0.40, -zs*bore*0.12, 0,0,0.45);
+        } else B.add("steel", CYL(bore*0.07, bore*0.07, bore*0.24, 8), x, y1+bore*0.42, 0);
+      }
+      setZone(2);
+      inPorts.push({bk:bk, x:x, zs:zs, M:B.top().clone()});
+    }
+    if(unif){
+      /* uniflow: air in through a belt of liner ports, out through four exhaust valves a cylinder under a rocker cover */
+      setZone(3);
+      B.add(headKey, RBOX(bankLen*0.98, bore*0.55, bore*1.50, 0.03), 0, y1+bore*0.27, 0);
+      B.add("wrinkle", RBOX(bankLen*0.95, bore*0.44, bore*1.28, 0.06), 0, y1+bore*0.77, 0);
+      for(ci=0; ci<per; ci++){
+        var xu=cx(ci);
+        B.add("castexh", BOX(bore*0.56, bore*0.42, bore*0.30), xu, y1+bore*0.22, zs*bore*0.84);      /* exhaust port in the head */
+        exPorts.push({bk:bk, ci:ci, x:xu, y:y1+bore*0.22, z:zs*bore*0.98, zs:zs, M:B.top().clone(), head:true});
+      }
+    }
+    heads.push({y1:y1, zs:zs, ang:ang});
+    B.pop();
+  }
+
+  /* ---------- intake: reed blocks and carburettors (or a Roots blower) ---------- */
+  setZone(0);
+  if(blower){
+    setZone(5);
+    var bLen=bankLen*0.86, bH=bore*0.95, bW=bore*1.05, bY, bZ;
+    if(vee){ bY=deckH*Math.cos(a)*0.62+bH*0.35; bZ=0; }
+    else { bY=caseR*0.15+bH*0.2; bZ=-(caseW*0.5+bW*0.55); }
+    B.add("calu", RBOX(bLen, bH, bW, 0.10), 0, bY, bZ);
+    for(k=-1;k<=1;k+=2) B.add("calu", RBOX(bore*0.20, bH*1.10, bW*1.08, 0.04), k*(bLen/2+bore*0.08), bY, bZ);
+    B.add("calu", RBOX(bLen*0.22, bH*0.7, bW*0.6, 0.06), -(bLen/2+bore*0.32), bY, bZ);   /* drive gear housing */
+    for(k=0;k<6;k++) B.add("calu", BOX(bLen*0.92, bore*0.03, bW*1.02), 0, bY-bH*0.30+k*bH*0.12, bZ);   /* rotor-case ribs */
+    var aiY=bY+bH*0.5+bore*0.25;
+    B.add("dark", CYL(bore*0.42, bore*0.36, bore*0.40, 22), bLen*0.18, aiY, bZ);      /* air inlet */
+    B.add("filterRed", CYL(bore*0.55, bore*0.55, bore*0.35, 24), bLen*0.18, aiY+bore*0.36, bZ);
+    if(asp!=="na"){
+      /* the turbo feeds the blower: a compressor on top of the inlet, its turbine fed from the exhaust */
+      var tY=aiY+bore*0.95, tX=-bLen*0.20;
+      B.add("calu", CYL(bore*0.48, bore*0.48, bore*0.40, 24), tX, tY, bZ, 0,0,PI/2);
+      B.add("turbine", CYL(bore*0.44, bore*0.44, bore*0.42, 24), tX-bore*0.55, tY, bZ, 0,0,PI/2);
+      B.add("steel", CYL(bore*0.16, bore*0.16, bore*0.30, 12), tX-bore*0.27, tY, bZ, 0,0,PI/2);
+      extras.push(hoseMesh([V3(tX+bore*0.25, tY, bZ), V3(tX+bore*0.6, tY-bore*0.3, bZ), V3(bLen*0.18, aiY+bore*0.45, bZ)], bore*0.18, MAT.hose));
+      var tw=new THREE.Group(), wm=makeWheelMesh(bore*0.32, 9, MAT.palu); wm.rotation.z=PI/2; tw.add(wm); tw.position.set(tX+bore*0.22, tY, bZ);
+      extras.push(tw); anim.turbos.push(tw);
+    }
+  } else {
+    for(i=0;i<inPorts.length;i++){
+      var ip=inPorts[i];
+      B.push(ip.M);
+      var iz=-ip.zs*(vee?bore*0.10:caseW*0.50), iy=vee?y0Of(ip):caseR*0.30;
+      if(vee){ iz=-ip.zs*bore*0.75; iy=caseR*0.65; }
+      /* reed block (or a disc-valve cover), then the carburettor or throttle body and its bellmouth */
+      B.add("dark", BOX(bore*0.58, bore*0.50, bore*0.26), ip.x, iy, iz-ip.zs*bore*0.12);
+      if(ind==="disc") B.add("calu", CYL(bore*0.55, bore*0.55, bore*0.12, 24), ip.x, iy, iz-ip.zs*bore*0.02, PI/2,0,0);
+      var cz=iz-ip.zs*bore*0.52;
+      B.add(tsf==="carb"?"calu":"anod", CYL(bore*0.24, bore*0.24, bore*0.55, 18), ip.x, iy, cz, PI/2,0,0);
+      if(tsf==="carb") B.add("calu", RBOX(bore*0.36, bore*0.34, bore*0.30, 0.03), ip.x, iy-bore*0.30, cz);   /* float bowl */
+      else if(tsf==="efi") B.add("blackPlast", CYL(bore*0.06, bore*0.06, bore*0.22, 10), ip.x, iy+bore*0.30, cz, 0.3,0,0);
+      B.add("dark", CONE(bore*0.36, bore*0.24, bore*0.26, 20), ip.x, iy, cz-ip.zs*bore*0.40, ip.zs>0?-PI/2:PI/2,0,0);   /* bellmouth */
+      B.pop();
+    }
+  }
+  function y0Of(ip){ return caseR*0.65; }
+
+  /* ---------- exhaust: expansion chambers, a straight pipe, a muffler, or a Detroit's manifold and stack ---------- */
+  setZone(4);
+  var rH=bore*0.24, rB=bore*0.62, rS=bore*0.13;
+  var realL=0.5*600*(ep/360)*60/Math.max(1500,pipeRpm)*10;                          /* metres -> scene units: a quarter wave and a bit */
+  var drawL=Math.min(realL, bankLen*2.0+bore*3.5);                                   /* folded for the stand: shorter than the real thing */
+  if(exPorts.length && (exPorts[0].head || (dsl && xp!=="chamber"))){
+    /* a cast log manifold along each bank and a vertical stack (a muffler can on it when muffled) */
+    for(bk=0; bk<banks; bk++){
+      var ps=exPorts.filter(function(p){ return p.bk===bk; }); if(!ps.length) continue;
+      B.push(ps[0].M);
+      var mz=ps[0].z+bore*0.18, my=ps[0].y;
+      B.add("castexh", CYL(bore*0.26, bore*0.30, bankLen*0.98, 18), 0, my, mz, 0,0,PI/2);
+      var sx=bankLen*0.30, sy=my+bore*0.3;
+      var st=[V3(sx, my, mz), V3(sx, my+bore*0.6, mz+ps[0].zs*bore*0.2), V3(sx, my+bore*3.0, mz+ps[0].zs*bore*0.2)];
+      pipeMesh(B, st, bore*0.24, "stainless");
+      if(xp==="muffled") B.add("steel", CYL(bore*0.48, bore*0.48, bore*1.4, 22), sx, my+bore*1.9, mz+ps[0].zs*bore*0.2);
+      if(bk===0){ exhaustTip=B.pt(sx, my+bore*3.0, mz+ps[0].zs*bore*0.2); CRACK={pt:B.pt(0, my+bore*0.2, mz), dir:V3(0,1,0.3).transformDirection(B.top()).normalize(), len:bore*0.5}; }
+      B.pop();
+    }
+  } else if(xp==="muffled"){
+    /* a short manifold or header into a box muffler under the engine */
+    for(bk=0; bk<banks; bk++){
+      var pm=exPorts.filter(function(p){ return p.bk===bk; }); if(!pm.length) continue;
+      B.push(pm[0].M);
+      var zl=pm[0].z+bore*0.30, yl=pm[0].y;
+      if(pm.length>1) B.add("castexh", CYL(bore*0.22, bore*0.22, (pm.length-1)*bspace+bore*0.4, 16), (pm[0].x+pm[pm.length-1].x)/2, yl, zl, 0,0,PI/2);
+      for(i=0;i<pm.length;i++) B.add("castexh", CYL(bore*0.20, bore*0.20, bore*0.34, 14), pm[i].x, yl, pm[i].z+bore*0.15, PI/2,0,0);
+      var ex0=pm[0].x-bore*0.3, muY=panBot-bore*0.70;
+      pipeMesh(B, [V3(ex0, yl, zl), V3(ex0-bore*0.4, yl-bore*0.6, zl+pm[0].zs*bore*0.2), V3(ex0-bore*0.6, muY, zl)], bore*0.18, "stainless");
+      B.add("steel", CYL(bore*0.50, bore*0.50, bankLen*0.9+bore, 22), -bankLen*0.15, muY, zl, 0,0,PI/2);
+      var tx=-bankLen*0.15-(bankLen*0.9+bore)/2;
+      pipeMesh(B, [V3(tx, muY, zl), V3(tx-bore*0.6, muY-bore*0.1, zl)], bore*0.10, "steel");
+      if(bk===0){ exhaustTip=B.pt(tx-bore*0.6, muY-bore*0.1, zl); CRACK={pt:B.pt(ex0, yl, zl), dir:V3(0,1,0.3).transformDirection(B.top()).normalize(), len:bore*0.4}; }
+      B.pop();
+    }
+  } else {
+    /* a pipe per cylinder: header out of the port, down beside the cases, then the chamber (or a plain pipe) running back */
+    for(i=0;i<exPorts.length;i++){
+      var ep2=exPorts[i];
+      B.push(ep2.M);
+      var stack=Math.floor(i/ Math.max(1,banks)), zo=ep2.zs*(caseW*0.5+rB*1.25+(ep2.ci)*rB*2.2), yr=(big?-caseR*0.2:-caseR*0.55)-(ep2.ci%2)*rB*0.3;
+      var hx=ep2.x+bore*0.25;
+      var hdr=[V3(ep2.x, ep2.y, ep2.z), V3(ep2.x, ep2.y, ep2.z+ep2.zs*bore*0.45), V3(hx, (ep2.y+yr)/2, zo), V3(hx-bore*0.2, yr, zo)];
+      pipeMesh(B, hdr, rH, "stainless");
+      var endX;
+      if(xp==="chamber") endX=tsChamber(B, hx-bore*0.2, yr, zo, drawL, rH, rB, rS, "stainless");
+      else { var sl=Math.min(drawL*0.5, bankLen+bore*2); B.add("stainless", CYL(rH*1.15, rH*1.15, sl, 16, true), hx-bore*0.2-sl/2, yr, zo, 0,0,PI/2); endX=hx-bore*0.2-sl; }
+      if(i===0){ exhaustTip=B.pt(endX, yr, zo); CRACK={pt:B.pt(ep2.x, ep2.y, ep2.z+ep2.zs*bore*0.3), dir:V3(0,1,0.2).transformDirection(B.top()).normalize(), len:bore*0.35}; }
+      B.pop();
+    }
+  }
+
+  /* ---------- internals (X-ray): crank, rods, pistons, and the port windows they uncover ---------- */
+  setZone(1);
+  (function(){
+    var nT=per, ph=[];
+    for(var q=0;q<nT;q++) ph.push(q*360/nT/(vee?1:1));
+    var IG=new THREE.Group(); IG.name="internals"; IG.visible=false;
+    var crank=new THREE.Group();
+    var journal=new THREE.Mesh(CYL(bore*0.17, bore*0.17, bankLen+bore*0.30, 16), MAT.steel); journal.rotation.z=PI/2; crank.add(journal);
+    var throws=[];
+    for(var ti=0; ti<nT; ti++){
+      var tx2=-bankLen/2+bspace*(ti+0.5), f0=deg(ph[ti]);
+      var pin=new THREE.Mesh(CYL(bore*0.14, bore*0.14, bspace*0.40, 12), MAT.palu); pin.rotation.z=PI/2; pin.position.set(tx2, r*Math.cos(f0), r*Math.sin(f0)); crank.add(pin);
+      for(var wsd=-1; wsd<=1; wsd+=2){
+        /* full-circle flywheels, as a pressed-up two-stroke crank has */
+        var fw=new THREE.Mesh(CYL(r+bore*0.30, r+bore*0.30, bore*0.10, 24), MAT.steel); fw.rotation.z=PI/2; fw.position.set(tx2+wsd*bspace*0.26, 0, 0); crank.add(fw);
+      }
+      throws.push({x:tx2, phase:f0});
+    }
+    IG.add(crank);
+    var cyls=[], ports=[], mE=tsPortMat(0xff7a1a), mT=tsPortMat(0x3ab0ff);
+    var pH=bore*0.56;
+    for(var b2=0; b2<banks; b2++){
+      var ang2=vee?(b2===0?a:-a):0, zs2=b2===0?1:-1;
+      for(var c2=0; c2<per; c2++){
+        var piston=new THREE.Mesh(CYL(bore*0.485, bore*0.485, pH, 22), MAT.palu);
+        var rod=new THREE.Mesh(BOX(bore*0.14, Lr, bore*0.09), MAT.steel);
+        IG.add(piston); IG.add(rod);
+        var phs=throws[c2].phase+(vee&&b2?deg(180):0);
+        cyls.push({ang:ang2, x:throws[c2].x, px:throws[c2].x, phase:phs, piston:piston, rod:rod});
+        /* port windows on the liner, in the bank's frame: exhaust on the outside, transfers either side */
+        var wg=new THREE.Group(); wg.rotation.x=ang2; IG.add(wg);
+        var eTop=unif?null:portTop, eBot=bdc-bore*0.05;
+        var cyl=cyls[cyls.length-1];
+        if(!unif){
+          var we=new THREE.Mesh(BOX(bore*0.55, Math.max(0.01, eTop-eBot), bore*0.02), mE.clone()); we.material.userData.perBuild=true;
+          we.position.set(throws[c2].x, (eTop+eBot)/2, zs2*bore*0.50); wg.add(we);
+          ports.push({m:we, cyl:cyl, top:eTop, kind:"e"});
+        }
+        for(var s2=-1; s2<=1; s2+=2){
+          var wt=new THREE.Mesh(BOX(bore*0.02, Math.max(0.01, trTop-eBot), bore*0.40), mT.clone()); wt.material.userData.perBuild=true;
+          if(unif){ wt.geometry=BOX(bore*0.98, Math.max(0.01, trTop-eBot), bore*0.98); }
+          wt.position.set(throws[c2].x+(unif?0:s2*bore*0.50), (trTop+eBot)/2, -zs2*bore*0.06);
+          wg.add(wt); ports.push({m:wt, cyl:cyl, top:trTop, kind:"t"});
+          if(unif) break;
+        }
+      }
+    }
+    mE.dispose(); mT.dispose();
+    G.add(IG);
+    anim.internals={group:IG, crank:crank, r:r, L:Lr, ch:ch, cyls:cyls, theta:0, pistonH:pH, ports:ports};
+  })();
+
+  /* ---------- flywheel ---------- */
+  setZone(1);
+  var fwR=big?caseR*1.05:caseR*0.80, fwX=-bankLen/2-bore*(big?0.40:0.05);
+  var fwm=new THREE.Mesh(CYL(fwR, fwR, bore*0.12, 30, false, 1.6), MAT.steel); fwm.rotation.z=PI/2;
+  var fwg=new THREE.Group(); fwg.add(fwm); fwg.position.set(fwX-(big?0:bore*0.40), big?-caseR*0.05:-caseR*0.25, big?0:-caseR*0.55);
+  if(big||DET){ fwm.castShadow=true; extras.push(fwg); anim.spin.push({o:fwg, axis:"x", k:1}); }
+
+  return tsMaterialise(cfg, B, G, extras, t0, exhaustTip, dsl&&xp!=="chamber");
+}
+/* materialise (as buildRotaryMesh does) */
+function tsMaterialise(cfg, B, G, extras, t0, exhaustTip, castPipe){
+  var live;
+  if(DET){
+    live = { stainless: liveClone(MATHI.stainless), castexh: liveClone(MATHI.castexh),
+      turbine: liveClone(pick(cfg.turbineMat,"cast_iron")==="inconel" ? MATHI.inconelCast : MATHI.turbine),
+      wrinkle: coverFinish(pick(cfg.cover,"red"), COVER_COLORS[pick(cfg.cover,"red")]||COVER_COLORS.red), anod: tint(MATHI.anod, 0x8d949c) };
+    live.anod.userData.perBuild=true;
+    for(var hk in MATHI) if(!live[hk]) live[hk]=MATHI[hk];
+    for(var dk in DECALS) live[dk]=DECALS[dk];
+  } else {
+    live = { stainless: liveClone(MAT.stainless), castexh: liveClone(MAT.castexh), turbine: liveClone(MAT.turbine),
+      wrinkle: tint(MAT.wrinkle, COVER_COLORS[pick(cfg.cover,"red")]||COVER_COLORS.red), anod: tint(MAT.anod, 0x8d949c) };
+    live.wrinkle.userData.perBuild=true; live.anod.userData.perBuild=true;
+  }
+  anim.glowMats = [live.stainless, live.castexh, live.turbine];
+  var flushed = B.flush(G, live, true);
+  for(var fk in flushed) if(fk.indexOf("decal")===0) flushed[fk].castShadow=false;
+  for(var ei=0; ei<extras.length; ei++){
+    if(!extras[ei]) continue;
+    var ez=0; for(var zi=0; zi<ZONE_MARKS.length; zi++) if(ZONE_MARKS[zi][0]<=ei) ez=ZONE_MARKS[zi][1];
+    extras[ei].traverse(function(o){ if(o.isMesh && o.geometry && !o.geometry.attributes.zone) zoneGeo(o.geometry, ez); });
+    G.add(extras[ei]);
+  }
+  ZONE_EXTRAS=null; setZone(0);
+  if(DET) flushHW(G, function(k){ return live[k] || MATHI[k] || MAT[k]; });
+  CUR_B=null; DECALS={};
+  G.traverse(function(o){
+    var lk = o.userData && o.userData.liveKey;
+    if(lk && live[lk]) o.material = live[lk];
+    else if(DET && o.isMesh && HI_OF.has(o.material)) o.material = HI_OF.get(o.material);
+    if(o.isMesh && !(o.material && o.material.isMeshBasicMaterial)){ if(Array.isArray(o.material)) o.material.forEach(heatPatch); else heatPatch(o.material); }
+  });
+  var t1=(typeof performance!=="undefined")?performance.now():0;
+  G.userData.buildMs = t1-t0;
+  G.userData.crack = CRACK; CRACK=null;
+  G.userData.exhaustTip = exhaustTip || null;
+  G.userData.twoStroke = true;
+  return G;
+}
+
+/* the Napier Deltic: three banks of opposed-piston cylinders forming a triangle (apex down), a crankshaft at each
+   corner (one of them turning the other way), the phasing gear case at one end and the scavenge blower at the other */
+function buildDelticMesh(cfg, L, B, G, extras, t0){
+  var nC=6, i, k, s;
+  var bore=pick(cfg.bore,130)*K, stroke=pick(cfg.stroke,184)*K, rr=pick(cfg.rodRatio,2.2);
+  var sF=clamp(6.0/(2*((stroke/2+stroke*rr+bore*0.37)*2/Math.sqrt(3)+stroke/2+bore*0.55)), 0.25, 1);   /* drawn to a size the stand and the camera can hold */
+  bore*=sF; stroke*=sF;
+  var r=stroke/2, ch=bore*0.34, Lr=stroke*rr, half=r+Lr+ch+bore*0.03;   /* crank to the middle of the cylinder */
+  var D=2*half, Rt=D/Math.sqrt(3);                                      /* side and circumradius of the triangle */
+  var bspace=bore*1.30+0.05, bankLen=nC*bspace+bore*0.4, caseR=r+bore*0.55;
+  var blockKey=(pick(cfg.blockMat,"alu_liners").indexOf("alu")===0)?"calu":"iron";
+  var corners=[], cAng=[-PI/2, PI/6, 5*PI/6];                           /* apex down: bottom, upper right, upper left */
+  for(i=0;i<3;i++) corners.push(V3(0, Rt*Math.sin(cAng[i]), Rt*Math.cos(cAng[i])));
+  DCTX.bore=bore;
+  EXH_COLL=[]; EXH_TAILS=[]; PIPE_LOG=[]; CRACK=null; LAST_PIPE_END=null;
+  var exhaustTip=null;
+  /* crankcases at the corners and the triangular phasing-gear case at the rear */
+  setZone(1);
+  for(i=0;i<3;i++) B.add(blockKey, CYL(caseR, caseR, bankLen+bore*0.3, 28), 0, corners[i].y, corners[i].z, 0,0,PI/2);
+  B.add(blockKey, CYL(Rt+caseR*1.05, Rt+caseR*1.05, bore*0.7, 3), -bankLen/2-bore*0.5, 0, 0, PI/2,0,PI/2);   /* three-sided gear case */
+  B.add("wrinkle", CYL(Rt+caseR*0.85, Rt+caseR*0.85, bore*0.12, 3), -bankLen/2-bore*0.92, 0, 0, PI/2,0,PI/2);
+  /* the banks: each side of the triangle is a block of six cylinders; exhaust belt toward one crank, air belt toward the other */
+  var banksInfo=[];
+  for(i=0;i<3;i++){
+    var A=corners[i], Bc=corners[(i+1)%3], mid=A.clone().add(Bc).multiplyScalar(0.5), dir=Bc.clone().sub(A).normalize();
+    var outN=mid.clone().setX(0).normalize();                           /* outward from the triangle's centre */
+    var angX=Math.atan2(dir.z, dir.y);                                   /* rotation about X taking +Y onto dir */
+    var M=new THREE.Matrix4().makeTranslation(0, mid.y, mid.z).multiply(new THREE.Matrix4().makeRotationX(angX));
+    B.push(M);
+    var outZ=(V3(0,0,1).applyAxisAngle(V3(1,0,0), angX).dot(outN) > 0) ? 1 : -1;   /* which local Z faces out */
+    setZone(2);
+    B.add(blockKey, RBOX(bankLen, D-caseR*1.4, bore*1.55, 0.04), 0, 0, 0);
+    setZone(4);
+    B.add("castexh", CYL(bore*0.30, bore*0.34, bankLen*0.96, 18), 0, half*0.30, outZ*bore*0.95, 0,0,PI/2);     /* exhaust manifold, outside */
+    for(s=0;s<nC;s++) B.add("castexh", BOX(bore*0.5, bore*0.35, bore*0.25), -bankLen/2+bspace*(s+0.5), half*0.30, outZ*bore*0.80);
+    setZone(5);
+    B.add("calu", RBOX(bankLen*0.96, bore*0.6, bore*0.5, 0.05), 0, -half*0.30, -outZ*bore*0.90);           /* air manifold, inside */
+    banksInfo.push({M:M.clone(), outZ:outZ, A:A, Bc:Bc, dir:dir});
+    if(i===1){ exhaustTip=B.pt(bankLen*0.45, half*0.30, outZ*bore*1.3); CRACK={pt:B.pt(0, half*0.30, outZ*bore*1.1), dir:V3(0,0,outZ).transformDirection(B.top()).normalize(), len:bore*0.5}; }
+    B.pop();
+  }
+  /* the scavenge blower and its volute at the free end */
+  setZone(5);
+  B.add("calu", CYL(Rt*0.75, Rt*0.75, bore*0.9, 30), bankLen/2+bore*0.75, 0, 0, 0,0,PI/2);
+  B.add("calu", TOR(Rt*0.75, bore*0.35, 10, 30), bankLen/2+bore*0.75, 0, 0, 0,PI/2,0);
+  B.add("dark", CYL(Rt*0.32, Rt*0.40, bore*0.6, 24), bankLen/2+bore*1.45, 0, 0, 0,0,PI/2);
+  /* exhaust stacks up from the two top banks' manifolds */
+  setZone(4);
+  var topY=Math.max(corners[1].y, corners[2].y)+caseR;
+  pipeMesh(B, [V3(bankLen*0.2, topY*0.6, corners[1].z*0.4), V3(bankLen*0.2, topY+bore*1.2, corners[1].z*0.4), V3(bankLen*0.2, topY+bore*2.6, corners[1].z*0.4)], bore*0.30, "stainless");
+  exhaustTip=V3(bankLen*0.2, topY+bore*2.6, corners[1].z*0.4);
+  /* X-ray: three cranks and thirty-six pistons meeting in eighteen cylinders */
+  setZone(1);
+  (function(){
+    var IG=new THREE.Group(); IG.name="internals"; IG.visible=false;
+    var cranks=[], op=[], pH=bore*0.56;
+    for(var c=0;c<3;c++){
+      var cg=new THREE.Group(); cg.position.copy(corners[c]);
+      var j=new THREE.Mesh(CYL(bore*0.18, bore*0.18, bankLen+bore*0.3, 14), MAT.steel); j.rotation.z=PI/2; cg.add(j);
+      for(var t=0;t<nC;t++){ var f=deg(t*60), pn=new THREE.Mesh(CYL(bore*0.14, bore*0.14, bspace*0.45, 10), MAT.palu); pn.rotation.z=PI/2; pn.position.set(-bankLen/2+bspace*(t+0.5), r*Math.cos(f), r*Math.sin(f)); cg.add(pn); }
+      IG.add(cg); cranks.push({g:cg, sign:c===1?-1:1, off:deg(c*20)});
+    }
+    for(var b=0;b<3;b++){
+      var bi=banksInfo[b];
+      for(var e=0;e<2;e++){
+        var cIdx=e===0?b:(b+1)%3, C=corners[cIdx], u=(e===0?bi.dir.clone():bi.dir.clone().negate());
+        for(var t2=0;t2<nC;t2++){
+          var pm=new THREE.Mesh(CYL(bore*0.485, bore*0.485, pH, 18), MAT.palu), rd=new THREE.Mesh(BOX(bore*0.14, Lr, bore*0.09), MAT.steel);
+          IG.add(pm); IG.add(rd);
+          op.push({c:cranks[cIdx], C:C.clone(), u:u, x:-bankLen/2+bspace*(t2+0.5), phase:deg(t2*60), piston:pm, rod:rd});
+        }
+      }
+    }
+    G.add(IG);
+    anim.internals={group:IG, crank:cranks[0].g, r:r, L:Lr, ch:ch, cyls:[], theta:0, pistonH:pH, op:op, cranks:cranks};
+  })();
+  return tsMaterialise(cfg, B, G, extras, t0, exhaustTip, true);
 }
 
 /* ===========================================================================
@@ -14005,6 +14908,22 @@ function tick(dt, t){
   if(anim.internals){
     var IN=anim.internals; IN.theta += spin*0.16; IN.crank.rotation.x = IN.theta;
     /* rotary: each rotor rides its eccentric lobe and turns at a third of shaft speed (that is what makes the apexes trace the housing) */
+    if(XRAY && IN.ports) for(var pi2=0; pi2<IN.ports.length; pi2++){   /* two-stroke: a port window glows while the crown is below its top edge */
+      var po=IN.ports[pi2], cy2=po.cyl, f2=IN.theta+cy2.phase, ca2=Math.cos(cy2.ang), sa2=Math.sin(cy2.ang), py2=IN.r*Math.cos(f2), pz2=IN.r*Math.sin(f2), ly2=ca2*py2+sa2*pz2, lz2=-sa2*py2+ca2*pz2, crown=ly2+Math.sqrt(Math.max(0, IN.L*IN.L-lz2*lz2))+IN.ch;
+      var open=crown<po.top-1e-4; po.m.material.opacity=open?(po.kind==="e"?0.95:0.85):0.18;
+    }
+    if(IN.op){   /* opposed pistons (the Deltic): each crank turns its own way; a piston rides its crank's pin along its cylinder */
+      for(var cr=0; cr<IN.cranks.length; cr++){ var ck=IN.cranks[cr]; ck.g.rotation.x=ck.sign*IN.theta+ck.off; }
+      if(XRAY){ var _Yo=new THREE.Vector3(0,1,0), _do=new THREE.Vector3(), _po=new THREE.Vector3(), _qo=new THREE.Vector3();
+        for(var oi=0; oi<IN.op.length; oi++){
+          var o=IN.op[oi], phi=o.c.sign*IN.theta+o.c.off+o.phase, py=IN.r*Math.cos(phi), pz=IN.r*Math.sin(phi);
+          var au=py*o.u.y+pz*o.u.z, bv=-py*o.u.z+pz*o.u.y, sp=au+Math.sqrt(Math.max(0, IN.L*IN.L-bv*bv));
+          _po.set(o.x, o.C.y+py, o.C.z+pz); _qo.set(o.x, o.C.y+o.u.y*sp, o.C.z+o.u.z*sp);
+          var cc=sp+IN.ch-IN.pistonH/2; o.piston.position.set(o.x, o.C.y+o.u.y*cc, o.C.z+o.u.z*cc); o.piston.quaternion.setFromUnitVectors(_Yo, _do.set(0,o.u.y,o.u.z));
+          _do.subVectors(_qo,_po); o.rod.position.copy(_po).addScaledVector(_do,0.5); o.rod.quaternion.setFromUnitVectors(_Yo, _do.normalize());
+        }
+      }
+    }
     if(IN.rotors) for(var ri=0; ri<IN.rotors.length; ri++){ var ro=IN.rotors[ri], th=IN.theta+ro.phase; ro.g.position.set(ro.x, IN.e*Math.cos(th), IN.e*Math.sin(th)); ro.g.rotation.x=th/3; }
     if(XRAY){
       var _Y=new THREE.Vector3(0,1,0), _d=new THREE.Vector3(), _p=new THREE.Vector3(), _q=new THREE.Vector3();
@@ -18346,6 +19265,15 @@ var TD_TXT = {
   backfire:["Intake plenum","A misfire lit the fuel and nitrous in the intake and split the plenum","Fix the lean misfire, keep the mixture rich, shorter runners or a burst panel."],
   cold:["Combustion chamber","The fuel sprayed into cold air and never lit \u2014 the chamber is washed with raw diesel","Higher compression, a higher-cetane fuel, or a common rail with pilot shots."]
 };
+Object.assign(TD_MAP, { ts_seize:"scuffed", port_wear:"ring", crank_seals:"bearing", pipe_crack:"manifold", plug_foul:"ringland", scav_air:"cold" });
+var TD_TXT_ID = {
+  ts_seize:["Piston & barrel \u00b7 exhaust side","The piston seized on its exhaust side: aluminium smeared across the port bridge and down the skirt","A richer premix and jetting, looser clearance, more cooling \u2014 never let it run lean on the pipe."],
+  port_wear:["Rings & exhaust port","The ring ends wore where they flex into the exhaust window, and one finally snagged the port edge and broke","Shorter exhaust duration or a bridged port, fewer revs, and a top end at the service interval."],
+  crank_seals:["Crankcase seals & main bearing","A main seal hardened and leaked: the crankcase pulled air, that cylinder ran lean and the big end ran dry","Fresh PTFE seals, less crankcase compression, fewer revs."],
+  pipe_crack:["Expansion chamber","The chamber cracked at the header weld: the wave escaped through the crack and the tune went with it","Spring mounts instead of rigid brackets, richer jetting to cool it, a smoother layout."],
+  plug_foul:["Spark plug & piston crown","Rich and oily: carbon built on the plug nose and the crown until the plug shorted out","Leaner low-speed jetting, less oil in the premix, a hotter plug \u2014 or direct injection."],
+  scav_air:["Cylinder & ports","No scavenge air: the cylinder never cleared its exhaust, so the fresh charge had nowhere to go and it would not fire","A gear-driven Roots blower \u2014 a two-stroke diesel needs one, with or without a turbo."]
+};
 function tdDmg(id){ id=String(id||""); return TD_MAP[id] || (/rod/.test(id)?"rodsnap":/crank|tors/.test(id)?"crank":/valve/.test(id)?"valvebent":/turb/.test(id)?"turbine":/oil|bear/.test(id)?"bearing":/gask|head|cool|steam/.test(id)?"gasket":"ringland"); }
 
 var _tdBox=null, _tdY=new THREE.Vector3(0,1,0);
@@ -18799,11 +19727,11 @@ ENGINE_VIS.teardown=function(info){
   if(engineRoot) engineRoot.visible=false;
   camState.autoForce=false; camState.auto=false; camState.idle=0;
   tdFrame(false);
-  var tx=TD_TXT[B.dmg]||TD_TXT.ringland;
+  var tx=TD_TXT_ID[String(info.failId||"")]||TD_TXT[B.dmg]||TD_TXT.ringland;
   return {dmg:B.dmg, part:tx[0], what:tx[1], fix:tx[2]};
 };
 ENGINE_VIS.teardownSpin=function(on){ if(!TD.on) return false; camState.autoForce=on?true:false; if(!on) camState.auto=false; return !!on; };
-ENGINE_VIS.teardownText=function(id){ var d=tdDmg(id), tx=TD_TXT[d]; return {dmg:d, part:tx[0], what:tx[1], fix:tx[2]}; };
+ENGINE_VIS.teardownText=function(id){ var d=tdDmg(id), tx=TD_TXT_ID[String(id||"")]||TD_TXT[d]; return {dmg:d, part:tx[0], what:tx[1], fix:tx[2]}; };
 ENGINE_VIS.teardownOn=function(){ return TD.on; };
 ENGINE_VIS.teardownPad=function(f, top){ TD.pad=+f||0; TD.padTop=+top||0; if(TD.on) tdFrame(false); };   /* fraction of the view's height under the caption card */
 if(typeof module!=="undefined" && module.exports) module.exports=ENGINE_VIS;
@@ -18945,6 +19873,15 @@ SEGMENTS.push(
   {id:"rotsport",name:"Rotary sports coupé",tier:1,units:[1,3],price:6500,req:{hp:[180,260],kg:160,smooth:80,fuel:"r94",rel:76,rot:1}},
   {id:"rotclub",name:"Club racer · rotary class",tier:2,units:[1,2],price:10500,req:{hp:[260,320],rot:1,rel:62,passes:200,fuel:"race100"}});
 CATS.find(c=>c.id==="perf").segs.push("rotsport");CATS.find(c=>c.id==="race").segs.push("rotclub");
+/* two-stroke buyers: they want an engine that fires every turn (ts:1) and judge it on the usual figures */
+SEGMENTS.push(
+  {id:"ts_vintage",name:"Vintage rally restorer · two-stroke",tier:0,units:[1,3],price:2000,req:{hp:[34,46],disp:0.9,ts:1,rel:80,fuel:"r87"}},
+  {id:"ts_mx",name:"Motocross team · 250 two-stroke",tier:2,units:[2,4],price:4600,req:{hp:[44,54],disp:0.25,kg:32,ts:1,rel:60,fuel:"r94"}},
+  {id:"ts_sled",name:"Snowmobile maker · 800 class",tier:2,units:[2,5],price:7200,req:{hp:[140,175],disp:0.85,kg:70,ts:1,rel:80,econ:[9.5,8.0],fuel:"r91"}},
+  {id:"ts_outboard",name:"Outboard maker · V6 two-stroke",tier:2,units:[2,4],price:8600,req:{hp:[180,230],life:2500,rel:84,ts:1,fuel:"r91"}},
+  {id:"ts_detroit",name:"Detroit rebuild · fleet & marine",tier:1,units:[1,3],price:7400,req:{tq:[820,960],tqrpm:1600,life:3000,rel:88,ts:1,fuel:"diesel"}});
+CATS.find(c=>c.id==="prod").segs.push("ts_vintage");CATS.find(c=>c.id==="race").segs.push("ts_mx");
+CATS.find(c=>c.id==="perf").segs.push("ts_sled","ts_outboard");CATS.find(c=>c.id==="diesel").segs.push("ts_detroit");
 const ROT_DISP=1.5;
 const SITE_P=0.3;
 const SITES={
@@ -19057,13 +19994,15 @@ function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
 const ROT_KEYS={ecc:1,rotPort:1,apexSeal:1,rotHousing:1,sidePlate:1,eshaft:1,oilMeter:1};   // Wankel parts: no part of a piston engine (and no change to its hash)
 const isRot=c=>!!(c&&SIM.isRotary&&SIM.isRotary(c));
+const TS_KEYS={cycle:1,scav:1,induct:1,tsFuel:1,xpipe:1,pipeRpm:1,ePort:1,tPort:1,pv:1,lube:1,premix:1,ccr:1};   // two-stroke parts: none of them part of a four-stroke's hash
+const isTs=c=>!!(c&&SIM.isTwoStroke&&SIM.isTwoStroke(c));
 const HASH_DEF={pipe:"stock",muffler:"stock",cat:"none",cutout:"none",turbine:"fixed",als:"off"};   // the exhaust system at its defaults is the engine every older hash was made from
-function cfgHash(c){const dsl=isCI(c.fuel),rot=isRot(c);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(!rot&&ROT_KEYS[k])&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
+function cfgHash(c){const dsl=isCI(c.fuel),rot=isRot(c),ts=isTs(c);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(!rot&&ROT_KEYS[k])&&!(!ts&&TS_KEYS[k])&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
 function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.short||o.name.split(" ")[0];}
 function isGasF(f){const o=OPT.fuel[f];return !!(o&&o.gas);}
-const INJ_SHORT={rotary_ve:"VE",inline_mech:"P-pump",heui:"HEUI",cr_gen1:"CR",cr_piezo:"CR"};
+const INJ_SHORT={rotary_ve:"VE",inline_mech:"P-pump",heui:"HEUI",cr_gen1:"CR",cr_piezo:"CR",unit_dd:"unit inj"};
 function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM.OPT.fuel.r91;const hp=quick&&isFinite(quick.peakHp)?quick.peakHp:300;
   // WOT burn: ~0.32 L/hp/h on gasoline, more on low-energy fuels (per-litre energy vs pump gas)
   const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv))*(fu.gas?0.745/fu.dens:1);const t=S.env.testType;   // gas: litres of liquid propane / kg of CNG   // diesel ~0.23 L/hp/h at full load
@@ -19080,6 +20019,8 @@ const ZONE_OF={rod_tension:1,rod_buckling:1,rod_bolts:1,crank_fatigue:1,bearing_
   head_lift:3,gasket_shear:3,valve_float:3,valve_piston:3,cooling:3,valve_temp:4,turbine_temp:5,compressor_map:5,oil_starvation:6,torsional:7};
 ZONE_OF.fuel_delivery=2;ZONE_OF.cold_start=2;ZONE_OF.vgt_vanes=5;ZONE_OF.als_heat=5;
 Object.assign(ZONE_OF,{apex_seal:2,housing_chatter:2,carbon_seals:2,coolant_seal:3,eshaft:1,oil_metering:6});   // rotary tests
+Object.assign(ZONE_OF,{ts_seize:2,port_wear:2,crank_seals:1,pipe_crack:4,plug_foul:3,scav_air:5});   // two-stroke tests
+const ZONE_NAME_TS={2:"Barrels, pistons & ports",3:"Heads & spark plugs",4:"Expansion chambers",5:"Scavenge air: blower & turbo",6:"Premix & oil pump"};
 const ZONE_NAME_ROT={1:"Eccentric shaft & rotor bearings",2:"Rotors, apex seals & housings",3:"Hot lobe, plugs & coolant seals",7:"Front cover, OMP & pulley"};
 const ZONE_NAME={1:"Crankcase & rotating assembly",2:"Cylinders & pistons",3:"Head, gasket & valvetrain",4:"Exhaust",5:"Turbocharger",6:"Sump & oiling",7:"Front drive & damper"};
 function heatZones(){if(!quick)return null;const worst={};for(const t of quick.tests){const z=ZONE_OF[t.id];if(!z)continue;if(t.id==="turbine_temp"||t.id==="compressor_map"){if(S.cfg.asp==="na")continue;}
@@ -19094,10 +20035,10 @@ function applyCam(){document.querySelectorAll("#camSeg button").forEach(b=>b.cla
 $("camSeg").addEventListener("click",e=>{const b=e.target.closest("[data-cam]");if(!b)return;S.followCam=b.dataset.cam==="1";applyCam();save();});
 function applyXray(){$("xrayBtn").classList.toggle("on",!!S.xray);ENGINE_VIS.setXray(!!S.xray);}
 $("gfxSeg").addEventListener("click",e=>{const b=e.target.closest("[data-gfx]");if(!b)return;S.gfx=b.dataset.gfx;applyGfx();save();toast(S.gfx==="ultra"?"ULTRA · bloom + ambient occlusion":S.gfx==="full"?"FULL GRAPHICS · bloom on":"LITE GRAPHICS");});
-$("xrayBtn").addEventListener("click",()=>{S.xray=!S.xray;applyXray();save();toast(S.xray?(isRot(S.cfg)?"X-RAY · rotors and eccentric shaft live":"X-RAY · crank, rods and pistons live"):"X-RAY OFF");});
+$("xrayBtn").addEventListener("click",()=>{S.xray=!S.xray;applyXray();save();toast(S.xray?(isRot(S.cfg)?"X-RAY · rotors and eccentric shaft live":isTs(S.cfg)?"X-RAY · pistons opening the ports live":"X-RAY · crank, rods and pistons live"):"X-RAY OFF");});
 function applyHeat(){$("heatBtn").classList.toggle("on",!!S.heat);ENGINE_VIS.setHeat(S.heat?heatZones():null);}
 function zoneSheet(z){if(!quick||!ZONE_NAME[z])return;const rows=quick.tests.filter(t=>ZONE_OF[t.id]===z&&!((t.id==="turbine_temp"||t.id==="compressor_map")&&S.cfg.asp==="na")).sort((a,b)=>b.util-a.util);
-  $("sheetTitle").textContent=(isRot(S.cfg)&&ZONE_NAME_ROT[z])||ZONE_NAME[z];
+  $("sheetTitle").textContent=(isRot(S.cfg)&&ZONE_NAME_ROT[z])||(isTs(S.cfg)&&ZONE_NAME_TS[z])||ZONE_NAME[z];
   $("sheetBody").innerHTML=rows.map(t=>`<div class="opt"><b>${t.name}</b><small class="${t.util>1?"critc":t.util>0.8?"warnc":""}">${Math.round(t.util*100)}% of limit</small><div class="bar" style="margin:6px 0"><i style="width:${Math.min(100,t.util*80)}%;background:${t.util>1?"var(--crit)":t.util>0.8?"var(--warn)":"var(--good)"}"></i></div><p>${t.physics||""}</p>${t.fix?`<p style="color:var(--muted)">${t.fix}</p>`:""}</div>`).join("")||"<p class='hint'>Nothing measured here.</p>";
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 $("tag").addEventListener("change",e=>{if(e.target.id==="nameIn"){S.name=e.target.value.trim()||null;save();}});
@@ -19138,9 +20079,10 @@ $("heatBtn").addEventListener("click",()=>{S.heat=!S.heat;applyHeat();save();toa
 /* ---- engine card: name + headline numbers + status, reused everywhere an engine is shown ---- */
 const ASP_SYM={na:"NA",turbo:"T",twin_turbo:"TT",roots:"SC",centrifugal:"SC",screw:"SCREW",compound:"CT"};
 function engineName(){return S.name||autoName();}
-function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${isRot(S.cfg)?LAYOUTS[S.cfg.layout].n+"-rotor":S.cfg.layout} ${(quick?quick.Vd/1000:0).toFixed(1)}`;}
+function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${isRot(S.cfg)?LAYOUTS[S.cfg.layout].n+"-rotor":isTs(S.cfg)?"two-stroke "+S.cfg.layout:S.cfg.layout} ${(quick?quick.Vd/1000:0).toFixed(isTs(S.cfg)&&quick&&quick.Vd<1000?2:1)}`;}
 const ROT_PORT_SHORT={side:"side port",sidex:"side exhaust",street:"street port",bridge:"bridge port",peri:"peri port"};
 function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==="na"?"NA":(ASP_SYM[cfg.asp]||cfg.asp.toUpperCase())+(cfg.asp!=="na"?" "+cfg.boost.toFixed(1)+"bar":"");
+  if(isTs(cfg))return `<b>2T ${cfg.layout==="D18"?"Deltic":cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(res.Vd<1000?2:1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${{loop:"loop",cross:"cross",uniflow:"uniflow"}[cfg.scav]||"loop"}<i>·</i>${cfg.xpipe==="chamber"&&!isCI(cfg.fuel)?"pipe "+(cfg.pipeRpm/1000).toFixed(1)+"k":cfg.induct==="blower"?"blown":cfg.induct}<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;
   if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
   return `<b>${cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
@@ -19162,7 +20104,7 @@ function recompute(){
   combosNow=SIM.combos(S.cfg,simEnv({testType:"pull"}),quick);
   if(S.heat)applyHeat();
   if(document.activeElement&&document.activeElement.id==="nameIn"){/* don't clobber while typing */}else $("tag").innerHTML=engineCard(S.cfg,quick,{editable:true});
-  $("sDisp").textContent=(quick.Vd/1000).toFixed(1);$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
+  $("sDisp").textContent=(quick.Vd/1000).toFixed(quick.twoStroke&&quick.Vd<1000?2:1);$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
   const worst=Math.max(...quick.tests.map(t=>t.util));$("sHp").className=worst>1?"critc":worst>.8?"warnc":"";
   const cert=C().cert;
   $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));
@@ -19178,7 +20120,7 @@ const CLS_DEFAULT={g10:"economy","4ac":"economy","22re":"truck",ea82:"economy",l
 const CLS_LABEL={economy:"Economy",truck:"Truck & industrial",classic:"Classic",performance:"Performance",motorsport:"Motorsport",outlaw:"Outlaw",diesel:"Diesel",pulling:"Pulling",rotary:"Rotary"};
 const FAM_OF=l=>l[0]==="I"?"inline":l[0]==="F"?"flat":l[0]==="R"?"rotary":"vee";
 function presetCls(p){return p.cls||CLS_DEFAULT[p.id]||"performance";}
-function presetDisp(p){const L=SIM.LAYOUTS[p.cfg.layout]||{n:4};if(L.rotary)return L.n*3*Math.sqrt(3)*p.cfg.stroke*(p.cfg.ecc||15)*p.cfg.bore/1e6;   // Mazda: one chamber per rotor
+function presetDisp(p){const L=SIM.LAYOUTS[p.cfg.layout]||{n:4};if(p.cfg.cycle==="two"&&!L.rotary)return L.n*(L.opposed?2:1)*Math.PI/4*p.cfg.bore*p.cfg.bore*p.cfg.stroke/1e6;if(L.rotary)return L.n*3*Math.sqrt(3)*p.cfg.stroke*(p.cfg.ecc||15)*p.cfg.bore/1e6;   // Mazda: one chamber per rotor
   return L.n*Math.PI/4*p.cfg.bore*p.cfg.bore*p.cfg.stroke/1e6;}
 function renderPresets(){
   const sort=S.pSort||"layout", fam=S.pFam||"all", cls=S.pCls||"all";
@@ -19186,13 +20128,14 @@ function renderPresets(){
   document.querySelectorAll("#pFam .chip").forEach(x=>x.classList.toggle("on",x.dataset.pf===fam));
   document.querySelectorAll("#pCls .chip").forEach(x=>x.classList.toggle("on",x.dataset.pc===cls));
   $("pReset").hidden=(sort==="layout"&&fam==="all"&&cls==="all");
-  const LORDER=["I3","I4","I5","I6","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4"];
-  let list=PRESETS.map((p,i)=>({p,i,disp:presetDisp(p),n:(SIM.LAYOUTS[p.cfg.layout]||{n:0}).n,cls:presetCls(p),fam:FAM_OF(p.cfg.layout)}));
+  const LORDER=["I1","I2","I3","I4","I5","I6","V4","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4","D18"];
+  let list=PRESETS.map((p,i)=>({p,i,disp:presetDisp(p),n:(SIM.LAYOUTS[p.cfg.layout]||{n:0}).n,cls:presetCls(p),fam:FAM_OF(p.cfg.layout),two:p.cfg.cycle==="two"}));
+  list=list.filter(e=>fam!=="two"||e.two);if(fam==="two")list.forEach(e=>e.fam="two");   // the two-stroke chip cuts across layouts
   list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||e.cls===cls));
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
   list.sort((a,b)=>key(a)-key(b));
   const groupOf=e=>sort==="layout"?(SIM.LAYOUTS[e.p.cfg.layout]||{}).name||e.p.cfg.layout:sort==="class"?CLS_LABEL[e.cls]:sort==="size"?(e.disp<1.6?"Under 1.6 L":e.disp<2.6?"1.6 – 2.5 L":e.disp<4.1?"2.6 – 4.0 L":e.disp<6.1?"4.1 – 6.0 L":"Over 6 L"):(e.p.realHp<150?"Under 150 hp":e.p.realHp<300?"150 – 299 hp":e.p.realHp<600?"300 – 599 hp":e.p.realHp<1000?"600 – 999 hp":"1,000 hp and up");
-  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${p.cfg.layout} ${e.disp.toFixed(1)} L · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
+  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${e.disp.toFixed(e.two&&e.disp<1?2:1)} L · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
   let h="",g=null,buf=[];const flush=()=>{if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.join("")}</div>`;buf=[];};
   for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push(card(e));}
   flush();
@@ -19224,7 +20167,7 @@ function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
 const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="fuel"&&o.ci&&isRot(c))&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);   // no carb on a diesel;   // nitrous kits for the other fuel family stay out of the way; a Wankel takes no diesel   // nitrous kits for the other fuel family stay out of the way
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="fuel"&&o.ci&&isRot(c))&&!(f.key==="layout"&&c[f.key]!==k&&(isTs(c)?!!o.rotary||!!(SIM.LAYOUTS[k]||{}).rotary:!!o.two))&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);   // no carb on a diesel;   // nitrous kits for the other fuel family stay out of the way; a Wankel takes no diesel   // nitrous kits for the other fuel family stay out of the way
   let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).filter(k=>famOK(opts[k],k)).length}">`;
   for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
@@ -19263,6 +20206,20 @@ function rotaryFamilyDefaults(c,wasR){const r=isRot(c);if(r===wasR)return null;c
     return `Rotary: 13B-size rotors (80 mm wide, R 105, e 15), ${c.cr.toFixed(1)}:1, redline ${c.redline.toLocaleString()}`;}
   c.bore=D.bore;c.stroke=D.stroke;c.rodRatio=D.rodRatio;c.cr=c.asp!=="na"?9.0:D.cr;if(c.redline>8000)c.redline=7000;
   return `Piston: ${D.bore}×${D.stroke} mm, ${c.cr.toFixed(1)}:1 to start`;}
+/* four-stroke <-> two-stroke: ports instead of valves, a trapped compression ratio, a pipe tuned near the port timing and
+   premix on a crankcase engine; a diesel gets a blower and uniflow scavenging. Back to four: a layout a four-stroke has. */
+function twoStrokeFamilyDefaults(c,wasT){const D=SIM.DEFAULT_CFG;
+  if(c.cycle==="two"&&SIM.LAYOUTS[c.layout]&&SIM.LAYOUTS[c.layout].rotary){c.layout="I2";c.bore=D.bore;c.stroke=D.stroke;c.rodRatio=D.rodRatio;}
+  const t=isTs(c);if(t===wasT)return null;
+  if(t){const dsl=isCI(c.fuel);c.timing=0;c.ePort=dsl?140:180;c.tPort=dsl?100:124;c.pv="none";c.ccr=1.40;c.lube="premix";c.premix=40;
+    if(dsl){c.scav="uniflow";c.induct="blower";c.xpipe="muffled";c.redline=Math.min(c.redline,2800);c.pipeRpm=c.redline;}
+    else{c.scav="loop";c.induct="reed";c.tsFuel=c.intake==="carb"?"carb":"efi";c.xpipe="chamber";c.cr=c.asp!=="na"?6.5:8.0;c.lambda=0.86;c.redline=Math.max(c.redline,6500);
+      try{const g=SIM.simulate(c,stdEnv({testType:"pull"}));c.pipeRpm=Math.round(Math.min(c.redline*0.92,Math.max(3000,g.twoStroke.rpmP))/100)*100;}catch(e){c.pipeRpm=Math.round(c.redline*0.85/100)*100;}}
+    return dsl?`Two-stroke diesel: uniflow, a Roots blower and ${c.redline.toLocaleString()} rpm to start`:`Two-stroke: loop-scavenged, reed valve, ${c.cr.toFixed(1)}:1 trapped, pipe tuned to ${c.pipeRpm.toLocaleString()} rpm, 40:1 premix`;}
+  if(SIM.LAYOUTS[c.layout]&&SIM.LAYOUTS[c.layout].two){c.layout=c.layout==="V4"||c.layout==="D18"?"V8":"I4";}
+  if(c.bore<68)c.bore=D.bore;if(c.stroke<58)c.stroke=D.stroke;
+  if(!isCI(c.fuel)){c.cr=c.asp!=="na"?9.0:D.cr;c.lambda=0.9;}
+  return `Four-stroke: valves and a cam again, ${c.layout}, ${c.cr.toFixed(1)}:1`;}
 function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"><span>${fLabel(f)}</span></div><div class="swatches">`+Object.keys(opts).map(k=>`<button data-k="${f.key}" data-v="${k}" class="${S.cfg[f.key]===k?"on":""}" style="background:${opts[k].hex}" aria-label="${opts[k].name}"></button>`).join("")+"</div>";}
 const openSec={"Bore & stroke":true};
 function secSummary(sec){return sec.fields.filter(f=>!f.showIf||f.showIf(S.cfg)).map(f=>{const v=S.cfg[f.key];if(f.type==="slider")return (f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");const o=OPT[f.optTable||f.key][v];return o?o.name:v;}).join(" · ");}
@@ -19288,8 +20245,8 @@ $("buildForm").addEventListener("click",e=>{
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
   if(testing){toast("Let the run finish first");return;}
-  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
-  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):b.dataset.k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):null;if(fam)delete S.cfg.map;
+  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg),wasT=isTs(S.cfg);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
+  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):b.dataset.k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):b.dataset.k==="cycle"?twoStrokeFamilyDefaults(S.cfg,wasT):null;if(fam)delete S.cfg.map;
   const moved=clampCfgLimits();
   if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
   afterCfgChange(true);});
@@ -19320,7 +20277,8 @@ function applySlider(k,v,r){mapShiftTo(k,v);S.cfg[k]=v;if(r&&parseFloat(r.value)
 const FOCUS_OF={bore:"engine",stroke:"engine",cr:"engine",rodRatio:"engine",blockMat:"engine",deck:"engine",piston:"engine",pistonClearance:"engine",rings:"engine",rod:"engine",rodBolts:"engine",crank:"engine",bearings:"engine",oilSystem:"engine",oilGrade:"engine",oilSquirters:"engine",
   head:"top",headMat:"top",valveMat:"top",springs:"top",cam:"top",lift:"top",gasket:"top",studs:"top",cover:"top",redline:"top",
   intake:"intake",nitrous:"intake",fuel:"intake",lambda:"intake",timing:"intake",asp:"turbo",turboSize:"turbo",turbineMat:"turbo",ic:"turbo",boost:"turbo",exhaust:"exhaust",damper:"front",cooling:"front",layout:"engine",
-  ecc:"engine",rotHousing:"engine",sidePlate:"engine",apexSeal:"engine",eshaft:"engine",rotPort:"intake",oilMeter:"front"};
+  ecc:"engine",rotHousing:"engine",sidePlate:"engine",apexSeal:"engine",eshaft:"engine",rotPort:"intake",oilMeter:"front",
+  cycle:"engine",scav:"engine",ePort:"engine",tPort:"engine",pv:"exhaust",ccr:"engine",induct:"intake",tsFuel:"intake",xpipe:"exhaust",pipeRpm:"exhaust",lube:"intake",premix:"intake"};
 Object.assign(FOCUS_OF,{launchCtl:"exhaust",launchRetard:"exhaust",twoStepRpm:"exhaust"});Object.assign(NOTCH,{twoStepRpm:500,launchRetard:5});
 Object.assign(FOCUS_OF,{injectors:"intake",fuelPump:"intake"});
 Object.assign(FOCUS_OF,{pipe:"exhaust",muffler:"exhaust",cat:"exhaust",cutout:"exhaust"});
@@ -19480,6 +20438,13 @@ const SPECS={
   sidePlate:{specs:[["Side-seal wear",o=>fac(o.sideSeal)],["Stiffness",o=>fac(o.stiff)],["Weight",o=>fac(o.massFac)]]},
   eshaft:{specs:[["Fatigue strength",o=>o.fatigue+" MPa"],["Main bearings",o=>o.supports+(o.supports>2?" (centre main)":" (ends only)")],["Journals",o=>fac(o.dFac)]]},
   oilMeter:{specs:[["Oil to the seals",o=>fac(o.cap)],["Carbon",o=>fac(o.carbon)],["Oil burnt",o=>o.oilL+" L / 1,000 km"]]},
+  cycle:{specs:[["Power strokes",o=>o._id==="cycle:two"?"every turn":"every second turn"],["Gas exchange",o=>o._id==="cycle:two"?"ports in the cylinder wall":"valves and a cam"]]},
+  scav:{specs:[["Trapping",o=>Math.round(o.te*100)+"% at DR 1"],["Port flow",o=>fac(o.flow)],["Needs",o=>o.valves?"exhaust valves + a blower":"nothing extra"]]},
+  induct:{specs:[["Low-speed fill",o=>fac(o.lowK)],["Top end",o=>fac(o.topK)],["Blow-back",o=>o.back?Math.round(o.back*100)+"% at idle":"none"]]},
+  tsFuel:{specs:[["Fuel lost with the short-circuit",o=>Math.round(o.sc*100)+"%"]]},
+  xpipe:{specs:[["Resonance",o=>o.amp?"+"+Math.round(o.amp*100)+"% on the pipe":"none"],["Band width",o=>o.amp?"±"+Math.round(o.w*100)+"% of its rpm":null],["Back-pressure",o=>fac(o.backP)],["Noise",o=>(o.db>0?"+":"")+o.db+" dB"]]},
+  pv:{specs:[["Band",o=>o.wide?fac(o.wide)+" wider below the pipe":"fixed port"]]},
+  lube:{specs:[["Oil fed by",o=>o._id==="lube:inject"?"a pump, by load":"the premix ratio"]]},
   cover:{specs:[]},
   launchCtl:{line:o=>o.sub,specs:[["Holds",o=>o.cost?"a set launch rpm":"whatever your foot does"],["Boost on the line",o=>o._id==="launchCtl:two_step_retard"?"most of it, with heat":o.cost?"a little":"none"],["Dyno",o=>"no effect"]]},
   transBrake:{line:o=>o.sub,specs:[["Launch",o=>o._id==="transBrake:trans_brake"?"torque converter":"clutch"],["Burnout",o=>o._id==="transBrake:none"?"creeps, fronts smoke":"clean, rears only"],["Dyno",o=>"no effect"]]}
@@ -21544,6 +22509,7 @@ const FAIL_VISUAL={rod_tension:"rod",rod_buckling:"rod",rod_bolts:"rod",bearing_
 FAIL_VISUAL.vgt_vanes="turbo";FAIL_VISUAL.als_heat="turbo";
 FAIL_VISUAL.fuel_delivery="knock";   // a lean cylinder rattles, then the crown lets go and it smokes
 FAIL_VISUAL.cold_start="seize";      // a diesel that won't light just winds down on the starter
+Object.assign(FAIL_VISUAL,{ts_seize:"seize",port_wear:"knock",crank_seals:"seize",pipe_crack:"steam",plug_foul:"seize",scav_air:"seize"});   // two-stroke: a seizure locks it, a cracked pipe hisses
 Object.assign(FAIL_VISUAL,{apex_seal:"knock",housing_chatter:"knock",carbon_seals:"knock",oil_metering:"seize",coolant_seal:"steam",eshaft:"crank"});   // rotary: a broken seal rattles and smokes, a blown O-ring steams
 function failKindOf(res,env){
   let id=null;
@@ -21791,13 +22757,26 @@ function renderAnalysis(){
     ["E-shaft bow",`${R.eshaftUm.toFixed(0)} µm · ${R.supports} mains`],["Rotor orbit pull",`${R.centKn.toFixed(0)} kN a rotor`],["Rotor bearing",`${R.brgMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],
     ["Seal oiling",`${Math.round(R.oilUtil*100)}% of supply`],["Oil burnt",`${R.oilL.toFixed(1)} L/1000 km`],["Carbon build-up",`${Math.round(R.carbon*100)}%`],["Idles at",`${R.idleRpm.toLocaleString()} rpm`],
     ["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]);}
+  if(r.twoStroke){const R=r.twoStroke;rows.splice(0,rows.length,   // a two-stroke: delivery and trapping, the pipe and the oil instead of valvetrain numbers
+    ["Firing rate",`${Math.round(R.firingHz).toLocaleString()}/s · every turn`],["Swept / eq.",`${R.swept.toFixed(R.swept<1?3:2)} L · ${R.eq.toFixed(R.eq<2?2:1)} L 4T`],
+    ["Delivery ratio",`${R.drPk.toFixed(2)} at peak`],["Trapping",`${Math.round(R.tePk*100)}% · ${R.scChargePct}% lost`],
+    ...(isCI(S.cfg.fuel)?[["Fuel cetane",`${K.cetane}`],["Smoke (peak)",`${Math.round(r.smoke||0)}%`]]:[["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Fuel out the pipe",`${R.scFuelPct}% at peak`]]),
+    ["Ports timed for",`${(Math.round(R.rpmP/100)*100).toLocaleString()} rpm · ${Math.round(R.ep)}°/${Math.round(R.tp)}°`],
+    ...(R.pipeRpm?[["Pipe tuned / hot",`${R.pipeRpm.toLocaleString()} / ${R.pipeTune.toLocaleString()} rpm`],["On the pipe",`${R.onPipe.toLocaleString()} rpm`]]:[]),
+    ["Power band",`${R.band[0].toLocaleString()}–${R.band[1].toLocaleString()} rpm`],["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],
+    ["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],
+    ...(R.ccr?[["Crankcase",`${R.ccr.toFixed(2)}:1 · seals ${R.sealMs.toFixed(1)} m/s`]]:[]),
+    ...(R.blower?[["Air box",`${R.boxBar.toFixed(2)} bar`]]:[]),
+    [R.lube==="sump"?"Oiling":"Oil burnt",R.lube==="sump"?"pressure-fed sump":R.lube==="inject"?`pump · ${R.oilLph.toFixed(2)} L/h`:`${Math.round(R.lubR)}:1 · ${R.oilLph.toFixed(2)} L/h`],
+    ["Seizure margin",`${Math.round(R.seize*100)}% of the edge`],["Idles at",`${R.idleRpm.toLocaleString()} rpm`],
+    ["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]);}
   if(r.alt&&r.alt.gas)rows.push(["Gas system load",`${Math.round(r.fuel.load*100)}% · ${Math.round(r.alt.capKgh)} kg/h`],["Air displaced",`${r.alt.displacePct}%`],[r.alt.unit==="kg"?"CNG use":"Propane use",`${r.alt.econNative} ${r.alt.unit==="kg"?"kg":"L"}/100km`]);
   if(r.alt&&r.alt.flex&&r.alt.winter){const w=r.alt.winter;rows.push(["Winter E"+w.pct+" margin",`${w.margin>=0?"+":"−"}${Math.abs(w.margin).toFixed(1)}`]);}
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   {const nz=r.noiseDb!=null?{db:r.noiseDb,dbOpen:r.noiseDbOpen}:SIM.exhaustNoise(S.cfg),nw=v=>v<=74?"quiet":v<=80?"road legal":v<=86?"loud":"track only";
     rows.push(["Drive-by noise",`${Math.round(nz.db)} dB · ${nw(nz.db)}`]);if(nz.dbOpen>nz.db+0.5)rows.push(["Cutout open",`${Math.round(nz.dbOpen)} dB`]);   // short values: .tele b never wraps
     if(r.exhaustSys)rows.push(["Exhaust backpressure",r.exhaustSys.open?"none · open":`${r.exhaustSys.dpBar.toFixed(2)} bar`]);}
-  $("tele").classList.toggle("rot",!!r.rotary);$("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
+  $("tele").classList.toggle("rot",!!(r.rotary||r.twoStroke));$("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
   renderRecords();renderAch();dlAnalysis();tdAnaRender();
 }
@@ -21831,7 +22810,7 @@ function genContract(seg){
   if(R.hp)req.hp=R.hp[0]+Math.round(rng()*(R.hp[1]-R.hp[0])/10)*10;
   if(R.tq)req.tq=R.tq[0]+Math.round(rng()*(R.tq[1]-R.tq[0])/10)*10;
   if(R.econ)req.econ=+(R.econ[0]-rng()*(R.econ[0]-R.econ[1])).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","road"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","ts","road"])if(R[k]!=null)req[k]=R[k];
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
   if(R.mph)req.mph=Math.round(R.mph[0]+rng()*(R.mph[1]-R.mph[0]));
   if(R.lap)req.lap=+(R.lap[0]+Math.round(rng()*(R.lap[1]-R.lap[0])*2)/2).toFixed(1);   // their car, their circuit: a lap time to beat
@@ -21851,7 +22830,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   if(from==="inbox")C().inbox=C().inbox.filter(x=>x.id!==k.id);else if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
 function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
-const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
+const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],ts:["Engine",v=>"Two-stroke"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
@@ -21896,6 +22875,7 @@ function fits(k,res,cfg){
   if(r.smooth!=null)add("smooth",res.smooth>=r.smooth,Math.round(res.smooth),ge(res.smooth,r.smooth));
   if(r.kg!=null)add("kg",res.kg<=r.kg,Math.round(res.kg),le(res.kg,r.kg));
   if(r.rot!=null){const ro=isRot(c);add("rot",ro,ro?"rotary":"pistons",ro?1:0.1);}
+  if(r.ts!=null){const t2=isTs(c);add("ts",t2,t2?"two-stroke":"four-stroke",t2?1:0.1);}
   const dispL=res.Vd/1000*(res.rotary?ROT_DISP:1);   // a rotary runs in a displacement class at 1.5x its quoted size
   if(r.disp!=null)add("disp",dispL<=r.disp+0.005,dispL.toFixed(2)+(res.rotary?" (×1.5)":""),le(dispL,r.disp+0.005));
   if(r.cyl!=null)add("cyl",res.n>=r.cyl,res.n,ge(res.n,r.cyl));
@@ -21916,7 +22896,7 @@ function fits(k,res,cfg){
 /* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
    Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit,
    and the wrong fuel family (a diesel for a petrol car, or the reverse) sends them away. */
-const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,lap:8,zero100:3,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1};
+const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,lap:8,zero100:3,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1,ts:1};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
   return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
@@ -21929,7 +22909,7 @@ function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*4
 const MKT_COOL=3;
 function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
   if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);if(R.mph)req.mph=Math.round(mid(R.mph,0.3));if(R.lap)req.lap=+mid(R.lap,0.7).toFixed(1);if(R.zero100)req.zero100=+mid(R.zero100,0.7).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","road"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","ts","road"])if(R[k]!=null)req[k]=R[k];
   const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
   return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
 function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
@@ -21944,6 +22924,8 @@ const FIX_KEYS=["fuel","piston","rings","rod","rodBolts","crank","bearings","oil
 FIX_KEYS.push("injectors","fuelPump");   // a build that only leans out can be one part away from a contract
 FIX_KEYS.push("dInj","dNoz");   // diesel: a common-rail pump or bigger nozzles can be the one change
 FIX_KEYS.push("rotPort","apexSeal","rotHousing","sidePlate","eshaft","oilMeter");   // rotary
+FIX_KEYS.push("scav","induct","tsFuel","xpipe","pv","lube");   // two-stroke
+const FOUR_ONLY_KEYS={head:1,springs:1,valveMat:1,intake:1,exhaust:1};   // a ported two-stroke has none of these (a uniflow keeps its exhaust valves)
 const PISTON_ONLY_KEYS={piston:1,rings:1,rod:1,rodBolts:1,crank:1,head:1,springs:1,valveMat:1,gasket:1,studs:1,damper:1,pistonClearance:1,oilSquirters:1,blockMat:1,headMat:1};
 FIX_KEYS.push("muffler","cat","pipe");   // a loud or smoky build is often one exhaust part away
 const fixCache=new Map();
@@ -21951,7 +22933,7 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   const env=stdEnv({testType:"pull"});let best=null;const tryCfg=(cfg,label)=>{const r=SIM.simulate(cfg,env);if(r.fails.length)return;const f=fits(k,r,cfg);if(f.ok){const gain=f.bonus;if(!best||gain>best.gain)best={label,cfg,gain};}};
   const dsl=isCI(S.cfg.fuel);
   const rotB=isRot(S.cfg);
-  for(const key2 of FIX_KEYS){const opts=OPT[key2];if(!opts)continue;if(rotB?PISTON_ONLY_KEYS[key2]:ROT_KEYS[key2])continue;if(!dsl&&(key2==="dInj"||key2==="dNoz"))continue;if(dsl&&key2==="injectors")continue;for(const v in opts){if(v===S.cfg[key2]||locked(opts[v]))continue;if(key2==="fuel"&&isCI(v)!==dsl)continue;if(key2==="layout")continue;tryCfg(Object.assign({},S.cfg,{[key2]:v}),`switch to ${opts[v].name}`);}}
+  for(const key2 of FIX_KEYS){const opts=OPT[key2];if(!opts)continue;if(rotB?PISTON_ONLY_KEYS[key2]:ROT_KEYS[key2])continue;if(isTs(S.cfg)?FOUR_ONLY_KEYS[key2]&&!(S.cfg.scav==="uniflow"&&(key2==="springs"||key2==="valveMat")):TS_KEYS[key2])continue;if(!dsl&&(key2==="dInj"||key2==="dNoz"))continue;if(dsl&&key2==="injectors")continue;for(const v in opts){if(v===S.cfg[key2]||locked(opts[v]))continue;if(key2==="fuel"&&isCI(v)!==dsl)continue;if(key2==="layout")continue;tryCfg(Object.assign({},S.cfg,{[key2]:v}),`switch to ${opts[v].name}`);}}
   const sl=[["redline",-500,"drop the redline 500 rpm"],["redline",-1000,"drop the redline 1,000 rpm"],["cam",-15,"a milder cam"],["cam",15,"a bigger cam"],["cr",-1,"a point less compression"],["cr",1,"a point more compression"],["timing",-3,"pull 3° of timing"],["boost",-0.3,"0.3 bar less boost"],["lambda",0.05,"lean it out a touch"]];
   if(dsl)sl.push(["lambda",0.1,"lean the full-load λ 0.1"],["lambda",-0.1,"richen the full-load λ 0.1"],["timing",-2,"retard the injection 2°"]);
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
@@ -22526,7 +23508,12 @@ const GLOSSARY=[
 ["torque","Torque and power","torque and horsepower|torque curve|power curve|torque peak","Torque is the twisting force the crank delivers; horsepower is torque times rpm, divided by a constant. An engine that holds torque to high rpm makes more power.","Diesels and trucks live on torque low down, and sports cars on horsepower high up. The dyno plots both.","bmep,ve"],
 ["dyno","Dynamometer","dyno|dynamometer|dyno cell","A dynamometer holds the engine against a brake and measures torque as the speed climbs. A pull is a full-throttle sweep through the rpm range.","Certification in career happens on the dyno, and the dyno's own capacity limits what you can certify.","sae,torque"],
 ["redline","Redline","redline|rev limit","The redline is the highest rpm the engine is set to run. Beyond it the valvetrain floats and piston speeds, rod loads and friction climb sharply.","It trades peak power rpm against the life and the valve float margin of the build.","valvefloat,pistonspeed"],
-["turbine","Turbine inlet temperature","turbine temp|turbine inlet|turbine inlet temp|hot-side|hot side","The exhaust temperature at the turbine wheel. Wheels are cast iron, nickel alloys or ceramics, and each has a temperature past which it creeps and fails.","Hot-side material limits how hot the engine can run under boost.","egt,wastegate"]
+["turbine","Turbine inlet temperature","turbine temp|turbine inlet|turbine inlet temp|hot-side|hot side","The exhaust temperature at the turbine wheel. Wheels are cast iron, nickel alloys or ceramics, and each has a temperature past which it creeps and fails.","Hot-side material limits how hot the engine can run under boost.","egt,wastegate"],
+["twostroke","Two-stroke","two-stroke|two-strokes|2-stroke","A two-stroke fires every cylinder on every turn of the crank. There are no intake and exhaust strokes: the piston itself uncovers ports in the cylinder wall near the bottom of its travel, the exhaust blows down, and fresh charge pushed up the transfer ports from the crankcase (or by a blower) sweeps the rest out.","Twice the power strokes and no valvetrain make it light and strong for its size; the price is the charge that escapes straight out of the exhaust, and a narrower band.","scavenge,pipe,premix"],
+["scavenge","Scavenging, delivery and trapping","scavenging|delivery ratio|trapping efficiency|short-circuits|short-circuit|loop-scavenged|uniflow","Scavenging is clearing the burnt gas out of a two-stroke's cylinder with fresh charge. The delivery ratio is how much fresh charge is pushed through per swept volume; the trapping efficiency is the share of it still inside when the exhaust port closes. The rest short-circuits out of the exhaust.","Loop scavenging aims the charge away from the exhaust; uniflow (Detroit, Napier) sweeps it straight up the bore and out of valves at the top, which traps the most but needs a blower.","twostroke,pipe"],
+["pipe","Expansion chamber","expansion chamber|expansion chambers|tuned pipe|on the pipe","A two-stroke exhaust built as a long diverging cone, a belly and a converging cone. The diverging cone sends back a suction wave that pulls the cylinder empty; the converging cone sends back a pressure wave that pushes escaping charge back in just before the port closes.","It only works at the rpm it is cut for, which is why a racing two-stroke 'comes on the pipe' with a hit. A hot pipe carries its waves faster, so lean running moves the tune up and rich running moves it down.","twostroke,scavenge"],
+["premix","Premix","premix|premix ratio","Two-stroke oil mixed into the fuel, at ratios from about 20:1 to 100:1. On a crankcase-scavenged engine there is no oil in the crankcase; the bearings, rings and skirt are oiled by what the mixture leaves behind.","Rich ratios smoke and foul plugs; lean ones free up a little friction and then seize the piston. An oil-injection pump meters by load instead.","twostroke"],
+["powervalve","Power valve","power valve|power valves|YPVS|RAVE","A guillotine or drum in a two-stroke's exhaust port that lowers the port roof at low rpm and lifts it on the pipe, so a racing port timing still pulls from low down.","It widens the band of a peaky two-stroke without giving up the top end.","pipe,twostroke"]
 ];
 /* Known terms in the text of a few containers get a dotted underline (first use per block). Tap (or hover on desktop) for a small card.
    Never inside inputs or buttons (the stress report's open explanations excepted), and S.gloss===false turns the whole pass off. */
@@ -22750,7 +23737,8 @@ function tick(now){
   const L=LAYOUTS[S.cfg.layout];
   let rpm=run.rpm,load=run.load,on=run.on;
   const rotP=isRot(S.cfg)?(SIM.OPT.rotPort[S.cfg.rotPort]||SIM.OPT.rotPort.side):null,camV=rotP?30+75*rotP.overlap:S.cfg.cam;   // a rotary's port overlap plays the part of a cam
-  if(!testing){const idleBase=rotP?rotP.idle:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
+  const tsIdle=!rotP&&isTs(S.cfg)&&quick&&quick.twoStroke?quick.twoStroke.idleRpm:0;
+  if(!testing){const idleBase=rotP?rotP.idle:tsIdle?tsIdle:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
   /* the picture follows the rpm with inertia: a test ending or a stall spins down instead of freezing */
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
