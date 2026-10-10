@@ -1221,6 +1221,21 @@ const ENGINE_SIM = (function () {
     inconel: { name: "Inconel 713C hot end", sub: "1050 C max EGT", info: "A full nickel superalloy hot side. Necessary once you run lean, or pull timing to hold back knock under boost.", maxEgtC: 1050, cost: 1400, req: "shop2" }
   };
 
+  /* ---- turbine housing geometry: fixed nozzle, or a ring of pivoting vanes (VGT / VNT) ----
+     Vanes nearly shut at low exhaust flow make a small, fast turbine (early boost, more drive pressure); swung
+     open up top they make a big one (less backpressure). Diesel exhaust is cool enough for a steel vane ring;
+     on petrol the ring has to be a superalloy and still has a lower ceiling than the housing around it. */
+  OPT.turbine = {
+    fixed: { name: "Fixed-geometry turbine", sub: "one A/R  wastegated", info: "One housing size, chosen as a compromise: small enough to spool, big enough not to choke the top end. A wastegate bleeds off what it can't use.", cost: 0 },
+    vgt: { name: "Variable-geometry (VGT)", sub: "vanes  spool x0.70-0.78", info: "A ring of pivoting vanes in the turbine nozzle. Closed at low revs they act like a tiny housing and light the turbo early; open at high revs they flow like a big one. Standard on modern diesels. On petrol the exhaust is a few hundred degrees hotter, so the vanes must be a superalloy (the Porsche 997 Turbo was first) and they still have a lower limit than the housing. Soot from a smoky tune glues them in place.", cost: 1500, costPetrol: 3600, vaneEgtC: { cast_iron: 880, inconel: 1000 }, req: "shop2" }
+  };
+  /* ---- anti-lag (ECU + plumbing, petrol turbos): fire fuel in the manifold so the turbine keeps turning with the throttle shut ---- */
+  OPT.als = {
+    off: { name: "No anti-lag", sub: "turbo coasts down", info: "Lift off and the turbine loses its exhaust: the wheel slows, the blow-off dumps the charge and boost has to build again on the next throttle.", cost: 0 },
+    ignition: { name: "Ignition-retard ALS", sub: "bangs  holds ~55%", info: "Off throttle the ECU leaves the throttle cracked, retards the spark 20-40° and richens the mixture, so the charge is still burning as it leaves the port and keeps the turbine spinning. Loud bangs and flames from the pipe. It keeps about half the boost through a shift, at the cost of enormous turbine heat.", cost: 900, hold: 0.55, line: 0.38, energy: 0.85, egtAdd: 130, fuel: 0.06, dose: 0.25, req: "boost" },
+    air: { name: "Secondary-air ALS", sub: "rally  holds ~75%", info: "The Group A rally system: a bypass valve feeds fresh air straight into the exhaust manifold, where it meets the rich, late-burning charge and burns ahead of the turbine. More effective than retard alone, and more violent — turbines and manifolds are a consumable at this level.", cost: 2400, hold: 0.75, line: 0.55, energy: 1.15, egtAdd: 190, fuel: 0.12, dose: 0.40, req: "race" }
+  };
+
   /* ---- intercooler ---- */
   OPT.ic = {
     none: { name: "No intercooler", sub: "eff 0%  dP 0.00 bar", info: "Compressor discharge goes straight into the manifold. The charge arrives hot, which costs you density and all of your knock margin.", eff: 0.0, dp: 0.0, soak: 0, massKg: 0, cost: 0 },
@@ -1494,6 +1509,8 @@ const ENGINE_SIM = (function () {
           unit: "bar", fmt: f2, showIf: isBoosted },
         { key: "turboSize", type: "seg", label: "Turbo size", optTable: "turboSize", showIf: (c) => isBoosted(c) && (OPT.asp[c.asp].kind === "turbo" || OPT.asp[c.asp].kind === "centrifugal") },
         { key: "turbineMat", type: "seg", label: "Hot-side material", optTable: "turbineMat", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" },
+        { key: "turbine", type: "seg", label: "Turbine geometry", optTable: "turbine", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" },
+        { key: "als", type: "seg", label: "Anti-lag", optTable: "als", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" && !isDiesel(c) },
         { key: "ic", type: "seg", label: "Charge cooler", optTable: "ic", showIf: isBoosted },
         { key: "exhaust", type: "seg", label: "Exhaust manifold", optTable: "exhaust" }
       ]
@@ -1567,7 +1584,8 @@ const ENGINE_SIM = (function () {
     oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "none",
     cooling: "std", exhaust: "cast_tubular", cover: "black",
     launchCtl: "none", twoStepRpm: 4000, launchRetard: 20, transBrake: "none",
-    pipe: "stock", muffler: "stock", cat: "none", cutout: "none"
+    pipe: "stock", muffler: "stock", cat: "none", cutout: "none",
+    turbine: "fixed", als: "off"
   };
 
   const DEFAULT_ENV = {
@@ -1676,6 +1694,10 @@ const ENGINE_SIM = (function () {
     if (units === 2) spool *= 0.78;                       // half the flow per unit
     if (compound) spool *= 0.70;                          // the small stage lights first
     spool *= Math.pow(1 + cfg.boost * 0.30, 0.55);         // more boost = later spool
+    if (cfg.turbine === "vgt" && asp.kind === "turbo") {     // vanes shut: a small fast turbine at low flow; open: the big housing's choke point
+      const spool0 = clamp(spool, 1200, 7000);
+      return { kind: asp.kind, spool: clamp(spool * (isDiesel(cfg) ? 0.70 : 0.78), 900, 7000), spool0: spool0, vgt: 1, target: cfg.boost, asp: asp, ts: ts, units: units, compound: compound };
+    }
     return { kind: asp.kind, spool: clamp(spool, 1200, 7000), target: cfg.boost, asp: asp, ts: ts, units: units, compound: compound };
   }
 
@@ -1699,7 +1721,7 @@ const ENGINE_SIM = (function () {
     }
     // turbo: first-order lag on turbine energy, then compressor choke roll-off
     let b = bm.target * (1 - Math.exp(-3.0 * Math.pow(rpm / bm.spool, 2.2)));
-    const chokeRpm = bm.spool * (2.55 * bm.ts.chokeFac);
+    const chokeRpm = (bm.vgt ? bm.spool0 * 1.06 : bm.spool) * (2.55 * bm.ts.chokeFac);   // open vanes flow a touch more than the fixed housing
     if (rpm > chokeRpm) b *= clamp(1 - 0.55 * sq((rpm - chokeRpm) / (1.5 * chokeRpm)), 0.30, 1);
     return Math.max(0, b);
   }
@@ -1934,6 +1956,11 @@ const ENGINE_SIM = (function () {
     const tmgAt = rpm => MAP ? mapLook(MAP, MAP.ign, rpm, 100 * mapLd) : cfg.timing;
     const lamAt = rpm => MAP ? mapLook(MAP, MAP.lam, rpm, 100 * mapLd) : cfg.lambda;
     const mgnCurve = [], rtdCurve = [];
+    /* VGT: vane opening 0 (shut, at the spool point) .. 1 (wide open), and the drive pressure that goes with it */
+    const vaneOpen = rpm => clamp((rpm - bm.spool) / (1.4 * bm.spool), 0, 1);
+    const vaneBack = rpm => { const o = vaneOpen(rpm); return 1 + 0.35 * sq(1 - o) - 0.15 * o; };   // shut: ~1.35x the drive pressure; open: less than the fixed housing
+    const vgtO = bm.vgt ? OPT.turbine.vgt : null;
+    const alsO = bm.kind === "turbo" && !dsl && OPT.als[cfg.als] && cfg.als !== "off" ? OPT.als[cfg.als] : null;
     /* ---- nitrous ----------------------------------------------------
        The shot is quoted in crank hp. Convert to the extra indicated work
        per cycle it puts in the cylinder, then let every downstream number
@@ -2134,7 +2161,7 @@ const ENGINE_SIM = (function () {
       if (boosted && (bm.kind === "turbo")) {
         // turbine backpressure: exhaust manifold pressure ratio vs compressor
         const backFac = O.ts.backP * O.exh.backP * (bm.units === 2 ? 0.82 : 1.0) * (bm.compound ? 1.30 : 1.0) * (dsl ? 0.75 : 1);   // diesel turbos run near-matched drive pressure
-        const pExh = air.p + bBar * 1e5 * backFac;
+        const pExh = air.p + bBar * 1e5 * backFac * (bm.vgt ? vaneBack(rpm) : 1);
         pmep = (pExh - pMan);
       } else if (boosted) {
         const pExh = air.p * (1 + 0.16 * O.exh.backP * sq(rpm / redline));
@@ -2591,6 +2618,23 @@ const ENGINE_SIM = (function () {
       ) : "No turbine in the exhaust stream.",
       "Fit an Inconel hot side, richen the mixture, or remove the knock retard that is raising EGT.");
 
+    if (vgtO) {
+      // diesel: soot cakes the vane ring and it sticks (usually shut: overboost, then limp mode); petrol: the vanes' own heat limit
+      const vLim = dsl ? 0 : (vgtO.vaneEgtC[cfg.turbineMat] || 880);
+      T("vgt_vanes", "VGT vane ring", dsl ? "smoke " + Math.round(smokePk * 100) + "%" : maxEgt.toFixed(0) + " / " + vLim + " °C",
+        dsl ? 0.30 + 0.95 * smokePk : maxEgt / vLim,
+        dsl ? ("Peak smoke is about " + Math.round(smokePk * 100) + "% opacity. Soot builds up on the vanes and their pivots; a smoky tune glues them shut, and a stuck-closed VGT overboosts and then goes into limp mode.")
+          : ("The vane ring sees " + maxEgt.toFixed(0) + " °C; with a " + (cfg.turbineMat === "inconel" ? "superalloy" : "cast") + " hot side the vanes are good to about " + vLim + " °C before they warp and bind. Petrol runs several hundred degrees hotter than diesel, which is why petrol VGTs are rare and expensive."),
+        dsl ? "Turn the fuel down to the smoke limit, or richen the air: more boost, a bigger turbo, finer injection." : "Inconel hot side, a richer mixture, or less knock retard. Or a fixed-geometry turbine.");
+    }
+    if (alsO) {
+      const alsC = maxEgt + alsO.egtAdd, aLim = vgtO ? Math.min(O.tm.maxEgtC, vgtO.vaneEgtC[cfg.turbineMat] || 880) : O.tm.maxEgtC;
+      T("als_heat", "Anti-lag turbine heat", Math.round(alsC) + " / " + aLim + " °C",
+        0.88 * alsC / aLim,                                  // in bursts, not continuously
+        "With the throttle shut, " + alsO.name.toLowerCase() + " burns fuel in the manifold to keep the turbo spinning: the turbine inlet spikes to about " + Math.round(alsC) + " °C on every lift. It does nothing on a dyno pull, but on the road or the strip the turbine, the manifold and the exhaust valves wear out far faster.",
+        "An Inconel hot side, a tubular manifold, or ignition-retard ALS instead of secondary air. Or switch it off away from a stage.");
+    }
+
     T("bore_distortion", "Bore roundness", boreDist.toFixed(0) + " / 60 µm",
       boreDist / 60,
       "At " + maxPmax.toFixed(0) + " bar the bore distorts about " + boreDist.toFixed(0) + " µm with this block stiffness (" + O.block.name + (cfg.blockMat.indexOf("alu") === 0 ? ", " + O.deck.name.toLowerCase() : "") + "). Past ~60 µm the rings cannot follow.",
@@ -2705,6 +2749,7 @@ const ENGINE_SIM = (function () {
       + O.ink.cost + O.asp.cost + (boosted ? O.ts.cost + O.tm.cost + O.icc.cost : 0)
       + O.oil.cost + O.osys.cost + O.sq.cost + O.cool.cost + O.exh.cost * L.banks + O.cov.cost
       + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
+      + (vgtO ? (dsl ? vgtO.cost : vgtO.costPetrol) * bm.units : 0) + (alsO ? alsO.cost : 0)
       + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + (gasF ? gs.cost : fpump.cost)
       + (dsl ? dInj.cost + L.n * dNoz.cost : 0)
       + exP.pipe.cost + (exOpenH ? 0 : exRuns * (exP.muf.cost + exP.cat.cost) + exP.cut.cost);
@@ -2789,7 +2834,7 @@ const ENGINE_SIM = (function () {
       lphD = fKg * 3600 / O.fu.dens;
     }
     const econ = dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : gasF ? Math.round(clamp(fuelPow * 3600 / (43.4e6 * 0.745), 2, 60) * 10) / 10   // gas: petrol-equivalent litres by energy
-      : Math.round(clamp(litresPerHour / 100 * 100, 2, 60) * 10) / 10;  // L/100 km at 100 km/h
+      : Math.round(clamp(litresPerHour / 100 * 100 * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10;  // anti-lag burns fuel on every lift  // L/100 km at 100 km/h
 
     let smooth = L.smooth * (1 - 0.10 * L.secondOrder * (g.s / 86))
       - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" ? 2 : 0)
@@ -3372,6 +3417,24 @@ const ENGINE_SIM = (function () {
       add("warn", "Heavy launch retard on a cast manifold", "At " + Math.round(cfg.launchRetard) + "° the turbine inlet climbs past " + (cfg.exhaust === "cast_log" ? 900 : 930) + " °C within a couple of seconds on the limiter, and cast manifolds crack from exactly that heat cycling. Keep the holds short, or fit tubular headers.");
     if (cfg.launchCtl === "two_step_retard" && OPT.asp[cfg.asp].kind === "turbo" && cfg.turbineMat === "cast_iron" && cfg.launchRetard >= 25)
       add("warn", "Ni-resist turbine behind a hot two-step", "The cast turbine housing is good to about 950 °C. Launch retard this heavy gets there in about two seconds on the line — an Inconel hot side takes another hundred degrees.");
+    /* --- turbine geometry and anti-lag ------------------------------------ */
+    const turboK = OPT.asp[cfg.asp].kind === "turbo";
+    if (turboK && cfg.turbine === "vgt") {
+      if (dsl && quick.smoke > 30)
+        add(quick.smoke > 55 ? "bad" : "warn", "VGT on a smoky diesel sticks", "At about " + Math.round(quick.smoke) + "% peak smoke the soot cakes onto the vane ring and its pivots. A sticky VGT hangs shut (overboost, then limp mode) or open (no low-end at all). Fuel it to the smoke limit, or give it the air to burn what it gets.");
+      else if (dsl) add("good", "Variable geometry on a diesel", "Cool, clean diesel exhaust is what VGTs were made for: the vanes shut to light the turbo just off idle and open up top, so one turbo does the job of a small one and a big one.");
+      else if (cfg.turbineMat !== "inconel")
+        add("bad", "VGT needs Inconel on petrol", "Petrol exhaust runs 200-300 °C hotter than diesel. A vane ring in a cast hot side warps and binds at about 880 °C; the production petrol VGTs use superalloy vanes good to about 1,000 °C and still run rich to stay under it.");
+      else add("info", "Petrol VGT", "Superalloy vanes take about 1,000 °C. Earlier boost and a freer top end, at three times the price of a fixed turbine — keep the mixture rich enough that the vanes never see more.");
+    }
+    if (turboK && !dsl && cfg.als && cfg.als !== "off" && OPT.als[cfg.als]) {
+      const ao = OPT.als[cfg.als];
+      add(cfg.als === "air" || cfg.turbineMat !== "inconel" ? "bad" : "warn", "ALS cooks turbos", ao.name + " keeps the turbine spinning by burning fuel in the manifold every time the throttle shuts: the inlet spikes to about " + Math.round(quick.thermals.egtPeakC + ao.egtAdd) + " °C on every lift. Rally teams treat the turbo as a consumable. " + (cfg.turbineMat !== "inconel" ? "On a Ni-resist turbine it is a matter of passes, not seasons." : "Inconel buys time, not immunity."));
+      if (cfg.exhaust === "cast_log" || cfg.exhaust === "cast_tubular")
+        add("warn", "Anti-lag on a cast manifold", "Every bang is a heat cycle on the manifold. Cast manifolds crack from exactly that; a fabricated tubular manifold flexes instead.");
+      if (cfg.launchCtl === "two_step_retard") add("info", "ALS and launch retard together", "On the line the two-step holds the revs and the retard and the anti-lag both heat the turbine — boost comes up fastest, and so does the turbine inlet temperature. Keep the holds short.");
+      else if (cfg.launchCtl === "none") add("info", "Anti-lag without a two-step", "ALS will still build some boost on the line while the driver holds the revs, but a two-step holds them steadier and adds its own heat.");
+    }
     /* --- nitrous kits (the newer kits: dry, stacked plates, diesel) ------ */
     const nk = OPT.nitrous[cfg.nitrous], nz = quick.nitrous;
     if (nk && nz && (nk.kind === "dry" || nk.kind === "diesel" || nk.stageHp)) {
@@ -4100,6 +4163,20 @@ const ENGINE_SIM = (function () {
       }
     }),
     P({
+      id: "p997t", name: "Three-six VGT flat-six", basedOn: "Porsche 997 Turbo 3.6 (Mezger)", cls: "performance",
+      blurb: "100×76.4 dry-sump boxer six, the first petrol engine sold with variable-geometry turbos. Superalloy vanes take 1,000 °C, and it still runs rich to keep them there.",
+      soundProfile: "f6", realHp: 480, realRpm: 6000, realNm: 620,
+      cfg: {
+        layout: "F6", bore: 100, stroke: 76.4, rodRatio: 1.66, cr: 9, blockMat: "alu_nikasil",
+        deck: "closed", headMat: "alu", head: "dohc4v_vvl", valveMat: "sodium", springs: "dual", cam: 50,
+        lift: 58, redline: 6750, piston: "forged_4032", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "arp2000", crank: "forged_4340", damper: "rubber", bearings: "trimetal", gasket: "mls", studs: "arp_studs",
+        intake: "single_tb", asp: "twin_turbo", turboSize: "medium", turbineMat: "inconel", turbine: "vgt", ic: "air_air", boost: 0.85,
+        nitrous: "none", fuel: "r94", timing: 0, lambda: 0.8, injectors: "i650", fuelPump: "p340", oilGrade: "w5_30", oilSystem: "dry",
+        oilSquirters: "fitted", cooling: "uprated", exhaust: "cast_tubular", cover: "black"
+      }
+    }),
+    P({
       id: "m156", name: "Six-two hand-built V8", basedOn: "Mercedes-AMG M156", cls: "performance",
       blurb: "102.2×94.6 DOHC alloy V8, 11.3:1, bucket tappets and a 7,200 rpm cut. The last big naturally aspirated AMG.",
       soundProfile: "v8_crossplane", realHp: 451, realRpm: 6800, realNm: 600,
@@ -4368,6 +4445,20 @@ const ENGINE_SIM = (function () {
       }
     }),
     P({
+      id: "psd67", name: "Six-seven VGT V8", basedOn: "Ford 6.7 Power Stroke (Scorpion)", cls: "diesel",
+      blurb: "99×108 compacted-graphite V8 with the exhaust in the valley, 2,000-bar piezo injection and one big variable-geometry turbo. The vanes shut make it pull from just off idle; open, it breathes like a much bigger turbine.",
+      soundProfile: null, realHp: 400, realRpm: 2800, realNm: 1085,
+      cfg: {
+        layout: "V8", bore: 99, stroke: 108, rodRatio: 1.62, cr: 16.2, blockMat: "cgi",
+        deck: "closed", headMat: "alu", head: "dohc4v", valveMat: "steel", springs: "single", cam: 8,
+        lift: 45, redline: 3500, piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls", studs: "bolts_tty",
+        intake: "single_tb", asp: "turbo", turboSize: "huge", turbineMat: "cast_iron", turbine: "vgt", ic: "water_air", boost: 1.7,
+        nitrous: "none", fuel: "diesel", dInj: "cr_piezo", dNoz: "stock", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 1.85,
+        oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "fitted", cooling: "uprated", exhaust: "cast_log", cover: "blue"
+      }
+    }),
+    P({
       id: "alh", name: "One-nine TDI", basedOn: "VW 1.9 TDI ALH", cls: "diesel",
       blurb: "79.5×95.5 iron four with a direct-injection bowl in the piston, a VE pump and a small turbo. Half the fuel of the petrol car it replaced and enough torque to tow it.",
       soundProfile: null, realHp: 90, realRpm: 3750, realNm: 210,
@@ -4520,6 +4611,10 @@ const ENGINE_SIM = (function () {
     res.turbineMat = cfg.turbineMat;
     res.exhaust = cfg.exhaust;
     res.egtLimitC = asp.kind === "turbo" ? (OPT.turbineMat[cfg.turbineMat] || OPT.turbineMat.cast_iron).maxEgtC : 0;
+    // anti-lag and variable geometry only ever add to the pass; with neither fitted nothing below changes
+    res.als = asp.kind === "turbo" && !isDiesel(cfg) && OPT.als[cfg.als] && cfg.als !== "off" ? cfg.als : "off";
+    res.vgt = asp.kind === "turbo" && cfg.turbine === "vgt";
+    if (res.vgt && !isDiesel(cfg)) res.egtLimitC = Math.min(res.egtLimitC, OPT.turbine.vgt.vaneEgtC[cfg.turbineMat] || 880);
     if (asp.kind === "na") res.naTorque = res.torque.slice();
     else {
       const na = simulate(Object.assign({}, cfg, { asp: "na" }), env);
@@ -4574,7 +4669,11 @@ const ENGINE_SIM = (function () {
     const twoStep = lc !== "none", retardOn = lc === "two_step_retard", transBrake = tbk === "trans_brake", lineLock = tbk === "line_lock";
     const retard = retardOn ? clamp(+v.launchRetard || 0, 0, 35) : 0;
     const holdRpm = twoStep && v.twoStepRpm > 0 ? Math.min(v.redline, v.twoStepRpm) : v.launchRpm;
-    const canArm = twoStep || transBrake;
+    /* anti-lag: off throttle (staging, shifts, the lift at the stripe) it keeps burning fuel ahead of the turbine,
+       so the wheel keeps its speed. Only a turbo car with it fitted; "off" leaves every line below as it was. */
+    const ALS = res.als && res.als !== "off" && OPT.als[res.als] && res.aspKind === "turbo" ? OPT.als[res.als] : null;
+    const alsMin = ALS ? Math.max(2200, 0.35 * v.redline) : 0;
+    const canArm = twoStep || transBrake || !!ALS;
     /* ---- nitrous: only when the app hands over the bottle (veh.n2o = {act, psi, line}); otherwise the shot is
        whatever the dyno curve says, exactly as before. act: "window" (the rpm window switch), "mph40", "mph60",
        "shift2" (after the 1-2 shift). line 0..1: how much of the feed line is liquid (purging fills it). ---- */
@@ -4604,9 +4703,9 @@ const ENGINE_SIM = (function () {
     }
     const mm = res.turboMm || 54, VdL = Math.max(0.3, (res.Vd || 2000) / 1000);
     // time constant of the rotating group at full exhaust energy: ~0.2 s for a 46 mm wheel, ~1.2 s for a 98 mm frame
-    const tauBase = (0.2 + 1.0 * clamp((mm - 46) / 52, 0, 1.2)) * (res.turboUnits === 2 && !res.compound ? 0.78 : 1) * clamp(Math.pow(2.5 / VdL, 0.3), 0.55, 1.5);
+    const tauBase = (0.2 + 1.0 * clamp((mm - 46) / 52, 0, 1.2)) * (res.turboUnits === 2 && !res.compound ? 0.78 : 1) * clamp(Math.pow(2.5 / VdL, 0.3), 0.55, 1.5) * (res.vgt ? 0.72 : 1);   // shut vanes spin the wheel up faster
     const pkRpm = res.peakHpRpm || v.redline * 0.85;
-    const sizeK = clamp(1 - 0.7 * (mm - 46) / 52, 0.25, 1) * (res.turboUnits === 2 && !res.compound ? 1.15 : res.compound ? 1.1 : 1);
+    const sizeK = clamp(1 - 0.7 * (mm - 46) / 52, 0.25, 1) * (res.turboUnits === 2 && !res.compound ? 1.15 : res.compound ? 1.1 : 1) * (res.vgt ? 1.2 : 1);
     const dispK = clamp(Math.pow(VdL / 2.5, 0.35), 0.75, 1.5);
     const retFrac = Math.pow(retard / 35, 0.85);
     // what the turbo can be brought to on the line: a spark-cut limiter alone makes little heat to drive it,
@@ -4616,9 +4715,10 @@ const ENGINE_SIM = (function () {
       const rpmK = clamp(r / 4500, 0.6, 1.25);
       let f = (twoStep ? 0.10 + 0.75 * retFrac : 0) * sizeK * dispK * rpmK;
       if (transBrake) f += bssAt(r) / bT * (1 + 0.2 * retFrac);
+      if (ALS) f += ALS.line * sizeK * dispK * rpmK;   // anti-lag on top of whatever the limiter does
       return bT * clamp(f, 0, 1);
     }
-    function lineEnergy() { return clamp((twoStep ? 0.35 : 0.2) + 0.8 * retFrac + (transBrake ? 0.5 : 0), 0.2, 1.3); }
+    function lineEnergy() { return clamp((twoStep ? 0.35 : 0.2) + 0.8 * retFrac + (transBrake ? 0.5 : 0) + (ALS ? ALS.energy * 0.5 : 0), 0.2, ALS ? 1.6 : 1.3); }
     function boostStep(dt, r, load, line) {
       if (!trans) { st.boost = 0; return; }
       if (!isTurbo) {   // crank-driven: the blower makes its boost whenever the throttle is open, and keeps it through a shift
@@ -4626,13 +4726,15 @@ const ENGINE_SIM = (function () {
         st.boost += (tgt - st.boost) * (1 - Math.exp(-dt / 0.05)); return;
       }
       let avail = line != null ? line : bssAt(r) * Math.pow(clamp(load, 0, 1), 1.5);
+      const alsHold = ALS && line == null && load < 0.5 && r > alsMin && st.phase !== "burnout" ? bT * ALS.hold * clamp(r / (0.7 * pkRpm), 0.4, 1) : 0;
+      if (alsHold > avail) avail = alsHold;
       avail = Math.min(avail, bT);
       let tau;
       if (avail > st.boost) {
-        const e = line != null ? lineEnergy() : clamp(r * Math.max(0.15, load) / pkRpm, 0.08, 1.3);
+        const e = line != null ? lineEnergy() : alsHold >= avail && alsHold > 0 ? ALS.energy : clamp(r * Math.max(0.15, load) / pkRpm, 0.08, 1.3);
         tau = tauBase / Math.pow(e, 0.75);
         if (res.compound) tau *= st.boost > 0.5 * bT ? 1.35 : 0.7;   // the small stage lights first, the big one takes over
-      } else tau = 0.35;                                            // wastegate and blow-off dump it
+      } else tau = alsHold > 0 ? 0.9 : 0.35;                        // wastegate and blow-off dump it (anti-lag keeps the wheel turning)
       st.boost += (avail - st.boost) * (1 - Math.exp(-dt / Math.max(0.03, tau)));
       st.boost = clamp(st.boost, 0, bT);
     }
@@ -4648,6 +4750,18 @@ const ENGINE_SIM = (function () {
       armedT: 0, egt: 420 + (+v.soakC || 0), egtPeak: 0, egtLine: 0, turbDose: 0, manDose: 0, lineHeat: 0, launchBoost: 0, launchRpmAct: 0,
       lift: 0, liftMax: 0, onBars: false, wheelieT: 0, conv: false, failKind: null, failAt: Infinity, broke: null, risk: null, gripGain: 0, boost0T: null };
     st.egtPeak = st.egt;
+    st.als = 0; st.alsT = 0; st.alsDose = 0; st.alsBangs = 0;   // anti-lag: firing now 0..1, seconds fired, wear from it, bangs
+    /* anti-lag firing (off throttle above its rpm floor): bangs and flames out of the pipe, a hotter turbine, wear */
+    function alsFire(dt, on, wear) {
+      if (!ALS) return false;
+      const k = on ? (res.als === "air" ? 1 : 0.8) : 0;
+      st.als += (k - st.als) * (1 - Math.exp(-dt / (on ? 0.03 : 0.12)));
+      if (!on) return false;
+      if (wear) { st.alsT += dt; st.alsDose += dt * ALS.dose * clamp(st.egt / Math.max(700, egtLimit), 0.6, 1.4); }
+      // irregular, loud: a bang every 40-140 ms, harder with secondary air
+      if (Math.random() < dt * (res.als === "air" ? 14 : 10)) { st.launch.pops = Math.max(st.launch.pops, (res.als === "air" ? 0.75 : 0.6) + 0.25 * Math.random()); st.alsBangs++; }
+      return true;
+    }
     st.n2oS = NZ ? { line: clamp(v.n2o.line == null ? 0.15 : +v.n2o.line, 0, 1), psi: nzPsi, on: false, onT: null, onMph: 0, onGear: 0, onX: 0, frac: 0, stage2: false, purging: false, purged: 0, puff: 0, event: null, cut: false, lineAtOn: 0, popT: 0 } : null;
     st.n2o = 0;   // the shot's flow right now, 0..1 (the datalog reads it)
     let acc = 0, lastTrace = 0, popT = 0;
@@ -4676,6 +4790,7 @@ const ENGINE_SIM = (function () {
         st.shutFt = (st.x - 402.336) * 3.28084;
         st.rpm = Math.max(v.idle, st.rpm - 2600 * dt); st.load = 0;
         boostStep(dt, st.rpm, 0, null); heat(dt, 520, 3); pops(dt, 0, 0);
+        alsFire(dt, !!ALS && st.rpm > alsMin && st.t - (st.trapT || 0) < 2.5, false);   // the lift at the stripe: a last volley
         if (st.v < 8 || st.t > 40) { st.done = true; st.phase = "done"; }
         return st;
       }
@@ -4702,11 +4817,12 @@ const ENGINE_SIM = (function () {
           st.rpm += (holdRpm + wav - st.rpm) * (1 - Math.exp(-dt / 0.04));
           st.load = transBrake ? 1 : retardOn ? 0.45 : 0.3;
           boostStep(dt, holdRpm, st.load, lineTarget(holdRpm));
-          heat(dt, 690 + (retardOn ? 11.5 * retard : twoStep ? 40 : 0) + (transBrake ? 80 : 0), transBrake ? 0.9 : 1.1);
+          heat(dt, 690 + (retardOn ? 11.5 * retard : twoStep ? 40 : 0) + (transBrake ? 80 : 0) + (ALS ? 1.2 * ALS.egtAdd : 0), transBrake ? 0.9 : 1.1);
           pops(dt, twoStep ? 6 + 12 * retard / 35 : 0, twoStep ? 0.45 + 0.55 * retard / 35 : 0);
+          alsFire(dt, true, true);
         } else {
           st.rpm = v.launchRpm + Math.sin(st.t * 60) * 90; st.load = 0.35;
-          boostStep(dt, st.rpm, st.load, null); heat(dt, 620, 2.5); pops(dt, 0, 0);
+          boostStep(dt, st.rpm, st.load, null); heat(dt, 620, 2.5); pops(dt, 0, 0); alsFire(dt, false);
         }
         return st;
       }
@@ -4716,7 +4832,9 @@ const ENGINE_SIM = (function () {
       if (inShift) { st.shiftT -= dt; st.load = 0; if (st.shiftT <= 0 && !st.conv) st.slipping = true; }
       else st.load = 1;
       boostStep(dt, st.rpm, st.load, null);
-      heat(dt, hasEgtCurve ? interp(res.egtCurve, st.rpm) : 850, 1.5); pops(dt, 0, 0);
+      const alsOn = !!ALS && inShift && st.rpm > alsMin;
+      heat(dt, (hasEgtCurve ? interp(res.egtCurve, st.rpm) : 850) + (alsOn ? ALS.egtAdd * 1.6 : 0), alsOn ? 0.5 : 1.5); pops(dt, 0, 0);
+      alsFire(dt, alsOn, true);
       if (trans && st.boost0T == null && st.boost >= 0.75 * bT) st.boost0T = st.t;
       if (st.failKind && st.t >= st.failAt) { st.broke = st.failKind; st.phase = "done"; st.done = true; st.load = 0; return st; }
       let Teng = inShift ? 0 : engTq(st.rpm);
@@ -4764,7 +4882,7 @@ const ENGINE_SIM = (function () {
       for (const sh of st.shifts) if (sh.min == null || st.t - sh.t < 0.7) sh.min = Math.min(sh.min == null ? 99 : sh.min, st.boost);
       for (const [d, n] of DRAG_MARKS) if (st.x >= d && !st.marks.find(m => m.n === n)) st.marks.push({ n: n, d: d, t: +st.t.toFixed(3), mph: +(st.v * 2.23694).toFixed(1) });
       if (st.t - lastTrace >= 0.05) { lastTrace = st.t; st.trace.push([+st.t.toFixed(2), Math.round(st.x), +(st.v * 2.23694).toFixed(1), Math.round(st.rpm), st.gear, st.spin ? 1 : 0, +st.boost.toFixed(2), +(driveRpm / ratio * 2 * Math.PI * rw / 60 * 2.23694).toFixed(1), Math.round(st.egt), inShift ? 0 : 1, +(st.n2o || 0).toFixed(2)]); }   // [7] driveshaft speed as mph (above [2] = tyres spinning), [8] EGT C, [9] throttle, [10] nitrous flow 0..1 (datalog)
-      if (st.x >= 402.336) { st.trap = st.v * 2.23694; st.trapRpm = st.rpm; st.trapGear = st.gear; st.phase = "shutdown"; st.chuteOut = !!v.chute; st.load = 0; }
+      if (st.x >= 402.336) { st.trap = st.v * 2.23694; st.trapRpm = st.rpm; st.trapGear = st.gear; st.trapT = st.t; st.phase = "shutdown"; st.chuteOut = !!v.chute; st.load = 0; }
       else if (st.t > 40) { st.done = true; st.phase = "done"; st.load = 0.1; }
       return st;
     }
@@ -4825,7 +4943,7 @@ const ENGINE_SIM = (function () {
       const reasons = [];
       const C0 = n => Math.round(n).toLocaleString("en-CA");
       if (st.broke || st.risk && (st.risk.turbo > 0 || st.risk.manifold > 0) || st.lineHeat > 0.8) {
-        const held = st.armedT, how = `Held the ${retardOn ? "two-step" : twoStep ? "two-step" : "trans-brake"} for ${held.toFixed(1)} s${retardOn ? " at " + Math.round(retard) + "°" : ""}${transBrake && twoStep ? " on the trans-brake" : ""}`;
+        const held = st.armedT, how = `Held the ${retardOn ? "two-step" : twoStep ? "two-step" : transBrake ? "trans-brake" : "anti-lag"} for ${held.toFixed(1)} s${retardOn ? " at " + Math.round(retard) + "°" : ""}${transBrake && twoStep ? " on the trans-brake" : ""}`;
         const eL = Math.round(Math.max(st.egtLine, 0) / 5) * 5, peak = `turbine inlet hit ${C0(eL)} °C`;
         if (st.broke === "manifold") reasons.push(`${how} — ${MH && isTurbo ? peak : "the exhaust hit " + C0(eL) + " °C"}; the ${MH ? MH.n + " cracked " + MH.where : "manifold cracked"}. About a second on the limiter is plenty — every one after that is heat the ${MH ? MH.n : "manifold"} has to swallow.`);
         else if (st.broke === "turbo") reasons.push(`${how} — ${peak}, past the ${(OPT.turbineMat[res.turbineMat] || OPT.turbineMat.cast_iron).name}'s ${C0(egtLimit)} °C limit. The turbine wheel let go the moment it saw full load. Less retard, a shorter hold, or an Inconel hot side.`);
@@ -4842,6 +4960,7 @@ const ENGINE_SIM = (function () {
           else reasons.push(`Held ${st.armedT.toFixed(1)} s and still left on only ${lb.toFixed(1)} of ${bT.toFixed(1)} bar — the ${unit} is a lot of wheel to spin up at ${C0(holdRpm)} rpm. More retard, a higher hold rpm, or a smaller frame.`);
         }
         const dips = st.shifts.filter(x => x.boost > 0.3 && x.min != null).map(x => x.boost - x.min);
+        if (ALS && st.shifts.length) reasons.push(`${ALS.name} kept ${alsShiftMin() != null ? alsShiftMin().toFixed(1) : "—"} of ${bT.toFixed(1)} bar through the shifts and fired for ${st.alsT.toFixed(1)} s — the turbine paid for it with ${st.alsDose.toFixed(1)} pass${st.alsDose >= 1.05 ? "es" : ""} of extra wear.`);
         if (dips.length && dips.reduce((a, b) => a + b, 0) / dips.length > 0.3 * bT) reasons.push(`Each shift dumped about ${(dips.reduce((a, b) => a + b, 0) / dips.length).toFixed(1)} bar and the ${unit} had to build it again — that lag between gears is the price of a big frame.`);
       }
       if (v.burnout && (v.tyre === "radial" || v.tyre === "slick")) {
@@ -4877,10 +4996,13 @@ const ENGINE_SIM = (function () {
       const thousand = st.marks.find(m => m.n === "1000 ft"), three = st.marks.find(m => m.n === "330 ft");
       return { et: q ? q.t : null, mph: q ? q.mph : null, eighth: e || null, sixty: s || null, ft330: three || null, ft1000: thousand || null, marks: st.marks, trace: st.trace, shifts: st.shifts, spinTime: +st.spinTime.toFixed(2), limiterTime: +st.limiterTime.toFixed(2), overrev: +st.overrev.toFixed(3), bog: st.bog, shutFt: Math.round(st.shutFt), chute: !!v.chute, body: v.body, reasons: reasons, veh: v, ratios: ratios.map(r => +r.toFixed(2)),
         launch: { ctl: lc, brake: tbk, holdRpm: twoStep ? holdRpm : 0, retard: retard, held: +st.armedT.toFixed(2), boost: +st.launchBoost.toFixed(2), boostTarget: bT, rpm: st.launchRpmAct, tyreTemp: +st.tyreTemp.toFixed(2), burnT: +st.burnT.toFixed(1), grip: +(st.gripGain * 100).toFixed(1), egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), boostT: st.boost0T != null ? +st.boost0T.toFixed(2) : null },
-        heat: { egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), turbDose: +st.turbDose.toFixed(2), manDose: +st.manDose.toFixed(2), risk: st.risk, lineHeat: +st.lineHeat.toFixed(2), abuse: +clamp(st.lineHeat * 0.5, 0, 2.5).toFixed(2), limitC: egtLimit || null, manifold: MH ? MH.n : null },
+        heat: { egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), turbDose: +st.turbDose.toFixed(2), manDose: +st.manDose.toFixed(2), risk: st.risk, lineHeat: +st.lineHeat.toFixed(2), abuse: +clamp(st.lineHeat * 0.5 + st.alsDose, 0, 2.5).toFixed(2), limitC: egtLimit || null, manifold: MH ? MH.n : null },
         n2o: NZ ? { kit: NZ.kind, shotHp: NZ.shotHp, act: nzAct, psi: Math.round(st.n2oS.psi), psiK: +nzPsiK.toFixed(3), on: st.n2oS.on, onT: st.n2oS.on ? +st.n2oS.onT.toFixed(2) : null, onMph: Math.round(st.n2oS.onMph), onGear: st.n2oS.onGear, onFt: Math.round(st.n2oS.onX * 3.28084), purged: +st.n2oS.purged.toFixed(1), lineAtOn: +st.n2oS.lineAtOn.toFixed(2), cut: st.n2oS.cut, risk: st.risk ? { lean: st.risk.lean, backfire: st.risk.backfire } : null } : null,
-        broke: st.broke, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2) };
+        broke: st.broke, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2),
+        als: ALS ? { type: res.als, fired: +st.alsT.toFixed(2), dose: +st.alsDose.toFixed(2), bangs: st.alsBangs, shiftMin: alsShiftMin() } : null };
     }
+    // lowest boost in the 0.7 s after each shift, averaged: what the anti-lag kept in the manifold
+    function alsShiftMin() { const m = st.shifts.filter(x => x.min != null).map(x => x.min); return m.length ? +(m.reduce((a, b) => a + b, 0) / m.length).toFixed(2) : null; }
     function Fmax0() { const m = mu * (1 + st.gripGain) * tuneGrip(0.3); return bite * m * v.mass * g * v.rearBias / Math.max(0.3, 1 - m * v.cgH / v.wheelbase); }
     return { st: st, step: step, launch: launch, shift: shift, result: result, ratios: ratios, burn: burn, stage: stage, arm: arm, disarm: disarm, canArm: canArm, holdRpm: holdRpm, purge: purge, n2o: NZ };
   }
@@ -5013,7 +5135,7 @@ const ENGINE_SIM = (function () {
     }
     const isTurbo = trans && kind === "turbo", tqCap = Math.max.apply(null, tq) * 1.06;
     const mm = res.turboMm || 54;
-    const tauBase = (0.25 + 1.0 * clamp((mm - 46) / 52, 0, 1.2)) * (res.turboUnits === 2 && !res.compound ? 0.78 : 1) * clamp(Math.pow(2.5 / VdL, 0.3), 0.55, 1.5);
+    const tauBase = (0.25 + 1.0 * clamp((mm - 46) / 52, 0, 1.2)) * (res.turboUnits === 2 && !res.compound ? 0.78 : 1) * clamp(Math.pow(2.5 / VdL, 0.3), 0.55, 1.5) * (res.vgt ? 0.72 : 1);   // VGT: shut vanes spin it up faster
     const pkRpm = res.peakHpRpm || v.redline * 0.85;
     const bssAt = r => trans ? Math.max(0, interp(res.boostCurve, r)) : 0;
     function fullTq(r) {
@@ -6197,7 +6319,8 @@ const ENGINE_SOUND = (function () {
     try { watchAn.getFloatFrequencyData(watchBuf); } catch (e) { return null; }
     var binHz = ctx.sampleRate / watchAn.fftSize, best = -200, bi = 0, lo = -200, i;
     for (i = 1; i < watchBuf.length; i++) { if (watchBuf[i] > best) { best = watchBuf[i]; bi = i; } if (i * binHz < 420 && watchBuf[i] > lo) lo = watchBuf[i]; }
-    return { hz: Math.round(bi * binHz), db: Math.round(best), lo: Math.round(lo), state: ctx.state, sr: ctx.sampleRate };
+    var amp = 0; try { if (!peak.td) peak.td = new Float32Array(watchAn.fftSize); watchAn.getFloatTimeDomainData(peak.td); for (i = 0; i < peak.td.length; i++) amp = Math.max(amp, Math.abs(peak.td[i])); } catch (e) {}
+    return { hz: Math.round(bi * binHz), db: Math.round(best), lo: Math.round(lo), amp: +amp.toFixed(3), state: ctx.state, sr: ctx.sampleRate };   // amp: sample peak over the last ~43 ms (catches a bang)
   }   /* lite: no reverb, no valvetrain/gear layer — cheaper and never shrill on a phone speaker */
   function setQuality(q) { LITE = (q === "lite"); if (wetG && dryG) { ap(wetG.gain, LITE ? 0 : (curProf ? curProf.wet : 0.18), 0.1); ap(dryG.gain, LITE ? 1 : (1 - (curProf ? curProf.wet : 0.18) * 0.6), 0.1); } }
   var master = null, limiter = null, bus = null, conv = null, wetG = null, dryG = null;
@@ -6647,6 +6770,15 @@ const ENGINE_SOUND = (function () {
     var popV = clamp(num(o.pops, 0), 0, 1), tNow = ctx.currentTime;
     if (live && !dz && popV > (st.popV || 0) + 0.12 && tNow - (st.popT || -9) > (LITE ? 0.2 : 0.12)) { st.popT = tNow; pop(0.22 + 0.55 * popV); }
     st.popV = popV;
+    /* anti-lag: fuel lit in the manifold with the throttle shut. Loud, irregular detonations, never a steady
+       rhythm: a bang every 35-250 ms while it fires (o.als 0..1 = how hard; secondary air is the harder one) */
+    var alsV = (live && !dz) ? clamp(num(o.als, 0), 0, 1) : 0;
+    if (alsV > 0.05) {
+      if (tNow >= (st.alsT || 0)) {
+        st.alsT = tNow + (0.035 + 0.22 * Math.random() * Math.random()) / (0.5 + 0.5 * alsV) * (LITE ? 1.4 : 1);
+        alsBang(alsV * (0.7 + 0.3 * Math.random()));
+      }
+    } else st.alsT = tNow + 0.04;
     /* tyre scream: a burnout is loud, wheelspin on the run less so */
     var tyre = live ? clamp(num(o.tyre, 0), 0, 1) : 0;
     if (tyre > 0.01) { st.tyreWob = (st.tyreWob || 0) + 0.07 + Math.random() * 0.05;
@@ -6862,6 +6994,25 @@ const ENGINE_SOUND = (function () {
     reap([o, sh, g], 0.13);
   }
 
+  /* one anti-lag detonation: a deep shaped thump, a broadband crack and a boom tail, louder than an overrun pop */
+  function alsBang(amp) {
+    if (!ctx || !bus) return;
+    st.alsN = (st.alsN || 0) + 1;
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator(); o.type = "triangle";
+    o.frequency.setValueAtTime(110 + Math.random() * 90, t);
+    o.frequency.exponentialRampToValueAtTime(34, t + 0.11);
+    var g = ctx.createGain(); g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.55 * amp, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    var sh = ctx.createWaveShaper(); sh.curve = makeCurve();
+    o.connect(sh); sh.connect(g); g.connect(bus);
+    o.start(t); o.stop(t + 0.18);
+    noiseVoice(0.05, "bandpass", 1100 + Math.random() * 1600, 0.8, 0.34 * amp);   // the crack
+    if (!LITE || Math.random() < 0.5) noiseVoice(0.22, "lowpass", 320 + Math.random() * 160, 0.7, 0.30 * amp);   // the boom off the pipe
+    reap([o, sh, g], 0.19);
+  }
+
   function starterCrank(dur) {
     var t = ctx.currentTime;
     // whirring starter gear
@@ -7015,6 +7166,7 @@ const ENGINE_SOUND = (function () {
     setQuality: setQuality,
     rebuild: function () { rebuildGraph("manual"); },
     solo: solo, peak: peak,
+    alsBangs: function () { return st.alsN || 0; },   // diagnostics: anti-lag detonations played so far
     profiles: profiles,
     // extras (harmless additions, not part of the contract)
     LAYOUTS: LAY,
@@ -11690,6 +11842,19 @@ function n2oPurgeStep(dt){
   while(N2O_FX.acc>=1){ N2O_FX.acc-=1; emit("purge", _n2oA); var q=particles[particles.length-1], u=q.userData, sp=9+Math.random()*7;
     u.vx=_n2oB.x*sp+(Math.random()-0.5)*2.2; u.vy=_n2oB.y*sp+(Math.random()-0.5)*1.6; u.vz=_n2oB.z*sp+(Math.random()-0.5)*2.2; u.life=0.45+Math.random()*0.45; }
 }
+/* anti-lag in the engine view: irregular fireballs out of the exhaust tip while it fires (lift-off, shifts, staging) */
+var ALS_FX = {amt:0, n:0}, _alsP = new THREE.Vector3();
+function alsStep(dt){
+  var a=ALS_FX.amt; if(a<=0.02 || !fxRoot || run.fail) return;
+  if(Math.random() > dt*(GFX==="lite"?7:11)*a) return;
+  _alsP.copy(exhaustPoint()); ALS_FX.n++;
+  var k=0.6+0.6*Math.random()*a, nn=GFX==="lite"?4:8;
+  for(var i=0;i<nn;i++){ _tmpV2.copy(_alsP); _tmpV2.x+=(Math.random()-0.5)*0.25; _tmpV2.z+=(Math.random()-0.5)*0.25; emit("flame", _tmpV2);
+    var q=particles[particles.length-1]; if(q){ var u=q.userData; u.s0*=1.0+k; u.life*=0.8+0.6*Math.random(); u.vx*=2.2; u.vz*=2.2; u.vy*=1.4; } }
+  if(Math.random()<0.5) emit("smokeGrey", _alsP);
+  flashAt(_alsP, 0xff8a30, 1.8+2.6*k*a);
+  if(camState) camState.shake=Math.max(camState.shake, 0.04*a);
+}
 function emit(kind, pos){
   var mat, life, scale, vy;
   var K2 = PKIND[kind];
@@ -12160,6 +12325,7 @@ function tick(dt, t){
     if(run.fail) stepFail(dt);
     else if(failFx.debris.length) stepDebris(dt);
     n2oPurgeStep(dt);
+    alsStep(dt);
     stepParticles(dt);
   }
 }
@@ -14955,6 +15121,7 @@ const ENGINE_VIS = {
   stripPb: function(k){ if(k!==undefined){ STRIP.pb=k||0; STRIP.pbCut=0; if(k) STRIP.cheer=Math.max(STRIP.cheer, k>1?2.4:1.7); }
     return {pb:STRIP.pb||0, shot:STRIP.shot, cheer:+STRIP.cheer.toFixed(2)}; },   /* no argument: just report (harness) */
   purge: function(sec){ N2O_FX.t=Math.max(N2O_FX.t, sec==null?0.6:+sec); },
+  als: function(a){ if(a!==undefined) ALS_FX.amt=Math.max(0,Math.min(1,+a||0)); return {amt:ALS_FX.amt, bursts:ALS_FX.n}; },   /* engine view anti-lag: 0..1 while it fires; no argument just reports */
   stripN2O: function(s){ STRIP.n2oSt=s||null; },   /* strip car nitrous: {purge 0..1, n2o 0..1, cut, phase} */   /* engine view: puff the nitrous purge for sec seconds */
   hasPurge: function(){ return !!(N2O_PURGE && N2O_PURGE.parent); },
   skipCut: function(){ if(STRIP.shot==="crowd") STRIP.pbCut=2; },   /* a tap during the crowd cut goes back to the car */
@@ -15374,7 +15541,7 @@ function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===
 function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
 function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
-const HASH_DEF={pipe:"stock",muffler:"stock",cat:"none",cutout:"none"};   // the exhaust system at its defaults is the engine every older hash was made from
+const HASH_DEF={pipe:"stock",muffler:"stock",cat:"none",cutout:"none",turbine:"fixed",als:"off"};   // the exhaust system at its defaults is the engine every older hash was made from
 function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
@@ -15395,7 +15562,7 @@ function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");c
 const ZONE_OF={rod_tension:1,rod_buckling:1,rod_bolts:1,crank_fatigue:1,bearing_load:1,oil_film:1,
   detonation:2,preignition_egt:2,piston_speed:2,crown_temp:2,crown_pressure:2,hot_clearance:2,slap_blowby:2,ring_gap:2,bore_distortion:2,wall_thickness:2,
   head_lift:3,gasket_shear:3,valve_float:3,valve_piston:3,cooling:3,valve_temp:4,turbine_temp:5,compressor_map:5,oil_starvation:6,torsional:7};
-ZONE_OF.fuel_delivery=2;ZONE_OF.cold_start=2;
+ZONE_OF.fuel_delivery=2;ZONE_OF.cold_start=2;ZONE_OF.vgt_vanes=5;ZONE_OF.als_heat=5;
 const ZONE_NAME={1:"Crankcase & rotating assembly",2:"Cylinders & pistons",3:"Head, gasket & valvetrain",4:"Exhaust",5:"Turbocharger",6:"Sump & oiling",7:"Front drive & damper"};
 function heatZones(){if(!quick)return null;const worst={};for(const t of quick.tests){const z=ZONE_OF[t.id];if(!z)continue;if(t.id==="turbine_temp"||t.id==="compressor_map"){if(S.cfg.asp==="na")continue;}
     if(!worst[z]||t.util>worst[z])worst[z]=t.util;}
@@ -15626,6 +15793,7 @@ const FOCUS_OF={bore:"engine",stroke:"engine",cr:"engine",rodRatio:"engine",bloc
 Object.assign(FOCUS_OF,{launchCtl:"exhaust",launchRetard:"exhaust",twoStepRpm:"exhaust"});Object.assign(NOTCH,{twoStepRpm:500,launchRetard:5});
 Object.assign(FOCUS_OF,{injectors:"intake",fuelPump:"intake"});
 Object.assign(FOCUS_OF,{pipe:"exhaust",muffler:"exhaust",cat:"exhaust",cutout:"exhaust"});
+Object.assign(FOCUS_OF,{turbine:"turbo",als:"exhaust"});
 let lastFocus=null;
 function autoFocus(key){if(testing||S.followCam===false)return;let part=FOCUS_OF[key];if(!part)return;if(part==="turbo"&&S.cfg.asp==="na")part="intake";if(part===lastFocus)return;lastFocus=part;ENGINE_VIS.focus(part);}
 function commitSlider(){S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);}
@@ -15710,6 +15878,10 @@ const SPECS={
     ["Flow ceiling",o=>o.maxFlow+" lb/min"],["Spool",o=>o.spoolFac<0.9?"almost instant":o.spoolFac<1.2?"early":o.spoolFac<1.7?"late":"very late"],
     ["Backpressure",o=>x1(o.backP)+"×"]]},
   turbineMat:{specs:[["Exhaust limit",o=>o.maxEgtC+" °C"]]},
+  turbine:{price:o=>o.costPetrol?o.cost.toLocaleString()+" diesel · $"+o.costPetrol.toLocaleString()+" petrol":o.cost,specs:[["Spool",o=>o.vaneEgtC?"30% earlier (diesel), 22% (petrol)":"set by the housing"],["Backpressure",o=>o.vaneEgtC?"high low down, low up top":"fixed by the A/R"],
+    ["Vane limit",o=>o.vaneEgtC?o.vaneEgtC.cast_iron+" °C cast · "+o.vaneEgtC.inconel+" °C Inconel":null],["Watch for",o=>o.vaneEgtC?"soot (diesel), heat (petrol)":null]]},
+  als:{price:o=>o.cost,specs:[["Boost kept",o=>o.hold?"~"+Math.round(o.hold*100)+"% through a lift":"none"],["On the line",o=>o.line?"+"+Math.round(o.line*100)+"% of target":"—"],
+    ["Turbine heat",o=>o.egtAdd?"+"+o.egtAdd+" °C spikes":"—"],["Fuel",o=>o.fuel?"+"+Math.round(o.fuel*100)+"%":"—"],["Dyno",o=>"no effect"]]},
   ic:{specs:[
     ["Removes",o=>o.eff?Math.round(o.eff*100)+"% of charge heat":"nothing"],
     ["Pressure drop",o=>o.dp?Math.round(o.dp*100)+"%":"none"],
@@ -16101,8 +16273,11 @@ function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.a
 let DR=null;
 function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return{mass:e.mass,rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake};}
 /* launch hardware, in words, only when something is fitted */
-function launchLine(cfg,short){const lt=SIM.launchTech(cfg);const b=[];
-  if(short){if(lt.launchCtl!=="none")b.push(`2-step ${(lt.twoStepRpm/1000).toFixed(1)}k${lt.launchCtl==="two_step_retard"?" +"+Math.round(lt.launchRetard)+"°":""}`);if(lt.transBrake!=="none")b.push(lt.transBrake==="trans_brake"?"trans-brake":"line lock");return b.join(" · ");}
+/* anti-lag that will actually fire: a petrol turbo with it fitted */
+function alsOf(cfg){const a=cfg&&cfg.als;return a&&a!=="off"&&OPT.als&&OPT.als[a]&&(OPT.asp[cfg.asp]||{}).kind==="turbo"&&!isCI(cfg.fuel)?a:null;}
+function launchLine(cfg,short){const lt=SIM.launchTech(cfg);const b=[];const als=alsOf(cfg);
+  if(short){if(lt.launchCtl!=="none")b.push(`2-step ${(lt.twoStepRpm/1000).toFixed(1)}k${lt.launchCtl==="two_step_retard"?" +"+Math.round(lt.launchRetard)+"°":""}`);if(lt.transBrake!=="none")b.push(lt.transBrake==="trans_brake"?"trans-brake":"line lock");if(als)b.push(als==="air"?"ALS air":"ALS");return b.join(" · ");}
+  if(als)b.push(als==="air"?"secondary-air anti-lag":"ignition anti-lag");
   if(lt.launchCtl==="two_step")b.push(`two-step ${lt.twoStepRpm.toLocaleString()}`);else if(lt.launchCtl==="two_step_retard")b.push(`two-step ${lt.twoStepRpm.toLocaleString()} · ${Math.round(lt.launchRetard)}° retard`);
   if(lt.transBrake==="trans_brake")b.push("trans-brake");else if(lt.transBrake==="line_lock")b.push("line lock");return b.join(" · ");}
 /* back-to-back launches: the turbine and manifold are still hot from the last hold (kept for the session, not saved) */
@@ -16177,15 +16352,15 @@ function dragStart(){
     else if(st.phase==="staged"){const bT=st.boostTarget;let h="";
       if(R){const bulbs=[dtT>=0,dtT>=0.5,dtT>=1.0,dtT>=1.5];h+=`<div class="peak" style="grid-column:1/-1"><b style="letter-spacing:6px">${bulbs.slice(0,3).map(b=>b?"🟠":"⚫").join("")}${bulbs[3]?"🟢":"⚫"}</b><span>${!st.rolled?"rolling into the beams":dtT<0?"staged — wait for the ambers":dtT<1.5?"…":"GO"}</span></div>`;}
       else h+=`<div class="peak" style="grid-column:1/-1"><b>${st.rolled?"STAGED":"…"}</b><span>${st.rolled?"time trial — leave when you like":"rolling into the beams"}</span></div>`;
-      if(d.canArm)h+=`<div class="peak"><b>${bT>0?bv(st.boost):"—"}<i>${bT>0?pU():""}</i></b><span>${bT>0?"of "+bv(bT)+" on the line":"no boost to build"}</span></div><div class="peak"><b>${st.launch.held.toFixed(1)}<i>s</i></b><span>${st.launch.armed?(st.launch.twoStep?"on the two-step":"on the trans-brake"):"not armed"}</span></div><div class="peak"><b style="color:${st.egt>950?"var(--crit)":st.egt>850?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>turbine inlet</span></div>`;
+      if(d.canArm)h+=`<div class="peak"><b>${bT>0?bv(st.boost):"—"}<i>${bT>0?pU():""}</i></b><span>${bT>0?"of "+bv(bT)+" on the line":"no boost to build"}</span></div><div class="peak"><b>${st.launch.held.toFixed(1)}<i>s</i></b><span>${st.launch.armed?(st.launch.twoStep?"on the two-step":st.launch.transBrake?"on the trans-brake":"ALS armed — foot on the throttle"):"not armed"}</span></div><div class="peak"><b style="color:${st.egt>950?"var(--crit)":st.egt>850?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>turbine inlet</span></div>`;
       $("dragLive").innerHTML=h;
-      if(!st.rolled)dragBtnText("ROLLING IN…");else if(d.canArm)dragBtnText(st.launch.armed?"RELEASE ON GREEN":"HOLD · RELEASE ON GREEN",st.launch.armed?(st.launch.twoStep?`two-step ${d.holdRpm.toLocaleString()} rpm`:"on the brake"):"arm it on the ambers — every second holding is heat");else dragBtnText("LAUNCH",R?"tap on the green":"tap to go");}
+      if(!st.rolled)dragBtnText("ROLLING IN…");else if(d.canArm)dragBtnText(st.launch.armed?"RELEASE ON GREEN":"HOLD · RELEASE ON GREEN",st.launch.armed?(st.launch.twoStep?`two-step ${d.holdRpm.toLocaleString()} rpm`:st.launch.transBrake?"on the brake":`ALS armed · ${d.holdRpm.toLocaleString()} rpm`):"arm it on the ambers — every second holding is heat");else dragBtnText("LAUNCH",R?"tap on the green":"tap to go");}
     run.on=true;run.rpm=DR.failed?Math.max(0,run.rpm-380):st.rpm;run.load=DR.failed?0:st.load;
     $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
     if(st.phase==="run"||st.phase==="shutdown"||st.phase==="done"){$("testProg").style.width=Math.min(100,100*st.x/402.336)+"%";
       const m=st.marks.slice(-1)[0];let lane="";if(R){const ox=oppX(now);
         const gap=(st.x-ox)*3.281;lane=`<div class="peak" style="grid-column:1/-1"><b style="color:${R.foul?"var(--crit)":gap>=0?"var(--good)":"var(--crit)"}">${R.foul?"RED LIGHT":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>"}</b><span>${R.name} · RT ${R.rt0!=null?R.rt0.toFixed(3):"—"}</span></div>`;}
-      $("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.onBars?" · on the bars":""}</span></div>`:""}`;
+      $("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.als>0.2?' · <span style="color:var(--orange)">ALS</span>':""}${st.onBars?" · on the bars":""}</span></div>`:""}${DR.res.als&&DR.res.als!=="off"&&st.phase==="run"?`<div class="peak" style="grid-column:1/-1"><b style="font-size:15px;color:var(--orange)">ALS armed</b><span>boost held through shifts · ${Math.round(st.egt)} °C at the turbine</span></div>`:""}`;
       if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":DR.failKind==="backfire"?"INTAKE BACKFIRE":DR.failKind==="lean"?"MELTED A PISTON":"BROKE");
       else if(st.phase==="shutdown"){if(DR.pb&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText(DR.pb.kind>1?"PERSONAL BEST":"ENGINE PB","tap to go back to the car");else dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");}
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
@@ -17075,6 +17250,7 @@ function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
   if(r.heat&&r.heat.egtLine>=850)b.push(`${r.heat.egtLine.toLocaleString()} °C on the line`);
   if(r.broke)b.push(`<span style="color:var(--crit)">${r.broke==="turbo"?"turbo cooked":r.broke==="lean"?"lean on the bottle — melted a piston":r.broke==="backfire"?"intake backfire":"manifold cracked"}</span>`);
   else if(r.heat&&r.heat.abuse>=0.05)b.push(`+${r.heat.abuse.toFixed(1)} pass of wear from the heat`);
+  if(r.als)b.push(`ALS ${r.als.type==="air"?"(secondary air)":"(ignition)"} ${r.als.fired.toFixed(1)} s${r.als.shiftMin!=null?` · held ${r.als.shiftMin.toFixed(1)} bar through the shifts`:""}`);
   return b.join(" · ");}
 /* run animation */
 const run={on:false,rpm:0,load:0,fail:false,failKind:null,idle:false};
@@ -17084,6 +17260,7 @@ const FAIL_VISUAL={rod_tension:"rod",rod_buckling:"rod",rod_bolts:"rod",bearing_
   head_lift:"steam",gasket_shear:"steam",cooling:"steam",
   valve_float:"valve",valve_piston:"valve",valve_temp:"valve",
   oil_starvation:"seize",compressor_map:"turbo",turbine_temp:"turbo"};
+FAIL_VISUAL.vgt_vanes="turbo";FAIL_VISUAL.als_heat="turbo";
 FAIL_VISUAL.fuel_delivery="knock";   // a lean cylinder rattles, then the crown lets go and it smokes
 FAIL_VISUAL.cold_start="seize";      // a diesel that won't light just winds down on the starter
 function failKindOf(res,env){
@@ -18043,7 +18220,7 @@ function sfx(n){if(soundReady&&S.sound)ENGINE_SOUND.event(n);}
 function ensureSound(){try{ENGINE_SOUND.init();ENGINE_SOUND.setVolume(S.vol/100);soundReady=true;if(S.sound)ENGINE_SOUND.start();}catch(e){console.warn(e);}}
 $("sndBtn").addEventListener("click",()=>{S.sound=!S.sound;ensureSound();if(S.sound){ENGINE_SOUND.start();setTimeout(applySoundQuality,50);}else ENGINE_SOUND.stop();$("sndBtn").classList.toggle("on",S.sound);save();toast(S.sound?"SOUND ON":"SOUND OFF");});
 $("idleBtn").addEventListener("click",()=>{run.idle=!run.idle;$("idleBtn").classList.toggle("on",run.idle);if(run.idle){ensureSound();if(!S.sound){S.sound=true;$("sndBtn").classList.add("on");ENGINE_SOUND.start();}sfx("start");}});
-let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0;
+let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0,alsHot=0;
 /* ---------- sound bench: hold two builds and switch between them ----------
    Differences in an engine note are almost impossible to judge from memory
    between taps, so the bench keeps both configs loaded and plays either one at
@@ -18100,6 +18277,12 @@ function tick(now){
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
   rpm=visRpm;load=visLoad;on=visRpm>40;
+  /* anti-lag: fires on the lift after real load (end of a pull, the spin-down) — bangs in the sound, flame at the tip */
+  let alsAct=0;{const a=alsOf(S.cfg);
+    if(a&&testing&&DR&&DR.d&&S.env.testType==="drag")alsAct=DR.failed?0:DR.d.st.als||0;
+    else if(a&&on){if(load>0.6&&rpm>0.45*S.cfg.redline)alsHot=1.4;else alsHot=Math.max(0,alsHot-dt);if(load<0.3&&rpm>Math.max(2200,0.35*S.cfg.redline)&&alsHot>0&&!run.fail)alsAct=a==="air"?1:0.8;}
+    else alsHot=0;}
+  if(ENGINE_VIS.als)ENGINE_VIS.als(alsAct);
   ENGINE_VIS.setRun({on,rpm,load,fail:run.fail,failKind:run.failKind,redline:S.cfg.redline,smooth:quick?quick.smooth:L.smooth,first:L.firstOrder,second:L.secondOrder,n:L.n,angle:L.angle,stroke:S.cfg.stroke,rodRatio:S.cfg.rodRatio,cam:S.cfg.cam,wear:quick&&wearInfo(quick)?wearInfo(quick).w:0,smoke:dieselSmoke(quick,rpm,load)});
   if(AB.playing&&AB[AB.playing]){
     const c=AB[AB.playing];
@@ -18137,10 +18320,10 @@ function tick(now){
     }
     const wi=quick?wearInfo(quick):null;let dx=null;
     if(testing&&DR&&DR.d&&S.env.testType==="drag"&&!DR.failed){const st=DR.d.st;boostBar=st.boost*(on?1:0);
-      dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
+      dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,als:st.als||0,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
     if(testing&&SR&&SR.p&&S.env.testType==="salt"&&!SR.failed){const st=SR.p.st;dx={tyre:st.phase==="run"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*3)):st.phase==="spin"?0.8:0};}
     if(testing&&PR&&PR.p&&S.env.testType==="pull_sled"&&!PR.failed){const st=PR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase==="pull"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.1)*1.5)):0};}   // the sled: load from the run, tyre noise from the slip
-    ENGINE_SOUND.set(Object.assign({rpm:on?rpm:0,load,cfg:S.cfg,layout:L,boostBar,wear:wi?wi.w:0,
+    ENGINE_SOUND.set(Object.assign({rpm:on?rpm:0,load,cfg:S.cfg,layout:L,boostBar,wear:wi?wi.w:0,als:alsAct,
       knock:quick?quick.knock.retardDeg:0,profileId:S.profileId||undefined,diesel:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci),clatter:(quick&&quick.clatter)||0},dx||{}));}
   requestAnimationFrame(tick);
 }
