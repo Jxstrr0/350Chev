@@ -6116,13 +6116,13 @@ const ENGINE_SIM = (function () {
   const BOG_CLASSES = {
     street: { n: "Street 4×4", d: "plated pickup · mud-terrains · part-time 4×4", tier: 1, rep: 0,
       veh: { mass: 2500, tyreDia: 35, width: 1.9, clear: 0.30, front: 0.55, drive: 0.85, driveN: "part-time 4×4", trans: "conv", tyres: ["mt"], runup: 30, pitK: 1 },
-      gears: [["1st", 24], ["2nd", 36], ["3rd", 50]], field: { hp: 330, sd: 60, dsl: 0.4 } },
+      gears: [["1st", 24], ["2nd", 36], ["3rd", 50]], field: { hp: 290, sd: 60, dsl: 0.4 } },
     modified: { n: "Modified", d: "lifted · swampers · lockers both ends", tier: 2, rep: 40,
       veh: { mass: 2150, tyreDia: 44, width: 2.1, clear: 0.45, front: 0.52, drive: 1.0, driveN: "locked 4×4", trans: "conv", tyres: ["mt", "swamp"], runup: 35, pitK: 1.4 },
-      gears: [["1st", 28], ["2nd", 42], ["3rd", 58]], field: { hp: 520, sd: 90, dsl: 0.3 } },
+      gears: [["1st", 28], ["2nd", 42], ["3rd", 58]], field: { hp: 480, sd: 90, dsl: 0.3 } },
     super: { n: "Open · Super", d: "tube chassis · paddles · spooled, clutch", tier: 3, rep: 150,
       veh: { mass: 1650, tyreDia: 54, width: 2.4, clear: 0.62, front: 0.48, drive: 1.0, driveN: "spooled 4×4", trans: "clutch", tyres: ["swamp", "paddle"], runup: 40, pitK: 1.75 },
-      gears: [["2nd", 40], ["3rd", 56], ["4th", 74]], field: { hp: 900, sd: 160, dsl: 0.15 } }
+      gears: [["2nd", 40], ["3rd", 56], ["4th", 74]], field: { hp: 850, sd: 150, dsl: 0.15 } }
   };
   for (const k in BOG_CLASSES) BOG_CLASSES[k].id = k;
   function bogGears(cls) { return (BOG_CLASSES[cls] || BOG_CLASSES.street).gears; }
