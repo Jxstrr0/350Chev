@@ -20484,7 +20484,7 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
     clsBest:Math.min(...inCls.filter(x=>x.best!=null).map(x=>x.best)),win:inCls[0]?inCls[0].laps:0,hrs:+hrs.toFixed(1)};
   /* career money and standing */
   if(career()&&!ff){const g=e24C();g.live=null;g.runs=(g.runs||0)+1;const K=SIM.E24_CLASSES[cls],fu=SIM.fuelOf(S.cfg)||SIM.OPT.fuel.r91;
-    const prize=r.classified?(K.prize[r.posCls-1]||0)+1500:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.5);   // series fuel, at the trade pricelet rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
+    const prize=r.classified?(K.prize[r.posCls-1]||0)+1500:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.5)/* series fuel, at the trade price */;let rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
     if(r.dnf&&r.dnf.id){C().cert=null;rep-=2;}
     C().cash+=prize-fuelBill;C().rep=Math.max(0,C().rep+rep);r.prize=prize;r.fuelBill=fuelBill;r.rep=rep;
     addWear(+(hrs/40*({push:1.6,race:1.25,save:0.95}[stints.length?stints[stints.length-1].mode:"race"]||1.25)).toFixed(2));
