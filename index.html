@@ -164,7 +164,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .strip b.warnc{color:var(--warn)}.strip b.critc{color:var(--crit)}
 /* buttons */
 /* HUD buttons: chamfered octagon, top/bottom light strips, inner gradient, colour by intent */
-.btn{--hb:#3a4049;--hb2:#242930;--hs:rgba(255,255,255,.35);--ht:var(--chalk);position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border:0;border-radius:0;
+.btn{--hb:#3a4049;--hb2:#242930;--hs:rgba(255,255,255,.35);--ht:#f0ece2;position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border:0;border-radius:0;
   clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px);
   font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ht);width:100%;
   background:linear-gradient(180deg,var(--hb) 0%,var(--hb2) 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 10px 18px -10px rgba(255,255,255,.28),inset 0 -8px 16px -10px rgba(0,0,0,.6);
@@ -178,7 +178,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .btn.info{--hb:#4f9be6;--hb2:#215fa8;--hs:#c9e3ff;--ht:#fff}
 .btn[disabled]{opacity:.42;cursor:default;filter:saturate(.4)}
 .btn.sm{width:auto;padding:9px 12px;font-size:12.5px;letter-spacing:.06em;clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,7px 100%,0 calc(100% - 7px),0 7px)}
-.btn.ghost{--hb:transparent;--hb2:transparent;--hs:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px var(--rule)}
+.btn.ghost{--hb:transparent;--hb2:transparent;--hs:rgba(255,255,255,.18);--ht:var(--chalk);box-shadow:inset 0 0 0 1px var(--rule)}
 .btn.ghost::before,.btn.ghost::after{display:none}
 .hint{font-size:14px;color:var(--muted);margin:8px 0;line-height:1.45}
 /* chart */
@@ -524,11 +524,11 @@ html.desk #rpmbox{right:18px;bottom:16px}html.desk #rpmbox b{font-size:34px}
 html.desk #app.onstrip #rpmbox{bottom:auto;top:80px}
 html.desk #chart{height:260px}
 html.desk #toast{left:calc((100% - var(--sbw))/2);bottom:auto;top:84px;max-width:min(560px,calc(100% - var(--sbw) - 40px))}
-/* drag strip and truck pull: their controls dock bottom-centre over the big view, in the view's dark ink */
-html.desk #dragCtl,html.desk #pullCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+/* drag strip, truck pull and salt flats: their controls dock bottom-centre over the big view, in the view's dark ink */
+html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
-html.desk #pullLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row{grid-column:1/-1}
+html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}
 /* the sheet becomes a centred dialog */
 html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
 html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
@@ -7368,7 +7368,7 @@ const ENGINE_SAMPLES = (function () {
     var dt = lastT ? clamp((now - lastT) / 1000, 0.001, 0.1) : 0.016; lastT = now;
     if (MODE === "synth" || !H.running) { ENGINE_SOUND.setSynthMix(1); stat.mix = 1; fadeOut(dt); return; }
     var cfg = o.cfg || null, lk = (cfg && cfg.layout) || null, n = NCYL[lk] || 4;
-    var key = cfg ? [lk, cfg.bore, cfg.stroke, cfg.asp, !!o.diesel, H.lite ? 1 : 0].join("|") : pickKey;
+    var key = cfg ? [lk, cfg.bore, cfg.stroke, cfg.asp, !!o.diesel, H.lite ? 1 : 0, (+cfg.redline || 0) >= 7800 ? 1 : 0, (+cfg.cam || 0) >= 60 ? 1 : 0].join("|") : pickKey;   // + the redline/cam gates choose() scores on
     if (key !== pickKey) { pickKey = key; pick = cfg ? choose(cfg, lk, !!o.diesel) : null; }
     var A = pick && pick.a, B = pick && !H.lite ? pick.b : null;
     var lazyOk = !SLOW || MODE === "real";
@@ -15463,8 +15463,9 @@ function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":
 const BAR_PSI=14.5038;
 const pU=()=>S&&S.psi?"psi":"bar";
 const bv=b=>{if(!(S&&S.psi))return b.toFixed(1);const v=b*BAR_PSI;return v.toFixed(v<100?1:0);};
-const P_RE=/((?:\d+(?:\.\d+)?\s?(?:–|-|\/|of|to)\s?)*)(\d+(?:\.\d+)?)\s?bar\b(?!s)/g;
-const toPsiTxt=t=>t.replace(P_RE,m=>m.replace(/\s?bar$/,"").replace(/\d+(?:\.\d+)?/g,n=>{const v=+n*BAR_PSI;return v.toFixed(v<100?1:0);})+" psi");
+const P_NUM="\\d{1,3}(?:,\\d{3})+(?!\\d)|\\d+(?:\\.\\d+)?";   // "2,000" (thousands separator) or 1.5
+const P_RE=new RegExp("((?:(?:"+P_NUM+")\\s?(?:–|-|\\/|of|to)\\s?)*)("+P_NUM+")(?:\\s?|-)bar\\b(?!s)","g");
+const toPsiTxt=t=>t.replace(P_RE,m=>{const h=/-bar$/.test(m);return m.replace(/\s?-?bar$/,"").replace(new RegExp(P_NUM,"g"),n=>{const c=n.includes(","),v=+n.replace(/,/g,"")*BAR_PSI;return v<100?v.toFixed(1):c?Math.round(v).toLocaleString("en-CA"):v.toFixed(0);})+(h?"-psi":" psi");});
 function psiNode(n){const t=n.nodeValue;if(!t||t.indexOf("bar")<0){return;}if(n.__psi!==undefined&&t===n.__psi)return;const c=toPsiTxt(t);if(c!==t){n.__bar=t;n.nodeValue=c;n.__psi=c;}}
 function psiWalk(root,on){if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;return p&&(p.nodeName==="SCRIPT"||p.nodeName==="STYLE"||p.nodeName==="TEXTAREA")?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;}});const ns=[];let n;while((n=w.nextNode()))ns.push(n);
   for(const x of ns){if(on)psiNode(x);else if(x.__bar!==undefined){if(x.nodeValue===x.__psi)x.nodeValue=x.__bar;delete x.__bar;delete x.__psi;}}}
@@ -17162,7 +17163,7 @@ function dlDraw(id){const M=DLM[id],cv=$(id+"Cv");if(!M||!cv||!cv.isConnected)re
   x.setLineDash([]);D.sh.forEach(h=>{const px=X(byT?h.t:h.x);x.fillStyle=INK;x.beginPath();x.moveTo(px,padT-1);x.lineTo(px-4,padT-8);x.lineTo(px+4,padT-8);x.closePath();x.fill();x.fillStyle=soft;x.textAlign="center";x.fillText(h.g+"–"+(h.g+1),px,padT-11);});
   // scales
   x.textAlign="left";x.font="10px "+ff;let sx=padL+2;
-  [["rpm",DL.on.rpm,D.rpmMax/1000+"k rpm"],["spd",DL.on.spd||DL.on.whl,D.mphMax+" mph"],["boost",DL.on.boost&&D.hasB,D.bMax+" bar"],["egt",DL.on.egt,D.eMax+"°C"]].forEach(([k,on,t])=>{if(!on)return;x.fillStyle=col(k);x.fillText(t,sx,10);sx+=x.measureText(t).width+9;});
+  [["rpm",DL.on.rpm,D.rpmMax/1000+"k rpm"],["spd",DL.on.spd||DL.on.whl,D.mphMax+" mph"],["boost",DL.on.boost&&D.hasB,(S.psi?bv(D.bMax):D.bMax)+" "+pU()],["egt",DL.on.egt,D.eMax+"°C"]].forEach(([k,on,t])=>{if(!on)return;x.fillStyle=col(k);x.fillText(t,sx,10);sx+=x.measureText(t).width+9;});
   // cursor
   const i=M.cur;if(i!=null&&i>=0&&i<D.n){const px=X(xs[i]);x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,padT-12);x.lineTo(px,padT+ch);x.stroke();
     const dot=(arr,m,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,Y(arr[i],m),3.2,0,7);x.fill();};if(DL.on.rpm)dot(D.rpm,D.rpmMax,col("rpm"));if(DL.on.spd)dot(D.mph,D.mphMax,col("spd"));if(DL.on.whl)dot(D.whl,D.mphMax,INK);if(DL.on.boost&&D.hasB)dot(D.boost,D.bMax,col("boost"));if(DL.on.egt)dot(D.egt,D.eMax,col("egt"));}
@@ -17277,7 +17278,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
-  testing=true;renderTest();ensureSound();
+  testing=true;abStop();renderTest();ensureSound();
   if(S.env.testType==="drag"){dragStart();return;}
   if(S.env.testType==="pull_sled"){pullStart();return;}
   if(S.env.testType==="salt"){saltStart();return;}
@@ -18218,7 +18219,7 @@ let soundReady=false;
 /* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */
 function sfx(n){if(soundReady&&S.sound)ENGINE_SOUND.event(n);}
 function ensureSound(){try{ENGINE_SOUND.init();ENGINE_SOUND.setVolume(S.vol/100);soundReady=true;if(S.sound)ENGINE_SOUND.start();}catch(e){console.warn(e);}}
-$("sndBtn").addEventListener("click",()=>{S.sound=!S.sound;ensureSound();if(S.sound){ENGINE_SOUND.start();setTimeout(applySoundQuality,50);}else ENGINE_SOUND.stop();$("sndBtn").classList.toggle("on",S.sound);save();toast(S.sound?"SOUND ON":"SOUND OFF");});
+$("sndBtn").addEventListener("click",()=>{S.sound=!S.sound;ensureSound();if(S.sound){ENGINE_SOUND.start();setTimeout(applySoundQuality,50);}else{ENGINE_SOUND.stop();if(AB.playing)abStop();}$("sndBtn").classList.toggle("on",S.sound);save();toast(S.sound?"SOUND ON":"SOUND OFF");});
 $("idleBtn").addEventListener("click",()=>{run.idle=!run.idle;$("idleBtn").classList.toggle("on",run.idle);if(run.idle){ensureSound();if(!S.sound){S.sound=true;$("sndBtn").classList.add("on");ENGINE_SOUND.start();}sfx("start");}});
 let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0,alsHot=0;
 /* ---------- sound bench: hold two builds and switch between them ----------
@@ -18242,6 +18243,7 @@ function abRender(){
     :(AB.A&&AB.B)?"Both loaded. Tap Play A, then Play B.":"Capture a build into A, change something, capture it into B.";}
 function abPlay(k){
   if(!AB[k]){toast("Capture a build into "+k+" first");return;}
+  if(testing){toast("Wait for the run to finish");return;}
   if(!S.sound){S.sound=true;$("sndBtn").classList.add("on");}
   ensureSound();AB.playing=k;abRender();buzz(8);
 }
@@ -18284,10 +18286,11 @@ function tick(now){
     else alsHot=0;}
   if(ENGINE_VIS.als)ENGINE_VIS.als(alsAct);
   ENGINE_VIS.setRun({on,rpm,load,fail:run.fail,failKind:run.failKind,redline:S.cfg.redline,smooth:quick?quick.smooth:L.smooth,first:L.firstOrder,second:L.secondOrder,n:L.n,angle:L.angle,stroke:S.cfg.stroke,rodRatio:S.cfg.rodRatio,cam:S.cfg.cam,wear:quick&&wearInfo(quick)?wearInfo(quick).w:0,smoke:dieselSmoke(quick,rpm,load)});
-  if(AB.playing&&AB[AB.playing]){
-    const c=AB[AB.playing];
+  if(AB.playing&&AB[AB.playing]&&!testing){
+    const c=AB[AB.playing],ev=simEnv({testType:"pull"}),ek=JSON.stringify(ev);
+    if(!AB.sim||AB.sim.c!==c||AB.sim.ek!==ek)AB.sim={c,ek,r:SIM.simulate(c,ev)};   // one simulate per capture, not two per frame
+    const r=AB.sim.r;
     if(soundReady&&S.sound){
-      const r=SIM.simulate(c,simEnv({testType:"pull"}));
       const rp=r.rpms,bc=r.boostCurve;
       let bb=0;
       if(c.asp!=="na"&&bc&&rp&&rp.length>1){
@@ -18297,9 +18300,9 @@ function tick(now){
       ENGINE_SOUND.set({rpm:AB.rpm,load:AB.load,cfg:c,layout:LAYOUTS[c.layout],boostBar:bb,
         knock:r.knock.retardDeg,profileId:undefined,diesel:(SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci),clatter:r.clatter||0});
     }
-    const cl=LAYOUTS[c.layout],cq=SIM.simulate(c,simEnv({testType:"pull"}));
+    const cl=LAYOUTS[c.layout];
     ENGINE_VIS.setRun({on:true,rpm:AB.rpm,load:AB.load,fail:null,failKind:null,redline:c.redline,
-      smooth:cq.smooth,first:cl.firstOrder,second:cl.secondOrder,n:cl.n,angle:cl.angle,
+      smooth:r.smooth,first:cl.firstOrder,second:cl.secondOrder,n:cl.n,angle:cl.angle,
       stroke:c.stroke,rodRatio:c.rodRatio,cam:c.cam});
     requestAnimationFrame(tick);return;
   }
@@ -18332,7 +18335,7 @@ function tick(now){
 let curTab="build";
 /* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
-function showTab(t){tabScroll[curTab]=$("panel").scrollTop;curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+function showTab(t){tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
   if(t==="test")renderTest();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
