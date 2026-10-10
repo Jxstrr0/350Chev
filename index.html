@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.31.2.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.32.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -5880,7 +5880,7 @@ const ENGINE_SIM = (function () {
     const lam = +cfg.lambda || 1.5, egt = Array.isArray(res.egtCurve) && res.egtCurve.length ? Math.max.apply(null, res.egtCurve) : 0;
     const tu = id => { const t = (res.tests || []).find(x => x.id === id); return t ? t.util : 0; };
     const turbo = (OPT.asp[cfg.asp] || {}).kind === "turbo", tS = turbo ? Math.max(tu("compressor_map"), tu("turbine_temp")) : 0, gone = turbo && tS >= 1;
-    const fL = clamp((1.25 - lam) / 0.2, 0, 1), fE = clamp((egt - 850) / 150, 0, 1), fT = gone ? 1 : clamp((tS - 0.9) / 0.3, 0, 1), fW = clamp(((+wear || 0) - 0.6) / 0.6, 0, 1);
+    const fL = clamp((1.25 - lam) / 0.2, 0, 1), fE = clamp((egt - 900) / 100, 0, 1), fT = gone ? 1 : clamp((tS - 0.95) / 0.25, 0, 1), fW = clamp(((+wear || 0) - 0.6) / 0.6, 0, 1);
     out.p = +clamp(0.3 * fL * fE + 0.2 * fT + (gone ? 0.35 : 0) + 0.12 * fW, 0, 0.85).toFixed(3); out.lam = lam; out.egt = Math.round(egt);
     if (fT > 0) out.why.push(gone ? "turbo seals gone" : "turbo seals at " + Math.round(tS * 100) + "%");
     if (fL * fE > 0) out.why.push("\u03bb " + lam.toFixed(2), "EGT " + Math.round(egt) + " \u00b0C");
@@ -6111,13 +6111,13 @@ const ENGINE_SIM = (function () {
      forward of the rear axle: ~1 = over the front axle, ~0.25 = behind the seats). front = static front weight share.
      cdA m², clA = downforce coefficient × area (m², + is down), brake = what the brakes can hold in g, ratios = gearbox. */
   const CHASSIS = {
-    roadster: { n: "Light roadster", d: "1,000 kg · RWD · 50/50", mass: 1000, eng: 120, drive: "rwd", front: 0.50, xE: 0.92, cgH: 0.45, wb: 2.31, tyre: "sport", cdA: 0.66, clA: 0.06, brake: 1.05, tyreDia: 24.4, ratios: [3.76, 2.27, 1.65, 1.26, 1.0, 0.84], shift: 0.22, rr: 0.011 },
-    hatch: { n: "Hot hatch", d: "1,200 kg · FWD · 62% front", mass: 1200, eng: 135, drive: "fwd", front: 0.62, xE: 1.06, cgH: 0.53, wb: 2.6, tyre: "street", cdA: 0.70, clA: 0.02, brake: 1.0, tyreDia: 25.2, ratios: [3.31, 2.13, 1.48, 1.12, 0.92, 0.77], shift: 0.25, rr: 0.011 },
-    coupe: { n: "Sports coupé", d: "1,350 kg · RWD · 53% front", mass: 1350, eng: 165, drive: "rwd", front: 0.53, xE: 0.9, cgH: 0.48, wb: 2.57, tyre: "sport", cdA: 0.64, clA: 0.12, brake: 1.08, tyreDia: 25.7, ratios: [3.62, 2.19, 1.54, 1.21, 1.0, 0.79], shift: 0.2, rr: 0.011 },
-    muscle: { n: "Muscle car", d: "1,650 kg · RWD · 56% front", mass: 1650, eng: 230, drive: "rwd", front: 0.56, xE: 0.95, cgH: 0.52, wb: 2.72, tyre: "street", cdA: 0.78, clA: 0, brake: 0.98, tyreDia: 26.5, ratios: [2.97, 2.07, 1.43, 1.0, 0.84, 0.56], shift: 0.3, rr: 0.012 },
-    rally: { n: "AWD rally sedan", d: "1,450 kg · AWD · 58% front", mass: 1450, eng: 150, drive: "awd", front: 0.58, xE: 1.0, cgH: 0.5, wb: 2.63, tyre: "sport", cdA: 0.74, clA: 0.18, brake: 1.05, tyreDia: 25.2, ratios: [3.64, 2.38, 1.76, 1.35, 1.06, 0.84], shift: 0.2, rr: 0.012 },
-    pickup: { n: "Pickup truck", d: "2,100 kg · RWD · tall and soft", mass: 2100, eng: 260, drive: "rwd", front: 0.57, xE: 1.0, cgH: 0.72, wb: 3.4, tyre: "eco", cdA: 1.12, clA: -0.05, brake: 0.85, tyreDia: 31, ratios: [4.17, 2.34, 1.52, 1.14, 0.85, 0.67], shift: 0.4, rr: 0.014 },
-    super: { n: "Mid-engine GT", d: "1,450 kg · RWD · 42% front · wing", mass: 1450, eng: 200, drive: "rwd", front: 0.42, xE: 0.25, cgH: 0.42, wb: 2.65, tyre: "semi", cdA: 0.74, clA: 1.0, brake: 1.2, tyreDia: 27, ratios: [3.13, 2.1, 1.62, 1.3, 1.07, 0.88, 0.7], shift: 0.12, rr: 0.011 }
+    roadster: { n: "Light roadster", d: "1,000 kg · RWD · 50/50", mass: 1000, eng: 120, drive: "rwd", front: 0.50, xE: 0.92, cgH: 0.45, wb: 2.31, tyre: "sport", cdA: 0.83, clA: 0.06, brake: 1.05, tyreDia: 24.4, ratios: [3.76, 2.27, 1.65, 1.26, 1.0, 0.84], shift: 0.22, rr: 0.011 },
+    hatch: { n: "Hot hatch", d: "1,200 kg · FWD · 62% front", mass: 1200, eng: 135, drive: "fwd", front: 0.62, xE: 1.06, cgH: 0.53, wb: 2.6, tyre: "street", cdA: 0.88, clA: 0.02, brake: 1.0, tyreDia: 25.2, ratios: [3.31, 2.13, 1.48, 1.12, 0.92, 0.77], shift: 0.25, rr: 0.011 },
+    coupe: { n: "Sports coupé", d: "1,350 kg · RWD · 53% front", mass: 1350, eng: 165, drive: "rwd", front: 0.53, xE: 0.9, cgH: 0.48, wb: 2.57, tyre: "sport", cdA: 0.8, clA: 0.12, brake: 1.08, tyreDia: 25.7, ratios: [3.62, 2.19, 1.54, 1.21, 1.0, 0.79], shift: 0.2, rr: 0.011 },
+    muscle: { n: "Muscle car", d: "1,650 kg · RWD · 56% front", mass: 1650, eng: 230, drive: "rwd", front: 0.56, xE: 0.95, cgH: 0.52, wb: 2.72, tyre: "street", cdA: 0.98, clA: 0, brake: 0.98, tyreDia: 26.5, ratios: [2.97, 2.07, 1.43, 1.0, 0.84, 0.56], shift: 0.3, rr: 0.012 },
+    rally: { n: "AWD rally sedan", d: "1,450 kg · AWD · 58% front", mass: 1450, eng: 150, drive: "awd", front: 0.58, xE: 1.0, cgH: 0.5, wb: 2.63, tyre: "sport", cdA: 0.93, clA: 0.18, brake: 1.05, tyreDia: 25.2, ratios: [3.64, 2.38, 1.76, 1.35, 1.06, 0.84], shift: 0.2, rr: 0.012 },
+    pickup: { n: "Pickup truck", d: "2,100 kg · RWD · tall and soft", mass: 2100, eng: 260, drive: "rwd", front: 0.57, xE: 1.0, cgH: 0.72, wb: 3.4, tyre: "eco", cdA: 1.4, clA: -0.05, brake: 0.85, tyreDia: 31, ratios: [4.17, 2.34, 1.52, 1.14, 0.85, 0.67], shift: 0.4, rr: 0.014 },
+    super: { n: "Mid-engine GT", d: "1,450 kg · RWD · 42% front · wing", mass: 1450, eng: 200, drive: "rwd", front: 0.42, xE: 0.25, cgH: 0.42, wb: 2.65, tyre: "semi", cdA: 0.93, clA: 1.0, brake: 1.2, tyreDia: 27, ratios: [3.13, 2.1, 1.62, 1.3, 1.07, 0.88, 0.7], shift: 0.12, rr: 0.011 }
   };
   /* tracks: a closed polygon of [x, y, corner radius, name] (metres, driven clockwise); each vertex is filleted with
      its radius, the straights run tangent to tangent. start = metres into the main straight (vertex 0 → 1);
@@ -6196,7 +6196,7 @@ const ENGINE_SIM = (function () {
     const front = clamp((C0.front * C0.mass + dm * C0.xE + 75 * 0.45) / m, 0.3, 0.75), dF = front - C0.front;
     // balance off the chassis' design point costs cornering grip (nose-heavy pushes, tail-heavy snaps); tyres lose a little μ per kg
     const kBal = clamp(1 - 1.2 * Math.abs(dF), 0.82, 1), kLoad = Math.pow(m / (C0.mass + 75), -0.12);
-    const rw = C0.tyreDia * 0.0254 / 2, eta = C0.drive === "awd" ? 0.86 : 0.9, gears = C0.ratios.slice();
+    const rw = C0.tyreDia * 0.0254 / 2, eta = C0.drive === "awd" ? 0.8 : 0.85, gears = C0.ratios.slice();
     const redline = res.redline || 7000;
     // fit the final drive: top gear lands the engine on its power peak at the speed that power can hold against drag
     const Pw = (res.peakHp || 100) * 745.7 * eta, crr = C0.rr * m * ROAD_G;
@@ -6419,9 +6419,9 @@ const ENGINE_SIM = (function () {
     hot_clearance: [0.4, 6, "scuffed piston — oil topped up"], coolant_seal: [0.4, 12, "O-ring weep — coolant topped up"], carbon_seals: [0.7, 5, "carbon cleared with a hot lap"], oil_metering: [0.8, 5, "oil metering pump changed"] };
   const E24_K = 2.5, E24_DUR = 86400, E24_START = 14, E24_TANK = 100, E24_SC_RATE = 0.16;
   const E24_CLASSES = {
-    proto: { n: "Proto", ch: "super", k: 0.96, pool: ["v12_65", "valkyrie", "r26b", "dfv", "v10_52", "1lr", "s85", "hellcat"], prize: [30000, 18000, 10000], rep: [34, 22, 15] },
-    gt: { n: "GT", ch: "super", k: 1, pool: ["gt3r", "m156", "p997t", "9a2tt", "vr38", "coyote", "f6_38", "voodoo", "ls3", "godzilla73", "b58", "hemi64"], prize: [20000, 12000, 7000], rep: [26, 17, 11] },
-    stock: { n: "Stock", ch: "coupe", k: 1, pool: ["k20a", "2jzgte", "rb26", "ej257", "4g63", "1gr", "s54", "l36", "13b_rew", "f20c", "ea888", "20b_rew"], prize: [12000, 7000, 4000], rep: [18, 12, 8] } };
+    proto: { n: "Proto", ch: "super", k: 0.96, pool: ["v12_65", "valkyrie", "r26b", "dfv", "v10_52", "1lr", "s85", "hellcat"], prize: [30000, 18000, 10000, 5000, 3000], rep: [34, 22, 15] },
+    gt: { n: "GT", ch: "super", k: 1, pool: ["gt3r", "m156", "p997t", "9a2tt", "vr38", "coyote", "f6_38", "voodoo", "ls3", "godzilla73", "b58", "hemi64"], prize: [20000, 12000, 7000, 4000, 2500], rep: [26, 17, 11] },
+    stock: { n: "Stock", ch: "coupe", k: 1, pool: ["k20a", "2jzgte", "rb26", "ej257", "4g63", "1gr", "s54", "l36", "13b_rew", "f20c", "ea888", "20b_rew"], prize: [12000, 7000, 4000, 2500, 1500], rep: [18, 12, 8] } };
   const E24_CLS_ORDER = ["proto", "gt", "stock"], E24_FIELD = { proto: 5, gt: 8, stock: 7 };
   const E24_TEAMS = ["Coulee Racing", "Big Sky Motorsport", "Red Deer Autosport", "Moose Jaw Speed", "Brandon Garage", "Medicine Hat Racing", "Swift Current GT", "Yorkton Engineering",
     "Lethbridge Lightning", "Prince Albert Racing", "Estevan Oilpatch", "Grain Belt Motorsport", "Chinook Racing", "Badlands Competition", "Canola Speedworks", "Saskatoon Sports Cars",
@@ -6501,7 +6501,7 @@ const ENGINE_SIM = (function () {
       mode: "race", dmg: P.tests.map(() => 0), out: false, fin: false, pits: 0, pitT: 0, fuelUsed: 0, best: null, bestLap: 0, last: null, drv: drv(), drvI: 0, drvT: 0, drvPace: [1, 1.003, 1.006],
       stintT0: 0, stintLaps: 0, stintF: 0, pace: 1, traf: E24_CLS_ORDER.indexOf(cls) === 0 ? 1 : E24_CLS_ORDER.indexOf(cls) === 1 ? 0.6 : 0.3, pend: null, pitIn: null, hist: [] }, extra || {});
     // the player: number 55, the team drivers, the plan
-    const me = mk(o.me, myCls, true, { no: o.number || 55, team: o.name || "Prairie Engine Works", mode: R.plan.mode, drvPace: [1, 1.0025, 1.0065] });
+    const me = mk(o.me, myCls, true, { no: o.number || 55, team: o.name || "Prairie Engine Works", mode: R.plan.mode, drvPace: [1, 1.0025, 1.0065], pace: E24_CLASSES[myCls].k });
     me.tyre.c = R.plan.tyre; me.fuel = R.plan.fuel === "full" ? E24_TANK : null; me.stints = []; me.lapLog = []; me.posLog = [];
     R.cars.push(me);
     for (const c of E24_CLS_ORDER) {
@@ -18804,13 +18804,13 @@ const UPGRADES=[
   {id:"dyno2",name:"Engine dyno",desc:"Reads to 1,000 hp / 10,000 rpm. The chassis dyno tops out at 400 hp.",price:18000},
   {id:"shop1",name:"Machine shop I",desc:"Forged pistons and rods, forged cranks, better bolts, baffled sump.",price:14000},
   {id:"flow",name:"Flow bench",desc:"Variable valve timing and lift, individual throttles, tuned runners.",price:16000},
-  {id:"boost",name:"Boost bench",desc:"Turbochargers, superchargers, intercoolers and the fuels that like them.",price:22000},
-  {id:"bay1",name:"Second bay",desc:"Room for inline-5, inline-6, V8 and flat-6 blocks.",price:30000},
-  {id:"shop2",name:"Machine shop II",desc:"Billet cranks, titanium, 300M, coated bearings, dry sumps, exotic fuels.",price:45000,needs:"shop1"},
-  {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:60000,needs:"dyno2"},
-  {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:90000,needs:"bay1"},
-  {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:180000,needs:"shop2"},
-  {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:150000,needs:"dyno3"}
+  {id:"boost",name:"Boost bench",desc:"Turbochargers, superchargers, intercoolers and the fuels that like them.",price:24000},
+  {id:"bay1",name:"Second bay",desc:"Room for inline-5, inline-6, V8 and flat-6 blocks.",price:36000},
+  {id:"shop2",name:"Machine shop II",desc:"Billet cranks, titanium, 300M, coated bearings, dry sumps, exotic fuels.",price:60000,needs:"shop1"},
+  {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:90000,needs:"dyno2"},
+  {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:140000,needs:"bay1"},
+  {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
+  {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:240000,needs:"dyno3"}
 ];
 const STAFF=[
   {id:"machinist",name:"Machinist",wage:350,desc:"Runs the mill and the hone. Unit cost −8%, machining R&D 25% faster."},
@@ -18827,9 +18827,9 @@ const RND=[
   {id:"calib",name:"Calibration suite",cost:7000,weeks:3,desc:"Knock sensing and a proper base map. +0.5 octane number of margin, permanently.",effect:{octane:0.5}}
 ];
 const PRESTIGE=[
-  {id:"sign",name:"Illuminated shop sign",price:6000,rep:1,desc:"Your name over the door, lit. +1 rep a week."},
-  {id:"trophy",name:"Trophy wall",price:15000,rep:2,desc:"A wall of certified builds and client plaques. +2 rep a week."},
-  {id:"display",name:"Show engine plinth",price:30000,rep:4,desc:"A polished display engine in the front window. +4 rep a week and contracts pay +3%."}
+  {id:"sign",name:"Illuminated shop sign",price:10000,rep:1,desc:"Your name over the door, lit. +1 rep a week."},
+  {id:"trophy",name:"Trophy wall",price:30000,rep:2,desc:"A wall of certified builds and client plaques. +2 rep a week."},
+  {id:"display",name:"Show engine plinth",price:60000,rep:4,desc:"A polished display engine in the front window. +4 rep a week and contracts pay +3%."}
 ];
 const REP_TIERS=[[0,"Backyard"],[40,"Local shop"],[120,"Known builder"],[300,"Regional supplier"],[700,"OEM partner"],[1500,"Legend"]];
 const GOALS=[
@@ -18861,65 +18861,65 @@ const FUEL_RANK={r87:0,r91:1,r94:2,race100:3,e85:4,methanol:5,
   race104u:2.5,race110:3.2,ox112:3.4,ox116:3.6};   // race grades sit between pump premium and alcohol; flex ranks by its blend (fuelRank)
 const SEGMENTS=[
   /* tier 0 — Backyard: everything here is reachable with the five starter engines and base-shop parts */
-  {id:"hatch",name:"City hatchback",tier:0,units:[12,30],price:2100,req:{hp:[50,75],econ:[6.2,5.6],fuel:"r87",rel:85,kg:140,noise:74}},
-  {id:"sedan",name:"Family sedan",tier:0,units:[8,22],price:2900,req:{hp:[90,125],econ:[6.8,6.2],fuel:"r87",rel:82,smooth:45,kg:175,noise:74}},
-  {id:"van",name:"Delivery van",tier:0,dsl:true,gas:true,units:[6,16],price:3100,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0],noise:77}},
-  {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,gas:true,units:[6,14],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
+  {id:"hatch",name:"City hatchback",tier:0,units:[3,8],price:2100,req:{hp:[50,75],econ:[6.2,5.6],fuel:"r87",rel:85,kg:140,noise:74}},
+  {id:"sedan",name:"Family sedan",tier:0,units:[2,6],price:2500,req:{hp:[90,125],econ:[6.8,6.2],fuel:"r87",rel:82,smooth:45,kg:175,noise:74}},
+  {id:"van",name:"Delivery van",tier:0,dsl:true,gas:true,units:[2,5],price:2800,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0],noise:77}},
+  {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,gas:true,units:[2,4],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
   /* tier 1 — Local shop */
-  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86,noise:78}},
-  {id:"hot",name:"Hot hatch",tier:1,units:[5,14],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76,road:{ch:"hatch"},zero100:[7.0,8.4]}},
-  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87",noise:74}},
-  {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78,road:{ch:"coupe",trk:"club"},lap:[75.0,78.0]}},
+  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[2,5],price:3800,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86,noise:78}},
+  {id:"hot",name:"Hot hatch",tier:1,units:[2,4],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76,road:{ch:"hatch"},zero100:[7.4,8.8]}},
+  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[3,7],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87",noise:74}},
+  {id:"sport",name:"Sports coupé",tier:1,units:[1,3],price:6200,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78,road:{ch:"coupe",trk:"club"},lap:[75.5,78.5]}},
   /* tier 2 — Known builder */
-  {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[2,6],price:13500,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
-  {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5],noise:79}},
-  {id:"rally",name:"Rally car · 1.6 T",tier:2,units:[2,6],price:16000,req:{hp:[280,340],tq:[320,400],disp:1.6,rel:70,fuel:"race100"}},
-  {id:"drift",name:"Drift car",tier:2,units:[2,6],price:15000,req:{tq:[500,700],smooth:55,rel:65,fuel:"e85"}},
-  {id:"genset",name:"Standby generator set",tier:2,dsl:true,gas:true,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
-  {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,gas:true,units:[3,8],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
+  {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[1,2],price:11000,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
+  {id:"gt",name:"Grand tourer",tier:2,units:[1,3],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5],noise:79}},
+  {id:"rally",name:"Rally car · 1.6 T",tier:2,units:[1,2],price:13000,req:{hp:[280,340],tq:[320,400],disp:1.6,rel:70,fuel:"race100"}},
+  {id:"drift",name:"Drift car",tier:2,units:[1,2],price:12000,req:{tq:[500,700],smooth:55,rel:65,fuel:"e85"}},
+  {id:"genset",name:"Standby generator set",tier:2,dsl:true,gas:true,units:[1,3],price:6800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
+  {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,gas:true,units:[1,3],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
   /* tier 3 — Regional supplier */
-  {id:"super",name:"Supercar",tier:3,units:[2,5],price:26000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75,noise:80,road:{ch:"super",trk:"gp"},lap:[112.0,116.0]}},
-  {id:"endur",name:"Endurance prototype",tier:3,units:[1,4],price:42000,req:{hp:[500,700],rel:92,fuel:"race100",kg:210,life:300}},
-  {id:"attack",name:"Time attack",tier:3,units:[1,4],price:30000,req:{hp:[700,900],kg:200,rel:60,fuel:"e85"}},
-  {id:"drag",name:"Pro-mod drag",tier:3,units:[1,3],price:55000,req:{hp:[1200,1800],rel:35,fuel:"methanol",life:5}},
+  {id:"super",name:"Supercar",tier:3,units:[1,2],price:22000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75,noise:80,road:{ch:"super",trk:"gp"},lap:[113.0,117.0]}},
+  {id:"endur",name:"Endurance prototype",tier:3,units:[1,2],price:28000,req:{hp:[500,700],rel:92,fuel:"race100",kg:210,life:300}},
+  {id:"attack",name:"Time attack",tier:3,units:[1,2],price:30000,req:{hp:[700,900],kg:200,rel:60,fuel:"e85"}},
+  {id:"drag",name:"Pro-mod drag",tier:3,units:[1,2],price:34000,req:{hp:[1200,1800],rel:35,fuel:"methanol",life:5}},
   /* tier 4 — OEM partner */
-  {id:"hyper",name:"Hypercar",tier:4,units:[1,3],price:60000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82,road:{ch:"super",trk:"gp"},lap:[108.5,111.5],zero100:[3.1,3.4]}},
-  {id:"flagship",name:"OEM V12 flagship",tier:4,units:[6,14],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94",noise:80}},
+  {id:"hyper",name:"Hypercar",tier:4,units:[1,2],price:48000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82,road:{ch:"super",trk:"gp"},lap:[109.5,112.5],zero100:[3.15,3.45]}},
+  {id:"flagship",name:"OEM V12 flagship",tier:4,units:[2,4],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94",noise:80}},
   /* tier 5 — Outlaw racing */
-  {id:"stripcar",name:"Street/strip coupe",tier:4,units:[2,4],price:26000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
-  {id:"grudge",name:"Grudge car · no time",tier:5,units:[1,2],price:70000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
-  {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:105000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
-  {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:165000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
-  {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:88000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
+  {id:"stripcar",name:"Street/strip coupe",tier:4,units:[1,2],price:20000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
+  {id:"grudge",name:"Grudge car · no time",tier:5,units:[1,2],price:44000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
+  {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:58000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
+  {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:60000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
+  {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:52000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
   /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't.
      Road segments also cap drive-by noise (dBA, judged with any cutout shut) */
-  {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[6,16],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel",noise:80}},
-  {id:"mdtruck",name:"Medium-duty delivery truck",tier:1,units:[5,12],price:6200,req:{tq:[450,650],tqrpm:2400,rel:88,life:3000,econ:[9.5,8.5],smoke:30,fuel:"diesel",noise:80}},
-  {id:"workboat",name:"Marine workboat",tier:2,units:[3,8],price:9400,req:{tq:[600,900],tqrpm:2600,life:4000,rel:92,fuel:"diesel"}},
-  {id:"dtractor",name:"Four-wheel-drive farm tractor",tier:2,units:[3,8],price:11800,req:{tq:[800,1200],tqrpm:1900,life:3000,rel:88,fuel:"diesel"}},
-  {id:"minegen",name:"Mine standby genset · prime power",tier:3,units:[2,6],price:21000,req:{tq:[1200,1800],tqrpm:1900,life:4500,rel:92,fuel:"diesel"}},
-  {id:"class8",name:"Class-8 highway truck",tier:3,units:[4,10],price:24000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel",noise:80}},
+  {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[2,5],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel",noise:80}},
+  {id:"mdtruck",name:"Medium-duty delivery truck",tier:1,units:[2,4],price:6200,req:{tq:[450,650],tqrpm:2400,rel:88,life:3000,econ:[9.5,8.5],smoke:30,fuel:"diesel",noise:80}},
+  {id:"workboat",name:"Marine workboat",tier:2,units:[1,3],price:9400,req:{tq:[600,900],tqrpm:2600,life:4000,rel:92,fuel:"diesel"}},
+  {id:"dtractor",name:"Four-wheel-drive farm tractor",tier:2,units:[1,3],price:11800,req:{tq:[800,1200],tqrpm:1900,life:3000,rel:88,fuel:"diesel"}},
+  {id:"minegen",name:"Mine standby genset · prime power",tier:3,units:[1,3],price:21000,req:{tq:[1200,1800],tqrpm:1900,life:4500,rel:92,fuel:"diesel"}},
+  {id:"class8",name:"Class-8 highway truck",tier:3,units:[1,3],price:15000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel",noise:80}},
   /* Fleet & alt-fuel (rep 20+): buyers who fuel at their own depot and want propane or CNG only (fuel "lpg"/"cng" is
      an exact family). gas:true on the truck & industrial segments means a gas engine is welcome there too. */
-  {id:"forklift",name:"Warehouse forklift · propane",tier:0,units:[10,24],price:2300,req:{tq:[110,160],tqrpm:3200,life:3000,rel:88,fuel:"lpg"}},
-  {id:"cngvan",name:"City fleet van · CNG",tier:1,units:[8,20],price:4200,req:{tq:[220,300],tqrpm:4000,rel:88,econ:[9.0,8.0],fuel:"cng",noise:77}},
-  {id:"lpgbus",name:"Propane school bus",tier:2,units:[4,10],price:9800,req:{tq:[450,600],tqrpm:3600,life:3000,rel:90,fuel:"lpg",noise:78}},
-  {id:"wellsite",name:"Wellsite compressor drive · CNG",tier:2,units:[2,6],price:12500,req:{tq:[350,500],tqrpm:3000,life:5000,rel:92,fuel:"cng"}},
+  {id:"forklift",name:"Warehouse forklift · propane",tier:0,units:[3,7],price:2300,req:{tq:[110,160],tqrpm:3200,life:3000,rel:88,fuel:"lpg"}},
+  {id:"cngvan",name:"City fleet van · CNG",tier:1,units:[2,6],price:4200,req:{tq:[220,300],tqrpm:4000,rel:88,econ:[9.0,8.0],fuel:"cng",noise:77}},
+  {id:"lpgbus",name:"Propane school bus",tier:2,units:[1,3],price:9800,req:{tq:[450,600],tqrpm:3600,life:3000,rel:90,fuel:"lpg",noise:78}},
+  {id:"wellsite",name:"Wellsite compressor drive · CNG",tier:2,units:[1,3],price:12500,req:{tq:[350,500],tqrpm:3000,life:5000,rel:92,fuel:"cng"}},
   /* race gas: a control-fuel series where everyone runs the same drum (spec:true = exactly that fuel), and a hill climb
      that allows anything up to oxygenated 116 */
-  {id:"specgt",name:"Spec GT series · control fuel",tier:2,spec:true,units:[3,8],price:15500,req:{hp:[300,380],rel:75,life:400,fuel:"race104u"}},
-  {id:"hillclimb",name:"Hill-climb special",tier:3,units:[1,3],price:34000,req:{hp:[450,650],kg:190,rel:65,fuel:"ox116"}},
-  {id:"puller",name:"Pulling truck · sled-ready",tier:3,units:[1,3],price:38000,req:{hp:[700,1200],passes:150,rel:55,fuel:"diesel"}},
+  {id:"specgt",name:"Spec GT series · control fuel",tier:2,spec:true,units:[1,3],price:15500,req:{hp:[300,380],rel:75,life:400,fuel:"race104u"}},
+  {id:"hillclimb",name:"Hill-climb special",tier:3,units:[1,2],price:26000,req:{hp:[450,650],kg:190,rel:65,fuel:"ox116"}},
+  {id:"puller",name:"Pulling truck · sled-ready",tier:3,units:[1,2],price:24000,req:{hp:[700,1200],passes:150,rel:55,fuel:"diesel"}},
   /* land speed: their car on the salt, your engine — they want a mile speed in it (estimated with a steady driver, long course) */
-  {id:"lsr",name:"Land-speed team · lakester",tier:3,units:[1,2],price:44000,req:{hp:[450,800],rel:55,lsr:{body:"lakester"},mph:[215,250]}}
+  {id:"lsr",name:"Land-speed team · lakester",tier:3,units:[1,2],price:20000,req:{hp:[450,800],rel:55,lsr:{body:"lakester"},mph:[215,250]}}
 ];
 /* site briefs: some clients say where the engine will live and re-run your certified engine in that air before they pay.
    [name, ambient °C, altitude m, premium]. Cold air packs the cylinder (more load, boost overshoots), heat eats knock margin,
    thin air costs an NA engine over a quarter of its torque at 3,000 m. All inside the Pro dyno cell's range so it can be previewed. */
 /* rotary buyers: they want a Wankel and nothing else. Classes count a rotary at 1.5x its quoted displacement (the FIA factor). */
 SEGMENTS.push(
-  {id:"rotsport",name:"Rotary sports coupé",tier:1,units:[3,10],price:9200,req:{hp:[180,260],kg:160,smooth:80,fuel:"r94",rel:76,rot:1}},
-  {id:"rotclub",name:"Club racer · rotary class",tier:2,units:[2,5],price:15500,req:{hp:[260,320],rot:1,rel:62,passes:200,fuel:"race100"}});
+  {id:"rotsport",name:"Rotary sports coupé",tier:1,units:[1,3],price:6500,req:{hp:[180,260],kg:160,smooth:80,fuel:"r94",rel:76,rot:1}},
+  {id:"rotclub",name:"Club racer · rotary class",tier:2,units:[1,2],price:10500,req:{hp:[260,320],rot:1,rel:62,passes:200,fuel:"race100"}});
 CATS.find(c=>c.id==="perf").segs.push("rotsport");CATS.find(c=>c.id==="race").segs.push("rotclub");
 const ROT_DISP=1.5;
 const SITE_P=0.3;
@@ -18943,7 +18943,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.31.2.0";
+const VERSION="1.32.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -20133,7 +20133,7 @@ function dragFinish(){
     else if(r.et!=null&&r.mph>150&&!r.chute){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — BLACK-FLAGGED, no parachute`,"bad");toast("BLACK-FLAGGED · no parachute over 150 mph");}
     else if(DR.night){}   // race night: purse and rep are settled when the night ends (rnFinish)
     else if(r.race&&!r.race.won){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et!=null?r.et.toFixed(2)+" s":"DNF"} — ${r.race.foul?"red light":"lost to "+r.race.name+" by "+Math.abs(r.race.margin||0).toFixed(3)+" s"}`,"bad");toast(r.race.foul?"RED LIGHT · entry gone":`LOST by ${Math.abs(r.race.margin||0).toFixed(3)} s`);}
-    else if(r.et!=null){const purse=(r.et<7?25000:r.et<8?9000:r.et<9?3500:r.et<10?1500:r.et<11?600:r.et<13?200:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`,purse>0?"good":"");if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
+    else if(r.et!=null){const purse=(r.et<7?400:r.et<8?250:r.et<9?150:r.et<10?80:r.et<11?40:r.et<13?20:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`,purse>0?"good":"");if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
     if(!failed)spEvent("drag",{win:!DR.night&&!!(r.race&&r.race.won)});
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
@@ -20198,7 +20198,7 @@ function rnQualBest(N,i){const t=[0,1].map(q=>N.q[q]&&N.q[q][i]).filter(p=>p&&p.
 function rnResolve(N,ri){const br=N.fmt==="bracket";for(const m of N.rounds[ri]){if(m.win!=null||m.a===0||m.b===0)continue;
   const pa=rnRivalAt(N,ri+2,m.a),pb=rnRivalAt(N,ri+2,m.b),j=rnJudge(Object.assign({x:pa.broke?402*pa.at:402},pa),Object.assign({x:pb.broke?402*pb.at:402},pb),br);
   m.pa=pa;m.pb=pb;m.win=j.w===0?m.a:m.b;m.why=j.why;m.margin=j.margin;}}
-function rnPurseEt(et){return et<7?25000:et<8?9000:et<9?3500:et<10?1500:et<11?600:et<13?200:100;}
+function rnPurseEt(et){return et<7?6000:et<8?4000:et<9?2000:et<10?1000:et<11?500:et<13?200:100;}
 function rnCur(){const n=career()?C().rn:S.rnSb;return n&&n.v===1?n:null;}
 function rnSetN(n){if(career())C().rn=n;else S.rnSb=n;}
 function rnLive(){const n=rnCur();return n&&!n.done?n:null;}
@@ -20225,7 +20225,7 @@ function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
   const veh=rnVeh(dragVeh()),b=rnBaseline(veh),body=veh.body||"street";
   if(career()&&b.mph>150&&!veh.chute){toast("Tech won't take it — over 150 mph needs a parachute");return;}
   const rnKey=fmt+":"+body;if(career()&&(C().rnDone||{})[rnKey]===C().week){toast(`One ${RN_FMT[fmt].toLowerCase()} night a week for the ${SIM.AERO[body].n} class — back next week`);return;}
-  const br=fmt==="bracket",purse=Math.round(Math.max(1500,6*rnPurseEt(b.et))*(br?0.8:1)/50)*50,entry=career()?Math.max(500,Math.round(purse*0.08/50)*50):0;
+  const br=fmt==="bracket",purse=Math.round(Math.max(1500,6*rnPurseEt(b.et))*(br?0.8:1)/50)*50,entry=career()?Math.max(150,Math.round(purse*0.08/50)*50):0;
   if(career()&&C().cash<entry){toast(`Entry is ${fmt$(entry)} — not enough cash`);return;}
   const seed=career()?rnHash([C().seed,C().week,body,fmt].join(":")):rnHash(Date.now()+":"+Math.random()),r=rnRng(rnHash(seed+":air"));
   const air=[0];for(let i=1;i<5;i++)air.push(+(air[i-1]+0.002+0.006*r()-0.002*(r()<0.25?1:0)).toFixed(4));   // the air gets better as the night cools
@@ -20453,7 +20453,7 @@ function pitsPlace(){const ov=$("pitsOv");if(!ov||ov.hidden)return;const svg=ov.
   svg.innerHTML=lines;}
 function rnFmtHtml(){const f=RN_FMT[S.env.dragFmt]?S.env.dragFmt:"test";
   let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
-  if(f!=="test")h+=`<p class="hint" style="margin-top:-4px"><b>${RN_FMT[f]}</b> · ${f==="elim"?"two qualifying passes set your seed, then quarter-final, semi and final against seven cars of your class. First to the stripe wins — a quick light beats a quick car. Red light or crossing the centreline loses.":"dial in the ET you expect. The slower dial leaves first; first to the stripe wins unless they ran under their dial (a breakout). Both under: the smaller breakout wins. Consistency beats horsepower."} ${career()?`Entry about 8% of the winner's purse (from $500), fuel per pass. Same rules as a pass: certified engine, ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade.`:"Free in the sandbox."} Set the car up below — body, tyre and weight lock when you enter.</p>`;
+  if(f!=="test")h+=`<p class="hint" style="margin-top:-4px"><b>${RN_FMT[f]}</b> · ${f==="elim"?"two qualifying passes set your seed, then quarter-final, semi and final against seven cars of your class. First to the stripe wins — a quick light beats a quick car. Red light or crossing the centreline loses.":"dial in the ET you expect. The slower dial leaves first; first to the stripe wins unless they ran under their dial (a breakout). Both under: the smaller breakout wins. Consistency beats horsepower."} ${career()?`Entry about 8% of the winner's purse (from $150), fuel per pass. Same rules as a pass: certified engine, ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade.`:"Free in the sandbox."} Set the car up below — body, tyre and weight lock when you enter.</p>`;
   return h;}
 function rnTuneEnvHtml(sl){const e=S.env,psi0=(SIM.TYRES[e.tyre]||SIM.TYRES.street).psi||16,sh=e.shocks||"medium";
   return`<div class="envgrid">${sl("tyrePsi","Tyre pressure",+(psi0*0.5).toFixed(1),+(psi0*1.4).toFixed(1),0.5," psi",e.tyrePsi>0?e.tyrePsi:psi0)}</div><div class="lbl"><span>Shocks</span></div><div class="seg n3">${[["soft","Soft","more bite · lifts"],["medium","Medium","as delivered"],["firm","Firm","flat · may spin"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shocks" class="${sh===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;}
@@ -20501,7 +20501,7 @@ async function shareSlip(l){try{await document.fonts.ready;}catch(e){}const c=sl
 /* ---- truck pull driver: a sled, a class, a field of local pullers ---- */
 let PR=null;
 const pullIsDiesel=c=>SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
-const PULL_PURSE=[4000,2000,1200,600,300],PULL_PAY={1:1,2:1.6,3:2.5,4:4},PULL_REP=[3,2,1];
+const PULL_PURSE=[4000,2000,1200,600,300],PULL_PAY={1:1,2:1.5,3:2,4:3},PULL_REP=[3,2,1];
 const PULL_NAMES={truck:["Dirty Deeds","Smoke Show","Black Gold","Coal Roller","Prairie Thunder","Mud Hen","Night Shift","Holy Roller","Rusty Nail","Stack Attack","Bad Habit","Gravel Pit"],tractor:["Sod Buster","Iron Horse","Field General","Green Machine","Big Red","Grain Train","Hay Fever","Dust Devil","Plow Boy","Farmall Fury","Quarter Section","Swather"]};
 const ordN=n=>n+(n%10===1&&n%100!==11?"st":n%10===2&&n%100!==12?"nd":n%10===3&&n%100!==13?"rd":"th");
 function pullRand(seed){let a=(seed>>>0)||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
@@ -20923,7 +20923,7 @@ const e24Cache=new Map();
 function e24Prep(trk,cfg){cfg=cfg||S.cfg;const o=roadOpt(),k=cfgHash(cfg)+"|"+o.ch+"|"+o.finalK+"|"+trk;let P=e24Cache.get(k);
   if(!P){if(e24Cache.size>10)e24Cache.clear();P=SIM.enduroPrep(cfg,null,{ch:o.ch,finalK:o.finalK},trk);e24Cache.set(k,P);}return P;}
 const e24Pct=h=>(100*(1-Math.exp(-h))).toFixed(h<0.001?2:1);
-function e24Hint(){return career()?`<b>24 Hours of Prairie Sky</b> · ${fmt$(E24_FEE)} entry, fuel billed by the litre after the flag. Opens at ${E24_REP} rep; one entry every ${E24_GAP} weeks. Class podiums pay, every hour is wear on the build, and a failure can end it — the teardown shows what let go.`
+function e24Hint(){return career()?`<b>24 Hours of Prairie Sky</b> · ${fmt$(E24_FEE)} entry, fuel billed by the litre after the flag. Opens at ${E24_REP} rep; one entry every ${E24_GAP} weeks. The top five in each class are paid, every hour is wear on the build, and a failure can end it — the teardown shows what let go.`
   :`<b>24 Hours of Prairie Sky</b> · your engine in the road-test car against twenty cars in three classes, a full day and night in accelerated time. Set the strategy, then watch it at 1× or time-lapse to the next event.`;}
 /* strategy seg rows: pre-race they edit S.env.e24*, live they edit the race plan (mode at once, the rest from the next stop) */
 function e24Seg(k,cur,opts,cls){return `<div class="seg ${cls||""}">${opts.map(([v,n,d])=>`<button data-e24k="${k}" data-e24v="${v}" class="${String(cur)===String(v)?"on":""}">${n}${d?`<small>${d}</small>`:""}</button>`).join("")}</div>`;}
@@ -21071,7 +21071,7 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
     clsBest:Math.min(...inCls.filter(x=>x.best!=null).map(x=>x.best)),win:inCls[0]?inCls[0].laps:0,hrs:+hrs.toFixed(1)};
   /* career money and standing */
   if(career()&&!ff&&same){const g=e24C();g.live=null;g.runs=(g.runs||0)+1;const K=SIM.E24_CLASSES[cls],fu=SIM.fuelOf(cfg0)||SIM.OPT.fuel.r91;
-    const prize=r.classified?(K.prize[r.posCls-1]||0)+1500:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.5)/* series fuel, at the trade price */;let rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
+    const prize=r.classified?(K.prize[r.posCls-1]||0)+3000:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.35)/* series fuel, at the trade price */;let rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
     if(r.dnf&&r.dnf.id){C().cert=null;rep-=2;}
     C().cash+=prize-fuelBill;C().rep=Math.max(0,C().rep+rep);r.prize=prize;r.fuelBill=fuelBill;r.rep=rep;
     addWear(+(hrs/40*({push:1.6,race:1.25,save:0.95}[stints.length?stints[stints.length-1].mode:"race"]||1.25)).toFixed(2),snap?hKey(snap.h):undefined);
@@ -21885,7 +21885,7 @@ function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;co
 const MKT_MIN=0.2;
 function missTxt(d){return d.miss.slice(0,3).map(x=>`${x.name.toLowerCase()} −${Math.round(x.cut*100)}%`).join(" · ");}
 // same engine, same word of mouth: contract or open market, rep follows units, class and how well it suits the buyer
-function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*6+(d.ok?bonus*20:0)+(repeat?4:0))*1.4*(d.ok?1:d.m));}
+function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*4+(d.ok?bonus*20:0)+(repeat?4:0))*0.4*(d.ok?1:d.m));}
 /* buyer groups: every segment the shop can reach bids on the certified engine on the spot market — no deposit, no deadline,
    a little under contract money. A crate-engine dealer takes anything that certified, at a thin margin. */
 const MKT_COOL=3;
@@ -21935,9 +21935,9 @@ function warrantyPass(){let claims=0,cost=0,active=0;
   if(claims)toast(`${claims} warranty claim${claims>1?"s":""} · ${fmt$(cost)}`);
   return claims;}
 function repeatPass(){for(const f of C().fleet){if(f.repeated||(f.claims||0)>0||C().week!==f.week+4)continue;f.repeated=true;
-    const units=Math.max(1,Math.round(f.units*1.4));const price=Math.round((f.basePrice||f.unitPrice)*1.15/10)*10;   // +15% on the brief's price; deal() adds the fit bonus again
+    const units=Math.max(1,Math.round(f.units*1.0));const price=Math.round((f.basePrice||f.unitPrice)*1.10/10)*10;   // +10% on the brief's price; deal() adds the fit bonus again
     (C().inbox=C().inbox||[]).push({id:Math.floor(rng()*1e9),seg:f.seg,name:f.name,client:f.client,req:Object.assign({},f.req),units,price,expires:C().week+3,repeat:true,...(f.site?{site:Object.assign({},f.site)}:{})});
-    logEvent(`${f.client} is back for ${units} more ${f.name} engines at +15%`,"good");toast(`${f.client} wants a repeat order`);}}
+    logEvent(`${f.client} is back for ${units} more ${f.name} engines at +10%`,"good");toast(`${f.client} wants a repeat order`);}}
 /* ===== rebuilds & cores =====
    Engines in the field wear: a fleet entry runs a segment's duty hours a week against the life rating it was certified
    with. Short-lived builds wear out inside the ten-week warranty and come back as WARRANTY REBUILDS (you pay the parts;
@@ -21947,9 +21947,9 @@ function repeatPass(){for(const f of C().fleet){if(f.repeated||(f.claims||0)>0||
    unit, worth 12% of the unit cost (capped at the core's book value). Other cores go to a six-slot core stock, used on
    later builds of that layout or sold to the core buyer for scrap. Cores are never bought, so there's nothing to flip. */
 const SVC_DUTY={prod:100,truck:120,diesel:150,perf:70,race:90,outlaw:110};   // in-service hours a week, compressed
-const SVC_TIERS=[{id:"top",name:"Top end",worn:"valves, guides and stem seals",parts:0.12,lab:0.07},
-  {id:"rb",name:"Rings & bearings",worn:"rings, rod and main bearings",parts:0.20,lab:0.09},
-  {id:"full",name:"Full rebuild",worn:"bores, crank, rings, bearings and valves",parts:0.32,lab:0.11}];
+const SVC_TIERS=[{id:"top",name:"Top end",worn:"valves, guides and stem seals",parts:0.12,lab:0.11},
+  {id:"rb",name:"Rings & bearings",worn:"rings, rod and main bearings",parts:0.20,lab:0.14},
+  {id:"full",name:"Full rebuild",worn:"bores, crank, rings, bearings and valves",parts:0.32,lab:0.18}];
 const CORE_MAX=6,CORE_FRAC=0.12,CORE_SCRAP=0.4;
 const CORE_LAY={hatch:["I3","I4"],sedan:["I4","V6"],van:["I4","V6"],pump:["I3","I4"],truck:["V6","V8"],hot:["I4","I4","F4"],taxi:["I4","V6"],sport:["I6","V6","F6"],
   club:["I4"],gt:["V8","V12","V10"],rally:["I4","F4"],drift:["I6","V8"],genset:["I6","V8"],tractor:["I6","I4"],super:["V8","V10"],endur:["V8","V6"],attack:["I4","V6"],
@@ -22084,9 +22084,9 @@ function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s
   const pool=SP_BRANDS.filter(b=>!taken.has(b.id));if(!pool.length)return null;
   const w=pool.map(b=>0.4+SP_LIKES[b.type].reduce((a,k)=>a+(s.form[k]||0),0)+(kind&&SP_LIKES[b.type].includes(kind)?3:0));
   let r=spRng()*w.reduce((a,v)=>a+v,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;const b=pool[i],likes=SP_LIKES[b.type];
-  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.8+Math.min(2,C().rep/250),style=spRng();
+  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.5+Math.min(1,C().rep/500),style=spRng();
   const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
-  const bon={win:spR50(350*scale*bm),finish:likes.some(k=>k==="night"||k==="pull")?spR50(120*scale*bm):0,record:likes.includes("salt")?spR50(1200*scale*bm):0};
+  const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull")?spR50(80*scale*bm):0,record:likes.includes("salt")?spR50(800*scale*bm):0};
   const pick=SP_OBL[b.type][Math.floor(spRng()*SP_OBL[b.type].length)];
   const n={nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick];
   const obl=[{k:pick,n:n||0}];if(C().rep>=10&&spRng()<0.5)obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
@@ -22184,7 +22184,7 @@ function renderShop(){
       ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
-    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +15%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
+    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
       <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
   const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
     const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
