@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.22.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.23.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -105,7 +105,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 .seg button{flex:1 1 auto;min-width:0;min-height:46px;padding:11px 8px;border:1px solid var(--rule);background:var(--panel);border-radius:5px;font-size:14px;font-weight:500;color:var(--chalk);line-height:1.15;position:relative}
 .seg button small{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
-.seg.n11 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
+.seg.n11 button,.seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .seg.n8 button{flex:1 1 22%}
 .seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .seg button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06));color:#fff}
@@ -255,6 +255,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .tele{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tele div{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;display:flex;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 .tele b{font-family:var(--mono);font-weight:500;color:var(--chalk);font-size:13px;white-space:nowrap}
+.tele.rot{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.tele.rot b{white-space:normal;text-align:right;margin-left:auto}
 /* records card (Analysis) */
 .recs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rec{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px 12px;min-width:0}
@@ -676,8 +677,8 @@ html.desk #tdCap b{font-size:22px}html.desk #tdCap p{font-size:14px}
       </div>
       <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
         <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
-        <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button></div>
-        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button></div>
+        <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button><button class="chip" data-pf="rotary">Rotary</button></div>
+        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
         <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
         <div id="presets"></div></div></div>
       <div id="buildForm"></div>
@@ -980,7 +981,19 @@ const ENGINE_SIM = (function () {
       n: 6, banks: 2, angle: 180, smooth: 92, bay: 1, name: "Flat 6",
       firingOrder: [1, 6, 2, 4, 3, 5], evenFire: true, crossplane: false,
       firstOrder: 0.0, secondOrder: 0.05
-    }
+    },
+    /* Wankel rotaries: n = rotors. A rotor's three faces each fire once per rotor turn and the rotor turns
+       once for every three turns of the eccentric shaft, so every rotor fires once per e-shaft revolution:
+       a two-rotor fires as often as an inline four. Nothing reciprocates; the rotors' orbit is cancelled by
+       the e-shaft counterweights, which is where the turbine-smoothness comes from. */
+    R1: { n: 1, banks: 1, angle: 0, smooth: 62, bay: 0, name: "1-rotor Wankel", rotary: 1,
+      firingOrder: [1], evenFire: true, crossplane: false, firstOrder: 0.12, secondOrder: 0.0 },
+    R2: { n: 2, banks: 1, angle: 0, smooth: 86, bay: 0, name: "2-rotor Wankel", rotary: 1,
+      firingOrder: [1, 2], evenFire: true, crossplane: false, firstOrder: 0.02, secondOrder: 0.0 },
+    R3: { n: 3, banks: 1, angle: 0, smooth: 93, bay: 1, name: "3-rotor Wankel", rotary: 1,
+      firingOrder: [1, 3, 2], evenFire: true, crossplane: false, firstOrder: 0.01, secondOrder: 0.0 },
+    R4: { n: 4, banks: 1, angle: 0, smooth: 96, bay: 1, name: "4-rotor Wankel", rotary: 1,
+      firingOrder: [1, 3, 2, 4], evenFire: true, crossplane: false, firstOrder: 0.0, secondOrder: 0.0 }
   };
 
   /* =====================================================================
@@ -1004,7 +1017,11 @@ const ENGINE_SIM = (function () {
     V10: { name: "V10 90°", sub: "10 cyl · bal 78 · bay L", info: "A 90° vee with offset crankpins so it still fires evenly. Huge specific output, and a crank long enough to be a problem to keep straight.", cost: 5200, massKg: 232, req: "bay2" },
     V12: { name: "V12 60°", sub: "12 cyl · bal 97 · bay L", info: "Two perfectly balanced sixes sharing a crank — the smoothest thing you can build. Twist in that long crank is what limits the revs.", cost: 12000, massKg: 272, req: "bay2" },
     F4: { name: "Flat 4", sub: "4 cyl · bal 70 · bay S", info: "Opposed pairs cancel each other, including the shake an inline four suffers. Leaves a small rocking couple, and sits very low in the car.", cost: 1400, massKg: 130 },
-    F6: { name: "Flat 6", sub: "6 cyl · bal 92 · bay M", info: "An opposed six: balanced, with a crank short enough that twist never becomes an issue. Getting air to the rear cylinders is the hard part.", cost: 3400, massKg: 185, req: "bay1" }
+    F6: { name: "Flat 6", sub: "6 cyl · bal 92 · bay M", info: "An opposed six: balanced, with a crank short enough that twist never becomes an issue. Getting air to the rear cylinders is the hard part.", cost: 3400, massKg: 185, req: "bay1" },
+    R1: { name: "1-rotor Wankel", sub: "1 rotor · bal 62 · bay S", info: "One triangular rotor orbiting in a peanut-shaped housing: three combustion chambers, one bang per turn of the eccentric shaft. Tiny and light, and the only rotary that shakes.", cost: 900, massKg: 55 },
+    R2: { name: "2-rotor Wankel", sub: "2 rotor · bal 86 · bay S", info: "The 12A and 13B: two rotors phased 180° apart on one eccentric shaft. Fires like a four, revs like nothing else of its size and sits low and far back in the bay.", cost: 1300, massKg: 100 },
+    R3: { name: "3-rotor Wankel", sub: "3 rotor · bal 93 · bay M", info: "The 20B: a third rotor housing and a longer eccentric shaft. Six-cylinder smoothness out of two litres, and a shaft long enough that it bends.", cost: 2600, massKg: 140, req: "bay1" },
+    R4: { name: "4-rotor Wankel", sub: "4 rotor · bal 96 · bay M", info: "The R26B that won Le Mans: four rotors on a split eccentric shaft with a centre main bearing. A scream you can hear from the next county.", cost: 6800, massKg: 178, req: "bay2" }
   };
 
   /* ---- block material ---- */
@@ -1358,6 +1375,55 @@ const ENGINE_SIM = (function () {
     n250: { name: "250 hp sticks", sub: "x3.5 flow  pulling", info: "Pulling sticks: enough fuel to black out the grandstand. A built bottom end, compound turbos and a fire-ringed head, or it will not see the end of the track.", mult: 3.5, cost: 340, req: "race" }
   };
 
+  /* ---- ROTARY (Wankel) parts: only fitted when the layout is a rotary ----
+     Ports: ve = breathing plateau, rpmC = rpm the port timing is centred on, wLo = how gently it falls
+     away below that, flow = port area vs a stock side port, overlap = intake/exhaust overlap (idle,
+     dilution, the brap), etaB = efficiency from a later exhaust opening, idle = the idle it needs.   */
+  OPT.rotPort = {
+    side: { name: "Stock side port", sub: "VE.96 ~5600rpm idle 750", info: "The factory intake ports cut in the side housings, timed so the intake and exhaust barely overlap. Clean idle, decent economy, good low-end torque \u2014 and it runs out of breath past about seven thousand.", ve: 0.86, rpmC: 5600, wLo: 1.25, wHi: 1.02, flow: 1.00, overlap: 0.05, etaB: 0, idle: 750, cost: 0 },
+    sidex: { name: "6-port side exhaust", sub: "VE1.0 ~6900rpm no overlap", info: "The Renesis layout: three intake ports a rotor and the exhaust moved into the side housings too. There is no overlap at all, so it idles like a piano and opens the exhaust late enough to waste less heat.", ve: 0.92, rpmC: 6900, wLo: 1.08, wHi: 1.16, flow: 1.30, overlap: 0.0, etaB: 0.04, idle: 750, cost: 1600, req: "flow" },
+    street: { name: "Street port", sub: "VE1.0 ~6400rpm idle 900", info: "The side ports opened up and the closing edge moved later by hand with a die grinder. A little lumpy at idle, noticeably stronger above five thousand, and still a road engine.", ve: 0.90, rpmC: 6400, wLo: 1.06, wHi: 1.12, flow: 1.14, overlap: 0.14, etaB: 0, idle: 900, cost: 900, req: "shop1" },
+    bridge: { name: "Bridge port", sub: "VE1.08 ~7700rpm idle 1150", info: "A second window cut beside each side port, leaving a thin bridge so the apex seal has something to ride over. Huge overlap: it idles like a cement mixer and makes its power from seven thousand to the moon.", ve: 1.04, rpmC: 7700, wLo: 0.74, wHi: 1.25, flow: 1.34, overlap: 0.48, etaB: 0, idle: 1150, cost: 2400, req: "flow" },
+    peri: { name: "Peripheral port", sub: "VE1.14 ~8500rpm idle 1400", info: "The intake moved out of the side housings into the rotor housing itself, where the apex seal sweeps straight past it. Nothing breathes better at nine thousand, and nothing idles worse. The race-car port.", ve: 1.12, rpmC: 8500, wLo: 0.62, wHi: 1.35, flow: 1.58, overlap: 0.72, etaB: 0, idle: 1400, cost: 5200, req: "shop2" }
+  };
+  /* apex seals: thick (mm), fatigue = what the seal survives in bending under combustion shock (MPa),
+     dens (kg/m3) for the inertia that makes it chatter, brittle = how badly a knock event hurts it,
+     fric/seal/wear vs the OEM part, cost per rotor (three seals and their springs)                    */
+  OPT.apexSeal = {
+    oem3: { name: "OEM 3 mm cast iron", sub: "3 mm  fat 90  std", info: "Mazda's two-piece cast-iron seal: wears in kindly against the chrome and lasts a long time at stock boost. A knock event cracks it, and then the rotor loses compression on one face.", thick: 3, fatigue: 90, dens: 7200, brittle: 0.60, fric: 1.00, seal: 1.00, wear: 1.00, cost: 45 },
+    oem2: { name: "OEM 2 mm (Renesis)", sub: "2 mm  fat 150  light", info: "The thinner seal the Renesis brought in: less mass to bounce and less friction at nine thousand. Thinner means it bends more under pressure, and a boosted 2 mm seal is famous for the wrong reasons.", thick: 2, fatigue: 150, dens: 7300, brittle: 0.75, fric: 0.90, seal: 0.99, wear: 1.05, cost: 55 },
+    ceramic: { name: "Ceramic Si3N4", sub: "3 mm  fat 230  0.44 mass", info: "Silicon nitride: less than half the weight of iron, very hard and barely wears. Strong in steady bending, but a ceramic does not bend before it breaks \u2014 knock shatters it.", thick: 3, fatigue: 230, dens: 3200, brittle: 1.40, fric: 0.85, seal: 1.02, wear: 0.60, cost: 380, req: "shop2" },
+    billet: { name: "Billet steel seal", sub: "3 mm  fat 260  tough", info: "A one-piece seal machined from tool steel, the way the big-boost street rotary builders (Iannetti and the like) make them. Heavy and hard on a tired housing, but it takes a knock event and keeps sealing.", thick: 3, fatigue: 260, dens: 7800, brittle: 0.12, fric: 1.05, seal: 1.01, wear: 0.90, cost: 520, req: "race" }
+  };
+  /* rotor housings: chatter = how fast the seal can run before it bounces and marks the surface,
+     hotC = hot-lobe temperature offset, egtC = exhaust heat kept in the gas, cost per housing          */
+  OPT.rotHousing = {
+    chrome: { name: "Hard-chrome lined", sub: "OEM  chatter 1.00", info: "An aluminium housing with a sprayed steel liner plated in hard chrome. Durable at stock revs; push past what the seals can follow and the chrome picks up chatter marks.", chatter: 1.00, hotC: 0, egtC: 0, massFac: 1.0, cost: 450 },
+    nikasil: { name: "Nikasil re-plated", sub: "chatter 1.18  -12 C", info: "Stripped and re-plated with nickel-silicon carbide: harder than chrome, holds oil better and carries heat to the coolant faster.", chatter: 1.18, hotC: -12, egtC: 0, massFac: 1.0, cost: 1100, req: "shop1" },
+    ceramic: { name: "Plasma ceramic coat", sub: "chatter 1.30  -35 C", info: "A plasma-sprayed ceramic running surface: the hardest there is, and it keeps combustion heat in the gas instead of the housing \u2014 cooler housings, hotter exhaust.", chatter: 1.30, hotC: -35, egtC: 25, massFac: 1.0, cost: 2600, req: "shop2" }
+  };
+  /* side (end) housings: what the side seals run on, and how stiff the stack is around the e-shaft */
+  OPT.sidePlate = {
+    iron: { name: "Nitrided cast iron", sub: "OEM  side seal 1.00", info: "The factory end plates: cast iron, nitrided where the side seals run. Heavy, stiff and forgiving.", sideSeal: 1.00, stiff: 1.00, massFac: 1.00, cost: 300 },
+    hardened: { name: "Hardened & lapped", sub: "side seal 0.75", info: "Induction-hardened, lapped flat and checked for wear steps. The side seals bed in properly and stop sticking.", sideSeal: 0.75, stiff: 1.00, massFac: 1.00, cost: 700, req: "shop1" },
+    alu: { name: "Billet alu, coated", sub: "0.55 mass  stiff 0.85", info: "Machined aluminium end plates with a sprayed hard face, as the endurance racers ran. Takes a quarter of the weight off a rotary \u2014 and gives the eccentric shaft a little less to lean on.", sideSeal: 0.90, stiff: 0.85, massFac: 0.55, cost: 2400, req: "race" }
+  };
+  /* eccentric shaft: supports = main bearings carrying it (a split shaft adds a centre main) */
+  OPT.eshaft = {
+    stock: { name: "Forged one-piece", sub: "fat 520  2 mains", info: "The factory forging, carried by a main bearing in each end housing. On two rotors it is massively over-built; on three or four it is a long beam with nothing in the middle.", fatigue: 520, dFac: 1.00, supports: 2, cost: 350 },
+    billet: { name: "Billet 4340 shaft", sub: "fat 720  oversize", info: "Machined from chrome-moly bar with slightly bigger journals: stiffer, stronger, and far happier with a lot of power on a long engine.", fatigue: 720, dFac: 1.06, supports: 2, cost: 1400, req: "shop2" },
+    split: { name: "Split + centre main", sub: "fat 680  3 mains", info: "A multi-piece shaft joined on tapers so a third main bearing can sit in the middle intermediate housing \u2014 what three- and four-rotor race engines need to stay straight at nine thousand.", fatigue: 680, dFac: 1.04, supports: 3, cost: 3200, req: "bay2" }
+  };
+  /* oil metering: the apex and side seals are lubricated by oil burnt with the charge. cap = how much
+     oil reaches the seals vs the stock pump at the same load, carbon = deposits it leaves, oilL = oil
+     burnt per 1,000 km                                                                           */
+  OPT.oilMeter = {
+    omp: { name: "Mechanical OMP", sub: "cap 1.00  0.5 L/1000km", info: "The factory oil metering pump: a little plunger pump linked to the throttle that squirts engine oil into the housings. Sized for the stock engine at stock boost.", cap: 1.00, carbon: 1.00, oilL: 0.5, cost: 0 },
+    emop: { name: "Electronic OMP", sub: "cap 1.30  ECU metered", info: "A stepper-motor pump the ECU meters by load as well as revs, as on the RX-8: more oil under boost, less at a light cruise.", cap: 1.30, carbon: 0.85, oilL: 0.45, cost: 240, req: "shop1" },
+    omp_premix: { name: "OMP + premix", sub: "cap 2.00  1:200", info: "The pump left in and two-stroke oil added to the tank at about 1:200. The seals never go short, at the price of a smokier exhaust and a little more carbon.", cap: 2.00, carbon: 1.25, oilL: 0.9, cost: 60 },
+    premix: { name: "Premix only", sub: "cap 2.60  1:100", info: "Pump deleted, two-stroke oil in the fuel at 1:100: every drop of fuel carries its oil, so the seals are oiled exactly as hard as the engine is working. The race-car answer, and it smells like one.", cap: 2.60, carbon: 1.55, oilL: 1.4, cost: 30 }
+  };
+
   /* ---- engine oil (kinematic viscosity at 100 C, viscosity index) ---- */
   OPT.oilGrade = {
     w0_20: { name: "0W-20 full syn", sub: "8.2 cSt@100 VI 165", info: "Thin, so the pump and the bearings waste almost nothing. The film gets marginal under heavy bearing load.", kv100: 8.2, vi: 165, hths: 2.6, fricFac: 0.93, cost: 70 },
@@ -1460,6 +1526,8 @@ const ENGINE_SIM = (function () {
   const isTurbo = (c) => OPT.asp[c.asp].kind === "turbo";
   /* compression ignition: every diesel branch in the physics hangs off this */
   function isDiesel(c) { const f = c && OPT.fuel[c.fuel]; return !!(f && f.ci); }
+  function isRotary(c) { const L = c && LAYOUTS[c.layout]; return !!(L && L.rotary); }
+  const notRotary = (c) => !isRotary(c);
   /* MORE FUELS: gaseous fuels (propane, CNG) and the flex blend. fuelOf() is the fuel the engine actually burns:
      the table entry, or for flex the pump-91 / E85 blend at cfg.ethanolPct (E85 when it is unset). */
   function isGas(c) { const f = c && OPT.fuel[c.fuel]; return !!(f && f.gas); }
@@ -1486,43 +1554,53 @@ const ENGINE_SIM = (function () {
       ]
     },
     {
-      title: "Bore & stroke", fields: [
-        { key: "bore", type: "slider", label: "Bore", min: 68, max: 110, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 140 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
-        { key: "stroke", type: "slider", label: "Stroke", min: 58, max: 120, maxIf: c => OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 180 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
-        { key: "rodRatio", type: "slider", label: "Rod ratio L/r", min: 1.45, max: 2.10, step: 0.01, nudge: 0.01, unit: "", fmt: f2 },
-        { key: "cr", type: "slider", label: "Compression ratio", min: 7, max: 15, minIf: c => isDiesel(c) ? 14 : 7, maxIf: c => isDiesel(c) ? 24 : 15, step: 0.25, nudge: 0.25, unit: ":1", fmt: fq }
+      title: "Bore & stroke", titleIf: c => isRotary(c) ? "Rotor geometry" : null, fields: [
+        { key: "bore", type: "slider", label: "Bore", labelIf: c => isRotary(c) ? "Rotor width B" : null, min: 68, max: 110, minIf: c => isRotary(c) ? 50 : 68, maxIf: c => isRotary(c) ? 100 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 140 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "stroke", type: "slider", label: "Stroke", labelIf: c => isRotary(c) ? "Generating radius R" : null, min: 58, max: 120, minIf: c => isRotary(c) ? 85 : 58, maxIf: c => isRotary(c) ? 125 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 180 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "ecc", type: "slider", label: "Eccentricity e", min: 11, max: 19, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq, showIf: isRotary },
+        { key: "rodRatio", type: "slider", label: "Rod ratio L/r", min: 1.45, max: 2.10, step: 0.01, nudge: 0.01, unit: "", fmt: f2, showIf: notRotary },
+        { key: "cr", type: "slider", label: "Compression ratio", min: 7, max: 15, minIf: c => isDiesel(c) ? 14 : 7, maxIf: c => isDiesel(c) ? 24 : isRotary(c) ? 11.5 : 15, step: 0.25, nudge: 0.25, unit: ":1", fmt: fq }
+      ]
+    },
+    {
+      title: "Rotors & housings", fields: [
+        { key: "rotHousing", type: "seg", label: "Rotor housings", optTable: "rotHousing", showIf: isRotary },
+        { key: "sidePlate", type: "seg", label: "Side housings", optTable: "sidePlate", showIf: isRotary },
+        { key: "apexSeal", type: "seg", label: "Apex seals", optTable: "apexSeal", showIf: isRotary },
+        { key: "eshaft", type: "seg", label: "Eccentric shaft", optTable: "eshaft", showIf: isRotary }
       ]
     },
     {
       title: "Block & head materials", fields: [
-        { key: "blockMat", type: "seg", label: "Block material", optTable: "blockMat" },
-        { key: "deck", type: "seg", label: "Deck construction", optTable: "deck", showIf: (c) => c.blockMat === "alu_liners" || c.blockMat === "alu_nikasil" },
-        { key: "headMat", type: "seg", label: "Head material", optTable: "headMat" },
-        { key: "head", type: "seg", label: "Valvetrain layout", optTable: "head" }
+        { key: "blockMat", type: "seg", label: "Block material", optTable: "blockMat", showIf: notRotary },
+        { key: "deck", type: "seg", label: "Deck construction", optTable: "deck", showIf: (c) => !isRotary(c) && (c.blockMat === "alu_liners" || c.blockMat === "alu_nikasil") },
+        { key: "headMat", type: "seg", label: "Head material", optTable: "headMat", showIf: notRotary },
+        { key: "head", type: "seg", label: "Valvetrain layout", optTable: "head", showIf: notRotary }
       ]
     },
     {
       title: "Pistons & rings", fields: [
-        { key: "piston", type: "seg", label: "Piston alloy", optTable: "piston" },
-        { key: "pistonClearance", type: "seg", label: "Piston clearance", optTable: "pistonClearance" },
-        { key: "rings", type: "seg", label: "Ring pack", optTable: "rings" }
+        { key: "piston", type: "seg", label: "Piston alloy", optTable: "piston", showIf: notRotary },
+        { key: "pistonClearance", type: "seg", label: "Piston clearance", optTable: "pistonClearance", showIf: notRotary },
+        { key: "rings", type: "seg", label: "Ring pack", optTable: "rings", showIf: notRotary }
       ]
     },
     {
-      title: "Rods & crank", fields: [
-        { key: "rod", type: "seg", label: "Connecting rods", optTable: "rod" },
-        { key: "rodBolts", type: "seg", label: "Rod bolts", optTable: "rodBolts" },
-        { key: "crank", type: "seg", label: "Crankshaft", optTable: "crank" },
-        { key: "damper", type: "seg", label: "Torsional damper", optTable: "damper" },
-        { key: "bearings", type: "seg", label: "Main/rod bearings", optTable: "bearings" }
+      title: "Rods & crank", titleIf: c => isRotary(c) ? "Bearings" : null, fields: [
+        { key: "rod", type: "seg", label: "Connecting rods", optTable: "rod", showIf: notRotary },
+        { key: "rodBolts", type: "seg", label: "Rod bolts", optTable: "rodBolts", showIf: notRotary },
+        { key: "crank", type: "seg", label: "Crankshaft", optTable: "crank", showIf: notRotary },
+        { key: "damper", type: "seg", label: "Torsional damper", optTable: "damper", showIf: notRotary },
+        { key: "bearings", type: "seg", label: "Main/rod bearings", labelIf: c => isRotary(c) ? "Rotor & main bearings" : null, optTable: "bearings" }
       ]
     },
     {
-      title: "Valvetrain", fields: [
-        { key: "valveMat", type: "seg", label: "Valve material", optTable: "valveMat" },
-        { key: "springs", type: "seg", label: "Valve springs", optTable: "springs" },
-        { key: "cam", type: "slider", label: "Cam duration / overlap", min: 0, max: 100, maxIf: c => OPT.head[c.head].camMax || 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)) },
-        { key: "lift", type: "slider", label: "Valve lift", min: 0, max: 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)) },
+      title: "Valvetrain", titleIf: c => isRotary(c) ? "Porting & revs" : null, fields: [
+        { key: "valveMat", type: "seg", label: "Valve material", optTable: "valveMat", showIf: notRotary },
+        { key: "springs", type: "seg", label: "Valve springs", optTable: "springs", showIf: notRotary },
+        { key: "cam", type: "slider", label: "Cam duration / overlap", min: 0, max: 100, maxIf: c => OPT.head[c.head].camMax || 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)), showIf: notRotary },
+        { key: "lift", type: "slider", label: "Valve lift", min: 0, max: 100, step: 1, nudge: 1, unit: "", fmt: (v) => String(Math.round(v)), showIf: notRotary },
+        { key: "rotPort", type: "seg", label: "Intake porting", optTable: "rotPort", showIf: isRotary },
         { key: "redline", type: "slider", label: "Redline", min: 4000, max: 12500, minIf: c => isDiesel(c) ? 1800 : 4000, step: 100, nudge: 100, unit: "rpm", fmt: (v) => String(Math.round(v)) }
       ]
     },
@@ -1575,19 +1653,20 @@ const ENGINE_SIM = (function () {
       title: "Lubrication & cooling", fields: [
         { key: "oilGrade", type: "seg", label: "Oil grade", optTable: "oilGrade" },
         { key: "oilSystem", type: "seg", label: "Oil system", optTable: "oilSystem" },
-        { key: "oilSquirters", type: "seg", label: "Piston cooling jets", optTable: "oilSquirters" },
+        { key: "oilSquirters", type: "seg", label: "Piston cooling jets", optTable: "oilSquirters", showIf: notRotary },
+        { key: "oilMeter", type: "seg", label: "Seal oiling", optTable: "oilMeter", showIf: isRotary },
         { key: "cooling", type: "seg", label: "Cooling package", optTable: "cooling" }
       ]
     },
     {
       title: "Sealing", fields: [
-        { key: "gasket", type: "seg", label: "Head gasket", optTable: "gasket" },
-        { key: "studs", type: "seg", label: "Head fasteners", optTable: "studs" }
+        { key: "gasket", type: "seg", label: "Head gasket", optTable: "gasket", showIf: notRotary },
+        { key: "studs", type: "seg", label: "Head fasteners", optTable: "studs", showIf: notRotary }
       ]
     },
     {
       title: "Finish", fields: [
-        { key: "cover", type: "swatch", label: "Cam cover", optTable: "cover" }
+        { key: "cover", type: "swatch", label: "Cam cover", labelIf: c => isRotary(c) ? "Front cover & intake" : null, optTable: "cover" }
       ]
     }
   ];
@@ -1610,6 +1689,7 @@ const ENGINE_SIM = (function () {
     oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "none",
     cooling: "std", exhaust: "cast_tubular", cover: "black",
     launchCtl: "none", twoStepRpm: 4000, launchRetard: 20, transBrake: "none",
+    ecc: 15, rotPort: "side", apexSeal: "oem3", rotHousing: "chrome", sidePlate: "iron", eshaft: "stock", oilMeter: "omp",
     pipe: "stock", muffler: "stock", cat: "none", cutout: "none",
     turbine: "fixed", als: "off"
   };
@@ -1646,6 +1726,7 @@ const ENGINE_SIM = (function () {
      ===================================================================== */
   function geometry(cfg) {
     const L = LAYOUTS[cfg.layout] || LAYOUTS.I4;
+    if (L.rotary) return rotGeometry(cfg, L);
     const b = cfg.bore, s = cfg.stroke;
     const Ap = PI / 4 * b * b / 1e6;             // piston area, m^2
     const Vcyl = Ap * (s / 1000);                // m^3 per cylinder
@@ -1718,13 +1799,14 @@ const ENGINE_SIM = (function () {
     let spool = 2150 * ts.spoolFac * Math.pow(2.0 / Math.max(0.5, VdL), 0.48);
     if (isDiesel(cfg)) spool *= 0.75;                     // unthrottled: full exhaust mass flow from just off idle
     if (units === 2) spool *= 0.78;                       // half the flow per unit
+    if (isRotary(cfg)) spool *= (units === 2 && !compound) ? 0.86 : 0.92;   // a valveless port dumps a hot, sharp pulse; rotary twins run in sequence
     if (compound) spool *= 0.70;                          // the small stage lights first
     spool *= Math.pow(1 + cfg.boost * 0.30, 0.55);         // more boost = later spool
     if (cfg.turbine === "vgt" && asp.kind === "turbo") {     // vanes shut: a small fast turbine at low flow; open: the big housing's choke point
       const spool0 = clamp(spool, 1200, 7000);
-      return { kind: asp.kind, spool: clamp(spool * (isDiesel(cfg) ? 0.70 : 0.78), 900, 7000), spool0: spool0, vgt: 1, target: cfg.boost, asp: asp, ts: ts, units: units, compound: compound };
+      return { kind: asp.kind, spool: clamp(spool * (isDiesel(cfg) ? 0.70 : 0.78), 900, 7000), spool0: spool0, vgt: 1, target: cfg.boost, asp: asp, ts: ts, units: units, compound: compound, seq: false };
     }
-    return { kind: asp.kind, spool: clamp(spool, 1200, 7000), target: cfg.boost, asp: asp, ts: ts, units: units, compound: compound };
+    return { kind: asp.kind, spool: clamp(spool, 1200, 7000), target: cfg.boost, asp: asp, ts: ts, units: units, compound: compound, seq: isRotary(cfg) && units === 2 && !compound };
   }
 
   function boostAt(rpm, bm, cfg, g) {
@@ -1747,8 +1829,9 @@ const ENGINE_SIM = (function () {
     }
     // turbo: first-order lag on turbine energy, then compressor choke roll-off
     let b = bm.target * (1 - Math.exp(-3.0 * Math.pow(rpm / bm.spool, 2.2)));
-    const chokeRpm = (bm.vgt ? bm.spool0 * 1.06 : bm.spool) * (2.55 * bm.ts.chokeFac);   // open vanes flow a touch more than the fixed housing
+    const chokeRpm = (bm.vgt ? bm.spool0 * 1.06 : bm.spool) * (2.55 * bm.ts.chokeFac) * (bm.seq ? 1.45 : 1);   // open vanes flow a touch more than the fixed housing; sequential: the second turbo carries the top end
     if (rpm > chokeRpm) b *= clamp(1 - 0.55 * sq((rpm - chokeRpm) / (1.5 * chokeRpm)), 0.30, 1);
+    if (bm.seq) b *= 1 - 0.07 * Math.exp(-sq((rpm - 1.9 * bm.spool) / (0.12 * bm.spool)));   // sequential changeover: the second turbo is brought in
     return Math.max(0, b);
   }
 
@@ -1860,6 +1943,77 @@ const ENGINE_SIM = (function () {
   function mapRow(m, arr, rpm) { const r = mapSeg(m.rpm, rpm); return mapMix(arr[r[0]], arr[r[0] + 1], r[1]); }
 
   /* =====================================================================
+     9r.  ROTARY (Wankel) cycle. Only a rotary layout ever reaches these.
+          The eccentric shaft (e-shaft) is the output shaft: it turns three
+          times for every turn of a rotor, and each of the rotor's three faces
+          fires once per rotor turn, so every rotor fires once per e-shaft rev.
+          Displacement is quoted Mazda's way: 3*sqrt(3)*R*e*B per chamber, one
+          chamber per rotor (13B = 2 x 654 cc = 1.3 L). Over 720 deg of e-shaft
+          each rotor sweeps two chambers, so the cycle breathes and burns like
+          a four-stroke of twice that (the 13B like a 2.6 L): that four-stroke
+          equivalent is the volume IMEP/BMEP, torque and air flow use (g.Vd),
+          and the quoted figure is g.VdNom (res.Vd).
+     ===================================================================== */
+  const ROT_ETA = 0.74;      // indicated efficiency vs a piston engine at the same CR: a long thin moving chamber burns slowly,
+                             //   leaves a quench pocket at the trailing apex (the unburnt HC) and loses heat to a lot of housing
+  const ROT_CRUISE = 0.90;   // part load: proportionally more charge in the quench zone and more leakage time per cycle
+  const ROT_PMAX = 0.78;     // the burn spreads along a chamber that is already expanding, so the peak is lower
+  const ROT_FC = 0.30, ROT_FS = 0.050, ROT_FS2 = 0.0060;   // seal + e-shaft bearing friction [bar] vs an apex-speed index (krpm x R/105)
+  const ROT_EGT = 115;       // degC: the exhaust port opens while the charge is still burning
+  const ROT_ON = 0.0, ROT_ON_B = 5.5;   // octane: a cool quenched trailing chamber NA; boosted, the end gas sits on the hot lobe
+  const ROT_HEAT = 1.25;     // heat to coolant: a large housing surface wraps every chamber
+  const ROT_SHOCK = 4.0;     // apex seal: combustion shock and hammering in its slot over the static pressure load
+  const ROT_VLIM = 55;       // m/s an OEM-mass seal follows on chrome before it bounces
+  const ROT_HOUSE = 5.5;     // hot-lobe temperature rise vs heat flux
+  const ROT_ESH = 2.1e-3;    // e-shaft deflection index -> um
+  const ROT_SKIP = { piston_speed: 1, crown_temp: 1, crown_pressure: 1, hot_clearance: 1, slap_blowby: 1, ring_gap: 1, rod_tension: 1,
+    rod_buckling: 1, rod_bolts: 1, crank_fatigue: 1, torsional: 1, head_lift: 1, gasket_shear: 1, valve_float: 1, valve_piston: 1,
+    valve_temp: 1, bore_distortion: 1, wall_thickness: 1, detonation: 1, preignition_egt: 1, bearing_load: 1, oil_film: 1 };
+  function rotGeometry(cfg, L) {
+    const B = cfg.bore, R = cfg.stroke, e = cfg.ecc || 15;
+    const Vch = 3 * Math.sqrt(3) * R * e * B / 1e9;            // m^3, one chamber
+    const VdNom = Vch * L.n, Vd = 2 * VdNom;                    // quoted / four-stroke equivalent
+    // the piston-only maths downstream still runs (its tests are skipped): give it a neutral 86 mm "cylinder"
+    return { L: L, b: 86, s: 86, Ap: PI / 4 * 0.086 * 0.086, Vcyl: Vd / L.n, Vd: Vd, VdNom: VdNom, Vch: Vch,
+      r: 0.043, l: 0.086 * 1.65, lam: 0.043 / (0.086 * 1.65), rot: true, R: R / 1000, e: e / 1000, B: B / 1000 };
+  }
+  /* breathing: the port timing (rpmC, wLo) and its area against how much chamber it has to fill (Z) */
+  function rotVeModel(cfg, g, ink, exh, pt) {
+    const plateau = clamp(pt.ve + ink.veBonus + exh.veBonus, 0.60, 1.25);
+    const rpmC = pt.rpmC * Math.pow(0.105 / g.R, 0.5) * Math.pow(0.015 / g.e, 0.3);
+    const zK = 0.0137 * (g.e / 0.015) * Math.pow(g.R / 0.105, 0.5) / pt.flow;
+    return { plateau: plateau, rpmC: rpmC, zK: zK, wLo: pt.wLo, wHi: pt.wHi || 1.16, overlap: pt.overlap,
+      dyn: (rpm) => 1 - 0.115 * pt.overlap * clamp(1.6 - rpm / rpmC, 0, 1.1) };
+  }
+  function rotVeAt(rpm, rv, ink, chargeK, bBar) {
+    const a = 20.05 * Math.sqrt(chargeK);
+    const Z = rv.zK * rpm / a;
+    const fMach = 1 / (1 + Math.pow(Z / 0.648, 3.4));
+    const x = rpm / rv.rpmC;
+    const fCam = Math.exp(-0.5 * sq((x - 1) / (x < 1 ? rv.wLo : rv.wHi)));
+    const ampEff = ink.amp / (1 + 1.2 * (bBar || 0));
+    const fRun = 1 + ampEff * Math.exp(-0.5 * sq((rpm - ink.rTune) / (0.30 * ink.rTune)));
+    // boost traps exhaust residual through the overlap; a side port barely overlaps, so a rotary keeps more of its charge
+    const trap = bBar > 0.001 ? 1 / (1 + (K_TRAP0 * clamp(bBar / 0.5, 0, 1) + K_TRAP1 * bBar) * (0.30 + rv.overlap)) : 1;
+    // overlap at low load-and-rpm: exhaust gas backs into the intake and dilutes the next charge
+    const rev = 1 - 0.10 * rv.overlap * clamp(1 - rpm / 3500, 0, 1);
+    return clamp(rv.plateau * fCam * fMach * fRun * trap * rev, 0.15, 1.30);
+  }
+  /* compression leaks past the apex seals in proportion to the time it has: worst at low rpm and under boost */
+  function rotLeak(rpm, sl, bBar) {
+    return 1 - 0.045 * (2 - sl.seal) * Math.pow(3000 / Math.max(600, rpm), 0.7) * (1 + 0.10 * (bBar || 0)) * (sl.thick < 2.5 ? 1.08 : 1);
+  }
+  function rotFmepBar(rpm, pmaxBar, g, sl) {
+    const v = rpm / 1000 * g.R / 0.105;
+    return (ROT_FC + FM_P * pmaxBar + ROT_FS * v + ROT_FS2 * v * v) * sl.fric;
+  }
+  /* octane requirement: no bore and no head; aluminium housings and side seals of iron */
+  function rotOnReq(crEff, chargeC, coolantC, timing, lamE, bBar) {
+    return 89.6 + 3.0 * (crEff - 10.55) + 0.135 * (chargeC - 35) + 0.10 * (coolantC - 90) + 0.85 * timing
+      - 1.4 - 6.0 * clamp(1.0 - lamE, -0.05, 0.22) + ROT_ON + ROT_ON_B * (bBar || 0);
+  }
+
+  /* =====================================================================
      10.  simulate()
      ===================================================================== */
   /* ---- exhaust system after the manifold -------------------------------------------------
@@ -1934,6 +2088,8 @@ const ENGINE_SIM = (function () {
   function simulate(cfg, env) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     env = Object.assign({}, DEFAULT_ENV, env || {});
+    const rot = isRotary(cfg);
+    if (rot && (!OPT.fuel[cfg.fuel] || OPT.fuel[cfg.fuel].ci)) cfg.fuel = "r91";   // a Wankel is a spark engine
 
     const O = {
       block: OPT.blockMat[cfg.blockMat], deck: OPT.deck[cfg.deck],
@@ -1954,10 +2110,14 @@ const ENGINE_SIM = (function () {
     const shop = env.shop || {};
     if (shop.rodFat && shop.rodFat !== 1) O.rod = Object.assign({}, O.rod, { fatigue: O.rod.fatigue * shop.rodFat });
     if (shop.crkFat && shop.crkFat !== 1) O.crk = Object.assign({}, O.crk, { fatigue: O.crk.fatigue * shop.crkFat });
+    if (rot) Object.assign(O, { port: OPT.rotPort[cfg.rotPort] || OPT.rotPort.side, apex: OPT.apexSeal[cfg.apexSeal] || OPT.apexSeal.oem3,
+      rh: OPT.rotHousing[cfg.rotHousing] || OPT.rotHousing.chrome, rsp: OPT.sidePlate[cfg.sidePlate] || OPT.sidePlate.iron,
+      esh: OPT.eshaft[cfg.eshaft] || OPT.eshaft.stock, omp: OPT.oilMeter[cfg.oilMeter] || OPT.oilMeter.omp });
     const g = geometry(cfg);
     const L = g.L;
     const air = ambient(env);
     const vm = veModel(cfg, g, O.hd, O.ink, O.exh);
+    const rv = rot ? rotVeModel(cfg, g, O.ink, O.exh, O.port) : null;
     const bm = boostModel(cfg, g);
     const boosted = bm.kind !== "na";
     const deckStiff = (cfg.blockMat === "alu_liners" || cfg.blockMat === "alu_nikasil") ? O.deck.stiff : 1.0;
@@ -2016,7 +2176,7 @@ const ENGINE_SIM = (function () {
     const inj = OPT.injectors[cfg.injectors] || OPT.injectors.i240;
     const fpump = OPT.fuelPump[cfg.fuelPump] || OPT.fuelPump.p190;
     const portInj = !dsl && !gasF && cfg.intake !== "carb";          // a carburettor meters through jets (a gas system has its own meter)
-    const injCc = inj.cc * (inj.perCyl || 1);               // cc/min per cylinder
+    const injCc = inj.cc * (inj.perCyl || 1) * (isRotary(cfg) ? 2 : 1);   // cc/min per cylinder (a rotary stages a primary and a secondary per rotor)
     const fuelRho = fuelDensity(O.fu);
     const lamCurve = [], fuelLph = [];
     let dutyPk = 0, dutyRpm = 0, ccCylPk = 0, pumpPk = 0, pumpRpm = 0, pumpCapPk = 0, pumpNeedPk = 0;
@@ -2079,14 +2239,14 @@ const ENGINE_SIM = (function () {
       const rhoCharge = pMan / (R_AIR * Tcharge);
 
       /* ---- breathing -------------------------------------------------- */
-      const ve0 = veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
+      const ve0 = rot ? rotVeAt(rpm, rv, O.ink, Tcharge, bBar) : veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
       /* exhaust system: the extra pressure after the manifold. A turbine passes it upstream multiplied by its own
          expansion ratio; behind the exhaust valve it raises residual gas and, with overlap, pushes exhaust back
          into the intake, so a high-rpm, big-cam engine loses breathing as well as pumping work. */
       const exM = ve0 * rhoCharge * g.Vd * rpm / 120 * (1 + 1 / (O.fu.afr * cfg.lambda));
       let exDp = 0;
       if (exS) exDp = exS.delta(exM, air.p) * (bm.kind === "turbo" ? pManAbs0 / air.p : 1);
-      const ve = (gasF ? ve0 * gasVeK : ve0) * (exS ? clamp(1 - (0.10 + 0.25 * cfg.cam / 100) * exDp / pMan, 0.75, 1.04) : 1);
+      const ve = (gasF ? ve0 * gasVeK : ve0) * (exS ? clamp(1 - (0.10 + 0.25 * (rot ? clamp(rv.overlap / 0.4, 0, 1) : cfg.cam / 100)) * exDp / pMan, 0.75, 1.04) : 1);
 
       /* ---- fuel delivery ------------------------------------------------
          The tune asks for air x fuel/air at the commanded lambda; nitrous
@@ -2130,7 +2290,7 @@ const ENGINE_SIM = (function () {
 
       /* ---- knock ------------------------------------------------------ */
       // dynamic compression falls with cam overlap (late intake valve closing)
-      const dyn = 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
+      const dyn = rot ? rv.dyn(rpm) : 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
       const chargeC = (fd < 1 ? Math.max(air.T - 5, Tc3 - evapKr * fd) : Tcharge) - 273.15;   // less fuel, less evaporative cooling
       let onReq = 89.6 + 3.0 * (crEff - 10.55)
@@ -2142,6 +2302,7 @@ const ENGINE_SIM = (function () {
         - 5.5 * (O.hd.burn - 1)
         - 6.0 * clamp(1.0 - lamE, -0.05, 0.22);
       onReq -= O.block.k > 100 ? 0.4 : 0;                 // alu block pulls heat too
+      if (rot) onReq = rotOnReq(crEff, chargeC, env.coolantC, cfg.timing, lamE, bBar);
       if (n2oOn && rpm >= n2oWin) onReq += clamp(9.0 * n2oBite, 2, 15) * (O.n2o.prog ? 0.85 : 1);  // oxygen in the chamber, not just air
       if (n2oDry && n2oLph > 0) onReq += 30 * Math.max(0, lamE - lamC);   // lean on nitrous: the burn runs away
       const margin = fuelON - onReq;
@@ -2159,7 +2320,8 @@ const ENGINE_SIM = (function () {
       }
 
       /* ---- indicated work --------------------------------------------- */
-      const eta_th = dsl ? ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * K_DSL
+      const eta_th = rot ? ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * ROT_ETA * (1 + O.port.etaB) * rotLeak(rpm, O.apex, bBar) / (1 + 0.0018 * sq(effTiming))
+        : dsl ? ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * K_DSL
         * clamp(1 - 0.20 / lamE, 0.55, 1)                   // more fuel, longer cut-off, less expansion
         * (1 + (O.hd.burn - 1) * 0.30)
         * (1 + 0.0008 * (g.b - 86))                         // bigger bore, less wall per unit of charge
@@ -2168,7 +2330,7 @@ const ENGINE_SIM = (function () {
         * (1 - 0.0011 * (g.b - 86))
         / (1 + 0.0018 * sq(effTiming));
       const fuelPerAir = 1 / (O.fu.afr * lamE);
-      let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * (dsl ? etaCombD(lamE, dInj.etaB) : etaComb(lamE)) * eta_th * (1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring seal sets blow-by
+      let imep = ve * rhoCharge * O.fu.lhv * fuelPerAir * (dsl ? etaCombD(lamE, dInj.etaB) : etaComb(lamE)) * eta_th * (rot ? 1 + 0.5 * (O.apex.seal - 1) : 1 + 0.5 * ((O.ring.seal || 1) - 1)); // Pa — ring (apex) seal sets blow-by
       if (O.fu.etaK) imep *= O.fu.etaK;                     // methane burns slowly: a little more of the work is lost to the walls
       /* nitrous: a fixed power addition above the window, so it appears as a
          fixed torque that falls away with rpm exactly as a real shot does   */
@@ -2186,7 +2348,7 @@ const ENGINE_SIM = (function () {
       let pmep;
       if (boosted && (bm.kind === "turbo")) {
         // turbine backpressure: exhaust manifold pressure ratio vs compressor
-        const backFac = O.ts.backP * O.exh.backP * (bm.units === 2 ? 0.82 : 1.0) * (bm.compound ? 1.30 : 1.0) * (dsl ? 0.75 : 1);   // diesel turbos run near-matched drive pressure
+        const backFac = O.ts.backP * O.exh.backP * (bm.units === 2 ? 0.82 : 1.0) * (bm.compound ? 1.30 : 1.0) * (dsl ? 0.75 : 1) * (rot ? 0.75 : 1);   // a rotary's port has no valve to choke the blowdown; diesel turbos run near-matched drive pressure
         const pExh = air.p + bBar * 1e5 * backFac * (bm.vgt ? vaneBack(rpm) : 1);
         pmep = (pExh - pMan);
       } else if (boosted) {
@@ -2202,13 +2364,13 @@ const ENGINE_SIM = (function () {
       const mps = 2 * (g.s / 1000) * rpm / 60;
       /* diesel: compression pressure plus the combustion rise; advance puts it nearer TDC. Boost
          heat shortens the delay, so less fuel goes off at once and the rise gets gentler.  */
-      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * tmg) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
+      const pmaxBar = dsl ? (pMan / 1e5 * Math.pow(cfg.cr, 1.32) + 3.2 * (imep / 1e5) * (1 + 0.03 * tmg) / (1 + 0.08 * bBar)) * (1 + (n2oDsl ? 0.55 : 0.30) * n2oFrac) : (rot ? ROT_PMAX : 1) * K_PMAX * (imep / 1e5) * Math.sqrt(cfg.cr) * (1 - 0.016 * retard)
         * (1 + (O.n2o.prog ? 0.16 : 0.30) * n2oFrac);    // nitrous burns faster and peaks earlier
-      let fmepBar = FM_C + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps;
+      let fmepBar = rot ? rotFmepBar(rpm, pmaxBar, g, O.apex) : FM_C + FM_P * pmaxBar + FM_S * mps + FM_S2 * mps * mps;
       fmepBar *= (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac;
-      fmepBar *= O.ring.fric;
+      fmepBar *= rot ? 1 : O.ring.fric;
       fmepBar *= O.osys.windage + (O.osys.windage < 1 ? 0 : 0);
-      fmepBar *= (1 + 0.025 * (O.spr.rate - 1)) * (L.n > 8 ? 1.03 : 1.0);
+      if (!rot) fmepBar *= (1 + 0.025 * (O.spr.rate - 1)) * (L.n > 8 ? 1.03 : 1.0);
       let fmep = fmepBar * 1e5;
       if (dsl) fmep += 0.10e5;                              // injection pump drive
       // supercharger parasitic drive power appears as extra FMEP
@@ -2231,6 +2393,7 @@ const ENGINE_SIM = (function () {
       if (dsl) egt = 220 + 650 / Math.pow(Math.max(lamE, 0.95), 1.2) - 250 * Math.max(0, 0.95 - lamE) + 0.03 * (rpm - 2000) - 12 * tmg + 260 * n2oFrac;
       if (n2oDsl) egt += -560 * n2oFrac + 700 * n2oFrac * n2oFrac;   // a moderate shot cools a diesel's exhaust; a big one heats it again
       if (n2oDry) egt += 900 * Math.max(0, lamE - lamC) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
+      if (rot) egt += ROT_EGT + O.rh.egtC;
       egt = clamp(egt, 380, 1150);
 
       rpms.push(rpm);
@@ -2267,13 +2430,14 @@ const ENGINE_SIM = (function () {
       const Tc3 = bBar > 0.001 ? Tc2 - O.icc.eff * (Tc2 - air.T) : air.T;
       const Tcharge = Math.max(air.T - 5, Tc3 - (MAP ? evapCoolK(O.fu, lamAt(rpm)) : evapK) * fdK);
       const pMan = boosted ? pManAbs0 - O.icc.dp * 1e5 : air.p;
-      const dyn = 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
+      const dyn = rot ? rv.dyn(rpm) : 1 - 0.115 * (cfg.cam / 100) * clamp(1.6 - rpm / vm.rpmCam, 0, 1.1);
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
       const chargeC = Tcharge - 273.15;
       knockOnReq = 89.6 + 3.0 * (crEff - 10.55) + 0.095 * (g.b - 86) + 0.135 * (chargeC - 35)
         + 0.10 * (env.coolantC - 90) + 0.85 * tmgAt(rpm) - O.headMat.octane
         - 5.5 * (O.hd.burn - 1) - 6.0 * clamp(1.0 - lamK, -0.05, 0.22);
       knockOnReq -= O.block.k > 100 ? 0.4 : 0;
+      if (rot) knockOnReq = rotOnReq(crEff, chargeC, env.coolantC, cfg.timing, lamK, bBar);
       knockMargin = fuelON - knockOnReq + (shop.octane || 0) - 0.8 * (O.ink.wet || 0);
       /* flex: the same point on the winter blend. Less ethanol means a little less octane and less evaporative
          cooling; the sensor tells the ECU, which pulls timing for it — power, or knock if it runs out of room. */
@@ -2435,11 +2599,11 @@ const ENGINE_SIM = (function () {
     const gProfile = env.testType === "endurance"
       ? (env.loadProfile === "track" ? 1.25 : env.loadProfile === "highway" ? 0.30 : 0.60)
       : 0.35;
-    const pumpLimit = cfg.oilSystem === "dry" ? 13000 : cfg.oilSystem === "baffled" ? 10000 : 9000;
+    const pumpLimit = (cfg.oilSystem === "dry" ? 13000 : cfg.oilSystem === "baffled" ? 10000 : 9000) + (rot ? 2500 : 0);   // a rotary's pump is geared down off the e-shaft
     const starveUtil = Math.max(gProfile / O.osys.gLimit, redline / pumpLimit);
     const duty = env.testType === "endurance"
       ? (env.loadProfile === "track" ? 1.0 : env.loadProfile === "highway" ? 0.55 : 0.75) : 0.62;
-    const Qkw = peakHp * KW_PER_HP * 0.82 * duty * (O.fu.lhv < 35e6 ? 0.94 : 1.0);
+    const Qkw = peakHp * KW_PER_HP * 0.82 * duty * (O.fu.lhv < 35e6 ? 0.94 : 1.0) * (rot ? ROT_HEAT : 1);
     const radKw = (g.Vd * 1000) * 72 * O.cool.cap
       * (cfg.blockMat === "alu_liners" || cfg.blockMat === "alu_nikasil" ? O.deck.cool : 1.0);
     const coolUtil = Qkw / radKw;
@@ -2451,11 +2615,64 @@ const ENGINE_SIM = (function () {
     const compUtil = boosted ? (pd ? 0.55 : maxFlowLb / compCap) : 0.15;
     const turbUtil = (bm.kind === "turbo") ? maxEgt / O.tm.maxEgtC : (boosted ? 0.35 : 0.15);
 
+    /* ---- rotary: apex seals, housings, eccentric shaft, rotor bearings, seal oiling ---- */
+    let RT = null;
+    if (rot) {
+      const sl = O.apex, hs = O.rh, sp = O.rsp, es = O.esh, om = O.omp, pt = O.port;
+      const Rm = g.R, em = g.e, Bm = g.B;
+      const wR = redline * 2 * PI / 60;
+      const vApex = Rm * wR / 3 + em * wR;                         // m/s: seal tip sliding along the housing (rotor spin + orbit)
+      const aApex = Rm * sq(wR / 3) + em * wR * wR;                // m/s^2 flinging the seal outward
+      // seal bending across its slot under the pressure difference; knock is what actually breaks seals
+      const knockAmp = 1 + (0.40 + 1.0 * sl.brittle) * clamp(-knockMargin / 2, 0, 3);
+      const sigSeal = ROT_SHOCK * 3 * (maxPmax * knockAmp / 10) * sq(2.6 / sl.thick);   // MPa
+      const sealMass = sl.dens * sl.thick / (7200 * 3);
+      const chatterLim = ROT_VLIM * hs.chatter / Math.pow(sealMass, 0.25);
+      // the hot lobe: combustion always happens on the same stretch of housing, so it never cools
+      const bmepR = peakTq * 4 * PI / g.Vd / 1e5;
+      const heatR = Math.pow(Math.max(0.5, bmepR) * Math.sqrt(peakHpRpm / 1000), 0.62);
+      const housingC = env.coolantC + ROT_HOUSE * heatR * (1 + 0.25 * maxBoost) / Math.pow(O.cool.cap, 0.35) + hs.hotC + 0.10 * clamp(maxEgt - 900, -150, 250);
+      // eccentric shaft: rotor orbit (centrifugal) + gas push on each rotor, carried between the main bearings
+      const mRotor = 4.6 * (cfg.bore / 80) * sq(cfg.stroke / 105);
+      const Fcent = mRotor * em * wR * wR;
+      const FgasR = maxPmax * 1e5 * Bm * Rm * Math.sqrt(3) * 0.6;
+      const Fe = Fcent + 0.5 * FgasR;
+      const sup = Math.max(2, Math.min(es.supports, L.n + 1));
+      const span = (L.n * (Bm + 0.035) + 0.05) / (sup - 1), perSpan = L.n / (sup - 1);
+      const dSh = 0.043 * (Rm / 0.105) * es.dFac;
+      const eshUm = ROT_ESH * Fe * Math.sqrt(perSpan) * span * span / (Math.pow(dSh / 0.043, 4) * Math.sqrt(sp.stiff));
+      const eshMPa = (Fe * span / 4) / (PI * Math.pow(dSh * 60 / 43, 3) / 32) / 1e6;
+      const eshUtil = Math.max(eshUm / 50, eshMPa / (0.8 * es.fatigue));
+      // rotor bearing: the gas push less the orbit it is partly cancelled by, or the orbit alone at redline
+      const wPkR = (maxPmaxRpm || peakTqRpm) * 2 * PI / 60;
+      const dRB = 0.70 * cfg.stroke, wRB = 0.36 * cfg.bore;
+      const FrB = Math.max(FgasR - 0.5 * mRotor * em * wPkR * wPkR, 0.8 * Fcent);
+      const brgMPa = FrB / (dRB * wRB);
+      const brgLimR = Math.round(O.brg.limitMPa * ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? 0.80 : 1));
+      const filmR = 0.19 * Math.sqrt(kvOil) * Math.pow(O.oil.hths / 3.6, 0.6) * Math.sqrt(peakHpRpm / 1000) * (60 / Math.max(6, brgMPa));
+      // seal oiling: the apex and side seals live on oil burnt with the charge
+      const oilDemand = Math.pow(redline / 7000, 1.6) * (1 + 0.35 * maxBoost) * Math.pow(Math.max(20, maxPmax) / 50, 0.4) * sl.wear;
+      const oilUtil = 0.45 * oilDemand / om.cap;
+      // carbon: rich, oily, never revved - the side seals stick in their grooves
+      const profK = env.testType === "endurance" ? (env.loadProfile === "track" ? 0.75 : env.loadProfile === "highway" ? 1.35 : 1.0) : 1.0;
+      const fuelK = O.fu.afr < 12 ? 0.70 : O.fu.ron >= 104 ? 1.20 : 1.0;
+      const carbon = 0.42 * om.carbon * profK * fuelK * sp.sideSeal * (1 + 1.5 * clamp(0.92 - cfg.lambda, 0, 0.2)) * (1 + 0.35 * pt.overlap);
+      const detR = (0.95 - knockMargin * 0.062) * (1 + 0.45 * sl.brittle * clamp(-knockMargin / 4, 0, 1)) * (1 + 0.12 * maxBoost);
+      const hotSpotR = housingC + 0.30 * maxEgt + 80, hotLimR = 640 + 4.0 * (fuelON - 91);
+      RT = { rotors: L.n, VdNomL: g.VdNom * 1000, VdEqL: g.Vd * 1000, chamberCc: g.Vch * 1e6, eshaftRpm: redline, rotorRpm: Math.round(redline / 3),
+        firingHz: L.n * redline / 60, apexMs: vApex, apexG: aApex / 9.81, knockAmp: knockAmp, sealMPa: sigSeal, sealUtil: sigSeal / sl.fatigue,
+        chatterLim: chatterLim, chatterUtil: vApex / chatterLim, housingC: housingC, oringLim: 200, bmep: bmepR,
+        mRotor: mRotor, centKn: Fcent / 1000, gasKn: FgasR / 1000, eshaftUm: eshUm, eshaftMPa: eshMPa, eshaftUtil: eshUtil, supports: sup,
+        brgMPa: brgMPa, brgLim: brgLimR, filmUm: filmR, oilUtil: oilUtil, carbon: carbon, det: detR, hotSpot: hotSpotR, hotLim: hotLimR,
+        idleRpm: pt.idle, overlap: pt.overlap, egtC: maxEgt, oilL: om.oilL * (1 + 0.5 * maxBoost) * Math.pow(redline / 7000, 0.5) };
+    }
+
     /* =================================================================
        12.  Tests
        ================================================================= */
     const tests = [];
-    function T(id, name, sub, util, physics, fix) {
+    function T(id, name, sub, util, physics, fix, rotOwn) {
+      if (rot && !rotOwn && ROT_SKIP[id]) return;   // a rotary has no pistons, rods, valves or head gasket
       util = (isFinite(util) && util > 0) ? util : 0.01;
       const status = util > 1.0 ? "crit" : util > 0.8 ? "warn" : "good";
       tests.push({ id: id, name: name, sub: sub, util: util, status: status, physics: physics, fix: fix });
@@ -2671,6 +2888,42 @@ const ENGINE_SIM = (function () {
       "Bore pitch works out at " + borePitch.toFixed(0) + " mm for this bore and stroke, leaving " + wallThicknessMm.toFixed(1) + " mm of wall between bores; " + O.block.name + " needs at least " + wallLimit + " mm to stay round and take the heat.",
       "Reduce the bore, or choose a block material that tolerates a thinner wall.");
 
+    /* ---- rotary tests: seals, housings and the eccentric shaft take the place of pistons, rods and valves ---- */
+    if (rot) {
+      const R = RT, sl = O.apex;
+      T("apex_seal", "Apex seal load", R.sealMPa.toFixed(0) + " / " + sl.fatigue + " MPa", R.sealUtil,
+        "Peak chamber pressure of " + maxPmax.toFixed(0) + " bar" + (R.knockAmp > 1.01 ? ", hit " + R.knockAmp.toFixed(1) + "\u00d7 harder by knock," : "") + " bends each " + sl.thick + " mm seal across its slot at about " + R.sealMPa.toFixed(0) + " MPa once the combustion shock is counted; the " + sl.name + " lives with about " + sl.fatigue + " MPa. A cracked apex seal drops the compression on that face for good.",
+        "Thicker or tougher seals (billet steel takes a knock event), less boost, or more octane so it never knocks.", true);
+      T("housing_chatter", "Seal chatter", R.apexMs.toFixed(1) + " / " + R.chatterLim.toFixed(1) + " m/s", R.chatterUtil,
+        "At " + redline + " rpm on the eccentric shaft the rotors turn " + R.rotorRpm + " rpm and the apex seals slide along the housing at " + R.apexMs.toFixed(1) + " m/s, flung outward at " + Math.round(R.apexG).toLocaleString("en-US") + " g. A " + sl.name + " on " + O.rh.name.toLowerCase() + " follows the surface to about " + R.chatterLim.toFixed(1) + " m/s; past that it bounces and hammers chatter marks into the housing.",
+        "Lighter seals (ceramic or 2 mm), a harder housing surface, or fewer revs.", true);
+      T("coolant_seal", "Hot lobe & O-rings", R.housingC.toFixed(0) + " / " + R.oringLim + " \u00b0C", R.housingC / R.oringLim,
+        "Combustion always happens on the same stretch of a rotor housing, so that lobe never sees a cool intake charge. At " + R.bmep.toFixed(1) + " bar BMEP and " + peakHpRpm + " rpm it runs near " + R.housingC.toFixed(0) + " \u00b0C; the rubber coolant O-rings between the housings harden and leak past about " + R.oringLim + " \u00b0C \u2014 coolant into the chamber and white smoke out of the pipe.",
+        "A bigger radiator and oil cooler, less boost, or ceramic-coated housings that keep the heat in the gas.", true);
+      T("eshaft", "Eccentric shaft", R.eshaftUm.toFixed(0) + " \u00b5m \u00b7 max 50", R.eshaftUtil,
+        "Each " + R.mRotor.toFixed(1) + " kg rotor orbits " + (g.e * 1000).toFixed(1) + " mm off centre and pulls " + R.centKn.toFixed(0) + " kN at redline, on top of a " + R.gasKn.toFixed(0) + " kN gas push. With " + R.rotors + " rotor" + (R.rotors > 1 ? "s" : "") + " carried on " + R.supports + " main bearings the shaft bows about " + R.eshaftUm.toFixed(0) + " \u00b5m and its journals see " + R.eshaftMPa.toFixed(0) + " MPa against " + O.esh.fatigue + " MPa fatigue strength; past ~50 \u00b5m a rotor face starts touching its side housing.",
+        "A split shaft with a centre main bearing on three or four rotors, a billet shaft, or fewer revs.", true);
+      T("bearing_load", "Rotor bearing load", R.brgMPa.toFixed(0) + " / " + R.brgLim + " MPa", R.brgMPa / R.brgLim,
+        "The gas load on a rotor flank and the rotor's own orbit both go through its bearing: about " + R.brgMPa.toFixed(0) + " MPa over the rotor bearing's projected area, against " + R.brgLim + " MPa for the " + O.brg.name + " shells.",
+        "Trimetal or coated bearing shells, or less peak pressure.", true);
+      const filmMinR = +(0.55 + 0.45 * (O.brg.galling == null ? 1 : O.brg.galling)).toFixed(2);
+      T("oil_film", "Hydrodynamic film", R.filmUm.toFixed(2) + " \u00b5m \u00b7 min " + filmMinR.toFixed(2), filmMinR / Math.max(0.02, R.filmUm),
+        "At " + env.oilC + " \u00b0C the oil is " + kvOil.toFixed(1) + " cSt; against " + R.brgMPa.toFixed(0) + " MPa on the rotor bearings the minimum film is " + R.filmUm.toFixed(2) + " \u00b5m. The same oil cools the inside of the rotors, so it runs hot.",
+        "Thicker oil grade, a bigger oil cooler, or less bearing load.", true);
+      T("oil_metering", "Seal oiling", Math.round(R.oilUtil * 100) + "% of supply", R.oilUtil,
+        "The apex and side seals are lubricated only by oil burnt with the charge. At " + redline + " rpm" + (maxBoost > 0.05 ? " and " + maxBoost.toFixed(2) + " bar" : "") + " the seals want about " + Math.round(R.oilUtil * 100) + "% of what the " + O.omp.name.toLowerCase() + " delivers; short of oil they wear their tips and scuff the chrome. It burns about " + R.oilL.toFixed(1) + " L of oil per 1,000 km doing it.",
+        "Premix for track days, an electronic pump that meters by load, or fewer revs.", true);
+      T("carbon_seals", "Carbon & side seals", Math.round(R.carbon * 100) + "% \u00b7 sticks 100", R.carbon,
+        "Burnt oil and rich running leave carbon in the side-seal grooves; an engine that is never revved out never blows it clean, and stuck side seals lose compression across the rotor faces." + (env.testType === "endurance" && env.loadProfile === "highway" ? " A highway duty cycle is the worst for it." : ""),
+        "Less oil in the charge, leaner cruise, hardened side housings \u2014 and a redline a day keeps the carbon away.", true);
+      T("detonation", "Detonation margin", (knockMargin >= 0 ? "+" : "") + knockMargin.toFixed(1) + " ON margin", R.det,
+        "Octane requirement " + knockOnReq.toFixed(0) + " from " + cfg.cr.toFixed(1) + ":1 (" + (cfg.cr * Math.pow((air.p + maxBoost * 1e5) / 101325, 0.24)).toFixed(1) + ":1 effective at " + maxBoost.toFixed(2) + " bar) and " + maxChargeC.toFixed(0) + " \u00b0C charge; the fuel supplies " + fuelON.toFixed(0) + ". A rotary's end gas sits against the hot lobe, and a knock event goes straight into the apex seals.",
+        knockMargin < 0 ? "More octane, less boost, a cooler charge \u2014 rotaries hate knock." : "Margin is adequate \u2014 keep the charge cool; boost eats it fast on a rotary.", true);
+      T("preignition_egt", "Pre-ignition / EGT", R.hotSpot.toFixed(0) + " / " + R.hotLim.toFixed(0) + " \u00b0C", R.hotSpot / R.hotLim,
+        "Peak EGT is " + maxEgt.toFixed(0) + " \u00b0C \u2014 the exhaust port opens while the charge is still burning \u2014 and the trailing plug's boss on the hot lobe works out at " + R.hotSpot.toFixed(0) + " \u00b0C against a " + R.hotLim.toFixed(0) + " \u00b0C surface-ignition threshold for this fuel.",
+        "Richen the mixture, cool the housings, or run a fuel with more octane.", true);
+    }
+
     /* =================================================================
        13.  Reliability, life, endurance, over-rev
        ================================================================= */
@@ -2734,7 +2987,7 @@ const ENGINE_SIM = (function () {
 
     /* --- over-rev: 1.15x redline for half a second --- */
     let overrev = null;
-    if (env.testType === "overrev") {
+    if (env.testType === "overrev" && !rot) {
       const orRpm = redline * 1.15;
       const k = sq(orRpm / redline);
       const ev = [];
@@ -2752,6 +3005,22 @@ const ENGINE_SIM = (function () {
       if (ev.length === 0) ev.push("Nothing complained — the valvetrain, rods and oil system all had margin at " + orRpm.toFixed(0) + " rpm.");
       overrev = { survived: survived, events: ev };
     }
+    if (env.testType === "overrev" && rot) {
+      const orRpm = redline * 1.15, k = sq(1.15), ev = [];
+      let survived = true;
+      const chat = RT.chatterUtil * 1.15;
+      if (chat > 1.05) { survived = false; ev.push("Apex seals lost the housing at " + orRpm.toFixed(0) + " rpm: they chattered across the " + O.rh.name.toLowerCase() + " and one snapped."); }
+      else if (chat > 0.95) ev.push("Apex seals were bouncing at " + orRpm.toFixed(0) + " rpm \u2014 expect chatter marks in the housings at the next teardown.");
+      const esU = RT.eshaftUtil * (0.35 + 0.65 * k);
+      if (esU > 1.0) { survived = false; ev.push("The eccentric shaft bowed at " + orRpm.toFixed(0) + " rpm and a rotor face picked up its side housing."); }
+      else if (esU > 0.9) ev.push("The eccentric shaft flexed to " + Math.round(esU * 100) + "% of its clearance \u2014 check the side housings for rub marks.");
+      const brU = (RT.brgMPa / RT.brgLim) * Math.max(1, 0.8 * k);
+      if (brU > 1.0) { survived = false; ev.push("Rotor bearings overloaded by the rotors' own orbit at " + orRpm.toFixed(0) + " rpm."); }
+      if (orRpm > pumpLimit) ev.push("Oil pump cavitated above " + pumpLimit + " rpm; pressure dropped for a fraction of a second.");
+      if (orRpm > pumpLimit * 1.10) { survived = false; ev.push("Sustained loss of oil pressure wiped the rotor bearings."); }
+      if (ev.length === 0) ev.push("Nothing complained \u2014 apex seals, eccentric shaft and rotor bearings all had margin at " + orRpm.toFixed(0) + " rpm (the rotors themselves at " + Math.round(orRpm / 3) + ").");
+      overrev = { survived: survived, events: ev };
+    }
 
     /* =================================================================
        14.  Mass, cost, economy, smoothness
@@ -2765,6 +3034,13 @@ const ENGINE_SIM = (function () {
     kg += gasF ? gs.massKg : (fpump.massKg || 0);                    // a belt pump hangs off the engine; in-tank ones live in the car
     const exRuns = exP.pipe.runs || 1, exOpenH = !!exP.pipe.open;
     kg += exP.pipe.massKg + (exOpenH ? 0 : exRuns * (exP.muf.massKg + exP.cat.massKg) + exP.cut.massKg);   // 0 for the stock system
+    if (rot) {
+      // housings and plates, scaled with the quoted displacement against a 654 cc-a-rotor 13B
+      kg = O.lay.massKg * Math.pow(g.VdNom * 1000 / (0.654 * L.n), 0.55) * (0.62 + 0.38 * O.rsp.massFac);
+      kg += (bm.kind === "turbo" ? bm.units * 9 * (O.ts.maxFlow > 100 ? 1.8 : 1) : bm.kind === "roots" ? 22 : bm.kind === "screw" ? 26 : bm.kind === "centrifugal" ? 11 : 0);
+      kg += O.icc.massKg + O.osys.massKg + O.cool.massKg + O.exh.massKg + 10 + (gasF ? gs.massKg : (fpump.massKg || 0));
+      kg += exP.pipe.massKg + (exOpenH ? 0 : exRuns * (exP.muf.massKg + exP.cat.massKg) + exP.cut.massKg);
+    }
     kg = Math.round(kg);
 
     const perCyl = O.pis.cost + O.ring.cost + O.rod.cost + O.rb.cost
@@ -2778,6 +3054,14 @@ const ENGINE_SIM = (function () {
       + (vgtO ? (dsl ? vgtO.cost : vgtO.costPetrol) * bm.units : 0) + (alsO ? alsO.cost : 0)
       + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + (gasF ? gs.cost : fpump.cost)
       + (dsl ? dInj.cost + L.n * dNoz.cost : 0)
+      + exP.pipe.cost + (exOpenH ? 0 : exRuns * (exP.muf.cost + exP.cat.cost) + exP.cut.cost);
+    if (rot) rawCost = O.lay.cost + L.n * (O.rh.cost + O.apex.cost + 260) + (L.n + 1) * O.rsp.cost + O.esh.cost * (L.n > 2 ? 1.6 : 1)
+      + O.port.cost * L.n * 0.5 + O.omp.cost + O.brg.cost
+      + O.ink.cost + O.asp.cost + (boosted ? O.ts.cost + O.tm.cost + O.icc.cost : 0)
+      + O.oil.cost + O.osys.cost + O.cool.cost + O.exh.cost + O.cov.cost
+      + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
+      + (portInj ? L.n * 2 * (inj.perCyl || 1) * inj.cost : 0) + (gasF ? gs.cost : fpump.cost)   // primary and secondary injectors on every rotor
+      + (vgtO ? vgtO.costPetrol * bm.units : 0) + (alsO ? alsO.cost : 0)
       + exP.pipe.cost + (exOpenH ? 0 : exRuns * (exP.muf.cost + exP.cat.cost) + exP.cut.cost);
     const cost = Math.round((0.155 * rawCost + 120 * L.n + 250) * (shop.costFac || 1));
 
@@ -2835,6 +3119,25 @@ const ENGINE_SIM = (function () {
     const fuelKgS = fuelPow / O.fu.lhv;
     const fuelDens = O.fu.afr < 8 ? 792 : O.fu.afr < 12 ? 782 : 745; // methanol / E85 / gasoline
     const litresPerHour = fuelKgS * 3600 / fuelDens * 1000;
+    /* rotary cruise: the same throttled operating point, with seal friction, the leakier, quench-heavy
+       part-load burn and the port overlap's exhaust reversion in place of a cam                     */
+    let lphRot = 0;
+    if (rot) {
+      let fmR = rotFmepBar(nCr, 22, g, O.apex) * (0.86 + 0.14 * Math.pow(kvOil / 10.5, 0.55)) * O.oil.fricFac;
+      if (bm.kind === "roots") fmR += 0.12;
+      if (bm.kind === "screw") fmR += 0.09;
+      if (bm.kind === "centrifugal") fmR += 0.04;
+      const etaR0 = ottoEta(cfg.cr, O.fu.gamma) * K_QUAL * ROT_ETA * (1 + O.port.etaB) * rotLeak(nCr, O.apex, 0);
+      const imepRefR = rotVeAt(nCr, rv, O.ink, TchargeCr, 0) * air.rho * O.fu.lhv / O.fu.afr * etaComb(1.0) * etaR0;
+      let imepR = bmepCr + fmR * 1e5 + 0.35e5, etaR = 0.25;
+      for (let it = 0; it < 3; it++) {
+        const mapR = clamp(air.p * clamp(imepR / Math.max(1e4, imepRefR), 0.04, 1), air.p * 0.06, air.p);
+        const resid = clamp(0.05 + 0.55 * O.port.overlap * (1 - mapR / air.p), 0.03, 0.50);
+        etaR = clamp(etaR0 * ROT_CRUISE * (1 - 1.5 * Math.max(0, resid - 0.12)) * etaComb(lamCr), 0.10, 0.40);
+        imepR = bmepCr + fmR * 1e5 + (pExhCr - mapR);
+      }
+      lphRot = imepR * g.Vd * (nCr / 120) / etaR / O.fu.lhv * 3600 / fuelDens * 1000;
+    }
     /* diesel cruise: no throttle, so no pumping loss; the same air every stroke and only as much
        fuel as the work needs, which leaves lambda well past 2 at a cruise                  */
     let lphD = 0, lamCrD = 0;
@@ -2859,12 +3162,13 @@ const ENGINE_SIM = (function () {
       }
       lphD = fKg * 3600 / O.fu.dens;
     }
-    const econ = dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : gasF ? Math.round(clamp(fuelPow * 3600 / (43.4e6 * 0.745), 2, 60) * 10) / 10   // gas: petrol-equivalent litres by energy
+    const econ = rot ? Math.round(clamp(lphRot * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10 : dsl ? Math.round(clamp(lphD, 2, 60) * 10) / 10 : gasF ? Math.round(clamp(fuelPow * 3600 / (43.4e6 * 0.745), 2, 60) * 10) / 10   // gas: petrol-equivalent litres by energy
       : Math.round(clamp(litresPerHour / 100 * 100 * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10;  // anti-lag burns fuel on every lift  // L/100 km at 100 km/h
 
     let smooth = L.smooth * (1 - 0.10 * L.secondOrder * (g.s / 86))
       - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" ? 2 : 0)
       - (cfg.intake === "itb" ? 3 : 0) + 5;
+    if (rot) smooth = L.smooth - 18 * O.port.overlap + (cfg.oilSystem === "dry" ? 2 : 0) - (cfg.intake === "itb" ? 2 : 0) + 4;
     const misCr = MAP && !dsl ? Math.max(0, lamCr - mapMisLam(O.hd.burn)) : 0;   // a map leaned past the misfire limit at cruise
     if (misCr > 0) smooth -= 160 * misCr;
     smooth = Math.round(clamp(smooth, 5, 99));
@@ -2873,9 +3177,9 @@ const ENGINE_SIM = (function () {
     const notes = [];
     if (maxRetard > 0.5) notes.push("ECU is pulling " + maxRetard.toFixed(1) + "° of timing to stay off the knock limit — that is " + ((1 - 1 / (1 + 0.0018 * sq(maxRetard))) * 100).toFixed(1) + "% of indicated work thrown away.");
     if (boosted && compUtil > 0.95) notes.push("The compressor is past its choke line; more boost pressure here just makes hot air.");
-    if (!boosted && vm.rpmCam > redline * 0.95) notes.push("The cam is timed for more rpm than the redline allows — you are paying for duration you never use.");
-    if (inRes) notes.push("A " + majorOrder + "th-order torsional resonance sits at " + resRpm.toFixed(0) + " rpm, inside the rev range.");
-    if (hotMm < 0.030) notes.push("Running clearance is only " + (hotMm * 1000).toFixed(0) + " µm — a cold-start full-throttle pull will scuff it.");
+    if (!rot && !boosted && vm.rpmCam > redline * 0.95) notes.push("The cam is timed for more rpm than the redline allows — you are paying for duration you never use.");
+    if (!rot && inRes) notes.push("A " + majorOrder + "th-order torsional resonance sits at " + resRpm.toFixed(0) + " rpm, inside the rev range.");
+    if (!rot && hotMm < 0.030) notes.push("Running clearance is only " + (hotMm * 1000).toFixed(0) + " µm — a cold-start full-throttle pull will scuff it.");
     if (misCr > 0) notes.push("The map's cruise cell asks for \u03bb " + lamCr.toFixed(2) + " at " + Math.round(nCr) + " rpm and " + Math.round(loadCr * 100) + "% load: past about \u03bb " + mapMisLam(O.hd.burn).toFixed(2) + " the charge stops lighting every time. It misfires, surges and runs the exhaust hot.");
     if (dsl && leanTop) notes.push("The injection system runs out at " + leanRpm + " rpm: \u03bb " + lamTop.toFixed(2) + " instead of " + lamAt(leanRpm).toFixed(2) + ". A diesel just makes less power there \u2014 it runs cooler, not hotter.");
     if (dsl && smokePk > 0.35) notes.push("Peak smoke is about " + Math.round(smokePk * 100) + "% opacity: there is more fuel going in than air to burn it" + (lamMin < cfg.lambda - 0.05 ? ", worst while the turbo is still spooling (\u03bb " + lamMin.toFixed(2) + ")" : "") + ".");
@@ -2900,17 +3204,24 @@ const ENGINE_SIM = (function () {
       if (n2oDsl) notes.push("The diesel kit adds oxygen only; the injection pump has to find the fuel" + (qUtilPk > 1 ? ", and it is already on its stop \u2014 part of the shot goes unused." : "."));
     }
 
+    if (rot) {
+      notes.push("The dyno reads the eccentric shaft: at " + redline + " rpm the rotors themselves turn " + RT.rotorRpm + " rpm, and each rotor fires once per shaft turn \u2014 " + Math.round(RT.firingHz) + " combustions a second.");
+      if (O.port.overlap >= 0.4) notes.push("With this much port overlap it needs about " + O.port.idle + " rpm to idle, and at low load exhaust backs up into the intake and the next charge misfires \u2014 the brap.");
+      if (!boosted && rv.rpmC > redline * 1.02) notes.push("The ports are timed for more rpm than the redline allows \u2014 a rotary with these ports wants to rev.");
+      if (RT.oilUtil > 0.8) notes.push("The " + O.omp.name.toLowerCase() + " is only just keeping the apex seals wet at this boost and rpm.");
+    }
+
     const correctedHp = peakHp * j1349(air.pd, env.ambientC);
     const exNoise = exhaustNoise(cfg);
     // the stock system's own loss at the same flow (what the manifold's backP already carries)
     const exhStockDp = (m) => { const a = exhRefFlow(cfg, g) / (EXH_RHO * EXH_V0), rho = EXH_RHO * air.p / 101325, x = (EXH_KPIPE + OPT.muffler.stock.K) * m * m / (2 * rho * a * a); return x / (1 + x / EXH_SAT); };
 
-    return {
+    const out = {
       rpms: rpms, torque: torque, power: power, boostCurve: boostCurve,
       veCurve: veCurve, egtCurve: egtCurve, bmep: bmepArr,
       peakHp: peakHp, peakHpRpm: peakHpRpm, peakTq: peakTq, peakTqRpm: peakTqRpm,
       correctedHp: correctedHp,
-      Vd: g.Vd * 1e6, n: L.n, kg: kg, cost: cost, econ: econ, smooth: smooth,
+      Vd: (rot ? g.VdNom : g.Vd) * 1e6, n: L.n, kg: kg, cost: cost, econ: econ, smooth: smooth,
       thermals: { crownC: crownC, egtPeakC: maxEgt, coolantLoadKw: Qkw, chargeC: chargeCOut, oilC: oilCOut },
       clearances: { coldMm: coldMm, hotMm: hotMm, ringGapMm: ringGapMm, ringGapNeededMm: ringGapNeededMm, valvePistonMm: valvePistonMm },
       loads: {
@@ -2924,7 +3235,7 @@ const ENGINE_SIM = (function () {
       knockCurve: mgnCurve, retardCurve: rtdCurve, mapCruise: MAP ? { rpm: nCr, load: dsl ? 0 : loadCr, lam: dsl ? lamCrD : lamCr, ign: dsl ? 0 : ignCr, misfire: misCr } : null,
       fuel: { duty: dutyPk, dutyRpm: dutyRpm, ccCyl: ccCylPk, load: pumpPk, loadRpm: pumpRpm, capLph: pumpCapPk, needLph: pumpNeedPk,
         injUtil: injUtil, pumpUtil: pumpUtil, lamTop: lamTop, leanRpm: leanRpm, portInj: portInj, lph: fuelLph,
-        qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : litresPerHour },
+        qDem: qDemPk, qCap: qCapPk, qRpm: qRpm, lamMin: dsl ? lamMin : lamTop, lamCruise: lamCrD, cruiseLph: dsl ? lphD : rot ? lphRot : litresPerHour },
       nitrous: n2oInfo,
       /* MORE FUELS: gas system load and native consumption (L of propane or kg of CNG per 100 km), flex winter blend */
       alt: gasF ? { gas: true, sys: cfg.gasSys && OPT.gasSys[cfg.gasSys] ? cfg.gasSys : "mixer", displacePct: Math.round((1 - gasVeK) * 1000) / 10, unit: O.fu.unit || "L",
@@ -2938,6 +3249,12 @@ const ENGINE_SIM = (function () {
       racePasses: racePasses, raceSpec: raceSpec,
       endurance: endurance, overrev: overrev, notes: notes
     };
+    if (rot) {
+      out.rotary = RT; out.VdEq = g.Vd * 1e6;
+      out.loads.bearingMPa = RT.brgMPa; out.loads.filmUm = RT.filmUm;
+      out.thermals.housingC = RT.housingC;
+    }
+    return out;
   }
 
   /* =====================================================================
@@ -2959,6 +3276,7 @@ const ENGINE_SIM = (function () {
     const quick = q || simulate(cfg, env || DEFAULT_ENV);   // the app passes its own env (cell, climate, shop) and the run it already has
     const detMargin = quick.knock.margin;
     const dsl = isDiesel(cfg);
+    if (isRotary(cfg)) { rotaryCombos(cfg, quick, add, L); return out; }   // none of the piston interactions apply
 
     /* --- expansion / sealing ------------------------------------------ */
     if (cfg.headMat === "alu" && cfg.blockMat === "grey_iron" && cfg.gasket === "composite") {
@@ -3210,7 +3528,7 @@ const ENGINE_SIM = (function () {
         "The " + pmp.short + " is supplying " + Math.round(fq.pumpUtil * 100) + "% of what it can at " + fq.loadRpm + " rpm" + (boosted && !pmp.rpmRef ? ", and every extra bar of boost takes flow away from it" : "") + "." + fitWord);
       if (alky && !short) add("good", "Fuel system sized for alcohol",
         alky + ", and " + (fq.portInj ? injWord + " at " + Math.round(fq.duty * 100) + "% duty with " : "") + "the " + pmp.short + " behind them have room for it.");
-      if (fq.portInj && fq.duty < 0.12 && inj.cc * (inj.perCyl || 1) >= 1650) add("info", "A lot of injector for this engine",
+      if (fq.portInj && fq.duty < 0.12 && inj.cc * (inj.perCyl || 1) * (isRotary(cfg) ? 2 : 1) >= 1650) add("info", "A lot of injector for this engine",
         "At full load " + injWord + " are open only " + Math.round(fq.duty * 100) + "% of the time, so at idle the pulse is barely longer than the time the injector takes to open. A modern driver copes, but low-speed fuelling gets coarse.");
     }
     /* --- MORE FUELS: race gas grades, the flex blend, propane and CNG --- */
@@ -3488,6 +3806,55 @@ const ENGINE_SIM = (function () {
     return out;
   }
 
+  /* rotary interactions: seals, ports, oiling, the long shaft and the heat */
+  function rotaryCombos(cfg, quick, add, L) {
+    const boosted = cfg.asp !== "na", boost = boosted ? cfg.boost : 0, R = quick.rotary || {};
+    const dm = quick.knock.margin, sl = cfg.apexSeal, pt = cfg.rotPort, om = cfg.oilMeter;
+    const sealOEM = sl === "oem3" || sl === "oem2";
+    if (boosted && sealOEM && (boost > 0.9 || dm < 3))
+      add(sl === "oem2" || boost > 1.1 || dm < 1 ? "bad" : "warn", "Apex seals and boost",
+        "Factory cast-iron seals live happily at the 0.7\u20130.8 bar Mazda sold them with. Past that, one knock event cracks a seal and the rotor loses compression on that face" + (sl === "oem2" ? " \u2014 and a 2 mm seal bends at half the pressure of a 3 mm one" : "") + ". Knock margin here is " + (dm >= 0 ? "+" : "") + dm.toFixed(1) + " octane. Billet steel seals, more octane or less boost.");
+    else if (boosted && sl === "billet")
+      add("good", "Billet seals for boost", "A one-piece steel seal bends instead of shattering when the chamber knocks, which is why every big-boost street rotary runs them. It is hard on a tired housing, so fit them with fresh chrome.");
+    if (sl === "ceramic" && boosted && dm < 4)
+      add("warn", "Ceramic seals and knock", "Silicon nitride is light and almost wear-proof, but it does not bend before it breaks: one detonation event and it is gravel. They belong in race engines on race fuel, not on the edge of the knock limit.");
+    if (sl === "oem2" && cfg.redline >= 8500 && !boosted)
+      add("good", "2 mm seals for revs", "Less seal mass means less bounce at the tip: the Renesis revs to nine thousand on seals that would chatter in a 3 mm engine.");
+    if (pt === "bridge" || pt === "peri")
+      add("info", pt === "bridge" ? "Bridge port idles like a cement mixer" : "Peripheral port: no idle to speak of",
+        "With " + (pt === "bridge" ? "the bridge open" : "the intake in the rotor housing") + " the intake and exhaust overlap for a long time. At idle and light load the exhaust backs up into the intake, every other charge misfires, and you get the brap brap brap \u2014 about " + OPT.rotPort[pt].idle + " rpm is as low as it will go. It is magnificent from seven thousand up.");
+    if (pt === "sidex")
+      add("good", "Side exhaust: no overlap at all", "Moving the exhaust into the side housings ends the overlap a peripheral exhaust port forces on you: clean idle, less unburnt fuel, and the expansion runs a little longer before the port opens.");
+    if ((om === "omp" || om === "emop") && R.oilUtil > 0.7)
+      add(R.oilUtil > 1 ? "bad" : "warn", "Premix for track days", "The apex seals are oiled only by what the metering pump squirts in, and at " + cfg.redline.toLocaleString("en-US") + " rpm" + (boosted ? " and " + boost.toFixed(1) + " bar" : "") + " the " + OPT.oilMeter[om].name.replace(/^M/, "m").replace(/^E/, "e") + " is at " + Math.round(R.oilUtil * 100) + "% of what they want. Two-stroke oil in the tank at 1:200 on track days is cheap insurance.");
+    if (om === "premix")
+      add("info", "Premix only", "Every tank gets its two-stroke oil, the exhaust smells like a chainsaw and the side seals collect more carbon \u2014 but the seals are oiled exactly as hard as the engine is working.");
+    if (L.n >= 3 && cfg.eshaft !== "split" && (R.eshaftUtil || 0) > 0.7)
+      add((R.eshaftUtil || 0) > 1 ? "bad" : "warn", "A long eccentric shaft with no centre main", "Three or four rotors on a one-piece shaft leave a long beam between the end bearings. At " + cfg.redline.toLocaleString("en-US") + " rpm each rotor's orbit pulls " + (R.centKn || 0).toFixed(0) + " kN and the shaft bows about " + (R.eshaftUm || 0).toFixed(0) + " \u00b5m. A split shaft with a centre main bearing is how the four-rotor racers stay straight.");
+    if (L.n >= 3 && cfg.eshaft === "split")
+      add("good", "A centre main for a long shaft", "Splitting the shaft on tapers lets a third main bearing sit in the middle intermediate housing, halving the span the rotors' orbit has to bend.");
+    if (cfg.rotHousing === "chrome" && (R.chatterUtil || 0) > 0.8)
+      add("warn", "Chrome housings at these revs", "The apex seals are sliding at " + (R.apexMs || 0).toFixed(0) + " m/s. On chrome, a seal that starts to bounce leaves chatter marks that wreck the seal for good. Nikasil or ceramic surfaces, or lighter seals.");
+    if (cfg.rotHousing === "ceramic")
+      add("info", "Ceramic housings keep the heat in the gas", "A ceramic running surface insulates the housing: the coolant O-rings run cooler, the exhaust and the turbo run hotter.");
+    if (boosted && cfg.cooling === "std")
+      add((R.housingC || 0) > 170 ? "bad" : "warn", "Rotaries run hot", "Every chamber is wrapped in housing and combustion always happens on the same lobe, so a rotary puts far more heat into its coolant than a piston engine of the same power. The FD left the factory with an uprated radiator for a reason.");
+    if (cfg.asp === "twin_turbo")
+      add("good", "Sequential twins", "On a rotary the two turbos run in sequence: the primary alone lights early off the hot, sharp exhaust pulses, and the secondary is brought in near the top so the small turbo is never choking. There is a small dip at the changeover.");
+    if (boosted && (cfg.fuel === "e85" || cfg.fuel === "methanol"))
+      add("good", "Alcohol in a rotary", "Ethanol and methanol cool the charge, add octane exactly where a boosted rotary runs out of it, and burn clean enough to keep the side-seal grooves free of carbon.");
+    if (boosted && cfg.cr > 9.6)
+      add("bad", "High compression on a boosted rotary", "Mazda dropped the 13B-REW to 9.0:1 for boost. At " + cfg.cr.toFixed(1) + ":1 under " + boost.toFixed(1) + " bar the end gas against the hot lobe knocks long before the turbo runs out.");
+    if (cfg.sidePlate === "alu" && L.n >= 3 && cfg.eshaft !== "split")
+      add("warn", "Alloy side housings on a long shaft", "Aluminium end plates take weight off but give the main bearings less to stand on, and a long shaft needs all the support it can get.");
+    if (cfg.nitrous && cfg.nitrous !== "none")
+      add("warn", "Nitrous on a rotary", "A nitrous hit is a knock event waiting to happen and the apex seals are what take it. Keep the shot small, rich and late, and fit tough seals.");
+    if ((quick.econ || 0) >= 9.5)
+      add("info", "Thirsty by design", "A long, thin, moving chamber with a quench pocket at the trailing apex burns less of its fuel than a piston engine and loses more heat: about " + (quick.econ || 0).toFixed(1) + " L/100 km at a cruise. Economy buyers will not take it.");
+    if (cfg.transBrake === "trans_brake" && OPT.asp[cfg.asp].kind === "turbo")
+      add("good", "Trans-brake on a turbo engine", "Held on the converter at full load, the engine drives the turbo as if the car were already moving, so it leaves on boost without needing as much retard.");
+  }
+
   /* =====================================================================
      15b. fitFuel() — the smallest injectors and pump that feed a build with
           margin (fuel test at or under 0.8: duty under 72%, pump under 76%).
@@ -3527,7 +3894,7 @@ const ENGINE_SIM = (function () {
     let injectors = ik[ik.length - 1], fuelPump = pk[pk.length - 1];
     for (const k of ik) {
       const o = OPT.injectors[k];
-      if (!f.portInj || f.ccCyl / (o.cc * (o.perCyl || 1)) / INJ_MAX <= lim) { injectors = k; break; }
+      if (!f.portInj || f.ccCyl / (o.cc * (o.perCyl || 1) * (isRotary(cfg) ? 2 : 1)) / INJ_MAX <= lim) { injectors = k; break; }
     }
     for (const k of pk) {
       let worst = 0;
@@ -3540,8 +3907,14 @@ const ENGINE_SIM = (function () {
   /* =====================================================================
      16.  cfgLabel()
      ===================================================================== */
+  const PORT_SHORT = { side: "side port", sidex: "side exhaust", street: "street port", bridge: "bridge port", peri: "peripheral port" };
   function cfgLabel(cfg) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    if (isRotary(cfg)) {
+      const Lr = LAYOUTS[cfg.layout], g = rotGeometry(cfg, Lr);
+      const asp = { na: "NA", turbo: "Turbo", twin_turbo: "Sequential twin-turbo", roots: "Supercharged", centrifugal: "Centrifugal", screw: "Screw-blown", compound: "Compound turbo" }[cfg.asp] || "Boosted";
+      return Lr.n + "-rotor · " + (g.VdNom * 1000).toFixed(1) + " L · " + Math.round(cfg.bore) + "×" + Math.round(cfg.stroke) + " e" + (+(cfg.ecc || 15).toFixed(2)) + " · " + (PORT_SHORT[cfg.rotPort] || "side port") + " · " + asp;
+    }
     const L = LAYOUTS[cfg.layout] || LAYOUTS.I4;
     const Vd = PI / 4 * cfg.bore * cfg.bore * cfg.stroke * L.n / 1e6; // litres
     const headName = { sohc2v: "SOHC 2v", dohc4v: "DOHC 4v", dohc4v_vvt: "DOHC 4v VVT", dohc4v_vvl: "DOHC 4v VVL", pushrod2v: "Pushrod 2v", billet_hemi: "Billet hemi" }[cfg.head] || (OPT.head[cfg.head] || {}).name || cfg.head;
@@ -4567,6 +4940,85 @@ const ENGINE_SIM = (function () {
         nitrous: "none", fuel: "diesel", dInj: "inline_mech", dNoz: "n250", injectors: "i240", fuelPump: "twin450", timing: -5, lambda: 1.22,
         oilGrade: "w15_50", oilSystem: "wet", oilSquirters: "fitted", cooling: "race", exhaust: "cast_log", cover: "black"
       }
+    }),
+    /* ---- Wankel rotaries: rotor width (bore), generating radius (stroke) and eccentricity in place of
+       bore and stroke; displacement quoted Mazda's way (one chamber a rotor) ---- */
+    P({
+      id: "12a_sa", name: "Twelve-A carburettor rotary", basedOn: "Mazda 12A (RX-7 SA)", starter: true, cls: "rotary",
+      blurb: "Two 573 cc rotors (R 105, e 15, 70 mm wide) fed by a four-barrel carburettor. A hundred horsepower out of 1.1 litres, a buzz like an angry sewing machine and nothing at all to shake.",
+      soundProfile: null, realHp: 100, realRpm: 6000, realNm: 142,
+      cfg: {
+        layout: "R2", bore: 70, stroke: 105, ecc: 15, cr: 9.4, rotPort: "side", apexSeal: "oem3", rotHousing: "chrome",
+        sidePlate: "iron", eshaft: "stock", oilMeter: "omp", bearings: "bimetal", redline: 7000,
+        intake: "carb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none",
+        fuel: "r87", timing: 0, lambda: 0.92, oilGrade: "w10_40", oilSystem: "wet", cooling: "std", exhaust: "cast_log", cover: "silver"
+      }
+    }),
+    P({
+      id: "13b_fc", name: "Thirteen-B six-port", basedOn: "Mazda 13B (FC RX-7 NA)", cls: "rotary",
+      blurb: "Two 654 cc rotors, side ports and the six-port induction that opens extra runners above 5,000 rpm. 146 hp, a torque peak a piston engine of its size would envy, and the economy of a V8.",
+      soundProfile: null, realHp: 146, realRpm: 6500, realNm: 187,
+      cfg: {
+        layout: "R2", bore: 80, stroke: 105, ecc: 15, cr: 9.4, rotPort: "side", apexSeal: "oem3", rotHousing: "chrome",
+        sidePlate: "iron", eshaft: "stock", oilMeter: "omp", bearings: "bimetal", redline: 7000,
+        intake: "plenum_long", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none",
+        fuel: "r91", timing: 0, lambda: 0.90, oilGrade: "w10_40", oilSystem: "wet", cooling: "std", exhaust: "cast_tubular", cover: "black"
+      }
+    }),
+    P({
+      id: "13b_rew", name: "Sequential-twin Thirteen-B", basedOn: "Mazda 13B-REW (FD RX-7)", cls: "rotary",
+      blurb: "The 13B with two turbos in sequence: the first lights at 1,800 rpm, the second takes over at 4,500. 255 hp at 0.8 bar from 1.3 litres \u2014 hot, thirsty, and one knock event away from a rebuild.",
+      soundProfile: null, realHp: 255, realRpm: 6500, realNm: 294,
+      cfg: {
+        layout: "R2", bore: 80, stroke: 105, ecc: 15, cr: 9.0, rotPort: "side", apexSeal: "oem3", rotHousing: "chrome",
+        sidePlate: "iron", eshaft: "stock", oilMeter: "omp", bearings: "bimetal", redline: 8000,
+        intake: "plenum_short", asp: "twin_turbo", turboSize: "medium", turbineMat: "cast_iron", ic: "air_air", boost: 0.8, nitrous: "none",
+        fuel: "r94", timing: 0, lambda: 0.80, oilGrade: "w10_40", oilSystem: "wet", cooling: "uprated", exhaust: "cast_tubular", cover: "red"
+      }
+    }),
+    P({
+      id: "renesis", name: "Nine-thousand Renesis", basedOn: "Mazda 13B-MSP Renesis (RX-8)", cls: "rotary",
+      blurb: "Side exhaust ports, three intake ports a rotor, 2 mm apex seals and 10:1. No overlap, so it idles like a piano and pulls cleanly to 9,000 \u2014 232 hp from 1.3 litres with no turbo at all.",
+      soundProfile: null, realHp: 232, realRpm: 8500, realNm: 216,
+      cfg: {
+        layout: "R2", bore: 80, stroke: 105, ecc: 15, cr: 10.0, rotPort: "sidex", apexSeal: "oem2", rotHousing: "chrome",
+        sidePlate: "iron", eshaft: "stock", oilMeter: "emop", bearings: "bimetal", redline: 9000,
+        intake: "plenum_short", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none",
+        fuel: "r94", timing: 0, lambda: 0.88, oilGrade: "w5_30", oilSystem: "wet", cooling: "std", exhaust: "headers_equal", cover: "silver"
+      }
+    }),
+    P({
+      id: "20b_rew", name: "Three-rotor twin-turbo", basedOn: "Mazda 20B-REW (Eunos Cosmo)", cls: "rotary",
+      blurb: "Three 654 cc rotors on a one-piece eccentric shaft, sequential twins and the smoothness of a V12 from two litres. The only production three-rotor ever sold.",
+      soundProfile: null, realHp: 296, realRpm: 6500, realNm: 402,
+      cfg: {
+        layout: "R3", bore: 80, stroke: 105, ecc: 15, cr: 9.0, rotPort: "side", apexSeal: "oem3", rotHousing: "chrome",
+        sidePlate: "iron", eshaft: "stock", oilMeter: "omp", bearings: "bimetal", redline: 7000,
+        intake: "plenum_long", asp: "twin_turbo", turboSize: "medium", turbineMat: "cast_iron", ic: "air_air", boost: 0.6, nitrous: "none",
+        fuel: "r94", timing: 0, lambda: 0.80, oilGrade: "w10_40", oilSystem: "wet", cooling: "uprated", exhaust: "cast_tubular", cover: "blue"
+      }
+    }),
+    P({
+      id: "13b_bp", name: "Bridge-port club racer", basedOn: "13B bridge-port race build", cls: "rotary",
+      blurb: "A 13B with bridged side ports, billet apex seals in Nikasil housings, individual throttles and premix in the tank. Three hundred horsepower at 9,000, an idle like a cement mixer, and a rebuild every season.",
+      soundProfile: null, realHp: 300, realRpm: 9000, realNm: 250,
+      cfg: {
+        layout: "R2", bore: 80, stroke: 105, ecc: 15, cr: 10.0, rotPort: "bridge", apexSeal: "billet", rotHousing: "nikasil",
+        sidePlate: "hardened", eshaft: "stock", oilMeter: "premix", bearings: "trimetal", redline: 9600,
+        intake: "itb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none",
+        fuel: "race100", timing: 0, lambda: 0.88, oilGrade: "w15_50", oilSystem: "dry", cooling: "race", exhaust: "headers_merge", cover: "orange"
+      }
+    }),
+    P({
+      id: "r26b", name: "Four-rotor Le Mans screamer", basedOn: "Mazda R26B (787B)", cls: "rotary",
+      blurb: "Four rotors, peripheral intake ports, ceramic seals in ceramic-coated housings and a split eccentric shaft with a centre main bearing. Seven hundred horsepower at 9,000 and the most famous noise in motor racing.",
+      soundProfile: null, realHp: 690, realRpm: 9000, realNm: 608,
+      cfg: {
+        layout: "R4", bore: 80, stroke: 105, ecc: 15, cr: 10.5, rotPort: "peri", apexSeal: "ceramic", rotHousing: "ceramic",
+        sidePlate: "alu", eshaft: "split", oilMeter: "premix", bearings: "trimetal", redline: 9500,
+        intake: "itb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none",
+        fuel: "race100", timing: 0, lambda: 0.88, oilGrade: "w15_50", oilSystem: "dry", cooling: "race", exhaust: "headers_merge", cover: "orange"
+      }
     })
   ];
 
@@ -4687,7 +5139,7 @@ const ENGINE_SIM = (function () {
     const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = 0.90, TY = TYRES[v.tyre] || TYRES.street;
     let mu = TY.mu;
     if (veh && veh.body && !(veh.wheelbase > 0)) v.wheelbase = (AERO[veh.body] || AERO.street).wb;
-    const I = 0.12 + 0.06 * (res.Vd / 1000), peakTq = res.peakTq, clutchCap = peakTq * 1.8;
+    const I = 0.12 + 0.06 * ((res.VdEq || res.Vd) / 1000), peakTq = res.peakTq, clutchCap = peakTq * 1.8;
     const BODY = AERO[v.body] || AERO.street, cdA0 = BODY.cdA, bite = BODY.bite, crr = 0.014, rho = 1.2, limiter = v.redline * 1.02, shiftAt = v.shiftRpm || v.redline - 200;
 
     /* ---- launch tech ---- */
@@ -4727,7 +5179,7 @@ const ENGINE_SIM = (function () {
       if (d >= 0) return Math.min(full + gb * d, Math.max(tqCap, full));
       return Math.max(interp(res.naTorque, r), full + gb * d);
     }
-    const mm = res.turboMm || 54, VdL = Math.max(0.3, (res.Vd || 2000) / 1000);
+    const mm = res.turboMm || 54, VdL = Math.max(0.3, (res.VdEq || res.Vd || 2000) / 1000);
     // time constant of the rotating group at full exhaust energy: ~0.2 s for a 46 mm wheel, ~1.2 s for a 98 mm frame
     const tauBase = (0.2 + 1.0 * clamp((mm - 46) / 52, 0, 1.2)) * (res.turboUnits === 2 && !res.compound ? 0.78 : 1) * clamp(Math.pow(2.5 / VdL, 0.3), 0.55, 1.5) * (res.vgt ? 0.72 : 1);   // shut vanes spin the wheel up faster
     const pkRpm = res.peakHpRpm || v.redline * 0.85;
@@ -5140,7 +5592,7 @@ const ENGINE_SIM = (function () {
     const mph = v.mph || (gears[clamp(Math.round(v.gear), 0, gears.length - 1)] || gears[1])[1];
     const G = (v.redline * 2 * Math.PI / 60) / (mph * 0.44704 / rw);          // overall ratio, engine : wheel
     const conv = v.trans !== "clutch", etaL = conv ? 0.91 : 0.95;
-    const VdL = Math.max(0.5, (res.Vd || 2000) / 1000);
+    const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000);
     const Ie = (0.12 + 0.07 * VdL) * (v.flyK || 1), Iw = (v.kind === "tractor" ? 2 * 260 : 4 * 32) * rw * rw * 0.6;   // flywheel + crank; tyres and rims
     const m = v.mass + v.ballast, crr = 0.03, ballX = 0.75;               // ballast hangs ~0.75 m ahead of the front axle
     const hh = v.hitch * 0.0254;
@@ -5758,6 +6210,7 @@ const ENGINE_SIM = (function () {
     fitFuel: fitFuel,
     isGas: isGas, fuelOf: fuelOf, flexBlend: flexBlend, flexWinterPct: flexWinterPct, propaneBar: propaneBar,
     isDiesel: isDiesel,
+    isRotary: isRotary,
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
@@ -5814,8 +6267,16 @@ const ENGINE_SOUND = (function () {
     V12: { n:12, banks:2, angle:60,  smooth:99,
            firingOrder:[1,12,5,8,3,10,6,7,2,11,4,9], bankOf:[0,0,0,0,0,0,1,1,1,1,1,1] },
     F4:  { n:4,  banks:2, angle:180, smooth:60, firingOrder:[1,3,2,4],           bankOf:[0,1,0,1] },
-    F6:  { n:6,  banks:2, angle:180, smooth:96, firingOrder:[1,6,2,4,3,5],       bankOf:[0,0,0,1,1,1] }
+    F6:  { n:6,  banks:2, angle:180, smooth:96, firingOrder:[1,6,2,4,3,5],       bankOf:[0,0,0,1,1,1] },
+    /* Wankel: every rotor fires once per e-shaft turn, so over the 720-degree table a rotary has two
+       events per rotor, evenly spaced. Each event gets its own "bank" so the profile can make
+       individual combustions uneven (the overlap misfire that becomes the brap). */
+    R1:  { n:2,  banks:1, angle:0, smooth:62, rotors:1, firingOrder:[1,2],             bankOf:[0,1] },
+    R2:  { n:4,  banks:1, angle:0, smooth:88, rotors:2, firingOrder:[1,2,3,4],         bankOf:[0,1,2,3] },
+    R3:  { n:6,  banks:1, angle:0, smooth:94, rotors:3, firingOrder:[1,2,3,4,5,6],     bankOf:[0,1,2,3,4,5] },
+    R4:  { n:8,  banks:1, angle:0, smooth:97, rotors:4, firingOrder:[1,2,3,4,5,6,7,8], bankOf:[0,1,2,3,4,5,6,7] }
   };
+  var ROT_OVERLAP = { side: 0.05, sidex: 0.0, street: 0.14, bridge: 0.48, peri: 0.72 };   // mirrors OPT.rotPort
 
   /* ------------------------------------------------------------------ *
    * 2. Exhaust-system voicing tables
@@ -6016,6 +6477,7 @@ const ENGINE_SOUND = (function () {
                Math.round(num(cfg.bore, 86) / 4), Math.round(num(cfg.stroke, 86) / 4),
                cfg.pipe, cfg.muffler, cfg.cat, cfg.cutout].join("|");
     var dz = !!diesel; if (dz) key += "|dz";
+    var rot = !!L.rotors; if (rot) key += "|rotary|" + cfg.rotPort + "|" + num(cfg.ecc, 15);
     if (DERIVE_CACHE.key === key && DERIVE_CACHE.prof) return DERIVE_CACHE.prof;
 
     var exh = EXH[cfg.exhaust] ? cfg.exhaust : "cast_tubular";
@@ -6091,6 +6553,26 @@ const ENGINE_SOUND = (function () {
       level: clamp(1.06 - n * 0.017 + (big - 1) * 0.07, 0.84, 1.14),
       wet: 0.19, redline: num(cfg.redline, 7000)
     });
+    if (rot) {
+      /* Wankel: a peripheral exhaust port is uncovered all at once by the passing apex, so each pulse has
+         a hard edge and a short, bright, buzzing body; small chambers firing twice as often as a piston
+         engine of the same "litres" push the whole note up. Port overlap makes some combustions weak or
+         missing at idle: baked lightly into the cycle here, and as a live chop in set() (the brap). */
+      var ov = ROT_OVERLAP[cfg.rotPort]; if (ov == null) ov = 0.05;
+      var chamber = 3 * Math.sqrt(3) * num(cfg.stroke, 105) * num(cfg.ecc, 15) * num(cfg.bore, 80) / 1000;
+      var rbig = clamp(chamber / 500, 0.4, 2.2), k = 0.04 + 0.30 * ov, rg = [], rj = [];
+      for (var ev = 0; ev < n; ev++) { rg.push(1 - k * (((ev * 7) % 5) / 4)); rj.push([0, 6, -4, 3, -5, 2, -3, 5][ev % 8] * ov); }
+      prof.rotary = 1; prof.rot = ov; prof.name = "Custom " + lk + " rotary"; prof.cyl = chamber;
+      prof.tilt = clamp(0.80 + EXH[exh].tilt * 0.18 + ov * 0.10 - (cfg.rotPort === "sidex" ? 0.10 : 0), 0.6, 0.99);
+      prof.pulseSpread = clamp(0.95 - ov * 0.15, 0.75, 1.0);
+      prof.pulseDecay = clamp(7.5 + ov * 3, 6, 11);
+      prof.attack = 60; prof.bankGain = rg; prof.bankPhase = [0, 0]; prof.bankDelayMs = 0; prof.cylJitter = ov > 0.1 ? rj : null;
+      prof.lope = clamp(ov * 1.3, 0, 1);
+      if (ov >= 0.4) prof.intake = { type: "itb", lo: 330, hi: 1150, q: 3.2, g: 0.46 };   // a bridge / peri port howls through its intake
+      prof.mech = { tick: 0.05, whine: 0.16 + (cfg.oilSystem === "dry" ? 0.08 : 0) };      // no valvetrain: gears and the oil pump
+      prof.sub = clamp(0.28 + 0.22 * rbig, 0.28, 0.70);
+      prof.level = clamp(1.10 + 0.03 * (n / 2 - 2) + 0.06 * ov, 1.0, 1.22);               // loud
+    }
     DERIVE_CACHE.key = key; DERIVE_CACHE.prof = prof;
     return prof;
   }
@@ -6240,6 +6722,20 @@ const ENGINE_SOUND = (function () {
   BufferOsc.prototype.start = function (t) { this.started = t || this.ctx.currentTime; if (this.buffer) this._swap(); };
   BufferOsc.prototype.stop = function (t) { var src = this.src; this.src = null; this.started = null; if (src) { try { src.stop(t || this.ctx.currentTime); } catch (e) {} } };
 
+  // rotary chop: eight firing slots, some strong, some weak, some missing — zero-mean, minimum -1, used to gate the exhaust gain
+  var brapWave = null;
+  function buildBrapWave(ctx) {
+    if (brapWave) return brapWave;
+    var M = 512, K = 48, slot = [1, -1, 0.55, 0.9, -1, 0.25, 1, -0.6], s = new Float32Array(M), i, k, t, mean = 0, mn = 1e9;
+    for (i = 0; i < M; i++) { var x = i / M * 8, si = Math.floor(x), fr = x - si; s[i] = slot[si] * Math.sin(Math.PI * Math.min(1, fr * 1.25)); mean += s[i] / M; }
+    for (i = 0; i < M; i++) { s[i] -= mean; if (s[i] < mn) mn = s[i]; }
+    var r = new Float32Array(K + 1), im = new Float32Array(K + 1), sc = 1 / Math.max(0.2, -mn);
+    for (k = 1; k <= K; k++) { var a = 0, b = 0, w = 2 * Math.PI * k / M;
+      for (t = 0; t < M; t++) { a += s[t] * Math.cos(w * t); b += s[t] * Math.sin(w * t); }
+      r[k] = 2 / M * a * sc; im[k] = 2 / M * b * sc; }
+    brapWave = ctx.createPeriodicWave(r, im, { disableNormalization: true });
+    return brapWave;
+  }
   // spiky impulse-ish wave for the valvetrain voice
   var mechWave = null;
   function buildMechWave(ctx) {
@@ -6523,6 +7019,10 @@ const ENGINE_SOUND = (function () {
     g.clG = ctx.createGain(); g.clG.gain.value = 0;
     g.clNoise.connect(g.clHP); g.clHP.connect(g.clBP); g.clBP.connect(g.clAm); g.clAm.connect(g.clG); g.clG.connect(bus);
     g.clOsc.connect(g.clD); g.clD.connect(g.clAm.gain);
+    /* --- rotary brap: an irregular gate on the exhaust gain (silent unless a rotary at idle) --- */
+    g.brOsc = ctx.createOscillator(); g.brOsc.setPeriodicWave(buildBrapWave(ctx)); g.brOsc.frequency.value = 5;
+    g.brD = ctx.createGain(); g.brD.gain.value = 0;
+    g.brOsc.connect(g.brD); g.brD.connect(g.exhG.gain);
 
     /* --- forced induction ---------------------------------------------- */
     g.blowA = ctx.createOscillator(); g.blowA.type = "sine"; g.blowA.frequency.value = 700;
@@ -6550,7 +7050,7 @@ const ENGINE_SOUND = (function () {
 
     var t = nowT();
     g.exhOsc.start(t); g.subOsc.start(t); g.noise.start(t);
-    g.mechOsc.start(t); g.gearOsc.start(t); g.clOsc.start(t); g.clNoise.start(t);
+    g.mechOsc.start(t); g.gearOsc.start(t); g.clOsc.start(t); g.clNoise.start(t); g.brOsc.start(t);
     g.blowA.start(t); g.blowB.start(t); g.lfo.start(t);
 
     N = g;
@@ -6562,7 +7062,7 @@ const ENGINE_SOUND = (function () {
     if (!N) return;
     var g = N; N = null;
     var t = nowT();
-    ["exhOsc", "subOsc", "noise", "mechOsc", "gearOsc", "clOsc", "clNoise", "blowA", "blowB", "lfo"]
+    ["exhOsc", "subOsc", "noise", "mechOsc", "gearOsc", "clOsc", "clNoise", "blowA", "blowB", "lfo", "brOsc"]
       .forEach(function (k) { try { g[k].stop(t + 0.02); } catch (e) {} });
     setTimeout(function () {
       for (var k in g) { try { g[k].disconnect(); } catch (e) {} }
@@ -6753,7 +7253,7 @@ const ENGINE_SOUND = (function () {
 
     // brightness: low load = closed throttle = muffled
     var lpf = clamp((900 + fire * 9 * (0.35 + 0.85 * load) * (0.35 + 1.1 * ex.tilt)) * vBright
-                    * clamp(muff + 0.10, 0.5, 1.1) * (dz ? 0.62 : 1) * (sv ? sv.bright : 1), dz ? 520 : 700, 7500);
+                    * clamp(muff + 0.10, 0.5, 1.1) * (dz ? 0.62 : 1) * (sv ? sv.bright : 1) * (p.rotary ? 1.30 : 1), dz ? 520 : 700, 7500);
     ap(N.lp.frequency, lpf, 0.04);
     ap(N.hp.frequency, clamp(38 + rn * 30, 35, 90), 0.08);
 
@@ -6777,6 +7277,12 @@ const ENGINE_SOUND = (function () {
     // level: idle audible, full load loud, normalised across layouts
     var exhLvl = p.level * ex.level * (0.30 + 0.70 * load) * (0.62 + 0.45 * Math.min(1, rpm / 5200))
                  * (sv ? Math.pow(sv.lvl, 0.5 + 0.5 * load) : 1);   // a free system is loudest on the throttle
+    /* rotary brap: with port overlap, exhaust backs into the intake at idle and light load and whole
+       combustions go missing. A gate with eight uneven slots per period, its rate wandering around an
+       eighth of the firing rate, chops the note; it fades as the revs and the throttle come up. */
+    var brap = (p.rotary && live) ? clamp(0.12 + p.rot * 1.5, 0, 0.95) * clamp(1 - (rpm - 1000) / 2800, 0, 1) * clamp(1 - load * 1.7, 0, 1) : 0;
+    st.brap = brap;
+    if (p.rotary) ap(N.brOsc.frequency, clamp(fire / 8 * (0.82 + 0.36 * Math.random()), 1, 40), 0.06);
     // lope: a big cam breathes unevenly at low load and smooths out as it comes
     // on the cam, so the wander dies away with rpm and with throttle
     var lopeAmt = ((p.lope || 0) + 0.25 * wear) * clamp(1 - rpm / 2600, 0, 1) * clamp(1 - load * 1.3, 0, 1);
@@ -6786,6 +7292,7 @@ const ENGINE_SOUND = (function () {
     }
     if (!(st.flareUntil && ctx.currentTime < st.flareUntil))
       ap(N.exhG.gain, live * exhLvl * (1 + 0.30 * n2oBite) * 0.55 * soloGain("exhaust"), 0.03);
+    ap(N.brD.gain, brap > 0.005 ? live * exhLvl * 0.55 * 0.9 * brap * soloGain("exhaust") : 0, 0.04);
     /* two-step: the limiter cuts spark on random cycles, so the note stutters; retard makes the
        unburnt charge light off in the pipe as pops (fired from the sim's own bang envelope) */
     var ts2 = (o.twoStep && o.twoStep.on && live && !dz) ? o.twoStep : null;
@@ -6921,7 +7428,7 @@ const ENGINE_SOUND = (function () {
     var ex2 = st.exhaust || p.exh;
     var freeExh = (ex2 === "headers_equal" || ex2 === "headers_merge") ? 1
                 : (ex2 === "cast_tubular") ? 0.55 : 0.3;
-    if (!dz && load < 0.18 && rpm > 2000 && (richness * 0.8 + freeExh * 0.4) > 0.3) {
+    if (!dz && load < 0.18 && rpm > 2000 && (richness * 0.8 + freeExh * 0.4 + (p.rotary ? 0.35 : 0)) > 0.3) {   // a rotary's open port pops on every lift
       // mean interval between pops, as a rate rather than a switch
       var mean = 0.085 / (clamp(rpm / 6000, 0.35, 1.5) * (0.45 + 1.7 * richness) * freeExh);
       if (t >= st.crackleT) {
@@ -6945,6 +7452,7 @@ const ENGINE_SOUND = (function () {
   }
 
   function keyForLayoutObj(L, prefer) {
+    if (prefer && LAY[prefer] && LAY[prefer].rotors) return prefer;   // a Wankel: n is rotors in the sim, events here
     if (prefer && LAY[prefer]) {                       // the config knows which it is
       var q = LAY[prefer];
       if (q.n === L.n && q.banks === L.banks && q.angle === L.angle) return prefer;
@@ -8733,6 +9241,7 @@ function buildEngineMesh(cfg, layoutObj){
   ZONE_MARKS=[]; ZONE_EXTRAS=extras; setZone(1);   /* 1 crankcase: rods, crank, bearings */
   var boltXf = [];                         /* instanced bolt transforms    */
   var a = deg(L.angle/2);
+  if(isRotaryCfg(cfg)) return buildRotaryMesh(cfg, L, B, G, extras, t0);   /* Wankel: housings and rotors, no block at all */
 
   /* ---------- crankcase / block skirt ---------- */
   var caseSpan = caseTop - caseBot;
@@ -9146,6 +9655,286 @@ function hoseEnds(g, rad, type){
   var t0=Math.min(0.2, rad*1.6/len);
   hwW(type, endFrame(c.getPointAt(t0), c.getTangentAt(t0), rad));
   hwW(type, endFrame(c.getPointAt(1-t0), c.getTangentAt(1-t0), rad));
+}
+
+/* ===========================================================================
+   7r. WANKEL ROTARY: a stack of rotor housings and side housings threaded on the eccentric shaft.
+       Engine space is the same as a piston engine's: the e-shaft lies on X (front = +X, flywheel at -X),
+       the housings stand with the epitrochoid's long axis vertical. Intake on the -Z flank, exhaust ports
+       on the +Z flank (so the shared exhaust / turbo / intake / FAD builders hang their parts where they
+       expect), spark plugs low on the -Z flank, the oil metering pump on top of the front cover.
+       X-ray: triangular rotors orbit the eccentric lobes and turn at a third of shaft speed.
+   ==========================================================================*/
+function isRotaryCfg(c){
+  if(!c) return false;
+  var E=(typeof ENGINE_SIM!=="undefined")?ENGINE_SIM:null;
+  if(E&&E.isRotary) return !!E.isRotary(c);
+  return /^R[1-4]$/.test(c.layout||"");
+}
+/* epitrochoid (long axis on shape-y) pushed out along its normal by grow; extruded along X it is a housing */
+function trochoidShape(R, e, grow, n){
+  var s=new THREE.Shape(), i;
+  n=n||72;
+  for(i=0;i<n;i++){
+    var a=i/n*TAU;
+    var px=e*Math.sin(3*a)+R*Math.sin(a), py=e*Math.cos(3*a)+R*Math.cos(a);
+    var dx=3*e*Math.cos(3*a)+R*Math.cos(a), dy=-3*e*Math.sin(3*a)-R*Math.sin(a), l=Math.sqrt(dx*dx+dy*dy)||1;
+    var x=px-dy/l*grow, y=py+dx/l*grow;                 /* the curve runs clockwise: outward is (-dy, dx) */
+    if(i===0) s.moveTo(x,y); else s.lineTo(x,y);
+  }
+  s.closePath();
+  return s;
+}
+/* housing / plate slab: the trochoid outline extruded w thick along X, centred on x=0 */
+function TROCHOID(R, e, grow, w, bev){
+  var key=gkey("tro",r3(R),r3(e),r3(grow),r3(w),bev?1:0);
+  if(GEO[key]) return GEO[key];
+  var g=new THREE.ExtrudeGeometry(trochoidShape(R,e,grow,72), {depth:w, bevelEnabled:!!bev, bevelThickness:0.012, bevelSize:0.012, bevelSegments:1, curveSegments:4});
+  g.translate(0,0,-w/2); g.rotateY(PI/2);
+  scaleUV(g, TK, TK);
+  return cache(key, g);
+}
+/* a rotor: three apexes on radius Ra joined by flanks bulging out by bulge, a bearing bore in the middle */
+function ROTOR(Ra, bulge, w, bore){
+  var key=gkey("rot",r3(Ra),r3(bulge),r3(w),r3(bore));
+  if(GEO[key]) return GEO[key];
+  var s=new THREE.Shape(), k, P=function(r,a){ return [-r*Math.sin(a), r*Math.cos(a)]; };   /* world (y,z)=(cos a, sin a) */
+  var a0=P(Ra,0); s.moveTo(a0[0],a0[1]);
+  for(k=0;k<3;k++){
+    var aE=(k+1)*TAU/3, aM=k*TAU/3+TAU/6, c=P(0.5*Ra+2*bulge, aM), p=P(Ra, aE);
+    s.quadraticCurveTo(c[0],c[1],p[0],p[1]);
+  }
+  var h=new THREE.Path(); h.absarc(0,0,bore,0,TAU,true); s.holes.push(h);
+  var g=new THREE.ExtrudeGeometry(s, {depth:w, bevelEnabled:true, bevelThickness:0.01, bevelSize:0.01, bevelSegments:1, curveSegments:10});
+  g.translate(0,0,-w/2); g.rotateY(PI/2);
+  scaleUV(g, TK, TK);
+  return cache(key, g);
+}
+
+function buildRotaryMesh(cfg, L, B, G, extras, t0){
+  var n=L.n, i, k;
+  var Rr=pick(cfg.stroke,105)*K, ee=pick(cfg.ecc,15)*K, rw=pick(cfg.bore,80)*K;   /* generating radius, eccentricity, rotor width */
+  var port=pick(cfg.rotPort,"side"), asp=pick(cfg.asp,"na"), exh=pick(cfg.exhaust,"cast_tubular"), intake=pick(cfg.intake,"single_tb");
+  var ic=pick(cfg.ic,"none"), tsz=pick(cfg.turboSize,"medium"), oilSys=pick(cfg.oilSystem,"wet");
+  var coverCol = COVER_COLORS[pick(cfg.cover,"red")] || COVER_COLORS.red;
+  var chamber=3*Math.sqrt(3)*Rr*ee*rw;                               /* scene units^3 */
+  var bore=0.86*Math.pow(chamber/(3*Math.sqrt(3)*1.05*0.15*0.80), 1/3);   /* pipe and hardware scale: 0.86 on a 13B */
+  var wall=0.20;                                                     /* housing wall + water jacket */
+  var plateT=0.42*Math.max(0.8, rw/0.8*0.6+0.4);                     /* side housings */
+  var bspace=rw+plateT, stackLen=n*bspace+plateT, bankLen=n*bspace;  /* builders place ports at -bankLen/2 + bspace*(i+0.5) */
+  var Hh=Rr+ee+wall, Hw=Rr*0.87+wall;                               /* half-height / half-width of a housing */
+  var xF=stackLen/2, xR=-stackLen/2;
+  var phase=[]; for(i=0;i<n;i++) phase.push(i*TAU/n);
+  var rx=function(i){ return -bankLen/2 + bspace*(i+0.5); };         /* rotor (housing) centre */
+  var px=function(j){ return -stackLen/2 + plateT/2 + j*bspace; };   /* side housing j = 0..n */
+  var sideKey = cfg.sidePlate==="alu" ? "malu" : "iron";
+  var houseKey = cfg.rotHousing==="ceramic" ? "palu" : "calu";
+  DCTX.bore = bore;
+
+  /* ---------- housings and side plates ---------- */
+  setZone(2);
+  for(i=0;i<n;i++){
+    B.add(houseKey, TROCHOID(Rr, ee, wall, rw*0.995, DET>0), rx(i), 0, 0);
+    /* coolant-jacket ribs round the waist and cast bosses top and bottom */
+    for(k=-1;k<=1;k+=2){
+      B.add(houseKey, BOX(rw*0.70, bore*0.10, bore*0.10), rx(i), k*Hh*0.62, Hw*0.93);
+      B.add(houseKey, BOX(rw*0.70, bore*0.10, bore*0.10), rx(i), k*Hh*0.62, -Hw*0.93);
+    }
+    B.add(houseKey, BOX(rw*0.80, bore*0.16, bore*0.38), rx(i), Hh-bore*0.03, 0);
+    if(port==="peri"){
+      /* peripheral port: the intake enters the rotor housing itself, a cast stub on the -Z flank */
+      B.add(houseKey, BOX(rw*0.62, bore*0.34, bore*0.22), rx(i), Hh*0.42, -(Hw+bore*0.06));
+    }
+  }
+  setZone(3);
+  for(var j=0;j<=n;j++){
+    var end = (j===0||j===n), t=plateT*(end?1.0:0.98);
+    B.add(sideKey, TROCHOID(Rr, ee, wall+bore*0.07, t, DET>0), px(j), 0, 0);
+    /* side (intake) port boss on the -Z flank for side, street and bridge ports */
+    if(port!=="peri") B.add(sideKey, BOX(t*0.86, bore*0.30, bore*0.18), px(j), Hh*0.40, -(Hw+bore*0.10));
+    if(port==="sidex") B.add(sideKey, BOX(t*0.80, bore*0.26, bore*0.16), px(j), -Hh*0.34, Hw+bore*0.10);   /* side exhaust */
+    if(DET>=2 && j<n) B.add("gasket", TROCHOID(Rr, ee, wall+bore*0.035, bore*0.012, false), px(j)+plateT/2+bore*0.006, 0, 0);
+  }
+  /* tension bolts through the whole stack: heads on the front plate, nuts on the rear */
+  var nTB = n<=2 ? 14 : 16;
+  for(i=0;i<nTB;i++){
+    var ta=i/nTB*TAU, ty=Math.cos(ta)*(Hh+bore*0.02), tz=Math.sin(ta)*(Hw+bore*0.02);
+    if(DET){ B.hw("hex", xF+0.004, ty, tz, 0,0,-PI/2, bore*0.13); B.hw("hex", xR-0.004, ty, tz, 0,0,PI/2, bore*0.13); }
+    else B.add("steel", CYL(bore*0.06,bore*0.06,bore*0.06,6), xF+bore*0.03, ty, tz, 0,0,PI/2);
+  }
+
+  /* ---------- front cover, oil metering pump, e-shaft nose ---------- */
+  setZone(7);
+  var coverT=bore*0.42;
+  B.add("wrinkle", TROCHOID(Rr*0.92, ee, wall*0.6, coverT, DET>0), xF+coverT/2, -Hh*0.04, 0);
+  B.add("wrinkle", CYL(bore*0.42,bore*0.48,bore*0.20,22), xF+coverT+bore*0.08, 0, 0, 0,0,PI/2);       /* nose boss */
+  /* OMP: a little plunger pump on top of the front cover, its control rod to the throttle and a line to each housing */
+  var ompY=Hh*0.70, ompX=xF+coverT*0.40;
+  B.add("calu", BOX(bore*0.36, bore*0.26, bore*0.30), ompX, ompY+bore*0.10, bore*0.30);
+  B.add("steel", CYL(bore*0.05,bore*0.05,bore*0.22,8), ompX+bore*0.10, ompY+bore*0.28, bore*0.30, 0,0,0);
+  if(DET && cfg.oilMeter!=="premix"){
+    for(i=0;i<n;i++) extras.push(hoseMesh([V3(ompX-bore*0.10, ompY+bore*0.16, bore*0.20), V3((ompX+rx(i))/2, Hh+bore*0.18, bore*0.20), V3(rx(i), Hh+bore*0.10, bore*0.10)], bore*0.022, MAT.dark));
+  }
+  if(cfg.oilMeter==="premix") B.add("blackPlast", CYL(bore*0.06,bore*0.06,bore*0.04,8), ompX, ompY+bore*0.26, bore*0.30);   /* capped off */
+  /* oil filter on the front cover, low on the +Z side; water outlet + thermostat on top */
+  B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.58,20,false,1.8), xF+coverT*0.5, -Hh*0.60, Hw*0.55+bore*0.30, PI/2,0,0);
+  B.add("calu", CYL(bore*0.13,bore*0.13,bore*0.40,12), xF-bore*0.10, Hh+bore*0.16, -bore*0.30, 0,0,0);
+
+  /* ---------- sump ---------- */
+  setZone(6);
+  var panTop=-Hh*0.90, panH = oilSys==="dry" ? bore*0.26 : bore*0.70;
+  B.add(oilSys==="dry" ? "malu" : "steel", RBOX(stackLen*0.92, panH, Hw*1.60, 0.03), 0, panTop-panH/2, 0);
+  B.add("steel", CYL(bore*0.075,bore*0.075,0.04,10), stackLen*0.25, panTop-panH+0.01, Hw*0.30);
+
+  /* ---------- spark plugs: leading and trailing per rotor, low on the -Z flank; coils on a rail above ---------- */
+  setZone(3);
+  var plugZ=-(Hw+bore*0.02), plugY=[-Hh*0.16, -Hh*0.46];
+  var coilZ=-(Hw+bore*0.52), coilY=-Hh*0.30;
+  for(i=0;i<n;i++){
+    for(k=0;k<2;k++){
+      var pxx=rx(i)+(k?-1:1)*rw*0.18, pyy=plugY[k];
+      B.add("calu", BOX(rw*0.30, bore*0.22, bore*0.10), pxx, pyy, plugZ+bore*0.02);                     /* plug boss */
+      B.add("steel", CYL(bore*0.07,bore*0.07,bore*0.06,6), pxx, pyy, plugZ-bore*0.03, PI/2,0,0);        /* hex */
+      B.add(k ? "dark" : "wireRed", CYL(bore*0.055,bore*0.06,bore*0.16,10), pxx, pyy, plugZ-bore*0.14, PI/2,0,0);   /* boot: leading red, trailing black */
+      if(DET) extras.push(hoseMesh([V3(pxx, pyy, plugZ-bore*0.22), V3(pxx, (pyy+coilY)/2, plugZ-bore*0.40), V3(rx(i)+(k?-1:1)*rw*0.12, coilY-bore*0.12, coilZ+bore*0.06)], bore*0.026, k ? MAT.dark : MAT.wireRed));
+    }
+    if(DET){
+      for(k=0;k<2;k++) B.add("blackPlast", RBOX(rw*0.22, bore*0.30, bore*0.24, 0.02), rx(i)+(k?-1:1)*rw*0.12, coilY, coilZ);   /* coil packs */
+    }
+  }
+  if(DET){
+    B.add("steel", BOX(stackLen*0.86, bore*0.04, bore*0.16), 0, coilY-bore*0.18, coilZ+bore*0.10);    /* coil rail */
+    B.addW("loom", uvByLength(TUBE([B.pt(xF, coilY+bore*0.22, coilZ), B.pt(0, coilY+bore*0.24, coilZ), B.pt(xR+bore*0.2, coilY+bore*0.22, coilZ)], bore*0.03, 20, 6), 1/1.4));
+  }
+
+  /* ---------- internals (X-ray): eccentric shaft, rotors, stationary gears ---------- */
+  setZone(1);
+  (function(){
+    var IG=new THREE.Group(); IG.name="internals"; IG.visible=false;
+    var shaft=new THREE.Group(), items=[];
+    items.push({g:CYL(bore*0.25,bore*0.25,stackLen+bore*1.4,18), m:mkM(0,0,0,0,0,PI/2)});
+    for(i=0;i<n;i++) items.push({g:CYL(Rr*0.36,Rr*0.36,rw*0.90,24), m:mkM(rx(i), ee*Math.cos(phase[i]), ee*Math.sin(phase[i]), 0,0,PI/2)});   /* eccentric lobes */
+    for(k=-1;k<=1;k+=2) items.push({g:BOX(bore*0.10, Rr*0.55, Rr*0.70), m:mkM(k*(stackLen/2+bore*0.18), -Rr*0.22, 0)});   /* counterweights */
+    shaft.add(new THREE.Mesh(mergeGeos(items), MAT.steel));
+    IG.add(shaft);
+    var rotors=[], Ra=Rr*0.985;
+    for(i=0;i<n;i++){
+      var rg=new THREE.Group();
+      rg.add(new THREE.Mesh(ROTOR(Ra, Rr*0.11, rw*0.96, Rr*0.37), MAT.iron));
+      for(k=0;k<3;k++){
+        var aa=k*TAU/3, am=aa+TAU/6, fr=0.5*Ra+Rr*0.11-bore*0.012;
+        var seal=new THREE.Mesh(BOX(rw*0.98, bore*0.035, bore*0.05), MAT.steel);
+        seal.position.set(0, Ra*Math.cos(aa), Ra*Math.sin(aa)); seal.rotation.x=aa; rg.add(seal);
+        if(DET){   /* combustion recess in each flank */
+          var rec=new THREE.Mesh(BOX(rw*0.55, bore*0.02, Rr*0.42), MAT.dark);
+          rec.position.set(0, fr*Math.cos(am), fr*Math.sin(am)); rec.rotation.x=am; rg.add(rec);
+        }
+      }
+      var ring=new THREE.Mesh(TOR(Rr*0.40, bore*0.03, 6, 30), MAT.palu); ring.rotation.y=PI/2; ring.position.x=rw*0.49; rg.add(ring);   /* internal gear */
+      rg.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+      IG.add(rg);
+      rotors.push({g:rg, x:rx(i), phase:phase[i]});
+      /* stationary gear on the side housing face */
+      var sg=new THREE.Mesh(TOR(Rr*0.28, bore*0.03, 6, 26), MAT.steel); sg.rotation.y=PI/2; sg.position.set(rx(i)+rw*0.50, 0, 0); IG.add(sg);
+    }
+    G.add(IG);
+    anim.internals = {group:IG, crank:shaft, r:ee, L:1, ch:0, cyls:[], theta:0, pistonH:0, rotors:rotors, e:ee};
+  })();
+
+  /* ---------- exhaust: a port per rotor on the +Z flank, low ---------- */
+  setZone(4);
+  EXH_COLL=[]; PIPE_LOG=[]; CRACK=null;
+  var tFeed = (asp==="turbo"||asp==="twin_turbo"||asp==="compound") ? ((asp==="twin_turbo") ? 2 : 1) : 0;
+  if(tFeed===2 && n<2) tFeed=1;
+  var eHeadH=bore*0.62, ePortY=-Hh*0.30, eHeadY=ePortY-eHeadH*0.48;
+  var exP={ per:n, bore:bore, bspace:bspace, bankLen:bankLen, exh:exh, zs:1, turboFeed:tFeed, L:{boxer:false, vee:false}, bankIdx:0, deckH:Hh };
+  LAST_PIPE_END=null;
+  buildExhaust(B, exP, extras, Hw+bore*0.02, eHeadY, eHeadH, function(z){ return z; });
+  var exhaustTip = LAST_PIPE_END ? LAST_PIPE_END.clone() : null;
+  for(i=0;i<n;i++) B.add(houseKey, BOX(rw*0.62, eHeadH*0.62, bore*0.10), rx(i), ePortY, Hw-bore*0.02);   /* exhaust port boss */
+
+  /* ---------- intake: the shared builder, aimed at the -Z flank ---------- */
+  setZone(0);
+  var iHeadH=bore*0.62, iPortY=Hh*0.40;
+  var bi0={ zs:1, headW:(Hw+bore*0.08)*2/1.04, covW:Hw*1.6, covY:Hh, coverH:bore*0.30, headY:iPortY-iHeadH*0.55, headH:iHeadH,
+            covTop:Hh+bore*0.30, exhZ:Hw, inZ:-Hw, matrix:new THREE.Matrix4(), bankLen:bankLen, exhaustTip:exhaustTip, coilLoomEnd:null, injLoomEnd:null, dz:null };
+  var bankInfo=[bi0];
+  LAST_TB=null; LAST_PLEN=null;
+  buildIntake(B, { L:L, per:n, banks:1, bore:bore, bankLen:bankLen, bankW:Hw*2, deckH:Hh, headH:iHeadH, coverH:bore*0.30, bspace:bspace,
+    intake:intake, asp:asp, a:0, pushrod:false, dohc:true, bankInfo:bankInfo, boltXf:[] }, extras);
+  /* fuel rail with a primary and a secondary injector per rotor */
+  if(intake!=="carb"){
+    var rZ=-(Hw+bore*0.34), rY=iPortY+bore*0.30;
+    B.add("anod", CYL(bore*0.06,bore*0.06,bankLen*0.98,10), 0, rY, rZ, 0,0,PI/2);
+    for(i=0;i<n;i++) for(k=0;k<2;k++) B.add("blackPlast", CYL(bore*0.055,bore*0.055,bore*0.20,10), rx(i)+(k?-1:1)*rw*0.16, rY-bore*0.12, rZ+bore*0.05, 0.5,0,0);
+  }
+
+  /* ---------- aspiration, accessory drive, charge pipes ---------- */
+  setZone(5);
+  var caseW=Hw*2, caseH=Hh*0.9;
+  var aspInfo = buildAspiration(B, {
+    L:L, per:n, banks:1, bore:bore, stroke:bore, bankLen:bankLen, bankW:Hw*2,
+    deckH:Hh, headH:iHeadH, coverH:bore*0.30, caseH:caseH, caseW:caseW, panTop:panTop,
+    asp:asp, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
+    intake:intake, a:0, bankInfo:bankInfo, exh:exh,
+    panBot:panTop-panH, caseBot:panTop, tb:LAST_TB, plen:LAST_PLEN
+  }, extras);
+  setZone(7);
+  var fadLen = 2*(xF + coverT + bore*0.10 - bore*0.16);               /* puts the FAD's front-cover face on ours */
+  buildFAD(B, { L:L, bore:bore, stroke:bore, bankLen:fadLen, bankW:Hw*2, caseW:caseW, caseH:caseH,
+    deckH:Hh, damper:"rubber", a:0, cfg:cfg, aspInfo:aspInfo, head:"dohc4v", panTop:panTop, oilSys:oilSys }, extras);
+  setZone(5);
+  buildChargeAir(B, { bore:bore, bankLen:bankLen }, extras, aspInfo);
+
+  /* ---------- flywheel (counterweighted, as every rotary's is) ---------- */
+  setZone(1);
+  var fwR=Hh*0.78, fwX=xR-bore*0.30;
+  var fw=new THREE.Mesh(mergeGeos([
+      {g:CYL(fwR,fwR,bore*0.12,30,false,1.6), m:new THREE.Matrix4().makeRotationZ(PI/2)},
+      {g:TOR(fwR*0.99, bore*0.055, 8, 34, 1.6), m:new THREE.Matrix4().compose(V3(bore*0.05,0,0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0,PI/2,0)), V3(1,1,1))},
+      {g:BOX(bore*0.10, fwR*0.50, fwR*0.80), m:mkM(bore*0.10, fwR*0.40, 0)}
+    ]), MAT.steel);
+  fw.position.set(fwX,0,0); fw.castShadow=true; fw.receiveShadow=true;
+  extras.push(fw); anim.spin.push({o:fw, axis:"x", k:1});
+
+  /* ---------- materialise (as buildEngineMesh does) ---------- */
+  var live;
+  if(DET){
+    live = { stainless: liveClone(exh==="headers_merge" ? MATHI.inconel : MATHI.stainless), castexh: liveClone(MATHI.castexh),
+      turbine: liveClone(pick(cfg.turbineMat,"cast_iron")==="inconel" ? MATHI.inconelCast : MATHI.turbine),
+      wrinkle: coverFinish(pick(cfg.cover,"red"), coverCol), anod: tint(MATHI.anod, 0x8d949c) };
+    live.anod.userData.perBuild=true;
+    for(var hk in MATHI) if(!live[hk]) live[hk]=MATHI[hk];
+    for(var dk in DECALS) live[dk]=DECALS[dk];
+  } else {
+    live = { stainless: liveClone(MAT.stainless), castexh: liveClone(MAT.castexh), turbine: liveClone(MAT.turbine),
+      wrinkle: tint(MAT.wrinkle, coverCol), anod: tint(MAT.anod, 0x8d949c) };
+    live.wrinkle.userData.perBuild=true; live.anod.userData.perBuild=true;
+  }
+  anim.glowMats = [live.stainless, live.castexh, live.turbine];
+  var flushed = B.flush(G, live, true);
+  for(var fk in flushed) if(fk.indexOf("decal")===0) flushed[fk].castShadow=false;
+  for(var ei=0; ei<extras.length; ei++){
+    if(!extras[ei]) continue;
+    var ez=0; for(var zi=0; zi<ZONE_MARKS.length; zi++) if(ZONE_MARKS[zi][0]<=ei) ez=ZONE_MARKS[zi][1];
+    extras[ei].traverse(function(o){ if(o.isMesh && o.geometry && !o.geometry.attributes.zone) zoneGeo(o.geometry, ez); });
+    G.add(extras[ei]);
+  }
+  ZONE_EXTRAS=null; setZone(0);
+  if(DET) flushHW(G, function(k){ return live[k] || MATHI[k] || MAT[k]; });
+  CUR_B=null; DECALS={};
+  G.traverse(function(o){
+    var lk = o.userData && o.userData.liveKey;
+    if(lk && live[lk]) o.material = live[lk];
+    else if(DET && o.isMesh && HI_OF.has(o.material)) o.material = HI_OF.get(o.material);
+    if(o.isMesh){ if(Array.isArray(o.material)) o.material.forEach(heatPatch); else heatPatch(o.material); }
+  });
+  var t1=(typeof performance!=="undefined")?performance.now():0;
+  G.userData.buildMs = t1-t0;
+  G.userData.crack = CRACK; CRACK=null;
+  G.userData.exhaustTip = (aspInfo && aspInfo.tip) || exhaustTip || null;
+  G.userData.rotary = true;
+  return G;
 }
 
 /* ===========================================================================
@@ -12243,6 +13032,8 @@ function tick(dt, t){
   for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
   if(anim.internals){
     var IN=anim.internals; IN.theta += spin*0.16; IN.crank.rotation.x = IN.theta;
+    /* rotary: each rotor rides its eccentric lobe and turns at a third of shaft speed (that is what makes the apexes trace the housing) */
+    if(IN.rotors) for(var ri=0; ri<IN.rotors.length; ri++){ var ro=IN.rotors[ri], th=IN.theta+ro.phase; ro.g.position.set(ro.x, IN.e*Math.cos(th), IN.e*Math.sin(th)); ro.g.rotation.x=th/3; }
     if(XRAY){
       var _Y=new THREE.Vector3(0,1,0), _d=new THREE.Vector3(), _p=new THREE.Vector3(), _q=new THREE.Vector3();
       for(i=0;i<IN.cyls.length;i++){
@@ -16082,6 +16873,12 @@ const SEGMENTS=[
 /* site briefs: some clients say where the engine will live and re-run your certified engine in that air before they pay.
    [name, ambient °C, altitude m, premium]. Cold air packs the cylinder (more load, boost overshoots), heat eats knock margin,
    thin air costs an NA engine over a quarter of its torque at 3,000 m. All inside the Pro dyno cell's range so it can be previewed. */
+/* rotary buyers: they want a Wankel and nothing else. Classes count a rotary at 1.5x its quoted displacement (the FIA factor). */
+SEGMENTS.push(
+  {id:"rotsport",name:"Rotary sports coupé",tier:1,units:[3,10],price:9200,req:{hp:[180,260],kg:160,smooth:80,fuel:"r94",rel:76,rot:1}},
+  {id:"rotclub",name:"Club racer · rotary class",tier:2,units:[2,5],price:15500,req:{hp:[260,320],rot:1,rel:62,passes:200,fuel:"race100"}});
+CATS.find(c=>c.id==="perf").segs.push("rotsport");CATS.find(c=>c.id==="race").segs.push("rotclub");
+const ROT_DISP=1.5;
 const SITE_P=0.3;
 const SITES={
   sedan:[["Winnipeg winter commuter",-25,250,.14],["Phoenix commuter car",44,350,.12],["Denver family car",22,1600,.14],["Mexico City family car",18,2250,.18]],
@@ -16103,7 +16900,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.22.0.0";
+const VERSION="1.23.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -16191,8 +16988,10 @@ function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===
 function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
 function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
+const ROT_KEYS={ecc:1,rotPort:1,apexSeal:1,rotHousing:1,sidePlate:1,eshaft:1,oilMeter:1};   // Wankel parts: no part of a piston engine (and no change to its hash)
+const isRot=c=>!!(c&&SIM.isRotary&&SIM.isRotary(c));
 const HASH_DEF={pipe:"stock",muffler:"stock",cat:"none",cutout:"none",turbine:"fixed",als:"off"};   // the exhaust system at its defaults is the engine every older hash was made from
-function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
+function cfgHash(c){const dsl=isCI(c.fuel),rot=isRot(c);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(!rot&&ROT_KEYS[k])&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
 function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.short||o.name.split(" ")[0];}
@@ -16213,6 +17012,8 @@ const ZONE_OF={rod_tension:1,rod_buckling:1,rod_bolts:1,crank_fatigue:1,bearing_
   detonation:2,preignition_egt:2,piston_speed:2,crown_temp:2,crown_pressure:2,hot_clearance:2,slap_blowby:2,ring_gap:2,bore_distortion:2,wall_thickness:2,
   head_lift:3,gasket_shear:3,valve_float:3,valve_piston:3,cooling:3,valve_temp:4,turbine_temp:5,compressor_map:5,oil_starvation:6,torsional:7};
 ZONE_OF.fuel_delivery=2;ZONE_OF.cold_start=2;ZONE_OF.vgt_vanes=5;ZONE_OF.als_heat=5;
+Object.assign(ZONE_OF,{apex_seal:2,housing_chatter:2,carbon_seals:2,coolant_seal:3,eshaft:1,oil_metering:6});   // rotary tests
+const ZONE_NAME_ROT={1:"Eccentric shaft & rotor bearings",2:"Rotors, apex seals & housings",3:"Hot lobe, plugs & coolant seals",7:"Front cover, OMP & pulley"};
 const ZONE_NAME={1:"Crankcase & rotating assembly",2:"Cylinders & pistons",3:"Head, gasket & valvetrain",4:"Exhaust",5:"Turbocharger",6:"Sump & oiling",7:"Front drive & damper"};
 function heatZones(){if(!quick)return null;const worst={};for(const t of quick.tests){const z=ZONE_OF[t.id];if(!z)continue;if(t.id==="turbine_temp"||t.id==="compressor_map"){if(S.cfg.asp==="na")continue;}
     if(!worst[z]||t.util>worst[z])worst[z]=t.util;}
@@ -16226,10 +17027,10 @@ function applyCam(){document.querySelectorAll("#camSeg button").forEach(b=>b.cla
 $("camSeg").addEventListener("click",e=>{const b=e.target.closest("[data-cam]");if(!b)return;S.followCam=b.dataset.cam==="1";applyCam();save();});
 function applyXray(){$("xrayBtn").classList.toggle("on",!!S.xray);ENGINE_VIS.setXray(!!S.xray);}
 $("gfxSeg").addEventListener("click",e=>{const b=e.target.closest("[data-gfx]");if(!b)return;S.gfx=b.dataset.gfx;applyGfx();save();toast(S.gfx==="ultra"?"ULTRA · bloom + ambient occlusion":S.gfx==="full"?"FULL GRAPHICS · bloom on":"LITE GRAPHICS");});
-$("xrayBtn").addEventListener("click",()=>{S.xray=!S.xray;applyXray();save();toast(S.xray?"X-RAY · crank, rods and pistons live":"X-RAY OFF");});
+$("xrayBtn").addEventListener("click",()=>{S.xray=!S.xray;applyXray();save();toast(S.xray?(isRot(S.cfg)?"X-RAY · rotors and eccentric shaft live":"X-RAY · crank, rods and pistons live"):"X-RAY OFF");});
 function applyHeat(){$("heatBtn").classList.toggle("on",!!S.heat);ENGINE_VIS.setHeat(S.heat?heatZones():null);}
 function zoneSheet(z){if(!quick||!ZONE_NAME[z])return;const rows=quick.tests.filter(t=>ZONE_OF[t.id]===z&&!((t.id==="turbine_temp"||t.id==="compressor_map")&&S.cfg.asp==="na")).sort((a,b)=>b.util-a.util);
-  $("sheetTitle").textContent=ZONE_NAME[z];
+  $("sheetTitle").textContent=(isRot(S.cfg)&&ZONE_NAME_ROT[z])||ZONE_NAME[z];
   $("sheetBody").innerHTML=rows.map(t=>`<div class="opt"><b>${t.name}</b><small class="${t.util>1?"critc":t.util>0.8?"warnc":""}">${Math.round(t.util*100)}% of limit</small><div class="bar" style="margin:6px 0"><i style="width:${Math.min(100,t.util*80)}%;background:${t.util>1?"var(--crit)":t.util>0.8?"var(--warn)":"var(--good)"}"></i></div><p>${t.physics||""}</p>${t.fix?`<p style="color:var(--muted)">${t.fix}</p>`:""}</div>`).join("")||"<p class='hint'>Nothing measured here.</p>";
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 $("tag").addEventListener("change",e=>{if(e.target.id==="nameIn"){S.name=e.target.value.trim()||null;save();}});
@@ -16270,8 +17071,10 @@ $("heatBtn").addEventListener("click",()=>{S.heat=!S.heat;applyHeat();save();toa
 /* ---- engine card: name + headline numbers + status, reused everywhere an engine is shown ---- */
 const ASP_SYM={na:"NA",turbo:"T",twin_turbo:"TT",roots:"SC",centrifugal:"SC",screw:"SCREW",compound:"CT"};
 function engineName(){return S.name||autoName();}
-function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${S.cfg.layout} ${(quick?quick.Vd/1000:0).toFixed(1)}`;}
+function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${isRot(S.cfg)?LAYOUTS[S.cfg.layout].n+"-rotor":S.cfg.layout} ${(quick?quick.Vd/1000:0).toFixed(1)}`;}
+const ROT_PORT_SHORT={side:"side port",sidex:"side exhaust",street:"street port",bridge:"bridge port",peri:"peri port"};
 function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==="na"?"NA":(ASP_SYM[cfg.asp]||cfg.asp.toUpperCase())+(cfg.asp!=="na"?" "+cfg.boost.toFixed(1)+"bar":"");
+  if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
   return `<b>${cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
   if(res.fails&&res.fails.length)return{cls:"bad",txt:"✗ BREAKS"};
@@ -16305,17 +17108,18 @@ function hud(){
 
 /* ===================== BUILD ===================== */
 const CLS_DEFAULT={g10:"economy","4ac":"economy","22re":"truck",ea82:"economy",l36:"truck",k20a:"performance","2jzgte":"performance",rb26:"performance",ls3:"performance",coyote:"performance",ej257:"performance",f6_38:"performance",s54:"performance",v8fp45:"performance",v12_65:"performance",v10_52:"performance",i3_1000:"economy",ea888:"economy",m133:"performance",hemi64:"performance",i5_25t:"performance",outlaw_radial:"outlaw",outlaw_promod:"outlaw"};
-const CLS_LABEL={economy:"Economy",truck:"Truck & industrial",classic:"Classic",performance:"Performance",motorsport:"Motorsport",outlaw:"Outlaw",diesel:"Diesel",pulling:"Pulling"};
-const FAM_OF=l=>l[0]==="I"?"inline":l[0]==="F"?"flat":"vee";
+const CLS_LABEL={economy:"Economy",truck:"Truck & industrial",classic:"Classic",performance:"Performance",motorsport:"Motorsport",outlaw:"Outlaw",diesel:"Diesel",pulling:"Pulling",rotary:"Rotary"};
+const FAM_OF=l=>l[0]==="I"?"inline":l[0]==="F"?"flat":l[0]==="R"?"rotary":"vee";
 function presetCls(p){return p.cls||CLS_DEFAULT[p.id]||"performance";}
-function presetDisp(p){const L=SIM.LAYOUTS[p.cfg.layout]||{n:4};return L.n*Math.PI/4*p.cfg.bore*p.cfg.bore*p.cfg.stroke/1e6;}
+function presetDisp(p){const L=SIM.LAYOUTS[p.cfg.layout]||{n:4};if(L.rotary)return L.n*3*Math.sqrt(3)*p.cfg.stroke*(p.cfg.ecc||15)*p.cfg.bore/1e6;   // Mazda: one chamber per rotor
+  return L.n*Math.PI/4*p.cfg.bore*p.cfg.bore*p.cfg.stroke/1e6;}
 function renderPresets(){
   const sort=S.pSort||"layout", fam=S.pFam||"all", cls=S.pCls||"all";
   document.querySelectorAll("#pSort button").forEach(x=>x.classList.toggle("on",x.dataset.ps===sort));
   document.querySelectorAll("#pFam .chip").forEach(x=>x.classList.toggle("on",x.dataset.pf===fam));
   document.querySelectorAll("#pCls .chip").forEach(x=>x.classList.toggle("on",x.dataset.pc===cls));
   $("pReset").hidden=(sort==="layout"&&fam==="all"&&cls==="all");
-  const LORDER=["I3","I4","I5","I6","V6","V8","V8F","V10","V12","F4","F6"];
+  const LORDER=["I3","I4","I5","I6","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4"];
   let list=PRESETS.map((p,i)=>({p,i,disp:presetDisp(p),n:(SIM.LAYOUTS[p.cfg.layout]||{n:0}).n,cls:presetCls(p),fam:FAM_OF(p.cfg.layout)}));
   list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||e.cls===cls));
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
@@ -16353,7 +17157,7 @@ function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
 const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);   // no carb on a diesel   // nitrous kits for the other fuel family stay out of the way
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="fuel"&&o.ci&&isRot(c))&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);   // no carb on a diesel;   // nitrous kits for the other fuel family stay out of the way; a Wankel takes no diesel   // nitrous kits for the other fuel family stay out of the way
   let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).filter(k=>famOK(opts[k],k)).length}">`;
   for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
@@ -16368,7 +17172,7 @@ function clampCfgLimits(c){c=c||S.cfg;let moved=null;
     if(v>hi+1e-9){c[f.key]=hi;moved=moved||f;}else if(v<lo-1e-9){c[f.key]=lo;moved=moved||f;}}
   return moved;}
 function sliderRow(f){const v=S.cfg[f.key],lo=fMin(f),hi=fMax(f);
-  const unlocked=f.maxIf&&hi>f.max&&fMax(f,Object.assign({},S.cfg,{fuel:"r91"}))>f.max;   // "billet" only when the outlaw parts raised it, not the diesel limits
+  const unlocked=f.maxIf&&hi>f.max&&!isRot(S.cfg)&&fMax(f,Object.assign({},S.cfg,{fuel:"r91"}))>f.max;   // "billet" only when the outlaw parts raised it, not the diesel limits
   return `<div class="lbl"><span>${fLabel(f)}${unlocked?' <em class="unl">billet</em>':""}${mapTagFor(f.key)}</span><b id="v-${f.key}" class="tap" data-num="${f.key}" title="Tap to type">${f.fmt?f.fmt(v):v}${f.unit?" "+f.unit:""}</b></div><div class="srow"><button class="nud" data-nud="-1" data-nk="${f.key}" aria-label="Decrease">−</button><input type="range" id="r-${f.key}" data-k="${f.key}" min="${lo}" max="${hi}" step="${f.step}" value="${v}"><button class="nud" data-nud="1" data-nk="${f.key}" aria-label="Increase">+</button></div>`;}
 /* petrol <-> diesel: a petrol map on a diesel (or the reverse) is nonsense, so switching family drops in a tune that runs.
    Returns the toast, or null when the family didn't change. clampCfgLimits() then pulls the rest inside the new limits. */
@@ -16385,13 +17189,21 @@ function fuelFamilyDefaults0(c,wasD){const d=isCI(c.fuel);if(d===wasD)return nul
     return `Diesel: compression 17.5:1, λ 1.8, redline ${c.redline.toLocaleString()} to start`;}
   c.cr=boosted?9.0:10.5;c.lambda=boosted?0.82:0.9;c.timing=0;if(c.redline<=4200)c.redline=6000;   // a diesel governor speed is no petrol redline
   return `Petrol: compression ${c.cr.toFixed(1)}:1, λ ${c.lambda.toFixed(2)}, redline ${c.redline.toLocaleString()} to start`;}
-function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"><span>${f.label}</span></div><div class="swatches">`+Object.keys(opts).map(k=>`<button data-k="${f.key}" data-v="${k}" class="${S.cfg[f.key]===k?"on":""}" style="background:${opts[k].hex}" aria-label="${opts[k].name}"></button>`).join("")+"</div>";}
+/* piston <-> rotary: bore/stroke become rotor width / generating radius, so a switch drops in a 13B (or a
+   two-litre four on the way back) instead of leaving nonsense geometry behind */
+function rotaryFamilyDefaults(c,wasR){const r=isRot(c);if(r===wasR)return null;const D=SIM.DEFAULT_CFG;
+  if(r){c.bore=80;c.stroke=105;c.ecc=15;c.cr=c.asp!=="na"?9.0:9.4;c.redline=Math.max(7000,Math.min(c.redline,8000));c.timing=0;if(isCI(c.fuel)){c.fuel="r91";c.lambda=0.9;}
+    return `Rotary: 13B-size rotors (80 mm wide, R 105, e 15), ${c.cr.toFixed(1)}:1, redline ${c.redline.toLocaleString()}`;}
+  c.bore=D.bore;c.stroke=D.stroke;c.rodRatio=D.rodRatio;c.cr=c.asp!=="na"?9.0:D.cr;if(c.redline>8000)c.redline=7000;
+  return `Piston: ${D.bore}×${D.stroke} mm, ${c.cr.toFixed(1)}:1 to start`;}
+function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"><span>${fLabel(f)}</span></div><div class="swatches">`+Object.keys(opts).map(k=>`<button data-k="${f.key}" data-v="${k}" class="${S.cfg[f.key]===k?"on":""}" style="background:${opts[k].hex}" aria-label="${opts[k].name}"></button>`).join("")+"</div>";}
 const openSec={"Bore & stroke":true};
 function secSummary(sec){return sec.fields.filter(f=>!f.showIf||f.showIf(S.cfg)).map(f=>{const v=S.cfg[f.key];if(f.type==="slider")return (f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");const o=OPT[f.optTable||f.key][v];return o?o.name:v;}).join(" · ");}
 function renderBuild(){
   altFuelFill(S.cfg);
   let h="";
-  for(const sec of FORM){const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}"><span class="t">${sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
+  for(const sec of FORM){if(!sec.fields.some(f=>!f.showIf||f.showIf(S.cfg)))continue;   // a rotary has no pistons, rods or head gasket to show
+    const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);
@@ -16409,8 +17221,8 @@ $("buildForm").addEventListener("click",e=>{
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
   if(testing){toast("Let the run finish first");return;}
-  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel;S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
-  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):null;if(fam)delete S.cfg.map;
+  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
+  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):b.dataset.k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):null;if(fam)delete S.cfg.map;
   const moved=clampCfgLimits();
   if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
   afterCfgChange(true);});
@@ -16440,7 +17252,8 @@ function applySlider(k,v,r){mapShiftTo(k,v);S.cfg[k]=v;if(r&&parseFloat(r.value)
   const sec=r&&r.closest(".acc");if(sec){const fs=FORM.find(x=>x.title===sec.querySelector("[data-sec]").dataset.sec);sec.querySelector(".sum").textContent=secSummary(fs);}}
 const FOCUS_OF={bore:"engine",stroke:"engine",cr:"engine",rodRatio:"engine",blockMat:"engine",deck:"engine",piston:"engine",pistonClearance:"engine",rings:"engine",rod:"engine",rodBolts:"engine",crank:"engine",bearings:"engine",oilSystem:"engine",oilGrade:"engine",oilSquirters:"engine",
   head:"top",headMat:"top",valveMat:"top",springs:"top",cam:"top",lift:"top",gasket:"top",studs:"top",cover:"top",redline:"top",
-  intake:"intake",nitrous:"intake",fuel:"intake",lambda:"intake",timing:"intake",asp:"turbo",turboSize:"turbo",turbineMat:"turbo",ic:"turbo",boost:"turbo",exhaust:"exhaust",damper:"front",cooling:"front",layout:"engine"};
+  intake:"intake",nitrous:"intake",fuel:"intake",lambda:"intake",timing:"intake",asp:"turbo",turboSize:"turbo",turbineMat:"turbo",ic:"turbo",boost:"turbo",exhaust:"exhaust",damper:"front",cooling:"front",layout:"engine",
+  ecc:"engine",rotHousing:"engine",sidePlate:"engine",apexSeal:"engine",eshaft:"engine",rotPort:"intake",oilMeter:"front"};
 Object.assign(FOCUS_OF,{launchCtl:"exhaust",launchRetard:"exhaust",twoStepRpm:"exhaust"});Object.assign(NOTCH,{twoStepRpm:500,launchRetard:5});
 Object.assign(FOCUS_OF,{injectors:"intake",fuelPump:"intake"});
 Object.assign(FOCUS_OF,{pipe:"exhaust",muffler:"exhaust",cat:"exhaust",cutout:"exhaust"});
@@ -16594,6 +17407,12 @@ const SPECS={
     ["Kit",o=>({dry:"dry · nozzle only",wet:o.stages===2?"wet · two plates":"wet · plate",direct:"direct port · nozzle per runner",diesel:"diesel · oxygen only"})[o.kind]||null],
     ["Fuel from",o=>o.kind==="dry"?"your injectors (rail raised)":o.kind==="diesel"?"the injection pump":o.kind?"its own jets, off your pump":null],
     ["Watch for",o=>o.kind==="dry"?"lean spike":o.plate?"intake backfire":o.kind==="diesel"?"peak pressure":o.kind?"rod and gasket load":null]]},
+  rotPort:{specs:[["Breathing",o=>fac(o.ve)],["Strongest near",o=>xN(o.rpmC)+" rpm"],["Port area",o=>fac(o.flow)],["Overlap",o=>o.overlap<=0?"none":o.overlap<0.1?"slight":o.overlap<0.3?"some":o.overlap<0.6?"big — it braps":"huge"],["Idles at",o=>o.idle+" rpm"]]},
+  apexSeal:{price:o=>o.cost+"/rotor",specs:[["Thickness",o=>o.thick+" mm"],["Fatigue in bending",o=>o.fatigue+" MPa"],["Seal mass",o=>fac(o.dens*o.thick/21600)],["Knock",o=>o.brittle>=1?"shatters":o.brittle>=0.5?"cracks":"bends, survives"],["Friction",o=>fac(o.fric)],["Wear",o=>fac(o.wear)]]},
+  rotHousing:{price:o=>o.cost+"/housing",specs:[["Chatter limit",o=>fac(o.chatter)],["Hot lobe",o=>o.hotC?o.hotC+" °C":"baseline"],["Exhaust heat",o=>o.egtC?"+"+o.egtC+" °C":null]]},
+  sidePlate:{specs:[["Side-seal wear",o=>fac(o.sideSeal)],["Stiffness",o=>fac(o.stiff)],["Weight",o=>fac(o.massFac)]]},
+  eshaft:{specs:[["Fatigue strength",o=>o.fatigue+" MPa"],["Main bearings",o=>o.supports+(o.supports>2?" (centre main)":" (ends only)")],["Journals",o=>fac(o.dFac)]]},
+  oilMeter:{specs:[["Oil to the seals",o=>fac(o.cap)],["Carbon",o=>fac(o.carbon)],["Oil burnt",o=>o.oilL+" L / 1,000 km"]]},
   cover:{specs:[]},
   launchCtl:{line:o=>o.sub,specs:[["Holds",o=>o.cost?"a set launch rpm":"whatever your foot does"],["Boost on the line",o=>o._id==="launchCtl:two_step_retard"?"most of it, with heat":o.cost?"a little":"none"],["Dyno",o=>"no effect"]]},
   transBrake:{line:o=>o.sub,specs:[["Launch",o=>o._id==="transBrake:trans_brake"?"torque converter":"clutch"],["Burnout",o=>o._id==="transBrake:none"?"creeps, fronts smoke":"clean, rears only"],["Dyno",o=>"no effect"]]}
@@ -17925,9 +18744,10 @@ const FAIL_VISUAL={rod_tension:"rod",rod_buckling:"rod",rod_bolts:"rod",bearing_
 FAIL_VISUAL.vgt_vanes="turbo";FAIL_VISUAL.als_heat="turbo";
 FAIL_VISUAL.fuel_delivery="knock";   // a lean cylinder rattles, then the crown lets go and it smokes
 FAIL_VISUAL.cold_start="seize";      // a diesel that won't light just winds down on the starter
+Object.assign(FAIL_VISUAL,{apex_seal:"knock",housing_chatter:"knock",carbon_seals:"knock",oil_metering:"seize",coolant_seal:"steam",eshaft:"crank"});   // rotary: a broken seal rattles and smokes, a blown O-ring steams
 function failKindOf(res,env){
   let id=null;
-  if(env.testType==="overrev"&&res.overrev&&!res.overrev.survived){const e=(res.overrev.events||[]).join(" ");id=/Valve float/.test(e)?"valve_piston":/Rod beam/.test(e)?"rod_tension":/Rod bolts/.test(e)?"rod_bolts":/oil pressure/.test(e)?"bearing_load":null;}
+  if(env.testType==="overrev"&&res.overrev&&!res.overrev.survived){const e=(res.overrev.events||[]).join(" ");id=/Valve float/.test(e)?"valve_piston":/Rod beam/.test(e)?"rod_tension":/Rod bolts/.test(e)?"rod_bolts":/oil pressure/.test(e)?"bearing_load":/Apex seals/.test(e)?"apex_seal":/eccentric shaft/.test(e)?"eshaft":/Rotor bearings/.test(e)?"bearing_load":null;}
   else if(env.testType==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null){const dm=res.endurance.damage||{};for(const t of res.tests){if(dm[t.id]>=1){id=t.id;break;}}}
   if(!id&&res.fails.length){const t=res.tests.find(x=>x.name===res.fails[0]);id=t?t.id:null;}
   return FAIL_VISUAL[id]||"rod";
@@ -18152,13 +18972,22 @@ function renderAnalysis(){
   $("combos").innerHTML=combosNow.slice().sort((a,b)=>order[a.severity]-order[b.severity]).map(c=>`<div class="combo ${c.severity}"><h3>${c.title}</h3><p>${c.text}</p></div>`).join("")||`<p class="hint">Nothing notable — a conventional combination.</p>`;
   const r=(S.last&&S.last.hash===cfgHash(S.cfg))?S.last.res:quick;const T=r.thermals,L=r.loads,Cl=r.clearances,K=r.knock;
   const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],...(r.diesel?[["Smoke (peak)",`${Math.round(r.smoke||0)}% · ${smokeWord(r)}`],["Clatter",`${Math.round((r.clatter||0)*100)}% · ${r.clatter>0.66?"loud":r.clatter>0.4?"audible":"quiet"}`],["Full-load λ (leanest / spool)",r.fuel?`${(+(r.fuel.lamTop||S.cfg.lambda)).toFixed(2)} / ${(r.fuel.lamMin||0).toFixed(2)}`:"—"],["Injection used",r.fuel?`${Math.round(r.fuel.injUtil*100)}%`:"—"]]:[["Knock retard",`${K.retardDeg.toFixed(1)}°`]]),["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
+  if(r.rotary){const R=r.rotary;rows.splice(0,rows.length,   // a rotary: the eccentric shaft, the seals and the hot lobe instead of pistons and rods
+    ["Eccentric shaft / rotors",`${R.eshaftRpm.toLocaleString()} / ${R.rotorRpm.toLocaleString()} rpm`],["Firing rate",`${Math.round(R.firingHz)}/s · ${R.rotors} rotor${R.rotors>1?"s":""}`],
+    ["Chamber",`${Math.round(R.chamberCc)} cc × ${R.rotors} ≈ ${R.VdEqL.toFixed(1)} L eq.`],["Peak chamber pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],
+    ["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Knock retard",`${K.retardDeg.toFixed(1)}°`],
+    ["Apex seal load",`${R.sealMPa.toFixed(0)} / ${Math.round(R.sealMPa/Math.max(1e-6,R.sealUtil))} MPa`],["Apex seal speed",`${R.apexMs.toFixed(1)} m/s · ${Math.round(R.apexG).toLocaleString()} g`],
+    ["Hot lobe (housing)",`${Math.round(R.housingC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],
+    ["E-shaft bow",`${R.eshaftUm.toFixed(0)} µm · ${R.supports} mains`],["Rotor orbit pull",`${R.centKn.toFixed(0)} kN a rotor`],["Rotor bearing",`${R.brgMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],
+    ["Seal oiling",`${Math.round(R.oilUtil*100)}% of supply`],["Oil burnt",`${R.oilL.toFixed(1)} L/1000 km`],["Carbon build-up",`${Math.round(R.carbon*100)}%`],["Idles at",`${R.idleRpm.toLocaleString()} rpm`],
+    ["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]);}
   if(r.alt&&r.alt.gas)rows.push(["Gas system load",`${Math.round(r.fuel.load*100)}% · ${Math.round(r.alt.capKgh)} kg/h`],["Air displaced",`${r.alt.displacePct}%`],[r.alt.unit==="kg"?"CNG use":"Propane use",`${r.alt.econNative} ${r.alt.unit==="kg"?"kg":"L"}/100km`]);
   if(r.alt&&r.alt.flex&&r.alt.winter){const w=r.alt.winter;rows.push(["Winter E"+w.pct+" margin",`${w.margin>=0?"+":"−"}${Math.abs(w.margin).toFixed(1)}`]);}
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   {const nz=r.noiseDb!=null?{db:r.noiseDb,dbOpen:r.noiseDbOpen}:SIM.exhaustNoise(S.cfg),nw=v=>v<=74?"quiet":v<=80?"road legal":v<=86?"loud":"track only";
     rows.push(["Drive-by noise",`${Math.round(nz.db)} dB · ${nw(nz.db)}`]);if(nz.dbOpen>nz.db+0.5)rows.push(["Cutout open",`${Math.round(nz.dbOpen)} dB`]);   // short values: .tele b never wraps
     if(r.exhaustSys)rows.push(["Exhaust backpressure",r.exhaustSys.open?"none · open":`${r.exhaustSys.dpBar.toFixed(2)} bar`]);}
-  $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
+  $("tele").classList.toggle("rot",!!r.rotary);$("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
   renderRecords();renderAch();dlAnalysis();tdAnaRender();
 }
@@ -18192,7 +19021,7 @@ function genContract(seg){
   if(R.hp)req.hp=R.hp[0]+Math.round(rng()*(R.hp[1]-R.hp[0])/10)*10;
   if(R.tq)req.tq=R.tq[0]+Math.round(rng()*(R.tq[1]-R.tq[0])/10)*10;
   if(R.econ)req.econ=+(R.econ[0]-rng()*(R.econ[0]-R.econ[1])).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot"])if(R[k]!=null)req[k]=R[k];
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
   if(R.mph)req.mph=Math.round(R.mph[0]+rng()*(R.mph[1]-R.mph[0]));
   const units=seg.units[0]+Math.floor(rng()*(seg.units[1]-seg.units[0]));
@@ -18210,7 +19039,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   if(from==="inbox")C().inbox=C().inbox.filter(x=>x.id!==k.id);else if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
 function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
-const REQ_LABEL={hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
+const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
@@ -18253,7 +19082,9 @@ function fits(k,res,cfg){
   if(r.rel!=null)add("rel",res.rel>=r.rel,res.rel,ge(res.rel,r.rel));
   if(r.smooth!=null)add("smooth",res.smooth>=r.smooth,Math.round(res.smooth),ge(res.smooth,r.smooth));
   if(r.kg!=null)add("kg",res.kg<=r.kg,Math.round(res.kg),le(res.kg,r.kg));
-  if(r.disp!=null)add("disp",res.Vd/1000<=r.disp+0.005,(res.Vd/1000).toFixed(2),le(res.Vd/1000,r.disp+0.005));
+  if(r.rot!=null){const ro=isRot(c);add("rot",ro,ro?"rotary":"pistons",ro?1:0.1);}
+  const dispL=res.Vd/1000*(res.rotary?ROT_DISP:1);   // a rotary runs in a displacement class at 1.5x its quoted size
+  if(r.disp!=null)add("disp",dispL<=r.disp+0.005,dispL.toFixed(2)+(res.rotary?" (×1.5)":""),le(dispL,r.disp+0.005));
   if(r.cyl!=null)add("cyl",res.n>=r.cyl,res.n,ge(res.n,r.cyl));
   if(r.life!=null)add("life",res.lifeHours>=r.life,res.lifeHours.toLocaleString(),ge(res.lifeHours,r.life));
   if(r.passes!=null)add("passes",res.racePasses>=r.passes,res.racePasses,ge(res.racePasses,r.passes));
@@ -18269,7 +19100,7 @@ function fits(k,res,cfg){
 /* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
    Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit,
    and the wrong fuel family (a diesel for a petrol car, or the reverse) sends them away. */
-const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5};
+const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
   return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
@@ -18282,7 +19113,7 @@ function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*6
 const MKT_COOL=3;
 function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
   if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);if(R.mph)req.mph=Math.round(mid(R.mph,0.3));
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot"])if(R[k]!=null)req[k]=R[k];
   const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
   return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
 function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
@@ -18296,15 +19127,18 @@ function buyers(cert){const key=cert.hash+"|"+C().week+"|"+C().rep+"|"+Object.ke
 const FIX_KEYS=["fuel","piston","rings","rod","rodBolts","crank","bearings","oilGrade","cooling","head","springs","valveMat","intake","exhaust","gasket","studs","damper","pistonClearance","oilSystem","oilSquirters","ic","asp","blockMat","headMat"];
 FIX_KEYS.push("injectors","fuelPump");   // a build that only leans out can be one part away from a contract
 FIX_KEYS.push("dInj","dNoz");   // diesel: a common-rail pump or bigger nozzles can be the one change
+FIX_KEYS.push("rotPort","apexSeal","rotHousing","sidePlate","eshaft","oilMeter");   // rotary
+const PISTON_ONLY_KEYS={piston:1,rings:1,rod:1,rodBolts:1,crank:1,head:1,springs:1,valveMat:1,gasket:1,studs:1,damper:1,pistonClearance:1,oilSquirters:1,blockMat:1,headMat:1};
 FIX_KEYS.push("muffler","cat","pipe");   // a loud or smoky build is often one exhaust part away
 const fixCache=new Map();
 function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.keys(C().owned).join(","):"sb");if(fixCache.has(key))return fixCache.get(key);
   const env=stdEnv({testType:"pull"});let best=null;const tryCfg=(cfg,label)=>{const r=SIM.simulate(cfg,env);if(r.fails.length)return;const f=fits(k,r,cfg);if(f.ok){const gain=f.bonus;if(!best||gain>best.gain)best={label,cfg,gain};}};
   const dsl=isCI(S.cfg.fuel);
-  for(const key2 of FIX_KEYS){const opts=OPT[key2];if(!opts)continue;if(!dsl&&(key2==="dInj"||key2==="dNoz"))continue;if(dsl&&key2==="injectors")continue;for(const v in opts){if(v===S.cfg[key2]||locked(opts[v]))continue;if(key2==="fuel"&&isCI(v)!==dsl)continue;tryCfg(Object.assign({},S.cfg,{[key2]:v}),`switch to ${opts[v].name}`);}}
+  const rotB=isRot(S.cfg);
+  for(const key2 of FIX_KEYS){const opts=OPT[key2];if(!opts)continue;if(rotB?PISTON_ONLY_KEYS[key2]:ROT_KEYS[key2])continue;if(!dsl&&(key2==="dInj"||key2==="dNoz"))continue;if(dsl&&key2==="injectors")continue;for(const v in opts){if(v===S.cfg[key2]||locked(opts[v]))continue;if(key2==="fuel"&&isCI(v)!==dsl)continue;if(key2==="layout")continue;tryCfg(Object.assign({},S.cfg,{[key2]:v}),`switch to ${opts[v].name}`);}}
   const sl=[["redline",-500,"drop the redline 500 rpm"],["redline",-1000,"drop the redline 1,000 rpm"],["cam",-15,"a milder cam"],["cam",15,"a bigger cam"],["cr",-1,"a point less compression"],["cr",1,"a point more compression"],["timing",-3,"pull 3° of timing"],["boost",-0.3,"0.3 bar less boost"],["lambda",0.05,"lean it out a touch"]];
   if(dsl)sl.push(["lambda",0.1,"lean the full-load λ 0.1"],["lambda",-0.1,"richen the full-load λ 0.1"],["timing",-2,"retard the injection 2°"]);
-  for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
+  for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
 function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
 function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*0.75):r.weeks;}   // machinist: machining projects 25% shorter
@@ -19099,7 +19933,8 @@ function tick(now){
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
   const L=LAYOUTS[S.cfg.layout];
   let rpm=run.rpm,load=run.load,on=run.on;
-  if(!testing){const idleBase=(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+S.cfg.cam/50)+(S.cfg.cam>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
+  const rotP=isRot(S.cfg)?(SIM.OPT.rotPort[S.cfg.rotPort]||SIM.OPT.rotPort.side):null,camV=rotP?30+75*rotP.overlap:S.cfg.cam;   // a rotary's port overlap plays the part of a cam
+  if(!testing){const idleBase=rotP?rotP.idle:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
   /* the picture follows the rpm with inertia: a test ending or a stall spins down instead of freezing */
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
@@ -19110,7 +19945,7 @@ function tick(now){
     else if(a&&on){if(load>0.6&&rpm>0.45*S.cfg.redline)alsHot=1.4;else alsHot=Math.max(0,alsHot-dt);if(load<0.3&&rpm>Math.max(2200,0.35*S.cfg.redline)&&alsHot>0&&!run.fail)alsAct=a==="air"?1:0.8;}
     else alsHot=0;}
   if(ENGINE_VIS.als)ENGINE_VIS.als(alsAct);
-  ENGINE_VIS.setRun({on,rpm,load,fail:run.fail,failKind:run.failKind,redline:S.cfg.redline,smooth:quick?quick.smooth:L.smooth,first:L.firstOrder,second:L.secondOrder,n:L.n,angle:L.angle,stroke:S.cfg.stroke,rodRatio:S.cfg.rodRatio,cam:S.cfg.cam,wear:quick&&wearInfo(quick)?wearInfo(quick).w:0,smoke:dieselSmoke(quick,rpm,load)});
+  ENGINE_VIS.setRun({on,rpm,load,fail:run.fail,failKind:run.failKind,redline:S.cfg.redline,smooth:quick?quick.smooth:L.smooth,first:L.firstOrder,second:L.secondOrder,n:L.n,angle:L.angle,stroke:S.cfg.stroke,rodRatio:S.cfg.rodRatio,cam:camV,wear:quick&&wearInfo(quick)?wearInfo(quick).w:0,smoke:dieselSmoke(quick,rpm,load)});
   if(AB.playing&&AB[AB.playing]&&!testing){
     const c=AB[AB.playing],ev=simEnv({testType:"pull"}),ek=JSON.stringify(ev);
     if(!AB.sim||AB.sim.c!==c||AB.sim.ek!==ek)AB.sim={c,ek,r:SIM.simulate(c,ev)};   // one simulate per capture, not two per frame
