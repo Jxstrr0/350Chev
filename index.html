@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.32.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.32.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1393,7 +1393,7 @@ const ENGINE_SIM = (function () {
     billet_tbc: {
       name: "Billet 2618 + TBC", sub: "300MPa@250 coated crown", info: "Machined from solid 2618 with a thick crown and a ceramic thermal barrier sprayed on top, so the heat stays in the gas instead of soaking into the piston. The only crown that lives behind a big power adder.",
       alpha: 22.5e-6, k: 155, hot250: 300, dens: 2780, maxCrownC: 470, massFac: 1.14, cost: 2600, brittle: 0.08,
-      crownCool: 60, crownFac: 0.58, hotSlope: 0.0038, req: "race"
+      crownCool: 60, crownFac: 0.58, hotSlope: 0.0038, req: "shop2"
     },
     forged_2618: {
       name: "Forged 2618-T61", sub: "240MPa@250 a22.5 k160", info: "Almost no silicon, which makes it the toughest crown there is under heat and detonation. It grows a lot, so it runs loose and rattles when cold.",
@@ -1412,7 +1412,7 @@ const ENGINE_SIM = (function () {
   OPT.rings = {
     cast: { name: "Cast iron ring", sub: "gap .0040 in/in bore", info: "Plain cast iron. Conforms to the bore nicely and costs nothing, but detonation or sustained heat will break it.", gapSet: 0.0040, fric: 1.00, seal: 0.96, maxTempC: 260, cost: 90 },
     moly: { name: "Moly-faced ring", sub: "gap .0045 in/in bore", info: "A sprayed molybdenum face on a cast-iron carrier. The porous face carries oil, so it seals better and takes more heat.", gapSet: 0.0045, fric: 0.93, seal: 1.00, maxTempC: 330, cost: 180 },
-    steel_drag: { name: "Steel, drag gap", sub: "gap .0085 in/in bore", info: "The same nitrided steel ring opened right up, because a top ring that closes its gap behind a power adder butts and welds itself to the bore. It blows past a little cold and does not care.", gapSet: 0.0085, fric: 0.88, seal: 0.97, maxTempC: 520, cost: 620, req: "race" },
+    steel_drag: { name: "Steel, drag gap", sub: "gap .0085 in/in bore", info: "The same nitrided steel ring opened right up, because a top ring that closes its gap behind a power adder butts and welds itself to the bore. It blows past a little cold and does not care.", gapSet: 0.0085, fric: 0.88, seal: 0.97, maxTempC: 520, cost: 620, req: "shop2" },
     steel: { name: "Gas-nitrided steel", sub: "gap .0055 in/in bore", info: "A thin nitrided steel top ring: least friction, highest temperature, and the only sane choice under real boost. It needs the biggest gap.", gapSet: 0.0055, fric: 0.86, seal: 1.02, maxTempC: 450, cost: 380, req: "shop1" }
   };
 
@@ -1466,7 +1466,7 @@ const ENGINE_SIM = (function () {
   OPT.studs = {
     bolts_tty: { name: "TTY head bolts", sub: "1035MPa 45kN each", info: "Stretched past their yield point on assembly for an even clamp. Single use, and they relax as the alloy head heats up.", clampKn: 45, uts: 1035, pullOut: 1.0, cost: 70 },
     arp_studs: { name: "ARP head studs", sub: "1240MPa 62kN each", info: "The nut turns against a washer instead of the thread, so the block never sees any twist. Repeatable, reusable, and a real step up in clamp.", clampKn: 62, uts: 1240, pullOut: 1.0, cost: 320, req: "shop1" },
-    studs_916: { name: "9/16 studs, six", sub: "112kN each  6 per bore", oring: 1.35, info: "Half again the thread area, six of them around each bore, and a wire O-ring cut into the deck so the gasket only has to seal water. This is what holds a head down at forty pounds of boost.", clampKn: 112, uts: 1500, pullOut: 1.45, bolts: 6, cost: 3400, req: "race" },
+    studs_916: { name: "9/16 studs, six", sub: "112kN each  6 per bore", oring: 1.35, info: "Half again the thread area, six of them around each bore, and a wire O-ring cut into the deck so the gasket only has to seal water. This is what holds a head down at forty pounds of boost.", clampKn: 112, uts: 1500, pullOut: 1.45, bolts: 6, cost: 3400, req: "shop2" },
     l19: { name: "ARP L19 studs", sub: "1500MPa 75kN each", info: "A vacuum-melt steel giving the highest clamp you can buy. It is prone to hydrogen embrittlement — keep it oiled and out of damp storage.", clampKn: 75, uts: 1500, pullOut: 1.25, cost: 780, req: "shop2" }
   };
 
@@ -1506,7 +1506,7 @@ const ENGINE_SIM = (function () {
     roots: { name: "Roots blower", sub: "boost ~ rpm  parasitic", info: "A blower geared straight to the crank, so boost arrives just off idle and climbs with revs. It eats crank power and heats the charge hard.", kind: "roots", units: 1, cost: 2600, req: "boost" },
     centrifugal: { name: "Centrifugal super", sub: "boost ~ rpm^2  cool", info: "A turbo-style wheel on a belt drive: efficient and cool, with boost that builds with the square of engine speed. Useless below half revs.", kind: "centrifugal", units: 1, cost: 2400, req: "boost" },
     screw: { name: "Twin-screw blower", sub: "PD  intercooled lid", info: "Screw rotors compress the air inside the case instead of just shoving it along, so it makes boost from idle without the heat a Roots blower adds. It still takes a lot of crank power to turn.", kind: "screw", units: 1, cost: 9800, req: "race" },
-    compound: { name: "Compound turbos", sub: "2 stages  interstage cool", info: "A big turbo feeding a smaller one, so each stage only has to make part of the pressure ratio. Far cooler air at high boost than one wheel can manage, at the cost of serious backpressure.", kind: "turbo", units: 2, compound: 1, cost: 12500, req: "race" }
+    compound: { name: "Compound turbos", sub: "2 stages  interstage cool", info: "A big turbo feeding a smaller one, so each stage only has to make part of the pressure ratio. Far cooler air at high boost than one wheel can manage, at the cost of serious backpressure.", kind: "turbo", units: 2, compound: 1, cost: 12500, req: "shop2" }
   };
 
   /* ---- turbo size (compressor flow in lb/min per unit) ---- */
@@ -1634,7 +1634,7 @@ const ENGINE_SIM = (function () {
     n60: { name: "60 hp nozzles", sub: "x1.6 flow", info: "The usual first step on a turned-up truck. It wants a bigger turbo, or the extra fuel comes out of the stack.", mult: 1.6, cost: 95 },
     n100: { name: "100 hp nozzles", sub: "x2.0 flow", info: "Twice the stock flow per stroke. Hot exhaust and a lot of soot unless there is the air to burn it.", mult: 2.0, cost: 140, req: "shop1" },
     n150: { name: "150 hp nozzles", sub: "x2.5 flow", info: "Competition street nozzles. They only make sense with twin turbos, a pyrometer in the manifold and studs in the head.", mult: 2.5, cost: 210, req: "shop2" },
-    n250: { name: "250 hp sticks", sub: "x3.5 flow  pulling", info: "Pulling sticks: enough fuel to black out the grandstand. A built bottom end, compound turbos and a fire-ringed head, or it will not see the end of the track.", mult: 3.5, cost: 340, req: "race" }
+    n250: { name: "250 hp sticks", sub: "x3.5 flow  pulling", info: "Pulling sticks: enough fuel to black out the grandstand. A built bottom end, compound turbos and a fire-ringed head, or it will not see the end of the track.", mult: 3.5, cost: 340, req: "shop2" }
   };
 
   /* ---- ROTARY (Wankel) parts: only fitted when the layout is a rotary ----
@@ -6417,6 +6417,8 @@ const ENGINE_SIM = (function () {
     valve_temp: [0.3, 8, "misfire — plugs and leads"], head_lift: [0.25, 18, "head bolts re-torqued"], gasket_shear: [0.25, 18, "weeping head gasket — coolant topped up"],
     cold_start: [1, 3, "starter changed"], flex_blend: [1, 4, "fuel filter changed"], slap_blowby: [0.8, 4, "blow-by — oil topped up"], ring_gap: [0.6, 4, "oil consumption — topped up"],
     hot_clearance: [0.4, 6, "scuffed piston — oil topped up"], coolant_seal: [0.4, 12, "O-ring weep — coolant topped up"], carbon_seals: [0.7, 5, "carbon cleared with a hot lap"], oil_metering: [0.8, 5, "oil metering pump changed"] };
+  /* a wet sump in the 24 h: the oil-surge rate is multiplied by k and never below floor per hour (race mode) */
+  const E24_WET = { k: 3, floor: 0.04 };
   const E24_K = 2.5, E24_DUR = 86400, E24_START = 14, E24_TANK = 100, E24_SC_RATE = 0.16;
   const E24_CLASSES = {
     proto: { n: "Proto", ch: "super", k: 0.96, pool: ["v12_65", "valkyrie", "r26b", "dfv", "v10_52", "1lr", "s85", "hellcat"], prize: [30000, 18000, 10000, 5000, 3000], rep: [34, 22, 15] },
@@ -6458,7 +6460,7 @@ const ENGINE_SIM = (function () {
     const tests = hot.tests.map(t => { const c = cool.tests.find(x => x.id === t.id) || t; return { id: t.id, name: t.name, sub: t.sub, uH: t.util, uC: c.util, th: !!E24_THERM[t.id] }; });
     const out = { cfg: cfg, ch: o.ch, track: trackId, len: Lr.len, modes: modes, slope: slope, tests: tests, fails: res.fails.slice(), crit: hot.fails.length > 0, hp: res.peakHp, kg: res.kg,
       redline: cfg.redline, lifeHours: res.lifeHours, raceSpec: res.raceSpec, racePasses: res.racePasses, rel: res.rel, cost: res.cost,
-      egtH: hot.thermals.egtPeakC, egtC: cool.thermals.egtPeakC, oilH: hot.thermals.oilC, oilC: cool.thermals.oilC, mass: Lr.car.m, vmax: Lr.vmax, gLat: gLat, critN: hot.fails.slice() };
+      wet: !cfg.oilSystem || cfg.oilSystem === "wet", egtH: hot.thermals.egtPeakC, egtC: cool.thermals.egtPeakC, oilH: hot.thermals.oilC, oilC: cool.thermals.oilC, mass: Lr.car.m, vmax: Lr.vmax, gLat: gLat, critN: hot.fails.slice() };
     if (!lite) { out.lap = Lr; out.res = res; }
     return out;
   }
@@ -6466,7 +6468,9 @@ const ENGINE_SIM = (function () {
   function e24Rates(P, amb, mode) {
     const M = E24_MODES[mode] || E24_MODES.race, f = clamp((amb - 11) / 20, -0.6, 1.6), r = new Array(P.tests.length); let sum = 0, top = 0, ti = -1;
     for (let i = 0; i < P.tests.length; i++) { const t = P.tests[i], u = Math.max(0, t.uC + (t.uH - t.uC) * f) * (t.th ? M.therm : M.mech);
-      r[i] = clamp(Math.pow(u * 1.06 / 0.82, 7) / 5000, 0, 3); sum += r[i]; if (r[i] > top) { top = r[i]; ti = i; } }
+      r[i] = clamp(Math.pow(u * 1.06 / 0.82, 7) / 5000, 0, 3);
+      if (t.id === "oil_starvation" && P.wet) r[i] = Math.max(r[i] * E24_WET.k, E24_WET.floor * (t.th ? M.therm : M.mech));   // 24 hours of kerbs on a standard pan
+      sum += r[i]; if (r[i] > top) { top = r[i]; ti = i; } }
     return { r: r, sum: sum, top: ti, haz: E24_K * sum };
   }
   /* the field: AI entries drawn from the presets, each run through the same model (cached per circuit) */
@@ -18806,7 +18810,7 @@ const UPGRADES=[
   {id:"flow",name:"Flow bench",desc:"Variable valve timing and lift, individual throttles, tuned runners.",price:16000},
   {id:"boost",name:"Boost bench",desc:"Turbochargers, superchargers, intercoolers and the fuels that like them.",price:24000},
   {id:"bay1",name:"Second bay",desc:"Room for inline-5, inline-6, V8 and flat-6 blocks.",price:36000},
-  {id:"shop2",name:"Machine shop II",desc:"Billet cranks, titanium, 300M, coated bearings, dry sumps, exotic fuels.",price:60000,needs:"shop1"},
+  {id:"shop2",name:"Machine shop II",desc:"Billet cranks, titanium, 300M, coated bearings, dry sumps, exotic fuels \u2014 and the pulling parts: billet TBC pistons, drag-gap rings, 9/16 studs, compound turbos and 250 hp sticks.",price:60000,needs:"shop1"},
   {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:90000,needs:"dyno2"},
   {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:140000,needs:"bay1"},
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
@@ -18845,7 +18849,13 @@ const GOALS=[
   {id:"sold200",name:"Production line",desc:"Sell 200 engines.",cash:30000,check:c=>c.sold>=200},
   {id:"hp1000",name:"Four figures",desc:"Certify a 1,000 hp engine.",cash:40000,check:c=>c.bestHp>=1000}
 ];
-const LOAN_STEP=10000,LOAN_MAX=50000,LOAN_RATE=0.015,FORECLOSE_AT=-25000;
+const LOAN_STEP=10000,LOAN_MAX=50000,LOAN_RATE=0.02,LOAN_PAY=0.04,LOAN_MIN_PAY=250,FORECLOSE_AT=-25000;
+/* the bank: every week-close takes the interest and a slice of the balance (LOAN_PAY, at least LOAN_MIN_PAY) out of cash.
+   Nothing is added to the balance; a shop that cannot pay goes overdrawn, and below FORECLOSE_AT the bank takes it. */
+function loanPay(){const l=C().loan||0;return l>0?Math.min(l,Math.max(LOAN_MIN_PAY,Math.round(l*LOAN_PAY/10)*10)):0;}
+function loanInt(){return Math.round((C().loan||0)*LOAN_RATE);}
+function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loanPay();c.cash-=i+p;c.loan-=p;c.loanPaid=(c.loanPaid||0)+i+p;
+  if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 const MAX_ACTIVE=2,DEPOSIT=0.10,EXPIRE_REP=8;
 const CATS=[
   {id:"prod",name:"Production run",sub:"volume · economy · warranty",segs:["hatch","sedan","taxi","flagship"],rep:0},
@@ -18943,7 +18953,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.32.0.0";
+const VERSION="1.32.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -22039,7 +22049,7 @@ $("contracts").addEventListener("click",e=>{const rb=e.target.closest("[data-reb
     toast(r.j.warranty?`WARRANTY REBUILD · ${r.n} DONE · ${fmt$(r.parts)} PARTS`:`REBUILT ${r.n} · +${fmt$(r.net)}${r.j.done>=r.j.units?" · JOB DONE":""}`);buzz(25);return;}
   const cs=e.target.closest("[data-corescrap]");if(cs){const v=sellCore(cs.dataset.corescrap);if(v){save();hud();renderShop();toast(`CORE SOLD · ${fmt$(v)}`);}}});
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
-  if(C().loan>0){const i=Math.round(C().loan*LOAN_RATE);C().loan+=i;t+=` · loan interest ${fmt$(i)}`;}
+  t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
   logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
@@ -22168,7 +22178,7 @@ function renderShop(){
   const cert=C().cert&&C().cert.hash===cfgHash(S.cfg)&&C().cert.ok?C().cert:null;const lastCert=C().cert&&C().cert.hash===cfgHash(S.cfg)?C().cert:null;
   $("mktHint").innerHTML=cert?`<div style="margin-bottom:8px">${engineCard(S.cfg,cert.res,{cls:"inline"})}</div>ON OFFER · unit cost ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`NO CERT — last pull: ${lastCert.why}.`:"NO CERT ON FILE — run a dyno pull in Test; buyers only look at certified engines.";
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
-  $("bankHint").textContent=`${(LOAN_RATE*100).toFixed(1)}% a week, up to ${fmt$(LOAN_MAX)}. Below ${fmt$(FORECLOSE_AT)} the bank takes the shop.`;
+  $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(LOAN_RATE*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
   $("goals").innerHTML=GOALS.map(g=>`<div class="goal ${C().goals[g.id]?"done":""}"><div><h3>${g.name}</h3><p>${g.desc}</p></div><div class="price">${C().goals[g.id]?"✓ wk "+C().goals[g.id]:fmt$(g.cash)}</div></div>`).join("");
@@ -22234,7 +22244,7 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
   if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
-$("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}`);});
+$("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
   if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);if(!confirm(`Let the ${st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
@@ -22243,7 +22253,7 @@ $("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(
   C().cash-=r.cost;C().rndActive={id:r.id,done:0};logEvent(`Funded R&D: ${r.name} (${r.weeks} weeks)`,"");save();hud();renderShop();toast(`R&D STARTED · ${r.weeks} WEEKS`);buzz(20);});
 $("prestige").addEventListener("click",e=>{const b=e.target.closest("[data-prestige]");if(!b)return;const pp=PRESTIGE.find(x=>x.id===b.dataset.prestige);if(C().cash<pp.price){toast(`Need ${fmt$(pp.price-C().cash)} more`);return;}
   C().cash-=pp.price;C().prestige[pp.id]=C().week;C().rep+=pp.rep*2;logEvent(`Bought the ${pp.name.toLowerCase()}`,"good");save();hud();renderShop();ENGINE_VIS.buildGarage(garageOwned());toast(`${pp.name.toUpperCase()} · INSTALLED`);buzz(30);});
-$("borrow").addEventListener("click",()=>{if(C().loan+LOAN_STEP>LOAN_MAX)return;C().loan+=LOAN_STEP;C().cash+=LOAN_STEP;logEvent(`Borrowed ${fmt$(LOAN_STEP)} from the bank`,"");save();hud();renderShop();toast(`${fmt$(LOAN_STEP)} in the account. It costs ${fmt$(LOAN_STEP*LOAN_RATE)} a week.`);});
+$("borrow").addEventListener("click",()=>{if(C().loan+LOAN_STEP>LOAN_MAX)return;C().loan+=LOAN_STEP;C().cash+=LOAN_STEP;logEvent(`Borrowed ${fmt$(LOAN_STEP)} from the bank`,"");save();hud();renderShop();toast(`${fmt$(LOAN_STEP)} in the account. The bank takes ${fmt$(loanInt()+loanPay())} a week now.`);});
 $("repay").addEventListener("click",()=>{const amt=Math.min(C().loan,Math.max(0,C().cash));if(amt<=0)return;C().loan-=amt;C().cash-=amt;logEvent(`Repaid ${fmt$(amt)} to the bank`,"good");achCheck({type:"loan"});save();hud();renderShop();toast(C().loan>0?`${fmt$(C().loan)} still owed`:"Loan cleared");});
 function benchUnlock(){if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;S.name=null;}}   // a fresh career can't keep a locked build on the bench
 $("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
