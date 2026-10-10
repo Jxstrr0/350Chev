@@ -18539,7 +18539,7 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   else{if(R){const ox=oppX(now),gap=(st.x-ox)*3.281;let mg=null;   // past the stripe the gap means nothing: once both are through, the margin
       if(m4&&!foul){if(n&&n.verdict&&n.verdict.margin!=null)mg=n.verdict.win?n.verdict.margin:-n.verdict.margin;else if(!n&&R.et!=null&&ox>=402.336)mg=(R.et+R.rt)-(m4.t+Math.max(0,R.rt0||0));}
       c.push(mg!=null?["gap","Margin",(mg>=0?"+":"−")+Math.abs(mg).toFixed(3)+"<i>s</i>",mg>=0?"good":"bad"]:["gap","vs "+rnEsc(shOpp(R.name)),foul?"RED":m4&&gap<0?"—":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>",foul||gap<0?"bad":"good"]);}
-    c.push(["et",m4?"ET":"Clock",m4?m4.t.toFixed(3):st.t.toFixed(2)+"<i>s</i>",m4?"good":st.spin?"bad":""]);
+    c.push(["et",m4?"ET":"Clock",m4?m4.t.toFixed(3):st.t.toFixed(2)+"<i>s</i>",st.spin&&!m4?"bad":""]);
     c.push(["mph",m4?"Trap mph":"mph",String(Math.round(m4?m4.mph:st.v*2.237)),""]);
     if(st.boostTarget>0)c.push(["boost","Boost",`${bv(st.boost)}<i>${pU()}</i>`,st.als>0.2?"hot":""]);}
   const z=st.n2oS;if(z){if(pre){const lp=Math.round(z.psi*(0.55+0.45*z.line));c.push(["n2o",z.purging?"Purging":z.line>=0.5?"N2O purged":"N2O · purge",`${lp}<i>psi</i><u><s style="transform:scaleX(${Math.min(1,z.psi/1100).toFixed(2)})"></s></u>`,z.purging?"info":z.line>=0.5?"good":"warn"]);}
@@ -18615,7 +18615,7 @@ function slipCanvas(l){const r=l.res.drag,res=l.res,D=slipData(r,res),W=1080,H=1
   const lamp=(cx,on)=>{x.beginPath();x.arc(cx,y-8,9,0,7);x.fillStyle=on?"#e8392a":"#cfcabd";if(on){x.save();x.shadowColor="#ff5a3c";x.shadowBlur=14;x.fill();x.restore();}else x.fill();};
   x.fillStyle=ink2;x.font=M(18);x.fillText("RIGHT LANE",cx1,y-30);if(two)x.fillText("LEFT LANE",cx2,y-30);
   x.fillStyle=ink;x.font=M(24,600);x.fillText("YOU",cx1,y);if(two&&D.win!=null)lamp(cx1-x.measureText("YOU").width-20,D.win===true);
-  if(two){const t=fit(D.opp.toUpperCase(),M(24,600),190);x.font=M(24,600);x.fillText(t,cx2,y);if(D.win!=null)lamp(cx2-x.measureText(t).width-20,D.win===false);}
+  if(two){const t=fit(D.opp.toUpperCase(),M(24,600),190);x.font=M(24,600);x.fillStyle=ink;x.fillText(t,cx2,y);if(D.win!=null)lamp(cx2-x.measureText(t).width-20,D.win===false);}
   y+=58;for(const row of D.rows){const big=row[3]==="et",sub=row[3]==="mph";if(big){x.strokeStyle="rgba(45,43,54,.3)";x.lineWidth=2;x.beginPath();x.moveTo(L+40,y-42);x.lineTo(Rt-40,y-42);x.stroke();y+=6;}
     x.textAlign="left";x.fillStyle=ink2;x.font=M(28);x.fillText(row[0],L+50,y);x.textAlign="right";x.fillStyle=sub?ink2:ink;x.font=M(big?44:32,big?600:500);x.fillText(row[1],cx1,y);if(two){x.fillText(row[2]==null?"—":row[2],cx2,y);}
     y+=big?62:sub?60:52;}
