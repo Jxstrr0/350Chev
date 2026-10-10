@@ -38,6 +38,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #app.nomotion #view{transition:none}
 #app.mini #tag{display:none}
 #app.onstrip #tag{opacity:0;pointer-events:none;transition:opacity .25s}
+#dragCtl{scroll-margin:8px 0 calc(var(--tabh) + 12px)}
 #app.mini #hud .brand small{display:none}
 #app.mini #rpmbox b{font-size:24px}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -13357,7 +13358,8 @@ function stripSkyMat(){
       " vec3 nt=mix(uHorN,vec3(0.0015,0.0025,0.008),pow(up,0.35));",
       " vec2 az=normalize(d.xz+vec2(1e-4)); float town=pow(max(0.0,1.0-abs(h)*7.0),2.2)*(0.35+0.65*pow(max(0.0,dot(az,normalize(vec2(-0.7,-0.7)))),3.0));",
       " nt+=vec3(0.075,0.04,0.015)*town;",
-      " vec3 sp=d*230.0; float s=h3(floor(sp)); float star=step(0.9972,s)*smoothstep(0.03,0.25,h)*(1.0-cov*0.9);",
+      " vec3 sp=d*150.0, sc=floor(sp)+0.5; float s=h3(floor(sp)); vec3 so=normalize(sc)*150.0, sq=abs(so-sc);",
+      " float star=1.4*step(0.986,s)*step(max(sq.x,max(sq.y,sq.z)),0.2)*smoothstep(0.3,0.06,length(sp-so))*smoothstep(0.03,0.25,h)*(1.0-cov*0.9);",
       " nt+=vec3(0.75,0.8,1.0)*star*(0.35+0.65*fract(s*173.1));",
       " float md=max(dot(d,uMoon),0.0); nt+=vec3(0.85,0.88,0.95)*smoothstep(0.99965,0.99985,md)+vec3(0.03,0.035,0.05)*pow(md,40.0);",
       " nt=mix(nt,vec3(0.006,0.007,0.011)+vec3(0.03,0.018,0.008)*town,cov*0.75);",
@@ -13466,7 +13468,7 @@ function buildStripScene(){
     var fence=new THREE.Mesh(new THREE.PlaneGeometry(fx1-fx0, 2.45), M.fence); fence.position.set((fx0+fx1)/2, 2.32, side*7.9); M.fence.map.repeat.set((fx1-fx0)/0.9, 2.45/0.9); S2.add(fence);
     /* timing blocks at every increment, both lanes (lane edges + centre) */
     var marks=[18.288,100.584,201.168,304.8,402.336];
-    for(i=0;i<marks.length;i++){ B.box("solid", marks[i], 0.2, side*7.3, 0.3, 0.4, 0.3, 0x3a3d40); B.box("lamp", marks[i]-0.16, 0.25, side*7.3, 0.02, 0.08, 0.08, 0xff3322);
+    for(i=0;i<marks.length;i++){ if(i||side<0){ B.box("solid", marks[i], 0.2, side*7.3, 0.3, 0.4, 0.3, 0x3a3d40); B.box("lamp", marks[i]-0.16, 0.25, side*7.3, 0.02, 0.08, 0.08, 0xff3322); }   /* not the near 60 ft one: it sits in front of the pan camera's lens */
       /* marker boards on posts behind the wall, angled to read from the chase and the side */
       var mx=marks[i]-2, mz=side*9.6; B.add("metal","cyl6",[mx, 1.9, mz],[0.14,3.8,0.14],STEEL);
       B.add("sign","plane",[mx, 3.4, mz],[3.2,1.9,1],0xffffff,[0, side<0?-0.62:-(PI-0.62), 0],STRIP_UV.mark(i));
@@ -14510,7 +14512,7 @@ function stripSetNight(on){
   STRIP.sunDir=(on?STRIP_MOON:STRIP_SUN_DAY);
   STRIP.sun.color.set(on?0x9fb2d6:0xffe2bc); STRIP.sun.intensity=on?0.14:1.45;
   STRIP.hemi.intensity=on?0.10:0.18; STRIP.hemi.color.set(on?0x3a4764:0xcfdcf0); STRIP.hemi.groundColor.set(on?0x16130e:0x6a5a3c);
-  STRIP.flood.intensity=on?(lite?0.6:0.22):0;
+  STRIP.flood.intensity=on?(lite?0.6:0.36):0;   /* a soft key from above the near stands so the cars read between the spots (no shadow, no cost) */
   M.lamp.color.set(on?0xffffff:0x5e5e5e);
   if(STRIP.beamMesh){ STRIP.beamMesh.visible=on; M.beam.opacity=on?0.012:0; }
   var env=stripEnv(on); S2.environment=env;
@@ -14552,13 +14554,13 @@ function stripCarMeta(car){
 /* --- effects --- */
 var STRIP_WIND=new THREE.Vector3(-0.8,0,-2.2), _sfA=new THREE.Vector3(), _sfB=new THREE.Vector3(), _sfD=new THREE.Vector3();
 function stripTyreSmoke(car, dt, k, temp, still, v){
-  var u=car.userData, FX=STRIP.fx; u._acc=(u._acc||0)+k*dt*(still?44:26); var n=Math.floor(u._acc); u._acc-=n; if(n<=0) return;
+  var u=car.userData, FX=STRIP.fx; u._acc=(u._acc||0)+k*dt*(still?70:26); var n=Math.floor(u._acc); u._acc-=n; if(n<=0) return;
   var c=0.62+0.26*temp, a=(still?0.5:0.36)+0.3*temp, rr=u.rr||0.35;
   for(var t=0;t<u._tyres.length;t++){ car.localToWorld(_sfA.copy(u._tyres[t])); var sz=u._tyres[t].z>=0?1:-1;
     for(var i=0;i<n;i++){ var r=Math.random();
       FX.emit(_sfA.x-0.25+Math.random()*0.5, rr*(0.35+Math.random()*0.5), _sfA.z+(Math.random()-0.3)*0.35*sz,
         still? -1.5-Math.random()*6 : (v||0)*0.15+(Math.random()-0.5)*2, 0.5+Math.random()*1.4, sz*(0.4+Math.random()*2.6),
-        still? 3.0+r*1.8 : 2.0+r*1.3, 0.9+Math.random()*0.6, (still?5.5:3.8)+Math.random()*3, c, c, c*1.03, a, {drag:0.55, buoy:0.45, fin:0.1, spin:0.6}); } }
+        still? 1.5+r*0.9 : 2.0+r*1.3, 0.9+Math.random()*0.6, (still?4.8:3.8)+Math.random()*(still?2.6:3), c, c, c*1.03, a, {drag:0.55, buoy:0.45, fin:0.1, spin:0.6}); } }   /* burnout: denser but short-lived, so it has cleared off the tree by the time the car is staged */
 }
 function stripFlames(car, amt, shift, carV){
   var u=car.userData, FA=STRIP.fxAdd, FF=STRIP.fxFire, FX=STRIP.fx, lite=GFX==="lite";
@@ -14691,9 +14693,10 @@ function stripDirect(o, dt, P, O){
     case "finish": { _cw.set(STRIP_FIN_X, 1.4, 7.15); var w=smoothstep(STRIP_FIN_X-4, STRIP_FIN_X+14, mx);
       _ct.set(lerp(STRIP_Q+18,mx+3,w), lerp(3.6,0.9,w), lerp(-1.5,mz*0.5,w)); d=_cw.distanceTo(_ct);
       fov=lerp(36, clamp(2*Math.atan((4.8+(both?gap*0.5+2.5:0))/d)*180/PI, 24, 62), w); break; }
-    case "shutdown": { rel=true; var b3=race&&gap<16; ax=b3?trail:px; var cz3=b3?0:pz, bk=5.5+v*0.03+(b3?gap*0.5:0);
-      /* rear three-quarter from well out beside the lane, so the chute blossoms between us and the car instead of over the lens */
-      _cw.set(-bk, 2.6, cz3+8.0); _ct.set((b3?lead-ax:0)-1.5, 1.1, cz3*0.6); fov=44; sm=4; break; }
+    case "shutdown": { rel=true; var b3=race&&gap<10; ax=b3?trail:px; var cz3=b3?0:pz, bk=11+v*0.04+(b3?gap*0.3:0);
+      /* rear three-quarter from inside the near wall (the catch fence is at 7.9), far enough back that the chute blossoms
+         between us and the car instead of over the lens, aimed between the two so both stay in a portrait frame */
+      _cw.set(-bk, 3.0, 6.6); _ct.set((b3?lead-ax:0)-3.2, 1.0, cz3*0.7); fov=42; sm=4; break; }
     case "board": _cw.set(STRIP_Q+1.5+Math.min(2,T*0.7), 3.0, 0); _ct.set(STRIP_Q+26, 6.0, 0); fov=58; break;
     case "crowd": { if(!STRIP.pbCut) STRIP.pbCut=1; var cp=smoothstep(0,2.3,T); _cw.set(78-cp*6, 1.4+cp*0.5, 2.4); _ct.set(52-cp*4, 3.4, -13.5); fov=40-cp*5; break; }
     case "fail": { rel=true; ax=px; _cw.set(8.5+v*0.04, 1.5, pz+4.2); _ct.set(-3.5, 1.2, pz-0.6); fov=50; sm=8; STRIP.shake=Math.max(STRIP.shake, 0.16); break; }
@@ -17792,9 +17795,11 @@ function dragStart(){
   if(env.race==="heads"){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
-    DR.race={trace:opp.trace,k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};}
+    DR.race={trace:oppTrace(opp.trace,Infinity,veh.chute?9:6,(opp.et||30)+40),k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};}
   n2oStart();
   if(env.race==="night")rnRace();   // race night: the rival in the other lane
+  // phone: bring the button and the live numbers up to the top of the panel, clear of the tab bar, with room for the HUD to grow
+  if(!document.documentElement.classList.contains("desk"))setTimeout(()=>{try{$("dragCtl").scrollIntoView({block:"start",behavior:"smooth"});}catch(e){}},60);
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("dragCtl").style.display="";$("dragBtn").dataset.k="";dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");$("dragBtn").disabled=false;$("dragLive").innerHTML="";
   $("testProg").classList.remove("done");sfx("start");
   // fresh-engine budget: passes beyond what the build can take start to break parts
@@ -17810,11 +17815,14 @@ function dragStart(){
     if(DR.night)rnFrame(now,st,dtT);
     {const pre=st.phase==="burnout"||(st.phase==="staged"&&!st.rolled);const ox=R?(pre?st.x:oppX(now)):0;const ov=dt>0?Math.max(0,(ox-DR.lox)/dt):0;const acc=dt>0?(st.v-DR.lv)/dt:0;DR.lv=st.v;DR.lox=ox;
       const m4=st.phase==="shutdown"||st.phase==="done"?st.marks.find(m=>m.n==="1/4 mi"):null;
-      ENGINE_VIS.setStrip({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
+      // test & tune heads-up: the other lane's RT once it leaves, its ET/MPH once it's through the traps, and the same verdict as the slip
+      let hx=null;if(R&&!DR.night){const fin=R.et!=null&&ox>=402.336;hx={ort:R.green!=null&&(now-R.green)/1000>=R.rt?R.rt:undefined,oet:fin?R.et:undefined,omph:fin?R.mph:undefined,
+        win:st.phase==="shutdown"||st.phase==="done"?!DR.failed&&!R.foul&&!!m4&&(R.et==null||m4.t+Math.max(0,R.rt0||0)<R.et+R.rt):undefined};}
+      ENGINE_VIS.setStrip(Object.assign({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
         tree:{staged:!!st.rolled&&st.phase!=="burnout",a1:dtT>=0,a2:dtT>=0.5,a3:dtT>=1.0,green:!!(R&&R.green!=null)},
         shifting:st.shiftT>0,boost:st.boost,boostTarget:st.boostTarget,rpm:st.rpm,redline:veh.redline,gear:st.gear,
         launch:{armed:!!st.launch.armed,twoStep:st.launch.twoStep,transBrake:st.launch.transBrake,held:st.launch.held,retard:st.launch.retard,pops:st.launch.pops},
-        tyreTemp:st.tyreTemp,burnout:st.phase==="burnout",lift:st.lift,onBars:!!st.onBars,brake:st.phase==="shutdown",failed:!!DR.failed,failKind:DR.failed?DR.failKind:null,night:!!S.night,rt:R?R.rt0:null});}
+        tyreTemp:st.tyreTemp,burnout:st.phase==="burnout",lift:st.lift,onBars:!!st.onBars,brake:st.phase==="shutdown",failed:!!DR.failed,failKind:DR.failed?DR.failKind:null,night:!!(S.night||DR.night),rt:R?R.rt0:null},hx));}
     if(st.phase==="burnout"){const ll=veh.transBrake==="line_lock";
       $("dragLive").innerHTML=`<div class="peak" style="grid-column:1/-1"><b>${Math.round(st.tyreTemp*100)}<i>% tyre heat</i></b><span>${st.burning?"burning · "+st.burnT.toFixed(1)+" s"+(st.burnT>4?" · too long, it's going greasy":st.burnT>2.5?" · that's about right":""):st.burnT>0?"tap to roll into the beams":"in the water box"}${ll?" · line lock on":" · no line lock — it will creep"}</span></div>`;
       if(st.burning)dragBtnText("BURNING…","let go when the smoke rolls");else if(st.burnT>0)dragBtnText("TAP TO STAGE","or hold to burn some more");else dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");}
@@ -17995,10 +18003,12 @@ function rnBaseline(veh){const res=SIM.dragPrep(S.cfg,stdEnv());const b=SIM.drag
   if(b.et!=null)return{et:b.et,mph:b.mph,trace:b.trace.map(p=>[p[0],p[1]])};
   const lb=veh.mass*2.2046,hp=Math.max(30,res.peakHp),et=Math.min(39,5.825*Math.cbrt(lb/hp)),mph=234*Math.cbrt(hp/lb),tr=[];for(let t=0.05;t<=et+0.001;t+=0.05)tr.push([+t.toFixed(2),Math.round(402.336*Math.pow(t/et,1.7))]);return{et:+et.toFixed(3),mph:+mph.toFixed(1),trace:tr};}
 /* the other lane's trace: the baseline, cut where the rival broke, then a coast to a stop past the stripe */
-function rnOppTrace(N,op){const tr=N.trace,et0=N.et0,out=[];const cut=op.broke?op.at*et0:Infinity;let last=null,prev=null;
+function rnOppTrace(N,op){return oppTrace(N.trace,op.broke?op.at*N.et0:Infinity,op.broke?2.5:N.lock.chute?9:6,N.et0+40);}
+/* a [t,x] trace cut at time `cut`, then slowing at `dec` m/s² to a stop (both lanes: race nights and the test & tune mirror) */
+function oppTrace(tr,cut,dec,tEnd){const out=[];let last=null,prev=null;
   for(const p of tr){if(p[0]>cut)break;out.push(p);prev=last;last=p;}
-  if(!last)return[[0.05,0],[1,0]];let v=prev?(last[1]-prev[1])/Math.max(0.01,last[0]-prev[0]):10,x=last[1],t=last[0];const dec=op.broke?2.5:N.lock.chute?9:6;
-  while(v>1&&t<et0+40){t+=0.1;v=Math.max(0,v-dec*0.1);x+=v*0.1;out.push([+t.toFixed(2),+x.toFixed(1)]);}return out;}
+  if(!last)return[[0.05,0],[1,0]];let v=last[2]!=null?last[2]/2.23694:prev?(last[1]-prev[1])/Math.max(0.01,last[0]-prev[0]):10,x=last[1],t=last[0];   // [2] mph when the trace carries it (dragPass)
+  while(v>1&&t<tEnd){t+=0.1;v=Math.max(0,v-dec*0.1);x+=v*0.1;out.push([+t.toFixed(2),+x.toFixed(1)]);}return out;}
 function rnStageName(N,s){return N.fmt==="bracket"&&s<2?RN_TT[s]:RN_STAGE[s];}
 function rnOppIdx(N){if(N.stage<2)return N.qopp[N.stage];const m=N.rounds[N.stage-2].find(x=>x.a===0||x.b===0);return m?(m.a===0?m.b:m.a):1;}
 function rnSuggest(N){const p=(N.passes||[]).filter(x=>x.et!=null&&!x.dq).slice(-1)[0];const et=p?p.et:N.et0;return Math.floor((et-0.01)*100)/100;}
@@ -18033,8 +18043,7 @@ function rnRace(){const N=rnLive();if(!N)return;const i=rnOppIdx(N),rv=N.field[i
   const k=op.et!=null?op.et/N.et0:rv.mean/N.et0;
   DR.race={trace:rnOppTrace(N,op),k,rt:op.rt,et:op.et,mph:op.mph,foul:false,rt0:null,tree0:null,green:null,name:rv.name,ofoul:op.rt<0};
   DR.night={stage:N.stage,label:rnStageName(N,N.stage),opp:i,op,dialP:br?N.dial:null,dialO:br?op.dial:null,verdict:null};
-  if(br){const h=rnTreeOffsets(N.dial,op.dial);DR.race.hcP=h.p;DR.race.hcO=h.o;}
-  if(!document.documentElement.classList.contains("desk"))setTimeout(()=>{try{$("dragCtl").scrollIntoView({block:"nearest",behavior:"smooth"});}catch(e){}},60);}
+  if(br){const h=rnTreeOffsets(N.dial,op.dial);DR.race.hcP=h.p;DR.race.hcO=h.o;}}
 /* every frame: the other lane's tree, lights and numbers on the boards, and the round's verdict once you're past the stripe */
 function rnFrame(now,st,dtT){const R=DR.race,n=DR.night;if(!R||!n)return;
   if(R.hcP!=null&&R.tree0!=null&&R.otree0==null){R.otree0=R.tree0+R.hcO*1000;R.tree0+=R.hcP*1000;R.ogreen=R.otree0+1500;}
