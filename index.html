@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.24.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.25.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -233,6 +233,17 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}
 .pfield{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .pfield b{color:var(--orange2);font-weight:500}.pfield .me{color:var(--chalk);font-weight:600}.pfield .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* pulling extras: series standings, the pull-off banner, the runaway warning and the kill switch */
+.pstand{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:4px 12px;font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:8px;align-items:baseline}
+.pstand .h{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.pstand b{color:var(--orange2);font-weight:500}.pstand .me{color:var(--chalk);font-weight:600}.pstand .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pstand .champ{font-style:normal;color:var(--good);font-size:11px;letter-spacing:.06em}
+.pobanner{background:rgba(229,183,59,.13);border:1px solid var(--warn);border-radius:6px;padding:10px 12px;margin:8px 0;color:var(--chalk);font-size:13px;line-height:1.45}
+.pobanner b{display:block;color:var(--warn);font-family:var(--display);font-size:17px;letter-spacing:.05em;margin-bottom:2px}
+.ph.rawarn{border-color:var(--crit);background:rgba(226,71,60,.14)}.ph.rawarn .ph-lbl b{color:var(--crit)}
+.ph-bar .fill.ra{background:linear-gradient(90deg,rgba(226,71,60,.45),rgba(226,71,60,.95))}
+#killBtn{width:100%;min-height:72px;margin-bottom:8px;font-size:24px;font-weight:700;letter-spacing:.08em;background:var(--crit);border-color:var(--crit);color:#fff;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;animation:killPulse .45s ease-in-out infinite alternate}
+@keyframes killPulse{from{box-shadow:0 0 0 0 rgba(226,71,60,.65)}to{box-shadow:0 0 0 9px rgba(226,71,60,0)}}
+.pobtns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.pobtns .btn{min-height:44px}.pobtns .btn:not(.pri){--ht:#ece7dc}
 /* stress list */
 .stress{display:flex;flex-direction:column;gap:6px}
 .st{--lc:var(--steel);display:grid;grid-template-columns:142px 1fr 42px;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 8px 22px;text-align:left;width:100%;position:relative}
@@ -591,6 +602,7 @@ html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #roadCtl{posi
   --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
 html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}
+html.desk #pullLive .pobanner,html.desk #pullLive .rawarn{grid-column:1/-1}
 /* the sheet becomes a centred dialog */
 html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
 html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
@@ -768,7 +780,7 @@ html.desk #tdCap b{font-size:22px}html.desk #tdCap p{font-size:14px}
       <p class="hint" id="dynoHint"></p>
       <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
       <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
-      <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
+      <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn" id="killBtn" style="display:none">KILL SWITCH<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.85;font-weight:500">it's running away — tap now</small></button><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
       <div id="roadCtl" style="display:none"><div id="roadLive"></div><div class="row rdbtns"><button class="btn pri" id="roadSkip">SKIP ▸▸</button><button class="btn" id="roadSpd">2×</button><button class="btn" id="roadCamB">Cam · Auto</button></div></div>
       <div id="saltCtl" style="display:none"><div id="saltLive"></div><div class="row" style="gap:8px"><button class="btn pri" id="saltBtn" style="flex:3;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO RUN</button><button class="btn" id="saltShiftBtn" style="flex:1;min-height:72px;font-size:18px;touch-action:none">SHIFT</button></div><div class="chips" id="saltWarp" style="margin-top:8px"><span class="hint" style="margin:0 4px 0 0;align-self:center">Run-up</span><button class="chip on" data-warp="1">×1</button><button class="chip" data-warp="2">×2</button><button class="chip" data-warp="4">×4</button></div></div>
 
@@ -3655,6 +3667,10 @@ const ENGINE_SIM = (function () {
       if (egt > 800)
         add(egt > 870 ? "bad" : "warn", "Overfuelled: EGT",
           "Peak exhaust is " + Math.round(egt) + " \u00b0C. On a diesel the extra fuel cools nothing \u2014 it burns late, down the stroke and into the manifold. Much past 700 \u00b0C held for long, the bowl rim softens and the turbine housing cracks; a puller lives with it for ten seconds, a tow truck cannot.");
+      const rwy = pullRunaway(quick, cfg, 0);
+      if (rwy.p >= 0.12)
+        add("bad", "Runaway risk",
+          "Under a sled this build can find oil to burn (" + rwy.why.join(", ") + ") and run on it with the pedal up \u2014 the governor can't stop fuel it isn't metering. On the dirt you'd have a couple of seconds to hit the kill switch. More air or less fuel, and a turbo that isn't working past its map.");
       const cs = coldStart(cfg, -20);
       if (cs.util > 0.85)
         add(cs.util > 1 ? "warn" : "info", "Cold start",
@@ -5631,12 +5647,44 @@ const ENGINE_SIM = (function () {
   for (const k in PULL_CLASSES) PULL_CLASSES[k].id = k;
   // the gear ladder a class pulls in: name and road speed at the governor with no slip
   function pullGears(cls) { const c = PULL_CLASSES[cls] || PULL_CLASSES.street; return c.gears || (c.veh.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS); }
+  /* the dirt on the night: moisture 0 (dust) … 1 (mud), cut 0 (fresh prep) … 1 (chewed up). A wet track bites harder at
+     less slip but drags at the tyres and the pan; a dry one is slick and wants more wheel speed; ruts take the grip away
+     at the heavy end, where the box is up on the pan. No track (practice) is neutral: every factor exactly 1 / 0. */
+  function pullTrackK(t) {
+    if (!t) return { mu: 1, sp: 0, crr: 1, sled: 1, cut: 0, dig: 1 };
+    const m = clamp(+t.moist, 0, 1) - 0.5, c = clamp(+t.cut || 0, 0, 1);
+    return { mu: 1 + 0.17 * m, sp: -0.09 * m, crr: 1 + 1.2 * m, sled: 1 + 0.10 * m, cut: c, dig: 1 + c };
+  }
+  function pullTrackName(t) {
+    if (!t) return "practice · neutral";
+    const m = +t.moist, c = +t.cut || 0;
+    const a = m > 0.62 ? "tacky" : m < 0.38 ? "dry & slick" : "good bite";
+    return c > 0.45 ? (m > 0.62 ? "tacky · cut up" : m < 0.38 ? "dry · cut up" : "cut up") : a;
+  }
+  /* runaway: a diesel that finds oil to burn — through a turbo seal pushed past its limit, as blow-by mist from tired rings,
+     or simply overfuelled into an exhaust hot enough to keep it lit — runs on it, and the governor can't shut that off.
+     Rare on a healthy build; p is the chance a given hook sees it. */
+  function pullRunaway(res, cfg, wear) {
+    const out = { p: 0, lvl: "none", why: [], lam: 0, egt: 0 };
+    if (!res || !cfg || !isDiesel(cfg)) return out;
+    const lam = +cfg.lambda || 1.5, egt = Array.isArray(res.egtCurve) && res.egtCurve.length ? Math.max.apply(null, res.egtCurve) : 0;
+    const tu = id => { const t = (res.tests || []).find(x => x.id === id); return t ? t.util : 0; };
+    const turbo = (OPT.asp[cfg.asp] || {}).kind === "turbo", tS = turbo ? Math.max(tu("compressor_map"), tu("turbine_temp")) : 0, gone = turbo && tS >= 1;
+    const fL = clamp((1.25 - lam) / 0.2, 0, 1), fE = clamp((egt - 850) / 150, 0, 1), fT = gone ? 1 : clamp((tS - 0.9) / 0.3, 0, 1), fW = clamp(((+wear || 0) - 0.6) / 0.6, 0, 1);
+    out.p = +clamp(0.3 * fL * fE + 0.2 * fT + (gone ? 0.35 : 0) + 0.12 * fW, 0, 0.85).toFixed(3); out.lam = lam; out.egt = Math.round(egt);
+    if (fT > 0) out.why.push(gone ? "turbo seals gone" : "turbo seals at " + Math.round(tS * 100) + "%");
+    if (fL * fE > 0) out.why.push("\u03bb " + lam.toFixed(2), "EGT " + Math.round(egt) + " \u00b0C");
+    if (fW > 0) out.why.push("worn rings \u2014 blow-by");
+    out.lvl = out.p <= 0 ? "none" : out.p < 0.03 ? "low" : out.p < 0.12 ? "moderate" : "high";
+    return out;
+  }
   function pullRng(seed) { let a = (seed >>> 0) || 1; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   /* veh: { cls, mass (kg, without ballast), ballast (kg on the front weight bracket), wb (m), cgH (m), front (static share on
      the front axle), hitch (inches above the dirt), tyre, tyreDia (in), gear (index into the class gear ladder) or mph,
      trans "conv"|"clutch", drive "4x4"|"rwd", redline, idle, sled {base, box, mu, travel}, sledK (heavier sled for a
-     pull-off), seed, noFail }. step(dt, throttle) takes the driver's foot 0..1; the pedal itself moves at a human rate. */
+     pull-off), seed, noFail, track {moist, cut} (none = neutral practice dirt), runaway {p, at?, win?} (diesel only) }.
+     kill() is the kill switch: fuel and air off, the truck rolls to a stop on the sled. step(dt, throttle) takes the driver's foot 0..1; the pedal itself moves at a human rate. */
   function pullRun(res, veh) {
     const C0 = PULL_CLASSES[veh && veh.cls] || PULL_CLASSES.street, CV = C0.veh;
     const v = Object.assign({ cls: C0.id, mass: CV.mass, ballast: 0, wb: CV.wb, cgH: CV.cgH, front: CV.front, hitch: CV.hitchMax - 2, tyre: CV.tyres[0], tyreDia: CV.tyreDia, gear: 1, trans: "conv", drive: CV.drive, kind: CV.kind,
@@ -5645,13 +5693,14 @@ const ENGINE_SIM = (function () {
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const torqueAt = r => r <= rpms[0] ? tq[0] * Math.max(0.35, r / rpms[0]) : interp(tq, r);
     const TY = PULL_TYRES[v.tyre] || PULL_TYRES.dot, g = 9.81, rw = v.tyreDia * 0.0254 / 2;
+    const TK = pullTrackK(v.track), SP = TY.sp + TK.sp;   // the night's dirt; neutral when there is no track
     const gears = C0.gears || (v.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS);
     const mph = v.mph || (gears[clamp(Math.round(v.gear), 0, gears.length - 1)] || gears[1])[1];
     const G = (v.redline * 2 * Math.PI / 60) / (mph * 0.44704 / rw);          // overall ratio, engine : wheel
     const conv = v.trans !== "clutch", etaL = conv ? 0.91 : 0.95;
     const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000);
     const Ie = (0.12 + 0.07 * VdL) * (v.flyK || 1), Iw = (v.kind === "tractor" ? 2 * 260 : 4 * 32) * rw * rw * 0.6;   // flywheel + crank; tyres and rims
-    const m = v.mass + v.ballast, crr = 0.03, ballX = 0.75;               // ballast hangs ~0.75 m ahead of the front axle
+    const m = v.mass + v.ballast, crr = 0.03 * TK.crr, ballX = 0.75;               // ballast hangs ~0.75 m ahead of the front axle
     const hh = v.hitch * 0.0254;
     const Nf0 = (v.mass * g * v.front * v.wb + v.ballast * g * (v.wb + ballX)) / v.wb;   // static front-axle load
     const floorFull = conv ? clamp(0.5 * (res.peakTqRpm || v.redline * 0.55) + 0.25 * v.redline, v.idle + 300, v.redline * 0.8) : clamp(0.62 * v.redline, v.idle + 400, v.redline * 0.85);
@@ -5688,12 +5737,13 @@ const ENGINE_SIM = (function () {
     function engTq(r, thr) {
       let T = thr * fullTq(r) - (1 - thr) * Tfric * clamp(r / v.redline, 0.3, 1);
       if (r > v.redline) T = Math.min(T, thr * fullTq(v.redline) * clamp((gov - r) / (gov - v.redline), 0, 1));   // the governor pulls fuel
+      if (st.raOn && !st.killed) T = fullTq(Math.min(r, v.redline)) * (1 + 0.9 * st.ra) * clamp((v.redline * (1.08 + 0.5 * st.ra) - r) / (0.05 * v.redline), 0, 1);   // running on its own oil: no governor, no pedal — it climbs as fast as the oil feeds it
       return T;
     }
     function mu(s) {
       const a = Math.abs(s);
-      const base = a < TY.sp ? Math.pow(Math.sin(Math.PI / 2 * a / TY.sp), 0.7) : 1 - TY.fall * Math.pow((a - TY.sp) / (1 - TY.sp), 0.8);
-      return TY.mu * base * (1 - 0.25 * st.dig * TY.dig) * Math.sign(s || 1);
+      const base = a < SP ? Math.pow(Math.sin(Math.PI / 2 * a / SP), 0.7) : 1 - TY.fall * Math.pow((a - SP) / (1 - SP), 0.8);
+      return TY.mu * TK.mu * base * (1 - 0.25 * st.dig * TY.dig) * Math.sign(s || 1) * (TK.cut ? 1 - 0.18 * TK.cut * clamp(st.x / SL.travel, 0, 1) : 1);
     }
     const hasEgt = Array.isArray(res.egtCurve) && res.egtCurve.length === N;
     const hasSmoke = Array.isArray(res.smokeCurve) && res.smokeCurve.length === N;
@@ -5701,16 +5751,22 @@ const ENGINE_SIM = (function () {
 
     const st = { t: 0, x: 0, v: 0, w: 0, rpm: v.idle, thr: 0, foot: 0, slip: 0, boxFrac: 0, hop: 0, hopAmp: 0, lift: 0, Nf: Nf0, Nr: m * g - Nf0, phase: "stage", full: false, done: false,
       boost: 0, egt: 430, egtPeak: 430, smoke: 0, smokeMax: 0, dig: 0, fSled: 0, fTrac: 0, maxV: 0, peakSlip: 0, stopT: 0, spinT: 0, sweetT: 0, bogT: 0, hopT: 0, frontUpT: 0, slipT: 0, egtDose: 0,
-      broke: null, failKind: null, failAt: Infinity, stopWhy: null, trace: [], marks: [], markT: 0, coupled: false, Twheel: 0, sweet: [Math.max(0.05, TY.sp - 0.08), TY.sp + 0.08], dist: 0, distFt: 0 };
+      broke: null, failKind: null, failAt: Infinity, stopWhy: null, trace: [], marks: [], markT: 0, coupled: false, Twheel: 0, sweet: [Math.max(0.05, SP - 0.08), SP + 0.08], dist: 0, distFt: 0,
+      raAt: Infinity, raOn: false, ra: 0, raT: 0, raWin: 2, raX: null, killed: false, killT: null, killX: null };
     // the build's own weak point lets go part way down the track, at a seeded moment
     if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(x => x.name === res.fails[0]); st.failKind = t0 ? t0.id : "rod_tension"; st.failAt = 1.5 + rng() * 5; }
     const egtTrip = 1.2 + rng() * 2.2;
+    // runaway draws from its own stream so every other seeded moment of the hook stays where it was
+    const RA = v.runaway || null, rra = pullRng(((v.seed >>> 0) ^ 0x2545F491) >>> 0);
+    if (RA && !v.noFail && res.diesel) { if (RA.at != null) st.raAt = +RA.at; else if (rra() < (+RA.p || 0)) st.raAt = 2 + rra() * 7; st.raWin = RA.win || clamp(2.4 - 1.2 * (+RA.p || 0), 1.5, 2.4); }
+    // a turbo that is going to let go on a diesel goes at the oil seal first: it runs away on its own lube oil
+    if (RA && !v.noFail && res.diesel && /^(compressor_map|turbine_temp)$/.test(st.failKind || "")) { st.raAt = Math.min(st.raAt, st.failAt); st.failKind = null; st.failAt = Infinity; }
     let lastTrace = -1, loadT = 0, prevTw = 0;
 
     function sub(dt) {
       st.foot += (clamp(st.thr, 0, 1) > st.foot ? 1 / 0.45 : -1 / 0.25) * dt;   // the pedal goes down in about half a second, comes up quicker
       st.foot = clamp(st.foot, 0, 1);
-      const thr = st.foot;
+      const thr = st.killed ? 0 : st.raOn ? 1 : st.foot;   // killed: nothing; running away: the pedal no longer matters
       if (st.phase === "stage") {
         st.t = 0; st.rpm += (v.idle + 250 * st.foot - st.rpm) * Math.min(1, dt * 4); boostStep(dt, st.rpm, 0.05);
         if (st.thr > 0.05) st.phase = "pull";
@@ -5718,7 +5774,7 @@ const ENGINE_SIM = (function () {
       }
       st.t += dt;
       // engine and driveline: locked when the wheels turn the engine faster than the converter stall / slipped-clutch speed
-      const floor = v.idle + (floorFull - v.idle) * thr;
+      const floor = st.killed ? 0 : v.idle + (floorFull - v.idle) * thr;
       const wRpm = st.w * G * 60 / (2 * Math.PI);
       st.coupled = wRpm >= floor;
       let rpmE = st.coupled ? wRpm : st.rpm + (floor - st.rpm) * Math.min(1, dt / 0.25);
@@ -5726,10 +5782,11 @@ const ENGINE_SIM = (function () {
       let Te = engTq(rpmE, thr), Tw;
       if (st.coupled) Tw = Te * G * etaL;
       else { const SR = clamp(wRpm / Math.max(1, rpmE), 0, 1); const TR = conv ? 1 + 1.1 * clamp(1 - SR / 0.85, 0, 1) : 1; Tw = Math.max(0, Te) * TR * G * (conv ? 0.86 : 0.93); }
+      if (st.killed) { Tw = 0; st.coupled = false; rpmE = st.rpm * Math.max(0, 1 - dt * 2.5); }   // killed: the driver is in neutral and on the brake, the engine winds down on its own
       st.rpm = rpmE;
       // sled: the box rides toward the pan as the sled travels
       st.boxFrac = Math.pow(clamp(st.x / SL.travel, 0, 1), 1.15);
-      const Fs = g * SL.mu * sk * (SL.base + SL.box * st.boxFrac) * (1 + 0.01 * st.v);
+      const Fs = g * SL.mu * sk * (SL.base + SL.box * st.boxFrac) * (1 + 0.01 * st.v) * TK.sled;
       st.fSled = Fs;
       // axle loads: the chain pulls back at hitch height and lifts the nose; ballast on the front bracket holds it down
       const acc0 = st.acc || 0;
@@ -5762,7 +5819,7 @@ const ENGINE_SIM = (function () {
       if (st.slip > st.sweet[1] + 0.12) st.spinT += dt; else if (st.slip >= st.sweet[0] && st.slip <= st.sweet[1]) st.sweetT += dt;
       st.slipT += dt;
       // spinning hard digs a hole under the tyre; easing off lets it climb out onto fresh dirt as the truck moves
-      if (st.slip > 0.5) st.dig = Math.min(1, st.dig + dt * (st.slip - 0.5) * 0.6); else st.dig = Math.max(0, st.dig - dt * st.v * 0.12);
+      if (st.slip > 0.5) st.dig = Math.min(1, st.dig + dt * (st.slip - 0.5) * 0.6 * TK.dig); else st.dig = Math.max(0, st.dig - dt * st.v * 0.12);
       if (st.hop > 0.3) st.hopT += dt;
       // heat and smoke
       const egtT = (hasEgt ? interp(res.egtCurve, st.rpm) : 800) * (0.5 + 0.5 * thr) + 40 * thr * clamp(st.t / 12, 0, 1);
@@ -5772,6 +5829,9 @@ const ENGINE_SIM = (function () {
       st.smokeMax = Math.max(st.smokeMax, st.smoke);
       if (thr > 0.6) loadT += dt;
       if (st.rpm < floorFull * 0.95 && thr > 0.8 && st.v < 0.6 && st.t > 1) st.bogT += dt;
+      // runaway: it starts with the pull loaded; from then the driver has a couple of seconds to find the kill switch
+      if (!st.raOn && !st.killed && loadT >= st.raAt) { st.raOn = true; st.raX = st.x; }
+      if (st.raOn && !st.killed) { st.raT += dt; st.ra = clamp(st.raT / st.raWin, 0, 1); if (st.raT >= st.raWin && !st.broke) { st.broke = "runaway"; st.failKind = "runaway"; st.stopWhy = "broke"; } }
       // something lets go
       if (!v.noFail && !st.broke) {
         if (st.failKind && loadT >= st.failAt) st.broke = st.failKind;
@@ -5779,23 +5839,28 @@ const ENGINE_SIM = (function () {
         else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : "piston";
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
       }
-      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2), egt: Math.round(st.egt), boost: +(st.boost || 0).toFixed(2) }); }
+      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2), egt: Math.round(st.egt), boost: +(st.boost || 0).toFixed(2) }); if (st.raOn) st.trace[st.trace.length - 1].ra = +st.ra.toFixed(2); }
       st.thrNow = thr;
       if (st.x >= PULL_FULL) { st.x = PULL_FULL; st.full = true; st.stopWhy = "full"; finish(); return; }
       if (st.broke) { finish(); return; }
+      if (st.killed && st.v < 0.05 && st.t - st.killT > 0.3) { st.stopWhy = "killed"; finish(); return; }
       // the flagman calls it when forward motion stops: under half a metre in three seconds
       if (st.t - st.markT >= 0.5) { st.marks.push(st.x); st.markT = st.t; if (st.marks.length > 7) st.marks.shift(); }
-      if ((st.v < 0.05 && st.t > 1.5 && (st.stopT += dt) > 1.2) || (st.t > 4 && st.marks.length >= 7 && st.x - st.marks[0] < 0.5)) { st.stopWhy = st.slip > 0.4 ? "spun" : thr < 0.2 ? "lifted" : "bogged"; finish(); return; }
+      if (!(st.raOn && !st.killed) && ((st.v < 0.05 && st.t > 1.5 && (st.stopT += dt) > 1.2) || (st.t > 4 && st.marks.length >= 7 && st.x - st.marks[0] < 0.5))) { st.stopWhy = st.slip > 0.4 ? "spun" : thr < 0.2 ? "lifted" : "bogged"; finish(); return; }   // a runaway is not the flagman's to stop
       if (st.v >= 0.05) st.stopT = 0;
       if (st.t > 90) { st.stopWhy = "time"; finish(); }
     }
     function finish() { st.done = true; st.phase = "done"; st.dist = st.x; st.distFt = st.x * 3.28084; }
+    function kill() { if (st.done || st.killed || st.phase === "stage") return false; st.killed = true; st.killT = st.t; st.killX = st.x; st.killRpm = Math.round(st.rpm); return true; }
     function step(dt, throttle) { if (throttle != null) st.thr = clamp(+throttle || 0, 0, 1); dt = Math.min(0.25, Math.max(0, dt)); while (dt > 1e-9 && !st.done) { const h = Math.min(0.001, dt); dt -= h; sub(h); } st.distFt = st.x * 3.28084; return st; }
     function result() {
       const ft = Math.round(st.x * 3.28084 * 10) / 10, reasons = [];
       const sw = st.sweet, tn = TY.n.toLowerCase();
-      if (st.broke) reasons.push(st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C — past what the hot side takes for that long. It let go under the sled.` : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for seconds on end — a diesel crown can't shed that. A piston melted. Less fuel, more air (bigger turbo, intercooler), or shorter bursts.` : st.broke === "worn" ? `Something tired let go ${Math.round(ft)} ft down the track — the build was past its pass budget. Freshen it before the next hook.` : `The engine let go under load ${Math.round(ft)} ft down the track — the dyno sheet already said it was past a limit.`);
+      if (st.broke) reasons.push(st.broke === "runaway" ? `It ran away on its own oil ${Math.round(st.raX * 3.28084)} ft out and nobody pulled the kill switch: ${st.raWin.toFixed(1)} s later it went past ${Math.round(st.rpm).toLocaleString()} rpm and came apart. Disqualified.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C — past what the hot side takes for that long. It let go under the sled.` : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for seconds on end — a diesel crown can't shed that. A piston melted. Less fuel, more air (bigger turbo, intercooler), or shorter bursts.` : st.broke === "worn" ? `Something tired let go ${Math.round(ft)} ft down the track — the build was past its pass budget. Freshen it before the next hook.` : `The engine let go under load ${Math.round(ft)} ft down the track — the dyno sheet already said it was past a limit.`);
       if (st.full) reasons.push("Full pull — the box was still moving at 300 ft.");
+      if (st.killed && st.raOn) reasons.push(`Ran away ${Math.round(st.raX * 3.28084)} ft out — killed it ${st.raT.toFixed(1)} s later at ${st.killRpm.toLocaleString()} rpm. Good kill: the engine lives. Scored where it stopped.`);
+      else if (st.killed) reasons.push(`Killed it at ${Math.round(st.killX * 3.28084)} ft — scored where it stopped.`);
+      if (v.track) reasons.push(`Track: ${pullTrackName(v.track)} (moisture ${Math.round(v.track.moist * 100)}%, cut ${Math.round((v.track.cut || 0) * 100)}%).`);
       if (st.spinT > 1.5) reasons.push(`Spun the tyres for ${st.spinT.toFixed(1)} s past ${Math.round(100 * (sw[1] + 0.12))}% slip — ${tn}s dig instead of bite. Feather the pedal to hold ${Math.round(sw[0] * 100)}–${Math.round(sw[1] * 100)}% slip, or a taller gear.`);
       if (st.dig > 0.5) reasons.push("Dug in — the hole under the tyres cost grip for the rest of the pull.");
       if (st.hopT > 1) reasons.push(`Hopped for ${st.hopT.toFixed(1)} s — the ${v.hitch}" hitch lifts the front faster than ${Math.round(v.ballast)} kg of front weight holds it. Lower the hitch or hang more weight on the bracket.`);
@@ -5808,9 +5873,10 @@ const ENGINE_SIM = (function () {
       if (st.smokeMax > 0.7) reasons.push("Black smoke all the way — more fuel than air. It looks the part; it is also heat in the pistons.");
       return { distM: +st.x.toFixed(2), distFt: ft, full: st.full, maxMph: +(st.maxV * 2.23694).toFixed(1), peakSlip: +st.peakSlip.toFixed(3), peakEgt: Math.round(st.egtPeak), broke: st.broke, failKind: st.broke ? st.failKind : null,
         trace: st.trace, smokeMax: +st.smokeMax.toFixed(2), time: +st.t.toFixed(1), stopWhy: st.stopWhy, spinT: +st.spinT.toFixed(1), sweetT: +st.sweetT.toFixed(1), hopT: +st.hopT.toFixed(1), frontUpT: +st.frontUpT.toFixed(1), dig: +st.dig.toFixed(2),
-        boxFrac: +st.boxFrac.toFixed(3), endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, veh: v, tyre: TY.n, sledK: sk };
+        boxFrac: +st.boxFrac.toFixed(3), endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, veh: v, tyre: TY.n, sledK: sk,
+        runaway: st.raOn ? { ftAt: Math.round(st.raX * 3.28084 * 10) / 10, killed: st.killed, react: st.killed ? +st.raT.toFixed(2) : null, win: +st.raWin.toFixed(2), grenade: st.broke === "runaway" } : null, killed: st.killed, track: v.track || null };
     }
-    return { st: st, step: step, result: result, ratio: G, sweet: st.sweet, full: PULL_FULL };
+    return { st: st, step: step, result: result, kill: kill, ratio: G, sweet: st.sweet, full: PULL_FULL };
   }
   /* A pull with nobody's foot on it: the rival field's pull-off and the node harness. foot "flat" stays pinned;
      "feather" lifts whenever the slip runs past the top of the sweet spot, like a good driver. */
@@ -6564,6 +6630,7 @@ const ENGINE_SIM = (function () {
     isRotary: isRotary,
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
+    pullTrackK: pullTrackK, pullTrackName: pullTrackName, pullRunaway: pullRunaway,
     roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
     lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel,
@@ -7990,6 +8057,31 @@ const ENGINE_SOUND = (function () {
         po.connect(pg); pg.connect(bus); po.start(tp); po.stop(tp + 0.7); reap([po, pg], 0.7);
         if (!st.purgeT || tp - st.purgeT > 1.2) solenoid();      // the purge solenoid clacks open
         st.purgeT = tp;
+        break;
+      }
+      case "runaway": {
+        /* a diesel running on its own oil: a howl climbing past anything the governor would allow, and a hiss from the stack */
+        if (st.raVoice) return;
+        var tr = ctx.currentTime, ro = ctx.createOscillator(); ro.type = "sawtooth";
+        ro.frequency.setValueAtTime(700, tr); ro.frequency.exponentialRampToValueAtTime(2300, tr + 2.4);
+        var rb = ctx.createBiquadFilter(); rb.type = "bandpass"; rb.Q.value = 3; rb.frequency.setValueAtTime(1400, tr); rb.frequency.exponentialRampToValueAtTime(3600, tr + 2.4);
+        var rg = ctx.createGain(); rg.gain.setValueAtTime(0, tr); rg.gain.linearRampToValueAtTime(0.09, tr + 0.5); rg.gain.linearRampToValueAtTime(0.14, tr + 2.4);
+        ro.connect(rb); rb.connect(rg); rg.connect(bus); ro.start(tr); ro.stop(tr + 3.2);
+        var rh = noiseVoice(3.0, "highpass", 1800, 0.6, 0.10);
+        st.raVoice = { o: ro, g: rg, h: rh }; reap([ro, rb, rg], 3.3);
+        setTimeout(function () { st.raVoice = null; }, 3300);
+        break;
+      }
+      case "kill": {
+        /* the kill switch: air and fuel off at once — sudden silence, a clunk from the flapper, the engine winding down */
+        var tk = ctx.currentTime;
+        if (st.raVoice) { try { st.raVoice.g.gain.cancelScheduledValues(tk); st.raVoice.g.gain.setValueAtTime(0.0001, tk + 0.03); if (st.raVoice.h && st.raVoice.h.g) { st.raVoice.h.g.gain.cancelScheduledValues(tk); st.raVoice.h.g.gain.setValueAtTime(0.0001, tk + 0.03); } } catch (e) {} st.raVoice = null; }
+        var ko = ctx.createOscillator(); ko.type = "square"; ko.frequency.setValueAtTime(95, tk); ko.frequency.exponentialRampToValueAtTime(38, tk + 0.12);
+        var kg = ctx.createGain(); kg.gain.setValueAtTime(0.32, tk); kg.gain.exponentialRampToValueAtTime(0.0001, tk + 0.18);
+        var kf = ctx.createBiquadFilter(); kf.type = "lowpass"; kf.frequency.value = 420;
+        ko.connect(kf); kf.connect(kg); kg.connect(bus); ko.start(tk); ko.stop(tk + 0.2); reap([ko, kf, kg], 0.25);
+        noiseVoice(0.12, "lowpass", 600, 0.8, 0.22);
+        if (N) { dead = true; ap(N.exhG.gain, 0.0001, 0.04); ap(N.subG.gain, 0.0001, 0.06); ap(N.inG.gain, 0.0001, 0.03); ap(N.blowG.gain, 0.0001, 0.15); ap(N.wgG.gain, 0.0001, 0.15); ap(N.mechG.gain, 0.0001, 0.5); ap(N.gearG.gain, 0.0001, 0.6); ap(N.clG.gain, 0.0001, 0.04); if (N.tyreG) ap(N.tyreG.gain, 0.0001, 0.4); }
         break;
       }
       case "intakeBang": {
@@ -12950,6 +13042,14 @@ function buildUpgrades(B, G, addLight, W, D, Hh, owned, sandbox){
     }
     B.add("blackPlast", BOX(0.2, 6.5, 13.5, 1/6), tx+0.3, 14.5+4.2, tz);
   }
+  if(owned.pullCups>0){
+    /* pulling-series cups: one per championship on a plank by the right-hand wall, up to eight */
+    var cupX=W/2-1.4, cupZ=-D*0.06, nCup=Math.min(8, owned.pullCups), q;
+    B.add("woodDark", BOX(1.6, 0.35, 11, 1/8), cupX, 12, cupZ);
+    for(q=0;q<nCup;q++){ var cz=cupZ-4.4+q*1.25;
+      B.add("copper", CYL(0.4,0.4,0.14,12), cupX, 12.25, cz); B.add("copper", CYL(0.09,0.09,0.55,8), cupX, 12.6, cz);
+      B.add("copper", CYL(0.42,0.16,0.75,12), cupX, 13.25, cz); B.add("copper", BOX(0.08,0.35,0.5,1/8), cupX, 13.3, cz+0.42); B.add("copper", BOX(0.08,0.35,0.5,1/8), cupX, 13.3, cz-0.42); }
+  }
   if(has("prestige_display")){
     /* a chrome show engine on a lit plinth near the front */
     var px=W*0.34, pz=D*0.36;
@@ -15473,6 +15573,7 @@ function buildPullScene(){
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), gm); ground.rotation.x=-PI/2; ground.position.set(40,-0.12,0); ground.receiveShadow=true; S3.add(ground);
   var tm=stripSurfMat(PULL_GLSL_TRACK, {polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2}); tm.customProgramCacheKey=function(){ return "pull_track"; };
   var track=new THREE.Mesh(new THREE.PlaneGeometry(160, 13.2), tm); track.rotation.x=-PI/2; track.position.set(-36+80, 0, 0); track.receiveShadow=true; S3.add(track);
+  PULL.trackMat=tm; PULL.trackKey="";   /* tinted per hook by setPull({track}) */
   /* low coulee hills on the horizon */
   (function(){ var seg=120, R0=1900, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
     for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=Math.max(5, 14+34*Math.pow(0.5+0.5*Math.sin(a*3.0+0.4),2)+18*Math.sin(a*11.0+1.4)*Math.sin(a*5.0)+10*Math.sin(a*23.0));
@@ -15895,6 +15996,8 @@ function pullEffects(o, dt, V){
   var U=V.userData, FX=PULL.fx, FD=PULL.fxDirt, lite=GFX==="lite", rate=lite?0.5:1, ph=o.phase||"stage";
   var v=Math.max(0,+o.v||0), slip=clamp(+o.slip||0,0,1), smoke=clamp(o.smoke==null?0.15:+o.smoke,0,1), pulling=(ph==="pull");
   var R=Math.random, i, t;
+  /* a wet track throws clods and little dust; a dry, cut-up one hangs a cloud over the pan */
+  var TRK=o.track||null, dustK=TRK?clamp(1+1.6*(0.5-clamp(+TRK.moist,0,1))+0.6*clamp(+TRK.cut||0,0,1),0.3,2.2):1, raV=clamp(+o.runaway||0,0,1);
   /* roost: clods + spray thrown up and back, more with slip and speed */
   var k=pulling ? clamp(slip*1.25+v*0.05, 0, 1.4) : 0;
   if(k>0.02){ for(t=0;t<2;t++){ var s=t?1:-1; _pA.set(V.position.x-U.rr*0.55, U.rr*0.75, s*U.trR);
@@ -15903,16 +16006,17 @@ function pullEffects(o, dt, V){
         FD.emit(_pA.x-R()*0.3, _pA.y+R()*0.4, _pA.z+(R()-0.5)*U.wr*0.9, v*0.4-back, up, s*R()*1.6+(R()-0.5), 0.9+R()*0.7, 0.1+R()*0.12, 0.15+R()*0.17, 0.26, 0.18, 0.11, 1, {drag:0.12, grav:9.8, fin:0.02, spin:4}); }
       var ns=k*rate*34*dt, m=Math.floor(ns)+(R()<ns%1?1:0);
       for(i=0;i<m;i++) FX.emit(_pA.x-0.2, _pA.y+R()*0.3, _pA.z+(R()-0.5)*U.wr, v*0.3-1.5-R()*3.5*(0.4+slip), 2+R()*5*(0.4+slip), s*R()*1.2, 1.2+R()*0.7, 0.5, 1.8+R()*1.2, 0.5, 0.38, 0.25, 0.8, {drag:0.55, grav:3.5, fin:0.04, spin:1});
-      var nd=k*rate*12*dt, md=Math.floor(nd)+(R()<nd%1?1:0);
+      var nd=k*rate*12*dt*dustK, md=Math.floor(nd)+(R()<nd%1?1:0);
       for(i=0;i<md;i++) FX.emit(_pA.x-1-R()*2, 0.6+R()*0.8, _pA.z+(R()-0.5)*1.5, v*0.2-0.6, 0.3+R()*0.4, -0.3-R()*0.4, 4+R()*3, 1.4, 4.2+R()*2.4, 0.5, 0.39, 0.27, 0.17, {drag:0.5, buoy:0.12, fin:0.15, spin:0.3}); } }
   /* the pan ploughs: dust off the pile */
-  if(pulling && v>0.15){ var S=PULL.sled, nb=rate*(0.6+(+o.boxFrac||0)*1.5)*v*1.4*dt, mb=Math.floor(nb)+(R()<nb%1?1:0);
+  if(pulling && v>0.15){ var S=PULL.sled, nb=rate*(0.6+(+o.boxFrac||0)*1.5)*v*1.4*dt*dustK, mb=Math.floor(nb)+(R()<nb%1?1:0);
     for(i=0;i<mb;i++){ var side=R()<0.5?-1:1; FX.emit(S.position.x-0.2-R()*1.5, 0.25, side*(1.2+R()*0.8), v*0.3, 0.4+R()*0.5, side>0?0.3:-0.9, 3.5+R()*2, 0.8, 3.2+R()*1.6, 0.5, 0.39, 0.27, 0.14, {drag:0.6, buoy:0.15, fin:0.1, spin:0.3}); } }
   /* black smoke: puffs leave the stack fast, slow, swell and drift with the wind */
   var ns2=rate*(lite?16:30)*(0.25+smoke)*dt;
+  if(o.killed) ns2=0; else if(raV>0) ns2*=1+3.5*raV;   /* runaway: a grey-white torrent of burnt oil; killed: nothing at all */
   for(t=0;t<U.tips.length;t++){ V.userData.body.localToWorld(_pB.copy(U.tips[t])); _pD.copy(U.dirs[t]).applyQuaternion(U.pivot.quaternion);
     var nn=Math.floor(ns2)+(R()<ns2%1?1:0);
-    for(i=0;i<nn;i++){ var sp=1.8+smoke*2.2+R()*1.2, c=lerp(0.42,0.025,Math.pow(smoke,0.7))+R()*0.03;
+    for(i=0;i<nn;i++){ var sp=1.8+smoke*2.2+R()*1.2, c=lerp(lerp(0.42,0.025,Math.pow(smoke,0.7))+R()*0.03, 0.7+R()*0.12, raV>0?Math.min(1,0.55+raV*1.5):0);
       FX.emit(_pB.x+_pD.x*0.05, _pB.y+_pD.y*0.05, _pB.z, _pD.x*sp+v, _pD.y*sp, _pD.z*sp+(R()-0.5)*0.6, 2.4+R()*1.6+smoke*1.2, 0.3+smoke*0.25, 2+smoke*4+R(), c, c*0.98, c*0.96, 0.22+0.55*smoke, {drag:0.75, buoy:0.12+smoke*0.18, fin:0.03, spin:0.5}); } }
   /* full pull: confetti over the hook */
   if(PULL.confT>0){ PULL.confT-=dt; var nf=rate*(lite?60:120)*dt, mf=Math.floor(nf)+(R()<nf%1?1:0), CC=[[1,0.48,0.1],[0.95,0.93,0.88],[0.2,0.4,0.85],[0.95,0.78,0.15],[0.2,0.7,0.35]];
@@ -16021,6 +16125,12 @@ function pullUpdate(o, dt){
   if(o.full && !PULL.prev.full){ PULL.cheer=2.4; PULL.confT=5; PULL.shake=Math.max(PULL.shake,0.25); }
   if(ph==="done" && PULL.prev.phase==="pull" && !o.full) PULL.cheer=Math.max(PULL.cheer,1.0);
   if(PULL.x0==null || ph==="stage") PULL.x0=x;
+  if(+o.runaway>0 && !o.killed) PULL.shake=Math.max(PULL.shake, 0.05+0.1*clamp(+o.runaway,0,1));   /* the whole truck shakes as it screams */
+  /* track condition: darker and wetter early, paler and dustier as it dries and gets chewed up (no field = neutral) */
+  if(PULL.trackMat){ var trk=o.track||null, tmo=trk?clamp(+trk.moist,0,1):0.5, tcu=trk?clamp(+trk.cut||0,0,1):0, tkey=tmo.toFixed(2)+"|"+tcu.toFixed(2);
+    if(PULL.trackKey!==tkey){ PULL.trackKey=tkey; var wet=tmo-0.5, kk=(wet>0?1-0.62*wet:1-0.5*wet)*(1-0.07*tcu);
+      PULL.trackMat.color.setRGB(kk, kk*(1-0.03*Math.abs(wet)), kk*(1-0.08*Math.abs(wet)));
+      if(PULL.mats.dirt) PULL.mats.dirt.color.setHex(0x9a8270).multiplyScalar(kk); } }
   /* vehicle: hitch at x; pitch is a damped spring on hop (front lifts about the rear axle), squat under load */
   V.position.set(x-U.hitch.x, 0, 0);
   var load=ph==="pull"?0.4+0.6*bf:0, target=U.maxPitch*hop+0.012*load*(1+slip)+(ph==="pull"?Math.sin(PULL.t*9.0)*0.004*slip:0);
@@ -16914,7 +17024,8 @@ const ENGINE_VIS = {
   pitsAnchors: function(){ return pitsAnchors(); },   /* {w, h, launch|wear|gear|psi|shocks|dial: [x, y, inFront]} in canvas CSS px */
   pitsState: function(){ return {on:PITS.on, built:PITS.built, renders:PITS.renders, stats:PITS.stats, nightK:PITS.nightK, heat:+PITS.heat.toFixed(2), car:PITS.carKey,
     cam:PITS.cam?PITS.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null}; },   /* harness */
-  /* DIESEL pulling scene: fed every frame {on, phase:"stage"|"pull"|"done", x, v, boxFrac, slip, hop, smoke, rpm, vehicle, full, night, cls, distFt, color?, dt?}; {on:false} leaves */
+  /* DIESEL pulling scene: fed every frame {on, phase:"stage"|"pull"|"done", x, v, boxFrac, slip, hop, smoke, rpm, vehicle, full, night, cls, distFt, color?, dt?,
+     track?:{moist 0..1, cut 0..1} (dirt tint + dust), runaway?: 0..1 (grey-white stack torrent + shake), killed?: bool (stack goes quiet)}; {on:false} leaves */
   setPull: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(PULL.on){ PULL.on=false; pullReset(); } return; }
@@ -17762,7 +17873,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.24.1.0";
+const VERSION="1.25.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -17865,7 +17976,7 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="salt"?0.03:t==="road"?0.03:t==="overrev"?0.008:0.02;
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev())return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
 
 /* ===================== live compute ===================== */
@@ -18434,6 +18545,7 @@ function renderTest(){
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
     : `<b>${dc.n}</b> · no limits in the test cell. Figures update as you change the build; run a test to lock a result and pin it as a baseline.`;
   if(S.env.testType==="drag")rnRunBtn();
+  if(S.env.testType==="pull_sled")pullRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
   renderMap();
 }
@@ -19138,10 +19250,79 @@ const PULL_PURSE=[4000,2000,1200,600,300],PULL_PAY={1:1,2:1.6,3:2.5,4:4},PULL_RE
 const PULL_NAMES={truck:["Dirty Deeds","Smoke Show","Black Gold","Coal Roller","Prairie Thunder","Mud Hen","Night Shift","Holy Roller","Rusty Nail","Stack Attack","Bad Habit","Gravel Pit"],tractor:["Sod Buster","Iron Horse","Field General","Green Machine","Big Red","Grain Train","Hay Fever","Dust Devil","Plow Boy","Farmall Fury","Quarter Section","Swather"]};
 const ordN=n=>n+(n%10===1&&n%100!==11?"st":n%10===2&&n%100!==12?"nd":n%10===3&&n%100!==13?"rd":"th");
 function pullRand(seed){let a=(seed>>>0)||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+/* ---- the night around the hook: a running order, dirt that changes under it, a points series, the pull-off ---- */
+let PO=null;   // a pull-off waiting for the player: the first hook's result and the field that tied it
+const PULL_ORDER=["gas","street","smoker26","hotfarm","superstock"];   // classes run in this order; the crew re-preps between them
+const PULL_PTS=[20,18,16,14,12,10,8,6,4,2],PULL_FULL_PTS=3,PULL_SER_N=6,PULL_TITLE=5000,PULL_SB={};
+const pClamp=(v,a,b)=>Math.max(a,Math.min(b,v)),pullTrkName=t=>SIM.pullTrackName?SIM.pullTrackName(t):"";
+function pullFmt(){const f=S.env.pullFmt;return f==="series"||f==="night"||(f==="practice"&&!career())?f:career()?"night":"practice";}
+/* the dirt for each hook of a class: watered in the afternoon, it dries and packs as the night goes and the ruts deepen
+   hook by hook; the crew re-works it between classes, so each class starts tackier and smoother than the last one ended */
+function pullNight(k,seed,n){const r=pullRand((seed^0x51ED27)>>>0),ci=Math.max(0,PULL_ORDER.indexOf(k)),m0=0.66+r()*0.2-0.07*ci,c0=0.04+0.03*ci,out=[];
+  for(let i=0;i<n;i++){const f=n>1?i/(n-1):0;out.push({moist:+pClamp(m0-0.26*f+(r()-0.5)*0.03,0.08,0.95).toFixed(2),cut:+pClamp(c0+0.6*f,0,1).toFixed(2)});}
+  return out;}
+/* what the dirt does to a rival's number: a dry, cut-up track takes feet off everyone who pulls on it */
+function pullTrkAdj(f,t){const k=1-0.1*Math.max(0,0.5-t.moist)-0.16*t.cut,o=Object.assign({},f,{trk:t});
+  if(o.full&&k<0.95){o.full=false;o.ft=Math.round(Math.min(299.5,300*(k+0.04))*10)/10;}else if(!o.full)o.ft=Math.round(Math.max(100,Math.min(299.5,o.ft*k))*10)/10;return o;}
+const poTrack=()=>PO&&PO.ev&&PO.ev.track?{moist:+Math.min(0.95,PO.ev.track.moist+0.06).toFixed(2),cut:0.12}:null;   // re-worked for the pull-off
+/* the class on the night: practice is the old neutral hook; a pull night draws you a slot in the order and the dirt that comes with it */
+function pullEvent(k,fseed,live){const fmt=pullFmt(),s=fmt==="series"?(live?pullSerCur(k):pullSerPeek(k)):null;let field=s?pullSerField(k,s):pullField(k,fseed),track=null,draw=null;const n=field.length+1;
+  if(fmt!=="practice"){const night=pullNight(k,fseed,n),rd=pullRand((fseed^0x3C6EF372)>>>0);draw=Math.floor(rd()*n);let j=0;field=field.map(f=>{if(j===draw)j++;return pullTrkAdj(f,night[j++]);});track=night[draw];}
+  return{fmt,field,track,draw,n,ser:s};}
+function pullRaRisk(){if(!quick||!pullIsDiesel(S.cfg)||!SIM.pullRunaway)return null;const wi=wearInfo(quick);return SIM.pullRunaway(quick,S.cfg,wi?wi.w:0);}
+/* ---- points series: the same named rivals all season, points by place plus a bonus for a full pull ---- */
+function pullSerStore(){const o=career()?C():S;if(!o.pullSer||typeof o.pullSer!=="object")o.pullSer={};return o.pullSer;}
+function pullSerSeed(){if(career())return(C().seed>>>0)||1;if(!S.pullSerSeed)S.pullSerSeed=Math.floor(Math.random()*1e9)+1;return S.pullSerSeed;}
+function pullSerNew(k,season){const c=SIM.PULL_CLASSES[k],seed=(pullSerSeed()^Math.imul(season,2654435761)^Math.imul(PULL_ORDER.indexOf(k)+1,40503))>>>0,r=pullRand(seed),names=PULL_NAMES[c.veh.kind].slice(),rivals=[];
+  for(let i=0;i<7;i++){const nm=names.splice(Math.floor(r()*names.length),1)[0];const g=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());rivals.push({n:nm,sk:+g.toFixed(2),pts:0,wins:0,fulls:0,last:0});}
+  return{k,season,seed,round:0,rivals,me:{pts:0,wins:0,fulls:0,last:0},ev:[],done:false,champ:null,lastWeek:null};}
+function pullSerPeek(k){const s=pullSerStore()[k];return s&&!s.done?s:pullSerNew(k,s?s.season+1:1);}
+function pullSerCur(k){const st=pullSerStore();if(!st[k]||st[k].done)st[k]=pullSerPeek(k);return st[k];}
+/* a round's field: every rival turns up, with a steady skill and the night's luck */
+function pullSerField(k,s){const F=SIM.PULL_CLASSES[k].field,r=pullRand((s.seed^Math.imul(s.round+1,0x9E3779B1))>>>0);
+  return s.rivals.map(x=>{const g=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r()),ft=F.med+F.sd*(0.6*x.sk+0.8*g),full=ft>=300||r()<F.full*pClamp(1+0.6*x.sk,0.3,2);
+    return{n:x.n,full,ft:full?300:Math.round(Math.max(110,Math.min(299.5,ft))*10)/10};});}
+/* standings: points, then wins, then full pulls, then the better finish in the latest round */
+function pullStand(s){return s.rivals.map(x=>Object.assign({},x)).concat([Object.assign({n:"You",me:true},s.me)]).sort((a,b)=>b.pts-a.pts||b.wins-a.wins||b.fulls-a.fulls||(a.last||99)-(b.last||99)||(a.me?-1:b.me?1:a.n<b.n?-1:1));}
+function pullSerScore(k,rows,r){const s=pullSerCur(k);s.round++;
+  rows.forEach((f,i)=>{const c=f.me?s.me:s.rivals.find(x=>x.n===f.n);if(!c)return;const pts=f.dq?0:(PULL_PTS[i]||1)+(f.full?PULL_FULL_PTS:0);c.pts+=pts;if(i===0&&!f.dq)c.wins++;if(f.full)c.fulls++;c.last=i+1;if(f.me)r.serPts=pts;});
+  s.ev.push({round:s.round,place:r.place,of:r.of,pts:r.serPts||0,w:career()?C().week:null});if(career())s.lastWeek=C().week;
+  const st=pullStand(s);if(s.round>=PULL_SER_N){s.done=true;s.champ=st[0].n;s.champMe=!!st[0].me;if(st[0].me)pullTitle(k,s,r);}
+  r.ser={k,season:s.season,round:s.round,n:PULL_SER_N,pts:r.serPts||0,done:s.done,champ:s.champ,champMe:!!s.champMe,stand:st.map(x=>({n:x.n,me:!!x.me,pts:x.pts,wins:x.wins,fulls:x.fulls}))};}
+function pullTitle(k,s,r){const C0=SIM.PULL_CLASSES[k],bonus=Math.round(PULL_TITLE*(PULL_PAY[C0.tier]||1)/10)*10;r.title={bonus:career()?bonus:0};
+  const R=recs();if(!Array.isArray(R.pullTitles))R.pullTitles=[];R.pullTitles.push(Object.assign({k,season:s.season,pts:s.me.pts},recTag()));
+  if(career()){C().cash+=bonus;C().rep+=8;C().pullTitles=(C().pullTitles||[]).concat([{k,season:s.season,w:C().week}]);logEvent(`Champion: ${C0.n} pulling series, season ${s.season} — ${fmt$(bonus)} bonus, +8 rep, a cup for the shop`,"good");try{ENGINE_VIS.buildGarage(garageOwned());}catch(e){}}
+  setTimeout(()=>toast(`SERIES CHAMPION · ${C0.n}${career()?" · "+fmt$(bonus):""}`),3200);}
+function pullStandHtml(st,o){o=o||{};const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,"");const rows=o.short?st.filter((x,i)=>i<4||x.me):st;
+  return `<div class="pstand"><span></span><span class="h">${o.title||"Standings"}</span><span class="h">pts</span><span class="h">W · full</span>${rows.map(x=>{const i=st.indexOf(x);return `<b>${i+1}</b><span class="nm${x.me?" me":""}">${x.me?"▶ ":""}${esc(x.n)}${o.champ&&i===0?` <i class="champ">CHAMPION</i>`:""}</span><span class="${x.me?"me":""}">${x.pts}</span><span>${x.wins} · ${x.fulls}</span>`;}).join("")}</div>`;}
+function pullSerCard(z){const C0=SIM.PULL_CLASSES[z.k];
+  return `<div class="sec"><h2>Pulling series <span class="cnt">${C0?C0.n:""} · season ${z.season} · round ${z.round} of ${z.n}</span></h2><p class="hint">${z.done?(z.champMe?`<b style="color:var(--good)">Series champion.</b> ${career()?"The cup goes on the shop shelf and the bonus is in the account.":"It's in the records."}`:`<b>Season over</b> — ${String(z.champ).replace(/[&<>"]/g,"")} takes the title. A new season starts with the next round.`):`<b>+${z.pts} points</b> tonight.`} Points by place ${PULL_PTS.slice(0,4).join(", ")}… plus ${PULL_FULL_PTS} for a full pull; a DQ scores nothing. Ties go to wins, then full pulls, then the latest round.</p>${pullStandHtml(z.stand,{champ:z.done})}</div>`;}
+/* standings and titles on the Records card: rows in the records' own five-column format */
+function pullSerRecHtml(){const st=pullSerStore(),R=recs(),T=Array.isArray(R.pullTitles)?R.pullTitles:[],esc=v=>String(v==null?"":v).replace(/[&<>"]/g,"");let h="";
+  Object.keys(st).filter(k=>SIM.PULL_CLASSES[k]&&st[k]&&st[k].round>0).forEach(k=>{const s=st[k],sd=pullStand(s);
+    h+=`<div class="rtop"><span>Pulling series · ${SIM.PULL_CLASSES[k].n} · season ${s.season} · ${s.done?"final":"round "+s.round+" of "+PULL_SER_N}</span>${sd.map((x,i)=>`<div><b>${i+1}</b><span class="et">${x.pts}</span><span>${x.wins}W ${x.fulls}F</span><span class="nm"${x.me?' style="color:var(--chalk);font-weight:600"':""}>${x.me?"▶ ":""}${esc(x.n)}</span><span>${s.done&&i===0?"champ":""}</span></div>`).join("")}</div>`;});
+  if(T.length)h+=`<div class="rtop"><span>Pulling championships won · ${T.length}</span>${T.map(t=>`<div><b>★</b><span class="et">S${t.season}</span><span>${t.pts} pts</span><span class="nm">${esc(SIM.PULL_CLASSES[t.k]?SIM.PULL_CLASSES[t.k].n:t.k)}</span><span>${t.w!=null?"wk "+t.w:t.d?new Date(t.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`).join("")}</div>`;
+  return h;}
+/* gates before a hook: a pending pull-off is conceded by leaving the dirt or swapping engines; a series round is weekly in career */
+function pullGate(){if(PO&&(S.env.testType!=="pull_sled"||cfgHash(S.cfg)!==PO.hash)){const away=S.env.testType!=="pull_sled";poConcede(away?"Pull-off conceded — you left the dirt":"Pull-off conceded — that's a different engine");return !away;}
+  if(!PO&&S.env.testType==="pull_sled"&&pullFmt()==="series"&&career()){const s=pullSerStore()[S.env.pullCls];if(s&&!s.done&&s.lastWeek===C().week){toast(`Round ${s.round+1} of the series runs next week — Pull night is open tonight`);return true;}}
+  return false;}
+function poConcede(why){if(!PO)return;const P0=PO;PO=null;const r=Object.assign({},P0.r1,{reasons:(P0.r1.reasons||[]).concat(["Conceded the pull-off — placed behind the trucks that pulled it."])});
+  pullSettle(r,{k:P0.k,res:P0.res,env:P0.env,field:P0.field,isPO:true,first:P0.r1,po:0,failed:false,fmt:P0.fmt,ev:P0.ev,veh:P0.veh,fseed:P0.fseed,conceded:true});if(why)setTimeout(()=>toast(why),60);}
+function pullRunBtn(){if(testing)return;const b=$("runTest");if(PO)b.textContent="Hook up · PULL-OFF · sled +15%";else if(pullFmt()==="series"){const s=pullSerPeek(S.env.pullCls);b.textContent=b.textContent.replace("truck pull",`series round ${s.round+1} of ${PULL_SER_N}`);}}
+function pullEnvTop(k){const fmt=pullFmt(),dk=document.documentElement.classList.contains("desk");let h="";
+  if(PO)h+=`<div class="pobanner"><b>PULL-OFF — the sled is heavier</b>${PO.n} other${PO.n>1?"s":""} full-pulled too. The box is set 15% heavier and the longest pull-off wins. Pits are open: gear, driveline, tyres, hitch and ballast. Class and engine are locked — leaving the dirt or swapping the engine concedes.</div>`;
+  const F=career()?[["night","Pull night","purse · changing dirt"],["series","Points series",PULL_SER_N+" rounds · one a week"]]:[["practice","Practice","neutral dirt"],["night","Pull night","draw · changing dirt"],["series","Points series",PULL_SER_N+" rounds"]];
+  if(!PO)h+=`<div class="lbl"><span>Format</span></div><div class="seg">${F.map(([id,n,d])=>`<button data-pk="pullFmt" data-pv="${id}" class="${fmt===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  const pv=PO?{track:poTrack()}:pullEvent(k,pullSeed(k,true),false),t=pv.track;
+  h+=`<p class="hint">${t?`<b>Track: ${pullTrkName(t)}</b> · ${PO?"re-worked for the pull-off":`you draw ${ordN(pv.draw+1)} of ${pv.n}`} · moisture ${Math.round(t.moist*100)}% · cut ${Math.round(t.cut*100)}%. ${PO?"":pv.draw<pv.n/3?"Early, on fresh wet dirt: more bite, less speed.":pv.draw>=pv.n*2/3?"Late: the dirt has dried and the ruts are in — less grip at the heavy end.":"Middle of the order."} The crew re-preps between classes.`:`<b>Track: practice · neutral</b> — the same dirt every hook.`}${pv.ser?` <b>Series</b> · season ${pv.ser.season}, round ${pv.ser.round+1} of ${PULL_SER_N}${career()&&pv.ser.lastWeek===C().week?" — the next round is next week":""}.`:""}</p>`;
+  const ra=pullRaRisk();if(ra&&ra.p>0)h+=`<p class="hint"><b style="color:${ra.lvl==="high"?"var(--crit)":ra.lvl==="moderate"?"var(--warn)":"var(--muted)"}">Runaway risk: ${ra.lvl}</b> — ${ra.why.join(" / ")}. If it runs away on its own oil the pedal does nothing: hit KILL${dk?" (or K)":""} within about ${(Math.round(pClamp(2.4-1.2*ra.p,1.5,2.4)*10)/10).toFixed(1)} s or it grenades. The kill switch is also on a cable to the sled: if the hitch ever breaks away, it pulls itself.</p>`;
+  if(pv.ser&&pv.ser.round>0)h+=pullStandHtml(pullStand(pv.ser),{short:true,title:"Series standings"});
+  return h;}
 function pullClsLocked(k){const c=SIM.PULL_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 function pullLegal(k,cfg){const c=SIM.PULL_CLASSES[k];if(!c)return{ok:false,why:"no such class"};try{return c.legal(cfg||S.cfg);}catch(e){return{ok:false,why:"can't be teched"};}}
 /* the pull setup lives on S.env next to the strip's; anything a class doesn't allow is pulled back inside its rules */
-function pullEnvFix(){const e=S.env;if(!SIM.PULL_CLASSES[e.pullCls])e.pullCls=pullIsDiesel(S.cfg)?"street":"gas";const k=e.pullCls,V=SIM.PULL_CLASSES[k].veh,G=SIM.pullGears(k);
+function pullEnvFix(){const e=S.env;if(PO)e.pullCls=PO.k;if(!SIM.PULL_CLASSES[e.pullCls])e.pullCls=pullIsDiesel(S.cfg)?"street":"gas";const k=e.pullCls,V=SIM.PULL_CLASSES[k].veh,G=SIM.pullGears(k);
   if(!V.tyres.includes(e.pullTyre))e.pullTyre=V.tyres[V.tyres.length-1];
   e.pullGear=Math.max(0,Math.min(G.length-1,Math.round(isFinite(+e.pullGear)&&e.pullGear!==""&&e.pullGear!=null?+e.pullGear:2)));
   if(e.pullTrans!=="clutch")e.pullTrans="conv";
@@ -19154,17 +19335,20 @@ function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed
   for(let i=0;i<n;i++){const nm=names.splice(Math.floor(r()*names.length),1)[0];const full=r()<F.full;const gs=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());
     out.push({n:nm,full,ft:full?300:Math.round(Math.max(110,Math.min(299.5,F.med+gs*F.sd))*10)/10});}
   return out;}
-function pullSeed(k){const ix=Object.keys(SIM.PULL_CLASSES).indexOf(k)+1;if(!career())return Math.floor(Math.random()*1e9);if(!C().pullSeed)C().pullSeed=Math.floor(Math.random()*1e9);return(C().pullSeed^(C().week*7919)^(ix*104729))>>>0;}
+function pullSeed(k){const ix=Object.keys(SIM.PULL_CLASSES).indexOf(k)+1;if(!career())return PULL_SB[ix]||(PULL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().pullSeed)C().pullSeed=Math.floor(Math.random()*1e9);return(C().pullSeed^(C().week*7919)^(ix*104729))>>>0;}
 function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 function pullBreak(kind){PR.failed=true;PR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 function pullStart(){
   $("app").classList.add("onstrip");
   const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
-  const hk=hKey(cfgHash(S.cfg)),veh=pullVeh(k),fseed=pullSeed(k);veh.seed=career()?(fseed+7919*(C().pullHooks=(C().pullHooks||0)+1))>>>0:Math.floor(Math.random()*1e9);
+  const hk=hKey(cfgHash(S.cfg)),veh=pullVeh(k),fseed=PO?PO.fseed:pullSeed(k);veh.seed=career()?(fseed+7919*(C().pullHooks=(C().pullHooks||0)+1))>>>0:Math.floor(Math.random()*1e9);
   if(wi&&wi.w>=1)veh.wornAt=2+Math.random()*4;
-  const p=SIM.pullRun(res,veh),field=pullField(k,fseed);
-  PR={p,res,env,veh,k,hk,field,fseed,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,lead:Math.max(...field.map(f=>f.ft)),kind:SIM.PULL_CLASSES[k].veh.kind};
+  const ev=PO?{fmt:PO.fmt,field:PO.field,track:poTrack(),draw:null,n:PO.field.length+1}:pullEvent(k,fseed,true);
+  if(ev.track)veh.track=ev.track;if(PO)veh.sledK=1.15;   // the night's dirt; the pull-off sled
+  const ra=SIM.pullRunaway?SIM.pullRunaway(res,S.cfg,wi?wi.w:0):{p:0};if(ra.p>0)veh.runaway={p:ra.p};if(window.PULL_FORCE_RA===false)delete veh.runaway;else if(window.PULL_FORCE_RA!=null)veh.runaway={p:1,at:+window.PULL_FORCE_RA};   // PULL_FORCE_RA: test hook — seconds of load, or false for never
+  const p=SIM.pullRun(res,veh),field=ev.field;
+  PR={p,res,env,veh,k,hk,field,fseed,ev,fmt:ev.fmt,po:!!PO,trk:ev.track,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,lead:Math.max(...field.map(f=>f.ft)),kind:SIM.PULL_CLASSES[k].veh.kind};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("pullCtl").style.display="";$("pullBtn").dataset.k="";pullBtnText("HOLD TO PULL","let go to ease off — keep the slip in the green");$("pullBtn").disabled=false;
   $("testProg").classList.remove("done");sfx("start");pullHud(p.st);
   // the button and the card have to be under the thumb: bring them up above the tab bar
@@ -19172,12 +19356,14 @@ function pullStart(){
   const step=()=>{if(!PR||PR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-PR.last)/1000);PR.last=now;
     const st=p.step(dt,PR.down&&!PR.failed?1:0);
     if(st.broke&&!PR.failed)pullBreak(st.broke);
+    if(st.raOn&&!PR.raSeen&&!st.killed&&!st.done&&!PR.failed){PR.raSeen=true;sfx("runaway");buzz([120,60,120,60,120]);
+      pullHud(st);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
     if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){$("flash").style.background="rgba(79,192,141,.35)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
-    if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:st.phase,x:st.x,v:st.v,boxFrac:st.boxFrac,slip:st.slip,hop:st.hop,smoke:st.smoke||0,rpm:PR.failed?run.rpm:st.rpm,vehicle:PR.kind,full:st.full,night:!!S.night,cls:k,distFt:st.x*3.28084,
-      dt,throttle:st.foot,boost:st.boost,sweet:st.sweet,failed:PR.failed,failKind:PR.failed?run.failKind:null,hitch:veh.hitch,ballast:veh.ballast,tyre:veh.tyre});
+    if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:st.phase,x:st.x,v:st.v,boxFrac:st.boxFrac,slip:st.slip,hop:st.hop,smoke:st.smoke||0,rpm:PR.failed||PR.killed?run.rpm:st.rpm,vehicle:PR.kind,full:st.full,night:!!S.night,cls:k,distFt:st.x*3.28084,
+      dt,throttle:st.foot,boost:st.boost,sweet:st.sweet,failed:PR.failed,failKind:PR.failed?run.failKind:null,hitch:veh.hitch,ballast:veh.ballast,tyre:veh.tyre,track:PR.trk||undefined,runaway:st.raOn&&!st.killed&&!PR.failed?Math.max(0.2,st.ra):0,killed:!!st.killed});
     pullHud(st);
     run.on=true;
-    if(PR.failed)run.rpm=Math.max(0,run.rpm-380);else if(st.done)run.rpm+=(veh.idle-run.rpm)*Math.min(1,dt*3);else run.rpm=st.rpm;
+    if(PR.failed||PR.killed)run.rpm=Math.max(0,run.rpm-380);else if(st.done)run.rpm+=(veh.idle-run.rpm)*Math.min(1,dt*3);else run.rpm=st.rpm;
     run.load=PR.failed||st.done?0:st.foot;
     $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
     $("testProg").style.width=Math.min(100,100*st.x/SIM.PULL_FULL)+"%";
@@ -19188,23 +19374,34 @@ function pullStart(){
 /* the live card: distance first, then the two things the driver's foot is managing — slip and the box */
 function pullHud(st){if(!PR)return;const ft=st.x*3.28084,sw=st.sweet,lo=Math.round(sw[0]*100),hi=Math.round(sw[1]*100),sp=Math.round(st.slip*100);
   const stat=PR.failed?"broke":st.full?"full":"";
-  const say=PR.failed?"BROKE":st.full?"FULL PULL":st.done?(st.stopWhy==="spun"?"spun out":st.stopWhy==="lifted"?"lifted":"stopped"):st.phase==="stage"?"hooked to the sled":Math.round(st.v*2.237)+" mph";
+  const say=PR.failed?(PR.failKind==="runaway"?"GRENADED":"BROKE"):st.killed?(st.done?"killed":"KILLED — rolling"):st.raOn?"RUNAWAY":st.full?"FULL PULL":st.done?(st.stopWhy==="spun"?"spun out":st.stopWhy==="lifted"?"lifted":"stopped"):st.phase==="stage"?"hooked to the sled":Math.round(st.v*2.237)+" mph";
   const marks=PR.field.map(f=>`<i class="mk${f.ft===PR.lead?" lead":""}" style="left:${Math.min(99.5,f.ft/3)}%"></i>`).join("");
   const bT=PR.res.boostTarget||0;
-  $("pullLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${ft.toFixed(1)}<i>ft</i></b><span>${say}${st.phase!=="stage"&&!st.done?"<br>"+st.t.toFixed(1)+" s":""}</span></div>
-    <div class="ph-bar"><i class="fill" style="width:${Math.min(100,ft/3)}%"></i>${marks}</div><div class="ph-lbl"><span>0</span><span>leader <b>${PR.lead>=300?"FULL":PR.lead.toFixed(1)+" ft"}</b></span><span>300 ft</span></div></div>
+  const raOn=st.raOn&&!st.killed&&!st.done&&!PR.failed,rl=PR.veh.redline;
+  $("pullLive").innerHTML=`${PR.po?`<div class="ph pobanner"><b>PULL-OFF</b>the sled is heavier — +15% on the box</div>`:""}${raOn?`<div class="ph rawarn"><div class="ph-lbl" style="margin-top:0"><span><b>RUNAWAY</b> · ${Math.round(st.rpm/10)*10} rpm</span><span>redline ${rl}</span></div><div class="ph-bar"><i class="fill ra" style="width:${Math.min(100,Math.round(100*(st.rpm-rl*0.8)/(rl*0.75)))}%"></i><i class="mk lead" style="left:${Math.round(100*0.2/0.75)}%"></i></div><div class="ph-lbl"><span>pedal does nothing — hit KILL${document.documentElement.classList.contains("desk")?" (K)":""}</span><span><b>${Math.max(0,st.raWin-st.raT).toFixed(1)} s</b></span></div></div>`:""}<div class="ph"><div class="ph-top ${stat}"><b>${ft.toFixed(1)}<i>ft</i></b><span>${say}${st.phase!=="stage"&&!st.done?"<br>"+st.t.toFixed(1)+" s":""}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${Math.min(100,ft/3)}%"></i>${marks}</div><div class="ph-lbl"><span>0</span><span>leader <b>${PR.lead>=300?"FULL":PR.lead.toFixed(1)+" ft"}</b></span><span>300 ft</span></div>${PR.trk?`<div class="ph-lbl"><span>Track <b>${pullTrkName(PR.trk)}</b></span><span>${PR.po?"re-worked":"draw "+ordN((PR.ev.draw||0)+1)+" of "+PR.ev.n}</span></div>`:""}</div>
     <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>Wheel slip <b>${sp}%</b></span><span>sweet ${lo}–${hi}%</span></div>
     <div class="ph-bar"><i class="sw" style="left:${lo}%;width:${hi-lo}%"></i><i class="nd ${st.slip>sw[1]+0.1?"hot":st.slip>=sw[0]&&st.slip<=sw[1]+0.02?"ok":""}" style="left:${Math.min(99,sp)}%"></i></div>
     <div class="ph-lbl"><span>Sled box <b>${Math.round(st.boxFrac*100)}%</b> to the pan</span><span>${st.hop>0.3?`<b style="color:var(--warn)">HOPPING</b>`:st.lift>0.85?`<b style="color:var(--warn)">front light</b>`:""}</span></div>
     <div class="ph-bar"><i class="fill" style="width:${Math.round(st.boxFrac*100)}%"></i></div></div>
     <div class="ph-row"><div class="peak"><b>${Math.round(st.rpm/10)*10}</b><span>rpm</span></div><div class="peak"><b>${bT>0?bv(st.boost):"—"}<i>${bT>0?pU():""}</i></b><span>boost</span></div><div class="peak"><b style="color:${st.egt>900?"var(--crit)":st.egt>780?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>EGT</span></div></div>`;
-  if(PR.failed)pullBtnText(PR.failKind==="turbo"?"TURBO GONE":PR.failKind==="piston"?"MELTED A PISTON":"BROKE","tap to skip");
+  const kb=$("killBtn");if(kb.style.display!==(raOn?"":"none"))kb.style.display=raOn?"":"none";
+  if(PR.failed)pullBtnText(PR.failKind==="runaway"?"GRENADED · DQ":PR.failKind==="turbo"?"TURBO GONE":PR.failKind==="piston"?"MELTED A PISTON":"BROKE","tap to skip");
+  else if(st.killed)pullBtnText(st.done?`KILLED · ${ft.toFixed(1)} FT`:"KILLED","good kill — tap to skip");
+  else if(raOn)pullBtnText("RUNAWAY","the pedal does nothing — hit the kill switch");
   else if(st.done)pullBtnText(st.full?"FULL PULL!":`${ft.toFixed(1)} FT`,"tap to skip");
   else if(st.phase==="stage")pullBtnText("HOLD TO PULL","let go to ease off — keep the slip in the green");
   else if(PR.down)pullBtnText(st.slip>sw[1]+0.1?"SPINNING — EASE OFF":"ON IT",st.slip>sw[1]+0.1?"let go a moment, then back on":"hold the slip in the green");
   else pullBtnText("EASED OFF","hold to get back on it");}
 function pullPress(){if(!PR||PR.finished)return;const st=PR.p.st;if(st.done||PR.failed){pullSkip();return;}PR.down=true;if(st.phase==="stage")buzz([20]);}
 function pullRelease(){if(!PR)return;PR.down=false;}
+/* the kill switch: only live while it is running away. Air and fuel off — the truck rolls to a stop and is scored there */
+function pullKill(){if(!PR||PR.finished||!PR.p)return false;const st=PR.p.st;if(!st.raOn||st.killed||st.done||PR.failed||!PR.p.kill())return false;
+  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",160);pullHud(st);return true;}
+$("killBtn").addEventListener("pointerdown",e=>{e.preventDefault();pullKill();});
+$("killBtn").addEventListener("click",()=>pullKill());
+/* the pull-off buttons on the verdict */
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-po]");if(!b||testing)return;if(b.dataset.po==="go"&&PO){S.env.testType="pull_sled";$("runTest").click();}else if(b.dataset.po==="concede")poConcede("Pull-off conceded");});
 function pullSkip(){if(!PR||PR.finished)return;if(ENGINE_VIS.pullSkip)ENGINE_VIS.pullSkip();PR.skip=true;}
 (()=>{const b=$("pullBtn");
   b.addEventListener("pointerdown",e=>{e.preventDefault();PR&&(PR.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}pullPress();});
@@ -19218,36 +19415,49 @@ function pullFinish(){
   if(!PR||PR.finished)return;PR.finished=true;const {p,res,env,k}=PR;const r=p.result();const failed=PR.failed;const C0=SIM.PULL_CLASSES[k];
   setTimeout(()=>{if(!testing){if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});$("app").classList.remove("onstrip");}},2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("pullCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
-  // a full pull against other full pulls goes to a pull-off: same truck, sled set 15% heavier, the best foot on the night
-  let po=null;const fulls=PR.field.filter(f=>f.full);
-  if(r.full&&!failed&&fulls.length){po=SIM.pullPass(res,Object.assign({},PR.veh,{sledK:1.15,noFail:true,wornAt:0}),"feather").distFt;const rr=pullRand(PR.fseed+99);fulls.forEach(f=>{f.po=Math.round((232+rr()*58)*10)/10;});}
-  const me={n:engineName().slice(0,26),ft:r.distFt,full:r.full,po,me:true};
-  const rows=PR.field.map(f=>({n:f.n,ft:f.ft,full:f.full,po:f.po!=null?f.po:null})).concat([me]).sort((a,b)=>b.ft-a.ft||((b.po||0)-(a.po||0))||(a.me?-1:b.me?1:0));
-  r.field=rows;r.place=rows.indexOf(me)+1;r.of=rows.length;r.pullOff=po;r.clsName=C0.n;r.tier=C0.tier;r.gearName=(SIM.pullGears(k)[PR.veh.gear]||[""])[0];
-  if(failed){r.broke=r.broke||PR.failKind;r.failKind=r.failKind||PR.failKind;}
-  pullPb(r,failed);
-  res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?PR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
-  const pl=ordN(r.place)+" of "+r.of,dist=r.full?"FULL PULL":r.distFt.toFixed(1)+" ft";
-  if(career()){addWear(0.6+Math.min(1,r.time/30)*0.4+(r.peakEgt>850?0.3:0));
-    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
-    else{const purse=Math.round((PULL_PURSE[r.place-1]||0)*(PULL_PAY[C0.tier]||1)/10)*10,rep=(PULL_REP[r.place-1]||0)+(r.full?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
-      logEvent(`Pull: ${C0.n} — ${dist}${po!=null?" (pull-off "+po.toFixed(1)+" ft)":""}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
-    spEvent("pull",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
+  // a full pull against other full pulls goes to a pull-off: the same truck on a sled set 15% heavier — and the player drives it
+  const isPO=!!PR.po,P0=PO,fulls=PR.field.filter(f=>f.full);
+  if(!isPO&&r.full&&!failed&&fulls.length){const rr=pullRand(PR.fseed+99);fulls.forEach(f=>{f.po=Math.round((232+rr()*58)*10)/10;});
+    PO={k,r1:r,res,env,field:PR.field,fseed:PR.fseed,ev:PR.ev,fmt:PR.fmt,veh:PR.veh,hash:cfgHash(S.cfg),n:fulls.length};}
+  else if(isPO)PO=null;
+  const ctx={k,res,env,field:isPO?P0.field:PR.field,isPO,first:isPO?P0.r1:r,po:isPO?(failed?0:r.distFt):null,failed,failKind:PR.failKind,fmt:PR.fmt,ev:PR.ev,veh:PR.veh,fseed:PR.fseed,pending:!!PO&&!isPO};
+  PR.p=null;pullSettle(r,ctx);
+}
+function pullSettle(r,c){const {k,res,env,failed}=c,C0=SIM.PULL_CLASSES[k],f1=c.first,dq=r.broke==="runaway"&&!c.isPO;   // grenaded on a hook: disqualified
+  const me={n:engineName().slice(0,26),ft:f1.distFt,full:f1.full,po:c.po,me:true,dq};
+  const rows=c.field.map(f=>({n:f.n,ft:f.ft,full:f.full,po:f.po!=null?f.po:null})).concat([me]).sort((a,b)=>(a.dq?1:0)-(b.dq?1:0)||b.ft-a.ft||((b.po||0)-(a.po||0))||(a.me?-1:b.me?1:0));
+  r.field=rows;r.place=rows.indexOf(me)+1;r.of=rows.length;r.pullOff=c.po;r.clsName=C0.n;r.tier=C0.tier;r.gearName=(SIM.pullGears(k)[c.veh.gear]||[""])[0];
+  r.dq=dq;r.fmt=c.fmt;r.draw=c.ev&&c.ev.draw;r.hooks=c.ev&&c.ev.n;r.poPending=!!c.pending;r.poN=c.pending&&PO?PO.n:0;if(c.isPO){r.poRun=!c.conceded;r.conceded=!!c.conceded;r.first=f1.distFt;}
+  if(failed){r.broke=r.broke||c.failKind;r.failKind=r.failKind||c.failKind;}
+  if(!c.isPO)pullPb(r,failed);
+  if(!r.poPending&&c.fmt==="series")pullSerScore(k,rows,r);
+  res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?c.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  const pl=ordN(r.place)+" of "+r.of,dist=f1.full?"FULL PULL":f1.distFt.toFixed(1)+" ft",kill=r.runaway&&r.runaway.killed;
+  if(career()){if(!c.conceded)addWear(0.6+Math.min(1,r.time/30)*0.4+(r.peakEgt>850?0.3:0));
+    if(r.poPending){logEvent(`Pull: ${C0.n} — FULL PULL, pull-off against ${r.poN}`,"good");toast(`FULL PULL · PULL-OFF against ${r.poN}`);}
+    else if(dq){const bill=Math.max(1500,Math.round((res.cost||5000)*0.4/50)*50);r.bill=bill;C().cash-=bill;C().cert=null;C().rep=Math.max(0,C().rep-3);addWear(3);
+      logEvent(`Pull: ${C0.n} — ran away and grenaded at ${r.distFt.toFixed(0)} ft, DQ. Rebuild ${fmt$(bill)}`,"bad");toast(`GRENADED · DQ · rebuild ${fmt$(bill)}`);}
+    else if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
+    else{const purse=Math.round((PULL_PURSE[r.place-1]||0)*(PULL_PAY[C0.tier]||1)/10)*10,rep=(PULL_REP[r.place-1]||0)+(f1.full?1:0)+(kill?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
+      logEvent(`Pull: ${C0.n} — ${dist}${c.po!=null?" (pull-off "+(c.conceded?"conceded":c.po.toFixed(1)+" ft")+")":""}${kill?", good kill":""}, ${pl}${r.ser?", series +"+r.ser.pts+" pts":""}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${kill?" · good kill":""}${purse?" · "+fmt$(purse):""}`);}
+    if(!r.poPending)spEvent("pull",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
     hud();checkGoals();}
-  else toast(failed?`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`:`${dist} · ${pl}`);
-  PR.p=null;achCheck({type:"pull",r,failed});save();recompute();renderTest();
+  else toast(r.poPending?`FULL PULL · PULL-OFF against ${r.poN}`:dq?`GRENADED · DQ`:failed?`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`:`${dist} · ${pl}${kill?" · good kill":""}`);
+  if(!career()&&!r.poPending)delete PULL_SB[Object.keys(SIM.PULL_CLASSES).indexOf(k)+1];   // a new night next hook
+  if(!r.poPending)achCheck({type:"pull",r:Object.assign({},r,{full:f1.full}),failed});   // a pull-off counts the first hook's full pull
+  save();recompute();renderTest();
   revealVerdict();
 }
 /* records: the longest clean pull per class */
 function pullPb(r,failed){if(ff||failed)return;const R=recs();if(!R.pull||typeof R.pull!=="object")R.pull={};const was=R.pull[r.cls];
   if(was&&!(r.distFt>was.ft))return;R.pull[r.cls]=Object.assign({ft:r.distFt,full:r.full},recTag());
   if(was){r.pb={was:was.ft};setTimeout(()=>toast(`CLASS BEST · ${r.full?"FULL PULL":r.distFt.toFixed(1)+" ft"} (was ${was.ft.toFixed(1)})`),2700);}}
-function pullRecHtml(){const R=recs(),P=R.pull;if(!P||typeof P!=="object")return"";const ks=Object.keys(SIM.PULL_CLASSES).filter(k=>P[k]);if(!ks.length)return"";const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
-  return `<div class="rtop"><span>Truck pull · longest per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.full?"✓":"·"}</b><span class="et">${e.full?"FULL":e.ft.toFixed(1)}</span><span>${e.full?"300 ft":"ft"}</span><span class="nm" title="${esc(e.n)}">${esc(SIM.PULL_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+function pullRecHtml(){const R=recs(),P=R.pull,sr=pullSerRecHtml();if(!P||typeof P!=="object")return sr;const ks=Object.keys(SIM.PULL_CLASSES).filter(k=>P[k]);if(!ks.length)return sr;const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  return `<div class="rtop"><span>Truck pull · longest per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.full?"✓":"·"}</b><span class="et">${e.full?"FULL":e.ft.toFixed(1)}</span><span>${e.full?"300 ft":"ft"}</span><span class="nm" title="${esc(e.n)}">${esc(SIM.PULL_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`+sr;}
 function pullHint(){const c=SIM.PULL_CLASSES;return career()?`<b>Pull night</b> · $150 entry. Needs a certified engine — no shop upgrade, this is a county-fair event. ${c.street.n} and ${c.gas.n} are open to anyone; ${c.smoker26.n} at ${c.smoker26.rep} rep, ${c.hotfarm.n} at ${c.hotfarm.rep}, ${c.superstock.n} at ${c.superstock.rep}. Purse by placing — 1st pays ${fmt$(PULL_PURSE[0])} in the street classes, up to ${fmt$(PULL_PURSE[0]*PULL_PAY[4])} in Super Stock. Every hook is wear on the build.`
   :`<b>Sled</b> · hold the button for throttle, let go to ease off. The box slides up the sled toward the pan as you go, so the drag keeps building — keep the wheel slip in the green band and carry speed into the heavy end. 300 ft is a full pull.`;}
 function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C0.veh,G=SIM.pullGears(k),lg=pullLegal(k),lk=pullClsLocked(k);
-  let h=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.PULL_CLASSES).map(([id,c])=>{const L=pullLegal(id),l=pullClsLocked(id);return `<button data-pk="pullCls" data-pv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small style="color:${l?"":L.ok?"var(--good)":"var(--crit)"}">${l?l+" rep":(L.ok?"✓ legal":"✗ "+L.why)}</small></button>`;}).join("")}</div>`;
+  let h=pullEnvTop(k)+`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.PULL_CLASSES).map(([id,c])=>{const L=pullLegal(id),l=pullClsLocked(id);return `<button data-pk="pullCls" data-pv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small style="color:${l?"":L.ok?"var(--good)":"var(--crit)"}">${l?l+" rep":(L.ok?"✓ legal":"✗ "+L.why)}</small></button>`;}).join("")}</div>`;
   h+=`<p class="hint"><b style="color:${lg.ok?"var(--good)":"var(--crit)"}">${lg.ok?"✓ Legal":"✗ Not legal"}</b> · ${lg.why}. ${C0.d[0].toUpperCase()+C0.d.slice(1)}. ${V.kind==="tractor"?"Two-wheel-drive tractor":"Four-wheel-drive pickup"}, ${V.mass.toLocaleString("en-CA")} kg empty, ${V.maxMass.toLocaleString("en-CA")} kg class limit. Sled: ${C0.sled.box.toLocaleString("en-CA")} kg box that rides up onto the pan.${lk?` <b>Opens at ${lk} rep.</b>`:""}</p>`;
   h+=`<div class="lbl"><span>Pulling gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-pk="pullGear" data-pv="${i}" class="${+e.pullGear===i?"on":""}">${n}<small>${mph} mph</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Driveline</span></div><div class="seg">${[["conv","Converter","multiplies torque when it bogs"],["clutch","Clutch","direct · less heat, no help low"]].map(([id,n,d])=>`<button data-pk="pullTrans" data-pv="${id}" class="${e.pullTrans===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
@@ -19256,6 +19466,7 @@ function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C
   h+=`<p class="hint">A higher hitch plants the rear tyres but lifts the nose — past a point the front hops and the grip goes with it. Weight on the front bracket holds it down${V.drive==="rwd"?", though on a two-wheel-drive tractor it takes a little off the rear":" and the front axle pulls too"}. A tall gear carries speed into the heavy end; a short one digs if you stay flat on it.</p>`;
   return h;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-pk]");if(!b)return;const k=b.dataset.pk,v=b.dataset.pv;
+  if(PO&&(k==="pullCls"||k==="pullFmt")&&v!==S.env[k]){toast("Locked for the pull-off — concede it first");return;}
   if(k==="pullCls"){const l=pullClsLocked(v);if(l){toast(`${SIM.PULL_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.pullCls)S.env.pullGear=null;}   /* each class has its own gear ladder: start from its default, not the old button position */
   S.env[k]=k==="pullGear"?+v:v;pullEnvFix();renderEnv();save();buzz(6);});
 /* the pull sheet's trace: speed and slip against distance, the sweet spot shaded */
@@ -19271,17 +19482,19 @@ function drawPullTrace(r){const INK=getComputedStyle(document.documentElement).g
   const rm=Math.max(4000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000),em=Math.max(800,Math.ceil(Math.max(...tr.map(p=>p.egt||0))/100)*100),hasE=tr[0].egt!=null;if(hasE&&PL.rpm)line(p=>p.rpm/rm,"#e8c14a",1.3,[2,3]);if(hasE&&PL.egt)line(p=>p.egt/em,"#c58be0",1.3);
   x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("slip",padL+34,padT+12);x.fillStyle=soft;x.fillText("box",padL+62,padT+12);if(hasE&&PL.rpm){x.fillStyle="#e8c14a";x.fillText("rpm",padL+88,padT+12);}if(hasE&&PL.egt){x.fillStyle="#c58be0";x.fillText("EGT",padL+116,padT+12);}x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,padT+12);pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK);}
 function pullVerdict(res){const r=res.pull;
+  if(r.dq)return `<div class="verdict fail"><div><div class="big">RAN AWAY · GRENADED</div><p>It ran away on its own oil ${r.runaway?Math.round(r.runaway.ftAt)+" ft out":""} and came apart before the kill switch — disqualified${career()?`. Certification void, rebuild bill ${fmt$(r.bill||0)}`:""}.</p></div></div>`;
+  if(r.poPending&&PO)return `<div class="verdict pass"><div style="flex:1"><div class="big">FULL PULL · PULL-OFF</div><p>${r.poN} other${r.poN>1?"s":""} full-pulled too. The sled goes 15% heavier and you drive it again — the longest pull-off wins. Pits are open below: gear, driveline, tyres, hitch and ballast.</p><div class="pobtns"><button class="btn pri" data-po="go">Hook up for the pull-off</button><button class="btn" data-po="concede">Concede</button></div></div></div>`;
   if(res.pullFailed)return `<div class="verdict fail"><div><div class="big">${r.broke==="turbo"?"TURBO LET GO":r.broke==="piston"?"MELTED A PISTON":"BROKE UNDER THE SLED"}</div><p>${r.distFt.toFixed(1)} ft before it let go${career()?" — certification is void and reputation took a hit":""}.</p></div></div>`;
   const cls=r.full||r.place===1?"pass":r.place<=PULL_PURSE.length?"marg":"fail";   // in the money is not a loss
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${r.full?"FULL PULL":r.distFt.toFixed(1)+" ft"} · ${ordN(r.place)}</div><p>${r.clsName} · ${ordN(r.place)} of ${r.of}${r.pullOff!=null?` · pull-off ${r.pullOff.toFixed(1)} ft with the sled 15% heavier`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb?` · class best (was ${r.pb.was.toFixed(1)})`:""}</p>
-    <div class="vstats"><div><b>${r.full?"300":r.distFt.toFixed(1)}</b><span>feet</span></div><div><b>${Math.round(r.maxMph)}</b><span>top mph</span></div><div><b>${Math.round(r.peakSlip*100)}%</b><span>peak slip</span></div><div><b>${r.sweetT.toFixed(1)}</b><span>s in the band</span></div><div><b>${r.peakEgt}</b><span>peak EGT °C</span></div><div><b>${r.time.toFixed(1)}</b><span>seconds</span></div></div></div></div>`;}
-function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull",bogged:"bogged",spun:"spun out",lifted:"lifted",broke:"broke",time:"flagged"}[r.stopWhy]||"stopped";
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${r.full||r.poRun||r.conceded?"FULL PULL":r.distFt.toFixed(1)+" ft"} · ${ordN(r.place)}</div><p>${r.clsName} · ${ordN(r.place)} of ${r.of}${r.conceded?" · pull-off conceded":r.pullOff!=null?` · pull-off ${r.pullOff.toFixed(1)} ft with the sled 15% heavier`:""}${r.runaway&&r.runaway.killed?` · ran away, good kill in ${r.runaway.react.toFixed(1)} s`:r.killed?" · killed":""}${r.track?` · track ${pullTrkName(r.track)}`:""}${r.ser?` · series round ${r.ser.round}: +${r.ser.pts} pts`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb?` · class best (was ${r.pb.was.toFixed(1)})`:""}</p>
+    <div class="vstats"><div><b>${r.full?"300":r.distFt.toFixed(1)}</b><span>${r.poRun?"pull-off ft":"feet"}</span></div><div><b>${Math.round(r.maxMph)}</b><span>top mph</span></div><div><b>${Math.round(r.peakSlip*100)}%</b><span>peak slip</span></div><div><b>${r.sweetT.toFixed(1)}</b><span>s in the band</span></div><div><b>${r.peakEgt}</b><span>peak EGT °C</span></div><div><b>${r.time.toFixed(1)}</b><span>seconds</span></div></div></div></div>`;}
+function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull",bogged:"bogged",spun:"spun out",lifted:"lifted",broke:"broke",time:"flagged",killed:"killed"}[r.stopWhy]||"stopped";
   const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
   return `<div class="sec"><h2>Pull sheet</h2><div class="log"><div><b>Pull</b>${r.full?"FULL · 300 ft":r.distFt.toFixed(1)+" ft"} · ${r.maxMph} mph top · ${r.time.toFixed(1)} s · ${why}</div>
     <div><b>Setup</b>${r.clsName} · ${r.gearName} (${r.mphGear} mph) · ${v.trans==="clutch"?"clutch":"converter"} · ${r.tyre.toLowerCase()} · ${v.hitch} in hitch · ${v.ballast} kg front · ${r.ratio}:1 overall</div>
     <div><b>Tyres</b>peak slip ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s spinning${r.hopT>0?" · hopped "+r.hopT.toFixed(1)+" s":""}</div>
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
-    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>`;}
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.dq?"DQ":f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):f.me&&r.poPending?" · pull-off next":""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>${r.ser?pullSerCard(r.ser):""}`;}
 
 
 /* ===================== ROAD TEST: the engine in a car ===================== */
@@ -19814,6 +20027,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="drag"){if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(career()&&!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
   if(S.env.testType==="road"&&career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
+  if(pullGate())return;
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;abStop();renderTest();ensureSound();
@@ -20543,7 +20757,7 @@ $("importSave").addEventListener("click",()=>{$("sheetTitle").textContent="Impor
   $("doImport").addEventListener("click",()=>{let o;try{o=decodeSave($("codeIn").value);}catch(e){toast("That code didn't decode — check you copied all of it");return;}closeSheet();applyLoaded(o,"Save imported");});});
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
-function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;}return o;}
+function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
   {tab:"build",sel:"#presets",title:"Pick a starter engine",text:"The five green-tagged base engines use only parts your bay already has. Tap one — the Two-four truck four is a safe first sale."},
@@ -21161,7 +21375,7 @@ document.addEventListener("wheel",e=>{const r=e.target;if(!wheelArm||r!==wheelAr
 /* keyboard, alongside touch and mouse: Space is the hold button on the strip and the sled */
 function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySelector(".kbd")){closeSheet();return;}
   const K=(k,t)=>`<kbd>${k}</kbd><span>${t}</span>`;$("sheetTitle").textContent="Keyboard & mouse";
-  $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}
+  $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}${K("K","truck pull: the kill switch when a diesel runs away")}
     <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test (Test tab)")}${K("V","view options")}
     <h3>Panel</h3>${K("1 – 5","Build · Test · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("G","the glossary")}${K("?","this list")}
     <h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}</div>`;
@@ -21181,7 +21395,8 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
   if(e.repeat)return;
   if(k==="?"){kbHelp();e.preventDefault();return;}
   const lk=k.toLowerCase();
-  if(/^[1-5]$/.test(k)){const b=document.querySelector(`#tabs [data-tab="${TAB_KEYS[+k-1]}"]`);if(b){b.click();e.preventDefault();}}
+  if(lk==="k"&&pullKill()){e.preventDefault();}
+  else if(/^[1-5]$/.test(k)){const b=document.querySelector(`#tabs [data-tab="${TAB_KEYS[+k-1]}"]`);if(b){b.click();e.preventDefault();}}
   else if(lk==="s")$("sndBtn").click();
   else if(lk==="i"||lk==="e")$("idleBtn").click();
   else if(lk==="v")$("viewBtn").click();
