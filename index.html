@@ -5420,7 +5420,8 @@ const ENGINE_SOUND = (function () {
     try { watchAn.getFloatFrequencyData(watchBuf); } catch (e) { return null; }
     var binHz = ctx.sampleRate / watchAn.fftSize, best = -200, bi = 0, lo = -200, i;
     for (i = 1; i < watchBuf.length; i++) { if (watchBuf[i] > best) { best = watchBuf[i]; bi = i; } if (i * binHz < 420 && watchBuf[i] > lo) lo = watchBuf[i]; }
-    return { hz: Math.round(bi * binHz), db: Math.round(best), lo: Math.round(lo), state: ctx.state, sr: ctx.sampleRate };
+    var amp = 0; try { if (!peak.td) peak.td = new Float32Array(watchAn.fftSize); watchAn.getFloatTimeDomainData(peak.td); for (i = 0; i < peak.td.length; i++) amp = Math.max(amp, Math.abs(peak.td[i])); } catch (e) {}
+    return { hz: Math.round(bi * binHz), db: Math.round(best), lo: Math.round(lo), amp: +amp.toFixed(3), state: ctx.state, sr: ctx.sampleRate };   // amp: sample peak over the last ~43 ms (catches a bang)
   }   /* lite: no reverb, no valvetrain/gear layer — cheaper and never shrill on a phone speaker */
   function setQuality(q) { LITE = (q === "lite"); if (wetG && dryG) { ap(wetG.gain, LITE ? 0 : (curProf ? curProf.wet : 0.18), 0.1); ap(dryG.gain, LITE ? 1 : (1 - (curProf ? curProf.wet : 0.18) * 0.6), 0.1); } }
   var master = null, limiter = null, bus = null, conv = null, wetG = null, dryG = null;
