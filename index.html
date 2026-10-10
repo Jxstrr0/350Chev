@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.14.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.15.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -704,6 +704,9 @@ html:not(.desk) #kbHelpBtn{display:none}
         <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
         <div class="lbl"><span>Engine sound</span></div>
         <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
+        <div class="lbl"><span>Engine voice</span><b id="srcLbl">—</b></div>
+        <div class="seg n3" id="srcSeg"><button data-src="synth">Synth<small>your build</small></button><button data-src="real">Real<small>recordings</small></button><button data-src="blend">Blend<small>both</small></button></div>
+        <button class="btn sm ghost" id="sndCredBtn" style="margin:0 0 10px">Sound credits</button>
         <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
         <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
         <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
@@ -5217,7 +5220,8 @@ if (typeof window !== "undefined") window.ENGINE_SIM = ENGINE_SIM;
 <script>
 /* ============================================================================
    Prairie Engine Works v2 — ENGINE_SOUND
-   Pure Web Audio engine synthesis. No audio files, no network.
+   Pure Web Audio engine synthesis. No audio files, no network (the optional
+   recorded layer lives in ENGINE_SAMPLES below and only hooks setSynthMix/sampleHost).
    Contract: see SCHEMA.md  §ENGINE_SOUND
    ----------------------------------------------------------------------------
    Model
@@ -5754,7 +5758,9 @@ const ENGINE_SOUND = (function () {
     }
     if (N && N.rawG) ap(N.rawG.gain, SOLO === "raw" ? 0.35 : 0, 0.05);
   }
-  function soloGain(layer) { if (SOLO === "all" || SOLO === "nolimiter") return 1; if (SOLO === "raw") return 0; return SOLO === layer ? 1 : 0; }
+  function soloGain(layer) { if (SOLO === "all" || SOLO === "nolimiter") return SYNTH_MIX; if (SOLO === "raw") return 0; return SOLO === layer ? 1 : 0; }
+  /* ENGINE_SAMPLES (recorded layer) ducks the synth's core voice (exhaust, sub, intake, mech) by this; 1 = synth alone */
+  var SYNTH_MIX = 1;
   function peak() {
     if (!ctx || !watchAn || !watchBuf) return null;
     try { watchAn.getFloatFrequencyData(watchBuf); } catch (e) { return null; }
@@ -6580,6 +6586,9 @@ const ENGINE_SOUND = (function () {
     // extras (harmless additions, not part of the contract)
     LAYOUTS: LAY,
     deriveProfile: deriveProfile,
+    // recorded-sample layer hooks (ENGINE_SAMPLES): duck the synth core, and read where to plug in
+    setSynthMix: function (m) { m = +m; SYNTH_MIX = isFinite(m) ? clamp(m, 0, 1) : 1; },
+    sampleHost: function () { return { ctx: ctx, bus: bus, running: running && !!N, dead: dead, solo: SOLO, lite: LITE, diesel: !!st.diesel }; },
     get context() { return ctx; },
     get isRunning() { return running; }
   };
@@ -6589,6 +6598,285 @@ if (typeof module !== "undefined") module.exports = ENGINE_SOUND;
 if (typeof window !== "undefined") window.ENGINE_SOUND = ENGINE_SOUND;
 
 </script>
+<!-- ENGINE_SAMPLES:BEGIN -->
+<script>
+/* ============================================================================
+   Prairie Engine Works — ENGINE_SAMPLES  (real recorded engine layer)
+   ----------------------------------------------------------------------------
+   Openly licensed recordings (CC0 / public domain / CC BY / CC BY-SA — see
+   sounds/CREDITS.md and Settings › Sound credits), trimmed to seamless loops,
+   time-warped to one steady measured rpm. For the build on the bench the layer
+   picks the closest recorded set by layout, displacement band, fuel and
+   aspiration, plays its idle loop and its load/rev loop through
+   AudioBufferSourceNodes with playbackRate = build firing frequency / clip
+   firing frequency, crossfades them by rpm and load, and fades back to the
+   synth outside a sane pitch window (0.5–2.5×). On desktop a build that sits
+   between two size bands of the same layout hears both sets interpolated
+   (≤ 4 sources); phones use the nearest set only (≤ 2 sources).
+   It rides ENGINE_SOUND's bus (garage reverb, tone, limiter) and only asks the
+   synth to duck its core voice — exhaust options, cam lope, aspiration,
+   mechanical noise and events stay synthesized on top. Lazy: a set's two files
+   are fetched the first time that set is needed; any failure leaves the synth
+   exactly as it was.
+   ========================================================================== */
+const ENGINE_SAMPLES = (function () {
+  "use strict";
+  var BASE = "sounds/";
+  /* clip: f file, rpm measured steady rpm of the loop, cyl cylinders of the recorded
+     engine, loop [start,end] s inside the decoded file (cyclic pre/post roll, so
+     decoder padding never lands on the seam), gain trim */
+  var CLIPS = {"i3_idle":{"f":"i3_idle.mp3","src":"fs_584878","rpm":880,"cyl":3,"loop":[0.3,3.29948]},"i4_rev":{"f":"i4_rev.mp3","src":"fs_522221","rpm":2274,"cyl":4,"loop":[0.3,1.51365]},"i4b_rev":{"f":"i4b_rev.mp3","src":"fs_181460","rpm":2529,"cyl":4,"loop":[0.3,2.29261]},"i3b_idle":{"f":"i3b_idle.mp3","src":"HR12DE_March_K13_oga","rpm":824,"cyl":3,"loop":[0.3,3.36009]},"i4s_idle":{"f":"i4s_idle.mp3","src":"fs_362942","rpm":877,"cyl":4,"loop":[0.3,3.30998]},"i4_idle":{"f":"i4_idle.mp3","src":"fs_405322","rpm":1489,"cyl":4,"loop":[0.3,2.79848]},"i4t_idle":{"f":"i4t_idle.mp3","src":"Saab_900_16V_Turbo_Kaltstart_wav","rpm":1463,"cyl":4,"loop":[0.3,2.76029]},"i4hi_hi":{"f":"i4hi_hi.mp3","src":"2002_Honda_F20C_ogg","rpm":7317,"cyl":4,"loop":[0.3,1.49723]},"i6_idle":{"f":"i6_idle.mp3","src":"fs_173005","rpm":757,"cyl":6,"loop":[0.3,2.36084]},"i6old_rev":{"f":"i6old_rev.mp3","src":"Triumph_I6_engine_ogg","rpm":2285,"cyl":6,"loop":[0.3,1.08769]},"i6t_rev":{"f":"i6t_rev.mp3","src":"fs_496171","rpm":3530,"cyl":6,"loop":[0.3,2.3054]},"i6big_idle":{"f":"i6big_idle.mp3","src":"fs_466715","rpm":1419,"cyl":6,"loop":[0.3,1.48376]},"v6_idle":{"f":"v6_idle.mp3","src":"fs_840317","rpm":651,"cyl":6,"loop":[0.3,3.24741]},"v6_rev":{"f":"v6_rev.mp3","src":"NISSAN_VQ35HR_engine_ogg","rpm":4111,"cyl":6,"loop":[0.3,1.2924]},"v8x54_idle":{"f":"v8x54_idle.mp3","src":"fs_610772","rpm":999,"cyl":8,"loop":[0.3,3.30313]},"v8x57_rev":{"f":"v8x57_rev.mp3","src":"fs_391671","rpm":1444,"cyl":8,"loop":[0.3,2.29406]},"v8x50_mid":{"f":"v8x50_mid.mp3","src":"Lexus_IS_F_dynamometer_2UR_GSE_2008_ogg","rpm":3747,"cyl":8,"loop":[0.3,2.28556]},"v8xsc_hi":{"f":"v8xsc_hi.mp3","src":"fs_177184","rpm":6478,"cyl":8,"loop":[0.3,1.50401]},"v8x57_idle":{"f":"v8x57_idle.mp3","src":"fs_391671","rpm":805,"cyl":8,"loop":[0.3,3.73032]},"v8xbb_rev":{"f":"v8xbb_rev.mp3","src":"fs_127980","rpm":2265,"cyl":8,"loop":[0.3,0.88277]},"v8x62_idle":{"f":"v8x62_idle.mp3","src":"fs_637184","rpm":635,"cyl":8,"loop":[0.3,3.3217]},"v8xcam_idle":{"f":"v8xcam_idle.mp3","src":"fs_570800","rpm":1036,"cyl":8,"loop":[0.3,3.77519]},"v8f_idle":{"f":"v8f_idle.mp3","src":"fs_241083","rpm":1087,"cyl":8,"loop":[0.3,3.27941]},"v8f_rev":{"f":"v8f_rev.mp3","src":"fs_241083","rpm":1657,"cyl":8,"loop":[0.3,1.82059]},"v8f_hi":{"f":"v8f_hi.mp3","src":"fs_241083","rpm":4342,"cyl":8,"loop":[0.3,0.60404]},"v10b_idle":{"f":"v10b_idle.mp3","src":"fs_478597","rpm":1231,"cyl":10,"loop":[0.3,1.76274]},"v10a_rev":{"f":"v10a_rev.mp3","src":"fs_564373","rpm":3735,"cyl":10,"loop":[0.3,0.6534]},"v10a_idle":{"f":"v10a_idle.mp3","src":"fs_564373","rpm":1602,"cyl":10,"loop":[0.3,2.77265]},"v12_idle":{"f":"v12_idle.mp3","src":"M70_ogg","rpm":722,"cyl":12,"loop":[0.3,2.29401]},"v12_rev":{"f":"v12_rev.mp3","src":"Aston_Martin_V12_Vantage_ogg","rpm":2517,"cyl":12,"loop":[0.3,1.301]},"f4vw_idle":{"f":"f4vw_idle.mp3","src":"WWS_VolkswagenBeetle8211engine_ogg","rpm":1179,"cyl":4,"loop":[0.3,3.25213]},"f4_rev":{"f":"f4_rev.mp3","src":"fs_183654","rpm":5472,"cyl":4,"loop":[0.3,2.29569]},"f4old_idle":{"f":"f4old_idle.mp3","src":"fs_808983","rpm":918,"cyl":4,"loop":[0.3,3.30617]},"f4t_idle":{"f":"f4t_idle.mp3","src":"fs_273334","rpm":722,"cyl":4,"loop":[0.3,2.7942]},"f4_idle":{"f":"f4_idle.mp3","src":"fs_369797","rpm":833,"cyl":4,"loop":[0.3,2.74812]},"f6_mid":{"f":"f6_mid.mp3","src":"2006_Porsche_Cayman_S_engine_sound_wav","rpm":3706,"cyl":6,"loop":[0.3,2.79299]},"f6_hi":{"f":"f6_hi.mp3","src":"2006_Porsche_Cayman_S_engine_sound_wav","rpm":5193,"cyl":6,"loop":[0.3,1.80213]},"d4p_idle":{"f":"d4p_idle.mp3","src":"Peugeot_204_starten_stationair_doorgassen_en_motor_afzetten_","rpm":765,"cyl":4,"loop":[0.3,3.2795]},"d4s_rev":{"f":"d4s_rev.mp3","src":"fs_448217","rpm":2191,"cyl":4,"loop":[0.3,1.77857]},"d4s_idle":{"f":"d4s_idle.mp3","src":"fs_448217","rpm":887,"cyl":4,"loop":[0.3,2.73624]},"d4m_idle":{"f":"d4m_idle.mp3","src":"fs_264864","rpm":915,"cyl":4,"loop":[0.3,3.31594]},"d4b_idle":{"f":"d4b_idle.mp3","src":"fs_546740","rpm":649,"cyl":4,"loop":[0.3,3.25628]},"d6_idle":{"f":"d6_idle.mp3","src":"fs_610771","rpm":752,"cyl":6,"loop":[0.3,3.33154]},"d6m_mid":{"f":"d6m_mid.mp3","src":"Volvo_Penta_Motorljud_ogg","rpm":1230,"cyl":6,"loop":[0.3,3.32469]},"d6big_idle":{"f":"d6big_idle.mp3","src":"fs_637916","rpm":700,"cyl":6,"loop":[0.3,3.72846]},"d6big_rev":{"f":"d6big_rev.mp3","src":"fs_451935","rpm":1752,"cyl":6,"loop":[0.3,1.80662]},"d8n_idle":{"f":"d8n_idle.mp3","src":"Detroit62_ogg","rpm":602,"cyl":8,"loop":[0.3,2.88943]},"d8_rev":{"f":"d8_rev.mp3","src":"fs_443319","rpm":1727,"cyl":8,"loop":[0.3,0.71683]},"d8_idle":{"f":"d8_idle.mp3","src":"fs_443319","rpm":602,"cyl":8,"loop":[0.3,3.29152]},"crank":{"f":"crank.mp3","src":"fs_637184"},"crank_dsl":{"f":"crank_dsl.mp3","src":"fs_610771"}};
+  /* set: lay layouts it is recorded on (exact match), alt layouts it may stand in for,
+     L litres, fuel gas|diesel, asp na|turbo|sc, loops = clip ids from idle up to high rpm */
+  var SETS = [{"k":"i3_10","name":"I3 1.0","lay":["I3"],"L":1.0,"fuel":"gas","asp":"na","loops":["i3_idle","i4_rev","i4b_rev"]},{"k":"i3_12","name":"I3 1.2","lay":["I3"],"L":1.2,"fuel":"gas","asp":"na","loops":["i3b_idle","i4_rev","i4b_rev"]},{"k":"i4_14","name":"I4 1.4\u20131.6 economy","lay":["I4"],"L":1.5,"fuel":"gas","asp":"na","loops":["i4s_idle","i4_rev","i4b_rev"]},{"k":"i4_22","name":"I4 2.2","lay":["I4"],"L":2.2,"fuel":"gas","asp":"na","alt":{"I5":0.4},"loops":["i4_idle","i4b_rev"]},{"k":"i4t_20","name":"I4 2.0 turbo","lay":["I4"],"L":2.0,"fuel":"gas","asp":"turbo","alt":{"I5":0.45},"loops":["i4t_idle","i4b_rev","i4hi_hi"]},{"k":"i4hi_20","name":"I4 2.0 high-rev","lay":["I4"],"L":2.0,"fuel":"gas","asp":"na","hi":true,"loops":["i4s_idle","i4b_rev","i4hi_hi"]},{"k":"i6_20","name":"I6 2.0\u20132.5","lay":["I6"],"L":2.2,"fuel":"gas","asp":"na","alt":{"I5":0.4},"loops":["i6_idle","i6old_rev","i6t_rev"]},{"k":"i6_30t","name":"I6 3.0 turbo","lay":["I6"],"L":3.0,"fuel":"gas","asp":"turbo","loops":["i6_idle","i6t_rev"]},{"k":"i6_40","name":"I6 4.0","lay":["I6"],"L":4.0,"fuel":"gas","asp":"na","loops":["i6big_idle","i6t_rev"]},{"k":"v6_30","name":"V6 3.0\u20133.5","lay":["V6"],"L":3.2,"fuel":"gas","asp":"na","loops":["v6_idle","v6_rev"]},{"k":"v8x_50","name":"V8 crossplane 5.0\u20135.4","lay":["V8"],"L":5.1,"fuel":"gas","asp":"na","loops":["v8x54_idle","v8x57_rev","v8x50_mid","v8xsc_hi"]},{"k":"v8x_57","name":"V8 crossplane 5.7","lay":["V8"],"L":5.7,"fuel":"gas","asp":"na","loops":["v8x57_idle","v8x57_rev","v8xbb_rev","v8xsc_hi"]},{"k":"v8x_62","name":"V8 crossplane 6.2 (LS)","lay":["V8"],"L":6.2,"fuel":"gas","asp":"na","loops":["v8x62_idle","v8x57_rev","v8x50_mid","v8xsc_hi"]},{"k":"v8x_74","name":"V8 big-block 7.0+ (mild cam)","lay":["V8"],"L":7.4,"fuel":"gas","asp":"na","loops":["v8x54_idle","v8xbb_rev","v8xsc_hi"]},{"k":"v8x_bb","name":"V8 big-cam hot rod / big-block","lay":["V8"],"L":7.5,"fuel":"gas","asp":"na","lope":true,"loops":["v8xcam_idle","v8xbb_rev","v8xsc_hi"]},{"k":"v8f_36","name":"V8 flat-plane 3.6","lay":["V8F"],"L":3.6,"fuel":"gas","asp":"na","loops":["v8f_idle","v8f_rev","v8f_hi"]},{"k":"v10_50","name":"V10 5.0","lay":["V10"],"L":5.0,"fuel":"gas","asp":"na","loops":["v10b_idle","v10a_rev"]},{"k":"v10_52","name":"V10 5.2","lay":["V10"],"L":5.2,"fuel":"gas","asp":"na","loops":["v10a_idle","v10a_rev"]},{"k":"v12_55","name":"V12 5.0\u20136.0","lay":["V12"],"L":5.5,"fuel":"gas","asp":"na","loops":["v12_idle","v12_rev"]},{"k":"f4_14","name":"Flat-4 air-cooled 1.2\u20131.6","lay":["F4"],"L":1.4,"fuel":"gas","asp":"na","loops":["f4vw_idle","f4_rev"]},{"k":"f4_16","name":"Flat-4 1.6 vintage","lay":["F4"],"L":1.6,"fuel":"gas","asp":"na","loops":["f4old_idle","f4_rev"]},{"k":"f4_20t","name":"Flat-4 2.0 turbo","lay":["F4"],"L":2.0,"fuel":"gas","asp":"turbo","loops":["f4t_idle","f4_rev"]},{"k":"f4_25","name":"Flat-4 2.5","lay":["F4"],"L":2.5,"fuel":"gas","asp":"na","loops":["f4_idle","f4_rev"]},{"k":"f6_34","name":"Flat-6 3.4","lay":["F6"],"L":3.4,"fuel":"gas","asp":"na","loops":["f6_mid","f6_hi"]},{"k":"d4_14","name":"Diesel I4 1.4 (NA, old)","lay":["I4"],"L":1.4,"fuel":"diesel","asp":"na","alt":{"I3":0.3,"F4":0.4},"loops":["d4p_idle","d4s_rev"]},{"k":"d4_19","name":"Diesel I4 1.9 TDI","lay":["I4"],"L":1.9,"fuel":"diesel","asp":"turbo","alt":{"I3":0.3,"I5":0.3,"F4":0.4},"loops":["d4s_idle","d4s_rev"]},{"k":"d4_20m","name":"Diesel I4 2.0 marine (NA)","lay":["I4"],"L":2.0,"fuel":"diesel","asp":"na","alt":{"I3":0.3,"I5":0.3,"F4":0.4},"loops":["d4m_idle","d4s_rev"]},{"k":"d4_52","name":"Diesel I4 5.2 truck","lay":["I4"],"L":5.2,"fuel":"diesel","asp":"turbo","alt":{"I5":0.3},"loops":["d4b_idle","d4s_rev"]},{"k":"d6_59","name":"Diesel I6 5.9","lay":["I6"],"L":5.9,"fuel":"diesel","asp":"turbo","alt":{"V6":0.4,"I5":0.3,"F6":0.4},"loops":["d6_idle","d6m_mid"]},{"k":"d6_14","name":"Diesel I6 big rig 12\u201315 L","lay":["I6"],"L":14.0,"fuel":"diesel","asp":"turbo","alt":{"V6":0.4},"loops":["d6big_idle","d6big_rev"]},{"k":"d8_62","name":"Diesel V8 6.2 (NA)","lay":["V8","V8F"],"L":6.2,"fuel":"diesel","asp":"na","alt":{"V6":0.4,"V10":0.4,"V12":0.4},"loops":["d8n_idle","d8_rev"]},{"k":"d8_73","name":"Diesel V8 7.3 turbo","lay":["V8","V8F"],"L":7.3,"fuel":"diesel","asp":"turbo","alt":{"V6":0.4,"V10":0.4,"V12":0.4},"loops":["d8_idle","d8_rev"]}];
+  var CREDITS = [{"title":"Volkswagen 3-cylinder engine start and idle","author":"rodrigocswm","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/rodrigocswm/sounds/584878/","use":"I3 1.0 idle","mods":"trimmed 8.0–38.0 s; steadied, looped, normalised, mono MP3"},{"title":"Peugeot 308 acceleration/idle close to the exhaust (I4)","author":"Nox_Sound","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Nox_Sound/sounds/522221/","use":"I3 1.0 rev; I3 1.2 rev; I4 1.4–1.6 economy rev","mods":"trimmed 31.8–36.2 s; steadied, looped, normalised, mono MP3"},{"title":"Chevrolet Cobalt LS engine rev (I4, interior)","author":"erik90","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/erik90/sounds/181460/","use":"I3 1.0 high; I3 1.2 high; I4 1.4–1.6 economy high; I4 2.0 high-rev rev; I4 2.0 turbo rev; I4 2.2 rev","mods":"trimmed 19.5–26.5 s; steadied, looped, normalised, mono MP3"},{"title":"Nissan March HR12DE (I3)","author":"Oq10pass","license":"CC0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/deed.en","src":"https://commons.wikimedia.org/wiki/File:HR12DE-March-K13.oga","use":"I3 1.2 idle","mods":"trimmed 1.0–11.0 s; steadied, looped, normalised, mono MP3"},{"title":"Chevrolet Lacetti 1.4 start and idle (I4)","author":"AlexanderChe","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/AlexanderChe/sounds/362942/","use":"I4 1.4–1.6 economy idle; I4 2.0 high-rev idle","mods":"trimmed 15.0–27.0 s; steadied, looped, normalised, mono MP3"},{"title":"2004 Saturn Vue engine start and idle (I4)","author":"tbsounddesigns","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/tbsounddesigns/sounds/405322/","use":"I4 2.2 idle","mods":"trimmed 3.5–10.5 s; steadied, looped, normalised, mono MP3"},{"title":"Saab 900 16V turbo cold start (I4)","author":"KunstKonst","license":"CC BY-SA 4.0","licUrl":"https://creativecommons.org/licenses/by-sa/4.0","src":"https://commons.wikimedia.org/wiki/File:Saab_900_16V_Turbo_Kaltstart.wav","use":"I4 2.0 turbo idle","mods":"trimmed 4.0–15.0 s; steadied, looped, normalised, mono MP3"},{"title":"2002 Honda F20C (S2000) engine-bay recording (I4)","author":"Tyler Riddle","license":"CC BY 3.0","licUrl":"https://creativecommons.org/licenses/by/3.0","src":"https://commons.wikimedia.org/wiki/File:2002-Honda-F20C.ogg","use":"I4 2.0 high-rev high; I4 2.0 turbo high","mods":"trimmed 122.8–126.2 s; steadied, looped, normalised, mono MP3"},{"title":"BMW 320 (1988) engine (I6)","author":"ninebilly","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/ninebilly/sounds/173005/","use":"I6 2.0–2.5 idle; I6 3.0 turbo idle","mods":"trimmed 1.2–5.5 s; steadied, looped, normalised, mono MP3"},{"title":"Triumph six-cylinder engine running","author":"Netlore","license":"CC BY-SA 3.0","licUrl":"https://creativecommons.org/licenses/by-sa/3.0","src":"https://commons.wikimedia.org/wiki/File:Triumph-I6_engine.ogg","use":"I6 2.0–2.5 rev","mods":"trimmed 4.6–6.4 s; steadied, looped, normalised, mono MP3"},{"title":"Toyota Supra on a chassis dyno with turbo (I6)","author":"editboy23","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/editboy23/sounds/496171/","use":"I6 2.0–2.5 high; I6 3.0 turbo rev; I6 4.0 rev","mods":"trimmed 12.5–21.0 s; steadied, looped, normalised, mono MP3"},{"title":"Straight-piped Jeep inline six after start-up","author":"dudebrobrodude","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/dudebrobrodude/sounds/466715/","use":"I6 4.0 idle","mods":"trimmed 0.3–3.0 s; steadied, looped, normalised, mono MP3"},{"title":"2019 Porsche Cayenne idling (V6)","author":"Robo9418","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Robo9418/sounds/840317/","use":"V6 3.0–3.5 idle","mods":"trimmed 3.0–25.0 s; steadied, looped, normalised, mono MP3"},{"title":"Nissan Fuga 350GT VQ35HR V6","author":"TTTNIS","license":"Public domain","licUrl":"","src":"https://commons.wikimedia.org/wiki/File:NISSAN_VQ35HR_engine.ogg","use":"V6 3.0–3.5 rev","mods":"trimmed 0.6–3.6 s; steadied, looped, normalised, mono MP3"},{"title":"Ford F350 5.4 V8 startup and idle","author":"Therancher01","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Therancher01/sounds/610772/","use":"V8 big-block 7.0+ (mild cam) idle; V8 crossplane 5.0–5.4 idle","mods":"trimmed 5.0–28.0 s; steadied, looped, normalised, mono MP3"},{"title":"Chevrolet Caprice V8 at different speeds","author":"romanholtwick","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/romanholtwick/sounds/391671/","use":"V8 crossplane 5.0–5.4 rev; V8 crossplane 5.7 idle; V8 crossplane 5.7 rev; V8 crossplane 6.2 (LS) rev","mods":"trimmed 61.2–65.8 s, 18.0–38.0 s; steadied, looped, normalised, mono MP3"},{"title":"Lexus IS F 2UR-GSE V8 on a dynamometer","author":"Altair78","license":"CC BY-SA 4.0","licUrl":"https://creativecommons.org/licenses/by-sa/4.0","src":"https://commons.wikimedia.org/wiki/File:Lexus_IS-F_dynamometer_2UR-GSE_(2008).ogg","use":"V8 crossplane 5.0–5.4 high; V8 crossplane 6.2 (LS) high","mods":"trimmed 10.5–14.5 s; steadied, looped, normalised, mono MP3"},{"title":"Holden V8 supercharged (951 hp) dyno run-up","author":"Ears68","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Ears68/sounds/177184/","use":"V8 big-block 7.0+ (mild cam) high; V8 big-cam hot rod / big-block high; V8 crossplane 5.0–5.4 high; V8 crossplane 5.7 high; V8 crossplane 6.2 (LS) high","mods":"trimmed 68.6–71.2 s; steadied, looped, normalised, mono MP3"},{"title":"Ford 460 big-block V8 rev","author":"Henaway","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Henaway/sounds/127980/","use":"V8 big-block 7.0+ (mild cam) rev; V8 big-cam hot rod / big-block rev; V8 crossplane 5.7 high","mods":"trimmed 1.2–2.4 s; steadied, looped, normalised, mono MP3"},{"title":"Chevrolet Corvette (V8): start, idle, revs","author":"kyles","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/kyles/sounds/637184/","use":"V8 crossplane 6.2 (LS) idle; starter crank one-shot","mods":"trimmed 11.0–17.0 s, 0.0–1.75 s; steadied, looped, normalised, mono MP3"},{"title":"'55 Chevy hot rod V8 idle","author":"tubbers","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/tubbers/sounds/570800/","use":"V8 big-cam hot rod / big-block idle","mods":"trimmed 10.0–60.0 s; steadied, looped, normalised, mono MP3"},{"title":"Ferrari 360 Spider engine (flat-plane V8)","author":"PritzProductions","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/PritzProductions/sounds/241083/","use":"V8 flat-plane 3.6 high; V8 flat-plane 3.6 idle; V8 flat-plane 3.6 rev","mods":"trimmed 18.5–24.0 s, 12.3–15.6 s, 8.1–9.0 s; steadied, looped, normalised, mono MP3"},{"title":"BMW M6 start and idle (V10)","author":"Kinoton","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Kinoton/sounds/478597/","use":"V10 5.0 idle","mods":"trimmed 1.6–5.0 s; steadied, looped, normalised, mono MP3"},{"title":"Lamborghini Huracán EVO start-up and idle (V10)","author":"JaimeLopes","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/JaimeLopes/sounds/564373/","use":"V10 5.0 rev; V10 5.2 idle; V10 5.2 rev","mods":"trimmed 1.3–2.0 s, 6.0–20.0 s; steadied, looped, normalised, mono MP3"},{"title":"BMW M70 V12 idling","author":"Johannes Maximilian","license":"CC BY-SA 4.0","licUrl":"https://creativecommons.org/licenses/by-sa/4.0","src":"https://commons.wikimedia.org/wiki/File:M70.ogg","use":"V12 5.0–6.0 idle","mods":"trimmed 0.2–4.3 s; steadied, looped, normalised, mono MP3"},{"title":"Aston Martin V12 Vantage pulling away (Goodwood 2009)","author":"Edvvc","license":"CC BY-SA 3.0","licUrl":"https://creativecommons.org/licenses/by-sa/3.0","src":"https://commons.wikimedia.org/wiki/File:Aston-Martin-V12-Vantage.ogg","use":"V12 5.0–6.0 rev","mods":"trimmed 5.5–7.5 s; steadied, looped, normalised, mono MP3"},{"title":"Volkswagen Beetle engine (air-cooled flat-4)","author":"Work With Sounds / Technical Museum of Slovenia","license":"CC BY 4.0","licUrl":"https://creativecommons.org/licenses/by/4.0","src":"https://commons.wikimedia.org/wiki/File:WWS_VolkswagenBeetle8211engine.ogg","use":"Flat-4 air-cooled 1.2–1.6 idle","mods":"trimmed 44.0–53.0 s; steadied, looped, normalised, mono MP3"},{"title":"Scion FR-S on a DynoJet (flat-4)","author":"dezoris","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/dezoris/sounds/183654/","use":"Flat-4 1.6 vintage rev; Flat-4 2.0 turbo rev; Flat-4 2.5 rev; Flat-4 air-cooled 1.2–1.6 rev","mods":"trimmed 14.0–19.5 s; steadied, looped, normalised, mono MP3"},{"title":"Porsche 912 engine after restoration (flat-4)","author":"vukongs","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/vukongs/sounds/808983/","use":"Flat-4 1.6 vintage idle","mods":"trimmed 24.0–56.0 s; steadied, looped, normalised, mono MP3"},{"title":"2003 Subaru Impreza WRX exhaust sounds (flat-4 turbo)","author":"ulose2piranha","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/ulose2piranha/sounds/273334/","use":"Flat-4 2.0 turbo idle","mods":"trimmed 0.5–7.0 s; steadied, looped, normalised, mono MP3"},{"title":"2003 Subaru Impreza start-up and idle (flat-4)","author":"t33kno","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/t33kno/sounds/369797/","use":"Flat-4 2.5 idle","mods":"trimmed 8.0–14.0 s; steadied, looped, normalised, mono MP3"},{"title":"2006 Porsche Cayman S accelerating (flat-6)","author":"John64","license":"CC BY-SA 3.0","licUrl":"https://creativecommons.org/licenses/by-sa/3.0","src":"https://commons.wikimedia.org/wiki/File:2006_Porsche_Cayman_S_engine_sound.wav","use":"Flat-6 3.4 idle; Flat-6 3.4 rev","mods":"trimmed 19.0–32.0 s, 12.0–16.5 s; steadied, looped, normalised, mono MP3"},{"title":"Peugeot 204 diesel: start, idle, revs, stop","author":"Beeld en Geluid","license":"CC BY-SA 3.0","licUrl":"https://creativecommons.org/licenses/by-sa/3.0","src":"https://commons.wikimedia.org/wiki/File:Peugeot_204,_starten,_stationair,_doorgassen_en_motor_afzetten_-_SoundCloud_-_Beeld_en_Geluid.ogg","use":"Diesel I4 1.4 (NA, old) idle","mods":"trimmed 50.0–67.0 s; steadied, looped, normalised, mono MP3"},{"title":"VW New Beetle TDI diesel","author":"Evilmikie","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Evilmikie/sounds/448217/","use":"Diesel I4 1.4 (NA, old) rev; Diesel I4 1.9 TDI idle; Diesel I4 1.9 TDI rev; Diesel I4 2.0 marine (NA) rev; Diesel I4 5.2 truck rev","mods":"trimmed 83.0–90.0 s, 16.0–24.0 s; steadied, looped, normalised, mono MP3"},{"title":"Volvo Penta MD22 marine diesel (4 cyl)","author":"AugustSandberg","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/AugustSandberg/sounds/264864/","use":"Diesel I4 2.0 marine (NA) idle","mods":"trimmed 5.0–60.0 s; steadied, looped, normalised, mono MP3"},{"title":"Isuzu 4HK1 5.2 L turbo diesel","author":"ithoanglong26","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/ithoanglong26/sounds/546740/","use":"Diesel I4 5.2 truck idle","mods":"trimmed 2.0–16.0 s; steadied, looped, normalised, mono MP3"},{"title":"Ram 3500 5.9 Cummins startup and idle","author":"Therancher01","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/Therancher01/sounds/610771/","use":"Diesel I6 5.9 idle; starter crank one-shot","mods":"trimmed 8.0–30.0 s, 0.0–3.4 s; steadied, looped, normalised, mono MP3"},{"title":"Volvo Penta six-cylinder marine diesel","author":"Ljud: Jonn Leffmann","license":"CC BY 3.0","licUrl":"https://creativecommons.org/licenses/by/3.0","src":"https://commons.wikimedia.org/wiki/File:Volvo_Penta_Motorljud.ogg","use":"Diesel I6 5.9 rev","mods":"trimmed 1.0–15.0 s; steadied, looped, normalised, mono MP3"},{"title":"Semi-trailer truck idle, deep and close","author":"kyles","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/kyles/sounds/637916/","use":"Diesel I6 big rig 12–15 L idle","mods":"trimmed 5.0–45.0 s; steadied, looped, normalised, mono MP3"},{"title":"Mack semi idle and pull-away","author":"kyles","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/kyles/sounds/451935/","use":"Diesel I6 big rig 12–15 L rev","mods":"trimmed 6.8–11.0 s; steadied, looped, normalised, mono MP3"},{"title":"Detroit Diesel 6.2 L V8","author":"Sixthstar (talk)","license":"CC0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/deed.en","src":"https://commons.wikimedia.org/wiki/File:Detroit62.ogg","use":"Diesel V8 6.2 (NA) idle","mods":"trimmed 6.5–9.8 s; steadied, looped, normalised, mono MP3"},{"title":"Ford F350 modified turbo diesel start, idle, revs","author":"DAVESTALKER","license":"CC0 1.0","licUrl":"http://creativecommons.org/publicdomain/zero/1.0/","src":"https://freesound.org/people/DAVESTALKER/sounds/443319/","use":"Diesel V8 6.2 (NA) rev; Diesel V8 7.3 turbo idle; Diesel V8 7.3 turbo rev","mods":"trimmed 12.0–12.8 s, 1.5–11.0 s; steadied, looped, normalised, mono MP3"}];
+  var NCYL = { I3: 3, I4: 4, I5: 5, I6: 6, V6: 6, V8: 8, V8F: 8, V10: 10, V12: 12, F4: 4, F6: 6 };
+
+  var MODE = "blend";                 // synth | real | blend
+  var host = null, ctx = null, out = null, lp = null;
+  var G = [null, null];               // voice groups: {set, w, vI, vR}
+  var cache = {}, loading = {}, failed = {};
+  var running = false, lastT = 0, holdUntil = 0, presence = 0, stopT = null, pickKey = "", pick = null;
+  var stat = { fetched: 0, bytes: 0, decoded: 0, errors: 0, set: null, set2: null, w2: 0, rateI: 0, rateR: 0, gI: 0, gR: 0, mix: 1, cover: 0, sources: 0 };
+  var SLOW = false;
+  try { var cn = navigator.connection; SLOW = !!(cn && (cn.saveData || /(^|-)2g$/.test(cn.effectiveType || ""))); } catch (e) {}
+
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function sstep(a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+  function nowMs() { return (typeof performance !== "undefined") ? performance.now() : Date.now(); }
+  function litres(cfg, n) { var b = +(cfg && cfg.bore) || 86, s = +(cfg && cfg.stroke) || 86; return Math.PI / 4 * b * b * s * n / 1e6; }
+  function aspOf(cfg) {
+    var a = (cfg && cfg.asp) || "na";
+    try { var o = (typeof SIM !== "undefined" && SIM.OPT && SIM.OPT.asp && SIM.OPT.asp[a]) || null; if (o) a = o.kind; } catch (e) {}
+    return a === "na" ? "na" : (a === "roots" || a === "screw" || a === "centrifugal") ? "sc" : "turbo";
+  }
+
+  /* rank the recorded sets for a build: exact layout first, then stand-ins, nearest displacement
+     band (log distance), matching aspiration. Returns {a, b, w, fit} — b/w = the neighbouring size
+     band to interpolate toward, fit = how much of the voice the recording may carry (stand-ins less). */
+  function choose(cfg, lk, diesel) {
+    var n = NCYL[lk]; if (!n) return null;                       // unknown layout (rotary, future ones): synth only
+    var L = litres(cfg, n), asp = aspOf(cfg), fuel = diesel ? "diesel" : "gas";
+    var best = null, bs = 1e9, list = [];
+    for (var i = 0; i < SETS.length; i++) {
+      var s = SETS[i]; if (s.fuel !== fuel) continue;
+      var lay = s.lay.indexOf(lk) >= 0 ? 0 : (s.alt && s.alt[lk] != null) ? s.alt[lk] : -1;
+      if (lay < 0) continue;
+      var sc = lay + 1.1 * Math.abs(Math.log(L / s.L)) + (s.asp === asp ? 0 : 0.12)
+               + (s.hi ? ((+(cfg && cfg.redline) || 0) >= 7800 ? -0.35 : 0.6) : 0)     // the high-rev set only for screamers
+               + (s.lope ? ((+(cfg && cfg.cam) || 0) >= 60 ? -0.4 : 0.35) : 0);         // the lumpy hot-rod idle only for big cams
+      list.push({ s: s, sc: sc, lay: lay });
+      if (sc < bs) { bs = sc; best = list[list.length - 1]; }
+    }
+    if (!best || bs > 2.2) return null;
+    var res = { a: best.s, b: null, w: 0, fit: best.lay === 0 ? 1 : clamp(1 - best.lay, 0.35, 0.8) };
+    /* neighbour band on the other side of the build's displacement, same layout match level */
+    var side = L >= best.s.L ? 1 : -1, nb = null;
+    for (var j = 0; j < list.length; j++) {
+      var c = list[j]; if (c.s === best.s || c.lay !== best.lay || c.s.asp !== best.s.asp || !c.s.hi !== !best.s.hi || !c.s.lope !== !best.s.lope) continue;
+      if ((c.s.L - best.s.L) * side <= 0) continue;
+      if (!nb || Math.abs(c.s.L - L) < Math.abs(nb.s.L - L)) nb = c;
+    }
+    if (nb && L !== best.s.L) {
+      var w = Math.log(L / best.s.L) / Math.log(nb.s.L / best.s.L);
+      if (w > 0.08) { res.b = nb.s; res.w = clamp(w, 0, 0.5); }
+    }
+    return res;
+  }
+
+  function fetchClip(id) {
+    if (cache[id] || loading[id] || failed[id] || !ctx) return;
+    var c = CLIPS[id]; if (!c) return;
+    loading[id] = true;
+    var ac = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var to = setTimeout(function () { if (ac) ac.abort(); }, 15000);
+    fetch(BASE + c.f, ac ? { signal: ac.signal } : {}).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.arrayBuffer();
+    }).then(function (ab) {
+      stat.fetched++; stat.bytes += ab.byteLength;
+      return new Promise(function (res, rej) {          // callback form: old Safari has no promise decodeAudioData
+        var p = ctx.decodeAudioData(ab, res, rej); if (p && p.catch) p.catch(rej);
+      });
+    }).then(function (buf) {
+      clearTimeout(to); delete loading[id]; cache[id] = buf; stat.decoded++;
+    }).catch(function (e) {
+      clearTimeout(to); delete loading[id]; failed[id] = true; stat.errors++;
+      if (typeof console !== "undefined" && console.debug) console.debug("[sound] sample unavailable, synth only:", c.f, e && e.message);
+    });
+  }
+  function want(s) { if (s) s.loops.forEach(fetchClip); }
+  function ready(s) { return !!s && s.loops.every(function (id) { return cache[id]; }); }
+  /* phones keep decoded audio small: drop buffers no current set uses once there are more than 6 */
+  function trim() {
+    var keep = {}, ids = Object.keys(cache); if (ids.length <= 8) return;
+    G.forEach(function (g) { if (g) g.set.loops.forEach(function (id) { keep[id] = 1; }); });
+    if (pick) [pick.a, pick.b].forEach(function (st) { if (st) st.loops.forEach(function (id) { keep[id] = 1; }); });   // never evict what is still loading
+    ["crank", "crank_dsl"].forEach(function (k) { keep[k] = 1; });
+    ids.forEach(function (id) { if (!keep[id]) delete cache[id]; });
+  }
+
+  function ensureGraph() {
+    if (out || !host) return !!out;
+    var H = host(); ctx = H.ctx; if (!ctx || !H.bus) return false;
+    out = ctx.createGain(); out.gain.value = 0;
+    lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 6000; lp.Q.value = 0.5;
+    lp.connect(out); out.connect(H.bus);
+    return true;
+  }
+  function mkVoice(id) {
+    var c = CLIPS[id], b = cache[id];
+    var s = ctx.createBufferSource(); s.buffer = b; s.loop = true;
+    s.loopStart = c.loop[0]; s.loopEnd = c.loop[1];
+    var g = ctx.createGain(); g.gain.value = 0;
+    s.connect(g); g.connect(lp);
+    s.start(ctx.currentTime + 0.01, c.loop[0] + Math.random() * (c.loop[1] - c.loop[0]) * 0.9);
+    return { id: id, c: c, s: s, g: g, gv: 0, rv: 1 };
+  }
+  function kill(v) { if (!v) return; try { v.s.stop(); } catch (e) {} try { v.s.disconnect(); v.g.disconnect(); } catch (e) {} }
+  function killG(i) { var g = G[i]; if (!g) return; for (var k in g.v) kill(g.v[k]); G[i] = null; }
+  function mkGroup(s) { return { set: s, v: {} }; }          // voices are made on demand: only the two loops around the rpm play
+  function silence() { killG(0); killG(1); }
+  function nSources() { var n = 0; G.forEach(function (g) { if (g) n += Object.keys(g.v).length; }); return n; }
+
+  function rateFor(c, rpm, n) { return (rpm * n) / (c.rpm * c.cyl); }   // put the clip's firing frequency on the build's
+  function cover(r) { return sstep(0.42, 0.55, r) * (1 - sstep(2.3, 2.6, r)); }
+  function glide(v, field, tgt, tc, dt) { v[field] = (v[field] || 0) + (tgt - (v[field] || 0)) * (1 - Math.exp(-dt / tc)); return v[field]; }
+
+  /* drive one group. The set's loops sit at their own rpm (idle → mid → high); the two loops either
+     side of the build's rpm crossfade in log-rpm, throttle leans toward the next loop up (a loaded
+     engine sounds like a busier one), and each loop fades out where its pitch shift would exceed
+     0.5–2.5×. Loops not in use have no source node at all. */
+  function drive(g, wGroup, rpm, load, n, lvl, dt) {
+    var L = g.set.loops, m = L.length, w = [], i, r = rpm * (1 + 0.22 * load), at = [];
+    for (i = 0; i < m; i++) { at.push(CLIPS[L[i]].rpm * CLIPS[L[i]].cyl / n); w.push(0); }
+    if (r <= at[0]) w[0] = 1; else if (r >= at[m - 1]) w[m - 1] = 1;
+    else for (i = 0; i < m - 1; i++) if (r >= at[i] && r < at[i + 1]) {
+      var t = sstep(0, 1, Math.log(r / at[i]) / Math.log(at[i + 1] / at[i])); w[i] = Math.cos(t * Math.PI / 2); w[i + 1] = Math.sin(t * Math.PI / 2);
+    }
+    var cov2 = 0, o = { rI: 0, rR: 0, gI: 0, gR: 0 }, k = 0;
+    for (i = 0; i < m; i++) {
+      var id = L[i], c = CLIPS[id], rate = rateFor(c, rpm, n), wi = w[i] * cover(rate), v = g.v[id];
+      if (wi * lvl > 0.001 && !v) v = g.v[id] = mkVoice(id);
+      if (!v) continue;
+      v.s.playbackRate.value = glide(v, "rv", clamp(rate, 0.3, 3), 0.025, dt);
+      v.g.gain.value = glide(v, "gv", wi * wGroup * lvl, 0.06, dt);
+      v.tw = wi * lvl;
+      if (v.tw <= 0.001 && v.gv < 0.01) { kill(v); delete g.v[id]; continue; }
+      cov2 += wi * wi;
+      if (k === 0) { o.rI = rate; o.gI = v.gv; } else { o.rR = rate; o.gR = v.gv; } k++;
+    }
+    /* hard cap: two sources per group — drop the quietest loop that is on its way out */
+    var ks = Object.keys(g.v);
+    while (ks.length > 2) {
+      ks.sort(function (a, b) { return (g.v[a].tw > 0.001) - (g.v[b].tw > 0.001) || g.v[a].gv - g.v[b].gv; });
+      kill(g.v[ks[0]]); delete g.v[ks[0]]; ks.shift();
+    }
+    o.cov = Math.sqrt(cov2); return o;
+  }
+
+  /* called by the ENGINE_SOUND.set() wrapper every frame BEFORE the synth runs */
+  function update(o) {
+    if (!host) return;
+    var H = host();
+    var now = nowMs();
+    var dt = lastT ? clamp((now - lastT) / 1000, 0.001, 0.1) : 0.016; lastT = now;
+    if (MODE === "synth" || !H.running) { ENGINE_SOUND.setSynthMix(1); stat.mix = 1; fadeOut(dt); return; }
+    var cfg = o.cfg || null, lk = (cfg && cfg.layout) || null, n = NCYL[lk] || 4;
+    var key = cfg ? [lk, cfg.bore, cfg.stroke, cfg.asp, !!o.diesel, H.lite ? 1 : 0].join("|") : pickKey;
+    if (key !== pickKey) { pickKey = key; pick = cfg ? choose(cfg, lk, !!o.diesel) : null; }
+    var A = pick && pick.a, B = pick && !H.lite ? pick.b : null;
+    var lazyOk = !SLOW || MODE === "real";
+    if (A && lazyOk) { want(A); if (B) want(B); }
+    /* (re)build voice groups when the chosen sets are decoded */
+    if (ctx && ensureGraph()) {
+      if (A && ready(A) && (!G[0] || G[0].set !== A)) { if (G[1] && G[1].set === A) { var t = G[0]; G[0] = G[1]; G[1] = t; } else { killG(0); G[0] = mkGroup(A); } }
+      if (!A && G[0]) killG(0);
+      if (B && ready(B) && (!G[1] || G[1].set !== B)) { killG(1); G[1] = mkGroup(B); }
+      if (!B && G[1]) killG(1);
+      trim();
+    }
+    var rpm = +o.rpm || 0, load = clamp(+o.load || 0, 0, 1);
+    var live = rpm > 120 && !H.dead && (H.solo === "all" || H.solo === "nolimiter") && now > holdUntil;
+    var lvl = live ? 1 : 0, cov = 0, w2 = (G[1] && G[0]) ? pick.w : 0;
+    try {
+      if (G[0]) { var d0 = drive(G[0], 1 - w2, rpm, load, n, lvl, dt); cov += d0.cov * (1 - w2); stat.rateI = +d0.rI.toFixed(3); stat.rateR = +d0.rR.toFixed(3); stat.gI = +d0.gI.toFixed(3); stat.gR = +d0.gR.toFixed(3); }
+      if (G[1]) { var d1 = drive(G[1], w2, rpm, load, n, lvl, dt); cov += d1.cov * w2; }
+      /* closed throttle sounds muffled, on load the pipe opens up */
+      if (lp) lp.frequency.value = clamp(1400 + 7000 * Math.pow(load, 0.8) + rpm * 0.35, 900, 9000);
+    } catch (e) {}
+    if (!live || !G[0]) cov = 0;
+    cov = clamp(cov, 0, 1) * (pick ? pick.fit : 0);
+    presence += (cov - presence) * (1 - Math.exp(-dt / 0.12));
+    stat.cover = +presence.toFixed(3); stat.set = G[0] ? G[0].set.k : null; stat.set2 = G[1] ? G[1].set.k : null;
+    stat.setName = G[0] ? G[0].set.name : null; stat.set2Name = G[1] ? G[1].set.name : null; stat.w2 = +w2.toFixed(2); stat.sources = nSources();
+    /* the synth keeps the build's character in Blend; in Real it only fills where the recordings cannot reach */
+    var mix = MODE === "real" ? 1 - presence * 0.92 : 1 - presence * 0.5;
+    stat.mix = +mix.toFixed(3);
+    ENGINE_SOUND.setSynthMix(mix);
+    if (out) try { out.gain.value = glide(stat, "_og", (MODE === "real" ? 1.0 : 0.8), 0.1, dt); } catch (e) {}
+  }
+  function fadeOut(dt) {
+    presence = 0; stat.cover = 0;
+    if (!out) return;
+    try { out.gain.value = glide(stat, "_og", 0, 0.08, dt); } catch (e) {}
+    if (stat._og < 0.002 && (G[0] || G[1])) silence();
+  }
+
+  function start() { running = true; lastT = 0; if (stopT) { clearTimeout(stopT); stopT = null; } }
+  function stop() {
+    running = false;
+    if (stopT) clearTimeout(stopT);
+    stopT = setTimeout(function () { if (!running) { silence(); stat._og = 0; if (out) out.gain.value = 0; } }, 400);
+  }
+  /* recorded one-shot: the starter crank (gasoline / diesel) while the synth also cranks */
+  function event(name) {
+    if (MODE === "synth" || !host) return;
+    if (name === "start") {
+      holdUntil = nowMs() + 620;                                   // loops stay silent while it cranks, like the synth
+      var H = host(), id = H.diesel ? "crank_dsl" : "crank";
+      if (!CLIPS[id]) return;
+      if (!cache[id]) { fetchClip(id); return; }
+      if (!ensureGraph()) return;
+      var s = ctx.createBufferSource(); s.buffer = cache[id];
+      var g = ctx.createGain(); g.gain.value = (CLIPS[id].gain || 1) * (MODE === "real" ? 0.9 : 0.6);
+      s.connect(g); g.connect(H.bus);
+      s.start(ctx.currentTime, 0, Math.min(cache[id].duration, 0.8));
+      s.onended = function () { try { s.disconnect(); g.disconnect(); } catch (e) {} };
+    } else if (name === "fail") { presence = 0; }
+  }
+
+  function prefetch() {
+    if (MODE === "synth" || !host) return;
+    var H = host(); if (!H.ctx) return; ctx = H.ctx;
+    if (SLOW && MODE !== "real") return;
+    ["crank", "crank_dsl"].forEach(function (id) { if (CLIPS[id]) fetchClip(id); });
+  }
+  function attach(ES) {
+    if (!ES || ES._samples || !ES.sampleHost) return;
+    ES._samples = true;
+    host = ES.sampleHost;
+    var _set = ES.set, _start = ES.start, _stop = ES.stop, _event = ES.event;
+    ES.set = function (o) { try { update(o || {}); } catch (e) {} return _set.apply(ES, arguments); };
+    ES.start = function () { var r = _start.apply(ES, arguments); start(); prefetch(); return r; };
+    ES.stop = function () { stop(); return _stop.apply(ES, arguments); };
+    ES.event = function (nm) { var r = _event.apply(ES, arguments); try { if (nm === "start") { start(); prefetch(); } event(nm); } catch (e) {} return r; };
+  }
+  function setMode(m) {
+    MODE = (m === "synth" || m === "real") ? m : "blend";
+    if (MODE === "synth") ENGINE_SOUND.setSynthMix(1); else prefetch();
+  }
+
+  if (typeof ENGINE_SOUND !== "undefined") attach(ENGINE_SOUND);
+  return {
+    setMode: setMode, get mode() { return MODE; },
+    choose: choose, clips: CLIPS, sets: SETS, credits: CREDITS,
+    stats: function () { var s = {}; for (var k in stat) if (k[0] !== "_") s[k] = stat[k]; s.cached = Object.keys(cache); s.failed = Object.keys(failed); s.mode = MODE; s.slow = SLOW; return s; }
+  };
+})();
+if (typeof window !== "undefined") window.ENGINE_SAMPLES = ENGINE_SAMPLES;
+</script>
+<!-- ENGINE_SAMPLES:END -->
 <script>
 /* ============================================================================
    Prairie Engine Works — visuals.js  (ENGINE_VIS)
@@ -14369,7 +14657,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.14.0.0";
+const VERSION="1.15.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -14513,6 +14801,17 @@ $("devCash").addEventListener("click",()=>{if(!career())return;C().cash+=1e6;hud
 $("devRep").addEventListener("click",()=>{if(!career())return;C().rep+=500;hud();save();toast("+500 rep");});
 $("devWeek").addEventListener("click",()=>{if(!career()||typeof advanceWeek!=="function")return;advanceWeek();save();hud();renderShop();recompute();});
 $("sqSeg").addEventListener("click",e=>{const b=e.target.closest("[data-sq]");if(!b)return;S.soundQ=b.dataset.sq;applySoundQuality();save();});
+/* recorded engine layer: Synth / Real recordings / Blend (default Blend) + the credits sheet */
+function applySoundSrc(){const m=S.soundSrc||"blend";if(typeof ENGINE_SAMPLES!=="undefined")ENGINE_SAMPLES.setMode(m);document.querySelectorAll("#srcSeg button").forEach(b=>b.classList.toggle("on",b.dataset.src===m));}
+$("srcSeg").addEventListener("click",e=>{const b=e.target.closest("[data-src]");if(!b)return;S.soundSrc=b.dataset.src;applySoundSrc();save();toast(`ENGINE VOICE · ${b.firstChild.textContent.toUpperCase()}`);});
+setInterval(()=>{const el=$("srcLbl");if(!el||curTab!=="shop"||typeof ENGINE_SAMPLES==="undefined")return;const t=ENGINE_SAMPLES.stats();
+  el.textContent=t.mode==="synth"?"synth only":t.set?`${t.setName}${t.set2?" + "+t.set2Name:""} · ${Math.round(t.cover*100)}% recorded`:t.errors&&!t.decoded?"recordings unavailable · synth":t.slow&&t.mode!=="real"?"slow connection · synth":"loads when sound starts";},500);
+function sndCredits(){const E=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  const L=(typeof ENGINE_SAMPLES!=="undefined"&&ENGINE_SAMPLES.credits)||[];$("sheetTitle").textContent="Sound credits";
+  $("sheetBody").innerHTML=`<p class="hint">Real engine recordings used by the Real and Blend engine voices. All are openly licensed; files were trimmed, looped, level-matched, converted to mono MP3 and are pitch-shifted live. Full list: <a href="sounds/CREDITS.md" target="_blank" rel="noopener" style="color:var(--orange)">sounds/CREDITS.md</a>.</p>`
+    +L.map(c=>`<div class="opt"><div class="oh"><b>${E(c.title)}</b><span class="tag">${E(c.license)}</span></div><p>${E(c.use)} · by ${E(c.author)} · <a href="${E(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${E(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${E(c.mods)}</small>`:""}</p></div>`).join("");
+  $("sheet").classList.add("on");$("scrim").classList.add("on");}
+$("sndCredBtn").addEventListener("click",sndCredits);
 $("themeSeg").addEventListener("click",e=>{const b=e.target.closest("[data-theme]");if(!b)return;S.theme=b.dataset.theme;applyTheme();save();});
 $("puSeg").addEventListener("click",e=>{const b=e.target.closest("[data-pu]");if(!b)return;S.psi=b.dataset.pu==="psi";applyPU();save();});
 $("hapSeg").addEventListener("click",e=>{const b=e.target.closest("[data-hap]");if(!b)return;S.haptics=b.dataset.hap==="1";applyTheme();save();if(S.haptics)buzz(12);});
@@ -16803,7 +17102,7 @@ function boot(){
   applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
 }
