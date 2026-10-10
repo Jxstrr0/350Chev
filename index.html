@@ -4913,7 +4913,7 @@ const ENGINE_SIM = (function () {
   const LSR_MILE = 1609.344;
   const LSR_COURSES = {
     short: { n: "Short course", runup: 1, shut: 1.5, d: "1-mile run-up · timed mile 1–2" },
-    long: { n: "Long course", runup: 3, shut: 2, d: "3-mile run-up · timed mile 3–4" }
+    long: { n: "Long course", runup: 4, shut: 2.5, d: "4-mile run-up · timed mile 4–5" }
   };
   // body classes in the SCTA spirit. mass is the car without its engine; ClA lift (+) per unit dynamic pressure;
   // liftF the share of the lift over the front axle; kRad the radiator's kW per °C at speed
@@ -4924,14 +4924,14 @@ const ENGINE_SIM = (function () {
       aero: { n: "Rear spoiler", cl: -0.40, cd: 0.06 } },
     lakester: { n: "Lakester", code: "L", d: "belly-tank body · open wheels", mass: 760, cdA: 0.36, clA: 0.12, liftF: 0.55, rear: 0.58, wb: 2.90, cgH: 0.38, tyreDia: 26, kRad: 1.3, radDrag: 0.02, rep: 60, course: "long",
       aero: { n: "Nose canards", cl: -0.15, cd: 0.02 } },
-    streamliner: { n: "Streamliner", code: "S", d: "wheels enclosed · lowest drag · twitchy", mass: 1150, cdA: 0.26, clA: 0.06, liftF: 0.55, rear: 0.55, wb: 4.60, cgH: 0.34, tyreDia: 27, kRad: 0.6, radDrag: 0.025, rep: 200, course: "long", narrow: true,
-      aero: { n: "Trim tabs", cl: -0.08, cd: 0.012 } }
+    streamliner: { n: "Streamliner", code: "S", d: "wheels enclosed · lowest drag · twitchy", mass: 1150, cdA: 0.26, clA: 0.06, liftF: 0.55, rear: 0.62, wb: 4.60, cgH: 0.34, tyreDia: 27, kRad: 0.6, radDrag: 0.025, rep: 200, course: "long", narrow: true,
+      aero: { n: "Trim tabs", cl: -0.30, cd: 0.015 } }
   };
   for (const k in LSR_BODIES) LSR_BODIES[k].id = k;
   // engine classes by displacement, SCTA-style letters (upper bound in litres; AA is unlimited)
   const LSR_DISP = [["J", 0.75], ["I", 1.0], ["H", 1.5], ["G", 2.0], ["F", 3.0], ["E", 4.25], ["D", 5.0], ["C", 6.1], ["B", 7.2], ["A", 8.2], ["AA", Infinity]];
   const LSR_FUELS = { G: "gas", F: "fuel", D: "diesel" };
-  const LSR_CHUTES = { none: { n: "No chute", cdA: 0, rated: 0, kg: 0 }, single: { n: "Single chute", cdA: 1.5, rated: 112, kg: 9 }, dual: { n: "Dual chutes", cdA: 2.6, rated: 190, kg: 18 } };
+  const LSR_CHUTES = { none: { n: "No chute", cdA: 0, rated: 0, kg: 0 }, single: { n: "Single chute", cdA: 1.5, rated: 112, kg: 9 }, dual: { n: "Dual chutes", cdA: 2.6, rated: 225, kg: 18 } };
   const LSR_RATIOS = [2.45, 1.70, 1.30, 1.0];   // four-speed, relative to top gear
   function lsrDispClass(L) { for (const d of LSR_DISP) if (L <= d[1] + 1e-9) return d[0]; return "AA"; }
   /* the class an engine runs in: displacement letter / (B = blown) fuel letter + body code, e.g. "C/BGALT" */
@@ -4984,7 +4984,7 @@ const ENGINE_SIM = (function () {
     const isTurbo = (res.aspKind || "na") === "turbo", egtLimit = res.egtLimitC || (res.diesel ? 900 : 0);
     const worst = (res.tests || []).reduce((a, t) => Math.max(a, +t.util || 0), 0);
     const hazK = 0.0003 * Math.exp((clamp(worst, 0.5, 1.2) - 0.85) * 14);
-    const muPk = 0.60, sPk = 0.08, muSlide = 0.43;
+    const muPk = 0.72, sPk = 0.08, muSlide = 0.52;
     function mu(s) { const a = Math.abs(s); return (a < sPk ? muPk * Math.sin(Math.PI / 2 * a / sPk) : muSlide + (muPk - muSlide) * Math.exp(-(a - sPk) / 0.18)) * Math.sign(s || 1); }
     const x0 = CO.runup * LSR_MILE, x1 = x0 + LSR_MILE, k0 = (x0 + x1) / 2 - 500, k1 = k0 + 1000, xEnd = x1 + CO.shut * LSR_MILE;
     const st = { t: 0, x: 0, v: 0, w: 0, rpm: v.idle, gear: 0, thr: 0, foot: 0, phase: "stage", done: false, slip: 0, light: 1, loose: 0, Nf: Nf0, Nr: rearStatic, lift: 0, drag: 0, acc: 0,
@@ -5173,7 +5173,7 @@ const ENGINE_SIM = (function () {
   const lsrRecCache = {};
   function lsrSynth(L, fuel, blown) {
     const hpL = fuel === "D" ? (blown ? 125 : 42) : fuel === "F" ? (blown ? 290 : 135) : (blown ? 190 : 108);
-    const hp0 = Math.min(fuel === "D" ? 1500 : 2300, hpL * L), salt = blown ? 0.93 : 0.87, hp = hp0 * salt;
+    const hp0 = Math.min(fuel === "D" ? 1500 : fuel === "F" && blown ? 3000 : 2300, hpL * L), salt = blown ? 0.93 : 0.87, hp = hp0 * salt;
     const red = fuel === "D" ? clamp(5200 - 180 * L, 2600, 4800) : clamp(9800 - 420 * L, 6200, 9500), pk = 0.9 * red;
     const rpms = [], torque = []; for (let r = 1000; r <= red + 1e-6; r += 250) { rpms.push(r); const x = (r - pk * 0.75) / (pk * 0.75); torque.push(Math.max(0.3, 1 - 0.28 * x * x)); }
     let best = 0, bi = 0; rpms.forEach((r, i) => { const p = torque[i] * r; if (p > best) { best = p; bi = i; } });
@@ -5186,10 +5186,10 @@ const ENGINE_SIM = (function () {
     const mt = /^(AA|[A-J])\/(B?)([GFD])(ALT|MR|L|S)$/.exec(key); if (!mt) return null;
     const di = LSR_DISP.findIndex(d => d[0] === mt[1]), lo = di > 0 ? LSR_DISP[di - 1][1] : 0.5, hi = LSR_DISP[di][1];
     const L = hi === Infinity ? 9.0 : lo + (hi - lo) * 0.9, body = Object.keys(LSR_BODIES).find(k => LSR_BODIES[k].code === mt[4]);
-    const res = lsrSynth(L, mt[3], !!mt[2]), veh = { body: body, redline: res.red, aero: body === "altered" || body === "roadster", ballast: 60, cooling: body === "streamliner" || body === "lakester" ? "ice" : "radiator", chute: "dual", course: LSR_BODIES[body].course };
+    const res = lsrSynth(L, mt[3], !!mt[2]), veh = { body: body, redline: res.red, aero: true, ballast: body === "streamliner" ? 150 : 60, cooling: body === "streamliner" || body === "lakester" ? "ice" : "radiator", chute: "dual", course: LSR_BODIES[body].course };
     veh.topMph = lsrGearing(res, veh);
     const r = lsrPass(res, Object.assign({}, veh, { noFail: true, noSpin: true, h: 0.004 }));
-    const hsh = lsrHash(key), soft = 0.70 + 0.27 * ((hsh % 1000) / 1000);
+    const hsh = lsrHash(key), hot = clamp((res.peakHp - 600) / 1200, 0, 1), soft = 0.70 + 0.2 * hot + (0.27 - 0.17 * hot) * ((hsh % 1000) / 1000);   // the big blown classes are contested: their records sit close to the limit
     const mph = Math.round((r.mileMph || r.peakMph) * soft * 1000) / 1000;
     const rec = { key: key, mph: mph, holder: LSR_HOLDERS[(hsh >>> 10) % LSR_HOLDERS.length], year: 1958 + ((hsh >>> 4) % 67), seeded: true };
     lsrRecCache[key] = rec; return rec;
@@ -13537,11 +13537,11 @@ var SALT_GLSL_GROUND=[
   "  c-=vec3(0.10,0.09,0.07)*ridge;",
   "  float damp=smoothstep(0.6,0.82,sn(p*0.0019+3.0))*smoothstep(60.0,400.0,abs(w.z));",
   "  c=mix(c,vec3(0.50,0.49,0.46),damp*0.5);",
-  "  float az=abs(w.z), crs=(1.0-smoothstep(13.0,18.0,az))*smoothstep(-260.0,-200.0,w.x)*(1.0-smoothstep(10200.0,10500.0,w.x));",
+  "  float az=abs(w.z), crs=(1.0-smoothstep(13.0,18.0,az))*smoothstep(-260.0,-200.0,w.x)*(1.0-smoothstep(12400.0,12700.0,w.x));",
   "  float tr=exp(-pow((az-0.75)/0.32,2.0))+0.55*exp(-pow((az-2.6)/0.5,2.0))+0.35*exp(-pow((az-5.2)/0.9,2.0));",
   "  c*=1.0-crs*0.17*tr*(0.55+0.45*sn(vec2(w.x*0.04,w.z*2.5)));",
   "  c*=1.0+crs*0.03;",
-  "  float bl=(1.0-smoothstep(0.10,0.15,az))*step(-40.0,w.x)*(1.0-step(10150.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
+  "  float bl=(1.0-smoothstep(0.10,0.15,az))*step(-40.0,w.x)*(1.0-step(12350.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
   "  c=mix(c,vec3(0.03,0.03,0.035),bl);",
   "  float sl=(1.0-smoothstep(0.08,0.13,abs(w.x)))*(1.0-smoothstep(5.0,5.4,az));",
   "  c=mix(c,vec3(0.04,0.04,0.05),sl*0.9);",
