@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.15.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.15.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -4916,7 +4916,7 @@ const ENGINE_SIM = (function () {
   const LSR_MILE = 1609.344;
   const LSR_COURSES = {
     short: { n: "Short course", runup: 1, shut: 1.5, d: "1-mile run-up · timed mile 1–2" },
-    long: { n: "Long course", runup: 3, shut: 2, d: "3-mile run-up · timed mile 3–4" }
+    long: { n: "Long course", runup: 4, shut: 2.5, d: "4-mile run-up · timed mile 4–5" }
   };
   // body classes in the SCTA spirit. mass is the car without its engine; ClA lift (+) per unit dynamic pressure;
   // liftF the share of the lift over the front axle; kRad the radiator's kW per °C at speed
@@ -4927,14 +4927,16 @@ const ENGINE_SIM = (function () {
       aero: { n: "Rear spoiler", cl: -0.40, cd: 0.06 } },
     lakester: { n: "Lakester", code: "L", d: "belly-tank body · open wheels", mass: 760, cdA: 0.36, clA: 0.12, liftF: 0.55, rear: 0.58, wb: 2.90, cgH: 0.38, tyreDia: 26, kRad: 1.3, radDrag: 0.02, rep: 60, course: "long",
       aero: { n: "Nose canards", cl: -0.15, cd: 0.02 } },
-    streamliner: { n: "Streamliner", code: "S", d: "wheels enclosed · lowest drag · twitchy", mass: 1150, cdA: 0.26, clA: 0.06, liftF: 0.55, rear: 0.55, wb: 4.60, cgH: 0.34, tyreDia: 27, kRad: 0.6, radDrag: 0.025, rep: 200, course: "long", narrow: true,
-      aero: { n: "Trim tabs", cl: -0.08, cd: 0.012 } }
+    streamliner: { n: "Streamliner", code: "S", d: "wheels enclosed · lowest drag · twitchy", mass: 1150, cdA: 0.26, clA: 0.06, liftF: 0.55, rear: 0.62, wb: 4.60, cgH: 0.34, tyreDia: 27, kRad: 0.6, radDrag: 0.025, rep: 200, course: "long", narrow: true,
+      aero: { n: "Trim tabs", cl: -0.30, cd: 0.015 } }
   };
   for (const k in LSR_BODIES) LSR_BODIES[k].id = k;
   // engine classes by displacement, SCTA-style letters (upper bound in litres; AA is unlimited)
   const LSR_DISP = [["J", 0.75], ["I", 1.0], ["H", 1.5], ["G", 2.0], ["F", 3.0], ["E", 4.25], ["D", 5.0], ["C", 6.1], ["B", 7.2], ["A", 8.2], ["AA", Infinity]];
   const LSR_FUELS = { G: "gas", F: "fuel", D: "diesel" };
-  const LSR_CHUTES = { none: { n: "No chute", cdA: 0, rated: 0, kg: 0 }, single: { n: "Single chute", cdA: 1.5, rated: 112, kg: 9 }, dual: { n: "Dual chutes", cdA: 2.6, rated: 190, kg: 18 } };
+  // rated: the fastest the canopy survives opening (m/s). The dual pack is a small high-speed drogue plus the main.
+  const LSR_CHUTES = { none: { n: "No chute", cdA: 0, rated: 0, kg: 0 }, single: { n: "Single chute", cdA: 1.5, rated: 134, kg: 9 }, dual: { n: "Drogue + main", cdA: 2.0, rated: 134, kg: 18, drogue: { cdA: 0.7, rated: 225 } } };
+  function lsrChuteMax(id) { const c = LSR_CHUTES[id] || LSR_CHUTES.none; return c.drogue ? c.drogue.rated : c.rated; }
   const LSR_RATIOS = [2.45, 1.70, 1.30, 1.0];   // four-speed, relative to top gear
   function lsrDispClass(L) { for (const d of LSR_DISP) if (L <= d[1] + 1e-9) return d[0]; return "AA"; }
   /* the class an engine runs in: displacement letter / (B = blown) fuel letter + body code, e.g. "C/BGALT" */
@@ -4987,12 +4989,12 @@ const ENGINE_SIM = (function () {
     const isTurbo = (res.aspKind || "na") === "turbo", egtLimit = res.egtLimitC || (res.diesel ? 900 : 0);
     const worst = (res.tests || []).reduce((a, t) => Math.max(a, +t.util || 0), 0);
     const hazK = 0.0003 * Math.exp((clamp(worst, 0.5, 1.2) - 0.85) * 14);
-    const muPk = 0.60, sPk = 0.08, muSlide = 0.43;
+    const muPk = 0.72, sPk = 0.08, muSlide = 0.52;
     function mu(s) { const a = Math.abs(s); return (a < sPk ? muPk * Math.sin(Math.PI / 2 * a / sPk) : muSlide + (muPk - muSlide) * Math.exp(-(a - sPk) / 0.18)) * Math.sign(s || 1); }
     const x0 = CO.runup * LSR_MILE, x1 = x0 + LSR_MILE, k0 = (x0 + x1) / 2 - 500, k1 = k0 + 1000, xEnd = x1 + CO.shut * LSR_MILE;
     const st = { t: 0, x: 0, v: 0, w: 0, rpm: v.idle, gear: 0, thr: 0, foot: 0, phase: "stage", done: false, slip: 0, light: 1, loose: 0, Nf: Nf0, Nr: rearStatic, lift: 0, drag: 0, acc: 0,
       shiftT: 0, shifts: 0, shiftReq: false, limiter: 0, limT: 0, clutch: true, coolC: ice ? 45 : 85, coolMax: 0, egt: 450, egtPeak: 450, egtDose: 0, loadT: 0, fullT: 0,
-      chuteOut: false, chuteAt: null, chuteMph: null, chuteBlown: false, chuteK: 0, braking: false, broke: null, failKind: null, failAt: Infinity, haz: 0, hazRoll: rng(), stopWhy: null,
+      chuteOut: false, chuteAt: null, chuteMph: null, chuteBlown: false, chuteK: 0, drogueOut: false, drogueK: 0, drogueMph: null, chuteWait: false, braking: false, broke: null, failKind: null, failAt: Infinity, haz: 0, hazRoll: rng(), stopWhy: null,
       tIn: null, tOut: null, tK0: null, tK1: null, vIn: null, vOut: null, peakV: 0, peakRpm: 0, spinT: 0, wanderT: 0, lightMin: 1, trace: [], pushT: 0, offEnd: false,
       x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd, gears: NG, mileMph: null, kmMph: null, overRev: 0, lifted: 0 };
     if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(q => q.name === res.fails[0]); st.failKind = t0 ? t0.id : "rod_tension"; st.failAt = 3 + rng() * 16; }
@@ -5007,12 +5009,17 @@ const ENGINE_SIM = (function () {
     function cross(xa, xb, ta, tb, X) { return ta + (tb - ta) * (X - xa) / Math.max(1e-9, xb - xa); }
     function sub(h) {
       st.foot += (clamp(st.thr, 0, 1) > st.foot ? 1 / 0.35 : -1 / 0.2) * h; st.foot = clamp(st.foot, 0, 1);
-      const thrIn = st.phase === "run" ? st.foot : 0;
+      // the auto driver lifts early when the chute could not open before the end of the course: coasting from here down to
+      // the rating (drag only) plus a stopping margin has to fit in what is left
+      if (v.autoLift && st.phase === "run" && CH.cdA > 0 && !st.liftEarly) { const vr = (CH.drogue ? CH.drogue.rated : CH.rated) * 0.98;
+        const stop = m / (0.5 * v.rho * (cdA + CH.cdA)) * Math.log(Math.max(1, Math.min(vr, CH.rated) / 70)) + 70 * 70 / (2 * 0.28 * 9.81) + 150;
+        if (st.v > vr && st.x + m / (0.5 * v.rho * cdA) * Math.log(st.v / vr) + stop > xEnd) st.liftEarly = true; }
+      const thrIn = st.phase === "run" && !st.liftEarly ? st.foot : 0;
       if (st.phase === "stage") { st.rpm += (v.idle + 300 * st.foot - st.rpm) * Math.min(1, h * 4); if (st.thr > 0.05) st.phase = "push"; return; }
       st.t += h;
       const q = 0.5 * v.rho * st.v * st.v;
       const Lf = q * clA;                      // lift (+) / downforce (-)
-      const Fd = q * cdA + (st.chuteOut ? q * CH.cdA * st.chuteK : 0);
+      const Fd = q * cdA + (st.chuteOut ? q * CH.cdA * st.chuteK : 0) + (st.drogueOut ? q * CH.drogue.cdA * st.drogueK : 0);
       const crr = 0.012 + 3.5e-7 * st.v * st.v;
       let Nr = rearStatic + m * st.acc * B.cgH / B.wb - Lf * (1 - B.liftF);
       let Nf = Nf0 - m * st.acc * B.cgH / B.wb - Lf * B.liftF;
@@ -5096,11 +5103,17 @@ const ENGINE_SIM = (function () {
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; st.brokeX = st.x; }
       }
       // the chute: the driver pulls it once the clocks are behind him (or when it all goes wrong past 150 mph)
-      if (!st.chuteOut && CH.cdA > 0 && ((v.autoChute && st.phase === "shutdown" && st.x > x1 + 60) || st.chuteReq || ((st.broke || st.phase === "spin") && st.v > 45))) {
-        st.chuteOut = true; st.chuteAt = st.x; st.chuteMph = st.v * 2.23694; if (st.v > CH.rated) st.chuteBlown = true;
+      // auto: the driver coasts until the speed is inside a canopy's rating — the drogue first if there is one, then the main.
+      // A chute pulled by hand goes out when asked; over its rating it tears off.
+      const wantChute = CH.cdA > 0 && ((v.autoChute && st.phase === "shutdown" && st.x > x1 + 60) || ((st.broke || st.phase === "spin") && st.v > 45));
+      if (CH.drogue && !st.drogueOut && !st.chuteOut && ((wantChute && st.v <= CH.drogue.rated * 0.98) || (st.chuteReq && st.v > CH.rated))) { st.drogueOut = true; st.drogueMph = st.v * 2.23694; if (st.v > CH.drogue.rated) st.chuteBlown = true; if (st.chuteAt == null) st.chuteAt = st.x; }
+      else if (!st.chuteOut && CH.cdA > 0 && ((wantChute && st.v <= CH.rated * 0.98) || (st.chuteReq && !(CH.drogue && !st.drogueOut && st.v > CH.rated)))) {
+        st.chuteOut = true; if (st.chuteAt == null) st.chuteAt = st.x; st.chuteMph = st.v * 2.23694; if (st.v > CH.rated) st.chuteBlown = true;
       }
+      st.chuteWait = wantChute && !st.chuteOut && !st.drogueOut;
       st.chuteReq = false;
       if (st.chuteOut) st.chuteK = st.chuteBlown ? Math.max(0, st.chuteK - h * 3) : Math.min(1, st.chuteK + h / 0.6);
+      if (st.drogueOut) st.drogueK = st.chuteBlown && !st.chuteOut ? Math.max(0, st.drogueK - h * 3) : Math.min(1, st.drogueK + h / 0.4);
       if (st.t - lastTrace >= 0.25) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(2), x: Math.round(st.x), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), g: st.gear + 1, thr: +thrIn.toFixed(2), slip: +clamp(st.slip, 0, 1).toFixed(3), egt: Math.round(st.egt), tc: Math.round(st.coolC), light: +st.light.toFixed(2) }); }
       if (st.x > xEnd && st.v > 3) st.offEnd = true;
       if ((st.phase === "shutdown" || st.phase === "spin" || st.broke) && st.v < 0.5 && st.t > 2) finish();
@@ -5130,22 +5143,23 @@ const ENGINE_SIM = (function () {
       if (lim > 2) reasons.push(`On the rev limiter for ${lim.toFixed(1)} s — the top gear is too short. Taller gearing would let it pull further.`);
       else if (st.mileMph != null && st.gear === NG - 1 && st.rpm < 0.8 * (res.peakHpRpm || red) && st.vOut != null && Math.abs(st.vOut - st.vIn) < 2) reasons.push(`Top gear too tall: it ran out of power at ${Math.round(st.rpm).toLocaleString()} rpm, well under the ${(res.peakHpRpm || red).toLocaleString()} rpm power peak. Shorter gearing would be faster.`);
       if (st.spinT > 2 && st.stopWhy !== "spun") reasons.push(`${st.spinT.toFixed(1)} s of wheelspin at speed — salt is about μ 0.55. Ballast on the rear, or ease into the low gears.`);
+      if (st.liftEarly) reasons.push(`Lifted early at ${(st.x / LSR_MILE).toFixed(2)} mi — at ${Math.round(st.v * 2.23694)} mph the ${CH.n.toLowerCase()} could not open before the end of the course. A drogue + main pack opens far higher.`);
       if (st.wanderT > 1 && st.stopWhy !== "spun") reasons.push(`The front was light for ${st.wanderT.toFixed(1)} s (down to ${Math.round(st.lightMin * 100)}%) — the car wanders when the nose lifts. ${v.aero ? "" : "The " + aeroN + " would hold it down."}`);
       if (st.coolMax > 112 && st.broke !== "steam") reasons.push(`Coolant peaked at ${Math.round(st.coolMax)} °C — hot enough to pull timing and cost power.`);
-      if (st.chuteBlown) reasons.push(`The chute came out at ${Math.round(st.chuteMph)} mph — past its ${Math.round(CH.rated * 2.23694)} mph rating — and tore off. Brakes only from there.`);
+      if (st.chuteBlown) reasons.push(`The ${st.chuteOut ? "chute" : "drogue"} came out at ${Math.round(st.chuteOut ? st.chuteMph : st.drogueMph)} mph — past its ${Math.round((st.chuteOut ? CH.rated : CH.drogue.rated) * 2.23694)} mph rating — and tore off. Brakes only from there.`);
       if (!st.chuteOut && CH.cdA === 0 && st.peakV * 2.23694 > 175) reasons.push("No parachute over 175 mph — tech will not accept the run. Fit a chute.");
       if (st.offEnd) reasons.push("Ran out of course before it stopped — off the end into the soft salt.");
       return { mileMph: st.mileMph != null ? +st.mileMph.toFixed(3) : null, kmMph: st.kmMph != null ? +st.kmMph.toFixed(3) : null, peakMph: +mph(st.peakV).toFixed(1), inMph: st.vIn != null ? +mph(st.vIn).toFixed(1) : null, outMph: st.vOut != null ? +mph(st.vOut).toFixed(1) : null,
         mileT: st.tOut != null ? +(st.tOut - st.tIn).toFixed(3) : null, kmT: st.tK1 != null ? +(st.tK1 - st.tK0).toFixed(3) : null, time: +st.t.toFixed(1), stopWhy: st.stopWhy, broke: st.broke, failKind: st.broke ? st.failKind : null, brokeX: st.brokeX != null ? Math.round(st.brokeX) : null,
         coolMax: Math.round(st.coolMax), peakEgt: Math.round(st.egtPeak), lightMin: +st.lightMin.toFixed(2), spinT: +st.spinT.toFixed(1), wanderT: +st.wanderT.toFixed(1), limT: +lim.toFixed(1), shifts: st.shifts, peakRpm: Math.round(st.peakRpm),
-        chute: { out: st.chuteOut, mph: st.chuteMph != null ? Math.round(st.chuteMph) : null, blown: st.chuteBlown }, offEnd: st.offEnd, noChuteFast: CH.cdA === 0 && st.peakV * 2.23694 > 175,
+        chute: { out: st.chuteOut || st.drogueOut, mph: st.chuteMph != null ? Math.round(st.chuteMph) : null, drogueMph: st.drogueMph != null ? Math.round(st.drogueMph) : null, blown: st.chuteBlown }, offEnd: st.offEnd, noChuteFast: CH.cdA === 0 && st.peakV * 2.23694 > 175,
         trace: st.trace, reasons: reasons, body: B.id, course: v.course, topMph: v.topMph, ratios: ratios.map(r => +r.toFixed(2)), mass: Math.round(m), cdA: +cdA.toFixed(3), clA: +clA.toFixed(3), x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd, veh: v };
     }
     return { st: st, step: step, shift: shift, autoShift: autoShift, chute: chute, result: result, ratios: ratios, shiftRpm: shiftRpm, mass: m, x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd };
   }
   /* a run with a sensible driver: flat out, feathering wheelspin and a light front end; the node harness and the record book use it */
   function lsrPass(res, veh) {
-    const p = lsrRun(res, Object.assign({}, veh, { shift: "auto" })); let thr = 1;
+    const p = lsrRun(res, Object.assign({ autoLift: true }, veh, { shift: "auto" })); let thr = 1;
     while (!p.st.done) {
       const s = p.st;
       if (s.phase === "run") {
@@ -5176,7 +5190,7 @@ const ENGINE_SIM = (function () {
   const lsrRecCache = {};
   function lsrSynth(L, fuel, blown) {
     const hpL = fuel === "D" ? (blown ? 125 : 42) : fuel === "F" ? (blown ? 290 : 135) : (blown ? 190 : 108);
-    const hp0 = Math.min(fuel === "D" ? 1500 : 2300, hpL * L), salt = blown ? 0.93 : 0.87, hp = hp0 * salt;
+    const hp0 = Math.min(fuel === "D" ? 1500 : fuel === "F" && blown ? 3000 : 2300, hpL * L), salt = blown ? 0.93 : 0.87, hp = hp0 * salt;
     const red = fuel === "D" ? clamp(5200 - 180 * L, 2600, 4800) : clamp(9800 - 420 * L, 6200, 9500), pk = 0.9 * red;
     const rpms = [], torque = []; for (let r = 1000; r <= red + 1e-6; r += 250) { rpms.push(r); const x = (r - pk * 0.75) / (pk * 0.75); torque.push(Math.max(0.3, 1 - 0.28 * x * x)); }
     let best = 0, bi = 0; rpms.forEach((r, i) => { const p = torque[i] * r; if (p > best) { best = p; bi = i; } });
@@ -5189,10 +5203,10 @@ const ENGINE_SIM = (function () {
     const mt = /^(AA|[A-J])\/(B?)([GFD])(ALT|MR|L|S)$/.exec(key); if (!mt) return null;
     const di = LSR_DISP.findIndex(d => d[0] === mt[1]), lo = di > 0 ? LSR_DISP[di - 1][1] : 0.5, hi = LSR_DISP[di][1];
     const L = hi === Infinity ? 9.0 : lo + (hi - lo) * 0.9, body = Object.keys(LSR_BODIES).find(k => LSR_BODIES[k].code === mt[4]);
-    const res = lsrSynth(L, mt[3], !!mt[2]), veh = { body: body, redline: res.red, aero: body === "altered" || body === "roadster", ballast: 60, cooling: body === "streamliner" || body === "lakester" ? "ice" : "radiator", chute: "dual", course: LSR_BODIES[body].course };
+    const res = lsrSynth(L, mt[3], !!mt[2]), veh = { body: body, redline: res.red, aero: true, ballast: body === "streamliner" ? 150 : 60, cooling: body === "streamliner" || body === "lakester" ? "ice" : "radiator", chute: "dual", course: LSR_BODIES[body].course };
     veh.topMph = lsrGearing(res, veh);
     const r = lsrPass(res, Object.assign({}, veh, { noFail: true, noSpin: true, h: 0.004 }));
-    const hsh = lsrHash(key), soft = 0.70 + 0.27 * ((hsh % 1000) / 1000);
+    const hsh = lsrHash(key), hot = clamp((res.peakHp - 600) / 1200, 0, 1), soft = 0.70 + 0.2 * hot + (0.27 - 0.17 * hot) * ((hsh % 1000) / 1000);   // the big blown classes are contested: their records sit close to the limit
     const mph = Math.round((r.mileMph || r.peakMph) * soft * 1000) / 1000;
     const rec = { key: key, mph: mph, holder: LSR_HOLDERS[(hsh >>> 10) % LSR_HOLDERS.length], year: 1958 + ((hsh >>> 4) % 67), seeded: true };
     lsrRecCache[key] = rec; return rec;
@@ -5208,7 +5222,7 @@ const ENGINE_SIM = (function () {
     isDiesel: isDiesel,
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
-    lsrRun: lsrRun, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
+    lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel
   };
 })();
@@ -13825,11 +13839,11 @@ var SALT_GLSL_GROUND=[
   "  c-=vec3(0.10,0.09,0.07)*ridge;",
   "  float damp=smoothstep(0.6,0.82,sn(p*0.0019+3.0))*smoothstep(60.0,400.0,abs(w.z));",
   "  c=mix(c,vec3(0.50,0.49,0.46),damp*0.5);",
-  "  float az=abs(w.z), crs=(1.0-smoothstep(13.0,18.0,az))*smoothstep(-260.0,-200.0,w.x)*(1.0-smoothstep(10200.0,10500.0,w.x));",
+  "  float az=abs(w.z), crs=(1.0-smoothstep(13.0,18.0,az))*smoothstep(-260.0,-200.0,w.x)*(1.0-smoothstep(12400.0,12700.0,w.x));",
   "  float tr=exp(-pow((az-0.75)/0.32,2.0))+0.55*exp(-pow((az-2.6)/0.5,2.0))+0.35*exp(-pow((az-5.2)/0.9,2.0));",
   "  c*=1.0-crs*0.17*tr*(0.55+0.45*sn(vec2(w.x*0.04,w.z*2.5)));",
   "  c*=1.0+crs*0.03;",
-  "  float bl=(1.0-smoothstep(0.10,0.15,az))*step(-40.0,w.x)*(1.0-step(10150.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
+  "  float bl=(1.0-smoothstep(0.10,0.15,az))*step(-40.0,w.x)*(1.0-step(12350.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
   "  c=mix(c,vec3(0.03,0.03,0.035),bl);",
   "  float sl=(1.0-smoothstep(0.08,0.13,abs(w.x)))*(1.0-smoothstep(5.0,5.4,az));",
   "  c=mix(c,vec3(0.04,0.04,0.05),sl*0.9);",
@@ -14056,7 +14070,7 @@ function saltAltered(color, aero){
 function saltChutes(car, n){
   var U=car.userData; if(U.strip || U.chutes.length===n) return;
   U.chutes.forEach(function(c){ U.piv.remove(c); }); U.chutes.length=0;
-  for(var i=0;i<n;i++){ var c=sc_chute(U.me, sc_mats()); c.position.copy(U.me.anchor); if(n>1) c.position.z+= (i?1:-1)*0.14; c.visible=false; U.piv.add(c); U.chutes.push(c); }
+  for(var i=0;i<n;i++){ var c=sc_chute(U.me, sc_mats()); c.position.copy(U.me.anchor); if(n>1){ c.position.z+= (i?1:-1)*0.14; if(i===0) c.scale.setScalar(0.6); } c.visible=false; U.piv.add(c); U.chutes.push(c); }
 }
 /* --- effects: salt spray off the rear tyres, a long rooster tail hanging over the course at speed, exhaust --- */
 function saltEffects(o, dt, V){
@@ -14173,7 +14187,7 @@ function saltUpdate(o, dt){
     U.piv.position.set(0, Math.sin(SALT.t*43)*0.0015*Math.min(1,v/40), 0); U.piv.rotation.z=U.pitch;
     var wr=v*(1+clamp(+o.slip||0,0,1)*1.2);
     for(i=0;i<U.wheels.length;i++){ var W=U.wheels[i], w=(W.rear?wr:v)/W.r; W.s.rotation.y=(W.s.rotation.y-w*dt)%TAU; }
-    for(i=0;i<U.chutes.length;i++){ var ch=U.chutes[i], A=U.A[i], on=!!o.chute && !(o.chuteBlown && SALT.prev.blownT>0.8);
+    for(i=0;i<U.chutes.length;i++){ var ch=U.chutes[i], A=U.A[i], on=(o.chuteMask!=null?!!((o.chuteMask>>i)&1):!!o.chute) && !(o.chuteBlown && SALT.prev.blownT>0.8);
       if(on && !ch.visible){ ch.visible=true; A.chT=0; A.chC=0; } else if(!on && ch.visible) ch.visible=false;
       if(ch.visible){ A.pitch=U.pitch; sc_chuteAnim(ch, A, me, v, dt); } }
   }
@@ -14657,7 +14671,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.15.0.0";
+const VERSION="1.15.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -15917,7 +15931,7 @@ function saltEnvFix(){const e=S.env,B=SIM.LSR_BODIES;if(!B[e.saltBody])e.saltBod
 const saltCache=new Map();
 /* the engine at Bonneville's 1,290 m and 32 °C — simulate() re-run in that air, cached per build */
 function saltRes(){const h=cfgHash(S.cfg);let r=saltCache.get(h);if(!r){if(saltCache.size>24)saltCache.clear();r=SIM.lsrPrep(S.cfg,stdEnv());saltCache.set(h,r);}return r;}
-function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCourse,redline:S.cfg.redline,aero:e.saltAero==="on",ballast:+e.saltBallast,cooling:e.saltCool,chute:e.saltChute,shift:e.saltDrive==="auto"?"auto":e.saltShift,idle:SIM.isDiesel(S.cfg)?720:Math.max(800,S.cfg.cam>70?1100:850)};
+function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCourse,redline:S.cfg.redline,aero:e.saltAero==="on",ballast:+e.saltBallast,cooling:e.saltCool,chute:e.saltChute,shift:e.saltDrive==="auto"?"auto":e.saltShift,autoLift:e.saltDrive==="auto",idle:SIM.isDiesel(S.cfg)?720:Math.max(800,S.cfg.cam>70?1100:850)};
   if(!e.saltTop){e.saltTop=SIM.lsrGearing(res,v);}v.topMph=+e.saltTop;return v;}
 function saltCls(k){const r=quick||saltRes();return SIM.lsrClass(S.cfg,r,k||S.env.saltBody);}
 function saltBook(){const R=recs();if(!R.lsr||typeof R.lsr!=="object")R.lsr={};const L=R.lsr;if(!L.rec||typeof L.rec!=="object")L.rec={};if(!L.pb||typeof L.pb!=="object")L.pb={};return L;}
@@ -15951,7 +15965,7 @@ function saltStart(){
     if(st.tOut!=null&&!SR.miled){SR.miled=true;buzz([20,30,20]);}
     if(st.done&&SR.doneAt==null){SR.doneAt=now;buzz([40]);}
     if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:true,phase:st.phase,x:st.x,v:st.v,acc:st.acc,slip:Math.max(0,st.slip),rpm:SR.failed?run.rpm:st.rpm,throttle:st.foot,body:k,aero:veh.aero,color:SR.color,
-      chute:st.chuteOut,chutes:veh.chute==="dual"?2:veh.chute==="single"?1:0,chuteBlown:st.chuteBlown,failed:SR.failed,smoke:SR.res.diesel?Math.min(1,(SR.res.smoke||0)/60)*st.foot:0,course,lightness:1-Math.min(1,st.light),dt:rdt*wp});
+      chute:st.chuteOut||st.drogueOut,chutes:veh.chute==="dual"?2:veh.chute==="single"?1:0,chuteMask:veh.chute==="dual"?(st.drogueOut?1:0)|(st.chuteOut?2:0):(st.chuteOut?1:0),chuteBlown:st.chuteBlown,failed:SR.failed,smoke:SR.res.diesel?Math.min(1,(SR.res.smoke||0)/60)*st.foot:0,course,lightness:1-Math.min(1,st.light),dt:rdt*wp});
     saltHud(st);
     run.on=true;
     if(SR.failed)run.rpm=Math.max(0,run.rpm-380);else if(st.done)run.rpm+=(veh.idle-run.rpm)*Math.min(1,rdt*3);else run.rpm=st.rpm;
@@ -15968,7 +15982,7 @@ function saltWarpUi(){document.querySelectorAll("#saltWarp [data-warp]").forEach
 /* the live card: speed first, then the course with the timed mile on it, then what the driver is managing */
 function saltHud(st){if(!SR)return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
   const stat=SR.failed?"broke":st.phase==="spin"?"broke":st.tOut!=null&&!SR.failed?"full":"";
-  const say=SR.failed?"BROKE":st.phase==="spin"?"SPUN":st.phase==="stage"?"on the line":st.phase==="push"?"push truck":st.phase==="run"?(st.x<p.x0?`${((p.x0-st.x)/SIM.LSR_MILE).toFixed(2)} mi to the clocks`:"IN THE MILE"):st.phase==="shutdown"?(st.chuteOut?(st.chuteBlown?"chute tore off":"chute out"):"shut off"):"stopped";
+  const say=SR.failed?"BROKE":st.phase==="spin"?"SPUN":st.phase==="stage"?"on the line":st.phase==="push"?"push truck":st.phase==="run"?(st.x<p.x0?`${((p.x0-st.x)/SIM.LSR_MILE).toFixed(2)} mi to the clocks`:"IN THE MILE"):st.phase==="shutdown"?(st.chuteWait?"coasting to chute speed":st.chuteBlown?"chute tore off":st.chuteOut?"chute out":st.drogueOut?"drogue out":"shut off"):"stopped";
   const split=st.tIn!=null&&st.tOut==null&&st.t>st.tIn?`${(SIM.LSR_MILE*Math.min(1,(st.x-p.x0)/SIM.LSR_MILE)/Math.max(0.01,st.t-st.tIn)*2.23694).toFixed(1)} avg`:st.mileMph!=null?`<b>${st.mileMph.toFixed(3)}</b>`:"—";
   const rec=SR.rec,need=SR.backup?"backup run":"record";
   const lt=Math.round(st.light*100),sp=Math.round(Math.max(0,st.slip)*100),loose=Math.min(100,Math.round(st.loose*100));
@@ -15984,12 +15998,12 @@ function saltHud(st){if(!SR)return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR
   else if(SR.auto)saltBtnText(st.phase==="stage"?"START THE PUSH":"AUTO DRIVER",st.phase==="stage"?"the driver takes it from here":"tap to skip to the result");
   else if(st.phase==="stage")saltBtnText("HOLD TO RUN","push off · hold for throttle, let go to feather");
   else if(st.phase==="push")saltBtnText("PUSHING","hold — the clutch goes out at 27 mph");
-  else if(st.phase==="shutdown")saltBtnText(st.chuteOut?"CHUTE OUT":"SHUT OFF",st.chuteOut?"tap to skip":"tap for the chute");
+  else if(st.phase==="shutdown")saltBtnText(st.chuteOut?"CHUTE OUT":st.drogueOut?"DROGUE OUT":st.chuteWait?"COASTING":"SHUT OFF",st.chuteOut?"tap to skip":st.chuteWait?"chute comes out at its rated speed":"tap for the chute");
   else if(SR.down)saltBtnText(st.loose>0.3?"LOOSE — LIFT":st.light<0.5?"FRONT LIGHT — LIFT":sp>15?"SPINNING — FEATHER":"FLAT OUT",SR.veh.shift==="manual"?"SHIFT with ↑ or G":"let go to feather");
   else saltBtnText("FEATHERED","hold to get back on it");}
 function saltPress(){if(!SR||SR.finished)return;const st=SR.p.st;if(st.done||SR.failed||st.phase==="spin"){saltSkip();return;}
   if(SR.auto){if(st.phase==="stage"){SR.go=true;buzz([20]);}else saltSkip();return;}
-  if(st.phase==="shutdown"){if(!st.chuteOut)SR.p.chute();else saltSkip();return;}
+  if(st.phase==="shutdown"){if(!st.chuteOut&&!st.chuteWait)SR.p.chute();else saltSkip();return;}
   SR.down=true;if(st.phase==="stage")buzz([20]);}
 function saltRelease(){if(!SR)return;SR.down=false;}
 function saltShift(){if(!SR||SR.finished||!SR.p)return;SR.p.shift();buzz([8]);}
@@ -16047,6 +16061,10 @@ function saltFinish(){
 }
 function saltHint(){const fee=SALT_FEE;return career()?`<b>Speed trials</b> · $${fee.short} entry on the short course, $${fee.long} on the long. Needs a certified engine. ${SIM.LSR_BODIES.lakester.n} opens at ${SIM.LSR_BODIES.lakester.rep} rep, ${SIM.LSR_BODIES.streamliner.n} at ${SIM.LSR_BODIES.streamliner.rep}. Beat a class record and back it up on your next run the same week — the record is the average of the two. Records pay contingency money and reputation; a long run is real wear.`
   :`<b>Salt</b> · hold the button for the push, then for throttle — let go to feather the wheelspin. Salt grips about half as well as a prepped strip. The clocks time the mile ${S.env.saltCourse==="long"?"three":"one"} mile${S.env.saltCourse==="long"?"s":""} out; the chute comes out after it.`;}
+/* what this car can do with this setup (steady driver, cached), to check the chute against */
+const saltTopCache=new Map();
+function saltTopEst(k){const v=saltVeh(k),key=[cfgHash(S.cfg),k,v.course,v.topMph,v.aero,v.ballast,v.cooling].join("|");if(saltTopCache.has(key))return saltTopCache.get(key);
+  const r=SIM.lsrPass(saltRes(),Object.assign({},v,{noFail:true,noSpin:true,autoLift:false,h:0.004}));if(saltTopCache.size>40)saltTopCache.clear();saltTopCache.set(key,r.peakMph);return r.peakMph;}
 function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=SIM.LSR_BODIES[k],cls=saltCls(k),rec=saltRecord(cls.key),L=saltBook(),pb=L.pb[cls.key],meet=saltMeet(),res=saltRes(),cell=quick,lk=saltBodyLocked(k);
   const loss=cell&&cell.peakHp>0?Math.round((1-res.peakHp/cell.peakHp)*100):0;
   let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+saltEsc(rec.holder||""):saltEsc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
@@ -16056,7 +16074,10 @@ function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=SIM.LSR_BODIES[k],cls=sa
   h+=`<div class="envgrid">${sl("saltTop","Top gear",100,520,5," mph",e.saltTop||saltVeh(k).topMph)}${sl("saltBallast","Rear ballast",0,300,10," kg",e.saltBallast)}</div><div class="row" style="margin:-2px 0 8px"><button class="chip" data-saltgear>Suggest gearing</button></div>`;
   h+=`<div class="lbl"><span>Aero</span></div><div class="seg">${[["off","Clean","least drag"],["on",B.aero.n,"holds the nose down · more drag"]].map(([id,n,d])=>`<button data-sk="saltAero" data-sv="${id}" class="${e.saltAero===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Cooling</span></div><div class="seg">${[["radiator","Radiator",B.radDrag?"costs drag in this body":"sheds heat at speed"],["ice","Ice tank","sealed nose · soaks a run's heat"]].map(([id,n,d])=>`<button data-sk="saltCool" data-sv="${id}" class="${e.saltCool===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
-  h+=`<div class="lbl"><span>Parachute</span></div><div class="seg">${Object.entries(SIM.LSR_CHUTES).map(([id,c])=>`<button data-sk="saltChute" data-sv="${id}" class="${e.saltChute===id?"on":""}">${c.n}<small>${id==="none"?"tech says 175 mph max":"rated "+Math.round(c.rated*2.23694)+" mph"}</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Parachute</span></div><div class="seg">${Object.entries(SIM.LSR_CHUTES).map(([id,c])=>`<button data-sk="saltChute" data-sv="${id}" class="${e.saltChute===id?"on":""}">${c.n}<small>${id==="none"?"tech says 175 mph max":c.drogue?"drogue to "+Math.round(c.drogue.rated*2.23694)+", main "+Math.round(c.rated*2.23694)+" mph":"rated "+Math.round(c.rated*2.23694)+" mph"}</small></button>`).join("")}</div>`;
+  {const est=saltTopEst(k),rated=SIM.lsrChuteMax(e.saltChute)*2.23694;
+   if(e.saltChute==="none"&&est>175)h+=`<p class="hint" style="color:var(--warn)">⚠ This car can do ~${Math.round(est)} mph — over 175 mph tech wants a parachute, or the run won't count.</p>`;
+   else if(e.saltChute!=="none"&&est>rated*0.98)h+=`<p class="hint" style="color:var(--warn)">⚠ Chute rated ${Math.round(rated)} mph, this car can do ~${Math.round(est)}. It has to coast down to ${Math.round(rated)} before the chute can open — a long shutdown, and the auto driver lifts early if the course would run out${e.saltChute==="single"?"; the drogue + main pack opens far higher":""}.</p>`;}
   h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold to run, let go to feather"],["auto","Auto","a steady hand · watch the run"]].map(([id,n,d])=>`<button data-sk="saltDrive" data-sv="${id}" class="${e.saltDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   if(e.saltDrive!=="auto")h+=`<div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts at the power peak"],["manual","Manual","SHIFT, ↑ or G — four gears"]].map(([id,n,d])=>`<button data-sk="saltShift" data-sv="${id}" class="${e.saltShift===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<p class="hint">${B.n}: ${B.d}. Car ${Math.round(B.mass+res.kg)} kg with this engine · CdA ${(B.cdA+(e.saltAero==="on"?B.aero.cd:0)+(e.saltCool==="ice"?0:B.radDrag)).toFixed(2)} m². Top gear is the road speed at the redline in fourth. Tall gearing is free speed only if the engine can pull it — too tall and it runs out of power below the peak; too short and it sits on the limiter. Lift at speed unloads the front: past half its weight the car wanders. Ballast plants the rear tyres but has to be pushed through the air like everything else.${lk?` <b>Opens at ${lk} rep.</b>`:""}${career()?"":` <button class="chip" data-saltmeet style="margin-left:4px">New meet</button>`}</p>`;
