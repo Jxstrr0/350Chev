@@ -295,6 +295,7 @@ html:not(.desk) .e24st>div>:nth-child(7){display:none}html:not(.desk) .e24st>div
 html.desk .e24map{width:150px;height:104px}html.desk .e24c b,html.desk .e24p b{font-size:38px}
 html.desk body #e24Ctl{width:min(780px,calc(100% - var(--sbw) - 40px))}
 html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
+.bogpit{display:block;width:100%;height:40px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
 .saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;min-width:0}
 .saltcls span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
 .saltcls small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-bar .zone{position:absolute;top:0;bottom:0;background:rgba(232,193,74,.22);border-left:1px solid var(--warn);border-right:1px solid var(--warn)}
@@ -956,6 +957,7 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
         <button data-t="pull_sled">Truck pull<small>sled · 300 ft</small></button>
         <button data-t="road">Road test<small>0–100 · lap</small></button>
         <button data-t="salt">Salt flats<small>Bonneville · timed mile</small></button>
+        <button data-t="bog">Mud bog<small>pit · 60–90 m</small></button>
         <button data-t="race24">24 Hours<small>endurance race</small></button>
       </div>
       <div id="envBox"></div>
@@ -973,6 +975,7 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
       <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
       <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn" id="killBtn" style="display:none">KILL SWITCH<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.85;font-weight:500">it's running away — tap now</small></button><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
       <div id="roadCtl" style="display:none"><div id="roadLive"></div><div class="row rdbtns"><button class="btn pri" id="roadSkip">SKIP ▸▸</button><button class="btn" id="roadSpd">2×</button><button class="btn" id="roadCamB">Cam · Auto</button></div></div>
+      <div id="bogCtl" style="display:none"><div id="bogLive"></div><button class="btn pri" id="bogBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO DRIVE</button></div>
       <div id="e24Ctl" style="display:none"><div id="e24Hud"></div><div class="row e24spd" id="e24Spd"></div></div>
       <div id="e24Side" style="display:none"></div>
       <div id="saltCtl" style="display:none"><div id="saltLive"></div><div class="row" style="gap:8px"><button class="btn pri" id="saltBtn" style="flex:3;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO RUN</button><button class="btn" id="saltShiftBtn" style="flex:1;min-height:72px;font-size:18px;touch-action:none">SHIFT</button></div><div class="chips" id="saltWarp" style="margin-top:8px"><span class="hint" style="margin:0 4px 0 0;align-self:center">Run-up</span><button class="chip on" data-warp="1">×1</button><button class="chip" data-warp="2">×2</button><button class="chip" data-warp="4">×4</button></div></div>
@@ -6097,6 +6100,268 @@ const ENGINE_SIM = (function () {
   }
 
   /* =====================================================================
+     MUD BOG: the engine in a truck, a run-up on firm dirt, then a pit of mud 60–90 m long.
+     Stuck in the pit scores the distance; through it scores the time from the near edge to the far one.
+     Mud: depth varies along the pit, consistency per night (0 soupy … 1 sticky clay), hidden ruts and hard ridges.
+     The tyre: bite against slip like the sled's dirt, plus a paddle's push from wheel speed over ground speed;
+     slow wheels pack their lugs with mud (bite goes), fast ones throw it out (clean), too much spin digs a hole.
+     Drag: rolling resistance grows with how far the tyres are under, a bow wave of mud, and the belly once it
+     touches. The engine bogs below a band (torque falls away), a clutch truck can stall, and the radiator packs up.
+     ===================================================================== */
+  const BOG_TYRES = {
+    mt: { n: "Mud-terrain", d: "street lugs · bite, then pack up", mu: 0.56, sp: 0.16, fall: 0.40, clean: 0.15, dig: 1.0, paddle: 0.15 },
+    swamp: { n: "Swampers", d: "tall bias-ply · deep lugs", mu: 0.62, sp: 0.24, fall: 0.32, clean: 0.45, dig: 0.8, paddle: 0.45 },
+    paddle: { n: "Paddle tyres", d: "cupped paddles · need wheel speed", mu: 0.46, sp: 0.42, fall: 0.15, clean: 0.85, dig: 0.6, paddle: 1 }
+  };
+  const BOG_CLASSES = {
+    street: { n: "Street 4×4", d: "plated pickup · mud-terrains · part-time 4×4", tier: 1, rep: 0,
+      veh: { mass: 2500, tyreDia: 35, width: 1.9, clear: 0.30, front: 0.55, drive: 0.85, driveN: "part-time 4×4", trans: "conv", tyres: ["mt"], runup: 30, pitK: 1 },
+      gears: [["1st", 24], ["2nd", 36], ["3rd", 50]], field: { hp: 330, sd: 60, dsl: 0.4 } },
+    modified: { n: "Modified", d: "lifted · swampers · lockers both ends", tier: 2, rep: 40,
+      veh: { mass: 2150, tyreDia: 44, width: 2.1, clear: 0.45, front: 0.52, drive: 1.0, driveN: "locked 4×4", trans: "conv", tyres: ["mt", "swamp"], runup: 35, pitK: 1.4 },
+      gears: [["1st", 28], ["2nd", 42], ["3rd", 58]], field: { hp: 520, sd: 90, dsl: 0.3 } },
+    super: { n: "Open · Super", d: "tube chassis · paddles · spooled, clutch", tier: 3, rep: 150,
+      veh: { mass: 1650, tyreDia: 54, width: 2.4, clear: 0.62, front: 0.48, drive: 1.0, driveN: "spooled 4×4", trans: "clutch", tyres: ["swamp", "paddle"], runup: 40, pitK: 1.75 },
+      gears: [["2nd", 40], ["3rd", 56], ["4th", 74]], field: { hp: 900, sd: 160, dsl: 0.15 } }
+  };
+  for (const k in BOG_CLASSES) BOG_CLASSES[k].id = k;
+  function bogGears(cls) { return (BOG_CLASSES[cls] || BOG_CLASSES.street).gears; }
+  function bogMudName(c) { return c < 0.22 ? "soupy" : c < 0.45 ? "sloppy" : c < 0.7 ? "peanut butter" : "sticky clay"; }
+  /* the night's pit: length, mud, a depth profile every half metre, hidden ruts and hard ridges. Same seed, same pit. */
+  function bogNight(seed) {
+    const r = pullRng(((seed >>> 0) ^ 0x6B0C1D) >>> 0);
+    const len = 60 + Math.floor(r() * 31), cons = +(0.05 + r() * 0.9).toFixed(2), d0 = 0.42 + r() * 0.26;
+    const l1 = 9 + r() * 9, l2 = 3 + r() * 3, p1 = r() * 6.28, p2 = r() * 6.28, n = Math.ceil(len * 2) + 1, depth = new Array(n);
+    for (let i = 0; i < n; i++) { const x = i / 2;
+      let d = d0 * (0.82 + 0.22 * Math.sin(2 * Math.PI * x / l1 + p1) + 0.1 * Math.sin(2 * Math.PI * x / l2 + p2)) * (0.86 + 0.28 * Math.sin(Math.PI * x / len));
+      d *= clamp(x / 5, 0.25, 1) * clamp((len - x) / 6, 0.35, 1); depth[i] = +d.toFixed(3); }
+    const hz = [], nh = 3 + Math.floor(r() * 3);
+    for (let i = 0; i < nh; i++) { const kind = r() < 0.55 ? "rut" : "bump", x = 10 + r() * (len - 20);
+      if (hz.some(h => Math.abs(h.x - x) < 5)) continue;
+      hz.push({ x: +x.toFixed(1), kind, h: +(kind === "rut" ? 0.2 + r() * 0.2 : 0.14 + r() * 0.18).toFixed(2), w: +(kind === "rut" ? 1.6 + r() * 1.2 : 0.8 + r() * 0.6).toFixed(1) }); }
+    hz.sort((a, b) => a.x - b.x);
+    return { seed: seed >>> 0, len, cons, name: bogMudName(cons), d0: +d0.toFixed(2), depth, hz };
+  }
+  function bogDepth(N, x) { if (x < 0 || x > N.len) return 0; const f = x * 2, i = Math.floor(f), a = N.depth[i] || 0, b = N.depth[Math.min(N.depth.length - 1, i + 1)] || 0; return a + (b - a) * (f - i); }
+
+  /* veh: { cls, gear (index into the class ladder), tyre, redline, idle, seed, noFail, night (bogNight), wornAt?, skill? (AI driver 0..1) }.
+     step(dt, throttle) takes the driver's foot 0..1; auto() is the auto driver's foot for this moment. */
+  function bogRun(res, veh) {
+    const C0 = BOG_CLASSES[veh && veh.cls] || BOG_CLASSES.street, CV = C0.veh;
+    const v = Object.assign({ cls: C0.id, gear: 1, tyre: CV.tyres[CV.tyres.length - 1], redline: 3200, idle: 750, seed: 1, noFail: false, night: null }, veh || {});
+    const N0 = v.night || bogNight(v.seed), L = N0.len, cons = N0.cons, pitK = CV.pitK || 1;   // the bigger classes dig their pit deeper
+    const rpms = res.rpms, tq = res.torque, NR = rpms.length, rng = pullRng(v.seed);
+    const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[NR - 1]) return arr[NR - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
+    const torqueAt = r => r <= rpms[0] ? tq[0] * Math.max(0.3, r / rpms[0]) : interp(tq, r);
+    const TY = BOG_TYRES[v.tyre] || BOG_TYRES.mt, g = 9.81, rw = CV.tyreDia * 0.0254 / 2, G0 = C0.gears;
+    const gi = clamp(Math.round(+v.gear || 0), 0, G0.length - 1), mph = G0[gi][1];
+    const G = (v.redline * 2 * Math.PI / 60) / (mph * 0.44704 / rw);
+    const conv = CV.trans !== "clutch", eta = conv ? 0.88 : 0.93;
+    const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000);
+    const Ie = 0.12 + 0.07 * VdL, Iw = 4 * (18 + 30 * rw) * rw * rw * 0.6;
+    const m0 = CV.mass + 230 * Math.min(1.6, VdL / 5);   // the engine's own weight moves the truck a little
+    const pkTqR = res.peakTqRpm || v.redline * 0.55;
+    const floorFull = conv ? clamp(0.45 * pkTqR + 0.22 * v.redline, v.idle + 350, v.redline * 0.75) : clamp(0.5 * v.redline, v.idle + 500, v.redline * 0.8);
+    const bogHi = clamp(Math.max(v.idle + 450, 0.55 * pkTqR), v.idle + 300, v.redline * 0.7), stallR = v.idle * 0.62;
+    const lim = v.redline * 1.03, Tfric = 0.10 * (res.peakTq || 300);
+    const kind = res.aspKind || "na", bT = +res.boostTarget || 0;
+    let trans = kind !== "na" && bT > 0 && Array.isArray(res.naTorque) && res.naTorque.length === NR && Array.isArray(res.boostCurve) && res.boostCurve.length === NR;
+    let gpb = null;
+    if (trans) { gpb = new Array(NR); const valid = [];
+      for (let i = 0; i < NR; i++) { const b = res.boostCurve[i]; if (b > Math.max(0.10, 0.15 * bT)) { gpb[i] = Math.max(0, tq[i] - res.naTorque[i]) / b; valid.push(i); } else gpb[i] = null; }
+      if (!valid.length) trans = false;
+      else for (let i = 0; i < NR; i++) if (gpb[i] == null) { let j = valid[0]; for (const k of valid) if (Math.abs(k - i) < Math.abs(j - i)) j = k; gpb[i] = gpb[j] * Math.max(0, res.naTorque[i]) / Math.max(1, res.naTorque[j]); } }
+    const isTurbo = trans && kind === "turbo", tqCap = Math.max.apply(null, tq) * 1.06, mmT = res.turboMm || 54;
+    const tauBase = (0.25 + 1.0 * clamp((mmT - 46) / 52, 0, 1.2)) * (res.turboUnits === 2 && !res.compound ? 0.78 : 1) * clamp(Math.pow(2.5 / VdL, 0.3), 0.55, 1.5) * (res.vgt ? 0.72 : 1);
+    const pkRpm = res.peakHpRpm || v.redline * 0.85, bssAt = r => trans ? Math.max(0, interp(res.boostCurve, r)) : 0;
+    function fullTq(r) { if (!trans) return torqueAt(r); const full = torqueAt(r), d = st.boost - bssAt(r), gb = interp(gpb, r);
+      return d >= 0 ? Math.min(full + gb * d, Math.max(tqCap, full)) : Math.max(interp(res.naTorque, r), full + gb * d); }
+    function boostStep(dt, r, load) { if (!trans) { st.boost = 0; return; }
+      const tgt = Math.min(bT, bssAt(r) * Math.pow(clamp(load, 0, 1), isTurbo ? 1.5 : 1)); let tau = 0.05;
+      if (isTurbo) { tau = tgt > st.boost ? tauBase / Math.pow(clamp(r * Math.max(0.15, load) / pkRpm, 0.08, 1.3), 0.75) : 0.35; if (res.compound && tgt > st.boost) tau *= st.boost > 0.5 * bT ? 1.35 : 0.7; }
+      st.boost = clamp(st.boost + (tgt - st.boost) * (1 - Math.exp(-dt / Math.max(0.03, tau))), 0, bT); }
+    // lugging: under the band the engine can't hold its torque — it falls away, and keeps falling as the rpm does
+    const lug = r => r >= bogHi ? 1 : clamp(0.5 + 0.5 * (r - stallR) / Math.max(1, bogHi - stallR), 0.25, 1);
+    function engTq(r, thr) { let T = thr * fullTq(r) * lug(r) - (1 - thr) * Tfric * clamp(r / v.redline, 0.3, 1);
+      if (r > v.redline) T = Math.min(T, thr * fullTq(v.redline) * clamp((lim - r) / (lim - v.redline), 0, 1)); return T; }
+    function muS(s, mu0, sp, fall) { const a = Math.abs(s); return Math.sign(s || 1) * mu0 * (a < sp ? Math.pow(Math.sin(Math.PI / 2 * a / sp), 0.7) : 1 - fall * Math.pow(clamp((a - sp) / (1 - sp), 0, 1), 0.8)); }
+    const hasEgt = Array.isArray(res.egtCurve) && res.egtCurve.length === NR;
+    const egtLimit = res.egtLimitC || (res.diesel ? 900 : 960);
+    const tU = id => { const t = (res.tests || []).find(x => x.id === id); return t ? t.util : 0; };
+    const kW = Math.max(60, (res.peakHp || 250) * 0.7457), Cth = (7 + 2.6 * VdL) * 1000, UA = kW * 1000 * 0.5 / 62;   // a radiator sized to hold full power at full airflow
+    const hFrac = res.diesel ? 0.42 : 0.52;
+    const sw = [Math.max(0.05, TY.sp - 0.06), TY.sp + 0.1], digS = TY.sp + 0.28 + 0.1 * TY.paddle;
+    const st = { t: 0, tPit: null, tOut: null, x: -CV.runup, v: 0, w: 0, rpm: v.idle, thr: 0, foot: 0, slip: 0, phase: "stage", done: false, cleared: false,
+      boost: 0, egt: 420, egtPeak: 420, egtDose: 0, cool: 88 + 9 * clamp(tU("cooling"), 0, 1.2), coolPeak: 0, hotT: 0, radPack: 0, pack: 0, dig: 0, sink: 0, depth: 0, mudKg: 0,
+      y: 0, vy: 0, air: false, airT: 0, belly: 0, hz: -1, hzHit: [], slaps: 0, slapK: 0, bogT: 0, spinT: 0, sweetT: 0, packT: 0, stuckT: 0, limT: 0, maxV: 0, entryV: null, peakSlip: 0,
+      broke: null, failKind: null, failAt: Infinity, stopWhy: null, stalled: false, trace: [], Ft: 0, Fd: 0, ai: 0.6, coupled: false, sweet: sw, bogBand: [Math.round(stallR), Math.round(bogHi)] };
+    st.coolPeak = st.cool;
+    if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(x => x.name === res.fails[0]); st.failKind = t0 ? t0.id : "rod_tension"; st.failAt = 1.2 + rng() * 4.5; }
+    const egtTrip = 1.0 + rng() * 2.0;
+    const kLine = 0.95 + 0.1 * pullRng(((v.seed >>> 0) ^ 0x51F0B3) >>> 0)();   // the line it takes: no two runs find quite the same mud
+    let lastTrace = -1, loadT = 0, launchT = 0;
+    function hazAt(x) { for (let i = 0; i < N0.hz.length; i++) { const h = N0.hz[i]; if (Math.abs(x - h.x) < h.w / 2) return i; } return -1; }
+    function sub(dt) {
+      st.foot += (clamp(st.thr, 0, 1) > st.foot ? 1 / 0.3 : -1 / 0.2) * dt; st.foot = clamp(st.foot, 0, 1);
+      const thr = st.stalled ? 0 : st.foot;
+      if (st.phase === "stage") { st.t = 0; st.rpm += (v.idle + 300 * st.foot - st.rpm) * Math.min(1, dt * 4); boostStep(dt, st.rpm, 0.05); if (st.thr > 0.05) st.phase = "runup"; return; }
+      st.t += dt; launchT += dt;
+      const inPit = st.x >= 0 && st.x < L;
+      if (st.x >= 0 && st.phase === "runup") { st.phase = "pit"; st.tPit = st.t; st.entryV = st.v; st.slapK = 1 + st.v / 6; }
+      // the mud under the truck: depth, a hidden rut or a ridge
+      const hi = inPit ? hazAt(st.x) : -1, H = hi >= 0 ? N0.hz[hi] : null;
+      let D = inPit ? bogDepth(N0, st.x) * pitK : 0; if (H && H.kind === "rut") D += H.h;
+      st.depth = D;
+      if (hi >= 0 && st.hzHit.indexOf(hi) < 0) { st.hzHit.push(hi); st.hz = hi;
+        if (H.kind === "bump") { if (st.v > 2.5) { st.vy = Math.max(st.vy, H.h * st.v * 0.75); st.slapK = Math.max(st.slapK, 0.6); } }
+        else { st.vy -= Math.min(1.2, 0.08 * st.v); st.slapK = Math.max(st.slapK, 0.5 + st.v / 10); } }
+      // sink: soupy mud lets the tyres down to the floor, sticky holds them up but grabs; a dug hole sinks them further
+      const tgtSink = inPit ? D * (0.5 + 0.38 * (1 - cons)) * (1 - 0.3 * clamp(st.v / 16, 0, 1)) + st.dig * 0.32 * rw : 0;   // speed keeps it up on top
+      st.sink += (tgtSink - st.sink) * Math.min(1, dt * (tgtSink > st.sink ? 7 : 3));
+      const sr = clamp(st.sink / rw, 0, 1.6);
+      // up and down: ridges throw it, landings slap
+      st.vy -= g * dt; st.y += st.vy * dt;
+      if (st.y <= 0) { if (st.vy < -1.4) { st.slapK = Math.max(st.slapK, Math.min(1.5, -st.vy / 3)); st.slaps++; } st.y = 0; st.vy = st.vy < -0.5 ? -st.vy * 0.22 : 0; }
+      st.air = st.y > 0.04; if (st.air) st.airT += dt;
+      // the belly: the frame sits down on firm ground — the crown between ruts, a ridge at walking pace, the lip of a hole it dug —
+      // and carries the truck's weight off the tyres. Deep mud alone only drags at it (the bow wave below).
+      const gap = CV.clear - (H && H.kind === "rut" ? H.h * 0.9 : 0) - (H && H.kind === "bump" && st.v < 3 ? H.h * 1.5 : 0) - st.dig * 0.42 * rw;
+      st.belly = inPit ? clamp(-gap / 0.12, 0, 0.9) : 0;
+      st.wade = inPit ? clamp((st.sink - CV.clear) / 0.3, 0, 1) : 0;
+      // engine and driveline: a converter slips up to its stall speed; a clutch truck slips the clutch off the line, then it's locked
+      const m = m0 + st.mudKg, W = m * g;
+      const wRpm = st.w * G * 60 / (2 * Math.PI);
+      if (!conv && !st.locked && wRpm >= Math.max(v.idle + 600, 0.38 * v.redline)) st.locked = true;   // the driver slips the clutch until the wheels catch up, then it's in for the run
+      let floor = conv ? v.idle + (floorFull - v.idle) * thr : (!st.locked ? v.idle + (floorFull - v.idle) * Math.max(thr, 0.3) : 0);
+      if (st.stalled) floor = 0;
+      st.coupled = wRpm >= floor;
+      let rpmE = st.coupled ? wRpm : st.rpm + (floor - st.rpm) * Math.min(1, dt / 0.2);
+      boostStep(dt, rpmE, thr);
+      let Te = st.stalled ? 0 : engTq(rpmE, thr), Tw;
+      if (st.coupled) Tw = Te * G * eta;
+      else { const SR = clamp(wRpm / Math.max(1, rpmE), 0, 1), TR = conv ? 1 + 1.0 * clamp(1 - SR / 0.85, 0, 1) : 1; Tw = Math.max(0, Te) * TR * G * (conv ? 0.84 : 0.92); }
+      st.rpm = rpmE;
+      if (!conv && st.coupled && !st.stalled && st.rpm < stallR && st.t > 1) { st.stalled = true; }
+      if (st.rpm > v.redline * 1.005) st.limT += dt;
+      // the tyres: bite against slip, a paddle's push, lugs packing and cleaning, a hole when it spins too much
+      const vw = st.w * rw, den = Math.max(Math.abs(vw), Math.abs(st.v), 1.0), s = (vw - st.v) / den;
+      st.slip = clamp(s, 0, 1);
+      const Nn = st.air ? 0 : W * (1 - st.belly) * (1 + clamp(-st.vy, 0, 2) * 0.15), grip = Nn * ((1 - CV.front) + CV.front * CV.drive);
+      let Ft, Fp = 0;
+      if (inPit) {
+        const kc = (0.84 + 0.3 * cons) * clamp(1.15 - 0.25 * sr, 0.7, 1.1);
+        const muM = muS(s, TY.mu * kc, TY.sp, TY.fall) * (1 - 0.55 * st.pack) * (1 - 0.32 * st.dig * TY.dig);
+        const slipV = Math.max(0, vw - st.v);
+        Fp = TY.paddle * 170 * (CV.width / 2) * clamp(sr, 0.15, 1.1) * Math.pow(slipV, 1.55) * (st.air ? 0 : 1) * (1 - 0.4 * st.pack);
+        Fp = Math.min(Fp, grip * 0.9);
+        Ft = (muM * grip + Fp) * kLine;
+      } else Ft = muS(s, 0.78, 0.13, 0.3) * grip;
+      st.Ft = Ft;
+      // churning: mud on the tyre resists it turning, more the deeper and stickier
+      const Fch = inPit ? 130 * sr * (0.5 + cons) * Math.min(25, Math.abs(vw)) * (CV.width / 2) : 0;
+      const I = Iw + (st.coupled && !st.stalled ? Ie * G * G : 0);
+      st.w += (Tw - (Ft + Fch) * rw) / I * dt; if (st.w < 0) st.w = 0;
+      if (!st.coupled && st.w * G * 60 / (2 * Math.PI) > floor) st.w = Math.min(st.w, floor * 2 * Math.PI / 60 / G * 1.001);
+      if (st.stalled) st.w = Math.min(st.w, st.v / rw);
+      // drag: rolling in mud, the bow wave, the belly
+      const crr = inPit ? 0.06 + 0.42 * sr * (0.5 + 0.9 * cons) : 0.03;
+      const plow = inPit ? 95 * CV.width * (st.sink + 0.5 * st.wade * CV.clear) * st.v * st.v * (0.7 + 0.6 * cons) : 0;   // tyres, then the axles and frame, pushing mud
+      const Fd = (st.air ? 0.3 : 1) * crr * W + plow + 0.62 * W * st.belly + 0.6 * st.v * st.v;
+      st.Fd = Fd;
+      let acc = (Ft - Fd) / m; if (st.v <= 0 && acc < 0) acc = 0;
+      st.v = Math.max(0, st.v + acc * dt); st.x += st.v * dt; st.acc = acc;
+      st.maxV = Math.max(st.maxV, st.v); if (inPit) st.peakSlip = Math.max(st.peakSlip, st.slip);
+      // lugs: slow wheels pack, fast wheels throw it out; a hole when it spins past the dig point
+      if (inPit) {
+        const aC = vw * vw / rw;
+        st.pack += dt * ((1 - st.pack) * cons * 0.9 * (1 - TY.clean * 0.6) * (aC < 120 ? 1 : 0.35) - st.pack * clamp((aC - 60) / 220, 0, 2) * (0.35 + TY.clean) * 1.6);
+        st.pack = clamp(st.pack, 0, 1); if (st.pack > 0.45) st.packT += dt;
+        if (st.slip > digS) st.dig = Math.min(1, st.dig + dt * (st.slip - digS) * 1.5 * TY.dig * (0.6 + cons)); else st.dig = Math.max(0, st.dig - dt * st.v * 0.09);
+        if (st.slip > digS) st.spinT += dt; else if (st.slip >= sw[0] && st.slip <= sw[1] + 0.06) st.sweetT += dt;
+        st.mudKg = Math.min(260, st.mudKg + dt * (6 + 14 * cons) * sr * Math.min(2, Math.abs(vw) / 6));
+        st.radPack = clamp(st.radPack + dt * (0.015 + 0.1 * clamp(sr, 0, 1.2) * clamp(Math.abs(vw) / 10, 0, 1.6)) * (0.5 + cons), 0, 1);
+      }
+      // heat: the water, the exhaust
+      const Pk = Math.max(0, Te) * st.rpm * 2 * Math.PI / 60;
+      const air = 0.28 + 0.72 * clamp(st.v / 14, 0, 1);
+      st.cool += dt * (hFrac * Pk - UA * (st.cool - 30) * air * (1 - 0.78 * st.radPack)) / Cth;
+      st.coolPeak = Math.max(st.coolPeak, st.cool); if (st.cool > 122) st.hotT += dt; else st.hotT = Math.max(0, st.hotT - dt * 0.5);
+      const egtT = (hasEgt ? interp(res.egtCurve, st.rpm) : (res.diesel ? 720 : 800)) * (0.5 + 0.5 * thr) + (st.rpm < bogHi && thr > 0.7 ? 70 : 0);
+      st.egt += (egtT - st.egt) * (1 - Math.exp(-dt / 3.5)); st.egtPeak = Math.max(st.egtPeak, st.egt);
+      if (st.egt > egtLimit) st.egtDose += dt * (st.egt - egtLimit) / 60;
+      if (thr > 0.6) loadT += dt;
+      if (inPit && st.rpm < bogHi && thr > 0.7) st.bogT += dt;
+      // something lets go
+      if (!v.noFail && !st.broke) {
+        if (st.failKind && loadT >= st.failAt) st.broke = st.failKind;
+        else if (v.wornAt && loadT >= v.wornAt) st.broke = "worn";
+        else if (st.hotT > 1.4) st.broke = "head_lift";
+        else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : res.diesel ? "piston" : "crown_temp";
+        if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
+      }
+      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), throttle: +thr.toFixed(2), d: +st.depth.toFixed(2), cool: Math.round(st.cool), egt: Math.round(st.egt), pack: +st.pack.toFixed(2), dig: +st.dig.toFixed(2) }); }
+      st.thrNow = thr;
+      if (st.x >= L) { st.cleared = true; st.tOut = st.t; st.stopWhy = "cleared"; finish(); return; }
+      if (st.broke) { finish(); return; }
+      if (st.stalled && st.v < 0.1) { st.stopWhy = "stalled"; finish(); return; }
+      if (st.phase === "pit" && st.v < 0.12) { if ((st.stuckT += dt) > 1.5) { st.stopWhy = st.belly > 0.45 ? "highcentre" : st.dig > 0.45 ? "dug" : st.rpm < bogHi && thr > 0.6 ? "bogged" : thr < 0.25 ? "lifted" : st.pack > 0.6 ? "packed" : "stuck"; finish(); return; } }
+      else st.stuckT = 0;
+      if (st.phase === "runup" && st.t > 25) { st.stopWhy = "time"; finish(); return; }
+      if (st.t > 60) { st.stopWhy = "time"; finish(); }
+    }
+    function finish() { st.done = true; st.phase = "done"; st.distM = clamp(st.x, 0, L); }
+    function step(dt, throttle) { if (throttle != null) st.thr = clamp(+throttle || 0, 0, 1); dt = Math.min(0.25, Math.max(0, dt)); while (dt > 1e-9 && !st.done) { const h = Math.min(0.002, dt); dt -= h; sub(h); } return st; }
+    /* the auto driver: flat on the run-up unless it's spinning; in the mud it holds the slip near the tyre's sweet spot and the rpm
+       out of the bog band — on with it when the rpm sags, off when the slip runs past the dig point. skill 0..1 blurs it. */
+    function auto(skill) {
+      const k = skill == null ? 1 : skill;
+      if (st.phase === "stage") return 1;
+      if (st.phase === "runup") { st.ai = st.slip > 0.22 ? Math.max(0.5, st.ai - 0.04) : Math.min(1, st.ai + 0.05); return st.ai; }
+      const tgt = sw[1] + 0.04 + 0.12 * (1 - k), rpmLow = st.rpm < bogHi * (1.08 + 0.1 * k);
+      if (st.slip > digS - 0.04 * k && !rpmLow) st.ai = Math.max(0.35, st.ai - 0.05 * (0.5 + k));
+      else if (rpmLow || st.slip < tgt) st.ai = Math.min(1, st.ai + 0.06);
+      return st.ai;
+    }
+    function result() {
+      const reasons = [], tn = TY.n.toLowerCase(), pitT = st.cleared ? +(st.tOut - st.tPit).toFixed(2) : null;
+      const dM = +clamp(st.x, 0, L).toFixed(2);
+      if (st.broke) reasons.push(st.broke === "head_lift" ? `The water hit ${Math.round(st.coolPeak)} °C with the radiator ${Math.round(st.radPack * 100)}% packed with mud — it lifted the head. A bigger radiator margin, or less time spinning in the deep end.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C, lugging in the mud — the hot side let go.` : st.broke === "piston" || st.broke === "crown_temp" ? `Exhaust held ${Math.round(st.egtPeak)} °C, loaded down in the mud below its band — a piston crown gave up.` : st.broke === "worn" ? `Something tired let go ${Math.round(dM)} m into the pit — the build was past its pass budget.` : `The engine let go under load ${Math.round(dM)} m into the pit — the dyno sheet already said it was past a limit.`);
+      if (st.cleared) reasons.push(`Through the pit in ${pitT.toFixed(2)} s — ${L} m of ${N0.name} mud.`);
+      if (st.stopWhy === "bogged") reasons.push(`Bogged down at ${Math.round(st.rpm).toLocaleString()} rpm — under the ${st.bogBand[1].toLocaleString()} rpm band the engine can't hold its torque. A shorter gear keeps it up on the cam; more wheel speed in the deep end.`);
+      if (st.stopWhy === "stalled") reasons.push(`Stalled — the clutch truck dragged the engine under ${Math.round(stallR)} rpm. Keep the wheels turning: let it spin rather than lug.`);
+      if (st.stopWhy === "highcentre") reasons.push(`High-centred — the frame sat down on the mud with ${Math.round(CV.clear * 100)} cm of clearance and the tyres lost their load. Carry speed over the ridges and through the ruts.`);
+      if (st.stopWhy === "dug") reasons.push(`Dug in — ${st.spinT.toFixed(1)} s spinning past ${Math.round(digS * 100)}% slip. The ${tn}s dug a hole instead of driving; feather it to keep them on top.`);
+      if (st.stopWhy === "packed") reasons.push(`The ${tn}s packed solid with mud — too slow to throw it out. Some wheel speed cleans the lugs.`);
+      if (st.stopWhy === "lifted") reasons.push("Lifted in the pit — the mud stopped it dead. In a bog you stay in it.");
+      if (st.stopWhy === "stuck" && !st.broke) reasons.push(`Ran out of momentum ${dM.toFixed(1)} m in — the mud's drag beat what the tyres could put down.`);
+      if (st.entryV != null) reasons.push(`Hit the mud at ${(st.entryV * 2.23694).toFixed(0)} mph after a ${CV.runup} m run-up${st.entryV < 6 ? " — not much momentum to carry" : ""}.`);
+      if (st.packT > 1.5 && st.stopWhy !== "packed") reasons.push(`Lugs packed for ${st.packT.toFixed(1)} s — ${cons > 0.6 ? "sticky clay grabs a slow tyre" : "slow wheels fill up"}.`);
+      if (st.radPack > 0.6 && st.broke !== "head_lift") reasons.push(`Radiator ${Math.round(st.radPack * 100)}% packed by the end · water ${Math.round(st.coolPeak)} °C peak.`);
+      if (st.airT > 0.3) reasons.push(`Airborne ${st.airT.toFixed(1)} s off the ridges${st.limT > 0.3 ? " — on the limiter while the wheels were in the air" : ""}.`);
+      if (st.sweetT > 2 && !st.cleared) reasons.push(`${st.sweetT.toFixed(1)} s with the slip in the ${Math.round(sw[0] * 100)}–${Math.round(sw[1] * 100)}% band.`);
+      return { cleared: st.cleared, pitT: pitT, distM: dM, distFt: +(dM * 3.28084).toFixed(1), len: L, mud: N0.name, cons: cons, night: { len: L, cons: cons, name: N0.name, d0: N0.d0, seed: N0.seed, hz: N0.hz },
+        entryMph: st.entryV != null ? +(st.entryV * 2.23694).toFixed(1) : 0, maxMph: +(st.maxV * 2.23694).toFixed(1), avgMph: st.cleared ? +(L / pitT * 2.23694).toFixed(1) : null,
+        peakSlip: +st.peakSlip.toFixed(3), peakEgt: Math.round(st.egtPeak), coolPeak: Math.round(st.coolPeak), radPack: +st.radPack.toFixed(2), pack: +st.pack.toFixed(2), dig: +st.dig.toFixed(2), mudKg: Math.round(st.mudKg),
+        broke: st.broke, failKind: st.broke ? st.failKind : null, stopWhy: st.stopWhy, time: +st.t.toFixed(1), spinT: +st.spinT.toFixed(1), sweetT: +st.sweetT.toFixed(1), bogT: +st.bogT.toFixed(1), airT: +st.airT.toFixed(1), slaps: st.slaps,
+        trace: st.trace, sweet: sw, digS: +digS.toFixed(2), bogBand: st.bogBand, ratio: +G.toFixed(1), mphGear: mph, gearName: G0[gi][0], tyre: TY.n, cls: v.cls, reasons: reasons, veh: { cls: v.cls, gear: gi, tyre: v.tyre } };
+    }
+    return { st: st, step: step, auto: auto, result: result, ratio: G, night: N0, len: L, sweet: sw, digS: digS, bogBand: st.bogBand, runup: CV.runup };
+  }
+  /* the engine as the truck sees it: the strip's prep (boost split, turbo size, EGT limit) on a simulate() run */
+  function bogPrep(cfg, env, res) { return dragPrep(cfg, env, res); }
+  /* a run with the auto driver's foot on it, start to finish: the AI field and the node harness */
+  function bogPass(res, veh, skill) { const p = bogRun(res, veh); let n = 0; while (!p.st.done && n++ < 20000) p.step(0.02, p.auto(skill)); return p.result(); }
+  /* a rival's engine from a horsepower figure: a smooth torque curve, petrol or diesel, enough for the same sim */
+  function bogAiRes(hp, diesel, seed) {
+    const r = pullRng(seed), red = diesel ? 3000 + Math.round(r() * 6) * 100 : 5600 + Math.round(r() * 14) * 100, pk = red * (diesel ? 0.6 : 0.64) * (0.9 + 0.2 * r());
+    const rpms = [], f = [];
+    for (let x = 1000; x <= red + 1; x += 250) { rpms.push(x); f.push(Math.max(0.35, 1 - 0.95 * Math.pow((x - pk) / red, 2))); }
+    let best = 0, bi = 0; for (let i = 0; i < rpms.length; i++) if (f[i] * rpms[i] > best) { best = f[i] * rpms[i]; bi = i; }
+    const Tpk = hp * 7121 / best, torque = f.map(q => q * Tpk);
+    return { rpms, torque, peakTq: Tpk, peakTqRpm: Math.round(pk), peakHp: hp, peakHpRpm: rpms[bi], redline: red, diesel: !!diesel, VdEq: diesel ? 6600 : 5700, fails: [], tests: [], aspKind: "na" };
+  }
+
+  /* =====================================================================
      Road test: the engine bolted into a car. Straight-line figures come from a
      time-stepped run (clutch launch, traction limit with weight transfer, the
      torque curve through the gearbox, shift times, turbo lag); the lap is a
@@ -7137,6 +7402,7 @@ const ENGINE_SIM = (function () {
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     pullTrackK: pullTrackK, pullTrackName: pullTrackName, pullRunaway: pullRunaway,
+    bogPrep: bogPrep, bogRun: bogRun, bogPass: bogPass, bogNight: bogNight, bogDepth: bogDepth, bogGears: bogGears, bogAiRes: bogAiRes, bogMudName: bogMudName, BOG_CLASSES: BOG_CLASSES, BOG_TYRES: BOG_TYRES,
     roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
     enduroPrep: enduroPrep, e24AiPrep: e24Ai, enduroNew: enduroNew, enduroStep: enduroStep, enduroWhere: enduroWhere, enduroResult: enduroResult, enduroClasses: enduroClasses, enduroClassOf: enduroClassOf,
     e24Rates: e24Rates, e24Sky: e24Sky, e24Amb: e24Amb, e24Hour: e24Hour, e24Pos: e24Pos, e24Order: e24Order, e24Need: e24Need, e24Clock: e24Clock, e24Lap: e24Lap,
@@ -8580,6 +8846,13 @@ const ENGINE_SOUND = (function () {
         var rh = noiseVoice(3.0, "highpass", 1800, 0.6, 0.10);
         st.raVoice = { o: ro, g: rg, h: rh }; reap([ro, rb, rg], 3.3);
         setTimeout(function () { st.raVoice = null; }, 3300);
+        break;
+      }
+      case "mudslap": {
+        /* a wet slap: a low thump of mud hitting the body, a smack of spray on top */
+        var tm = ctx.currentTime; if (tm - (st.slapT || -9) < 0.07) return; st.slapT = tm;
+        noiseVoice(0.16 + Math.random() * 0.08, "lowpass", 300 + Math.random() * 160, 0.9, 0.20);
+        noiseVoice(0.09, "bandpass", 1100 + Math.random() * 600, 1.4, 0.05);
         break;
       }
       case "kill": {
@@ -14157,6 +14430,7 @@ function loop(now){
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
   if(ROAD.on && ROAD.W){ if(ROAD.minMs && now-ROAD.lastR<ROAD.minMs && now>=ROAD.lastR) return; ROAD.lastR=now; roadRender(); return; }
   if(SALT.on && SALT.built){ saltRender(); return; }
+  if(BOG.on && BOG.built){ bogRender(); return; }
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ if(STRIP.post) stripPostStep(); stripRender(); return; }
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
@@ -16739,14 +17013,14 @@ function buildPullScene(){
    -------------------------------------------------------------------------*/
 function pullTyreGeo(r, w, rimR, kind){
   var key="pt"+[r,w,rimR].map(r3).join("_")+kind; if(PULL.geo[key]) return PULL.geo[key];
-  var hw=w/2, lugH=kind==="ag"?r*0.075:kind==="cut"?0.04:0, r0=r-lugH, sh=Math.min(0.07,(r0-rimR)*0.25), i, s;
+  var hw=w/2, lugH=kind==="ag"?r*0.075:kind==="cut"?0.04:kind==="paddle"?r*0.13:0, r0=r-lugH, sh=Math.min(0.07,(r0-rimR)*0.25), i, s;
   var pr=[[rimR+0.004,0.86],[lerp(rimR,r0,0.4),1],[lerp(rimR,r0,0.8),1],[r0-sh,0.97],[r0-sh*0.2,0.84]], pts=[];
   for(i=0;i<pr.length;i++) pts.push(new THREE.Vector2(pr[i][0], -hw*pr[i][1]));
   for(i=pr.length-1;i>=0;i--) pts.push(new THREE.Vector2(pr[i][0], hw*pr[i][1]));
   var parts=[{g:new THREE.LatheGeometry(pts, kind==="ag"?36:28), m:new THREE.Matrix4()}];
-  if(lugH>0){ var n=kind==="ag"?23:28, a=kind==="ag"?0.62:0.42, L=kind==="ag"?hw*1.0/Math.cos(a):hw*0.78/Math.cos(a), t=kind==="ag"?0.075:0.07;
+  if(lugH>0){ var pad=kind==="paddle", n=pad?16:kind==="ag"?23:28, a=pad?0:kind==="ag"?0.62:0.42, L=pad?hw*0.98:kind==="ag"?hw*1.0/Math.cos(a):hw*0.78/Math.cos(a), t=pad?0.05:kind==="ag"?0.075:0.07;   /* paddles: straight scoops across the tread, both halves in line */
     var rad=new THREE.Vector3(), tan=new THREE.Vector3(), ax=new THREE.Vector3(0,1,0), d=new THREE.Vector3(), e=new THREE.Vector3(), c=new THREE.Vector3();
-    for(i=0;i<n;i++) for(s=-1;s<=1;s+=2){ var th=(i+(s>0?0:0.5))/n*TAU;
+    for(i=0;i<n;i++) for(s=-1;s<=1;s+=2){ var th=(i+(s>0||pad?0:0.5))/n*TAU;
       rad.set(Math.cos(th),0,Math.sin(th)); tan.set(-Math.sin(th),0,Math.cos(th));
       d.copy(ax).multiplyScalar(s*Math.cos(a)).addScaledVector(tan, Math.sin(a)); e.crossVectors(rad, d).normalize();
       var zc=s*(kind==="ag"?hw*0.5:hw*0.52);
@@ -17184,6 +17458,371 @@ function pullUpdate(o, dt){
   PULL.prev={phase:ph, full:!!o.full};
 }
 
+
+/* ===========================================================================
+   MUD BOG SCENE — a county-fair mud pit the view cuts to while ENGINE_VIS.setBog({on:true, ...}) is fed every frame.
+   Units metres, +x down the pit: the run-up is x < 0, the mud runs 0 … len. The mud is one plane per night: a canvas
+   map (colour by consistency, the night's dark wet tracks painted in as the truck goes) and, on Full/Ultra, vertices
+   pressed down into ruts behind the tyres. Berms both sides, a crowd on the bank, light poles, the pull pickup on
+   bigger tyres (swampers, paddles) sinking and pitching with the mud, rooster tails scaled by wheelspin.
+   ==========================================================================*/
+var BOG={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, veh:{}, cur:null, curKey:"",
+  mud:null, mudKey:"", mudCv:null, mudTex:null, mudGeo:null, mudBase:null, ruts:null, rutDirty:0, paintAt:-1, paintX:-1e9, crowd:null, poles:[], spots:[], fx:null, fxSpray:null,
+  camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:46, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false,
+  t:0, doneT:0, cheer:0, night:null, tier:null, prev:{}, lastT:0, composer:null, exposure:0.92, stats:null, horLin:null, sunDir:null, shake:0, fixX:0, coat:0, slapT:0, pitch:0, pv:0, roll:0 };
+var BOG_W=10, BOG_WIND=new THREE.Vector3(-0.8,0,0.6), _bA=new THREE.Vector3(), _bB=new THREE.Vector3(), _bw=new THREE.Vector3(), _bt=new THREE.Vector3(), _br=new THREE.Vector3(), _brt=new THREE.Vector3();
+/* fairground grass, a dirt run-up lane, the dark ground round the pit, the pits and lot off to the side */
+var BOG_GLSL_GROUND=[
+  "uniform float uLen;",
+  "vec3 stripSurf(vec3 w, out float rough){",
+  "  vec2 p=w.xz; if(p.x>0.0 && p.x<uLen && abs(p.y)<5.0) discard;",
+  "  float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(20.0,120.0,d), mid=1.0-smoothstep(100.0,900.0,d);",
+  "  vec3 grass=vec3(0.11,0.155,0.055)*(0.8+0.35*sn(p*0.08))*(0.9+0.2*sn(p*1.9)*fine);",
+  "  float worn=smoothstep(0.5,0.8,sn(p*0.06+3.0))*0.6;",
+  "  vec3 c=mix(grass,vec3(0.27,0.21,0.14)*(0.85+0.3*sn(p*0.7)),worn);",
+  "  float lane=(1.0-smoothstep(5.0,6.5,abs(p.y)))*smoothstep(-58.0,-55.0,p.x)*(1.0-smoothstep(uLen+26.0,uLen+30.0,p.x));",
+  "  vec3 dirt=vec3(0.30,0.22,0.14)*(0.8+0.3*sn(p*0.9))+vec3(0.04,0.03,0.02)*(sn(p*6.0)-0.5)*fine;",
+  "  float tr=exp(-pow((abs(p.y)-1.0)/0.35,2.0))*0.5;",
+  "  dirt=mix(dirt,dirt*0.7,tr);",
+  "  float wet=(1.0-smoothstep(7.0,10.0,abs(p.y)))*smoothstep(-4.0,0.0,p.x)*(1.0-smoothstep(uLen,uLen+8.0,p.x));",
+  "  dirt=mix(dirt,vec3(0.16,0.11,0.07)*(0.85+0.3*sn(p*1.3)),wet*0.8);",
+  "  c=mix(c,dirt,max(lane,wet*0.9));",
+  "  float lot=smoothstep(16.0,17.0,p.y)*(1.0-smoothstep(46.0,47.0,p.y))*smoothstep(-50.0,-49.0,p.x)*(1.0-smoothstep(uLen+20.0,uLen+21.0,p.x));",
+  "  c=mix(c,vec3(0.30,0.27,0.22)*(0.8+0.35*sn(p*0.9)),lot);",
+  "  vec2 q=(p+vec2(800.0,800.0))/805.0; vec2 cell=floor(q); float h=sh(cell+11.0);",
+  "  vec3 fc= h<0.25?vec3(0.40,0.30,0.11): h<0.45?vec3(0.50,0.42,0.03): h<0.62?vec3(0.11,0.17,0.05): h<0.8?vec3(0.30,0.23,0.12):vec3(0.18,0.13,0.08);",
+  "  fc*=0.9+0.22*(sn(p*0.006+cell*7.0)-0.5)*mid;",
+  "  float fair=1.0-smoothstep(140.0,170.0,max(abs(p.x-40.0),abs(p.y)));",
+  "  c=mix(fc,c,fair); rough=mix(0.96,0.7,wet); return c; }"].join("\n");
+
+/* the night's mud: colour by consistency (soupy = milky chocolate, sticky = grey clay), puddles, foam, the edges */
+function bogMudPaint(cv, len, cons, seed){
+  var x=cv.getContext("2d"), W=cv.width, H=cv.height, i, r=function(){ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  var base=cons<0.45?[104,68,38]:[92,72,52], dark=cons<0.45?[52,32,18]:[50,40,30];
+  base=[lerp(base[0],90,cons),lerp(base[1],70,cons),lerp(base[2],50,cons)];
+  x.fillStyle="rgb("+base.map(Math.round).join(",")+")"; x.fillRect(0,0,W,H);
+  var img=x.getImageData(0,0,W,H), d=img.data;
+  for(var j=0;j<H;j++) for(i=0;i<W;i++){ var n=fbm(i/W*len/8, j/H*1.3, 4, 3, 5)*0.7+hashi(i,j,9)*0.3, k=(j*W+i)*4, edge=Math.min(1, Math.min(j, H-1-j)/(H*0.12));
+    var f=0.72+0.55*n; d[k]=d[k]*f*(0.8+0.2*edge); d[k+1]=d[k+1]*f*(0.8+0.2*edge); d[k+2]=d[k+2]*f*(0.82+0.18*edge); }
+  x.putImageData(img,0,0);
+  /* standing water: soupy mud pools, sticky clay cracks into islands */
+  var np=Math.round(6+10*(1-cons));
+  for(i=0;i<np;i++){ var px=r()*W, py=H*(0.15+0.7*r()), rx=W*(0.01+0.03*r()), ry=H*(0.06+0.12*r());
+    x.fillStyle="rgba("+dark.join(",")+","+(0.35+0.3*(1-cons))+")"; x.beginPath(); x.ellipse(px,py,rx,ry,0,0,TAU); x.fill(); }
+  if(cons<0.4){ for(i=0;i<60;i++){ x.fillStyle="rgba(200,180,150,"+(0.06+0.08*r())+")"; x.beginPath(); x.ellipse(r()*W,H*(0.1+0.8*r()),2+r()*6,1+r()*2,0,0,TAU); x.fill(); } }   /* foam */
+  else { x.strokeStyle="rgba(40,32,24,0.35)"; x.lineWidth=1; for(i=0;i<90;i++){ var cx=r()*W, cy=r()*H; x.beginPath(); x.moveTo(cx,cy); x.lineTo(cx+(r()-0.5)*14,cy+(r()-0.5)*6); x.stroke(); } }
+}
+/* (re)build the pit for a night: a plane len × BOG_W, its depth profile only drives the ruts; the surface sits level */
+function bogMudBuild(pit){
+  var lite=GFX==="lite", len=Math.max(20, +pit.len||70), key=[pit.seed, len, pit.cons, GFX==="lite"?"l":"f"].join("|");
+  if(BOG.mudKey===key && BOG.mud) return; BOG.mudKey=key;
+  if(BOG.mud){ BOG.scene.remove(BOG.mud); BOG.mud.geometry.dispose(); }
+  var sx=lite?Math.ceil(len/2):Math.ceil(len*2), sz=lite?2:24, g=new THREE.PlaneGeometry(len, BOG_W, sx, sz); g.rotateX(-PI/2); g.translate(len/2, -0.06, 0);
+  if(!lite){ var PA=g.attributes.position, sd=(pit.seed>>>0)%997; for(var q=0;q<PA.count;q++){ var qx=PA.getX(q), qz=PA.getZ(q), edge=Math.min(1,(BOG_W/2-Math.abs(qz))/0.8);
+      PA.setY(q, -0.06+edge*(0.045*(fbm(qx/9+sd,qz/5,3,2,7)-0.5)+0.012*Math.sin(qx*1.7+qz*2.3+sd))+(1-edge)*0.05); } g.computeVertexNormals(); }
+  BOG.mudGeo=g; BOG.mudBase=Float32Array.from(g.attributes.position.array); BOG.mudSx=sx; BOG.mudSz=sz; BOG.mudLen=len;
+  var W=lite?512:1024, H=lite?64:128; if(!BOG.mudCv || BOG.mudCv.width!==W){ BOG.mudCv=newCanvas(W,H); if(BOG.mudTex) BOG.mudTex.dispose(); BOG.mudTex=new THREE.CanvasTexture(BOG.mudCv); BOG.mudTex.encoding=THREE.sRGBEncoding; BOG.mudTex.anisotropy=MAXANISO; }
+  bogMudPaint(BOG.mudCv, len, +pit.cons||0.5, (pit.seed>>>0)%2147483646+1); BOG.mudTex.needsUpdate=true;
+  BOG.mats.mud.map=BOG.mudTex; BOG.mats.mud.roughness=lerp(0.22,0.48,clamp(+pit.cons||0.5,0,1)); BOG.mats.mud.needsUpdate=true;
+  BOG.mud=new THREE.Mesh(g, BOG.mats.mud); BOG.mud.receiveShadow=true; BOG.scene.add(BOG.mud);
+  BOG.paintX=-1e9; BOG.rutDirty=0;
+  /* the berms close in on the pit's length: scale the two long ones, slide the far end */
+  if(BOG.berms){ BOG.berms.forEach(function(b){ b.scale.x=len+14; b.position.x=len/2; }); BOG.farBerm.position.x=len+16; BOG.farWall.position.x=len+13; }
+  if(BOG.groundMat && BOG.groundMat.userData.uLen) BOG.groundMat.userData.uLen.value=len;
+  if(BOG.marks) BOG.marks.forEach(function(m){ m.visible=m.userData.d<len; });
+}
+/* paint the wheel tracks into the map: dark wet stripes, churned edges, a smear where it stopped */
+function bogMudTrack(x0, x1, half, w, k){
+  var cv=BOG.mudCv; if(!cv) return; var c=cv.getContext("2d"), W=cv.width, H=cv.height, L=BOG.mudLen, a=Math.max(0,Math.min(L,x0)), b=Math.max(0,Math.min(L,x1)); if(b<=a) return;
+  var px0=a/L*W, px1=b/L*W, zs=[-half, half];
+  for(var i=0;i<2;i++){ var cy=(zs[i]/BOG_W+0.5)*H, hh=w/BOG_W*H;
+    c.fillStyle="rgba(22,15,9,"+(0.28+0.4*k)+")"; c.fillRect(px0, cy-hh/2, px1-px0+1, hh);
+    c.fillStyle="rgba(150,120,90,"+(0.05+0.08*k)+")"; c.fillRect(px0, cy-hh/2-2, px1-px0+1, 2); c.fillRect(px0, cy+hh/2, px1-px0+1, 2); }
+  c.fillStyle="rgba(30,20,12,"+(0.1+0.1*k)+")"; c.fillRect(px0, H*0.5-half/BOG_W*H*0.6, px1-px0+1, half/BOG_W*H*1.2);
+  BOG.mudTex.needsUpdate=true;
+}
+/* Full/Ultra: press the plane down where the tyres went; keep the deepest mark each vertex has had */
+function bogMudRut(x, half, w, depth){
+  if(!BOG.mudGeo || GFX==="lite") return;
+  var P=BOG.mudGeo.attributes.position, A=P.array, sx=BOG.mudSx, sz=BOG.mudSz, L=BOG.mudLen, ix0=Math.max(0,Math.floor((x-1.4)/L*sx)), ix1=Math.min(sx,Math.ceil((x+0.6)/L*sx)), ch=false;
+  for(var ix=ix0; ix<=ix1; ix++) for(var iz=0; iz<=sz; iz++){ var q=iz*(sx+1)+ix, zz=A[q*3+2], dz=Math.min(Math.abs(zz-half), Math.abs(zz+half));
+    var f=dz<w*0.5?1:dz<w*0.5+0.5?0.5+0.5*Math.cos((dz-w*0.5)/0.5*PI):0, lip=dz>w*0.5&&dz<w*0.5+0.7?Math.sin((dz-w*0.5)/0.7*PI)*0.35:0;
+    var y=-0.06-depth*f+depth*lip*(1-f); if(f>0 && y<A[q*3+1]){ A[q*3+1]=y; ch=true; } else if(lip>0 && f===0 && y>A[q*3+1] && A[q*3+1]>=-0.07){ A[q*3+1]=y; ch=true; } }
+  if(ch){ P.needsUpdate=true; BOG.rutDirty++; }
+}
+function bogMudReset(){
+  if(BOG.mudGeo && BOG.mudBase){ BOG.mudGeo.attributes.position.array.set(BOG.mudBase); BOG.mudGeo.attributes.position.needsUpdate=true; BOG.mudGeo.computeVertexNormals(); }
+  BOG.mudKey="";   /* repaint the map next frame */
+}
+function bogAtlas(){
+  var c=newCanvas(1024,256), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
+  function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2, w-16); if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
+  panel(0,0,1024,62,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS · MUD BOG",40,"#ff7a1a");
+  panel(0,64,340,60,"#ff7a1a","#15171b","PRAIRIE ENGINE WORKS",30,"#15171b"); panel(342,64,340,60,"#15171b","#ff7a1a","COULEE FUELS",40,"#ff7a1a"); panel(684,64,340,60,"#131416","#f2c22c","NORTHWIND TYRE",38,"#f2c22c");
+  for(i=0;i<9;i++){ var bx=i*113; x.fillStyle="#15171b"; x.fillRect(bx,128,111,126); x.fillStyle=i%2?"#f4efe2":"#ff7a1a"; x.fillRect(bx+5,133,101,116); x.fillStyle="#15171b"; x.font="700 56px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String((i+1)*10), bx+55, 180); x.font="700 18px "+F; x.fillText("METRES", bx+55, 228); }
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
+}
+var BOG_UV={ long:[0,1-62/256,1,1], ban:[[0,1-124/256,340/1024,1-64/256],[342/1024,1-124/256,682/1024,1-64/256],[684/1024,1-124/256,1,1-64/256]], mark:function(i){ return [i*113/1024, 1-254/256, (i*113+111)/1024, 1-128/256]; } };
+function bogBuild(B, key, mat, shadow){ var keep=STRIP.scene; STRIP.scene=BOG.scene; var m=B.build(key, mat, shadow); STRIP.scene=keep; return m; }
+function buildBogScene(){
+  var S3=new THREE.Scene(); BOG.scene=S3; BOG.tier=GFX;
+  var lite=(GFX==="lite"), i, k, side, x, z, M=BOG.mats;
+  var rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); };
+  if(!PULL.g) PULL.g={ box:new THREE.BoxGeometry(1,1,1), cyl:new THREE.CylinderGeometry(0.5,0.5,1,14), cyl8:new THREE.CylinderGeometry(0.5,0.5,1,8), sph:new THREE.SphereGeometry(0.5,12,8), plane:new THREE.PlaneGeometry(1,1).rotateX(-PI/2) };   /* the pull pickup's parts */
+  var hemi=new THREE.HemisphereLight(0xcfdcf0, 0x6a5a3c, 0.3); S3.add(hemi); BOG.hemi=hemi;
+  var sun=new THREE.DirectionalLight(0xffe6c4, 1.45); sun.shadow.mapSize.set(2048,2048);
+  var shc=sun.shadow.camera; shc.left=-24; shc.right=24; shc.top=24; shc.bottom=-24; shc.near=1; shc.far=260; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
+  S3.add(sun); S3.add(sun.target); BOG.sun=sun;
+  var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,40,30); S3.add(flood); S3.add(flood.target); BOG.flood=flood;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); BOG.sky=sky;
+  S3.fog=new THREE.Fog(0xffffff, 150, 2700); BOG.fog=S3.fog;
+  var uLen={value:75}, gm=stripSurfMat(BOG_GLSL_GROUND, null, {uLen:uLen}); gm.userData.uLen=uLen; gm.customProgramCacheKey=function(){ return "bog_ground"; }; BOG.groundMat=gm;
+  var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), gm); ground.rotation.x=-PI/2; ground.position.set(40,-0.02,0); ground.receiveShadow=true; S3.add(ground);
+  /* the pit's walls: a dark box under the mud so a deep rut never shows the sky */
+  var well=new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color:sc(0x1c140c), roughness:1, side:THREE.BackSide})); well.scale.set(200,1.4,BOG_W); well.position.set(60,-0.78,0); S3.add(well); BOG.well=well;
+  (function(){ var seg=120, R0=1900, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
+    for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=Math.max(5, 14+34*Math.pow(0.5+0.5*Math.sin(a*3.0+1.4),2)+18*Math.sin(a*11.0+0.4)*Math.sin(a*5.0)+10*Math.sin(a*23.0));
+      pos.push(40+Math.cos(a)*(R0-500),-2,Math.sin(a)*(R0-500), 40+Math.cos(a)*R0,hgt,Math.sin(a)*R0, 40+Math.cos(a)*(R0+400),hgt*0.6,Math.sin(a)*(R0+400)); col.push(c1.r,c1.g,c1.b, c2.r,c2.g,c2.b, c2.r,c2.g,c2.b); }
+    for(s=0;s<seg;s++){ var a0=s*3, b0=(s+1)*3; idx.push(a0,b0,a0+1, b0,b0+1,a0+1, a0+1,b0+1,a0+2, b0+1,b0+2,a0+2); }
+    var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("color",new THREE.Float32BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals();
+    var hm=new THREE.Mesh(g, new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, side:THREE.DoubleSide})); hm.frustumCulled=false; S3.add(hm); })();
+  M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.86});
+  M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.42, metalness:0.65});
+  M.lamp=new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false, color:0x777777});
+  M.beam=new THREE.MeshBasicMaterial({vertexColors:true, transparent:true, opacity:0.0, depthWrite:false, blending:THREE.AdditiveBlending, fog:true, side:THREE.DoubleSide});
+  M.sign=new THREE.MeshStandardMaterial({map:bogAtlas(), roughness:0.72});
+  M.dirt=new THREE.MeshStandardMaterial({color:sc(0x5a4029), roughness:1});
+  M.mud=new THREE.MeshStandardMaterial({color:0xb0a090, roughness:0.3, metalness:0.0, envMapIntensity:0.45});
+  var B=new StripBatch(), STEEL=0x8d9296, ALU=0xb9bec4, DARK=0x2a2c2f, RUB=0x1a1a1c;
+  /* berms: long dirt banks both sides (scaled to the night's pit), one across the far end, a tyre wall in front of it */
+  BOG.berms=[]; [-1,1].forEach(function(sd){ var m=new THREE.Mesh(sbGeo().prism, M.dirt); m.scale.set(84,1.8,3.4); m.position.set(35,-0.05,sd*(BOG_W/2+1.9)); m.castShadow=!lite; m.receiveShadow=true; S3.add(m); BOG.berms.push(m); });
+  var fb=new THREE.Mesh(sbGeo().prism, M.dirt); fb.scale.set(22,4.2,6); fb.rotation.y=PI/2; fb.position.set(91,-0.05,0); fb.castShadow=!lite; fb.receiveShadow=true; S3.add(fb); BOG.farBerm=fb;
+  var tw=new THREE.Group(); for(z=-6; z<=6.1; z+=0.8) for(k=0;k<3;k++){ var tyre=new THREE.Mesh(PULL.g.cyl8, new THREE.MeshStandardMaterial({color:sc(RUB), roughness:0.95})); tyre.scale.set(0.72,0.3,0.72); tyre.position.set((k&1)?0.35:0, 0.17+k*0.3, z); tw.add(tyre); }
+  tw.position.set(88,0,0); S3.add(tw); BOG.farWall=tw;
+  /* pipe rail along the crowd side, banners on it, distance boards on the far side every 10 m */
+  for(x=-30; x<110; x+=3){ B.add("metal","cyl6",[x, 0.55, -BOG_W/2-3.6],[0.07,1.1,0.07],STEEL); }
+  B.add("metal","cyl6",[40, 1.08, -BOG_W/2-3.6],[0.06,140,0.06],ALU,[0,0,PI/2]); B.add("metal","cyl6",[40, 0.6, -BOG_W/2-3.6],[0.06,140,0.06],ALU,[0,0,PI/2]);
+  for(x=-24, k=0; x<104; x+=9, k++) B.add("sign","plane",[x, 0.82, -BOG_W/2-3.55],[5.4,0.62,1],0xffffff,[0,0,0],BOG_UV.ban[k%3]);
+  BOG.marks=[]; var markIt=function(i2){ var mx=(i2+1)*10, mz=BOG_W/2+4.4, gp=new THREE.Group(); gp.userData.d=mx;
+    var post=new THREE.Mesh(PULL.g.cyl8, new THREE.MeshStandardMaterial({color:sc(STEEL), roughness:0.5, metalness:0.6})); post.scale.set(0.1,2.4,0.1); post.position.y=1.2; gp.add(post);
+    var pg=new THREE.PlaneGeometry(1.2,1.36), uv=pg.attributes.uv, r4=BOG_UV.mark(i2); for(var q=0;q<uv.count;q++) uv.setXY(q, r4[0]+uv.getX(q)*(r4[2]-r4[0]), r4[1]+uv.getY(q)*(r4[3]-r4[1]));
+    var bd=new THREE.Mesh(pg, M.sign); bd.position.set(0,2.5,-0.06); bd.rotation.y=PI; gp.add(bd); gp.position.set(mx,0,mz); gp.rotation.y=-0.35; S3.add(gp); BOG.marks.push(gp); };
+  for(i=0;i<9;i++) markIt(i);
+  /* the bank on the crowd side: a grass slope behind the rail, the crowd on it, pickups parked along the top */
+  var bank=new THREE.Mesh(sbGeo().prism, new THREE.MeshStandardMaterial({color:sc(0x3d4a24), roughness:1})); bank.scale.set(150,3.4,16); bank.position.set(40,-0.05,-BOG_W/2-12.5); S3.add(bank); bank.receiveShadow=true;
+  var hcol=[0xe9e6dc,0x1b1d20,0x9e2a22,0x22488f,0xd0d3d6,0x2c6b3a,0xff7a1a,0x6b6f74];
+  for(i=0;i<12;i++){ var hx=-26+i*11+rng(i)*4, hz=-BOG_W/2-25-rng(i+3)*4, cc=hcol[i%hcol.length];
+    B.box("solid", hx, 1.05, hz, 5.2, 0.9, 2.0, cc, 0.08*(rng(i+7)-0.5)); B.box("solid", hx+0.9, 1.75, hz, 2.0, 0.7, 1.85, 0x22262b, 0.08*(rng(i+7)-0.5)); B.box("solid", hx, 0.35, hz, 4.6, 0.5, 1.9, 0x161718); }
+  /* light poles: four on each side */
+  BOG.poles=[]; [[-14,-BOG_W/2-8],[20,-BOG_W/2-8],[54,-BOG_W/2-8],[88,-BOG_W/2-8],[-4,BOG_W/2+10],[30,BOG_W/2+10],[64,BOG_W/2+10],[96,BOG_W/2+10]].forEach(function(pp){
+    var px=pp[0], pz=pp[1], H=pz<0?18:16, s2=pz<0?1:-1;
+    B.add("metal","cyl",[px, H/2, pz],[0.36,H,0.36],0x9aa0a6); B.box("metal", px, H+0.2, pz, 3.2, 0.22, 0.28, 0x80868c);
+    for(k=0;k<3;k++){ var lx=px-1.0+k; B.box("metal", lx, H+0.65, pz+s2*0.12, 0.74, 0.62, 0.36, 0x5a5f65); B.box("lamp", lx, H+0.65, pz+s2*0.31, 0.6, 0.5, 0.02, 0xfff0d0); }
+    B.add("beam","beam",[px, H/2, pz+s2*H*0.18],[6,H,6],0xffe8c0,[-s2*0.36,0,0]);
+    BOG.poles.push(new THREE.Vector3(px, H+0.8, pz)); });
+  /* announcer's trailer and a food truck behind the far side */
+  B.box("solid", 44, 1.6, BOG_W/2+16, 7, 2.6, 2.6, 0xe7e2d6); B.box("solid", 44, 3.05, BOG_W/2+16, 7.3, 0.25, 2.9, 0x2a2c2f); B.add("sign","plane",[44, 2.2, BOG_W/2+14.68],[6.4,0.6,1],0xffffff,[0,PI,0],BOG_UV.long);
+  B.box("solid", 70, 1.4, BOG_W/2+15, 5, 2.4, 2.3, 0x9e2a22); B.box("solid", 70, 2.75, BOG_W/2+15, 5.2, 0.2, 2.5, 0xf1ede2);
+  /* sheds and a grain elevator off in the distance */
+  B.box("solid", 150, 12, -150, 12, 24, 12, 0x8e2f23, 0.3); B.add("solid","prism",[150,24,-150],[12.4,3.4,12.4],0x4a4644,[0,0.3,0]);
+  B.box("solid", -80, 3.5, 120, 20, 7, 12, 0x9a2e22, 0.4); B.add("solid","prism",[-80,7,120],[20.4,3,12.6],0x5a5a5a,[0,0.4,0]);
+  bogBuild(B,"solid", M.solid, !lite); bogBuild(B,"metal", M.metal, !lite); BOG.lampMesh=bogBuild(B,"lamp", M.lamp, false); bogBuild(B,"sign", M.sign, false);
+  BOG.beamMesh=bogBuild(B,"beam", M.beam, false); if(BOG.beamMesh){ BOG.beamMesh.receiveShadow=false; BOG.beamMesh.visible=false; BOG.beamMesh.renderOrder=4; }
+  /* shelterbelt */
+  (function(){ var pts=[], s;
+    for(s=0;s<60;s++){ var a=s/60*TAU, R=150+rng(s)*30; pts.push([40+Math.cos(a)*R*1.3, Math.sin(a)*R, 4+rng(s+3)*3]); }
+    var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
+    pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); });
+    S3.add(im); })();
+  /* the crowd on the bank: standing, some on lawn chairs, thinner on Lite */
+  (function(){ var ppl=[], occ=lite?0.35:0.6, slope=1.7/8;
+    for(var r=0;r<8;r++){ var rz=-BOG_W/2-4.6-r*1.0, ry=Math.max(0,-BOG_W/2-4.5-rz)*slope;
+      for(var xx=-22; xx<104; xx+=0.62){ if(rng(xx*3.1+r*17.7)>occ*(1-r*0.06)) continue; ppl.push([xx+(rng(xx+r)-0.5)*0.3, ry, rz+(rng(xx*1.7+r)-0.5)*0.4]); } }
+    var n=ppl.length, bodyM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.46,0.8,0.32), new THREE.MeshStandardMaterial({roughness:0.95}), n),
+        headM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.22,0.25,0.22), new THREE.MeshStandardMaterial({roughness:0.9}), n);
+    var shirts=[0x9c3a30,0x34598f,0xcfccc4,0x1f2023,0x2a2c30,0xff7a1a,0x44684a,0xc8a640,0x5d5f66,0x7a7f86,0x3a3d44,0x8f4a5e,0x2c6b3a], skin=[0xe0b494,0xc68a64,0x8d5a3b,0xf0c9a8,0x5a3a26], hats=[0x1d4787,0xff7a1a,0x222222,0xe9e6dc,0x2c6b3a,0x9e2a22];
+    var mm=new THREE.Matrix4(), cc=new THREE.Color(), base=[];
+    for(var s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.4,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.93,p[2]); headM.setMatrixAt(s,mm);
+      cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc);
+      cc.set(rng(s*2.9)<0.45?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
+    bodyM.receiveShadow=true; S3.add(bodyM); S3.add(headM);
+    BOG.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
+  /* mud: the plane is built per night; clods (lit, sharp), spray and splash mist (soft, Full/Ultra only), exhaust */
+  BOG.fx=new StripFx(lite?150:700, "fire", stripFlameTex(true)); BOG.fx.mat.blending=THREE.NormalBlending; S3.add(BOG.fx.mesh);
+  BOG.fxSpray=lite?null:new StripFx(GFX==="ultra"?420:260, "smoke", stripPuffTex()); if(BOG.fxSpray) S3.add(BOG.fxSpray.mesh);
+  BOG.cam=new THREE.PerspectiveCamera(46, 1, 0.3, 3600); BOG.built=true;
+  BOG.night=null; bogSetNight(false);
+}
+function bogSetNight(on){
+  on=!!on; var tierChanged=BOG.tier!==GFX; if(BOG.night===on && !tierChanged) return;
+  BOG.night=on; BOG.tier=GFX; var S3=BOG.scene, lite=(GFX==="lite"), M=BOG.mats;
+  BOG.sky.material.uniforms.uNight.value=on?1:0;
+  var h=on?STRIP_HOR_N:STRIP_HOR; BOG.horLin=new THREE.Color(h[0],h[1],h[2]);
+  BOG.sunDir=(on?STRIP_MOON:STRIP_SUN_DAY);
+  BOG.sun.color.set(on?0x9fb2d6:0xffe2bc); BOG.sun.intensity=on?0.14:1.45; BOG.sun.castShadow=!lite;
+  BOG.hemi.intensity=on?0.14:0.2; BOG.hemi.color.set(on?0x3a4764:0xcfdcf0); BOG.hemi.groundColor.set(on?0x16130e:0x6a5a3c);
+  BOG.flood.intensity=on?(lite?0.6:0.28):0;
+  M.lamp.color.set(on?0xffffff:0x5e5e5e);
+  if(BOG.beamMesh){ BOG.beamMesh.visible=on; M.beam.opacity=on?0.014:0; }
+  S3.environment=stripEnv(on); BOG.exposure=on?1.0:0.9;
+  [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F){ F.mat.uniforms.uAmb.value=F===BOG.fx?1:(on?0.45:1); F.mat.uniforms.uFogN.value=S3.fog.near; F.mat.uniforms.uFogF.value=S3.fog.far; } });
+  if(tierChanged && BOG.sun.shadow.map){ BOG.sun.shadow.map.dispose(); BOG.sun.shadow.map=null; }
+  BOG.spots.forEach(function(sp){ S3.remove(sp); S3.remove(sp.target); if(sp.shadow&&sp.shadow.map) sp.shadow.map.dispose(); }); BOG.spots=[];
+  if(on){ for(var i=0;i<(lite?2:3);i++){ var sp=new THREE.SpotLight(0xfff0d8, 1.6, 120, 0.62, 0.6, 1.5); sp.castShadow=!lite && i===0; if(sp.castShadow){ sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.002; sp.shadow.normalBias=0.05; sp.shadow.camera.near=4; sp.shadow.camera.far=120; }
+    S3.add(sp); S3.add(sp.target); BOG.spots.push(sp); } }
+}
+/* the truck per class: the pull pickup, its tyres swapped (mud-terrain cut lugs, swampers, paddles) and the whole thing scaled up on the bigger tyres */
+var BOG_LOOK={ street:{k:1.0, tyre:"cut", col:0x1d4787}, modified:{k:1.1, tyre:"ag", col:0xb7261d}, super:{k:1.22, tyre:"paddle", col:0x2c6b3a} };
+function bogVehicle(cls, tyre, color){
+  var L=BOG_LOOK[cls]||BOG_LOOK.street, kind=tyre==="paddle"?"paddle":tyre==="swamp"?"ag":"cut", V=pullVehicle("truck", color), U=V.userData;
+  [U.wheelsR, U.wheelsF].forEach(function(arr){ arr.forEach(function(sp){ var cont=sp.children[0], ty=cont&&cont.children[0]; if(ty && kind!=="cut") ty.geometry=pullTyreGeo(U.rr, U.wr*(kind==="paddle"?1.12:1.05), 0.27, kind); }); });
+  V.scale.setScalar(L.k); U.k=L.k; U.paint0=U.mats.paint.color.clone(); U.cls=cls; return V;
+}
+function bogEffects(o, dt, V){
+  var U=V.userData, FX=BOG.fx, FS=BOG.fxSpray, lite=GFX==="lite", rate=lite?0.4:1, ph=o.phase||"stage", R=Math.random, i, t;
+  var v=Math.max(0,+o.v||0), ws=Math.max(v,+o.wspd||0), spin=Math.max(0, ws-v), inPit=ph==="pit"||(ph==="done"&&+o.x>0&&+o.x<+o.len), sink=clamp(+o.sink||0,0,1.2), k=U.k||1;
+  var mc=o.cons>0.5?[0.13,0.095,0.065]:[0.16,0.1,0.055];
+  if(inPit && ph!=="done"){
+    /* rooster tails: off the back of every tyre, as high and as thick as the spin; clods fall, spray hangs */
+    var amt=(clamp(spin/5,0,1.5)+clamp(v/25,0,0.5))*clamp(0.5+sink*2,0.5,1.5), axl=[0, U.wb*k];
+    for(t=0;t<4;t++){ var s=(t&1)?1:-1, ax=V.position.x+axl[t>>1]-U.rr*k*0.5, front=t>=2, kk=front?0.65:1;
+      var nc=amt*kk*rate*(lite?60:190)*dt, n=Math.floor(nc)+(R()<nc%1?1:0);
+      for(i=0;i<n;i++){ var up=3+R()*7*(0.35+amt*0.6), back=2.5+spin*(0.35+R()*0.5), sh=0.75+R()*0.5;
+        FX.emit(ax-R()*0.3, U.rr*k*(0.4+R()*0.7)+V.position.y, s*U.trR*k+(R()-0.5)*U.wr*k, v*0.5-back, up, s*(0.3+R()*1.8), 0.9+R()*0.9, 0.2+R()*0.25, 0.32+R()*0.35, mc[0]*sh, mc[1]*sh, mc[2]*sh, 1, {drag:0.15, grav:9.8, fin:0.01, spin:5}); }
+      if(FS){ var ns=amt*kk*rate*20*dt, m2=Math.floor(ns)+(R()<ns%1?1:0);
+        for(i=0;i<m2;i++) FS.emit(ax-0.6, U.rr*k*0.9+V.position.y, s*U.trR*k, v*0.4-2.5-spin*0.5*R(), 2.5+R()*4*amt, s*R()*1.2, 0.8+R()*0.6, 0.35, 1.0+R()*0.9, mc[0]*1.6, mc[1]*1.6, mc[2]*1.6, 0.38, {drag:0.5, grav:4, fin:0.05, spin:0.8}); } }
+    /* bow wave: mud pushed up ahead of the front tyres at speed */
+    var bw=clamp(v/10,0,1.2)*clamp(sink*2,0,1.2), nb=bw*rate*(lite?14:40)*dt, mb=Math.floor(nb)+(R()<nb%1?1:0), fxp=V.position.x+(U.wb+U.rr*0.9)*k;
+    for(i=0;i<mb;i++){ var sd=R()<0.5?-1:1; FX.emit(fxp, 0.1, sd*(U.trR*k+0.2+R()*0.6), v*0.7, 1+R()*2.5*bw, sd*(1+R()*2.5), 0.6+R()*0.5, 0.12, 0.22, mc[0], mc[1], mc[2], 1, {drag:0.3, grav:9.8, fin:0.01, spin:4}); }
+  }
+  /* splashes: the pit entry, a landing, a rut — one burst */
+  if(BOG.splash>0){ var nsp=Math.round(BOG.splash*(lite?14:46)); for(i=0;i<nsp;i++){ var a=R()*TAU, sp2=2+R()*5*BOG.splash; FX.emit(V.position.x+(U.wb*0.5)*k+(R()-0.5)*3, 0.15, Math.sin(a)*1.6, v*0.6+Math.cos(a)*sp2, 2.5+R()*5*BOG.splash, Math.sin(a)*sp2, 0.9+R()*0.7, 0.14, 0.3, mc[0], mc[1], mc[2], 1, {drag:0.2, grav:9.8, fin:0.01, spin:5}); }
+    if(FS) for(i=0;i<nsp*0.4;i++) FS.emit(V.position.x+(U.wb*0.5)*k+(R()-0.5)*4, 0.6, (R()-0.5)*4, v*0.5, 1+R()*2, (R()-0.5)*2, 1.6+R(), 1.2, 3.2+R()*1.5, mc[0]*1.3, mc[1]*1.3, mc[2]*1.3, 0.45, {drag:0.6, grav:1.2, fin:0.05, spin:0.4});
+    BOG.splash=0; }
+  /* exhaust: a diesel's black smoke out the stacks, a whisp otherwise */
+  var smk=clamp(+o.smoke||0,0,1), ne=(lite?6:14)*(0.15+smk)*(+o.throttle||0)*dt*(o.failed?0:1);
+  for(t=0;t<U.tips.length;t++){ var nn=Math.floor(ne)+(R()<ne%1?1:0); if(!nn) continue; U.body.localToWorld(_bA.copy(U.tips[t]));
+    for(i=0;i<nn;i++){ var c=lerp(0.42,0.04,Math.pow(smk,0.7)); (FS||FX).emit(_bA.x, _bA.y, _bA.z, v-0.6, 2.4+smk*2, (R()-0.5)*0.5, 1.8+R(), 0.25, 1.6+smk*3, c, c, c, 0.2+0.5*smk, {drag:0.7, buoy:0.15, fin:0.03, spin:0.5}); } }
+  FX.step(dt, BOG_WIND); if(FS) FS.step(dt, BOG_WIND);
+}
+function bogCrowd(dt){
+  var C=BOG.crowd; if(!C) return; BOG.cheer=Math.max(0,BOG.cheer-dt*0.3);
+  if(BOG.cheer<0.02 && !C.live) return;
+  var t=BOG.t, amp=BOG.cheer, i, m=_pM;
+  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.05:0.4)?Math.abs(Math.sin(t*(amp>1?9:7)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
+    m.makeTranslation(p[0],p[1]+0.4+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.93+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
+  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=BOG.cheer>=0.02;
+}
+function bogCut(name){ if(BOG.shot!==name){ BOG.shot=name; BOG.shotT=0; BOG.cutT=0; BOG.snap=true; } }
+function bogDirect(o, dt, V){
+  var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, k=U.k||1, fx=+o.x||0, len=+o.len||70, cx=V.position.x+U.wb*k*0.5, s=BOG.shot;
+  if(o.shot) s=o.shot;
+  else if(BOG.skip||ph==="done") s=(s==="front"&&BOG.doneT<1.2)?"front":"stop";
+  else if(ph==="stage") s="stage";
+  else if(ph==="runup") s=fx<-12?"chase":"entry";
+  else { if(s!=="side"&&s!=="front"&&s!=="high") s="side";
+    if(s==="side" && BOG.shotT>2.6 && fx<len-14 && v>2) s="front";
+    else if(s==="front" && (BOG.fixX-fx<4 || BOG.shotT>3.4)) s=GFX==="lite"?"side":"high";
+    else if(s==="high" && BOG.shotT>2.6) s="side"; }
+  if(s!==BOG.shot){ if(s==="front") BOG.fixX=Math.min(len+6, fx+10+v*1.6); }
+  bogCut(s); BOG.shotT+=dt; BOG.cutT+=dt; var T=BOG.shotT, fov=46, rel=false, ax=0, sm=0;
+  switch(s){
+    case "stage": { var push=Math.min(2.2,T*0.2); _bw.set(cx-8+push, 2.4, 5.6-push*0.4); _bt.set(cx+14, 0.8, -0.6); fov=48; break; }
+    case "chase": rel=true; ax=cx; _bw.set(-9.5, 2.6, 2.2); _bt.set(6, 1.0, 0); fov=50; sm=4; break;
+    case "entry": _bw.set(-2, 1.5, -BOG_W/2-2.8); _bt.set(cx, 1.0, 0); fov=46; break;
+    case "side": rel=true; ax=cx; _bw.set(-2, 5.2, -BOG_W/2-7.5); _bt.set(1.2, 0.6, 0); fov=48; sm=3; break;
+    case "front": _bw.set(BOG.fixX, 1.1, 2.6); _bt.set(cx, 1.2, 0); fov=42; BOG.shake=Math.max(BOG.shake, 0.04*clamp(+o.slip||0,0,1)); break;
+    case "high": rel=true; ax=cx; _bw.set(-7, 9, 9); _bt.set(4, 0, -1); fov=46; sm=2; break;
+    case "stop": { var dr=Math.min(3,T*0.25); _bw.set(cx-7+dr, 3.2-dr*0.2, -7.5+dr*0.4); _bt.set(cx+2, 0.8, 0); fov=40; break; }
+  }
+  if(rel){ if(BOG.snap||!BOG.relOn){ _br.copy(_bw); _brt.copy(_bt); } else { var kk=1-Math.exp(-sm*dt); _br.lerp(_bw,kk); _brt.lerp(_bt,kk); }
+    _bw.copy(_br); _bt.copy(_brt); _bw.x+=ax; _bt.x+=ax; BOG.relOn=true; } else BOG.relOn=false;
+  if(BOG.snap){ BOG.fov=fov; BOG.snap=false; BOG.camTgt.copy(_bt); } else BOG.fov+=(fov-BOG.fov)*(1-Math.exp(-6*dt));
+  BOG.camPos.copy(_bw); if(rel) BOG.camTgt.copy(_bt); else BOG.camTgt.lerp(_bt, 1-Math.exp(-8*dt));
+  BOG.shake*=Math.exp(-dt*3.5); var sh=BOG.shake; if(sh>0.002){ BOG.camPos.x+=(Math.random()-0.5)*sh*0.25; BOG.camPos.y+=(Math.random()-0.5)*sh*0.25; }
+  var cam=BOG.cam; cam.position.copy(BOG.camPos); cam.lookAt(BOG.camTgt); cam.fov=BOG.fov; cam.updateProjectionMatrix();
+}
+function bogComposer(){
+  if(BOG.composer===false) return null;
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=BOG.composer;
+  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.addPass(new THREE.RenderPass(BOG.scene, BOG.cam));
+      var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); BOG.bloom=bp;
+      if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+      BOG.composer=C; BOG.cSize=""; }catch(e){ BOG.composer=false; return null; } }
+  var key=sz.x+"x"+sz.y+"@"+pr; if(BOG.cSize!==key){ if(C.setPixelRatio) C.setPixelRatio(pr); C.setSize(sz.x, sz.y); BOG.cSize=key; }
+  var n=!!BOG.night, b=BOG.bloom; b.strength=n?0.6:0.22; b.threshold=n?0.72:0.92; b.radius=n?0.5:0.4;
+  return C;
+}
+function bogRender(){
+  var S3=BOG.scene, cam=BOG.cam; if(!S3||!cam) return;
+  var C=(GFX!=="lite" && THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass) ? bogComposer() : null;
+  if(C) S3.fog.color.copy(BOG.horLin); else S3.fog.color.copy(BOG.horLin).convertLinearToSRGB();
+  BOG.sky.position.copy(cam.position);
+  [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F) F.mat.uniforms.uFog.value.copy(BOG.horLin); });
+  var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=BOG.exposure;
+  var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  if(C) C.render(); else renderer.render(S3, cam);
+  BOG.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, shot:BOG.shot, parts:BOG.fx.P.length+(BOG.fxSpray?BOG.fxSpray.P.length:0)}; inf.autoReset=ar;
+  renderer.toneMappingExposure=ex;
+}
+function bogReset(){
+  [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F) F.clear(); });
+  BOG.shot=null; BOG.prev={}; BOG.vsink=0; BOG.shake=0; BOG.cheer=0; BOG.skip=false; BOG.doneT=0; BOG.splash=0; BOG.coat=0; BOG.pitch=0; BOG.pv=0; BOG.lastHz=0;
+  if(BOG.crowd && BOG.crowd.live){ BOG.cheer=0; bogCrowd(0); }
+  if(BOG.cur){ var U=BOG.cur.userData; if(U.paint0) U.mats.paint.color.copy(U.paint0); }
+  bogMudReset();
+}
+function bogUpdate(o, dt){
+  if(!BOG.built) buildBogScene();
+  var S3=BOG.scene; BOG.t+=dt;
+  if(BOG.tier!==GFX || BOG.night!==!!o.night){ var tc=BOG.tier!==GFX; bogSetNight(!!o.night); if(tc){ BOG.mudKey=""; if(BOG.fxSpray===null && GFX!=="lite"){ BOG.fxSpray=new StripFx(GFX==="ultra"?420:260, "smoke", stripPuffTex()); S3.add(BOG.fxSpray.mesh); bogSetNight(!!o.night); } } }
+  var ph=o.phase||"stage";
+  if(ph==="stage" && BOG.prev.phase && BOG.prev.phase!=="stage") bogReset();
+  if(o.pit) bogMudBuild(o.pit);
+  var cls=BOG_LOOK[o.cls]?o.cls:"street", ty=o.tyre||"mt", col=o.color!=null?o.color:BOG_LOOK[cls].col, vk=cls+":"+ty+":"+col;
+  if(!BOG.veh[vk]){ BOG.veh[vk]=bogVehicle(cls, ty, col); S3.add(BOG.veh[vk]); }
+  for(var kk in BOG.veh) BOG.veh[kk].visible=(kk===vk);
+  var V=BOG.veh[vk], U=V.userData, k=U.k||1; if(BOG.cur!==V){ BOG.cur=V; } pullLivery(U);
+  var x=+o.x||0, v=Math.max(0,+o.v||0), slip=clamp(+o.slip||0,0,1), sink=clamp(+o.sink||0,0,1.4), len=+o.len||(o.pit&&o.pit.len)||70, i;
+  if(ph==="done") BOG.doneT+=dt;
+  if(ph==="pit" && BOG.prev.phase==="runup"){ BOG.splash=Math.max(BOG.splash, 0.6+Math.min(1,v/12)); BOG.cheer=Math.max(BOG.cheer,1.2); BOG.shake=Math.max(BOG.shake,0.12); }
+  if(o.cleared && !BOG.prev.cleared){ BOG.cheer=2.4; }
+  if(ph==="done" && BOG.prev.phase==="pit" && !o.cleared) BOG.cheer=Math.max(BOG.cheer,0.8);
+  if((+o.slap||0)>0){ BOG.splash=Math.max(BOG.splash, Math.min(1.5,+o.slap)); BOG.shake=Math.max(BOG.shake, 0.08*Math.min(1.5,+o.slap)); }
+  /* the truck: front axle at x, sunk by the sim's sinkage, thrown by its bounce; pitch follows the depth under each axle and the bounce */
+  var vsink=Math.min(U.rr*k*0.62, Math.max(sink*1.3, (ph==="pit"?0.42*Math.max(+o.dFront||0,+o.dRear||0):0)));   /* down to the hubs in the deep end */
+  BOG.vsink=(BOG.vsink||0)+(vsink-(BOG.vsink||0))*Math.min(1,dt*5);
+  V.position.set(x-U.wb*k, -BOG.vsink+Math.max(0,+o.y||0), 0);
+  var tgt=clamp(-(+o.vy||0)*0.05, -0.12, 0.14)+clamp((+o.dRear||0)-(+o.dFront||0),-0.4,0.4)*0.25+0.01*slip*(ph==="pit"?1:0)+(ph!=="stage"&&ph!=="done"?Math.sin(BOG.t*8.0)*0.006*slip:0);
+  var n=Math.min(8, Math.ceil(dt/0.01)), h=n?dt/n:0, om=7, ze=0.35;
+  for(i=0;i<n;i++){ BOG.pv+=(om*om*(tgt-BOG.pitch)-2*ze*om*BOG.pv)*h; BOG.pitch+=BOG.pv*h; }
+  BOG.roll+=((ph==="pit"?Math.sin(BOG.t*3.1)*0.02*slip+Math.sin(BOG.t*1.3)*0.012*sink:0)-BOG.roll)*Math.min(1,dt*4);
+  U.pivot.rotation.z=BOG.pitch; U.pivot.rotation.x=BOG.roll; U.pivot.position.y=U.rr+Math.sin(BOG.t*(+o.rpm||800)/60*1.3)*0.002;
+  var ws=Math.max(v,+o.wspd||0), wr=ws/(U.rr*k);
+  for(i=0;i<U.wheelsR.length;i++){ var sp=U.wheelsR[i]; sp.rotation.y=(sp.rotation.y-wr*dt)%TAU; }
+  for(i=0;i<U.wheelsF.length;i++){ var sf=U.wheelsF[i]; sf.rotation.y=(sf.rotation.y-wr*dt)%TAU; }
+  /* the mud coat builds on the paint */
+  BOG.coat+=(clamp((+o.mudKg||0)/220,0,0.85)-BOG.coat)*Math.min(1,dt*2);
+  if(U.paint0){ U.mats.paint.color.copy(U.paint0).lerp(_mudC, BOG.coat); }
+  V.updateMatrixWorld(true);
+  /* ruts and tracks: where the tyres have been */
+  if(BOG.mud && x>0 && (ph==="pit"||ph==="done")){
+    var rx=Math.min(x, len), half=U.trR*k, tw=U.wr*k*0.95, dep=clamp(0.05+sink*0.4,0.05,0.4);
+    if(rx-BOG.paintX>0.4 || (ph==="done"&&BOG.paintX<rx-0.01)){ var from=Math.max(0,BOG.paintX<-1e8?0:BOG.paintX); bogMudTrack(from-0.2, rx, half, tw, clamp(slip+sink,0,1)); BOG.paintX=rx; }
+    if(GFX!=="lite"){ bogMudRut(rx-U.rr*k*0.9, half, tw, dep); bogMudRut(rx-U.wb*k-U.rr*k*0.9, half, tw, dep*0.9); }
+  }
+  if(BOG.rutDirty && (BOG.t-(BOG.normT||0)>0.12)){ BOG.normT=BOG.t; BOG.rutDirty=0; BOG.mudGeo.computeVertexNormals(); }
+  bogEffects(o, dt, V);
+  bogCrowd(dt);
+  bogDirect(o, dt, V);
+  var c=_pC.copy(BOG.camPos).lerp(BOG.camTgt, 0.6); c.y=0;
+  BOG.sun.position.copy(c).addScaledVector(BOG.sunDir, 120); BOG.sun.target.position.copy(c); BOG.sun.target.updateMatrixWorld();
+  if(BOG.flood.intensity>0){ BOG.flood.position.set(c.x-20, 60, 40); BOG.flood.target.position.copy(c); BOG.flood.target.updateMatrixWorld(); }
+  if(BOG.spots.length){ var poles=BOG.poles.slice().sort(function(a,b){ return Math.abs(a.x-c.x)-Math.abs(b.x-c.x); });
+    BOG.spots.forEach(function(sp,j){ var pp=poles[j]; if(!pp) return; sp.position.copy(pp); sp.target.position.set(lerp(pp.x,c.x,0.5), 0, 0); sp.target.updateMatrixWorld(); }); }
+  BOG.prev={phase:ph, cleared:!!o.cleared};
+}
+var _mudC=new THREE.Color(0.11,0.075,0.045);
 
 /* ===========================================================================
    ROAD COURSE SCENE — the road test's flying lap, a fourth world the view cuts
@@ -18043,6 +18682,7 @@ const ENGINE_VIS = {
     camera.updateProjectionMatrix();
     if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; stripBandRead(); }
     if(PULL.cam){ PULL.cam.aspect=w/h; PULL.cam.updateProjectionMatrix(); }
+    if(BOG.cam){ BOG.cam.aspect=w/h; BOG.cam.updateProjectionMatrix(); }
     if(ROAD.cam){ ROAD.cam.aspect=w/h; ROAD.cam.updateProjectionMatrix(); }
     if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); }
     if(PITS.cam) PITS.dirty=2;
@@ -18121,6 +18761,19 @@ const ENGINE_VIS = {
     return PULL.stats||null;
   },
   pullSkip: function(){ if(PULL.on) PULL.skip=true; },
+  /* MUD BOG: fed every frame {on, phase:"stage"|"runup"|"pit"|"done", x (front axle, m from the pit's near edge), v, wspd (tyre surface speed), slip, sink, y, vy,
+     dFront, dRear (mud depth under each axle), rpm, throttle, smoke, cls, tyre, color?, night, len, cons, pit:{seed, len, cons} (builds the night's mud), mudKg,
+     slap (a splash this frame, 0..1.5), cleared, failed, shot? (force a camera), dt?}; {on:false} leaves */
+  setBog: function(o){
+    if(!renderer) return;
+    if(!o || o.on===false){ if(BOG.on){ BOG.on=false; bogReset(); } return; }
+    var now=performance.now(); if(!BOG.on){ BOG.on=true; if(!BOG.built) buildBogScene(); bogReset(); BOG.snap=true; BOG.lastT=now; ENGINE_VIS.resize(); }
+    var rdt=o.dt!=null ? +o.dt : (now-BOG.lastT)/1000; BOG.lastT=now; bogUpdate(o, clamp(rdt||0, 0, 0.1));
+    return BOG.stats||null;
+  },
+  bogSkip: function(){ if(BOG.on) BOG.skip=true; },
+  bogState: function(){ return {on:BOG.on, built:BOG.built, shot:BOG.shot, mudKey:BOG.mudKey, parts:BOG.fx?BOG.fx.P.length+(BOG.fxSpray?BOG.fxSpray.P.length:0):0, spray:!!BOG.fxSpray, stats:BOG.stats,
+    cam:BOG.cam?BOG.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null, ruts:BOG.mudGeo?Math.round(-Math.min.apply(null, Array.prototype.filter.call(BOG.mudGeo.attributes.position.array, function(v,i){ return i%3===1; }))*100)/100:0}; },   /* harness */
   /* career sponsors on the cars: {hood:sp, sides:[sp...]} (sp: {id, name, tag, shape, c1, c2, c3}); null = the shop's own colours */
   setLivery: function(L){ var h=L&&L.hood||null, sd=(L&&L.sides||[]).filter(Boolean); LIVERY.hood=h; LIVERY.sides=h?sd:[]; LIVERY.key=h?[h.id].concat(sd.map(function(q){ return q.id; })).join(","):""; return LIVERY.key; },
   livery: function(){ return {key:LIVERY.key, hood:LIVERY.hood&&LIVERY.hood.id, sides:LIVERY.sides.map(function(q){ return q.id; })}; },   /* harness */
@@ -18787,6 +19440,7 @@ ENGINE_VIS.teardown=function(info){
   else TD.saved={th:camState.theta, ph:camState.phi, r:camState.r, tg:camState.target.clone(), af:camState.autoForce, au:camState.auto};
   if(STRIP.on) ENGINE_VIS.setStrip({on:false});
   if(PULL.on) ENGINE_VIS.setPull({on:false});
+  if(BOG.on) ENGINE_VIS.setBog({on:false});
   var B=tdBuild(info);
   TD.root=B.root; TD.focusObj=B.focus; TD.view=B.view; TD.dmg=B.dmg; TD.on=true; TD.t=0;
   scene.add(B.root); B.root.updateMatrixWorld(true);
@@ -19048,7 +19702,7 @@ const CELL_KEYS=["ambientC","altitudeM","coolantC","oilC"];
 function stdCell(){const d=SIM.DEFAULT_ENV,o={};CELL_KEYS.forEach(k=>o[k]=d[k]);return o;}
 function careerCell(){const c=C();if(!c.cell||typeof c.cell!=="object")c.cell=stdCell();return c.cell;}
 function climateCtl(){return career()&&has("dyno3");}
-function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt"||t==="road"||t==="race24";}   // out on the strip or the dirt: the cell's climate control stays home
+function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt"||t==="road"||t==="race24"||t==="bog";}   // out on the strip or the dirt: the cell's climate control stays home
 function simEnv(extra){return Object.assign({},S.env,career()?(climateCtl()&&!trackEvt(S.env.testType)?careerCell():stdCell()):{},extra||{});}
 function stdEnv(extra){return Object.assign({},S.env,career()?stdCell():{},extra||{});}
 function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===+d[k]);}
@@ -19068,9 +19722,9 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   // WOT burn: ~0.32 L/hp/h on gasoline, more on low-energy fuels (per-litre energy vs pump gas)
   const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv))*(fu.gas?0.745/fu.dens:1);const t=S.env.testType;   // gas: litres of liquid propane / kg of CNG   // diesel ~0.23 L/hp/h at full load
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
-  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="salt"?0.03:t==="road"?0.03:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
+  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="salt"?0.03:t==="road"?0.03:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
 
 /* ===================== live compute ===================== */
@@ -19557,11 +20211,12 @@ function renderEnv(){
   if(t==="road")h+=roadEnvHtml(sl);
   if(t==="race24"&&!ER)h+=e24EnvHtml();
   if(t==="salt")h+=saltEnvHtml(sl);
+  if(t==="bog")h+=bogEnvHtml(sl);
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;pitsSync();
 }
 function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();}
-function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
+function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="bog"&&l&&l.bog&&S.last.env.testType==="bog")drawBogTrace(l.bog);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
 $("envBox").addEventListener("input",e=>{const r=e.target;if(!r.dataset.e||r.type!=="range")return;applyEnv(r.dataset.e,parseFloat(r.value));});
 $("envBox").addEventListener("change",e=>{if(e.target.type==="range")commitEnv();});
 (()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
@@ -19668,11 +20323,11 @@ function renderTest(){
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.env.testType===S.env.testType?S.last:null;
-  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else if(last&&S.env.testType==="road"&&last.res.road)drawRoadTrace(last.res.road);else if(last&&S.env.testType==="race24"&&last.res.e24)drawE24Trace(last.res.e24);else drawChart(last?last.res:null,null);
+  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else if(last&&S.env.testType==="bog"&&last.res.bog)drawBogTrace(last.res.bog);else if(last&&S.env.testType==="road"&&last.res.road)drawRoadTrace(last.res.road);else if(last&&S.env.testType==="race24"&&last.res.e24)drawE24Trace(last.res.e24);else drawChart(last?last.res:null,null);
   $("runTest").disabled=testing;const cost=testCost();
-  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",road:"Roll out · road test",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
+  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",road:"Roll out · road test",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
-  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="race24"?e24Hint():S.env.testType==="road"?roadHint():S.env.testType==="salt"?saltHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
+  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="race24"?e24Hint():S.env.testType==="road"?roadHint():S.env.testType==="salt"?saltHint():S.env.testType==="bog"?bogHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
     : `<b>${dc.n}</b> · no limits in the test cell. Figures update as you change the build; run a test to lock a result and pin it as a baseline.`;
   if(S.env.testType==="drag")rnRunBtn();
@@ -20778,6 +21433,197 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.dq?"DQ":f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):f.me&&r.poPending?" · pull-off next":""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>${r.ser?pullSerCard(r.ser):""}`;}
 
 
+/* ===================== MUD BOG: the engine in a truck, a pit of mud ===================== */
+/* run up on the dirt, hit the mud with whatever speed you've got and keep the wheels turning: stuck scores the distance, through scores the time */
+let BR=null;
+const BOG_FEE=120,BOG_PURSE=[2500,1200,700,400,200],BOG_PAY={1:1,2:1.8,3:3},BOG_REP=[3,2,1],BOG_SB={};
+const BOG_NAMES=["Swamp Thing","Mud Butter","Gumbo","Sloppy Joe","Bog Hog","Muddy Waters","Dirty Bird","Low Ground","Sink Hole","Gator Bait","Brown Out","Clay Pigeon","Backwater","Slough Monster","Rooster Tail","Wet Willy","Gravy Train","Stuck Up"];
+const BOG_COLORS={street:0x1d4787,modified:0xb7261d,super:0x2c6b3a};
+const bogEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const bogIsD=c=>SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
+function bogClsLocked(k){const c=SIM.BOG_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
+/* the truck setup lives on S.env beside the sled's and the salt's; anything a class doesn't run is pulled back in */
+function bogEnvFix(){const e=S.env,B=SIM.BOG_CLASSES;if(!B[e.bogCls])e.bogCls="street";const k=e.bogCls,V=B[k].veh,G=B[k].gears;
+  if(!V.tyres.includes(e.bogTyre))e.bogTyre=V.tyres[V.tyres.length-1];
+  e.bogGear=Math.max(0,Math.min(G.length-1,Math.round(isFinite(+e.bogGear)&&e.bogGear!==""&&e.bogGear!=null?+e.bogGear:1)));
+  if(e.bogDrive!=="auto")e.bogDrive="you";return k;}
+function bogVeh(k){const e=S.env;return{cls:k,gear:+e.bogGear,tyre:e.bogTyre,redline:S.cfg.redline,idle:bogIsD(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850)};}
+/* the night: one pit per class per week in career (the same mud all week), a fresh one every run in the sandbox */
+function bogSeed(k){const ix=Object.keys(SIM.BOG_CLASSES).indexOf(k)+1;if(!career())return BOG_SB[ix]||(BOG_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().bogSeed)C().bogSeed=Math.floor(Math.random()*1e9)+1;return(C().bogSeed^(C().week*7919)^(ix*104729))>>>0;}
+function bogHookedWk(k){return career()&&(C().bogWk||{})[k]===C().week;}
+const bogNightCache=new Map(),bogFieldCache=new Map();
+function bogNight(seed){let n=bogNightCache.get(seed);if(!n){if(bogNightCache.size>12)bogNightCache.clear();n=SIM.bogNight(seed);bogNightCache.set(seed,n);}return n;}
+/* the rest of the class: 5–7 trucks, each its own engine and driver run through the same sim and the same mud */
+function bogField(k,seed){const key=k+"|"+seed;if(bogFieldCache.has(key))return bogFieldCache.get(key);
+  const C0=SIM.BOG_CLASSES[k],F=C0.field,r=pullRand((seed^0x2F6B1D)>>>0),night=bogNight(seed),names=BOG_NAMES.slice(),n=5+Math.floor(r()*3),out=[];
+  for(let i=0;i<n;i++){const nm=names.splice(Math.floor(r()*names.length),1)[0],gs=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());
+    const hp=Math.round(Math.max(140,F.hp+gs*F.sd)),dsl=r()<F.dsl,skill=+(0.45+0.55*r()).toFixed(2),gear=Math.min(C0.gears.length-1,Math.max(0,1+(r()<0.25?-1:r()<0.3?1:0))),tyre=C0.veh.tyres[r()<0.8?C0.veh.tyres.length-1:0];
+    const res=SIM.bogAiRes(hp,dsl,(seed+i*977)>>>0);let q;try{q=SIM.bogPass(res,{cls:k,gear,tyre,redline:res.redline,idle:dsl?720:850,seed:(seed^(i+1)*2654435761)>>>0,night,noFail:true},skill);}catch(e){q={cleared:false,distM:20,pitT:null};}
+    const row={n:nm,hp,dsl,cleared:!!q.cleared,t:q.cleared?q.pitT:null,m:q.cleared?night.len:q.distM};
+    if(r()<0.06){row.broke=true;row.cleared=false;row.t=null;row.m=+(row.m*(0.25+0.6*r())).toFixed(2);}
+    out.push(row);}
+  if(bogFieldCache.size>12)bogFieldCache.clear();bogFieldCache.set(key,out);return out;}
+/* mud-bog order: through the pit beats stuck in it; through, the quicker time; stuck, the farther */
+const bogCmp=(a,b)=>(a.dq?1:0)-(b.dq?1:0)||(b.cleared?1:0)-(a.cleared?1:0)||(a.cleared?a.t-b.t:b.m-a.m)||(a.me?-1:b.me?1:0);
+const bogScore=f=>f.dq?"DQ":f.cleared?f.t.toFixed(2)+" s":f.m.toFixed(1)+" m";
+function bogBtnText(t,sub){const b=$("bogBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+function bogBreak(kind){BR.failed=true;BR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function bogStart(){
+  $("app").classList.add("onstrip");
+  const k=bogEnvFix(),env=stdEnv();const res=SIM.bogPrep(S.cfg,env);
+  const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
+  const snap=testSnap(),hk=hKey(snap.h),veh=bogVeh(k),seed=bogSeed(k),night=bogNight(seed),field=bogField(k,seed);
+  if(career())(C().bogWk=C().bogWk||{})[k]=C().week;
+  veh.seed=career()?(seed+7919*(C().bogRuns=(C().bogRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);veh.night=night;if(wi&&wi.w>=1)veh.wornAt=1.5+Math.random()*4;
+  const p=SIM.bogRun(res,veh),C0=SIM.BOG_CLASSES[k],pitK=C0.veh.pitK||1;
+  const lead=field.slice().sort(bogCmp)[0];
+  BR={p,res,env,veh,k,hk,snap,seed,night,field,lead,pitK,pit:{seed:night.seed,len:night.len,cons:night.cons},auto:S.env.bogDrive==="auto",last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,slaps:0,hz:0,slapT:0,color:BOG_COLORS[k]};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("bogCtl").style.display="";$("bogBtn").dataset.k="";$("bogBtn").disabled=false;
+  bogBtnText(BR.auto?"START THE RUN":"HOLD TO DRIVE",BR.auto?"the driver takes it from here":"hold for throttle · let go to feather the wheelspin");
+  $("testProg").classList.remove("done");sfx("start");bogHud(p.st);
+  requestAnimationFrame(()=>{const pn=$("panel"),r=$("bogCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  const step=()=>{if(!BR||BR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-BR.last)/1000);BR.last=now;const st=p.st;
+    let left=dt;while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,bogThr(st));}
+    if(st.broke&&!BR.failed)bogBreak(st.broke);
+    if(st.done&&BR.doneAt==null){BR.doneAt=now;if(st.cleared&&!BR.failed){$("flash").style.background="rgba(79,192,141,.35)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
+    // mud slaps: the pit entry, a ridge, a rut, a landing — and the wheels throwing it while they spin
+    let slap=0;if(st.phase==="pit"&&BR.ph!=="pit")slap=1;if(st.hzHit.length>BR.hz){BR.hz=st.hzHit.length;slap=Math.max(slap,0.8);}if(st.slaps>BR.slaps){BR.slaps=st.slaps;slap=Math.max(slap,0.9);}
+    if(slap)sfx("mudslap");else if(st.phase==="pit"&&!st.done&&st.slip>0.2&&now-BR.slapT>Math.max(140,520-600*st.slip)){BR.slapT=now;sfx("mudslap");}
+    BR.ph=st.phase;
+    const x=Math.max(-50,st.x),dF=SIM.bogDepth(BR.night,x)*BR.pitK,dR=SIM.bogDepth(BR.night,x-3.6)*BR.pitK;
+    if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:true,phase:st.phase,x:st.x,v:st.v,wspd:st.w*SIM.BOG_CLASSES[k].veh.tyreDia*0.0254/2,slip:st.slip,sink:st.sink,y:st.y,vy:st.vy,dFront:dF,dRear:dR,rpm:BR.failed?run.rpm:st.rpm,throttle:st.foot,
+      smoke:BR.res.diesel?Math.min(1,(BR.res.smoke||0)/60):0.1,cls:k,tyre:veh.tyre,color:BR.color,night:!!S.night,len:BR.night.len,cons:BR.night.cons,pit:BR.pit,mudKg:st.mudKg,slap,cleared:st.cleared,failed:BR.failed,dt});
+    bogHud(st);
+    run.on=true;
+    if(BR.failed)run.rpm=Math.max(0,run.rpm-380);else if(st.done||st.stalled)run.rpm=st.stalled?Math.max(0,run.rpm-260):run.rpm+(veh.idle-run.rpm)*Math.min(1,dt*3);else run.rpm=st.rpm;
+    run.load=BR.failed||st.done?0:st.foot;
+    $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*Math.max(0,st.x)/BR.night.len)+"%";
+    const hold=st.cleared?2400:1800;
+    if(!st.done||(now-BR.doneAt<hold&&!BR.skip)||(BR.failed&&run.rpm>0&&!BR.skip))requestAnimationFrame(step);else bogFinish();};
+  requestAnimationFrame(step);
+}
+/* the driver's foot: yours (the button), or the auto driver every 20 ms */
+function bogThr(st){if(!BR.auto)return BR.down&&!BR.failed?1:0;if(st.phase==="stage")return BR.go?1:0;return BR.failed?0:BR.p.auto(0.92);}
+/* the live card: distance (or the clock once through), the pit with the field on it, then the two things the foot manages — wheel speed and rpm */
+function bogHud(st){if(!BR)return;const L=BR.night.len,x=Math.max(0,st.x),pc=v=>Math.min(100,100*v/L);
+  const stat=BR.failed?"broke":st.cleared?"full":"";
+  const say=BR.failed?"BROKE":st.cleared?"THROUGH!":st.done?({stalled:"stalled",highcentre:"high-centred",dug:"dug in",bogged:"bogged down",packed:"packed up",lifted:"lifted"}[st.stopWhy]||"stuck"):st.phase==="stage"?"at the line":st.phase==="runup"?`${Math.round(-st.x)} m to the mud`:Math.round(st.v*2.237)+" mph";
+  const pitT=st.tPit!=null?(st.cleared?st.tOut:st.t)-st.tPit:0,big=st.cleared?`${pitT.toFixed(2)}<i>s</i>`:`${x.toFixed(1)}<i>m</i>`;
+  const marks=BR.field.map(f=>`<i class="mk${f===BR.lead?" lead":""}" style="left:${Math.min(99.5,pc(f.cleared?L:f.m))}%"></i>`).join("");
+  const sw=st.sweet,sp=Math.round(st.slip*100),dg=Math.round(BR.p.digS*100),band=st.bogBand,rl=BR.veh.redline,rpmP=Math.min(100,Math.round(100*st.rpm/(rl*1.05))),bandP=Math.round(100*band[1]/(rl*1.05));
+  const d=st.phase==="pit"?st.depth:0,lead=BR.lead;
+  $("bogLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${say}${st.phase==="pit"&&!st.done?"<br>"+pitT.toFixed(1)+" s in the mud":""}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${pc(x)}%"></i>${marks}</div><div class="ph-lbl"><span>0</span><span>leader <b>${lead?bogScore(lead):"—"}</b></span><span>${L} m</span></div>
+    <div class="ph-lbl"><span>Mud <b>${bogEsc(BR.night.name)}</b></span><span>${st.phase==="pit"?`depth <b>${Math.round(d*100)} cm</b>`:`${SIM.BOG_CLASSES[BR.k].n}`}</span></div></div>
+    <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>Wheelspin <b>${sp}%</b></span><span>${st.pack>0.5?`<b style="color:var(--warn)">LUGS PACKED</b>`:st.dig>0.4?`<b style="color:var(--crit)">DIGGING</b>`:st.belly>0.3?`<b style="color:var(--crit)">ON THE FRAME</b>`:st.air?`<b style="color:var(--info)">AIRBORNE</b>`:`dig past ${dg}%`}</span></div>
+    <div class="ph-bar"><i class="sw" style="left:${Math.round(sw[0]*100)}%;width:${Math.round((sw[1]-sw[0])*100)}%"></i><i class="mk" style="left:${dg}%"></i><i class="nd ${st.slip>BR.p.digS?"hot":st.slip>=sw[0]&&st.slip<=sw[1]+0.06?"ok":""}" style="left:${Math.min(99,sp)}%"></i></div>
+    <div class="ph-lbl"><span>rpm <b style="color:${st.phase==="pit"&&st.rpm<band[1]?"var(--crit)":""}">${Math.round(st.rpm/10)*10}</b></span><span>${st.stalled?`<b style="color:var(--crit)">STALLED</b>`:st.phase==="pit"&&st.rpm<band[1]?`<b style="color:var(--warn)">BOGGING</b>`:`bog under ${band[1].toLocaleString()}`}</span></div>
+    <div class="ph-bar"><i class="zone" style="left:0;width:${bandP}%"></i><i class="fill" style="width:${rpmP}%"></i></div></div>
+    <div class="ph-row"><div class="peak"><b>${Math.round(st.v*2.237)}</b><span>mph</span></div><div class="peak"><b style="color:${st.cool>118?"var(--crit)":st.cool>108?"var(--warn)":""}">${Math.round(st.cool)}<i>°C</i></b><span>water</span></div><div class="peak"><b style="color:${st.egt>900?"var(--crit)":st.egt>800?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>EGT</span></div></div>`;
+  if(BR.failed)bogBtnText(BR.failKind==="head_lift"?"COOKED IT":BR.failKind==="turbo"?"TURBO GONE":BR.failKind==="piston"||BR.failKind==="crown_temp"?"MELTED A PISTON":"GRENADED","tap to skip");
+  else if(st.done)bogBtnText(st.cleared?`THROUGH · ${pitT.toFixed(2)} S`:`${x.toFixed(1)} M`,"tap to skip");
+  else if(BR.auto)bogBtnText(st.phase==="stage"?"START THE RUN":"AUTO DRIVER",st.phase==="stage"?"the driver takes it from here":"tap to skip to the result");
+  else if(st.phase==="stage")bogBtnText("HOLD TO DRIVE","hold for throttle · let go to feather the wheelspin");
+  else if(BR.down)bogBtnText(st.phase==="runup"?"BUILD SPEED":st.slip>BR.p.digS?"DIGGING — FEATHER":st.rpm<band[1]?"BOGGING — STAY IN IT":"IN THE MUD",st.phase==="runup"?"momentum is free":st.slip>BR.p.digS?"let go a moment, then back on":"keep the wheels turning");
+  else bogBtnText("FEATHERED","hold to get back on it");}
+function bogPress(){if(!BR||BR.finished)return;const st=BR.p.st;if(st.done||BR.failed){bogSkip();return;}
+  if(BR.auto){if(st.phase==="stage"){BR.go=true;buzz([20]);}else bogSkip();return;}
+  BR.down=true;if(st.phase==="stage")buzz([20]);}
+function bogRelease(){if(!BR)return;BR.down=false;}
+/* skip: the rest of the run is driven at once (the auto driver's foot, or yours held where it was) */
+function bogSkip(){if(!BR||BR.finished)return;const p=BR.p,st=p.st;if(st.phase==="stage"&&!BR.auto)return;
+  if(!st.done){let n=0;while(!st.done&&n++<20000)p.step(0.02,BR.auto?p.auto(0.92):BR.down?1:p.auto(0.92));if(st.broke&&!BR.failed)bogBreak(st.broke);}
+  if(ENGINE_VIS.bogSkip)ENGINE_VIS.bogSkip();BR.skip=true;if(BR.doneAt==null)BR.doneAt=performance.now()-2000;}
+(()=>{const b=$("bogBtn");
+  b.addEventListener("pointerdown",e=>{e.preventDefault();BR&&(BR.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}bogPress();});
+  b.addEventListener("pointerup",()=>{BR&&(BR.lastPtr=performance.now());bogRelease();});
+  b.addEventListener("pointercancel",()=>{BR&&(BR.lastPtr=performance.now());bogRelease();});
+  b.addEventListener("contextmenu",e=>e.preventDefault());
+  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();bogPress();}});
+  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();bogRelease();}});
+  b.addEventListener("click",()=>{if(!BR||!BR.p||performance.now()-(BR.lastPtr||0)<800)return;bogPress();setTimeout(bogRelease,60);});})();
+function bogFinish(){
+  if(!BR||BR.finished)return;BR.finished=true;const {p,res,env,k,snap,hk}=BR;const r=p.result();const failed=BR.failed,C0=SIM.BOG_CLASSES[k];const same=testSame(snap);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});$("app").classList.remove("onstrip");}},2200);
+  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("bogCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const me={n:engineName().slice(0,26),me:true,cleared:r.cleared&&!failed,t:r.pitT,m:r.distM,broke:failed};
+  const rows=BR.field.map(f=>Object.assign({},f)).concat([me]).sort(bogCmp);
+  r.field=rows;r.place=rows.indexOf(me)+1;r.of=rows.length;r.clsName=C0.n;r.tier=C0.tier;r.auto=BR.auto;r.cleared=me.cleared;
+  if(failed){r.broke=r.broke||BR.failKind;r.failKind=r.failKind||BR.failKind;}
+  if(same)bogPb(r,failed);
+  res.bog=r;res.bogFailed=failed;res.bogFailKind=failed?BR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  const pl=ordN(r.place)+" of "+r.of,sc=r.cleared?`THROUGH · ${r.pitT.toFixed(2)} s`:`${r.distM.toFixed(1)} m`;
+  if(career()&&same){addWear(0.5+Math.min(1,r.time/25)*0.5+(r.coolPeak>115?0.4:0),hk);
+    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Mud bog: ${C0.n} — ${r.broke==="head_lift"?"cooked it":r.broke==="turbo"?"turbo let go":"grenaded"} ${r.distM.toFixed(0)} m into the pit`,"bad");toast(`GRENADED IN THE MUD · ${r.distM.toFixed(0)} m`);}
+    else{const purse=Math.round((BOG_PURSE[r.place-1]||0)*(BOG_PAY[C0.tier]||1)/10)*10,rep=(BOG_REP[r.place-1]||0)+(r.cleared?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
+      logEvent(`Mud bog: ${C0.n} — ${sc}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${sc} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
+    spEvent("bog",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
+    hud();checkGoals();}
+  else toast(failed?`GRENADED IN THE MUD · ${r.distM.toFixed(0)} m`:`${sc} · ${pl}`);
+  if(!career())delete BOG_SB[Object.keys(SIM.BOG_CLASSES).indexOf(k)+1];   // a new pit next run
+  achCheck({type:"bog",r,failed});
+  BR.p=null;save();recompute();renderTest();
+  revealVerdict();
+}
+/* records: per class, the quickest time through, or the farthest anyone got */
+function bogPb(r,failed){if(ff||failed)return;const R=recs();if(!R.bog||typeof R.bog!=="object")R.bog={};const was=R.bog[r.cls];
+  const better=!was||(r.cleared&&(!was.c||r.pitT<was.t))||(!r.cleared&&!was.c&&r.distM>was.m);if(!better)return;
+  R.bog[r.cls]=Object.assign({c:!!r.cleared,t:r.cleared?r.pitT:null,m:r.distM,len:r.len},recTag());
+  if(was){r.pb={was:was.c?was.t.toFixed(2)+" s":was.m.toFixed(1)+" m"};setTimeout(()=>toast(`CLASS BEST · ${r.cleared?r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} (was ${r.pb.was})`),2700);}}
+function bogRecHtml(){const R=recs(),P=R.bog;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOG_CLASSES).filter(k=>P[k]);if(!ks.length)return "";
+  return `<div class="rtop"><span>Mud bog · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.c?"✓":"·"}</b><span class="et">${e.c?e.t.toFixed(2):e.m.toFixed(1)}</span><span>${e.c?"s":"m"}</span><span class="nm" title="${bogEsc(e.n)}">${bogEsc(SIM.BOG_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+function bogHint(){const c=SIM.BOG_CLASSES;return career()?`<b>Mud bog</b> · $${BOG_FEE} entry, one run per class a week. Needs a certified engine. ${c.street.n} is open to anyone; ${c.modified.n} at ${c.modified.rep} rep, ${c.super.n} at ${c.super.rep}. Through the pit beats stuck in it — quickest time wins, then farthest. Purse by placing, up to ${fmt$(BOG_PURSE[0]*BOG_PAY[3])} in Super. Every run is wear, and the mud packs the radiator.`
+  :`<b>Mud bog</b> · hold the button for throttle, let go to feather. Carry speed off the run-up, then keep the wheels turning in the mud: a little wheelspin cleans the lugs, too much digs a hole. Stuck scores the distance; through scores the time.`;}
+/* a quick look at the night's pit before you run it: length, mud, the depth along it, where the field got to */
+function bogPitSvg(night,pitK,field){const L=night.len,W=300,H=40,pts=[];for(let x=0;x<=L;x+=1)pts.push([x/L*W,4+Math.min(1.6,SIM.bogDepth(night,x)*pitK)/1.6*(H-8)]);
+  const path="M0,4 "+pts.map(p=>"L"+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")+` L${W},4 Z`;
+  const mk=(field||[]).map(f=>`<line x1="${((f.cleared?L:f.m)/L*W).toFixed(1)}" x2="${((f.cleared?L:f.m)/L*W).toFixed(1)}" y1="0" y2="${H}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 2"/>`).join("");
+  const hz=night.hz.map(h=>`<text x="${(h.x/L*W).toFixed(1)}" y="${H-1}" font-size="8" text-anchor="middle" fill="var(--dim)">${h.kind==="rut"?"▾":"▴"}</text>`).join("");
+  return `<svg class="bogpit" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Depth along the pit"><path d="${path}" fill="rgba(122,86,52,.55)" stroke="rgba(160,120,80,.9)" stroke-width="1"/>${mk}${hz}</svg>`;}
+function bogEnvHtml(sl){const e=S.env,k=bogEnvFix(),C0=SIM.BOG_CLASSES[k],V=C0.veh,G=C0.gears,lk=bogClsLocked(k),seed=bogSeed(k),night=bogNight(seed),field=bogField(k,seed),R=recs().bog||{},pb=R[k];
+  const thru=field.filter(f=>f.cleared).length,lead=field.slice().sort(bogCmp)[0];
+  let h=`<div class="saltcls"><div><span>Tonight's pit</span><b>${night.len} m</b><small>${bogEsc(night.name)} · ${Math.round(night.d0*(V.pitK||1)*100)} cm deep</small></div><div><span>To beat</span><b>${lead?bogScore(lead):"—"}</b><small>${thru} of ${field.length} got through</small></div><div><span>Your best</span><b>${pb?(pb.c?pb.t.toFixed(2)+" s":pb.m.toFixed(1)+" m"):"—"}</b><small>${pb?(pb.c?"through the pit":"farthest"):"no run yet"}</small></div></div>${bogPitSvg(night,V.pitK||1,field)}`;
+  h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOG_CLASSES).map(([id,c])=>{const l=bogClsLocked(id);return `<button data-bk="bogCls" data-bv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
+  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold for throttle, feather the spin"],["auto","Auto","a steady foot · watch the run"]].map(([id,n,d])=>`<button data-bk="bogDrive" data-bv="${id}" class="${e.bogDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=`<div class="bogadv"><div class="lbl"><span>Gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-bk="bogGear" data-bv="${i}" class="${+e.bogGear===i?"on":""}">${n}<small>${mph} mph at redline</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.BOG_TYRES[id];return `<button data-bk="bogTyre" data-bv="${id}" class="${e.bogTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div></div>`;
+  h+=`<p class="hint">${C0.n}: ${V.mass.toLocaleString("en-CA")} kg truck, ${V.tyreDia}" tyres, ${V.driveN}, ${V.trans==="clutch"?"clutch — it can stall":"automatic"}, ${Math.round(V.clear*100)} cm under the frame. ${V.runup} m run-up. A tall gear carries more speed into the mud but bogs sooner in the deep end; a short one keeps the engine up in its band and spins easier. ${night.cons>0.6?"Sticky clay grabs the tyres and packs slow lugs solid":"Soupy mud lets the tyres sink to the floor but lets go of them"}.${lk?` <b>Opens at ${lk} rep.</b>`:""}${bogHookedWk(k)?` <b>Run this week — the next mud bog is week ${C().week+1}.</b>`:""}</p>`;
+  return h;}
+$("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-bk]");if(!b)return;const k=b.dataset.bk,v=b.dataset.bv;
+  if(k==="bogCls"){const l=bogClsLocked(v);if(l){toast(`${SIM.BOG_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.bogCls){S.env.bogGear=null;S.env.bogTyre=null;}}
+  S.env[k]=k==="bogGear"?+v:v;bogEnvFix();renderEnv();save();buzz(6);});
+/* the run sheet's trace: speed and wheelspin against distance, the mud's depth shaded under them */
+function drawBogTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+  const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
+  const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=(r.trace||[]).filter(p=>p.x>-15);if(!tr.length)return;
+  const L=r.len||70,padL=34,padR=34,padT=12,padB=22,cw=W-padL-padR,ch=H-padT-padB,X0=-15,X=d=>padL+cw*Math.max(0,Math.min(1,(d-X0)/(L+5-X0))),mx=Math.max(10,Math.ceil((r.maxMph||10)/5)*5);
+  x.strokeStyle=css.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;x.font="10px "+getComputedStyle(document.body).fontFamily;x.textAlign="center";
+  for(let f=0;f<=L;f+=10){const px=X(f);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText(f+" m",px,H-6);}
+  // the mud: depth hangs down from the top of the plot
+  x.fillStyle="rgba(122,86,52,.28)";x.beginPath();x.moveTo(X(0),padT);tr.forEach(p=>{if(p.x>=0)x.lineTo(X(p.x),padT+ch*Math.min(1,p.d/1.6));});x.lineTo(X(Math.min(L,tr[tr.length-1].x)),padT);x.closePath();x.fill();
+  const sw=r.sweet||[0.1,0.26];x.fillStyle="rgba(79,192,141,.10)";x.fillRect(X(0),padT+ch*(1-sw[1]),X(L)-X(0),ch*(sw[1]-sw[0]));
+  const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
+  const rm=Math.max(3000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000);
+  line(p=>p.slip,"rgba(95,168,230,.9)",1.5);line(p=>p.rpm/rm,"#e8c14a",1.2,[2,3]);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
+  x.strokeStyle=INK;x.lineWidth=1;x.setLineDash([3,3]);x.beginPath();x.moveTo(X(L),padT);x.lineTo(X(L),padT+ch);x.stroke();x.setLineDash([]);
+  const ly=padT+ch-6;x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,ly);x.fillStyle="rgba(95,168,230,.9)";x.fillText("spin",padL+34,ly);x.fillStyle="#e8c14a";x.fillText("rpm",padL+62,ly);x.fillStyle="rgba(160,120,80,.95)";x.fillText("depth",padL+88,ly);
+  x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,ly);}
+function bogRedraw(){const l=lastForChart();if(S.env.testType==="bog"&&l&&l.bog)drawBogTrace(l.bog);}
+function bogVerdict(res){const r=res.bog;
+  if(res.bogFailed)return `<div class="verdict fail"><div><div class="big">${r.broke==="head_lift"?"COOKED IT IN THE MUD":r.broke==="turbo"?"TURBO LET GO":r.broke==="piston"||r.broke==="crown_temp"?"MELTED A PISTON":"GRENADED IN THE PIT"}</div><p>${r.distM.toFixed(1)} m into the pit before it let go · scored ${ordN(r.place)} of ${r.of} on distance${career()?" — certification is void and reputation took a hit":""}.</p></div></div>`;
+  const cls=r.place===1?"pass":r.place<=BOG_PURSE.length?"marg":"fail";
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${r.cleared?"THROUGH · "+r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} · ${ordN(r.place)}</div><p>${r.clsName} · ${ordN(r.place)} of ${r.of} · ${r.len} m of ${bogEsc(r.mud)} mud${r.auto?" · auto driver":""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb?` · class best (was ${r.pb.was})`:""}</p>
+    <div class="vstats"><div><b>${r.cleared?r.pitT.toFixed(2):r.distM.toFixed(1)}</b><span>${r.cleared?"seconds":"metres"}</span></div><div><b>${Math.round(r.entryMph)}</b><span>mph in</span></div><div><b>${r.avgMph!=null?Math.round(r.avgMph):Math.round(r.maxMph)}</b><span>${r.avgMph!=null?"avg mph":"top mph"}</span></div><div><b>${r.sweetT.toFixed(1)}</b><span>s in the band</span></div><div><b>${r.coolPeak}</b><span>water °C</span></div><div><b>${r.peakEgt}</b><span>EGT °C</span></div></div></div></div>`;}
+function bogSheet(res){const r=res.bog;const why={cleared:"through",bogged:"bogged down",stalled:"stalled",highcentre:"high-centred",dug:"dug in",packed:"lugs packed",lifted:"lifted",stuck:"stuck",broke:"broke",time:"flagged"}[r.stopWhy]||"stopped";
+  const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
+  return `<div class="sec"><h2>Mud bog sheet</h2><div class="log"><div><b>Run</b>${r.cleared?"through in "+r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m of "+r.len+" · "+why} · in at ${r.entryMph} mph · ${r.maxMph} mph top</div>
+    <div><b>Setup</b>${r.clsName} · ${r.gearName} (${r.mphGear} mph) · ${r.tyre.toLowerCase()} · ${r.ratio}:1 overall</div>
+    <div><b>Tyres</b>peak spin ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s past the dig point · lugs ${Math.round(r.pack*100)}% packed · ${r.mudKg} kg of mud on it</div>
+    <div><b>Heat</b>water ${r.coolPeak} °C peak · radiator ${Math.round(r.radPack*100)}% packed · EGT ${r.peakEgt} °C${r.bogT>0.3?" · "+r.bogT.toFixed(1)+" s lugging under "+r.bogBand[1].toLocaleString()+" rpm":""}</div>
+    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${bogEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.dsl?" diesel":""}</small>`}</span><span class="${f.me?"me":""}">${f.broke&&!f.cleared?"broke · ":""}${bogScore(f)}</span>`).join("")}</div></div>`;}
+
 /* ===================== ROAD TEST: the engine in a car ===================== */
 /* pick a chassis, tyres and a circuit; the sim runs 0–100, the quarter, top speed and a flying lap, the view plays the lap */
 let RT=null;
@@ -20993,7 +21839,7 @@ let e24Snap=null;   // the build, mode and career the flag dropped on (testSnap)
 function e24Click(){const gate=e24Gate();if(gate){toast(gate);return;}
   const res=SIM.simulate(S.cfg,stdEnv({testType:"pull"}));if(res.fails.length){toast(`Scrutineering says no — ${String(res.fails[0]).toLowerCase()} on the dyno`);return;}
   testing=true;e24Snap=testSnap();abStop();renderTest();ensureSound();
-  ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});   // a leftover strip/sled/salt scene
+  ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});   // a leftover strip/sled/salt scene
   if(!E24W.done[S.env.e24Trk])toast("Scrutineering the field…");
   e24Warm(S.env.e24Trk,e24Go);}
 function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roadOpt();let P;
@@ -21486,6 +22332,7 @@ function showResult(res,env){
   else if(env.testType==="road"&&res.road)v=roadVerdict(res);
   else if(env.testType==="pull_sled"&&res.pull)v=pullVerdict(res);
   else if(env.testType==="salt"&&res.salt)v=saltVerdict(res);
+  else if(env.testType==="bog"&&res.bog)v=bogVerdict(res);
   else if(over)v=`<div class="verdict fail"><div><div class="big">DYNO OVERLOADED</div><p>${dynoCap().n} can't hold ${Math.round(res.peakHp)} hp / ${S.cfg.redline} rpm. It cannot be certified here — upgrade the dyno in the Shop.</p></div></div>`;
   else if(res.fails.length)v=`<div class="verdict fail"><div><div class="big">FAILED</div><p>${res.fails.length===1?"One subsystem":res.fails.length+" subsystems"} went past its limit.</p>${res.fails.map(n=>{const t=res.tests.find(x=>x.name===n)||{};return `<div class="failnote"><b>${n}</b>${t.sub?` <small>${t.sub}</small>`:""} — ${t.physics||""} <i>${t.fix||""}</i></div>`;}).join("")}</div></div>`;
   else if(env.testType==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)v=`<div class="verdict fail"><div><div class="big">FAILED AT ${res.endurance.failedAtHour} H</div><p>First to go: ${(res.tests.find(t=>t.id===res.firstToFail)||{}).name||res.firstToFail}. It passed the pull but not the hours.</p></div></div>`;
@@ -21510,10 +22357,11 @@ function showResult(res,env){
   if(env.testType==="road"&&res.road)extra+=roadSheet(res);
   if(env.testType==="race24"&&res.e24)extra+=e24Sheet(res);
   if(env.testType==="salt"&&res.salt)extra+=saltSheet(res);
+  if(env.testType==="bog"&&res.bog)extra+=bogSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
-  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt)||(env.testType==="road"&&res.road)||(env.testType==="race24"&&res.e24))extra=spSlipHtml()+extra;
-  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="road"&&res.road)roadRedraw();if(env.testType==="race24"&&res.e24)drawE24Trace(res.e24);
+  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt)||(env.testType==="bog"&&res.bog)||(env.testType==="road"&&res.road)||(env.testType==="race24"&&res.e24))extra=spSlipHtml()+extra;
+  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="bog"&&res.bog)bogRedraw();if(env.testType==="road"&&res.road)roadRedraw();if(env.testType==="race24"&&res.e24)drawE24Trace(res.e24);
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
@@ -21560,18 +22408,21 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="road"&&career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(pullHookedWk(k)){toast(`Already hooked in ${SIM.PULL_CLASSES[k].n} this week — next pull night is week ${C().week+1}`);return;}}
   if(pullGate())return;
+  if(S.env.testType==="bog"){const k=bogEnvFix(),l=bogClsLocked(k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[k].n} this week — the next mud bog is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;abStop();renderTest();ensureSound();
   if(S.env.testType!=="drag"){ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);}
   if(S.env.testType!=="pull_sled"&&ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});
   if(S.env.testType!=="salt"&&ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});
+  if(S.env.testType!=="bog"&&ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});
   if(S.env.testType!=="road"&&S.env.testType!=="race24"&&ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:false});
-  if(S.env.testType!=="drag"&&S.env.testType!=="pull_sled"&&S.env.testType!=="salt"&&S.env.testType!=="road"&&S.env.testType!=="race24")$("app").classList.remove("onstrip");
+  if(S.env.testType!=="drag"&&S.env.testType!=="pull_sled"&&S.env.testType!=="salt"&&S.env.testType!=="road"&&S.env.testType!=="race24"&&S.env.testType!=="bog")$("app").classList.remove("onstrip");
   if(S.env.testType==="drag"){dragStart();return;}
   if(S.env.testType==="pull_sled"){pullStart();return;}
   if(S.env.testType==="road"){roadStart();return;}
   if(S.env.testType==="salt"){saltStart();return;}
+  if(S.env.testType==="bog"){bogStart();return;}
   const snap=testSnap(),cfg0=snap.cfg;
   const env=simEnv();const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";
@@ -21618,7 +22469,7 @@ $("runTest").addEventListener("click",()=>{
    ({id:{d:ms,w:week|null}}) - shared by sandbox and career. Shop badges read the career state directly. */
 const ACH_ICONS={flame:"M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",bolt:"M13 2 5 14h6l-1 8 8-12h-6z",gauge:"M4 17a8 8 0 1 1 16 0M12 17l4-6",clock:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",flag:"M5 21V4M5 4h11l-2 4 2 4H5",shield:"M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z",coin:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M9 10c0-2 6-2 6 0s-6 2-6 4 6 2 6 0",star:"M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",cloud:"M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.5-1A4.5 4.5 0 0 1 17 18z",snow:"M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7",drop:"M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z",hook:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",trophy:"M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8",chev:"M6 7l6 5-6 5M12 7l6 5-6 5",wheel:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 3v6.5M12 14.5V21M3.5 8l6.5 4M14 12l6.5 4",tree:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",cal:"M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",tick:"M5 12l5 5 9-10",engine:"M4 9h14l2 3v5H4zM8 9V6h6v3",target:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",people:"M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 10a2.5 2.5 0 1 0 0-5M18 15c2 .5 3 2.5 3 5"};
 const ACH_TIER={bronze:"Bronze",silver:"Silver",gold:"Gold"};
-const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["endure","Endurance"],["shop","Shop & career"]];
+const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["bog","Mud bog"],["endure","Endurance"],["shop","Shop & career"]];
 const ACH=[
   {g:"dyno",id:"firstfire",name:"First fire",desc:"Light an engine for the first time.",ic:"flame",tier:"bronze",check:x=>!!x.firstfire},
   {g:"dyno",id:"certified",name:"Certified",desc:"Pull a clean engine (career: certify one).",ic:"tick",tier:"bronze",check:x=>!!x.ok},
@@ -21665,6 +22516,9 @@ const ACH=[
   {g:"pull",id:"ribbon",name:"Blue ribbon",desc:"Win a pulling class.",ic:"trophy",tier:"silver",check:x=>!!x.pullWin},
   {g:"pull",id:"puller",name:"Pull-off winner",desc:"Win a pull-off against other full pulls.",ic:"trophy",tier:"gold",check:x=>!!x.pullOff},
   {g:"pull",id:"hotfarm",name:"Hot Farm hero",desc:"Win the Hot Farm class.",ic:"flame",tier:"gold",check:x=>!!x.hotfarm},
+  {g:"bog",id:"bogthru",name:"Through the pit",desc:"Get a truck all the way through a mud pit.",ic:"wheel",tier:"bronze",check:x=>!!x.bogThru},
+  {g:"bog",id:"bogwin",name:"King of the pit",desc:"Win a mud-bog class.",ic:"trophy",tier:"silver",check:x=>!!x.bogWin},
+  {g:"bog",id:"bogfast",name:"Skimmer",desc:"Clear the pit averaging 30 mph or more.",ic:"bolt",tier:"gold",check:x=>x.bogAvg>=30},
   {g:"endure",id:"e24fin",name:"Saw the flag",desc:"Be classified at the end of the 24 Hours of Prairie Sky.",ic:"clock",tier:"bronze",check:x=>!!x.e24Fin},
   {g:"endure",id:"e24pod",name:"Sunday morning podium",desc:"Finish the 24 Hours on the class podium.",ic:"flag",tier:"silver",check:x=>!!x.e24Pod},
   {g:"endure",id:"e24win",name:"Prairie Sky winner",desc:"Win your class at the 24 Hours.",ic:"trophy",tier:"gold",check:x=>!!x.e24Win},
@@ -21697,12 +22551,13 @@ function achFacts(x){
     else if(!x.failed&&r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;}
     if(ra&&ra.won&&!ra.foul){f.win=true;if(r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
     if(nt&&nt.stage>=2)f.qualified=true;}
+  else if(x.type==="bog"){const r=x.r;if(!x.failed){if(r.cleared){f.bogThru=true;f.bogAvg=r.avgMph||0;}if(r.place===1)f.bogWin=true;}}
   else if(x.type==="e24"){const r=x.r;if(r.classified){f.e24Fin=true;if(r.posCls<=3)f.e24Pod=true;if(r.posCls===1)f.e24Win=true;}}
   else if(x.type==="pull"){const r=x.r;if(!x.failed){f.pullDone=true;if(r.full)f.full=true;if(r.place===1){f.pullWin=true;if(r.cls==="hotfarm")f.hotfarm=true;if(r.full&&r.pullOff!=null)f.pullOff=true;}}}
   else if(x.type==="retro"){const hp=R.hp?R.hp.v:career()&&C().bestHp>0?C().bestHp:0,rel=R.rel?R.rel.v:career()&&C().bestRel>0?C().bestRel:0,et=allBest(),P=R.pull&&typeof R.pull==="object"?Object.values(R.pull):[];
     if(hp>0){f.ok=true;f.hp=hp;}if(rel>0)f.rel=rel;if(et<Infinity)f.et=et;if(R.top&&R.top[0])f.mph=Math.max.apply(null,R.top.map(e=>e.mph||0));
     if(career()&&C().enduranceOk)f.hours=100;if(career()&&C().boostedCert)f.boosted=true;
-    if(P.length){f.pullDone=true;if(P.some(e=>e.full))f.full=true;}if(R.bestFinish<=5)f.qualified=true;
+    if(P.length){f.pullDone=true;if(P.some(e=>e.full))f.full=true;}if(R.bog&&typeof R.bog==="object"&&Object.values(R.bog).some(e=>e&&e.c))f.bogThru=true;if(R.bestFinish<=5)f.qualified=true;
     if(S.firstFireDone)f.firstfire=true;if(R.e24Best){f.e24Fin=true;if(R.e24Best<=3)f.e24Pod=true;if(R.e24Best===1)f.e24Win=true;}}
   else if(x.type==="ff")f.firstfire=true;
   f.nightsWon=R.nightsWon||0;
@@ -21742,11 +22597,12 @@ function tdFail(L){   // {id, test} for a run that broke, else null
     if(!i&&res.fails&&res.fails.length){const t=res.tests.find(x=>x.name===res.fails[0]);i=t?t.id:null;}return i;};
   if(tt==="drag"){if(!res.dragFailed)return null;const k=res.dragFailKind;id=TD_SPECIAL[k]?k:(fromTests()||k||"rod");}
   else if(tt==="race24"){const d=res.e24&&res.e24.dnf;if(!d||!d.id)return null;id=d.id;}
+  else if(tt==="bog"){if(!res.bogFailed)return null;const k=res.bogFailKind;id=k&&(TD_SPECIAL[k]||res.tests.some(t=>t.id===k))?k:(fromTests()||k||"rod");}
   else if(tt==="pull_sled"){if(!res.pullFailed)return null;const k=res.pullFailKind;id=k&&(TD_SPECIAL[k]||res.tests.some(t=>t.id===k))?k:(fromTests()||k||"rod");}
   else{const broke=(res.fails&&res.fails.length)||(tt==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)||(tt==="overrev"&&res.overrev&&!res.overrev.survived);if(!broke)return null;id=fromTests()||"rod_tension";}
   return {id,test:res.tests.find(t=>t.id===id)||null};
 }
-function tdRunName(L){const tt=L.env&&L.env.testType;return tt==="race24"?"24-hour race":tt==="drag"?"strip pass":tt==="pull_sled"?"sled pull":tt==="endurance"?"endurance run":tt==="overrev"?"over-rev test":"dyno pull";}
+function tdRunName(L){const tt=L.env&&L.env.testType;return tt==="bog"?"mud bog run":tt==="race24"?"24-hour race":tt==="drag"?"strip pass":tt==="pull_sled"?"sled pull":tt==="endurance"?"endurance run":tt==="overrev"?"over-rev test":"dyno pull";}
 function tdVerdict(res,env){const f=tdFail({res,env});const v=$("verdict").firstElementChild;if(!f||!v)return;const box=v.firstElementChild||v;
   box.insertAdjacentHTML("beforeend",`<div class="tdgo"><button class="btn sm danger" data-td="1">Teardown — see what broke</button></div>`);}
 function tdAnaRender(){const el=$("tdAna");if(!el)return;const f=tdFail(S.last);if(!f){el.hidden=true;el.innerHTML="";return;}
@@ -21806,7 +22662,7 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
-  const pr=pullRecHtml()+saltRecHtml()+roadRecHtml()+e24RecHtml();
+  const pr=pullRecHtml()+bogRecHtml()+saltRecHtml()+roadRecHtml()+e24RecHtml();
   if(!best&&!hp&&!rel&&!pr){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
@@ -22101,12 +22957,12 @@ const SP_BRANDS=[
   {id:"wildoat",name:"Wild Oat",tag:"Energy soda",type:"energy",shape:"star",c1:"#e2541c",c2:"#fff3b0",c3:"#ffffff"},
   {id:"northlight",name:"Northlight",tag:"Race fuels",type:"fuel",shape:"star",c1:"#0e1f3d",c2:"#ff7a1a",c3:"#f4f1e8"}];
 const SP_TYPES={oil:"Oil company",parts:"Parts maker",feed:"Local feed store",tyre:"Tyre brand",energy:"Energy drink",fuel:"Fuel supplier"};
-const SP_LIKES={oil:["night","pull","salt","endurance"],parts:["sale","night","salt"],feed:["pull"],tyre:["night","drag","endurance"],energy:["night","drag","salt"],fuel:["salt","night","endurance"]};
+const SP_LIKES={oil:["night","pull","salt","endurance"],parts:["sale","night","salt"],feed:["pull","bog"],tyre:["night","drag","endurance","bog"],energy:["night","drag","salt"],fuel:["salt","night","endurance"]};
 const SP_OBL={oil:["nights","pulls"],parts:["deliver"],feed:["pulls"],tyre:["nights"],energy:["nights","nodiesel"],fuel:["salt","nodiesel"]};
 const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
   deliver:n=>`Ship at least ${n} engine order${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
 const SP_SLOT_REP=[0,120,300];
-const SP_EVT={endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines"};
+const SP_EVT={bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines"};
 function spS(){const c=C();const s=c.spons&&typeof c.spons==="object"?c.spons:(c.spons={});
   if(!Array.isArray(s.active))s.active=[];if(!Array.isArray(s.offers))s.offers=[];if(!s.form||typeof s.form!=="object")s.form={};
   if(!s.hist||typeof s.hist!=="object")s.hist={};for(const k of ["signed","done","broken","earned","max"])s.hist[k]=+s.hist[k]||0;
@@ -22124,7 +22980,7 @@ function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s
   let r=spRng()*w.reduce((a,v)=>a+v,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;const b=pool[i],likes=SP_LIKES[b.type];
   const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.5+Math.min(1,C().rep/500),style=spRng();
   const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
-  const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull")?spR50(80*scale*bm):0,record:likes.includes("salt")?spR50(800*scale*bm):0};
+  const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull"||k==="bog")?spR50(80*scale*bm):0,record:likes.includes("salt")?spR50(800*scale*bm):0};
   const pick=SP_OBL[b.type][Math.floor(spRng()*SP_OBL[b.type].length)];
   const n={nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick];
   const obl=[{k:pick,n:n||0}];if(C().rep>=10&&spRng()<0.5)obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
@@ -22802,6 +23658,7 @@ function tick(now){
       dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,als:st.als||0,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
     if(testing&&RT&&!RT.finished&&S.env.testType==="road"){boostBar=(RT.bst||0)*(on?1:0);dx={tyre:RT.slip||0};}   // the road test: boost and tyre noise from the lap trace
     if(testing&&SR&&SR.p&&S.env.testType==="salt"&&!SR.failed){const st=SR.p.st;dx={tyre:st.phase==="run"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*3)):st.phase==="spin"?0.8:0};}
+    if(testing&&BR&&BR.p&&S.env.testType==="bog"&&!BR.failed){const st=BR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase!=="stage"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*1.6))*(st.phase==="pit"?0.8:1):0};}   // the mud bog: boost from the run, tyre noise from the wheelspin
     if(testing&&PR&&PR.p&&S.env.testType==="pull_sled"&&!PR.failed){const st=PR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase==="pull"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.1)*1.5)):0};}   // the sled: load from the run, tyre noise from the slip
     ENGINE_SOUND.set(Object.assign({rpm:on?rpm:0,load,cfg:S.cfg,layout:L,boostBar,wear:wi?wi.w:0,als:alsAct,
       knock:quick?quick.knock.retardDeg:0,profileId:S.profileId||undefined,diesel:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci),clatter:(quick&&quick.clatter)||0},dx||{}));}
@@ -22928,13 +23785,13 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
 const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
-function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
+function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(BR&&!BR.finished&&$("bogCtl").style.display!=="none")return "bog";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
 let spaceHeld=null;
-function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}}
+function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}else if(k==="bog"&&BR){BR.lastPtr=performance.now();bogRelease();}}
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;const k=e.key;
   if(k===" "||k==="Spacebar"){const h=holdKind();if(!h)return;e.preventDefault();if(e.repeat||spaceHeld)return;spaceHeld=h;
     if(h==="road"){roadSkip();return;}
-    if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
+    if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else if(h==="bog"){BR.lastPtr=performance.now();bogPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
   if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
   if(k==="ArrowLeft"||k==="ArrowRight"){const a=document.activeElement,r=a&&a.matches&&a.matches("input[type=range]")?a:kbSlider&&kbSlider.offsetParent?kbSlider:null;if(r&&nudgeSlider(r,k==="ArrowRight"?1:-1))e.preventDefault();return;}
