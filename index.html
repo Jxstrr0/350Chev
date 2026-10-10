@@ -15169,9 +15169,9 @@ function stripCrowdLit(m){
 /* the crowd colour wave (the final, and won the night): cards up in a band that runs along the stands */
 var STRIP_CARDS=[0x1d4787,0xd9a52b,0xf3efe4].map(function(h){ return new THREE.Color(h).convertSRGBToLinear(); }), _wvC=new THREE.Color();
 function stripWave(t, off){
-  var C=STRIP.crowd; if(!C||!C.col) return; var n=C.n, i, col=C.body.instanceColor.array, base=C.col, len=180, wx=-28+((t*21)%len), dirty=false;
-  for(i=0;i<n;i++){ var p=C.base[i], xx=p[2]<0?p[0]:(p[0]-272)*2.6-8, dx=xx-wx, b=off?0:Math.exp(-dx*dx/5.5);
-    C.wy[i]=0.3*b;
+  var C=STRIP.crowd; if(!C||!C.col) return; var n=C.n, i, col=C.body.instanceColor.array, base=C.col, wx=t*24, dirty=false;
+  for(i=0;i<n;i++){ var p=C.base[i], xx=p[2]<0?p[0]:(p[0]-272)*2.6-8, dx=((xx-wx)%75+112.5)%75-37.5, b=off?0:Math.exp(-dx*dx/14);   /* two bands, 75 m apart */
+    C.wy[i]=0.36*b;
     if(b>0.004 || C.cw[i]>0){ var row=p[2]<0?Math.round((p[1]-0.57)/0.46):Math.round((p[1]-0.37)/0.56), cc=STRIP_CARDS[(row+(xx>60?1:0))%3];
       col[i*3]=base[i*3]+(cc.r-base[i*3])*b; col[i*3+1]=base[i*3+1]+(cc.g-base[i*3+1])*b; col[i*3+2]=base[i*3+2]+(cc.b-base[i*3+2])*b; C.cw[i]=b>0.004?b:0; dirty=true; } }
   if(dirty) C.body.instanceColor.needsUpdate=true;
@@ -15192,11 +15192,11 @@ function stripPayoffs(o, dt, P, O){
     else if(C.wave){ C.wave=false; C.waveT=0; stripWave(0, true); } }
   /* flashbulbs on a win: the stands and the photographers along the wall past the stripe */
   if((STRIP.flashT||0)>0 && C && STRIP.fxAdd){ STRIP.flashT=Math.max(0, STRIP.flashT-dt);
-    var fr=(STRIP.honour?(lite?40:70):(lite?24:40))*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);
+    var fr=(STRIP.honour?(lite?70:140):(lite?40:70))*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);
     while(nf-->0){ var x, y, z;
       if(Math.random()<0.45){ x=STRIP_Q-6+Math.random()*48; z=(Math.random()<0.5?-1:1)*(8.4+Math.random()*1.2); y=1.3+Math.random()*0.6; }
       else { var q=C.base[(Math.random()*C.n)|0]; x=q[0]; y=q[1]+1.0; z=q[2]+(q[2]<0?0.3:-0.3); }
-      STRIP.fxAdd.emit(x, y, z, 0,0,0, 0.11, 0.5, 0.75, 1, 0.98, 0.93, 1, {drag:0, fin:0.01}); } }
+      STRIP.fxAdd.emit(x, y, z, 0,0,0, 0.14, 0.6, 0.85, 1, 0.98, 0.93, 1, {drag:0, fin:0.01}); } }
 }
 
 /* --- camera direction: a cut list, not a lerp between distant spots --- */
