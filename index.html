@@ -100,6 +100,33 @@ html.desk #stripCap{left:18px;top:16px}
 /* panel */
 #panel{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px 16px calc(var(--tabh) + 24px);border-top:1px solid var(--rule)}
 .tabpage{display:none}.tabpage.on{display:block}
+/* Events tab: a compact card picker, then only the chosen event. The test core (set-up, chart, results) and the run dock
+   move between Test and Events with S.env.testType; the run dock stays in reach at the foot of the panel. */
+.evpick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.evpick button{display:grid;grid-template-columns:26px minmax(0,1fr);grid-template-rows:auto auto;column-gap:9px;align-items:center;min-height:52px;padding:7px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--panel);text-align:left;color:var(--chalk)}
+.evpick button:last-child:nth-child(odd){grid-column:1/-1}
+.evpick svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
+.evpick button.on svg{stroke:var(--orange2)}
+.evpick button.lock small{color:var(--dim)}.evpick button.live small{color:var(--orange2)}
+:root[data-theme=light] .evpick button.on{background:linear-gradient(180deg,rgba(232,98,10,.16),rgba(232,98,10,.05))}
+.tbusy{padding:10px 12px;border:1px dashed var(--rule);border-radius:6px}
+.tbusy .chip{margin-left:6px}
+.card .evgo{display:block;margin:8px 0 2px;color:var(--orange2);border-color:var(--orange)}
+.dockslot{position:sticky;bottom:-24px;z-index:6}   /* sticky insets count from inside #panel's padding (tabh + 24 px): -24 px sits it on the tab bar */
+#runDock{gap:8px;margin:12px -16px 0;padding:8px 16px;background:var(--soot);border-top:1px solid var(--rule)}
+#runDock .btn{min-height:48px}
+#runDock .btn.sm{flex:0 0 auto}
+#tab-events #pinBase{display:none}
+#tab-events:has(#dragCtl:not([style*="none"]),#pullCtl:not([style*="none"]),#saltCtl:not([style*="none"]),#roadCtl:not([style*="none"]),#e24Ctl:not([style*="none"])) #runDock{display:none}
+html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:10px 16px}
+/* the Advanced fold under an event's or test's essentials (open state per test type in S.advOpen) */
+.advf{margin:6px 0 10px}
+.advf .acch .sum{white-space:nowrap}
+.advf .accb{padding-top:10px}
+#abSec.acc .accb{padding-top:8px}#abSec.acc{margin-bottom:18px}
 .sec{margin-bottom:18px}
 .sec>h2{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .sec>h2::after{content:"";flex:1;height:1px;background:var(--rule)}
@@ -556,7 +583,7 @@ div.up.owned .price{color:var(--good)}
 .slot .acts button.del{color:var(--crit)}
 textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono);font-size:12px;line-height:1.4;color:var(--chalk);background:var(--soot);border:1px solid var(--rule);border-radius:4px;padding:8px;word-break:break-all}
 /* tabs */
-#tabs{position:absolute;left:0;right:0;bottom:0;height:var(--tabh);display:grid;grid-template-columns:repeat(5,1fr);background:var(--tabbg);border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom)}
+#tabs{position:absolute;left:0;right:0;bottom:0;height:var(--tabh);display:grid;grid-template-columns:repeat(6,1fr);background:var(--tabbg);border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom)}
 #testProg{position:absolute;left:0;top:-2px;height:2px;width:0;background:var(--orange);transition:width .12s linear;box-shadow:0 0 6px var(--orange)}
 #testProg.done{transition:opacity .6s;opacity:0}
 #tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:var(--display);font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);position:relative}
@@ -948,37 +975,28 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
 
     <!-- TEST -->
     <section class="tabpage" id="tab-test">
-      <div class="seg wide" id="testType">
+      <div class="seg n3" id="testType">
         <button data-t="pull" class="on">Dyno pull<small>WOT sweep</small></button>
         <button data-t="endurance">Endurance<small>hours to failure</small></button>
         <button data-t="overrev">Over-rev<small>missed shift</small></button>
-        <button data-t="drag">Drag pass<small>1/4 mile</small></button>
-        <button data-t="pull_sled">Truck pull<small>sled · 300 ft</small></button>
-        <button data-t="road">Road test<small>0–100 · lap</small></button>
-        <button data-t="salt">Salt flats<small>Bonneville · timed mile</small></button>
-        <button data-t="race24">24 Hours<small>endurance race</small></button>
       </div>
+      <p class="hint tbusy" id="testBusy" hidden></p>
+      <div class="coreslot" id="testSlot"><div id="testCore">
       <div id="envBox"></div>
       <div id="chartwrap"><canvas id="chart"></canvas></div>
       <div class="chips" id="curveChips">
         <button class="chip on" data-c="power">Power</button><button class="chip on" data-c="torque">Torque</button><button class="chip" data-c="boost">Boost</button><button class="chip" data-c="ve">VE</button><button class="chip" data-c="egt">EGT</button><button class="chip" data-c="base" id="baseChip">vs baseline</button>
       </div>
       <div class="peaks" id="peaks"></div>
-      <div class="row" style="margin-bottom:10px">
-        <button class="btn pri" id="runTest" style="flex:2">Run test</button>
-        <button class="btn sm" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button>
-      </div>
       <p class="hint" id="dynoHint"></p>
+      <div id="verdict"></div>
+      <div id="testExtra"></div>
+      <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
+      </div></div>
       <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
-      <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
-      <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn" id="killBtn" style="display:none">KILL SWITCH<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.85;font-weight:500">it's running away — tap now</small></button><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
-      <div id="roadCtl" style="display:none"><div id="roadLive"></div><div class="row rdbtns"><button class="btn pri" id="roadSkip">SKIP ▸▸</button><button class="btn" id="roadSpd">2×</button><button class="btn" id="roadCamB">Cam · Auto</button></div></div>
-      <div id="e24Ctl" style="display:none"><div id="e24Hud"></div><div class="row e24spd" id="e24Spd"></div></div>
-      <div id="e24Side" style="display:none"></div>
-      <div id="saltCtl" style="display:none"><div id="saltLive"></div><div class="row" style="gap:8px"><button class="btn pri" id="saltBtn" style="flex:3;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO RUN</button><button class="btn" id="saltShiftBtn" style="flex:1;min-height:72px;font-size:18px;touch-action:none">SHIFT</button></div><div class="chips" id="saltWarp" style="margin-top:8px"><span class="hint" style="margin:0 4px 0 0;align-self:center">Run-up</span><button class="chip on" data-warp="1">×1</button><button class="chip" data-warp="2">×2</button><button class="chip" data-warp="4">×4</button></div></div>
 
-      <div class="sec" id="abSec"><h2>Sound bench <span class="cnt" id="abCnt">A / B</span></h2>
-        <p class="hint" style="margin-top:-4px">Hold two builds at the same rpm and switch between them. Small differences only show up back to back.</p>
+      <div class="sec acc advf" id="abSec" data-adv="ab"><button class="acch" aria-expanded="false"><span class="t">Sound bench</span><span class="sum" id="abCnt">A / B · two builds back to back</span><span class="chev"></span></button><div class="accb">
+        <p class="hint" style="margin-top:0">Hold two builds at the same rpm and switch between them. Small differences only show up back to back.</p>
         <div class="abslot" id="abA"><div class="abhead"><b>A</b><span id="abAname">empty</span></div>
           <div class="row"><button class="btn sm" data-abcap="A">Capture current</button><button class="btn sm ghost" data-abload="A">Load into build</button></div></div>
         <div class="abslot" id="abB"><div class="abhead"><b>B</b><span id="abBname">empty</span></div>
@@ -994,11 +1012,28 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
         <div class="seg n2" id="abPlay"><button data-abplay="A">Play A</button><button data-abplay="B">Play B</button></div>
         <button class="btn sm ghost" id="abStop" style="width:100%;margin-top:8px">Stop</button>
         <p class="hint" id="abHint">Capture a build into A, change something, capture it into B.</p>
-      </div>
+      </div></div>
 
-      <div id="verdict"></div>
-      <div id="testExtra"></div>
-      <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
+      <div class="dockslot" id="testDock"><div class="row" id="runDock">
+        <button class="btn pri" id="runTest" style="flex:2">Run test</button>
+        <button class="btn sm" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button>
+      </div></div>
+    </section>
+
+    <!-- EVENTS: the strip, the sled, the salt, the road and the 24 Hours (the test core moves here with them) -->
+    <section class="tabpage" id="tab-events">
+      <div class="evpick" id="evPick" role="radiogroup" aria-label="Event"></div>
+      <p class="hint tbusy" id="evBusy" hidden></p>
+      <div class="coreslot" id="evSlot"></div>
+      <div id="evCtls">
+        <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
+        <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn" id="killBtn" style="display:none">KILL SWITCH<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.85;font-weight:500">it's running away — tap now</small></button><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
+        <div id="roadCtl" style="display:none"><div id="roadLive"></div><div class="row rdbtns"><button class="btn pri" id="roadSkip">SKIP ▸▸</button><button class="btn" id="roadSpd">2×</button><button class="btn" id="roadCamB">Cam · Auto</button></div></div>
+        <div id="e24Ctl" style="display:none"><div id="e24Hud"></div><div class="row e24spd" id="e24Spd"></div></div>
+        <div id="e24Side" style="display:none"></div>
+        <div id="saltCtl" style="display:none"><div id="saltLive"></div><div class="row" style="gap:8px"><button class="btn pri" id="saltBtn" style="flex:3;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO RUN</button><button class="btn" id="saltShiftBtn" style="flex:1;min-height:72px;font-size:18px;touch-action:none">SHIFT</button></div><div class="chips" id="saltWarp" style="margin-top:8px"><span class="hint" style="margin:0 4px 0 0;align-self:center">Run-up</span><button class="chip on" data-warp="1">×1</button><button class="chip" data-warp="2">×2</button><button class="chip" data-warp="4">×4</button></div></div>
+      </div>
+      <div class="dockslot" id="evDock"></div>
     </section>
 
     <!-- ANALYSIS -->
@@ -1099,6 +1134,7 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
   <nav id="tabs"><div id="testProg"></div>
     <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
     <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
+    <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
     <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
     <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
     <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
@@ -18987,7 +19023,7 @@ new MutationObserver(ms=>{if(!S||!S.psi||psiBusy)return;psiBusy=true;try{for(con
 function applyPU(){psiWalk(document.body,!!(S&&S.psi));applyTheme();}
 function applyTheme(){const t=S.theme||"dark";const eff=t==="auto"?(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):t;document.documentElement.setAttribute("data-theme",eff);
   document.querySelectorAll("#themeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.theme===t));document.querySelectorAll("#hapSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.hap==="1")===(S.haptics!==false)));document.querySelectorAll("#puSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.pu==="psi")===!!S.psi));
-  if(curTab==="test")drawChart(lastForChart(),null);}
+  if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();}
 function buzz(ms){if(S.haptics===false||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
 function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false,psi:false};}
 function save(){try{const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
@@ -19558,7 +19594,7 @@ function renderEnv(){
   if(t==="race24"&&!ER)h+=e24EnvHtml();
   if(t==="salt")h+=saltEnvHtml(sl);
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
-  $("envBox").innerHTML=h;pitsSync();
+  $("envBox").innerHTML=h;envFold(t);pitsSync();
 }
 function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();}
 function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
@@ -19618,7 +19654,73 @@ $("envBox").addEventListener("click",e=>{if(e.target.closest("[data-stdcell]")){
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-lp]");if(!b)return;const k=b.dataset.ek||"loadProfile";S.env[k]=b.dataset.lp;
   if(k==="body"&&BODY_SETUP[b.dataset.lp]){const bs=Object.assign({},BODY_SETUP[b.dataset.lp]);bs.launchRpm=Math.min(bs.launchRpm,S.cfg.redline);Object.assign(S.env,bs);toast(`${SIM.AERO[b.dataset.lp].n} — typical gearing filled in, edit anything`);}
   renderEnv();save();});
-$("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;S.env.testType=b.dataset.t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===b.dataset.t));renderEnv();if(climateCtl())recompute();renderTest();save();});
+/* Test holds the dyno work, Events the strip, the sled, the salt, the road and the 24 Hours. Both pick S.env.testType;
+   S.testPick / S.evPick remember the last of each so either tab reopens where it was left. */
+const DYNO_T=["pull","endurance","overrev"],EV_T=["drag","pull_sled","salt","road","race24"];
+function pickTest(t){if(testing&&t!==S.env.testType){toast("Let the run finish first");return;}S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));renderEnv();if(climateCtl())recompute();renderTest();save();}
+$("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;pickTest(b.dataset.t);});
+$("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===S.env.testType;pickTest(b.dataset.t);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});
+/* opening Test or Events: if S.env.testType belongs to the other tab, switch to this tab's last pick (never mid-run) */
+function evSync(tab){if(testing)return;const ev=trackEvt(S.env.testType);let t=null;
+  if(tab==="events"&&!ev)t=EV_T.includes(S.evPick)?S.evPick:"drag";else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
+  if(!t)return;S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
+/* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
+const EV_NAME={drag:"Drag strip",pull_sled:"Truck pull",salt:"Salt flats",road:"Road test",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
+function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"testSlot"),dock=$(ev?"evDock":"testDock"),core=$("testCore"),rd=$("runDock");
+  if(core.parentElement!==slot)slot.appendChild(core);if(rd.parentElement!==dock)dock.appendChild(rd);
+  const busy=(id,on,txt)=>{const el=$(id);if(el.hidden!==!on)el.hidden=!on;if(on&&el.dataset.k!==txt){el.dataset.k=txt;el.innerHTML=txt;}};
+  busy("testBusy",ev,`<b>${EV_NAME[t]}</b> ${testing?"is running":"is set up"} in Events. <button class="chip" data-gotab="events">Open Events</button>`);
+  busy("evBusy",!ev,`A <b>${(EV_NAME[t]||"dyno").toLowerCase()}</b> ${testing?"is running":"is set up"} in Test. <button class="chip" data-gotab="test">Open Test</button>`);}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-gotab]");if(!b)return;showTab(b.dataset.gotab);});
+/* a brief judged on the road, the strip or the salt: straight to that event (in the buyer's car and circuit for the road) */
+function evGo(t,patch){if(testing){toast("Let the run finish first");return;}Object.assign(S.env,patch||{});S.env.testType=t;S.evPick=t;if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-evgo]");if(!b)return;const t=b.dataset.evgo,p={};if(t==="road"){if(b.dataset.ch)p.roadCh=b.dataset.ch;if(b.dataset.trk)p.roadTrk=b.dataset.trk;}evGo(t,p);});
+/* the picker cards: icon, name and one line of where you stand */
+const EV_IC={drag:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",pull_sled:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",
+  salt:"M4 17a8 8 0 1 1 16 0M12 17l5-3M3 21h18",road:"M7 21c0-5 10-4 10-9S9 8 9 3M15 3c0 3 2 4 4 5",race24:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"};
+function evCert(){return !career()||!!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg));}
+function evStatus(t){const cr=career();let s="",k="";
+  try{
+  if(t==="drag"){const up=UPGRADES.find(u=>u.id==="race")||{},b=allBest(),N=rnLive();
+    if(cr&&!has("race")){s=`locked: needs ${up.name||"the race upgrade"}`;k="lock";}else if(N){s=`${RN_FMT[N.fmt]||"race night"} · on now`;k="live";}else if(!evCert())s="certify on the dyno first";else s=b<Infinity?`best ${b.toFixed(2)} s`:"no pass yet";}
+  else if(t==="pull_sled"){const P=recs().pull||{},ks=Object.keys(SIM.PULL_CLASSES).filter(c=>P[c]),full=ks.find(c=>P[c].full),bf=ks.reduce((m,c)=>Math.max(m,P[c].ft||0),0),c0=S.env.pullCls;
+    if(PO){s="pull-off · on now";k="live";}else if(!evCert())s="certify on the dyno first";else if(cr&&SIM.PULL_CLASSES[c0]&&pullHookedWk(c0))s=`hooked · next pull wk ${C().week+1}`;else s=full?`FULL · ${SIM.PULL_CLASSES[full].n}`:bf?`best ${bf.toFixed(1)} ft`:"no pull yet";}
+  else if(t==="salt"){const L=saltBook(),bm=Object.values(L.pb).reduce((m,p)=>Math.max(m,p&&p.mph||0),0);s=!evCert()?"certify on the dyno first":bm?`best ${bm.toFixed(1)} mph`:"no run yet";}
+  else if(t==="road"){const P=roadRecs(),o=roadOpt(),r=P[roadKey(o.ch,S.env.roadTrk)],any=Object.values(P).some(x=>x&&x.t);s=!evCert()?"certify on the dyno first":r&&r.t?`best ${fmtLap(r.t,1)} · ${SIM.ROAD_TRACKS[S.env.roadTrk].n.split(" ")[0]}`:any?"no lap in this car yet":"no lap yet";}
+  else if(t==="race24"){const g=cr?e24Gate():null,P=e24Recs(),km=Object.values(P).reduce((m,x)=>Math.max(m,x&&x.km||0),0),nx=g&&/^Next running in week (\d+)/.exec(g);
+    if(ER){s="racing now";k="live";}else if(g&&/^Opens at/.test(g)){s=`locked: opens at ${E24_REP} rep`;k="lock";}else if(nx)s=`next 24 h in wk ${nx[1]}`;else if(g)s=/Certify/.test(g)?"certify on the dyno first":g.split(" — ")[0].toLowerCase();else s=km?`best ${Math.round(km).toLocaleString("en-CA")} km`:cr?"entry open":"a day and a night";}
+  }catch(err){s="";}
+  return{s,k};}
+function evPickRender(){const box=$("evPick");if(!box)return;const cur=S.env.testType;
+  const h=EV_T.map(t=>{const st=evStatus(t),on=t===cur;return `<button data-t="${t}" role="radio" aria-checked="${on}" class="${on?"on":""}${st.k?" "+st.k:""}" title="${EV_NAME[t]}${st.s?" · "+st.s:""}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><b>${EV_NAME[t]}</b><small>${st.s||"&nbsp;"}</small></button>`;}).join("");
+  if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
+  const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO));}
+/* Advanced: the settings a racer rarely touches fold away under the essentials (open state per test in S.advOpen) */
+const ADV={cell:{e:["ambientC","altitudeM","coolantC","oilC"]},
+  drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],paint:1,hint:"Rear-drive on a prepped strip",sum:"weight · gearing · tyre psi · shocks · chute · paint"},
+  pull_sled:{e:["pullHitch","pullBallast"],hint:"A higher hitch plants",sum:"hitch height · front ballast"},
+  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],x:["[data-saltgear]"],sum:"gearing · ballast · aero · cooling · chutes"},
+  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],sum:"final drive · camera · playback"},
+  race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],sum:"fuel · tyre changes · safety cars"}};
+function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envBox");if(!A)return;const nodes=[],add=n=>{if(n&&!nodes.includes(n))nodes.push(n);};
+  const seg=b=>{const g=b&&b.closest(".seg");if(!g)return;const l=g.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(g);};
+  (A.e||[]).forEach(k=>{const r=$("er-"+k);if(r&&box.contains(r))add(r.closest(".env"));});
+  (A.k||[]).forEach(([a,k])=>seg(box.querySelector(`[data-${a}="${k}"]`)));
+  (A.x||[]).forEach(q=>{const b=box.querySelector(q);if(b)add(b.closest(".row")||b);});
+  if(A.paint){const p=box.querySelector(".paints");if(p){const l=p.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(p);}}
+  if(A.hint)box.querySelectorAll(":scope > p.hint").forEach(p=>{if(p.textContent.trim().startsWith(A.hint))add(p);});
+  if(!nodes.length)return;nodes.sort((a,b)=>a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
+  const open=!!(S.advOpen&&S.advOpen[key]),es=k=>envStore(k)[k];
+  const sum=key==="cell"?`${es("ambientC")} °C · ${es("altitudeM")} m · coolant ${es("coolantC")} · oil ${es("oilC")}`:A.sum;
+  const f=document.createElement("div");f.className="acc advf"+(open?" open":"");f.dataset.adv=key;
+  f.innerHTML=`<button class="acch" aria-expanded="${open}"><span class="t">${key==="cell"?"Cell":"Advanced"}</span><span class="sum">${sum}</span><span class="chev"></span></button><div class="accb"></div>`;
+  const body=f.lastElementChild;let grid=null;
+  for(const n of nodes){const g=n.parentElement;if(n.classList.contains("env")){if(!grid){grid=document.createElement("div");grid.className="envgrid";body.appendChild(grid);}grid.appendChild(n);if(g&&g.classList.contains("envgrid")&&!g.children.length)g.remove();}else{grid=null;body.appendChild(n);}}
+  box.appendChild(f);}
+function advSet(f,on){if(!f)return;f.classList.toggle("open",on);const h=f.querySelector(".acch");if(h)h.setAttribute("aria-expanded",String(on));S.advOpen=Object.assign({},S.advOpen,{[f.dataset.adv]:on});save();}
+/* a lesson, tour or tip pointing into a closed fold opens it (Build's accordion or an Advanced fold) */
+function accReveal(el){const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+$("envBox").addEventListener("click",e=>{const h=e.target.closest(".advf > .acch");if(!h)return;advSet(h.parentElement,!h.parentElement.classList.contains("open"));buzz(4);});
 $("curveChips").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;curves[b.dataset.c]=!curves[b.dataset.c];b.classList.toggle("on",curves[b.dataset.c]);drawChart(lastForChart(),null);});
 function quickForChart(){return quick;}
 function drawDragTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
@@ -19664,11 +19766,15 @@ function drawChart(res,upto){if(res&&res.e24&&upto==null&&S.env.testType==="race
   x.fillStyle="#ffa04d";x.textAlign="left";x.fillText("Nm",padL+2,padT+6);x.fillStyle=INK;x.textAlign="right";x.fillText("hp",padL+cw-2,padT+6);x.lineWidth=1;
 }
 let testing=false;
+/* the chart for the current test: the last run's trace when it matches the build and the test type, otherwise the live curve */
+function chartRedraw(){const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.env.testType===S.env.testType?S.last:null;
+  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else if(last&&S.env.testType==="road"&&last.res.road)drawRoadTrace(last.res.road);else if(last&&S.env.testType==="race24"&&last.res.e24)drawE24Trace(last.res.e24);else drawChart(last?last.res:null,null);
+  return last;}
 function renderTest(){
+  if(trackEvt(S.env.testType))S.evPick=S.env.testType;else S.testPick=S.env.testType;corePlace();evPickRender();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
-  const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.env.testType===S.env.testType?S.last:null;
-  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else if(last&&S.env.testType==="road"&&last.res.road)drawRoadTrace(last.res.road);else if(last&&S.env.testType==="race24"&&last.res.e24)drawE24Trace(last.res.e24);else drawChart(last?last.res:null,null);
+  const last=chartRedraw();
   $("runTest").disabled=testing;const cost=testCost();
   $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",road:"Roll out · road test",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
@@ -20419,7 +20525,7 @@ function rnPanel(){const N=rnCur();if(!N)return"";const br=N.fmt==="bracket";
    tune as tags on the car. A tag opens its control in a bar along the bottom of the view; the bar's buttons press the same
    controls in the pits panel below, which stays the one source of truth. */
 var pitsKey="",pitsSel=null,pitsPass={n:-1,t:0},pitsPokeK=null;   // var: renderEnv can run before this line on boot
-function pitsWanted(){const N=rnCur();return !!(N&&!N.done&&!testing&&S.env.testType==="drag"&&$("tab-test").classList.contains("on")&&!$("app").classList.contains("td"));}
+function pitsWanted(){const N=rnCur();return !!(N&&!N.done&&!testing&&S.env.testType==="drag"&&$("tab-events").classList.contains("on")&&!$("app").classList.contains("td"));}
 function pitsTags(){const q=s=>$("envBox").querySelector(s),T=[];
   const rv=k=>{const b=q(`[data-rn="tune"][data-k="${k}"]`),r=b&&b.closest(".rnt");if(!r)return null;const sp=r.querySelector("span"),sm=sp.querySelector("small");return{k,lbl:sp.firstChild.textContent,sub:sm?sm.innerHTML:"",val:r.querySelector("b").textContent};};
   const L=rv("launch"),f=rv("first"),fd=rv("final"),p=rv("psi");
@@ -20971,7 +21077,7 @@ function e24EnvHtml(){e24Orphan();const e=e24EnvFix(),trk=e.e24Trk,ready=!!E24W.
   h+=`<div class="lbl"><span>Circuit</span></div>${e24Seg("e24Trk",trk,Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return [id,t.n,`${(T.len/1000).toFixed(2)} km · ${id==="gp"?"the 24 Hours":"short-course 24"}`];}))}`;
   h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   let P=null;
-  if(!ready){h+=`<div class="e24scr"><b>Scrutineering</b><p>Checking the field in… <span class="e24spin"></span></p></div>`;e24Warm(trk,()=>{if(S.env.testType==="race24"&&!ER&&curTab==="test")renderEnv();});}
+  if(!ready){h+=`<div class="e24scr"><b>Scrutineering</b><p>Checking the field in… <span class="e24spin"></span></p></div>`;e24Warm(trk,()=>{if(S.env.testType==="race24"&&!ER&&curTab==="events")renderEnv();});}
   else if(quick&&quick.rpms){try{P=e24Prep(trk);}catch(err){P=null;}
     if(P){const cls=SIM.enduroClassOf(P,trk),K=SIM.enduroClasses(trk)[cls],rt=SIM.e24Rates(P,24,e.e24Mode),rp=SIM.e24Rates(P,24,"push"),rs=SIM.e24Rates(P,24,"save"),m=P.modes[e.e24Mode],perTank=SIM.E24_TANK/m.fuel;
       const top=rt.top>=0?P.tests[rt.top]:null,crit=P.critN||[];
@@ -22181,9 +22287,9 @@ function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPri
     <p class="spfine">Break it: ${fmt$(o.pen)} and ${o.penRep} rep${live?` · earned ${fmt$(o.earned)} so far`:""}</p><div class="spbtns">${btns}</div></div>`;}
 function spRender(){const box=$("spons");if(!box||!career())return;const s=spS(),slots=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
   $("sponCnt").textContent=`${s.active.length} / ${slots}`;
-  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}. Brands notice shops that race and win: race nights, pulls, the salt and delivered orders. The primary sponsor goes on the hood, the rest on the sides.`;
+  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}. Brands notice shops that race and win: race nights, pulls, the salt (all on the Events tab) and delivered orders. The primary sponsor goes on the hood, the rest on the sides.`;
   box.innerHTML=(s.active.length?`<div class="cgroup g-now"><h3>Signed<span>${s.active.length}</span></h3>${s.active.map(a=>spCard(a,"active")).join("")}</div>`:"")
-    +`<div class="cgroup g-far"><h3>Offers<span>${s.offers.length}</span></h3>${s.offers.length?s.offers.map(o=>spCard(o,"offer")).join(""):`<p class="hint">No one is calling yet. Put the shop's name out there — enter a race night, a pull or a speed trial.</p>`}</div>`;}
+    +`<div class="cgroup g-far"><h3>Offers<span>${s.offers.length}</span></h3>${s.offers.length?s.offers.map(o=>spCard(o,"offer")).join(""):`<p class="hint">No one is calling yet. Put the shop's name out there — enter a race night, a pull or a speed trial. <button class="chip" data-gotab="events">Open Events</button></p>`}</div>`;}
 function spSlipHtml(){if(!career())return"";const s=spS();if(!s.active.length)return"";const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
   return `<div class="spslip"><span>Sponsored by</span>${L.map(id=>{const b=spBrand(id);return `<img src="${spLogoUrl(b)}" alt="${b.name}" width="512" height="192">`;}).join("")}</div>`;}
 function spSlipDraw(x,W,H){if(!career())return;const s=spS();if(!s.active.length)return;const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
@@ -22222,7 +22328,8 @@ function renderShop(){
       ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
-    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
+    const rq=k.req||{},evGo=rq.lap!=null||rq.zero100!=null?`<button class="chip evgo" data-evgo="road" data-ch="${(rq.road&&rq.road.ch)||"coupe"}" data-trk="${rq.lap!=null&&rq.road&&rq.road.trk||""}">Road test it in their car ›</button>`:rq.et!=null?`<button class="chip evgo" data-evgo="drag">Take it to the strip ›</button>`:rq.mph!=null&&rq.lsr?`<button class="chip evgo" data-evgo="salt">Run it on the salt ›</button>`:"";
+    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${evGo}${sc.brk}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
       <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
   const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
     const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
@@ -22317,7 +22424,7 @@ function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.query
   else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}
   deskBox(box,el&&el.getBoundingClientRect());}
 function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);
-  {const ac=document.querySelector(st.sel)?.closest(".acc");if(ac&&!ac.classList.contains("open"))toggleSec(ac.querySelector("[data-sec]"));}
+  accReveal(document.querySelector(st.sel));
   const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){setTimeout(()=>{const pr=$("panel").getBoundingClientRect(),tr=target.getBoundingClientRect();$("panel").scrollTop+= (tr.top-pr.top)-(pr.height*0.38);tourPlace();setTimeout(tourPlace,380);setTimeout(tourPlace,700);},60);}
   $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text;$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
   requestAnimationFrame(()=>requestAnimationFrame(tourPlace));}
@@ -22618,19 +22725,19 @@ const LESSONS=[
   {tab:"build",sel:'[data-k="fuel"]',up:1,lbl:1,title:"Octane matters more",text:"The extra oxygen makes the cylinder hotter and faster, so knock margin gets thin. High-octane or alcohol fuel protects pistons that a shot would otherwise melt."},
   {tab:"build",sel:"#r-timing",up:1,lbl:1,title:"Retard the timing",text:"Nitrous burns fast. Pull a few degrees of ignition timing back for a bigger shot. The Detonation margin test in the stress report shows whether you went far enough."},
   {tab:"build",sel:'[data-k="launchCtl"]',up:1,lbl:1,title:"Launch control",text:"A two-step holds rpm on the line, launch retard builds boost while holding it, and a trans-brake keeps the car still until you release. They are strip-only and add no power by themselves."},
-  {tab:"test",sel:"#testType",title:"Take it to the strip",text:"Drag pass is the 1/4 mile. Your nitrous kit only arrives when the throttle is wide open, and it comes on at the point you choose below."},
-  {tab:"test",sel:'#envBox [data-ek="n2oHeater"]',up:1,lbl:1,title:"Bottle pressure and purge",text:"The shot is jetted for about 950 psi, so a heater keeps passes the same. On the line, hold PURGE (or press P) until it spits white so the first spray is liquid."},
-  {tab:"test",sel:"#runTest",title:"Stage and launch",text:"Stage the car and launch on the green. A strong launch counts for more than top-end power, and a shot that comes on too early only spins the tyres."},
-  {tab:"test",sel:"#dynoHint",title:"Read the timing slip",text:"After a pass, the slip lists reaction time, 60 ft, the eighth and quarter mile ET with trap speed. If the 60 ft is slow but the trap speed is high, the power is there and the launch is the problem."}]},
+  {tab:"events",sel:'#evPick [data-t="drag"]',title:"Take it to the strip",text:"Events holds the strip, the sled, the salt, the road and the 24 Hours. Drag strip is the 1/4 mile. Your nitrous kit only arrives when the throttle is wide open, and it comes on at the point you choose below."},
+  {tab:"events",sel:'#envBox [data-ek="n2oHeater"]',up:1,lbl:1,title:"Bottle pressure and purge",text:"The shot is jetted for about 950 psi, so a heater keeps passes the same. On the line, hold PURGE (or press P) until it spits white so the first spray is liquid."},
+  {tab:"events",sel:"#runTest",title:"Stage and launch",text:"Stage the car and launch on the green. A strong launch counts for more than top-end power, and a shot that comes on too early only spins the tyres."},
+  {tab:"events",sel:"#dynoHint",title:"Read the timing slip",text:"After a pass, the slip lists reaction time, 60 ft, the eighth and quarter mile ET with trap speed. If the 60 ft is slow but the trap speed is high, the power is there and the launch is the problem."}]},
  {id:"pulling",name:"Pulling 101",sub:"the sled, hitch, tyres and throttle",preset:"smoker26",env:{testType:"pull_sled"},steps:[
-  {tab:"test",sel:"#testType",title:"The sled pull",text:"A truck drags a sled down 300 feet of dirt. A heavy box slides forward as it goes, pressing the sled's pan into the track, so the load grows every foot. Farthest wins; a full pull gets a pull-off."},
-  {tab:"test",sel:'#envBox [data-pk="pullCls"]',up:1,lbl:1,title:"Pick a class",text:"Each class has its own weight limit, tyres and rules. Your build has to be legal for the class, and the legal line is shown under each button."},
-  {tab:"test",sel:'#envBox [data-pk="pullGear"]',up:1,lbl:1,title:"Choose a gear",text:"A tall gear carries speed into the heavy end of the track; a short one gives more pull but digs the tyres if you stay flat on it."},
-  {tab:"test",sel:'#envBox [data-pk="pullTyre"]',up:1,lbl:1,title:"Tyres and slip",text:"Some slip is good: there is a sweet spot where the tyres pull hardest. Too little and the engine bogs, too much and the tyres dig a hole. The pull sheet reports the time you spent in that band."},
-  {tab:"test",sel:"#er-pullHitch",up:0,wrap:".envgrid",title:"Hitch height and ballast",text:"A higher hitch plants the rear tyres but lifts the nose. Past a point the front hops and grip goes with it. Weight on the front bracket holds the nose down."},
+  {tab:"events",sel:'#evPick [data-t="pull_sled"]',title:"The sled pull",text:"Truck pull lives on the Events tab. A truck drags a sled down 300 feet of dirt. A heavy box slides forward as it goes, pressing the sled's pan into the track, so the load grows every foot. Farthest wins; a full pull gets a pull-off."},
+  {tab:"events",sel:'#envBox [data-pk="pullCls"]',up:1,lbl:1,title:"Pick a class",text:"Each class has its own weight limit, tyres and rules. Your build has to be legal for the class, and the legal line is shown under each button."},
+  {tab:"events",sel:'#envBox [data-pk="pullGear"]',up:1,lbl:1,title:"Choose a gear",text:"A tall gear carries speed into the heavy end of the track; a short one gives more pull but digs the tyres if you stay flat on it."},
+  {tab:"events",sel:'#envBox [data-pk="pullTyre"]',up:1,lbl:1,title:"Tyres and slip",text:"Some slip is good: there is a sweet spot where the tyres pull hardest. Too little and the engine bogs, too much and the tyres dig a hole. The pull sheet reports the time you spent in that band."},
+  {tab:"events",sel:"#er-pullHitch",up:0,wrap:".envgrid",title:"Hitch height and ballast",text:"Under Advanced. A higher hitch plants the rear tyres but lifts the nose. Past a point the front hops and grip goes with it. Weight on the front bracket holds the nose down."},
   {tab:"build",sel:'[data-k="dNoz"]',up:1,lbl:1,title:"Fuel and sticks",text:"Pulling diesels live on large injector nozzles and compound turbos. The smoke limit is not a rule here; the limits are cylinder pressure, the head gasket and the pump."},
-  {tab:"test",sel:"#runTest",title:"Hold the throttle",text:"Start the pull and hold the button (or Space) for throttle. Ease off when the tyres spin to stay in the sweet spot; the engine must keep pulling as the sled gets heavier."},
-  {tab:"test",sel:"#dynoHint",title:"Read the pull sheet",text:"The sheet lists distance, setup, tyre slip and the reasons the pull ended. If the truck stopped bogged, you need torque or gear; if it spun, you need grip or less throttle."}]}
+  {tab:"events",sel:"#runTest",title:"Hold the throttle",text:"Start the pull and hold the button (or Space) for throttle. Ease off when the tyres spin to stay in the sweet spot; the engine must keep pulling as the sled gets heavier."},
+  {tab:"events",sel:"#dynoHint",title:"Read the pull sheet",text:"The sheet lists distance, setup, tyre slip and the reasons the pull ended. If the truck stopped bogged, you need torque or gear; if it spun, you need grip or less throttle."}]}
 ];
 let LS=null;
 const LS_WALK=["#modeBox button","#replayTour","#resetGame","#foreclose [data-restart]","#slots button","#importSave","#exportSave"].join(",");
@@ -22647,9 +22754,9 @@ function lsPlace(){if(!LS)return;const st=LS.L.steps[LS.i];if(!st)return;const a
   else{spot.style.display="none";box.style.top="auto";box.style.bottom=(app.height-tabT+10)+"px";}
   deskBox(box,r);}
 function lsShow(i){if(!LS)return;LS.i=i;const L=LS.L,st=L.steps[i];if(!st){lsEnd(false);return;}glPopClose();
-  if(st.tab==="test"&&S.env.testType!==L.env.testType&&!testing){const b=document.querySelector(`#testType [data-t="${L.env.testType}"]`);if(b)b.click();}
+  if((st.tab==="test"||st.tab==="events")&&S.env.testType!==L.env.testType&&!testing)pickTest(L.env.testType);
   if(curTab!==st.tab)showTab(st.tab);
-  const target=document.querySelector(st.sel),ac=target&&target.closest(".acc");if(ac&&!ac.classList.contains("open"))toggleSec(ac.querySelector("[data-sec]"));
+  accReveal(document.querySelector(st.sel));
   const last=i===L.steps.length-1;
   $("lesStep").textContent=`${L.name} · ${i+1} of ${L.steps.length}`;$("lesTitle").textContent=st.title;$("lesText").textContent=st.text;
   $("lesSkip").style.display=last?"none":"";$("lesKeep").style.display=last?"":"none";$("lesNext").textContent=last?"Back to my engine":"Next";
@@ -22666,7 +22773,7 @@ function lsMenu(){$("sheetTitle").textContent="Lessons";
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 function lsStart(id){if(LS||(typeof ff!=="undefined"&&ff))return;if(testing){toast("Let the dyno finish first");return;}
   const L=LESSONS.find(x=>x.id===id),p=PRESETS.find(x=>x.id===L.preset);if(!L||!p)return;closeSheet();if(tourStep>=0){tourStep=-1;$("tour").hidden=true;}
-  LS={L,i:0,to:S.mode||"sandbox",back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle,sound:S.sound,tabs:Object.assign({},tabScroll,{[curTab]:$("panel").scrollTop})}};tabScroll.build=0;
+  LS={L,i:0,to:S.mode||"sandbox",back:{picks:[S.evPick,S.testPick],cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle,sound:S.sound,tabs:Object.assign({},tabScroll,{[curTab]:$("panel").scrollTop})}};tabScroll.build=0;
   S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg,L.cfg||{});S.env=Object.assign({},SIM.DEFAULT_ENV,L.env);S.profileId=p.soundProfile;S.name=p.name;S.last=null;curTab="build";resetBase();
   if(S.mode!=="sandbox"){S.mode="sandbox";boot();}else{afterCfgChange(true);hud();showTab("build");}
   $("les").hidden=false;lsShow(0);}
@@ -22674,6 +22781,7 @@ function lsEnd(keep){if(!LS)return;if(testing){toast("Let the dyno finish first"
   if(f.i>=f.L.steps.length-1){S.lessonsDone=Object.assign({},S.lessonsDone,{[f.L.id]:true});}
   const mine={cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name};
   run.idle=b.idle;$("idleBtn").classList.toggle("on",run.idle);
+  if(b.picks){S.evPick=b.picks[0];S.testPick=b.picks[1];}
   Object.assign(S,keep?{cfg:mine.cfg,env:mine.env,profileId:mine.profileId,name:mine.name,last:null}:{cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last},{mode:f.to});curTab=keep?"build":b.tab;
   let note=keep?"Kept the lesson engine":"Your build is back";
   if(career()&&presetLocked(S.cfg)){S.cfg=b.cfg;S.env=b.env;S.profileId=b.profileId;S.name=b.name;S.last=b.last;note=keep?"Career bay can't fit that engine yet. Your own build is back":note;keep=false;curTab=b.tab;}
@@ -22724,6 +22832,7 @@ function abPlay(k){
 }
 function abStop(){AB.playing=null;abRender();}
 $("abSec").addEventListener("click",e=>{
+  if(e.target.closest("#abSec > .acch")){const f=$("abSec");advSet(f,!f.classList.contains("open"));buzz(4);return;}
   const cap=e.target.closest("[data-abcap]");if(cap){AB[cap.dataset.abcap]=Object.assign({},S.cfg);abRender();toast(`Captured into ${cap.dataset.abcap}`);buzz(10);return;}
   const ld=e.target.closest("[data-abload]");if(ld){const c=AB[ld.dataset.abload];if(!c){toast("That slot is empty");return;}if(testing){toast("Let the run finish first");return;}
     fuelFit(c);S.cfg=Object.assign({},c);S.profileId=null;resetBase();afterCfgChange(true);toast(`${ld.dataset.abload} loaded into the build`);return;}
@@ -22813,13 +22922,13 @@ let curTab="build";
 /* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
 function showTab(t){tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
-  if(t==="test")renderTest();else pitsSync();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
+  if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
-function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(ff||curTab!=="test"||!v)return;
+function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(ff||(curTab!=="test"&&curTab!=="events")||!v)return;
   const pr=pn.getBoundingClientRect(),vr=v.getBoundingClientRect(),st=document.querySelector(".tabpage.on .strip"),sc=st&&st.offsetParent&&getComputedStyle(st);
   const top=pr.top+pn.clientTop+(sc&&sc.position==="sticky"?parseFloat(getComputedStyle(pn).paddingTop)+(parseFloat(sc.top)||0)+st.offsetHeight:0)+8;
-  const bot=Math.min(pr.bottom,tabsTop())-8;
+  const dk=$("runDock"),dr=dk&&dk.offsetParent?dk.getBoundingClientRect():null,bot=Math.min(pr.bottom,tabsTop(),dr&&dr.top>pr.top?dr.top:Infinity)-8;
   if(vr.top>=top&&vr.bottom<=bot)return;pn.scrollTo({top:pn.scrollTop+vr.top-top,behavior:calmScroll()});}
 document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
@@ -22888,7 +22997,7 @@ function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
 const tipEl=document.createElement("div");tipEl.id="tip";tipEl.setAttribute("role","tooltip");document.body.appendChild(tipEl);
 let tipT=null,tipOn=null;
 function tipHide(){clearTimeout(tipT);tipT=null;tipOn=null;tipEl.classList.remove("on");}
-const TAB_KEYS=["build","test","analysis","market","shop"];
+const TAB_KEYS=["build","test","events","analysis","market","shop"];
 const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
 function tipText(el){if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
@@ -22922,8 +23031,8 @@ document.addEventListener("wheel",e=>{const r=e.target;if(!wheelArm||r!==wheelAr
 function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySelector(".kbd")){closeSheet();return;}
   const K=(k,t)=>`<kbd>${k}</kbd><span>${t}</span>`;$("sheetTitle").textContent="Keyboard & mouse";
   $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}${K("K","truck pull: the kill switch when a diesel runs away")}
-    <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test (Test tab)")}${K("V","view options")}
-    <h3>Panel</h3>${K("1 – 5","Build · Test · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("G","the glossary")}${K("?","this list")}
+    <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test or the event (Test and Events tabs)")}${K("V","view options")}
+    <h3>Panel</h3>${K("1 – 6","Build · Test · Events · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("G","the glossary")}${K("?","this list")}
     <h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}</div>`;
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
@@ -22942,12 +23051,12 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
   if(k==="?"){kbHelp();e.preventDefault();return;}
   const lk=k.toLowerCase();
   if(lk==="k"&&pullKill()){e.preventDefault();}
-  else if(/^[1-5]$/.test(k)){const b=document.querySelector(`#tabs [data-tab="${TAB_KEYS[+k-1]}"]`);if(b){b.click();e.preventDefault();}}
+  else if(/^[1-6]$/.test(k)){const b=document.querySelector(`#tabs [data-tab="${TAB_KEYS[+k-1]}"]`);if(b){b.click();e.preventDefault();}}
   else if(lk==="s")$("sndBtn").click();
   else if(lk==="i"||lk==="e")$("idleBtn").click();
   else if(lk==="v")$("viewBtn").click();
   else if(lk==="g")glBrowse();
-  else if(lk==="r"&&curTab==="test"&&!testing&&!$("runTest").disabled)$("runTest").click();});
+  else if(lk==="r"&&(curTab==="test"||curTab==="events")&&!testing&&!$("runTest").disabled)$("runTest").click();});
 document.addEventListener("keyup",e=>{if((e.key===" "||e.key==="Spacebar")&&spaceHeld){e.preventDefault();spaceUp(false);}});
 window.addEventListener("blur",()=>{if(spaceHeld)spaceUp(true);});
 let visReady=false;
@@ -22958,6 +23067,10 @@ function boot(){
   if(!visReady){ENGINE_VIS.init($("gl"));visReady=true;requestAnimationFrame(tick);}
   ENGINE_VIS.buildGarage(garageOwned());ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);
   applyFps();
+  /* Test / Events picks: an older save only has S.env.testType, so it seeds whichever tab owns it */
+  if(!EV_T.includes(S.evPick))S.evPick=EV_T.includes(S.env.testType)?S.env.testType:"drag";
+  if(!DYNO_T.includes(S.testPick))S.testPick=DYNO_T.includes(S.env.testType)?S.env.testType:"pull";
+  advSet($("abSec"),!!(S.advOpen&&S.advOpen.ab));
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
   if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();spLivery();showTab(curTab);glApply();
@@ -22969,7 +23082,7 @@ function start(hot){
   if(hot&&hot.S){Object.assign(S,hot.S);curTab=hot.tab||"build";}
   boot();
   window.claude?.hot?.snapshot?.(()=>({S:Object.assign({},S,{last:null,base:S.base}),tab:curTab}));
-  window.addEventListener("resize",()=>{ENGINE_VIS.resize();if(curTab==="test")drawChart(lastForChart(),null);});
+  window.addEventListener("resize",()=>{ENGINE_VIS.resize();if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();});
   setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle
 }
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
