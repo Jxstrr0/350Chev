@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.29.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.30.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -14152,8 +14152,11 @@ var STRIP={ on:false, scene:null, cam:null, built:false, sun:null, hemi:null, ca
   fx:null, fxAdd:null, marks:null, board:null, tm:null, sky:null, env:{}, spots:[], poles:[], mats:{}, composer:null, heatPass:null,
   flash:null, fog:null, crowd:null, halos:[], exposure:0.95 };
 var STRIP_TRACK_END=780, STRIP_Q=402.336, STRIP_LANE=2.5;
+/* v2 world: uniforms shared by the track and crowd shaders (time, midday mirage, fresh burnout shine per lane, water-box ripples, lit stands) */
+var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2()}, uRip:{value:0}, uHorC:{value:new THREE.Color(0.52,0.6,0.7)}, uCrowdLit:{value:0} };
 var STRIP_SUN_DAY=new THREE.Vector3(-0.55,0.36,0.75).normalize(), STRIP_MOON=new THREE.Vector3(0.45,0.42,-0.78).normalize();
-var STRIP_HOR=[0.52,0.60,0.70], STRIP_HOR_N=[0.016,0.019,0.03];
+var STRIP_HOR=[0.52,0.60,0.70], STRIP_HOR_N=[0.016,0.019,0.03], STRIP_HOR_D=[0.2,0.1,0.1];
+var STRIP_SUN_DUSK=new THREE.Vector3(0.86,0.03,-0.5).normalize(), STRIP_DUSK_LIGHT=new THREE.Vector3(0.82,0.2,-0.54).normalize();
 function stripMat(c, r, m){ return new THREE.MeshStandardMaterial({color:c, roughness:r===undefined?0.7:r, metalness:m||0}); }
 function stripBox(w,h,d,mat,x,y,z){ var mm=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); mm.position.set(x,y,z); mm.castShadow=true; mm.receiveShadow=true; return mm; }
 function stripLabel(txt, w, h){ var c=document.createElement("canvas"); c.width=256; c.height=96; var x=c.getContext("2d"); x.fillStyle="#f4efe2"; x.fillRect(0,0,256,96); x.fillStyle="#1a1a1a"; x.font="bold 54px 'Barlow Condensed','Arial Narrow',sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt,128,50);
@@ -14164,7 +14167,7 @@ var SB_GEO=null;
 function sbGeo(){
   if(SB_GEO) return SB_GEO;
   SB_GEO={ box:new THREE.BoxGeometry(1,1,1).toNonIndexed(), cyl:new THREE.CylinderGeometry(0.5,0.5,1,10).toNonIndexed(), cyl6:new THREE.CylinderGeometry(0.5,0.5,1,6).toNonIndexed(),
-    cone:new THREE.CylinderGeometry(0,0.5,1,4).toNonIndexed(), plane:new THREE.PlaneGeometry(1,1).toNonIndexed(), prism:null, beam:new THREE.CylinderGeometry(0.08,0.5,1,12,1,true).toNonIndexed() };
+    cone:new THREE.CylinderGeometry(0,0.5,1,4).toNonIndexed(), plane:new THREE.PlaneGeometry(1,1).toNonIndexed(), prism:null, beam:new THREE.CylinderGeometry(0.08,0.5,1,12,1,true).toNonIndexed(), tcone:new THREE.CylinderGeometry(0.11,0.5,1,12).toNonIndexed() };
   /* gable roof: triangular prism, 1×1×1, ridge along x */
   var p=new THREE.BufferGeometry(), v=[-.5,0,-.5, .5,0,-.5, .5,.5,0,  -.5,0,-.5, .5,.5,0, -.5,.5,0,   .5,0,.5, -.5,0,.5, -.5,.5,0,  .5,0,.5, -.5,.5,0, .5,.5,0,
     -.5,0,.5, -.5,0,-.5, -.5,.5,0,   .5,0,-.5, .5,0,.5, .5,.5,0];
@@ -14201,6 +14204,8 @@ var STRIP_GLSL_NOISE=[
   "float sn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(sh(i),sh(i+vec2(1.0,0.0)),f.x), mix(sh(i+vec2(0.0,1.0)),sh(i+vec2(1.0,1.0)),f.x), f.y); }",
   "float sfbm(vec2 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*sn(p); p=p*2.03+vec2(17.1,9.3); a*=0.5; } return s; }"].join("\n");
 var STRIP_GLSL_TRACK=[
+  "uniform float uTime; uniform float uHaze; uniform vec2 uShine; uniform float uRip; uniform vec3 uHorC;",
+  "float gWet=0.0, gMir=0.0; vec2 gRip=vec2(0.0);",
   "vec3 stripSurf(vec3 w, out float rough){",
   "  float x=w.x, z=w.z, az=abs(z); float d=length(w-cameraPosition);",
   "  float fine=1.0-smoothstep(20.0,80.0,d), mid=1.0-smoothstep(60.0,260.0,d);",
@@ -14220,10 +14225,21 @@ var STRIP_GLSL_TRACK=[
   "  float bo=smoothstep(-5.6,-4.8,x)*(1.0-smoothstep(-0.4,0.6,x))*tyre*(0.55+0.45*sn(vec2(x*2.5,dz*28.0)));",
   "  rub=max(rub,bo*0.97);",
   "  c=mix(c,vec3(0.018,0.018,0.02),rub); rough=mix(rough,0.55,rub);",
+  "  float vht=fx*(1.0-smoothstep(45.0,140.0,x))*clamp(0.6*broad+0.5*tyre,0.0,1.0)*(0.8+0.2*n1);",
+  "  c=mix(c,vec3(0.026,0.021,0.016),vht*0.4); rough=mix(rough,0.24,vht*0.9);",
+  "  float shn=(z>0.0?uShine.x:uShine.y)*smoothstep(-6.4,-5.4,x)*(1.0-smoothstep(0.5,7.0,x))*tyre*(0.55+0.45*sn(vec2(x*1.1,dz*36.0)));",
+  "  c=mix(c,vec3(0.01,0.01,0.011),shn*0.7); rough=mix(rough,0.1,shn);",
   "  float wb=smoothstep(-15.2,-14.6,x)*(1.0-smoothstep(-5.6,-5.0,x))*(1.0-smoothstep(1.75,2.05,dz));",
   "  float wtr=smoothstep(-5.8,-5.0,x)*(1.0-smoothstep(-4.5,1.5,x))*tyre;",
   "  float wet=max(wb*(0.8+0.2*n2),wtr*0.85);",
   "  c*=1.0-0.62*wet; rough=mix(rough,0.06,wet);",
+  "  float pool=wb*smoothstep(0.56,0.64,sn(w.xz*vec2(0.8,1.5)+3.0)+0.18*n2);",
+  "  c*=1.0-0.3*pool; rough=mix(rough,0.02,pool); gWet=max(wet,pool);",
+  "  if(gWet>0.0){ vec2 q=w.xz*6.0; float t=uTime; gRip=vec2(sin(q.x+t*3.3+sn(q*0.6)*6.0), sin(q.y*1.3-t*2.6+sn(q*0.45+3.0)*6.0))*(0.03+0.16*uRip)*gWet; }",
+  "  if(uHaze>0.0){ vec3 vd=normalize(w-cameraPosition); float graze=1.0-smoothstep(0.004,0.032,-vd.y);",
+  "    float far=smoothstep(60.0,200.0,d)*(1.0-smoothstep(900.0,1500.0,d));",
+  "    float wob=0.7*sn(vec2(x*0.045-uTime*0.9,z*0.35+uTime*0.3))+0.3*sn(vec2(x*0.14+uTime*1.7,z*0.8));",
+  "    gMir=uHaze*graze*far*smoothstep(0.38,0.72,wob); c*=1.0-0.85*gMir; rough=mix(rough,0.9,gMir); }",
   "  float ln=1.0-smoothstep(0.05,0.075,abs(x));",
   "  ln=max(ln,(1.0-smoothstep(0.13,0.16,abs(x-402.336)))*(0.75+0.25*step(0.5,fract(z*1.0))));",
   "  ln=max(ln,(1.0-smoothstep(0.05,0.075,abs(az-6.95)))*step(-40.0,x));",
@@ -14253,9 +14269,13 @@ var STRIP_GLSL_GROUND=[
   "  float sp=(1.0-smoothstep(7.4,8.2,abs(p.y)))*smoothstep(-80.0,-75.0,p.x)*(1.0-smoothstep(785.0,790.0,p.x));",
   "  c=mix(c,vec3(0.2,0.19,0.17),sp);",
   "  rough=0.96; return c; }"].join("\n");
-function stripSurfMat(glsl, extra){
+var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*gMir;" };
+function stripSurfMat(glsl, extra, uni, post){
   var m=new THREE.MeshStandardMaterial(Object.assign({color:0xffffff, roughness:0.9, metalness:0}, extra||{}));
   m.onBeforeCompile=function(sh){
+    if(uni) for(var uk in uni) sh.uniforms[uk]=uni[uk];
+    if(post){ if(post.normal) sh.fragmentShader=sh.fragmentShader.replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n"+post.normal);
+      if(post.emissive) sh.fragmentShader=sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n"+post.emissive); }
     sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;").replace("#include <project_vertex>", "#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;");
     sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nfloat gRough;\n"+STRIP_GLSL_NOISE+"\n"+glsl)
       .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb*=stripSurf(vWp,gRough);")
@@ -14267,9 +14287,9 @@ function stripSurfMat(glsl, extra){
 
 /* --- sky dome: gradient, sun, prairie cumulus; night: stars, moon, town glow on the horizon --- */
 function stripSkyMat(){
-  return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:STRIP_SUN_DAY.clone()}, uMoon:{value:STRIP_MOON.clone()}, uNight:{value:0}, uGain:{value:1}, uHor:{value:new THREE.Vector3().fromArray(STRIP_HOR)}, uHorN:{value:new THREE.Vector3().fromArray(STRIP_HOR_N)} },
+  return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:STRIP_SUN_DAY.clone()}, uMoon:{value:STRIP_MOON.clone()}, uNight:{value:0}, uGain:{value:1}, uHor:{value:new THREE.Vector3().fromArray(STRIP_HOR)}, uHorN:{value:new THREE.Vector3().fromArray(STRIP_HOR_N)}, uDusk:{value:0}, uDuskSun:{value:STRIP_SUN_DUSK.clone()} },
     vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
-    fragmentShader:[ "uniform vec3 uSun; uniform vec3 uMoon; uniform float uNight; uniform float uGain; uniform vec3 uHor; uniform vec3 uHorN; varying vec3 vDir;", STRIP_GLSL_NOISE,
+    fragmentShader:[ "uniform vec3 uSun; uniform vec3 uMoon; uniform float uNight; uniform float uGain; uniform vec3 uHor; uniform vec3 uHorN; uniform float uDusk; uniform vec3 uDuskSun; varying vec3 vDir;", STRIP_GLSL_NOISE,
       "float h3(vec3 p){ p=fract(p*0.1031); p+=dot(p,p.zyx+31.32); return fract((p.x+p.y)*p.z); }",
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
       " vec3 zen=vec3(0.075,0.19,0.48);",
@@ -14291,6 +14311,15 @@ function stripSkyMat(){
       " float md=max(dot(d,uMoon),0.0); nt+=vec3(0.85,0.88,0.95)*smoothstep(0.99965,0.99985,md)+vec3(0.03,0.035,0.05)*pow(md,40.0);",
       " nt=mix(nt,vec3(0.006,0.007,0.011)+vec3(0.03,0.018,0.008)*town,cov*0.75);",
       " vec3 col=mix(day,nt,uNight);",
+      /* race-night dusk: sunset glow downtrack fading to blue hour, clouds lit pink from below */
+      " if(uDusk>0.0){ vec3 ds=uDuskSun; float sdd=max(dot(d,ds),0.0), aw=0.5+0.5*dot(az,normalize(ds.xz)), hb=clamp(h,0.0,1.0);",
+      "  vec3 dk=mix(vec3(0.95,0.34,0.09)*(0.18+0.82*pow(aw,3.0)), vec3(0.15,0.09,0.20), smoothstep(0.0,0.17,hb));",
+      "  dk=mix(dk,vec3(0.016,0.03,0.09),smoothstep(0.1,0.62,hb));",
+      "  dk+=vec3(1.0,0.5,0.2)*pow(sdd,22.0)*0.55+vec3(1.0,0.72,0.42)*smoothstep(0.9993,0.9997,sdd)*3.0*step(-0.002,h);",
+      "  dk=mix(dk,vec3(0.03,0.025,0.035),smoothstep(0.0,-0.05,h));",
+      "  vec3 dcl=mix(vec3(0.03,0.026,0.045),vec3(0.9,0.36,0.18)*(0.15+0.85*pow(aw,2.0)),clamp((n-0.45)*1.8,0.0,1.0)*(1.0-smoothstep(0.05,0.4,hb))+0.12);",
+      "  dk=mix(dk,dcl,cov*0.9); dk*=0.22+0.78*uDusk;",
+      "  col=mix(col,dk,smoothstep(0.0,0.3,uDusk)); }",
       " gl_FragColor=vec4(col*uGain,1.0);",
       " gl_FragColor=linearToOutputTexel(gl_FragColor); }"].join("\n"),
     side:THREE.BackSide, depthWrite:false, fog:false, toneMapped:false });
@@ -14360,7 +14389,7 @@ function buildStripScene(){
   S2.fog=new THREE.Fog(0xffffff, 170, 3400); STRIP.fog=S2.fog;
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), stripSurfMat(STRIP_GLSL_GROUND)); ground.rotation.x=-PI/2; ground.position.set(350,-0.03,0); ground.receiveShadow=true; S2.add(ground);
   var trackW=15, trackL=STRIP_TRACK_END+80;
-  var track=new THREE.Mesh(new THREE.PlaneGeometry(trackL, trackW), stripSurfMat(STRIP_GLSL_TRACK)); track.rotation.x=-PI/2; track.position.set(-80+trackL/2, 0, 0); track.receiveShadow=true; S2.add(track);
+  var track=new THREE.Mesh(new THREE.PlaneGeometry(trackL, trackW), stripSurfMat(STRIP_GLSL_TRACK, null, STRIP_U, STRIP_TRACK_POST)); track.rotation.x=-PI/2; track.position.set(-80+trackL/2, 0, 0); track.receiveShadow=true; S2.add(track);
   /* distant hills: a low ring of coulee rises */
   (function(){ var seg=160, R0=2300, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
     for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=18+40*Math.pow(0.5+0.5*Math.sin(a*3.0+1.2),2)+22*Math.sin(a*11.0+0.4)*Math.sin(a*5.0)+14*Math.sin(a*23.0);
@@ -14411,6 +14440,12 @@ function buildStripScene(){
   }
   /* burnout-box water hose reel + cones behind the line */
   B.add("solid","cone",[-15.5,0.35,6.6],[0.4,0.7,0.4],0xe36a17); B.add("solid","cone",[-15.5,0.35,-6.6],[0.4,0.7,0.4],0xe36a17);
+  /* v2: traffic cones: lane split behind the box, the shutdown centreline, the turn-off */
+  function tcone(cx, cz){ B.box("solid", cx, 0.015, cz, 0.38, 0.03, 0.38, 0xe8641a); B.add("solid","tcone",[cx, 0.31, cz],[0.3,0.56,0.3],0xf06a1c);
+    B.add("solid","cyl",[cx, 0.36, cz],[0.19,0.09,0.19],0xf3f1ea); }
+  tcone(-19,0); tcone(-23,0); tcone(-27,0); tcone(-16.2,5.7); tcone(-16.2,-5.7);
+  for(x=480; x<=760; x+=40) tcone(x, 0);
+  tcone(705,5.9); tcone(715,5.4); tcone(725,4.9); tcone(735,4.4);
 
   /* the tree (pole, housing, visors) — bulbs are separate emissive meshes */
   var TX=6.0;
@@ -14439,6 +14474,7 @@ function buildStripScene(){
   for(x=GX0; x<=GX1; x+=18.5){ B.box("metal", x, 5.6, gzB+0.4, 0.3, 11.2, 0.3, STEEL); B.box("metal", x, 11.0, gzB+3.2, 0.25, 0.25, 6.6, STEEL); }
   B.box("metal", (GX0+GX1)/2, 11.2, gzB+3.4, GX1-GX0+1, 0.25, 7.6, 0x5d6268);
   B.add("sign","plane",[(GX0+GX1)/2, 10.4, gzB+7.21],[40,1.9,1],0xffffff,null,STRIP_UV.raceway);
+  for(x=GX0+4; x<GX1; x+=9) B.box("lamp", x, 11.06, gzB+4.2, 1.6, 0.04, 0.5, 0xfff2d8);   /* v2: canopy lights over the stands */
   /* light poles (both sides, every 55 m) with lamp heads and fake light shafts for night */
   STRIP.poles=[];
   for(x=-45; x<=STRIP_TRACK_END-20; x+=55){ for(side=-1; side<=1; side+=2){ var plz=side*(side<0 && x>=GX0-6 && x<=GX1+6 ? 9.0 : 10.6);
@@ -14458,7 +14494,8 @@ function buildStripScene(){
   /* scoreboard frames near the stripe (boards themselves are dynamic) */
   for(side=-1; side<=1; side+=2){ var sbx=STRIP_Q+26, sbz=side*10.8, ry2=side<0?-PI/2+0.55:-PI/2-0.55;
     B.box("metal", sbx+1.0, 3.3, sbz-2.4, 0.35, 6.6, 0.35, STEEL); B.box("metal", sbx+1.0, 3.3, sbz+2.4, 0.35, 6.6, 0.35, STEEL);
-    B.add("solid","box",[sbx-Math.sin(ry2)*0.3, 6.7, sbz-Math.cos(ry2)*0.3],[9.0,4.7,0.4],0x151618,[0,ry2,0]); }
+    B.add("solid","box",[sbx-Math.sin(ry2)*0.3, 6.7, sbz-Math.cos(ry2)*0.3],[9.0,4.7,0.4],0x151618,[0,ry2,0]);
+    B.add("solid","box",[sbx-Math.sin(ry2)*0.3, 9.66, sbz-Math.cos(ry2)*0.3],[9.0,1.3,0.4],0x151618,[0,ry2,0]); }   /* v2: title header */
   /* grain elevators: the prairie skyline (one downtrack, one behind the start, one far off) */
   function elevator(ex, ez, s, col, rot){
     var cs=Math.cos(rot||0), sn2=Math.sin(rot||0); function P(dx,dz){ return [ex+dx*cs-dz*sn2, ez+dx*sn2+dz*cs]; }
@@ -14501,7 +14538,8 @@ function buildStripScene(){
       cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc);
       cc.set(rng(s*2.9)<0.35?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
     bodyM.castShadow=false; headM.castShadow=false; bodyM.receiveShadow=true; S2.add(bodyM); S2.add(headM);
-    STRIP.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
+    STRIP.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false};
+    stripCrowdLit(bodyM.material); stripCrowdLit(headM.material); STRIP.crowd.col=bodyM.instanceColor.array.slice(); STRIP.crowd.cw=new Float32Array(n); STRIP.crowd.wy=new Float32Array(n); })();
 
   /* Christmas tree bulbs — names kept: {p,o}{pre,stage,a1,a2,a3,g,r} */
   STRIP.tree={bulbs:{}, halos:{}};
@@ -14528,6 +14566,16 @@ function buildStripScene(){
     var bm=new THREE.Mesh(new THREE.PlaneGeometry(8.4,4.2), new THREE.MeshBasicMaterial({map:tx, toneMapped:false, color:0xdddddd}));
     bm.position.set(STRIP_Q+26, 6.7, side*10.8); bm.rotation.y=side<0?-PI/2+0.55:-PI/2-0.55; S2.add(bm);
     STRIP.board[side>0?"p":"o"]={cv:cv, tex:tx, mesh:bm, key:""}; }
+  /* v2: round title over both boards: one canvas, both quads in one mesh */
+  (function(){ var cv=newCanvas(512,64), tx=new THREE.CanvasTexture(cv); tx.encoding=THREE.sRGBEncoding; tx.anisotropy=MAXANISO; var gs=[];
+    for(var sd=-1; sd<=1; sd+=2){ var g=new THREE.PlaneGeometry(8.4,1.05); g.rotateY(sd<0?-PI/2+0.55:-PI/2-0.55); g.translate(STRIP_Q+26, 9.66, sd*10.8); gs.push(g); }
+    var pos=new Float32Array(gs[0].attributes.position.array.length*2), uv=new Float32Array(gs[0].attributes.uv.array.length*2), idx=[];
+    pos.set(gs[0].attributes.position.array); pos.set(gs[1].attributes.position.array, gs[0].attributes.position.array.length);
+    uv.set(gs[0].attributes.uv.array); uv.set(gs[1].attributes.uv.array, gs[0].attributes.uv.array.length);
+    var i0=gs[0].index.array, nv=gs[0].attributes.position.count; for(var q=0;q<i0.length;q++) idx.push(i0[q]); for(q=0;q<i0.length;q++) idx.push(i0[q]+nv);
+    var gg=new THREE.BufferGeometry(); gg.setAttribute("position",new THREE.BufferAttribute(pos,3)); gg.setAttribute("uv",new THREE.BufferAttribute(uv,2)); gg.setIndex(idx);
+    var tm=new THREE.Mesh(gg, new THREE.MeshBasicMaterial({map:tx, toneMapped:false, color:0xdddddd})); S2.add(tm);
+    STRIP.title={cv:cv, tex:tx, mesh:tm, key:""}; gs.forEach(function(g){ g.dispose(); }); })();
   stripBoardDraw({}, true);
 
   /* effects */
@@ -15520,11 +15568,25 @@ function stripBoardDraw(d, force){
       if(L.pb){ x.fillStyle=L.pb>1?"#c86bff":"#44ff72"; x.fillRect(24,188,116,54); x.fillStyle="#060607"; x.font="700 44px "+F; x.textAlign="center"; x.fillText("PB", 82, 217); }
     }
     bd.tex.needsUpdate=true; });
+  stripTitleDraw(force);
+}
+/* v2: the title line over the boards: the round on a race night, the raceway otherwise, the winner's call after the final */
+function stripTitleDraw(force){
+  var T=STRIP.title; if(!T) return; var X=STRIP.rn||{}, hon=!!STRIP.honour;
+  var txt=hon?"WON THE NIGHT":X.round?String(X.round):"PRAIRIE BLUE RACEWAY", key=txt+"|"+hon;
+  if(!force && key===T.key) return; T.key=key;
+  var x=T.cv.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
+  x.fillStyle="#060607"; x.fillRect(0,0,512,64); x.strokeStyle="#34373c"; x.lineWidth=6; x.strokeRect(3,3,506,58);
+  x.fillStyle=hon?"#44ff72":X.round?"#ffb22c":"#9aa0a8"; x.textAlign="center"; x.textBaseline="middle";
+  var sz=40; x.font="700 "+sz+"px "+F; while(sz>22 && x.measureText(txt).width>440){ sz-=2; x.font="700 "+sz+"px "+F; }
+  x.fillText(txt, 256, 34);
+  x.fillStyle=hon?"#44ff72":"#ff9a1c"; [22,490].forEach(function(cx){ x.beginPath(); x.arc(cx,32,7,0,TAU); x.fill(); });
+  T.tex.needsUpdate=true;
 }
 function stripTmLane(){ return {px:null, pv:0, start:null, et:null, mph:null, cross:null}; }
 function stripTiming(o, rdt){
   var ph=o.phase||"run";
-  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; STRIP.pb=0; STRIP.pbCut=0; STRIP.win=0; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
+  if(ph==="burnout"||ph==="staged"){ if(!STRIP.tm||STRIP.tm.used){ STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()}; STRIP.pb=0; STRIP.pbCut=0; STRIP.win=0; STRIP.wonFx=0; STRIP.honour=0; STRIP.honourT=0; stripBoardDraw({p:{},o:{off:!o.race}}, false); } return; }
   var tm=STRIP.tm||(STRIP.tm={used:false, clock:0, p:stripTmLane(), o:stripTmLane()});
   tm.used=true; tm.clock+=rdt;
   function lane(L, x, v){
@@ -15541,14 +15603,15 @@ function stripTiming(o, rdt){
       if(o.win!=null){ pd.win=!!o.win; od.win=!o.win && (oc!=null||o.foul); }
       else { pd.win=pc!=null && (oc==null||pc<=oc); od.win=oc!=null && (pc==null||oc<pc) || (!!o.foul && !o.ofoul); } }
     stripBoardDraw({p:pd, o:od}, false);
+    if(pd.win && !STRIP.wonFx){ STRIP.wonFx=1; STRIP.flashT=Math.max(STRIP.flashT||0, 3.2); STRIP.cheer=Math.max(STRIP.cheer, 1.25); }   /* v2: every win: flashbulbs */
   }
 }
 
 /* --- day / night --- */
-function stripEnv(night){
-  var key=night?"n":"d"; if(STRIP.env[key]) return STRIP.env[key];
+function stripEnv(night, dusk){
+  var key=dusk?"k":night?"n":"d"; if(STRIP.env[key]) return STRIP.env[key];
   try{
-    var s=new THREE.Scene(), mat=stripSkyMat(); mat.uniforms.uNight.value=night?1:0; mat.uniforms.uGain.value=night?1:0.45; var sky=new THREE.Mesh(new THREE.SphereGeometry(100,32,16), mat); s.add(sky);
+    var s=new THREE.Scene(), mat=stripSkyMat(); mat.uniforms.uNight.value=night?1:0; mat.uniforms.uDusk.value=dusk?1:0; mat.uniforms.uGain.value=night?1:0.45; var sky=new THREE.Mesh(new THREE.SphereGeometry(100,32,16), mat); s.add(sky);
     var gm=new THREE.MeshBasicMaterial({color:night?0x040404:0x4a4330}), gd=new THREE.Mesh(new THREE.CircleGeometry(100,24), gm); gd.rotation.x=-PI/2; gd.position.y=-4; s.add(gd);
     var pm=new THREE.PMREMGenerator(renderer); var rt=pm.fromScene(s, 0.02, 0.1, 400); pm.dispose();
     sky.geometry.dispose(); mat.dispose(); gd.geometry.dispose(); gm.dispose();
@@ -15575,7 +15638,9 @@ function stripSetNight(on){
   /* floodlights: a few spots riding the nearest poles; shadows only on Full/Ultra */
   STRIP.spots.forEach(function(sp){ S2.remove(sp); S2.remove(sp.target); if(sp.shadow&&sp.shadow.map) sp.shadow.map.dispose(); }); STRIP.spots=[];
   if(on){ for(var i=0;i<3;i++){ var sp=new THREE.SpotLight(0xfff0d8, 1.25, 110, 0.72, 0.65, 1.6); sp.castShadow=!lite; if(!lite){ sp.shadow.mapSize.set(512,512); sp.shadow.bias=-0.0025; sp.shadow.normalBias=0.06; sp.shadow.camera.near=2; sp.shadow.camera.far=130; }
-    S2.add(sp); S2.add(sp.target); STRIP.spots.push(sp); } }
+    S2.add(sp); S2.add(sp.target); STRIP.spots.push(sp); }
+    STRIP.spots[1].castShadow=false; }   /* v2: spots 0/1 are the cars' keys (stripKeySpots); only the player's casts a shadow */
+  STRIP.duskK=null;   /* v2: re-apply the dusk blend (and the stands' lights, the mirage) on top */
 }
 
 /* --- per-car helper data (tyre contact points, exhaust tips, engine, chute anchor), cached on rebuild --- */
@@ -15754,13 +15819,77 @@ function stripTreeLights(o){
 var _crM=new THREE.Matrix4();
 function stripCrowd(dt){
   var C=STRIP.crowd; if(!C) return; STRIP.cheer=Math.max(0,STRIP.cheer-dt*0.28);
-  if(STRIP.cheer<0.02 && !C.live) return;
+  if(STRIP.cheer<0.02 && !C.live && !C.wave) return;
   var t=STRIP.t, amp=STRIP.cheer, i;
   for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.04:0.3)?Math.abs(Math.sin(t*(amp>1?10:8)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
+    if(C.wave) y+=C.wy[i];
     _crM.makeTranslation(p[0],p[1]+0.31+y,p[2]); C.body.setMatrixAt(i,_crM); _crM.makeTranslation(p[0],p[1]+0.75+y*1.15,p[2]); C.head.setMatrixAt(i,_crM); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=STRIP.cheer>=0.02;
+  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=STRIP.cheer>=0.02||!!C.wave;
   if(amp>1 && STRIP.fxAdd){ var fr=(amp>1.8?70:35)*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);   /* a PB: phones and flashes going off in the stands */
     while(nf-->0){ var q=C.base[(Math.random()*C.n)|0]; STRIP.fxAdd.emit(q[0], q[1]+1.0, q[2]+0.3, 0,0,0, 0.16, 0.8, 1.1, 1, 0.97, 0.9, 1, {drag:0, fin:0.01}); } }
+}
+
+/* --- v2 world: dusk to dark across a race night, key lights on the cars, crowd pay-offs --- */
+/* nightK 0..1 (race nights: Q1 = 0 dusk … final = 1 full dark); missing = 1, i.e. plain night as before. Day ignores it. */
+function stripDusk(nk){
+  var k=(nk==null||!isFinite(+nk))?1:clamp(+nk,0,1), lite=GFX==="lite", key=(STRIP.night?1:0)+":"+k.toFixed(3); if(STRIP.duskK===key) return; STRIP.duskK=key;
+  var U=STRIP.sky.material.uniforms, d=STRIP.night?Math.pow(1-k,1.15):0; STRIP.dusk=d; U.uDusk.value=d;
+  STRIP_U.uHaze.value=(!STRIP.night && !lite)?1:0; STRIP_U.uCrowdLit.value=STRIP.night?0.16+0.06*(1-d):0;
+  var h=STRIP.night?STRIP_HOR_N:STRIP_HOR; STRIP_U.uHorC.value.setRGB(h[0],h[1],h[2]).multiplyScalar(0.9);
+  if(!STRIP.night) return;
+  var hn=STRIP_HOR_N, hd=STRIP_HOR_D; STRIP.horLin=new THREE.Color(lerp(hn[0],hd[0],d), lerp(hn[1],hd[1],d), lerp(hn[2],hd[2],d));
+  STRIP.sunDir=d>0.001?STRIP_DUSK_LIGHT:STRIP_MOON;
+  STRIP.sun.color.set(0x9fb2d6).lerp(new THREE.Color(0xff9a5c), d); STRIP.sun.intensity=lerp(0.14, 0.7, d);
+  STRIP.hemi.intensity=lerp(0.10, 0.24, d); STRIP.hemi.color.set(0x3a4764).lerp(new THREE.Color(0x9a86b4), d);
+  if(STRIP.beamMesh) STRIP.mats.beam.opacity=0.012*(1-0.7*d);
+  var env=stripEnv(true, d>0.45); if(env) STRIP.scene.environment=env;
+}
+/* night: two of the three spots become key lights riding above each car (no extra lights; shadowed only off Lite, as before) */
+function stripKeySpots(P, O){
+  var sp=STRIP.spots, i, cars=[P, O&&O.visible?O:null];
+  for(i=0;i<2;i++){ var L=sp[i], c=cars[i]; if(!L || !c) continue; var zs=c.position.z>=0?1:-1;
+    L.position.set(c.position.x+6, 15, zs*9.6); L.target.position.set(c.position.x+0.4, 0.4, c.position.z); L.target.updateMatrixWorld();
+    L.angle=0.27; L.penumbra=0.75; L.distance=50; L.intensity=0.95; }
+}
+/* the lit stands: each person glows in their own colour a little under the canopy lights */
+function stripCrowdLit(m){
+  m.onBeforeCompile=function(sh){ sh.uniforms.uCrowdLit=STRIP_U.uCrowdLit;
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform float uCrowdLit;").replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uCrowdLit;"); };
+  m.customProgramCacheKey=function(){ return "stripCrowdLit"; };
+}
+/* the crowd colour wave (the final, and won the night): cards up in a band that runs along the stands */
+var STRIP_CARDS=[0x1d4787,0xd9a52b,0xf3efe4].map(function(h){ return new THREE.Color(h).convertSRGBToLinear(); }), _wvC=new THREE.Color();
+function stripWave(t, off){
+  var C=STRIP.crowd; if(!C||!C.col) return; var n=C.n, i, col=C.body.instanceColor.array, base=C.col, wx=t*24, dirty=false;
+  for(i=0;i<n;i++){ var p=C.base[i], xx=p[2]<0?p[0]:(p[0]-272)*2.6-8, dx=((xx-wx)%75+112.5)%75-37.5, b=off?0:Math.exp(-dx*dx/14);   /* two bands, 75 m apart */
+    C.wy[i]=0.36*b;
+    if(b>0.004 || C.cw[i]>0){ var row=p[2]<0?Math.round((p[1]-0.57)/0.46):Math.round((p[1]-0.37)/0.56), cc=STRIP_CARDS[(row+(xx>60?1:0))%3];
+      col[i*3]=base[i*3]+(cc.r-base[i*3])*b; col[i*3+1]=base[i*3+1]+(cc.g-base[i*3+1])*b; col[i*3+2]=base[i*3+2]+(cc.b-base[i*3+2])*b; C.cw[i]=b>0.004?b:0; dirty=true; } }
+  if(dirty) C.body.instanceColor.needsUpdate=true;
+  if(off){ C.live=true; }   /* one more stripCrowd pass puts everyone back down */
+}
+function stripPayoffs(o, dt, P, O){
+  var ph=o.phase||"run", C=STRIP.crowd, lite=GFX==="lite", i;
+  STRIP_U.uTime.value=STRIP.t%600;
+  /* fresh rubber: the burnout leaves a shine in each lane's groove; tyres in the water ripple the box */
+  var burn=(o.burnout||ph==="burnout") && o.spin, sh=STRIP_U.uShine.value;
+  if(burn){ sh.x=Math.min(1, sh.x+dt*0.45); if(o.race && O && O.visible && Math.abs(O.position.x-P.position.x)<5) sh.y=Math.min(1, sh.y+dt*0.4); }
+  STRIP_U.uRip.value+=((burn?1:0)-STRIP_U.uRip.value)*Math.min(1, dt*(burn?4:0.8));
+  if(STRIP.honour) STRIP.honourT=(STRIP.honourT||0)+dt;
+  /* staged: the big burnout puffs (they grow to 4.8 m+) age 3x faster so the tree shot clears on every tier; the purge cloud is small and keeps its time */
+  if(ph==="staged" && STRIP.fx){ var FP=STRIP.fx.P; for(i=0;i<FP.length;i++) if(FP[i].s1>=4.5) FP[i].t+=dt*2; }
+  stripTitleDraw(false);
+  /* the wave: the final's burnout and staging, and the lap of honour */
+  var rd=STRIP.rn&&STRIP.rn.round, want=!!C && (!!STRIP.honour || (rd==="FINAL" && (ph==="burnout"||ph==="staged")));
+  if(C){ if(want){ C.wave=true; C.waveT=(C.waveT||0)+dt; if(!lite || (STRIP.waveSkip=!STRIP.waveSkip)) stripWave(C.waveT, false); }
+    else if(C.wave){ C.wave=false; C.waveT=0; stripWave(0, true); } }
+  /* flashbulbs on a win: the stands and the photographers along the wall past the stripe */
+  if((STRIP.flashT||0)>0 && C && STRIP.fxAdd){ STRIP.flashT=Math.max(0, STRIP.flashT-dt);
+    var fr=(STRIP.honour?(lite?70:140):(lite?40:70))*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);
+    while(nf-->0){ var x, y, z;
+      if(Math.random()<0.45){ x=STRIP_Q-6+Math.random()*48; z=(Math.random()<0.5?-1:1)*(8.4+Math.random()*1.2); y=1.3+Math.random()*0.6; }
+      else { var q=C.base[(Math.random()*C.n)|0]; x=q[0]; y=q[1]+1.0; z=q[2]+(q[2]<0?0.3:-0.3); }
+      STRIP.fxAdd.emit(x, y, z, 0,0,0, 0.14, 0.6, 0.85, 1, 0.98, 0.93, 1, {drag:0, fin:0.01}); } }
 }
 
 /* --- camera direction: a cut list, not a lerp between distant spots --- */
@@ -15874,7 +16003,8 @@ function stripReset(){
   if(STRIP.marks){ STRIP.marks.n=0; STRIP.marks.i=0; STRIP.marks.mesh.count=0; }
   STRIP.shot=null; STRIP.prev={}; STRIP.tm=null; STRIP.shake=0; STRIP.flashI=0; if(STRIP.flash) STRIP.flash.intensity=0; if(STRIP.heatPass) STRIP.heatPass.enabled=false;
   STRIP.cheer=0; STRIP.pb=0; STRIP.pbCut=0; if(STRIP.crowd && STRIP.crowd.live) stripCrowd(0);
-  STRIP.win=0; STRIP.rn=null;
+  STRIP.win=0; STRIP.rn=null; STRIP.wonFx=0; STRIP.flashT=0; STRIP.honour=0; STRIP.honourT=0; STRIP_U.uShine.value.set(0,0); STRIP_U.uRip.value=0;
+  if(STRIP.crowd && STRIP.crowd.wave){ STRIP.crowd.wave=false; stripWave(0, true); stripCrowd(0); }
   ["p","o"].forEach(function(k){ var c=STRIP.cars[k]; if(c){ c.userData._markLast=[]; } });
 }
 
@@ -15882,6 +16012,7 @@ function stripUpdate(o, dt, rdt){
   if(!STRIP.built) buildStripScene();
   var S2=STRIP.scene; STRIP.t+=dt; if(rdt===undefined) rdt=dt;
   if(STRIP.tier!==GFX || STRIP.night!==!!o.night) stripSetNight(!!o.night);
+  stripDusk(o.nightK);
   /* v2: o.hw = what your engine carries (scoop / blower / turbos / intercooler, diesel, ALS, nitrous); o.opp = the other lane's
      own car {color, hw:{...style}}. Both optional: without them the cars are the v1.5 ones (charcoal mirror opponent). */
   var CS=STRIP.cars, hwK=o.hw===CS.hwRef?CS.hwK:(o.hw?JSON.stringify(o.hw):""), opK=o.opp===CS.opRef?CS.opK:(o.opp?JSON.stringify(o.opp):""), liteK=(hwK||opK)?GFX==="lite":false;
@@ -15912,6 +16043,7 @@ function stripUpdate(o, dt, rdt){
   stripEffects(o, dt, P, O);
   stripN2O(o, dt, P);
   stripTreeLights(o);
+  stripPayoffs(o, dt, P, O);
   stripCrowd(dt);
   stripDirect(o, dt, P, O);
   stripHeat(o, P);
@@ -15921,7 +16053,8 @@ function stripUpdate(o, dt, rdt){
   var sun=STRIP.sun; sun.position.copy(c).addScaledVector(STRIP.sunDir, 130); sun.target.position.copy(c); sun.target.updateMatrixWorld();
   if(STRIP.flood.intensity>0){ STRIP.flood.position.set(c.x-30, 60, 40); STRIP.flood.target.position.copy(c); STRIP.flood.target.updateMatrixWorld(); }
   if(STRIP.spots.length){ var poles=STRIP.poles.slice().sort(function(a,b){ return Math.abs(a.x-c.x-4)-Math.abs(b.x-c.x-4); });
-    STRIP.spots.forEach(function(sp,i){ var pl=poles[i]; if(!pl) return; sp.position.copy(pl); sp.target.position.set(pl.x+8, 0, pl.z*0.15); sp.target.updateMatrixWorld(); }); }
+    STRIP.spots.forEach(function(sp,i){ var pl=poles[i]; if(!pl) return; sp.position.copy(pl); sp.target.position.set(pl.x+8, 0, pl.z*0.15); sp.target.updateMatrixWorld(); });
+    stripKeySpots(P, O); }
   STRIP.prev={phase:ph, chute:!!o.chute, shifting:!!o.shifting, failed:!!o.failed};
 }
 
@@ -17748,9 +17881,12 @@ const ENGINE_VIS = {
   stripN2O: function(s){ STRIP.n2oSt=s||null; },   /* strip car nitrous: {purge 0..1, n2o 0..1, cut, phase} */   /* engine view: puff the nitrous purge for sec seconds */
   hasPurge: function(){ return !!(N2O_PURGE && N2O_PURGE.parent); },
   skipCut: function(){ if(STRIP.shot==="crowd") STRIP.pbCut=2; },   /* a tap during the crowd cut goes back to the car */
-  /* race night: extra fields merged into every setStrip frame {round, pdial, odial, otree:{a1,a2,a3,green}, ort, oet, omph, ofoul, win}; null clears */
+  /* race night: extra fields merged into every setStrip frame {round, nightK (v2: 0 dusk at Q1 .. 1 dark at the final), pdial, odial, otree:{a1,a2,a3,green}, ort, oet, omph, ofoul, win}; null clears */
   stripRace: function(x){ STRIP.rn=x||null; },
-  stripWin: function(){ STRIP.win=1; STRIP.pbCut=0; STRIP.cheer=Math.max(STRIP.cheer, 2.6); },   /* won the night: the stands come up and the camera cuts to them */
+  stripWin: function(){ STRIP.win=1; STRIP.pbCut=0; STRIP.cheer=Math.max(STRIP.cheer, 2.6); STRIP.honour=1; STRIP.honourT=0; STRIP.flashT=Math.max(STRIP.flashT||0, 9); },   /* won the night: the stands come up, the camera cuts to them, honour starts */
+  /* v2: STRIP.honour is 1 from "WON THE NIGHT" until the next burnout or leaving the strip (STRIP.honourT counts seconds); C's camera reads it.
+     No argument: report (harness). */
+  stripHonour: function(){ return {honour:STRIP.honour||0, t:+(STRIP.honourT||0).toFixed(2), wave:!!(STRIP.crowd&&STRIP.crowd.wave), flashT:+(STRIP.flashT||0).toFixed(2), dusk:STRIP.dusk==null?null:+STRIP.dusk.toFixed(3)}; },
   /* race night pits, between rounds: {on, body, color, tyreIn, nightK 0..1 (dusk to full dark), heat 0..1 (hot-tyre smoke, fades by itself),
      poke ("launch"|"first"|"final"|"psi"|"shocks"|"wear"|"dial": the crew works on that end)}; {on:false} leaves. Lite draws a still. */
   setPits: function(o){
@@ -18612,7 +18748,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.29.0.0";
+const VERSION="1.30.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -19874,6 +20010,8 @@ function oppTrace(tr,cut,dec,tEnd){const out=[];let last=null,prev=null;
   for(const p of tr){if(p[0]>cut)break;out.push(p);prev=last;last=p;}
   if(!last)return[[0.05,0],[1,0]];let v=last[2]!=null?last[2]/2.23694:prev?(last[1]-prev[1])/Math.max(0.01,last[0]-prev[0]):10,x=last[1],t=last[0];   // [2] mph when the trace carries it (dragPass)
   while(v>1&&t<tEnd){t+=0.1;v=Math.max(0,v-dec*0.1);x+=v*0.1;out.push([+t.toFixed(2),+x.toFixed(1)]);}return out;}
+/* race-night darkness for a stage, shared by the strip and the pits: Q1 dusk (0) to the final full dark (1); night mode on = dark all night */
+function rnNightK(stage){return S.night?1:Math.min(1,(stage||0)/4);}
 function rnStageName(N,s){return N.fmt==="bracket"&&s<2?RN_TT[s]:RN_STAGE[s];}
 function rnOppIdx(N){if(N.stage<2)return N.qopp[N.stage];const m=N.rounds[N.stage-2].find(x=>x.a===0||x.b===0);return m?(m.a===0?m.b:m.a):1;}
 function rnSuggest(N){const p=(N.passes||[]).filter(x=>x.et!=null&&!x.dq).slice(-1)[0];const et=p?p.et:N.et0;return Math.floor((et-0.01)*100)/100;}
@@ -19917,7 +20055,7 @@ function rnFrame(now,st,dtT){const R=DR.race,n=DR.night;if(!R||!n)return;
   const g0=R.ogreen!=null?R.ogreen:R.green,dO=R.otree0!=null?(now-R.otree0)/1000:dtT,ox=oppX(now),left=g0!=null&&(now-g0)/1000>=R.rt||(R.ofoul&&ox>0.3);
   if(n.verdict==null&&(st.phase==="shutdown"||st.phase==="done")&&st.t>0){n.verdict=rnJudgePass(n,st);
     if(n.stage>=2&&n.verdict.win&&n.stage===4){n.cheer=true;ENGINE_VIS.stripWin&&ENGINE_VIS.stripWin();buzz([30,40,30,40,90]);}}
-  ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace({round:n.label,pdial:n.dialP,odial:n.dialO,otree:R.otree0!=null?{a1:dO>=0,a2:dO>=0.5,a3:dO>=1.0,green:dO>=1.5}:undefined,
+  ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace({round:n.label,nightK:rnNightK(n.stage),pdial:n.dialP,odial:n.dialO,otree:R.otree0!=null?{a1:dO>=0,a2:dO>=0.5,a3:dO>=1.0,green:dO>=1.5}:undefined,
     ort:left?R.rt:undefined,ofoul:!!(R.ofoul&&left),oet:R.et!=null&&ox>=402.336?R.et:undefined,omph:R.et!=null&&ox>=402.336?R.mph:undefined,win:n.verdict&&n.stage>=2?!!n.verdict.win:undefined});}
 function rnJudgePass(n,st){const R=DR.race,q=st.marks.find(m=>m.n==="1/4 mi"),bars=(SIM.AERO[DR.veh.body]||{}).bars;
   const rr=rnRng(rnHash(n.label+":"+(R.rt0||0)+":"+Math.round(st.x)));const pq=Math.min(0.8,(bars?0:Math.max(0,(st.wheelieT-0.35)*1.2))+Math.max(0,((st.shakeT||0)-0.25)*1.0));
@@ -20080,7 +20218,7 @@ function pitsSync(){if(!ENGINE_VIS.setPits)return;let ov=$("pitsOv");
   ov.hidden=false;$("app").classList.add("pits");
   const np=(N.passes||[]).length;if(np!==pitsPass.n){pitsPass={n:np,t:pitsPass.n>=0&&np>0?Date.now():0};}   // just off the strip: hot tyres
   const veh=rnVeh(dragVeh());
-  ENGINE_VIS.setPits({on:true,body:N.body,color:carPaint(),hw:stripHw(S.cfg),tyreIn:veh.tyreDia,nightK:Math.min(1,N.stage/4),
+  ENGINE_VIS.setPits({on:true,body:N.body,color:carPaint(),hw:stripHw(S.cfg),tyreIn:veh.tyreDia,nightK:rnNightK(N.stage),
     heat:pitsPass.t?Math.max(0,1-(Date.now()-pitsPass.t)/90000):0,poke:pitsPokeK});pitsPokeK=null;
   const T=pitsTags();if(pitsSel&&!T.some(x=>x.k===pitsSel))pitsSel=null;
   const key=JSON.stringify(T.map(x=>[x.k,x.v]))+"|"+pitsSel+"|"+N.stage+"|"+((T.find(x=>x.k===pitsSel)||{}).wi?$("envBox").querySelector('[data-rn="freshen"]')?1:0:"");
