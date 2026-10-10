@@ -23,7 +23,6 @@
 :root[data-theme=light] #view,:root[data-theme=light] #intro{--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--rule:#343941;--good:#4fc08d;--crit:#e2473c;--info:#5fa8e6}
 :root[data-theme=light] .seg button.on{background:linear-gradient(180deg,rgba(232,98,10,.16),rgba(232,98,10,.05));color:var(--chalk)}
 :root[data-theme=light] #toast{background:#1b1a17;color:#f0ece2}
-:root[data-theme=light] .btn.pri{color:#fff}
 :root[data-theme=light] .money div,:root[data-theme=light] .cstat{background:var(--panel2)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -194,8 +193,8 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .btn:active{transform:translateY(1px);filter:brightness(1.15)}
 .btn.pri{--hb:#ff9a45;--hb2:#e8620a;--hs:#ffd8a8;--ht:var(--hud-ink);text-shadow:0 0 6px rgba(255,255,255,.35)}
 .btn.ok{--hb:#4fd48c;--hb2:#1f8f52;--hs:#c8ffe0;--ht:#04140b}
-.btn.danger{--hb:#ef5a4a;--hb2:#a8261c;--hs:#ffc9c2;--ht:#fff}
-.btn.info{--hb:#4f9be6;--hb2:#215fa8;--hs:#c9e3ff;--ht:#fff}
+.btn.danger{--hb:#d03f2f;--hb2:#a8261c;--hs:#ffc9c2;--ht:#fff}
+.btn.info{--hb:#2f74c4;--hb2:#215fa8;--hs:#c9e3ff;--ht:#fff}
 .btn[disabled]{opacity:.42;cursor:default;filter:saturate(.4)}
 .btn.sm{width:auto;padding:9px 12px;font-size:12.5px;letter-spacing:.06em;clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,7px 100%,0 calc(100% - 7px),0 7px)}
 .btn.ghost{--hb:transparent;--hb2:transparent;--hs:rgba(255,255,255,.18);--ht:var(--chalk);box-shadow:inset 0 0 0 1px var(--rule)}
@@ -3886,7 +3885,7 @@ const ENGINE_SIM = (function () {
           "The " + di.name + " keeps up to about " + di.rpmMax.toLocaleString("en-US") + " rpm; above that every stroke gets less fuel and the burn runs out of time, so the power falls away. The last " + Math.round(cfg.redline - di.rpmMax) + " rpm is mostly noise.");
       if (dfq.injUtil > 1)
         add("info", "Injection pump on its stop",
-          "At " + dfq.qRpm + " rpm the tune asks for " + Math.round(dfq.qDem) + " mm\u00b3 a stroke and the " + di.name + " with " + nz.name.toLowerCase() + " can push about " + Math.round(dfq.qCap) + ". On a diesel that just caps the power \u2014 bigger nozzles are how you get past it.");
+          "At " + dfq.qRpm + " rpm the tune asks for " + Math.round(dfq.qDem) + " mm\u00b3 a stroke and the " + di.name + " with " + nz.name.toLowerCase() + " can push about " + Math.round(dfq.qCap) + ". On a diesel that just caps the power \u2014 bigger nozzles are how you get past it." + (() => { const ff = fitFuel(cfg); return ff.dInj === cfg.dInj && ff.dNoz === cfg.dNoz ? "" : " The smallest set that feeds it with margin: the " + OPT.dInj[ff.dInj].name + " with " + OPT.dNoz[ff.dNoz].name.toLowerCase() + "."; })());
       if (dfq.pumpUtil > 1)
         add("bad", "The lift pump can't keep up",
           "The " + OPT.fuelPump[cfg.fuelPump].short + " lifts about " + Math.round(dfq.capLph) + " L/h and the injection pump wants " + Math.round(dfq.needLph) + " L/h, burn plus return. A starved injection pump runs dry and scores its plungers." + " The smallest one that feeds it: the " + OPT.fuelPump[fitFuel(cfg).fuelPump].short + ".");
@@ -4132,15 +4131,32 @@ const ENGINE_SIM = (function () {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     const ik = Object.keys(OPT.injectors), pk = Object.keys(OPT.fuelPump);
     if (isDiesel(cfg)) {
-      // a diesel has no port injectors: size the lift pump (burn plus return flow) and leave the rest alone
-      const rd = simulate(Object.assign({}, cfg, { fuelPump: pk[pk.length - 1] }), env || DEFAULT_ENV);
+      // a diesel has no port injectors: size the injection system and nozzles (mm3 a stroke at or under 0.8 of what they push),
+      // then the lift pump (burn plus return flow). The build's own injection system is kept if some nozzle size feeds it.
+      const dk = Object.keys(OPT.dInj), nk = Object.keys(OPT.dNoz).sort((a, b) => OPT.dNoz[a].mult - OPT.dNoz[b].mult), e0 = env || DEFAULT_ENV;
+      const qU = (di, nz) => simulate(Object.assign({}, cfg, { dInj: di, dNoz: nz, fuelPump: pk[pk.length - 1] }), e0).fuel.injUtil;
+      const own = OPT.dInj[cfg.dInj] ? cfg.dInj : DEFAULT_CFG.dInj;
+      const order = [own].concat(dk.filter(k => k !== own).sort((a, b) => OPT.dInj[a].cost - OPT.dInj[b].cost));
+      const ownN = OPT.dNoz[cfg.dNoz] ? cfg.dNoz : DEFAULT_CFG.dNoz;
+      let dI = null, dN = null, bestU = Infinity, bestI = own, bestN = nk[nk.length - 1];
+      if (qU(own, ownN) <= 0.8) { dI = own; dN = ownN; }   // already feeds it: keep the build's own parts
+      else for (const di of order) {
+        for (const nz of nk) {
+          const u = qU(di, nz);
+          if (u <= 0.8) { dI = di; dN = nz; break; }
+          if (nz === nk[nk.length - 1] && u < bestU) { bestU = u; bestI = di; bestN = nz; }   // nothing fits: remember the closest
+        }
+        if (dI) break;
+      }
+      if (!dI) { dI = bestI; dN = bestN; }
+      const rd = simulate(Object.assign({}, cfg, { dInj: dI, dNoz: dN, fuelPump: pk[pk.length - 1] }), e0);
       let lp = pk[pk.length - 1];
       for (const k of pk) {
         let worst = 0;
         for (let i = 0; i < rd.rpms.length; i++) worst = Math.max(worst, rd.fuel.lph[i] * DSL_RETURN / pumpLphAt(OPT.fuelPump[k], rd.rpms[i], 0));
         if (worst / PUMP_MAX <= 0.8) { lp = k; break; }
       }
-      return { injectors: cfg.injectors, fuelPump: lp };
+      return { injectors: cfg.injectors, fuelPump: lp, dInj: dI, dNoz: dN };
     }
     if (isGas(cfg)) {
       // propane / CNG: the injectors and pump are not in the circuit; size the gas system that meters it
