@@ -363,6 +363,7 @@ div.up.owned .price{color:var(--good)}
 .card.brief .req .rl{min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .card.brief .req .rl b{font-weight:500;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.brief .req .rl i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.brief .req.rq-road .rl i{white-space:normal}
 .card.brief .req.no .rl b{color:var(--crit)}
 .card.brief .req .rb{height:6px;background:var(--soot);border-radius:2px;overflow:hidden;position:relative}
 .card.brief .req .rb i{position:absolute;left:0;top:0;bottom:0;background:var(--good);border-radius:2px}
@@ -15805,7 +15806,7 @@ function renderShop(){
   if(!C().cat||!catOpen(CATS.find(c=>c.id===C().cat)||CATS[0]))C().cat="prod";
   const cardH=(k,mode)=>{const lf=liveFit(k);const failing=lf.o.filter(q=>!q.ok).length;const fix=(!lf.ok&&failing<=3)?oneChange(k):null;
     const f=cert?fits(k,cert.res,cert.cfg):null;const d=deal(k,f||lf);const unit=d.unit;const cost=f?cert.res.cost:live.cost;const profit=(unit-cost)*d.units;
-    const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
+    const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}${q.q==="lap"||q.q==="zero100"?" rq-road":""}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
     const status=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):`<div class="cstat off">◐ OFF BRIEF · ${d.want?`they'd take ${d.units} of ${k.units} at ${Math.round(Math.pow(d.m,0.7)*100)}%`:"too far off — they'd walk"} <small>${missTxt(d)}</small>${fix?`<span>Full price with one change: <b>${fix.label}</b></span>`:""}</div>`;
     const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;const sc=siteCard(k,lf);
     const btn=mode==="active"
