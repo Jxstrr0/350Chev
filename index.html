@@ -362,6 +362,7 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 #pitsOv .psc .psw{font-size:13px;padding:0 14px;font-family:var(--display);letter-spacing:.04em;border-color:var(--orange);color:var(--orange2)}
 #pitsOv .psn{font-size:13px;color:var(--pm);min-height:44px;display:flex;align-items:center}
 html:not(.desk) #pitsOv .pt>span{flex-direction:row;align-items:baseline;gap:6px;padding:3px 8px}
+html:not(.desk) #pitsOv .psr.half{gap:4px}html:not(.desk) #pitsOv .psr.half i{min-width:0}html:not(.desk) #pitsOv .psr.half b{min-width:40px;font-size:13px}
 html.desk #pitsOv .pcap{left:18px;bottom:16px;font-size:12px}
 html.desk #pitsOv .pstep{bottom:16px}
 html.desk #pitsOv .pt b{font-size:14px}
@@ -19137,7 +19138,7 @@ function pitsTags(){const q=s=>$("envBox").querySelector(s),T=[];
   const dl=q(".rnt.dial");if(dl)T.push({k:"dial",t:"Dial-in",v:dl.querySelector("b").textContent,dial:1});
   return T;}
 function pitsStepHtml(x){const fw=(s,lbl,aria)=>`<button data-fw='${s}' aria-label="${aria}">${lbl}</button>`;
-  const nud=(r,full)=>`<div class="psr${full?"":" half"}">${full?"":`<i>${r.lbl}</i>`}${fw(`[data-rn="tune"][data-k="${r.k}"][data-d="-1"]`,"−","less")}<b>${r.val}</b>${fw(`[data-rn="tune"][data-k="${r.k}"][data-d="1"]`,"+","more")}</div>`;
+  const nud=(r,full)=>`<div class="psr${full?"":" half"}">${full?"":`<i>${r.lbl}</i>`}${fw(`[data-rn="tune"][data-k="${r.k}"][data-d="-1"]`,"−","less")}<b>${full?r.val:r.val.replace(":1","")}</b>${fw(`[data-rn="tune"][data-k="${r.k}"][data-d="1"]`,"+","more")}</div>`;
   let sub="",c="";
   if(x.rows&&x.rows.length===1){sub=x.rows[0].sub;c=nud(x.rows[0],1);}
   else if(x.rows){sub="shorter = harder hit";c=x.rows.map(r=>nud(r,0)).join("");}
