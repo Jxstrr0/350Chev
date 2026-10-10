@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.27.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.28.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -109,6 +109,11 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 .seg.n11 button,.seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .seg.n8 button{flex:1 1 22%}
 .seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
+.paints{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+.paints button{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:2px solid var(--rule);background:var(--panel);padding:5px;cursor:pointer}
+.paints button i{display:block;width:100%;height:100%;border-radius:50%;box-shadow:inset 0 -4px 7px rgba(0,0,0,.38),inset 0 2px 3px rgba(255,255,255,.25)}
+.paints button.cov i{outline:2px dashed var(--muted);outline-offset:-9px}
+.paints button.on{border-color:var(--orange);box-shadow:0 0 0 2px rgba(255,122,26,.35)}
 .seg button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06));color:#fff}
 .seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center;hyphens:none;overflow-wrap:normal}
 .seg button .d{display:block;width:100%;height:14px;flex:0 0 14px;font-family:var(--mono);font-size:10px;line-height:14px;margin-top:4px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:clip;letter-spacing:0}
@@ -14197,10 +14202,11 @@ function buildStripScene(){
 var SC = { geo:{}, tex:{}, mat:null, paint:{}, env:null };
 var SC_F = ["zb","ys","yt","w","wt","cr"];
 var _scA=new THREE.Vector3(), _scB=new THREE.Vector3(), _scC=new THREE.Vector3(), _scX=new THREE.Vector3(1,0,0), _scY=new THREE.Vector3(0,1,0), _scO=new THREE.Vector3();
-function stripCar(body, color, tyreIn){
+function stripCar(body, color, tyreIn, hw){
   if(body!=="outlaw" && body!=="promod" && body!=="rail") body="street";
   var tIn=clamp(+tyreIn||({street:27,outlaw:30,promod:33,rail:36})[body], 20, 40);
-  var P=sc_pack(body, Math.round(tIn*4)/4), M=sc_mats(), me=P.meta;
+  var H=sc_hw(hw, body);
+  var P=sc_pack(body, Math.round(tIn*4)/4, H), M=sc_mats(), me=P.meta;
   var paint=sc_paint(color===undefined?0xa32a26:color);
   var tail=new THREE.MeshStandardMaterial({color:sc(0x4a0707), roughness:0.25, metalness:0.1, emissive:new THREE.Color(0xff1a0a), emissiveIntensity:0});
   var head=new THREE.MeshStandardMaterial({color:sc(0xc9ced4), roughness:0.12, metalness:0.55, emissive:new THREE.Color(0xfff1d8), emissiveIntensity:0});
@@ -14230,7 +14236,7 @@ function stripCar(body, color, tyreIn){
   var chute=sc_chute(me, M); chute.position.copy(me.anchor); chute.visible=false; inner.add(chute);
   var tips=[], dirs=[], tipR=[], dirR=[];
   for(var t=0;t<me.tips.length;t++){ tips.push(me.tips[t].clone()); dirs.push(me.dirs[t].clone()); tipR.push(me.tips[t].clone().add(inner.position)); dirR.push(me.dirs[t].clone()); }
-  g.userData={ body:body, rr:me.rr, fr:me.fr, wheels:wheels, carriers:carriers, chute:chute, exhaustTips:tips, exhaustDirs:dirs,
+  g.userData={ body:body, hw:H, rr:me.rr, fr:me.fr, wheels:wheels, carriers:carriers, chute:chute, exhaustTips:tips, exhaustDirs:dirs,
     chuteAnchor:me.anchor.clone(), lights:lights, bodyGroup:bodyG, meta:me, paint:paint, lampMats:{tail:tail, head:head}, liv:liv,
     anim:{ pitch:0, pv:0, sq:0, sqv:0, roll:0, lastV:0, accF:0, shifting:false, chT:0, chC:0, chS:0, tailI:-1, headI:-1,
       tipRest:tipR, dirRest:dirR, anchorRest:me.anchor.clone().add(inner.position) } };
@@ -14250,7 +14256,7 @@ function stripCarAnim(car, o, dt, isPlayer){
   else { if(dt>0){ var ea=(v-A.lastV)/dt; if(ea>60) ea=60; if(ea<-60) ea=-60; A.accF+=(ea-A.accF)*Math.min(1,dt*5); } acc=A.accF; }
   A.lastV=v;
   var spin = isPlayer ? !!o.spin : !!o.ospin;
-  var burn = isPlayer && !!o.burnout;
+  var burn = isPlayer ? !!o.burnout : !!o.oburn;
   /* wheels */
   var wr=v/U.rr*(spin?1.4:1), wf=v/me.fr;
   if(burn && wr<75) wr=75;
@@ -14728,13 +14734,55 @@ function sc_chute(me, M){
   return g;
 }
 
+/* --- v2: what the car carries -----------------------------------------------
+   hw (optional, from setStrip): {asp:"na"|"turbo"|"twin"|"blower"|"centri", ic, als, n2o, diesel, style}
+   style (door cars): "coupe" (the 90s shell, default) | "muscle" | "hatch" | "truck". No hw = the v1.5 cars exactly. */
+function sc_hw(hw, body){
+  if(!hw || typeof hw!=="object") return null;
+  var a=String(hw.asp||"na"); if(!/^(na|turbo|twin|blower|centri)$/.test(a)) a="na";
+  var st=String(hw.style||"coupe"); if(body==="promod"||body==="rail"||!SC_STYLE[st]) st="coupe";
+  var H={asp:a, ic:!!hw.ic && a!=="na" && a!=="blower", als:!!hw.als && (a==="turbo"||a==="twin"), n2o:!!hw.n2o, diesel:!!hw.diesel, style:st, lite:GFX==="lite"};
+  H.boost=a!=="na"; H.turbo=(a==="turbo"||a==="twin");
+  H.key=[a, H.ic?1:0, H.diesel?1:0, st, H.lite?1:0].join(",");
+  return H;
+}
+/* door-car shells: loft rows (see sc_def) + where the glass, wheels and hood hardware go */
+var SC_STYLE={
+  coupe:{xr:-1.28, xf:1.27, roofF:0.18, cowl:0.98, roofR:-0.5, deck:-1.62, dG0:-0.52, qG0:-1.12, hx:1.3},
+  muscle:{xr:-1.32, xf:1.42, roofF:0.06, cowl:0.72, roofR:-0.6, deck:-1.12, dG0:-0.42, qG0:-0.95, hx:1.36, rows:[
+    [-2.36,.30,.85,.89,.86,.82,.02],[-2.28,.24,.92,.965,.89,.85,.02],[-1.85,.21,.93,.985,.90,.86,.03],[-1.42,.20,.935,1.0,.905,.82,.04],
+    [-1.08,.19,.935,1.16,.905,.70,.05],[-0.62,.19,.935,1.285,.905,.645,.05],[0.06,.19,.935,1.295,.905,.645,.05],[0.46,.19,.935,1.09,.905,.77,.04],
+    [0.72,.19,.93,.975,.905,.845,.03],[1.40,.20,.92,.96,.90,.86,.02],[2.02,.22,.90,.935,.89,.85,.02],[2.30,.25,.84,.875,.86,.82,.02],[2.40,.31,.73,.76,.80,.76,.02]]},
+  hatch:{xr:-1.2, xf:1.2, roofF:0.06, cowl:0.84, roofR:-1.42, deck:-1.86, dG0:-0.42, qG0:-1.3, hx:1.24, spoilerRoof:true, rows:[
+    [-1.98,.33,.84,.93,.80,.74,.02],[-1.92,.26,.88,1.04,.84,.77,.03],[-1.78,.22,.89,1.17,.85,.71,.04],[-1.45,.20,.90,1.29,.86,.645,.05],
+    [-0.60,.20,.91,1.33,.865,.625,.05],[0.06,.20,.91,1.30,.865,.64,.05],[0.55,.20,.905,1.06,.86,.74,.04],[0.84,.20,.89,.93,.855,.80,.03],
+    [1.35,.21,.85,.885,.85,.80,.03],[1.82,.24,.74,.765,.82,.76,.02],[1.98,.30,.62,.64,.76,.70,.02]]},
+  truck:{xr:-1.42, xf:1.36, roofF:0.14, cowl:0.86, roofR:-0.52, deck:-0.74, dG0:-0.4, qG0:null, hx:1.4, bed:true, rows:[
+    [-2.30,.36,.86,.90,.84,.80,.02],[-2.24,.30,.90,.95,.86,.83,.02],[-1.90,.26,.91,.955,.87,.84,.02],[-0.86,.24,.915,.955,.87,.84,.02],
+    [-0.70,.23,.92,1.36,.87,.60,.04],[-0.55,.22,.92,1.41,.87,.62,.05],[0.14,.21,.92,1.41,.87,.62,.05],[0.55,.20,.915,1.14,.87,.74,.04],
+    [0.86,.20,.905,.985,.865,.81,.03],[1.40,.21,.89,.95,.86,.82,.03],[1.95,.24,.82,.855,.85,.80,.02],[2.16,.30,.72,.74,.82,.76,.02]]}
+};
+/* a forward-facing compressor inlet (turbo / centrifugal through the grille) */
+function sc_bell(B, x, y, z, r){
+  B.add("chrome", new THREE.CylinderGeometry(r, r*0.82, 0.16, 16, 1, true), sc_M(x, y, z, 0,0,-PI/2));
+  B.add("chrome", new THREE.TorusGeometry(r*1.02, r*0.12, 6, 18), sc_M(x+0.08, y, z, 0,PI/2,0));
+  B.add("well", new THREE.CircleGeometry(r*0.9, 14), sc_M(x+0.02, y, z, 0,PI/2,0));
+}
+/* front-mount intercooler in the lower grille */
+function sc_ic(B, x, y, w, h){
+  B.add("alu", sc_rbox(0.05, h, w, 0.008), sc_M(x+0.02, y, 0));
+  B.add("satin", sc_rbox(0.03, h*0.92, w*0.11, 0.008), sc_M(x+0.035, y, w*0.47));
+  B.add("satin", sc_rbox(0.03, h*0.92, w*0.11, 0.008), sc_M(x+0.035, y, -w*0.47));
+  for(var i=0;i<3;i++) B.add("black", sc_rbox(0.012, 0.006, w*0.8, 0.002), sc_M(x+0.047, y-h*0.3+i*h*0.3, 0));
+}
+
 /* --- body packs (cached geometry per body + tyre) --------------------------- */
-function sc_pack(body, tIn){
-  var key=body+"|"+tIn; if(SC.geo[key]) return SC.geo[key];
+function sc_pack(body, tIn, H){
+  var key=body+"|"+tIn+(H?"|"+H.key:""); if(SC.geo[key]) return SC.geo[key];
   var rr=tIn*0.0254/2, B=sc_bin(), me, res={parts:{}, decals:[], tail:null, head:null};
   var tails=[], heads=[];
-  if(body==="rail") me=sc_rail(B, rr, tails, heads, res);
-  else me=sc_door(B, body, rr, tails, heads, res);
+  if(body==="rail") me=sc_rail(B, rr, tails, heads, res, H);
+  else me=sc_door(B, body, rr, tails, heads, res, H, tIn);
   for(var k in B) if(k!=="add" && B[k].length) res.parts[k]=sc_merge(B[k]);
   if(tails.length) res.tail=sc_merge(tails);
   if(heads.length) res.head=sc_merge(heads);
@@ -14742,12 +14790,59 @@ function sc_pack(body, tIn){
 }
 function sc_decal(res, g, kind){ res.decals.push({g:g, kind:kind||"door"}); }
 
+/* v2 hood by aspiration: blower through the hood; NA street = cowl induction, outlaw = scoop, promod = tall scoop;
+   boosted = a low bulge (street / outlaw) or a flat carbon hood (promod: the turbos show in the grille) */
+function sc_hoodKind(H, body){
+  if(!H) return body==="outlaw"?"scoop":body==="promod"?"blower":"none";
+  if(H.asp==="blower") return "blower";
+  if(H.asp==="na") return body==="street"?"cowl":body==="outlaw"?"scoop":"tall";
+  return body==="promod"?"none":"bulge";
+}
+function sc_doorHw(B, D, H, kind, body, hx, hood, slope, cowl, cF, gates){
+  var P={}, st=body==="street", pm=body==="promod", hat=null, i;
+  if(kind==="blower"){
+    B.add("alu", sc_rbox(0.62,0.2,0.34,0.03), sc_M(hx, hood+0.06, 0));
+    B.add("satin", sc_rbox(0.66,0.04,0.38,0.012), sc_M(hx, hood+0.17, 0));
+    B.add("black", sc_rbox(0.5,0.03,0.4,0.01), sc_M(hx, hood-0.02, 0));
+    for(i=0;i<5;i++) B.add("satin", sc_rbox(0.012,0.12,0.36,0.004), sc_M(hx-0.24+i*0.12, hood+0.07, 0));   /* case ribs */
+    B.add(pm?"carbon":"alu", sc_prof([[0.2,0],[0.24,0.26],[0.08,0.3],[-0.22,0.24],[-0.22,0]], 0.3, 0.015), sc_M(hx+0.02, hood+0.19, 0));
+    B.add("well", sc_rbox(0.02,0.18,0.22,0.01), sc_M(hx+0.235, hood+0.33, 0, 0,0,0.15));
+    hat=new THREE.Vector3(hx+0.05, hood+0.5, 0);
+  } else if(kind==="scoop"){
+    B.add("paint", sc_prof([[0.45,0],[0.3,0.07],[0.0,0.12],[-0.42,0.13],[-0.5,0.02],[-0.5,0]], 0.66, 0.02), sc_M(hx, hood-0.01, 0, 0,0,slope));
+    B.add("well", sc_rbox(0.02,0.09,0.54,0.01), sc_M(hx-0.515, hood+0.065, 0, 0,0,slope));
+  } else if(kind==="tall"){
+    B.add("carbon", sc_prof([[0.34,0],[0.26,0.3],[-0.12,0.33],[-0.36,0.05],[-0.36,0]], 0.34, 0.02), sc_M(hx, hood-0.01, 0));
+    B.add("well", sc_rbox(0.02,0.16,0.26,0.01), sc_M(hx+0.3, hood+0.2, 0, 0,0,0.27));
+    hat=new THREE.Vector3(hx+0.2, hood+0.38, 0);
+  } else if(kind==="cowl" || kind==="bulge"){
+    var cx=cowl+(kind==="cowl"?0.42:0.5); sc_params(D, cx, P); var cy=P.yt, hgt=kind==="cowl"?0.075:0.05;
+    B.add("paint", sc_prof([[0.5,0],[0.25,hgt*0.8],[-0.25,hgt],[-0.38,hgt*0.9],[-0.4,0]], kind==="cowl"?0.56:0.74, 0.02), sc_M(cx, cy-0.012, 0, 0,0,slope*0.5));
+    if(kind==="cowl") B.add("well", sc_rbox(0.015,hgt*0.7,0.46,0.006), sc_M(cx-0.395, cy+hgt*0.45, 0, 0,0,slope*0.5));
+  }
+  if(H.ic){ var icy=lerp(cF.zb,cF.ys,pm?0.42:0.36); sc_ic(B, cF.x, icy, pm?0.62:0.52, pm?0.13:0.15); }
+  if(!st && (H.turbo || H.asp==="centri")){   /* outlaw / promod: the compressor inlets stick out through the grille */
+    var by=lerp(cF.zb,cF.ys,0.66), n=H.asp==="twin"?2:1;
+    for(i=0;i<n;i++) sc_bell(B, cF.x+0.04, by, n>1?(i?0.22:-0.22):0.2, pm?0.1:0.09);
+  }
+  if(H.turbo){   /* wastegate dumps (screamer pipes) poke up through the hood: the flutter puffs come out of these */
+    var gx=cowl+0.3; sc_params(D, gx, P);
+    (H.asp==="twin"?[-1,1]:[1]).forEach(function(sd){ var z=sd*Math.min(0.36, P.wt*0.55), a=new THREE.Vector3(gx, P.yt-0.04, z), b=new THREE.Vector3(gx-0.05, P.yt+0.13, z+sd*0.02);
+      B.add("chrome", sc_cyl(0.03,10), sc_rodM(a,b)); B.add("well", new THREE.CircleGeometry(0.026,10), sc_M(b.x, b.y+0.001, b.z, -PI/2,0,0));
+      gates.push({p:b.clone(), d:new THREE.Vector3(-0.25,1,0).normalize()}); });
+  }
+  return {hat:hat};
+}
 /* door cars: street (90s coupe), outlaw (radial car), promod */
-function sc_door(B, body, rr, tails, heads, res){
+function sc_door(B, body, rr, tails, heads, res, H, tIn){
   var I=new THREE.Matrix4(), st=body==="street", ol=body==="outlaw", pm=body==="promod";
+  var SY=(H && !pm)?SC_STYLE[H.style]:null;   /* v2: the rival's (or your) shell; null = the v1.5 car */
   var rr0=st?0.343:ol?0.381:0.419, lift=(rr-rr0)*0.7;
-  var fr=st?clamp(rr*0.94,0.3,0.335):0.335, xr=pm?-1.34:-1.28, xf=pm?1.40:1.27, rows;
-  if(pm) rows=[
+  var fr=st?clamp(rr*0.94,0.3,0.335):0.335, xr=pm?-1.34:SY?SY.xr:-1.28, xf=pm?1.40:SY?SY.xf:1.27, rows;
+  /* v2 tyre-size cue: the rear tyre gets wider with its height, and a fat tyre on a street car gets flared tubs */
+  var rwH=H?(st?clamp(0.2+(tIn-24)*0.025,0.2,0.37):ol?clamp(0.28+(tIn-28)*0.025,0.28,0.42):clamp(0.36+(tIn-31)*0.025,0.36,0.46)):0;
+  if(SY && SY.rows) rows=SY.rows.map(function(r){ return r.slice(); });
+  else if(pm) rows=[
     [-2.42,.36,.84,.90,.86,.82,.02],[-2.32,.28,.95,1.0,.94,.88,.02],[-1.95,.22,.985,1.03,.97,.90,.03],[-1.50,.20,.975,1.07,.97,.78,.05],
     [-0.90,.19,.935,1.19,.965,.665,.05],[-0.20,.19,.91,1.215,.96,.645,.05],[0.22,.185,.90,1.12,.958,.72,.05],[0.64,.18,.885,.945,.955,.84,.04],
     [1.10,.17,.87,.915,.95,.87,.03],[1.80,.16,.80,.84,.94,.86,.03],[2.30,.165,.68,.72,.90,.82,.02],[2.52,.19,.56,.59,.80,.72,.02]];
@@ -14759,23 +14854,27 @@ function sc_door(B, body, rr, tails, heads, res){
   var xR=rows[0][0], xF=rows[rows.length-1][0];
   var gapR=pm?0.045:0.05, gapF=0.05;
   var flares=[]; if(!st) flares.push({x:xr, span:pm?0.75:0.6, amt:pm?0.035:0.025, up:0.03});
-  var D=sc_def(rows, {arches:[{x:xr, y:rr, R:rr+gapR},{x:xf, y:fr, R:fr+gapF}], rake:ol?-0.012:pm?-0.006:0, rakeX:xr, lift:lift+(ol?0.02:0), flares:flares});
+  if(H && st && rwH>0.285) flares.push({x:xr, span:0.62, amt:(rwH-0.26)*0.75, up:0.025});
+  var D=sc_def(rows, {arches:[{x:xr, y:rr, R:rr+gapR},{x:xf, y:fr, R:fr+gapF}], rake:ol?-0.012:pm?-0.006:0, rakeX:xr, lift:lift+(ol?0.02:0), flares:flares, sub:(H && !H.lite)?3:2});
   var L=sc_loft(D);
   B.add("paint", L.paint); B.add("well", L.well);
   var P={}, R=new Float32Array(40), v=new THREE.Vector3();
   /* glass: windshield, backlight, door + quarter glass both sides */
-  var roofF=pm?-0.2:0.18, cowl=pm?0.64:0.98, roofR=pm?-0.9:-0.5, deck=pm?-1.5:-1.62;
+  var roofF=pm?-0.2:SY?SY.roofF:0.18, cowl=pm?0.64:SY?SY.cowl:0.98, roofR=pm?-0.9:SY?SY.roofR:-0.5, deck=pm?-1.5:SY?SY.deck:-1.62;
   B.add("glass", sc_patch(D, roofF+0.03, cowl-0.03, 8.28, 11.72, 0.006));
   B.add("glass", sc_patch(D, deck+0.06, roofR-0.03, 8.28, 11.72, 0.006));
-  var dG0=pm?-0.62:-0.52, dG1=cowl-0.06, qG0=pm?-1.05:-1.12, qG1=dG0-0.07;
-  [[dG0,dG1],[qG0,qG1]].forEach(function(r){ B.add("glass", sc_patch(D, r[0], r[1], 5.42, 7.7, 0.006)); B.add("glass", sc_patch(D, r[0], r[1], 12.3, 14.58, 0.006, "L")); });
+  var dG0=pm?-0.62:SY?SY.dG0:-0.52, dG1=cowl-0.06, qG0=pm?-1.05:SY?SY.qG0:-1.12, qG1=dG0-0.07;
+  [[dG0,dG1],[qG0,qG1]].forEach(function(r){ if(r[0]==null) return; B.add("glass", sc_patch(D, r[0], r[1], 5.42, 7.7, 0.006)); B.add("glass", sc_patch(D, r[0], r[1], 12.3, 14.58, 0.006, "L")); });
   /* door shut lines */
   [dG1+0.02, dG0-0.1].forEach(function(x){ B.add("seam", sc_patch(D, x, x+0.009, 1.6, 5.2, 0.002)); B.add("seam", sc_patch(D, x, x+0.009, 14.8, 18.4, 0.002)); });
   /* door decals + windshield banner */
   var dx0=pm?-0.5:-0.42, dx1=pm?0.5:0.58;
   sc_decal(res, sc_patch(D, dx0, dx1, 2.3, 4.75, 0.004, null, 0.5)); sc_decal(res, sc_patch(D, dx0, dx1, 15.25, 17.7, 0.004, "L", 0.5));
   sc_decal(res, sc_patch(D, roofF+0.02, roofF+0.17, 8.3, 11.7, 0.009, "K", 0.5), "banner");
-  res.hood=pm?sc_patch(D, 1.45, 2.12, 8.45, 11.55, 0.012, "K", 0.5):ol?sc_patch(D, 1.79, 2.19, 8.5, 11.5, 0.012, "K", 0.5):sc_patch(D, cowl+0.12, cowl+0.68, 8.45, 11.55, 0.012, "K", 0.5);   /* primary sponsor on the hood, clear of the outlaw scoop / promod blower (hidden until there is one) */
+  var hoodK=sc_hoodKind(H, body);   /* v2: what sits on the hood (scoop, blower, cowl...) */
+  var hdF=rows[rows.length-1][0];
+  res.hood=pm?sc_patch(D, 1.45, 2.12, 8.45, 11.55, 0.012, "K", 0.5):(ol||(H && st && hoodK!=="none"))?sc_patch(D, hdF-0.5, hdF-0.1, 8.5, 11.5, 0.012, "K", 0.5):sc_patch(D, cowl+0.12, cowl+0.68, 8.45, 11.55, 0.012, "K", 0.5);
+  if(SY && SY.bed) B.add("well", sc_patch(D, rows[0][0]+0.12, deck-0.1, 8.3, 11.7, 0.004));   /* pickup bed */   /* primary sponsor on the hood, clear of the outlaw scoop / promod blower (hidden until there is one) */
   if(pm) B.add("carbon", sc_patch(D, cowl+0.02, 2.28, 7.4, 12.6, 0.003));
   /* front + rear caps: lamps, grille, bumpers */
   var cF=L.capF, cR=L.capR, hy=lerp(cF.zb,cF.ys,0.72), ly=lerp(cF.zb,cF.ys,0.3);
@@ -14802,7 +14901,7 @@ function sc_door(B, body, rr, tails, heads, res){
   [[xr,rr+gapR,rr],[xf,fr+gapF,fr]].forEach(function(a){ var s=new THREE.Shape(); s.absarc(0,0,a[1],0,PI,false); s.lineTo(-a[1],0);
     var lg=new THREE.ShapeGeometry(s,8); [-1,1].forEach(function(sd){ B.add("well", lg, sc_M(a[0], a[2], sd*0.36, 0, sd>0?0:PI, 0)); }); });
   /* wheels */
-  var rw=st?0.26:ol?0.34:0.43, fw=st?0.225:0.115;
+  var rw=H?rwH:st?0.26:ol?0.34:0.43, fw=st?0.225:0.115;
   sc_params(D, xr, P); var zr=P.w-(st?0.015:0.05)-rw/2; sc_params(D, xf, P); var zf=st?P.w-0.02-fw/2:P.w-0.11-fw/2;
   var wh=[];
   [-1,1].forEach(function(sd){
@@ -14810,13 +14909,15 @@ function sc_door(B, body, rr, tails, heads, res){
     wh.push({x:xf, z:sd*zf, r:fr, w:fw, rimR:0.19, style:st?"star":"weld", rimMat:pm?"rimBlack":"alu", rear:false, letters:st});
   });
   /* hood: outlaw scoop, promod blower + injector hat */
-  var hx=pm?1.05:1.3; sc_params(D, hx, P); var hood=P.yt;
+  var hx=pm?1.05:SY?SY.hx:1.3; sc_params(D, hx, P); var hood=P.yt;
   sc_params(D, hx+0.35, P); var slope=Math.atan2(P.yt-hood, 0.35);
-  if(ol){
+  var gates=[], hat=null;
+  if(H){ var hwr=sc_doorHw(B, D, H, hoodK, body, hx, hood, slope, cowl, L.capF, gates); hat=hwr.hat; }
+  else if(ol){
     B.add("paint", sc_prof([[0.45,0],[0.3,0.07],[0.0,0.12],[-0.42,0.13],[-0.5,0.02],[-0.5,0]], 0.66, 0.02), sc_M(hx, hood-0.01, 0, 0,0,slope));
     B.add("well", sc_rbox(0.02,0.09,0.54,0.01), sc_M(hx-0.515, hood+0.065, 0, 0,0,slope));
   }
-  if(pm){
+  if(pm && !H){
     B.add("alu", sc_rbox(0.62,0.2,0.34,0.03), sc_M(hx, hood+0.06, 0));
     B.add("satin", sc_rbox(0.66,0.04,0.38,0.012), sc_M(hx, hood+0.17, 0));
     B.add("carbon", sc_prof([[0.2,0],[0.24,0.26],[0.08,0.3],[-0.22,0.24],[-0.22,0]], 0.3, 0.015), sc_M(hx+0.02, hood+0.19, 0));
@@ -14824,7 +14925,8 @@ function sc_door(B, body, rr, tails, heads, res){
   }
   /* rear: spoiler (street/outlaw) or big wing (promod) */
   sc_params(D, xR+0.2, P); var dk=P.yt;
-  if(!pm){
+  if(SY && SY.bed){}   /* pickup: no deck spoiler */
+  else if(!pm){
     B.add("paint", sc_foil(0.24, 0.06, 1.5), sc_M(xR+0.14, dk+0.1, 0, 0,0,-0.08));
     [-0.6,0.6].forEach(function(z){ B.add("paint", sc_rbox(0.12,0.1,0.05,0.015), sc_M(xR+0.16, dk+0.045, z)); });
     tails.push({g:sc_rbox(0.03,0.025,0.34,0.008), m:sc_M(xR+0.02, dk+0.105, 0)});
@@ -14840,7 +14942,17 @@ function sc_door(B, body, rr, tails, heads, res){
   }
   /* exhaust */
   var tips=[], dirs=[];
-  if(st){
+  if(H && H.diesel && SY && SY.bed){
+    [-1,1].forEach(function(sd){ var x0=deck+0.02, z0=sd*0.62, y1=1.84;
+      B.add("chrome", sc_cyl(0.06,12), sc_rodM(new THREE.Vector3(x0, 0.86, z0), new THREE.Vector3(x0, y1, z0)));
+      B.add("well", new THREE.CircleGeometry(0.055,12), sc_M(x0, y1+0.002, z0, -PI/2,0,0));
+      tips.push(new THREE.Vector3(x0, y1+0.02, z0)); dirs.push(new THREE.Vector3(-0.15,1,0).normalize()); });
+  } else if(H && H.diesel && st){
+    var pD=new THREE.Vector3(xR-0.04, cR.zb-0.04, 0.5);
+    B.add("chrome", new THREE.CylinderGeometry(0.065,0.065,0.24,14,1,true), sc_M(pD.x+0.1, pD.y, pD.z, 0,0,PI/2));
+    B.add("well", new THREE.CircleGeometry(0.06,14), sc_M(pD.x+0.03, pD.y, pD.z, 0,-PI/2,0));
+    tips.push(pD); dirs.push(new THREE.Vector3(-1,-0.08,0).normalize());
+  } else if(st){
     [-1,1].forEach(function(sd){ var p=new THREE.Vector3(xR-0.04, cR.zb-0.06, sd*0.52);
       B.add("chrome", new THREE.CylinderGeometry(0.045,0.045,0.22,12,1,true), sc_M(p.x+0.1, p.y, p.z, 0,0,PI/2));
       B.add("well", new THREE.CircleGeometry(0.04,12), sc_M(p.x+0.03, p.y, p.z, 0,-PI/2,0));
@@ -14877,13 +14989,13 @@ function sc_door(B, body, rr, tails, heads, res){
     B.add("paint", sc_rbox(0.03, 0.2, 0.3, 0.012), sc_M(xR-0.2, py, 0));
     anchor=new THREE.Vector3(xR-0.2, py, 0);
   } else anchor=new THREE.Vector3(xR-0.05, cR.zb+0.05, 0);
-  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, anchor:anchor, bars:bars, maxPitch:maxP,
+  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, anchor:anchor, bars:bars, maxPitch:maxP, gates:gates, hat:hat,
     squat:st?deg(1.6):deg(0.7), squatDrop:st?0.035:0.015, shiftKick:st?0.22:0.12, pitchW:st?6.5:8.5, droop:st?0.07:0.04, wrinkle:st?0.55:1,
     chuteLen:pm?5.2:4.4, chuteRise:pm?0.45:0.35, chuteR:pm?0.95:0.8 };
 }
 
 /* rear-engine dragster */
-function sc_rail(B, rr, tails, heads, res){
+function sc_rail(B, rr, tails, heads, res, H){
   var xr=-2.7, xf=3.3, fr=0.29, V=function(x,y,z){ return new THREE.Vector3(x,y,z); };
   var D=sc_def([
     [-1.40,.17,.46,.58,.30,.27,.03],[-0.95,.16,.48,.60,.30,.25,.04],[-0.45,.15,.48,.63,.29,.24,.05],[0.30,.15,.42,.52,.24,.2,.04],
@@ -14917,10 +15029,27 @@ function sc_rail(B, rr, tails, heads, res){
   var ex=-1.95;
   B.add("engine", sc_rbox(0.78,0.42,0.4,0.03), sc_M(ex, 0.5, 0));
   [-1,1].forEach(function(sd){ B.add("alu", sc_rbox(0.74,0.1,0.2,0.03), sc_M(ex, 0.78, sd*0.2, sd*-0.55,0,0)); B.add("engine", sc_rbox(0.76,0.2,0.16,0.02), sc_M(ex, 0.66, sd*0.19, sd*-0.55,0,0)); });
+  var gates=[], hat=null, ra=H?H.asp:"blower";
+  if(ra==="blower"){
   B.add("alu", sc_rbox(0.66,0.22,0.3,0.035), sc_M(ex, 0.93, 0));
   B.add("satin", sc_rbox(0.7,0.04,0.34,0.012), sc_M(ex, 1.05, 0));
   B.add("paint", sc_prof([[0.18,0],[0.22,0.28],[0.06,0.32],[-0.2,0.25],[-0.2,0]], 0.3, 0.015), sc_M(ex+0.05, 1.06, 0));
   B.add("well", sc_rbox(0.02,0.2,0.22,0.01), sc_M(ex+0.265, 1.21, 0, 0,0,0.15));
+  hat=V(ex+0.08, 1.38, 0);
+  } else if(ra==="na"){   /* v2: injector hat straight on the intake, no blower case */
+    B.add("satin", sc_rbox(0.6,0.06,0.3,0.012), sc_M(ex, 0.85, 0));
+    B.add("paint", sc_prof([[0.18,0],[0.22,0.28],[0.06,0.32],[-0.2,0.25],[-0.2,0]], 0.3, 0.015), sc_M(ex+0.05, 0.87, 0));
+    B.add("well", sc_rbox(0.02,0.2,0.22,0.01), sc_M(ex+0.265, 1.02, 0, 0,0,0.15));
+    hat=V(ex+0.08, 1.2, 0);
+  } else {   /* v2: turbos hung off the headers, inlets forward, wastegates up */
+    B.add("satin", sc_rbox(0.6,0.06,0.3,0.012), sc_M(ex, 0.85, 0));
+    (ra==="twin"||ra==="turbo"?[-1,1]:[1]).forEach(function(sd){
+      B.add("alu", new THREE.CylinderGeometry(0.15,0.15,0.13,16), sc_M(ex+0.12, 0.98, sd*0.36, PI/2,0,0));
+      B.add("barrel", new THREE.TorusGeometry(0.15,0.035,6,16), sc_M(ex+0.12, 0.98, sd*0.36));
+      sc_bell(B, ex+0.3, 0.98, sd*0.36, 0.085);
+      if(ra!=="centri"){ var a=V(ex-0.12, 0.9, sd*0.34), b=V(ex-0.2, 1.22, sd*0.38); B.add("chrome", sc_cyl(0.028,10), sc_rodM(a,b)); gates.push({p:b.clone(), d:V(-0.3,1,sd*0.1).normalize()}); }
+    });
+  }
   /* zoomie headers, up and back */
   var tips=[], dirs=[];
   [-1,1].forEach(function(sd){ for(var i=0;i<4;i++){
@@ -14949,10 +15078,10 @@ function sc_rail(B, rr, tails, heads, res){
   tails.push({g:sc_rbox(0.03,0.04,0.26,0.01), m:sc_M(-3.22, 0.6, 0)});
   var wh=[];
   [-1,1].forEach(function(sd){
-    wh.push({x:xr, z:sd*0.6, r:rr, w:0.43, rimR:0.205, style:"bead", rimMat:"alu", rear:true, letters:true});
+    wh.push({x:xr, z:sd*0.6, r:rr, w:H?clamp(0.34+(rr*2/0.0254-32)*0.022,0.34,0.46):0.43, rimR:0.205, style:"bead", rimMat:"alu", rear:true, letters:true});
     wh.push({x:xf, z:sd*0.56, r:fr, w:0.075, rimR:0.215, style:"wire", rimMat:"alu", rear:false, letters:false});
   });
-  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, anchor:V(-3.23,0.44,0), bars:true, maxPitch:maxP,
+  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, anchor:V(-3.23,0.44,0), bars:true, maxPitch:maxP, gates:gates, hat:hat,
     squat:deg(0.5), squatDrop:0.01, shiftKick:0.1, pitchW:9, droop:0.03, wrinkle:1, chuteLen:5.4, chuteRise:0.5, chuteR:0.9 };
 }
 /* --- instanced billboard particles: one draw call per system (smoke = normal blend, flames = additive) --- */
@@ -15123,6 +15252,7 @@ function stripCarMeta(car){
   u._eng=u.enginePos? u.enginePos.clone() : (u.body==="rail" ? new THREE.Vector3(bb.min.x+(bb.max.x-bb.min.x)*0.3, bb.max.y*0.7, 0) : new THREE.Vector3(bb.max.x-(bb.max.x-bb.min.x)*0.24, bb.max.y*0.72, 0));
   u._chuteA=u.chuteAnchor? u.chuteAnchor.clone() : new THREE.Vector3(bb.min.x-0.3, bb.max.y*0.5, 0);
   u._len=bb.max.x-bb.min.x; u._bbMinX=bb.min.x; u._markLast=[]; u._acc=0; u._markT=0;
+  var me=u.meta||{}; u._gates=(me.gates||[]).map(function(q){ return {p:q.p.clone(), d:q.d.clone()}; }); u._hat=me.hat?me.hat.clone():null; u._ex=null;
 }
 
 /* --- effects --- */
@@ -15136,16 +15266,16 @@ function stripTyreSmoke(car, dt, k, temp, still, v){
         still? -1.5-Math.random()*6 : (v||0)*0.15+(Math.random()-0.5)*2, 0.5+Math.random()*1.4, sz*(0.4+Math.random()*2.6),
         still? 1.5+r*0.9 : 2.0+r*1.3, 0.9+Math.random()*0.6, (still?4.8:3.8)+Math.random()*(still?2.6:3), c, c, c*1.03, a, {drag:0.55, buoy:0.45, fin:0.1, spin:0.6}); } }   /* burnout: denser but short-lived, so it has cleared off the tree by the time the car is staged */
 }
-function stripFlames(car, amt, shift, carV){
-  var u=car.userData, FA=STRIP.fxAdd, FF=STRIP.fxFire, FX=STRIP.fx, lite=GFX==="lite";
+function stripFlames(car, amt, shift, carV, tint){
+  var u=car.userData, FA=STRIP.fxAdd, FF=STRIP.fxFire, FX=STRIP.fx, lite=GFX==="lite", tn=clamp(tint||0,0,1);
   for(var t=0;t<u._tips.length;t++){ car.localToWorld(_sfA.copy(u._tips[t])); _sfD.copy(u._dirs[t]).applyQuaternion(car.quaternion);
     var n=(shift?2:2+Math.round(amt*(lite?2:4)));
     for(var i=0;i<n;i++){ var sp=(shift?5:8)+Math.random()*6, blue=(i===0);
       (blue?FA:FF).emit(_sfA.x+_sfD.x*Math.random()*0.2, _sfA.y+_sfD.y*Math.random()*0.2, _sfA.z+_sfD.z*Math.random()*0.2,
         _sfD.x*sp+carV+(Math.random()-0.5), _sfD.y*sp+Math.random(), _sfD.z*sp+(Math.random()-0.5),
         blue?0.07:0.07+Math.random()*0.09, (blue?0.14:0.16)*(0.7+amt), blue?0.35:0.4+amt*(shift?0.3:0.6),
-        blue?0.35:1.0, blue?0.5:0.5+Math.random()*0.35, blue?1.0:0.08+Math.random()*0.12, blue?0.8:0.95, {drag:2.5, buoy:1.2, fin:0.01, spin:2}); }
-    FA.emit(_sfA.x+_sfD.x*0.25, _sfA.y+_sfD.y*0.25, _sfA.z+_sfD.z*0.25, carV, 0, 0, 0.06, (shift?0.35:0.5)+amt*0.5, (shift?0.5:0.7)+amt*0.7, 1.0, 0.72, 0.4, 0.75, {drag:0, fin:0.01, spin:0});
+        blue?0.35:lerp(1.0,0.62,tn), blue?0.5:lerp(0.5+Math.random()*0.35,0.42,tn), blue?1.0:lerp(0.08+Math.random()*0.12,1.0,tn), blue?0.8:0.95, {drag:2.5, buoy:1.2, fin:0.01, spin:2}); }
+    FA.emit(_sfA.x+_sfD.x*0.25, _sfA.y+_sfD.y*0.25, _sfA.z+_sfD.z*0.25, carV, 0, 0, 0.06, (shift?0.35:0.5)+amt*0.5, (shift?0.5:0.7)+amt*0.7, lerp(1.0,0.5,tn), lerp(0.72,0.55,tn), lerp(0.4,1.0,tn), 0.75, {drag:0, fin:0.01, spin:0});
     if(Math.random()<0.5) FX.emit(_sfA.x+_sfD.x*0.4, _sfA.y+0.1, _sfA.z+_sfD.z*0.4, carV*0.6+_sfD.x*2, 0.6, _sfD.z*2, 0.9, 0.25, 1.3, 0.22, 0.22, 0.23, 0.28, {drag:1.2, buoy:0.4, fin:0.05});
     STRIP.flash.position.copy(_sfA).addScaledVector(_sfD,0.4); STRIP.flash.position.y+=0.25; }
   STRIP.flashI=Math.max(STRIP.flashI||0, amt*(shift?1.5:3)*(STRIP.night?0.5:1));
@@ -15163,11 +15293,61 @@ function stripN2O(o, dt, P){
       FX.emit(_sfA.x, _sfA.y, _sfA.z, v+sp*0.30+(Math.random()-0.5)*1.2, sp*0.38+Math.random()*0.8, (Math.random()-0.35)*2.6,
         0.45+Math.random()*0.4, 0.12, 1.3+Math.random()*1.0, 0.98, 0.99, 1.0, 0.85, {drag:4.0, buoy:0.4, fin:0.08, spin:0.8}); }
   }
-  if(o.phase==="run" && (o.n2o||0)>0.3 && Math.random()<dt*(lite?3:6)) stripFlames(P, 0.12+0.15*o.n2o, false, v);
+  if(o.phase==="run" && (o.n2o||0)>0.3 && Math.random()<dt*(lite?3:6)) stripFlames(P, 0.12+0.15*o.n2o, false, v, 1);
   if(o.cut && !pv.cut){ P.localToWorld(_sfA.copy(u._eng)); _sfA.y+=0.3;
     for(var j=0;j<(lite?8:16);j++) STRIP.fxFire.emit(_sfA.x+(Math.random()-0.5)*0.4, _sfA.y, _sfA.z+(Math.random()-0.5)*0.4, v*0.9+(Math.random()-0.5)*3, 2+Math.random()*3, (Math.random()-0.5)*2, 0.25+Math.random()*0.2, 0.4, 1.4, 1.0, 0.5+Math.random()*0.2, 0.1, 0.9, {drag:1.5, buoy:2, fin:0.05, spin:3});
     STRIP.flashI=Math.max(STRIP.flashI||0, 6); STRIP.flash.position.copy(_sfA); STRIP.shake=Math.max(STRIP.shake||0, 0.35); }
   pv.cut=!!o.cut;
+}
+/* v2 engine-true exhaust, per car from userData.hw (set at build): diesel black smoke on the launch and every shift;
+   turbo wastegate flutter out of the dump pipes on a shift; an anti-lag car spits a fireball on every shift; a
+   nitrous car in the other lane shows its blue flame. The player's own lane reads o.*, the other lane o.o* (ox, ov, oshifting). */
+function stripExhaust(o, dt, car, isP){
+  var u=car.userData, H=u.hw; if(!H || !u._tips) return;
+  var FX=STRIP.fx, FF=STRIP.fxFire, FA=STRIP.fxAdd, lite=GFX==="lite", ph=o.phase||"run", t, i, k;
+  var v=Math.max(0, isP?(o.v||0):(o.ov||0)), x=isP?(o.x||0):(o.ox||0), sh=isP?!!o.shifting:!!o.oshifting;
+  var E=u._ex||(u._ex={sh:false, fl:0, flN:0, dz:0});
+  var moving=ph==="run" && (isP ? v>0.2 : x>0.15), edge=sh && !E.sh && moving && v>2; E.sh=sh;
+  var boosted=isP ? (o.boost||0)>0.3 || (o.boostTarget||0)>0.3 : v>6;
+  /* diesel: rolling black smoke off the line, a black cough on each shift, haze while it loads up on the line */
+  if(H.diesel){
+    var load=moving ? clamp(1-v/34,0.15,1) : (ph==="staged" && isP && o.launch && o.launch.held>0 ? 0.35 : 0);
+    if(ph==="burnout" && isP && o.spin) load=0.5;
+    var rate=(lite?14:32)*load*(isP?1:0.75);
+    if(edge) E.dz+=lite?5:11;
+    E.dz+=rate*dt;
+    var nD=Math.floor(E.dz); E.dz-=nD;
+    for(i=0;i<nD;i++){ t=i%u._tips.length; car.localToWorld(_sfA.copy(u._tips[t])); _sfD.copy(u._dirs[t]).applyQuaternion(car.quaternion);
+      var sp=3+Math.random()*4, c=0.02+Math.random()*0.035;
+      FX.emit(_sfA.x+_sfD.x*0.15, _sfA.y+_sfD.y*0.15, _sfA.z+_sfD.z*0.15, _sfD.x*sp+v*0.55+(Math.random()-0.5), _sfD.y*sp+0.8+Math.random(), _sfD.z*sp+(Math.random()-0.5)*1.2,
+        1.6+Math.random()*1.3, 0.4, 2.8+Math.random()*1.9, c, c, c*1.05, 0.8, {drag:1.1, buoy:0.55, fin:0.04, spin:0.8}); }
+  }
+  /* turbo: the wastegates flutter open on the lift, three quick puffs out of the dumps */
+  if(H.turbo && edge && boosted){ E.flN=3; E.fl=0; }
+  if(E.flN>0){ E.fl-=dt;
+    if(E.fl<=0){ E.fl=0.07; E.flN--;
+      var G=u._gates.length?u._gates:null;
+      for(k=0;k<(G?G.length:u._tips.length);k++){
+        if(G){ car.localToWorld(_sfA.copy(G[k].p)); _sfD.copy(G[k].d).applyQuaternion(car.quaternion); }
+        else { car.localToWorld(_sfA.copy(u._tips[k])); _sfD.copy(u._dirs[k]).applyQuaternion(car.quaternion); }
+        for(i=0;i<(lite?1:2);i++) FX.emit(_sfA.x, _sfA.y, _sfA.z, _sfD.x*6+v*0.7+(Math.random()-0.5), _sfD.y*6+Math.random(), _sfD.z*6+(Math.random()-0.5),
+          0.45+Math.random()*0.25, 0.12, 0.8+Math.random()*0.5, 0.9, 0.91, 0.93, 0.5, {drag:2.2, buoy:0.6, fin:0.02, spin:1.2}); } } }
+  /* anti-lag: a fireball out of the pipes on every shift */
+  if(H.als && edge && boosted){
+    for(t=0;t<u._tips.length;t++){ car.localToWorld(_sfA.copy(u._tips[t])); _sfD.copy(u._dirs[t]).applyQuaternion(car.quaternion);
+      var nF=lite?5:12;
+      for(i=0;i<nF;i++){ var s2=4+Math.random()*7;
+        FF.emit(_sfA.x+_sfD.x*0.2, _sfA.y+_sfD.y*0.2, _sfA.z+_sfD.z*0.2, _sfD.x*s2+v*0.85+(Math.random()-0.5)*3, _sfD.y*s2+1+Math.random()*2.5, _sfD.z*s2+(Math.random()-0.5)*3,
+          0.28+Math.random()*0.28, 0.3, 1.5+Math.random()*1.3, 1.0, 0.45+Math.random()*0.35, 0.06+Math.random()*0.1, 0.95, {drag:2.2, buoy:2.4, fin:0.02, spin:3}); }
+      FA.emit(_sfA.x+_sfD.x*0.7, _sfA.y+_sfD.y*0.7+0.2, _sfA.z+_sfD.z*0.7, v*0.85, 0.5, 0, 0.22, 1.4, 3.4, 1.0, 0.62, 0.25, 0.9, {drag:0, fin:0.01, spin:0});
+      for(i=0;i<(lite?2:4);i++) FX.emit(_sfA.x+_sfD.x*1.2, _sfA.y+0.5, _sfA.z+_sfD.z*1.2, v*0.6+_sfD.x*2, 1.2+Math.random(), _sfD.z*2+(Math.random()-0.5),
+        1.2+Math.random()*0.6, 0.5, 2.2+Math.random(), 0.16, 0.15, 0.15, 0.4, {drag:1.3, buoy:0.6, fin:0.1});
+      STRIP.flash.position.copy(_sfA).addScaledVector(_sfD,0.8); STRIP.flash.position.y+=0.4; }
+    STRIP.flashI=Math.max(STRIP.flashI||0, (isP?9:6)*(STRIP.night?0.6:1));
+    if(isP) STRIP.shake=Math.max(STRIP.shake||0, 0.12);
+  }
+  /* nitrous in the other lane: its blue flame at the pipes while the shot is in */
+  if(!isP && H.n2o && moving && v>3 && v<75 && Math.random()<dt*(lite?3:6)) stripFlames(car, 0.25, false, v, 1);
 }
 function stripEffects(o, dt, P, O){
   var FX=STRIP.fx, FA=STRIP.fxAdd, lite=(GFX==="lite"), rate=lite?0.55:1, ph=o.phase||"run", v=Math.max(0,o.v||0), u=P.userData, prev=STRIP.prev;
@@ -15182,10 +15362,12 @@ function stripEffects(o, dt, P, O){
       else if(Math.abs(_sfB.x-L.x)>0.7 || (burn && STRIP.t-u._markT>0.45)){ stripMark(L,_sfB,u._tyreW); L.copy(_sfB); if(t===u._tyres.length-1) u._markT=STRIP.t; } } }
   else u._markLast=[];
   /* two-step / anti-lag bangs and shift pops */
-  var pops=(o.launch&&o.launch.pops)||0;
-  if(pops>0.02) stripFlames(P, clamp(pops,0,1), false, v);
-  if(o.shifting && !prev.shifting && (o.boost||0)>0.3) stripFlames(P, 0.5, true, v);
-  else if(o.shifting && (o.boost||0)>0.3 && Math.random()<dt*6) stripFlames(P, 0.3, true, v);
+  var pops=(o.launch&&o.launch.pops)||0, nz=STRIP.n2oSt, tn=(nz && ph==="run" && (nz.n2o||0)>0.3)?1:0;
+  if(pops>0.02) stripFlames(P, clamp(pops,0,1), false, v, tn);
+  if(o.shifting && !prev.shifting && (o.boost||0)>0.3) stripFlames(P, 0.5, true, v, tn);
+  else if(o.shifting && (o.boost||0)>0.3 && Math.random()<dt*6) stripFlames(P, 0.3, true, v, tn);
+  stripExhaust(o, dt, P, true); if(race) stripExhaust(o, dt, O, false);
+  if(race && ph==="run" && o.ospin && (o.ov||0)<60) stripTyreSmoke(O, dt, rate*0.4, 0.5, false, o.ov||0);
   /* chute dust */
   if(o.chute && !prev.chute){ P.localToWorld(_sfA.copy(u._chuteA)); for(var i=0;i<(lite?9:16);i++) FX.emit(_sfA.x-Math.random()*2, 0.3+Math.random()*0.6, _sfA.z+(Math.random()-0.5)*2.4, v*0.35+(Math.random()-0.5)*4, 0.6+Math.random(), (Math.random()-0.5)*3, 1.6+Math.random(), 0.6, 3.2, 0.6, 0.53, 0.42, 0.34, {drag:1.3, buoy:0.2}); }
   if(o.chute && v>12 && Math.random()<dt*10*rate){ P.localToWorld(_sfA.copy(u._chuteA)); FX.emit(_sfA.x-1.5, 0.15, _sfA.z+(Math.random()-0.5)*1.5, v*0.5, 0.3, 0, 1.1, 0.5, 2.2, 0.58, 0.52, 0.43, 0.18, {drag:1.5}); }
@@ -15314,6 +15496,18 @@ function stripHeat(o, P){
   hp.uniforms.uC.value.set(_sfA.x*0.5+0.5, _sfA.y*0.5+0.5); hp.uniforms.uR.value.set(ry*1.6/cam.aspect, ry);
   hp.uniforms.uAmt.value=0.0013*smoothstep(22,70,v)*clamp(8/Math.max(4,dist),0.3,1); hp.uniforms.uT.value=STRIP.t;
 }
+function stripHatHeat(o, P){
+  var C=STRIP.composer, u=P&&P.userData, hp=STRIP.hatPass, ph=o.phase||"run";
+  var hot=u && u._hat && u.hw && u.hw.asp!=="na" ? 1 : 0.55;   /* a blower hat shimmers hardest; an NA scoop a little */
+  if(!C || GFX==="lite" || !u || !u._hat || !u.hw || ph==="done" || o.failed || STRIP.shot==="tree"){ if(hp) hp.enabled=false; return; }
+  if(hp===false) return;
+  if(!hp){ try{ hp=new THREE.ShaderPass(STRIP_HEAT_SHADER); var at=C.passes.indexOf(STRIP.heatPass); C.passes.splice(at>=0?at+1:1, 0, hp); hp.enabled=false; STRIP.hatPass=hp; }catch(e){ STRIP.hatPass=false; return; } }
+  var cam=STRIP.cam; P.localToWorld(_sfA.copy(u._hat)); _sfA.y+=0.32; var dist=_sfA.distanceTo(cam.position);
+  _sfA.project(cam); if(_sfA.z>1 || Math.abs(_sfA.x)>1.2 || Math.abs(_sfA.y)>1.2 || dist>60){ hp.enabled=false; return; }
+  var rpmK=o.redline>0 ? clamp((o.rpm||0)/o.redline,0.25,1) : 0.6, ry=0.45/(dist*Math.tan(deg(cam.fov)/2));
+  hp.enabled=true; hp.uniforms.uC.value.set(_sfA.x*0.5+0.5, _sfA.y*0.5+0.5); hp.uniforms.uR.value.set(ry*1.1/cam.aspect, ry);
+  hp.uniforms.uAmt.value=0.0019*hot*rpmK*clamp(6/Math.max(3,dist),0.25,1); hp.uniforms.uT.value=STRIP.t*1.3;
+}
 function stripRender(){
   var S2=STRIP.scene, cam=STRIP.cam; if(!S2||!cam) return;
   var C=(GFX!=="lite" && THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass) ? stripComposer() : null;
@@ -15340,10 +15534,16 @@ function stripUpdate(o, dt, rdt){
   if(!STRIP.built) buildStripScene();
   var S2=STRIP.scene; STRIP.t+=dt; if(rdt===undefined) rdt=dt;
   if(STRIP.tier!==GFX || STRIP.night!==!!o.night) stripSetNight(!!o.night);
-  if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn)){
+  /* v2: o.hw = what your engine carries (scoop / blower / turbos / intercooler, diesel, ALS, nitrous); o.opp = the other lane's
+     own car {color, hw:{...style}}. Both optional: without them the cars are the v1.5 ones (charcoal mirror opponent). */
+  var CS=STRIP.cars, hwK=o.hw===CS.hwRef?CS.hwK:(o.hw?JSON.stringify(o.hw):""), opK=o.opp===CS.opRef?CS.opK:(o.opp?JSON.stringify(o.opp):""), liteK=(hwK||opK)?GFX==="lite":false;
+  CS.hwRef=o.hw; CS.hwK=hwK; CS.opRef=o.opp; CS.opK=opK;
+  if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn || CS.bHw!==hwK || CS.bOp!==opK || CS.bLite!==liteK)){
     if(STRIP.cars.p) S2.remove(STRIP.cars.p); if(STRIP.cars.o) S2.remove(STRIP.cars.o);
-    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn); stripCarMeta(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
-    STRIP.cars.o=stripCar(o.body, 0x3a3f46, o.tyreIn); stripCarMeta(STRIP.cars.o); STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
+    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); stripCarMeta(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
+    var op=o.opp||{};
+    STRIP.cars.o=stripCar(o.body, op.color!=null?op.color:0x3a3f46, op.tyreIn||o.tyreIn, op.hw); stripCarMeta(STRIP.cars.o); STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
+    CS.bHw=hwK; CS.bOp=opK; CS.bLite=liteK;
   }
   var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return; stripLivery(P);
   var ph=o.phase||"run", v=o.v||0;
@@ -15367,6 +15567,7 @@ function stripUpdate(o, dt, rdt){
   stripCrowd(dt);
   stripDirect(o, dt, P, O);
   stripHeat(o, P);
+  stripHatHeat(o, P);
   /* sun (and its shadow box) rides between the camera and what it looks at */
   var c=_sfB.copy(STRIP.camPos).lerp(STRIP.camTgt, 0.62); c.y=0;
   var sun=STRIP.sun; sun.position.copy(c).addScaledVector(STRIP.sunDir, 130); sun.target.position.copy(c); sun.target.updateMatrixWorld();
@@ -15518,10 +15719,10 @@ function pitsFrame(){
 function pitsUpdate(o){
   if(!PITS.built) buildPitsScene();
   var S5=PITS.scene, ch=false;
-  var key=(o.body||"street")+"|"+(o.color>>>0)+"|"+(+o.tyreIn||0);
+  var key=(o.body||"street")+"|"+(o.color>>>0)+"|"+(+o.tyreIn||0)+(o.hw?"|"+JSON.stringify(o.hw)+(GFX==="lite"):"");   /* hw: the strip car's hardware (drag v2 A) */
   if(key!==PITS.carKey){
     if(PITS.car) S5.remove(PITS.car);
-    var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn); stripCarMeta(car);
+    var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn, o.hw); stripCarMeta(car);
     car.position.set(-(car.userData._bbMinX+car.userData._len/2), PITS_LIFT, 0); car.updateMatrixWorld(true);
     S5.add(car); PITS.car=car; PITS.carKey=key; pitsProps(car); PITS.fitKey=""; ch=true;
   }
@@ -17994,7 +18195,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.27.0.0";
+const VERSION="1.28.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -18573,7 +18774,7 @@ function renderEnv(){
   if(t==="drag"){h+=rnFmtHtml()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>
-    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>
+    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>${paintHtml()}
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
@@ -18605,6 +18806,41 @@ const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"
   outlaw:{gears:3,first:2.1,top:1.0,final:3.25,tyreDia:30,tyre:"radial",chute:"yes",launchRpm:4500,rearBias:0.6,mass:1450},
   promod:{gears:3,first:1.8,top:1.0,final:3.2,tyreDia:33,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.62,mass:1150},
   rail:{gears:2,first:1.6,top:1.0,final:3.0,tyreDia:36,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.8,mass:1000}};
+/* drag v2: the car's paint (S.paint sandbox / C().paint career; unset = the valve-cover colour, as before) */
+const PAINTS=[["cover","Match the covers",null],["red","Red",0xb3261e],["white","White",0xe6e4de],["black","Black",0x16181b],["yellow","Yellow",0xe2b21b],["orange","Orange",0xd85f14],["blue","Blue",0x1f4fa8],["green","Green",0x1e6a3b],["purple","Purple",0x5b2a86],["silver","Silver",0xa9aeb5]];
+function paintKey(){const k=(career()?C():S).paint;return PAINTS.some(p=>p[0]===k)?k:"cover";}
+function carPaint(){const p=PAINTS.find(x=>x[0]===paintKey());return p&&p[2]!=null?p[2]:((window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26);}
+const hex6=n=>"#"+(n>>>0).toString(16).padStart(6,"0");
+function paintHtml(){const k=paintKey(),cov=(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26;
+  return`<div class="lbl"><span>Paint</span><b>${(PAINTS.find(p=>p[0]===k)||PAINTS[0])[1]}</b></div><div class="paints" role="radiogroup" aria-label="Paint">${PAINTS.map(([id,n,c])=>`<button data-paint="${id}" role="radio" aria-checked="${k===id}" aria-label="${n}" title="${n}" class="${k===id?"on":""}${c==null?" cov":""}"><i style="background:${hex6(c==null?cov:c)}"></i></button>`).join("")}</div>`;}
+$("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-paint]");if(!b)return;(career()?C():S).paint=b.dataset.paint;renderEnv();save();});
+/* drag v2: what the strip car carries, read off the build (hood hardware, intercooler, exhaust effects) */
+function stripHw(c){const k=c.asp||"na",asp=k==="na"?"na":k==="roots"||k==="screw"?"blower":k==="centrifugal"?"centri":k==="twin_turbo"||k==="compound"?"twin":"turbo";
+  return{asp,ic:!!c.ic&&c.ic!=="none",als:!!c.als&&c.als!=="off",n2o:!!c.nitrous&&c.nitrous!=="none",diesel:!!SIM.isDiesel(c)};}
+/* the other lane's own car: shell from the car's name, paint and hardware seeded from the name (hw0: the test & tune mirror runs your engine) */
+const RIVAL_PAINT=[0x1f4fa8,0xe2b21b,0x1e6a3b,0xe6e4de,0x16181b,0x5b2a86,0xd85f14,0x7a1f1f,0x2b8a9e,0xa9aeb5,0xc23b6e,0x55602f];
+function rivalLook(name,car,body,hw0){const h=rnHash(String(name)+"|"+String(car||"")),r=rnRng(h),n=String(car||"").toLowerCase();
+  let style=/s10|pickup|truck/.test(n)?"truck":/civic|hatch/.test(n)?"hatch":/'6\d|'7[0-4]|camaro|nova|chevelle|duster|challenger|dart|falcon|cuda|gto|fox|mustang|impala|willys/.test(n)?"muscle":n?"coupe":["coupe","muscle","coupe","hatch","muscle"][h%5];
+  let hw;if(hw0)hw=Object.assign({},hw0);
+  else{const pool=body==="street"?["na","na","turbo","blower","centri"]:body==="outlaw"?["turbo","twin","blower","na","centri"]:["blower","twin","turbo","blower","na"];
+    let asp=/turbo|grand national|supra/.test(n)?(r()<0.5?"twin":"turbo"):/nitrous/.test(n)?"na":pool[Math.floor(r()*pool.length)];
+    const tb=asp==="turbo"||asp==="twin",dsl=/s10|pickup/.test(n)&&r()<0.5;if(dsl&&asp==="na")asp="turbo";
+    hw={asp,ic:tb||asp==="centri"||dsl,als:(tb&&!dsl&&body!=="street"&&r()<0.6)||(tb&&r()<0.2),n2o:/nitrous/.test(n)||(!dsl&&r()<0.2),diesel:dsl};}
+  hw.style=style;const mine=carPaint();let c=RIVAL_PAINT[h%RIVAL_PAINT.length];if(c===mine)c=RIVAL_PAINT[(h+5)%RIVAL_PAINT.length];
+  return{color:c,hw};}
+/* what the other lane's car does (from a full dragPass trace): shift times, how long it spins, a seeded wheelie, chute */
+function oppFx(tr,veh,seed){const r=rnRng(seed>>>0),sh=[];let g=null,spin=0;
+  for(const p of tr||[]){if(p&&p.length>5){if(g!=null&&p[4]>g)sh.push(p[0]);g=p[4];if(p[5]&&p[0]<2.5)spin=p[0]+0.05;}}
+  return{sh,spin,cut:Infinity,chute:!!veh.chute,lift:veh.body==="street"?0.05+r()*0.25:0.35+r()*0.55};}
+function rnOppFx(N,rv,op){let tr=[];try{tr=SIM.dragPass(DR.res,Object.assign({},DR.veh,{auto:true,noFail:true,tyreTemp:DR.veh.tyre==="street"?0.3:0.8,holdTime:1.0})).trace;}catch(e){}
+  const f=oppFx(tr,DR.veh,rnHash(rv.name+"|"+rv.car));if(op.broke)f.cut=op.at*N.et0;if(rv.skill<0.45)f.spin=Math.max(f.spin,0.25+(0.45-rv.skill));return f;}
+/* every frame: the other lane's spin / shift kick / wheelie / chute, on the trace's clock (same as oppX) */
+function oppDyn(now,ox,st){const R=DR&&DR.race,F=R&&R.fx;if(!F)return null;
+  if(st.phase==="burnout")return{oburn:!!st.spin,ospin:!!st.spin,oshifting:false,olift:0,ochute:false};
+  const g0=R.ogreen!=null?R.ogreen:R.green;const tt=g0==null?-1:((now-g0)/1000-R.rt)/R.k;
+  if(tt<=0)return{ospin:false,oshifting:false,olift:0,ochute:false};
+  const live=tt<F.cut;
+  return{ospin:live&&tt<F.spin,oshifting:live&&F.sh.some(s=>tt>=s&&tt<s+0.22),olift:live?F.lift*Math.min(1,tt/0.2)*Math.max(0,1-tt/1.3):0,ochute:F.chute&&ox>404};}
 $("envBox").addEventListener("click",e=>{if(e.target.closest("[data-stdcell]")){C().cell=stdCell();renderEnv();recompute();commitEnv();renderTest();toast("Cell reset to standard");}});
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-lp]");if(!b)return;const k=b.dataset.ek||"loadProfile";S.env[k]=b.dataset.lp;
   if(k==="body"&&BODY_SETUP[b.dataset.lp]){const bs=Object.assign({},BODY_SETUP[b.dataset.lp]);bs.launchRpm=Math.min(bs.launchRpm,S.cfg.redline);Object.assign(S.env,bs);toast(`${SIM.AERO[b.dataset.lp].n} — typical gearing filled in, edit anything`);}
@@ -19003,11 +19239,12 @@ function dragStart(){
   rnPrep(veh,res,env);   // tyre pressure / shocks; on a race night the class lock and the air
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const snap=testSnap(),hk=hKey(snap.h),soak=soakFor(hk);
-  const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,snap,last:performance.now(),failed:false,downAt:null,lastPtr:0};
+  const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,snap,last:performance.now(),failed:false,downAt:null,lastPtr:0};DR.hw=stripHw(snap.cfg);
   if(env.race==="heads"){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
-    DR.race={trace:oppTrace(opp.trace,Infinity,veh.chute?9:6,(opp.et||30)+40),k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};}
+    DR.race={trace:oppTrace(opp.trace,Infinity,veh.chute?9:6,(opp.et||30)+40),k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};
+    DR.race.look=rivalLook(DR.race.name,"",veh.body,DR.hw);DR.race.fx=oppFx(opp.trace,veh,rnHash(DR.race.name+":"+DR.race.k));}
   n2oStart();
   ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);
   if(env.race==="night")rnRace();   // race night: the rival in the other lane
@@ -19031,11 +19268,11 @@ function dragStart(){
       // test & tune heads-up: the other lane's RT once it leaves, its ET/MPH once it's through the traps, and the same verdict as the slip
       let hx=null;if(R&&!DR.night){const fin=R.et!=null&&ox>=402.336;hx={ort:R.green!=null&&(now-R.green)/1000>=R.rt?R.rt:undefined,oet:fin?R.et:undefined,omph:fin?R.mph:undefined,
         win:st.phase==="shutdown"||st.phase==="done"?!DR.failed&&!R.foul&&!!m4&&(R.et==null||m4.t+Math.max(0,R.rt0||0)<R.et+R.rt):undefined};}
-      ENGINE_VIS.setStrip(Object.assign({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,
+      ENGINE_VIS.setStrip(Object.assign({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:carPaint(),hw:DR.hw,opp:R?R.look:undefined,
         tree:{staged:!!st.rolled&&st.phase!=="burnout",a1:dtT>=0,a2:dtT>=0.5,a3:dtT>=1.0,green:!!(R&&R.green!=null)},
         shifting:st.shiftT>0,boost:st.boost,boostTarget:st.boostTarget,rpm:st.rpm,redline:veh.redline,gear:st.gear,
         launch:{armed:!!st.launch.armed,twoStep:st.launch.twoStep,transBrake:st.launch.transBrake,held:st.launch.held,retard:st.launch.retard,pops:st.launch.pops},
-        tyreTemp:st.tyreTemp,burnout:st.phase==="burnout",lift:st.lift,onBars:!!st.onBars,brake:st.phase==="shutdown",failed:!!DR.failed,failKind:DR.failed?DR.failKind:null,night:!!(S.night||DR.night),rt:R?R.rt0:null},hx));}
+        tyreTemp:st.tyreTemp,burnout:st.phase==="burnout",lift:st.lift,onBars:!!st.onBars,brake:st.phase==="shutdown",failed:!!DR.failed,failKind:DR.failed?DR.failKind:null,night:!!(S.night||DR.night),rt:R?R.rt0:null},R?oppDyn(now,ox,st):null,hx));}
     if(st.phase==="burnout"){const ll=veh.transBrake==="line_lock";
       $("dragLive").innerHTML=`<div class="peak" style="grid-column:1/-1"><b>${Math.round(st.tyreTemp*100)}<i>% tyre heat</i></b><span>${st.burning?"burning · "+st.burnT.toFixed(1)+" s"+(st.burnT>4?" · too long, it's going greasy":st.burnT>2.5?" · that's about right":""):st.burnT>0?"tap to roll into the beams":"in the water box"}${ll?" · line lock on":" · no line lock — it will creep"}</span></div>`;
       if(st.burning)dragBtnText("BURNING…","let go when the smoke rolls");else if(st.burnT>0)dragBtnText("TAP TO STAGE","or hold to burn some more");else dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");}
@@ -19260,6 +19497,7 @@ function rnRace(){const N=rnLive();if(!N)return;const i=rnOppIdx(N),rv=N.field[i
   const k=op.et!=null?op.et/N.et0:rv.mean/N.et0;
   DR.race={trace:rnOppTrace(N,op),k,rt:op.rt,et:op.et,mph:op.mph,foul:false,rt0:null,tree0:null,green:null,name:rv.name,ofoul:op.rt<0};
   DR.night={stage:N.stage,label:rnStageName(N,N.stage),opp:i,op,dialP:br?N.dial:null,dialO:br?op.dial:null,verdict:null};
+  DR.race.look=rivalLook(rv.name,rv.car,N.body,null);DR.race.fx=rnOppFx(N,rv,op);
   if(br){const h=rnTreeOffsets(N.dial,op.dial);DR.race.hcP=h.p;DR.race.hcO=h.o;}}
 /* every frame: the other lane's tree, lights and numbers on the boards, and the round's verdict once you're past the stripe */
 function rnFrame(now,st,dtT){const R=DR.race,n=DR.night;if(!R||!n)return;
@@ -19431,7 +19669,7 @@ function pitsSync(){if(!ENGINE_VIS.setPits)return;let ov=$("pitsOv");
   ov.hidden=false;$("app").classList.add("pits");
   const np=(N.passes||[]).length;if(np!==pitsPass.n){pitsPass={n:np,t:pitsPass.n>=0&&np>0?Date.now():0};}   // just off the strip: hot tyres
   const veh=rnVeh(dragVeh());
-  ENGINE_VIS.setPits({on:true,body:N.body,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,tyreIn:veh.tyreDia,nightK:Math.min(1,N.stage/4),
+  ENGINE_VIS.setPits({on:true,body:N.body,color:carPaint(),hw:stripHw(S.cfg),tyreIn:veh.tyreDia,nightK:Math.min(1,N.stage/4),
     heat:pitsPass.t?Math.max(0,1-(Date.now()-pitsPass.t)/90000):0,poke:pitsPokeK});pitsPokeK=null;
   const T=pitsTags();if(pitsSel&&!T.some(x=>x.k===pitsSel))pitsSel=null;
   const key=JSON.stringify(T.map(x=>[x.k,x.v]))+"|"+pitsSel+"|"+N.stage+"|"+((T.find(x=>x.k===pitsSel)||{}).wi?$("envBox").querySelector('[data-rn="freshen"]')?1:0:"");
