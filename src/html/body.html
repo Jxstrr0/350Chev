@@ -1,0 +1,259 @@
+</style>
+
+<div id="app">
+  <div id="view">
+    <canvas id="gl"></canvas>
+    <div id="hud">
+      <div class="brand">Prairie Engine Works<small id="weekLbl">TEST CELL</small></div>
+      <div class="right">
+        <div class="cash"><b id="cashLbl">$20,000</b><span id="repLbl">Rep 0</span></div>
+      </div>
+      <div class="hudbtns">
+        <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
+        <button id="idleBtn" aria-label="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
+        <button id="viewBtn" aria-label="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
+        <div class="hudtray" id="viewTray" role="group" aria-label="View options" hidden>
+          <button id="sizeBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M12 7V4M12 17v3"/><path d="M8 20h8"/><path d="M5 12h14"/><path d="M9 9l3-3 3 3"/><path d="M9 15l3 3 3-3"/></svg><span>Small view</span></button>
+          <button id="xrayBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V6M12 18v-3"/></svg><span>X-ray</span></button>
+          <button id="heatBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M10 4a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 9v6"/></svg><span>Heat map</span></button>
+        </div>
+      </div>
+    </div>
+    <div id="tag">—</div>
+    <div id="fpsHud" aria-hidden="true"></div>
+    <div id="rpmbox"><b id="rpmLbl">0</b><span>RPM</span></div>
+    <div id="stripHud" hidden></div>
+    <div id="flash"></div>
+    <div id="stripCap" aria-live="polite" hidden></div>
+    <div id="tdCap" role="dialog" aria-label="Teardown" hidden><div class="tdk">Teardown · <span id="tdRun"></span></div><b id="tdPart"></b><p id="tdWhat"></p><p class="ms" id="tdMeas"></p><p class="fx" id="tdFix"></p>
+      <div class="tdbtns"><button class="btn sm ghost" id="tdSpin" aria-pressed="false">Rotate</button><button class="btn sm pri" id="tdBack">Back to the engine</button></div></div>
+  </div>
+
+  <div id="panel">
+    <div id="ddBar" hidden></div>
+    <!-- BUILD -->
+    <section class="tabpage on" id="tab-build">
+      <div class="strip">
+        <div><b id="sDisp">2.0</b><span>Litres</span></div>
+        <div><b id="sHp">0</b><span>est. hp</span></div>
+        <div><b id="sKg">0</b><span>kg</span></div>
+        <div><b id="sCost">$0</b><span>unit cost</span></div>
+      </div>
+      <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
+        <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
+        <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button><button class="chip" data-pf="rotary">Rotary</button><button class="chip" data-pf="two">Two-stroke</button></div>
+        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
+        <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
+        <div id="presets"></div></div></div>
+      <div id="buildForm"></div>
+      <div class="sec">
+        <h2>Blueprints</h2>
+        <div id="bpList"></div>
+        <button class="btn sm info" id="saveBp">Save blueprint</button>
+      </div>
+    </section>
+
+    <!-- TEST -->
+    <section class="tabpage" id="tab-test">
+      <div class="seg n3" id="testType">
+        <button data-t="pull" class="on">Dyno pull<small>WOT sweep</small></button>
+        <button data-t="endurance">Endurance<small>hours to failure</small></button>
+        <button data-t="overrev">Over-rev<small>missed shift</small></button>
+      </div>
+      <p class="hint tbusy" id="testBusy" hidden></p>
+      <div class="coreslot" id="testSlot"><div id="testCore">
+      <div id="envBox"></div>
+      <div id="chartwrap"><canvas id="chart"></canvas></div>
+      <div class="chips" id="curveChips">
+        <button class="chip on" data-c="power">Power</button><button class="chip on" data-c="torque">Torque</button><button class="chip" data-c="boost">Boost</button><button class="chip" data-c="ve">VE</button><button class="chip" data-c="egt">EGT</button><button class="chip" data-c="base" id="baseChip">vs baseline</button>
+      </div>
+      <div class="peaks" id="peaks"></div>
+      <p class="hint" id="dynoHint"></p>
+      <div id="verdict"></div>
+      <div id="testExtra"></div>
+      <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
+      </div></div>
+      <div class="sec" id="ddSec" hidden><h2>Dyno day <span class="cnt" id="ddCnt"></span></h2><div id="ddBox"></div></div>
+      <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
+
+      <div class="sec acc advf" id="abSec" data-adv="ab"><button class="acch" aria-expanded="false"><span class="t">Sound bench</span><span class="sum" id="abCnt">A / B · two builds back to back</span><span class="chev"></span></button><div class="accb">
+        <p class="hint" style="margin-top:0">Hold two builds at the same rpm and switch between them. Small differences only show up back to back.</p>
+        <div class="abslot" id="abA"><div class="abhead"><b>A</b><span id="abAname">empty</span></div>
+          <div class="row"><button class="btn sm" data-abcap="A">Capture current</button><button class="btn sm ghost" data-abload="A">Load into build</button></div></div>
+        <div class="abslot" id="abB"><div class="abhead"><b>B</b><span id="abBname">empty</span></div>
+          <div class="row"><button class="btn sm" data-abcap="B">Capture current</button><button class="btn sm ghost" data-abload="B">Load into build</button></div></div>
+        <div class="lbl"><span>Bench rpm</span><b id="v-abrpm" class="tap">4,000 rpm</b></div>
+        <div class="srow"><button class="nud" data-abr="-1">−</button>
+          <input type="range" id="abRpm" min="900" max="9000" step="100" value="4000">
+          <button class="nud" data-abr="1">+</button></div>
+        <div class="lbl"><span>Throttle</span><b id="v-abload">100%</b></div>
+        <div class="srow"><button class="nud" data-abl="-1">−</button>
+          <input type="range" id="abLoad" min="10" max="100" step="5" value="100">
+          <button class="nud" data-abl="1">+</button></div>
+        <div class="seg n2" id="abPlay"><button data-abplay="A">Play A</button><button data-abplay="B">Play B</button></div>
+        <button class="btn sm ghost" id="abStop" style="width:100%;margin-top:8px">Stop</button>
+        <p class="hint" id="abHint">Capture a build into A, change something, capture it into B.</p>
+      </div></div>
+
+      <div class="dockslot" id="testDock"><div class="row" id="runDock">
+        <button class="btn pri" id="runTest" style="flex:2">Run test</button>
+        <button class="btn sm" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button>
+      </div></div>
+    </section>
+
+    <!-- EVENTS: the strip, the sled, the salt, the road and the 24 Hours (the test core moves here with them) -->
+    <section class="tabpage" id="tab-events">
+      <div class="evpick" id="evPick" role="radiogroup" aria-label="Event"></div>
+      <p class="hint tbusy" id="evBusy" hidden></p>
+      <div class="coreslot" id="evSlot"></div>
+      <div id="e24Ctl" style="display:none"><div id="e24Hud"></div><div class="row e24spd" id="e24Spd"></div></div>
+      <div id="e24Side" style="display:none"></div>
+      <div id="evCtls">
+        <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
+        <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn" id="killBtn" style="display:none">KILL SWITCH<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.85;font-weight:500">it's running away — tap now</small></button><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
+        <div id="roadCtl" style="display:none"><div id="roadLive"></div><div class="row rdbtns"><button class="btn pri" id="roadSkip">SKIP ▸▸</button><button class="btn" id="roadSpd">2×</button><button class="btn" id="roadCamB">Cam · Auto</button></div></div>
+        <div id="bogCtl" style="display:none"><div id="bogLive"></div><button class="btn pri" id="bogBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO DRIVE</button></div>
+        <div id="saltCtl" style="display:none"><div id="saltLive"></div><div class="row" style="gap:8px"><button class="btn pri" id="saltBtn" style="flex:3;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO RUN</button><button class="btn" id="saltShiftBtn" style="flex:1;min-height:72px;font-size:18px;touch-action:none">SHIFT</button></div><div class="chips" id="saltWarp" style="margin-top:8px"><span class="hint" style="margin:0 4px 0 0;align-self:center">Run-up</span><button class="chip on" data-warp="1">×1</button><button class="chip" data-warp="2">×2</button><button class="chip" data-warp="4">×4</button></div></div>
+      </div>
+      <div class="dockslot" id="evDock"></div>
+    </section>
+
+    <!-- ANALYSIS -->
+    <section class="tabpage" id="tab-analysis">
+      <div class="sec" id="tdAna" hidden></div>
+      <div class="sec"><h2>Material &amp; combo interactions <span class="cnt" id="comboCnt"></span></h2><div id="combos"></div></div>
+      <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
+      <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
+      <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><div id="recBox"></div></div>
+      <div class="sec" id="achSec"><h2>Achievements <span class="cnt" id="achCnt"></span></h2><div id="achBox"></div></div>
+      <div class="sec" id="dlSec" style="display:none"><h2>Last pass datalog</h2><div id="dlBox"></div></div>
+    </section>
+
+    <!-- MARKET -->
+    <section class="tabpage" id="tab-market">
+      <div id="marketBox">
+        <div class="stats" id="gStats"></div>
+        <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
+        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><div id="contracts"></div><button class="btn pri" id="nextWeek">Close the week</button><p class="hint" id="overheadHint"></p></div>
+        <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
+        <div class="sec"><h2>Warranty &amp; ledger</h2><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div>
+        <div class="sec"><h2>Shop goals <span class="cnt" id="goalCnt"></span></h2><div id="goals"></div></div>
+      </div>
+      <div id="marketSandbox"><p class="hint">Contracts, warranty claims and goals are a career thing. The test cell has no customers — switch to Career in the Shop tab to start selling.</p></div>
+    </section>
+
+    <!-- SHOP -->
+    <section class="tabpage" id="tab-shop">
+      <div class="modebox" id="modeBox">
+        <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
+        <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
+      </div>
+      <div id="careerBox">
+        <div class="stats" id="sStats"></div>
+        <div class="sec"><h2>Upgrades</h2><div id="upgrades"></div></div>
+        <div class="sec"><h2>Staff <span class="cnt" id="staffCnt"></span></h2><div id="staff"></div></div>
+        <div class="sec"><h2>R&amp;D <span class="cnt" id="rndCnt"></span></h2><p class="hint" id="rndHint"></p><div id="rnd"></div></div>
+        <div class="sec"><h2>Prestige</h2><div id="prestige"></div></div>
+        <div class="sec"><h2>Bank</h2><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div>
+      </div>
+      <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
+      <div class="sec"><h2>Settings</h2>
+        <button class="btn sm ghost" id="achBtn" style="margin:0 0 10px;display:flex;justify-content:space-between;width:100%"><span>Achievements</span><b id="achSet"></b></button>
+        <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
+        <div class="lbl"><span>Theme</span></div>
+        <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
+        <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
+        <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
+        <div class="lbl"><span>Glossary links</span></div>
+        <div class="seg n2" id="glSeg"><button data-gl="1">On<small>dotted terms explain themselves</small></button><button data-gl="0">Off</button></div>
+        <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
+        <div id="layBox"><div class="lbl"><span>Layout</span></div>
+        <div class="seg n2" id="laySeg"><button data-lay="phone">Phone<small>one column, thumb-sized</small></button><button data-lay="desktop">Desktop<small>wide view + sidebar</small></button></div>
+        <button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
+        <div class="lbl"><span>Graphics</span></div>
+        <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
+        <div class="lbl"><span>Camera follows edits</span></div>
+        <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
+        <div class="lbl"><span>Engine sound</span></div>
+        <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
+        <div class="lbl"><span>Engine voice</span><b id="srcLbl">—</b></div>
+        <div class="seg n3" id="srcSeg"><button data-src="synth">Synth<small>your build</small></button><button data-src="real">Real<small>recordings</small></button><button data-src="blend">Blend<small>both</small></button></div>
+        <button class="btn sm ghost" id="sndCredBtn" style="margin:0 0 10px">Sound credits</button>
+        <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
+        <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
+        <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
+        <div class="lbl"><span>Haptics</span></div>
+        <div class="seg n2" id="hapSeg"><button data-hap="1">On<small>slider ticks, bangs</small></button><button data-hap="0">Off</button></div>
+        <div class="lbl"><span>Pressure units</span></div>
+        <div class="seg n2" id="puSeg"><button data-pu="bar">Bar<small>boost, cylinder pressure</small></button><button data-pu="psi">PSI<small>pounds per square inch</small></button></div>
+        <div id="devBox">
+          <div class="lbl"><span>Career dev mode</span></div>
+          <div class="seg n2" id="devSeg"><button data-dev="0">Off<small>play it straight</small></button><button data-dev="1">On<small>every part, upgrade and staff · tests free</small></button></div>
+          <div class="row" id="devRow" style="display:none;margin-bottom:8px"><button class="btn sm info" id="devCash" style="flex:1">+ $1,000,000</button><button class="btn sm info" id="devRep" style="flex:1">+ 500 rep</button><button class="btn sm info" id="devWeek" style="flex:1">Skip week</button></div>
+          <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
+        </div>
+        <div id="fpsBox">
+          <div class="lbl"><span>Show FPS</span><b id="fpsLbl">—</b></div>
+          <div class="seg n2" id="fpsSeg"><button data-fps="1">On<small>in the engine view</small></button><button data-fps="0">Off</button></div>
+          <div class="lbl"><span>Frame-rate cap</span></div>
+          <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
+          <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
+        </div>
+      </div>
+      <div class="sec"><h2>Saves <span class="cnt" id="autoLbl">autosave on</span></h2>
+        <div id="slots"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm info" id="exportSave" style="flex:1">Export code</button>
+          <button class="btn sm info" id="importSave" style="flex:1">Import code</button>
+        </div>
+        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots — save before a risky build, load to roll back. A save code moves everything to another phone.</p>
+        <button class="btn danger" id="resetGame">Wipe career</button>
+        <p class="hint">A game by Prairie Blue Studio.</p>
+      </div>
+    </section>
+  </div>
+
+  <nav id="tabs"><div id="testProg"></div>
+    <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
+    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
+    <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
+    <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
+    <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
+    <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
+  </nav>
+
+  <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
+  <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
+  <div id="les" hidden><div id="lesSpot"></div><div id="lesBox" role="dialog" aria-labelledby="lesTitle" aria-live="polite"><div class="step" id="lesStep"></div><h3 id="lesTitle"></h3><p id="lesText"></p><div class="row"><button class="btn sm ghost" id="lesSkip">Skip</button><button class="btn sm" id="lesKeep" style="display:none">Keep this build</button><button class="btn sm pri" id="lesNext" style="flex:1">Next</button></div></div></div>
+  <div id="glPop" role="dialog" aria-live="polite" hidden></div>
+  <div id="scrim"></div>
+  <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
+  <div id="toast"></div>
+  <div id="achToast"></div>
+
+  <div id="intro">
+    <div class="box">
+      <h1>Prairie<br>Engine <em>Works</em></h1>
+      <p>Design an engine down to the piston alloy and rod bolts, then find out what breaks. Sixty-five base engines modelled on real ones, twenty-six measured failure modes, and every material interaction spelled out.</p>
+      <div id="introLay" hidden><span>Play on</span><div class="seg n2"><button data-lay="phone">Phone<small>portrait, touch</small></button><button data-lay="desktop">Desktop<small>wide screen, mouse + keys</small></button></div></div>
+      <div class="modebox">
+        <button data-mode="sandbox"><b>Test cell</b><small>Sandbox — everything unlocked, no money. For testing theories.</small></button>
+        <button data-mode="career"><b>Career</b><small>$20,000, a chassis dyno, five stock starter engines. Sell certified engines, survive the warranty claims, grow.</small></button>
+      </div>
+      <div class="credit">A game by Prairie Blue Studio · <span id="verLbl"></span></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>

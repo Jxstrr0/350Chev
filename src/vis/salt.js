@@ -1,0 +1,410 @@
+/* ===========================================================================
+   SALT FLATS SCENE — Bonneville land-speed runs, a fourth world the view cuts
+   to while ENGINE_VIS.setSalt({on:true, ...}) is fed every frame.
+   Units metres. x = distance down the course from the start line (the timed
+   mile sits a mile or three out), y up, z across: pits and timing stands on
+   the left (z < 0), the black line down the middle at z = 0. The ground is one
+   big plane that follows the camera; its salt crust, tyre tracks, the black
+   line and the start line are drawn by a world-space shader, so a 10 km course
+   costs nothing. Mountains ring the flats 9–15 km out, hazed by the fog; a
+   full-screen pass adds the heat shimmer and the mirage band at the horizon
+   (Full/Ultra). Cars are built here (streamliner, lakester, roadster) or reuse
+   the strip's street car for the Altered class. Built on first use.
+   ==========================================================================*/
+var LSR_MILE_V=1609.344;
+var SALT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
+  camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:46, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false, horLin:null,
+  t:0, runT:0, doneT:0, prev:{}, composer:null, shimmer:null, exposure:0.74, stats:null, tier:null, fx:null, flags:[], fixX:0, fixZ:0, seq:0,
+  course:null, crowd:null, shake:0, pushX:0, pushZ:0, pushV:0 };
+SALT.course={x0:LSR_MILE_V, x1:2*LSR_MILE_V, k0:1.5*LSR_MILE_V-500, k1:1.5*LSR_MILE_V+500, xEnd:3.5*LSR_MILE_V};
+var _sA=new THREE.Vector3(), _sB=new THREE.Vector3(), _sC=new THREE.Vector3(), _sw=new THREE.Vector3(), _st=new THREE.Vector3(), _sr=new THREE.Vector3(), _srt=new THREE.Vector3(), _sM=new THREE.Matrix4(), _sQ=new THREE.Quaternion(), _sS=new THREE.Vector3();
+var SALT_SUN=new THREE.Vector3(0.42,0.66,0.62).normalize(), SALT_HOR=[0.56,0.64,0.74], SALT_WIND=new THREE.Vector3(-1.6,0,0.7);
+/* salt: a crust of low polygon ridges, damp grey patches far off, the graded course with old tyre tracks, the black line, the start line */
+var SALT_GLSL_GROUND=[
+  "vec2 saltVor(vec2 p){ vec2 i=floor(p), f=fract(p); float d1=8.0, d2=8.0; for(int y=-1;y<=1;y++) for(int x=-1;x<=1;x++){ vec2 g=vec2(float(x),float(y)); vec2 r=g+vec2(sh(i+g),sh(i+g+19.7))*0.85-f; float dd=dot(r,r); if(dd<d1){ d2=d1; d1=dd; } else if(dd<d2) d2=dd; } return vec2(sqrt(d1),sqrt(d2)); }",
+  "vec3 stripSurf(vec3 w, out float rough){",
+  "  vec2 p=w.xz; float d=length(w-cameraPosition); float fine=1.0-smoothstep(12.0,70.0,d), mid=1.0-smoothstep(60.0,1400.0,d);",
+  "  float n2=sn(p*0.21+7.0), n3=sn(p*3.7), n4=sn(p*0.017+2.0);",
+  "  vec2 q=p*0.42; float r1=1.0-abs(sn(q)*2.0-1.0), r2=1.0-abs(sn(q*1.9+5.0)*2.0-1.0);",
+  "  float ridge=(pow(r1,7.0)+0.6*pow(r2,9.0))*(1.0-fine)*mid*0.5;",
+  "  vec3 c=vec3(0.76,0.765,0.75)*(0.95+0.08*(n2-0.5)*mid+0.06*(n3-0.5)*fine+0.07*(n4-0.5));",
+  "  if(fine>0.0){ vec2 vv=saltVor(p*0.75); float e=1.0-smoothstep(0.0,0.09,vv.y-vv.x); vec2 v2=saltVor(p*0.75+vec2(0.035,0.02)); float e2=1.0-smoothstep(0.0,0.09,v2.y-v2.x);",
+  "    c*=1.0-fine*(0.16*e2-0.07*e); c*=1.0-fine*0.05*smoothstep(0.2,0.6,vv.x); }",
+  "  c-=vec3(0.10,0.09,0.07)*ridge;",
+  "  float damp=smoothstep(0.6,0.82,sn(p*0.0019+3.0))*smoothstep(60.0,400.0,abs(w.z));",
+  "  c=mix(c,vec3(0.50,0.49,0.46),damp*0.5);",
+  "  float az=abs(w.z), crs=(1.0-smoothstep(13.0,18.0,az))*smoothstep(-260.0,-200.0,w.x)*(1.0-smoothstep(12400.0,12700.0,w.x));",
+  "  float tr=exp(-pow((az-0.75)/0.32,2.0))+0.55*exp(-pow((az-2.6)/0.5,2.0))+0.35*exp(-pow((az-5.2)/0.9,2.0));",
+  "  c*=1.0-crs*0.17*tr*(0.55+0.45*sn(vec2(w.x*0.04,w.z*2.5)));",
+  "  c*=1.0+crs*0.03;",
+  "  float bl=(1.0-smoothstep(0.10,0.15,az))*step(-40.0,w.x)*(1.0-step(12350.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
+  "  c=mix(c,vec3(0.03,0.03,0.035),bl);",
+  "  float sl=(1.0-smoothstep(0.08,0.13,abs(w.x)))*(1.0-smoothstep(5.0,5.4,az));",
+  "  c=mix(c,vec3(0.04,0.04,0.05),sl*0.9);",
+  "  float pit=smoothstep(-260.0,-240.0,w.x)*(1.0-smoothstep(110.0,130.0,w.x))*smoothstep(-160.0,-150.0,w.z)*(1.0-smoothstep(-32.0,-26.0,w.z));",
+  "  c*=1.0-pit*0.08*(0.6+0.4*sn(p*0.8));",
+  "  rough=0.93-crs*0.05; return c; }"].join("\n");
+/* sky: deep desert blue overhead to a pale hazy horizon, the sun, no clouds to speak of */
+function saltSkyMat(){
+  return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:SALT_SUN.clone()}, uHor:{value:new THREE.Vector3().fromArray(SALT_HOR)} },
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    fragmentShader:["uniform vec3 uSun; uniform vec3 uHor; varying vec3 vDir;", STRIP_GLSL_NOISE,
+      "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
+      " vec3 zen=vec3(0.045,0.14,0.42); vec3 col=mix(uHor,zen,pow(up,0.42)); col=mix(col,uHor*0.97,smoothstep(0.0,-0.04,h));",
+      " float sd=max(dot(d,uSun),0.0); col+=vec3(1.0,0.86,0.62)*(pow(sd,6.0)*0.14+pow(sd,60.0)*0.35);",
+      " col+=vec3(1.0,0.95,0.85)*smoothstep(0.99955,0.9998,sd)*6.0;",
+      " vec2 cp=d.xz/(max(h,0.0)+0.08)*0.7+vec2(5.0,2.0); float n=sfbm(cp*0.9)-0.5;",
+      " col=mix(col,vec3(0.86,0.88,0.92),smoothstep(0.22,0.4,n)*smoothstep(0.02,0.1,h)*smoothstep(0.5,0.2,h)*0.45);",
+      " gl_FragColor=vec4(col,1.0); gl_FragColor=linearToOutputTexel(gl_FragColor); }"].join("\n"),
+    side:THREE.BackSide, depthWrite:false, fog:false, toneMapped:false });
+}
+/* heat: the air over the salt boils — a wobble that grows toward the horizon and a mirage band just under it, mirrored like water */
+var SALT_SHIMMER_SHADER={ uniforms:{ tDiffuse:{value:null}, uHorY:{value:0.5}, uAmt:{value:1}, uT:{value:0}, uMir:{value:1}, uAsp:{value:1} },
+  vertexShader:"varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+  fragmentShader:["uniform sampler2D tDiffuse; uniform float uHorY; uniform float uAmt; uniform float uT; uniform float uMir; uniform float uAsp; varying vec2 vUv;",
+    "void main(){ float d=vUv.y-uHorY; float band=exp(-pow(d/0.06,2.0))*uAmt;",
+    " vec2 o=vec2(sin(vUv.y*620.0+uT*9.0)+0.6*sin(vUv.y*231.0-uT*6.3+vUv.x*40.0), 0.6*cos(vUv.x*180.0*uAsp+uT*7.0))*0.0011*band;",
+    " vec4 c=texture2D(tDiffuse,vUv+o);",
+    " float mb=uMir*(1.0-smoothstep(0.0,0.016,-d))*step(d,0.0);",
+    " if(mb>0.001){ vec2 mu=vec2(vUv.x+o.x*2.0, uHorY+(uHorY-vUv.y)*1.6+0.002); vec4 m=texture2D(tDiffuse,clamp(mu,0.0,1.0)); c=mix(c,m*vec4(0.92,0.95,1.0,1.0),mb*0.55); }",
+    " gl_FragColor=c; }"].join("\n") };
+function saltBuild(B, key, mat, shadow){ var keep=STRIP.scene; STRIP.scene=SALT.scene; var m=B.build(key, mat, shadow); STRIP.scene=keep; return m; }
+/* sign atlas: mile boards 1–7, START, TIMING, 1 KM, the meet banner, two trailer liveries */
+function saltAtlas(){
+  var c=newCanvas(1024,512), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
+  function board(x0,y0,w,h,bg,fg,big,small){ x.fillStyle="#1a1a1a"; x.fillRect(x0,y0,w,h); x.fillStyle=bg; x.fillRect(x0+5,y0+5,w-10,h-10); x.fillStyle=fg; x.textAlign="center"; x.textBaseline="middle";
+    x.font="700 "+(big.length>2?Math.round(h*0.34):Math.round(h*0.55))+"px "+F; x.fillText(big, x0+w/2, y0+h*(small?0.42:0.52), w-16); if(small){ x.font="700 "+Math.round(h*0.17)+"px "+F; x.fillText(small, x0+w/2, y0+h*0.82, w-16); } }
+  for(i=0;i<7;i++) board(i*146,0,144,180,"#f4efe2","#141414",String(i+1),"MILE");
+  board(0,182,250,120,"#f4efe2","#b7261d","START","");
+  board(252,182,250,120,"#ff7a1a","#141414","TIMING","");
+  board(504,182,250,120,"#f4efe2","#1d4787","1 KM","");
+  board(756,182,268,120,"#141414","#ff7a1a","TIMED","MILE");
+  x.fillStyle="#f4efe2"; x.fillRect(0,304,1024,72); x.fillStyle="#1d4787"; x.fillRect(0,366,1024,10);
+  x.fillStyle="#1d4787"; x.font="700 44px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText("SALT FLATS SPEED TRIALS · PRAIRIE ENGINE WORKS", 512, 336, 1000);
+  x.fillStyle="#1b1d20"; x.fillRect(0,380,510,130); x.fillStyle="#ff7a1a"; x.font="700 60px "+F; x.fillText("COULEE FUELS", 255, 445, 480);
+  x.fillStyle="#e9e6dc"; x.fillRect(512,380,512,130); x.fillStyle="#1d4787"; x.font="700 52px "+F; x.fillText("WENDOVER FLYERS", 768, 445, 490);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
+}
+var SALT_UV={ mile:function(i){ i=Math.max(0,Math.min(6,i)); return [i*146/1024, 1-180/512, (i*146+144)/1024, 1]; },
+  start:[0,1-302/512,250/1024,1-182/512], timing:[252/1024,1-302/512,502/1024,1-182/512], km:[504/1024,1-302/512,754/1024,1-182/512], timed:[756/1024,1-302/512,1,1-182/512],
+  banner:[0,1-376/512,1,1-304/512], liv:[[0,0,510/1024,1-380/512],[512/1024,0,1,1-380/512]] };
+
+/* --- the flats --- */
+function buildSaltScene(){
+  var S4=new THREE.Scene(); SALT.scene=S4; SALT.tier=GFX;
+  var lite=(GFX==="lite"), i, k, x, z, side, M=SALT.mats;
+  var rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); };
+  SALT.g={ box:new THREE.BoxGeometry(1,1,1), cyl:new THREE.CylinderGeometry(0.5,0.5,1,12), sph:new THREE.SphereGeometry(0.5,12,8) };
+  var hemi=new THREE.HemisphereLight(0xd6e2f2, 0xe8e2d4, 0.42); S4.add(hemi); SALT.hemi=hemi;
+  var sun=new THREE.DirectionalLight(0xfff0dc, 1.6); sun.castShadow=!lite; sun.shadow.mapSize.set(GFX==="ultra"?4096:2048, GFX==="ultra"?4096:2048);
+  var shc=sun.shadow.camera; shc.left=-24; shc.right=24; shc.top=24; shc.bottom=-24; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
+  S4.add(sun); S4.add(sun.target); SALT.sun=sun;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), saltSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S4.add(sky); SALT.sky=sky;
+  SALT.horLin=new THREE.Color(SALT_HOR[0], SALT_HOR[1], SALT_HOR[2]);
+  S4.fog=new THREE.Fog(0xffffff, 1800, 30000);
+  S4.environment=stripEnv(false);
+  var gm=stripSurfMat(SALT_GLSL_GROUND); gm.customProgramCacheKey=function(){ return "salt_ground"; };
+  var ground=new THREE.Mesh(new THREE.PlaneGeometry(64000, 64000, 96, 96), gm); ground.rotation.x=-PI/2; ground.receiveShadow=true; S4.add(ground); SALT.ground=ground;
+  /* mountains: Silver Island-ish ranges close on the left, long low ranges across the flats on the right */
+  (function(){ var seg=lite?120:220, pos=[], col=[], idx=[], cB=sc(0x8a96a6), cP=sc(0x6f6a64), cS=sc(0xb9c2cc), cx=4800;
+    for(var s=0;s<=seg;s++){ var a=s/seg*TAU, ca=Math.cos(a), sa=Math.sin(a);
+      var near=Math.pow(Math.max(0,Math.cos(a+1.75)),2.0), R=lerp(15500,9000,near)+900*Math.sin(a*7.0+0.4);
+      var hg=Math.max(40, 140+520*near*Math.pow(0.5+0.5*Math.sin(a*13.0+1.3),1.5)+260*Math.pow(0.5+0.5*Math.sin(a*5.0+2.2),3.0)+120*Math.sin(a*31.0)*Math.sin(a*3.0)+(1-near)*180*Math.pow(0.5+0.5*Math.sin(a*9.0),2.0));
+      pos.push(cx+ca*(R-1800),-4,sa*(R-1800), cx+ca*R,hg,sa*R, cx+ca*(R+2400),hg*0.55,sa*(R+2400));
+      var c2=hg>520?cS:cP; col.push(cB.r,cB.g,cB.b, c2.r,c2.g,c2.b, cP.r,cP.g,cP.b); }
+    for(s=0;s<seg;s++){ var a0=s*3, b0=(s+1)*3; idx.push(a0,b0,a0+1, b0,b0+1,a0+1, a0+1,b0+1,a0+2, b0+1,b0+2,a0+2); }
+    var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("color",new THREE.Float32BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals();
+    var hm=new THREE.Mesh(g, new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, side:THREE.DoubleSide})); hm.frustumCulled=false; S4.add(hm); SALT.mtn=hm; })();
+  M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.82});
+  M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.4, metalness:0.65});
+  M.sign=new THREE.MeshStandardMaterial({map:saltAtlas(), roughness:0.7, side:THREE.DoubleSide});
+  M.cloth=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.85, side:THREE.DoubleSide});
+  var B=new StripBatch(), ORANGE=0xff6a14, WHITE=0xeeeae0, STEEL=0x8d9296, DARK=0x232528;
+  SALT.static=B;
+  saltCourseProps(B, SALT.course, true);
+  /* pits: rigs, canopies, a starter's stand at the line, the meet banner */
+  var tc=[0xe9e6dc,0x1b1d20,0x9e2a22,0x22488f,0xd0d3d6,0x2c6b3a,0xd9a52b], P0=-230;
+  for(i=0;i<(lite?8:14);i++){ var px=P0+i*24+rng(i)*8, pz=-48-rng(i+3)*70, rot=(rng(i+7)-0.5)*0.5, cc=tc[i%tc.length];
+    B.box("solid", px, 1.75, pz, 9.5, 2.9, 2.5, cc, rot); B.box("solid", px, 0.25, pz, 9.5, 0.4, 2.3, DARK, rot);
+    var cx2=px+Math.cos(rot)*7.6, cz2=pz-Math.sin(rot)*7.6; B.box("solid", cx2, 1.1, cz2, 5.4, 1.2, 2.0, tc[(i+3)%tc.length], rot); B.box("solid", cx2+Math.cos(rot)*0.6, 1.95, cz2-Math.sin(rot)*0.6, 2.2, 0.75, 1.85, 0x22262b, rot);
+    if(i%3===1) B.add("sign","plane",[px-Math.sin(rot)*1.27, 1.9, pz-Math.cos(rot)*1.27],[7,1.8,1],0xffffff,[0,PI+rot,0],SALT_UV.liv[i%2]);
+    if(i%2===0){ var ax=px+Math.sin(rot)*4.5, az=pz+Math.cos(rot)*4.5, cw=tc[(i+1)%tc.length]; B.box("solid", ax, 2.85, az, 4.2, 0.1, 4.2, cw, rot);
+      for(k=0;k<4;k++) B.box("metal", ax+((k>>1)?1.95:-1.95), 1.42, az+((k&1)?1.95:-1.95), 0.05, 2.84, 0.05, STEEL, rot); } }
+  B.add("sign","plane",[-40, 3.0, -30.5],[22,1.55,1],0xffffff,null,SALT_UV.banner); B.box("metal", -51, 1.9, -30.6, 0.12, 3.8, 0.12, STEEL); B.box("metal", -29, 1.9, -30.6, 0.12, 3.8, 0.12, STEEL);
+  B.box("solid", -6, 2.55, 11, 3.6, 0.1, 3.6, ORANGE); for(k=0;k<4;k++) B.box("metal", -6+((k>>1)?1.7:-1.7), 1.28, 11+((k&1)?1.7:-1.7), 0.05, 2.56, 0.05, STEEL);
+  B.add("sign","plane",[-2, 1.6, 8.6],[2.4,1.15,1],0xffffff,[0,-PI/2+0.5,0],SALT_UV.start); B.box("metal", -2.05, 0.6, 8.6, 0.08, 1.2, 0.08, STEEL);
+  saltBuild(B,"solid", M.solid, !lite); saltBuild(B,"metal", M.metal, !lite); saltBuild(B,"sign", M.sign, false); saltBuild(B,"cloth", M.cloth, false);
+  /* flags on poles at the pits and the start: they flap in the wind */
+  (function(){ var fc=[0xff7a1a,0x1d4787,0xd9a52b,0xb7261d,0xf4efe2,0x2c6b3a], spots=[[-8,9],[-60,-34],[-110,-36],[-170,-40],[-20,-36],[40,-34],[-140,-120]];
+    spots.forEach(function(sp,q){ var pole=new THREE.Mesh(SALT.g.cyl, sc_mats().alu); pole.scale.set(0.06,6.5,0.06); pole.position.set(sp[0],3.25,sp[1]); S4.add(pole);
+      var g=new THREE.PlaneGeometry(2.0,1.25,10,1); g.translate(1.0,0,0); var fl=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(fc[q%fc.length]), roughness:0.8, side:THREE.DoubleSide})); fl.position.set(sp[0],5.8,sp[1]); fl.rotation.y=-2.7; S4.add(fl);
+      SALT.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.3}); }); })();
+  /* people in the pits and along the start (instanced) */
+  if(!lite) (function(){ var n=46, body=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.2,0.17,1.2,8), new THREE.MeshStandardMaterial({roughness:0.8}), n), head=new THREE.InstancedMesh(new THREE.SphereGeometry(0.13,10,8), new THREE.MeshStandardMaterial({color:sc(0xc89a78), roughness:0.7}), n), cc=new THREE.Color(), sh=[0xff7a1a,0x1d4787,0xf4efe2,0xb7261d,0x2c6b3a,0x3b3f45,0xd9a52b];
+    for(var q=0;q<n;q++){ var px=q<10?-14+rng(q)*10:-220+rng(q*3)*300, pz=q<10?6+rng(q+1)*8:-34-rng(q*5)*40;
+      _sM.makeTranslation(px,0.6,pz); body.setMatrixAt(q,_sM); _sM.makeTranslation(px,1.36,pz); head.setMatrixAt(q,_sM); cc.set(sh[q%sh.length]).convertSRGBToLinear(); body.setColorAt(q,cc); }
+    body.castShadow=true; S4.add(body); S4.add(head); })();
+  /* the push truck: an old pickup with a padded push bar */
+  SALT.push=saltPushTruck(); S4.add(SALT.push);
+  /* effects: salt thrown off the tyres and hanging behind the car; exhaust */
+  SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1100:760), "smoke", stripPuffTex()); S4.add(SALT.fx.mesh);
+  SALT.fx.mat.uniforms.uFogN.value=S4.fog.near; SALT.fx.mat.uniforms.uFogF.value=S4.fog.far;
+  SALT.cam=new THREE.PerspectiveCamera(46, 1, 0.4, 34000); SALT.built=true;
+  SALT.sunDir=SALT_SUN.clone();
+}
+/* everything that hangs off the course layout (mile boards, timing traps, cones); rebuilt when the course length changes */
+function saltCourseProps(B, C, first){
+  var i, k, side, x, M=SALT.mats, ORANGE=0xff6a14, WHITE=0xeeeae0, STEEL=0x8d9296, DARK=0x232528, MILE=LSR_MILE_V;
+  var B2=first?B:new StripBatch();
+  for(i=1;i<=6;i++){ x=i*MILE; if(x>C.xEnd+50) break;
+    B2.box("cmetal", x, 1.15, -17, 0.12, 2.3, 0.12, STEEL); B2.add("csign","plane",[x+0.07, 2.65, -17],[1.6,2.0,1],0xffffff,[0,-PI/2+0.45,0],SALT_UV.mile(i-1)); }
+  /* the traps: an electronic eye on a tripod each side, a flag, and a timing stand at the start and end of the mile */
+  [C.x0, C.k0, C.k1, C.x1].forEach(function(tx, q){ var main=(q===0||q===3);
+    for(side=-1; side<=1; side+=2){ var tz=side*13;
+      for(k=0;k<3;k++){ var a=k/3*TAU; B2.add("cmetal","cyl",[tx+Math.cos(a)*0.22, 0.55, tz+Math.sin(a)*0.22],[0.04,1.15,0.04],DARK,[Math.sin(a)*0.2,0,-Math.cos(a)*0.2]); }
+      B2.box("cmetal", tx, 1.15, tz, 0.3, 0.22, 0.24, main?0xffd23a:0xd9dde2); B2.box("csolid", tx, 1.15, tz-side*0.13, 0.12, 0.12, 0.02, 0x111111);
+      if(main){ B2.box("cmetal", tx, 1.8, tz+side*1.6, 0.05, 3.6, 0.05, STEEL); B2.add("ccloth","plane",[tx+0.5, 3.3, tz+side*1.6],[1.0,0.65,1],ORANGE,null); } }
+    if(main){ B2.box("csolid", tx-6, 1.4, -26, 6.5, 2.4, 2.4, WHITE); B2.box("csolid", tx-6, 2.75, -26, 6.8, 0.15, 2.7, 0xb7261d);
+      B2.add("csign","plane",[tx-6, 1.7, -24.78],[4.2,1.4,1],0xffffff,null,SALT_UV.timing); B2.add("csign","plane",[tx-6, 2.2, -27.22],[4.2,1.4,1],0xffffff,[0,PI,0],SALT_UV.timing);
+      B2.box("csolid", tx-14, 1.0, -27, 5.2, 1.3, 2.0, 0xd0d3d6); B2.box("csolid", tx-13.4, 1.85, -27, 2.2, 0.7, 1.85, 0x22262b);
+      B2.add("csign","plane",[tx-0.6, 2.4, -18],[2.2,1.05,1],0xffffff,[0,-PI/2+0.45,0],q===0?SALT_UV.timed:SALT_UV.timing); B2.box("cmetal", tx-0.66, 1.0, -18, 0.08, 2.0, 0.08, STEEL); }
+    else B2.add("csign","plane",[tx, 2.0, -17],[1.6,0.77,1],0xffffff,[0,-PI/2+0.45,0],SALT_UV.km); });
+  /* cones every quarter mile along the course, and every 100 m through the timed mile */
+  for(x=MILE/4; x<C.xEnd; x+=MILE/4) for(side=-1; side<=1; side+=2){ B2.add("csolid","cone",[x, 0.36, side*16],[0.42,0.72,0.42],ORANGE); B2.box("csolid", x, 0.42, side*16, 0.2, 0.08, 0.2, WHITE); }
+  for(x=C.x0+100; x<C.x1; x+=100) for(side=-1; side<=1; side+=2) B2.add("csolid","cone",[x, 0.36, side*14],[0.42,0.72,0.42],ORANGE);
+  if(SALT.courseMeshes) SALT.courseMeshes.forEach(function(m){ SALT.scene.remove(m); m.geometry.dispose(); });
+  SALT.courseMeshes=[]; var lite=GFX==="lite";
+  [["csolid",M.solid,!lite],["cmetal",M.metal,!lite],["csign",M.sign,false],["ccloth",M.cloth,false]].forEach(function(a){ var m=saltBuild(B2,a[0],a[1],a[2]); if(m) SALT.courseMeshes.push(m); });
+  SALT.courseKey=[C.x0,C.x1,C.xEnd].join(",");
+}
+function saltPushTruck(){
+  var M=sc_mats(), g=new THREE.Group(), P=sc_paint(0x2c6b3a), bx=SALT.g.box;
+  function box(m, x,y,z, w,h,d){ var q=new THREE.Mesh(bx, m); q.position.set(x,y,z); q.scale.set(w,h,d); q.castShadow=true; q.receiveShadow=true; g.add(q); return q; }
+  box(P, -2.6, 0.95, 0, 2.6, 0.7, 1.9); box(P, -0.55, 0.95, 0, 1.7, 0.7, 1.9); box(P, -1.25, 1.62, 0, 1.6, 0.66, 1.8); box(M.glass, -0.55, 1.62, 0, 0.18, 0.5, 1.6);
+  box(M.black, 0.5, 0.75, 0, 0.35, 0.45, 1.6); box(M.rubber, 0.72, 0.75, 0, 0.1, 0.5, 1.3);
+  box(M.black, -2.0, 0.48, 0, 4.8, 0.2, 1.7);
+  var wh=[]; [[-3.0,-0.82],[-3.0,0.82],[-0.3,-0.82],[-0.3,0.82]].forEach(function(p){ var w=sc_wheel({x:p[0], z:p[1], r:0.38, w:0.24, rimR:0.2, style:"star", rimMat:"alu"}, M); w.position.set(p[0],0.38,p[1]); g.add(w); wh.push(w.userData.spin); });
+  g.userData={wheels:wh, front:0.8}; return g;
+}
+function saltNumMat(num, color){
+  var c=newCanvas(256,256), x=c.getContext("2d"); x.clearRect(0,0,256,256); x.fillStyle="#f4efe2"; x.beginPath(); x.arc(128,128,120,0,TAU); x.fill();
+  x.lineWidth=10; x.strokeStyle="#141414"; x.stroke(); x.fillStyle="#141414"; x.font="700 "+(num.length>3?92:120)+"px 'Chakra Petch','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(num,128,136,220);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; return new THREE.MeshStandardMaterial({map:t, transparent:true, roughness:0.6, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+}
+/* a body of revolution along x: profile [t 0 (tail) .. 1 (nose), radius fraction] */
+function saltLathe(len, R, prof, seg){
+  var pts=prof.map(function(p){ return new THREE.Vector2(Math.max(0.002,p[1]*R), p[0]*len); });
+  var g=new THREE.LatheGeometry(pts, seg||32); g.rotateZ(-PI/2); g.computeVertexNormals(); return g;
+}
+/* --- the cars. Origin of every car = its rear axle on the salt, +x forward. userData: wheels (spin groups + radius), chute anchor(s), body pivot --- */
+function saltCar(body, color, aero){
+  var M=sc_mats(), paint=sc_paint(color), g=new THREE.Group(), piv=new THREE.Group(), bx=SALT.g.box, cy=SALT.g.cyl, sp=SALT.g.sph, wheels=[], tips=[];
+  g.add(piv);
+  function mesh(geo, mat, x,y,z, sx,sy,sz, rx,ry,rz, par){ var q=new THREE.Mesh(geo, mat); q.position.set(x,y,z); if(sx!=null) q.scale.set(sx,sy,sz); if(rx||ry||rz) q.rotation.set(rx||0,ry||0,rz||0); q.castShadow=true; q.receiveShadow=true; (par||piv).add(q); return q; }
+  function wheel(x,z,r,w,style,rear){ var c=sc_wheel({x:x, z:z, r:r, w:w, rimR:r*0.6, style:style||"weld", rimMat:"alu", rear:rear}, M); c.position.set(x,r,z); g.add(c); wheels.push({s:c.userData.spin, r:r, rear:rear}); return c; }
+  var num=String(((color>>>0)%377)+11), nm=saltNumMat(num, color), me, ls=[];
+  if(body==="streamliner"){
+    var L=9.6, R=0.6, X0=-2.35, yc=0.64;
+    var hull=mesh(saltLathe(L, R, [[0,0.1],[0.04,0.3],[0.13,0.58],[0.28,0.84],[0.45,0.97],[0.6,1.0],[0.74,0.96],[0.85,0.82],[0.93,0.6],[0.975,0.34],[1,0.02]], 36), paint, X0, yc, 0, 1, 0.86, 1.04);
+    mesh(saltLathe(2.2, 0.36, [[0,0.0],[0.15,0.7],[0.5,1.0],[0.85,0.75],[1,0.05]], 20), M.glass, 1.0, yc+R*0.8, 0, 1, 0.55, 0.85);
+    var fs=new THREE.Shape(); fs.moveTo(0,0); fs.lineTo(2.0,0); fs.lineTo(0.35,1.25); fs.lineTo(-0.05,1.25); fs.lineTo(0,0);
+    var fg=new THREE.ExtrudeGeometry(fs, {depth:0.05, bevelEnabled:false}); fg.translate(0,0,-0.025); mesh(fg, paint, X0+0.15, yc+0.2, 0);
+    mesh(cy, M.satin, X0-0.08, yc, 0, 0.26, 0.22, 0.26, 0, 0, PI/2);
+    [-1,1].forEach(function(sd){ var d=mesh(new THREE.PlaneGeometry(0.75,0.75), nm, 3.2, yc+0.05, sd*0.66, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false;
+      mesh(bx, M.black, 1.5, yc-0.16, sd*0.6, 4.0, 0.07, 0.01); });
+    if(aero) [-1,1].forEach(function(sd){ mesh(bx, M.black, X0+0.5, yc+0.05, sd*0.5, 0.6, 0.03, 0.28, 0, 0, -0.06); });
+    wheel(0, -0.3, 0.343, 0.18, "weld", true); wheel(0, 0.3, 0.343, 0.18, "weld", true); wheel(4.6, -0.27, 0.33, 0.14, "weld", false); wheel(4.6, 0.27, 0.33, 0.14, "weld", false);
+    [[0,0.3],[4.6,0.27]].forEach(function(a){ [-1,1].forEach(function(sd){ mesh(sp, paint, a[0], 0.36, sd*a[1], 1.15, 0.5, 0.3); }); });
+    tips.push(new THREE.Vector3(-0.6, yc-0.42, -0.45), new THREE.Vector3(-0.6, yc-0.42, 0.45));
+    me={rr:0.343, anchor:new THREE.Vector3(X0-0.12, yc, 0), chuteLen:9, chuteRise:0.7, chuteR:1.15, len:L, tail:X0, nose:X0+L, top:yc+R, wb:4.6};
+    ls=[{role:"hood", w:1.3, h:0.42, p:[4.15,1.158,0], u:[1,0,0], v:[0,0,-1]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,0.03], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,-0.03], u:[-1,0,0], v:[0,1,0]}];
+  } else if(body==="lakester"){
+    var L2=5.7, R2=0.44, X2=-1.75, y2=0.56;
+    mesh(saltLathe(L2, R2, [[0,0.03],[0.14,0.42],[0.32,0.82],[0.52,1.0],[0.72,0.96],[0.86,0.8],[0.94,0.56],[0.985,0.28],[1,0.0]], 32), paint, X2, y2, 0, 1, 0.92, 1);
+    mesh(saltLathe(1.0, 0.2, [[0,0.0],[0.4,0.9],[0.8,1.0],[1,0.2]], 14), paint, -0.55, y2+0.36, 0, 1, 1.3, 0.9);
+    mesh(sp, sc_paint(0xf4efe2), 0.32, y2+0.56, 0, 0.3, 0.32, 0.3); mesh(bx, M.visor, 0.47, y2+0.57, 0, 0.04, 0.09, 0.2);
+    mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 16, PI), M.chrome, 0.05, y2+0.38, 0, 1,1,1, 0, PI/2, 0);
+    mesh(bx, M.glass, 0.82, y2+0.47, 0, 0.03, 0.18, 0.42, 0, 0, -0.5);
+    [-1,1].forEach(function(sd){ mesh(cy, M.tube, 2.9, 0.33, sd*0.45, 0.06, 0.7, 0.06, PI/2, 0, 0); mesh(cy, M.tube, 0.0, 0.36, sd*0.45, 0.06, 0.7, 0.06, PI/2, 0, 0);
+      mesh(cy, M.chrome, 1.55, y2+0.05, sd*0.43, 0.07, 0.6, 0.07, 0, 0, PI/2+0.15);
+      var d=mesh(new THREE.PlaneGeometry(0.55,0.55), nm, 1.6, y2+0.2, sd*0.425, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false; });
+    if(aero) [-1,1].forEach(function(sd){ mesh(bx, M.black, 3.5, y2-0.05, sd*0.42, 0.35, 0.025, 0.22, 0, 0, 0.12); });
+    wheel(0, -0.88, 0.33, 0.22, "weld", true); wheel(0, 0.88, 0.33, 0.22, "weld", true); wheel(2.9, -0.86, 0.3, 0.14, "weld", false); wheel(2.9, 0.86, 0.3, 0.14, "weld", false);
+    tips.push(new THREE.Vector3(1.25, y2+0.02, -0.5), new THREE.Vector3(1.25, y2+0.02, 0.5));
+    me={rr:0.33, anchor:new THREE.Vector3(X2-0.05, y2, 0), chuteLen:6.5, chuteRise:0.5, chuteR:0.9, len:L2, tail:X2, nose:X2+L2, top:y2+0.8, wb:2.9};
+    ls=[{role:"hood", w:1.0, h:0.3, p:[1.9,0.963,0], u:[1,0,0], v:[0,0,-1]}];
+  } else {   /* modified roadster: a channelled tub, long hood, exposed front end */
+    mesh(bx, paint, 0.2, 0.68, 0, 2.3, 0.62, 1.2);
+    mesh(bx, paint, -1.15, 0.62, 0, 0.6, 0.5, 1.15, 0, 0, 0.25);
+    mesh(bx, paint, 2.2, 0.72, 0, 1.9, 0.48, 0.74);
+    mesh(bx, paint, 2.25, 0.98, 0, 1.8, 0.06, 0.6, 0, 0, -0.04);
+    mesh(bx, M.chrome, 3.18, 0.72, 0, 0.07, 0.62, 0.64); mesh(bx, M.black, 3.2, 0.72, 0, 0.05, 0.5, 0.52);
+    mesh(bx, M.black, 0.2, 0.36, 0, 2.7, 0.12, 0.9);
+    mesh(bx, M.glass, 1.15, 1.12, 0, 0.04, 0.24, 1.0, 0, 0, -0.35);
+    mesh(sp, sc_paint(0xf4efe2), 0.35, 1.22, -0.2, 0.3, 0.32, 0.3); mesh(bx, M.visor, 0.5, 1.23, -0.2, 0.04, 0.09, 0.2);
+    mesh(new THREE.TorusGeometry(0.42, 0.03, 6, 16, PI), M.chrome, 0.05, 0.98, 0, 1,1,1, 0, PI/2, 0);
+    mesh(cy, M.tube, 2.75, 0.32, 0, 0.07, 1.5, 0.07, PI/2, 0, 0);
+    [-1,1].forEach(function(sd){ for(var h=0;h<4;h++) mesh(cy, M.chrome, 1.65+h*0.3, 0.6, sd*0.44, 0.05, 0.3, 0.05, PI/2*sd*0.6, 0, 0);
+      mesh(cy, M.chrome, 1.6, 0.47, sd*0.6, 0.08, 1.8, 0.08, 0, 0, PI/2);
+      var d=mesh(new THREE.PlaneGeometry(0.5,0.5), nm, 0.2, 0.7, sd*0.605, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false; });
+    if(aero){ mesh(bx, M.black, -1.35, 1.12, 0, 0.4, 0.04, 1.25, 0, 0, 0.15); [-1,1].forEach(function(sd){ mesh(bx, M.black, -1.3, 0.98, sd*0.55, 0.3, 0.3, 0.03); }); }
+    wheel(0, -0.72, 0.343, 0.3, "weld", true); wheel(0, 0.72, 0.343, 0.3, "weld", true); wheel(2.75, -0.78, 0.31, 0.15, "star", false); wheel(2.75, 0.78, 0.31, 0.15, "star", false);
+    tips.push(new THREE.Vector3(0.6, 0.47, -0.62), new THREE.Vector3(0.6, 0.47, 0.62));
+    me={rr:0.343, anchor:new THREE.Vector3(-1.45, 0.75, 0), chuteLen:5.5, chuteRise:0.45, chuteR:0.85, len:4.7, tail:-1.5, nose:3.22, top:1.3, wb:2.75};
+    ls=[{role:"hood", w:1.2, h:0.42, p:[2.25,1.013,0], u:[0.9992,-0.04,0], v:[0,0,-1]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,0.606], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,-0.606], u:[-1,0,0], v:[0,1,0]}];
+  }
+  var chutes=[];
+  g.userData={body:body, me:me, piv:piv, wheels:wheels, tips:tips, chutes:chutes, A:[{chT:0,chC:0,chS:0,pitch:0},{chT:0,chC:0,chS:0.7,pitch:0}], pitch:0, pv:0, strip:false, livSpots:ls};
+  return g;
+}
+/* the Altered class runs the strip's street car with a spoiler bolted on when the aero is fitted */
+function saltAltered(color, aero){
+  var car=stripCar("street", color, 26.5), U=car.userData, me=U.meta, g=new THREE.Group(); car.position.x=-me.xr; g.add(car);
+  if(aero){ var wing=new THREE.Mesh(SALT.g.box, sc_mats().black); wing.scale.set(0.35,0.04,1.45); wing.position.set(me.xr-0.95, 1.32, 0); wing.rotation.z=0.18; U.bodyGroup.children[0].add(wing); }
+  g.userData={body:"altered", me:{rr:me.rr, anchor:me.anchor.clone().add(new THREE.Vector3(-me.xr,0,0)), len:4.6, tail:-2.3-me.xr, nose:2.3-me.xr, top:1.4, wb:me.xf-me.xr}, strip:true, car:car, chutes:[], A:[], tips:[]};
+  return g;
+}
+function saltChutes(car, n){
+  var U=car.userData; if(U.strip || U.chutes.length===n) return;
+  U.chutes.forEach(function(c){ U.piv.remove(c); }); U.chutes.length=0;
+  for(var i=0;i<n;i++){ var c=sc_chute(U.me, sc_mats()); c.position.copy(U.me.anchor); if(n>1){ c.position.z+= (i?1:-1)*0.14; if(i===0) c.scale.setScalar(0.6); } c.visible=false; U.piv.add(c); U.chutes.push(c); }
+}
+/* --- effects: salt spray off the rear tyres, a long rooster tail hanging over the course at speed, exhaust --- */
+function saltEffects(o, dt, V){
+  var U=V.userData, me=U.me, FX=SALT.fx, lite=GFX==="lite", rate=lite?0.45:(GFX==="ultra"?1.3:1), R=Math.random, i, t;
+  var v=Math.max(0,+o.v||0), slip=clamp(+o.slip||0,0,1), ph=o.phase||"stage", x=V.position.x, run=(ph==="run"||ph==="shutdown"||ph==="spin");
+  if(run && v>3){ var k=clamp(v/60,0,1.6)+slip*2.5+(ph==="spin"?2:0), nc=k*rate*55*dt, n=Math.floor(nc)+(R()<nc%1?1:0);
+    for(i=0;i<n;i++){ var s=R()<0.5?-1:1, wz=(U.strip?0.75:(me.wb>3?0.34:0.8))*s;
+      FX.emit(x-0.2-R()*0.4, 0.15+R()*0.25, wz+(R()-0.5)*0.3, v*(0.25+R()*0.3), 0.4+R()*1.8*(0.3+slip), s*(0.3+R()*1.2), 1.2+R()*1.6, 0.35, 1.6+R()*2.4+v*0.02, 0.93, 0.93, 0.9, 0.55, {drag:0.9, buoy:0.05, fin:0.06, spin:0.6}); }
+    var nr=rate*clamp((v-25)/50,0,1)*22*dt, m=Math.floor(nr)+(R()<nr%1?1:0);
+    for(i=0;i<m;i++) FX.emit(x-2-R()*3, 0.4+R()*0.8, (R()-0.5)*1.2, v*0.55, 0.2+R()*0.5, (R()-0.5)*0.8, 3+R()*3, 1.2, 5+R()*5, 0.92, 0.92, 0.9, 0.32, {drag:0.55, buoy:0.08, fin:0.15, spin:0.2}); }
+  /* exhaust: heat puffs at full load; black for a smoky diesel */
+  if(run && U.tips.length && !o.failed){ var sm=clamp(+o.smoke||0,0,1), ne=rate*(6+18*sm)*clamp(+o.throttle||0,0,1)*dt;
+    for(t=0;t<U.tips.length;t++){ U.piv.localToWorld(_sA.copy(U.tips[t])); var nn=Math.floor(ne)+(R()<ne%1?1:0);
+      for(i=0;i<nn;i++){ var cc=lerp(0.7,0.05,sm); FX.emit(_sA.x, _sA.y, _sA.z+(_sA.z>V.position.z?0.1:-0.1), v*0.8-2, 0.3, (_sA.z>V.position.z?1:-1)*0.8, 0.6+sm*1.2, 0.2, 0.9+sm*2, cc, cc, cc, 0.12+0.5*sm, {drag:1.2, buoy:0.2, fin:0.05, spin:0.5}); } } }
+  if(o.failed && v>1){ var nf=rate*30*dt, mf=Math.floor(nf)+(R()<nf%1?1:0); for(i=0;i<mf;i++) FX.emit(x+(me.nose-me.tail)*0.35+me.tail, 0.8, (R()-0.5)*0.5, v*0.7, 1+R(), (R()-0.5), 2+R()*2, 0.5, 3+R()*3, 0.22, 0.22, 0.24, 0.5, {drag:0.8, buoy:0.25, fin:0.1, spin:0.4}); }
+  FX.step(dt, SALT_WIND);
+}
+/* --- camera direction: the push, chase, the helicopter, an on-board nose cam, trackside and the traps, the chute, the stop --- */
+function saltCut(name){ if(SALT.shot!==name){ SALT.shot=name; SALT.shotT=0; SALT.cutT=0; SALT.snap=true; SALT.seq++; } }
+function saltDirect(o, dt, V){
+  var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, me=U.me, x=V.position.x, C=SALT.course, s=SALT.shot, T, sTo=function(X){ return (X-x)/Math.max(8,v); };
+  if(o.shot){ s=o.shot; if(o.fixX!=null){ SALT.fixX=+o.fixX; SALT.fixZ=o.fixZ!=null?+o.fixZ:12; } }
+  else if(SALT.skip) s="stop";
+  else if(ph==="stage") s="stage";
+  else if(ph==="push") s="push";
+  else if(ph==="run"){
+    var cycle=["chase","heli","nose","track","chase","low"];
+    if(s===null||s==="stage"||s==="push"&&SALT.shotT>1.2||s==="stop") s="chase";
+    var trap=(x<C.x0 && sTo(C.x0)<2.6 && sTo(C.x0)>0.4) ? C.x0 : (x<C.x1 && x>C.x0+50 && sTo(C.x1)<2.6 && sTo(C.x1)>0.4) ? C.x1 : null;
+    if(trap!=null && s!=="traps"){ s="traps"; SALT.fixX=trap; }
+    else if(s==="traps" && x>SALT.fixX+Math.max(60,v*1.6)) s=cycle[SALT.seq%cycle.length];
+    else if(s!=="traps" && s!=="push" && SALT.shotT>(s==="heli"?6:s==="track"?3.2:4.5)){ s=cycle[(SALT.seq+1)%cycle.length]; if(s==="track"){ SALT.fixX=x+Math.max(40,v*2.2); SALT.fixZ=(SALT.seq%2?1:-1)*(9+rng01(SALT.seq)*6); } }
+  } else if(ph==="shutdown"){ if(o.chute && s!=="chute" && s!=="stop" && SALT.prev.chute!==true) s="chute"; else if(s==="chute" && (SALT.shotT>6 || v<12)) s="stop"; else if(s!=="chute" && s!=="stop" && s!=="traps" && v<20) s="stop"; else if(s==="traps" && x>SALT.fixX+Math.max(60,v*1.6)) s="chase"; }
+  else if(ph==="spin"){ s="spin"; }
+  else { if(s!=="stop") s="stop"; }
+  saltCut(s);
+  SALT.shotT+=dt; SALT.cutT+=dt; T=SALT.shotT;
+  var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, mid=(me.tail+me.nose)/2;
+  switch(s){
+    case "stage": { var a=0.8+T*0.05; _sw.set(Math.cos(a)*9+mid, 1.6, Math.sin(a)*9); _st.set(mid, 0.6, 0); fov=42; break; }
+    case "push": rel=true; _sw.set(me.tail-3.5, 1.4, 6.8); _st.set(me.tail-1.0, 0.8, 0); fov=52; sm=3; break;
+    case "chase": rel=true; _sw.set(me.tail-5.5-v*0.025, 1.15+v*0.004, 1.9); _st.set(me.nose+5, 0.75, 0); fov=clamp(50-v*0.05,38,50); sm=2.4; SALT.shake=Math.max(SALT.shake, clamp(v/130,0,1)*0.08); break;
+    case "heli": rel=true; _sw.set(-26+T*2.0, 8, 30); _st.set(mid+4, 0.5, 0); fov=30; sm=1.5; break;
+    case "nose": rel=true; _sw.set(me.nose-1.2, top+0.18, -0.45); _st.set(me.nose+60, 0.3, -0.45); fov=62; sm=12; SALT.shake=Math.max(SALT.shake, clamp(v/120,0,1)*0.05); break;
+    case "low": rel=true; _sw.set(me.nose+2.5, 0.35, 2.2); _st.set(me.tail, 0.6, 0); fov=58; sm=6; break;
+    case "track": _sw.set(SALT.fixX, 1.4, SALT.fixZ); _st.set(x+mid+v*0.08, 0.7, 0); fov=clamp(28+Math.abs(SALT.fixX-x)*0.12,24,50); break;
+    case "traps": _sw.set(SALT.fixX+14, 1.0, -18.5); _st.set(x+mid, 0.7, 0); fov=clamp(26+Math.abs(SALT.fixX-x)*0.08,22,56); break;
+    case "chute": rel=true; _sw.set(me.tail-18, 2.6, 4.5); _st.set(me.tail-4, 0.9, 0); fov=44; sm=3; break;
+    case "spin": rel=true; _sw.set(-12, 5, 10); _st.set(0, 0.5, 0); fov=50; sm=2; break;
+    case "stop": { var dr=Math.min(4,T*0.3), a2=-0.5+T*0.04; _sw.set(x+mid+Math.cos(a2)*(12-dr), 2.2-dr*0.15, 8+Math.sin(a2)*4); _st.set(x+mid, 0.8, -1.5); fov=40; break; }
+  }
+  if(rel){ if(SALT.snap||!SALT.relOn){ _sr.copy(_sw); _srt.copy(_st); } else { var kk=1-Math.exp(-sm*dt); _sr.lerp(_sw,kk); _srt.lerp(_st,kk); }
+    _sw.copy(_sr); _st.copy(_srt); _sw.x+=ax; _st.x+=ax; SALT.relOn=true; } else SALT.relOn=false;
+  if(SALT.snap){ SALT.fov=fov; SALT.snap=false; SALT.camTgt.copy(_st); } else SALT.fov+=(fov-SALT.fov)*(1-Math.exp(-5*dt));
+  SALT.camPos.copy(_sw); if(rel) SALT.camTgt.copy(_st); else SALT.camTgt.lerp(_st, 1-Math.exp(-9*dt));
+  if(SALT.camPos.y<0.25) SALT.camPos.y=0.25;
+  SALT.shake*=Math.exp(-dt*4); var sh=SALT.shake; if(sh>0.002){ SALT.camPos.y+=(Math.random()-0.5)*sh*0.25; SALT.camPos.z+=(Math.random()-0.5)*sh*0.25; }
+  var cam=SALT.cam; cam.position.copy(SALT.camPos); cam.lookAt(SALT.camTgt); cam.fov=SALT.fov; cam.updateProjectionMatrix();
+}
+function rng01(s){ var t=Math.sin(s*91.7+1.3)*43758.5453; return t-Math.floor(t); }
+function saltComposer(){
+  if(SALT.composer===false) return null;
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=SALT.composer;
+  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.addPass(new THREE.RenderPass(SALT.scene, SALT.cam));
+      var hp=new THREE.ShaderPass(SALT_SHIMMER_SHADER); C.addPass(hp); SALT.shimmer=hp;
+      var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.22, 0.4, 0.93); C.addPass(bp); SALT.bloom=bp;
+      if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+      SALT.composer=C; SALT.cSize=""; }catch(e){ SALT.composer=false; return null; } }
+  var key=sz.x+"x"+sz.y+"@"+pr; if(SALT.cSize!==key){ if(C.setPixelRatio) C.setPixelRatio(pr); C.setSize(sz.x, sz.y); SALT.cSize=key; }
+  return C;
+}
+function saltRender(){
+  var S4=SALT.scene, cam=SALT.cam; if(!S4||!cam) return;
+  var C=(GFX!=="lite" && THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass) ? saltComposer() : null;
+  if(C) S4.fog.color.copy(SALT.horLin); else S4.fog.color.copy(SALT.horLin).convertLinearToSRGB();
+  SALT.sky.position.copy(cam.position);
+  SALT.fx.mat.uniforms.uFog.value.copy(SALT.horLin);
+  if(C && SALT.shimmer){ /* the horizon's height on screen: a point far out along the view, down on the salt */
+    _sA.set(cam.position.x, 0, cam.position.z); _sB.copy(SALT.camTgt).sub(cam.position); _sB.y=0; if(_sB.lengthSq()<1e-6) _sB.set(1,0,0); _sB.normalize();
+    _sA.addScaledVector(_sB, 20000); _sA.project(cam); var hy=clamp(_sA.y*0.5+0.5, -0.5, 1.5);
+    var U2=SALT.shimmer.uniforms; U2.uHorY.value=hy; U2.uT.value=SALT.t; U2.uAmt.value=GFX==="ultra"?1.25:1; U2.uMir.value=cam.position.y<6?(GFX==="ultra"?1:0.75):0.25; U2.uAsp.value=cam.aspect; }
+  var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=SALT.exposure;
+  var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  if(C) C.render(); else renderer.render(S4, cam);
+  SALT.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, shot:SALT.shot, parts:SALT.fx.P.length}; inf.autoReset=ar;
+  renderer.toneMappingExposure=ex;
+}
+function saltReset(){
+  if(SALT.fx) SALT.fx.clear(); SALT.shot=null; SALT.prev={}; SALT.shake=0; SALT.skip=false; SALT.runT=0; SALT.doneT=0; SALT.seq=0;
+  SALT.pushX=0; SALT.pushZ=0; SALT.pushV=0; SALT.spinA=0;
+  for(var k in SALT.cars){ var U=SALT.cars[k].userData; U.chutes.forEach(function(c){ c.visible=false; }); U.A.forEach(function(A){ A.chT=0; A.chC=0; }); if(U.strip && U.car.userData.chute) U.car.userData.chute.visible=false; }
+}
+function saltUpdate(o, dt){
+  if(!SALT.built) buildSaltScene();
+  var S4=SALT.scene; SALT.t+=dt; var i;
+  /* course layout: rebuild the traps and boards if a different course was picked */
+  if(o.course && [o.course.x0,o.course.x1,o.course.xEnd].join(",")!==SALT.courseKey){ SALT.course=o.course; saltCourseProps(null, o.course, false); }
+  var body=o.body||"streamliner", col=o.color!=null?o.color:0xd9a52b, aero=!!o.aero, key=body+":"+col+":"+(aero?1:0);
+  if(!SALT.cars[key]){ SALT.cars[key]=body==="altered"?saltAltered(col, aero):saltCar(body, col, aero); S4.add(SALT.cars[key]); }
+  for(var k2 in SALT.cars) SALT.cars[k2].visible=(k2===key);
+  var V=SALT.cars[key], U=V.userData, me=U.me; SALT.cur=V; if(U.car) stripLivery(U.car); else if(U.livSpots) livPlanes(U.piv, U, U.livSpots);
+  saltChutes(V, o.chutes==null?1:o.chutes);
+  var ph=o.phase||"stage", x=+o.x||0, v=Math.max(0,+o.v||0);
+  if(ph==="stage" && SALT.prev.phase && SALT.prev.phase!=="stage") saltReset();
+  if(ph==="run"||ph==="shutdown") SALT.runT+=dt; if(ph==="done") SALT.doneT+=dt;
+  V.position.set(x, 0, 0);
+  /* spin: the car swaps ends and slides, kicking up salt */
+  if(ph==="spin"){ SALT.spinA=(SALT.spinA||0)+dt*clamp(v/12,0.2,3.5); V.rotation.y=SALT.spinA; V.position.z=Math.sin(SALT.spinA*0.5)*2; } else if(ph!=="done"){ V.rotation.y=0; V.position.z=0; SALT.spinA=0; }
+  /* pitch: squat under power, nose-down under the chute, a little float at speed */
+  var acc=+o.acc||0, tgt=clamp(acc/40,-0.25,0.3)*0.02+clamp(+o.lightness||0,0,1)*0.006;
+  if(U.strip){ stripCarAnim(U.car, {v:v, acc:acc, spin:(+o.slip||0)>0.2, chute:!!o.chute, brake:ph==="shutdown"&&v<60, night:false}, dt, true); }
+  else {
+    var n=Math.min(8, Math.ceil(dt/0.012)), h=n?dt/n:0; for(i=0;i<n;i++){ U.pv+=(60*(tgt-U.pitch)-2*0.5*7.7*U.pv)*h; U.pitch+=U.pv*h; }
+    U.piv.position.set(0, Math.sin(SALT.t*43)*0.0015*Math.min(1,v/40), 0); U.piv.rotation.z=U.pitch;
+    var wr=v*(1+clamp(+o.slip||0,0,1)*1.2);
+    for(i=0;i<U.wheels.length;i++){ var W=U.wheels[i], w=(W.rear?wr:v)/W.r; W.s.rotation.y=(W.s.rotation.y-w*dt)%TAU; }
+    for(i=0;i<U.chutes.length;i++){ var ch=U.chutes[i], A=U.A[i], on=(o.chuteMask!=null?!!((o.chuteMask>>i)&1):!!o.chute) && !(o.chuteBlown && SALT.prev.blownT>0.8);
+      if(on && !ch.visible){ ch.visible=true; A.chT=0; A.chC=0; } else if(!on && ch.visible) ch.visible=false;
+      if(ch.visible){ A.pitch=U.pitch; sc_chuteAnim(ch, A, me, v, dt); } }
+  }
+  if(o.chuteBlown) SALT.prev.blownT=(SALT.prev.blownT||0)+dt;
+  V.updateMatrixWorld(true);
+  /* push truck: nose on the car's tail until the car fires and pulls away, then it peels off and stops */
+  var PT=SALT.push, pu=PT.userData;
+  if(ph==="stage"||ph==="push"){ SALT.pushX=x+me.tail-pu.front-0.05; SALT.pushV=v; SALT.pushZ=0; }
+  else { SALT.pushV=Math.max(0, SALT.pushV-dt*3.2); SALT.pushX+=SALT.pushV*dt; SALT.pushZ=Math.max(-7, SALT.pushZ-dt*1.4*Math.min(1,SALT.pushV/4+0.2)); }
+  PT.position.set(SALT.pushX, 0, SALT.pushZ); PT.rotation.y=Math.min(0.35, -SALT.pushZ*0.06)*(SALT.pushV>0.3?1:0);
+  for(i=0;i<pu.wheels.length;i++) pu.wheels[i].rotation.y=(pu.wheels[i].rotation.y-SALT.pushV/0.38*dt)%TAU;
+  PT.visible=SALT.pushX>x-400;
+  saltEffects(o, dt, V);
+  /* flags in the wind */
+  SALT.flags.forEach(function(f){ var p=f.m.geometry.attributes.position, b=f.base; for(var j=0;j<p.count;j++){ var fx=b[j*3]; p.setZ(j, Math.sin(fx*2.6-SALT.t*6+f.ph)*0.13*fx/2.0); } p.needsUpdate=true; });
+  saltDirect(o, dt, V);
+  /* the ground follows the camera; the sun and its shadow box ride with the car */
+  SALT.ground.position.set(Math.round(SALT.camPos.x/200)*200, 0, Math.round(SALT.camPos.z/200)*200);
+  var c=_sC.set(x+(me.tail+me.nose)/2, 0, 0);
+  SALT.sun.position.copy(c).addScaledVector(SALT.sunDir, 150); SALT.sun.target.position.copy(c); SALT.sun.target.updateMatrixWorld();
+  SALT.prev.phase=ph; SALT.prev.chute=!!o.chute;
+}
+
