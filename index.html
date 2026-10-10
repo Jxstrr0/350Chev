@@ -15599,10 +15599,10 @@ function pitsFrame(){
 function pitsUpdate(o){
   if(!PITS.built) buildPitsScene();
   var S5=PITS.scene, ch=false;
-  var key=(o.body||"street")+"|"+(o.color>>>0)+"|"+(+o.tyreIn||0);
+  var key=(o.body||"street")+"|"+(o.color>>>0)+"|"+(+o.tyreIn||0)+(o.hw?"|"+JSON.stringify(o.hw)+(GFX==="lite"):"");   /* hw: the strip car's hardware (drag v2 A) */
   if(key!==PITS.carKey){
     if(PITS.car) S5.remove(PITS.car);
-    var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn); stripCarMeta(car);
+    var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn, o.hw); stripCarMeta(car);
     car.position.set(-(car.userData._bbMinX+car.userData._len/2), PITS_LIFT, 0); car.updateMatrixWorld(true);
     S5.add(car); PITS.car=car; PITS.carKey=key; pitsProps(car); PITS.fitKey=""; ch=true;
   }
@@ -19393,7 +19393,7 @@ function pitsSync(){if(!ENGINE_VIS.setPits)return;let ov=$("pitsOv");
   ov.hidden=false;$("app").classList.add("pits");
   const np=(N.passes||[]).length;if(np!==pitsPass.n){pitsPass={n:np,t:pitsPass.n>=0&&np>0?Date.now():0};}   // just off the strip: hot tyres
   const veh=rnVeh(dragVeh());
-  ENGINE_VIS.setPits({on:true,body:N.body,color:(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26,tyreIn:veh.tyreDia,nightK:Math.min(1,N.stage/4),
+  ENGINE_VIS.setPits({on:true,body:N.body,color:carPaint(),hw:stripHw(S.cfg),tyreIn:veh.tyreDia,nightK:Math.min(1,N.stage/4),
     heat:pitsPass.t?Math.max(0,1-(Date.now()-pitsPass.t)/90000):0,poke:pitsPokeK});pitsPokeK=null;
   const T=pitsTags();if(pitsSel&&!T.some(x=>x.k===pitsSel))pitsSel=null;
   const key=JSON.stringify(T.map(x=>[x.k,x.v]))+"|"+pitsSel+"|"+N.stage+"|"+((T.find(x=>x.k===pitsSel)||{}).wi?$("envBox").querySelector('[data-rn="freshen"]')?1:0:"");
