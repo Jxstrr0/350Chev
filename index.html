@@ -222,7 +222,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .rd-sec{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
 .rd-sec div{background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:6px 8px;font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;min-width:0}
 .rd-sec div.on{border-color:var(--orange)}.rd-sec b{color:var(--chalk);font-weight:500}.rd-sec i{font-style:normal;font-size:11px}.rd-sec i.up{color:var(--good)}.rd-sec i.dn{color:var(--crit)}
-.rdbtns{margin-top:8px;gap:8px}.rdbtns .btn{min-height:46px}.rdbtns #roadSkip{flex:2}.rdbtns #roadSpd,.rdbtns #roadCamB{flex:1}
+.rdbtns{margin-top:8px;gap:8px}.rdbtns .btn{min-height:46px}.rdbtns #roadSkip{flex:1.6}.rdbtns #roadSpd{flex:.8}.rdbtns #roadCamB{flex:1.5}.rdbtns .btn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}
 .rtop.rdrec div{grid-template-columns:22px 64px 46px minmax(0,1fr) auto}
 html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .pfield{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;font-family:var(--mono);font-size:13px;color:var(--muted)}
@@ -14007,7 +14007,7 @@ const SEGMENTS=[
   {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,road:{ch:"coupe",trk:"club"},lap:[75.0,78.0]}},
   /* tier 2 — Known builder */
   {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[2,6],price:13500,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
-  {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5],road:{ch:"coupe"},zero100:[4.7,5.6]}},
+  {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5],road:{ch:"coupe"},zero100:[4.8,5.6]}},
   {id:"rally",name:"Rally car · 1.6 T",tier:2,units:[2,6],price:16000,req:{hp:[280,340],tq:[320,400],disp:1.6,rel:70,fuel:"race100"}},
   {id:"drift",name:"Drift car",tier:2,units:[2,6],price:15000,req:{tq:[500,700],smooth:55,rel:65,fuel:"e85"}},
   {id:"genset",name:"Standby generator set",tier:2,dsl:true,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
@@ -14018,7 +14018,7 @@ const SEGMENTS=[
   {id:"attack",name:"Time attack",tier:3,units:[1,4],price:30000,req:{hp:[700,900],kg:200,rel:60,fuel:"e85"}},
   {id:"drag",name:"Pro-mod drag",tier:3,units:[1,3],price:55000,req:{hp:[1200,1800],rel:35,fuel:"methanol",life:5}},
   /* tier 4 — OEM partner */
-  {id:"hyper",name:"Hypercar",tier:4,units:[1,3],price:60000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,road:{ch:"super",trk:"gp"},lap:[107.5,111.0],zero100:[2.9,3.3]}},
+  {id:"hyper",name:"Hypercar",tier:4,units:[1,3],price:60000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,road:{ch:"super",trk:"gp"},lap:[108.5,111.5],zero100:[3.1,3.4]}},
   {id:"flagship",name:"OEM V12 flagship",tier:4,units:[6,14],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94"}},
   /* tier 5 — Outlaw racing */
   {id:"stripcar",name:"Street/strip coupe",tier:4,units:[2,4],price:26000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
@@ -15289,7 +15289,7 @@ function roadCarTxt(road){const c=SIM.CHASSIS[road&&road.ch]||SIM.CHASSIS.coupe;
 function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry. Needs a certified engine. Bolt it into a car, run the straight-line figures and a flying lap — performance buyers judge 0–100 and lap times in their own car. Every lap is a little wear on the build.`
   :`<b>Road test</b> · the engine goes into the chassis you pick. 0–100, the quarter, 80–120 and top speed come off a straight; then one flying lap, played back on the circuit. <b>Space</b> skips the lap.`;}
 function roadEnvHtml(sl){const e=roadEnvFix(),o=roadOpt(),C0=SIM.CHASSIS[o.ch],q=quick&&quick.rpms?quick:null;
-  let h=`<div class="lbl"><span>Chassis</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).join(" · ")}</small></button>`).join("")}</div>`;
+  let h=`<div class="lbl"><span>Chassis</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.ROAD_TYRES).map(([id,t])=>`<button data-rk="roadTyre" data-rv="${id}" class="${o.tyre===id?"on":""}">${t.n}<small>μ ${t.mu}${C0.tyre===id?" · stock":""}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Circuit</span></div><div class="seg">${Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return `<button data-rk="roadTrk" data-rv="${id}" class="${e.roadTrk===id?"on":""}">${t.n}<small>${(T.len/1000).toFixed(2)} km · ${t.d.split(" · ")[1]}</small></button>`;}).join("")}</div>`;
   h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
@@ -15304,8 +15304,8 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");i
 /* live card: speed, gear, the tach, the lap clock with sector splits against the record, a mini-map */
 function roadMapDraw(cv,T,s){if(!cv)return;const dpr=Math.min(devicePixelRatio||1,2),W=cv.clientWidth||120,H=cv.clientHeight||90;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const sc=Math.min((W-12)/T.size[0],(H-12)/T.size[1]),P=i=>[W/2+T.x[i]*sc,H/2-T.y[i]*sc];
-  x.lineJoin="round";x.strokeStyle="rgba(240,236,226,.25)";x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
-  x.strokeStyle="rgba(240,236,226,.75)";x.lineWidth=1.6;x.stroke();
+  const ink=getComputedStyle(cv).color||"#f0ece2";x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.22;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
+  x.globalAlpha=.75;x.lineWidth=1.6;x.stroke();x.globalAlpha=1;
   const p0=P(0),h0=T.h[0];x.strokeStyle="#ff7a1a";x.lineWidth=2;x.beginPath();x.moveTo(p0[0]-Math.sin(h0)*6,p0[1]-Math.cos(h0)*6);x.lineTo(p0[0]+Math.sin(h0)*6,p0[1]+Math.cos(h0)*6);x.stroke();
   if(s!=null){const i=Math.floor(((s/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#ff7a1a";x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();x.strokeStyle="#15171b";x.lineWidth=1.2;x.stroke();}}
 function roadHudInit(){const L=$("roadLive");L.innerHTML=`<div class="rdh"><div class="rd-spd"><b id="rdV">0</b><i>km/h</i></div><div class="rd-g"><b id="rdG">–</b><i>gear</i></div><div class="rd-lt"><b id="rdT">0:00.0</b><i id="rdTi">lap</i></div><canvas id="rdMap" class="rd-map"></canvas></div>
@@ -15387,17 +15387,17 @@ function roadSheet(res){const r=res.road,b=roadRecs()[roadKey(r.ch,r.trk)],bs=b&
 function drawRoadTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=r.trace;if(!tr||!tr.d||tr.d.length<3)return;
-  const padL=34,padR=12,padT=14,padB=34,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*d/r.len,mx=Math.max(60,Math.ceil(Math.max(...tr.v)/50)*50),Y=v=>padT+ch*(1-v/mx);
+  const padL=34,padR=12,padT=24,padB=34,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*d/r.len,mx=Math.max(60,Math.ceil(Math.max(...tr.v)/50)*50),Y=v=>padT+ch*(1-v/mx);
   const F=getComputedStyle(document.body).fontFamily;x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;x.font="10px "+F;
   for(let v=0;v<=mx;v+=50){const py=Y(v);x.beginPath();x.moveTo(padL,py);x.lineTo(W-padR,py);x.stroke();x.fillStyle=soft;x.textAlign="right";x.fillText(v,padL-4,py+3);}
   x.textAlign="center";for(let d=0;d<=r.len;d+=500){const px=X(d);x.fillStyle=soft;x.fillText(d===0?"0":(d/1000).toFixed(1)+" km",px,H-4);}
-  let cum=0;x.setLineDash([3,4]);x.strokeStyle=soft;r.sectors.slice(0,2).forEach((t,k)=>{cum+=t;const T=SIM.roadTrack(r.trk),dd=T.sec[k]*T.len,px=X(dd);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText("S"+(k+2),px+9,padT+8);});x.setLineDash([]);
+  let cum=0;x.setLineDash([3,4]);x.strokeStyle=soft;r.sectors.slice(0,2).forEach((t,k)=>{cum+=t;const T=SIM.roadTrack(r.trk),dd=T.sec[k]*T.len,px=X(dd);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText("S"+(k+2),px+9,padT+ch-4);});x.setLineDash([]);
   const bandY=H-padB+6,bh=6;for(let i=0;i<tr.d.length-1;i++){const x0=X(tr.d[i]),x1=X(tr.d[i+1]);if(tr.brk[i]>0.05){x.fillStyle=`rgba(226,71,60,${0.3+0.6*tr.brk[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}else if(tr.thr[i]>0.02){x.fillStyle=`rgba(79,192,141,${0.2+0.7*tr.thr[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}}
   const gm=Math.max(...tr.g);x.strokeStyle="rgba(95,168,230,.7)";x.lineWidth=1.2;x.beginPath();tr.d.forEach((d,i)=>{const py=padT+ch*(1-0.32*tr.g[i]/gm);i?x.lineTo(X(d),py):x.moveTo(X(d),py);});x.stroke();
   x.strokeStyle="#ff7a1a";x.lineWidth=2.2;x.beginPath();tr.d.forEach((d,i)=>{i?x.lineTo(X(d),Y(tr.v[i])):x.moveTo(X(d),Y(tr.v[i]));});x.stroke();
   x.font="9.5px "+F;x.fillStyle=INK;(r.apex||[]).forEach((a,k)=>{const px=X(a.s),py=Y(a.kmh);x.beginPath();x.arc(px,py,2.2,0,7);x.fill();if(W>520||k%2===0){x.textAlign="center";x.fillText(Math.round(a.kmh),px,py+12);}});
-  x.textAlign="left";x.font="11px "+F;x.fillStyle="#ff7a1a";x.fillText("km/h",padL+4,padT+10);x.fillStyle="rgba(95,168,230,.9)";x.fillText("gear",padL+40,padT+10);x.fillStyle="#4fc08d";x.fillText("throttle",padL+72,padT+10);x.fillStyle="#e2473c";x.fillText("brake",padL+122,padT+10);
-  x.fillStyle=soft;x.textAlign="right";x.fillText(`${rdEsc(r.trkName)} · ${fmtLap(r.lapT)}`,W-padR,padT+10);}
+  x.textAlign="left";x.font="11px "+F;x.fillStyle="#ff7a1a";x.fillText("km/h",padL+4,13);x.fillStyle="rgba(95,168,230,.9)";x.fillText("gear",padL+40,13);x.fillStyle="#4fc08d";x.fillText("throttle",padL+72,13);x.fillStyle="#e2473c";x.fillText("brake",padL+122,13);
+  x.fillStyle=soft;x.textAlign="right";x.fillText(`${rdEsc(r.trkName)} · ${fmtLap(r.lapT)}`,W-padR,13);}
 function roadRedraw(){const l=lastForChart();if(S.env.testType==="road"&&l&&l.road)drawRoadTrace(l.road);}
 function roadRecHtml(){const P=roadRecs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].t);if(!ks.length)return"";ks.sort((a,b)=>(P[a].trk>P[b].trk?1:P[a].trk<P[b].trk?-1:P[a].t-P[b].t));
   return `<div class="rtop rdrec"><span>Road test · best lap per car and circuit</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":"C"}</b><span class="et">${fmtLap(e.t,2)}</span><span>${e.z!=null?e.z.toFixed(1)+" s":""}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
