@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.16.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.17.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -522,6 +522,34 @@ html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(10
 html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
 html.desk #sheet header{padding:14px 20px 10px}html.desk #sheet .body{padding:12px 20px 20px}
 html.desk #tourBox,html.desk #ffBox{width:400px}
+/* glossary links, card, browser and lessons */
+html:not(.desk) .desk-only{display:none}
+.gl{border-bottom:1px dotted var(--orange2);cursor:help;padding-bottom:1px}
+.gl:hover,.gl:focus-visible{background:rgba(255,122,26,.16);outline:0}
+#glPop{position:absolute;z-index:48;width:min(330px,calc(100% - 16px));background:var(--panel);border:1px solid var(--orange);border-radius:8px;padding:10px 12px 8px;box-shadow:0 12px 30px rgba(0,0,0,.4);font-size:14px;line-height:1.45;color:var(--chalk)}
+#glPop[hidden]{display:none}
+#glPop .gh{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+#glPop .gh b{font-size:16px;font-weight:700;padding-top:2px}
+#glPop .gx{flex:none;width:44px;height:44px;margin:-10px -10px 0 0;border:0;background:transparent;color:var(--muted);font-size:16px}
+#glPop p{margin:2px 0 6px}
+.gw{color:var(--muted)}.gw em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--orange2);margin-right:6px}
+.grel{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.gchip{padding:8px 12px;min-height:36px;border-radius:16px;border:1px solid var(--rule);background:var(--panel2);color:var(--chalk);font-size:13px}
+.gmore{display:block;width:100%;min-height:44px;border:0;border-top:1px dashed var(--rule);background:transparent;color:var(--orange2);font-size:13px;text-align:left;padding:0}
+.glb input{width:100%;min-height:44px;padding:0 12px;border:1px solid var(--rule);border-radius:6px;background:var(--panel2);color:var(--chalk);font-size:16px}
+.gle{border-bottom:1px dashed var(--rule)}
+.glh{display:block;width:100%;min-height:48px;padding:10px 0;border:0;background:transparent;text-align:left;color:var(--chalk)}
+.glh b{display:block;font-size:15px}.glh span{display:block;font-size:13px;color:var(--muted);line-height:1.4;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.gle .glx{display:none;padding:0 0 10px;font-size:14px;line-height:1.5}.gle.open .glx{display:block}.gle.open .glh span{display:none}
+.glx p{margin:0 0 6px}
+#les{position:absolute;inset:0;z-index:45;pointer-events:none}
+#les[hidden]{display:none}
+#lesSpot{position:absolute;border-radius:10px;box-shadow:0 0 0 9999px rgba(8,9,11,.66);border:2px solid var(--orange);transition:all .3s ease;pointer-events:none}
+#lesBox{position:absolute;left:16px;right:16px;background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--orange);border-radius:8px;padding:12px 14px;pointer-events:auto;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:top .3s ease,bottom .3s ease}
+#lesBox .step{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--orange2);text-transform:uppercase}
+#lesBox h3{font-size:18px;font-weight:700;margin:2px 0 4px}
+#lesBox p{margin:0 0 10px;font-size:15px;color:var(--chalk);line-height:1.45}
+html.desk #lesBox{width:400px}
 html.desk #intro .modebox button{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.16);color:var(--chalk)}html.desk #intro .modebox small{color:var(--muted)}
 :root[data-theme=light] #intro .modebox button{background:#1d2026;border-color:rgba(255,255,255,.16);color:var(--chalk)}:root[data-theme=light] #intro .modebox small{color:var(--muted)}   /* the intro stays dark in light theme: keep its cards dark too */
 html.desk #intro .box{max-width:600px}html.desk #intro h1{font-size:54px}html.desk #intro p{font-size:17px;max-width:52ch}
@@ -718,6 +746,9 @@ html:not(.desk) #kbHelpBtn{display:none}
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
         <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
         <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
+        <div class="lbl"><span>Glossary links</span></div>
+        <div class="seg n2" id="glSeg"><button data-gl="1">On<small>dotted terms explain themselves</small></button><button data-gl="0">Off</button></div>
+        <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
         <div id="layBox"><div class="lbl"><span>Layout</span></div>
         <div class="seg n2" id="laySeg"><button data-lay="phone">Phone<small>one column, thumb-sized</small></button><button data-lay="desktop">Desktop<small>wide view + sidebar</small></button></div>
         <button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
@@ -774,6 +805,8 @@ html:not(.desk) #kbHelpBtn{display:none}
 
   <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
   <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
+  <div id="les" hidden><div id="lesSpot"></div><div id="lesBox" role="dialog" aria-labelledby="lesTitle" aria-live="polite"><div class="step" id="lesStep"></div><h3 id="lesTitle"></h3><p id="lesText"></p><div class="row"><button class="btn sm ghost" id="lesSkip">Skip</button><button class="btn sm" id="lesKeep" style="display:none">Keep this build</button><button class="btn sm pri" id="lesNext" style="flex:1">Next</button></div></div></div>
+  <div id="glPop" role="dialog" aria-live="polite" hidden></div>
   <div id="scrim"></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="toast"></div>
@@ -14864,7 +14897,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.16.0.0";
+const VERSION="1.17.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -15371,7 +15404,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
       + (chips?`<div class="chips">${chips}</div>`:"")
       + (o.info?`<p>${o.info}</p>`:"") + `</div>`;}).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
-function closeSheet(){$("sheet").classList.remove("on");$("scrim").classList.remove("on");}
+function closeSheet(){$("sheet").classList.remove("on");$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
 function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
@@ -17222,6 +17255,272 @@ $("panel").addEventListener("click",e=>{if(!ff)return;const b=e.target.closest("
 document.addEventListener("visibilitychange",()=>{if(document.hidden)ffSafeSave();});window.addEventListener("pagehide",ffSafeSave);
 window.addEventListener("resize",()=>{if(ff)ffPlace();});$("panel").addEventListener("scroll",()=>{if(ff)ffPlace();},{passive:true});
 
+/* ===================== GLOSSARY, TAP-TO-EXPLAIN AND LESSONS ===================== */
+/* ---- glossary: [id, name, aliases (| list, "=" prefix = match this exact case only), what it is, why it matters here, related ids] ---- */
+const GLOSSARY=[
+["lambda","Lambda (λ) and AFR","=λ|lambda|air-fuel ratio|air/fuel ratio|=AFR","Lambda is the air actually in the cylinder divided by the air needed to burn the fuel completely. 1.0 is chemically exact, below 1 is rich, above 1 is lean. AFR is the same thing as a mass ratio (about 14.7:1 for petrol at λ 1).","A rich petrol engine runs cooler and knocks less; a lean one makes heat. A diesel always runs lean, and how low its full-load λ can go is set by the smoke limit.","smoke,egt,knock"],
+["bmep","BMEP","=BMEP|brake mean effective pressure","Brake mean effective pressure is the average pressure on the pistons through the whole cycle that would give the engine's measured torque. It is torque normalised for engine size, so it compares a 1.0 L and a 12 L fairly.","It is the best single number for how hard an engine is working. High BMEP means high loads on pistons, rods and bearings, and it is how boost shows up in your stress report.","imep,fmep,pmax"],
+["imep","IMEP","=IMEP|indicated mean effective pressure","Indicated mean effective pressure is what the gas actually pushes on the pistons, before friction and pumping losses are taken off. Brake pressure is IMEP minus those losses.","The gap between IMEP and BMEP is the engine wasting work on friction and breathing.","bmep,fmep,pmep"],
+["fmep","FMEP","=FMEP|friction mean effective pressure","Friction mean effective pressure is the rubbing loss of rings, bearings, valvetrain and oil pump, expressed as a pressure. It rises with rpm and with thick, cold oil.","Friction is why a tight, high-revving build loses power at the top, and why oil grade and ring choice show up in the dyno numbers.","bmep,pmep"],
+["pmep","PMEP","=PMEP|pumping mean effective pressure|pumping loss","Pumping mean effective pressure is the work the engine spends dragging air in past a throttle and pushing exhaust out. A throttled petrol engine at part load pays a lot; an open diesel pays little.","It is a big part of why diesels use less fuel at light load, and why restrictive manifolds cost power.","imep,fmep"],
+["mbt","MBT timing","=MBT|minimum advance for best torque|best torque timing","MBT is the spark timing that gives the most torque, just early enough that peak pressure lands a few degrees after top dead centre. Earlier than that adds knock risk without adding torque.","The ignition slider is measured against MBT: pull it back to protect a knocking engine, and the game shows the torque you gave up.","knock,injtiming"],
+["knock","Knock (detonation)","knock|knocking|detonation|pre-ignition|preignition","Knock is the end gas igniting by itself, before the flame front reaches it. The sharp pressure spike hammers pistons and can melt crowns and ring lands in seconds. Heat, boost, compression and low octane all bring it on.","It is the hard ceiling on petrol power. The Detonation margin test tells you how close you are, and the fixes are octane, an intercooler, retarded timing, a richer mixture or lower compression.","octane,mbt,crown,egt"],
+["octane","Octane (RON / MON)","octane|=RON|=MON|octane number|octane rating","Octane is a petrol's resistance to knock. RON is measured gently and MON under hotter, harder conditions; North American pump labels average the two. Higher is not more energy, only more resistance to self-ignition.","Each fuel in the game has an octane number, and the engine reports the octane it requires. Ethanol, methanol and race fuel buy knock margin that lets you run more boost and compression.","knock,cetane,cr"],
+["cetane","Cetane number","cetane","Cetane is the opposite of octane: how quickly a diesel fuel ignites after injection. Higher cetane means shorter ignition delay, a smoother burn and easier cold starts.","Low-cetane fuel makes a diesel start hard and clatter. It appears in Analysis in place of the octane line.","octane,coldstart,injtiming"],
+["cr","Compression ratio","compression ratio|static compression|=CR","The static compression ratio is the cylinder volume with the piston at the bottom divided by the volume at the top. More compression extracts more work from the fuel but raises the heat and the knock risk.","Petrol engines are limited by knock, so boost wants lower compression. A diesel needs 14 to 24:1 just to light the fuel by the heat of compression.","ecr,knock,boost"],
+["ecr","Effective compression","effective compression|dynamic compression|effective CR|=ECR","Effective compression ratio counts only from the moment the intake valve closes, so a long cam with a late closing gives less than the static figure. Boost multiplies it again, since the cylinder is filled above atmospheric pressure.","This is the figure that actually decides knock and cylinder pressure, which is why big cams let you run more static compression.","cr,boost,knock"],
+["ve","Volumetric efficiency","volumetric efficiency|=VE","Volumetric efficiency is how much air an engine actually draws compared with the air its displacement could hold at atmospheric pressure. Good heads and tuned runners can pass 100 percent; a turbo takes it far beyond.","Power is air first, so VE is the heart of the dyno curve. Cam, valves, runners, intake and exhaust all move it, and it falls off as the valves run out of time at high rpm.","boost,bmep"],
+["boost","Boost","boost|boost pressure","Boost is how far above atmospheric pressure a turbo or blower pushes the intake air. 1 bar of boost roughly doubles the air in the cylinder.","More air burns more fuel for more power, and also more heat and pressure on everything downstream. Boost is why detonation, head lift and the gasket show up as limits.","pr,spool,ic,wastegate"],
+["pr","Pressure ratio","pressure ratio|=PR","Pressure ratio is the absolute pressure after the compressor divided by the pressure before it. 1 bar of boost at sea level is a ratio of about 2.0.","Compressors are rated by flow at a pressure ratio. Ask for more ratio than the compressor can give and its efficiency collapses and the air comes out hot.","boost,inducer,compmap"],
+["inducer","Inducer","inducer|inducer diameter","The inducer is the inlet side of a compressor wheel, where air enters. A bigger inducer swallows more air, so it is the number people quote for turbo frame size.","A bigger inducer moves more air at high boost but is slower to spin up. This is the trade between the small, medium and large turbo frames.","exducer,spool,compmap"],
+["exducer","Exducer","exducer","The exducer is the outer edge of a wheel, where flow leaves a compressor or enters a turbine. Its diameter sets the speed at the tips and, for the turbine, how much exhaust energy it can catch.","Along with the inducer it describes a wheel's size and trim. Bigger wheels flow more but take more exhaust energy to turn.","inducer,spool"],
+["spool","Spool and lag","spool|spool-up|turbo lag","Spool is a turbo getting up to speed on exhaust energy. Lag is the wait between pressing the throttle and the boost arriving; big wheels and low rpm make it longer.","A big turbo makes more peak power but arrives later. Diesels spool earlier because they push full exhaust flow with no throttle.","boost,inducer,compound"],
+["wastegate","Wastegate","wastegate|waste gate","A wastegate is a valve that lets exhaust bypass the turbine so boost stops rising at the set pressure. Without it the turbo would keep speeding up until something broke.","It holds boost to your slider setting and protects the turbo's speed limit.","boost,bov,spool"],
+["bov","Blow-off valve","blow-off valve|blowoff valve|=BOV|diverter valve","A blow-off valve vents boost from the intake when the throttle snaps shut, so the compressor is not slammed against a closed throttle. That stops compressor surge and the fluttering sound.","It protects the compressor wheel and keeps the turbo spinning for quicker re-boost.","wastegate,compmap"],
+["compound","Compound turbos","compound turbos|compound turbo|compound|triple turbo|triple-turbo|series turbos","Compound turbos run in series: a big low-pressure turbo feeds a small high-pressure turbo. The small one spools quickly and the big one carries the flow, so the pressure ratios multiply.","This is how diesel pulling trucks reach several bar of boost. It makes enormous cylinder pressure and demands a stout head, studs and gasket.","boost,pr,spool,pmax"],
+["ic","Intercooler","intercooler|charge cooler|charge-air cooler|aftercooler|ice tank","An intercooler cools the compressed intake air. Cooler air is denser, so more of it fits in the cylinder, and it also lowers the temperature the cylinder starts from.","Cooling the charge is the cheapest knock margin you can buy, and it lifts power at the same boost.","boost,knock,ve"],
+["compmap","Compressor map","compressor map|compressor flow|surge","A compressor map plots how much air a compressor moves at each pressure ratio and how efficient it is there. Too little flow at high ratio causes surge; too much chokes it.","The Compressor flow test in the stress report is this check: does your turbo sit in its efficient island for the air and boost you asked for.","pr,inducer,bov"],
+["pmax","Peak cylinder pressure","peak cylinder pressure|cylinder pressure|firing pressure|=Pmax","The highest pressure reached in the cylinder during combustion, normally a few degrees after top dead centre. Boost and compression raise it directly.","It loads the crown, gasket, studs, head, bearings and rod. Many failures in the stress report are really this number passing a part's limit.","bmep,headlift,gasket,crown"],
+["egt","Exhaust gas temperature","exhaust gas temperature|=EGT","EGT is how hot the gas is as it leaves the cylinders. It rises when the mixture is lean or the timing is late, because the heat is still being released as the exhaust valve opens.","High EGT cooks exhaust valves, manifolds and turbine wheels. A diesel's EGT is the direct limit on how much fuel it can burn.","lambda,turbine,valvetemp"],
+["crown","Crown temperature","crown temperature|piston crown|crown temp|crown strength","The piston crown is the top face the flame touches. It is cooled mostly through the rings and from underneath by oil, so it runs far hotter than the block around it.","Past roughly the point where aluminium softens, crowns melt or hammer into a ring land. Oil squirters, forged alloys and cooler charge all bring it down.","ringland,knock,squirters"],
+["squirters","Piston cooling jets","oil squirters|piston cooling jets|piston squirters|squirters","Small oil nozzles in the block that spray the underside of each piston. The oil carries heat away from the crown that the rings alone cannot.","Cheap and effective protection for a boosted or high-load build, and a normal feature on diesels.","crown,oilstarve"],
+["ringland","Ring land","ring land|ringland|top land","The ring lands are the ridges of piston metal between the ring grooves. The top land carries the top ring and is the thinnest, hottest, most fragile part of the piston.","Knock and heat break ring lands first. When the ring land fails, compression and oil control go with it.","crown,ringgap,knock"],
+["ringgap","Ring end gap","ring end gap|ring gap|end gap","Each piston ring is split, and the gap at the split closes up as the ring heats. Too small and the ends butt together and the ring scuffs the bore; too large and gas leaks past.","Power adders need looser gaps because the rings run hotter. The Ring end gap test checks that the hot gap has not closed.","ringland,blowby"],
+["slap","Piston slap","piston slap|cold slap|slap","Piston slap is the knock of a piston rocking in its bore when the engine is cold and the piston has not yet expanded to fit. Forged pistons are fitted looser, so they slap more when cold.","A loose fit that is right when hot is noisy and wearing when cold. The Cold slap test balances it against blow-by.","blowby,ringgap,forged"],
+["blowby","Blow-by","blow-by|blowby","Blow-by is combustion gas that leaks past the rings into the crankcase. It costs power, dilutes the oil and pressurises the case.","Loose pistons and big ring gaps raise it. A little is normal; a lot means lost compression and fouled oil.","slap,ringgap"],
+["rodratio","Rod ratio","rod ratio|rod/stroke|rod-to-stroke","Rod ratio is the connecting rod's length divided by the stroke. A longer rod swings less side to side, lowering the push on the cylinder wall and lingering a little longer near top dead centre.","Long rods are kinder to piston skirts and bores; short rods make a more compact engine. It is a modest, not a dramatic, effect.","pistonspeed,slap"],
+["pistonspeed","Piston speed","mean piston speed|piston speed","Mean piston speed is how fast the piston moves on average: twice the stroke times rpm. Everything that scales with inertia, friction and ring wear scales with it.","Roughly 25 m/s is where production engines top out and racing engines push past. It is why long strokes limit redline.","rodratio,redline,fmep"],
+["bearingfilm","Bearing oil film","hydrodynamic film|oil film|bearing film|bearing specific load|bearing load","A crank bearing never touches the shaft when it works: spinning drags a wedge of oil between them that carries the load. It is thin, and oil thickness and temperature change it.","Heavy cylinder pressure squeezes the film out. When it breaks down the bearing wipes, one of the quickest ways to destroy an engine.","oilstarve,pmax,oilgrade"],
+["oilstarve","Oil starvation","oil starvation|oil pickup|aeration","Oil starvation is the pump drawing air instead of oil, from sloshing in hard cornering or braking, or from oil foamed by the crank. Pressure collapses and the bearings are unprotected within seconds.","Baffled sumps and dry sumps exist to prevent it. It matters most for race builds at high g.","bearingfilm,drysump"],
+["drysump","Dry sump","dry sump|dry-sump","A dry-sump system pumps oil out of a shallow pan into a remote tank and feeds the engine from there. The oil stays deaerated and available whatever the car does.","It protects race engines from starvation and lets the engine sit lower.","oilstarve"],
+["oilgrade","Oil grade","oil grade|oil viscosity|viscosity","Viscosity grades such as 5W-30 describe how thick the oil is cold and hot. Thin oil flows easily and wastes less; thick oil holds a film under load but drags.","It trades friction against bearing protection, and cold flow against hot film strength.","bearingfilm,fmep"],
+["valvefloat","Valve float","valve float|valvetrain limit","Valve float is the valve springs being too soft to pull the valve closed as fast as the cam lets it go, so the valve lags the cam and bounces. The engine loses power and can crash a valve into the piston.","It sets the usable redline of a valvetrain. Stiffer springs, lighter valves and a gentler cam push the limit up.","valvepiston,springs"],
+["springs","Valve springs","valve springs|beehive","Valve springs close the valves against the cam's motion. Stiffer ones hold the valves under control to a higher rpm but add friction and wear the cam.","Fitting a stiffer spring is the standard cure for valve float.","valvefloat"],
+["valvepiston","Valve-to-piston clearance","valve-to-piston|valve to piston|valve/piston","With big lift and overlap the open valves reach into the space where the piston arrives at top dead centre. The clearance between them is a few millimetres.","A float, a broken belt or a too-wild cam closes that gap, and the result is bent valves and holed pistons.","valvefloat,cam"],
+["valvetemp","Exhaust valve temperature","exhaust valve temp|exhaust valve temperature|valve temperature","The exhaust valve passes all of the hot gas and has only its seat and stem to shed heat, so it runs near its material limit.","Lean mixtures, late timing and boost cook valves. Sodium-filled or nickel alloys raise the limit.","egt,lambda"],
+["cam","Cam duration and overlap","cam duration|overlap|valve overlap","Cam duration is how long the valves stay open; overlap is when intake and exhaust are both open at once. Long cams favour high rpm breathing and idle rough at low rpm.","A wild cam moves the powerband upwards and lowers effective compression, which is why it changes both the dyno and the knock picture.","ve,ecr,valvepiston"],
+["headlift","Head lift and clamp margin","head lift|head clamp|clamp margin|clamp load","Cylinder pressure pushes the head up and the studs hold it down. If the pressure force exceeds the clamp load, the head lifts a hair and gas escapes past the gasket.","Boost and compression raise the force. Better studs and a stiff deck raise the clamp.","gasket,studs,pmax"],
+["studs","Head studs and fasteners","head studs|studs|head bolts|head fasteners|torque-to-yield","Head studs clamp the head to the block. Studs stretch evenly and hold more load than bolts, which are turned into the block and tend to distort it. Torque-to-yield bolts are single use.","They set the head's clamp margin. Boosted and high-pressure builds need studs.","headlift,gasket"],
+["gasket","Head gasket and MLS","head gasket|gasket|=MLS|multi-layer steel|multilayer steel","The head gasket seals combustion, coolant and oil between head and block. Composite gaskets are cheap; multi-layer steel (MLS) uses stacked steel sheets that take more pressure and heat.","Cylinder pressure and head lift are measured against the gasket's sealing limit.","firering,headlift,studs"],
+["firering","Fire ring","fire ring|o-ring|receiver groove|o-ringed|copper gasket","A fire ring is a wire or groove that sinks into the block or head to ring each cylinder, so the gasket is not the only thing sealing very high pressure. Copper gaskets work the same way.","It is the answer for outlaw boost and nitrous power where a normal gasket would blow out.","gasket,headlift"],
+["cgi","CGI (compacted graphite iron)","=CGI|compacted graphite iron|compacted graphite","CGI is cast iron with graphite in short, blunt flakes. It is roughly 75 percent stronger and 35 percent stiffer than grey iron, so the block can be lighter or stand higher pressure.","It is the modern diesel block material: high cylinder pressure without enormous mass.","pmax,blockmat,billet"],
+["nikasil","Nikasil bore plating","nikasil|Ni-SiC|bore plating|plated bore","A thin nickel and silicon carbide coat plated on an aluminium bore. It is very hard, runs the rings well and lets an aluminium block do without iron liners.","It saves weight and conducts heat better than a liner, but needs a machine shop that can do the plating.","blockmat"],
+["blockmat","Block material","block material|grey iron|aluminium block|iron block","The block is the foundation: grey iron is cheap, damped and heavy; aluminium is light and conducts heat but is weaker and expands; CGI sits between them in stiffness and strength.","Stiffness keeps bores round under load and strength carries cylinder pressure. Heavy blocks cost weight on a launch.","cgi,nikasil"],
+["forged","Forged 2618 and 4032","2618|4032|forged piston|forged pistons","Forged pistons are pressed from billet alloy. 2618 is strong and tough and expands a lot, so it needs a looser fit and rattles cold; 4032 holds a tighter fit with a little less strength.","2618 is the choice for nitrous, boost and race builds; 4032 is the quieter street forging. This choice trades slap against strength.","slap,crown,billet"],
+["billet","Billet","billet","A billet part is machined from a solid block of alloy rather than cast or forged. It is the strongest and most consistent, with no cast porosity, and the most expensive.","It is how outlaw builds go past what any casting can take, and what lifts the limits on bore and cylinder pressure.","forged,cgi"],
+["torsional","Torsional vibration and damper","torsional|torsional vibration|harmonic damper|damper|harmonic balancer","A crank is a long spring and twists a little with every firing pulse. At some rpm the twist builds into a resonance. A torsional damper is a weighted rubber or fluid ring that absorbs it.","Without the right damper a crank can fatigue and break at the resonant rpm. Cylinder count and stroke decide where it sits.","firing,crankfatigue"],
+["crankfatigue","Crank bending fatigue","crank bending fatigue|crank fatigue","A crank bends a little with each combustion pulse. Do that millions of times and a crack grows from the fillet where a journal meets a web.","Forged and nitrided cranks resist it. It is the failure of long endurance runs rather than single pulls.","torsional,forged"],
+["firing","Firing order","firing order|firing interval","The firing order is the sequence in which the cylinders fire. Even spacing gives a smooth engine; uneven spacing gives a lumpy idle and the characteristic burble.","It sets smoothness, exhaust pulse spacing and exhaust note.","crossplane,smoothness"],
+["crossplane","Crossplane and flatplane","crossplane|cross-plane|flatplane|flat-plane|flat plane","A crossplane V8 crank has throws at 90 degrees, giving the deep, rumbly note and balanced shaking forces. A flatplane has all throws in one plane: revvier and lighter, with a higher-pitched sound and more vibration.","The choice changes sound, the smoothness score, and the firing pulses seen by the exhaust.","firing,smoothness"],
+["smoke","Smoke limit","smoke limit|smoke|black smoke|=Smoke","The smoke limit is the least air a diesel can burn its fuel in without soot. Past it, fuel burns badly and the exhaust goes black, so the fuelling is held at a minimum lambda.","It is the real power limit of a diesel. More air (boost) lets you burn more fuel inside the limit, and market briefs cap smoke too.","lambda,egt,boost"],
+["injtiming","Injection timing","injection timing|injection advance|pump timing","When in the compression stroke the diesel fuel is injected, in degrees before top dead centre. Earlier means a higher peak pressure and a hotter, noisier burn; later gives less pressure but more smoke and heat.","It is the diesel's equivalent of the ignition slider: more advance trades torque and cold-start ability against peak pressure.","mbt,pmax,cetane"],
+["commonrail","Common rail","common rail|common-rail","A common-rail diesel keeps fuel at very high pressure in a shared rail, and electronic injectors open when told to. The pressure is independent of rpm, and the fuel can be split into several injections.","It makes the quiet, clean, strong diesels of the last twenty years, and good low-rpm torque.","heui,ppump,vepump"],
+["heui","HEUI","=HEUI|hydraulic electronic unit injector","Hydraulic electronic unit injectors are electronically controlled injectors boosted by high-pressure engine oil. Each one multiplies the oil pressure into fuel pressure at the nozzle.","They give common-rail-style control from an older design, as on the 7.3 Power Stroke.","commonrail"],
+["ppump","P-pump","P-pump|P pump|=P7100|inline pump|inline mechanical","An inline injection pump with one plunger per cylinder, driven by the engine and set by a mechanical governor. It is rugged and easy to tune for large fuel flow.","The classic pulling and high-power pump: a simple mechanism with lots of fuelling headroom.","vepump,commonrail"],
+["vepump","VE pump","VE pump|rotary pump|rotary injection pump|distributor pump","A rotary distributor-type diesel injection pump: one plunger pumps for all the cylinders and a rotor spins to deal the fuel out in turn. Compact, cheap and lower in pressure.","Fine for small diesels and light duty; it caps how much fuel a build can use.","ppump"],
+["nozzles","Injector nozzles and sticks","nozzles|nozzle|sticks|injector sticks|injector nozzles","The nozzle is the tip of a diesel injector, with tiny holes that atomise fuel into the cylinder. Bigger holes (pullers call a set of injectors 'sticks' by size) flow more fuel for more power and more smoke.","Nozzle size caps how much fuel can go in during the available time, and with it the power.","commonrail,smoke"],
+["glow","Glow plugs","glow plugs|glow plug|intake heater|grid heater","Glow plugs are small electric heaters in each diesel cylinder that warm the chamber for starting, since cold air at the end of compression may not be hot enough to light the fuel.","They matter for the cold-start test and the cold site briefs.","coldstart,cetane"],
+["coldstart","Cold start","cold start|cold-start|cold starting","Starting at low temperature is hard for any engine: fuel will not vaporise, oil is thick and the battery weak. A diesel must also get its cylinder air hot enough to ignite the fuel by compression alone.","The cold-start test and the cold site briefs check this. Compression, glow plugs, cetane and oil grade help.","glow,cetane,cloud"],
+["cloud","Cloud point","cloud point|gel point|waxing","The cloud point is the temperature at which wax first appears in diesel fuel. It plugs filters well before the fuel is solid, and biodiesel clouds at a higher temperature than mineral diesel.","It is a fuel limit at cold sites; B100 is the worst case.","b100,coldstart"],
+["b100","B100 (biodiesel)","=B100|biodiesel","B100 is pure biodiesel made from vegetable oil or fat. It has high cetane and lubricity but a little less energy per litre and a higher cloud point than petroleum diesel.","It starts easily and smokes less, but it gels sooner at cold sites.","cetane,cloud"],
+["nitrous","Nitrous oxide","nitrous oxide|nitrous|N₂O|N2O","Nitrous oxide is a liquid that splits at combustion heat to release oxygen: by weight about 36 percent oxygen, against 23 for air. More oxygen allows more fuel burned and more power, and the evaporating liquid also chills the charge.","The game models bottle pressure, jetting, fuel match and timing. A shot too big for the engine breaks pistons faster than any other power adder.","wetdry,bottle,purge"],
+["wetdry","Wet and dry nitrous","wet kit|dry kit|nitrous wet|nitrous dry|wet shot|dry shot|, wet|, dry|wet nitrous|dry nitrous","A dry kit sprays only nitrous and relies on the engine's own injectors to add fuel. A wet kit sprays fuel with the nitrous through the same plate or nozzle. In the game the kind is part of each kit's name.","A wet kit's fuel comes from its own jet, so it is easy to match to the shot but can pool in the intake; a dry kit needs the injectors and pump to keep up.","directport,progressive,nitrous"],
+["directport","Direct port","direct port|direct-port|nozzle per runner","A direct-port kit has a nozzle and a fuel jet in every intake runner, so every cylinder gets an identical share. It can carry very large shots.","Even distribution is what makes 250 to 700 horsepower shots survivable.","wetdry,progressive"],
+["progressive","Progressive controller","progressive|progressive controller|ramped","A progressive controller pulses the nitrous solenoids and ramps the shot in over a second or two instead of slamming it on all at once.","It lets the tyres hook up and spares the pistons the full-shot shock, which is why strong launches use it.","directport,holeshot"],
+["purge","Purge","purge|nitrous purge","Purging opens the nitrous line to the air for a moment to flush out gas bubbles that formed while the car sat. This puts liquid at the solenoid so the first spray is full strength.","Skip it and the first part of the shot is weak and lean in fuel; it is also the cloud and the hiss on the line.","bottle,nitrous"],
+["bottle","Bottle pressure","bottle pressure|bottle temperature|bottle heater","The vapour pressure of a nitrous bottle follows its temperature: about 900 to 1,000 psi is the target. Lower pressure delivers less nitrous through the same jets, higher delivers more.","A cold bottle makes a weak shot and an over-warm one makes a violent one. The game shows the bottle pressure and warns when it is off.","nitrous,purge"],
+["twostep","Two-step","two-step|two step|2-step","A two-step is a second rev limiter, set lower than the real one, that you use only on the line. It holds rpm steady while you wait for the green.","It lets the engine sit at the rpm where boost or nitrous is ready, for a consistent launch.","launchretard,transbrake"],
+["launchretard","Launch retard","launch retard|retarded timing|timing retard","On a two-step with launch retard, the ignition timing is pulled far back while holding rpm. The late burn heats the exhaust and builds boost on a turbo car without making much torque.","It spools the turbo on the line, at the cost of exhaust heat.","twostep,egt,boost"],
+["transbrake","Trans-brake","trans-brake|trans brake|transbrake","A trans-brake is a transmission feature that locks the output so the car stays still in gear with the engine loaded against the converter, and releases at a button press.","The driver can hold rpm and boost at the line, and it gives the hardest, most consistent launch.","twostep,linelock,launchretard"],
+["linelock","Line lock","line lock|line-lock","A line lock clamps the front brakes only, while the rear wheels spin free, so the driver can do a burnout to heat the slicks without moving the car.","Hot tyres grip better; the burnout is part of the launch in the game.","transbrake,sixty"],
+["sixty","60 foot time","60 ft|60-foot|60 foot|sixty-foot","The elapsed time over the first 60 feet of the track. It is purely launch: grip, power at the line and driver, and it governs a large share of the final ET.","A tenth lost here is about a tenth to a tenth-and-a-half lost in the quarter mile.","et,holeshot,rt"],
+["et","Elapsed time (ET)","=ET|elapsed time|quarter mile","Elapsed time is how long a pass takes from the car leaving the line to crossing the finish, measured at 1/8 or 1/4 mile.","It is the number the strip is judged on, and the one the career drag briefs ask for.","trap,sixty,breakout"],
+["trap","Trap speed","trap speed|=Trap","The speed measured through the last stretch before the finish line. Elapsed time depends on launch and traction; trap speed depends almost purely on power and aero.","If ET is slow but trap speed is high, the car has power but lost it at the line. The reverse means it cannot pull at the top.","et,sixty"],
+["rt","Reaction time","reaction time|=RT","Reaction time is the time between the last bulb lighting and the car leaving the line. Zero is a perfect launch, and a negative one is a red light foul.","On the tree it can decide close races, and nothing the engine does will repair it.","holeshot,breakout"],
+["holeshot","Holeshot","holeshot|hole shot","A holeshot is winning the race by leaving the line sooner, even though the other car is quicker over the full distance.","A good reaction time can beat an engine that is a tenth quicker.","rt,et"],
+["breakout","Breakout","breakout|break out|broke out","In bracket racing, running quicker than the number you dialled in is a breakout and loses the race, unless the other car did something worse.","It is why consistency matters more than outright speed there.","dialin,package"],
+["dialin","Dial-in","dial-in|dial in|dial-ins","A dial-in is the elapsed time you tell the timers you expect to run. A slower car gets a head start worth the difference between dial-ins.","It lets cars of very different speeds race fairly, so the winner is the one who gets closest to the number without going under.","breakout,package"],
+["package","Race package","race package|your package","The package is the whole combination: engine, converter, tyres, gearing and weight. Bracket racers tune it to run the same time every pass.","Changing any one part changes everything else, which is why a repeatable setup beats a faster, jumpier one.","dialin,breakout"],
+["sled","Pulling sled","pulling sled|sled","The sled is a trailer with a heavy box that slides forward along its length as it is dragged, so the load grows the farther the truck pulls. The winner goes farthest.","The sled pull tests drag a sled down 300 feet of track; it is the whole point of the Pulling class.","weightbox,pan,fullpull"],
+["weightbox","Weight box","weight box|weightbox","On a pulling sled the weight box is the heavy block that rolls toward the front as the sled moves, shifting load onto the pan and making the pull harder.","It makes the sled harder the farther you go, so late in the pull torque and traction are all that matter.","sled,pan"],
+["pan","Sled pan","sled pan|drag pan|the pan","The pan is the flat skid under the front of the sled. As the weight box moves forward, it presses the pan into the dirt, so friction rises to stop the truck.","The pan is why a pull always ends: the load rises until the engine, the tyres, or both give up.","sled,weightbox"],
+["fullpull","Full pull","full pull|full-pull|full 300","A full pull is dragging the sled the full 300 ft length of the track. Anyone who does that goes to a pull-off.","In the game FULL marks a completed pull; stopping short ends in a distance in feet.","pulloff,sled"],
+["pulloff","Pull-off","pull-off|pull off|pulloff","If more than one truck makes a full pull, the sled is made heavier and the tied trucks go again. The winner is whoever goes farthest.","Pull-offs reward the truck that does not break after several full-power efforts.","fullpull"],
+["hitch","Hitch height","hitch height|hitch|drawbar","Where the sled is attached to the truck. A high hitch lifts the front end under load, taking weight off the steering axle and helping the rear tyres by weight transfer; too high, and the truck stands up.","It is one of the main chassis settings in the game's pull setup.","slip,sled"],
+["slip","Tyre slip and sweet spot","slip sweet spot|sweet spot|tyre slip|wheel slip|slip band","Slip is how much faster the tyre turns than the truck moves. A little slip gives the most traction; too much spins and digs in. The sweet spot is the narrow band where pull is greatest.","Time spent in the band is shown on the pull sheet. Gearing and throttle control keep you in it.","hitch,sled"],
+["sae","SAE J1349 correction","SAE J1349|SAE|correction factor|corrected hp|corrected power","SAE J1349 is a standard formula for correcting a power reading to a reference temperature and pressure (25 °C and 99 kPa dry air), so a dyno run on a hot day can be compared with a cold one.","The dyno reports raw and SAE-corrected power. Certification and market briefs use the corrected number.","densalt"],
+["densalt","Density altitude","density altitude|air density","Density altitude is the height at which standard air has the same density as today's air. Heat, humidity and elevation all thin the air and raise it.","Thin air means less oxygen and less power for an engine without boost, which is why site briefs at altitude punish naturally aspirated engines.","sae,boost"],
+["warranty","Warranty claims","warranty claims|warranty claim|warranty|warranty ledger","A warranty claim is a customer sending back a failed engine within the guarantee period. In career the shop pays to put it right, and the cost comes out of your earnings.","Reliability on the dyno becomes real money here: weak engines come back, and the ledger shows each week's claims.","reliability,sitebrief"],
+["sitebrief","Site brief","site brief|site briefs|site conditions","A site brief puts a requirement into a climate and altitude, such as a Yukon pickup at -25 °C or a mine at 3,500 m. Your engine is tested in those conditions, not the dyno's comfortable ones.","Cold, heat and thin air each stress different things, so one build rarely suits every site.","densalt,coldstart,warranty"],
+["reliability","Reliability score","reliability","The shop's score for how much margin an engine has: how far every stress limit sits from what the engine actually does. It sets whether a build certifies and how likely it is to come back under warranty.","Most briefs ask for a minimum score, and most deliveries are priced by it.","warranty,smoothness"],
+["smoothness","Smoothness","smoothness","Smoothness is the score for how little the engine shakes and how even its torque is. It depends on cylinder count, layout, firing order and balance.","Car and luxury briefs ask for smoothness; a truck brief does not care.","firing,crossplane"],
+["freshen","Passes to freshen","passes to freshen|freshen-up|freshen up","Racing engines wear with every pass. 'Passes to freshen' is how many hard passes an engine can make before the teardown that replaces its parts.","Outlaw drag briefs ask for a minimum number of passes between rebuilds, which is a trade against power.","reliability,et"],
+["torque","Torque and power","torque and horsepower|torque curve|power curve|torque peak","Torque is the twisting force the crank delivers; horsepower is torque times rpm, divided by a constant. An engine that holds torque to high rpm makes more power.","Diesels and trucks live on torque low down, and sports cars on horsepower high up. The dyno plots both.","bmep,ve"],
+["dyno","Dynamometer","dyno|dynamometer|dyno cell","A dynamometer holds the engine against a brake and measures torque as the speed climbs. A pull is a full-throttle sweep through the rpm range.","Certification in career happens on the dyno, and the dyno's own capacity limits what you can certify.","sae,torque"],
+["redline","Redline","redline|rev limit","The redline is the highest rpm the engine is set to run. Beyond it the valvetrain floats and piston speeds, rod loads and friction climb sharply.","It trades peak power rpm against the life and the valve float margin of the build.","valvefloat,pistonspeed"],
+["turbine","Turbine inlet temperature","turbine temp|turbine inlet|turbine inlet temp|hot-side|hot side","The exhaust temperature at the turbine wheel. Wheels are cast iron, nickel alloys or ceramics, and each has a temperature past which it creeps and fails.","Hot-side material limits how hot the engine can run under boost.","egt,wastegate"]
+];
+/* Known terms in the text of a few containers get a dotted underline (first use per block). Tap (or hover on desktop) for a small card.
+   Never inside inputs or buttons (the stress report's open explanations excepted), and S.gloss===false turns the whole pass off. */
+const GL={on:true,re:null,ci:new Map(),cs:new Map(),cache:new Map(),mo:null,pop:null,pin:false,timer:0,roots:["tab-analysis","tab-market","testExtra","verdict","stressList","sheetBody","dynoHint"]};
+const GL_BLK="p,li,.combo,.opt,.req,.stx,.verdict,.card,.buyer,.goal,.rec,.peak,.log > div,#tele > div,#notes > div,.lbl";
+const GL_ESC=s=>s.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");
+function glBuild(){const alts=new Set();GL.ci.clear();GL.cs.clear();
+  GLOSSARY.forEach((g,i)=>g[2].split("|").forEach(a=>{const sens=a[0]==="=",w=sens?a.slice(1):a;if(!w)return;(sens?GL.cs:GL.ci).set(sens?w:w.toLowerCase(),i);alts.add(w);}));
+  GL.re=new RegExp("(?<![\\p{L}\\p{N}_])(?:"+[...alts].sort((a,b)=>b.length-a.length).map(GL_ESC).join("|")+")(?![\\p{L}\\p{N}_])","giu");}
+function glMatch(txt){let r=GL.cache.get(txt);if(r)return r;if(!GL.re)glBuild();r=[];GL.re.lastIndex=0;let m;
+  while((m=GL.re.exec(txt))){let s=m.index;const w=m[0],i=GL.cs.has(w)?GL.cs.get(w):GL.ci.get(w.toLowerCase());if(i==null)continue;
+    while(s<m.index+w.length&&!/[\p{L}\p{N}]/u.test(txt[s]))s++;r.push([s,m.index+w.length,i]);}
+  if(GL.cache.size>5000)GL.cache.clear();GL.cache.set(txt,r);return r;}
+function glScan(root){if(!GL.on||!root||!root.isConnected)return;
+  if(root.nodeType===1&&root.closest("[data-nogl],#glPop,.glb,.kbd"))return;
+  const bad=p=>{if(!p||p.closest(".gl,input,textarea,select,a,kbd,script,style,svg,canvas,[data-nogl],.glb,.kbd,h1,h2"))return true;const b=p.closest("button");return !!b&&!p.closest(".stx");};
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.nodeValue.length<3||n.__bar!==undefined||bad(n.parentElement)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const ns=[];let n;while((n=w.nextNode()))ns.push(n);if(!ns.length)return;
+  const seen=new Map(),seenOf=b=>{let s=seen.get(b);if(!s){s=new Set();b.querySelectorAll(".gl").forEach(x=>s.add(+x.dataset.gi));seen.set(b,s);}return s;};
+  for(const t of ns){const txt=t.nodeValue,ms=glMatch(txt);if(!ms.length||!t.parentNode)continue;const par=t.parentElement,blk=par.closest(".combo,.opt,.req,.buyer,.card,.goal,.rec,.verdict")||par.closest(GL_BLK)||par,sn=seenOf(blk);
+    const use=ms.filter(m=>!sn.has(m[2])&&(sn.add(m[2]),true));if(!use.length)continue;
+    const f=document.createDocumentFragment();let at=0;
+    for(const [s,e,i] of use){if(s>at)f.appendChild(document.createTextNode(txt.slice(at,s)));const sp=document.createElement("span");sp.className="gl";sp.dataset.g=GLOSSARY[i][0];sp.dataset.gi=i;sp.tabIndex=0;sp.setAttribute("role","button");sp.setAttribute("aria-label",GLOSSARY[i][1]+": explain");sp.textContent=txt.slice(s,e);f.appendChild(sp);at=e;}
+    if(at<txt.length)f.appendChild(document.createTextNode(txt.slice(at)));t.parentNode.replaceChild(f,t);}
+  if(GL.mo)GL.mo.takeRecords();}
+function glScanAll(){for(const id of GL.roots){const r=$(id);if(r)glScan(r);}}
+function glUnwrap(){document.querySelectorAll(".gl").forEach(s=>s.replaceWith(document.createTextNode(s.textContent)));}
+function glApply(){const on=!S||S.gloss!==false;document.querySelectorAll("#glSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.gl==="1")===on));
+  if(on===GL.on&&GL.mo){if(on)glScanAll();return;}GL.on=on;glPopClose();if(on){glScanAll();}else glUnwrap();}
+let glQ=0;GL.q=new Set();
+GL.mo=new MutationObserver(ms=>{if(!GL.on)return;for(const m of ms)for(const a of m.addedNodes){const e=a.nodeType===1?a:a.parentElement;if(e&&!e.closest(".gl"))GL.q.add(e);}
+  if(GL.q.size&&!glQ)glQ=requestAnimationFrame(()=>{glQ=0;const q=[...GL.q];GL.q.clear();for(const e of q)glScan(e);});});
+GL.roots.forEach(id=>{const r=$(id);if(r)GL.mo.observe(r,{childList:true,subtree:true});});
+/* the card */
+function glRel(g){return g[5].split(",").map(id=>GLOSSARY.find(x=>x[0]===id)).filter(Boolean);}
+function glPopOpen(id,anchor,pin){const g=GLOSSARY.find(x=>x[0]===id);if(!g)return;const p=$("glPop");GL.pin=!!pin;GL.anchor=anchor;
+  p.innerHTML=`<div class="gh"><b>${g[1]}</b><button class="gx" aria-label="Close">✕</button></div><p>${g[3]}</p><p class="gw"><em>Here</em> ${g[4]}</p><div class="grel">${glRel(g).slice(0,4).map(r=>`<button class="gchip" data-gj="${r[0]}">${r[1].replace(/ \(.*/,"")}</button>`).join("")}</div><button class="gmore" data-gb="${g[0]}">Open in the glossary ›</button>`;
+  p.hidden=false;p.dataset.id=id;glPlace(anchor);}
+function glPlace(a){const p=$("glPop");if(!a||!a.isConnected){glPopClose();return;}const app=$("app").getBoundingClientRect(),r=a.getClientRects()[0]||a.getBoundingClientRect(),w=p.offsetWidth,h=p.offsetHeight;
+  let left=Math.max(8,Math.min(app.width-w-8,r.left-app.left+r.width/2-w/2)),top=r.bottom-app.top+8;if(top+h>app.height-8)top=Math.max(8,r.top-app.top-h-8);
+  if(deskOn()&&a.closest("#panel")){const pl=$("panel").getBoundingClientRect();left=Math.max(8,pl.left-app.left-w-12);top=Math.max(8,Math.min(app.height-h-8,r.top-app.top-8));}   // beside the sidebar, not over the text it explains
+  p.style.left=Math.round(left)+"px";p.style.top=Math.round(top)+"px";}
+function glPopClose(){const p=$("glPop");if(!p)return;p.hidden=true;GL.pin=false;GL.anchor=null;clearTimeout(GL.timer);}
+document.addEventListener("click",e=>{const x=e.target.closest&&e.target.closest(".gl,#glPop");if(!x)return;
+  if(x.matches(".gl")){e.preventDefault();e.stopPropagation();const open=!$("glPop").hidden&&GL.anchor===x&&GL.pin;if(open)glPopClose();else glPopOpen(x.dataset.g,x,true);return;}
+  const j=e.target.closest("[data-gj]"),b=e.target.closest("[data-gb]");
+  if(e.target.closest(".gx")){glPopClose();return;}
+  if(j){glPopOpen(j.dataset.gj,GL.anchor,true);return;}
+  if(b){const id=b.dataset.gb;glPopClose();glBrowse(id);}},true);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("glPop").hidden){glPopClose();e.stopImmediatePropagation();e.preventDefault();return;}
+  if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("gl")){e.preventDefault();e.stopImmediatePropagation();glPopOpen(e.target.dataset.g,e.target,true);}},true);
+document.addEventListener("pointerdown",e=>{if($("glPop").hidden)return;if(!e.target.closest(".gl,#glPop"))glPopClose();},true);
+document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const a=e.target.closest&&e.target.closest(".gl");clearTimeout(GL.timer);
+  if(a){if(GL.pin&&GL.anchor!==a)return;if(!$("glPop").hidden&&GL.anchor===a)return;GL.timer=setTimeout(()=>glPopOpen(a.dataset.g,a,false),230);}});
+document.addEventListener("pointerout",e=>{if(e.pointerType!=="mouse"||GL.pin)return;const f=e.target.closest&&e.target.closest(".gl,#glPop");if(!f)return;const to=e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest(".gl,#glPop");if(to)return;clearTimeout(GL.timer);GL.timer=setTimeout(glPopClose,260);});
+$("panel").addEventListener("scroll",()=>{if(!$("glPop").hidden)glPopClose();},{passive:true});$("sheetBody").addEventListener("scroll",()=>{if(!$("glPop").hidden)glPopClose();},{passive:true});
+window.addEventListener("resize",()=>{if(!$("glPop").hidden)glPlace(GL.anchor);});
+$("glSeg").addEventListener("click",e=>{const b=e.target.closest("[data-gl]");if(!b)return;S.gloss=b.dataset.gl==="1";save();glApply();});
+/* the browser: every term, searchable */
+function glRow(g,open){return `<div class="gle${open?" open":""}" id="gle-${g[0]}"><button class="glh" data-ge="${g[0]}" aria-expanded="${!!open}"><b>${g[1]}</b><span>${g[3].split(/(?<=\.)\s/)[0]}</span></button><div class="glx"><p>${g[3]}</p><p class="gw"><em>Here</em> ${g[4]}</p><div class="grel">${glRel(g).map(r=>`<button class="gchip" data-gt="${r[0]}">${r[1].replace(/ \(.*/,"")}</button>`).join("")}</div></div></div>`;}
+function glList(q,open){const t=(q||"").toLowerCase().split(/\s+/).filter(Boolean);
+  const hit=GLOSSARY.filter(g=>{const hay=(g[1]+" "+g[2].replace(/[=|]/g," ")+" "+g[3]).toLowerCase();return t.every(w=>hay.includes(w));}).sort((a,b)=>a[1].localeCompare(b[1]));
+  $("glList").innerHTML=hit.map(g=>glRow(g,g[0]===open)).join("")||`<p class="hint">Nothing matches “${q.replace(/[<>&]/g,"")}”. Try a shorter word.</p>`;
+  $("glCnt").textContent=hit.length===GLOSSARY.length?`${GLOSSARY.length} terms`:`${hit.length} of ${GLOSSARY.length} terms`;}
+function glBrowse(open){if(open===undefined&&$("sheet").classList.contains("on")&&$("sheetBody").querySelector(".glb")){closeSheet();return;}
+  glPopClose();$("sheetTitle").textContent="Glossary";
+  $("sheetBody").innerHTML=`<div class="glb"><input type="search" id="glQ" placeholder="Search terms: lambda, boost, sled…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search the glossary"><div class="hint" id="glCnt"></div><div id="glList"></div></div>`;
+  $("sheet").classList.add("on");$("scrim").classList.add("on");glList("",open);
+  const q=$("glQ");q.addEventListener("input",()=>glList(q.value));q.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
+  if(open){const el=$("gle-"+open);if(el)requestAnimationFrame(()=>el.scrollIntoView({block:"start"}));}else if(deskOn())q.focus({preventScroll:true});}
+$("sheetBody").addEventListener("click",e=>{const h=e.target.closest(".glb [data-ge]"),c=e.target.closest(".glb [data-gt]");
+  if(h){const r=h.parentElement,on=!r.classList.contains("open");r.classList.toggle("open",on);h.setAttribute("aria-expanded",on);return;}
+  if(c){const id=c.dataset.gt;$("glQ").value="";glList("",id);const el=$("gle-"+id);if(el)el.scrollIntoView({block:"start"});}});
+$("glOpen").addEventListener("click",()=>glBrowse());
+
+/* ---- guided lessons: the tour's spotlight, a sandbox rig, and the player's own build put back afterwards ---- */
+const LESSONS=[
+ {id:"diesel",name:"Diesel 101",sub:"compression, smoke limit, fuel system",preset:"c59_12v",env:{testType:"pull"},steps:[
+  {tab:"build",sel:".strip",title:"No spark, just heat",text:"This is a 5.9 litre inline-six diesel. It has no spark plugs: it squeezes air until it is hot enough to light the fuel the instant it is sprayed in. Everything on these steps follows from that."},
+  {tab:"build",sel:"#r-cr",up:1,lbl:1,title:"Compression ratio",text:"A diesel runs 14 to 24:1. Higher compression lights the fuel more easily and extracts more work, but it raises cylinder pressure and stress on the block."},
+  {tab:"build",sel:"#r-lambda",up:1,lbl:1,title:"The smoke limit",text:"A diesel always runs with spare air. Lambda here is the full-load mixture: push it lower for more fuel and power, and the exhaust turns black. The market has smoke caps."},
+  {tab:"build",sel:'[data-k="dInj"]',up:1,lbl:1,title:"How the fuel arrives",text:"Rotary VE pump, inline P-pump, HEUI or common rail. Each trades cost and simplicity against pressure and control. Nozzle size caps how much fuel can go in."},
+  {tab:"build",sel:"#r-timing",up:1,lbl:1,title:"Injection timing",text:"When the fuel is injected before top dead centre. Earlier is more peak pressure and a harder knock; later cuts pressure but raises smoke and exhaust heat."},
+  {tab:"build",sel:'[data-k="asp"]',up:1,lbl:1,title:"Air is power",text:"Fit a turbo and more fuel fits inside the smoke limit. Diesels spool early because they push full exhaust flow with no throttle, which is why they love boost."},
+  {tab:"test",sel:"#runTest",title:"Run it on the dyno",text:"Arm the dyno and pull. The torque curve of a diesel peaks low and is flat. Check the stress report afterwards: peak cylinder pressure and exhaust temperature are the first limits."},
+  {tab:"analysis",sel:"#tele",title:"Read the telemetry",text:"Analysis shows cetane instead of octane, smoke, peak cylinder pressure and the temperatures. Cold sites need glow plugs and good cetane for the cold start."}]},
+ {id:"nitrous",name:"Nitrous 101",sub:"kits, bottle, timing, the line",preset:"n2o632",env:{testType:"drag"},steps:[
+  {tab:"build",sel:'[data-k="nitrous"]',up:1,lbl:1,title:"A bottle of oxygen",text:"Nitrous oxide splits in the cylinder and gives up extra oxygen, so more fuel burns. Dry kits add nitrous only, wet kits add their own fuel, direct port feeds every runner, and a progressive controller ramps the shot in, as on this 632 big-block."},
+  {tab:"build",sel:'[data-k="fuel"]',up:1,lbl:1,title:"Octane matters more",text:"The extra oxygen makes the cylinder hotter and faster, so knock margin gets thin. High-octane or alcohol fuel protects pistons that a shot would otherwise melt."},
+  {tab:"build",sel:"#r-timing",up:1,lbl:1,title:"Retard the timing",text:"Nitrous burns fast. Pull a few degrees of ignition timing back for a bigger shot. The Detonation margin test in the stress report shows whether you went far enough."},
+  {tab:"build",sel:'[data-k="launchCtl"]',up:1,lbl:1,title:"Launch control",text:"A two-step holds rpm on the line, launch retard builds boost while holding it, and a trans-brake keeps the car still until you release. They are strip-only and add no power by themselves."},
+  {tab:"test",sel:"#testType",title:"Take it to the strip",text:"Drag pass is the 1/4 mile. Your nitrous kit only arrives when the throttle is wide open, and it comes on at the point you choose below."},
+  {tab:"test",sel:'#envBox [data-ek="n2oHeater"]',up:1,lbl:1,title:"Bottle pressure and purge",text:"The shot is jetted for about 950 psi, so a heater keeps passes the same. On the line, hold PURGE (or press P) until it spits white so the first spray is liquid."},
+  {tab:"test",sel:"#runTest",title:"Stage and launch",text:"Stage the car and launch on the green. A strong launch counts for more than top-end power, and a shot that comes on too early only spins the tyres."},
+  {tab:"test",sel:"#dynoHint",title:"Read the timing slip",text:"After a pass, the slip lists reaction time, 60 ft, the eighth and quarter mile ET with trap speed. If the 60 ft is slow but the trap speed is high, the power is there and the launch is the problem."}]},
+ {id:"pulling",name:"Pulling 101",sub:"the sled, hitch, tyres and throttle",preset:"smoker26",env:{testType:"pull_sled"},steps:[
+  {tab:"test",sel:"#testType",title:"The sled pull",text:"A truck drags a sled down 300 feet of dirt. A heavy box slides forward as it goes, pressing the sled's pan into the track, so the load grows every foot. Farthest wins; a full pull gets a pull-off."},
+  {tab:"test",sel:'#envBox [data-pk="pullCls"]',up:1,lbl:1,title:"Pick a class",text:"Each class has its own weight limit, tyres and rules. Your build has to be legal for the class, and the legal line is shown under each button."},
+  {tab:"test",sel:'#envBox [data-pk="pullGear"]',up:1,lbl:1,title:"Choose a gear",text:"A tall gear carries speed into the heavy end of the track; a short one gives more pull but digs the tyres if you stay flat on it."},
+  {tab:"test",sel:'#envBox [data-pk="pullTyre"]',up:1,lbl:1,title:"Tyres and slip",text:"Some slip is good: there is a sweet spot where the tyres pull hardest. Too little and the engine bogs, too much and the tyres dig a hole. The pull sheet reports the time you spent in that band."},
+  {tab:"test",sel:"#er-pullHitch",up:0,wrap:".envgrid",title:"Hitch height and ballast",text:"A higher hitch plants the rear tyres but lifts the nose. Past a point the front hops and grip goes with it. Weight on the front bracket holds the nose down."},
+  {tab:"build",sel:'[data-k="dNoz"]',up:1,lbl:1,title:"Fuel and sticks",text:"Pulling diesels live on large injector nozzles and compound turbos. The smoke limit is not a rule here; the limits are cylinder pressure, the head gasket and the pump."},
+  {tab:"test",sel:"#runTest",title:"Hold the throttle",text:"Start the pull and hold the button (or Space) for throttle. Ease off when the tyres spin to stay in the sweet spot; the engine must keep pulling as the sled gets heavier."},
+  {tab:"test",sel:"#dynoHint",title:"Read the pull sheet",text:"The sheet lists distance, setup, tyre slip and the reasons the pull ended. If the truck stopped bogged, you need torque or gear; if it spun, you need grip or less throttle."}]}
+];
+let LS=null;
+const LS_WALK=["#modeBox button","#replayTour","#resetGame","#foreclose [data-restart]","#slots button","#importSave","#exportSave"].join(",");
+function lsEl(st){let el=document.querySelector(st.sel);if(!el)return null;if(st.wrap)el=el.closest(st.wrap)||el;for(let i=0;i<(st.up||0)&&el.parentElement;i++)el=el.parentElement;return el;}
+function lsRect(st){const el=lsEl(st);if(!el||!el.offsetParent&&getComputedStyle(el).position!=="fixed")return null;let r=el.getBoundingClientRect();
+  if(st.lbl&&el.previousElementSibling&&el.previousElementSibling.classList.contains("lbl")){const a=el.previousElementSibling.getBoundingClientRect();r={left:Math.min(a.left,r.left),right:Math.max(a.right,r.right),top:a.top,bottom:r.bottom,width:0,height:0};r.width=r.right-r.left;r.height=r.bottom-r.top;}
+  return r.width&&r.height?r:null;}
+function lsPlace(){if(!LS)return;const st=LS.L.steps[LS.i];if(!st)return;const app=$("app").getBoundingClientRect(),spot=$("lesSpot"),box=$("lesBox"),tabT=tabsTop()-app.top;let r=lsRect(st);
+  if(r){const pr=$("panel").getBoundingClientRect(),fixed=st.sel==="#dragBtn"||st.sel==="#pullBtn";const top=fixed?r.top:Math.max(r.top,pr.top),bot=fixed?r.bottom:Math.min(r.bottom,app.top+tabT);r=bot-top>=Math.min(28,r.height*0.5)?{left:r.left,width:r.width,top,bottom:bot,height:bot-top}:null;}
+  const boxH=box.offsetHeight||150;
+  if(r){spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
+    const below=r.bottom-app.top+14,above=r.top-app.top-14-boxH;const top=below+boxH<tabT-8?below:above>=8?above:null;
+    if(top!=null){box.style.top=top+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-tabT+10)+"px";}}
+  else{spot.style.display="none";box.style.top="auto";box.style.bottom=(app.height-tabT+10)+"px";}
+  deskBox(box,r);}
+function lsShow(i){if(!LS)return;LS.i=i;const L=LS.L,st=L.steps[i];if(!st){lsEnd(false);return;}glPopClose();
+  if(st.tab==="test"&&S.env.testType!==L.env.testType&&!testing){const b=document.querySelector(`#testType [data-t="${L.env.testType}"]`);if(b)b.click();}
+  if(curTab!==st.tab)showTab(st.tab);
+  const target=document.querySelector(st.sel),ac=target&&target.closest(".acc");if(ac&&!ac.classList.contains("open"))toggleSec(ac.querySelector("[data-sec]"));
+  const last=i===L.steps.length-1;
+  $("lesStep").textContent=`${L.name} · ${i+1} of ${L.steps.length}`;$("lesTitle").textContent=st.title;$("lesText").textContent=st.text;
+  $("lesSkip").style.display=last?"none":"";$("lesKeep").style.display=last?"":"none";$("lesNext").textContent=last?"Back to my engine":"Next";
+  glScan($("lesText"));
+  const t2=document.querySelector(st.sel);if(t2&&$("panel").contains(t2)&&st.sel.charAt(0)!=="."){setTimeout(()=>{if(!LS||LS.i!==i)return;const pr=$("panel").getBoundingClientRect(),tr=(lsRect(st)||t2.getBoundingClientRect());$("panel").scrollTop+=(tr.top-pr.top)-pr.height*0.32;lsPlace();setTimeout(lsPlace,380);setTimeout(lsPlace,700);},60);}
+  requestAnimationFrame(()=>requestAnimationFrame(lsPlace));}
+function lsAsk(id){const L=LESSONS.find(x=>x.id===id);if(!L||LS)return;const car=career();
+  $("sheetTitle").textContent=L.name;
+  $("sheetBody").innerHTML=`<p class="hint" style="margin-top:0">${L.name} runs in the test cell on a scratch engine${car?", so you will switch out of Career for a few minutes. Your shop, cash and contracts are not touched":""}. Your current build is saved first and put back when you finish or skip${car?" and you return to Career":""}. You can also keep the lesson's engine at the end.</p><div class="row" style="margin-top:12px"><button class="btn sm ghost" id="lesCancel" style="flex:1">Not now</button><button class="btn pri" id="lesGo" style="flex:2">Start ${L.name}</button></div>`;
+  $("sheet").classList.add("on");$("scrim").classList.add("on");
+  $("lesCancel").addEventListener("click",closeSheet);$("lesGo").addEventListener("click",()=>{closeSheet();lsStart(id);});}
+function lsMenu(){$("sheetTitle").textContent="Lessons";
+  $("sheetBody").innerHTML=`<p class="hint" style="margin-top:0">Short guided tours of the real controls. Each runs on a scratch engine and puts your own build back when it ends. Skip any time.</p>`+LESSONS.map(L=>`<div class="opt"><div class="oh"><b>${L.name}</b><span class="tag">${L.steps.length} steps</span></div><p>${L.sub}</p><button class="btn sm pri" data-les="${L.id}" style="margin-top:6px">${S.lessonsDone&&S.lessonsDone[L.id]?"Replay":"Start"}</button></div>`).join("");
+  $("sheet").classList.add("on");$("scrim").classList.add("on");}
+function lsStart(id){if(LS||(typeof ff!=="undefined"&&ff))return;if(testing){toast("Let the dyno finish first");return;}
+  const L=LESSONS.find(x=>x.id===id),p=PRESETS.find(x=>x.id===L.preset);if(!L||!p)return;closeSheet();if(tourStep>=0){tourStep=-1;$("tour").hidden=true;}
+  LS={L,i:0,to:S.mode||"sandbox",back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle,sound:S.sound,tabs:Object.assign({},tabScroll,{[curTab]:$("panel").scrollTop})}};tabScroll.build=0;
+  S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg,L.cfg||{});S.env=Object.assign({},SIM.DEFAULT_ENV,L.env);S.profileId=p.soundProfile;S.name=p.name;S.last=null;curTab="build";resetBase();
+  if(S.mode!=="sandbox"){S.mode="sandbox";boot();}else{afterCfgChange(true);hud();showTab("build");}
+  $("les").hidden=false;lsShow(0);}
+function lsEnd(keep){if(!LS)return;if(testing){toast("Let the dyno finish first");return;}const f=LS;LS=null;$("les").hidden=true;const b=f.back;
+  if(f.i>=f.L.steps.length-1){S.lessonsDone=Object.assign({},S.lessonsDone,{[f.L.id]:true});}
+  const mine={cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name};
+  run.idle=b.idle;$("idleBtn").classList.toggle("on",run.idle);
+  Object.assign(S,keep?{cfg:mine.cfg,env:mine.env,profileId:mine.profileId,name:mine.name,last:null}:{cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last},{mode:f.to});curTab=keep?"build":b.tab;
+  let note=keep?"Kept the lesson engine":"Your build is back";
+  if(career()&&presetLocked(S.cfg)){S.cfg=b.cfg;S.env=b.env;S.profileId=b.profileId;S.name=b.name;S.last=b.last;note=keep?"Career bay can't fit that engine yet. Your own build is back":note;keep=false;curTab=b.tab;}
+  if(S.sound!==b.sound){S.sound=b.sound;$("sndBtn").classList.toggle("on",S.sound);if(!S.sound)ENGINE_SOUND.stop();}
+  resetBase();save();boot();if(!keep){Object.assign(tabScroll,b.tabs);$("panel").scrollTop=b.tabs[curTab]||0;}toast(note);}
+function lsSafeSave(){if(!LS)return;const keep={mode:S.mode,cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,sound:S.sound},b=LS.back;
+  Object.assign(S,{mode:LS.to,cfg:b.cfg,env:b.env,profileId:b.profileId,name:b.name,last:b.last,sound:b.sound});save();Object.assign(S,keep);}
+$("lesNext").addEventListener("click",()=>{if(!LS)return;if(LS.i>=LS.L.steps.length-1)lsEnd(false);else lsShow(LS.i+1);});
+$("lesSkip").addEventListener("click",()=>lsEnd(false));$("lesKeep").addEventListener("click",()=>lsEnd(true));
+$("lessonsOpen").addEventListener("click",lsMenu);
+$("sheetBody").addEventListener("click",e=>{const b=e.target.closest("[data-les]");if(b)lsAsk(b.dataset.les);});
+$("panel").addEventListener("click",e=>{if(!LS)return;const b=e.target.closest(LS_WALK);if(!b)return;if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}lsEnd(false);},true);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)lsSafeSave();});window.addEventListener("pagehide",lsSafeSave);
+window.addEventListener("resize",()=>{if(LS)lsPlace();});$("panel").addEventListener("scroll",()=>{if(LS)lsPlace();},{passive:true});
+
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
 /* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */
@@ -17446,7 +17745,7 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   const K=(k,t)=>`<kbd>${k}</kbd><span>${t}</span>`;$("sheetTitle").textContent="Keyboard & mouse";
   $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}
     <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test (Test tab)")}${K("V","view options")}
-    <h3>Panel</h3>${K("1 – 5","Build · Test · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("?","this list")}
+    <h3>Panel</h3>${K("1 – 5","Build · Test · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("G","the glossary")}${K("?","this list")}
     <h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}</div>`;
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
@@ -17467,6 +17766,7 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
   else if(lk==="s")$("sndBtn").click();
   else if(lk==="i"||lk==="e")$("idleBtn").click();
   else if(lk==="v")$("viewBtn").click();
+  else if(lk==="g")glBrowse();
   else if(lk==="r"&&curTab==="test"&&!testing&&!$("runTest").disabled)$("runTest").click();});
 document.addEventListener("keyup",e=>{if((e.key===" "||e.key==="Spacebar")&&spaceHeld){e.preventDefault();spaceUp(false);}});
 window.addEventListener("blur",()=>{if(spaceHeld)spaceUp(true);});
@@ -17480,7 +17780,7 @@ function boot(){
   applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
 }
