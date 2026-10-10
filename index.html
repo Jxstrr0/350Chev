@@ -364,6 +364,18 @@ div.up.owned .price{color:var(--good)}
 .cstat.brk{color:var(--crit)}
 .cstat.off{color:var(--warn)}.cstat.off small{display:block;font-family:var(--mono);font-size:12px;color:var(--muted)}.cstat.off span{display:block;color:var(--muted)}.cstat.off span b{color:var(--chalk);font-weight:500}
 .cgroup.g-mkt h3{color:var(--info)}
+.cgroup.g-svc>h3{color:var(--orange2)}.cgroup.g-core>h3{color:var(--muted)}
+.card.svcjob h3{font-size:16px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--chalk);margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.card.svcjob h3::after{content:none}.card.svcjob h3 span{font-size:12px;text-align:right;white-space:nowrap}
+.card.svcjob{border-left:3px solid var(--orange2)}.card.svcjob.wty{border-left-color:var(--crit)}.card.svcjob.wty .client{color:var(--crit)}
+.svcworn{background:var(--soot);border-radius:4px;padding:7px 10px;margin:2px 0 10px;display:flex;flex-direction:column;gap:2px}
+.svcworn b{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--chalk)}
+.svcworn span{font-size:13px;color:var(--muted)}.svcworn i{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.card.svcjob .btn{width:100%;min-height:46px}.svchint{margin-top:2px}
+.coreln{font-family:var(--mono);font-size:12px;color:var(--good);margin:6px 0 2px;padding:4px 8px;border-radius:3px;background:var(--soot);line-height:1.4}
+.card .coreln{margin:-4px 0 10px}
+.corerow .bdeal .btn{min-width:86px}.corerow .bdeal b{color:var(--muted)}
+:root[data-theme=light] .svcworn,:root[data-theme=light] .coreln{background:var(--panel2)}
 .buyer{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;margin-bottom:6px}
 .buyer .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.buyer .bh>span:first-child{min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .buyer .bh b{font-weight:600;color:var(--chalk);font-size:14px}.buyer .bh i{font-style:normal;font-size:12px;color:var(--dim)}
@@ -17013,7 +17025,7 @@ function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])contin
   if(hit.length){toast(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
 function warrantyPass(){let claims=0,cost=0,active=0;
   for(const f of C().fleet){const age=C().week-f.week;if(age<1||age>10)continue;active++;
-    const lam=f.units*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
+    const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
     if(n){f.claims=(f.claims||0)+n;const c=n*(Math.round(f.unitCost*0.5)+350);claims+=n;cost+=c;C().cash-=c;C().warranty+=c;C().rep=Math.max(0,C().rep-n);
       logEvent(`${n} × ${f.name} back from ${f.client} — ${f.weak.toLowerCase()} — ${fmt$(c)} warranty`,"bad");}}
   if(active&&!claims)C().cleanWeeks++;else if(claims)C().cleanWeeks=0;
@@ -17023,10 +17035,110 @@ function repeatPass(){for(const f of C().fleet){if(f.repeated||(f.claims||0)>0||
     const units=Math.max(1,Math.round(f.units*1.4));const price=Math.round(f.unitPrice*1.15/10)*10;
     (C().inbox=C().inbox||[]).push({id:Math.floor(rng()*1e9),seg:f.seg,name:f.name,client:f.client,req:Object.assign({},f.req),units,price,expires:C().week+3,repeat:true,...(f.site?{site:Object.assign({},f.site)}:{})});
     logEvent(`${f.client} is back for ${units} more ${f.name} engines at +15%`,"good");toast(`${f.client} wants a repeat order`);}}
+/* ===== rebuilds & cores =====
+   Engines in the field wear: a fleet entry runs a segment's duty hours a week against the life rating it was certified
+   with. Short-lived builds wear out inside the ten-week warranty and come back as WARRANTY REBUILDS (you pay the parts;
+   ignore them and the client bills you claims). Everything else comes back after the warranty as a PAID REBUILD from
+   the same client — at most twice per delivery, the second time only for the units you rebuilt yourself.
+   Cores: a buyer may trade in old engines. A core of the same layout re-uses its block, crank and rods: up to one core a
+   unit, worth 12% of the unit cost (capped at the core's book value). Other cores go to a six-slot core stock, used on
+   later builds of that layout or sold to the core buyer for scrap. Cores are never bought, so there's nothing to flip. */
+const SVC_DUTY={prod:100,truck:120,diesel:150,perf:70,race:90,outlaw:110};   // in-service hours a week, compressed
+const SVC_TIERS=[{id:"top",name:"Top end",worn:"valves, guides and stem seals",parts:0.12,lab:0.07},
+  {id:"rb",name:"Rings & bearings",worn:"rings, rod and main bearings",parts:0.20,lab:0.09},
+  {id:"full",name:"Full rebuild",worn:"bores, crank, rings, bearings and valves",parts:0.32,lab:0.11}];
+const CORE_MAX=6,CORE_FRAC=0.12,CORE_SCRAP=0.4;
+const CORE_LAY={hatch:["I3","I4"],sedan:["I4","V6"],van:["I4","V6"],pump:["I3","I4"],truck:["V6","V8"],hot:["I4","I4","F4"],taxi:["I4","V6"],sport:["I6","V6","F6"],
+  club:["I4"],gt:["V8","V12","V10"],rally:["I4","F4"],drift:["I6","V8"],genset:["I6","V8"],tractor:["I6","I4"],super:["V8","V10"],endur:["V8","V6"],attack:["I4","V6"],
+  drag:["V8"],hyper:["V8","V12"],flagship:["V12"],stripcar:["V8"],grudge:["V8"],radial:["V8"],promod:["V8"],smallblock:["V8"],
+  hdpickup:["V8","I6"],mdtruck:["I6","I4"],workboat:["I6"],dtractor:["I6"],minegen:["I6","V8"],class8:["I6"],puller:["I6","V8"]};
+function SV(){const c=C();if(!Array.isArray(c.service))c.service=[];if(!Array.isArray(c.cores))c.cores=[];
+  for(const k of ["svcUsed","svcIncome","rebuildJobs","rebuiltUnits","coresUsed","coreCredit","coreScrap","fidN"])if(typeof c[k]!=="number")c[k]=0;
+  if(!c.coreSalt)c.coreSalt=1+Math.floor(Math.random()*1e9);return c;}
+function segCat(seg){const c=CATS.find(x=>x.segs.includes(seg));return c?c.id:"prod";}
+function svcCap(){return 6+(staffed("machinist")?4:0)+(has("shop1")?3:0)+(has("shop2")?3:0);}
+function svcQual(){return 1+(staffed("machinist")?0.15:0)+(has("shop1")?0.1:0)+(has("shop2")?0.1:0);}   // a better shop's rebuild lasts longer
+function svcRaw(f){return 0.55*Math.max(300,+f.life||2000)/(SVC_DUTY[segCat(f.seg)]||100)*(0.7+0.3*clamp(+f.rel||80,0,100)/100);}   // weeks to a rebuild
+function svcClient(f){return f.client===f.name?f.name+" buyers":f.client;}
+function fleetBy(fid){return C().fleet.find(f=>f.fid===fid);}
+function svcJob(f,units,warranty,cycle){const c=C();
+  const score=(100-f.rel)/25+2000/Math.max(300,+f.life||2000)+(rng()-0.5)*0.5+(cycle>1?0.3-(svcQual()-1):0);
+  const t=SVC_TIERS[warranty?Math.max(1,score<1.8?1:2):score<1?0:score<1.8?1:2];const parts=Math.max(50,Math.round(f.unitCost*t.parts/10)*10);
+  const j={id:Math.floor(rng()*1e9),fid:f.fid,client:svcClient(f),name:f.name,seg:f.seg,engine:f.engine,units,done:0,tier:t.id,parts,
+    pay:warranty?0:Math.round((parts*1.1+t.lab*f.unitPrice)/10)*10,due:c.week+(warranty?3:4),warranty:!!warranty,cycle,unitCost:f.unitCost,
+    hrs:Math.round((c.week-(cycle>1?f.rbWeek:f.week))*(SVC_DUTY[segCat(f.seg)]||100)),life:Math.round(f.life||0)};
+  c.service.push(j);return j;}
+function servicePass(){const c=SV();c.svcUsed=0;
+  for(const j of c.service.slice()){if(j.due>=c.week)continue;c.service.splice(c.service.indexOf(j),1);const left=j.units-j.done,f=fleetBy(j.fid);
+    if(j.warranty){if(f)f.inShop=0;if(left>0){const cost=left*(Math.round(j.unitCost*0.5)+350);c.cash-=cost;c.warranty+=cost;c.rep=Math.max(0,c.rep-left);if(f)f.claims=(f.claims||0)+left;
+      logEvent(`${left} × ${j.name} warranty rebuild${left>1?"s":""} left undone — ${j.client} had them fixed elsewhere and billed you ${fmt$(cost)}`,"bad");}}
+    else if(left>0){c.rep=Math.max(0,c.rep-1);logEvent(`${j.client} took ${left} rebuild${left>1?"s":""} elsewhere — the service window closed`,"");}}
+  let n=0;
+  for(const f of c.fleet){if(!f.fid)f.fid=++c.fidN;const age=c.week-f.week,raw=svcRaw(f);
+    if(!f.svc){const due=clamp(Math.round(raw),11,26);if(age>due+6){f.svc=-1;continue;}   // an old save's long-gone fleet: no back-dated calls
+      if(raw<8&&!f.wjob&&age>=Math.max(4,Math.round(raw))&&age<=9){f.wjob=true;   // worn out inside the warranty: premature wear, your bill
+        const base=f.units-(f.claims||0);const share=clamp(0.3+(8-raw)*0.08,0.3,0.7);const u=Math.max(base>0?1:0,Math.round(base*share));
+        if(u>0){svcJob(f,u,true,1);f.inShop=u;n++;logEvent(`${svcClient(f)}: ${u} × ${f.name} worn out under warranty — bring them in (parts on you) by wk ${c.week+3}`,"bad");}}
+      if(age>=due){f.svc=1;const base=f.units-(f.claims||0)-(f.wDone||0)-(f.inShop||0);const share=clamp(0.3+(100-f.rel)/300+0.15*(1-Math.min(1,(f.life||2000)/4000)),0.3,0.55);
+        const x=Math.max(0,base)*share;const u=Math.floor(x)+(rng()<x-Math.floor(x)?1:0);
+        if(u>0){const j=svcJob(f,u,false,1);n++;logEvent(`${svcClient(f)}: ${u} × ${f.name} in for a ${SVC_TIERS.find(t=>t.id===j.tier).name.toLowerCase()} — ${fmt$(j.pay)} a unit`,"good");}}}
+    else if(f.svc===1&&f.due2&&c.week>=f.due2){f.svc=2;if(c.week>f.due2+6)continue;const x=(f.rebuiltN||0)*0.35;const u=Math.floor(x)+(rng()<x-Math.floor(x)?1:0);
+      if(u>0){const j=svcJob(f,u,false,2);n++;logEvent(`${svcClient(f)}: the rebuilt ${f.name} engines are due again — ${u} in for a ${SVC_TIERS.find(t=>t.id===j.tier).name.toLowerCase()}`,"good");}}}
+  if(n)toast(`SERVICE BAY · ${n} new rebuild job${n>1?"s":""}`);return n;}
+function doRebuild(id){const c=SV();const j=c.service.find(x=>x.id==id);if(!j)return false;const n=Math.min(j.units-j.done,svcCap()-c.svcUsed);
+  if(n<=0){toast("Service bay is full this week — close the week");return false;}const f=fleetBy(j.fid);
+  c.svcUsed+=n;j.done+=n;const parts=j.parts*n;let msg;
+  if(j.warranty){c.cash-=parts;c.warranty+=parts;if(f){f.wDone=(f.wDone||0)+n;f.inShop=Math.max(0,(f.inShop||0)-n);}
+    msg=`Warranty-rebuilt ${n} × ${j.engine} for ${j.client} — ${fmt$(parts)} in parts`;}
+  else{const net=(j.pay-j.parts)*n;c.cash+=net;c.profit+=net;c.svcIncome+=net;const rep=Math.ceil(n/3);c.rep+=rep;c.rebuiltUnits+=n;
+    if(f&&j.cycle===1){f.rebuiltN=(f.rebuiltN||0)+n;if(!f.due2){f.rbWeek=c.week;f.due2=c.week+clamp(Math.round(svcRaw(f)*svcQual()),8,26);}}
+    msg=`Rebuilt ${n} × ${j.engine} for ${j.client} (${SVC_TIERS.find(t=>t.id===j.tier).name.toLowerCase()}) — ${fmt$(j.pay*n)} billed, ${fmt$(net)} after parts, +${rep} rep`;}
+  if(j.done>=j.units){c.service=c.service.filter(x=>x!==j);c.rebuildJobs++;if(j.warranty&&f)f.wfix=true;}
+  logEvent(msg,j.warranty?"":"good");checkGoals();return {n,j,parts,net:j.warranty?-parts:(j.pay-j.parts)*n};}
+/* cores */
+function coreBook(l){return Math.round(((OPT.layout[l]||{}).cost||1000)*0.25/10)*10;}
+function coreScrapVal(l){return Math.round(coreBook(l)*CORE_SCRAP/10)*10;}
+function h01(s){let h=2166136261;for(const ch of String(s)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
+function coreOffer(k,units){if(!k||k.crate)return null;const c=SV();const key=c.coreSalt+"|"+(String(k.id).startsWith("m-")?k.seg+"|"+c.week+(k.recent?"r":""):k.id);
+  const cat=segCat(k.seg);const p={prod:0.5,truck:0.5,diesel:0.5,perf:0.35,race:0.2,outlaw:0.15}[cat]||0.3;if(h01(key+"p")>=p)return null;
+  const L=CORE_LAY[k.seg]||["I4","V6","V8"];return{n:Math.min(3,1+(units>=8?1:0)+(units>=16?1:0)),lay:L[Math.floor(h01(key+"l")*L.length)]};}
+function coreDeal(k,units,cert){const c=SV();const o=coreOffer(k,units),lay=(cert.cfg||S.cfg).layout;const per=Math.min(Math.round(cert.res.cost*CORE_FRAC/10)*10,coreBook(lay));
+  let cap=Math.min(units,3);const tUse=o&&o.lay===lay?Math.min(o.n,cap):0;cap-=tUse;const sUse=Math.min(cap,c.cores.filter(x=>x.lay===lay).length);
+  return{o,lay,per,tUse,sUse,credit:(tUse+sUse)*per,inN:o?o.n-tUse:0,inLay:o?o.lay:null};}
+function coreTxt(cd){const u=cd.tUse+cd.sUse;const src=cd.tUse&&cd.sUse?`${cd.tUse} trade-in, ${cd.sUse} from stock`:cd.tUse?"their trade-in":"from stock";
+  return (cd.credit?`core credit −${fmt$(cd.credit)} · ${u} ${cd.lay} core${u>1?"s":""} (${src})`:"")+(cd.inN?`${cd.credit?" · ":""}trades in ${cd.inN} × ${cd.inLay} core${cd.inN>1?"s":""} → stock`:"");}
+function applyCores(cd){const c=SV();let left=cd.sUse;c.cores=c.cores.filter(x=>{if(left>0&&x.lay===cd.lay){left--;return false;}return true;});
+  c.coresUsed+=cd.tUse+cd.sUse;c.coreCredit+=cd.credit;let scrap=0,kept=0;
+  for(let i=0;i<cd.inN;i++){if(c.cores.length<CORE_MAX){c.cores.push({lay:cd.inLay,w:c.week});kept++;}else{const v=coreScrapVal(cd.inLay);c.cash+=v;c.coreScrap+=v;scrap+=v;}}
+  return {kept,scrap};}
+function sellCore(lay){const c=SV();const i=c.cores.findIndex(x=>x.lay===lay);if(i<0)return 0;c.cores.splice(i,1);const v=coreScrapVal(lay);c.cash+=v;c.coreScrap+=v;
+  logEvent(`Sold a ${lay} core to the core buyer — ${fmt$(v)}`,"");return v;}
+function svcBayH(){const c=SV();const cap=svcCap(),free=cap-c.svcUsed;const jobs=c.service.slice().sort((a,b)=>a.due-b.due);
+  const card=j=>{const t=SVC_TIERS.find(x=>x.id===j.tier)||SVC_TIERS[1];const left=j.units-j.done,n=Math.min(left,free);const net=j.warranty?-j.parts:j.pay-j.parts;
+    return `<div class="card svcjob ${j.warranty?"wty":""}"><div class="client">${j.client}${j.warranty?" · under warranty":j.cycle>1?" · second rebuild":" · service order"}</div>
+      <h3>${j.engine}<span>${left} of ${j.units} unit${j.units>1?"s":""} · due wk ${j.due}</span></h3>
+      <div class="svcworn"><b>${t.name}</b><span>${t.worn}</span><i>${j.name} · ≈ ${j.hrs.toLocaleString()} h on a ${j.life.toLocaleString()} h build</i></div>
+      <div class="money"><div><b>${j.warranty?"$0":fmt$(j.pay)}</b><span>${j.warranty?"no pay":"pay / unit"}</span></div><div><b>${fmt$(j.parts)}</b><span>parts / unit</span></div><div><b class="${net>=0?"pos":"neg"}">${fmt$(net*left)}</b><span>${j.warranty?"your bill":"margin"}</span></div></div>
+      <button class="btn ${n>0?(j.warranty?"danger":"pri"):""}" data-rebuild="${j.id}" ${n>0?"":"disabled"}>${n>0?`Rebuild ${n} unit${n>1?"s":""}${n<left?" (bay limit)":""}`:"Bay full this week"}</button></div>`;};
+  return `<div class="cgroup g-svc"><h3>Service bay<span>${c.svcUsed} / ${cap} this week</span></h3>${jobs.length?jobs.map(card).join(""):`<p class="hint">No engines in for service. Deliveries come back for rebuilds once their warranty runs out — short-lived builds sooner, and on your bill.</p>`}
+    <p class="hint svchint">${c.rebuildJobs} job${c.rebuildJobs===1?"":"s"} done · ${c.rebuiltUnits} engines rebuilt · ${fmt$(c.svcIncome)} service margin. Bay: ${cap} rebuilds a week${cap<16?" — a machinist and the machine shops add more":""}.</p></div>`;}
+function coreStockH(cert){const c=SV();const by={};for(const x of c.cores)by[x.lay]=(by[x.lay]||0)+1;const lay=S.cfg.layout;
+  const rows=Object.keys(by).sort().map(l=>{const ok=l===lay;const per=ok&&cert?Math.min(Math.round(cert.res.cost*CORE_FRAC/10)*10,coreBook(l)):coreBook(l);
+    return `<div class="buyer corerow"><div class="bh"><span><b>${by[l]} × ${l} core${by[l]>1?"s":""}</b><i>${(OPT.layout[l]||{}).name||l} · block, crank and rods</i></span><span class="bfit ${ok?"ok":""}">${ok?"fits this build":"other layout"}</span></div>
+      <div class="bdeal"><span>${ok&&cert?`−${fmt$(per)} a unit on this build`:`worth up to ${fmt$(coreBook(l))} a unit on ${l} builds`}</span><b>${fmt$(coreScrapVal(l))}</b><button class="btn sm ghost" data-corescrap="${l}">Scrap 1</button></div></div>`;}).join("");
+  return `<div class="cgroup g-core"><h3>Core stock<span>${c.cores.length} / ${CORE_MAX}</span></h3>${rows||`<p class="hint">Empty. Buyers sometimes trade in an old engine; a core of your build's layout knocks ${Math.round(CORE_FRAC*100)}% off a unit's cost, the rest wait here.</p>`}
+    ${c.coresUsed||c.coreScrap?`<p class="hint">${c.coresUsed} core${c.coresUsed===1?"":"s"} re-used · ${fmt$(c.coreCredit)} saved · ${fmt$(c.coreScrap)} scrap</p>`:""}</div>`;}
+GOALS.push({id:"svc5",name:"Back in service",desc:"Complete 5 rebuild jobs in the service bay.",cash:6000,check:c=>(c.rebuildJobs||0)>=5},
+  {id:"cores10",name:"Core business",desc:"Re-use 10 trade-in cores in new builds.",cash:4000,check:c=>(c.coresUsed||0)>=10});
+function coreHint(cert){const l=(cert.cfg||S.cfg).layout;const n=SV().cores.filter(x=>x.lay===l).length;return n?` · ${n} ${l} core${n>1?"s":""} in stock: −${fmt$(Math.min(Math.round(cert.res.cost*CORE_FRAC/10)*10,coreBook(l)))} a unit on up to ${n}`:"";}
+function coreLog(cd,cr){const p=[];if(cd.credit)p.push(`${cd.tUse+cd.sUse} ${cd.lay} core${cd.tUse+cd.sUse>1?"s":""} re-used, −${fmt$(cd.credit)}`);if(cr&&cr.kept)p.push(`${cr.kept} ${cd.inLay} core${cr.kept>1?"s":""} to stock`);if(cr&&cr.scrap)p.push(`stock full, ${fmt$(cr.scrap)} scrap`);return p.length?" · "+p.join(", "):"";}
+$("contracts").addEventListener("click",e=>{const rb=e.target.closest("[data-rebuild]");if(rb){if(rb.disabled)return;const r=doRebuild(rb.dataset.rebuild);if(!r)return;save();hud();renderShop();
+    toast(r.j.warranty?`WARRANTY REBUILD · ${r.n} DONE · ${fmt$(r.parts)} PARTS`:`REBUILT ${r.n} · +${fmt$(r.net)}${r.j.done>=r.j.units?" · JOB DONE":""}`);buzz(25);return;}
+  const cs=e.target.closest("[data-corescrap]");if(cs){const v=sellCore(cs.dataset.corescrap);if(v){save();hud();renderShop();toast(`CORE SOLD · ${fmt$(v)}`);}}});
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   if(C().loan>0){const i=Math.round(C().loan*LOAN_RATE);C().loan+=i;t+=` · loan interest ${fmt$(i)}`;}
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();rndPass();prestigePass();refillContracts();checkGoals();achCheck({type:"week"});
+  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();checkGoals();achCheck({type:"week"});
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 function renderShop(){
@@ -17039,7 +17151,7 @@ function renderShop(){
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${dc.hp.toLocaleString()}</b><span>dyno hp cap</span></div><div><b>${C().loan>0?fmt$(C().loan):Object.keys(C().owned).length}</b><span>${C().loan>0?"bank loan":"upgrades owned"}</span></div>`;
   const cert=C().cert&&C().cert.hash===cfgHash(S.cfg)&&C().cert.ok?C().cert:null;const lastCert=C().cert&&C().cert.hash===cfgHash(S.cfg)?C().cert:null;
-  $("mktHint").innerHTML=cert?`<div style="margin-bottom:8px">${engineCard(S.cfg,cert.res,{cls:"inline"})}</div>ON OFFER · unit cost ${fmt$(cert.res.cost)}.`:lastCert&&lastCert.why?`NO CERT — last pull: ${lastCert.why}.`:"NO CERT ON FILE — run a dyno pull in Test; buyers only look at certified engines.";
+  $("mktHint").innerHTML=cert?`<div style="margin-bottom:8px">${engineCard(S.cfg,cert.res,{cls:"inline"})}</div>ON OFFER · unit cost ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`NO CERT — last pull: ${lastCert.why}.`:"NO CERT ON FILE — run a dyno pull in Test; buyers only look at certified engines.";
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`${(LOAN_RATE*100).toFixed(1)}% a week, up to ${fmt$(LOAN_MAX)}. Below ${fmt$(FORECLOSE_AT)} the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
@@ -17049,7 +17161,7 @@ function renderShop(){
   const live=career()&&!isStdCell(simEnv())?SIM.simulate(S.cfg,stdEnv({testType:"pull"})):quick;const liveFit=k=>fits(k,live,S.cfg);
   if(!C().cat||!catOpen(CATS.find(c=>c.id===C().cat)||CATS[0]))C().cat="prod";
   const cardH=(k,mode)=>{const lf=liveFit(k);const failing=lf.o.filter(q=>!q.ok).length;const fix=(!lf.ok&&failing<=3)?oneChange(k):null;
-    const f=cert?fits(k,cert.res,cert.cfg):null;const d=deal(k,f||lf);const unit=d.unit;const cost=f?cert.res.cost:live.cost;const profit=(unit-cost)*d.units;
+    const f=cert?fits(k,cert.res,cert.cfg):null;const d=deal(k,f||lf);const unit=d.unit;const cost=f?cert.res.cost:live.cost;const cd=mode==="active"&&f&&d.want?coreDeal(k,d.units,cert):null;const profit=(unit-cost)*d.units+(cd?cd.credit:0);
     const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
     const status=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):`<div class="cstat off">◐ OFF BRIEF · ${d.want?`they'd take ${d.units} of ${k.units} at ${Math.round(Math.pow(d.m,0.7)*100)}%`:"too far off — they'd walk"} <small>${missTxt(d)}</small>${fix?`<span>Full price with one change: <b>${fix.label}</b></span>`:""}</div>`;
     const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;const sc=siteCard(k,lf);
@@ -17057,13 +17169,13 @@ function renderShop(){
       ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${k.repeat?"repeat order":"offer"} · open till wk ${k.expires}`;
-    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +15%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}
+    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +15%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
       <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
   const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
     const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
-    const row=b=>{const d=b.d,k=b.k;const fit=Math.round(Math.min(1,d.ok?1:d.m)*100);const full=C().shipped>=MAX_ACTIVE;
+    const row=b=>{const d=b.d,k=b.k;const cd=coreDeal(k,d.units,cert),pr=b.profit+cd.credit;const fit=Math.round(Math.min(1,d.ok?1:d.m)*100);const full=C().shipped>=MAX_ACTIVE;
       return `<div class="buyer"><div class="bh"><span><b>${k.name}</b><i>${k.cat}${k.recent?" · supplied recently":""}</i></span><span class="bfit ${d.ok?"ok":fit>=60?"mid":"low"}">${k.crate?"any engine":d.ok?"fits brief":fit+"% fit"}</span></div>
-        ${d.ok||k.crate?"":`<div class="bmiss">${missTxt(d)}</div>`}<div class="bdeal"><span>${d.units} × ${fmt$(d.unit)}</span><b class="${b.profit>=0?"pos":"neg"}">${fmt$(b.profit)}</b><button class="btn sm ${b.profit>0&&!full?"pri":""}" data-sell="${k.seg}" ${full?"disabled":""}>${full?"Week full":"Sell "+d.units}</button></div></div>`;};
+        ${d.ok||k.crate?"":`<div class="bmiss">${missTxt(d)}</div>`}${cd.credit||cd.inN?`<div class="coreln">${coreTxt(cd)}</div>`:""}<div class="bdeal"><span>${d.units} × ${fmt$(d.unit)}</span><b class="${pr>=0?"pos":"neg"}">${fmt$(pr)}</b><button class="btn sm ${pr>0&&!full?"pri":""}" data-sell="${k.seg}" ${full?"disabled":""}>${full?"Week full":"Sell "+d.units}</button></div></div>`;};
     return `<div class="cgroup g-mkt"><h3>Open market<span>who wants this engine</span></h3>${top.map(row).join("")}${rest.length?`<details class="moreb"><summary>All buyer groups (${all.length})</summary>${rest.map(row).join("")}</details>`:""}</div>`;};
   const tier=repTierIdx();
   const catSeg=`<div class="seg" id="catSeg">${CATS.map(c=>{const open=catOpen(c);return `<button data-cat="${c.id}" class="${C().cat===c.id?"on":""}" ${open?"":"disabled"}>${c.name}<small>${open?c.sub:c.needs&&!has(c.needs)?"needs the Outlaw shop":"rep "+c.rep+" · "+(REP_TIERS.filter(r=>r[0]<=c.rep).pop()||REP_TIERS[0])[1]}</small></button>`;}).join("")}</div>`;
@@ -17073,6 +17185,7 @@ function renderShop(){
     `<div class="cgroup g-now"><h3>On the board<span>${C().contracts.length} / ${MAX_ACTIVE}</span></h3>${C().contracts.length?C().contracts.map(k=>cardH(k,"active")).join(""):`<p class="hint">Nothing accepted. Pick a category below and take a job — two at a time, ten percent down, three weeks to ship.</p>`}</div>`+
     buyersH()+
     (inbox.length?`<div class="cgroup g-one"><h3>Repeat orders<span>${inbox.length}</span></h3>${inbox.map(k=>cardH(k,"inbox")).join("")}</div>`:"")+
+    svcBayH()+coreStockH(cert)+
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`;
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
@@ -17090,20 +17203,20 @@ $("contracts").addEventListener("click",e=>{
   const sp=e.target.closest("[data-siteprev]");if(sp){const k=C().contracts.concat(C().inbox||[],offersFor(C().cat)).find(x=>x.id==sp.dataset.siteprev);if(k&&k.site)previewSite(k.site);return;}
   const ab=e.target.closest("[data-accept]");if(ab){if(ab.disabled)return;const from=ab.dataset.from;const list=from==="inbox"?(C().inbox||[]):offersFor(C().cat);const k=list.find(x=>x.id==ab.dataset.accept);if(!k)return;if(acceptContract(k,from)){save();hud();renderShop();toast(`${k.name.toUpperCase()} · ${fmt$(k.deposit)} DEPOSIT IN`);buzz(20);}return;}
   const b=e.target.closest("[data-deliver]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}const k=C().contracts.find(x=>x.id==b.dataset.deliver);const cert=C().cert;if(!k||!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const f=fits(k,cert.res,cert.cfg);const d=deal(k,f);if(!d.want)return;const units=d.units;
-  const unit=d.unit;const profit=Math.round((unit-cert.res.cost)*units);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(SEGMENTS.find(s=>s.id===k.seg).tier,units,d,f.bonus,k.repeat);C().rep+=repGain;
+  const unit=d.unit;const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(SEGMENTS.find(s=>s.id===k.seg).tier,units,d,f.bonus,k.repeat);C().rep+=repGain;
   const weak=(f.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
   C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units,hash:cfgHash(S.cfg),engine:engineName(),rel:k.site&&f.res.fails.length?Math.min(f.res.rel,55):f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:!!k.repeat||!f.ok,...(k.site?{site:k.site}:{})});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
-  logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}`,f.ok?"good":"");
+  logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}${coreLog(cd,cr)}`,f.ok?"good":"");
   if(tourStep>=0)tourEnd();
   C().contracts=C().contracts.filter(x=>x.id!==k.id);achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}
   const cert=C().cert;if(!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const o=buyers(cert).find(x=>x.k.seg===b.dataset.sell);if(!o)return;const k=o.k,d=o.d,units=d.units,unit=d.unit;
-  const profit=Math.round((unit-cert.res.cost)*units);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
+  const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
   (C().mkt=C().mkt||{})[k.seg]=C().week;const weak=(cert.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
   C().fleet.push({week:C().week,client:k.name,name:k.name,seg:k.seg,req:k.req,units,hash:cert.hash,engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:true});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
-  logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep`,profit>=0?"good":"");
+  logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
   if(tourStep>=0)tourEnd();achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
 $("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}`);});
