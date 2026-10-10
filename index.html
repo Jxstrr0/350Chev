@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.20.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.22.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -164,7 +164,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .strip b.warnc{color:var(--warn)}.strip b.critc{color:var(--crit)}
 /* buttons */
 /* HUD buttons: chamfered octagon, top/bottom light strips, inner gradient, colour by intent */
-.btn{--hb:#3a4049;--hb2:#242930;--hs:rgba(255,255,255,.35);--ht:var(--chalk);position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border:0;border-radius:0;
+.btn{--hb:#3a4049;--hb2:#242930;--hs:rgba(255,255,255,.35);--ht:#f0ece2;position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border:0;border-radius:0;
   clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px);
   font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ht);width:100%;
   background:linear-gradient(180deg,var(--hb) 0%,var(--hb2) 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 10px 18px -10px rgba(255,255,255,.28),inset 0 -8px 16px -10px rgba(0,0,0,.6);
@@ -178,7 +178,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .btn.info{--hb:#4f9be6;--hb2:#215fa8;--hs:#c9e3ff;--ht:#fff}
 .btn[disabled]{opacity:.42;cursor:default;filter:saturate(.4)}
 .btn.sm{width:auto;padding:9px 12px;font-size:12.5px;letter-spacing:.06em;clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,7px 100%,0 calc(100% - 7px),0 7px)}
-.btn.ghost{--hb:transparent;--hb2:transparent;--hs:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px var(--rule)}
+.btn.ghost{--hb:transparent;--hb2:transparent;--hs:rgba(255,255,255,.18);--ht:var(--chalk);box-shadow:inset 0 0 0 1px var(--rule)}
 .btn.ghost::before,.btn.ghost::after{display:none}
 .hint{font-size:14px;color:var(--muted);margin:8px 0;line-height:1.45}
 /* chart */
@@ -358,6 +358,12 @@ div.up.owned .price{color:var(--good)}
 .card.brief .req.no .rl b{color:var(--crit)}
 .card.brief .req .rb{height:6px;background:var(--soot);border-radius:2px;overflow:hidden;position:relative}
 .card.brief .req .rb i{position:absolute;left:0;top:0;bottom:0;background:var(--good);border-radius:2px}
+.card.spon .sphead{display:flex;gap:12px;align-items:center;margin-bottom:8px}.card.spon .sphead img{width:120px;height:45px;flex:none}.card.spon .sphead>div{min-width:0;flex:1}.card.spon .sphead .client{margin-bottom:2px}
+.card.spon .spname b{display:block;font-size:16px;font-weight:700;color:var(--chalk)}.card.spon .spname span{display:block;font-family:var(--mono);font-size:12px;color:var(--muted)}.card.spon.prim{border-color:var(--orange)}.money.spm{grid-template-columns:repeat(auto-fit,minmax(84px,1fr))}
+.spobl{margin:0 0 8px;font-size:13px}.spobl div{display:flex;justify-content:space-between;gap:8px;padding:5px 0 5px 20px;position:relative;color:var(--chalk);border-top:1px dashed var(--rule)}
+.spobl div::before{content:"•";position:absolute;left:5px;color:var(--muted)}.spobl div.ok::before{content:"✓";color:var(--good)}.spobl div.run::before{content:"◐";color:var(--warn)}.spobl div.no::before{content:"✕";color:var(--crit)}.spobl div.no span{color:var(--crit)}
+.spobl i{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}.spfine{font-size:12px;color:var(--muted);margin:0 0 8px}.spbtns{display:flex;gap:8px}.spbtns .btn{flex:1;min-height:44px}
+.spslip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}.spslip span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.spslip img{height:34px;width:auto}
 .card.brief .req.no .rb i{background:var(--crit)}.card.brief .req .rv{font-family:var(--mono);font-size:13px;text-align:right;color:var(--chalk);white-space:nowrap}
 .card.brief .req.no .rv{color:var(--crit)}
 .cstat{font-size:13px;line-height:1.4;padding:6px 10px;border-radius:4px;margin-bottom:10px;background:var(--soot);color:var(--muted)}
@@ -525,11 +531,11 @@ html.desk #rpmbox{right:18px;bottom:16px}html.desk #rpmbox b{font-size:34px}
 html.desk #app.onstrip #rpmbox{bottom:auto;top:80px}
 html.desk #chart{height:260px}
 html.desk #toast{left:calc((100% - var(--sbw))/2);bottom:auto;top:84px;max-width:min(560px,calc(100% - var(--sbw) - 40px))}
-/* drag strip and truck pull: their controls dock bottom-centre over the big view, in the view's dark ink */
-html.desk #dragCtl,html.desk #pullCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+/* drag strip, truck pull and salt flats: their controls dock bottom-centre over the big view, in the view's dark ink */
+html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
-html.desk #pullLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row{grid-column:1/-1}
+html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}
 /* the sheet becomes a centred dialog */
 html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
 html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
@@ -614,6 +620,22 @@ html.desk input[type=range]{cursor:pointer}
 .mapbar .btn.sm.on{box-shadow:inset 0 0 0 2px var(--orange);color:var(--orange2)}
 #mapSec .seg button{min-height:46px}
 html:not(.desk) #kbHelpBtn{display:none}
+/* teardown view: caption card over the 3D view */
+#tdCap{position:absolute;left:10px;right:10px;bottom:10px;z-index:6;pointer-events:auto;background:rgba(15,17,20,.86);border:1px solid rgba(226,71,60,.55);border-radius:6px;padding:10px 12px;color:var(--chalk);box-shadow:0 6px 24px rgba(0,0,0,.45)}
+#tdCap[hidden]{display:none}
+#tdCap .tdk{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--crit);text-transform:uppercase}
+#tdCap b{display:block;font-family:var(--display);font-size:18px;letter-spacing:.03em;line-height:1.15;margin:1px 0 3px}
+#tdCap p{margin:0 0 4px;font-size:13px;line-height:1.4;color:var(--chalk)}
+#tdCap p.fx{color:var(--muted)}#tdCap p.fx i{font-style:normal;color:var(--good);font-weight:600}
+#tdCap p.ms{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+#tdCap .tdbtns{display:flex;gap:8px;margin-top:6px}#tdCap .tdbtns .btn{min-height:44px;flex:0 0 auto;white-space:nowrap}#tdCap .tdbtns .btn.pri{flex:1 1 auto}
+#tdSpin.on{box-shadow:inset 0 0 0 1px var(--orange2);color:var(--orange2)}
+#app.td #view{flex-basis:64%}#app.td.mini #view{flex-basis:64%;min-height:220px}
+#app.td #tag,#app.td #rpmbox{display:none!important}
+.tdgo{margin-top:8px}
+#tdAna .tdrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}#tdAna p{margin:0;font-size:14px;color:var(--muted);flex:1 1 200px}
+html.desk #tdCap{left:18px;right:auto;bottom:16px;width:min(480px,calc(100% - 36px));padding:14px 16px}
+html.desk #tdCap b{font-size:22px}html.desk #tdCap p{font-size:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -640,6 +662,8 @@ html:not(.desk) #kbHelpBtn{display:none}
     <div id="fpsHud" aria-hidden="true"></div>
     <div id="rpmbox"><b id="rpmLbl">0</b><span>RPM</span></div>
     <div id="flash"></div>
+    <div id="tdCap" role="dialog" aria-label="Teardown" hidden><div class="tdk">Teardown · <span id="tdRun"></span></div><b id="tdPart"></b><p id="tdWhat"></p><p class="ms" id="tdMeas"></p><p class="fx" id="tdFix"></p>
+      <div class="tdbtns"><button class="btn sm ghost" id="tdSpin" aria-pressed="false">Rotate</button><button class="btn sm pri" id="tdBack">Back to the engine</button></div></div>
   </div>
 
   <div id="panel">
@@ -717,6 +741,7 @@ html:not(.desk) #kbHelpBtn{display:none}
 
     <!-- ANALYSIS -->
     <section class="tabpage" id="tab-analysis">
+      <div class="sec" id="tdAna" hidden></div>
       <div class="sec"><h2>Material &amp; combo interactions <span class="cnt" id="comboCnt"></span></h2><div id="combos"></div></div>
       <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
@@ -731,6 +756,7 @@ html:not(.desk) #kbHelpBtn{display:none}
         <div class="stats" id="gStats"></div>
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
         <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><div id="contracts"></div><button class="btn pri" id="nextWeek">Close the week</button><p class="hint" id="overheadHint"></p></div>
+        <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
         <div class="sec"><h2>Warranty &amp; ledger</h2><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div>
         <div class="sec"><h2>Shop goals <span class="cnt" id="goalCnt"></span></h2><div id="goals"></div></div>
       </div>
@@ -7876,7 +7902,7 @@ const ENGINE_SAMPLES = (function () {
     var dt = lastT ? clamp((now - lastT) / 1000, 0.001, 0.1) : 0.016; lastT = now;
     if (MODE === "synth" || !H.running) { ENGINE_SOUND.setSynthMix(1); stat.mix = 1; fadeOut(dt); return; }
     var cfg = o.cfg || null, lk = (cfg && cfg.layout) || null, n = NCYL[lk] || 4;
-    var key = cfg ? [lk, cfg.bore, cfg.stroke, cfg.asp, !!o.diesel, H.lite ? 1 : 0].join("|") : pickKey;
+    var key = cfg ? [lk, cfg.bore, cfg.stroke, cfg.asp, !!o.diesel, H.lite ? 1 : 0, (+cfg.redline || 0) >= 7800 ? 1 : 0, (+cfg.cam || 0) >= 60 ? 1 : 0].join("|") : pickKey;   // + the redline/cam gates choose() scores on
     if (key !== pickKey) { pickKey = key; pick = cfg ? choose(cfg, lk, !!o.diesel) : null; }
     var A = pick && pick.a, B = pick && !H.lite ? pick.b : null;
     var lazyOk = !SLOW || MODE === "real";
@@ -13155,6 +13181,7 @@ function loop(now){
   fpsCount(now);
   var dt=Math.min(clock.getDelta(), 0.05);
   tick(dt, clock.elapsedTime);
+  if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
   if(SALT.on && SALT.built){ saltRender(); return; }
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ stripRender(); return; }
@@ -13165,6 +13192,7 @@ function loop(now){
    12. FRAMING
    ==========================================================================*/
 function frameEngine(){
+  if(TD.on){ tdFrame(true); return; }   /* teardown view frames the failed part instead */
   if(!engineRoot) return;
   engineBounds.setFromObject(engineRoot);
   if(engineBounds.isEmpty()) return;
@@ -13613,7 +13641,9 @@ function stripCar(body, color, tyreIn){
   if(P.head){ mesh=new THREE.Mesh(P.head, head); inner.add(mesh); lights.head.push(mesh); }
   /* door number + sponsor decals: number is picked from the paint so the two lanes differ */
   var num=String(((color>>>0)%89)+11), dm=sc_decalMat(num, color, "door"), bm=sc_decalMat("", color, "banner");
-  for(var d=0; d<P.decals.length; d++){ mesh=new THREE.Mesh(P.decals[d].g, P.decals[d].kind==="banner"?bm:dm); mesh.renderOrder=2; inner.add(mesh); }
+  var liv={num:num, color:color, dm:dm, bm:bm, door:[], banner:[], hood:null, key:""};   /* sponsor livery (stripLivery) */
+  for(var d=0; d<P.decals.length; d++){ mesh=new THREE.Mesh(P.decals[d].g, P.decals[d].kind==="banner"?bm:dm); mesh.renderOrder=2; inner.add(mesh); (P.decals[d].kind==="banner"?liv.banner:liv.door).push(mesh); }
+  if(P.hood){ liv.hood=new THREE.Mesh(P.hood, dm); liv.hood.visible=false; liv.hood.renderOrder=3; inner.add(liv.hood); }
   /* wheels: carrier (squash / lift) -> tyre holder (never spins, tyres are round) + spin group (rim, lettering) */
   var wheels=[], carriers=[];
   for(var w=0; w<me.wheels.length; w++){
@@ -13625,7 +13655,7 @@ function stripCar(body, color, tyreIn){
   var tips=[], dirs=[], tipR=[], dirR=[];
   for(var t=0;t<me.tips.length;t++){ tips.push(me.tips[t].clone()); dirs.push(me.dirs[t].clone()); tipR.push(me.tips[t].clone().add(inner.position)); dirR.push(me.dirs[t].clone()); }
   g.userData={ body:body, rr:me.rr, fr:me.fr, wheels:wheels, carriers:carriers, chute:chute, exhaustTips:tips, exhaustDirs:dirs,
-    chuteAnchor:me.anchor.clone(), lights:lights, bodyGroup:bodyG, meta:me, paint:paint, lampMats:{tail:tail, head:head},
+    chuteAnchor:me.anchor.clone(), lights:lights, bodyGroup:bodyG, meta:me, paint:paint, lampMats:{tail:tail, head:head}, liv:liv,
     anim:{ pitch:0, pv:0, sq:0, sqv:0, roll:0, lastV:0, accF:0, shifting:false, chT:0, chC:0, chS:0, tailI:-1, headI:-1,
       tipRest:tipR, dirRest:dirR, anchorRest:me.anchor.clone().add(inner.position) } };
   g.traverse(function(q){ if(q.geometry) q.geometry.__cached=true; });   /* shared by both lanes + later rebuilds: disposeTree must skip them */
@@ -13837,6 +13867,91 @@ function sc_decalMat(num, color, kind){
   var q=new THREE.MeshStandardMaterial({map:sc_ctex(c), transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
   var env=sc_env(); if(env) q.envMap=env;
   SC.tex[key]=q; return q;
+}
+
+/* --- SPONSOR LIVERY (career sponsors, fictional brands) ----------------------
+   LIVERY {key, hood, sides:[...]} comes from the app (ENGINE_VIS.setLivery); a sponsor is {id, name, tag, shape, c1 plate, c2 mark, c3 word}.
+   Each logo is drawn once per sponsor on a canvas and cached (spLogoCanvas also feeds the app's cards and slips). The strip
+   car keeps its own decal meshes and only swaps materials; the pull and salt vehicles get a hood plane and a few side planes. */
+var LIVERY={key:"", hood:null, sides:[]}, LIV_CV={}, LIV_MAT={}, LIV_PG=null;
+function spRRect(x, x0, y0, w, h, r){ x.beginPath(); x.moveTo(x0+r,y0); x.lineTo(x0+w-r,y0); x.quadraticCurveTo(x0+w,y0,x0+w,y0+r); x.lineTo(x0+w,y0+h-r); x.quadraticCurveTo(x0+w,y0+h,x0+w-r,y0+h); x.lineTo(x0+r,y0+h); x.quadraticCurveTo(x0,y0+h,x0,y0+h-r); x.lineTo(x0,y0+r); x.quadraticCurveTo(x0,y0,x0+r,y0); x.closePath(); }
+function spShape(x, shape, cx, cy, r, col, bg){
+  var i, a, q; x.save(); x.translate(cx, cy); x.fillStyle=col; x.strokeStyle=col; x.lineJoin="round"; x.beginPath();
+  if(shape==="drop"){ x.moveTo(0,-r); x.bezierCurveTo(r*0.5,-r*0.4, r*0.78,r*0.0, r*0.78,r*0.3); x.arc(0,r*0.3,r*0.78,0,PI); x.bezierCurveTo(-r*0.78,r*0.0,-r*0.5,-r*0.4,0,-r); x.fill(); }
+  else if(shape==="ring"){ x.lineWidth=r*0.34; x.arc(0,0,r*0.8,0,TAU); x.stroke(); x.beginPath(); x.arc(0,0,r*0.3,0,TAU); x.fill(); }
+  else if(shape==="gear"){ for(i=0;i<16;i++){ a=i/16*TAU; q=(i%2)?r*0.76:r; x.lineTo(Math.cos(a)*q, Math.sin(a)*q); x.lineTo(Math.cos(a+TAU/16)*q, Math.sin(a+TAU/16)*q); } x.closePath(); x.fill(); x.fillStyle=bg; x.beginPath(); x.arc(0,0,r*0.36,0,TAU); x.fill(); }
+  else if(shape==="diamond"){ x.moveTo(0,-r); x.lineTo(r*0.8,0); x.lineTo(0,r); x.lineTo(-r*0.8,0); x.closePath(); x.fill(); x.fillStyle=bg; x.beginPath(); x.moveTo(0,-r*0.45); x.lineTo(r*0.36,0); x.lineTo(0,r*0.45); x.lineTo(-r*0.36,0); x.closePath(); x.fill(); }
+  else if(shape==="leaf"){ x.moveTo(0,r); x.quadraticCurveTo(-r*1.05,0,0,-r); x.quadraticCurveTo(r*1.05,0,0,r); x.fill(); x.strokeStyle=bg; x.lineWidth=r*0.12; x.beginPath(); x.moveTo(0,r*0.85); x.lineTo(0,-r*0.7); x.stroke(); }
+  else if(shape==="shield"){ x.moveTo(-r*0.8,-r*0.85); x.lineTo(r*0.8,-r*0.85); x.lineTo(r*0.8,0); x.quadraticCurveTo(r*0.7,r*0.7,0,r); x.quadraticCurveTo(-r*0.7,r*0.7,-r*0.8,0); x.closePath(); x.fill(); x.fillStyle=bg; x.fillRect(-r*0.12,-r*0.6,r*0.24,r*1.1); x.fillRect(-r*0.5,-r*0.25,r,r*0.24); }
+  else if(shape==="bolt"){ x.moveTo(r*0.25,-r); x.lineTo(-r*0.6,r*0.12); x.lineTo(-r*0.02,r*0.12); x.lineTo(-r*0.3,r); x.lineTo(r*0.62,-r*0.2); x.lineTo(r*0.04,-r*0.2); x.closePath(); x.fill(); }
+  else if(shape==="wing"){ for(i=0;i<3;i++){ x.beginPath(); x.moveTo(-r,-r*0.55+i*r*0.5); x.lineTo(r*0.95,-r*0.55+i*r*0.5); x.lineTo(r*0.65-i*r*0.3,-r*0.2+i*r*0.5); x.lineTo(-r*0.85+i*r*0.1,-r*0.2+i*r*0.5); x.closePath(); x.fill(); } }
+  else { for(i=0;i<10;i++){ a=-PI/2+i/10*TAU; q=(i%2)?r*0.42:r; x.lineTo(Math.cos(a)*q, Math.sin(a)*q); } x.closePath(); x.fill(); }   /* star */
+  x.restore();
+}
+/* the logo: a plate in the brand colour, the mark on the left, the wordmark and a tag line */
+function spLogoCanvas(sp, w, h){
+  w=w||512; h=h||192; var key=sp.id+"|"+w+"x"+h; if(LIV_CV[key]) return LIV_CV[key];
+  var c=newCanvas(w,h), x=c.getContext("2d"), F="'Barlow Condensed','Arial Narrow',Arial,sans-serif", m=Math.round(h*0.05), r=h*0.16;
+  x.clearRect(0,0,w,h); spRRect(x, m, m, w-2*m, h-2*m, r); x.fillStyle=sp.c1; x.fill();
+  x.lineWidth=Math.max(2,h*0.03); x.strokeStyle=sp.c2; spRRect(x, m*2.4, m*2.4, w-4.8*m, h-4.8*m, r*0.7); x.stroke();
+  spShape(x, sp.shape, h*0.52, h*0.5, h*0.27, sp.c2, sp.c1);
+  var tx=h*0.92, tw=w-tx-h*0.18, word=String(sp.name||"").toUpperCase();
+  x.textAlign="left"; x.textBaseline="alphabetic"; x.fillStyle=sp.c3; x.font="italic 700 "+Math.round(h*0.4)+"px "+F; x.fillText(word, tx, h*0.6, tw);
+  x.fillStyle=sp.c2; x.font="600 "+Math.round(h*0.15)+"px "+F; x.fillText(String(sp.tag||"").toUpperCase(), tx+2, h*0.8, tw);
+  LIV_CV[key]=c; return c;
+}
+function livMat(sp){
+  if(LIV_MAT[sp.id]) return LIV_MAT[sp.id];
+  var t=new THREE.CanvasTexture(spLogoCanvas(sp,512,192)); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
+  var q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.32, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-3});
+  var env=sc_env(); if(env) q.envMap=env;
+  LIV_MAT[sp.id]=q; return q;
+}
+/* the strip car's door decal: the race number, with the side sponsors where the studio's name went (one, or two stacked) */
+function livDoorMat(num, color){
+  var key="door|"+num+"|"+LIVERY.key; if(LIV_MAT[key]) return LIV_MAT[key];
+  var c=sc_canvas(512,200), x=c.getContext("2d"), L=LIVERY.sides.length?LIVERY.sides.slice(0,2):[LIVERY.hood];
+  x.fillStyle="#f3efe4"; x.beginPath(); x.arc(118,96,78,0,TAU); x.fill(); x.lineWidth=6; x.strokeStyle=L[0].c1; x.stroke();
+  x.fillStyle="#141518"; x.font="bold 104px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(num, 118, 102);
+  if(L.length===1) x.drawImage(spLogoCanvas(L[0],512,192), 206, 40, 300, 112.5);
+  else L.forEach(function(sp,i){ x.drawImage(spLogoCanvas(sp,512,192), 214, 6+i*96, 250, 94); });
+  var q=new THREE.MeshStandardMaterial({map:sc_ctex(c), transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
+  var env=sc_env(); if(env) q.envMap=env;
+  LIV_MAT[key]=q; return q;
+}
+/* windshield banner in the primary sponsor's colours */
+function livBannerMat(sp){
+  var key="ban|"+sp.id; if(LIV_MAT[key]) return LIV_MAT[key];
+  var c=sc_canvas(512,64), x=c.getContext("2d");
+  x.fillStyle=sp.c1; x.fillRect(0,0,512,64); x.fillStyle=sp.c2; x.fillRect(0,56,512,8);
+  spShape(x, sp.shape, 40, 30, 20, sp.c2, sp.c1);
+  x.fillStyle=sp.c3; x.font="italic bold 40px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String(sp.name).toUpperCase(), 270, 31, 420);
+  var q=new THREE.MeshStandardMaterial({map:sc_ctex(c), transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
+  var env=sc_env(); if(env) q.envMap=env;
+  LIV_MAT[key]=q; return q;
+}
+/* the player's strip car (and the salt Altered, which is one): swap the door / banner materials, show the hood patch */
+function stripLivery(car){
+  var L=car && car.userData && car.userData.liv; if(!L) return; var key=LIVERY.key; if(L.key===key) return; L.key=key;
+  var on=!!(key && LIVERY.hood), i;
+  for(i=0;i<L.door.length;i++) L.door[i].material=on?livDoorMat(L.num, L.color):L.dm;
+  for(i=0;i<L.banner.length;i++) L.banner[i].material=on?livBannerMat(LIVERY.hood):L.bm;
+  if(L.hood){ L.hood.visible=on; if(on) L.hood.material=livMat(LIVERY.hood); }
+}
+/* logo planes for the pull and salt vehicles: spots [{role:"hood"|"side", w, h, p:[x,y,z], u:[..], v:[..]}] (u = along the text, v = up the logo) */
+var _livU=new THREE.Vector3(), _livV=new THREE.Vector3(), _livN=new THREE.Vector3();
+function livPlanes(parent, U, spots){
+  var key=LIVERY.key+"|"+GFX; if(U.livKey===key) return; U.livKey=key;
+  if(U.livG){ parent.remove(U.livG); U.livG=null; }
+  if(!LIVERY.key || !LIVERY.hood) return;
+  var G=new THREE.Group(); if(!LIV_PG){ LIV_PG=new THREE.PlaneGeometry(1,1); LIV_PG.__cached=true; }
+  spots.forEach(function(s){
+    var sp=s.role==="hood"?LIVERY.hood:(LIVERY.sides.length?LIVERY.sides[(s.i||0)%LIVERY.sides.length]:null);
+    if(!sp || (s.role!=="hood" && GFX==="lite")) return;   /* Lite: the hood logo only */
+    var m=new THREE.Mesh(LIV_PG, livMat(sp)); _livU.fromArray(s.u); _livV.fromArray(s.v); _livN.crossVectors(_livU,_livV);
+    m.matrix.makeBasis(_livU, _livV, _livN); m.matrix.scale(_livN.set(s.w, s.h, 1)); m.matrix.setPosition(s.p[0], s.p[1], s.p[2]); m.matrixAutoUpdate=false; m.renderOrder=3;
+    G.add(m); });
+  parent.add(G); U.livG=G;
 }
 
 /* --- body loft ------------------------------------------------------------ */
@@ -14084,6 +14199,7 @@ function sc_door(B, body, rr, tails, heads, res){
   var dx0=pm?-0.5:-0.42, dx1=pm?0.5:0.58;
   sc_decal(res, sc_patch(D, dx0, dx1, 2.3, 4.75, 0.004, null, 0.5)); sc_decal(res, sc_patch(D, dx0, dx1, 15.25, 17.7, 0.004, "L", 0.5));
   sc_decal(res, sc_patch(D, roofF+0.02, roofF+0.17, 8.3, 11.7, 0.009, "K", 0.5), "banner");
+  res.hood=pm?sc_patch(D, 1.45, 2.12, 8.45, 11.55, 0.012, "K", 0.5):ol?sc_patch(D, 1.79, 2.19, 8.5, 11.5, 0.012, "K", 0.5):sc_patch(D, cowl+0.12, cowl+0.68, 8.45, 11.55, 0.012, "K", 0.5);   /* primary sponsor on the hood, clear of the outlaw scoop / promod blower (hidden until there is one) */
   if(pm) B.add("carbon", sc_patch(D, cowl+0.02, 2.28, 7.4, 12.6, 0.003));
   /* front + rear caps: lamps, grille, bumpers */
   var cF=L.capF, cR=L.capR, hy=lerp(cF.zb,cF.ys,0.72), ly=lerp(cF.zb,cF.ys,0.3);
@@ -14198,6 +14314,7 @@ function sc_rail(B, rr, tails, heads, res){
     [1.30,.15,.36,.44,.19,.16,.03],[2.60,.16,.31,.37,.14,.12,.03],[3.70,.17,.26,.30,.10,.085,.02],[4.02,.2,.23,.25,.05,.04,.01]], {sub:3});
   var L=sc_loft(D); B.add("paint", L.paint); B.add("well", L.well);
   sc_decal(res, sc_patch(D, -0.1, 0.6, 2.3, 5.4, 0.004, null, 0.5)); sc_decal(res, sc_patch(D, -0.1, 0.6, 14.6, 17.7, 0.004, "L", 0.5));
+  res.hood=sc_patch(D, 1.45, 2.65, 8.4, 11.6, 0.008, null, 0.5);
   /* cockpit opening (dark) + driver */
   B.add("well", sc_patch(D, -1.33, -0.55, 8.6, 11.4, 0.004, null, 0.5));
   B.add("paint", new THREE.SphereGeometry(0.155, 16, 12), sc_M(-1.02, 0.86, 0));
@@ -14651,7 +14768,7 @@ function stripUpdate(o, dt, rdt){
     STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn); stripCarMeta(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
     STRIP.cars.o=stripCar(o.body, 0x3a3f46, o.tyreIn); stripCarMeta(STRIP.cars.o); STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
   }
-  var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return;
+  var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return; stripLivery(P);
   var ph=o.phase||"run", v=o.v||0;
   P.position.x=o.x||0; P.position.z=STRIP_LANE; if(O){ O.visible=!!o.race; O.position.x=o.ox||0; O.position.z=-STRIP_LANE; }
   if(ph==="run" && STRIP.prev.phase!=="run"){ STRIP.runT=0; STRIP.cheer=Math.max(STRIP.cheer,1); }
@@ -15007,6 +15124,22 @@ function pullBinTo(bin, parent, mats, shadow){
   for(var k in bin){ if(typeof bin[k]!=="object"||!bin[k].length) continue; var g=mergeGeos(bin[k]); g.__cached=true;
     var m=new THREE.Mesh(g, mats[k]); m.castShadow=shadow!==false && k!=="glass" && k!=="decal"; m.receiveShadow=true; if(k==="decal") m.renderOrder=2; parent.add(m); }
 }
+/* the pull vehicle's door decal with the first side sponsor (or the primary) where the stripes go */
+function pullLivDecalMat(num){
+  var key="pull|"+num+"|"+LIVERY.key; if(LIV_MAT[key]) return LIV_MAT[key];
+  var c=newCanvas(512,160), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", sp=LIVERY.sides[0]||LIVERY.hood;
+  x.clearRect(0,0,512,160); x.textAlign="left"; x.textBaseline="middle";
+  x.font="italic 700 92px "+F; x.lineWidth=10; x.strokeStyle="#111"; x.strokeText(num, 14, 66); x.fillStyle="#f4f1e8"; x.fillText(num, 14, 66);
+  var nw=Math.min(230, x.measureText(num).width+30); x.drawImage(spLogoCanvas(sp,512,192), nw, 8, Math.min(290, 500-nw), Math.min(290, 500-nw)*0.375);
+  x.font="700 34px "+F; x.fillStyle="#ff7a1a"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 136); x.fillText("PRAIRIE ENGINE WORKS", 14, 136);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
+  LIV_MAT[key]=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.45, metalness:0.1, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+  return LIV_MAT[key];
+}
+function pullLivery(U){
+  var key=LIVERY.key; if(U.livDk!==key){ U.livDk=key; if(U.livDecal) U.livDecal.material=(key&&LIVERY.hood)?pullLivDecalMat(U.livNum):U.mats.decal; }
+  livPlanes(U.body, U, U.livSpots);
+}
 function pullVehicle(kind, color){
   var M=sc_mats(), P=pullMats(), paint=new THREE.MeshStandardMaterial({color:sc(color), roughness:0.36, metalness:0.12, envMapIntensity:0.8}), lite=GFX==="lite";
   var paintDS=new THREE.MeshStandardMaterial({color:paint.color, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
@@ -15109,6 +15242,12 @@ function pullVehicle(kind, color){
     var w2=pullWheel(rf, wf, kind==="tractor"?0.26:0.27, kind==="tractor"?"rib":"cut", s, rimF, st); w2.position.set(wb, rf, s*trF); body.add(w2); U.wheelsF.push(w2.userData.spin);
   }
   U.rr=rr; U.rf=rf; U.wr=wr; U.trR=trR; U.wb=wb; U.pivot=pivot; U.body=body; U.mats=mats;
+  /* sponsor livery: the door decal mesh (material swap) and logo spots in body space */
+  U.livNum=kind==="tractor"?"4020":String(((color>>>0)%89)+11); U.livDecal=body.children.filter(function(c){ return c.material===mats.decal; })[0]||null;
+  U.livSpots=kind==="tractor"?[{role:"hood", w:0.76, h:0.28, p:[2.64,1.852,0], u:[0,0,-1], v:[-0.9992,0.04,0]}]
+    :[{role:"hood", w:0.72, h:0.27, p:[3.55,1.976,0], u:[0,0,-1], v:[-1,0,0]},
+      {role:"side", i:0, w:1.45, h:0.46, p:[-0.2,1.46,1.006], u:[1,0,0], v:[0,1,0]}, {role:"side", i:0, w:1.45, h:0.46, p:[-0.2,1.46,-1.006], u:[-1,0,0], v:[0,1,0]},
+      {role:"side", i:1, w:0.9, h:0.34, p:[3.72,1.56,1.0], u:[1,0,0], v:[0,1,0]}, {role:"side", i:1, w:0.9, h:0.34, p:[3.72,1.56,-1.0], u:[-1,0,0], v:[0,1,0]}];
   g.userData=U;
   return g;
 }
@@ -15323,7 +15462,7 @@ function pullUpdate(o, dt){
   var kind=o.vehicle==="tractor"?"tractor":"truck", col=o.color!=null?o.color:(kind==="tractor"?0xd9661c:0xa32a26), vk=kind+":"+col;
   if(!PULL.veh[vk]){ PULL.veh[vk]=pullVehicle(kind, col); S3.add(PULL.veh[vk]); }
   for(var k in PULL.veh) PULL.veh[k].visible=(k===vk);
-  var V=PULL.veh[vk], U=V.userData; PULL.cur=V;
+  var V=PULL.veh[vk], U=V.userData; PULL.cur=V; pullLivery(U);
   var ph=o.phase||"stage", x=+o.x||0, v=Math.max(0,+o.v||0), slip=clamp(+o.slip||0,0,1), hop=clamp(+o.hop||0,0,1), bf=clamp(+o.boxFrac||0,0,1), i;
   if(ph==="stage" && PULL.prev.phase && PULL.prev.phase!=="stage") pullReset();
   if(ph!=="stage" && PULL.prev.phase==="stage"){ PULL.cheer=Math.max(PULL.cheer,0.9); }
@@ -15580,7 +15719,7 @@ function saltCar(body, color, aero){
   g.add(piv);
   function mesh(geo, mat, x,y,z, sx,sy,sz, rx,ry,rz, par){ var q=new THREE.Mesh(geo, mat); q.position.set(x,y,z); if(sx!=null) q.scale.set(sx,sy,sz); if(rx||ry||rz) q.rotation.set(rx||0,ry||0,rz||0); q.castShadow=true; q.receiveShadow=true; (par||piv).add(q); return q; }
   function wheel(x,z,r,w,style,rear){ var c=sc_wheel({x:x, z:z, r:r, w:w, rimR:r*0.6, style:style||"weld", rimMat:"alu", rear:rear}, M); c.position.set(x,r,z); g.add(c); wheels.push({s:c.userData.spin, r:r, rear:rear}); return c; }
-  var num=String(((color>>>0)%377)+11), nm=saltNumMat(num, color), me;
+  var num=String(((color>>>0)%377)+11), nm=saltNumMat(num, color), me, ls=[];
   if(body==="streamliner"){
     var L=9.6, R=0.6, X0=-2.35, yc=0.64;
     var hull=mesh(saltLathe(L, R, [[0,0.1],[0.04,0.3],[0.13,0.58],[0.28,0.84],[0.45,0.97],[0.6,1.0],[0.74,0.96],[0.85,0.82],[0.93,0.6],[0.975,0.34],[1,0.02]], 36), paint, X0, yc, 0, 1, 0.86, 1.04);
@@ -15595,6 +15734,7 @@ function saltCar(body, color, aero){
     [[0,0.3],[4.6,0.27]].forEach(function(a){ [-1,1].forEach(function(sd){ mesh(sp, paint, a[0], 0.36, sd*a[1], 1.15, 0.5, 0.3); }); });
     tips.push(new THREE.Vector3(-0.6, yc-0.42, -0.45), new THREE.Vector3(-0.6, yc-0.42, 0.45));
     me={rr:0.343, anchor:new THREE.Vector3(X0-0.12, yc, 0), chuteLen:9, chuteRise:0.7, chuteR:1.15, len:L, tail:X0, nose:X0+L, top:yc+R, wb:4.6};
+    ls=[{role:"hood", w:1.3, h:0.42, p:[4.15,1.158,0], u:[1,0,0], v:[0,0,-1]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,0.03], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,-0.03], u:[-1,0,0], v:[0,1,0]}];
   } else if(body==="lakester"){
     var L2=5.7, R2=0.44, X2=-1.75, y2=0.56;
     mesh(saltLathe(L2, R2, [[0,0.03],[0.14,0.42],[0.32,0.82],[0.52,1.0],[0.72,0.96],[0.86,0.8],[0.94,0.56],[0.985,0.28],[1,0.0]], 32), paint, X2, y2, 0, 1, 0.92, 1);
@@ -15609,6 +15749,7 @@ function saltCar(body, color, aero){
     wheel(0, -0.88, 0.33, 0.22, "weld", true); wheel(0, 0.88, 0.33, 0.22, "weld", true); wheel(2.9, -0.86, 0.3, 0.14, "weld", false); wheel(2.9, 0.86, 0.3, 0.14, "weld", false);
     tips.push(new THREE.Vector3(1.25, y2+0.02, -0.5), new THREE.Vector3(1.25, y2+0.02, 0.5));
     me={rr:0.33, anchor:new THREE.Vector3(X2-0.05, y2, 0), chuteLen:6.5, chuteRise:0.5, chuteR:0.9, len:L2, tail:X2, nose:X2+L2, top:y2+0.8, wb:2.9};
+    ls=[{role:"hood", w:1.0, h:0.3, p:[1.9,0.963,0], u:[1,0,0], v:[0,0,-1]}];
   } else {   /* modified roadster: a channelled tub, long hood, exposed front end */
     mesh(bx, paint, 0.2, 0.68, 0, 2.3, 0.62, 1.2);
     mesh(bx, paint, -1.15, 0.62, 0, 0.6, 0.5, 1.15, 0, 0, 0.25);
@@ -15627,9 +15768,10 @@ function saltCar(body, color, aero){
     wheel(0, -0.72, 0.343, 0.3, "weld", true); wheel(0, 0.72, 0.343, 0.3, "weld", true); wheel(2.75, -0.78, 0.31, 0.15, "star", false); wheel(2.75, 0.78, 0.31, 0.15, "star", false);
     tips.push(new THREE.Vector3(0.6, 0.47, -0.62), new THREE.Vector3(0.6, 0.47, 0.62));
     me={rr:0.343, anchor:new THREE.Vector3(-1.45, 0.75, 0), chuteLen:5.5, chuteRise:0.45, chuteR:0.85, len:4.7, tail:-1.5, nose:3.22, top:1.3, wb:2.75};
+    ls=[{role:"hood", w:1.2, h:0.42, p:[2.25,1.013,0], u:[0.9992,-0.04,0], v:[0,0,-1]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,0.606], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,-0.606], u:[-1,0,0], v:[0,1,0]}];
   }
   var chutes=[];
-  g.userData={body:body, me:me, piv:piv, wheels:wheels, tips:tips, chutes:chutes, A:[{chT:0,chC:0,chS:0,pitch:0},{chT:0,chC:0,chS:0.7,pitch:0}], pitch:0, pv:0, strip:false};
+  g.userData={body:body, me:me, piv:piv, wheels:wheels, tips:tips, chutes:chutes, A:[{chT:0,chC:0,chS:0,pitch:0},{chT:0,chC:0,chS:0.7,pitch:0}], pitch:0, pv:0, strip:false, livSpots:ls};
   return g;
 }
 /* the Altered class runs the strip's street car with a spoiler bolted on when the aero is fitted */
@@ -15743,7 +15885,7 @@ function saltUpdate(o, dt){
   var body=o.body||"streamliner", col=o.color!=null?o.color:0xd9a52b, aero=!!o.aero, key=body+":"+col+":"+(aero?1:0);
   if(!SALT.cars[key]){ SALT.cars[key]=body==="altered"?saltAltered(col, aero):saltCar(body, col, aero); S4.add(SALT.cars[key]); }
   for(var k2 in SALT.cars) SALT.cars[k2].visible=(k2===key);
-  var V=SALT.cars[key], U=V.userData, me=U.me; SALT.cur=V;
+  var V=SALT.cars[key], U=V.userData, me=U.me; SALT.cur=V; if(U.car) stripLivery(U.car); else if(U.livSpots) livPlanes(U.piv, U, U.livSpots);
   saltChutes(V, o.chutes==null?1:o.chutes);
   var ph=o.phase||"stage", x=+o.x||0, v=Math.max(0,+o.v||0);
   if(ph==="stage" && SALT.prev.phase && SALT.prev.phase!=="stage") saltReset();
@@ -15927,7 +16069,11 @@ const ENGINE_VIS = {
     var rdt=o.dt!=null ? +o.dt : (now-PULL.lastT)/1000; PULL.lastT=now; pullUpdate(o, clamp(rdt||0, 0, 0.1));
     return PULL.stats||null;
   },
-  pullSkip: function(){ if(PULL.on) PULL.skip=true; },   /* cut straight to the stop framing (sled + board) */
+  pullSkip: function(){ if(PULL.on) PULL.skip=true; },
+  /* career sponsors on the cars: {hood:sp, sides:[sp...]} (sp: {id, name, tag, shape, c1, c2, c3}); null = the shop's own colours */
+  setLivery: function(L){ var h=L&&L.hood||null, sd=(L&&L.sides||[]).filter(Boolean); LIVERY.hood=h; LIVERY.sides=h?sd:[]; LIVERY.key=h?[h.id].concat(sd.map(function(q){ return q.id; })).join(","):""; return LIVERY.key; },
+  livery: function(){ return {key:LIVERY.key, hood:LIVERY.hood&&LIVERY.hood.id, sides:LIVERY.sides.map(function(q){ return q.id; })}; },   /* harness */
+  logoCanvas: function(sp, w, h){ return spLogoCanvas(sp, w, h); },   /* the app's sponsor cards and slips draw the same cached logo */   /* cut straight to the stop framing (sled + board) */
   /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
      failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
   setSalt: function(o){
@@ -16096,6 +16242,509 @@ const ENGINE_VIS = {
 Object.defineProperty(ENGINE_VIS,"_root",{get:function(){return scene;}});
 ENGINE_VIS._state=function(){return {gfx:GFX,xray:XRAY,grime:GRIME_UNIFORM.value,wear:run.wear,composer:!!composer,hot:anim.hot?anim.hot.length:0,glow:anim.glowMats?anim.glowMats.map(function(m){return +m.emissiveIntensity.toFixed(2);}):null};};
 Object.defineProperty(ENGINE_VIS,"_shake",{get:function(){return engineShake;}});
+/* ===========================================================================
+   TEARDOWN VIEW — after a failure: an exploded section of this engine (block
+   barrel, lifted head, the failed cylinder's piston and rod pulled out, crank
+   throw, bearings, valves, turbo as needed) built on demand over the stand,
+   the failed part glowing and pulsing, everything else dimmed.
+   ENGINE_VIS.teardown({failId, layout:{banks,angle,n}, bore, stroke, rodRatio,
+   diesel, cyl, asp, blockMat, headMat, valves})   ·   ENGINE_VIS.teardown(null)
+   ==========================================================================*/
+var TD = { on:false, root:null, saved:null, glow:[], cracks:[], mats:[], geos:[], light:null, dmg:null, view:null, focusObj:null, t:0 };
+var TD_MAP = { detonation:"ringland", knock:"ringland", preignition_egt:"holed", crown_temp:"holed", fuel_delivery:"holed", lean:"holed", piston:"holed",
+  crown_pressure:"crowncrack", hot_clearance:"scuffed", seize:"scuffed", slap_blowby:"scuffed", ring_gap:"ring",
+  rod_tension:"rodsnap", piston_speed:"rodsnap", rod:"rodsnap", rod_buckling:"rodbent", rod_bolts:"rodbolt",
+  crank_fatigue:"crank", torsional:"crank", crank:"crank", bearing_load:"bearing", oil_film:"bearing", worn:"bearing",
+  oil_starvation:"starve", head_lift:"headlift", gasket_shear:"gasket", steam:"gasket", cooling:"warp",
+  valve_float:"valvebent", valve_piston:"valvebent", valve:"valvebent", valve_temp:"valveburn",
+  compressor_map:"compressor", turbine_temp:"turbine", turbo:"turbine", bore_distortion:"boredist", wall_thickness:"wall",
+  manifold:"manifold", backfire:"backfire", panel:"backfire", cold_start:"cold" };
+/* [part, what you are looking at (one line), fallback fix] */
+var TD_TXT = {
+  ringland:["Piston \u00b7 top ring land","Detonation hammered the edge of the crown until the top ring land cracked away","Raise the fuel's octane, drop compression or boost, or cool the charge."],
+  holed:["Piston crown","The crown overheated and melted through \u2014 a hole straight into the crankcase","Richen the mixture, fix the knock so the timing isn't pulled, or fit piston cooling jets."],
+  crowncrack:["Piston crown","Peak cylinder pressure split the crown across the middle","Forged pistons, less boost or timing, or a thicker crown."],
+  scuffed:["Piston skirt & bore","The piston grew into the bore and scuffed \u2014 aluminium smeared down the skirt and the wall","Open the piston-to-wall clearance, or keep the crown cooler."],
+  ring:["Top compression ring","The ring ends butted when it got hot \u2014 the ring snapped and scuffed its land","Open the ring end gaps to suit the bore, boost and nitrous."],
+  rodsnap:["Connecting rod","The rod snapped across the beam \u2014 inertia at the top of the stroke pulled it apart","Lower the redline, lighten the piston, or fit a stronger forged rod."],
+  rodbent:["Connecting rod","Cylinder pressure buckled the rod beam into a bow","A stiffer rod (H-beam or billet), or less peak pressure \u2014 boost, timing, nitrous."],
+  rodbolt:["Rod bolts & cap","A rod bolt stretched and let go \u2014 the cap came off the crankpin","Upgrade the rod bolts and torque them to stretch."],
+  crank:["Crankshaft","The crank cracked at the pin fillet and broke in two","A forged or billet crank, a proper damper, or a lower redline."],
+  bearing:["Rod bearing","The oil film broke down and the bearing spun \u2014 scored shell, blued crankpin","Thicker oil, better bearings, more clearance, or less load."],
+  starve:["Oil pickup & rod bearing","The pickup sucked air, the oil pressure went away and the rod bearing spun","A baffled sump or a dry sump, or a lower redline."],
+  headlift:["Cylinder head & studs","Cylinder pressure stretched the head bolts and lifted the head off the deck","Fit head studs and a fire-ringed gasket, or reduce peak pressure."],
+  gasket:["Head gasket","The gasket blew out past the fire ring \u2014 combustion gas escaped across the deck","An MLS or copper gasket on studs, or less cylinder pressure."],
+  warp:["Cylinder head","More heat than the cooling could reject \u2014 the head warped and the gasket steamed","A bigger radiator and better cooling, or less sustained power."],
+  valvebent:["Valve","The valve met the piston and bent \u2014 witness marks on the crown","Stiffer springs, lighter valves, a milder cam, or a lower redline."],
+  valveburn:["Exhaust valve","The exhaust valve burned \u2014 a chunk of the valve head eroded away","Richen the mixture, sodium-filled or Inconel valves, more seat contact."],
+  compressor:["Compressor wheel","The compressor ran off its map and the blades took the hit","A bigger compressor, or less boost at that airflow."],
+  turbine:["Turbine wheel","Exhaust heat cracked the turbine wheel and threw blade tips","Less retard, a richer mixture, a shorter hold, or an Inconel hot side."],
+  boredist:["Cylinder bore","The bore went out of round \u2014 the rings stopped sealing and scored the wall","Hone with a torque plate, closed deck, or a stiffer block."],
+  wall:["Cylinder wall","The wall between the bores cracked \u2014 too thin for the heat and pressure","A smaller bore, or a block material that takes a thinner wall."],
+  manifold:["Exhaust manifold","The manifold cracked from the heat \u2014 too long on the limiter","Shorter two-step holds, less retard, or a tubular stainless manifold."],
+  backfire:["Intake plenum","A misfire lit the fuel and nitrous in the intake and split the plenum","Fix the lean misfire, keep the mixture rich, shorter runners or a burst panel."],
+  cold:["Combustion chamber","The fuel sprayed into cold air and never lit \u2014 the chamber is washed with raw diesel","Higher compression, a higher-cetane fuel, or a common rail with pilot shots."]
+};
+function tdDmg(id){ id=String(id||""); return TD_MAP[id] || (/rod/.test(id)?"rodsnap":/crank|tors/.test(id)?"crank":/valve/.test(id)?"valvebent":/turb/.test(id)?"turbine":/oil|bear/.test(id)?"bearing":/gask|head|cool|steam/.test(id)?"gasket":"ringland"); }
+
+var _tdBox=null, _tdY=new THREE.Vector3(0,1,0);
+function tdGeo(g){ TD.geos.push(g); return g; }
+function tdMat(base, mode){
+  var m=base.clone(); m.userData={}; TD.mats.push(m);
+  if(m.emissive){ m.emissive.setHex(0x000000); m.emissiveIntensity=0; }
+  if(mode==="dim"){ m.color.multiplyScalar(0.62); m.envMapIntensity=(base.envMapIntensity||1)*0.55; }
+  if(mode==="hot"){ m.color.multiplyScalar(0.8); m.emissive=sc(0xff2200); m.emissiveIntensity=0.32; m.userData.tdBase=0.32; TD.glow.push(m); }
+  return m;
+}
+function tdFlat(hex, o){ o=o||{}; var m=new THREE.MeshStandardMaterial({color:sc(hex), roughness:o.r===undefined?0.6:o.r, metalness:o.m===undefined?0.3:o.m, envMapIntensity:o.e===undefined?0.6:o.e, side:o.side||THREE.FrontSide, transparent:!!o.op, opacity:o.op||1});
+  if(o.em){ m.emissive=sc(o.em); m.emissiveIntensity=o.ei||0.6; m.userData.tdBase=m.emissiveIntensity; TD.glow.push(m); }
+  TD.mats.push(m); return m; }
+function tdCrackMat(hex){ var m=new THREE.MeshBasicMaterial({color:sc(hex||0xffb43c), toneMapped:false}); m.userData.c0=m.color.clone(); TD.mats.push(m); TD.cracks.push(m); return m; }
+function tdM(geo, mat, par, x,y,z, rx,ry,rz){ var m=new THREE.Mesh(tdGeo(geo), mat); m.position.set(x||0,y||0,z||0); if(rx||ry||rz) m.rotation.set(rx||0,ry||0,rz||0); m.castShadow=true; m.receiveShadow=true; par.add(m); return m; }
+function tdBoxG(){ if(!_tdBox){ _tdBox=new THREE.BoxGeometry(1,1,1); _tdBox.__cached=true; } return _tdBox; }
+/* a glowing crack: thin boxes along a polyline (points in par space) */
+function tdCrack(par, pts, w, mat){
+  for(var i=0;i<pts.length-1;i++){
+    var a=pts[i], b=pts[i+1], d=new THREE.Vector3().subVectors(b,a), L=d.length(); if(L<1e-4) continue;
+    var m=new THREE.Mesh(tdBoxG(), mat); m.scale.set(w, L+w*0.6, w*0.7);
+    m.position.copy(a).addScaledVector(d,0.5); m.quaternion.setFromUnitVectors(_tdY, d.normalize()); par.add(m);
+  }
+}
+/* jagged line on a cylinder surface (axis y): angles th (rad, 0 = +z) and heights y */
+function tdZig(R, th0, y0, th1, y1, n, amp, seed){
+  var pts=[], s=seed||1;
+  for(var i=0;i<=n;i++){ var f=i/n, j=(i===0||i===n)?0:(((Math.sin(s*12.9898+i*78.233)*43758.5453)%1)-0.5)*amp;
+    var th=th0+(th1-th0)*f+j/R, y=y0+(y1-y0)*f+j*0.6; pts.push(new THREE.Vector3(R*Math.sin(th), y, R*Math.cos(th))); }
+  return pts;
+}
+/* flat jagged line in a plane y = const */
+function tdZigFlat(x0,z0,x1,z1,y,n,amp,seed){
+  var pts=[], s=seed||1, dx=x1-x0, dz=z1-z0, L=Math.hypot(dx,dz)||1, nx=-dz/L, nz=dx/L;
+  for(var i=0;i<=n;i++){ var f=i/n, j=(i===0||i===n)?0:(((Math.sin(s*12.9898+i*78.233)*43758.5453)%1)-0.5)*amp;
+    pts.push(new THREE.Vector3(x0+dx*f+nx*j, y, z0+dz*f+nz*j)); }
+  return pts;
+}
+/* extrude a 2D shape along +y (shape x -> x, shape y -> -z) */
+function tdExY(shape, h, cs){ var g=new THREE.ExtrudeGeometry(shape,{depth:h, bevelEnabled:false, curveSegments:cs||16}); g.rotateX(-PI/2); return g; }
+/* extrude a 2D shape along +x (shape x -> -z, shape y -> y), centred on x = 0 */
+function tdExX(shape, w, cs){ var g=new THREE.ExtrudeGeometry(shape,{depth:w, bevelEnabled:false, curveSegments:cs||16}); g.translate(0,0,-w/2); g.rotateY(PI/2); return g; }
+function tdAnnulus(ro, ri, a0, a1){ var s=new THREE.Shape(); s.absarc(0,0,ro,a0,a1,false);
+  if(a1-a0>=TAU-1e-3){ var h=new THREE.Path(); h.absarc(0,0,ri,0,TAU,true); s.holes.push(h); } else s.absarc(0,0,ri,a1,a0,true);
+  return s; }
+
+/* ---------- parts (B = displayed bore) ---------- */
+function tdPiston(P, B, d, mats, lite){
+  var G=new THREE.Group(), R=B/2, seg=lite?20:36, cH=0.40*B, pH=0.72*B, top=cH;
+  var hot=(d==="ringland"||d==="holed"||d==="crowncrack"||d==="scuffed"||d==="valvebent"||d==="cold");
+  var pm=hot?mats.pistonHot:mats.piston, dark=mats.dark, ringM=d==="ring"?mats.ringHot:mats.ring;
+  var gh=0.042*B, g1=top-0.10*B, g2=top-0.17*B, g3=top-0.25*B, tl=top-g1-gh/2;
+  /* crown + top land: one solid, with a bite out of it for a cracked ring land, a hole for a melted crown */
+  var sh=new THREE.Shape();
+  if(d==="ringland"){ /* shape angle a = theta - 90deg, theta the 3D angle from +z toward +x */
+    var c=0.62, w=0.95, a0=c-w/2-PI/2, a1=c+w/2-PI/2, k; sh.absarc(0,0,R,a1,a0+TAU,false);
+    for(k=1;k<6;k++){ var f=k/6, aa=a0+(a1-a0)*f, rr=R*(0.52+0.14*Math.sin(k*2.7)); sh.lineTo(rr*Math.cos(aa), rr*Math.sin(aa)); } sh.lineTo(R*Math.cos(a1),R*Math.sin(a1)); }
+  else sh.absarc(0,0,R,0,TAU,false);
+  if(d==="holed"){ var hp=new THREE.Path(), hx=0.18*R, hz=0.30*R, hr=0.36*R, n=lite?10:18; for(var i=0;i<=n;i++){ var a=-i/n*TAU, r=hr*(1+0.16*Math.sin(i*2.3)+0.08*Math.sin(i*5.1)); if(i===0) hp.moveTo(hx+r*Math.cos(a), -hz+r*Math.sin(a)); else hp.lineTo(hx+r*Math.cos(a), -hz+r*Math.sin(a)); } sh.holes.push(hp); }
+  tdM(tdExY(sh, tl, seg), pm, G, 0, g1+gh/2, 0);
+  /* lands, ring grooves, rings */
+  var land=function(y0,y1){ tdM(new THREE.CylinderGeometry(R,R,y1-y0,seg,1,true), pm, G, 0,(y0+y1)/2,0); };
+  land(g2+gh/2, g1-gh/2); land(g3+gh*0.7, g2-gh/2);
+  [g1,g2,g3].forEach(function(gy,ix){ var h=ix===2?gh*1.4:gh;
+    tdM(new THREE.CylinderGeometry(R*0.93,R*0.93,h,seg,1,true), dark, G, 0,gy,0);
+    if(!(d==="ring"&&ix===0)) tdM(new THREE.CylinderGeometry(R*1.003,R*1.003,h*0.62,seg,1,true), ix===0&&d==="ringland"?mats.ring:mats.ring, G, 0,gy,0); });
+  if(d==="ringland"){ /* the bitten-out ring land: a broken ring end and dark groove showing */
+    tdCrack(G, tdZig(R*1.004, 0.62-0.95/2, g1, 0.62-0.95/2-0.1, g3-0.1*B, 5, 0.05*B, 3), 0.03*B, mats.crack);
+    tdCrack(G, tdZig(R*1.004, 0.62+0.95/2, g1, 0.62+0.95, g3-0.2*B, 6, 0.07*B, 7), 0.03*B, mats.crack);
+    var bp=[], a0b=0.62-0.95/2, a1b=0.62+0.95/2; for(var q=0;q<=6;q++){ var aq=a0b+(a1b-a0b)*q/6, rq=R*(0.52+0.14*Math.sin(q*2.7)); if(q===0||q===6) rq=R; bp.push(new THREE.Vector3(rq*Math.sin(aq), top+0.004, rq*Math.cos(aq))); }
+    tdCrack(G, bp, 0.026*B, mats.crack);
+    if(!lite) for(var p=0;p<26;p++){ var pa=0.62+(Math.sin(p*7.3))*1.2, pr=R*(0.55+0.4*Math.abs(Math.sin(p*3.1))); tdM(new THREE.CircleGeometry(0.018*B*(1+(p%3)*0.4),6), dark, G, pr*Math.sin(pa), top+0.003, pr*Math.cos(pa), -PI/2); }
+  }
+  if(d==="holed"){
+    var hx2=0.18*R, hz2=0.30*R, hr2=0.36*R;
+    tdM(new THREE.CircleGeometry(hr2*1.02, 20), mats.void, G, hx2, g1-0.02*B, hz2, -PI/2);
+    tdM(new THREE.TorusGeometry(hr2*1.06, 0.035*B, 6, lite?14:28), mats.crackHot, G, hx2, top+0.004, hz2, PI/2);
+    if(!lite) for(var mb=0;mb<9;mb++){ var ma=mb/9*TAU, mr=hr2*(1.35+0.2*Math.sin(mb*4.1)); var bl=tdM(new THREE.SphereGeometry(0.06*B,8,6), pm, G, hx2+mr*Math.cos(ma), top+0.01, hz2+mr*Math.sin(ma)); bl.scale.set(1.2,0.35,0.9); }
+    /* the melt ran down the side: a gouge through the lands */
+    tdCrack(G, tdZig(R*1.004, 0.55, top, 0.62, g3-0.06*B, 5, 0.04*B, 11), 0.05*B, mats.crackHot);
+  }
+  if(d==="crowncrack"){ tdCrack(G, tdZigFlat(-R*0.98,0.1*R, R*0.98,-0.15*R, top+0.006, lite?6:12, 0.18*R, 5), 0.03*B, mats.crack);
+    tdCrack(G, tdZigFlat(-0.1*R,-0.05*R, 0.25*R,R*0.96, top+0.006, lite?4:8, 0.15*R, 9), 0.026*B, mats.crack);
+    tdCrack(G, tdZig(R*1.004, PI/2+0.1, top, PI/2+0.15, g3, 4, 0.03*B, 2), 0.022*B, mats.crack); }
+  if(d==="valvebent"){ [[-0.38,0.30],[0.36,0.32]].forEach(function(v){ tdM(new THREE.CircleGeometry(0.17*B,lite?12:20), mats.dent, G, v[0]*B, top+0.004, v[1]*B, -PI/2);
+      tdM(new THREE.TorusGeometry(0.17*B, 0.012*B, 4, 20), mats.crack, G, v[0]*B, top+0.006, v[1]*B, PI/2); }); }
+  if(d==="cold"){ tdM(new THREE.CircleGeometry(R*0.86, seg), mats.wet, G, 0, top+0.004, 0, -PI/2); }
+  /* skirt (open bottom, hollow) and wrist pin */
+  var skH=pH-(top-g3)-gh;
+  var sk=tdM(new THREE.CylinderGeometry(R*0.995,R*0.995,skH,seg,1,true), d==="scuffed"?mats.pistonHot:mats.piston, G, 0, g3-gh*0.7-skH/2, 0);
+  tdM(new THREE.CylinderGeometry(R*0.94,R*0.94,skH,seg,1,true), mats.darkIn, G, 0, g3-gh*0.7-skH/2, 0);
+  tdM(new THREE.CylinderGeometry(0.115*B,0.115*B,2*R*1.01,lite?10:16), mats.pin, G, 0,0,0, 0,0,PI/2);
+  if(d==="scuffed"||d==="ring"){ var n2=lite?6:14; for(var s2=0;s2<n2;s2++){ var sa=0.15+s2*(1.0/n2)*1.3, sy=g3-gh-0.04*B, sL=skH*(0.55+0.4*Math.abs(Math.sin(s2*2.1)));
+      var st=new THREE.Mesh(tdBoxG(), s2%3===0?mats.crack:mats.smear); st.scale.set(0.016*B, sL, 0.01*B); st.position.set(R*1.002*Math.sin(sa), sy-sL/2, R*1.002*Math.cos(sa)); st.rotation.y=sa; G.add(st);
+      if(d==="ring") st.scale.y*=0.25, st.position.y=top-0.06*B; } }
+  if(d==="ring"){ /* the broken top ring lifted off: two pieces, butted ends glowing */
+    var rg=new THREE.Group(); rg.position.set(0, top+0.30*B, 0); G.add(rg);
+    tdM(new THREE.TorusGeometry(R*1.0, 0.03*B, 6, lite?24:48, TAU*0.62), ringM, rg, 0,0,0, PI/2,0,0.5);
+    var p2=tdM(new THREE.TorusGeometry(R*1.0, 0.03*B, 6, lite?16:32, TAU*0.34), ringM, rg, 0.06*B,0.10*B,0.05*B, PI/2+0.25,0,0.5+TAU*0.64);
+    [0.5, 0.5+TAU*0.62].forEach(function(a){ tdM(new THREE.SphereGeometry(0.05*B,8,6), mats.crackHot, rg, R*Math.cos(a), 0, -R*Math.sin(a)); });
+  }
+  return G;
+}
+function tdRod(L, B, d, mats, lite){
+  var G=new THREE.Group(), rs=0.20*B, rsi=0.12*B, rb=0.40*B, rp=0.29*B, tx=0.20*B, cs=lite?12:20;
+  var hotBeam=(d==="rodsnap"||d==="rodbent"), hotEnd=(d==="rodbolt");
+  var rm=mats.rod, rmh=mats.rodHot;
+  tdM(tdExX(tdAnnulus(rs, rsi, 0, TAU), tx*0.9, cs), hotBeam&&d==="rodsnap"?rmh:rm, G, 0,0,0);
+  var b0=-rs*0.8, b1=-L+rb*0.85, bl=b0-b1;
+  if(d==="rodbent"){ var cv=new THREE.QuadraticBezierCurve3(new THREE.Vector3(0,b0,0), new THREE.Vector3(0,(b0+b1)/2,0.42*B), new THREE.Vector3(0,b1,0));
+    tdM(new THREE.TubeGeometry(cv, lite?10:20, 0.075*B, lite?6:10, false), rmh, G, 0,0,0);
+    tdCrack(G, [cv.getPoint(0.38), cv.getPoint(0.5), cv.getPoint(0.62)].map(function(p){ return p.add(new THREE.Vector3(0,0,0.08*B)); }), 0.035*B, mats.crack);
+  } else if(d==="rodsnap"){
+    var cut=b0-bl*0.42;
+    tdM(new THREE.BoxGeometry(0.12*B, b0-cut, 0.20*B), rmh, G, 0,(b0+cut)/2,0);
+    tdCrack(G, [new THREE.Vector3(0,cut-0.01,-0.11*B), new THREE.Vector3(0.02,cut+0.02,-0.03*B), new THREE.Vector3(-0.02,cut-0.03,0.04*B), new THREE.Vector3(0,cut+0.01,0.11*B)], 0.05*B, mats.crackHot);
+    var low=new THREE.Group(); low.position.set(0.05*B, -0.35*B, 0.42*B); low.rotation.set(0.55,0.15,0.1); G.add(low);
+    tdM(new THREE.BoxGeometry(0.12*B, cut-b1-0.06*B, 0.20*B), rmh, low, 0,(cut-0.06*B+b1)/2,0);
+    tdCrack(low, [new THREE.Vector3(0,cut-0.06*B,-0.11*B), new THREE.Vector3(-0.02,cut-0.03*B,-0.02*B), new THREE.Vector3(0.02,cut-0.08*B,0.05*B), new THREE.Vector3(0,cut-0.05*B,0.11*B)], 0.05*B, mats.crackHot);
+    tdRodEnd(low, L, B, d, mats, lite);
+    return G;
+  } else {
+    tdM(new THREE.BoxGeometry(0.075*B, bl, 0.20*B), rm, G, 0,(b0+b1)/2,0);
+    if(!lite){ tdM(new THREE.BoxGeometry(0.15*B, bl, 0.045*B), rm, G, 0,(b0+b1)/2, 0.085*B); tdM(new THREE.BoxGeometry(0.15*B, bl, 0.045*B), rm, G, 0,(b0+b1)/2,-0.085*B); }
+  }
+  tdRodEnd(G, L, B, d, mats, lite);
+  return G;
+}
+function tdRodEnd(G, L, B, d, mats, lite){
+  var rb=0.40*B, rp=0.29*B, tx=0.24*B, cs=lite?14:24, rm=(d==="rodbolt")?mats.rodHot:mats.rod;
+  var E=new THREE.Group(); E.position.y=-L; G.add(E);
+  tdM(tdExX(tdAnnulus(rb, rp, 0, PI), tx, cs), d==="rodsnap"?mats.rodHot:mats.rod, E, 0,0,0);
+  var bz=rp+(rb-rp)*0.5;
+  tdM(new THREE.BoxGeometry(tx, 0.12*B, 2*rb+0.06*B), d==="rodsnap"?mats.rodHot:mats.rod, E, 0,-0.04*B,0);
+  var cap=new THREE.Group(); E.add(cap);
+  if(d==="rodbolt"){ cap.position.set(0.04*B,-0.55*B,0.22*B); cap.rotation.set(0.45,0.2,0); }
+  tdM(tdExX(tdAnnulus(rb, rp, PI, TAU), tx, cs), rm, cap, 0,-0.0,0);
+  tdM(new THREE.BoxGeometry(tx, 0.10*B, 2*rb+0.06*B), rm, cap, 0,-0.05*B,0);
+  /* shells */
+  var spun=(d==="bearing"||d==="starve");
+  tdM(tdExX(tdAnnulus(rp, rp-0.035*B, 0, PI), tx*0.98, cs), mats.shell, E, 0,0,0);
+  if(!spun) tdM(tdExX(tdAnnulus(rp, rp-0.035*B, PI, TAU), tx*0.98, cs), mats.shell, cap, 0,0,0);
+  /* bolts */
+  [-1,1].forEach(function(sg,ix){ var z=-sg*bz;
+    if(d==="rodbolt"&&ix===0){ tdM(new THREE.CylinderGeometry(0.045*B,0.045*B,0.14*B,8), mats.boltHot, E, 0,-0.1*B,z);
+      tdM(new THREE.SphereGeometry(0.06*B,8,6), mats.crackHot, E, 0,-0.17*B,z);
+      tdM(new THREE.CylinderGeometry(0.045*B,0.045*B,0.16*B,8), mats.boltHot, cap, 0,-0.05*B,z);
+      tdM(new THREE.SphereGeometry(0.06*B,8,6), mats.crackHot, cap, 0,0.03*B,z); }
+    else if(d==="rodbolt"){ tdM(new THREE.CylinderGeometry(0.03*B,0.045*B,0.55*B,8), mats.boltHot, E, 0,-0.22*B,z); }
+    else tdM(new THREE.CylinderGeometry(0.045*B,0.045*B,0.40*B,8), mats.bolt, cap, 0,-0.02*B,z);
+  });
+  return E;
+}
+function tdCrank(B, cr, d, mats, lite){
+  var G=new THREE.Group(), rj=0.30*B, rpn=0.27*B, tw=0.17*B, wx=0.33*B, cs=lite?16:28, Rcw=cr+0.30*B;
+  var broken=(d==="crank"), spun=(d==="bearing"||d==="starve");
+  var cm=broken?mats.crankHot:mats.crank;
+  var left=new THREE.Group(), right=new THREE.Group(); G.add(left); G.add(right);
+  if(broken){ right.position.set(0.28*B, -0.12*B, 0.10*B); right.rotation.set(0.32, 0.06, -0.05); }
+  function web(par, x){
+    var lobe=new THREE.Shape(); lobe.moveTo(-0.40*B,0); lobe.lineTo(-0.36*B,cr); lobe.absarc(0,cr,0.36*B,PI,0,true); lobe.lineTo(0.40*B,0); lobe.lineTo(-0.40*B,0);
+    var cw=new THREE.Shape(); cw.moveTo(0,0.08*B); cw.absarc(0,0,Rcw,PI+0.25,TAU-0.25,false); cw.lineTo(0,0.08*B);
+    tdM(tdExX(lobe, tw, cs), cm, par, x,0,0); tdM(tdExX(cw, tw*0.97, cs), cm, par, x,0,0);
+    tdM(new THREE.CylinderGeometry(0.43*B,0.43*B,tw*0.985,cs), cm, par, x,0,0, 0,0,PI/2);
+  }
+  web(left, -wx); web(right, wx);
+  var pinL=2*wx-tw;
+  if(broken){ tdM(new THREE.CylinderGeometry(rpn,rpn,pinL*0.62,cs), mats.journalHot, left, -wx+tw/2+pinL*0.31, cr, 0, 0,0,PI/2);
+    tdM(new THREE.CylinderGeometry(rpn,rpn,pinL*0.38,cs), mats.journalHot, right, wx-tw/2-pinL*0.19, cr, 0, 0,0,PI/2);
+    tdM(new THREE.CircleGeometry(rpn*1.01, cs), mats.crackHot, left, -wx+tw/2+pinL*0.62+0.003, cr, 0, 0,PI/2,0);
+    tdM(new THREE.CircleGeometry(rpn*1.01, cs), mats.crackHot, right, wx-tw/2-pinL*0.38-0.003, cr, 0, 0,-PI/2,0);
+    tdCrack(left, tdZig(0.435*B, 0.3, -0.3*B, 2.6, 0.2*B, 6, 0.05*B, 4).map(function(p){ return new THREE.Vector3(-wx+tw/2+0.002, p.y+cr*0.4, p.z); }), 0.03*B, mats.crack);
+  } else tdM(new THREE.CylinderGeometry(rpn,rpn,pinL,cs), spun?mats.journalHot:mats.journal, left, 0, cr, 0, 0,0,PI/2);
+  if(spun&&!lite) for(var k=0;k<5;k++) tdM(new THREE.TorusGeometry(rpn*1.003, 0.006*B, 4, cs), mats.score, left, -pinL*0.35+k*pinL*0.17, cr, 0, 0,PI/2,0);
+  var jl=0.55*B;
+  tdM(new THREE.CylinderGeometry(rj,rj,jl,cs), mats.journal, left, -wx-tw/2-jl/2, 0,0, 0,0,PI/2);
+  tdM(new THREE.CylinderGeometry(rj,rj,jl,cs), mats.journal, right, wx+tw/2+jl/2, 0,0, 0,0,PI/2);
+  /* main bearing shells, exploded off the journals */
+  [-1,1].forEach(function(sg){ var x=sg*(wx+tw/2+jl/2), par=sg<0?left:right;
+    tdM(tdExX(tdAnnulus(rj+0.04*B, rj, 0, PI), jl*0.8, cs), mats.shellDim, par, x, 0.32*B, 0);
+    tdM(tdExX(tdAnnulus(rj+0.04*B, rj, PI, TAU), jl*0.8, cs), mats.shellDim, par, x,-0.32*B, 0); });
+  if(spun){ /* the spun rod shell: torn out, scored to the copper, blued */
+    var S=new THREE.Group(); S.position.set(0, cr+0.05*B, 0.62*B); S.rotation.set(0.6, 0.35, 0.2); left.add(S);
+    tdM(tdExX(tdAnnulus(rpn+0.05*B, rpn+0.012*B, 0.25, PI+0.7), pinL*0.95, cs), mats.shellHot, S, 0,0,0);
+    var nS=lite?4:9; for(var q=0;q<nS;q++){ var a=0.4+q*(PI/ nS); var sc2=new THREE.Mesh(tdBoxG(), q%2?mats.crack:mats.score); sc2.scale.set(pinL*0.9, 0.012*B, 0.01*B); sc2.position.set(0, (rpn+0.01*B)*Math.sin(a), -(rpn+0.01*B)*Math.cos(a)); S.add(sc2); }
+  }
+  return G;
+}
+function tdValve(B, kind, mats, lite){
+  var G=new THREE.Group(), rh=0.19*B, sl=0.95*B, cs=lite?14:24;
+  var hot=(kind==="bent"||kind==="burn"), vm=hot?mats.valveHot:mats.valve;
+  var head=new THREE.Group(); G.add(head);
+  if(kind==="burn"){ var shp=new THREE.Shape(); shp.moveTo(0,0); shp.absarc(0,0,rh,0.9,TAU-0.1,false); var n=5; for(var i=1;i<n;i++){ var a=-0.1+i/n*1.0, r=rh*(0.45+0.18*Math.sin(i*2.9)); shp.lineTo(r*Math.cos(a), r*Math.sin(a)); } shp.lineTo(0,0);
+    tdM(tdExY(shp, 0.035*B, cs), mats.valveBurnt, head, 0,0,0);
+    var cp=[]; for(i=0;i<=n;i++){ var a2=-0.1+i/n*1.0, r2=i===0||i===n?rh:rh*(0.45+0.18*Math.sin(i*2.9)); cp.push(new THREE.Vector3(r2*Math.cos(a2), 0.04*B, -r2*Math.sin(a2))); }
+    tdCrack(head, cp, 0.03*B, mats.crackHot);
+  } else tdM(new THREE.CylinderGeometry(rh,rh,0.035*B,cs), vm, head, 0,0.0175*B,0);
+  tdM(new THREE.CylinderGeometry(0.045*B, rh*0.95, 0.10*B, cs), kind==="burn"?mats.valveBurnt:vm, head, 0,0.085*B,0);
+  if(kind==="bent"){ var k1=0.30*sl;
+    tdM(new THREE.CylinderGeometry(0.035*B,0.035*B,k1,8), vm, head, 0,0.13*B+k1/2,0);
+    head.rotation.z=0.42; head.position.set(-0.2*B, 0, 0);
+    tdM(new THREE.CylinderGeometry(0.035*B,0.035*B,sl-k1,8), vm, G, 0,0.13*B+k1+(sl-k1)/2,0);
+    tdM(new THREE.SphereGeometry(0.05*B,8,6), mats.crackHot, G, 0,0.13*B+k1,0);
+  } else tdM(new THREE.CylinderGeometry(0.035*B,0.035*B,sl,8), vm, G, 0,0.13*B+sl/2,0);
+  tdM(new THREE.CylinderGeometry(0.11*B,0.11*B,0.04*B,12), mats.steelDim, G, 0,0.13*B+sl*0.88,0);
+  return G;
+}
+function tdTurboG(B, d, mats, lite){
+  var G=new THREE.Group(), cs=lite?16:28, nb=lite?9:12;
+  /* bearing housing along x, turbine (hot side) at -x, compressor at +x */
+  tdM(new THREE.CylinderGeometry(0.26*B,0.26*B,0.55*B,cs), mats.iron, G, 0,0,0, 0,0,PI/2);
+  tdM(new THREE.CylinderGeometry(0.05*B,0.05*B,1.9*B,8), mats.journal, G, 0,0,0, 0,0,PI/2);
+  function wheel(x, rr, hot, comp, missing){
+    var W=new THREE.Group(); W.position.x=x; G.add(W);
+    var m=hot?(comp?mats.compHot:mats.turbHot):(comp?mats.alu:mats.turbDim), bentTips=comp&&hot;
+    tdM(new THREE.CylinderGeometry(0.10*B, 0.22*B, 0.30*B, cs), m, W, 0,0,0, 0,0,(x<0?1:-1)*PI/2);
+    for(var i=0;i<nb;i++){ var a=i/nb*TAU, len=rr*(missing&&missing.indexOf(i)>=0?0.45:1);
+      var bl=new THREE.Mesh(tdGeo(new THREE.BoxGeometry(0.26*B, len, 0.022*B)), m); bl.castShadow=true;
+      bl.position.set(0, Math.cos(a)*(0.10*B+len/2), Math.sin(a)*(0.10*B+len/2)); bl.rotation.set(a, 0, 0); bl.rotateY(0.35);
+      if(bentTips&&i%3===0){ bl.rotateZ(0.5); }
+      W.add(bl);
+      if(missing&&missing.indexOf(i)>=0){ var cap=new THREE.Mesh(tdBoxG(), mats.crackHot); cap.scale.set(0.28*B, 0.03*B, 0.04*B); cap.position.set(0, Math.cos(a)*(0.10*B+len), Math.sin(a)*(0.10*B+len)); cap.rotation.set(a,0,0); W.add(cap); }
+    }
+    return W;
+  }
+  var tw=wheel(-0.62*B, 0.30*B, d==="turbine", false, d==="turbine"?[1,4,8]:null);
+  if(d==="turbine") tdCrack(tw, [new THREE.Vector3(-0.15*B,0,0.04*B), new THREE.Vector3(-0.14*B,0.12*B,0.06*B), new THREE.Vector3(-0.15*B,0.22*B,0.02*B), new THREE.Vector3(-0.14*B,0.36*B,0.05*B)], 0.03*B, mats.crackHot);
+  wheel(0.62*B, 0.34*B, d==="compressor", true, null);
+  /* housings, pulled back off the wheels and cut open */
+  var hm=d==="turbine"?mats.ironDim:mats.ironDim;
+  tdM(new THREE.TorusGeometry(0.52*B, 0.18*B, lite?8:12, cs, PI*1.3), mats.castexh, G, -1.15*B, 0, 0, 0, PI/2, 0);
+  tdM(new THREE.TorusGeometry(0.56*B, 0.17*B, lite?8:12, cs, PI*1.3), mats.aluDim, G, 1.18*B, 0, 0, 0, PI/2, 0);
+  return G;
+}
+
+function tdBuild(info){
+  var lite=GFX==="lite", d=tdDmg(info.failId), Lo=info.layout||{banks:1, angle:0, n:4};
+  var B=1.6, R=B/2, bs=Math.max(40, +info.bore||86), st=Math.max(30, +info.stroke||86);
+  var S=clamp(B*st/bs, 0.6*B, 1.5*B), cr=S/2, L=clamp(+info.rodRatio||1.7, 1.4, 2.2)*S, cH=0.40*B, pH=0.72*B;
+  var Dk=cr+L+cH, wall=info.diesel?0.30*B:0.24*B, W=B+2*wall, D=B+2*wall, pitch=B+0.22*B+(info.diesel?0.06*B:0);
+  var alu=/alu/.test(info.blockMat||""), headAlu=!/iron/.test(info.headMat||"alu");
+  var two=(Lo.banks||1)===1 && (info.cyl||Lo.n||4)>=2;
+  var hotSet={ piston:/ringland|holed|crowncrack|scuffed|valvebent|cold/.test(d) };
+  var M={};
+  function pick(base, hot){ return tdMat(base, hot?"hot":"dim"); }
+  M.piston=pick(MAT.palu,false); M.pistonHot=pick(MAT.palu,true); M.dark=tdFlat(0x16171a,{r:0.8,m:0.2}); M.darkIn=tdFlat(0x2a2b2e,{r:0.8,m:0.2,side:THREE.BackSide});
+  M.ring=pick(MAT.steel,false); M.ringHot=pick(MAT.steel,true); M.pin=pick(MAT.chrome||MAT.steel,false);
+  M.rod=pick(MAT.steel,false); M.rodHot=pick(MAT.steel,true); M.bolt=pick(MAT.steel,false); M.boltHot=pick(MAT.steel,true);
+  M.crank=pick(MAT.steel,false); M.crankHot=pick(MAT.steel,true); M.journal=pick(MAT.chrome||MAT.steel,false); M.journalHot=pick(MAT.chrome||MAT.steel,true);
+  M.shell=tdFlat(0x8a8478,{r:0.35,m:0.8}); M.shellDim=tdFlat(0x5c5850,{r:0.4,m:0.8}); M.shellHot=tdFlat(0xb4652e,{r:0.45,m:0.85,em:0xff2a12,ei:0.5});
+  M.valve=pick(MAT.steel,false); M.valveHot=pick(MAT.steel,true); M.valveBurnt=tdFlat(0x5a3626,{r:0.7,m:0.6,em:0xff3a10,ei:0.5}); M.steelDim=pick(MAT.steel,false);
+  M.iron=pick(MAT.iron,false); M.ironDim=pick(MAT.iron,false); M.alu=pick(MAT.calu,false); M.aluDim=pick(MAT.calu,false);
+  M.turbDim=pick(MAT.turbine,false); M.turbHot=tdFlat(0x8a4a2a,{r:0.5,m:0.8,em:0xff4a10,ei:0.7}); M.compHot=pick(MAT.palu,true); M.castexh=pick(MAT.castexh, d==="manifold");
+  M.crack=tdCrackMat(0xffa630); M.crackHot=tdCrackMat(0xff5a1e); M.void=tdFlat(0x050505,{r:1,m:0,e:0,side:THREE.DoubleSide});
+  M.smear=tdFlat(0xd9d9d4,{r:0.25,m:0.9}); M.score=tdFlat(0x1a1410,{r:0.9,m:0.2}); M.dent=tdFlat(0x2a2622,{r:0.7,m:0.4});
+  M.wet=tdFlat(0x1c2a3a,{r:0.06,m:0.2,e:1.6,op:0.72}); M.soot=tdFlat(0x0e0c0a,{r:1,m:0,e:0.1});
+  var blockHot=/boredist|wall|scuffed/.test(d), headHot=/headlift|warp/.test(d);
+  M.block=pick(alu?MAT.calu:MAT.iron, false); M.blockHot=pick(alu?MAT.calu:MAT.iron, true);
+  M.head=pick(headAlu?MAT.calu:MAT.iron, headHot); M.cover=pick(MAT.wrinkle||MAT.dark, false); M.gasket=pick(MAT.steel, /gasket|headlift|warp/.test(d));
+  M.stud=pick(MAT.steel, d==="headlift"); M.plenum=pick(MAT.calu, d==="backfire"); M.pan=pick(MAT.steel,false); M.pickup=tdFlat(0x7a7268,{r:0.5,m:0.7,em:d==="starve"?0xff2a12:undefined,ei:0.55});
+  M.inj=pick(MAT.steel, d==="cold");
+  M.liner=tdFlat(alu?0x8e8e8b:0x6a6865,{r:0.35,m:0.7,side:THREE.BackSide}); M.linerHot=tdFlat(alu?0x8e8e8b:0x6a6865,{r:0.35,m:0.7,side:THREE.BackSide,em:0xff2a12,ei:0.4});
+
+  var root=new THREE.Group(); root.name="teardown";
+  var focus=null, view={th:0.80, ph:1.12, k:1};
+  /* banks: the failed one is first and leans toward the camera */
+  var ang=Lo.angle||0, banks;
+  if((Lo.banks||1)===1) banks=[{a:0, fail:true}];
+  else if(ang>=170) banks=[{a:0, fail:true},{a:-PI/2, stub:true}];   /* boxer: the far bank lies flat behind, as a stub */
+  else banks=[{a:0, fail:true},{a:-deg(ang), seated:true}];   /* vee: the failed bank stands upright, its partner at the real included angle */
+  var lift=/headlift|gasket|warp/.test(d)?1.45*B:/valve/.test(d)?1.55*B:/cold|backfire/.test(d)?1.25*B:0.95*B, Hh=0.78*B;
+  banks.forEach(function(bk){
+    var F=new THREE.Group(); F.rotation.x=bk.a; root.add(F);
+    var bores=bk.fail&&two?[0,-pitch]:[0], len=S+pH+0.18*B, y0=Dk-len;
+    /* block barrel, cut open along the bore axis so the wall shows */
+    var x0=Math.min.apply(null,bores)-W/2, x1=W/2;
+    var cutDir=new THREE.Vector3(0,-Math.sin(bk.a),Math.cos(bk.a)), sgn=cutDir.dot(new THREE.Vector3(0,0.55,0.84))>=0?1:-1;
+    var sh=new THREE.Shape(), zc=0, zb=-sgn*D/2;
+    /* shape space: x -> x, y -> -z ; keep the half of the barrel away from the viewer */
+    var ky=function(z){ return -z; };
+    sh.moveTo(x0, ky(zb)); sh.lineTo(x1, ky(zb)); sh.lineTo(x1, ky(zc));
+    bores.slice().sort(function(a,b){return b-a;}).forEach(function(bx){ sh.lineTo(bx+R, ky(zc));
+      var n=lite?12:24; for(var i=1;i<n;i++){ var a=i/n*PI; sh.lineTo(bx+R*Math.cos(a), ky(zc - sgn*R*Math.sin(a))); } sh.lineTo(bx-R, ky(zc)); });
+    sh.lineTo(x0, ky(zc)); sh.lineTo(x0, ky(zb));
+    var bm=blockHot&&bk.fail?M.blockHot:M.block;
+    var barrel=tdM(tdExY(sh, len, lite?12:24), bm, F, 0, y0, 0);
+    if(bk.stub) return;
+    /* the bore wall that faces the viewer: liner sheen + damage */
+    bores.forEach(function(bx, bi){
+      var ln=tdM(new THREE.CylinderGeometry(R*0.998,R*0.998,len*0.995,lite?14:28,1,true, sgn>0?PI/2:-PI/2, PI), (bk.fail&&bi===0&&blockHot)?M.linerHot:M.liner, F, bx, y0+len/2, 0);
+      if(bk.fail&&bi===0&&(d==="boredist"||d==="scuffed")){ var n=lite?5:11; for(var s=0;s<n;s++){ var th=(sgn>0?PI:0)+(-0.9+1.8*s/(n-1)), x=bx+R*0.985*Math.sin(th), z=R*0.985*Math.cos(th); var sl=len*(0.45+0.35*Math.abs(Math.sin(s*1.7)));
+          var st=new THREE.Mesh(tdBoxG(), s%2?M.crack:M.score); st.scale.set(0.022*B, sl, 0.022*B); st.position.set(x, Dk-0.12*B-sl/2, z); F.add(st); }
+        if(d==="boredist"){ var ov=tdM(new THREE.TorusGeometry(R*1.0, 0.02*B, 4, 40), M.crackHot, F, bx, Dk+0.004, 0, PI/2); ov.scale.set(1.08,0.9,1); }
+        focus=focus||ln; }
+      if(bk.fail&&bi===0&&d==="wall"&&two){ var xm=-pitch/2;
+        tdCrack(F, tdZigFlat(xm, -sgn*0.05, xm, -sgn*(D/2), Dk+0.006, lite?4:8, 0.08*B, 3), 0.035*B, M.crackHot);
+        var wp=[], nw=lite?5:10; for(var q=0;q<=nw;q++) wp.push(new THREE.Vector3(xm+(q%2?0.035:-0.035)*B*(q===0||q===nw?0:1), Dk-len*0.7*q/nw, sgn*0.012));
+        tdCrack(F, wp, 0.04*B, M.crackHot);
+        var wf=new THREE.Group(); wf.position.set(xm, Dk-len/2, -sgn*0.08*B); F.add(wf); focus=wf; }
+      if(bk.fail&&bi===0&&d==="wall"&&!two){ tdCrack(F, tdZig(R*0.985, PI+sgn*0.2, Dk, PI+sgn*0.35, Dk-len*0.75, lite?5:10, 0.08*B, 6).map(function(p){ return new THREE.Vector3(p.x, p.y, sgn>0?p.z:-p.z); }), 0.04*B, M.crackHot); focus=ln; }
+      /* the neighbour's piston, still in its bore */
+      if(bk.fail&&bi===1&&!lite){ var np=tdPiston(null, B, "none", M, true); np.position.set(bx, Dk-cH-0.04*B, 0); F.add(np); }
+      /* head studs */
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(c){ var sx=bx+c[0]*(R+wall*0.5), sz=c[1]*(D/2-wall*0.5); if(sgn*sz>0) return;
+        var sL=d==="headlift"&&bk.fail?lift*0.92:0.55*B;
+        tdM(new THREE.CylinderGeometry(0.045*B, 0.045*B, sL, 8), M.stud, F, sx, Dk+sL/2, sz); });
+    });
+    if(bk.seated){ tdM(new THREE.BoxGeometry(W, Hh, D), M.head, F, 0, Dk+Hh/2+0.03*B, 0); tdM(new THREE.BoxGeometry(W*0.9, 0.32*B, D*0.75), M.cover, F, 0, Dk+Hh+0.19*B, 0); return; }
+    /* gasket, lifted half-way */
+    var gy=Dk+lift*0.42, gs=new THREE.Shape(), gxa=x0, gxb=x1;
+    gs.moveTo(gxa,-D/2); gs.lineTo(gxb,-D/2); gs.lineTo(gxb,D/2); gs.lineTo(gxa,D/2); gs.lineTo(gxa,-D/2);
+    bores.forEach(function(bx){ var h=new THREE.Path(); h.absarc(bx,0,R*1.03,0,TAU,true); gs.holes.push(h); });
+    var gk=tdM(tdExY(gs, 0.035*B, lite?16:32), M.gasket, F, 0, gy, 0);
+    bores.forEach(function(bx){ tdM(new THREE.TorusGeometry(R*1.06, 0.03*B, 4, lite?18:36), M.ring, F, bx, gy+0.035*B, 0, PI/2); });
+    if(/gasket|headlift|warp/.test(d)){
+      var gz=sgn*(D/2), gyy=gy+0.04*B;
+      if(two&&d!=="warp"){ tdCrack(F, tdZigFlat(-R*1.0, 0, -pitch+R*1.0, 0.0, gyy+0.003, 4, 0.04*B, 2), 0.05*B, M.crackHot);
+        var so=tdM(new THREE.PlaneGeometry(pitch-2*R*1.03+0.1*B, 0.32*B), M.soot, F, -pitch/2, gyy+0.002, 0, -PI/2); }
+      tdCrack(F, tdZigFlat(R*1.06*Math.sin(0.55), sgn*R*1.06*Math.cos(0.55), R*0.75, gz*0.98, gyy+0.004, 4, 0.06*B, 7), 0.05*B, M.crackHot);
+      tdM(new THREE.PlaneGeometry(0.30*B, (D/2-R*0.9)), M.soot, F, R*0.65, gyy+0.002, sgn*(R*0.9+D/2)/2, -PI/2);
+      if(d==="warp") tdM(new THREE.TorusGeometry(R*1.12, 0.02*B, 4, 36), tdFlat(0xe8e0c8,{r:0.9,m:0}), F, 0, gyy+0.004, 0, PI/2);
+      if(d==="gasket") focus=gk;
+    }
+    /* head, lifted (tilted when the studs let go, bowed when it warped) */
+    var Hd=new THREE.Group(); Hd.position.set(0, Dk+lift, 0); F.add(Hd);
+    if(d==="headlift"){ Hd.rotation.x=sgn*0.10; Hd.rotation.z=0.05; }
+    var hx=(x0+x1)/2, hw=x1-x0;
+    if(d==="warp"){ var nW=5; for(var w=0;w<nW;w++){ var f=(w+0.5)/nW-0.5, sw=hw/nW; var hb=tdM(new THREE.BoxGeometry(sw*1.02, Hh, D), M.head, Hd, hx+f*hw, Hh/2+0.14*B*(1-4*f*f), 0); hb.rotation.z=-f*0.18; } }
+    else tdM(new THREE.BoxGeometry(hw, Hh, D), M.head, Hd, hx, Hh/2, 0);
+    tdM(new THREE.BoxGeometry(hw*0.92, 0.34*B, D*0.78), M.cover, Hd, hx, Hh+0.17*B+(d==="warp"?0.14*B:0), 0);
+    /* chambers on the underside, valves, plug / injector */
+    bores.forEach(function(bx, bi){
+      tdM(new THREE.CircleGeometry(R*0.92, lite?16:28), M.dark, Hd, bx, -0.004, 0, PI/2);
+      var vk=(bk.fail&&bi===0)?(d==="valvebent"?"bent":d==="valveburn"?"burn":null):null;
+      [[-0.26,"in"],[0.26,"ex"]].forEach(function(v, vi){ var isF=vk&&vi===1;
+        var vv=tdValve(B, isF?vk:"ok", M, lite); vv.position.set(bx+v[0]*B, -(isF?0.62*B:0.20*B), sgn*0.04*B); Hd.add(vv);
+        if(isF) focus=vv; });
+      var pl=tdM(new THREE.CylinderGeometry(0.06*B,0.06*B,0.42*B,10), info.diesel?M.inj:M.steelDim, Hd, bx, Hh+0.34*B+0.21*B, 0);
+      if(info.diesel&&bk.fail&&bi===0&&d==="cold"){
+        tdM(new THREE.CylinderGeometry(0.035*B,0.035*B,Hh*1.2,8), M.inj, Hd, bx, Hh*0.4, 0);
+        var spray=tdM(new THREE.ConeGeometry(0.42*B, 0.75*B, 16, 1, true), tdFlat(0xd9c98a,{r:0.3,m:0,op:0.45,side:THREE.DoubleSide,em:0x8a7a40,ei:0.4}), Hd, bx, -0.38*B, 0);
+        tdM(new THREE.CylinderGeometry(0.03*B,0.03*B,0.5*B,8), M.inj, Hd, bx+0.32*B, -0.05*B, sgn*0.2*B, 0,0,0.5);
+        focus=spray; }
+    });
+    if(d==="headlift"||d==="warp") focus=Hd;
+    /* exhaust manifold off the viewer's side of the head */
+    if(d==="manifold"){ var MF=new THREE.Group(); MF.position.set(hx, Dk+lift+Hh*0.45, sgn*(D/2+0.75*B)); F.add(MF);
+      bores.forEach(function(bx){ tdM(new THREE.CylinderGeometry(0.15*B,0.15*B,0.55*B,12), M.castexh, MF, bx-hx, 0.05*B, -sgn*0.2*B, PI/2,0,0); });
+      tdM(new THREE.CylinderGeometry(0.24*B,0.24*B,hw*0.95,lite?14:24), M.castexh, MF, 0,-0.12*B,0.05*B*sgn, 0,0,PI/2);
+      tdCrack(MF, tdZig(0.245*B, -0.1, -0.2*B, 2.2, 0.2*B, lite?5:9, 0.03*B, 4).map(function(p){ return new THREE.Vector3(p.y*0.6, -0.12*B+p.x, 0.05*B*sgn+p.z); }), 0.035*B, M.crackHot);
+      focus=MF; }
+    /* split intake plenum above the head */
+    if(d==="backfire"){ var PL=new THREE.Group(); PL.position.set(hx, Dk+lift+Hh+0.95*B, 0); F.add(PL);
+      tdM(new THREE.BoxGeometry(hw*0.9, 0.42*B, 0.55*B), M.plenum, PL, 0,0,-0.30*B);
+      var pb=tdM(new THREE.BoxGeometry(hw*0.9, 0.42*B, 0.55*B), M.plenum, PL, 0.05*B,0.18*B,0.42*B, 0.45,0,0.04);
+      tdCrack(PL, tdZigFlat(-hw*0.45, -0.02*B, hw*0.45, -0.02*B, 0.215*B, lite?6:12, 0.08*B, 8), 0.04*B, M.crackHot);
+      tdM(new THREE.PlaneGeometry(hw*0.8, 0.30*B), M.soot, PL, 0, 0.212*B, -0.2*B, -PI/2);
+      focus=PL; }
+  });
+  /* the failed cylinder's piston and rod, pulled out and stood beside the block */
+  var Xp=W/2+0.62*B+R, PR=new THREE.Group(); PR.position.set(Xp, Dk-cH+0.25*B, 0.15*B); root.add(PR);
+  var pis=tdPiston(null, B, d, M, lite); PR.add(pis);
+  var rod=tdRod(L, B, d, M, lite); PR.add(rod);
+  if(/ringland|holed|crowncrack|scuffed|ring|valvebent/.test(d)) focus=focus&&d==="valvebent"?focus:pis;
+  if(d==="cold"&&!info.diesel) focus=pis;
+  if(/rodsnap|rodbent|rodbolt/.test(d)) focus=rod;
+  /* crank throw, dropped out of the block */
+  var CK=tdCrank(B, cr, d, M, lite); CK.position.y=-0.55*B; root.add(CK);
+  if(/crank|bearing|starve/.test(d)) focus=CK;
+  /* sump + pickup when it starved */
+  if(d==="starve"){ var SP=new THREE.Group(); SP.position.y=-0.55*B-(cr+0.30*B)-1.0*B; root.add(SP);
+    var pw=2.6*B, pd=W*1.05, ph=0.55*B;
+    tdM(new THREE.BoxGeometry(pw, 0.03*B, pd), M.pan, SP, 0,-ph,0);
+    tdM(new THREE.BoxGeometry(pw, ph, 0.03*B), M.pan, SP, 0,-ph/2,-pd/2);
+    tdM(new THREE.BoxGeometry(0.03*B, ph, pd), M.pan, SP, -pw/2,-ph/2,0);
+    tdM(new THREE.BoxGeometry(0.03*B, ph, pd), M.pan, SP, pw/2,-ph/2,0);
+    var cvp=new THREE.CatmullRomCurve3([new THREE.Vector3(-0.9*B, 1.1*B, 0), new THREE.Vector3(-0.9*B, 0.3*B, 0), new THREE.Vector3(-0.5*B, -0.25*B, 0.15*B), new THREE.Vector3(0.1*B,-ph+0.12*B,0.2*B)]);
+    tdM(new THREE.TubeGeometry(cvp, lite?12:24, 0.07*B, 8, false), M.pickup, SP, 0,0,0);
+    tdM(new THREE.CylinderGeometry(0.30*B,0.30*B,0.06*B,lite?14:24), M.pickup, SP, 0.1*B,-ph+0.10*B,0.2*B);
+    /* a slick of oil thrown to the far corner, the pickup left high and dry */
+    tdM(new THREE.PlaneGeometry(0.7*B, pd*0.9), tdFlat(0x14100a,{r:0.1,m:0.3,e:1.2}), SP, -pw/2+0.37*B, -ph+0.02*B, 0, -PI/2);
+    focus=[CK,SP]; }
+  /* turbo beside the block when the hot side or the compressor let go (or just for context on a turbo engine) */
+  var showT=d==="turbine"||d==="compressor";
+  if(showT){ var TB=tdTurboG(B, d, M, lite); TB.position.set(-(two?pitch:0)-W/2-1.55*B, Dk*0.62, 0.2*B); root.add(TB); focus=TB; }
+
+  /* views per damage: theta (around y, 0 = from +z), phi (from vertical), zoom */
+  var V={ ringland:{th:0.75,ph:0.92,k:0.72}, holed:{th:0.7,ph:0.80,k:0.7}, crowncrack:{th:0.7,ph:0.70,k:0.7}, scuffed:{th:0.75,ph:1.15,k:0.85}, ring:{th:0.7,ph:0.95,k:0.8},
+    rodsnap:{th:0.85,ph:1.20,k:1.15}, rodbent:{th:1.42,ph:1.28,k:1.05}, rodbolt:{th:0.85,ph:1.25,k:1.1}, crank:{th:0.55,ph:1.20,k:1.0}, bearing:{th:0.5,ph:1.1,k:1.0}, starve:{th:0.55,ph:1.08,k:1.25},
+    headlift:{th:0.6,ph:1.25,k:1.2}, gasket:{th:0.55,ph:0.72,k:1.05}, warp:{th:0.35,ph:1.30,k:1.15}, valvebent:{th:0.6,ph:1.38,k:0.95}, valveburn:{th:0.55,ph:1.42,k:0.95},
+    compressor:{th:0.15,ph:1.15,k:0.68}, turbine:{th:-0.35,ph:1.15,k:0.68}, boredist:{th:0.25,ph:1.02,k:1.1}, wall:{th:0.2,ph:0.85,k:1.15}, manifold:{th:0.45,ph:1.05,k:1.15}, backfire:{th:0.6,ph:0.95,k:1.1}, cold:{th:0.45,ph:1.25,k:1.1} };
+  view=V[d]||view;
+  return {root:root, focus:focus||pis, view:view, dmg:d};
+}
+
+function tdFrame(soft){
+  if(!TD.root) return;
+  var fb=new THREE.Box3(); [].concat(TD.focusObj).forEach(function(o){ var b=new THREE.Box3().setFromObject(o); if(b.isEmpty()) b.setFromCenterAndSize(o.getWorldPosition(new THREE.Vector3()), new THREE.Vector3(1.6,1.6,1.6)); fb.union(b); });   /* an empty marker group frames around its position */
+  var c=fb.getCenter(new THREE.Vector3()), sz=fb.getSize(new THREE.Vector3());
+  if(!soft && TD.view){ camState.theta=TD.view.th; camState.phi=TD.view.ph; }
+  /* the caption card covers the bottom TD.pad of the view: fit the part into what is left, and centre it there */
+  var pad=clamp(TD.pad||0, 0, 0.6), top=clamp(TD.padTop||0, 0, 0.3), vfov=deg(camera.fov), aspect=camera.aspect||1, tv=Math.tan(vfov/2)*(1-pad-top), th=Math.tan(vfov/2)*aspect;
+  var span=Math.max(sz.x,sz.y,sz.z, 1.6);
+  var need=Math.max((span*0.5)/tv, (span*0.5)/th);
+  camState.r=clamp(need*2.4*(TD.view?TD.view.k:1)*(aspect>1.2?1.2:1), 5.2, 20);   /* a wide view pulls back a touch so the part keeps its context */
+  var sh=(pad-top)*camState.r*Math.tan(vfov/2), ph=camState.phi, t=camState.theta;
+  camState.target.set(c.x+sh*Math.cos(ph)*Math.sin(t), c.y-sh*Math.sin(ph), c.z+sh*Math.cos(ph)*Math.cos(t));
+}
+function tdStep(dt, t){
+  if(!TD.on) return;
+  TD.t+=dt;
+  var p=0.5+0.5*Math.sin(TD.t*4.2), i;
+  for(i=0;i<TD.glow.length;i++){ var m=TD.glow[i]; m.emissiveIntensity=(m.userData.tdBase||0.5)*(0.45+0.95*p); }
+  var k=0.75+0.65*p;
+  for(i=0;i<TD.cracks.length;i++){ var c=TD.cracks[i]; c.color.copy(c.userData.c0).multiplyScalar(k*(GFX==="lite"?1.0:1.35)); }
+  if(TD.light) TD.light.intensity=(GFX==="lite"?2.2:1.6)*(0.55+0.6*p);
+  if(scene.fog&&TD.fog0){ scene.fog.near=camState.r+2.2; scene.fog.far=camState.r+15; }
+}
+function tdClear(){
+  if(TD.root){ scene.remove(TD.root); TD.root.traverse(function(o){ if(o.geometry&&!o.geometry.__cached) o.geometry.dispose(); }); }
+  TD.geos.forEach(function(g){ if(!g.__cached) g.dispose(); });
+  TD.mats.forEach(function(m){ m.dispose(); });
+  if(TD.light){ scene.remove(TD.light); TD.light=null; }
+  TD.root=null; TD.focusObj=null; TD.geos=[]; TD.mats=[]; TD.glow=[]; TD.cracks=[];
+}
+ENGINE_VIS.teardown=function(info){
+  if(!renderer) return null;
+  if(!info){
+    if(!TD.on) return null;
+    tdClear(); TD.on=false;
+    if(TD.fog0&&scene.fog){ scene.fog.near=TD.fog0.near; scene.fog.far=TD.fog0.far; } TD.fog0=null;
+    if(engineRoot) engineRoot.visible=true;
+    var s=TD.saved; TD.saved=null;
+    if(s){ camState.theta=s.th; camState.phi=s.ph; camState.r=s.r; camState.target.copy(s.tg); camState.autoForce=s.af; camState.auto=s.au; camState.idle=0; }
+    return null;
+  }
+  if(TD.on) tdClear();
+  else TD.saved={th:camState.theta, ph:camState.phi, r:camState.r, tg:camState.target.clone(), af:camState.autoForce, au:camState.auto};
+  if(STRIP.on) ENGINE_VIS.setStrip({on:false});
+  if(PULL.on) ENGINE_VIS.setPull({on:false});
+  var B=tdBuild(info);
+  TD.root=B.root; TD.focusObj=B.focus; TD.view=B.view; TD.dmg=B.dmg; TD.on=true; TD.t=0;
+  scene.add(B.root); B.root.updateMatrixWorld(true);
+  var bb=new THREE.Box3().setFromObject(B.root), c=bb.getCenter(new THREE.Vector3());
+  B.root.position.set(-c.x, 7.25-bb.min.y, -c.z*0.5); B.root.updateMatrixWorld(true);
+  /* the garage falls back into a close dark fog (kept just behind the parts in tdStep) so the glow reads */
+  if(scene.fog && !TD.fog0) TD.fog0={near:scene.fog.near, far:scene.fog.far};
+  TD.light=new THREE.PointLight(0xff4020, 2, 7, 2); var fb2=new THREE.Box3(); [].concat(B.focus).forEach(function(o){ fb2.expandByObject(o); fb2.expandByPoint(o.getWorldPosition(new THREE.Vector3())); }); var fc=fb2.getCenter(new THREE.Vector3());
+  TD.light.position.copy(fc).add(new THREE.Vector3(0.6, 0.9, 1.2)); scene.add(TD.light);
+  if(engineRoot) engineRoot.visible=false;
+  camState.autoForce=false; camState.auto=false; camState.idle=0;
+  tdFrame(false);
+  var tx=TD_TXT[B.dmg]||TD_TXT.ringland;
+  return {dmg:B.dmg, part:tx[0], what:tx[1], fix:tx[2]};
+};
+ENGINE_VIS.teardownSpin=function(on){ if(!TD.on) return false; camState.autoForce=on?true:false; if(!on) camState.auto=false; return !!on; };
+ENGINE_VIS.teardownText=function(id){ var d=tdDmg(id), tx=TD_TXT[d]; return {dmg:d, part:tx[0], what:tx[1], fix:tx[2]}; };
+ENGINE_VIS.teardownOn=function(){ return TD.on; };
+ENGINE_VIS.teardownPad=function(f, top){ TD.pad=+f||0; TD.padTop=+top||0; if(TD.on) tdFrame(false); };   /* fraction of the view's height under the caption card */
 if(typeof module!=="undefined" && module.exports) module.exports=ENGINE_VIS;
 if(typeof window!=="undefined")window.ENGINE_VIS=ENGINE_VIS;
 
@@ -16251,7 +16900,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.20.0.0";
+const VERSION="1.22.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -16260,8 +16909,9 @@ function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":
 const BAR_PSI=14.5038;
 const pU=()=>S&&S.psi?"psi":"bar";
 const bv=b=>{if(!(S&&S.psi))return b.toFixed(1);const v=b*BAR_PSI;return v.toFixed(v<100?1:0);};
-const P_RE=/((?:\d+(?:\.\d+)?\s?(?:–|-|\/|of|to)\s?)*)(\d+(?:\.\d+)?)\s?bar\b(?!s)/g;
-const toPsiTxt=t=>t.replace(P_RE,m=>m.replace(/\s?bar$/,"").replace(/\d+(?:\.\d+)?/g,n=>{const v=+n*BAR_PSI;return v.toFixed(v<100?1:0);})+" psi");
+const P_NUM="\\d{1,3}(?:,\\d{3})+(?!\\d)|\\d+(?:\\.\\d+)?";   // "2,000" (thousands separator) or 1.5
+const P_RE=new RegExp("((?:(?:"+P_NUM+")\\s?(?:–|-|\\/|of|to)\\s?)*)("+P_NUM+")(?:\\s?|-)bar\\b(?!s)","g");
+const toPsiTxt=t=>t.replace(P_RE,m=>{const h=/-bar$/.test(m);return m.replace(/\s?-?bar$/,"").replace(new RegExp(P_NUM,"g"),n=>{const c=n.includes(","),v=+n.replace(/,/g,"")*BAR_PSI;return v<100?v.toFixed(1):c?Math.round(v).toLocaleString("en-CA"):v.toFixed(0);})+(h?"-psi":" psi");});
 function psiNode(n){const t=n.nodeValue;if(!t||t.indexOf("bar")<0){return;}if(n.__psi!==undefined&&t===n.__psi)return;const c=toPsiTxt(t);if(c!==t){n.__bar=t;n.nodeValue=c;n.__psi=c;}}
 function psiWalk(root,on){if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;return p&&(p.nodeName==="SCRIPT"||p.nodeName==="STYLE"||p.nodeName==="TEXTAREA")?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;}});const ns=[];let n;while((n=w.nextNode()))ns.push(n);
   for(const x of ns){if(on)psiNode(x);else if(x.__bar!==undefined){if(x.nodeValue===x.__psi)x.nodeValue=x.__bar;delete x.__bar;delete x.__psi;}}}
@@ -17270,6 +17920,7 @@ function dragFinish(){
     else if(DR.night){}   // race night: purse and rep are settled when the night ends (rnFinish)
     else if(r.race&&!r.race.won){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et!=null?r.et.toFixed(2)+" s":"DNF"} — ${r.race.foul?"red light":"lost to "+r.race.name+" by "+Math.abs(r.race.margin||0).toFixed(3)+" s"}`,"bad");toast(r.race.foul?"RED LIGHT · entry gone":`LOST by ${Math.abs(r.race.margin||0).toFixed(3)} s`);}
     else if(r.et!=null){const purse=(r.et<7?25000:r.et<8?9000:r.et<9?3500:r.et<10?1500:r.et<11?600:r.et<13?200:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`,purse>0?"good":"");if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
+    if(!failed)spEvent("drag",{win:!DR.night&&!!(r.race&&r.race.won)});
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
   achCheck({type:"drag",r,failed,res,env});
@@ -17437,7 +18088,7 @@ function rnFinish(N,place){if(N.done)return;N.done=true;N.place=place;N.out=plac
   const best=(N.passes||[]).filter(p=>p.et!=null).reduce((a,p)=>a&&a.et<=p.et?a:p,null);N.best=best?{et:best.et,mph:best.mph}:null;
   const R=recs();R.nightsRun=(R.nightsRun||0)+1;if(place===1)R.nightsWon=(R.nightsWon||0)+1;if(!(R.bestFinish<=place))R.bestFinish=place;
   const cls=SIM.AERO[N.body].n,last=N.hist[N.hist.length-1];
-  if(career()){C().cash+=paid;C().rep+=rep;logEvent(`Race night · ${cls} ${N.fmt==="bracket"?"bracket":"heads-up"}: ${place===1?"WON — beat "+(rnPart(N,last.opp).name)+" in the final":(N.left?"left the night":RN_PLACE[place].toLowerCase()+(last&&last.text?", "+last.text.split(" — ")[0].toLowerCase():""))}${best?", best "+best.et.toFixed(2):""} — purse ${fmt$(paid)}${rep?", +"+rep+" rep":""}`,place<=2?"good":paid>0?"":"bad");hud();checkGoals();}}
+  if(career()){C().cash+=paid;C().rep+=rep;logEvent(`Race night · ${cls} ${N.fmt==="bracket"?"bracket":"heads-up"}: ${place===1?"WON — beat "+(rnPart(N,last.opp).name)+" in the final":(N.left?"left the night":RN_PLACE[place].toLowerCase()+(last&&last.text?", "+last.text.split(" — ")[0].toLowerCase():""))}${best?", best "+best.et.toFixed(2):""} — purse ${fmt$(paid)}${rep?", +"+rep+" rep":""}`,place<=2?"good":paid>0?"":"bad");spEvent("night",{win:place===1,finish:place>1&&place<=3,noCount:!!N.left&&place===9});hud();checkGoals();}}
 function rnLeave(){const N=rnLive();if(!N||testing)return;if(!confirm(N.stage<2?"Leave the night? Your entry is gone and you go home without a seed.":"Leave the night? You forfeit this round and take the purse for going out here."))return;
   if(N.stage>=2){const ri=N.stage-2,m=N.rounds[ri].find(x=>x.a===0||x.b===0);m.win=m.a===0?m.b:m.a;m.why="left";m.text="Didn't come to the line";N.hist.push({stage:N.stage,label:rnStageName(N,N.stage),opp:m.win,win:false,text:"Left the night — forfeit"});
     N.left=true;for(let k=ri;k<3;k++){rnResolve(N,k);if(k<2&&!N.rounds[k+1])N.rounds[k+1]=rnNextPairs(N.rounds[k]);}rnFinish(N,ri===0?5:ri===1?3:2);}
@@ -17541,7 +18192,7 @@ async function shareSlip(l){const r=l.res.drag,res=l.res;const W=1080,H=1350,c=d
   x.fillStyle="#8e887b";x.font=F(26);const sh=r.shifts.length?"Shifts "+r.shifts.map(s=>s.rpm.toLocaleString()).join(" · "):"No shifts";x.fillText(sh,100,y+20);x.fillText(`${r.ratios.join(" · ")} × ${r.veh.final} · ${r.veh.tyreDia}" · ${r.spinTime>0.3?"spun "+r.spinTime.toFixed(1)+" s":"hooked"}`,100,y+60);
   {const plain=h=>String(h||"").replace(/<[^>]+>/g,"");const rt=r.race&&r.race.rt!=null?(r.race.foul?"RT red light":"RT "+r.race.rt.toFixed(3)):"";const ls=plain(launchSlip(r));x.fillStyle="#b8b2a3";x.font=F(24);let yy=y+100;
     for(const line of [rt,ls].filter(Boolean)){const words=line.split(" ");let cur="";for(const w of words){const t=cur?cur+" "+w:w;if(x.measureText(t).width>W-200){x.fillText(cur,100,yy);yy+=34;cur=w;}else cur=t;}if(cur){x.fillText(cur,100,yy);yy+=34;}}}
-  x.fillStyle="#4a505a";x.font=F(24);x.fillText(new Date().toLocaleDateString()+(career()?" · week "+C().week:" · test cell"),100,H-100);
+  spSlipDraw(x,W,H);x.fillStyle="#4a505a";x.font=F(24);x.fillText(new Date().toLocaleDateString()+(career()?" · week "+C().week:" · test cell"),100,H-100);
   const blob=await new Promise(r=>c.toBlob(r,"image/png"));
   // published page: the viewer hands the file over (share sheet on iOS, download elsewhere)
   const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
@@ -17652,6 +18303,7 @@ function pullFinish(){
     if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
     else{const purse=Math.round((PULL_PURSE[r.place-1]||0)*(PULL_PAY[C0.tier]||1)/10)*10,rep=(PULL_REP[r.place-1]||0)+(r.full?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`Pull: ${C0.n} — ${dist}${po!=null?" (pull-off "+po.toFixed(1)+" ft)":""}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
+    spEvent("pull",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
     hud();checkGoals();}
   else toast(failed?`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`:`${dist} · ${pl}`);
   PR.p=null;achCheck({type:"pull",r,failed});save();recompute();renderTest();
@@ -17846,7 +18498,7 @@ function saltFinish(){
     else if(outcome==="impound")logEvent(`Salt: ${cls.key} — ${mphTxt}, over the record. Impounded for a backup run`,"good");
     else if(!failed&&r.stopWhy!=="spun")logEvent(`Salt: ${cls.key} — ${mphTxt}${r.pb&&!r.pb.first?" (class best)":""}`,"");
     if(r.pb&&!r.pb.first&&outcome!=="record")rep+=1;
-    C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;hud();checkGoals();}
+    C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;spEvent("salt",{record:outcome==="record"});hud();checkGoals();}
   toast(outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)} MPH`:outcome==="impound"?`${mphTxt} · OVER THE RECORD — IMPOUND`:failed?"BROKE ON THE SALT":r.stopWhy==="spun"?"SPUN ON THE SALT":dq?`${mphTxt} · NOT ACCEPTED — NO CHUTE`:`${mphTxt}`);
   SR.p=null;save();recompute();renderTest();
   revealVerdict();
@@ -17981,7 +18633,7 @@ function dlDraw(id){const M=DLM[id],cv=$(id+"Cv");if(!M||!cv||!cv.isConnected)re
   x.setLineDash([]);D.sh.forEach(h=>{const px=X(byT?h.t:h.x);x.fillStyle=INK;x.beginPath();x.moveTo(px,padT-1);x.lineTo(px-4,padT-8);x.lineTo(px+4,padT-8);x.closePath();x.fill();x.fillStyle=soft;x.textAlign="center";x.fillText(h.g+"–"+(h.g+1),px,padT-11);});
   // scales
   x.textAlign="left";x.font="10px "+ff;let sx=padL+2;
-  [["rpm",DL.on.rpm,D.rpmMax/1000+"k rpm"],["spd",DL.on.spd||DL.on.whl,D.mphMax+" mph"],["boost",DL.on.boost&&D.hasB,D.bMax+" bar"],["egt",DL.on.egt,D.eMax+"°C"]].forEach(([k,on,t])=>{if(!on)return;x.fillStyle=col(k);x.fillText(t,sx,10);sx+=x.measureText(t).width+9;});
+  [["rpm",DL.on.rpm,D.rpmMax/1000+"k rpm"],["spd",DL.on.spd||DL.on.whl,D.mphMax+" mph"],["boost",DL.on.boost&&D.hasB,(S.psi?bv(D.bMax):D.bMax)+" "+pU()],["egt",DL.on.egt,D.eMax+"°C"]].forEach(([k,on,t])=>{if(!on)return;x.fillStyle=col(k);x.fillText(t,sx,10);sx+=x.measureText(t).width+9;});
   // cursor
   const i=M.cur;if(i!=null&&i>=0&&i<D.n){const px=X(xs[i]);x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,padT-12);x.lineTo(px,padT+ch);x.stroke();
     const dot=(arr,m,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,Y(arr[i],m),3.2,0,7);x.fill();};if(DL.on.rpm)dot(D.rpm,D.rpmMax,col("rpm"));if(DL.on.spd)dot(D.mph,D.mphMax,col("spd"));if(DL.on.whl)dot(D.whl,D.mphMax,INK);if(DL.on.boost&&D.hasB)dot(D.boost,D.bMax,col("boost"));if(DL.on.egt)dot(D.egt,D.eMax,col("egt"));}
@@ -18039,7 +18691,7 @@ function showResult(res,env){
   else if(career()&&env.testOnly)v=`<div class="verdict marg"><div style="flex:1"><div class="big">${env.testType==="endurance"?"SURVIVED":"PASSED"} · TEST ONLY</div><p>Run at ${env.ambientC} °C · ${env.altitudeM} m · coolant ${env.coolantC} °C · oil ${env.oilC} °C. ${env.testType==="endurance"?"Off-standard hours don't count toward the 100 h goal":"Contracts certify in the standard cell"} — 20 °C · 500 m · coolant 90 °C · oil 100 °C. Reset the cell and run it again${env.testType==="endurance"?"":" to certify"}.</p></div></div>`;
   else v=`<div class="verdict ${res.rel>=85?"pass":"marg"}"><div style="flex:1"><div class="big">${res.rel>=85?"CERTIFIED":"CERTIFIED · MARGINAL"}</div>
     <div class="vstats"><div><b>${res.rel}</b><span>Reliability</span></div><div><b>${res.raceSpec?res.racePasses:res.econ.toFixed(1)}</b><span>${res.raceSpec?"Passes to freshen":"L/100 km"}</span></div><div><b>${Math.round(res.smooth)}</b><span>Smoothness</span></div><div><b>${Math.round(res.kg)}</b><span>kg</span></div><div><b>${fmt$(res.cost)}</b><span>Unit cost</span></div>${res.diesel?`<div><b>${Math.round(res.smoke||0)}%</b><span>Smoke · ${smokeWord(res,1)}</span></div>`:`<div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div>`}</div></div></div>`;
-  $("verdict").innerHTML=v;
+  $("verdict").innerHTML=v;tdVerdict(res,env);
   let extra="";
   if(env.testType==="endurance"&&res.endurance){const d=res.endurance.damage||{};const top=Object.entries(d).sort((a,b)=>b[1]-a[1]).slice(0,5);
     extra+=`<div class="sec"><h2>Fatigue damage after ${res.endurance.failedAtHour!=null?res.endurance.failedAtHour:env.hours} h</h2><div class="stress">${top.map(([id,f])=>{const t=res.tests.find(x=>x.id===id)||{name:id};const p=Math.min(1,f);return `<div class="st ${p>=1?"crit":p>.6?"warn":"good"}"><div class="n">${t.name}</div><div class="bar"><i style="width:${Math.min(100,p*80)}%"></i></div><div class="p">${Math.round(p*100)}%</div></div>`;}).join("")}</div>`;
@@ -18051,6 +18703,7 @@ function showResult(res,env){
   if(env.testType==="salt"&&res.salt)extra+=saltSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
+  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt))extra=spSlipHtml()+extra;
   $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
@@ -18097,7 +18750,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
-  testing=true;renderTest();ensureSound();
+  testing=true;abStop();renderTest();ensureSound();
   if(S.env.testType==="drag"){dragStart();return;}
   if(S.env.testType==="pull_sled"){pullStart();return;}
   if(S.env.testType==="salt"){saltStart();return;}
@@ -18201,7 +18854,10 @@ const ACH=[
   {g:"shop",id:"zero",name:"Zero defects",desc:"Ten straight weeks in the field with no warranty claim.",ic:"shield",tier:"silver",check:()=>career()&&C().cleanWeeks>=10},
   {g:"shop",id:"debtfree",name:"Debt-free",desc:"Take a loan, then pay the bank back in full.",ic:"coin",tier:"bronze",check:()=>career()&&!!(S.achN||{}).loan&&C().loan<=0},
   {g:"shop",id:"cash100",name:"Six figures",desc:"Hold $100,000 in cash.",ic:"coin",tier:"silver",check:()=>career()&&C().cash>=1e5},
-  {g:"shop",id:"year",name:"A full year",desc:"Survive to week 52.",ic:"cal",tier:"silver",check:()=>career()&&C().week>=52}
+  {g:"shop",id:"year",name:"A full year",desc:"Survive to week 52.",ic:"cal",tier:"silver",check:()=>career()&&C().week>=52},
+  {g:"shop",id:"spon1",name:"Sponsored",desc:"Sign your first sponsor.",ic:"star",tier:"bronze",check:()=>career()&&spS().hist.signed>0},
+  {g:"shop",id:"spondone",name:"Good for the brand",desc:"Finish a sponsorship with every obligation met.",ic:"tick",tier:"silver",check:()=>career()&&spS().hist.done>0},
+  {g:"shop",id:"sponfull",name:"Full livery",desc:"Carry three sponsors at once.",ic:"trophy",tier:"gold",check:()=>career()&&spS().hist.max>=3}
 ];
 let achQ=[],achBusy=false,achOpen=null;
 const achN=()=>ACH.filter(a=>S.ach&&S.ach[a.id]).length;
@@ -18253,6 +18909,47 @@ function renderAch(){const box=$("achBox");if(!box)return;const have=S.ach||{};
     +ACH_GROUPS.map(([g,n])=>{const L=ACH.filter(a=>a.g===g),k=L.filter(a=>have[a.id]).length;return `<details class="achg" data-g="${g}"${achOpen.has(g)?" open":""}><summary>${n}<span>${k} / ${L.length}</span></summary><div class="achs">${L.map(card).join("")}</div></details>`;}).join("");
   achRefresh();}
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("achg")&&achOpen){if(d.open)achOpen.add(d.dataset.g);else achOpen.delete(d.dataset.g);}},true);
+/* ===================== TEARDOWN (exploded view of what broke) ===================== */
+const TD_SPECIAL={lean:1,backfire:1,panel:1,turbo:1,manifold:1,piston:1,worn:1};
+function tdFail(L){   // {id, test} for a run that broke, else null
+  if(!L||!L.res)return null;const res=L.res,env=L.env||{},tt=env.testType;let id=null;
+  const fromTests=()=>{let i=null;
+    if(tt==="overrev"&&res.overrev&&!res.overrev.survived){const e=(res.overrev.events||[]).join(" ");i=/Valve float/.test(e)?"valve_piston":/Rod beam/.test(e)?"rod_tension":/Rod bolts/.test(e)?"rod_bolts":/oil pressure/.test(e)?"bearing_load":null;}
+    else if(tt==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null){const dm=res.endurance.damage||{};for(const t of res.tests)if(dm[t.id]>=1){i=t.id;break;}}
+    if(!i&&res.fails&&res.fails.length){const t=res.tests.find(x=>x.name===res.fails[0]);i=t?t.id:null;}return i;};
+  if(tt==="drag"){if(!res.dragFailed)return null;const k=res.dragFailKind;id=TD_SPECIAL[k]?k:(fromTests()||k||"rod");}
+  else if(tt==="pull_sled"){if(!res.pullFailed)return null;const k=res.pullFailKind;id=k&&(TD_SPECIAL[k]||res.tests.some(t=>t.id===k))?k:(fromTests()||k||"rod");}
+  else{const broke=(res.fails&&res.fails.length)||(tt==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)||(tt==="overrev"&&res.overrev&&!res.overrev.survived);if(!broke)return null;id=fromTests()||"rod_tension";}
+  return {id,test:res.tests.find(t=>t.id===id)||null};
+}
+function tdRunName(L){const tt=L.env&&L.env.testType;return tt==="drag"?"strip pass":tt==="pull_sled"?"sled pull":tt==="endurance"?"endurance run":tt==="overrev"?"over-rev test":"dyno pull";}
+function tdVerdict(res,env){const f=tdFail({res,env});const v=$("verdict").firstElementChild;if(!f||!v)return;const box=v.firstElementChild||v;
+  box.insertAdjacentHTML("beforeend",`<div class="tdgo"><button class="btn sm danger" data-td="1">Teardown — see what broke</button></div>`);}
+function tdAnaRender(){const el=$("tdAna");if(!el)return;const f=tdFail(S.last);if(!f){el.hidden=true;el.innerHTML="";return;}
+  const tx=ENGINE_VIS.teardownText?ENGINE_VIS.teardownText(f.id):null;el.hidden=false;
+  el.innerHTML=`<h2>Last failure <span class="cnt">${tdRunName(S.last)}</span></h2><div class="tdrow"><p><b style="color:var(--crit)">${tx?tx.part:"Broken part"}</b> — ${tx?tx.what:""}.</p><button class="btn sm danger" data-td="1">Teardown</button></div>`;}
+let tdIsOpen=false;
+function tdShort(x,n){x=String(x||"").replace(/<[^>]*>/g,"");const m=x.match(/^.*?[.!?](\s|$)/);x=(m?m[0]:x).trim();return x.length>n?x.slice(0,n-1).trim()+"…":x;}
+function tdOpen(){const L=S.last,f=tdFail(L);if(!f||testing||!ENGINE_VIS.teardown)return;
+  const c=L.cfg||S.cfg,lay=LAYOUTS[c.layout]||{banks:1,angle:0,n:4};
+  const isD=SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
+  const tx=ENGINE_VIS.teardown({failId:f.id,layout:{banks:lay.banks,angle:lay.angle,n:lay.n},bore:c.bore,stroke:c.stroke,rodRatio:c.rodRatio,diesel:isD,cyl:lay.n,asp:c.asp,blockMat:c.blockMat,headMat:c.headMat});
+  if(!tx)return;tdIsOpen=true;$("app").classList.remove("onstrip");$("app").classList.add("td");
+  const t=f.test,r=L.res;let meas=t?`${t.name}: ${t.sub}`:"";
+  if(!t){const why=((r.drag&&r.drag.reasons)||(r.pull&&r.pull.reasons)||[]).find(x=>/lean|backfire|turbine|manifold|crown|sled|let go|tired/i.test(x));meas=why?tdShort(why,150):"";}
+  $("tdRun").textContent=tdRunName(L);$("tdPart").textContent=tx.part;$("tdWhat").textContent=tx.what+".";
+  $("tdMeas").textContent=meas;$("tdMeas").hidden=!meas;
+  $("tdFix").innerHTML=`<i>Fix:</i> `+(t&&t.fix?t.fix:tx.fix).replace(/</g,"&lt;");
+  $("tdSpin").classList.remove("on");$("tdSpin").setAttribute("aria-pressed","false");
+  $("tdCap").hidden=false;tdPadSync();setTimeout(()=>{tdPadSync();$("tdBack").focus({preventScroll:true});},350);}
+function tdPadSync(){if(!tdIsOpen)return;const v=$("view").getBoundingClientRect(),c=$("tdCap").getBoundingClientRect();const h=document.querySelector("#hud .hudbtns"),hb=h?h.getBoundingClientRect().bottom:v.top;
+  if(v.height>0)ENGINE_VIS.teardownPad(deskOn()?0.1:Math.max(0,(v.bottom-c.top)/v.height),Math.max(0,(hb-v.top)/v.height));}
+function tdClose(){if(!tdIsOpen)return;tdIsOpen=false;$("tdCap").hidden=true;$("app").classList.remove("td");ENGINE_VIS.teardown(null);}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-td]");if(b){e.preventDefault();tdOpen();}});
+$("tdBack").addEventListener("click",tdClose);
+$("tdSpin").addEventListener("click",()=>{const on=!$("tdSpin").classList.contains("on");ENGINE_VIS.teardownSpin(on);$("tdSpin").classList.toggle("on",on);$("tdSpin").setAttribute("aria-pressed",String(on));});
+document.addEventListener("keydown",e=>{if(tdIsOpen&&e.key==="Escape"){e.preventDefault();e.stopPropagation();tdClose();}},true);
+$("runTest").addEventListener("click",tdClose,true);   // a new run always starts from the assembled engine
 
 /* ===================== ANALYSIS ===================== */
 function renderAnalysis(){
@@ -18278,7 +18975,7 @@ function renderAnalysis(){
     if(r.exhaustSys)rows.push(["Exhaust backpressure",r.exhaustSys.open?"none · open":`${r.exhaustSys.dpBar.toFixed(2)} bar`]);}
   $("tele").classList.toggle("rot",!!r.rotary);$("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
-  renderRecords();renderAch();dlAnalysis();
+  renderRecords();renderAch();dlAnalysis();tdAnaRender();
 }
 function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
@@ -18551,15 +19248,127 @@ $("contracts").addEventListener("click",e=>{const rb=e.target.closest("[data-reb
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   if(C().loan>0){const i=Math.round(C().loan*LOAN_RATE);C().loan+=i;t+=` · loan interest ${fmt$(i)}`;}
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();checkGoals();achCheck({type:"week"});
+  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
+/* ===================== SPONSORS (career) =====================
+   Made-up brands approach the shop on reputation and results: race nights, pulls, the salt, delivered orders. An offer pays a
+   weekly retainer and/or bonuses per win, record or top-3 class finish, for a set number of weeks, and comes with obligations.
+   Break one and the deal ends with a cash penalty and a rep hit. Slots open with rep (SP_SLOT_REP). State lives on C().spons;
+   spS() fills its defaults, so old saves load clean. The primary sponsor goes on the hood and the rest on the sides
+   (ENGINE_VIS.setLivery). Nothing here touches S.cfg, so cfgHash and the dyno are unchanged. */
+const SP_BRANDS=[
+  {id:"heron",name:"Blue Heron",tag:"Motor oil",type:"oil",shape:"drop",c1:"#16325c",c2:"#f2b630",c3:"#f4f1e8"},
+  {id:"coldwater",name:"Coldwater",tag:"Lubricants",type:"oil",shape:"ring",c1:"#0d5c63",c2:"#9fe3e0",c3:"#ffffff"},
+  {id:"ironhorn",name:"Ironhorn",tag:"Performance parts",type:"parts",shape:"gear",c1:"#26282c",c2:"#e8462b",c3:"#f4f1e8"},
+  {id:"corvid",name:"Corvid",tag:"Pistons & rods",type:"parts",shape:"diamond",c1:"#3b1f5c",c2:"#c9b3f2",c3:"#ffffff"},
+  {id:"gopher",name:"Gopher Valley",tag:"Feed & seed",type:"feed",shape:"leaf",c1:"#2f6b2a",c2:"#f2d04a",c3:"#fffbe8"},
+  {id:"coulee",name:"Red Butte",tag:"Farmers' co-op",type:"feed",shape:"shield",c1:"#8c1d18",c2:"#f4f1e8",c3:"#ffffff"},
+  {id:"gripline",name:"Gripline",tag:"Race tyres",type:"tyre",shape:"ring",c1:"#111214",c2:"#f2c230",c3:"#ffffff"},
+  {id:"hollow",name:"Hollow Ridge",tag:"Rubber co.",type:"tyre",shape:"wing",c1:"#f2efe6",c2:"#1e4fa3",c3:"#16181c"},
+  {id:"moose",name:"Static Moose",tag:"Energy drink",type:"energy",shape:"bolt",c1:"#1a1a1a",c2:"#7cf03a",c3:"#ffffff"},
+  {id:"wildoat",name:"Wild Oat",tag:"Energy soda",type:"energy",shape:"star",c1:"#e2541c",c2:"#fff3b0",c3:"#ffffff"},
+  {id:"northlight",name:"Northlight",tag:"Race fuels",type:"fuel",shape:"star",c1:"#0e1f3d",c2:"#ff7a1a",c3:"#f4f1e8"}];
+const SP_TYPES={oil:"Oil company",parts:"Parts maker",feed:"Local feed store",tyre:"Tyre brand",energy:"Energy drink",fuel:"Fuel supplier"};
+const SP_LIKES={oil:["night","pull","salt"],parts:["sale","night","salt"],feed:["pull"],tyre:["night","drag"],energy:["night","drag","salt"],fuel:["salt","night"]};
+const SP_OBL={oil:["nights","pulls"],parts:["deliver"],feed:["pulls"],tyre:["nights"],energy:["nights","nodiesel"],fuel:["salt","nodiesel"]};
+const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
+  deliver:n=>`Ship at least ${n} engine order${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
+const SP_SLOT_REP=[0,120,300];
+const SP_EVT={night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines"};
+function spS(){const c=C();const s=c.spons&&typeof c.spons==="object"?c.spons:(c.spons={});
+  if(!Array.isArray(s.active))s.active=[];if(!Array.isArray(s.offers))s.offers=[];if(!s.form||typeof s.form!=="object")s.form={};
+  if(!s.hist||typeof s.hist!=="object")s.hist={};for(const k of ["signed","done","broken","earned","max"])s.hist[k]=+s.hist[k]||0;
+  if(!s.seed)s.seed=((c.seed||1)^0x5f3759df)>>>0||7;return s;}
+function spRng(){const s=spS();s.seed=(s.seed*1664525+1013904223)>>>0;return s.seed/4294967296;}
+function spBrand(id){return SP_BRANDS.find(b=>b.id===id)||SP_BRANDS[0];}
+function spSlots(){return SP_SLOT_REP.filter(r=>C().rep>=r).length;}
+function spDiesel(){return isCI(S.cfg.fuel);}
+function spPrimary(){const s=spS();return s.active.some(a=>a.b===s.primary)?s.primary:(s.active[0]?s.active[0].b:null);}
+const spR10=v=>Math.round(v/10)*10,spR50=v=>Math.round(v/50)*50;
+/* a new offer: the brand leans toward whatever the shop has been doing lately (form), the money toward its reputation */
+function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s.active.map(a=>a.b).concat(s.offers.map(o=>o.b)));
+  const pool=SP_BRANDS.filter(b=>!taken.has(b.id));if(!pool.length)return null;
+  const w=pool.map(b=>0.4+SP_LIKES[b.type].reduce((a,k)=>a+(s.form[k]||0),0)+(kind&&SP_LIKES[b.type].includes(kind)?3:0));
+  let r=spRng()*w.reduce((a,v)=>a+v,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;const b=pool[i],likes=SP_LIKES[b.type];
+  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.8+Math.min(2,C().rep/250),style=spRng();
+  const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
+  const bon={win:spR50(350*scale*bm),finish:likes.some(k=>k==="night"||k==="pull")?spR50(120*scale*bm):0,record:likes.includes("salt")?spR50(1200*scale*bm):0};
+  const pick=SP_OBL[b.type][Math.floor(spRng()*SP_OBL[b.type].length)];
+  const n={nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick];
+  const obl=[{k:pick,n:n||0}];if(C().rep>=10&&spRng()<0.5)obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
+  const o={id:Math.floor(spRng()*1e9),b:b.id,weeks,ret,bon,obl,pen:spR50(Math.max(500,ret*2+bon.win*0.5)),penRep:4+tier*2,exp:C().week+2,
+    why:kind&&SP_EVT[kind]?`Saw what you did at ${SP_EVT[kind]}.`:""};
+  s.offers.push(o);return o;}
+function spLivery(){let L=null;if(S&&career()){const s=spS(),p=spPrimary();if(p)L={hood:spBrand(p),sides:s.active.filter(a=>a.b!==p).map(a=>spBrand(a.b))};}
+  try{ENGINE_VIS.setLivery(L);}catch(e){}}
+function spDrop(a){const s=spS();s.active=s.active.filter(x=>x!==a);if(s.primary===a.b)s.primary=spPrimary();}
+function spBreak(a,why){const b=spBrand(a.b);C().cash-=a.pen;C().rep=Math.max(0,C().rep-a.penRep);spS().hist.broken++;spDrop(a);
+  logEvent(`${b.name} pulled the sponsorship — ${why}. ${fmt$(a.pen)} penalty, −${a.penRep} rep`,"bad");setTimeout(()=>toast(`${b.name.toUpperCase()} · DEAL BROKEN · −${fmt$(a.pen)}`),1600);}
+function spEnd(a){const b=spBrand(a.b),s=spS();const miss=a.obl.filter(o=>o.k!=="rep"&&o.k!=="nodiesel"&&(o.have||0)<o.n);
+  if(miss.length){C().cash-=a.pen;C().rep=Math.max(0,C().rep-a.penRep);s.hist.broken++;logEvent(`${b.name} deal ended short — ${miss.map(o=>SP_OBL_TXT[o.k](o.n).toLowerCase()+" ("+(o.have||0)+")").join(", ")}. ${fmt$(a.pen)} penalty, −${a.penRep} rep`,"bad");}
+  else{const rep=3+repTierIdx();C().rep+=rep;s.hist.done++;logEvent(`${b.name} deal done — every obligation met, ${fmt$(a.earned)} earned, +${rep} rep`,"good");}
+  spDrop(a);}
+/* weekly: retainers, the rep floor, contracts running out, offers expiring, new approaches */
+function spWeek(){if(!career())return;const s=spS();let paid=0;
+  for(const a of s.active.slice()){if(a.ret){C().cash+=a.ret;a.earned+=a.ret;s.hist.earned+=a.ret;paid+=a.ret;}
+    const ro=a.obl.find(o=>o.k==="rep");if(ro&&C().rep<ro.n){spBreak(a,`reputation fell below ${ro.n}`);continue;}
+    if(C().week>=a.end)spEnd(a);}
+  if(paid)logEvent(`Sponsors: ${fmt$(paid)} in retainers`,"good");
+  for(const k in s.form)s.form[k]=Math.round(s.form[k]*70)/100;
+  s.offers=s.offers.filter(o=>o.exp>=C().week);
+  const tot=Object.values(s.form).reduce((a,v)=>a+v,0);
+  if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
+  spLivery();}
+/* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
+function spEvent(kind,o){if(!career()||ff)return;const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
+  if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
+  const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
+  if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
+  const t=o.record?"record":o.win?"win":o.finish?"finish":null,got=[];let sum=0;
+  if(t)for(const a of s.active){const v=a.bon&&a.bon[t];if(v){C().cash+=v;a.earned+=v;s.hist.earned+=v;sum+=v;got.push(`${spBrand(a.b).name} ${fmt$(v)}`);}}
+  if(got.length){logEvent(`Sponsor bonus (${t==="finish"?"top-3 finish":t}): ${got.join(", ")}`,"good");setTimeout(()=>toast(`SPONSOR BONUS · +${fmt$(sum)}`),3400);}
+  if(t&&s.offers.length<3&&spRng()<(t==="record"?0.7:t==="win"?0.45:0.2)){const of=spGen(kind);if(of)logEvent(`${spBrand(of.b).name} saw that and wants to talk — see Market`,"good");}
+  spLivery();}
+function spSign(id){const s=spS();const o=s.offers.find(x=>x.id==id);if(!o||s.active.length>=spSlots())return false;
+  const a=Object.assign({},o,{w0:C().week,end:C().week+o.weeks,earned:0,obl:o.obl.map(q=>({k:q.k,n:q.n,have:0}))});delete a.exp;delete a.why;
+  s.active.push(a);s.offers=s.offers.filter(x=>x!==o);s.hist.signed++;s.hist.max=Math.max(s.hist.max,s.active.length);if(!spPrimary()||s.active.length===1)s.primary=a.b;
+  logEvent(`Signed with ${spBrand(a.b).name} for ${a.weeks} weeks${a.ret?" — "+fmt$(a.ret)+"/week":""}`,"good");spLivery();achCheck({type:"sponsor"});return true;}
+const spLogoUrl=(()=>{const m={};return b=>m[b.id]||(m[b.id]=ENGINE_VIS.logoCanvas(b,512,192).toDataURL());})();
+function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPrimary()===o.b,live=mode==="active";
+  const bo=o.bon||{},cells=[];if(o.ret)cells.push([fmt$(o.ret),"per week"]);if(bo.win)cells.push([fmt$(bo.win),"per win"]);if(bo.record)cells.push([fmt$(bo.record),"per record"]);if(bo.finish)cells.push([fmt$(bo.finish),"top-3 finish"]);
+  const obl=o.obl.map(q=>{const c=q.k!=="rep"&&q.k!=="nodiesel",have=q.have||0,ok=c?have>=q.n:q.k==="rep"?C().rep>=q.n:!spDiesel();
+    const cls=live?(ok?"ok":c?"run":"no"):(q.k==="nodiesel"&&spDiesel()?"no":"");
+    const tail=live&&c?`${have} / ${q.n}`:q.k==="rep"?`now ${C().rep}`:q.k==="nodiesel"&&spDiesel()?"this build is diesel":"";
+    return `<div class="${cls}"><span>${SP_OBL_TXT[q.k](q.n)}</span>${tail?`<i>${tail}</i>`:""}</div>`;}).join("");
+  const full=s.active.length>=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
+  const btns=live?`${!prim?`<button class="btn info" data-spprim="${o.b}">Move to hood</button>`:""}<button class="btn danger" data-spdrop="${o.b}">Walk away</button>`
+    :`<button class="btn ${full?"ghost":"pri"}" data-spsign="${o.id}" ${full?"disabled":""}>${full?(next?`Slots full · rep ${next} opens one`:"Slots full"):"Sign the deal"}</button><button class="btn ghost" data-spno="${o.id}">Decline</button>`;
+  return `<div class="card spon${prim?" prim":""}"><div class="sphead"><img src="${spLogoUrl(b)}" alt="${b.name} logo" width="512" height="192"><div><div class="client">${SP_TYPES[b.type]}${live?(prim?" · on the hood":" · on the sides"):""}</div>
+    <div class="spname"><b>${b.name}</b><span>${live?`week ${Math.min(o.weeks,C().week-o.w0+1)} of ${o.weeks}`:`${o.weeks} weeks · offer open till wk ${o.exp}`}</span></div></div></div>${!live&&o.why?`<p class="spfine">${o.why}</p>`:""}
+    <div class="money spm">${cells.map(c=>`<div><b>${c[0]}</b><span>${c[1]}</span></div>`).join("")}</div><div class="spobl">${obl}</div>
+    <p class="spfine">Break it: ${fmt$(o.pen)} and ${o.penRep} rep${live?` · earned ${fmt$(o.earned)} so far`:""}</p><div class="spbtns">${btns}</div></div>`;}
+function spRender(){const box=$("spons");if(!box||!career())return;const s=spS(),slots=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
+  $("sponCnt").textContent=`${s.active.length} / ${slots}`;
+  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}. Brands notice shops that race and win: race nights, pulls, the salt and delivered orders. The primary sponsor goes on the hood, the rest on the sides.`;
+  box.innerHTML=(s.active.length?`<div class="cgroup g-now"><h3>Signed<span>${s.active.length}</span></h3>${s.active.map(a=>spCard(a,"active")).join("")}</div>`:"")
+    +`<div class="cgroup g-far"><h3>Offers<span>${s.offers.length}</span></h3>${s.offers.length?s.offers.map(o=>spCard(o,"offer")).join(""):`<p class="hint">No one is calling yet. Put the shop's name out there — enter a race night, a pull or a speed trial.</p>`}</div>`;}
+function spSlipHtml(){if(!career())return"";const s=spS();if(!s.active.length)return"";const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
+  return `<div class="spslip"><span>Sponsored by</span>${L.map(id=>{const b=spBrand(id);return `<img src="${spLogoUrl(b)}" alt="${b.name}" width="512" height="192">`;}).join("")}</div>`;}
+function spSlipDraw(x,W,H){if(!career())return;const s=spS();if(!s.active.length)return;const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
+  let xx=W-100;for(let i=L.length-1;i>=0;i--){xx-=150;x.drawImage(ENGINE_VIS.logoCanvas(spBrand(L[i]),512,192),xx,H-152,150,56.25);xx-=10;}}
+$("spons").addEventListener("click",e=>{if(!career())return;const s=spS();
+  const sg=e.target.closest("[data-spsign]");if(sg){if(sg.disabled)return;const o=s.offers.find(x=>x.id==sg.dataset.spsign);if(o&&spSign(o.id)){save();hud();renderShop();toast(`SIGNED · ${spBrand(o.b).name.toUpperCase()}`);buzz(20);}return;}
+  const no=e.target.closest("[data-spno]");if(no){s.offers=s.offers.filter(x=>x.id!=no.dataset.spno);save();renderShop();return;}
+  const pr=e.target.closest("[data-spprim]");if(pr){s.primary=pr.dataset.spprim;spLivery();save();renderShop();toast(`${spBrand(s.primary).name.toUpperCase()} · ON THE HOOD`);return;}
+  const dr=e.target.closest("[data-spdrop]");if(dr){const a=s.active.find(x=>x.b===dr.dataset.spdrop);if(!a)return;if(!confirm(`Walk away from ${spBrand(a.b).name}? It costs ${fmt$(a.pen)} and ${a.penRep} rep.`))return;
+    spBreak(a,"you walked away");spLivery();save();hud();renderShop();}});
 function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  if(!career())return;
-  refillContracts();
+  spLivery();if(!career())return;
+  refillContracts();spRender();
   $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${dc.hp.toLocaleString()}</b><span>dyno hp cap</span></div><div><b>${C().loan>0?fmt$(C().loan):Object.keys(C().owned).length}</b><span>${C().loan>0?"bank loan":"upgrades owned"}</span></div>`;
@@ -18622,7 +19431,7 @@ $("contracts").addEventListener("click",e=>{
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
   logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}${coreLog(cd,cr)}`,f.ok?"good":"");
   if(tourStep>=0)tourEnd();
-  C().contracts=C().contracts.filter(x=>x.id!==k.id);achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  C().contracts=C().contracts.filter(x=>x.id!==k.id);spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}
   const cert=C().cert;if(!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const o=buyers(cert).find(x=>x.k.seg===b.dataset.sell);if(!o)return;const k=o.k,d=o.d,units=d.units,unit=d.unit;
   const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
@@ -18630,7 +19439,7 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   C().fleet.push({week:C().week,client:k.name,name:k.name,seg:k.seg,req:k.req,units,hash:cert.hash,engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:true});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
-  if(tourStep>=0)tourEnd();achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
 $("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
@@ -19052,7 +19861,7 @@ let soundReady=false;
 /* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */
 function sfx(n){if(soundReady&&S.sound)ENGINE_SOUND.event(n);}
 function ensureSound(){try{ENGINE_SOUND.init();ENGINE_SOUND.setVolume(S.vol/100);soundReady=true;if(S.sound)ENGINE_SOUND.start();}catch(e){console.warn(e);}}
-$("sndBtn").addEventListener("click",()=>{S.sound=!S.sound;ensureSound();if(S.sound){ENGINE_SOUND.start();setTimeout(applySoundQuality,50);}else ENGINE_SOUND.stop();$("sndBtn").classList.toggle("on",S.sound);save();toast(S.sound?"SOUND ON":"SOUND OFF");});
+$("sndBtn").addEventListener("click",()=>{S.sound=!S.sound;ensureSound();if(S.sound){ENGINE_SOUND.start();setTimeout(applySoundQuality,50);}else{ENGINE_SOUND.stop();if(AB.playing)abStop();}$("sndBtn").classList.toggle("on",S.sound);save();toast(S.sound?"SOUND ON":"SOUND OFF");});
 $("idleBtn").addEventListener("click",()=>{run.idle=!run.idle;$("idleBtn").classList.toggle("on",run.idle);if(run.idle){ensureSound();if(!S.sound){S.sound=true;$("sndBtn").classList.add("on");ENGINE_SOUND.start();}sfx("start");}});
 let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0,alsHot=0;
 /* ---------- sound bench: hold two builds and switch between them ----------
@@ -19076,6 +19885,7 @@ function abRender(){
     :(AB.A&&AB.B)?"Both loaded. Tap Play A, then Play B.":"Capture a build into A, change something, capture it into B.";}
 function abPlay(k){
   if(!AB[k]){toast("Capture a build into "+k+" first");return;}
+  if(testing){toast("Wait for the run to finish");return;}
   if(!S.sound){S.sound=true;$("sndBtn").classList.add("on");}
   ensureSound();AB.playing=k;abRender();buzz(8);
 }
@@ -19119,10 +19929,11 @@ function tick(now){
     else alsHot=0;}
   if(ENGINE_VIS.als)ENGINE_VIS.als(alsAct);
   ENGINE_VIS.setRun({on,rpm,load,fail:run.fail,failKind:run.failKind,redline:S.cfg.redline,smooth:quick?quick.smooth:L.smooth,first:L.firstOrder,second:L.secondOrder,n:L.n,angle:L.angle,stroke:S.cfg.stroke,rodRatio:S.cfg.rodRatio,cam:camV,wear:quick&&wearInfo(quick)?wearInfo(quick).w:0,smoke:dieselSmoke(quick,rpm,load)});
-  if(AB.playing&&AB[AB.playing]){
-    const c=AB[AB.playing];
+  if(AB.playing&&AB[AB.playing]&&!testing){
+    const c=AB[AB.playing],ev=simEnv({testType:"pull"}),ek=JSON.stringify(ev);
+    if(!AB.sim||AB.sim.c!==c||AB.sim.ek!==ek)AB.sim={c,ek,r:SIM.simulate(c,ev)};   // one simulate per capture, not two per frame
+    const r=AB.sim.r;
     if(soundReady&&S.sound){
-      const r=SIM.simulate(c,simEnv({testType:"pull"}));
       const rp=r.rpms,bc=r.boostCurve;
       let bb=0;
       if(c.asp!=="na"&&bc&&rp&&rp.length>1){
@@ -19132,9 +19943,9 @@ function tick(now){
       ENGINE_SOUND.set({rpm:AB.rpm,load:AB.load,cfg:c,layout:LAYOUTS[c.layout],boostBar:bb,
         knock:r.knock.retardDeg,profileId:undefined,diesel:(SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci),clatter:r.clatter||0});
     }
-    const cl=LAYOUTS[c.layout],cq=SIM.simulate(c,simEnv({testType:"pull"}));
+    const cl=LAYOUTS[c.layout];
     ENGINE_VIS.setRun({on:true,rpm:AB.rpm,load:AB.load,fail:null,failKind:null,redline:c.redline,
-      smooth:cq.smooth,first:cl.firstOrder,second:cl.secondOrder,n:cl.n,angle:cl.angle,
+      smooth:r.smooth,first:cl.firstOrder,second:cl.secondOrder,n:cl.n,angle:cl.angle,
       stroke:c.stroke,rodRatio:c.rodRatio,cam:c.cam});
     requestAnimationFrame(tick);return;
   }
@@ -19167,7 +19978,7 @@ function tick(now){
 let curTab="build";
 /* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
-function showTab(t){tabScroll[curTab]=$("panel").scrollTop;curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+function showTab(t){tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
   if(t==="test")renderTest();if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
@@ -19313,7 +20124,7 @@ function boot(){
   applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();spLivery();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
 }
