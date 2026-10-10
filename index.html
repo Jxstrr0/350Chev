@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.18.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.19.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1354,6 +1354,38 @@ const ENGINE_SIM = (function () {
     headers_merge: { name: "Merge-collector 4-1", sub: "VE+0.055 backP 0.66", info: "Stepped primaries into a tapered merge: the pulse leaving one cylinder pulls a real vacuum on the next during overlap. Peaky, and worth genuine power.", veBonus: 0.055, backP: 0.66, cost: 1250, massKg: 10, req: "flow" }
   };
 
+  /* ---- exhaust system: everything after the manifold (or the turbine). The stock pipe, the OEM muffler, no cat and no
+     cutout is the system every engine here was always tested with, so it adds nothing; every other choice is a separate
+     term on top of the manifold's (exhSysOf). K is the pressure loss in velocity heads at the pipe's own gas speed. ---- */
+  OPT.pipe = {
+    stock: { name: "Stock pipe", sub: "OEM size for the engine", info: "The factory pipe, sized for the engine it came on: about 100 m/s of exhaust at full power. It never chokes the engine you built and never flatters it either.", cost: 0, massKg: 0 },
+    s225: { name: "Single 2.25\"", sub: "57 mm · one pipe", info: "The pipe under every economy car. Plenty for a 1.6 at full song; a 500 hp V8 tries to push three times the gas through it and spends its top end fighting the pipe.", dia: 2.25, runs: 1, cost: 220, massKg: 9 },
+    s250: { name: "Single 2.5\"", sub: "64 mm · one pipe", info: "The usual cat-back on a sporty four or a mild six. About a quarter more area than 2.25\" for a few dollars more.", dia: 2.5, runs: 1, cost: 280, massKg: 10 },
+    d250: { name: "Dual 2.5\"", sub: "2 × 64 mm", info: "One pipe per bank on a vee, or a Y-pipe split on an inline. Twice the area of a single 2.5\" and the classic V8 note.", dia: 2.5, runs: 2, cost: 620, massKg: 19, req: "shop1" },
+    d300: { name: "Dual 3\"", sub: "2 × 76 mm", info: "Race-sized duals. Over 700 hp of flow before the pipe matters, and a deeper, heavier note. On a small four it is just weight and drone.", dia: 3.0, runs: 2, cost: 880, massKg: 23, req: "flow" },
+    t400: { name: "4\" turbo-back", sub: "102 mm · one pipe", info: "One huge mandrel-bent pipe straight off the turbine. A turbine sees whatever the pipe after it sees, multiplied by its own pressure ratio, so on a boosted engine the downpipe is worth more than any other exhaust part.", dia: 4.0, runs: 1, cost: 760, massKg: 15, req: "boost" },
+    open: { name: "Open headers", sub: "zoomies · nothing after", info: "Collector straight to the air, or short zoomie tubes turned out of the bodywork. No pipe, no muffler, no cat: the least restriction there is, the loudest engine in the pits, and no road buyer will touch it.", open: true, cost: 90, massKg: 2 }
+  };
+  OPT.muffler = {
+    stock: { name: "OEM baffled", sub: "reverse flow · quiet", info: "Perforated tubes and reversing chambers that cancel the pulses against each other. Quiet and durable, and it costs real backpressure at full power.", K: 3.0, db: 0, cost: 0, massKg: 0 },
+    chambered: { name: "Chambered", sub: "baffles · bark", info: "Angled baffles bounce the pulses into each other instead of through packing. About half the restriction of the OEM can and the hard-edged bark of every muscle car since 1990.", K: 1.5, db: 6, cost: 240, massKg: 7 },
+    glasspack: { name: "Glasspack", sub: "straight-through · rasp", info: "A perforated tube wrapped in fibreglass inside a can. Nearly free-flowing, loud, and raspier every year as the packing blows out.", K: 0.45, db: 10, cost: 90, massKg: 3 },
+    turbo: { name: "Turbo muffler", sub: "S-flow · deep, quiet", info: "Two or three perforated S-bends through a big oval can. Quieter than a chambered box with less restriction than the OEM one; a turbine upstream has already eaten the sharpest part of the pulse.", K: 1.1, db: 2.5, cost: 180, massKg: 8 },
+    straight: { name: "Straight pipe", sub: "no muffler at all", info: "A length of tube where the muffler was. Every pulse leaves at full amplitude: free flow, a crackle on the overrun and a ticket waiting at the end of the street.", K: 0, db: 16, cost: 40, massKg: 0 }
+  };
+  OPT.cat = {
+    none: { name: "No cat", sub: "nothing in the way", info: "No catalyst and no filter: what the engine burns is what leaves the pipe.", K: 0, db: 0, cost: 0, massKg: 0 },
+    oem: { name: "OEM cat", sub: "400 cpsi ceramic", info: "A ceramic honeycomb washcoated with platinum, palladium and rhodium. Cleans up the exhaust and takes the edge off the note, at the price of a dense core in the gas path.", K: 2.0, db: -2, cost: 380, massKg: 7, fam: "si" },
+    hiflow: { name: "High-flow cat", sub: "200 cpsi metal", info: "A metal-foil core with half the cells. Most of the cleanup and about a third of the restriction; the road-legal compromise on a modified engine.", K: 0.7, db: -1, cost: 520, massKg: 5, fam: "si", req: "flow" },
+    dpf: { name: "DOC + DPF", sub: "smoke ≈ 0 · backpressure", info: "An oxidation cat ahead of a wall-flow particulate filter. The filter traps the soot, so the stack runs clean whatever the tune does, and burns it off every few hundred kilometres. It is the most restrictive thing in any exhaust.", K: 3.5, db: -3, smokeK: 0.04, cost: 2400, massKg: 24, fam: "ci" },
+    delete: { name: "DPF delete", sub: "straight section + tune", info: "The filter replaced by a straight section and the regeneration tuned out. Flows like no filter at all and puts every bit of soot back out of the stack, which is the first thing an on-road buyer checks.", K: 0, db: 0.5, cost: 450, massKg: 0, fam: "ci", req: "shop1" }
+  };
+  OPT.cutout = {
+    none: { name: "No cutout", sub: "one way out", info: "All the exhaust goes through the system.", cost: 0, massKg: 0 },
+    closed: { name: "Cutout closed", sub: "street mode", info: "An electric butterfly valve teed off the downpipe, shut: everything still goes through the cat and muffler. This is how a road buyer will drive it.", cost: 420, massKg: 3, req: "shop1" },
+    open: { name: "Cutout open", sub: "dumps at the downpipe", info: "The butterfly open: the exhaust leaves before the cat and muffler, as loud and as free as open headers. The dyno sees the power; a road buyer judges the engine with it shut.", open: true, cost: 420, massKg: 3, req: "shop1" }
+  };
+
   /* ---- launch control (ECU) — strip only: nothing here changes a dyno pull ---- */
   OPT.launchCtl = {
     none: { name: "No launch control", sub: "right foot only", info: "The driver holds the revs with the throttle and drops the clutch. Every launch is a little different, and a turbo sits asleep on the line until the car is already moving.", cost: 0 },
@@ -1467,6 +1499,14 @@ const ENGINE_SIM = (function () {
       ]
     },
     {
+      title: "Exhaust system", fields: [
+        { key: "pipe", type: "seg", label: "Pipe size", optTable: "pipe" },
+        { key: "muffler", type: "seg", label: "Muffler", optTable: "muffler", showIf: (c) => c.pipe !== "open" },
+        { key: "cat", type: "seg", label: "Catalyst", labelIf: c => isDiesel(c) ? "Diesel aftertreatment" : null, optTable: "cat", showIf: (c) => c.pipe !== "open" },
+        { key: "cutout", type: "seg", label: "Electric cutout", optTable: "cutout", showIf: (c) => c.pipe !== "open" }
+      ]
+    },
+    {
       title: "Fuel & tune", fields: [
         { key: "fuel", type: "seg", label: "Fuel", optTable: "fuel" },
         { key: "ethanolPct", type: "slider", label: "Ethanol content (sensor)", min: 0, max: 85, step: 1, nudge: 1, unit: "", fmt: (v) => "E" + Math.round(v == null ? 85 : v), showIf: (c) => c.fuel === "flex" },
@@ -1526,7 +1566,8 @@ const ENGINE_SIM = (function () {
     injectors: "i240", fuelPump: "p190", dInj: "rotary_ve", dNoz: "stock",
     oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "none",
     cooling: "std", exhaust: "cast_tubular", cover: "black",
-    launchCtl: "none", twoStepRpm: 4000, launchRetard: 20, transBrake: "none"
+    launchCtl: "none", twoStepRpm: 4000, launchRetard: 20, transBrake: "none",
+    pipe: "stock", muffler: "stock", cat: "none", cutout: "none"
   };
 
   const DEFAULT_ENV = {
@@ -1773,6 +1814,75 @@ const ENGINE_SIM = (function () {
   /* =====================================================================
      10.  simulate()
      ===================================================================== */
+  /* ---- exhaust system after the manifold -------------------------------------------------
+     Pressure loss through pipe, cat and muffler is K velocity heads: dP = K * mdot^2 / (2 rho A^2), so it
+     scales with the square of the exhaust mass flow. A 2.25" single passes a 1.6 at ~90 m/s and chokes a
+     500 hp V8 at over 300 m/s. The stock pipe is sized for 100 m/s at this engine's rated flow (mRef), so
+     the stock system is the baseline already inside the manifold's backP and every choice is the
+     difference from it. Long pipes run sonic well before the sums say so: sat() soft-limits the loss. */
+  const EXH_RHO = 0.54, EXH_V0 = 100, EXH_KPIPE = 1.2, EXH_SAT = 0.9e5;
+  function exhParts(cfg) {
+    const dsl = isDiesel(cfg);
+    let cat = OPT.cat[cfg.cat] || OPT.cat.none;
+    if (cat.fam && cat.fam !== (dsl ? "ci" : "si")) cat = OPT.cat.none;   // a DPF on a petrol engine (or a cat on a diesel) left over from a fuel swap does nothing
+    return { pipe: OPT.pipe[cfg.pipe] || OPT.pipe.stock, muf: OPT.muffler[cfg.muffler] || OPT.muffler.stock,
+             cat: cat, cut: OPT.cutout[cfg.cutout] || OPT.cutout.none, dsl: dsl };
+  }
+  // exhaust mass flow (kg/s) the stock pipe is sized for: rated rpm, full boost
+  function exhRefFlow(cfg, g) {
+    const boost = cfg.asp !== "na" ? cfg.boost : 0;
+    return 1.2 * g.Vd * clamp(cfg.redline, 1800, 12500) / 120 * 0.9 * (1 + 0.85 * boost) * 1.07;
+  }
+  /* returns null for the system every engine was tested with; otherwise the loss functions (Pa) */
+  function exhSysOf(cfg, g, openOverride, always) {
+    const X = exhParts(cfg), open = X.pipe.open || (openOverride != null ? openOverride : X.cut.open);
+    if (!always && !open && X.pipe === OPT.pipe.stock && X.muf === OPT.muffler.stock && X.cat === OPT.cat.none) return null;
+    const mRef = exhRefFlow(cfg, g);
+    const aStock = mRef / (EXH_RHO * EXH_V0);
+    const id = X.pipe.dia ? (X.pipe.dia * 25.4 - 3.3) / 1000 : 0;          // 16-gauge wall
+    const aPipe = X.pipe.dia ? X.pipe.runs * PI / 4 * id * id : aStock;
+    const kSys = open ? 0 : (EXH_KPIPE + X.muf.K + X.cat.K);
+    const kStock = EXH_KPIPE + OPT.muffler.stock.K;
+    const sat = (x) => x / (1 + x / EXH_SAT);
+    const dp = (m, pAmb, k, a) => { const rho = EXH_RHO * pAmb / 101325; return sat(k * m * m / (2 * rho * a * a)); };
+    return {
+      parts: X, mRef: mRef, aPipe: aPipe, aStock: aStock, open: open,
+      dp: (m, pAmb) => dp(m, pAmb, kSys, aPipe),                           // this system's own loss
+      dpStock: (m, pAmb) => dp(m, pAmb, kStock, aStock),
+      delta: (m, pAmb) => dp(m, pAmb, kSys, aPipe) - dp(m, pAmb, kStock, aStock)
+    };
+  }
+  /* the UI's view of a system: its own loss (bar) at an exhaust flow, gas speed (m/s), and the flow (kg/s) it passes at 100 m/s */
+  function exhaustInfo(cfg, mKgS) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const S = exhSysOf(cfg, geometry(cfg), null, true), m = mKgS || S.mRef;
+    return { dpBar: S.dp(m, 101325) / 1e5, speed: S.open ? 0 : m / (EXH_RHO * S.aPipe), flow100: EXH_RHO * S.aPipe * EXH_V0, mRef: S.mRef, open: S.open, runs: S.parts.pipe.runs || 1 };
+  }
+  /* drive-by noise estimate, dBA at 7.5 m under a part-throttle pull at three-quarter rated speed (capped at 4,500).
+     Bigger cylinders, more of them and more revs are louder; a turbine eats the pulse; the system after the manifold
+     adds or takes away on top. db is what a road buyer hears (cutout shut); dbOpen is with the cutout open. */
+  function exhaustNoise(cfg) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const L = LAYOUTS[cfg.layout] || LAYOUTS.I4, g = geometry(cfg), X = exhParts(cfg);
+    const kind = (OPT.asp[cfg.asp] || OPT.asp.na).kind;
+    const rpmT = Math.min(0.75 * clamp(cfg.redline, 1800, 12500), 4500);
+    let base = 64 + 10 * Math.log10(Math.max(0.3, g.Vd * 1000)) + 15 * Math.log10(rpmT / 3000) + 1.5 * Math.log2(L.n / 4)
+      + 2.0 * (cfg.cam / 100 - 0.4)
+      + ({ cast_log: -0.5, cast_tubular: 0, headers_equal: 1.0, headers_merge: 1.5 }[cfg.exhaust] || 0);
+    if (X.dsl) base += 3;                                  // combustion knock carries through the block
+    const turbo = kind === "turbo";
+    if (turbo) base -= cfg.asp === "twin_turbo" || cfg.asp === "compound" ? 3.5 : 3;
+    else if (kind !== "na") base += 1;                     // blower whine
+    const pipeDb = { stock: 0, s225: -0.5, s250: 0, d250: 1.5, d300: 2.5, t400: 2 }[cfg.pipe] || 0;
+    const sys = (open) => {
+      let d = open ? 19 : pipeDb + X.muf.db + X.cat.db;
+      if (turbo && d > 0) d *= 0.8;                        // the turbine has already taken the edge off
+      return d;
+    };
+    const r1 = (v) => Math.round(v * 10) / 10;
+    return { db: r1(base + sys(!!X.pipe.open)), dbOpen: r1(base + sys(!!X.pipe.open || !!X.cut.open)) };
+  }
+
   function simulate(cfg, env) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     env = Object.assign({}, DEFAULT_ENV, env || {});
@@ -1875,6 +1985,9 @@ const ENGINE_SIM = (function () {
       rhoFull = (air.p + cfg.boost * 1e5 - O.icc.dp * 1e5) / (R_AIR * (T2f - O.icc.eff * (T2f - air.T)));
     }
     const atomise = dsl ? clamp(1.15 - dInj.bar / 2600, 0.35, 1) * (1 + 0.06 * (dNoz.mult - 1)) : 1;   // finer spray, less soot; big holes, bigger drops
+    /* exhaust system after the manifold: null (no extra term at all) for the stock system */
+    const exS = exhSysOf(cfg, g), exP = exhParts(cfg), exSmokeK = exP.cat.smokeK || 1;
+    let exFlowPk = 0, exDpPk = 0, exDeltaPk = 0;
     const cetane = dsl ? (O.fu.cetane || 48) : 0;
 
     for (let rpm = 1000; rpm <= redline + 0.5; rpm += 100) {
@@ -1914,7 +2027,13 @@ const ENGINE_SIM = (function () {
 
       /* ---- breathing -------------------------------------------------- */
       const ve0 = veAt(rpm, cfg, g, vm, O.ink, O.hd, Tcharge, bBar);
-      const ve = gasF ? ve0 * gasVeK : ve0;
+      /* exhaust system: the extra pressure after the manifold. A turbine passes it upstream multiplied by its own
+         expansion ratio; behind the exhaust valve it raises residual gas and, with overlap, pushes exhaust back
+         into the intake, so a high-rpm, big-cam engine loses breathing as well as pumping work. */
+      const exM = ve0 * rhoCharge * g.Vd * rpm / 120 * (1 + 1 / (O.fu.afr * cfg.lambda));
+      let exDp = 0;
+      if (exS) exDp = exS.delta(exM, air.p) * (bm.kind === "turbo" ? pManAbs0 / air.p : 1);
+      const ve = (gasF ? ve0 * gasVeK : ve0) * (exS ? clamp(1 - (0.10 + 0.25 * cfg.cam / 100) * exDp / pMan, 0.75, 1.04) : 1);
 
       /* ---- fuel delivery ------------------------------------------------
          The tune asks for air x fuel/air at the commanded lambda; nitrous
@@ -1944,7 +2063,8 @@ const ENGINE_SIM = (function () {
         if (lamE < lamMin) lamMin = lamE;
         // black smoke: unburnt carbon once the spray runs short of air
         const sm = clamp(Math.pow(clamp((1.45 - lamE) / 0.40, 0, 1), 1.3) * atomise * (1 + 0.08 * Math.max(0, -tmg)), 0, 1)
-          * (n2oDsl && n2oLph > 0 ? clamp(1 - 1.6 * n2oBite, 0.2, 1) : 1);   // the shot's oxygen burns the soot
+          * (n2oDsl && n2oLph > 0 ? clamp(1 - 1.6 * n2oBite, 0.2, 1) : 1)   // the shot's oxygen burns the soot
+          * exSmokeK;                                                         // a DPF traps what comes out
         smokeCurve.push(sm);
         if (sm > smokePk) smokePk = sm;
       }
@@ -2023,6 +2143,7 @@ const ENGINE_SIM = (function () {
         const pExh = air.p * (1 + 0.20 * O.exh.backP * sq(rpm / redline));
         pmep = (pExh - pMan);
       }
+      if (exS) pmep += exDp;                                  // pipe, cat and muffler, on top of the manifold
 
       /* ---- friction (Chen-Flynn + viscosity) ---------------------------- */
       const mps = 2 * (g.s / 1000) * rpm / 60;
@@ -2068,7 +2189,7 @@ const ENGINE_SIM = (function () {
       egtCurve.push(egt);
       bmepArr.push(bmepPa / 1e5);
 
-      if (hp > peakHp) { peakHp = hp; peakHpRpm = rpm; flowAtPeak = hp / 10; }
+      if (hp > peakHp) { peakHp = hp; peakHpRpm = rpm; flowAtPeak = hp / 10; exFlowPk = exM; exDpPk = exS ? exS.dp(exM, air.p) : 0; exDeltaPk = exDp; }
       if (tq > peakTq) { peakTq = tq; peakTqRpm = rpm; }
       if (pmaxBar > maxPmax) { maxPmax = pmaxBar; maxPmaxRpm = rpm; maxImep = imep / 1e5; }
       if (egt > maxEgt) maxEgt = egt;
@@ -2572,6 +2693,8 @@ const ENGINE_SIM = (function () {
     kg += (bm.kind === "turbo" ? bm.units * 9 * (O.ts.maxFlow > 100 ? 1.8 : 1) : bm.kind === "roots" ? 22 : bm.kind === "screw" ? 26 : bm.kind === "centrifugal" ? 11 : 0);
     kg += O.icc.massKg + O.osys.massKg + O.cool.massKg + O.exh.massKg * (L.banks) + 14;
     kg += gasF ? gs.massKg : (fpump.massKg || 0);                    // a belt pump hangs off the engine; in-tank ones live in the car
+    const exRuns = exP.pipe.runs || 1, exOpenH = !!exP.pipe.open;
+    kg += exP.pipe.massKg + (exOpenH ? 0 : exRuns * (exP.muf.massKg + exP.cat.massKg) + exP.cut.massKg);   // 0 for the stock system
     kg = Math.round(kg);
 
     const perCyl = O.pis.cost + O.ring.cost + O.rod.cost + O.rb.cost
@@ -2583,7 +2706,8 @@ const ENGINE_SIM = (function () {
       + O.oil.cost + O.osys.cost + O.sq.cost + O.cool.cost + O.exh.cost * L.banks + O.cov.cost
       + ((OPT.launchCtl[cfg.launchCtl] || OPT.launchCtl.none).cost + (OPT.transBrake[cfg.transBrake] || OPT.transBrake.none).cost)
       + (portInj ? L.n * (inj.perCyl || 1) * inj.cost : 0) + (gasF ? gs.cost : fpump.cost)
-      + (dsl ? dInj.cost + L.n * dNoz.cost : 0);
+      + (dsl ? dInj.cost + L.n * dNoz.cost : 0)
+      + exP.pipe.cost + (exOpenH ? 0 : exRuns * (exP.muf.cost + exP.cat.cost) + exP.cut.cost);
     const cost = Math.round((0.155 * rawCost + 120 * L.n + 250) * (shop.costFac || 1));
 
     /* WOT indicated work at the cruise point, used as the 100%-load reference */
@@ -2706,6 +2830,9 @@ const ENGINE_SIM = (function () {
     }
 
     const correctedHp = peakHp * j1349(air.pd, env.ambientC);
+    const exNoise = exhaustNoise(cfg);
+    // the stock system's own loss at the same flow (what the manifold's backP already carries)
+    const exhStockDp = (m) => { const a = exhRefFlow(cfg, g) / (EXH_RHO * EXH_V0), rho = EXH_RHO * air.p / 101325, x = (EXH_KPIPE + OPT.muffler.stock.K) * m * m / (2 * rho * a * a); return x / (1 + x / EXH_SAT); };
 
     return {
       rpms: rpms, torque: torque, power: power, boostCurve: boostCurve,
@@ -2732,6 +2859,9 @@ const ENGINE_SIM = (function () {
       alt: gasF ? { gas: true, sys: cfg.gasSys && OPT.gasSys[cfg.gasSys] ? cfg.gasSys : "mixer", displacePct: Math.round((1 - gasVeK) * 1000) / 10, unit: O.fu.unit || "L",
           econNative: Math.round(clamp(fuelKgS * 3600 / O.fu.dens, 0.5, 80) * 10) / 10, kgh: pumpNeedPk * fuelRho, capKgh: pumpCapPk * fuelRho, coldBar: lpgBar || null }
         : O.fu.flex ? { flex: true, ePct: O.fu.ePct, winter: flexW } : null,
+      noiseDb: exNoise.db, noiseDbOpen: exNoise.dbOpen,
+      exhaustSys: { flowKgS: exFlowPk, dpBar: (exS ? exDpPk : exhStockDp(exFlowPk)) / 1e5,
+        stockDpBar: exhStockDp(exFlowPk) / 1e5, deltaBar: exDeltaPk / 1e5, mRef: exhRefFlow(cfg, g), open: !!(exS && exS.open) },
       tests: tests, fails: fails, rel: Math.round(rel * 10) / 10,
       lifeHours: Math.round(lifeHours), firstToFail: firstToFail,
       racePasses: racePasses, raceSpec: raceSpec,
@@ -3148,6 +3278,28 @@ const ENGINE_SIM = (function () {
     if (cfg.exhaust === "headers_merge" && !boosted && cfg.cam > 55) {
       add("good", "Merge collector with overlap",
         "The departing pulse from the previous cylinder pulls a genuine negative pressure at the port during overlap, which scavenges the chamber and pulls fresh charge in. That is free volumetric efficiency.");
+    }
+    /* --- exhaust system after the manifold (all quiet for the stock system) ------- */
+    {
+      const XS = quick.exhaustSys, XP = exhParts(cfg), nzDb = quick.noiseDb;
+      const pumpFuel = dsl || cfg.fuel === "r87" || cfg.fuel === "r91" || cfg.fuel === "r94";
+      const loud = XP.pipe.open || XP.muf === OPT.muffler.straight;
+      if (loud && pumpFuel)
+        add(nzDb > 86 ? "bad" : "warn", XP.pipe.open ? "Open headers on a road build" : "Straight pipe on a road build",
+          "About " + Math.round(nzDb) + " dB on a drive-by test, against road limits of 74\u201382 dB. A road buyer hears that before they hear the power; a chambered or turbo muffler keeps most of the flow at a fraction of the noise.");
+      if (XS.deltaBar > 0.06 && XP.pipe.dia)
+        add(XS.deltaBar > 0.2 ? "bad" : "warn", "Pipe too small for the power",
+          "At peak power " + XS.flowKgS.toFixed(2) + " kg/s of exhaust goes through " + (XP.pipe.runs === 2 ? "two " : "one ") + XP.pipe.dia + "\" pipe" + (XP.pipe.runs === 2 ? "s" : "") + ": " + XS.dpBar.toFixed(2) + " bar of backpressure"
+          + (boosted && OPT.asp[cfg.asp].kind === "turbo" ? ", and the turbine passes it upstream multiplied by its own pressure ratio" : "") + ". Exhaust gas wants under about 100 m/s; " + (cfg.pipe === "d300" ? "dual 3\" is as big as pipes come here, so a cutout or open headers are the only freer ways out." : "go up a size."));
+      if (XP.cut.open)
+        add("warn", "Cutout open = illegal on the street",
+          "The dyno sees the open cutout: about " + Math.round(quick.noiseDbOpen) + " dB and the freest exhaust there is. Road buyers judge it shut, at " + Math.round(nzDb) + " dB, and so does the law.");
+      if (dsl && cfg.cat === "delete")
+        add(quick.smoke > 30 ? "bad" : "warn", "DPF delete smokes",
+          "Peak smoke is " + Math.round(quick.smoke) + "% opacity and there is nothing left to catch it. On-road diesel buyers cap smoke at 20\u201330%; a DOC + DPF takes it to almost nothing for a couple of percent of power.");
+      else if (dsl && cfg.cat === "dpf" && quick.smoke < 10)
+        add("good", "Filter on the stack",
+          "The DPF holds the stack to " + Math.round(quick.smoke) + "% opacity whatever the fuelling does: any on-road buyer's smoke limit is met. It costs " + XS.dpBar.toFixed(2) + " bar of backpressure at peak power.");
     }
 
     /* --- fasteners, misc ------------------------------------------------------- */
@@ -5461,7 +5613,8 @@ const ENGINE_SIM = (function () {
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
-    simulate: simulate, combos: combos, cfgLabel: cfgLabel
+    simulate: simulate, combos: combos, cfgLabel: cfgLabel,
+    exhaustNoise: exhaustNoise, exhaustInfo: exhaustInfo, exhSysOf: exhSysOf, exhParts: exhParts
   };
 })();
 
@@ -5530,6 +5683,31 @@ const ENGINE_SOUND = (function () {
     headers_merge: { tilt:0.92, drive:1.25, rasp:0.55, level:1.04,
                      form:[[195,1.4,5],[820,2.8,8],[2450,1.6,3]] }
   };
+
+  /* the system after the manifold, layered on the manifold's voicing: lvl = loudness, drive = bark/distortion,
+     bright = how much top end gets out (low-pass), fq = pipe resonance pitch (big duals sit lower), rasp = gain on the
+     top formant (dB), body = gain on the bottom one. Stock pipe + OEM muffler + no cat is exactly 1/1/1/1/0/0. */
+  var SYS = {
+    pipe:    { stock:{}, s225:{ fq:1.12, bright:0.95, body:-1 }, s250:{ fq:1.05 }, d250:{ fq:0.90, lvl:1.06, body:1.5 },
+               d300:{ fq:0.80, lvl:1.10, body:3 }, t400:{ fq:0.84, lvl:1.06, body:2 } },
+    muffler: { stock:{}, chambered:{ lvl:1.32, drive:1.18, bright:1.12, rasp:2, body:1.5 }, glasspack:{ lvl:1.50, drive:1.32, bright:1.30, rasp:4.5 },
+               turbo:{ lvl:1.10, bright:0.90, rasp:-1.5, body:1 }, straight:{ lvl:1.85, drive:1.55, bright:1.50, rasp:6, body:1 } },
+    cat:     { none:{}, oem:{ lvl:0.82, drive:0.85, bright:0.78, rasp:-2.5 }, hiflow:{ lvl:0.90, drive:0.92, bright:0.88, rasp:-1.2 },
+               dpf:{ lvl:0.76, drive:0.82, bright:0.70, rasp:-3.5 }, "delete":{ lvl:1.03, bright:1.04 } },
+    open:    { lvl:2.05, drive:1.70, bright:1.65, rasp:7, fq:1.22, body:-1 }
+  };
+  function sysVoice(cfg) {
+    var v = { lvl:1, drive:1, bright:1, fq:1, rasp:0, body:0 }, parts;
+    var open = cfg.pipe === "open" || cfg.cutout === "open";
+    if (open) parts = [SYS.open];
+    else parts = [SYS.pipe[cfg.pipe] || {}, SYS.muffler[cfg.muffler] || {}, SYS.cat[cfg.cat] || {}];
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      if (p.lvl) v.lvl *= p.lvl; if (p.drive) v.drive *= p.drive; if (p.bright) v.bright *= p.bright; if (p.fq) v.fq *= p.fq;
+      if (p.rasp) v.rasp += p.rasp; if (p.body) v.body += p.body;
+    }
+    return v;
+  }
 
   // shot size in crank hp, mirroring OPT.nitrous in the sim
   var OPTN2O = { none: 0, wet150: 150, direct250: 250, prog400: 400, prog700: 700, dry75: 75, dry125: 125, wet2stage: 250, diesel100: 100 };
@@ -5687,7 +5865,8 @@ const ENGINE_SOUND = (function () {
     var L = LAY[lk] || LAY.I4;
     var key = [lk, cfg.intake, cfg.asp, cfg.turboSize, cfg.exhaust, cfg.head,
                cfg.cam, cfg.lift, cfg.redline, cfg.crank, cfg.nitrous,
-               Math.round(num(cfg.bore, 86) / 4), Math.round(num(cfg.stroke, 86) / 4)].join("|");
+               Math.round(num(cfg.bore, 86) / 4), Math.round(num(cfg.stroke, 86) / 4),
+               cfg.pipe, cfg.muffler, cfg.cat, cfg.cutout].join("|");
     var dz = !!diesel; if (dz) key += "|dz";
     if (DERIVE_CACHE.key === key && DERIVE_CACHE.prof) return DERIVE_CACHE.prof;
 
@@ -5759,7 +5938,7 @@ const ENGINE_SOUND = (function () {
       cylJitter: jit, lope: lope, intake: iv, vvl: vvl, ind: ind,
       mech: { tick: tick, whine: whine },
       n2o: num((OPTN2O[cfg.nitrous] || 0), 0), n2oProg: (cfg.nitrous === "prog400" || cfg.nitrous === "prog700") ? 1 : 0,
-      cyl: cc, dz: dz, attack: dz ? 75 : 0,
+      cyl: cc, dz: dz, attack: dz ? 75 : 0, sys: sysVoice(cfg),
       sub: clamp(0.34 + 0.62 * Math.min(1.35, big) - cam * 0.42 + (dz ? 0.16 : 0), 0.30, 1.25),
       level: clamp(1.06 - n * 0.017 + (big - 1) * 0.07, 0.84, 1.14),
       wet: 0.19, redline: num(cfg.redline, 7000)
@@ -6264,10 +6443,10 @@ const ENGINE_SOUND = (function () {
       curWaveKey = wk;
     }
     var ex = EXH[p.exh] || EXH.cast_tubular;
-    var f = ex.form;
-    apNow(N.f1.frequency, f[0][0]); N.f1.Q.value = f[0][1]; apNow(N.f1.gain, f[0][2]);
-    apNow(N.f2.frequency, f[1][0]); N.f2.Q.value = f[1][1]; apNow(N.f2.gain, f[1][2]);
-    apNow(N.f3.frequency, f[2][0]); N.f3.Q.value = f[2][1]; apNow(N.f3.gain, f[2][2]);
+    var f = ex.form, sv = p.sys || null, fq = sv ? sv.fq : 1;
+    apNow(N.f1.frequency, f[0][0] * fq); N.f1.Q.value = f[0][1]; apNow(N.f1.gain, f[0][2] + (sv ? sv.body : 0));
+    apNow(N.f2.frequency, f[1][0] * fq); N.f2.Q.value = f[1][1]; apNow(N.f2.gain, f[1][2] + (sv ? sv.rasp * 0.4 : 0));
+    apNow(N.f3.frequency, f[2][0] * fq); N.f3.Q.value = f[2][1]; apNow(N.f3.gain, f[2][2] + (sv ? sv.rasp : 0));
     N.inBP.Q.value = p.intake.q;
     ap(wetG.gain, LITE ? 0 : p.wet, 0.08);
     ap(dryG.gain, LITE ? 1 : 1 - p.wet * 0.6, 0.08);
@@ -6417,14 +6596,15 @@ const ENGINE_SOUND = (function () {
     var turbined = (bt0 === "turbo" || bt0 === "twin" || bt0 === "comp") ? 1 : 0.35;
     var muff = 1 - clamp(boost, 0, 4) * 0.115 * turbined;
     // retarded timing dumps burning charge into the pipe: hotter, flatter, harsher
+    var sv = p.sys || null;                  // pipe, muffler, cat, cutout (derived profiles only)
     var drive = ex.drive * (0.55 + load * 1.9 + rn * 0.35) * (vvlOn ? 1.12 : 1)
-                * clamp(muff, 0.45, 1) * (1 + knock * 0.45) * (dz ? 0.55 : 1);
+                * clamp(muff, 0.45, 1) * (1 + knock * 0.45) * (dz ? 0.55 : 1) * (sv ? sv.drive : 1);
     ap(N.pre.gain, 0.8 + drive * 2.4, 0.05);
     ap(N.post.gain, 0.62 / (1 + drive * 0.55), 0.05);
 
     // brightness: low load = closed throttle = muffled
     var lpf = clamp((900 + fire * 9 * (0.35 + 0.85 * load) * (0.35 + 1.1 * ex.tilt)) * vBright
-                    * clamp(muff + 0.10, 0.5, 1.1) * (dz ? 0.62 : 1), dz ? 520 : 700, 7500);
+                    * clamp(muff + 0.10, 0.5, 1.1) * (dz ? 0.62 : 1) * (sv ? sv.bright : 1), dz ? 520 : 700, 7500);
     ap(N.lp.frequency, lpf, 0.04);
     ap(N.hp.frequency, clamp(38 + rn * 30, 35, 90), 0.08);
 
@@ -6446,7 +6626,8 @@ const ENGINE_SOUND = (function () {
     }
 
     // level: idle audible, full load loud, normalised across layouts
-    var exhLvl = p.level * ex.level * (0.30 + 0.70 * load) * (0.62 + 0.45 * Math.min(1, rpm / 5200));
+    var exhLvl = p.level * ex.level * (0.30 + 0.70 * load) * (0.62 + 0.45 * Math.min(1, rpm / 5200))
+                 * (sv ? Math.pow(sv.lvl, 0.5 + 0.5 * load) : 1);   // a free system is loudest on the throttle
     // lope: a big cam breathes unevenly at low load and smooths out as it comes
     // on the cam, so the wander dies away with rpm and with throttle
     var lopeAmt = ((p.lope || 0) + 0.25 * wear) * clamp(1 - rpm / 2600, 0, 1) * clamp(1 - load * 1.3, 0, 1);
@@ -8469,7 +8650,7 @@ function buildEngineMesh(cfg, layoutObj){
   /* ---------- banks ---------- */
   setZone(2);
   var bankInfo=[];
-  EXH_COLL=[]; PIPE_LOG=[]; CRACK=null;
+  EXH_COLL=[]; EXH_TAILS=[]; PIPE_LOG=[]; CRACK=null;
   var tFeed = (asp==="turbo"||asp==="twin_turbo"||asp==="compound") ? ((banks===1 && asp==="twin_turbo") ? 2 : 1) : 0;
   for(var bk=0; bk<banks; bk++){
     var zs = (bk===0) ? 1 : -1;
@@ -8565,6 +8746,10 @@ function buildEngineMesh(cfg, layoutObj){
   /* ---------- charge pipes (after the FAD so a centrifugal head unit's discharge is known) ---------- */
   setZone(5);
   buildChargeAir(B, { bore:bore, bankLen:bankLen }, extras, aspInfo);
+
+  /* ---------- exhaust system after the manifold / turbine (nothing for the stock system) ---------- */
+  setZone(4);
+  var exSys = buildExhSystem(B, { cfg:cfg, L:L, bore:bore, bankLen:bankLen, caseW:caseW, panBot:panTop-panH, caseBot:caseBot, deckH:deckH, banks:banks }, extras);
 
   /* ---------- flywheel / flexplate ---------- */
   setZone(1);
@@ -8738,7 +8923,7 @@ function buildEngineMesh(cfg, layoutObj){
   var t1=(typeof performance!=="undefined")?performance.now():0;
   G.userData.buildMs = t1-t0;
   G.userData.crack = CRACK; CRACK=null;
-  G.userData.exhaustTip = (aspInfo && aspInfo.tip) || (bankInfo[0]&&bankInfo[0].exhaustTip) || null;
+  G.userData.exhaustTip = (exSys && exSys.tip) || (aspInfo && aspInfo.tip) || (bankInfo[0]&&bankInfo[0].exhaustTip) || null;
   return G;
 }
 
@@ -9430,11 +9615,13 @@ function buildExhaust(B, p, extras, exhZ, headY, headH, Z){
     } else {
       /* collector + downpipe */
       B.add("castexh", CYL(bore*0.22,bore*0.22,bore*0.44,14,false,2.4), -bankLen*0.10, portY, cz, (PI/2)*zs,0,0);
-      extras.push(pipeMesh(B, [
+      var dnP=[
         V3(-bankLen*0.10, portY, cz+Z(bore*0.20)),
         V3(-bankLen*0.14, portY-p.deckH*0.35, cz+Z(bore*0.55)),
         V3(-bankLen*0.30, portY-p.deckH*0.95, cz+Z(bore*0.45))
-      ], bore*0.21, "castexh"));
+      ];
+      extras.push(pipeMesh(B, dnP, bore*0.21, "castexh"));
+      exhTail(B, dnP, bore*0.21);
     }
   } else {
     /* tubular headers */
@@ -9497,14 +9684,204 @@ function buildExhaust(B, p, extras, exhZ, headY, headH, Z){
         feed(cX, cBot-bore*0.03, collZ, 0,-1,0, cr*0.72);
       } else {
         /* tail: on a V the bank tilt already carries it low, so it runs back instead of down */
-        extras.push(pipeMesh(B, [
+        var tlP=[
           V3(cX, collY-bore*0.46, collZ),
           V3(cX-bore*0.34, collY-bore*(vee?0.25:1.15), collZ+Z(bore*0.10)),
           V3(-bankLen*0.52, collY-bore*(vee?0.30:1.55), collZ-Z(bore*0.05))
-        ], cr*0.62, "stainless"));
+        ];
+        extras.push(pipeMesh(B, tlP, cr*0.62, "stainless"));
+        exhTail(B, tlP, cr*0.62);
       }
     }
   }
+}
+
+/* ===========================================================================
+   7b'. EXHAUST SYSTEM after the manifold / turbine: pipe(s) of the chosen size, cutout, cat (heat shield),
+   muffler can (shape by type) and tips. The stock system lives in the car, so nothing is drawn for it.
+   Everything stays at or above the sump so the engine still rests on the stand exactly where it did:
+   the run comes down beside the block, then goes back behind the bell housing.
+   ==========================================================================*/
+var EXH_TAILS=[];   /* collector / downpipe ends, engine space: {pt, dir, r} (filled by buildExhaust / buildAspiration) */
+function exhTail(B, localPts, r){
+  var n=localPts.length, a=localPts[n-2].clone().applyMatrix4(B.top()), b=localPts[n-1].clone().applyMatrix4(B.top());
+  EXH_TAILS.push({ pt:b, dir:b.clone().sub(a).normalize(), r:r });
+}
+/* a pipe tube with world-scaled uvs, so the steel grain keeps its pitch instead of smearing into a braid */
+function exTube(B, g){ if(DET) tubeUV(g, g.parameters.radius); B.addW("steel", g); }
+function buildExhSystem(B, p, extras){
+  var cfg=p.cfg, SIMx=(typeof ENGINE_SIM!=="undefined")?ENGINE_SIM:null;
+  var pipe=pick(cfg.pipe,"stock"), muf=pick(cfg.muffler,"stock"), cat=pick(cfg.cat,"none"), cut=pick(cfg.cutout,"none");
+  var catO=SIMx&&SIMx.OPT.cat[cat], dz=isDieselCfg(cfg);
+  if(!catO || (catO.fam && catO.fam!==(dz?"ci":"si"))) cat="none";
+  if(pipe==="stock" && muf==="stock" && cat==="none" && cut==="none") return null;
+  if(!EXH_TAILS.length || !SIMx) return null;
+  var bore=p.bore, bankLen=p.bankLen, L=p.L, yLow=p.panBot, i, j, k;
+  var tails=EXH_TAILS.slice(), info=SIMx.exhaustInfo(cfg);
+  var out={ tip:null };
+
+  /* ---- open headers: a short zoomie off every collector, turned out and up, nothing after it ---- */
+  if(pipe==="open"){
+    for(i=0;i<tails.length;i++){
+      var T=tails[i], sd=T.pt.z>=0?1:-1, r0=T.r;
+      var z1=T.pt.clone().addScaledVector(T.dir, bore*0.30);
+      var z2=z1.clone().add(V3(-bore*0.30, bore*0.06, sd*bore*0.30));
+      var z3=z2.clone().add(V3(-bore*0.30, bore*0.16, sd*bore*0.42));
+      exTube(B, TUBE([T.pt, z1, z2, z3], r0, 20, 12));
+      var dZ=z3.clone().sub(z2).normalize(), qZ=new THREE.Quaternion().setFromUnitVectors(_UP, dZ);
+      B.addM("chrome", TOR(r0*1.0, bore*0.022, 6, 18), new THREE.Matrix4().compose(z3, qZ.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(PI/2,0,0))), new THREE.Vector3(1,1,1)));
+      if(DET) B.addM("dark", CYL(r0*0.96, r0*0.96, bore*0.01, 16), new THREE.Matrix4().compose(z3.clone().addScaledVector(dZ, -bore*0.04), qZ, new THREE.Vector3(1,1,1)));
+      if(!out.tip) out.tip=z3.clone();
+    }
+    return out;
+  }
+
+  /* ---- sizes: the pipe in scene units (1 = 100 mm); the stock pipe's area comes from the sim ---- */
+  var dia = (SIMx.OPT.pipe[pipe]||{}).dia, stockRuns = Math.max(1, Math.min(2, p.banks));
+  var runs = dia ? (SIMx.OPT.pipe[pipe].runs||1) : stockRuns;
+  var rp = dia ? dia*0.127 : Math.sqrt(info.flow100/0.54/100/stockRuns/PI)*10;   /* A = m/(rho v); m^2 -> units */
+  rp = clamp(rp, bore*0.17, bore*0.62);
+  var muffD = {
+    stock:     { L:bore*2.6, h:bore*0.42, w:bore*0.70, kind:"oval" },
+    chambered: { L:bore*2.1, h:bore*0.34, w:bore*0.62, kind:"box" },
+    glasspack: { L:bore*2.4, h:rp*1.55, w:rp*1.55, kind:"round" },
+    turbo:     { L:bore*2.3, h:bore*0.40, w:bore*0.64, kind:"oval" },
+    straight:  null
+  }[muf];
+  if(muffD){ muffD.h=Math.max(muffD.h, rp*1.25); muffD.w=Math.max(muffD.w, rp*1.30); }
+  var catD = cat==="none" ? null : cat==="dpf" ? { L:bore*2.4, r:Math.max(rp*1.85, bore*0.36) } : { L:bore*1.25, r:Math.max(rp*1.6, bore*0.28) };
+  var hMax = Math.max(rp, muffD?muffD.h:0, catD?catD.r*(cat==="dpf"?1:0.82):0);
+  var yRun = yLow + hMax + bore*0.05;                     /* the whole system runs at one height, its bottom just above the sump */
+  var halfW = p.caseW*(L.boxer?0.48:0.5);
+  var zLane = halfW + Math.max(rp, (muffD?muffD.w:0), catD?catD.r:0)*0.55 + bore*0.16;
+  var xG = -bankLen*0.5 - bore*0.62;
+  for(i=0;i<tails.length;i++) xG=Math.min(xG, tails[i].pt.x - bore*0.45);
+
+  /* ---- phase A: every collector / downpipe comes down to its side's lane and back to the bell housing ---- */
+  var sides={};
+  for(i=0;i<tails.length;i++){ var sg=tails[i].pt.z>=0?1:-1; (sides[sg]||(sides[sg]=[])).push(tails[i]); }
+  var sKeys=Object.keys(sides).map(Number).sort(function(a,b){ return b-a; });
+  var G={};
+  for(i=0;i<sKeys.length;i++){
+    var s=sKeys[i], list=sides[s], zl=s*zLane, gp=V3(xG, yRun, zl);
+    G[s]=gp;
+    for(j=0;j<list.length;j++){
+      var T2=list[j], t0=T2.pt, t1=t0.clone().addScaledVector(T2.dir, Math.max(T2.r*1.6, bore*0.22));
+      t1.y=Math.max(t1.y, yRun);
+      var mid=V3(Math.min(t1.x-bore*0.30, (t1.x+xG)/2), yRun+(t1.y-yRun)*0.30, zl+(t1.z-zl)*0.30);
+      var pts=[t0, t1, mid];
+      if(mid.x-xG > bore*0.55) pts.push(V3(Math.max(xG+bore*0.30, mid.x-bore*0.6), yRun, zl));
+      pts.push(gp);
+      exTube(B, TUBE(pts, Math.min(rp, T2.r*1.15), 10*pts.length+8, 12));
+    }
+    if(list.length>1) B.add("steel", CONE(rp*1.15, rp*1.30, bore*0.30, 16), xG, yRun, zl, 0,0,PI/2);   /* merge collector */
+  }
+
+  /* ---- phase B: behind the engine. Merge both sides into one pipe, split one side into two, or carry on ---- */
+  var starts=[], xS=xG-bore*0.95;
+  var sA=sKeys[0], sB=sKeys[sKeys.length-1];
+  if(runs===1 && sKeys.length===2){
+    var zm=0, mp=V3(xS, yRun, zm);
+    for(i=0;i<2;i++){ var gq=G[sKeys[i]]; exTube(B, TUBE([gq, V3(gq.x-bore*0.30, yRun, gq.z*0.85), V3(xS+bore*0.25, yRun, zm+gq.z*0.20), mp], rp, 26, 12)); }
+    B.add("steel", SPH(rp*1.18, 14), mp.x, mp.y, mp.z);
+    starts.push(mp);
+  } else if(runs===2 && sKeys.length===1){
+    var g0=G[sA], zz=[zLane, -zLane];
+    for(i=0;i<2;i++){ var sp=V3(xS, yRun, zz[i]); exTube(B, TUBE([g0, V3(g0.x-bore*0.30, yRun, g0.z+(zz[i]-g0.z)*0.12), V3(xS+bore*0.30, yRun, zz[i]-(zz[i]-g0.z)*0.12), sp], rp, 26, 12)); starts.push(sp); }
+    B.add("steel", SPH(rp*1.18, 14), g0.x, g0.y, g0.z);
+  } else {
+    for(i=0;i<sKeys.length;i++){ var gs=G[sKeys[i]], sp2=V3(xS, yRun, gs.z); B.add("steel", CYL(rp, rp, gs.x-xS, 16, true), (gs.x+xS)/2, yRun, gs.z, 0,0,PI/2); starts.push(sp2); }
+  }
+
+  /* straight pipe along -x */
+  var run=function(x0, x1, y, z, r){ if(x0-x1>1e-3) B.add("steel", CYL(r, r, x0-x1, 18, true), (x0+x1)/2, y, z, 0,0,PI/2); };
+  var band=function(x, y, z, r){ B.add("steel", TOR(r*1.04, bore*0.018, 6, 18), x, y, z, 0,PI/2,0); };
+
+  for(k=0;k<starts.length;k++){
+    var S0=starts[k], y=S0.y, z=S0.z, x=S0.x, sd2=z>=0?1:-1;
+    if(Math.abs(z)<1e-3) sd2=1;
+    /* electric cutout: a Y off the pipe, butterfly body, motor and its lead */
+    if(cut!=="none"){
+      var cx0=x-bore*0.35; run(x, cx0-bore*0.40, y, z, rp);
+      var cd=V3(-0.55, 0.25, sd2*0.80).normalize(), c1=V3(cx0, y, z).addScaledVector(cd, rp*0.6), c2=V3(cx0, y, z).addScaledVector(cd, rp+bore*0.42);
+      exTube(B, TUBE([V3(cx0+bore*0.10, y, z), c1, c2], rp*0.92, 12, 12));
+      var qc=new THREE.Quaternion().setFromUnitVectors(_UP, cd);
+      B.addM("steel", CYL(rp*1.22, rp*1.22, bore*0.07, 18), new THREE.Matrix4().compose(c2, qc, new THREE.Vector3(1,1,1)));        /* valve flange */
+      var c3=c2.clone().addScaledVector(cd, bore*0.09);
+      B.addM("calu", CYL(rp*1.05, rp*1.05, bore*0.12, 18), new THREE.Matrix4().compose(c3, qc, new THREE.Vector3(1,1,1)));          /* butterfly body */
+      var mo=c3.clone().add(V3(0, rp*1.05+bore*0.10, 0));
+      B.add("dark", BOX(bore*0.26, bore*0.18, bore*0.20), mo.x, mo.y, mo.z);                                                            /* motor */
+      B.add("dark", CYL(bore*0.07, bore*0.07, bore*0.16, 12), mo.x-bore*0.18, mo.y, mo.z, 0,0,PI/2);
+      if(cut==="open"){ var c4=c3.clone().addScaledVector(cd, bore*0.10); B.addM("dark", CYL(rp*0.80, rp*0.80, bore*0.01, 14), new THREE.Matrix4().compose(c4, qc, new THREE.Vector3(1,1,1))); }
+      else { var c5=c3.clone().addScaledVector(cd, bore*0.08); B.addM("steel", CYL(rp*1.10, rp*1.10, bore*0.04, 18), new THREE.Matrix4().compose(c5, qc, new THREE.Vector3(1,1,1))); }   /* cap plate */
+      if(DET){
+        B.addW("wireBlk", TUBE([V3(mo.x+bore*0.13, mo.y, mo.z), V3(mo.x+bore*0.35, mo.y+bore*0.10, mo.z-sd2*bore*0.10), V3(p.bankLen*-0.5+bore*0.05, p.caseBot+bore*0.10, sd2*(p.caseW*0.5+bore*0.02))], bore*0.018, 16, 5));
+      }
+      x=cx0-bore*0.40;
+    }
+    /* catalyst / DOC + DPF with its heat shield */
+    if(catD){
+      var xc0=x-bore*0.22, xc1=xc0-catD.L, rc=catD.r;
+      run(x, xc0, y, z, rp);
+      var sq = cat==="dpf" ? 1 : 0.82;               /* a cat is a flattened oval; a DPF a fat round can */
+      B.add("steel", CONE(rp, rc*0.92, bore*0.28, 20), xc0-bore*0.14, y, z, 0,0,PI/2);
+      B.add("steel", CYL(1, 1, catD.L-bore*0.56, 24), (xc0+xc1)/2, y, z, 0,0,PI/2, rc*sq, 1, rc);
+      B.add("steel", CONE(rc*0.92, rp, bore*0.28, 20), xc1+bore*0.14, y, z, 0,0,PI/2);
+      if(cat==="dpf"){ band((xc0+xc1)/2+bore*0.25, y, z, rc); }
+      if(DET){
+        /* stamped heat shield over the top and outboard side, standing off the shell */
+        B.add("shield", CYL(1, 1, catD.L-bore*0.70, 24, true), (xc0+xc1)/2, y+bore*0.02, z, 0,0,PI/2, rc*sq+bore*0.06, 1, rc+bore*0.06);
+        band(xc0-bore*0.30, y, z, rc*sq*0.98); band(xc1+bore*0.30, y, z, rc*sq*0.98);
+        o2Sensor(B, V3(xc0-bore*0.06, y+rp*0.75, z), V3(0,1,0), bore, sd2);
+        if(cat==="dpf"){
+          /* differential pressure sensor: two pick-up tubes either side of the filter to a sensor box */
+          var sb=V3((xc0+xc1)/2, y+rc+bore*0.30, z);
+          B.add("dark", BOX(bore*0.30, bore*0.14, bore*0.20), sb.x, sb.y, sb.z);
+          exTube(B, TUBE([V3(xc0-bore*0.20, y+rc*0.8, z), V3(xc0-bore*0.25, sb.y, z), V3(sb.x+bore*0.15, sb.y, z)], bore*0.025, 12, 6));
+          exTube(B, TUBE([V3(xc1+bore*0.20, y+rc*0.8, z), V3(xc1+bore*0.25, sb.y, z), V3(sb.x-bore*0.15, sb.y, z)], bore*0.025, 12, 6));
+        }
+      }
+      x=xc1;
+    }
+    /* muffler */
+    var xm0=x-bore*0.28;
+    run(x, xm0, y, z, rp);
+    if(muffD){
+      var xm1=xm0-muffD.L, mc=(xm0+xm1)/2;
+      if(muffD.kind==="box"){
+        B.add("steel", RBOX(muffD.L, muffD.h*2, muffD.w*2, bore*0.08), mc, y, z);
+        if(DET) for(i=0;i<3;i++) B.add("steel", BOX(bore*0.03, muffD.h*2.02, muffD.w*2.02), xm0-muffD.L*(0.2+i*0.3), y, z);   /* chamber seams */
+      } else {
+        B.add("steel", CYL(1, 1, muffD.L, 28), mc, y, z, 0,0,PI/2, muffD.h, 1, muffD.w);
+      }
+      if(DET){
+        /* rolled end-cap rims and a stamped part label */
+        if(muffD.kind!=="box"){
+          B.add("steel", TOR(1, bore*0.02/Math.max(muffD.h,muffD.w), 6, 28), xm0-bore*0.02, y, z, 0,PI/2,0, muffD.w*0.99, muffD.h*0.99, 1);
+          B.add("steel", TOR(1, bore*0.02/Math.max(muffD.h,muffD.w), 6, 28), xm1+bore*0.02, y, z, 0,PI/2,0, muffD.w*0.99, muffD.h*0.99, 1);
+        }
+        if(muf==="glasspack") for(i=1;i<=3;i++) B.add("steel", TOR(muffD.h*1.0, bore*0.012, 5, 22), xm0-muffD.L*i/4, y, z, 0,PI/2,0);
+        if(DET>=2 && muf!=="glasspack") B.add("connGrey", BOX(bore*0.50, bore*0.012, bore*0.24), mc, y+muffD.h*(muffD.kind==="box"?1.0:0.99)+bore*0.006, z);
+      }
+      x=xm1;
+    } else {
+      run(xm0, xm0-bore*1.2, y, z, rp);      /* straight pipe: tube all the way */
+      if(DET) band(xm0-bore*0.6, y, z, rp);
+      x=xm0-bore*1.2;
+    }
+    /* tail pipe and tip */
+    var xt0=x-bore*0.30;
+    run(x, xt0, y, z, rp);
+    var tipR=rp*(dia && dia>=3 ? 1.22 : 1.32), tipL=bore*0.62;
+    B.add("chrome", CYL(tipR, tipR*0.96, tipL, 22, true), xt0-tipL/2, y, z, 0,0,PI/2);
+    B.add("chrome", CONE(rp*1.02, tipR*0.96, bore*0.10, 22), xt0+bore*0.02, y, z, 0,0,PI/2);
+    if(DET){
+      B.add("dark", CYL(tipR*0.94, tipR*0.94, bore*0.01, 18), xt0-tipL*0.55, y, z, 0,0,PI/2);   /* looking down the bore */
+      if(DET>=2) B.add("chrome", TOR(tipR*0.98, bore*0.02, 6, 24), xt0-tipL, y, z, 0,PI/2,0);   /* rolled lip */
+    }
+    if(!out.tip) out.tip=V3(xt0-tipL, y, z);
+  }
+  return out;
 }
 
 /* Full / Ultra: two studs + nuts on a port flange (diagonal), and a gasket edge showing round it on Ultra */
@@ -9938,7 +10315,7 @@ function buildAspiration(B, p, extras){
       if(!out.tip) out.tip = t1.tip;
     }
     for(q=0;q<ups.length;q++) upPipe(ups[q][0], ups[q][1], ups[q][2]);
-    for(q=0;q<dps.length;q++) if(dps[q].dp){ var dq=dps[q].dp; extras.push(pipeMesh(B, clearOfFilters(dq.pts, out.filt, dq.rad+0.04), dq.rad, "stainless", 18)); }
+    for(q=0;q<dps.length;q++) if(dps[q].dp){ var dq=dps[q].dp, dqp=clearOfFilters(dq.pts, out.filt, dq.rad+0.04); extras.push(pipeMesh(B, dqp, dq.rad, "stainless", 18)); exhTail(B, dqp, dq.rad); }
     addIntercooler(B,p,extras,true,out);
     return out;
   }
@@ -14834,48 +15211,49 @@ const FUEL_RANK={r87:0,r91:1,r94:2,race100:3,e85:4,methanol:5,
   race104u:2.5,race110:3.2,ox112:3.4,ox116:3.6};   // race grades sit between pump premium and alcohol; flex ranks by its blend (fuelRank)
 const SEGMENTS=[
   /* tier 0 — Backyard: everything here is reachable with the five starter engines and base-shop parts */
-  {id:"hatch",name:"City hatchback",tier:0,units:[12,30],price:2100,req:{hp:[50,75],econ:[6.2,5.6],fuel:"r87",rel:85,kg:140}},
-  {id:"sedan",name:"Family sedan",tier:0,units:[8,22],price:2900,req:{hp:[90,125],econ:[6.8,6.2],fuel:"r87",rel:82,smooth:45,kg:175}},
-  {id:"van",name:"Delivery van",tier:0,dsl:true,gas:true,units:[6,16],price:3100,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0]}},
+  {id:"hatch",name:"City hatchback",tier:0,units:[12,30],price:2100,req:{hp:[50,75],econ:[6.2,5.6],fuel:"r87",rel:85,kg:140,noise:74}},
+  {id:"sedan",name:"Family sedan",tier:0,units:[8,22],price:2900,req:{hp:[90,125],econ:[6.8,6.2],fuel:"r87",rel:82,smooth:45,kg:175,noise:74}},
+  {id:"van",name:"Delivery van",tier:0,dsl:true,gas:true,units:[6,16],price:3100,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0],noise:77}},
   {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,gas:true,units:[6,14],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
   /* tier 1 — Local shop */
-  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86}},
-  {id:"hot",name:"Hot hatch",tier:1,units:[5,14],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80}},
-  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87"}},
-  {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78}},
+  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86,noise:78}},
+  {id:"hot",name:"Hot hatch",tier:1,units:[5,14],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76}},
+  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87",noise:74}},
+  {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78}},
   /* tier 2 — Known builder */
   {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[2,6],price:13500,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
-  {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5]}},
+  {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5],noise:79}},
   {id:"rally",name:"Rally car · 1.6 T",tier:2,units:[2,6],price:16000,req:{hp:[280,340],tq:[320,400],disp:1.6,rel:70,fuel:"race100"}},
   {id:"drift",name:"Drift car",tier:2,units:[2,6],price:15000,req:{tq:[500,700],smooth:55,rel:65,fuel:"e85"}},
   {id:"genset",name:"Standby generator set",tier:2,dsl:true,gas:true,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
   {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,gas:true,units:[3,8],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
   /* tier 3 — Regional supplier */
-  {id:"super",name:"Supercar",tier:3,units:[2,5],price:26000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75}},
+  {id:"super",name:"Supercar",tier:3,units:[2,5],price:26000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75,noise:80}},
   {id:"endur",name:"Endurance prototype",tier:3,units:[1,4],price:42000,req:{hp:[500,700],rel:92,fuel:"race100",kg:210,life:300}},
   {id:"attack",name:"Time attack",tier:3,units:[1,4],price:30000,req:{hp:[700,900],kg:200,rel:60,fuel:"e85"}},
   {id:"drag",name:"Pro-mod drag",tier:3,units:[1,3],price:55000,req:{hp:[1200,1800],rel:35,fuel:"methanol",life:5}},
   /* tier 4 — OEM partner */
-  {id:"hyper",name:"Hypercar",tier:4,units:[1,3],price:60000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70}},
-  {id:"flagship",name:"OEM V12 flagship",tier:4,units:[6,14],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94"}},
+  {id:"hyper",name:"Hypercar",tier:4,units:[1,3],price:60000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82}},
+  {id:"flagship",name:"OEM V12 flagship",tier:4,units:[6,14],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94",noise:80}},
   /* tier 5 — Outlaw racing */
   {id:"stripcar",name:"Street/strip coupe",tier:4,units:[2,4],price:26000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
   {id:"grudge",name:"Grudge car · no time",tier:5,units:[1,2],price:70000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
   {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:105000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
   {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:165000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
   {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:88000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
-  /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't */
-  {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[6,16],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel"}},
-  {id:"mdtruck",name:"Medium-duty delivery truck",tier:1,units:[5,12],price:6200,req:{tq:[450,650],tqrpm:2400,rel:88,life:3000,econ:[9.5,8.5],smoke:30,fuel:"diesel"}},
+  /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't.
+     Road segments also cap drive-by noise (dBA, judged with any cutout shut) */
+  {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[6,16],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel",noise:80}},
+  {id:"mdtruck",name:"Medium-duty delivery truck",tier:1,units:[5,12],price:6200,req:{tq:[450,650],tqrpm:2400,rel:88,life:3000,econ:[9.5,8.5],smoke:30,fuel:"diesel",noise:80}},
   {id:"workboat",name:"Marine workboat",tier:2,units:[3,8],price:9400,req:{tq:[600,900],tqrpm:2600,life:4000,rel:92,fuel:"diesel"}},
   {id:"dtractor",name:"Four-wheel-drive farm tractor",tier:2,units:[3,8],price:11800,req:{tq:[800,1200],tqrpm:1900,life:3000,rel:88,fuel:"diesel"}},
   {id:"minegen",name:"Mine standby genset · prime power",tier:3,units:[2,6],price:21000,req:{tq:[1200,1800],tqrpm:1900,life:4500,rel:92,fuel:"diesel"}},
-  {id:"class8",name:"Class-8 highway truck",tier:3,units:[4,10],price:24000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel"}},
+  {id:"class8",name:"Class-8 highway truck",tier:3,units:[4,10],price:24000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel",noise:80}},
   /* Fleet & alt-fuel (rep 20+): buyers who fuel at their own depot and want propane or CNG only (fuel "lpg"/"cng" is
      an exact family). gas:true on the truck & industrial segments means a gas engine is welcome there too. */
   {id:"forklift",name:"Warehouse forklift · propane",tier:0,units:[10,24],price:2300,req:{tq:[110,160],tqrpm:3200,life:3000,rel:88,fuel:"lpg"}},
-  {id:"cngvan",name:"City fleet van · CNG",tier:1,units:[8,20],price:4200,req:{tq:[220,300],tqrpm:4000,rel:88,econ:[9.0,8.0],fuel:"cng"}},
-  {id:"lpgbus",name:"Propane school bus",tier:2,units:[4,10],price:9800,req:{tq:[450,600],tqrpm:3600,life:3000,rel:90,fuel:"lpg"}},
+  {id:"cngvan",name:"City fleet van · CNG",tier:1,units:[8,20],price:4200,req:{tq:[220,300],tqrpm:4000,rel:88,econ:[9.0,8.0],fuel:"cng",noise:77}},
+  {id:"lpgbus",name:"Propane school bus",tier:2,units:[4,10],price:9800,req:{tq:[450,600],tqrpm:3600,life:3000,rel:90,fuel:"lpg",noise:78}},
   {id:"wellsite",name:"Wellsite compressor drive · CNG",tier:2,units:[2,6],price:12500,req:{tq:[350,500],tqrpm:3000,life:5000,rel:92,fuel:"cng"}},
   /* race gas: a control-fuel series where everyone runs the same drum (spec:true = exactly that fuel), and a hill climb
      that allows anything up to oxygenated 116 */
@@ -14909,7 +15287,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.18.0.0";
+const VERSION="1.19.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -14996,7 +15374,8 @@ function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===
 function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
 function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
-function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
+const HASH_DEF={pipe:"stock",muffler:"stock",cat:"none",cutout:"none"};   // the exhaust system at its defaults is the engine every older hash was made from
+function cfgHash(c){const dsl=isCI(c.fuel);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
 function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.short||o.name.split(" ")[0];}
@@ -15184,6 +15563,7 @@ function fuelFamilyDefaults(c,wasD,was){const fam=fuelFamilyDefaults0(c,wasD);le
     if(c.cr!==cr0)t=(fam?fam.replace(/ to start$/,"")+"; ":"")+`${OPT.fuel[c.fuel].short}: compression ${c.cr.toFixed(1)}:1 to use the octane`;}
   altFuelFill(c);return t;}
 function fuelFamilyDefaults0(c,wasD){const d=isCI(c.fuel);if(d===wasD)return null;const boosted=c.asp!=="na";
+  const ct=OPT.cat&&OPT.cat[c.cat];if(ct&&ct.fam)c.cat="none";   // a cat on a diesel or a DPF on a petrol engine: back to none
   if(d){c.cr=17.5;c.lambda=1.8;c.timing=0;c.redline=Math.min(c.redline,4200);c.cam=Math.min(c.cam,30);if(c.intake==="carb")c.intake="single_tb";
     return `Diesel: compression 17.5:1, λ 1.8, redline ${c.redline.toLocaleString()} to start`;}
   c.cr=boosted?9.0:10.5;c.lambda=boosted?0.82:0.9;c.timing=0;if(c.redline<=4200)c.redline=6000;   // a diesel governor speed is no petrol redline
@@ -15245,6 +15625,7 @@ const FOCUS_OF={bore:"engine",stroke:"engine",cr:"engine",rodRatio:"engine",bloc
   intake:"intake",nitrous:"intake",fuel:"intake",lambda:"intake",timing:"intake",asp:"turbo",turboSize:"turbo",turbineMat:"turbo",ic:"turbo",boost:"turbo",exhaust:"exhaust",damper:"front",cooling:"front",layout:"engine"};
 Object.assign(FOCUS_OF,{launchCtl:"exhaust",launchRetard:"exhaust",twoStepRpm:"exhaust"});Object.assign(NOTCH,{twoStepRpm:500,launchRetard:5});
 Object.assign(FOCUS_OF,{injectors:"intake",fuelPump:"intake"});
+Object.assign(FOCUS_OF,{pipe:"exhaust",muffler:"exhaust",cat:"exhaust",cutout:"exhaust"});
 let lastFocus=null;
 function autoFocus(key){if(testing||S.followCam===false)return;let part=FOCUS_OF[key];if(!part)return;if(part==="turbo"&&S.cfg.asp==="na")part="intake";if(part===lastFocus)return;lastFocus=part;ENGINE_VIS.focus(part);}
 function commitSlider(){S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);}
@@ -15379,6 +15760,10 @@ const SPECS={
   exhaust:{specs:[
     ["Airflow",o=>o.veBonus?(o.veBonus>0?"+":"")+Math.round(o.veBonus*100)+"%":"standard"],["Backpressure",o=>fac(o.backP)],
     ["Weight",o=>o.massKg+" kg"]]},
+  pipe:{line:o=>exhLine("pipe",o),specs:[["Flows",o=>exhSpec("pipe",o,"flow")],["Backpressure",o=>exhSpec("pipe",o,"dp")],["Drive-by",o=>exhSpec("pipe",o,"db")],["Weight",o=>o.massKg?"+"+o.massKg+" kg":"stock"]]},
+  muffler:{line:o=>exhLine("muffler",o),specs:[["Restriction",o=>o.K?Math.round(o.K/3*100)+"% of OEM":"none"],["Backpressure",o=>exhSpec("muffler",o,"dp")],["Drive-by",o=>exhSpec("muffler",o,"db")],["Weight",o=>o.massKg?"+"+o.massKg+" kg each":"stock"]]},
+  cat:{line:o=>exhLine("cat",o),specs:[["Restriction",o=>o.K?Math.round(o.K/3*100)+"% of an OEM muffler":"none"],["Backpressure",o=>exhSpec("cat",o,"dp")],["Drive-by",o=>exhSpec("cat",o,"db")],["Smoke",o=>o.smokeK?"trapped: ≈ 0%":o.fam==="ci"||isCI(S.cfg.fuel)?"what the tune makes":null],["Weight",o=>o.massKg?"+"+o.massKg+" kg each":null]]},
+  cutout:{line:o=>exhLine("cutout",o),specs:[["Drive-by",o=>exhSpec("cutout",o,"db")],["Backpressure",o=>exhSpec("cutout",o,"dp")],["Road buyers",o=>o.cost?"judge it shut":null],["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
   nitrous:{price:o=>o.cost,line:o=>o.shotHp?o.shotHp+" hp shot":"none",specs:[
     ["Shot",o=>o.shotHp?o.shotHp+" hp at the jet":"none"],
     ["Delivery",o=>o.shotHp?(o.prog?"ramped in on a controller":"all at once"):null],
@@ -15390,6 +15775,17 @@ const SPECS={
   launchCtl:{line:o=>o.sub,specs:[["Holds",o=>o.cost?"a set launch rpm":"whatever your foot does"],["Boost on the line",o=>o._id==="launchCtl:two_step_retard"?"most of it, with heat":o.cost?"a little":"none"],["Dyno",o=>"no effect"]]},
   transBrake:{line:o=>o.sub,specs:[["Launch",o=>o._id==="transBrake:trans_brake"?"torque converter":"clutch"],["Burnout",o=>o._id==="transBrake:none"?"creeps, fronts smoke":"clean, rears only"],["Dyno",o=>"no effect"]]}
 };
+/* exhaust system spec chips: each option evaluated on this engine at its own peak-power exhaust flow */
+function exhVar(tbl,o){const k=o._id.split(":")[1],c=Object.assign({},S.cfg,{[tbl]:k});if(tbl!=="cutout"&&c.cutout==="open")c.cutout="closed";return c;}   // compare pipes, cans and cats with the cutout shut
+function exhSpec(tbl,o,what){if(!quick||!quick.exhaustSys)return null;const c=exhVar(tbl,o),m=quick.exhaustSys.flowKgS;
+  if(what==="db"){const n=SIM.exhaustNoise(c);return tbl==="cutout"&&o.cost?`${Math.round(n.db)} dB shut · ${Math.round(n.dbOpen)} open`:`${Math.round(tbl==="cutout"?n.dbOpen:n.db)} dB`;}
+  const X=SIM.exhaustInfo(c,m);
+  if(what==="dp")return X.open?"none · open to the air":`${X.dpBar.toFixed(2)} bar at ${Math.round(quick.peakHp)} hp`;
+  if(what==="flow"){if(X.open)return"unlimited";const hp=quick.peakHp*X.flow100/Math.max(1e-6,m);return`≈ ${Math.round(hp/10)*10} hp at 100 m/s`;}
+  return null;}
+function exhLine(tbl,o){if(!quick||!quick.exhaustSys)return o.sub;const k=o._id.split(":")[1];
+  if(S.cfg[tbl]!==k)return o.sub;const X=SIM.exhaustInfo(S.cfg,quick.exhaustSys.flowKgS);
+  return X.open?`${Math.round(quick.noiseDbOpen)} dB · open`:`${Math.round(quick.noiseDb)} dB · ${X.dpBar.toFixed(2)} bar`;}
 function chipsFor(tbl,o){const d=SPECS[tbl];if(!d)return [];
   return d.specs.map(([l,f])=>{let v=null;try{v=f(o);}catch(e){}return v==null?null:[l,v];}).filter(Boolean);}
 function priceOf(tbl,o){if((tbl==="injectors"||tbl==="fuelPump"||tbl==="dNoz")&&!o.cost)return"stock";const d=SPECS[tbl];if(d&&d.price){const v=d.price(o);return typeof v==="number"?fmt$(v):"$"+v;}
@@ -16871,6 +17267,9 @@ function renderAnalysis(){
   if(r.alt&&r.alt.gas)rows.push(["Gas system load",`${Math.round(r.fuel.load*100)}% · ${Math.round(r.alt.capKgh)} kg/h`],["Air displaced",`${r.alt.displacePct}%`],[r.alt.unit==="kg"?"CNG use":"Propane use",`${r.alt.econNative} ${r.alt.unit==="kg"?"kg":"L"}/100km`]);
   if(r.alt&&r.alt.flex&&r.alt.winter){const w=r.alt.winter;rows.push(["Winter E"+w.pct+" margin",`${w.margin>=0?"+":"−"}${Math.abs(w.margin).toFixed(1)}`]);}
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
+  {const nz=r.noiseDb!=null?{db:r.noiseDb,dbOpen:r.noiseDbOpen}:SIM.exhaustNoise(S.cfg),nw=v=>v<=74?"quiet":v<=80?"road legal":v<=86?"loud":"track only";
+    rows.push(["Drive-by noise",`${Math.round(nz.db)} dB · ${nw(nz.db)}`]);if(nz.dbOpen>nz.db+0.5)rows.push(["Cutout open",`${Math.round(nz.dbOpen)} dB`]);   // short values: .tele b never wraps
+    if(r.exhaustSys)rows.push(["Exhaust backpressure",r.exhaustSys.open?"none · open":`${r.exhaustSys.dpBar.toFixed(2)} bar`]);}
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
   renderRecords();renderAch();dlAnalysis();
@@ -16905,7 +17304,7 @@ function genContract(seg){
   if(R.hp)req.hp=R.hp[0]+Math.round(rng()*(R.hp[1]-R.hp[0])/10)*10;
   if(R.tq)req.tq=R.tq[0]+Math.round(rng()*(R.tq[1]-R.tq[0])/10)*10;
   if(R.econ)req.econ=+(R.econ[0]-rng()*(R.econ[0]-R.econ[1])).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise"])if(R[k]!=null)req[k]=R[k];
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
   if(R.mph)req.mph=Math.round(R.mph[0]+rng()*(R.mph[1]-R.mph[0]));
   const units=seg.units[0]+Math.floor(rng()*(seg.units[1]-seg.units[0]));
@@ -16924,7 +17323,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
 function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
-  econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],
+  econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
   passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`],lsr:["Their car",v=>`${(SIM.LSR_BODIES[v.body]||{}).n||"car"} · long course`],mph:["Timed mile",v=>`≥ ${v} mph`]};
@@ -16961,6 +17360,8 @@ function fits(k,res,cfg){
   if(r.econ!=null)add("econ",res.econ<=r.econ,res.econ.toFixed(1),le(res.econ,r.econ));
   if(r.fuel!=null){const fo=fuelOk(c.fuel,r.fuel,x.dsl,x,c);add("fuel",fo,fuelShort(c.fuel)+(OPT.fuel[c.fuel]&&OPT.fuel[c.fuel].flex?" E"+Math.round(c.ethanolPct==null?85:c.ethanolPct):""),fo?1:0.3);if(!fo&&(r.fuel==="diesel"||dsl||isGasF(r.fuel)||isGasF(c.fuel)))o[o.length-1].fam=true;}
   if(r.smoke!=null){const sm=dsl?(res.smoke||0):0;add("smoke",sm<=r.smoke,Math.round(sm)+"%",le(Math.max(1,sm),Math.max(1,r.smoke)));}
+  /* drive-by noise: a road buyer drives it with the cutout shut; every 2 dB over is a tenth further from a sale */
+  if(r.noise!=null){const nz=res.noiseDb!=null?res.noiseDb:SIM.exhaustNoise(c).db;add("noise",nz<=r.noise,Math.round(nz)+" dB",clamp(1-(nz-r.noise)/20,0,1));}
   if(r.rel!=null)add("rel",res.rel>=r.rel,res.rel,ge(res.rel,r.rel));
   if(r.smooth!=null)add("smooth",res.smooth>=r.smooth,Math.round(res.smooth),ge(res.smooth,r.smooth));
   if(r.kg!=null)add("kg",res.kg<=r.kg,Math.round(res.kg),le(res.kg,r.kg));
@@ -16980,7 +17381,7 @@ function fits(k,res,cfg){
 /* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
    Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit,
    and the wrong fuel family (a diesel for a petrol car, or the reverse) sends them away. */
-const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5};
+const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
   return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
@@ -16993,7 +17394,7 @@ function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*6
 const MKT_COOL=3;
 function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
   if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);if(R.mph)req.mph=Math.round(mid(R.mph,0.3));
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise"])if(R[k]!=null)req[k]=R[k];
   const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
   return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
 function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
@@ -17007,6 +17408,7 @@ function buyers(cert){const key=cert.hash+"|"+C().week+"|"+C().rep+"|"+Object.ke
 const FIX_KEYS=["fuel","piston","rings","rod","rodBolts","crank","bearings","oilGrade","cooling","head","springs","valveMat","intake","exhaust","gasket","studs","damper","pistonClearance","oilSystem","oilSquirters","ic","asp","blockMat","headMat"];
 FIX_KEYS.push("injectors","fuelPump");   // a build that only leans out can be one part away from a contract
 FIX_KEYS.push("dInj","dNoz");   // diesel: a common-rail pump or bigger nozzles can be the one change
+FIX_KEYS.push("muffler","cat","pipe");   // a loud or smoky build is often one exhaust part away
 const fixCache=new Map();
 function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.keys(C().owned).join(","):"sb");if(fixCache.has(key))return fixCache.get(key);
   const env=stdEnv({testType:"pull"});let best=null;const tryCfg=(cfg,label)=>{const r=SIM.simulate(cfg,env);if(r.fails.length)return;const f=fits(k,r,cfg);if(f.ok){const gain=f.bonus;if(!best||gain>best.gain)best={label,cfg,gain};}};
