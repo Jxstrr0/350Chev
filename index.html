@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.23.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.24.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -212,6 +212,20 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .ph-lbl b{color:var(--chalk);font-weight:500}
 .ph-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
 .ph-row .peak{padding:8px 10px}.ph-row .peak b{font-size:20px}
+/* road test live card: speed · gear · lap clock · mini-map, the tach, sector splits */
+#roadCtl{margin-bottom:10px}
+.rdh{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:end;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px}
+.rdh b{display:block;font-family:var(--display);font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
+.rdh i{display:block;font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.rd-spd b{font-size:40px;min-width:2.4em}.rd-g b{font-size:30px;color:var(--orange2);text-align:center}.rd-g i{text-align:center}.rd-lt{text-align:right}.rd-lt b{font-size:24px}
+.rd-map{width:96px;height:72px;display:block}
+.rd-rpm{margin-top:8px;height:12px}.rd-rpm .mk{background:var(--crit);opacity:.8}
+.rd-sec{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.rd-sec div{background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:6px 8px;font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;min-width:0}
+.rd-sec div.on{border-color:var(--orange)}.rd-sec b{color:var(--chalk);font-weight:500}.rd-sec i{font-style:normal;font-size:11px}.rd-sec i.up{color:var(--good)}.rd-sec i.dn{color:var(--crit)}
+.rdbtns{margin-top:8px;gap:8px}.rdbtns .btn{min-height:46px}.rdbtns #roadSkip{flex:1.6}.rdbtns #roadSpd{flex:.8}.rdbtns #roadCamB{flex:1.5}.rdbtns .btn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}
+.rtop.rdrec div{grid-template-columns:22px 64px 46px minmax(0,1fr) auto}
+html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;min-width:0}
 .saltcls span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
 .saltcls small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-bar .zone{position:absolute;top:0;bottom:0;background:rgba(232,193,74,.22);border-left:1px solid var(--warn);border-right:1px solid var(--warn)}
@@ -355,6 +369,7 @@ div.up.owned .price{color:var(--good)}
 .card.brief .req .rl{min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .card.brief .req .rl b{font-weight:500;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.brief .req .rl i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.brief .req.rq-road .rl i{white-space:normal}
 .card.brief .req.no .rl b{color:var(--crit)}
 .card.brief .req .rb{height:6px;background:var(--soot);border-radius:2px;overflow:hidden;position:relative}
 .card.brief .req .rb i{position:absolute;left:0;top:0;bottom:0;background:var(--good);border-radius:2px}
@@ -531,8 +546,8 @@ html.desk #rpmbox{right:18px;bottom:16px}html.desk #rpmbox b{font-size:34px}
 html.desk #app.onstrip #rpmbox{bottom:auto;top:80px}
 html.desk #chart{height:260px}
 html.desk #toast{left:calc((100% - var(--sbw))/2);bottom:auto;top:84px;max-width:min(560px,calc(100% - var(--sbw) - 40px))}
-/* drag strip, truck pull and salt flats: their controls dock bottom-centre over the big view, in the view's dark ink */
-html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+/* drag strip, truck pull, salt flats and road test: their controls dock bottom-centre over the big view, in the view's dark ink */
+html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #roadCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
 html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}
@@ -697,6 +712,7 @@ html.desk #tdCap b{font-size:22px}html.desk #tdCap p{font-size:14px}
         <button data-t="overrev">Over-rev<small>missed shift</small></button>
         <button data-t="drag">Drag pass<small>1/4 mile</small></button>
         <button data-t="pull_sled">Truck pull<small>sled · 300 ft</small></button>
+        <button data-t="road">Road test<small>0–100 · lap</small></button>
         <button data-t="salt">Salt flats<small>Bonneville · timed mile</small></button>
       </div>
       <div id="envBox"></div>
@@ -713,6 +729,7 @@ html.desk #tdCap b{font-size:22px}html.desk #tdCap p{font-size:14px}
       <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
       <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
       <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
+      <div id="roadCtl" style="display:none"><div id="roadLive"></div><div class="row rdbtns"><button class="btn pri" id="roadSkip">SKIP ▸▸</button><button class="btn" id="roadSpd">2×</button><button class="btn" id="roadCamB">Cam · Auto</button></div></div>
       <div id="saltCtl" style="display:none"><div id="saltLive"></div><div class="row" style="gap:8px"><button class="btn pri" id="saltBtn" style="flex:3;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO RUN</button><button class="btn" id="saltShiftBtn" style="flex:1;min-height:72px;font-size:18px;touch-action:none">SHIFT</button></div><div class="chips" id="saltWarp" style="margin-top:8px"><span class="hint" style="margin:0 4px 0 0;align-self:center">Run-up</span><button class="chip on" data-warp="1">×1</button><button class="chip" data-warp="2">×2</button><button class="chip" data-warp="4">×4</button></div></div>
 
       <div class="sec" id="abSec"><h2>Sound bench <span class="cnt" id="abCnt">A / B</span></h2>
@@ -5764,6 +5781,300 @@ const ENGINE_SIM = (function () {
   }
 
   /* =====================================================================
+     Road test: the engine bolted into a car. Straight-line figures come from a
+     time-stepped run (clutch launch, traction limit with weight transfer, the
+     torque curve through the gearbox, shift times, turbo lag); the lap is a
+     quasi-steady point-mass simulation over a track built from straights and
+     constant-radius corners: a grip ceiling from μ·(g + downforce), a backward
+     pass for braking, a forward pass that carries gear, shift and boost state.
+     ===================================================================== */
+  // μ by tyre class (peak, dry, warm). Lateral and longitudinal share one friction circle.
+  const ROAD_TYRES = { eco: { n: "Eco", mu: 0.86, d: "hard, low rolling drag" }, street: { n: "Street", mu: 1.0, d: "all-round summer tyre" },
+    sport: { n: "Sport", mu: 1.1, d: "soft, warm-up quick" }, semi: { n: "Semi-slick", mu: 1.26, d: "track tyre, road legal" } };
+  /* generic chassis archetypes. mass includes a baseline engine of `eng` kg sitting at xE (fraction of the wheelbase
+     forward of the rear axle: ~1 = over the front axle, ~0.25 = behind the seats). front = static front weight share.
+     cdA m², clA = downforce coefficient × area (m², + is down), brake = what the brakes can hold in g, ratios = gearbox. */
+  const CHASSIS = {
+    roadster: { n: "Light roadster", d: "1,000 kg · RWD · 50/50", mass: 1000, eng: 120, drive: "rwd", front: 0.50, xE: 0.92, cgH: 0.45, wb: 2.31, tyre: "sport", cdA: 0.66, clA: 0.06, brake: 1.05, tyreDia: 24.4, ratios: [3.76, 2.27, 1.65, 1.26, 1.0, 0.84], shift: 0.22, rr: 0.011 },
+    hatch: { n: "Hot hatch", d: "1,200 kg · FWD · 62% front", mass: 1200, eng: 135, drive: "fwd", front: 0.62, xE: 1.06, cgH: 0.53, wb: 2.6, tyre: "street", cdA: 0.70, clA: 0.02, brake: 1.0, tyreDia: 25.2, ratios: [3.31, 2.13, 1.48, 1.12, 0.92, 0.77], shift: 0.25, rr: 0.011 },
+    coupe: { n: "Sports coupé", d: "1,350 kg · RWD · 53% front", mass: 1350, eng: 165, drive: "rwd", front: 0.53, xE: 0.9, cgH: 0.48, wb: 2.57, tyre: "sport", cdA: 0.64, clA: 0.12, brake: 1.08, tyreDia: 25.7, ratios: [3.62, 2.19, 1.54, 1.21, 1.0, 0.79], shift: 0.2, rr: 0.011 },
+    muscle: { n: "Muscle car", d: "1,650 kg · RWD · 56% front", mass: 1650, eng: 230, drive: "rwd", front: 0.56, xE: 0.95, cgH: 0.52, wb: 2.72, tyre: "street", cdA: 0.78, clA: 0, brake: 0.98, tyreDia: 26.5, ratios: [2.97, 2.07, 1.43, 1.0, 0.84, 0.56], shift: 0.3, rr: 0.012 },
+    rally: { n: "AWD rally sedan", d: "1,450 kg · AWD · 58% front", mass: 1450, eng: 150, drive: "awd", front: 0.58, xE: 1.0, cgH: 0.5, wb: 2.63, tyre: "sport", cdA: 0.74, clA: 0.18, brake: 1.05, tyreDia: 25.2, ratios: [3.64, 2.38, 1.76, 1.35, 1.06, 0.84], shift: 0.2, rr: 0.012 },
+    pickup: { n: "Pickup truck", d: "2,100 kg · RWD · tall and soft", mass: 2100, eng: 260, drive: "rwd", front: 0.57, xE: 1.0, cgH: 0.72, wb: 3.4, tyre: "eco", cdA: 1.12, clA: -0.05, brake: 0.85, tyreDia: 31, ratios: [4.17, 2.34, 1.52, 1.14, 0.85, 0.67], shift: 0.4, rr: 0.014 },
+    super: { n: "Mid-engine GT", d: "1,450 kg · RWD · 42% front · wing", mass: 1450, eng: 200, drive: "rwd", front: 0.42, xE: 0.25, cgH: 0.42, wb: 2.65, tyre: "semi", cdA: 0.74, clA: 1.0, brake: 1.2, tyreDia: 27, ratios: [3.13, 2.1, 1.62, 1.3, 1.07, 0.88, 0.7], shift: 0.12, rr: 0.011 }
+  };
+  /* tracks: a closed polygon of [x, y, corner radius, name] (metres, driven clockwise); each vertex is filleted with
+     its radius, the straights run tangent to tangent. start = metres into the main straight (vertex 0 → 1);
+     sec = sector lines as lap fractions; scale stretches the whole map. */
+  const ROAD_TRACKS = {
+    club: { n: "Coulee Park", d: "club circuit · 7 turns", start: 250, sec: [0.36, 0.7], scale: 1, pts: [
+      [-350, 215, 60, "Pit bend"], [330, 215, 30, "Elevator"], [410, -60, 80, "Section Line"], [330, -280, 19, "Gopher hairpin"], [130, -90, 50, "Coulee"],
+      [-120, -230, 38, "Slough"], [-390, -130, 110, "Canola sweep"]] },
+    gp: { n: "Prairie Sky Raceway", d: "GP circuit · 12 turns", start: 380, sec: [0.33, 0.67], scale: 1, pts: [
+      [-760, 330, 90, "Coulee"], [560, 330, 26, "Elevator"], [640, 60, 150, "Chinook kink"], [560, -170, 60, "Badlands"], [330, -170, 42, "Canola esses"],
+      [190, -330, 42, ""], [-420, -380, 21, "Grain Bin hairpin"], [-140, -200, 160, "Big Sky sweeper"], [-80, 30, 52, "Gopher"], [-420, 60, 36, "Slough"], [-600, -120, 70, "Badger"], [-860, -60, 120, ""]] }
+  };
+  const ROAD_DS = 2.5, ROAD_G = 9.81, ROAD_RHO = 1.2;
+  const TRACK_CACHE = {};
+  function roadTrack(id) {
+    if (TRACK_CACHE[id]) return TRACK_CACHE[id];
+    const T = ROAD_TRACKS[id] || ROAD_TRACKS.club;
+    // fillet each vertex: turn angle, tangent length; emit [straight, corner] pairs starting on the main straight
+    const P = T.pts.map(q => [q[0] * T.scale, q[1] * T.scale, q[2], q[3]]), nv = P.length, ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]);
+    const turn = [], tl = [];
+    for (let i = 0; i < nv; i++) { const a = P[(i - 1 + nv) % nv], v = P[i], b = P[(i + 1) % nv]; let d = ang(v, b) - ang(a, v); while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; turn.push(d); tl.push(v[2] * Math.tan(Math.abs(d) / 2)); }
+    const segs = [];
+    for (let i = 0; i < nv; i++) { const j = (i + 1) % nv, L = Math.hypot(P[j][0] - P[i][0], P[j][1] - P[i][1]) - tl[i] - tl[j]; segs.push(["s", Math.max(1, L)]); segs.push(["c", P[j][2], turn[j] * 180 / Math.PI, P[j][3]]); }
+    const h0 = ang(P[0], P[1]);
+    // sample at ROAD_DS: position, heading, curvature (+ left)
+    const X = [], Y = [], H = [], K = [], seg = [];
+    let x = P[0][0] + Math.cos(h0) * tl[0], y = P[0][1] + Math.sin(h0) * tl[0], h = h0, carry = 0;
+    const corners = [];
+    let s0 = 0;
+    segs.forEach((s, si) => {
+      const L = s[0] === "s" ? s[1] : s[1] * Math.abs(s[2]) * Math.PI / 180, k = s[0] === "s" ? 0 : Math.sign(s[2]) / s[1];
+      if (s[0] === "c") corners.push({ s0: s0, s1: s0 + L, R: s[1], deg: s[2], name: s[3] || "", i: si });
+      let u = carry;
+      while (u < L - 1e-9) {
+        let px, py, ph;
+        if (k === 0) { px = x + Math.cos(h) * u; py = y + Math.sin(h) * u; ph = h; }
+        else { const R = 1 / Math.abs(k), sg2 = Math.sign(k), cx = x - Math.sin(h) * R * sg2, cy = y + Math.cos(h) * R * sg2; ph = h + u * k; px = cx + Math.sin(ph) * R * sg2; py = cy - Math.cos(ph) * R * sg2; }
+        X.push(px); Y.push(py); H.push(ph); K.push(k); seg.push(si); u += ROAD_DS;
+      }
+      carry = u - L;
+      if (k === 0) { x += Math.cos(h) * L; y += Math.sin(h) * L; } else { const R = 1 / Math.abs(k), sg2 = Math.sign(k), cx = x - Math.sin(h) * R * sg2, cy = y + Math.cos(h) * R * sg2; h += L * k; x = cx + Math.sin(h) * R * sg2; y = cy - Math.cos(h) * R * sg2; }
+      s0 += L;
+    });
+    // rotate so sample 0 is the start/finish line; recentre the map on the origin
+    const n = X.length, i0 = Math.round(T.start / ROAD_DS) % n, rot = a2 => a2.slice(i0).concat(a2.slice(0, i0));
+    const Xr = rot(X), Yr = rot(Y), Hr = rot(H), Kr = rot(K), Sr = rot(seg);
+    let mx = Infinity, Mx = -Infinity, my = Infinity, My = -Infinity; for (let i = 0; i < n; i++) { mx = Math.min(mx, Xr[i]); Mx = Math.max(Mx, Xr[i]); my = Math.min(my, Yr[i]); My = Math.max(My, Yr[i]); }
+    const ox = (mx + Mx) / 2, oy = (my + My) / 2; for (let i = 0; i < n; i++) { Xr[i] -= ox; Yr[i] -= oy; }
+    const len = n * ROAD_DS, sh = i0 * ROAD_DS;
+    corners.forEach(c => { c.s0 = ((c.s0 - sh) % len + len) % len; c.s1 = ((c.s1 - sh) % len + len) % len; });
+    corners.sort((p, q) => p.s0 - q.s0);
+    const out = { id: T === ROAD_TRACKS[id] ? id : "club", n: T.n, d: T.d, len: len, ds: ROAD_DS, N: n, x: Xr, y: Yr, h: Hr, k: Kr, seg: Sr, corners: corners, sec: T.sec.slice(), size: [Mx - mx, My - my] };
+    TRACK_CACHE[id] = out; return out;
+  }
+
+  /* what the road car needs from a dyno result. If the build was never run atmospheric (no res.naTorque), the
+     atmospheric curve is estimated from manifold pressure — torque scales with the charge the cylinder takes in. */
+  function roadPrep(cfg, res) {
+    cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const r = Object.assign({}, res);
+    const asp = OPT.asp[cfg.asp] || OPT.asp.na;
+    r.aspKind = asp.kind; r.compound = !!asp.compound; r.turboUnits = asp.kind === "turbo" ? (asp.units || 1) : 0;
+    r.turboMm = (asp.kind === "turbo" || asp.kind === "centrifugal") ? (TURBO_MM[cfg.turboSize] || 54) : 0;
+    r.boostTarget = asp.kind === "na" ? 0 : cfg.boost;
+    if (!Array.isArray(r.naTorque) || r.naTorque.length !== r.rpms.length) r.naTorque = asp.kind === "na" ? r.torque.slice() : r.torque.map((t, i) => t * 1.013 / (1.013 + Math.max(0, (r.boostCurve || [])[i] || 0)));
+    r.redline = cfg.redline; r.idle = isDiesel(cfg) ? 700 : cfg.cam > 60 ? 1100 : 850;
+    return r;
+  }
+
+  /* the car: chassis + this engine's weight, the tyre fitted and the final drive (auto-fitted, × finalK) */
+  function roadCar(res, opt) {
+    opt = opt || {};
+    const C0 = CHASSIS[opt.ch] || CHASSIS.coupe, ty = ROAD_TYRES[opt.tyre] || ROAD_TYRES[C0.tyre];
+    const ekg = clamp(+res.kg || C0.eng, 40, 900), dm = ekg - C0.eng;
+    const m = C0.mass + dm + 75;   // + the driver
+    const front = clamp((C0.front * C0.mass + dm * C0.xE + 75 * 0.45) / m, 0.3, 0.75), dF = front - C0.front;
+    // balance off the chassis' design point costs cornering grip (nose-heavy pushes, tail-heavy snaps); tyres lose a little μ per kg
+    const kBal = clamp(1 - 1.2 * Math.abs(dF), 0.82, 1), kLoad = Math.pow(m / (C0.mass + 75), -0.12);
+    const rw = C0.tyreDia * 0.0254 / 2, eta = C0.drive === "awd" ? 0.86 : 0.9, gears = C0.ratios.slice();
+    const redline = res.redline || 7000;
+    // fit the final drive: top gear lands the engine on its power peak at the speed that power can hold against drag
+    const Pw = (res.peakHp || 100) * 745.7 * eta, crr = C0.rr * m * ROAD_G;
+    let lo = 5, hi = 140; for (let it = 0; it < 50; it++) { const v = (lo + hi) / 2; if (0.5 * ROAD_RHO * C0.cdA * v * v * v + crr * v > Pw) hi = v; else lo = v; }
+    const vPow = lo, pkR = Math.min(res.peakHpRpm || redline * 0.85, redline);
+    const top = gears[gears.length - 1];
+    let fd = (pkR * 2 * Math.PI / 60) * rw / (vPow * top);
+    fd = clamp(fd, 0.9, 6.5);
+    const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.7, 1.4), 0.7, 8);
+    return { ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
+      muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
+      cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift, engKg: ekg, vPow: vPow,
+      bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
+  }
+
+  /* engine model shared by the straight-line run and the lap: torque at rpm with the boost that has actually been built */
+  function roadEngine(res, car) {
+    const rpms = res.rpms, tq = res.torque, N = rpms.length;
+    const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let a = 0, b = N - 1; while (b - a > 1) { const m = (a + b) >> 1; if (rpms[m] <= r) a = m; else b = m; } const f = (r - rpms[a]) / (rpms[b] - rpms[a]); return arr[a] + f * (arr[b] - arr[a]); };
+    const torqueAt0 = r => r <= rpms[0] ? tq[0] * Math.max(0.35, r / rpms[0]) : interp(tq, r);
+    // the full-load curve on a 10 rpm grid: the lap asks for it a few hundred thousand times
+    const TQS = 10, TQN = Math.ceil(car.redline * 1.02 / TQS) + 2, TQT = new Float64Array(TQN); for (let i = 0; i < TQN; i++) TQT[i] = torqueAt0(i * TQS);
+    const torqueAt = r => { const x = r / TQS, i = x | 0; if (i >= TQN - 1) return torqueAt0(r); const f = x - i; return TQT[i] + (TQT[i + 1] - TQT[i]) * f; };
+    const kind = res.aspKind || "na", bT = +res.boostTarget || 0;
+    let trans = kind !== "na" && bT > 0 && Array.isArray(res.naTorque) && res.naTorque.length === N && Array.isArray(res.boostCurve) && res.boostCurve.length === N;
+    let gpb = null;
+    if (trans) {
+      gpb = new Array(N); const valid = [];
+      for (let i = 0; i < N; i++) { const b = res.boostCurve[i]; if (b > Math.max(0.10, 0.15 * bT)) { gpb[i] = Math.max(0, tq[i] - res.naTorque[i]) / b; valid.push(i); } else gpb[i] = null; }
+      if (!valid.length) trans = false;
+      else for (let i = 0; i < N; i++) if (gpb[i] == null) { let j = valid[0]; for (const k of valid) if (Math.abs(k - i) < Math.abs(j - i)) j = k; gpb[i] = gpb[j] * Math.max(0, res.naTorque[i]) / Math.max(1, res.naTorque[j]); }
+    }
+    const isTurbo = trans && kind === "turbo", tqCap = Math.max.apply(null, tq) * 1.06, mm = res.turboMm || 54, VdL = Math.max(0.5, (res.Vd || 2000) / 1000);
+    const tauBase = (0.25 + 1.0 * clamp((mm - 46) / 52, 0, 1.2)) * (res.turboUnits === 2 && !res.compound ? 0.78 : 1) * clamp(Math.pow(2.5 / VdL, 0.3), 0.55, 1.5);
+    const pkRpm = res.peakHpRpm || car.redline * 0.85;
+    const gridOf = fn => { const T2 = new Float64Array(TQN); for (let i = 0; i < TQN; i++) T2[i] = fn(i * TQS); return r => { const x = r / TQS, i = x | 0; if (i >= TQN - 1) return fn(r); if (i < 0) return T2[0]; const f = x - i; return T2[i] + (T2[i + 1] - T2[i]) * f; }; };
+    const bss = trans ? gridOf(r => Math.max(0, interp(res.boostCurve, r))) : () => 0, gpbAt = trans ? gridOf(r => interp(gpb, r)) : null, naAt = trans ? gridOf(r => interp(res.naTorque, r)) : null;
+    const E = {
+      trans: trans, bss: bss,
+      // full-throttle torque with boost state b (bar); above the redline the limiter cuts it
+      tq: (r, b) => {
+        if (r > car.redline * 1.005) return 0;
+        if (!trans) return torqueAt(r);
+        const full = torqueAt(r), d = b - bss(r), gb = gpbAt(r);
+        return d >= 0 ? Math.min(full + gb * d, Math.max(tqCap, full)) : Math.max(naAt(r), full + gb * d);
+      },
+      steadyTq: r => r > car.redline * 1.005 ? 0 : torqueAt(r),
+      boost: (b, dt, r, load) => {
+        if (!trans) return 0;
+        const tgt = Math.min(bT, bss(r) * Math.pow(clamp(load, 0, 1), isTurbo ? 1.5 : 1));
+        let tau = 0.05;
+        if (isTurbo) { tau = tgt > b ? tauBase / Math.pow(clamp(r * Math.max(0.15, load) / pkRpm, 0.08, 1.3), 0.75) : 0.35; if (res.compound && tgt > b) tau *= b > 0.5 * bT ? 1.35 : 0.7; }
+        return clamp(b + (tgt - b) * (1 - Math.exp(-dt / Math.max(0.03, tau))), 0, bT);
+      }
+    };
+    return E;
+  }
+  const rpmOf = (car, v, g) => v / car.rw * car.gears[g] * car.fd * 60 / (2 * Math.PI);
+  // the gear that pulls hardest at this speed (steady boost) without going past the redline
+  function bestGear(car, E, v, cap) {
+    let best = car.gears.length - 1, bf = -1;
+    for (let g = 0; g < car.gears.length; g++) { const r = rpmOf(car, v, g); if (r > car.redline * (cap || 0.995)) continue; const f = E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; if (f > bf) { bf = f; best = g; } }
+    return best;
+  }
+  const gearPull = (car, E, v, g) => { const r = rpmOf(car, v, g); return r > car.redline ? 0 : E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; };
+  // most force the tyres take for drive (a = 0 weight transfer handled implicitly), and for braking, at speed v with lateral use latF (0..1)
+  function tractionF(car, v, latF) {
+    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - latF * latF)), hw = car.h / car.wb;
+    if (car.drive === "awd") return mu * (mg + DF) * 0.98;
+    if (car.drive === "fwd") return mu * (mg * car.front + DF * 0.45) / (1 + mu * hw);
+    return mu * (mg * (1 - car.front) + DF * 0.55) / Math.max(0.3, 1 - mu * hw);
+  }
+  function brakeF(car, v, latF) {
+    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G;
+    return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - latF * latF));
+  }
+  // flywheel, gears and wheels have to be spun up too: the usual 1.04 + k·N² effective-mass factor on the overall ratio N
+  const mEff = (car, g) => { const N = car.gears[g] * car.fd; return 1.04 + 0.0008 * N * N; };
+  const dragF = (car, v) => 0.5 * ROAD_RHO * car.cdA * v * v + car.crr;
+
+  /* straight line: 0–60 mph, 0–100 km/h, 0–200, the quarter, 80–120 rolling, top speed, 100–0 */
+  function roadRun(res, opt) {
+    const car = roadCar(res, opt), E = roadEngine(res, car), m = car.m;
+    const out = { car: car };
+    // standing start: clutch slips at the launch rpm until the wheels catch up; turbo pre-loaded a little against the brake
+    const launch = clamp(Math.max(car.idle + 1200, (res.peakTqRpm || 3000) * 0.75), car.idle + 600, car.redline * 0.8);
+    let v = 0, x = 0, t = 0, g = 0, shiftLeft = 0, b = E.bss(launch) * 0.35, spin = 0, z60 = null, z100 = null, z200 = null, q = null, e8 = null;
+    const dt = 0.01;
+    while (t < 60 && (q == null || z200 == null && t < 40)) {
+      let F = 0, rpm;
+      const vr = rpmOf(car, v, g);
+      if (shiftLeft > 0) { shiftLeft -= dt; rpm = vr; if (shiftLeft <= 0) g++; }
+      else {
+        const bg = bestGear(car, E, v); if (bg > g && v > 1) { shiftLeft = car.shift; }
+        rpm = Math.max(vr, g === 0 ? launch : car.idle);
+        F = E.tq(rpm, b) * car.gears[g] * car.fd * car.eta / car.rw;
+        const Ft = tractionF(car, v, 0); if (F > Ft) { spin += dt; F = Ft; }
+      }
+      b = E.boost(b, dt, rpm, shiftLeft > 0 ? 0.7 : 1);
+      const a = (F - dragF(car, v)) / (m * mEff(car, g));
+      v = Math.max(0, v + a * dt); x += v * dt; t += dt;
+      if (z60 == null && v >= 26.8224) z60 = t;
+      if (z100 == null && v >= 27.7778) z100 = t;
+      if (z200 == null && v >= 55.5556) z200 = t;
+      if (e8 == null && x >= 201.168) e8 = { t: t, kmh: v * 3.6 };
+      if (q == null && x >= 402.336) q = { t: t, kmh: v * 3.6, mph: v * 2.23694 };
+    }
+    out.zero60 = z60; out.zero100 = z100; out.zero200 = z200; out.quarter = q; out.eighth = e8; out.spinT = +spin.toFixed(2);
+    // top speed: the fastest speed where some gear still has force to spare at steady boost
+    let vt = 0, gt = car.gears.length - 1, lim = "drag";
+    for (let vv = 5; vv < 140; vv += 0.1) {
+      let ok = false, gg = -1; for (let k = 0; k < car.gears.length; k++) { const r = rpmOf(car, vv, k); if (r > car.redline) continue; const f = E.steadyTq(Math.max(r, car.idle)) * car.gears[k] * car.fd * car.eta / car.rw; if (f > dragF(car, vv)) { ok = true; gg = k; } }
+      if (!ok) break; vt = vv; gt = gg;
+    }
+    if (rpmOf(car, vt + 0.15, gt) > car.redline && gt === car.gears.length - 1) lim = "redline";
+    out.top = { kmh: +(vt * 3.6).toFixed(1), mph: +(vt * 2.23694).toFixed(1), gear: gt + 1, limit: lim };
+    // 80–120 km/h: kick down to the best gear, boost starts from cruise
+    v = 80 / 3.6; t = 0; g = bestGear(car, E, v); b = E.bss(rpmOf(car, v, g)) * 0.15; shiftLeft = 0;
+    while (v < 120 / 3.6 && t < 40) {
+      let F = 0; const rpm = rpmOf(car, v, g);
+      if (shiftLeft > 0) { shiftLeft -= dt; if (shiftLeft <= 0) g++; }
+      else { if (bestGear(car, E, v) > g) shiftLeft = car.shift; F = Math.min(E.tq(rpm, b) * car.gears[g] * car.fd * car.eta / car.rw, tractionF(car, v, 0)); }
+      b = E.boost(b, dt, rpm, shiftLeft > 0 ? 0.7 : 1);
+      v += (F - dragF(car, v)) / (m * mEff(car, g)) * dt; t += dt;
+    }
+    out.roll80120 = v >= 120 / 3.6 ? +t.toFixed(2) : null;
+    // 100–0 km/h on the brakes
+    v = 100 / 3.6; x = 0; while (v > 0) { const a = (brakeF(car, v, 0) + dragF(car, v)) / m; x += v * 0.002; v -= a * 0.002; }
+    out.brake100 = +x.toFixed(1);
+    return out;
+  }
+
+  /* one lap, flying start. Returns the lap time, sectors and a dense trace (one sample per ROAD_DS metres). */
+  function lapSim(res, opt, trackId) {
+    const T = roadTrack(trackId), N = T.N, ds = T.ds, car = roadCar(res, opt), E = roadEngine(res, car), m = car.m;
+    // grip ceiling: v²|k| = μ (g + ½ρ clA v² / m)
+    const vc = new Float64Array(N); let iMin = 0;
+    const aero = 0.5 * ROAD_RHO * car.clA / m;
+    for (let i = 0; i < N; i++) { const k = Math.abs(T.k[i]); if (k < 1e-6) { vc[i] = 150; continue; } const den = k - car.muLat * aero; vc[i] = den <= 0 ? 150 : Math.min(150, Math.sqrt(car.muLat * ROAD_G / den)); if (vc[i] < vc[iMin]) iMin = i; }
+    const ayMax = v => car.muLat * (ROAD_G + aero * v * v);
+    const latUse = (i, v) => Math.min(1, v * v * Math.abs(T.k[i]) / ayMax(v));
+    // backward pass: how fast it can be going here and still make every corner ahead (two laps round from the slowest point)
+    const vb = Float64Array.from(vc);
+    for (let it = 0; it < 2 * N; it++) {
+      const i = ((iMin - it) % N + N) % N, j = (i + 1) % N;
+      const vj = vb[j], lat = latUse(j, vj), dec = (brakeF(car, vj, lat * 0.98) + dragF(car, vj)) / m;
+      const lim = Math.sqrt(vj * vj + 2 * dec * ds); if (lim < vb[i]) vb[i] = lim;
+    }
+    // forward pass: full throttle wherever the envelope allows, gear + shift + boost carried, two laps to settle
+    const tr = { v: new Float32Array(N), g: new Uint8Array(N), rpm: new Float32Array(N), thr: new Float32Array(N), brk: new Float32Array(N), bst: new Float32Array(N), t: new Float64Array(N + 1), ax: new Float32Array(N), ay: new Float32Array(N), lim: new Uint8Array(N) };
+    let v = vb[iMin], g = bestGear(car, E, v), shiftLeft = 0, b = 0, shifts = 0, lim = 0;
+    const dtOf = (v0, v1) => 2 * ds / Math.max(0.5, v0 + v1);
+    for (let it = 0; it < 2 * N; it++) {
+      const i = (iMin + it) % N, j = (i + 1) % N, rec = it >= N;
+      const lat = latUse(i, v), Ft = tractionF(car, v, Math.min(0.995, lat));
+      let rpm = Math.max(rpmOf(car, v, g), car.idle), Fe = 0;
+      if (shiftLeft <= 0) {
+        const bg = bestGear(car, E, v), bd = bestGear(car, E, v, 0.9);   // down a gear only with room under the redline: no hunting at the limiter
+        if (bg > g) { shiftLeft = car.shift; if (rec) shifts++; }
+        else if (bd < g && gearPull(car, E, v, bd) > 1.12 * gearPull(car, E, v, g)) { g = bd; rpm = Math.max(rpmOf(car, v, g), car.idle); }
+      }
+      if (shiftLeft <= 0) Fe = E.tq(rpm, b) * car.gears[g] * car.fd * car.eta / car.rw;
+      const Fd = dragF(car, v);
+      let F = Math.min(Fe, Ft), v1 = Math.sqrt(Math.max(0.25, v * v + 2 * (F - Fd) / (m * mEff(car, g)) * ds)), thr = shiftLeft > 0 ? 0 : 1, brk = 0;
+      const tl = F < Fe && F === Ft;
+      if (tl && rec) lim += dtOf(v, v1);   // traction-limited time (wheelspin / push on corner exit)
+      if (v1 > vb[j]) {
+        const Freq = m * mEff(car, g) * (vb[j] * vb[j] - v * v) / (2 * ds) + Fd;
+        v1 = vb[j];
+        if (Freq >= 0) thr = Fe > 0 ? clamp(Freq / Fe, 0, 1) : 0; else { thr = 0; brk = clamp(-Freq / Math.max(1, brakeF(car, v, 0)), 0, 1); }
+      }
+      const dt = dtOf(v, v1);
+      if (shiftLeft > 0) { shiftLeft -= dt; if (shiftLeft <= 0) g = Math.min(car.gears.length - 1, g + 1); }
+      b = E.boost(b, dt, rpm, shiftLeft > 0 ? 0.7 : thr);
+      if (rec) { tr.v[i] = v; tr.g[i] = g + 1; tr.rpm[i] = rpm; tr.thr[i] = thr; tr.brk[i] = brk; tr.bst[i] = b; tr.ax[i] = (v1 - v) / dt / ROAD_G; tr.ay[i] = v * v * T.k[i] / ROAD_G; tr.t[i] = dt; tr.lim[i] = tl && v1 <= vb[j] + 1e-9 && thr > 0.5 ? 1 : 0; }
+      v = v1;
+    }
+    // cumulative time from the start line (sample 0)
+    let acc = 0; for (let i = 0; i < N; i++) { const d = tr.t[i]; tr.t[i] = acc; acc += d; } tr.t[N] = acc;
+    const time = acc;
+    const secT = T.sec.map(f => tr.t[Math.round(f * N)]);
+    const sectors = [secT[0], secT[1] - secT[0], time - secT[1]];
+    let vmax = 0, vmaxAt = 0; for (let i = 0; i < N; i++) if (tr.v[i] > vmax) { vmax = tr.v[i]; vmaxAt = i * ds; }
+    // slowest point of each corner (the apex speed)
+    const apex = T.corners.filter(c => c.name).map(c => { let mn = 999, at = c.s0; const i0 = Math.floor(c.s0 / ds), i1 = Math.ceil((c.s1 < c.s0 ? c.s1 + T.len : c.s1) / ds); for (let q2 = i0; q2 <= i1; q2++) { const ii = q2 % N; if (tr.v[ii] < mn) { mn = tr.v[ii]; at = ii * ds; } } return { name: c.name, kmh: +(mn * 3.6).toFixed(1), s: at }; });
+    let vmin = 999; for (let i = 0; i < N; i++) vmin = Math.min(vmin, tr.v[i]);
+    let ayPk = 0, brPk = 0, full = 0; for (let i = 0; i < N; i++) { ayPk = Math.max(ayPk, Math.abs(tr.ay[i])); brPk = Math.min(brPk, tr.ax[i]); if (tr.thr[i] > 0.98) full += tr.t[i + 1] - tr.t[i]; }
+    return { track: T.id, trackName: T.n, len: T.len, time: time, sectors: sectors, vmax: vmax * 3.6, vmaxAt: vmaxAt, vmin: vmin * 3.6, apex: apex, shifts: shifts,
+      tractionT: +lim.toFixed(2), fullPct: Math.round(100 * full / time), ayPk: +ayPk.toFixed(2), brakePk: +(-brPk).toFixed(2), trace: tr, car: car, N: N, ds: ds };
+  }
+  /* both, for the app: straight-line figures + a lap */
+  function roadTest(res, opt, trackId) { const r = roadRun(res, opt); r.lap = lapSim(res, opt, trackId); return r; }
+
+  /* =====================================================================
      BONNEVILLE — land-speed runs on the salt.
      A push truck rolls the car to ~27 mph, then the driver has a run-up (one mile on the
      short course, two on the long) to the timed mile, then shuts off and pulls the chute.
@@ -6213,6 +6524,7 @@ const ENGINE_SIM = (function () {
     isRotary: isRotary,
     n2oBottle: n2oBottle,
     pullRun: pullRun, pullPass: pullPass, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
+    roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
     lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel,
     exhaustNoise: exhaustNoise, exhaustInfo: exhaustInfo, exhSysOf: exhSysOf, exhParts: exhParts
@@ -13182,6 +13494,7 @@ function loop(now){
   var dt=Math.min(clock.getDelta(), 0.05);
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
+  if(ROAD.on && ROAD.W){ roadRender(); return; }
   if(SALT.on && SALT.built){ saltRender(); return; }
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ stripRender(); return; }
@@ -15515,6 +15828,295 @@ function pullUpdate(o, dt){
   PULL.prev={phase:ph, full:!!o.full};
 }
 
+
+/* ===========================================================================
+   ROAD COURSE SCENE — the road test's flying lap, a fourth world the view cuts
+   to while ENGINE_VIS.setRoad({on:true, track, s, v, ...}) is fed every frame.
+   Units metres. The track comes from ENGINE_SIM.roadTrack (x, y, heading,
+   curvature per 2.5 m sample); world x = track x, world z = −track y, so a
+   heading h faces (cos h, 0, −sin h) and a car's rotation.y is simply h.
+   One world per circuit, built on first use: asphalt ribbon, kerbs on every
+   corner, gravel traps on the outside, a pit straight with a timing gantry,
+   grandstands, trees, the coulee hills. Scenery goes through StripBatch like
+   the strip and the pull; the car is the strip's door car, scaled per chassis.
+   ==========================================================================*/
+var ROAD={ on:false, worlds:{}, W:null, cam:null, cars:{}, car:null, carKey:"", camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:50, shot:null, shotT:0, cutT:9,
+  snap:true, skip:false, night:null, tier:null, exposure:0.92, composer:null, stats:null, lastT:0, st:-1, chP:new THREE.Vector3(), chT:new THREE.Vector3(), roll:0, steer:0, mode:"auto" };
+var ROAD_W=12, _rA=new THREE.Vector3(), _rB=new THREE.Vector3(), _rC=new THREE.Vector3(), _rF=new THREE.Vector3(), _rW=new THREE.Vector3(0.6,0,-0.4);
+var ROAD_GLSL_GROUND=[
+  "vec3 stripSurf(vec3 w, out float rough){",
+  "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(30.0,160.0,d), mid=1.0-smoothstep(150.0,1100.0,d);",
+  "  float mow=step(0.5,fract((p.x*0.7+p.y*0.7)/9.0));",
+  "  vec3 grass=vec3(0.10,0.155,0.052)*(0.82+0.32*sn(p*0.05))*(1.0+(mow-0.5)*0.18*mid)*(0.9+0.2*sn(p*1.9)*fine);",
+  "  float inf=1.0-smoothstep(uR,uR+60.0,max(abs(p.x)-uHx,abs(p.y)-uHy)+uR);",
+  "  vec2 q=(p+vec2(402.0,402.0))/805.0; vec2 cell=floor(q); float h=sh(cell+23.0);",
+  "  vec3 fc= h<0.22?vec3(0.40,0.30,0.11): h<0.40?vec3(0.50,0.42,0.03): h<0.56?vec3(0.11,0.17,0.05): h<0.72?vec3(0.30,0.23,0.12): h<0.86?vec3(0.18,0.13,0.08):vec3(0.16,0.19,0.08);",
+  "  float dir=step(0.5,sh(cell+3.0)); fc*=0.9+0.14*(0.5+0.5*sin(mix(p.x,p.y,dir)*1.3))*mid+0.22*(sn(p*0.006+cell*7.0)-0.5);",
+  "  vec2 rp=abs(fract((p+vec2(402.0,402.0))/1609.0+0.5)-0.5)*1609.0; fc=mix(fc,vec3(0.34,0.30,0.24),1.0-smoothstep(4.0,7.0,min(rp.x,rp.y)));",
+  "  vec3 c=mix(fc,grass,inf); rough=0.96; return c; }"].join("\n");
+
+/* --- canvas art: asphalt, kerb stripes, gravel, chequer line, banners --- */
+function roadAsphaltTex(){
+  var c=newCanvas(256,512), x=c.getContext("2d"), img=x.createImageData(256,512), d=img.data;
+  for(var j=0;j<512;j++) for(var i=0;i<256;i++){ var n=fbm(i/256,j/512,4,6,3)*0.6+hashi(i,j,7)*0.4, k=(j*256+i)*4, u=Math.abs(i/255-0.5)*2;
+    var rub=Math.exp(-Math.pow((u-0.42)/0.16,2))*0.35+Math.exp(-Math.pow(u/0.2,2))*0.12, v=44+44*n-rub*26;
+    d[k]=v; d[k+1]=v+1; d[k+2]=v+4; d[k+3]=255; }
+  x.putImageData(img,0,0);
+  x.fillStyle="rgba(236,234,226,0.92)"; x.fillRect(5,0,7,512); x.fillRect(244,0,7,512);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=MAXANISO; return t;
+}
+function roadKerbTex(){
+  var c=newCanvas(64,128), x=c.getContext("2d");
+  for(var j=0;j<4;j++){ x.fillStyle=(j&1)?"#f0ede4":"#c8261c"; x.fillRect(0,j*32,64,32); }
+  x.fillStyle="rgba(0,0,0,0.18)"; x.fillRect(0,0,6,128);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=MAXANISO; return t;
+}
+function roadGravelTex(){
+  var c=newCanvas(128,128), x=c.getContext("2d"), img=x.createImageData(128,128), d=img.data;
+  for(var j=0;j<128;j++) for(var i=0;i<128;i++){ var n=hashi(i,j,11)*0.6+fbm(i/128,j/128,3,5,9)*0.4, k=(j*128+i)*4; d[k]=150+70*n; d[k+1]=132+62*n; d[k+2]=100+50*n; d[k+3]=255; }
+  x.putImageData(img,0,0); var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
+}
+function roadAtlas(name){
+  var c=newCanvas(1024,512), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
+  function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2);
+    if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
+  panel(0,0,1024,96,"#f1ede2","#1d4787",String(name).toUpperCase(),62,"#ff7a1a");
+  panel(0,98,340,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",42,"#d9a52b"); panel(342,98,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414"); panel(684,98,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
+  panel(0,164,340,64,"#2c6b3a","#f4f1e8","HALCYON GT",42); panel(342,164,340,64,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS",30,"#ff7a1a"); panel(684,164,340,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",40);
+  for(var i=0;i<64;i++) for(var j=0;j<4;j++){ x.fillStyle=((i+j)&1)?"#111":"#f2f2f2"; x.fillRect(i*16, 232+j*16, 16,16); }
+  panel(0,300,256,96,"#15171b","#f4efe2","PIT",64,"#ff7a1a"); panel(258,300,256,96,"#f4efe2","#c8261c","3",80); panel(514,300,256,96,"#f4efe2","#c8261c","2",80); panel(770,300,254,96,"#f4efe2","#c8261c","1",80);
+  x.fillStyle="#0e1418"; x.fillRect(0,400,1024,110); for(i=0;i<16;i++){ x.fillStyle="#26343d"; x.fillRect(i*64+4,404,56,102); x.fillStyle="rgba(170,200,220,0.25)"; x.fillRect(i*64+6,406,20,98); }
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
+}
+var ROAD_UV={ name:[0,1-96/512,1,1], ban:[[0,1-162/512,340/1024,1-98/512],[342/1024,1-162/512,682/1024,1-98/512],[684/1024,1-162/512,1,1-98/512],[0,1-228/512,340/1024,1-164/512],[342/1024,1-228/512,682/1024,1-164/512],[684/1024,1-228/512,1,1-164/512]],
+  cheq:[0,1-296/512,1,1-232/512], pit:[0,1-396/512,0.25,1-300/512], brd:function(i){ return [(258+i*256)/1024,1-396/512,(258+i*256+254)/1024,1-300/512]; }, win:[0,1-510/512,1,1-400/512] };
+
+/* a ribbon along the track between lateral offsets dA..dB (+ = left of the driving line), samples i0..i1 (wrapping) */
+function roadRibbon(T, i0, i1, dA, dB, y, vScale, closed){
+  var N=T.N, n=closed?N+1:(((i1-i0)%N+N)%N)+1, pos=new Float32Array(n*6), nor=new Float32Array(n*6), uv=new Float32Array(n*4), idx=[], q;
+  for(q=0;q<n;q++){ var i=(i0+q)%N, h=T.h[i], sx=-Math.sin(h), sy=Math.cos(h), x=T.x[i], yy=T.y[i];
+    var da=typeof dA==="function"?dA(i):dA, db=typeof dB==="function"?dB(i):dB;
+    pos[q*6]=x+sx*da; pos[q*6+1]=y; pos[q*6+2]=-(yy+sy*da); pos[q*6+3]=x+sx*db; pos[q*6+4]=y; pos[q*6+5]=-(yy+sy*db);
+    nor[q*6+1]=1; nor[q*6+4]=1; var v=q*T.ds/vScale; uv[q*4]=0; uv[q*4+1]=v; uv[q*4+2]=1; uv[q*4+3]=v;
+    if(q<n-1){ var a=q*2, b=a+1, c2=a+2, d2=a+3; if(db<da) idx.push(a,b,c2, b,d2,c2); else idx.push(a,c2,b, b,c2,d2); } }
+  var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.BufferAttribute(pos,3)); g.setAttribute("normal",new THREE.BufferAttribute(nor,3)); g.setAttribute("uv",new THREE.BufferAttribute(uv,2)); g.setIndex(idx); g.computeBoundingSphere();
+  return g;
+}
+/* track-relative point: sample i (fractional ok), lateral offset d, height y -> world vector */
+function roadPt(T, i, d, y, out){ var N=T.N, i0=Math.floor(i), f=i-i0, a=((i0%N)+N)%N, b=(a+1)%N, x=lerp(T.x[a],T.x[b],f), yy=lerp(T.y[a],T.y[b],f), h=T.h[a]+((T.h[b]-T.h[a]+PI*3)%TAU-PI)*f;
+  return out.set(x-Math.sin(h)*d, y, -(yy+Math.cos(h)*d)); }
+function roadHd(T, i){ var N=T.N, i0=Math.floor(i), f=i-i0, a=((i0%N)+N)%N, b=(a+1)%N; return T.h[a]+((T.h[b]-T.h[a]+PI*3)%TAU-PI)*f; }
+
+function buildRoadWorld(T){
+  var W={T:T, scene:new THREE.Scene(), mats:{}, stations:[]}, S4=W.scene, lite=(GFX==="lite"), M=W.mats, N=T.N, ds=T.ds, hw=ROAD_W/2, i, k, q;
+  var rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); };
+  /* lights + sky + ground */
+  var hemi=new THREE.HemisphereLight(0xcfdcf0, 0x5a5a3c, 0.22); S4.add(hemi); W.hemi=hemi;
+  var sun=new THREE.DirectionalLight(0xffe6c4, 1.45); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-30; shc.right=30; shc.top=30; shc.bottom=-30; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
+  S4.add(sun); S4.add(sun.target); W.sun=sun;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S4.add(sky); W.sky=sky;
+  S4.fog=new THREE.Fog(0xffffff, 300, 3200); W.fog=S4.fog;
+  var gm=stripSurfMat(ROAD_GLSL_GROUND.replace(/uR/g,"60.0").replace(/uHx/g,(T.size[0]/2+90).toFixed(1)).replace(/uHy/g,(T.size[1]/2+90).toFixed(1)));
+  gm.customProgramCacheKey=function(){ return "road_ground_"+T.id; };
+  var ground=new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), gm); ground.rotation.x=-PI/2; ground.position.y=-0.05; ground.receiveShadow=true; S4.add(ground);
+  /* asphalt, kerbs, gravel, start line */
+  M.asph=new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2});
+  M.kerb=new THREE.MeshStandardMaterial({map:roadKerbTex(), roughness:0.7, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-3});
+  M.grav=new THREE.MeshStandardMaterial({map:roadGravelTex(), roughness:1, color:0xd8ccb4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+  M.verge=new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+  M.sign=new THREE.MeshStandardMaterial({map:roadAtlas(T.n), roughness:0.72});
+  M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.86}); M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.42, metalness:0.65});
+  M.lamp=new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false, color:0x777777});
+  var road=new THREE.Mesh(roadRibbon(T, 0, 0, hw, -hw, 0.02, 20, true), M.asph); road.receiveShadow=true; S4.add(road);
+  M.asph.map.repeat.set(1,1);
+  /* corners: runs of samples with |k| > 1/260 (grown a little at each end) */
+  var runs=[], inR=false, r0=0;
+  for(i=0;i<=N;i++){ var on=i<N && Math.abs(T.k[i])>1/260; if(on&&!inR){ inR=true; r0=i; } else if(!on&&inR){ inR=false; runs.push([r0,i-1]); } }
+  if(runs.length>1 && runs[0][0]===0 && runs[runs.length-1][1]===N-1){ runs[0][0]=runs[runs.length-1][0]-N; runs.pop(); }
+  W.runs=runs;
+  runs.forEach(function(r){ var a=r[0]-4, b=r[1]+4, mid=((((r[0]+r[1])>>1)%N)+N)%N, sg=Math.sign(T.k[mid])||1, a0=(a+N)%N, b0=(b+N)%N;
+    var kin=new THREE.Mesh(roadRibbon(T, a0, b0, sg*hw, sg*(hw+1.3), 0.035, 4, false), M.kerb); kin.receiveShadow=true; S4.add(kin);
+    var kout=new THREE.Mesh(roadRibbon(T, a0, b0, -sg*hw, -sg*(hw+1.5), 0.035, 4, false), M.kerb); kout.receiveShadow=true; S4.add(kout);
+    var len=(b-a), ga=(a-2+N)%N, gb=(b+Math.round(36/ds)+N)%N, R=1/Math.abs(T.k[mid]||1/100), gw=clamp(9+260/R,10,22);
+    var taper=function(ii){ var u=(((ii-ga)%N)+N)%N, L=(((gb-ga)%N)+N)%N, f=Math.min(1, u/6, (L-u)/10); return -sg*(hw+1.5+0.2+gw*clamp(f,0.15,1)); };
+    var gr=new THREE.Mesh(roadRibbon(T, ga, gb, -sg*(hw+1.6), taper, 0.015, 8, false), M.grav); gr.receiveShadow=true; S4.add(gr);
+    r.sg=sg; r.ga=ga; r.gb=gb; r.gw=gw; r.R=R; r.len=len; });
+  /* start/finish chequer across the track */
+  var cq=new THREE.Mesh(roadRibbon(T, N-1, 0, hw, -hw, 0.04, 1, false), new THREE.MeshStandardMaterial({map:M.sign.map, roughness:0.7, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-4}));
+  (function(){ var uv=cq.geometry.attributes.uv; var R=ROAD_UV.cheq; for(var j=0;j<uv.count;j++){ uv.setXY(j, lerp(R[0],R[2],uv.getX(j)), lerp(R[1],R[3],uv.getY(j)>0?1:0)); } uv.needsUpdate=true; })();
+  S4.add(cq);
+
+  var B=new StripBatch(), CONC=0xc9c4b6, STEEL=0x8d9296, DARK=0x2a2c2f, TYRE=0x1a1a1c;
+  /* barriers: tyre-faced walls behind every gravel trap, armco on the open stretches of the outside */
+  runs.forEach(function(r, ri){ var L=(((r.gb-r.ga)%N)+N)%N;
+    for(q=0;q<=L;q+=2){ var ii=(r.ga+q)%N, f=Math.min(1,q/6,(L-q)/10), d=-r.sg*(hw+1.9+r.gw*clamp(f,0.15,1)+0.6), h=T.h[ii]; roadPt(T, ii, d, 0, _rA);
+      B.box("solid", _rA.x, 0.45, _rA.z, 5.3, 0.9, 0.5, CONC, h); B.box("solid", _rA.x-Math.sin(h)*r.sg*0.32, 0.38, _rA.z-Math.cos(h)*r.sg*0.32, 5.3, 0.62, 0.36, q%4?TYRE:0x2b2d30, h);
+      if(q%4===0) B.add("sign","plane",[_rA.x-Math.sin(h)*r.sg*0.52, 0.62, _rA.z-Math.cos(h)*r.sg*0.52],[4.6,0.5,1],0xffffff,[0,h+(r.sg>0?PI:0),0],ROAD_UV.ban[(ri+q/4)%6]); }
+    /* brake boards 150 / 100 / 50 m before the slow corners */
+    if(r.R<70){ var app=(r.ga+N)%N; [150,100,50].forEach(function(m,bi){ var ii=((app-Math.round(m/ds))%N+N)%N, h=T.h[ii], d=-r.sg*(hw+3.2); roadPt(T, ii, d, 0, _rA);
+      B.add("metal","cyl6",[_rA.x,0.6,_rA.z],[0.08,1.2,0.08],STEEL); B.add("sign","plane",[_rA.x,1.35,_rA.z],[0.9,0.6,1],0xffffff,[0,h-PI/2,0],ROAD_UV.brd(bi)); }); }
+    W.stations.push({i:(((r[0]+r[1])>>1)+N)%N, d:-r.sg*(hw+1.9+r.gw+9), y:3.2+(ri%3)*1.4}); });
+  /* the pit straight: the straight that holds the line; pits and pit wall inside (right), stands outside (left) */
+  var s0=0, s1=0; while(Math.abs(T.k[(s0-1+N)%N])<1e-6 && s0>-N/2) s0--; while(Math.abs(T.k[(s1+1)%N])<1e-6 && s1<N/2) s1++;
+  W.pit=[s0,s1];
+  var pitA=s0+8, pitB=s1-8;
+  var pl=new THREE.Mesh(roadRibbon(T, (pitA+N)%N, (pitB+N)%N, -(hw+4), -(hw+16), 0.02, 20, false), M.verge); pl.receiveShadow=true; S4.add(pl);
+  for(q=pitA;q<=pitB;q+=2){ var ii=(q+N)%N, h=T.h[ii]; roadPt(T, ii, -(hw+3.2), 0, _rA); B.box("solid", _rA.x, 0.55, _rA.z, 5.2, 1.1, 0.5, CONC, h);
+    if(q%6===0) B.add("sign","plane",[_rA.x-Math.sin(h)*0.26, 0.62, _rA.z-Math.cos(h)*0.26],[4.6,0.6,1],0xffffff,[0,h+PI,0],ROAD_UV.ban[((q/6)|0)%6]); }
+  /* pit building: garages along the lane, a control tower over the line */
+  var gA=s0+16, gB=Math.min(s1-30, s0+16+Math.round(220/ds));
+  for(q=gA;q<gB;q+=Math.round(12/ds)){ var ii2=(q+N)%N, h2=T.h[ii2]; roadPt(T, ii2+2.4, -(hw+23), 0, _rA);
+    B.box("solid", _rA.x, 3.2, _rA.z, 11.6, 6.4, 13, 0xe7e2d6, h2); roadPt(T, ii2+2.4, -(hw+16.45), 0, _rB); B.box("solid", _rB.x, 2.2, _rB.z, 9.4, 4.4, 0.1, q%2?0x2b2f35:0x3a4048, h2);
+    roadPt(T, ii2+2.4, -(hw+23), 0, _rA); B.box("solid", _rA.x, 6.55, _rA.z, 12, 0.3, 14, 0x3c3f44, h2); }
+  roadPt(T, 6, -(hw+24), 0, _rA); B.box("solid", _rA.x, 7.5, _rA.z, 10, 15, 10, 0xe9e6dc, T.h[6]); roadPt(T, 6, -(hw+18.9), 0, _rB);
+  B.add("sign","plane",[_rB.x, 11.6, _rB.z],[9,2.6,1],0xffffff,[0,T.h[6]+PI,0],ROAD_UV.win); B.add("sign","plane",[_rB.x, 14, _rB.z],[9,0.85,1],0xffffff,[0,T.h[6]+PI,0],ROAD_UV.name);
+  roadPt(T, gA-6, -(hw+16.5), 0, _rA); B.add("sign","plane",[_rA.x, 3.4, _rA.z],[3,1.1,1],0xffffff,[0,T.h[(gA-6+N)%N]+PI,0],ROAD_UV.pit);
+  /* timing gantry over the line */
+  (function(){ var h=T.h[0], L=ROAD_W+4; for(var sd=-1;sd<=1;sd+=2){ roadPt(T, 0, sd*(hw+1.6), 0, _rA); B.add("metal","box",[_rA.x,3.6,_rA.z],[0.45,7.2,0.45],STEEL,[0,h,0]); }
+    roadPt(T, 0, 0, 0, _rA); B.add("metal","box",[_rA.x,6.9,_rA.z],[0.7,1.1,L],DARK,[0,h,0]);
+    B.add("sign","plane",[_rA.x-Math.cos(h)*0.37,6.9,_rA.z+Math.sin(h)*0.37],[L-0.6,1.0,1],0xffffff,[0,h-PI/2,0],ROAD_UV.name);
+    B.add("sign","plane",[_rA.x+Math.cos(h)*0.37,6.9,_rA.z-Math.sin(h)*0.37],[L-0.6,1.0,1],0xffffff,[0,h+PI/2,0],ROAD_UV.name);
+    for(var j=0;j<5;j++){ roadPt(T, 0, -2.6+j*1.3, 0, _rB); B.add("lamp","box",[_rB.x-Math.cos(h)*0.4,6.2,_rB.z+Math.sin(h)*0.4],[0.1,0.42,0.42],0xff2a18,[0,h,0]); } })();
+  /* grandstands outside the pit straight */
+  var stands=[]; for(q=Math.max(s0+20,-Math.round(260/ds)); q<Math.min(s1-20, Math.round(160/ds)); q+=Math.round(44/ds)) stands.push(q);
+  var rows=lite?7:9, seatPts=[];
+  stands.forEach(function(sq, si){ var ii=(sq+N)%N, h=T.h[ii], len=40;
+    for(var r=0;r<rows;r++){ roadPt(T, ii, hw+9+r*0.85, 0, _rA); B.box("solid", _rA.x, 0.45+r*0.5, _rA.z, len, 0.9+r*1.0, 0.85, r%2?0xb9b4a8:0xa9a497, h);
+      B.box("solid", _rA.x, 0.95+r*0.5+r*0.5, _rA.z, len, 0.12, 0.5, [0x1d4787,0xff7a1a,0x2c6b3a,0xb7261d][si%4], h);
+      for(var p=-len/2+0.5;p<len/2-0.3;p+=0.62){ if(rng(p*3.1+r*17.7+si*5.3)>(lite?0.35:0.6)) continue; seatPts.push([_rA.x+Math.cos(h)*p, 1.05+r*1.0, _rA.z-Math.sin(h)*p]); } }
+    roadPt(T, ii, hw+9+rows*0.85*0.5, 0, _rA); B.box("solid", _rA.x, 2+rows*1.0+1.6, _rA.z, len+1, 0.25, rows*0.85+2.4, 0xe9e6dc, h);
+    for(var pp=-1;pp<=1;pp+=2){ roadPt(T, ii+pp*len/2/ds, hw+9+rows*0.85, 0, _rB); B.box("metal", _rB.x, (2+rows*1.0+1.6)/2, _rB.z, 0.3, 2+rows*1.0+1.6, 0.3, STEEL, h); }
+    roadPt(T, ii, hw+8.3, 0, _rB); B.add("sign","plane",[_rB.x, 0.6, _rB.z],[len*0.5,0.55,1],0xffffff,[0,h,0],ROAD_UV.ban[si%6]); });
+  /* catch fence posts along the stands side of the straight */
+  for(q=s0+6;q<=s1-6;q+=4){ var i3=(q+N)%N; roadPt(T, i3, hw+3.5, 0, _rA); B.box("metal", _rA.x, 1.8, _rA.z, 0.1, 3.6, 0.1, STEEL, T.h[i3]); roadPt(T, i3, hw+3.5, 0, _rA); B.box("solid", _rA.x, 0.5, _rA.z, 10.2, 1.0, 0.45, CONC, T.h[i3]); }
+  /* a grain elevator and a red barn beyond the back of the circuit, sheds round the paddock */
+  var far=Math.max(T.size[0],T.size[1])/2;
+  B.box("solid", far+180, 14, -far*0.4, 14, 28, 14, 0x8e2f23, 0.3); B.add("solid","prism",[far+180,28,-far*0.4],[14.4,3.6,14.4],0x4a4644,[0,0.3,0]); B.box("solid", far+180, 33, -far*0.4, 6, 7, 6.4, 0x8e2f23, 0.3);
+  B.box("solid", far+198, 8, -far*0.4-6, 10, 16, 10, 0xb9a57a, 0.3);
+  B.box("solid", -far-140, 5, far*0.5, 18, 10, 12, 0x9a2e22, 0.5); B.add("solid","prism",[-far-140,10,far*0.5],[18.4,5,12.6],0x5a5a5a,[0,0.5,0]);
+  var keep=STRIP.scene; STRIP.scene=S4; B.build("solid", M.solid, !lite); B.build("metal", M.metal, !lite); W.lampMesh=B.build("lamp", M.lamp, false); B.build("sign", M.sign, false); STRIP.scene=keep;
+  /* crowd in the stands */
+  if(seatPts.length){ var n2=seatPts.length, bodyM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.46,0.62,0.34), new THREE.MeshStandardMaterial({roughness:0.95}), n2), headM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.22,0.25,0.22), new THREE.MeshStandardMaterial({roughness:0.9}), n2);
+    var shirts=[0x9c3a30,0x34598f,0xcfccc4,0x1f2023,0xff7a1a,0x44684a,0xc8a640,0x5d5f66,0x8f4a5e,0x2c6b3a], skin=[0xe0b494,0xc68a64,0x8d5a3b,0xf0c9a8,0x5a3a26], mm=new THREE.Matrix4(), cc=new THREE.Color();
+    for(q=0;q<n2;q++){ var p0=seatPts[q]; mm.makeTranslation(p0[0],p0[1]+0.31,p0[2]); bodyM.setMatrixAt(q,mm); mm.makeTranslation(p0[0],p0[1]+0.75,p0[2]); headM.setMatrixAt(q,mm);
+      cc.set(shirts[Math.floor(rng(q*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(q,cc); cc.set(skin[Math.floor(rng(q*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(q,cc); }
+    S4.add(bodyM); S4.add(headM); }
+  /* trees: shelterbelts and copses, kept well clear of the racing surface */
+  (function(){ var pts=[], tries=lite?900:1800, R2=Math.max(T.size[0],T.size[1])*0.5+260, s;
+    for(s=0;s<tries && pts.length<(lite?170:380);s++){ var px=(rng(s*1.7)-0.5)*2*R2, pz=(rng(s*2.9+1)-0.5)*2*R2, ok=true;
+      for(var j=0;j<N;j+=6){ var dx=T.x[j]-px, dz=-T.y[j]-pz; if(dx*dx+dz*dz<34*34){ ok=false; break; } }
+      if(ok) pts.push([px,pz,3.5+rng(s+3)*3.5]); }
+    var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
+    pts.forEach(function(p,qq){ var h=p[2]*1.7; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(qq,mm); cc.setHSL(0.24+rng(qq)*0.06,0.45,0.13+rng(qq+1)*0.06).convertSRGBToLinear(); im.setColorAt(qq,cc); });
+    im.castShadow=!lite; S4.add(im); })();
+  /* coulee hills on the horizon */
+  (function(){ var seg=120, R0=2400, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
+    for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=Math.max(5, 16+40*Math.pow(0.5+0.5*Math.sin(a*3.0+1.1),2)+18*Math.sin(a*11.0+1.4)*Math.sin(a*5.0)+10*Math.sin(a*23.0));
+      pos.push(Math.cos(a)*(R0-500),-2,Math.sin(a)*(R0-500), Math.cos(a)*R0,hgt,Math.sin(a)*R0, Math.cos(a)*(R0+400),hgt*0.6,Math.sin(a)*(R0+400)); col.push(c1.r,c1.g,c1.b, c2.r,c2.g,c2.b, c2.r,c2.g,c2.b); }
+    for(s=0;s<seg;s++){ var a0=s*3, b0=(s+1)*3; idx.push(a0,b0,a0+1, b0,b0+1,a0+1, a0+1,b0+1,a0+2, b0+1,b0+2,a0+2); }
+    var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("color",new THREE.Float32BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals();
+    var hm=new THREE.Mesh(g, new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, side:THREE.DoubleSide})); hm.frustumCulled=false; S4.add(hm); })();
+  /* trackside cameras: one per corner (above), a couple down each long straight, the gantry */
+  for(q=0;q<N;q+=Math.round(330/ds)){ if(Math.abs(T.k[q])<1e-6) W.stations.push({i:q, d:(q%2?1:-1)*(hw+14), y:2.6}); }
+  W.stations.sort(function(a,b){ return a.i-b.i; });
+  W.fx=new StripFx(lite?160:360, "smoke", stripPuffTex()); S4.add(W.fx.mesh);
+  return W;
+}
+/* door car scaled per chassis: [length, height, width, tyre inches, wing] */
+var ROAD_SHAPE={ roadster:[0.86,0.86,0.96,24.5,0], hatch:[0.84,1.07,0.97,25,0], coupe:[1,1,1,26,0], muscle:[1.06,1.0,1.04,27,0], rally:[0.95,1.05,0.99,25.5,1], pickup:[1.16,1.26,1.07,31,0], super:[1.02,0.84,1.07,27,2] };
+var ROAD_PAINT={ roadster:0xc23a2b, hatch:0xe8e6df, coupe:0x1d4787, muscle:0x2b2d30, rally:0x2a6db5, pickup:0x8e2f23, super:0xff7a1a };
+function roadCarMesh(ch){
+  var sp=ROAD_SHAPE[ch]||ROAD_SHAPE.coupe, car=stripCar("street", ROAD_PAINT[ch]||0xa32a26, sp[3]), U=car.userData, me=U.meta, B=U.bodyGroup;
+  B.scale.set(sp[0], sp[1], sp[2]);
+  for(var i=0;i<U.carriers.length;i++){ var C=U.carriers[i]; if(!C.userData.rear) C.position.x=me.xr+(me.xf-me.xr)*sp[0]; C.position.z*=sp[2]; }
+  if(sp[4]){ var wm=new THREE.MeshStandardMaterial({color:sc(sp[4]>1?0x15171b:0xf0ede4), roughness:0.5, metalness:0.2}), g=new THREE.Group();
+    var plane=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.04,1.5), wm); plane.position.set(-2.12,1.13,0); plane.rotation.z=0.12; g.add(plane);
+    for(var s=-1;s<=1;s+=2){ var st=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.22,0.03), wm); st.position.set(-2.06,1.0,s*0.48); g.add(st); }
+    g.children.forEach(function(m){ m.castShadow=true; }); U.bodyGroup.children[0].add(g); }
+  car.traverse(function(o){ if(o.isMesh){ o.castShadow=true; } });
+  U.roadCh=ch; return car;
+}
+function roadSetNight(W, on){
+  on=!!on; var tierChanged=W.tier!==GFX; if(W.night===on && !tierChanged) return;
+  W.night=on; W.tier=GFX; var lite=(GFX==="lite");
+  W.sky.material.uniforms.uNight.value=on?1:0;
+  var h=on?STRIP_HOR_N:STRIP_HOR; W.horLin=new THREE.Color(h[0],h[1],h[2]); W.sunDir=on?STRIP_MOON:STRIP_SUN_DAY;
+  W.sun.color.set(on?0x9fb2d6:0xffe2bc); W.sun.intensity=on?0.16:1.45; W.sun.castShadow=!lite;
+  W.hemi.intensity=on?0.14:0.22; W.hemi.color.set(on?0x3a4764:0xcfdcf0);
+  W.mats.lamp.color.set(on?0xffffff:0x777777);
+  W.scene.environment=stripEnv(on); W.exposure=on?1.05:0.9;
+  if(W.fx){ W.fx.mat.uniforms.uAmb.value=on?0.42:1; W.fx.mat.uniforms.uFogN.value=W.fog.near; W.fx.mat.uniforms.uFogF.value=W.fog.far; }
+  if(tierChanged && W.sun.shadow.map){ W.sun.shadow.map.dispose(); W.sun.shadow.map=null; }
+  if(!W.head){ W.head=new THREE.SpotLight(0xfff2dc, 0, 120, 0.5, 0.5, 1.4); W.scene.add(W.head); W.scene.add(W.head.target); }
+  W.head.intensity=on?3.2:0;
+}
+function roadCut(name){ if(ROAD.shot!==name){ ROAD.shot=name; ROAD.shotT=0; ROAD.cutT=0; ROAD.snap=true; } }
+function roadDirect(o, dt, W, car){
+  var T=W.T, N=T.N, fi=(o.s||0)/T.ds, h=roadHd(T, fi), v=Math.max(0,+o.v||0), mode=o.cam||"auto", s=ROAD.shot;
+  var fx=Math.cos(h), fz=-Math.sin(h);
+  /* nearest trackside camera ahead of (or just past) the car */
+  var best=-1, bd=1e9; for(var q=0;q<W.stations.length;q++){ var st=W.stations[q], d=((st.i-fi)%N+N)%N; if(d>N/2) d-=N; var m=d*T.ds; if(m>-45 && m<150 && Math.abs(m-30)<bd){ bd=Math.abs(m-30); best=q; } }
+  if(mode==="chase") s="chase"; else if(mode==="onboard") s="onboard"; else if(mode==="side") s=best>=0?"side":"chase";
+  else { if(o.pre) s="gantry"; else if(s==="gantry" && ROAD.shotT<2.6) s="gantry"; else if(best>=0 && (s!=="side"||ROAD.st===best) && !(s==="chase" && ROAD.shotT<3.5)) s="side"; else if(s==="side" && best!==ROAD.st) s=(ROAD.shotT>3.2 && best>=0)?"side":"chase"; else if(s!=="side") s=(s==="onboard"&&ROAD.shotT<5)?"onboard":(s==="chase"&&ROAD.shotT>9&&v>25)?"onboard":"chase"; }
+  if(s==="side" && best!==ROAD.st){ ROAD.st=best; ROAD.shot=null; }
+  roadCut(s); ROAD.shotT+=dt; ROAD.cutT+=dt;
+  var cp=car.position, fov=50;
+  if(s==="chase"){ _rA.set(cp.x-fx*6.8, cp.y+2.25, cp.z-fz*6.8); _rB.set(cp.x+fx*5, cp.y+0.8, cp.z+fz*5);
+    if(ROAD.snap){ ROAD.chP.copy(_rA); ROAD.chT.copy(_rB); } else { var k1=1-Math.exp(-dt*7), k2=1-Math.exp(-dt*12); ROAD.chP.lerp(_rA,k1); ROAD.chT.lerp(_rB,k2); }
+    ROAD.camPos.copy(ROAD.chP); ROAD.camTgt.copy(ROAD.chT); fov=56+Math.min(10,v*0.12); }
+  else if(s==="onboard"){ var bx=-0.15; ROAD.camPos.set(cp.x+fx*bx, cp.y+1.18, cp.z+fz*bx); ROAD.camTgt.set(cp.x+fx*20, cp.y+0.9, cp.z+fz*20); fov=68; }
+  else if(s==="gantry"){ roadPt(T, 0, -(ROAD_W/2+4), 0, _rA); _rA.y=7.6; roadPt(T, -Math.round(10/T.ds), 0, 0, _rB); ROAD.camPos.copy(_rA); ROAD.camTgt.lerp(_rC.set(cp.x, cp.y+0.6, cp.z), ROAD.snap?1:1-Math.exp(-dt*8)); fov=40; }
+  else { var st2=W.stations[ROAD.st]; roadPt(T, st2.i, st2.d, st2.y, ROAD.camPos); _rC.set(cp.x, cp.y+0.7, cp.z); if(ROAD.snap) ROAD.camTgt.copy(_rC); else ROAD.camTgt.lerp(_rC, 1-Math.exp(-dt*10));
+    var dist=ROAD.camPos.distanceTo(_rC); fov=clamp(2*Math.atan(5.5/Math.max(1,dist))*180/PI, 9, 55); }
+  if(ROAD.snap){ ROAD.fov=fov; ROAD.snap=false; } else ROAD.fov+=(fov-ROAD.fov)*(1-Math.exp(-dt*6));
+  var cam=ROAD.cam; cam.position.copy(ROAD.camPos); cam.lookAt(ROAD.camTgt); cam.fov=ROAD.fov; cam.updateProjectionMatrix();
+}
+function roadComposer(){
+  if(ROAD.composer===false) return null;
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ROAD.composer;
+  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.rp=new THREE.RenderPass(ROAD.W.scene, ROAD.cam); C.addPass(C.rp);
+      var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); ROAD.bloom=bp;
+      if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+      ROAD.composer=C; ROAD.cSize=""; }catch(e){ ROAD.composer=false; return null; } }
+  C.rp.scene=ROAD.W.scene;
+  var key=sz.x+"x"+sz.y+"@"+pr; if(ROAD.cSize!==key){ if(C.setPixelRatio) C.setPixelRatio(pr); C.setSize(sz.x, sz.y); ROAD.cSize=key; }
+  var n=!!ROAD.W.night, b=ROAD.bloom; b.strength=n?0.55:0.22; b.threshold=n?0.7:0.92;
+  return C;
+}
+function roadRender(){
+  var W=ROAD.W, cam=ROAD.cam; if(!W||!cam) return;
+  var C=(GFX!=="lite" && THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass) ? roadComposer() : null;
+  if(C) W.fog.color.copy(W.horLin); else W.fog.color.copy(W.horLin).convertLinearToSRGB();
+  W.sky.position.copy(cam.position); if(W.fx) W.fx.mat.uniforms.uFog.value.copy(W.horLin);
+  var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=W.exposure;
+  var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  if(C) C.render(); else renderer.render(W.scene, cam);
+  ROAD.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, shot:ROAD.shot, track:W.T.id}; inf.autoReset=ar;
+  renderer.toneMappingExposure=ex;
+}
+function roadUpdate(o, dt){
+  var T=o.track; if(!T) return;
+  var W=ROAD.worlds[T.id]; if(!W){ W=ROAD.worlds[T.id]=buildRoadWorld(T); }
+  if(ROAD.W!==W){ if(ROAD.car && ROAD.car.parent) ROAD.car.parent.remove(ROAD.car); ROAD.W=W; ROAD.carKey=""; ROAD.snap=true; ROAD.shot=null; }
+  if(W.tier!==GFX || W.night!==!!o.night) roadSetNight(W, !!o.night);
+  var ch=o.ch||"coupe"; if(!ROAD.cars[ch]) ROAD.cars[ch]=roadCarMesh(ch);
+  var car=ROAD.cars[ch]; if(ROAD.carKey!==ch || car.parent!==W.scene){ if(ROAD.car && ROAD.car.parent) ROAD.car.parent.remove(ROAD.car); W.scene.add(car); ROAD.car=car; ROAD.carKey=ch; }
+  var N=T.N, fi=((o.s||0)/T.ds%N+N)%N, h=roadHd(T, fi), v=Math.max(0,+o.v||0);
+  roadPt(T, fi, 0, 0, car.position); car.rotation.set(0, h, 0);
+  /* steering: front wheels to the path's curvature (bicycle model), body roll to the lateral g */
+  var k=T.k[Math.floor(fi)%N]||0, U=car.userData, stT=Math.atan(2.6*k)*1.15;
+  ROAD.steer+=(stT-ROAD.steer)*Math.min(1,dt*10); for(var i=0;i<U.carriers.length;i++){ var Cw=U.carriers[i]; if(!Cw.userData.rear) Cw.rotation.y=ROAD.steer; }
+  stripCarAnim(car, {v:v, acc:(+o.ax||0)*9.81, brake:(+o.brk||0)>0.05, night:!!o.night, lift:0}, dt, true);
+  var rollT=clamp(-(+o.ay||0)*0.03,-0.07,0.07); ROAD.roll+=(rollT-ROAD.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=ROAD.roll;
+  /* a puff of tyre smoke and dust when it runs out of grip on exit, or locks a wheel */
+  if(W.fx){ var sl=(+o.slip||0); if(sl>0.2 && v>4 && Math.random()<sl*dt*30){ roadPt(T, fi-1.2, (Math.random()-0.5)*1.6, 0.3, _rA); W.fx.emit(_rA.x,0.25,_rA.z,(Math.random()-0.5),0.35,(Math.random()-0.5),1.3,0.6,2.6,0.84,0.84,0.84,0.18,{drag:0.6,buoy:0.15}); }
+    W.fx.step(dt, _rW); }
+  roadDirect(o, dt, W, car);
+  var c=_rA.copy(ROAD.camPos).lerp(car.position, 0.7); c.y=0;
+  W.sun.position.copy(c).addScaledVector(W.sunDir, 160); W.sun.target.position.copy(c); W.sun.target.updateMatrixWorld();
+  if(W.head && W.head.intensity>0){ W.head.position.set(car.position.x+Math.cos(h)*2.2, 0.9, car.position.z-Math.sin(h)*2.2); W.head.target.position.set(car.position.x+Math.cos(h)*30, 0, car.position.z-Math.sin(h)*30); W.head.target.updateMatrixWorld(); }
+}
+
 /* ===========================================================================
    SALT FLATS SCENE — Bonneville land-speed runs, a fourth world the view cuts
    to while ENGINE_VIS.setSalt({on:true, ...}) is fed every frame.
@@ -16015,6 +16617,7 @@ const ENGINE_VIS = {
     camera.updateProjectionMatrix();
     if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); }
     if(PULL.cam){ PULL.cam.aspect=w/h; PULL.cam.updateProjectionMatrix(); }
+    if(ROAD.cam){ ROAD.cam.aspect=w/h; ROAD.cam.updateProjectionMatrix(); }
     if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); }
     frameEngine();
   },
@@ -16074,6 +16677,15 @@ const ENGINE_VIS = {
   setLivery: function(L){ var h=L&&L.hood||null, sd=(L&&L.sides||[]).filter(Boolean); LIVERY.hood=h; LIVERY.sides=h?sd:[]; LIVERY.key=h?[h.id].concat(sd.map(function(q){ return q.id; })).join(","):""; return LIVERY.key; },
   livery: function(){ return {key:LIVERY.key, hood:LIVERY.hood&&LIVERY.hood.id, sides:LIVERY.sides.map(function(q){ return q.id; })}; },   /* harness */
   logoCanvas: function(sp, w, h){ return spLogoCanvas(sp, w, h); },   /* the app's sponsor cards and slips draw the same cached logo */   /* cut straight to the stop framing (sled + board) */
+  /* ROAD COURSE: fed every frame {on, track (ENGINE_SIM.roadTrack), s (m from the line), v (m/s), g, rpm, thr, brk, ax, ay (g), slip, ch (chassis id), night, cam:"auto"|"chase"|"side"|"onboard", pre (approaching the line)}; {on:false} leaves */
+  setRoad: function(o){
+    if(!renderer) return;
+    if(!o || o.on===false){ if(ROAD.on){ ROAD.on=false; if(ROAD.W && ROAD.W.fx) ROAD.W.fx.clear(); } return; }
+    var now=performance.now();
+    if(!ROAD.on){ ROAD.on=true; ROAD.snap=true; ROAD.shot=null; ROAD.lastT=now; if(!ROAD.cam) ROAD.cam=new THREE.PerspectiveCamera(50, 1, 0.3, 5200); ENGINE_VIS.resize(); }
+    var rdt=o.dt!=null ? +o.dt : (now-ROAD.lastT)/1000; ROAD.lastT=now; roadUpdate(o, clamp(rdt||0, 0, 0.1));
+    return ROAD.stats||null;
+  },
   /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
      failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
   setSalt: function(o){
@@ -16824,9 +17436,9 @@ const SEGMENTS=[
   {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,gas:true,units:[6,14],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
   /* tier 1 — Local shop */
   {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[8,20],price:4300,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86,noise:78}},
-  {id:"hot",name:"Hot hatch",tier:1,units:[5,14],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76}},
+  {id:"hot",name:"Hot hatch",tier:1,units:[5,14],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76,road:{ch:"hatch"},zero100:[7.0,8.4]}},
   {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[10,24],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87",noise:74}},
-  {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78}},
+  {id:"sport",name:"Sports coupé",tier:1,units:[4,12],price:8400,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78,road:{ch:"coupe",trk:"club"},lap:[75.0,78.0]}},
   /* tier 2 — Known builder */
   {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[2,6],price:13500,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
   {id:"gt",name:"Grand tourer",tier:2,units:[3,8],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5],noise:79}},
@@ -16835,12 +17447,12 @@ const SEGMENTS=[
   {id:"genset",name:"Standby generator set",tier:2,dsl:true,gas:true,units:[4,10],price:7800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
   {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,gas:true,units:[3,8],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
   /* tier 3 — Regional supplier */
-  {id:"super",name:"Supercar",tier:3,units:[2,5],price:26000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75,noise:80}},
+  {id:"super",name:"Supercar",tier:3,units:[2,5],price:26000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75,noise:80,road:{ch:"super",trk:"gp"},lap:[112.0,116.0]}},
   {id:"endur",name:"Endurance prototype",tier:3,units:[1,4],price:42000,req:{hp:[500,700],rel:92,fuel:"race100",kg:210,life:300}},
   {id:"attack",name:"Time attack",tier:3,units:[1,4],price:30000,req:{hp:[700,900],kg:200,rel:60,fuel:"e85"}},
   {id:"drag",name:"Pro-mod drag",tier:3,units:[1,3],price:55000,req:{hp:[1200,1800],rel:35,fuel:"methanol",life:5}},
   /* tier 4 — OEM partner */
-  {id:"hyper",name:"Hypercar",tier:4,units:[1,3],price:60000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82}},
+  {id:"hyper",name:"Hypercar",tier:4,units:[1,3],price:60000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82,road:{ch:"super",trk:"gp"},lap:[108.5,111.5],zero100:[3.1,3.4]}},
   {id:"flagship",name:"OEM V12 flagship",tier:4,units:[6,14],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94",noise:80}},
   /* tier 5 — Outlaw racing */
   {id:"stripcar",name:"Street/strip coupe",tier:4,units:[2,4],price:26000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
@@ -16900,7 +17512,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.23.0.0";
+const VERSION="1.24.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -16981,7 +17593,7 @@ const CELL_KEYS=["ambientC","altitudeM","coolantC","oilC"];
 function stdCell(){const d=SIM.DEFAULT_ENV,o={};CELL_KEYS.forEach(k=>o[k]=d[k]);return o;}
 function careerCell(){const c=C();if(!c.cell||typeof c.cell!=="object")c.cell=stdCell();return c.cell;}
 function climateCtl(){return career()&&has("dyno3");}
-function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt";}   // out on the strip or the dirt: the cell's climate control stays home
+function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt"||t==="road";}   // out on the strip or the dirt: the cell's climate control stays home
 function simEnv(extra){return Object.assign({},S.env,career()?(climateCtl()&&!trackEvt(S.env.testType)?careerCell():stdCell()):{},extra||{});}
 function stdEnv(extra){return Object.assign({},S.env,career()?stdCell():{},extra||{});}
 function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===+d[k]);}
@@ -17001,9 +17613,9 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   // WOT burn: ~0.32 L/hp/h on gasoline, more on low-energy fuels (per-litre energy vs pump gas)
   const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv))*(fu.gas?0.745/fu.dens:1);const t=S.env.testType;   // gas: litres of liquid propane / kg of CNG   // diesel ~0.23 L/hp/h at full load
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
-  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="salt"?0.03:t==="overrev"?0.008:0.02;
+  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="salt"?0.03:t==="road"?0.03:t==="overrev"?0.008:0.02;
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev())return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev())return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
 
 /* ===================== live compute ===================== */
@@ -17486,12 +18098,13 @@ function renderEnv(){
     <p class="hint">Rear-drive on a prepped strip. Gears are spaced evenly between 1st and top. Wheel force is the engine's torque × gear × final ÷ tyre radius; grip is μ × rear weight, with weight transfer helping the launch. Tyres, body and launch rpm are what a ${career()?"racer":"tuner"} actually changes between rounds. Body sets aero drag and how hard the chassis can plant the tyre — bars and a four-link put the power down; a stock shell cannot.</p>`;}
   if(t==="drag"&&n2oKit())h+=n2oEnvHtml();
   if(t==="pull_sled")h+=pullEnvHtml(sl);
+  if(t==="road")h+=roadEnvHtml(sl);
   if(t==="salt")h+=saltEnvHtml(sl);
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;
 }
 function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();}
-function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else drawChart(quickForChart(),null);}
+function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
 $("envBox").addEventListener("input",e=>{const r=e.target;if(!r.dataset.e||r.type!=="range")return;applyEnv(r.dataset.e,parseFloat(r.value));});
 $("envBox").addEventListener("change",e=>{if(e.target.type==="range")commitEnv();});
 (()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
@@ -17563,11 +18176,11 @@ function renderTest(){
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.env.testType===S.env.testType?S.last:null;
-  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else drawChart(last?last.res:null,null);
+  if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else if(last&&S.env.testType==="road"&&last.res.road)drawRoadTrace(last.res.road);else drawChart(last?last.res:null,null);
   $("runTest").disabled=testing;const cost=testCost();
-  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
+  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",road:"Roll out · road test"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
-  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="salt"?saltHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
+  const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="road"?roadHint():S.env.testType==="salt"?saltHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
     : `<b>${dc.n}</b> · no limits in the test cell. Figures update as you change the build; run a test to lock a result and pin it as a baseline.`;
   if(S.env.testType==="drag")rnRunBtn();
@@ -18354,6 +18967,140 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>`;}
 
+
+/* ===================== ROAD TEST: the engine in a car ===================== */
+/* pick a chassis, tyres and a circuit; the sim runs 0–100, the quarter, top speed and a flying lap, the view plays the lap */
+let RT=null;
+const ROAD_FEE=200,ROAD_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],["side","Trackside","corner cameras"],["onboard","Onboard","driver's eye"]];
+const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(d||1).padStart(d===2?5:4,"0")}`;
+const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
+  if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";return e;}
+function roadOpt(){const e=roadEnvFix();return{ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal};}
+function roadKey(ch,trk){return ch+"|"+trk;}
+function roadRecs(){const R=recs();if(!R.road||typeof R.road!=="object")R.road={};return R.road;}
+/* market: a buyer's road figures for an engine, in the buyer's car (cached like the site runs) */
+const roadCache=new Map();
+function roadFor(res,cfg,road,tag){const ch=road&&SIM.CHASSIS[road.ch]?road.ch:"coupe",trk=road&&SIM.ROAD_TRACKS[road.trk]?road.trk:null,ty=road&&road.tyre||null;
+  const key=cfgHash(cfg)+"|"+(tag||"")+"|"+ch+"|"+(ty||"")+"|"+(trk||"");let r=roadCache.get(key);
+  if(!r){if(roadCache.size>800)roadCache.clear();const p=SIM.roadPrep(cfg,res),o={ch,tyre:ty||undefined},a=SIM.roadRun(p,o),L=trk?SIM.lapSim(p,o,trk):null;r={z100:a.zero100,top:a.top.kmh,lap:L?L.time:null};roadCache.set(key,r);}
+  return r;}
+function roadCarTxt(road){const c=SIM.CHASSIS[road&&road.ch]||SIM.CHASSIS.coupe;return `${/^[AEIOU]/.test(c.n)?"an":"a"} ${c.n.toLowerCase().replace("gt","GT").replace("awd","AWD")}`;}
+function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry. Needs a certified engine. Bolt it into a car, run the straight-line figures and a flying lap — performance buyers judge 0–100 and lap times in their own car. Every lap is a little wear on the build.`
+  :`<b>Road test</b> · the engine goes into the chassis you pick. 0–100, the quarter, 80–120 and top speed come off a straight; then one flying lap, played back on the circuit. <b>Space</b> skips the lap.`;}
+function roadEnvHtml(sl){const e=roadEnvFix(),o=roadOpt(),C0=SIM.CHASSIS[o.ch],q=quick&&quick.rpms?quick:null;
+  let h=`<div class="lbl"><span>Chassis</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.ROAD_TYRES).map(([id,t])=>`<button data-rk="roadTyre" data-rv="${id}" class="${o.tyre===id?"on":""}">${t.n}<small>μ ${t.mu}${C0.tyre===id?" · stock":""}</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Circuit</span></div><div class="seg">${Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return `<button data-rk="roadTrk" data-rv="${id}" class="${e.roadTrk===id?"on":""}">${t.n}<small>${(T.len/1000).toFixed(2)} km · ${t.d.split(" · ")[1]}</small></button>`;}).join("")}</div>`;
+  h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
+  if(q){const car=SIM.roadCar(SIM.roadPrep(S.cfg,q),o),fr=Math.round(car.front*100),bal=car.bal==="under"?`nose-heavy (${fr}% front, ${C0.front*100|0}% as designed) — it will push in the slow corners`:car.bal==="over"?`light in the nose (${fr}% front) — the tail steps out on the way in`:`balanced (${fr}% front)`;
+    h+=`<p class="hint"><b>${C0.n}</b> · ${C0.d}. With this ${Math.round(car.engKg)} kg engine and a driver: <b>${Math.round(car.m).toLocaleString("en-CA")} kg</b>, ${bal}. ${car.gears.length}-speed, final drive ${car.fd.toFixed(2)}:1 (fitted ${car.fdAuto.toFixed(2)} — top gear on the power peak at the speed the power can hold). Shorter pulls harder out of corners; taller runs out the straight.</p>`;}
+  h+=`<div class="lbl"><span>Camera</span></div><div class="seg n4">${ROAD_CAMS.map(([id,n,d])=>`<button data-rk="roadCam" data-rv="${id}" class="${e.roadCam===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=`<div class="lbl"><span>Playback</span></div><div class="seg">${[1,2,4].map(v=>`<button data-rk="roadSpd" data-rv="${v}" class="${+e.roadSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double speed":"quick look"}</small></button>`).join("")}</div>`;
+  return h;}
+$("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");if(!b)return;const k=b.dataset.rk,v=b.dataset.rv;
+  if(k==="roadCh"&&v!==S.env.roadCh)S.env.roadTyre=null;   // a new chassis comes on its own stock tyres
+  S.env[k]=k==="roadSpd"?+v:v;roadEnvFix();if(RT&&!RT.finished){if(k==="roadCam")RT.cam=v;if(k==="roadSpd")RT.speed=+v;}renderEnv();save();buzz(6);});
+/* live card: speed, gear, the tach, the lap clock with sector splits against the record, a mini-map */
+function roadMapDraw(cv,T,s){if(!cv)return;const dpr=Math.min(devicePixelRatio||1,2),W=cv.clientWidth||120,H=cv.clientHeight||90;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const sc=Math.min((W-12)/T.size[0],(H-12)/T.size[1]),P=i=>[W/2+T.x[i]*sc,H/2-T.y[i]*sc];
+  const ink=getComputedStyle(cv).color||"#f0ece2";x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.22;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
+  x.globalAlpha=.75;x.lineWidth=1.6;x.stroke();x.globalAlpha=1;
+  const p0=P(0),h0=T.h[0];x.strokeStyle="#ff7a1a";x.lineWidth=2;x.beginPath();x.moveTo(p0[0]-Math.sin(h0)*6,p0[1]-Math.cos(h0)*6);x.lineTo(p0[0]+Math.sin(h0)*6,p0[1]+Math.cos(h0)*6);x.stroke();
+  if(s!=null){const i=Math.floor(((s/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#ff7a1a";x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();x.strokeStyle="#15171b";x.lineWidth=1.2;x.stroke();}}
+function roadHudInit(){const L=$("roadLive");L.innerHTML=`<div class="rdh"><div class="rd-spd"><b id="rdV">0</b><i>km/h</i></div><div class="rd-g"><b id="rdG">–</b><i>gear</i></div><div class="rd-lt"><b id="rdT">0:00.0</b><i id="rdTi">lap</i></div><canvas id="rdMap" class="rd-map"></canvas></div>
+  <div class="ph-bar rd-rpm"><i class="fill" id="rdR"></i><i class="mk" style="left:${Math.round(100*(RT.redline*0.9)/(RT.redline*1.04))}%"></i></div><div class="ph-lbl" style="margin-top:4px"><span id="rdRpm">0 rpm</span><span id="rdPd"></span></div>
+  <div class="rd-sec" id="rdS"></div>`;}
+function roadHud(f){if(!RT)return;const v=$("rdV");if(!v)return;
+  v.textContent=Math.round(f.v*3.6);$("rdG").textContent=f.g||"–";$("rdT").textContent=fmtLap(Math.max(0,f.lapT));$("rdTi").textContent=f.pre?"flying start":f.done?"lap":"lap time";
+  $("rdR").style.width=Math.min(100,100*f.rpm/(RT.redline*1.04))+"%";$("rdR").style.background=f.rpm>RT.redline*0.97?"linear-gradient(90deg,rgba(226,71,60,.4),rgba(226,71,60,.9))":"";
+  $("rdRpm").textContent=`${(Math.round(f.rpm/10)*10).toLocaleString("en-CA")} rpm${RT.boostT>0?` · ${bv(f.bst)} ${pU()}`:""}`;$("rdPd").innerHTML=f.brk>0.05?`<b style="color:var(--crit)">BRAKE ${Math.round(f.brk*100)}%</b>`:`throttle <b>${Math.round(f.thr*100)}%</b>${f.lim?` · <b style="color:var(--warn)">grip</b>`:""}`;
+  const sec=RT.lap.sectors,cut=RT.secCut,best=RT.best&&RT.best.sec;let h="";
+  for(let k=0;k<3;k++){const done=!f.pre&&f.lapT>=cut[k+1]-1e-6,t=sec[k],d=best&&done?t-best[k]:null;
+    h+=`<div class="${done?"on":""}"><span>S${k+1}</span><b>${done?t.toFixed(2):k===0||(!f.pre&&f.lapT>=cut[k])?"…":"—"}</b>${d!=null?`<i class="${d<=0?"up":"dn"}">${d<=0?"−":"+"}${Math.abs(d).toFixed(2)}</i>`:""}</div>`;}
+  $("rdS").innerHTML=h;roadMapDraw($("rdMap"),RT.T,f.s);}
+function roadBtnText(){const b=$("roadSkip");if(b)b.textContent=RT&&RT.finished?"…":"SKIP ▸▸";const s=$("roadSpd");if(s&&RT)s.textContent=RT.speed+"×";}
+/* sample the lap trace at lap time tt */
+function roadAt(L,tt){const t=L.trace.t,N=L.N;tt=((tt%L.time)+L.time)%L.time;let a=0,b=N;while(b-a>1){const m=(a+b)>>1;if(t[m]<=tt)a=m;else b=m;}
+  const f=clamp((tt-t[a])/Math.max(1e-6,t[a+1]-t[a]),0,1),j=(a+1)%N,T=L.trace;
+  return{i:a,s:(a+f)*L.ds,v:T.v[a]+(T.v[j]-T.v[a])*f,g:T.g[a],rpm:T.rpm[a]+(T.rpm[j]-T.rpm[a])*f,thr:T.thr[a],brk:T.brk[a],ax:T.ax[a],ay:T.ay[a],bst:T.bst[a],lim:T.lim[a]};}
+function roadStart(){
+  const env=stdEnv(),opt=roadOpt(),trk=S.env.roadTrk;
+  const res=SIM.simulate(S.cfg,env);
+  if(res.fails.length){testing=false;toast(`It wouldn't last a lap — ${String(res.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
+  $("app").classList.add("onstrip");
+  const prep=SIM.roadPrep(S.cfg,res),run0=SIM.roadRun(prep,opt),lap=SIM.lapSim(prep,opt,trk),T=SIM.roadTrack(trk);
+  const best=roadRecs()[roadKey(opt.ch,trk)]||null,secCut=[0,lap.sectors[0],lap.sectors[0]+lap.sectors[1],lap.time];
+  RT={res,env,opt,trk,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:S.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("roadCtl").style.display="";roadHudInit();roadBtnText();
+  $("testProg").classList.remove("done");sfx("start");
+  requestAnimationFrame(()=>{const pn=$("panel"),r=$("roadCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  const step=()=>{if(!RT||RT.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-RT.last)/1000);RT.last=now;
+    RT.t+=dt*RT.speed;const L=RT.lap,pre=RT.t<0,f=roadAt(L,RT.t),done=RT.t>=L.time;
+    f.pre=pre;f.done=done;f.lapT=pre?0:Math.min(RT.t,L.time);
+    RT.bst=f.bst;RT.slip=f.lim&&f.v<30?0.6:f.lim&&f.v<45?0.3:0;
+    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
+    roadHud(f);run.on=true;run.rpm=f.rpm;run.load=Math.max(0.05,f.thr);$("rpmLbl").textContent=Math.round(f.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*Math.max(0,RT.t)/L.time)+"%";
+    if(done&&!RT.crossed){RT.crossed=true;buzz([20,30,20]);}
+    if(RT.skip||RT.t>=L.time+1.6*RT.speed)roadFinish();else requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
+function roadSkip(){if(!RT||RT.finished)return;RT.skip=true;}
+(()=>{$("roadSkip").addEventListener("click",()=>roadSkip());
+  $("roadSpd").addEventListener("click",()=>{if(!RT)return;RT.speed=RT.speed>=4?1:RT.speed*2;S.env.roadSpd=RT.speed;roadBtnText();save();});
+  $("roadCamB").addEventListener("click",()=>{const ids=ROAD_CAMS.map(c=>c[0]);const cur=RT?RT.cam:S.env.roadCam;const nx=ids[(ids.indexOf(cur)+1)%ids.length];S.env.roadCam=nx;if(RT)RT.cam=nx;$("roadCamB").textContent="Cam · "+ROAD_CAMS.find(c=>c[0]===nx)[1];save();});})();
+function roadFinish(){
+  if(!RT||RT.finished)return;RT.finished=true;const {res,env,opt,trk,run:a,lap}=RT;
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:false});$("app").classList.remove("onstrip");}},RT.skip?250:1600);
+  testing=false;run.on=false;run.rpm=0;$("rpmbox").style.display="none";$("roadCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const C0=SIM.CHASSIS[opt.ch],car=lap.car,tr=lap.trace,dec={d:[],v:[],thr:[],brk:[],g:[]};
+  for(let i=0;i<lap.N;i+=4){dec.d.push(Math.round(i*lap.ds));dec.v.push(+(tr.v[i]*3.6).toFixed(1));dec.thr.push(+tr.thr[i].toFixed(2));dec.brk.push(+tr.brk[i].toFixed(2));dec.g.push(tr.g[i]);}
+  const r={ch:opt.ch,chName:C0.n,tyre:opt.tyre,tyreName:SIM.ROAD_TYRES[opt.tyre].n,trk,trkName:lap.trackName,len:Math.round(lap.len),finalK:opt.finalK,fd:+car.fd.toFixed(2),fdAuto:+car.fdAuto.toFixed(2),gears:car.gears.length,
+    m:Math.round(car.m),front:+car.front.toFixed(3),bal:car.bal,engKg:Math.round(car.engKg),drive:car.drive,
+    zero60:a.zero60,zero100:a.zero100,zero200:a.zero200,quarter:a.quarter,roll:a.roll80120,brake100:a.brake100,top:a.top,spinT:a.spinT,
+    lapT:+lap.time.toFixed(3),sectors:lap.sectors.map(x=>+x.toFixed(3)),vmax:+lap.vmax.toFixed(1),vmin:+lap.vmin.toFixed(1),apex:lap.apex,shifts:lap.shifts,fullPct:lap.fullPct,ayPk:lap.ayPk,brakePk:lap.brakePk,tracT:lap.tractionT,trace:dec};
+  /* records: best lap per chassis × circuit, best 0–100 per chassis */
+  if(!ff){const RR=roadRecs(),k=roadKey(opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
+  res.road=r;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
+  if(career()){addWear(0.35);logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");hud();checkGoals();}
+  toast(`${fmtLap(r.lapT)} · ${r.trkName}`);
+  RT.lap=null;save();recompute();renderTest();revealVerdict();
+}
+function roadVerdict(res){const r=res.road,z=r.zero100;
+  return `<div class="verdict pass"><div style="flex:1"><div class="big">${fmtLap(r.lapT)} · ${rdEsc(r.trkName)}</div><p>0–100 ${z!=null?z.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h · ${rdEsc(r.trkName)} ${fmtLap(r.lapT)} — ${r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD")}, ${r.tyreName.toLowerCase()} tyres, ${r.m.toLocaleString("en-CA")} kg${r.pb&&r.pb.was?` · <b>lap record</b> (was ${fmtLap(r.pb.was,2)})`:""}</p>
+    <div class="vstats"><div><b>${z!=null?z.toFixed(1):"—"}</b><span>0–100 km/h s</span></div><div><b>${r.zero60!=null?r.zero60.toFixed(1):"—"}</b><span>0–60 mph s</span></div><div><b>${r.quarter?r.quarter.t.toFixed(1):"—"}</b><span>1/4 mi${r.quarter?" · "+Math.round(r.quarter.kmh)+" km/h":""}</span></div>
+    <div><b>${Math.round(r.top.kmh)}</b><span>top km/h · ${r.top.limit==="redline"?"rev limit":"drag"}</span></div><div><b>${r.roll!=null?r.roll.toFixed(1):"—"}</b><span>80–120 s</span></div><div><b>${r.brake100.toFixed(1)}</b><span>100–0 m</span></div></div></div></div>`;}
+function roadSheet(res){const r=res.road,b=roadRecs()[roadKey(r.ch,r.trk)],bs=b&&b.t<r.lapT-1e-6?b.sec:null;
+  const balTxt=r.bal==="under"?`nose-heavy at ${Math.round(r.front*100)}% front — the ${r.engKg} kg engine makes it push in the slow corners`:r.bal==="over"?`light nose at ${Math.round(r.front*100)}% front — loose on turn-in`:`${Math.round(r.front*100)}% front, as the chassis was designed`;
+  const drv={rwd:"rear-drive",fwd:"front-drive",awd:"all-wheel drive"}[r.drive]||r.drive;
+  return `<div class="sec"><h2>Lap sheet</h2><div class="log"><div><b>Lap</b>${fmtLap(r.lapT,2)} · ${rdEsc(r.trkName)} ${(r.len/1000).toFixed(2)} km · ${(r.len/r.lapT*3.6).toFixed(1)} km/h average</div>
+    <div><b>Sectors</b>${r.sectors.map((t,i)=>`S${i+1} ${t.toFixed(2)}${bs?` <span style="color:${t<=bs[i]?"var(--good)":"var(--crit)"}">(${t<=bs[i]?"−":"+"}${Math.abs(t-bs[i]).toFixed(2)})</span>`:""}`).join(" · ")}${bs?" vs the record":""}</div>
+    <div><b>Speed</b>${Math.round(r.vmax)} km/h on the straight · slowest ${Math.round(r.vmin)} km/h · ${r.fullPct}% of the lap flat · ${r.shifts} upshifts</div>
+    <div><b>Corners</b>${r.apex.map(a=>`${rdEsc(a.name)} ${Math.round(a.kmh)}`).join(" · ")} km/h</div>
+    <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
+    <div><b>Car</b>${rdEsc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
+    <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
+    ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
+/* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */
+function drawRoadTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+  const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
+  const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=r.trace;if(!tr||!tr.d||tr.d.length<3)return;
+  const padL=34,padR=12,padT=24,padB=34,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*d/r.len,mx=Math.max(60,Math.ceil(Math.max(...tr.v)/50)*50),Y=v=>padT+ch*(1-v/mx);
+  const F=getComputedStyle(document.body).fontFamily;x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;x.font="10px "+F;
+  for(let v=0;v<=mx;v+=50){const py=Y(v);x.beginPath();x.moveTo(padL,py);x.lineTo(W-padR,py);x.stroke();x.fillStyle=soft;x.textAlign="right";x.fillText(v,padL-4,py+3);}
+  x.textAlign="center";for(let d=0;d<=r.len;d+=500){const px=X(d);x.fillStyle=soft;x.fillText(d===0?"0":(d/1000).toFixed(1)+" km",px,H-4);}
+  let cum=0;x.setLineDash([3,4]);x.strokeStyle=soft;r.sectors.slice(0,2).forEach((t,k)=>{cum+=t;const T=SIM.roadTrack(r.trk),dd=T.sec[k]*T.len,px=X(dd);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText("S"+(k+2),px+9,padT+ch-4);});x.setLineDash([]);
+  const bandY=H-padB+6,bh=6;for(let i=0;i<tr.d.length-1;i++){const x0=X(tr.d[i]),x1=X(tr.d[i+1]);if(tr.brk[i]>0.05){x.fillStyle=`rgba(226,71,60,${0.3+0.6*tr.brk[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}else if(tr.thr[i]>0.02){x.fillStyle=`rgba(79,192,141,${0.2+0.7*tr.thr[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}}
+  const gm=Math.max(...tr.g);x.strokeStyle="rgba(95,168,230,.7)";x.lineWidth=1.2;x.beginPath();tr.d.forEach((d,i)=>{const py=padT+ch*(1-0.32*tr.g[i]/gm);i?x.lineTo(X(d),py):x.moveTo(X(d),py);});x.stroke();
+  x.strokeStyle="#ff7a1a";x.lineWidth=2.2;x.beginPath();tr.d.forEach((d,i)=>{i?x.lineTo(X(d),Y(tr.v[i])):x.moveTo(X(d),Y(tr.v[i]));});x.stroke();
+  x.font="9.5px "+F;x.fillStyle=INK;(r.apex||[]).forEach((a,k)=>{const px=X(a.s),py=Y(a.kmh);x.beginPath();x.arc(px,py,2.2,0,7);x.fill();if(W>520||k%2===0){x.textAlign="center";x.fillText(Math.round(a.kmh),px,py+12);}});
+  x.textAlign="left";x.font="11px "+F;x.fillStyle="#ff7a1a";x.fillText("km/h",padL+4,13);x.fillStyle="rgba(95,168,230,.9)";x.fillText("gear",padL+40,13);x.fillStyle="#4fc08d";x.fillText("throttle",padL+72,13);x.fillStyle="#e2473c";x.fillText("brake",padL+122,13);
+  x.fillStyle=soft;x.textAlign="right";x.fillText(`${rdEsc(r.trkName)} · ${fmtLap(r.lapT)}`,W-padR,13);}
+function roadRedraw(){const l=lastForChart();if(S.env.testType==="road"&&l&&l.road)drawRoadTrace(l.road);}
+function roadRecHtml(){const P=roadRecs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].t);if(!ks.length)return"";ks.sort((a,b)=>(P[a].trk>P[b].trk?1:P[a].trk<P[b].trk?-1:P[a].t-P[b].t));
+  return `<div class="rtop rdrec"><span>Road test · best lap per car and circuit</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":"C"}</b><span class="et">${fmtLap(e.t,2)}</span><span>${e.z!=null?e.z.toFixed(1)+" s":""}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 /* ---- Bonneville: salt-flat land-speed runs. A push off the line, a run-up, the timed mile, the chute.
    A class record (body × displacement letter × fuel, B for blown) stands until a run beats it AND the backup run
    at the same meet does too: the record is the average of the two. Career meet = the week; sandbox meet = until "New meet". ---- */
@@ -18677,7 +19424,8 @@ function showResult(res,env){
   $("peaks").innerHTML=`<div class="peak"><b>${Math.round(res.peakHp)}<i>hp</i></b>${delta(res.peakHp,b&&b.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()} rpm · SAE ${Math.round(res.correctedHp)}</span></div><div class="peak"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${delta(res.peakTq,b&&b.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()} rpm</span></div><div class="peak"><b>${res.rel}<i>rel</i></b>${delta(res.rel,b&&b.rel)}<span>${env.testType==="endurance"?(res.endurance&&res.endurance.failedAtHour!=null?`failed at ${res.endurance.failedAtHour} h`:`survived ${env.hours} h`):`life ≈ ${life} h`}</span></div>`;
   const over=career()&&(res.peakHp>dynoCap().hp||S.cfg.redline>dynoCap().rpm);
   let v;
-  if(env.testType==="pull_sled"&&res.pull)v=pullVerdict(res);
+  if(env.testType==="road"&&res.road)v=roadVerdict(res);
+  else if(env.testType==="pull_sled"&&res.pull)v=pullVerdict(res);
   else if(env.testType==="salt"&&res.salt)v=saltVerdict(res);
   else if(over)v=`<div class="verdict fail"><div><div class="big">DYNO OVERLOADED</div><p>${dynoCap().n} can't hold ${Math.round(res.peakHp)} hp / ${S.cfg.redline} rpm. It cannot be certified here — upgrade the dyno in the Shop.</p></div></div>`;
   else if(res.fails.length)v=`<div class="verdict fail"><div><div class="big">FAILED</div><p>${res.fails.length===1?"One subsystem":res.fails.length+" subsystems"} went past its limit.</p>${res.fails.map(n=>{const t=res.tests.find(x=>x.name===n)||{};return `<div class="failnote"><b>${n}</b>${t.sub?` <small>${t.sub}</small>`:""} — ${t.physics||""} <i>${t.fix||""}</i></div>`;}).join("")}</div></div>`;
@@ -18700,11 +19448,12 @@ function showResult(res,env){
   if(env.testType==="drag"&&res.drag){const r=res.drag;extra+=`<div class="sec"><h2>Timing slip</h2><div class="log">${slipLine(r)?`<div><b>Slip</b>${slipLine(r)}</div>`:""}${launchSlip(r)?`<div><b>Launch</b>${launchSlip(r)}</div>`:""}${r.race&&r.race.rt!=null&&!r.race.foul&&r.race.rt>0.25?`<div>Reaction time ${r.race.rt.toFixed(3)} — a good light is under 0.100. That is ${(r.race.rt-0.1).toFixed(2)} s given away before the car moved.</div>`:""}${r.reasons.length?r.reasons.map(x=>`<div>${x}</div>`).join(""):"<div>Clean pass. Nothing left on the table that the driveline can fix — the rest is horsepower.</div>"}${r.shifts.length?`<div><b>Shifts</b>${r.shifts.map(x=>x.gear+"→"+(x.gear+1)+" at "+x.rpm.toLocaleString()).join(", ")}</div>`:""}<div><b>Ratios</b>${r.ratios.join(" · ")} × ${r.veh.final} final · ${r.veh.tyreDia}" ${SIM.TYRES[r.veh.tyre].n.toLowerCase()}</div><div><b>Shutdown</b>${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${r.chute?"chute out":"brakes only"} · pulled up in ${r.shutFt.toLocaleString()} ft</div><div style="margin-top:8px"><button class="btn sm info" id="shareSlip">Share timing slip</button></div>${(()=>{const wi=wearInfo(res);if(!wi)return"";const pct=Math.round(wi.w*100);return `<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${pct}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0.3?" · listen for the slap at idle":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`;})()}</div></div>`;}
   if(env.testType==="drag"&&res.drag&&res.drag.n2o)extra=extra.replace("<div><b>Ratios</b>",`<div><b>Nitrous</b>${n2oSlip(res.drag.n2o)}</div><div><b>Ratios</b>`);
   if(env.testType==="pull_sled"&&res.pull)extra+=pullSheet(res);
+  if(env.testType==="road"&&res.road)extra+=roadSheet(res);
   if(env.testType==="salt"&&res.salt)extra+=saltSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
-  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt))extra=spSlipHtml()+extra;
-  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();
+  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt)||(env.testType==="road"&&res.road))extra=spSlipHtml()+extra;
+  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="road"&&res.road)roadRedraw();
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
@@ -18747,12 +19496,14 @@ $("runTest").addEventListener("click",()=>{
   if(!testing&&S.env.testType==="drag"&&rnGate())return;   // race night: enter, close, or the wrong engine
   if(testing)return;const cost=testCost();if(career()&&C().cash<cost){toast("Not enough cash for dyno time");return;}
   if(S.env.testType==="drag"){if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(career()&&!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
+  if(S.env.testType==="road"&&career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;abStop();renderTest();ensureSound();
   if(S.env.testType==="drag"){dragStart();return;}
   if(S.env.testType==="pull_sled"){pullStart();return;}
+  if(S.env.testType==="road"){roadStart();return;}
   if(S.env.testType==="salt"){saltStart();return;}
   const env=simEnv();const res=SIM.simulate(S.cfg,env);const N=res.rpms.length;const t0=performance.now();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";
@@ -18982,7 +19733,7 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
-  const pr=pullRecHtml()+saltRecHtml();
+  const pr=pullRecHtml()+saltRecHtml()+roadRecHtml();
   if(!best&&!hp&&!rel&&!pr){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
@@ -19007,9 +19758,11 @@ function genContract(seg){
   if(R.hp)req.hp=R.hp[0]+Math.round(rng()*(R.hp[1]-R.hp[0])/10)*10;
   if(R.tq)req.tq=R.tq[0]+Math.round(rng()*(R.tq[1]-R.tq[0])/10)*10;
   if(R.econ)req.econ=+(R.econ[0]-rng()*(R.econ[0]-R.econ[1])).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","road"])if(R[k]!=null)req[k]=R[k];
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
   if(R.mph)req.mph=Math.round(R.mph[0]+rng()*(R.mph[1]-R.mph[0]));
+  if(R.lap)req.lap=+(R.lap[0]+Math.round(rng()*(R.lap[1]-R.lap[0])*2)/2).toFixed(1);   // their car, their circuit: a lap time to beat
+  if(R.zero100)req.zero100=+(R.zero100[0]+Math.round(rng()*(R.zero100[1]-R.zero100[0])*10)/10).toFixed(1);
   const units=seg.units[0]+Math.floor(rng()*(seg.units[1]-seg.units[0]));
   const price=Math.round(seg.price*(0.9+rng()*0.25)*(1+(req.hp?(req.hp-R.hp[0])/(R.hp[1]-R.hp[0])*0.35:0))/10)*10;
   const k={id:Math.floor(rng()*1e9),seg:seg.id,name:seg.name,client,req,units,price,expires:C().week+2+Math.floor(rng()*3)};
@@ -19029,7 +19782,8 @@ const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],hp:["Power",v=>`≥ ${v} hp`]
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
-  passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`],lsr:["Their car",v=>`${(SIM.LSR_BODIES[v.body]||{}).n||"car"} · long course`],mph:["Timed mile",v=>`≥ ${v} mph`]};
+  passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`],lsr:["Their car",v=>`${(SIM.LSR_BODIES[v.body]||{}).n||"car"} · long course`],mph:["Timed mile",v=>`≥ ${v} mph`],
+  lap:["Lap time",(v,x)=>`≤ ${fmtLap(+v)} · ${(SIM.ROAD_TRACKS[x&&x.road&&x.road.trk]||SIM.ROAD_TRACKS.club).n} in ${roadCarTxt(x&&x.road)}`],zero100:["0–100 km/h",(v,x)=>`≤ ${(+v).toFixed(1)} s in ${roadCarTxt(x&&x.road)}`]};
 function describeReq(q,v,x){const m=REQ_LABEL[q];return m?`${m[0]} ${m[1](v,x)}`:q;}
 function reqName(q){return (REQ_LABEL[q]||[q])[0];}
 function reqTarget(q,v,x){const m=REQ_LABEL[q];return m?m[1](v,x):"";}
@@ -19054,7 +19808,7 @@ function previewSite(s){if(testing){toast("Let the run finish first");return;}C(
 function fits(k,res,cfg){
   const r=k.req,c=cfg||S.cfg,o=[];let ok=true;
   if(k.site)res=siteRun(k.site,c);   // a site brief ignores the cell figures: the client re-runs the engine in their own air
-  const sg=SEGMENTS.find(s=>s.id===k.seg)||{},x={dsl:!!sg.dsl,gas:!!sg.gas,spec:!!sg.spec},dsl=isCI(c.fuel);
+  const sg=SEGMENTS.find(s=>s.id===k.seg)||{},x={dsl:!!sg.dsl,gas:!!sg.gas,spec:!!sg.spec,road:r.road},dsl=isCI(c.fuel);
   const add=(q,cond,val,prog)=>{o.push({q,name:reqName(q),target:reqTarget(q,r[q],x),label:describeReq(q,r[q],x),val,ok:cond,prog});if(!cond)ok=false;};
   const ge=(v,t)=>clamp(v/Math.max(1e-6,t),0,1.25), le=(v,t)=>clamp(t/Math.max(1e-6,v),0,1.25);
   if(r.hp!=null)add("hp",res.peakHp>=r.hp,Math.round(res.peakHp),ge(res.peakHp,r.hp));
@@ -19078,6 +19832,9 @@ function fits(k,res,cfg){
   if(r.lsr)add("lsr",true,"",1);
   if(r.mph!=null&&res.rpms){const m=lsrFitMph(res,c,(r.lsr&&r.lsr.body)||"lakester");add("mph",m>=r.mph,m?m.toFixed(1)+" mph":"no time",ge(m,r.mph));}
   if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
+  if((r.lap!=null||r.zero100!=null)&&res.rpms){const R0=roadFor(res,c,Object.assign({ch:"coupe"},r.road,r.lap!=null?{}:{trk:null}),k.site?k.site.name:"");   // judged in their car (a site brief: in their air too)
+    if(r.zero100!=null)add("zero100",R0.z100!=null&&R0.z100<=r.zero100,R0.z100!=null?R0.z100.toFixed(1)+" s":"—",R0.z100!=null?le(R0.z100,r.zero100):0);
+    if(r.lap!=null)add("lap",R0.lap!=null&&R0.lap<=r.lap+1e-6,fmtLap(R0.lap),R0.lap!=null?le(R0.lap,r.lap):0);}
   if(k.site){const br=res.fails[0];o.push({q:"site",name:"At the site",target:siteTxt(k.site),label:`Holds at ${siteTxt(k.site)}`,val:br?"breaks":"holds",ok:!br,prog:br?0:1,why:br});if(br)ok=false;}
   let bonus=0;if(ok){if(r.hp)bonus+=clamp(res.peakHp/r.hp-1,0,0.3)*0.5;if(r.rel)bonus+=clamp((res.rel-r.rel)/100,0,0.15);if(r.tq)bonus+=clamp(res.peakTq/r.tq-1,0,0.3)*0.4;
     if(x.dsl&&dsl)bonus+=0.06;if(x.gas&&isGasF(c.fuel))bonus+=0.08;}   // ...and more for propane or CNG: cheap fuel, clean oil, indoor-safe   // fleet and farm buyers pay a little extra for diesel: low-down torque, fuel bills, a long life
@@ -19086,7 +19843,7 @@ function fits(k,res,cfg){
 /* soft briefs: a buyer still takes an engine that misses the brief, just fewer of them and for less.
    Each shortfall costs in proportion to how far off it is; the wrong fuel or a site break is a flat hit,
    and the wrong fuel family (a diesel for a petrol car, or the reverse) sends them away. */
-const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1};
+const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,lap:8,zero100:3,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
   return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
@@ -19098,8 +19855,8 @@ function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*6
    a little under contract money. A crate-engine dealer takes anything that certified, at a thin margin. */
 const MKT_COOL=3;
 function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
-  if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);if(R.mph)req.mph=Math.round(mid(R.mph,0.3));
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot"])if(R[k]!=null)req[k]=R[k];
+  if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);if(R.mph)req.mph=Math.round(mid(R.mph,0.3));if(R.lap)req.lap=+mid(R.lap,0.7).toFixed(1);if(R.zero100)req.zero100=+mid(R.zero100,0.7).toFixed(1);
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","road"])if(R[k]!=null)req[k]=R[k];
   const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
   return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
 function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
@@ -19384,7 +20141,7 @@ function renderShop(){
   if(!C().cat||!catOpen(CATS.find(c=>c.id===C().cat)||CATS[0]))C().cat="prod";
   const cardH=(k,mode)=>{const lf=liveFit(k);const failing=lf.o.filter(q=>!q.ok).length;const fix=(!lf.ok&&failing<=3)?oneChange(k):null;
     const f=cert?fits(k,cert.res,cert.cfg):null;const d=deal(k,f||lf);const unit=d.unit;const cost=f?cert.res.cost:live.cost;const cd=mode==="active"&&f&&d.want?coreDeal(k,d.units,cert):null;const profit=(unit-cost)*d.units+(cd?cd.credit:0);
-    const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
+    const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}${q.q==="lap"||q.q==="zero100"?" rq-road":""}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
     const status=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):`<div class="cstat off">◐ OFF BRIEF · ${d.want?`they'd take ${d.units} of ${k.units} at ${Math.round(Math.pow(d.m,0.7)*100)}%`:"too far off — they'd walk"} <small>${missTxt(d)}</small>${fix?`<span>Full price with one change: <b>${fix.label}</b></span>`:""}</div>`;
     const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;const sc=siteCard(k,lf);
     const btn=mode==="active"
@@ -19967,6 +20724,7 @@ function tick(now){
     const wi=quick?wearInfo(quick):null;let dx=null;
     if(testing&&DR&&DR.d&&S.env.testType==="drag"&&!DR.failed){const st=DR.d.st;boostBar=st.boost*(on?1:0);
       dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,als:st.als||0,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
+    if(testing&&RT&&!RT.finished&&S.env.testType==="road"){boostBar=(RT.bst||0)*(on?1:0);dx={tyre:RT.slip||0};}   // the road test: boost and tyre noise from the lap trace
     if(testing&&SR&&SR.p&&S.env.testType==="salt"&&!SR.failed){const st=SR.p.st;dx={tyre:st.phase==="run"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*3)):st.phase==="spin"?0.8:0};}
     if(testing&&PR&&PR.p&&S.env.testType==="pull_sled"&&!PR.failed){const st=PR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase==="pull"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.1)*1.5)):0};}   // the sled: load from the run, tyre noise from the slip
     ENGINE_SOUND.set(Object.assign({rpm:on?rpm:0,load,cfg:S.cfg,layout:L,boostBar,wear:wi?wi.w:0,als:alsAct,
@@ -20094,11 +20852,12 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
 const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
-function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";return null;}
+function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
 let spaceHeld=null;
 function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}}
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;const k=e.key;
   if(k===" "||k==="Spacebar"){const h=holdKind();if(!h)return;e.preventDefault();if(e.repeat||spaceHeld)return;spaceHeld=h;
+    if(h==="road"){roadSkip();return;}
     if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
   if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
