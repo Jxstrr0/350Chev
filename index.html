@@ -39,7 +39,8 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #app.mini #tag{display:none}
 #app.onstrip #tag{opacity:0;pointer-events:none;transition:opacity .25s}
 /* on the strip (html.onstrip, while a drag pass or race-night round is on): a taller view, the header and SOUND/START/VIEW
-   folded away. --striphud is the height of the HUD band along the view's bottom edge; the strip camera lifts the picture clear of it */
+   folded away. The strip camera lifts the picture clear of the HUD band along the view's bottom edge: --shud-h while the
+   compact HUD overlay is up (html.shud), else --striphud */
 #view{--striphud:0px}
 html.onstrip #view{--striphud:56px}
 html.onstrip:not(.desk) #app #view{flex-basis:60%;min-height:300px}
@@ -15058,7 +15059,10 @@ function stripFitFov(vf, refAsp){ var a=STRIP.cam?STRIP.cam.aspect:1; refAsp=ref
   return Math.min(78, 2*Math.atan(Math.tan(deg(vf)/2)*refAsp/a)*180/PI); }
 /* ...and an off-axis lens shift lifts the picture so the subject sits above the HUD band along the view's bottom edge
    (the band is the --striphud custom property on #view, read on resize) */
-function stripLens(cam){ var b=STRIP.band||0, h=STRIP.viewH||0; if(!(b>0&&h>0)) return;
+function stripBandRead(){ var de=document.documentElement, host=canvasEl&&canvasEl.parentElement; STRIP.band=0; STRIP.bandShud=de.classList.contains("shud");
+  if(host && de.classList.contains("onstrip")){ try{ var cs=getComputedStyle(host); STRIP.band=parseFloat(cs.getPropertyValue(STRIP.bandShud?"--shud-h":"--striphud"))||parseFloat(cs.getPropertyValue("--striphud"))||0; }catch(e){} } }
+function stripLens(cam){ if(document.documentElement.classList.contains("shud")!==STRIP.bandShud) stripBandRead();   /* the HUD overlay (html.shud, --shud-h) came or went */
+  var b=STRIP.band||0, h=STRIP.viewH||0; if(!(b>0&&h>0)) return;
   cam.projectionMatrix.elements[9]=-clamp(b/h,0,0.3); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); }
 
 /* --- post: the strip gets its own bloom chain (Full/Ultra) and a heat-haze pass behind the car --- */
@@ -16786,8 +16790,7 @@ const ENGINE_VIS = {
     if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
-    if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; STRIP.band=0;
-      if(host && document.documentElement.classList.contains("onstrip")){ try{ STRIP.band=parseFloat(getComputedStyle(host).getPropertyValue("--striphud"))||0; }catch(e){} } }
+    if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; stripBandRead(); }
     if(PULL.cam){ PULL.cam.aspect=w/h; PULL.cam.updateProjectionMatrix(); }
     if(ROAD.cam){ ROAD.cam.aspect=w/h; ROAD.cam.updateProjectionMatrix(); }
     if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); }
