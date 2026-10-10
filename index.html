@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.32.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.33.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -7875,6 +7875,7 @@ const ENGINE_SOUND = (function () {
       var wake = function () { resume(); };
       document.addEventListener("visibilitychange", function () {
         if (!document.hidden) resume();
+        else if (ctx && ctx.state === "running" && ctx.suspend) { try { ctx.suspend(); } catch (e) {} }   /* perf: a hidden tab stops the audio thread (and the battery drain) */
       }, false);
       ["touchstart", "touchend", "pointerdown", "mousedown", "keydown"]
         .forEach(function (ev) { document.addEventListener(ev, wake, { passive: true }); });
@@ -8064,7 +8065,7 @@ const ENGINE_SOUND = (function () {
   }
   function armWatch() {
     if (watchT) return;
-    watchT = setInterval(function () { if (running) watchdog(); }, 450);
+    watchT = setInterval(function () { if (running && !(typeof document !== "undefined" && document.hidden)) watchdog(); }, 450);   /* perf: no FFT polling in a hidden tab (the context is suspended) */
     if (ctx && !ctx._pewState) {
       ctx._pewState = true;
       var prev = ctx.state;
@@ -8977,8 +8978,11 @@ function wrap(a,b){ return ((a%b)+b)%b; }
 /* tileable value noise: lattice period = per */
 function vnoise(x,y,per,s){
   var xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
-  var u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
-  var x0=wrap(xi,per), x1=wrap(xi+1,per), y0=wrap(yi,per), y1=wrap(yi+1,per);
+  var u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf), x0, x1, y0, y1;
+  if(per===(per|0) && per>0){   /* perf: integer period (every caller) — one modulo per axis, same lattice as wrap() */
+    x0=xi%per; if(x0<0) x0+=per; x1=x0+1; if(x1===per) x1=0;
+    y0=yi%per; if(y0<0) y0+=per; y1=y0+1; if(y1===per) y1=0;
+  } else { x0=wrap(xi,per); x1=wrap(xi+1,per); y0=wrap(yi,per); y1=wrap(yi+1,per); }
   var a=hashi(x0,y0,s), b=hashi(x1,y0,s), c=hashi(x0,y1,s), d=hashi(x1,y1,s);
   var ab=a+(b-a)*u, cd=c+(d-c)*u;
   return ab+(cd-ab)*v;
@@ -9029,7 +9033,7 @@ function buildMaps(size, fn, nstr){
 function sobelNormal(H,size,strength){
   var c=newCanvas(size), x=c.getContext("2d");
   var img=x.createImageData(size,size), d=img.data, k=0;
-  function at(px,py){ return H[wrap(py,size)*size + wrap(px,size)]; }
+  function at(px,py){ return H[(py<0?py+size:py>=size?py-size:py)*size + (px<0?px+size:px>=size?px-size:px)]; }   /* perf: px,py only step one past an edge */
   for(var y=0;y<size;y++){
     for(var px=0;px<size;px++){
       var gx = (at(px+1,y-1)+2*at(px+1,y)+at(px+1,y+1)) - (at(px-1,y-1)+2*at(px-1,y)+at(px-1,y+1));
@@ -9053,14 +9057,21 @@ function tex(canvas, srgb){
 }
 
 /* Make a MeshStandardMaterial from a per-pixel fn. */
+/* perf: the maps are painted the first time three.js uploads one of them (texture.image is read on upload), so a
+   surface nothing on screen uses (a turbine, a belt, the glass…) costs nothing at boot. Same pixels, just later. */
+function lazyTex(get, srgb){
+  var t=tex(undefined, srgb), img=null;
+  Object.defineProperty(t, "image", { configurable:true, enumerable:true, get:function(){ if(!img) img=get(); return img; }, set:function(v){ img=v; } });
+  return t;
+}
 function pmat(size, fn, o){
   o=o||{};
-  var m=buildMaps(size, fn, o.nstr);
+  var mm=null, M=function(){ return mm||(mm=buildMaps(size, fn, o.nstr)); };
   var mat=new THREE.MeshStandardMaterial({
-    map: tex(m.color,true),
-    normalMap: tex(m.normal,false),
-    roughnessMap: tex(m.orm,false),
-    metalnessMap: tex(m.orm,false),
+    map: lazyTex(function(){ return M().color; },true),
+    normalMap: lazyTex(function(){ return M().normal; },false),
+    roughnessMap: lazyTex(function(){ return M().orm; },false),
+    metalnessMap: lazyTex(function(){ return M().orm; },false),
     roughness: 1, metalness: 1,
     color: o.tint===undefined?0xffffff:sc(o.tint).getHex(),
     envMapIntensity: o.env===undefined?1.0:o.env,
@@ -14118,7 +14129,7 @@ function exhaustPoint(){
    keeps running, so the next frame's dt covers the gap. The drawn frames follow a 1/cap grid, so a
    90 or 144 Hz screen still averages the cap instead of dropping to half. Every rAF loop that asks
    in the same vsync gets the same answer (they share the timestamp), so the app's tick skips with it. */
-var capMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
+var viewOff=false, capMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
 function frameDue(now){
   if(now===gateT) return gateOk;
   gateT=now; var el=now-lastDraw;
@@ -14139,6 +14150,7 @@ function loop(now){
   if(!renderer) return;
   now = now>0 ? now : performance.now();
   if(!frameDue(now)) return;
+  if(viewOff){ clock.getDelta(); return; }
   fpsCount(now);
   var dt=Math.min(clock.getDelta(), 0.05);
   tick(dt, clock.elapsedTime);
@@ -17945,6 +17957,8 @@ const ENGINE_VIS = {
     if(renderer) return ENGINE_VIS;
     canvasEl = (typeof canvas==="string") ? document.getElementById(canvas) : canvas;
     if(!canvasEl) throw new Error("ENGINE_VIS.init: canvas not found");
+    /* perf: no drawing while the 3D view is scrolled out of sight (an embedded page, a squeezed layout) */
+    if(window.IntersectionObserver){ try{ new IntersectionObserver(function(es){ viewOff=!es[es.length-1].isIntersecting; }).observe(canvasEl); }catch(e){} }
 
     renderer=new THREE.WebGLRenderer({canvas:canvasEl, antialias:true, alpha:false,
                                       powerPreference:"high-performance"});
@@ -18953,7 +18967,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.32.1.0";
+const VERSION="1.33.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -19259,7 +19273,7 @@ function renderBuild(){
     const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
-  document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);
+  document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);   // perf: closed sections fill when opened (toggleSec)
   fuelHdr();
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
@@ -19313,7 +19327,7 @@ Object.assign(FOCUS_OF,{pipe:"exhaust",muffler:"exhaust",cat:"exhaust",cutout:"e
 Object.assign(FOCUS_OF,{turbine:"turbo",als:"exhaust"});
 let lastFocus=null;
 function autoFocus(key){if(testing||S.followCam===false)return;let part=FOCUS_OF[key];if(!part)return;if(part==="turbo"&&S.cfg.asp==="na")part="intake";if(part===lastFocus)return;lastFocus=part;ENGINE_VIS.focus(part);}
-function commitSlider(){S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc").forEach(fillDeltas);}
+function commitSlider(){S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);}   // perf: closed sections fill when opened (toggleSec)
 function sliderField(k){return FORM.flatMap(s=>s.fields).find(x=>x.key===k);}
 function snapVal(f,v){const st=f.step||1,lo=fMin(f),hi=fMax(f);v=Math.round((v-lo)/st)*st+lo;v=Math.min(hi,Math.max(lo,v));return +v.toFixed(4);}
 $("buildForm").addEventListener("input",e=>{const r=e.target;if(!r.dataset||!r.dataset.k||r.type!=="range")return;autoFocus(r.dataset.k);applySlider(r.dataset.k,parseFloat(r.value),r);});
@@ -20798,9 +20812,13 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");i
   if(k==="roadCh"&&v!==S.env.roadCh)S.env.roadTyre=null;   // a new chassis comes on its own stock tyres
   S.env[k]=k==="roadSpd"?+v:v;roadEnvFix();if(RT&&!RT.finished){if(k==="roadCam")RT.cam=v;if(k==="roadSpd")RT.speed=+v;}renderEnv();save();buzz(6);});
 /* live card: speed, gear, the tach, the lap clock with sector splits against the record, a mini-map */
-function roadMapDraw(cv,T,s){if(!cv)return;const dpr=Math.min(devicePixelRatio||1,2),W=cv.clientWidth||120,H=cv.clientHeight||90;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+/* perf: a live mini-map's size and ink, read once per layout (window size, desk/theme classes) instead of a forced
+   style + layout every frame right after the HUD text was written */
+function cvBox(cv){const de=document.documentElement,k=innerWidth+"x"+innerHeight+"|"+de.className+"|"+(de.getAttribute("data-theme")||""),m=cv._box;if(m&&m.k===k)return m;
+  const W=cv.clientWidth,H=cv.clientHeight,b={k:W&&H?k:"",W:W||120,H:H||90,ink:getComputedStyle(cv).color||"#f0ece2"};cv._box=b;return b;}
+function roadMapDraw(cv,T,s){if(!cv)return;const B=cvBox(cv),dpr=Math.min(devicePixelRatio||1,2),W=B.W,H=B.H;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const sc=Math.min((W-12)/T.size[0],(H-12)/T.size[1]),P=i=>[W/2+T.x[i]*sc,H/2-T.y[i]*sc];
-  const ink=getComputedStyle(cv).color||"#f0ece2";x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.22;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
+  const ink=B.ink;x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.22;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
   x.globalAlpha=.75;x.lineWidth=1.6;x.stroke();x.globalAlpha=1;
   const p0=P(0),h0=T.h[0];x.strokeStyle="#ff7a1a";x.lineWidth=2;x.beginPath();x.moveTo(p0[0]-Math.sin(h0)*6,p0[1]-Math.cos(h0)*6);x.lineTo(p0[0]+Math.sin(h0)*6,p0[1]+Math.cos(h0)*6);x.stroke();
   if(s!=null){const i=Math.floor(((s/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#ff7a1a";x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();x.strokeStyle="#15171b";x.lineWidth=1.2;x.stroke();}}
@@ -21044,10 +21062,10 @@ function e24Hud(){if(!ER||!$("e24Clk"))return;const R=ER.R,me=R.cars[0],t=R.t,P=
   const dm=Math.max(0,...me.dmg);$("e24Hw").textContent=top?`${top.name} · wear ${Math.round(dm*100)}%`:"—";const hb=$("e24Hb");hb.style.width=Math.min(100,100*hz/0.05)+"%";hb.style.background=hz>0.03?"var(--crit)":hz>0.012?"var(--warn)":"var(--good)";
   $("e24Am").textContent=Math.round(sky.amb)+" °C";$("e24Sk").textContent=`${sky.n>0.7?"night":sky.warm>0.35?(sky.h>12?"dusk":"dawn"):sky.n>0.2?(sky.h>12?"dusk":"dawn"):"day"} · ${SIM.E24_MODES[me.mode].n.toLowerCase()} · ${me.drv[me.drvI%3]}`;
   e24MapDraw();}
-function e24MapDraw(){const cv=$("e24Map");if(!cv||!ER)return;const T=ER.T,R=ER.R,dpr=Math.min(devicePixelRatio||1,2),Wd=cv.clientWidth||120,H=cv.clientHeight||90;
+function e24MapDraw(){const cv=$("e24Map");if(!cv||!ER)return;const T=ER.T,R=ER.R,dpr=Math.min(devicePixelRatio||1,2),B=cvBox(cv),Wd=B.W,H=B.H;
   if(cv.width!==Math.round(Wd*dpr)){cv.width=Math.round(Wd*dpr);cv.height=Math.round(H*dpr);}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,Wd,H);const sc=Math.min((Wd-12)/T.size[0],(H-12)/T.size[1]),Pt=i=>[Wd/2+T.x[i]*sc,H/2-T.y[i]*sc];
-  const ink=getComputedStyle(cv).color||"#f0ece2";x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.2;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=Pt(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();x.globalAlpha=.7;x.lineWidth=1.4;x.stroke();x.globalAlpha=1;
+  const ink=B.ink;x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.2;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=Pt(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();x.globalAlpha=.7;x.lineWidth=1.4;x.stroke();x.globalAlpha=1;
   const W=SIM.enduroWhere(R,R.t),L=ER.L,col=["#e8e6df","#5fa8e6","#e5b73b"];
   for(let k=W.length-1;k>=0;k--){const w=W[k],c=R.cars[k];if(w.out)continue;let p;if(w.pit||w.fin){p=Pt(Math.max(0,T.N-14));p[1]+=6;}else{const s=roadAt(L,w.f*L.time).s,i=Math.floor(((s/T.ds)%T.N+T.N)%T.N);p=Pt(i);}
     if(c.me){x.fillStyle="#ff7a1a";x.beginPath();x.arc(p[0],p[1],4.6,0,7);x.fill();x.strokeStyle="#15171b";x.lineWidth=1.3;x.stroke();}
@@ -21346,8 +21364,18 @@ function saltSheet(res){const r=res.salt,v=r.veh||{},c=r.cls||{};
     <div><b>Setup</b>${r.clsName} · ${r.courseName} · ${v.topMph} mph top gear (${r.ratios.map(x=>x.toFixed(2)).join(" / ")}:1) · ${v.aero?"aero on":"clean"} · ${v.ballast} kg ballast · ${v.cooling==="ice"?"ice tank":"radiator"} · ${(SIM.LSR_CHUTES[v.chute]||{}).n||""} · ${r.mass} kg · CdA ${r.cdA}</div>
     <div><b>Car</b>front down to ${Math.round(r.lightMin*100)}% · ${r.spinT.toFixed(1)} s of wheelspin · ${r.shifts} shift${r.shifts===1?"":"s"}${r.limT>0?" · "+r.limT.toFixed(1)+" s on the limiter":""} · water ${r.coolMax} °C · EGT ${r.peakEgt} °C${r.chute.out?` · chute at ${r.chute.mph} mph${r.chute.blown?" (tore off)":""}`:""}</div>
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div></div>`;}
+/* perf: a seeded class record costs a few hundred ms on a phone the first time (SIM caches it), and Analysis
+   draws up to ten. They are worked out one per idle slot (never during a run): after boot for this build, and on
+   demand when Analysis needs one it hasn't got, which then shows a placeholder line until they're in. */
+const LSRW={done:new Set(),q:[],cbs:[],busy:false};
+function lsrWarm(keys,cb){if(!keys){keys=[];try{keys=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){return;}}
+  for(const k of keys)if(!LSRW.done.has(k)&&!LSRW.q.includes(k))LSRW.q.push(k);if(cb)LSRW.cbs.push(cb);if(LSRW.busy)return;LSRW.busy=true;
+  const ric=window.requestIdleCallback?f=>requestIdleCallback(f,{timeout:1500}):f=>setTimeout(f,60);
+  const go=()=>{if(testing){setTimeout(()=>ric(go),2000);return;}const k=LSRW.q.shift();if(k!=null){try{SIM.lsrRecord(k);}catch(e){}LSRW.done.add(k);}
+    if(LSRW.q.length){ric(go);return;}LSRW.busy=false;const cbs=LSRW.cbs.splice(0);cbs.forEach(f=>{try{f();}catch(e){}});};ric(go);}
 /* records: the class records you have set or are chasing, and your best per class */
 function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).concat(Object.keys(L.pb)));let cur=[];try{cur=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){}cur.forEach(k=>keys.add(k));if(!keys.size)return"";
+  const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length){lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});return `<div class="rtop saltrec"><span>Salt flats · class records</span><div><span>working out the class records…</span></div></div>`;}
   const rows=[...keys].map(k=>{const r=saltRecord(k),pb=L.pb[k];return{k,r,pb};}).filter(o=>o.r).sort((a,b)=>(b.pb?1:0)-(a.pb?1:0)||(b.r.mph-a.r.mph)).slice(0,10);
   return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${saltEsc(o.k)}</span><span class="nm" title="${saltEsc(o.r.holder)}">${o.r.mine?"you":saltEsc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
 /* land-speed buyers: their car, your engine, the same salt — the mile they need, estimated with a steady driver */
@@ -22942,6 +22970,7 @@ function start(hot){
   boot();
   window.claude?.hot?.snapshot?.(()=>({S:Object.assign({},S,{last:null,base:S.base}),tab:curTab}));
   window.addEventListener("resize",()=>{ENGINE_VIS.resize();if(curTab==="test")drawChart(lastForChart(),null);});
+  setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle
 }
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
 
