@@ -891,6 +891,31 @@ html.desk.shud #n2oPurge{margin-top:6px!important;min-height:40px!important;font
 .rnlgx b{display:block;font-family:var(--display);font-size:15px;color:var(--chalk);letter-spacing:.02em}
 .rnlgx div{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:11.5px;padding:2px 0;border-top:1px dashed var(--rule)}
 html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size:13px}
+/* dyno day: the customer bay banner (sticky over every tab) and the job cards */
+#ddBar{position:sticky;top:-14px;z-index:4;margin:-14px -16px 12px;padding:6px 12px 6px 16px;display:flex;align-items:center;gap:10px;background:var(--panel2);border-bottom:2px solid var(--orange);box-shadow:0 4px 10px rgba(0,0,0,.18)}
+#ddBar[hidden]{display:none}
+#ddBar .ddbt{flex:1 1 auto;min-width:0}
+#ddBar small{display:block;font-family:var(--display);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--orange)}
+#ddBar b{display:block;font-size:13.5px;line-height:1.25;color:var(--chalk);overflow-wrap:anywhere}
+#ddBar .btn{flex:0 0 auto;min-height:44px}
+#panel.ddon .strip{top:calc(var(--ddh,58px) - 14px)}
+html.desk #ddBar{top:-16px;margin:-16px -16px 12px}
+html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
+.ddjob{margin-bottom:10px}
+.ddjob.on{border-color:var(--orange)}
+.ddjob .ddh{display:flex;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;align-items:baseline}
+.ddjob .ddh b{font-family:var(--display);font-size:16px;color:var(--chalk)}
+.ddjob .ddh span{font-size:12px;color:var(--muted)}
+.ddsay{font-style:italic;margin:6px 0 8px;color:var(--chalk);font-size:14px}
+.ddk{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:5px 0;border-top:1px dashed var(--rule)}
+.ddk span{color:var(--muted);flex:0 0 auto}.ddk b{text-align:right;font-weight:600}.ddk b.crit{color:var(--crit)}
+.ddreq{margin:6px 0;padding-left:18px;font-size:12.5px;color:var(--muted)}
+.ddhints{margin:6px 0;padding-left:20px;font-size:12.5px;color:var(--info)}
+.ddiss{margin:8px 0;padding:8px 10px;border-left:3px solid var(--crit);background:var(--panel2);font-size:12.5px;color:var(--chalk)}
+.ddbtns{flex-wrap:wrap;gap:8px;margin-top:10px}
+.ddbtns .btn.pri{flex:2 1 100%}.ddbtns .btn.sm{flex:1 1 40%;min-height:44px}
+#buildForm .ddno{opacity:.38}
+#panel.ddon #ddSec{scroll-margin-top:calc(var(--ddh,58px) + 4px)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -924,6 +949,7 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
   </div>
 
   <div id="panel">
+    <div id="ddBar" hidden></div>
     <!-- BUILD -->
     <section class="tabpage on" id="tab-build">
       <div class="strip">
@@ -969,6 +995,7 @@ html.desk .rnlgb{grid-template-rows:repeat(8,46px)}html.desk .rnk span{font-size
         <button class="btn sm" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button>
       </div>
       <p class="hint" id="dynoHint"></p>
+      <div class="sec" id="ddSec" hidden><h2>Dyno day <span class="cnt" id="ddCnt"></span></h2><div id="ddBox"></div></div>
       <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
       <div id="dragCtl" style="display:none"><button class="btn pri" id="dragBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">LAUNCH</button><div class="peaks" id="dragLive"></div></div>
       <div id="pullCtl" style="display:none"><div id="pullLive"></div><button class="btn" id="killBtn" style="display:none">KILL SWITCH<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.85;font-weight:500">it's running away — tap now</small></button><button class="btn pri" id="pullBtn" style="width:100%;font-size:22px;padding:14px 0;min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">HOLD TO PULL</button></div>
@@ -18861,7 +18888,9 @@ const GOALS=[
   {id:"clean",name:"Zero defects",desc:"Ten straight weeks with engines in the field and no warranty claim.",cash:10000,check:c=>c.cleanWeeks>=10},
   {id:"hp500",name:"Five hundred",desc:"Certify a 500 hp engine.",cash:15000,check:c=>c.bestHp>=500},
   {id:"sold200",name:"Production line",desc:"Sell 200 engines.",cash:30000,check:c=>c.sold>=200},
-  {id:"hp1000",name:"Four figures",desc:"Certify a 1,000 hp engine.",cash:40000,check:c=>c.bestHp>=1000}
+  {id:"hp1000",name:"Four figures",desc:"Certify a 1,000 hp engine.",cash:40000,check:c=>c.bestHp>=1000},
+  {id:"dd5",name:"Dyno day",desc:"Fix five customers' engines on Dyno day.",cash:3000,check:c=>!!c.dd&&c.dd.passed>=5},
+  {id:"dd25",name:"Shop doctor",desc:"Fix twenty-five customers' engines on Dyno day.",cash:12000,check:c=>!!c.dd&&c.dd.passed>=25}
 ];
 const LOAN_STEP=10000,LOAN_MAX=50000,LOAN_RATE=0.02,LOAN_PAY=0.04,LOAN_MIN_PAY=250,FORECLOSE_AT=-25000;
 /* the bank: every week-close takes the interest and a slice of the balance (LOAN_PAY, at least LOAN_MIN_PAY) out of cash.
@@ -18990,14 +19019,18 @@ function applyTheme(){const t=S.theme||"dark";const eff=t==="auto"?(window.match
   if(curTab==="test")drawChart(lastForChart(),null);}
 function buzz(ms){if(S.haptics===false||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
 function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false,psi:false};}
-function save(){try{const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
+function save(){try{const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});if(S.bay)ddSaveAs(o);localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
-function snapshot(){return Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});}
+function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});if(S.bay)ddSaveAs(o);return o;}
+/* a customer engine on the dyno is never saved as the player's build: the build, its last pull and pin go to storage, the customer rides in o.bay */
+function ddSaveAs(o){const B=S.bay,w=B.own;Object.assign(o,{cfg:w.cfg,last:w.last?slimRes(w.last):null,base:w.base?slimRes(w.base):null,env:Object.assign({},S.env,{testType:w.testType||"pull"}),profileId:w.profileId,name:w.name,bay:{job:B.job,practice:!!B.practice,cur:S.cfg}});}
+function ddLoad(o){const b=o.bay;S.bay=null;if(!b||!b.job||!b.cur||typeof b.cur!=="object"||!b.job.cfg)return;
+  S.bay={job:b.job,practice:!!b.practice,own:{cfg:S.cfg,last:S.last,base:S.base,testType:S.env.testType,profileId:S.profileId,name:S.name}};S.cfg=Object.assign({},SIM.DEFAULT_CFG,b.cur);S.last=null;S.base=null;S.env.testType="pull";S.name=ddLabel(b.job);}
 function hydrate(o){if(!o||!o.cfg)return false;S=freshState();Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
   try{fuelMigrate();}catch(e){}
   if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
     S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
-      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];return true;}
+      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];try{ddLoad(o);}catch(e){S.bay=null;}return true;}
 /* fuel system: a build saved before injectors and pumps existed gets the smallest set that feeds it (SIM.fitFuel), so a
    600 hp save doesn't suddenly lean out. Certs, strip bests, wear and the fleet are keyed by the cfg hash, so they follow
    it. In career a fitted part the shop hasn't unlocked comes with the build (an R&D-style unlock), so nothing certified
@@ -19155,11 +19188,12 @@ let prevQuick=null;
 function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.querySelector(".d");if(!t){t=document.createElement("span");t.className="d";el.appendChild(t);}
   if(!d){t.classList.remove("show");return;}t.textContent=(d>0?"▲":"▼")+fmt(Math.abs(d));t.classList.toggle("dn",lowGood?d>0:d<0);t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
 function recompute(){
+  if(S.bay)ddGuard();   // dyno day: only the parts the customer OK'd
   altFuelFill(S.cfg);   // flex needs a blend and a gas fuel a gas system before the engine is run
   prevQuick=quick;
-  quick=SIM.simulate(S.cfg,simEnv({testType:"pull"}));
+  quick=SIM.simulate(S.cfg,simEnv(Object.assign({testType:"pull"},ddEnvX())));
   if(prevQuick&&prevQuick!==quick){stripFlash("sHp",Math.round(quick.peakHp-prevQuick.peakHp),v=>v);stripFlash("sKg",Math.round(quick.kg-prevQuick.kg),v=>v,true);stripFlash("sCost",Math.round(quick.cost-prevQuick.cost),v=>"$"+v.toLocaleString("en-CA"),true);stripFlash("sDisp",+(quick.Vd/1000-prevQuick.Vd/1000).toFixed(1),v=>v.toFixed(1));}
-  combosNow=SIM.combos(S.cfg,simEnv({testType:"pull"}),quick);
+  combosNow=SIM.combos(S.cfg,simEnv(Object.assign({testType:"pull"},ddEnvX())),quick);
   if(S.heat)applyHeat();
   if(document.activeElement&&document.activeElement.id==="nameIn"){/* don't clobber while typing */}else $("tag").innerHTML=engineCard(S.cfg,quick,{editable:true});
   $("sDisp").textContent=(quick.Vd/1000).toFixed(1);$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
@@ -19274,7 +19308,7 @@ function renderBuild(){
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);   // perf: closed sections fill when opened (toggleSec)
-  fuelHdr();
+  fuelHdr();ddMarkBuild();
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
 function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
@@ -19678,7 +19712,7 @@ function renderTest(){
   if(S.env.testType==="drag")rnRunBtn();
   if(S.env.testType==="pull_sled")pullRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
-  renderMap();
+  renderMap();ddRender();
 }
 /* ===================== TUNE MAP (dyno) =====================
    S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,
@@ -21486,6 +21520,7 @@ function showResult(res,env){
   else if(env.testType==="road"&&res.road)v=roadVerdict(res);
   else if(env.testType==="pull_sled"&&res.pull)v=pullVerdict(res);
   else if(env.testType==="salt"&&res.salt)v=saltVerdict(res);
+  else if(S.bay&&env.testType==="pull"&&!over&&!res.fails.length)v=ddVerdict(res);
   else if(over)v=`<div class="verdict fail"><div><div class="big">DYNO OVERLOADED</div><p>${dynoCap().n} can't hold ${Math.round(res.peakHp)} hp / ${S.cfg.redline} rpm. It cannot be certified here — upgrade the dyno in the Shop.</p></div></div>`;
   else if(res.fails.length)v=`<div class="verdict fail"><div><div class="big">FAILED</div><p>${res.fails.length===1?"One subsystem":res.fails.length+" subsystems"} went past its limit.</p>${res.fails.map(n=>{const t=res.tests.find(x=>x.name===n)||{};return `<div class="failnote"><b>${n}</b>${t.sub?` <small>${t.sub}</small>`:""} — ${t.physics||""} <i>${t.fix||""}</i></div>`;}).join("")}</div></div>`;
   else if(env.testType==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)v=`<div class="verdict fail"><div><div class="big">FAILED AT ${res.endurance.failedAtHour} H</div><p>First to go: ${(res.tests.find(t=>t.id===res.firstToFail)||{}).name||res.firstToFail}. It passed the pull but not the hours.</p></div></div>`;
@@ -21573,7 +21608,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="road"){roadStart();return;}
   if(S.env.testType==="salt"){saltStart();return;}
   const snap=testSnap(),cfg0=snap.cfg;
-  const env=simEnv();const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
+  const env=simEnv(ddEnvX());const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";
   let failed=false,failAt=Infinity,dur,hold,label="";
   const failKind=failKindOf(res,env);const rpmDecay={rod:420,crank:520,valve:360,seize:80,knock:45,steam:30,turbo:70}[failKind]||160;
@@ -21595,16 +21630,16 @@ $("runTest").addEventListener("click",()=>{
     else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
-      if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
-      if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
+      if(same&&!ff&&!career()&&env.testType==="pull"&&!failing&&!S.bay)pbPull(res);
+      if(career()&&env.testType==="pull"&&!offStd&&!S.bay){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
         if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(cfg0.asp!=="na")C().boostedCert=true;}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
-      if(career()&&same)addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40,hKey(snap.h));
+      if(career()&&same&&!S.bay)addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40,hKey(snap.h));
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career()&&same)checkGoals();
-      achCheck({type:"dyno",res,env,failing,offStd});
+      if(!S.bay)achCheck({type:"dyno",res,env,failing,offStd});   // a customer's engine earns the shop nothing on the dyno
       save();recompute();renderTest();
       revealVerdict();
       if(ff&&ff.ending);else if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
@@ -21679,7 +21714,10 @@ const ACH=[
   {g:"shop",id:"year",name:"A full year",desc:"Survive to week 52.",ic:"cal",tier:"silver",check:()=>career()&&C().week>=52},
   {g:"shop",id:"spon1",name:"Sponsored",desc:"Sign your first sponsor.",ic:"star",tier:"bronze",check:()=>career()&&spS().hist.signed>0},
   {g:"shop",id:"spondone",name:"Good for the brand",desc:"Finish a sponsorship with every obligation met.",ic:"tick",tier:"silver",check:()=>career()&&spS().hist.done>0},
-  {g:"shop",id:"sponfull",name:"Full livery",desc:"Carry three sponsors at once.",ic:"trophy",tier:"gold",check:()=>career()&&spS().hist.max>=3}
+  {g:"shop",id:"sponfull",name:"Full livery",desc:"Carry three sponsors at once.",ic:"trophy",tier:"gold",check:()=>career()&&spS().hist.max>=3},
+  {g:"shop",id:"ddfirst",name:"Diagnosed",desc:"Find and fix a sick engine on Dyno day (practice counts).",ic:"tick",tier:"bronze",check:x=>!!x.ddPass},
+  {g:"shop",id:"ddclean",name:"No hints needed",desc:"Fix a Dyno day job with no hints, on budget.",ic:"bolt",tier:"silver",check:x=>!!x.ddClean},
+  {g:"shop",id:"dd10",name:"House calls",desc:"Fix ten customers' engines in one career.",ic:"shield",tier:"gold",check:()=>career()&&!!C().dd&&C().dd.passed>=10}
 ];
 let achQ=[],achBusy=false,achOpen=null;
 const achN=()=>ACH.filter(a=>S.ach&&S.ach[a.id]).length;
@@ -21704,6 +21742,7 @@ function achFacts(x){
     if(career()&&C().enduranceOk)f.hours=100;if(career()&&C().boostedCert)f.boosted=true;
     if(P.length){f.pullDone=true;if(P.some(e=>e.full))f.full=true;}if(R.bestFinish<=5)f.qualified=true;
     if(S.firstFireDone)f.firstfire=true;if(R.e24Best){f.e24Fin=true;if(R.e24Best<=3)f.e24Pod=true;if(R.e24Best===1)f.e24Win=true;}}
+  else if(x.type==="dd"){f.ddPass=!!x.pass;f.ddClean=!!x.clean;}
   else if(x.type==="ff")f.firstfire=true;
   f.nightsWon=R.nightsWon||0;
   return f;}
@@ -22076,10 +22115,267 @@ function coreLog(cd,cr){const p=[];if(cd.credit)p.push(`${cd.tUse+cd.sUse} ${cd.
 $("contracts").addEventListener("click",e=>{const rb=e.target.closest("[data-rebuild]");if(rb){if(rb.disabled)return;const r=doRebuild(rb.dataset.rebuild);if(!r)return;save();hud();renderShop();
     toast(r.j.warranty?`WARRANTY REBUILD · ${r.n} DONE · ${fmt$(r.parts)} PARTS`:`REBUILT ${r.n} · +${fmt$(r.net)}${r.j.done>=r.j.units?" · JOB DONE":""}`);buzz(25);return;}
   const cs=e.target.closest("[data-corescrap]");if(cs){const v=sellCore(cs.dataset.corescrap);if(v){save();hud();renderShop();toast(`CORE SOLD · ${fmt$(v)}`);}}});
+/* ===================== DYNO DAY (career customer jobs) — core =====================
+   A customer books dyno time for their own engine: a preset with one deliberate fault injected. Every fault is built by
+   search (step the part or the number until the dyno shows the fault) and is only offered when a reference fix, using parts the
+   shop can fit, clears it. ddCheck() judges a hand-back against the job's targets. Pure: SIM in, data out (tested in node). */
+const DD_FREE={cover:1,twoStepRpm:1,launchRetard:1,launchCtl:1,transBrake:1};   // cosmetic / launch keys: never a customer's business
+const DD_PUMP=["r87","r91","r94"];
+const ddCl=o=>JSON.parse(JSON.stringify(o));
+const ddT=(r,id)=>(r.tests||[]).find(t=>t.id===id);
+const ddCrit=(r,id)=>{const t=ddT(r,id);return !!t&&t.status==="crit";};
+const ddSpark=c=>!SIM.isDiesel(c)&&!(SIM.OPT.fuel[c.fuel]||{}).gas;
+const ddTurbo=c=>/turbo|compound/.test(c.asp);
+const ddBoosted=c=>c.asp!=="na";
+const ddFuelOk=f=>{const o=SIM.OPT.fuel[f];return !!o&&!o.ci&&!o.gas&&f!=="flex";};
+function ddOrder(key,by){const t=SIM.OPT[key];const ks=Object.keys(t);return by?ks.slice().sort((a,b)=>by(t[a])-by(t[b])):ks;}
+function ddBelow(key,cur,by){const o=ddOrder(key,by),i=o.indexOf(cur);return i>0?o.slice(0,i).reverse():[];}   // weaker parts, nearest first
+const DD_FAULTS=[
+ {id:"lean",tag:"lean at the top end",name:"Fuel delivery",hrs:2.5,allowed:["injectors","fuelPump","lambda","timing"],k:0.97,
+  says:["Pulls hard to {r} and then falls on its face.","Feels great down low, goes flat above {r} — like it's starving.","Lays down at the top of every gear, right around {r}."],
+  hints:["It's a fuel problem, not a spark one. Run a pull and read Fuel delivery in the stress report.","The injectors (or the pump) can't keep up: past about 85% duty the top of the pull goes lean.","Fit bigger injectors or a bigger fuel pump — what a healthy one of these runs."],
+  gen(c0,r0,X){if(!ddSpark(c0))return null;
+    for(const k of ["injectors","fuelPump"])for(const v of ddBelow(k,c0[k]).slice(0,3)){const c=Object.assign({},c0,{[k]:v});const r=X.sim(c);if(ddCrit(r,"fuel_delivery")&&r.peakHp>=0.7*r0.peakHp&&r.fails.length<=3)return{cfg:c,fix:[[k,c0[k]]],sig:"fuel_delivery"};}
+    return null;}},
+ {id:"knock_tim",tag:"pings under load",name:"Ignition timing",hrs:2,allowed:["timing","lambda","fuel"],k:0.95,pump:true,
+  says:["A buddy 'tuned' it. Now it pings when I lean on it.","Rattles like marbles in a can when I floor it uphill.","Pings on the highway, worst in top gear climbing hills."],
+  hints:["That rattle is knock. Read Detonation margin in the stress report.","Someone put too much timing in it for the fuel it runs: the margin is below zero.","Pull the ignition timing back toward where it should be — don't fix it with race gas."],
+  gen(c0,r0,X){if(!ddSpark(c0))return null;
+    for(let d=2;d<=14;d+=2){const c=Object.assign({},c0,{timing:c0.timing+d});if(c.timing>15)break;const r=X.sim(c);if(ddCrit(r,"detonation")&&r.fails.length<=2)return{cfg:c,fix:[["timing",c0.timing]],sig:"detonation"};}
+    return null;}},
+ {id:"knock_fuel",tag:"pings on regular",name:"Fuel vs timing",hrs:3,allowed:["timing","lambda","boost"],k:0.9,
+  says:["Pings on the highway since I started filling it with regular.","Knocks going up hills. The guy at the counter said 87 is fine. I'm not paying for premium.","Sounds like gravel in the motor when I pass — and I only buy regular."],
+  hints:["Listen for knock: read Detonation margin on a pull.","It was built for premium and it's running 87 regular. The customer won't change fuel.","Take timing out (and boost, if it has any) until the margin is positive — keep the power loss small."],
+  gen(c0,r0,X){if(!ddSpark(c0)||DD_PUMP.indexOf(c0.fuel)<1)return null;const c=Object.assign({},c0,{fuel:"r87"});const r=X.sim(c);
+    if(!ddCrit(r,"detonation")||r.fails.length>2)return null;
+    for(let d=1;d<=14;d++){const f=Object.assign({},c,{timing:c.timing-d});if(f.timing<-15)break;const rf=X.sim(f);if(!rf.fails.length&&rf.peakHp>=0.85*r0.peakHp)return{cfg:c,fix:[["timing",f.timing]],sig:"detonation",fuels:["r87"],refHp:rf.peakHp};}
+    return null;}},
+ {id:"knock_cr",tag:"knocks since the rebuild",name:"Compression vs fuel",hrs:3,allowed:["timing","lambda","fuel"],k:0.93,internal:true,
+  says:["Fresh rebuild — the machinist milled the head. Since then it knocks under load.","Had the head skimmed, now it pings and the pistons sound like they're rattling.","It's been knocking ever since the head came back from the shop."],
+  hints:["That's knock. The Detonation margin on a pull shows it.","Milling the head raised the compression ratio — more octane needed than the tune allows for. The head stays on: no internal work.","Retard the timing, or put it on a higher-octane fuel. Don't touch the compression."],
+  gen(c0,r0,X){if(!ddSpark(c0))return null;
+    for(let d=0.5;d<=2.5;d+=0.5){const c=Object.assign({},c0,{cr:+(c0.cr+d).toFixed(2)});if(c.cr>15)break;const r=X.sim(c);if(ddCrit(r,"detonation")&&r.fails.length<=2){
+      for(let t=1;t<=14;t++){const f=Object.assign({},c,{timing:c.timing-t});if(f.timing<-15)break;const rf=X.sim(f);if(!rf.fails.length)return{cfg:c,fix:[["timing",f.timing]],sig:"detonation",refHp:rf.peakHp};}
+      return null;}}
+    return null;}},
+ {id:"vfloat",tag:"misses at the limiter",name:"Valve float",hrs:3,allowed:["springs","redline","valveMat"],k:0.97,internal:false,
+  says:["Stumbles and misses right before the limiter at {rl}.","Above {r} it breaks up like it's hitting a rev limiter early.","Had the limiter raised to {rl}. Now it pops and misses near the top."],
+  hints:["A miss only at the very top is the valvetrain. Read Valve float in the stress report.","The springs can't close the valves at that rpm — the customer wants the redline kept where it is.","Fit stiffer or lighter valve springs (dual, beehive, titanium retainers). Leave the redline."],
+  gen(c0,r0,X){if(SIM.isRotary(c0))return null;const tryF=c=>{const r=X.sim(c);return ddCrit(r,"valve_float")&&r.fails.length===1?r:null;};
+    for(const v of ddBelow("springs",c0.springs)){const c=Object.assign({},c0,{springs:v});if(tryF(c))return{cfg:c,fix:[["springs",c0.springs]],sig:"valve_float",redlineMin:c.redline};}
+    for(let d=200;d<=1600;d+=200){const c=Object.assign({},c0,{redline:c0.redline+d});if(c.redline>12500)break;if(tryF(c)){
+      for(const v of ddOrder("springs"))if(v!==c.springs&&X.ok("springs",v)){const f=Object.assign({},c,{springs:v});const rf=X.sim(f);if(!rf.fails.length)return{cfg:c,fix:[["springs",v]],sig:"valve_float",redlineMin:c.redline};}
+      return null;}}
+    return null;}},
+ {id:"oil",tag:"oil light in long corners",name:"Oil starvation",hrs:3.5,w:0.4,allowed:["oilSystem","oilGrade","redline"],k:0.95,
+  says:["Track car. The oil light flickers in long sweepers.","Oil pressure drops out in the long right-hander at the club track.","Spun a bearing last year. Now the oil light blinks in fast corners again."],
+  hints:["Run a pull: the customer's duty — sustained cornering — is set on this job. Read Oil pickup / aeration.","A plain wet sump uncovers the pickup under sustained g; the oil sloshes away from it.","Fit a baffled or dry sump."],
+  gen(c0,r0,X){if(c0.oilSystem==="dry"&&!X.ok("oilSystem","baffled"))return null;const g=+(1.1+0.2*X.rnd()).toFixed(2),env={gLat:g};
+    const c=Object.assign({},c0,{oilSystem:"wet"});const r=X.sim(c,env);if(!ddCrit(r,"oil_starvation")||r.fails.length>1)return null;
+    return{cfg:c,env,fix:[["oilSystem",c0.oilSystem==="wet"?"baffled":c0.oilSystem]],alt:[["oilSystem","baffled"],["oilSystem","dry"]],sig:"oil_starvation"};}},
+ {id:"hot_turbo",tag:"cooks the turbo",name:"Lean on boost",hrs:2.5,allowed:["lambda","turbineMat","timing","boost"],k:0.95,
+  says:["The exhaust manifold glows on a long pull and the turbo smells hot.","Went through a turbo last summer. This one's already smoking after long highway pulls.","Hot-side glows cherry red after a couple of hard runs."],
+  hints:["Read Turbine inlet temp in the stress report (and EGT on the chart).","The tune runs it too lean on boost: lean burns hot, and the turbine takes the heat.","Richen the full-load λ back to where a boosted engine wants it (or fit an Inconel hot side)."],
+  gen(c0,r0,X){if(!ddSpark(c0)||!ddTurbo(c0))return null;
+    for(let d=0.03;d<=0.16;d+=0.03){const c=Object.assign({},c0,{lambda:+(c0.lambda+d).toFixed(2)});const r=X.sim(c);if(ddCrit(r,"turbine_temp")&&r.fails.length<=3)return{cfg:c,fix:[["lambda",c0.lambda]],sig:"turbine_temp"};}
+    return null;}},
+ {id:"creep",tag:"boost creep up top",name:"Boost creep",hrs:3.5,allowed:["map","boost"],k:0.96,map:true,
+  says:["Boost won't hold — it keeps climbing past {b} bar up top, then it pings.","Gauge creeps way over target near the redline. The wastegate can't hold it.","Boost spikes at the top of third and it knocks or cuts out."],
+  hints:["Boost creep: look at the Boost row of the tune map and the boost trace on a pull.","The boost target climbs in the top rpm columns — more than the turbo and the fuel can live with.","Pull the high-rpm boost cells back down to the rest of the row (select them, Interpolate or nudge)."],
+  gen(c0,r0,X){if(!ddSpark(c0)||!ddTurbo(c0)||c0.turbine==="vgt")return null;const m0=SIM.mapFromSliders(c0);if(!m0.boost)return null;const n=m0.rpm.length,k0=n-Math.max(2,Math.round(n/3));
+    for(let d=0.2;d<=1.2;d+=0.2){const m=ddCl(m0);for(let i=k0;i<n;i++)m.boost[i]=+(m0.boost[i]+d*(i-k0+1)/(n-k0)).toFixed(2);
+      const c=Object.assign({},c0,{map:m,boost:Math.max(...m.boost)});const r=X.sim(c);if(r.fails.length&&r.fails.length<=3)return{cfg:c,fix:[["map",m0]],sig:null,b:c0.boost};}
+    return null;}},
+ {id:"cell",tag:"stumble in one spot",name:"Wrong map cell",hrs:3,allowed:["map","boost"],k:0.97,map:true,
+  says:["Bought it with an aftermarket ECU. Around {r} it knocks, then it's fine again.","There's one spot near {r} where it rattles under full throttle.","Flat spot and a ping right about {r}. Clean either side of it."],
+  hints:["It's only one band of rpm: read the tune map with the Knock and EGT overlays.","One or two full-load (100%) cells near {r} are way off the rest of the row.","Bring those cells back in line with their neighbours (select them and Interpolate, or nudge)."],
+  gen(c0,r0,X){if(!ddSpark(c0))return null;const m0=SIM.mapFromSliders(c0),n=m0.rpm.length,W=m0.load.length-1;
+    let i0=m0.rpm.reduce((bi,x,i)=>Math.abs(x-r0.peakTqRpm)<Math.abs(m0.rpm[bi]-r0.peakTqRpm)?i:bi,0);i0=Math.max(1,Math.min(n-3,i0));
+    for(let d=4;d<=18;d+=2){const m=ddCl(m0);m.ign[W][i0]+=d;m.ign[W][i0+1]+=d;const c=Object.assign({},c0,{map:m});const r=X.sim(c);if(r.fails.length&&r.fails.length<=3)return{cfg:c,fix:[["map",m0]],sig:null,r:m0.rpm[i0]};}
+    for(let d=0.06;d<=0.3;d+=0.04){const m=ddCl(m0);m.lam[W][i0]=+(m.lam[W][i0]+d).toFixed(2);m.lam[W][i0+1]=+(m.lam[W][i0+1]+d).toFixed(2);const c=Object.assign({},c0,{map:m});const r=X.sim(c);if(r.fails.length&&r.fails.length<=3)return{cfg:c,fix:[["map",m0]],sig:null,r:m0.rpm[i0]};}
+    return null;}},
+ {id:"smoke",tag:"rolling coal",name:"Over-fuelled diesel",hrs:2.5,allowed:["lambda","turboSize","dNoz","timing","ic"],k:0.95,
+  says:["Smokes like a chimney. I'm getting looks — the inspection's next week.","Black smoke every time I touch the throttle. Smells like a cookstove.","Someone turned up the fuel. It rolls coal and the EGTs scare me."],
+  hints:["Read Smoke on the verdict, and λ on the chart or the datalog: it's a diesel fuelling problem.","The fuel limiter lets in more fuel than the air can burn. The customer still wants it to pull.","Raise the full-load λ (fuel limiter) back toward stock, or give it more air with a bigger turbo."],
+  gen(c0,r0,X){if(!SIM.isDiesel(c0))return null;
+    for(let d=0.05;d<=0.9;d+=0.05){const c=Object.assign({},c0,{lambda:+(c0.lambda-d).toFixed(2)});if(c.lambda<1.05)break;const r=X.sim(c);if(r.fails.length)return null;if((r.smoke||0)>=35)return{cfg:c,fix:[["lambda",c0.lambda]],sig:"smoke",smokeMax:Math.max(12,Math.round((r0.smoke||0)+8))};}
+    return null;}},
+ {id:"small_turbo",tag:"runs out of breath",name:"Turbo too small",hrs:3,allowed:["turboSize","boost","ic"],k:0.97,
+  says:["Pulls hard low, then it's like it hits a wall up top. Turbo screams.","Lost power after the turbo was replaced — it whistles and goes flat.","Spools instantly but it's done by {r}. The turbo sounds like a dentist's drill."],
+  hints:["Read Compressor flow in the stress report.","The compressor is past its choke line: it only heats the air up top. Someone swapped in a smaller turbo.","Fit a turbo that flows what this engine needs — about what it came with."],
+  gen(c0,r0,X){if(!ddTurbo(c0))return null;
+    for(const v of ddBelow("turboSize",c0.turboSize,o=>o.maxFlow||0)){const c=Object.assign({},c0,{turboSize:v});const r=X.sim(c);if(ddCrit(r,"compressor_map")&&r.fails.length<=2)return{cfg:c,fix:[["turboSize",c0.turboSize]],sig:"compressor_map"};}
+    return null;}},
+ {id:"gasket",tag:"pushing coolant",name:"Head gasket",hrs:4,allowed:["gasket","studs","boost"],k:0.97,
+  says:["Pushes coolant out of the overflow under boost. No milkshake in the oil — yet.","Bubbles in the radiator after a hard run, and the overflow's always full.","Lost coolant every hard pull since I turned the boost up."],
+  hints:["Coolant pushed out under load means combustion gas getting past the head joint: read Head gasket and Head clamp margin.","The gasket can't seal the cylinder pressure this engine makes now.","Fit an MLS or copper O-ring gasket (and studs if the clamp is short). Keep the boost."],
+  gen(c0,r0,X){if(!ddBoosted(c0)&&!SIM.isDiesel(c0))return null;
+    for(const v of ddBelow("gasket",c0.gasket)){const c=Object.assign({},c0,{gasket:v});const r=X.sim(c);if((ddCrit(r,"gasket_shear")||ddCrit(r,"head_lift"))&&r.fails.length<=2)return{cfg:c,fix:[["gasket",c0.gasket]],sig:"gasket_shear"};}
+    return null;}},
+ {id:"thin_oil",tag:"bottom-end knock when hot",name:"Oil too thin",hrs:1.5,allowed:["oilGrade","oilSystem"],k:0.97,
+  says:["Oil pressure falls off when it's hot and there's a knock from the bottom end.","Quick lube put 'the good thin stuff' in. Now the bottom end rattles when it's warm.","Low oil pressure light at hot idle, and a deep knock under load."],
+  hints:["A hot-oil knock lives in the bearings: read Hydrodynamic film and Bearing specific load.","The oil is too thin for the bearing load: the film breaks down when it's hot.","Change to the oil grade this engine should run — thicker."],
+  gen(c0,r0,X){if(SIM.isRotary(c0))return null;
+    for(const v of ddBelow("oilGrade",c0.oilGrade,o=>o.kv100)){const c=Object.assign({},c0,{oilGrade:v});const r=X.sim(c);if((ddCrit(r,"oil_film")||ddCrit(r,"bearing_load"))&&r.fails.length<=2)return{cfg:c,fix:[["oilGrade",c0.oilGrade]],sig:"oil_film"};}
+    return null;}},
+ {id:"overheat",tag:"runs hot",name:"Cooling",hrs:3,allowed:["cooling","oilSquirters"],k:0.97,
+  says:["Temperature gauge climbs on every long pull. Had to back out of it last weekend.","Boils over after two hard runs.","Runs hot under load — fine cruising, overheats when I lean on it."],
+  hints:["Read Heat rejection in the stress report.","The radiator can't shed the heat this power level makes: someone fitted a cheaper core.","Fit a bigger cooling package."],
+  gen(c0,r0,X){
+    for(const v of ddBelow("cooling",c0.cooling)){const c=Object.assign({},c0,{cooling:v});const r=X.sim(c);if(ddCrit(r,"cooling")&&r.fails.length<=2)return{cfg:c,fix:[["cooling",c0.cooling]],sig:"cooling"};}
+    return null;}}
+];
+/* parts the customer buys: list price of every part swapped in (tune numbers and map cells are labour) */
+function ddPartsOf(a,b){let s=0;for(const k in b){const t=SIM.OPT[k];if(!t||typeof b[k]!=="string"||b[k]===a[k]||!t[b[k]])continue;s+=+t[b[k]].cost||0;}return Math.round(s);}
+/* hand-back judge: {ok, issues:[...], newFails:[...], fixed} — cfg is the customer's engine as it is now, res a pull of it in the job's env */
+function ddCheck(job,cfg,res){const iss=[],o=job.cfg,A=new Set(job.allowed);
+  const nf=res.fails.filter(n=>job.f0.indexOf(n)<0),still=res.fails.filter(n=>job.f0.indexOf(n)>=0);
+  if(still.length)iss.push("Still failing: "+still.join(", "));
+  if(nf.length)iss.push("New failure: "+nf.join(", "));
+  if(job.smokeMax!=null&&(res.smoke||0)>job.smokeMax)iss.push(`Smoke ${Math.round(res.smoke||0)}% — the customer wants ${job.smokeMax}% or less`);
+  if(job.hpMin&&res.peakHp<job.hpMin)iss.push(`${Math.round(res.peakHp)} hp — the customer wants at least ${job.hpMin} hp`);
+  if(job.fuels&&job.fuels.indexOf(cfg.fuel)<0)iss.push(`Fuel: the customer will only run ${job.fuels.map(f=>(SIM.OPT.fuel[f]||{}).name||f).join(" / ")}`);
+  if(job.redlineMin&&cfg.redline<job.redlineMin)iss.push(`Redline ${cfg.redline} — the customer wants it kept at ${job.redlineMin}`);
+  const bad=Object.keys(Object.assign({},o,cfg)).filter(k=>!A.has(k)&&!DD_FREE[k]&&JSON.stringify(cfg[k])!==JSON.stringify(o[k]));
+  if(bad.length)iss.push("Work the customer didn't OK: "+bad.join(", "));
+  return {ok:!iss.length,issues:iss,newFails:nf,botched:nf.length>0||bad.length>0,fixed:!still.length&&!(job.smokeMax!=null&&(res.smoke||0)>job.smokeMax)};}
+/* make one job: X = {sim(cfg,envExtra), rnd(), ok(key,val), pool:[preset], f:[fault ids] (optional)} — null if nothing fits */
+function ddMake(X){const tries=24;
+  for(let n=0;n<tries;n++){const p=X.pool[Math.floor(X.rnd()*X.pool.length)];if(!p)return null;
+    const fl=DD_FAULTS.filter(f=>!X.f||X.f.indexOf(f.id)>=0);let u=X.rnd()*fl.reduce((a,f)=>a+(f.w||1),0),F=fl[fl.length-1];for(const f of fl){u-=f.w||1;if(u<0){F=f;break;}}
+    const c0=Object.assign({},SIM.DEFAULT_CFG,ddCl(p.cfg));const r0=X.sim(c0);if(r0.fails.length)continue;
+    let g=null;try{g=F.gen(c0,r0,X);}catch(e){g=null;}if(!g)continue;
+    const env=g.env||{},rf0=X.sim(g.cfg,env);
+    const job={v:1,id:Math.floor(X.rnd()*1e9),preset:p.id,fault:F.id,cfg:g.cfg,env,allowed:F.allowed.slice(),f0:rf0.fails.slice(),hp0:Math.round(r0.peakHp),hpF:Math.round(rf0.peakHp),cost0:rf0.cost,
+      smokeMax:g.smokeMax!=null?g.smokeMax:null,fuels:g.fuels||(F.pump&&DD_PUMP.indexOf(c0.fuel)>=0?DD_PUMP.slice():null),redlineMin:g.redlineMin||null,sig:g.sig,r:g.r||Math.round(c0.redline*0.72/100)*100,b:g.b||c0.boost,rl:g.cfg.redline};
+    /* the reference fix must use parts the shop can fit, pass every target, and set the hp floor */
+    const cands=[g.fix].concat((g.alt||[]).map(a=>[a]));let ref=null;
+    for(const fx of cands){if(fx.some(([k,v])=>typeof v==="string"&&SIM.OPT[k]&&!X.ok(k,v)))continue;const fc=Object.assign({},g.cfg);fx.forEach(([k,v])=>fc[k]=typeof v==="object"?ddCl(v):v);
+      if(fc.map&&fc.map.boost&&g.cfg.map)fc.boost=Math.max(...fc.map.boost);const rr=X.sim(fc,env);if(!rr.fails.length&&(job.smokeMax==null||(rr.smoke||0)<=job.smokeMax)){ref={fx,cfg:fc,res:rr};break;}}
+    if(!ref)continue;
+    job.hpMin=Math.floor(Math.min(F.k*r0.peakHp,0.985*ref.res.peakHp));
+    if(!ddCheck(job,ref.cfg,ref.res).ok)continue;
+    if(!(rf0.fails.length||(job.smokeMax!=null&&(rf0.smoke||0)>job.smokeMax)))continue;   // the fault must show on the dyno
+    job.fix=ref.fx.map(([k,v])=>[k,typeof v==="object"?"(map)":v]);job.partsRef=ddPartsOf(g.cfg,ref.cfg);
+    return job;}
+  return null;}
+/* ---- DYNO DAY core end ---- */
+/* ---- DYNO DAY in the shop: the week's customers (C().dd), the customer bay (S.bay) and the hand-back.
+   S.bay holds the player's own build while a customer's engine sits on the dyno: save()/snapshot() write the player's build
+   (the customer engine rides along in o.bay.cur), the dyno never certifies, wears or records a customer engine, and recompute()
+   puts back any part the customer didn't OK. Sandbox: "Practice diagnosis" — the same bay, no money. ---- */
+const DD_WHO=["Dale","Marie","Kev","Priya","Earl","Tanya","Lou","Gus","Rosa","Wes","Darlene","Hank","Mo","Jules","Shane","Bev","Corey","Nadia","Ray","Fern","Lyle","Joanne","Arjun","Cass"];
+const DD_VEH={g10:"'99 city hatch","4ac":"'87 hatchback","22re":"'89 compact pickup",ea82:"'88 wagon",l36:"'04 sedan",k20a:"'03 hot hatch","2jzgte":"'97 GT coupe",rb26:"'99 AWD coupe",ls3:"'10 muscle car",
+  coyote:"'16 pony car",ej257:"'08 rally sedan",f6_38:"'09 rear-engined coupe",s54:"'04 sport coupe",v8fp45:"track-day exotic",v12_65:"'12 grand tourer",v10_52:"'10 supercar",i3_1000:"'17 city car",ea888:"'15 hot hatch",
+  m133:"'14 AWD hatch",hemi64:"'70 muscle car",i5_25t:"'18 five-pot hatch",outlaw_radial:"radial drag car",outlaw_promod:"Pro Mod",d15b:"'95 commuter",ea211:"'19 compact",["2zr"]:"'12 compact",skyg25:"'16 crossover",
+  kent:"'71 club racer",lima23:"'84 pony car",ford300:"'86 farm truck",vortec43:"'05 Silverado",["1gr"]:"'08 4x4",godzilla73:"'21 three-quarter-ton",sbc350:"'79 street rod",f20c:"'02 roadster",["4age20v"]:"'85 sprint coupe",
+  ["4g63"]:"'98 rally sedan",b58:"'20 sport sedan",vr38:"'12 AWD supercar",["9a2tt"]:"'18 sports car",p997t:"'11 turbo coupe",m156:"'09 super-sedan",voodoo:"'16 track pony car",hellcat:"'19 blown coupe",lt4:"'17 blown coupe",
+  s85:"'07 super-sedan",["1lr"]:"V10 exotic",dfv:"historic Grand Prix car",wrc16:"rally car",gt3r:"cup car",valkyrie:"hypercar",k24_1000:"drag hatch",jz_1500:"drag coupe",n2o632:"nitrous dragster",pro540:"blown drag car",
+  compound402:"outlaw truck",p4236:"'78 tractor",c59_12v:"'95 three-quarter-ton",lb7:"'03 heavy-duty pickup",psd73:"'99 super-duty",psd67:"'19 super-duty",alh:"'02 diesel wagon",om606:"'97 diesel sedan",s60:"'05 highway tractor",
+  ["1kd"]:"'10 diesel 4x4",smoker26:"pulling truck",ss_triple:"super stock puller",["12a_sa"]:"'79 rotary coupe",["13b_fc"]:"'88 rotary coupe",["13b_rew"]:"'94 twin-turbo rotary",renesis:"'05 rotary coupe",["20b_rew"]:"'96 three-rotor",
+  ["13b_bp"]:"rotary club racer",r26b:"four-rotor prototype"};
+const DD_COST=[3000,4500,6500,9500,16000,1e9];   // dearest customer engine by rep tier: a backyard shop sees commuters
+function DD(){const c=C();if(!c.dd||typeof c.dd!=="object")c.dd={};const d=c.dd;if(!Array.isArray(d.jobs))d.jobs=[];
+  for(const k of ["week","passed","failed","earned","streak"])if(typeof d[k]!=="number")d[k]=0;if(!d.seed)d.seed=1+Math.floor(Math.random()*1e9);return d;}
+function ddRnd(o){return()=>{o.seed=(o.seed*1664525+1013904223)>>>0;return o.seed/4294967296;};}
+const ddFault=id=>DD_FAULTS.find(f=>f.id===id)||DD_FAULTS[0];
+const ddFill=(s,j)=>String(s).replace(/\{r\}/g,(+j.r||0).toLocaleString("en-CA")).replace(/\{rl\}/g,(+j.rl||0).toLocaleString("en-CA")).replace(/\{b\}/g,(+j.b||0).toFixed(1));
+const ddEsc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function ddKeyLbl(k){if(k==="map")return "Tune map";const f=FORM.flatMap(x=>x.fields).find(x=>x.key===k);return f?fLabel(f):k;}
+const ddLabel=j=>`${j.who}'s ${j.veh}`;
+const ddEnvX=()=>S&&S.bay&&S.bay.job.env?S.bay.job.env:null;
+let ddPresetHp=null;
+function ddPool(){const dc=career()?dynoCap():{hp:1e9,rpm:1e9},ti=career()?repTierIdx():5,e=simEnv({testType:"pull"}),k=envHash();
+  if(!ddPresetHp||ddPresetHp.k!==k){ddPresetHp={k,m:{}};}
+  return PRESETS.filter(p=>{if(!p||!p.cfg||!p.id)return false;if(career()&&(locked(OPT.layout[p.cfg.layout])||(p.cfg.redline||0)>dc.rpm))return false;
+    let m=ddPresetHp.m[p.id];if(!m){try{const r=SIM.simulate(Object.assign({},SIM.DEFAULT_CFG,p.cfg),e);m={hp:r.peakHp,cost:r.cost};}catch(x){m={hp:1e9,cost:1e9};}ddPresetHp.m[p.id]=m;}
+    return m.hp<=dc.hp*0.9&&(!career()||m.cost<=DD_COST[ti]);});}
+function ddMakeJob(rnd,practice,only){const pool=ddPool();if(!pool.length)return null;
+  const X={sim:(cfg,ex)=>SIM.simulate(cfg,simEnv(Object.assign({testType:"pull"},ex||{}))),rnd,ok:(k,v)=>!(career()&&OPT[k]&&OPT[k][v]&&locked(OPT[k][v])),pool,f:only};
+  const j=ddMake(X);if(!j)return null;const F=ddFault(j.fault),p=PRESETS.find(q=>q.id===j.preset)||{};
+  j.who=DD_WHO[Math.floor(rnd()*DD_WHO.length)];j.veh=DD_VEH[j.preset]||("'"+String(90+Math.floor(rnd()*30)).slice(-2)+" "+(presetCls(p)==="truck"?"pickup":"car"));j.eng=p.name||j.preset;
+  j.says=ddFill(F.says[Math.floor(rnd()*F.says.length)],j);j.tag=F.tag;j.hints=0;j.paid=0;
+  const ti=career()?repTierIdx():0;j.labour=practice?0:Math.max(250,Math.round(F.hrs*(110+j.cost0*0.034)*(1+0.2*ti)/10)*10);   // shop rate: $110/h plus the engine's worth
+  j.budget=Math.max(100,Math.round((j.partsRef*1.25+60)/50)*50);return j;}
+/* the week's walk-ins: 0-3 by rep and dyno, more with a dyno technician */
+function ddWeek(){if(!career())return;const d=DD();if(d.week===C().week)return;
+  if(S.bay&&!S.bay.practice&&!testing){const j=S.bay.job;ddExit();C().rep=Math.max(0,C().rep-1);d.failed++;d.streak=0;logEvent(`Dyno day: ${ddLabel(j)} came back for it unfinished — −1 rep`,"bad");}
+  const left=d.jobs.filter(j=>j.st==="open").length;d.jobs=d.jobs.filter(j=>j.st==="bay"&&S.bay&&S.bay.job.id===j.id);d.week=C().week;
+  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45:0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
+  for(let i=0;i<n;i++){const j=ddMakeJob(rnd,false);if(j){j.st="open";d.jobs.push(j);}}
+  if(left&&d.week>1)logEvent(`Dyno day: ${left} customer${left>1?"s":""} took ${left>1?"their cars":"the car"} elsewhere`,"");
+  const nn=d.jobs.filter(j=>j.st==="open").length;if(nn&&d.week>1)setTimeout(()=>toast(`DYNO DAY · ${nn} customer${nn>1?"s":""} booked in`),2700);}
+function ddEnter(j,practice){if(testing){toast("Let the run finish first");return false;}if(S.bay)return false;if(rnLive()||PO||ER){toast("Finish the event first");return false;}
+  S.bay={job:j,practice:!!practice,own:{cfg:S.cfg,last:S.last,base:S.base,testType:S.env.testType,profileId:S.profileId,name:S.name}};
+  S.cfg=Object.assign({},SIM.DEFAULT_CFG,ddCl(j.cfg));S.last=null;S.base=null;S.env.testType="pull";S.profileId=(PRESETS.find(p=>p.id===j.preset)||{}).soundProfile||null;S.name=ddLabel(j);
+  resetBase();afterCfgChange(true);ddBar();save();return true;}
+function ddExit(){const B=S.bay;if(!B)return;const o=B.own;S.bay=null;S.cfg=o.cfg;S.last=o.last;S.base=o.base;S.env.testType=o.testType||"pull";S.profileId=o.profileId;S.name=o.name;
+  resetBase();afterCfgChange(true);ddBar();if(curTab==="test")renderTest();save();}
+/* the customer only pays for what they OK'd: anything else goes back as it came (fuel stays a liquid spark fuel) */
+let ddGuardT=0;
+function ddGuard(){const B=S.bay;if(!B)return;const o=B.job.cfg,A=new Set(B.job.allowed),back=[];
+  for(const k of Object.keys(Object.assign({},o,S.cfg))){if(A.has(k)&&!(k==="fuel"&&!ddFuelOk(S.cfg.fuel))||DD_FREE[k])continue;
+    if(JSON.stringify(S.cfg[k])===JSON.stringify(o[k]))continue;if(o[k]===undefined)delete S.cfg[k];else S.cfg[k]=ddCl(o[k]);back.push(k);}
+  if(back.length&&!ddGuardT){ddGuardT=setTimeout(()=>{ddGuardT=0;renderBuild();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);},0);toast(`${B.job.who} didn't OK that — ${back.map(ddKeyLbl).join(", ")} put back`);}}
+function ddMarkBuild(){if(!S.bay)return;const A=new Set(S.bay.job.allowed);
+  document.querySelectorAll("#buildForm [data-k],#buildForm [data-nk],#buildForm [data-num]").forEach(el=>{const k=el.dataset.k||el.dataset.nk||el.dataset.num;if(A.has(k)||DD_FREE[k])return;el.classList.add("ddno");if(el.tagName==="INPUT")el.disabled=true;});}
+function ddParts(){const B=S.bay;return B?ddPartsOf(B.job.cfg,S.cfg):0;}
+function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:Math.max(20,Math.round(j.labour*0.12/10)*10);}
+function ddHint(){const B=S.bay;if(!B)return;const j=B.job;if(j.hints>=3)return;const c=ddHintCost(j);j.hints++;if(c)j.paid+=c;save();ddRender();
+  toast(c?`Hint · ${fmt$(c)} off the labour`:j.hints===1&&staffed("tuner")&&career()?"Your calibration engineer has a look — free":"Hint");}
+function ddVerdict(res){const B=S.bay,j=B.job,ck=ddCheck(j,S.cfg,res);
+  return `<div class="verdict ${ck.ok?"pass":"marg"}"><div style="flex:1"><div class="big">${ck.ok?"READY TO HAND BACK":"CUSTOMER ENGINE"}</div><p>${ck.ok?`It's clean and it meets what ${ddEsc(j.who)} asked for. Hand it back from the Dyno day card.`:ck.issues.map(ddEsc).join(" · ")}</p>
+    <div class="vstats"><div><b>${Math.round(res.peakHp)}</b><span>hp · wants ${j.hpMin}+</span></div>${res.diesel?`<div><b>${Math.round(res.smoke||0)}%</b><span>Smoke${j.smokeMax!=null?" · max "+j.smokeMax+"%":""}</span></div>`:`<div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div>`}<div><b>${res.rel}</b><span>Reliability</span></div><div><b>${fmt$(ddParts())}<i style="font-style:normal;font-size:.75em;color:var(--muted)"> / ${fmt$(j.budget)}</i></b><span>Parts / budget</span></div></div></div></div>`;}
+function ddHand(){const B=S.bay;if(!B||testing)return;const j=B.job;const last=S.last&&S.last.hash===cfgHash(S.cfg)?S.last:null;
+  if(!last){toast("Pull it as it sits first — the customer wants the dyno sheet");return;}
+  const ck=ddCheck(j,S.cfg,last.res);if(!ck.ok&&!B.confirm){B.confirm=true;B.issues=ck.issues;ddRender();toast("Not right yet — see the job card");return;}
+  const parts=ddParts(),under=parts<=j.budget,clean=ck.ok&&!j.hints&&under,F=ddFault(j.fault);
+  if(B.practice){S.achN=S.achN||{};if(ck.ok)S.achN.ddp=(S.achN.ddp||0)+1;ddExit();toast(ck.ok?`FIXED · ${F.name} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`:`NOT FIXED · it was ${F.name.toLowerCase()} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`);
+    if(ck.ok)achCheck({type:"dd",pass:true,clean});return;}
+  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;
+  if(ck.ok){const lab=Math.max(0,j.labour-j.paid),bonus=under?Math.round(j.labour*0.15/10)*10:0,bill=lab+Math.round(Math.min(parts,j.budget)*1.3)+bonus,net=bill-parts;
+    C().cash+=net;C().rep+=clean?2:1;d.passed++;d.earned+=net;d.streak++;j.net=net;
+    logEvent(`Dyno day: ${ddLabel(j)} fixed (${F.name.toLowerCase()}) — billed ${fmt$(bill)}${bonus?", under budget":""}, net ${fmt$(net)}`,"good");toast(`FIXED · ${fmt$(net)} net${bonus?" · under budget":""}`);}
+  else{const hit=ck.botched?3:2;C().cash-=parts;C().rep=Math.max(0,C().rep-hit);d.failed++;d.streak=0;
+    logEvent(`Dyno day: ${ddLabel(j)} handed back ${ck.botched?"worse than it came in":"unfixed"} (${F.name.toLowerCase()}) — −${hit} rep${parts?", "+fmt$(parts)+" in parts on you":""}`,"bad");toast(`${ck.botched?"BOTCHED":"NOT FIXED"} · −${hit} rep`);}
+  ddExit();hud();if(ck.ok)achCheck({type:"dd",pass:true,clean});checkGoals();save();}
+function ddWalk(){const B=S.bay;if(!B||testing)return;const j=B.job;
+  if(!B.practice){const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st="failed";if(dj)dj.st="failed";d.failed++;d.streak=0;C().rep=Math.max(0,C().rep-1);logEvent(`Dyno day: sent ${ddLabel(j)} away unfixed — −1 rep`,"");}
+  ddExit();hud();toast(B.practice?"Practice engine off the dyno":"Customer sent away — −1 rep");}
+function ddPractice(){const o={seed:1+Math.floor(Math.random()*1e9)};const j=ddMakeJob(ddRnd(o),true);if(!j){toast("Couldn't find a sick engine — try again");return;}j.st="bay";if(ddEnter(j,true)){renderTest();toast(`Practice: ${ddLabel(j)} — "${j.tag}"`);}}
+function ddBar(){const b=$("ddBar");if(!b)return;const B=S&&S.bay;$("panel").classList.toggle("ddon",!!B);if(!B){b.hidden=true;b.innerHTML="";return;}
+  b.hidden=false;b.innerHTML=`<div class="ddbt"><small>${B.practice?"Practice bay":"Customer bay"}</small><b>${B.practice?"Practice":"Customer"}: ${ddEsc(ddLabel(B.job))} — ‘${ddEsc(B.job.tag)}’</b></div><button class="btn sm" data-dd="goto">Job ›</button>`;
+  requestAnimationFrame(()=>$("panel").style.setProperty("--ddh",b.offsetHeight+"px"));}
+function ddReqHtml(j){const F=ddFault(j.fault),t=[`No failures on the dyno`,`At least ${j.hpMin.toLocaleString("en-CA")} hp`];
+  if(j.smokeMax!=null)t.push(`Smoke ${j.smokeMax}% or less`);if(j.fuels)t.push(`Fuel: ${j.fuels.map(f=>(OPT.fuel[f]||{}).name||f).join(" / ")} only`);if(j.redlineMin)t.push(`Redline stays at ${j.redlineMin.toLocaleString("en-CA")} rpm`);
+  if(F.internal)t.push("No internal work — the head stays on");if(j.env&&j.env.gLat)t.push(`Duty: ${j.env.gLat.toFixed(2)} g sustained cornering (set on this job's pulls)`);
+  return `<ul class="ddreq">${t.map(x=>`<li>${ddEsc(x)}</li>`).join("")}</ul>`;}
+function ddRender(){const sec=$("ddSec");if(!sec)return;const B=S.bay,show=!!B||S.env.testType==="pull";sec.hidden=!show;if(!show)return;const box=$("ddBox");
+  if(B){const j=B.job,F=ddFault(j.fault),parts=ddParts(),hc=ddHintCost(j);$("ddCnt").textContent=B.practice?"practice":"on the dyno";
+    box.innerHTML=`<div class="card ddjob on"><div class="ddh"><b>${ddEsc(ddLabel(j))}</b><span>${ddEsc(j.eng)}${B.practice?"":" · labour "+fmt$(j.labour)}</span></div>
+      <p class="ddsay">“${ddEsc(j.says)}”</p>
+      <div class="ddk"><span>They'll pay for</span><b>${j.allowed.map(ddKeyLbl).map(ddEsc).join(" · ")}</b></div>
+      ${ddReqHtml(j)}
+      ${B.practice?"":`<div class="ddk"><span>Parts so far</span><b class="${parts>j.budget?"crit":""}">${fmt$(parts)} of ${fmt$(j.budget)} budget</b></div>`}
+      ${j.hints?`<ol class="ddhints">${F.hints.slice(0,j.hints).map(h=>`<li>${ddEsc(ddFill(h,j))}</li>`).join("")}</ol>`:""}
+      ${B.confirm&&B.issues?`<div class="ddiss">${B.issues.map(x=>`<div>${ddEsc(x)}</div>`).join("")}</div>`:""}
+      <div class="row ddbtns"><button class="btn pri" data-dd="hand"${testing?" disabled":""}>${B.confirm?(B.practice?"Hand it back as is":"Hand back unfixed · rep hit"):"Hand back"}</button>${j.hints<3?`<button class="btn sm" data-dd="hint">Hint${hc?" · "+fmt$(hc):B.practice||!career()?"":" · free"}</button>`:""}<button class="btn sm ghost" data-dd="walk"${testing?" disabled":""}>${B.practice?"Done":"Walk away"}</button></div>
+      <p class="hint">Run pulls, read the stress report, the chart and Analysis, change only what they'll pay for, then pull it again before you hand it back.</p></div>`;return;}
+  if(!career()){$("ddCnt").textContent="practice";box.innerHTML=`<p class="hint" style="margin-top:-4px">In career, customers book dyno time for their own sick engines. Practise here: a random engine comes in with one fault and a complaint. Find it, fix it with the parts they'll pay for, and hand it back. Your own build waits in the corner.</p><button class="btn" data-dd="practice" style="width:100%">Practice diagnosis</button>`;return;}
+  ddWeek();const d=DD(),open=d.jobs.filter(j=>j.st==="open");$("ddCnt").textContent=open.length?`${open.length} booked`:"none this week";
+  box.innerHTML=`<p class="hint" style="margin-top:-4px">Customers book the dyno for their own engines. Take a job: their engine goes on the dyno in place of yours (yours waits). Find the fault, fix it with the parts they'll pay for, hand it back. Pay = labour + 30% on parts; under budget earns a bonus. A botched job costs rep.${d.passed?` · ${d.passed} fixed so far, ${fmt$(d.earned)} net`:""}</p>`
+    +(open.length?open.map(j=>`<div class="card ddjob"><div class="ddh"><b>${ddEsc(ddLabel(j))}</b><span>${ddEsc(j.eng)} · labour ${fmt$(j.labour)}</span></div><p class="ddsay">“${ddEsc(j.says)}”</p><button class="btn sm pri" data-dd="take" data-id="${j.id}" style="width:100%"${testing?" disabled":""}>Take the job</button></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-dd]");if(!b)return;const a=b.dataset.dd;
+  if(a==="goto"){showTab("test");requestAnimationFrame(()=>{const s=$("ddSec");if(s)s.scrollIntoView({block:"start",behavior:calmScroll()});});return;}
+  if(a==="practice"){ddPractice();return;}if(a==="hint"){ddHint();return;}if(a==="hand"){ddHand();return;}if(a==="walk"){ddWalk();return;}
+  if(a==="take"){const j=DD().jobs.find(x=>String(x.id)===b.dataset.id&&x.st==="open");if(!j)return;if(ddEnter(j,false)){j.st="bay";renderTest();toast(`${j.who}'s engine is on the dyno — "${j.tag}"`);}}});
+/* while a customer engine is on the dyno, nothing swaps the whole engine or the game out from under it */
+document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;const no=e.target.closest("#buildForm .ddno");if(no){e.stopPropagation();e.preventDefault();toast(`${S.bay.job.who} isn't paying for that — ${ddKeyLbl(no.dataset.k||no.dataset.nk||no.dataset.num)}`);return;}const b=e.target.closest("#presets [data-p],#bpList [data-load],[data-abload],#modeBox button,#testType button,#slots [data-load],#importSave,#replayFF");if(!b)return;
+  if(b.matches("#testType button")&&b.dataset.t==="pull")return;e.stopPropagation();e.preventDefault();toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);},true);
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});
+  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -22396,7 +22692,7 @@ function ffTick(){if(!ff)return;if(ff.ending){if(!testing)ffFinish(true);return;
   else if(st==="fix"){const ok=!!quick&&!quick.fails.length;if(ph==="go"&&ok){buzz(20);ffSet("ok");return;}if(ph==="ok"&&!ok){ffSet("go");return;}}
   const P=ffCur(),dt=performance.now()-ff.t0;if(P.auto&&dt>P.auto){ffNext();return;}
   $("ffNext").style.display=dt>=(P.d||0)?"":"none";ffPlace();}
-function ffStart(to){if(ff)return;if(testing){toast("Let the dyno finish first");return;}
+function ffStart(to){if(ff)return;if(S.bay){toast("Hand the dyno-day engine back first");return;}if(testing){toast("Let the dyno finish first");return;}
   closeSheet();if(tourStep>=0){tourStep=-1;$("tour").hidden=true;}
   const rig=ffRig();ff={to:to||S.mode||"sandbox",rig,step:0,phase:"go",t0:0,ref:null,back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle,sound:S.sound,tabs:Object.assign({},tabScroll,{[curTab]:$("panel").scrollTop})}};tabScroll.build=0;
   S.cfg=Object.assign({},rig.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,{testType:"pull"});S.profileId=rig.p.soundProfile;S.name=rig.p.name;S.last=null;curTab="build";resetBase();
@@ -22530,7 +22826,7 @@ const GLOSSARY=[
 ];
 /* Known terms in the text of a few containers get a dotted underline (first use per block). Tap (or hover on desktop) for a small card.
    Never inside inputs or buttons (the stress report's open explanations excepted), and S.gloss===false turns the whole pass off. */
-const GL={on:true,re:null,ci:new Map(),cs:new Map(),cache:new Map(),mo:null,pop:null,pin:false,timer:0,roots:["tab-analysis","tab-market","testExtra","verdict","stressList","sheetBody","dynoHint"]};
+const GL={on:true,re:null,ci:new Map(),cs:new Map(),cache:new Map(),mo:null,pop:null,pin:false,timer:0,roots:["tab-analysis","tab-market","testExtra","verdict","stressList","sheetBody","dynoHint","ddBox","ddBar"]};
 const GL_BLK="p,li,.combo,.opt,.req,.stx,.verdict,.card,.buyer,.goal,.rec,.peak,.log > div,#tele > div,#notes > div,.lbl";
 const GL_ESC=s=>s.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");
 function glBuild(){const alts=new Set();GL.ci.clear();GL.cs.clear();
@@ -22664,7 +22960,7 @@ function lsAsk(id){const L=LESSONS.find(x=>x.id===id);if(!L||LS)return;const car
 function lsMenu(){$("sheetTitle").textContent="Lessons";
   $("sheetBody").innerHTML=`<p class="hint" style="margin-top:0">Short guided tours of the real controls. Each runs on a scratch engine and puts your own build back when it ends. Skip any time.</p>`+LESSONS.map(L=>`<div class="opt"><div class="oh"><b>${L.name}</b><span class="tag">${L.steps.length} steps</span></div><p>${L.sub}</p><button class="btn sm pri" data-les="${L.id}" style="margin-top:6px">${S.lessonsDone&&S.lessonsDone[L.id]?"Replay":"Start"}</button></div>`).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
-function lsStart(id){if(LS||(typeof ff!=="undefined"&&ff))return;if(testing){toast("Let the dyno finish first");return;}
+function lsStart(id){if(LS||(typeof ff!=="undefined"&&ff))return;if(S.bay){toast("Hand the dyno-day engine back first");return;}if(testing){toast("Let the dyno finish first");return;}
   const L=LESSONS.find(x=>x.id===id),p=PRESETS.find(x=>x.id===L.preset);if(!L||!p)return;closeSheet();if(tourStep>=0){tourStep=-1;$("tour").hidden=true;}
   LS={L,i:0,to:S.mode||"sandbox",back:{cfg:S.cfg,env:S.env,profileId:S.profileId,name:S.name,last:S.last,tab:curTab,idle:run.idle,sound:S.sound,tabs:Object.assign({},tabScroll,{[curTab]:$("panel").scrollTop})}};tabScroll.build=0;
   S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg,L.cfg||{});S.env=Object.assign({},SIM.DEFAULT_ENV,L.env);S.profileId=p.soundProfile;S.name=p.name;S.last=null;curTab="build";resetBase();
@@ -22960,7 +23256,7 @@ function boot(){
   applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();spLivery();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();spLivery();showTab(curTab);glApply();ddBar();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
 }
