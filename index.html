@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.21.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.22.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -368,6 +368,12 @@ div.up.owned .price{color:var(--good)}
 .card.brief .req.no .rl b{color:var(--crit)}
 .card.brief .req .rb{height:6px;background:var(--soot);border-radius:2px;overflow:hidden;position:relative}
 .card.brief .req .rb i{position:absolute;left:0;top:0;bottom:0;background:var(--good);border-radius:2px}
+.card.spon .sphead{display:flex;gap:12px;align-items:center;margin-bottom:8px}.card.spon .sphead img{width:120px;height:45px;flex:none}.card.spon .sphead>div{min-width:0;flex:1}.card.spon .sphead .client{margin-bottom:2px}
+.card.spon .spname b{display:block;font-size:16px;font-weight:700;color:var(--chalk)}.card.spon .spname span{display:block;font-family:var(--mono);font-size:12px;color:var(--muted)}.card.spon.prim{border-color:var(--orange)}.money.spm{grid-template-columns:repeat(auto-fit,minmax(84px,1fr))}
+.spobl{margin:0 0 8px;font-size:13px}.spobl div{display:flex;justify-content:space-between;gap:8px;padding:5px 0 5px 20px;position:relative;color:var(--chalk);border-top:1px dashed var(--rule)}
+.spobl div::before{content:"•";position:absolute;left:5px;color:var(--muted)}.spobl div.ok::before{content:"✓";color:var(--good)}.spobl div.run::before{content:"◐";color:var(--warn)}.spobl div.no::before{content:"✕";color:var(--crit)}.spobl div.no span{color:var(--crit)}
+.spobl i{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}.spfine{font-size:12px;color:var(--muted);margin:0 0 8px}.spbtns{display:flex;gap:8px}.spbtns .btn{flex:1;min-height:44px}
+.spslip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}.spslip span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.spslip img{height:34px;width:auto}
 .card.brief .req.no .rb i{background:var(--crit)}.card.brief .req .rv{font-family:var(--mono);font-size:13px;text-align:right;color:var(--chalk);white-space:nowrap}
 .card.brief .req.no .rv{color:var(--crit)}
 .cstat{font-size:13px;line-height:1.4;padding:6px 10px;border-radius:4px;margin-bottom:10px;background:var(--soot);color:var(--muted)}
@@ -761,6 +767,7 @@ html.desk #tdCap b{font-size:22px}html.desk #tdCap p{font-size:14px}
         <div class="stats" id="gStats"></div>
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
         <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><div id="contracts"></div><button class="btn pri" id="nextWeek">Close the week</button><p class="hint" id="overheadHint"></p></div>
+        <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
         <div class="sec"><h2>Warranty &amp; ledger</h2><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div>
         <div class="sec"><h2>Shop goals <span class="cnt" id="goalCnt"></span></h2><div id="goals"></div></div>
       </div>
@@ -12943,7 +12950,9 @@ function stripCar(body, color, tyreIn){
   if(P.head){ mesh=new THREE.Mesh(P.head, head); inner.add(mesh); lights.head.push(mesh); }
   /* door number + sponsor decals: number is picked from the paint so the two lanes differ */
   var num=String(((color>>>0)%89)+11), dm=sc_decalMat(num, color, "door"), bm=sc_decalMat("", color, "banner");
-  for(var d=0; d<P.decals.length; d++){ mesh=new THREE.Mesh(P.decals[d].g, P.decals[d].kind==="banner"?bm:dm); mesh.renderOrder=2; inner.add(mesh); }
+  var liv={num:num, color:color, dm:dm, bm:bm, door:[], banner:[], hood:null, key:""};   /* sponsor livery (stripLivery) */
+  for(var d=0; d<P.decals.length; d++){ mesh=new THREE.Mesh(P.decals[d].g, P.decals[d].kind==="banner"?bm:dm); mesh.renderOrder=2; inner.add(mesh); (P.decals[d].kind==="banner"?liv.banner:liv.door).push(mesh); }
+  if(P.hood){ liv.hood=new THREE.Mesh(P.hood, dm); liv.hood.visible=false; liv.hood.renderOrder=3; inner.add(liv.hood); }
   /* wheels: carrier (squash / lift) -> tyre holder (never spins, tyres are round) + spin group (rim, lettering) */
   var wheels=[], carriers=[];
   for(var w=0; w<me.wheels.length; w++){
@@ -12955,7 +12964,7 @@ function stripCar(body, color, tyreIn){
   var tips=[], dirs=[], tipR=[], dirR=[];
   for(var t=0;t<me.tips.length;t++){ tips.push(me.tips[t].clone()); dirs.push(me.dirs[t].clone()); tipR.push(me.tips[t].clone().add(inner.position)); dirR.push(me.dirs[t].clone()); }
   g.userData={ body:body, rr:me.rr, fr:me.fr, wheels:wheels, carriers:carriers, chute:chute, exhaustTips:tips, exhaustDirs:dirs,
-    chuteAnchor:me.anchor.clone(), lights:lights, bodyGroup:bodyG, meta:me, paint:paint, lampMats:{tail:tail, head:head},
+    chuteAnchor:me.anchor.clone(), lights:lights, bodyGroup:bodyG, meta:me, paint:paint, lampMats:{tail:tail, head:head}, liv:liv,
     anim:{ pitch:0, pv:0, sq:0, sqv:0, roll:0, lastV:0, accF:0, shifting:false, chT:0, chC:0, chS:0, tailI:-1, headI:-1,
       tipRest:tipR, dirRest:dirR, anchorRest:me.anchor.clone().add(inner.position) } };
   g.traverse(function(q){ if(q.geometry) q.geometry.__cached=true; });   /* shared by both lanes + later rebuilds: disposeTree must skip them */
@@ -13167,6 +13176,91 @@ function sc_decalMat(num, color, kind){
   var q=new THREE.MeshStandardMaterial({map:sc_ctex(c), transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
   var env=sc_env(); if(env) q.envMap=env;
   SC.tex[key]=q; return q;
+}
+
+/* --- SPONSOR LIVERY (career sponsors, fictional brands) ----------------------
+   LIVERY {key, hood, sides:[...]} comes from the app (ENGINE_VIS.setLivery); a sponsor is {id, name, tag, shape, c1 plate, c2 mark, c3 word}.
+   Each logo is drawn once per sponsor on a canvas and cached (spLogoCanvas also feeds the app's cards and slips). The strip
+   car keeps its own decal meshes and only swaps materials; the pull and salt vehicles get a hood plane and a few side planes. */
+var LIVERY={key:"", hood:null, sides:[]}, LIV_CV={}, LIV_MAT={}, LIV_PG=null;
+function spRRect(x, x0, y0, w, h, r){ x.beginPath(); x.moveTo(x0+r,y0); x.lineTo(x0+w-r,y0); x.quadraticCurveTo(x0+w,y0,x0+w,y0+r); x.lineTo(x0+w,y0+h-r); x.quadraticCurveTo(x0+w,y0+h,x0+w-r,y0+h); x.lineTo(x0+r,y0+h); x.quadraticCurveTo(x0,y0+h,x0,y0+h-r); x.lineTo(x0,y0+r); x.quadraticCurveTo(x0,y0,x0+r,y0); x.closePath(); }
+function spShape(x, shape, cx, cy, r, col, bg){
+  var i, a, q; x.save(); x.translate(cx, cy); x.fillStyle=col; x.strokeStyle=col; x.lineJoin="round"; x.beginPath();
+  if(shape==="drop"){ x.moveTo(0,-r); x.bezierCurveTo(r*0.5,-r*0.4, r*0.78,r*0.0, r*0.78,r*0.3); x.arc(0,r*0.3,r*0.78,0,PI); x.bezierCurveTo(-r*0.78,r*0.0,-r*0.5,-r*0.4,0,-r); x.fill(); }
+  else if(shape==="ring"){ x.lineWidth=r*0.34; x.arc(0,0,r*0.8,0,TAU); x.stroke(); x.beginPath(); x.arc(0,0,r*0.3,0,TAU); x.fill(); }
+  else if(shape==="gear"){ for(i=0;i<16;i++){ a=i/16*TAU; q=(i%2)?r*0.76:r; x.lineTo(Math.cos(a)*q, Math.sin(a)*q); x.lineTo(Math.cos(a+TAU/16)*q, Math.sin(a+TAU/16)*q); } x.closePath(); x.fill(); x.fillStyle=bg; x.beginPath(); x.arc(0,0,r*0.36,0,TAU); x.fill(); }
+  else if(shape==="diamond"){ x.moveTo(0,-r); x.lineTo(r*0.8,0); x.lineTo(0,r); x.lineTo(-r*0.8,0); x.closePath(); x.fill(); x.fillStyle=bg; x.beginPath(); x.moveTo(0,-r*0.45); x.lineTo(r*0.36,0); x.lineTo(0,r*0.45); x.lineTo(-r*0.36,0); x.closePath(); x.fill(); }
+  else if(shape==="leaf"){ x.moveTo(0,r); x.quadraticCurveTo(-r*1.05,0,0,-r); x.quadraticCurveTo(r*1.05,0,0,r); x.fill(); x.strokeStyle=bg; x.lineWidth=r*0.12; x.beginPath(); x.moveTo(0,r*0.85); x.lineTo(0,-r*0.7); x.stroke(); }
+  else if(shape==="shield"){ x.moveTo(-r*0.8,-r*0.85); x.lineTo(r*0.8,-r*0.85); x.lineTo(r*0.8,0); x.quadraticCurveTo(r*0.7,r*0.7,0,r); x.quadraticCurveTo(-r*0.7,r*0.7,-r*0.8,0); x.closePath(); x.fill(); x.fillStyle=bg; x.fillRect(-r*0.12,-r*0.6,r*0.24,r*1.1); x.fillRect(-r*0.5,-r*0.25,r,r*0.24); }
+  else if(shape==="bolt"){ x.moveTo(r*0.25,-r); x.lineTo(-r*0.6,r*0.12); x.lineTo(-r*0.02,r*0.12); x.lineTo(-r*0.3,r); x.lineTo(r*0.62,-r*0.2); x.lineTo(r*0.04,-r*0.2); x.closePath(); x.fill(); }
+  else if(shape==="wing"){ for(i=0;i<3;i++){ x.beginPath(); x.moveTo(-r,-r*0.55+i*r*0.5); x.lineTo(r*0.95,-r*0.55+i*r*0.5); x.lineTo(r*0.65-i*r*0.3,-r*0.2+i*r*0.5); x.lineTo(-r*0.85+i*r*0.1,-r*0.2+i*r*0.5); x.closePath(); x.fill(); } }
+  else { for(i=0;i<10;i++){ a=-PI/2+i/10*TAU; q=(i%2)?r*0.42:r; x.lineTo(Math.cos(a)*q, Math.sin(a)*q); } x.closePath(); x.fill(); }   /* star */
+  x.restore();
+}
+/* the logo: a plate in the brand colour, the mark on the left, the wordmark and a tag line */
+function spLogoCanvas(sp, w, h){
+  w=w||512; h=h||192; var key=sp.id+"|"+w+"x"+h; if(LIV_CV[key]) return LIV_CV[key];
+  var c=newCanvas(w,h), x=c.getContext("2d"), F="'Barlow Condensed','Arial Narrow',Arial,sans-serif", m=Math.round(h*0.05), r=h*0.16;
+  x.clearRect(0,0,w,h); spRRect(x, m, m, w-2*m, h-2*m, r); x.fillStyle=sp.c1; x.fill();
+  x.lineWidth=Math.max(2,h*0.03); x.strokeStyle=sp.c2; spRRect(x, m*2.4, m*2.4, w-4.8*m, h-4.8*m, r*0.7); x.stroke();
+  spShape(x, sp.shape, h*0.52, h*0.5, h*0.27, sp.c2, sp.c1);
+  var tx=h*0.92, tw=w-tx-h*0.18, word=String(sp.name||"").toUpperCase();
+  x.textAlign="left"; x.textBaseline="alphabetic"; x.fillStyle=sp.c3; x.font="italic 700 "+Math.round(h*0.4)+"px "+F; x.fillText(word, tx, h*0.6, tw);
+  x.fillStyle=sp.c2; x.font="600 "+Math.round(h*0.15)+"px "+F; x.fillText(String(sp.tag||"").toUpperCase(), tx+2, h*0.8, tw);
+  LIV_CV[key]=c; return c;
+}
+function livMat(sp){
+  if(LIV_MAT[sp.id]) return LIV_MAT[sp.id];
+  var t=new THREE.CanvasTexture(spLogoCanvas(sp,512,192)); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
+  var q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.32, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-3});
+  var env=sc_env(); if(env) q.envMap=env;
+  LIV_MAT[sp.id]=q; return q;
+}
+/* the strip car's door decal: the race number, with the side sponsors where the studio's name went (one, or two stacked) */
+function livDoorMat(num, color){
+  var key="door|"+num+"|"+LIVERY.key; if(LIV_MAT[key]) return LIV_MAT[key];
+  var c=sc_canvas(512,200), x=c.getContext("2d"), L=LIVERY.sides.length?LIVERY.sides.slice(0,2):[LIVERY.hood];
+  x.fillStyle="#f3efe4"; x.beginPath(); x.arc(118,96,78,0,TAU); x.fill(); x.lineWidth=6; x.strokeStyle=L[0].c1; x.stroke();
+  x.fillStyle="#141518"; x.font="bold 104px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(num, 118, 102);
+  if(L.length===1) x.drawImage(spLogoCanvas(L[0],512,192), 206, 40, 300, 112.5);
+  else L.forEach(function(sp,i){ x.drawImage(spLogoCanvas(sp,512,192), 214, 6+i*96, 250, 94); });
+  var q=new THREE.MeshStandardMaterial({map:sc_ctex(c), transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
+  var env=sc_env(); if(env) q.envMap=env;
+  LIV_MAT[key]=q; return q;
+}
+/* windshield banner in the primary sponsor's colours */
+function livBannerMat(sp){
+  var key="ban|"+sp.id; if(LIV_MAT[key]) return LIV_MAT[key];
+  var c=sc_canvas(512,64), x=c.getContext("2d");
+  x.fillStyle=sp.c1; x.fillRect(0,0,512,64); x.fillStyle=sp.c2; x.fillRect(0,56,512,8);
+  spShape(x, sp.shape, 40, 30, 20, sp.c2, sp.c1);
+  x.fillStyle=sp.c3; x.font="italic bold 40px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String(sp.name).toUpperCase(), 270, 31, 420);
+  var q=new THREE.MeshStandardMaterial({map:sc_ctex(c), transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
+  var env=sc_env(); if(env) q.envMap=env;
+  LIV_MAT[key]=q; return q;
+}
+/* the player's strip car (and the salt Altered, which is one): swap the door / banner materials, show the hood patch */
+function stripLivery(car){
+  var L=car && car.userData && car.userData.liv; if(!L) return; var key=LIVERY.key; if(L.key===key) return; L.key=key;
+  var on=!!(key && LIVERY.hood), i;
+  for(i=0;i<L.door.length;i++) L.door[i].material=on?livDoorMat(L.num, L.color):L.dm;
+  for(i=0;i<L.banner.length;i++) L.banner[i].material=on?livBannerMat(LIVERY.hood):L.bm;
+  if(L.hood){ L.hood.visible=on; if(on) L.hood.material=livMat(LIVERY.hood); }
+}
+/* logo planes for the pull and salt vehicles: spots [{role:"hood"|"side", w, h, p:[x,y,z], u:[..], v:[..]}] (u = along the text, v = up the logo) */
+var _livU=new THREE.Vector3(), _livV=new THREE.Vector3(), _livN=new THREE.Vector3();
+function livPlanes(parent, U, spots){
+  var key=LIVERY.key+"|"+GFX; if(U.livKey===key) return; U.livKey=key;
+  if(U.livG){ parent.remove(U.livG); U.livG=null; }
+  if(!LIVERY.key || !LIVERY.hood) return;
+  var G=new THREE.Group(); if(!LIV_PG){ LIV_PG=new THREE.PlaneGeometry(1,1); LIV_PG.__cached=true; }
+  spots.forEach(function(s){
+    var sp=s.role==="hood"?LIVERY.hood:(LIVERY.sides.length?LIVERY.sides[(s.i||0)%LIVERY.sides.length]:null);
+    if(!sp || (s.role!=="hood" && GFX==="lite")) return;   /* Lite: the hood logo only */
+    var m=new THREE.Mesh(LIV_PG, livMat(sp)); _livU.fromArray(s.u); _livV.fromArray(s.v); _livN.crossVectors(_livU,_livV);
+    m.matrix.makeBasis(_livU, _livV, _livN); m.matrix.scale(_livN.set(s.w, s.h, 1)); m.matrix.setPosition(s.p[0], s.p[1], s.p[2]); m.matrixAutoUpdate=false; m.renderOrder=3;
+    G.add(m); });
+  parent.add(G); U.livG=G;
 }
 
 /* --- body loft ------------------------------------------------------------ */
@@ -13414,6 +13508,7 @@ function sc_door(B, body, rr, tails, heads, res){
   var dx0=pm?-0.5:-0.42, dx1=pm?0.5:0.58;
   sc_decal(res, sc_patch(D, dx0, dx1, 2.3, 4.75, 0.004, null, 0.5)); sc_decal(res, sc_patch(D, dx0, dx1, 15.25, 17.7, 0.004, "L", 0.5));
   sc_decal(res, sc_patch(D, roofF+0.02, roofF+0.17, 8.3, 11.7, 0.009, "K", 0.5), "banner");
+  res.hood=pm?sc_patch(D, 1.45, 2.12, 8.45, 11.55, 0.012, "K", 0.5):ol?sc_patch(D, 1.79, 2.19, 8.5, 11.5, 0.012, "K", 0.5):sc_patch(D, cowl+0.12, cowl+0.68, 8.45, 11.55, 0.012, "K", 0.5);   /* primary sponsor on the hood, clear of the outlaw scoop / promod blower (hidden until there is one) */
   if(pm) B.add("carbon", sc_patch(D, cowl+0.02, 2.28, 7.4, 12.6, 0.003));
   /* front + rear caps: lamps, grille, bumpers */
   var cF=L.capF, cR=L.capR, hy=lerp(cF.zb,cF.ys,0.72), ly=lerp(cF.zb,cF.ys,0.3);
@@ -13528,6 +13623,7 @@ function sc_rail(B, rr, tails, heads, res){
     [1.30,.15,.36,.44,.19,.16,.03],[2.60,.16,.31,.37,.14,.12,.03],[3.70,.17,.26,.30,.10,.085,.02],[4.02,.2,.23,.25,.05,.04,.01]], {sub:3});
   var L=sc_loft(D); B.add("paint", L.paint); B.add("well", L.well);
   sc_decal(res, sc_patch(D, -0.1, 0.6, 2.3, 5.4, 0.004, null, 0.5)); sc_decal(res, sc_patch(D, -0.1, 0.6, 14.6, 17.7, 0.004, "L", 0.5));
+  res.hood=sc_patch(D, 1.45, 2.65, 8.4, 11.6, 0.008, null, 0.5);
   /* cockpit opening (dark) + driver */
   B.add("well", sc_patch(D, -1.33, -0.55, 8.6, 11.4, 0.004, null, 0.5));
   B.add("paint", new THREE.SphereGeometry(0.155, 16, 12), sc_M(-1.02, 0.86, 0));
@@ -13981,7 +14077,7 @@ function stripUpdate(o, dt, rdt){
     STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn); stripCarMeta(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
     STRIP.cars.o=stripCar(o.body, 0x3a3f46, o.tyreIn); stripCarMeta(STRIP.cars.o); STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
   }
-  var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return;
+  var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return; stripLivery(P);
   var ph=o.phase||"run", v=o.v||0;
   P.position.x=o.x||0; P.position.z=STRIP_LANE; if(O){ O.visible=!!o.race; O.position.x=o.ox||0; O.position.z=-STRIP_LANE; }
   if(ph==="run" && STRIP.prev.phase!=="run"){ STRIP.runT=0; STRIP.cheer=Math.max(STRIP.cheer,1); }
@@ -14338,6 +14434,22 @@ function pullBinTo(bin, parent, mats, shadow){
   for(var k in bin){ if(typeof bin[k]!=="object"||!bin[k].length) continue; var g=mergeGeos(bin[k]); g.__cached=true;
     var m=new THREE.Mesh(g, mats[k]); m.castShadow=shadow!==false && k!=="glass" && k!=="decal"; m.receiveShadow=true; if(k==="decal") m.renderOrder=2; parent.add(m); }
 }
+/* the pull vehicle's door decal with the first side sponsor (or the primary) where the stripes go */
+function pullLivDecalMat(num){
+  var key="pull|"+num+"|"+LIVERY.key; if(LIV_MAT[key]) return LIV_MAT[key];
+  var c=newCanvas(512,160), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", sp=LIVERY.sides[0]||LIVERY.hood;
+  x.clearRect(0,0,512,160); x.textAlign="left"; x.textBaseline="middle";
+  x.font="italic 700 92px "+F; x.lineWidth=10; x.strokeStyle="#111"; x.strokeText(num, 14, 66); x.fillStyle="#f4f1e8"; x.fillText(num, 14, 66);
+  var nw=Math.min(230, x.measureText(num).width+30); x.drawImage(spLogoCanvas(sp,512,192), nw, 8, Math.min(290, 500-nw), Math.min(290, 500-nw)*0.375);
+  x.font="700 34px "+F; x.fillStyle="#ff7a1a"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 136); x.fillText("PRAIRIE ENGINE WORKS", 14, 136);
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
+  LIV_MAT[key]=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.45, metalness:0.1, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+  return LIV_MAT[key];
+}
+function pullLivery(U){
+  var key=LIVERY.key; if(U.livDk!==key){ U.livDk=key; if(U.livDecal) U.livDecal.material=(key&&LIVERY.hood)?pullLivDecalMat(U.livNum):U.mats.decal; }
+  livPlanes(U.body, U, U.livSpots);
+}
 function pullVehicle(kind, color){
   var M=sc_mats(), P=pullMats(), paint=new THREE.MeshStandardMaterial({color:sc(color), roughness:0.36, metalness:0.12, envMapIntensity:0.8}), lite=GFX==="lite";
   var paintDS=new THREE.MeshStandardMaterial({color:paint.color, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
@@ -14440,6 +14552,12 @@ function pullVehicle(kind, color){
     var w2=pullWheel(rf, wf, kind==="tractor"?0.26:0.27, kind==="tractor"?"rib":"cut", s, rimF, st); w2.position.set(wb, rf, s*trF); body.add(w2); U.wheelsF.push(w2.userData.spin);
   }
   U.rr=rr; U.rf=rf; U.wr=wr; U.trR=trR; U.wb=wb; U.pivot=pivot; U.body=body; U.mats=mats;
+  /* sponsor livery: the door decal mesh (material swap) and logo spots in body space */
+  U.livNum=kind==="tractor"?"4020":String(((color>>>0)%89)+11); U.livDecal=body.children.filter(function(c){ return c.material===mats.decal; })[0]||null;
+  U.livSpots=kind==="tractor"?[{role:"hood", w:0.76, h:0.28, p:[2.64,1.852,0], u:[0,0,-1], v:[-0.9992,0.04,0]}]
+    :[{role:"hood", w:0.72, h:0.27, p:[3.55,1.976,0], u:[0,0,-1], v:[-1,0,0]},
+      {role:"side", i:0, w:1.45, h:0.46, p:[-0.2,1.46,1.006], u:[1,0,0], v:[0,1,0]}, {role:"side", i:0, w:1.45, h:0.46, p:[-0.2,1.46,-1.006], u:[-1,0,0], v:[0,1,0]},
+      {role:"side", i:1, w:0.9, h:0.34, p:[3.72,1.56,1.0], u:[1,0,0], v:[0,1,0]}, {role:"side", i:1, w:0.9, h:0.34, p:[3.72,1.56,-1.0], u:[-1,0,0], v:[0,1,0]}];
   g.userData=U;
   return g;
 }
@@ -14657,7 +14775,7 @@ function pullUpdate(o, dt){
   var kind=o.vehicle==="tractor"?"tractor":"truck", col=o.color!=null?o.color:(kind==="tractor"?0xd9661c:0xa32a26), vk=kind+":"+col;
   if(!PULL.veh[vk]){ PULL.veh[vk]=pullVehicle(kind, col); S3.add(PULL.veh[vk]); }
   for(var k in PULL.veh) PULL.veh[k].visible=(k===vk);
-  var V=PULL.veh[vk], U=V.userData; PULL.cur=V;
+  var V=PULL.veh[vk], U=V.userData; PULL.cur=V; pullLivery(U);
   var ph=o.phase||"stage", x=+o.x||0, v=Math.max(0,+o.v||0), slip=clamp(+o.slip||0,0,1), hop=clamp(+o.hop||0,0,1), bf=clamp(+o.boxFrac||0,0,1), i;
   if(ph==="stage" && PULL.prev.phase && PULL.prev.phase!=="stage") pullReset();
   if(ph!=="stage" && PULL.prev.phase==="stage"){ PULL.cheer=Math.max(PULL.cheer,0.9); }
@@ -14920,7 +15038,7 @@ function saltCar(body, color, aero){
   g.add(piv);
   function mesh(geo, mat, x,y,z, sx,sy,sz, rx,ry,rz, par){ var q=new THREE.Mesh(geo, mat); q.position.set(x,y,z); if(sx!=null) q.scale.set(sx,sy,sz); if(rx||ry||rz) q.rotation.set(rx||0,ry||0,rz||0); q.castShadow=true; q.receiveShadow=true; (par||piv).add(q); return q; }
   function wheel(x,z,r,w,style,rear){ var c=sc_wheel({x:x, z:z, r:r, w:w, rimR:r*0.6, style:style||"weld", rimMat:"alu", rear:rear}, M); c.position.set(x,r,z); g.add(c); wheels.push({s:c.userData.spin, r:r, rear:rear}); return c; }
-  var num=String(((color>>>0)%377)+11), nm=saltNumMat(num, color), me;
+  var num=String(((color>>>0)%377)+11), nm=saltNumMat(num, color), me, ls=[];
   if(body==="streamliner"){
     var L=9.6, R=0.6, X0=-2.35, yc=0.64;
     var hull=mesh(saltLathe(L, R, [[0,0.1],[0.04,0.3],[0.13,0.58],[0.28,0.84],[0.45,0.97],[0.6,1.0],[0.74,0.96],[0.85,0.82],[0.93,0.6],[0.975,0.34],[1,0.02]], 36), paint, X0, yc, 0, 1, 0.86, 1.04);
@@ -14935,6 +15053,7 @@ function saltCar(body, color, aero){
     [[0,0.3],[4.6,0.27]].forEach(function(a){ [-1,1].forEach(function(sd){ mesh(sp, paint, a[0], 0.36, sd*a[1], 1.15, 0.5, 0.3); }); });
     tips.push(new THREE.Vector3(-0.6, yc-0.42, -0.45), new THREE.Vector3(-0.6, yc-0.42, 0.45));
     me={rr:0.343, anchor:new THREE.Vector3(X0-0.12, yc, 0), chuteLen:9, chuteRise:0.7, chuteR:1.15, len:L, tail:X0, nose:X0+L, top:yc+R, wb:4.6};
+    ls=[{role:"hood", w:1.3, h:0.42, p:[4.15,1.158,0], u:[1,0,0], v:[0,0,-1]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,0.03], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,-0.03], u:[-1,0,0], v:[0,1,0]}];
   } else if(body==="lakester"){
     var L2=5.7, R2=0.44, X2=-1.75, y2=0.56;
     mesh(saltLathe(L2, R2, [[0,0.03],[0.14,0.42],[0.32,0.82],[0.52,1.0],[0.72,0.96],[0.86,0.8],[0.94,0.56],[0.985,0.28],[1,0.0]], 32), paint, X2, y2, 0, 1, 0.92, 1);
@@ -14949,6 +15068,7 @@ function saltCar(body, color, aero){
     wheel(0, -0.88, 0.33, 0.22, "weld", true); wheel(0, 0.88, 0.33, 0.22, "weld", true); wheel(2.9, -0.86, 0.3, 0.14, "weld", false); wheel(2.9, 0.86, 0.3, 0.14, "weld", false);
     tips.push(new THREE.Vector3(1.25, y2+0.02, -0.5), new THREE.Vector3(1.25, y2+0.02, 0.5));
     me={rr:0.33, anchor:new THREE.Vector3(X2-0.05, y2, 0), chuteLen:6.5, chuteRise:0.5, chuteR:0.9, len:L2, tail:X2, nose:X2+L2, top:y2+0.8, wb:2.9};
+    ls=[{role:"hood", w:1.0, h:0.3, p:[1.9,0.963,0], u:[1,0,0], v:[0,0,-1]}];
   } else {   /* modified roadster: a channelled tub, long hood, exposed front end */
     mesh(bx, paint, 0.2, 0.68, 0, 2.3, 0.62, 1.2);
     mesh(bx, paint, -1.15, 0.62, 0, 0.6, 0.5, 1.15, 0, 0, 0.25);
@@ -14967,9 +15087,10 @@ function saltCar(body, color, aero){
     wheel(0, -0.72, 0.343, 0.3, "weld", true); wheel(0, 0.72, 0.343, 0.3, "weld", true); wheel(2.75, -0.78, 0.31, 0.15, "star", false); wheel(2.75, 0.78, 0.31, 0.15, "star", false);
     tips.push(new THREE.Vector3(0.6, 0.47, -0.62), new THREE.Vector3(0.6, 0.47, 0.62));
     me={rr:0.343, anchor:new THREE.Vector3(-1.45, 0.75, 0), chuteLen:5.5, chuteRise:0.45, chuteR:0.85, len:4.7, tail:-1.5, nose:3.22, top:1.3, wb:2.75};
+    ls=[{role:"hood", w:1.2, h:0.42, p:[2.25,1.013,0], u:[0.9992,-0.04,0], v:[0,0,-1]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,0.606], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,-0.606], u:[-1,0,0], v:[0,1,0]}];
   }
   var chutes=[];
-  g.userData={body:body, me:me, piv:piv, wheels:wheels, tips:tips, chutes:chutes, A:[{chT:0,chC:0,chS:0,pitch:0},{chT:0,chC:0,chS:0.7,pitch:0}], pitch:0, pv:0, strip:false};
+  g.userData={body:body, me:me, piv:piv, wheels:wheels, tips:tips, chutes:chutes, A:[{chT:0,chC:0,chS:0,pitch:0},{chT:0,chC:0,chS:0.7,pitch:0}], pitch:0, pv:0, strip:false, livSpots:ls};
   return g;
 }
 /* the Altered class runs the strip's street car with a spoiler bolted on when the aero is fitted */
@@ -15083,7 +15204,7 @@ function saltUpdate(o, dt){
   var body=o.body||"streamliner", col=o.color!=null?o.color:0xd9a52b, aero=!!o.aero, key=body+":"+col+":"+(aero?1:0);
   if(!SALT.cars[key]){ SALT.cars[key]=body==="altered"?saltAltered(col, aero):saltCar(body, col, aero); S4.add(SALT.cars[key]); }
   for(var k2 in SALT.cars) SALT.cars[k2].visible=(k2===key);
-  var V=SALT.cars[key], U=V.userData, me=U.me; SALT.cur=V;
+  var V=SALT.cars[key], U=V.userData, me=U.me; SALT.cur=V; if(U.car) stripLivery(U.car); else if(U.livSpots) livPlanes(U.piv, U, U.livSpots);
   saltChutes(V, o.chutes==null?1:o.chutes);
   var ph=o.phase||"stage", x=+o.x||0, v=Math.max(0,+o.v||0);
   if(ph==="stage" && SALT.prev.phase && SALT.prev.phase!=="stage") saltReset();
@@ -15268,7 +15389,11 @@ const ENGINE_VIS = {
     var rdt=o.dt!=null ? +o.dt : (now-PULL.lastT)/1000; PULL.lastT=now; pullUpdate(o, clamp(rdt||0, 0, 0.1));
     return PULL.stats||null;
   },
-  pullSkip: function(){ if(PULL.on) PULL.skip=true; },   /* cut straight to the stop framing (sled + board) */
+  pullSkip: function(){ if(PULL.on) PULL.skip=true; },
+  /* career sponsors on the cars: {hood:sp, sides:[sp...]} (sp: {id, name, tag, shape, c1, c2, c3}); null = the shop's own colours */
+  setLivery: function(L){ var h=L&&L.hood||null, sd=(L&&L.sides||[]).filter(Boolean); LIVERY.hood=h; LIVERY.sides=h?sd:[]; LIVERY.key=h?[h.id].concat(sd.map(function(q){ return q.id; })).join(","):""; return LIVERY.key; },
+  livery: function(){ return {key:LIVERY.key, hood:LIVERY.hood&&LIVERY.hood.id, sides:LIVERY.sides.map(function(q){ return q.id; })}; },   /* harness */
+  logoCanvas: function(sp, w, h){ return spLogoCanvas(sp, w, h); },   /* the app's sponsor cards and slips draw the same cached logo */   /* cut straight to the stop framing (sled + board) */
   /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
      failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
   setSalt: function(o){
@@ -16089,7 +16214,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.21.0.0";
+const VERSION="1.22.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -17088,6 +17213,7 @@ function dragFinish(){
     else if(DR.night){}   // race night: purse and rep are settled when the night ends (rnFinish)
     else if(r.race&&!r.race.won){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et!=null?r.et.toFixed(2)+" s":"DNF"} — ${r.race.foul?"red light":"lost to "+r.race.name+" by "+Math.abs(r.race.margin||0).toFixed(3)+" s"}`,"bad");toast(r.race.foul?"RED LIGHT · entry gone":`LOST by ${Math.abs(r.race.margin||0).toFixed(3)} s`);}
     else if(r.et!=null){const purse=(r.et<7?25000:r.et<8?9000:r.et<9?3500:r.et<10?1500:r.et<11?600:r.et<13?200:0)*(r.race?1.5:1);const rep=(r.et<8?3:r.et<10?2:r.et<12?1:0)+(r.race?1:0);C().cash+=purse;C().rep+=rep;logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — ${r.race?"beat "+r.race.name+", ":""}purse ${fmt$(purse)}`,purse>0?"good":"");if(!C().dragBest[h]||r.et<C().dragBest[h])C().dragBest[h]=r.et;if(r.et<(C().bestEt||99))C().bestEt=r.et;toast(`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph · ${fmt$(purse)} purse`);}
+    if(!failed)spEvent("drag",{win:!DR.night&&!!(r.race&&r.race.won)});
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
   achCheck({type:"drag",r,failed,res,env});
@@ -17255,7 +17381,7 @@ function rnFinish(N,place){if(N.done)return;N.done=true;N.place=place;N.out=plac
   const best=(N.passes||[]).filter(p=>p.et!=null).reduce((a,p)=>a&&a.et<=p.et?a:p,null);N.best=best?{et:best.et,mph:best.mph}:null;
   const R=recs();R.nightsRun=(R.nightsRun||0)+1;if(place===1)R.nightsWon=(R.nightsWon||0)+1;if(!(R.bestFinish<=place))R.bestFinish=place;
   const cls=SIM.AERO[N.body].n,last=N.hist[N.hist.length-1];
-  if(career()){C().cash+=paid;C().rep+=rep;logEvent(`Race night · ${cls} ${N.fmt==="bracket"?"bracket":"heads-up"}: ${place===1?"WON — beat "+(rnPart(N,last.opp).name)+" in the final":(N.left?"left the night":RN_PLACE[place].toLowerCase()+(last&&last.text?", "+last.text.split(" — ")[0].toLowerCase():""))}${best?", best "+best.et.toFixed(2):""} — purse ${fmt$(paid)}${rep?", +"+rep+" rep":""}`,place<=2?"good":paid>0?"":"bad");hud();checkGoals();}}
+  if(career()){C().cash+=paid;C().rep+=rep;logEvent(`Race night · ${cls} ${N.fmt==="bracket"?"bracket":"heads-up"}: ${place===1?"WON — beat "+(rnPart(N,last.opp).name)+" in the final":(N.left?"left the night":RN_PLACE[place].toLowerCase()+(last&&last.text?", "+last.text.split(" — ")[0].toLowerCase():""))}${best?", best "+best.et.toFixed(2):""} — purse ${fmt$(paid)}${rep?", +"+rep+" rep":""}`,place<=2?"good":paid>0?"":"bad");spEvent("night",{win:place===1,finish:place>1&&place<=3,noCount:!!N.left&&place===9});hud();checkGoals();}}
 function rnLeave(){const N=rnLive();if(!N||testing)return;if(!confirm(N.stage<2?"Leave the night? Your entry is gone and you go home without a seed.":"Leave the night? You forfeit this round and take the purse for going out here."))return;
   if(N.stage>=2){const ri=N.stage-2,m=N.rounds[ri].find(x=>x.a===0||x.b===0);m.win=m.a===0?m.b:m.a;m.why="left";m.text="Didn't come to the line";N.hist.push({stage:N.stage,label:rnStageName(N,N.stage),opp:m.win,win:false,text:"Left the night — forfeit"});
     N.left=true;for(let k=ri;k<3;k++){rnResolve(N,k);if(k<2&&!N.rounds[k+1])N.rounds[k+1]=rnNextPairs(N.rounds[k]);}rnFinish(N,ri===0?5:ri===1?3:2);}
@@ -17359,7 +17485,7 @@ async function shareSlip(l){const r=l.res.drag,res=l.res;const W=1080,H=1350,c=d
   x.fillStyle="#8e887b";x.font=F(26);const sh=r.shifts.length?"Shifts "+r.shifts.map(s=>s.rpm.toLocaleString()).join(" · "):"No shifts";x.fillText(sh,100,y+20);x.fillText(`${r.ratios.join(" · ")} × ${r.veh.final} · ${r.veh.tyreDia}" · ${r.spinTime>0.3?"spun "+r.spinTime.toFixed(1)+" s":"hooked"}`,100,y+60);
   {const plain=h=>String(h||"").replace(/<[^>]+>/g,"");const rt=r.race&&r.race.rt!=null?(r.race.foul?"RT red light":"RT "+r.race.rt.toFixed(3)):"";const ls=plain(launchSlip(r));x.fillStyle="#b8b2a3";x.font=F(24);let yy=y+100;
     for(const line of [rt,ls].filter(Boolean)){const words=line.split(" ");let cur="";for(const w of words){const t=cur?cur+" "+w:w;if(x.measureText(t).width>W-200){x.fillText(cur,100,yy);yy+=34;cur=w;}else cur=t;}if(cur){x.fillText(cur,100,yy);yy+=34;}}}
-  x.fillStyle="#4a505a";x.font=F(24);x.fillText(new Date().toLocaleDateString()+(career()?" · week "+C().week:" · test cell"),100,H-100);
+  spSlipDraw(x,W,H);x.fillStyle="#4a505a";x.font=F(24);x.fillText(new Date().toLocaleDateString()+(career()?" · week "+C().week:" · test cell"),100,H-100);
   const blob=await new Promise(r=>c.toBlob(r,"image/png"));
   // published page: the viewer hands the file over (share sheet on iOS, download elsewhere)
   const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
@@ -17566,6 +17692,7 @@ function pullSettle(r,c){const {k,res,env,failed}=c,C0=SIM.PULL_CLASSES[k],f1=c.
     else if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
     else{const purse=Math.round((PULL_PURSE[r.place-1]||0)*(PULL_PAY[C0.tier]||1)/10)*10,rep=(PULL_REP[r.place-1]||0)+(f1.full?1:0)+(kill?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`Pull: ${C0.n} — ${dist}${c.po!=null?" (pull-off "+(c.conceded?"conceded":c.po.toFixed(1)+" ft")+")":""}${kill?", good kill":""}, ${pl}${r.ser?", series +"+r.ser.pts+" pts":""}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${kill?" · good kill":""}${purse?" · "+fmt$(purse):""}`);}
+    if(!r.poPending)spEvent("pull",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
     hud();checkGoals();}
   else toast(r.poPending?`FULL PULL · PULL-OFF against ${r.poN}`:dq?`GRENADED · DQ`:failed?`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`:`${dist} · ${pl}${kill?" · good kill":""}`);
   if(!career()&&!r.poPending)delete PULL_SB[Object.keys(SIM.PULL_CLASSES).indexOf(k)+1];   // a new night next hook
@@ -17765,7 +17892,7 @@ function saltFinish(){
     else if(outcome==="impound")logEvent(`Salt: ${cls.key} — ${mphTxt}, over the record. Impounded for a backup run`,"good");
     else if(!failed&&r.stopWhy!=="spun")logEvent(`Salt: ${cls.key} — ${mphTxt}${r.pb&&!r.pb.first?" (class best)":""}`,"");
     if(r.pb&&!r.pb.first&&outcome!=="record")rep+=1;
-    C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;hud();checkGoals();}
+    C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;spEvent("salt",{record:outcome==="record"});hud();checkGoals();}
   toast(outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)} MPH`:outcome==="impound"?`${mphTxt} · OVER THE RECORD — IMPOUND`:failed?"BROKE ON THE SALT":r.stopWhy==="spun"?"SPUN ON THE SALT":dq?`${mphTxt} · NOT ACCEPTED — NO CHUTE`:`${mphTxt}`);
   SR.p=null;save();recompute();renderTest();
   revealVerdict();
@@ -17970,6 +18097,7 @@ function showResult(res,env){
   if(env.testType==="salt"&&res.salt)extra+=saltSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
+  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt))extra=spSlipHtml()+extra;
   $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
@@ -18120,7 +18248,10 @@ const ACH=[
   {g:"shop",id:"zero",name:"Zero defects",desc:"Ten straight weeks in the field with no warranty claim.",ic:"shield",tier:"silver",check:()=>career()&&C().cleanWeeks>=10},
   {g:"shop",id:"debtfree",name:"Debt-free",desc:"Take a loan, then pay the bank back in full.",ic:"coin",tier:"bronze",check:()=>career()&&!!(S.achN||{}).loan&&C().loan<=0},
   {g:"shop",id:"cash100",name:"Six figures",desc:"Hold $100,000 in cash.",ic:"coin",tier:"silver",check:()=>career()&&C().cash>=1e5},
-  {g:"shop",id:"year",name:"A full year",desc:"Survive to week 52.",ic:"cal",tier:"silver",check:()=>career()&&C().week>=52}
+  {g:"shop",id:"year",name:"A full year",desc:"Survive to week 52.",ic:"cal",tier:"silver",check:()=>career()&&C().week>=52},
+  {g:"shop",id:"spon1",name:"Sponsored",desc:"Sign your first sponsor.",ic:"star",tier:"bronze",check:()=>career()&&spS().hist.signed>0},
+  {g:"shop",id:"spondone",name:"Good for the brand",desc:"Finish a sponsorship with every obligation met.",ic:"tick",tier:"silver",check:()=>career()&&spS().hist.done>0},
+  {g:"shop",id:"sponfull",name:"Full livery",desc:"Carry three sponsors at once.",ic:"trophy",tier:"gold",check:()=>career()&&spS().hist.max>=3}
 ];
 let achQ=[],achBusy=false,achOpen=null;
 const achN=()=>ACH.filter(a=>S.ach&&S.ach[a.id]).length;
@@ -18497,15 +18628,127 @@ $("contracts").addEventListener("click",e=>{const rb=e.target.closest("[data-reb
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   if(C().loan>0){const i=Math.round(C().loan*LOAN_RATE);C().loan+=i;t+=` · loan interest ${fmt$(i)}`;}
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();checkGoals();achCheck({type:"week"});
+  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
+/* ===================== SPONSORS (career) =====================
+   Made-up brands approach the shop on reputation and results: race nights, pulls, the salt, delivered orders. An offer pays a
+   weekly retainer and/or bonuses per win, record or top-3 class finish, for a set number of weeks, and comes with obligations.
+   Break one and the deal ends with a cash penalty and a rep hit. Slots open with rep (SP_SLOT_REP). State lives on C().spons;
+   spS() fills its defaults, so old saves load clean. The primary sponsor goes on the hood and the rest on the sides
+   (ENGINE_VIS.setLivery). Nothing here touches S.cfg, so cfgHash and the dyno are unchanged. */
+const SP_BRANDS=[
+  {id:"heron",name:"Blue Heron",tag:"Motor oil",type:"oil",shape:"drop",c1:"#16325c",c2:"#f2b630",c3:"#f4f1e8"},
+  {id:"coldwater",name:"Coldwater",tag:"Lubricants",type:"oil",shape:"ring",c1:"#0d5c63",c2:"#9fe3e0",c3:"#ffffff"},
+  {id:"ironhorn",name:"Ironhorn",tag:"Performance parts",type:"parts",shape:"gear",c1:"#26282c",c2:"#e8462b",c3:"#f4f1e8"},
+  {id:"corvid",name:"Corvid",tag:"Pistons & rods",type:"parts",shape:"diamond",c1:"#3b1f5c",c2:"#c9b3f2",c3:"#ffffff"},
+  {id:"gopher",name:"Gopher Valley",tag:"Feed & seed",type:"feed",shape:"leaf",c1:"#2f6b2a",c2:"#f2d04a",c3:"#fffbe8"},
+  {id:"coulee",name:"Red Butte",tag:"Farmers' co-op",type:"feed",shape:"shield",c1:"#8c1d18",c2:"#f4f1e8",c3:"#ffffff"},
+  {id:"gripline",name:"Gripline",tag:"Race tyres",type:"tyre",shape:"ring",c1:"#111214",c2:"#f2c230",c3:"#ffffff"},
+  {id:"hollow",name:"Hollow Ridge",tag:"Rubber co.",type:"tyre",shape:"wing",c1:"#f2efe6",c2:"#1e4fa3",c3:"#16181c"},
+  {id:"moose",name:"Static Moose",tag:"Energy drink",type:"energy",shape:"bolt",c1:"#1a1a1a",c2:"#7cf03a",c3:"#ffffff"},
+  {id:"wildoat",name:"Wild Oat",tag:"Energy soda",type:"energy",shape:"star",c1:"#e2541c",c2:"#fff3b0",c3:"#ffffff"},
+  {id:"northlight",name:"Northlight",tag:"Race fuels",type:"fuel",shape:"star",c1:"#0e1f3d",c2:"#ff7a1a",c3:"#f4f1e8"}];
+const SP_TYPES={oil:"Oil company",parts:"Parts maker",feed:"Local feed store",tyre:"Tyre brand",energy:"Energy drink",fuel:"Fuel supplier"};
+const SP_LIKES={oil:["night","pull","salt"],parts:["sale","night","salt"],feed:["pull"],tyre:["night","drag"],energy:["night","drag","salt"],fuel:["salt","night"]};
+const SP_OBL={oil:["nights","pulls"],parts:["deliver"],feed:["pulls"],tyre:["nights"],energy:["nights","nodiesel"],fuel:["salt","nodiesel"]};
+const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
+  deliver:n=>`Ship at least ${n} engine order${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
+const SP_SLOT_REP=[0,120,300];
+const SP_EVT={night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines"};
+function spS(){const c=C();const s=c.spons&&typeof c.spons==="object"?c.spons:(c.spons={});
+  if(!Array.isArray(s.active))s.active=[];if(!Array.isArray(s.offers))s.offers=[];if(!s.form||typeof s.form!=="object")s.form={};
+  if(!s.hist||typeof s.hist!=="object")s.hist={};for(const k of ["signed","done","broken","earned","max"])s.hist[k]=+s.hist[k]||0;
+  if(!s.seed)s.seed=((c.seed||1)^0x5f3759df)>>>0||7;return s;}
+function spRng(){const s=spS();s.seed=(s.seed*1664525+1013904223)>>>0;return s.seed/4294967296;}
+function spBrand(id){return SP_BRANDS.find(b=>b.id===id)||SP_BRANDS[0];}
+function spSlots(){return SP_SLOT_REP.filter(r=>C().rep>=r).length;}
+function spDiesel(){return isCI(S.cfg.fuel);}
+function spPrimary(){const s=spS();return s.active.some(a=>a.b===s.primary)?s.primary:(s.active[0]?s.active[0].b:null);}
+const spR10=v=>Math.round(v/10)*10,spR50=v=>Math.round(v/50)*50;
+/* a new offer: the brand leans toward whatever the shop has been doing lately (form), the money toward its reputation */
+function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s.active.map(a=>a.b).concat(s.offers.map(o=>o.b)));
+  const pool=SP_BRANDS.filter(b=>!taken.has(b.id));if(!pool.length)return null;
+  const w=pool.map(b=>0.4+SP_LIKES[b.type].reduce((a,k)=>a+(s.form[k]||0),0)+(kind&&SP_LIKES[b.type].includes(kind)?3:0));
+  let r=spRng()*w.reduce((a,v)=>a+v,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;const b=pool[i],likes=SP_LIKES[b.type];
+  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.8+Math.min(2,C().rep/250),style=spRng();
+  const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
+  const bon={win:spR50(350*scale*bm),finish:likes.some(k=>k==="night"||k==="pull")?spR50(120*scale*bm):0,record:likes.includes("salt")?spR50(1200*scale*bm):0};
+  const pick=SP_OBL[b.type][Math.floor(spRng()*SP_OBL[b.type].length)];
+  const n={nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick];
+  const obl=[{k:pick,n:n||0}];if(C().rep>=10&&spRng()<0.5)obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
+  const o={id:Math.floor(spRng()*1e9),b:b.id,weeks,ret,bon,obl,pen:spR50(Math.max(500,ret*2+bon.win*0.5)),penRep:4+tier*2,exp:C().week+2,
+    why:kind&&SP_EVT[kind]?`Saw what you did at ${SP_EVT[kind]}.`:""};
+  s.offers.push(o);return o;}
+function spLivery(){let L=null;if(S&&career()){const s=spS(),p=spPrimary();if(p)L={hood:spBrand(p),sides:s.active.filter(a=>a.b!==p).map(a=>spBrand(a.b))};}
+  try{ENGINE_VIS.setLivery(L);}catch(e){}}
+function spDrop(a){const s=spS();s.active=s.active.filter(x=>x!==a);if(s.primary===a.b)s.primary=spPrimary();}
+function spBreak(a,why){const b=spBrand(a.b);C().cash-=a.pen;C().rep=Math.max(0,C().rep-a.penRep);spS().hist.broken++;spDrop(a);
+  logEvent(`${b.name} pulled the sponsorship — ${why}. ${fmt$(a.pen)} penalty, −${a.penRep} rep`,"bad");setTimeout(()=>toast(`${b.name.toUpperCase()} · DEAL BROKEN · −${fmt$(a.pen)}`),1600);}
+function spEnd(a){const b=spBrand(a.b),s=spS();const miss=a.obl.filter(o=>o.k!=="rep"&&o.k!=="nodiesel"&&(o.have||0)<o.n);
+  if(miss.length){C().cash-=a.pen;C().rep=Math.max(0,C().rep-a.penRep);s.hist.broken++;logEvent(`${b.name} deal ended short — ${miss.map(o=>SP_OBL_TXT[o.k](o.n).toLowerCase()+" ("+(o.have||0)+")").join(", ")}. ${fmt$(a.pen)} penalty, −${a.penRep} rep`,"bad");}
+  else{const rep=3+repTierIdx();C().rep+=rep;s.hist.done++;logEvent(`${b.name} deal done — every obligation met, ${fmt$(a.earned)} earned, +${rep} rep`,"good");}
+  spDrop(a);}
+/* weekly: retainers, the rep floor, contracts running out, offers expiring, new approaches */
+function spWeek(){if(!career())return;const s=spS();let paid=0;
+  for(const a of s.active.slice()){if(a.ret){C().cash+=a.ret;a.earned+=a.ret;s.hist.earned+=a.ret;paid+=a.ret;}
+    const ro=a.obl.find(o=>o.k==="rep");if(ro&&C().rep<ro.n){spBreak(a,`reputation fell below ${ro.n}`);continue;}
+    if(C().week>=a.end)spEnd(a);}
+  if(paid)logEvent(`Sponsors: ${fmt$(paid)} in retainers`,"good");
+  for(const k in s.form)s.form[k]=Math.round(s.form[k]*70)/100;
+  s.offers=s.offers.filter(o=>o.exp>=C().week);
+  const tot=Object.values(s.form).reduce((a,v)=>a+v,0);
+  if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
+  spLivery();}
+/* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
+function spEvent(kind,o){if(!career()||ff)return;const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
+  if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
+  const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
+  if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
+  const t=o.record?"record":o.win?"win":o.finish?"finish":null,got=[];let sum=0;
+  if(t)for(const a of s.active){const v=a.bon&&a.bon[t];if(v){C().cash+=v;a.earned+=v;s.hist.earned+=v;sum+=v;got.push(`${spBrand(a.b).name} ${fmt$(v)}`);}}
+  if(got.length){logEvent(`Sponsor bonus (${t==="finish"?"top-3 finish":t}): ${got.join(", ")}`,"good");setTimeout(()=>toast(`SPONSOR BONUS · +${fmt$(sum)}`),3400);}
+  if(t&&s.offers.length<3&&spRng()<(t==="record"?0.7:t==="win"?0.45:0.2)){const of=spGen(kind);if(of)logEvent(`${spBrand(of.b).name} saw that and wants to talk — see Market`,"good");}
+  spLivery();}
+function spSign(id){const s=spS();const o=s.offers.find(x=>x.id==id);if(!o||s.active.length>=spSlots())return false;
+  const a=Object.assign({},o,{w0:C().week,end:C().week+o.weeks,earned:0,obl:o.obl.map(q=>({k:q.k,n:q.n,have:0}))});delete a.exp;delete a.why;
+  s.active.push(a);s.offers=s.offers.filter(x=>x!==o);s.hist.signed++;s.hist.max=Math.max(s.hist.max,s.active.length);if(!spPrimary()||s.active.length===1)s.primary=a.b;
+  logEvent(`Signed with ${spBrand(a.b).name} for ${a.weeks} weeks${a.ret?" — "+fmt$(a.ret)+"/week":""}`,"good");spLivery();achCheck({type:"sponsor"});return true;}
+const spLogoUrl=(()=>{const m={};return b=>m[b.id]||(m[b.id]=ENGINE_VIS.logoCanvas(b,512,192).toDataURL());})();
+function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPrimary()===o.b,live=mode==="active";
+  const bo=o.bon||{},cells=[];if(o.ret)cells.push([fmt$(o.ret),"per week"]);if(bo.win)cells.push([fmt$(bo.win),"per win"]);if(bo.record)cells.push([fmt$(bo.record),"per record"]);if(bo.finish)cells.push([fmt$(bo.finish),"top-3 finish"]);
+  const obl=o.obl.map(q=>{const c=q.k!=="rep"&&q.k!=="nodiesel",have=q.have||0,ok=c?have>=q.n:q.k==="rep"?C().rep>=q.n:!spDiesel();
+    const cls=live?(ok?"ok":c?"run":"no"):(q.k==="nodiesel"&&spDiesel()?"no":"");
+    const tail=live&&c?`${have} / ${q.n}`:q.k==="rep"?`now ${C().rep}`:q.k==="nodiesel"&&spDiesel()?"this build is diesel":"";
+    return `<div class="${cls}"><span>${SP_OBL_TXT[q.k](q.n)}</span>${tail?`<i>${tail}</i>`:""}</div>`;}).join("");
+  const full=s.active.length>=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
+  const btns=live?`${!prim?`<button class="btn info" data-spprim="${o.b}">Move to hood</button>`:""}<button class="btn danger" data-spdrop="${o.b}">Walk away</button>`
+    :`<button class="btn ${full?"ghost":"pri"}" data-spsign="${o.id}" ${full?"disabled":""}>${full?(next?`Slots full · rep ${next} opens one`:"Slots full"):"Sign the deal"}</button><button class="btn ghost" data-spno="${o.id}">Decline</button>`;
+  return `<div class="card spon${prim?" prim":""}"><div class="sphead"><img src="${spLogoUrl(b)}" alt="${b.name} logo" width="512" height="192"><div><div class="client">${SP_TYPES[b.type]}${live?(prim?" · on the hood":" · on the sides"):""}</div>
+    <div class="spname"><b>${b.name}</b><span>${live?`week ${Math.min(o.weeks,C().week-o.w0+1)} of ${o.weeks}`:`${o.weeks} weeks · offer open till wk ${o.exp}`}</span></div></div></div>${!live&&o.why?`<p class="spfine">${o.why}</p>`:""}
+    <div class="money spm">${cells.map(c=>`<div><b>${c[0]}</b><span>${c[1]}</span></div>`).join("")}</div><div class="spobl">${obl}</div>
+    <p class="spfine">Break it: ${fmt$(o.pen)} and ${o.penRep} rep${live?` · earned ${fmt$(o.earned)} so far`:""}</p><div class="spbtns">${btns}</div></div>`;}
+function spRender(){const box=$("spons");if(!box||!career())return;const s=spS(),slots=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
+  $("sponCnt").textContent=`${s.active.length} / ${slots}`;
+  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}. Brands notice shops that race and win: race nights, pulls, the salt and delivered orders. The primary sponsor goes on the hood, the rest on the sides.`;
+  box.innerHTML=(s.active.length?`<div class="cgroup g-now"><h3>Signed<span>${s.active.length}</span></h3>${s.active.map(a=>spCard(a,"active")).join("")}</div>`:"")
+    +`<div class="cgroup g-far"><h3>Offers<span>${s.offers.length}</span></h3>${s.offers.length?s.offers.map(o=>spCard(o,"offer")).join(""):`<p class="hint">No one is calling yet. Put the shop's name out there — enter a race night, a pull or a speed trial.</p>`}</div>`;}
+function spSlipHtml(){if(!career())return"";const s=spS();if(!s.active.length)return"";const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
+  return `<div class="spslip"><span>Sponsored by</span>${L.map(id=>{const b=spBrand(id);return `<img src="${spLogoUrl(b)}" alt="${b.name}" width="512" height="192">`;}).join("")}</div>`;}
+function spSlipDraw(x,W,H){if(!career())return;const s=spS();if(!s.active.length)return;const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
+  let xx=W-100;for(let i=L.length-1;i>=0;i--){xx-=150;x.drawImage(ENGINE_VIS.logoCanvas(spBrand(L[i]),512,192),xx,H-152,150,56.25);xx-=10;}}
+$("spons").addEventListener("click",e=>{if(!career())return;const s=spS();
+  const sg=e.target.closest("[data-spsign]");if(sg){if(sg.disabled)return;const o=s.offers.find(x=>x.id==sg.dataset.spsign);if(o&&spSign(o.id)){save();hud();renderShop();toast(`SIGNED · ${spBrand(o.b).name.toUpperCase()}`);buzz(20);}return;}
+  const no=e.target.closest("[data-spno]");if(no){s.offers=s.offers.filter(x=>x.id!=no.dataset.spno);save();renderShop();return;}
+  const pr=e.target.closest("[data-spprim]");if(pr){s.primary=pr.dataset.spprim;spLivery();save();renderShop();toast(`${spBrand(s.primary).name.toUpperCase()} · ON THE HOOD`);return;}
+  const dr=e.target.closest("[data-spdrop]");if(dr){const a=s.active.find(x=>x.b===dr.dataset.spdrop);if(!a)return;if(!confirm(`Walk away from ${spBrand(a.b).name}? It costs ${fmt$(a.pen)} and ${a.penRep} rep.`))return;
+    spBreak(a,"you walked away");spLivery();save();hud();renderShop();}});
 function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  if(!career())return;
-  refillContracts();
+  spLivery();if(!career())return;
+  refillContracts();spRender();
   $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${dc.hp.toLocaleString()}</b><span>dyno hp cap</span></div><div><b>${C().loan>0?fmt$(C().loan):Object.keys(C().owned).length}</b><span>${C().loan>0?"bank loan":"upgrades owned"}</span></div>`;
@@ -18568,7 +18811,7 @@ $("contracts").addEventListener("click",e=>{
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
   logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}${coreLog(cd,cr)}`,f.ok?"good":"");
   if(tourStep>=0)tourEnd();
-  C().contracts=C().contracts.filter(x=>x.id!==k.id);achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  C().contracts=C().contracts.filter(x=>x.id!==k.id);spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}
   const cert=C().cert;if(!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const o=buyers(cert).find(x=>x.k.seg===b.dataset.sell);if(!o)return;const k=o.k,d=o.d,units=d.units,unit=d.unit;
   const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
@@ -18576,7 +18819,7 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   C().fleet.push({week:C().week,client:k.name,name:k.name,seg:k.seg,req:k.req,units,hash:cert.hash,engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:true});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
-  if(tourStep>=0)tourEnd();achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
 $("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
@@ -19261,7 +19504,7 @@ function boot(){
   applyFps();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();spLivery();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
 }
