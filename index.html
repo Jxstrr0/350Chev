@@ -2142,8 +2142,8 @@ const ENGINE_SIM = (function () {
       "Peak cylinder pressure of " + maxPmax.toFixed(0) + " bar works out at " + crownStressMPa.toFixed(0) + " MPa of bending in the crown; the alloy retains about " + crownHotMPa.toFixed(0) + " MPa at " + crownC.toFixed(0) + " °C.",
       "Use a stronger hot alloy (2618), thicken the crown by lowering boost, or cut peak pressure.");
 
-    T("hot_clearance", "Hot piston clearance", hotMm <= 0 ? "seized hot" : (hotMm * 1000).toFixed(0) + " µm · min 20",
-      hotMm <= 0 ? 20 : 0.020 / hotMm,
+    T("hot_clearance", "Hot piston clearance", hotMm <= 0.001 ? "seized hot" : (hotMm * 1000).toFixed(0) + " µm · min 20",
+      hotMm <= 0.001 ? 20 : Math.min(20, 0.020 / hotMm),
       "Cold clearance " + (coldMm * 1000).toFixed(0) + " µm; the bore grows " + (growBore * 1000).toFixed(0) + " µm (α " + (boreAlpha * 1e6).toFixed(1) + "e-6) and the skirt grows " + (growPis * 1000).toFixed(0) + " µm (α " + (O.pis.alpha * 1e6).toFixed(1) + "e-6 at " + skirtC.toFixed(0) + " °C), leaving " + (hotMm * 1000).toFixed(0) + " µm. Below 20 µm the skirt picks up the bore.",
       "Open the piston-to-wall clearance or move to a lower-expansion alloy.");
 
@@ -2510,7 +2510,7 @@ const ENGINE_SIM = (function () {
           These do not change the physics; they EXPLAIN what the physics
           is about to do to you, in the language an engine builder uses.
      ===================================================================== */
-  function combos(cfg) {
+  function combos(cfg, env, q) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     const L = LAYOUTS[cfg.layout] || LAYOUTS.I4;
     const out = [];
@@ -2521,7 +2521,7 @@ const ENGINE_SIM = (function () {
     const g = geometry(cfg);
     const fu = OPT.fuel[cfg.fuel];
     const fuelON = 0.60 * fu.ron + 0.40 * fu.mon;
-    const quick = simulate(cfg, DEFAULT_ENV);
+    const quick = q || simulate(cfg, env || DEFAULT_ENV);   // the app passes its own env (cell, climate, shop) and the run it already has
     const detMargin = quick.knock.margin;
     const dsl = isDiesel(cfg);
 
@@ -2763,7 +2763,7 @@ const ENGINE_SIM = (function () {
       const alky = vol < 1.2 ? "" : cfg.fuel === "methanol" ? "Methanol needs about " + vol.toFixed(1) + "\u00d7 the fuel of petrol for the same air"
         : fu.name.split(" ")[0] + " needs about " + Math.round((vol - 1) * 100) + "% more fuel than petrol for the same air";
       const short = fq.injUtil > 0.8 || fq.pumpUtil > 0.8;
-      const fit = short ? fitFuel(cfg) : null;
+      const fit = short ? fitFuel(cfg, env) : null;
       const fitWord = fit ? " The smallest set that feeds it with margin: " + (fq.portInj ? OPT.injectors[fit.injectors].name.replace(" stock", "") + " injectors and " : "") + "the " + OPT.fuelPump[fit.fuelPump].short + "." : "";
       if (fq.injUtil > 1) add("bad", "Out of injector",
         (alky ? alky + " \u2014 " : "At " + fq.dutyRpm + " rpm ") + injWord + (fq.duty > 1 ? " would need " : " are at ") + Math.round(fq.duty * 100) + "% duty" + (alky ? " at " + fq.dutyRpm + " rpm" : "") + ". Past about 90% an injector is all but static, so the top of the pull goes lean (\u03bb " + fq.lamTop.toFixed(2) + " where the tune asks for " + cfg.lambda.toFixed(2) + "), and lean under load is how pistons melt." + fitWord);
@@ -2772,7 +2772,7 @@ const ENGINE_SIM = (function () {
       if (fq.pumpUtil > 1) add("bad", "The fuel pump can't keep up",
         (boosted && !pmp.rpmRef ? "With " + boost.toFixed(1) + " bar of boost on top of the base pressure, the " : "The ") + pmp.short + " can only supply about " + Math.round(fq.capLph) + " L/h against the " + Math.round(fq.needLph) + " L/h this engine burns at " + fq.loadRpm + " rpm. The rail pressure sags and every cylinder leans out together." + fitWord);
       else if (fq.pumpUtil > 0.8) add("warn", "Fuel pump near its limit",
-        "The " + pmp.short + " is supplying " + Math.round(fq.load * 100) + "% of what it can at " + fq.loadRpm + " rpm" + (boosted && !pmp.rpmRef ? ", and every extra bar of boost takes flow away from it" : "") + "." + fitWord);
+        "The " + pmp.short + " is supplying " + Math.round(fq.pumpUtil * 100) + "% of what it can at " + fq.loadRpm + " rpm" + (boosted && !pmp.rpmRef ? ", and every extra bar of boost takes flow away from it" : "") + "." + fitWord);
       if (alky && !short) add("good", "Fuel system sized for alcohol",
         alky + ", and " + (fq.portInj ? injWord + " at " + Math.round(fq.duty * 100) + "% duty with " : "") + "the " + pmp.short + " behind them have room for it.");
       if (fq.portInj && fq.duty < 0.12 && inj.cc * (inj.perCyl || 1) >= 1650) add("info", "A lot of injector for this engine",
@@ -2964,7 +2964,7 @@ const ENGINE_SIM = (function () {
         add("bad", "Dry shot on a carburettor", "A dry kit leaves the fuel to the engine's injectors and an ECU that adds it while the button is closed. A carburettor has neither: the shot arrives with no fuel at all, and a lean nitrous cylinder melts its piston in a second. Use a wet plate under the carb.");
       else if (nz.dry && (nz.lean > 0.01 || quick.fuel.injUtil > 0.85))
         add("bad", "Dry shot on stock injectors", "With the " + nk.shotHp + " shot on, the injectors have to find about " + Math.round(nk.shotHp / (quick.peakHp || 1) * 100) + "% more fuel at once; they are already at " + Math.round(quick.fuel.duty * 100) + "% duty with the rail pressure raised" + (nz.lean > 0.01 ? ", and the mixture goes to \u03bb " + (cfg.lambda + nz.lean).toFixed(2) + " on the bottle" : "") + ". Bigger injectors and a pump with room to spare, or a wet kit that brings its own fuel.");
-      else if (nz.dry)
+      else if (nz.dry && quick.fuel.pumpUtil <= 0.8 && quick.fuel.injUtil <= 0.8)
         add("good", "Dry kit with fuel to spare", "The injectors and pump can carry the " + nk.shotHp + " shot's fuel with margin left over, so the mixture stays where the tune put it when the button closes.");
       if (nk.plate && (cfg.intake === "plenum_long" || boosted))
         add("warn", "Wet plate on a " + (cfg.intake === "plenum_long" ? "long-runner intake" : "boosted intake") + " (backfire)", "A plate fills the " + (cfg.intake === "plenum_long" ? "long runners" : "intake tract") + " with fuel and nitrous; one misfire or a lean cylinder lights the lot and it comes back up the intake. About " + Math.round(nz.backfire * 100) + "% a pass here. Short runners, direct port, or a burst panel and a good ignition system.");
@@ -3014,7 +3014,7 @@ const ENGINE_SIM = (function () {
     }
     for (const k of pk) {
       let worst = 0;
-      for (let i = 0; i < r.rpms.length; i++) worst = Math.max(worst, f.lph[i] / pumpLphAt(OPT.fuelPump[k], r.rpms[i], r.boostCurve[i]));
+      for (let i = 0; i < r.rpms.length; i++) worst = Math.max(worst, f.lph[i] / (pumpLphAt(OPT.fuelPump[k], r.rpms[i], r.boostCurve[i]) * (r.nitrous && r.nitrous.dry && r.rpms[i] >= r.nitrous.winRpm ? 0.92 : 1)));   // a dry shot's raised rail costs the pump flow (as in simulate)
       if (worst / PUMP_MAX <= lim) { fuelPump = k; break; }
     }
     return { injectors: injectors, fuelPump: fuelPump };
@@ -3027,8 +3027,8 @@ const ENGINE_SIM = (function () {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     const L = LAYOUTS[cfg.layout] || LAYOUTS.I4;
     const Vd = PI / 4 * cfg.bore * cfg.bore * cfg.stroke * L.n / 1e6; // litres
-    const headName = { sohc2v: "SOHC 2v", dohc4v: "DOHC 4v", dohc4v_vvt: "DOHC 4v VVT", dohc4v_vvl: "DOHC 4v VVL", pushrod2v: "Pushrod 2v" }[cfg.head];
-    const aspName = { na: "NA", turbo: "Turbo", twin_turbo: "Twin-turbo", roots: "Supercharged", centrifugal: "Centrifugal" }[cfg.asp];
+    const headName = { sohc2v: "SOHC 2v", dohc4v: "DOHC 4v", dohc4v_vvt: "DOHC 4v VVT", dohc4v_vvl: "DOHC 4v VVL", pushrod2v: "Pushrod 2v", billet_hemi: "Billet hemi" }[cfg.head] || (OPT.head[cfg.head] || {}).name || cfg.head;
+    const aspName = { na: "NA", turbo: "Turbo", twin_turbo: "Twin-turbo", roots: "Supercharged", centrifugal: "Centrifugal", screw: "Twin-screw", compound: "Compound turbo" }[cfg.asp] || (OPT.asp[cfg.asp] || {}).name || cfg.asp;
     const lay = { I3: "I3", I4: "I4", I5: "I5", I6: "I6", V6: "V6", V8: "V8", V8F: "V8 FP", V10: "V10", V12: "V12", F4: "F4", F6: "F6" }[cfg.layout];
     return lay + " · " + Vd.toFixed(1) + " L · " + Math.round(cfg.bore) + "×" + Math.round(cfg.stroke)
       + " · " + headName + " · " + (isDiesel(cfg) ? (cfg.asp === "na" ? "NA diesel" : (aspName || "Boosted") + " diesel") : aspName);
@@ -13506,7 +13506,7 @@ function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt
 function encodeSave(o){return"PEW2:"+btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
 function decodeSave(t){t=(t||"").trim();if(t.startsWith("PEW2:"))t=t.slice(5);const o=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,"")))));if(!o||!o.cfg)throw new Error("bad");return o;}
 function renderSaves(){const box=$("slots");if(!box)return;let h="";for(let i=1;i<=SLOTS;i++){const o=readSlot(i);h+=`<div class="slot ${o?"full":""}"><div><h3>Slot ${i}${o?"":"<small>empty</small>"}</h3><p>${slotSummary(o)}</p></div><div class="acts"><button class="pri" data-save="${i}">Save</button><button data-load="${i}" ${o?"":"disabled"}>Load</button><button class="del" data-clear="${i}" ${o?"":"disabled"}>Clear</button></div></div>`;}box.innerHTML=h;}
-function applyLoaded(o,msg){if(!hydrate(o)){toast("That save didn't read right.");return;}save();curTab="shop";boot();toast(msg);}
+function applyLoaded(o,msg){if(testing){toast("Let the run finish first");return;}if(!hydrate(o)){toast("That save didn't read right.");return;}save();curTab="shop";boot();toast(msg);}
 const C=()=>S.career;
 function rng(){C().seed=(C().seed*1664525+1013904223)>>>0;return C().seed/4294967296;}
 const career=()=>S.mode==="career";
@@ -13546,7 +13546,7 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.OPT.fuel[S.cfg.fue
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="overrev"?0.008:0.02;
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev())return 0;const cell=career()&&!staffed("dynotech")?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev())return 0;const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
 
 /* ===================== live compute ===================== */
@@ -13619,7 +13619,7 @@ function recompute(){
   prevQuick=quick;
   quick=SIM.simulate(S.cfg,simEnv({testType:"pull"}));
   if(prevQuick&&prevQuick!==quick){stripFlash("sHp",Math.round(quick.peakHp-prevQuick.peakHp),v=>v);stripFlash("sKg",Math.round(quick.kg-prevQuick.kg),v=>v,true);stripFlash("sCost",Math.round(quick.cost-prevQuick.cost),v=>"$"+v.toLocaleString("en-CA"),true);stripFlash("sDisp",+(quick.Vd/1000-prevQuick.Vd/1000).toFixed(1),v=>v.toFixed(1));}
-  combosNow=SIM.combos(S.cfg);
+  combosNow=SIM.combos(S.cfg,simEnv({testType:"pull"}),quick);
   if(S.heat)applyHeat();
   if(document.activeElement&&document.activeElement.id==="nameIn"){/* don't clobber while typing */}else $("tag").innerHTML=engineCard(S.cfg,quick,{editable:true});
   $("sDisp").textContent=(quick.Vd/1000).toFixed(1);$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
@@ -13665,11 +13665,11 @@ $("pFam").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(
 $("pCls").addEventListener("click",e=>{const b=e.target.closest("[data-pc]");if(!b)return;S.pCls=b.dataset.pc;renderPresets();save();});
 $("pReset").addEventListener("click",()=>{S.pSort="layout";S.pFam="all";S.pCls="all";renderPresets();save();toast("Filters reset");});
 function presetLocked(cfg){for(const k in OPT){if(k==="layout")continue;const o=OPT[k][cfg[k]];if(locked(o))return (UPGRADES.find(u=>u.id===o.req)||{}).name;}const L=OPT.layout[cfg.layout];if(locked(L))return (UPGRADES.find(u=>u.id===L.req)||{}).name;return null;}
-$("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;const p=PRESETS[+b.dataset.p];const lk=career()&&presetLocked(p.cfg);if(lk){toast(`Needs the ${lk} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg);S.profileId=p.soundProfile;S.name=p.name;resetBase();afterCfgChange(true);toast(`${p.name} loaded — ${p.blurb}`);tourAdvance(0);});
+$("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;if(testing){toast("Let the run finish first");return;}const p=PRESETS[+b.dataset.p];const lk=career()&&presetLocked(p.cfg);if(lk){toast(`Needs the ${lk} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg);S.profileId=p.soundProfile;S.name=p.name;resetBase();afterCfgChange(true);toast(`${p.name} loaded — ${p.blurb}`);tourAdvance(0);});
 /* live deltas: what each option would do to hp / reliability / unit cost, from a real simulate() call (cached) */
 const deltaCache=new Map();
 function probe(k,v){const key=cfgHash(S.cfg)+"|"+envHash()+"|"+k+"="+v;let r=deltaCache.get(key);if(r)return r;
-  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel));const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
+  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel));clampCfgLimits(cfg);const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
   if(deltaCache.size>1500)deltaCache.clear();deltaCache.set(key,r);return r;}
 const money=n=>{const a=Math.abs(n);return (n<0?"−$":"+$")+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+"k":String(Math.round(a)));};
 function fmtDelta(r,base){if(!base)return"";const dh=Math.round(r.hp-base.peakHp),dr=Math.round(r.rel-base.rel),dc=Math.round(r.cost-base.cost);
@@ -13683,7 +13683,7 @@ function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
 const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k;   // nitrous kits for the other fuel family stay out of the way
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);   // no carb on a diesel   // nitrous kits for the other fuel family stay out of the way
   let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).filter(k=>famOK(opts[k],k)).length}">`;
   for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
@@ -13692,10 +13692,10 @@ function segRow(f){
 const fMin=(f,c)=>f.minIf?f.minIf(c||S.cfg):f.min;
 const fMax=(f,c)=>f.maxIf?f.maxIf(c||S.cfg):f.max;
 // pull every slider back inside the limits the fitted hardware allows
-function clampCfgLimits(){let moved=null;
+function clampCfgLimits(c){c=c||S.cfg;let moved=null;
   for(const f of FORM.flatMap(x=>x.fields)){if(f.type!=="slider")continue;
-    const lo=fMin(f),hi=fMax(f),v=S.cfg[f.key];
-    if(v>hi+1e-9){S.cfg[f.key]=hi;moved=moved||f;}else if(v<lo-1e-9){S.cfg[f.key]=lo;moved=moved||f;}}
+    const lo=fMin(f,c),hi=fMax(f,c),v=c[f.key];
+    if(v>hi+1e-9){c[f.key]=hi;moved=moved||f;}else if(v<lo-1e-9){c[f.key]=lo;moved=moved||f;}}
   return moved;}
 function sliderRow(f){const v=S.cfg[f.key],lo=fMin(f),hi=fMax(f);
   const unlocked=f.maxIf&&hi>f.max&&fMax(f,Object.assign({},S.cfg,{fuel:"r91"}))>f.max;   // "billet" only when the outlaw parts raised it, not the diesel limits
@@ -13729,6 +13729,7 @@ $("buildForm").addEventListener("click",e=>{
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
+  if(testing){toast("Let the run finish first");return;}
   const wasD=isCI(S.cfg.fuel);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
   const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD):null;
   const moved=clampCfgLimits();
@@ -13930,7 +13931,7 @@ $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener
 function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
-  if(l){const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}
+  if(l){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}
   if(d){S.blueprints.splice(+d.dataset.del,1);renderBlueprints();save();}});
 $("saveBp").addEventListener("click",()=>{if(S.blueprints.length>=12){toast("Blueprint drawer is full (12)");return;}const q=quick;S.blueprints.push({title:engineName(),name:`${SIM.cfgLabel(S.cfg)} · ${Math.round(q.peakHp)} hp`,sum:`${Math.round(q.peakTq)} Nm · rel ${q.rel} · ${fmt$(q.cost)}`,cfg:Object.assign({},S.cfg)});renderBlueprints();save();toast("BLUEPRINT SAVED");});
 
@@ -14060,7 +14061,10 @@ function hKey(h){let x=5381;for(let i=0;i<h.length;i++)x=((x*33)^h.charCodeAt(i)
 function dragWear(){if(!career())return null;const h=hKey(cfgHash(S.cfg));C().wear=C().wear||{};return C().wear[h]||0;}
 function wearBudget(res){return res.raceSpec?res.racePasses:Math.max(2,Math.round(res.lifeHours/25));}
 function wearInfo(res){const p=dragWear();if(p==null||!res)return null;const b=wearBudget(res);return{passes:+p.toFixed(1),budget:b,w:Math.min(1.5,p/Math.max(1,b))};}
-function addWear(n){if(!career())return;const h=hKey(cfgHash(S.cfg));C().wear=C().wear||{};C().wear[h]=+((C().wear[h]||0)+n).toFixed(2);}
+function addWear(n,hk){if(!career())return;const h=hk||hKey(cfgHash(S.cfg));C().wear=C().wear||{};C().wear[h]=+((C().wear[h]||0)+n).toFixed(2);}
+/* a test reads the build, mode and career it started on; a run whose mode or career changed underneath books nothing */
+function testSnap(){return{cfg:Object.assign({},S.cfg),h:cfgHash(S.cfg),car:S.career,mode:S.mode};}
+function testSame(s){return!!s&&S.mode===s.mode&&S.career===s.car;}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
@@ -14091,13 +14095,14 @@ function dragStart(){
   if(res.nitrous&&res.n2oTq)veh.n2o=n2oVeh(env);
   rnPrep(veh,res,env);   // tyre pressure / shocks; on a race night the class lock and the air
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
-  const hk=hKey(cfgHash(S.cfg)),soak=soakFor(hk);
-  const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,last:performance.now(),failed:false,downAt:null,lastPtr:0};
+  const snap=testSnap(),hk=hKey(snap.h),soak=soakFor(hk);
+  const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,snap,last:performance.now(),failed:false,downAt:null,lastPtr:0};
   if(env.race==="heads"){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
     DR.race={trace:opp.trace,k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};}
   n2oStart();
+  ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);
   if(env.race==="night")rnRace();   // race night: the rival in the other lane
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("dragCtl").style.display="";$("dragBtn").dataset.k="";dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");$("dragBtn").disabled=false;$("dragLive").innerHTML="";
   $("testProg").classList.remove("done");sfx("start");
@@ -14146,6 +14151,7 @@ function dragStart(){
    a plain click (keyboard, harness) is treated as a tap. */
 function dragStage(){const d=DR.d;d.stage();buzz([12]);}
 function dragGo(now){const d=DR.d;if(d.st.phase!=="staged")return;const R=DR.race;
+  if(R&&R.green==null&&R.tree0!=null&&now>=R.tree0+1500)R.green=R.tree0+1500;   // the green lit between frames: not a red light
   if(R){if(R.green==null){R.foul=true;R.rt0=R.tree0!=null?+((now-(R.tree0+1500))/1000).toFixed(3):-9.999;}
     else{let rt=(now-R.green)/1000;if(DR.veh.transBrake==="trans_brake")rt=Math.max(0.001,rt-0.020);   // a trans-brake lets go quicker and the same every time
       R.rt0=+rt.toFixed(3);}}
@@ -14200,25 +14206,25 @@ function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
   if(DR.failed&&DR.failKind==="backfire"&&!N.bang){N.bang=true;sfx("intakeBang");}
   if(st.done&&!N.ended){N.ended=true;if((S.env.n2oHeater||"on")!=="on"&&z.on){N2OB.cooled=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000)+1.8;N2OB.t=Date.now();}if(soundReady)ENGINE_SOUND.nitrous(null);ENGINE_VIS.stripN2O(null);if(b)b.style.display="none";}}
 function n2oSlip(n){const g=["1st","2nd","3rd","4th","5th","6th","7th"][Math.max(0,(n.onGear||1)-1)];
-  return `${n.shotHp} shot ${n.cut?"cut by a backfire":n.on?`on ${n.act==="window"?"at the window":"at "+n.onMph+" mph"} in ${g}`:"never came on"} · ${n.psi.toLocaleString("en-CA")} psi${n.purged>0.3?` · purged ${n.purged.toFixed(1)} s`:" · not purged"}`;}
+  return `${n.shotHp} shot ${n.cut?"cut by a backfire":n.on?`on ${n.act==="window"?"at the window":"at "+n.onMph+" mph"} in ${g}`:"never came on"} · ${n.psi.toLocaleString("en-CA")} psi${n.purged>0.3?` after a ${n.purged.toFixed(1)} s purge`:" · not purged"}`;}
 /* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay */
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target)||e.key.toLowerCase()!=="p"||e.repeat)return;
   if(holdKind()==="drag"&&DR&&DR.n2o){n2oPurge(true);e.preventDefault();return;}
   if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
 document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
 function dragFinish(){
-  const {d,res,env}=DR;const r=d.result();const failed=DR.failed;
+  const {d,res,env,snap}=DR;const r=d.result();const failed=DR.failed;const same=testSame(snap);
   setTimeout(()=>{if(!testing){ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");}},2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)sfx("bov");
   if(DR.race){const R=DR.race;const mine=r.et!=null&&!R.foul?r.et+Math.max(0,R.rt0||0):null;const theirs=R.et!=null?R.et+R.rt:null;
     const won=!failed&&mine!=null&&(theirs==null||mine<theirs);r.race={name:R.name,rt:R.rt0,oppRt:+R.rt.toFixed(3),oppEt:R.et,oppMph:R.mph,foul:R.foul,won,margin:mine!=null&&theirs!=null?+(theirs-mine).toFixed(3):null};}
   if(failed&&!r.broke&&(DR.failKind==="turbo"||DR.failKind==="manifold"))r.broke=DR.failKind;
-  if(DR.night)rnAfterPass(r,failed);
+  if(DR.night&&same)rnAfterPass(r,failed);
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
-  pbPass(r,failed);
-  res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  if(same)pbPass(r,failed);
+  res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const abuse=r.heat?r.heat.abuse:0;
-  if(career()){addWear(1+abuse);const h=hKey(cfgHash(S.cfg));C().dragBest=C().dragBest||{};
+  if(career()&&same){addWear(1+abuse,DR.hk);const h=DR.hk;C().dragBest=C().dragBest||{};
     if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);if(DR.failKind==="manifold"||DR.failKind==="turbo")logEvent(`Strip: ${DR.failKind==="turbo"?"cooked the turbo":"cracked the exhaust manifold"} on the line — held the ${r.launch&&r.launch.ctl!=="none"?"two-step":"brake"} ${r.launch?r.launch.held.toFixed(1):"?"} s`,"bad");toast(DR.failKind==="turbo"?"COOKED THE TURBO · pass over":DR.failKind==="manifold"?"CRACKED MANIFOLD · pass over":`BROKE ON THE PASS · ${String(DR.failKind).toUpperCase()}`);}
     else if(r.et!=null&&r.mph>150&&!r.chute){C().rep=Math.max(0,C().rep-1);logEvent(`Strip: ${r.et.toFixed(2)} s @ ${r.mph} mph — BLACK-FLAGGED, no parachute`,"bad");toast("BLACK-FLAGGED · no parachute over 150 mph");}
     else if(DR.night){}   // race night: purse and rep are settled when the night ends (rnFinish)
@@ -14308,6 +14314,7 @@ function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
   if(career()){if(!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
   const veh=rnVeh(dragVeh()),b=rnBaseline(veh),body=veh.body||"street";
   if(career()&&b.mph>150&&!veh.chute){toast("Tech won't take it — over 150 mph needs a parachute");return;}
+  const rnKey=fmt+":"+body;if(career()&&(C().rnDone||{})[rnKey]===C().week){toast(`One ${RN_FMT[fmt].toLowerCase()} night a week for the ${SIM.AERO[body].n} class — back next week`);return;}
   const br=fmt==="bracket",purse=Math.round(Math.max(1500,6*rnPurseEt(b.et))*(br?0.8:1)/50)*50,entry=career()?Math.max(500,Math.round(purse*0.08/50)*50):0;
   if(career()&&C().cash<entry){toast(`Entry is ${fmt$(entry)} — not enough cash`);return;}
   const seed=career()?rnHash([C().seed,C().week,body,fmt].join(":")):rnHash(Date.now()+":"+Math.random()),r=rnRng(rnHash(seed+":air"));
@@ -14318,7 +14325,7 @@ function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
     lock:{mass:veh.mass,rearBias:veh.rearBias,tyre:veh.tyre,tyreDia:veh.tyreDia,gears:veh.gears,top:veh.top,body,chute:veh.chute},
     t0:{first:S.env.first,final:S.env.final,launch:lt.launchCtl!=="none"?lt.twoStepRpm:S.env.launchRpm},
     field:rnField(seed,body,fmt,b.et,b.mph),stage:0,qopp:[q0,q1],q:[[],[]],rounds:[],passes:[],hist:[],dial:br?Math.floor((b.et-0.01)*100)/100:null,done:false,place:null,won:0};
-  if(career()){C().cash-=entry;logEvent(`Race night: entered ${RN_FMT[fmt].toLowerCase()} (${SIM.AERO[body].n}) — ${fmt$(entry)} entry`);hud();}
+  if(career()){(C().rnDone=C().rnDone||{})[rnKey]=C().week;C().cash-=entry;logEvent(`Race night: entered ${RN_FMT[fmt].toLowerCase()} (${SIM.AERO[body].n}) — ${fmt$(entry)} entry`);hud();}
   rnSetN(N);save();renderTest();toast(`${RN_FMT[fmt].toUpperCase()} · ${SIM.AERO[body].n.toUpperCase()} · 8 CARS`);buzz([20,30,20]);}
 /* runTest on the drag tab: true when the race night took the click */
 function rnGate(){const N=rnCur();
@@ -14527,6 +14534,8 @@ function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed
   for(let i=0;i<n;i++){const nm=names.splice(Math.floor(r()*names.length),1)[0];const full=r()<F.full;const gs=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());
     out.push({n:nm,full,ft:full?300:Math.round(Math.max(110,Math.min(299.5,F.med+gs*F.sd))*10)/10});}
   return out;}
+/* career: one hook per class per week (the field is the same all week) */
+function pullHookedWk(k){return career()&&(C().pullWk||{})[k]===C().week;}
 function pullSeed(k){const ix=Object.keys(SIM.PULL_CLASSES).indexOf(k)+1;if(!career())return Math.floor(Math.random()*1e9);if(!C().pullSeed)C().pullSeed=Math.floor(Math.random()*1e9);return(C().pullSeed^(C().week*7919)^(ix*104729))>>>0;}
 function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 function pullBreak(kind){PR.failed=true;PR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
@@ -14534,10 +14543,10 @@ function pullStart(){
   $("app").classList.add("onstrip");
   const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
-  const hk=hKey(cfgHash(S.cfg)),veh=pullVeh(k),fseed=pullSeed(k);veh.seed=career()?(fseed+7919*(C().pullHooks=(C().pullHooks||0)+1))>>>0:Math.floor(Math.random()*1e9);
+  const snap=testSnap(),hk=hKey(snap.h),veh=pullVeh(k),fseed=pullSeed(k);if(career())(C().pullWk=C().pullWk||{})[k]=C().week;veh.seed=career()?(fseed+7919*(C().pullHooks=(C().pullHooks||0)+1))>>>0:Math.floor(Math.random()*1e9);
   if(wi&&wi.w>=1)veh.wornAt=2+Math.random()*4;
   const p=SIM.pullRun(res,veh),field=pullField(k,fseed);
-  PR={p,res,env,veh,k,hk,field,fseed,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,lead:Math.max(...field.map(f=>f.ft)),kind:SIM.PULL_CLASSES[k].veh.kind};
+  PR={p,res,env,veh,k,hk,field,fseed,snap,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,lead:Math.max(...field.map(f=>f.ft)),kind:SIM.PULL_CLASSES[k].veh.kind};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("pullCtl").style.display="";$("pullBtn").dataset.k="";pullBtnText("HOLD TO PULL","let go to ease off — keep the slip in the green");$("pullBtn").disabled=false;
   $("testProg").classList.remove("done");sfx("start");pullHud(p.st);
   // the button and the card have to be under the thumb: bring them up above the tab bar
@@ -14588,7 +14597,7 @@ function pullSkip(){if(!PR||PR.finished)return;if(ENGINE_VIS.pullSkip)ENGINE_VIS
   b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();pullRelease();}});
   b.addEventListener("click",()=>{if(!PR||!PR.p||performance.now()-(PR.lastPtr||0)<800)return;const st=PR.p.st;if(st.done||PR.failed)pullSkip();});})();
 function pullFinish(){
-  if(!PR||PR.finished)return;PR.finished=true;const {p,res,env,k}=PR;const r=p.result();const failed=PR.failed;const C0=SIM.PULL_CLASSES[k];
+  if(!PR||PR.finished)return;PR.finished=true;const {p,res,env,k,snap}=PR;const r=p.result();const failed=PR.failed;const C0=SIM.PULL_CLASSES[k];const same=testSame(snap);
   setTimeout(()=>{if(!testing){if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});$("app").classList.remove("onstrip");}},2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("pullCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
   // a full pull against other full pulls goes to a pull-off: same truck, sled set 15% heavier, the best foot on the night
@@ -14598,10 +14607,10 @@ function pullFinish(){
   const rows=PR.field.map(f=>({n:f.n,ft:f.ft,full:f.full,po:f.po!=null?f.po:null})).concat([me]).sort((a,b)=>b.ft-a.ft||((b.po||0)-(a.po||0))||(a.me?-1:b.me?1:0));
   r.field=rows;r.place=rows.indexOf(me)+1;r.of=rows.length;r.pullOff=po;r.clsName=C0.n;r.tier=C0.tier;r.gearName=(SIM.pullGears(k)[PR.veh.gear]||[""])[0];
   if(failed){r.broke=r.broke||PR.failKind;r.failKind=r.failKind||PR.failKind;}
-  pullPb(r,failed);
-  res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?PR.failKind:null;S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  if(same)pullPb(r,failed);
+  res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?PR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,dist=r.full?"FULL PULL":r.distFt.toFixed(1)+" ft";
-  if(career()){addWear(0.6+Math.min(1,r.time/30)*0.4+(r.peakEgt>850?0.3:0));
+  if(career()&&same){addWear(0.6+Math.min(1,r.time/30)*0.4+(r.peakEgt>850?0.3:0),PR.hk);
     if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
     else{const purse=Math.round((PULL_PURSE[r.place-1]||0)*(PULL_PAY[C0.tier]||1)/10)*10,rep=(PULL_REP[r.place-1]||0)+(r.full?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`Pull: ${C0.n} — ${dist}${po!=null?" (pull-off "+po.toFixed(1)+" ft)":""}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
@@ -14620,7 +14629,7 @@ function pullHint(){const c=SIM.PULL_CLASSES;return career()?`<b>Pull night</b> 
   :`<b>Sled</b> · hold the button for throttle, let go to ease off. The box slides up the sled toward the pan as you go, so the drag keeps building — keep the wheel slip in the green band and carry speed into the heavy end. 300 ft is a full pull.`;}
 function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C0.veh,G=SIM.pullGears(k),lg=pullLegal(k),lk=pullClsLocked(k);
   let h=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.PULL_CLASSES).map(([id,c])=>{const L=pullLegal(id),l=pullClsLocked(id);return `<button data-pk="pullCls" data-pv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small style="color:${l?"":L.ok?"var(--good)":"var(--crit)"}">${l?l+" rep":(L.ok?"✓ legal":"✗ "+L.why)}</small></button>`;}).join("")}</div>`;
-  h+=`<p class="hint"><b style="color:${lg.ok?"var(--good)":"var(--crit)"}">${lg.ok?"✓ Legal":"✗ Not legal"}</b> · ${lg.why}. ${C0.d[0].toUpperCase()+C0.d.slice(1)}. ${V.kind==="tractor"?"Two-wheel-drive tractor":"Four-wheel-drive pickup"}, ${V.mass.toLocaleString("en-CA")} kg empty, ${V.maxMass.toLocaleString("en-CA")} kg class limit. Sled: ${C0.sled.box.toLocaleString("en-CA")} kg box that rides up onto the pan.${lk?` <b>Opens at ${lk} rep.</b>`:""}</p>`;
+  h+=`<p class="hint"><b style="color:${lg.ok?"var(--good)":"var(--crit)"}">${lg.ok?"✓ Legal":"✗ Not legal"}</b> · ${lg.why}. ${C0.d[0].toUpperCase()+C0.d.slice(1)}. ${V.kind==="tractor"?"Two-wheel-drive tractor":"Four-wheel-drive pickup"}, ${V.mass.toLocaleString("en-CA")} kg empty, ${V.maxMass.toLocaleString("en-CA")} kg class limit. Sled: ${C0.sled.box.toLocaleString("en-CA")} kg box that rides up onto the pan.${lk?` <b>Opens at ${lk} rep.</b>`:""}${pullHookedWk(k)?` <b>Hooked this week — next pull night is week ${C().week+1}.</b>`:""}</p>`;
   h+=`<div class="lbl"><span>Pulling gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-pk="pullGear" data-pv="${i}" class="${+e.pullGear===i?"on":""}">${n}<small>${mph} mph</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Driveline</span></div><div class="seg">${[["conv","Converter","multiplies torque when it bogs"],["clutch","Clutch","direct · less heat, no help low"]].map(([id,n,d])=>`<button data-pk="pullTrans" data-pv="${id}" class="${e.pullTrans===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.PULL_TYRES[id];return `<button data-pk="pullTyre" data-pv="${id}" class="${e.pullTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
@@ -14814,12 +14823,16 @@ $("runTest").addEventListener("click",()=>{
   if(!testing&&S.env.testType==="drag"&&rnGate())return;   // race night: enter, close, or the wrong engine
   if(testing)return;const cost=testCost();if(career()&&C().cash<cost){toast("Not enough cash for dyno time");return;}
   if(S.env.testType==="drag"){if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(career()&&!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
-  if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
+  if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(pullHookedWk(k)){toast(`Already hooked in ${SIM.PULL_CLASSES[k].n} this week — next pull night is week ${C().week+1}`);return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;renderTest();ensureSound();
+  if(S.env.testType!=="drag"){ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);}
+  if(S.env.testType!=="pull_sled"&&ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});
+  if(S.env.testType!=="drag"&&S.env.testType!=="pull_sled")$("app").classList.remove("onstrip");
   if(S.env.testType==="drag"){dragStart();return;}
   if(S.env.testType==="pull_sled"){pullStart();return;}
-  const env=simEnv();const res=SIM.simulate(S.cfg,env);const N=res.rpms.length;const t0=performance.now();
+  const snap=testSnap(),cfg0=snap.cfg;
+  const env=simEnv();const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";
   let failed=false,failAt=Infinity,dur,hold,label="";
   const failKind=failKindOf(res,env);const rpmDecay={rod:420,crank:520,valve:360,seize:80,knock:45,steam:30,turbo:70}[failKind]||160;
@@ -14830,26 +14843,26 @@ $("runTest").addEventListener("click",()=>{
   sfx("start");
   $("testProg").classList.remove("done");
   const step=()=>{const t=performance.now()-t0;let i=N;$("testProg").style.width=Math.min(100,100*t/(dur+hold))+"%";
-    if(env.testType==="pull"){if(t<dur){i=Math.floor(N*(t/dur));run.rpm=res.rpms[Math.min(N-1,i)];}else run.rpm=S.cfg.redline+Math.sin(t/40)*40;run.load=1;}
-    else if(env.testType==="endurance"){const ph=t/dur;const prof={highway:.35,mixed:.6,track:.95}[env.loadProfile];run.rpm=1500+(S.cfg.redline-1500)*prof*(0.55+0.45*Math.abs(Math.sin(t/230)));run.load=prof*(0.6+0.4*Math.abs(Math.sin(t/230+1)));i=N;label=`${Math.min(env.hours,Math.round(env.hours*Math.min(1,ph)))} h`;}
-    else{if(t<dur*0.5)run.rpm=1000+(S.cfg.redline-1000)*(t/(dur*0.5));else if(t<dur)run.rpm=S.cfg.redline*(1+0.15*Math.min(1,(t-dur*0.5)/120));else run.rpm=Math.max(1000,S.cfg.redline*1.15-(t-dur)*4);run.load=t<dur*0.5?1:0.2;}
+    if(env.testType==="pull"){if(t<dur){i=Math.floor(N*(t/dur));run.rpm=res.rpms[Math.min(N-1,i)];}else run.rpm=cfg0.redline+Math.sin(t/40)*40;run.load=1;}
+    else if(env.testType==="endurance"){const ph=t/dur;const prof={highway:.35,mixed:.6,track:.95}[env.loadProfile];run.rpm=1500+(cfg0.redline-1500)*prof*(0.55+0.45*Math.abs(Math.sin(t/230)));run.load=prof*(0.6+0.4*Math.abs(Math.sin(t/230+1)));i=N;label=`${Math.min(env.hours,Math.round(env.hours*Math.min(1,ph)))} h`;}
+    else{if(t<dur*0.5)run.rpm=1000+(cfg0.redline-1000)*(t/(dur*0.5));else if(t<dur)run.rpm=cfg0.redline*(1+0.15*Math.min(1,(t-dur*0.5)/120));else run.rpm=Math.max(1000,cfg0.redline*1.15-(t-dur)*4);run.load=t<dur*0.5?1:0.2;}
     if(t>failAt&&!failed){failed=true;run.fail=true;run.failKind=failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
     if(failed){const since=t-failAt;const d=failKind==="seize"?(since>1600?900:rpmDecay):failKind==="knock"?(since>1200?140:rpmDecay):rpmDecay;run.rpm=Math.max(0,run.rpm-d);if(failKind==="knock"||failKind==="steam")run.rpm+=(Math.random()-0.5)*120;}
     run.on=true;$("rpmLbl").textContent=label||Math.round(run.rpm/10)*10;
     if(env.testType==="pull")drawChart(res,Math.min(N,i+1));
     if(t<dur+hold)requestAnimationFrame(step);
     else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
-      S.last={hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
-      const offStd=career()&&!isStdCell(env);if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
-      if(!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
-      if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(S.cfg);const overCap=res.peakHp>cap.hp||S.cfg.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:cfgHash(S.cfg),ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
+      S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
+      const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
+      if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
+      if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
         if(ok)pbPull(res);
-        if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(S.cfg.asp!=="na")C().boostedCert=true;}
+        if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(cfg0.asp!=="na")C().boostedCert=true;}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
-      if(career())addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40);
+      if(career()&&same)addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40,hKey(snap.h));
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
-      if(career())checkGoals();
+      if(career()&&same)checkGoals();
       save();recompute();renderTest();
       revealVerdict();
       if(ff&&ff.ending);else if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
@@ -14863,7 +14876,7 @@ function renderAnalysis(){
   const order={bad:0,warn:1,good:2,info:3};
   $("combos").innerHTML=combosNow.slice().sort((a,b)=>order[a.severity]-order[b.severity]).map(c=>`<div class="combo ${c.severity}"><h3>${c.title}</h3><p>${c.text}</p></div>`).join("")||`<p class="hint">Nothing notable — a conventional combination.</p>`;
   const r=(S.last&&S.last.hash===cfgHash(S.cfg))?S.last.res:quick;const T=r.thermals,L=r.loads,Cl=r.clearances,K=r.knock;
-  const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],...(r.diesel?[["Smoke (peak)",`${Math.round(r.smoke||0)}% · ${smokeWord(r)}`],["Clatter",`${Math.round((r.clatter||0)*100)}% · ${r.clatter>0.66?"loud":r.clatter>0.4?"audible":"quiet"}`],["Full-load λ (leanest / spool)",r.fuel?`${(+S.cfg.lambda).toFixed(2)} / ${(r.fuel.lamMin||0).toFixed(2)}`:"—"],["Injection used",r.fuel?`${Math.round(r.fuel.injUtil*100)}%`:"—"]]:[["Knock retard",`${K.retardDeg.toFixed(1)}°`]]),["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
+  const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],...(r.diesel?[["Smoke (peak)",`${Math.round(r.smoke||0)}% · ${smokeWord(r)}`],["Clatter",`${Math.round((r.clatter||0)*100)}% · ${r.clatter>0.66?"loud":r.clatter>0.4?"audible":"quiet"}`],["Full-load λ (leanest / spool)",r.fuel?`${(+(r.fuel.lamTop||S.cfg.lambda)).toFixed(2)} / ${(r.fuel.lamMin||0).toFixed(2)}`:"—"],["Injection used",r.fuel?`${Math.round(r.fuel.injUtil*100)}%`:"—"]]:[["Knock retard",`${K.retardDeg.toFixed(1)}°`]]),["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
   if(launchLine(S.cfg))rows.push(["Launch (strip only)",launchLine(S.cfg)]);
   $("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
@@ -15003,8 +15016,9 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
 function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
-function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=(r.mach&&staffed("machinist"))?1.25:1;
-  if(a.done>=r.weeks){C().rnd[r.id]=C().week;C().rndActive=null;if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
+function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*0.75):r.weeks;}   // machinist: machining projects 25% shorter
+function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
+  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
 function prestigePass(){let rp=0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
 function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}if(ok){C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=10;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus, +10 rep`,"good");hit.push(g);}}
@@ -15018,7 +15032,7 @@ function warrantyPass(){let claims=0,cost=0,active=0;
   if(claims)toast(`${claims} warranty claim${claims>1?"s":""} · ${fmt$(cost)}`);
   return claims;}
 function repeatPass(){for(const f of C().fleet){if(f.repeated||(f.claims||0)>0||C().week!==f.week+4)continue;f.repeated=true;
-    const units=Math.max(1,Math.round(f.units*1.4));const price=Math.round(f.unitPrice*1.15/10)*10;
+    const units=Math.max(1,Math.round(f.units*1.4));const price=Math.round((f.basePrice||f.unitPrice)*1.15/10)*10;   // +15% on the brief's price; deal() adds the fit bonus again
     (C().inbox=C().inbox||[]).push({id:Math.floor(rng()*1e9),seg:f.seg,name:f.name,client:f.client,req:Object.assign({},f.req),units,price,expires:C().week+3,repeat:true,...(f.site?{site:Object.assign({},f.site)}:{})});
     logEvent(`${f.client} is back for ${units} more ${f.name} engines at +15%`,"good");toast(`${f.client} wants a repeat order`);}}
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
@@ -15054,7 +15068,7 @@ function renderShop(){
     const btn=mode==="active"
       ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
-    const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${k.repeat?"repeat order":"offer"} · open till wk ${k.expires}`;
+    const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
     return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +15%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${sc.brk}${status}
       <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
   const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
@@ -15076,9 +15090,9 @@ function renderShop(){
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
   $("staff").innerHTML=STAFF.map(st=>{const on=!!C().staff[st.id];return `<div class="up ${on?"owned":""}"><div><h3>${st.name}</h3><p>${st.desc} <b>${fmt$(st.wage)}/week${on?"":", "+fmt$(st.wage*2)+" to hire"}</b></p></div>${on?`<button class="btn sm danger" data-fire="${st.id}">Release</button>`:`<button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire</button>`}</div>`;}).join("");
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
-  $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(RND.find(r=>r.id===act.id).weeks,Math.floor(act.done)+1)} of ${RND.find(r=>r.id===act.id).weeks}.`:"Fund one project at a time. It runs while you advance weeks.";
-  $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.round(100*act.done/r.weeks):0;
-    return `<div class="up ${done?"owned":""}"><div><h3>${r.name}</h3><p>${r.desc} <b>${r.weeks} wk${r.mach&&staffed("machinist")?" (−25%)":""}</b></p>${running?`<div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div>`:""}</div>${done?`<div class="price">Done</div>`:running?`<div class="price" style="color:var(--warn)">${pct}%</div>`:`<button class="btn sm ${C().cash>=r.cost&&!act?"pri":""}" data-rnd="${r.id}" ${act?"disabled":""}>${fmt$(r.cost)}</button>`}</div>`;}).join("");
+  $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
+  $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
+    return `<div class="up ${done?"owned":""}"><div><h3>${r.name}</h3><p>${r.desc} <b>${rndNeed(r)} wk${rndNeed(r)<r.weeks?` (−25%, was ${r.weeks})`:""}</b></p>${running?`<div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div>`:""}</div>${done?`<div class="price">Done</div>`:running?`<div class="price" style="color:var(--warn)">${pct}%</div>`:`<button class="btn sm ${C().cash>=r.cost&&!act?"pri":""}" data-rnd="${r.id}" ${act?"disabled":""}>${fmt$(r.cost)}</button>`}</div>`;}).join("");
   $("prestige").innerHTML=PRESTIGE.map(pp=>{const own=!!C().prestige[pp.id];return `<div class="up ${own?"owned":""}"><div><h3>${pp.name}</h3><p>${pp.desc}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=pp.price?"pri":""}" data-prestige="${pp.id}">${fmt$(pp.price)}</button>`}</div>`;}).join("");
   $("upgrades").innerHTML=UPGRADES.map(u=>{const own=!!C().owned[u.id];const gated=u.needs&&!C().owned[u.needs];
     return `<div class="up ${own?"owned":""}"><div><h3>${u.name}</h3><p>${u.desc}${gated?` <b>Needs ${UPGRADES.find(x=>x.id===u.needs).name}.</b>`:""}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=u.price&&!gated?"pri":""}" data-buy="${u.id}" ${gated?"disabled":""}>${fmt$(u.price)}</button>`}</div>`;}).join("");
@@ -15090,11 +15104,11 @@ $("contracts").addEventListener("click",e=>{
   const b=e.target.closest("[data-deliver]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}const k=C().contracts.find(x=>x.id==b.dataset.deliver);const cert=C().cert;if(!k||!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const f=fits(k,cert.res,cert.cfg);const d=deal(k,f);if(!d.want)return;const units=d.units;
   const unit=d.unit;const profit=Math.round((unit-cert.res.cost)*units);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(SEGMENTS.find(s=>s.id===k.seg).tier,units,d,f.bonus,k.repeat);C().rep+=repGain;
   const weak=(f.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
-  C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units,hash:cfgHash(S.cfg),engine:engineName(),rel:k.site&&f.res.fails.length?Math.min(f.res.rel,55):f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:!!k.repeat||!f.ok,...(k.site?{site:k.site}:{})});
+  C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units,hash:cfgHash(S.cfg),engine:engineName(),rel:k.site&&f.res.fails.length?Math.min(f.res.rel,55):f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,basePrice:k.price,weak,claims:0,repeated:!!k.repeat||!f.ok,...(k.site?{site:k.site}:{})});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
   logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}`,f.ok?"good":"");
   if(tourStep>=0)tourEnd();
-  C().contracts=C().contracts.filter(x=>x.id!==k.id);save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  C().contracts=C().contracts.filter(x=>x.id!==k.id);save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
 $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}
   const cert=C().cert;if(!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const o=buyers(cert).find(x=>x.k.seg===b.dataset.sell);if(!o)return;const k=o.k,d=o.d,units=d.units,unit=d.unit;
   const profit=Math.round((unit-cert.res.cost)*units);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
@@ -15102,22 +15116,24 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   C().fleet.push({week:C().week,client:k.name,name:k.name,seg:k.seg,req:k.req,units,hash:cert.hash,engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:true});
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep`,profit>=0?"good":"");
-  if(tourStep>=0)tourEnd();save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);});
+  if(tourStep>=0)tourEnd();save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
 $("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
-  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);if(!confirm(`Let the ${st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();logEvent(`Let the ${st.name.toLowerCase()} go`,"");save();hud();renderShop();renderBuild();recompute();}});
+  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);if(!confirm(`Let the ${st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
+    if(C().cert&&(st.id==="tuner"||st.id==="machinist")){C().cert=null;logEvent(`Cert void — the ${st.name.toLowerCase()} signed it off; pull it again`,"bad");setTimeout(()=>toast("CERT VOID · re-run the dyno"),50);}logEvent(`Let the ${st.name.toLowerCase()} go`,"");save();hud();renderShop();renderBuild();recompute();}});
 $("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(!b||b.disabled)return;const r=RND.find(x=>x.id===b.dataset.rnd);if(C().rndActive||C().rnd[r.id])return;if(C().cash<r.cost){toast(`Need ${fmt$(r.cost-C().cash)} more`);return;}
   C().cash-=r.cost;C().rndActive={id:r.id,done:0};logEvent(`Funded R&D: ${r.name} (${r.weeks} weeks)`,"");save();hud();renderShop();toast(`R&D STARTED · ${r.weeks} WEEKS`);buzz(20);});
 $("prestige").addEventListener("click",e=>{const b=e.target.closest("[data-prestige]");if(!b)return;const pp=PRESTIGE.find(x=>x.id===b.dataset.prestige);if(C().cash<pp.price){toast(`Need ${fmt$(pp.price-C().cash)} more`);return;}
   C().cash-=pp.price;C().prestige[pp.id]=C().week;C().rep+=pp.rep*2;logEvent(`Bought the ${pp.name.toLowerCase()}`,"good");save();hud();renderShop();ENGINE_VIS.buildGarage(garageOwned());toast(`${pp.name.toUpperCase()} · INSTALLED`);buzz(30);});
 $("borrow").addEventListener("click",()=>{if(C().loan+LOAN_STEP>LOAN_MAX)return;C().loan+=LOAN_STEP;C().cash+=LOAN_STEP;logEvent(`Borrowed ${fmt$(LOAN_STEP)} from the bank`,"");save();hud();renderShop();toast(`${fmt$(LOAN_STEP)} in the account. It costs ${fmt$(LOAN_STEP*LOAN_RATE)} a week.`);});
 $("repay").addEventListener("click",()=>{const amt=Math.min(C().loan,Math.max(0,C().cash));if(amt<=0)return;C().loan-=amt;C().cash-=amt;logEvent(`Repaid ${fmt$(amt)} to the bank`,"good");save();hud();renderShop();toast(C().loan>0?`${fmt$(C().loan)} still owed`:"Loan cleared");});
-$("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();save();boot();toast("New shop, same dream. $20,000.");});
+function benchUnlock(){if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;S.name=null;}}   // a fresh career can't keep a locked build on the bench
+$("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
 $("upgrades").addEventListener("click",e=>{const b=e.target.closest("[data-buy]");if(!b||b.disabled)return;const u=UPGRADES.find(x=>x.id===b.dataset.buy);if(C().cash<u.price){toast(`Need ${fmt$(u.price-C().cash)} more`);return;}
   C().cash-=u.price;C().owned[u.id]=true;C().rep+=5;save();hud();renderShop();renderBuild();renderPresets();recompute();ENGINE_VIS.buildGarage(garageOwned());toast(`${u.name.toUpperCase()} · INSTALLED`);buzz(30);});
-$("resetGame").addEventListener("click",()=>{if(confirm("Wipe the career save? Cash, upgrades and contracts reset. Blueprints are kept."))
-  {S.career=freshCareer();save();boot();toast("Fresh start. $20,000 and a dream.");}});
+$("resetGame").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}if(confirm("Wipe the career save? Cash, upgrades and contracts reset. Blueprints are kept."))
+  {S.career=freshCareer();benchUnlock();save();boot();toast("Fresh start. $20,000 and a dream.");}});
 $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   if(b.dataset.save){const i=+b.dataset.save;if(readSlot(i)&&!confirm(`Overwrite slot ${i}?`))return;toast(writeSlot(i)?`SLOT ${i} SAVED`:"Couldn't save — storage blocked on this device");renderSaves();}
   else if(b.dataset.load){const i=+b.dataset.load;const o=readSlot(i);if(!o)return;if(!confirm(`Load slot ${i}? Your current game is replaced (it stays in autosave until you make a change).`))return;applyLoaded(o,`Loaded slot ${i}`);}
@@ -15158,7 +15174,7 @@ $("replayTour").addEventListener("click",()=>{if(!career()){setMode("career");}S
 window.addEventListener("resize",()=>{if(tourStep>=0)tourPlace();});
 $("panel").addEventListener("scroll",()=>{if(tourStep>=0)tourPlace();},{passive:true});
 function setMode(m){
-  if(S.mode===m)return;S.mode=m;
+  if(S.mode===m)return;if(testing){toast("Let the run finish first");return;}S.mode=m;
   if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;toast("Career bay can't fit that design yet — starting from the base four.");}
   save();boot();
 }
@@ -15287,7 +15303,7 @@ function abPlay(k){
 function abStop(){AB.playing=null;abRender();}
 $("abSec").addEventListener("click",e=>{
   const cap=e.target.closest("[data-abcap]");if(cap){AB[cap.dataset.abcap]=Object.assign({},S.cfg);abRender();toast(`Captured into ${cap.dataset.abcap}`);buzz(10);return;}
-  const ld=e.target.closest("[data-abload]");if(ld){const c=AB[ld.dataset.abload];if(!c){toast("That slot is empty");return;}
+  const ld=e.target.closest("[data-abload]");if(ld){const c=AB[ld.dataset.abload];if(!c){toast("That slot is empty");return;}if(testing){toast("Let the run finish first");return;}
     fuelFit(c);S.cfg=Object.assign({},c);S.profileId=null;resetBase();afterCfgChange(true);toast(`${ld.dataset.abload} loaded into the build`);return;}
   const pl=e.target.closest("[data-abplay]");if(pl){abPlay(pl.dataset.abplay);return;}
   if(e.target.closest("#abStop")){abStop();return;}
