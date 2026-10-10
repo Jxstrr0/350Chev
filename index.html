@@ -2478,6 +2478,7 @@ const ENGINE_SIM = (function () {
       + 2.0 * (cfg.cam / 100 - 0.4)
       + ({ cast_log: -0.5, cast_tubular: 0, headers_equal: 1.0, headers_merge: 1.5 }[cfg.exhaust] || 0);
     if (X.dsl) base += 3;                                  // combustion knock carries through the block
+    if (isTwoStroke(cfg)) base += 10 + ((OPT.xpipe[cfg.xpipe] || {}).db || 0);   // a power pulse every turn, straight off the port: two-strokes are loud
     const turbo = kind === "turbo";
     if (turbo) base -= cfg.asp === "twin_turbo" || cfg.asp === "compound" ? 3.5 : 3;
     else if (kind !== "na") base += 1;                     // blower whine
@@ -3498,7 +3499,7 @@ const ENGINE_SIM = (function () {
       if (!tsCaseB && orRpm > pumpLimit) ev.push("Oil pump cavitated above " + pumpLimit + " rpm; pressure dropped for a fraction of a second.");
       if (!tsCaseB && orRpm > pumpLimit * 1.10) { survived = false; ev.push("Sustained loss of oil pressure wiped the rod bearings."); }
       if (ts && TSI && TSI.pipeRpm && orRpm > TSI.pipeRpm * 1.12) ev.push("Way over the pipe at " + orRpm.toFixed(0) + " rpm: the power fell off a cliff, which is what saved it.");
-      if (ev.length === 0) ev.push("Nothing complained — the valvetrain, rods and oil system all had margin at " + orRpm.toFixed(0) + " rpm.");
+      if (ev.length === 0) ev.push(ts ? "Nothing complained \u2014 the rods, pistons and crank all had margin at " + orRpm.toFixed(0) + " rpm." : "Nothing complained — the valvetrain, rods and oil system all had margin at " + orRpm.toFixed(0) + " rpm.");
       overrev = { survived: survived, events: ev };
     }
     if (env.testType === "overrev" && rot) {
@@ -20277,6 +20278,7 @@ $("buildForm").addEventListener("click",e=>{
   if(testing){toast("Let the run finish first");return;}
   const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg),wasT=isTs(S.cfg);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
   const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):b.dataset.k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):b.dataset.k==="cycle"?twoStrokeFamilyDefaults(S.cfg,wasT):null;if(fam)delete S.cfg.map;
+  if(fam&&b.dataset.k==="fuel"&&isTs(S.cfg)&&isCI(S.cfg.fuel)){S.cfg.induct="blower";S.cfg.scav="uniflow";S.cfg.xpipe="muffled";}   // a two-stroke diesel needs a blower to breathe
   const moved=clampCfgLimits();
   if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
   afterCfgChange(true);});
