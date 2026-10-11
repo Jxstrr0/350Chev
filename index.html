@@ -984,8 +984,8 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
 .swres .vstats{grid-template-columns:repeat(4,1fr);margin-top:0}
 .swq{margin:8px 0 0;font-size:13.5px;color:var(--chalk);font-style:italic}
 .swnote{margin:6px 0 10px}
-.swnote.on{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:10px 12px;border:1px solid var(--orange);border-radius:6px;background:var(--panel2);font-size:13px;color:var(--muted)}
-.swnote.on b{color:var(--chalk)}.swnote.on span{flex:1 1 220px}.swnote em{color:var(--crit);font-style:normal}.swnote .chip{min-height:44px}
+.swnote.on{display:block;padding:10px 12px;border:1px solid var(--orange);border-radius:6px;background:var(--panel2);font-size:13px;color:var(--muted)}
+.swnote.on b{display:block;color:var(--chalk);margin-bottom:2px}.swnote.on span{display:block}.swnote.on .chip{margin-top:8px}.swnote em{color:var(--crit);font-style:normal}.swnote .chip{min-height:44px}
 .swban{display:flex;flex-direction:column;gap:2px;margin:-4px 0 12px;padding:8px 12px;border-left:3px solid var(--orange);background:var(--panel2);border-radius:0 6px 6px 0;font-size:13px;color:var(--chalk)}
 .swban b{font-family:var(--display);letter-spacing:.04em;text-transform:uppercase;font-size:12px;color:var(--orange2)}.swban.brk{border-left-color:var(--crit)}
 @media (max-width:420px){.swres .vstats{grid-template-columns:repeat(2,1fr)}}
@@ -24586,22 +24586,23 @@ function swapRender(){if(!SW_READY)return;const box=$("swapBody"),sum=$("swapSum
   if(sum)sum.innerHTML=!V?"on the stand":`${swEsc(V.n)}${r?" · "+["r","a"].map(s=>{const n=r.items.filter(x=>x.st===s).length;return n?`<i class="sw-${s}">${n} ${s==="r"?"red":"amber"}</i>`:"";}).filter(Boolean).join(" ")||" · all green":""}`;
   if(!$("swapAcc").classList.contains("open"))return;   // perf: the body fills when the section is open
   const g0=swOpenG||(V&&V.g)||"muscle";
-  let h=`<p class="hint">Put this engine into a car. The fit comes from the engine's size, its torque, its heat and its weight; each fix has a price. The car you pick here is the one the road test, the strip, the salt and the 24 Hours use (pull and bog keep their class trucks).</p>`;
+  let h=`<p class="hint">Put this engine in a car: size, torque, heat and weight decide the fit. The road test, strip, salt and 24 Hours run in the car you pick; pull and bog keep their class trucks.</p>`;
   h+=`<div class="chips swg">${SIM.VEH_GROUPS.map(([id,n])=>`<button class="chip${g0===id?" on":""}" data-swg="${id}">${n}</button>`).join("")}<button class="chip${!V?" on":""}" data-swv="">None</button></div>`;
-  h+=`<div class="seg wide swvs">${Object.values(SIM.VEHICLES).filter(x=>x.g===g0).map(x=>`<button data-swv="${x.id}" class="${v===x.id?"on":""}">${swEsc(x.n)}<small>${x.mass.toLocaleString("en-CA")} kg · ${x.drive.toUpperCase()} · ${swEsc(x.famN)}${swapOwns(x.id)?"":` · ${fmt$(x.price)}`}</small></button>`).join("")}</div>`;
+  h+=`<div class="seg wide swvs">${Object.values(SIM.VEHICLES).filter(x=>x.g===g0).map(x=>`<button data-swv="${x.id}" class="${v===x.id?"on":""}">${swEsc(x.n)}<small>${x.mass.toLocaleString("en-CA")} kg · ${x.drive.toUpperCase()}${swapOwns(x.id)?"":` · ${fmt$(x.price)}`}</small></button>`).join("")}</div>`;
   if(!V){box.innerHTML=h;return;}
   if(!swapOwns(v)){h+=`<div class="swbuy"><span>${swEsc(V.n)} — the donor car costs <b>${fmt$(V.price)}</b>.</span><button class="btn sm pri" data-swbuy="${v}" ${C().cash<V.price?"disabled":""}>Buy it</button></div>`;box.innerHTML=h;return;}
   if(!r){box.innerHTML=h;return;}
   const own=swapOwnFx(v),D=r.dims;
-  h+=`<div class="swsilw">${swapSil(r)}<div class="swcap"><span>Engine ${D.L} × ${D.W} × ${D.H} mm${V.tv?" · turned across the car":""}</span><span>Bay ${V.bay.join(" × ")} mm</span></div></div>`;
-  h+=`<div class="swrep">${r.items.map(it=>{const st=it.st;let val,why;
+  h+=`<div class="swsilw">${swapSil(r)}<div class="swcap"><span>Engine ${D.L} × ${D.W} × ${D.H} mm${V.tv?" · turned across the car":""}</span><span>Bay ${V.bay.join(" × ")} mm · stock ${swEsc(V.famN)}</span></div></div>`;
+  const shellAt=r.items.findIndex(x=>x.st==="r"&&(x.k==="len"||x.k==="wid"||x.k==="hgt"));   // the shell is offered once, on the first red bay item
+  h+=`<div class="swrep">${r.items.map((it,ii)=>{const st=it.st;let val,why;
     if(it.k==="len"||it.k==="wid"||it.k==="hgt"){val=it.room==null?`${it.have} mm · any`:`${it.have} / ${it.room} mm`;why=it.room==null?"the shell goes over it":st==="r"?`${it.over} mm too big`:st==="a"?"tight — a pry bar and patience":`${-it.over} mm spare`;}
     else if(it.k==="mass"){val=`${it.have.toLocaleString("en-CA")} kg · ${Math.round(it.front*100)}% front`;why=r.mostly?"the engine outweighs the car":`${it.have>=it.stock?"+":""}${(it.have-it.stock).toLocaleString("en-CA")} kg · front ${it.dF>=0?"+":""}${(it.dF*100).toFixed(1)} pts — ${it.dF>0.04?"pushes in corners, light at the back on launch":it.dF<-0.04?"light nose, loose on turn-in, hooks on launch":"handles as it did"}`;}
     else if(it.k==="rad"){val=`${it.have} / ${it.room} kW`;why=st==="r"?"overheats in long events (24 h, salt)":st==="a"?"runs hot in long events":"keeps up";}
     else{val=`${it.have.toLocaleString("en-CA")} / ${it.room.toLocaleString("en-CA")} N·m`;why=st==="r"?"breaks the first time it sees full load":st==="a"?"near its rating":"inside its rating";}
-    const fxBtns=st==="g"?"":it.fixes.filter(id=>{const f=SIM.SWAP_FIX[id];if(own.includes(id))return false;if(f.tier){const cur=own.map(o=>SIM.SWAP_FIX[o]).filter(o=>o.grp===f.grp).reduce((a,o)=>Math.max(a,o.tier),0);if(f.tier<=cur)return false;}return true;})
+    const fxBtns=st==="g"?"":it.fixes.filter(id=>{const f=SIM.SWAP_FIX[id];if(own.includes(id)||(f.inf&&ii!==shellAt))return false;if(f.tier){const cur=own.map(o=>SIM.SWAP_FIX[o]).filter(o=>o.grp===f.grp).reduce((a,o)=>Math.max(a,o.tier),0);if(f.tier<=cur)return false;}return true;})
       .map(id=>{const f=SIM.SWAP_FIX[id],lk=f.need&&!own.includes(f.need);return `<button class="chip swfx${lk?" lk":""}" data-swf="${id}"${lk?` title="needs ${swEsc(SIM.SWAP_FIX[f.need].n)} first"`:""}>${swEsc(f.n)}<small>${swapFree()?"":fmt$(f.cost)+" · "}${swEsc(f.d)}</small></button>`;}).join("");
-    const have=own.filter(id=>it.fixes.includes(id)).map(id=>`<button class="chip swhave" data-swr="${id}" title="remove">${swEsc(SIM.SWAP_FIX[id].n)} ✕</button>`).join("");
+    const have=own.filter(id=>it.fixes.includes(id)&&!(SIM.SWAP_FIX[id].inf&&ii>0)).map(id=>`<button class="chip swhave" data-swr="${id}" title="remove">${swEsc(SIM.SWAP_FIX[id].n)} ✕</button>`).join("");
     return `<div class="swit s-${st}"><i class="dot" aria-label="${SW_WORD[st]}"></i><div class="swt"><b>${it.n}</b><span>${val}</span><small>${why}</small></div>${have||fxBtns?`<div class="swfxs">${have}${fxBtns}</div>`:""}</div>`;}).join("")}</div>`;
   // the result: the car on this engine (a standing start and top speed, judged with the road test's own sim)
   if(r.fits){let z="—",tp="—",qm="—";try{const p=SIM.roadPrep(S.cfg,quick),a=SIM.roadRun(p,{ch:r.look,car:r.car,tyre:r.car.tyre});z=a.zero100!=null?a.zero100.toFixed(1)+" s":"—";tp=Math.round(a.top.kmh)+" km/h";qm=a.quarter?a.quarter.t.toFixed(1)+" s":"—";}catch(e){}

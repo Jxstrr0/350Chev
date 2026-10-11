@@ -978,8 +978,8 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
 .swres .vstats{grid-template-columns:repeat(4,1fr);margin-top:0}
 .swq{margin:8px 0 0;font-size:13.5px;color:var(--chalk);font-style:italic}
 .swnote{margin:6px 0 10px}
-.swnote.on{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:10px 12px;border:1px solid var(--orange);border-radius:6px;background:var(--panel2);font-size:13px;color:var(--muted)}
-.swnote.on b{color:var(--chalk)}.swnote.on span{flex:1 1 220px}.swnote em{color:var(--crit);font-style:normal}.swnote .chip{min-height:44px}
+.swnote.on{display:block;padding:10px 12px;border:1px solid var(--orange);border-radius:6px;background:var(--panel2);font-size:13px;color:var(--muted)}
+.swnote.on b{display:block;color:var(--chalk);margin-bottom:2px}.swnote.on span{display:block}.swnote.on .chip{margin-top:8px}.swnote em{color:var(--crit);font-style:normal}.swnote .chip{min-height:44px}
 .swban{display:flex;flex-direction:column;gap:2px;margin:-4px 0 12px;padding:8px 12px;border-left:3px solid var(--orange);background:var(--panel2);border-radius:0 6px 6px 0;font-size:13px;color:var(--chalk)}
 .swban b{font-family:var(--display);letter-spacing:.04em;text-transform:uppercase;font-size:12px;color:var(--orange2)}.swban.brk{border-left-color:var(--crit)}
 @media (max-width:420px){.swres .vstats{grid-template-columns:repeat(2,1fr)}}
