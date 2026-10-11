@@ -32,6 +32,7 @@ vis/strip-run.js
 vis/pits.js
 vis/pull.js
 vis/bog.js
+vis/bog-trucks.js
 vis/road.js
 vis/salt.js
 vis/api.js
