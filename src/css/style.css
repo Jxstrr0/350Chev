@@ -948,3 +948,43 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
 #buildForm .ddno{opacity:.38}
 #panel.ddon #ddSec{scroll-margin-top:calc(var(--ddh,58px) + 4px)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ---- trophy room: the view goes full screen, a slim bar on top, the plaque card at the bottom, the list as a sheet ---- */
+.trgo{display:flex;justify-content:space-between;width:100%;margin:0 0 10px;min-height:44px}.trgo b{font-weight:500;color:var(--muted)}
+html.troom #view,html.troom.desk #view,html.troom #app.mini #view{position:fixed;inset:0;z-index:40;min-height:0;flex:none;max-width:none;width:auto;height:auto;transition:none}
+html.troom #hud,html.troom #tag,html.troom #rpmbox,html.troom #fpsHud,html.troom #stripHud,html.troom #stripCap,html.troom #tdCap,html.troom #pitsOv,html.troom #dragCtl,html.troom #pullCtl,html.troom #saltCtl,html.troom #bogCtl,html.troom #roadCtl,html.troom #e24Ctl{display:none!important}
+html.troom #toast,html.troom #achToast{z-index:42}
+html.troom #tour,html.troom #tip,html.troom #ff,html.troom #les,html.troom #glPop{display:none!important}
+#troom{position:fixed;inset:0;z-index:41;pointer-events:none;color:#f0ece2;--tg:#d9a93a;--ts:#aab1ba;--tb:#c0763a}
+#troom[hidden]{display:none}
+.trtop{pointer-events:auto;position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 14px;background:linear-gradient(rgba(12,10,8,.9),rgba(12,10,8,.55) 70%,rgba(12,10,8,0))}
+.trtop .btn{min-height:44px;padding-left:11px;padding-right:11px;--ht:#f0ece2;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.trtt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.trtt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:#e8c27a}
+.trtt small{font-size:11.5px;color:#b8b2a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#trNote{pointer-events:auto;position:absolute;left:12px;right:12px;top:calc(68px + env(safe-area-inset-top,0px));margin:0;padding:9px 12px;border-radius:8px;background:rgba(15,13,10,.82);border:1px solid rgba(232,194,122,.35);font-size:13px;line-height:1.4;color:#e6e0d2}
+#trNote b{color:#e8c27a}
+#troom.lst #trNote,#troom.crd #trNote{display:none}
+#trCard{pointer-events:auto;position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-height:min(60%,520px);overflow:auto;padding:14px 14px 12px;border-radius:12px;background:var(--panel);color:var(--chalk);border:1px solid var(--rule);box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:2}
+#trCard h3{margin:2px 0 6px;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-size:21px;line-height:1.15}
+#trCard p{margin:0 0 8px;font-size:13.5px;line-height:1.4;color:var(--muted)}
+.trk{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.trk.t-gold{color:#c8961f}.trk.t-silver{color:#8d959f}.trk.t-bronze{color:#b06a34}
+.trnums{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1px;margin:4px 0 10px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.trnums div{background:var(--panel2);padding:7px 9px;min-width:0}
+.trnums span{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.trnums b{display:block;font-size:15px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trveh{font-size:12.5px!important}.trveh span{color:var(--dim);text-transform:uppercase;font-size:10.5px;letter-spacing:.06em}
+.trbtns{display:flex;flex-wrap:wrap;gap:8px}.trbtns .btn{min-height:44px;flex:1 1 auto}
+#trList{pointer-events:auto;position:absolute;left:0;right:0;top:calc(62px + env(safe-area-inset-top,0px));bottom:0;overflow:auto;padding:6px 12px calc(16px + env(safe-area-inset-bottom,0px));background:var(--soot);color:var(--chalk);border-top:1px solid var(--rule);overscroll-behavior:contain}
+.trret{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}.trret .btn{min-height:46px}.trret small{font-size:12px;color:var(--muted);line-height:1.35}
+.trsec h4{display:flex;justify-content:space-between;margin:14px 0 8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.trsec h4 span{color:var(--dim)}
+.trgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.trc{display:grid;grid-template-columns:26px 1fr;column-gap:8px;align-items:center;text-align:left;min-height:60px;padding:9px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--panel2);color:var(--chalk);font:inherit;cursor:pointer;min-width:0}
+.trc svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--tg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.trc.t-silver svg{stroke:var(--ts)}.trc.t-bronze svg{stroke:var(--tb)}.trc.eng svg{stroke:var(--orange)}
+.trc b{color:var(--chalk);font-size:13px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-width:0;overflow-wrap:anywhere}
+.trc small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.trc:active{filter:brightness(1.12)}
+html.desk #trCard{left:auto;right:16px;bottom:16px;width:420px}
+html.desk #trList{left:auto;width:min(460px,40vw);border-left:1px solid var(--rule)}
+html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}

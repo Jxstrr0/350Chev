@@ -262,6 +262,7 @@ function loop(now){
   if(viewOff){ clock.getDelta(); return; }
   fpsCount(now);
   var dt=Math.min(clock.getDelta(), 0.05);
+  if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
   if(ROAD.on && ROAD.W){ if(ROAD.minMs && now-ROAD.lastR<ROAD.minMs && now>=ROAD.lastR) return; ROAD.lastR=now; roadRender(); return; }
