@@ -156,7 +156,8 @@ function buildBogScene(){
   /* sheds and a grain elevator off in the distance */
   B.box("solid", 150, 12, -150, 12, 24, 12, 0x8e2f23, 0.3); B.add("solid","prism",[150,24,-150],[12.4,3.4,12.4],0x4a4644,[0,0.3,0]);
   B.box("solid", -80, 3.5, 120, 20, 7, 12, 0x9a2e22, 0.4); B.add("solid","prism",[-80,7,120],[20.4,3,12.6],0x5a5a5a,[0,0.4,0]);
-  bogBuild(B,"solid", M.solid, !lite); bogBuild(B,"metal", M.metal, !lite); BOG.lampMesh=bogBuild(B,"lamp", M.lamp, false); bogBuild(B,"sign", M.sign, false);
+  bogProps(B, S3, lite);   /* people in the pickup beds, chairs, coolers, flags, the recovery tractor (vis/bog-trucks.js) */
+  bogBuild(B,"solid", M.solid, !lite); bogBuild(B,"metal", M.metal, !lite); bogFlagman(S3); BOG.lampMesh=bogBuild(B,"lamp", M.lamp, false); bogBuild(B,"sign", M.sign, false);
   BOG.beamMesh=bogBuild(B,"beam", M.beam, false); if(BOG.beamMesh){ BOG.beamMesh.receiveShadow=false; BOG.beamMesh.visible=false; BOG.beamMesh.renderOrder=4; }
   /* shelterbelt */
   (function(){ var pts=[], s;
@@ -221,12 +222,11 @@ function bogSetNight(on){
   if(on){ for(var i=0;i<(lite?2:3);i++){ var sp=new THREE.SpotLight(0xfff0d8, 1.6, 120, 0.62, 0.6, 1.5); sp.castShadow=!lite && i===0; if(sp.castShadow){ sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.002; sp.shadow.normalBias=0.05; sp.shadow.camera.near=4; sp.shadow.camera.far=120; }
     S3.add(sp); S3.add(sp.target); BOG.spots.push(sp); } }
 }
-/* the truck per class: the pull pickup, its tyres swapped (mud-terrain cut lugs, swampers, paddles) and the whole thing scaled up on the bigger tyres */
-var BOG_LOOK={ street:{k:1.0, tyre:"cut", col:0x1d4787}, modified:{k:1.1, tyre:"ag", col:0xb7261d}, super:{k:1.22, tyre:"paddle", col:0x2c6b3a} };
-function bogVehicle(cls, tyre, color){
-  var L=BOG_LOOK[cls]||BOG_LOOK.street, kind=tyre==="paddle"?"paddle":tyre==="swamp"?"ag":"cut", V=pullVehicle("truck", color), U=V.userData;
-  [U.wheelsR, U.wheelsF].forEach(function(arr){ arr.forEach(function(sp){ var cont=sp.children[0], ty=cont&&cont.children[0]; if(ty && kind!=="cut") ty.geometry=pullTyreGeo(U.rr, U.wr*(kind==="paddle"?1.12:1.05), 0.27, kind); }); });
-  V.scale.setScalar(L.k); U.k=L.k; U.paint0=U.mats.paint.color.clone(); U.cls=cls; return V;
+/* the truck per class: a real one per class at real size on the sim's tyres (vis/bog-trucks.js: bogTruck), no pull gear; k=1 */
+var BOG_LOOK={ street:{k:1.0, tyre:"mt", col:0x1d4787}, modified:{k:1.0, tyre:"swamp", col:0xb7261d}, super:{k:1.0, tyre:"paddle", col:0x2c6b3a} };
+function bogVehicle(cls, tyre, color, hw){
+  var V=bogTruck(BOG_LOOK[cls]?cls:"street", tyre, color, hw||bogTruckHw()), U=V.userData;
+  U.k=1; U.paint0=U.mats.paint.color.clone(); U.cls=cls; return V;
 }
 function bogEffects(o, dt, V){
   var U=V.userData, FX=BOG.fx, FS=BOG.fxSpray, lite=GFX==="lite", rate=lite?0.4:1, ph=o.phase||"stage", R=Math.random, i, t;
@@ -277,13 +277,13 @@ function bogDirect(o, dt, V){
   if(s!==BOG.shot){ if(s==="front") BOG.fixX=Math.min(len+5, fx+7+v*0.9); }
   bogCut(s); BOG.shotT+=dt; BOG.cutT+=dt; var T=BOG.shotT, fov=46, rel=false, ax=0, sm=0;
   switch(s){
-    case "stage": { var push=Math.min(2.2,T*0.2); _bw.set(cx-8+push, 2.4, 5.6-push*0.4); _bt.set(cx+14, 0.8, -0.6); fov=48; break; }
+    case "stage": { var dS=bogFitDist(U, 46), pu=1-0.08*Math.min(1,T/5); _bw.set(cx-dS*0.6*pu, 0.9+dS*0.2, -dS*0.8*pu); _bt.set(cx+0.6, (U.top||2)*0.42, 0); fov=46; break; }   /* the whole truck in frame on any aspect */
     case "chase": rel=true; ax=cx; _bw.set(-9.5, 2.6, 2.2); _bt.set(6, 1.0, 0); fov=50; sm=4; break;
     case "entry": _bw.set(3, 2.4, -BOG_W/2-4.2); _bt.set(cx+1, 0.9, 0); fov=50; break;
     case "side": rel=true; ax=cx; _bw.set(-2, 5.2, -BOG_W/2-7.5); _bt.set(1.2, 0.6, 0); fov=48; sm=3; break;
     case "front": _bw.set(BOG.fixX, 1.0, 2.4); _bt.set(cx, 1.3, 0); fov=38; BOG.shake=Math.max(BOG.shake, 0.04*clamp(+o.slip||0,0,1)); break;
     case "high": rel=true; ax=cx; _bw.set(-7, 9, 9); _bt.set(4, 0, -1); fov=46; sm=2; break;
-    case "stop": { var dr=Math.min(3,T*0.25); _bw.set(cx-7+dr, 3.2-dr*0.2, -7.5+dr*0.4); _bt.set(cx+2, 0.8, 0); fov=40; break; }
+    case "stop": { var dr=Math.min(3,T*0.25), fs=Math.max(1, bogFitDist(U, 40)/9.6); _bw.set(cx+(-7+dr)*fs, (3.2-dr*0.2)*Math.min(fs,1.3), (-7.5+dr*0.4)*fs); _bt.set(cx+1.2, 0.9, 0); fov=40; break; }
   }
   if(rel){ if(BOG.snap||!BOG.relOn){ _br.copy(_bw); _brt.copy(_bt); } else { var kk=1-Math.exp(-sm*dt); _br.lerp(_bw,kk); _brt.lerp(_bt,kk); }
     _bw.copy(_br); _bt.copy(_brt); _bw.x+=ax; _bt.x+=ax; BOG.relOn=true; } else BOG.relOn=false;
@@ -329,8 +329,8 @@ function bogUpdate(o, dt){
   if(BOG.tier!==GFX || BOG.night!==!!o.night){ var tc=BOG.tier!==GFX; bogSetNight(!!o.night); if(tc){ BOG.mudKey=""; if(BOG.fxSpray===null && GFX!=="lite"){ BOG.fxSpray=new StripFx(GFX==="ultra"?420:260, "smoke", stripPuffTex()); S3.add(BOG.fxSpray.mesh); bogSetNight(!!o.night); } } }
   var ph=o.phase||"stage";
   if(ph==="stage" && BOG.prev.phase && BOG.prev.phase!=="stage") bogReset();
-  var cls=BOG_LOOK[o.cls]?o.cls:"street", ty=o.tyre||"mt", col=o.color!=null?o.color:BOG_LOOK[cls].col, vk=cls+":"+ty+":"+col;
-  if(!BOG.veh[vk]){ BOG.veh[vk]=bogVehicle(cls, ty, col); S3.add(BOG.veh[vk]); }
+  var cls=BOG_LOOK[o.cls]?o.cls:"street", ty=o.tyre||"mt", col=o.color!=null?o.color:BOG_LOOK[cls].col, hwk=bogTruckHw(), vk=cls+":"+ty+":"+col+":"+hwk+(GFX==="lite"?":l":"");
+  if(!BOG.veh[vk]){ BOG.veh[vk]=bogVehicle(cls, ty, col, hwk); S3.add(BOG.veh[vk]); }
   for(var kk in BOG.veh) BOG.veh[kk].visible=(kk===vk);
   var V=BOG.veh[vk], U=V.userData, k=U.k||1; if(BOG.cur!==V){ BOG.cur=V; } pullLivery(U);
   if(o.pit) bogMudBuild(o.pit, U.trR*k);   /* after the truck: the fine rut rows follow its track */
@@ -391,6 +391,7 @@ function bogUpdate(o, dt){
   if(BOG.flood.intensity>0){ BOG.flood.position.set(c.x-20, 60, 40); BOG.flood.target.position.copy(c); BOG.flood.target.updateMatrixWorld(); }
   if(BOG.spots.length){ var poles=BOG.poles.slice().sort(function(a,b){ return Math.abs(a.x-c.x)-Math.abs(b.x-c.x); });
     BOG.spots.forEach(function(sp,j){ var pp=poles[j]; if(!pp) return; sp.position.copy(pp); sp.target.position.set(lerp(pp.x,c.x,0.5), 0, 0); sp.target.updateMatrixWorld(); }); }
+  bogTruckFrame(V, o, dt);   /* blob shadow on the ground, the flagman, night spots off the run-up (vis/bog-trucks.js) */
   BOG.prev={phase:ph, cleared:!!o.cleared};
 }
 var _mudC=new THREE.Color(0.11,0.075,0.045);
