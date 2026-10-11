@@ -206,6 +206,8 @@ const ENGINE_VIS = {
     var rdt=o.dt!=null ? +o.dt : (now-SALT.lastT)/1000; SALT.lastT=now; saltUpdate(o, clamp(rdt||0, 0, 0.1));
     return SALT.stats||null;
   },
+  /* the player's car for the next run: {color, num, cls, cfg} (or {rival:seed, body} for any other car); null clears */
+  saltLook: function(o){ if(!renderer) return null; if(o && o.rival!=null && o.rival!==true) return (SALT.look=saltRivalLook(o.rival, o.body)); return saltSetLook(o); },
   saltSkip: function(){ if(SALT.on) SALT.skip=true; },   /* cut straight to the stopped car */
   saltState: function(){ return {on:SALT.on, built:SALT.built, shot:SALT.shot, cam:SALT.cam?SALT.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null, cars:Object.keys(SALT.cars), parts:SALT.fx?SALT.fx.P.length:0, fx:SALT.fx?SALT.fx.mesh:null}; },   /* harness */
   setXray: function(on){

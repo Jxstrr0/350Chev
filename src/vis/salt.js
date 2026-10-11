@@ -8,8 +8,8 @@
    line and the start line are drawn by a world-space shader, so a 10 km course
    costs nothing. Mountains ring the flats 9–15 km out, hazed by the fog; a
    full-screen pass adds the heat shimmer and the mirage band at the horizon
-   (Full/Ultra). Cars are built here (streamliner, lakester, roadster) or reuse
-   the strip's street car for the Altered class. Built on first use.
+   (Full/Ultra). The cars are built in vis/salt-cars.js (the Altered on the
+   strip's muscle shell). Built on first use.
    ==========================================================================*/
 var LSR_MILE_V=1609.344;
 var SALT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
@@ -186,84 +186,22 @@ function saltPushTruck(){
   var wh=[]; [[-3.0,-0.82],[-3.0,0.82],[-0.3,-0.82],[-0.3,0.82]].forEach(function(p){ var w=sc_wheel({x:p[0], z:p[1], r:0.38, w:0.24, rimR:0.2, style:"star", rimMat:"alu"}, M); w.position.set(p[0],0.38,p[1]); g.add(w); wh.push(w.userData.spin); });
   g.userData={wheels:wh, front:0.8}; return g;
 }
-function saltNumMat(num, color){
-  var c=newCanvas(256,256), x=c.getContext("2d"); x.clearRect(0,0,256,256); x.fillStyle="#f4efe2"; x.beginPath(); x.arc(128,128,120,0,TAU); x.fill();
-  x.lineWidth=10; x.strokeStyle="#141414"; x.stroke(); x.fillStyle="#141414"; x.font="700 "+(num.length>3?92:120)+"px 'Chakra Petch','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(num,128,136,220);
-  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; return new THREE.MeshStandardMaterial({map:t, transparent:true, roughness:0.6, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
-}
 /* a body of revolution along x: profile [t 0 (tail) .. 1 (nose), radius fraction] */
 function saltLathe(len, R, prof, seg){
   var pts=prof.map(function(p){ return new THREE.Vector2(Math.max(0.002,p[1]*R), p[0]*len); });
   var g=new THREE.LatheGeometry(pts, seg||32); g.rotateZ(-PI/2); g.computeVertexNormals(); return g;
 }
-/* --- the cars. Origin of every car = its rear axle on the salt, +x forward. userData: wheels (spin groups + radius), chute anchor(s), body pivot --- */
-function saltCar(body, color, aero){
-  var M=sc_mats(), paint=sc_paint(color), g=new THREE.Group(), piv=new THREE.Group(), bx=SALT.g.box, cy=SALT.g.cyl, sp=SALT.g.sph, wheels=[], tips=[];
-  g.add(piv);
-  function mesh(geo, mat, x,y,z, sx,sy,sz, rx,ry,rz, par){ var q=new THREE.Mesh(geo, mat); q.position.set(x,y,z); if(sx!=null) q.scale.set(sx,sy,sz); if(rx||ry||rz) q.rotation.set(rx||0,ry||0,rz||0); q.castShadow=true; q.receiveShadow=true; (par||piv).add(q); return q; }
-  function wheel(x,z,r,w,style,rear){ var c=sc_wheel({x:x, z:z, r:r, w:w, rimR:r*0.6, style:style||"weld", rimMat:"alu", rear:rear}, M); c.position.set(x,r,z); g.add(c); wheels.push({s:c.userData.spin, r:r, rear:rear}); return c; }
-  var num=String(((color>>>0)%377)+11), nm=saltNumMat(num, color), me, ls=[];
-  if(body==="streamliner"){
-    var L=9.6, R=0.6, X0=-2.35, yc=0.64;
-    var hull=mesh(saltLathe(L, R, [[0,0.1],[0.04,0.3],[0.13,0.58],[0.28,0.84],[0.45,0.97],[0.6,1.0],[0.74,0.96],[0.85,0.82],[0.93,0.6],[0.975,0.34],[1,0.02]], 36), paint, X0, yc, 0, 1, 0.86, 1.04);
-    mesh(saltLathe(2.2, 0.36, [[0,0.0],[0.15,0.7],[0.5,1.0],[0.85,0.75],[1,0.05]], 20), M.glass, 1.0, yc+R*0.8, 0, 1, 0.55, 0.85);
-    var fs=new THREE.Shape(); fs.moveTo(0,0); fs.lineTo(2.0,0); fs.lineTo(0.35,1.25); fs.lineTo(-0.05,1.25); fs.lineTo(0,0);
-    var fg=new THREE.ExtrudeGeometry(fs, {depth:0.05, bevelEnabled:false}); fg.translate(0,0,-0.025); mesh(fg, paint, X0+0.15, yc+0.2, 0);
-    mesh(cy, M.satin, X0-0.08, yc, 0, 0.26, 0.22, 0.26, 0, 0, PI/2);
-    [-1,1].forEach(function(sd){ var d=mesh(new THREE.PlaneGeometry(0.75,0.75), nm, 3.2, yc+0.05, sd*0.66, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false;
-      mesh(bx, M.black, 1.5, yc-0.16, sd*0.6, 4.0, 0.07, 0.01); });
-    if(aero) [-1,1].forEach(function(sd){ mesh(bx, M.black, X0+0.5, yc+0.05, sd*0.5, 0.6, 0.03, 0.28, 0, 0, -0.06); });
-    wheel(0, -0.3, 0.343, 0.18, "weld", true); wheel(0, 0.3, 0.343, 0.18, "weld", true); wheel(4.6, -0.27, 0.33, 0.14, "weld", false); wheel(4.6, 0.27, 0.33, 0.14, "weld", false);
-    [[0,0.3],[4.6,0.27]].forEach(function(a){ [-1,1].forEach(function(sd){ mesh(sp, paint, a[0], 0.36, sd*a[1], 1.15, 0.5, 0.3); }); });
-    tips.push(new THREE.Vector3(-0.6, yc-0.42, -0.45), new THREE.Vector3(-0.6, yc-0.42, 0.45));
-    me={rr:0.343, anchor:new THREE.Vector3(X0-0.12, yc, 0), chuteLen:9, chuteRise:0.7, chuteR:1.15, len:L, tail:X0, nose:X0+L, top:yc+R, wb:4.6};
-    ls=[{role:"hood", w:1.3, h:0.42, p:[4.15,1.158,0], u:[1,0,0], v:[0,0,-1]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,0.03], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.8, h:0.3, p:[-1.6,1.16,-0.03], u:[-1,0,0], v:[0,1,0]}];
-  } else if(body==="lakester"){
-    var L2=5.7, R2=0.44, X2=-1.75, y2=0.56;
-    mesh(saltLathe(L2, R2, [[0,0.03],[0.14,0.42],[0.32,0.82],[0.52,1.0],[0.72,0.96],[0.86,0.8],[0.94,0.56],[0.985,0.28],[1,0.0]], 32), paint, X2, y2, 0, 1, 0.92, 1);
-    mesh(saltLathe(1.0, 0.2, [[0,0.0],[0.4,0.9],[0.8,1.0],[1,0.2]], 14), paint, -0.55, y2+0.36, 0, 1, 1.3, 0.9);
-    mesh(sp, sc_paint(0xf4efe2), 0.32, y2+0.56, 0, 0.3, 0.32, 0.3); mesh(bx, M.visor, 0.47, y2+0.57, 0, 0.04, 0.09, 0.2);
-    mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 16, PI), M.chrome, 0.05, y2+0.38, 0, 1,1,1, 0, PI/2, 0);
-    mesh(bx, M.glass, 0.82, y2+0.47, 0, 0.03, 0.18, 0.42, 0, 0, -0.5);
-    [-1,1].forEach(function(sd){ mesh(cy, M.tube, 2.9, 0.33, sd*0.45, 0.06, 0.7, 0.06, PI/2, 0, 0); mesh(cy, M.tube, 0.0, 0.36, sd*0.45, 0.06, 0.7, 0.06, PI/2, 0, 0);
-      mesh(cy, M.chrome, 1.55, y2+0.05, sd*0.43, 0.07, 0.6, 0.07, 0, 0, PI/2+0.15);
-      var d=mesh(new THREE.PlaneGeometry(0.55,0.55), nm, 1.6, y2+0.2, sd*0.425, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false; });
-    if(aero) [-1,1].forEach(function(sd){ mesh(bx, M.black, 3.5, y2-0.05, sd*0.42, 0.35, 0.025, 0.22, 0, 0, 0.12); });
-    wheel(0, -0.88, 0.33, 0.22, "weld", true); wheel(0, 0.88, 0.33, 0.22, "weld", true); wheel(2.9, -0.86, 0.3, 0.14, "weld", false); wheel(2.9, 0.86, 0.3, 0.14, "weld", false);
-    tips.push(new THREE.Vector3(1.25, y2+0.02, -0.5), new THREE.Vector3(1.25, y2+0.02, 0.5));
-    me={rr:0.33, anchor:new THREE.Vector3(X2-0.05, y2, 0), chuteLen:6.5, chuteRise:0.5, chuteR:0.9, len:L2, tail:X2, nose:X2+L2, top:y2+0.8, wb:2.9};
-    ls=[{role:"hood", w:1.0, h:0.3, p:[1.9,0.963,0], u:[1,0,0], v:[0,0,-1]}];
-  } else {   /* modified roadster: a channelled tub, long hood, exposed front end */
-    mesh(bx, paint, 0.2, 0.68, 0, 2.3, 0.62, 1.2);
-    mesh(bx, paint, -1.15, 0.62, 0, 0.6, 0.5, 1.15, 0, 0, 0.25);
-    mesh(bx, paint, 2.2, 0.72, 0, 1.9, 0.48, 0.74);
-    mesh(bx, paint, 2.25, 0.98, 0, 1.8, 0.06, 0.6, 0, 0, -0.04);
-    mesh(bx, M.chrome, 3.18, 0.72, 0, 0.07, 0.62, 0.64); mesh(bx, M.black, 3.2, 0.72, 0, 0.05, 0.5, 0.52);
-    mesh(bx, M.black, 0.2, 0.36, 0, 2.7, 0.12, 0.9);
-    mesh(bx, M.glass, 1.15, 1.12, 0, 0.04, 0.24, 1.0, 0, 0, -0.35);
-    mesh(sp, sc_paint(0xf4efe2), 0.35, 1.22, -0.2, 0.3, 0.32, 0.3); mesh(bx, M.visor, 0.5, 1.23, -0.2, 0.04, 0.09, 0.2);
-    mesh(new THREE.TorusGeometry(0.42, 0.03, 6, 16, PI), M.chrome, 0.05, 0.98, 0, 1,1,1, 0, PI/2, 0);
-    mesh(cy, M.tube, 2.75, 0.32, 0, 0.07, 1.5, 0.07, PI/2, 0, 0);
-    [-1,1].forEach(function(sd){ for(var h=0;h<4;h++) mesh(cy, M.chrome, 1.65+h*0.3, 0.6, sd*0.44, 0.05, 0.3, 0.05, PI/2*sd*0.6, 0, 0);
-      mesh(cy, M.chrome, 1.6, 0.47, sd*0.6, 0.08, 1.8, 0.08, 0, 0, PI/2);
-      var d=mesh(new THREE.PlaneGeometry(0.5,0.5), nm, 0.2, 0.7, sd*0.605, 1,1,1, 0, sd>0?0:PI, 0); d.castShadow=false; });
-    if(aero){ mesh(bx, M.black, -1.35, 1.12, 0, 0.4, 0.04, 1.25, 0, 0, 0.15); [-1,1].forEach(function(sd){ mesh(bx, M.black, -1.3, 0.98, sd*0.55, 0.3, 0.3, 0.03); }); }
-    wheel(0, -0.72, 0.343, 0.3, "weld", true); wheel(0, 0.72, 0.343, 0.3, "weld", true); wheel(2.75, -0.78, 0.31, 0.15, "star", false); wheel(2.75, 0.78, 0.31, 0.15, "star", false);
-    tips.push(new THREE.Vector3(0.6, 0.47, -0.62), new THREE.Vector3(0.6, 0.47, 0.62));
-    me={rr:0.343, anchor:new THREE.Vector3(-1.45, 0.75, 0), chuteLen:5.5, chuteRise:0.45, chuteR:0.85, len:4.7, tail:-1.5, nose:3.22, top:1.3, wb:2.75};
-    ls=[{role:"hood", w:1.2, h:0.42, p:[2.25,1.013,0], u:[0.9992,-0.04,0], v:[0,0,-1]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,0.606], u:[1,0,0], v:[0,1,0]}, {role:"side", w:0.56, h:0.21, p:[-0.62,0.72,-0.606], u:[-1,0,0], v:[0,1,0]}];
-  }
-  var chutes=[];
-  g.userData={body:body, me:me, piv:piv, wheels:wheels, tips:tips, chutes:chutes, A:[{chT:0,chC:0,chS:0,pitch:0},{chT:0,chC:0,chS:0.7,pitch:0}], pitch:0, pv:0, strip:false, livSpots:ls};
-  return g;
+/* --- the cars (built in vis/salt-cars.js). Origin of every car = its rear axle on the salt, +x forward.
+   userData: wheels (spin groups + radius; none when the wheels are Moon discs), chute anchor(s), body pivot, exhaust tips.
+   look: from slLook / saltRivalLook (paint, number, class, engine); default = SALT.look when its paint matches, else the garage engine */
+function saltCarLook(color, body, look){
+  if(look) return look; var L=SALT.look; if(L && L.color===(color>>>0)) return L;
+  var cls=""; try{ if(lastCfg && ENGINE_SIM.lsrClass) cls=ENGINE_SIM.lsrClass(lastCfg, null, body||"streamliner").key; }catch(e){}
+  return slLook({color:color, cls:cls, num:L?L.num:undefined});
 }
-/* the Altered class runs the strip's street car with a spoiler bolted on when the aero is fitted */
-function saltAltered(color, aero){
-  var car=stripCar("street", color, 26.5), U=car.userData, me=U.meta, g=new THREE.Group(); car.position.x=-me.xr; g.add(car);
-  if(aero){ var wing=new THREE.Mesh(SALT.g.box, sc_mats().black); wing.scale.set(0.35,0.04,1.45); wing.position.set(me.xr-0.95, 1.32, 0); wing.rotation.z=0.18; U.bodyGroup.children[0].add(wing); }
-  g.userData={body:"altered", me:{rr:me.rr, anchor:me.anchor.clone().add(new THREE.Vector3(-me.xr,0,0)), len:4.6, tail:-2.3-me.xr, nose:2.3-me.xr, top:1.4, wb:me.xf-me.xr}, strip:true, car:car, chutes:[], A:[], tips:[]};
-  return g;
-}
+function saltCar(body, color, aero, look){ return saltCarV2(body, saltCarLook(color, body, look), aero); }
+/* the Altered class: the strip's muscle shell, set up for the salt */
+function saltAltered(color, aero, look){ return saltAlteredV2(saltCarLook(color, "altered", look), aero); }
 function saltChutes(car, n){
   var U=car.userData; if(U.strip || U.chutes.length===n) return;
   U.chutes.forEach(function(c){ U.piv.remove(c); }); U.chutes.length=0;
@@ -366,6 +304,7 @@ function saltUpdate(o, dt){
   /* course layout: rebuild the traps and boards if a different course was picked */
   if(o.course && [o.course.x0,o.course.x1,o.course.xEnd].join(",")!==SALT.courseKey){ SALT.course=o.course; saltCourseProps(null, o.course, false); }
   var body=o.body||"streamliner", col=o.color!=null?o.color:0xd9a52b, aero=!!o.aero, key=body+":"+col+":"+(aero?1:0);
+  if(SALT.look){ col=SALT.look.color; key=body+":"+SALT.look.key+":"+GFX+":"+(aero?1:0); if(!SALT.cars[key]) saltCarsPrune(); }   /* the player's paint / number / class / engine */
   if(!SALT.cars[key]){ SALT.cars[key]=body==="altered"?saltAltered(col, aero):saltCar(body, col, aero); S4.add(SALT.cars[key]); }
   for(var k2 in SALT.cars) SALT.cars[k2].visible=(k2===key);
   var V=SALT.cars[key], U=V.userData, me=U.me; SALT.cur=V; if(U.car) stripLivery(U.car); else if(U.livSpots) livPlanes(U.piv, U, U.livSpots);
