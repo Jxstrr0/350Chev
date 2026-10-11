@@ -210,7 +210,7 @@ function buildPullScene(){
     for(s=0;s<24;s++) pts.push([-60+s*9+rng(s+7)*3, -64-rng(s)*6, 4+rng(s+9)*2.5]);
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); });
-    S3.add(im); })();
+    instCull(im); S3.add(im); })();
   /* Ferris wheel on the midway behind the stands (turns slowly, rim lights at night) */
   (function(){ var W=new THREE.Group(), R=11, hub=new THREE.Vector3(58, 14, -78), mat=new THREE.MeshStandardMaterial({color:0xd8dde2, roughness:0.4, metalness:0.6}), parts=[];
     parts.push({g:new THREE.TorusGeometry(R,0.16,6,48), m:new THREE.Matrix4()}); parts.push({g:new THREE.TorusGeometry(R*0.94,0.1,6,48), m:new THREE.Matrix4()});
@@ -241,7 +241,7 @@ function buildPullScene(){
     for(var s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.31,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.75,p[2]); headM.setMatrixAt(s,mm);
       cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc);
       cc.set(rng(s*2.9)<0.45?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
-    bodyM.receiveShadow=true; S3.add(bodyM); S3.add(headM);
+    bodyM.receiveShadow=true; instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM);
     PULL.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
 
   /* scoreboards: one canvas, two faces */
