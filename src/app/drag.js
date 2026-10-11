@@ -350,10 +350,13 @@ $("testExtra").addEventListener("click",e=>{if(e.target.closest("#freshen")){con
    same body class. The night lives on C().rn (career) / S.rnSb (sandbox), so a reload keeps it. Rivals are a calibrated
    ET / reaction-time model seeded per career week (per entry in sandbox); the car in the other lane replays the player's
    own baseline pass, time-scaled so it crosses the stripe on the rival's ET. */
-const RN_CARS={street:["'69 Camaro","Fox-body Mustang","'72 Nova","Civic hatch","'87 Grand National","'71 Duster","'99 Trans Am","S10 pickup","'66 Chevelle","Supra Mk IV","'70 Challenger","'95 Impala SS"],
-  outlaw:["Outlaw Camaro","Big-tyre Fox","Radial Nova","Outlaw S10","'68 Dart","Turbo Mustang","Outlaw Corvette","'70 Chevelle","Radial Supra","Outlaw Firebird","'63 Falcon","Nitrous Duster"],
+const RN_CARS={street:["'69 Camaro","Fox-body Mustang","'72 Nova","Civic hatch","'87 Grand National","'71 Duster","'99 Trans Am","Duramax crew cab","'66 Chevelle","Supra Mk IV","'70 Challenger","'86 Monte Carlo SS"],
+  outlaw:["Outlaw Camaro","Big-tyre Fox","Radial Regal","Outlaw Cummins","'68 Dart","Turbo Mustang","Outlaw Corvette","'70 Chevelle","Radial Supra","Outlaw Firebird","'63 Falcon","Nitrous Duster"],
   promod:["Pro-mod '68 Camaro","Pro-mod Corvette","Pro-mod '41 Willys","Pro-mod Mustang","Pro-mod GTO","Pro-mod Camaro","Pro-mod '53 Corvette","Pro-mod Firebird","Pro-mod Dart","Pro-mod Cuda"],
-  rail:["Front-engine dragster","Rear-engine rail","Top dragster","Alcohol dragster","Junior-built rail","Swingarm rail","Long-wheelbase rail","Nostalgia digger","Top sportsman rail","Turbo rail"]};
+  rail:["Front-engine dragster","Rear-engine rail","Top dragster","Alcohol dragster","Junior-built rail","Swingarm rail","Long-wheelbase rail","Nostalgia digger","Top sportsman rail","Turbo rail"],
+  funny:["Nitro Mustang funny car","Nitro Camaro funny car","Nitro Charger funny car","Alcohol Mustang funny car","Alcohol Camaro funny car","Nostalgia Charger funny car","Nostalgia Vega funny car","Alcohol Monza funny car","Nostalgia 'Cuda funny car","Nitro Challenger funny car"],
+  prostock:["Pro stock Camaro","Pro stock Mustang","Pro stock Dart","Pro stock Firebird","Pro stock GXP","Pro stock Cobalt","Pro stock Strata","Pro stock Thunderbird","Pro stock Probe","Pro stock Avenger"],
+  gasser:["'55 Chevy gasser","'41 Willys gasser","'33 Willys gasser","'56 Chevy gasser","'57 Bel Air gasser","Anglia gasser","Austin gasser","'40 Willys pickup gasser","'55 Chevy 210 gasser","'37 Chevy gasser"]};
 const RN_DRV=["Dale Kowalchuk","Marie Lavoie","Tyler Sorensen","Wes Bouchard","Kim Nakamura","Rhett Dyck","Jo Fehr","Sam Okafor","Lena Penner","Cody Gauthier","Ana Petrova","Reggie Thiessen","Bo Lindqvist","Nora Wiebe","Gus Halvorsen","Priya Sandhu"];
 const RN_FMT={elim:"Heads-up eliminations",bracket:"Bracket racing"};
 const RN_STAGE=["QUALIFYING 1","QUALIFYING 2","QUARTER-FINAL","SEMI-FINAL","FINAL"],RN_TT=["TIME TRIAL 1","TIME TRIAL 2"];
@@ -525,8 +528,12 @@ const RNLG_SIL={   // side views facing right, 30×13
   street:"M29 9.6 28.6 7.2 23.4 6.1 19.2 3.2 11 3 7 6 1.6 6.8 1 9.6Z",
   outlaw:"M29 9.6 28.6 7.3 23 6.3 19 3.4 11.2 3.2 7.4 6.1 2.6 6.4 2.2 4.6 .6 4.6 .8 9.6Z",
   promod:"M29.3 9.6 28.4 7.9 21.5 6.6 17.2 3.8 10.4 3.6 6.4 6 2.4 6 2 3.8 .4 3.8 .6 9.6Z",
-  rail:"M29.6 9.4 25 8.4 11 7.8 9.4 5.6 7.4 5.6 6.4 7.4 3.2 7.4 3.2 3 .4 2 .4 3.4 2 3.6 2 9.6Z"};
-const RNLG_WH={street:[[23.4,10.2,2.4],[6.8,10.2,2.4]],outlaw:[[23.6,10.6,2],[6.6,9.8,3]],promod:[[23,10.4,2.2],[6.4,9.7,3]],rail:[[27,10.8,1.5],[5.2,9.3,3.6]]};
+  rail:"M29.6 9.4 25 8.4 11 7.8 9.4 5.6 7.4 5.6 6.4 7.4 3.2 7.4 3.2 3 .4 2 .4 3.4 2 3.6 2 9.6Z",
+  funny:"M29.6 9.6 29 8.6 20 6.8 14 4.4 9.6 4.2 6.4 4.8 2.2 3.4 .6 3.4 1 9.6Z",
+  prostock:"M29.4 9.6 28.6 8.2 21.6 6.8 17 4.2 10.6 4 6.2 6 1.4 6.4 .8 9.6Z",
+  gasser:"M28.8 7.4 28.4 4.6 22.6 3.8 18.6 1.4 11.2 1.4 7.6 4.6 1.6 5.8 1.2 9.4Z"};
+const RNLG_WH={street:[[23.4,10.2,2.4],[6.8,10.2,2.4]],outlaw:[[23.6,10.6,2],[6.6,9.8,3]],promod:[[23,10.4,2.2],[6.4,9.7,3]],rail:[[27,10.8,1.5],[5.2,9.3,3.6]],
+  funny:[[24.4,10.9,1.7],[6.2,9.7,2.9]],prostock:[[23,10.4,2.2],[6.4,9.7,2.9]],gasser:[[23.4,10.4,2.2],[6.8,10,2.6]]};
 function rnSil(body,col){const b=RNLG_SIL[body]?body:"street";return`<svg viewBox="0 0 30 13" aria-hidden="true"><path d="${RNLG_SIL[b]}" fill="${col}"/>${RNLG_WH[b].map(([cx,cy,r])=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#121417" stroke="#5a606b" stroke-width=".7"/>`).join("")}</svg>`;}
 const rnPaint=(N,i)=>i===0?"var(--orange)":`hsl(${rnHash(N.field[i-1].name)%360} 52% 56%)`;
 function rnLadderHtml(N){const br=N.fmt==="bracket",seedOf=i=>N.seeds?N.seeds.indexOf(i)+1:"",cur=N.done?-1:N.stage-2;
