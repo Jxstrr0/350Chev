@@ -146,6 +146,9 @@ html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
 .seg.n11 button,.seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .seg.n8 button{flex:1 1 22%}
+/* the drag body picker (7 classes): a compact grid, two across on a phone, the note wrapping instead of clipping */
+.seg.segbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}html.desk .seg.segbody{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.seg.segbody button{padding:8px 6px;min-height:46px}.seg.segbody button small{white-space:normal;font-size:10.5px;line-height:1.25;overflow:visible}
 .seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .paints{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
 .paints button{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:2px solid var(--rule);background:var(--panel);padding:5px;cursor:pointer}
@@ -947,6 +950,17 @@ html.evhud #rpmbox{display:none!important}
 #evHud .e24prog{margin-top:4px;height:5px}#evHud .e24sc{margin-top:4px;padding:1px 0;font-size:11px}
 #evHud .e24g{gap:3px 4px;margin-top:4px}#evHud .e24g>div{padding:2px 6px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:5px}#evHud .e24g b{font-size:14px;line-height:1.2}#evHud .e24g span{font-size:9px}#evHud .e24g .ph-bar{flex:1 0 100%;height:3px;margin-top:2px}
 html:not(.desk) #evHud .e24g i{display:none}html.desk #evHud .e24g i{font-size:10px;flex:1 0 100%}   /* phone: the reading only, the notes stay for the desktop bar */
+/* phone: a label row never clips with "…": the narrower body face, and the right-hand note drops under the left one when the
+   two don't fit. The 24 Hours and hillclimb strips go compact (the map beside two rows, one-line readings, smaller type) so the car stays in sight */
+#evHud .ph-lbl{flex-wrap:wrap;column-gap:6px;overflow:visible}#evHud .ph-lbl span{overflow:visible;text-overflow:clip;flex:0 0 auto}#evHud .ph-lbl span:last-child{margin-left:auto}
+html:not(.desk) #evHud .ph-lbl{font-family:var(--body);font-size:11px}html:not(.desk) #evHud .ph+.ph .ph-lbl{font-size:10.5px}
+html:not(.desk) #evHud:is([data-ev=e24Hud],[data-ev=hillLive]){padding-top:8px}
+html:not(.desk) #evHud .e24h{grid-template-columns:auto auto minmax(0,1fr) auto;row-gap:3px}html:not(.desk) #evHud .e24map{grid-column:4;grid-row:1/3;align-self:end}
+html:not(.desk) #evHud .e24gp{grid-column:1/4;padding-top:3px}html:not(.desk) #evHud .e24c b,html:not(.desk) #evHud .e24p b{font-size:20px}html:not(.desk) #evHud .e24h i{margin-top:1px;font-size:9.5px}
+html:not(.desk) #evHud .e24g>div{padding:1px 5px}html:not(.desk) #evHud .e24g b{font-size:13px;line-height:1.15}html:not(.desk) #evHud .e24g .ph-bar{height:2px;margin-top:1px}
+html:not(.desk) #evHud .hlh .rd-spd b{font-size:24px}html:not(.desk) #evHud .hlh .rd-g b{font-size:19px}html:not(.desk) #evHud .hlh .rd-lt b{font-size:16px}
+html:not(.desk) #evHud .hl-meters{grid-template-columns:repeat(3,auto);justify-content:space-between}html:not(.desk) #evHud .hl-meters .peak{padding:1px 5px}
+html:not(.desk) #evHud .hl-meters .peak b{font-size:14px}html:not(.desk) #evHud .hl-meters .peak span{overflow:visible;text-overflow:clip;font-family:var(--body);font-size:10px;letter-spacing:0;text-transform:none}
 html.desk #evHud{left:18px;right:auto;bottom:16px;width:min(720px,calc(100% - min(320px,34%) - 56px));padding:10px 14px 9px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
 html.desk #evHud .ph-top b{font-size:34px}html.desk #evHud .ph-lbl{font-size:11.5px}html.desk #evHud .ph-row .peak b{font-size:19px}
 html.desk #evHud .rd-spd b{font-size:40px}html.desk #evHud .rd-map,html.desk #evHud .e24map{width:110px;height:78px}html.desk #evHud .e24c b,html.desk #evHud .e24p b{font-size:30px}

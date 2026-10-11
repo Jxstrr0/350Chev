@@ -88,7 +88,12 @@ function saltBoard(B, p, s, ry, uv, key){ key=key||"csign"; B.add(key,"plane",p,
 /* --- the HUD band: --salthud on #view is the strip of the view the dock covers; an off-axis lens shift lifts the picture
    so the car frames above it (like stripLens) --- */
 function saltBandRead(){ var host=canvasEl&&canvasEl.parentElement; SALT.band=0; if(host){ try{ SALT.band=parseFloat(getComputedStyle(host).getPropertyValue("--salthud"))||0; }catch(e){} } }
-function saltLens(cam){ var b=SALT.band||0, h=SALT.viewH||0; if(!(b>0&&h>0)) return;
+function saltLens(cam, fitted){
+  /* the run view's HUD band (VBAND, vis/band.js) wins while it is up: it already counts the dock, so the picture is lifted once.
+     bandFov widens a portrait shot as in the other scenes, except a shot already sized to the view's width (fitted) */
+  if(VBAND.px>0 && VBAND.h>0){ if(!fitted){ var f=bandFov(cam.fov, cam.aspect); if(f!==cam.fov){ cam.fov=f; cam.updateProjectionMatrix(); } }
+    cam.projectionMatrix.elements[9]=-clamp(VBAND.px/VBAND.h,0,0.3); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); return; }
+  var b=SALT.band||0, h=SALT.viewH||0; if(!(b>0&&h>0)) return;
   cam.projectionMatrix.elements[9]=-clamp(b/h,0,0.3); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); }
 
 /* --- the nose cam's seat: find the bodywork under a point a third of the way back from the nose, and the nose itself,
