@@ -170,7 +170,7 @@ const ENGINE_VIS = {
   },
   pullSkip: function(){ if(PULL.on) PULL.skip=true; },
   /* MUD BOG: fed every frame {on, phase:"stage"|"runup"|"pit"|"done", x (front axle, m from the pit's near edge), v, wspd (tyre surface speed), slip, sink, y, vy,
-     dFront, dRear (mud depth under each axle), rpm, throttle, smoke, cls, tyre, color?, night, len, cons, pit:{seed, len, cons} (builds the night's mud), mudKg,
+     dFront, dRear (mud depth under each axle), rpm, throttle, smoke, cls, tyre, color?, night, len, cons, pit:{seed, len, cons} (builds the night's mud), mudKg, pack (lugs packed 0..1, optional),
      slap (a splash this frame, 0..1.5), cleared, failed, shot? (force a camera), dt?}; {on:false} leaves */
   setBog: function(o){
     if(!renderer) return;
