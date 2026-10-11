@@ -114,10 +114,10 @@ html:not(.desk) .evpick small{font-size:10.5px;letter-spacing:-.01em}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
 :root[data-theme=light] .evpick button.on{background:linear-gradient(180deg,rgba(232,98,10,.16),rgba(232,98,10,.05))}
-:root[data-theme=light] .evpick button.lock small{color:var(--muted)}
+:root[data-theme=light] .evpick button.lock small{color:var(--muted)}:root[data-theme=light] .evpick button.live small{color:#a8440a}
 /* light: --good / --warn are dark enough for text on white and on --soot (≥4.5:1: stress report figures, the 24 h gate note, "legal");
    the hillclimb's lit LIFT button and the safety-car tag go white on it while they sit in the panel */
-:root[data-theme=light] #panel :is(.hlbtns #hillLift.on,.e24sc){color:#fff}   /* --dim on white is ~3.6:1 at this size */
+:root[data-theme=light] #panel :is(.hlbtns #hillLift.on,.e24sc){color:#fff}   /* --dim on white is ~3.6:1 and --orange2 on the soot ~3.8:1 at this size */
 .tbusy{padding:10px 12px;border:1px dashed var(--rule);border-radius:6px}
 .tbusy .chip{margin-left:6px}
 .card .evgo{display:block;margin:8px 0 2px;color:var(--orange2);border-color:var(--orange)}
