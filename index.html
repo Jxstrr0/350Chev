@@ -8049,7 +8049,7 @@ const ENGINE_SIM = (function () {
       const Qc = Qp / Gr / 0.95;
       st.rpm += (Te - Qc) / Ie * dt * 60 / (2 * Math.PI);
       if (st.rpm < v.idle * 0.85 && !st.broke) st.rpm = v.idle * 0.85; if (st.rpm < 0) st.rpm = 0;
-      if (st.rpm > v.redline * 1.005) st.limT += dt;
+      if (st.rpm > v.redline * 1.005 && (st.air || st.blown)) st.limT += dt;   // bouncing off the limiter with the prop unloaded floats the valves
       st.peakRpm = Math.max(st.peakRpm, st.rpm);
       // the hull: trim, attitude, aero lift on the bow; porpoising, chine walk, a nose that gets light
       const f = st.v / HU.vh; st.pl = boatSm(0.6, 1.6, f);
@@ -8060,15 +8060,15 @@ const ENGINE_SIM = (function () {
       st.porp = clamp(st.porp + dt * (st.pl > 0.7 ? 1.3 * (st.trim - pT) + 0.6 * st.kick * 0.2 : -2) - dt * 1.1 * st.porp, 0, 1.4); if (st.porp > 0.35) st.porpT += dt;
       if (HU.walk) { const over = st.trim - (tOpt + 0.8), sp = st.v / HU.walk; st.walk = clamp(st.walk + dt * ((sp > 1 ? 0.9 * over * sp + 0.25 * W0.chop * sp : -1.5) - 0.8 * st.walk - 1.2 * (1 - thr) * st.walk), 0, 1.6); if (st.walk > 0.3) st.walkT += dt; }
       const R = Wt * hullRW(st.v, st.trim, st.Lr) + 0.6 * HU.cdA * vAir * Math.abs(vAir) * (1 + 0.1 * st.walk);
-      st.R = R;
-      const acc = run || st.v > 0 ? (Tp - R) / (m * 1.05) : 0;
+      st.R = R + (st.dnf && st.dnf !== "time" ? 2.5 * Wt : 0);   // over, hooked or stuffed: it stops in a hurry
+      const acc = run || st.v > 0 ? (Tp - st.R) / (m * 1.05) : 0;
       const xPrev = st.x, vPrev = st.v, tPrev = st.t - dt;
       st.v = Math.max(0, st.v + acc * dt); st.x += st.v * dt; st.acc = acc; st.maxV = Math.max(st.maxV, st.v);
       if (st.humpT == null && f > 1) st.humpT = st.t - (st.rt || 0); if (st.planeT == null && st.pl > 0.95) st.planeT = st.t - (st.rt || 0);
       st.bow = (f < 1 ? 7.5 * Math.pow(f, 1.4) : 7.5 * Math.exp(-Math.pow((f - 1) / 0.8, 2))) * (1 - 0.06 * Math.max(0, -st.trim)) + st.pl * st.alpha * 0.55;
       st.vy = st.hopV;
       // heat: raw water through the block — cool, unless the pickup is choked
-      st.cool += dt * ((50 + 22 * thr - st.cool) * (st.debris && !jet ? 0.02 : 0.8) + (st.debris && !jet ? 14 * thr : 0)); st.coolPeak = Math.max(st.coolPeak, st.cool);
+      st.cool += dt * ((50 + 22 * thr - st.cool) * (st.debris && !jet ? 0.02 : 0.8) + (st.debris && !jet ? 7 * thr : 0)); st.coolPeak = Math.max(st.coolPeak, st.cool);
       if (thr > 0.6) loadT += dt;
       // the debris: a bag of weed on the prop, or a stick in the grate
       if (deb && !st.debris && st.x >= deb.x) st.debris = { x: +st.x.toFixed(1), kind: deb.kind };
@@ -8083,7 +8083,7 @@ const ENGINE_SIM = (function () {
           if (failKind && loadT >= failAt) st.broke = failKind;
           else if (v.wornAt && loadT >= v.wornAt) st.broke = "worn";
           else if (st.limT > limTrip) st.broke = "valve_float";
-          else if (st.cool > 118) st.broke = "head_lift";
+          else if (st.cool > 124) st.broke = "head_lift";
           if (st.broke) st.failKind = st.broke;
         }
       }
@@ -19262,7 +19262,7 @@ function boatModel(cls, color){
       box(paint, 5.6, 0.55, sd*0.95, 2.6, 0.08, 1.0); });   /* sponsons and the wing deck between */
     box(dark, 6.6, 0.85, 0, 1.4, 0.45, 0.8); var cap=new THREE.Mesh(new THREE.SphereGeometry(0.5,14,10,0,TAU,0,PI/2), glass); cap.scale.set(1.6,0.9,0.9); cap.position.set(6.6,1.05,0); pivot.add(cap);   /* the capsule */
     box(dark, 2.6, 1.0, 0, 2.2, 0.7, 0.9); box(chrome, 2.9, 1.55, 0, 0.9, 0.45, 0.55); box(dark, 2.9, 1.95, 0, 0.7, 0.35, 0.45);   /* engine, blower, hat */
-    box(dark, 0.3, 1.0, -0.6, 0.12, 1.2, 0.08); box(dark, 0.3, 1.0, 0.6, 0.12, 1.2, 0.08); box(paint, 0.3, 1.62, 0, 0.9, 0.08, 2.8);   /* the rear wing */
+    box(dark, 0.3, 1.0, -0.6, 0.12, 1.2, 0.08); box(dark, 0.3, 1.0, 0.6, 0.12, 1.2, 0.08); box(paint, 0.3, 1.62, 0, 0.7, 0.05, 2.2);   /* the rear wing */
     box(dark, -0.3, -0.05, 0, 0.7, 0.1, 0.1);
   } else {
     var flat=cls==="pro"||cls==="jet", wl=cls==="jet"?6.6:6.8;
