@@ -136,7 +136,7 @@ function showResult(res,env){
 }
 function smokeWord(r,short){const s=r.smoke||0,lm=r.fuel&&r.fuel.lamMin,lam=S.cfg.lambda;if(short)return s<8?"clean":s<35?"haze":"black";return s<8?"clean stack":s<35?"light haze":(lm&&lm<lam-0.05?"black under spool":"black at full load");}
 $("stressList").addEventListener("click",e=>{const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
-$("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${SIM.cfgLabel(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
+$("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${cfgLbl(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
 
 function slipLine(r){return [r.race&&r.race.rt!=null?`RT ${r.race.foul?"red":r.race.rt.toFixed(3)}`:null,r.sixty?`60 ft ${r.sixty.t.toFixed(3)}`:null,r.ft330?`330 ${r.ft330.t.toFixed(3)}`:null,r.eighth?`1/8 ${r.eighth.t.toFixed(3)} @ ${Math.round(r.eighth.mph)}`:null,r.ft1000?`1000 ${r.ft1000.t.toFixed(3)}`:null,r.et!=null?`1/4 ${r.et.toFixed(3)} @ ${Math.round(r.mph)}`:null].filter(Boolean).join(" · ");}
 function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
@@ -276,8 +276,8 @@ const ACH=[
   {g:"strip",id:"sixty",name:"Hooked up",desc:"A 60-foot time of 1.40 s or quicker.",ic:"wheel",tier:"silver",check:x=>x.sixty<=1.4},
   {g:"strip",id:"wheelie",name:"Wheelie",desc:"Lift the front wheels off the track.",ic:"wheel",tier:"bronze",check:x=>!!x.wheelie},
   {g:"strip",id:"win",name:"Won the lane",desc:"Win a heads-up race.",ic:"trophy",tier:"bronze",check:x=>!!x.win},
-  {g:"strip",id:"holeshot",name:"Holeshot",desc:"Win heads-up with the slower ET.",ic:"tree",tier:"silver",check:x=>!!x.holeshot},
-  {g:"strip",id:"perfect",name:"Perfect light",desc:"A reaction time of 0.010 s or better.",ic:"tree",tier:"gold",check:x=>x.rt>=0&&x.rt<=0.010},
+  {g:"strip",id:"holeshot",name:"Holeshot",desc:"Win heads-up with the slower ET, driving it yourself.",ic:"tree",tier:"silver",check:x=>!!x.holeshot},
+  {g:"strip",id:"perfect",name:"Perfect light",desc:"A reaction time of 0.010 s or better, driving it yourself.",ic:"tree",tier:"gold",check:x=>x.rt>=0&&x.rt<=0.010},
   {g:"strip",id:"show",name:"Made the show",desc:"Qualify for a race-night ladder.",ic:"flag",tier:"bronze",check:x=>!!x.qualified},
   {g:"strip",id:"night",name:"Won the night",desc:"Win a race night.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=1},
   {g:"strip",id:"night3",name:"Regular",desc:"Win three race nights.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=3},
@@ -324,12 +324,13 @@ function achFacts(x){
       if(res.diesel){f.dsl=true;if(pull){const t=(res.tests||[]).find(q=>q.id==="cold_start");if(env.ambientC<=-25&&t&&t.util<=1)f.cold=true;}}}
     if(res.diesel&&pull)f.smoke=res.smoke;
     if(env.testType==="overrev"&&res.overrev&&res.overrev.survived&&!res.fails.length)f.overrevOk=true;}
-  else if(x.type==="drag"){const r=x.r,ra=r.race,nt=r.night,ok=!x.failed&&r.et!=null&&!(ra&&ra.foul)&&!(career()&&r.mph>150&&!r.chute);
+  // the light (reaction time, holeshot) counts only if you drove it: "You drive", or you took over from Auto before the tree lit (r.auto.pre). ET and mph count either way
+  else if(x.type==="drag"){const r=x.r,ra=r.race,nt=r.night,you=!r.auto||!!r.auto.pre,ok=!x.failed&&r.et!=null&&!(ra&&ra.foul)&&!(career()&&r.mph>150&&!r.chute);
     if(ok){f.et=r.et;f.mph=r.mph;if(r.sixty)f.sixty=r.sixty.t;if(r.launch&&r.launch.ctl&&r.launch.ctl!=="none")f.twostep=true;if(r.wheelieT>=0.2||r.liftMax>=0.6)f.wheelie=true;
-      if(ra&&ra.rt!=null)f.rt=ra.rt;if(nt&&nt.fmt==="bracket"&&nt.dialP!=null&&nt.stage>=2)f.deadOn=Math.abs(r.et-nt.dialP);
+      if(ra&&ra.rt!=null&&you)f.rt=ra.rt;if(nt&&nt.fmt==="bracket"&&nt.dialP!=null&&nt.stage>=2)f.deadOn=Math.abs(r.et-nt.dialP);
       if(r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;f.shotHp=r.n2o.shotHp;}}
     else if(!x.failed&&r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;}
-    if(ra&&ra.won&&!ra.foul){f.win=true;if(r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
+    if(ra&&ra.won&&!ra.foul){f.win=true;if(you&&r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
     if(nt&&nt.stage>=2)f.qualified=true;}
   else if(x.type==="bog"){const r=x.r;if(!x.failed){if(r.cleared){f.bogThru=true;f.bogAvg=r.avgMph||0;}if(r.place===1)f.bogWin=true;}}
   else if(x.type==="boat"){const r=x.r;if(!x.failed&&r.et!=null&&!(r.match&&r.match.foul)){f.boatPass=true;f.boatMph=r.mph||0;}if(x.place===1)f.boatWin=true;}
@@ -433,7 +434,7 @@ function renderAnalysis(){
     ["Seal oiling",`${Math.round(R.oilUtil*100)}% of supply`],["Oil burnt",`${R.oilL.toFixed(1)} L/1000 km`],["Carbon build-up",`${Math.round(R.carbon*100)}%`],["Idles at",`${R.idleRpm.toLocaleString()} rpm`],
     ["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]);}
   if(r.twoStroke){const R=r.twoStroke;rows.splice(0,rows.length,   // a two-stroke: delivery and trapping, the pipe and the oil instead of valvetrain numbers
-    ["Firing rate",`${Math.round(R.firingHz).toLocaleString()}/s · every turn`],["Swept / eq.",`${R.swept.toFixed(R.swept<1?3:2)} L · ${R.eq.toFixed(R.eq<2?2:1)} L 4T`],
+    ["Firing rate",`${Math.round(R.firingHz).toLocaleString()}/s · every turn`],["Swept / eq.",`${R.swept<1?fmtDisp(R.swept):R.swept.toFixed(2)+" L"} · ${R.eq<1?fmtDisp(R.eq):R.eq.toFixed(R.eq<2?2:1)+" L"} 4T`],
     ["Delivery ratio",`${R.drPk.toFixed(2)} at peak`],["Trapping",`${Math.round(R.tePk*100)}% · ${R.scChargePct}% lost`],
     ...(isCI(S.cfg.fuel)?[["Fuel cetane",`${K.cetane}`],["Smoke (peak)",`${Math.round(r.smoke||0)}%`]]:[["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Fuel out the pipe",`${R.scFuelPct}% at peak`]]),
     ["Ports timed for",`${(Math.round(R.rpmP/100)*100).toLocaleString()} rpm · ${Math.round(R.ep)}°/${Math.round(R.tp)}°`],

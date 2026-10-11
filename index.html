@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.42.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.42.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -107,7 +107,7 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick button:last-child:nth-child(odd){grid-column:1/-1}
 .evpick svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:break-word}   /* a long status ("needs Outlaw shop") wraps to a second line */
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
@@ -5869,9 +5869,9 @@ const ENGINE_SIM = (function () {
       blurb: "Three loop-scavenged cylinders on a piston-port crankcase, one Solex carburettor and 33:1 in the tank. It rallied, it smoked, and it goes 'ring-ding-ding' at idle like nothing else on four wheels.",
       soundProfile: null, realHp: 38, realRpm: 5000, realNm: 79,
       cfg: {
-        cycle: "two", layout: "I3", bore: 70, stroke: 72.9, rodRatio: 1.85, cr: 5.8, ccr: 1.25, blockMat: "grey_iron", deck: "open", headMat: "alu",
+        cycle: "two", layout: "I3", bore: 70, stroke: 72.9, rodRatio: 1.85, cr: 5.8, ccr: 1.16, blockMat: "grey_iron", deck: "open", headMat: "alu",
         piston: "cast_alu", pistonClearance: "standard", rings: "cast", rod: "cast_steel", rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "bimetal",
-        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 126, tPort: 112, pv: "none", redline: 5500, induct: "piston", tsFuel: "carb",
+        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 134, tPort: 124, pv: "none", redline: 5500, induct: "piston", tsFuel: "carb",
         asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 5000,
         fuel: "r87", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.90, lube: "premix", premix: 33, cooling: "std", cover: "silver",
         head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
@@ -5881,9 +5881,9 @@ const ENGINE_SIM = (function () {
       blurb: "594 cc, two air-cooled cylinders, a piston-port crankcase and a single carburettor, built for thirty years with hardly a change. Twenty-six horsepower, a cloud of blue and a sound like a two-stroke lawnmower with ambition.",
       soundProfile: null, realHp: 26, realRpm: 4200, realNm: 54,
       cfg: {
-        cycle: "two", layout: "I2", bore: 72, stroke: 73, rodRatio: 1.85, cr: 5.8, ccr: 1.25, blockMat: "grey_iron", deck: "open", headMat: "alu",
+        cycle: "two", layout: "I2", bore: 72, stroke: 73, rodRatio: 1.85, cr: 5.8, ccr: 1.16, blockMat: "grey_iron", deck: "open", headMat: "alu",
         piston: "cast_alu", pistonClearance: "standard", rings: "cast", rod: "cast_steel", rodBolts: "oem", crank: "cast_nodular", damper: "rubber", bearings: "bimetal",
-        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 118, tPort: 108, pv: "none", redline: 4500, induct: "piston", tsFuel: "carb",
+        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 128, tPort: 116, pv: "none", redline: 4500, induct: "piston", tsFuel: "carb",
         asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 4200,
         fuel: "r87", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.92, lube: "premix", premix: 33, cooling: "std", cover: "blue",
         head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
@@ -19196,6 +19196,7 @@ function buildBogScene(){
   M.sign=new THREE.MeshStandardMaterial({map:bogAtlas(), roughness:0.72});
   M.dirt=new THREE.MeshStandardMaterial({color:sc(0x5a4029), roughness:1});
   M.mud=new THREE.MeshStandardMaterial({color:0xb0a090, roughness:0.3, metalness:0.0, envMapIntensity:0.45});
+  bogMudWet(M.mud);
   var B=new StripBatch(), STEEL=0x8d9296, ALU=0xb9bec4, DARK=0x2a2c2f, RUB=0x1a1a1c;
   /* berms: long dirt banks both sides (scaled to the night's pit), one across the far end, a tyre wall in front of it */
   BOG.berms=[]; [-1,1].forEach(function(sd){ var m=new THREE.Mesh(sbGeo().prism, M.dirt); m.scale.set(84,1.8,3.4); m.position.set(35,-0.05,sd*(BOG_W/2+1.9)); m.castShadow=!lite; m.receiveShadow=true; S3.add(m); BOG.berms.push(m); });
@@ -19256,6 +19257,25 @@ function buildBogScene(){
   BOG.cam=new THREE.PerspectiveCamera(46, 1, 0.3, 3600); BOG.built=true;
   BOG.night=null; bogSetNight(false);
 }
+/* wet mud by day: the material is darker and browner in daylight, and on Full/Ultra (MUD_VAR) a world-space noise breaks it
+   into broad tonal patches with glossy wet slicks between matte crust, so it still reads as mud from the stands. Lite keeps
+   the plain material (only its colour and gloss change: no extra shader work). Night uses the original look (uDay 0). */
+function bogMudWet(m){
+  var uDay={value:0}; m.userData.uDay=uDay;
+  m.onBeforeCompile=function(sh){ sh.uniforms.uMudDay=uDay;
+    sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\n#ifdef MUD_VAR\nvarying vec2 vMw;\n#endif").replace("#include <project_vertex>", "#include <project_vertex>\n#ifdef MUD_VAR\nvMw=(modelMatrix*vec4(transformed,1.0)).xz;\n#endif");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform float uMudDay;\n#ifdef MUD_VAR\nvarying vec2 vMw;\n"+STRIP_GLSL_NOISE+"\n#endif")
+      .replace("#include <color_fragment>", "#include <color_fragment>\n#ifdef MUD_VAR\nfloat mTone=sn(vMw*0.33)*0.65+sn(vMw*1.6+3.1)*0.35, mWet=smoothstep(0.42,0.68,sn(vMw*0.55+vec2(7.0,2.0)));\ndiffuseColor.rgb*=mix(1.0,(0.74+0.5*mTone)*(1.0-0.16*mWet),uMudDay);\n#endif")
+      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n#ifdef MUD_VAR\nroughnessFactor*=mix(1.0,mix(1.3,0.42,mWet),uMudDay);\n#endif");
+  };
+  m.customProgramCacheKey=function(){ return "bog_mud"+(m.defines&&m.defines.MUD_VAR!==undefined?"_v":""); };
+}
+function bogMudLook(on, lite){
+  var m=BOG.mats&&BOG.mats.mud; if(!m||!m.userData.uDay) return; m.userData.uDay.value=on?0:1;
+  m.color.set(on?0xb0a090:0x84644a);           /* by day: darker, browner (the sun is 10x the floods and washed it to grey) */
+  m.envMapIntensity=on?0.45:0.32;               /* less grey sky in the sheen; the sun still glints off it */
+  var v=!lite; if(v!==(m.defines&&m.defines.MUD_VAR!==undefined)){ m.defines=v?{MUD_VAR:""}:{}; m.needsUpdate=true; }
+}
 function bogSetNight(on){
   on=!!on; var tierChanged=BOG.tier!==GFX; if(BOG.night===on && !tierChanged) return;
   BOG.night=on; BOG.tier=GFX; var S3=BOG.scene, lite=(GFX==="lite"), M=BOG.mats;
@@ -19266,6 +19286,7 @@ function bogSetNight(on){
   BOG.hemi.intensity=on?0.14:0.2; BOG.hemi.color.set(on?0x3a4764:0xcfdcf0); BOG.hemi.groundColor.set(on?0x16130e:0x6a5a3c);
   BOG.flood.intensity=on?(lite?0.6:0.28):0;
   M.lamp.color.set(on?0xffffff:0x5e5e5e);
+  bogMudLook(on, lite);
   if(BOG.beamMesh){ BOG.beamMesh.visible=on; M.beam.opacity=on?0.014:0; }
   S3.environment=stripEnv(on); BOG.exposure=on?1.0:0.9;
   [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F){ F.mat.uniforms.uAmb.value=F===BOG.fx?1:(on?0.45:1); F.mat.uniforms.uFogN.value=S3.fog.near; F.mat.uniforms.uFogF.value=S3.fog.far; } });
@@ -21932,7 +21953,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.42.0.0";
+const VERSION="1.42.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -21991,7 +22012,7 @@ function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?JSON.
 function writeSlot(i){try{const o=snapshot();o.savedAt=Date.now();localStorage.setItem(slotKey(i),JSON.stringify(o));return true;}catch(e){return false;}}
 function clearSlot(i){try{localStorage.removeItem(slotKey(i));}catch(e){}}
 function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt):null;const when=d?d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-CA",{hour:"2-digit",minute:"2-digit"}):"";
-  const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${SIM.cfgLabel(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
+  const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
 function encodeSave(o){return"PEW2:"+btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
 function decodeSave(t){t=(t||"").trim();if(t.startsWith("PEW2:"))t=t.slice(5);const o=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,"")))));if(!o||!o.cfg)throw new Error("bad");return o;}
 function renderSaves(){const box=$("slots");if(!box)return;let h="";for(let i=1;i<=SLOTS;i++){const o=readSlot(i);h+=`<div class="slot ${o?"full":""}"><div><h3>Slot ${i}${o?"":"<small>empty</small>"}</h3><p>${slotSummary(o)}</p></div><div class="acts"><button class="pri" data-save="${i}">Save</button><button data-load="${i}" ${o?"":"disabled"}>Load</button><button class="del" data-clear="${i}" ${o?"":"disabled"}>Clear</button></div></div>`;}box.innerHTML=h;}
@@ -22032,6 +22053,9 @@ const HASH_DEF={pipe:"stock",muffler:"stock",cat:"none",cutout:"none",turbine:"f
 function cfgHash(c){const dsl=isCI(c.fuel),rot=isRot(c),ts=isTs(c);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(!rot&&ROT_KEYS[k])&&!(!ts&&TS_KEYS[k])&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
+/* displacement for display: cc below a litre ("125 cc"), litres from 1.0 up. sp: the gap before "L" */
+function fmtDisp(L,sp){return L<1?Math.round(L*1000)+" cc":L.toFixed(1)+(sp==null?" ":sp)+"L";}
+function cfgLbl(cfg){return SIM.cfgLabel(cfg).replace(/(\d+\.\d+) L\b/,(m,v)=>+v<1?fmtDisp(presetDisp({cfg})):m);}   // SIM.cfgLabel prints litres; small engines read in cc
 function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.short||o.name.split(" ")[0];}
 function isGasF(f){const o=OPT.fuel[f];return !!(o&&o.gas);}
 const INJ_SHORT={rotary_ve:"VE",inline_mech:"P-pump",heui:"HEUI",cr_gen1:"CR",cr_piezo:"CR",unit_dd:"unit inj"};
@@ -22111,12 +22135,12 @@ $("heatBtn").addEventListener("click",()=>{S.heat=!S.heat;applyHeat();save();toa
 /* ---- engine card: name + headline numbers + status, reused everywhere an engine is shown ---- */
 const ASP_SYM={na:"NA",turbo:"T",twin_turbo:"TT",roots:"SC",centrifugal:"SC",screw:"SCREW",compound:"CT"};
 function engineName(){return S.name||autoName();}
-function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${isRot(S.cfg)?LAYOUTS[S.cfg.layout].n+"-rotor":isTs(S.cfg)?"two-stroke "+S.cfg.layout:S.cfg.layout} ${(quick?quick.Vd/1000:0).toFixed(isTs(S.cfg)&&quick&&quick.Vd<1000?2:1)}`;}
+function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${isRot(S.cfg)?LAYOUTS[S.cfg.layout].n+"-rotor":isTs(S.cfg)?"two-stroke "+S.cfg.layout:S.cfg.layout} ${quick?fmtDisp(quick.Vd/1000,""):""}`;}
 const ROT_PORT_SHORT={side:"side port",sidex:"side exhaust",street:"street port",bridge:"bridge port",peri:"peri port"};
 function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==="na"?"NA":(ASP_SYM[cfg.asp]||cfg.asp.toUpperCase())+(cfg.asp!=="na"?" "+cfg.boost.toFixed(1)+"bar":"");
-  if(isTs(cfg))return `<b>2T ${cfg.layout==="D18"?"Deltic":cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(res.Vd<1000?2:1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${{loop:"loop",cross:"cross",uniflow:"uniflow"}[cfg.scav]||"loop"}<i>·</i>${cfg.xpipe==="chamber"&&!isCI(cfg.fuel)?"pipe "+(cfg.pipeRpm/1000).toFixed(1)+"k":cfg.induct==="blower"?"blown":cfg.induct}<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;
-  if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
-  return `<b>${cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
+  if(isTs(cfg))return `<b>2T ${cfg.layout==="D18"?"Deltic":cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${{loop:"loop",cross:"cross",uniflow:"uniflow"}[cfg.scav]||"loop"}<i>·</i>${cfg.xpipe==="chamber"&&!isCI(cfg.fuel)?"pipe "+(cfg.pipeRpm/1000).toFixed(1)+"k":cfg.induct==="blower"?"blown":cfg.induct}<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;
+  if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
+  return `<b>${cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
   if(res.fails&&res.fails.length)return{cls:"bad",txt:"✗ BREAKS"};
   if(career()){const inField=C().fleet.filter(f=>f.hash===h&&C().week-f.week<=10).reduce((a,f)=>a+f.units,0);if(inField)return{cls:"fld",txt:`◆ ${inField} IN FIELD`};
@@ -22137,7 +22161,7 @@ function recompute(){
   combosNow=SIM.combos(S.cfg,simEnv(Object.assign({testType:"pull"},ddEnvX())),quick);
   if(S.heat)applyHeat();
   if(document.activeElement&&document.activeElement.id==="nameIn"){/* don't clobber while typing */}else $("tag").innerHTML=engineCard(S.cfg,quick,{editable:true});
-  $("sDisp").textContent=(quick.Vd/1000).toFixed(quick.twoStroke&&quick.Vd<1000?2:1);$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
+  {const cc=quick.Vd<1000;$("sDisp").textContent=cc?Math.round(quick.Vd):(quick.Vd/1000).toFixed(1);$("sDisp").nextElementSibling.textContent=cc?"cc":"Litres";}$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
   const worst=Math.max(...quick.tests.map(t=>t.util));$("sHp").className=worst>1?"critc":worst>.8?"warnc":"";
   const cert=C().cert;
   $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));
@@ -22169,7 +22193,7 @@ function renderPresets(){
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
   list.sort((a,b)=>key(a)-key(b));
   const groupOf=e=>sort==="layout"?(SIM.LAYOUTS[e.p.cfg.layout]||{}).name||e.p.cfg.layout:sort==="class"?CLS_LABEL[e.cls]:sort==="size"?(e.disp<1.6?"Under 1.6 L":e.disp<2.6?"1.6 – 2.5 L":e.disp<4.1?"2.6 – 4.0 L":e.disp<6.1?"4.1 – 6.0 L":"Over 6 L"):(e.p.realHp<150?"Under 150 hp":e.p.realHp<300?"150 – 299 hp":e.p.realHp<600?"300 – 599 hp":e.p.realHp<1000?"600 – 999 hp":"1,000 hp and up");
-  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${e.disp.toFixed(e.two&&e.disp<1?2:1)} L · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
+  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
   let h="",g=null,buf=[];const flush=()=>{if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.join("")}</div>`;buf=[];};
   for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push(card(e));}
   flush();
@@ -22528,7 +22552,7 @@ function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
   if(l){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}
   if(d){S.blueprints.splice(+d.dataset.del,1);renderBlueprints();save();}});
-$("saveBp").addEventListener("click",()=>{if(S.blueprints.length>=12){toast("Blueprint drawer is full (12)");return;}const q=quick;S.blueprints.push({title:engineName(),name:`${SIM.cfgLabel(S.cfg)} · ${Math.round(q.peakHp)} hp`,sum:`${Math.round(q.peakTq)} Nm · rel ${q.rel} · ${fmt$(q.cost)}`,cfg:Object.assign({},S.cfg)});renderBlueprints();save();toast("BLUEPRINT SAVED");});
+$("saveBp").addEventListener("click",()=>{if(S.blueprints.length>=12){toast("Blueprint drawer is full (12)");return;}const q=quick;S.blueprints.push({title:engineName(),name:`${cfgLbl(S.cfg)} · ${Math.round(q.peakHp)} hp`,sum:`${Math.round(q.peakTq)} Nm · rel ${q.rel} · ${fmt$(q.cost)}`,cfg:Object.assign({},S.cfg)});renderBlueprints();save();toast("BLUEPRINT SAVED");});
 
 /* ===================== TEST ===================== */
 const chart=$("chart");const curves={power:true,torque:true,boost:false,ve:false,egt:false,base:false};
@@ -23168,7 +23192,8 @@ function dragAutoStep(now){const d=DR.d,H=SIM.DRAG_TICK;let st=d.st;if(now-DR.vt
 function dragAutoDo(a,vt){const d=DR.d;
   if(a==="burn")d.burn(true);else if(a==="unburn")d.burn(false);else if(a==="stage")dragStage();else if(a==="purge")n2oPurge(true);else if(a==="unpurge")n2oPurge(false);
   else if(a==="arm"){if(d.arm())buzz([20]);}else if(a==="shift")d.shift();else if(a==="go"){const l=DR.last;dragGo(vt);DR.last=l;}}
-function dragTakeOver(){const d=DR.d,st=d.st;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+function dragTakeOver(){const d=DR.d,st=d.st,R=DR.race;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+  DR.tookPre=st.phase==="burnout"||st.phase==="staged"&&(!R||R.tree0==null||performance.now()<R.tree0);   // took it before the tree lit: the light is yours
   if(st.burning)d.burn(false);DR.downAt=null;if(st.launch.armed)d.disarm();if(st.n2oS&&st.n2oS.purging)n2oPurge(false);$("dragBtn").dataset.k="";
   toast(st.phase==="run"?(DR.veh.auto?"You have it — the box shifts itself":"You have it — tap to shift"):st.phase==="burnout"?"You have it — hold to burn out, tap to stage":"You have it — "+(d.canArm?"hold to arm, let go on the green":DR.race?"tap on the green":"tap to go"));buzz([20]);}
 function dragAutoWord(a){return a.took==null?"Auto driver — the whole pass":"Auto driver — you took over "+(typeof a.took==="number"?"at "+a.took+" ft":a.took==="burnout"?"in the water box":"on the line");}
@@ -23234,13 +23259,15 @@ function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
   if(st.done&&!N.ended){N.ended=true;if((S.env.n2oHeater||"on")!=="on"&&z.on){N2OB.cooled=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000)+1.8;N2OB.t=Date.now();}if(soundReady)ENGINE_SOUND.nitrous(null);ENGINE_VIS.stripN2O(null);if(b)b.style.display="none";}}
 function n2oSlip(n){const g=["1st","2nd","3rd","4th","5th","6th","7th"][Math.max(0,(n.onGear||1)-1)];
   return `${n.shotHp} shot ${n.cut?"cut by a backfire":n.on?`on ${n.act==="window"?"at the window":"at "+n.onMph+" mph"} in ${g}`:"never came on"} · ${n.psi.toLocaleString("en-CA")} psi${n.purged>0.3?` after a ${n.purged.toFixed(1)} s purge`:" · not purged"}`;}
-/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay */
+/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay.
+   While the auto driver has the car, P does nothing: the auto driver purges for itself and its PURGE button is hidden too
+   (a tap on the big button or Space is how you take over) */
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target)||e.key.toLowerCase()!=="p"||e.repeat)return;
-  if(holdKind()==="drag"&&DR&&DR.n2o){n2oPurge(true);e.preventDefault();return;}
+  if(holdKind()==="drag"&&DR&&DR.n2o){if(!DR.auto)n2oPurge(true);e.preventDefault();return;}
   if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
-document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
+document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o&&!DR.auto)n2oPurge(false);});
 function dragFinish(){
-  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took}:{};const failed=DR.failed;const same=testSame(snap);
+  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took,pre:!!DR.tookPre}:{};const failed=DR.failed;const same=testSame(snap);
   const leave=()=>{if(testing)return;const b=ENGINE_VIS.stripBusy?ENGINE_VIS.stripBusy():0;if(b>0){setTimeout(leave,Math.min(1000,b*1000+60));return;}ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");};
   setTimeout(leave,2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)sfx("bov");
@@ -25112,7 +25139,7 @@ function showResult(res,env){
 }
 function smokeWord(r,short){const s=r.smoke||0,lm=r.fuel&&r.fuel.lamMin,lam=S.cfg.lambda;if(short)return s<8?"clean":s<35?"haze":"black";return s<8?"clean stack":s<35?"light haze":(lm&&lm<lam-0.05?"black under spool":"black at full load");}
 $("stressList").addEventListener("click",e=>{const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
-$("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${SIM.cfgLabel(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
+$("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${cfgLbl(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
 
 function slipLine(r){return [r.race&&r.race.rt!=null?`RT ${r.race.foul?"red":r.race.rt.toFixed(3)}`:null,r.sixty?`60 ft ${r.sixty.t.toFixed(3)}`:null,r.ft330?`330 ${r.ft330.t.toFixed(3)}`:null,r.eighth?`1/8 ${r.eighth.t.toFixed(3)} @ ${Math.round(r.eighth.mph)}`:null,r.ft1000?`1000 ${r.ft1000.t.toFixed(3)}`:null,r.et!=null?`1/4 ${r.et.toFixed(3)} @ ${Math.round(r.mph)}`:null].filter(Boolean).join(" · ");}
 function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
@@ -25252,8 +25279,8 @@ const ACH=[
   {g:"strip",id:"sixty",name:"Hooked up",desc:"A 60-foot time of 1.40 s or quicker.",ic:"wheel",tier:"silver",check:x=>x.sixty<=1.4},
   {g:"strip",id:"wheelie",name:"Wheelie",desc:"Lift the front wheels off the track.",ic:"wheel",tier:"bronze",check:x=>!!x.wheelie},
   {g:"strip",id:"win",name:"Won the lane",desc:"Win a heads-up race.",ic:"trophy",tier:"bronze",check:x=>!!x.win},
-  {g:"strip",id:"holeshot",name:"Holeshot",desc:"Win heads-up with the slower ET.",ic:"tree",tier:"silver",check:x=>!!x.holeshot},
-  {g:"strip",id:"perfect",name:"Perfect light",desc:"A reaction time of 0.010 s or better.",ic:"tree",tier:"gold",check:x=>x.rt>=0&&x.rt<=0.010},
+  {g:"strip",id:"holeshot",name:"Holeshot",desc:"Win heads-up with the slower ET, driving it yourself.",ic:"tree",tier:"silver",check:x=>!!x.holeshot},
+  {g:"strip",id:"perfect",name:"Perfect light",desc:"A reaction time of 0.010 s or better, driving it yourself.",ic:"tree",tier:"gold",check:x=>x.rt>=0&&x.rt<=0.010},
   {g:"strip",id:"show",name:"Made the show",desc:"Qualify for a race-night ladder.",ic:"flag",tier:"bronze",check:x=>!!x.qualified},
   {g:"strip",id:"night",name:"Won the night",desc:"Win a race night.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=1},
   {g:"strip",id:"night3",name:"Regular",desc:"Win three race nights.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=3},
@@ -25300,12 +25327,13 @@ function achFacts(x){
       if(res.diesel){f.dsl=true;if(pull){const t=(res.tests||[]).find(q=>q.id==="cold_start");if(env.ambientC<=-25&&t&&t.util<=1)f.cold=true;}}}
     if(res.diesel&&pull)f.smoke=res.smoke;
     if(env.testType==="overrev"&&res.overrev&&res.overrev.survived&&!res.fails.length)f.overrevOk=true;}
-  else if(x.type==="drag"){const r=x.r,ra=r.race,nt=r.night,ok=!x.failed&&r.et!=null&&!(ra&&ra.foul)&&!(career()&&r.mph>150&&!r.chute);
+  // the light (reaction time, holeshot) counts only if you drove it: "You drive", or you took over from Auto before the tree lit (r.auto.pre). ET and mph count either way
+  else if(x.type==="drag"){const r=x.r,ra=r.race,nt=r.night,you=!r.auto||!!r.auto.pre,ok=!x.failed&&r.et!=null&&!(ra&&ra.foul)&&!(career()&&r.mph>150&&!r.chute);
     if(ok){f.et=r.et;f.mph=r.mph;if(r.sixty)f.sixty=r.sixty.t;if(r.launch&&r.launch.ctl&&r.launch.ctl!=="none")f.twostep=true;if(r.wheelieT>=0.2||r.liftMax>=0.6)f.wheelie=true;
-      if(ra&&ra.rt!=null)f.rt=ra.rt;if(nt&&nt.fmt==="bracket"&&nt.dialP!=null&&nt.stage>=2)f.deadOn=Math.abs(r.et-nt.dialP);
+      if(ra&&ra.rt!=null&&you)f.rt=ra.rt;if(nt&&nt.fmt==="bracket"&&nt.dialP!=null&&nt.stage>=2)f.deadOn=Math.abs(r.et-nt.dialP);
       if(r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;f.shotHp=r.n2o.shotHp;}}
     else if(!x.failed&&r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;}
-    if(ra&&ra.won&&!ra.foul){f.win=true;if(r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
+    if(ra&&ra.won&&!ra.foul){f.win=true;if(you&&r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
     if(nt&&nt.stage>=2)f.qualified=true;}
   else if(x.type==="bog"){const r=x.r;if(!x.failed){if(r.cleared){f.bogThru=true;f.bogAvg=r.avgMph||0;}if(r.place===1)f.bogWin=true;}}
   else if(x.type==="boat"){const r=x.r;if(!x.failed&&r.et!=null&&!(r.match&&r.match.foul)){f.boatPass=true;f.boatMph=r.mph||0;}if(x.place===1)f.boatWin=true;}
@@ -25409,7 +25437,7 @@ function renderAnalysis(){
     ["Seal oiling",`${Math.round(R.oilUtil*100)}% of supply`],["Oil burnt",`${R.oilL.toFixed(1)} L/1000 km`],["Carbon build-up",`${Math.round(R.carbon*100)}%`],["Idles at",`${R.idleRpm.toLocaleString()} rpm`],
     ["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]);}
   if(r.twoStroke){const R=r.twoStroke;rows.splice(0,rows.length,   // a two-stroke: delivery and trapping, the pipe and the oil instead of valvetrain numbers
-    ["Firing rate",`${Math.round(R.firingHz).toLocaleString()}/s · every turn`],["Swept / eq.",`${R.swept.toFixed(R.swept<1?3:2)} L · ${R.eq.toFixed(R.eq<2?2:1)} L 4T`],
+    ["Firing rate",`${Math.round(R.firingHz).toLocaleString()}/s · every turn`],["Swept / eq.",`${R.swept<1?fmtDisp(R.swept):R.swept.toFixed(2)+" L"} · ${R.eq<1?fmtDisp(R.eq):R.eq.toFixed(R.eq<2?2:1)+" L"} 4T`],
     ["Delivery ratio",`${R.drPk.toFixed(2)} at peak`],["Trapping",`${Math.round(R.tePk*100)}% · ${R.scChargePct}% lost`],
     ...(isCI(S.cfg.fuel)?[["Fuel cetane",`${K.cetane}`],["Smoke (peak)",`${Math.round(r.smoke||0)}%`]]:[["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Fuel out the pipe",`${R.scFuelPct}% at peak`]]),
     ["Ports timed for",`${(Math.round(R.rpmP/100)*100).toLocaleString()} rpm · ${Math.round(R.ep)}°/${Math.round(R.tp)}°`],
@@ -25483,7 +25511,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
 function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],ts:["Engine",v=>"Two-stroke"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
-  smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
+  smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${+v<1?fmtDisp(+v):(+v).toFixed(1)+" L"}`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
   passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`],lsr:["Their car",v=>`${(SIM.LSR_BODIES[v.body]||{}).n||"car"} · long course`],mph:["Timed mile",v=>`≥ ${v} mph`],
   lap:["Lap time",(v,x)=>`≤ ${fmtLap(+v)} · ${(SIM.ROAD_TRACKS[x&&x.road&&x.road.trk]||SIM.ROAD_TRACKS.club).n} in ${roadCarTxt(x&&x.road)}`],zero100:["0–100 km/h",(v,x)=>`≤ ${(+v).toFixed(1)} s in ${roadCarTxt(x&&x.road)}`]};
@@ -25528,7 +25556,7 @@ function fits(k,res,cfg){
   if(r.rot!=null){const ro=isRot(c);add("rot",ro,ro?"rotary":"pistons",ro?1:0.1);}
   if(r.ts!=null){const t2=isTs(c);add("ts",t2,t2?"two-stroke":"four-stroke",t2?1:0.1);}
   const dispL=res.Vd/1000*(res.rotary?ROT_DISP:1);   // a rotary runs in a displacement class at 1.5x its quoted size
-  if(r.disp!=null)add("disp",dispL<=r.disp+0.005,dispL.toFixed(2)+(res.rotary?" (×1.5)":""),le(dispL,r.disp+0.005));
+  if(r.disp!=null)add("disp",dispL<=r.disp+0.005,(dispL<1?fmtDisp(dispL):dispL.toFixed(2))+(res.rotary?" (×1.5)":""),le(dispL,r.disp+0.005));
   if(r.cyl!=null)add("cyl",res.n>=r.cyl,res.n,ge(res.n,r.cyl));
   if(r.life!=null)add("life",res.lifeHours>=r.life,res.lifeHours.toLocaleString(),ge(res.lifeHours,r.life));
   if(r.passes!=null)add("passes",res.racePasses>=r.passes,res.racePasses,ge(res.racePasses,r.passes));
@@ -26254,7 +26282,7 @@ function renderShop(){
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${dc.hp.toLocaleString()}</b><span>dyno hp cap</span></div><div><b>${C().loan>0?fmt$(C().loan):Object.keys(C().owned).length}</b><span>${C().loan>0?"bank loan":"upgrades owned"}</span></div>`;
   const cert=C().cert&&C().cert.hash===cfgHash(S.cfg)&&C().cert.ok?C().cert:null;const lastCert=C().cert&&C().cert.hash===cfgHash(S.cfg)?C().cert:null;
-  $("mktHint").innerHTML=cert?`<div style="margin-bottom:8px">${engineCard(S.cfg,cert.res,{cls:"inline"})}</div>ON OFFER · unit cost ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`NO CERT — last pull: ${lastCert.why}.`:"NO CERT ON FILE — run a dyno pull in Test; buyers only look at certified engines.";
+  $("mktHint").innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":ddEsc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:cert?`<div style="margin-bottom:8px">${engineCard(S.cfg,cert.res,{cls:"inline"})}</div>ON OFFER · unit cost ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`NO CERT — last pull: ${lastCert.why}.`:"NO CERT ON FILE — run a dyno pull in Test; buyers only look at certified engines.";
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(LOAN_RATE*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
@@ -26323,7 +26351,7 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
   if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
-$("nextWeek").addEventListener("click",()=>{advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
+$("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
   if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);if(!confirm(`Let the ${st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
@@ -26457,7 +26485,7 @@ function tropBest(name,h){const R=recs(),out=[],mine=e=>e&&(e.n===name||(h&&e.h=
   return out.slice(0,6);}
 function tropRetire(){if(testing){toast("Let the run finish first");return;}if(S.bay){toast("That's a customer's engine — hand it back first");return;}
   const T=tropBook(),h=cfgHash(S.cfg),name=engineName(),cert=career()&&C().cert&&C().cert.ok&&C().cert.hash===h?C().cert.res:null,q=cert||quick||{};
-  const snap={id:Date.now().toString(36),name:name.slice(0,40),cfg:Object.assign({},S.cfg),h,hp:Math.round(q.peakHp||0),tq:Math.round(q.peakTq||0),rel:q.rel,label:SIM.cfgLabel(S.cfg),best:tropBest(name,h),cert:!!cert};
+  const snap={id:Date.now().toString(36),name:name.slice(0,40),cfg:Object.assign({},S.cfg),h,hp:Math.round(q.peakHp||0),tq:Math.round(q.peakTq||0),rel:q.rel,label:cfgLbl(S.cfg),best:tropBest(name,h),cert:!!cert};
   tropStamp(snap);const i=T.retired.findIndex(e=>e.h===h);
   if(i>=0){snap.id=T.retired[i].id;T.retired.splice(i,1);T.retired.unshift(snap);toast("Plaque updated — it was already on a stand");}
   else{if(T.retired.length>=TROPHY_RET_MAX){toast(`The room holds ${TROPHY_RET_MAX} retired engines — take one down first`);return;}T.retired.unshift(snap);toast(`RETIRED · ${snap.name} goes on a stand`);}
@@ -26963,7 +26991,7 @@ let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0,alsHot=0;
 const AB={A:null,B:null,playing:null,rpm:4000,load:1};
 function abLabel(cfg){if(!cfg)return"empty";
   const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
-  return `${cfg.layout} ${(r.Vd/1000).toFixed(1)}L · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
+  return `${cfg.layout} ${fmtDisp(r.Vd/1000,"")} · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
 function abRender(){
   $("abAname").textContent=AB.A?abLabel(AB.A):"empty";
   $("abBname").textContent=AB.B?abLabel(AB.B):"empty";
