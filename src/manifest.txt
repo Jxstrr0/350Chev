@@ -28,6 +28,8 @@ vis/particles.js
 vis/loop.js
 vis/strip.js
 vis/strip-cars.js
+vis/strip-cars-shells.js
+vis/strip-cars-classes.js
 vis/strip-run.js
 vis/pits.js
 vis/pull.js

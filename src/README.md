@@ -59,6 +59,8 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 | `vis/loop.js` | 10. orbit controls, 11. frame loop, 12. framing |
 | `vis/strip.js` | drag strip scene: STRIP state, track/ground shaders, sky, prairie and the plant, per-frame scenery |
 | `vis/strip-cars.js` | drag cars: materials, sponsor livery, body loft, wheels, chute, body packs |
+| `vis/strip-cars-shells.js` | drag car shells per class (street Fox / G-body / Nova / F-body / hatch / diesel pickup, pro-mod Camaro / C7 / Willys, pro stock, gassers): loft rows, stance, fascia, mirrors |
+| `vis/strip-cars-classes.js` | the nitro classes: Top Fuel-scale rail, funny car with its flip-up body; header flame anchors |
 | `vis/strip-run.js` | strip particles, rubber, scoreboards, day/night, effects, tree lights, crowd, camera cuts, post, after-the-pass show |
 | `vis/pits.js` | race-night pits vignette |
 | `vis/pull.js` | pull track scene (fairground, sled, chain, camera) |
