@@ -324,7 +324,7 @@ function bogUpdate(o, dt){
      bogged sits mid-tyre in level mud, high-centred sits its frame on a crown of mud, dug in is buried to the axles in its
      holes, and a truck that cleared rolls on out onto dry ground. */
   var R=U.rr*k, why=o.why||"", stopped=ph==="done"&&!o.cleared&&x>0&&x<len, sk=R/((+o.rw)||(BOG_TYRE_IN[cls]||35)*0.0254/2), dig=clamp(+o.dig||0,0,1.5), bel=clamp(+o.belly||0,0,1), cons=BOG.pit?BOG.pit.cons:0.5;
-  if(o.cleared && ph==="done"){ if(BOG.outV==null) BOG.outV=Math.max(2.5,v); BOG.outV=Math.max(0,BOG.outV-2.6*dt); BOG.outX=Math.min(9,(BOG.outX||0)+BOG.outV*dt); } else { BOG.outV=null; BOG.outX=0; }
+  if(o.cleared && ph==="done"){ if(BOG.outV==null) BOG.outV=Math.max(2.5,v); BOG.outV=Math.max(0,BOG.outV-2.6*dt); BOG.outX=Math.min(6.5,(BOG.outX||0)+BOG.outV*dt); } else { BOG.outV=null; BOG.outX=0; }
   var xF=x+BOG.outX, xR=xF-U.wb*k, vs=Math.min(R*0.8, sink*sk+dig*0.28*R), vF=vs, vR=vs;
   if(stopped){ if(why==="dug"){ vR=R*0.98; vF=Math.max(vs,R*0.82); } else if(why==="highcentre"){ vR=vF=clamp(vs,R*0.55,R*0.72); } else { vR=clamp(vs,R*0.48,R*0.75); vF=clamp(vs*0.9,R*0.42,R*0.68); } }
   vF*=bogPitRamp(xF); vR*=bogPitRamp(xR);

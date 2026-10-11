@@ -165,12 +165,12 @@ function bogMudMatDetail(mat){
         /* sticky clay: a dry grey-tan crust cracked into plates; the churn breaks it up */
         "float crust=wClay*(1.0-bWet)*(1.0-film);",
         "#ifdef BOG_LITE",
-        "float crack=1.0-smoothstep(0.0,0.05,abs(bgN(bP*1.4)-0.5));",
+        "float crack=1.0-smoothstep(0.0,0.04,abs(bgN(bP*3.0)-0.5));",
         "#else",
-        "float crack=1.0-smoothstep(0.02,0.08,bgVor(bP*1.6));",
+        "float crack=(1.0-smoothstep(0.015,0.05,bgVor(bP*3.6+bgN(bP*0.9)*0.8)))*smoothstep(0.25,0.55,bgN(bP*0.6+5.0));",
         "#endif",
-        "bH+=crust*(-crack*0.014+bgN(bP*7.0)*0.004)*bFade;",
-        "bT*=mix(vec3(1.0), mix(vec3(1.38,1.33,1.24), vec3(0.42,0.39,0.37), crack*(0.4+0.6*bFade)), crust);",
+        "bH+=crust*(-crack*0.008+bgN(bP*9.0)*0.004)*bFade;",
+        "bT*=mix(vec3(1.0), mix(vec3(1.42,1.38,1.3)*(0.92+0.16*bgN(bP*1.3)), vec3(0.62,0.58,0.55), crack*(0.3+0.7*bFade)), crust);",
         /* ridge crowns and the belly crown: drier, lighter, lumpy */
         "bT*=mix(vec3(1.0), vec3(1.28,1.22,1.12), dryK*0.75); bH+=dryK*bgN(bP*5.0)*0.016*bFade;",
         /* tread prints in the churned tracks */
@@ -178,7 +178,7 @@ function bogMudMatDetail(mat){
         /* water darkens what's under it */
         "bT*=mix(vec3(1.0), vec3(0.5,0.5,0.55), film);",
         "diffuseColor.rgb*=bT;",
-        "float bRT=mix(mix(0.34,0.2,thick),0.92,crust); bRT=mix(bRT,0.035,film); bRT=mix(bRT,0.82,dryK);"].join("\n"))
+        "float bRT=mix(mix(0.34,0.2,thick),0.92,crust); bRT=mix(bRT,0.07,film); bRT=mix(bRT,0.82,dryK);"].join("\n"))
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,bRT,0.88);")
       .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n#ifndef BOG_LITE\nnormal=bgBump(-vViewPosition, normal, bH);\n#endif");
   };
