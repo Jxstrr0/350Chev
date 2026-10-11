@@ -75,12 +75,12 @@ function seBlob(k, x, z, l, w){ k.put("blob","seFlat", x, 0.015, z, l, 1, w, 0xf
 function sePfRig(k, s, lite, sides){
   var c=SE_LIV[Math.floor(seRng(s)*SE_LIV.length)], c2=SE_LIV[Math.floor(seRng(s+1)*SE_LIV.length)], DK=0x232528, CH=0xc9ccd0;
   k.put("gloss","box", 0, 2.3, 0, 13.4, 2.8, 2.55, c); k.put("solid","box", 0, 0.62, 0, 12.8, 0.42, 2.2, DK);
-  k.put("gloss","box", 0, 0.98, 1.28, 13.2, 0.18, 0.02, c2); k.put("gloss","box", 0, 0.98, -1.28, 13.2, 0.18, 0.02, c2);
+  if(!lite){ k.put("gloss","box", 0, 0.98, 1.28, 13.2, 0.18, 0.02, c2); k.put("gloss","box", 0, 0.98, -1.28, 13.2, 0.18, 0.02, c2); }
   seAxle(k, -5.2, 0.5, 2.4, lite); seAxle(k, -4.0, 0.5, 2.4, lite);
   /* tractor */
   k.put("solid","box", 8.6, 0.72, 0, 5.4, 0.36, 1.1, DK); k.put("gloss","box", 7.65, 2.25, 0, 1.6, 2.2, 2.4, c2);
-  k.put("gloss","box", 9.5, 1.55, 0, 2.1, 1.05, 2.2, c2); k.put("gloss","box", 8.48, 2.75, 0, 0.06, 0.8, 2.2, 0x1a2128, 0, 0, 0.25);
-  k.put("metal","box", 10.58, 1.45, 0, 0.08, 0.8, 1.2, CH); k.put("metal","box", 10.7, 0.75, 0, 0.18, 0.3, 2.4, CH);
+  k.put("gloss","box", 9.5, 1.55, 0, 2.1, 1.05, 2.2, c2); if(!lite) k.put("gloss","box", 8.48, 2.75, 0, 0.06, 0.8, 2.2, 0x1a2128, 0, 0, 0.25);
+  if(!lite) k.put("metal","box", 10.58, 1.45, 0, 0.08, 0.8, 1.2, CH); k.put("metal","box", 10.7, 0.75, 0, 0.18, 0.3, 2.4, CH);
   if(!lite){ k.put("metal","cyl6", 6.75, 3.0, 1.0, 0.16, 3.0, 0.16, CH); k.put("metal","cyl6", 6.75, 3.0, -1.0, 0.16, 3.0, 0.16, CH); }
   seAxle(k, 9.8, 0.5, 2.3, lite); seAxle(k, 7.2, 0.5, 2.4, lite); if(!lite) seAxle(k, 6.0, 0.5, 2.4, lite);
   if(sides!==0){ var sd=sides||-1, aw=SE_SHIRT[Math.floor(seRng(s+2)*SE_SHIRT.length)];
@@ -169,7 +169,7 @@ function saltPitTown(B, lite){
   var ult=(GFX==="ultra"), inst=!lite, pits=new SeKit(B, inst), line=new SeKit(B, inst), road=new SeKit(B, inst), i, k, x, z, s=11;
   SALT.town=[];
   /* rows of pits, aisles along x between them: rigs nose toward the line, EZ-Ups and carts in the gaps */
-  var rows=lite?[{z:-54, n:5},{z:-78, n:4}]:[{z:-54, n:8},{z:-78, n:7},{z:-102, n:ult?8:6}];
+  var rows=lite?[{z:-54, n:4},{z:-78, n:3}]:[{z:-54, n:8},{z:-78, n:7},{z:-102, n:ult?8:6}];
   rows.forEach(function(r, ri){ var span=330/r.n;
     for(i=0;i<r.n;i++){ x=-232+span*(i+0.5)+(seRng(s)-0.5)*span*0.25; z=r.z+(seRng(s+1)-0.5)*3; var yaw=(seRng(s+2)-0.5)*0.12, kind=seRng(s+3);
       pits.at(x, z, yaw);
@@ -182,10 +182,10 @@ function saltPitTown(B, lite){
       s+=23; }
   });
   /* the back row: motorhomes and haulers' living quarters */
-  var nm=lite?3:(ult?11:8);
+  var nm=lite?1:(ult?11:8);
   for(i=0;i<nm;i++){ pits.at(-226+i*(330/nm)+seRng(s)*6, lite?-100:-122, (seRng(s+1)-0.5)*0.1+(i%2?PI:0)); sePfMotorhome(pits, s, lite); s+=7; }
   /* golf carts and scooters parked in the aisles, feather flags at pit corners */
-  var ng=lite?3:(ult?14:10);
+  var ng=lite?2:(ult?14:10);
   for(i=0;i<ng;i++){ x=-220+seRng(s)*320; z=[-66,-90,-112][i%(lite?1:3)]+(seRng(s+1)-0.5)*3; pits.at(x, z, seRng(s+2)*TAU);
     if(i%3===2) sePfScooter(pits, s, lite); else sePfGolfCart(pits, s, lite);
     if(!lite && i%2===0){ pits.at(x+1.6, z+0.8, seRng(s+3)*TAU); sePfPerson(pits, s+5, lite, false); }
@@ -197,15 +197,15 @@ function saltPitTown(B, lite){
   pits.at(-22, -21, 0.4); sePfGolfCart(pits, 991, lite); pits.at(-16, -22.5, 0); sePfToolCart(pits, 992, lite);
   if(!lite) [[-19,-19.5],[-13,-21.5],[-24,-23],[-10,-24]].forEach(function(p,q){ pits.at(p[0], p[1], 1.2+q); sePfPerson(pits, 500+q, lite, false); });
   /* spectators along the course behind the left cones, folding chairs, EZ-Ups and their cars and pickups behind them */
-  var x1=lite?380:(ult?900:560), st=lite?14:(ult?2.6:4.6);
+  var x1=lite?320:(ult?900:560), st=lite?22:(ult?2.6:4.6);
   for(x=40; x<x1; x+=st*(0.7+seRng(s)*0.6)){ s+=3; if(seRng(s+1)<0.12) continue;
     var seat=seRng(s+2)<0.35; line.at(x, -21.2-seRng(s+3)*1.5, seat?-PI/2:(-PI/2+(seRng(s+4)-0.5)*1.2)); sePfPerson(line, s, lite, seat); }
-  for(x=46; x<x1; x+=(lite?40:15)+seRng(s)*10){ s+=5; var kz=-28.5-seRng(s+1)*2.5;
+  for(x=46; x<x1; x+=(lite?90:15)+seRng(s)*10){ s+=5; var kz=-28.5-seRng(s+1)*2.5;
     if(seRng(s+2)<0.35 && !lite){ line.at(x, -25.2, 0); sePfEzUp(line, s, lite, 3); }
     line.at(x+4, kz, (seRng(s+3)<0.5?0:PI)+(seRng(s+4)-0.5)*0.2);
     if(seRng(s+5)<0.5) sePfPickupBody(line, 0, SE_LIV[Math.floor(seRng(s+6)*SE_LIV.length)], lite); else sePfMotorhome(line, s, lite); }
   /* traffic on the return road: crews driving back to the pits */
-  [[420,0],[260,1],[1300,1],[2600,0],[3900,1],[6200,0]].slice(0, lite?2:6).forEach(function(p, q){ road.at(p[0], -37.8+(p[1]?1.6:-1.6), p[1]?PI:0); sePfPickupBody(road, 0, SE_LIV[(q*3)%SE_LIV.length], lite); });
+  [[420,0],[260,1],[1300,1],[2600,0],[3900,1],[6200,0]].slice(0, lite?1:6).forEach(function(p, q){ road.at(p[0], -37.8+(p[1]?1.6:-1.6), p[1]?PI:0); sePfPickupBody(road, 0, SE_LIV[(q*3)%SE_LIV.length], lite); });
   if(inst){ var a=pits.build(SALT.scene), b=line.build(SALT.scene); road.build(SALT.scene);   /* the road's few trucks span the course: tiny, never dropped */
     SALT.town.push({ms:a, c:new THREE.Vector3(-60,0,-85)}, {ms:b, c:new THREE.Vector3(300,0,-26)}); }
   saltReturnRoad();
@@ -342,12 +342,12 @@ function seSafety(o, dt, V){
   if(!P || !P.on){ if(T) T.visible=false; return; }
   if(!T){ T=SALT.safety=saltPickup(0xf1efe8, {beacon:true, stripe:0xff6a14, roof:0xff6a14}); SALT.scene.add(T); }
   var u=T.userData, v=Math.max(0,+o.v||0);
-  if(P.start || !u.st){ P.start=false; var side=-P.side; u.st={x:V.position.x+v*v/(2*4.4)+70, z:V.position.z+side*20, yaw:PI, v:0, wait:0.8, side:side}; }
+  if(P.start || !u.st){ P.start=false; var side=-P.side; u.st={x:V.position.x+v*v/(2*7)+50, z:V.position.z+side*20, yaw:PI, v:0, wait:0.5, side:side};   /* from the station just past where the car will stop (salt plus the chute pulls ~0.7 g) */ }
   var S=u.st; S.wait-=dt;
   if(S.wait<0){ var tx=V.position.x-4, tz=V.position.z+S.side*6.5, dx=tx-S.x, dz=tz-S.z, d=Math.sqrt(dx*dx+dz*dz);
-    var want=Math.min(24, d*0.6), hd=Math.atan2(-dz, dx), dy=((hd-S.yaw+PI*3)%TAU)-PI;
+    var want=Math.min(30, d*0.7), hd=Math.atan2(-dz, dx), dy=((hd-S.yaw+PI*3)%TAU)-PI;
     if(d>1.2){ S.yaw+=clamp(dy, -1.4*dt, 1.4*dt)*Math.min(1, S.v/3+0.3); } else want=0;
-    S.v+=clamp(want-S.v, -7*dt, 4.5*dt); S.x+=Math.cos(S.yaw)*S.v*dt; S.z-=Math.sin(S.yaw)*S.v*dt; }
+    S.v+=clamp(want-S.v, -8*dt, 5*dt); S.x+=Math.cos(S.yaw)*S.v*dt; S.z-=Math.sin(S.yaw)*S.v*dt; }
   T.position.set(S.x, 0, S.z); T.rotation.y=S.yaw; T.visible=true;
   for(var i=0;i<u.wheels.length;i++) u.wheels[i].rotation.y=(u.wheels[i].rotation.y-S.v/0.38*dt)%TAU;
   if(u.beacon) u.beacon.material.emissiveIntensity=(Math.sin(SALT.t*13)>0.2)?3.2:0.25;
