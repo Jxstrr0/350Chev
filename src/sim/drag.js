@@ -9,7 +9,19 @@
     street: { cdA: 0.82, bite: 1.00, wb: 2.70, n: "Street body", d: "stock shell · no bars" },
     outlaw: { cdA: 1.05, bite: 1.22, wb: 2.80, n: "Outlaw", d: "big tyre, wheelie bar, spoiler", bars: 1 },
     promod: { cdA: 0.62, bite: 1.40, wb: 2.95, n: "Pro-mod", d: "slick body, four-link, bars", bars: 1 },
-    rail: { cdA: 0.45, bite: 1.62, wb: 4.20, n: "Dragster", d: "long rail, wing, huge bite", bars: 1 }
+    rail: { cdA: 0.45, bite: 1.62, wb: 4.20, n: "Dragster", d: "long rail, wing, huge bite", bars: 1 },
+    // v3 classes (the four above are unchanged). cgH only where a class sits differently from the 0.5 m default.
+    // Funny car: short 125" chassis under a full-width body and a big rear spoiler. More drag than a rail (frontal area
+    //   ~1.9 m² vs a rail's ~1 m²) but the body + spoiler press the slicks down nearly as hard: bite just under the rail's,
+    //   and the short wheelbase transfers more weight (more lift, so it leans on the bars).
+    // Pro stock: wind-tunnel door car, low and narrow, no power adder — the slipperiest door car (below the pro-mod's 0.62),
+    //   four-link + 33" slicks but no tubbed 36s: bite between outlaw and pro-mod; low cg.
+    // Gasser: upright 50s body jacked up on a straight axle: lots of drag (nose-high, air under the car), short wheelbase,
+    //   high cg (0.62 m) for violent weight transfer, slicks on leaf springs: bite a little over a street car; no bars, so
+    //   it wheelstands — which is the point.
+    funny: { cdA: 0.58, bite: 1.55, wb: 3.18, cgH: 0.46, n: "Funny car", d: "flip-up body, short chassis, blower", bars: 1 },
+    prostock: { cdA: 0.56, bite: 1.32, wb: 2.67, cgH: 0.42, n: "Pro stock", d: "sleek door car, big scoop, bars", bars: 1 },
+    gasser: { cdA: 0.95, bite: 1.12, wb: 2.79, cgH: 0.62, n: "Gasser", d: "nose-high straight axle, no bars" }
   };
   // compressor inducer size for each turbo option — sets how fast the wheel can be brought up to speed
   const TURBO_MM = { small: 46, medium: 54, large: 62, s66: 66, huge: 76, f88: 88, f98: 98 };
@@ -89,6 +101,7 @@
     const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = 0.90, TY = TYRES[v.tyre] || TYRES.street;
     let mu = TY.mu;
     if (veh && veh.body && !(veh.wheelbase > 0)) v.wheelbase = (AERO[veh.body] || AERO.street).wb;
+    if (veh && veh.body && !(veh.cgH > 0) && AERO[veh.body] && AERO[veh.body].cgH) v.cgH = AERO[veh.body].cgH;   // v3 classes only
     const I = 0.12 + 0.06 * ((res.VdEq || res.Vd) / 1000), peakTq = res.peakTq, clutchCap = peakTq * 1.8;
     const BODY = AERO[v.body] || AERO.street, cdA0 = v.cdA > 0 ? v.cdA : BODY.cdA, bite = BODY.bite, crr = 0.014, rho = 1.2, limiter = v.redline * 1.02, shiftAt = v.shiftRpm || v.redline - 200;
 
@@ -402,7 +415,7 @@
       if (st.spinTime > 0.25) reasons.push(`Wheelspin for ${st.spinTime.toFixed(1)} s — ${TY.n.toLowerCase()}s can only plant about ${Math.round(Fmax0() / 1000)} kN. Softer tyre, taller first gear, more rear weight, or a lower launch rpm.`);
       if ((st.shakeT || 0) > 0.1) reasons.push(`Tyre shake for ${st.shakeT.toFixed(1)} s — ${v.tyrePsi} psi is too soft for ${TY.n.toLowerCase()}s (they're set up around ${psiNom}); the sidewall winds up and lets go. A pound or two more.`);
       if (st.bog) reasons.push(`Bogged off the line — rpm fell to ${Math.round(st.minRpm)}. Launch higher or shorten first gear.`);
-      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — a street shell has no wheelie bars, so the driver had to pedal it straight. Less rear weight bias, or a body with bars.`);
+      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — ${v.body === "gasser" ? "a gasser has no wheelie bars" : "a street shell has no wheelie bars"}, so the driver had to pedal it straight. Less rear weight bias, or a body with bars.`);
       if (st.limiterTime > 0.3) reasons.push(`${st.limiterTime.toFixed(1)} s on the rev limiter. Shift sooner or lengthen the gearing.`);
       if (st.overrev > 1.06) reasons.push(`Over-revved to ${Math.round(st.overrev * v.redline).toLocaleString()} rpm on a shift.`);
       const late = st.shifts.filter(x => x.rpm < res.peakHpRpm * 0.92);

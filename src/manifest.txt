@@ -31,12 +31,15 @@ vis/particles.js
 vis/loop.js
 vis/strip.js
 vis/strip-cars.js
+vis/strip-cars-shells.js
+vis/strip-cars-classes.js
 vis/strip-ground.js
 vis/strip-run.js
 vis/pits.js
 vis/pull.js
 vis/bog.js
 vis/bog-fx.js
+vis/bog-pit.js
 vis/boat.js
 vis/road.js
 vis/salt.js
