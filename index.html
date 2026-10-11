@@ -527,6 +527,31 @@ div.up h3{font-size:15px;font-weight:700}
 div.up p{margin:3px 0 0;font-size:13px;color:var(--muted);line-height:1.4}
 div.up .price{font-family:var(--display);font-size:15px;font-weight:700;color:var(--orange2);white-space:nowrap;font-variant-numeric:tabular-nums}
 div.up.owned .price{color:var(--good)}
+/* crew cards (app/crew.js): portrait initials, level bar, traits, history, training */
+div.up.crew{grid-template-columns:1fr;gap:6px}
+div.up.crew.away{opacity:.82;border-style:dashed}
+.crew .cwho{display:flex;align-items:center;gap:10px;min-width:0}
+.crew .cwho>div{flex:1;min-width:0}
+.crew .cav{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.04em;color:var(--cc);background:color-mix(in srgb,var(--cc) 16%,transparent);box-shadow:inset 0 0 0 2px var(--cc)}
+.crew .cav.off{opacity:.55;box-shadow:inset 0 0 0 2px var(--rule)}
+.crew .csub{margin:1px 0 0;font-size:12px;color:var(--muted)}
+.crew .clv{font-family:var(--display);font-size:15px;color:var(--orange2);white-space:nowrap}
+.crew .cbar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.crew .cbar i{display:block;height:100%;background:var(--orange);border-radius:3px}
+.crew p.cxp{display:flex;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.crew .cmor.good{color:var(--good)}.crew .cmor.warn{color:var(--warn)}.crew .cmor.crit{color:var(--crit)}
+.crew .ctrs{display:flex;flex-wrap:wrap;gap:5px}
+.crew .ctr{font-size:12px;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
+.crew .ctr.pos{color:var(--good);border-color:rgba(79,192,141,.45)}.crew .ctr.neg{color:var(--crit);border-color:rgba(226,71,60,.45)}.crew .ctr.hid{border-style:dashed;color:var(--dim)}
+.crew p.chist{font-size:12px;color:var(--dim);font-style:italic}
+.crew p.caway{font-size:12px;color:var(--warn)}
+.crew .ctrain summary{cursor:pointer;font-size:13px;color:var(--orange2);min-height:36px;display:flex;align-items:center}
+.crew .ccrs{display:flex;flex-direction:column;align-items:flex-start;width:100%;margin-top:6px;min-height:44px;padding:8px 10px;text-align:left;background:var(--panel2);border:1px solid var(--rule);border-radius:6px;color:var(--chalk);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.crew .ccrs small{font-size:12px;font-weight:400;color:var(--muted);margin-top:2px;line-height:1.35}
+.crew .ccrs:hover,.crew .ccrs:focus-visible{border-color:var(--orange)}
+.crew .cbtn{display:flex;justify-content:flex-end}
+.crew .cbtn .btn{min-height:40px}
+#staff .crewi{margin:-2px 0 8px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
 .stats div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px}
 .stats b{display:block;font-family:var(--display);font-size:18px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
@@ -7739,7 +7764,7 @@ const ENGINE_SIM = (function () {
     const add = Math.max(0, Math.min(E24_TANK, need, toEnd + 2) - c.fuel);
     const swap = c.drvT >= 100 * 60 || (me && pl.box && pl.swap);
     const crawl = why && why.why !== "box" ? c.P.modes[c.mode].lap * c.pace * 0.45 : 0;   // limping round to the pit entry
-    const stat = Math.max(add / 2.6, swap ? 14 : 0, fix) + (tyres ? 22 : 0) + 4, total = R.lane + stat + crawl;
+    const stat = (Math.max(add / 2.6, swap ? 14 : 0, fix) + (tyres ? 22 : 0) + 4) * (me && R.pitK ? R.pitK : 1), total = R.lane + stat + crawl;   // pitK: the shop crew (career)
     c.fuel += add; c.pits++; c.pitT += total; c.tyre.stops++;
     if (tyres) { c.tyre = { c: newC, km: 0, cold: true, stops: 0 }; parts.push(`${E24_TYRES[newC].n.toLowerCase()} tyres`); } else parts.push("tyres stay on");
     if (add > 0.5) parts.push(`${Math.round(add)} L`);
@@ -24303,11 +24328,11 @@ const career=()=>S.mode==="career";
 function dev(){return career()&&!!C().dev;}
 function has(id){return !career()||dev()||!!C().owned[id];}
 function locked(o){return career()&&!dev()&&o&&o.req&&!C().owned[o.req]&&!(C().unlocks&&o._id&&C().unlocks[o._id]);}
-function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]));}
-function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1;if(staffed("machinist"))b.costFac*=0.92;
+function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]&&crewOn(id)));}   // a person on a course is out of the shop (app/crew.js)
+function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1+0.15*crewL("tuner");if(staffed("machinist"))b.costFac*=0.92-0.01*crewL("machinist");b.costFac*=crewCostK();
   for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;}}return b;}
 function syncShop(){S.env.shop=shopBonus();deltaCache.clear();fixCache.clear();}
-function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?st.wage:0),0):0;}
+function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?crewWage(st):0),0):0;}
 function dynoCap(){if(!career())return{hp:5000,rpm:14000,n:"Test cell dyno"};return has("dyno4")?{hp:3500,rpm:12500,n:"Outlaw cell"}:has("dyno3")?{hp:2000,rpm:12500,n:"Pro cell"}:has("dyno2")?{hp:1000,rpm:10000,n:"Engine dyno"}:{hp:400,rpm:8000,n:"Chassis dyno"};}
 function repTier(){let t=REP_TIERS[0];for(const r of REP_TIERS)if(C().rep>=r[0])t=r;return t;}
 function repTierIdx(){let i=0;REP_TIERS.forEach((r,k)=>{if(C().rep>=r[0])i=k;});return i;}
@@ -25111,7 +25136,7 @@ function mapShiftTo(k,v){const mode=MAP_SLIDE[k];if(!mapHas()||!mode||v===S.cfg[
 function mapFitAxis(){if(!mapHas())return false;const ax=SIM.mapAxis(S.cfg),m=S.cfg.map;if(ax.join()===m.rpm.join())return false;S.cfg.map=SIM.mapRespace(m,ax);MV.a=MV.b=null;return true;}
 function mapGridNow(){const env=simEnv({testType:"pull"});const k=cfgHash(S.cfg)+JSON.stringify(env);if(MV.key!==k){MV.grid=SIM.mapGrid(S.cfg,env);MV.key=k;}return MV.grid;}
 function tuneLevel(){if(!career()||dev())return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Full calibration"};const t=staffed("tuner"),c=!!(C().rnd&&C().rnd.calib);
-  if(t&&c)return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Calibration engineer + suite"};if(t)return{margin:1.0,ignStep:1,lamStep:0.02,name:"Calibration engineer"};
+  if(t&&c)return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Calibration engineer + suite"};if(t)return crewT("wizard")?{margin:0.75,ignStep:0.5,lamStep:0.01,name:"Calibration engineer · tuning wizard"}:{margin:1.0,ignStep:1,lamStep:0.02,name:"Calibration engineer"};
   if(c)return{margin:1.5,ignStep:2,lamStep:0.04,name:"Calibration suite"};return null;}
 function tuneCost(){if(!career()||dev())return 0;return (staffed("dynotech")?0:300)+4*fuelBill();}   // about four pulls of dyno time
 /* cell colour: by value, or by the overlay's feedback (green safe, amber close, red past it) */
@@ -25274,6 +25299,7 @@ function addWear(n,hk){if(!career())return;const h=hk||hKey(cfgHash(S.cfg));C().
 function testSnap(){return{cfg:Object.assign({},S.cfg),h:cfgHash(S.cfg),car:S.career,mode:S.mode};}
 function testSame(s){return!!s&&S.mode===s.mode&&S.career===s.car;}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
+function rnFreshCost(res){const c=freshenCost(res),k=career()?crewRnFreshK():1;return k===1?c:Math.round(c*k/50)*50;}   // race-night pits: the crew's fast hands or nerves (app/crew.js)
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
@@ -25833,7 +25859,7 @@ function rnPitsHtml(N){const br=N.fmt==="bracket",p=N.last,i=rnOppIdx(N),rv=N.fi
   h+=`<p class="hint" style="margin:4px 0 8px">${N.stage>0?`Air ${da>=0.05?"is "+da.toFixed(1)+"% better than last round — cars will pick up a little":da<=-0.05?"has gone off "+(-da).toFixed(1)+"% — expect it to slow down":"about the same as last round"}. `:""}Body, tyre and weight are locked for the night; this is what a racer changes between rounds.</p>`;
   h+=rnTuneRows(N);
   if(br&&rd){const sug=rnSuggest(N);h+=`<div class="rnt dial"><span>Your dial-in<small>${p&&p.et!=null?"last ran "+p.et.toFixed(3)+" · ":""}under it is a breakout</small></span><button class="nud" data-rn="dial" data-d="-1" aria-label="quicker">−</button><b>${N.dial.toFixed(2)}</b><button class="nud" data-rn="dial" data-d="1" aria-label="slower">+</button></div>${Math.abs(sug-N.dial)>0.004?`<button class="chip" data-rn="dialsug" style="margin:0 0 8px">Use ${sug.toFixed(2)} (a hundredth under your last)</button>`:""}`;}
-  const wi=wearInfo(quick);if(wi){const c=freshenCost(quick);h+=`<div class="rnt"><span>Wear<small>${wi.passes} of ${wi.budget} passes${wi.w>=1?" · past budget, parts start letting go":""}</small></span><b style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</b>${wi.w>0?`<button class="btn sm" data-rn="freshen">Freshen · ${fmt$(c)}</button>`:""}</div>`;}
+  const wi=wearInfo(quick);if(wi){const c=rnFreshCost(quick);h+=`<div class="rnt"><span>Wear<small>${wi.passes} of ${wi.budget} passes${wi.w>=1?" · past budget, parts start letting go":""}</small></span><b style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</b>${wi.w>0?`<button class="btn sm" data-rn="freshen">Freshen · ${fmt$(c)}</button>`:""}</div>`;}
   else if(!career())h+=`<p class="hint" style="margin:6px 0 0">Sandbox: no wear on the parts.</p>`;
   return h+`</div>`;}
 function rnNextHtml(N){const br=N.fmt==="bracket",i=rnOppIdx(N),rv=N.field[i-1],qb=rnQualBest(N,i),rd=N.stage>=2,ri=N.stage-2;
@@ -25958,7 +25984,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rn]");i
   else if(a==="shock"){S.env.shocks=b.dataset.k;}
   else if(a==="dial"){N.dial=+(N.dial+0.01*+b.dataset.d).toFixed(2);rnSetN(N);}
   else if(a==="dialsug"){N.dial=rnSuggest(N);rnSetN(N);}
-  else if(a==="freshen"){const c=freshenCost(quick);if(!career())return;if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} between rounds — ${fmt$(c)}`);hud();toast("Rings, bearings and a hone — like new");}
+  else if(a==="freshen"){const c=rnFreshCost(quick);if(!career())return;if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} between rounds — ${fmt$(c)}`);hud();toast("Rings, bearings and a hone — like new");}
   save();const sc=$("panel").scrollTop;renderEnv();$("panel").scrollTop=sc;});
 $("envBox").addEventListener("click",e=>{if(e.target.closest('[data-ek="tyre"],[data-ek="body"]')&&S.env.tyrePsi!=null){delete S.env.tyrePsi;renderEnv();save();}});
 async function shareSlip(l){try{await document.fonts.ready;}catch(e){}const c=slipCanvas(l);
@@ -26653,6 +26679,7 @@ function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roa
   try{P=e24Prep(trk,snap.cfg);}catch(err){testing=false;renderTest();toast("The car would not pass scrutineering");return;}
   const seed=career()?rnHash([C().seed,C().week,"e24",trk].join(":")):rnHash(Date.now()+":"+Math.random());
   const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true}});
+  if(career()&&crewPitK()!==1)R.pitK=crewPitK();   // fast hands on the crew: quicker stops (app/crew.js)
   if(career()){C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${fmt$(E24_FEE)} entry`);hud();save();}
   ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0};
   renderEnv();$("app").classList.add("onstrip");ENGINE_VIS.setAutoRotate(false);$("e24Ctl").style.display="";$("e24Side").style.display="";e24HudInit();e24StratRender();e24FeedRender();e24Hud();
@@ -27796,11 +27823,13 @@ $("runTest").addEventListener("click",()=>{
       S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
       if(same&&!ff&&!career()&&env.testType==="pull"&&!failing&&!S.bay)pbPull(res);
-      if(career()&&env.testType==="pull"&&!offStd&&!S.bay){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
+      if(career()&&env.testType==="pull"&&!offStd&&!S.bay){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const bad=!res.fails.length&&!overCap&&!lk&&crewBadRead(),ok=!res.fails.length&&!overCap&&!lk&&!bad;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:bad?"a sensor read wrong (clumsy with sensors) — pull it again":lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
         if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(cfg0.asp!=="na")C().boostedCert=true;}
+        else if(bad){logEvent(`Bad reading on the dyno — a sensor knocked loose; pull it again`,"bad");setTimeout(()=>toast("BAD READING · a sensor knocked loose — pull it again"),2700);}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
+      if(career())crewWork("dyno",{tt:env.testType});
       if(career()&&same&&!S.bay)addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40,hKey(snap.h));
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career()&&same)checkGoals();
@@ -28084,7 +28113,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   k.deposit=Math.round(k.price*k.units*DEPOSIT/10)*10;k.expires=C().week+3;k.accepted=C().week;C().cash+=k.deposit;C().contracts.push(k);
   if(from==="inbox")C().inbox=C().inbox.filter(x=>x.id!==k.id);else if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
-function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
+function priceBoost(){let b=1;if(staffed("sales"))b*=1.06+0.0125*crewL("sales");b*=crewPriceK();if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],ts:["Engine",v=>"Two-stroke"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${+v<1?fmtDisp(+v):(+v).toFixed(1)+" L"}`],
@@ -28155,7 +28184,7 @@ function fits(k,res,cfg){
 const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,lap:8,zero100:3,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1,ts:1};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
-  return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
+  return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*crewFamK(f.res)*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
 const MKT_MIN=0.2;
 function missTxt(d){return d.miss.slice(0,3).map(x=>`${x.name.toLowerCase()} −${Math.round(x.cut*100)}%`).join(" · ");}
 // same engine, same word of mouth: contract or open market, rep follows units, class and how well it suits the buyer
@@ -28195,16 +28224,16 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
 function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
-function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*0.75):r.weeks;}   // machinist: machining projects 25% shorter
+function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
-  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
+  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
 function prestigePass(){let rp=0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
 function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}if(ok){C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=10;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus, +10 rep`,"good");hit.push(g);}}
   if(hit.length){toast(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
 function warrantyPass(){let claims=0,cost=0,active=0;
   for(const f of C().fleet){const age=C().week-f.week;if(age<1||age>10)continue;active++;
-    const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
+    const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1)*(crewT("lucky")?0.85:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
     if(n){f.claims=(f.claims||0)+n;const c=n*(Math.round(f.unitCost*0.5)+350);claims+=n;cost+=c;C().cash-=c;C().warranty+=c;C().rep=Math.max(0,C().rep-n);
       logEvent(`${n} × ${f.name} back from ${f.client} — ${f.weak.toLowerCase()} — ${fmt$(c)} warranty`,"bad");}}
   if(active&&!claims)C().cleanWeeks++;else if(claims)C().cleanWeeks=0;
@@ -28235,8 +28264,8 @@ function SV(){const c=C();if(!Array.isArray(c.service))c.service=[];if(!Array.is
   for(const k of ["svcUsed","svcIncome","rebuildJobs","rebuiltUnits","coresUsed","coreCredit","coreScrap","fidN"])if(typeof c[k]!=="number")c[k]=0;
   if(!c.coreSalt)c.coreSalt=1+Math.floor(Math.random()*1e9);return c;}
 function segCat(seg){const c=CATS.find(x=>x.segs.includes(seg));return c?c.id:"prod";}
-function svcCap(){return 6+(staffed("machinist")?4:0)+(has("shop1")?3:0)+(has("shop2")?3:0);}
-function svcQual(){return 1+(staffed("machinist")?0.15:0)+(has("shop1")?0.1:0)+(has("shop2")?0.1:0);}   // a better shop's rebuild lasts longer
+function svcCap(){return 6+(staffed("machinist")?4+crewL("machinist"):0)+(has("shop1")?3:0)+(has("shop2")?3:0)+2*crewT("owl");}
+function svcQual(){return 1+(staffed("machinist")?0.15+0.025*crewL("machinist"):0)+(has("shop1")?0.1:0)+(has("shop2")?0.1:0)+0.08*crewT("meticulous");}   // a better shop's rebuild lasts longer
 function svcRaw(f){return 0.55*Math.max(300,+f.life||2000)/(SVC_DUTY[segCat(f.seg)]||100)*(0.7+0.3*clamp(+f.rel||80,0,100)/100);}   // weeks to a rebuild
 function svcClient(f){return f.client===f.name?f.name+" buyers":f.client;}
 function fleetBy(fid){return C().fleet.find(f=>f.fid===fid);}
@@ -28273,7 +28302,7 @@ function doRebuild(id){const c=SV();const j=c.service.find(x=>x.id==id);if(!j)re
     if(f&&j.cycle===1){f.rebuiltN=(f.rebuiltN||0)+n;if(!f.due2){f.rbWeek=c.week;f.due2=c.week+clamp(Math.round(svcRaw(f)*svcQual()),8,26);}}
     msg=`Rebuilt ${n} × ${j.engine} for ${j.client} (${SVC_TIERS.find(t=>t.id===j.tier).name.toLowerCase()}) — ${fmt$(j.pay*n)} billed, ${fmt$(net)} after parts, +${rep} rep`;}
   if(j.done>=j.units){c.service=c.service.filter(x=>x!==j);c.rebuildJobs++;if(j.warranty&&f)f.wfix=true;}
-  logEvent(msg,j.warranty?"":"good");checkGoals();return {n,j,parts,net:j.warranty?-parts:(j.pay-j.parts)*n};}
+  logEvent(msg,j.warranty?"":"good");crewWork("rebuild",{n});checkGoals();return {n,j,parts,net:j.warranty?-parts:(j.pay-j.parts)*n};}
 /* cores */
 function coreBook(l){return Math.round(((OPT.layout[l]||{}).cost||1000)*0.25/10)*10;}
 function coreScrapVal(l){return Math.round(coreBook(l)*CORE_SCRAP/10)*10;}
@@ -28659,7 +28688,7 @@ function ddMakeJob(rnd,practice,only){const pool=ddPool();if(!pool.length)return
 function ddWeek(){if(!career())return;const d=DD();if(d.week===C().week)return;
   if(S.bay&&!S.bay.practice&&!testing){const j=S.bay.job;ddExit();C().rep=Math.max(0,C().rep-1);d.failed++;d.streak=0;logEvent(`Dyno day: ${ddLabel(j)} came back for it unfinished — −1 rep`,"bad");}
   const left=d.jobs.filter(j=>j.st==="open").length;d.jobs=d.jobs.filter(j=>j.st==="bay"&&S.bay&&S.bay.job.id===j.id);d.week=C().week;
-  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45:0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
+  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
   for(let i=0;i<n;i++){const j=ddMakeJob(rnd,false);if(j){j.st="open";d.jobs.push(j);}}
   if(left&&d.week>1)logEvent(`Dyno day: ${left} customer${left>1?"s":""} took ${left>1?"their cars":"the car"} elsewhere`,"");
   const nn=d.jobs.filter(j=>j.st==="open").length;if(nn&&d.week>1)setTimeout(()=>toast(`DYNO DAY · ${nn} customer${nn>1?"s":""} booked in`),2700);}
@@ -28678,7 +28707,7 @@ function ddGuard(){const B=S.bay;if(!B)return;const o=B.job.cfg,A=new Set(B.job.
 function ddMarkBuild(){if(!S.bay)return;const A=new Set(S.bay.job.allowed);
   document.querySelectorAll("#buildForm [data-k],#buildForm [data-nk],#buildForm [data-num]").forEach(el=>{const k=el.dataset.k||el.dataset.nk||el.dataset.num;if(A.has(k)||DD_FREE[k])return;el.classList.add("ddno");if(el.tagName==="INPUT")el.disabled=true;});}
 function ddParts(){const B=S.bay;return B?ddPartsOf(B.job.cfg,S.cfg):0;}
-function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:Math.max(20,Math.round(j.labour*0.12/10)*10);}
+function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:crewT("wizard")?Math.max(10,Math.round(j.labour*0.06/10)*10):Math.max(20,Math.round(j.labour*0.12/10)*10);}
 function ddHint(){const B=S.bay;if(!B)return;const j=B.job;if(j.hints>=3)return;const c=ddHintCost(j);j.hints++;if(c)j.paid+=c;save();ddRender();
   toast(c?`Hint · ${fmt$(c)} off the labour`:j.hints===1&&staffed("tuner")&&career()?"Your calibration engineer has a look — free":"Hint");}
 function ddVerdict(res){const B=S.bay,j=B.job,ck=ddCheck(j,S.cfg,res);
@@ -28690,7 +28719,7 @@ function ddHand(){const B=S.bay;if(!B||testing)return;const j=B.job;const last=S
   const parts=ddParts(),under=parts<=j.budget,clean=ck.ok&&!j.hints&&under,F=ddFault(j.fault);
   if(B.practice){S.achN=S.achN||{};if(ck.ok)S.achN.ddp=(S.achN.ddp||0)+1;ddExit();toast(ck.ok?`FIXED · ${F.name} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`:`NOT FIXED · it was ${F.name.toLowerCase()} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`);
     if(ck.ok)achCheck({type:"dd",pass:true,clean});return;}
-  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;
+  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;crewWork("dd",{job:j,ok:ck.ok});
   if(ck.ok){const lab=Math.max(0,j.labour-j.paid),bonus=under?Math.round(j.labour*0.15/10)*10:0,bill=lab+Math.round(Math.min(parts,j.budget)*1.3)+bonus,net=bill-parts;
     C().cash+=net;C().rep+=clean?2:1;d.passed++;d.earned+=net;d.streak++;j.net=net;
     logEvent(`Dyno day: ${ddLabel(j)} fixed (${F.name.toLowerCase()}) — billed ${fmt$(bill)}${bonus?", under budget":""}, net ${fmt$(net)}`,"good");toast(`FIXED · ${fmt$(net)} net${bonus?" · under budget":""}`);}
@@ -28733,7 +28762,7 @@ document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;co
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
+  logEvent(t,"");crewWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -28806,7 +28835,7 @@ function spWeek(){if(!career())return;const s=spS();let paid=0;
   if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
   spLivery();}
 /* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
-function spEvent(kind,o){if(!career()||ff)return;const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
+function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
   if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
   const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
   if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
@@ -28897,7 +28926,7 @@ function renderShop(){
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`;
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
-  $("staff").innerHTML=STAFF.map(st=>{const on=!!C().staff[st.id];return `<div class="up ${on?"owned":""}"><div><h3>${st.name}</h3><p>${st.desc} <b>${fmt$(st.wage)}/week${on?"":", "+fmt$(st.wage*2)+" to hire"}</b></p></div>${on?`<button class="btn sm danger" data-fire="${st.id}">Release</button>`:`<button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire</button>`}</div>`;}).join("");
+  crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
@@ -28929,8 +28958,8 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
 $("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
-  if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
-  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);if(!confirm(`Let the ${st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
+  if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
+  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);const who=(crewP(st.id)||{}).nm;if(!confirm(`Let ${who?who+", your "+st.name.toLowerCase()+",":"the "+st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
     if(C().cert&&(st.id==="tuner"||st.id==="machinist")){C().cert=null;logEvent(`Cert void — the ${st.name.toLowerCase()} signed it off; pull it again`,"bad");setTimeout(()=>toast("CERT VOID · re-run the dyno"),50);}logEvent(`Let the ${st.name.toLowerCase()} go`,"");save();hud();renderShop();renderBuild();recompute();}});
 $("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(!b||b.disabled)return;const r=RND.find(x=>x.id===b.dataset.rnd);if(C().rndActive||C().rnd[r.id])return;if(C().cash<r.cost){toast(`Need ${fmt$(r.cost-C().cash)} more`);return;}
   C().cash-=r.cost;C().rndActive={id:r.id,done:0};logEvent(`Funded R&D: ${r.name} (${r.weeks} weeks)`,"");save();hud();renderShop();toast(`R&D STARTED · ${r.weeks} WEEKS`);buzz(20);});
@@ -28959,6 +28988,145 @@ $("importSave").addEventListener("click",()=>{$("sheetTitle").textContent="Impor
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
+/* ===================== CREW PROGRESSION (career) =====================
+   Every STAFF hire is a named person: C().staff[role] = {nm, role, lvl 1-5, xp, tr:[{id,rv}], mor, away, crs, h:{...}, hired}.
+   The role's STAFF effect is the base; each level past 1 adds a little to it (and to the wage). Traits (CREW_TRAITS) roll
+   at hire, stay hidden until they show (level 2 / 8 weeks, level 3 / 16 weeks) and only act once revealed. Level 1 with no
+   traits is exactly the old flat staff effect, so a save from before people (staff[role] = hire week) reads the same.
+   The crew has its own seeded generator (C().crew.seed): it never draws from C().seed, so contracts, claims and the
+   week's walk-ins roll as they always did. */
+const CREW_XP=[0,80,200,380,640];   // cumulative XP for levels 1..5
+const CREW_FIRST=["Dale","Marie","Kev","Priya","Earl","Tanya","Lou","Gus","Rosa","Wes","Darlene","Hank","Mo","Jules","Shane","Bev","Corey","Nadia","Ray","Fern","Lyle","Joanne","Arjun","Cass","Tomasz","Ingrid","Dwayne","Leah","Bao","Colette","Rune","Amrit","Sheila","Travis","Noreen","Elias"];
+const CREW_LAST=["Kowalski","Lindqvist","Fontaine","Gill","Thiessen","McAllister","Boychuk","Nakamura","Dumont","Halvorsen","Okafor","Penner","Sandhu","Lavoie","Reimer","Fraser","Hryniuk","Olsen","Cardinal","Mbeki","Wiebe","Larocque","Tkachuk","Ferreira","Bjornson","Desjarlais","Kaur","Doucette","Friesen","Abbott"];
+const CREW_ALL=["machinist","tuner","dynotech","sales"];
+const CREW_TRAITS=[
+  {id:"wizard",v:"is a tuning wizard",n:"Tuning wizard",pos:1,roles:["tuner","dynotech"],d:"Dyno-day hints cost half, and auto-tune lands closer to the edge."},
+  {id:"hands",v:"has fast hands",n:"Fast hands",pos:1,roles:CREW_ALL,d:"24 Hours pit stops 15% quicker; race-night freshens cost a quarter less."},
+  {id:"owl",v:"is a night owl",n:"Night owl",pos:1,roles:["machinist","dynotech","tuner"],d:"Works late: the rebuild bay takes 2 more units a week."},
+  {id:"frugal",v:"is frugal",n:"Frugal",pos:1,roles:CREW_ALL,d:"Haggles with every supplier: unit cost −2%."},
+  {id:"diesel",v:"is a diesel whisperer",n:"Diesel whisperer",pos:1,roles:CREW_ALL,d:"Diesel engines sell for 4% more."},
+  {id:"twostroke",v:"is a two-stroke nut",n:"Two-stroke nut",pos:1,roles:CREW_ALL,d:"Two-stroke engines sell for 6% more."},
+  {id:"lucky",v:"is lucky",n:"Lucky",pos:1,roles:CREW_ALL,d:"Warranty claims come back 15% less often."},
+  {id:"meticulous",v:"is meticulous",n:"Meticulous",pos:1,roles:["machinist","dynotech"],d:"Rebuilds last 8% longer."},
+  {id:"smooth",v:"is a smooth talker",n:"Smooth talker",pos:1,roles:["sales"],d:"Contracts and buyers pay +2%."},
+  {id:"quick",v:"is a quick study",n:"Quick study",pos:1,roles:CREW_ALL,d:"Learns 40% faster."},
+  {id:"workhorse",v:"is a workhorse",n:"Workhorse",pos:1,roles:CREW_ALL,d:"Busy weeks don't wear on morale."},
+  {id:"clumsy",v:"is clumsy with sensors",n:"Clumsy with sensors",pos:0,roles:["dynotech","tuner"],d:"Knocks a sensor loose now and then: about one cert pull in twelve reads wrong and has to be pulled again."},
+  {id:"nervous",v:"gets nervous at the strip",n:"Nervous at the strip",pos:0,roles:CREW_ALL,d:"Fumbles in the pits: race-night freshens cost a quarter more, and track days teach them nothing."},
+  {id:"slow",v:"is a slow learner",n:"Slow learner",pos:0,roles:CREW_ALL,d:"Learns 30% slower."},
+  {id:"fuse",v:"has a short fuse",n:"Short fuse",pos:0,roles:CREW_ALL,d:"Morale drops twice as fast."},
+  {id:"heavy",v:"is heavy-handed",n:"Heavy-handed",pos:0,roles:["machinist","tuner","dynotech"],d:"Goes through parts: unit cost +1.5%."}
+];
+const crewTr=id=>CREW_TRAITS.find(t=>t.id===id);
+const CREW_COL={machinist:"var(--info)",tuner:"var(--orange)",dynotech:"var(--good)",sales:"var(--warn)"};
+function crewS(){const c=C();if(!c.crew||typeof c.crew!=="object")c.crew={};const k=c.crew;if(!k.seed)k.seed=((c.seed>>>0)^0x5bd1e995)>>>0||7;if(!k.cand||typeof k.cand!=="object")k.cand={};if(!k.hist||typeof k.hist!=="object")k.hist={lv:0,max:1,crs:0,rv:0,quit:0};return k;}
+function crewRnd(){const k=crewS();k.seed=(k.seed*1664525+1013904223)>>>0;return k.seed/4294967296;}
+const crewPick=a=>a[Math.floor(crewRnd()*a.length)];
+function crewName(){const k=crewS(),used=new Set(Object.values(C().staff||{}).concat(Object.values(k.cand)).map(p=>p&&typeof p==="object"?String(p.nm).split(" ")[0]:""));let f=crewPick(CREW_FIRST);for(let i=0;i<12&&used.has(f);i++)f=crewPick(CREW_FIRST);return f+" "+crewPick(CREW_LAST);}   // no two first names alike in the shop
+function crewRollTraits(role){const x=crewRnd(),n=x<0.3?0:x<0.75?1:2,out=[];
+  for(let i=0;i<n;i++){const pos=crewRnd()<0.62;const pool=CREW_TRAITS.filter(t=>!!t.pos===pos&&t.roles.includes(role)&&!out.some(o=>o.id===t.id)&&!(t.id==="quick"&&out.some(o=>o.id==="slow"))&&!(t.id==="slow"&&out.some(o=>o.id==="quick")));if(pool.length)out.push({id:crewPick(pool).id,rv:false});}
+  return out;}
+function crewPerson(role,mig){return{nm:crewName(),role,lvl:1,xp:0,tr:mig?[]:crewRollTraits(role),mor:70,away:0,crs:null,warn:0,wk:0,pulls:0,h:{},hired:C().week};}
+/* the next applicant for an open role: fixed once drawn, so the name on the card is the one you hire */
+function crewCand(role){const k=crewS();if(!k.cand[role])k.cand[role]=crewPerson(role,false);return k.cand[role];}
+function crewNew(role){const k=crewS(),p=crewCand(role);delete k.cand[role];p.hired=C().week;p.mor=70;return p;}
+/* a save from before people: staff[role] = hire week → a level-1 hand with no traits */
+function crewP(role){if(!career())return null;const st=C().staff;if(!st)return null;const v=st[role];if(!v)return null;
+  if(typeof v!=="object"){const p=crewPerson(role,true);p.hired=+v||C().week;st[role]=p;return p;}
+  if(!v.h||typeof v.h!=="object")v.h={};if(!Array.isArray(v.tr))v.tr=[];if(!(v.lvl>=1))v.lvl=1;return v;}
+function crewOn(role){const p=crewP(role);return !!p&&!(p.away>C().week);}
+function crewL(role){if(!career()||dev())return 0;const p=crewP(role);return p?Math.max(0,Math.min(4,(p.lvl|0)-1)):0;}   // levels past the first
+function crewT(id){if(!career()||dev()||!C().staff)return 0;let n=0;for(const r of CREW_ALL){const p=crewP(r);if(p&&!(p.away>C().week)&&p.tr.some(t=>t.id===id&&t.rv))n++;}return n;}
+function crewWage(st){const p=crewP(st.id);const L=p?Math.max(1,Math.min(5,p.lvl|0)):1;return L===1?st.wage:Math.round(st.wage*(1+0.12*(L-1))/10)*10;}
+/* trait effects the rest of the shop reads (all exactly 1 / 0 with no revealed trait) */
+function crewCostK(){return (crewT("frugal")?0.98:1)*(crewT("heavy")?1.015:1);}
+function crewPriceK(){return crewT("smooth")?1.02:1;}
+function crewFamK(res){return res&&res.diesel&&crewT("diesel")?1.04:res&&res.twoStroke&&crewT("twostroke")?1.06:1;}
+function crewPitK(){return crewT("hands")?0.85:1;}
+function crewRnFreshK(){return (crewT("hands")?0.75:1)*(crewT("nervous")?1.25:1);}
+function crewBadRead(){return crewT("clumsy")>0&&crewRnd()<1/12;}
+/* the role's effect at its level, in words */
+function crewFx(role,L){L=L||1;const k=L-1;
+  return role==="machinist"?`Unit cost −${8+k}%, machining R&D ${25+2.5*k}% faster, rebuild bay +${4+k} a week.`
+    :role==="tuner"?`+${(1+0.15*k).toFixed(k?2:0)} octane number of knock margin on every build; auto-tune and a free first dyno-day hint.`
+    :role==="dynotech"?`Dyno pulls, endurance and over-rev runs are free; +${(0.45+0.08*k).toFixed(2)} dyno-day customers a week on average.`
+    :role==="sales"?`Contracts pay +${+(6+1.25*k).toFixed(2)}% and every category shows a third offer.`:"";}
+const CREW_HIST={eng:["built","engine","engines"],cal:["calibrated","engine","engines"],jobs:["fixed","customer engine","customer engines"],rb:["rebuilt","engine","engines"],pulls:["ran","dyno pull","dyno pulls"],ev:["crewed at","event","events"],deals:["closed","deal","deals"],rnd:["saw through","R&D project","R&D projects"]};
+function crewHistTxt(p){const o=[];for(const k in CREW_HIST){const n=p.h[k]|0;if(n>0){const w=CREW_HIST[k];o.push(`${w[0]} ${n} ${n===1?w[1]:w[2]}`);}}return o.length?o.join(" · "):"Nothing on the board yet.";}
+const crewRole=r=>(STAFF.find(s=>s.id===r)||{name:r}).name;
+const crewFirst=p=>String(p.nm).split(" ")[0];
+/* XP: work the role does. mult: quick/slow; a person away on a course earns nothing */
+function crewXP(role,xp,hk,hn){const p=crewP(role);if(!p||p.away>C().week)return;if(hk)p.h[hk]=(p.h[hk]||0)+(hn||1);
+  const has=id=>p.tr.some(t=>t.id===id&&t.rv);xp*=has("quick")?1.4:has("slow")?0.7:1;p.xp=(p.xp||0)+xp;p.wk=(p.wk||0)+xp;crewLevel(p);}
+function crewLevel(p){let up=false;while(p.lvl<5&&p.xp>=CREW_XP[p.lvl]){p.lvl++;up=true;const st=STAFF.find(s=>s.id===p.role);const h=crewS().hist;h.lv++;h.max=Math.max(h.max||1,p.lvl);p.mor=Math.min(100,(p.mor||70)+5);
+    logEvent(`${p.nm} (${crewRole(p.role).toLowerCase()}) made level ${p.lvl} — wage now ${fmt$(crewWage(st))}/week`,"good");toast(`LEVEL UP · ${p.nm.toUpperCase()} · LV ${p.lvl}`);}
+  if(up){crewReveal(p);syncShop();}}
+/* traits show themselves: the first at level 2 or 10 weeks on the job, the second at level 3 or 20 weeks */
+function crewReveal(p){const wks=C().week-(p.hired||C().week);let any=false;
+  p.tr.forEach((t,i)=>{if(t.rv)return;if(p.lvl>=2+i||wks>=10*(i+1)){t.rv=true;any=true;const T=crewTr(t.id);crewS().hist.rv++;
+    logEvent(`Turns out ${p.nm} ${T.v}: ${T.d.replace(/\.$/,"").replace(/^./,c=>c.toLowerCase())}`,T.pos?"good":"bad");}});
+  if(any)syncShop();return any;}
+/* game hooks: one call per kind of work */
+function crewWork(kind,o){if(!career()||!C().staff)return;o=o||{};try{
+  if(kind==="dyno"||kind==="drag"){const p=crewP("dynotech");if(p&&(p.pulls|0)<6){p.pulls=(p.pulls|0)+1;crewXP("dynotech",o.tt==="endurance"?4:o.tt==="overrev"?3:kind==="drag"?1:2,kind==="drag"?null:"pulls");}}
+  else if(kind==="dd"){const tune=(o.job.fix||[]).some(f=>["timing","lambda","map","boost","fuel"].includes(f[0]));const r=tune?"tuner":"machinist";crewXP(r,o.ok?14:4,o.ok?"jobs":null);crewXP("dynotech",o.ok?5:2);}
+  else if(kind==="sale"){const f=C().fleet[C().fleet.length-1],u=f?f.units|0:1;crewXP("sales",6,"deals");crewXP("machinist",3,"eng",u);crewXP("tuner",2,"cal",u);crewXP("dynotech",1.5);}
+  else if(kind==="rebuild"){crewXP("machinist",0.5*(o.n||1),"rb",o.n||1);}
+  else if(kind==="rnd"){crewXP(o.r&&o.r.mach?"machinist":"tuner",20,"rnd");}
+  else{const w=!!(o.win||o.record);for(const r of CREW_ALL){const p=crewP(r);if(!p||p.away>C().week||p.tr.some(t=>t.id==="nervous"&&t.rv))continue;p.evn=(p.evn|0)+1;if(p.evn<=4)crewXP(r,r==="dynotech"?(w?6:4):(w?2:1.5),"ev");else p.h.ev=(p.h.ev||0)+1;}}   // track days: the first four a week teach them something
+  }catch(e){}}
+/* weekly: courses end, traits show, morale moves, the unhappy warn and then walk */
+function crewWeek(){if(!career()||!C().staff)return;const k=crewS();let changed=false;const bounced=C().cash<0;
+  for(const r of CREW_ALL){const p=crewP(r);if(!p)continue;
+    if(p.crs&&p.away&&C().week>=p.away){const c=p.crs;p.crs=null;p.away=0;changed=true;p.mor=Math.min(100,(p.mor||70)+10);
+      if(c.k==="xp"){p.xp+=c.xp;p.h.crs=(p.h.crs||0)+1;logEvent(`${p.nm} is back from the ${c.n.toLowerCase()} — +${c.xp} XP`,"good");crewLevel(p);}
+      else{const T=crewTr(c.t);const neg=p.tr.findIndex(t=>!crewTr(t.id).pos&&t.rv);if(p.tr.length>=2&&neg>=0)p.tr.splice(neg,1);if(p.tr.length<2)p.tr.push({id:c.t,rv:true});p.h.crs=(p.h.crs||0)+1;logEvent(`${p.nm} is back from the ${c.n.toLowerCase()}: now ${T.n.toLowerCase()}`,"good");}}
+    if(p.away>C().week){p.wk=0;p.pulls=0;p.evn=0;continue;}
+    if(crewReveal(p))changed=true;
+    const has=id=>p.tr.some(t=>t.id===id&&t.rv),fk=has("fuse")?2:1;let d=(p.mor||70)<75?4:0;
+    if((p.wk||0)>30&&!has("workhorse"))d=-Math.min(5,Math.ceil(((p.wk||0)-30)/4))*fk;
+    if(bounced)d-=12*fk;
+    p.mor=Math.max(0,Math.min(100,(p.mor||70)+d));p.wk=0;p.pulls=0;p.evn=0;
+    if(p.mor<25){if(!p.warn){p.warn=C().week;logEvent(`${p.nm} (${crewRole(r).toLowerCase()}) is fed up — ${bounced?"pay bounced":"run off their feet"}. Ease off or send them on a course, or they'll walk`,"bad");}
+      else if(C().week>p.warn&&crewRnd()<0.4){delete C().staff[r];k.hist.quit++;changed=true;logEvent(`${p.nm} quit — the ${crewRole(r).toLowerCase()} job is open again`,"bad");toast(`${p.nm.toUpperCase()} QUIT`);
+        if(C().cert&&(r==="tuner"||r==="machinist"))C().cert=null;}}
+    else if(p.mor>=35)p.warn=0;}
+  if(changed)syncShop();}
+/* training: a course costs money and takes them away for its weeks. Skills = XP; specialist = a chosen good trait */
+function crewCourses(p){const L=p.lvl|0;return{xp:{k:"xp",n:"Skills course",wk:2,cost:1500+500*L,xp:Math.round(CREW_XP[Math.min(4,L)]*0.35+30)},
+  tr:{k:"tr",n:"Specialist course",wk:4,cost:4500+900*L}};}
+function crewTrainable(p){return CREW_TRAITS.filter(t=>t.pos&&t.roles.includes(p.role)&&!p.tr.some(x=>x.id===t.id)&&!(t.id==="quick"&&p.tr.some(x=>x.id==="slow")));}
+function crewCanLearn(p){return p.tr.length<2||p.tr.some(t=>!crewTr(t.id).pos&&t.rv);}
+function crewTrain(role,kind,tid){const p=crewP(role);if(!p||p.away>C().week)return;const cs=crewCourses(p),c=cs[kind];if(!c)return;
+  if(kind==="xp"&&p.lvl>=5)return;if(kind==="tr"&&(!crewCanLearn(p)||!crewTrainable(p).some(t=>t.id===tid)))return;
+  if(C().cash<c.cost){toast(`Need ${fmt$(c.cost-C().cash)} more`);return;}
+  C().cash-=c.cost;p.away=C().week+c.wk;p.crs=Object.assign({},c,kind==="tr"?{t:tid,n:`${crewTr(tid).n} course`}:{});crewS().hist.crs++;syncShop();
+  logEvent(`Sent ${p.nm} on the ${p.crs.n.toLowerCase()} — ${fmt$(c.cost)}, back week ${p.away}`,"");achCheck({type:"crew"});save();hud();renderShop();renderBuild();recompute();toast(`${p.nm.toUpperCase()} · ON COURSE ${c.wk} WEEKS`);buzz(20);}
+function crewMaxLv(){let m=0;for(const r of CREW_ALL){const p=crewP(r);if(p)m=Math.max(m,p.lvl|0);}return Math.max(m,career()?crewS().hist.max||0:0);}
+/* the Staff section: one card per role, a person or the next applicant */
+function crewRender(){const box=$("staff");if(!box||!career())return;let open=null;try{open=box.dataset.open||null;}catch(e){}
+  box.innerHTML=`<p class="hint crewi">Staff learn on the job and level up to 5: each level adds a little to what they do, and to their wage. Everyone has a trait or two that shows in time. Overwork or a bounced payroll sours morale, and an unhappy hand warns you once before they quit.</p>`+STAFF.map(st=>{const p=crewP(st.id);
+    if(!p){const a=crewCand(st.id);return `<div class="up crew"><div class="cwho"><i class="cav off" style="--cc:${CREW_COL[st.id]}">${crewIni(a.nm)}</i><div><h3>${st.name}</h3><p class="csub">Applicant: <b>${ddEsc(a.nm)}</b> · level 1</p></div></div><p>${st.desc} <b>${fmt$(st.wage)}/week, ${fmt$(st.wage*2)} to hire</b></p><div class="cbtn"><button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire ${ddEsc(crewFirst(a))}</button></div></div>`;}
+    const L=p.lvl|0,nx=L<5?CREW_XP[L]:null,pv=CREW_XP[L-1],pct=nx?Math.max(0,Math.min(100,Math.round(100*(p.xp-pv)/(nx-pv)))):100,away=p.away>C().week,hid=p.tr.filter(t=>!t.rv).length;
+    const chips=p.tr.filter(t=>t.rv).map(t=>{const T=crewTr(t.id);return `<span class="ctr ${T.pos?"pos":"neg"}" title="${ddEsc(T.d)}">${T.n}</span>`;}).join("")+(hid?`<span class="ctr hid">${hid===1?"one trait":"two traits"} still to show</span>`:"");
+    const mor=Math.round(p.mor||0),mc=mor<25?"crit":mor<45?"warn":"good";const cs=crewCourses(p);
+    const train=away?`<p class="caway">On the ${ddEsc(p.crs?p.crs.n.toLowerCase():"course")} · back week ${p.away}. The role's effect is off till then.</p>`
+      :`<details class="ctrain" data-role="${st.id}"${open===st.id?" open":""}><summary>Training</summary><p class="hint">A course takes them out of the shop: no ${st.name.toLowerCase()} effect while they're away. Wages still run.</p>
+        ${L<5?`<button class="ccrs" data-crs="xp" data-role="${st.id}">${cs.xp.n} · ${cs.xp.wk} wk · ${fmt$(cs.xp.cost)}<small>+${cs.xp.xp} XP</small></button>`:`<p class="hint">Top level — nothing left to teach them.</p>`}
+        ${crewCanLearn(p)?crewTrainable(p).map(t=>`<button class="ccrs" data-crs="tr" data-t="${t.id}" data-role="${st.id}">${t.n} · ${cs.tr.wk} wk · ${fmt$(cs.tr.cost)}<small>${t.d}</small></button>`).join(""):`<p class="hint">Already two traits — a specialist course only replaces a known bad habit.</p>`}</details>`;
+    return `<div class="up owned crew${away?" away":""}"><div class="cwho"><i class="cav" style="--cc:${CREW_COL[st.id]}">${crewIni(p.nm)}</i><div><h3>${ddEsc(p.nm)}</h3><p class="csub">${st.name} · since week ${p.hired||1}${away?" · on course":""}</p></div><b class="clv">LV ${L}</b></div>
+      <div class="cbar" title="${Math.floor(p.xp)} XP"><i style="width:${pct}%"></i></div><p class="cxp">${nx?`${Math.floor(p.xp)} / ${nx} XP to level ${L+1}`:`${Math.floor(p.xp)} XP · top level`}<span class="cmor ${mc}">morale ${mor}</span></p>
+      ${chips?`<div class="ctrs">${chips}</div>`:""}
+      <p>${crewFx(st.id,L)} <b>${fmt$(crewWage(st))}/week</b></p><p class="chist">${ddEsc(crewHistTxt(p))}</p>
+      ${train}<div class="cbtn"><button class="btn sm danger" data-fire="${st.id}">Release</button></div></div>`;}).join("");}
+const crewIni=n=>String(n).split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+$("staff").addEventListener("click",e=>{const b=e.target.closest("[data-crs]");if(!b)return;crewTrain(b.dataset.role,b.dataset.crs,b.dataset.t);});
+$("staff").addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("ctrain"))$("staff").dataset.open=d.open?d.dataset.role:"";},true);
+ACH.push(
+  {g:"shop",id:"crew_lv",name:"Moving up",desc:"A member of staff reaches level 2.",ic:"people",tier:"bronze",check:()=>career()&&crewMaxLv()>=2},
+  {g:"shop",id:"crew_course",name:"Back to school",desc:"Send someone on a training course.",ic:"people",tier:"bronze",check:()=>career()&&(crewS().hist.crs||0)>0},
+  {g:"shop",id:"crew_crew3",name:"Seasoned crew",desc:"All four roles filled at level 3 or better.",ic:"people",tier:"silver",check:()=>career()&&CREW_ALL.every(r=>{const p=crewP(r);return p&&p.lvl>=3;})},
+  {g:"shop",id:"crew_lv5",name:"Master hand",desc:"A member of staff reaches level 5.",ic:"star",tier:"gold",check:()=>career()&&crewMaxLv()>=5});
 /* ===================== TROPHY ROOM =====================
    What the shop has won, set and kept, in one room. The game already keeps records (recs()), achievements (S.ach), goals
    (C().goals), sponsors (spS()) and Dyno day counts (DD()); what it didn't keep is a dated history of wins, so this adds
