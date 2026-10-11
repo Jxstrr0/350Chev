@@ -19606,8 +19606,8 @@ function bogTruck(cls, tyre, color, hw){
   var dia=bogTyreDia(cls), r=dia*0.0254/2, wIn=spec.w[kind]||12.5, tw=wIn*0.0254, rimR=spec.rimIn*0.0254/2, wb=spec.wb, trR=spec.trk;
   var mats=bogtMats(color, spec, cls, kind, dia, wIn, lite); delete mats.num;
   var g=new THREE.Group(), pivot=new THREE.Group(), body=new THREE.Group(); g.add(pivot); pivot.add(body);
-  var bin=sc_bin(), bx=BOGT.geo.box||(BOGT.geo.box=new THREE.BoxGeometry(1,1,1)), cy=BOGT.geo.cyl||(BOGT.geo.cyl=new THREE.CylinderGeometry(0.5,0.5,1,12)),
-      cy6=BOGT.geo.cyl6||(BOGT.geo.cyl6=new THREE.CylinderGeometry(0.5,0.5,1,lite?5:7)), sp=BOGT.geo.sph||(BOGT.geo.sph=new THREE.SphereGeometry(0.5,12,8)), i, s;
+  var bin=sc_bin(), bx=BOGT.geo.box||(BOGT.geo.box=new THREE.BoxGeometry(1,1,1)), tk=lite?"l":"f", cy=BOGT.geo["cyl"+tk]||(BOGT.geo["cyl"+tk]=new THREE.CylinderGeometry(0.5,0.5,1,lite?8:12)),
+      cy6=BOGT.geo["cyl6"+tk]||(BOGT.geo["cyl6"+tk]=new THREE.CylinderGeometry(0.5,0.5,1,lite?5:7)), sp=BOGT.geo["sph"+tk]||(BOGT.geo["sph"+tk]=new THREE.SphereGeometry(0.5,lite?8:12,lite?6:8)), i, s;
   function box(m,x,y,z,w,h,d,rx,ry,rz){ bin.add(m, bx, mkM(x,y,z,rx||0,ry||0,rz||0,w,h,d)); }
   function rbox(m,x,y,z,w,h,d,bv,rx,ry,rz){ bin.add(m, sc_rbox(w,h,d,bv), mkM(x,y,z,rx||0,ry||0,rz||0)); }
   function cyl(m,x,y,z,rr,len,rx,ry,rz){ bin.add(m, cy, mkM(x,y,z,rx||0,ry||0,rz||0,2*rr,len,2*rr)); }
