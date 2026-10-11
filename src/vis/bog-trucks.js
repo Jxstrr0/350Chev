@@ -115,7 +115,7 @@ function bogRimGeo(rimR, w, style, hub, lite){
     parts.push({g:new THREE.LatheGeometry([new THREE.Vector2(rimR*0.9, hw*0.9), new THREE.Vector2(rimR*0.9, hw+0.016), new THREE.Vector2(rimR*1.1, hw+0.016), new THREE.Vector2(rimR*1.12, hw*0.88)], lite?16:32), m:M0()});
     if(!lite){ var bolt=BOGT.geo.bolt||(BOGT.geo.bolt=new THREE.CylinderGeometry(0.009,0.009,0.014,5,1)); for(i=0;i<18;i++){ var b=i/18*TAU; parts.push({g:bolt, m:mkM(Math.cos(b)*rimR*1.0, hw+0.022, Math.sin(b)*rimR*1.0)}); } }
   } else {
-    var nut=BOGT.geo.nut||(BOGT.geo.nut=new THREE.CylinderGeometry(0.012,0.012,0.024,6)); for(i=0;i<6;i++){ var b2=i/6*TAU; parts.push({g:nut, m:mkM(Math.cos(b2)*rimR*0.27, dishY+0.022, Math.sin(b2)*rimR*0.27)}); }
+    var nut=BOGT.geo.nut||(BOGT.geo.nut=new THREE.CylinderGeometry(0.012,0.012,0.024,6)); for(i=0;i<(lite?0:6);i++){ var b2=i/6*TAU; parts.push({g:nut, m:mkM(Math.cos(b2)*rimR*0.27, dishY+0.022, Math.sin(b2)*rimR*0.27)}); }
     var cap=new THREE.CylinderGeometry(rimR*0.15, rimR*0.17, 0.04, 12); cap.translate(0, dishY+0.03, 0); parts.push({g:cap, m:M0()});
   }
   /* inside: barrel, a dark backing so the wheel doesn't see through, the hub (a Rockwell's planetary dome pokes out of the dish) */
@@ -264,7 +264,7 @@ function bogTruck(cls, tyre, color, hw){
     /* ---- Open / Super: tube chassis, chopped fibreglass cab, engine set back, cage, no bed ---- */
     var yl=1.0, yu=1.4, xs=[-0.95,-0.3,0.4,1.55,2.75,3.6];
     for(s=-1;s<=1;s+=2){ rod("tube",[-0.95,yl,s*0.42],[3.7,yl+0.02,s*0.42],0.035); rod("tube",[-0.95,yu,s*0.5],[1.55,yu,s*0.55],0.035); rod("tube",[1.55,yu,s*0.55],[3.6,yu-0.04,s*0.45],0.035);
-      for(i=0;i<xs.length;i++){ var xx=xs[i]; rod("tube",[xx,yl,s*0.42],[xx,yu-(xx>2?0.03:0),s*(xx<1.6?(xx<0?0.5:0.53):0.47)],0.03); if(i<xs.length-1) rod("tube",[xx,yl,s*0.42],[xs[i+1],yu,s*0.5],0.026); }
+      for(i=0;i<xs.length;i++){ var xx=xs[i]; rod("tube",[xx,yl,s*0.42],[xx,yu-(xx>2?0.03:0),s*(xx<1.6?(xx<0?0.5:0.53):0.47)],0.03); if(i<xs.length-1 && (!lite || (i&1))) rod("tube",[xx,yl,s*0.42],[xs[i+1],yu,s*0.5],0.026); }
       /* cage: main hoop, A-pillars, roof rails, rear braces, front down-bars over the engine */
       rod("tube",[0.4,yu,s*0.55],[0.42,2.24,s*0.5],0.035); rod("tube",[1.55,yu,s*0.58],[1.12,2.24,s*0.5],0.035); rod("tube",[0.42,2.24,s*0.5],[1.12,2.24,s*0.5],0.035);
       rod("tube",[0.42,2.2,s*0.48],[-0.9,yu+0.02,s*0.46],0.03); rod("tube",[1.3,2.0,s*0.55],[3.55,1.42,s*0.42],0.03); rod("tube",[0.42,1.8,s*0.56],[1.4,1.8,s*0.6],0.028); }
@@ -285,8 +285,8 @@ function bogTruck(cls, tyre, color, hw){
     else if(asp==="T"||asp==="C"){ cyl("cast",2.2,1.98,0.18,0.17,0.17,PI/2,0,0); if(asp==="C") cyl("chrome",2.4,1.98,0.18,0.1,0.22,0,0,PI/2); else cyl("chrome",2.2,2.2,0.18,0.1,0.24); rod("satin",[2.2,1.95,0.06],[2.0,1.78,-0.15],0.06); box("black",2.2,1.78,0,0.7,0.04,0.46); }
     else if(!diesel){ box("black",2.2,1.8,0,0.66,0.05,0.42); for(i=0;i<8;i++) cyl("chrome",1.96+(i>>1)*0.16,1.92,(i&1?1:-1)*0.11,0.045,0.2); }
     if(diesel){ cyl("cast",2.1,1.95,0.18,0.16,0.16,PI/2,0,0); cyl("chrome",1.72,2.55,0.32,0.07,1.5); U.tips.push(new THREE.Vector3(1.72,3.32,0.32)); U.dirs.push(new THREE.Vector3(-0.15,1,0).normalize()); }
-    for(s=-1;s<=1;s+=2) for(i=0;i<4;i++){ var hx=1.85+i*0.17; rod("chrome",[hx,1.3,s*0.3],[hx+0.02,1.42,s*0.58],0.028,true); rod("chrome",[hx+0.02,1.42,s*0.58],[hx-0.32,2.05,s*0.66],0.028,true);
-      if(!diesel && (i===0||i===2)){ U.tips.push(new THREE.Vector3(hx-0.34,2.08,s*0.66)); U.dirs.push(new THREE.Vector3(-0.45,1,s*0.1).normalize()); } }
+    for(s=-1;s<=1;s+=2) for(i=0;i<(lite?2:4);i++){ var hx=1.85+i*(lite?0.34:0.17); rod("chrome",[hx,1.3,s*0.3],[hx+0.02,1.42,s*0.58],0.028,true); rod("chrome",[hx+0.02,1.42,s*0.58],[hx-0.32,2.05,s*0.66],0.028,true);
+      if(!diesel && (i===0||i===2||(lite&&i===1))){ U.tips.push(new THREE.Vector3(hx-0.34,2.08,s*0.66)); U.dirs.push(new THREE.Vector3(-0.45,1,s*0.1).normalize()); } }
     /* back: rear-mount radiator + fan, fuel cell, battery, tube bumper */
     rbox("black",-0.62,1.78,0,0.12,0.6,0.92,0.02,0,0,0.42); cyl("satin",-0.53,1.8,0,0.26,0.1,0,0,PI/2-0.42); box("alu",-0.66,1.78,0,0.02,0.5,0.84,0,0,0.42);
     rbox("alu",-0.3,1.24,0,0.46,0.3,0.62,0.03); box("black",0.15,1.12,-0.25,0.26,0.18,0.18);
