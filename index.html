@@ -30687,7 +30687,7 @@ function ddCheck(job,cfg,res){const iss=[],o=job.cfg,A=new Set(job.allowed);
 /* make one job: X = {sim(cfg,envExtra), rnd(), ok(key,val), pool:[preset], f:[fault ids] (optional)} — null if nothing fits */
 function ddMake(X){const tries=24;
   for(let n=0;n<tries;n++){const p=X.pool[Math.floor(X.rnd()*X.pool.length)];if(!p)return null;
-    const fl=DD_FAULTS.filter(f=>!X.f||X.f.indexOf(f.id)>=0);let u=X.rnd()*fl.reduce((a,f)=>a+(f.w||1),0),F=fl[fl.length-1];for(const f of fl){u-=f.w||1;if(u<0){F=f;break;}}
+    const fl=DD_FAULTS.filter(f=>!X.f||X.f.indexOf(f.id)>=0),fw=f=>(f.w||1)*(X.easy&&f.hrs<=DD_EASY_HRS?DD_EASY_W:1);let u=X.rnd()*fl.reduce((a,f)=>a+fw(f),0),F=fl[fl.length-1];for(const f of fl){u-=fw(f);if(u<0){F=f;break;}}
     const c0=Object.assign({},SIM.DEFAULT_CFG,ddCl(p.cfg));const r0=X.sim(c0);if(r0.fails.length)continue;
     let g=null;try{g=F.gen(c0,r0,X);}catch(e){g=null;}if(!g)continue;
     const env=g.env||{},rf0=X.sim(g.cfg,env);
@@ -30719,7 +30719,8 @@ const DD_VEH={g10:"'99 city hatch","4ac":"'87 hatchback","22re":"'89 compact pic
   compound402:"outlaw truck",p4236:"'78 tractor",c59_12v:"'95 three-quarter-ton",lb7:"'03 heavy-duty pickup",psd73:"'99 super-duty",psd67:"'19 super-duty",alh:"'02 diesel wagon",om606:"'97 diesel sedan",s60:"'05 highway tractor",
   ["1kd"]:"'10 diesel 4x4",smoker26:"pulling truck",ss_triple:"super stock puller",["12a_sa"]:"'79 rotary coupe",["13b_fc"]:"'88 rotary coupe",["13b_rew"]:"'94 twin-turbo rotary",renesis:"'05 rotary coupe",["20b_rew"]:"'96 three-rotor",
   ["13b_bp"]:"rotary club racer",r26b:"four-rotor prototype"};
-const DD_COST=[3000,4500,6500,9500,16000,1e9];   // dearest customer engine by rep tier: a backyard shop sees commuters
+const DD_COST=[3000,4500,6500,9500,16000,1e9];
+const DD_EASY_HRS=2.5,DD_EASY_W=1.6,DD_EASY_TIER=1;   // a backyard or local shop mostly sees the quick, readable faults (one stress-report line, a part or a setting)   // dearest customer engine by rep tier: a backyard shop sees commuters
 function DD(){const c=C();if(!c.dd||typeof c.dd!=="object")c.dd={};const d=c.dd;if(!Array.isArray(d.jobs))d.jobs=[];
   for(const k of ["week","passed","failed","earned","streak"])if(typeof d[k]!=="number")d[k]=0;if(!d.seed)d.seed=1+Math.floor(Math.random()*1e9);return d;}
 function ddRnd(o){return()=>{o.seed=(o.seed*1664525+1013904223)>>>0;return o.seed/4294967296;};}
@@ -30736,17 +30737,17 @@ function ddPool(){const dc=career()?dynoCap():{hp:1e9,rpm:1e9},ti=career()?repTi
     let m=ddPresetHp.m[p.id];if(!m){try{const r=SIM.simulate(Object.assign({},SIM.DEFAULT_CFG,p.cfg),e);m={hp:r.peakHp,cost:r.cost};}catch(x){m={hp:1e9,cost:1e9};}ddPresetHp.m[p.id]=m;}
     return m.hp<=dc.hp*0.9&&(!career()||m.cost<=DD_COST[ti]);});}
 function ddMakeJob(rnd,practice,only){const pool=ddPool();if(!pool.length)return null;
-  const X={sim:(cfg,ex)=>SIM.simulate(cfg,simEnv(Object.assign({testType:"pull"},ex||{}))),rnd,ok:(k,v)=>!(career()&&OPT[k]&&OPT[k][v]&&locked(OPT[k][v])),pool,f:only};
+  const X={sim:(cfg,ex)=>SIM.simulate(cfg,simEnv(Object.assign({testType:"pull"},ex||{}))),rnd,ok:(k,v)=>!(career()&&OPT[k]&&OPT[k][v]&&locked(OPT[k][v])),pool,f:only,easy:!practice&&career()&&repTierIdx()<=DD_EASY_TIER};
   const j=ddMake(X);if(!j)return null;const F=ddFault(j.fault),p=PRESETS.find(q=>q.id===j.preset)||{};
   j.who=DD_WHO[Math.floor(rnd()*DD_WHO.length)];j.veh=DD_VEH[j.preset]||("'"+String(90+Math.floor(rnd()*30)).slice(-2)+" "+(presetCls(p)==="truck"?"pickup":"car"));j.eng=p.name||j.preset;
   j.says=ddFill(F.says[Math.floor(rnd()*F.says.length)],j);j.tag=F.tag;j.hints=0;j.paid=0;
-  const ti=career()?repTierIdx():0;j.labour=practice?0:Math.max(250,Math.round(F.hrs*(110+j.cost0*0.034)*(1+0.2*ti)/10)*10);   // shop rate: $110/h plus the engine's worth
+  const ti=career()?repTierIdx():0;j.labour=practice?0:Math.max(250,Math.round(F.hrs*(150+j.cost0*0.05)*(1+0.25*ti)/10)*10);   // shop rate: $150/h plus the engine's worth
   j.budget=Math.max(100,Math.round((j.partsRef*1.25+60)/50)*50);return j;}
-/* the week's walk-ins: 0-3 by rep and dyno, more with a dyno technician */
+/* the week's walk-ins: 0-4 by rep and dyno, more with a dyno technician (about one a week even for a backyard shop) */
 function ddWeek(){if(!career())return;const d=DD();if(d.week===C().week)return;
   if(S.bay&&!S.bay.practice&&!testing){const j=S.bay.job;ddExit();C().rep=Math.max(0,C().rep-1);d.failed++;d.streak=0;logEvent(`Dyno day: ${ddLabel(j)} came back for it unfinished — −1 rep`,"bad");}
   const left=d.jobs.filter(j=>j.st==="open").length;d.jobs=d.jobs.filter(j=>j.st==="bay"&&S.bay&&S.bay.job.id===j.id);d.week=C().week;
-  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
+  const rnd=ddRnd(d),lam=0.95+0.32*repTierIdx()+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(4,Math.round(lam+(rnd()-0.5)*1.4)));
   for(let i=0;i<n;i++){const j=ddMakeJob(rnd,false);if(j){j.st="open";d.jobs.push(j);}}
   if(left&&d.week>1)logEvent(`Dyno day: ${left} customer${left>1?"s":""} took ${left>1?"their cars":"the car"} elsewhere`,"");
   const nn=d.jobs.filter(j=>j.st==="open").length;if(nn&&d.week>1)setTimeout(()=>toast(`DYNO DAY · ${nn} customer${nn>1?"s":""} booked in`),2700);}
