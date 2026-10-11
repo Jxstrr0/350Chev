@@ -30,9 +30,9 @@ function bogPitHz(x, kind){
 function bogPitGeo(P, half, lite){
   var len=P.len, ultra=GFX==="ultra", xs=[], zs=[], i, x, z;
   if(lite){ xs=[0,0.8,1.6,2.4]; for(x=4;x<len-3;x+=2) xs.push(x); xs.push(len-2.8,len-1.4,len);
-    P.hz.forEach(function(h){ var w=+h.w||1; [-0.5,-0.25,0,0.25,0.5].forEach(function(f){ if(h.x+f*w>0 && h.x+f*w<len) xs.push(h.x+f*w); }); });
+    P.hz.forEach(function(h){ var w=+h.w||1; [-0.5,0,0.5].forEach(function(f){ if(h.x+f*w>0 && h.x+f*w<len) xs.push(h.x+f*w); }); });
     xs.sort(function(a,b){ return a-b; }); xs=xs.filter(function(v,j){ return j===0||v-xs[j-1]>0.05; });
-    zs=[-5,-4.9,-BOG_EDGE,-half-0.3,-half+0.3,0,half-0.3,half+0.3,BOG_EDGE,4.9,5]; }
+    zs=[-5,-4.9,-BOG_EDGE,0,BOG_EDGE,4.9,5]; }
   else { var dx=ultra?0.2:0.3, nx=Math.ceil(len/dx)+1; dx=len/(nx-1); for(i=0;i<nx;i++) xs.push(i*dx); BOG.mudDx=dx;
     var fine=ultra?0.09:0.13, band=0.8; zs=[-5,-4.9]; z=-BOG_EDGE;
     while(z<BOG_EDGE-0.05){ zs.push(z); var a=Math.abs(Math.abs(z)-half); z+=a<band?fine:Math.abs(z)<half?0.22:(ultra?0.45:0.6); }
@@ -178,7 +178,10 @@ function bogMudMatDetail(mat){
         /* water darkens what's under it */
         "bT*=mix(vec3(1.0), vec3(0.5,0.5,0.55), film);",
         "diffuseColor.rgb*=bT;",
-        "float bRT=mix(mix(0.34,0.2,thick),0.92,crust); bRT=mix(bRT,0.07,film); bRT=mix(bRT,0.82,dryK);"].join("\n"))
+        "float bRT=mix(mix(0.34,0.2,thick),0.92,crust); bRT=mix(bRT,0.07,film); bRT=mix(bRT,0.82,dryK);",
+        "#ifdef BOG_LITE",
+        "bRT=max(bRT,0.24);   /* no ripples to break it up: keep the sun off a flat mirror */",
+        "#endif"].join("\n"))
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,bRT,0.88);")
       .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n#ifndef BOG_LITE\nnormal=bgBump(-vViewPosition, normal, bH);\n#endif");
   };
