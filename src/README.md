@@ -42,6 +42,7 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 | `sim/road.js` | road test: CHASSIS, ROAD_TRACKS, `roadTrack`, `roadRun`, `lapSim`, `roadTest` |
 | `sim/e24.js` | 24 Hours of Prairie Sky: `enduroPrep`, `enduroNew`, `enduroStep`, `e24*` |
 | `sim/salt.js` | Bonneville/LSR: LSR_BODIES/COURSES/CHUTES, `lsrClass`, `lsrRun`, `lsrPass`, `lsrRecord` |
+| `sim/hill.js` | Pikes Peak hillclimb: HILL_SECTIONS/CLASSES/TYRES/AERO, `hillCourse` (156 corners, elevation), `hillPrep` (simulate at five altitudes: NA, blower, turbo, carb), `hillCar`, `hillNew` (time-stepped run, cooling, corner calls and offs), `hillPass`, `hillAiPrep` |
 | `sim/tunemap.js` | tune map tools (`mapAxis`, `mapGrid`, `mapAutoTune` …) and **the ENGINE_SIM export object**. Add new exports here |
 | **ENGINE_SOUND** | |
 | `sound/profile.js` | `<script>`, firing-order table, exhaust voicing, profiles, `deriveProfile`, wave construction, static buffers |
@@ -66,6 +67,7 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 | `vis/bog.js` | mud bog scene |
 | `vis/road.js` | road course scene |
 | `vis/salt.js` | salt flats scene |
+| `vis/hill.js` | Pikes Peak scene: heightfield mountain round the road, verges, guardrails, pines and boulders, summit house, thin-air sky, chase/heli/trackside cameras |
 | `vis/api.js` | **the `ENGINE_VIS` public object** (`setStrip`, `setPull`, `setSalt` …, and `_state`/`_root` debug hooks) |
 | `vis/teardown.js` | teardown/exploded view after a failure, `window.ENGINE_VIS=`, IIFE close, `</script>` |
 | **app** | |
@@ -78,6 +80,7 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 | `app/road.js` | road test UI (RT) |
 | `app/e24.js` | 24 Hours UI (ER): live race, flag, records |
 | `app/salt.js` | Bonneville UI: meets, records, `lsrWarm` |
+| `app/hill.js` | Pikes Peak UI (HC): classes, field, live card with corner calls, PUSH/LIFT, splits sheet, power-vs-altitude chart, records |
 | `app/results.js` | datalog `dl*`, `showResult`, achievements, teardown panel, `renderAnalysis`, `renderRecords` |
 | `app/market.js` | Shop contracts, briefs (`fits`, `deal`, `buyers`, `oneChange`), weekly passes (rnd, warranty, goals), rebuilds & cores |
 | `app/career.js` | dyno day, `advanceWeek`, sponsors, `renderShop`, volume |
