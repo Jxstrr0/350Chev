@@ -95,6 +95,7 @@ function showResult(res,env){
   let v;
   if(env.testType==="race24"&&res.e24)v=e24Verdict(res);
   else if(env.testType==="road"&&res.road)v=roadVerdict(res);
+  else if(env.testType==="hill"&&res.hill)v=hillVerdict(res);
   else if(env.testType==="pull_sled"&&res.pull)v=pullVerdict(res);
   else if(env.testType==="salt"&&res.salt)v=saltVerdict(res);
   else if(env.testType==="bog"&&res.bog)v=bogVerdict(res);
@@ -126,17 +127,18 @@ function showResult(res,env){
   if(env.testType==="salt"&&res.salt)extra+=saltSheet(res);
   if(env.testType==="bog"&&res.bog)extra+=bogSheet(res);
   if(env.testType==="boat"&&res.boat)extra+=boatSheet(res);
+  if(env.testType==="hill"&&res.hill)extra+=hillSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
-  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt)||(env.testType==="bog"&&res.bog)||(env.testType==="boat"&&res.boat)||(env.testType==="road"&&res.road)||(env.testType==="race24"&&res.e24))extra=spSlipHtml()+extra;
-  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="bog"&&res.bog)bogRedraw();if(env.testType==="boat"&&res.boat)boatRedraw();if(env.testType==="road"&&res.road)roadRedraw();if(env.testType==="race24"&&res.e24)drawE24Trace(res.e24);
+  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt)||(env.testType==="bog"&&res.bog)||(env.testType==="boat"&&res.boat)||(env.testType==="road"&&res.road)||(env.testType==="race24"&&res.e24)||(env.testType==="hill"&&res.hill))extra=spSlipHtml()+extra;
+  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="bog"&&res.bog)bogRedraw();if(env.testType==="boat"&&res.boat)boatRedraw();if(env.testType==="road"&&res.road)roadRedraw();if(env.testType==="hill"&&res.hill)hillRedraw();if(env.testType==="race24"&&res.e24)drawE24Trace(res.e24);
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
 }
 function smokeWord(r,short){const s=r.smoke||0,lm=r.fuel&&r.fuel.lamMin,lam=S.cfg.lambda;if(short)return s<8?"clean":s<35?"haze":"black";return s<8?"clean stack":s<35?"light haze":(lm&&lm<lam-0.05?"black under spool":"black at full load");}
 $("stressList").addEventListener("click",e=>{const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
-$("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${SIM.cfgLabel(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
+$("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${cfgLbl(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
 
 function slipLine(r){return [r.race&&r.race.rt!=null?`RT ${r.race.foul?"red":r.race.rt.toFixed(3)}`:null,r.sixty?`60 ft ${r.sixty.t.toFixed(3)}`:null,r.ft330?`330 ${r.ft330.t.toFixed(3)}`:null,r.eighth?`1/8 ${r.eighth.t.toFixed(3)} @ ${Math.round(r.eighth.mph)}`:null,r.ft1000?`1000 ${r.ft1000.t.toFixed(3)}`:null,r.et!=null?`1/4 ${r.et.toFixed(3)} @ ${Math.round(r.mph)}`:null].filter(Boolean).join(" · ");}
 function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
@@ -179,6 +181,8 @@ $("runTest").addEventListener("click",()=>{
   if(pullGate())return;
   if(S.env.testType==="bog"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}   // dyno day: no mud bog with a customer's engine
   if(S.env.testType==="bog"){const k=bogEnvFix(),l=bogClsLocked(k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[k].n} this week — the next mud bog is week ${C().week+1}`);return;}}
+  if(S.env.testType==="hill"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
+  if(S.env.testType==="hill"){const k=hillEnvFix(),l=hillClsLocked(k);if(l){toast(`${SIM.HILL_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(hillRanWk(k)){toast(`Already ran ${SIM.HILL_CLASSES[k].n} this week — the next running is week ${C().week+1}`);return;}}
   if(S.env.testType==="boat"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
   if(S.env.testType==="boat"){const k=boatEnvFix(),l=boatClsLocked(k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(!boatLive()&&boatRanWk(k)){toast(`Already ran ${SIM.BOAT_CLASSES[k].n} this week — the next night is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
@@ -189,13 +193,15 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType!=="salt"&&ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});
   if(S.env.testType!=="bog"&&ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});
   if(S.env.testType!=="boat"&&ENGINE_VIS.setBoat)ENGINE_VIS.setBoat({on:false});
+  if(S.env.testType!=="hill"&&ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:false});
   if(S.env.testType!=="road"&&S.env.testType!=="race24"&&ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:false});
-  if(S.env.testType!=="drag"&&S.env.testType!=="pull_sled"&&S.env.testType!=="salt"&&S.env.testType!=="road"&&S.env.testType!=="race24"&&S.env.testType!=="bog"&&S.env.testType!=="boat")$("app").classList.remove("onstrip");
+  if(S.env.testType!=="drag"&&S.env.testType!=="pull_sled"&&S.env.testType!=="salt"&&S.env.testType!=="road"&&S.env.testType!=="race24"&&S.env.testType!=="bog"&&S.env.testType!=="boat"&&S.env.testType!=="hill")$("app").classList.remove("onstrip");
   if(S.env.testType==="drag"){dragStart();return;}
   if(S.env.testType==="pull_sled"){pullStart();return;}
   if(S.env.testType==="road"){roadStart();return;}
   if(S.env.testType==="salt"){saltStart();return;}
   if(S.env.testType==="bog"){bogStart();return;}
+  if(S.env.testType==="hill"){hillStart();return;}
   if(S.env.testType==="boat"){boatStart();return;}
   const snap=testSnap(),cfg0=snap.cfg;
   const env=simEnv(ddEnvX());const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
@@ -243,7 +249,7 @@ $("runTest").addEventListener("click",()=>{
    ({id:{d:ms,w:week|null}}) - shared by sandbox and career. Shop badges read the career state directly. */
 const ACH_ICONS={flame:"M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",bolt:"M13 2 5 14h6l-1 8 8-12h-6z",gauge:"M4 17a8 8 0 1 1 16 0M12 17l4-6",clock:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",flag:"M5 21V4M5 4h11l-2 4 2 4H5",shield:"M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z",coin:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M9 10c0-2 6-2 6 0s-6 2-6 4 6 2 6 0",star:"M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",cloud:"M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.5-1A4.5 4.5 0 0 1 17 18z",snow:"M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7",drop:"M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z",hook:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",trophy:"M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8",chev:"M6 7l6 5-6 5M12 7l6 5-6 5",wheel:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 3v6.5M12 14.5V21M3.5 8l6.5 4M14 12l6.5 4",tree:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",cal:"M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",tick:"M5 12l5 5 9-10",engine:"M4 9h14l2 3v5H4zM8 9V6h6v3",target:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",people:"M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 10a2.5 2.5 0 1 0 0-5M18 15c2 .5 3 2.5 3 5"};
 const ACH_TIER={bronze:"Bronze",silver:"Silver",gold:"Gold"};
-const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["bog","Mud bog"],["boat","Boat drags"],["endure","Endurance"],["shop","Shop & career"]];
+const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["bog","Mud bog"],["boat","Boat drags"],["hill","Pikes Peak"],["endure","Endurance"],["shop","Shop & career"]];
 const ACH=[
   {g:"dyno",id:"firstfire",name:"First fire",desc:"Light an engine for the first time.",ic:"flame",tier:"bronze",check:x=>!!x.firstfire},
   {g:"dyno",id:"certified",name:"Certified",desc:"Pull a clean engine (career: certify one).",ic:"tick",tier:"bronze",check:x=>!!x.ok},
@@ -276,8 +282,8 @@ const ACH=[
   {g:"strip",id:"sixty",name:"Hooked up",desc:"A 60-foot time of 1.40 s or quicker.",ic:"wheel",tier:"silver",check:x=>x.sixty<=1.4},
   {g:"strip",id:"wheelie",name:"Wheelie",desc:"Lift the front wheels off the track.",ic:"wheel",tier:"bronze",check:x=>!!x.wheelie},
   {g:"strip",id:"win",name:"Won the lane",desc:"Win a heads-up race.",ic:"trophy",tier:"bronze",check:x=>!!x.win},
-  {g:"strip",id:"holeshot",name:"Holeshot",desc:"Win heads-up with the slower ET.",ic:"tree",tier:"silver",check:x=>!!x.holeshot},
-  {g:"strip",id:"perfect",name:"Perfect light",desc:"A reaction time of 0.010 s or better.",ic:"tree",tier:"gold",check:x=>x.rt>=0&&x.rt<=0.010},
+  {g:"strip",id:"holeshot",name:"Holeshot",desc:"Win heads-up with the slower ET, driving it yourself.",ic:"tree",tier:"silver",check:x=>!!x.holeshot},
+  {g:"strip",id:"perfect",name:"Perfect light",desc:"A reaction time of 0.010 s or better, driving it yourself.",ic:"tree",tier:"gold",check:x=>x.rt>=0&&x.rt<=0.010},
   {g:"strip",id:"show",name:"Made the show",desc:"Qualify for a race-night ladder.",ic:"flag",tier:"bronze",check:x=>!!x.qualified},
   {g:"strip",id:"night",name:"Won the night",desc:"Win a race night.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=1},
   {g:"strip",id:"night3",name:"Regular",desc:"Win three race nights.",ic:"trophy",tier:"gold",check:x=>x.nightsWon>=3},
@@ -292,6 +298,9 @@ const ACH=[
   {g:"pull",id:"hotfarm",name:"Hot Farm hero",desc:"Win the Hot Farm class.",ic:"flame",tier:"gold",check:x=>!!x.hotfarm},
   {g:"bog",id:"bogthru",name:"Through the pit",desc:"Get a truck all the way through a mud pit.",ic:"wheel",tier:"bronze",check:x=>!!x.bogThru},
   {g:"bog",id:"bogwin",name:"King of the pit",desc:"Win a mud-bog class.",ic:"trophy",tier:"silver",check:x=>!!x.bogWin},
+  {g:"hill",id:"hillsum",name:"To the clouds",desc:"Reach the summit of Pikes Peak.",ic:"flag",tier:"bronze",check:x=>!!x.hillFin},
+  {g:"hill",id:"hillwin",name:"King of the Mountain",desc:"Win a Pikes Peak class.",ic:"trophy",tier:"silver",check:x=>!!x.hillWin},
+  {g:"hill",id:"hill10",name:"Under ten",desc:"Reach the summit in under 10 minutes.",ic:"clock",tier:"gold",check:x=>x.hillT>0&&x.hillT<600},
   {g:"boat",id:"boatpass",name:"On plane",desc:"Make a clean 1,000 ft pass on the river.",ic:"flag",tier:"bronze",check:x=>!!x.boatPass},
   {g:"boat",id:"boatwin",name:"River king",desc:"Win a boat-drag night.",ic:"trophy",tier:"silver",check:x=>!!x.boatWin},
   {g:"boat",id:"boat200",name:"Rooster tail",desc:"Cross the far buoys at 200 mph or more.",ic:"bolt",tier:"gold",check:x=>x.boatMph>=200},
@@ -324,14 +333,16 @@ function achFacts(x){
       if(res.diesel){f.dsl=true;if(pull){const t=(res.tests||[]).find(q=>q.id==="cold_start");if(env.ambientC<=-25&&t&&t.util<=1)f.cold=true;}}}
     if(res.diesel&&pull)f.smoke=res.smoke;
     if(env.testType==="overrev"&&res.overrev&&res.overrev.survived&&!res.fails.length)f.overrevOk=true;}
-  else if(x.type==="drag"){const r=x.r,ra=r.race,nt=r.night,ok=!x.failed&&r.et!=null&&!(ra&&ra.foul)&&!(career()&&r.mph>150&&!r.chute);
+  // the light (reaction time, holeshot) counts only if you drove it: "You drive", or you took over from Auto before the tree lit (r.auto.pre). ET and mph count either way
+  else if(x.type==="drag"){const r=x.r,ra=r.race,nt=r.night,you=!r.auto||!!r.auto.pre,ok=!x.failed&&r.et!=null&&!(ra&&ra.foul)&&!(career()&&r.mph>150&&!r.chute);
     if(ok){f.et=r.et;f.mph=r.mph;if(r.sixty)f.sixty=r.sixty.t;if(r.launch&&r.launch.ctl&&r.launch.ctl!=="none")f.twostep=true;if(r.wheelieT>=0.2||r.liftMax>=0.6)f.wheelie=true;
-      if(ra&&ra.rt!=null)f.rt=ra.rt;if(nt&&nt.fmt==="bracket"&&nt.dialP!=null&&nt.stage>=2)f.deadOn=Math.abs(r.et-nt.dialP);
+      if(ra&&ra.rt!=null&&you)f.rt=ra.rt;if(nt&&nt.fmt==="bracket"&&nt.dialP!=null&&nt.stage>=2)f.deadOn=Math.abs(r.et-nt.dialP);
       if(r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;f.shotHp=r.n2o.shotHp;}}
     else if(!x.failed&&r.n2o&&r.n2o.on){f.n2oOn=true;if(r.n2o.lineAtOn>=0.95)f.n2oPurged=true;}
-    if(ra&&ra.won&&!ra.foul){f.win=true;if(r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
+    if(ra&&ra.won&&!ra.foul){f.win=true;if(you&&r.et!=null&&ra.oppEt!=null&&r.et>ra.oppEt)f.holeshot=true;}
     if(nt&&nt.stage>=2)f.qualified=true;}
   else if(x.type==="bog"){const r=x.r;if(!x.failed){if(r.cleared){f.bogThru=true;f.bogAvg=r.avgMph||0;}if(r.place===1)f.bogWin=true;}}
+  else if(x.type==="hill"){const r=x.r;if(!r.dnf&&r.time>0){f.hillFin=true;f.hillT=r.time;if(r.place===1)f.hillWin=true;}}
   else if(x.type==="boat"){const r=x.r;if(!x.failed&&r.et!=null&&!(r.match&&r.match.foul)){f.boatPass=true;f.boatMph=r.mph||0;}if(x.place===1)f.boatWin=true;}
   else if(x.type==="e24"){const r=x.r;if(r.classified){f.e24Fin=true;if(r.posCls<=3)f.e24Pod=true;if(r.posCls===1)f.e24Win=true;}}
   else if(x.type==="pull"){const r=x.r;if(!x.failed){f.pullDone=true;if(r.full)f.full=true;if(r.place===1){f.pullWin=true;if(r.cls==="hotfarm")f.hotfarm=true;if(r.full&&r.pullOff!=null)f.pullOff=true;}}}
@@ -433,7 +444,7 @@ function renderAnalysis(){
     ["Seal oiling",`${Math.round(R.oilUtil*100)}% of supply`],["Oil burnt",`${R.oilL.toFixed(1)} L/1000 km`],["Carbon build-up",`${Math.round(R.carbon*100)}%`],["Idles at",`${R.idleRpm.toLocaleString()} rpm`],
     ["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]);}
   if(r.twoStroke){const R=r.twoStroke;rows.splice(0,rows.length,   // a two-stroke: delivery and trapping, the pipe and the oil instead of valvetrain numbers
-    ["Firing rate",`${Math.round(R.firingHz).toLocaleString()}/s · every turn`],["Swept / eq.",`${R.swept.toFixed(R.swept<1?3:2)} L · ${R.eq.toFixed(R.eq<2?2:1)} L 4T`],
+    ["Firing rate",`${Math.round(R.firingHz).toLocaleString()}/s · every turn`],["Swept / eq.",`${R.swept<1?fmtDisp(R.swept):R.swept.toFixed(2)+" L"} · ${R.eq<1?fmtDisp(R.eq):R.eq.toFixed(R.eq<2?2:1)+" L"} 4T`],
     ["Delivery ratio",`${R.drPk.toFixed(2)} at peak`],["Trapping",`${Math.round(R.tePk*100)}% · ${R.scChargePct}% lost`],
     ...(isCI(S.cfg.fuel)?[["Fuel cetane",`${K.cetane}`],["Smoke (peak)",`${Math.round(r.smoke||0)}%`]]:[["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],["Fuel out the pipe",`${R.scFuelPct}% at peak`]]),
     ["Ports timed for",`${(Math.round(R.rpmP/100)*100).toLocaleString()} rpm · ${Math.round(R.ep)}°/${Math.round(R.tp)}°`],
@@ -460,7 +471,7 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
-  const pr=pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+e24RecHtml();
+  const pr=pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+hillRecHtml()+e24RecHtml();
   if(!best&&!hp&&!rel&&!pr){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`

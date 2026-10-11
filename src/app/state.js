@@ -164,7 +164,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.42.0.0";
+const VERSION="1.43.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -223,7 +223,7 @@ function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?JSON.
 function writeSlot(i){try{const o=snapshot();o.savedAt=Date.now();localStorage.setItem(slotKey(i),JSON.stringify(o));return true;}catch(e){return false;}}
 function clearSlot(i){try{localStorage.removeItem(slotKey(i));}catch(e){}}
 function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt):null;const when=d?d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-CA",{hour:"2-digit",minute:"2-digit"}):"";
-  const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${SIM.cfgLabel(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
+  const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
 function encodeSave(o){return"PEW2:"+btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
 function decodeSave(t){t=(t||"").trim();if(t.startsWith("PEW2:"))t=t.slice(5);const o=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,"")))));if(!o||!o.cfg)throw new Error("bad");return o;}
 function renderSaves(){const box=$("slots");if(!box)return;let h="";for(let i=1;i<=SLOTS;i++){const o=readSlot(i);h+=`<div class="slot ${o?"full":""}"><div><h3>Slot ${i}${o?"":"<small>empty</small>"}</h3><p>${slotSummary(o)}</p></div><div class="acts"><button class="pri" data-save="${i}">Save</button><button data-load="${i}" ${o?"":"disabled"}>Load</button><button class="del" data-clear="${i}" ${o?"":"disabled"}>Clear</button></div></div>`;}box.innerHTML=h;}
@@ -249,7 +249,7 @@ const CELL_KEYS=["ambientC","altitudeM","coolantC","oilC"];
 function stdCell(){const d=SIM.DEFAULT_ENV,o={};CELL_KEYS.forEach(k=>o[k]=d[k]);return o;}
 function careerCell(){const c=C();if(!c.cell||typeof c.cell!=="object")c.cell=stdCell();return c.cell;}
 function climateCtl(){return career()&&has("dyno3");}
-function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt"||t==="road"||t==="race24"||t==="bog"||t==="boat";}   // out on the strip or the dirt: the cell's climate control stays home
+function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt"||t==="road"||t==="race24"||t==="bog"||t==="boat"||t==="hill";}   // out on the strip or the dirt: the cell's climate control stays home
 function simEnv(extra){return Object.assign({},S.env,career()?(climateCtl()&&!trackEvt(S.env.testType)?careerCell():stdCell()):{},extra||{});}
 function stdEnv(extra){return Object.assign({},S.env,career()?stdCell():{},extra||{});}
 function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===+d[k]);}
@@ -264,6 +264,9 @@ const HASH_DEF={pipe:"stock",muffler:"stock",cat:"none",cutout:"none",turbine:"f
 function cfgHash(c){const dsl=isCI(c.fuel),rot=isRot(c),ts=isTs(c);return JSON.stringify(Object.keys(c).filter(k=>!HASH_SKIP[k]&&!(!rot&&ROT_KEYS[k])&&!(!ts&&TS_KEYS[k])&&!(HASH_DEF[k]&&(!c[k]||c[k]===HASH_DEF[k]))&&!(k==="map"&&!c[k])&&!((k==="launchCtl"||k==="transBrake")&&(!c[k]||c[k]==="none"))&&!(!dsl&&(k==="dInj"||k==="dNoz"))&&!(k==="ethanolPct"&&c.fuel!=="flex")&&!(k==="gasSys"&&!isGasF(c.fuel))).sort().map(k=>c[k]));}
 // fuel families: compression-ignition fuels (diesel, B100) vs everything with a spark plug
 function isCI(f){const o=OPT.fuel[f];return !!(o&&o.ci);}
+/* displacement for display: cc below a litre ("125 cc"), litres from 1.0 up. sp: the gap before "L" */
+function fmtDisp(L,sp){return L<1?Math.round(L*1000)+" cc":L.toFixed(1)+(sp==null?" ":sp)+"L";}
+function cfgLbl(cfg){return SIM.cfgLabel(cfg).replace(/(\d+\.\d+) L\b/,(m,v)=>+v<1?fmtDisp(presetDisp({cfg})):m);}   // SIM.cfgLabel prints litres; small engines read in cc
 function fuelShort(f){const o=OPT.fuel[f];return !o?String(f):o.ci?(f==="b100"?"B100":"Diesel"):o.short||o.name.split(" ")[0];}
 function isGasF(f){const o=OPT.fuel[f];return !!(o&&o.gas);}
 const INJ_SHORT={rotary_ve:"VE",inline_mech:"P-pump",heui:"HEUI",cr_gen1:"CR",cr_piezo:"CR",unit_dd:"unit inj"};
@@ -271,9 +274,9 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   // WOT burn: ~0.32 L/hp/h on gasoline, more on low-energy fuels (per-litre energy vs pump gas)
   const lph=hp*(fu.ci?0.23*(42.8e6/fu.lhv):0.32*(44e6/fu.lhv))*(fu.gas?0.745/fu.dens:1);const t=S.env.testType;   // gas: litres of liquid propane / kg of CNG   // diesel ~0.23 L/hp/h at full load
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
-  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="boat"?0.008:t==="salt"?0.03:t==="road"?0.03:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
+  const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="boat"?0.008:t==="salt"?0.03:t==="road"?0.03:t==="hill"?0.04:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE,hill:HILL_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
 
 /* ===================== live compute ===================== */
@@ -343,12 +346,12 @@ $("heatBtn").addEventListener("click",()=>{S.heat=!S.heat;applyHeat();save();toa
 /* ---- engine card: name + headline numbers + status, reused everywhere an engine is shown ---- */
 const ASP_SYM={na:"NA",turbo:"T",twin_turbo:"TT",roots:"SC",centrifugal:"SC",screw:"SCREW",compound:"CT"};
 function engineName(){return S.name||autoName();}
-function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${isRot(S.cfg)?LAYOUTS[S.cfg.layout].n+"-rotor":isTs(S.cfg)?"two-stroke "+S.cfg.layout:S.cfg.layout} ${(quick?quick.Vd/1000:0).toFixed(isTs(S.cfg)&&quick&&quick.Vd<1000?2:1)}`;}
+function autoName(){const p=PRESETS.find(x=>x.soundProfile&&x.soundProfile===S.profileId)||null;return p?p.name:`Custom ${isRot(S.cfg)?LAYOUTS[S.cfg.layout].n+"-rotor":isTs(S.cfg)?"two-stroke "+S.cfg.layout:S.cfg.layout} ${quick?fmtDisp(quick.Vd/1000,""):""}`;}
 const ROT_PORT_SHORT={side:"side port",sidex:"side exhaust",street:"street port",bridge:"bridge port",peri:"peri port"};
 function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==="na"?"NA":(ASP_SYM[cfg.asp]||cfg.asp.toUpperCase())+(cfg.asp!=="na"?" "+cfg.boost.toFixed(1)+"bar":"");
-  if(isTs(cfg))return `<b>2T ${cfg.layout==="D18"?"Deltic":cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(res.Vd<1000?2:1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${{loop:"loop",cross:"cross",uniflow:"uniflow"}[cfg.scav]||"loop"}<i>·</i>${cfg.xpipe==="chamber"&&!isCI(cfg.fuel)?"pipe "+(cfg.pipeRpm/1000).toFixed(1)+"k":cfg.induct==="blower"?"blown":cfg.induct}<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;
-  if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
-  return `<b>${cfg.layout}</b><i>·</i>${(res.Vd/1000).toFixed(1)}L<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
+  if(isTs(cfg))return `<b>2T ${cfg.layout==="D18"?"Deltic":cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${{loop:"loop",cross:"cross",uniflow:"uniflow"}[cfg.scav]||"loop"}<i>·</i>${cfg.xpipe==="chamber"&&!isCI(cfg.fuel)?"pipe "+(cfg.pipeRpm/1000).toFixed(1)+"k":cfg.induct==="blower"?"blown":cfg.induct}<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;
+  if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
+  return `<b>${cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
   if(res.fails&&res.fails.length)return{cls:"bad",txt:"✗ BREAKS"};
   if(career()){const inField=C().fleet.filter(f=>f.hash===h&&C().week-f.week<=10).reduce((a,f)=>a+f.units,0);if(inField)return{cls:"fld",txt:`◆ ${inField} IN FIELD`};
@@ -369,7 +372,7 @@ function recompute(){
   combosNow=SIM.combos(S.cfg,simEnv(Object.assign({testType:"pull"},ddEnvX())),quick);
   if(S.heat)applyHeat();
   if(document.activeElement&&document.activeElement.id==="nameIn"){/* don't clobber while typing */}else $("tag").innerHTML=engineCard(S.cfg,quick,{editable:true});
-  $("sDisp").textContent=(quick.Vd/1000).toFixed(quick.twoStroke&&quick.Vd<1000?2:1);$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
+  {const cc=quick.Vd<1000;$("sDisp").textContent=cc?Math.round(quick.Vd):(quick.Vd/1000).toFixed(1);$("sDisp").nextElementSibling.textContent=cc?"cc":"Litres";}$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
   const worst=Math.max(...quick.tests.map(t=>t.util));$("sHp").className=worst>1?"critc":worst>.8?"warnc":"";
   const cert=C().cert;
   $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));
