@@ -265,6 +265,7 @@ function loop(now){
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
   if(ROAD.on && ROAD.W){ if(ROAD.minMs && now-ROAD.lastR<ROAD.minMs && now>=ROAD.lastR) return; ROAD.lastR=now; roadRender(); return; }
+  if(HILL.on && HILL.W){ hillRender(); return; }
   if(SALT.on && SALT.built){ saltRender(); return; }
   if(BOG.on && BOG.built){ bogRender(); return; }
   if(PULL.on && PULL.built){ pullRender(); return; }

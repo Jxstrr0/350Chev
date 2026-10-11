@@ -111,6 +111,7 @@ function tick(now){
     const wi=quick?wearInfo(quick):null;let dx=null;
     if(testing&&DR&&DR.d&&S.env.testType==="drag"&&!DR.failed){const st=DR.d.st;boostBar=st.boost*(on?1:0);
       dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,als:st.als||0,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
+    if(testing&&HC&&HC.run&&!HC.finished&&S.env.testType==="hill"){const st=HC.run.st,q=HC.prep.pts[0];boostBar=(q.boost>0?q.boost*Math.min(1,st.thr+0.1):0)*(on?1:0);dx={tyre:st.off?0.5:st.latUse>0.97&&st.v>15?0.25:0};}   // the hillclimb: boost while it is on the throttle, tyre noise at the limit
     if(testing&&RT&&!RT.finished&&S.env.testType==="road"){boostBar=(RT.bst||0)*(on?1:0);dx={tyre:RT.slip||0};}   // the road test: boost and tyre noise from the lap trace
     if(testing&&SR&&SR.p&&S.env.testType==="salt"&&!SR.failed){const st=SR.p.st;dx={tyre:st.phase==="run"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*3)):st.phase==="spin"?0.8:0};}
     if(testing&&BR&&BR.p&&S.env.testType==="bog"&&!BR.failed){const st=BR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase!=="stage"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*1.6))*(st.phase==="pit"?0.8:1):0};}   // the mud bog: boost from the run, tyre noise from the wheelspin
@@ -240,12 +241,13 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
 const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
-function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(BR&&!BR.finished&&$("bogCtl").style.display!=="none")return "bog";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
+function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(BR&&!BR.finished&&$("bogCtl").style.display!=="none")return "bog";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";if(HC&&!HC.finished&&$("hillCtl").style.display!=="none")return "hill";return null;}
 let spaceHeld=null;
-function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}else if(k==="bog"&&BR){BR.lastPtr=performance.now();bogRelease();}}
+function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}else if(k==="bog"&&BR){BR.lastPtr=performance.now();bogRelease();}else if(k==="hill"&&HC){HC.lastPtr=performance.now();hillRelease("push");}}
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;const k=e.key;
   if(k===" "||k==="Spacebar"){const h=holdKind();if(!h)return;e.preventDefault();if(e.repeat||spaceHeld)return;spaceHeld=h;
     if(h==="road"){roadSkip();return;}
+    if(h==="hill"){HC.lastPtr=performance.now();hillPress("push");return;}
     if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else if(h==="bog"){BR.lastPtr=performance.now();bogPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
   if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
