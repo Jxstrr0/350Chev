@@ -93,7 +93,8 @@ const ENGINE_VIS = {
     if(BOG.cam){ BOG.cam.aspect=w/h; BOG.cam.updateProjectionMatrix(); }
     if(BOAT.cam){ BOAT.cam.aspect=w/h; BOAT.cam.updateProjectionMatrix(); }
     if(ROAD.cam){ ROAD.cam.aspect=w/h; ROAD.cam.updateProjectionMatrix(); }
-    if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); }
+    if(HILL.cam){ HILL.cam.aspect=w/h; HILL.cam.updateProjectionMatrix(); }
+    if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); SALT.viewH=h; saltBandRead(); }
     if(PITS.cam) PITS.dirty=2;
     frameEngine();
   },
@@ -157,6 +158,8 @@ const ENGINE_VIS = {
     if(!PITS.on){ PITS.on=true; PITS.dirty=2; PITS.fitKey=""; }
     pitsUpdate(o); return PITS.stats;
   },
+  /* fix pack: which event scene owns the canvas ("" = the engine stand, where orbiting works); the app hides the orbit hint otherwise */
+  eventScene: function(){ return (TROPHY.on&&TROPHY.built)?"trophy":(ROAD.on&&ROAD.W)?"road":(HILL.on&&HILL.W)?"hill":(BOAT.on&&BOAT.built)?"boat":(SALT.on&&SALT.built)?"salt":(BOG.on&&BOG.built)?"bog":(PULL.on&&PULL.built)?"pull":(STRIP.on&&STRIP.built)?"strip":(PITS.on&&PITS.built&&!TD.on)?"pits":""; },
   pitsAnchors: function(){ return pitsAnchors(); },   /* {w, h, launch|wear|gear|psi|shocks|dial: [x, y, inFront]} in canvas CSS px */
   pitsState: function(){ return {on:PITS.on, built:PITS.built, renders:PITS.renders, stats:PITS.stats, nightK:PITS.nightK, heat:+PITS.heat.toFixed(2), car:PITS.carKey,
     cam:PITS.cam?PITS.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null}; },   /* harness */
@@ -211,13 +214,23 @@ const ENGINE_VIS = {
     var rdt=o.dt!=null ? +o.dt : (now-ROAD.lastT)/1000; ROAD.lastT=now; roadUpdate(o, clamp(rdt||0, 0, 0.1));
     return ROAD.stats||null;
   },
+  /* PIKES PEAK: fed every frame {on, course (ENGINE_SIM.hillCourse), s, v, d (lateral m), g, rpm, thr, brk, lat, off, dnf, ev, ch, aero, color, cam:"auto"|"chase"|"heli"|"onboard", pre, done, dt}; {on:false} leaves */
+  setHill: function(o){
+    if(!renderer) return;
+    if(!o || o.on===false){ if(HILL.on){ HILL.on=false; if(HILL.W && HILL.W.fx) HILL.W.fx.clear(); } return; }
+    var now=performance.now();
+    if(!HILL.on){ HILL.on=true; HILL.snap=true; HILL.shot=null; HILL.lastT=now; if(!HILL.cam) HILL.cam=new THREE.PerspectiveCamera(50, 1, 0.3, 14000); ENGINE_VIS.resize(); }
+    var rdt=o.dt!=null ? +o.dt : (now-HILL.lastT)/1000; HILL.lastT=now; hillUpdate(o, clamp(rdt||0, 0, 0.4));
+    return HILL.stats||null;
+  },
+  hillState: function(){ return {on:HILL.on, built:!!HILL.W, shot:HILL.shot, stats:HILL.stats, cam:HILL.cam?HILL.cam.position.toArray().map(function(v){ return Math.round(v); }):null}; },   /* harness */
   /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
      failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
   setSalt: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(SALT.on){ SALT.on=false; saltReset(); } return; }
     var now=performance.now(); if(!SALT.on){ SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
-    if(SALT.tier!==GFX && SALT.sun){ SALT.tier=GFX; SALT.sun.castShadow=GFX!=="lite"; if(SALT.sun.shadow.map){ SALT.sun.shadow.map.dispose(); SALT.sun.shadow.map=null; } }
+    if(SALT.tier!==GFX && SALT.built){ saltRebuild(); ENGINE_VIS.resize(); }   /* a new quality tier: build the flats again at it */
     var rdt=o.dt!=null ? +o.dt : (now-SALT.lastT)/1000; SALT.lastT=now; saltUpdate(o, clamp(rdt||0, 0, 0.1));
     return SALT.stats||null;
   },
