@@ -163,11 +163,11 @@ function buildHillWorld(T){
       var foliage=new THREE.InstancedMesh(lite?fg:mergeHillGeos([fg,f2]), new THREE.MeshStandardMaterial({roughness:0.95}), tp.length), trunk=new THREE.InstancedMesh(tg, new THREE.MeshStandardMaterial({color:sc(0x4a3626), roughness:1}), tp.length);
       tp.forEach(function(p,j){ var sz=p[3]*(1-0.35*smoothstep(3300,3560,p[4])); mm.compose(_hA.set(p[0],p[1]-0.3,p[2]), qq.setFromEuler(e.set(0,rng(j)*6,0)), _hB.set(sz,sz*(0.9+rng(j+9)*0.35),sz));
         foliage.setMatrixAt(j,mm); trunk.setMatrixAt(j,mm); cc.setHSL(0.30+rng(j+2)*0.06,0.38,0.12+rng(j+3)*0.06).convertSRGBToLinear(); foliage.setColorAt(j,cc); });
-      foliage.castShadow=trunk.castShadow=!lite; S5.add(foliage); S5.add(trunk); W.trees=tp.length; }
+      foliage.castShadow=trunk.castShadow=!lite; instCull(foliage); instCull(trunk); S5.add(foliage); S5.add(trunk); W.trees=tp.length; }
     if(rp.length){ var rg=new THREE.DodecahedronGeometry(1,0), rocks=new THREE.InstancedMesh(rg, new THREE.MeshStandardMaterial({roughness:0.92}), rp.length);
       rp.forEach(function(p,j){ mm.compose(_hA.set(p[0],p[1]+p[3]*0.25,p[2]), qq.setFromEuler(e.set(rng(j)*3,rng(j+1)*3,rng(j+2)*3)), _hB.set(p[3]*(0.8+rng(j+3)*0.6),p[3]*(0.55+rng(j+4)*0.4),p[3]*(0.8+rng(j+5)*0.5)));
         rocks.setMatrixAt(j,mm); cc.setHSL(0.07,0.08+rng(j+6)*0.06,0.3+rng(j+7)*0.12).convertSRGBToLinear(); rocks.setColorAt(j,cc); });
-      rocks.castShadow=!lite; S5.add(rocks); W.rocks=rp.length; }
+      rocks.castShadow=!lite; instCull(rocks); S5.add(rocks); W.rocks=rp.length; }
     if(lite||ultra) hillTreeCells(W, S5, tp, rp, foliage, trunk, rocks, ultra); })();
   /* the Front Range on the horizon: a ring of peaks, snow on the tops */
   (function(){ var seg=lite?96:160, R0=W.span*0.62+2500, pos=[], col=[], idx=[], cx=0, cz=0, c1=sc(0x5a5e5c), c2=sc(0x8a8e92), c3=sc(0xe8ecf0);
