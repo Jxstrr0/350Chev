@@ -24,7 +24,7 @@ function sc_bigBlower(B, x, y, len, hatMat){
 function sc_zoomies(B, x0, dx, y, z0, len, tips, dirs, flames, out){
   [-1,1].forEach(function(sd){ for(var i=0;i<8;i++){
     var x=x0-i*dx, a=sc_V(x, y, sd*z0), b=sc_V(x-0.02, y+0.05, sd*(z0+0.1)), c=sc_V(x-len*0.55, y+len*0.85, sd*(z0+0.1+len*(out||0.3)));
-    B.add("alu", TUBE([a,b,c], 0.027, 4, 6));
+    if(!SC.lite || i%2===0) B.add("alu", TUBE([a,b,c], 0.027, SC.lite?2:4, SC.lite?5:6));   /* Lite: every other pipe, coarser */
     var d=c.clone().sub(b).normalize(); flames.push({p:c.clone(), d:d});
     if(i===2||i===5){ tips.push(c.clone()); dirs.push(d.clone()); }
   } });

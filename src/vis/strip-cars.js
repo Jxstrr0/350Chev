@@ -467,6 +467,7 @@ function sc_rr(w,h,r){ var s=new THREE.Shape(), x=-w/2, y=-h/2; r=Math.min(r,w/2
   s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.quadraticCurveTo(x+w,y,x+w,y+r); s.lineTo(x+w,y+h-r); s.quadraticCurveTo(x+w,y+h,x+w-r,y+h); s.lineTo(x+r,y+h); s.quadraticCurveTo(x,y+h,x,y+h-r); s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y); return s; }
 /* beveled box, w along x, h along y, d along z, centred */
 function sc_rbox(w,h,d,b){
+  if(SC.lite){ var kl="rbL"+[w,h,d].map(r3).join("_"); return SC.geo[kl]||(SC.geo[kl]=new THREE.BoxGeometry(w,h,d)); }   /* v3: Lite strip cars use plain boxes */
   var key="rb"+[w,h,d,b].map(r3).join("_"); if(SC.geo[key]) return SC.geo[key];
   b=Math.min(b, w*0.3, h*0.3, d*0.3);
   var g=new THREE.ExtrudeGeometry(sc_rr(w-2*b,h-2*b,b*1.2), {depth:Math.max(0.001,d-2*b), bevelEnabled:true, bevelThickness:b, bevelSize:b, bevelSegments:1, curveSegments:2});
@@ -474,6 +475,7 @@ function sc_rbox(w,h,d,b){
 }
 /* side profile (x,y points) extruded across z */
 function sc_prof(pts, d, b){
+  if(SC.lite) b=0;   /* v3: Lite: no bevels */
   var s=new THREE.Shape(); s.moveTo(pts[0][0],pts[0][1]); for(var i=1;i<pts.length;i++) s.lineTo(pts[i][0],pts[i][1]);
   var g=new THREE.ExtrudeGeometry(s, {depth:Math.max(0.001,d-2*(b||0)), bevelEnabled:!!b, bevelThickness:b||0, bevelSize:b||0, bevelSegments:2, curveSegments:4});
   g.translate(0,0,-(d-2*(b||0))/2); return g;
@@ -484,13 +486,14 @@ function sc_foil(chord, thick, span, b){
   for(i=0;i<=N;i++){ u=(1-Math.cos(PI*i/N))/2; yt=5*thick*(0.2969*Math.sqrt(u)-0.126*u-0.3516*u*u+0.2843*u*u*u-0.1036*u*u*u*u); pts.push([chord/2-u*chord, -yt*1.35+0.02*chord*Math.sin(PI*u)]); }
   for(i=N-1;i>0;i--){ u=(1-Math.cos(PI*i/N))/2; yt=5*thick*(0.2969*Math.sqrt(u)-0.126*u-0.3516*u*u+0.2843*u*u*u-0.1036*u*u*u*u); pts.push([chord/2-u*chord, yt*0.55+0.02*chord*Math.sin(PI*u)]); }
   pts.reverse();
-  return sc_prof(pts, span, b||0.004);
+  return sc_prof(pts, span, SC.lite?0:(b||0.004));
 }
 function sc_rodM(a, b){ /* matrix mapping a unit Y cylinder (centre origin, h=1) onto segment a->b */
   var d=new THREE.Vector3().subVectors(b,a), L=d.length(), q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), d.clone().normalize());
   return new THREE.Matrix4().compose(new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5), q, new THREE.Vector3(1,L,1));
 }
-function sc_cyl(r, seg){ var key="cy"+r3(r)+"_"+seg; return SC.geo[key]||(SC.geo[key]=new THREE.CylinderGeometry(r,r,1,seg||8,1,false)); }
+function sc_cyl(r, seg){ if(SC.lite){ var kl="cyL"+r3(r)+"_"+Math.min(seg||8,6); return SC.geo[kl]||(SC.geo[kl]=new THREE.CylinderGeometry(r,r,1,Math.min(seg||8,6),1,true)); }   /* v3: Lite rods: 6 sides, no caps */
+  var key="cy"+r3(r)+"_"+seg; return SC.geo[key]||(SC.geo[key]=new THREE.CylinderGeometry(r,r,1,seg||8,1,false)); }
 function sc_M(x,y,z,rx,ry,rz,sx,sy,sz){ return mkM(x,y,z,rx,ry,rz,sx,sy,sz); }
 function sc_bin(){ var B={}; B.add=function(k,g,m){ (B[k]||(B[k]=[])).push({g:g, m:m||new THREE.Matrix4()}); }; return B; }
 function sc_merge(list){ return mergeGeos(list); }
@@ -615,10 +618,11 @@ function sc_ic(B, x, y, w, h){
 function sc_pack(body, tIn, H){
   var key=body+"|"+tIn+(H?"|"+H.key:""); if(SC.geo[key]) return SC.geo[key];
   var rr=tIn*0.0254/2, B=sc_bin(), me, res={parts:{}, decals:[], tail:null, head:null};
-  var tails=[], heads=[];
+  var tails=[], heads=[]; SC.lite=!!(H && H.lite);
   if(body==="rail") me=H?sc_tfrail(B, rr, tails, heads, res, H):sc_rail(B, rr, tails, heads, res, H);
   else if(body==="funny") me=sc_funny(B, rr, tails, heads, res, H||sc_hw({asp:"blower"}, "funny"));
   else me=sc_door(B, body, rr, tails, heads, res, H, tIn);
+  SC.lite=false;
   if(H && H.lite) [B, res.flipB].forEach(sc_liteBins);   /* v3: Lite folds the extra trim materials into their base ones (no extra draw calls) */
   for(var k in B) if(k!=="add" && B[k].length) res.parts[k]=sc_merge(B[k]);
   if(res.flipB){ res.flip={}; for(k in res.flipB) if(k!=="add" && res.flipB[k].length) res.flip[k]=sc_merge(res.flipB[k]); delete res.flipB; }
