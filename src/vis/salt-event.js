@@ -16,6 +16,7 @@
 var SALT_PUSH_PAL=[0xf2c12e, 0xc8331f, 0xff6a14, 0x1f4f9a, 0x2a8a4a];   /* never white or black: it has to read against the salt as well as the car */
 var _seM=new THREE.Matrix4(), _seL=new THREE.Matrix4(), _seE=new THREE.Euler(), _seQ=new THREE.Quaternion(), _seP=new THREE.Vector3(), _seS=new THREE.Vector3(),
   _seA=new THREE.Vector3(), _seB=new THREE.Vector3(), _seC=new THREE.Vector3(), _seX=new THREE.Vector3(1,0,0), _seCol=new THREE.Color();
+function seOwn(m){ if(m && SALT.owned) SALT.owned.push(m); return m; }   /* saltRebuild (vis/salt-look.js) disposes what is listed */
 function seRng(s){ var t=Math.sin(s*12.9898+78.233)*43758.5453; return t-Math.floor(t); }
 /* extra unit shapes, registered beside StripBatch's own so either path can use them */
 function seGeo(){
@@ -47,7 +48,7 @@ SeKit.prototype.build=function(scene){
     var sp=new THREE.Sphere(); bb.getBoundingSphere(sp); sp.radius+=16; g.boundingSphere=sp; im.frustumCulled=true;   /* r128 turns culling off for InstancedMesh; with the town's sphere on the geometry it culls right */
     im.instanceMatrix.needsUpdate=true; im.castShadow=false; im.receiveShadow=(p[0]!=="blob"); im.matrixAutoUpdate=false; im.updateMatrix();
     if(p[0]==="blob") im.renderOrder=1;
-    scene.add(im); out.push(im); }
+    scene.add(im); out.push(im); seOwn(im); }
   return out;
 };
 function seMats(){
@@ -218,7 +219,7 @@ function saltReturnRoad(){
   var t=new THREE.CanvasTexture(cv); t.wrapS=THREE.RepeatWrapping;
   var L=12600, g=new THREE.PlaneGeometry(L, 8).rotateX(-PI/2);
   var m=new THREE.Mesh(g, new THREE.MeshBasicMaterial({map:t, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-3}));
-  m.position.set(70+L/2, 0.01, -37.8); m.renderOrder=1; SALT.scene.add(m); SALT.road=m;
+  m.position.set(70+L/2, 0.01, -37.8); m.renderOrder=1; SALT.scene.add(m); SALT.road=seOwn(m);
 }
 
 /* --- the push truck: a 60s-style pickup, two-tone, padded push bar, a crew member riding the bed. o: {crew, beacon, roof, stripe} --- */
@@ -260,7 +261,7 @@ function saltPickup(col, o){
     var spin=new THREE.Group(); spin.rotation.x=PI/2; spin.position.set(p[0],0.38,p[1]); var wb=new StripBatch();
     wb.add("w","cyl",[0,0,0],[0.76,0.24,0.76],0x18181a); wb.add("w","cyl6",[0,0,0],[0.42,0.26,0.42],0xc9ccd0); wb.add("w","box",[0,0,0],[0.08,0.27,0.4],0x5a5d62);
     STRIP.scene=spin; wb.build("w", SALT.mats.solid, false); g.add(spin); wh.push(spin); });
-  STRIP.scene=keep;
+  STRIP.scene=keep; g.traverse(function(q){ if(q.isMesh && !q.geometry.parameters) seOwn(q); });   /* the merged batches are this truck's own */
   g.userData={wheels:wh, front:0.9, paint:paint, beacon:mb, col:col};
   return g;
 }
@@ -297,7 +298,7 @@ function seMarks(){
   var cap=GFX==="lite"?240:(GFX==="ultra"?1400:720), g=new THREE.PlaneGeometry(1,1); g.rotateX(-PI/2);
   var m=new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.6, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-4}), cap);
   m.setColorAt(0, _seCol.setRGB(1,1,1)); m.count=0; m.visible=false; m.frustumCulled=false; m.renderOrder=2;
-  m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.instanceColor.setUsage(THREE.DynamicDrawUsage); SALT.scene.add(m);
+  m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.instanceColor.setUsage(THREE.DynamicDrawUsage); SALT.scene.add(m); seOwn(m);
   return (SALT.mk={mesh:m, cap:cap, i:0, n:0, last:null});
 }
 function seMark(ax, az, bx, bz, w, shade){
