@@ -35,7 +35,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   k.deposit=Math.round(k.price*k.units*DEPOSIT/10)*10;k.expires=C().week+3;k.accepted=C().week;C().cash+=k.deposit;C().contracts.push(k);
   if(from==="inbox")C().inbox=C().inbox.filter(x=>x.id!==k.id);else if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
-function priceBoost(){let b=1;if(staffed("sales"))b*=1.06+0.01*crewL("sales");b*=crewPriceK();if(career()&&C().prestige.display)b*=1.03;return b;}
+function priceBoost(){let b=1;if(staffed("sales"))b*=1.06+0.0125*crewL("sales");b*=crewPriceK();if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],ts:["Engine",v=>"Two-stroke"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
