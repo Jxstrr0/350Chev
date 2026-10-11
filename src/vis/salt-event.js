@@ -44,7 +44,7 @@ SeKit.prototype.build=function(scene){
   for(var k in this.I){ var it=this.I[k], p=k.split("|"), mat=M[p[0]], geo=G[p[1]]; if(!mat||!geo) continue;
     var g=geo.clone(), im=new THREE.InstancedMesh(g, mat, it.length); bb.makeEmpty();
     for(var i=0;i<it.length;i++){ im.setMatrixAt(i, it[i].m); im.setColorAt(i, c.set(it[i].c==null?0xffffff:it[i].c).convertSRGBToLinear()); bb.expandByPoint(v.setFromMatrixPosition(it[i].m)); }
-    var sp=new THREE.Sphere(); bb.getBoundingSphere(sp); sp.radius+=16; g.boundingSphere=sp;   /* r128 culls an InstancedMesh by its geometry's sphere */
+    var sp=new THREE.Sphere(); bb.getBoundingSphere(sp); sp.radius+=16; g.boundingSphere=sp; im.frustumCulled=true;   /* r128 turns culling off for InstancedMesh; with the town's sphere on the geometry it culls right */
     im.instanceMatrix.needsUpdate=true; im.castShadow=false; im.receiveShadow=(p[0]!=="blob"); im.matrixAutoUpdate=false; im.updateMatrix();
     if(p[0]==="blob") im.renderOrder=1;
     scene.add(im); out.push(im); }
@@ -69,7 +69,7 @@ var SE_LIV=[0xe9e6dc,0x1b1d20,0x9e2a22,0x22488f,0xd0d3d6,0x2c6b3a,0xd9a52b,0x6b2
 var SE_SHIRT=[0xff7a1a,0x1d4787,0xf4efe2,0xb7261d,0x2c6b3a,0x3b3f45,0xd9a52b,0x7fb3d5,0xe36f8b,0x8a8f96];
 var SE_PANTS=[0x2f3e5c,0x9c8a66,0x1d1f22,0x4a4f56,0x2f3e5c];
 var SE_SKIN=[0xe0b48f,0xc89a78,0x9a6a4a,0x6e4a33,0xf0c8a8];
-function seAxle(k, x, r, tw, lite, col){ if(lite) k.put("solid","box", x, r*0.8, 0, r*1.7, r*1.6, tw, col||0x18181a); else k.put("solid","seWheel", x, r, 0, r*2, r*2, tw, col||0x18181a); }
+function seAxle(k, x, r, tw, lite, col){ if(lite) k.put("solid","box", x, r*0.8, 0, r*1.7, r*1.6, tw, col||0x18181a); else k.put("solid","seWheelL", x, r, 0, r*2, r*2, tw, col||0x18181a); }
 function seBlob(k, x, z, l, w){ k.put("blob","seFlat", x, 0.015, z, l, 1, w, 0xffffff); }
 /* a race rig: conventional tractor, enclosed trailer, the side door down as a ramp, an awning */
 function sePfRig(k, s, lite, sides){
@@ -125,7 +125,7 @@ function sePfMotorhome(k, s, lite){
 /* an EZ-Up: four legs, valance, peaked top; a table and chairs under it */
 function sePfEzUp(k, s, lite, sz){
   var c=SE_SHIRT[Math.floor(seRng(s+9)*SE_SHIRT.length)], h=sz/2-0.05;
-  for(var q=0;q<4;q++) k.put("metal", lite?"box":"cyl6", (q>>1)?h:-h, 1.2, (q&1)?h:-h, 0.05, 2.4, 0.05, 0x8d9296);
+  for(var q=0;q<4;q++) k.put("metal","box", (q>>1)?h:-h, 1.2, (q&1)?h:-h, 0.05, 2.4, 0.05, 0x8d9296);
   k.put("cloth","box", 0, 2.4, 0, sz, 0.24, sz, c); k.put("cloth","sePyr", 0, 2.52, 0, sz, 0.62, sz, c);
   k.put("solid","box", 0, 0.72, 0, 1.8, 0.05, 0.7, 0xeeeae0); if(!lite) for(q=0;q<2;q++) k.put("solid","box", 0, 0.38, (q?1:-1)*0.75, 0.75, 0.75, 0.5, 0x1d4787);
   if(!lite) seBlob(k, 0, 0, sz+0.6, sz+0.6);
@@ -169,7 +169,7 @@ function saltPitTown(B, lite){
   var ult=(GFX==="ultra"), inst=!lite, pits=new SeKit(B, inst), line=new SeKit(B, inst), road=new SeKit(B, inst), i, k, x, z, s=11;
   SALT.town=[];
   /* rows of pits, aisles along x between them: rigs nose toward the line, EZ-Ups and carts in the gaps */
-  var rows=lite?[{z:-54, n:4},{z:-78, n:3}]:[{z:-54, n:8},{z:-78, n:7},{z:-102, n:ult?8:6}];
+  var rows=lite?[{z:-54, n:4},{z:-78, n:3}]:[{z:-54, n:ult?8:7},{z:-78, n:ult?7:6},{z:-102, n:ult?8:5}];
   rows.forEach(function(r, ri){ var span=330/r.n;
     for(i=0;i<r.n;i++){ x=-232+span*(i+0.5)+(seRng(s)-0.5)*span*0.25; z=r.z+(seRng(s+1)-0.5)*3; var yaw=(seRng(s+2)-0.5)*0.12, kind=seRng(s+3);
       pits.at(x, z, yaw);
@@ -182,7 +182,7 @@ function saltPitTown(B, lite){
       s+=23; }
   });
   /* the back row: motorhomes and haulers' living quarters */
-  var nm=lite?1:(ult?11:8);
+  var nm=lite?1:(ult?11:6);
   for(i=0;i<nm;i++){ pits.at(-226+i*(330/nm)+seRng(s)*6, lite?-100:-122, (seRng(s+1)-0.5)*0.1+(i%2?PI:0)); sePfMotorhome(pits, s, lite); s+=7; }
   /* golf carts and scooters parked in the aisles, feather flags at pit corners */
   var ng=lite?2:(ult?14:10);
@@ -192,7 +192,7 @@ function saltPitTown(B, lite){
     s+=5; }
   if(!lite) for(i=0;i<(ult?14:9);i++){ pits.at(-228+i*(330/(ult?14:9))+seRng(s)*8, -44.5-seRng(s+1)*2, -PI/2); sePfFeather(pits, s); s+=3; }
   /* walkers in the aisles (Full/Ultra) */
-  if(!lite) for(i=0;i<(ult?36:16);i++){ pits.at(-225+seRng(s)*325, [-66,-90,-112,-44][i%4]+(seRng(s+1)-0.5)*5, seRng(s+2)*TAU); sePfPerson(pits, s, lite, false); s+=3; }
+  if(!lite) for(i=0;i<(ult?36:12);i++){ pits.at(-225+seRng(s)*325, [-66,-90,-112,-44][i%4]+(seRng(s+1)-0.5)*5, seRng(s+2)*TAU); sePfPerson(pits, s, lite, false); s+=3; }
   /* the start: a handful of officials and crew well off the line, clear of the push and stage cameras */
   pits.at(-22, -21, 0.4); sePfGolfCart(pits, 991, lite); pits.at(-16, -22.5, 0); sePfToolCart(pits, 992, lite);
   if(!lite) [[-19,-19.5],[-13,-21.5],[-24,-23],[-10,-24]].forEach(function(p,q){ pits.at(p[0], p[1], 1.2+q); sePfPerson(pits, 500+q, lite, false); });
