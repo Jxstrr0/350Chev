@@ -19935,7 +19935,7 @@ var _mudC=new THREE.Color(0.11,0.075,0.045);
    truck is swapped for a per-truck clone with a splatter mask that builds from the bottom up (lugs pack on the tyres).
    Fed from bogEffects / bogUpdate in vis/bog.js; nothing here touches the sim.
    ==========================================================================*/
-var BOGFX={ sheet:null, decal:null, decN:0, decI:0, lens:null, lensP:[], crown:null, splatTex:null, puffTex:null, sheetTex:null, mudKey:"",
+var BOGFX={ mudY:0, len:70, sheet:null, decal:null, decN:0, decI:0, lens:null, lensP:[], crown:null, splatTex:null, puffTex:null, sheetTex:null, mudKey:"",
   crowdC:null, sunC:new THREE.Color(1,1,1), ambC:new THREE.Color(0.3,0.3,0.3), t:0, tailA:0, bowA:0, lensT:0 };
 var _bfA=new THREE.Vector3(), _bfM=new THREE.Matrix4(), _bfQ=new THREE.Quaternion(), _bfS=new THREE.Vector3(), _bfE=new THREE.Euler(), _bfC=new THREE.Color(), _bfZ=new THREE.Vector3(0,0,1);
 /* --- textures --- */
@@ -20020,7 +20020,8 @@ BogParts.prototype.step=function(dt, wind){
     p.x+=p.vx*dt; p.y+=p.vy*dt; p.z+=p.vz*dt; p.rot+=p.vr*dt;
     if(p.lob && z0>railZ && p.z<=railZ){ if(bogFxHitRail(p.x, p.y, railZ)) continue; }
     if(p.lob && p.z<railZ-0.9 && p.y<1.9){ bogFxHitCrowd(p.x, p.z); continue; }
-    if(p.y<0.03){ if(p.kind===0 && p.vy<0) continue; p.y=0.03; if(p.vy<0) p.vy=0; }
+    var gy=(p.x>0 && p.x<BOGFX.len && Math.abs(p.z)<BOG_W/2)?BOGFX.mudY:0;   /* the mud sits below the fairground */
+    if(p.y<gy+0.03){ if(p.kind===0 && p.vy<0) continue; p.y=gy+0.03; if(p.vy<0) p.vy=0; }
     P[n++]=p; }
   P.length=n;
   var pos=this.aPos.array, vel=this.aVel.array, sz=this.aSz.array, col=this.aCol.array, rot=this.aRot.array, kd=this.aKind.array;
@@ -20134,8 +20135,9 @@ function bogFxUpdate(o, dt, V){
   var U=V.userData, FX=BOG.fx, Sh=GFX==="lite"?null:BOGFX.sheet, lite=GFX==="lite", R=Math.random, i, t, ph=o.phase||"stage";
   if(!FX) return;
   if(BOG.mudKey!==BOGFX.mudKey){ BOGFX.mudKey=BOG.mudKey; bogFxClearSplats(); }
-  BOGFX.t+=dt;
+  BOGFX.t+=dt; BOGFX.mudY=typeof BOG_MUDY==='number'?BOG_MUDY:0; var my=BOGFX.mudY;
   var v=Math.max(0,+o.v||0), ws=Math.max(v,+o.wspd||0), spin=Math.max(0, ws-v), x=+o.x||0, len=+o.len||70, k=U.k||1;
+  BOGFX.len=len;
   var inPit=ph==="pit"||(ph==="done"&&x>0&&x<len), running=ph==="pit", sink=clamp(+o.sink||0,0,1.2);
   var rr=(U.rr||0.55)*k, wr=(U.wr||0.42)*k, trR=(U.trR||0.93)*k, trF=(U.trF||U.trR||0.93)*k, wb=(U.wb||3.65)*k, rx=V.position.x, fx=rx+wb, by=V.position.y;
   var mc=o.cons>0.5?[0.1,0.072,0.05]:[0.115,0.07,0.04]; BOGFX.mudC=mc;
@@ -20162,7 +20164,7 @@ function bogFxUpdate(o, dt, V){
         FX.emit(ax-0.3, y0, s*trR, v*0.6-1-R()*2, vy, vz, 2.6, 0.07, 0.06, mc[0], mc[1], mc[2], 1, {drag:0, kind:0, lob:true}); } } }
   }
   if(bw>0.03){ var nb=bw*rate*(lite?36:70)*dt, mb=Math.floor(nb)+(R()<nb%1?1:0), fx0=fx+rr*0.95;
-    for(i=0;i<mb;i++){ var sd=R()<0.5?-1:1, sh2=0.8+R()*0.4; FX.emit(fx0+R()*0.4, 0.25+R()*0.3*bw, sd*(trF+R()*wr), v*(0.9+R()*0.25), 1.2+R()*3.2*bw, sd*(1.2+R()*2.8*bw), 0.7+R()*0.5, 0.04+R()*0.035, 0.035, mc[0]*sh2, mc[1]*sh2, mc[2]*sh2, 1, {drag:0.25, kind:0}); } }
+    for(i=0;i<mb;i++){ var sd=R()<0.5?-1:1, sh2=0.8+R()*0.4; FX.emit(fx0+R()*0.4, my+0.25+R()*0.3*bw, sd*(trF+R()*wr), v*(0.9+R()*0.25), 1.2+R()*3.2*bw, sd*(1.2+R()*2.8*bw), 0.7+R()*0.5, 0.04+R()*0.035, 0.035, mc[0]*sh2, mc[1]*sh2, mc[2]*sh2, 1, {drag:0.25, kind:0}); } }
   /* pit entry: a wall of mud 3-4 m high with wings, scaled with the entry speed; slaps (ridges, ruts, landings) a smaller one */
   var entry=ph==="pit" && BOG.prev.phase==="runup";
   if(entry || BOG.splash>0){
@@ -20170,7 +20172,7 @@ function bogFxUpdate(o, dt, V){
     if(!BOGFX.crown || entry || BOGFX.crown.t>0.7) BOGFX.crown={t:0, x:fx+rr*0.4, sc:sc, v:v, z:0};
     var nsp=Math.round(sc*(lite?42:110));
     for(i=0;i<nsp;i++){ var a=(R()-0.5)*3.6, f=0.35+R()*0.65, H=3.6*sc*(0.72+0.28*Math.cos(a)), vy0=Math.sqrt(2*9.8*H)*f*(0.85+R()*0.25), hs=(2.2+3.4*f)*Math.max(0.5,sc), sh3=0.7+R()*0.6;
-      FX.emit(BOGFX.crown.x+Math.cos(a)*1.1, 0.2, Math.sin(a)*(trF+0.4), v*0.55+Math.cos(a)*hs, vy0, Math.sin(a)*hs*1.1, 1.0+R()*0.9, R()<0.25?0.08:0.04+R()*0.035, 0.04, mc[0]*sh3, mc[1]*sh3, mc[2]*sh3, 1, {drag:0.1, kind:0}); }
+      FX.emit(BOGFX.crown.x+Math.cos(a)*1.1, my+0.2, Math.sin(a)*(trF+0.4), v*0.55+Math.cos(a)*hs, vy0, Math.sin(a)*hs*1.1, 1.0+R()*0.9, R()<0.25?0.08:0.04+R()*0.035, 0.04, mc[0]*sh3, mc[1]*sh3, mc[2]*sh3, 1, {drag:0.1, kind:0}); }
     if(!lite) for(i=0;i<Math.round(sc*4);i++) FX.emit(BOGFX.crown.x+R()*2, 0.6+R(), (R()-0.5)*4, v*0.4, 0.8+R()*1.4, (R()-0.5)*2, 1.8+R(), 1.2, 3.4+R()*1.5, mc[0]*2.4, mc[1]*2.3, mc[2]*2.2, 0.16, {drag:0.6, grav:0.5, fin:0.1, spin:0.4, kind:1});
     BOG.splash=0; }
   /* exhaust: a diesel's black smoke out the stacks, a whisp otherwise */
@@ -20192,7 +20194,7 @@ function bogFxSheets(Sh, dt, q){
     for(c=0;c<sl.cols;c++){ var u=c/(sl.cols-1), el=0.42+0.55*u, lat=(0.04+0.16*(1-u))*s, cv=Math.cos(el)*sp, sv=Math.sin(el)*sp, T=(sv+Math.sqrt(sv*sv+2*g*Math.max(0.1,ly)))/g, ef=Math.sin(u*PI);
       for(r=0;r<sl.rows;r++){ var f=r/(sl.rows-1), a=f*T, d=1-0.12*a, px=lx-cv*a*d, py=ly+sv*a-0.5*g*a*a, pz=lz+lat*sp*a*d+s*0.05*q.wr*Math.sin(c*1.7);
         var al=Math.min(1,f*6)*Math.pow(1-f,0.9)*(0.2+0.8*ef)*clamp(q.amt*1.1,0,0.9);
-        if(py<0.02){ py=0.02; al=0; }
+        if(py<BOGFX.mudY+0.02){ py=BOGFX.mudY+0.02; al=0; }
         Sh.set(sl, c, r, px, py, pz, al, 0.3+0.55*f+(1-ef)*0.2, u*1.3+side*0.37, f*2.2-t*2.4); } } }
   /* crown */
   var C=BOGFX.crown, sc2=S[2];
@@ -20203,7 +20205,7 @@ function bogFxSheets(Sh, dt, q){
         var bx=C.x+Math.cos(phi)*0.7, bz=Math.sin(phi)*(q.trF+q.wr*0.6);
         for(r=0;r<sc2.rows;r++){ var fr=0.2+0.8*r/(sc2.rows-1), vy=vmax*fr, hs=(1.6+3.0*fr)*Math.max(0.55,C.sc), vxx=C.v*0.45+Math.cos(phi)*hs, vzz=Math.sin(phi)*hs*1.15;
           var py2=vy*T2-0.5*g*T2*T2, al2=ef2*Math.min(1,T2*14)*Math.pow(1-life,0.6)*(py2>0.03?1:0)*(0.55+0.45*fr);
-          Sh.set(sc2, c, r, bx+vxx*T2*(1-0.1*T2), Math.max(0.02,py2), bz+vzz*T2*(1-0.1*T2), al2, 0.04+0.6*Math.pow(life,1.5)+0.12*fr, ua*2.6, fr*1.4); } } } }
+          Sh.set(sc2, c, r, bx+vxx*T2*(1-0.1*T2), BOGFX.mudY+Math.max(0.02,py2), bz+vzz*T2*(1-0.1*T2), al2, 0.04+0.6*Math.pow(life,1.5)+0.12*fr, ua*2.6, fr*1.4); } } } }
   else Sh.off(sc2);
   /* bow mound: two lobes ahead of the front tyres, joined by the axle's push; its crest breaks */
   var B=S[3];
@@ -20212,7 +20214,7 @@ function bogFxSheets(Sh, dt, q){
     var W=q.trF+q.wr*0.95, x0=q.fx+q.rr*0.55, L2=(1.0+0.9*q.bw)*q.k, Hb=(0.22+0.45*q.bw)*q.k;
     for(c=0;c<B.cols;c++){ var zu=(c/(B.cols-1))*2-1, z=zu*W*1.18, dz=Math.abs(Math.abs(z)-q.trF)/(q.wr*0.9), lobe=0.5+0.5*Math.exp(-dz*dz*0.9), edge=1-Math.pow(Math.abs(zu),3);
       for(r=0;r<B.rows;r++){ var xr=r/(B.rows-1), prof=Math.pow(Math.sin(PI*Math.pow(xr,0.7)),0.9), wob=0.06*Math.sin(t*9+c*1.3+r);
-        Sh.set(B, c, r, x0+xr*L2+Math.abs(zu)*0.25*L2, Math.max(0.01,Hb*lobe*prof*edge*(1+wob)), z, Math.min(1,edge*1.4)*Math.min(1,(1-xr)*3+0.2)*Math.min(1,q.bw*2.2),
+        Sh.set(B, c, r, x0+xr*L2+Math.abs(zu)*0.25*L2, BOGFX.mudY+Math.max(0.01,Hb*lobe*prof*edge*(1+wob)), z, Math.min(1,edge*1.4)*Math.min(1,(1-xr)*3+0.2)*Math.min(1,q.bw*2.2),
           0.02+0.35*xr*xr+0.3*(1-edge), zu*1.4, (x0+xr*L2)*0.35); } } }
   Sh.flush();
 }
@@ -20285,7 +20287,7 @@ function bogCoatUpdate(o, dt, V){
   if(BOG.coat<0.001 && !U.mudU) return;
   bogMudPatch(V);
   var u=U.mudU, c=BOG.coat, pk=o.pack!=null?clamp(+o.pack,0,1):clamp(c*1.1,0,1);
-  u.uMudCoat.value=c; u.uMudLine.value=c>0.001?0.15+2.75*Math.pow(c,1.15):0; u.uMudBase.value=V.position.y; u.uMudK.value=U.k||1;
+  u.uMudCoat.value=c; u.uMudLine.value=c>0.001?Math.max(0.15+2.75*Math.pow(c,1.15), (+U.mudLine||0)/(U.k||1)+0.08):0;   /* never below the mud's high-water mark (mudstuck's U.mudLine, m above the contact) */ u.uMudBase.value=V.position.y; u.uMudK.value=U.k||1;
   u.uMudPack.value+=(Math.max(pk, c*0.6)-u.uMudPack.value)*Math.min(1,dt*3); if(c<0.001) u.uMudPack.value=0;
   if(o.cons>0.5) u.uMudCol.value.setRGB(0.075,0.054,0.038); else u.uMudCol.value.setRGB(0.08,0.05,0.03);
 }
