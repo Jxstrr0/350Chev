@@ -21398,7 +21398,7 @@ function seChuteRig(ch){
   if(!M.seLine){ M.seLine=new THREE.MeshStandardMaterial({color:sc(0xe0582c), roughness:0.8}); M.seTether=new THREE.MeshStandardMaterial({color:sc(0x26282c), roughness:0.7}); }
   u.lines.forEach(function(l){ l.material=M.seLine; }); u.bridle.material=M.seTether;
   var pc=new THREE.Mesh(u.canopy.geometry, u.canopy.material); pc.castShadow=false; pc.visible=false; ch.add(pc);
-  var pl=new THREE.Mesh(SC.geo.chuteLine, M.seLine); pl.visible=false; ch.add(pl);
+  var pl=new THREE.Mesh(u.lines[0].geometry, M.seLine); pl.visible=false; ch.add(pl);
   return (u.se={pilot:pc, pline:pl, t:-1, bloom:false});
 }
 function seChutes(o, dt, V, ph){
