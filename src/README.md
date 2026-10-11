@@ -58,6 +58,7 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 | `vis/particles.js` | 9. particles (haze, smoke, sparks, `emit`/PKIND), 9b failure FX |
 | `vis/loop.js` | 10. orbit controls, 11. frame loop, 12. framing |
 | `vis/strip.js` | drag strip scene: STRIP state, track/ground shaders, sky, prairie and the plant, per-frame scenery |
+| `vis/strip-venue.js` | drag strip venue: billboard crowd (GPU poses/bounce/wave), instanced pit spaces, staging-lane cars, markings atlas, per-tier thinning |
 | `vis/strip-cars.js` | drag cars: materials, sponsor livery, body loft, wheels, chute, body packs |
 | `vis/strip-run.js` | strip particles, rubber, scoreboards, day/night, effects, tree lights, crowd, camera cuts, post, after-the-pass show |
 | `vis/pits.js` | race-night pits vignette |
