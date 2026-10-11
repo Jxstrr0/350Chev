@@ -9,7 +9,7 @@
 var PITS={ on:false, built:false, scene:null, cam:null, car:null, carKey:"", props:null, crew:[], fx:null, spot:null, hemi:null, lamp:null, bg:null,
   mats:{}, t:0, heat:0, nightK:-1, dirty:2, seen:-1, renders:0, work:{}, wind:new THREE.Vector3(-0.25,0,-0.3), tier:null, stats:null,
   fit:{L:4.6, hw:0.95, H:1.3, rearX:-1.5, rearZ:0.8, rr:0.35, frontX:1.4, tw:0.35} };
-var PITS_LIFT=0.13, _ptA=new THREE.Vector3(), _ptB=new THREE.Vector3();
+var PITS_LIFT=0.22, _ptA=new THREE.Vector3(), _ptB=new THREE.Vector3(), _ptC=new THREE.Color();
 function pitsBuild(B, key, mat, shadow, into){ var keep=STRIP.scene; STRIP.scene=into; var m=B.build(key, mat, shadow); STRIP.scene=keep; return m; }
 function pitsMats(){
   var M=PITS.mats; if(M.solid) return M;
@@ -37,7 +37,7 @@ function pitsMats(){
 /* sky: a vertical gradient, dusk (k 0) to full dark (k 1); returns the horizon colour (sRGB) for the fog */
 function pitsSky(k){
   var mix=function(a,b){ return new THREE.Color(a).lerp(new THREE.Color(b), k); };
-  var top=mix(0x1c2b4c,0x04060b), mid=mix(0x5a4a66,0x0b1018), hor=mix(0xc4703e,0x1a212e);
+  var top=mix(0x2a2f55,0x04060b), mid=mix(0x8a5266,0x0b1018), hor=mix(0xe9853f,0x1a212e);   /* fix pack: Q1 (k 0) is a warm sunset, not a cold blue */
   if(!PITS.bg){ var c=newCanvas(4,256); PITS.bg=new THREE.CanvasTexture(c); PITS.bg.encoding=THREE.sRGBEncoding; }
   var x=PITS.bg.image.getContext("2d"), g=x.createLinearGradient(0,0,0,256);
   g.addColorStop(0,"#"+top.getHexString()); g.addColorStop(0.55,"#"+mid.getHexString()); g.addColorStop(0.82,"#"+hor.getHexString()); g.addColorStop(1,"#"+hor.getHexString());
@@ -100,8 +100,11 @@ function pitsProps(car){
   var x0=bb.min.x, x1=bb.max.x, RED=0xb3261e, STAND=0xd2471f;
   B.box("solid", (x0+x1)/2, 0.006, 0, L+1.8, 0.012, 2*hw+1.4, 0x232528);   /* the pit mat */
   /* jack stands under the frame, just inboard of each axle */
-  [[rearX+rr*0.9, rearZ*0.62],[frontX-frontR*0.9, frontZ*0.62]].forEach(function(p){ for(var s=-1;s<=1;s+=2){ var sx=p[0], sz=s*Math.max(0.28,p[1]);
-    B.add("metal","cone",[sx, 0.13, sz],[0.34,0.26,0.34],STAND,[0,PI/4,0]); B.add("metal","cyl",[sx, 0.2, sz],[0.05,0.26,0.05],0xb9bec4); B.box("metal", sx, 0.34, sz, 0.12, 0.03, 0.08, STAND); } });
+  /* fix pack: out near the sills where the camera sees them, tall enough to meet the frame (the car is PITS_LIFT up, wheels hanging) */
+  var rail=u.body==="rail", top=PITS_LIFT+(rail?0.2:0.15);
+  [[rearX+rr*0.9, rearZ*0.62],[frontX-frontR*0.9, frontZ*0.62]].forEach(function(p){ for(var s=-1;s<=1;s+=2){ var sx=p[0], sz=s*(rail?Math.max(0.28,p[1]):Math.max(0.28,hw-0.34));
+    B.add("metal","cone",[sx, 0.16, sz],[0.42,0.32,0.42],STAND,[0,PI/4,0]); B.add("metal","cyl",[sx, (0.3+top)/2, sz],[0.055,top-0.3+0.04,0.055],0xb9bec4);
+    B.box("metal", sx, top-0.015, sz, 0.16, 0.03, 0.1, STAND); B.box("solid", sx, 0.014, sz, 0.5, 0.004, 0.5, 0x161719); } });
   /* floor jack behind the car, handle up */
   B.box("metal", x0-0.55, 0.09, 0.15, 0.9, 0.12, 0.34, RED); B.add("metal","cyl",[x0-1.2, 0.55, 0.15],[0.05,1.1,0.05],0x9a9ea4,[0,0,0.9]);
   for(k=0;k<4;k++) B.add("solid","cyl",[x0-0.2-(k>>1)*0.7, 0.05, 0.15+((k&1)?0.16:-0.16)],[0.1,0.05,0.1],0x111111,[PI/2,0,0]);
@@ -145,12 +148,12 @@ function pitsUpdate(o){
     if(PITS.car) S5.remove(PITS.car);
     var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn, o.hw); stripCarMeta(car);
     car.position.set(-(car.userData._bbMinX+car.userData._len/2), PITS_LIFT, 0); car.updateMatrixWorld(true);
-    S5.add(car); PITS.car=car; PITS.carKey=key; pitsProps(car); PITS.fitKey=""; ch=true;
+    S5.add(car); PITS.car=car; PITS.carKey=key; pitsProps(car); stripContact(car, {soft:true, y:0.01-PITS_LIFT, opacity:0.8}); PITS.fitKey=""; ch=true;   /* floor shadow under the raised car */
   }
   stripLivery(PITS.car);
   var nk=clamp(o.nightK==null?1:+o.nightK, 0, 1);
   if(Math.abs(nk-PITS.nightK)>0.001){ PITS.nightK=nk; var hor=pitsSky(nk); S5.background=PITS.bg; S5.fog.color.copy(hor);
-    PITS.hemi.intensity=0.62-0.22*nk; PITS.moon.intensity=0.45-0.25*nk; if(PITS.fx) PITS.fx.mat.uniforms.uFog.value.copy(hor).convertSRGBToLinear(); ch=true; }
+    PITS.hemi.intensity=0.62-0.22*nk; PITS.moon.intensity=0.45-0.25*nk; PITS.hemi.color.set(0x8090b0).lerp(_ptC.set(0xc9a08e), 0.7*(1-nk)); PITS.moon.color.set(0x9fb4d8).lerp(_ptC.set(0xffb27a), 1-nk); if(PITS.fx) PITS.fx.mat.uniforms.uFog.value.copy(hor).convertSRGBToLinear(); ch=true; }
   if(PITS.tier!==GFX){ PITS.tier=GFX; var ms=GFX==="ultra"?2048:1024; PITS.spot.shadow.mapSize.set(ms,ms); if(PITS.spot.shadow.map){ PITS.spot.shadow.map.dispose(); PITS.spot.shadow.map=null; } ch=true; }
   PITS.heat=clamp(+o.heat||0, 0, 1);
   if(o.poke){ PITS.work[o.poke==="first"||o.poke==="final"||o.poke==="gear"||o.poke==="wear"?"launch":o.poke==="shocks"?"psi":o.poke]=1.6; ch=true; }
