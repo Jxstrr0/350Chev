@@ -21,6 +21,7 @@ function addWear(n,hk){if(!career())return;const h=hk||hKey(cfgHash(S.cfg));C().
 function testSnap(){return{cfg:Object.assign({},S.cfg),h:cfgHash(S.cfg),car:S.career,mode:S.mode};}
 function testSame(s){return!!s&&S.mode===s.mode&&S.career===s.car;}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
+function rnFreshCost(res){const c=freshenCost(res),k=career()?crewRnFreshK():1;return k===1?c:Math.round(c*k/50)*50;}   // race-night pits: the crew's fast hands or nerves (app/crew.js)
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
@@ -568,7 +569,7 @@ function rnPitsHtml(N){const br=N.fmt==="bracket",p=N.last,i=rnOppIdx(N),rv=N.fi
   h+=`<p class="hint" style="margin:4px 0 8px">${N.stage>0?`Air ${da>=0.05?"is "+da.toFixed(1)+"% better than last round — cars will pick up a little":da<=-0.05?"has gone off "+(-da).toFixed(1)+"% — expect it to slow down":"about the same as last round"}. `:""}Body, tyre and weight are locked for the night; this is what a racer changes between rounds.</p>`;
   h+=rnTuneRows(N);
   if(br&&rd){const sug=rnSuggest(N);h+=`<div class="rnt dial"><span>Your dial-in<small>${p&&p.et!=null?"last ran "+p.et.toFixed(3)+" · ":""}under it is a breakout</small></span><button class="nud" data-rn="dial" data-d="-1" aria-label="quicker">−</button><b>${N.dial.toFixed(2)}</b><button class="nud" data-rn="dial" data-d="1" aria-label="slower">+</button></div>${Math.abs(sug-N.dial)>0.004?`<button class="chip" data-rn="dialsug" style="margin:0 0 8px">Use ${sug.toFixed(2)} (a hundredth under your last)</button>`:""}`;}
-  const wi=wearInfo(quick);if(wi){const c=freshenCost(quick);h+=`<div class="rnt"><span>Wear<small>${wi.passes} of ${wi.budget} passes${wi.w>=1?" · past budget, parts start letting go":""}</small></span><b style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</b>${wi.w>0?`<button class="btn sm" data-rn="freshen">Freshen · ${fmt$(c)}</button>`:""}</div>`;}
+  const wi=wearInfo(quick);if(wi){const c=rnFreshCost(quick);h+=`<div class="rnt"><span>Wear<small>${wi.passes} of ${wi.budget} passes${wi.w>=1?" · past budget, parts start letting go":""}</small></span><b style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</b>${wi.w>0?`<button class="btn sm" data-rn="freshen">Freshen · ${fmt$(c)}</button>`:""}</div>`;}
   else if(!career())h+=`<p class="hint" style="margin:6px 0 0">Sandbox: no wear on the parts.</p>`;
   return h+`</div>`;}
 function rnNextHtml(N){const br=N.fmt==="bracket",i=rnOppIdx(N),rv=N.field[i-1],qb=rnQualBest(N,i),rd=N.stage>=2,ri=N.stage-2;
@@ -686,7 +687,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rn]");i
   else if(a==="shock"){S.env.shocks=b.dataset.k;}
   else if(a==="dial"){N.dial=+(N.dial+0.01*+b.dataset.d).toFixed(2);rnSetN(N);}
   else if(a==="dialsug"){N.dial=rnSuggest(N);rnSetN(N);}
-  else if(a==="freshen"){const c=freshenCost(quick);if(!career())return;if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} between rounds — ${fmt$(c)}`);hud();toast("Rings, bearings and a hone — like new");}
+  else if(a==="freshen"){const c=rnFreshCost(quick);if(!career())return;if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} between rounds — ${fmt$(c)}`);hud();toast("Rings, bearings and a hone — like new");}
   save();const sc=$("panel").scrollTop;renderEnv();$("panel").scrollTop=sc;});
 $("envBox").addEventListener("click",e=>{if(e.target.closest('[data-ek="tyre"],[data-ek="body"]')&&S.env.tyrePsi!=null){delete S.env.tyrePsi;renderEnv();save();}});
 async function shareSlip(l){try{await document.fonts.ready;}catch(e){}const c=slipCanvas(l);

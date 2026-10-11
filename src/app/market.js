@@ -35,7 +35,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   k.deposit=Math.round(k.price*k.units*DEPOSIT/10)*10;k.expires=C().week+3;k.accepted=C().week;C().cash+=k.deposit;C().contracts.push(k);
   if(from==="inbox")C().inbox=C().inbox.filter(x=>x.id!==k.id);else if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
-function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
+function priceBoost(){let b=1;if(staffed("sales"))b*=1.06+0.01*crewL("sales");b*=crewPriceK();if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],ts:["Engine",v=>"Two-stroke"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
@@ -105,7 +105,7 @@ function fits(k,res,cfg){
 const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,lap:8,zero100:3,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1,ts:1};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
-  return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
+  return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*crewFamK(f.res)*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
 const MKT_MIN=0.2;
 function missTxt(d){return d.miss.slice(0,3).map(x=>`${x.name.toLowerCase()} −${Math.round(x.cut*100)}%`).join(" · ");}
 // same engine, same word of mouth: contract or open market, rep follows units, class and how well it suits the buyer
@@ -145,16 +145,16 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
 function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
-function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*0.75):r.weeks;}   // machinist: machining projects 25% shorter
+function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
-  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
+  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
 function prestigePass(){let rp=0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
 function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}if(ok){C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=10;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus, +10 rep`,"good");hit.push(g);}}
   if(hit.length){toast(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
 function warrantyPass(){let claims=0,cost=0,active=0;
   for(const f of C().fleet){const age=C().week-f.week;if(age<1||age>10)continue;active++;
-    const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
+    const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1)*(crewT("lucky")?0.85:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
     if(n){f.claims=(f.claims||0)+n;const c=n*(Math.round(f.unitCost*0.5)+350);claims+=n;cost+=c;C().cash-=c;C().warranty+=c;C().rep=Math.max(0,C().rep-n);
       logEvent(`${n} × ${f.name} back from ${f.client} — ${f.weak.toLowerCase()} — ${fmt$(c)} warranty`,"bad");}}
   if(active&&!claims)C().cleanWeeks++;else if(claims)C().cleanWeeks=0;
@@ -185,8 +185,8 @@ function SV(){const c=C();if(!Array.isArray(c.service))c.service=[];if(!Array.is
   for(const k of ["svcUsed","svcIncome","rebuildJobs","rebuiltUnits","coresUsed","coreCredit","coreScrap","fidN"])if(typeof c[k]!=="number")c[k]=0;
   if(!c.coreSalt)c.coreSalt=1+Math.floor(Math.random()*1e9);return c;}
 function segCat(seg){const c=CATS.find(x=>x.segs.includes(seg));return c?c.id:"prod";}
-function svcCap(){return 6+(staffed("machinist")?4:0)+(has("shop1")?3:0)+(has("shop2")?3:0);}
-function svcQual(){return 1+(staffed("machinist")?0.15:0)+(has("shop1")?0.1:0)+(has("shop2")?0.1:0);}   // a better shop's rebuild lasts longer
+function svcCap(){return 6+(staffed("machinist")?4+crewL("machinist"):0)+(has("shop1")?3:0)+(has("shop2")?3:0)+2*crewT("owl");}
+function svcQual(){return 1+(staffed("machinist")?0.15+0.025*crewL("machinist"):0)+(has("shop1")?0.1:0)+(has("shop2")?0.1:0)+0.08*crewT("meticulous");}   // a better shop's rebuild lasts longer
 function svcRaw(f){return 0.55*Math.max(300,+f.life||2000)/(SVC_DUTY[segCat(f.seg)]||100)*(0.7+0.3*clamp(+f.rel||80,0,100)/100);}   // weeks to a rebuild
 function svcClient(f){return f.client===f.name?f.name+" buyers":f.client;}
 function fleetBy(fid){return C().fleet.find(f=>f.fid===fid);}
@@ -223,7 +223,7 @@ function doRebuild(id){const c=SV();const j=c.service.find(x=>x.id==id);if(!j)re
     if(f&&j.cycle===1){f.rebuiltN=(f.rebuiltN||0)+n;if(!f.due2){f.rbWeek=c.week;f.due2=c.week+clamp(Math.round(svcRaw(f)*svcQual()),8,26);}}
     msg=`Rebuilt ${n} × ${j.engine} for ${j.client} (${SVC_TIERS.find(t=>t.id===j.tier).name.toLowerCase()}) — ${fmt$(j.pay*n)} billed, ${fmt$(net)} after parts, +${rep} rep`;}
   if(j.done>=j.units){c.service=c.service.filter(x=>x!==j);c.rebuildJobs++;if(j.warranty&&f)f.wfix=true;}
-  logEvent(msg,j.warranty?"":"good");checkGoals();return {n,j,parts,net:j.warranty?-parts:(j.pay-j.parts)*n};}
+  logEvent(msg,j.warranty?"":"good");crewWork("rebuild",{n});checkGoals();return {n,j,parts,net:j.warranty?-parts:(j.pay-j.parts)*n};}
 /* cores */
 function coreBook(l){return Math.round(((OPT.layout[l]||{}).cost||1000)*0.25/10)*10;}
 function coreScrapVal(l){return Math.round(coreBook(l)*CORE_SCRAP/10)*10;}
