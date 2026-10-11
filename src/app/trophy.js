@@ -126,12 +126,12 @@ function tropClose(){if(!TR.open)return;TR.open=false;$("troom").hidden=true;doc
 function tropRefresh(){const items=tropItems(),eng=tropEngines(),cr=career();TR.map={};items.forEach(i=>TR.map[i.id]=i);eng.forEach(e=>TR.map[e.id]={id:e.id,eng:e});
   const c=tropCounts(),med=items.filter(i=>i.slot==="medal").length,sl=items.filter(i=>i.slot==="slip").length;
   $("trSub").textContent=`${cr?"Career · week "+C().week:"Test cell"} · ${c.shelf} troph${c.shelf===1?"y":"ies"} · ${sl} slip${sl===1?"":"s"} · ${med} medal${med===1?"":"s"}${c.eng?" · "+c.eng+" retired":""}`;
-  const note=$("trNote");note.hidden=cr&&!!(c.shelf||sl||med||c.eng);
+  const note=$("trNote");note.hidden=cr&&c.shelf>0;
   note.innerHTML=!cr?`<b>Test cell shelf.</b> Practice wins, test-cell records and your achievements. Goals, sponsors and Dyno day hang in the career room.`:`<b>Empty shelf — go win something.</b> Race nights, pull and bog wins, salt records, 24 h podiums and Dyno day milestones land here.`;
   if(TR.gl)TR.gl=ENGINE_VIS.setTrophy({on:true,items,engines:eng,onPick:tropPick})!==false;
   tropListRender(items,eng);if(TR.sel&&TR.map[TR.sel])tropCard(TR.sel);}
 function tropPick(id){if(!TR.open)return;if(!id||!TR.map[id]){tropCard(null);if(TR.gl)ENGINE_VIS.trophyFocus(null);return;}tropCard(id);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(id);}
-function tropCard(id){const box=$("trCard");TR.sel=id||null;if(!id||!TR.map[id]){box.hidden=true;box.innerHTML="";return;}const it=TR.map[id];let h="";
+function tropCard(id){const box=$("trCard");TR.sel=id||null;$("troom").classList.toggle("crd",!!(id&&TR.map[id]));if(!id||!TR.map[id]){box.hidden=true;box.innerHTML="";return;}const it=TR.map[id];let h="";
   if(it.eng){const e=it.eng.src,b=e.best||[];
     h=`<div class="trk">Retired engine${e.cert?" · certified":""} · ${trEsc(trWhen(e))}</div><h3>${trEsc(e.name)}</h3><p>${trEsc(e.label||"")}</p><div class="trnums">${[["Peak",Math.round(e.hp||0).toLocaleString("en-CA")+" hp"],["Torque",Math.round(e.tq||0).toLocaleString("en-CA")+" Nm"],["Reliability",e.rel!=null?e.rel:"—"]].concat(b).map(([k,v])=>`<div><span>${trEsc(k)}</span><b>${trEsc(v)}</b></div>`).join("")}</div>
       <div class="trbtns"><button class="btn sm pri" data-tra="load" data-id="${trEsc(e.id)}">Load this build</button>${tropBook().retired.indexOf(e)>=TR_STANDS?`<button class="btn sm ghost" data-tra="front" data-id="${trEsc(e.id)}">Put on a stand</button>`:""}<button class="btn sm ghost" data-tra="share" data-id="${trEsc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="remove" data-id="${trEsc(e.id)}">Take down</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}

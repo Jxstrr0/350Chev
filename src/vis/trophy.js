@@ -99,7 +99,8 @@ function trCanvasTex(w, h, bg, lines, frame){
   x.textAlign="center"; x.textBaseline="middle";
   for(var i=0;i<lines.length;i++){ var L=lines[i]; if(!L||L[0]==null) continue; x.fillStyle=L[3]||"#2d2b36"; x.font=(L[2]||600)+" "+L[1]+"px 'Chakra Petch','Barlow Condensed','Arial Narrow',sans-serif";
     var s=String(L[0]); while(s.length>3&&x.measureText(s).width>w*0.88) s=s.slice(0,-2)+"…"; x.fillText(s, w/2, L[4]*h); }
-  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(4, MAXANISO||1); TROPHY.tex.push(t); return t;
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(4, MAXANISO||1); t.generateMipmaps=false; t.minFilter=THREE.LinearFilter;   /* odd sizes: no mipmaps, so WebGL1 never resizes them */
+  TROPHY.tex.push(t); return t;
 }
 function trTexMat(t){ var m=new THREE.MeshStandardMaterial({map:t, roughness:0.85, metalness:0}); m.userData.trTex=true; return m; }
 function trFloorTex(){
@@ -138,7 +139,7 @@ function trBuildScene(){
   for(var s=0;s<3;s++){ var y=TROPHY.shelfY[s], sh=new THREE.Mesh(sg, trMat("wood")); sh.position.set(0,y-0.02,R.back+0.17); fixed.add(sh);
     for(var b=-4;b<=4;b+=2){ var br=new THREE.Mesh(bg, trMat("steel")); br.position.set(b*1.02,y-0.12,R.back+0.15); fixed.add(br); } }
   /* the shop sign over the shelves */
-  var sign=new THREE.Mesh(new THREE.PlaneGeometry(4.2,0.5), trTexMat(trCanvasTex(1024,122,"#1b1611",[["PRAIRIE ENGINE WORKS · TROPHY ROOM",54,700,"#e8c27a",0.53]],"#8a6a3a")));
+  var sign=new THREE.Mesh(new THREE.PlaneGeometry(5,0.5), trTexMat(trCanvasTex(1280,128,"#1b1611",[["PRAIRIE ENGINE WORKS · TROPHY ROOM",50,700,"#e8c27a",0.53]],"#8a6a3a")));
   sign.position.set(0,2.92,R.back+0.01); fixed.add(sign);
   /* medal board on the right wall */
   var mb=new THREE.Mesh(new THREE.BoxGeometry(0.05,1.2,2.5), trMat("woodDk")); mb.position.set(W/2-0.03,1.95,-0.6); fixed.add(mb);
@@ -266,7 +267,7 @@ function trSetupInput(){
       if(q.d>0&&q2.d>0) o.r*=q.d/q2.d; panBy(q2.x-q.x, q2.y-q.y); }
     P[e.pointerId]=np; trClampOrb(); TROPHY.dirty=1; });
   var up=function(e){ if(!P[e.pointerId]) return; delete P[e.pointerId]; n=Math.max(0,n-1);
-    if(TROPHY.on && down && e.type==="pointerup" && Math.hypot(e.clientX-down.x,e.clientY-down.y)<10 && performance.now()-down.t<450){ var id=trPickAt(e.clientX,e.clientY); if(TROPHY.onPick) TROPHY.onPick(id); }
+    if(TROPHY.on && down && e.type==="pointerup" && Math.hypot(e.clientX-down.x,e.clientY-down.y)<10 && performance.now()-down.t<700){ var id=trPickAt(e.clientX,e.clientY); if(TROPHY.onPick) TROPHY.onPick(id); }
     if(!n) down=null; };
   canvasEl.addEventListener("pointerup", up); canvasEl.addEventListener("pointercancel", up); canvasEl.addEventListener("pointerleave", up);
   canvasEl.addEventListener("wheel", function(e){ if(!TROPHY.on) return; TROPHY.fly=null; TROPHY.orb.r*=1+e.deltaY*0.0012; trClampOrb(); TROPHY.dirty=1; }, {passive:true});
@@ -331,6 +332,7 @@ ENGINE_VIS.trophyFocus=function(id){ if(!TROPHY.on) return; if(id==null){ var hm
 ENGINE_VIS.trophyShot=function(){   /* a copy of the room as it stands, for the share card */
   if(!TROPHY.on||!renderer) return null; trRender(); var c=document.createElement("canvas"); c.width=canvasEl.width; c.height=canvasEl.height;
   try{ c.getContext("2d").drawImage(canvasEl,0,0); }catch(e){ return null; } return c; };
+ENGINE_VIS.trophyPickAt=function(x,y){ return TROPHY.on?trPickAt(x,y):null; };
 ENGINE_VIS.trophyState=function(){ return {on:TROPHY.on, built:TROPHY.built, pick:TROPHY.pick.length, engQ:TROPHY.engQ.length, stats:TROPHY.stats, orb:{th:+TROPHY.orb.th.toFixed(2), ph:+TROPHY.orb.ph.toFixed(2), r:+TROPHY.orb.r.toFixed(2)}, fly:!!TROPHY.fly}; };
 ENGINE_VIS.trophyProject=function(id){   /* screen point of an item (tests, and the card's pointer) */
   if(!TROPHY.on||!TROPHY.cam) return null; var f=null; for(var i=0;i<TROPHY.pick.length;i++) if(TROPHY.pick[i].userData.tid===id){ f=TROPHY.pick[i]; break; } if(!f) return null;
