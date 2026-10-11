@@ -514,8 +514,8 @@ function saltAlteredV2(L, aero){
   car.position.x=-me.xr; g.add(car);
   /* door number boards (the strip's door decals carry them) */
   var board=slDoorMat(L); U.liv.dm=board; U.liv.num=L.num; for(i=0;i<U.liv.door.length;i++) U.liv.door[i].material=board;
-  /* the windshield banner: the car's own lead salt sponsor, not the drag strip's */
-  var ban=slBannerMat(L); U.liv.bm=ban; for(i=0;i<U.liv.banner.length;i++) U.liv.banner[i].material=ban;
+  /* no windshield banner on the salt: a strip thing (stripLivery only swaps its material, so it stays hidden) */
+  for(i=0;i<U.liv.banner.length;i++) U.liv.banner[i].visible=false;
   /* headlight tape: a silver panel over each lamp, crossed with black tape */
   var hl=U.lights.head[0];
   if(hl){ hl.geometry.computeBoundingBox(); var bb=hl.geometry.boundingBox, pa=hl.geometry.attributes.position, lb=[new THREE.Box3(), new THREE.Box3()], v=new THREE.Vector3();
@@ -557,16 +557,6 @@ function slDoorMat(L){
   x.fillStyle="#141414"; x.textAlign="center"; x.textBaseline="middle"; x.font="700 "+(L.num.length>3?110:140)+"px "+F; x.fillText(L.num, 156, 104, 270);
   x.fillStyle="#f4efe2"; x.fillRect(318, 120, 188, 66); x.strokeStyle="#141414"; x.lineWidth=5; x.strokeRect(321, 123, 182, 60); x.fillStyle="#141414"; x.font="700 44px "+F; x.fillText(L.cls||"ALT", 412, 156, 170);
   slSponsor(x, SL_SPONSORS[L.sponsors[0]], 316, 12, 192, 100);
-  var t=sc_ctex(c), q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
-  var env=sc_env(); if(env) q.envMap=env; q.userData.perBuild=true; q.userData.ownMaps=[t];
-  SLC.mat[key]=q; return q;
-}
-/* the salt Altered's windshield banner: its lead sponsor's colours and name over the glass */
-function slBannerMat(L){
-  var sp=SL_SPONSORS[L.sponsors[0]]||SL_SPONSORS[0], key="ban|"+sp.id+"|"+GFX; if(SLC.mat[key]) return SLC.mat[key];
-  var c=sc_canvas(512,64), x=c.getContext("2d"), F="'Chakra Petch','Barlow Condensed','Arial Narrow',Arial,sans-serif";
-  x.fillStyle=sp.c1; x.fillRect(0,0,512,64); x.fillStyle=sp.c2; x.fillRect(0,0,512,5); x.fillRect(0,59,512,5);
-  x.fillStyle=sp.c3; x.textAlign="center"; x.textBaseline="middle"; x.font="italic 700 38px "+F; x.fillText(sp.n+" "+sp.t, 256, 33, 480);
   var t=sc_ctex(c), q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
   var env=sc_env(); if(env) q.envMap=env; q.userData.perBuild=true; q.userData.ownMaps=[t];
   SLC.mat[key]=q; return q;

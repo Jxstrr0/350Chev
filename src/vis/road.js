@@ -172,7 +172,7 @@ function buildRoadWorld(T){
     var shirts=[0x9c3a30,0x34598f,0xcfccc4,0x1f2023,0xff7a1a,0x44684a,0xc8a640,0x5d5f66,0x8f4a5e,0x2c6b3a], skin=[0xe0b494,0xc68a64,0x8d5a3b,0xf0c9a8,0x5a3a26], mm=new THREE.Matrix4(), cc=new THREE.Color();
     for(q=0;q<n2;q++){ var p0=seatPts[q]; mm.makeTranslation(p0[0],p0[1]+0.31,p0[2]); bodyM.setMatrixAt(q,mm); mm.makeTranslation(p0[0],p0[1]+0.75,p0[2]); headM.setMatrixAt(q,mm);
       cc.set(shirts[Math.floor(rng(q*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(q,cc); cc.set(skin[Math.floor(rng(q*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(q,cc); }
-    S4.add(bodyM); S4.add(headM); }
+    instCull(bodyM, 1.5); instCull(headM, 1.5); S4.add(bodyM); S4.add(headM); }
   /* trees: shelterbelts and copses, kept well clear of the racing surface */
   (function(){ var ult=ULT(), pts=[], tries=lite?900:ult?3600:1800, R2=Math.max(T.size[0],T.size[1])*0.5+260, s;
     for(s=0;s<tries && pts.length<(lite?170:ult?760:380);s++){ var px=(rng(s*1.7)-0.5)*2*R2, pz=(rng(s*2.9+1)-0.5)*2*R2, ok=true;
@@ -180,7 +180,7 @@ function buildRoadWorld(T){
       if(ok) pts.push([px,pz,3.5+rng(s+3)*3.5]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,qq){ var h=p[2]*1.7; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(qq,mm); cc.setHSL(0.24+rng(qq)*0.06,0.45,0.13+rng(qq+1)*0.06).convertSRGBToLinear(); im.setColorAt(qq,cc); });
-    im.castShadow=!lite; S4.add(im); if(ult) ultraRoadTrees(S4, im, pts, rng); })();
+    im.castShadow=!lite; instCull(im); S4.add(im); if(ult) ultraRoadTrees(S4, im, pts, rng); })();
   /* coulee hills on the horizon */
   (function(){ var seg=120, R0=2400, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
     for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=Math.max(5, 16+40*Math.pow(0.5+0.5*Math.sin(a*3.0+1.1),2)+18*Math.sin(a*11.0+1.4)*Math.sin(a*5.0)+10*Math.sin(a*23.0));
