@@ -280,6 +280,9 @@
       st.cool += (qIn + 0.03 * prep.coolQ - qOut) * dt / (30 + 25 * prep.VdL); st.coolPeak = Math.max(st.coolPeak, st.cool);
       st.derate = st.cool > 110 ? clamp(1 - 0.025 * (st.cool - 110), 0.65, 1) : 1; if (st.derate < 0.999) st.derateT += dt;
       if (st.cool > 127) { st.dnf = { kind: "boil", s: st.s, t: st.t, name: HILL_SECTIONS[T.sec[i]].n }; st.done = true; }
+      // not enough to pull itself up the grade, or flagged off after half an hour
+      st.stuckT = st.v < 0.5 ? (st.stuckT || 0) + dt : 0;
+      if (st.stuckT > 20 || st.t > 1800) { st.dnf = { kind: st.stuckT > 20 ? "stall" : "time", s: st.s, t: st.t, name: HILL_SECTIONS[T.sec[i]].n }; st.done = true; }
       // a corner's apex: did it hold?
       const c = KC[st.kChk];
       if (c && st.s >= c.s0 + (c.s1 - c.s0) * 0.5) {
