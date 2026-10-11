@@ -30,6 +30,7 @@ vis/garage.js
 vis/particles.js
 vis/loop.js
 vis/strip.js
+vis/strip-venue.js
 vis/strip-cars.js
 vis/strip-cars-shells.js
 vis/strip-cars-classes.js
@@ -45,6 +46,7 @@ vis/salt.js
 vis/salt-look.js
 vis/salt-event.js
 vis/hill.js
+vis/band.js
 vis/api.js
 vis/trophy.js
 vis/teardown.js
@@ -59,10 +61,12 @@ app/e24.js
 app/salt.js
 app/hill.js
 app/boat.js
+app/runview.js
 app/results.js
 app/market.js
 app/swap.js
 app/career.js
+app/crew.js
 app/trophy.js
 app/help.js
 app/boot.js
