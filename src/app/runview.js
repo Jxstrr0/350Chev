@@ -1,11 +1,11 @@
 /* ===================== RUN VIEW: the big 3D view during every event =====================
-   html.onevent is on while an event scene is up (#app.onstrip: drag, pull, salt, mud bog, road test, 24 Hours, through the
+   html.onevent is on while an event scene is up (#app.onstrip: drag, pull, salt, mud bog, road test, 24 Hours, hillclimb, drag boats, through the
    after-run beat) and the Events tab is showing; teardown (#app.td) or another tab takes it off and everything comes back.
    Under it the header and SOUND/START/VIEW fold away and the view grows (CSS). For every event but the strip (which has
-   its own #stripHud), the live card (#pullLive, #saltLive, #bogLive, #roadLive, #e24Hud) moves from its control block into
+   its own #stripHud), the live card (#pullLive, #saltLive, #bogLive, #roadLive, #e24Hud, #hillLive, #boatLive) moves from its control block into
    #evHud on the view's bottom edge (html.evhud) and goes home when the run view ends. The band it covers goes to the scene
    cameras through ENGINE_VIS.setBand. All driven by observers: no event's start / finish code needs to know. */
-const RV_LIVE=[["dragCtl",null],["pullCtl","pullLive"],["saltCtl","saltLive"],["bogCtl","bogLive"],["roadCtl","roadLive"],["e24Ctl","e24Hud"]];
+const RV_LIVE=[["dragCtl",null],["pullCtl","pullLive"],["saltCtl","saltLive"],["bogCtl","bogLive"],["roadCtl","roadLive"],["e24Ctl","e24Hud"],["hillCtl","hillLive"],["boatCtl","boatLive"]];
 const RV={live:null,home:null,band:-1,h:-1,raf:0};
 /* an event scene owns the 3D view (also the race-night pits): no "drag to orbit" over it */
 function evScene(){const a=$("app"),d=document.documentElement.classList;return a.classList.contains("onstrip")||a.classList.contains("pits")||d.contains("onstrip")||d.contains("onevent");}

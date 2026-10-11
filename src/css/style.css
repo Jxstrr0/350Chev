@@ -102,7 +102,7 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick button:last-child:nth-child(odd){grid-column:1/-1}
 .evpick svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:break-word}   /* a long status ("needs Outlaw shop") wraps to a second line */
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
@@ -118,7 +118,7 @@ html.desk #stripCap{left:18px;top:16px}
 /* phone: the hold-to-run controls (strip, sled, salt, road) dock where the run button was, above the tab bar */
 html:not(.desk) #evCtls{position:sticky;bottom:-24px;z-index:6;margin:0 -16px;padding:0 16px;background:var(--soot)}
 html:not(.desk) #evCtls>div:not([style*="none"]){padding:8px 0}
-#tab-events:has(#dragCtl:not([style*="none"]),#pullCtl:not([style*="none"]),#saltCtl:not([style*="none"]),#bogCtl:not([style*="none"]),#roadCtl:not([style*="none"]),#e24Ctl:not([style*="none"])) #runDock{display:none}
+#tab-events:has(#dragCtl:not([style*="none"]),#pullCtl:not([style*="none"]),#saltCtl:not([style*="none"]),#bogCtl:not([style*="none"]),#boatCtl:not([style*="none"]),#roadCtl:not([style*="none"]),#e24Ctl:not([style*="none"]),#hillCtl:not([style*="none"])) #runDock{display:none}
 html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:10px 16px}
 /* the Advanced fold under an event's or test's essentials (open state per test type in S.advOpen) */
 .advf{margin:6px 0 10px}
@@ -259,6 +259,18 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .ph-row .peak{padding:8px 10px}.ph-row .peak b{font-size:20px}
 /* road test live card: speed · gear · lap clock · mini-map, the tach, sector splits */
 #roadCtl{margin-bottom:10px}
+#hillCtl{margin-bottom:10px}.hlh{grid-template-columns:auto auto 1fr auto}.hlh .rd-lt b{font-size:22px}.hl-bar{height:10px}.hl-bar .fill{background:linear-gradient(90deg,rgba(255,122,26,.3),rgba(255,122,26,.8))}
+.hl-next{margin-top:8px;display:grid;gap:4px;min-height:58px}.hl-c{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:6px 8px;font-size:13px;min-width:0}
+.hl-c.dim{opacity:.6;font-size:12px}.hl-c b{color:var(--chalk);white-space:nowrap;word-spacing:.14em}.hl-c span{color:var(--muted);font-family:var(--mono);font-size:11px}.hl-c em.dr{font-style:normal;color:var(--crit)}
+.hl-c i.call{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:1px 6px;border-radius:3px;border:1px solid var(--rule);color:var(--muted)}
+.hl-c i.call.dusty{color:var(--warn);border-color:var(--warn)}.hl-c i.call.grippy{color:var(--good);border-color:var(--good)}
+.hl-ev{border-radius:5px;padding:12px 10px;text-align:center;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.04em;border:1px solid var(--rule);background:var(--panel)}
+.hl-ev.bad{color:var(--crit);border-color:var(--crit)}.hl-ev.warn{color:var(--warn);border-color:var(--warn)}.hl-ev.good{color:var(--good);border-color:var(--good)}
+.hl-meters{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}.hl-meters .peak{min-width:0}.hl-mode.push{color:var(--good)}.hl-mode.lift{color:var(--warn)}.hl-mode.auto{color:var(--info)}
+.hlbtns{gap:8px;margin-top:8px}.hlbtns .btn{flex:1;min-height:64px;font-size:20px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.hlbtns #hillPush{flex:1.6}
+.hlbtns .btn small{display:block;font-size:11px;letter-spacing:.4px;opacity:.75;font-weight:400}.hlbtns #hillLift.on{background:var(--warn);color:#1b1a17;border-color:var(--warn)}.hlbtns #hillPush.on{background:var(--good);border-color:var(--good)}
+.hlprof{display:block;width:100%;height:56px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
+.rtop.hlsplit div{grid-template-columns:18px minmax(0,1fr) auto auto 58px}.rdbtns #hillSkip{flex:1.2}.rdbtns #hillSpdB{flex:.8}.rdbtns #hillCamB{flex:1.5}
 .rdh{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:end;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px}
 .rdh b{display:block;font-family:var(--display);font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 .rdh i{display:block;font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
@@ -321,6 +333,19 @@ html:not(.desk) .e24st>div>:nth-child(7){display:none}html:not(.desk) .e24st>div
 html.desk .e24map{width:150px;height:104px}html.desk .e24c b,html.desk .e24p b{font-size:38px}
 html.desk body #e24Ctl{width:min(780px,calc(100% - var(--sbw) - 40px))}
 html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
+/* boat drags: throttle between the trim switches; the night's ladder */
+.boatbtns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.2fr) minmax(0,1fr);gap:8px}
+.boatbtns .btn{min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;padding:10px 4px;font-size:14px;letter-spacing:.04em}
+.boatbtns .btn small{display:block;font-size:11px;letter-spacing:.04em;opacity:.75;margin-top:2px;font-weight:400}
+#boatBtn{font-size:20px}.boatbtns .btn.on:not(.pri){border-color:var(--orange);color:var(--chalk);background:var(--panel2)}
+.bladder{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:2px 0 10px}
+.blr{display:flex;flex-direction:column;justify-content:space-around;gap:6px;min-width:0}
+.blh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--dim);text-align:center}
+.blm{border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:4px 6px;font-size:12px;min-width:0}
+.blm.me{border-color:var(--orange)}
+.blm span{display:flex;justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden;color:var(--muted)}
+.blm span i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.blm span.w{color:var(--chalk)}.blm span.w i{color:var(--good)}.blm span.l{opacity:.55;text-decoration:line-through;text-decoration-thickness:1px}
 .bogpit{display:block;width:100%;height:40px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
 .saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;min-width:0}
 .saltcls span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -699,7 +724,7 @@ html.desk #app.onstrip #rpmbox{bottom:auto;top:80px}
 html.desk #chart{height:260px}
 html.desk #toast{left:calc((100% - var(--sbw))/2);bottom:auto;top:84px;max-width:min(560px,calc(100% - var(--sbw) - 40px))}
 /* drag strip, truck pull, salt flats and road test: their controls dock bottom-centre over the big view, in the view's dark ink */
-html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #bogCtl,html.desk #roadCtl,html.desk #e24Ctl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #bogCtl,html.desk #boatCtl,html.desk #roadCtl,html.desk #e24Ctl,html.desk #hillCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
 html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}
@@ -871,7 +896,9 @@ html.evhud #rpmbox{display:none!important}
 #evHud .ph-row .peak{display:flex;align-items:baseline;gap:5px;padding:0;background:none;border:0;min-width:0}
 #evHud .ph-row .peak b{font-size:16px}#evHud .ph-row .peak b i{font-size:11px}#evHud .ph-row .peak span{margin:0;font-size:9.5px}
 /* road test and the 24 Hours: their own grids, made smaller; full width */
-#evHud #roadLive,#evHud #e24Hud{display:block}
+#evHud #roadLive,#evHud #e24Hud,#evHud #hillLive{display:block}
+#evHud .hl-bar{height:7px;margin-top:5px}#evHud .hl-next{min-height:0;margin-top:4px;gap:3px}#evHud .hl-c{padding:3px 7px;font-size:11.5px}
+#evHud .hl-meters{gap:4px;margin-top:4px}#evHud .hl-meters .peak{display:flex;align-items:baseline;gap:5px;padding:2px 6px}#evHud .hl-meters .peak b{font-size:15px}#evHud .hl-meters .peak span{margin:0;font-size:9.5px}
 #evHud .rdh,#evHud .e24h{background:none;border:0;padding:0;gap:8px}
 #evHud .rd-spd b{font-size:30px}#evHud .rd-g b{font-size:24px}#evHud .rd-lt b{font-size:19px}#evHud .rd-map,#evHud .e24map{width:72px;height:52px}
 #evHud .rd-rpm{margin-top:5px;height:7px}
@@ -884,12 +911,12 @@ html:not(.desk) #evHud .e24g i{display:none}html.desk #evHud .e24g i{font-size:1
 html.desk #evHud{left:18px;right:auto;bottom:16px;width:min(720px,calc(100% - min(320px,34%) - 56px));padding:10px 14px 9px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
 html.desk #evHud .ph-top b{font-size:34px}html.desk #evHud .ph-lbl{font-size:11.5px}html.desk #evHud .ph-row .peak b{font-size:19px}
 html.desk #evHud .rd-spd b{font-size:40px}html.desk #evHud .rd-map,html.desk #evHud .e24map{width:110px;height:78px}html.desk #evHud .e24c b,html.desk #evHud .e24p b{font-size:30px}
-html.desk.evhud :is(#pullCtl,#saltCtl,#bogCtl,#roadCtl,#e24Ctl){left:auto;right:calc(var(--sbw) + 18px);bottom:16px;transform:none;width:min(320px,34%);padding:8px}
-html.desk.evhud :is(#pullBtn,#bogBtn,#saltBtn,#saltShiftBtn){min-height:58px!important;font-size:19px!important;padding:8px 0!important}
+html.desk.evhud :is(#pullCtl,#saltCtl,#bogCtl,#roadCtl,#e24Ctl,#hillCtl,#boatCtl){left:auto;right:calc(var(--sbw) + 18px);bottom:16px;transform:none;width:min(320px,34%);padding:8px}
+html.desk.evhud :is(#pullBtn,#bogBtn,#saltBtn,#saltShiftBtn),html.desk.evhud .hlbtns .btn,html.desk.evhud .boatbtns .btn{min-height:58px!important;font-size:19px!important;padding:8px 0!important}
 html.desk.evhud :is(#pullBtn,#bogBtn,#saltBtn) small{font-size:11px!important}
 html.desk.evhud #killBtn{min-height:48px}
 html.desk.evhud #saltWarp{margin-top:6px!important}
-html.desk.evhud .rdbtns{margin-top:0}html.desk.evhud .e24spd{margin-top:0;flex-wrap:wrap}html.desk.evhud .e24spd .btn{flex:1 1 18%}html.desk.evhud .e24spd .e24nx{flex:1 1 100%}
+html.desk.evhud .rdbtns{margin-top:0}html.desk.evhud .hlbtns{margin-top:0}html.desk.evhud #hillCtl .rdbtns{margin-top:6px}html.desk.evhud .boatbtns .btn{font-size:13px!important}html.desk.evhud #boatBtn{font-size:17px!important}html.desk.evhud .e24spd{margin-top:0;flex-wrap:wrap}html.desk.evhud .e24spd .btn{flex:1 1 18%}html.desk.evhud .e24spd .e24nx{flex:1 1 100%}
 /* ---- thermal timing slip: printed on paper in both themes; the prose folds out under it ---- */
 .tslipw{display:flex;flex-direction:column;align-items:center;margin:4px 0 0}
 .tslip{--ink:#2d2b36;--ink2:#6b6772;--tp:#f4f1e6;position:relative;width:100%;max-width:360px;margin:9px 0 0;padding:16px 16px 14px;color:var(--ink);font-family:var(--mono);font-size:12.5px;line-height:1.35;
@@ -992,6 +1019,42 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
 .ddbtns .btn.pri{flex:2 1 100%}.ddbtns .btn.sm{flex:1 1 40%;min-height:44px}
 #buildForm .ddno{opacity:.38}
 #panel.ddon #ddSec{scroll-margin-top:calc(var(--ddh,58px) + 4px)}
+/* engine swaps (Build › Swap) */
+#swapAcc .accb{padding-top:10px}
+#swapSum .sw-r{font-style:normal;color:var(--crit)}#swapSum .sw-a{font-style:normal;color:var(--warn)}
+.swg{margin-bottom:8px}.swg .chip{min-height:44px}.swg .chip.on{border-color:var(--orange);color:var(--chalk)}
+.swvs button{min-height:56px}
+.swbuy{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:10px 0;padding:10px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--panel2);font-size:13px;color:var(--muted)}
+.swbuy .btn{min-height:44px;flex:0 0 auto}
+.swsilw{margin:10px 0 6px;padding:8px;border:1px solid var(--rule);border-radius:6px;background:var(--panel2)}
+.swsil{display:block;width:100%;height:auto;max-height:200px}
+.swsil .sw-gnd{stroke:var(--rule);stroke-width:2}
+.swsil .sw-body{fill:var(--panel);stroke:var(--muted);stroke-width:2.5;stroke-linejoin:round}
+.swsil .sw-wh{fill:var(--soot);stroke:var(--dim);stroke-width:2}.swsil .sw-hub{fill:var(--dim)}
+.swsil .sw-bay{fill:none;stroke:var(--info);stroke-width:2;stroke-dasharray:6 5}
+.swsil .sw-eng{fill:rgba(255,122,26,.55);stroke:var(--orange);stroke-width:2.5}.swsil .sw-eng.out{fill:rgba(226,71,60,.5);stroke:var(--crit)}
+.swcap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px}
+.swrep{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.swit{display:grid;grid-template-columns:14px 1fr;gap:4px 10px;padding:9px 10px;border:1px solid var(--rule);border-left-width:3px;border-radius:6px;background:var(--panel)}
+.swit .dot{width:12px;height:12px;border-radius:50%;margin-top:3px}
+.swit.s-g{border-left-color:var(--good)}.swit.s-g .dot{background:var(--good)}
+.swit.s-a{border-left-color:var(--warn)}.swit.s-a .dot{background:var(--warn)}
+.swit.s-r{border-left-color:var(--crit)}.swit.s-r .dot{background:var(--crit)}
+.swt{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline;min-width:0}
+.swt b{font-size:13.5px;color:var(--chalk)}.swt span{font-family:var(--mono);font-size:12px;color:var(--orange2)}.swt small{flex:1 1 100%;font-size:12px;color:var(--muted)}
+.swfxs{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.swfxs .chip{min-height:44px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;max-width:100%;color:var(--chalk)}
+.swfxs .chip small{font-size:11px;color:var(--muted);white-space:normal}
+.swfxs .chip.lk{opacity:.5}.swfxs .swhave{border-color:var(--good);color:var(--good)}
+.swres{margin:8px 0;padding:10px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--panel2)}
+.swres .vstats{grid-template-columns:repeat(4,1fr);margin-top:0}
+.swq{margin:8px 0 0;font-size:13.5px;color:var(--chalk);font-style:italic}
+.swnote{margin:6px 0 10px}
+.swnote.on{display:block;padding:10px 12px;border:1px solid var(--orange);border-radius:6px;background:var(--panel2);font-size:13px;color:var(--muted)}
+.swnote.on b{display:block;color:var(--chalk);margin-bottom:2px}.swnote.on span{display:block}.swnote.on .chip{margin-top:8px}.swnote em{color:var(--crit);font-style:normal}.swnote .chip{min-height:44px}
+.swban{display:flex;flex-direction:column;gap:2px;margin:-4px 0 12px;padding:8px 12px;border-left:3px solid var(--orange);background:var(--panel2);border-radius:0 6px 6px 0;font-size:13px;color:var(--chalk)}
+.swban b{font-family:var(--display);letter-spacing:.04em;text-transform:uppercase;font-size:12px;color:var(--orange2)}.swban.brk{border-left-color:var(--crit)}
+@media (max-width:420px){.swres .vstats{grid-template-columns:repeat(2,1fr)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 /* ---- trophy room: the view goes full screen, a slim bar on top, the plaque card at the bottom, the list as a sheet ---- */
 .trgo{display:flex;justify-content:space-between;width:100%;margin:0 0 10px;min-height:44px}.trgo b{font-weight:500;color:var(--muted)}
