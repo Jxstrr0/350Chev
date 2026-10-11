@@ -376,11 +376,11 @@ function bogProps(B, S3, lite){
   /* the pickups parked along the top of the bank (same spots as buildBogScene's) */
   var fl=[[0xff7a1a,0x15171b],[0x1d4787,0xf1ede2],[0x9e2a22,0xf1ede2],[0x2c6b3a,0xf2c22c],[0x15171b,0xf2c22c]];
   for(i=0;i<12;i++){ var hx=-26+i*11+rng(i)*4, hz=-BOG_W/2-25-rng(i+3)*4, bedY=1.5;
-    var n=lite?(i%2===0?1:0):2+Math.floor(rng(i+20)*3);
+    var n=lite?(i%2===0?1:0):1+Math.floor(rng(i+20)*2.6);
     for(k=0;k<n;k++) person(hx-2.3+k*0.62, bedY, hz+(rng(i*7+k)-0.5)*0.9, false, i*13+k);
     if(!lite || i%3===0) flag(hx-2.45, bedY, hz+0.7, 2.6+rng(i+9), fl[i%fl.length][0], fl[i%fl.length][1]);
     /* tailgate party in front of the truck, facing the pit */
-    if(!lite){ chair(hx-1.2, 0.6, hz+2.6, i%2?0x2c6b3a:0x34598f, 0); person(hx-1.2, 0.6, hz+2.68, true, i*31); chair(hx-0.3, 0.6, hz+2.7, 0x9e2a22, 0.2); person(hx-0.3, 0.6, hz+2.78, true, i*37);
+    if(!lite && (i&1)===(i>5?1:0)){ chair(hx-1.2, 0.6, hz+2.6, i%2?0x2c6b3a:0x34598f, 0); person(hx-1.2, 0.6, hz+2.68, true, i*31); chair(hx-0.3, 0.6, hz+2.7, 0x9e2a22, 0.2); person(hx-0.3, 0.6, hz+2.78, true, i*37);
       cooler(hx+0.6, 0.6, hz+2.6, i%2?0x9e2a22:0x1d4787); }
   }
   /* lawn chairs down the front of the bank, between the standing crowd */
