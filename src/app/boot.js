@@ -14,7 +14,7 @@ let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0,alsHot=0;
 const AB={A:null,B:null,playing:null,rpm:4000,load:1};
 function abLabel(cfg){if(!cfg)return"empty";
   const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
-  return `${cfg.layout} ${(r.Vd/1000).toFixed(1)}L · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
+  return `${cfg.layout} ${fmtDisp(r.Vd/1000,"")} · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
 function abRender(){
   $("abAname").textContent=AB.A?abLabel(AB.A):"empty";
   $("abBname").textContent=AB.B?abLabel(AB.B):"empty";
@@ -240,13 +240,13 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
 const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
-function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(BR&&!BR.finished&&$("bogCtl").style.display!=="none")return "bog";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
+function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(BR&&!BR.finished&&$("bogCtl").style.display!=="none")return "bog";if(BT&&!BT.finished&&$("boatCtl").style.display!=="none")return "boat";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
 let spaceHeld=null;
-function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}else if(k==="bog"&&BR){BR.lastPtr=performance.now();bogRelease();}}
+function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}else if(k==="bog"&&BR){BR.lastPtr=performance.now();bogRelease();}else if(k==="boat"&&BT){BT.lastPtr=performance.now();boatRelease();}}
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;const k=e.key;
   if(k===" "||k==="Spacebar"){const h=holdKind();if(!h)return;e.preventDefault();if(e.repeat||spaceHeld)return;spaceHeld=h;
     if(h==="road"){roadSkip();return;}
-    if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else if(h==="bog"){BR.lastPtr=performance.now();bogPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
+    if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else if(h==="bog"){BR.lastPtr=performance.now();bogPress();}else if(h==="boat"){BT.lastPtr=performance.now();boatPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
   if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
   if(k==="ArrowLeft"||k==="ArrowRight"){const a=document.activeElement,r=a&&a.matches&&a.matches("input[type=range]")?a:kbSlider&&kbSlider.offsetParent?kbSlider:null;if(r&&nudgeSlider(r,k==="ArrowRight"?1:-1))e.preventDefault();return;}
