@@ -21495,7 +21495,7 @@ function saltPickup(col, o){
     [-1,1].forEach(function(sd){ B.add("g","box",[cx+0.24, fl+1.2, cz+sd*0.22],[0.55,0.09,0.09],0xff6a14,[0,0,-0.62]); });
     if(!lite){ P("s", -1.95, 1.5, -0.35, 0.36, 0.5, 0.3, 0x2a2b2e, 0, "cyl6"); P("s", -1.95, 1.74, -0.35, 0.2, 0.22, 0.2, 0x6e4a33, 0, "seHead"); } }
   if(o.beacon) P("b", -1.98, 1.93, 0, 0.26, 0.1, 1.3, 0xffffff);
-  var WP=[[-3.5,-0.82],[-3.5,0.82],[-0.3,-0.82],[-0.3,0.82]], stat=lite&&!!o.beacon;   /* Lite's safety truck: tyres merged into the body, they don't need to roll */
+  var WP=[[-3.5,-0.82],[-3.5,0.82],[-0.3,-0.82],[-0.3,0.82]], stat=!!o.beacon;   /* the safety truck: tyres merged into the body (seen from afar, it needn't roll; saves ~12 draw calls) */
   if(stat) WP.forEach(function(p){ B.add("s","cyl",[p[0],0.38,p[1]],[0.76,0.24,0.76],0x18181a,[PI/2,0,0]); });
   var keep=STRIP.scene; STRIP.scene=g;
   var mp=B.build("p", paint, !lite), mg=B.build("g", SALT.mats.solid.clone(), !lite), ms=B.build("s", SALT.mats.solid, !lite), mb=null;
