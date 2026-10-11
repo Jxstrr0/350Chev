@@ -65,6 +65,7 @@ app/results.js
 app/market.js
 app/swap.js
 app/career.js
+app/crew.js
 app/trophy.js
 app/help.js
 app/boot.js
