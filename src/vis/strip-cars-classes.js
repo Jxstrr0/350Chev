@@ -13,7 +13,7 @@ function sc_bigBlower(B, x, y, len, hatMat){
   B.add("satin", sc_rbox(len*0.92, 0.08, 0.36, 0.015), sc_M(x, y+0.04, 0));                    /* manifold */
   B.add("alu", sc_rbox(len, 0.3, 0.36, 0.05), sc_M(x, y+0.23, 0));                           /* case */
   for(var i=0;i<6;i++) B.add("satin", sc_rbox(0.014, 0.18, 0.37, 0.004), sc_M(x-len*0.4+i*len*0.16, y+0.24, 0));
-  B.add("black", sc_rbox(0.05, 0.02, 0.4, 0.006), sc_M(x-len*0.25, y+0.39, 0)); B.add("black", sc_rbox(0.05, 0.02, 0.4, 0.006), sc_M(x+len*0.25, y+0.39, 0));
+  B.add("satin", sc_rbox(0.05, 0.02, 0.4, 0.006), sc_M(x-len*0.25, y+0.39, 0)); B.add("satin", sc_rbox(0.05, 0.02, 0.4, 0.006), sc_M(x+len*0.25, y+0.39, 0));
   B.add("alu", sc_rbox(0.12, 0.2, 0.2, 0.03), sc_M(x+len*0.5+0.05, y+0.2, 0));                 /* snout / drive */
   B.add("satin", sc_rbox(len*0.7, 0.04, 0.34, 0.012), sc_M(x, y+0.4, 0));                    /* hat base */
   B.add(hatMat||"alu", sc_prof([[0.26,0],[0.3,0.34],[0.12,0.4],[-0.26,0.3],[-0.28,0]], 0.34, 0.02), sc_M(x+0.03, y+0.42, 0));
@@ -108,7 +108,7 @@ function sc_tfrail(B, rr, tails, heads, res, H){
     wh.push({x:xf, z:sd*0.5, r:fr, w:0.07, rimR:0.215, style:"wire", rimMat:"alu", rear:false, letters:false});
   });
   if(brk) sc_calipers(B, wh);
-  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, flames:flames, eng:V(ex, 0.75, 0), anchor:V(-3.86,0.62,0), bars:true, maxPitch:maxP, gates:gates, hat:hat,
+  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, flames:flames, headers:flames, eng:V(ex, 0.75, 0), anchor:V(-3.86,0.62,0), bars:true, maxPitch:maxP, gates:gates, hat:hat,
     squat:deg(0.4), squatDrop:0.008, shiftKick:0.08, pitchW:9.5, droop:0.03, wrinkle:1.15, chuteLen:5.8, chuteRise:0.6, chuteR:0.95 };
 }
 
@@ -170,6 +170,6 @@ function sc_funny(B, rr, tails, heads, res, H){
     wh.push({x:xf, z:sd*0.7, r:fr, w:0.1, rimR:0.19, style:"weld", rimMat:"rimBlack", rear:false, letters:false});
   });
   if(brk) sc_calipers(B, wh);
-  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, flames:flames, eng:V(ex, 0.7, 0), anchor:V(-2.6,0.5,0), bars:true, maxPitch:maxP, gates:gates, hat:hat,
+  return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, flames:flames, headers:flames, eng:V(ex, 0.7, 0), anchor:V(-2.6,0.5,0), bars:true, maxPitch:maxP, gates:gates, hat:hat,
     hinge:V(-2.4, 1.0, 0), squat:deg(0.6), squatDrop:0.012, shiftKick:0.1, pitchW:8.5, droop:0.035, wrinkle:1.15, chuteLen:5.4, chuteRise:0.5, chuteR:0.95 };
 }

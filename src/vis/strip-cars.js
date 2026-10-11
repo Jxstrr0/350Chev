@@ -879,7 +879,8 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
   } else anchor=new THREE.Vector3(xR-0.05, cR.zb+0.05, 0);
   return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, anchor:anchor, bars:bars, maxPitch:maxP, gates:gates, hat:hat,
     squat:st?deg(1.6):deg(0.7), squatDrop:st?0.035:0.015, shiftKick:st?0.22:0.12, pitchW:st?6.5:8.5, droop:st?0.07:0.04, wrinkle:st?0.55:1,
-    chuteLen:pm?5.2:4.4, chuteRise:pm?0.45:0.35, chuteR:pm?0.95:0.8, flames:SY&&SY.flames?tips.map(function(t,i){ return {p:t.clone(), d:dirs[i].clone()}; }):null };
+    chuteLen:pm?5.2:4.4, chuteRise:pm?0.45:0.35, chuteR:pm?0.95:0.8, flames:SY&&SY.flames?tips.map(function(t,i){ return {p:t.clone(), d:dirs[i].clone()}; }):null,
+    headers:SY&&(SY.flames||ps)?tips.map(function(t,i){ return {p:t.clone(), d:dirs[i].clone()}; }):undefined };   /* v3: night header flames (dragfx) for gassers + pro stock */
 }
 
 /* rear-engine dragster */
