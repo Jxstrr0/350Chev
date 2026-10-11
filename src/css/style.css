@@ -545,13 +545,14 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .crew .ctrs{display:flex;flex-wrap:wrap;gap:5px}
 .crew .ctr{font-size:12px;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
 .crew .ctr.pos{color:var(--good);border-color:rgba(79,192,141,.45)}.crew .ctr.neg{color:var(--crit);border-color:rgba(226,71,60,.45)}.crew .ctr.hid{border-style:dashed;color:var(--dim)}
+.crew h3 .ctr.chief{font-size:11px;padding:2px 7px;vertical-align:2px;color:var(--orange);border-color:var(--orange);font-weight:600;white-space:nowrap}
 .crew p.chist{font-size:12px;color:var(--dim);font-style:italic}
 .crew p.caway{font-size:12px;color:var(--warn)}
 .crew .ctrain summary{cursor:pointer;font-size:13px;color:var(--orange2);min-height:36px;display:flex;align-items:center}
 .crew .ccrs{display:flex;flex-direction:column;align-items:flex-start;width:100%;margin-top:6px;min-height:44px;padding:8px 10px;text-align:left;background:var(--panel2);border:1px solid var(--rule);border-radius:6px;color:var(--chalk);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .crew .ccrs small{font-size:12px;font-weight:400;color:var(--muted);margin-top:2px;line-height:1.35}
 .crew .ccrs:hover,.crew .ccrs:focus-visible{border-color:var(--orange)}
-.crew .cbtn{display:flex;justify-content:flex-end}
+.crew .cbtn{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .crew .cbtn .btn{min-height:40px}
 #staff .crewi{margin:-2px 0 8px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
