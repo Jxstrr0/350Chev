@@ -18062,7 +18062,7 @@ function stripN2O(o, dt, P){
     var tr=dt*(lite?15:30)*o.n2o; u._nzAcc=(u._nzAcc||0)+tr;
     if(u._nzAcc>=1){ u._nzAcc-=1; var FA=STRIP.fxAdd;
       for(var t=0;t<u._tips.length;t++){ P.localToWorld(_sfA.copy(u._tips[t])); _sfD.copy(u._dirs[t]).applyQuaternion(P.quaternion);
-        FA.emit(_sfA.x, _sfA.y, _sfA.z, _sfD.x*6+v, _sfD.y*6, _sfD.z*6, 0.08, 0.14, 0.2, 0.62, 0.72, 1.5, 0.95, {drag:3, fin:0.01, spin:0, fout:0.8, sx:_sfD.x*0.7, sy:_sfD.y*0.7, sz:_sfD.z*0.7}); }
+        FA.emit(_sfA.x, _sfA.y, _sfA.z, _sfD.x*6+v, _sfD.y*6, _sfD.z*6, 0.09, 0.2, 0.28, 0.62, 0.72, 1.6, 0.95, {drag:3, fin:0.01, spin:0, fout:0.8, sx:_sfD.x*1.0, sy:_sfD.y*1.0, sz:_sfD.z*1.0}); }
       STRIP.flash.position.copy(_sfA); STRIP.flash.color.setHex(0x7a8cff); STRIP.flashI=Math.max(STRIP.flashI||0, STRIP.night?1.6:2.4); }
     if(Math.random()<dt*(lite?2:4)) stripFlames(P, 0.12+0.15*o.n2o, false, v, 1);
   }
