@@ -47,7 +47,13 @@ function crewP(role){if(!career())return null;const st=C().staff;if(!st)return n
 function crewOn(role){const p=crewP(role);return !!p&&!(p.away>C().week);}
 function crewL(role){if(!career()||dev())return 0;const p=crewP(role);return p?Math.max(0,Math.min(4,(p.lvl|0)-1)):0;}   // levels past the first
 function crewT(id){if(!career()||dev()||!C().staff)return 0;let n=0;for(const r of CREW_ALL){const p=crewP(r);if(p&&!(p.away>C().week)&&p.tr.some(t=>t.id===id&&t.rv))n++;}return n;}
-function crewWage(st){const p=crewP(st.id);const L=p?Math.max(1,Math.min(5,p.lvl|0)):1;return L===1?st.wage:Math.round(st.wage*(1+0.12*(L-1))/10)*10;}
+/* crew chief: one hand at level 3+ promoted to run the floor (C().crew.chief = role; absent in older saves = none).
+   While the chief is in the shop the others learn 15% faster and a busy week wears on them half as much; the chief
+   draws a stipend of +15% on their wage. Releasing or losing the chief simply leaves the post empty. */
+const CHIEF_LV=3,CHIEF_XP=1.15,CHIEF_PAY=0.15;
+function crewChiefRole(){if(!career()||!C().staff)return null;const k=crewS(),r=k.chief;if(!r)return null;const p=CREW_ALL.includes(r)?crewP(r):null;if(!p||(p.lvl|0)<CHIEF_LV){delete k.chief;return null;}return r;}
+function crewChief(){if(dev())return null;const r=crewChiefRole();return r&&crewOn(r)?r:null;}   // the post's effect: only while the chief is in the shop
+function crewWage(st){const p=crewP(st.id);const L=p?Math.max(1,Math.min(5,p.lvl|0)):1;const w=L===1?st.wage:Math.round(st.wage*(1+0.12*(L-1))/10)*10;return p&&crewChiefRole()===st.id?Math.round(w*(1+CHIEF_PAY)/10)*10:w;}
 /* trait effects the rest of the shop reads (all exactly 1 / 0 with no revealed trait) */
 function crewCostK(){return (crewT("frugal")?0.98:1)*(crewT("heavy")?1.015:1);}
 function crewPriceK(){return crewT("smooth")?1.02:1;}
@@ -67,7 +73,7 @@ const crewRole=r=>(STAFF.find(s=>s.id===r)||{name:r}).name;
 const crewFirst=p=>String(p.nm).split(" ")[0];
 /* XP: work the role does. mult: quick/slow; a person away on a course earns nothing */
 function crewXP(role,xp,hk,hn){const p=crewP(role);if(!p||p.away>C().week)return;if(hk)p.h[hk]=(p.h[hk]||0)+(hn||1);
-  const has=id=>p.tr.some(t=>t.id===id&&t.rv);xp*=has("quick")?1.4:has("slow")?0.7:1;p.xp=(p.xp||0)+xp;p.wk=(p.wk||0)+xp;crewLevel(p);}
+  const has=id=>p.tr.some(t=>t.id===id&&t.rv);xp*=has("quick")?1.4:has("slow")?0.7:1;const ch=crewChief();if(ch&&ch!==role)xp*=CHIEF_XP;p.xp=(p.xp||0)+xp;p.wk=(p.wk||0)+xp;crewLevel(p);}
 function crewLevel(p){let up=false;while(p.lvl<5&&p.xp>=CREW_XP[p.lvl]){p.lvl++;up=true;const st=STAFF.find(s=>s.id===p.role);const h=crewS().hist;h.lv++;h.max=Math.max(h.max||1,p.lvl);p.mor=Math.min(100,(p.mor||70)+5);
     logEvent(`${p.nm} (${crewRole(p.role).toLowerCase()}) made level ${p.lvl} — wage now ${fmt$(crewWage(st))}/week`,"good");toast(`LEVEL UP · ${p.nm.toUpperCase()} · LV ${p.lvl}`);}
   if(up){crewReveal(p);syncShop();}}
@@ -94,7 +100,7 @@ function crewWeek(){if(!career()||!C().staff)return;const k=crewS();let changed=
     if(p.away>C().week){p.wk=0;p.pulls=0;p.evn=0;continue;}
     if(crewReveal(p))changed=true;
     const has=id=>p.tr.some(t=>t.id===id&&t.rv),fk=has("fuse")?2:1;let d=(p.mor||70)<75?4:0;
-    if((p.wk||0)>30&&!has("workhorse"))d=-Math.min(5,Math.ceil(((p.wk||0)-30)/4))*fk;
+    if((p.wk||0)>30&&!has("workhorse")){d=-Math.min(5,Math.ceil(((p.wk||0)-30)/4))*fk;const ch=crewChief();if(ch&&ch!==r)d=Math.trunc(d/2);}   // a crew chief spreads the load
     if(bounced)d-=12*fk;
     p.mor=Math.max(0,Math.min(100,(p.mor||70)+d));p.wk=0;p.pulls=0;p.evn=0;
     if(p.mor<25){if(!p.warn){p.warn=C().week;logEvent(`${p.nm} (${crewRole(r).toLowerCase()}) is fed up — ${bounced?"pay bounced":"run off their feet"}. Ease off or send them on a course, or they'll walk`,"bad");}
@@ -114,8 +120,8 @@ function crewTrain(role,kind,tid){const p=crewP(role);if(!p||p.away>C().week)ret
   logEvent(`Sent ${p.nm} on the ${p.crs.n.toLowerCase()} — ${fmt$(c.cost)}, back week ${p.away}`,"");achCheck({type:"crew"});save();hud();renderShop();renderBuild();recompute();toast(`${p.nm.toUpperCase()} · ON COURSE ${c.wk} WEEKS`);buzz(20);}
 function crewMaxLv(){let m=0;for(const r of CREW_ALL){const p=crewP(r);if(p)m=Math.max(m,p.lvl|0);}return Math.max(m,career()?crewS().hist.max||0:0);}
 /* the Staff section: one card per role, a person or the next applicant */
-function crewRender(){const box=$("staff");if(!box||!career())return;let open=null;try{open=box.dataset.open||null;}catch(e){}
-  box.innerHTML=`<p class="hint crewi">Staff learn on the job and level up to 5: each level adds a little to what they do, and to their wage. Everyone has a trait or two that shows in time. Overwork or a bounced payroll sours morale, and an unhappy hand warns you once before they quit.</p>`+STAFF.map(st=>{const p=crewP(st.id);
+function crewRender(){const box=$("staff");if(!box||!career())return;let open=null;const chief=crewChiefRole();try{open=box.dataset.open||null;}catch(e){}
+  box.innerHTML=`<p class="hint crewi">Staff learn on the job and level up to 5: each level adds a little to what they do, and to their wage. Everyone has a trait or two that shows in time. Overwork or a bounced payroll sours morale, and an unhappy hand warns you once before they quit. Promote one hand at level ${CHIEF_LV}+ to <b>crew chief</b>: the others learn ${Math.round((CHIEF_XP-1)*100)}% faster and a busy week wears on them half as much, for +${Math.round(CHIEF_PAY*100)}% on the chief's wage.</p>`+STAFF.map(st=>{const p=crewP(st.id);
     if(!p){const a=crewCand(st.id);return `<div class="up crew"><div class="cwho"><i class="cav off" style="--cc:${CREW_COL[st.id]}">${crewIni(a.nm)}</i><div><h3>${st.name}</h3><p class="csub">Applicant: <b>${ddEsc(a.nm)}</b> · level 1</p></div></div><p>${st.desc} <b>${fmt$(st.wage)}/week, ${fmt$(st.wage*2)} to hire</b></p><div class="cbtn"><button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire ${ddEsc(crewFirst(a))}</button></div></div>`;}
     const L=p.lvl|0,nx=L<5?CREW_XP[L]:null,pv=CREW_XP[L-1],pct=nx?Math.max(0,Math.min(100,Math.round(100*(p.xp-pv)/(nx-pv)))):100,away=p.away>C().week,hid=p.tr.filter(t=>!t.rv).length;
     const chips=p.tr.filter(t=>t.rv).map(t=>{const T=crewTr(t.id);return `<span class="ctr ${T.pos?"pos":"neg"}" title="${ddEsc(T.d)}">${T.n}</span>`;}).join("")+(hid?`<span class="ctr hid">${hid===1?"one trait":"two traits"} still to show</span>`:"");
@@ -124,16 +130,22 @@ function crewRender(){const box=$("staff");if(!box||!career())return;let open=nu
       :`<details class="ctrain" data-role="${st.id}"${open===st.id?" open":""}><summary>Training</summary><p class="hint">A course takes them out of the shop: no ${st.name.toLowerCase()} effect while they're away. Wages still run.</p>
         ${L<5?`<button class="ccrs" data-crs="xp" data-role="${st.id}">${cs.xp.n} · ${cs.xp.wk} wk · ${fmt$(cs.xp.cost)}<small>+${cs.xp.xp} XP</small></button>`:`<p class="hint">Top level — nothing left to teach them.</p>`}
         ${crewCanLearn(p)?crewTrainable(p).map(t=>`<button class="ccrs" data-crs="tr" data-t="${t.id}" data-role="${st.id}">${t.n} · ${cs.tr.wk} wk · ${fmt$(cs.tr.cost)}<small>${t.d}</small></button>`).join(""):`<p class="hint">Already two traits — a specialist course only replaces a known bad habit.</p>`}</details>`;
-    return `<div class="up owned crew${away?" away":""}"><div class="cwho"><i class="cav" style="--cc:${CREW_COL[st.id]}">${crewIni(p.nm)}</i><div><h3>${ddEsc(p.nm)}</h3><p class="csub">${st.name} · since week ${p.hired||1}${away?" · on course":""}</p></div><b class="clv">LV ${L}</b></div>
+    return `<div class="up owned crew${away?" away":""}"><div class="cwho"><i class="cav" style="--cc:${CREW_COL[st.id]}">${crewIni(p.nm)}</i><div><h3>${ddEsc(p.nm)}${chief===st.id?` <span class="ctr chief">Crew chief</span>`:""}</h3><p class="csub">${st.name} · since week ${p.hired||1}${away?" · on course":""}</p></div><b class="clv">LV ${L}</b></div>
       <div class="cbar" title="${Math.floor(p.xp)} XP"><i style="width:${pct}%"></i></div><p class="cxp">${nx?`${Math.floor(p.xp)} / ${nx} XP to level ${L+1}`:`${Math.floor(p.xp)} XP · top level`}<span class="cmor ${mc}">morale ${mor}</span></p>
       ${chips?`<div class="ctrs">${chips}</div>`:""}
       <p>${crewFx(st.id,L)} <b>${fmt$(crewWage(st))}/week</b></p><p class="chist">${ddEsc(crewHistTxt(p))}</p>
-      ${train}<div class="cbtn"><button class="btn sm danger" data-fire="${st.id}">Release</button></div></div>`;}).join("");}
+      ${train}<div class="cbtn">${chief===st.id?`<button class="btn sm ghost" data-chief="">Step down as chief</button>`:!chief&&L>=CHIEF_LV?`<button class="btn sm info" data-chief="${st.id}">Make crew chief</button>`:""}<button class="btn sm danger" data-fire="${st.id}">Release</button></div></div>`;}).join("");}
 const crewIni=n=>String(n).split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
-$("staff").addEventListener("click",e=>{const b=e.target.closest("[data-crs]");if(!b)return;crewTrain(b.dataset.role,b.dataset.crs,b.dataset.t);});
+$("staff").addEventListener("click",e=>{const c=e.target.closest("[data-chief]");if(c){crewSetChief(c.dataset.chief);return;}const b=e.target.closest("[data-crs]");if(!b)return;crewTrain(b.dataset.role,b.dataset.crs,b.dataset.t);});
+function crewSetChief(role){if(!career())return;const k=crewS(),was=crewChiefRole();
+  if(!role){if(!was)return;const p=crewP(was);delete k.chief;logEvent(`${p.nm} stepped down as crew chief`,"");}
+  else{const p=crewP(role);if(!p||(p.lvl|0)<CHIEF_LV||was)return;k.chief=role;k.hist.chief=(k.hist.chief|0)+1;p.mor=Math.min(100,(p.mor||70)+5);
+    logEvent(`${p.nm} is crew chief — the crew learns faster; wage now ${fmt$(crewWage(STAFF.find(s=>s.id===role)))}/week`,"good");toast(`CREW CHIEF · ${p.nm.toUpperCase()}`);achCheck({type:"crew"});}
+  syncShop();save();hud();renderShop();buzz(20);}
 $("staff").addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("ctrain"))$("staff").dataset.open=d.open?d.dataset.role:"";},true);
 ACH.push(
   {g:"shop",id:"crew_lv",name:"Moving up",desc:"A member of staff reaches level 2.",ic:"people",tier:"bronze",check:()=>career()&&crewMaxLv()>=2},
   {g:"shop",id:"crew_course",name:"Back to school",desc:"Send someone on a training course.",ic:"people",tier:"bronze",check:()=>career()&&(crewS().hist.crs||0)>0},
   {g:"shop",id:"crew_crew3",name:"Seasoned crew",desc:"All four roles filled at level 3 or better.",ic:"people",tier:"silver",check:()=>career()&&CREW_ALL.every(r=>{const p=crewP(r);return p&&p.lvl>=3;})},
+  {g:"shop",id:"crew_chief",name:"Runs the floor",desc:"Promote a member of staff to crew chief.",ic:"people",tier:"bronze",check:()=>career()&&(crewS().hist.chief||0)>0},
   {g:"shop",id:"crew_lv5",name:"Master hand",desc:"A member of staff reaches level 5.",ic:"star",tier:"gold",check:()=>career()&&crewMaxLv()>=5});
