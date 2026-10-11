@@ -255,7 +255,8 @@ function bogDirect(o, dt, V){
     case "chase": rel=true; ax=cx; _bw.set(-9.5, 2.6, 2.2); _bt.set(6, 1.0, 0); fov=50; sm=4; break;
     case "entry": _bw.set(3, 2.4, -BOG_W/2-4.2); _bt.set(cx+1, 0.9, 0); fov=50; break;
     case "side": rel=true; ax=cx; _bw.set(-2, 5.2, -BOG_W/2-7.5); _bt.set(1.2, 0.6, 0); fov=48; sm=3; break;
-    case "front": _bw.set(BOG.fixX, 1.0, 2.4); _bt.set(cx, 1.3, 0); fov=38; BOG.shake=Math.max(BOG.shake, 0.04*clamp(+o.slip||0,0,1)); break;
+    case "front": { var nose=V.position.x+(U.front||U.wb+1)*k, hw2=(U.width||2.4)*k/2;   /* never inside the truck: it backs off ahead of the nose, and stands clear of the side */
+      _bw.set(Math.max(BOG.fixX, nose+2.2), Math.max(1.0, (U.top||2)*k*0.42), Math.max(2.4, hw2+1.1)); } _bt.set(cx, 1.3, 0); fov=38; BOG.shake=Math.max(BOG.shake, 0.04*clamp(+o.slip||0,0,1)); break;
     case "high": rel=true; ax=cx; _bw.set(-7, 9, 9); _bt.set(4, 0, -1); fov=46; sm=2; break;
     case "stop": { var dr=Math.min(3,T*0.25), fs=Math.max(1, bogFitDist(U, 40)/9.6); _bw.set(cx+(-7+dr)*fs, (3.2-dr*0.2)*Math.min(fs,1.3), (-7.5+dr*0.4)*fs); _bt.set(cx+1.2, 0.9, 0); fov=40; break; }
   }
