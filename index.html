@@ -16468,7 +16468,7 @@ function stripKitMesh(S2, items, inst, mat){
     mn[0]=Math.min(mn[0],q.x); mn[1]=Math.min(mn[1],q.z); mx[0]=Math.max(mx[0],q.x); mx[1]=Math.max(mx[1],q.z); }
   geo.setAttribute("iT1", new THREE.InstancedBufferAttribute(t1,3)); geo.setAttribute("iT2", new THREE.InstancedBufferAttribute(t2,3));
   var ctr=new THREE.Vector3((mn[0]+mx[0])/2, 2, (mn[1]+mx[1])/2); geo.boundingSphere=new THREE.Sphere(ctr, Math.hypot(mx[0]-mn[0], mx[1]-mn[1])/2+kr);
-  mesh.receiveShadow=true; mesh.castShadow=true; S2.add(mesh);
+  mesh.receiveShadow=true; mesh.castShadow=false; S2.add(mesh);   /* the pits sit outside the sun's 60 m shadow box; at night each spot would redraw them */
   return { mesh:mesh, ranks:inst.map(function(q){ return q.r; }) };
 }
 /* the two pit spaces (local: length along x, the work side toward +z) */
@@ -16563,13 +16563,13 @@ function stripDecalTex(){
   for(i=0;i<2;i++){ x.save(); x.translate(i*512+256, 384); x.scale(0.82,1.45); x.fillText(w[i],0,0); x.restore(); }
   var t=new THREE.CanvasTexture(c); t.anisotropy=MAXANISO; return t;
 }
-/* tier: instance counts are prefixes of the ranked lists; kits stop casting shadows on Lite */
+/* tier: instance counts are prefixes of the ranked lists */
 function stripVenueTier(){
-  var C=STRIP.crowd, lite=GFX==="lite", i, k;
+  var C=STRIP.crowd, k;
   if(C){ C.tier=GFX; k=stripKeep(STRIP_VENUE_KEEP); var n=0; while(n<C.ranks.length && C.ranks[n]<k) n++; C.mesh.count=n;
     var ns=0; while(ns<C.standRanks.length && C.standRanks[ns]<k) ns++; C.n=Math.max(1,ns); }
   (STRIP.kits||[]).forEach(function(K){ var kk=stripKeep(STRIP_PITS_KEEP), n=0; while(n<K.ranks.length && K.ranks[n]<kk) n++;
-    K.mesh.count=n; K.mesh.visible=n>0; K.mesh.castShadow=!lite; });
+    K.mesh.count=n; K.mesh.visible=n>0; });
 }
 /* ---------------------------------------------------------------------------
    DRAG CARS (v1.5) — procedural car models for the strip.
