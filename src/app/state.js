@@ -164,7 +164,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.38.1.0";
+const VERSION="1.39.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -198,7 +198,7 @@ function hydrate(o){if(!o||!o.cfg)return false;S=freshState();Object.assign(S,o)
   try{fuelMigrate();}catch(e){}
   if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
     S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
-      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];try{ddLoad(o);}catch(e){S.bay=null;}return true;}
+      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});if(S.env.dragDrive!=="auto")S.env.dragDrive="you";S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];try{ddLoad(o);}catch(e){S.bay=null;}return true;}
 /* fuel system: a build saved before injectors and pumps existed gets the smallest set that feeds it (SIM.fitFuel), so a
    600 hp save doesn't suddenly lean out. Certs, strip bests, wear and the fleet are keyed by the cfg hash, so they follow
    it. In career a fitted part the shop hasn't unlocked comes with the build (an R&D-style unlock), so nothing certified

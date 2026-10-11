@@ -437,10 +437,117 @@
   /* A whole pass with no human in it: contract ET checks, the rival in the other lane, the node harness.
      veh.holdTime: seconds on the two-step / trans-brake before the release (default 1.2 when fitted). */
   function dragPass(res, veh) {
+    if (veh && (veh.driver || veh.drive === "auto")) return dragAutoPass(res, veh);   // the auto driver, the same presses the app makes
     const d = dragRun(res, Object.assign({ auto: true }, veh || {}));
     if (d.st.phase === "burnout") d.stage();
     while (d.st.phase === "staged" && d.st.rollIn > 0) d.step(0.01);
     if (d.canArm) { const ht = veh && veh.holdTime != null ? +veh.holdTime : 1.2; if (ht > 0 && d.arm()) { let t = 0; while (t < ht) { d.step(0.01); t += 0.01; } } }
     if (d.n2o && veh.n2o.purge > 0) { d.purge(true); let t = 0; while (t < veh.n2o.purge) { d.step(0.01); t += 0.01; } d.purge(false); }   // a headless car purges before it leaves
     d.launch(); while (!d.st.done) d.step(0.002); return d.result();
+  }
+  /* The auto driver for a drag pass: the player's own buttons, pressed on a fixed 4 ms clock. A burnout of the right
+     length for the tyre, roll in, purge a nitrous line, arm the two-step / trans-brake / anti-lag on the ambers, leave on
+     the green with a human light (most .04-.10, now and then a slow one, a red very rarely), and on a manual box shift
+     near where the next gear pulls harder, read off the build's own torque curve, give or take a hand. Launch rpm, the
+     nitrous switch and the chute are the car's set-up, not the driver's, so they stay as set; there is no pedal on a
+     drag pass, for the player or for it. Deterministic for a seed, on its own random stream.
+     tick(d, h, tree) runs before each step of the runner d and returns one press or null: "burn" / "unburn" / "stage" /
+     "purge" / "unpurge" / "arm" / "go" / "shift". tree: null on a time trial; on a tree, NaN while it is dark, then seconds
+     from the green (negative before it). say(d, tree) is the HUD's word for what it is doing. */
+  const DRAG_TICK = 0.004;
+  function dragDriver(seed, res, veh) {
+    const r = pullRng(((seed >>> 0) ^ 0x2D5A9E37) >>> 0);
+    const gs = () => { let u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * r()); };
+    const v = Object.assign({ tyre: "street", gears: 4, first: 2.9, top: 1.0, final: 3.7, redline: 7000, auto: true, tyreDia: 27, transBrake: "none" }, veh || {});
+    const hot = v.tyre === "radial" || v.tyre === "slick", ll = v.transBrake === "line_lock", red = v.redline;
+    const jump = r() < 0.0025, slow = r() < 0.05, g0 = gs(), sl = r(), jr = r();
+    let rt = 0.072 + 0.022 * g0; if (slow) rt += 0.04 + 0.12 * sl; if (jump) rt = -(0.004 + 0.03 * jr);
+    const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.0 : 3.4) + 0.5 * r() : 1.0 + 0.6 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.9 + 0.5 * r(),
+      beat: 0.6 + 0.6 * r(), hold: 1.0 + 0.4 * r(), rt: +rt.toFixed(4), shift: [], ideal: [] };
+    // shift points: the rpm where the next gear's wheel torque (after the drop) matches this one's, or the redline if it never does
+    const n = Math.max(1, v.gears | 0), rat = [];
+    for (let i = 0; i < n; i++) rat.push(n === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (n - 1)));
+    const rp = res && res.rpms, tq = res && res.torque, N = rp ? rp.length : 0;
+    const T = x => { if (!N) return 1; if (x <= rp[0]) return tq[0]; if (x >= rp[N - 1]) return tq[N - 1]; let i = 1; while (rp[i] < x) i++; return tq[i - 1] + (x - rp[i - 1]) / (rp[i] - rp[i - 1]) * (tq[i] - tq[i - 1]); };
+    for (let i = 0; i < n - 1; i++) {
+      const k = rat[i + 1] / rat[i]; let s = red;
+      for (let x = Math.round(0.55 * red); x <= red; x += 25) if (T(x) * rat[i] <= T(x * k) * rat[i + 1]) { s = x; break; }
+      let x = s + 70 * gs(); if (r() < 0.04) x += 150 + 150 * r();   // now and then a hand that is late on the lever
+      plan.ideal.push(s); plan.shift.push(Math.round(clamp(x, 0.6 * red, 1.015 * red)));
+    }
+    let t = 0, offAt = null, rolledT = null, readyT = null, purged = false;
+    function goIn(d, tree) {   // seconds until it means to leave
+      if (tree === null) return readyT == null ? Infinity : readyT + plan.beat + (d.canArm ? plan.hold : 0) - t;
+      return tree !== tree ? Infinity : plan.rt - tree;
+    }
+    function tick(d, h, tree) {
+      const st = d.st; t += h;
+      if (st.phase === "burnout") {
+        if (st.burning) { if (st.burnT >= plan.burn) { offAt = t; return "unburn"; } return null; }
+        if (st.burnT > 0) return offAt == null || t - offAt >= plan.settle ? "stage" : null;
+        return t >= plan.wait ? "burn" : null;
+      }
+      if (st.phase === "staged") {
+        if (!st.rolled) return null;
+        if (rolledT == null) rolledT = t;
+        const z = st.n2oS;
+        if (z && !purged) {   // hold PURGE until the line spits liquid
+          if (!z.purging) { if (t - rolledT >= plan.purgeAt) return "purge"; return null; }
+          if (z.purged >= plan.purge || goIn(d, tree) <= plan.hold + 0.1) { purged = true; return "unpurge"; }
+          return null;
+        }
+        if (readyT == null) readyT = t;
+        const g = goIn(d, tree);
+        if (g <= 0) return "go";
+        if (d.canArm && !st.launch.armed && g <= plan.hold) return "arm";
+        return null;
+      }
+      if (st.phase === "run") {
+        if (v.auto || st.gear >= n || st.shiftT > 0) return null;
+        const tgt = plan.shift[st.gear - 1];
+        if (st.rpm < tgt) return null;
+        if (st.slipping && !st.conv && st.v / (Math.PI * v.tyreDia * 0.0254) * 60 * rat[st.gear - 1] * v.final < 0.85 * tgt) return null;   // a slipping clutch revs the engine, not the car
+        return "shift";
+      }
+      return null;
+    }
+    function say(d, tree) {
+      const st = d.st, z = st.n2oS;
+      if (st.phase === "burnout") return st.burning ? "burnout" : st.burnT > 0 ? "staging" : "into the box";
+      if (st.phase === "staged") {
+        if (!st.rolled) return "staging";
+        if (z && z.purging) return "purging";
+        if (st.launch.armed) return st.launch.twoStep ? "two-step " + Math.round(d.holdRpm) : st.launch.transBrake ? "on the trans-brake" : "anti-lag armed";
+        return tree === null ? "staged" : "waiting on the tree";
+      }
+      if (st.phase === "run") {
+        const sh = st.shifts[st.shifts.length - 1];
+        if (sh && st.t - sh.t < 0.6) return "shift " + sh.gear + "→" + (sh.gear + 1);
+        if (z && z.on && !z.cut && st.t - z.onT < 0.8) return "nitrous on";
+        if (st.t < 0.7) return "launch " + st.launchRpmAct;
+        return st.spin ? "wheelspin" : "flat out";
+      }
+      if (st.phase === "shutdown") return st.chuteOut ? "chute out" : "on the brakes";
+      return "";
+    }
+    return { plan: plan, tick: tick, say: say };
+  }
+  /* dragPass with the auto driver at the wheel (veh.driver, or veh.drive "auto" with veh.seed): burnout to the stripe.
+     veh.tree: a heads-up tree (it lights 1.2-3 s after the car is in the beams); the result carries auto.rt (null on a
+     time trial) and auto.foul. */
+  function dragAutoPass(res, veh) {
+    const d = dragRun(res, Object.assign({ auto: true, burnout: true }, veh)), H = DRAG_TICK;
+    const drv = veh.driver || dragDriver(veh.seed, res, veh), tr = pullRng(((veh.seed >>> 0) ^ 0x7EE5) >>> 0);
+    let t = 0, green = null, rt = null, foul = false;
+    while (!d.st.done && t < 120) {
+      const st = d.st;
+      if (veh.tree && green == null && st.phase === "staged" && st.rolled) green = t + 1.2 + 1.8 * tr() + 1.5;
+      const tree = !veh.tree ? null : green == null || t < green - 1.5 ? NaN : t - green;
+      const a = drv.tick(d, H, tree);
+      if (a === "burn") d.burn(true); else if (a === "unburn") d.burn(false); else if (a === "stage") d.stage();
+      else if (a === "purge") d.purge(true); else if (a === "unpurge") d.purge(false); else if (a === "arm") d.arm(); else if (a === "shift") d.shift();
+      else if (a === "go") { if (veh.tree) { rt = t - green; if (rt < 0) foul = true; else if (veh.transBrake === "trans_brake") rt = Math.max(0.001, rt - 0.020); rt = +rt.toFixed(3); } d.launch(); }
+      d.step(H); t += H;
+    }
+    const out = d.result(); out.auto = { rt: rt, foul: foul, plan: drv.plan }; return out;
   }
