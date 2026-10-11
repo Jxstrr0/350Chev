@@ -136,7 +136,7 @@ function evPickRender(){const box=$("evPick");if(!box)return;const cur=S.env.tes
 const ADV={cell:{e:["ambientC","altitudeM","coolantC","oilC"]},
   drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],paint:1,hint:"Rear-drive on a prepped strip",sum:"weight · gearing · tyre psi · shocks · chute · paint"},
   pull_sled:{e:["pullHitch","pullBallast"],hint:"A higher hitch plants",sum:"hitch height · front ballast"},
-  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],x:["[data-saltgear]"],sum:"gearing · ballast · aero · cooling · chutes"},
+  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],x:["[data-saltgear]"],paint:1,sum:"gearing · ballast · aero · cooling · chutes · paint"},
   bog:{k:[["bk","bogGear"],["bk","bogTyre"]],sum:"gear · tyres"},
   road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],sum:"final drive · camera · playback"},
   race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],sum:"fuel · tyre changes · safety cars"}};

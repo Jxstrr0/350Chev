@@ -34,6 +34,7 @@ vis/pull.js
 vis/bog.js
 vis/road.js
 vis/salt.js
+vis/salt-cars.js
 vis/api.js
 vis/teardown.js
 app/state.js
