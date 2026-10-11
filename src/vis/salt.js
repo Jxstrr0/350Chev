@@ -122,14 +122,8 @@ function buildSaltScene(){
   var B=new StripBatch(), ORANGE=0xff6a14, WHITE=0xeeeae0, STEEL=0x8d9296, DARK=0x232528;
   SALT.static=B;
   saltCourseProps(B, SALT.course, true);
-  /* pits: rigs, canopies, a starter's stand at the line, the meet banner */
-  var tc=[0xe9e6dc,0x1b1d20,0x9e2a22,0x22488f,0xd0d3d6,0x2c6b3a,0xd9a52b], P0=-230;
-  for(i=0;i<(lite?8:14);i++){ var px=P0+i*24+rng(i)*8, pz=-48-rng(i+3)*70, rot=(rng(i+7)-0.5)*0.5, cc=tc[i%tc.length];
-    B.box("solid", px, 1.75, pz, 9.5, 2.9, 2.5, cc, rot); B.box("solid", px, 0.25, pz, 9.5, 0.4, 2.3, DARK, rot);
-    var cx2=px+Math.cos(rot)*7.6, cz2=pz-Math.sin(rot)*7.6; B.box("solid", cx2, 1.1, cz2, 5.4, 1.2, 2.0, tc[(i+3)%tc.length], rot); B.box("solid", cx2+Math.cos(rot)*0.6, 1.95, cz2-Math.sin(rot)*0.6, 2.2, 0.75, 1.85, 0x22262b, rot);
-    if(i%3===1) B.add("sign","plane",[px-Math.sin(rot)*1.27, 1.9, pz-Math.cos(rot)*1.27],[7,1.8,1],0xffffff,[0,PI+rot,0],SALT_UV.liv[i%2]);
-    if(i%2===0){ var ax=px+Math.sin(rot)*4.5, az=pz+Math.cos(rot)*4.5, cw=tc[(i+1)%tc.length]; B.box("solid", ax, 2.85, az, 4.2, 0.1, 4.2, cw, rot);
-      for(k=0;k<4;k++) B.box("metal", ax+((k>>1)?1.95:-1.95), 1.42, az+((k&1)?1.95:-1.95), 0.05, 2.84, 0.05, STEEL, rot); } }
+  /* pits: the Speed Week pit town (vis/salt-event.js), a starter's stand at the line, the meet banner */
+  saltPitTown(B, lite);
   B.add("sign","plane",[-40, 3.0, -30.5],[22,1.55,1],0xffffff,null,SALT_UV.banner); B.box("metal", -51, 1.9, -30.6, 0.12, 3.8, 0.12, STEEL); B.box("metal", -29, 1.9, -30.6, 0.12, 3.8, 0.12, STEEL);
   B.box("solid", -6, 2.55, 11, 3.6, 0.1, 3.6, ORANGE); for(k=0;k<4;k++) B.box("metal", -6+((k>>1)?1.7:-1.7), 1.28, 11+((k&1)?1.7:-1.7), 0.05, 2.56, 0.05, STEEL);
   B.add("sign","plane",[-2, 1.6, 8.6],[2.4,1.15,1],0xffffff,[0,-PI/2+0.5,0],SALT_UV.start); B.box("metal", -2.05, 0.6, 8.6, 0.08, 1.2, 0.08, STEEL);
@@ -139,13 +133,8 @@ function buildSaltScene(){
     spots.forEach(function(sp,q){ var pole=new THREE.Mesh(SALT.g.cyl, sc_mats().alu); pole.scale.set(0.06,6.5,0.06); pole.position.set(sp[0],3.25,sp[1]); S4.add(pole);
       var g=new THREE.PlaneGeometry(2.0,1.25,10,1); g.translate(1.0,0,0); var fl=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(fc[q%fc.length]), roughness:0.8, side:THREE.DoubleSide})); fl.position.set(sp[0],5.8,sp[1]); fl.rotation.y=-2.7; S4.add(fl);
       SALT.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.3}); }); })();
-  /* people in the pits and along the start (instanced) */
-  if(!lite) (function(){ var n=46, body=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.2,0.17,1.2,8), new THREE.MeshStandardMaterial({roughness:0.8}), n), head=new THREE.InstancedMesh(new THREE.SphereGeometry(0.13,10,8), new THREE.MeshStandardMaterial({color:sc(0xc89a78), roughness:0.7}), n), cc=new THREE.Color(), sh=[0xff7a1a,0x1d4787,0xf4efe2,0xb7261d,0x2c6b3a,0x3b3f45,0xd9a52b];
-    for(var q=0;q<n;q++){ var px=q<10?-14+rng(q)*10:-220+rng(q*3)*300, pz=q<10?6+rng(q+1)*8:-34-rng(q*5)*40;
-      _sM.makeTranslation(px,0.6,pz); body.setMatrixAt(q,_sM); _sM.makeTranslation(px,1.36,pz); head.setMatrixAt(q,_sM); cc.set(sh[q%sh.length]).convertSRGBToLinear(); body.setColorAt(q,cc); }
-    body.castShadow=true; S4.add(body); S4.add(head); })();
-  /* the push truck: an old pickup with a padded push bar */
-  SALT.push=saltPushTruck(); S4.add(SALT.push);
+  /* the push truck: a real pickup with a padded push bar and a crew member in the bed (vis/salt-event.js) */
+  SALT.push=saltPickup(saltPushCol(null), {crew:true}); S4.add(SALT.push);
   /* effects: salt thrown off the tyres and hanging behind the car; exhaust */
   SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1100:760), "smoke", stripPuffTex()); S4.add(SALT.fx.mesh);
   SALT.fx.mat.uniforms.uFogN.value=S4.fog.near; SALT.fx.mat.uniforms.uFogF.value=S4.fog.far;
@@ -303,6 +292,7 @@ function saltDirect(o, dt, V){
   } else if(ph==="shutdown"){ if(o.chute && s!=="chute" && s!=="stop" && SALT.prev.chute!==true) s="chute"; else if(s==="chute" && (SALT.shotT>6 || v<12)) s="stop"; else if(s!=="chute" && s!=="stop" && s!=="traps" && v<20) s="stop"; else if(s==="traps" && x>SALT.fixX+Math.max(60,v*1.6)) s="chase"; }
   else if(ph==="spin"){ s="spin"; }
   else { if(s!=="stop") s="stop"; }
+  if(SALT.cue){ if(!o.shot && !SALT.skip && ph==="shutdown") s=SALT.cue; SALT.cue=null; }   /* a one-frame cut asked for elsewhere (vis/salt-event.js: the chute) */
   saltCut(s);
   SALT.shotT+=dt; SALT.cutT+=dt; T=SALT.shotT;
   var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, mid=(me.tail+me.nose)/2;
@@ -375,7 +365,7 @@ function saltUpdate(o, dt){
   if(ph==="run"||ph==="shutdown") SALT.runT+=dt; if(ph==="done") SALT.doneT+=dt;
   V.position.set(x, 0, 0);
   /* spin: the car swaps ends and slides, kicking up salt */
-  if(ph==="spin"){ SALT.spinA=(SALT.spinA||0)+dt*clamp(v/12,0.2,3.5); V.rotation.y=SALT.spinA; V.position.z=Math.sin(SALT.spinA*0.5)*2; } else if(ph!=="done"){ V.rotation.y=0; V.position.z=0; SALT.spinA=0; }
+  saltSpinPose(V, o, dt, ph);
   /* pitch: squat under power, nose-down under the chute, a little float at speed */
   var acc=+o.acc||0, tgt=clamp(acc/40,-0.25,0.3)*0.02+clamp(+o.lightness||0,0,1)*0.006;
   if(U.strip){ stripCarAnim(U.car, {v:v, acc:acc, spin:(+o.slip||0)>0.2, chute:!!o.chute, brake:ph==="shutdown"&&v<60, night:false}, dt, true); }
@@ -398,6 +388,7 @@ function saltUpdate(o, dt){
   for(i=0;i<pu.wheels.length;i++) pu.wheels[i].rotation.y=(pu.wheels[i].rotation.y-SALT.pushV/0.38*dt)%TAU;
   PT.visible=SALT.pushX>x-400;
   saltEffects(o, dt, V);
+  saltEventUpdate(o, dt, V, ph);
   /* flags in the wind */
   SALT.flags.forEach(function(f){ var p=f.m.geometry.attributes.position, b=f.base; for(var j=0;j<p.count;j++){ var fx=b[j*3]; p.setZ(j, Math.sin(fx*2.6-SALT.t*6+f.ph)*0.13*fx/2.0); } p.needsUpdate=true; });
   saltDirect(o, dt, V);
