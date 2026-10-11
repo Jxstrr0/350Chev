@@ -130,6 +130,7 @@
     pullRun: pullRun, pullPass: pullPass, pullDriver: pullDriver, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     pullTrackK: pullTrackK, pullTrackName: pullTrackName, pullRunaway: pullRunaway,
     bogPrep: bogPrep, bogRun: bogRun, bogPass: bogPass, bogNight: bogNight, bogDepth: bogDepth, bogGears: bogGears, bogAiRes: bogAiRes, bogMudName: bogMudName, BOG_CLASSES: BOG_CLASSES, BOG_TYRES: BOG_TYRES,
+    boatPrep: boatPrep, boatRun: boatRun, boatPass: boatPass, boatTune: boatTune, boatGuess: boatGuess, boatWater: boatWater, boatTrimRange: boatTrimRange, BOAT_CLASSES: BOAT_CLASSES, BOAT_HULLS: BOAT_HULLS, BOAT_IMP: BOAT_IMP, BOAT_FT: BOAT_FT,
     roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
     enduroPrep: enduroPrep, e24AiPrep: e24Ai, enduroNew: enduroNew, enduroStep: enduroStep, enduroWhere: enduroWhere, enduroResult: enduroResult, enduroClasses: enduroClasses, enduroClassOf: enduroClassOf,
     e24Rates: e24Rates, e24Sky: e24Sky, e24Amb: e24Amb, e24Hour: e24Hour, e24Pos: e24Pos, e24Order: e24Order, e24Need: e24Need, e24Clock: e24Clock, e24Lap: e24Lap,
