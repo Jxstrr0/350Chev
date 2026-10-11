@@ -19,7 +19,7 @@
   // subsystems that run on heat (ambient and mode bite harder) — the rest are mechanical (rpm, load)
   const E24_THERM = { cooling: 1, crown_temp: 1, valve_temp: 1, turbine_temp: 1, preignition_egt: 1, detonation: 1, compressor_map: 1, als_heat: 1, coolant_seal: 1, head_lift: 1, gasket_shear: 1, oil_starvation: 1, hot_clearance: 1, vgt_vanes: 1, carbon_seals: 1 };
   // what a failure of that subsystem is in the pit lane: [chance it can be fixed, minutes, the fix]; anything else is terminal
-  const E24_FIX = { cooling: [0.85, 7, "split radiator hose replaced"], fuel_delivery: [0.9, 9, "fuel pump changed"], turbine_temp: [0.6, 24, "turbo changed"],
+  const E24_FIX = { swap_driveline: [0.55, 35, "gearbox changed in the pits"], cooling: [0.85, 7, "split radiator hose replaced"], fuel_delivery: [0.9, 9, "fuel pump changed"], turbine_temp: [0.6, 24, "turbo changed"],
     compressor_map: [0.7, 24, "turbo changed"], vgt_vanes: [0.7, 20, "turbo vane ring freed"], als_heat: [0.7, 22, "cooked turbo changed"],
     oil_starvation: [0.45, 6, "oil surge — topped up, pickup checked"], detonation: [0.35, 5, "burnt plug changed, map pulled back"], preignition_egt: [0.35, 6, "plugs changed, map richened"],
     valve_temp: [0.3, 8, "misfire — plugs and leads"], head_lift: [0.25, 18, "head bolts re-torqued"], gasket_shear: [0.25, 18, "weeping head gasket — coolant topped up"],
@@ -53,6 +53,7 @@
     const base = Object.assign({}, DEFAULT_ENV, env || {});
     const res = simulate(cfg, Object.assign({}, base, { testType: "pull" }));
     const prep = roadPrep(cfg, res), o = { ch: (opt && opt.ch) || "coupe", tyre: "semi", finalK: (opt && opt.finalK) || 1 };
+    if (opt && opt.car) o.car = opt.car;   // a swap vehicle (sim/swap.js)
     const scaled = k => k === 1 ? prep : Object.assign({}, prep, { torque: prep.torque.map(t => t * k), naTorque: prep.naTorque.map(t => t * k) });
     const rp = res.rpms, lph = (res.fuel && res.fuel.lph) || rp.map(() => res.peakHp * 0.33), N = rp.length;
     const lphAt = r => { if (r <= rp[0]) return lph[0] * Math.max(0.3, r / rp[0]); if (r >= rp[N - 1]) return lph[N - 1]; let a = 0, b = N - 1; while (b - a > 1) { const m = (a + b) >> 1; if (rp[m] <= r) a = m; else b = m; } return lph[a] + (lph[b] - lph[a]) * (r - rp[a]) / (rp[b] - rp[a]); };
@@ -66,6 +67,9 @@
     const hot = endu(31), cool = endu(11);
     const slope = Math.min(-1, (Ls.time - modes.race.lap) / (ROAD_TYRES.sport.mu - ROAD_TYRES.semi.mu));   // s of lap per unit of μ
     const tests = hot.tests.map(t => { const c = cool.tests.find(x => x.id === t.id) || t; return { id: t.id, name: t.name, sub: t.sub, uH: t.util, uC: c.util, th: !!E24_THERM[t.id] }; });
+    /* a swap: a radiator short of the sustained heat runs the cooling hot for 24 hours; a driveline past its rating is one more part that wears out */
+    if (opt && opt.cool > 1) tests.forEach(t => { if (t.id === "cooling") { t.uH = Math.max(t.uH, 1.4 * opt.cool); t.uC = Math.max(t.uC, 1.25 * opt.cool); } });
+    if (opt && opt.dl > 0) { const u = opt.dl <= 1 ? 0.75 * opt.dl : 1.5 * opt.dl; tests.push({ id: "swap_driveline", name: "Gearbox & axle", sub: "swap driveline", uH: u, uC: u, th: false }); }
     const out = { cfg: cfg, ch: o.ch, track: trackId, len: Lr.len, modes: modes, slope: slope, tests: tests, fails: res.fails.slice(), crit: hot.fails.length > 0, hp: res.peakHp, kg: res.kg,
       redline: cfg.redline, lifeHours: res.lifeHours, raceSpec: res.raceSpec, racePasses: res.racePasses, rel: res.rel, cost: res.cost,
       wet: !cfg.oilSystem || cfg.oilSystem === "wet", egtH: hot.thermals.egtPeakC, egtC: cool.thermals.egtPeakC, oilH: hot.thermals.oilC, oilC: cool.thermals.oilC, mass: Lr.car.m, vmax: Lr.vmax, gLat: gLat, critN: hot.fails.slice() };
