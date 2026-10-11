@@ -111,7 +111,7 @@ function showResult(res,env){
   else if(career()&&env.testOnly)v=`<div class="verdict marg"><div style="flex:1"><div class="big">${env.testType==="endurance"?"SURVIVED":"PASSED"} · TEST ONLY</div><p>Run at ${env.ambientC} °C · ${env.altitudeM} m · coolant ${env.coolantC} °C · oil ${env.oilC} °C. ${env.testType==="endurance"?"Off-standard hours don't count toward the 100 h goal":"Contracts certify in the standard cell"} — 20 °C · 500 m · coolant 90 °C · oil 100 °C. Reset the cell and run it again${env.testType==="endurance"?"":" to certify"}.</p></div></div>`;
   else v=`<div class="verdict ${res.rel>=85?"pass":"marg"}"><div style="flex:1"><div class="big">${res.rel>=85?"CERTIFIED":"CERTIFIED · MARGINAL"}</div>
     <div class="vstats"><div><b>${res.rel}</b><span>Reliability</span></div><div><b>${res.raceSpec?res.racePasses:res.econ.toFixed(1)}</b><span>${res.raceSpec?"Passes to freshen":"L/100 km"}</span></div><div><b>${Math.round(res.smooth)}</b><span>Smoothness</span></div><div><b>${Math.round(res.kg)}</b><span>kg</span></div><div><b>${fmt$(res.cost)}</b><span>Unit cost</span></div>${res.diesel?`<div><b>${Math.round(res.smoke||0)}%</b><span>Smoke · ${smokeWord(res,1)}</span></div>`:`<div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div>`}</div></div></div>`;
-  $("verdict").innerHTML=v;tdVerdict(res,env);
+  $("verdict").innerHTML=v+swapVerdict(res);tdVerdict(res,env);
   let extra="";
   if(env.testType==="endurance"&&res.endurance){const d=res.endurance.damage||{};const top=Object.entries(d).sort((a,b)=>b[1]-a[1]).slice(0,5);
     extra+=`<div class="sec"><h2>Fatigue damage after ${res.endurance.failedAtHour!=null?res.endurance.failedAtHour:env.hours} h</h2><div class="stress">${top.map(([id,f])=>{const t=res.tests.find(x=>x.id===id)||{name:id};const p=Math.min(1,f);return `<div class="st ${p>=1?"crit":p>.6?"warn":"good"}"><div class="n">${t.name}</div><div class="bar"><i style="width:${Math.min(100,p*80)}%"></i></div><div class="p">${Math.round(p*100)}%</div></div>`;}).join("")}</div>`;
@@ -332,6 +332,7 @@ function achFacts(x){
     if(S.firstFireDone)f.firstfire=true;if(R.e24Best){f.e24Fin=true;if(R.e24Best<=3)f.e24Pod=true;if(R.e24Best===1)f.e24Win=true;}}
   else if(x.type==="dd"){f.ddPass=!!x.pass;f.ddClean=!!x.clean;}
   else if(x.type==="ff")f.firstfire=true;
+  else if(x.type==="swap")Object.assign(f,x.f||{});
   f.nightsWon=R.nightsWon||0;
   return f;}
 function achCheck(x){

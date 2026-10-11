@@ -16,7 +16,7 @@ function genContract(seg){
   if(R.hp)req.hp=R.hp[0]+Math.round(rng()*(R.hp[1]-R.hp[0])/10)*10;
   if(R.tq)req.tq=R.tq[0]+Math.round(rng()*(R.tq[1]-R.tq[0])/10)*10;
   if(R.econ)req.econ=+(R.econ[0]-rng()*(R.econ[0]-R.econ[1])).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","ts","road"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","ts","road","swap"])if(R[k]!=null)req[k]=R[k];
   if(R.et)req.et=+(R.et[0]+Math.round(rng()*(R.et[1]-R.et[0])*20)/20).toFixed(2);
   if(R.mph)req.mph=Math.round(R.mph[0]+rng()*(R.mph[1]-R.mph[0]));
   if(R.lap)req.lap=+(R.lap[0]+Math.round(rng()*(R.lap[1]-R.lap[0])*2)/2).toFixed(1);   // their car, their circuit: a lap time to beat
@@ -89,6 +89,7 @@ function fits(k,res,cfg){
   if(r.passes!=null)add("passes",res.racePasses>=r.passes,res.racePasses,ge(res.racePasses,r.passes));
   if(r.car)add("car",true,"",1);
   if(r.lsr)add("lsr",true,"",1);
+  if(r.swap&&res.peakTq!=null){const q=swapReqFit(r.swap,res,c);add("swap",q.ok,q.val,q.prog);}   // a swap job: it has to go in their car (app/swap.js)
   if(r.mph!=null&&res.rpms){const m=lsrFitMph(res,c,(r.lsr&&r.lsr.body)||"lakester");add("mph",m>=r.mph,m?m.toFixed(1)+" mph":"no time",ge(m,r.mph));}
   if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if((r.lap!=null||r.zero100!=null)&&res.rpms){const R0=roadFor(res,c,Object.assign({ch:"coupe"},r.road,r.lap!=null?{}:{trk:null}),k.site?k.site.name:"");   // judged in their car (a site brief: in their air too)
@@ -115,7 +116,7 @@ function repFor(tier,units,d,bonus,repeat){return Math.round((2+units*0.6+tier*4
 const MKT_COOL=3;
 function buyerK(seg,res){const R=seg.req,req={};const mid=(a,f)=>a[0]+(a[1]-a[0])*f;
   if(R.hp)req.hp=Math.round(mid(R.hp,0.3)/10)*10;if(R.tq)req.tq=Math.round(mid(R.tq,0.3)/10)*10;if(R.econ)req.econ=+mid(R.econ,0.3).toFixed(1);if(R.et)req.et=+mid(R.et,0.7).toFixed(2);if(R.mph)req.mph=Math.round(mid(R.mph,0.3));if(R.lap)req.lap=+mid(R.lap,0.7).toFixed(1);if(R.zero100)req.zero100=+mid(R.zero100,0.7).toFixed(1);
-  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","ts","road"])if(R[k]!=null)req[k]=R[k];
+  for(const k of ["tqrpm","fuel","rel","smooth","kg","disp","cyl","life","passes","car","smoke","lsr","noise","rot","ts","road","swap"])if(R[k]!=null)req[k]=R[k];
   const recent=C().week-((C().mkt||{})[seg.id]||-99)<MKT_COOL;
   return{id:"m-"+seg.id,seg:seg.id,name:seg.name,tier:seg.tier,req,units:Math.max(1,Math.round((seg.units[0]+seg.units[1])/4*(recent?0.5:1))),price:Math.round(seg.price*0.85*(recent?0.9:1)/10)*10,recent};}
 function crateK(res){const recent=C().week-((C().mkt||{}).crate||-99)<MKT_COOL;return{id:"m-crate",seg:"crate",name:"Crate engine dealer",tier:0,req:{},units:recent?1:2,price:Math.round((res.cost*1.06+res.peakHp*1.5)*(recent?0.9:1)/10)*10,recent,crate:true};}
