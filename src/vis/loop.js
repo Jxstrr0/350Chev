@@ -266,8 +266,10 @@ function loop(now){
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
   if(ROAD.on && ROAD.W){ if(ROAD.minMs && now-ROAD.lastR<ROAD.minMs && now>=ROAD.lastR) return; ROAD.lastR=now; roadRender(); return; }
+  if(HILL.on && HILL.W){ hillRender(); return; }
   if(SALT.on && SALT.built){ saltRender(); return; }
   if(BOG.on && BOG.built){ bogRender(); return; }
+  if(BOAT.on && BOAT.built){ boatRender(); return; }
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ if(STRIP.post) stripPostStep(); stripRender(); return; }
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
