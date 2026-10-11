@@ -1,6 +1,6 @@
 /* ---- drag pass driver ---- */
 let DR=null;
-function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return{mass:e.mass,rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake};}
+function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass,rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
 function alsOf(cfg){const a=cfg&&cfg.als;return a&&a!=="off"&&OPT.als&&OPT.als[a]&&(OPT.asp[cfg.asp]||{}).kind==="turbo"&&!isCI(cfg.fuel)?a:null;}
@@ -43,7 +43,8 @@ function pbPass(r,failed){if(ff||failed||r.et==null||(r.race&&r.race.foul)||(car
 function pbPull(res){const R=recs(),hp=Math.round(res.peakHp),was=career()?Math.round(C().bestHp||0):R.hp?R.hp.v:0,rw=career()?C().bestRel||0:R.rel?R.rel.v:0;
   if(hp>was){R.hp=Object.assign({v:hp},recTag());if(was>0)setTimeout(()=>toast(`New record: ${hp.toLocaleString("en-CA")} hp (was ${was.toLocaleString("en-CA")})`),2700);}
   if(res.rel>rw||(!R.rel&&res.rel>=rw))R.rel=Object.assign({v:res.rel,hp},recTag());}
-function dragBreak(){DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function dragBreak(){if(DR&&DR.failKind==="driveline"){if(!DR.dl){DR.dl=true;sfx("fail");buzz([80,40,120]);toast("DRIVELINE LET GO · the engine is fine");}return;}   // a swap car's gearbox or axle: not an engine failure
+  DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 /* ---- compact strip HUD on the 3D view (#stripHud): built when a pass starts, updated in place every frame (only nodes whose
    text changed are touched). It carries what #dragLive carried; while it is up (html.shud) the panel copy and #rpmbox step aside. ---- */
 let SH=null,SHgen=0;
@@ -118,7 +119,7 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
     car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg${r.auto?r.auto.took!=null?" · you took over":" · Auto driver":""}`};}
 function dragSlipCard(r,res){const D=slipData(r,res),two=!!D.R,lamp=w=>two&&D.win!=null?`<i class="lamp${w?" on":""}"></i>`:"";
   const pb=r.pb&&r.et!=null?(()=>{const f=etFix(r.et,+r.pb.was);return`<div class="stamp">${r.pb.all?"PERSONAL BEST":"ENGINE BEST"}<br><s>${(+r.pb.was).toFixed(f)}</s> ${r.et.toFixed(f)}</div>`;})():"";
-  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE DRAGWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
+  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE BLUE RACEWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
     <div class="tsc"><strong>${rnEsc(D.car)}</strong>${rnEsc(D.spec)}</div>
     <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(D.win===true)}You</th>${two?`<th><small>Left lane</small>${lamp(D.win===false)}${rnEsc(D.opp)}</th>`:""}</tr></thead>
     <tbody>${D.rows.map(x=>`<tr class="${x[3]||""}"><td>${x[0]}</td><td>${x[1]}</td>${two?`<td>${x[2]==null?"—":x[2]}</td>`:""}</tr>`).join("")}</tbody></table>
@@ -135,7 +136,7 @@ function slipCanvas(l){const r=l.res.drag,res=l.res,D=slipData(r,res),W=1080,H=1
   {const g=x.createLinearGradient(0,T,0,B);g.addColorStop(0,"rgba(0,0,0,.05)");g.addColorStop(.15,"rgba(0,0,0,0)");g.addColorStop(.88,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.06)");x.fillStyle=g;x.fillRect(L,T,Rt-L,B-T);}
   const dash=y=>{x.save();x.strokeStyle="rgba(45,43,54,.45)";x.setLineDash([10,8]);x.lineWidth=2;x.beginPath();x.moveTo(L+40,y);x.lineTo(Rt-40,y);x.stroke();x.restore();};
   const fit=(t,font,max)=>{x.font=font;let s=String(t);while(s.length>3&&x.measureText(s).width>max)s=s.slice(0,-2)+"…";return s;};
-  x.textAlign="center";x.fillStyle=ink;x.font=F(58,700);x.fillText("PRAIRIE DRAGWAY",W/2,150);
+  x.textAlign="center";x.fillStyle=ink;{let fs=58;x.font=F(fs,700);while(fs>34&&x.measureText("PRAIRIE BLUE RACEWAY").width>Rt-L-80){fs-=2;x.font=F(fs,700);}}x.fillText("PRAIRIE BLUE RACEWAY",W/2,150);
   x.fillStyle=ink2;x.font=M(26);x.fillText(fit(("1/4 MILE · "+D.round).toUpperCase(),M(26),Rt-L-80),W/2,196);x.fillText(D.date,W/2,232);dash(262);
   x.fillStyle=ink;x.fillText(fit(D.car,M(32,500),Rt-L-80),W/2,312);x.fillStyle=ink2;x.font=M(23);x.fillText(fit(D.spec,M(23),Rt-L-80),W/2,350);dash(380);
   // the times: label on the left, your lane, then theirs
@@ -240,7 +241,8 @@ function dragAutoStep(now){const d=DR.d,H=SIM.DRAG_TICK;let st=d.st;if(now-DR.vt
 function dragAutoDo(a,vt){const d=DR.d;
   if(a==="burn")d.burn(true);else if(a==="unburn")d.burn(false);else if(a==="stage")dragStage();else if(a==="purge")n2oPurge(true);else if(a==="unpurge")n2oPurge(false);
   else if(a==="arm"){if(d.arm())buzz([20]);}else if(a==="shift")d.shift();else if(a==="go"){const l=DR.last;dragGo(vt);DR.last=l;}}
-function dragTakeOver(){const d=DR.d,st=d.st;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+function dragTakeOver(){const d=DR.d,st=d.st,R=DR.race;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+  DR.tookPre=st.phase==="burnout"||st.phase==="staged"&&(!R||R.tree0==null||performance.now()<R.tree0);   // took it before the tree lit: the light is yours
   if(st.burning)d.burn(false);DR.downAt=null;if(st.launch.armed)d.disarm();if(st.n2oS&&st.n2oS.purging)n2oPurge(false);$("dragBtn").dataset.k="";
   toast(st.phase==="run"?(DR.veh.auto?"You have it — the box shifts itself":"You have it — tap to shift"):st.phase==="burnout"?"You have it — hold to burn out, tap to stage":"You have it — "+(d.canArm?"hold to arm, let go on the green":DR.race?"tap on the green":"tap to go"));buzz([20]);}
 function dragAutoWord(a){return a.took==null?"Auto driver — the whole pass":"Auto driver — you took over "+(typeof a.took==="number"?"at "+a.took+" ft":a.took==="burnout"?"in the water box":"on the line");}
@@ -306,13 +308,15 @@ function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
   if(st.done&&!N.ended){N.ended=true;if((S.env.n2oHeater||"on")!=="on"&&z.on){N2OB.cooled=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000)+1.8;N2OB.t=Date.now();}if(soundReady)ENGINE_SOUND.nitrous(null);ENGINE_VIS.stripN2O(null);if(b)b.style.display="none";}}
 function n2oSlip(n){const g=["1st","2nd","3rd","4th","5th","6th","7th"][Math.max(0,(n.onGear||1)-1)];
   return `${n.shotHp} shot ${n.cut?"cut by a backfire":n.on?`on ${n.act==="window"?"at the window":"at "+n.onMph+" mph"} in ${g}`:"never came on"} · ${n.psi.toLocaleString("en-CA")} psi${n.purged>0.3?` after a ${n.purged.toFixed(1)} s purge`:" · not purged"}`;}
-/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay */
+/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay.
+   While the auto driver has the car, P does nothing: the auto driver purges for itself and its PURGE button is hidden too
+   (a tap on the big button or Space is how you take over) */
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target)||e.key.toLowerCase()!=="p"||e.repeat)return;
-  if(holdKind()==="drag"&&DR&&DR.n2o){n2oPurge(true);e.preventDefault();return;}
+  if(holdKind()==="drag"&&DR&&DR.n2o){if(!DR.auto)n2oPurge(true);e.preventDefault();return;}
   if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
-document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
+document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o&&!DR.auto)n2oPurge(false);});
 function dragFinish(){
-  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took}:{};const failed=DR.failed;const same=testSame(snap);
+  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took,pre:!!DR.tookPre}:{};const failed=DR.failed;const same=testSame(snap);
   const leave=()=>{if(testing)return;const b=ENGINE_VIS.stripBusy?ENGINE_VIS.stripBusy():0;if(b>0){setTimeout(leave,Math.min(1000,b*1000+60));return;}ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");};
   setTimeout(leave,2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)sfx("bov");
@@ -323,6 +327,7 @@ function dragFinish(){
   if(DR.night&&same)rnAfterPass(r,failed);
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
   if(same)pbPass(r,failed);
+  if(DR.veh&&DR.veh.dlCap)r.swap=swapTag();
   res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const abuse=r.heat?r.heat.abuse:0;
   if(career()&&same){addWear(1+abuse,DR.hk);const h=DR.hk;C().dragBest=C().dragBest||{};
@@ -334,7 +339,7 @@ function dragFinish(){
     if(!failed)spEvent("drag",{win:!DR.night&&!!(r.race&&r.race.won)});
     hud();checkGoals();}
   else toast(failed?(DR.failKind==="turbo"?"COOKED THE TURBO":DR.failKind==="manifold"?"CRACKED MANIFOLD":"BROKE ON THE PASS"):r.et!=null?`${r.et.toFixed(2)} s @ ${Math.round(r.mph)} mph`:"Did not finish");
-  achCheck({type:"drag",r,failed,res,env});
+  achCheck({type:"drag",r,failed,res,env});if(r.swap)swapAfter(r);
   save();recompute();renderTest();
   revealVerdict();
 }
@@ -643,8 +648,15 @@ function pitsPlace(){const ov=$("pitsOv");if(!ov||ov.hidden)return;const svg=ov.
   const OFF={launch:[0.5,-1],wear:[-0.9,-0.8],gear:[0.2,1],psi:[-0.8,0.9],shocks:[-0.9,-1],dial:[0,-1]},D=34,placed=[];let lines="";
   tags.forEach(t=>{const k=t.dataset.pk,a=A[k];if(!a||!a[2]){t.style.visibility="hidden";return;}
     const w=t.offsetWidth,h=t.offsetHeight,o=OFF[k]||[0,-1];let x=a[0]+o[0]*(D+w*0.3)-w/2,y=a[1]+o[1]*D-h/2;
-    const fit=()=>{x=Math.max(4,Math.min(vr.width-w-4,x));y=Math.max(top,Math.min(bot-h,y));};fit();
-    for(let pass=0;pass<2;pass++)for(const p of placed)if(x<p.x+p.w&&x+w>p.x&&y<p.y+p.h&&y+h>p.y){const up=p.y-h-2,dn=p.y+p.h+2;y=(up>=top&&(y+h/2<p.y+p.h/2||dn+h>bot))?up:dn;fit();}
+    const fx=v=>Math.max(4,Math.min(vr.width-w-4,v)),fy=v=>Math.max(top,Math.min(bot-h,v));
+    /* rings of spots around the wanted one, nearest first: the first that overlaps nothing wins, else the least overlap (the phone's
+       short view used to stack Dial-in on Gearing) */
+    const ovl=(cx,cy)=>placed.reduce((s,p)=>s+Math.max(0,Math.min(cx+w,p.x+p.w+2)-Math.max(cx,p.x-2))*Math.max(0,Math.min(cy+h,p.y+p.h+2)-Math.max(cy,p.y-2)),0);
+    let bx=fx(x),by=fy(y),best=Infinity;
+    ring:for(let r=0;r<=4;r++)for(const [dx,dy] of r?[[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[1,-1],[-1,1],[1,1]]:[[0,0]]){
+      const cx=fx(x+dx*r*(w*0.5+4)),cy=fy(y+dy*r*(h*0.55+2)),o=ovl(cx,cy);
+      if(o===0){bx=cx;by=cy;break ring;}const c=o*10+Math.hypot(cx-x,cy-y);if(c<best){best=c;bx=cx;by=cy;}}
+    x=bx;y=by;
     placed.push({x,y,w,h});t.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;t.style.visibility="visible";
     lines+=`<line x1="${a[0]}" y1="${a[1]}" x2="${Math.round(x+w/2)}" y2="${Math.round(y+h/2)}"/><circle cx="${a[0]}" cy="${a[1]}" r="3.5"/>`;});
   svg.innerHTML=lines;}

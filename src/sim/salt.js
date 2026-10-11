@@ -69,7 +69,7 @@
      aero (spoiler/canards/tabs on), ballast kg, cooling "radiator"|"ice", chute "none"|"single"|"dual", seed, noFail, rho, wornAt, h (step s) }.
      step(dt, throttle) takes the driver's foot 0..1; shift() asks for the next gear; chute() pulls the chute after the mile. */
   function lsrRun(res, veh) {
-    const B = LSR_BODIES[veh && veh.body] || LSR_BODIES.altered;
+    const B = (veh && veh.bodyObj) || LSR_BODIES[veh && veh.body] || LSR_BODIES.altered;   // bodyObj: a swap vehicle (sim/swap.js)
     const v = Object.assign({ body: B.id, course: B.course, topMph: 200, redline: 7000, shiftRpm: 0, shift: "auto", aero: false, ballast: 0, cooling: B.id === "streamliner" ? "ice" : "radiator", chute: "single",
       seed: 1, noFail: false, rho: res.saltEnv ? res.saltEnv.rho : 1.0, ambientC: res.saltEnv ? res.saltEnv.ambientC : SALT_ENV.ambientC, idle: 900, h: 0.002, autoChute: true }, veh || {});
     const CO = LSR_COURSES[v.course] || LSR_COURSES.short, CH = LSR_CHUTES[v.chute] || LSR_CHUTES.none, rng = lsrRng(v.seed);
@@ -149,6 +149,8 @@
         else if (st.clutch) { st.rpm += (floor - st.rpm) * Math.min(1, h * 6); Tw = Math.max(0, engT(st.rpm, thrIn)) * G * eta; }
         else { st.rpm = wRpm; Tw = engT(st.rpm, thrIn) * G * eta; I = Iw + Ie * G * G; }
         if (st.rpm > red * 1.005) { st.limT += h; if (st.rpm > red * 1.03) st.overRev++; }
+        // a swap's driveline (veh.dlCap, engine-side N·m): past its rating it lets go; the engine is fine
+        if (v.dlCap > 0 && !v.noFail && st.shiftT <= 0 && Tw > v.dlCap * G * eta) { st.dlOver = (st.dlOver || 0) + h; if (st.dlOver > 0.05) { st.broke = st.failKind = "driveline"; st.stopWhy = "broke"; st.brokeX = st.x; } }
         // shifting: the auto box at the shift point; a manual driver asks with shift()
         const want = v.shift === "auto" ? (st.rpm >= shiftRpm && thrIn > 0.5) : st.shiftReq;
         if (want && st.gear < NG - 1 && st.shiftT <= 0 && !st.clutch) { st.gear++; st.shiftT = 0.25; st.shifts++; }
@@ -238,7 +240,8 @@
     function result() {
       const mph = x => x * 2.23694, reasons = [];
       const lim = st.limT, B2 = B, aeroN = B2.aero.n.toLowerCase();
-      if (st.broke) reasons.push(st.broke === "steam" ? `Coolant hit ${Math.round(st.coolMax)} °C and blew past the head gasket. ${ice ? "Even the ice tank ran out" : "The radiator can't shed that much heat for that long"} — ${ice ? "less power for the run, or a bigger tank" : "try an ice tank, or a body with more radiator"}.`
+      if (st.broke === "driveline") reasons.push(`The driveline let go ${(st.x / LSR_MILE).toFixed(2)} miles out — rated for ${Math.round(v.dlCap)} N·m, and the engine made more. The engine is fine; the car needs a stronger gearbox and axle (Build → Swap).`);
+      else if (st.broke) reasons.push(st.broke === "steam" ? `Coolant hit ${Math.round(st.coolMax)} °C and blew past the head gasket. ${ice ? "Even the ice tank ran out" : "The radiator can't shed that much heat for that long"} — ${ice ? "less power for the run, or a bigger tank" : "try an ice tank, or a body with more radiator"}.`
         : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C for a minute — past what the hot side takes. The turbo let go on the salt.`
         : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for too long and melted a piston. Leaner on fuel, more air, or less boost for the long haul.`
         : st.broke === "worn" ? "Something tired gave up at full load — the build was past its run budget. Freshen it first."

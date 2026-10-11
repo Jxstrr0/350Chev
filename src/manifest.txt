@@ -14,6 +14,8 @@ sim/road.js
 sim/e24.js
 sim/salt.js
 sim/boat.js
+sim/swap.js
+sim/hill.js
 sim/tunemap.js
 sound/profile.js
 sound/synth.js
@@ -30,6 +32,7 @@ vis/loop.js
 vis/strip.js
 vis/strip-venue.js
 vis/strip-cars.js
+vis/strip-ground.js
 vis/strip-run.js
 vis/pits.js
 vis/pull.js
@@ -37,6 +40,7 @@ vis/bog.js
 vis/boat.js
 vis/road.js
 vis/salt.js
+vis/hill.js
 vis/api.js
 vis/trophy.js
 vis/teardown.js
@@ -49,9 +53,11 @@ app/bog.js
 app/road.js
 app/e24.js
 app/salt.js
+app/hill.js
 app/boat.js
 app/results.js
 app/market.js
+app/swap.js
 app/career.js
 app/trophy.js
 app/help.js
