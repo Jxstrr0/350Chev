@@ -117,7 +117,7 @@ html.desk #stripCap{left:18px;top:16px}
 /* phone: the hold-to-run controls (strip, sled, salt, road) dock where the run button was, above the tab bar */
 html:not(.desk) #evCtls{position:sticky;bottom:-24px;z-index:6;margin:0 -16px;padding:0 16px;background:var(--soot)}
 html:not(.desk) #evCtls>div:not([style*="none"]){padding:8px 0}
-#tab-events:has(#dragCtl:not([style*="none"]),#pullCtl:not([style*="none"]),#saltCtl:not([style*="none"]),#bogCtl:not([style*="none"]),#roadCtl:not([style*="none"]),#e24Ctl:not([style*="none"]),#hillCtl:not([style*="none"])) #runDock{display:none}
+#tab-events:has(#dragCtl:not([style*="none"]),#pullCtl:not([style*="none"]),#saltCtl:not([style*="none"]),#bogCtl:not([style*="none"]),#boatCtl:not([style*="none"]),#roadCtl:not([style*="none"]),#e24Ctl:not([style*="none"]),#hillCtl:not([style*="none"])) #runDock{display:none}
 html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:10px 16px}
 /* the Advanced fold under an event's or test's essentials (open state per test type in S.advOpen) */
 .advf{margin:6px 0 10px}
@@ -332,6 +332,19 @@ html:not(.desk) .e24st>div>:nth-child(7){display:none}html:not(.desk) .e24st>div
 html.desk .e24map{width:150px;height:104px}html.desk .e24c b,html.desk .e24p b{font-size:38px}
 html.desk body #e24Ctl{width:min(780px,calc(100% - var(--sbw) - 40px))}
 html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
+/* boat drags: throttle between the trim switches; the night's ladder */
+.boatbtns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.2fr) minmax(0,1fr);gap:8px}
+.boatbtns .btn{min-height:72px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;padding:10px 4px;font-size:14px;letter-spacing:.04em}
+.boatbtns .btn small{display:block;font-size:11px;letter-spacing:.04em;opacity:.75;margin-top:2px;font-weight:400}
+#boatBtn{font-size:20px}.boatbtns .btn.on:not(.pri){border-color:var(--orange);color:var(--chalk);background:var(--panel2)}
+.bladder{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:2px 0 10px}
+.blr{display:flex;flex-direction:column;justify-content:space-around;gap:6px;min-width:0}
+.blh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--dim);text-align:center}
+.blm{border:1px solid var(--rule);border-radius:6px;background:var(--panel);padding:4px 6px;font-size:12px;min-width:0}
+.blm.me{border-color:var(--orange)}
+.blm span{display:flex;justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden;color:var(--muted)}
+.blm span i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.blm span.w{color:var(--chalk)}.blm span.w i{color:var(--good)}.blm span.l{opacity:.55;text-decoration:line-through;text-decoration-thickness:1px}
 .bogpit{display:block;width:100%;height:40px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
 .saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;min-width:0}
 .saltcls span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -710,7 +723,7 @@ html.desk #app.onstrip #rpmbox{bottom:auto;top:80px}
 html.desk #chart{height:260px}
 html.desk #toast{left:calc((100% - var(--sbw))/2);bottom:auto;top:84px;max-width:min(560px,calc(100% - var(--sbw) - 40px))}
 /* drag strip, truck pull, salt flats and road test: their controls dock bottom-centre over the big view, in the view's dark ink */
-html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #bogCtl,html.desk #roadCtl,html.desk #e24Ctl,html.desk #hillCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #bogCtl,html.desk #boatCtl,html.desk #roadCtl,html.desk #e24Ctl,html.desk #hillCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
 html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}

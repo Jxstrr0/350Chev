@@ -492,6 +492,7 @@ ENGINE_VIS.teardown=function(info){
   if(STRIP.on) ENGINE_VIS.setStrip({on:false});
   if(PULL.on) ENGINE_VIS.setPull({on:false});
   if(BOG.on) ENGINE_VIS.setBog({on:false});
+  if(BOAT.on) ENGINE_VIS.setBoat({on:false});
   var B=tdBuild(info);
   TD.root=B.root; TD.focusObj=B.focus; TD.view=B.view; TD.dmg=B.dmg; TD.on=true; TD.t=0;
   scene.add(B.root); B.root.updateMatrixWorld(true);
