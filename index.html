@@ -969,7 +969,7 @@ html.troom #tour,html.troom #tip,html.troom #ff,html.troom #les,html.troom #glPo
 .trtt small{font-size:11.5px;color:#b8b2a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #trNote{pointer-events:auto;position:absolute;left:12px;right:12px;top:calc(68px + env(safe-area-inset-top,0px));margin:0;padding:9px 12px;border-radius:8px;background:rgba(15,13,10,.82);border:1px solid rgba(232,194,122,.35);font-size:13px;line-height:1.4;color:#e6e0d2}
 #trNote b{color:#e8c27a}
-#troom.lst #trNote{display:none}
+#troom.lst #trNote,#troom.crd #trNote{display:none}
 #trCard{pointer-events:auto;position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-height:min(60%,520px);overflow:auto;padding:14px 14px 12px;border-radius:12px;background:var(--panel);color:var(--chalk);border:1px solid var(--rule);box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:2}
 #trCard h3{margin:2px 0 6px;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-size:21px;line-height:1.15}
 #trCard p{margin:0 0 8px;font-size:13.5px;line-height:1.4;color:var(--muted)}
@@ -988,7 +988,7 @@ html.troom #tour,html.troom #tip,html.troom #ff,html.troom #les,html.troom #glPo
 .trc{display:grid;grid-template-columns:26px 1fr;column-gap:8px;align-items:center;text-align:left;min-height:60px;padding:9px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--panel2);color:var(--chalk);font:inherit;cursor:pointer;min-width:0}
 .trc svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--tg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .trc.t-silver svg{stroke:var(--ts)}.trc.t-bronze svg{stroke:var(--tb)}.trc.eng svg{stroke:var(--orange)}
-.trc b{font-size:13px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-width:0;overflow-wrap:anywhere}
+.trc b{color:var(--chalk);font-size:13px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-width:0;overflow-wrap:anywhere}
 .trc small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .trc:active{filter:brightness(1.12)}
 html.desk #trCard{left:auto;right:16px;bottom:16px;width:420px}
@@ -20228,7 +20228,8 @@ function trCanvasTex(w, h, bg, lines, frame){
   x.textAlign="center"; x.textBaseline="middle";
   for(var i=0;i<lines.length;i++){ var L=lines[i]; if(!L||L[0]==null) continue; x.fillStyle=L[3]||"#2d2b36"; x.font=(L[2]||600)+" "+L[1]+"px 'Chakra Petch','Barlow Condensed','Arial Narrow',sans-serif";
     var s=String(L[0]); while(s.length>3&&x.measureText(s).width>w*0.88) s=s.slice(0,-2)+"…"; x.fillText(s, w/2, L[4]*h); }
-  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(4, MAXANISO||1); TROPHY.tex.push(t); return t;
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(4, MAXANISO||1); t.generateMipmaps=false; t.minFilter=THREE.LinearFilter;   /* odd sizes: no mipmaps, so WebGL1 never resizes them */
+  TROPHY.tex.push(t); return t;
 }
 function trTexMat(t){ var m=new THREE.MeshStandardMaterial({map:t, roughness:0.85, metalness:0}); m.userData.trTex=true; return m; }
 function trFloorTex(){
@@ -20267,7 +20268,7 @@ function trBuildScene(){
   for(var s=0;s<3;s++){ var y=TROPHY.shelfY[s], sh=new THREE.Mesh(sg, trMat("wood")); sh.position.set(0,y-0.02,R.back+0.17); fixed.add(sh);
     for(var b=-4;b<=4;b+=2){ var br=new THREE.Mesh(bg, trMat("steel")); br.position.set(b*1.02,y-0.12,R.back+0.15); fixed.add(br); } }
   /* the shop sign over the shelves */
-  var sign=new THREE.Mesh(new THREE.PlaneGeometry(4.2,0.5), trTexMat(trCanvasTex(1024,122,"#1b1611",[["PRAIRIE ENGINE WORKS · TROPHY ROOM",54,700,"#e8c27a",0.53]],"#8a6a3a")));
+  var sign=new THREE.Mesh(new THREE.PlaneGeometry(5,0.5), trTexMat(trCanvasTex(1280,128,"#1b1611",[["PRAIRIE ENGINE WORKS · TROPHY ROOM",50,700,"#e8c27a",0.53]],"#8a6a3a")));
   sign.position.set(0,2.92,R.back+0.01); fixed.add(sign);
   /* medal board on the right wall */
   var mb=new THREE.Mesh(new THREE.BoxGeometry(0.05,1.2,2.5), trMat("woodDk")); mb.position.set(W/2-0.03,1.95,-0.6); fixed.add(mb);
@@ -20395,7 +20396,7 @@ function trSetupInput(){
       if(q.d>0&&q2.d>0) o.r*=q.d/q2.d; panBy(q2.x-q.x, q2.y-q.y); }
     P[e.pointerId]=np; trClampOrb(); TROPHY.dirty=1; });
   var up=function(e){ if(!P[e.pointerId]) return; delete P[e.pointerId]; n=Math.max(0,n-1);
-    if(TROPHY.on && down && e.type==="pointerup" && Math.hypot(e.clientX-down.x,e.clientY-down.y)<10 && performance.now()-down.t<450){ var id=trPickAt(e.clientX,e.clientY); if(TROPHY.onPick) TROPHY.onPick(id); }
+    if(TROPHY.on && down && e.type==="pointerup" && Math.hypot(e.clientX-down.x,e.clientY-down.y)<10 && performance.now()-down.t<700){ var id=trPickAt(e.clientX,e.clientY); if(TROPHY.onPick) TROPHY.onPick(id); }
     if(!n) down=null; };
   canvasEl.addEventListener("pointerup", up); canvasEl.addEventListener("pointercancel", up); canvasEl.addEventListener("pointerleave", up);
   canvasEl.addEventListener("wheel", function(e){ if(!TROPHY.on) return; TROPHY.fly=null; TROPHY.orb.r*=1+e.deltaY*0.0012; trClampOrb(); TROPHY.dirty=1; }, {passive:true});
@@ -20460,6 +20461,7 @@ ENGINE_VIS.trophyFocus=function(id){ if(!TROPHY.on) return; if(id==null){ var hm
 ENGINE_VIS.trophyShot=function(){   /* a copy of the room as it stands, for the share card */
   if(!TROPHY.on||!renderer) return null; trRender(); var c=document.createElement("canvas"); c.width=canvasEl.width; c.height=canvasEl.height;
   try{ c.getContext("2d").drawImage(canvasEl,0,0); }catch(e){ return null; } return c; };
+ENGINE_VIS.trophyPickAt=function(x,y){ return TROPHY.on?trPickAt(x,y):null; };
 ENGINE_VIS.trophyState=function(){ return {on:TROPHY.on, built:TROPHY.built, pick:TROPHY.pick.length, engQ:TROPHY.engQ.length, stats:TROPHY.stats, orb:{th:+TROPHY.orb.th.toFixed(2), ph:+TROPHY.orb.ph.toFixed(2), r:+TROPHY.orb.r.toFixed(2)}, fly:!!TROPHY.fly}; };
 ENGINE_VIS.trophyProject=function(id){   /* screen point of an item (tests, and the card's pointer) */
   if(!TROPHY.on||!TROPHY.cam) return null; var f=null; for(var i=0;i<TROPHY.pick.length;i++) if(TROPHY.pick[i].userData.tid===id){ f=TROPHY.pick[i]; break; } if(!f) return null;
@@ -25241,12 +25243,12 @@ function tropClose(){if(!TR.open)return;TR.open=false;$("troom").hidden=true;doc
 function tropRefresh(){const items=tropItems(),eng=tropEngines(),cr=career();TR.map={};items.forEach(i=>TR.map[i.id]=i);eng.forEach(e=>TR.map[e.id]={id:e.id,eng:e});
   const c=tropCounts(),med=items.filter(i=>i.slot==="medal").length,sl=items.filter(i=>i.slot==="slip").length;
   $("trSub").textContent=`${cr?"Career · week "+C().week:"Test cell"} · ${c.shelf} troph${c.shelf===1?"y":"ies"} · ${sl} slip${sl===1?"":"s"} · ${med} medal${med===1?"":"s"}${c.eng?" · "+c.eng+" retired":""}`;
-  const note=$("trNote");note.hidden=cr&&!!(c.shelf||sl||med||c.eng);
+  const note=$("trNote");note.hidden=cr&&c.shelf>0;
   note.innerHTML=!cr?`<b>Test cell shelf.</b> Practice wins, test-cell records and your achievements. Goals, sponsors and Dyno day hang in the career room.`:`<b>Empty shelf — go win something.</b> Race nights, pull and bog wins, salt records, 24 h podiums and Dyno day milestones land here.`;
   if(TR.gl)TR.gl=ENGINE_VIS.setTrophy({on:true,items,engines:eng,onPick:tropPick})!==false;
   tropListRender(items,eng);if(TR.sel&&TR.map[TR.sel])tropCard(TR.sel);}
 function tropPick(id){if(!TR.open)return;if(!id||!TR.map[id]){tropCard(null);if(TR.gl)ENGINE_VIS.trophyFocus(null);return;}tropCard(id);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(id);}
-function tropCard(id){const box=$("trCard");TR.sel=id||null;if(!id||!TR.map[id]){box.hidden=true;box.innerHTML="";return;}const it=TR.map[id];let h="";
+function tropCard(id){const box=$("trCard");TR.sel=id||null;$("troom").classList.toggle("crd",!!(id&&TR.map[id]));if(!id||!TR.map[id]){box.hidden=true;box.innerHTML="";return;}const it=TR.map[id];let h="";
   if(it.eng){const e=it.eng.src,b=e.best||[];
     h=`<div class="trk">Retired engine${e.cert?" · certified":""} · ${trEsc(trWhen(e))}</div><h3>${trEsc(e.name)}</h3><p>${trEsc(e.label||"")}</p><div class="trnums">${[["Peak",Math.round(e.hp||0).toLocaleString("en-CA")+" hp"],["Torque",Math.round(e.tq||0).toLocaleString("en-CA")+" Nm"],["Reliability",e.rel!=null?e.rel:"—"]].concat(b).map(([k,v])=>`<div><span>${trEsc(k)}</span><b>${trEsc(v)}</b></div>`).join("")}</div>
       <div class="trbtns"><button class="btn sm pri" data-tra="load" data-id="${trEsc(e.id)}">Load this build</button>${tropBook().retired.indexOf(e)>=TR_STANDS?`<button class="btn sm ghost" data-tra="front" data-id="${trEsc(e.id)}">Put on a stand</button>`:""}<button class="btn sm ghost" data-tra="share" data-id="${trEsc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="remove" data-id="${trEsc(e.id)}">Take down</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}

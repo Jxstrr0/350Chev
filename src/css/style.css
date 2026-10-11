@@ -963,7 +963,7 @@ html.troom #tour,html.troom #tip,html.troom #ff,html.troom #les,html.troom #glPo
 .trtt small{font-size:11.5px;color:#b8b2a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #trNote{pointer-events:auto;position:absolute;left:12px;right:12px;top:calc(68px + env(safe-area-inset-top,0px));margin:0;padding:9px 12px;border-radius:8px;background:rgba(15,13,10,.82);border:1px solid rgba(232,194,122,.35);font-size:13px;line-height:1.4;color:#e6e0d2}
 #trNote b{color:#e8c27a}
-#troom.lst #trNote{display:none}
+#troom.lst #trNote,#troom.crd #trNote{display:none}
 #trCard{pointer-events:auto;position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-height:min(60%,520px);overflow:auto;padding:14px 14px 12px;border-radius:12px;background:var(--panel);color:var(--chalk);border:1px solid var(--rule);box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:2}
 #trCard h3{margin:2px 0 6px;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-size:21px;line-height:1.15}
 #trCard p{margin:0 0 8px;font-size:13.5px;line-height:1.4;color:var(--muted)}
@@ -982,7 +982,7 @@ html.troom #tour,html.troom #tip,html.troom #ff,html.troom #les,html.troom #glPo
 .trc{display:grid;grid-template-columns:26px 1fr;column-gap:8px;align-items:center;text-align:left;min-height:60px;padding:9px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--panel2);color:var(--chalk);font:inherit;cursor:pointer;min-width:0}
 .trc svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--tg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .trc.t-silver svg{stroke:var(--ts)}.trc.t-bronze svg{stroke:var(--tb)}.trc.eng svg{stroke:var(--orange)}
-.trc b{font-size:13px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-width:0;overflow-wrap:anywhere}
+.trc b{color:var(--chalk);font-size:13px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-width:0;overflow-wrap:anywhere}
 .trc small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .trc:active{filter:brightness(1.12)}
 html.desk #trCard{left:auto;right:16px;bottom:16px;width:420px}
