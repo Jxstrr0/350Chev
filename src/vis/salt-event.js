@@ -210,6 +210,14 @@ function saltPitTown(B, lite){
   if(inst){ var a=pits.build(SALT.scene), b=line.build(SALT.scene); road.build(SALT.scene);   /* the road's few trucks span the course: tiny, never dropped */
     SALT.town.push({ms:a, c:new THREE.Vector3(-60,0,-85)}, {ms:b, c:new THREE.Vector3(300,0,-26)}); }
   saltReturnRoad();
+  if(!lite) saltPitCars(ult?3:1);
+}
+/* a few real salt cars parked at the front of the pits (Full 1, Ultra 3; Lite none; no cast shadows, ~13 draw calls each): rival looks when vis/salt.js offers them (saltRivalLook) */
+function saltPitCars(n){
+  SALT.pitCars=[]; var spots=[[-34,-45.5,0.25],[6,-46.5,-0.2],[-76,-45.8,0.1],[-118,-46.2,-0.15]], bodies=["lakester","roadster","streamliner","lakester"];
+  for(var i=0;i<n;i++){ try{ var sp=spots[i], body=bodies[i], col=SE_SHIRT[(i*3+1)%SE_SHIRT.length], look=(typeof saltRivalLook==="function")?saltRivalLook(4100+i*17, body):undefined;
+      var car=saltCar(body, col, i%2===0, look); car.position.set(sp[0],0,sp[1]); car.rotation.y=sp[2]; car.userData.pit=true; car.traverse(function(q){ q.castShadow=false; }); SALT.scene.add(car); SALT.pitCars.push(car);
+    }catch(e){ break; } }
 }
 /* the return road: a graded lane beside the course, two darker wheel tracks, soft edges */
 function saltReturnRoad(){
@@ -408,6 +416,7 @@ function saltEventUpdate(o, dt, V, ph){
   /* the push truck stands out from whatever the car is painted */
   var pu=SALT.push&&SALT.push.userData; if(pu && pu.paint){ var pc=saltPushCol(o.color); if(pc!==pu.col){ pu.col=pc; pu.paint.color.copy(sc(pc)); } }
   seMarksUpdate(o, V, ph); seSpinDust(o, dt, V); seSafety(o, dt, V); seChutes(o, dt, V, ph);
-  /* the town drops out once the camera is miles away from it */
+  /* the pit cars only show near the start; the town drops out once the camera is miles away from it */
+  if(SALT.pitCars && SALT.pitCars.length){ var near=SALT.camPos.x<260 && SALT.camPos.distanceTo(_seA.set(-50,0,-46))<260; if(SALT.pitCars[0].visible!==near) SALT.pitCars.forEach(function(c){ c.visible=near; }); }
   if(SALT.town && SALT.cam) for(var i=0;i<SALT.town.length;i++){ var T=SALT.town[i], on=SALT.camPos.distanceTo(T.c)<3200; if(T.on!==on){ T.on=on; T.ms.forEach(function(m){ m.visible=on; }); } }
 }
