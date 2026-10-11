@@ -220,7 +220,7 @@ function stripSetNight(on){
   STRIP.hemi.intensity=on?0.10:0.18; STRIP.hemi.color.set(on?0x3a4764:0xcfdcf0); STRIP.hemi.groundColor.set(on?0x16130e:0x6a5a3c);
   STRIP.flood.intensity=on?(lite?0.6:0.36):0;   /* a soft key from above the near stands so the cars read between the spots (no shadow, no cost) */
   M.lamp.color.set(on?0xffffff:0x5e5e5e);
-  if(STRIP.beamMesh){ STRIP.beamMesh.visible=on; M.beam.opacity=on?0.012:0; }
+  if(STRIP.beamMesh){ STRIP.beamMesh.visible=on; M.beam.opacity=on?0.012:0; ultraBeam(STRIP.beamMesh, M.beam); }
   var env=stripEnv(on); S2.environment=env;
   STRIP.exposure=on?0.95:0.9;
   if(STRIP.board){ ["p","o"].forEach(function(t){ STRIP.board[t].mesh.material.color.set(on?0xffffff:0xd8d8d8); }); }
@@ -231,7 +231,8 @@ function stripSetNight(on){
   STRIP.spots.forEach(function(sp){ S2.remove(sp); S2.remove(sp.target); if(sp.shadow&&sp.shadow.map) sp.shadow.map.dispose(); }); STRIP.spots=[];
   if(on){ for(var i=0;i<3;i++){ var sp=new THREE.SpotLight(0xfff0d8, 1.25, 110, 0.72, 0.65, 1.6); sp.castShadow=!lite; if(!lite){ sp.shadow.mapSize.set(512,512); sp.shadow.bias=-0.0025; sp.shadow.normalBias=0.06; sp.shadow.camera.near=2; sp.shadow.camera.far=130; }
     S2.add(sp); S2.add(sp.target); STRIP.spots.push(sp); }
-    STRIP.spots[1].castShadow=false; }   /* v2: spots 0/1 are the cars' keys (stripKeySpots); only the player's casts a shadow */
+    STRIP.spots[1].castShadow=false; ultraSpots(STRIP.spots); }   /* v2: spots 0/1 are the cars' keys (stripKeySpots); only the player's casts a shadow (Ultra: all) */
+  if(!lite) ultraShadow(STRIP.sun, 2048);
   STRIP.duskK=null;   /* v2: re-apply the dusk blend (and the stands' lights, the mirage) on top */
 }
 
@@ -663,8 +664,8 @@ function stripBlur(P, dt){
 }
 function stripComposer(){
   if(STRIP.composer===false) return null;
-  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=STRIP.composer;
-  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.addPass(new THREE.RenderPass(STRIP.scene, STRIP.cam));
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(STRIP.composer);
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(STRIP.scene, STRIP.cam));
       var hp=new THREE.ShaderPass(STRIP_HEAT_SHADER); hp.enabled=false; C.addPass(hp); STRIP.heatPass=hp;
       var mb=new THREE.ShaderPass(STRIP_BLUR_SHADER); mb.enabled=false; C.addPass(mb); STRIP.blurPass=mb;
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); STRIP.bloom=bp;
