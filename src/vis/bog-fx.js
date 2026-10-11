@@ -115,7 +115,7 @@ function BogSheet(slots){
   g.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(nv*3),3));
   this.geo=g;
   if(!BOGFX.sheetTex) BOGFX.sheetTex=bogFxSheetTex();
-  var m=new THREE.MeshStandardMaterial({color:0x3a2a1c, map:BOGFX.sheetTex, transparent:true, depthWrite:false, side:THREE.DoubleSide, roughness:0.5, metalness:0, envMapIntensity:0.22});
+  var m=new THREE.MeshStandardMaterial({color:0x3a2a1c, map:BOGFX.sheetTex, transparent:true, depthWrite:false, side:THREE.DoubleSide, roughness:0.75, metalness:0, envMapIntensity:0.22});
   m.onBeforeCompile=function(sh){
     sh.vertexShader="attribute float aA; attribute float aE; varying float vMA; varying float vME;\n"+sh.vertexShader.replace("#include <begin_vertex>","#include <begin_vertex>\n vMA=aA; vME=aE;");
     sh.fragmentShader="varying float vMA; varying float vME;\n"+sh.fragmentShader.replace("#include <map_fragment>",
@@ -169,7 +169,7 @@ function bogFxDecal(x, y, z, s){
 /* a long throw crossing the rail line: a splat if it hits a banner or a pipe; returns true when it stops there */
 function bogFxHitRail(x, y, z){
   var cx=-24+9*Math.round((x+24)/9);
-  if(Math.abs(x-cx)<2.6 && x>-27 && x<104 && y>0.53 && y<1.12){ bogFxDecal(x, y, z+0.03, 0.22+Math.random()*0.3); return true; }
+  if(Math.abs(x-cx)<2.6 && x>-27 && x<104 && y>0.53 && y<1.12){ bogFxDecal(x, y, z+0.03, 0.3+Math.random()*0.4); return true; }
   if(Math.abs(y-1.08)<0.09 || Math.abs(y-0.6)<0.09){ bogFxDecal(x, y, z+0.02, 0.1+Math.random()*0.08); return true; }
   return false;
 }
@@ -179,7 +179,7 @@ function bogFxHitCrowd(x, z){
   if(!BOGFX.crowdC || BOGFX.crowdC.body!==C.body) BOGFX.crowdC={body:C.body, b:C.body.instanceColor.array.slice(), h:C.head.instanceColor.array.slice()};
   var B=C.body.instanceColor.array, H=C.head.instanceColor.array, mc=BOGFX.mudC||[0.13,0.095,0.065], hit=0;
   for(var i=0;i<C.n && hit<3;i++){ var p=C.base[i]; if(Math.abs(p[0]-x)>0.7 || p[2]<-BOG_W/2-7.2) continue;
-    var k=0.35+Math.random()*0.3; for(var j=0;j<3;j++){ B[i*3+j]+= (mc[j]*1.4-B[i*3+j])*k; H[i*3+j]+=(mc[j]*1.4-H[i*3+j])*k*0.6; } hit++; }
+    var k=0.6+Math.random()*0.25; for(var j=0;j<3;j++){ B[i*3+j]+= (mc[j]*1.4-B[i*3+j])*k; H[i*3+j]+=(mc[j]*1.4-H[i*3+j])*k*0.6; } hit++; }
   if(hit){ C.body.instanceColor.needsUpdate=C.head.instanceColor.needsUpdate=true; }
 }
 /* --- mud on the lens of a low camera near the truck (Full/Ultra) --- */
@@ -229,7 +229,7 @@ function bogFxUpdate(o, dt, V){
       if(!front && !lite){ var ns=amt*6*dt, m2=Math.floor(ns)+(R()<ns%1?1:0);
         for(i=0;i<m2;i++) FX.emit(ax-1.6-R(), by+rr*1.6+R()*1.2, s*(trR+0.3), v*0.5-1.5, 0.6+R()*1.2, s*R()*0.8, 1.4+R()*0.8, 0.8, 2.2+R()*1.2, mc[0]*2.6, mc[1]*2.5, mc[2]*2.4, 0.14, {drag:0.6, grav:0.4, fin:0.15, spin:0.5, kind:1}); }
       /* long throws toward the crowd side: they splat the rail, the banners and the front rows */
-      if(!front && !lite && s<0 && amt>0.7){ var nl=(amt-0.6)*3*dt; if(R()<nl){ var vz=-(7+R()*2.5), vy=3.4+R()*2.4;
+      if(!front && !lite && s<0 && amt>0.45){ var nl=(amt-0.35)*4*dt; if(R()<nl){ var vz=-(7+R()*2.5), vy=3.4+R()*2.4;
         FX.emit(ax-0.3, by+rr*1.2, s*trR, v*0.6-1-R()*2, vy, vz, 2.6, 0.07, 0.06, mc[0], mc[1], mc[2], 1, {drag:0.03, kind:0, lob:true}); } } }
   }
   if(bw>0.03){ var nb=bw*rate*(lite?36:70)*dt, mb=Math.floor(nb)+(R()<nb%1?1:0), fx0=fx+rr*0.95;
@@ -260,7 +260,7 @@ function bogFxSheets(Sh, dt, q){
     if(q.amt<0.06){ Sh.off(sl); continue; }
     sl.on=true; sl.dirty=true; Sh.touched=true;
     var sp=clamp(2+q.ws*0.32+(q.ws-q.v)*0.6,3,9), lx=q.rx-q.rr*0.7, ly=q.by+q.rr*0.95, lz=s*q.trR, Tf=0;
-    for(c=0;c<sl.cols;c++){ var u=c/(sl.cols-1), el=0.7+0.5*u, lat=(0.04+0.16*(1-u))*s, cv=Math.cos(el)*sp, sv=Math.sin(el)*sp, T=(sv+Math.sqrt(sv*sv+2*g*Math.max(0.1,ly)))/g, ef=Math.sin(u*PI);
+    for(c=0;c<sl.cols;c++){ var u=c/(sl.cols-1), el=0.42+0.55*u, lat=(0.04+0.16*(1-u))*s, cv=Math.cos(el)*sp, sv=Math.sin(el)*sp, T=(sv+Math.sqrt(sv*sv+2*g*Math.max(0.1,ly)))/g, ef=Math.sin(u*PI);
       for(r=0;r<sl.rows;r++){ var f=r/(sl.rows-1), a=f*T, d=1-0.12*a, px=lx-cv*a*d, py=ly+sv*a-0.5*g*a*a, pz=lz+lat*sp*a*d+s*0.05*q.wr*Math.sin(c*1.7);
         var al=Math.min(1,f*6)*Math.pow(1-f,0.9)*(0.2+0.8*ef)*clamp(q.amt*1.1,0,0.9);
         if(py<0.02){ py=0.02; al=0; }
