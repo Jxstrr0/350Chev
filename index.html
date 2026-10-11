@@ -26071,6 +26071,7 @@ function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
 const tipEl=document.createElement("div");tipEl.id="tip";tipEl.setAttribute("role","tooltip");document.body.appendChild(tipEl);
 let tipT=null,tipOn=null;
 function tipHide(){clearTimeout(tipT);tipT=null;tipOn=null;tipEl.classList.remove("on");}
+setInterval(()=>{if(tipOn&&tipOn.id==="gl"&&ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene())tipHide();},400);   // an event scene took the canvas under the orbit hint
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
 const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
