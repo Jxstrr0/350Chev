@@ -6,8 +6,8 @@
    the per-tier thinning. Everything is ranked once at build; a tier only changes
    instance counts (a prefix of the ranked lists), so switching tiers is free.
    ------------------------------------------------------------------------- */
-var STRIP_VENUE_KEEP={ lite:0.42, full:0.8, ultra:1.01 };   /* crowd: share of the (Ultra-density) people kept per tier */
-var STRIP_PITS_KEEP={ lite:0.3, full:0.68, ultra:1.01 };    /* pit spaces kept per tier (near the start line first) */
+var STRIP_VENUE_KEEP={ lite:0.55, full:0.8, ultra:1.01 };   /* crowd: share of the (Ultra-density) people kept per tier */
+var STRIP_PITS_KEEP={ lite:0.38, full:0.68, ultra:1.01 };    /* pit spaces kept per tier (near the start line first) */
 function stripKeep(tbl){ return tbl[GFX]!=null?tbl[GFX]:tbl.full; }
 
 /* --- crowd atlas: 6 poses in 84×256 tiles (1 px = 1 cm, tile bottom = seat ref −0.5 m).
