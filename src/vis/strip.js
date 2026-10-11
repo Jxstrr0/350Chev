@@ -13,7 +13,8 @@ var STRIP={ on:false, scene:null, cam:null, built:false, sun:null, hemi:null, ca
   flash:null, fog:null, crowd:null, halos:[], exposure:0.95 };
 var STRIP_TRACK_END=780, STRIP_Q=402.336, STRIP_LANE=2.5;
 /* v2 world: uniforms shared by the track and crowd shaders (time, midday mirage, fresh burnout shine per lane, water-box ripples, lit stands) */
-var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2()}, uRip:{value:0}, uHorC:{value:new THREE.Color(0.52,0.6,0.7)}, uCrowdLit:{value:0} };
+var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2()}, uRip:{value:0}, uHorC:{value:new THREE.Color(0.52,0.6,0.7)}, uCrowdLit:{value:0},
+  uGlare:{value:0}, uSunW:{value:new THREE.Vector3(0,1,0)}, uGlareC:{value:new THREE.Color(1,0.6,0.35)} };   /* fix pack: dusk glare clamp (stripGlare) */
 var STRIP_SUN_DAY=new THREE.Vector3(-0.55,0.36,0.75).normalize(), STRIP_MOON=new THREE.Vector3(0.45,0.42,-0.78).normalize();
 var STRIP_HOR=[0.52,0.60,0.70], STRIP_HOR_N=[0.016,0.019,0.03], STRIP_HOR_D=[0.2,0.1,0.1];
 var STRIP_SUN_DUSK=new THREE.Vector3(0.86,0.03,-0.5).normalize(), STRIP_DUSK_LIGHT=new THREE.Vector3(0.82,0.2,-0.54).normalize();
@@ -64,8 +65,8 @@ var STRIP_GLSL_NOISE=[
   "float sn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(sh(i),sh(i+vec2(1.0,0.0)),f.x), mix(sh(i+vec2(0.0,1.0)),sh(i+vec2(1.0,1.0)),f.x), f.y); }",
   "float sfbm(vec2 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*sn(p); p=p*2.03+vec2(17.1,9.3); a*=0.5; } return s; }"].join("\n");
 var STRIP_GLSL_TRACK=[
-  "uniform float uTime; uniform float uHaze; uniform vec2 uShine; uniform float uRip; uniform vec3 uHorC;",
-  "float gWet=0.0, gMir=0.0; vec2 gRip=vec2(0.0);",
+  "uniform float uTime; uniform float uHaze; uniform vec2 uShine; uniform float uRip; uniform vec3 uHorC; uniform float uGlare; uniform vec3 uSunW; uniform vec3 uGlareC;",
+  "float gWet=0.0, gMir=0.0, gGlare=0.0; vec2 gRip=vec2(0.0);",
   "vec3 stripSurf(vec3 w, out float rough){",
   "  float x=w.x, z=w.z, az=abs(z); float d=length(w-cameraPosition);",
   "  float fine=1.0-smoothstep(20.0,80.0,d), mid=1.0-smoothstep(60.0,260.0,d);",
@@ -100,6 +101,10 @@ var STRIP_GLSL_TRACK=[
   "    float far=smoothstep(60.0,200.0,d)*(1.0-smoothstep(900.0,1500.0,d));",
   "    float wob=0.7*sn(vec2(x*0.045-uTime*0.9,z*0.35+uTime*0.3))+0.3*sn(vec2(x*0.14+uTime*1.7,z*0.8));",
   "    gMir=uHaze*graze*far*smoothstep(0.38,0.72,wob); c*=1.0-0.85*gMir; rough=mix(rough,0.9,gMir); }",
+  /* fix pack: a low sun off the glossy groove made a white blob; at dusk the sharp highlight is clamped (STRIP_TRACK_POST.light)
+     and a broad warm sheen towards the sun stands in for it */
+  "  if(uGlare>0.0){ vec3 gv=normalize(w-cameraPosition); float gs=max(dot(reflect(gv,vec3(0.0,1.0,0.0)),uSunW),0.0);",
+  "    gGlare=uGlare*(0.25+0.75*(1.0-rough))*(0.55*pow(gs,5.0)+0.45*pow(gs,40.0))*(1.0-smoothstep(0.02,0.35,-gv.y)); }",
   "  float ln=1.0-smoothstep(0.05,0.075,abs(x));",
   "  ln=max(ln,(1.0-smoothstep(0.13,0.16,abs(x-402.336)))*(0.75+0.25*step(0.5,fract(z*1.0))));",
   "  ln=max(ln,(1.0-smoothstep(0.05,0.075,abs(az-6.95)))*step(-40.0,x));",
@@ -129,13 +134,15 @@ var STRIP_GLSL_GROUND=[
   "  float sp=(1.0-smoothstep(7.4,8.2,abs(p.y)))*smoothstep(-80.0,-75.0,p.x)*(1.0-smoothstep(785.0,790.0,p.x));",
   "  c=mix(c,vec3(0.2,0.19,0.17),sp);",
   "  rough=0.96; return c; }"].join("\n");
-var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*gMir;" };
+var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*gMir+uGlareC*gGlare;",
+  light:"reflectedLight.directSpecular=min(reflectedLight.directSpecular, vec3(mix(64.0,0.14,uGlare))); reflectedLight.indirectSpecular=min(reflectedLight.indirectSpecular, vec3(mix(64.0,0.3,uGlare)));" };
 function stripSurfMat(glsl, extra, uni, post){
   var m=new THREE.MeshStandardMaterial(Object.assign({color:0xffffff, roughness:0.9, metalness:0}, extra||{}));
   m.onBeforeCompile=function(sh){
     if(uni) for(var uk in uni) sh.uniforms[uk]=uni[uk];
     if(post){ if(post.normal) sh.fragmentShader=sh.fragmentShader.replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n"+post.normal);
-      if(post.emissive) sh.fragmentShader=sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n"+post.emissive); }
+      if(post.emissive) sh.fragmentShader=sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n"+post.emissive);
+      if(post.light) sh.fragmentShader=sh.fragmentShader.replace("#include <lights_fragment_end>", "#include <lights_fragment_end>\n"+post.light); }
     sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;").replace("#include <project_vertex>", "#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;");
     sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nfloat gRough;\n"+STRIP_GLSL_NOISE+"\n"+glsl)
       .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb*=stripSurf(vWp,gRough);")
@@ -296,7 +303,8 @@ function buildStripScene(){
       B.box("solid", 0.0, 0.18, pz, 0.16, 0.36, 0.16, 0x2b2d30); B.box("solid", -0.18, 0.18, pz, 0.16, 0.36, 0.16, 0x2b2d30);
       B.box("lamp", 0.0, 0.2, pz-side*0.085, 0.06, 0.06, 0.01, 0xff2a1a); B.box("lamp", -0.18, 0.2, pz-side*0.085, 0.06, 0.06, 0.01, 0xff2a1a); }
     /* water box curbs */
-    B.box("solid", -10, 0.05, lzc+2.3, 10, 0.1, 0.12, 0xd9d4c6); B.box("solid", -10, 0.05, lzc-2.3, 10, 0.1, 0.12, 0xd9d4c6);
+    B.box("solid", -10, 0.035, lzc+2.3, 10, 0.1, 0.12, 0xd9d4c6); B.box("solid", -10, 0.035, lzc-2.3, 10, 0.1, 0.12, 0xd9d4c6);   /* fix pack: set into the pad */
+    B.box("solid", -10, 0.002, lzc+2.3, 10.06, 0.006, 0.18, 0x26272a); B.box("solid", -10, 0.002, lzc-2.3, 10.06, 0.006, 0.18, 0x26272a);   /* grime line where the curb meets the pad */
   }
   /* burnout-box water hose reel + cones behind the line */
   B.add("solid","cone",[-15.5,0.35,6.6],[0.4,0.7,0.4],0xe36a17); B.add("solid","cone",[-15.5,0.35,-6.6],[0.4,0.7,0.4],0xe36a17);
@@ -313,6 +321,10 @@ function buildStripScene(){
   B.box("solid", TX, 2.42, 0, 0.26, 2.3, 0.86, 0x121315); B.box("solid", TX+0.06, 3.66, 0, 0.16, 0.12, 0.86, 0x121315);
   var bulbY={pre:3.44, stage:3.2, a1:2.9, a2:2.55, a3:2.2, g:1.85, r:1.5};
   for(var nm in bulbY){ for(side=-1; side<=1; side+=2) B.box("solid", TX-0.2, bulbY[nm]+0.13, side*0.24, 0.16, 0.025, 0.3, 0x0c0c0d); }
+  /* fix pack: the back of the tree (what the chase cam sees): a grey service door with ribs and a stencilled lane split, not a black slab */
+  B.box("solid", TX+0.135, 2.42, 0, 0.02, 2.18, 0.78, 0x8b9096); B.box("solid", TX+0.15, 2.42, 0, 0.012, 2.1, 0.035, 0xe1b21c);
+  for(k=0;k<4;k++) B.box("metal", TX+0.15, 1.55+k*0.58, 0, 0.02, 0.04, 0.7, 0x7d8388);
+  B.box("solid", TX+0.15, 3.25, 0.2, 0.012, 0.1, 0.14, 0xe9e5da); B.box("solid", TX+0.15, 3.25, -0.2, 0.012, 0.1, 0.14, 0xe9e5da);
   /* start-line timing tower (far side, behind the line) */
   var TWX=-24, TWZ=-15;
   B.box("solid", TWX, 3.2, TWZ, 10, 6.4, 6, 0xd8d2c2); B.box("solid", TWX, 6.65, TWZ, 10.8, 0.5, 6.8, 0x2a2c2f);
@@ -353,7 +365,7 @@ function buildStripScene(){
   for(i=0;i<5;i++){ B.box("solid", 300, 0.25+i*0.28, 10.5+i*0.75, 60, 0.5+i*0.56, 0.75, i%2?0xb8b2a4:0xc4beb0); }
   /* scoreboard frames near the stripe (boards themselves are dynamic) */
   for(side=-1; side<=1; side+=2){ var sbx=STRIP_Q+26, sbz=side*10.8, ry2=side<0?-PI/2+0.55:-PI/2-0.55;
-    B.box("metal", sbx+1.0, 3.3, sbz-2.4, 0.35, 6.6, 0.35, STEEL); B.box("metal", sbx+1.0, 3.3, sbz+2.4, 0.35, 6.6, 0.35, STEEL);
+    for(var sp2=-1; sp2<=1; sp2+=2) B.box("metal", sbx-Math.sin(ry2)*0.75+Math.cos(ry2)*sp2*2.6, 3.3, sbz-Math.cos(ry2)*0.75-Math.sin(ry2)*sp2*2.6, 0.35, 6.6, 0.35, STEEL);   /* posts behind the board (one stood in front of its lower half) */
     B.add("solid","box",[sbx-Math.sin(ry2)*0.3, 6.7, sbz-Math.cos(ry2)*0.3],[9.0,4.7,0.4],0x151618,[0,ry2,0]);
     B.add("solid","box",[sbx-Math.sin(ry2)*0.3, 9.66, sbz-Math.cos(ry2)*0.3],[9.0,1.3,0.4],0x151618,[0,ry2,0]); }   /* v2: title header */
   /* grain elevators: the prairie skyline (one downtrack, one behind the start, one far off) */
