@@ -184,7 +184,7 @@ function ddMakeJob(rnd,practice,only){const pool=ddPool();if(!pool.length)return
 function ddWeek(){if(!career())return;const d=DD();if(d.week===C().week)return;
   if(S.bay&&!S.bay.practice&&!testing){const j=S.bay.job;ddExit();C().rep=Math.max(0,C().rep-1);d.failed++;d.streak=0;logEvent(`Dyno day: ${ddLabel(j)} came back for it unfinished — −1 rep`,"bad");}
   const left=d.jobs.filter(j=>j.st==="open").length;d.jobs=d.jobs.filter(j=>j.st==="bay"&&S.bay&&S.bay.job.id===j.id);d.week=C().week;
-  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45:0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
+  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
   for(let i=0;i<n;i++){const j=ddMakeJob(rnd,false);if(j){j.st="open";d.jobs.push(j);}}
   if(left&&d.week>1)logEvent(`Dyno day: ${left} customer${left>1?"s":""} took ${left>1?"their cars":"the car"} elsewhere`,"");
   const nn=d.jobs.filter(j=>j.st==="open").length;if(nn&&d.week>1)setTimeout(()=>toast(`DYNO DAY · ${nn} customer${nn>1?"s":""} booked in`),2700);}
@@ -203,7 +203,7 @@ function ddGuard(){const B=S.bay;if(!B)return;const o=B.job.cfg,A=new Set(B.job.
 function ddMarkBuild(){if(!S.bay)return;const A=new Set(S.bay.job.allowed);
   document.querySelectorAll("#buildForm [data-k],#buildForm [data-nk],#buildForm [data-num]").forEach(el=>{const k=el.dataset.k||el.dataset.nk||el.dataset.num;if(A.has(k)||DD_FREE[k])return;el.classList.add("ddno");if(el.tagName==="INPUT")el.disabled=true;});}
 function ddParts(){const B=S.bay;return B?ddPartsOf(B.job.cfg,S.cfg):0;}
-function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:Math.max(20,Math.round(j.labour*0.12/10)*10);}
+function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:crewT("wizard")?Math.max(10,Math.round(j.labour*0.06/10)*10):Math.max(20,Math.round(j.labour*0.12/10)*10);}
 function ddHint(){const B=S.bay;if(!B)return;const j=B.job;if(j.hints>=3)return;const c=ddHintCost(j);j.hints++;if(c)j.paid+=c;save();ddRender();
   toast(c?`Hint · ${fmt$(c)} off the labour`:j.hints===1&&staffed("tuner")&&career()?"Your calibration engineer has a look — free":"Hint");}
 function ddVerdict(res){const B=S.bay,j=B.job,ck=ddCheck(j,S.cfg,res);
@@ -215,7 +215,7 @@ function ddHand(){const B=S.bay;if(!B||testing)return;const j=B.job;const last=S
   const parts=ddParts(),under=parts<=j.budget,clean=ck.ok&&!j.hints&&under,F=ddFault(j.fault);
   if(B.practice){S.achN=S.achN||{};if(ck.ok)S.achN.ddp=(S.achN.ddp||0)+1;ddExit();toast(ck.ok?`FIXED · ${F.name} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`:`NOT FIXED · it was ${F.name.toLowerCase()} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`);
     if(ck.ok)achCheck({type:"dd",pass:true,clean});return;}
-  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;
+  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;crewWork("dd",{job:j,ok:ck.ok});
   if(ck.ok){const lab=Math.max(0,j.labour-j.paid),bonus=under?Math.round(j.labour*0.15/10)*10:0,bill=lab+Math.round(Math.min(parts,j.budget)*1.3)+bonus,net=bill-parts;
     C().cash+=net;C().rep+=clean?2:1;d.passed++;d.earned+=net;d.streak++;j.net=net;
     logEvent(`Dyno day: ${ddLabel(j)} fixed (${F.name.toLowerCase()}) — billed ${fmt$(bill)}${bonus?", under budget":""}, net ${fmt$(net)}`,"good");toast(`FIXED · ${fmt$(net)} net${bonus?" · under budget":""}`);}
@@ -258,7 +258,7 @@ document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;co
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
+  logEvent(t,"");crewWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -331,7 +331,7 @@ function spWeek(){if(!career())return;const s=spS();let paid=0;
   if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
   spLivery();}
 /* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
-function spEvent(kind,o){if(!career()||ff)return;const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
+function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
   if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
   const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
   if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
@@ -422,7 +422,7 @@ function renderShop(){
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`;
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
-  $("staff").innerHTML=STAFF.map(st=>{const on=!!C().staff[st.id];return `<div class="up ${on?"owned":""}"><div><h3>${st.name}</h3><p>${st.desc} <b>${fmt$(st.wage)}/week${on?"":", "+fmt$(st.wage*2)+" to hire"}</b></p></div>${on?`<button class="btn sm danger" data-fire="${st.id}">Release</button>`:`<button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire</button>`}</div>`;}).join("");
+  crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
@@ -454,8 +454,8 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
 $("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
-  if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
-  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);if(!confirm(`Let the ${st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
+  if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
+  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);const who=(crewP(st.id)||{}).nm;if(!confirm(`Let ${who?who+", your "+st.name.toLowerCase()+",":"the "+st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
     if(C().cert&&(st.id==="tuner"||st.id==="machinist")){C().cert=null;logEvent(`Cert void — the ${st.name.toLowerCase()} signed it off; pull it again`,"bad");setTimeout(()=>toast("CERT VOID · re-run the dyno"),50);}logEvent(`Let the ${st.name.toLowerCase()} go`,"");save();hud();renderShop();renderBuild();recompute();}});
 $("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(!b||b.disabled)return;const r=RND.find(x=>x.id===b.dataset.rnd);if(C().rndActive||C().rnd[r.id])return;if(C().cash<r.cost){toast(`Need ${fmt$(r.cost-C().cash)} more`);return;}
   C().cash-=r.cost;C().rndActive={id:r.id,done:0};logEvent(`Funded R&D: ${r.name} (${r.weeks} weeks)`,"");save();hud();renderShop();toast(`R&D STARTED · ${r.weeks} WEEKS`);buzz(20);});

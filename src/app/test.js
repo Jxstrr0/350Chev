@@ -275,7 +275,7 @@ function mapShiftTo(k,v){const mode=MAP_SLIDE[k];if(!mapHas()||!mode||v===S.cfg[
 function mapFitAxis(){if(!mapHas())return false;const ax=SIM.mapAxis(S.cfg),m=S.cfg.map;if(ax.join()===m.rpm.join())return false;S.cfg.map=SIM.mapRespace(m,ax);MV.a=MV.b=null;return true;}
 function mapGridNow(){const env=simEnv({testType:"pull"});const k=cfgHash(S.cfg)+JSON.stringify(env);if(MV.key!==k){MV.grid=SIM.mapGrid(S.cfg,env);MV.key=k;}return MV.grid;}
 function tuneLevel(){if(!career()||dev())return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Full calibration"};const t=staffed("tuner"),c=!!(C().rnd&&C().rnd.calib);
-  if(t&&c)return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Calibration engineer + suite"};if(t)return{margin:1.0,ignStep:1,lamStep:0.02,name:"Calibration engineer"};
+  if(t&&c)return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Calibration engineer + suite"};if(t)return crewT("wizard")?{margin:0.75,ignStep:0.5,lamStep:0.01,name:"Calibration engineer · tuning wizard"}:{margin:1.0,ignStep:1,lamStep:0.02,name:"Calibration engineer"};
   if(c)return{margin:1.5,ignStep:2,lamStep:0.04,name:"Calibration suite"};return null;}
 function tuneCost(){if(!career()||dev())return 0;return (staffed("dynotech")?0:300)+4*fuelBill();}   // about four pulls of dyno time
 /* cell colour: by value, or by the overlay's feedback (green safe, amber close, red past it) */

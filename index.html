@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.47.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.50.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -37,14 +37,15 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #app.nomotion #view{transition:none}
 #app.mini #tag{display:none}
 #app.onstrip #tag{opacity:0;pointer-events:none;transition:opacity .25s}
-/* on the strip (html.onstrip, while a drag pass or race-night round is on): a taller view, the header and SOUND/START/VIEW
-   folded away. The strip camera lifts the picture clear of the HUD band along the view's bottom edge: --shud-h while the
-   compact HUD overlay is up (html.shud), else --striphud */
+/* the run view (html.onevent, app/runview.js: any event scene is up — drag, pull, salt, mud bog, drag boats, road test, hillclimb, 24 Hours — and the
+   Events tab is showing): a taller view, the header and SOUND/START/VIEW folded away. The strip camera lifts the picture clear
+   of the HUD band along the view's bottom edge: --shud-h while the compact HUD overlay is up (html.shud), else --striphud
+   (html.onstrip is the strip scene's own flag); the other scenes get their band through ENGINE_VIS.setBand */
 #view{--striphud:0px}
 html.onstrip #view{--striphud:56px}
-html.onstrip:not(.desk) #app #view{flex-basis:60%;min-height:300px}
-html.onstrip #hud{background:none}
-html.onstrip #hud .brand,html.onstrip #hud .right,html.onstrip .hudbtns{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility 0s .2s}
+html.onevent:not(.desk) #app #view{flex-basis:60%;min-height:300px}
+html.onevent #hud{background:none}
+html.onevent #hud .brand,html.onevent #hud .right,html.onevent .hudbtns{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility 0s .2s}
 #stripCap{position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:3;display:flex;align-items:center;gap:10px;pointer-events:none;font-family:var(--display);text-transform:uppercase;letter-spacing:.1em}
 #stripCap[hidden]{display:none}
 #stripCap b{font-size:13px;font-weight:700;color:#fff;background:#d42b20;padding:5px 10px 5px 22px;border-radius:3px;position:relative;line-height:1}
@@ -526,6 +527,31 @@ div.up h3{font-size:15px;font-weight:700}
 div.up p{margin:3px 0 0;font-size:13px;color:var(--muted);line-height:1.4}
 div.up .price{font-family:var(--display);font-size:15px;font-weight:700;color:var(--orange2);white-space:nowrap;font-variant-numeric:tabular-nums}
 div.up.owned .price{color:var(--good)}
+/* crew cards (app/crew.js): portrait initials, level bar, traits, history, training */
+div.up.crew{grid-template-columns:1fr;gap:6px}
+div.up.crew.away{opacity:.82;border-style:dashed}
+.crew .cwho{display:flex;align-items:center;gap:10px;min-width:0}
+.crew .cwho>div{flex:1;min-width:0}
+.crew .cav{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.04em;color:var(--cc);background:color-mix(in srgb,var(--cc) 16%,transparent);box-shadow:inset 0 0 0 2px var(--cc)}
+.crew .cav.off{opacity:.55;box-shadow:inset 0 0 0 2px var(--rule)}
+.crew .csub{margin:1px 0 0;font-size:12px;color:var(--muted)}
+.crew .clv{font-family:var(--display);font-size:15px;color:var(--orange2);white-space:nowrap}
+.crew .cbar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.crew .cbar i{display:block;height:100%;background:var(--orange);border-radius:3px}
+.crew p.cxp{display:flex;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.crew .cmor.good{color:var(--good)}.crew .cmor.warn{color:var(--warn)}.crew .cmor.crit{color:var(--crit)}
+.crew .ctrs{display:flex;flex-wrap:wrap;gap:5px}
+.crew .ctr{font-size:12px;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
+.crew .ctr.pos{color:var(--good);border-color:rgba(79,192,141,.45)}.crew .ctr.neg{color:var(--crit);border-color:rgba(226,71,60,.45)}.crew .ctr.hid{border-style:dashed;color:var(--dim)}
+.crew p.chist{font-size:12px;color:var(--dim);font-style:italic}
+.crew p.caway{font-size:12px;color:var(--warn)}
+.crew .ctrain summary{cursor:pointer;font-size:13px;color:var(--orange2);min-height:36px;display:flex;align-items:center}
+.crew .ccrs{display:flex;flex-direction:column;align-items:flex-start;width:100%;margin-top:6px;min-height:44px;padding:8px 10px;text-align:left;background:var(--panel2);border:1px solid var(--rule);border-radius:6px;color:var(--chalk);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.crew .ccrs small{font-size:12px;font-weight:400;color:var(--muted);margin-top:2px;line-height:1.35}
+.crew .ccrs:hover,.crew .ccrs:focus-visible{border-color:var(--orange)}
+.crew .cbtn{display:flex;justify-content:flex-end}
+.crew .cbtn .btn{min-height:40px}
+#staff .crewi{margin:-2px 0 8px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
 .stats div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px}
 .stats b{display:block;font-family:var(--display);font-size:18px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
@@ -881,7 +907,8 @@ html.shud #rpmbox,html.shud #dragLive{display:none!important}
 .shn span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .shn span em{font-style:normal;font-weight:700;letter-spacing:.06em}.shn span .w{color:var(--good)}.shn span .l{color:var(--crit)}.shn span .o{color:var(--orange2)}
 .shn b{flex:0 0 auto;font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--chalk)}
-html.onstrip #stripHud{padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+html.onevent #stripHud{padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+html.shud:not(.onevent) #stripHud{display:none}   /* another tab mid-pass: the panel is back, the strip HUD steps aside */
 @media (max-width:374px){.shx>b{font-size:17px}.shx{padding:1px 4px 0}}
 /* desktop: a glass bar bottom-left of the big view; the dock shrinks to just the button at bottom-right, clear of the car */
 html.desk #stripHud{left:18px;right:auto;bottom:16px;width:min(680px,calc(100% - min(300px,34%) - 56px));padding:9px 14px 8px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
@@ -890,6 +917,51 @@ html.desk.shud #dragCtl{left:auto;right:calc(var(--sbw) + 18px);bottom:16px;tran
 html.desk.shud #dragBtn{min-height:58px!important;font-size:19px!important;padding:8px 0!important}
 html.desk.shud #dragBtn small{font-size:11px!important}
 html.desk.shud #n2oPurge{margin-top:6px!important;min-height:40px!important;font-size:11.5px}
+/* ---- every other event's live card on the 3D view's bottom edge (#evHud, html.evhud; app/runview.js moves #pullLive, #saltLive,
+   #bogLive, #roadLive or #e24Hud in for the run and back after). Phone: a compact two-column strip under a dark fade, the controls
+   stay docked above the tab bar. Desktop: a glass bar bottom-left, the control block shrinks to a slim dock bottom-right, both
+   clear of the vehicle. Always the view's dark ink, also in the light theme. ---- */
+#evHud{position:absolute;left:0;right:0;bottom:0;z-index:3;pointer-events:none;padding:16px 10px max(6px,env(safe-area-inset-bottom,0px));contain:layout paint;
+  background:linear-gradient(0deg,rgba(10,11,13,.92) 0,rgba(10,11,13,.8) 62%,rgba(10,11,13,0) 100%);font-variant-numeric:tabular-nums;
+  --panel:rgba(255,255,255,.06);--panel2:rgba(255,255,255,.1);--rule:rgba(255,255,255,.16);--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
+#evHud[hidden]{display:none}
+html.evhud #rpmbox{display:none!important}
+#evHud>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:0 10px;align-items:end}
+#evHud .ph{background:none;border:0;border-radius:0;padding:0;margin:0;min-width:0}
+#evHud .ph+.ph{border-left:1px solid var(--rule);padding-left:9px}
+#evHud .ph+.ph .ph-lbl{font-size:10px;gap:4px}
+#evHud .pobanner,#evHud .rawarn,#evHud .ph-row{grid-column:1/-1}
+#evHud .pobanner{font-size:11px;color:var(--warn);margin-bottom:4px}#evHud .pobanner b{margin-right:6px}
+#evHud .rawarn{border:1px solid var(--crit);border-radius:5px;padding:4px 8px;margin-bottom:6px;background:rgba(226,71,60,.14)}
+#evHud .ph-top b{font-size:27px}#evHud .ph-top b i{font-size:13px}#evHud .ph-top span{font-size:10px;line-height:1.25;letter-spacing:.03em}
+#evHud .ph-lbl span:first-child:nth-last-child(3){display:none}   /* the scale's "0" / "start": the bar says it */
+#evHud .ph-bar{height:7px;margin-top:4px;border-radius:2px}
+#evHud .ph-lbl{font-size:10.5px;margin-top:3px;gap:6px;white-space:nowrap;overflow:hidden}#evHud .ph-lbl span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+#evHud .ph-row{display:flex;gap:14px;margin:6px 0 0;padding-top:5px;border-top:1px solid var(--rule)}
+#evHud .ph-row .peak{display:flex;align-items:baseline;gap:5px;padding:0;background:none;border:0;min-width:0}
+#evHud .ph-row .peak b{font-size:16px}#evHud .ph-row .peak b i{font-size:11px}#evHud .ph-row .peak span{margin:0;font-size:9.5px}
+/* road test and the 24 Hours: their own grids, made smaller; full width */
+#evHud #roadLive,#evHud #e24Hud,#evHud #hillLive{display:block}
+#evHud .hl-bar{height:7px;margin-top:5px}#evHud .hl-next{min-height:0;margin-top:4px;gap:3px}#evHud .hl-c{padding:3px 7px;font-size:11.5px}
+#evHud .hl-meters{gap:4px;margin-top:4px}#evHud .hl-meters .peak{display:flex;align-items:baseline;gap:5px;padding:2px 6px}#evHud .hl-meters .peak b{font-size:15px}#evHud .hl-meters .peak span{margin:0;font-size:9.5px}#evHud .hl-meters .peak span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}html:not(.desk) #evHud .hl-c+.hl-c{display:none}   /* phone: the next call only */
+#evHud .rdh,#evHud .e24h{background:none;border:0;padding:0;gap:8px}
+#evHud .rd-spd b{font-size:30px}#evHud .rd-g b{font-size:24px}#evHud .rd-lt b{font-size:19px}#evHud .rd-map,#evHud .e24map{width:72px;height:52px}
+#evHud .rd-rpm{margin-top:5px;height:7px}
+#evHud .rd-sec{gap:4px;margin-top:5px}#evHud .rd-sec div{padding:3px 6px;font-size:11px}
+#evHud .e24c b,#evHud .e24p b{font-size:22px}
+#evHud .e24gp{border-top-color:var(--rule);padding-top:4px}
+#evHud .e24prog{margin-top:4px;height:5px}#evHud .e24sc{margin-top:4px;padding:1px 0;font-size:11px}
+#evHud .e24g{gap:3px 4px;margin-top:4px}#evHud .e24g>div{padding:2px 6px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:5px}#evHud .e24g b{font-size:14px;line-height:1.2}#evHud .e24g span{font-size:9px}#evHud .e24g .ph-bar{flex:1 0 100%;height:3px;margin-top:2px}
+html:not(.desk) #evHud .e24g i{display:none}html.desk #evHud .e24g i{font-size:10px;flex:1 0 100%}   /* phone: the reading only, the notes stay for the desktop bar */
+html.desk #evHud{left:18px;right:auto;bottom:16px;width:min(720px,calc(100% - min(320px,34%) - 56px));padding:10px 14px 9px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+html.desk #evHud .ph-top b{font-size:34px}html.desk #evHud .ph-lbl{font-size:11.5px}html.desk #evHud .ph-row .peak b{font-size:19px}
+html.desk #evHud .rd-spd b{font-size:40px}html.desk #evHud .rd-map,html.desk #evHud .e24map{width:110px;height:78px}html.desk #evHud .e24c b,html.desk #evHud .e24p b{font-size:30px}
+html.desk.evhud :is(#pullCtl,#saltCtl,#bogCtl,#roadCtl,#e24Ctl,#hillCtl,#boatCtl){left:auto;right:calc(var(--sbw) + 18px);bottom:16px;transform:none;width:min(320px,34%);padding:8px}
+html.desk.evhud :is(#pullBtn,#bogBtn,#saltBtn,#saltShiftBtn),html.desk.evhud .hlbtns .btn,html.desk.evhud .boatbtns .btn{min-height:58px!important;font-size:19px!important;padding:8px 0!important}
+html.desk.evhud :is(#pullBtn,#bogBtn,#saltBtn) small{font-size:11px!important}
+html.desk.evhud #killBtn{min-height:48px}
+html.desk.evhud #saltWarp{margin-top:6px!important}
+html.desk.evhud .rdbtns{margin-top:0}html.desk.evhud .hlbtns{margin-top:0}html.desk.evhud #hillCtl .rdbtns{margin-top:6px}html.desk.evhud .boatbtns .btn{font-size:13px!important}html.desk.evhud #boatBtn{font-size:17px!important}html.desk.evhud .e24spd{margin-top:0;flex-wrap:wrap}html.desk.evhud .e24spd .btn{flex:1 1 18%}html.desk.evhud .e24spd .e24nx{flex:1 1 100%}
 /* ---- thermal timing slip: printed on paper in both themes; the prose folds out under it ---- */
 .tslipw{display:flex;flex-direction:column;align-items:center;margin:4px 0 0}
 .tslip{--ink:#2d2b36;--ink2:#6b6772;--tp:#f4f1e6;position:relative;width:100%;max-width:360px;margin:9px 0 0;padding:16px 16px 14px;color:var(--ink);font-family:var(--mono);font-size:12.5px;line-height:1.35;
@@ -7692,7 +7764,7 @@ const ENGINE_SIM = (function () {
     const add = Math.max(0, Math.min(E24_TANK, need, toEnd + 2) - c.fuel);
     const swap = c.drvT >= 100 * 60 || (me && pl.box && pl.swap);
     const crawl = why && why.why !== "box" ? c.P.modes[c.mode].lap * c.pace * 0.45 : 0;   // limping round to the pit entry
-    const stat = Math.max(add / 2.6, swap ? 14 : 0, fix) + (tyres ? 22 : 0) + 4, total = R.lane + stat + crawl;
+    const stat = (Math.max(add / 2.6, swap ? 14 : 0, fix) + (tyres ? 22 : 0) + 4) * (me && R.pitK ? R.pitK : 1), total = R.lane + stat + crawl;   // pitK: the shop crew (career)
     c.fuel += add; c.pits++; c.pitT += total; c.tyre.stops++;
     if (tyres) { c.tyre = { c: newC, km: 0, cold: true, stops: 0 }; parts.push(`${E24_TYRES[newC].n.toLowerCase()} tyres`); } else parts.push("tyres stay on");
     if (add > 0.5) parts.push(`${Math.round(add)} L`);
@@ -16458,7 +16530,7 @@ var SB_GEO=null;
 function sbGeo(){
   if(SB_GEO) return SB_GEO;
   SB_GEO={ box:new THREE.BoxGeometry(1,1,1).toNonIndexed(), cyl:new THREE.CylinderGeometry(0.5,0.5,1,10).toNonIndexed(), cyl6:new THREE.CylinderGeometry(0.5,0.5,1,6).toNonIndexed(),
-    cone:new THREE.CylinderGeometry(0,0.5,1,4).toNonIndexed(), plane:new THREE.PlaneGeometry(1,1).toNonIndexed(), prism:null, beam:new THREE.CylinderGeometry(0.08,0.5,1,12,1,true).toNonIndexed(), tcone:new THREE.CylinderGeometry(0.11,0.5,1,12).toNonIndexed() };
+    cone:new THREE.CylinderGeometry(0,0.5,1,4).toNonIndexed(), plane:new THREE.PlaneGeometry(1,1).toNonIndexed(), prism:null, beam:new THREE.CylinderGeometry(0.08,0.5,1,12,1,true).toNonIndexed(), tcone:new THREE.CylinderGeometry(0.11,0.5,1,12).toNonIndexed(), ico:new THREE.IcosahedronGeometry(1,0) };
   /* gable roof: triangular prism, 1×1×1, ridge along x */
   var p=new THREE.BufferGeometry(), v=[-.5,0,-.5, .5,0,-.5, .5,.5,0,  -.5,0,-.5, .5,.5,0, -.5,.5,0,   .5,0,.5, -.5,0,.5, -.5,.5,0,  .5,0,.5, -.5,.5,0, .5,.5,0,
     -.5,0,.5, -.5,0,-.5, -.5,.5,0,   .5,0,-.5, .5,0,.5, .5,.5,0];
@@ -16494,19 +16566,24 @@ var STRIP_GLSL_NOISE=[
   "float sh(vec2 p){ vec3 p3=fract(vec3(p.xyx)*0.1031); p3+=dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }",
   "float sn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(sh(i),sh(i+vec2(1.0,0.0)),f.x), mix(sh(i+vec2(0.0,1.0)),sh(i+vec2(1.0,1.0)),f.x), f.y); }",
   "float sfbm(vec2 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*sn(p); p=p*2.03+vec2(17.1,9.3); a*=0.5; } return s; }"].join("\n");
+/* painted markings: a mask sampled from the decal atlas in a rotated rect (c centre, fw travel direction = top of the letters, hs half across/along, cell uv rect) */
+var STRIP_GLSL_DECAL=["uniform sampler2D uDecal;",
+  "float dcl(vec2 p, vec2 c, vec2 fw, vec2 hs, vec4 cell){ vec2 d=p-c, rt=vec2(-fw.y,fw.x); vec2 q=vec2(dot(d,rt),dot(d,fw))/(2.0*hs)+0.5;",
+  "  float ins=step(0.0,q.x)*step(q.x,1.0)*step(0.0,q.y)*step(q.y,1.0); return ins*texture2D(uDecal,cell.xy+clamp(q,0.0,1.0)*cell.zw).r; }"].join("\n");
 var STRIP_GLSL_TRACK=[
-  "uniform float uTime; uniform float uHaze; uniform vec2 uShine; uniform float uRip; uniform vec3 uHorC; uniform float uGlare; uniform vec3 uSunW; uniform vec3 uGlareC;",
-  "float gWet=0.0, gMir=0.0, gGlare=0.0; vec2 gRip=vec2(0.0);",
+  "uniform float uTime; uniform float uHaze; uniform vec2 uShine; uniform float uRip; uniform vec3 uHorC; uniform float uGlare; uniform vec3 uSunW; uniform vec3 uGlareC;", STRIP_GLSL_DECAL,
+  "float gWet=0.0, gMir=0.0, gRefl=0.0, gGlare=0.0; vec2 gRip=vec2(0.0);",
   "vec3 stripSurf(vec3 w, out float rough){",
   "  float x=w.x, z=w.z, az=abs(z); float d=length(w-cameraPosition);",
   "  float fine=1.0-smoothstep(20.0,80.0,d), mid=1.0-smoothstep(60.0,260.0,d);",
   "  float n1=sn(w.xz*vec2(0.21,0.7)), n2=sn(w.xz*2.7), n3=sn(w.xz*13.0);",
-  "  float conc=smoothstep(-17.0,-16.0,x)*(1.0-smoothstep(196.0,204.0,x));",
+  "  float conc=smoothstep(-17.0,-16.0,x)*(1.0-smoothstep(99.93,100.07,x));",
   "  vec3 asph=vec3(0.062,0.063,0.067)*(0.78+0.38*n1)+(n3-0.5)*0.035*fine;",
   "  vec3 cr=vec3(0.19,0.187,0.178)*(0.86+0.2*n1+(n2-0.5)*0.12*fine);",
   "  float jx=abs(fract(x/4.57+0.5)-0.5)*4.57, jz=abs(fract((z+7.5)/3.75+0.5)-0.5)*3.75;",
   "  cr*=1.0-0.4*max(1.0-smoothstep(0.012,0.04,jx),1.0-smoothstep(0.012,0.04,jz))*(1.0-smoothstep(12.0,55.0,d));",
   "  vec3 c=mix(asph,cr,conc); rough=mix(0.9,0.8,conc);",
+  "  c*=1.0-0.7*(1.0-smoothstep(0.025,0.07,abs(x-100.0)))-0.12*(1.0-smoothstep(0.07,0.5,abs(x-100.0)))*step(100.0,x);",
   "  float lc=z>0.0?2.5:-2.5; float dz=abs(z-lc);",
   "  float tyre=exp(-pow((dz-0.82)/0.30,2.0)), broad=exp(-pow(dz/1.45,2.0));",
   "  float fx=smoothstep(-4.8,-3.6,x);",
@@ -16516,6 +16593,8 @@ var STRIP_GLSL_TRACK=[
   "  float bo=smoothstep(-5.6,-4.8,x)*(1.0-smoothstep(-0.4,0.6,x))*tyre*(0.55+0.45*sn(vec2(x*2.5,dz*28.0)));",
   "  rub=max(rub,bo*0.97);",
   "  c=mix(c,vec3(0.018,0.018,0.02),rub); rough=mix(rough,0.55,rub);",
+  "  float prep=fx*exp(-pow((dz-0.82)/0.42,2.0))*(0.5+0.5*exp(-max(x,0.0)/260.0))*(1.0-smoothstep(560.0,700.0,x))*(0.85+0.15*n2);",
+  "  c=mix(c,vec3(0.021,0.02,0.021),prep*0.55); rough=mix(rough,0.4,prep*0.7); gRefl=prep*0.12;",
   "  float vht=fx*(1.0-smoothstep(45.0,140.0,x))*clamp(0.6*broad+0.5*tyre,0.0,1.0)*(0.8+0.2*n1);",
   "  c=mix(c,vec3(0.026,0.021,0.016),vht*0.4); rough=mix(rough,0.24,vht*0.9);",
   "  float shn=(z>0.0?uShine.x:uShine.y)*smoothstep(-6.4,-5.4,x)*(1.0-smoothstep(0.5,7.0,x))*tyre*(0.55+0.45*sn(vec2(x*1.1,dz*36.0)));",
@@ -16523,9 +16602,10 @@ var STRIP_GLSL_TRACK=[
   "  float wb=smoothstep(-15.2,-14.6,x)*(1.0-smoothstep(-5.6,-5.0,x))*(1.0-smoothstep(1.75,2.05,dz));",
   "  float wtr=smoothstep(-5.8,-5.0,x)*(1.0-smoothstep(-4.5,1.5,x))*tyre;",
   "  float wet=max(wb*(0.8+0.2*n2),wtr*0.85);",
-  "  c*=1.0-0.62*wet; rough=mix(rough,0.06,wet);",
-  "  float pool=wb*smoothstep(0.56,0.64,sn(w.xz*vec2(0.8,1.5)+3.0)+0.18*n2);",
-  "  c*=1.0-0.3*pool; rough=mix(rough,0.02,pool); gWet=max(wet,pool);",
+  "  c*=1.0-0.7*wet; rough=mix(rough,0.16,wet);",
+  "  float pool=wb*smoothstep(0.47,0.57,sn(w.xz*vec2(0.8,1.5)+3.0)+0.18*n2);",
+  "  c*=1.0-0.45*pool; rough=mix(rough,0.07,pool); gWet=max(wet,pool); gRefl=max(gRefl,pool*0.12);",
+  "  c*=1.0-0.55*(1.0-smoothstep(0.05,0.26,abs(dz-2.3)))*smoothstep(-15.3,-14.9,x)*(1.0-smoothstep(-5.1,-4.7,x));",
   "  if(gWet>0.0){ vec2 q=w.xz*6.0; float t=uTime; gRip=vec2(sin(q.x+t*3.3+sn(q*0.6)*6.0), sin(q.y*1.3-t*2.6+sn(q*0.45+3.0)*6.0))*(0.03+0.16*uRip)*gWet; }",
   "  if(uHaze>0.0){ vec3 vd=normalize(w-cameraPosition); float graze=1.0-smoothstep(0.004,0.032,-vd.y);",
   "    float far=smoothstep(60.0,200.0,d)*(1.0-smoothstep(900.0,1500.0,d));",
@@ -16537,14 +16617,22 @@ var STRIP_GLSL_TRACK=[
   "    gGlare=uGlare*(0.25+0.75*(1.0-rough))*(0.55*pow(gs,5.0)+0.45*pow(gs,40.0))*(1.0-smoothstep(0.02,0.35,-gv.y)); }",
   "  float ln=1.0-smoothstep(0.05,0.075,abs(x));",
   "  ln=max(ln,(1.0-smoothstep(0.13,0.16,abs(x-402.336)))*(0.75+0.25*step(0.5,fract(z*1.0))));",
-  "  ln=max(ln,(1.0-smoothstep(0.05,0.075,abs(az-6.95)))*step(-40.0,x));",
+  "  ln=max(ln,(1.0-smoothstep(0.05,0.075,abs(az-6.95)))*step(-76.0,x));",
+  "  float stg=step(-76.0,x)*(1.0-step(-31.0,x)); ln=max(ln,stg*(1.0-smoothstep(0.05,0.075,abs(az-3.73))));",
+  "  ln=max(ln,stg*(1.0-smoothstep(0.05,0.075,az))*step(0.45,fract(x/3.0))); ln=max(ln,(1.0-smoothstep(0.1,0.13,abs(x+31.0)))*step(az,6.95));",
+  "  if(x<-14.0){ vec2 f0=vec2(1.0,0.0), h0=vec2(0.72,1.45), h1=vec2(0.62,1.25);",
+  "    ln=max(ln,dcl(w.xz,vec2(-20.5,-2.5),f0,h0,vec4(0.0,0.5,0.125,0.5))+dcl(w.xz,vec2(-20.5,2.5),f0,h0,vec4(0.125,0.5,0.125,0.5)));",
+  "    ln=max(ln,dcl(w.xz,vec2(-34.0,-5.6),f0,h1,vec4(0.0,0.5,0.125,0.5))+dcl(w.xz,vec2(-34.0,-1.87),f0,h1,vec4(0.125,0.5,0.125,0.5))",
+  "      +dcl(w.xz,vec2(-34.0,1.87),f0,h1,vec4(0.25,0.5,0.125,0.5))+dcl(w.xz,vec2(-34.0,5.6),f0,h1,vec4(0.375,0.5,0.125,0.5))); }",
+  "  if(x>690.0) ln=max(ln,dcl(w.xz,vec2(714.0,4.4),normalize(vec2(1.0,0.42)),vec2(0.8,2.3),vec4(0.5,0.5,0.125,0.5))+dcl(w.xz,vec2(744.0,5.6),normalize(vec2(1.0,0.42)),vec2(0.8,2.3),vec4(0.5,0.5,0.125,0.5)));",
   "  float st=(1.0-smoothstep(0.04,0.06,abs(x+0.18)))*(1.0-smoothstep(1.9,2.0,dz))*0.6;",
   "  ln=max(ln,st*step(0.5,fract(dz*2.5)));",
   "  c=mix(c,vec3(0.74,0.73,0.69),ln*(1.0-rub*0.5));",
   "  float cl=(1.0-smoothstep(0.05,0.075,az))*smoothstep(-2.0,-1.0,x);",
   "  c=mix(c,vec3(0.78,0.52,0.06),cl);",
+  "  vec3 vdr=normalize(w-cameraPosition); gRefl*=pow(1.0-clamp(-vdr.y,0.0,1.0),4.0)*(1.0-ln);",
   "  return c; }"].join("\n");
-var STRIP_GLSL_GROUND=[
+var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(30.0,140.0,d), mid=1.0-smoothstep(120.0,900.0,d);",
   "  float inf=(1.0-smoothstep(70.0,80.0,abs(p.y)))*smoothstep(-300.0,-290.0,p.x)*(1.0-smoothstep(1020.0,1030.0,p.x));",
@@ -16559,12 +16647,22 @@ var STRIP_GLSL_GROUND=[
   "  vec3 c=mix(fc,grass,inf);",
   "  float rr=(1.0-smoothstep(2.7,3.0,abs(p.y-13.5)))*smoothstep(-95.0,-90.0,p.x)*(1.0-smoothstep(775.0,780.0,p.x));",
   "  c=mix(c,vec3(0.07,0.07,0.075)*(0.85+0.3*sn(p*0.4)),rr);",
-  "  float pit=smoothstep(-140.0,-135.0,p.x)*(1.0-smoothstep(135.0,140.0,p.x))*smoothstep(17.0,18.0,p.y)*(1.0-smoothstep(54.0,55.0,p.y));",
+  "  float pit=smoothstep(-162.0,-157.0,p.x)*(1.0-smoothstep(336.0,341.0,p.x))*smoothstep(17.0,18.0,p.y)*(1.0-smoothstep(68.0,69.0,p.y));",
   "  c=mix(c,vec3(0.25,0.23,0.20)*(0.8+0.4*sn(p*1.1)),pit);",
   "  float sp=(1.0-smoothstep(7.4,8.2,abs(p.y)))*smoothstep(-80.0,-75.0,p.x)*(1.0-smoothstep(785.0,790.0,p.x));",
   "  c=mix(c,vec3(0.2,0.19,0.17),sp);",
+  "  float ap=smoothstep(-153.0,-151.0,p.x)*(1.0-smoothstep(-80.5,-79.5,p.x))*(1.0-smoothstep(11.5,12.2,abs(p.y)));",
+  "  float tf=smoothstep(736.0,738.0,p.x)*(1.0-smoothstep(772.0,774.0,p.x))*smoothstep(6.8,7.2,p.y)*(1.0-smoothstep(11.0,11.6,p.y));",
+  "  c=mix(c,vec3(0.07,0.07,0.075)*(0.85+0.3*sn(p*0.4)),max(ap,tf));",
+  "  float sand=smoothstep(783.0,785.0,p.x)*(1.0-smoothstep(855.0,857.0,p.x))*(1.0-smoothstep(8.6,9.1,abs(p.y)));",
+  "  c=mix(c,vec3(0.44,0.36,0.24)*(0.82+0.3*sn(p*0.7)+0.12*(sn(p*6.0)-0.5)*fine)*(1.0+0.09*sin(p.y*21.0)*fine),sand);",
+  "  float ry=abs(p.y-13.5), rl=rr*(1.0-smoothstep(0.05,0.08,abs(ry-2.7)));",
+  "  if(ry<3.0 && p.x<640.0){ vec2 fb=vec2(-1.0,0.0), hw=vec2(2.2,4.2), ha=vec2(0.85,2.3); vec4 cw=vec4(0.0,0.0,0.5,0.5), ca=vec4(0.5,0.5,0.125,0.5);",
+  "    float dm=dcl(p,vec2(560.0,13.5),fb,hw,cw)+dcl(p,vec2(260.0,13.5),fb,hw,cw)+dcl(p,vec2(-40.0,13.5),fb,hw,cw)+dcl(p,vec2(60.0,13.5),fb,hw,vec4(0.5,0.0,0.5,0.5));",
+  "    dm+=dcl(p,vec2(546.0,13.5),fb,ha,ca)+dcl(p,vec2(246.0,13.5),fb,ha,ca)+dcl(p,vec2(-54.0,13.5),fb,ha,ca); rl=max(rl,dm); }",
+  "  c=mix(c,vec3(0.72,0.71,0.66),rl);",
   "  rough=0.96; return c; }"].join("\n");
-var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*gMir+uGlareC*gGlare;",
+var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*(gMir+gRefl)+uGlareC*gGlare;",
   light:"reflectedLight.directSpecular=min(reflectedLight.directSpecular, vec3(mix(64.0,0.14,uGlare))); reflectedLight.indirectSpecular=min(reflectedLight.indirectSpecular, vec3(mix(64.0,0.3,uGlare)));" };
 function stripSurfMat(glsl, extra, uni, post){
   var m=new THREE.MeshStandardMaterial(Object.assign({color:0xffffff, roughness:0.9, metalness:0}, extra||{}));
@@ -16684,9 +16782,10 @@ function buildStripScene(){
   /* sky + fog + big world */
   var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S2.add(sky); STRIP.sky=sky;
   S2.fog=new THREE.Fog(0xffffff, 170, 3400); STRIP.fog=S2.fog;
-  var ground=new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), stripSurfMat(STRIP_GLSL_GROUND)); ground.rotation.x=-PI/2; ground.position.set(350,-0.03,0); ground.receiveShadow=true; S2.add(ground);
+  var decal={value:stripDecalTex()};   /* painted markings (lane numbers, staging lanes, return road) sampled by both surface shaders */
+  var ground=new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), stripSurfMat(STRIP_GLSL_GROUND, null, {uDecal:decal})); ground.rotation.x=-PI/2; ground.position.set(350,-0.03,0); ground.receiveShadow=true; S2.add(ground);
   var trackW=15, trackL=STRIP_TRACK_END+80;
-  var track=new THREE.Mesh(new THREE.PlaneGeometry(trackL, trackW), stripSurfMat(STRIP_GLSL_TRACK, null, STRIP_U, STRIP_TRACK_POST)); track.rotation.x=-PI/2; track.position.set(-80+trackL/2, 0, 0); track.receiveShadow=true; S2.add(track);
+  var track=new THREE.Mesh(new THREE.PlaneGeometry(trackL, trackW), stripSurfMat(STRIP_GLSL_TRACK, null, Object.assign({uDecal:decal}, STRIP_U), STRIP_TRACK_POST)); track.rotation.x=-PI/2; track.position.set(-80+trackL/2, 0, 0); track.receiveShadow=true; S2.add(track);
   /* distant hills: a low ring of coulee rises */
   (function(){ var seg=160, R0=2300, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
     for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=18+40*Math.pow(0.5+0.5*Math.sin(a*3.0+1.2),2)+22*Math.sin(a*11.0+0.4)*Math.sin(a*5.0)+14*Math.sin(a*23.0);
@@ -16706,19 +16805,23 @@ function buildStripScene(){
   var B=new StripBatch();
   var CONC=0xc9c4b6, CONC2=0xb4ae9f, STEEL=0x8d9296, DARK=0x2a2c2f;
 
-  /* guardwalls + sponsor panels + catch fence */
+  /* guardwalls + sponsor panels + catch fence (the near wall opens at x 738-772 for the turn-off to the return road) */
+  var fenceG=[], TO0=738, TO1=772;
+  function fencePanel(cx, cy, cz, len, h, ry){ var g=new THREE.PlaneGeometry(len, h).toNonIndexed(), uv=g.attributes.uv; for(var q=0;q<uv.count;q++) uv.setXY(q, uv.getX(q)*len/0.9, uv.getY(q)*h/0.9);
+    if(ry) g.rotateY(ry); g.translate(cx, cy, cz); fenceG.push(g); }
   for(side=-1; side<=1; side+=2){
     var wz=side*7.78, x0=-75, x1=STRIP_TRACK_END;
-    B.box("solid", (x0+x1)/2, 0.53, wz, x1-x0, 1.06, 0.56, CONC);
-    B.box("solid", (x0+x1)/2, 1.075, wz, x1-x0, 0.05, 0.4, CONC2);
-    for(x=-60, k=0; x<x1-10; x+=8.5, k++){
+    (side>0?[[x0,TO0],[TO1,x1]]:[[x0,x1]]).forEach(function(sg){
+      B.box("solid", (sg[0]+sg[1])/2, 0.53, wz, sg[1]-sg[0], 1.06, 0.56, CONC);
+      B.box("solid", (sg[0]+sg[1])/2, 1.075, wz, sg[1]-sg[0], 0.05, 0.4, CONC2); });
+    for(x=-60, k=0; x<x1-10; x+=8.5, k++){ if(side>0 && x>TO0-4 && x<TO1+4) continue;
       var pick=((k*7+(side>0?1:0)*3)%5); var uvr=STRIP_UV.ban[pick];
       B.add("sign","plane",[x, 0.56, side*7.495],[5.4,0.82,1],0xffffff,[0, side>0?PI:0, 0],uvr); }
     /* catch fence along the launch half on both sides */
     var fx0=-40, fx1=440;
     for(x=fx0; x<=fx1; x+=10) B.add("metal","cyl6",[x, 2.3, side*7.9],[0.07,2.5,0.07],STEEL);
     B.box("metal", (fx0+fx1)/2, 3.55, side*7.9, fx1-fx0, 0.05, 0.05, STEEL);
-    var fence=new THREE.Mesh(new THREE.PlaneGeometry(fx1-fx0, 2.45), M.fence); fence.position.set((fx0+fx1)/2, 2.32, side*7.9); M.fence.map.repeat.set((fx1-fx0)/0.9, 2.45/0.9); S2.add(fence);
+    fencePanel((fx0+fx1)/2, 2.32, side*7.9, fx1-fx0, 2.45, 0);
     /* timing blocks at every increment, both lanes (lane edges + centre) */
     var marks=[18.288,100.584,201.168,304.8,402.336];
     for(i=0;i<marks.length;i++){ if(i||side<0){ B.box("solid", marks[i], 0.2, side*7.3, 0.3, 0.4, 0.3, 0x3a3d40); B.box("lamp", marks[i]-0.16, 0.25, side*7.3, 0.02, 0.08, 0.08, 0xff3322); }   /* not the near 60 ft one: it sits in front of the pan camera's lens */
@@ -16784,13 +16887,18 @@ function buildStripScene(){
     for(k=-1;k<=1;k+=2){ B.box("metal", x, 18.55, plz-side*0.2+k*0.8, 0.7, 0.5, 0.6, 0x5a5f65); B.box("lamp", x, 18.29, plz-side*0.2+k*0.8, 0.62, 0.02, 0.52, 0xfff0d0);
       B.add("beam","beam",[x, 9.2, plz-side*(0.2+2.4)+k*0.8],[5.2,18,5.2],0xffe8c0,[side*0.26,0,0]); }
     STRIP.poles.push(new THREE.Vector3(x, 18.3, plz)); } }
-  /* pits on the near side: haulers, pickups, canopies */
-  var hcol=[0xe9e6dc,0x1b1d20,0x9e2a22,0x22488f,0xd0d3d6,0x2c6b3a], rng=function(s){ var t=Math.sin(s*127.1)*43758.5453; return t-Math.floor(t); };
-  for(i=0;i<9;i++){ var hx=-120+i*27+rng(i)*8, hz=24+rng(i+9)*16, liv=i%3===0?0:i%3===1?1:-1;
-    B.box("solid", hx, 2.1, hz, 14, 3.4, 2.6, hcol[i%hcol.length]); B.box("solid", hx+8.6, 1.6, hz, 3.0, 2.6, 2.5, hcol[(i+2)%hcol.length]); B.box("solid", hx, 0.3, hz, 14, 0.5, 2.3, 0x1c1d1f);
-    if(liv>=0) B.add("sign","plane",[hx, 2.3, hz-1.31],[9,2.1,1],0xffffff,[0,PI,0],STRIP_UV.haul[liv]);
-    B.box("solid", hx+2, 1.2, hz-5.5, 4.8, 1.3, 2.0, hcol[(i+4)%hcol.length]); B.box("solid", hx+1.6, 2.1, hz-5.5, 2.2, 0.7, 1.8, 0x22262b);
-    if(i%2===0){ B.box("solid", hx-3, 2.9, hz-7.5, 4, 0.08, 4, hcol[(i+1)%hcol.length]); for(k=0;k<4;k++) B.box("metal", hx-4.9+(k>>1)*3.8, 1.45, hz-9.4+(k&1)*3.8, 0.06, 2.9, 0.06, STEEL); } }
+  /* shutdown: sand trap past the end of the strip, curbed, with a catch net across it */
+  var rng=function(s){ var t=Math.sin(s*127.1)*43758.5453; return t-Math.floor(t); };
+  for(side=-1; side<=1; side+=2) B.box("solid", 820, 0.22, side*9.3, 74, 0.44, 0.45, CONC);
+  B.box("solid", 781.5, 0.08, 0, 3, 0.16, 15, CONC2);
+  for(z=-9; z<=9.01; z+=3) B.add("metal","cyl6",[851, 2.35, z],[0.16,4.7,0.16],STEEL);
+  B.box("metal", 851, 4.66, 0, 0.08, 0.08, 18.4, STEEL); B.box("metal", 851, 0.3, 0, 0.12, 0.12, 18.4, STEEL);
+  fencePanel(851, 2.4, 0, 18, 4.2, PI/2);
+  for(i=0;i<5;i++) B.box("solid", 760+i*1.2, 0.5, 0, 0.9, 1.0, 0.9, i%2?0xe8641a:0xf3f1ea);   /* barrels at the end of the shutdown */
+  /* the pits (instanced pit spaces + crews) and the staging lanes (static cars) */
+  var ppl=[];
+  STRIP.kits=stripBuildPits(S2, B, ppl, rng);
+  stripBuildStaging(B, ppl, rng);
   /* bleacher + fence near the finish on the near side */
   for(i=0;i<5;i++){ B.box("solid", 300, 0.25+i*0.28, 10.5+i*0.75, 60, 0.5+i*0.56, 0.75, i%2?0xb8b2a4:0xc4beb0); }
   /* scoreboard frames near the stripe (boards themselves are dynamic) */
@@ -16814,34 +16922,30 @@ function buildStripScene(){
     B.box("solid", fx+22, 5, fz+4, 16, 10, 12, 0x9a2e22, rot); B.add("solid","prism",[fx+22,10,fz+4],[16.4,5,12.6],0x5a5a5a,[0,rot,0]);
     B.add("metal","cyl",[fx-18, 0, fz+10],[14,26,14],0x8f959b,[PI/2,rot,0]); }
   yard(520,-340,0.2); yard(-180,-520,-0.4); yard(900,380,0.7); yard(150,620,0.1);
-  /* build the merged meshes */
-  B.build("solid", M.solid, true); B.build("metal", M.metal, true); STRIP.lampMesh=B.build("lamp", M.lamp, false); B.build("sign", M.sign, true);
-  STRIP.beamMesh=B.build("beam", M.beam, false); if(STRIP.beamMesh){ STRIP.beamMesh.receiveShadow=false; STRIP.beamMesh.visible=false; STRIP.beamMesh.renderOrder=4; }
-
-  /* shelterbelts: instanced low-poly trees around the yards and along the mile roads */
+  (function(){ var n=0, q, o=0; fenceG.forEach(function(g){ n+=g.attributes.position.count; });
+    var pos=new Float32Array(n*3), uv=new Float32Array(n*2); fenceG.forEach(function(g){ pos.set(g.attributes.position.array, o*3); uv.set(g.attributes.uv.array, o*2); o+=g.attributes.position.count; g.dispose(); });
+    var fg=new THREE.BufferGeometry(); fg.setAttribute("position",new THREE.BufferAttribute(pos,3)); fg.setAttribute("uv",new THREE.BufferAttribute(uv,2)); fg.computeBoundingSphere();
+    M.fence.map.repeat.set(1,1); S2.add(new THREE.Mesh(fg, M.fence)); })();
+  /* shelterbelts: low-poly trees around the yards and along the mile roads (merged into the static batch: no draw of their own) */
   (function(){ var pts=[], s;
     var belts=[[520,-340,0.2],[-180,-520,-0.4],[900,380,0.7],[150,620,0.1],[1180,-210,0.3],[-760,-420,-0.5]];
     belts.forEach(function(b,bi){ for(var q=0;q<26;q++){ var a=b[2], along=-30+q*4.2, off=-28+rng(bi*50+q)*3; if(q>=14){ along=-30+(q-14)*5; off=40+rng(q*3+bi)*3; }
       pts.push([b[0]+along*Math.cos(a)-off*Math.sin(a), b[1]+along*Math.sin(a)+off*Math.cos(a), 4+rng(q+bi*7)*3]); } });
     for(s=0;s<60;s++){ pts.push([-600+s*32+rng(s)*10, -1207+rng(s+3)*6, 3+rng(s+5)*2.5]); pts.push([-400+s*30, 1210+rng(s+8)*6, 3+rng(s+2)*2.5]); }
-    var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1, color:0xffffff}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
-    pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); });
-    im.castShadow=false; im.receiveShadow=false; S2.add(im); })();
+    var cc=new THREE.Color();
+    pts.forEach(function(p,q){ var h=p[2]*1.6; cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06); B.add("solid","ico",[p[0],h*0.8,p[1]],[p[2],h,p[2]],cc.getHex()); }); })();
+  /* build the merged meshes */
+  B.build("solid", M.solid, true); B.build("metal", M.metal, true); STRIP.lampMesh=B.build("lamp", M.lamp, false); B.build("sign", M.sign, true);
+  STRIP.beamMesh=B.build("beam", M.beam, false); if(STRIP.beamMesh){ STRIP.beamMesh.receiveShadow=false; STRIP.beamMesh.visible=false; STRIP.beamMesh.renderOrder=4; }
 
-  /* crowd: instanced bodies + heads on the grandstand rows (and a thin line on the near bleacher) */
-  (function(){ var ppl=[], s, r2;
-    for(r2=0;r2<rows;r2++){ for(x=GX0+0.6; x<GX1-0.5; x+=0.62){ if(rng(x*3.1+r2*17.7)<0.38) continue; ppl.push([x+(rng(x+r2)-0.5)*0.2, 0.45+r2*0.46+0.12, -9.6-r2*0.9-0.1]); } }
-    for(r2=0;r2<5;r2++){ for(x=272; x<328; x+=0.7){ if(rng(x*1.7+r2*5.3)<0.55) continue; ppl.push([x, 0.25+r2*0.56+0.12, 10.5+r2*0.75]); } }
-    var n=ppl.length, bodyM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.46,0.62,0.34), new THREE.MeshStandardMaterial({roughness:0.95}), n),
-        headM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.22,0.25,0.22), new THREE.MeshStandardMaterial({roughness:0.9}), n);
-    var shirts=[0x9c3a30,0x34598f,0xcfccc4,0x1f2023,0x2a2c30,0xb7652a,0x44684a,0xc8a640,0x5d5f66,0x7a7f86,0x3a3d44,0x8f4a5e], skin=[0xe0b494,0xc68a64,0x8d5a3b,0xf0c9a8,0x5a3a26], hats=[0x1d4787,0xb7261d,0x222222,0xe9e6dc,0x2c6b3a];
-    var mm=new THREE.Matrix4(), cc=new THREE.Color(); var base=[];
-    for(s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.31,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.75,p[2]); headM.setMatrixAt(s,mm);
-      cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc);
-      cc.set(rng(s*2.9)<0.35?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
-    bodyM.castShadow=false; headM.castShadow=false; bodyM.receiveShadow=true; S2.add(bodyM); S2.add(headM);
-    STRIP.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false};
-    stripCrowdLit(bodyM.material); stripCrowdLit(headM.material); STRIP.crowd.col=bodyM.instanceColor.array.slice(); STRIP.crowd.cw=new Float32Array(n); STRIP.crowd.wy=new Float32Array(n); })();
+  /* crowd: billboard people on the grandstand rows and the near bleacher (+ the pit and staging crews collected above), one draw;
+     built at Ultra density, ranked, and thinned per tier by instance count (stripVenueTier) */
+  (function(){ var s2, r2;
+    for(r2=0;r2<rows;r2++){ for(x=GX0+0.6; x<GX1-0.5; x+=0.62){ if(rng(x*3.1+r2*17.7)<0.24) continue; var xx=x+(rng(x+r2)-0.5)*0.2;
+      ppl.push({p:[xx, 0.45+r2*0.46+0.12, -9.6-r2*0.9-0.1], r:rng(x*7.3+r2*3.9+0.5), xx:xx, card:(r2+(xx>60?1:0))%3, stand:true}); } }
+    for(r2=0;r2<5;r2++){ for(x=272; x<328; x+=0.7){ if(rng(x*1.7+r2*5.3)<0.4) continue; var wx=(x-272)*2.6-8;
+      ppl.push({p:[x, 0.25+r2*0.56+0.12, 10.5+r2*0.75], r:rng(x*5.1+r2*2.3+0.9), xx:wx, card:(r2+(wx>60?1:0))%3, stand:true}); } }
+    STRIP.crowd=stripBuildCrowd(S2, ppl, rng); })();
 
   /* Christmas tree bulbs — names kept: {p,o}{pre,stage,a1,a2,a3,g,r} */
   STRIP.tree={bulbs:{}, halos:{}};
@@ -16886,8 +16990,246 @@ function buildStripScene(){
   STRIP.fxAdd=new StripFx(lite?140:240, "add", haloTex, {str:true}); S2.add(STRIP.fxAdd.mesh);
   STRIP.marks=stripMarksInit(lite?160:260); S2.add(STRIP.marks.mesh);
 
+  stripVenueTier();
   STRIP.cam=new THREE.PerspectiveCamera(46, 1, 0.3, 4200); STRIP.built=true;
   STRIP.night=null; stripSetNight(false);
+}
+/* ---------------------------------------------------------------------------
+   STRIP VENUE (v1.40) — the dressing that makes the strip a real dragstrip: a
+   billboard crowd (one draw: stands, pit crews and staging crews), the pits as
+   two instanced "pit space" kits (a hauler space and a trailer space, tinted per
+   instance), the painted markings atlas the track and ground shaders sample, and
+   the per-tier thinning. Everything is ranked once at build; a tier only changes
+   instance counts (a prefix of the ranked lists), so switching tiers is free.
+   ------------------------------------------------------------------------- */
+var STRIP_VENUE_KEEP={ lite:0.55, full:0.8, ultra:1.01 };   /* crowd: share of the (Ultra-density) people kept per tier */
+var STRIP_PITS_KEEP={ lite:0.38, full:0.68, ultra:1.01 };    /* pit spaces kept per tier (near the start line first) */
+function stripKeep(tbl){ return tbl[GFX]!=null?tbl[GFX]:tbl.full; }
+
+/* --- crowd atlas: 6 poses in 84×256 tiles (1 px = 1 cm, tile bottom = seat ref −0.5 m).
+   Channels are masks: R shirt (or the wave card), G skin, B pants (or hair/hat above the pose's head line); R+G+B = shading --- */
+function stripCrowdTex(){
+  var c=newCanvas(512,256), x=c.getContext("2d"), tx0=0;
+  function col(ch,s){ s=Math.round(clamp(s,0,1)*255); return ch===0?"rgb("+s+",0,0)":ch===1?"rgb(0,"+s+",0)":"rgb(0,0,"+s+")"; }
+  function X(m){ return tx0+42+m*100; } function Y(m){ return 256-(m+0.5)*100; }
+  function rr(ch,s,x0,y0,x1,y1,rad){ var L=X(x0),R=X(x1),T=Y(y1),B=Y(y0),r=Math.min(rad*100,(R-L)/2,(B-T)/2);
+    var g=x.createLinearGradient(L,0,R,0); g.addColorStop(0,col(ch,s*0.6)); g.addColorStop(0.42,col(ch,s)); g.addColorStop(1,col(ch,s*0.68)); x.fillStyle=g;
+    x.beginPath(); x.moveTo(L+r,T); x.lineTo(R-r,T); x.quadraticCurveTo(R,T,R,T+r); x.lineTo(R,B-r); x.quadraticCurveTo(R,B,R-r,B); x.lineTo(L+r,B); x.quadraticCurveTo(L,B,L,B-r); x.lineTo(L,T+r); x.quadraticCurveTo(L,T,L+r,T); x.fill(); }
+  function limb(ch,s,ax,ay,bx,by,w){ x.strokeStyle=col(ch,s); x.lineWidth=w*100; x.lineCap="round"; x.beginPath(); x.moveTo(X(ax),Y(ay)); x.lineTo(X(bx),Y(by)); x.stroke(); }
+  function head(cy,lean){ var cx=X(lean||0), cyp=Y(cy); x.fillStyle=col(1,0.86); x.beginPath(); x.ellipse(cx,cyp,9.5,11.5,0,0,TAU); x.fill();
+    x.fillStyle=col(1,0.62); x.beginPath(); x.ellipse(cx+3,cyp+1,5,8,0,0,TAU); x.fill();
+    x.fillStyle=col(2,0.8); x.beginPath(); x.ellipse(cx,cyp-4,10.4,8.5,0,PI,TAU); x.fill(); x.fillRect(cx-10.4,cyp-4.5,20.8,1.5); }
+  function arms(sh, ex, ey, hx, hy, side){ limb(0,0.72,side*0.2,sh,side*ex,ey,0.095); limb(1,0.78,side*ex,ey,side*hx,hy,0.075); }
+  function seatedBase(){ rr(2,0.3,-0.2,-0.5,-0.03,-0.42,0.03); rr(2,0.3,0.03,-0.5,0.2,-0.42,0.03);
+    rr(2,0.66,-0.17,-0.45,-0.04,0.02,0.05); rr(2,0.66,0.04,-0.45,0.17,0.02,0.05); rr(2,0.85,-0.2,-0.05,0.2,0.1,0.06);
+    rr(0,0.92,-0.2,0.04,0.2,0.6,0.08); rr(1,0.7,-0.045,0.55,0.045,0.66,0.02); }
+  function standBase(){ rr(2,0.3,-0.19,-0.13,-0.02,-0.05,0.03); rr(2,0.3,0.02,-0.13,0.19,-0.05,0.03);
+    rr(2,0.72,-0.17,-0.08,-0.025,0.78,0.05); rr(2,0.72,0.025,-0.08,0.17,0.78,0.05); rr(2,0.8,-0.18,0.6,0.18,0.8,0.05);
+    rr(0,0.92,-0.21,0.72,0.21,1.33,0.08); rr(1,0.7,-0.045,1.28,0.045,1.39,0.02); }
+  /* 0 seated, arms on knees */
+  tx0=0; seatedBase(); arms(0.52,0.25,0.24,0.15,0.06,-1); arms(0.52,0.25,0.24,0.15,0.06,1); head(0.75);
+  /* 1 seated, phone/drink up */
+  tx0=84; seatedBase(); arms(0.52,0.25,0.24,0.14,0.06,-1); arms(0.52,0.27,0.3,0.2,0.6,1); rr(2,0.25,0.15,0.57,0.24,0.7,0.01); head(0.75,-0.01);
+  /* 2 standing */
+  tx0=168; standBase(); arms(1.27,0.26,0.98,0.27,0.72,-1); arms(1.27,0.26,0.98,0.25,0.72,1); head(1.48);
+  /* 3 standing, arms up */
+  tx0=252; standBase(); arms(1.27,0.32,1.55,0.36,1.86,-1); arms(1.27,0.32,1.55,0.36,1.86,1); head(1.48);
+  /* 4 standing, card up (the R block takes the card colour) */
+  tx0=336; standBase(); arms(1.27,0.24,1.58,0.24,1.8,-1); arms(1.27,0.24,1.58,0.24,1.8,1); head(1.48); rr(0,1.0,-0.31,1.68,0.31,2.03,0.012);
+  /* 5 crew, hands on hips */
+  tx0=420; standBase(); arms(1.27,0.35,1.06,0.2,0.86,-1); arms(1.27,0.35,1.06,0.2,0.86,1); head(1.48);
+  var t=new THREE.CanvasTexture(c); t.anisotropy=Math.min(4,MAXANISO); return t;
+}
+/* billboard crowd material: cylindrical billboards in the vertex shader, pose + bounce + sway + card wave all on the GPU */
+function stripCrowdMat(){
+  var m=new THREE.MeshStandardMaterial({roughness:0.92, metalness:0}), tex=stripCrowdTex();
+  var U={ uCrowd:STRIP_VU.uCrowd, uCrowdTex:{value:tex}, uCrowdLit:STRIP_U.uCrowdLit, uCard0:{value:STRIP_VU.cards[0]}, uCard1:{value:STRIP_VU.cards[1]}, uCard2:{value:STRIP_VU.cards[2]} };
+  m.onBeforeCompile=function(sh){ for(var k in U) sh.uniforms[k]=U[k];
+    sh.vertexShader=sh.vertexShader.replace("#include <common>", ["#include <common>",
+      "attribute vec4 aCw; attribute vec3 aShirt; attribute vec3 aSkin; attribute vec3 aHat; uniform vec4 uCrowd; uniform vec3 uCard0; uniform vec3 uCard1; uniform vec3 uCard2;",
+      "varying vec3 vShirt; varying vec3 vSkin; varying vec3 vHat; varying vec3 vPants; varying vec2 vCuv; varying float vHl;"].join("\n"))
+    .replace("#include <beginnormal_vertex>", [
+      "vec3 cC=(modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xyz; vec3 toC=cameraPosition-cC; vec3 rt=normalize(vec3(toC.z,0.0,-toC.x)+vec3(1e-4,0.0,0.0));",
+      "float tt=uCrowd.x, amp=uCrowd.y, ph=aCw.x, ex=aCw.y, pit=step(aCw.w,-0.5), hs=fract(ph*7.31);",
+      "float on=(1.0-pit)*step(0.02,amp)*step(amp>1.0?0.04:0.3,ex);",
+      "float by=on*abs(sin(tt*(amp>1.0?10.0:8.0)+ph))*0.18*min(amp,2.0)*ex;",
+      "float wdx=mod(aCw.z-uCrowd.z+37.5,75.0)-37.5; float wb=(1.0-pit)*uCrowd.w*exp(-wdx*wdx/14.0); by+=0.36*wb;",
+      "float pose=pit>0.5?(hs<0.45?2.0:5.0):(wb>0.3?4.0:(on>0.5?((amp>1.0&&ex>0.55)?3.0:2.0):(hs<0.72?0.0:1.0)));",
+      "float yy=position.y+0.5, sway=sin(tt*(1.2+0.7*hs)+ph*3.0)*(0.02+0.05*on)*(1.0-pit*0.5);",
+      "vec3 crowdPos=rt*(position.x*0.84+sway*yy*yy*1.6)+vec3(0.0,-0.5+yy*2.56+by,0.0);",
+      "vCuv=vec2((pose+position.x+0.5)*84.0/512.0, uv.y); vHl=pose<1.5?0.469:0.754;",
+      "vec3 card=aCw.w<0.5?uCard0:(aCw.w<1.5?uCard1:uCard2); vShirt=mix(aShirt,card,clamp(wb*1.4,0.0,1.0)); vSkin=aSkin; vHat=aHat;",
+      "float hp=fract(ph*3.17); vPants=hp<0.55?vec3(0.03,0.045,0.09):(hp<0.8?vec3(0.02,0.02,0.022):vec3(0.17,0.14,0.085));",
+      "vec3 objectNormal=pit>0.5?normalize(vec3(toC.x,0.0,toC.z)/max(length(toC.xz),1e-3)+vec3(0.0,0.5,0.0)):normalize(vec3(0.0,0.45,cC.z<0.0?1.0:-1.0));",
+      "#ifdef USE_TANGENT\nvec3 objectTangent=vec3(1.0,0.0,0.0);\n#endif"].join("\n"))
+    .replace("#include <begin_vertex>", "vec3 transformed=crowdPos;");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>", ["#include <common>",
+      "uniform sampler2D uCrowdTex; uniform float uCrowdLit; varying vec3 vShirt; varying vec3 vSkin; varying vec3 vHat; varying vec3 vPants; varying vec2 vCuv; varying float vHl;"].join("\n"))
+    .replace("#include <map_fragment>", ["vec4 ctx=texture2D(uCrowdTex,vCuv); if(ctx.a<0.42) discard;",
+      "float csh=ctx.r+ctx.g+ctx.b; vec3 cwt=ctx.rgb/max(csh,1e-3);",
+      "diffuseColor.rgb=(cwt.r*vShirt+cwt.g*vSkin+cwt.b*(vCuv.y>vHl?vHat:vPants))*min(csh,1.0);"].join("\n"))
+    .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uCrowdLit;");
+  };
+  m.customProgramCacheKey=function(){ return "stripCrowdBB"; };
+  return m;
+}
+var STRIP_VU={ uCrowd:{value:new THREE.Vector4(0,0,0,0)}, cards:[0x1d4787,0xd9a52b,0xf3efe4].map(function(h){ return new THREE.Color(h).convertSRGBToLinear(); }) };
+var STRIP_SHIRTS=[0x9c3a30,0x34598f,0xcfccc4,0x1f2023,0x2a2c30,0xb7652a,0x44684a,0xc8a640,0x5d5f66,0x7a7f86,0x3a3d44,0x8f4a5e,0xd8d4ca,0x1d4787,0xb7261d],
+    STRIP_SKIN=[0xe0b494,0xc68a64,0x8d5a3b,0xf0c9a8,0x5a3a26], STRIP_HATS=[0x1d4787,0xb7261d,0x222222,0xe9e6dc,0x2c6b3a,0xe5701f], STRIP_HAIR=[0x1a1410,0x3a2616,0x6b4a2a,0x8c8a86,0xb08a50,0x120f0d];
+/* people: [{p:[x,refY,z], r:rank, xx:wave x, card:0..2 or -1 (pits/staging: standing, no bounce/wave), stand:bool}] */
+function stripBuildCrowd(S2, ppl, rng){
+  ppl.sort(function(a,b){ return a.r-b.r; });
+  var n=ppl.length, g=new THREE.PlaneGeometry(1,1), i, cc=new THREE.Color();
+  var aCw=new Float32Array(n*4), aSh=new Float32Array(n*3), aSk=new Float32Array(n*3), aHt=new Float32Array(n*3);
+  function put(arr,i,hex){ cc.set(hex).convertSRGBToLinear(); arr[i*3]=cc.r; arr[i*3+1]=cc.g; arr[i*3+2]=cc.b; }
+  var mesh=new THREE.InstancedMesh(g, stripCrowdMat(), n), mm=new THREE.Matrix4(), base=[], mn=[1e9,1e9,1e9], mx=[-1e9,-1e9,-1e9];
+  for(i=0;i<n;i++){ var q=ppl[i], p=q.p; mm.makeTranslation(p[0],p[1],p[2]); mesh.setMatrixAt(i,mm);
+    aCw[i*4]=rng(i*9.1+0.3)*TAU; aCw[i*4+1]=q.card<0?0:rng(i*5.3+0.7); aCw[i*4+2]=q.xx||0; aCw[i*4+3]=q.card;
+    put(aSh,i,STRIP_SHIRTS[Math.floor(rng(i*1.3+0.1)*STRIP_SHIRTS.length)]); put(aSk,i,STRIP_SKIN[Math.floor(rng(i*3.7+0.2)*STRIP_SKIN.length)]);
+    put(aHt,i,rng(i*2.9+0.4)<(q.card<0?0.55:0.35)?STRIP_HATS[Math.floor(rng(i*4.1)*STRIP_HATS.length)]:STRIP_HAIR[Math.floor(rng(i*6.7)*STRIP_HAIR.length)]);
+    if(q.stand) base.push(p);
+    for(var k=0;k<3;k++){ mn[k]=Math.min(mn[k],p[k]); mx[k]=Math.max(mx[k],p[k]); } }
+  g.setAttribute("aCw", new THREE.InstancedBufferAttribute(aCw,4)); g.setAttribute("aShirt", new THREE.InstancedBufferAttribute(aSh,3));
+  g.setAttribute("aSkin", new THREE.InstancedBufferAttribute(aSk,3)); g.setAttribute("aHat", new THREE.InstancedBufferAttribute(aHt,3));
+  var ctr=new THREE.Vector3((mn[0]+mx[0])/2,(mn[1]+mx[1])/2+1,(mn[2]+mx[2])/2);
+  g.boundingSphere=new THREE.Sphere(ctr, ctr.distanceTo(new THREE.Vector3(mx[0],mx[1]+2.2,mx[2]))+1);
+  mesh.castShadow=false; mesh.receiveShadow=true; S2.add(mesh);
+  var rk=ppl.map(function(q){ return q.r; }), sr=[]; for(i=0;i<n;i++) if(ppl[i].stand) sr.push(ppl[i].r);
+  return { mesh:mesh, body:mesh, base:base, n:base.length, ranks:rk, standRanks:sr, live:false, wave:false, u:STRIP_VU.uCrowd, tier:null };
+}
+
+/* --- instanced kits: unit primitives (StripBatch geometry names) merged into one geometry with a per-vertex paint slot;
+   colour "1"/"2" = tinted per instance (iT1/iT2), anything else is a fixed vertex colour --- */
+function stripKitGeo(items){
+  var G=sbGeo(), n=0, i, j; items.forEach(function(it){ n+=G[it[0]].attributes.position.count; });
+  var pos=new Float32Array(n*3), nor=new Float32Array(n*3), col=new Float32Array(n*3), pnt=new Float32Array(n), o=0, m=new THREE.Matrix4(), nm=new THREE.Matrix3(), v=new THREE.Vector3(), c=new THREE.Color();
+  for(i=0;i<items.length;i++){ var it=items[i], g=G[it[0]], P=g.attributes.position, N=g.attributes.normal, r=it[4];
+    _sbE.set(r?r[0]:0, r?r[1]:0, r?r[2]:0); _sbQ.setFromEuler(_sbE); m.compose(_sbP.set(it[1][0],it[1][1],it[1][2]), _sbQ, _sbS.set(it[2][0],it[2][1],it[2][2])); nm.getNormalMatrix(m);
+    var tint=(it[3]==="1")?1:(it[3]==="2")?2:0; if(tint) c.setRGB(1,1,1); else c.set(it[3]).convertSRGBToLinear();
+    for(j=0;j<P.count;j++,o++){ v.fromBufferAttribute(P,j).applyMatrix4(m); pos[o*3]=v.x; pos[o*3+1]=v.y; pos[o*3+2]=v.z;
+      v.fromBufferAttribute(N,j).applyMatrix3(nm).normalize(); nor[o*3]=v.x; nor[o*3+1]=v.y; nor[o*3+2]=v.z; col[o*3]=c.r; col[o*3+1]=c.g; col[o*3+2]=c.b; pnt[o]=tint; } }
+  var geo=new THREE.BufferGeometry(); geo.setAttribute("position",new THREE.BufferAttribute(pos,3)); geo.setAttribute("normal",new THREE.BufferAttribute(nor,3));
+  geo.setAttribute("color",new THREE.BufferAttribute(col,3)); geo.setAttribute("aPaint",new THREE.BufferAttribute(pnt,1)); return geo;
+}
+function stripKitMat(){
+  var m=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.62, metalness:0.08});
+  m.onBeforeCompile=function(sh){ sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nattribute float aPaint; attribute vec3 iT1; attribute vec3 iT2;")
+    .replace("#include <color_vertex>", "#include <color_vertex>\nvColor.rgb*=aPaint>1.5?iT2:(aPaint>0.5?iT1:vec3(1.0));"); };
+  m.customProgramCacheKey=function(){ return "stripKit"; };
+  return m;
+}
+/* inst: [{x,z,ry,c1,c2,r}] sorted by rank r here; returns {mesh, ranks} */
+function stripKitMesh(S2, items, inst, mat){
+  inst.sort(function(a,b){ return a.r-b.r; });
+  var geo=stripKitGeo(items), n=inst.length, t1=new Float32Array(n*3), t2=new Float32Array(n*3), mesh=new THREE.InstancedMesh(geo, mat, n), mm=new THREE.Matrix4(), c=new THREE.Color(), i;
+  geo.computeBoundingSphere(); var kr=geo.boundingSphere.radius+geo.boundingSphere.center.length(), mn=[1e9,1e9], mx=[-1e9,-1e9];
+  for(i=0;i<n;i++){ var q=inst[i]; _sbQ.setFromAxisAngle(_sbS.set(0,1,0), q.ry); mm.compose(_sbP.set(q.x,0,q.z), _sbQ, _sbS.set(1,1,1)); mesh.setMatrixAt(i,mm);
+    c.set(q.c1).convertSRGBToLinear(); t1[i*3]=c.r; t1[i*3+1]=c.g; t1[i*3+2]=c.b; c.set(q.c2).convertSRGBToLinear(); t2[i*3]=c.r; t2[i*3+1]=c.g; t2[i*3+2]=c.b;
+    mn[0]=Math.min(mn[0],q.x); mn[1]=Math.min(mn[1],q.z); mx[0]=Math.max(mx[0],q.x); mx[1]=Math.max(mx[1],q.z); }
+  geo.setAttribute("iT1", new THREE.InstancedBufferAttribute(t1,3)); geo.setAttribute("iT2", new THREE.InstancedBufferAttribute(t2,3));
+  var ctr=new THREE.Vector3((mn[0]+mx[0])/2, 2, (mn[1]+mx[1])/2); geo.boundingSphere=new THREE.Sphere(ctr, Math.hypot(mx[0]-mn[0], mx[1]-mn[1])/2+kr);
+  mesh.receiveShadow=true; mesh.castShadow=false; S2.add(mesh);   /* the pits sit outside the sun's 60 m shadow box; at night each spot would redraw them */
+  return { mesh:mesh, ranks:inst.map(function(q){ return q.r; }) };
+}
+/* the two pit spaces (local: length along x, the work side toward +z) */
+function stripKitHauler(){
+  var K=[], DK=0x1c1d1f, CH=0xb9bdc1, GL=0x1b2228, ST=0x9aa0a6;
+  function b(x,y,z,w,h,d,c,r){ K.push(["box",[x,y,z],[w,h,d],c,r||null]); }
+  function wh(x,z,dia,w){ K.push(["cyl6",[x,dia/2,z],[dia,w,dia],DK,[PI/2,0,0]]); }
+  b(0,0.95,0,14,0.3,2.2,DK); b(0,2.55,0,14.6,2.95,2.55,"1"); b(0,1.42,0,14.62,0.2,2.57,"2"); b(0,3.95,0,14.62,0.12,2.57,"2");
+  wh(-5.4,0,1.0,2.45); wh(-4.3,0,1.0,2.45);
+  b(7.55,2.45,0,1.8,2.7,2.45,"1"); b(9.25,2.15,0,1.7,2.1,2.45,"1"); b(10.12,2.55,0,0.06,0.8,2.1,GL); b(10.85,1.5,0,1.5,1.05,2.3,"1"); b(11.65,0.85,0,0.25,0.45,2.5,CH);
+  b(9.2,0.85,0,5.6,0.35,1.1,DK); wh(10.6,0,1.0,2.4); wh(8.3,0,1.0,2.4);
+  K.push(["cyl6",[8.45,3.7,1.3],[0.16,2.4,0.16],CH,null]); K.push(["cyl6",[8.45,3.7,-1.3],[0.16,2.4,0.16],CH,null]);
+  b(0,3.7,2.95,12.5,0.07,3.4,"2",[0.1,0,0]); K.push(["cyl6",[-5.9,1.75,4.5],[0.08,3.5,0.08],ST,null]); K.push(["cyl6",[5.9,1.75,4.5],[0.08,3.5,0.08],ST,null]);
+  b(0,0.012,3.4,12,0.025,4.4,0x2e3033); b(-4.4,0.55,1.75,1.6,1.1,0.6,0xa8241e); b(-2.6,0.45,1.7,1.0,0.9,0.55,0x2a2c30); K.push(["cyl6",[4.6,0.55,1.85],[0.72,1.1,0.72],0x161617,null]);
+  /* the race car on stands under the awning */
+  b(0.5,0.68,3.95,4.5,0.5,1.75,"1"); b(0.2,1.1,3.95,1.5,0.4,1.3,GL); b(-1.75,1.3,3.95,0.4,0.06,1.6,"2"); b(-1.65,1.0,3.95,0.08,0.6,1.0,DK);
+  wh(-0.9,3.0,0.8,0.36); wh(-0.9,4.9,0.8,0.36); wh(2.3,3.12,0.6,0.22); wh(2.3,4.78,0.6,0.22);
+  return K;
+}
+function stripKitTrailer(){
+  var K=[], DK=0x1c1d1f, CH=0xb9bdc1, GL=0x1b2228, ST=0x9aa0a6, WH=0xe6e4dc;
+  function b(x,y,z,w,h,d,c,r){ K.push(["box",[x,y,z],[w,h,d],c,r||null]); }
+  function wh(x,z,dia,w){ K.push(["cyl6",[x,dia/2,z],[dia,w,dia],DK,[PI/2,0,0]]); }
+  /* enclosed car trailer + pickup on the hitch */
+  b(-2,1.75,0,7.3,2.3,2.45,"1"); b(-2,0.95,0,7.32,0.14,2.47,"2"); b(-2,0.56,0,7.0,0.2,2.0,DK); wh(-1.6,0,0.7,2.5); wh(-2.5,0,0.7,2.5); b(2.3,0.55,0,1.6,0.12,0.15,DK);
+  b(5.2,0.78,0,5.4,0.55,1.95,"2"); b(3.95,1.25,0,2.3,0.42,1.95,"2"); b(5.9,1.45,0,1.6,0.82,1.85,"2"); b(6.72,1.5,0,0.05,0.6,1.7,GL); b(7.95,0.66,0,0.12,0.3,1.95,CH);
+  wh(3.6,0,0.8,1.95); wh(6.95,0,0.8,1.95);
+  /* pop-up canopy, the car under it, a cooler */
+  K.push(["cone",[-2,2.98,3.8],[4.24,0.56,4.24],"1",[0,PI/4,0]]); b(-2,2.6,3.8,3.0,0.22,3.0,"1");
+  for(var k=0;k<4;k++) K.push(["cyl6",[-2+((k&1)?1.45:-1.45),1.25,3.8+((k&2)?1.45:-1.45)],[0.05,2.5,0.05],ST,null]);
+  b(-2,0.012,3.8,3.2,0.02,3.2,0x2e3033);
+  b(-2,0.62,3.8,4.2,0.48,1.7,"2"); b(-2.2,1.03,3.8,1.4,0.38,1.25,GL); wh(-3.3,2.95,0.72,0.32); wh(-3.3,4.65,0.72,0.32); wh(-0.6,3.0,0.6,0.22); wh(-0.6,4.6,0.6,0.22);
+  b(0.4,0.3,2.4,0.65,0.5,0.42,0x2058a8);
+  /* golf cart */
+  b(3.6,0.5,4.4,1.9,0.42,1.1,WH); b(3.25,0.95,4.4,0.3,0.5,1.0,0x2a2c30); b(3.6,1.85,4.4,2.0,0.05,1.15,"1");
+  for(k=0;k<4;k++) K.push(["cyl6",[3.6+((k&1)?0.85:-0.85),1.32,4.4+((k&2)?0.5:-0.5)],[0.04,1.06,0.04],ST,null]);
+  wh(2.95,3.85,0.45,0.18); wh(2.95,4.95,0.45,0.18); wh(4.25,3.85,0.45,0.18); wh(4.25,4.95,0.45,0.18);
+  return K;
+}
+/* the pits: rows of pit spaces on the near side (x −150…330, z 19…64), crews standing about in each */
+function stripBuildPits(S2, B, ppl, rng){
+  var A=[], T=[], hcol=[0xe9e6dc,0x1b1d20,0x9e2a22,0x22488f,0xd0d3d6,0x2c6b3a,0xe5701f,0x5b2a86,0xc8a640,0x2a2c30],
+      acc=[0xd9a52b,0xe9e6dc,0xb7261d,0x1d4787,0x141414,0xe5701f], rows=[24,41,58], ri, slot=0;
+  for(ri=0;ri<rows.length;ri++){ var cx=-150+rng(ri*7.7)*6;
+    while(cx<322){ var big=rng(slot*3.3+ri)<0.42, len=big?24:19, sx=cx+len/2, gap=2+rng(slot*1.9)*5; cx+=len+gap; slot++;
+      if(rng(slot*4.7+1.1)<0.1) continue;   /* an empty space here and there */
+      var flip=rng(slot*2.2)<0.5, ry=(flip?PI:0)+(rng(slot*6.1)-0.5)*0.08, z=rows[ri]+(rng(slot*8.3)-0.5)*1.5;
+      var r=0.62*rng(slot*5.9+0.4)+0.38*clamp(Math.abs(sx-40)/320+ri*0.12,0,1);
+      var q={x:sx, z:z, ry:ry, c1:hcol[Math.floor(rng(slot*1.7)*hcol.length)], c2:acc[Math.floor(rng(slot*2.7)*acc.length)], r:r};
+      (big?A:T).push(q);
+      /* livery on the haulers every tier keeps (signs ride the static batch, so only where the hauler is always drawn) */
+      if(big && r<STRIP_PITS_KEEP.lite && slot%2===0){ var cs=Math.cos(ry), sn2=Math.sin(ry), lz=1.29;
+        B.add("sign","plane",[sx-lz*sn2, 2.45, z+lz*cs],[9,2.1,1],0xffffff,[0,ry,0],STRIP_UV.haul[slot%4<2?0:1]); }
+      /* crew: 2-4 people on the work side */
+      var nc=2+Math.floor(rng(slot*3.9)*3), cs2=Math.cos(ry), sn3=Math.sin(ry);
+      for(var k=0;k<nc;k++){ var lx=(rng(slot*11+k)-0.5)*(big?11:7)+(big?0:-1), lz2=1.6+rng(slot*13+k*1.7)*4.2;
+        ppl.push({p:[sx+lx*cs2+lz2*sn3, 0.12, z-lx*sn3+lz2*cs2], r:r+0.001*k, card:-1}); } } }
+  /* a few walking the return road / pit lane */
+  for(var w=0;w<26;w++){ var wr=rng(w*7.3+40); ppl.push({p:[-130+rng(w*3.1+9)*440, 0.12, 17.6+rng(w*5.7+3)*1.6], r:wr, card:-1}); }
+  var mat=stripKitMat();
+  var KA=stripKitMesh(S2, stripKitHauler(), A, mat), KT=stripKitMesh(S2, stripKitTrailer(), T, mat);
+  return [KA, KT];
+}
+/* staging lanes behind the tree (inside the walls, x −76…−31) and the holding apron behind the strip: cars waiting, crews with them */
+function stripBuildStaging(B, ppl, rng){
+  var cols=[0xb3261e,0x1f4fa8,0xe2b21b,0xe6e4de,0x16181b,0xd85f14,0x5b2a86,0x1e6a3b,0xa9aeb5,0x7a1f2a,0x2b7fae];
+  function car(x, z, col, k){ var GL=0x2b3742, DK=0x161617;
+    var lo=k===1?0.5:0.62, L=k===1?5.2:4.5;
+    B.box("solid", x, lo, z, L, 0.55, 1.85, col); B.box("solid", x-0.35, lo+0.44, z, 1.5, 0.34, 1.36, GL); B.box("solid", x-0.45, lo+0.63, z, 1.1, 0.05, 1.3, col); B.box("solid", x+0.6, lo+0.3, z, 1.3, 0.06, 1.7, col);
+    if(k===1){ B.box("solid", x-L/2+0.25, lo+0.75, z, 0.45, 0.06, 1.7, col); B.box("solid", x-L/2+0.3, lo+0.45, z, 0.06, 0.55, 1.1, DK); }
+    var rw=k===1?0.86:0.72, fw=k===1?0.56:0.66;
+    B.add("solid","cyl6",[x-L/2+0.95, rw/2, z+0.82],[rw,0.36,rw],DK,[PI/2,0,0]); B.add("solid","cyl6",[x-L/2+0.95, rw/2, z-0.82],[rw,0.36,rw],DK,[PI/2,0,0]);
+    B.add("solid","cyl6",[x+L/2-0.85, fw/2, z+0.8],[fw,0.24,fw],DK,[PI/2,0,0]); B.add("solid","cyl6",[x+L/2-0.85, fw/2, z-0.8],[fw,0.24,fw],DK,[PI/2,0,0]); }
+  var lanes=[-5.6,-1.87,1.87,5.6], q=[3,2,3,1], i, j, s=0;
+  for(i=0;i<4;i++) for(j=0;j<q[i];j++,s++){ var x=-39-j*8.5-rng(s*2.1)*1.5;
+    car(x, lanes[i]+(rng(s*3.3)-0.5)*0.3, cols[(s*3+i)%cols.length], rng(s*5.1)<0.45?1:0);
+    if(rng(s*7.7)<0.7) ppl.push({p:[x+(rng(s)-0.5)*3, 0.12, lanes[i]+(i<2?1.35:-1.35)], r:rng(s*9.9)*0.3, card:-1}); }
+  /* holding apron behind the strip (x −150…−82): two rows of cars nose to tail */
+  for(i=0;i<9;i++){ var hx=-92-i*6.8, hz=(i%2?-1:1)*(3.2+rng(i*1.3)*1.2)+(i>4?(i%2?-4.5:4.5):0);
+    car(hx, hz, cols[(i*5+2)%cols.length], i%3===0?1:0);
+    if(i%2===0) ppl.push({p:[hx+1.5, 0.12, hz+(hz>0?1.4:-1.4)], r:0.2+rng(i*4.4)*0.6, card:-1}); }
+}
+/* painted markings atlas (white on black, sampled as a mask): top row 8 cells 128×256 ("1"…"4", arrow), bottom row two 512×256 words */
+function stripDecalTex(){
+  var c=newCanvas(1024,512), x=c.getContext("2d"), F="'Barlow Condensed','Arial Narrow',Arial,sans-serif", i;
+  x.fillStyle="#000"; x.fillRect(0,0,1024,512); x.fillStyle="#fff"; x.textAlign="center"; x.textBaseline="middle";
+  var dg=["1","2","3","4"]; x.font="700 230px "+F;
+  for(i=0;i<4;i++){ x.save(); x.translate(i*128+64, 134); x.scale(0.62,1); x.fillText(dg[i],0,0); x.restore(); }
+  /* arrow pointing "far" (canvas up) */
+  x.beginPath(); x.moveTo(4*128+64, 18); x.lineTo(4*128+116, 104); x.lineTo(4*128+82, 104); x.lineTo(4*128+82, 238); x.lineTo(4*128+46, 238); x.lineTo(4*128+46, 104); x.lineTo(4*128+12, 104); x.closePath(); x.fill();
+  x.font="700 150px "+F; var w=["RETURN","SLOW"];
+  for(i=0;i<2;i++){ x.save(); x.translate(i*512+256, 384); x.scale(0.82,1.45); x.fillText(w[i],0,0); x.restore(); }
+  var t=new THREE.CanvasTexture(c); t.anisotropy=MAXANISO; return t;
+}
+/* tier: instance counts are prefixes of the ranked lists */
+function stripVenueTier(){
+  var C=STRIP.crowd, k;
+  if(C){ C.tier=GFX; k=stripKeep(STRIP_VENUE_KEEP); var n=0; while(n<C.ranks.length && C.ranks[n]<k) n++; C.mesh.count=n;
+    var ns=0; while(ns<C.standRanks.length && C.standRanks[ns]<k) ns++; C.n=Math.max(1,ns); }
+  (STRIP.kits||[]).forEach(function(K){ var kk=stripKeep(STRIP_PITS_KEEP), n=0; while(n<K.ranks.length && K.ranks[n]<kk) n++;
+    K.mesh.count=n; K.mesh.visible=n>0; });
 }
 /* ---------------------------------------------------------------------------
    DRAG CARS (v1.5) — procedural car models for the strip.
@@ -18929,16 +19271,10 @@ function stripTreeLights(o){
   set("oa1", race&&tr.a1); set("oa2", race&&tr.a2); set("oa3", race&&tr.a3); set("og", race&&tr.green&&!o.ofoul); set("or", race&&!!o.ofoul);
   if(o.otree){ var ot=o.otree; set("oa1", race&&ot.a1); set("oa2", race&&ot.a2); set("oa3", race&&ot.a3); set("og", race&&ot.green&&!o.ofoul); }   /* bracket: the slower dial's tree counts down first */
 }
-/* --- crowd gets up for the launch and the finish --- */
-var _crM=new THREE.Matrix4();
+/* --- crowd gets up for the launch and the finish (billboard crowd: the bounce, sway and poses run in its vertex shader) --- */
 function stripCrowd(dt){
-  var C=STRIP.crowd; if(!C) return; STRIP.cheer=Math.max(0,STRIP.cheer-dt*0.28);
-  if(STRIP.cheer<0.02 && !C.live && !C.wave) return;
-  var t=STRIP.t, amp=STRIP.cheer, i;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.04:0.3)?Math.abs(Math.sin(t*(amp>1?10:8)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
-    if(C.wave) y+=C.wy[i];
-    _crM.makeTranslation(p[0],p[1]+0.31+y,p[2]); C.body.setMatrixAt(i,_crM); _crM.makeTranslation(p[0],p[1]+0.75+y*1.15,p[2]); C.head.setMatrixAt(i,_crM); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=STRIP.cheer>=0.02||!!C.wave;
+  var C=STRIP.crowd; if(!C) return; if(C.tier!==GFX) stripVenueTier(); STRIP.cheer=Math.max(0,STRIP.cheer-dt*0.28);
+  var amp=STRIP.cheer; C.u.value.x=STRIP.t%600; C.u.value.y=amp<0.02?0:amp; C.live=amp>=0.02||!!C.wave;
   if(amp>1 && STRIP.fxAdd){ var fr=(amp>1.8?70:35)*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);   /* a PB: phones and flashes going off in the stands */
     while(nf-->0){ var q=C.base[(Math.random()*C.n)|0]; STRIP.fxAdd.emit(q[0], q[1]+1.0, q[2]+0.3, 0,0,0, 0.16, 0.8, 1.1, 1, 0.97, 0.9, 1, {drag:0, fin:0.01}); } }
 }
@@ -18965,22 +19301,16 @@ function stripKeySpots(P, O){
     L.position.set(c.position.x+6, 15, zs*9.6); L.target.position.set(c.position.x+0.4, 0.4, c.position.z); L.target.updateMatrixWorld();
     L.angle=0.27; L.penumbra=0.75; L.distance=50; L.intensity=0.95; }
 }
-/* the lit stands: each person glows in their own colour a little under the canopy lights */
+/* the lit stands: each person glows in their own colour a little under the canopy lights (the billboard crowd material does it itself) */
 function stripCrowdLit(m){
   m.onBeforeCompile=function(sh){ sh.uniforms.uCrowdLit=STRIP_U.uCrowdLit;
     sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform float uCrowdLit;").replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uCrowdLit;"); };
   m.customProgramCacheKey=function(){ return "stripCrowdLit"; };
 }
-/* the crowd colour wave (the final, and won the night): cards up in a band that runs along the stands */
-var STRIP_CARDS=[0x1d4787,0xd9a52b,0xf3efe4].map(function(h){ return new THREE.Color(h).convertSRGBToLinear(); }), _wvC=new THREE.Color();
+/* the crowd colour wave (the final, and won the night): cards up in a band that runs along the stands — two bands 75 m apart, on the GPU */
 function stripWave(t, off){
-  var C=STRIP.crowd; if(!C||!C.col) return; var n=C.n, i, col=C.body.instanceColor.array, base=C.col, wx=t*24, dirty=false;
-  for(i=0;i<n;i++){ var p=C.base[i], xx=p[2]<0?p[0]:(p[0]-272)*2.6-8, dx=((xx-wx)%75+112.5)%75-37.5, b=off?0:Math.exp(-dx*dx/14);   /* two bands, 75 m apart */
-    C.wy[i]=0.36*b;
-    if(b>0.004 || C.cw[i]>0){ var row=p[2]<0?Math.round((p[1]-0.57)/0.46):Math.round((p[1]-0.37)/0.56), cc=STRIP_CARDS[(row+(xx>60?1:0))%3];
-      col[i*3]=base[i*3]+(cc.r-base[i*3])*b; col[i*3+1]=base[i*3+1]+(cc.g-base[i*3+1])*b; col[i*3+2]=base[i*3+2]+(cc.b-base[i*3+2])*b; C.cw[i]=b>0.004?b:0; dirty=true; } }
-  if(dirty) C.body.instanceColor.needsUpdate=true;
-  if(off){ C.live=true; }   /* one more stripCrowd pass puts everyone back down */
+  var C=STRIP.crowd; if(!C||!C.u) return; C.u.value.z=t*24; C.u.value.w=off?0:1;
+  if(off){ C.live=true; }
 }
 function stripPayoffs(o, dt, P, O){
   var ph=o.phase||"run", C=STRIP.crowd, lite=GFX==="lite", i;
@@ -20200,7 +20530,7 @@ function pullDirect(o, dt, V){
   PULL.camPos.copy(_pw); if(rel) PULL.camTgt.copy(_pt); else PULL.camTgt.lerp(_pt, 1-Math.exp(-8*dt));
   var ease=1-smoothstep(0,0.15,PULL.cutT); if(ease>0) PULL.camPos.addScaledVector(_pD.subVectors(PULL.camPos,PULL.camTgt), 0.06*ease);
   PULL.shake*=Math.exp(-dt*3.5); var sh=PULL.shake; if(sh>0.002){ PULL.camPos.x+=(Math.random()-0.5)*sh*0.2; PULL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
-  var cam=PULL.cam; cam.position.copy(PULL.camPos); cam.lookAt(PULL.camTgt); cam.fov=PULL.fov; cam.updateProjectionMatrix();
+  var cam=PULL.cam; cam.position.copy(PULL.camPos); cam.lookAt(PULL.camTgt); cam.fov=PULL.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function pullComposer(){
   if(PULL.composer===false) return null;
@@ -20591,7 +20921,7 @@ function bogDirect(o, dt, V){
   if(BOG.snap){ BOG.fov=fov; BOG.snap=false; BOG.camTgt.copy(_bt); } else BOG.fov+=(fov-BOG.fov)*(1-Math.exp(-6*dt));
   BOG.camPos.copy(_bw); if(rel) BOG.camTgt.copy(_bt); else BOG.camTgt.lerp(_bt, 1-Math.exp(-8*dt));
   BOG.shake*=Math.exp(-dt*3.5); var sh=BOG.shake; if(sh>0.002){ BOG.camPos.x+=(Math.random()-0.5)*sh*0.25; BOG.camPos.y+=(Math.random()-0.5)*sh*0.25; }
-  var cam=BOG.cam; cam.position.copy(BOG.camPos); cam.lookAt(BOG.camTgt); cam.fov=BOG.fov; cam.updateProjectionMatrix();
+  var cam=BOG.cam; cam.position.copy(BOG.camPos); cam.lookAt(BOG.camTgt); cam.fov=BOG.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function bogComposer(){
   if(BOG.composer===false) return null;
@@ -21204,7 +21534,7 @@ function boatDirect(o, dt){
   BOAT.camPos.copy(_btw); if(rel) BOAT.camTgt.copy(_btt); else BOAT.camTgt.lerp(_btt, 1-Math.exp(-7*dt));
   BOAT.shake*=Math.exp(-dt*3.5); var sh=BOAT.shake; if(sh>0.002){ BOAT.camPos.x+=(Math.random()-0.5)*sh*0.3; BOAT.camPos.y+=(Math.random()-0.5)*sh*0.3; }
   BOAT.camPos.y=Math.max(0.6,BOAT.camPos.y);
-  var cam=BOAT.cam; cam.position.copy(BOAT.camPos); cam.lookAt(BOAT.camTgt); cam.fov=BOAT.fov; cam.updateProjectionMatrix();
+  var cam=BOAT.cam; cam.position.copy(BOAT.camPos); cam.lookAt(BOAT.camTgt); cam.fov=BOAT.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function boatComposer(){
   if(BOAT.composer===false) return null; var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=BOAT.composer;
@@ -21547,7 +21877,7 @@ function roadDirect(o, dt, W, car){
   var fx=Math.cos(h), fz=-Math.sin(h);
   /* the 24 Hours at time-lapse speed: a tower shot down the pit straight, the field streaming at it */
   if(mode==="tower"){ var i1=W.pit[1]-6; roadPt(T, i1, ROAD_W/2+30, 21, ROAD.camPos); roadPt(T, i1-Math.round(190/T.ds), -3, 0, ROAD.camTgt); roadCut("tower"); ROAD.shotT+=dt; ROAD.fov=46; ROAD.snap=false;
-    var tc=ROAD.cam; tc.position.copy(ROAD.camPos); tc.lookAt(ROAD.camTgt); tc.fov=46; tc.updateProjectionMatrix(); return; }
+    var tc=ROAD.cam; tc.position.copy(ROAD.camPos); tc.lookAt(ROAD.camTgt); tc.fov=46; tc.updateProjectionMatrix(); bandLens(tc); return; }
   /* nearest trackside camera ahead of (or just past) the car */
   var best=-1, bd=1e9; for(var q=0;q<W.stations.length;q++){ var st=W.stations[q], d=((st.i-fi)%N+N)%N; if(d>N/2) d-=N; var m=d*T.ds; if(m>-45 && m<150 && Math.abs(m-30)<bd){ bd=Math.abs(m-30); best=q; } }
   if(mode==="chase") s="chase"; else if(mode==="onboard") s="onboard"; else if(mode==="side") s=best>=0?"side":"chase";
@@ -21563,7 +21893,7 @@ function roadDirect(o, dt, W, car){
   else { var st2=W.stations[ROAD.st]; roadPt(T, st2.i, st2.d, st2.y, ROAD.camPos); _rC.set(cp.x, cp.y+0.7, cp.z); if(ROAD.snap) ROAD.camTgt.copy(_rC); else ROAD.camTgt.lerp(_rC, 1-Math.exp(-dt*10));
     var dist=ROAD.camPos.distanceTo(_rC); fov=clamp(2*Math.atan(5.5/Math.max(1,dist))*180/PI, 9, 55); }
   if(ROAD.snap){ ROAD.fov=fov; ROAD.snap=false; } else ROAD.fov+=(fov-ROAD.fov)*(1-Math.exp(-dt*6));
-  var cam=ROAD.cam; cam.position.copy(ROAD.camPos); cam.lookAt(ROAD.camTgt); cam.fov=ROAD.fov; cam.updateProjectionMatrix();
+  var cam=ROAD.cam; cam.position.copy(ROAD.camPos); cam.lookAt(ROAD.camTgt); cam.fov=ROAD.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function roadComposer(){
   if(ROAD.composer===false) return null;
@@ -22878,7 +23208,7 @@ function hillDirect(o, dt, W, car){
   else { var st2=W.stations[HILL.st]; hillPt(W, st2.i, st2.d, 0, HILL.camPos); HILL.camPos.y=st2.y; _hC.set(cp.x, cp.y+0.7, cp.z); if(HILL.snap) HILL.camTgt.copy(_hC); else HILL.camTgt.lerp(_hC, 1-Math.exp(-dt*10));
     var dist=HILL.camPos.distanceTo(_hC); fov=clamp(2*Math.atan(6/Math.max(1,dist))*180/PI, 10, 55); }
   if(HILL.snap){ HILL.fov=fov; HILL.snap=false; } else HILL.fov+=(fov-HILL.fov)*(1-Math.exp(-dt*6));
-  var cam=HILL.cam; cam.position.copy(HILL.camPos); cam.lookAt(HILL.camTgt); cam.fov=HILL.fov; cam.updateProjectionMatrix();
+  var cam=HILL.cam; cam.position.copy(HILL.camPos); cam.lookAt(HILL.camTgt); cam.fov=HILL.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function hillRender(){
   var W=HILL.W, cam=HILL.cam; if(!W||!cam) return;
@@ -22911,6 +23241,22 @@ function hillUpdate(o, dt){
   var alt=clamp((HILL.camPos.y+W.z0-2862)/1440,0,1.1); W.sky.material.uniforms.uAlt.value=alt; W.horLin.setRGB(lerp(0.6,0.52,alt),lerp(0.68,0.63,alt),lerp(0.76,0.78,alt)); W.fog.near=lerp(500,1100,alt); W.fog.far=lerp(6000,9000,alt);
   var c=_hA.copy(car.position); W.sun.position.copy(c).addScaledVector(W.sunDir, 200); W.sun.target.position.copy(c); W.sun.target.updateMatrixWorld();
 }
+
+/* ===========================================================================
+   RUN VIEW HUD BAND (every event but the strip, which keeps its own STRIP.band)
+   While an event's live HUD overlays the 3D view's bottom edge (html.onevent), the app reports the band it covers
+   (CSS px up from the view's bottom, and the view's height) through ENGINE_VIS.setBand. A scene camera calls
+   bandLens(cam) right after updateProjectionMatrix(): an off-axis lens shift lifts the picture by half the band, so the
+   vehicle sits in the middle of the clear part of the view instead of behind the HUD. VBAND.px is 0 outside a run.
+   The run view also makes the phone's view taller than it is wide: bandFov widens the vertical fov so the shot keeps the
+   width it has in a square view (the scenes were framed for the normal, wider view), like the strip's stripFitFov.
+   ==========================================================================*/
+var VBAND = { px:0, h:0, refAsp:1 };
+function bandFov(vf, aspect){ var r=VBAND.refAsp; if(!(VBAND.px>0)||!(aspect>0)||aspect>=r) return vf;
+  return Math.min(78, 2*Math.atan(Math.tan(deg(vf)/2)*r/aspect)*180/PI); }
+function bandLens(cam){ var b=VBAND.px||0, h=VBAND.h||0; if(!(b>0&&h>0)||!cam) return;
+  var f=bandFov(cam.fov, cam.aspect); if(f!==cam.fov){ cam.fov=f; cam.updateProjectionMatrix(); }
+  cam.projectionMatrix.elements[9]=-clamp(b/h,0,0.3); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); }
 const ENGINE_VIS = {
 
   init: function(canvas){
@@ -23035,6 +23381,10 @@ const ENGINE_VIS = {
     if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } }
     ENGINE_VIS.resize();
   },
+  /* run view: the band (CSS px up from the view's bottom edge) an event's live HUD covers, and the view's height; the pull, bog,
+     road / 24 h cameras lift the picture clear of it (bandLens), salt reads VBAND itself. No argument: report. */
+  setBand: function(px, h){ VBAND.px=Math.max(0,+px||0); if(h>0) VBAND.h=+h; return ENGINE_VIS.band(); },
+  band: function(){ return {px:VBAND.px, h:VBAND.h}; },
   setStrip: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(STRIP.on){ stripPostEnd(); STRIP.on=false; STRIP.honour=0; STRIP.rec=null; STRIP.recPre=null; stripReset(); } document.documentElement.classList.remove("onstrip"); return; }
@@ -24331,7 +24681,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.47.0.0";
+const VERSION="1.50.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -24401,11 +24751,11 @@ const career=()=>S.mode==="career";
 function dev(){return career()&&!!C().dev;}
 function has(id){return !career()||dev()||!!C().owned[id];}
 function locked(o){return career()&&!dev()&&o&&o.req&&!C().owned[o.req]&&!(C().unlocks&&o._id&&C().unlocks[o._id]);}
-function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]));}
-function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1;if(staffed("machinist"))b.costFac*=0.92;
+function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]&&crewOn(id)));}   // a person on a course is out of the shop (app/crew.js)
+function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1+0.15*crewL("tuner");if(staffed("machinist"))b.costFac*=0.92-0.01*crewL("machinist");b.costFac*=crewCostK();
   for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;}}return b;}
 function syncShop(){S.env.shop=shopBonus();deltaCache.clear();fixCache.clear();}
-function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?st.wage:0),0):0;}
+function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?crewWage(st):0),0):0;}
 function dynoCap(){if(!career())return{hp:5000,rpm:14000,n:"Test cell dyno"};return has("dyno4")?{hp:3500,rpm:12500,n:"Outlaw cell"}:has("dyno3")?{hp:2000,rpm:12500,n:"Pro cell"}:has("dyno2")?{hp:1000,rpm:10000,n:"Engine dyno"}:{hp:400,rpm:8000,n:"Chassis dyno"};}
 function repTier(){let t=REP_TIERS[0];for(const r of REP_TIERS)if(C().rep>=r[0])t=r;return t;}
 function repTierIdx(){let i=0;REP_TIERS.forEach((r,k)=>{if(C().rep>=r[0])i=k;});return i;}
@@ -25209,7 +25559,7 @@ function mapShiftTo(k,v){const mode=MAP_SLIDE[k];if(!mapHas()||!mode||v===S.cfg[
 function mapFitAxis(){if(!mapHas())return false;const ax=SIM.mapAxis(S.cfg),m=S.cfg.map;if(ax.join()===m.rpm.join())return false;S.cfg.map=SIM.mapRespace(m,ax);MV.a=MV.b=null;return true;}
 function mapGridNow(){const env=simEnv({testType:"pull"});const k=cfgHash(S.cfg)+JSON.stringify(env);if(MV.key!==k){MV.grid=SIM.mapGrid(S.cfg,env);MV.key=k;}return MV.grid;}
 function tuneLevel(){if(!career()||dev())return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Full calibration"};const t=staffed("tuner"),c=!!(C().rnd&&C().rnd.calib);
-  if(t&&c)return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Calibration engineer + suite"};if(t)return{margin:1.0,ignStep:1,lamStep:0.02,name:"Calibration engineer"};
+  if(t&&c)return{margin:0.5,ignStep:0.5,lamStep:0.01,name:"Calibration engineer + suite"};if(t)return crewT("wizard")?{margin:0.75,ignStep:0.5,lamStep:0.01,name:"Calibration engineer · tuning wizard"}:{margin:1.0,ignStep:1,lamStep:0.02,name:"Calibration engineer"};
   if(c)return{margin:1.5,ignStep:2,lamStep:0.04,name:"Calibration suite"};return null;}
 function tuneCost(){if(!career()||dev())return 0;return (staffed("dynotech")?0:300)+4*fuelBill();}   // about four pulls of dyno time
 /* cell colour: by value, or by the overlay's feedback (green safe, amber close, red past it) */
@@ -25372,6 +25722,7 @@ function addWear(n,hk){if(!career())return;const h=hk||hKey(cfgHash(S.cfg));C().
 function testSnap(){return{cfg:Object.assign({},S.cfg),h:cfgHash(S.cfg),car:S.career,mode:S.mode};}
 function testSame(s){return!!s&&S.mode===s.mode&&S.career===s.car;}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
+function rnFreshCost(res){const c=freshenCost(res),k=career()?crewRnFreshK():1;return k===1?c:Math.round(c*k/50)*50;}   // race-night pits: the crew's fast hands or nerves (app/crew.js)
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
@@ -25931,7 +26282,7 @@ function rnPitsHtml(N){const br=N.fmt==="bracket",p=N.last,i=rnOppIdx(N),rv=N.fi
   h+=`<p class="hint" style="margin:4px 0 8px">${N.stage>0?`Air ${da>=0.05?"is "+da.toFixed(1)+"% better than last round — cars will pick up a little":da<=-0.05?"has gone off "+(-da).toFixed(1)+"% — expect it to slow down":"about the same as last round"}. `:""}Body, tyre and weight are locked for the night; this is what a racer changes between rounds.</p>`;
   h+=rnTuneRows(N);
   if(br&&rd){const sug=rnSuggest(N);h+=`<div class="rnt dial"><span>Your dial-in<small>${p&&p.et!=null?"last ran "+p.et.toFixed(3)+" · ":""}under it is a breakout</small></span><button class="nud" data-rn="dial" data-d="-1" aria-label="quicker">−</button><b>${N.dial.toFixed(2)}</b><button class="nud" data-rn="dial" data-d="1" aria-label="slower">+</button></div>${Math.abs(sug-N.dial)>0.004?`<button class="chip" data-rn="dialsug" style="margin:0 0 8px">Use ${sug.toFixed(2)} (a hundredth under your last)</button>`:""}`;}
-  const wi=wearInfo(quick);if(wi){const c=freshenCost(quick);h+=`<div class="rnt"><span>Wear<small>${wi.passes} of ${wi.budget} passes${wi.w>=1?" · past budget, parts start letting go":""}</small></span><b style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</b>${wi.w>0?`<button class="btn sm" data-rn="freshen">Freshen · ${fmt$(c)}</button>`:""}</div>`;}
+  const wi=wearInfo(quick);if(wi){const c=rnFreshCost(quick);h+=`<div class="rnt"><span>Wear<small>${wi.passes} of ${wi.budget} passes${wi.w>=1?" · past budget, parts start letting go":""}</small></span><b style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</b>${wi.w>0?`<button class="btn sm" data-rn="freshen">Freshen · ${fmt$(c)}</button>`:""}</div>`;}
   else if(!career())h+=`<p class="hint" style="margin:6px 0 0">Sandbox: no wear on the parts.</p>`;
   return h+`</div>`;}
 function rnNextHtml(N){const br=N.fmt==="bracket",i=rnOppIdx(N),rv=N.field[i-1],qb=rnQualBest(N,i),rd=N.stage>=2,ri=N.stage-2;
@@ -26056,7 +26407,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rn]");i
   else if(a==="shock"){S.env.shocks=b.dataset.k;}
   else if(a==="dial"){N.dial=+(N.dial+0.01*+b.dataset.d).toFixed(2);rnSetN(N);}
   else if(a==="dialsug"){N.dial=rnSuggest(N);rnSetN(N);}
-  else if(a==="freshen"){const c=freshenCost(quick);if(!career())return;if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} between rounds — ${fmt$(c)}`);hud();toast("Rings, bearings and a hone — like new");}
+  else if(a==="freshen"){const c=rnFreshCost(quick);if(!career())return;if(C().cash<c){toast("Not enough cash for a freshen");return;}C().cash-=c;C().wear[hKey(cfgHash(S.cfg))]=0;logEvent(`Freshened ${engineName()} between rounds — ${fmt$(c)}`);hud();toast("Rings, bearings and a hone — like new");}
   save();const sc=$("panel").scrollTop;renderEnv();$("panel").scrollTop=sc;});
 $("envBox").addEventListener("click",e=>{if(e.target.closest('[data-ek="tyre"],[data-ek="body"]')&&S.env.tyrePsi!=null){delete S.env.tyrePsi;renderEnv();save();}});
 async function shareSlip(l){try{await document.fonts.ready;}catch(e){}const c=slipCanvas(l);
@@ -26751,6 +27102,7 @@ function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roa
   try{P=e24Prep(trk,snap.cfg);}catch(err){testing=false;renderTest();toast("The car would not pass scrutineering");return;}
   const seed=career()?rnHash([C().seed,C().week,"e24",trk].join(":")):rnHash(Date.now()+":"+Math.random());
   const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true}});
+  if(career()&&crewPitK()!==1)R.pitK=crewPitK();   // fast hands on the crew: quicker stops (app/crew.js)
   if(career()){C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${fmt$(E24_FEE)} entry`);hud();save();}
   ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0};
   renderEnv();$("app").classList.add("onstrip");ENGINE_VIS.setAutoRotate(false);$("e24Ctl").style.display="";$("e24Side").style.display="";e24HudInit();e24StratRender();e24FeedRender();e24Hud();
@@ -27630,6 +27982,41 @@ function boatSheet(res){const r=res.boat,N=boatCur();
     <div><b>Engine</b>${r.peakRpm.toLocaleString()} rpm peak · ${r.limT>0.05?r.limT.toFixed(1)+" s on the limiter · ":""}raw water ${r.coolPeak} °C${r.slipEnd!=null?` · ${Math.round(r.slipEnd*100)}% slip at the line`:""}</div>
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>
     ${N&&N.cls===r.cls?`<h2 style="margin-top:12px">The ladder</h2>${boatLadderHtml(N)}`:""}</div>`;}
+/* ===================== RUN VIEW: the big 3D view during every event =====================
+   html.onevent is on while an event scene is up (#app.onstrip: drag, pull, salt, mud bog, road test, 24 Hours, hillclimb, drag boats, through the
+   after-run beat) and the Events tab is showing; teardown (#app.td) or another tab takes it off and everything comes back.
+   Under it the header and SOUND/START/VIEW fold away and the view grows (CSS). For every event but the strip (which has
+   its own #stripHud), the live card (#pullLive, #saltLive, #bogLive, #roadLive, #e24Hud, #hillLive, #boatLive) moves from its control block into
+   #evHud on the view's bottom edge (html.evhud) and goes home when the run view ends. The band it covers goes to the scene
+   cameras through ENGINE_VIS.setBand. All driven by observers: no event's start / finish code needs to know. */
+const RV_LIVE=[["dragCtl",null],["pullCtl","pullLive"],["saltCtl","saltLive"],["bogCtl","bogLive"],["roadCtl","roadLive"],["e24Ctl","e24Hud"],["hillCtl","hillLive"],["boatCtl","boatLive"]];
+const RV={live:null,home:null,band:-1,h:-1,raf:0};
+/* an event scene owns the 3D view (also the race-night pits): no "drag to orbit" over it */
+function evScene(){const a=$("app"),d=document.documentElement.classList;return a.classList.contains("onstrip")||a.classList.contains("pits")||d.contains("onstrip")||d.contains("onevent");}
+function rvActive(){const a=$("app").classList,t=$("tab-events");return a.contains("onstrip")&&!a.contains("td")&&!!t&&t.classList.contains("on");}
+function rvHost(){let h=$("evHud");if(!h){h=document.createElement("div");h.id="evHud";h.hidden=true;$("view").appendChild(h);}return h;}
+function rvHome(){const L=RV.live;if(!L)return;const ph=RV.home;if(ph&&ph.parentNode)ph.parentNode.replaceChild(L,ph);RV.live=null;RV.home=null;}
+function rvSync(){const on=rvActive(),de=document.documentElement;
+  if(de.classList.contains("onevent")!==on){de.classList.toggle("onevent",on);if(on&&typeof tipHide==="function")tipHide();}   // a "drag to orbit" tip left up from before the run goes
+  /* the card of the control block that is showing; after the run its block hides but the card stays up with the final numbers until the scene goes */
+  let want=null;if(on){const c=RV_LIVE.find(([c])=>{const e=$(c);return e&&e.style.display!=="none";});want=c?(c[1]?$(c[1]):null):RV.live;}   // the strip brings its own HUD
+  if(want!==RV.live){rvHome();
+    if(want){const ph=document.createComment("evHud");want.parentNode.insertBefore(ph,want);RV.home=ph;RV.live=want;rvHost().appendChild(want);}}
+  const host=$("evHud");if(host)host.hidden=!RV.live;de.classList.toggle("evhud",!!RV.live);
+  if(host)host.dataset.ev=RV.live?RV.live.id:"";
+  rvBandSoon();}
+/* the band: from the view's bottom edge up to the top of whatever covers its middle (the overlay; on desktop the slim dock too) */
+function rvBandSoon(){if(!RV.raf)RV.raf=requestAnimationFrame(rvBand);}
+function rvBand(){RV.raf=0;if(!ENGINE_VIS.setBand)return;const v=$("view"),vr=v.getBoundingClientRect();let px=0;
+  if(RV.live&&vr.height>0){const cx0=vr.left+vr.width*0.3,cx1=vr.right-vr.width*0.3;
+    [$("evHud")].concat(RV_LIVE.map(([c])=>$(c))).forEach(e=>{if(!e||e.hidden||e.style.display==="none")return;const r=e.getBoundingClientRect();
+      if(!r.height||r.right<cx0||r.left>cx1||r.top>=vr.bottom||r.bottom<vr.top+vr.height*0.5)return;px=Math.max(px,vr.bottom-r.top);});}
+  px=Math.round(px);const h=Math.round(vr.height);if(px!==RV.band||h!==RV.h){RV.band=px;RV.h=h;ENGINE_VIS.setBand(px,h);}}
+(()=>{if(!window.MutationObserver)return;const mo=new MutationObserver(rvSync);
+  mo.observe($("app"),{attributes:true,attributeFilter:["class"]});
+  ["tab-events"].concat(RV_LIVE.map(([c])=>c)).forEach(id=>{const e=$(id);if(e)mo.observe(e,{attributes:true,attributeFilter:["class","style"]});});
+  if(window.ResizeObserver){const ro=new ResizeObserver(rvBandSoon);ro.observe($("view"));ro.observe(rvHost());RV_LIVE.forEach(([c])=>{const e=$(c);if(e)ro.observe(e);});}
+  rvSync();})();
 /* ---- datalog: the pass, channel by channel. Trace rows: [t, m, mph, rpm, gear, spin, bar, wheel mph, EGT C, throttle, n2o] ---- */
 const DL={on:{rpm:1,spd:1,whl:1,boost:1,egt:0,n2o:1},mode:"t"},DLM={},DLC={rpm:["rpm","rgba(95,168,230,.95)"],spd:["ground","#ff7a1a"],whl:["wheel","INK"],boost:["boost","#4fc08d"],egt:["EGT","#c58be0"],n2o:["N₂O","#e8c14a"]};
 const dlCache=new WeakMap();
@@ -27859,11 +28246,13 @@ $("runTest").addEventListener("click",()=>{
       S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
       if(same&&!ff&&!career()&&env.testType==="pull"&&!failing&&!S.bay)pbPull(res);
-      if(career()&&env.testType==="pull"&&!offStd&&!S.bay){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const ok=!res.fails.length&&!overCap&&!lk;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
+      if(career()&&env.testType==="pull"&&!offStd&&!S.bay){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const bad=!res.fails.length&&!overCap&&!lk&&crewBadRead(),ok=!res.fails.length&&!overCap&&!lk&&!bad;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:bad?"a sensor read wrong (clumsy with sensors) — pull it again":lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
         if(ok)tourAdvance(1);
         if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(cfg0.asp!=="na")C().boostedCert=true;}
+        else if(bad){logEvent(`Bad reading on the dyno — a sensor knocked loose; pull it again`,"bad");setTimeout(()=>toast("BAD READING · a sensor knocked loose — pull it again"),2700);}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
+      if(career())crewWork("dyno",{tt:env.testType});
       if(career()&&same&&!S.bay)addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40,hKey(snap.h));
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career()&&same)checkGoals();
@@ -28147,7 +28536,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
   k.deposit=Math.round(k.price*k.units*DEPOSIT/10)*10;k.expires=C().week+3;k.accepted=C().week;C().cash+=k.deposit;C().contracts.push(k);
   if(from==="inbox")C().inbox=C().inbox.filter(x=>x.id!==k.id);else if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);
   logEvent(`Took the ${k.name} job from ${k.client} — ${k.units} units by week ${k.expires}, ${fmt$(k.deposit)} deposit in`,"");return true;}
-function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
+function priceBoost(){let b=1;if(staffed("sales"))b*=1.06+0.0125*crewL("sales");b*=crewPriceK();if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],ts:["Engine",v=>"Two-stroke"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
   smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${+v<1?fmtDisp(+v):(+v).toFixed(1)+" L"}`],
@@ -28218,7 +28607,7 @@ function fits(k,res,cfg){
 const MISS_W={hp:1.8,tq:1.8,et:4,mph:4,lap:8,zero100:3,econ:1.6,kg:1.6,tqrpm:1.2,disp:3,cyl:1.5,rel:2.5,smooth:1.6,life:1.2,passes:1.2,smoke:0.5,noise:1.5,rot:1,ts:1};
 function deal(k,f){let m=1;const miss=[];for(const q of f.o){if(q.ok)continue;const x=q.q==="fuel"?(q.fam?0.15:0.7):q.q==="site"?0.55:clamp(1-(MISS_W[q.q]||1.5)*(1-clamp(q.prog,0,1)),0.05,1);m*=x;miss.push({name:q.name,cut:1-x});}
   miss.sort((a,b)=>b.cut-a.cut);   // under a fifth of a fit and they walk: that engine was never theirs
-  return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
+  return{m,miss,ok:f.ok,want:f.ok||m>=MKT_MIN,units:f.ok?k.units:Math.max(1,Math.round(k.units*Math.pow(m,0.6))),unit:Math.round(k.price*priceBoost()*crewFamK(f.res)*(f.ok?1+f.bonus:Math.pow(m,0.7))/10)*10};}
 const MKT_MIN=0.2;
 function missTxt(d){return d.miss.slice(0,3).map(x=>`${x.name.toLowerCase()} −${Math.round(x.cut*100)}%`).join(" · ");}
 // same engine, same word of mouth: contract or open market, rep follows units, class and how well it suits the buyer
@@ -28258,16 +28647,16 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
 function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
-function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*0.75):r.weeks;}   // machinist: machining projects 25% shorter
+function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
-  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
+  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
 function prestigePass(){let rp=0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
 function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}if(ok){C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=10;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus, +10 rep`,"good");hit.push(g);}}
   if(hit.length){toast(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
 function warrantyPass(){let claims=0,cost=0,active=0;
   for(const f of C().fleet){const age=C().week-f.week;if(age<1||age>10)continue;active++;
-    const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
+    const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1)*(crewT("lucky")?0.85:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
     if(n){f.claims=(f.claims||0)+n;const c=n*(Math.round(f.unitCost*0.5)+350);claims+=n;cost+=c;C().cash-=c;C().warranty+=c;C().rep=Math.max(0,C().rep-n);
       logEvent(`${n} × ${f.name} back from ${f.client} — ${f.weak.toLowerCase()} — ${fmt$(c)} warranty`,"bad");}}
   if(active&&!claims)C().cleanWeeks++;else if(claims)C().cleanWeeks=0;
@@ -28298,8 +28687,8 @@ function SV(){const c=C();if(!Array.isArray(c.service))c.service=[];if(!Array.is
   for(const k of ["svcUsed","svcIncome","rebuildJobs","rebuiltUnits","coresUsed","coreCredit","coreScrap","fidN"])if(typeof c[k]!=="number")c[k]=0;
   if(!c.coreSalt)c.coreSalt=1+Math.floor(Math.random()*1e9);return c;}
 function segCat(seg){const c=CATS.find(x=>x.segs.includes(seg));return c?c.id:"prod";}
-function svcCap(){return 6+(staffed("machinist")?4:0)+(has("shop1")?3:0)+(has("shop2")?3:0);}
-function svcQual(){return 1+(staffed("machinist")?0.15:0)+(has("shop1")?0.1:0)+(has("shop2")?0.1:0);}   // a better shop's rebuild lasts longer
+function svcCap(){return 6+(staffed("machinist")?4+crewL("machinist"):0)+(has("shop1")?3:0)+(has("shop2")?3:0)+2*crewT("owl");}
+function svcQual(){return 1+(staffed("machinist")?0.15+0.025*crewL("machinist"):0)+(has("shop1")?0.1:0)+(has("shop2")?0.1:0)+0.08*crewT("meticulous");}   // a better shop's rebuild lasts longer
 function svcRaw(f){return 0.55*Math.max(300,+f.life||2000)/(SVC_DUTY[segCat(f.seg)]||100)*(0.7+0.3*clamp(+f.rel||80,0,100)/100);}   // weeks to a rebuild
 function svcClient(f){return f.client===f.name?f.name+" buyers":f.client;}
 function fleetBy(fid){return C().fleet.find(f=>f.fid===fid);}
@@ -28336,7 +28725,7 @@ function doRebuild(id){const c=SV();const j=c.service.find(x=>x.id==id);if(!j)re
     if(f&&j.cycle===1){f.rebuiltN=(f.rebuiltN||0)+n;if(!f.due2){f.rbWeek=c.week;f.due2=c.week+clamp(Math.round(svcRaw(f)*svcQual()),8,26);}}
     msg=`Rebuilt ${n} × ${j.engine} for ${j.client} (${SVC_TIERS.find(t=>t.id===j.tier).name.toLowerCase()}) — ${fmt$(j.pay*n)} billed, ${fmt$(net)} after parts, +${rep} rep`;}
   if(j.done>=j.units){c.service=c.service.filter(x=>x!==j);c.rebuildJobs++;if(j.warranty&&f)f.wfix=true;}
-  logEvent(msg,j.warranty?"":"good");checkGoals();return {n,j,parts,net:j.warranty?-parts:(j.pay-j.parts)*n};}
+  logEvent(msg,j.warranty?"":"good");crewWork("rebuild",{n});checkGoals();return {n,j,parts,net:j.warranty?-parts:(j.pay-j.parts)*n};}
 /* cores */
 function coreBook(l){return Math.round(((OPT.layout[l]||{}).cost||1000)*0.25/10)*10;}
 function coreScrapVal(l){return Math.round(coreBook(l)*CORE_SCRAP/10)*10;}
@@ -28722,7 +29111,7 @@ function ddMakeJob(rnd,practice,only){const pool=ddPool();if(!pool.length)return
 function ddWeek(){if(!career())return;const d=DD();if(d.week===C().week)return;
   if(S.bay&&!S.bay.practice&&!testing){const j=S.bay.job;ddExit();C().rep=Math.max(0,C().rep-1);d.failed++;d.streak=0;logEvent(`Dyno day: ${ddLabel(j)} came back for it unfinished — −1 rep`,"bad");}
   const left=d.jobs.filter(j=>j.st==="open").length;d.jobs=d.jobs.filter(j=>j.st==="bay"&&S.bay&&S.bay.job.id===j.id);d.week=C().week;
-  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45:0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
+  const rnd=ddRnd(d),lam=0.55+0.32*repTierIdx()+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(3,Math.round(lam+(rnd()-0.5)*1.4)));
   for(let i=0;i<n;i++){const j=ddMakeJob(rnd,false);if(j){j.st="open";d.jobs.push(j);}}
   if(left&&d.week>1)logEvent(`Dyno day: ${left} customer${left>1?"s":""} took ${left>1?"their cars":"the car"} elsewhere`,"");
   const nn=d.jobs.filter(j=>j.st==="open").length;if(nn&&d.week>1)setTimeout(()=>toast(`DYNO DAY · ${nn} customer${nn>1?"s":""} booked in`),2700);}
@@ -28741,7 +29130,7 @@ function ddGuard(){const B=S.bay;if(!B)return;const o=B.job.cfg,A=new Set(B.job.
 function ddMarkBuild(){if(!S.bay)return;const A=new Set(S.bay.job.allowed);
   document.querySelectorAll("#buildForm [data-k],#buildForm [data-nk],#buildForm [data-num]").forEach(el=>{const k=el.dataset.k||el.dataset.nk||el.dataset.num;if(A.has(k)||DD_FREE[k])return;el.classList.add("ddno");if(el.tagName==="INPUT")el.disabled=true;});}
 function ddParts(){const B=S.bay;return B?ddPartsOf(B.job.cfg,S.cfg):0;}
-function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:Math.max(20,Math.round(j.labour*0.12/10)*10);}
+function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:crewT("wizard")?Math.max(10,Math.round(j.labour*0.06/10)*10):Math.max(20,Math.round(j.labour*0.12/10)*10);}
 function ddHint(){const B=S.bay;if(!B)return;const j=B.job;if(j.hints>=3)return;const c=ddHintCost(j);j.hints++;if(c)j.paid+=c;save();ddRender();
   toast(c?`Hint · ${fmt$(c)} off the labour`:j.hints===1&&staffed("tuner")&&career()?"Your calibration engineer has a look — free":"Hint");}
 function ddVerdict(res){const B=S.bay,j=B.job,ck=ddCheck(j,S.cfg,res);
@@ -28753,7 +29142,7 @@ function ddHand(){const B=S.bay;if(!B||testing)return;const j=B.job;const last=S
   const parts=ddParts(),under=parts<=j.budget,clean=ck.ok&&!j.hints&&under,F=ddFault(j.fault);
   if(B.practice){S.achN=S.achN||{};if(ck.ok)S.achN.ddp=(S.achN.ddp||0)+1;ddExit();toast(ck.ok?`FIXED · ${F.name} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`:`NOT FIXED · it was ${F.name.toLowerCase()} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`);
     if(ck.ok)achCheck({type:"dd",pass:true,clean});return;}
-  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;
+  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;crewWork("dd",{job:j,ok:ck.ok});
   if(ck.ok){const lab=Math.max(0,j.labour-j.paid),bonus=under?Math.round(j.labour*0.15/10)*10:0,bill=lab+Math.round(Math.min(parts,j.budget)*1.3)+bonus,net=bill-parts;
     C().cash+=net;C().rep+=clean?2:1;d.passed++;d.earned+=net;d.streak++;j.net=net;
     logEvent(`Dyno day: ${ddLabel(j)} fixed (${F.name.toLowerCase()}) — billed ${fmt$(bill)}${bonus?", under budget":""}, net ${fmt$(net)}`,"good");toast(`FIXED · ${fmt$(net)} net${bonus?" · under budget":""}`);}
@@ -28796,7 +29185,7 @@ document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;co
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
+  logEvent(t,"");crewWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -28869,7 +29258,7 @@ function spWeek(){if(!career())return;const s=spS();let paid=0;
   if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
   spLivery();}
 /* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
-function spEvent(kind,o){if(!career()||ff)return;const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
+function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
   if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
   const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
   if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
@@ -28960,7 +29349,7 @@ function renderShop(){
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`;
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
-  $("staff").innerHTML=STAFF.map(st=>{const on=!!C().staff[st.id];return `<div class="up ${on?"owned":""}"><div><h3>${st.name}</h3><p>${st.desc} <b>${fmt$(st.wage)}/week${on?"":", "+fmt$(st.wage*2)+" to hire"}</b></p></div>${on?`<button class="btn sm danger" data-fire="${st.id}">Release</button>`:`<button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire</button>`}</div>`;}).join("");
+  crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
@@ -28992,8 +29381,8 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
 $("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
 $("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
-  if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=C().week;syncShop();logEvent(`Hired a ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
-  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);if(!confirm(`Let the ${st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
+  if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
+  if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);const who=(crewP(st.id)||{}).nm;if(!confirm(`Let ${who?who+", your "+st.name.toLowerCase()+",":"the "+st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
     if(C().cert&&(st.id==="tuner"||st.id==="machinist")){C().cert=null;logEvent(`Cert void — the ${st.name.toLowerCase()} signed it off; pull it again`,"bad");setTimeout(()=>toast("CERT VOID · re-run the dyno"),50);}logEvent(`Let the ${st.name.toLowerCase()} go`,"");save();hud();renderShop();renderBuild();recompute();}});
 $("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(!b||b.disabled)return;const r=RND.find(x=>x.id===b.dataset.rnd);if(C().rndActive||C().rnd[r.id])return;if(C().cash<r.cost){toast(`Need ${fmt$(r.cost-C().cash)} more`);return;}
   C().cash-=r.cost;C().rndActive={id:r.id,done:0};logEvent(`Funded R&D: ${r.name} (${r.weeks} weeks)`,"");save();hud();renderShop();toast(`R&D STARTED · ${r.weeks} WEEKS`);buzz(20);});
@@ -29022,6 +29411,145 @@ $("importSave").addEventListener("click",()=>{$("sheetTitle").textContent="Impor
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
+/* ===================== CREW PROGRESSION (career) =====================
+   Every STAFF hire is a named person: C().staff[role] = {nm, role, lvl 1-5, xp, tr:[{id,rv}], mor, away, crs, h:{...}, hired}.
+   The role's STAFF effect is the base; each level past 1 adds a little to it (and to the wage). Traits (CREW_TRAITS) roll
+   at hire, stay hidden until they show (level 2 / 8 weeks, level 3 / 16 weeks) and only act once revealed. Level 1 with no
+   traits is exactly the old flat staff effect, so a save from before people (staff[role] = hire week) reads the same.
+   The crew has its own seeded generator (C().crew.seed): it never draws from C().seed, so contracts, claims and the
+   week's walk-ins roll as they always did. */
+const CREW_XP=[0,80,200,380,640];   // cumulative XP for levels 1..5
+const CREW_FIRST=["Dale","Marie","Kev","Priya","Earl","Tanya","Lou","Gus","Rosa","Wes","Darlene","Hank","Mo","Jules","Shane","Bev","Corey","Nadia","Ray","Fern","Lyle","Joanne","Arjun","Cass","Tomasz","Ingrid","Dwayne","Leah","Bao","Colette","Rune","Amrit","Sheila","Travis","Noreen","Elias"];
+const CREW_LAST=["Kowalski","Lindqvist","Fontaine","Gill","Thiessen","McAllister","Boychuk","Nakamura","Dumont","Halvorsen","Okafor","Penner","Sandhu","Lavoie","Reimer","Fraser","Hryniuk","Olsen","Cardinal","Mbeki","Wiebe","Larocque","Tkachuk","Ferreira","Bjornson","Desjarlais","Kaur","Doucette","Friesen","Abbott"];
+const CREW_ALL=["machinist","tuner","dynotech","sales"];
+const CREW_TRAITS=[
+  {id:"wizard",v:"is a tuning wizard",n:"Tuning wizard",pos:1,roles:["tuner","dynotech"],d:"Dyno-day hints cost half, and auto-tune lands closer to the edge."},
+  {id:"hands",v:"has fast hands",n:"Fast hands",pos:1,roles:CREW_ALL,d:"24 Hours pit stops 15% quicker; race-night freshens cost a quarter less."},
+  {id:"owl",v:"is a night owl",n:"Night owl",pos:1,roles:["machinist","dynotech","tuner"],d:"Works late: the rebuild bay takes 2 more units a week."},
+  {id:"frugal",v:"is frugal",n:"Frugal",pos:1,roles:CREW_ALL,d:"Haggles with every supplier: unit cost −2%."},
+  {id:"diesel",v:"is a diesel whisperer",n:"Diesel whisperer",pos:1,roles:CREW_ALL,d:"Diesel engines sell for 4% more."},
+  {id:"twostroke",v:"is a two-stroke nut",n:"Two-stroke nut",pos:1,roles:CREW_ALL,d:"Two-stroke engines sell for 6% more."},
+  {id:"lucky",v:"is lucky",n:"Lucky",pos:1,roles:CREW_ALL,d:"Warranty claims come back 15% less often."},
+  {id:"meticulous",v:"is meticulous",n:"Meticulous",pos:1,roles:["machinist","dynotech"],d:"Rebuilds last 8% longer."},
+  {id:"smooth",v:"is a smooth talker",n:"Smooth talker",pos:1,roles:["sales"],d:"Contracts and buyers pay +2%."},
+  {id:"quick",v:"is a quick study",n:"Quick study",pos:1,roles:CREW_ALL,d:"Learns 40% faster."},
+  {id:"workhorse",v:"is a workhorse",n:"Workhorse",pos:1,roles:CREW_ALL,d:"Busy weeks don't wear on morale."},
+  {id:"clumsy",v:"is clumsy with sensors",n:"Clumsy with sensors",pos:0,roles:["dynotech","tuner"],d:"Knocks a sensor loose now and then: about one cert pull in twelve reads wrong and has to be pulled again."},
+  {id:"nervous",v:"gets nervous at the strip",n:"Nervous at the strip",pos:0,roles:CREW_ALL,d:"Fumbles in the pits: race-night freshens cost a quarter more, and track days teach them nothing."},
+  {id:"slow",v:"is a slow learner",n:"Slow learner",pos:0,roles:CREW_ALL,d:"Learns 30% slower."},
+  {id:"fuse",v:"has a short fuse",n:"Short fuse",pos:0,roles:CREW_ALL,d:"Morale drops twice as fast."},
+  {id:"heavy",v:"is heavy-handed",n:"Heavy-handed",pos:0,roles:["machinist","tuner","dynotech"],d:"Goes through parts: unit cost +1.5%."}
+];
+const crewTr=id=>CREW_TRAITS.find(t=>t.id===id);
+const CREW_COL={machinist:"var(--info)",tuner:"var(--orange)",dynotech:"var(--good)",sales:"var(--warn)"};
+function crewS(){const c=C();if(!c.crew||typeof c.crew!=="object")c.crew={};const k=c.crew;if(!k.seed)k.seed=((c.seed>>>0)^0x5bd1e995)>>>0||7;if(!k.cand||typeof k.cand!=="object")k.cand={};if(!k.hist||typeof k.hist!=="object")k.hist={lv:0,max:1,crs:0,rv:0,quit:0};return k;}
+function crewRnd(){const k=crewS();k.seed=(k.seed*1664525+1013904223)>>>0;return k.seed/4294967296;}
+const crewPick=a=>a[Math.floor(crewRnd()*a.length)];
+function crewName(){const k=crewS(),used=new Set(Object.values(C().staff||{}).concat(Object.values(k.cand)).map(p=>p&&typeof p==="object"?String(p.nm).split(" ")[0]:""));let f=crewPick(CREW_FIRST);for(let i=0;i<12&&used.has(f);i++)f=crewPick(CREW_FIRST);return f+" "+crewPick(CREW_LAST);}   // no two first names alike in the shop
+function crewRollTraits(role){const x=crewRnd(),n=x<0.3?0:x<0.75?1:2,out=[];
+  for(let i=0;i<n;i++){const pos=crewRnd()<0.62;const pool=CREW_TRAITS.filter(t=>!!t.pos===pos&&t.roles.includes(role)&&!out.some(o=>o.id===t.id)&&!(t.id==="quick"&&out.some(o=>o.id==="slow"))&&!(t.id==="slow"&&out.some(o=>o.id==="quick")));if(pool.length)out.push({id:crewPick(pool).id,rv:false});}
+  return out;}
+function crewPerson(role,mig){return{nm:crewName(),role,lvl:1,xp:0,tr:mig?[]:crewRollTraits(role),mor:70,away:0,crs:null,warn:0,wk:0,pulls:0,h:{},hired:C().week};}
+/* the next applicant for an open role: fixed once drawn, so the name on the card is the one you hire */
+function crewCand(role){const k=crewS();if(!k.cand[role])k.cand[role]=crewPerson(role,false);return k.cand[role];}
+function crewNew(role){const k=crewS(),p=crewCand(role);delete k.cand[role];p.hired=C().week;p.mor=70;return p;}
+/* a save from before people: staff[role] = hire week → a level-1 hand with no traits */
+function crewP(role){if(!career())return null;const st=C().staff;if(!st)return null;const v=st[role];if(!v)return null;
+  if(typeof v!=="object"){const p=crewPerson(role,true);p.hired=+v||C().week;st[role]=p;return p;}
+  if(!v.h||typeof v.h!=="object")v.h={};if(!Array.isArray(v.tr))v.tr=[];if(!(v.lvl>=1))v.lvl=1;return v;}
+function crewOn(role){const p=crewP(role);return !!p&&!(p.away>C().week);}
+function crewL(role){if(!career()||dev())return 0;const p=crewP(role);return p?Math.max(0,Math.min(4,(p.lvl|0)-1)):0;}   // levels past the first
+function crewT(id){if(!career()||dev()||!C().staff)return 0;let n=0;for(const r of CREW_ALL){const p=crewP(r);if(p&&!(p.away>C().week)&&p.tr.some(t=>t.id===id&&t.rv))n++;}return n;}
+function crewWage(st){const p=crewP(st.id);const L=p?Math.max(1,Math.min(5,p.lvl|0)):1;return L===1?st.wage:Math.round(st.wage*(1+0.12*(L-1))/10)*10;}
+/* trait effects the rest of the shop reads (all exactly 1 / 0 with no revealed trait) */
+function crewCostK(){return (crewT("frugal")?0.98:1)*(crewT("heavy")?1.015:1);}
+function crewPriceK(){return crewT("smooth")?1.02:1;}
+function crewFamK(res){return res&&res.diesel&&crewT("diesel")?1.04:res&&res.twoStroke&&crewT("twostroke")?1.06:1;}
+function crewPitK(){return crewT("hands")?0.85:1;}
+function crewRnFreshK(){return (crewT("hands")?0.75:1)*(crewT("nervous")?1.25:1);}
+function crewBadRead(){return crewT("clumsy")>0&&crewRnd()<1/12;}
+/* the role's effect at its level, in words */
+function crewFx(role,L){L=L||1;const k=L-1;
+  return role==="machinist"?`Unit cost −${8+k}%, machining R&D ${25+2.5*k}% faster, rebuild bay +${4+k} a week.`
+    :role==="tuner"?`+${(1+0.15*k).toFixed(k?2:0)} octane number of knock margin on every build; auto-tune and a free first dyno-day hint.`
+    :role==="dynotech"?`Dyno pulls, endurance and over-rev runs are free; +${(0.45+0.08*k).toFixed(2)} dyno-day customers a week on average.`
+    :role==="sales"?`Contracts pay +${+(6+1.25*k).toFixed(2)}% and every category shows a third offer.`:"";}
+const CREW_HIST={eng:["built","engine","engines"],cal:["calibrated","engine","engines"],jobs:["fixed","customer engine","customer engines"],rb:["rebuilt","engine","engines"],pulls:["ran","dyno pull","dyno pulls"],ev:["crewed at","event","events"],deals:["closed","deal","deals"],rnd:["saw through","R&D project","R&D projects"]};
+function crewHistTxt(p){const o=[];for(const k in CREW_HIST){const n=p.h[k]|0;if(n>0){const w=CREW_HIST[k];o.push(`${w[0]} ${n} ${n===1?w[1]:w[2]}`);}}return o.length?o.join(" · "):"Nothing on the board yet.";}
+const crewRole=r=>(STAFF.find(s=>s.id===r)||{name:r}).name;
+const crewFirst=p=>String(p.nm).split(" ")[0];
+/* XP: work the role does. mult: quick/slow; a person away on a course earns nothing */
+function crewXP(role,xp,hk,hn){const p=crewP(role);if(!p||p.away>C().week)return;if(hk)p.h[hk]=(p.h[hk]||0)+(hn||1);
+  const has=id=>p.tr.some(t=>t.id===id&&t.rv);xp*=has("quick")?1.4:has("slow")?0.7:1;p.xp=(p.xp||0)+xp;p.wk=(p.wk||0)+xp;crewLevel(p);}
+function crewLevel(p){let up=false;while(p.lvl<5&&p.xp>=CREW_XP[p.lvl]){p.lvl++;up=true;const st=STAFF.find(s=>s.id===p.role);const h=crewS().hist;h.lv++;h.max=Math.max(h.max||1,p.lvl);p.mor=Math.min(100,(p.mor||70)+5);
+    logEvent(`${p.nm} (${crewRole(p.role).toLowerCase()}) made level ${p.lvl} — wage now ${fmt$(crewWage(st))}/week`,"good");toast(`LEVEL UP · ${p.nm.toUpperCase()} · LV ${p.lvl}`);}
+  if(up){crewReveal(p);syncShop();}}
+/* traits show themselves: the first at level 2 or 10 weeks on the job, the second at level 3 or 20 weeks */
+function crewReveal(p){const wks=C().week-(p.hired||C().week);let any=false;
+  p.tr.forEach((t,i)=>{if(t.rv)return;if(p.lvl>=2+i||wks>=10*(i+1)){t.rv=true;any=true;const T=crewTr(t.id);crewS().hist.rv++;
+    logEvent(`Turns out ${p.nm} ${T.v}: ${T.d.replace(/\.$/,"").replace(/^./,c=>c.toLowerCase())}`,T.pos?"good":"bad");}});
+  if(any)syncShop();return any;}
+/* game hooks: one call per kind of work */
+function crewWork(kind,o){if(!career()||!C().staff)return;o=o||{};try{
+  if(kind==="dyno"||kind==="drag"){const p=crewP("dynotech");if(p&&(p.pulls|0)<6){p.pulls=(p.pulls|0)+1;crewXP("dynotech",o.tt==="endurance"?4:o.tt==="overrev"?3:kind==="drag"?1:2,kind==="drag"?null:"pulls");}}
+  else if(kind==="dd"){const tune=(o.job.fix||[]).some(f=>["timing","lambda","map","boost","fuel"].includes(f[0]));const r=tune?"tuner":"machinist";crewXP(r,o.ok?14:4,o.ok?"jobs":null);crewXP("dynotech",o.ok?5:2);}
+  else if(kind==="sale"){const f=C().fleet[C().fleet.length-1],u=f?f.units|0:1;crewXP("sales",6,"deals");crewXP("machinist",3,"eng",u);crewXP("tuner",2,"cal",u);crewXP("dynotech",1.5);}
+  else if(kind==="rebuild"){crewXP("machinist",0.5*(o.n||1),"rb",o.n||1);}
+  else if(kind==="rnd"){crewXP(o.r&&o.r.mach?"machinist":"tuner",20,"rnd");}
+  else{const w=!!(o.win||o.record);for(const r of CREW_ALL){const p=crewP(r);if(!p||p.away>C().week||p.tr.some(t=>t.id==="nervous"&&t.rv))continue;p.evn=(p.evn|0)+1;if(p.evn<=4)crewXP(r,r==="dynotech"?(w?6:4):(w?2:1.5),"ev");else p.h.ev=(p.h.ev||0)+1;}}   // track days: the first four a week teach them something
+  }catch(e){}}
+/* weekly: courses end, traits show, morale moves, the unhappy warn and then walk */
+function crewWeek(){if(!career()||!C().staff)return;const k=crewS();let changed=false;const bounced=C().cash<0;
+  for(const r of CREW_ALL){const p=crewP(r);if(!p)continue;
+    if(p.crs&&p.away&&C().week>=p.away){const c=p.crs;p.crs=null;p.away=0;changed=true;p.mor=Math.min(100,(p.mor||70)+10);
+      if(c.k==="xp"){p.xp+=c.xp;p.h.crs=(p.h.crs||0)+1;logEvent(`${p.nm} is back from the ${c.n.toLowerCase()} — +${c.xp} XP`,"good");crewLevel(p);}
+      else{const T=crewTr(c.t);const neg=p.tr.findIndex(t=>!crewTr(t.id).pos&&t.rv);if(p.tr.length>=2&&neg>=0)p.tr.splice(neg,1);if(p.tr.length<2)p.tr.push({id:c.t,rv:true});p.h.crs=(p.h.crs||0)+1;logEvent(`${p.nm} is back from the ${c.n.toLowerCase()}: now ${T.n.toLowerCase()}`,"good");}}
+    if(p.away>C().week){p.wk=0;p.pulls=0;p.evn=0;continue;}
+    if(crewReveal(p))changed=true;
+    const has=id=>p.tr.some(t=>t.id===id&&t.rv),fk=has("fuse")?2:1;let d=(p.mor||70)<75?4:0;
+    if((p.wk||0)>30&&!has("workhorse"))d=-Math.min(5,Math.ceil(((p.wk||0)-30)/4))*fk;
+    if(bounced)d-=12*fk;
+    p.mor=Math.max(0,Math.min(100,(p.mor||70)+d));p.wk=0;p.pulls=0;p.evn=0;
+    if(p.mor<25){if(!p.warn){p.warn=C().week;logEvent(`${p.nm} (${crewRole(r).toLowerCase()}) is fed up — ${bounced?"pay bounced":"run off their feet"}. Ease off or send them on a course, or they'll walk`,"bad");}
+      else if(C().week>p.warn&&crewRnd()<0.4){delete C().staff[r];k.hist.quit++;changed=true;logEvent(`${p.nm} quit — the ${crewRole(r).toLowerCase()} job is open again`,"bad");toast(`${p.nm.toUpperCase()} QUIT`);
+        if(C().cert&&(r==="tuner"||r==="machinist"))C().cert=null;}}
+    else if(p.mor>=35)p.warn=0;}
+  if(changed)syncShop();}
+/* training: a course costs money and takes them away for its weeks. Skills = XP; specialist = a chosen good trait */
+function crewCourses(p){const L=p.lvl|0;return{xp:{k:"xp",n:"Skills course",wk:2,cost:1500+500*L,xp:Math.round(CREW_XP[Math.min(4,L)]*0.35+30)},
+  tr:{k:"tr",n:"Specialist course",wk:4,cost:4500+900*L}};}
+function crewTrainable(p){return CREW_TRAITS.filter(t=>t.pos&&t.roles.includes(p.role)&&!p.tr.some(x=>x.id===t.id)&&!(t.id==="quick"&&p.tr.some(x=>x.id==="slow")));}
+function crewCanLearn(p){return p.tr.length<2||p.tr.some(t=>!crewTr(t.id).pos&&t.rv);}
+function crewTrain(role,kind,tid){const p=crewP(role);if(!p||p.away>C().week)return;const cs=crewCourses(p),c=cs[kind];if(!c)return;
+  if(kind==="xp"&&p.lvl>=5)return;if(kind==="tr"&&(!crewCanLearn(p)||!crewTrainable(p).some(t=>t.id===tid)))return;
+  if(C().cash<c.cost){toast(`Need ${fmt$(c.cost-C().cash)} more`);return;}
+  C().cash-=c.cost;p.away=C().week+c.wk;p.crs=Object.assign({},c,kind==="tr"?{t:tid,n:`${crewTr(tid).n} course`}:{});crewS().hist.crs++;syncShop();
+  logEvent(`Sent ${p.nm} on the ${p.crs.n.toLowerCase()} — ${fmt$(c.cost)}, back week ${p.away}`,"");achCheck({type:"crew"});save();hud();renderShop();renderBuild();recompute();toast(`${p.nm.toUpperCase()} · ON COURSE ${c.wk} WEEKS`);buzz(20);}
+function crewMaxLv(){let m=0;for(const r of CREW_ALL){const p=crewP(r);if(p)m=Math.max(m,p.lvl|0);}return Math.max(m,career()?crewS().hist.max||0:0);}
+/* the Staff section: one card per role, a person or the next applicant */
+function crewRender(){const box=$("staff");if(!box||!career())return;let open=null;try{open=box.dataset.open||null;}catch(e){}
+  box.innerHTML=`<p class="hint crewi">Staff learn on the job and level up to 5: each level adds a little to what they do, and to their wage. Everyone has a trait or two that shows in time. Overwork or a bounced payroll sours morale, and an unhappy hand warns you once before they quit.</p>`+STAFF.map(st=>{const p=crewP(st.id);
+    if(!p){const a=crewCand(st.id);return `<div class="up crew"><div class="cwho"><i class="cav off" style="--cc:${CREW_COL[st.id]}">${crewIni(a.nm)}</i><div><h3>${st.name}</h3><p class="csub">Applicant: <b>${ddEsc(a.nm)}</b> · level 1</p></div></div><p>${st.desc} <b>${fmt$(st.wage)}/week, ${fmt$(st.wage*2)} to hire</b></p><div class="cbtn"><button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire ${ddEsc(crewFirst(a))}</button></div></div>`;}
+    const L=p.lvl|0,nx=L<5?CREW_XP[L]:null,pv=CREW_XP[L-1],pct=nx?Math.max(0,Math.min(100,Math.round(100*(p.xp-pv)/(nx-pv)))):100,away=p.away>C().week,hid=p.tr.filter(t=>!t.rv).length;
+    const chips=p.tr.filter(t=>t.rv).map(t=>{const T=crewTr(t.id);return `<span class="ctr ${T.pos?"pos":"neg"}" title="${ddEsc(T.d)}">${T.n}</span>`;}).join("")+(hid?`<span class="ctr hid">${hid===1?"one trait":"two traits"} still to show</span>`:"");
+    const mor=Math.round(p.mor||0),mc=mor<25?"crit":mor<45?"warn":"good";const cs=crewCourses(p);
+    const train=away?`<p class="caway">On the ${ddEsc(p.crs?p.crs.n.toLowerCase():"course")} · back week ${p.away}. The role's effect is off till then.</p>`
+      :`<details class="ctrain" data-role="${st.id}"${open===st.id?" open":""}><summary>Training</summary><p class="hint">A course takes them out of the shop: no ${st.name.toLowerCase()} effect while they're away. Wages still run.</p>
+        ${L<5?`<button class="ccrs" data-crs="xp" data-role="${st.id}">${cs.xp.n} · ${cs.xp.wk} wk · ${fmt$(cs.xp.cost)}<small>+${cs.xp.xp} XP</small></button>`:`<p class="hint">Top level — nothing left to teach them.</p>`}
+        ${crewCanLearn(p)?crewTrainable(p).map(t=>`<button class="ccrs" data-crs="tr" data-t="${t.id}" data-role="${st.id}">${t.n} · ${cs.tr.wk} wk · ${fmt$(cs.tr.cost)}<small>${t.d}</small></button>`).join(""):`<p class="hint">Already two traits — a specialist course only replaces a known bad habit.</p>`}</details>`;
+    return `<div class="up owned crew${away?" away":""}"><div class="cwho"><i class="cav" style="--cc:${CREW_COL[st.id]}">${crewIni(p.nm)}</i><div><h3>${ddEsc(p.nm)}</h3><p class="csub">${st.name} · since week ${p.hired||1}${away?" · on course":""}</p></div><b class="clv">LV ${L}</b></div>
+      <div class="cbar" title="${Math.floor(p.xp)} XP"><i style="width:${pct}%"></i></div><p class="cxp">${nx?`${Math.floor(p.xp)} / ${nx} XP to level ${L+1}`:`${Math.floor(p.xp)} XP · top level`}<span class="cmor ${mc}">morale ${mor}</span></p>
+      ${chips?`<div class="ctrs">${chips}</div>`:""}
+      <p>${crewFx(st.id,L)} <b>${fmt$(crewWage(st))}/week</b></p><p class="chist">${ddEsc(crewHistTxt(p))}</p>
+      ${train}<div class="cbtn"><button class="btn sm danger" data-fire="${st.id}">Release</button></div></div>`;}).join("");}
+const crewIni=n=>String(n).split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+$("staff").addEventListener("click",e=>{const b=e.target.closest("[data-crs]");if(!b)return;crewTrain(b.dataset.role,b.dataset.crs,b.dataset.t);});
+$("staff").addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("ctrain"))$("staff").dataset.open=d.open?d.dataset.role:"";},true);
+ACH.push(
+  {g:"shop",id:"crew_lv",name:"Moving up",desc:"A member of staff reaches level 2.",ic:"people",tier:"bronze",check:()=>career()&&crewMaxLv()>=2},
+  {g:"shop",id:"crew_course",name:"Back to school",desc:"Send someone on a training course.",ic:"people",tier:"bronze",check:()=>career()&&(crewS().hist.crs||0)>0},
+  {g:"shop",id:"crew_crew3",name:"Seasoned crew",desc:"All four roles filled at level 3 or better.",ic:"people",tier:"silver",check:()=>career()&&CREW_ALL.every(r=>{const p=crewP(r);return p&&p.lvl>=3;})},
+  {g:"shop",id:"crew_lv5",name:"Master hand",desc:"A member of staff reaches level 5.",ic:"star",tier:"gold",check:()=>career()&&crewMaxLv()>=5});
 /* ===================== TROPHY ROOM =====================
    What the shop has won, set and kept, in one room. The game already keeps records (recs()), achievements (S.ach), goals
    (C().goals), sponsors (spS()) and Dyno day counts (DD()); what it didn't keep is a dated history of wins, so this adds
@@ -29822,8 +30350,8 @@ setInterval(()=>{if(tipOn&&tipOn.id==="gl"&&ENGINE_VIS.eventScene&&ENGINE_VIS.ev
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
 const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
-function tipText(el){if(el.dataset.tip)return el.dataset.tip;if(el.id==="gl"&&(ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()||document.documentElement.classList.contains("onstrip")||$("app").classList.contains("pits")))return "";   // the orbit hint is for the engine stand only
-  if(KEY_TIP[el.id])return KEY_TIP[el.id];
+function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()))return "";   // the orbit hint is for the engine stand only: no "drag to orbit" over an event scene, the pits or a vis-side scene
+  if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
   if(el.matches("#tabs button")){const i=TAB_KEYS.indexOf(el.dataset.tab);return i<0?"":`${el.textContent.trim()} <kbd>${i+1}</kbd>`;}
   if(el.matches("#buildForm .seg button[data-k][data-v]")){const f=sliderField(el.dataset.k),o=f&&(OPT[f.optTable||f.key]||{})[el.dataset.v];if(!o)return "";
     return `<b>${o.name}</b>${o.cost?` · $${o.cost.toLocaleString("en-CA")}`:""}${o.info?"<br>"+o.info:o.sub?"<br>"+o.sub:""}${el.dataset.req?`<br><b>Needs ${el.dataset.req}</b>`:""}`;}

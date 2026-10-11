@@ -122,6 +122,10 @@ const ENGINE_VIS = {
     if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } }
     ENGINE_VIS.resize();
   },
+  /* run view: the band (CSS px up from the view's bottom edge) an event's live HUD covers, and the view's height; the pull, bog,
+     road / 24 h cameras lift the picture clear of it (bandLens), salt reads VBAND itself. No argument: report. */
+  setBand: function(px, h){ VBAND.px=Math.max(0,+px||0); if(h>0) VBAND.h=+h; return ENGINE_VIS.band(); },
+  band: function(){ return {px:VBAND.px, h:VBAND.h}; },
   setStrip: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(STRIP.on){ stripPostEnd(); STRIP.on=false; STRIP.honour=0; STRIP.rec=null; STRIP.recPre=null; stripReset(); } document.documentElement.classList.remove("onstrip"); return; }

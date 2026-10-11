@@ -31,14 +31,15 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #app.nomotion #view{transition:none}
 #app.mini #tag{display:none}
 #app.onstrip #tag{opacity:0;pointer-events:none;transition:opacity .25s}
-/* on the strip (html.onstrip, while a drag pass or race-night round is on): a taller view, the header and SOUND/START/VIEW
-   folded away. The strip camera lifts the picture clear of the HUD band along the view's bottom edge: --shud-h while the
-   compact HUD overlay is up (html.shud), else --striphud */
+/* the run view (html.onevent, app/runview.js: any event scene is up — drag, pull, salt, mud bog, drag boats, road test, hillclimb, 24 Hours — and the
+   Events tab is showing): a taller view, the header and SOUND/START/VIEW folded away. The strip camera lifts the picture clear
+   of the HUD band along the view's bottom edge: --shud-h while the compact HUD overlay is up (html.shud), else --striphud
+   (html.onstrip is the strip scene's own flag); the other scenes get their band through ENGINE_VIS.setBand */
 #view{--striphud:0px}
 html.onstrip #view{--striphud:56px}
-html.onstrip:not(.desk) #app #view{flex-basis:60%;min-height:300px}
-html.onstrip #hud{background:none}
-html.onstrip #hud .brand,html.onstrip #hud .right,html.onstrip .hudbtns{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility 0s .2s}
+html.onevent:not(.desk) #app #view{flex-basis:60%;min-height:300px}
+html.onevent #hud{background:none}
+html.onevent #hud .brand,html.onevent #hud .right,html.onevent .hudbtns{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility 0s .2s}
 #stripCap{position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:3;display:flex;align-items:center;gap:10px;pointer-events:none;font-family:var(--display);text-transform:uppercase;letter-spacing:.1em}
 #stripCap[hidden]{display:none}
 #stripCap b{font-size:13px;font-weight:700;color:#fff;background:#d42b20;padding:5px 10px 5px 22px;border-radius:3px;position:relative;line-height:1}
@@ -520,6 +521,31 @@ div.up h3{font-size:15px;font-weight:700}
 div.up p{margin:3px 0 0;font-size:13px;color:var(--muted);line-height:1.4}
 div.up .price{font-family:var(--display);font-size:15px;font-weight:700;color:var(--orange2);white-space:nowrap;font-variant-numeric:tabular-nums}
 div.up.owned .price{color:var(--good)}
+/* crew cards (app/crew.js): portrait initials, level bar, traits, history, training */
+div.up.crew{grid-template-columns:1fr;gap:6px}
+div.up.crew.away{opacity:.82;border-style:dashed}
+.crew .cwho{display:flex;align-items:center;gap:10px;min-width:0}
+.crew .cwho>div{flex:1;min-width:0}
+.crew .cav{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.04em;color:var(--cc);background:color-mix(in srgb,var(--cc) 16%,transparent);box-shadow:inset 0 0 0 2px var(--cc)}
+.crew .cav.off{opacity:.55;box-shadow:inset 0 0 0 2px var(--rule)}
+.crew .csub{margin:1px 0 0;font-size:12px;color:var(--muted)}
+.crew .clv{font-family:var(--display);font-size:15px;color:var(--orange2);white-space:nowrap}
+.crew .cbar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.crew .cbar i{display:block;height:100%;background:var(--orange);border-radius:3px}
+.crew p.cxp{display:flex;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.crew .cmor.good{color:var(--good)}.crew .cmor.warn{color:var(--warn)}.crew .cmor.crit{color:var(--crit)}
+.crew .ctrs{display:flex;flex-wrap:wrap;gap:5px}
+.crew .ctr{font-size:12px;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
+.crew .ctr.pos{color:var(--good);border-color:rgba(79,192,141,.45)}.crew .ctr.neg{color:var(--crit);border-color:rgba(226,71,60,.45)}.crew .ctr.hid{border-style:dashed;color:var(--dim)}
+.crew p.chist{font-size:12px;color:var(--dim);font-style:italic}
+.crew p.caway{font-size:12px;color:var(--warn)}
+.crew .ctrain summary{cursor:pointer;font-size:13px;color:var(--orange2);min-height:36px;display:flex;align-items:center}
+.crew .ccrs{display:flex;flex-direction:column;align-items:flex-start;width:100%;margin-top:6px;min-height:44px;padding:8px 10px;text-align:left;background:var(--panel2);border:1px solid var(--rule);border-radius:6px;color:var(--chalk);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.crew .ccrs small{font-size:12px;font-weight:400;color:var(--muted);margin-top:2px;line-height:1.35}
+.crew .ccrs:hover,.crew .ccrs:focus-visible{border-color:var(--orange)}
+.crew .cbtn{display:flex;justify-content:flex-end}
+.crew .cbtn .btn{min-height:40px}
+#staff .crewi{margin:-2px 0 8px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
 .stats div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px}
 .stats b{display:block;font-family:var(--display);font-size:18px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
@@ -875,7 +901,8 @@ html.shud #rpmbox,html.shud #dragLive{display:none!important}
 .shn span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .shn span em{font-style:normal;font-weight:700;letter-spacing:.06em}.shn span .w{color:var(--good)}.shn span .l{color:var(--crit)}.shn span .o{color:var(--orange2)}
 .shn b{flex:0 0 auto;font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--chalk)}
-html.onstrip #stripHud{padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+html.onevent #stripHud{padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+html.shud:not(.onevent) #stripHud{display:none}   /* another tab mid-pass: the panel is back, the strip HUD steps aside */
 @media (max-width:374px){.shx>b{font-size:17px}.shx{padding:1px 4px 0}}
 /* desktop: a glass bar bottom-left of the big view; the dock shrinks to just the button at bottom-right, clear of the car */
 html.desk #stripHud{left:18px;right:auto;bottom:16px;width:min(680px,calc(100% - min(300px,34%) - 56px));padding:9px 14px 8px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
@@ -884,6 +911,51 @@ html.desk.shud #dragCtl{left:auto;right:calc(var(--sbw) + 18px);bottom:16px;tran
 html.desk.shud #dragBtn{min-height:58px!important;font-size:19px!important;padding:8px 0!important}
 html.desk.shud #dragBtn small{font-size:11px!important}
 html.desk.shud #n2oPurge{margin-top:6px!important;min-height:40px!important;font-size:11.5px}
+/* ---- every other event's live card on the 3D view's bottom edge (#evHud, html.evhud; app/runview.js moves #pullLive, #saltLive,
+   #bogLive, #roadLive or #e24Hud in for the run and back after). Phone: a compact two-column strip under a dark fade, the controls
+   stay docked above the tab bar. Desktop: a glass bar bottom-left, the control block shrinks to a slim dock bottom-right, both
+   clear of the vehicle. Always the view's dark ink, also in the light theme. ---- */
+#evHud{position:absolute;left:0;right:0;bottom:0;z-index:3;pointer-events:none;padding:16px 10px max(6px,env(safe-area-inset-bottom,0px));contain:layout paint;
+  background:linear-gradient(0deg,rgba(10,11,13,.92) 0,rgba(10,11,13,.8) 62%,rgba(10,11,13,0) 100%);font-variant-numeric:tabular-nums;
+  --panel:rgba(255,255,255,.06);--panel2:rgba(255,255,255,.1);--rule:rgba(255,255,255,.16);--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
+#evHud[hidden]{display:none}
+html.evhud #rpmbox{display:none!important}
+#evHud>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:0 10px;align-items:end}
+#evHud .ph{background:none;border:0;border-radius:0;padding:0;margin:0;min-width:0}
+#evHud .ph+.ph{border-left:1px solid var(--rule);padding-left:9px}
+#evHud .ph+.ph .ph-lbl{font-size:10px;gap:4px}
+#evHud .pobanner,#evHud .rawarn,#evHud .ph-row{grid-column:1/-1}
+#evHud .pobanner{font-size:11px;color:var(--warn);margin-bottom:4px}#evHud .pobanner b{margin-right:6px}
+#evHud .rawarn{border:1px solid var(--crit);border-radius:5px;padding:4px 8px;margin-bottom:6px;background:rgba(226,71,60,.14)}
+#evHud .ph-top b{font-size:27px}#evHud .ph-top b i{font-size:13px}#evHud .ph-top span{font-size:10px;line-height:1.25;letter-spacing:.03em}
+#evHud .ph-lbl span:first-child:nth-last-child(3){display:none}   /* the scale's "0" / "start": the bar says it */
+#evHud .ph-bar{height:7px;margin-top:4px;border-radius:2px}
+#evHud .ph-lbl{font-size:10.5px;margin-top:3px;gap:6px;white-space:nowrap;overflow:hidden}#evHud .ph-lbl span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+#evHud .ph-row{display:flex;gap:14px;margin:6px 0 0;padding-top:5px;border-top:1px solid var(--rule)}
+#evHud .ph-row .peak{display:flex;align-items:baseline;gap:5px;padding:0;background:none;border:0;min-width:0}
+#evHud .ph-row .peak b{font-size:16px}#evHud .ph-row .peak b i{font-size:11px}#evHud .ph-row .peak span{margin:0;font-size:9.5px}
+/* road test and the 24 Hours: their own grids, made smaller; full width */
+#evHud #roadLive,#evHud #e24Hud,#evHud #hillLive{display:block}
+#evHud .hl-bar{height:7px;margin-top:5px}#evHud .hl-next{min-height:0;margin-top:4px;gap:3px}#evHud .hl-c{padding:3px 7px;font-size:11.5px}
+#evHud .hl-meters{gap:4px;margin-top:4px}#evHud .hl-meters .peak{display:flex;align-items:baseline;gap:5px;padding:2px 6px}#evHud .hl-meters .peak b{font-size:15px}#evHud .hl-meters .peak span{margin:0;font-size:9.5px}#evHud .hl-meters .peak span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}html:not(.desk) #evHud .hl-c+.hl-c{display:none}   /* phone: the next call only */
+#evHud .rdh,#evHud .e24h{background:none;border:0;padding:0;gap:8px}
+#evHud .rd-spd b{font-size:30px}#evHud .rd-g b{font-size:24px}#evHud .rd-lt b{font-size:19px}#evHud .rd-map,#evHud .e24map{width:72px;height:52px}
+#evHud .rd-rpm{margin-top:5px;height:7px}
+#evHud .rd-sec{gap:4px;margin-top:5px}#evHud .rd-sec div{padding:3px 6px;font-size:11px}
+#evHud .e24c b,#evHud .e24p b{font-size:22px}
+#evHud .e24gp{border-top-color:var(--rule);padding-top:4px}
+#evHud .e24prog{margin-top:4px;height:5px}#evHud .e24sc{margin-top:4px;padding:1px 0;font-size:11px}
+#evHud .e24g{gap:3px 4px;margin-top:4px}#evHud .e24g>div{padding:2px 6px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:5px}#evHud .e24g b{font-size:14px;line-height:1.2}#evHud .e24g span{font-size:9px}#evHud .e24g .ph-bar{flex:1 0 100%;height:3px;margin-top:2px}
+html:not(.desk) #evHud .e24g i{display:none}html.desk #evHud .e24g i{font-size:10px;flex:1 0 100%}   /* phone: the reading only, the notes stay for the desktop bar */
+html.desk #evHud{left:18px;right:auto;bottom:16px;width:min(720px,calc(100% - min(320px,34%) - 56px));padding:10px 14px 9px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+html.desk #evHud .ph-top b{font-size:34px}html.desk #evHud .ph-lbl{font-size:11.5px}html.desk #evHud .ph-row .peak b{font-size:19px}
+html.desk #evHud .rd-spd b{font-size:40px}html.desk #evHud .rd-map,html.desk #evHud .e24map{width:110px;height:78px}html.desk #evHud .e24c b,html.desk #evHud .e24p b{font-size:30px}
+html.desk.evhud :is(#pullCtl,#saltCtl,#bogCtl,#roadCtl,#e24Ctl,#hillCtl,#boatCtl){left:auto;right:calc(var(--sbw) + 18px);bottom:16px;transform:none;width:min(320px,34%);padding:8px}
+html.desk.evhud :is(#pullBtn,#bogBtn,#saltBtn,#saltShiftBtn),html.desk.evhud .hlbtns .btn,html.desk.evhud .boatbtns .btn{min-height:58px!important;font-size:19px!important;padding:8px 0!important}
+html.desk.evhud :is(#pullBtn,#bogBtn,#saltBtn) small{font-size:11px!important}
+html.desk.evhud #killBtn{min-height:48px}
+html.desk.evhud #saltWarp{margin-top:6px!important}
+html.desk.evhud .rdbtns{margin-top:0}html.desk.evhud .hlbtns{margin-top:0}html.desk.evhud #hillCtl .rdbtns{margin-top:6px}html.desk.evhud .boatbtns .btn{font-size:13px!important}html.desk.evhud #boatBtn{font-size:17px!important}html.desk.evhud .e24spd{margin-top:0;flex-wrap:wrap}html.desk.evhud .e24spd .btn{flex:1 1 18%}html.desk.evhud .e24spd .e24nx{flex:1 1 100%}
 /* ---- thermal timing slip: printed on paper in both themes; the prose folds out under it ---- */
 .tslipw{display:flex;flex-direction:column;align-items:center;margin:4px 0 0}
 .tslip{--ink:#2d2b36;--ink2:#6b6772;--tp:#f4f1e6;position:relative;width:100%;max-width:360px;margin:9px 0 0;padding:16px 16px 14px;color:var(--ink);font-family:var(--mono);font-size:12.5px;line-height:1.35;
