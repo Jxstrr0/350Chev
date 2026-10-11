@@ -39,6 +39,7 @@ function hillFieldJob(k,seed){const key=k+"|"+seed;
     out.push({n:nm,hp,turbo,ch,skill,t:q.time,dnf:q.dnf?q.dnf.kind:null,splits:q.splits,offs:(q.offs||[]).length,paint:HILL_PAINT[(i+Math.floor(r()*9))%HILL_PAINT.length]});}
     i++;if(i>=n)J.next();}};
   return J;}
+const hillDnfWord=k=>({edge:"OVER THE EDGE",boil:"BOILED OVER",stall:"COULDN'T CLIMB",time:"FLAGGED OFF"})[k]||"DNF";
 const hillCmp=(a,b)=>(a.t==null?1:0)-(b.t==null?1:0)||(a.t!=null?a.t-b.t:0)||(a.me?-1:b.me?1:0);
 function hillHint(){const c=SIM.HILL_CLASSES;return career()?`<b>Pikes Peak</b> · ${fmt$(HILL_FEE)} entry, one run per class a week. Needs a certified engine. ${c.open.n} is open to anyone; ${c.ta.n} at ${c.ta.rep} rep, ${c.ppo.n} at ${c.ppo.rep}, ${c.unl.n} at ${c.unl.rep}. Purse by placing, up to ${fmt$(HILL_PURSE[0]*HILL_PAY[4])} in ${c.unl.n}. Thin air costs an atmospheric engine about a third of its power; a turbo holds on.`
   :`<b>Pikes Peak</b> · 19.99 km, 156 turns, 2,862 m to 4,302 m. Auto reads the corner calls for you; in <b>You drive</b>, hold <b>PUSH</b> into grippy corners and <b>LIFT</b> into dusty ones. Too fast is a moment, a trip through the gravel, or — where there's a drop and no rail — the end of the run. <b>Space</b> pushes.`;}
@@ -90,7 +91,7 @@ function hillHud(){if(!HC)return;const st=HC.run.st,T=HC.run.T,v=$("hlV");if(!v)
   $("hlD").innerHTML=gap;
   // the next two corners and their calls; the event of the moment over them
   const K=T.corners,c0=K[Math.min(K.length-1,st.k)],c1=K[Math.min(K.length-1,st.k+1)],ev=st.ev&&st.t-st.ev.t<2.5?st.ev:null;
-  let nx="";if(st.dnf)nx=`<div class="hl-ev bad">${st.dnf.kind==="edge"?"OVER THE EDGE":"BOILED OVER"} · ${hlEsc(st.dnf.name)}</div>`;
+  let nx="";if(st.dnf)nx=`<div class="hl-ev bad">${hillDnfWord(st.dnf.kind)} · ${hlEsc(st.dnf.name)}</div>`;
   else if(st.off)nx=`<div class="hl-ev bad">${st.off.kind==="rail"?"INTO THE GUARDRAIL":st.off.kind==="bank"?"INTO THE BANK":"OFF · GRAVEL"} · +${st.off.T.toFixed(1)} s</div>`;
   else if(ev&&ev.kind==="moment")nx=`<div class="hl-ev warn">MOMENT! · ${hlEsc(K[ev.k].name||"held it")}</div>`;
   else if(st.done)nx=`<div class="hl-ev good">SUMMIT · ${fmtHill(st.t)}</div>`;
@@ -160,7 +161,7 @@ function hillFinish(){
   if(r.dnf)r.place=rows.indexOf(me)+1;
   if(same&&!r.dnf&&!ff){const RR=hillRecs(),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
   const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
-  const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:"boiled over in "+r.dnf.name):fmtHill(r.time);
+  const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:r.dnf.kind==="boil"?"boiled over in "+r.dnf.name:r.dnf.kind==="stall"?"couldn't climb the grade":"flagged off in "+r.dnf.name):fmtHill(r.time);
   if(career()&&same){addWear(0.6+(r.coolPeak>112?0.4:0)+(r.dmg>0?0.3:0),hKey(snap.h));
     if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Pikes Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
     else{const purse=Math.round((HILL_PURSE[r.place-1]||0)*(HILL_PAY[C0.tier]||1)/10)*10,rep=(HILL_REP[r.place-1]||0)+1;r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
@@ -172,7 +173,7 @@ function hillFinish(){
   HC.run=null;HC.prep=null;save();recompute();renderTest();revealVerdict();
 }
 function hillVerdict(res){const r=res.hill;
-  if(r.dnf)return `<div class="verdict fail"><div><div class="big">${r.dnf.kind==="edge"?"OVER THE EDGE":"BOILED OVER"} · DNF</div><p>${r.dnf.kind==="edge"?`Too fast into ${hlEsc(r.dnf.name)} with a drop on the outside and no guardrail`:`The water went past boiling in ${hlEsc(r.dnf.name)} — thin air through the radiator`} · ${(r.dnf.s/1000).toFixed(2)} km up, ${fmtHill(r.dnf.t)} in${career()?" — reputation took a hit":""}.</p></div></div>`;
+  if(r.dnf)return `<div class="verdict fail"><div><div class="big">${hillDnfWord(r.dnf.kind)} · DNF</div><p>${r.dnf.kind==="edge"?`Too fast into ${hlEsc(r.dnf.name)} with a drop on the outside and no guardrail`:r.dnf.kind==="boil"?`The water went past boiling in ${hlEsc(r.dnf.name)} — thin air through the radiator`:r.dnf.kind==="stall"?`Not enough torque to pull the car up the grade in ${hlEsc(r.dnf.name)} — a shorter final drive, or more engine`:`Still on the mountain at half an hour, in ${hlEsc(r.dnf.name)}`} · ${(r.dnf.s/1000).toFixed(2)} km up, ${fmtHill(r.dnf.t)} in${career()?" — reputation took a hit":""}.</p></div></div>`;
   const cls=r.place===1?"pass":r.place<=HILL_PURSE.length?"marg":"fail",hp=r.hp,top=hp[hp.length-1];
   return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${fmtHill(r.time)} · ${ordN(r.place)}</div><p>${hlEsc(r.clsName)} · ${ordN(r.place)} of ${r.of} · ${hlEsc(r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD"))}, ${r.tyreName.toLowerCase()} tyres${r.aero!=="none"?", "+r.aeroName.toLowerCase():""}${r.auto?" · auto driver":r.took!=null?` · you took over at ${(r.took/1000).toFixed(1)} km`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb&&r.pb.was?` · class record (was ${fmtHill(r.pb.was)})`:""}</p>
     <div class="vstats"><div><b>${r.avgKmh}</b><span>avg km/h</span></div><div><b>${Math.round(r.vmax)}</b><span>top km/h</span></div><div><b>${r.offs.length}</b><span>off${r.offs.length===1?"":"s"} · ${r.moments} moment${r.moments===1?"":"s"}</span></div><div><b>${top.hp}</b><span>hp on top · ${Math.round(100*top.hp/r.refHp)}%</span></div><div><b>${r.coolPeak}</b><span>water °C peak</span></div><div><b>${r.m.toLocaleString("en-CA")}</b><span>kg</span></div></div></div></div>`;}
@@ -186,7 +187,7 @@ function hillSheet(res){const r=res.hill,b=hillRecs()[r.cls],L=r.lead;let pt=0,l
     <div><b>Run</b>${r.dnf?"DNF":fmtHill(r.time)} · ${(r.len/1000).toFixed(2)} km · ${r.avgKmh!=null?r.avgKmh+" km/h average · ":""}${Math.round(r.vmax)} km/h top${b&&!r.dnf?` · class record ${fmtHill(b.t)}`:""}</div>
     <div><b>Power</b>${hp} hp — ${r.refHp} hp at the shop${r.carb?" · carburettor running rich up top":""}</div>
     <div><b>Driving</b>${r.auto?"Auto driver all the way":r.took!=null?`Auto to ${(r.took/1000).toFixed(1)} km, then you`:"You drove"}${r.handed?` to ${(r.handed/1000).toFixed(1)} km, then the auto driver took the rest`:""} · ${r.moments} moment${r.moments===1?"":"s"}${offs?" · "+offs:" · no offs"}</div>
-    <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · the radiator has ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less air to work with on top</div>
+    <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · on top the air is ${Math.round(100*(1-0.69))}% thinner, so the radiator sheds about ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less heat per degree</div>
     <div><b>Car</b>${hlEsc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}</div>
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${hlEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
