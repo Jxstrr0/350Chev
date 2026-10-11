@@ -14,7 +14,7 @@ function renderEnv(){
   if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>
-    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>${paintHtml()}
+    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>${paintHtml()}${shellHtml()}
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
@@ -50,7 +50,10 @@ function carVeh(car){const b=BODY_SETUP[(car&&car.body)||"street"]||BODY_SETUP.s
 const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"street",chute:"no",launchRpm:3500,rearBias:0.55,mass:1400},
   outlaw:{gears:3,first:2.1,top:1.0,final:3.25,tyreDia:30,tyre:"radial",chute:"yes",launchRpm:4500,rearBias:0.6,mass:1450},
   promod:{gears:3,first:1.8,top:1.0,final:3.2,tyreDia:33,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.62,mass:1150},
-  rail:{gears:2,first:1.6,top:1.0,final:3.0,tyreDia:36,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.8,mass:1000}};
+  rail:{gears:2,first:1.6,top:1.0,final:3.0,tyreDia:36,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.8,mass:1000},
+  funny:{gears:2,first:1.75,top:1.0,final:3.25,tyreDia:36,tyre:"slick",chute:"yes",launchRpm:6000,rearBias:0.68,mass:1170},
+  prostock:{gears:5,first:2.5,top:1.0,final:4.25,tyreDia:33,tyre:"slick",chute:"yes",launchRpm:7000,rearBias:0.56,mass:1070},
+  gasser:{gears:4,first:2.5,top:1.0,final:4.5,tyreDia:30,tyre:"slick",chute:"no",launchRpm:5000,rearBias:0.6,mass:1360}};
 /* drag v2: the car's paint (S.paint sandbox / C().paint career; unset = the valve-cover colour, as before) */
 const PAINTS=[["cover","Match the covers",null],["red","Red",0xb3261e],["white","White",0xe6e4de],["black","Black",0x16181b],["yellow","Yellow",0xe2b21b],["orange","Orange",0xd85f14],["blue","Blue",0x1f4fa8],["green","Green",0x1e6a3b],["purple","Purple",0x5b2a86],["silver","Silver",0xa9aeb5]];
 function paintKey(){const k=(career()?C():S).paint;return PAINTS.some(p=>p[0]===k)?k:"cover";}
@@ -59,20 +62,36 @@ const hex6=n=>"#"+(n>>>0).toString(16).padStart(6,"0");
 function paintHtml(){const k=paintKey(),cov=(window.COVER_COLORS||{})[S.cfg.cover]||0xa32a26;
   return`<div class="lbl"><span>Paint</span><b>${(PAINTS.find(p=>p[0]===k)||PAINTS[0])[1]}</b></div><div class="paints" role="radiogroup" aria-label="Paint">${PAINTS.map(([id,n,c])=>`<button data-paint="${id}" role="radio" aria-checked="${k===id}" aria-label="${n}" title="${n}" class="${k===id?"on":""}${c==null?" cov":""}"><i style="background:${hex6(c==null?cov:c)}"></i></button>`).join("")}</div>`;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-paint]");if(!b)return;(career()?C():S).paint=b.dataset.paint;renderEnv();save();});
+/* drag v3: the body shell, picked per class next to the paint (S.shell sandbox / C().shell career: {street:"fox", promod:"c7", ...});
+   unset = the class default, a diesel street car defaults to the pickup */
+const SHELLS={street:[["fox","Fox Mustang","notchback"],["gbody","G-body","Monte / Regal"],["nova","'70 Nova","chrome bumpers"],["coupe","90s F-body","the coupe"],["hatch","Hatch","small & light"],["truck","Diesel pickup","crew cab, stacks"]],
+  promod:[["modern","Modern","the shop shell"],["camaro69","'69 Camaro","square & wide"],["c7","C7 Corvette","low wedge"],["willys41","'41 Willys","fendered coupe"]],
+  gasser:[["tri55","'55 Chevy","tri-five post"],["willys","Willys","'41 coupe"]]};
+SHELLS.outlaw=SHELLS.street;
+function carShell(body,diesel){const o=(career()?C():S).shell||{},L=SHELLS[body];if(!L)return"";const k=o[body];return L.some(x=>x[0]===k)?k:body==="street"||body==="outlaw"?(diesel?"truck":"coupe"):L[0][0];}
+function shellHtml(){const body=S.env.body||"street",L=SHELLS[body];if(!L)return"";const k=carShell(body,!!SIM.isDiesel(S.cfg));
+  return`<div class="lbl"><span>Shell</span><b>${L.find(x=>x[0]===k)[1]}</b></div><div class="seg n${L.length}" role="radiogroup" aria-label="Body shell">${L.map(([id,n,d])=>`<button data-shell="${id}" role="radio" aria-checked="${k===id}" class="${k===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;}
+$("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-shell]");if(!b)return;const o=career()?C():S;o.shell=Object.assign({},o.shell||{},{[S.env.body||"street"]:b.dataset.shell});renderEnv();save();});
 /* drag v2: what the strip car carries, read off the build (hood hardware, intercooler, exhaust effects) */
 function stripHw(c){const k=c.asp||"na",asp=k==="na"?"na":k==="roots"||k==="screw"?"blower":k==="centrifugal"?"centri":k==="twin_turbo"||k==="compound"?"twin":"turbo";
-  return{asp,ic:!!c.ic&&c.ic!=="none",als:!!c.als&&c.als!=="off",n2o:!!c.nitrous&&c.nitrous!=="none",diesel:!!SIM.isDiesel(c)};}
+  const diesel=!!SIM.isDiesel(c);return{asp,ic:!!c.ic&&c.ic!=="none",als:!!c.als&&c.als!=="off",n2o:!!c.nitrous&&c.nitrous!=="none",diesel,style:carShell((S.env&&S.env.body)||"street",diesel)};}
 /* the other lane's own car: shell from the car's name, paint and hardware seeded from the name (hw0: the test & tune mirror runs your engine) */
 const RIVAL_PAINT=[0x1f4fa8,0xe2b21b,0x1e6a3b,0xe6e4de,0x16181b,0x5b2a86,0xd85f14,0x7a1f1f,0x2b8a9e,0xa9aeb5,0xc23b6e,0x55602f];
+/* v3: the shell each rival's car name reads as, per class (unnamed test & tune rivals get a seeded one) */
+function rivalShell(body,n,h){
+  if(body==="street"||body==="outlaw")return/s10|pickup|truck|duramax|cummins|ram 2500|crew cab/.test(n)?"truck":/civic|hatch|crx|golf/.test(n)?"hatch":/fox|mustang/.test(n)?"fox":/grand national|monte|regal|cutlass|g-body|buick/.test(n)?"gbody":/'6\d|'7[0-4]|camaro|nova|chevelle|duster|challenger|dart|falcon|cuda|gto|impala/.test(n)?"nova":/trans am|firebird|supra|corvette|'9\d|z28/.test(n)?"coupe":["fox","gbody","nova","coupe","hatch","nova","fox","coupe","truck"][h%9];
+  if(body==="promod")return/willys/.test(n)?"willys41":/corvette/.test(n)?"c7":/camaro|'6\d/.test(n)?"camaro69":["modern","camaro69","c7","willys41","modern"][h%5];
+  if(body==="gasser")return/willys|anglia|austin/.test(n)?"willys":/chevy|bel air|'5\d/.test(n)?"tri55":["tri55","willys"][h%2];
+  return"";}
 function rivalLook(name,car,body,hw0){const h=rnHash(String(name)+"|"+String(car||"")),r=rnRng(h),n=String(car||"").toLowerCase();
-  let style=/s10|pickup|truck/.test(n)?"truck":/civic|hatch/.test(n)?"hatch":/'6\d|'7[0-4]|camaro|nova|chevelle|duster|challenger|dart|falcon|cuda|gto|fox|mustang|impala|willys/.test(n)?"muscle":n?"coupe":["coupe","muscle","coupe","hatch","muscle"][h%5];
+  let style=rivalShell(body,n,h);
   let hw;if(hw0)hw=Object.assign({},hw0);
-  else{const pool=body==="street"?["na","na","turbo","blower","centri"]:body==="outlaw"?["turbo","twin","blower","na","centri"]:["blower","twin","turbo","blower","na"];
-    let asp=/turbo|grand national|supra/.test(n)?(r()<0.5?"twin":"turbo"):/nitrous/.test(n)?"na":pool[Math.floor(r()*pool.length)];
-    const tb=asp==="turbo"||asp==="twin",dsl=/s10|pickup/.test(n)&&r()<0.5;if(dsl&&asp==="na")asp="turbo";
+  else{const pool=body==="street"?["na","na","turbo","blower","centri"]:body==="outlaw"?["turbo","twin","blower","na","centri"]:body==="funny"?["blower"]:body==="prostock"?["na"]:body==="gasser"?["na","blower","na","blower","turbo"]:["blower","twin","turbo","blower","na"];
+    let asp=/turbo|grand national|supra/.test(n)?(r()<0.5?"twin":"turbo"):/nitrous|pro stock/.test(n)?"na":/nitro|top dragster|funny/.test(n)?"blower":pool[Math.floor(r()*pool.length)];
+    const tb=asp==="turbo"||asp==="twin",dsl=style==="truck"&&(/duramax|cummins|diesel/.test(n)||r()<0.5);if(dsl&&asp==="na")asp="turbo";
     hw={asp,ic:tb||asp==="centri"||dsl,als:(tb&&!dsl&&body!=="street"&&r()<0.6)||(tb&&r()<0.2),n2o:/nitrous/.test(n)||(!dsl&&r()<0.2),diesel:dsl};}
   hw.style=style;const mine=carPaint();let c=RIVAL_PAINT[h%RIVAL_PAINT.length];if(c===mine)c=RIVAL_PAINT[(h+5)%RIVAL_PAINT.length];
-  return{color:c,hw};}
+  return{color:c,hw,body:body||"street"};}
 /* what the other lane's car does (from a full dragPass trace): shift times, how long it spins, a seeded wheelie, chute */
 function oppFx(tr,veh,seed){const r=rnRng(seed>>>0),sh=[];let g=null,spin=0;
   for(const p of tr||[]){if(p&&p.length>5){if(g!=null&&p[4]>g)sh.push(p[0]);g=p[4];if(p[5]&&p[0]<2.5)spin=p[0]+0.05;}}
