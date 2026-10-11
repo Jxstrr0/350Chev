@@ -97,7 +97,7 @@ function stripBuildCrowd(S2, ppl, rng){
   g.setAttribute("aSkin", new THREE.InstancedBufferAttribute(aSk,3)); g.setAttribute("aHat", new THREE.InstancedBufferAttribute(aHt,3));
   var ctr=new THREE.Vector3((mn[0]+mx[0])/2,(mn[1]+mx[1])/2+1,(mn[2]+mx[2])/2);
   g.boundingSphere=new THREE.Sphere(ctr, ctr.distanceTo(new THREE.Vector3(mx[0],mx[1]+2.2,mx[2]))+1);
-  mesh.castShadow=false; mesh.receiveShadow=true; S2.add(mesh);
+  mesh.castShadow=false; mesh.receiveShadow=true; mesh.frustumCulled=true; S2.add(mesh);   /* r128 leaves InstancedMesh unculled; the sphere above holds every one */
   var rk=ppl.map(function(q){ return q.r; }), sr=[]; for(i=0;i<n;i++) if(ppl[i].stand) sr.push(ppl[i].r);
   return { mesh:mesh, body:mesh, base:base, n:base.length, ranks:rk, standRanks:sr, live:false, wave:false, u:STRIP_VU.uCrowd, tier:null };
 }
@@ -132,7 +132,7 @@ function stripKitMesh(S2, items, inst, mat){
     mn[0]=Math.min(mn[0],q.x); mn[1]=Math.min(mn[1],q.z); mx[0]=Math.max(mx[0],q.x); mx[1]=Math.max(mx[1],q.z); }
   geo.setAttribute("iT1", new THREE.InstancedBufferAttribute(t1,3)); geo.setAttribute("iT2", new THREE.InstancedBufferAttribute(t2,3));
   var ctr=new THREE.Vector3((mn[0]+mx[0])/2, 2, (mn[1]+mx[1])/2); geo.boundingSphere=new THREE.Sphere(ctr, Math.hypot(mx[0]-mn[0], mx[1]-mn[1])/2+kr);
-  mesh.receiveShadow=true; mesh.castShadow=false; S2.add(mesh);   /* the pits sit outside the sun's 60 m shadow box; at night each spot would redraw them */
+  mesh.receiveShadow=true; mesh.castShadow=false; mesh.frustumCulled=true; S2.add(mesh);   /* the pits sit outside the sun's 60 m shadow box; at night each spot would redraw them */
   return { mesh:mesh, ranks:inst.map(function(q){ return q.r; }) };
 }
 /* the two pit spaces (local: length along x, the work side toward +z) */

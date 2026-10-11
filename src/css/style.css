@@ -12,7 +12,7 @@
 :root[data-theme=light]{
   --soot:#efece4; --panel:#ffffff; --panel2:#f5f2eb; --rule:#d8d3c7; --steel:#b7b1a4;
   --chalk:#1b1a17; --muted:#5b574e; --dim:#8b867b; --orange:#e8620a; --orange2:#c9500a; --orange-ink:#fff8f2;
-  --good:#1f8f5b; --warn:#b7860b; --crit:#c8362c; --info:#2a76b8; --tabbg:#faf8f3; --grid:rgba(0,0,0,.08); --ink:#1b1a17;
+  --good:#17794c; --warn:#946c00; --crit:#c8362c; --info:#2a76b8; --tabbg:#faf8f3; --grid:rgba(0,0,0,.08); --ink:#1b1a17;
 }
 :root[data-theme=light] #view,:root[data-theme=light] #intro{--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--rule:#343941;--good:#4fc08d;--crit:#e2473c;--info:#5fa8e6}
 :root[data-theme=light] .seg button.on{background:linear-gradient(180deg,rgba(232,98,10,.16),rgba(232,98,10,.05));color:var(--chalk)}
@@ -102,11 +102,16 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick button:last-child:nth-child(odd){grid-column:1/-1}
 .evpick svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:break-word}   /* a long status ("needs Outlaw shop") wraps to a second line */
+.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.3;overflow-wrap:break-word;min-width:0}   /* a long status ("Heads-up eliminations · on now") wraps, never clipped */
+html:not(.desk) .evpick small{font-size:10.5px;letter-spacing:-.01em}
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
 :root[data-theme=light] .evpick button.on{background:linear-gradient(180deg,rgba(232,98,10,.16),rgba(232,98,10,.05))}
+:root[data-theme=light] .evpick button.lock small{color:var(--muted)}:root[data-theme=light] .evpick button.live small{color:#a8440a}
+/* light: --good / --warn are dark enough for text on white and on --soot (≥4.5:1: stress report figures, the 24 h gate note, "legal");
+   the hillclimb's lit LIFT button and the safety-car tag go white on it while they sit in the panel */
+:root[data-theme=light] #panel :is(.hlbtns #hillLift.on,.e24sc){color:#fff}   /* --dim on white is ~3.6:1 and --orange2 on the soot ~3.8:1 at this size */
 .tbusy{padding:10px 12px;border:1px dashed var(--rule);border-radius:6px}
 .tbusy .chip{margin-left:6px}
 .card .evgo{display:block;margin:8px 0 2px;color:var(--orange2);border-color:var(--orange)}
@@ -154,6 +159,10 @@ html.desk #catSeg{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
 /* the drag body picker (7 classes): a compact grid, two across on a phone, the note wrapping instead of clipping */
 .seg.segbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}html.desk .seg.segbody{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .seg.segbody button{padding:8px 6px;min-height:46px}.seg.segbody button small{white-space:normal;font-size:10.5px;line-height:1.25;overflow:visible}
+/* phone: the seven classes four across by name only (two rows, not four), the chosen one's note on a line under them */
+html:not(.desk) .seg.segbody{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-bottom:4px}html:not(.desk) .seg.segbody button{padding:5px 3px;min-height:44px;font-size:13px;line-height:1.12}
+html:not(.desk) .seg.segbody button small{display:none}
+.segbodynote{display:none}html:not(.desk) .segbodynote{display:block;margin:0 0 10px;font-family:var(--mono);font-size:11px;line-height:1.3;color:var(--muted)}
 .seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .paints{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
 .paints button{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:2px solid var(--rule);background:var(--panel);padding:5px;cursor:pointer}
@@ -964,6 +973,18 @@ html:not(.desk) #evHud:is([data-ev=e24Hud],[data-ev=hillLive]){padding-top:8px}
 html:not(.desk) #evHud .e24h{grid-template-columns:auto auto minmax(0,1fr) auto;row-gap:3px}html:not(.desk) #evHud .e24map{grid-column:4;grid-row:1/3;align-self:end}
 html:not(.desk) #evHud .e24gp{grid-column:1/4;padding-top:3px}html:not(.desk) #evHud .e24c b,html:not(.desk) #evHud .e24p b{font-size:20px}html:not(.desk) #evHud .e24h i{margin-top:1px;font-size:9.5px}
 html:not(.desk) #evHud .e24g>div{padding:1px 5px}html:not(.desk) #evHud .e24g b{font-size:13px;line-height:1.15}html:not(.desk) #evHud .e24g .ph-bar{height:2px;margin-top:1px}
+/* phone 24 Hours, tighter still (~a fifth of the view, not a third): clock, place, gaps and map on one row, the six readings
+   in one row (Failure risk says "Risk"), a slim safety-car tag */
+html:not(.desk) #evHud .e24h{grid-template-columns:auto auto minmax(0,1fr) auto;column-gap:8px}
+html:not(.desk) #evHud .e24gp{grid-column:3;grid-row:1;flex-direction:column;justify-content:center;gap:2px;border-top:0;padding-top:0;align-self:center;font-size:10px}
+html:not(.desk) #evHud .e24gp b{font-size:10.5px}
+html:not(.desk) #evHud .e24map{grid-column:4;grid-row:1;width:60px;height:42px}
+html:not(.desk) #evHud .e24g{grid-template-columns:repeat(6,minmax(0,1fr));gap:3px}
+html:not(.desk) #evHud .e24g>div{display:block;padding:1px 4px}
+html:not(.desk) #evHud .e24g span{font-size:8.5px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:clip}
+html:not(.desk) #evHud .e24g span[data-s]{font-size:0}html:not(.desk) #evHud .e24g span[data-s]::after{content:attr(data-s);font-size:8.5px}
+html:not(.desk) #evHud .e24g b{font-size:13px;white-space:nowrap}html:not(.desk) #evHud .e24g .ph-bar{margin-top:2px}
+html:not(.desk) #evHud .e24sc{font-size:10px;line-height:14px;padding:0;margin-top:3px;letter-spacing:.1em}
 html:not(.desk) #evHud .hlh .rd-spd b{font-size:24px}html:not(.desk) #evHud .hlh .rd-g b{font-size:19px}html:not(.desk) #evHud .hlh .rd-lt b{font-size:16px}
 html:not(.desk) #evHud .hl-meters{grid-template-columns:repeat(3,auto);justify-content:space-between}html:not(.desk) #evHud .hl-meters .peak{padding:1px 5px}
 html:not(.desk) #evHud .hl-meters .peak b{font-size:14px}html:not(.desk) #evHud .hl-meters .peak span{overflow:visible;text-overflow:clip;font-family:var(--body);font-size:10px;letter-spacing:0;text-transform:none}

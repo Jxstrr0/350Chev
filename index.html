@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.56.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.56.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -18,7 +18,7 @@
 :root[data-theme=light]{
   --soot:#efece4; --panel:#ffffff; --panel2:#f5f2eb; --rule:#d8d3c7; --steel:#b7b1a4;
   --chalk:#1b1a17; --muted:#5b574e; --dim:#8b867b; --orange:#e8620a; --orange2:#c9500a; --orange-ink:#fff8f2;
-  --good:#1f8f5b; --warn:#b7860b; --crit:#c8362c; --info:#2a76b8; --tabbg:#faf8f3; --grid:rgba(0,0,0,.08); --ink:#1b1a17;
+  --good:#17794c; --warn:#946c00; --crit:#c8362c; --info:#2a76b8; --tabbg:#faf8f3; --grid:rgba(0,0,0,.08); --ink:#1b1a17;
 }
 :root[data-theme=light] #view,:root[data-theme=light] #intro{--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--rule:#343941;--good:#4fc08d;--crit:#e2473c;--info:#5fa8e6}
 :root[data-theme=light] .seg button.on{background:linear-gradient(180deg,rgba(232,98,10,.16),rgba(232,98,10,.05));color:var(--chalk)}
@@ -108,11 +108,16 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick button:last-child:nth-child(odd){grid-column:1/-1}
 .evpick svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:break-word}   /* a long status ("needs Outlaw shop") wraps to a second line */
+.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.3;overflow-wrap:break-word;min-width:0}   /* a long status ("Heads-up eliminations · on now") wraps, never clipped */
+html:not(.desk) .evpick small{font-size:10.5px;letter-spacing:-.01em}
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
 :root[data-theme=light] .evpick button.on{background:linear-gradient(180deg,rgba(232,98,10,.16),rgba(232,98,10,.05))}
+:root[data-theme=light] .evpick button.lock small{color:var(--muted)}:root[data-theme=light] .evpick button.live small{color:#a8440a}
+/* light: --good / --warn are dark enough for text on white and on --soot (≥4.5:1: stress report figures, the 24 h gate note, "legal");
+   the hillclimb's lit LIFT button and the safety-car tag go white on it while they sit in the panel */
+:root[data-theme=light] #panel :is(.hlbtns #hillLift.on,.e24sc){color:#fff}   /* --dim on white is ~3.6:1 and --orange2 on the soot ~3.8:1 at this size */
 .tbusy{padding:10px 12px;border:1px dashed var(--rule);border-radius:6px}
 .tbusy .chip{margin-left:6px}
 .card .evgo{display:block;margin:8px 0 2px;color:var(--orange2);border-color:var(--orange)}
@@ -160,6 +165,10 @@ html.desk #catSeg{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
 /* the drag body picker (7 classes): a compact grid, two across on a phone, the note wrapping instead of clipping */
 .seg.segbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}html.desk .seg.segbody{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .seg.segbody button{padding:8px 6px;min-height:46px}.seg.segbody button small{white-space:normal;font-size:10.5px;line-height:1.25;overflow:visible}
+/* phone: the seven classes four across by name only (two rows, not four), the chosen one's note on a line under them */
+html:not(.desk) .seg.segbody{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-bottom:4px}html:not(.desk) .seg.segbody button{padding:5px 3px;min-height:44px;font-size:13px;line-height:1.12}
+html:not(.desk) .seg.segbody button small{display:none}
+.segbodynote{display:none}html:not(.desk) .segbodynote{display:block;margin:0 0 10px;font-family:var(--mono);font-size:11px;line-height:1.3;color:var(--muted)}
 .seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .paints{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
 .paints button{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:2px solid var(--rule);background:var(--panel);padding:5px;cursor:pointer}
@@ -970,6 +979,18 @@ html:not(.desk) #evHud:is([data-ev=e24Hud],[data-ev=hillLive]){padding-top:8px}
 html:not(.desk) #evHud .e24h{grid-template-columns:auto auto minmax(0,1fr) auto;row-gap:3px}html:not(.desk) #evHud .e24map{grid-column:4;grid-row:1/3;align-self:end}
 html:not(.desk) #evHud .e24gp{grid-column:1/4;padding-top:3px}html:not(.desk) #evHud .e24c b,html:not(.desk) #evHud .e24p b{font-size:20px}html:not(.desk) #evHud .e24h i{margin-top:1px;font-size:9.5px}
 html:not(.desk) #evHud .e24g>div{padding:1px 5px}html:not(.desk) #evHud .e24g b{font-size:13px;line-height:1.15}html:not(.desk) #evHud .e24g .ph-bar{height:2px;margin-top:1px}
+/* phone 24 Hours, tighter still (~a fifth of the view, not a third): clock, place, gaps and map on one row, the six readings
+   in one row (Failure risk says "Risk"), a slim safety-car tag */
+html:not(.desk) #evHud .e24h{grid-template-columns:auto auto minmax(0,1fr) auto;column-gap:8px}
+html:not(.desk) #evHud .e24gp{grid-column:3;grid-row:1;flex-direction:column;justify-content:center;gap:2px;border-top:0;padding-top:0;align-self:center;font-size:10px}
+html:not(.desk) #evHud .e24gp b{font-size:10.5px}
+html:not(.desk) #evHud .e24map{grid-column:4;grid-row:1;width:60px;height:42px}
+html:not(.desk) #evHud .e24g{grid-template-columns:repeat(6,minmax(0,1fr));gap:3px}
+html:not(.desk) #evHud .e24g>div{display:block;padding:1px 4px}
+html:not(.desk) #evHud .e24g span{font-size:8.5px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:clip}
+html:not(.desk) #evHud .e24g span[data-s]{font-size:0}html:not(.desk) #evHud .e24g span[data-s]::after{content:attr(data-s);font-size:8.5px}
+html:not(.desk) #evHud .e24g b{font-size:13px;white-space:nowrap}html:not(.desk) #evHud .e24g .ph-bar{margin-top:2px}
+html:not(.desk) #evHud .e24sc{font-size:10px;line-height:14px;padding:0;margin-top:3px;letter-spacing:.1em}
 html:not(.desk) #evHud .hlh .rd-spd b{font-size:24px}html:not(.desk) #evHud .hlh .rd-g b{font-size:19px}html:not(.desk) #evHud .hlh .rd-lt b{font-size:16px}
 html:not(.desk) #evHud .hl-meters{grid-template-columns:repeat(3,auto);justify-content:space-between}html:not(.desk) #evHud .hl-meters .peak{padding:1px 5px}
 html:not(.desk) #evHud .hl-meters .peak b{font-size:14px}html:not(.desk) #evHud .hl-meters .peak span{overflow:visible;text-overflow:clip;font-family:var(--body);font-size:10px;letter-spacing:0;text-transform:none}
@@ -11962,6 +11983,20 @@ function flushHW(G, matOf){
   }
   HW=null;
 }
+/* r128's InstancedMesh turns frustum culling off (its geometry's sphere is one instance's, at the origin), so a static set
+   (a forest, a crowd, the rocks) draws, and shadows, all of it every frame wherever the camera looks. instCull puts a sphere
+   round every instance on the mesh's geometry (which must be its own) and turns culling on: the set is skipped, in the
+   view and in each shadow map, only when none of it can be there. pad: metres of slack for small per-frame motion (a cheer);
+   base: the shape's own geometry when the mesh's geometry already carries some other (cell) sphere. */
+var _icM=new THREE.Matrix4(), _icS=new THREE.Sphere();
+function instCull(im, pad, base){
+  var g=im.geometry, n=im.count, i, bb=new THREE.Box3(), c=new THREE.Vector3(), r=0; if(!n) return im;
+  var sg=base||g; if(!sg.boundingSphere) sg.computeBoundingSphere(); var gs=sg.boundingSphere.clone();
+  for(i=0;i<n;i++){ im.getMatrixAt(i,_icM); _icS.copy(gs).applyMatrix4(_icM); bb.expandByPoint(_icS.center); }
+  bb.getCenter(c);
+  for(i=0;i<n;i++){ im.getMatrixAt(i,_icM); _icS.copy(gs).applyMatrix4(_icM); r=Math.max(r, c.distanceTo(_icS.center)+_icS.radius); }
+  g.boundingSphere=new THREE.Sphere(c, r+(pad||0)); im.frustumCulled=true; return im;
+}
 
 /* world-space point of a local point (for belt paths, pipe routing) */
 Builder.prototype.pt=function(x,y,z){ return new THREE.Vector3(x,y,z).applyMatrix4(this.top()); };
@@ -17116,7 +17151,7 @@ function stripBuildCrowd(S2, ppl, rng){
   g.setAttribute("aSkin", new THREE.InstancedBufferAttribute(aSk,3)); g.setAttribute("aHat", new THREE.InstancedBufferAttribute(aHt,3));
   var ctr=new THREE.Vector3((mn[0]+mx[0])/2,(mn[1]+mx[1])/2+1,(mn[2]+mx[2])/2);
   g.boundingSphere=new THREE.Sphere(ctr, ctr.distanceTo(new THREE.Vector3(mx[0],mx[1]+2.2,mx[2]))+1);
-  mesh.castShadow=false; mesh.receiveShadow=true; S2.add(mesh);
+  mesh.castShadow=false; mesh.receiveShadow=true; mesh.frustumCulled=true; S2.add(mesh);   /* r128 leaves InstancedMesh unculled; the sphere above holds every one */
   var rk=ppl.map(function(q){ return q.r; }), sr=[]; for(i=0;i<n;i++) if(ppl[i].stand) sr.push(ppl[i].r);
   return { mesh:mesh, body:mesh, base:base, n:base.length, ranks:rk, standRanks:sr, live:false, wave:false, u:STRIP_VU.uCrowd, tier:null };
 }
@@ -17151,7 +17186,7 @@ function stripKitMesh(S2, items, inst, mat){
     mn[0]=Math.min(mn[0],q.x); mn[1]=Math.min(mn[1],q.z); mx[0]=Math.max(mx[0],q.x); mx[1]=Math.max(mx[1],q.z); }
   geo.setAttribute("iT1", new THREE.InstancedBufferAttribute(t1,3)); geo.setAttribute("iT2", new THREE.InstancedBufferAttribute(t2,3));
   var ctr=new THREE.Vector3((mn[0]+mx[0])/2, 2, (mn[1]+mx[1])/2); geo.boundingSphere=new THREE.Sphere(ctr, Math.hypot(mx[0]-mn[0], mx[1]-mn[1])/2+kr);
-  mesh.receiveShadow=true; mesh.castShadow=false; S2.add(mesh);   /* the pits sit outside the sun's 60 m shadow box; at night each spot would redraw them */
+  mesh.receiveShadow=true; mesh.castShadow=false; mesh.frustumCulled=true; S2.add(mesh);   /* the pits sit outside the sun's 60 m shadow box; at night each spot would redraw them */
   return { mesh:mesh, ranks:inst.map(function(q){ return q.r; }) };
 }
 /* the two pit spaces (local: length along x, the work side toward +z) */
@@ -20138,7 +20173,7 @@ function buildPullScene(){
     for(s=0;s<24;s++) pts.push([-60+s*9+rng(s+7)*3, -64-rng(s)*6, 4+rng(s+9)*2.5]);
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); });
-    S3.add(im); })();
+    instCull(im); S3.add(im); })();
   /* Ferris wheel on the midway behind the stands (turns slowly, rim lights at night) */
   (function(){ var W=new THREE.Group(), R=11, hub=new THREE.Vector3(58, 14, -78), mat=new THREE.MeshStandardMaterial({color:0xd8dde2, roughness:0.4, metalness:0.6}), parts=[];
     parts.push({g:new THREE.TorusGeometry(R,0.16,6,48), m:new THREE.Matrix4()}); parts.push({g:new THREE.TorusGeometry(R*0.94,0.1,6,48), m:new THREE.Matrix4()});
@@ -20169,7 +20204,7 @@ function buildPullScene(){
     for(var s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.31,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.75,p[2]); headM.setMatrixAt(s,mm);
       cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc);
       cc.set(rng(s*2.9)<0.45?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
-    bodyM.receiveShadow=true; S3.add(bodyM); S3.add(headM);
+    bodyM.receiveShadow=true; instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM);
     PULL.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
 
   /* scoreboards: one canvas, two faces */
@@ -20820,7 +20855,7 @@ function buildBogScene(){
     for(s=0;s<60;s++){ var a=s/60*TAU, R=150+rng(s)*30; pts.push([40+Math.cos(a)*R*1.3, Math.sin(a)*R, 4+rng(s+3)*3]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); });
-    S3.add(im); })();
+    instCull(im); S3.add(im); })();
   /* the crowd on the bank: standing, some on lawn chairs, thinner on Lite */
   (function(){ var ppl=[], occ=lite?0.35:ULT()?0.88:0.6, slope=1.7/8;
     for(var r=0;r<8;r++){ var rz=-BOG_W/2-4.6-r*1.0, ry=Math.max(0,-BOG_W/2-4.5-rz)*slope;
@@ -20832,7 +20867,7 @@ function buildBogScene(){
     for(var s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.4,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.93,p[2]); headM.setMatrixAt(s,mm);
       cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc);
       cc.set(rng(s*2.9)<0.45?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
-    bodyM.receiveShadow=true; S3.add(bodyM); S3.add(headM);
+    bodyM.receiveShadow=true; instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM);
     BOG.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
   /* mud: the plane is built per night; clods (lit, sharp), spray and splash mist (soft, Full/Ultra only), exhaust */
   bogFxBuild(S3, lite);   /* vis/bog-fx.js */
@@ -22220,11 +22255,11 @@ function buildBoatScene(){
   (function(){ var pts=[]; [-12,0,12].forEach(function(zz){ pts.push([0,zz,1.2,0xff6a1a]); pts.push([BOAT_FIN,zz,1.2,0xff6a1a]); for(var f=100; f<1000; f+=100) pts.push([f/3.28084,zz,0.55,0xf2c22c]); });
     [-18,18].forEach(function(zz){ pts.push([0,zz,1.0,0xf4efe2]); pts.push([BOAT_FIN,zz,1.0,0xf4efe2]); });
     var im=new THREE.InstancedMesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({roughness:0.45}), pts.length), cc=new THREE.Color();
-    pts.forEach(function(p,q){ cc.set(p[3]).convertSRGBToLinear(); im.setColorAt(q,cc); }); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); S3.add(im); BOAT.buoys={mesh:im, pts:pts}; boatBuoys(0); })();
+    pts.forEach(function(p,q){ cc.set(p[3]).convertSRGBToLinear(); im.setColorAt(q,cc); }); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); S3.add(im); BOAT.buoys={mesh:im, pts:pts}; boatBuoys(0); instCull(im, 1); })();
   /* trees behind the banks */
   (function(){ var pts=[], s; for(s=0;s<(lite?70:150);s++){ var sd=s%2?1:-1, xx=-200+rng(s)*900, zz=sd*(100+rng(s+5)*120); if(sd>0&&xx>-60&&xx<380&&zz<115) continue; pts.push([xx,zz,4+rng(s+3)*3]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
-    pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],0.9+h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06,0.45,0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); }); S3.add(im); })();
+    pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],0.9+h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06,0.45,0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); }); instCull(im); S3.add(im); })();
   /* the crowd on the right bank and in the bleachers; thinner on Lite */
   (function(){ var ppl=[], occ=lite?0.3:0.6;
     for(var r=0;r<6;r++){ var rz=62+r*1.1, ry=0.6+Math.min(0.3,r*0.06); for(var xx=-30; xx<360; xx+=0.65){ if(xx>214&&xx<300) continue; if(rng(xx*3.1+r*17.7)>occ*(xx>180?1:0.55)*(1-r*0.08)) continue; ppl.push([xx+(rng(xx+r)-0.5)*0.3, ry, rz+(rng(xx*1.7+r)-0.5)*0.4]); } }
@@ -22234,7 +22269,7 @@ function buildBoatScene(){
     var mm=new THREE.Matrix4(), cc=new THREE.Color(), base=[];
     for(var s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.4,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.93,p[2]); headM.setMatrixAt(s,mm);
       cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc); cc.set(rng(s*2.9)<0.45?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
-    S3.add(bodyM); S3.add(headM); BOAT.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
+    instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM); BOAT.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
   /* spray: droplets (unlit, sharp) on every tier, a soft lit mist on Full/Ultra; wakes for both lanes */
   BOAT.fx=new StripFx(lite?220:900, "fire", stripPuffTex()); BOAT.fx.mat.blending=THREE.NormalBlending; S3.add(BOAT.fx.mesh);
   BOAT.fxMist=lite?null:new StripFx(GFX==="ultra"?500:300, "smoke", stripPuffTex()); if(BOAT.fxMist) S3.add(BOAT.fxMist.mesh);
@@ -22573,7 +22608,7 @@ function buildRoadWorld(T){
     var shirts=[0x9c3a30,0x34598f,0xcfccc4,0x1f2023,0xff7a1a,0x44684a,0xc8a640,0x5d5f66,0x8f4a5e,0x2c6b3a], skin=[0xe0b494,0xc68a64,0x8d5a3b,0xf0c9a8,0x5a3a26], mm=new THREE.Matrix4(), cc=new THREE.Color();
     for(q=0;q<n2;q++){ var p0=seatPts[q]; mm.makeTranslation(p0[0],p0[1]+0.31,p0[2]); bodyM.setMatrixAt(q,mm); mm.makeTranslation(p0[0],p0[1]+0.75,p0[2]); headM.setMatrixAt(q,mm);
       cc.set(shirts[Math.floor(rng(q*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(q,cc); cc.set(skin[Math.floor(rng(q*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(q,cc); }
-    S4.add(bodyM); S4.add(headM); }
+    instCull(bodyM, 1.5); instCull(headM, 1.5); S4.add(bodyM); S4.add(headM); }
   /* trees: shelterbelts and copses, kept well clear of the racing surface */
   (function(){ var ult=ULT(), pts=[], tries=lite?900:ult?3600:1800, R2=Math.max(T.size[0],T.size[1])*0.5+260, s;
     for(s=0;s<tries && pts.length<(lite?170:ult?760:380);s++){ var px=(rng(s*1.7)-0.5)*2*R2, pz=(rng(s*2.9+1)-0.5)*2*R2, ok=true;
@@ -22581,7 +22616,7 @@ function buildRoadWorld(T){
       if(ok) pts.push([px,pz,3.5+rng(s+3)*3.5]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,qq){ var h=p[2]*1.7; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(qq,mm); cc.setHSL(0.24+rng(qq)*0.06,0.45,0.13+rng(qq+1)*0.06).convertSRGBToLinear(); im.setColorAt(qq,cc); });
-    im.castShadow=!lite; S4.add(im); if(ult) ultraRoadTrees(S4, im, pts, rng); })();
+    im.castShadow=!lite; instCull(im); S4.add(im); if(ult) ultraRoadTrees(S4, im, pts, rng); })();
   /* coulee hills on the horizon */
   (function(){ var seg=120, R0=2400, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
     for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=Math.max(5, 16+40*Math.pow(0.5+0.5*Math.sin(a*3.0+1.1),2)+18*Math.sin(a*11.0+1.4)*Math.sin(a*5.0)+10*Math.sin(a*23.0));
@@ -23688,8 +23723,8 @@ function saltAlteredV2(L, aero){
   car.position.x=-me.xr; g.add(car);
   /* door number boards (the strip's door decals carry them) */
   var board=slDoorMat(L); U.liv.dm=board; U.liv.num=L.num; for(i=0;i<U.liv.door.length;i++) U.liv.door[i].material=board;
-  /* the windshield banner: the car's own lead salt sponsor, not the drag strip's */
-  var ban=slBannerMat(L); U.liv.bm=ban; for(i=0;i<U.liv.banner.length;i++) U.liv.banner[i].material=ban;
+  /* no windshield banner on the salt: a strip thing (stripLivery only swaps its material, so it stays hidden) */
+  for(i=0;i<U.liv.banner.length;i++) U.liv.banner[i].visible=false;
   /* headlight tape: a silver panel over each lamp, crossed with black tape */
   var hl=U.lights.head[0];
   if(hl){ hl.geometry.computeBoundingBox(); var bb=hl.geometry.boundingBox, pa=hl.geometry.attributes.position, lb=[new THREE.Box3(), new THREE.Box3()], v=new THREE.Vector3();
@@ -23731,16 +23766,6 @@ function slDoorMat(L){
   x.fillStyle="#141414"; x.textAlign="center"; x.textBaseline="middle"; x.font="700 "+(L.num.length>3?110:140)+"px "+F; x.fillText(L.num, 156, 104, 270);
   x.fillStyle="#f4efe2"; x.fillRect(318, 120, 188, 66); x.strokeStyle="#141414"; x.lineWidth=5; x.strokeRect(321, 123, 182, 60); x.fillStyle="#141414"; x.font="700 44px "+F; x.fillText(L.cls||"ALT", 412, 156, 170);
   slSponsor(x, SL_SPONSORS[L.sponsors[0]], 316, 12, 192, 100);
-  var t=sc_ctex(c), q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
-  var env=sc_env(); if(env) q.envMap=env; q.userData.perBuild=true; q.userData.ownMaps=[t];
-  SLC.mat[key]=q; return q;
-}
-/* the salt Altered's windshield banner: its lead sponsor's colours and name over the glass */
-function slBannerMat(L){
-  var sp=SL_SPONSORS[L.sponsors[0]]||SL_SPONSORS[0], key="ban|"+sp.id+"|"+GFX; if(SLC.mat[key]) return SLC.mat[key];
-  var c=sc_canvas(512,64), x=c.getContext("2d"), F="'Chakra Petch','Barlow Condensed','Arial Narrow',Arial,sans-serif";
-  x.fillStyle=sp.c1; x.fillRect(0,0,512,64); x.fillStyle=sp.c2; x.fillRect(0,0,512,5); x.fillRect(0,59,512,5);
-  x.fillStyle=sp.c3; x.textAlign="center"; x.textBaseline="middle"; x.font="italic 700 38px "+F; x.fillText(sp.n+" "+sp.t, 256, 33, 480);
   var t=sc_ctex(c), q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
   var env=sc_env(); if(env) q.envMap=env; q.userData.perBuild=true; q.userData.ownMaps=[t];
   SLC.mat[key]=q; return q;
@@ -24481,11 +24506,11 @@ function buildHillWorld(T){
       var foliage=new THREE.InstancedMesh(lite?fg:mergeHillGeos([fg,f2]), new THREE.MeshStandardMaterial({roughness:0.95}), tp.length), trunk=new THREE.InstancedMesh(tg, new THREE.MeshStandardMaterial({color:sc(0x4a3626), roughness:1}), tp.length);
       tp.forEach(function(p,j){ var sz=p[3]*(1-0.35*smoothstep(3300,3560,p[4])); mm.compose(_hA.set(p[0],p[1]-0.3,p[2]), qq.setFromEuler(e.set(0,rng(j)*6,0)), _hB.set(sz,sz*(0.9+rng(j+9)*0.35),sz));
         foliage.setMatrixAt(j,mm); trunk.setMatrixAt(j,mm); cc.setHSL(0.30+rng(j+2)*0.06,0.38,0.12+rng(j+3)*0.06).convertSRGBToLinear(); foliage.setColorAt(j,cc); });
-      foliage.castShadow=trunk.castShadow=!lite; S5.add(foliage); S5.add(trunk); W.trees=tp.length; }
+      foliage.castShadow=trunk.castShadow=!lite; instCull(foliage); instCull(trunk); S5.add(foliage); S5.add(trunk); W.trees=tp.length; }
     if(rp.length){ var rg=new THREE.DodecahedronGeometry(1,0), rocks=new THREE.InstancedMesh(rg, new THREE.MeshStandardMaterial({roughness:0.92}), rp.length);
       rp.forEach(function(p,j){ mm.compose(_hA.set(p[0],p[1]+p[3]*0.25,p[2]), qq.setFromEuler(e.set(rng(j)*3,rng(j+1)*3,rng(j+2)*3)), _hB.set(p[3]*(0.8+rng(j+3)*0.6),p[3]*(0.55+rng(j+4)*0.4),p[3]*(0.8+rng(j+5)*0.5)));
         rocks.setMatrixAt(j,mm); cc.setHSL(0.07,0.08+rng(j+6)*0.06,0.3+rng(j+7)*0.12).convertSRGBToLinear(); rocks.setColorAt(j,cc); });
-      rocks.castShadow=!lite; S5.add(rocks); W.rocks=rp.length; }
+      rocks.castShadow=!lite; instCull(rocks); S5.add(rocks); W.rocks=rp.length; }
     if(lite||ultra) hillTreeCells(W, S5, tp, rp, foliage, trunk, rocks, ultra); })();
   /* the Front Range on the horizon: a ring of peaks, snow on the tops */
   (function(){ var seg=lite?96:160, R0=W.span*0.62+2500, pos=[], col=[], idx=[], cx=0, cz=0, c1=sc(0x5a5e5c), c2=sc(0x8a8e92), c3=sc(0xe8ecf0);
@@ -24645,7 +24670,7 @@ function hillTreeCells(W, S, tp, rp, foliage, trunk, rocks, ultra){
   var mm=new THREE.Matrix4(), cc=new THREE.Color();
   var cellMesh=function(src, base, ids, sph, cast){ var m=new THREE.InstancedMesh(hillCellGeo(base, sph), src.material, ids.length);
     ids.forEach(function(j, q){ src.getMatrixAt(j, mm); m.setMatrixAt(q, mm); if(src.instanceColor){ src.getColorAt(j, cc); m.setColorAt(q, cc); } });
-    m.castShadow=cast; m.receiveShadow=src.receiveShadow; S.add(m); return m; };
+    m.castShadow=cast; m.receiveShadow=src.receiveShadow; instCull(m, 0, base); S.add(m); return m; };
   var sphOf=function(list, ids, up){ var a=new THREE.Vector3(1e9,1e9,1e9), b=new THREE.Vector3(-1e9,-1e9,-1e9); ids.forEach(function(j){ var p=list[j]; a.min(_hlA.set(p[0],p[1],p[2])); b.max(_hlA); });
     b.y+=up; a.x-=8; a.z-=8; b.x+=8; b.z+=8; var c=a.clone().add(b).multiplyScalar(0.5); return new THREE.Sphere(c, c.distanceTo(b)); };
   if(foliage){ var TB=bin(tp);
@@ -24785,8 +24810,8 @@ function ultraAO(key, S, cam, o){
 }
 /* --- road course / 24 h --- */
 /* trees: a faceted two-crown broadleaf on a trunk (Full: one icosahedron blob sunk in the ground). The trees go into
-   ground cells with real bounds, so the camera culls the ones behind it and only the cells in the sun's shadow box
-   draw into the shadow map (Full's single instanced forest is never culled). */
+   ground cells with real bounds (instCull), so the camera culls the ones behind it and only the cells in the sun's shadow box
+   draw into the shadow map (Full's single instanced forest culls only as a whole). */
 function ultraRoadTrees(S, im, pts, rng){
   var g=new THREE.IcosahedronGeometry(1,1), P=g.attributes.position;
   for(var q=0;q<P.count;q++){ var x=P.getX(q), y=P.getY(q), z=P.getZ(q), k=0.84+0.3*Math.abs(Math.sin(x*7.1+y*3.3+z*5.7)); P.setXYZ(q, x*k, y*k, z*k); }
@@ -24806,7 +24831,7 @@ function ultraRoadTrees(S, im, pts, rng){
       mm.compose(_sbP.set(p[0]+(rng(j+11)-0.5)*r*0.6, tH+h*1.32, p[1]+(rng(j+13)-0.5)*r*0.6), Q, _sbS.set(r*0.62, h*0.5, r*0.62)); top.setMatrixAt(n, mm);
       mm.compose(_sbP.set(p[0], 0, p[1]), Q.set(0,0,0,1), _sbS.set(r*0.35+0.4, tH+h*0.4, r*0.35+0.4)); trunk.setMatrixAt(n, mm);
       im.getColorAt(j, cc); crown.setColorAt(n, cc); top.setColorAt(n, cc.multiplyScalar(1.12)); });
-    crown.castShadow=true; S.add(crown); S.add(top); S.add(trunk); }
+    crown.castShadow=true; instCull(crown, 0, g); instCull(top, 0, g2); instCull(trunk, 0, tg); S.add(crown); S.add(top); S.add(trunk); }
   S.remove(im);
 }
 /* the 24 h field: four wheels per car (Full: body and cabin boxes on the road) */
@@ -26312,7 +26337,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.56.0.0";
+const VERSION="1.56.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -26929,7 +26954,7 @@ function renderEnv(){
   if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>
-    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg segbody">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>${paintHtml()}${shellHtml()}
+    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg segbody">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div><div class="segbodynote">${(SIM.AERO[e.body]||{}).d||""}</div>${paintHtml()}${shellHtml()}
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
@@ -28772,7 +28797,7 @@ function e24HudInit(){$("e24Hud").innerHTML=`<div class="e24h"><div class="e24c"
   <div><span>Fuel</span><b id="e24Fu">—</b><i id="e24Fl">—</i><div class="ph-bar"><i class="fill" id="e24Fb"></i></div></div>
   <div><span>Tyres</span><b id="e24Ty">—</b><i id="e24Tl">—</i><div class="ph-bar"><i class="fill" id="e24Tb"></i></div></div>
   <div><span>Engine</span><b id="e24En">—</b><i id="e24Et">—</i></div>
-  <div class="e24hz"><span>Failure risk</span><b id="e24Hz">—</b><i id="e24Hw">—</i><div class="ph-bar"><i class="fill" id="e24Hb"></i></div></div>
+  <div class="e24hz"><span data-s="Risk">Failure risk</span><b id="e24Hz">—</b><i id="e24Hw">—</i><div class="ph-bar"><i class="fill" id="e24Hb"></i></div></div>
   <div><span>Track</span><b id="e24Am">—</b><i id="e24Sk">—</i></div></div>`;e24SpdRender();}
 function e24SpdRender(){const b=$("e24Spd");if(!b||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
   b.innerHTML=end?`<button class="btn pri" data-e24a="end" style="flex:1">${ER.toEnd?"Running the race to the flag…":"To the flag ▸▸"}</button>`
