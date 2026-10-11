@@ -21504,10 +21504,9 @@ function saltAlteredV2(L, aero){
     hl.visible=false; }
   /* chute pack over the rear bumper; the strip chute already anchors there */
   var an=me.anchor; slChutePack(B, an.x+0.06, an.y+0.12, 0);
-  /* class plate on the rear quarter window line, the sponsor rail on the rocker */
+  /* the sponsor rail on the rocker and a block on the front fender (the class plate is on the door boards) */
   var bbx=new THREE.Box3(); U.liv.door.forEach(function(d){ d.geometry.computeBoundingBox(); bbx.union(d.geometry.boundingBox); });
   if(!bbx.isEmpty()){ var zq=bbx.max.z+0.003, yq=bbx.min.y;
-    if(GFX!=="lite") slDecal2(B, SL_ATL.cls, bbx.min.x-0.45, yq+0.18, zq-0.02, 0.4, 0.125);   /* Lite: the door boards carry the class */
     if(GFX!=="lite"){ slDecal2(B, SL_ATL.rail, (bbx.min.x+bbx.max.x)/2, yq-0.1, zq-0.012, 1.3, 0.13); slDecal2(B, SL_ATL.sp[0], bbx.max.x+0.62, yq+0.12, zq-0.04, 0.42, 0.13); } }
   /* Moon discs on the strip wheels */
   var MB=sc_bin(); if(GFX!=="lite") U.carriers.forEach(function(cw){ var cu=cw.userData, sd2=cu.side; MB.add(L.moon==="paint"?"paint":"chrome", slMoonGeo(cu.r*0.58, cu.r*0.12, GFX==="lite"?12:18), sc_M(cw.position.x, cw.position.y, cw.position.z+sd2*cu.hw*0.9, sd2*PI/2, 0, 0)); });
