@@ -274,7 +274,7 @@ function saltDirect(o, dt, V){
   if(SALT.cue){ if(!o.shot && !SALT.skip && ph==="shutdown") s=SALT.cue; SALT.cue=null; }   /* a one-frame cut asked for elsewhere (vis/salt-event.js: the chute) */
   saltCut(s);
   SALT.shotT+=dt; SALT.cutT+=dt; T=SALT.shotT;
-  var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, lens=0, asp=SALT.cam.aspect||1.5, buf=0, D;
+  var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, lens=0, asp=SALT.cam.aspect||1.5, buf=0, D, fit=0;
   /* a vertical fov that shows a W-metre-wide slice at distance D (the long lenses size the car by this) */
   var fovFor=function(W, D){ return 2*Math.atan(Math.tan(Math.atan(W/2/Math.max(1,D)))/Math.max(0.5,asp))*180/PI; };
   var inMile=clamp((x-(C.x0-160))/160,0,1)*clamp(((C.x1+160)-x)/160,0,1);   /* through the traps: push in, shake */
@@ -283,7 +283,10 @@ function saltDirect(o, dt, V){
     case "push": rel=true; _sw.set(me.tail-3.5, 1.4, 6.8); _st.set(me.tail-1.0, 0.8, 0); fov=52; sm=3; break;
     case "chase": { rel=true; var sp=clamp(v/140,0,1), pk=inMile*clamp(v/80,0,1);
       _sw.set(me.tail-5.6-v*0.018+pk*1.4, 1.12+v*0.003-pk*0.18, 1.9-pk*0.3); _st.set(me.nose+5, 0.72, 0); fov=45+sp*6+pk*8; sm=2.4; buf=sp*(0.3+0.7*pk); break; }
-    case "heli": rel=true; _sw.set(-26+T*2.0, 8, 30); _st.set(mid+4, 0.5, 0); fov=30; sm=1.5; break;
+    case "heli": rel=true; _sw.set(-26+T*2.0, 8, 30); _st.set(mid+4, 0.5, 0); fov=30; sm=1.5;
+      if(ph==="shutdown" && o.chute){ var cz=Math.min(me.tail, me.anchor?me.anchor.x:me.tail)-(me.chuteLen||8)-1.6, cm=(cz+me.nose)/2;   /* the chute is out: the car and the canopy behind it, together */
+        _sw.set(cm-24+T*1.2, 8.5, 30); _st.set(cm, 0.7, 0); fov=clamp(fovFor((me.nose-cz)*1.12, 39.2), 30, 64); fit=1; }
+      break;
     case "nose": { rel=true; var ns=saltNoseSeat(V), hf=28*PI/180, al=Math.atan2(ns.y-ns.ny, Math.max(0.3,ns.nx-ns.x)), th=Math.max(-0.03, al-0.62*hf);
       _sw.set(ns.x, ns.y, ns.z); _st.set(ns.x+Math.cos(th)*40, ns.y-Math.sin(th)*40, ns.z*0.3); fov=56; sm=14; buf=clamp(v/120,0,1)*(0.5+0.5*inMile); break; }
     case "low": rel=true; _sw.set(me.nose+2.5, 0.35, 2.2); _st.set(me.tail, 0.6, 0); fov=58; sm=6; break;
@@ -308,7 +311,7 @@ function saltDirect(o, dt, V){
   if(bf>0.002){ var by=Math.sin(tt*13.1)+0.6*Math.sin(tt*29.7+1.3)+0.35*Math.sin(tt*53.3+0.4), bz=Math.sin(tt*11.3+2.1)+0.5*Math.sin(tt*31.9+0.7);
     SALT.camPos.y+=by*0.016*bf; SALT.camPos.z+=bz*0.014*bf; SALT.camTgt.y+=by*0.03*bf; }
   var cam=SALT.cam; cam.position.copy(SALT.camPos); cam.lookAt(SALT.camTgt); if(bf>0.002) cam.rotateZ((Math.sin(tt*7.3)+0.5*Math.sin(tt*19.1+1.0))*0.0045*bf);
-  cam.fov=SALT.fov; cam.updateProjectionMatrix(); saltLens(cam);
+  cam.fov=SALT.fov; cam.updateProjectionMatrix(); saltLens(cam, lens||fit);
   saltTrackVP(cam, dt);
 }
 function rng01(s){ var t=Math.sin(s*91.7+1.3)*43758.5453; return t-Math.floor(t); }

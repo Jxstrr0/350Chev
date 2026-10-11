@@ -152,6 +152,9 @@ html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
 .seg.n11 button,.seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .seg.n8 button{flex:1 1 22%}
+/* the drag body picker (7 classes): a compact grid, two across on a phone, the note wrapping instead of clipping */
+.seg.segbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}html.desk .seg.segbody{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.seg.segbody button{padding:8px 6px;min-height:46px}.seg.segbody button small{white-space:normal;font-size:10.5px;line-height:1.25;overflow:visible}
 .seg.n15 button{flex:1 1 22%;font-size:12.5px;letter-spacing:-.005em}
 .paints{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
 .paints button{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:2px solid var(--rule);background:var(--panel);padding:5px;cursor:pointer}
@@ -953,6 +956,17 @@ html.evhud #rpmbox{display:none!important}
 #evHud .e24prog{margin-top:4px;height:5px}#evHud .e24sc{margin-top:4px;padding:1px 0;font-size:11px}
 #evHud .e24g{gap:3px 4px;margin-top:4px}#evHud .e24g>div{padding:2px 6px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:5px}#evHud .e24g b{font-size:14px;line-height:1.2}#evHud .e24g span{font-size:9px}#evHud .e24g .ph-bar{flex:1 0 100%;height:3px;margin-top:2px}
 html:not(.desk) #evHud .e24g i{display:none}html.desk #evHud .e24g i{font-size:10px;flex:1 0 100%}   /* phone: the reading only, the notes stay for the desktop bar */
+/* phone: a label row never clips with "…": the narrower body face, and the right-hand note drops under the left one when the
+   two don't fit. The 24 Hours and hillclimb strips go compact (the map beside two rows, one-line readings, smaller type) so the car stays in sight */
+html:not(.desk) #evHud .ph-lbl{font-family:var(--body);font-size:11px;flex-wrap:wrap;column-gap:6px;overflow:visible}html:not(.desk) #evHud .ph+.ph .ph-lbl{font-size:10.5px}
+html:not(.desk) #evHud .ph-lbl span{overflow:visible;text-overflow:clip;flex:0 0 auto}html:not(.desk) #evHud .ph-lbl span:last-child{margin-left:auto}
+html:not(.desk) #evHud:is([data-ev=e24Hud],[data-ev=hillLive]){padding-top:8px}
+html:not(.desk) #evHud .e24h{grid-template-columns:auto auto minmax(0,1fr) auto;row-gap:3px}html:not(.desk) #evHud .e24map{grid-column:4;grid-row:1/3;align-self:end}
+html:not(.desk) #evHud .e24gp{grid-column:1/4;padding-top:3px}html:not(.desk) #evHud .e24c b,html:not(.desk) #evHud .e24p b{font-size:20px}html:not(.desk) #evHud .e24h i{margin-top:1px;font-size:9.5px}
+html:not(.desk) #evHud .e24g>div{padding:1px 5px}html:not(.desk) #evHud .e24g b{font-size:13px;line-height:1.15}html:not(.desk) #evHud .e24g .ph-bar{height:2px;margin-top:1px}
+html:not(.desk) #evHud .hlh .rd-spd b{font-size:24px}html:not(.desk) #evHud .hlh .rd-g b{font-size:19px}html:not(.desk) #evHud .hlh .rd-lt b{font-size:16px}
+html:not(.desk) #evHud .hl-meters{grid-template-columns:repeat(3,auto);justify-content:space-between}html:not(.desk) #evHud .hl-meters .peak{padding:1px 5px}
+html:not(.desk) #evHud .hl-meters .peak b{font-size:14px}html:not(.desk) #evHud .hl-meters .peak span{overflow:visible;text-overflow:clip;font-family:var(--body);font-size:10px;letter-spacing:0;text-transform:none}
 html.desk #evHud{left:18px;right:auto;bottom:16px;width:min(720px,calc(100% - min(320px,34%) - 56px));padding:10px 14px 9px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
 html.desk #evHud .ph-top b{font-size:34px}html.desk #evHud .ph-lbl{font-size:11.5px}html.desk #evHud .ph-row .peak b{font-size:19px}
 html.desk #evHud .rd-spd b{font-size:40px}html.desk #evHud .rd-map,html.desk #evHud .e24map{width:110px;height:78px}html.desk #evHud .e24c b,html.desk #evHud .e24p b{font-size:30px}
@@ -19203,8 +19217,8 @@ function stripExhaust(o, dt, car, isP){
   if(E.alN>0){ E.al-=dt;
     if(E.al<=0){ E.al=0.045+Math.random()*0.045; E.alN--;
       for(t=0;t<u._tips.length;t++){ car.localToWorld(_sfA.copy(u._tips[t])); _sfD.copy(u._dirs[t]).applyQuaternion(car.quaternion);
-        var ln=(E.al0?1.7:1.1)+Math.random()*0.6;
-        stripCone(FA, FF, _sfA, _sfD, v*0.9, ln, E.al0?0.32:0.24, 1.0, 0.55, 0.18, 1.15, lite);
+        var ln=(E.al0?2.3:1.6)+Math.random()*0.7;   /* longer and hotter than a shift pop, so it reads in daylight */
+        stripCone(FA, FF, _sfA, _sfD, v*0.9, ln, E.al0?0.36:0.29, 1.0, 0.4, 0.08, 1.6, lite);
         FA.emit(_sfA.x+_sfD.x*0.08, _sfA.y+_sfD.y*0.08, _sfA.z+_sfD.z*0.08, v*0.9, 0, 0, 0.06, 0.3, E.al0?0.75:0.5, 1.0, 0.66, 0.3, 0.9, {drag:0, fin:0.01, spin:0});
         if(E.al0) for(i=0;i<(lite?1:2);i++) FX.emit(_sfA.x+_sfD.x*1.0, _sfA.y+0.3, _sfA.z+_sfD.z*1.0, v*0.6+_sfD.x*2, 1.0+Math.random(), _sfD.z*2+(Math.random()-0.5),
           1.0+Math.random()*0.5, 0.4, 1.7+Math.random()*0.8, 0.14, 0.13, 0.13, 0.42, {drag:1.3, buoy:0.6, fin:0.1});
@@ -20886,7 +20900,8 @@ function bogDirect(o, dt, V){
     case "chase": rel=true; ax=cx; _bw.set(-9.5, 2.6, 2.2); _bt.set(6, 1.0, 0); fov=50; sm=4; break;
     case "entry": _bw.set(3, 2.4, -BOG_W/2-4.2); _bt.set(cx+1, 0.9, 0); fov=50; break;
     case "side": rel=true; ax=cx; _bw.set(-2, 5.2, -BOG_W/2-7.5); _bt.set(1.2, 0.6, 0); fov=48; sm=3; break;
-    case "front": _bw.set(BOG.fixX, 1.0, 2.4); _bt.set(cx, 1.3, 0); fov=38; BOG.shake=Math.max(BOG.shake, 0.04*clamp(+o.slip||0,0,1)); break;
+    case "front": { var nose=V.position.x+(U.front||U.wb+1)*k, hw2=(U.width||2.4)*k/2;   /* never inside the truck: it backs off ahead of the nose, and stands clear of the side */
+      _bw.set(Math.max(BOG.fixX, nose+2.2), Math.max(1.0, (U.top||2)*k*0.42), Math.max(2.4, hw2+1.1)); } _bt.set(cx, 1.3, 0); fov=38; BOG.shake=Math.max(BOG.shake, 0.04*clamp(+o.slip||0,0,1)); break;
     case "high": rel=true; ax=cx; _bw.set(-7, 9, 9); _bt.set(4, 0, -1); fov=46; sm=2; break;
     case "stop": { var dr=Math.min(3,T*0.25), fs=Math.max(1, bogFitDist(U, 40)/9.6); _bw.set(cx+(-7+dr)*fs, (3.2-dr*0.2)*Math.min(fs,1.3), (-7.5+dr*0.4)*fs); _bt.set(cx+1.2, 0.9, 0); fov=40; break; }
   }
@@ -21446,7 +21461,10 @@ function bogFxSplatTex(){
 function bogFxSheetTex(){
   var W=128, H=256, c=newCanvas(W,H), x=c.getContext("2d"), i, R=Math.random;
   x.clearRect(0,0,W,H);
-  for(i=0;i<260;i++){ var px=R()*W, py=R()*H, rw=1+R()*4.5, rh=rw*(2+R()*6), sh=150+Math.floor(R()*105), al=0.5+R()*0.5;
+  /* a dense body first (the sheet reads as a mass of mud, not a curtain of streaks), the streaks over it */
+  for(i=0;i<90;i++){ var bx=R()*W, by=R()*H, br=6+R()*12, bs=110+Math.floor(R()*50); x.fillStyle="rgba("+bs+","+bs+","+bs+",0.55)"; x.beginPath(); x.ellipse(bx,by,br,br*(1.5+R()*2),0,0,TAU); x.fill();
+    if(bx<br) { x.beginPath(); x.ellipse(bx+W,by,br,br*2,0,0,TAU); x.fill(); } if(bx>W-br){ x.beginPath(); x.ellipse(bx-W,by,br,br*2,0,0,TAU); x.fill(); } }
+  for(i=0;i<420;i++){ var px=R()*W, py=R()*H, rw=1+R()*4.5, rh=rw*(2+R()*6), sh=120+Math.floor(R()*100), al=0.65+R()*0.35;
     x.fillStyle="rgba("+sh+","+sh+","+sh+","+al.toFixed(2)+")"; x.beginPath(); x.ellipse(px,py,rw,rh,0,0,TAU); x.fill();
     if(px<rw*2){ x.beginPath(); x.ellipse(px+W,py,rw,rh,0,0,TAU); x.fill(); } if(px>W-rw*2){ x.beginPath(); x.ellipse(px-W,py,rw,rh,0,0,TAU); x.fill(); } }
   var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
@@ -21534,7 +21552,7 @@ function BogSheet(slots){
   m.onBeforeCompile=function(sh){
     sh.vertexShader="attribute float aA; attribute float aE; varying float vMA; varying float vME;\n"+sh.vertexShader.replace("#include <begin_vertex>","#include <begin_vertex>\n vMA=aA; vME=aE;");
     sh.fragmentShader="varying float vMA; varying float vME;\n"+sh.fragmentShader.replace("#include <map_fragment>",
-      "#ifdef USE_MAP\n vec4 texelColor=texture2D(map,vUv); diffuseColor.rgb*=0.55+0.6*texelColor.rgb; diffuseColor.a*=smoothstep(vME,vME+0.14,texelColor.a)*vMA;\n if(diffuseColor.a<0.01) discard;\n#endif");
+      "#ifdef USE_MAP\n vec4 texelColor=texture2D(map,vUv); diffuseColor.rgb*=0.5+0.5*texelColor.rgb; diffuseColor.a*=smoothstep(vME,vME+0.14,texelColor.a)*vMA;\n if(diffuseColor.a<0.01) discard;\n#endif");
   };
   m.customProgramCacheKey=function(){ return "bog_sheet"; };
   this.mat=m; this.mesh=new THREE.Mesh(g,m); this.mesh.frustumCulled=false; this.mesh.renderOrder=6; this.mesh.visible=false;
@@ -21626,7 +21644,7 @@ function bogFxUpdate(o, dt, V){
   var inPit=ph==="pit"||(ph==="done"&&x>0&&x<len), running=ph==="pit", sink=clamp(+o.sink||0,0,1.2);
   var rr=(U.rr||0.55)*k, wr=(U.wr||0.42)*k, trR=(U.trR||0.93)*k, trF=(U.trF||U.trR||0.93)*k, wb=(U.wb||3.65)*k, rx=V.position.x, fx=rx+wb, by=V.position.y;
   var mc=o.cons>0.5?[0.1,0.072,0.05]:[0.115,0.07,0.04]; BOGFX.mudC=mc;
-  if(Sh) Sh.mat.color.setRGB(mc[0]*0.9, mc[1]*0.9, mc[2]*0.9);
+  if(Sh) Sh.mat.color.setRGB(mc[0]*0.5, mc[1]*0.5, mc[2]*0.5);   /* darker than the clods: a thick sheet is in its own shadow */
   /* light for the clods: the sun (or the flood at night) and the sky */
   if(BOG.night){ BOGFX.sunC.setRGB(1.0,0.93,0.82).multiplyScalar(0.9); BOGFX.ambC.setRGB(0.24,0.23,0.22); }
   else { BOGFX.sunC.copy(BOG.sun.color).multiplyScalar(BOG.sun.intensity*0.6); BOGFX.ambC.copy(BOG.hemi.color).multiplyScalar(BOG.hemi.intensity*0.9).addScalar(0.14); }
@@ -21678,7 +21696,7 @@ function bogFxSheets(Sh, dt, q){
     var sp=clamp(2+q.ws*0.32+(q.ws-q.v)*0.6,3,9), lx=q.rx-q.rr*0.7, ly=q.by+q.rr*0.95, lz=s*q.trR, Tf=0;
     for(c=0;c<sl.cols;c++){ var u=c/(sl.cols-1), el=0.42+0.55*u, lat=(0.04+0.16*(1-u))*s, cv=Math.cos(el)*sp, sv=Math.sin(el)*sp, T=(sv+Math.sqrt(sv*sv+2*g*Math.max(0.1,ly)))/g, ef=Math.sin(u*PI);
       for(r=0;r<sl.rows;r++){ var f=r/(sl.rows-1), a=f*T, d=1-0.12*a, px=lx-cv*a*d, py=ly+sv*a-0.5*g*a*a, pz=lz+lat*sp*a*d+s*0.05*q.wr*Math.sin(c*1.7);
-        var al=Math.min(1,f*6)*Math.pow(1-f,0.9)*(0.2+0.8*ef)*clamp(q.amt*1.1,0,0.9);
+        var al=Math.min(1,f*6)*Math.pow(1-f,0.7)*(0.3+0.7*ef)*clamp(q.amt*1.4,0,1);
         if(py<BOGFX.mudY+0.02){ py=BOGFX.mudY+0.02; al=0; }
         Sh.set(sl, c, r, px, py, pz, al, 0.3+0.55*f+(1-ef)*0.2, u*1.3+side*0.37, f*2.2-t*2.4); } } }
   /* crown */
@@ -21689,7 +21707,7 @@ function bogFxSheets(Sh, dt, q){
       for(c=0;c<sc2.cols;c++){ var ua=(c/(sc2.cols-1))*2-1, phi=ua*1.95, H=3.6*C.sc*(0.72+0.28*Math.cos(phi)), vmax=Math.sqrt(2*g*H), ef2=Math.pow(Math.sin((ua*0.5+0.5)*PI),0.6);
         var bx=C.x+Math.cos(phi)*0.7, bz=Math.sin(phi)*(q.trF+q.wr*0.6);
         for(r=0;r<sc2.rows;r++){ var fr=0.2+0.8*r/(sc2.rows-1), vy=vmax*fr, hs=(1.6+3.0*fr)*Math.max(0.55,C.sc), vxx=C.v*0.45+Math.cos(phi)*hs, vzz=Math.sin(phi)*hs*1.15;
-          var py2=vy*T2-0.5*g*T2*T2, al2=ef2*Math.min(1,T2*14)*Math.pow(1-life,0.6)*(py2>0.03?1:0)*(0.55+0.45*fr);
+          var py2=vy*T2-0.5*g*T2*T2, al2=ef2*Math.min(1,T2*14)*Math.pow(1-life,0.6)*(py2>0.03?1:0)*(0.8+0.2*fr);
           Sh.set(sc2, c, r, bx+vxx*T2*(1-0.1*T2), BOGFX.mudY+Math.max(0.02,py2), bz+vzz*T2*(1-0.1*T2), al2, 0.04+0.6*Math.pow(life,1.5)+0.12*fr, ua*2.6, fr*1.4); } } } }
   else Sh.off(sc2);
   /* bow mound: two lobes ahead of the front tyres, joined by the axle's push; its crest breaks */
@@ -22017,14 +22035,17 @@ function bogFrameY(U){ return (U.frameY!=null?U.frameY:U.rr*1.3)*(U.k||1); }
 var BOAT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, fog:null, mats:{}, water:null, wMat:null, boats:{}, me:null, opp:null, fx:null, fxMist:null,
   tree:null, lamps:null, boards:[], crowd:null, buoys:null, camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:45, shot:null, shotT:0, snap:true, relOn:false, skip:false,
   t:0, doneT:0, cheer:0, tier:null, prev:{}, lastT:0, composer:null, exposure:0.9, stats:null, horLin:null, sunDir:null, shake:0, fixX:0, night:null, st:{me:{}, opp:{}} };
+/* night: light poles along both banks (built the first night only, vis/boat.js boatNightKit); the water mirrors them */
+var BOAT_POLES=[[20,71],[105,71],[190,71],[262,73],[-8,-66],[80,-66],[170,-66],[258,-66]], BOAT_POLE_H=15, BOAT_FLOOD=new THREE.Vector3(0.18,1,0.42).normalize();
 var BOAT_LZ=6, BOAT_FIN=304.8, BOAT_WIND=new THREE.Vector3(-1.2,0,0.5), _btA=new THREE.Vector3(), _btw=new THREE.Vector3(), _btt=new THREE.Vector3(), _btr=new THREE.Vector3(), _btrt=new THREE.Vector3(), _btM=new THREE.Matrix4(), _btQ=new THREE.Quaternion(), _btS=new THREE.Vector3(1,1,1), _btE=new THREE.Euler();
 /* the river: Lite gets two drifting ripple bands and a fresnel tint; Full/Ultra a sum of travelling waves for the normal,
    the sky reflected by it, a sun glint and the far water fading into the haze */
 function boatWaterMat(lite){
   return new THREE.ShaderMaterial({ uniforms:{ uT:{value:0}, uSun:{value:STRIP_SUN_DAY.clone()}, uHor:{value:new THREE.Color(0.55,0.62,0.7)}, uZen:{value:new THREE.Color(0.08,0.2,0.46)}, uDeep:{value:new THREE.Color(0.02,0.075,0.085)},
-      uFog:{value:new THREE.Color(0.55,0.62,0.7)}, uFogN:{value:200}, uFogF:{value:2600}, uChop:{value:0.2}, uNight:{value:0} },
+      uFog:{value:new THREE.Color(0.55,0.62,0.7)}, uFogN:{value:200}, uFogF:{value:2600}, uChop:{value:0.2}, uNight:{value:0},
+      uLmp:{value:BOAT_POLES.map(function(q){ return new THREE.Vector3(q[0], BOAT_POLE_H+1.5, q[1]); })} },
     vertexShader:"varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }",
-    fragmentShader:["uniform float uT; uniform vec3 uSun; uniform vec3 uHor; uniform vec3 uZen; uniform vec3 uDeep; uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uChop; uniform float uNight; varying vec3 vW;", STRIP_GLSL_NOISE,
+    fragmentShader:["uniform float uT; uniform vec3 uSun; uniform vec3 uHor; uniform vec3 uZen; uniform vec3 uDeep; uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uChop; uniform float uNight; uniform vec3 uLmp[8]; varying vec3 vW;", STRIP_GLSL_NOISE,
       "void main(){ vec2 p=vW.xz; vec3 V=normalize(cameraPosition-vW); float d=length(cameraPosition-vW);",
       lite?" float r=sin(p.x*0.35+p.y*0.12-uT*1.6)*0.5+sin(p.x*0.11-p.y*0.31+uT*1.1)*0.5; vec3 N=normalize(vec3(r*0.06*(0.6+uChop),1.0,r*0.04));"
           :" float a=0.0; vec2 g=vec2(0.0); float k=0.6+1.6*uChop; vec2 D[4]; D[0]=vec2(0.94,0.34); D[1]=vec2(0.6,-0.8); D[2]=vec2(-0.3,0.95); D[3]=vec2(0.85,-0.52); float F[4]; F[0]=0.31; F[1]=0.53; F[2]=0.87; F[3]=1.9;"+
@@ -22035,6 +22056,9 @@ function boatWaterMat(lite){
       " vec3 sky=mix(uHor,uZen,pow(up,0.6)); vec3 c=mix(uDeep*(0.8+0.4*sn(p*0.02)),sky*vec3(0.85,0.95,1.0),clamp(fr,0.0,0.85));",
       lite?" c+=vec3(1.0,0.9,0.75)*pow(max(dot(R,uSun),0.0),60.0)*0.6*(1.0-uNight);"
           :" c+=vec3(1.0,0.92,0.78)*(pow(max(dot(R,uSun),0.0),220.0)*2.2+pow(max(dot(R,uSun),0.0),24.0)*0.12)*(1.0-uNight);",
+      /* night: each bank light laid on the water as a long streak toward the camera (narrow across, long along the view) */
+      " if(uNight>0.5){ for(int i=0;i<8;i++){ vec3 L=normalize(uLmp[i]-vW); float ah=1.0-dot(normalize(R.xz+vec2(1e-4)),normalize(L.xz)); float av=R.y-L.y;",
+      "   c+=vec3(1.0,0.78,0.5)*exp(-ah*"+(lite?"12000.0":"9000.0")+"-av*av*"+(lite?"60.0":"38.0")+")*"+(lite?"0.7":"1.25")+"; } }",
       " c=mix(c,uFog,smoothstep(uFogN,uFogF,d));",
       " gl_FragColor=linearToOutputTexel(vec4(c,1.0)); }"].join("\n") });
 }
@@ -22117,9 +22141,9 @@ function boatModel(cls, color){
 function boatWakeMesh(){
   var N=120, g=new THREE.BufferGeometry(), pos=new Float32Array(N*6*3*3), al=new Float32Array(N*6*3);
   g.setAttribute("position", new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage)); g.setAttribute("aA", new THREE.BufferAttribute(al,1).setUsage(THREE.DynamicDrawUsage)); g.setDrawRange(0,0);
-  var m=new THREE.ShaderMaterial({ uniforms:{uFog:{value:new THREE.Color(0.6,0.65,0.7)}, uFogN:{value:200}, uFogF:{value:2600}},
+  var m=new THREE.ShaderMaterial({ uniforms:{uFog:{value:new THREE.Color(0.6,0.65,0.7)}, uFogN:{value:200}, uFogF:{value:2600}, uAmb:{value:1}},
     vertexShader:"attribute float aA; varying float vA; varying float vD; void main(){ vA=aA; vec4 mv=modelViewMatrix*vec4(position,1.0); vD=-mv.z; gl_Position=projectionMatrix*mv; }",
-    fragmentShader:"uniform vec3 uFog; uniform float uFogN; uniform float uFogF; varying float vA; varying float vD; void main(){ vec3 c=mix(vec3(0.92,0.95,0.96),uFog,smoothstep(uFogN,uFogF,vD)); gl_FragColor=linearToOutputTexel(vec4(c,vA*0.8)); }",
+    fragmentShader:"uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uAmb; varying float vA; varying float vD; void main(){ vec3 c=mix(vec3(0.92,0.95,0.96)*uAmb,uFog,smoothstep(uFogN,uFogF,vD)); gl_FragColor=linearToOutputTexel(vec4(c,vA*0.8)); }",
     transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-4 });
   var mesh=new THREE.Mesh(g,m); mesh.frustumCulled=false; mesh.renderOrder=3; mesh.userData.N=N; return mesh;
 }
@@ -22207,15 +22231,39 @@ function buildBoatScene(){
   BOAT.night=null; boatSetLight(false);
 }
 function boatBuoys(t){ var B=BOAT.buoys; if(!B) return; for(var q=0;q<B.pts.length;q++){ var p=B.pts[q], s=p[2], bob=Math.sin(t*1.7+q*1.3)*0.06*s; _btM.compose(_sbP.set(p[0], s*0.25+bob, p[1]), _btQ.setFromEuler(_btE.set(Math.sin(t*1.1+q)*0.08,0,Math.cos(t*1.3+q)*0.08)), _sbS.set(s,s,s)); B.mesh.setMatrixAt(q,_btM); } B.mesh.instanceMatrix.needsUpdate=true; }
-function boatSetLight(dusk){
-  dusk=!!dusk; var tc=BOAT.tier!==GFX; if(BOAT.night===dusk && !tc) return; BOAT.night=dusk; BOAT.tier=GFX; var lite=GFX==="lite";
-  BOAT.sky.material.uniforms.uNight.value=0; if(BOAT.sky.material.uniforms.uDusk) BOAT.sky.material.uniforms.uDusk.value=dusk?1:0;
-  var h=dusk?STRIP_HOR_D.map(function(v,i){ return lerp(v,STRIP_HOR[i],0.35); }):STRIP_HOR; BOAT.horLin=new THREE.Color(h[0],h[1],h[2]);
-  BOAT.sunDir=dusk?STRIP_DUSK_LIGHT:STRIP_SUN_DAY; BOAT.sun.color.set(dusk?0xffb780:0xffe2bc); BOAT.sun.intensity=dusk?1.0:1.5; BOAT.sun.castShadow=!lite;
-  BOAT.hemi.intensity=dusk?0.22:0.3; BOAT.scene.environment=stripEnv(false, dusk?1:0); BOAT.exposure=dusk?1.0:0.9;
-  var U=BOAT.wMat.uniforms; U.uSun.value.copy(dusk?STRIP_SUN_DUSK:STRIP_SUN_DAY); U.uHor.value.copy(BOAT.horLin); U.uZen.value.set(dusk?0.1:0.075, dusk?0.12:0.19, dusk?0.3:0.48);
-  [BOAT.fx, BOAT.fxMist].forEach(function(F){ if(F){ F.mat.uniforms.uFogN.value=BOAT.fog.near; F.mat.uniforms.uFogF.value=BOAT.fog.far; } });
+function boatSetLight(night){
+  /* a night meet: a dark sky, the bank lights flood the course (the sun light stands in for them: no extra lights, cheap on Lite),
+     the water goes black and mirrors the poles (boatWaterMat), the spray and the wakes dim */
+  night=!!night; var tc=BOAT.tier!==GFX; if(BOAT.night===night && !tc) return; BOAT.night=night; BOAT.tier=GFX; var lite=GFX==="lite";
+  BOAT.sky.material.uniforms.uNight.value=night?1:0; if(BOAT.sky.material.uniforms.uDusk) BOAT.sky.material.uniforms.uDusk.value=0;
+  var h=night?STRIP_HOR_N:STRIP_HOR; BOAT.horLin=new THREE.Color(h[0],h[1],h[2]);
+  BOAT.sunDir=night?BOAT_FLOOD:STRIP_SUN_DAY; BOAT.sun.color.set(night?0xfff0dc:0xffe2bc); BOAT.sun.intensity=night?(lite?0.8:0.62):1.5; BOAT.sun.castShadow=!lite;
+  BOAT.hemi.intensity=night?0.16:0.3; BOAT.hemi.color.set(night?0x3a4764:0xcfdcf0); BOAT.hemi.groundColor.set(night?0x16130e:0x5a6a44);
+  BOAT.scene.environment=stripEnv(night); BOAT.exposure=night?1.0:0.9;
+  var U=BOAT.wMat.uniforms; U.uSun.value.copy(night?STRIP_MOON:STRIP_SUN_DAY); U.uHor.value.copy(BOAT.horLin); U.uZen.value.set(night?0.006:0.075, night?0.009:0.19, night?0.022:0.48);
+  U.uDeep.value.setRGB(night?0.004:0.02, night?0.01:0.075, night?0.014:0.085); U.uNight.value=night?1:0;
+  [BOAT.fx, BOAT.fxMist].forEach(function(F){ if(F){ F.mat.uniforms.uAmb.value=night?0.5:1; F.mat.uniforms.uFogN.value=BOAT.fog.near; F.mat.uniforms.uFogF.value=BOAT.fog.far; } });
+  [BOAT.wakeMe, BOAT.wakeOpp].forEach(function(w){ if(w) w.material.uniforms.uAmb.value=night?0.45:1; });
   if(tc && BOAT.sun.shadow.map){ BOAT.sun.shadow.map.dispose(); BOAT.sun.shadow.map=null; }
+  boatNightKit(night, tc);
+}
+/* the bank light poles and the towers' lamps: built the first night (a day meet never pays for them); beams on Full/Ultra */
+function boatNightKit(on, rebuild){
+  var K=BOAT.nightKit, S3=BOAT.scene;
+  if(K && rebuild){ K.forEach(function(m){ S3.remove(m); m.geometry.dispose(); }); K=BOAT.nightKit=null; }
+  if(on && !K){ var B=new StripBatch(), M=BOAT.mats, lite=GFX==="lite", H=BOAT_POLE_H, G=0.9;
+    M.lamp=M.lamp||new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false});
+    M.beam=M.beam||new THREE.MeshBasicMaterial({vertexColors:true, transparent:true, opacity:0.016, depthWrite:false, blending:THREE.AdditiveBlending, fog:true, side:THREE.DoubleSide});
+    BOAT_POLES.forEach(function(q){ var px=q[0], pz=q[1], s=pz>0?-1:1;   /* s: toward the river */
+      B.add("metal","cyl",[px, G+H/2, pz],[0.32,H,0.32],0x9aa0a6); B.box("metal", px, G+H+0.2, pz, 3.0, 0.22, 0.28, 0x80868c);
+      for(var k=0;k<3;k++){ var lx=px-1.0+k; B.box("metal", lx, G+H+0.6, pz+s*0.1, 0.7, 0.6, 0.34, 0x5a5f65); B.box("lamp", lx, G+H+0.6, pz+s*0.29, 0.58, 0.48, 0.02, 0xfff0d0); }
+      if(!lite) B.add("beam","beam",[px, G+H/2, pz+s*H*0.18],[6,H,6],0xffe8c0,[-s*0.36,0,0]); });
+    [1,-1].forEach(function(sd){ for(var k=0;k<2;k++) B.box("lamp", BOAT_FIN-0.8+k*1.6, 11.7, sd*70-sd*1.62, 1.1, 0.4, 0.02, 0xfff0d0); });   /* lamps under the finish towers' decks */
+    B.box("lamp", -12, 7.6, 69.95, 3.0, 0.35, 0.02, 0xfff0d0);   /* the start tower */
+    K=[boatBuild(B,"metal",M.metal,false), boatBuild(B,"lamp",M.lamp,false)];
+    var bm=boatBuild(B,"beam",M.beam,false); if(bm){ bm.receiveShadow=false; bm.renderOrder=4; K.push(bm); }
+    K=BOAT.nightKit=K.filter(function(m){ return !!m; }); }
+  if(K) K.forEach(function(m){ m.visible=!!on; });
 }
 /* one boat's attitude for this frame: sitting in the water, the bow up over the hump, the running angle, porpoising, chine walk, a hop off the chop, a blowover */
 function boatPose(V, s, z, dt, live){
@@ -22970,7 +23018,7 @@ function saltDirect(o, dt, V){
   if(SALT.cue){ if(!o.shot && !SALT.skip && ph==="shutdown") s=SALT.cue; SALT.cue=null; }   /* a one-frame cut asked for elsewhere (vis/salt-event.js: the chute) */
   saltCut(s);
   SALT.shotT+=dt; SALT.cutT+=dt; T=SALT.shotT;
-  var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, lens=0, asp=SALT.cam.aspect||1.5, buf=0, D;
+  var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, lens=0, asp=SALT.cam.aspect||1.5, buf=0, D, fit=0;
   /* a vertical fov that shows a W-metre-wide slice at distance D (the long lenses size the car by this) */
   var fovFor=function(W, D){ return 2*Math.atan(Math.tan(Math.atan(W/2/Math.max(1,D)))/Math.max(0.5,asp))*180/PI; };
   var inMile=clamp((x-(C.x0-160))/160,0,1)*clamp(((C.x1+160)-x)/160,0,1);   /* through the traps: push in, shake */
@@ -22979,7 +23027,10 @@ function saltDirect(o, dt, V){
     case "push": rel=true; _sw.set(me.tail-3.5, 1.4, 6.8); _st.set(me.tail-1.0, 0.8, 0); fov=52; sm=3; break;
     case "chase": { rel=true; var sp=clamp(v/140,0,1), pk=inMile*clamp(v/80,0,1);
       _sw.set(me.tail-5.6-v*0.018+pk*1.4, 1.12+v*0.003-pk*0.18, 1.9-pk*0.3); _st.set(me.nose+5, 0.72, 0); fov=45+sp*6+pk*8; sm=2.4; buf=sp*(0.3+0.7*pk); break; }
-    case "heli": rel=true; _sw.set(-26+T*2.0, 8, 30); _st.set(mid+4, 0.5, 0); fov=30; sm=1.5; break;
+    case "heli": rel=true; _sw.set(-26+T*2.0, 8, 30); _st.set(mid+4, 0.5, 0); fov=30; sm=1.5;
+      if(ph==="shutdown" && o.chute){ var cz=Math.min(me.tail, me.anchor?me.anchor.x:me.tail)-(me.chuteLen||8)-1.6, cm=(cz+me.nose)/2;   /* the chute is out: the car and the canopy behind it, together */
+        _sw.set(cm-24+T*1.2, 8.5, 30); _st.set(cm, 0.7, 0); fov=clamp(fovFor((me.nose-cz)*1.12, 39.2), 30, 64); fit=1; }
+      break;
     case "nose": { rel=true; var ns=saltNoseSeat(V), hf=28*PI/180, al=Math.atan2(ns.y-ns.ny, Math.max(0.3,ns.nx-ns.x)), th=Math.max(-0.03, al-0.62*hf);
       _sw.set(ns.x, ns.y, ns.z); _st.set(ns.x+Math.cos(th)*40, ns.y-Math.sin(th)*40, ns.z*0.3); fov=56; sm=14; buf=clamp(v/120,0,1)*(0.5+0.5*inMile); break; }
     case "low": rel=true; _sw.set(me.nose+2.5, 0.35, 2.2); _st.set(me.tail, 0.6, 0); fov=58; sm=6; break;
@@ -23004,7 +23055,7 @@ function saltDirect(o, dt, V){
   if(bf>0.002){ var by=Math.sin(tt*13.1)+0.6*Math.sin(tt*29.7+1.3)+0.35*Math.sin(tt*53.3+0.4), bz=Math.sin(tt*11.3+2.1)+0.5*Math.sin(tt*31.9+0.7);
     SALT.camPos.y+=by*0.016*bf; SALT.camPos.z+=bz*0.014*bf; SALT.camTgt.y+=by*0.03*bf; }
   var cam=SALT.cam; cam.position.copy(SALT.camPos); cam.lookAt(SALT.camTgt); if(bf>0.002) cam.rotateZ((Math.sin(tt*7.3)+0.5*Math.sin(tt*19.1+1.0))*0.0045*bf);
-  cam.fov=SALT.fov; cam.updateProjectionMatrix(); saltLens(cam);
+  cam.fov=SALT.fov; cam.updateProjectionMatrix(); saltLens(cam, lens||fit);
   saltTrackVP(cam, dt);
 }
 function rng01(s){ var t=Math.sin(s*91.7+1.3)*43758.5453; return t-Math.floor(t); }
@@ -23623,6 +23674,8 @@ function saltAlteredV2(L, aero){
   car.position.x=-me.xr; g.add(car);
   /* door number boards (the strip's door decals carry them) */
   var board=slDoorMat(L); U.liv.dm=board; U.liv.num=L.num; for(i=0;i<U.liv.door.length;i++) U.liv.door[i].material=board;
+  /* the windshield banner: the car's own lead salt sponsor, not the drag strip's */
+  var ban=slBannerMat(L); U.liv.bm=ban; for(i=0;i<U.liv.banner.length;i++) U.liv.banner[i].material=ban;
   /* headlight tape: a silver panel over each lamp, crossed with black tape */
   var hl=U.lights.head[0];
   if(hl){ hl.geometry.computeBoundingBox(); var bb=hl.geometry.boundingBox, pa=hl.geometry.attributes.position, lb=[new THREE.Box3(), new THREE.Box3()], v=new THREE.Vector3();
@@ -23664,6 +23717,16 @@ function slDoorMat(L){
   x.fillStyle="#141414"; x.textAlign="center"; x.textBaseline="middle"; x.font="700 "+(L.num.length>3?110:140)+"px "+F; x.fillText(L.num, 156, 104, 270);
   x.fillStyle="#f4efe2"; x.fillRect(318, 120, 188, 66); x.strokeStyle="#141414"; x.lineWidth=5; x.strokeRect(321, 123, 182, 60); x.fillStyle="#141414"; x.font="700 44px "+F; x.fillText(L.cls||"ALT", 412, 156, 170);
   slSponsor(x, SL_SPONSORS[L.sponsors[0]], 316, 12, 192, 100);
+  var t=sc_ctex(c), q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
+  var env=sc_env(); if(env) q.envMap=env; q.userData.perBuild=true; q.userData.ownMaps=[t];
+  SLC.mat[key]=q; return q;
+}
+/* the salt Altered's windshield banner: its lead sponsor's colours and name over the glass */
+function slBannerMat(L){
+  var sp=SL_SPONSORS[L.sponsors[0]]||SL_SPONSORS[0], key="ban|"+sp.id+"|"+GFX; if(SLC.mat[key]) return SLC.mat[key];
+  var c=sc_canvas(512,64), x=c.getContext("2d"), F="'Chakra Petch','Barlow Condensed','Arial Narrow',Arial,sans-serif";
+  x.fillStyle=sp.c1; x.fillRect(0,0,512,64); x.fillStyle=sp.c2; x.fillRect(0,0,512,5); x.fillRect(0,59,512,5);
+  x.fillStyle=sp.c3; x.textAlign="center"; x.textBaseline="middle"; x.font="italic 700 38px "+F; x.fillText(sp.n+" "+sp.t, 256, 33, 480);
   var t=sc_ctex(c), q=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
   var env=sc_env(); if(env) q.envMap=env; q.userData.perBuild=true; q.userData.ownMaps=[t];
   SLC.mat[key]=q; return q;
@@ -23763,7 +23826,12 @@ function saltBoard(B, p, s, ry, uv, key){ key=key||"csign"; B.add(key,"plane",p,
 /* --- the HUD band: --salthud on #view is the strip of the view the dock covers; an off-axis lens shift lifts the picture
    so the car frames above it (like stripLens) --- */
 function saltBandRead(){ var host=canvasEl&&canvasEl.parentElement; SALT.band=0; if(host){ try{ SALT.band=parseFloat(getComputedStyle(host).getPropertyValue("--salthud"))||0; }catch(e){} } }
-function saltLens(cam){ var b=SALT.band||0, h=SALT.viewH||0; if(!(b>0&&h>0)) return;
+function saltLens(cam, fitted){
+  /* the run view's HUD band (VBAND, vis/band.js) wins while it is up: it already counts the dock, so the picture is lifted once.
+     bandFov widens a portrait shot as in the other scenes, except a shot already sized to the view's width (fitted) */
+  if(VBAND.px>0 && VBAND.h>0){ if(!fitted){ var f=bandFov(cam.fov, cam.aspect); if(f!==cam.fov){ cam.fov=f; cam.updateProjectionMatrix(); } }
+    cam.projectionMatrix.elements[9]=-clamp(VBAND.px/VBAND.h,0,0.3); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); return; }
+  var b=SALT.band||0, h=SALT.viewH||0; if(!(b>0&&h>0)) return;
   cam.projectionMatrix.elements[9]=-clamp(b/h,0,0.3); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); }
 
 /* --- the nose cam's seat: find the bodywork under a point a third of the way back from the nose, and the nose itself,
@@ -26555,7 +26623,7 @@ function renderEnv(){
   if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>
-    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>${paintHtml()}${shellHtml()}
+    <div class="lbl"><span>Body &amp; aero</span></div><div class="seg segbody">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div>${paintHtml()}${shellHtml()}
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>

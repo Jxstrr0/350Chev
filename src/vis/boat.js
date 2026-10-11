@@ -9,14 +9,17 @@
 var BOAT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, fog:null, mats:{}, water:null, wMat:null, boats:{}, me:null, opp:null, fx:null, fxMist:null,
   tree:null, lamps:null, boards:[], crowd:null, buoys:null, camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:45, shot:null, shotT:0, snap:true, relOn:false, skip:false,
   t:0, doneT:0, cheer:0, tier:null, prev:{}, lastT:0, composer:null, exposure:0.9, stats:null, horLin:null, sunDir:null, shake:0, fixX:0, night:null, st:{me:{}, opp:{}} };
+/* night: light poles along both banks (built the first night only, vis/boat.js boatNightKit); the water mirrors them */
+var BOAT_POLES=[[20,71],[105,71],[190,71],[262,73],[-8,-66],[80,-66],[170,-66],[258,-66]], BOAT_POLE_H=15, BOAT_FLOOD=new THREE.Vector3(0.18,1,0.42).normalize();
 var BOAT_LZ=6, BOAT_FIN=304.8, BOAT_WIND=new THREE.Vector3(-1.2,0,0.5), _btA=new THREE.Vector3(), _btw=new THREE.Vector3(), _btt=new THREE.Vector3(), _btr=new THREE.Vector3(), _btrt=new THREE.Vector3(), _btM=new THREE.Matrix4(), _btQ=new THREE.Quaternion(), _btS=new THREE.Vector3(1,1,1), _btE=new THREE.Euler();
 /* the river: Lite gets two drifting ripple bands and a fresnel tint; Full/Ultra a sum of travelling waves for the normal,
    the sky reflected by it, a sun glint and the far water fading into the haze */
 function boatWaterMat(lite){
   return new THREE.ShaderMaterial({ uniforms:{ uT:{value:0}, uSun:{value:STRIP_SUN_DAY.clone()}, uHor:{value:new THREE.Color(0.55,0.62,0.7)}, uZen:{value:new THREE.Color(0.08,0.2,0.46)}, uDeep:{value:new THREE.Color(0.02,0.075,0.085)},
-      uFog:{value:new THREE.Color(0.55,0.62,0.7)}, uFogN:{value:200}, uFogF:{value:2600}, uChop:{value:0.2}, uNight:{value:0} },
+      uFog:{value:new THREE.Color(0.55,0.62,0.7)}, uFogN:{value:200}, uFogF:{value:2600}, uChop:{value:0.2}, uNight:{value:0},
+      uLmp:{value:BOAT_POLES.map(function(q){ return new THREE.Vector3(q[0], BOAT_POLE_H+1.5, q[1]); })} },
     vertexShader:"varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }",
-    fragmentShader:["uniform float uT; uniform vec3 uSun; uniform vec3 uHor; uniform vec3 uZen; uniform vec3 uDeep; uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uChop; uniform float uNight; varying vec3 vW;", STRIP_GLSL_NOISE,
+    fragmentShader:["uniform float uT; uniform vec3 uSun; uniform vec3 uHor; uniform vec3 uZen; uniform vec3 uDeep; uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uChop; uniform float uNight; uniform vec3 uLmp[8]; varying vec3 vW;", STRIP_GLSL_NOISE,
       "void main(){ vec2 p=vW.xz; vec3 V=normalize(cameraPosition-vW); float d=length(cameraPosition-vW);",
       lite?" float r=sin(p.x*0.35+p.y*0.12-uT*1.6)*0.5+sin(p.x*0.11-p.y*0.31+uT*1.1)*0.5; vec3 N=normalize(vec3(r*0.06*(0.6+uChop),1.0,r*0.04));"
           :" float a=0.0; vec2 g=vec2(0.0); float k=0.6+1.6*uChop; vec2 D[4]; D[0]=vec2(0.94,0.34); D[1]=vec2(0.6,-0.8); D[2]=vec2(-0.3,0.95); D[3]=vec2(0.85,-0.52); float F[4]; F[0]=0.31; F[1]=0.53; F[2]=0.87; F[3]=1.9;"+
@@ -27,6 +30,9 @@ function boatWaterMat(lite){
       " vec3 sky=mix(uHor,uZen,pow(up,0.6)); vec3 c=mix(uDeep*(0.8+0.4*sn(p*0.02)),sky*vec3(0.85,0.95,1.0),clamp(fr,0.0,0.85));",
       lite?" c+=vec3(1.0,0.9,0.75)*pow(max(dot(R,uSun),0.0),60.0)*0.6*(1.0-uNight);"
           :" c+=vec3(1.0,0.92,0.78)*(pow(max(dot(R,uSun),0.0),220.0)*2.2+pow(max(dot(R,uSun),0.0),24.0)*0.12)*(1.0-uNight);",
+      /* night: each bank light laid on the water as a long streak toward the camera (narrow across, long along the view) */
+      " if(uNight>0.5){ for(int i=0;i<8;i++){ vec3 L=normalize(uLmp[i]-vW); float ah=1.0-dot(normalize(R.xz+vec2(1e-4)),normalize(L.xz)); float av=R.y-L.y;",
+      "   c+=vec3(1.0,0.78,0.5)*exp(-ah*"+(lite?"12000.0":"9000.0")+"-av*av*"+(lite?"60.0":"38.0")+")*"+(lite?"0.7":"1.25")+"; } }",
       " c=mix(c,uFog,smoothstep(uFogN,uFogF,d));",
       " gl_FragColor=linearToOutputTexel(vec4(c,1.0)); }"].join("\n") });
 }
@@ -109,9 +115,9 @@ function boatModel(cls, color){
 function boatWakeMesh(){
   var N=120, g=new THREE.BufferGeometry(), pos=new Float32Array(N*6*3*3), al=new Float32Array(N*6*3);
   g.setAttribute("position", new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage)); g.setAttribute("aA", new THREE.BufferAttribute(al,1).setUsage(THREE.DynamicDrawUsage)); g.setDrawRange(0,0);
-  var m=new THREE.ShaderMaterial({ uniforms:{uFog:{value:new THREE.Color(0.6,0.65,0.7)}, uFogN:{value:200}, uFogF:{value:2600}},
+  var m=new THREE.ShaderMaterial({ uniforms:{uFog:{value:new THREE.Color(0.6,0.65,0.7)}, uFogN:{value:200}, uFogF:{value:2600}, uAmb:{value:1}},
     vertexShader:"attribute float aA; varying float vA; varying float vD; void main(){ vA=aA; vec4 mv=modelViewMatrix*vec4(position,1.0); vD=-mv.z; gl_Position=projectionMatrix*mv; }",
-    fragmentShader:"uniform vec3 uFog; uniform float uFogN; uniform float uFogF; varying float vA; varying float vD; void main(){ vec3 c=mix(vec3(0.92,0.95,0.96),uFog,smoothstep(uFogN,uFogF,vD)); gl_FragColor=linearToOutputTexel(vec4(c,vA*0.8)); }",
+    fragmentShader:"uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uAmb; varying float vA; varying float vD; void main(){ vec3 c=mix(vec3(0.92,0.95,0.96)*uAmb,uFog,smoothstep(uFogN,uFogF,vD)); gl_FragColor=linearToOutputTexel(vec4(c,vA*0.8)); }",
     transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-4 });
   var mesh=new THREE.Mesh(g,m); mesh.frustumCulled=false; mesh.renderOrder=3; mesh.userData.N=N; return mesh;
 }
@@ -199,15 +205,39 @@ function buildBoatScene(){
   BOAT.night=null; boatSetLight(false);
 }
 function boatBuoys(t){ var B=BOAT.buoys; if(!B) return; for(var q=0;q<B.pts.length;q++){ var p=B.pts[q], s=p[2], bob=Math.sin(t*1.7+q*1.3)*0.06*s; _btM.compose(_sbP.set(p[0], s*0.25+bob, p[1]), _btQ.setFromEuler(_btE.set(Math.sin(t*1.1+q)*0.08,0,Math.cos(t*1.3+q)*0.08)), _sbS.set(s,s,s)); B.mesh.setMatrixAt(q,_btM); } B.mesh.instanceMatrix.needsUpdate=true; }
-function boatSetLight(dusk){
-  dusk=!!dusk; var tc=BOAT.tier!==GFX; if(BOAT.night===dusk && !tc) return; BOAT.night=dusk; BOAT.tier=GFX; var lite=GFX==="lite";
-  BOAT.sky.material.uniforms.uNight.value=0; if(BOAT.sky.material.uniforms.uDusk) BOAT.sky.material.uniforms.uDusk.value=dusk?1:0;
-  var h=dusk?STRIP_HOR_D.map(function(v,i){ return lerp(v,STRIP_HOR[i],0.35); }):STRIP_HOR; BOAT.horLin=new THREE.Color(h[0],h[1],h[2]);
-  BOAT.sunDir=dusk?STRIP_DUSK_LIGHT:STRIP_SUN_DAY; BOAT.sun.color.set(dusk?0xffb780:0xffe2bc); BOAT.sun.intensity=dusk?1.0:1.5; BOAT.sun.castShadow=!lite;
-  BOAT.hemi.intensity=dusk?0.22:0.3; BOAT.scene.environment=stripEnv(false, dusk?1:0); BOAT.exposure=dusk?1.0:0.9;
-  var U=BOAT.wMat.uniforms; U.uSun.value.copy(dusk?STRIP_SUN_DUSK:STRIP_SUN_DAY); U.uHor.value.copy(BOAT.horLin); U.uZen.value.set(dusk?0.1:0.075, dusk?0.12:0.19, dusk?0.3:0.48);
-  [BOAT.fx, BOAT.fxMist].forEach(function(F){ if(F){ F.mat.uniforms.uFogN.value=BOAT.fog.near; F.mat.uniforms.uFogF.value=BOAT.fog.far; } });
+function boatSetLight(night){
+  /* a night meet: a dark sky, the bank lights flood the course (the sun light stands in for them: no extra lights, cheap on Lite),
+     the water goes black and mirrors the poles (boatWaterMat), the spray and the wakes dim */
+  night=!!night; var tc=BOAT.tier!==GFX; if(BOAT.night===night && !tc) return; BOAT.night=night; BOAT.tier=GFX; var lite=GFX==="lite";
+  BOAT.sky.material.uniforms.uNight.value=night?1:0; if(BOAT.sky.material.uniforms.uDusk) BOAT.sky.material.uniforms.uDusk.value=0;
+  var h=night?STRIP_HOR_N:STRIP_HOR; BOAT.horLin=new THREE.Color(h[0],h[1],h[2]);
+  BOAT.sunDir=night?BOAT_FLOOD:STRIP_SUN_DAY; BOAT.sun.color.set(night?0xfff0dc:0xffe2bc); BOAT.sun.intensity=night?(lite?0.8:0.62):1.5; BOAT.sun.castShadow=!lite;
+  BOAT.hemi.intensity=night?0.16:0.3; BOAT.hemi.color.set(night?0x3a4764:0xcfdcf0); BOAT.hemi.groundColor.set(night?0x16130e:0x5a6a44);
+  BOAT.scene.environment=stripEnv(night); BOAT.exposure=night?1.0:0.9;
+  var U=BOAT.wMat.uniforms; U.uSun.value.copy(night?STRIP_MOON:STRIP_SUN_DAY); U.uHor.value.copy(BOAT.horLin); U.uZen.value.set(night?0.006:0.075, night?0.009:0.19, night?0.022:0.48);
+  U.uDeep.value.setRGB(night?0.004:0.02, night?0.01:0.075, night?0.014:0.085); U.uNight.value=night?1:0;
+  [BOAT.fx, BOAT.fxMist].forEach(function(F){ if(F){ F.mat.uniforms.uAmb.value=night?0.5:1; F.mat.uniforms.uFogN.value=BOAT.fog.near; F.mat.uniforms.uFogF.value=BOAT.fog.far; } });
+  [BOAT.wakeMe, BOAT.wakeOpp].forEach(function(w){ if(w) w.material.uniforms.uAmb.value=night?0.45:1; });
   if(tc && BOAT.sun.shadow.map){ BOAT.sun.shadow.map.dispose(); BOAT.sun.shadow.map=null; }
+  boatNightKit(night, tc);
+}
+/* the bank light poles and the towers' lamps: built the first night (a day meet never pays for them); beams on Full/Ultra */
+function boatNightKit(on, rebuild){
+  var K=BOAT.nightKit, S3=BOAT.scene;
+  if(K && rebuild){ K.forEach(function(m){ S3.remove(m); m.geometry.dispose(); }); K=BOAT.nightKit=null; }
+  if(on && !K){ var B=new StripBatch(), M=BOAT.mats, lite=GFX==="lite", H=BOAT_POLE_H, G=0.9;
+    M.lamp=M.lamp||new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false});
+    M.beam=M.beam||new THREE.MeshBasicMaterial({vertexColors:true, transparent:true, opacity:0.016, depthWrite:false, blending:THREE.AdditiveBlending, fog:true, side:THREE.DoubleSide});
+    BOAT_POLES.forEach(function(q){ var px=q[0], pz=q[1], s=pz>0?-1:1;   /* s: toward the river */
+      B.add("metal","cyl",[px, G+H/2, pz],[0.32,H,0.32],0x9aa0a6); B.box("metal", px, G+H+0.2, pz, 3.0, 0.22, 0.28, 0x80868c);
+      for(var k=0;k<3;k++){ var lx=px-1.0+k; B.box("metal", lx, G+H+0.6, pz+s*0.1, 0.7, 0.6, 0.34, 0x5a5f65); B.box("lamp", lx, G+H+0.6, pz+s*0.29, 0.58, 0.48, 0.02, 0xfff0d0); }
+      if(!lite) B.add("beam","beam",[px, G+H/2, pz+s*H*0.18],[6,H,6],0xffe8c0,[-s*0.36,0,0]); });
+    [1,-1].forEach(function(sd){ for(var k=0;k<2;k++) B.box("lamp", BOAT_FIN-0.8+k*1.6, 11.7, sd*70-sd*1.62, 1.1, 0.4, 0.02, 0xfff0d0); });   /* lamps under the finish towers' decks */
+    B.box("lamp", -12, 7.6, 69.95, 3.0, 0.35, 0.02, 0xfff0d0);   /* the start tower */
+    K=[boatBuild(B,"metal",M.metal,false), boatBuild(B,"lamp",M.lamp,false)];
+    var bm=boatBuild(B,"beam",M.beam,false); if(bm){ bm.receiveShadow=false; bm.renderOrder=4; K.push(bm); }
+    K=BOAT.nightKit=K.filter(function(m){ return !!m; }); }
+  if(K) K.forEach(function(m){ m.visible=!!on; });
 }
 /* one boat's attitude for this frame: sitting in the water, the bow up over the hump, the running angle, porpoising, chine walk, a hop off the chop, a blowover */
 function boatPose(V, s, z, dt, live){
