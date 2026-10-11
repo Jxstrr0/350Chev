@@ -144,7 +144,7 @@ function bogFxBuild(S3, lite){
   if(!BOGFX.sheet){ BOGFX.sheet=new BogSheet([{name:"tl",cols:7,rows:13},{name:"tr",cols:7,rows:13},{name:"crown",cols:17,rows:7},{name:"bow",cols:11,rows:6}]); }
   if(BOGFX.sheet.mesh.parent!==S3) S3.add(BOGFX.sheet.mesh);
   if(!BOGFX.decal){ var dm=new THREE.MeshStandardMaterial({map:BOGFX.splatTex, transparent:true, depthWrite:false, roughness:0.55, metalness:0, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-3});
-    var im=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), dm, 48); im.count=0; im.frustumCulled=false; im.renderOrder=3; BOGFX.decal={mesh:im}; }
+    var im=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), dm, 48); im.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(48*3),3); im.count=0;   /* colour buffer at full size before count drops to 0 */ im.frustumCulled=false; im.renderOrder=3; BOGFX.decal={mesh:im}; }
   if(BOGFX.decal.mesh.parent!==S3) S3.add(BOGFX.decal.mesh);
   BOGFX.decal.mesh.visible=BOGFX.decN>0;
 }
@@ -163,13 +163,13 @@ function bogFxDecal(x, y, z, s){
   var D=BOGFX.decal; if(!D || GFX==="lite") return;
   var im=D.mesh, i=BOGFX.decI; BOGFX.decI=(i+1)%48; BOGFX.decN=Math.min(48, BOGFX.decN+1);
   _bfE.set(0,0,Math.random()*TAU); _bfQ.setFromEuler(_bfE); _bfM.compose(_bfA.set(x,y,z), _bfQ, _bfS.set(s,s*(0.8+Math.random()*0.5),1)); im.setMatrixAt(i,_bfM);
-  var mc=BOGFX.mudC||[0.13,0.095,0.065], sh=0.8+Math.random()*0.5; im.setColorAt(i, _bfC.setRGB(mc[0]*sh*1.6, mc[1]*sh*1.6, mc[2]*sh*1.6));
+  var mc=BOGFX.mudC||[0.13,0.095,0.065], sh=0.8+Math.random()*0.5; im.setColorAt(i, _bfC.setRGB(mc[0]*sh*2.2, mc[1]*sh*2.2, mc[2]*sh*2.2));
   im.count=BOGFX.decN; im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.visible=true;
 }
 /* a long throw crossing the rail line: a splat if it hits a banner or a pipe; returns true when it stops there */
 function bogFxHitRail(x, y, z){
   var cx=-24+9*Math.round((x+24)/9);
-  if(Math.abs(x-cx)<2.6 && x>-27 && x<104 && y>0.53 && y<1.12){ bogFxDecal(x, y, z+0.03, 0.3+Math.random()*0.4); return true; }
+  if(Math.abs(x-cx)<2.6 && x>-27 && x<104 && y>0.53 && y<1.12){ bogFxDecal(x, y, z+0.03, 0.4+Math.random()*0.5); return true; }
   if(Math.abs(y-1.08)<0.09 || Math.abs(y-0.6)<0.09){ bogFxDecal(x, y, z+0.02, 0.1+Math.random()*0.08); return true; }
   return false;
 }
@@ -187,7 +187,7 @@ function bogFxLens(dt, frontX, rearX, amt, bow){
   var cam=BOG.cam; if(!cam || GFX==="lite") return;
   var L=BOGFX.lens;
   if(!L){ var m=new THREE.MeshBasicMaterial({map:BOGFX.splatTex, transparent:true, depthTest:false, depthWrite:false, fog:false, toneMapped:false});
-    var im=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), m, 10); im.count=0; im.frustumCulled=false; im.renderOrder=40; L=BOGFX.lens={mesh:im}; }
+    var im=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), m, 10); im.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(10*3),3); im.count=0; im.frustumCulled=false; im.renderOrder=40; L=BOGFX.lens={mesh:im}; }
   if(L.mesh.parent!==cam) cam.add(L.mesh); if(cam.parent!==BOG.scene) BOG.scene.add(cam);
   if(BOGFX.lensShot!==BOG.shot){ BOGFX.lensShot=BOG.shot; BOGFX.lensP.length=0; }   /* a cut is another camera: a clean lens */
   var cp=cam.position, low=cp.y<1.9 && Math.abs(cp.z)<6.5, near=(cp.x>frontX-1 && cp.x<frontX+6)?bow:(cp.x<rearX && cp.x>rearX-7?amt*0.8:0);
@@ -229,20 +229,20 @@ function bogFxUpdate(o, dt, V){
       if(!front && !lite){ var ns=amt*6*dt, m2=Math.floor(ns)+(R()<ns%1?1:0);
         for(i=0;i<m2;i++) FX.emit(ax-1.6-R(), by+rr*1.6+R()*1.2, s*(trR+0.3), v*0.5-1.5, 0.6+R()*1.2, s*R()*0.8, 1.4+R()*0.8, 0.8, 2.2+R()*1.2, mc[0]*2.6, mc[1]*2.5, mc[2]*2.4, 0.14, {drag:0.6, grav:0.4, fin:0.15, spin:0.5, kind:1}); }
       /* long throws toward the crowd side: they splat the rail, the banners and the front rows */
-      if(!front && !lite && s<0 && amt>0.45){ var nl=(amt-0.35)*4*dt; if(R()<nl){ var vz=-(7+R()*2.5), vy=3.4+R()*2.4;
-        FX.emit(ax-0.3, by+rr*1.2, s*trR, v*0.6-1-R()*2, vy, vz, 2.6, 0.07, 0.06, mc[0], mc[1], mc[2], 1, {drag:0.03, kind:0, lob:true}); } } }
+      if(!front && !lite && s<0 && amt>0.4){ var nl=(amt-0.3)*12*dt; if(R()<nl){ var vz=-(7+R()*2.5), y0=by+rr*1.2, tz=(BOG_W/2+3.55-trR)/-vz, yT=0.55+R()*1.1, vy=(yT-y0+4.9*tz*tz)/tz;   /* aimed: it crosses the rail line at yT */
+        FX.emit(ax-0.3, y0, s*trR, v*0.6-1-R()*2, vy, vz, 2.6, 0.07, 0.06, mc[0], mc[1], mc[2], 1, {drag:0, kind:0, lob:true}); } } }
   }
   if(bw>0.03){ var nb=bw*rate*(lite?36:70)*dt, mb=Math.floor(nb)+(R()<nb%1?1:0), fx0=fx+rr*0.95;
     for(i=0;i<mb;i++){ var sd=R()<0.5?-1:1, sh2=0.8+R()*0.4; FX.emit(fx0+R()*0.4, 0.25+R()*0.3*bw, sd*(trF+R()*wr), v*(0.9+R()*0.25), 1.2+R()*3.2*bw, sd*(1.2+R()*2.8*bw), 0.7+R()*0.5, 0.04+R()*0.035, 0.035, mc[0]*sh2, mc[1]*sh2, mc[2]*sh2, 1, {drag:0.25, kind:0}); } }
   /* pit entry: a wall of mud 3-4 m high with wings, scaled with the entry speed; slaps (ridges, ruts, landings) a smaller one */
   var entry=ph==="pit" && BOG.prev.phase==="runup";
   if(entry || BOG.splash>0){
-    var sc=entry?clamp(v/11,0.4,1.25):clamp(BOG.splash*0.45,0.15,0.6);
+    var sc=entry?clamp(v/12,0.4,1.1):clamp(BOG.splash*0.45,0.15,0.6);
     if(!BOGFX.crown || entry || BOGFX.crown.t>0.7) BOGFX.crown={t:0, x:fx+rr*0.4, sc:sc, v:v, z:0};
     var nsp=Math.round(sc*(lite?42:110));
     for(i=0;i<nsp;i++){ var a=(R()-0.5)*3.6, f=0.35+R()*0.65, H=3.6*sc*(0.72+0.28*Math.cos(a)), vy0=Math.sqrt(2*9.8*H)*f*(0.85+R()*0.25), hs=(2.2+3.4*f)*Math.max(0.5,sc), sh3=0.7+R()*0.6;
       FX.emit(BOGFX.crown.x+Math.cos(a)*1.1, 0.2, Math.sin(a)*(trF+0.4), v*0.55+Math.cos(a)*hs, vy0, Math.sin(a)*hs*1.1, 1.0+R()*0.9, R()<0.25?0.08:0.04+R()*0.035, 0.04, mc[0]*sh3, mc[1]*sh3, mc[2]*sh3, 1, {drag:0.1, kind:0}); }
-    if(!lite) for(i=0;i<Math.round(sc*8);i++) FX.emit(BOGFX.crown.x+R()*2, 0.6+R(), (R()-0.5)*4, v*0.4, 0.8+R()*1.4, (R()-0.5)*2, 1.8+R(), 1.2, 3.4+R()*1.5, mc[0]*2.4, mc[1]*2.3, mc[2]*2.2, 0.16, {drag:0.6, grav:0.5, fin:0.1, spin:0.4, kind:1});
+    if(!lite) for(i=0;i<Math.round(sc*4);i++) FX.emit(BOGFX.crown.x+R()*2, 0.6+R(), (R()-0.5)*4, v*0.4, 0.8+R()*1.4, (R()-0.5)*2, 1.8+R(), 1.2, 3.4+R()*1.5, mc[0]*2.4, mc[1]*2.3, mc[2]*2.2, 0.16, {drag:0.6, grav:0.5, fin:0.1, spin:0.4, kind:1});
     BOG.splash=0; }
   /* exhaust: a diesel's black smoke out the stacks, a whisp otherwise */
   var smk=clamp(+o.smoke||0,0,1), ne=(lite?5:12)*(0.15+smk)*(+o.throttle||0)*dt*(o.failed?0:1);
@@ -274,7 +274,7 @@ function bogFxSheets(Sh, dt, q){
         var bx=C.x+Math.cos(phi)*0.7, bz=Math.sin(phi)*(q.trF+q.wr*0.6);
         for(r=0;r<sc2.rows;r++){ var fr=0.2+0.8*r/(sc2.rows-1), vy=vmax*fr, hs=(1.6+3.0*fr)*Math.max(0.55,C.sc), vxx=C.v*0.45+Math.cos(phi)*hs, vzz=Math.sin(phi)*hs*1.15;
           var py2=vy*T2-0.5*g*T2*T2, al2=ef2*Math.min(1,T2*14)*Math.pow(1-life,0.6)*(py2>0.03?1:0)*(0.55+0.45*fr);
-          Sh.set(sc2, c, r, bx+vxx*T2*(1-0.1*T2), Math.max(0.02,py2), bz+vzz*T2*(1-0.1*T2), al2, 0.08+0.7*life+0.15*fr, ua*2.6, fr*1.4); } } } }
+          Sh.set(sc2, c, r, bx+vxx*T2*(1-0.1*T2), Math.max(0.02,py2), bz+vzz*T2*(1-0.1*T2), al2, 0.04+0.6*Math.pow(life,1.5)+0.12*fr, ua*2.6, fr*1.4); } } } }
   else Sh.off(sc2);
   /* bow mound: two lobes ahead of the front tyres, joined by the axle's push; its crest breaks */
   var B=S[3];
