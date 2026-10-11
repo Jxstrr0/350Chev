@@ -92,10 +92,11 @@
   /* the car: chassis + this engine's weight, the tyre fitted and the final drive (auto-fitted, × finalK) */
   function roadCar(res, opt) {
     opt = opt || {};
-    const C0 = CHASSIS[opt.ch] || CHASSIS.coupe, ty = ROAD_TYRES[opt.tyre] || ROAD_TYRES[C0.tyre];
-    const ekg = clamp(+res.kg || C0.eng, 40, 900), dm = ekg - C0.eng;
+    const sw = opt.car && opt.car.swap ? opt.car : null;   // an engine swap: the vehicle's own chassis (sim/swap.js); null = the archetypes, as before
+    const C0 = sw || CHASSIS[opt.ch] || CHASSIS.coupe, ty = ROAD_TYRES[opt.tyre] || ROAD_TYRES[C0.tyre];
+    const ekg = clamp(+res.kg || C0.eng, sw ? 5 : 40, sw ? 9000 : 900), dm = ekg - C0.eng;
     const m = C0.mass + dm + 75;   // + the driver
-    const front = clamp((C0.front * C0.mass + dm * C0.xE + 75 * 0.45) / m, 0.3, 0.75), dF = front - C0.front;
+    const front = clamp((C0.front * C0.mass + dm * C0.xE + 75 * 0.45) / m, sw ? 0.1 : 0.3, sw ? 0.9 : 0.75), dF = front - C0.front;
     // balance off the chassis' design point costs cornering grip (nose-heavy pushes, tail-heavy snaps); tyres lose a little μ per kg
     const kBal = clamp(1 - 1.2 * Math.abs(dF), 0.82, 1), kLoad = Math.pow(m / (C0.mass + 75), -0.12);
     const rw = C0.tyreDia * 0.0254 / 2, eta = C0.drive === "awd" ? 0.8 : 0.85, gears = C0.ratios.slice();
