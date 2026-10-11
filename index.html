@@ -21149,10 +21149,15 @@ function slSph(r, ws, hs){ var key="sph"+r3(r)+"_"+ws; return SLC.geo[key]||(SLC
 function slMoonGeo(R, h, seg){ var key="moon"+r3(R)+"_"+r3(h)+"_"+seg; if(SLC.geo[key]) return SLC.geo[key];
   var pts=[], i, N=5; for(i=0;i<=N;i++){ var t=i/N; pts.push(new THREE.Vector2(Math.max(0.001,R*Math.sin(t*PI/2)), h*Math.cos(t*PI/2))); }
   pts.push(new THREE.Vector2(R*1.02, -0.004)); pts.reverse(); return (SLC.geo[key]=new THREE.LatheGeometry(pts, seg)); }
+/* the strip's tyre profile; Lite lathes it with 12 sides instead of 18 */
+function slTyre(r, w, rimR){ if(GFX!=="lite") return sc_tyreGeo(r, w, rimR); var key="lty"+[r,w,rimR].map(r3).join("_"); if(SLC.geo[key]) return SLC.geo[key];
+  var hw=w/2, sh=Math.min(0.055,(r-rimR)*0.3), pr=[[rimR+0.004,0.86],[lerp(rimR,r,0.34),1],[lerp(rimR,r,0.74),1],[r-sh,0.965],[r-sh*0.22,0.82]], pts=[], i;
+  for(i=0;i<pr.length;i++) pts.push(new THREE.Vector2(pr[i][0], -hw*pr[i][1])); for(i=pr.length-1;i>=0;i--) pts.push(new THREE.Vector2(pr[i][0], hw*pr[i][1]));
+  return (SLC.geo[key]=new THREE.LatheGeometry(pts, 12)); }
 /* a salt wheel: tyre + Moon discs both faces (static: round things need no spin) */
 function slWheel(B, x, z, r, w, o){
   o=o||{}; var rimR=r*(o.rim||0.62), sd=z<0?-1:1, seg=GFX==="lite"?12:18;
-  B.add("rubber", sc_tyreGeo(r, w, rimR), sc_M(x, r, z, PI/2, 0, 0));
+  B.add("rubber", slTyre(r, w, rimR), sc_M(x, r, z, PI/2, 0, 0));
   if(o.disc===false || GFX!=="lite") B.add("well", new THREE.CircleGeometry(rimR*0.99, seg), sc_M(x, r, z+sd*w*0.2, 0, sd>0?0:PI, 0));
   if(o.disc!==false){ B.add(o.moon==="paint"?"paint":"chrome", slMoonGeo(rimR*0.98, rimR*0.22, seg), sc_M(x, r, z+sd*w*0.42, sd*PI/2, 0, 0));
     if(o.inner!==false) B.add("satin", new THREE.CircleGeometry(rimR*0.95, seg), sc_M(x, r, z-sd*w*0.38, 0, sd>0?PI:0, 0)); }
@@ -21370,8 +21375,8 @@ function slStreamliner(B, W, L, E, aero, tips, ls, k){
   if(GFX!=="lite"){ slDecal2(B, SL_ATL.rail, -0.42, 0.7, zs, 0.8, 0.09); slDecal2(B, SL_ATL.tech, 3.62, 0.37, zs, 0.16, 0.16); slDecal2(B, SL_ATL.club, 3.8, 0.62, zs, 0.5, 0.235); slDecal2(B, SL_ATL.sp[4], -1.35, 0.55, 0.43, 0.55, 0.17); }
   slDecal(B, SL_ATL.numB, [-0.3, yt+0.004, 0], [0,0,1], [1,0,0], 0.55, 0.36);
   /* wheels inside the skirts */
-  W.add("rubber", sc_tyreGeo(0.343, 0.18, 0.21), sc_M(0, 0.343, -0.25, PI/2, 0, 0)); W.add("rubber", sc_tyreGeo(0.343, 0.18, 0.21), sc_M(0, 0.343, 0.25, PI/2, 0, 0));
-  W.add("rubber", sc_tyreGeo(0.33, 0.14, 0.2), sc_M(4.6, 0.33, -0.24, PI/2, 0, 0)); W.add("rubber", sc_tyreGeo(0.33, 0.14, 0.2), sc_M(4.6, 0.33, 0.24, PI/2, 0, 0));
+  W.add("rubber", slTyre(0.343, 0.18, 0.21), sc_M(0, 0.343, -0.25, PI/2, 0, 0)); W.add("rubber", slTyre(0.343, 0.18, 0.21), sc_M(0, 0.343, 0.25, PI/2, 0, 0));
+  W.add("rubber", slTyre(0.33, 0.14, 0.2), sc_M(4.6, 0.33, -0.24, PI/2, 0, 0)); W.add("rubber", slTyre(0.33, 0.14, 0.2), sc_M(4.6, 0.33, 0.24, PI/2, 0, 0));
   ls.push({role:"hood", w:0.8, h:0.26, p:[0.3,yt+0.005,0], u:[0,0,1], v:[1,0,0]}, {role:"side", w:0.7, h:0.22, p:[4.3,0.32,zs+0.003], u:[1,0,0], v:[0,1,0]}, {role:"side", i:1, w:0.7, h:0.22, p:[4.3,0.32,-zs-0.003], u:[-1,0,0], v:[0,1,0]});
   return {rr:0.343, anchor:slV(T-0.3, 0.49, 0), chuteLen:9, chuteRise:0.7, chuteR:1.15, len:N-T, tail:T-0.3, nose:N, top:yt+0.2, wb:4.6};
 }
@@ -21502,10 +21507,10 @@ function saltAlteredV2(L, aero){
   /* class plate on the rear quarter window line, the sponsor rail on the rocker */
   var bbx=new THREE.Box3(); U.liv.door.forEach(function(d){ d.geometry.computeBoundingBox(); bbx.union(d.geometry.boundingBox); });
   if(!bbx.isEmpty()){ var zq=bbx.max.z+0.003, yq=bbx.min.y;
-    slDecal2(B, SL_ATL.cls, bbx.min.x-0.45, yq+0.18, zq-0.02, 0.4, 0.125);
+    if(GFX!=="lite") slDecal2(B, SL_ATL.cls, bbx.min.x-0.45, yq+0.18, zq-0.02, 0.4, 0.125);   /* Lite: the door boards carry the class */
     if(GFX!=="lite"){ slDecal2(B, SL_ATL.rail, (bbx.min.x+bbx.max.x)/2, yq-0.1, zq-0.012, 1.3, 0.13); slDecal2(B, SL_ATL.sp[0], bbx.max.x+0.62, yq+0.12, zq-0.04, 0.42, 0.13); } }
   /* Moon discs on the strip wheels */
-  var MB=sc_bin(); U.carriers.forEach(function(cw){ var cu=cw.userData, sd2=cu.side; MB.add(L.moon==="paint"?"paint":"chrome", slMoonGeo(cu.r*0.58, cu.r*0.12, GFX==="lite"?12:18), sc_M(cw.position.x, cw.position.y, cw.position.z+sd2*cu.hw*0.9, sd2*PI/2, 0, 0)); });
+  var MB=sc_bin(); if(GFX!=="lite") U.carriers.forEach(function(cw){ var cu=cw.userData, sd2=cu.side; MB.add(L.moon==="paint"?"paint":"chrome", slMoonGeo(cu.r*0.58, cu.r*0.12, GFX==="lite"?12:18), sc_M(cw.position.x, cw.position.y, cw.position.z+sd2*cu.hw*0.9, sd2*PI/2, 0, 0)); });
   slBuild(MB, car, slMats(L), true);
   /* engine cues the strip shell doesn't carry */
   var tips=[];
