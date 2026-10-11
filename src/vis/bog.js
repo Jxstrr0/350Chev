@@ -132,6 +132,7 @@ function buildBogScene(){
   M.sign=new THREE.MeshStandardMaterial({map:bogAtlas(), roughness:0.72});
   M.dirt=new THREE.MeshStandardMaterial({color:sc(0x5a4029), roughness:1});
   M.mud=new THREE.MeshStandardMaterial({color:0xb0a090, roughness:0.3, metalness:0.0, envMapIntensity:0.45});
+  bogMudWet(M.mud);
   var B=new StripBatch(), STEEL=0x8d9296, ALU=0xb9bec4, DARK=0x2a2c2f, RUB=0x1a1a1c;
   /* berms: long dirt banks both sides (scaled to the night's pit), one across the far end, a tyre wall in front of it */
   BOG.berms=[]; [-1,1].forEach(function(sd){ var m=new THREE.Mesh(sbGeo().prism, M.dirt); m.scale.set(84,1.8,3.4); m.position.set(35,-0.05,sd*(BOG_W/2+1.9)); m.castShadow=!lite; m.receiveShadow=true; S3.add(m); BOG.berms.push(m); });
@@ -191,6 +192,25 @@ function buildBogScene(){
   BOG.cam=new THREE.PerspectiveCamera(46, 1, 0.3, 3600); BOG.built=true;
   BOG.night=null; bogSetNight(false);
 }
+/* wet mud by day: the material is darker and browner in daylight, and on Full/Ultra (MUD_VAR) a world-space noise breaks it
+   into broad tonal patches with glossy wet slicks between matte crust, so it still reads as mud from the stands. Lite keeps
+   the plain material (only its colour and gloss change: no extra shader work). Night uses the original look (uDay 0). */
+function bogMudWet(m){
+  var uDay={value:0}; m.userData.uDay=uDay;
+  m.onBeforeCompile=function(sh){ sh.uniforms.uMudDay=uDay;
+    sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\n#ifdef MUD_VAR\nvarying vec2 vMw;\n#endif").replace("#include <project_vertex>", "#include <project_vertex>\n#ifdef MUD_VAR\nvMw=(modelMatrix*vec4(transformed,1.0)).xz;\n#endif");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform float uMudDay;\n#ifdef MUD_VAR\nvarying vec2 vMw;\n"+STRIP_GLSL_NOISE+"\n#endif")
+      .replace("#include <color_fragment>", "#include <color_fragment>\n#ifdef MUD_VAR\nfloat mTone=sn(vMw*0.33)*0.65+sn(vMw*1.6+3.1)*0.35, mWet=smoothstep(0.42,0.68,sn(vMw*0.55+vec2(7.0,2.0)));\ndiffuseColor.rgb*=mix(1.0,(0.74+0.5*mTone)*(1.0-0.16*mWet),uMudDay);\n#endif")
+      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n#ifdef MUD_VAR\nroughnessFactor*=mix(1.0,mix(1.3,0.42,mWet),uMudDay);\n#endif");
+  };
+  m.customProgramCacheKey=function(){ return "bog_mud"+(m.defines&&m.defines.MUD_VAR!==undefined?"_v":""); };
+}
+function bogMudLook(on, lite){
+  var m=BOG.mats&&BOG.mats.mud; if(!m||!m.userData.uDay) return; m.userData.uDay.value=on?0:1;
+  m.color.set(on?0xb0a090:0x84644a);           /* by day: darker, browner (the sun is 10x the floods and washed it to grey) */
+  m.envMapIntensity=on?0.45:0.32;               /* less grey sky in the sheen; the sun still glints off it */
+  var v=!lite; if(v!==(m.defines&&m.defines.MUD_VAR!==undefined)){ m.defines=v?{MUD_VAR:""}:{}; m.needsUpdate=true; }
+}
 function bogSetNight(on){
   on=!!on; var tierChanged=BOG.tier!==GFX; if(BOG.night===on && !tierChanged) return;
   BOG.night=on; BOG.tier=GFX; var S3=BOG.scene, lite=(GFX==="lite"), M=BOG.mats;
@@ -201,6 +221,7 @@ function bogSetNight(on){
   BOG.hemi.intensity=on?0.14:0.2; BOG.hemi.color.set(on?0x3a4764:0xcfdcf0); BOG.hemi.groundColor.set(on?0x16130e:0x6a5a3c);
   BOG.flood.intensity=on?(lite?0.6:0.28):0;
   M.lamp.color.set(on?0xffffff:0x5e5e5e);
+  bogMudLook(on, lite);
   if(BOG.beamMesh){ BOG.beamMesh.visible=on; M.beam.opacity=on?0.014:0; }
   S3.environment=stripEnv(on); BOG.exposure=on?1.0:0.9;
   [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F){ F.mat.uniforms.uAmb.value=F===BOG.fx?1:(on?0.45:1); F.mat.uniforms.uFogN.value=S3.fog.near; F.mat.uniforms.uFogF.value=S3.fog.far; } });
