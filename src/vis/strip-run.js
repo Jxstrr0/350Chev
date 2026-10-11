@@ -79,7 +79,7 @@ function stripBoardDraw(d, force){
     else {
       x.textAlign="right"; x.fillStyle=dim; x.font="600 30px "+MONO; x.fillText("RT "+(L.rt!=null?(+L.rt).toFixed(3):"-.---"), 488, 80);
       if(dl!=null){ var bo=L.et!=null && +L.et<dl; x.textAlign="left"; x.fillStyle=bo?"#ff3b30":dim; x.fillText("DIAL "+(+dl).toFixed(2)+(bo?" BO":""), 24, 80); }   /* bracket: the dial-in, red when it broke out */
-      x.fillStyle=amber; x.font="700 104px "+MONO; x.fillText(L.et!=null?(+L.et).toFixed(3):"--.---", 494, 150);
+      x.textAlign="right"; x.fillStyle=amber; x.font="700 104px "+MONO; x.fillText(L.et!=null?(+L.et).toFixed(3):"--.---", 494, 150);
       x.fillStyle=dim; x.font="700 58px "+MONO; x.fillText((L.mph!=null?(+L.mph).toFixed(2):"---.--"), 400, 220);
       x.font="700 30px "+F; x.fillText("MPH", 488, 226); x.textAlign="left"; x.font="700 30px "+F; x.fillText("ET", 24, 136);
       /* personal best: purple for the all-time quickest, green for this engine's best */
@@ -438,8 +438,15 @@ function stripDirect(o, dt, P, O){
     case "burnout": _cw.set(-0.7-Math.min(1.2,T*0.1), 0.72, Math.min(6.9,pz+4.4)); _ct.set(px-4.5, 1.3, pz-2.4); fov=40; break;
     case "tree": { var cz=race?0:1.35, push=Math.min(4.0,T*0.4); _cw.set(-20+push, 4.6, cz); _ct.set(2+push*0.5, 1.1, cz*0.3); fov=30;
       if(ph==="run") STRIP.shake=Math.max(STRIP.shake, 0.3*Math.max(0,1-STRIP.runT/0.8)); break; }
-    case "wall": { _cw.set(STRIP_WALL_X, 0.55, 7.2); _ct.set(mx+(mx<STRIP_WALL_X?1.2:-0.6), 0.8, mz*0.6); d=Math.max(2.5,_cw.distanceTo(_ct));
-      var hw=3.4+(both?gap*0.5+1.5:0), ta=Math.max(hw/(d*Math.max(0.3,STRIP.cam.aspect)), 1.9/d); fov=clamp(2*Math.atan(ta)*180/PI, 12, 74); break; }
+    case "wall": { _cw.set(STRIP_WALL_X, 0.55, 7.2);
+      /* fix pack: a pair only while it fits the frame; split up, the camera follows one car (the player's, unless the
+         other is much nearer the lens) and eases across instead of framing the empty track between them */
+      var wp=race&&gap<12, wt=STRIP_WALL_X-px, wo=STRIP_WALL_X-ox, wcar=(!race||wp||Math.abs(wt)<=Math.abs(wo)+8)?P:O;
+      var wx=wp?mx:wcar.position.x, wz=wp?mz:wcar.position.z;
+      if(STRIP.snap||STRIP.wallX==null) STRIP.wallX=wx; else STRIP.wallX+=(wx-STRIP.wallX)*(1-Math.exp(-7*dt));
+      STRIP.wallCar=wp?null:wcar; STRIP.wallPair=wp;
+      _ct.set(STRIP.wallX+(STRIP.wallX<STRIP_WALL_X?1.2:-0.6), 0.8, wz*0.6); d=Math.max(2.5,_cw.distanceTo(_ct));
+      var hw=3.4+(wp?gap*0.5+1.5:0), ta=Math.max(hw/(d*Math.max(0.3,STRIP.cam.aspect)), 1.9/d); fov=clamp(2*Math.atan(ta)*180/PI, 12, 74); break; }
     case "pan": _cw.set(STRIP_PAN_X, 1.3, 7.15); _ct.set(mx+1.4, 0.85, mz*0.6); d=_cw.distanceTo(_ct); fov=clamp(2*Math.atan((4.6+(both?gap*0.5+2.5:0))/d)*180/PI, 20, 62); break;
     case "chase": { rel=true; var b2=race&&gap<28; ax=b2?trail:px; var back=6.6+v*0.06+(b2?Math.min(12,gap*0.5):0), cz2=b2?0:pz;
       _cw.set(-back, 2.0+v*0.026+(b2?gap*0.03:0), cz2+1.5+v*0.022); _ct.set((b2?lead-ax:0)+5+v*0.1, 1.0, cz2*0.7); fov=46+Math.min(12,v*0.12); sm=5;
@@ -462,7 +469,8 @@ function stripDirect(o, dt, P, O){
       else { var ty=P.userData._tyres[0]; _sfA.copy(ty); P.localToWorld(_sfA); _cw.set(_sfA.x+2.4+rdx*0.04, 0.3, _sfA.z+2.6); _ct.set(_sfA.x+0.2, 0.45, _sfA.z-0.3); fov=stripFitFov(34, 1.25); }   /* down at the rear tyre: the sidewall wrinkles */
       break; }
     case "honour": { var hk=smoothstep(0,4.6,T), hz=smoothstep(0.35,1,hk);   /* crane up out of the wall over the fence: the car, the stands behind it */
-      _cw.set(px-8.5+4*hk, 1.0+6.4*hk, 6.6+3.2*hz); _ct.set(px+1.6, 0.9+2.6*hk, -1.5-8*hk); fov=stripFitFov(46, 1.2); break; }   /* ends on the stands (x 0-140, z -10..-19) so the card wave reads */
+      _cw.set(px-8.5+4*hk, 1.0+6.4*hk, 6.6+3.2*hz); _ct.set(px+1.6, 0.9+2.6*hk, -1.5-8*hk); fov=stripFitFov(46, 1.2);
+      stripKeepIn(_sfD.set(px, 0.15, pz), _sfB.set(px+0.6, 0.7, pz), fov); break; }   /* fix pack: the car stays clear of the HUD band and the frame edge */   /* ends on the stands (x 0-140, z -10..-19) so the card wave reads */
     case "crowd": { if(!STRIP.pbCut) STRIP.pbCut=1; var cp=smoothstep(0,2.3,T); _cw.set(78-cp*6, 1.4+cp*0.5, 2.4); _ct.set(52-cp*4, 3.4, -13.5); fov=stripFitFov(40-cp*5, 1.2); break; }
     case "fail": { rel=true; ax=px; _cw.set(8.5+v*0.04, 1.5, pz+4.2); _ct.set(-3.5, 1.2, pz-0.6); fov=50; sm=8; STRIP.shake=Math.max(STRIP.shake, 0.16); break; }
   }
@@ -480,6 +488,18 @@ function stripDirect(o, dt, P, O){
 /* phone-first framing: a portrait view widens a shot's vertical fov until it shows the width it would at refAsp */
 function stripFitFov(vf, refAsp){ var a=STRIP.cam?STRIP.cam.aspect:1; refAsp=refAsp||1.35; if(!(a>0)||a>=refAsp) return vf;
   return Math.min(78, 2*Math.atan(Math.tan(deg(vf)/2)*refAsp/a)*180/PI); }
+/* fix pack: pull the aim point (_ct) towards a subject until its low point (lo) sits above the HUD band and its centre (mid)
+   stays inside the frame's sides; bisection on a scratch camera, only when it is out (portrait honour shot) */
+var _kpCam=null, _kpT=new THREE.Vector3();
+function stripKeepIn(lo, mid, fov){
+  var c=_kpCam||(_kpCam=new THREE.PerspectiveCamera(46,1,0.3,4200)), b=STRIP.band||0, h=STRIP.viewH||0, yMin=-1+(h>0?clamp(b/h,0,0.3):0)+0.1, xMax=0.72;
+  c.aspect=STRIP.cam?STRIP.cam.aspect:1; c.fov=fov; c.updateProjectionMatrix(); c.position.copy(_cw);
+  function ok(k){ c.lookAt(_kpT.copy(_ct).lerp(mid, k)); c.updateMatrixWorld(true);
+    var a=_mbA.copy(lo).project(c), m=_mbB.copy(mid).project(c); return a.z<1 && a.y>=yMin && Math.abs(m.x)<=xMax; }
+  if(ok(0)) return; var k0=0, k1=1; if(!ok(1)) return;
+  for(var i=0;i<7;i++){ var km=(k0+k1)/2; if(ok(km)) k1=km; else k0=km; }
+  _ct.lerp(mid, k1);
+}
 /* ...and an off-axis lens shift lifts the picture so the subject sits above the HUD band along the view's bottom edge
    (the band is the --striphud custom property on #view, read on resize) */
 function stripBandRead(){ var de=document.documentElement, host=canvasEl&&canvasEl.parentElement; STRIP.band=0; STRIP.bandShud=de.classList.contains("shud");
@@ -513,8 +533,14 @@ function stripBlur(P, dt){
     if(L>0.07){ ux*=0.07/L; uy*=0.07/L; L=0.07; }
     on=L>0.0025;
     if(on){ bp.uniforms.uDir.value.set(ux, uy);
-      _mbA.set(0,0.75,0); P.localToWorld(_mbA); var dist=Math.max(1,_mbA.distanceTo(cam.position)); _mbA.project(cam);
-      var ry=Math.min(1.1, 3.6/(dist*Math.tan(deg(cam.fov)/2))*0.5); bp.uniforms.uC.value.set(_mbA.x*0.5+0.5, _mbA.y*0.5+0.5); bp.uniforms.uR.value.set(ry*1.5/cam.aspect, ry*0.7); } }
+      /* fix pack: the sharp spot sits on the car the wall cam follows (both, when it frames the pair); no car in frame, no smear */
+      var O=STRIP.cars.o, pair=STRIP.wallPair && O && O.visible, tc=STRIP.wallCar||P, gx=0;
+      if(pair){ _mbA.set(0,0.75,0); P.localToWorld(_mbA); _mbB.set(0,0.75,0); O.localToWorld(_mbB); _mbA.add(_mbB).multiplyScalar(0.5); }
+      else { _mbA.set(0,0.75,0); tc.localToWorld(_mbA); }
+      var dist=Math.max(1,_mbA.distanceTo(cam.position)); _mbA.project(cam);
+      if(pair){ _mbB.project(cam); gx=Math.abs(_mbB.x-_mbA.x)*0.5; }
+      if(_mbA.z>1 || Math.abs(_mbA.x)>1.05+gx || Math.abs(_mbA.y)>1.05) on=false;
+      var ry=Math.min(1.1, 3.6/(dist*Math.tan(deg(cam.fov)/2))*0.5); bp.uniforms.uC.value.set(_mbA.x*0.5+0.5, _mbA.y*0.5+0.5); bp.uniforms.uR.value.set(ry*1.5/cam.aspect+gx*0.5, ry*0.7); } }
   if(bp) bp.enabled=on;
   _mbQ.copy(cam.quaternion); STRIP.mbOk=true;
 }
@@ -687,15 +713,16 @@ function stripUpdate(o, dt, rdt){
   var S2=STRIP.scene; STRIP.t+=dt; if(rdt===undefined) rdt=dt;
   if(STRIP.tier!==GFX || STRIP.night!==!!o.night) stripSetNight(!!o.night);
   stripDusk(o.nightK);
+  stripGlare();
   /* v2: o.hw = what your engine carries (scoop / blower / turbos / intercooler, diesel, ALS, nitrous); o.opp = the other lane's
      own car {color, hw:{...style}}. Both optional: without them the cars are the v1.5 ones (charcoal mirror opponent). */
   var CS=STRIP.cars, hwK=o.hw===CS.hwRef?CS.hwK:(o.hw?JSON.stringify(o.hw):""), opK=o.opp===CS.opRef?CS.opK:(o.opp?JSON.stringify(o.opp):""), liteK=(hwK||opK)?GFX==="lite":false;
   CS.hwRef=o.hw; CS.hwK=hwK; CS.opRef=o.opp; CS.opK=opK;
   if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn || CS.bHw!==hwK || CS.bOp!==opK || CS.bLite!==liteK)){
     if(STRIP.cars.p) S2.remove(STRIP.cars.p); if(STRIP.cars.o) S2.remove(STRIP.cars.o);
-    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); stripCarMeta(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
+    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); stripCarMeta(STRIP.cars.p); stripContact(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
     var op=o.opp||{};
-    STRIP.cars.o=stripCar(o.body, op.color!=null?op.color:0x3a3f46, op.tyreIn||o.tyreIn, op.hw); stripCarMeta(STRIP.cars.o); STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
+    STRIP.cars.o=stripCar(op.body||o.body, op.color!=null?op.color:0x3a3f46, op.tyreIn||(op.body&&op.body!==o.body?undefined:o.tyreIn), op.hw); stripCarMeta(STRIP.cars.o); stripContact(STRIP.cars.o);   /* op.body: the rival's own class (fix pack plumbing) */ STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
     CS.bHw=hwK; CS.bOp=opK; CS.bLite=liteK;
   }
   var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return; stripLivery(P);
