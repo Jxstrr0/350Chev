@@ -109,14 +109,14 @@ function buildHillWorld(T){
     var rd=new THREE.Mesh(g, M.asph); rd.receiveShadow=!lite; S5.add(rd); })();
   (function(){ var step=lite?4:2, gcol=sc(0x8a7f70), cc=new THREE.Color(), pos=[], col=[], idx=[], base=0;
     [-1,1].forEach(function(sd){ for(var ii=0;ii<N;ii+=step){ var dr=W.drop[ii], isDrop=dr&&Math.sign(dr)===sd, Lv=isDrop?(Math.abs(dr)===2?9:6):Math.min(48,Math.max(cw,ch2)*0.95);
-        var offs=[hw, hw+0.9, hw+2.6, hw+4.4, hw+Lv];
-        for(var r=0;r<5;r++){ hillPt(W, ii, sd*offs[r], 0, _hA); var cx=_hA.x+W.ox, cy=-_hA.z+W.oy, roadY=T.z[ii]-W.z0, y;
-          if(r<2) y=roadY+0.03-r*0.06; else if(r===4) y=W.gH(cx,cy)-W.z0+0.05; else y=lerp(roadY-0.2, W.gH(cx,cy)-W.z0, r===2?0.04:0.1);
+        var offs=lite?[hw, hw+0.9, hw+3.2, hw+Lv]:[hw, hw+0.9, hw+2.6, hw+4.4, hw+Lv], nr=offs.length;
+        for(var r=0;r<nr;r++){ hillPt(W, ii, sd*offs[r], 0, _hA); var cx=_hA.x+W.ox, cy=-_hA.z+W.oy, roadY=T.z[ii]-W.z0, y;
+          if(r<2) y=roadY+0.03-r*0.06; else if(r===nr-1) y=W.gH(cx,cy)-W.z0+0.05; else y=lerp(roadY-0.2, W.gH(cx,cy)-W.z0, r===2?0.04:0.1);
           pos.push(_hA.x,y,_hA.z);
-          if(r<3) cc.copy(gcol).multiplyScalar(0.9+0.2*rng(ii*7+r)); else hillTerrColor(T.z[ii], 0.3, rng(ii), cc);
+          if(r<nr-2||(lite&&r<2)) cc.copy(gcol).multiplyScalar(0.9+0.2*rng(ii*7+r)); else hillTerrColor(T.z[ii], 0.3, rng(ii), cc);
           col.push(cc.r,cc.g,cc.b); }
-        if(ii+step<N){ var a=base, b=base+5; for(var r2=0;r2<4;r2++){ if(sd>0) idx.push(a+r2,b+r2,a+r2+1, a+r2+1,b+r2,b+r2+1); else idx.push(a+r2,a+r2+1,b+r2, a+r2+1,b+r2+1,b+r2); } }
-        base+=5; }
+        if(ii+step<N){ var a=base, b=base+nr; for(var r2=0;r2<nr-1;r2++){ if(sd>0) idx.push(a+r2,b+r2,a+r2+1, a+r2+1,b+r2,b+r2+1); else idx.push(a+r2,a+r2+1,b+r2, a+r2+1,b+r2+1,b+r2); } }
+        base+=nr; }
       base=pos.length/3; });
     var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("color",new THREE.Float32BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals();
     var vm=new THREE.Mesh(g, M.verge); vm.receiveShadow=!lite; S5.add(vm); })();
