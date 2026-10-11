@@ -276,7 +276,7 @@ function boatDirect(o, dt){
   BOAT.camPos.copy(_btw); if(rel) BOAT.camTgt.copy(_btt); else BOAT.camTgt.lerp(_btt, 1-Math.exp(-7*dt));
   BOAT.shake*=Math.exp(-dt*3.5); var sh=BOAT.shake; if(sh>0.002){ BOAT.camPos.x+=(Math.random()-0.5)*sh*0.3; BOAT.camPos.y+=(Math.random()-0.5)*sh*0.3; }
   BOAT.camPos.y=Math.max(0.6,BOAT.camPos.y);
-  var cam=BOAT.cam; cam.position.copy(BOAT.camPos); cam.lookAt(BOAT.camTgt); cam.fov=BOAT.fov; cam.updateProjectionMatrix();
+  var cam=BOAT.cam; cam.position.copy(BOAT.camPos); cam.lookAt(BOAT.camTgt); cam.fov=BOAT.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function boatComposer(){
   if(BOAT.composer===false) return null; var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=BOAT.composer;

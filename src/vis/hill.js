@@ -227,7 +227,7 @@ function hillDirect(o, dt, W, car){
   else { var st2=W.stations[HILL.st]; hillPt(W, st2.i, st2.d, 0, HILL.camPos); HILL.camPos.y=st2.y; _hC.set(cp.x, cp.y+0.7, cp.z); if(HILL.snap) HILL.camTgt.copy(_hC); else HILL.camTgt.lerp(_hC, 1-Math.exp(-dt*10));
     var dist=HILL.camPos.distanceTo(_hC); fov=clamp(2*Math.atan(6/Math.max(1,dist))*180/PI, 10, 55); }
   if(HILL.snap){ HILL.fov=fov; HILL.snap=false; } else HILL.fov+=(fov-HILL.fov)*(1-Math.exp(-dt*6));
-  var cam=HILL.cam; cam.position.copy(HILL.camPos); cam.lookAt(HILL.camTgt); cam.fov=HILL.fov; cam.updateProjectionMatrix();
+  var cam=HILL.cam; cam.position.copy(HILL.camPos); cam.lookAt(HILL.camTgt); cam.fov=HILL.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function hillRender(){
   var W=HILL.W, cam=HILL.cam; if(!W||!cam) return;
