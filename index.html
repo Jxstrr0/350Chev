@@ -6300,12 +6300,119 @@ const ENGINE_SIM = (function () {
   /* A whole pass with no human in it: contract ET checks, the rival in the other lane, the node harness.
      veh.holdTime: seconds on the two-step / trans-brake before the release (default 1.2 when fitted). */
   function dragPass(res, veh) {
+    if (veh && (veh.driver || veh.drive === "auto")) return dragAutoPass(res, veh);   // the auto driver, the same presses the app makes
     const d = dragRun(res, Object.assign({ auto: true }, veh || {}));
     if (d.st.phase === "burnout") d.stage();
     while (d.st.phase === "staged" && d.st.rollIn > 0) d.step(0.01);
     if (d.canArm) { const ht = veh && veh.holdTime != null ? +veh.holdTime : 1.2; if (ht > 0 && d.arm()) { let t = 0; while (t < ht) { d.step(0.01); t += 0.01; } } }
     if (d.n2o && veh.n2o.purge > 0) { d.purge(true); let t = 0; while (t < veh.n2o.purge) { d.step(0.01); t += 0.01; } d.purge(false); }   // a headless car purges before it leaves
     d.launch(); while (!d.st.done) d.step(0.002); return d.result();
+  }
+  /* The auto driver for a drag pass: the player's own buttons, pressed on a fixed 4 ms clock. A burnout of the right
+     length for the tyre, roll in, purge a nitrous line, arm the two-step / trans-brake / anti-lag on the ambers, leave on
+     the green with a human light (most .04-.10, now and then a slow one, a red very rarely), and on a manual box shift
+     near where the next gear pulls harder, read off the build's own torque curve, give or take a hand. Launch rpm, the
+     nitrous switch and the chute are the car's set-up, not the driver's, so they stay as set; there is no pedal on a
+     drag pass, for the player or for it. Deterministic for a seed, on its own random stream.
+     tick(d, h, tree) runs before each step of the runner d and returns one press or null: "burn" / "unburn" / "stage" /
+     "purge" / "unpurge" / "arm" / "go" / "shift". tree: null on a time trial; on a tree, NaN while it is dark, then seconds
+     from the green (negative before it). say(d, tree) is the HUD's word for what it is doing. */
+  const DRAG_TICK = 0.004;
+  function dragDriver(seed, res, veh) {
+    const r = pullRng(((seed >>> 0) ^ 0x2D5A9E37) >>> 0);
+    const gs = () => { let u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * r()); };
+    const v = Object.assign({ tyre: "street", gears: 4, first: 2.9, top: 1.0, final: 3.7, redline: 7000, auto: true, tyreDia: 27, transBrake: "none" }, veh || {});
+    const hot = v.tyre === "radial" || v.tyre === "slick", ll = v.transBrake === "line_lock", red = v.redline;
+    const jump = r() < 0.0025, slow = r() < 0.05, g0 = gs(), sl = r(), jr = r();
+    let rt = 0.072 + 0.022 * g0; if (slow) rt += 0.04 + 0.12 * sl; if (jump) rt = -(0.004 + 0.03 * jr);
+    const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.0 : 3.4) + 0.5 * r() : 1.0 + 0.6 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.9 + 0.5 * r(),
+      beat: 0.6 + 0.6 * r(), hold: 1.0 + 0.4 * r(), rt: +rt.toFixed(4), shift: [], ideal: [] };
+    // shift points: the rpm where the next gear's wheel torque (after the drop) matches this one's, or the redline if it never does
+    const n = Math.max(1, v.gears | 0), rat = [];
+    for (let i = 0; i < n; i++) rat.push(n === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (n - 1)));
+    const rp = res && res.rpms, tq = res && res.torque, N = rp ? rp.length : 0;
+    const T = x => { if (!N) return 1; if (x <= rp[0]) return tq[0]; if (x >= rp[N - 1]) return tq[N - 1]; let i = 1; while (rp[i] < x) i++; return tq[i - 1] + (x - rp[i - 1]) / (rp[i] - rp[i - 1]) * (tq[i] - tq[i - 1]); };
+    for (let i = 0; i < n - 1; i++) {
+      const k = rat[i + 1] / rat[i]; let s = red;
+      for (let x = Math.round(0.55 * red); x <= red; x += 25) if (T(x) * rat[i] <= T(x * k) * rat[i + 1]) { s = x; break; }
+      let x = s + 70 * gs(); if (r() < 0.04) x += 150 + 150 * r();   // now and then a hand that is late on the lever
+      plan.ideal.push(s); plan.shift.push(Math.round(clamp(x, 0.6 * red, 1.015 * red)));
+    }
+    let t = 0, offAt = null, rolledT = null, readyT = null, purged = false;
+    function goIn(d, tree) {   // seconds until it means to leave
+      if (tree === null) return readyT == null ? Infinity : readyT + plan.beat + (d.canArm ? plan.hold : 0) - t;
+      return tree !== tree ? Infinity : plan.rt - tree;
+    }
+    function tick(d, h, tree) {
+      const st = d.st; t += h;
+      if (st.phase === "burnout") {
+        if (st.burning) { if (st.burnT >= plan.burn) { offAt = t; return "unburn"; } return null; }
+        if (st.burnT > 0) return offAt == null || t - offAt >= plan.settle ? "stage" : null;
+        return t >= plan.wait ? "burn" : null;
+      }
+      if (st.phase === "staged") {
+        if (!st.rolled) return null;
+        if (rolledT == null) rolledT = t;
+        const z = st.n2oS;
+        if (z && !purged) {   // hold PURGE until the line spits liquid
+          if (!z.purging) { if (t - rolledT >= plan.purgeAt) return "purge"; return null; }
+          if (z.purged >= plan.purge || goIn(d, tree) <= plan.hold + 0.1) { purged = true; return "unpurge"; }
+          return null;
+        }
+        if (readyT == null) readyT = t;
+        const g = goIn(d, tree);
+        if (g <= 0) return "go";
+        if (d.canArm && !st.launch.armed && g <= plan.hold) return "arm";
+        return null;
+      }
+      if (st.phase === "run") {
+        if (v.auto || st.gear >= n || st.shiftT > 0) return null;
+        const tgt = plan.shift[st.gear - 1];
+        if (st.rpm < tgt) return null;
+        if (st.slipping && !st.conv && st.v / (Math.PI * v.tyreDia * 0.0254) * 60 * rat[st.gear - 1] * v.final < 0.85 * tgt) return null;   // a slipping clutch revs the engine, not the car
+        return "shift";
+      }
+      return null;
+    }
+    function say(d, tree) {
+      const st = d.st, z = st.n2oS;
+      if (st.phase === "burnout") return st.burning ? "burnout" : st.burnT > 0 ? "staging" : "into the box";
+      if (st.phase === "staged") {
+        if (!st.rolled) return "staging";
+        if (z && z.purging) return "purging";
+        if (st.launch.armed) return st.launch.twoStep ? "two-step " + Math.round(d.holdRpm) : st.launch.transBrake ? "on the trans-brake" : "anti-lag armed";
+        return tree === null ? "staged" : "waiting on the tree";
+      }
+      if (st.phase === "run") {
+        const sh = st.shifts[st.shifts.length - 1];
+        if (sh && st.t - sh.t < 0.6) return "shift " + sh.gear + "→" + (sh.gear + 1);
+        if (z && z.on && !z.cut && st.t - z.onT < 0.8) return "nitrous on";
+        if (st.t < 0.7) return "launch " + st.launchRpmAct;
+        return st.spin ? "wheelspin" : "flat out";
+      }
+      if (st.phase === "shutdown") return st.chuteOut ? "chute out" : "on the brakes";
+      return "";
+    }
+    return { plan: plan, tick: tick, say: say };
+  }
+  /* dragPass with the auto driver at the wheel (veh.driver, or veh.drive "auto" with veh.seed): burnout to the stripe.
+     veh.tree: a heads-up tree (it lights 1.2-3 s after the car is in the beams); the result carries auto.rt (null on a
+     time trial) and auto.foul. */
+  function dragAutoPass(res, veh) {
+    const d = dragRun(res, Object.assign({ auto: true, burnout: true }, veh)), H = DRAG_TICK;
+    const drv = veh.driver || dragDriver(veh.seed, res, veh), tr = pullRng(((veh.seed >>> 0) ^ 0x7EE5) >>> 0);
+    let t = 0, green = null, rt = null, foul = false;
+    while (!d.st.done && t < 120) {
+      const st = d.st;
+      if (veh.tree && green == null && st.phase === "staged" && st.rolled) green = t + 1.2 + 1.8 * tr() + 1.5;
+      const tree = !veh.tree ? null : green == null || t < green - 1.5 ? NaN : t - green;
+      const a = drv.tick(d, H, tree);
+      if (a === "burn") d.burn(true); else if (a === "unburn") d.burn(false); else if (a === "stage") d.stage();
+      else if (a === "purge") d.purge(true); else if (a === "unpurge") d.purge(false); else if (a === "arm") d.arm(); else if (a === "shift") d.shift();
+      else if (a === "go") { if (veh.tree) { rt = t - green; if (rt < 0) foul = true; else if (veh.transBrake === "trans_brake") rt = Math.max(0.001, rt - 0.020); rt = +rt.toFixed(3); } d.launch(); }
+      d.step(H); t += H;
+    }
+    const out = d.result(); out.auto = { rt: rt, foul: foul, plan: drv.plan }; return out;
   }
   /* ---- Truck & tractor pulling: a weight-transfer sled on a dirt track ----
      The sled's box starts over its rear wheels, so at first the pan carries little and the truck walks away.
@@ -7949,7 +8056,7 @@ const ENGINE_SIM = (function () {
   return {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
     mapFromSliders: mapFromSliders, mapGrid: mapGrid, mapCell: mapCell, mapAutoTune: mapAutoTune, mapRespace: mapRespace, mapAxis: mapAxis, mapOk: mapOk, mapLook: mapLook, MAP_LOADS: MAP_LOADS,
-    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, TYRES: TYRES, AERO: AERO,
+    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
     isGas: isGas, fuelOf: fuelOf, flexBlend: flexBlend, flexWinterPct: flexWinterPct, propaneBar: propaneBar,
@@ -20695,7 +20802,7 @@ function hydrate(o){if(!o||!o.cfg)return false;S=freshState();Object.assign(S,o)
   try{fuelMigrate();}catch(e){}
   if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
     S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
-      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];try{ddLoad(o);}catch(e){S.bay=null;}return true;}
+      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});if(S.env.dragDrive!=="auto")S.env.dragDrive="you";S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];try{ddLoad(o);}catch(e){S.bay=null;}return true;}
 /* fuel system: a build saved before injectors and pumps existed gets the smallest set that feeds it (SIM.fitFuel), so a
    600 hp save doesn't suddenly lean out. Certs, strip bests, wear and the fleet are keyed by the cfg hash, so they follow
    it. In career a fitted part the shop hasn't unlocked comes with the build (an R&D-style unlock), so nothing certified
@@ -21278,6 +21385,7 @@ function renderEnv(){
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
+    ${dragDriveHtml()}
     ${rnTuneEnvHtml(sl)}
     <p class="hint">Rear-drive on a prepped strip. Gears are spaced evenly between 1st and top. Wheel force is the engine's torque × gear × final ÷ tyre radius; grip is μ × rear weight, with weight transfer helping the launch. Tyres, body and launch rpm are what a ${career()?"racer":"tuner"} actually changes between rounds. Body sets aero drag and how hard the chassis can plant the tyre — bars and a four-link put the power down; a stock shell cannot.</p>`;}
   if(t==="drag"&&n2oKit())h+=n2oEnvHtml();
@@ -21671,7 +21779,7 @@ function testSnap(){return{cfg:Object.assign({},S.cfg),h:cfgHash(S.cfg),car:S.ca
 function testSame(s){return!!s&&S.mode===s.mode&&S.career===s.car;}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
-function dragBtnText(t,sub){const b=$("dragBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
 function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
 function engBest(h){return career()?(C().dragBest||{})[h]:recs().eng[h];}
@@ -21734,6 +21842,7 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   else if(ph==="staged")h=!st.rolled?"rolling into the beams":st.launch.armed?(st.launch.twoStep?"on the two-step":st.launch.transBrake?"on the trans-brake":"ALS armed — foot on the throttle")+` · ${st.launch.held.toFixed(1)} s`:R?(dtT<0?"staged — wait for the ambers":dtT<1.5?"…":`<em class="o">GO</em>`):"time trial — leave when you like";
   else if(ph==="run"){const m=st.marks.slice(-1)[0];h=st.spin?`<em class="l">SPIN</em>`:st.onBars?"on the bars":m?`${m.n} ${m.t.toFixed(2)} s`:`gear ${st.gear}`;}
   else if(ph==="shutdown")h=(st.chuteOut?"chute out · ":"on the brakes · ")+Math.round(st.shutFt)+" ft";
+  if(DR.auto&&!DR.failed&&(pre||ph==="run")){const w=DR.drv.say(d,dragTree(now));if(w)h="Auto · "+w;}
   if(!DR.failed&&(ph==="shutdown"||ph==="done")){let w=null;if(n&&n.verdict&&n.stage>=2)w=!!n.verdict.win;else if(R&&!n)w=!foul&&!!m4&&(R.et==null||m4.t+Math.max(0,R.rt0||0)<R.et+R.rt);
     if(w!=null)h=`<em class="${w?"w":"l"}">${w?"WIN":"LOSS"}</em>`+(h?" · "+h:"");}
   shudSet("cap",SH.cap,s&&h?s+" · "+h:s||h);
@@ -21763,7 +21872,7 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
   const when=new Date(r.at||Date.now());
   return{R,n,rows,win,verdict,margin,opp:R?shOpp(R.name):null,round:n?n.label:R?"TEST & TUNE · HEADS-UP":"TEST & TUNE",
     date:when.toLocaleDateString("en-CA")+" "+String(when.getHours()).padStart(2,"0")+":"+String(when.getMinutes()).padStart(2,"0"),
-    car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg`};}
+    car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg${r.auto?r.auto.took!=null?" · you took over":" · Auto driver":""}`};}
 function dragSlipCard(r,res){const D=slipData(r,res),two=!!D.R,lamp=w=>two&&D.win!=null?`<i class="lamp${w?" on":""}"></i>`:"";
   const pb=r.pb&&r.et!=null?(()=>{const f=etFix(r.et,+r.pb.was);return`<div class="stamp">${r.pb.all?"PERSONAL BEST":"ENGINE BEST"}<br><s>${(+r.pb.was).toFixed(f)}</s> ${r.et.toFixed(f)}</div>`;})():"";
   return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE DRAGWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
@@ -21816,6 +21925,7 @@ function dragStart(){
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const snap=testSnap(),hk=hKey(snap.h),soak=soakFor(hk);
   const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,snap,last:performance.now(),failed:false,downAt:null,lastPtr:0};DR.hw=stripHw(snap.cfg);
+  if(dragAuto()){DR.auto=true;DR.drv=SIM.dragDriver(Math.floor(Math.random()*4294967296),res,veh);DR.vt=DR.last;}   // the auto driver: its own seeded hand, on its own fixed clock
   if(env.race==="heads"){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
@@ -21832,7 +21942,7 @@ function dragStart(){
   DR.breakAt=(wi&&wi.w>=1)?(2+Math.random()*4):Infinity;
   DR.failKind=failKindOf(res,env)||"rod";
   DR.lv=0;DR.lox=0;
-  const step=()=>{const now=performance.now();const dt=(now-DR.last)/1000;DR.last=now;const st=d.step(dt);const R=DR.race;
+  const step=()=>{const now=performance.now();const dt=(now-DR.last)/1000;DR.last=now;const st=DR.auto?dragAutoStep(now):d.step(dt);const R=DR.race;
     if(R&&st.phase==="staged"&&st.rolled&&R.tree0==null)R.tree0=now+1200+Math.random()*1800;
     const dtT=R&&R.tree0!=null?(now-R.tree0)/1000:-1;if(R&&dtT>=1.5&&R.green==null)R.green=R.tree0+1500;
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
@@ -21869,6 +21979,7 @@ function dragStart(){
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
     if(DR.n2o)n2oFrame(st,dt);
     if(DR.night)rnHud(st);
+    if(DR.auto&&!DR.failed&&st.phase!=="done"){const w=DR.drv.say(d,dragTree(now));if(w)$("dragLive").insertAdjacentHTML("afterbegin",`<div class="peak dauto" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">Auto · <b>${w}</b> — tap to take over</span></div>`);}
     shudFrame(st,now,dtT);
     if(!st.done||(DR.failed&&run.rpm>0))requestAnimationFrame(step);else dragFinish();};
   requestAnimationFrame(step);
@@ -21876,6 +21987,20 @@ function dragStart(){
 /* the driver's inputs. Pointer events so a held thumb on an iPhone works (burnout, two-step, trans-brake);
    a plain click (keyboard, harness) is treated as a tap. */
 function dragStage(){const d=DR.d;d.stage();buzz([12]);}
+/* the auto driver (S.env.dragDrive "auto"): SIM.dragDriver presses the same buttons on fixed 4 ms ticks of a clock (DR.vt) that
+   trails the frame clock, so it drives the same pass at 4 fps or 120. A tap or Space hands the car back (dragTakeOver). */
+function dragAuto(){if(S.env.dragDrive!=="auto")S.env.dragDrive="you";return S.env.dragDrive==="auto";}
+function dragTree(t){const R=DR.race;return!R?null:R.tree0==null||t<R.tree0?NaN:(t-(R.tree0+1500))/1000;}   // seconds from the green (NaN while the tree is dark)
+function dragAutoStep(now){const d=DR.d,H=SIM.DRAG_TICK;let st=d.st;if(now-DR.vt>1000)DR.vt=now-1000;
+  while(DR.auto&&!st.done&&DR.vt+H*1000<=now){const vt=DR.vt+H*1000;const a=DR.failed?null:DR.drv.tick(d,H,dragTree(vt));if(a)dragAutoDo(a,vt);st=d.step(H);DR.vt=vt;}
+  return st;}
+function dragAutoDo(a,vt){const d=DR.d;
+  if(a==="burn")d.burn(true);else if(a==="unburn")d.burn(false);else if(a==="stage")dragStage();else if(a==="purge")n2oPurge(true);else if(a==="unpurge")n2oPurge(false);
+  else if(a==="arm"){if(d.arm())buzz([20]);}else if(a==="shift")d.shift();else if(a==="go"){const l=DR.last;dragGo(vt);DR.last=l;}}
+function dragTakeOver(){const d=DR.d,st=d.st;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+  if(st.burning)d.burn(false);DR.downAt=null;if(st.launch.armed)d.disarm();if(st.n2oS&&st.n2oS.purging)n2oPurge(false);$("dragBtn").dataset.k="";
+  toast(st.phase==="run"?(DR.veh.auto?"You have it — the box shifts itself":"You have it — tap to shift"):st.phase==="burnout"?"You have it — hold to burn out, tap to stage":"You have it — "+(d.canArm?"hold to arm, let go on the green":DR.race?"tap on the green":"tap to go"));buzz([20]);}
+function dragAutoWord(a){return a.took==null?"Auto driver — the whole pass":"Auto driver — you took over "+(typeof a.took==="number"?"at "+a.took+" ft":a.took==="burnout"?"in the water box":"on the line");}
 (()=>{const skip=()=>!testing&&ENGINE_VIS.stripBusy&&ENGINE_VIS.stripBusy()>0&&ENGINE_VIS.stripSkip();
   $("view").addEventListener("pointerdown",()=>{skip();});
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!e.defaultPrevented&&skip())e.preventDefault();});})();
@@ -21886,6 +22011,7 @@ function dragGo(now){const d=DR.d;if(d.st.phase!=="staged")return;const R=DR.rac
       R.rt0=+rt.toFixed(3);}}
   d.launch();DR.last=now;buzz([30]);}
 function dragPress(){if(!DR||!DR.d||DR.failed)return;const d=DR.d,st=d.st,now=performance.now();
+  if(DR.auto&&(st.phase==="burnout"||st.phase==="staged"||st.phase==="run")){dragTakeOver();return;}
   if(st.phase==="burnout"){DR.downAt=now;d.burn(true);buzz([15]);return;}
   if(st.phase==="staged"){if(!st.rolled)return;if(d.canArm){if(d.arm())buzz([20]);return;}dragGo(now);return;}
   if(st.phase==="shutdown"&&DR.pb){ENGINE_VIS.skipCut();return;}
@@ -21900,6 +22026,7 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
   b.addEventListener("pointercancel",e=>{DR&&(DR.lastPtr=performance.now());dragRelease(true);});
   b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("click",()=>{if(!DR||!DR.d||performance.now()-(DR.lastPtr||0)<800)return;const st=DR.d.st;
+    if(DR.auto&&!DR.failed&&(st.phase==="burnout"||st.phase==="staged"||st.phase==="run")){dragTakeOver();return;}
     if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();else if(st.phase==="shutdown"&&DR.pb)ENGINE_VIS.skipCut();});})();
 /* ---- nitrous on the strip: bottle pressure (heater or weather), when the shot comes on, and a purge on the line ---- */
 const N2O_ACT=[["window","Window switch","at the rpm window"],["mph40","At 40 mph","once it's hooked"],["mph60","At 60 mph","late, safe"],["shift2","After the 1-2","second gear on"]];
@@ -21925,7 +22052,7 @@ function n2oPurge(on){if(!DR||!DR.n2o||!DR.d)return;if(DR.d.purge(on)&&on){DR.n2
 function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
   const pre=st.phase==="burnout"||st.phase==="staged";
   if(z.purging){N.hiss-=dt;if(N.hiss<=0){sfx("purge");N.hiss=0.55;}}
-  if(b){b.style.display=pre?"":"none";const lp=Math.round(z.psi*(0.55+0.45*z.line)),k=(z.purging?"P":"")+lp;if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=z.purging?`PURGING · ${lp} psi at the solenoid`:`HOLD TO PURGE · ${lp} psi${z.line<0.5?" · line full of gas":" · line purged"}`;}}
+  if(b){b.style.display=pre&&!DR.auto?"":"none";const lp=Math.round(z.psi*(0.55+0.45*z.line)),k=(z.purging?"P":"")+lp;if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=z.purging?`PURGING · ${lp} psi at the solenoid`:`HOLD TO PURGE · ${lp} psi${z.line<0.5?" · line full of gas":" · line purged"}`;}}
   const live=$("dragLive");
   if(pre)live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${z.line>=0.5?"var(--good)":"var(--warn)"}">${Math.round(z.psi*(0.55+0.45*z.line))}<i>psi</i></b><span>nitrous · ${z.purging?"purging":z.line>=0.5?"purged":"purge the line"} · bottle ${Math.round(z.psi)}</span></div>`);
   else if(st.phase==="run")live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${st.n2o>0.05?"var(--info)":""}">${z.cut?"CUT":st.n2o>0.05?"ON":z.on?"window":"armed"}</b><span>nitrous${z.on&&!z.cut?" · "+Math.round(z.psi)+" psi":""}</span></div>`);
@@ -21942,7 +22069,7 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
   if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
 document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
 function dragFinish(){
-  const {d,res,env,snap}=DR;const r=d.result();const failed=DR.failed;const same=testSame(snap);
+  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took}:{};const failed=DR.failed;const same=testSame(snap);
   const leave=()=>{if(testing)return;const b=ENGINE_VIS.stripBusy?ENGINE_VIS.stripBusy():0;if(b>0){setTimeout(leave,Math.min(1000,b*1000+60));return;}ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");};
   setTimeout(leave,2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)sfx("bov");
@@ -22215,7 +22342,7 @@ function rnPanel(){const N=rnCur();if(!N)return"";const br=N.fmt==="bracket";
   h+=`<div class="rnsteps">${[0,1,2,3,4].map(s=>`<i class="${s<N.stage||N.done&&s<=N.stage?"d":s===N.stage&&!N.done?"on":""}">${br&&s<2?"TT"+(s+1):["Q1","Q2","QF","SF","F"][s]}</i>`).join("")}</div>`;
   if(testing&&!N.done)return h+rnNextHtml(N)+`</div>`;   // during the pass: just who's in the other lane
   if(N.done)return h+rnSummaryHtml(N)+(N.rounds.length?rnLadderHtml(N):rnQualHtml(N))+`</div>`;
-  h+=rnNextHtml(N);
+  h+=rnNextHtml(N)+dragDriveHtml(true);
   h+=N.stage<2?`<div class="lbl"><span>${br?"The field — time trials to learn your number":"Qualifying — best of two sets the seed"}</span></div>`+rnQualHtml(N):rnLadderHtml(N);
   return h+rnPitsHtml(N)+`</div>`;}
 /* race night pits vignette: between rounds the view shows the car up on stands in the pits (ENGINE_VIS.setPits) with the pits
@@ -22278,6 +22405,10 @@ function pitsPlace(){const ov=$("pitsOv");if(!ov||ov.hidden)return;const svg=ov.
     placed.push({x,y,w,h});t.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;t.style.visibility="visible";
     lines+=`<line x1="${a[0]}" y1="${a[1]}" x2="${Math.round(x+w/2)}" y2="${Math.round(y+h/2)}"/><circle cx="${a[0]}" cy="${a[1]}" r="3.5"/>`;});
   svg.innerHTML=lines;}
+/* Driver: you, or the auto driver (S.env.dragDrive; env only, never cfg or cfgHash). On a race night it is set once and drives every pass. */
+function dragDriveHtml(night){const on=dragAuto();
+  return`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","burnout, stage, the light, the shifts"],["auto","Auto","a steady hand · watch the pass"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragDrive" class="${(on?"auto":"you")===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`
+    +(on?`<p class="hint">The auto driver does the burnout, stages${n2oKit()?", purges the nitrous":""}${(()=>{const lt=SIM.launchTech(S.cfg);return lt.launchCtl!=="none"||lt.transBrake==="trans_brake"||alsOf(S.cfg);})()?", arms the launch on the ambers":""} and leaves on the green with a good, human light — a red is rare. ${S.env.shiftMode==="manual"?"It shifts near the best point for this engine's curve. ":""}Launch rpm, the nitrous switch and the chute stay as you set them. Steady, not perfect: a sharp light and good shifts beat it.${night?" It drives every pass of the night.":""} Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during a pass to take over.</p>`:"");}
 function rnFmtHtml(){const f=RN_FMT[S.env.dragFmt]?S.env.dragFmt:"test";
   let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   if(f!=="test")h+=`<p class="hint" style="margin-top:-4px"><b>${RN_FMT[f]}</b> · ${f==="elim"?"two qualifying passes set your seed, then quarter-final, semi and final against seven cars of your class. First to the stripe wins — a quick light beats a quick car. Red light or crossing the centreline loses.":"dial in the ET you expect. The slower dial leaves first; first to the stripe wins unless they ran under their dial (a breakout). Both under: the smaller breakout wins. Consistency beats horsepower."} ${career()?`Entry about 8% of the winner's purse (from $150), fuel per pass. Same rules as a pass: certified engine, ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade.`:"Free in the sandbox."} Set the car up below — body, tyre and weight lock when you enter.</p>`;
@@ -22292,7 +22423,7 @@ function rnRunBtn(){const N=rnCur(),b=$("runTest");if(testing)return;
 function rnRecHtml(){const R=recs();if(!R.nightsRun)return"";return`<div class="rec"><span>Race nights</span><b>${R.nightsWon||0}<i>of ${R.nightsRun} won</i></b><small>best finish: ${(RN_PLACE[R.bestFinish]||"—").toLowerCase()}</small></div>`;}
 function rnSlipHtml(r){const n=r.night;if(!n)return"";return`<div class="sec"><h2>${n.label}${n.win===true?" · won":n.win===false?" · out":""}</h2><div class="log"><div><b>vs</b>${rnEsc(n.opp)} · ${rnEsc(n.car)} — RT ${n.oppRt!=null?n.oppRt.toFixed(3):"—"}${n.oppBroke?" · broke":n.oppEt!=null?" · "+n.oppEt.toFixed(3)+" @ "+Math.round(n.oppMph):""}${n.dialO!=null?" on a "+n.dialO.toFixed(2):""}</div>${n.dialP!=null?`<div><b>Dial</b>${n.dialP.toFixed(2)}${r.et!=null?" · ran "+(r.et-n.dialP>=0?"+":"")+(r.et-n.dialP).toFixed(3):""}</div>`:""}<div>${rnEsc(n.text)}</div></div></div>`;}
 function rnVerdict(r){const n=r.night,R=r.race;const cls=n.win===true?"pass":n.win===false?"fail":r.et==null?"fail":"marg";
-  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${rnEsc(n.text)}</p>${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
+  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${rnEsc(n.text)}</p>${r.auto?`<p>${dragAutoWord(r.auto)}</p>`:""}${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
 function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive");let s=`${n.label} · vs ${rnEsc(R.name)}`;
   if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
   if(st.phase==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";
@@ -23498,7 +23629,7 @@ function showResult(res,env){
   else if(env.testType==="drag"&&res.dragFailed)v=`<div class="verdict fail"><div><div class="big">${res.dragFailKind==="turbo"?"COOKED THE TURBO":res.dragFailKind==="manifold"?"CRACKED THE MANIFOLD":"BROKE ON THE PASS"}</div><p>${res.dragFailKind==="turbo"||res.dragFailKind==="manifold"?"Too long on the two-step — the heat that built the boost found the weakest part of the hot side":"The engine let go on the strip"}${career()?" — certification is void and reputation took a hit":""}.</p></div></div>`;
   else if(env.testType==="drag"&&res.drag&&res.drag.night)v=rnVerdict(res.drag);
   else if(env.testType==="drag"&&res.drag){const r=res.drag,R=r.race;v=`<div class="verdict ${R?(R.won?"pass":"fail"):r.et==null?"fail":r.et<10?"pass":"marg"}"><div style="flex:1"><div class="big">${R?(R.foul?"RED LIGHT":R.won?"WON by "+Math.abs(R.margin||0).toFixed(3)+" s":"LOST by "+Math.abs(R.margin||0).toFixed(3)+" s"):""}${R?"<br><span style=\"font-size:.7em;opacity:.85\">":""}${r.et!=null?r.et.toFixed(2)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R?"</span>":""}</div>
-    ${R?`<p>RT ${R.rt!=null?R.rt.toFixed(3):"—"} vs ${R.name} ${R.oppRt.toFixed(3)} · they ran ${R.oppEt!=null?R.oppEt.toFixed(2)+" @ "+Math.round(R.oppMph):"DNF"}${R.foul?" · you left before the green":""}</p>`:""}
+    ${R?`<p>RT ${R.rt!=null?R.rt.toFixed(3):"—"} vs ${R.name} ${R.oppRt.toFixed(3)} · they ran ${R.oppEt!=null?R.oppEt.toFixed(2)+" @ "+Math.round(R.oppMph):"DNF"}${R.foul?(r.auto&&r.auto.took==null?" · the auto driver left before the green":" · you left before the green"):""}</p>`:""}${r.auto?`<p>${dragAutoWord(r.auto)}</p>`:""}
     <div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
   else if(career()&&env.testOnly)v=`<div class="verdict marg"><div style="flex:1"><div class="big">${env.testType==="endurance"?"SURVIVED":"PASSED"} · TEST ONLY</div><p>Run at ${env.ambientC} °C · ${env.altitudeM} m · coolant ${env.coolantC} °C · oil ${env.oilC} °C. ${env.testType==="endurance"?"Off-standard hours don't count toward the 100 h goal":"Contracts certify in the standard cell"} — 20 °C · 500 m · coolant 90 °C · oil 100 °C. Reset the cell and run it again${env.testType==="endurance"?"":" to certify"}.</p></div></div>`;
   else v=`<div class="verdict ${res.rel>=85?"pass":"marg"}"><div style="flex:1"><div class="big">${res.rel>=85?"CERTIFIED":"CERTIFIED · MARGINAL"}</div>
@@ -23509,7 +23640,7 @@ function showResult(res,env){
     extra+=`<div class="sec"><h2>Fatigue damage after ${res.endurance.failedAtHour!=null?res.endurance.failedAtHour:env.hours} h</h2><div class="stress">${top.map(([id,f])=>{const t=res.tests.find(x=>x.id===id)||{name:id};const p=Math.min(1,f);return `<div class="st ${p>=1?"crit":p>.6?"warn":"good"}"><div class="n">${t.name}</div><div class="bar"><i style="width:${Math.min(100,p*80)}%"></i></div><div class="p">${Math.round(p*100)}%</div></div>`;}).join("")}</div>`;
     if(res.endurance.log&&res.endurance.log.length)extra+=`<div class="log" style="margin-top:8px">${res.endurance.log.map(l=>`<div><b>${l.hour} h</b>${l.event}</div>`).join("")}</div>`;extra+=`</div>`;}
   const slipN=env.testType==="drag"&&res.drag&&res.drag.night?rnSlipHtml(res.drag):"";
-  if(env.testType==="drag"&&res.drag){const r=res.drag;extra+=`<div class="sec"><h2>Timing slip</h2><div class="tslipw">${dragSlipCard(r,res)}<details class="tsn"${SLIPN?" open":""}><summary>Notes</summary>${slipN}<div class="log">${slipLine(r)?`<div><b>Slip</b>${slipLine(r)}</div>`:""}${launchSlip(r)?`<div><b>Launch</b>${launchSlip(r)}</div>`:""}${r.race&&r.race.rt!=null&&!r.race.foul&&r.race.rt>0.25?`<div>Reaction time ${r.race.rt.toFixed(3)} — a good light is under 0.100. That is ${(r.race.rt-0.1).toFixed(2)} s given away before the car moved.</div>`:""}${r.reasons.length?r.reasons.map(x=>`<div>${x}</div>`).join(""):"<div>Clean pass. Nothing left on the table that the driveline can fix — the rest is horsepower.</div>"}${r.shifts.length?`<div><b>Shifts</b>${r.shifts.map(x=>x.gear+"→"+(x.gear+1)+" at "+x.rpm.toLocaleString()).join(", ")}</div>`:""}<div><b>Ratios</b>${r.ratios.join(" · ")} × ${r.veh.final} final · ${r.veh.tyreDia}" ${SIM.TYRES[r.veh.tyre].n.toLowerCase()}</div><div><b>Shutdown</b>${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${r.chute?"chute out":"brakes only"} · pulled up in ${r.shutFt.toLocaleString()} ft</div></div></details><div class="tsact"><button class="btn sm info" id="shareSlip">Share timing slip</button></div>${(()=>{const wi=wearInfo(res);if(!wi)return"";const pct=Math.round(wi.w*100);return `<div class="tswear"><b>Wear</b> ${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${pct}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0.3?" · listen for the slap at idle":""}${wi.w>0?` <button class="btn sm" id="freshen">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`;})()}</div></div>`;}
+  if(env.testType==="drag"&&res.drag){const r=res.drag;extra+=`<div class="sec"><h2>Timing slip</h2><div class="tslipw">${dragSlipCard(r,res)}<details class="tsn"${SLIPN?" open":""}><summary>Notes</summary>${slipN}<div class="log">${r.auto?`<div><b>Driver</b>${dragAutoWord(r.auto)}</div>`:""}${slipLine(r)?`<div><b>Slip</b>${slipLine(r)}</div>`:""}${launchSlip(r)?`<div><b>Launch</b>${launchSlip(r)}</div>`:""}${r.race&&r.race.rt!=null&&!r.race.foul&&r.race.rt>0.25?`<div>Reaction time ${r.race.rt.toFixed(3)} — a good light is under 0.100. That is ${(r.race.rt-0.1).toFixed(2)} s given away before the car moved.</div>`:""}${r.reasons.length?r.reasons.map(x=>`<div>${x}</div>`).join(""):"<div>Clean pass. Nothing left on the table that the driveline can fix — the rest is horsepower.</div>"}${r.shifts.length?`<div><b>Shifts</b>${r.shifts.map(x=>x.gear+"→"+(x.gear+1)+" at "+x.rpm.toLocaleString()).join(", ")}</div>`:""}<div><b>Ratios</b>${r.ratios.join(" · ")} × ${r.veh.final} final · ${r.veh.tyreDia}" ${SIM.TYRES[r.veh.tyre].n.toLowerCase()}</div><div><b>Shutdown</b>${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${r.chute?"chute out":"brakes only"} · pulled up in ${r.shutFt.toLocaleString()} ft</div></div></details><div class="tsact"><button class="btn sm info" id="shareSlip">Share timing slip</button></div>${(()=>{const wi=wearInfo(res);if(!wi)return"";const pct=Math.round(wi.w*100);return `<div class="tswear"><b>Wear</b> ${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${pct}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0.3?" · listen for the slap at idle":""}${wi.w>0?` <button class="btn sm" id="freshen">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`;})()}</div></div>`;}
   if(env.testType==="drag"&&res.drag&&res.drag.n2o)extra=extra.replace("<div><b>Ratios</b>",`<div><b>Nitrous</b>${n2oSlip(res.drag.n2o)}</div><div><b>Ratios</b>`);
   if(env.testType==="pull_sled"&&res.pull)extra+=pullSheet(res);
   if(env.testType==="road"&&res.road)extra+=roadSheet(res);
