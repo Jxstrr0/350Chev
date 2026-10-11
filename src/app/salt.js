@@ -146,6 +146,7 @@ function saltFinish(){
     if(r.pb&&!r.pb.first&&outcome!=="record")rep+=1;
     C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;spEvent("salt",{record:outcome==="record"});hud();checkGoals();}
   toast(outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)} MPH`:outcome==="impound"?`${mphTxt} · OVER THE RECORD — IMPOUND`:failed?"BROKE ON THE SALT":r.stopWhy==="spun"?"SPUN ON THE SALT":dq?`${mphTxt} · NOT ACCEPTED — NO CHUTE`:`${mphTxt}`);
+  achCheck({type:"salt",r,failed});   // (no salt badges yet; the trophy room books a class record)
   SR.p=null;save();recompute();renderTest();
   revealVerdict();
 }
