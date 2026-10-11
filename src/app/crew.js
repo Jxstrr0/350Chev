@@ -60,7 +60,7 @@ function crewFx(role,L){L=L||1;const k=L-1;
   return role==="machinist"?`Unit cost −${8+k}%, machining R&D ${25+2.5*k}% faster, rebuild bay +${4+k} a week.`
     :role==="tuner"?`+${(1+0.15*k).toFixed(k?2:0)} octane number of knock margin on every build; auto-tune and a free first dyno-day hint.`
     :role==="dynotech"?`Dyno pulls, endurance and over-rev runs are free; +${(0.45+0.08*k).toFixed(2)} dyno-day customers a week on average.`
-    :role==="sales"?`Contracts pay +${6+k}% and every category shows a third offer.`:"";}
+    :role==="sales"?`Contracts pay +${+(6+1.25*k).toFixed(2)}% and every category shows a third offer.`:"";}
 const CREW_HIST={eng:["built","engine","engines"],cal:["calibrated","engine","engines"],jobs:["fixed","customer engine","customer engines"],rb:["rebuilt","engine","engines"],pulls:["ran","dyno pull","dyno pulls"],ev:["crewed at","event","events"],deals:["closed","deal","deals"],rnd:["saw through","R&D project","R&D projects"]};
 function crewHistTxt(p){const o=[];for(const k in CREW_HIST){const n=p.h[k]|0;if(n>0){const w=CREW_HIST[k];o.push(`${w[0]} ${n} ${n===1?w[1]:w[2]}`);}}return o.length?o.join(" · "):"Nothing on the board yet.";}
 const crewRole=r=>(STAFF.find(s=>s.id===r)||{name:r}).name;
