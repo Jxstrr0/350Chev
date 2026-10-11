@@ -187,8 +187,7 @@ function buildBogScene(){
     bodyM.receiveShadow=true; S3.add(bodyM); S3.add(headM);
     BOG.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
   /* mud: the plane is built per night; clods (lit, sharp), spray and splash mist (soft, Full/Ultra only), exhaust */
-  BOG.fx=new StripFx(lite?150:700, "fire", stripFlameTex(true)); BOG.fx.mat.blending=THREE.NormalBlending; S3.add(BOG.fx.mesh);
-  BOG.fxSpray=lite?null:new StripFx(GFX==="ultra"?420:260, "smoke", stripPuffTex()); if(BOG.fxSpray) S3.add(BOG.fxSpray.mesh);
+  bogFxBuild(S3, lite);   /* vis/bog-fx.js */
   BOG.cam=new THREE.PerspectiveCamera(46, 1, 0.3, 3600); BOG.built=true;
   BOG.night=null; bogSetNight(false);
 }
@@ -217,33 +216,8 @@ function bogVehicle(cls, tyre, color){
   [U.wheelsR, U.wheelsF].forEach(function(arr){ arr.forEach(function(sp){ var cont=sp.children[0], ty=cont&&cont.children[0]; if(ty && kind!=="cut") ty.geometry=pullTyreGeo(U.rr, U.wr*(kind==="paddle"?1.12:1.05), 0.27, kind); }); });
   V.scale.setScalar(L.k); U.k=L.k; U.paint0=U.mats.paint.color.clone(); U.cls=cls; return V;
 }
-function bogEffects(o, dt, V){
-  var U=V.userData, FX=BOG.fx, FS=BOG.fxSpray, lite=GFX==="lite", rate=lite?0.4:1, ph=o.phase||"stage", R=Math.random, i, t;
-  var v=Math.max(0,+o.v||0), ws=Math.max(v,+o.wspd||0), spin=Math.max(0, ws-v), inPit=ph==="pit"||(ph==="done"&&+o.x>0&&+o.x<+o.len), sink=clamp(+o.sink||0,0,1.2), k=U.k||1;
-  var mc=o.cons>0.5?[0.13,0.095,0.065]:[0.16,0.1,0.055];
-  if(inPit && ph!=="done"){
-    /* rooster tails: off the back of every tyre, as high and as thick as the spin; clods fall, spray hangs */
-    var amt=(clamp(spin/5,0,1.5)+clamp(v/25,0,0.5))*clamp(0.5+sink*2,0.5,1.5), axl=[0, U.wb*k];
-    for(t=0;t<4;t++){ var s=(t&1)?1:-1, ax=V.position.x+axl[t>>1]-U.rr*k*0.5, front=t>=2, kk=front?0.65:1;
-      var nc=amt*kk*rate*(lite?60:190)*dt, n=Math.floor(nc)+(R()<nc%1?1:0);
-      for(i=0;i<n;i++){ var up=3+R()*7*(0.35+amt*0.6), back=2.5+spin*(0.35+R()*0.5), sh=0.75+R()*0.5;
-        FX.emit(ax-R()*0.3, U.rr*k*(0.4+R()*0.7)+V.position.y, s*U.trR*k+(R()-0.5)*U.wr*k, v*0.5-back, up, s*(0.3+R()*1.8), 0.9+R()*0.9, 0.2+R()*0.25, 0.32+R()*0.35, mc[0]*sh, mc[1]*sh, mc[2]*sh, 1, {drag:0.15, grav:9.8, fin:0.01, spin:5}); }
-      if(FS){ var ns=amt*kk*rate*20*dt, m2=Math.floor(ns)+(R()<ns%1?1:0);
-        for(i=0;i<m2;i++) FS.emit(ax-0.6, U.rr*k*0.9+V.position.y, s*U.trR*k, v*0.4-2.5-spin*0.5*R(), 2.5+R()*4*amt, s*R()*1.2, 0.8+R()*0.6, 0.35, 1.0+R()*0.9, mc[0]*1.6, mc[1]*1.6, mc[2]*1.6, 0.38, {drag:0.5, grav:4, fin:0.05, spin:0.8}); } }
-    /* bow wave: mud pushed up ahead of the front tyres at speed */
-    var bw=clamp(v/10,0,1.2)*clamp(sink*2,0,1.2), nb=bw*rate*(lite?14:40)*dt, mb=Math.floor(nb)+(R()<nb%1?1:0), fxp=V.position.x+(U.wb+U.rr*0.9)*k;
-    for(i=0;i<mb;i++){ var sd=R()<0.5?-1:1; FX.emit(fxp, 0.1, sd*(U.trR*k+0.2+R()*0.6), v*0.7, 1+R()*2.5*bw, sd*(1+R()*2.5), 0.6+R()*0.5, 0.12, 0.22, mc[0], mc[1], mc[2], 1, {drag:0.3, grav:9.8, fin:0.01, spin:4}); }
-  }
-  /* splashes: the pit entry, a landing, a rut — one burst */
-  if(BOG.splash>0){ var nsp=Math.round(BOG.splash*(lite?14:46)); for(i=0;i<nsp;i++){ var a=R()*TAU, sp2=2+R()*5*BOG.splash; FX.emit(V.position.x+(U.wb*0.5)*k+(R()-0.5)*3, 0.15, Math.sin(a)*1.6, v*0.6+Math.cos(a)*sp2, 2.5+R()*5*BOG.splash, Math.sin(a)*sp2, 0.9+R()*0.7, 0.14, 0.3, mc[0], mc[1], mc[2], 1, {drag:0.2, grav:9.8, fin:0.01, spin:5}); }
-    if(FS) for(i=0;i<nsp*0.4;i++) FS.emit(V.position.x+(U.wb*0.5)*k+(R()-0.5)*4, 0.6, (R()-0.5)*4, v*0.5, 1+R()*2, (R()-0.5)*2, 1.6+R(), 1.2, 3.2+R()*1.5, mc[0]*1.3, mc[1]*1.3, mc[2]*1.3, 0.45, {drag:0.6, grav:1.2, fin:0.05, spin:0.4});
-    BOG.splash=0; }
-  /* exhaust: a diesel's black smoke out the stacks, a whisp otherwise */
-  var smk=clamp(+o.smoke||0,0,1), ne=(lite?6:14)*(0.15+smk)*(+o.throttle||0)*dt*(o.failed?0:1);
-  for(t=0;t<U.tips.length;t++){ var nn=Math.floor(ne)+(R()<ne%1?1:0); if(!nn) continue; U.body.localToWorld(_bA.copy(U.tips[t]));
-    for(i=0;i<nn;i++){ var c=lerp(0.42,0.04,Math.pow(smk,0.7)); (FS||FX).emit(_bA.x, _bA.y, _bA.z, v-0.6, 2.4+smk*2, (R()-0.5)*0.5, 1.8+R(), 0.25, 1.6+smk*3, c, c, c, 0.2+0.5*smk, {drag:0.7, buoy:0.15, fin:0.03, spin:0.5}); } }
-  FX.step(dt, BOG_WIND); if(FS) FS.step(dt, BOG_WIND);
-}
+/* the mud thrown about: rooster tails, the bow wave, splashes, spray, exhaust (vis/bog-fx.js) */
+function bogEffects(o, dt, V){ bogFxUpdate(o, dt, V); }
 function bogCrowd(dt){
   var C=BOG.crowd; if(!C) return; BOG.cheer=Math.max(0,BOG.cheer-dt*0.3);
   if(BOG.cheer<0.02 && !C.live) return;
@@ -305,7 +279,7 @@ function bogRender(){
   renderer.toneMappingExposure=ex;
 }
 function bogReset(){
-  [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F) F.clear(); });
+  [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F) F.clear(); }); bogFxReset();
   BOG.shot=null; BOG.prev={}; BOG.vsink=0; BOG.shake=0; BOG.cheer=0; BOG.skip=false; BOG.doneT=0; BOG.splash=0; BOG.coat=0; BOG.pitch=0; BOG.pv=0; BOG.lastHz=0;
   if(BOG.crowd && BOG.crowd.live){ BOG.cheer=0; bogCrowd(0); }
   if(BOG.cur){ var U=BOG.cur.userData; if(U.paint0) U.mats.paint.color.copy(U.paint0); }
@@ -314,7 +288,7 @@ function bogReset(){
 function bogUpdate(o, dt){
   if(!BOG.built) buildBogScene();
   var S3=BOG.scene; BOG.t+=dt;
-  if(BOG.tier!==GFX || BOG.night!==!!o.night){ var tc=BOG.tier!==GFX; bogSetNight(!!o.night); if(tc){ BOG.mudKey=""; if(BOG.fxSpray===null && GFX!=="lite"){ BOG.fxSpray=new StripFx(GFX==="ultra"?420:260, "smoke", stripPuffTex()); S3.add(BOG.fxSpray.mesh); bogSetNight(!!o.night); } } }
+  if(BOG.tier!==GFX || BOG.night!==!!o.night){ var tc=BOG.tier!==GFX; bogSetNight(!!o.night); if(tc){ BOG.mudKey=""; bogFxBuild(S3, GFX==="lite"); } }
   var ph=o.phase||"stage";
   if(ph==="stage" && BOG.prev.phase && BOG.prev.phase!=="stage") bogReset();
   if(o.pit) bogMudBuild(o.pit);
@@ -340,9 +314,8 @@ function bogUpdate(o, dt){
   var ws=Math.max(v,+o.wspd||0), wr=ws/(U.rr*k);
   for(i=0;i<U.wheelsR.length;i++){ var sp=U.wheelsR[i]; sp.rotation.y=(sp.rotation.y-wr*dt)%TAU; }
   for(i=0;i<U.wheelsF.length;i++){ var sf=U.wheelsF[i]; sf.rotation.y=(sf.rotation.y-wr*dt)%TAU; }
-  /* the mud coat builds on the paint */
-  BOG.coat+=(clamp((+o.mudKg||0)/220,0,0.85)-BOG.coat)*Math.min(1,dt*2);
-  if(U.paint0){ U.mats.paint.color.copy(U.paint0).lerp(_mudC, BOG.coat); }
+  /* the mud coat: a splatter mask on every material, bottom up (vis/bog-fx.js) */
+  bogCoatUpdate(o, dt, V);
   V.updateMatrixWorld(true);
   /* ruts and tracks: where the tyres have been */
   if(BOG.mud && x>0 && (ph==="pit"||ph==="done")){
