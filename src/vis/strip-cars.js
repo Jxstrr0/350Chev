@@ -529,11 +529,11 @@ function sc_wheel(ws, M){
 function sc_chute(me, M){
   /* fix pack: a cross-form drag chute (four arms around a centre square, domed), shroud lines from each arm tip to the
      confluence, the fabric flutters in the vertex shader. Canopy axis along local +x (towards the car), rim at x=0. */
-  var g=new THREE.Group(), rc=me.chuteR, A=0.375, key="xcano"+r3(rc), geo=SC.geo[key];
+  var g=new THREE.Group(), rc=me.chuteR, A=0.375, key="xcano2"+r3(rc), geo=SC.geo[key];
   if(!geo){ var N=20, pos=[], uv=[], idx=[], i, j, DEP=0.34*rc, RA=1.12*rc;
     for(j=0;j<=N;j++) for(i=0;i<=N;i++){ var u=-1+2*i/N, v=-1+2*j/N, r2=Math.min(1,(u*u+v*v)/(1+A*A)), au=Math.abs(u), av=Math.abs(v);
       var puff=0.09*rc*(av<=A?Math.cos(PI/2*v/A):0)*Math.sin(PI*Math.max(0,au-A)/(1-A))+0.09*rc*(au<=A?Math.cos(PI/2*u/A):0)*Math.sin(PI*Math.max(0,av-A)/(1-A));   /* each arm bellies out between its seams */
-      pos.push(-DEP*(1-r2)-puff, u*RA, v*RA); uv.push((u+1)/2, (v+1)/2); }
+      pos.push(-DEP*(1-r2)-puff, (u-v)*RA*0.7071, (u+v)*RA*0.7071);   /* set as an X, the way it reads from the chase cams */ uv.push((u+1)/2, (v+1)/2); }
     for(j=0;j<N;j++) for(i=0;i<N;i++){ var uc=-1+2*(i+0.5)/N, vc=-1+2*(j+0.5)/N; if(Math.abs(uc)>A && Math.abs(vc)>A) continue;
       var q=j*(N+1)+i; idx.push(q, q+1, q+N+1, q+1, q+N+2, q+N+1); }
     geo=new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv,2));
@@ -541,7 +541,7 @@ function sc_chute(me, M){
   var mat=sc_chuteMat(M), cn=new THREE.Mesh(geo, mat); cn.castShadow=true; g.add(cn);
   var lg=SC.geo.chuteLine2||(SC.geo.chuteLine2=new THREE.CylinderGeometry(0.009,0.009,1,4,1,true).translate(0,0.5,0));
   var bg=SC.geo.chuteBridle||(SC.geo.chuteBridle=new THREE.CylinderGeometry(0.018,0.018,1,5,1,true).translate(0,0.5,0));
-  var lines=[]; for(var k=0;k<4;k++) for(var s2=-1;s2<=1;s2+=2){ var l=new THREE.Mesh(lg, M.lineM), ca=Math.cos(k*PI/2), sa=Math.sin(k*PI/2);
+  var lines=[]; for(var k=0;k<4;k++) for(var s2=-1;s2<=1;s2+=2){ var l=new THREE.Mesh(lg, M.lineM), ca=Math.cos(k*PI/2+PI/4), sa=Math.sin(k*PI/2+PI/4);
     l.userData={cy:(ca*0.98-sa*s2*A)*1.12, cz:(sa*0.98+ca*s2*A)*1.12}; g.add(l); lines.push(l); }   /* the two corners of each arm tip */
   var br=new THREE.Mesh(bg, M.lineM); g.add(br);
   g.userData={canopy:cn, lines:lines, bridle:br, rc:rc, fl:mat.userData.fl};
