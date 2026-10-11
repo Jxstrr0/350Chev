@@ -23981,7 +23981,7 @@ function rvActive(){const a=$("app").classList,t=$("tab-events");return a.contai
 function rvHost(){let h=$("evHud");if(!h){h=document.createElement("div");h.id="evHud";h.hidden=true;$("view").appendChild(h);}return h;}
 function rvHome(){const L=RV.live;if(!L)return;const ph=RV.home;if(ph&&ph.parentNode)ph.parentNode.replaceChild(L,ph);RV.live=null;RV.home=null;}
 function rvSync(){const on=rvActive(),de=document.documentElement;
-  if(de.classList.contains("onevent")!==on)de.classList.toggle("onevent",on);
+  if(de.classList.contains("onevent")!==on){de.classList.toggle("onevent",on);if(on&&typeof tipHide==="function")tipHide();}   // a "drag to orbit" tip left up from before the run goes
   /* the card of the control block that is showing; after the run its block hides but the card stays up with the final numbers until the scene goes */
   let want=null;if(on){const c=RV_LIVE.find(([c])=>{const e=$(c);return e&&e.style.display!=="none";});want=c?(c[1]?$(c[1]):null):RV.live;}   // the strip brings its own HUD
   if(want!==RV.live){rvHome();
