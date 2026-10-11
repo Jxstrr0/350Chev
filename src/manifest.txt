@@ -49,7 +49,9 @@ vis/salt-cars.js
 vis/salt-look.js
 vis/salt-event.js
 vis/hill.js
+vis/hill-lod.js
 vis/band.js
+vis/ultra.js
 vis/api.js
 vis/trophy.js
 vis/teardown.js

@@ -83,7 +83,7 @@ const ENGINE_VIS = {
     var w = host? host.clientWidth : canvasEl.clientWidth;
     var h = host? host.clientHeight : canvasEl.clientHeight;
     if(!w||!h){ w=canvasEl.clientWidth||400; h=canvasEl.clientHeight||340; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5));
+    renderer.setPixelRatio(ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5)));
     renderer.setSize(w, h, false);
     if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
     camera.aspect=w/h;
@@ -119,7 +119,7 @@ const ENGINE_VIS = {
     var tierChanged = (GFX !== want);
     GFX = want;
     if(tierChanged && lastCfg && engineRoot) ENGINE_VIS.buildEngine(lastCfg, lastLayout);   /* v1.6: model detail follows the tier */
-    if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } }
+    if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } if(GFX==="ultra") ultraShadow(keyLight, 2048); }
     ENGINE_VIS.resize();
   },
   /* run view: the band (CSS px up from the view's bottom edge) an event's live HUD covers, and the view's height; the pull, bog,

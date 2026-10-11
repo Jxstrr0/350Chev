@@ -75,13 +75,14 @@ function buildHillWorld(T){
   var rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); };
   var hemi=new THREE.HemisphereLight(0xd6e4f6, 0x5f5444, 0.3); S5.add(hemi); W.hemi=hemi;
   var sun=new THREE.DirectionalLight(0xfff0d8, 1.6); sun.shadow.mapSize.set(lite?512:2048,lite?512:2048); var shc=sun.shadow.camera; shc.left=-34; shc.right=34; shc.top=34; shc.bottom=-34; shc.near=1; shc.far=400; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.04; sun.castShadow=!lite;
+  if(ultra){ sun.shadow.mapSize.set(4096,4096); shc.left=shc.bottom=-48; shc.right=shc.top=48; }   /* Ultra: a sharper, wider sun shadow */
   S5.add(sun); S5.add(sun.target); W.sun=sun; W.sunDir=new THREE.Vector3(-0.35,0.62,0.7).normalize();
   var sky=new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), hillSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S5.add(sky); W.sky=sky;
   S5.fog=new THREE.Fog(0xa8b8c8, 500, 6000); W.fog=S5.fog; W.horLin=new THREE.Color(0.6,0.68,0.76);
   S5.environment=stripEnv(false);
   /* terrain grid over the course box plus a margin */
   var m=900; W.box=[T.box[0]-m, T.box[1]-m, T.box[2]+m, T.box[3]+m]; W.span=Math.max(W.box[2]-W.box[0], W.box[3]-W.box[1]);
-  var Hf=hillTerrainFn(W), G=lite?110:ultra?230:190, cw=(W.box[2]-W.box[0])/G, ch2=(W.box[3]-W.box[1])/G, gh=new Float32Array((G+1)*(G+1));
+  var Hf=hillTerrainFn(W), G=lite?110:ultra?280:190, cw=(W.box[2]-W.box[0])/G, ch2=(W.box[3]-W.box[1])/G, gh=new Float32Array((G+1)*(G+1));
   W.G=G; W.cw=cw; W.ch=ch2; W.gh=gh;
   var clampR=Math.max(cw,ch2)*1.05+hw;
   for(var gy=0;gy<=G;gy++) for(var gx=0;gx<=G;gx++){ var x=W.box[0]+gx*cw, y=W.box[1]+gy*ch2, h=Hf(x,y), nr=W.near(x,y,clampR); if(nr) h=Math.min(h, T.z[nr.i]-1.3-0.04*nr.d); gh[gy*(G+1)+gx]=h; }
@@ -97,7 +98,7 @@ function buildHillWorld(T){
     var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.BufferAttribute(pos,3)); g.setAttribute("color",new THREE.BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals();
     var mat=lite?new THREE.MeshLambertMaterial({vertexColors:true}):stripSurfMat(HILL_GLSL_TERR,{vertexColors:true});
     if(!lite) mat.customProgramCacheKey=function(){ return "hill_terr"; };
-    var tm=new THREE.Mesh(g, mat); tm.receiveShadow=!lite; S5.add(tm); W.terr=tm; })();
+    var tm=new THREE.Mesh(g, mat); tm.receiveShadow=!lite; S5.add(tm); W.terr=tm; if(lite||ultra) hillTiles(W, S5, tm, G); })();
   /* road, centre lines, gravel verges sloping out to the terrain */
   M.asph=new THREE.MeshStandardMaterial({map:hillAsphaltTex(), roughness:0.86, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
   M.verge=new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
@@ -106,7 +107,7 @@ function buildHillWorld(T){
       pos.set([_hA.x,_hA.y,_hA.z,_hB.x,_hB.y,_hB.z], q*6); nor[q*6+1]=1; nor[q*6+4]=1; var vv=ii*ds/16; uv.set([0,vv,1,vv], q*4);
       if(q<n-1){ var a=q*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } }
     var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.BufferAttribute(pos,3)); g.setAttribute("normal",new THREE.BufferAttribute(nor,3)); g.setAttribute("uv",new THREE.BufferAttribute(uv,2)); g.setIndex(idx); g.computeBoundingSphere();
-    var rd=new THREE.Mesh(g, M.asph); rd.receiveShadow=!lite; S5.add(rd); })();
+    var rd=new THREE.Mesh(g, M.asph); rd.receiveShadow=!lite; S5.add(rd); if(lite||ultra) hillSplit(W, S5, rd, "road"); })();
   (function(){ var step=lite?4:2, gcol=sc(0x8a7f70), cc=new THREE.Color(), pos=[], col=[], idx=[], base=0;
     [-1,1].forEach(function(sd){ for(var ii=0;ii<N;ii+=step){ var dr=W.drop[ii], isDrop=dr&&Math.sign(dr)===sd, Lv=isDrop?(Math.abs(dr)===2?9:6):Math.min(48,Math.max(cw,ch2)*0.95);
         var offs=lite?[hw, hw+0.9, hw+3.2, hw+Lv]:[hw, hw+0.9, hw+2.6, hw+4.4, hw+Lv], nr=offs.length;
@@ -119,7 +120,7 @@ function buildHillWorld(T){
         base+=nr; }
       base=pos.length/3; });
     var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("color",new THREE.Float32BufferAttribute(col,3)); g.setIndex(idx); g.computeVertexNormals();
-    var vm=new THREE.Mesh(g, M.verge); vm.receiveShadow=!lite; S5.add(vm); })();
+    var vm=new THREE.Mesh(g, M.verge); vm.receiveShadow=!lite; S5.add(vm); if(lite||ultra) hillSplit(W, S5, vm, "verge"); })();
   var B=new StripBatch(), STEEL=0xa7acb1, POST=0x6e7276;
   M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.86}); M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.38, metalness:0.7});
   /* guardrails: posts and a W-beam on the outside of the railed drops */
@@ -130,7 +131,7 @@ function buildHillWorld(T){
         if((ii-a)%(lite?4:2)===0){ hillPt(W, ii, d+sd*0.12, 0, _hB); B.add("metal","box",[_hB.x,_hB.y+0.36,_hB.z],[0.12,0.78,0.12],POST,[0,hh,0]); } } });
     if(!pos.length) return;
     var g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("normal",new THREE.Float32BufferAttribute(nrm,3)); g.setIndex(idx);
-    var rm=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(STEEL), roughness:0.35, metalness:0.75, side:THREE.DoubleSide})); rm.castShadow=!lite; S5.add(rm); })();
+    var rm=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(STEEL), roughness:0.35, metalness:0.75, side:THREE.DoubleSide})); rm.castShadow=!lite; S5.add(rm); if(lite||ultra) hillSplit(W, S5, rm, "rail"); })();
   /* start: a timing gantry over the road; summit: the summit house, a car park, the finish banner */
   (function(){ var h0=T.h[0];
     [-1,1].forEach(function(sd){ hillPt(W, 2, sd*(hw+1.4), 0, _hA); B.add("metal","box",[_hA.x,_hA.y+2.8,_hA.z],[0.3,5.6,0.3],0x2b2d30); });
@@ -166,7 +167,8 @@ function buildHillWorld(T){
     if(rp.length){ var rg=new THREE.DodecahedronGeometry(1,0), rocks=new THREE.InstancedMesh(rg, new THREE.MeshStandardMaterial({roughness:0.92}), rp.length);
       rp.forEach(function(p,j){ mm.compose(_hA.set(p[0],p[1]+p[3]*0.25,p[2]), qq.setFromEuler(e.set(rng(j)*3,rng(j+1)*3,rng(j+2)*3)), _hB.set(p[3]*(0.8+rng(j+3)*0.6),p[3]*(0.55+rng(j+4)*0.4),p[3]*(0.8+rng(j+5)*0.5)));
         rocks.setMatrixAt(j,mm); cc.setHSL(0.07,0.08+rng(j+6)*0.06,0.3+rng(j+7)*0.12).convertSRGBToLinear(); rocks.setColorAt(j,cc); });
-      rocks.castShadow=!lite; S5.add(rocks); W.rocks=rp.length; } })();
+      rocks.castShadow=!lite; S5.add(rocks); W.rocks=rp.length; }
+    if(lite||ultra) hillTreeCells(W, S5, tp, rp, foliage, trunk, rocks, ultra); })();
   /* the Front Range on the horizon: a ring of peaks, snow on the tops */
   (function(){ var seg=lite?96:160, R0=W.span*0.62+2500, pos=[], col=[], idx=[], cx=0, cz=0, c1=sc(0x5a5e5c), c2=sc(0x8a8e92), c3=sc(0xe8ecf0);
     for(var s2=0;s2<=seg;s2++){ var a=s2/seg*TAU, hgt=900+500*Math.pow(0.5+0.5*Math.sin(a*3.0+1.1),2)+300*Math.sin(a*11.0+1.4)*Math.sin(a*5.0)+140*Math.sin(a*23.0), snow=hgt>1300;
@@ -234,6 +236,7 @@ function hillRender(){
   W.fog.color.copy(W.horLin).convertLinearToSRGB();
   W.sky.position.copy(cam.position); if(W.fx) W.fx.mat.uniforms.uFog.value.copy(W.horLin);
   var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=0.95;
+  if(W.lod) hillLodUpdate(W, cam);
   var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
   renderer.render(W.scene, cam);
   HILL.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, shot:HILL.shot, trees:W.trees||0, rocks:W.rocks||0, grid:W.G}; inf.autoReset=ar;
@@ -257,6 +260,6 @@ function hillUpdate(o, dt){
     W.fx.step(dt, _hW); }
   hillDirect(o, dt, W, car);
   /* thin air: the zenith deepens and the haze lifts with the camera's altitude */
-  var alt=clamp((HILL.camPos.y+W.z0-2862)/1440,0,1.1); W.sky.material.uniforms.uAlt.value=alt; W.horLin.setRGB(lerp(0.6,0.52,alt),lerp(0.68,0.63,alt),lerp(0.76,0.78,alt)); W.fog.near=lerp(500,1100,alt); W.fog.far=lerp(6000,9000,alt);
+  var alt=clamp((HILL.camPos.y+W.z0-2862)/1440,0,1.1); W.sky.material.uniforms.uAlt.value=alt; W.horLin.setRGB(lerp(0.6,0.52,alt),lerp(0.68,0.63,alt),lerp(0.76,0.78,alt)); W.fog.near=lerp(500,1100,alt); W.fog.far=lerp(6000,9000,alt); if(W.tier==="ultra"){ W.fog.near*=1.6; W.fog.far*=1.3; }   /* Ultra: the long view */
   var c=_hA.copy(car.position); W.sun.position.copy(c).addScaledVector(W.sunDir, 200); W.sun.target.position.copy(c); W.sun.target.updateMatrixWorld();
 }
