@@ -14,7 +14,7 @@ let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0,alsHot=0;
 const AB={A:null,B:null,playing:null,rpm:4000,load:1};
 function abLabel(cfg){if(!cfg)return"empty";
   const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
-  return `${cfg.layout} ${(r.Vd/1000).toFixed(1)}L · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
+  return `${cfg.layout} ${fmtDisp(r.Vd/1000,"")} · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
 function abRender(){
   $("abAname").textContent=AB.A?abLabel(AB.A):"empty";
   $("abBname").textContent=AB.B?abLabel(AB.B):"empty";
