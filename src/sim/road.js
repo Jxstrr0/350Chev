@@ -99,14 +99,17 @@
     const front = clamp((C0.front * C0.mass + dm * C0.xE + 75 * 0.45) / m, sw ? 0.1 : 0.3, sw ? 0.9 : 0.75), dF = front - C0.front;
     // balance off the chassis' design point costs cornering grip (nose-heavy pushes, tail-heavy snaps); tyres lose a little μ per kg
     const kBal = clamp(1 - 1.2 * Math.abs(dF), 0.82, 1), kLoad = Math.pow(m / (C0.mass + 75), -0.12);
-    const rw = C0.tyreDia * 0.0254 / 2, eta = C0.drive === "awd" ? 0.8 : 0.85, gears = C0.ratios.slice();
+    // a swap car runs a real manual driveline: a transaxle loses least, a hypoid rear axle a little more, AWD the most
+    const rw = C0.tyreDia * 0.0254 / 2, eta = sw ? (C0.drive === "awd" ? 0.86 : C0.drive === "fwd" ? 0.92 : 0.9) : C0.drive === "awd" ? 0.8 : 0.85, gears = C0.ratios.slice();
     const redline = res.redline || 7000;
     // fit the final drive: top gear lands the engine on its power peak at the speed that power can hold against drag
     const Pw = (res.peakHp || 100) * 745.7 * eta, crr = C0.rr * m * ROAD_G;
     let lo = 5, hi = 140; for (let it = 0; it < 50; it++) { const v = (lo + hi) / 2; if (0.5 * ROAD_RHO * C0.cdA * v * v * v + crr * v > Pw) hi = v; else lo = v; }
     const vPow = lo, pkR = Math.min(res.peakHpRpm || redline * 0.85, redline);
     const top = gears[gears.length - 1];
-    let fd = (pkR * 2 * Math.PI / 60) * rw / (vPow * top);
+    // a swap car is geared like a road car: top gear runs out of revs just short of the drag-limited speed, so the
+    // engine stays up on its power through the gears instead of lugging in a top gear it can barely pull
+    let fd = ((sw ? Math.max(pkR, redline * 1.05) : pkR) * 2 * Math.PI / 60) * rw / (vPow * top);
     fd = clamp(fd, 0.9, 6.5);
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.7, 1.4), 0.7, 8);
     return { ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
