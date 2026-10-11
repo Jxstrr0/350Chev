@@ -954,6 +954,46 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
 #buildForm .ddno{opacity:.38}
 #panel.ddon #ddSec{scroll-margin-top:calc(var(--ddh,58px) + 4px)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ---- trophy room: the view goes full screen, a slim bar on top, the plaque card at the bottom, the list as a sheet ---- */
+.trgo{display:flex;justify-content:space-between;width:100%;margin:0 0 10px;min-height:44px}.trgo b{font-weight:500;color:var(--muted)}
+html.troom #view,html.troom.desk #view,html.troom #app.mini #view{position:fixed;inset:0;z-index:40;min-height:0;flex:none;max-width:none;width:auto;height:auto;transition:none}
+html.troom #hud,html.troom #tag,html.troom #rpmbox,html.troom #fpsHud,html.troom #stripHud,html.troom #stripCap,html.troom #tdCap,html.troom #pitsOv,html.troom #dragCtl,html.troom #pullCtl,html.troom #saltCtl,html.troom #bogCtl,html.troom #roadCtl,html.troom #e24Ctl{display:none!important}
+html.troom #toast,html.troom #achToast{z-index:42}
+html.troom #tour,html.troom #tip,html.troom #ff,html.troom #les,html.troom #glPop{display:none!important}
+#troom{position:fixed;inset:0;z-index:41;pointer-events:none;color:#f0ece2;--tg:#d9a93a;--ts:#aab1ba;--tb:#c0763a}
+#troom[hidden]{display:none}
+.trtop{pointer-events:auto;position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 14px;background:linear-gradient(rgba(12,10,8,.9),rgba(12,10,8,.55) 70%,rgba(12,10,8,0))}
+.trtop .btn{min-height:44px;padding-left:11px;padding-right:11px;--ht:#f0ece2;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.trtt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.trtt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:#e8c27a}
+.trtt small{font-size:11.5px;color:#b8b2a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#trNote{pointer-events:auto;position:absolute;left:12px;right:12px;top:calc(68px + env(safe-area-inset-top,0px));margin:0;padding:9px 12px;border-radius:8px;background:rgba(15,13,10,.82);border:1px solid rgba(232,194,122,.35);font-size:13px;line-height:1.4;color:#e6e0d2}
+#trNote b{color:#e8c27a}
+#troom.lst #trNote{display:none}
+#trCard{pointer-events:auto;position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-height:min(60%,520px);overflow:auto;padding:14px 14px 12px;border-radius:12px;background:var(--panel);color:var(--chalk);border:1px solid var(--rule);box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:2}
+#trCard h3{margin:2px 0 6px;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-size:21px;line-height:1.15}
+#trCard p{margin:0 0 8px;font-size:13.5px;line-height:1.4;color:var(--muted)}
+.trk{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.trk.t-gold{color:#c8961f}.trk.t-silver{color:#8d959f}.trk.t-bronze{color:#b06a34}
+.trnums{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1px;margin:4px 0 10px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.trnums div{background:var(--panel2);padding:7px 9px;min-width:0}
+.trnums span{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.trnums b{display:block;font-size:15px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trveh{font-size:12.5px!important}.trveh span{color:var(--dim);text-transform:uppercase;font-size:10.5px;letter-spacing:.06em}
+.trbtns{display:flex;flex-wrap:wrap;gap:8px}.trbtns .btn{min-height:44px;flex:1 1 auto}
+#trList{pointer-events:auto;position:absolute;left:0;right:0;top:calc(62px + env(safe-area-inset-top,0px));bottom:0;overflow:auto;padding:6px 12px calc(16px + env(safe-area-inset-bottom,0px));background:var(--soot);color:var(--chalk);border-top:1px solid var(--rule);overscroll-behavior:contain}
+.trret{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}.trret .btn{min-height:46px}.trret small{font-size:12px;color:var(--muted);line-height:1.35}
+.trsec h4{display:flex;justify-content:space-between;margin:14px 0 8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.trsec h4 span{color:var(--dim)}
+.trgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.trc{display:grid;grid-template-columns:26px 1fr;column-gap:8px;align-items:center;text-align:left;min-height:60px;padding:9px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--panel2);color:var(--chalk);font:inherit;cursor:pointer;min-width:0}
+.trc svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--tg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.trc.t-silver svg{stroke:var(--ts)}.trc.t-bronze svg{stroke:var(--tb)}.trc.eng svg{stroke:var(--orange)}
+.trc b{font-size:13px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-width:0;overflow-wrap:anywhere}
+.trc small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.trc:active{filter:brightness(1.12)}
+html.desk #trCard{left:auto;right:16px;bottom:16px;width:420px}
+html.desk #trList{left:auto;width:min(460px,40vw);border-left:1px solid var(--rule)}
+html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
 </style>
 
 <div id="app">
@@ -1080,7 +1120,7 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
       <div class="sec"><h2>Material &amp; combo interactions <span class="cnt" id="comboCnt"></span></h2><div id="combos"></div></div>
       <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
-      <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><div id="recBox"></div></div>
+      <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><button class="btn sm ghost trgo" data-trophy="1"><span>Trophy room</span><b class="trN"></b></button><div id="recBox"></div></div>
       <div class="sec" id="achSec"><h2>Achievements <span class="cnt" id="achCnt"></span></h2><div id="achBox"></div></div>
       <div class="sec" id="dlSec" style="display:none"><h2>Last pass datalog</h2><div id="dlBox"></div></div>
     </section>
@@ -1115,6 +1155,7 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
       <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
       <div class="sec"><h2>Settings</h2>
         <button class="btn sm ghost" id="achBtn" style="margin:0 0 10px;display:flex;justify-content:space-between;width:100%"><span>Achievements</span><b id="achSet"></b></button>
+        <button class="btn sm ghost trgo" data-trophy="1"><span>Trophy room</span><b class="trN"></b></button>
         <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
         <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
@@ -1184,6 +1225,8 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
   <div id="glPop" role="dialog" aria-live="polite" hidden></div>
   <div id="scrim"></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
+  <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
+    <p id="trNote" hidden></p><div id="trList" hidden></div><div id="trCard" role="dialog" aria-label="Plaque" aria-live="polite" hidden></div></div>
   <div id="toast"></div>
   <div id="achToast"></div>
 
@@ -15553,6 +15596,7 @@ function loop(now){
   if(viewOff){ clock.getDelta(); return; }
   fpsCount(now);
   var dt=Math.min(clock.getDelta(), 0.05);
+  if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
   if(ROAD.on && ROAD.W){ if(ROAD.minMs && now-ROAD.lastR<ROAD.minMs && now>=ROAD.lastR) return; ROAD.lastR=now; roadRender(); return; }
@@ -20084,6 +20128,344 @@ Object.defineProperty(ENGINE_VIS,"_root",{get:function(){return scene;}});
 ENGINE_VIS._state=function(){return {gfx:GFX,xray:XRAY,grime:GRIME_UNIFORM.value,wear:run.wear,composer:!!composer,hot:anim.hot?anim.hot.length:0,glow:anim.glowMats?anim.glowMats.map(function(m){return +m.emissiveIntensity.toFixed(2);}):null};};
 Object.defineProperty(ENGINE_VIS,"_shake",{get:function(){return engineShake;}});
 /* ===========================================================================
+   TROPHY ROOM — the shop's clubhouse mezzanine, a world the view cuts to while
+   ENGINE_VIS.setTrophy({on:true, items, engines}) is set. Metres; y up; the
+   back wall at z = -3, open to the front like a dollhouse (side walls face in,
+   so from outside they vanish). Shelves on the back wall hold the trophies,
+   timing slips hang framed on the left wall, the medal board, goal
+   certificates on the right, sponsor pennants along the top, retired engines
+   on stands on the floor. Everything is procedural from a few cached shapes;
+   medals are instanced. Drawn on demand: nothing renders while the camera
+   sits still. Built on first use, rebuilt when the item list changes.
+   ==========================================================================*/
+var TROPHY={ on:false, built:false, scene:null, cam:null, root:null, dyn:null, key:"", engKey:"", pick:[], geo:{}, mat:{}, tex:[],
+  orb:{th:0, ph:1.47, r:8.6, t:new THREE.Vector3(0,1.4,-1.2)}, home:{th:0, ph:1.47, r:8.6, t:new THREE.Vector3(0,1.4,-1.2)}, fly:null,
+  dirty:2, onPick:null, snapCam:null, engQ:[], engines:{}, stats:null, w:0, h:0, sel:null, selMesh:null, lim:{shelf:48, slip:12, cert:13, pennant:9, stand:6} };
+var TR_ROOM={ W:10, D:12, H:3.6, back:-3, front:9 };   /* the room runs forward past the camera: walls and ceiling all round */
+var _trRay=new THREE.Raycaster(), _trNdc=new THREE.Vector2(), _trV=new THREE.Vector3(), _trM=new THREE.Matrix4(), _trQ=new THREE.Quaternion(), _trS=new THREE.Vector3();
+function trMat(k){
+  var M=TROPHY.mat; if(M[k]) return M[k];
+  var std=function(c,r,m,o){ var x=new THREE.MeshStandardMaterial({color:sc(c), roughness:r, metalness:m||0}); if(o) for(var q in o) x[q]=o[q]; return x; };
+  var defs={
+    gold:function(){ return std(0xd9a93a,0.28,1,{envMapIntensity:1.1}); }, silver:function(){ return std(0xc9ced6,0.24,1,{envMapIntensity:1.1}); },
+    bronze:function(){ return std(0xb06a34,0.34,1); }, chrome:function(){ return std(0xe2e6ea,0.14,1,{envMapIntensity:1.2}); },
+    plinth:function(){ return std(0x16130f,0.55,0); }, wood:function(){ return std(0x6a4528,0.62,0); }, woodDk:function(){ return std(0x3b2617,0.7,0); },
+    wall:function(){ return std(0x2c3b34,0.92,0); }, wallS:function(){ return std(0x34443c,0.92,0); }, steel:function(){ return std(0x50565c,0.5,0.8); },
+    red:function(){ return std(0xb3281f,0.5,0.1); }, white:function(){ return std(0xf1efe6,0.7,0); }, paper:function(){ return std(0xefe9d8,0.85,0); },
+    black:function(){ return std(0x111214,0.6,0.2); }, mud:function(){ return std(0x3a2a1a,0.95,0); }, rubber:function(){ return std(0x1a1a1c,0.85,0); },
+    rock:function(){ return std(0x5d6670,0.8,0.1); }, snow:function(){ return std(0xf4f6f8,0.6,0); }, green:function(){ return std(0x3d7a3a,0.4,0.6); },
+    blue:function(){ return std(0x1f4f9a,0.4,0.3); }, brass:function(){ return std(0xc59a4a,0.32,1); }, shadow:function(){ return new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.28, depthWrite:false}); }
+  };
+  M[k]=defs[k]?defs[k]():std(0x888888,0.5,0); M[k].userData.trophy=true; return M[k];
+}
+function trGeo(k, mk){ var G=TROPHY.geo; if(!G[k]) G[k]=mk(); return G[k]; }
+function trSeg(){ return GFX==="lite"?12:20; }
+function trLathe(pts, sy){ var v=pts.map(function(p){ return new THREE.Vector2(p[0], p[1]*(sy||1)); }); return new THREE.LatheGeometry(v, trSeg()); }
+var TR_CUP=[[0,0.06],[0.05,0.06],[0.05,0.075],[0.022,0.09],[0.013,0.15],[0.02,0.175],[0.032,0.185],[0.068,0.215],[0.082,0.27],[0.086,0.33],[0.08,0.33],[0.074,0.28],[0.06,0.235],[0,0.225]];
+function trMesh(g, m, x, y, z){ var o=new THREE.Mesh(g, m); o.position.set(x||0, y||0, z||0); return o; }
+/* one trophy by shape; ~0.2 x 0.35 m, standing on its own plinth at the origin */
+function trBuild(it){
+  var g=new THREE.Group(), tier=it.tier||"gold", met=trMat(tier==="silver"?"silver":tier==="bronze"?"bronze":"gold");
+  var shape=it.shape||"cup", big=shape==="title"?1.35:1;
+  g.add(trMesh(trGeo("plinth", function(){ return new THREE.BoxGeometry(0.15,0.06,0.15); }), trMat("plinth"), 0, 0.03, 0));
+  if(shape==="cup"||shape==="title"||shape==="tallcup"){
+    var cup=new THREE.Group(), sy=shape==="tallcup"?1.3:1;
+    cup.add(trMesh(trGeo("cup"+sy, function(){ return trLathe(TR_CUP, sy); }), met));
+    var hg=trGeo("handle", function(){ return new THREE.TorusGeometry(0.04, 0.007, 6, 12, Math.PI); });
+    for(var s=-1;s<=1;s+=2){ var h=trMesh(hg, met, s*0.085, 0.265*sy, 0); h.rotation.z=s>0?-Math.PI/2:Math.PI/2; cup.add(h); }
+    if(shape==="tallcup"){ var ring=trMesh(trGeo("laurel", function(){ return new THREE.TorusGeometry(0.095, 0.009, 6, trSeg()+8); }), trMat("green"), 0, 0.3, 0); ring.rotation.x=Math.PI/2; cup.add(ring); }
+    cup.scale.setScalar(big); g.add(cup);
+  } else if(shape==="wrench"){
+    var w=new THREE.Group(); w.position.y=0.07;
+    w.add(trMesh(trGeo("wShaft", function(){ return new THREE.BoxGeometry(0.03,0.2,0.014); }), trMat("chrome"), 0, 0.1, 0));
+    var hd=trMesh(trGeo("wHead", function(){ return new THREE.TorusGeometry(0.034, 0.013, 6, 14, Math.PI*1.45); }), trMat("chrome"), 0, 0.225, 0); hd.rotation.z=Math.PI*0.27+Math.PI/2*0; w.add(hd);
+    var hb=trMesh(trGeo("wEye", function(){ return new THREE.TorusGeometry(0.022, 0.011, 6, 14); }), met, 0, -0.002, 0); w.add(hb);
+    w.rotation.z=-0.18; g.add(w);
+  } else if(shape==="salt"){
+    var b=trMesh(trGeo("sBoard", function(){ return new THREE.BoxGeometry(0.2,0.25,0.025); }), trMat("wood"), 0, 0.2, 0); b.rotation.x=-0.12; g.add(b);
+    var pl=trMesh(trGeo("sPlate", function(){ return new THREE.BoxGeometry(0.16,0.1,0.006); }), trMat("white"), 0, -0.04, 0.015); b.add(pl);
+    var car=trMesh(trGeo("sCar", function(){ var q=new THREE.SphereGeometry(0.5, trSeg(), 8); q.scale(0.09,0.016,0.02); return q; }), trMat("red"), 0, 0.055, 0.02); b.add(car);
+    var fin=trMesh(trGeo("sFin", function(){ return new THREE.BoxGeometry(0.012,0.026,0.004); }), trMat("red"), -0.038, 0.068, 0.02); b.add(fin);
+    var bl=trMesh(trGeo("sLine", function(){ return new THREE.BoxGeometry(0.15,0.006,0.008); }), met, 0, 0.03, 0.016); b.add(bl);
+  } else if(shape==="boot"){
+    var bt=new THREE.Group(); bt.position.y=0.06;
+    bt.add(trMesh(trGeo("bShaft", function(){ return new THREE.CylinderGeometry(0.036,0.04,0.16,trSeg()); }), met, 0, 0.13, 0));
+    bt.add(trMesh(trGeo("bFoot", function(){ var q=new THREE.SphereGeometry(0.5, trSeg(), 8); q.scale(0.15,0.07,0.085); return q; }), met, 0.035, 0.035, 0));
+    bt.add(trMesh(trGeo("bMud", function(){ var q=new THREE.SphereGeometry(0.5, 10, 6); q.scale(0.2,0.03,0.14); return q; }), trMat("mud"), 0.02, 0.008, 0));
+    var rm=trMesh(trGeo("bRim", function(){ return new THREE.TorusGeometry(0.037,0.006,6,trSeg()); }), trMat("mud"), 0, 0.21, 0); rm.rotation.x=Math.PI/2; bt.add(rm);
+    g.add(bt);
+  } else if(shape==="wheel"){
+    var wh=new THREE.Group(); wh.position.y=0.15;
+    wh.add(trMesh(trGeo("tyre", function(){ return new THREE.TorusGeometry(0.068,0.024,8,trSeg()+4); }), trMat("rubber")));
+    var rim=trMesh(trGeo("rim", function(){ return new THREE.CylinderGeometry(0.05,0.05,0.03,trSeg()); }), met); rim.rotation.x=Math.PI/2; wh.add(rim);
+    g.add(trMesh(trGeo("post", function(){ return new THREE.CylinderGeometry(0.012,0.012,0.06,8); }), trMat("steel"), 0, 0.07, 0)); g.add(wh);
+  } else if(shape==="peak"){
+    g.add(trMesh(trGeo("pk", function(){ return new THREE.ConeGeometry(0.1,0.22,5); }), trMat("rock"), 0, 0.17, 0));
+    g.add(trMesh(trGeo("pkSnow", function(){ return new THREE.ConeGeometry(0.042,0.09,5); }), trMat("snow"), 0, 0.237, 0));
+    g.add(trMesh(trGeo("pkFlag", function(){ return new THREE.BoxGeometry(0.004,0.08,0.004); }), met, 0, 0.32, 0));
+  } else if(shape==="prop"){
+    var pr=new THREE.Group(); pr.position.set(0,0.2,0.0);
+    pr.add(trMesh(trGeo("hub", function(){ return new THREE.SphereGeometry(0.024, 10, 8); }), met));
+    var bg=trGeo("blade", function(){ var q=new THREE.SphereGeometry(0.5, 10, 6); q.scale(0.055,0.13,0.012); q.translate(0,0.07,0); return q; });
+    for(var i=0;i<3;i++){ var bl2=trMesh(bg, met); bl2.rotation.z=i*Math.PI*2/3; bl2.rotation.y=0.35; pr.add(bl2); }
+    g.add(trMesh(trGeo("ppost", function(){ return new THREE.CylinderGeometry(0.01,0.014,0.14,8); }), trMat("steel"), 0, 0.12, -0.01)); g.add(pr);
+  } else if(shape==="gauge"){
+    var gg=new THREE.Group(); gg.position.y=0.19;
+    var face=trMesh(trGeo("gFace", function(){ return new THREE.CylinderGeometry(0.075,0.075,0.022,trSeg()+4); }), met); face.rotation.x=Math.PI/2; gg.add(face);
+    var dial=trMesh(trGeo("gDial", function(){ return new THREE.CircleGeometry(0.064,trSeg()+4); }), trMat("white"), 0, 0, 0.0115); gg.add(dial);
+    var nd=trMesh(trGeo("gNeedle", function(){ var q=new THREE.BoxGeometry(0.006,0.056,0.003); q.translate(0,0.024,0); return q; }), trMat("red"), 0, 0, 0.014); nd.rotation.z=-0.9; gg.add(nd);
+    g.add(trMesh(trGeo("post", function(){ return new THREE.CylinderGeometry(0.012,0.012,0.06,8); }), trMat("steel"), 0, 0.09, 0)); g.add(gg);
+  } else {   /* obelisk: an unknown event's win */
+    var ob=trMesh(trGeo("obel", function(){ return new THREE.CylinderGeometry(0.022,0.045,0.26,4); }), met, 0, 0.19, 0); ob.rotation.y=Math.PI/4; g.add(ob);
+  }
+  return g;
+}
+/* canvas text panel: lines [[text, px, weight, color]] centred on paper */
+function trCanvasTex(w, h, bg, lines, frame){
+  var c=document.createElement("canvas"); c.width=w; c.height=h; var x=c.getContext("2d");
+  x.fillStyle=bg; x.fillRect(0,0,w,h);
+  if(frame){ x.strokeStyle=frame; x.lineWidth=Math.max(2,w/90); x.strokeRect(w*0.04,h*0.04,w*0.92,h*0.92); }
+  x.textAlign="center"; x.textBaseline="middle";
+  for(var i=0;i<lines.length;i++){ var L=lines[i]; if(!L||L[0]==null) continue; x.fillStyle=L[3]||"#2d2b36"; x.font=(L[2]||600)+" "+L[1]+"px 'Chakra Petch','Barlow Condensed','Arial Narrow',sans-serif";
+    var s=String(L[0]); while(s.length>3&&x.measureText(s).width>w*0.88) s=s.slice(0,-2)+"…"; x.fillText(s, w/2, L[4]*h); }
+  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(4, MAXANISO||1); TROPHY.tex.push(t); return t;
+}
+function trTexMat(t){ var m=new THREE.MeshStandardMaterial({map:t, roughness:0.85, metalness:0}); m.userData.trTex=true; return m; }
+function trFloorTex(){
+  var c=document.createElement("canvas"); c.width=256; c.height=256; var x=c.getContext("2d");
+  for(var i=0;i<8;i++){ var l=34+((i*37)%17); x.fillStyle="hsl(26,32%,"+l+"%)"; x.fillRect(0,i*32,256,32); x.fillStyle="rgba(0,0,0,.35)"; x.fillRect(0,i*32,256,2); x.fillRect(((i*97)%200)+20,i*32,2,32); }
+  for(i=0;i<900;i++){ x.fillStyle="rgba(0,0,0,"+(0.03+0.05*((i*13)%7)/7)+")"; x.fillRect((i*53)%256,(i*29)%256,1+((i*7)%9),1); }
+  var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,3); t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(4, MAXANISO||1); TROPHY.tex.push(t); return t;
+}
+/* the fixed room: floor, walls, wainscot, shelves, medal board, sign, lights */
+function trBuildScene(){
+  var S5=new THREE.Scene(); S5.background=sc(0x14110e); S5.fog=new THREE.Fog(0x14110e, 14, 30); if(envMap) S5.environment=envMap;
+  var cam=new THREE.PerspectiveCamera(46, 1, 0.05, 60);
+  S5.add(new THREE.HemisphereLight(0xfff1dc, 0x2a2018, 0.62));
+  var key=new THREE.DirectionalLight(0xffe2bc, 0.85); key.position.set(-3,6,8); S5.add(key); S5.add(key.target);
+  var p1=new THREE.PointLight(0xffc98e, 0.9, 9, 2); p1.position.set(-2.4,3.2,-1.6); S5.add(p1);
+  var p2=new THREE.PointLight(0xffc98e, 0.9, 9, 2); p2.position.set(2.4,3.2,-1.6); S5.add(p2);
+  var p3=new THREE.PointLight(0xfff0dc, 0.55, 9, 2); p3.position.set(0,3.0,1.6); S5.add(p3);
+  var R=TR_ROOM, W=R.W, D=R.D, H=R.H, zc=(R.back+R.front)/2, fixed=new THREE.Group(); S5.add(fixed);
+  var ft=trFloorTex(); ft.repeat.set(5,6);
+  var floor=new THREE.Mesh(new THREE.PlaneGeometry(W,D), new THREE.MeshStandardMaterial({map:ft, roughness:0.7, metalness:0})); floor.rotation.x=-Math.PI/2; floor.position.z=zc; fixed.add(floor);
+  var back=new THREE.Mesh(new THREE.PlaneGeometry(W,H), trMat("wall")); back.position.set(0,H/2,R.back); fixed.add(back);
+  var fw=new THREE.Mesh(new THREE.PlaneGeometry(W,H), trMat("wallS")); fw.position.set(0,H/2,R.front); fw.rotation.y=Math.PI; fixed.add(fw);
+  var lw=new THREE.Mesh(new THREE.PlaneGeometry(D,H), trMat("wallS")); lw.position.set(-W/2,H/2,zc); lw.rotation.y=Math.PI/2; fixed.add(lw);
+  var rw=new THREE.Mesh(new THREE.PlaneGeometry(D,H), trMat("wallS")); rw.position.set(W/2,H/2,zc); rw.rotation.y=-Math.PI/2; fixed.add(rw);
+  /* the ceiling: boards and three beams across */
+  var ceil=new THREE.Mesh(new THREE.PlaneGeometry(W,D), trMat("woodDk")); ceil.rotation.x=Math.PI/2; ceil.position.set(0,H,zc); fixed.add(ceil);
+  var bmG=new THREE.BoxGeometry(W,0.22,0.24); for(var bz=-1.2; bz<R.front; bz+=3.2){ var beam=new THREE.Mesh(bmG, trMat("wood")); beam.position.set(0,H-0.11,bz); fixed.add(beam); }
+  /* wainscot and a chair rail on the three walls */
+  var wb=new THREE.Mesh(new THREE.BoxGeometry(W,0.9,0.04), trMat("woodDk")); wb.position.set(0,0.45,R.back+0.02); fixed.add(wb);
+  var wl=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.9,D), trMat("woodDk")); wl.position.set(-W/2+0.02,0.45,zc); fixed.add(wl);
+  var wr=wl.clone(); wr.position.x=W/2-0.02; fixed.add(wr);
+  var cr=new THREE.Mesh(new THREE.BoxGeometry(W,0.05,0.07), trMat("wood")); cr.position.set(0,0.92,R.back+0.035); fixed.add(cr);
+  /* shelves: three planks on brackets across the back wall, a long low cabinet under them */
+  var sg=new THREE.BoxGeometry(8.4,0.04,0.34), bg=new THREE.BoxGeometry(0.03,0.16,0.3);
+  TROPHY.shelfY=[1.52,2.12,0.98];
+  for(var s=0;s<3;s++){ var y=TROPHY.shelfY[s], sh=new THREE.Mesh(sg, trMat("wood")); sh.position.set(0,y-0.02,R.back+0.17); fixed.add(sh);
+    for(var b=-4;b<=4;b+=2){ var br=new THREE.Mesh(bg, trMat("steel")); br.position.set(b*1.02,y-0.12,R.back+0.15); fixed.add(br); } }
+  /* the shop sign over the shelves */
+  var sign=new THREE.Mesh(new THREE.PlaneGeometry(4.2,0.5), trTexMat(trCanvasTex(1024,122,"#1b1611",[["PRAIRIE ENGINE WORKS · TROPHY ROOM",54,700,"#e8c27a",0.53]],"#8a6a3a")));
+  sign.position.set(0,2.92,R.back+0.01); fixed.add(sign);
+  /* medal board on the right wall */
+  var mb=new THREE.Mesh(new THREE.BoxGeometry(0.05,1.2,2.5), trMat("woodDk")); mb.position.set(W/2-0.03,1.95,-0.6); fixed.add(mb);
+  var mbl=new THREE.Mesh(new THREE.PlaneGeometry(1.9,0.22), trTexMat(trCanvasTex(512,60,"#2a1d12",[["ACHIEVEMENTS",34,700,"#e8c27a",0.55]])));
+  mbl.position.set(W/2-0.061,2.67,-0.6); mbl.rotation.y=-Math.PI/2; fixed.add(mbl);
+  /* pendant lamps: a cone shade and a glowing bulb each */
+  var shade=new THREE.ConeGeometry(0.22,0.22,trSeg(),1,true), bulb=new THREE.SphereGeometry(0.06,10,8), bm=new THREE.MeshBasicMaterial({color:0xffe2b0});
+  [[-2.4,-1.6],[2.4,-1.6],[0,1.6]].forEach(function(p){ var c=new THREE.Mesh(shade, trMat("black")); c.material.side=THREE.DoubleSide; c.position.set(p[0],3.34,p[1]); fixed.add(c);
+    var bu=new THREE.Mesh(bulb, bm); bu.position.set(p[0],3.22,p[1]); fixed.add(bu);
+    var cord=new THREE.Mesh(trGeo("cord", function(){ return new THREE.CylinderGeometry(0.008,0.008,0.4,4); }), trMat("black")); cord.position.set(p[0],3.49,p[1]); cord.scale.y=0.55; fixed.add(cord); });
+  /* a rug under the stands */
+  var rug=new THREE.Mesh(new THREE.PlaneGeometry(8.4,2.2), new THREE.MeshStandardMaterial({color:sc(0x5a1f1a), roughness:1})); rug.rotation.x=-Math.PI/2; rug.position.set(0,0.004,1.25); fixed.add(rug);
+  TROPHY.scene=S5; TROPHY.cam=cam; TROPHY.dyn=new THREE.Group(); S5.add(TROPHY.dyn); TROPHY.built=true;
+}
+function trClearDyn(){
+  var d=TROPHY.dyn; if(!d) return;
+  for(var i=d.children.length-1;i>=0;i--){ var c=d.children[i]; trDispose(c); d.remove(c); }
+  TROPHY.pick=[]; TROPHY.engines={}; TROPHY.engQ=[]; TROPHY.selMesh=null;
+}
+function trDispose(o){
+  var eng=[]; o.traverse(function(c){ if(c.userData && c.userData.engine) eng.push(c); });
+  eng.forEach(function(c){ disposeTree(c); });
+  o.traverse(function(c){
+    if(c.isInstancedMesh && c.dispose) c.dispose();
+    if(c.material && c.material.userData && c.material.userData.trTex){ if(c.material.map){ c.material.map.dispose(); var k=TROPHY.tex.indexOf(c.material.map); if(k>=0) TROPHY.tex.splice(k,1); } c.material.dispose(); }
+    if(c.geometry && c.userData && c.userData.ownGeo) c.geometry.dispose();
+  });
+}
+function trTag(o, id){ o.userData.tid=id; TROPHY.pick.push(o); return o; }
+/* the movable part: everything that depends on the player's history */
+function trLayout(items, engines){
+  trClearDyn(); var D=TROPHY.dyn, R=TR_ROOM, L=TROPHY.lim, i;
+  var by={shelf:[], slip:[], medal:[], cert:[], pennant:[]};
+  for(i=0;i<items.length;i++){ var it=items[i]; (by[it.slot]||by.shelf).push(it); }
+  /* shelves: eye level first, centred; then the top shelf; then the bottom */
+  var sh=by.shelf.slice(0, L.shelf), per=sh.length<=8?8:Math.ceil(sh.length/3), rows=[sh.slice(0,per), sh.slice(per,2*per), sh.slice(2*per,3*per)];
+  rows.forEach(function(row, ri){ var y=TROPHY.shelfY[ri], n=row.length, gap=Math.min(0.5, 8/Math.max(1,n));
+    row.forEach(function(it, k){ var g=trBuild(it); g.position.set((k-(n-1)/2)*gap, y, R.back+0.18+(k%2?0.03:-0.02)); g.rotation.y=(k%3-1)*0.12; D.add(trTag(g, it.id)); }); });
+  if(!sh.length){   /* the empty shelf: a little card leaning on it */
+    var em=new THREE.Mesh(new THREE.PlaneGeometry(1.1,0.44), trTexMat(trCanvasTex(512,205,"#efe9d8",[["Empty shelf",62,700,"#2d2b36",0.36],["go win something",44,600,"#8a5a1a",0.72]],"#8a6a3a")));
+    em.position.set(0,TROPHY.shelfY[0]+0.22,R.back+0.1); em.rotation.x=-0.16; em.userData.ownGeo=true; D.add(em); }
+  /* timing slips, framed, on the left wall */
+  var fg=trGeo("slipFrame", function(){ return new THREE.BoxGeometry(0.03,0.62,0.44); });
+  by.slip.slice(0, L.slip).forEach(function(it, k){ var col=k%4, row=Math.floor(k/4), z=-2.25+col*1.15, y=2.55-row*0.78;
+    var g=new THREE.Group(); g.position.set(-R.W/2+0.02, y, z);
+    g.add(trMesh(fg, trMat("black"), 0.015, 0, 0));
+    var tl=it.lines||[], tex=trCanvasTex(256,360,"#f4f1e6",[[tl[0],22,700,"#6b6772",0.12],[tl[1],50,700,"#2d2b36",0.36],[tl[2],24,600,"#2d2b36",0.54],[tl[3],20,500,"#6b6772",0.68],[tl[4],18,500,"#6b6772",0.84]],"#c9c2ad");
+    var p=new THREE.Mesh(new THREE.PlaneGeometry(0.38,0.54), trTexMat(tex)); p.position.x=0.032; p.rotation.y=Math.PI/2; p.userData.ownGeo=true; g.add(p);
+    D.add(trTag(g, it.id)); });
+  /* medals: instanced by tier on the board */
+  var md=by.medal, tiers=["gold","silver","bronze"], mg=trGeo("medal", function(){ var q=new THREE.CylinderGeometry(0.05,0.05,0.008,trSeg()+4); q.rotateZ(Math.PI/2); return q; }),
+    rg=trGeo("ribbon", function(){ return new THREE.BoxGeometry(0.004,0.07,0.04); });
+  var cols=11, pos=function(k){ var c=k%cols, r=Math.floor(k/cols); return [R.W/2-0.06, 2.42-r*0.16, -0.6-1.05+c*0.21]; };
+  tiers.forEach(function(t){ var L2=[]; md.forEach(function(it, k){ if((it.tier||"bronze")===t) L2.push([it,k]); }); if(!L2.length) return;
+    var im=new THREE.InstancedMesh(mg, trMat(t), L2.length), ri=new THREE.InstancedMesh(rg, trMat(t==="gold"?"red":t==="silver"?"blue":"green"), L2.length);
+    L2.forEach(function(e, j){ var p=pos(e[1]); _trM.makeTranslation(p[0]-0.006,p[1],p[2]); im.setMatrixAt(j,_trM); _trM.makeTranslation(p[0]-0.003,p[1]+0.06,p[2]); ri.setMatrixAt(j,_trM); });
+    im.userData.tids=L2.map(function(e){ return e[0].id; }); D.add(im); D.add(ri); TROPHY.pick.push(im); });
+  /* goal certificates under the medal board */
+  var cf=trGeo("certFrame", function(){ return new THREE.BoxGeometry(0.025,0.26,0.34); }), cp=trGeo("certPaper", function(){ var q=new THREE.PlaneGeometry(0.29,0.21); q.rotateY(-Math.PI/2); return q; }),
+    seal=trGeo("seal", function(){ var q=new THREE.CircleGeometry(0.03,12); q.rotateY(-Math.PI/2); return q; });
+  by.cert.slice(0, L.cert).forEach(function(it, k){ var c=k%7, r=Math.floor(k/7), g=new THREE.Group(); g.position.set(R.W/2-0.02, 1.15-r*0.32, -2.3+c*0.4+(r?0.2:0));
+    g.add(trMesh(cf, trMat("woodDk"))); g.add(trMesh(cp, trMat("paper"), -0.014, 0, 0)); g.add(trMesh(seal, trMat("red"), -0.016, -0.05, 0.09)); D.add(trTag(g, it.id)); });
+  /* sponsor pennants along the top of the back wall */
+  var pg=trGeo("pennant", function(){ var s=new THREE.Shape(); s.moveTo(-0.32,0); s.lineTo(0.32,0); s.lineTo(0,-0.42); s.closePath(); return new THREE.ShapeGeometry(s); });
+  var pn=by.pennant.slice(0, L.pennant), np=pn.length;
+  pn.forEach(function(it, k){ var x=(k-(np-1)/2)*0.85, g=new THREE.Group(); g.position.set(x, 3.38, R.back+0.02);
+    var m=new THREE.MeshStandardMaterial({color:sc(it.col||0x8c1d18), roughness:0.8, side:THREE.DoubleSide}); m.userData.trTex=true;
+    var m2=new THREE.MeshStandardMaterial({color:sc(it.col2||0xf2d04a), roughness:0.8, side:THREE.DoubleSide}); m2.userData.trTex=true;
+    g.add(new THREE.Mesh(pg, m)); var st=new THREE.Mesh(pg, m2); st.scale.set(0.45,0.45,1); st.position.set(0,-0.05,0.004); g.add(st); D.add(trTag(g, it.id)); });
+  if(np){ var rope=new THREE.Mesh(new THREE.BoxGeometry(Math.max(1,np*0.85),0.012,0.012), trMat("black")); rope.position.set(0,3.39,R.back+0.02); rope.userData.ownGeo=true; D.add(rope); }
+  /* engine stands on the rug: the engine is queued and built a frame at a time */
+  var es=engines.slice(0, L.stand), ne=es.length, sp=Math.min(1.45, 7.8/Math.max(1,ne));
+  es.forEach(function(e, k){ var x=(k-(ne-1)/2)*sp, g=new THREE.Group(); g.position.set(x, 0, 1.25);
+    g.add(trStand());
+    var plate=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.24), trTexMat(trCanvasTex(384,150,"#c59a4a",[[e.name,34,700,"#2a1d12",0.36],[e.sub,23,600,"#3b2a16",0.7]],"#7a5a28")));
+    plate.position.set(0,0.27,0.356); plate.userData.ownGeo=true; g.add(plate);
+    var shd=new THREE.Mesh(trGeo("shad", function(){ var q=new THREE.PlaneGeometry(1.25,0.95); q.rotateX(-Math.PI/2); return q; }), trMat("shadow")); shd.position.y=0.008; g.add(shd);
+    D.add(trTag(g, e.id)); TROPHY.engQ.push({g:g, e:e}); });
+}
+function trStand(){   /* a display plinth: dark box, brass trim, two red cradle rails the engine sits on */
+  var g=new THREE.Group();
+  g.add(trMesh(trGeo("plinth2", function(){ return new THREE.BoxGeometry(1.08,0.5,0.7); }), trMat("woodDk"), 0, 0.25, 0));
+  g.add(trMesh(trGeo("plTrim", function(){ return new THREE.BoxGeometry(1.12,0.03,0.74); }), trMat("brass"), 0, 0.505, 0));
+  g.add(trMesh(trGeo("plFoot", function(){ return new THREE.BoxGeometry(1.14,0.05,0.76); }), trMat("black"), 0, 0.025, 0));
+  var rail=trGeo("plRail", function(){ return new THREE.BoxGeometry(0.07,0.06,0.56); });
+  g.add(trMesh(rail, trMat("red"), -0.26, 0.55, 0)); g.add(trMesh(rail, trMat("red"), 0.26, 0.55, 0));
+  return g;
+}
+/* build one queued engine with the shop's own builder, at Lite detail, without disturbing the engine on the main stand */
+function trEngineStep(){
+  var q=TROPHY.engQ.shift(); if(!q) return false;
+  var keep={anim:anim, det:DET, gfx:GFX, hw:HW, cb:CUR_B, dc:DCTX, zm:ZONE_MARKS, ze:ZONE_EXTRAS, z:ZONE};
+  var G=null;
+  try{ anim={ spin:[], turbos:[], belts:[], hot:[], fans:[], glowMats:[], internals:null }; GFX="lite"; G=buildEngineMesh(q.e.cfg, q.e.layout); }catch(err){ G=null; }
+  anim=keep.anim; GFX=keep.gfx; DET=keep.det; HW=keep.hw; CUR_B=keep.cb; DCTX=keep.dc; ZONE_MARKS=keep.zm; ZONE_EXTRAS=keep.ze; ZONE=keep.z;
+  if(!G) return true;
+  var holder=new THREE.Group(); holder.userData.engine=true; holder.add(G);
+  var bb=new THREE.Box3().setFromObject(G), sz=bb.getSize(_trV), mx=Math.max(sz.x,sz.y,sz.z)||1, k=Math.min(0.1, 0.95/mx), c=bb.getCenter(new THREE.Vector3());
+  G.position.set(-c.x, -bb.min.y, -c.z);   /* sit it centred on the stand head, its sump on the cradle */
+  holder.scale.setScalar(k); holder.position.set(0, 0.575, 0); holder.rotation.y=-0.5;
+  if(GFX==="lite") holder.traverse(function(o){ o.castShadow=false; o.receiveShadow=false; });
+  q.g.add(holder); TROPHY.dirty=2; return true;
+}
+/* camera: a dollhouse orbit with limits, pinch / wheel zoom, two-finger or right-drag pan, tap to pick */
+function trCamApply(){
+  var o=TROPHY.orb, cam=TROPHY.cam; if(!cam) return;
+  cam.position.set(o.t.x+o.r*Math.sin(o.ph)*Math.sin(o.th), o.t.y+o.r*Math.cos(o.ph), o.t.z+o.r*Math.sin(o.ph)*Math.cos(o.th));
+  var R=TR_ROOM; cam.position.set(clamp(cam.position.x,-R.W/2+0.25,R.W/2-0.25), clamp(cam.position.y,0.25,R.H-0.3), clamp(cam.position.z,R.back+0.3,R.front-0.3));   /* never through a wall */
+  cam.lookAt(o.t);
+}
+function trClampOrb(){ var o=TROPHY.orb; o.th=clamp(o.th,-1.35,1.35); o.ph=clamp(o.ph,1.0,1.75); o.r=clamp(o.r,0.7,10.5); o.t.x=clamp(o.t.x,-4.6,4.6); o.t.y=clamp(o.t.y,0.4,3.2); o.t.z=clamp(o.t.z,-2.7,2.6); }
+var trInput=null;
+function trSetupInput(){
+  if(trInput||!canvasEl) return; var P={}, n=0, last=null, down=null, pan=false;
+  trInput=true;
+  var pt=function(e){ return {x:e.clientX, y:e.clientY}; };
+  canvasEl.addEventListener("pointerdown", function(e){ if(!TROPHY.on) return; if(!P[e.pointerId]) n++; P[e.pointerId]=pt(e); TROPHY.fly=null;
+    pan=e.pointerType==="mouse"&&(e.button===1||e.button===2||e.shiftKey); down=n===1?{x:e.clientX,y:e.clientY,t:performance.now()}:null; last=null; });
+  canvasEl.addEventListener("pointermove", function(e){ if(!TROPHY.on) return; var p=P[e.pointerId]; if(!p) return; var np=pt(e), o=TROPHY.orb, h=canvasEl.clientHeight||600;
+    var panBy=function(dx,dy){ var k=2*o.r*Math.tan(TROPHY.cam.fov*Math.PI/360)/h; o.t.x-=dx*k*Math.cos(o.th); o.t.z+=dx*k*Math.sin(o.th); o.t.y+=dy*k; };
+    if(n===1&&pan) panBy(np.x-p.x, np.y-p.y);
+    else if(n===1){ o.th-=(np.x-p.x)*0.0065; o.ph=o.ph-(np.y-p.y)*0.005; }
+    else if(n>=2){ var ids=Object.keys(P), a=P[ids[0]], b=P[ids[1]], q={x:(a.x+b.x)/2, y:(a.y+b.y)/2, d:Math.hypot(a.x-b.x,a.y-b.y)};
+      P[e.pointerId]=np; a=P[ids[0]]; b=P[ids[1]]; var q2={x:(a.x+b.x)/2, y:(a.y+b.y)/2, d:Math.hypot(a.x-b.x,a.y-b.y)};
+      if(q.d>0&&q2.d>0) o.r*=q.d/q2.d; panBy(q2.x-q.x, q2.y-q.y); }
+    P[e.pointerId]=np; trClampOrb(); TROPHY.dirty=1; });
+  var up=function(e){ if(!P[e.pointerId]) return; delete P[e.pointerId]; n=Math.max(0,n-1);
+    if(TROPHY.on && down && e.type==="pointerup" && Math.hypot(e.clientX-down.x,e.clientY-down.y)<10 && performance.now()-down.t<450){ var id=trPickAt(e.clientX,e.clientY); if(TROPHY.onPick) TROPHY.onPick(id); }
+    if(!n) down=null; };
+  canvasEl.addEventListener("pointerup", up); canvasEl.addEventListener("pointercancel", up); canvasEl.addEventListener("pointerleave", up);
+  canvasEl.addEventListener("wheel", function(e){ if(!TROPHY.on) return; TROPHY.fly=null; TROPHY.orb.r*=1+e.deltaY*0.0012; trClampOrb(); TROPHY.dirty=1; }, {passive:true});
+}
+function trPickAt(px, py){
+  if(!TROPHY.cam) return null; var r=canvasEl.getBoundingClientRect();
+  _trNdc.set(((px-r.left)/r.width)*2-1, -((py-r.top)/r.height)*2+1); _trRay.setFromCamera(_trNdc, TROPHY.cam);
+  var hits=_trRay.intersectObjects(TROPHY.pick, true);
+  for(var i=0;i<hits.length;i++){ var o=hits[i].object;
+    if(o.isInstancedMesh && o.userData.tids && hits[i].instanceId!=null) return o.userData.tids[hits[i].instanceId];
+    while(o && o.userData.tid==null) o=o.parent; if(o) return o.userData.tid; }
+  return null;
+}
+/* where to stand to look at an item: square on to its wall, a little back */
+function trHome(){ var a=TROPHY.cam?TROPHY.cam.aspect:1; return {t:new THREE.Vector3(0,1.3,-1.2), th:0, ph:1.4, r:a<0.8?7.6:8.6}; }
+function trFocusOf(id){
+  var o=null, D=TROPHY.dyn; if(!D) return null;
+  for(var i=0;i<TROPHY.pick.length;i++){ var p=TROPHY.pick[i]; if(p.userData.tid===id){ o=p; break; } if(p.userData.tids){ var k=p.userData.tids.indexOf(id); if(k>=0){ p.getMatrixAt(k,_trM); var w=new THREE.Vector3().setFromMatrixPosition(_trM); p.localToWorld(w); return {t:w, th:1.2, r:1.1, ph:1.45}; } } }
+  if(!o) return null; var b=new THREE.Box3().setFromObject(o), c=b.getCenter(new THREE.Vector3()), pt=TROPHY.cam&&TROPHY.cam.aspect<0.8, k=pt?1.45:1, dy=pt?-0.16:0;
+  if(c.x<-TR_ROOM.W/2+0.3) return {t:c.setY(c.y+dy), th:-1.2, r:1.25*k, ph:1.5};
+  if(c.x>TR_ROOM.W/2-0.3) return {t:c.setY(c.y+dy), th:1.2, r:1.1*k, ph:1.45};
+  if(c.z>0) return {t:c.setY(Math.max(0.5,c.y)+dy*2), th:0.3, r:2.6*k, ph:1.25};
+  return {t:c.setY(c.y+dy), th:clamp(c.x*0.05,-0.3,0.3), r:(c.y>3?2.4:1.15)*k, ph:c.y>3?1.5:1.42};
+}
+function trFlyStep(dt){
+  var f=TROPHY.fly; if(!f) return; var o=TROPHY.orb, k=1-Math.exp(-dt*5);
+  o.t.lerp(f.t, k); o.th+=(f.th-o.th)*k; o.ph+=(f.ph-o.ph)*k; o.r+=(f.r-o.r)*k; TROPHY.dirty=1;
+  if(o.t.distanceTo(f.t)<0.005&&Math.abs(f.r-o.r)<0.005&&Math.abs(f.th-o.th)<0.003) TROPHY.fly=null;
+}
+var trLastT=0;
+function trophyFrame(now){
+  var dt=trLastT?Math.min(0.05,(now-trLastT)/1000):0.016; trLastT=now;
+  trFlyStep(dt);
+  if(TROPHY.engQ.length){ trEngineStep(); }
+  var w=canvasEl.clientWidth, h=canvasEl.clientHeight;
+  if(w!==TROPHY.w||h!==TROPHY.h){ TROPHY.w=w; TROPHY.h=h; TROPHY.dirty=2; }
+  if(!TROPHY.dirty) return;
+  TROPHY.dirty=Math.max(0,TROPHY.dirty-1);
+  trRender();
+}
+function trRender(){
+  var cam=TROPHY.cam; if(!cam||!renderer) return;
+  var sz=renderer.getSize(new THREE.Vector2()); cam.aspect=sz.x/Math.max(1,sz.y);
+  cam.fov=cam.aspect<0.8?58:46; cam.updateProjectionMatrix(); trCamApply();
+  var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=1.05;
+  var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  renderer.render(TROPHY.scene, cam);
+  TROPHY.stats={calls:inf.render.calls, tris:inf.render.triangles, items:TROPHY.pick.length, engQ:TROPHY.engQ.length}; inf.autoReset=ar;
+  renderer.toneMappingExposure=ex;
+}
+ENGINE_VIS.setTrophy=function(o){
+  if(!renderer) return false;
+  if(!o||o.on===false){ if(TROPHY.on){ TROPHY.on=false; trLastT=0; TROPHY.fly=null; if(TROPHY.snapCam){ var s=TROPHY.snapCam; camState.theta=s.th; camState.phi=s.ph; camState.r=s.r; camState.target.copy(s.t); TROPHY.snapCam=null; } ENGINE_VIS.resize(); } return true; }
+  if(!TROPHY.built) trBuildScene();
+  trSetupInput();
+  if(!TROPHY.on){ TROPHY.on=true; TROPHY.snapCam={th:camState.theta, ph:camState.phi, r:camState.r, t:camState.target.clone()}; if(canvasEl.clientHeight) TROPHY.cam.aspect=canvasEl.clientWidth/canvasEl.clientHeight; var hm=TROPHY.home=trHome(); TROPHY.orb.th=hm.th; TROPHY.orb.ph=hm.ph; TROPHY.orb.r=hm.r; TROPHY.orb.t.copy(hm.t); }
+  if(o.onPick) TROPHY.onPick=o.onPick;
+  if(o.items){ var key=o.key||JSON.stringify(o.items.map(function(x){ return x.id; }))+"|"+(o.engines||[]).map(function(e){ return e.id; }).join(","); if(key!==TROPHY.key){ TROPHY.key=key; trLayout(o.items, o.engines||[]); } }
+  TROPHY.dirty=2; return true;
+};
+ENGINE_VIS.trophyFocus=function(id){ if(!TROPHY.on) return; if(id==null){ var hm=TROPHY.home=trHome(); TROPHY.fly={t:hm.t.clone(), th:hm.th, ph:hm.ph, r:hm.r}; return; } var f=trFocusOf(id); if(f) TROPHY.fly=f; };
+ENGINE_VIS.trophyShot=function(){   /* a copy of the room as it stands, for the share card */
+  if(!TROPHY.on||!renderer) return null; trRender(); var c=document.createElement("canvas"); c.width=canvasEl.width; c.height=canvasEl.height;
+  try{ c.getContext("2d").drawImage(canvasEl,0,0); }catch(e){ return null; } return c; };
+ENGINE_VIS.trophyState=function(){ return {on:TROPHY.on, built:TROPHY.built, pick:TROPHY.pick.length, engQ:TROPHY.engQ.length, stats:TROPHY.stats, orb:{th:+TROPHY.orb.th.toFixed(2), ph:+TROPHY.orb.ph.toFixed(2), r:+TROPHY.orb.r.toFixed(2)}, fly:!!TROPHY.fly}; };
+ENGINE_VIS.trophyProject=function(id){   /* screen point of an item (tests, and the card's pointer) */
+  if(!TROPHY.on||!TROPHY.cam) return null; var f=null; for(var i=0;i<TROPHY.pick.length;i++) if(TROPHY.pick[i].userData.tid===id){ f=TROPHY.pick[i]; break; } if(!f) return null;
+  var c=new THREE.Box3().setFromObject(f).getCenter(new THREE.Vector3()); trCamApply(); c.project(TROPHY.cam); var r=canvasEl.getBoundingClientRect(); return {x:r.left+(c.x+1)/2*r.width, y:r.top+(1-c.y)/2*r.height}; };
+(function(){ var z0=ENGINE_VIS.zoneAt; ENGINE_VIS.zoneAt=function(x,y){ return TROPHY.on?0:z0(x,y); }; })();   /* no part sheets from a tap in the trophy room */
+/* ===========================================================================
    TEARDOWN VIEW — after a failure: an exploded section of this engine (block
    barrel, lifted head, the failed cylinder's piston and rod pulled out, crank
    throw, bearings, valves, turbo as needed) built on demand over the stand,
@@ -23429,6 +23811,7 @@ function saltFinish(){
     if(r.pb&&!r.pb.first&&outcome!=="record")rep+=1;
     C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;spEvent("salt",{record:outcome==="record"});hud();checkGoals();}
   toast(outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)} MPH`:outcome==="impound"?`${mphTxt} · OVER THE RECORD — IMPOUND`:failed?"BROKE ON THE SALT":r.stopWhy==="spun"?"SPUN ON THE SALT":dq?`${mphTxt} · NOT ACCEPTED — NO CHUTE`:`${mphTxt}`);
+  achCheck({type:"salt",r,failed});   // (no salt badges yet; the trophy room books a class record)
   SR.p=null;save();recompute();renderTest();
   revealVerdict();
 }
@@ -23859,6 +24242,7 @@ function achFacts(x){
   return f;}
 function achCheck(x){
   if(!S||ff||!S.mode)return;
+  try{tropHook(x);}catch(e){}   // the trophy room's dated log of wins (app/trophy.js)
   try{
     if(x.type==="dyno"){const res=x.res,env=x.env;x.ok=!x.failing&&!res.fails.length&&!x.offStd&&!(career()&&env.testType==="pull"&&!(C().cert&&C().cert.ok));}
     if(career()&&C().loan>0)(S.achN=S.achN||{}).loan=1;
@@ -24729,6 +25113,207 @@ $("importSave").addEventListener("click",()=>{$("sheetTitle").textContent="Impor
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
+/* ===================== TROPHY ROOM =====================
+   What the shop has won, set and kept, in one room. The game already keeps records (recs()), achievements (S.ach), goals
+   (C().goals), sponsors (spS()) and Dyno day counts (DD()); what it didn't keep is a dated history of wins, so this adds
+   one: an additive log per mode (career C().trophies, sandbox S.sbTrophies = {v, log:[...], retired:[...]}), filled
+   from the achCheck() hook at the end of every event and seeded from the records the first time a save meets it.
+   Events are data: TROPHY_EV lists each with its achCheck types, its trophy shape and how to read a win; an event with
+   no entry still lands on the shelf when its result has place 1 (an obelisk until someone gives it a shape).
+   Retired engines are snapshots (cfg, name, peak hp, best results) shown on stands in the room and loadable again. */
+const TROPHY_LOG_MAX=240,TROPHY_RET_MAX=24,TR_STANDS=6;   // TR_STANDS matches the vis room's stand count
+const trEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const trF=(v,d)=>v==null||!isFinite(v)?"—":(+v).toFixed(d);
+const trCls=(T,k)=>T&&T[k]&&T[k].n||k||"";
+const TROPHY_EV=[
+  {k:"drag",n:"Drag racing",shape:"cup",types:["drag"],win:x=>{const r=x.r,nt=r&&r.night;if(x.failed||!nt||nt.place!==1)return null;const car=(SIM.AERO[r.body]||{}).n||"";
+    return{t:"Won the night",what:`${RN_FMT[nt.fmt]||"Race night"} at Prairie Dragway — beat ${nt.opp||"the field"} in the final.`,nums:[["ET",r.et!=null?trF(r.et,3)+" s":"—"],["Trap",r.mph!=null?Math.round(r.mph)+" mph":"—"],["Reaction",r.race&&r.race.rt!=null?trF(r.race.rt,3):"—"],["Class",car]],veh:car,u:"d"+(r.at||Date.now())};}},
+  {k:"pull",n:"Truck & tractor pull",shape:"wrench",types:["pull"],win:x=>{const r=x.r;if(x.failed||r.poPending||r.dq||r.place!==1)return null;
+    return{t:`${r.clsName||"Pull"} — first`,what:`Longest pull of the night${r.pullOff!=null?", settled in a pull-off":""}${r.of?" against "+(r.of-1)+" others":""}.`,nums:[["Distance",r.full?"FULL · 300 ft":trF(r.distFt,1)+" ft"],["Pull-off",r.pullOff!=null?trF(r.pullOff,1)+" ft":"—"],["Gear",r.gearName||"—"],["Field",r.of||"—"]],veh:r.clsName||""};},
+    extra:x=>{const r=x.r,s=r&&r.ser;if(x.failed||!s||!s.done||!s.champMe)return null;return{t:"Series champion",shape:"title",what:`${r.clsName||"Pulling"} series, season ${s.season} — ${s.pts} points over ${s.n} rounds.`,nums:[["Points",(s.stand.find(q=>q.me)||{}).pts||"—"],["Season",s.season],["Rounds",s.n]],veh:r.clsName||"",u:"ps"+s.season+(r.cls||"")};}},
+  {k:"salt",n:"Bonneville",shape:"salt",types:["salt"],win:x=>{const r=x.r;if(x.failed||!r||r.outcome!=="record")return null;
+    return{t:`Class record · ${r.cls&&r.cls.key||""}`,what:`Two-way average over the mile on the ${r.courseName||"salt"}${r.rec?`, beating ${trF(r.rec.mph,3)} mph`:""}.${r.club?" Into the 200 MPH Club.":""}`,nums:[["Record",trF(r.avg,3)+" mph"],["Runs",r.firstMph!=null?trF(r.firstMph,1)+" / "+trF(r.mileMph,1):"—"],["Peak",r.peakMph!=null?Math.round(r.peakMph)+" mph":"—"],["Body",r.clsName||"—"]],veh:r.clsName||""};}},
+  {k:"bog",n:"Mud bog",shape:"boot",types:["bog"],win:x=>{const r=x.r;if(x.failed||r.place!==1)return null;
+    return{t:`${r.clsName||"Mud bog"} — first`,what:r.cleared?"Through the pit quickest of the night.":"Farthest into the pit of the night.",nums:[["Result",r.cleared?trF(r.pitT,2)+" s":trF(r.distM,1)+" m"],["Field",r.of||"—"],["Driver",r.auto?"auto":"you"]],veh:r.clsName||""};}},
+  {k:"road",n:"Road course",shape:"wheel",types:["road"],win:()=>null},
+  {k:"e24",n:"24 Hours of Prairie Sky",shape:"tallcup",types:["e24"],win:x=>{const r=x.r;if(!r||!r.classified||!(r.posCls<=3))return null;
+    return{t:r.posCls===1?`Class win · ${r.clsName}`:`${ordN(r.posCls)} in ${r.clsName}`,tier:r.posCls===1?"gold":r.posCls===2?"silver":"bronze",what:`${r.laps} laps of ${r.trkName}, ${ordN(r.pos)} overall of ${r.of}.`,nums:[["Distance",Math.round(r.km||0).toLocaleString("en-CA")+" km"],["Laps",r.laps],["Best lap",fmtLap(r.bestLap!=null?r.bestLap:r.best,2)],["Pits",r.pits!=null?r.pits:"—"]],veh:r.chName||""};}},
+  {k:"pikes",n:"Pikes Peak",shape:"peak",types:["pikes","hill","hillclimb","pikes_peak"]},
+  {k:"boat",n:"Boat drags",shape:"prop",types:["boat","boatdrag","boat_drag"]},
+  {k:"dd",n:"Dyno day",shape:"gauge",types:["dd"],win:x=>{if(!career()||!x.pass)return null;const d=DD(),n=d.passed,T=tropBook();const mk=[1,5,10,25,50,100];
+    if(x.clean&&!T.log.some(e=>e.ev==="dd"&&e.clean))return{t:"Clean fix",clean:true,tier:"silver",what:"Found and fixed a customer's engine with no hints, on budget.",nums:[["Fixed",n],["Streak",d.streak||"—"],["Earned",fmt$(d.earned||0)]]};
+    if(!mk.includes(n))return null;return{t:n===1?"First customer fixed":`${n} customers fixed`,tier:n>=25?"gold":n>=5?"silver":"bronze",what:"Dyno day: a sick engine in, a healthy one handed back.",nums:[["Fixed",n],["Failed",d.failed||0],["Earned",fmt$(d.earned||0)]],u:"dd"+n};}},
+  {k:"spon",n:"Sponsors",shape:"pennant",types:["sponsor"],win:()=>{if(!career())return null;const s=spS(),a=s.active[s.active.length-1];if(!a)return null;const b=spBrand(a.b),T=tropBook();if(T.log.some(e=>e.ev==="spon"&&e.brand===b.id))return null;
+    return{t:b.name,brand:b.id,slot:"pennant",what:`${b.tag} — signed for ${a.weeks} weeks${a.ret?", "+fmt$(a.ret)+" a week":""}.`,nums:[["Signed",s.hist.signed],["Completed",s.hist.done],["Earned",fmt$(s.hist.earned||0)]]};}}
+];
+function tropEv(k){return TROPHY_EV.find(e=>e.k===k)||{k,n:String(k||"Event").replace(/^./,c=>c.toUpperCase()),shape:"obelisk"};}
+function tropEvOf(type){return TROPHY_EV.find(e=>e.types&&e.types.includes(type))||null;}
+/* a result from an event this file doesn't know (or knows only by name): a place-1 finish is a win */
+function tropGeneric(x){const r=x.r;if(!r||x.failed||!(r.place===1||r.won===true||r.win===true))return null;const n=[];
+  if(r.et!=null)n.push(["Time",trF(r.et,3)+" s"]);else if(r.time!=null)n.push(["Time",trF(r.time,2)+" s"]);if(r.mph!=null)n.push(["Speed",Math.round(r.mph)+" mph"]);if(r.of)n.push(["Field",r.of]);
+  return{t:`${r.clsName||"Event"} — first`,what:"First of the field.",nums:n,veh:r.clsName||r.car||""};}
+function tropBook(){if(ff)return{v:1,log:[],retired:[]};const cr=career(),o=cr?C():S,k=cr?"trophies":"sbTrophies";let T=o[k];
+  if(!T||typeof T!=="object"||!Array.isArray(T.log)){T=o[k]={v:1,log:[],retired:[]};tropSeed(T);}
+  if(!Array.isArray(T.retired))T.retired=[];return T;}
+function tropStamp(e,src){const o={d:src&&src.d||Date.now()};if(src&&src.w!=null)o.w=src.w;else if(!src&&career())o.w=C().week;return Object.assign(e,o);}
+/* first meeting with a save: the records already say what it won */
+function tropSeed(T){if(ff)return;const R=recs(),L=T.log,cut=tropSeed.cut||0;let id=0;const add=(e,src)=>{if(src&&src.d&&cut&&src.d>=cut)return;const o=Object.assign({id:"s"+(++id),seed:true,eng:src&&src.n||""},e);if(src&&src.d)o.d=src.d;if(src&&src.w!=null)o.w=src.w;L.push(o);};
+  const nw=(R.nightsWon||0)-(tropSeed.night?1:0);if(nw>0)add({ev:"drag",t:nw>1?`Won the night ×${nw}`:"Won the night",x:nw,what:`Race nights won at Prairie Dragway${R.nightsRun?` — ${R.nightsWon} of ${R.nightsRun} entered`:""}, before the trophy room kept dates.`,nums:[["Won",nw],["Entered",R.nightsRun||"—"]]},{});
+  (Array.isArray(R.pullTitles)?R.pullTitles:[]).forEach(p=>add({ev:"pull",shape:"title",t:"Series champion",what:`${trCls(SIM.PULL_CLASSES,p.k)} series, season ${p.season}.`,nums:[["Points",p.pts],["Season",p.season]],veh:trCls(SIM.PULL_CLASSES,p.k)},p));
+  if(R.pull&&typeof R.pull==="object")Object.keys(R.pull).forEach(k=>{const e=R.pull[k];if(e&&e.full)add({ev:"pull",tier:"silver",t:`Full pull · ${trCls(SIM.PULL_CLASSES,k)}`,what:"Dragged the sled the whole 300 ft.",nums:[["Distance","300 ft"]],veh:trCls(SIM.PULL_CLASSES,k)},e);});
+  if(R.bog&&typeof R.bog==="object")Object.keys(R.bog).forEach(k=>{const e=R.bog[k];if(e&&e.c)add({ev:"bog",tier:"silver",t:`Through the pit · ${trCls(SIM.BOG_CLASSES,k)}`,what:"Cleared the whole pit.",nums:[["Best",trF(e.t,2)+" s"]],veh:trCls(SIM.BOG_CLASSES,k)},e);});
+  if(R.lsr&&R.lsr.rec)Object.keys(R.lsr.rec).forEach(k=>{const e=R.lsr.rec[k];if(e&&e.mph)add({ev:"salt",t:`Class record · ${k}`,what:`Two-way average over the mile${e.was?`, beating ${trF(e.was,3)} mph`:""}.`,nums:[["Record",trF(e.mph,3)+" mph"],["Runs",Array.isArray(e.runs)?e.runs.map(v=>trF(v,1)).join(" / "):"—"]]},e);});
+  if(R.e24Best&&R.e24Best<=3)add({ev:"e24",tier:R.e24Best===1?"gold":R.e24Best===2?"silver":"bronze",t:R.e24Best===1?"Class win":`${ordN(R.e24Best)} in class`,what:"Best class finish at the 24 Hours of Prairie Sky.",nums:[["Best",ordN(R.e24Best)],["Starts",R.e24Runs||"—"]]},{});
+  if(career()){const s=spS();s.active.forEach(a=>{const b=spBrand(a.b);add({ev:"spon",slot:"pennant",brand:b.id,t:b.name,what:`${b.tag} — on the car now.`,nums:[["Signed",s.hist.signed],["Earned",fmt$(s.hist.earned||0)]]},{w:a.w0!=null?a.w0:C().week});});
+    const d=C().dd;if(d&&d.passed>0)add({ev:"dd",tier:d.passed>=25?"gold":d.passed>=5?"silver":"bronze",t:`${d.passed} customer${d.passed>1?"s":""} fixed`,what:"Dyno day: sick engines in, healthy ones handed back.",nums:[["Fixed",d.passed],["Failed",d.failed||0],["Earned",fmt$(d.earned||0)]]},{});}
+  T.seeded=Date.now();}
+/* the hook: achCheck({type, r, ...}) at the end of every event */
+function tropHook(x){if(!x||ff||!S||!S.mode)return;
+  if(x.type==="retro"){tropBook();return;}
+  const ev=tropEvOf(x.type),known=!!ev;let e=null,more=null;
+  const cr=career(),o=cr?C():S,fresh=!(o[cr?"trophies":"sbTrophies"]&&Array.isArray(o[cr?"trophies":"sbTrophies"].log));
+  if(fresh){tropSeed.cut=Date.now()-15000;tropSeed.night=x.type==="drag"&&x.r&&x.r.night&&x.r.night.place===1;}
+  const T=tropBook();tropSeed.cut=0;tropSeed.night=false;
+  try{e=ev&&ev.win?ev.win(x):(!known||!ev.win)&&x.r?tropGeneric(x):null;more=ev&&ev.extra?ev.extra(x):null;}catch(err){e=null;}
+  const k=ev?ev.k:x.type;let n=0;
+  for(const z of [e,more]){if(!z)continue;if(z.u&&T.log.some(q=>q.u===z.u))continue;
+    const ent=tropStamp(Object.assign({id:"t"+Date.now().toString(36)+(n++),ev:k,eng:engineName().slice(0,28),h:cfgHash(S.cfg)},z));T.log.push(ent);
+    if(T.log.length>TROPHY_LOG_MAX)T.log.splice(T.log.findIndex(q=>q.seed)>=0?T.log.findIndex(q=>q.seed):0,1);
+    if(ent.slot!=="pennant"&&k!=="dd")setTimeout(()=>toast(`TROPHY ROOM · ${ent.t}`),5600);}
+  if(n){tropCountSync();if(TR.open)tropRefresh();}}
+/* ---- the room's contents: one list of items, each with its plaque card ---- */
+const TR_TIER_ACH={gold:"gold",silver:"silver",bronze:"bronze"};
+function trWhen(e){if(!e)return"";const w=e.w!=null?"Week "+e.w:"",d=e.d?new Date(e.d).toLocaleDateString("en-CA",{year:"numeric",month:"short",day:"numeric"}):"";return [w,d].filter(Boolean).join(" · ")||(e.seed?"before the trophy room":"");}
+function tropItems(){const T=tropBook(),R=recs(),cr=career(),items=[];
+  const log=T.log.slice().sort((a,b)=>(b.shape==="title")-(a.shape==="title")||(b.d||0)-(a.d||0));
+  for(const e of log){const ev=tropEv(e.ev);
+    items.push({id:"L"+e.id,slot:e.slot||"shelf",shape:e.shape||ev.shape,tier:e.tier||"gold",col:e.brand?(spBrand(e.brand).c1):null,col2:e.brand?(spBrand(e.brand).c2):null,
+      card:{kick:ev.n,title:e.t,what:e.what||"",when:trWhen(e),nums:e.nums||[],veh:e.veh||"",eng:e.eng||"",ic:"trophy",tier:e.tier||"gold"}});}
+  /* framed slips: the records */
+  const slip=(id,kick,big,unit,sub,e,nums,veh)=>items.push({id:"R"+id,slot:"slip",lines:[kick.toUpperCase(),big,unit,e&&e.n?e.n:"",trWhen(e)],card:{kick:"Record · "+kick,title:big+(unit?" "+unit:""),what:sub,when:trWhen(e),nums:nums||[],veh:veh||"",eng:e&&e.n||"",ic:"flag",tier:"silver",slip:true}});
+  const top=R.top&&R.top[0];if(top)slip("et","Quickest ET",trF(top.et,3),"s @ "+Math.round(top.mph)+" mph","The quickest clean quarter mile.",top,[["ET",trF(top.et,3)+" s"],["Trap",Math.round(top.mph)+" mph"],["Top 5",R.top.map(q=>trF(q.et,2)).join(" · ")]]);
+  const hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null);if(hp)slip("hp",cr?"Top certified":"Top pulled",Number(hp.v).toLocaleString("en-CA"),"hp","The most power on a clean dyno pull.",hp,[["Peak",Number(hp.v).toLocaleString("en-CA")+" hp"]]);
+  const rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);if(rel)slip("rel","Best reliability",String(rel.v),rel.hp?"rel @ "+rel.hp+" hp":"rel","The toughest engine off the dyno.",rel,[["Reliability",rel.v],["At",rel.hp?rel.hp+" hp":"—"]]);
+  if(R.pull&&typeof R.pull==="object")Object.keys(R.pull).forEach(k=>{const e=R.pull[k];if(e)slip("p"+k,"Pull · "+trCls(SIM.PULL_CLASSES,k),e.full?"FULL":trF(e.ft,1),e.full?"300 ft":"ft","Longest pull in the class.",e,[["Distance",e.full?"300 ft — full pull":trF(e.ft,1)+" ft"]],trCls(SIM.PULL_CLASSES,k));});
+  if(R.bog&&typeof R.bog==="object")Object.keys(R.bog).forEach(k=>{const e=R.bog[k];if(e)slip("b"+k,"Bog · "+trCls(SIM.BOG_CLASSES,k),e.c?trF(e.t,2):trF(e.m,1),e.c?"s through":"m","Best run in the class.",e,[[e.c?"Through":"Got to",e.c?trF(e.t,2)+" s":trF(e.m,1)+" m"]],trCls(SIM.BOG_CLASSES,k));});
+  if(R.lsr&&R.lsr.pb)Object.keys(R.lsr.pb).forEach(k=>{const e=R.lsr.pb[k];if(e&&e.mph)slip("s"+k,"Salt · "+k,trF(e.mph,2),"mph","Best timed mile in the class.",e,[["Mile",trF(e.mph,3)+" mph"],["Kilo",e.km!=null?trF(e.km,2)+" mph":"—"],["Peak",e.peak!=null?Math.round(e.peak)+" mph":"—"]]);});
+  if(R.road&&typeof R.road==="object")Object.keys(R.road).forEach(k=>{const e=R.road[k],c=e&&SIM.CHASSIS[e.ch],t=e&&SIM.ROAD_TRACKS[e.trk];if(e&&e.t&&c&&t)slip("r"+k,"Lap · "+t.n,fmtLap(e.t,2),"","Best lap for the car on this circuit.",e,[["Lap",fmtLap(e.t,2)],["0–100",e.z!=null?trF(e.z,1)+" s":"—"]],c.n);});
+  if(R.e24&&typeof R.e24==="object")Object.keys(R.e24).forEach(k=>{const e=R.e24[k],c=e&&SIM.CHASSIS[e.ch],t=e&&SIM.ROAD_TRACKS[e.trk];if(e&&e.km&&c&&t)slip("e"+k,"24 h · "+t.n,Math.round(e.km).toLocaleString("en-CA"),"km","Longest distance in 24 hours.",e,[["Distance",Math.round(e.km).toLocaleString("en-CA")+" km"],["Laps",e.laps],["Finish",e.pc?ordN(e.pc)+" in class":"DNF"]],c.n);});
+  /* medals: achievements (shared by both modes) */
+  const A=S.ach||{};for(const a of ACH){const e=A[a.id];if(!e)continue;items.push({id:"A"+a.id,slot:"medal",tier:TR_TIER_ACH[a.tier]||"bronze",card:{kick:"Achievement · "+ACH_TIER[a.tier],title:a.name,what:a.desc,when:achWhen(e),nums:[],ic:a.ic,tier:a.tier}});}
+  if(cr){for(const g of GOALS){const w=C().goals[g.id];if(w)items.push({id:"G"+g.id,slot:"cert",card:{kick:"Shop goal",title:g.name,what:g.desc,when:"Week "+w,nums:[["Bonus",fmt$(g.cash)],["Rep","+10"]],ic:"tick",tier:"silver"}});}}
+  return items;}
+function tropEngines(){const T=tropBook();return T.retired.map(e=>({id:"E"+e.id,name:String(e.name||"Engine").slice(0,26),sub:`${Math.round(e.hp||0).toLocaleString("en-CA")} hp · ${e.label||""}`.slice(0,34),cfg:Object.assign({},SIM.DEFAULT_CFG,e.cfg),layout:LAYOUTS[e.cfg.layout]||LAYOUTS[SIM.DEFAULT_CFG.layout],src:e}));}
+/* ---- retiring a build ---- */
+function tropBest(name,h){const R=recs(),out=[],mine=e=>e&&(e.n===name||(h&&e.h===h));
+  const t=(R.top||[]).filter(mine)[0];if(t)out.push(["Quickest ET",trF(t.et,3)+" s @ "+Math.round(t.mph)+" mph"]);
+  if(R.pull)Object.keys(R.pull).forEach(k=>{const e=R.pull[k];if(mine(e))out.push(["Pull · "+trCls(SIM.PULL_CLASSES,k),e.full?"full pull":trF(e.ft,1)+" ft"]);});
+  if(R.bog)Object.keys(R.bog).forEach(k=>{const e=R.bog[k];if(mine(e))out.push(["Bog · "+trCls(SIM.BOG_CLASSES,k),e.c?trF(e.t,2)+" s":trF(e.m,1)+" m"]);});
+  if(R.lsr&&R.lsr.pb)Object.keys(R.lsr.pb).forEach(k=>{const e=R.lsr.pb[k];if(mine(e))out.push(["Salt · "+k,trF(e.mph,2)+" mph"]);});
+  if(R.road)Object.keys(R.road).forEach(k=>{const e=R.road[k],t2=e&&SIM.ROAD_TRACKS[e.trk];if(mine(e)&&t2)out.push(["Lap · "+t2.n,fmtLap(e.t,2)]);});
+  const wins=tropBook().log.filter(e=>!e.seed&&e.slot!=="pennant"&&(e.h===h||e.eng===name)).length;if(wins)out.unshift(["Trophies",wins]);
+  return out.slice(0,6);}
+function tropRetire(){if(testing){toast("Let the run finish first");return;}if(S.bay){toast("That's a customer's engine — hand it back first");return;}
+  const T=tropBook(),h=cfgHash(S.cfg),name=engineName(),cert=career()&&C().cert&&C().cert.ok&&C().cert.hash===h?C().cert.res:null,q=cert||quick||{};
+  const snap={id:Date.now().toString(36),name:name.slice(0,40),cfg:Object.assign({},S.cfg),h,hp:Math.round(q.peakHp||0),tq:Math.round(q.peakTq||0),rel:q.rel,label:SIM.cfgLabel(S.cfg),best:tropBest(name,h),cert:!!cert};
+  tropStamp(snap);const i=T.retired.findIndex(e=>e.h===h);
+  if(i>=0){snap.id=T.retired[i].id;T.retired.splice(i,1);T.retired.unshift(snap);toast("Plaque updated — it was already on a stand");}
+  else{if(T.retired.length>=TROPHY_RET_MAX){toast(`The room holds ${TROPHY_RET_MAX} retired engines — take one down first`);return;}T.retired.unshift(snap);toast(`RETIRED · ${snap.name} goes on a stand`);}
+  if(career())logEvent(`Retired ${snap.name} to the trophy room — ${snap.hp.toLocaleString("en-CA")} hp`,"good");
+  save();tropCountSync();if(TR.open){tropRefresh();setTimeout(()=>tropPick("E"+snap.id),300);}}
+function tropLoad(id){const T=tropBook(),e=T.retired.find(x=>x.id===id);if(!e)return;if(testing){toast("Let the run finish first");return;}if(S.bay){toast("A customer's engine is on the dyno — hand it back first");return;}
+  if(career()&&presetLocked(e.cfg)){toast(`Needs the ${presetLocked(e.cfg)} upgrade`);return;}
+  S.cfg=Object.assign({},SIM.DEFAULT_CFG,e.cfg);S.profileId=null;S.name=e.name||null;afterCfgChange(true);tropClose();showTab("build");toast(`LOADED · ${e.name}`);}
+function tropFront(id){const T=tropBook(),i=T.retired.findIndex(x=>x.id===id);if(i<0)return;const [e]=T.retired.splice(i,1);T.retired.unshift(e);save();tropRefresh();setTimeout(()=>tropPick("E"+id),300);}
+function tropRemove(id){const T=tropBook(),i=T.retired.findIndex(x=>x.id===id);if(i<0)return;if(!confirm(`Take ${T.retired[i].name} out of the trophy room? The engine is gone from the room for good (your current build is untouched).`))return;T.retired.splice(i,1);save();tropRefresh();tropCard(null);tropCountSync();}
+/* ---- the room UI ---- */
+const TR={open:false,sel:null,list:false,map:{},gl:false};
+function tropCounts(){const T=tropBook();return{shelf:T.log.filter(e=>(e.slot||"shelf")==="shelf").length,eng:T.retired.length};}
+function tropCountSync(){if(!S||!S.mode||ff)return;try{const c=tropCounts(),t=c.shelf?`${c.shelf} on the shelf`:"empty shelf";document.querySelectorAll(".trN").forEach(b=>b.textContent=t);}catch(e){}}
+function tropOpen(){if(testing){toast("Let the run finish first");return;}if(typeof tdIsOpen!=="undefined"&&tdIsOpen)tdClose();
+  TR.open=true;TR.sel=null;document.documentElement.classList.add("troom");$("troom").hidden=false;tropCard(null);
+  TR.gl=!!(typeof visReady!=="undefined"&&visReady&&ENGINE_VIS.setTrophy);
+  try{ENGINE_VIS.resize();}catch(e){}
+  tropRefresh();if(!TR.gl)tropListShow(true);else tropListShow(TR.list);
+  setTimeout(()=>{if(TR.open)try{ENGINE_VIS.resize();}catch(e){}},60);
+  $("trBack").focus({preventScroll:true});}
+function tropClose(){if(!TR.open)return;TR.open=false;$("troom").hidden=true;document.documentElement.classList.remove("troom");if(TR.gl)ENGINE_VIS.setTrophy({on:false});else try{ENGINE_VIS.resize();}catch(e){}}
+function tropRefresh(){const items=tropItems(),eng=tropEngines(),cr=career();TR.map={};items.forEach(i=>TR.map[i.id]=i);eng.forEach(e=>TR.map[e.id]={id:e.id,eng:e});
+  const c=tropCounts(),med=items.filter(i=>i.slot==="medal").length,sl=items.filter(i=>i.slot==="slip").length;
+  $("trSub").textContent=`${cr?"Career · week "+C().week:"Test cell"} · ${c.shelf} troph${c.shelf===1?"y":"ies"} · ${sl} slip${sl===1?"":"s"} · ${med} medal${med===1?"":"s"}${c.eng?" · "+c.eng+" retired":""}`;
+  const note=$("trNote");note.hidden=cr&&!!(c.shelf||sl||med||c.eng);
+  note.innerHTML=!cr?`<b>Test cell shelf.</b> Practice wins, test-cell records and your achievements. Goals, sponsors and Dyno day hang in the career room.`:`<b>Empty shelf — go win something.</b> Race nights, pull and bog wins, salt records, 24 h podiums and Dyno day milestones land here.`;
+  if(TR.gl)TR.gl=ENGINE_VIS.setTrophy({on:true,items,engines:eng,onPick:tropPick})!==false;
+  tropListRender(items,eng);if(TR.sel&&TR.map[TR.sel])tropCard(TR.sel);}
+function tropPick(id){if(!TR.open)return;if(!id||!TR.map[id]){tropCard(null);if(TR.gl)ENGINE_VIS.trophyFocus(null);return;}tropCard(id);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(id);}
+function tropCard(id){const box=$("trCard");TR.sel=id||null;if(!id||!TR.map[id]){box.hidden=true;box.innerHTML="";return;}const it=TR.map[id];let h="";
+  if(it.eng){const e=it.eng.src,b=e.best||[];
+    h=`<div class="trk">Retired engine${e.cert?" · certified":""} · ${trEsc(trWhen(e))}</div><h3>${trEsc(e.name)}</h3><p>${trEsc(e.label||"")}</p><div class="trnums">${[["Peak",Math.round(e.hp||0).toLocaleString("en-CA")+" hp"],["Torque",Math.round(e.tq||0).toLocaleString("en-CA")+" Nm"],["Reliability",e.rel!=null?e.rel:"—"]].concat(b).map(([k,v])=>`<div><span>${trEsc(k)}</span><b>${trEsc(v)}</b></div>`).join("")}</div>
+      <div class="trbtns"><button class="btn sm pri" data-tra="load" data-id="${trEsc(e.id)}">Load this build</button>${tropBook().retired.indexOf(e)>=TR_STANDS?`<button class="btn sm ghost" data-tra="front" data-id="${trEsc(e.id)}">Put on a stand</button>`:""}<button class="btn sm ghost" data-tra="share" data-id="${trEsc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="remove" data-id="${trEsc(e.id)}">Take down</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
+  else{const c=it.card;h=`<div class="trk t-${trEsc(c.tier||"gold")}">${trEsc(c.kick)}${c.when?" · "+trEsc(c.when):""}</div><h3>${trEsc(c.title)}</h3>${c.what?`<p>${trEsc(c.what)}</p>`:""}${c.nums&&c.nums.length?`<div class="trnums">${c.nums.map(([k,v])=>`<div><span>${trEsc(k)}</span><b>${trEsc(v)}</b></div>`).join("")}</div>`:""}
+      ${c.veh||c.eng?`<p class="trveh">${c.veh?`<span>Vehicle</span> ${trEsc(c.veh)}`:""}${c.veh&&c.eng?" · ":""}${c.eng?`<span>Engine</span> ${trEsc(c.eng)}`:""}</p>`:""}
+      <div class="trbtns"><button class="btn sm pri" data-tra="share" data-id="${trEsc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
+  box.innerHTML=h;box.hidden=false;}
+function tropListShow(on){TR.list=!!on;$("trList").hidden=!on;$("trListBtn").setAttribute("aria-pressed",String(!!on));$("trListBtn").textContent=on&&TR.gl?"Room":"List";$("trListBtn").hidden=!TR.gl;$("troom").classList.toggle("lst",!!on);}
+function tropListRender(items,eng){const sec=(t,L,f,empty)=>`<div class="trsec"><h4>${t}<span>${L.length}</span></h4>${L.length?`<div class="trgrid">${L.map(f).join("")}</div>`:`<p class="hint">${empty}</p>`}</div>`;
+  const card=i=>{const c=i.card;return `<button class="trc t-${trEsc(c.tier||"gold")}" data-trp="${trEsc(i.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[c.ic]||ACH_ICONS.trophy}"/></svg><b>${trEsc(c.title)}</b><small>${trEsc(c.kick)}${c.when?" · "+trEsc(c.when):""}</small></button>`;};
+  const by=s=>items.filter(i=>i.slot===s),shelf=items.filter(i=>i.slot==="shelf"||i.slot==="pennant");
+  const T=tropBook(),h=cfgHash(S.cfg),on=T.retired.some(e=>e.h===h);
+  let o=`<div class="trret"><button class="btn sm info" data-tra="retire">${on?"Update this build's plaque":"Retire this build to the room"}</button><small>${trEsc(engineName())} — a snapshot of the build, its peak and best results, on an engine stand. Up to ${TR_STANDS} on stands, the rest listed.</small></div>`;
+  o+=sec("Trophies",shelf,card,"Empty shelf — go win something: a race night, a pull, a bog, a salt record or a 24 h podium.");
+  o+=sec("Record slips",by("slip"),card,"No records yet — a dyno pull or a pass on the strip starts the wall.");
+  o+=sec("Engines on stands",eng,e=>`<button class="trc eng" data-trp="${trEsc(e.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS.gauge}"/></svg><b>${trEsc(e.name)}</b><small>${trEsc(e.sub)}${T.retired.indexOf(e.src)>=TR_STANDS?" · in storage":""}</small></button>`,"No retired engines — retire a build you're proud of.");
+  o+=sec("Medals",by("medal"),card,"No achievements yet.");
+  if(career())o+=sec("Shop goals",by("cert"),card,"No goals completed yet.");
+  $("trList").innerHTML=o;}
+/* ---- share images: a plaque, or a photo of the room ---- */
+async function tropShareCanvas(c,fn,title){const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob){toast("Couldn't make the picture here");return;}
+  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  if(dl){try{await dl.save({filename:fn,data:blob});toast("Picture saved");}catch(e){if(e&&e.code!=="declined")toast("Couldn't save the picture here");}return;}
+  const file=new File([blob],fn,{type:"image/png"});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});return;}catch(e){}}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fn;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
+const TR_TIER_COL={gold:"#d9a93a",silver:"#c9ced6",bronze:"#b06a34"};
+function tropPlaqueCanvas(id){const it=TR.map[id];if(!it)return null;const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  const F=(sz,w)=>`${w||600} ${sz}px "Chakra Petch","Barlow Condensed","Arial Narrow",sans-serif`,M=(sz,w)=>`${w||500} ${sz}px "IBM Plex Mono",Menlo,Consolas,monospace`;
+  let k,t,what,when,nums,foot,tier="gold",ic="trophy";
+  if(it.eng){const e=it.eng.src;k="RETIRED ENGINE";t=e.name;what=e.label||"";when=trWhen(e);nums=[["Peak",Math.round(e.hp||0).toLocaleString("en-CA")+" hp"],["Torque",Math.round(e.tq||0).toLocaleString("en-CA")+" Nm"],["Reliability",e.rel!=null?String(e.rel):"—"]].concat(e.best||[]);foot="";ic="gauge";}
+  else{const cd=it.card;k=cd.kick.toUpperCase();t=cd.title;what=cd.what;when=cd.when;nums=cd.nums||[];foot=[cd.veh,cd.eng].filter(Boolean).join(" · ");tier=cd.tier||"gold";ic=cd.ic||"trophy";}
+  {const g=x.createRadialGradient(W/2,H/2,200,W/2,H/2,900);g.addColorStop(0,"#2a2420");g.addColorStop(1,"#120f0c");x.fillStyle=g;x.fillRect(0,0,W,H);}
+  const L=120,R=960,T=150,B=1200;x.save();x.shadowColor="rgba(0,0,0,.6)";x.shadowBlur=40;x.shadowOffsetY=16;x.fillStyle="#3b2617";x.fillRect(L-30,T-30,R-L+60,B-T+60);x.restore();
+  {const g=x.createLinearGradient(0,T,0,B);g.addColorStop(0,"#e3c27a");g.addColorStop(.5,"#c59a4a");g.addColorStop(1,"#a77b33");x.fillStyle=g;x.fillRect(L,T,R-L,B-T);}
+  x.strokeStyle="rgba(59,38,23,.7)";x.lineWidth=4;x.strokeRect(L+22,T+22,R-L-44,B-T-44);
+  const fit=(s,font,max)=>{x.font=font;s=String(s==null?"":s);while(s.length>3&&x.measureText(s).width>max)s=s.slice(0,-2)+"…";return s;};
+  const ink="#2a1d12",ink2="#4e3a22";x.textAlign="center";
+  x.save();x.translate(W/2-60,T+70);x.scale(5,5);x.fillStyle=TR_TIER_COL[tier]||TR_TIER_COL.gold;x.strokeStyle=ink;x.lineWidth=0.9;try{const p=new Path2D(ACH_ICONS[ic]||ACH_ICONS.trophy);x.stroke(p);}catch(e){}x.restore();
+  x.fillStyle=ink2;x.fillText(fit(k,M(28,600),R-L-120),W/2,T+250);x.font=M(28,600);
+  x.fillStyle=ink;{let fz=72;x.font=F(fz,700);while(fz>44&&x.measureText(String(t)).width>R-L-110){fz-=4;x.font=F(fz,700);}x.fillText(fit(t,F(fz,700),R-L-110),W/2,T+340);}
+  x.fillStyle=ink2;const words=String(what||"").split(" ");let line="",y=T+410;x.font=F(32,500);for(const w of words){const tt=line?line+" "+w:w;if(x.measureText(tt).width>R-L-140){x.fillText(line,W/2,y);y+=42;line=w;if(y>T+500)break;}else line=tt;}if(line&&y<=T+500)x.fillText(line,W/2,y);
+  y=Math.max(y+70,T+560);x.textAlign="left";
+  for(const [a,b] of nums.slice(0,8)){x.fillStyle=ink2;x.font=M(28);x.fillText(fit(String(a).toUpperCase(),M(28),300),L+70,y);x.textAlign="right";x.fillStyle=ink;x.fillText(fit(b,M(34,600),440),R-70,y);x.textAlign="left";
+    x.strokeStyle="rgba(59,38,23,.35)";x.setLineDash([8,8]);x.lineWidth=2;x.beginPath();x.moveTo(L+70,y+18);x.lineTo(R-70,y+18);x.stroke();x.setLineDash([]);y+=62;}
+  x.textAlign="center";x.fillStyle=ink2;if(foot)x.fillText(fit(foot,F(30,600),R-L-120),W/2,B-130);x.fillText(fit(when||"",M(26),R-L-120),W/2,B-86);
+  x.fillStyle="#e8c27a";x.font=F(34,700);x.fillText("PRAIRIE ENGINE WORKS · TROPHY ROOM",W/2,H-50);return c;}
+function tropPhotoCanvas(){const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  x.fillStyle="#1b1611";x.fillRect(0,0,W,H);x.fillStyle="#f4f1e6";x.fillRect(60,60,W-120,H-120);
+  const shot=TR.gl&&ENGINE_VIS.trophyShot?ENGINE_VIS.trophyShot():null,pw=W-180,ph=980;
+  if(shot&&shot.width){const s=Math.max(pw/shot.width,ph/shot.height),sw=pw/s,sh=ph/s;x.drawImage(shot,(shot.width-sw)/2,(shot.height-sh)/2,sw,sh,90,90,pw,ph);}
+  else{x.fillStyle="#2c3b34";x.fillRect(90,90,pw,ph);x.fillStyle="#e8c27a";x.font='700 64px "Chakra Petch","Arial Narrow",sans-serif';x.textAlign="center";x.fillText("TROPHY ROOM",W/2,560);}
+  const T=tropBook(),c2=tropCounts(),med=Object.keys(S.ach||{}).length;x.textAlign="center";x.fillStyle="#2a1d12";x.font='700 46px "Chakra Petch","Barlow Condensed","Arial Narrow",sans-serif';
+  x.fillText("PRAIRIE ENGINE WORKS",W/2,1140);x.fillStyle="#6b6772";x.font='500 28px "IBM Plex Mono",Menlo,monospace';
+  x.fillText(`${c2.shelf} troph${c2.shelf===1?"y":"ies"} · ${med} medal${med===1?"":"s"} · ${T.retired.length} retired engine${T.retired.length===1?"":"s"}`,W/2,1195);
+  x.fillText(career()?"Career · week "+C().week:"Test cell",W/2,1240);return c;}
+/* ---- wiring ---- */
+document.addEventListener("click",e=>{const o=e.target.closest("[data-trophy]");if(o){e.preventDefault();tropOpen();return;}
+  if(!TR.open)return;const p=e.target.closest("[data-trp]");if(p){tropCard(p.dataset.trp);if(TR.gl&&window.matchMedia&&!deskOn())tropListShow(false);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(p.dataset.trp);return;}
+  const a=e.target.closest("[data-tra]");if(!a)return;const k=a.dataset.tra,id=a.dataset.id;
+  if(k==="close"){tropPick(null);}else if(k==="load")tropLoad(id);else if(k==="front")tropFront(id);else if(k==="remove")tropRemove(id);else if(k==="retire")tropRetire();
+  else if(k==="share"){(async()=>{try{await document.fonts.ready;}catch(err){}const c=tropPlaqueCanvas(id);if(c)tropShareCanvas(c,"trophy-plaque.png","Trophy plaque");})();}});
+$("trBack").addEventListener("click",tropClose);
+$("trListBtn").addEventListener("click",()=>tropListShow(!TR.list));
+$("trPhoto").addEventListener("click",async()=>{try{await document.fonts.ready;}catch(e){}tropShareCanvas(tropPhotoCanvas(),"trophy-room.png","Trophy room");});
+document.addEventListener("keydown",e=>{if(!TR.open)return;if(e.key!=="Escape"){e.stopPropagation();return;}e.preventDefault();e.stopPropagation();if(TR.sel)tropPick(null);else tropClose();},true);   // the bench's single-key shortcuts sleep while the room is open
+{const f=renderRecords;renderRecords=function(){f();tropCountSync();};const g=renderShop;renderShop=function(){g.apply(this,arguments);tropCountSync();};}
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
   {tab:"build",sel:"#presets",title:"Pick a starter engine",text:"The five green-tagged base engines use only parts your bay already has. Tap one — the Two-four truck four is a safe first sale."},
