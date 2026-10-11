@@ -31,7 +31,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.0
 #app.nomotion #view{transition:none}
 #app.mini #tag{display:none}
 #app.onstrip #tag{opacity:0;pointer-events:none;transition:opacity .25s}
-/* the run view (html.onevent, app/runview.js: any event scene is up — drag, pull, salt, mud bog, road test, 24 Hours — and the
+/* the run view (html.onevent, app/runview.js: any event scene is up — drag, pull, salt, mud bog, drag boats, road test, hillclimb, 24 Hours — and the
    Events tab is showing): a taller view, the header and SOUND/START/VIEW folded away. The strip camera lifts the picture clear
    of the HUD band along the view's bottom edge: --shud-h while the compact HUD overlay is up (html.shud), else --striphud
    (html.onstrip is the strip scene's own flag); the other scenes get their band through ENGINE_VIS.setBand */
