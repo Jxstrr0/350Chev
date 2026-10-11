@@ -101,7 +101,7 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick button:last-child:nth-child(odd){grid-column:1/-1}
 .evpick svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:break-word}   /* a long status ("needs Outlaw shop") wraps to a second line */
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
@@ -117,7 +117,7 @@ html.desk #stripCap{left:18px;top:16px}
 /* phone: the hold-to-run controls (strip, sled, salt, road) dock where the run button was, above the tab bar */
 html:not(.desk) #evCtls{position:sticky;bottom:-24px;z-index:6;margin:0 -16px;padding:0 16px;background:var(--soot)}
 html:not(.desk) #evCtls>div:not([style*="none"]){padding:8px 0}
-#tab-events:has(#dragCtl:not([style*="none"]),#pullCtl:not([style*="none"]),#saltCtl:not([style*="none"]),#bogCtl:not([style*="none"]),#boatCtl:not([style*="none"]),#roadCtl:not([style*="none"]),#e24Ctl:not([style*="none"])) #runDock{display:none}
+#tab-events:has(#dragCtl:not([style*="none"]),#pullCtl:not([style*="none"]),#saltCtl:not([style*="none"]),#bogCtl:not([style*="none"]),#boatCtl:not([style*="none"]),#roadCtl:not([style*="none"]),#e24Ctl:not([style*="none"]),#hillCtl:not([style*="none"])) #runDock{display:none}
 html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:10px 16px}
 /* the Advanced fold under an event's or test's essentials (open state per test type in S.advOpen) */
 .advf{margin:6px 0 10px}
@@ -258,6 +258,18 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .ph-row .peak{padding:8px 10px}.ph-row .peak b{font-size:20px}
 /* road test live card: speed · gear · lap clock · mini-map, the tach, sector splits */
 #roadCtl{margin-bottom:10px}
+#hillCtl{margin-bottom:10px}.hlh{grid-template-columns:auto auto 1fr auto}.hlh .rd-lt b{font-size:22px}.hl-bar{height:10px}.hl-bar .fill{background:linear-gradient(90deg,rgba(255,122,26,.3),rgba(255,122,26,.8))}
+.hl-next{margin-top:8px;display:grid;gap:4px;min-height:58px}.hl-c{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:6px 8px;font-size:13px;min-width:0}
+.hl-c.dim{opacity:.6;font-size:12px}.hl-c b{color:var(--chalk);white-space:nowrap;word-spacing:.14em}.hl-c span{color:var(--muted);font-family:var(--mono);font-size:11px}.hl-c em.dr{font-style:normal;color:var(--crit)}
+.hl-c i.call{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:1px 6px;border-radius:3px;border:1px solid var(--rule);color:var(--muted)}
+.hl-c i.call.dusty{color:var(--warn);border-color:var(--warn)}.hl-c i.call.grippy{color:var(--good);border-color:var(--good)}
+.hl-ev{border-radius:5px;padding:12px 10px;text-align:center;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.04em;border:1px solid var(--rule);background:var(--panel)}
+.hl-ev.bad{color:var(--crit);border-color:var(--crit)}.hl-ev.warn{color:var(--warn);border-color:var(--warn)}.hl-ev.good{color:var(--good);border-color:var(--good)}
+.hl-meters{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}.hl-meters .peak{min-width:0}.hl-mode.push{color:var(--good)}.hl-mode.lift{color:var(--warn)}.hl-mode.auto{color:var(--info)}
+.hlbtns{gap:8px;margin-top:8px}.hlbtns .btn{flex:1;min-height:64px;font-size:20px;flex-direction:column;gap:2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.hlbtns #hillPush{flex:1.6}
+.hlbtns .btn small{display:block;font-size:11px;letter-spacing:.4px;opacity:.75;font-weight:400}.hlbtns #hillLift.on{background:var(--warn);color:#1b1a17;border-color:var(--warn)}.hlbtns #hillPush.on{background:var(--good);border-color:var(--good)}
+.hlprof{display:block;width:100%;height:56px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
+.rtop.hlsplit div{grid-template-columns:18px minmax(0,1fr) auto auto 58px}.rdbtns #hillSkip{flex:1.2}.rdbtns #hillSpdB{flex:.8}.rdbtns #hillCamB{flex:1.5}
 .rdh{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:end;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px 10px}
 .rdh b{display:block;font-family:var(--display);font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 .rdh i{display:block;font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
@@ -711,7 +723,7 @@ html.desk #app.onstrip #rpmbox{bottom:auto;top:80px}
 html.desk #chart{height:260px}
 html.desk #toast{left:calc((100% - var(--sbw))/2);bottom:auto;top:84px;max-width:min(560px,calc(100% - var(--sbw) - 40px))}
 /* drag strip, truck pull, salt flats and road test: their controls dock bottom-centre over the big view, in the view's dark ink */
-html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #bogCtl,html.desk #boatCtl,html.desk #roadCtl,html.desk #e24Ctl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #bogCtl,html.desk #boatCtl,html.desk #roadCtl,html.desk #e24Ctl,html.desk #hillCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
 html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}
