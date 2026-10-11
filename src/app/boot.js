@@ -14,7 +14,7 @@ let lastT=performance.now(),idleRpm=0,idleTarget=0,visRpm=0,visLoad=0,alsHot=0;
 const AB={A:null,B:null,playing:null,rpm:4000,load:1};
 function abLabel(cfg){if(!cfg)return"empty";
   const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
-  return `${cfg.layout} ${(r.Vd/1000).toFixed(1)}L · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
+  return `${cfg.layout} ${fmtDisp(r.Vd/1000,"")} · ${Math.round(r.peakHp)}hp · ${OPT.asp[cfg.asp].name.split(" ")[0]}`;}
 function abRender(){
   $("abAname").textContent=AB.A?abLabel(AB.A):"empty";
   $("abBname").textContent=AB.B?abLabel(AB.B):"empty";
@@ -111,6 +111,7 @@ function tick(now){
     const wi=quick?wearInfo(quick):null;let dx=null;
     if(testing&&DR&&DR.d&&S.env.testType==="drag"&&!DR.failed){const st=DR.d.st;boostBar=st.boost*(on?1:0);
       dx={twoStep:{on:!!st.launch.armed&&st.launch.twoStep,retard:st.launch.retard},pops:st.launch.pops,als:st.als||0,tyre:st.phase==="burnout"&&st.burning?1:st.spin&&st.phase==="run"?0.55:0};}
+    if(testing&&HC&&HC.run&&!HC.finished&&S.env.testType==="hill"){const st=HC.run.st,q=HC.prep.pts[0];boostBar=(q.boost>0?q.boost*Math.min(1,st.thr+0.1):0)*(on?1:0);dx={tyre:st.off?0.5:st.latUse>0.97&&st.v>15?0.25:0};}   // the hillclimb: boost while it is on the throttle, tyre noise at the limit
     if(testing&&RT&&!RT.finished&&S.env.testType==="road"){boostBar=(RT.bst||0)*(on?1:0);dx={tyre:RT.slip||0};}   // the road test: boost and tyre noise from the lap trace
     if(testing&&SR&&SR.p&&S.env.testType==="salt"&&!SR.failed){const st=SR.p.st;dx={tyre:st.phase==="run"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*3)):st.phase==="spin"?0.8:0};}
     if(testing&&BR&&BR.p&&S.env.testType==="bog"&&!BR.failed){const st=BR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase!=="stage"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*1.6))*(st.phase==="pit"?0.8:1):0};}   // the mud bog: boost from the run, tyre noise from the wheelspin
@@ -200,10 +201,12 @@ function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
 const tipEl=document.createElement("div");tipEl.id="tip";tipEl.setAttribute("role","tooltip");document.body.appendChild(tipEl);
 let tipT=null,tipOn=null;
 function tipHide(){clearTimeout(tipT);tipT=null;tipOn=null;tipEl.classList.remove("on");}
+setInterval(()=>{if(tipOn&&tipOn.id==="gl"&&ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene())tipHide();},400);   // an event scene took the canvas under the orbit hint
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
 const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
-function tipText(el){if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
+function tipText(el){if(el.dataset.tip)return el.dataset.tip;if(el.id==="gl"&&(ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()||document.documentElement.classList.contains("onstrip")||$("app").classList.contains("pits")))return "";   // the orbit hint is for the engine stand only
+  if(KEY_TIP[el.id])return KEY_TIP[el.id];
   if(el.matches("#tabs button")){const i=TAB_KEYS.indexOf(el.dataset.tab);return i<0?"":`${el.textContent.trim()} <kbd>${i+1}</kbd>`;}
   if(el.matches("#buildForm .seg button[data-k][data-v]")){const f=sliderField(el.dataset.k),o=f&&(OPT[f.optTable||f.key]||{})[el.dataset.v];if(!o)return "";
     return `<b>${o.name}</b>${o.cost?` · $${o.cost.toLocaleString("en-CA")}`:""}${o.info?"<br>"+o.info:o.sub?"<br>"+o.sub:""}${el.dataset.req?`<br><b>Needs ${el.dataset.req}</b>`:""}`;}
@@ -240,12 +243,13 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
 const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
-function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(BR&&!BR.finished&&$("bogCtl").style.display!=="none")return "bog";if(BT&&!BT.finished&&$("boatCtl").style.display!=="none")return "boat";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
+function holdKind(){if(DR&&DR.d&&$("dragCtl").style.display!=="none")return "drag";if(SR&&!SR.finished&&$("saltCtl").style.display!=="none")return "salt";if(BR&&!BR.finished&&$("bogCtl").style.display!=="none")return "bog";if(BT&&!BT.finished&&$("boatCtl").style.display!=="none")return "boat";if(HC&&!HC.finished&&$("hillCtl").style.display!=="none")return "hill";if(PR&&!PR.finished&&$("pullCtl").style.display!=="none")return "pull";if(RT&&!RT.finished&&$("roadCtl").style.display!=="none")return "road";return null;}
 let spaceHeld=null;
-function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}else if(k==="bog"&&BR){BR.lastPtr=performance.now();bogRelease();}else if(k==="boat"&&BT){BT.lastPtr=performance.now();boatRelease();}}
+function spaceUp(cancel){const k=spaceHeld;spaceHeld=null;if(k==="drag"&&DR){DR.lastPtr=performance.now();dragRelease(!!cancel);}else if(k==="pull"&&PR){PR.lastPtr=performance.now();pullRelease();}else if(k==="salt"&&SR){SR.lastPtr=performance.now();saltRelease();}else if(k==="bog"&&BR){BR.lastPtr=performance.now();bogRelease();}else if(k==="boat"&&BT){BT.lastPtr=performance.now();boatRelease();}else if(k==="hill"&&HC){HC.lastPtr=performance.now();hillRelease("push");}}
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;const k=e.key;
   if(k===" "||k==="Spacebar"){const h=holdKind();if(!h)return;e.preventDefault();if(e.repeat||spaceHeld)return;spaceHeld=h;
     if(h==="road"){roadSkip();return;}
+    if(h==="hill"){HC.lastPtr=performance.now();hillPress("push");return;}
     if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else if(h==="bog"){BR.lastPtr=performance.now();bogPress();}else if(h==="boat"){BT.lastPtr=performance.now();boatPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
   if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
