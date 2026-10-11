@@ -38,7 +38,7 @@ function acceptContract(k,from){if(C().contracts.length>=MAX_ACTIVE){toast(`Two 
 function priceBoost(){let b=1;if(staffed("sales"))b*=1.06;if(career()&&C().prestige.display)b*=1.03;return b;}
 const REQ_LABEL={rot:["Engine",v=>"Wankel rotary"],ts:["Engine",v=>"Two-stroke"],hp:["Power",v=>`≥ ${v} hp`],tq:["Torque",v=>`≥ ${v} Nm`],tqrpm:["Torque peak",v=>`≤ ${(+v).toLocaleString()} rpm`],
   econ:["Economy",v=>`≤ ${v} L/100km`],fuel:["Fuel",(v,x)=>v==="diesel"?"Diesel":x&&x.spec?`${fuelShort(v)} only · control fuel`:isGasF(v)?`${fuelShort(v)} only`:`${fuelShort(v)} or ${x&&x.dsl?"diesel":"lower"}${x&&x.gas?" · LPG/CNG":""}`],rel:["Reliability",v=>`≥ ${v}`],smoke:["Smoke",v=>`≤ ${v}%`],noise:["Noise",v=>`≤ ${v} dB`],
-  smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${(+v).toFixed(1)} L`],
+  smooth:["Smoothness",v=>`≥ ${v}`],kg:["Weight",v=>`≤ ${v} kg`],disp:["Displacement",v=>`≤ ${+v<1?fmtDisp(+v):(+v).toFixed(1)+" L"}`],
   cyl:["Cylinders",v=>`≥ ${v}`],life:["Service life",v=>`≥ ${(+v).toLocaleString()} h`],
   passes:["Passes to freshen",v=>`≥ ${v}`],car:["Their car",v=>`${SIM.AERO[v.body].n} · ${v.mass} kg · ${SIM.TYRES[v.tyre].n.toLowerCase()}`],et:["Quarter mile",v=>`≤ ${(+v).toFixed(2)} s`],lsr:["Their car",v=>`${(SIM.LSR_BODIES[v.body]||{}).n||"car"} · long course`],mph:["Timed mile",v=>`≥ ${v} mph`],
   lap:["Lap time",(v,x)=>`≤ ${fmtLap(+v)} · ${(SIM.ROAD_TRACKS[x&&x.road&&x.road.trk]||SIM.ROAD_TRACKS.club).n} in ${roadCarTxt(x&&x.road)}`],zero100:["0–100 km/h",(v,x)=>`≤ ${(+v).toFixed(1)} s in ${roadCarTxt(x&&x.road)}`]};
@@ -83,7 +83,7 @@ function fits(k,res,cfg){
   if(r.rot!=null){const ro=isRot(c);add("rot",ro,ro?"rotary":"pistons",ro?1:0.1);}
   if(r.ts!=null){const t2=isTs(c);add("ts",t2,t2?"two-stroke":"four-stroke",t2?1:0.1);}
   const dispL=res.Vd/1000*(res.rotary?ROT_DISP:1);   // a rotary runs in a displacement class at 1.5x its quoted size
-  if(r.disp!=null)add("disp",dispL<=r.disp+0.005,dispL.toFixed(2)+(res.rotary?" (×1.5)":""),le(dispL,r.disp+0.005));
+  if(r.disp!=null)add("disp",dispL<=r.disp+0.005,(dispL<1?fmtDisp(dispL):dispL.toFixed(2))+(res.rotary?" (×1.5)":""),le(dispL,r.disp+0.005));
   if(r.cyl!=null)add("cyl",res.n>=r.cyl,res.n,ge(res.n,r.cyl));
   if(r.life!=null)add("life",res.lifeHours>=r.life,res.lifeHours.toLocaleString(),ge(res.lifeHours,r.life));
   if(r.passes!=null)add("passes",res.racePasses>=r.passes,res.racePasses,ge(res.racePasses,r.passes));

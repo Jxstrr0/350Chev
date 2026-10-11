@@ -101,7 +101,7 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick button:last-child:nth-child(odd){grid-column:1/-1}
 .evpick svg{grid-row:1/3;width:24px;height:24px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:break-word}   /* a long status ("needs Outlaw shop") wraps to a second line */
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}

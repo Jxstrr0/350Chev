@@ -240,7 +240,8 @@ function dragAutoStep(now){const d=DR.d,H=SIM.DRAG_TICK;let st=d.st;if(now-DR.vt
 function dragAutoDo(a,vt){const d=DR.d;
   if(a==="burn")d.burn(true);else if(a==="unburn")d.burn(false);else if(a==="stage")dragStage();else if(a==="purge")n2oPurge(true);else if(a==="unpurge")n2oPurge(false);
   else if(a==="arm"){if(d.arm())buzz([20]);}else if(a==="shift")d.shift();else if(a==="go"){const l=DR.last;dragGo(vt);DR.last=l;}}
-function dragTakeOver(){const d=DR.d,st=d.st;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+function dragTakeOver(){const d=DR.d,st=d.st,R=DR.race;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+  DR.tookPre=st.phase==="burnout"||st.phase==="staged"&&(!R||R.tree0==null||performance.now()<R.tree0);   // took it before the tree lit: the light is yours
   if(st.burning)d.burn(false);DR.downAt=null;if(st.launch.armed)d.disarm();if(st.n2oS&&st.n2oS.purging)n2oPurge(false);$("dragBtn").dataset.k="";
   toast(st.phase==="run"?(DR.veh.auto?"You have it — the box shifts itself":"You have it — tap to shift"):st.phase==="burnout"?"You have it — hold to burn out, tap to stage":"You have it — "+(d.canArm?"hold to arm, let go on the green":DR.race?"tap on the green":"tap to go"));buzz([20]);}
 function dragAutoWord(a){return a.took==null?"Auto driver — the whole pass":"Auto driver — you took over "+(typeof a.took==="number"?"at "+a.took+" ft":a.took==="burnout"?"in the water box":"on the line");}
@@ -306,13 +307,15 @@ function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
   if(st.done&&!N.ended){N.ended=true;if((S.env.n2oHeater||"on")!=="on"&&z.on){N2OB.cooled=N2OB.cooled*Math.exp(-(Date.now()-N2OB.t)/1200000)+1.8;N2OB.t=Date.now();}if(soundReady)ENGINE_SOUND.nitrous(null);ENGINE_VIS.stripN2O(null);if(b)b.style.display="none";}}
 function n2oSlip(n){const g=["1st","2nd","3rd","4th","5th","6th","7th"][Math.max(0,(n.onGear||1)-1)];
   return `${n.shotHp} shot ${n.cut?"cut by a backfire":n.on?`on ${n.act==="window"?"at the window":"at "+n.onMph+" mph"} in ${g}`:"never came on"} · ${n.psi.toLocaleString("en-CA")} psi${n.purged>0.3?` after a ${n.purged.toFixed(1)} s purge`:" · not purged"}`;}
-/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay */
+/* P: purge while staged on the strip (hold); anywhere else with a kit fitted, a puff in the engine bay.
+   While the auto driver has the car, P does nothing: the auto driver purges for itself and its PURGE button is hidden too
+   (a tap on the big button or Space is how you take over) */
 document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target)||e.key.toLowerCase()!=="p"||e.repeat)return;
-  if(holdKind()==="drag"&&DR&&DR.n2o){n2oPurge(true);e.preventDefault();return;}
+  if(holdKind()==="drag"&&DR&&DR.n2o){if(!DR.auto)n2oPurge(true);e.preventDefault();return;}
   if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
-document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
+document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o&&!DR.auto)n2oPurge(false);});
 function dragFinish(){
-  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took}:{};const failed=DR.failed;const same=testSame(snap);
+  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took,pre:!!DR.tookPre}:{};const failed=DR.failed;const same=testSame(snap);
   const leave=()=>{if(testing)return;const b=ENGINE_VIS.stripBusy?ENGINE_VIS.stripBusy():0;if(b>0){setTimeout(leave,Math.min(1000,b*1000+60));return;}ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");};
   setTimeout(leave,2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)sfx("bov");

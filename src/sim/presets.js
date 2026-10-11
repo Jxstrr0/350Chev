@@ -1149,9 +1149,9 @@
       blurb: "Three loop-scavenged cylinders on a piston-port crankcase, one Solex carburettor and 33:1 in the tank. It rallied, it smoked, and it goes 'ring-ding-ding' at idle like nothing else on four wheels.",
       soundProfile: null, realHp: 38, realRpm: 5000, realNm: 79,
       cfg: {
-        cycle: "two", layout: "I3", bore: 70, stroke: 72.9, rodRatio: 1.85, cr: 5.8, ccr: 1.25, blockMat: "grey_iron", deck: "open", headMat: "alu",
+        cycle: "two", layout: "I3", bore: 70, stroke: 72.9, rodRatio: 1.85, cr: 5.8, ccr: 1.16, blockMat: "grey_iron", deck: "open", headMat: "alu",
         piston: "cast_alu", pistonClearance: "standard", rings: "cast", rod: "cast_steel", rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "bimetal",
-        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 126, tPort: 112, pv: "none", redline: 5500, induct: "piston", tsFuel: "carb",
+        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 134, tPort: 124, pv: "none", redline: 5500, induct: "piston", tsFuel: "carb",
         asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 5000,
         fuel: "r87", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.90, lube: "premix", premix: 33, cooling: "std", cover: "silver",
         head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
@@ -1161,9 +1161,9 @@
       blurb: "594 cc, two air-cooled cylinders, a piston-port crankcase and a single carburettor, built for thirty years with hardly a change. Twenty-six horsepower, a cloud of blue and a sound like a two-stroke lawnmower with ambition.",
       soundProfile: null, realHp: 26, realRpm: 4200, realNm: 54,
       cfg: {
-        cycle: "two", layout: "I2", bore: 72, stroke: 73, rodRatio: 1.85, cr: 5.8, ccr: 1.25, blockMat: "grey_iron", deck: "open", headMat: "alu",
+        cycle: "two", layout: "I2", bore: 72, stroke: 73, rodRatio: 1.85, cr: 5.8, ccr: 1.16, blockMat: "grey_iron", deck: "open", headMat: "alu",
         piston: "cast_alu", pistonClearance: "standard", rings: "cast", rod: "cast_steel", rodBolts: "oem", crank: "cast_nodular", damper: "rubber", bearings: "bimetal",
-        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 118, tPort: 108, pv: "none", redline: 4500, induct: "piston", tsFuel: "carb",
+        gasket: "composite", studs: "bolts_tty", scav: "loop", ePort: 128, tPort: 116, pv: "none", redline: 4500, induct: "piston", tsFuel: "carb",
         asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 4200,
         fuel: "r87", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.92, lube: "premix", premix: 33, cooling: "std", cover: "blue",
         head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
