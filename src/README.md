@@ -64,6 +64,7 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 | `vis/pits.js` | race-night pits vignette |
 | `vis/pull.js` | pull track scene (fairground, sled, chain, camera) |
 | `vis/bog.js` | mud bog scene |
+| `vis/bog-pit.js` | mud bog pit: the sim's pit as a heightfield (depth, ridges, ruts, water), ruts, mud shader detail, berms |
 | `vis/road.js` | road course scene |
 | `vis/salt.js` | salt flats scene |
 | `vis/hill.js` | Pikes Peak scene: heightfield mountain round the road, verges, guardrails, pines and boulders, summit house, thin-air sky, chase/heli/trackside cameras |

@@ -308,6 +308,7 @@ function bogTruck(cls, tyre, color, hw){
     var w2=bogtWheel(r, tw, rimR, kind, s, style, hub, mats, lite); w2.position.set(wb, r, s*trR); body.add(w2); U.wheelsF.push(w2.userData.spin);
   }
   U.rr=r; U.rf=r; U.wr=tw; U.trR=trR; U.wb=wb; U.pivot=pivot; U.body=body; U.mats=mats; U.k=1;
+  U.frameY=cls==="street"?0.58:0.96;   /* frame rail bottoms above the contact patch: the belly / high-centre test (bogFrameY) */
   U.hitch=new THREE.Vector3(back,0.7,0); U.front=front; U.back=back; U.mid=wb/2; U.top=top; U.len=front-back; U.width=2*(trR+tw/2); U.maxPitch=0.085; U.bars=null;
   U.livNum=String(((color>>>0)%89)+11); U.livDecal=body.children.filter(function(c){ return c.material===mats.decal; })[0]||null; U.livSpots=livSpots;
   /* blob/contact shadow: four tyre patches and the chassis, on the ground under the truck (placed every frame by bogTruckFrame) */
@@ -331,7 +332,7 @@ function bogtBlob(U){
 /* per frame (from bogUpdate): keep the blob on the ground/mud under the truck, the flagman's flag, the night spots off the run-up */
 function bogTruckFrame(V, o, dt){
   var U=V.userData, ph=o.phase||"stage", x=+o.x||0, len=+o.len||70;
-  if(U.blob){ var inPit=x>-0.3 && x-U.wb<len+0.3, gy=inPit?-0.05:0.012; U.blob.position.y=gy-V.position.y;
+  if(U.blob){ var gy=(typeof bogPitLevel==="function"?bogPitLevel(x-U.wb/2):(x>-0.3&&x-U.wb<len+0.3?-0.07:-0.02))+0.03; U.blob.position.y=gy-V.position.y;   /* on the dug mud (vis/bog-pit.js) or the run-up */
     var lite=GFX==="lite"; if(U.blob.userData.lite!==lite){ U.blob.userData.lite=lite; U.blob.material.opacity=lite?0.62:0.34; }
     U.blob.material.opacity=(lite?0.62:0.34)*clamp(1-Math.max(0,+o.y||0)*1.4,0.25,1); }
   if(BOGT.flagman){ var F=BOGT.flagman;
@@ -340,17 +341,6 @@ function bogTruckFrame(V, o, dt){
     BOGT.poseT+=dt; var pose=ph==="stage"?((BOGT.poseT%0.7)<0.35?0:1):(ph==="runup"&&x<sx+12?2:3);
     if(pose!==BOGT.pose){ BOGT.pose=pose; F.geometry=F.userData.poses[pose]; } }
   if(BOG.night){ var cxm=BOG.camTgt.x, kk=lerp(0.5,1,clamp((cxm+6)/14,0,1)); BOG.spots.forEach(function(s2){ s2.intensity=1.6*kk; }); BOG.flood.intensity=(GFX==="lite"?0.6:0.28)*lerp(0.7,1,kk); }   /* the light dirt run-up blew out under the poles */
-  if(BOG.lip){ var L2=+o.len||(o.pit&&o.pit.len)||70; if(BOG.lip.scale.x!==L2+1){ BOG.lip.scale.x=L2+1; BOG.lip.position.x=(L2+1)/2-0.5; } }
-}
-/* the pit's lip: a dark wet band along both long edges, over the strip of light ground before the berms and the lifted,
-   sun-catching rim of the mud (the bright "seam"); its inner edge fades out into the mud */
-function bogLip(S3){
-  var pl=new THREE.PlaneGeometry(1,1.25,1,1).rotateX(-PI/2), g=mergeGeos([{g:pl, m:mkM(0,0,BOG_W/2-0.05)},{g:pl, m:mkM(0,0,-BOG_W/2+0.05)}]), P=g.attributes.position, UV=g.attributes.uv;
-  for(var i=0;i<P.count;i++) UV.setXY(i, 0.5, clamp((Math.abs(P.getZ(i))-(BOG_W/2-0.68))/0.45,0,1));
-  var c=newCanvas(4,64), x=c.getContext("2d"), gr=x.createLinearGradient(0,0,0,64); gr.addColorStop(0,"rgba(36,24,15,1)"); gr.addColorStop(1,"rgba(36,24,15,0)"); x.fillStyle=gr; x.fillRect(0,0,4,64);
-  var t=bogtCanvasTex(c); t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;
-  var m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:0xffffff, map:t, transparent:true, depthWrite:false, roughness:0.6, metalness:0, envMapIntensity:0.4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}));
-  m.position.set(35,-0.006,0); m.scale.x=71; m.receiveShadow=true; m.renderOrder=1; S3.add(m); BOG.lip=m;
 }
 /* stage framing: the whole truck in frame whatever the aspect (phone portrait canvas is narrow), a slow push in */
 function bogFitDist(U, fov){
@@ -398,7 +388,7 @@ function bogProps(B, S3, lite){
     for(var q=0;q<4;q++) B.add("solid","cyl",[sx+(q&1?0.55:-0.55), 0.3, sz+(q&2?0.62:-0.62)],[0.6,0.26,0.6],0x1a1a1c,[PI/2,0,0]);
     B.box("solid", sx, 0.75, sz, 1.6, 0.6, 1.1, Y); B.box("solid", sx-0.15, 1.4, sz, 0.9, 0.75, 0.9, 0x2a2c2f); B.box("solid", sx-0.15, 1.8, sz, 1.0, 0.06, 1.0, Y);
     B.box("solid", sx+1.2, 0.35, sz, 0.6, 0.45, 1.5, 0x3a3d42); for(var s=-1;s<=1;s+=2) B.box("solid", sx+0.6, 0.85, sz+s*0.6, 1.1, 0.12, 0.1, Y);
-  })(30, BOG_W/2+11.2);
+  })(-9.5, BOG_W/2+5.6);   /* by the start, clear of the far berm (vis/bog-pit.js bogPitBerms starts at x=-6) */
   if(!lite) bogBuild(B,"props", BOG.mats.solid, false);   /* Full/Ultra: the bank props in their own draw, out of the shadow pass */
 }
 /* the flagman at the start line: green flag up (waving: two poses), flag down the lane on "go", flag lowered */
