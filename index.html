@@ -869,7 +869,8 @@ html.evhud #rpmbox{display:none!important}
 #evHud .pobanner,#evHud .rawarn,#evHud .ph-row{grid-column:1/-1}
 #evHud .pobanner{font-size:11px;color:var(--warn);margin-bottom:4px}#evHud .pobanner b{margin-right:6px}
 #evHud .rawarn{border:1px solid var(--crit);border-radius:5px;padding:4px 8px;margin-bottom:6px;background:rgba(226,71,60,.14)}
-#evHud .ph-top b{font-size:27px}#evHud .ph-top b i{font-size:13px}#evHud .ph-top span{font-size:10.5px;line-height:1.25}
+#evHud .ph-top b{font-size:27px}#evHud .ph-top b i{font-size:13px}#evHud .ph-top span{font-size:10px;line-height:1.25;letter-spacing:.03em}
+#evHud .ph-lbl span:first-child:nth-last-child(3){display:none}   /* the scale's "0" / "start": the bar says it */
 #evHud .ph-bar{height:7px;margin-top:4px;border-radius:2px}
 #evHud .ph-lbl{font-size:10.5px;margin-top:3px;gap:6px;white-space:nowrap;overflow:hidden}#evHud .ph-lbl span{overflow:hidden;text-overflow:ellipsis;min-width:0}
 #evHud .ph-row{display:flex;gap:14px;margin:6px 0 0;padding-top:5px;border-top:1px solid var(--rule)}
@@ -884,7 +885,8 @@ html.evhud #rpmbox{display:none!important}
 #evHud .e24c b,#evHud .e24p b{font-size:22px}
 #evHud .e24gp{border-top-color:var(--rule);padding-top:4px}
 #evHud .e24prog{margin-top:4px;height:5px}#evHud .e24sc{margin-top:4px;padding:1px 0;font-size:11px}
-#evHud .e24g{gap:4px;margin-top:4px}#evHud .e24g>div{padding:3px 6px}#evHud .e24g b{font-size:15px}#evHud .e24g span{font-size:9.5px}#evHud .e24g i{font-size:10px}
+#evHud .e24g{gap:3px 4px;margin-top:4px}#evHud .e24g>div{padding:2px 6px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:5px}#evHud .e24g b{font-size:14px;line-height:1.2}#evHud .e24g span{font-size:9px}#evHud .e24g .ph-bar{flex:1 0 100%;height:3px;margin-top:2px}
+html:not(.desk) #evHud .e24g i{display:none}html.desk #evHud .e24g i{font-size:10px;flex:1 0 100%}   /* phone: the reading only, the notes stay for the desktop bar */
 html.desk #evHud{left:18px;right:auto;bottom:16px;width:min(720px,calc(100% - min(320px,34%) - 56px));padding:10px 14px 9px;border-radius:10px;background:rgba(15,17,20,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45)}
 html.desk #evHud .ph-top b{font-size:34px}html.desk #evHud .ph-lbl{font-size:11.5px}html.desk #evHud .ph-row .peak b{font-size:19px}
 html.desk #evHud .rd-spd b{font-size:40px}html.desk #evHud .rd-map,html.desk #evHud .e24map{width:110px;height:78px}html.desk #evHud .e24c b,html.desk #evHud .e24p b{font-size:30px}
