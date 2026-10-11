@@ -394,8 +394,8 @@ function stripExhaust(o, dt, car, isP){
   if(E.alN>0){ E.al-=dt;
     if(E.al<=0){ E.al=0.045+Math.random()*0.045; E.alN--;
       for(t=0;t<u._tips.length;t++){ car.localToWorld(_sfA.copy(u._tips[t])); _sfD.copy(u._dirs[t]).applyQuaternion(car.quaternion);
-        var ln=(E.al0?1.7:1.1)+Math.random()*0.6;
-        stripCone(FA, FF, _sfA, _sfD, v*0.9, ln, E.al0?0.32:0.24, 1.0, 0.55, 0.18, 1.15, lite);
+        var ln=(E.al0?2.3:1.6)+Math.random()*0.7;   /* longer and hotter than a shift pop, so it reads in daylight */
+        stripCone(FA, FF, _sfA, _sfD, v*0.9, ln, E.al0?0.36:0.29, 1.0, 0.4, 0.08, 1.6, lite);
         FA.emit(_sfA.x+_sfD.x*0.08, _sfA.y+_sfD.y*0.08, _sfA.z+_sfD.z*0.08, v*0.9, 0, 0, 0.06, 0.3, E.al0?0.75:0.5, 1.0, 0.66, 0.3, 0.9, {drag:0, fin:0.01, spin:0});
         if(E.al0) for(i=0;i<(lite?1:2);i++) FX.emit(_sfA.x+_sfD.x*1.0, _sfA.y+0.3, _sfA.z+_sfD.z*1.0, v*0.6+_sfD.x*2, 1.0+Math.random(), _sfD.z*2+(Math.random()-0.5),
           1.0+Math.random()*0.5, 0.4, 1.7+Math.random()*0.8, 0.14, 0.13, 0.13, 0.42, {drag:1.3, buoy:0.6, fin:0.1});

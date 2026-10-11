@@ -32,7 +32,10 @@ function bogFxSplatTex(){
 function bogFxSheetTex(){
   var W=128, H=256, c=newCanvas(W,H), x=c.getContext("2d"), i, R=Math.random;
   x.clearRect(0,0,W,H);
-  for(i=0;i<260;i++){ var px=R()*W, py=R()*H, rw=1+R()*4.5, rh=rw*(2+R()*6), sh=150+Math.floor(R()*105), al=0.5+R()*0.5;
+  /* a dense body first (the sheet reads as a mass of mud, not a curtain of streaks), the streaks over it */
+  for(i=0;i<90;i++){ var bx=R()*W, by=R()*H, br=6+R()*12, bs=110+Math.floor(R()*50); x.fillStyle="rgba("+bs+","+bs+","+bs+",0.55)"; x.beginPath(); x.ellipse(bx,by,br,br*(1.5+R()*2),0,0,TAU); x.fill();
+    if(bx<br) { x.beginPath(); x.ellipse(bx+W,by,br,br*2,0,0,TAU); x.fill(); } if(bx>W-br){ x.beginPath(); x.ellipse(bx-W,by,br,br*2,0,0,TAU); x.fill(); } }
+  for(i=0;i<420;i++){ var px=R()*W, py=R()*H, rw=1+R()*4.5, rh=rw*(2+R()*6), sh=120+Math.floor(R()*100), al=0.65+R()*0.35;
     x.fillStyle="rgba("+sh+","+sh+","+sh+","+al.toFixed(2)+")"; x.beginPath(); x.ellipse(px,py,rw,rh,0,0,TAU); x.fill();
     if(px<rw*2){ x.beginPath(); x.ellipse(px+W,py,rw,rh,0,0,TAU); x.fill(); } if(px>W-rw*2){ x.beginPath(); x.ellipse(px-W,py,rw,rh,0,0,TAU); x.fill(); } }
   var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
@@ -120,7 +123,7 @@ function BogSheet(slots){
   m.onBeforeCompile=function(sh){
     sh.vertexShader="attribute float aA; attribute float aE; varying float vMA; varying float vME;\n"+sh.vertexShader.replace("#include <begin_vertex>","#include <begin_vertex>\n vMA=aA; vME=aE;");
     sh.fragmentShader="varying float vMA; varying float vME;\n"+sh.fragmentShader.replace("#include <map_fragment>",
-      "#ifdef USE_MAP\n vec4 texelColor=texture2D(map,vUv); diffuseColor.rgb*=0.55+0.6*texelColor.rgb; diffuseColor.a*=smoothstep(vME,vME+0.14,texelColor.a)*vMA;\n if(diffuseColor.a<0.01) discard;\n#endif");
+      "#ifdef USE_MAP\n vec4 texelColor=texture2D(map,vUv); diffuseColor.rgb*=0.5+0.5*texelColor.rgb; diffuseColor.a*=smoothstep(vME,vME+0.14,texelColor.a)*vMA;\n if(diffuseColor.a<0.01) discard;\n#endif");
   };
   m.customProgramCacheKey=function(){ return "bog_sheet"; };
   this.mat=m; this.mesh=new THREE.Mesh(g,m); this.mesh.frustumCulled=false; this.mesh.renderOrder=6; this.mesh.visible=false;
@@ -212,7 +215,7 @@ function bogFxUpdate(o, dt, V){
   var inPit=ph==="pit"||(ph==="done"&&x>0&&x<len), running=ph==="pit", sink=clamp(+o.sink||0,0,1.2);
   var rr=(U.rr||0.55)*k, wr=(U.wr||0.42)*k, trR=(U.trR||0.93)*k, trF=(U.trF||U.trR||0.93)*k, wb=(U.wb||3.65)*k, rx=V.position.x, fx=rx+wb, by=V.position.y;
   var mc=o.cons>0.5?[0.1,0.072,0.05]:[0.115,0.07,0.04]; BOGFX.mudC=mc;
-  if(Sh) Sh.mat.color.setRGB(mc[0]*0.9, mc[1]*0.9, mc[2]*0.9);
+  if(Sh) Sh.mat.color.setRGB(mc[0]*0.5, mc[1]*0.5, mc[2]*0.5);   /* darker than the clods: a thick sheet is in its own shadow */
   /* light for the clods: the sun (or the flood at night) and the sky */
   if(BOG.night){ BOGFX.sunC.setRGB(1.0,0.93,0.82).multiplyScalar(0.9); BOGFX.ambC.setRGB(0.24,0.23,0.22); }
   else { BOGFX.sunC.copy(BOG.sun.color).multiplyScalar(BOG.sun.intensity*0.6); BOGFX.ambC.copy(BOG.hemi.color).multiplyScalar(BOG.hemi.intensity*0.9).addScalar(0.14); }
@@ -264,7 +267,7 @@ function bogFxSheets(Sh, dt, q){
     var sp=clamp(2+q.ws*0.32+(q.ws-q.v)*0.6,3,9), lx=q.rx-q.rr*0.7, ly=q.by+q.rr*0.95, lz=s*q.trR, Tf=0;
     for(c=0;c<sl.cols;c++){ var u=c/(sl.cols-1), el=0.42+0.55*u, lat=(0.04+0.16*(1-u))*s, cv=Math.cos(el)*sp, sv=Math.sin(el)*sp, T=(sv+Math.sqrt(sv*sv+2*g*Math.max(0.1,ly)))/g, ef=Math.sin(u*PI);
       for(r=0;r<sl.rows;r++){ var f=r/(sl.rows-1), a=f*T, d=1-0.12*a, px=lx-cv*a*d, py=ly+sv*a-0.5*g*a*a, pz=lz+lat*sp*a*d+s*0.05*q.wr*Math.sin(c*1.7);
-        var al=Math.min(1,f*6)*Math.pow(1-f,0.9)*(0.2+0.8*ef)*clamp(q.amt*1.1,0,0.9);
+        var al=Math.min(1,f*6)*Math.pow(1-f,0.7)*(0.3+0.7*ef)*clamp(q.amt*1.4,0,1);
         if(py<BOGFX.mudY+0.02){ py=BOGFX.mudY+0.02; al=0; }
         Sh.set(sl, c, r, px, py, pz, al, 0.3+0.55*f+(1-ef)*0.2, u*1.3+side*0.37, f*2.2-t*2.4); } } }
   /* crown */
@@ -275,7 +278,7 @@ function bogFxSheets(Sh, dt, q){
       for(c=0;c<sc2.cols;c++){ var ua=(c/(sc2.cols-1))*2-1, phi=ua*1.95, H=3.6*C.sc*(0.72+0.28*Math.cos(phi)), vmax=Math.sqrt(2*g*H), ef2=Math.pow(Math.sin((ua*0.5+0.5)*PI),0.6);
         var bx=C.x+Math.cos(phi)*0.7, bz=Math.sin(phi)*(q.trF+q.wr*0.6);
         for(r=0;r<sc2.rows;r++){ var fr=0.2+0.8*r/(sc2.rows-1), vy=vmax*fr, hs=(1.6+3.0*fr)*Math.max(0.55,C.sc), vxx=C.v*0.45+Math.cos(phi)*hs, vzz=Math.sin(phi)*hs*1.15;
-          var py2=vy*T2-0.5*g*T2*T2, al2=ef2*Math.min(1,T2*14)*Math.pow(1-life,0.6)*(py2>0.03?1:0)*(0.55+0.45*fr);
+          var py2=vy*T2-0.5*g*T2*T2, al2=ef2*Math.min(1,T2*14)*Math.pow(1-life,0.6)*(py2>0.03?1:0)*(0.8+0.2*fr);
           Sh.set(sc2, c, r, bx+vxx*T2*(1-0.1*T2), BOGFX.mudY+Math.max(0.02,py2), bz+vzz*T2*(1-0.1*T2), al2, 0.04+0.6*Math.pow(life,1.5)+0.12*fr, ua*2.6, fr*1.4); } } } }
   else Sh.off(sc2);
   /* bow mound: two lobes ahead of the front tyres, joined by the axle's push; its crest breaks */
