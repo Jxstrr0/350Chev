@@ -337,6 +337,7 @@ function achFacts(x){
   return f;}
 function achCheck(x){
   if(!S||ff||!S.mode)return;
+  try{tropHook(x);}catch(e){}   // the trophy room's dated log of wins (app/trophy.js)
   try{
     if(x.type==="dyno"){const res=x.res,env=x.env;x.ok=!x.failing&&!res.fails.length&&!x.offStd&&!(career()&&env.testType==="pull"&&!(C().cert&&C().cert.ok));}
     if(career()&&C().loan>0)(S.achN=S.achN||{}).loan=1;
