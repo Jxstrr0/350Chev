@@ -18,7 +18,7 @@ function stripCar(body, color, tyreIn, hw){
   var tail=new THREE.MeshStandardMaterial({color:sc(0x4a0707), roughness:0.25, metalness:0.1, emissive:new THREE.Color(0xff1a0a), emissiveIntensity:0});
   var head=new THREE.MeshStandardMaterial({color:sc(0xc9ced4), roughness:0.12, metalness:0.55, emissive:new THREE.Color(0xfff1d8), emissiveIntensity:0});
   var g=new THREE.Group(); g.name="stripCar";
-  var bodyG=new THREE.Group(); bodyG.position.set(me.xr, me.rr, 0); g.add(bodyG);
+  var bodyG=new THREE.Group(); bodyG.position.set(me.xr, me.rr-scRide(me, body), 0); g.add(bodyG);   /* scRide: the fix pack's lower ride height */
   var inner=new THREE.Group(); inner.position.set(-me.xr, -me.rr, 0); bodyG.add(inner);
   var k, mesh;
   for(k in P.parts){
@@ -121,7 +121,7 @@ function stripCarAnim(car, o, dt, isPlayer){
   }
   var B=U.bodyGroup;
   B.rotation.z=A.pitch; B.rotation.x=A.roll;
-  B.position.y=me.rr - me.rr*0.08*sq - clamp(acc/25,0,1)*me.squatDrop;
+  B.position.y=me.rr - (me.ride||0) - me.rr*0.08*sq - clamp(acc/25,0,1)*me.squatDrop;
   B.updateMatrix();
   for(i=0;i<A.tipRest.length;i++){ U.exhaustTips[i].copy(A.tipRest[i]).applyMatrix4(B.matrix); U.exhaustDirs[i].copy(A.dirRest[i]).transformDirection(B.matrix); }
   for(i=0;i<A.flameRest.length;i++){ U.flameTips[i].copy(A.flameRest[i]).applyMatrix4(B.matrix); U.flameDirs[i].copy(A.flameDirRest[i]).transformDirection(B.matrix); }
@@ -149,6 +149,7 @@ function sc_chuteAnim(ch, A, me, v, dt){
   _scA.copy(cn.position).negate().normalize();
   cn.quaternion.setFromUnitVectors(_scX, _scA);
   var rad=bloom*(1-0.6*c)*(1+0.035*Math.sin(A.chS*4.1)*(1-c));
+  if(U.fl) U.fl.value.set(A.chS%600, ext*(1-c)*(0.35+0.65*Math.min(1,v/30)));   /* fabric flutter: hard at speed, gone once it falls in */
   cn.scale.set(bloom*(1+0.5*c), rad, rad*(1-0.25*c));
   cn.updateMatrix();
   _scB.copy(cn.position).multiplyScalar(0.28);                 /* confluence point */
@@ -557,19 +558,49 @@ function sc_wheel(ws, M){
 
 /* --- parachute ------------------------------------------------------------ */
 function sc_chute(me, M){
-  var g=new THREE.Group(), rc=me.chuteR, key="cano"+r3(rc), geo=SC.geo[key];
-  if(!geo){ var pts=[], i; for(i=0;i<=7;i++){ var a=i/7*PI/2*0.9; pts.push(new THREE.Vector2(rc*(0.9+0.1*Math.cos(a*1.4))*Math.cos(a)+0.001, rc*0.62*Math.sin(a))); }
-    geo=new THREE.LatheGeometry(pts, 24);
-    /* inflated gores: pinch the radius at the 8 seams where the shroud lines attach */
-    var pa=geo.attributes.position; for(i=0;i<pa.count;i++){ var x=pa.getX(i), z=pa.getZ(i), ph=Math.atan2(x,z), gq=((ph/(TAU/8))%1+1)%1, f=0.92+0.08*Math.sin(PI*gq); pa.setX(i,x*f); pa.setZ(i,z*f); }
-    geo.computeVertexNormals(); geo.rotateZ(PI/2); SC.geo[key]=geo; }
-  var cn=new THREE.Mesh(geo, M.canopy); cn.castShadow=true; g.add(cn);
-  var lg=SC.geo.chuteLine||(SC.geo.chuteLine=new THREE.CylinderGeometry(0.008,0.008,1,4,1,true).translate(0,0.5,0));
+  /* fix pack: a cross-form drag chute (four arms around a centre square, domed), shroud lines from each arm tip to the
+     confluence, the fabric flutters in the vertex shader. Canopy axis along local +x (towards the car), rim at x=0. */
+  var g=new THREE.Group(), rc=me.chuteR, A=0.375, key="xcano2"+r3(rc), geo=SC.geo[key];
+  if(!geo){ var N=20, pos=[], uv=[], idx=[], i, j, DEP=0.34*rc, RA=1.12*rc;
+    for(j=0;j<=N;j++) for(i=0;i<=N;i++){ var u=-1+2*i/N, v=-1+2*j/N, r2=Math.min(1,(u*u+v*v)/(1+A*A)), au=Math.abs(u), av=Math.abs(v);
+      var puff=0.09*rc*(av<=A?Math.cos(PI/2*v/A):0)*Math.sin(PI*Math.max(0,au-A)/(1-A))+0.09*rc*(au<=A?Math.cos(PI/2*u/A):0)*Math.sin(PI*Math.max(0,av-A)/(1-A));   /* each arm bellies out between its seams */
+      pos.push(-DEP*(1-r2)-puff, (u-v)*RA*0.7071, (u+v)*RA*0.7071);   /* set as an X, the way it reads from the chase cams */ uv.push((u+1)/2, (v+1)/2); }
+    for(j=0;j<N;j++) for(i=0;i<N;i++){ var uc=-1+2*(i+0.5)/N, vc=-1+2*(j+0.5)/N; if(Math.abs(uc)>A && Math.abs(vc)>A) continue;
+      var q=j*(N+1)+i; idx.push(q, q+1, q+N+1, q+1, q+N+2, q+N+1); }
+    geo=new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv,2));
+    geo.setIndex(idx); geo.computeVertexNormals(); SC.geo[key]=geo; }
+  var mat=sc_chuteMat(M), cn=new THREE.Mesh(geo, mat); cn.castShadow=true; g.add(cn);
+  var lg=SC.geo.chuteLine2||(SC.geo.chuteLine2=new THREE.CylinderGeometry(0.009,0.009,1,4,1,true).translate(0,0.5,0));
   var bg=SC.geo.chuteBridle||(SC.geo.chuteBridle=new THREE.CylinderGeometry(0.018,0.018,1,5,1,true).translate(0,0.5,0));
-  var lines=[]; for(var k=0;k<8;k++){ var l=new THREE.Mesh(lg, M.lineM); var a2=PI/2-k/8*TAU; l.userData={cy:Math.cos(a2)*0.92, cz:Math.sin(a2)*0.92}; g.add(l); lines.push(l); }
+  var lines=[]; for(var k=0;k<4;k++) for(var s2=-1;s2<=1;s2+=2){ var l=new THREE.Mesh(lg, M.lineM), ca=Math.cos(k*PI/2+PI/4), sa=Math.sin(k*PI/2+PI/4);
+    l.userData={cy:(ca*0.98-sa*s2*A)*1.12, cz:(sa*0.98+ca*s2*A)*1.12}; g.add(l); lines.push(l); }   /* the two corners of each arm tip */
   var br=new THREE.Mesh(bg, M.lineM); g.add(br);
-  g.userData={canopy:cn, lines:lines, bridle:br, rc:rc};
+  g.userData={canopy:cn, lines:lines, bridle:br, rc:rc, fl:mat.userData.fl};
   return g;
+}
+/* the canopy: white nylon, a coloured band across each arm tip, dark seams; fluttering arms (uFl = time, amount) */
+function sc_chuteTex(){
+  if(SC.tex.xchute) return SC.tex.xchute;
+  var c=sc_canvas(128,128), x=c.getContext("2d"), A=0.375*64, m=64;
+  x.fillStyle="#efebe2"; x.fillRect(0,0,128,128);
+  x.fillStyle="#e5562b"; x.fillRect(0,m-A,22,2*A); x.fillRect(106,m-A,22,2*A); x.fillRect(m-A,0,2*A,22); x.fillRect(m-A,106,2*A,22);
+  x.fillStyle="#1b1c20"; x.fillRect(0,m-A,8,2*A); x.fillRect(120,m-A,8,2*A); x.fillRect(m-A,0,2*A,8); x.fillRect(m-A,120,2*A,8);
+  x.strokeStyle="rgba(40,36,30,0.45)"; x.lineWidth=1.5;
+  [m-A, m+A].forEach(function(p){ x.beginPath(); x.moveTo(p,0); x.lineTo(p,128); x.moveTo(0,p); x.lineTo(128,p); x.stroke(); });
+  x.strokeStyle="rgba(40,36,30,0.25)"; x.beginPath(); x.moveTo(m,0); x.lineTo(m,128); x.moveTo(0,m); x.lineTo(128,m); x.stroke();
+  return (SC.tex.xchute=sc_ctex(c));
+}
+function sc_chuteMat(M){
+  var env=M.canopy.envMap||null, fl={value:new THREE.Vector2(0,0)};
+  var q=new THREE.MeshStandardMaterial({color:0xffffff, map:sc_chuteTex(), roughness:0.82, metalness:0, envMapIntensity:0.4, side:THREE.DoubleSide}); if(env) q.envMap=env;
+  q.userData.fl=fl;
+  q.onBeforeCompile=function(sh){ sh.uniforms.uFl=fl;
+    sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nuniform vec2 uFl;").replace("#include <begin_vertex>",
+      "#include <begin_vertex>\nfloat flR=length(position.yz), flA=atan(position.z,position.y);\n"+
+      "transformed.x+=uFl.y*flR*flR*(0.07*sin(uFl.x*17.0+flA*2.0+flR*6.0)+0.06*sin(uFl.x*29.0-flR*9.0+flA*3.0));\n"+
+      "transformed.yz*=1.0+uFl.y*0.035*sin(uFl.x*21.0+flA*4.0);"); };
+  q.customProgramCacheKey=function(){ return "scChuteFl"; };
+  return q;
 }
 
 /* --- v2: what the car carries -----------------------------------------------
@@ -622,6 +653,7 @@ function sc_pack(body, tIn, H){
   if(body==="rail") me=H?sc_tfrail(B, rr, tails, heads, res, H):sc_rail(B, rr, tails, heads, res, H);
   else if(body==="funny") me=sc_funny(B, rr, tails, heads, res, H||sc_hw({asp:"blower"}, "funny"));
   else me=sc_door(B, body, rr, tails, heads, res, H, tIn);
+  if(body!=="rail") sc_skirt(B, me);   /* fix pack: side skirts under the sill (strip-ground.js) */
   SC.lite=false;
   if(H && H.lite) [B, res.flipB].forEach(sc_liteBins);   /* v3: Lite folds the extra trim materials into their base ones (no extra draw calls) */
   for(var k in B) if(k!=="add" && B[k].length) res.parts[k]=sc_merge(B[k]);

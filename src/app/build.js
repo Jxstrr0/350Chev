@@ -18,7 +18,7 @@ function renderPresets(){
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
   list.sort((a,b)=>key(a)-key(b));
   const groupOf=e=>sort==="layout"?(SIM.LAYOUTS[e.p.cfg.layout]||{}).name||e.p.cfg.layout:sort==="class"?CLS_LABEL[e.cls]:sort==="size"?(e.disp<1.6?"Under 1.6 L":e.disp<2.6?"1.6 – 2.5 L":e.disp<4.1?"2.6 – 4.0 L":e.disp<6.1?"4.1 – 6.0 L":"Over 6 L"):(e.p.realHp<150?"Under 150 hp":e.p.realHp<300?"150 – 299 hp":e.p.realHp<600?"300 – 599 hp":e.p.realHp<1000?"600 – 999 hp":"1,000 hp and up");
-  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${e.disp.toFixed(e.two&&e.disp<1?2:1)} L · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
+  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
   let h="",g=null,buf=[];const flush=()=>{if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.join("")}</div>`;buf=[];};
   for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push(card(e));}
   flush();
@@ -114,7 +114,7 @@ function renderBuild(){
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);   // perf: closed sections fill when opened (toggleSec)
-  fuelHdr();ddMarkBuild();
+  fuelHdr();ddMarkBuild();swapRender();
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
 function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
@@ -377,5 +377,5 @@ function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
   if(l){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}
   if(d){S.blueprints.splice(+d.dataset.del,1);renderBlueprints();save();}});
-$("saveBp").addEventListener("click",()=>{if(S.blueprints.length>=12){toast("Blueprint drawer is full (12)");return;}const q=quick;S.blueprints.push({title:engineName(),name:`${SIM.cfgLabel(S.cfg)} · ${Math.round(q.peakHp)} hp`,sum:`${Math.round(q.peakTq)} Nm · rel ${q.rel} · ${fmt$(q.cost)}`,cfg:Object.assign({},S.cfg)});renderBlueprints();save();toast("BLUEPRINT SAVED");});
+$("saveBp").addEventListener("click",()=>{if(S.blueprints.length>=12){toast("Blueprint drawer is full (12)");return;}const q=quick;S.blueprints.push({title:engineName(),name:`${cfgLbl(S.cfg)} · ${Math.round(q.peakHp)} hp`,sum:`${Math.round(q.peakTq)} Nm · rel ${q.rel} · ${fmt$(q.cost)}`,cfg:Object.assign({},S.cfg)});renderBlueprints();save();toast("BLUEPRINT SAVED");});
 

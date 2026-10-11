@@ -77,7 +77,7 @@ function sc_rearPipes(C, y, z, r, n){
 /* --- street / outlaw shells ------------------------------------------------- */
 /* Fox-body Mustang (notchback): aero nose with flush composite lamps, slot grille, body-colour bumpers, ribbed tails */
 SC_STYLE.fox={xr:-1.27, xf:1.28, roofF:0.1, cowl:0.6, roofR:-0.78, deck:-1.42, dG0:-0.42, qG0:-0.95, hx:1.25, door:[-0.38,0.5], hood:[1.55,2.0],
-  rake:0.028, lift:-0.015, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false, rows:[
+  rake:0.028, lift:0, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false, rows:[
   [-2.30,.31,.80,.83,.84,.80,.02],[-2.25,.24,.87,.92,.855,.82,.02],[-1.85,.21,.88,.94,.86,.83,.02],[-1.42,.20,.885,.96,.865,.81,.03],
   [-1.10,.19,.885,1.20,.865,.66,.04],[-0.78,.19,.885,1.295,.865,.62,.04],[0.10,.19,.885,1.305,.865,.62,.04],[0.60,.19,.885,1.01,.865,.79,.03],
   [0.95,.19,.88,.945,.86,.82,.02],[1.70,.20,.845,.89,.85,.81,.02],[2.12,.24,.73,.765,.82,.77,.02],[2.27,.31,.60,.625,.76,.70,.02]],
@@ -101,7 +101,7 @@ SC_STYLE.fox={xr:-1.27, xf:1.28, roofF:0.1, cowl:0.6, roofR:-0.78, deck:-1.42, d
 };
 /* G-body Monte Carlo SS: long hood, formal roof, aero nose with quad lamps around an egg-crate grille, a deck lip */
 SC_STYLE.gbody={xr:-1.37, xf:1.37, roofF:-0.05, cowl:0.5, roofR:-1.12, deck:-1.48, dG0:-0.5, qG0:-1.05, hx:1.35, door:[-0.45,0.4], hood:[1.7,2.2],
-  rake:0.028, lift:-0.018, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false, rows:[
+  rake:0.028, lift:0, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false, rows:[
   [-2.56,.32,.82,.86,.86,.82,.02],[-2.50,.25,.88,.935,.885,.85,.02],[-2.0,.22,.895,.96,.895,.86,.02],[-1.48,.21,.90,.985,.90,.85,.03],
   [-1.30,.20,.90,1.25,.90,.66,.04],[-1.12,.20,.90,1.35,.90,.62,.04],[-0.05,.20,.90,1.36,.90,.62,.04],[0.50,.20,.90,1.02,.90,.79,.03],
   [0.90,.20,.895,.975,.90,.84,.02],[1.90,.22,.875,.94,.89,.84,.02],[2.38,.26,.79,.82,.86,.81,.02],[2.56,.32,.66,.68,.80,.74,.02]],
@@ -124,7 +124,7 @@ SC_STYLE.gbody={xr:-1.37, xf:1.37, roofF:-0.05, cowl:0.5, roofR:-1.12, deck:-1.4
 };
 /* '68-72 Nova: flat face, full-width grille between round lamps, chrome blade bumpers, chrome trim, one bullet mirror */
 SC_STYLE.nova={xr:-1.36, xf:1.43, roofF:0.05, cowl:0.55, roofR:-0.72, deck:-1.55, dG0:-0.4, qG0:-1.0, hx:1.4, door:[-0.4,0.45], hood:[1.75,2.25],
-  rake:0.035, lift:-0.02, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false, rows:[
+  rake:0.035, lift:0, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false, rows:[
   [-2.34,.30,.80,.835,.86,.82,.02],[-2.29,.24,.88,.935,.885,.85,.02],[-1.90,.22,.89,.95,.895,.86,.02],[-1.55,.21,.895,.965,.90,.86,.03],
   [-1.20,.20,.90,1.15,.90,.71,.04],[-0.72,.20,.90,1.325,.90,.63,.04],[0.05,.20,.90,1.335,.90,.63,.04],[0.55,.20,.90,1.01,.90,.80,.03],
   [0.85,.20,.895,.97,.90,.855,.02],[1.85,.21,.885,.955,.895,.86,.02],[2.38,.23,.86,.925,.89,.85,.02],[2.50,.30,.81,.845,.86,.82,.02]],
@@ -142,7 +142,7 @@ SC_STYLE.nova={xr:-1.36, xf:1.43, roofF:0.05, cowl:0.55, roofR:-0.72, deck:-1.55
   rear:function(C){}
 };
 /* the 90s F-body: pointed nose, slim lamps, big lower intake, full-width tail bar, the factory spoiler (default rear) */
-Object.assign(SC_STYLE.coupe, {rake:0.022, lift:-0.015, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false,
+Object.assign(SC_STYLE.coupe, {rake:0.022, lift:0, fw:0.13, fr:0.33, fz:0.06, rimR:"star", rimF:"weld", lettersF:false,
   dress:function(C){ var B=C.B, D=C.D, cF=C.cF, cR=C.cR, y, x, P;
     y=lerp(cF.zb,cF.ys,0.82); x=sc_faceX(D, C.xF, y, -1); P=sc_at(D, x-0.1);
     sc_flushLamps(C, C.xF-0.32, C.xF-0.1, 9.0);
@@ -156,7 +156,7 @@ Object.assign(SC_STYLE.coupe, {rake:0.022, lift:-0.015, fw:0.13, fr:0.33, fz:0.0
     sc_mirror(C, "aero");
   }});
 /* Civic-style hatch: small flush lamps, tall corner tails, a roof spoiler over the hatch glass */
-Object.assign(SC_STYLE.hatch, {rake:0.016, lift:-0.012, fw:0.13, fr:0.32, fz:0.06, rimR:"star", rimF:"weld", lettersF:false,
+Object.assign(SC_STYLE.hatch, {rake:0.016, lift:0, fw:0.13, fr:0.32, fz:0.06, rimR:"star", rimF:"weld", lettersF:false,
   dress:function(C){ var B=C.B, D=C.D, cF=C.cF, cR=C.cR, y, x, P;
     y=lerp(cF.zb,cF.ys,0.78); x=sc_faceX(D, C.xF, y, -1); P=sc_at(D, x-0.05);
     sc_flushLamps(C, C.xF-0.2, C.xF-0.03, 9.2);
