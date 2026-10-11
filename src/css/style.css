@@ -898,7 +898,7 @@ html.evhud #rpmbox{display:none!important}
 /* road test and the 24 Hours: their own grids, made smaller; full width */
 #evHud #roadLive,#evHud #e24Hud,#evHud #hillLive{display:block}
 #evHud .hl-bar{height:7px;margin-top:5px}#evHud .hl-next{min-height:0;margin-top:4px;gap:3px}#evHud .hl-c{padding:3px 7px;font-size:11.5px}
-#evHud .hl-meters{gap:4px;margin-top:4px}#evHud .hl-meters .peak{display:flex;align-items:baseline;gap:5px;padding:2px 6px}#evHud .hl-meters .peak b{font-size:15px}#evHud .hl-meters .peak span{margin:0;font-size:9.5px}
+#evHud .hl-meters{gap:4px;margin-top:4px}#evHud .hl-meters .peak{display:flex;align-items:baseline;gap:5px;padding:2px 6px}#evHud .hl-meters .peak b{font-size:15px}#evHud .hl-meters .peak span{margin:0;font-size:9.5px}#evHud .hl-meters .peak span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}html:not(.desk) #evHud .hl-c+.hl-c{display:none}   /* phone: the next call only */
 #evHud .rdh,#evHud .e24h{background:none;border:0;padding:0;gap:8px}
 #evHud .rd-spd b{font-size:30px}#evHud .rd-g b{font-size:24px}#evHud .rd-lt b{font-size:19px}#evHud .rd-map,#evHud .e24map{width:72px;height:52px}
 #evHud .rd-rpm{margin-top:5px;height:7px}
