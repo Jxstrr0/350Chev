@@ -287,7 +287,7 @@ function roadDirect(o, dt, W, car){
   var fx=Math.cos(h), fz=-Math.sin(h);
   /* the 24 Hours at time-lapse speed: a tower shot down the pit straight, the field streaming at it */
   if(mode==="tower"){ var i1=W.pit[1]-6; roadPt(T, i1, ROAD_W/2+30, 21, ROAD.camPos); roadPt(T, i1-Math.round(190/T.ds), -3, 0, ROAD.camTgt); roadCut("tower"); ROAD.shotT+=dt; ROAD.fov=46; ROAD.snap=false;
-    var tc=ROAD.cam; tc.position.copy(ROAD.camPos); tc.lookAt(ROAD.camTgt); tc.fov=46; tc.updateProjectionMatrix(); return; }
+    var tc=ROAD.cam; tc.position.copy(ROAD.camPos); tc.lookAt(ROAD.camTgt); tc.fov=46; tc.updateProjectionMatrix(); bandLens(tc); return; }
   /* nearest trackside camera ahead of (or just past) the car */
   var best=-1, bd=1e9; for(var q=0;q<W.stations.length;q++){ var st=W.stations[q], d=((st.i-fi)%N+N)%N; if(d>N/2) d-=N; var m=d*T.ds; if(m>-45 && m<150 && Math.abs(m-30)<bd){ bd=Math.abs(m-30); best=q; } }
   if(mode==="chase") s="chase"; else if(mode==="onboard") s="onboard"; else if(mode==="side") s=best>=0?"side":"chase";
@@ -303,7 +303,7 @@ function roadDirect(o, dt, W, car){
   else { var st2=W.stations[ROAD.st]; roadPt(T, st2.i, st2.d, st2.y, ROAD.camPos); _rC.set(cp.x, cp.y+0.7, cp.z); if(ROAD.snap) ROAD.camTgt.copy(_rC); else ROAD.camTgt.lerp(_rC, 1-Math.exp(-dt*10));
     var dist=ROAD.camPos.distanceTo(_rC); fov=clamp(2*Math.atan(5.5/Math.max(1,dist))*180/PI, 9, 55); }
   if(ROAD.snap){ ROAD.fov=fov; ROAD.snap=false; } else ROAD.fov+=(fov-ROAD.fov)*(1-Math.exp(-dt*6));
-  var cam=ROAD.cam; cam.position.copy(ROAD.camPos); cam.lookAt(ROAD.camTgt); cam.fov=ROAD.fov; cam.updateProjectionMatrix();
+  var cam=ROAD.cam; cam.position.copy(ROAD.camPos); cam.lookAt(ROAD.camTgt); cam.fov=ROAD.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function roadComposer(){
   if(ROAD.composer===false) return null;

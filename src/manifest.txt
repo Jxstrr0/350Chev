@@ -34,6 +34,7 @@ vis/pull.js
 vis/bog.js
 vis/road.js
 vis/salt.js
+vis/band.js
 vis/api.js
 vis/teardown.js
 app/state.js
@@ -45,6 +46,7 @@ app/bog.js
 app/road.js
 app/e24.js
 app/salt.js
+app/runview.js
 app/results.js
 app/market.js
 app/career.js
