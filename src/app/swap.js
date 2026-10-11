@@ -73,8 +73,8 @@ REQ_LABEL.swap=["Their car",v=>`${(SIM.VEHICLES[v.v]||{}).n||"car"} · ${(v.fx||
 MISS_W.swap=4;
 SEGMENTS.push(
   {id:"swc10",name:"C10 restomod · put a V8 in it",tier:1,units:[1,2],price:7800,req:{hp:[300,420],rel:80,swap:{v:"c10",fx:["firewall","scoop","gbx1","rad1"]}}},
-  {id:"swbeetle",name:"Beetle sleeper",tier:1,units:[1,1],price:8600,req:{hp:[160,240],rel:72,swap:{v:"beetle",fx:["gbx1","axle1","rad1"]}}},
-  {id:"swmiata",name:"Miata V8 conversion",tier:2,units:[1,2],price:12500,req:{hp:[300,450],rel:75,swap:{v:"miata",fx:["firewall","tubs","scoop","gbx1","axle1","rad1"]}}},
+  {id:"swbeetle",name:"Beetle sleeper",tier:1,units:[1,1],price:8600,req:{hp:[160,240],rel:72,swap:{v:"beetle",fx:["firewall","scoop","gbx1","axle1","rad2"]}}},
+  {id:"swmiata",name:"Miata V8 conversion",tier:2,units:[1,2],price:12500,req:{hp:[300,450],rel:75,swap:{v:"miata",fx:["firewall","tubs","scoop","gbx1","axle1","rad2"]}}},
   {id:"swsemi",name:"Show-truck highway tractor",tier:3,units:[1,1],price:21000,req:{tq:[2400,3000],rel:75,fuel:"diesel",swap:{v:"semi",fx:["gbx2","axle2","rad1"]}}});
 CATS.push({id:"swap",name:"Swap jobs",sub:"their car · your engine · it has to fit",segs:["swc10","swbeetle","swmiata","swsemi"],rep:20});
 /* ---- the silhouette: the car side-on, the bay dashed, the engine to scale (it pokes out when it doesn't fit) ---- */
