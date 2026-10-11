@@ -387,7 +387,8 @@ function seChutes(o, dt, V, ph){
     else { _seB.copy(cn.position).normalize(); var ap=rc*0.62*cn.scale.x;
       _seC.copy(cn.position).addScaledVector(_seB, ap); _seA.copy(_seC).addScaledVector(_seB, 1.6+bob); _seA.y+=bob*0.5;
       pc.quaternion.copy(cn.quaternion); pc.scale.setScalar(0.32*(1-0.45*(A.chC||0))); }
-    pc.position.copy(_seA); pc.visible=true; sc_setLine(pl, _seC, _seA); pl.scale.x=pl.scale.z=3.5; pl.visible=true;
+    var pOn=!(lite && se.t>SE_PILOT+0.8);   /* Lite drops the pilot once the main is open: two draw calls back */
+    pc.position.copy(_seA); pc.visible=pOn; sc_setLine(pl, _seC, _seA); pl.scale.x=pl.scale.z=3.5; pl.visible=pOn;
     if(!FX) continue;
     /* deploy: the bag kicks a puff of salt off the tail; the main's blossom blasts more off the salt below it */
     if(first){ ch.localToWorld(_seA.set(0,0,0)); for(var q=0;q<(lite?8:20);q++) FX.emit(_seA.x-R()*1.5, 0.2+R()*0.6, _seA.z+(R()-0.5)*1.6, v*0.6, 0.3+R()*1.2, (R()-0.5)*3, 1.5+R()*2, 0.6, 3.5+R()*3, 0.95, 0.95, 0.93, 0.4, {drag:1.0, buoy:0.12, fin:0.05, spin:0.5});
