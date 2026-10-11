@@ -44,6 +44,7 @@ vis/road.js
 vis/salt.js
 vis/salt-look.js
 vis/hill.js
+vis/band.js
 vis/api.js
 vis/trophy.js
 vis/teardown.js
@@ -58,6 +59,7 @@ app/e24.js
 app/salt.js
 app/hill.js
 app/boat.js
+app/runview.js
 app/results.js
 app/market.js
 app/swap.js
