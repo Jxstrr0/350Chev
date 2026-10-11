@@ -182,11 +182,11 @@ function buildBoatScene(){
   (function(){ var pts=[]; [-12,0,12].forEach(function(zz){ pts.push([0,zz,1.2,0xff6a1a]); pts.push([BOAT_FIN,zz,1.2,0xff6a1a]); for(var f=100; f<1000; f+=100) pts.push([f/3.28084,zz,0.55,0xf2c22c]); });
     [-18,18].forEach(function(zz){ pts.push([0,zz,1.0,0xf4efe2]); pts.push([BOAT_FIN,zz,1.0,0xf4efe2]); });
     var im=new THREE.InstancedMesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({roughness:0.45}), pts.length), cc=new THREE.Color();
-    pts.forEach(function(p,q){ cc.set(p[3]).convertSRGBToLinear(); im.setColorAt(q,cc); }); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); S3.add(im); BOAT.buoys={mesh:im, pts:pts}; boatBuoys(0); })();
+    pts.forEach(function(p,q){ cc.set(p[3]).convertSRGBToLinear(); im.setColorAt(q,cc); }); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); S3.add(im); BOAT.buoys={mesh:im, pts:pts}; boatBuoys(0); instCull(im, 1); })();
   /* trees behind the banks */
   (function(){ var pts=[], s; for(s=0;s<(lite?70:150);s++){ var sd=s%2?1:-1, xx=-200+rng(s)*900, zz=sd*(100+rng(s+5)*120); if(sd>0&&xx>-60&&xx<380&&zz<115) continue; pts.push([xx,zz,4+rng(s+3)*3]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
-    pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],0.9+h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06,0.45,0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); }); S3.add(im); })();
+    pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],0.9+h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06,0.45,0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); }); instCull(im); S3.add(im); })();
   /* the crowd on the right bank and in the bleachers; thinner on Lite */
   (function(){ var ppl=[], occ=lite?0.3:0.6;
     for(var r=0;r<6;r++){ var rz=62+r*1.1, ry=0.6+Math.min(0.3,r*0.06); for(var xx=-30; xx<360; xx+=0.65){ if(xx>214&&xx<300) continue; if(rng(xx*3.1+r*17.7)>occ*(xx>180?1:0.55)*(1-r*0.08)) continue; ppl.push([xx+(rng(xx+r)-0.5)*0.3, ry, rz+(rng(xx*1.7+r)-0.5)*0.4]); } }
@@ -196,7 +196,7 @@ function buildBoatScene(){
     var mm=new THREE.Matrix4(), cc=new THREE.Color(), base=[];
     for(var s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.4,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.93,p[2]); headM.setMatrixAt(s,mm);
       cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc); cc.set(rng(s*2.9)<0.45?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
-    S3.add(bodyM); S3.add(headM); BOAT.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
+    instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM); BOAT.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
   /* spray: droplets (unlit, sharp) on every tier, a soft lit mist on Full/Ultra; wakes for both lanes */
   BOAT.fx=new StripFx(lite?220:900, "fire", stripPuffTex()); BOAT.fx.mat.blending=THREE.NormalBlending; S3.add(BOAT.fx.mesh);
   BOAT.fxMist=lite?null:new StripFx(GFX==="ultra"?500:300, "smoke", stripPuffTex()); if(BOAT.fxMist) S3.add(BOAT.fxMist.mesh);

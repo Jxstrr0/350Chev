@@ -164,7 +164,7 @@ function buildBogScene(){
     for(s=0;s<60;s++){ var a=s/60*TAU, R=150+rng(s)*30; pts.push([40+Math.cos(a)*R*1.3, Math.sin(a)*R, 4+rng(s+3)*3]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); });
-    S3.add(im); })();
+    instCull(im); S3.add(im); })();
   /* the crowd on the bank: standing, some on lawn chairs, thinner on Lite */
   (function(){ var ppl=[], occ=lite?0.35:ULT()?0.88:0.6, slope=1.7/8;
     for(var r=0;r<8;r++){ var rz=-BOG_W/2-4.6-r*1.0, ry=Math.max(0,-BOG_W/2-4.5-rz)*slope;
@@ -176,7 +176,7 @@ function buildBogScene(){
     for(var s=0;s<n;s++){ var p=ppl[s]; mm.makeTranslation(p[0],p[1]+0.4,p[2]); bodyM.setMatrixAt(s,mm); mm.makeTranslation(p[0],p[1]+0.93,p[2]); headM.setMatrixAt(s,mm);
       cc.set(shirts[Math.floor(rng(s*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(s,cc);
       cc.set(rng(s*2.9)<0.45?hats[Math.floor(rng(s*4.1)*hats.length)]:skin[Math.floor(rng(s*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(s,cc); base.push(p); }
-    bodyM.receiveShadow=true; S3.add(bodyM); S3.add(headM);
+    bodyM.receiveShadow=true; instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM);
     BOG.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
   /* mud: the plane is built per night; clods (lit, sharp), spray and splash mist (soft, Full/Ultra only), exhaust */
   bogFxBuild(S3, lite);   /* vis/bog-fx.js */

@@ -62,7 +62,7 @@ function hillTreeCells(W, S, tp, rp, foliage, trunk, rocks, ultra){
   var mm=new THREE.Matrix4(), cc=new THREE.Color();
   var cellMesh=function(src, base, ids, sph, cast){ var m=new THREE.InstancedMesh(hillCellGeo(base, sph), src.material, ids.length);
     ids.forEach(function(j, q){ src.getMatrixAt(j, mm); m.setMatrixAt(q, mm); if(src.instanceColor){ src.getColorAt(j, cc); m.setColorAt(q, cc); } });
-    m.castShadow=cast; m.receiveShadow=src.receiveShadow; S.add(m); return m; };
+    m.castShadow=cast; m.receiveShadow=src.receiveShadow; instCull(m, 0, base); S.add(m); return m; };
   var sphOf=function(list, ids, up){ var a=new THREE.Vector3(1e9,1e9,1e9), b=new THREE.Vector3(-1e9,-1e9,-1e9); ids.forEach(function(j){ var p=list[j]; a.min(_hlA.set(p[0],p[1],p[2])); b.max(_hlA); });
     b.y+=up; a.x-=8; a.z-=8; b.x+=8; b.z+=8; var c=a.clone().add(b).multiplyScalar(0.5); return new THREE.Sphere(c, c.distanceTo(b)); };
   if(foliage){ var TB=bin(tp);

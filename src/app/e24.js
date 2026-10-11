@@ -123,7 +123,7 @@ function e24HudInit(){$("e24Hud").innerHTML=`<div class="e24h"><div class="e24c"
   <div><span>Fuel</span><b id="e24Fu">—</b><i id="e24Fl">—</i><div class="ph-bar"><i class="fill" id="e24Fb"></i></div></div>
   <div><span>Tyres</span><b id="e24Ty">—</b><i id="e24Tl">—</i><div class="ph-bar"><i class="fill" id="e24Tb"></i></div></div>
   <div><span>Engine</span><b id="e24En">—</b><i id="e24Et">—</i></div>
-  <div class="e24hz"><span>Failure risk</span><b id="e24Hz">—</b><i id="e24Hw">—</i><div class="ph-bar"><i class="fill" id="e24Hb"></i></div></div>
+  <div class="e24hz"><span data-s="Risk">Failure risk</span><b id="e24Hz">—</b><i id="e24Hw">—</i><div class="ph-bar"><i class="fill" id="e24Hb"></i></div></div>
   <div><span>Track</span><b id="e24Am">—</b><i id="e24Sk">—</i></div></div>`;e24SpdRender();}
 function e24SpdRender(){const b=$("e24Spd");if(!b||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
   b.innerHTML=end?`<button class="btn pri" data-e24a="end" style="flex:1">${ER.toEnd?"Running the race to the flag…":"To the flag ▸▸"}</button>`
