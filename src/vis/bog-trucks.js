@@ -60,7 +60,7 @@ function bogTyreGeo(r, w, rimR, kind, lite){
   var pr=[[rimR+0.006,0.84],[lerp(rimR,r0,0.3),0.97],[lerp(rimR,r0,0.62),1],[lerp(rimR,r0,0.86),0.99],[r0-sh,0.95],[r0-sh*0.15,0.8]], pts=[];
   for(i=0;i<pr.length;i++) pts.push(new THREE.Vector2(pr[i][0], -hw*pr[i][1]));
   for(i=pr.length-1;i>=0;i--) pts.push(new THREE.Vector2(pr[i][0], hw*pr[i][1]));
-  var lathe=new THREE.LatheGeometry(pts, lite?24:48), P=lathe.attributes.position, UV=lathe.attributes.uv;
+  var lathe=new THREE.LatheGeometry(pts, lite?24:40), P=lathe.attributes.position, UV=lathe.attributes.uv;
   for(i=0;i<P.count;i++){ var px=P.getX(i), pz=P.getZ(i), rad=Math.sqrt(px*px+pz*pz), y=P.getY(i);
     UV.setY(i, y>hw*0.83 && rad<r0-sh*0.5 ? 0.2+0.6*clamp((rad-rimR)/(r0-sh-rimR),0,1) : 0.95); }
   var parts=[{g:lathe, m:new THREE.Matrix4()}], box=bogtLugBox();
@@ -108,12 +108,12 @@ function bogRimGeo(rimR, w, style, hub, lite){
   for(i=0;i<nh;i++){ var a=i/nh*TAU, hp=new THREE.Path(); hp.absarc(Math.cos(a)*hc, Math.sin(a)*hc, hr, 0, TAU, true); s.holes.push(hp); }
   if(!hub){ var cb=new THREE.Path(); cb.absarc(0,0,rimR*0.16,0,TAU,true); s.holes.push(cb); }
   var dishY=style==="steel"?hw*0.62:hw*0.5;
-  var face=new THREE.ExtrudeGeometry(s, {depth:0.014, bevelEnabled:false, curveSegments:lite?5:8}); face.rotateX(-PI/2); face.translate(0, dishY, 0); parts.push({g:face, m:M0()});
+  var face=new THREE.ExtrudeGeometry(s, {depth:0.014, bevelEnabled:false, curveSegments:lite?4:6}); face.rotateX(-PI/2); face.translate(0, dishY, 0); parts.push({g:face, m:M0()});
   /* the outer wall from the dish out to the flange */
   parts.push({g:new THREE.LatheGeometry([new THREE.Vector2(rimR*0.88, dishY), new THREE.Vector2(rimR*0.9, hw*0.86), new THREE.Vector2(rimR*1.03, hw*0.9), new THREE.Vector2(rimR*1.05, hw*0.8)], lite?16:28), m:M0()});
   if(style==="bead"){
     parts.push({g:new THREE.LatheGeometry([new THREE.Vector2(rimR*0.9, hw*0.9), new THREE.Vector2(rimR*0.9, hw+0.016), new THREE.Vector2(rimR*1.1, hw+0.016), new THREE.Vector2(rimR*1.12, hw*0.88)], lite?16:32), m:M0()});
-    if(!lite){ var bolt=BOGT.geo.bolt||(BOGT.geo.bolt=new THREE.CylinderGeometry(0.0085,0.0085,0.014,6)); for(i=0;i<24;i++){ var b=i/24*TAU; parts.push({g:bolt, m:mkM(Math.cos(b)*rimR*1.0, hw+0.022, Math.sin(b)*rimR*1.0)}); } }
+    if(!lite){ var bolt=BOGT.geo.bolt||(BOGT.geo.bolt=new THREE.CylinderGeometry(0.009,0.009,0.014,5,1)); for(i=0;i<18;i++){ var b=i/18*TAU; parts.push({g:bolt, m:mkM(Math.cos(b)*rimR*1.0, hw+0.022, Math.sin(b)*rimR*1.0)}); } }
   } else {
     var nut=BOGT.geo.nut||(BOGT.geo.nut=new THREE.CylinderGeometry(0.012,0.012,0.024,6)); for(i=0;i<6;i++){ var b2=i/6*TAU; parts.push({g:nut, m:mkM(Math.cos(b2)*rimR*0.27, dishY+0.022, Math.sin(b2)*rimR*0.27)}); }
     var cap=new THREE.CylinderGeometry(rimR*0.15, rimR*0.17, 0.04, 12); cap.translate(0, dishY+0.03, 0); parts.push({g:cap, m:M0()});
@@ -361,18 +361,18 @@ function bogFitDist(U, fov){
 /* ---- fairground props: people in the parked pickups' beds, lawn chairs, coolers, flags, a recovery tractor and a skid-steer.
    All into the scene's static batch (no extra draws). The flagman at the start is one mesh with three poses. ---- */
 function bogProps(B, S3, lite){
-  var rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); }, i, k, x, z;
+  var K=lite?"solid":"props", rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); }, i, k, x, z;
   var shirts=[0x9c3a30,0x34598f,0xcfccc4,0x1f2023,0xff7a1a,0x44684a,0xc8a640,0x5d5f66,0x8f4a5e,0x2c6b3a], skin=[0xe0b494,0xc68a64,0x8d5a3b,0xf0c9a8,0x5a3a26], jeans=[0x2a3550,0x1f2023,0x4a4a46,0x6b5a40];
   function person(px, py, pz, sitting, s0){
     var sh=shirts[Math.floor(rng(s0)*shirts.length)], sk=skin[Math.floor(rng(s0+1)*skin.length)], jn=jeans[Math.floor(rng(s0+2)*jeans.length)];
-    if(sitting){ B.box("solid", px, py+0.22, pz, 0.36, 0.14, 0.4, jn); B.box("solid", px, py+0.5, pz-0.08, 0.42, 0.5, 0.26, sh); B.box("solid", px, py+0.85, pz-0.08, 0.21, 0.24, 0.21, rng(s0+3)<0.4?0x1d4787:sk); B.box("solid", px, py+0.08, pz+0.16, 0.3, 0.3, 0.1, jn); }
-    else { B.box("solid", px, py+0.4, pz, 0.36, 0.8, 0.24, jn); B.box("solid", px, py+1.05, pz, 0.44, 0.56, 0.28, sh); B.box("solid", px, py+1.46, pz, 0.22, 0.25, 0.22, rng(s0+3)<0.4?0xff7a1a:sk);
-      if(rng(s0+4)<0.4) B.box("solid", px+0.12, py+1.62, pz-0.12, 0.08, 0.36, 0.08, sk); }   /* an arm up */
+    if(sitting){ B.box(K, px, py+0.22, pz, 0.36, 0.14, 0.4, jn); B.box(K, px, py+0.5, pz-0.08, 0.42, 0.5, 0.26, sh); B.box(K, px, py+0.85, pz-0.08, 0.21, 0.24, 0.21, rng(s0+3)<0.4?0x1d4787:sk); B.box(K, px, py+0.08, pz+0.16, 0.3, 0.3, 0.1, jn); }
+    else { B.box(K, px, py+0.4, pz, 0.36, 0.8, 0.24, jn); B.box(K, px, py+1.05, pz, 0.44, 0.56, 0.28, sh); B.box(K, px, py+1.46, pz, 0.22, 0.25, 0.22, rng(s0+3)<0.4?0xff7a1a:sk);
+      if(rng(s0+4)<0.4) B.box(K, px+0.12, py+1.62, pz-0.12, 0.08, 0.36, 0.08, sk); }   /* an arm up */
   }
-  function chair(px, py, pz, col, ry){ B.box("solid", px, py+0.24, pz, 0.48, 0.04, 0.46, col, ry); B.box("solid", px, py+0.5, pz-0.24, 0.48, 0.5, 0.04, col, ry);
-    for(var q=0;q<4;q++) B.box("solid", px+(q&1?0.22:-0.22), py+0.12, pz+(q&2?0.2:-0.2), 0.025, 0.24, 0.025, 0xb9bec4); }
-  function cooler(px, py, pz, col){ B.box("solid", px, py+0.2, pz, 0.62, 0.36, 0.4, col); B.box("solid", px, py+0.41, pz, 0.64, 0.06, 0.42, 0xf1ede2); }
-  function flag(px, py, pz, h, c1, c2){ B.add("solid","cyl6",[px, py+h/2, pz],[0.04,h,0.04],0xb9bec4); B.box("solid", px+0.46, py+h-0.16, pz, 0.88, 0.28, 0.02, c1); B.box("solid", px+0.46, py+h-0.44, pz, 0.88, 0.28, 0.02, c2); }
+  function chair(px, py, pz, col, ry){ B.box(K, px, py+0.24, pz, 0.48, 0.04, 0.46, col, ry); B.box(K, px, py+0.5, pz-0.24, 0.48, 0.5, 0.04, col, ry);
+    for(var q=0;q<4;q++) B.box(K, px+(q&1?0.22:-0.22), py+0.12, pz+(q&2?0.2:-0.2), 0.025, 0.24, 0.025, 0xb9bec4); }
+  function cooler(px, py, pz, col){ B.box(K, px, py+0.2, pz, 0.62, 0.36, 0.4, col); B.box(K, px, py+0.41, pz, 0.64, 0.06, 0.42, 0xf1ede2); }
+  function flag(px, py, pz, h, c1, c2){ B.add(K,"cyl6",[px, py+h/2, pz],[0.04,h,0.04],0xb9bec4); B.box(K, px+0.46, py+h-0.16, pz, 0.88, 0.28, 0.02, c1); B.box(K, px+0.46, py+h-0.44, pz, 0.88, 0.28, 0.02, c2); }
   /* the pickups parked along the top of the bank (same spots as buildBogScene's) */
   var fl=[[0xff7a1a,0x15171b],[0x1d4787,0xf1ede2],[0x9e2a22,0xf1ede2],[0x2c6b3a,0xf2c22c],[0x15171b,0xf2c22c]];
   for(i=0;i<12;i++){ var hx=-26+i*11+rng(i)*4, hz=-BOG_W/2-25-rng(i+3)*4, bedY=1.5;
@@ -384,7 +384,7 @@ function bogProps(B, S3, lite){
       cooler(hx+0.6, 0.6, hz+2.6, i%2?0x9e2a22:0x1d4787); }
   }
   /* lawn chairs down the front of the bank, between the standing crowd */
-  if(!lite) for(x=-18; x<100; x+=7.5+rng(x)*5){ var cz=-BOG_W/2-4.2; chair(x, 0.02, cz, [0x2c6b3a,0x1d4787,0x9e2a22,0xc8a640][Math.floor(rng(x+3)*4)], 0); person(x, 0.02, cz+0.08, true, Math.floor(x*7)); if(rng(x+5)<0.5) cooler(x+0.75, 0.02, cz+0.1, rng(x+6)<0.5?0xf1ede2:0x9e2a22); }
+  if(!lite) for(x=-18; x<100; x+=11+rng(x)*6){ var cz=-BOG_W/2-4.2; chair(x, 0.02, cz, [0x2c6b3a,0x1d4787,0x9e2a22,0xc8a640][Math.floor(rng(x+3)*4)], 0); person(x, 0.02, cz+0.08, true, Math.floor(x*7)); if(rng(x+5)<0.5) cooler(x+0.75, 0.02, cz+0.1, rng(x+6)<0.5?0xf1ede2:0x9e2a22); }
   /* the recovery tractor waiting by the far berm, chain on the drawbar, and a skid-steer near the start */
   (function(tx, tz){ var G=0x2f7a2c, Y=0xf2c22c;
     for(var s=-1;s<=1;s+=2){ B.add("solid","cyl",[tx-0.2, 0.85, tz+s*1.0],[1.7,0.62,1.7],0x1a1a1c,[PI/2,0,0]); B.add("solid","cyl",[tx-0.2, 0.85, tz+s*1.32],[0.9,0.04,0.9],Y,[PI/2,0,0]);
@@ -399,6 +399,7 @@ function bogProps(B, S3, lite){
     B.box("solid", sx, 0.75, sz, 1.6, 0.6, 1.1, Y); B.box("solid", sx-0.15, 1.4, sz, 0.9, 0.75, 0.9, 0x2a2c2f); B.box("solid", sx-0.15, 1.8, sz, 1.0, 0.06, 1.0, Y);
     B.box("solid", sx+1.2, 0.35, sz, 0.6, 0.45, 1.5, 0x3a3d42); for(var s=-1;s<=1;s+=2) B.box("solid", sx+0.6, 0.85, sz+s*0.6, 1.1, 0.12, 0.1, Y);
   })(30, BOG_W/2+11.2);
+  if(!lite) bogBuild(B,"props", BOG.mats.solid, false);   /* Full/Ultra: the bank props in their own draw, out of the shadow pass */
 }
 /* the flagman at the start line: green flag up (waving: two poses), flag down the lane on "go", flag lowered */
 function bogFlagman(S3){
