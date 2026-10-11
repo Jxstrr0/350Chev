@@ -90,7 +90,7 @@
     let mu = TY.mu;
     if (veh && veh.body && !(veh.wheelbase > 0)) v.wheelbase = (AERO[veh.body] || AERO.street).wb;
     const I = 0.12 + 0.06 * ((res.VdEq || res.Vd) / 1000), peakTq = res.peakTq, clutchCap = peakTq * 1.8;
-    const BODY = AERO[v.body] || AERO.street, cdA0 = BODY.cdA, bite = BODY.bite, crr = 0.014, rho = 1.2, limiter = v.redline * 1.02, shiftAt = v.shiftRpm || v.redline - 200;
+    const BODY = AERO[v.body] || AERO.street, cdA0 = v.cdA > 0 ? v.cdA : BODY.cdA, bite = BODY.bite, crr = 0.014, rho = 1.2, limiter = v.redline * 1.02, shiftAt = v.shiftRpm || v.redline - 200;
 
     /* ---- launch tech ---- */
     const lc = OPT.launchCtl[v.launchCtl] ? v.launchCtl : "none", tbk = OPT.transBrake[v.transBrake] ? v.transBrake : "none";
@@ -283,7 +283,10 @@
         if (!st.slipping) Ttrans = Teng;
       }
       const muE = mu * (1 + st.gripGain) * tuneGrip(st.t);
-      const Fmax = bite * muE * v.mass * g * v.rearBias / Math.max(0.3, 1 - muE * v.cgH / v.wheelbase);
+      const Fmax = v.drive === "fwd" ? bite * muE * v.mass * g * (1 - v.rearBias) / (1 + muE * v.cgH / v.wheelbase) : v.drive === "awd" ? bite * muE * v.mass * g * 0.98
+        : bite * muE * v.mass * g * v.rearBias / Math.max(0.3, 1 - muE * v.cgH / v.wheelbase);
+      // a swap's driveline (veh.dlCap, engine-side N·m): past its rating at full load it lets go — the engine is fine, the pass is over
+      if (v.dlCap > 0 && !v.noFail && !st.failKind && !inShift && Teng > v.dlCap) { st.dlOver = (st.dlOver || 0) + dt; if (st.dlOver > 0.05) { st.failKind = "driveline"; st.failAt = st.t; } }
       let Fdemand = Ttrans * ratio * eta / rw, F;
       st.spin = false;
       if (Fdemand > Fmax) { st.spin = true; st.spinTime += dt; F = Fmax * 0.85; st.wSpin += (Ttrans - F * rw / (ratio * eta)) / (I * 2.2) * dt * 60 / (2 * Math.PI); }
@@ -407,6 +410,7 @@
       if (q && (st.trapGear || st.gear) < v.gears && !late.length) reasons.push(`Crossed the line in ${st.trapGear || st.gear}${(st.trapGear||st.gear) === 1 ? "st" : (st.trapGear||st.gear) === 2 ? "nd" : (st.trapGear||st.gear) === 3 ? "rd" : "th"} of ${v.gears} — top gear never used; a shorter final drive would work the engine harder.`);
       if (q && st.trapRpm && st.trapRpm < res.peakHpRpm * 0.85 && st.trapGear === v.gears) reasons.push(`Ran out of gear — only ${Math.round(st.trapRpm).toLocaleString()} rpm at the stripe. Lower (numerically higher) final drive.`);
       if (!q && !st.broke) reasons.push("Did not reach the 1/4-mile mark.");
+      if (st.broke === "driveline") reasons.unshift(`The driveline let go at ${Math.round(st.x)} m — it is rated for ${Math.round(v.dlCap)} N·m and the engine put more than that through it. The engine is fine. A stronger gearbox and axle (Build → Swap), or less torque.`);
       if (q && q.mph > 150 && !v.chute) reasons.push(`Trapped ${Math.round(q.mph)} mph with no parachute. Anything over 150 gets black-flagged at tech, and it took ${Math.round(st.shutFt)} ft of brakes alone to pull up.`);
       else if (st.shutFt > 1800) reasons.push(`Used ${Math.round(st.shutFt)} ft of shutdown — more road than most strips give you.`);
       if (q && v.body === "street" && q.mph > 160) reasons.push("A full street body is its own parachute at this speed — a slicker shell is worth several mph of trap.");
