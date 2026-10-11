@@ -229,7 +229,7 @@
     const add = Math.max(0, Math.min(E24_TANK, need, toEnd + 2) - c.fuel);
     const swap = c.drvT >= 100 * 60 || (me && pl.box && pl.swap);
     const crawl = why && why.why !== "box" ? c.P.modes[c.mode].lap * c.pace * 0.45 : 0;   // limping round to the pit entry
-    const stat = Math.max(add / 2.6, swap ? 14 : 0, fix) + (tyres ? 22 : 0) + 4, total = R.lane + stat + crawl;
+    const stat = (Math.max(add / 2.6, swap ? 14 : 0, fix) + (tyres ? 22 : 0) + 4) * (me && R.pitK ? R.pitK : 1), total = R.lane + stat + crawl;   // pitK: the shop crew (career)
     c.fuel += add; c.pits++; c.pitT += total; c.tyre.stops++;
     if (tyres) { c.tyre = { c: newC, km: 0, cold: true, stops: 0 }; parts.push(`${E24_TYRES[newC].n.toLowerCase()} tyres`); } else parts.push("tyres stay on");
     if (add > 0.5) parts.push(`${Math.round(add)} L`);

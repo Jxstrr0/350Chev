@@ -48,6 +48,7 @@ app/salt.js
 app/results.js
 app/market.js
 app/career.js
+app/crew.js
 app/help.js
 app/boot.js
 html/end.html

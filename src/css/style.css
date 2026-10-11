@@ -495,6 +495,31 @@ div.up h3{font-size:15px;font-weight:700}
 div.up p{margin:3px 0 0;font-size:13px;color:var(--muted);line-height:1.4}
 div.up .price{font-family:var(--display);font-size:15px;font-weight:700;color:var(--orange2);white-space:nowrap;font-variant-numeric:tabular-nums}
 div.up.owned .price{color:var(--good)}
+/* crew cards (app/crew.js): portrait initials, level bar, traits, history, training */
+div.up.crew{grid-template-columns:1fr;gap:6px}
+div.up.crew.away{opacity:.82;border-style:dashed}
+.crew .cwho{display:flex;align-items:center;gap:10px;min-width:0}
+.crew .cwho>div{flex:1;min-width:0}
+.crew .cav{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.04em;color:var(--cc);background:color-mix(in srgb,var(--cc) 16%,transparent);box-shadow:inset 0 0 0 2px var(--cc)}
+.crew .cav.off{opacity:.55;box-shadow:inset 0 0 0 2px var(--rule)}
+.crew .csub{margin:1px 0 0;font-size:12px;color:var(--muted)}
+.crew .clv{font-family:var(--display);font-size:15px;color:var(--orange2);white-space:nowrap}
+.crew .cbar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
+.crew .cbar i{display:block;height:100%;background:var(--orange);border-radius:3px}
+.crew p.cxp{display:flex;justify-content:space-between;gap:8px;margin:0;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.crew .cmor.good{color:var(--good)}.crew .cmor.warn{color:var(--warn)}.crew .cmor.crit{color:var(--crit)}
+.crew .ctrs{display:flex;flex-wrap:wrap;gap:5px}
+.crew .ctr{font-size:12px;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
+.crew .ctr.pos{color:var(--good);border-color:rgba(79,192,141,.45)}.crew .ctr.neg{color:var(--crit);border-color:rgba(226,71,60,.45)}.crew .ctr.hid{border-style:dashed;color:var(--dim)}
+.crew p.chist{font-size:12px;color:var(--dim);font-style:italic}
+.crew p.caway{font-size:12px;color:var(--warn)}
+.crew .ctrain summary{cursor:pointer;font-size:13px;color:var(--orange2);min-height:36px;display:flex;align-items:center}
+.crew .ccrs{display:flex;flex-direction:column;align-items:flex-start;width:100%;margin-top:6px;min-height:44px;padding:8px 10px;text-align:left;background:var(--panel2);border:1px solid var(--rule);border-radius:6px;color:var(--chalk);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.crew .ccrs small{font-size:12px;font-weight:400;color:var(--muted);margin-top:2px;line-height:1.35}
+.crew .ccrs:hover,.crew .ccrs:focus-visible{border-color:var(--orange)}
+.crew .cbtn{display:flex;justify-content:flex-end}
+.crew .cbtn .btn{min-height:40px}
+#staff .crewi{margin:-2px 0 8px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
 .stats div{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:8px}
 .stats b{display:block;font-family:var(--display);font-size:18px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
