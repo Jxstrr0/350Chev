@@ -36,6 +36,7 @@ vis/road.js
 vis/salt.js
 vis/band.js
 vis/api.js
+vis/trophy.js
 vis/teardown.js
 app/state.js
 app/build.js
@@ -50,6 +51,7 @@ app/runview.js
 app/results.js
 app/market.js
 app/career.js
+app/trophy.js
 app/help.js
 app/boot.js
 html/end.html
