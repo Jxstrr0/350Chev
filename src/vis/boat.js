@@ -87,7 +87,7 @@ function boatModel(cls, color){
       box(paint, 5.6, 0.55, sd*0.95, 2.6, 0.08, 1.0); });   /* sponsons and the wing deck between */
     box(dark, 6.6, 0.85, 0, 1.4, 0.45, 0.8); var cap=new THREE.Mesh(new THREE.SphereGeometry(0.5,14,10,0,TAU,0,PI/2), glass); cap.scale.set(1.6,0.9,0.9); cap.position.set(6.6,1.05,0); pivot.add(cap);   /* the capsule */
     box(dark, 2.6, 1.0, 0, 2.2, 0.7, 0.9); box(chrome, 2.9, 1.55, 0, 0.9, 0.45, 0.55); box(dark, 2.9, 1.95, 0, 0.7, 0.35, 0.45);   /* engine, blower, hat */
-    box(dark, 0.3, 1.0, -0.6, 0.12, 1.2, 0.08); box(dark, 0.3, 1.0, 0.6, 0.12, 1.2, 0.08); box(paint, 0.3, 1.62, 0, 0.9, 0.08, 2.8);   /* the rear wing */
+    box(dark, 0.3, 1.0, -0.6, 0.12, 1.2, 0.08); box(dark, 0.3, 1.0, 0.6, 0.12, 1.2, 0.08); box(paint, 0.3, 1.62, 0, 0.7, 0.05, 2.2);   /* the rear wing */
     box(dark, -0.3, -0.05, 0, 0.7, 0.1, 0.1);
   } else {
     var flat=cls==="pro"||cls==="jet", wl=cls==="jet"?6.6:6.8;
