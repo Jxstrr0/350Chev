@@ -76,7 +76,7 @@ let e24Snap=null;   // the build, mode and career the flag dropped on (testSnap)
 function e24Click(){const gate=e24Gate();if(gate){toast(gate);return;}
   const res=SIM.simulate(S.cfg,stdEnv({testType:"pull"}));if(res.fails.length){toast(`Scrutineering says no — ${String(res.fails[0]).toLowerCase()} on the dyno`);return;}
   testing=true;e24Snap=testSnap();abStop();renderTest();ensureSound();
-  ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});   // a leftover strip/sled/salt scene
+  ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});if(ENGINE_VIS.setBoat)ENGINE_VIS.setBoat({on:false});   // a leftover strip/sled/salt scene
   if(!E24W.done[S.env.e24Trk])toast("Scrutineering the field…");
   e24Warm(S.env.e24Trk,e24Go);}
 function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roadOpt();let P;
