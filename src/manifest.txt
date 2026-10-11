@@ -30,6 +30,7 @@ vis/garage.js
 vis/particles.js
 vis/loop.js
 vis/strip.js
+vis/strip-venue.js
 vis/strip-cars.js
 vis/strip-cars-shells.js
 vis/strip-cars-classes.js
