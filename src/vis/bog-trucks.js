@@ -60,7 +60,7 @@ function bogTyreGeo(r, w, rimR, kind, lite){
   var pr=[[rimR+0.006,0.84],[lerp(rimR,r0,0.3),0.97],[lerp(rimR,r0,0.62),1],[lerp(rimR,r0,0.86),0.99],[r0-sh,0.95],[r0-sh*0.15,0.8]], pts=[];
   for(i=0;i<pr.length;i++) pts.push(new THREE.Vector2(pr[i][0], -hw*pr[i][1]));
   for(i=pr.length-1;i>=0;i--) pts.push(new THREE.Vector2(pr[i][0], hw*pr[i][1]));
-  var lathe=new THREE.LatheGeometry(pts, lite?30:48), P=lathe.attributes.position, UV=lathe.attributes.uv;
+  var lathe=new THREE.LatheGeometry(pts, lite?24:48), P=lathe.attributes.position, UV=lathe.attributes.uv;
   for(i=0;i<P.count;i++){ var px=P.getX(i), pz=P.getZ(i), rad=Math.sqrt(px*px+pz*pz), y=P.getY(i);
     UV.setY(i, y>hw*0.83 && rad<r0-sh*0.5 ? 0.2+0.6*clamp((rad-rimR)/(r0-sh-rimR),0,1) : 0.95); }
   var parts=[{g:lathe, m:new THREE.Matrix4()}], box=bogtLugBox();
@@ -91,10 +91,10 @@ function bogTyreGeo(r, w, rimR, kind, lite){
         blk(ts, s*hw*0.46, base, r, hw*0.8, 0.13*r/0.56, s*0.2);                                      /* the big square block */
         if(!lite) blk(ts, s*(hw*0.99), r0-lugH*1.9, r0+lugH*0.55, 0.05, 0.1*r/0.56, 0); } }          /* the side-biter down the shoulder */
   } else {
-    var n3=28, p3=TAU/n3; for(i=0;i<n3;i++){ var t3=i*p3;
+    var n3=lite?20:28, p3=TAU/n3; for(i=0;i<n3;i++){ var t3=i*p3;
       for(s=-1;s<=1;s+=2){ var ts3=t3+(s>0?0:p3/2);
-        blk(ts3, s*hw*0.62, base, r, hw*0.6, 0.072, s*0.12);                                         /* shoulder block */
-        blk(ts3+p3/2, s*hw*0.15, base, r-0.004, hw*0.34, 0.05, -s*0.35);                              /* centre block, staggered */
+        blk(ts3, s*hw*0.62, base, r, hw*0.6, lite?0.09:0.072, s*0.12);                               /* shoulder block */
+        if(!lite || (i&1)) blk(ts3+p3/2, s*hw*0.15, base, r-0.004, hw*0.34, 0.05, -s*0.35);                              /* centre block, staggered */
         if(!lite && (i&1)) blk(ts3, s*(hw*0.985), r0-lugH*1.6, r0+lugH*0.4, 0.035, 0.06, 0); } }
   }
   return (BOGT.geo[key]=mergeGeos(parts));
@@ -342,11 +342,15 @@ function bogTruckFrame(V, o, dt){
   if(BOG.night){ var cxm=BOG.camTgt.x, kk=lerp(0.5,1,clamp((cxm+6)/14,0,1)); BOG.spots.forEach(function(s2){ s2.intensity=1.6*kk; }); BOG.flood.intensity=(GFX==="lite"?0.6:0.28)*lerp(0.7,1,kk); }   /* the light dirt run-up blew out under the poles */
   if(BOG.lip){ var L2=+o.len||(o.pit&&o.pit.len)||70; if(BOG.lip.scale.x!==L2+1){ BOG.lip.scale.x=L2+1; BOG.lip.position.x=(L2+1)/2-0.5; } }
 }
-/* the pit's lip: a dark wet band over the strip of light ground between the mud's edge and the berms (the "seam") */
+/* the pit's lip: a dark wet band along both long edges, over the strip of light ground before the berms and the lifted,
+   sun-catching rim of the mud (the bright "seam"); its inner edge fades out into the mud */
 function bogLip(S3){
-  var pl=new THREE.PlaneGeometry(1,0.62).rotateX(-PI/2), g=mergeGeos([{g:pl, m:mkM(0,0,BOG_W/2+0.22)},{g:pl, m:mkM(0,0,-BOG_W/2-0.22)}]);
-  var m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(0x24180f), roughness:0.55, metalness:0, envMapIntensity:0.4}));
-  m.position.set(35,-0.013,0); m.scale.x=71; m.receiveShadow=true; S3.add(m); BOG.lip=m;
+  var pl=new THREE.PlaneGeometry(1,1.25,1,1).rotateX(-PI/2), g=mergeGeos([{g:pl, m:mkM(0,0,BOG_W/2-0.05)},{g:pl, m:mkM(0,0,-BOG_W/2+0.05)}]), P=g.attributes.position, UV=g.attributes.uv;
+  for(var i=0;i<P.count;i++) UV.setXY(i, 0.5, clamp((Math.abs(P.getZ(i))-(BOG_W/2-0.68))/0.45,0,1));
+  var c=newCanvas(4,64), x=c.getContext("2d"), gr=x.createLinearGradient(0,0,0,64); gr.addColorStop(0,"rgba(36,24,15,1)"); gr.addColorStop(1,"rgba(36,24,15,0)"); x.fillStyle=gr; x.fillRect(0,0,4,64);
+  var t=bogtCanvasTex(c); t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;
+  var m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:0xffffff, map:t, transparent:true, depthWrite:false, roughness:0.6, metalness:0, envMapIntensity:0.4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}));
+  m.position.set(35,-0.006,0); m.scale.x=71; m.receiveShadow=true; m.renderOrder=1; S3.add(m); BOG.lip=m;
 }
 /* stage framing: the whole truck in frame whatever the aspect (phone portrait canvas is narrow), a slow push in */
 function bogFitDist(U, fov){
@@ -372,11 +376,11 @@ function bogProps(B, S3, lite){
   /* the pickups parked along the top of the bank (same spots as buildBogScene's) */
   var fl=[[0xff7a1a,0x15171b],[0x1d4787,0xf1ede2],[0x9e2a22,0xf1ede2],[0x2c6b3a,0xf2c22c],[0x15171b,0xf2c22c]];
   for(i=0;i<12;i++){ var hx=-26+i*11+rng(i)*4, hz=-BOG_W/2-25-rng(i+3)*4, bedY=1.5;
-    var n=lite?(i%3===0?2:1):2+Math.floor(rng(i+20)*3);
+    var n=lite?(i%2===0?1:0):2+Math.floor(rng(i+20)*3);
     for(k=0;k<n;k++) person(hx-2.3+k*0.62, bedY, hz+(rng(i*7+k)-0.5)*0.9, false, i*13+k);
-    if(!lite || i%2===0) flag(hx-2.45, bedY, hz+0.7, 2.6+rng(i+9), fl[i%fl.length][0], fl[i%fl.length][1]);
+    if(!lite || i%3===0) flag(hx-2.45, bedY, hz+0.7, 2.6+rng(i+9), fl[i%fl.length][0], fl[i%fl.length][1]);
     /* tailgate party in front of the truck, facing the pit */
-    if(!lite || i%3===1){ chair(hx-1.2, 0.6, hz+2.6, i%2?0x2c6b3a:0x34598f, 0); person(hx-1.2, 0.6, hz+2.68, true, i*31); chair(hx-0.3, 0.6, hz+2.7, 0x9e2a22, 0.2); person(hx-0.3, 0.6, hz+2.78, true, i*37);
+    if(!lite){ chair(hx-1.2, 0.6, hz+2.6, i%2?0x2c6b3a:0x34598f, 0); person(hx-1.2, 0.6, hz+2.68, true, i*31); chair(hx-0.3, 0.6, hz+2.7, 0x9e2a22, 0.2); person(hx-0.3, 0.6, hz+2.78, true, i*37);
       cooler(hx+0.6, 0.6, hz+2.6, i%2?0x9e2a22:0x1d4787); }
   }
   /* lawn chairs down the front of the bank, between the standing crowd */
