@@ -100,7 +100,7 @@ function tropBest(name,h){const R=recs(),out=[],mine=e=>e&&(e.n===name||(h&&e.h=
   return out.slice(0,6);}
 function tropRetire(){if(testing){toast("Let the run finish first");return;}if(S.bay){toast("That's a customer's engine — hand it back first");return;}
   const T=tropBook(),h=cfgHash(S.cfg),name=engineName(),cert=career()&&C().cert&&C().cert.ok&&C().cert.hash===h?C().cert.res:null,q=cert||quick||{};
-  const snap={id:Date.now().toString(36),name:name.slice(0,40),cfg:Object.assign({},S.cfg),h,hp:Math.round(q.peakHp||0),tq:Math.round(q.peakTq||0),rel:q.rel,label:SIM.cfgLabel(S.cfg),best:tropBest(name,h),cert:!!cert};
+  const snap={id:Date.now().toString(36),name:name.slice(0,40),cfg:Object.assign({},S.cfg),h,hp:Math.round(q.peakHp||0),tq:Math.round(q.peakTq||0),rel:q.rel,label:cfgLbl(S.cfg),best:tropBest(name,h),cert:!!cert};
   tropStamp(snap);const i=T.retired.findIndex(e=>e.h===h);
   if(i>=0){snap.id=T.retired[i].id;T.retired.splice(i,1);T.retired.unshift(snap);toast("Plaque updated — it was already on a stand");}
   else{if(T.retired.length>=TROPHY_RET_MAX){toast(`The room holds ${TROPHY_RET_MAX} retired engines — take one down first`);return;}T.retired.unshift(snap);toast(`RETIRED · ${snap.name} goes on a stand`);}
