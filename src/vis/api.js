@@ -91,6 +91,7 @@ const ENGINE_VIS = {
     if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; stripBandRead(); }
     if(PULL.cam){ PULL.cam.aspect=w/h; PULL.cam.updateProjectionMatrix(); }
     if(BOG.cam){ BOG.cam.aspect=w/h; BOG.cam.updateProjectionMatrix(); }
+    if(BOAT.cam){ BOAT.cam.aspect=w/h; BOAT.cam.updateProjectionMatrix(); }
     if(ROAD.cam){ ROAD.cam.aspect=w/h; ROAD.cam.updateProjectionMatrix(); }
     if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); }
     if(PITS.cam) PITS.dirty=2;
@@ -180,6 +181,20 @@ const ENGINE_VIS = {
     return BOG.stats||null;
   },
   bogSkip: function(){ if(BOG.on) BOG.skip=true; },
+  /* BOAT DRAGS: fed every frame {on, phase:"tree"|"run"|"done", cls, hull, drive, night, water:{wind, chop}, tree:{pre, stage, amb (0..3), green, redMe, redOpp},
+     me / opp: {x (m from the start buoys), v, rpm, thr, bow (deg), pl (0..1 planing), porp, walk, hop, air, flip, hook, failed, color, smoke},
+     meEt, meMph, oppEt, oppMph (the boards), won, shot? (force a camera), dt?}; {on:false} leaves */
+  setBoat: function(o){
+    if(!renderer) return;
+    if(!o || o.on===false){ if(BOAT.on){ BOAT.on=false; boatReset(); } return; }
+    var now=performance.now(); if(!BOAT.on){ BOAT.on=true; if(!BOAT.built) buildBoatScene(); boatReset(); BOAT.snap=true; BOAT.lastT=now; ENGINE_VIS.resize(); }
+    var rdt=o.dt!=null ? +o.dt : (now-BOAT.lastT)/1000; BOAT.lastT=now; boatUpdate(o, clamp(rdt||0, 0, 0.1));
+    return BOAT.stats||null;
+  },
+  boatSkip: function(){ if(BOAT.on) BOAT.skip=true; },
+  boatState: function(){ return {on:BOAT.on, built:BOAT.built, shot:BOAT.shot, tier:BOAT.tier, parts:BOAT.fx?BOAT.fx.P.length+(BOAT.fxMist?BOAT.fxMist.P.length:0):0, mist:!!BOAT.fxMist, stats:BOAT.stats,
+    cam:BOAT.cam?BOAT.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null, me:BOAT.me?{x:+BOAT.me.position.x.toFixed(1), y:+BOAT.me.position.y.toFixed(2), bow:+(BOAT.me.userData.bow*180/PI).toFixed(1)}:null,
+    wake:BOAT.wakeMe?BOAT.wakeMe.geometry.drawRange.count:0}; },   /* harness */
   bogState: function(){ return {on:BOG.on, built:BOG.built, shot:BOG.shot, mudKey:BOG.mudKey, parts:BOG.fx?BOG.fx.P.length+(BOG.fxSpray?BOG.fxSpray.P.length:0):0, spray:!!BOG.fxSpray, stats:BOG.stats,
     cam:BOG.cam?BOG.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null, ruts:BOG.mudGeo?Math.round(-Math.min.apply(null, Array.prototype.filter.call(BOG.mudGeo.attributes.position.array, function(v,i){ return i%3===1; }))*100)/100:0}; },   /* harness */
   /* career sponsors on the cars: {hood:sp, sides:[sp...]} (sp: {id, name, tag, shape, c1, c2, c3}); null = the shop's own colours */
