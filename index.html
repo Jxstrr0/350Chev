@@ -15601,7 +15601,8 @@ var STRIP={ on:false, scene:null, cam:null, built:false, sun:null, hemi:null, ca
   flash:null, fog:null, crowd:null, halos:[], exposure:0.95 };
 var STRIP_TRACK_END=780, STRIP_Q=402.336, STRIP_LANE=2.5;
 /* v2 world: uniforms shared by the track and crowd shaders (time, midday mirage, fresh burnout shine per lane, water-box ripples, lit stands) */
-var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2()}, uRip:{value:0}, uHorC:{value:new THREE.Color(0.52,0.6,0.7)}, uCrowdLit:{value:0} };
+var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2()}, uRip:{value:0}, uHorC:{value:new THREE.Color(0.52,0.6,0.7)}, uCrowdLit:{value:0},
+  uGlare:{value:0}, uSunW:{value:new THREE.Vector3(0,1,0)}, uGlareC:{value:new THREE.Color(1,0.6,0.35)} };   /* fix pack: dusk glare clamp (stripGlare) */
 var STRIP_SUN_DAY=new THREE.Vector3(-0.55,0.36,0.75).normalize(), STRIP_MOON=new THREE.Vector3(0.45,0.42,-0.78).normalize();
 var STRIP_HOR=[0.52,0.60,0.70], STRIP_HOR_N=[0.016,0.019,0.03], STRIP_HOR_D=[0.2,0.1,0.1];
 var STRIP_SUN_DUSK=new THREE.Vector3(0.86,0.03,-0.5).normalize(), STRIP_DUSK_LIGHT=new THREE.Vector3(0.82,0.2,-0.54).normalize();
@@ -15652,8 +15653,8 @@ var STRIP_GLSL_NOISE=[
   "float sn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(sh(i),sh(i+vec2(1.0,0.0)),f.x), mix(sh(i+vec2(0.0,1.0)),sh(i+vec2(1.0,1.0)),f.x), f.y); }",
   "float sfbm(vec2 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*sn(p); p=p*2.03+vec2(17.1,9.3); a*=0.5; } return s; }"].join("\n");
 var STRIP_GLSL_TRACK=[
-  "uniform float uTime; uniform float uHaze; uniform vec2 uShine; uniform float uRip; uniform vec3 uHorC;",
-  "float gWet=0.0, gMir=0.0; vec2 gRip=vec2(0.0);",
+  "uniform float uTime; uniform float uHaze; uniform vec2 uShine; uniform float uRip; uniform vec3 uHorC; uniform float uGlare; uniform vec3 uSunW; uniform vec3 uGlareC;",
+  "float gWet=0.0, gMir=0.0, gGlare=0.0; vec2 gRip=vec2(0.0);",
   "vec3 stripSurf(vec3 w, out float rough){",
   "  float x=w.x, z=w.z, az=abs(z); float d=length(w-cameraPosition);",
   "  float fine=1.0-smoothstep(20.0,80.0,d), mid=1.0-smoothstep(60.0,260.0,d);",
@@ -15688,6 +15689,10 @@ var STRIP_GLSL_TRACK=[
   "    float far=smoothstep(60.0,200.0,d)*(1.0-smoothstep(900.0,1500.0,d));",
   "    float wob=0.7*sn(vec2(x*0.045-uTime*0.9,z*0.35+uTime*0.3))+0.3*sn(vec2(x*0.14+uTime*1.7,z*0.8));",
   "    gMir=uHaze*graze*far*smoothstep(0.38,0.72,wob); c*=1.0-0.85*gMir; rough=mix(rough,0.9,gMir); }",
+  /* fix pack: a low sun off the glossy groove made a white blob; at dusk the sharp highlight is clamped (STRIP_TRACK_POST.light)
+     and a broad warm sheen towards the sun stands in for it */
+  "  if(uGlare>0.0){ vec3 gv=normalize(w-cameraPosition); float gs=max(dot(reflect(gv,vec3(0.0,1.0,0.0)),uSunW),0.0);",
+  "    gGlare=uGlare*(0.25+0.75*(1.0-rough))*(0.55*pow(gs,5.0)+0.45*pow(gs,40.0))*(1.0-smoothstep(0.02,0.35,-gv.y)); }",
   "  float ln=1.0-smoothstep(0.05,0.075,abs(x));",
   "  ln=max(ln,(1.0-smoothstep(0.13,0.16,abs(x-402.336)))*(0.75+0.25*step(0.5,fract(z*1.0))));",
   "  ln=max(ln,(1.0-smoothstep(0.05,0.075,abs(az-6.95)))*step(-40.0,x));",
@@ -15717,13 +15722,15 @@ var STRIP_GLSL_GROUND=[
   "  float sp=(1.0-smoothstep(7.4,8.2,abs(p.y)))*smoothstep(-80.0,-75.0,p.x)*(1.0-smoothstep(785.0,790.0,p.x));",
   "  c=mix(c,vec3(0.2,0.19,0.17),sp);",
   "  rough=0.96; return c; }"].join("\n");
-var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*gMir;" };
+var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*gMir+uGlareC*gGlare;",
+  light:"reflectedLight.directSpecular=min(reflectedLight.directSpecular, vec3(mix(64.0,0.14,uGlare))); reflectedLight.indirectSpecular=min(reflectedLight.indirectSpecular, vec3(mix(64.0,0.3,uGlare)));" };
 function stripSurfMat(glsl, extra, uni, post){
   var m=new THREE.MeshStandardMaterial(Object.assign({color:0xffffff, roughness:0.9, metalness:0}, extra||{}));
   m.onBeforeCompile=function(sh){
     if(uni) for(var uk in uni) sh.uniforms[uk]=uni[uk];
     if(post){ if(post.normal) sh.fragmentShader=sh.fragmentShader.replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n"+post.normal);
-      if(post.emissive) sh.fragmentShader=sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n"+post.emissive); }
+      if(post.emissive) sh.fragmentShader=sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n"+post.emissive);
+      if(post.light) sh.fragmentShader=sh.fragmentShader.replace("#include <lights_fragment_end>", "#include <lights_fragment_end>\n"+post.light); }
     sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;").replace("#include <project_vertex>", "#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;");
     sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nfloat gRough;\n"+STRIP_GLSL_NOISE+"\n"+glsl)
       .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb*=stripSurf(vWp,gRough);")
@@ -15884,7 +15891,8 @@ function buildStripScene(){
       B.box("solid", 0.0, 0.18, pz, 0.16, 0.36, 0.16, 0x2b2d30); B.box("solid", -0.18, 0.18, pz, 0.16, 0.36, 0.16, 0x2b2d30);
       B.box("lamp", 0.0, 0.2, pz-side*0.085, 0.06, 0.06, 0.01, 0xff2a1a); B.box("lamp", -0.18, 0.2, pz-side*0.085, 0.06, 0.06, 0.01, 0xff2a1a); }
     /* water box curbs */
-    B.box("solid", -10, 0.05, lzc+2.3, 10, 0.1, 0.12, 0xd9d4c6); B.box("solid", -10, 0.05, lzc-2.3, 10, 0.1, 0.12, 0xd9d4c6);
+    B.box("solid", -10, 0.035, lzc+2.3, 10, 0.1, 0.12, 0xd9d4c6); B.box("solid", -10, 0.035, lzc-2.3, 10, 0.1, 0.12, 0xd9d4c6);   /* fix pack: set into the pad */
+    B.box("solid", -10, 0.002, lzc+2.3, 10.06, 0.006, 0.18, 0x26272a); B.box("solid", -10, 0.002, lzc-2.3, 10.06, 0.006, 0.18, 0x26272a);   /* grime line where the curb meets the pad */
   }
   /* burnout-box water hose reel + cones behind the line */
   B.add("solid","cone",[-15.5,0.35,6.6],[0.4,0.7,0.4],0xe36a17); B.add("solid","cone",[-15.5,0.35,-6.6],[0.4,0.7,0.4],0xe36a17);
@@ -15901,6 +15909,10 @@ function buildStripScene(){
   B.box("solid", TX, 2.42, 0, 0.26, 2.3, 0.86, 0x121315); B.box("solid", TX+0.06, 3.66, 0, 0.16, 0.12, 0.86, 0x121315);
   var bulbY={pre:3.44, stage:3.2, a1:2.9, a2:2.55, a3:2.2, g:1.85, r:1.5};
   for(var nm in bulbY){ for(side=-1; side<=1; side+=2) B.box("solid", TX-0.2, bulbY[nm]+0.13, side*0.24, 0.16, 0.025, 0.3, 0x0c0c0d); }
+  /* fix pack: the back of the tree (what the chase cam sees): a grey service door with ribs and a stencilled lane split, not a black slab */
+  B.box("solid", TX+0.135, 2.42, 0, 0.02, 2.18, 0.78, 0x8b9096); B.box("solid", TX+0.15, 2.42, 0, 0.012, 2.1, 0.035, 0xe1b21c);
+  for(k=0;k<4;k++) B.box("metal", TX+0.15, 1.55+k*0.58, 0, 0.02, 0.04, 0.7, 0x7d8388);
+  B.box("solid", TX+0.15, 3.25, 0.2, 0.012, 0.1, 0.14, 0xe9e5da); B.box("solid", TX+0.15, 3.25, -0.2, 0.012, 0.1, 0.14, 0xe9e5da);
   /* start-line timing tower (far side, behind the line) */
   var TWX=-24, TWZ=-15;
   B.box("solid", TWX, 3.2, TWZ, 10, 6.4, 6, 0xd8d2c2); B.box("solid", TWX, 6.65, TWZ, 10.8, 0.5, 6.8, 0x2a2c2f);
@@ -15941,7 +15953,7 @@ function buildStripScene(){
   for(i=0;i<5;i++){ B.box("solid", 300, 0.25+i*0.28, 10.5+i*0.75, 60, 0.5+i*0.56, 0.75, i%2?0xb8b2a4:0xc4beb0); }
   /* scoreboard frames near the stripe (boards themselves are dynamic) */
   for(side=-1; side<=1; side+=2){ var sbx=STRIP_Q+26, sbz=side*10.8, ry2=side<0?-PI/2+0.55:-PI/2-0.55;
-    B.box("metal", sbx+1.0, 3.3, sbz-2.4, 0.35, 6.6, 0.35, STEEL); B.box("metal", sbx+1.0, 3.3, sbz+2.4, 0.35, 6.6, 0.35, STEEL);
+    for(var sp2=-1; sp2<=1; sp2+=2) B.box("metal", sbx-Math.sin(ry2)*0.75+Math.cos(ry2)*sp2*2.6, 3.3, sbz-Math.cos(ry2)*0.75-Math.sin(ry2)*sp2*2.6, 0.35, 6.6, 0.35, STEEL);   /* posts behind the board (one stood in front of its lower half) */
     B.add("solid","box",[sbx-Math.sin(ry2)*0.3, 6.7, sbz-Math.cos(ry2)*0.3],[9.0,4.7,0.4],0x151618,[0,ry2,0]);
     B.add("solid","box",[sbx-Math.sin(ry2)*0.3, 9.66, sbz-Math.cos(ry2)*0.3],[9.0,1.3,0.4],0x151618,[0,ry2,0]); }   /* v2: title header */
   /* grain elevators: the prairie skyline (one downtrack, one behind the start, one far off) */
@@ -16055,7 +16067,7 @@ function stripCar(body, color, tyreIn, hw){
   var tail=new THREE.MeshStandardMaterial({color:sc(0x4a0707), roughness:0.25, metalness:0.1, emissive:new THREE.Color(0xff1a0a), emissiveIntensity:0});
   var head=new THREE.MeshStandardMaterial({color:sc(0xc9ced4), roughness:0.12, metalness:0.55, emissive:new THREE.Color(0xfff1d8), emissiveIntensity:0});
   var g=new THREE.Group(); g.name="stripCar";
-  var bodyG=new THREE.Group(); bodyG.position.set(me.xr, me.rr, 0); g.add(bodyG);
+  var bodyG=new THREE.Group(); bodyG.position.set(me.xr, me.rr-scRide(me, body), 0); g.add(bodyG);   /* scRide: the fix pack's lower ride height */
   var inner=new THREE.Group(); inner.position.set(-me.xr, -me.rr, 0); bodyG.add(inner);
   var k, mesh;
   for(k in P.parts){
@@ -16149,7 +16161,7 @@ function stripCarAnim(car, o, dt, isPlayer){
   }
   var B=U.bodyGroup;
   B.rotation.z=A.pitch; B.rotation.x=A.roll;
-  B.position.y=me.rr - me.rr*0.08*sq - clamp(acc/25,0,1)*me.squatDrop;
+  B.position.y=me.rr - (me.ride||0) - me.rr*0.08*sq - clamp(acc/25,0,1)*me.squatDrop;
   B.updateMatrix();
   for(i=0;i<A.tipRest.length;i++){ U.exhaustTips[i].copy(A.tipRest[i]).applyMatrix4(B.matrix); U.exhaustDirs[i].copy(A.dirRest[i]).transformDirection(B.matrix); }
   U.chuteAnchor.copy(A.anchorRest).applyMatrix4(B.matrix);
@@ -16176,6 +16188,7 @@ function sc_chuteAnim(ch, A, me, v, dt){
   _scA.copy(cn.position).negate().normalize();
   cn.quaternion.setFromUnitVectors(_scX, _scA);
   var rad=bloom*(1-0.6*c)*(1+0.035*Math.sin(A.chS*4.1)*(1-c));
+  if(U.fl) U.fl.value.set(A.chS%600, ext*(1-c)*(0.35+0.65*Math.min(1,v/30)));   /* fabric flutter: hard at speed, gone once it falls in */
   cn.scale.set(bloom*(1+0.5*c), rad, rad*(1-0.25*c));
   cn.updateMatrix();
   _scB.copy(cn.position).multiplyScalar(0.28);                 /* confluence point */
@@ -16563,19 +16576,49 @@ function sc_wheel(ws, M){
 
 /* --- parachute ------------------------------------------------------------ */
 function sc_chute(me, M){
-  var g=new THREE.Group(), rc=me.chuteR, key="cano"+r3(rc), geo=SC.geo[key];
-  if(!geo){ var pts=[], i; for(i=0;i<=7;i++){ var a=i/7*PI/2*0.9; pts.push(new THREE.Vector2(rc*(0.9+0.1*Math.cos(a*1.4))*Math.cos(a)+0.001, rc*0.62*Math.sin(a))); }
-    geo=new THREE.LatheGeometry(pts, 24);
-    /* inflated gores: pinch the radius at the 8 seams where the shroud lines attach */
-    var pa=geo.attributes.position; for(i=0;i<pa.count;i++){ var x=pa.getX(i), z=pa.getZ(i), ph=Math.atan2(x,z), gq=((ph/(TAU/8))%1+1)%1, f=0.92+0.08*Math.sin(PI*gq); pa.setX(i,x*f); pa.setZ(i,z*f); }
-    geo.computeVertexNormals(); geo.rotateZ(PI/2); SC.geo[key]=geo; }
-  var cn=new THREE.Mesh(geo, M.canopy); cn.castShadow=true; g.add(cn);
-  var lg=SC.geo.chuteLine||(SC.geo.chuteLine=new THREE.CylinderGeometry(0.008,0.008,1,4,1,true).translate(0,0.5,0));
+  /* fix pack: a cross-form drag chute (four arms around a centre square, domed), shroud lines from each arm tip to the
+     confluence, the fabric flutters in the vertex shader. Canopy axis along local +x (towards the car), rim at x=0. */
+  var g=new THREE.Group(), rc=me.chuteR, A=0.375, key="xcano"+r3(rc), geo=SC.geo[key];
+  if(!geo){ var N=20, pos=[], uv=[], idx=[], i, j, DEP=0.34*rc, RA=1.12*rc;
+    for(j=0;j<=N;j++) for(i=0;i<=N;i++){ var u=-1+2*i/N, v=-1+2*j/N, r2=Math.min(1,(u*u+v*v)/(1+A*A)), au=Math.abs(u), av=Math.abs(v);
+      var puff=0.09*rc*(av<=A?Math.cos(PI/2*v/A):0)*Math.sin(PI*Math.max(0,au-A)/(1-A))+0.09*rc*(au<=A?Math.cos(PI/2*u/A):0)*Math.sin(PI*Math.max(0,av-A)/(1-A));   /* each arm bellies out between its seams */
+      pos.push(-DEP*(1-r2)-puff, u*RA, v*RA); uv.push((u+1)/2, (v+1)/2); }
+    for(j=0;j<N;j++) for(i=0;i<N;i++){ var uc=-1+2*(i+0.5)/N, vc=-1+2*(j+0.5)/N; if(Math.abs(uc)>A && Math.abs(vc)>A) continue;
+      var q=j*(N+1)+i; idx.push(q, q+1, q+N+1, q+1, q+N+2, q+N+1); }
+    geo=new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv,2));
+    geo.setIndex(idx); geo.computeVertexNormals(); SC.geo[key]=geo; }
+  var mat=sc_chuteMat(M), cn=new THREE.Mesh(geo, mat); cn.castShadow=true; g.add(cn);
+  var lg=SC.geo.chuteLine2||(SC.geo.chuteLine2=new THREE.CylinderGeometry(0.009,0.009,1,4,1,true).translate(0,0.5,0));
   var bg=SC.geo.chuteBridle||(SC.geo.chuteBridle=new THREE.CylinderGeometry(0.018,0.018,1,5,1,true).translate(0,0.5,0));
-  var lines=[]; for(var k=0;k<8;k++){ var l=new THREE.Mesh(lg, M.lineM); var a2=PI/2-k/8*TAU; l.userData={cy:Math.cos(a2)*0.92, cz:Math.sin(a2)*0.92}; g.add(l); lines.push(l); }
+  var lines=[]; for(var k=0;k<4;k++) for(var s2=-1;s2<=1;s2+=2){ var l=new THREE.Mesh(lg, M.lineM), ca=Math.cos(k*PI/2), sa=Math.sin(k*PI/2);
+    l.userData={cy:(ca*0.98-sa*s2*A)*1.12, cz:(sa*0.98+ca*s2*A)*1.12}; g.add(l); lines.push(l); }   /* the two corners of each arm tip */
   var br=new THREE.Mesh(bg, M.lineM); g.add(br);
-  g.userData={canopy:cn, lines:lines, bridle:br, rc:rc};
+  g.userData={canopy:cn, lines:lines, bridle:br, rc:rc, fl:mat.userData.fl};
   return g;
+}
+/* the canopy: white nylon, a coloured band across each arm tip, dark seams; fluttering arms (uFl = time, amount) */
+function sc_chuteTex(){
+  if(SC.tex.xchute) return SC.tex.xchute;
+  var c=sc_canvas(128,128), x=c.getContext("2d"), A=0.375*64, m=64;
+  x.fillStyle="#efebe2"; x.fillRect(0,0,128,128);
+  x.fillStyle="#e5562b"; x.fillRect(0,m-A,22,2*A); x.fillRect(106,m-A,22,2*A); x.fillRect(m-A,0,2*A,22); x.fillRect(m-A,106,2*A,22);
+  x.fillStyle="#1b1c20"; x.fillRect(0,m-A,8,2*A); x.fillRect(120,m-A,8,2*A); x.fillRect(m-A,0,2*A,8); x.fillRect(m-A,120,2*A,8);
+  x.strokeStyle="rgba(40,36,30,0.45)"; x.lineWidth=1.5;
+  [m-A, m+A].forEach(function(p){ x.beginPath(); x.moveTo(p,0); x.lineTo(p,128); x.moveTo(0,p); x.lineTo(128,p); x.stroke(); });
+  x.strokeStyle="rgba(40,36,30,0.25)"; x.beginPath(); x.moveTo(m,0); x.lineTo(m,128); x.moveTo(0,m); x.lineTo(128,m); x.stroke();
+  return (SC.tex.xchute=sc_ctex(c));
+}
+function sc_chuteMat(M){
+  var env=M.canopy.envMap||null, fl={value:new THREE.Vector2(0,0)};
+  var q=new THREE.MeshStandardMaterial({color:0xffffff, map:sc_chuteTex(), roughness:0.82, metalness:0, envMapIntensity:0.4, side:THREE.DoubleSide}); if(env) q.envMap=env;
+  q.userData.fl=fl;
+  q.onBeforeCompile=function(sh){ sh.uniforms.uFl=fl;
+    sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nuniform vec2 uFl;").replace("#include <begin_vertex>",
+      "#include <begin_vertex>\nfloat flR=length(position.yz), flA=atan(position.z,position.y);\n"+
+      "transformed.x+=uFl.y*flR*flR*(0.07*sin(uFl.x*17.0+flA*2.0+flR*6.0)+0.06*sin(uFl.x*29.0-flR*9.0+flA*3.0));\n"+
+      "transformed.yz*=1.0+uFl.y*0.035*sin(uFl.x*21.0+flA*4.0);"); };
+  q.customProgramCacheKey=function(){ return "scChuteFl"; };
+  return q;
 }
 
 /* --- v2: what the car carries -----------------------------------------------
@@ -16627,6 +16670,7 @@ function sc_pack(body, tIn, H){
   var tails=[], heads=[];
   if(body==="rail") me=sc_rail(B, rr, tails, heads, res, H);
   else me=sc_door(B, body, rr, tails, heads, res, H, tIn);
+  if(body!=="rail") sc_skirt(B, me);   /* fix pack: side skirts under the sill (strip-ground.js) */
   for(var k in B) if(k!=="add" && B[k].length) res.parts[k]=sc_merge(B[k]);
   if(tails.length) res.tail=sc_merge(tails);
   if(heads.length) res.head=sc_merge(heads);
@@ -16928,6 +16972,85 @@ function sc_rail(B, rr, tails, heads, res, H){
   return { rr:rr, fr:fr, xr:xr, xf:xf, wheels:wh, tips:tips, dirs:dirs, anchor:V(-3.23,0.44,0), bars:true, maxPitch:maxP, gates:gates, hat:hat,
     squat:deg(0.5), squatDrop:0.01, shiftKick:0.1, pitchW:9, droop:0.03, wrinkle:1, chuteLen:5.4, chuteRise:0.5, chuteR:0.9 };
 }
+/* ---------------------------------------------------------------------------
+   GROUNDING (drag fix pack) — what keeps a car sitting on the track instead of hovering over it:
+   - stripContact(car, o): a soft contact-shadow decal under the car (ambient occlusion under the floor) with
+     dark tyre contact patches, baked into one small canvas per footprint. One transparent quad per car on every
+     tier (Lite too); it rides with the car group, not the body, so it stays on the ground through wheelies.
+     o.y lifts/sinks it (the pits car is up on stands: the decal goes back down to the floor, softer and wider).
+   - SC_RIDE: a little off the door cars' ride height (the body group sits lower over the wheels).
+   - sc_skirt(B, me): side skirts under the sill between the arches, merged into the car's own black part
+     (no extra draw call). Door cars only.
+   -------------------------------------------------------------------------*/
+var SC_RIDE={street:0.03, outlaw:0.025, promod:0.015, rail:0};
+function scRide(me, body){ if(me && me.ride===undefined) me.ride=SC_RIDE[body]||0; return me?me.ride||0:0; }
+function sc_skirt(B, me){
+  var L=B.paint; if(!L||!L.length||!me) return;
+  var g=L[0].g, p=g.attributes&&g.attributes.position; if(!p) return;
+  var x0=me.xr+me.rr+0.14, x1=me.xf-me.fr-0.14, ymin=Infinity, zmax=0, i, x, y;
+  if(!(x1-x0>0.4)) return;
+  for(i=0;i<p.count;i++){ x=p.getX(i); if(x<x0||x>x1) continue; y=p.getY(i); if(y<ymin) ymin=y; }
+  if(!isFinite(ymin)) return;
+  for(i=0;i<p.count;i++){ x=p.getX(i); if(x<x0||x>x1) continue; if(p.getY(i)<ymin+0.035) zmax=Math.max(zmax, Math.abs(p.getZ(i))); }
+  if(!(zmax>0.3)) return;
+  var h=0.075, geo=sc_rbox(x1-x0, h, 0.04, 0.012);
+  for(var sd=-1; sd<=1; sd+=2) B.add("black", geo, sc_M((x0+x1)/2, ymin+0.012-h/2, sd*(zmax-0.008)));
+}
+/* the decal texture: soft floor occlusion + a dark patch where each tyre meets the ground */
+var SC_CONTACT={tex:{}, geo:{}};
+function scContactTex(key, F){
+  if(SC_CONTACT.tex[key]) return SC_CONTACT.tex[key];
+  var W=256, H=128, c=sc_canvas(W,H), x=c.getContext("2d");
+  var sx=W/F.lx, sz=H/F.lz, cx=function(v){ return (v-F.x0)*sx; }, cz=function(v){ return (v+F.lz/2)*sz; };
+  x.clearRect(0,0,W,H);
+  /* floor occlusion: blurred rounded slab under the body (drawn off canvas, only its shadow lands) */
+  function blob(xa, xb, hz, a, blur){ var off=4000;
+    x.save(); x.shadowColor="rgba(0,0,0,"+a+")"; x.shadowBlur=blur; x.shadowOffsetX=off; x.fillStyle="#000";
+    var X0=cx(xa)-off, X1=cx(xb)-off, Z0=cz(-hz), Z1=cz(hz), r=Math.min((Z1-Z0)/2, 18);
+    x.beginPath(); x.moveTo(X0+r,Z0); x.lineTo(X1-r,Z0); x.quadraticCurveTo(X1,Z0,X1,Z0+r); x.lineTo(X1,Z1-r); x.quadraticCurveTo(X1,Z1,X1-r,Z1); x.lineTo(X0+r,Z1); x.quadraticCurveTo(X0,Z1,X0,Z1-r); x.lineTo(X0,Z0+r); x.quadraticCurveTo(X0,Z0,X0+r,Z0); x.fill(); x.restore(); }
+  blob(F.bx0, F.bx1, F.bhz, F.soft?0.5:0.82, F.soft?26:10); if(!F.soft) blob(F.bx0+0.25, F.bx1-0.25, F.bhz*0.7, 0.6, 16);
+  if(F.rail) blob(F.bx0+0.3, F.bx1-0.4, 0.16, 0.35, 8);   /* the rail's chassis rails */
+  /* tyres: a broad soft pool and a hard dark patch at the contact */
+  F.wheels.forEach(function(w){ var X=cx(w.x), Z=cz(w.z), lx=Math.max(4, w.r*(F.soft?1.3:0.75)*sx), lz=Math.max(3, w.w*(F.soft?1.0:0.62)*sz);
+    var g=x.createRadialGradient(0,0,0,0,0,1); g.addColorStop(0,"rgba(0,0,0,"+(F.soft?0.38:0.7)+")"); g.addColorStop(1,"rgba(0,0,0,0)");
+    x.save(); x.translate(X,Z); x.scale(lx*1.7, lz*1.5); x.fillStyle=g; x.beginPath(); x.arc(0,0,1,0,TAU); x.fill(); x.restore();
+    if(!F.soft){ var g2=x.createRadialGradient(0,0,0,0,0,1); g2.addColorStop(0,"rgba(0,0,0,1)"); g2.addColorStop(0.6,"rgba(0,0,0,0.92)"); g2.addColorStop(1,"rgba(0,0,0,0)");
+      x.save(); x.translate(X,Z); x.scale(lx*0.8, lz*0.75); x.fillStyle=g2; x.beginPath(); x.arc(0,0,1,0,TAU); x.fill(); x.restore(); } });
+  var t=sc_ctex(c, false); t.anisotropy=4; SC_CONTACT.tex[key]=t; return t;
+}
+function stripContact(car, o){
+  var u=car&&car.userData; if(!u||!u.meta) return null; o=o||{};
+  if(u._contact){ car.remove(u._contact); u._contact=null; }
+  var me=u.meta, body=u.body, rail=body==="rail", wh=[], i;
+  for(i=0;i<(me.wheels||[]).length;i++){ var ws=me.wheels[i]; wh.push({x:ws.x, z:ws.z, r:ws.r, w:ws.w||0.3}); }
+  if(!wh.length) return null;
+  /* footprint: the body group's box (car at rest, at the origin) */
+  var keepP=car.position.clone(), keepR=car.rotation.clone(); car.position.set(0,0,0); car.rotation.set(0,0,0); car.updateMatrixWorld(true);
+  var bb=new THREE.Box3(), inner=u.bodyGroup&&u.bodyGroup.children[0]; if(inner) inner.children.forEach(function(ch){ if(ch!==u.chute && ch.visible!==false) bb.expandByObject(ch); }); car.position.copy(keepP); car.rotation.copy(keepR); car.updateMatrixWorld(true);
+  var wx0=Infinity, wx1=-Infinity, wz=0; wh.forEach(function(w){ wx0=Math.min(wx0,w.x-w.r); wx1=Math.max(wx1,w.x+w.r); wz=Math.max(wz, Math.abs(w.z)+w.w/2); });
+  if(bb.isEmpty()) bb.set(new THREE.Vector3(wx0,0,-wz), new THREE.Vector3(wx1,1,wz));
+  var soft=!!o.soft, pad=soft?0.7:0.35, x0=Math.min(bb.min.x, wx0)-pad, x1=Math.max(bb.max.x, wx1)+pad, hz=Math.max(wz, rail?0.3:Math.max(-bb.min.z, bb.max.z))+pad;
+  var F={x0:x0, lx:x1-x0, lz:2*hz, wheels:wh, soft:soft, rail:rail,
+    bx0:rail?wx0+0.2:bb.min.x+0.12, bx1:rail?bb.max.x-0.6:bb.max.x-0.1, bhz:rail?0.28:Math.max(0.3, Math.min(-bb.min.z, bb.max.z)-0.06)};
+  var key=body+"|"+[x0,F.lx,F.lz,F.bx0,F.bx1,F.bhz].map(function(v){ return v.toFixed(2); }).join(",")+"|"+wh.map(function(w){ return w.x.toFixed(2)+":"+w.z.toFixed(2)+":"+w.r.toFixed(2)+":"+w.w.toFixed(2); }).join(",")+(soft?"|s":"");
+  var tex=scContactTex(key, F), gk="q"+F.lx.toFixed(2)+"x"+F.lz.toFixed(2), geo=SC_CONTACT.geo[gk];
+  if(!geo){ geo=new THREE.PlaneGeometry(F.lx, F.lz); geo.rotateX(-PI/2); geo.__cached=true; SC_CONTACT.geo[gk]=geo; }
+  var mat=new THREE.MeshBasicMaterial({map:tex, color:0x000000, transparent:true, opacity:o.opacity==null?1:o.opacity, depthWrite:false,
+    polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-4});
+  /* black colour, alpha from the canvas: MeshBasic multiplies map.rgb (black) and keeps map.a */
+  var m=new THREE.Mesh(geo, mat); m.name="stripContact"; m.renderOrder=1; m.frustumCulled=true;
+  m.position.set(x0+F.lx/2, (o.y||0)+0.004, 0); m.castShadow=false; m.receiveShadow=false; m.matrixAutoUpdate=false; m.updateMatrix();
+  /* Lite pays for the decal by not drawing the rims into the shadow map: the tyre around each one casts the same shadow */
+  if(GFX==="lite") (u.carriers||[]).forEach(function(c){ var sp=c.userData&&c.userData.spin; if(sp) sp.traverse(function(q){ if(q.isMesh) q.castShadow=false; }); });
+  car.add(m); u._contact=m; return m;
+}
+/* dusk glare (track shader, STRIP_TRACK_POST.light): with the sun on the horizon the glossy launch groove mirrored it into a
+   white blob that the bloom then blew up; from dusk on the sharp highlight is capped and a broad warm sheen replaces it */
+function stripGlare(){
+  var d=STRIP.night?(STRIP.dusk||0):0, g=clamp(d*1.6,0,1);
+  STRIP_U.uGlare.value=g; if(STRIP.sunDir) STRIP_U.uSunW.value.copy(STRIP.sunDir);
+  if(STRIP.sun) STRIP_U.uGlareC.value.copy(STRIP.sun.color).multiplyScalar(0.13*g);
+}
 /* --- instanced billboard particles: one draw call per system (smoke = normal blend, flames = additive) --- */
 function StripFx(cap, mode, tex){
   var additive=(mode==="add"); this.cap=cap; this.additive=additive; this.P=[];
@@ -17009,7 +17132,7 @@ function stripBoardDraw(d, force){
     else {
       x.textAlign="right"; x.fillStyle=dim; x.font="600 30px "+MONO; x.fillText("RT "+(L.rt!=null?(+L.rt).toFixed(3):"-.---"), 488, 80);
       if(dl!=null){ var bo=L.et!=null && +L.et<dl; x.textAlign="left"; x.fillStyle=bo?"#ff3b30":dim; x.fillText("DIAL "+(+dl).toFixed(2)+(bo?" BO":""), 24, 80); }   /* bracket: the dial-in, red when it broke out */
-      x.fillStyle=amber; x.font="700 104px "+MONO; x.fillText(L.et!=null?(+L.et).toFixed(3):"--.---", 494, 150);
+      x.textAlign="right"; x.fillStyle=amber; x.font="700 104px "+MONO; x.fillText(L.et!=null?(+L.et).toFixed(3):"--.---", 494, 150);
       x.fillStyle=dim; x.font="700 58px "+MONO; x.fillText((L.mph!=null?(+L.mph).toFixed(2):"---.--"), 400, 220);
       x.font="700 30px "+F; x.fillText("MPH", 488, 226); x.textAlign="left"; x.font="700 30px "+F; x.fillText("ET", 24, 136);
       /* personal best: purple for the all-time quickest, green for this engine's best */
@@ -17368,8 +17491,15 @@ function stripDirect(o, dt, P, O){
     case "burnout": _cw.set(-0.7-Math.min(1.2,T*0.1), 0.72, Math.min(6.9,pz+4.4)); _ct.set(px-4.5, 1.3, pz-2.4); fov=40; break;
     case "tree": { var cz=race?0:1.35, push=Math.min(4.0,T*0.4); _cw.set(-20+push, 4.6, cz); _ct.set(2+push*0.5, 1.1, cz*0.3); fov=30;
       if(ph==="run") STRIP.shake=Math.max(STRIP.shake, 0.3*Math.max(0,1-STRIP.runT/0.8)); break; }
-    case "wall": { _cw.set(STRIP_WALL_X, 0.55, 7.2); _ct.set(mx+(mx<STRIP_WALL_X?1.2:-0.6), 0.8, mz*0.6); d=Math.max(2.5,_cw.distanceTo(_ct));
-      var hw=3.4+(both?gap*0.5+1.5:0), ta=Math.max(hw/(d*Math.max(0.3,STRIP.cam.aspect)), 1.9/d); fov=clamp(2*Math.atan(ta)*180/PI, 12, 74); break; }
+    case "wall": { _cw.set(STRIP_WALL_X, 0.55, 7.2);
+      /* fix pack: a pair only while it fits the frame; split up, the camera follows one car (the player's, unless the
+         other is much nearer the lens) and eases across instead of framing the empty track between them */
+      var wp=race&&gap<12, wt=STRIP_WALL_X-px, wo=STRIP_WALL_X-ox, wcar=(!race||wp||Math.abs(wt)<=Math.abs(wo)+8)?P:O;
+      var wx=wp?mx:wcar.position.x, wz=wp?mz:wcar.position.z;
+      if(STRIP.snap||STRIP.wallX==null) STRIP.wallX=wx; else STRIP.wallX+=(wx-STRIP.wallX)*(1-Math.exp(-7*dt));
+      STRIP.wallCar=wp?null:wcar; STRIP.wallPair=wp;
+      _ct.set(STRIP.wallX+(STRIP.wallX<STRIP_WALL_X?1.2:-0.6), 0.8, wz*0.6); d=Math.max(2.5,_cw.distanceTo(_ct));
+      var hw=3.4+(wp?gap*0.5+1.5:0), ta=Math.max(hw/(d*Math.max(0.3,STRIP.cam.aspect)), 1.9/d); fov=clamp(2*Math.atan(ta)*180/PI, 12, 74); break; }
     case "pan": _cw.set(STRIP_PAN_X, 1.3, 7.15); _ct.set(mx+1.4, 0.85, mz*0.6); d=_cw.distanceTo(_ct); fov=clamp(2*Math.atan((4.6+(both?gap*0.5+2.5:0))/d)*180/PI, 20, 62); break;
     case "chase": { rel=true; var b2=race&&gap<28; ax=b2?trail:px; var back=6.6+v*0.06+(b2?Math.min(12,gap*0.5):0), cz2=b2?0:pz;
       _cw.set(-back, 2.0+v*0.026+(b2?gap*0.03:0), cz2+1.5+v*0.022); _ct.set((b2?lead-ax:0)+5+v*0.1, 1.0, cz2*0.7); fov=46+Math.min(12,v*0.12); sm=5;
@@ -17392,7 +17522,8 @@ function stripDirect(o, dt, P, O){
       else { var ty=P.userData._tyres[0]; _sfA.copy(ty); P.localToWorld(_sfA); _cw.set(_sfA.x+2.4+rdx*0.04, 0.3, _sfA.z+2.6); _ct.set(_sfA.x+0.2, 0.45, _sfA.z-0.3); fov=stripFitFov(34, 1.25); }   /* down at the rear tyre: the sidewall wrinkles */
       break; }
     case "honour": { var hk=smoothstep(0,4.6,T), hz=smoothstep(0.35,1,hk);   /* crane up out of the wall over the fence: the car, the stands behind it */
-      _cw.set(px-8.5+4*hk, 1.0+6.4*hk, 6.6+3.2*hz); _ct.set(px+1.6, 0.9+2.6*hk, -1.5-8*hk); fov=stripFitFov(46, 1.2); break; }   /* ends on the stands (x 0-140, z -10..-19) so the card wave reads */
+      _cw.set(px-8.5+4*hk, 1.0+6.4*hk, 6.6+3.2*hz); _ct.set(px+1.6, 0.9+2.6*hk, -1.5-8*hk); fov=stripFitFov(46, 1.2);
+      stripKeepIn(_sfD.set(px, 0.15, pz), _sfB.set(px+0.6, 0.7, pz), fov); break; }   /* fix pack: the car stays clear of the HUD band and the frame edge */   /* ends on the stands (x 0-140, z -10..-19) so the card wave reads */
     case "crowd": { if(!STRIP.pbCut) STRIP.pbCut=1; var cp=smoothstep(0,2.3,T); _cw.set(78-cp*6, 1.4+cp*0.5, 2.4); _ct.set(52-cp*4, 3.4, -13.5); fov=stripFitFov(40-cp*5, 1.2); break; }
     case "fail": { rel=true; ax=px; _cw.set(8.5+v*0.04, 1.5, pz+4.2); _ct.set(-3.5, 1.2, pz-0.6); fov=50; sm=8; STRIP.shake=Math.max(STRIP.shake, 0.16); break; }
   }
@@ -17410,6 +17541,18 @@ function stripDirect(o, dt, P, O){
 /* phone-first framing: a portrait view widens a shot's vertical fov until it shows the width it would at refAsp */
 function stripFitFov(vf, refAsp){ var a=STRIP.cam?STRIP.cam.aspect:1; refAsp=refAsp||1.35; if(!(a>0)||a>=refAsp) return vf;
   return Math.min(78, 2*Math.atan(Math.tan(deg(vf)/2)*refAsp/a)*180/PI); }
+/* fix pack: pull the aim point (_ct) towards a subject until its low point (lo) sits above the HUD band and its centre (mid)
+   stays inside the frame's sides; bisection on a scratch camera, only when it is out (portrait honour shot) */
+var _kpCam=null, _kpT=new THREE.Vector3();
+function stripKeepIn(lo, mid, fov){
+  var c=_kpCam||(_kpCam=new THREE.PerspectiveCamera(46,1,0.3,4200)), b=STRIP.band||0, h=STRIP.viewH||0, yMin=-1+(h>0?clamp(b/h,0,0.3):0)+0.1, xMax=0.72;
+  c.aspect=STRIP.cam?STRIP.cam.aspect:1; c.fov=fov; c.updateProjectionMatrix(); c.position.copy(_cw);
+  function ok(k){ c.lookAt(_kpT.copy(_ct).lerp(mid, k)); c.updateMatrixWorld(true);
+    var a=_mbA.copy(lo).project(c), m=_mbB.copy(mid).project(c); return a.z<1 && a.y>=yMin && Math.abs(m.x)<=xMax; }
+  if(ok(0)) return; var k0=0, k1=1; if(!ok(1)) return;
+  for(var i=0;i<7;i++){ var km=(k0+k1)/2; if(ok(km)) k1=km; else k0=km; }
+  _ct.lerp(mid, k1);
+}
 /* ...and an off-axis lens shift lifts the picture so the subject sits above the HUD band along the view's bottom edge
    (the band is the --striphud custom property on #view, read on resize) */
 function stripBandRead(){ var de=document.documentElement, host=canvasEl&&canvasEl.parentElement; STRIP.band=0; STRIP.bandShud=de.classList.contains("shud");
@@ -17443,8 +17586,14 @@ function stripBlur(P, dt){
     if(L>0.07){ ux*=0.07/L; uy*=0.07/L; L=0.07; }
     on=L>0.0025;
     if(on){ bp.uniforms.uDir.value.set(ux, uy);
-      _mbA.set(0,0.75,0); P.localToWorld(_mbA); var dist=Math.max(1,_mbA.distanceTo(cam.position)); _mbA.project(cam);
-      var ry=Math.min(1.1, 3.6/(dist*Math.tan(deg(cam.fov)/2))*0.5); bp.uniforms.uC.value.set(_mbA.x*0.5+0.5, _mbA.y*0.5+0.5); bp.uniforms.uR.value.set(ry*1.5/cam.aspect, ry*0.7); } }
+      /* fix pack: the sharp spot sits on the car the wall cam follows (both, when it frames the pair); no car in frame, no smear */
+      var O=STRIP.cars.o, pair=STRIP.wallPair && O && O.visible, tc=STRIP.wallCar||P, gx=0;
+      if(pair){ _mbA.set(0,0.75,0); P.localToWorld(_mbA); _mbB.set(0,0.75,0); O.localToWorld(_mbB); _mbA.add(_mbB).multiplyScalar(0.5); }
+      else { _mbA.set(0,0.75,0); tc.localToWorld(_mbA); }
+      var dist=Math.max(1,_mbA.distanceTo(cam.position)); _mbA.project(cam);
+      if(pair){ _mbB.project(cam); gx=Math.abs(_mbB.x-_mbA.x)*0.5; }
+      if(_mbA.z>1 || Math.abs(_mbA.x)>1.05+gx || Math.abs(_mbA.y)>1.05) on=false;
+      var ry=Math.min(1.1, 3.6/(dist*Math.tan(deg(cam.fov)/2))*0.5); bp.uniforms.uC.value.set(_mbA.x*0.5+0.5, _mbA.y*0.5+0.5); bp.uniforms.uR.value.set(ry*1.5/cam.aspect+gx*0.5, ry*0.7); } }
   if(bp) bp.enabled=on;
   _mbQ.copy(cam.quaternion); STRIP.mbOk=true;
 }
@@ -17617,15 +17766,16 @@ function stripUpdate(o, dt, rdt){
   var S2=STRIP.scene; STRIP.t+=dt; if(rdt===undefined) rdt=dt;
   if(STRIP.tier!==GFX || STRIP.night!==!!o.night) stripSetNight(!!o.night);
   stripDusk(o.nightK);
+  stripGlare();
   /* v2: o.hw = what your engine carries (scoop / blower / turbos / intercooler, diesel, ALS, nitrous); o.opp = the other lane's
      own car {color, hw:{...style}}. Both optional: without them the cars are the v1.5 ones (charcoal mirror opponent). */
   var CS=STRIP.cars, hwK=o.hw===CS.hwRef?CS.hwK:(o.hw?JSON.stringify(o.hw):""), opK=o.opp===CS.opRef?CS.opK:(o.opp?JSON.stringify(o.opp):""), liteK=(hwK||opK)?GFX==="lite":false;
   CS.hwRef=o.hw; CS.hwK=hwK; CS.opRef=o.opp; CS.opK=opK;
   if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn || CS.bHw!==hwK || CS.bOp!==opK || CS.bLite!==liteK)){
     if(STRIP.cars.p) S2.remove(STRIP.cars.p); if(STRIP.cars.o) S2.remove(STRIP.cars.o);
-    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); stripCarMeta(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
+    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); stripCarMeta(STRIP.cars.p); stripContact(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
     var op=o.opp||{};
-    STRIP.cars.o=stripCar(o.body, op.color!=null?op.color:0x3a3f46, op.tyreIn||o.tyreIn, op.hw); stripCarMeta(STRIP.cars.o); STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
+    STRIP.cars.o=stripCar(op.body||o.body, op.color!=null?op.color:0x3a3f46, op.tyreIn||(op.body&&op.body!==o.body?undefined:o.tyreIn), op.hw); stripCarMeta(STRIP.cars.o); stripContact(STRIP.cars.o);   /* op.body: the rival's own class (fix pack plumbing) */ STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
     CS.bHw=hwK; CS.bOp=opK; CS.bLite=liteK;
   }
   var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return; stripLivery(P);
@@ -17675,7 +17825,7 @@ function stripUpdate(o, dt, rdt){
 var PITS={ on:false, built:false, scene:null, cam:null, car:null, carKey:"", props:null, crew:[], fx:null, spot:null, hemi:null, lamp:null, bg:null,
   mats:{}, t:0, heat:0, nightK:-1, dirty:2, seen:-1, renders:0, work:{}, wind:new THREE.Vector3(-0.25,0,-0.3), tier:null, stats:null,
   fit:{L:4.6, hw:0.95, H:1.3, rearX:-1.5, rearZ:0.8, rr:0.35, frontX:1.4, tw:0.35} };
-var PITS_LIFT=0.13, _ptA=new THREE.Vector3(), _ptB=new THREE.Vector3();
+var PITS_LIFT=0.22, _ptA=new THREE.Vector3(), _ptB=new THREE.Vector3(), _ptC=new THREE.Color();
 function pitsBuild(B, key, mat, shadow, into){ var keep=STRIP.scene; STRIP.scene=into; var m=B.build(key, mat, shadow); STRIP.scene=keep; return m; }
 function pitsMats(){
   var M=PITS.mats; if(M.solid) return M;
@@ -17703,7 +17853,7 @@ function pitsMats(){
 /* sky: a vertical gradient, dusk (k 0) to full dark (k 1); returns the horizon colour (sRGB) for the fog */
 function pitsSky(k){
   var mix=function(a,b){ return new THREE.Color(a).lerp(new THREE.Color(b), k); };
-  var top=mix(0x1c2b4c,0x04060b), mid=mix(0x5a4a66,0x0b1018), hor=mix(0xc4703e,0x1a212e);
+  var top=mix(0x2a2f55,0x04060b), mid=mix(0x8a5266,0x0b1018), hor=mix(0xe9853f,0x1a212e);   /* fix pack: Q1 (k 0) is a warm sunset, not a cold blue */
   if(!PITS.bg){ var c=newCanvas(4,256); PITS.bg=new THREE.CanvasTexture(c); PITS.bg.encoding=THREE.sRGBEncoding; }
   var x=PITS.bg.image.getContext("2d"), g=x.createLinearGradient(0,0,0,256);
   g.addColorStop(0,"#"+top.getHexString()); g.addColorStop(0.55,"#"+mid.getHexString()); g.addColorStop(0.82,"#"+hor.getHexString()); g.addColorStop(1,"#"+hor.getHexString());
@@ -17766,8 +17916,11 @@ function pitsProps(car){
   var x0=bb.min.x, x1=bb.max.x, RED=0xb3261e, STAND=0xd2471f;
   B.box("solid", (x0+x1)/2, 0.006, 0, L+1.8, 0.012, 2*hw+1.4, 0x232528);   /* the pit mat */
   /* jack stands under the frame, just inboard of each axle */
-  [[rearX+rr*0.9, rearZ*0.62],[frontX-frontR*0.9, frontZ*0.62]].forEach(function(p){ for(var s=-1;s<=1;s+=2){ var sx=p[0], sz=s*Math.max(0.28,p[1]);
-    B.add("metal","cone",[sx, 0.13, sz],[0.34,0.26,0.34],STAND,[0,PI/4,0]); B.add("metal","cyl",[sx, 0.2, sz],[0.05,0.26,0.05],0xb9bec4); B.box("metal", sx, 0.34, sz, 0.12, 0.03, 0.08, STAND); } });
+  /* fix pack: out near the sills where the camera sees them, tall enough to meet the frame (the car is PITS_LIFT up, wheels hanging) */
+  var rail=u.body==="rail", top=PITS_LIFT+(rail?0.2:0.15);
+  [[rearX+rr*0.9, rearZ*0.62],[frontX-frontR*0.9, frontZ*0.62]].forEach(function(p){ for(var s=-1;s<=1;s+=2){ var sx=p[0], sz=s*(rail?Math.max(0.28,p[1]):Math.max(0.28,hw-0.34));
+    B.add("metal","cone",[sx, 0.16, sz],[0.42,0.32,0.42],STAND,[0,PI/4,0]); B.add("metal","cyl",[sx, (0.3+top)/2, sz],[0.055,top-0.3+0.04,0.055],0xb9bec4);
+    B.box("metal", sx, top-0.015, sz, 0.16, 0.03, 0.1, STAND); B.box("solid", sx, 0.014, sz, 0.5, 0.004, 0.5, 0x161719); } });
   /* floor jack behind the car, handle up */
   B.box("metal", x0-0.55, 0.09, 0.15, 0.9, 0.12, 0.34, RED); B.add("metal","cyl",[x0-1.2, 0.55, 0.15],[0.05,1.1,0.05],0x9a9ea4,[0,0,0.9]);
   for(k=0;k<4;k++) B.add("solid","cyl",[x0-0.2-(k>>1)*0.7, 0.05, 0.15+((k&1)?0.16:-0.16)],[0.1,0.05,0.1],0x111111,[PI/2,0,0]);
@@ -17811,12 +17964,12 @@ function pitsUpdate(o){
     if(PITS.car) S5.remove(PITS.car);
     var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn, o.hw); stripCarMeta(car);
     car.position.set(-(car.userData._bbMinX+car.userData._len/2), PITS_LIFT, 0); car.updateMatrixWorld(true);
-    S5.add(car); PITS.car=car; PITS.carKey=key; pitsProps(car); PITS.fitKey=""; ch=true;
+    S5.add(car); PITS.car=car; PITS.carKey=key; pitsProps(car); stripContact(car, {soft:true, y:0.01-PITS_LIFT, opacity:0.8}); PITS.fitKey=""; ch=true;   /* floor shadow under the raised car */
   }
   stripLivery(PITS.car);
   var nk=clamp(o.nightK==null?1:+o.nightK, 0, 1);
   if(Math.abs(nk-PITS.nightK)>0.001){ PITS.nightK=nk; var hor=pitsSky(nk); S5.background=PITS.bg; S5.fog.color.copy(hor);
-    PITS.hemi.intensity=0.62-0.22*nk; PITS.moon.intensity=0.45-0.25*nk; if(PITS.fx) PITS.fx.mat.uniforms.uFog.value.copy(hor).convertSRGBToLinear(); ch=true; }
+    PITS.hemi.intensity=0.62-0.22*nk; PITS.moon.intensity=0.45-0.25*nk; PITS.hemi.color.set(0x8090b0).lerp(_ptC.set(0xc9a08e), 0.7*(1-nk)); PITS.moon.color.set(0x9fb4d8).lerp(_ptC.set(0xffb27a), 1-nk); if(PITS.fx) PITS.fx.mat.uniforms.uFog.value.copy(hor).convertSRGBToLinear(); ch=true; }
   if(PITS.tier!==GFX){ PITS.tier=GFX; var ms=GFX==="ultra"?2048:1024; PITS.spot.shadow.mapSize.set(ms,ms); if(PITS.spot.shadow.map){ PITS.spot.shadow.map.dispose(); PITS.spot.shadow.map=null; } ch=true; }
   PITS.heat=clamp(+o.heat||0, 0, 1);
   if(o.poke){ PITS.work[o.poke==="first"||o.poke==="final"||o.poke==="gear"||o.poke==="wear"?"launch":o.poke==="shocks"?"psi":o.poke]=1.6; ch=true; }
@@ -19875,6 +20028,8 @@ const ENGINE_VIS = {
     if(!PITS.on){ PITS.on=true; PITS.dirty=2; PITS.fitKey=""; }
     pitsUpdate(o); return PITS.stats;
   },
+  /* fix pack: which event scene owns the canvas ("" = the engine stand, where orbiting works); the app hides the orbit hint otherwise */
+  eventScene: function(){ return (ROAD.on&&ROAD.W)?"road":(SALT.on&&SALT.built)?"salt":(BOG.on&&BOG.built)?"bog":(PULL.on&&PULL.built)?"pull":(STRIP.on&&STRIP.built)?"strip":(PITS.on&&PITS.built&&!TD.on)?"pits":""; },
   pitsAnchors: function(){ return pitsAnchors(); },   /* {w, h, launch|wear|gear|psi|shocks|dial: [x, y, inFront]} in canvas CSS px */
   pitsState: function(){ return {on:PITS.on, built:PITS.built, renders:PITS.renders, stats:PITS.stats, nightK:PITS.nightK, heat:+PITS.heat.toFixed(2), car:PITS.carKey,
     cam:PITS.cam?PITS.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null}; },   /* harness */
@@ -21875,7 +22030,7 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
     car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg${r.auto?r.auto.took!=null?" · you took over":" · Auto driver":""}`};}
 function dragSlipCard(r,res){const D=slipData(r,res),two=!!D.R,lamp=w=>two&&D.win!=null?`<i class="lamp${w?" on":""}"></i>`:"";
   const pb=r.pb&&r.et!=null?(()=>{const f=etFix(r.et,+r.pb.was);return`<div class="stamp">${r.pb.all?"PERSONAL BEST":"ENGINE BEST"}<br><s>${(+r.pb.was).toFixed(f)}</s> ${r.et.toFixed(f)}</div>`;})():"";
-  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE DRAGWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
+  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE BLUE RACEWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
     <div class="tsc"><strong>${rnEsc(D.car)}</strong>${rnEsc(D.spec)}</div>
     <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(D.win===true)}You</th>${two?`<th><small>Left lane</small>${lamp(D.win===false)}${rnEsc(D.opp)}</th>`:""}</tr></thead>
     <tbody>${D.rows.map(x=>`<tr class="${x[3]||""}"><td>${x[0]}</td><td>${x[1]}</td>${two?`<td>${x[2]==null?"—":x[2]}</td>`:""}</tr>`).join("")}</tbody></table>
@@ -21892,7 +22047,7 @@ function slipCanvas(l){const r=l.res.drag,res=l.res,D=slipData(r,res),W=1080,H=1
   {const g=x.createLinearGradient(0,T,0,B);g.addColorStop(0,"rgba(0,0,0,.05)");g.addColorStop(.15,"rgba(0,0,0,0)");g.addColorStop(.88,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.06)");x.fillStyle=g;x.fillRect(L,T,Rt-L,B-T);}
   const dash=y=>{x.save();x.strokeStyle="rgba(45,43,54,.45)";x.setLineDash([10,8]);x.lineWidth=2;x.beginPath();x.moveTo(L+40,y);x.lineTo(Rt-40,y);x.stroke();x.restore();};
   const fit=(t,font,max)=>{x.font=font;let s=String(t);while(s.length>3&&x.measureText(s).width>max)s=s.slice(0,-2)+"…";return s;};
-  x.textAlign="center";x.fillStyle=ink;x.font=F(58,700);x.fillText("PRAIRIE DRAGWAY",W/2,150);
+  x.textAlign="center";x.fillStyle=ink;{let fs=58;x.font=F(fs,700);while(fs>34&&x.measureText("PRAIRIE BLUE RACEWAY").width>Rt-L-80){fs-=2;x.font=F(fs,700);}}x.fillText("PRAIRIE BLUE RACEWAY",W/2,150);
   x.fillStyle=ink2;x.font=M(26);x.fillText(fit(("1/4 MILE · "+D.round).toUpperCase(),M(26),Rt-L-80),W/2,196);x.fillText(D.date,W/2,232);dash(262);
   x.fillStyle=ink;x.fillText(fit(D.car,M(32,500),Rt-L-80),W/2,312);x.fillStyle=ink2;x.font=M(23);x.fillText(fit(D.spec,M(23),Rt-L-80),W/2,350);dash(380);
   // the times: label on the left, your lane, then theirs
@@ -22400,8 +22555,15 @@ function pitsPlace(){const ov=$("pitsOv");if(!ov||ov.hidden)return;const svg=ov.
   const OFF={launch:[0.5,-1],wear:[-0.9,-0.8],gear:[0.2,1],psi:[-0.8,0.9],shocks:[-0.9,-1],dial:[0,-1]},D=34,placed=[];let lines="";
   tags.forEach(t=>{const k=t.dataset.pk,a=A[k];if(!a||!a[2]){t.style.visibility="hidden";return;}
     const w=t.offsetWidth,h=t.offsetHeight,o=OFF[k]||[0,-1];let x=a[0]+o[0]*(D+w*0.3)-w/2,y=a[1]+o[1]*D-h/2;
-    const fit=()=>{x=Math.max(4,Math.min(vr.width-w-4,x));y=Math.max(top,Math.min(bot-h,y));};fit();
-    for(let pass=0;pass<2;pass++)for(const p of placed)if(x<p.x+p.w&&x+w>p.x&&y<p.y+p.h&&y+h>p.y){const up=p.y-h-2,dn=p.y+p.h+2;y=(up>=top&&(y+h/2<p.y+p.h/2||dn+h>bot))?up:dn;fit();}
+    const fx=v=>Math.max(4,Math.min(vr.width-w-4,v)),fy=v=>Math.max(top,Math.min(bot-h,v));
+    /* rings of spots around the wanted one, nearest first: the first that overlaps nothing wins, else the least overlap (the phone's
+       short view used to stack Dial-in on Gearing) */
+    const ovl=(cx,cy)=>placed.reduce((s,p)=>s+Math.max(0,Math.min(cx+w,p.x+p.w+2)-Math.max(cx,p.x-2))*Math.max(0,Math.min(cy+h,p.y+p.h+2)-Math.max(cy,p.y-2)),0);
+    let bx=fx(x),by=fy(y),best=Infinity;
+    ring:for(let r=0;r<=4;r++)for(const [dx,dy] of r?[[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[1,-1],[-1,1],[1,1]]:[[0,0]]){
+      const cx=fx(x+dx*r*(w*0.5+4)),cy=fy(y+dy*r*(h*0.55+2)),o=ovl(cx,cy);
+      if(o===0){bx=cx;by=cy;break ring;}const c=o*10+Math.hypot(cx-x,cy-y);if(c<best){best=c;bx=cx;by=cy;}}
+    x=bx;y=by;
     placed.push({x,y,w,h});t.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;t.style.visibility="visible";
     lines+=`<line x1="${a[0]}" y1="${a[1]}" x2="${Math.round(x+w/2)}" y2="${Math.round(y+h/2)}"/><circle cx="${a[0]}" cy="${a[1]}" r="3.5"/>`;});
   svg.innerHTML=lines;}
@@ -25325,7 +25487,8 @@ function tipHide(){clearTimeout(tipT);tipT=null;tipOn=null;tipEl.classList.remov
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
 const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
-function tipText(el){if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
+function tipText(el){if(el.dataset.tip)return el.dataset.tip;if(el.id==="gl"&&(ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()||document.documentElement.classList.contains("onstrip")||$("app").classList.contains("pits")))return "";   // the orbit hint is for the engine stand only
+  if(KEY_TIP[el.id])return KEY_TIP[el.id];
   if(el.matches("#tabs button")){const i=TAB_KEYS.indexOf(el.dataset.tab);return i<0?"":`${el.textContent.trim()} <kbd>${i+1}</kbd>`;}
   if(el.matches("#buildForm .seg button[data-k][data-v]")){const f=sliderField(el.dataset.k),o=f&&(OPT[f.optTable||f.key]||{})[el.dataset.v];if(!o)return "";
     return `<b>${o.name}</b>${o.cost?` · $${o.cost.toLocaleString("en-CA")}`:""}${o.info?"<br>"+o.info:o.sub?"<br>"+o.sub:""}${el.dataset.req?`<br><b>Needs ${el.dataset.req}</b>`:""}`;}
