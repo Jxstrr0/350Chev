@@ -94,7 +94,7 @@ const ENGINE_VIS = {
     if(BOAT.cam){ BOAT.cam.aspect=w/h; BOAT.cam.updateProjectionMatrix(); }
     if(ROAD.cam){ ROAD.cam.aspect=w/h; ROAD.cam.updateProjectionMatrix(); }
     if(HILL.cam){ HILL.cam.aspect=w/h; HILL.cam.updateProjectionMatrix(); }
-    if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); }
+    if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); SALT.viewH=h; saltBandRead(); }
     if(PITS.cam) PITS.dirty=2;
     frameEngine();
   },
@@ -230,7 +230,7 @@ const ENGINE_VIS = {
     if(!renderer) return;
     if(!o || o.on===false){ if(SALT.on){ SALT.on=false; saltReset(); } return; }
     var now=performance.now(); if(!SALT.on){ SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
-    if(SALT.tier!==GFX && SALT.sun){ SALT.tier=GFX; SALT.sun.castShadow=GFX!=="lite"; if(SALT.sun.shadow.map){ SALT.sun.shadow.map.dispose(); SALT.sun.shadow.map=null; } }
+    if(SALT.tier!==GFX && SALT.built){ saltRebuild(); ENGINE_VIS.resize(); }   /* a new quality tier: build the flats again at it */
     var rdt=o.dt!=null ? +o.dt : (now-SALT.lastT)/1000; SALT.lastT=now; saltUpdate(o, clamp(rdt||0, 0, 0.1));
     return SALT.stats||null;
   },

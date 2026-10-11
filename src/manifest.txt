@@ -40,6 +40,7 @@ vis/boat.js
 vis/road.js
 vis/salt.js
 vis/salt-cars.js
+vis/salt-look.js
 vis/hill.js
 vis/api.js
 vis/trophy.js
