@@ -31,8 +31,8 @@ function e24Warm(trk,cb){if(E24W.done[trk]){if(cb)cb();return;}
   requestAnimationFrame(step);}
 /* the player's car, cached per engine × chassis × gearing × circuit */
 const e24Cache=new Map();
-function e24Prep(trk,cfg){cfg=cfg||S.cfg;const o=roadOpt(),k=cfgHash(cfg)+"|"+o.ch+"|"+o.finalK+"|"+trk;let P=e24Cache.get(k);
-  if(!P){if(e24Cache.size>10)e24Cache.clear();P=SIM.enduroPrep(cfg,null,{ch:o.ch,finalK:o.finalK},trk);e24Cache.set(k,P);}return P;}
+function e24Prep(trk,cfg){cfg=cfg||S.cfg;const o=roadOpt(),k=cfgHash(cfg)+"|"+o.ch+"|"+o.finalK+"|"+trk+(o.car?"|"+o.rk+"|"+o.car.mass+"|"+o.car.cdA+"|"+o.dl+"|"+o.cool:"");let P=e24Cache.get(k);
+  if(!P){if(e24Cache.size>10)e24Cache.clear();P=SIM.enduroPrep(cfg,null,o.car?{ch:o.ch,finalK:o.finalK,car:o.car,dl:o.dl,cool:o.cool}:{ch:o.ch,finalK:o.finalK},trk);e24Cache.set(k,P);}return P;}
 const e24Pct=h=>(100*(1-Math.exp(-h))).toFixed(h<0.001?2:1);
 function e24Hint(){return career()?`<b>24 Hours of Prairie Sky</b> · ${fmt$(E24_FEE)} entry, fuel billed by the litre after the flag. Opens at ${E24_REP} rep; one entry every ${E24_GAP} weeks. The top five in each class are paid, every hour is wear on the build, and a failure can end it — the teardown shows what let go.`
   :`<b>24 Hours of Prairie Sky</b> · your engine in the road-test car against twenty cars in three classes, a full day and night in accelerated time. Set the strategy, then watch it at 1× or time-lapse to the next event.`;}
@@ -52,7 +52,7 @@ function e24EnvHtml(){e24Orphan();const e=e24EnvFix(),trk=e.e24Trk,ready=!!E24W.
   if(career()){const g=e24C(),R=recs();h+=`<p class="${gate?"no":"ok"}">${gate?gate:`Entry open · ${fmt$(E24_FEE)}`}${g.runs?` · ${g.runs} run${g.runs>1?"s":""}${R.e24Best?`, best ${ordN(R.e24Best)} in class`:""}`:""}</p>`;}
   h+=`</div>`;
   h+=`<div class="lbl"><span>Circuit</span></div>${e24Seg("e24Trk",trk,Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return [id,t.n,`${(T.len/1000).toFixed(2)} km · ${id==="gp"?"the 24 Hours":"short-course 24"}`];}))}`;
-  h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
+  h+=swapEnvNote();if(!o.car)h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   let P=null;
   if(!ready){h+=`<div class="e24scr"><b>Scrutineering</b><p>Checking the field in… <span class="e24spin"></span></p></div>`;e24Warm(trk,()=>{if(S.env.testType==="race24"&&!ER&&curTab==="events")renderEnv();});}
   else if(quick&&quick.rpms){try{P=e24Prep(trk);}catch(err){P=null;}
@@ -176,22 +176,22 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
   const dec=[],LL=me.lapLog,step=Math.max(1,Math.ceil(LL.length/360));for(let i=0;i<LL.length;i+=step)dec.push(LL[i]);
   const stints=me.stints.filter(s=>s.laps>0).map(s=>{const mt=s.modeT,mm=Object.keys(mt).sort((a,b)=>mt[b]-mt[a])[0];return{drv:s.drv,c:s.c,laps:s.laps,fuel:Math.round(s.fuel),t0:Math.round(s.t0),t1:Math.round(s.t1!=null?s.t1:me.tLast),mode:mm};});
   const lapsGreen=LL.filter(l=>!l[2]).map(l=>l[1]),avg=lapsGreen.length?lapsGreen.reduce((a,b)=>a+b,0)/lapsGreen.length:null;
-  const r={trk,trkName:e24TrkName(trk),len:Math.round(R.len),ch:opt.ch,chName:SIM.CHASSIS[opt.ch].n,cls,clsName:e24Cls(cls),pos:mine.pos,posCls:mine.posCls,of:all.length,ofCls:inCls.length,laps:me.laps,km:mine.km,
+  const r={trk,trkName:e24TrkName(trk),len:Math.round(R.len),ch:opt.ch,chName:(opt.car||SIM.CHASSIS[opt.ch]).n,swap:opt.sw?swapTag():undefined,cls,clsName:e24Cls(cls),pos:mine.pos,posCls:mine.posCls,of:all.length,ofCls:inCls.length,laps:me.laps,km:mine.km,
     classified:!!mine.classified,dnf:me.dnf?{h:+me.dnf.h.toFixed(1),id:me.dnf.id,name:me.dnf.name}:null,best:me.best,bestLap:me.bestLap,avg,pits:me.pits,pitT:Math.round(me.pitT),fuel:Math.round(me.fuelUsed),
     stints,trace:dec,sc:R.scN,field:all.map(x=>({no:x.no,team:x.team,cls:x.cls,eng:x.eng,laps:x.laps,best:x.best!=null?+x.best.toFixed(2):null,out:x.out,dnf:x.dnf,me:x.me,cl:x.classified,pc:x.posCls})),
     clsBest:Math.min(...inCls.filter(x=>x.best!=null).map(x=>x.best)),win:inCls[0]?inCls[0].laps:0,hrs:+hrs.toFixed(1)};
   /* career money and standing */
   if(career()&&!ff&&same){const g=e24C();g.live=null;g.runs=(g.runs||0)+1;const K=SIM.E24_CLASSES[cls],fu=SIM.fuelOf(cfg0)||SIM.OPT.fuel.r91;
     const prize=r.classified?(K.prize[r.posCls-1]||0)+3000:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.35)/* series fuel, at the trade price */;let rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
-    if(r.dnf&&r.dnf.id){C().cert=null;rep-=2;}
+    if(r.dnf&&r.dnf.id&&r.dnf.id!=="swap_driveline"){C().cert=null;rep-=2;}   // a swap gearbox is not the engine
     C().cash+=prize-fuelBill;C().rep=Math.max(0,C().rep+rep);r.prize=prize;r.fuelBill=fuelBill;r.rep=rep;
     addWear(+(hrs/40*({push:1.6,race:1.25,save:0.95}[stints.length?stints[stints.length-1].mode:"race"]||1.25)).toFixed(2),snap?hKey(snap.h):undefined);
     logEvent(`24 Hours of Prairie Sky: ${r.dnf?(r.dnf.id?"out after "+r.dnf.h+" h — "+r.dnf.name.toLowerCase():"retired after "+r.dnf.h+" h"):r.classified?`${ordN(r.posCls)} in ${r.clsName}, ${ordN(r.pos)} overall`:"not classified"} — ${r.laps} laps${prize?", "+fmt$(prize)+" prize":""}, fuel ${fmt$(fuelBill)}${rep?", "+(rep>0?"+":"")+rep+" rep":""}`,r.classified&&r.posCls<=3?"good":r.dnf&&r.dnf.id?"bad":"");
     spEvent("endurance",{finish:r.classified&&r.posCls<=3,win:r.classified&&r.posCls===1});hud();checkGoals();}
   /* records: the longest distance per car and circuit */
-  if(!ff&&same){const E=e24Recs(),k=roadKey(opt.ch,trk),was=E[k];if(!was||r.km>was.km){E[k]=Object.assign({km:r.km,laps:r.laps,pc:r.classified?r.posCls:null,cls,ch:opt.ch,trk},recTag());r.pb=was?{was:was.km}:{first:true};}
+  if(!ff&&same){const E=e24Recs(),k=roadKey(opt.rk||opt.ch,trk),was=E[k];if(!was||r.km>was.km){E[k]=Object.assign({km:r.km,laps:r.laps,pc:r.classified?r.posCls:null,cls,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());r.pb=was?{was:was.km}:{first:true};}
     const RR=recs();RR.e24Runs=(RR.e24Runs||0)+1;if(r.classified&&!(RR.e24Best<=r.posCls))RR.e24Best=r.posCls;
-    achCheck({type:"e24",r});}
+    achCheck({type:"e24",r});if(r.swap)swapAfter(r);}
   const env=Object.assign(stdEnv(),{testType:"race24"});const res=Object.assign({},P.res,{e24:r});
   S.last=snap?{hash:snap.h,cfg:snap.cfg,env,res}:{hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
   testing=false;run.on=false;run.rpm=0;$("rpmbox").style.display="none";$("e24Ctl").style.display="none";$("e24Side").style.display="none";$("e24Side").innerHTML="";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
@@ -231,4 +231,4 @@ function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).ge
   x.textAlign="left";x.font="11px "+F;x.fillStyle="#ff7a1a";x.fillText("lap time",padL+4,13);x.fillStyle="#ff7a1a";x.fillText("▮ pit",padL+62,13);x.fillStyle="rgba(229,183,59,.95)";x.fillText("▮ safety car",padL+98,13);x.fillStyle="rgba(120,140,220,.95)";x.fillText("▮ night",padL+176,13);
   if(W>520){x.fillStyle=soft;x.textAlign="right";x.fillText(`${r.trkName} · ${r.laps} laps`,W-padR,13);}}
 function e24RecHtml(){const P=e24Recs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].km);if(!ks.length)return"";ks.sort((a,b)=>P[b].km-P[a].km);
-  return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
