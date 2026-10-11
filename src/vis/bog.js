@@ -51,22 +51,21 @@ function bogMudPaint(cv, len, cons, seed){
   if(cons<0.4){ for(i=0;i<60;i++){ x.fillStyle="rgba(200,180,150,"+(0.06+0.08*r())+")"; x.beginPath(); x.ellipse(r()*W,H*(0.1+0.8*r()),2+r()*6,1+r()*2,0,0,TAU); x.fill(); } }   /* foam */
   else { x.strokeStyle="rgba(40,32,24,0.35)"; x.lineWidth=1; for(i=0;i<90;i++){ var cx=r()*W, cy=r()*H; x.beginPath(); x.moveTo(cx,cy); x.lineTo(cx+(r()-0.5)*14,cy+(r()-0.5)*6); x.stroke(); } }
 }
-/* (re)build the pit for a night: a plane len × BOG_W, its depth profile only drives the ruts; the surface sits level */
-function bogMudBuild(pit){
-  var lite=GFX==="lite", len=Math.max(20, +pit.len||70), key=[pit.seed, len, pit.cons, GFX==="lite"?"l":"f"].join("|");
+/* (re)build the pit for a night: the sim's pit (depth profile, ridges, ruts) as a heightfield dug below the fairground, its
+   map, the water in its troughs and the berms (vis/bog-pit.js). half: the truck's half-track, where the fine rut rows go. */
+function bogMudBuild(pit, half){
+  var lite=GFX==="lite", len=Math.max(20, +pit.len||70), hf=Math.round((half||1)*20)/20, key=[pit.seed, len, pit.cons, lite?"l":GFX, hf, +pit.pitK||1, (pit.hz||[]).length, pit.depth?1:0].join("|");
   if(BOG.mudKey===key && BOG.mud) return; BOG.mudKey=key;
   if(BOG.mud){ BOG.scene.remove(BOG.mud); BOG.mud.geometry.dispose(); }
-  var sx=lite?Math.ceil(len/2):Math.ceil(len*2), sz=lite?2:24, g=new THREE.PlaneGeometry(len, BOG_W, sx, sz); g.rotateX(-PI/2); g.translate(len/2, -0.06, 0);
-  if(!lite){ var PA=g.attributes.position, sd=(pit.seed>>>0)%997; for(var q=0;q<PA.count;q++){ var qx=PA.getX(q), qz=PA.getZ(q), edge=Math.min(1,(BOG_W/2-Math.abs(qz))/0.8);
-      PA.setY(q, -0.06+edge*(0.045*(fbm(qx/9+sd,qz/5,3,2,7)-0.5)+0.012*Math.sin(qx*1.7+qz*2.3+sd))+(1-edge)*0.05); } g.computeVertexNormals(); }
-  BOG.mudGeo=g; BOG.mudBase=Float32Array.from(g.attributes.position.array); BOG.mudSx=sx; BOG.mudSz=sz; BOG.mudLen=len;
+  var P=bogPitInit(pit, len), g=bogPitGeo(P, hf, lite); BOG.mudLen=len; BOG.rutLast={}; BOG.rutC0=1e9; BOG.rutC1=-1; BOG.texC0=1e9; BOG.texC1=-1; BOG.holeDone=false;
   var W=lite?512:1024, H=lite?64:128; if(!BOG.mudCv || BOG.mudCv.width!==W){ BOG.mudCv=newCanvas(W,H); if(BOG.mudTex) BOG.mudTex.dispose(); BOG.mudTex=new THREE.CanvasTexture(BOG.mudCv); BOG.mudTex.encoding=THREE.sRGBEncoding; BOG.mudTex.anisotropy=MAXANISO; }
-  bogMudPaint(BOG.mudCv, len, +pit.cons||0.5, (pit.seed>>>0)%2147483646+1); BOG.mudTex.needsUpdate=true;
+  bogMudPaint(BOG.mudCv, len, +pit.cons||0.5, (pit.seed>>>0)%2147483646+1); bogPitPaint(BOG.mudCv, P); BOG.mudTex.needsUpdate=true;
   BOG.mats.mud.map=BOG.mudTex; BOG.mats.mud.roughness=lerp(0.22,0.48,clamp(+pit.cons||0.5,0,1)); BOG.mats.mud.needsUpdate=true;
+  var MD=BOG.mats.mud.defines=Object.assign({}, BOG.mats.mud.defines||{}); if(lite) MD.BOG_LITE=""; else delete MD.BOG_LITE; if(BOG.mudU) BOG.mudU.uCons.value=P.cons;
   BOG.mud=new THREE.Mesh(g, BOG.mats.mud); BOG.mud.receiveShadow=true; BOG.scene.add(BOG.mud);
+  bogPitWater(P, lite); bogPitBerms(len, lite);
   BOG.paintX=-1e9; BOG.rutDirty=0;
-  /* the berms close in on the pit's length: scale the two long ones, slide the far end */
-  if(BOG.berms){ BOG.berms.forEach(function(b){ b.scale.x=len+14; b.position.x=len/2; }); BOG.farBerm.position.x=len+16; BOG.farWall.position.x=len+13; }
+  if(BOG.farWall) BOG.farWall.position.x=len+13;
   if(BOG.groundMat && BOG.groundMat.userData.uLen) BOG.groundMat.userData.uLen.value=len;
   if(BOG.marks) BOG.marks.forEach(function(m){ m.visible=m.userData.d<len; });
 }
@@ -78,20 +77,12 @@ function bogMudTrack(x0, x1, half, w, k){
     c.fillStyle="rgba(22,15,9,"+(0.28+0.4*k)+")"; c.fillRect(px0, cy-hh/2, px1-px0+1, hh);
     c.fillStyle="rgba(150,120,90,"+(0.05+0.08*k)+")"; c.fillRect(px0, cy-hh/2-2, px1-px0+1, 2); c.fillRect(px0, cy+hh/2, px1-px0+1, 2); }
   c.fillStyle="rgba(30,20,12,"+(0.1+0.1*k)+")"; c.fillRect(px0, H*0.5-half/BOG_W*H*0.6, px1-px0+1, half/BOG_W*H*1.2);
-  BOG.mudTex.needsUpdate=true;
+  BOG.texC0=Math.min(BOG.texC0,px0-3); BOG.texC1=Math.max(BOG.texC1,px1+3);   /* uploaded as a strip once a frame (bogPitTexFlush) */
 }
-/* Full/Ultra: press the plane down where the tyres went; keep the deepest mark each vertex has had */
-function bogMudRut(x, half, w, depth){
-  if(!BOG.mudGeo || GFX==="lite") return;
-  var P=BOG.mudGeo.attributes.position, A=P.array, sx=BOG.mudSx, sz=BOG.mudSz, L=BOG.mudLen, ix0=Math.max(0,Math.floor((x-1.4)/L*sx)), ix1=Math.min(sx,Math.ceil((x+0.6)/L*sx)), ch=false;
-  for(var ix=ix0; ix<=ix1; ix++) for(var iz=0; iz<=sz; iz++){ var q=iz*(sx+1)+ix, zz=A[q*3+2], dz=Math.min(Math.abs(zz-half), Math.abs(zz+half));
-    var f=dz<w*0.5?1:dz<w*0.5+0.5?0.5+0.5*Math.cos((dz-w*0.5)/0.5*PI):0, lip=dz>w*0.5&&dz<w*0.5+0.7?Math.sin((dz-w*0.5)/0.7*PI)*0.35:0;
-    var y=-0.06-depth*f+depth*lip*(1-f); if(f>0 && y<A[q*3+1]){ A[q*3+1]=y; ch=true; } else if(lip>0 && f===0 && y>A[q*3+1] && A[q*3+1]>=-0.07){ A[q*3+1]=y; ch=true; } }
-  if(ch){ P.needsUpdate=true; BOG.rutDirty++; }
-}
+/* Full/Ultra: a rut behind each tyre (key: which tyre), the trough deep as the mud holds it — soup flows back in, clay keeps its shape */
+function bogMudRut(key, x, z, w, depth, lip){ if(GFX!=="lite") bogPitRut(key, x, z, w, depth, lip); }
 function bogMudReset(){
-  if(BOG.mudGeo && BOG.mudBase){ BOG.mudGeo.attributes.position.array.set(BOG.mudBase); BOG.mudGeo.attributes.position.needsUpdate=true; BOG.mudGeo.computeVertexNormals(); }
-  BOG.mudKey="";   /* repaint the map next frame */
+  BOG.mudKey=""; BOG.rutLast={};   /* rebuild the pit and repaint the map next frame */
 }
 function bogAtlas(){
   var c=newCanvas(1024,256), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
@@ -117,8 +108,7 @@ function buildBogScene(){
   S3.fog=new THREE.Fog(0xffffff, 150, 2700); BOG.fog=S3.fog;
   var uLen={value:75}, gm=stripSurfMat(BOG_GLSL_GROUND, null, {uLen:uLen}); gm.userData.uLen=uLen; gm.customProgramCacheKey=function(){ return "bog_ground"; }; BOG.groundMat=gm;
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), gm); ground.rotation.x=-PI/2; ground.position.set(40,-0.02,0); ground.receiveShadow=true; S3.add(ground);
-  /* the pit's walls: a dark box under the mud so a deep rut never shows the sky */
-  var well=new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({color:sc(0x1c140c), roughness:1, side:THREE.BackSide})); well.scale.set(200,1.4,BOG_W); well.position.set(60,-0.78,0); S3.add(well); BOG.well=well;
+  /* the pit itself (dug below the ground, its own walls), its water and the berms are built per night: bogMudBuild */
   (function(){ var seg=120, R0=1900, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
     for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=Math.max(5, 14+34*Math.pow(0.5+0.5*Math.sin(a*3.0+1.4),2)+18*Math.sin(a*11.0+0.4)*Math.sin(a*5.0)+10*Math.sin(a*23.0));
       pos.push(40+Math.cos(a)*(R0-500),-2,Math.sin(a)*(R0-500), 40+Math.cos(a)*R0,hgt,Math.sin(a)*R0, 40+Math.cos(a)*(R0+400),hgt*0.6,Math.sin(a)*(R0+400)); col.push(c1.r,c1.g,c1.b, c2.r,c2.g,c2.b, c2.r,c2.g,c2.b); }
@@ -133,10 +123,10 @@ function buildBogScene(){
   M.dirt=new THREE.MeshStandardMaterial({color:sc(0x5a4029), roughness:1});
   M.mud=new THREE.MeshStandardMaterial({color:0xb0a090, roughness:0.3, metalness:0.0, envMapIntensity:0.45});
   bogMudWet(M.mud);
+  bogMudMatDetail(M.mud);   /* consistency detail, tyre collars, the belly crown: chained after bogMudWet, layered over its colour */
   var B=new StripBatch(), STEEL=0x8d9296, ALU=0xb9bec4, DARK=0x2a2c2f, RUB=0x1a1a1c;
-  /* berms: long dirt banks both sides (scaled to the night's pit), one across the far end, a tyre wall in front of it */
-  BOG.berms=[]; [-1,1].forEach(function(sd){ var m=new THREE.Mesh(sbGeo().prism, M.dirt); m.scale.set(84,1.8,3.4); m.position.set(35,-0.05,sd*(BOG_W/2+1.9)); m.castShadow=!lite; m.receiveShadow=true; S3.add(m); BOG.berms.push(m); });
-  var fb=new THREE.Mesh(sbGeo().prism, M.dirt); fb.scale.set(22,4.2,6); fb.rotation.y=PI/2; fb.position.set(91,-0.05,0); fb.castShadow=!lite; fb.receiveShadow=true; S3.add(fb); BOG.farBerm=fb;
+  /* berms (rough banks both sides and across the far end) come with the night's pit: bogPitBerms. A tyre wall at the far end. */
+  BOG.bermKey="";
   var tw=new THREE.Group(); for(z=-6; z<=6.1; z+=0.8) for(k=0;k<3;k++){ var tyre=new THREE.Mesh(PULL.g.cyl8, new THREE.MeshStandardMaterial({color:sc(RUB), roughness:0.95})); tyre.scale.set(0.72,0.3,0.72); tyre.position.set((k&1)?0.35:0, 0.17+k*0.3, z); tw.add(tyre); }
   tw.position.set(88,0,0); S3.add(tw); BOG.farWall=tw;
   /* pipe rail along the crowd side, banners on it, distance boards on the far side every 10 m */
@@ -327,6 +317,7 @@ function bogRender(){
 }
 function bogReset(){
   [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F) F.clear(); });
+  BOG.vsF=BOG.vsR=0; BOG.outX=0; BOG.outV=null; BOG.bellyA=0; BOG.holeDone=false; if(BOG.cur) BOG.cur.userData.mudLine=0;
   BOG.shot=null; BOG.prev={}; BOG.vsink=0; BOG.shake=0; BOG.cheer=0; BOG.skip=false; BOG.doneT=0; BOG.splash=0; BOG.coat=0; BOG.pitch=0; BOG.pv=0; BOG.lastHz=0;
   if(BOG.crowd && BOG.crowd.live){ BOG.cheer=0; bogCrowd(0); }
   if(BOG.cur){ var U=BOG.cur.userData; if(U.paint0) U.mats.paint.color.copy(U.paint0); }
@@ -338,25 +329,34 @@ function bogUpdate(o, dt){
   if(BOG.tier!==GFX || BOG.night!==!!o.night){ var tc=BOG.tier!==GFX; bogSetNight(!!o.night); if(tc){ BOG.mudKey=""; if(BOG.fxSpray===null && GFX!=="lite"){ BOG.fxSpray=new StripFx(GFX==="ultra"?420:260, "smoke", stripPuffTex()); S3.add(BOG.fxSpray.mesh); bogSetNight(!!o.night); } } }
   var ph=o.phase||"stage";
   if(ph==="stage" && BOG.prev.phase && BOG.prev.phase!=="stage") bogReset();
-  if(o.pit) bogMudBuild(o.pit);
   var cls=BOG_LOOK[o.cls]?o.cls:"street", ty=o.tyre||"mt", col=o.color!=null?o.color:BOG_LOOK[cls].col, vk=cls+":"+ty+":"+col;
   if(!BOG.veh[vk]){ BOG.veh[vk]=bogVehicle(cls, ty, col); S3.add(BOG.veh[vk]); }
   for(var kk in BOG.veh) BOG.veh[kk].visible=(kk===vk);
   var V=BOG.veh[vk], U=V.userData, k=U.k||1; if(BOG.cur!==V){ BOG.cur=V; } pullLivery(U);
+  if(o.pit) bogMudBuild(o.pit, U.trR*k);   /* after the truck: the fine rut rows follow its track */
   var x=+o.x||0, v=Math.max(0,+o.v||0), slip=clamp(+o.slip||0,0,1), sink=clamp(+o.sink||0,0,1.4), len=+o.len||(o.pit&&o.pit.len)||70, i;
   if(ph==="done") BOG.doneT+=dt;
   if(ph==="pit" && BOG.prev.phase==="runup"){ BOG.splash=Math.max(BOG.splash, 0.6+Math.min(1,v/12)); BOG.cheer=Math.max(BOG.cheer,1.2); BOG.shake=Math.max(BOG.shake,0.12); }
   if(o.cleared && !BOG.prev.cleared){ BOG.cheer=2.4; }
   if(ph==="done" && BOG.prev.phase==="pit" && !o.cleared) BOG.cheer=Math.max(BOG.cheer,0.8);
   if((+o.slap||0)>0){ BOG.splash=Math.max(BOG.splash, Math.min(1.5,+o.slap)); BOG.shake=Math.max(BOG.shake, 0.08*Math.min(1.5,+o.slap)); }
-  /* the truck: front axle at x, sunk by the sim's sinkage, thrown by its bounce; pitch follows the depth under each axle and the bounce */
-  var vsink=Math.min(U.rr*k*0.62, Math.max(sink*1.3, (ph==="pit"?0.42*Math.max(+o.dFront||0,+o.dRear||0):0)));   /* down to the hubs in the deep end */
-  BOG.vsink=(BOG.vsink||0)+(vsink-(BOG.vsink||0))*Math.min(1,dt*5);
-  V.position.set(x-U.wb*k, -BOG.vsink+Math.max(0,+o.y||0), 0);
-  var tgt=clamp(-(+o.vy||0)*0.05, -0.12, 0.14)+clamp((+o.dRear||0)-(+o.dFront||0),-0.4,0.4)*0.25+0.01*slip*(ph==="pit"?1:0)+(ph!=="stage"&&ph!=="done"?Math.sin(BOG.t*8.0)*0.006*slip:0);
+  /* the truck: front axle at x, each axle on the pit's own level (dug in below the fairground, up on a ridge's crown), sunk by
+     the sim's sinkage scaled to the drawn tyre, deeper where it dug; thrown by its bounce. Stopped, the look says why:
+     bogged sits mid-tyre in level mud, high-centred sits its frame on a crown of mud, dug in is buried to the axles in its
+     holes, and a truck that cleared rolls on out onto dry ground. */
+  var R=U.rr*k, why=o.why||"", stopped=ph==="done"&&!o.cleared&&x>0&&x<len, sk=R/((+o.rw)||(BOG_TYRE_IN[cls]||35)*0.0254/2), dig=clamp(+o.dig||0,0,1.5), bel=clamp(+o.belly||0,0,1), cons=BOG.pit?BOG.pit.cons:0.5;
+  if(o.cleared && ph==="done"){ if(BOG.outV==null) BOG.outV=Math.max(2.5,v); BOG.outV=Math.max(0,BOG.outV-2.6*dt); BOG.outX=Math.min(6.5,(BOG.outX||0)+BOG.outV*dt); } else { BOG.outV=null; BOG.outX=0; }
+  var xF=x+BOG.outX, xR=xF-U.wb*k, vs=Math.min(R*0.8, sink*sk+dig*0.28*R), vF=vs, vR=vs;
+  if(stopped){ if(why==="dug"){ vR=R*0.98; vF=Math.max(vs,R*0.82); } else if(why==="highcentre"){ vR=vF=clamp(vs,R*0.55,R*0.72); } else { vR=clamp(vs,R*0.48,R*0.75); vF=clamp(vs*0.9,R*0.42,R*0.68); } }
+  vF*=bogPitRamp(xF); vR*=bogPitRamp(xR);
+  var kv=Math.min(1,dt*5); BOG.vsF=(BOG.vsF||0)+(vF-(BOG.vsF||0))*kv; BOG.vsR=(BOG.vsR||0)+(vR-(BOG.vsR||0))*kv; BOG.vsink=Math.max(BOG.vsF,BOG.vsR);
+  var rmx=Math.max(0.05,BOG.pit?BOG.pit.rmax:0.3), rgF=bogPitHz(xF,"bump")*bogPitRamp(xF), rgR=bogPitHz(xR,"bump")*bogPitRamp(xR);
+  var yF=bogPitLevel(xF)+0.02+rgF-BOG.vsF*(1-0.6*rgF/rmx), yR=bogPitLevel(xR)+0.02+rgR-BOG.vsR*(1-0.6*rgR/rmx);
+  V.position.set(xR, yR+Math.max(0,+o.y||0), 0);
+  var tgt=clamp(-(+o.vy||0)*0.05, -0.12, 0.14)+clamp((+o.dRear||0)-(+o.dFront||0),-0.4,0.4)*0.25+0.01*slip*(ph==="pit"?1:0)+(ph!=="stage"&&ph!=="done"?Math.sin(BOG.t*8.0)*0.006*slip:0)+Math.atan2(yF-yR, U.wb*k);
   var n=Math.min(8, Math.ceil(dt/0.01)), h=n?dt/n:0, om=7, ze=0.35;
   for(i=0;i<n;i++){ BOG.pv+=(om*om*(tgt-BOG.pitch)-2*ze*om*BOG.pv)*h; BOG.pitch+=BOG.pv*h; }
-  BOG.roll+=((ph==="pit"?Math.sin(BOG.t*3.1)*0.02*slip+Math.sin(BOG.t*1.3)*0.012*sink:0)-BOG.roll)*Math.min(1,dt*4);
+  BOG.roll+=((ph==="pit"?Math.sin(BOG.t*3.1)*0.02*slip+Math.sin(BOG.t*1.3)*0.012*sink:0)+(stopped&&why==="highcentre"?0.035:0)-BOG.roll)*Math.min(1,dt*4);
   U.pivot.rotation.z=BOG.pitch; U.pivot.rotation.x=BOG.roll; U.pivot.position.y=U.rr+Math.sin(BOG.t*(+o.rpm||800)/60*1.3)*0.002;
   var ws=Math.max(v,+o.wspd||0), wr=ws/(U.rr*k);
   for(i=0;i<U.wheelsR.length;i++){ var sp=U.wheelsR[i]; sp.rotation.y=(sp.rotation.y-wr*dt)%TAU; }
@@ -365,13 +365,24 @@ function bogUpdate(o, dt){
   BOG.coat+=(clamp((+o.mudKg||0)/220,0,0.85)-BOG.coat)*Math.min(1,dt*2);
   if(U.paint0){ U.mats.paint.color.copy(U.paint0).lerp(_mudC, BOG.coat); }
   V.updateMatrixWorld(true);
+  /* the mud round the truck (vertex shader): a collar heaped round each tyre as it sinks, a bow ahead of the fronts at speed;
+     a crown pushed up under the frame when it sits down on the mud */
+  var TY=BOG.mudU&&BOG.mudU.uTy.value, air=clamp((+o.y||0)/0.15,0,1), bow=ph==="pit"?clamp(v/9,0,1)*0.08:0, xc=xR+U.wb*k*0.5;
+  var hcW=(stopped&&why==="highcentre")?1:(ph==="pit"?clamp((bel-0.3)/0.4,0,1):0), need=Math.max(0, V.position.y+bogFrameY(U)+0.03-bogPitLevel(xc))*hcW*bogPitRamp(xc);
+  BOG.bellyA=(BOG.bellyA||0)+(need-(BOG.bellyA||0))*Math.min(1,dt*3);
+  if(TY){ for(i=0;i<4;i++){ var ax=i<2?xF:xR, va=i<2?BOG.vsF:BOG.vsR, ca=(clamp(va*0.4,0,0.22)*(0.6+0.6*cons)+(i<2?bow:bow*0.35))*bogPitRamp(ax)*(1-air)*(1-0.7*clamp(bogPitHz(ax,"bump")/0.1,0,1));
+      TY[i].set(ax, (i&1?1:-1)*U.trR*k, ca, U.wr*k*0.5+0.16); }
+    BOG.mudU.uTyR.value=R*0.95; BOG.mudU.uBelly.value.set(xc, U.wb*k*0.42, BOG.bellyA, U.trR*k*0.5); BOG.mudU.uTime.value=BOG.t;
+    U.mudLine=Math.max(U.mudLine||0, BOG.vsink+TY[3].z); }   /* the high-water mark up the tyres (m above the contact), for the mud coat */
   /* ruts and tracks: where the tyres have been */
   if(BOG.mud && x>0 && (ph==="pit"||ph==="done")){
     var rx=Math.min(x, len), half=U.trR*k, tw=U.wr*k*0.95, dep=clamp(0.05+sink*0.4,0.05,0.4);
     if(rx-BOG.paintX>0.4 || (ph==="done"&&BOG.paintX<rx-0.01)){ var from=Math.max(0,BOG.paintX<-1e8?0:BOG.paintX); bogMudTrack(from-0.2, rx, half, tw, clamp(slip+sink,0,1)); BOG.paintX=rx; }
-    if(GFX!=="lite"){ bogMudRut(rx-U.rr*k*0.9, half, tw, dep); bogMudRut(rx-U.wb*k-U.rr*k*0.9, half, tw, dep*0.9); }
+    if(GFX!=="lite" && ph==="pit"){ var dF=clamp(BOG.vsF*(0.22+0.5*cons)+0.03+dig*0.08,0.03,0.42), dR=clamp(BOG.vsR*(0.22+0.5*cons)+0.05+dig*0.1,0.04,0.45), lp=0.25+0.6*cons;
+      for(i=0;i<4;i++) bogMudRut(i, (i<2?xF:xR)-R*0.55, (i&1?1:-1)*half, tw, i<2?dF:dR, (i<2?dF:dR)*lp); }
+    if(stopped && why==="dug" && !BOG.holeDone){ BOG.holeDone=true; for(i=0;i<4;i++) bogPitHole(i<2?xF:xR, (i&1?1:-1)*half, R*0.95, tw, (i<2?0.25:0.4)*R); }
   }
-  if(BOG.rutDirty && (BOG.t-(BOG.normT||0)>0.12)){ BOG.normT=BOG.t; BOG.rutDirty=0; BOG.mudGeo.computeVertexNormals(); }
+  bogPitFlush(); bogPitTexFlush();   /* just the columns the ruts touched, just the strip of map the tracks painted */
   bogEffects(o, dt, V);
   bogCrowd(dt);
   bogDirect(o, dt, V);
