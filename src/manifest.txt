@@ -47,6 +47,7 @@ vis/road.js
 vis/salt.js
 vis/salt-cars.js
 vis/salt-look.js
+vis/salt-event.js
 vis/hill.js
 vis/band.js
 vis/api.js
