@@ -21507,8 +21507,8 @@ function saltPickup(col, o){
     if(!lite){ var w=sc_wheel({x:p[0], z:p[1], r:0.38, w:0.24, rimR:0.2, style:"star", rimMat:"alu"}, M); w.position.set(p[0],0.38,p[1]); g.add(w); wh.push(w.userData.spin); return; }
     var spin=new THREE.Group(); spin.rotation.x=PI/2; spin.position.set(p[0],0.38,p[1]); var wb=new StripBatch();
     wb.add("w","cyl",[0,0,0],[0.76,0.24,0.76],0x18181a); wb.add("w","cyl6",[0,0,0],[0.42,0.26,0.42],0xc9ccd0); wb.add("w","box",[0,0,0],[0.08,0.27,0.4],0x5a5d62);
-    STRIP.scene=spin; wb.build("w", SALT.mats.solid, false); g.add(spin); wh.push(spin); });
-  STRIP.scene=keep; g.traverse(function(q){ if(q.isMesh && !q.geometry.parameters) seOwn(q); });   /* the merged batches are this truck's own */
+    STRIP.scene=spin; seOwn(wb.build("w", SALT.mats.solid, false)); g.add(spin); wh.push(spin); });
+  STRIP.scene=keep; [mp,mg,ms,mb].forEach(seOwn);   /* the merged batches are this truck's own */
   g.userData={wheels:wh, front:0.9, paint:paint, beacon:mb, col:col};
   return g;
 }
