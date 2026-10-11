@@ -14,6 +14,7 @@ sim/road.js
 sim/e24.js
 sim/salt.js
 sim/boat.js
+sim/swap.js
 sim/tunemap.js
 sound/profile.js
 sound/synth.js
@@ -51,6 +52,7 @@ app/salt.js
 app/boat.js
 app/results.js
 app/market.js
+app/swap.js
 app/career.js
 app/trophy.js
 app/help.js
