@@ -1085,6 +1085,20 @@ function flushHW(G, matOf){
   }
   HW=null;
 }
+/* r128's InstancedMesh turns frustum culling off (its geometry's sphere is one instance's, at the origin), so a static set
+   (a forest, a crowd, the rocks) draws, and shadows, all of it every frame wherever the camera looks. instCull puts a sphere
+   round every instance on the mesh's geometry (which must be its own) and turns culling on: the set is skipped, in the
+   view and in each shadow map, only when none of it can be there. pad: metres of slack for small per-frame motion (a cheer);
+   base: the shape's own geometry when the mesh's geometry already carries some other (cell) sphere. */
+var _icM=new THREE.Matrix4(), _icS=new THREE.Sphere();
+function instCull(im, pad, base){
+  var g=im.geometry, n=im.count, i, bb=new THREE.Box3(), c=new THREE.Vector3(), r=0; if(!n) return im;
+  var sg=base||g; if(!sg.boundingSphere) sg.computeBoundingSphere(); var gs=sg.boundingSphere.clone();
+  for(i=0;i<n;i++){ im.getMatrixAt(i,_icM); _icS.copy(gs).applyMatrix4(_icM); bb.expandByPoint(_icS.center); }
+  bb.getCenter(c);
+  for(i=0;i<n;i++){ im.getMatrixAt(i,_icM); _icS.copy(gs).applyMatrix4(_icM); r=Math.max(r, c.distanceTo(_icS.center)+_icS.radius); }
+  g.boundingSphere=new THREE.Sphere(c, r+(pad||0)); im.frustumCulled=true; return im;
+}
 
 /* world-space point of a local point (for belt paths, pipe routing) */
 Builder.prototype.pt=function(x,y,z){ return new THREE.Vector3(x,y,z).applyMatrix4(this.top()); };

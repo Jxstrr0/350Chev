@@ -100,8 +100,8 @@ function ultraAO(key, S, cam, o){
 }
 /* --- road course / 24 h --- */
 /* trees: a faceted two-crown broadleaf on a trunk (Full: one icosahedron blob sunk in the ground). The trees go into
-   ground cells with real bounds, so the camera culls the ones behind it and only the cells in the sun's shadow box
-   draw into the shadow map (Full's single instanced forest is never culled). */
+   ground cells with real bounds (instCull), so the camera culls the ones behind it and only the cells in the sun's shadow box
+   draw into the shadow map (Full's single instanced forest culls only as a whole). */
 function ultraRoadTrees(S, im, pts, rng){
   var g=new THREE.IcosahedronGeometry(1,1), P=g.attributes.position;
   for(var q=0;q<P.count;q++){ var x=P.getX(q), y=P.getY(q), z=P.getZ(q), k=0.84+0.3*Math.abs(Math.sin(x*7.1+y*3.3+z*5.7)); P.setXYZ(q, x*k, y*k, z*k); }
@@ -121,7 +121,7 @@ function ultraRoadTrees(S, im, pts, rng){
       mm.compose(_sbP.set(p[0]+(rng(j+11)-0.5)*r*0.6, tH+h*1.32, p[1]+(rng(j+13)-0.5)*r*0.6), Q, _sbS.set(r*0.62, h*0.5, r*0.62)); top.setMatrixAt(n, mm);
       mm.compose(_sbP.set(p[0], 0, p[1]), Q.set(0,0,0,1), _sbS.set(r*0.35+0.4, tH+h*0.4, r*0.35+0.4)); trunk.setMatrixAt(n, mm);
       im.getColorAt(j, cc); crown.setColorAt(n, cc); top.setColorAt(n, cc.multiplyScalar(1.12)); });
-    crown.castShadow=true; S.add(crown); S.add(top); S.add(trunk); }
+    crown.castShadow=true; instCull(crown, 0, g); instCull(top, 0, g2); instCull(trunk, 0, tg); S.add(crown); S.add(top); S.add(trunk); }
   S.remove(im);
 }
 /* the 24 h field: four wheels per car (Full: body and cabin boxes on the road) */
