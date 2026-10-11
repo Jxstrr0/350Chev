@@ -280,12 +280,12 @@ const SP_BRANDS=[
   {id:"wildoat",name:"Wild Oat",tag:"Energy soda",type:"energy",shape:"star",c1:"#e2541c",c2:"#fff3b0",c3:"#ffffff"},
   {id:"northlight",name:"Northlight",tag:"Race fuels",type:"fuel",shape:"star",c1:"#0e1f3d",c2:"#ff7a1a",c3:"#f4f1e8"}];
 const SP_TYPES={oil:"Oil company",parts:"Parts maker",feed:"Local feed store",tyre:"Tyre brand",energy:"Energy drink",fuel:"Fuel supplier"};
-const SP_LIKES={oil:["night","pull","salt","endurance","boat"],parts:["sale","night","salt"],feed:["pull","bog"],tyre:["night","drag","endurance","bog"],energy:["night","drag","salt"],fuel:["salt","night","endurance","boat"]};
+const SP_LIKES={oil:["night","pull","salt","endurance","boat"],parts:["sale","night","salt"],feed:["pull","bog"],tyre:["night","drag","endurance","bog","hill"],energy:["night","drag","salt","hill"],fuel:["salt","night","endurance","boat","hill"]};
 const SP_OBL={oil:["nights","pulls"],parts:["deliver"],feed:["pulls"],tyre:["nights"],energy:["nights","nodiesel"],fuel:["salt","nodiesel"]};
 const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
   deliver:n=>`Ship at least ${n} engine order${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
 const SP_SLOT_REP=[0,120,300];
-const SP_EVT={boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines"};
+const SP_EVT={hill:"Pikes Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines"};
 function spS(){const c=C();const s=c.spons&&typeof c.spons==="object"?c.spons:(c.spons={});
   if(!Array.isArray(s.active))s.active=[];if(!Array.isArray(s.offers))s.offers=[];if(!s.form||typeof s.form!=="object")s.form={};
   if(!s.hist||typeof s.hist!=="object")s.hist={};for(const k of ["signed","done","broken","earned","max"])s.hist[k]=+s.hist[k]||0;
@@ -303,7 +303,7 @@ function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s
   let r=spRng()*w.reduce((a,v)=>a+v,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;const b=pool[i],likes=SP_LIKES[b.type];
   const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.5+Math.min(1,C().rep/500),style=spRng();
   const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
-  const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull"||k==="bog"||k==="boat")?spR50(80*scale*bm):0,record:likes.includes("salt")?spR50(800*scale*bm):0};
+  const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull"||k==="bog"||k==="boat"||k==="hill")?spR50(80*scale*bm):0,record:likes.includes("salt")?spR50(800*scale*bm):0};
   const pick=SP_OBL[b.type][Math.floor(spRng()*SP_OBL[b.type].length)];
   const n={nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick];
   const obl=[{k:pick,n:n||0}];if(C().rep>=10&&spRng()<0.5)obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
