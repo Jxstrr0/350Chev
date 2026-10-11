@@ -22,7 +22,7 @@ function testSnap(){return{cfg:Object.assign({},S.cfg),h:cfgHash(S.cfg),car:S.ca
 function testSame(s){return!!s&&S.mode===s.mode&&S.career===s.car;}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
-function dragBtnText(t,sub){const b=$("dragBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
 function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
 function engBest(h){return career()?(C().dragBest||{})[h]:recs().eng[h];}
@@ -85,6 +85,7 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   else if(ph==="staged")h=!st.rolled?"rolling into the beams":st.launch.armed?(st.launch.twoStep?"on the two-step":st.launch.transBrake?"on the trans-brake":"ALS armed — foot on the throttle")+` · ${st.launch.held.toFixed(1)} s`:R?(dtT<0?"staged — wait for the ambers":dtT<1.5?"…":`<em class="o">GO</em>`):"time trial — leave when you like";
   else if(ph==="run"){const m=st.marks.slice(-1)[0];h=st.spin?`<em class="l">SPIN</em>`:st.onBars?"on the bars":m?`${m.n} ${m.t.toFixed(2)} s`:`gear ${st.gear}`;}
   else if(ph==="shutdown")h=(st.chuteOut?"chute out · ":"on the brakes · ")+Math.round(st.shutFt)+" ft";
+  if(DR.auto&&!DR.failed&&(pre||ph==="run")){const w=DR.drv.say(d,dragTree(now));if(w)h="Auto · "+w;}
   if(!DR.failed&&(ph==="shutdown"||ph==="done")){let w=null;if(n&&n.verdict&&n.stage>=2)w=!!n.verdict.win;else if(R&&!n)w=!foul&&!!m4&&(R.et==null||m4.t+Math.max(0,R.rt0||0)<R.et+R.rt);
     if(w!=null)h=`<em class="${w?"w":"l"}">${w?"WIN":"LOSS"}</em>`+(h?" · "+h:"");}
   shudSet("cap",SH.cap,s&&h?s+" · "+h:s||h);
@@ -114,7 +115,7 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
   const when=new Date(r.at||Date.now());
   return{R,n,rows,win,verdict,margin,opp:R?shOpp(R.name):null,round:n?n.label:R?"TEST & TUNE · HEADS-UP":"TEST & TUNE",
     date:when.toLocaleDateString("en-CA")+" "+String(when.getHours()).padStart(2,"0")+":"+String(when.getMinutes()).padStart(2,"0"),
-    car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg`};}
+    car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg${r.auto?r.auto.took!=null?" · you took over":" · Auto driver":""}`};}
 function dragSlipCard(r,res){const D=slipData(r,res),two=!!D.R,lamp=w=>two&&D.win!=null?`<i class="lamp${w?" on":""}"></i>`:"";
   const pb=r.pb&&r.et!=null?(()=>{const f=etFix(r.et,+r.pb.was);return`<div class="stamp">${r.pb.all?"PERSONAL BEST":"ENGINE BEST"}<br><s>${(+r.pb.was).toFixed(f)}</s> ${r.et.toFixed(f)}</div>`;})():"";
   return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE DRAGWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
@@ -167,6 +168,7 @@ function dragStart(){
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const snap=testSnap(),hk=hKey(snap.h),soak=soakFor(hk);
   const d=SIM.dragRun(res,Object.assign({},veh,{burnout:true,soakC:soak}));DR={d,res,env,veh,hk,soak,snap,last:performance.now(),failed:false,downAt:null,lastPtr:0};DR.hw=stripHw(snap.cfg);
+  if(dragAuto()){DR.auto=true;DR.drv=SIM.dragDriver(Math.floor(Math.random()*4294967296),res,veh);DR.vt=DR.last;}   // the auto driver: its own seeded hand, on its own fixed clock
   if(env.race==="heads"){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
     const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
@@ -183,7 +185,7 @@ function dragStart(){
   DR.breakAt=(wi&&wi.w>=1)?(2+Math.random()*4):Infinity;
   DR.failKind=failKindOf(res,env)||"rod";
   DR.lv=0;DR.lox=0;
-  const step=()=>{const now=performance.now();const dt=(now-DR.last)/1000;DR.last=now;const st=d.step(dt);const R=DR.race;
+  const step=()=>{const now=performance.now();const dt=(now-DR.last)/1000;DR.last=now;const st=DR.auto?dragAutoStep(now):d.step(dt);const R=DR.race;
     if(R&&st.phase==="staged"&&st.rolled&&R.tree0==null)R.tree0=now+1200+Math.random()*1800;
     const dtT=R&&R.tree0!=null?(now-R.tree0)/1000:-1;if(R&&dtT>=1.5&&R.green==null)R.green=R.tree0+1500;
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
@@ -220,6 +222,7 @@ function dragStart(){
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
     if(DR.n2o)n2oFrame(st,dt);
     if(DR.night)rnHud(st);
+    if(DR.auto&&!DR.failed&&st.phase!=="done"){const w=DR.drv.say(d,dragTree(now));if(w)$("dragLive").insertAdjacentHTML("afterbegin",`<div class="peak dauto" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">Auto · <b>${w}</b> — tap to take over</span></div>`);}
     shudFrame(st,now,dtT);
     if(!st.done||(DR.failed&&run.rpm>0))requestAnimationFrame(step);else dragFinish();};
   requestAnimationFrame(step);
@@ -227,6 +230,20 @@ function dragStart(){
 /* the driver's inputs. Pointer events so a held thumb on an iPhone works (burnout, two-step, trans-brake);
    a plain click (keyboard, harness) is treated as a tap. */
 function dragStage(){const d=DR.d;d.stage();buzz([12]);}
+/* the auto driver (S.env.dragDrive "auto"): SIM.dragDriver presses the same buttons on fixed 4 ms ticks of a clock (DR.vt) that
+   trails the frame clock, so it drives the same pass at 4 fps or 120. A tap or Space hands the car back (dragTakeOver). */
+function dragAuto(){if(S.env.dragDrive!=="auto")S.env.dragDrive="you";return S.env.dragDrive==="auto";}
+function dragTree(t){const R=DR.race;return!R?null:R.tree0==null||t<R.tree0?NaN:(t-(R.tree0+1500))/1000;}   // seconds from the green (NaN while the tree is dark)
+function dragAutoStep(now){const d=DR.d,H=SIM.DRAG_TICK;let st=d.st;if(now-DR.vt>1000)DR.vt=now-1000;
+  while(DR.auto&&!st.done&&DR.vt+H*1000<=now){const vt=DR.vt+H*1000;const a=DR.failed?null:DR.drv.tick(d,H,dragTree(vt));if(a)dragAutoDo(a,vt);st=d.step(H);DR.vt=vt;}
+  return st;}
+function dragAutoDo(a,vt){const d=DR.d;
+  if(a==="burn")d.burn(true);else if(a==="unburn")d.burn(false);else if(a==="stage")dragStage();else if(a==="purge")n2oPurge(true);else if(a==="unpurge")n2oPurge(false);
+  else if(a==="arm"){if(d.arm())buzz([20]);}else if(a==="shift")d.shift();else if(a==="go"){const l=DR.last;dragGo(vt);DR.last=l;}}
+function dragTakeOver(){const d=DR.d,st=d.st;DR.auto=false;DR.took=st.phase==="run"?Math.round(st.x*3.28084):st.phase;
+  if(st.burning)d.burn(false);DR.downAt=null;if(st.launch.armed)d.disarm();if(st.n2oS&&st.n2oS.purging)n2oPurge(false);$("dragBtn").dataset.k="";
+  toast(st.phase==="run"?(DR.veh.auto?"You have it — the box shifts itself":"You have it — tap to shift"):st.phase==="burnout"?"You have it — hold to burn out, tap to stage":"You have it — "+(d.canArm?"hold to arm, let go on the green":DR.race?"tap on the green":"tap to go"));buzz([20]);}
+function dragAutoWord(a){return a.took==null?"Auto driver — the whole pass":"Auto driver — you took over "+(typeof a.took==="number"?"at "+a.took+" ft":a.took==="burnout"?"in the water box":"on the line");}
 (()=>{const skip=()=>!testing&&ENGINE_VIS.stripBusy&&ENGINE_VIS.stripBusy()>0&&ENGINE_VIS.stripSkip();
   $("view").addEventListener("pointerdown",()=>{skip();});
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!e.defaultPrevented&&skip())e.preventDefault();});})();
@@ -237,6 +254,7 @@ function dragGo(now){const d=DR.d;if(d.st.phase!=="staged")return;const R=DR.rac
       R.rt0=+rt.toFixed(3);}}
   d.launch();DR.last=now;buzz([30]);}
 function dragPress(){if(!DR||!DR.d||DR.failed)return;const d=DR.d,st=d.st,now=performance.now();
+  if(DR.auto&&(st.phase==="burnout"||st.phase==="staged"||st.phase==="run")){dragTakeOver();return;}
   if(st.phase==="burnout"){DR.downAt=now;d.burn(true);buzz([15]);return;}
   if(st.phase==="staged"){if(!st.rolled)return;if(d.canArm){if(d.arm())buzz([20]);return;}dragGo(now);return;}
   if(st.phase==="shutdown"&&DR.pb){ENGINE_VIS.skipCut();return;}
@@ -251,6 +269,7 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
   b.addEventListener("pointercancel",e=>{DR&&(DR.lastPtr=performance.now());dragRelease(true);});
   b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("click",()=>{if(!DR||!DR.d||performance.now()-(DR.lastPtr||0)<800)return;const st=DR.d.st;
+    if(DR.auto&&!DR.failed&&(st.phase==="burnout"||st.phase==="staged"||st.phase==="run")){dragTakeOver();return;}
     if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();else if(st.phase==="shutdown"&&DR.pb)ENGINE_VIS.skipCut();});})();
 /* ---- nitrous on the strip: bottle pressure (heater or weather), when the shot comes on, and a purge on the line ---- */
 const N2O_ACT=[["window","Window switch","at the rpm window"],["mph40","At 40 mph","once it's hooked"],["mph60","At 60 mph","late, safe"],["shift2","After the 1-2","second gear on"]];
@@ -276,7 +295,7 @@ function n2oPurge(on){if(!DR||!DR.n2o||!DR.d)return;if(DR.d.purge(on)&&on){DR.n2
 function n2oFrame(st,dt){const z=st.n2oS,N=DR.n2o,b=$("n2oPurge");if(!z)return;
   const pre=st.phase==="burnout"||st.phase==="staged";
   if(z.purging){N.hiss-=dt;if(N.hiss<=0){sfx("purge");N.hiss=0.55;}}
-  if(b){b.style.display=pre?"":"none";const lp=Math.round(z.psi*(0.55+0.45*z.line)),k=(z.purging?"P":"")+lp;if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=z.purging?`PURGING · ${lp} psi at the solenoid`:`HOLD TO PURGE · ${lp} psi${z.line<0.5?" · line full of gas":" · line purged"}`;}}
+  if(b){b.style.display=pre&&!DR.auto?"":"none";const lp=Math.round(z.psi*(0.55+0.45*z.line)),k=(z.purging?"P":"")+lp;if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML=z.purging?`PURGING · ${lp} psi at the solenoid`:`HOLD TO PURGE · ${lp} psi${z.line<0.5?" · line full of gas":" · line purged"}`;}}
   const live=$("dragLive");
   if(pre)live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${z.line>=0.5?"var(--good)":"var(--warn)"}">${Math.round(z.psi*(0.55+0.45*z.line))}<i>psi</i></b><span>nitrous · ${z.purging?"purging":z.line>=0.5?"purged":"purge the line"} · bottle ${Math.round(z.psi)}</span></div>`);
   else if(st.phase==="run")live.insertAdjacentHTML("beforeend",`<div class="peak"><b style="color:${st.n2o>0.05?"var(--info)":""}">${z.cut?"CUT":st.n2o>0.05?"ON":z.on?"window":"armed"}</b><span>nitrous${z.on&&!z.cut?" · "+Math.round(z.psi)+" psi":""}</span></div>`);
@@ -293,7 +312,7 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
   if(!testing&&n2oKit()&&$("intro").style.display==="none"){ENGINE_VIS.purge(0.8);sfx("purge");e.preventDefault();}});
 document.addEventListener("keyup",e=>{if(e.key.toLowerCase()==="p"&&DR&&DR.n2o)n2oPurge(false);});
 function dragFinish(){
-  const {d,res,env,snap}=DR;const r=d.result();const failed=DR.failed;const same=testSame(snap);
+  const {d,res,env,snap}=DR;const r=d.result();if(DR.drv)r.auto=DR.took!=null?{took:DR.took}:{};const failed=DR.failed;const same=testSame(snap);
   const leave=()=>{if(testing)return;const b=ENGINE_VIS.stripBusy?ENGINE_VIS.stripBusy():0;if(b>0){setTimeout(leave,Math.min(1000,b*1000+60));return;}ENGINE_VIS.setStrip({on:false});$("app").classList.remove("onstrip");};
   setTimeout(leave,2200);
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("dragCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(!failed)sfx("bov");
@@ -566,7 +585,7 @@ function rnPanel(){const N=rnCur();if(!N)return"";const br=N.fmt==="bracket";
   h+=`<div class="rnsteps">${[0,1,2,3,4].map(s=>`<i class="${s<N.stage||N.done&&s<=N.stage?"d":s===N.stage&&!N.done?"on":""}">${br&&s<2?"TT"+(s+1):["Q1","Q2","QF","SF","F"][s]}</i>`).join("")}</div>`;
   if(testing&&!N.done)return h+rnNextHtml(N)+`</div>`;   // during the pass: just who's in the other lane
   if(N.done)return h+rnSummaryHtml(N)+(N.rounds.length?rnLadderHtml(N):rnQualHtml(N))+`</div>`;
-  h+=rnNextHtml(N);
+  h+=rnNextHtml(N)+dragDriveHtml(true);
   h+=N.stage<2?`<div class="lbl"><span>${br?"The field — time trials to learn your number":"Qualifying — best of two sets the seed"}</span></div>`+rnQualHtml(N):rnLadderHtml(N);
   return h+rnPitsHtml(N)+`</div>`;}
 /* race night pits vignette: between rounds the view shows the car up on stands in the pits (ENGINE_VIS.setPits) with the pits
@@ -629,6 +648,10 @@ function pitsPlace(){const ov=$("pitsOv");if(!ov||ov.hidden)return;const svg=ov.
     placed.push({x,y,w,h});t.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;t.style.visibility="visible";
     lines+=`<line x1="${a[0]}" y1="${a[1]}" x2="${Math.round(x+w/2)}" y2="${Math.round(y+h/2)}"/><circle cx="${a[0]}" cy="${a[1]}" r="3.5"/>`;});
   svg.innerHTML=lines;}
+/* Driver: you, or the auto driver (S.env.dragDrive; env only, never cfg or cfgHash). On a race night it is set once and drives every pass. */
+function dragDriveHtml(night){const on=dragAuto();
+  return`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","burnout, stage, the light, the shifts"],["auto","Auto","a steady hand · watch the pass"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragDrive" class="${(on?"auto":"you")===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`
+    +(on?`<p class="hint">The auto driver does the burnout, stages${n2oKit()?", purges the nitrous":""}${(()=>{const lt=SIM.launchTech(S.cfg);return lt.launchCtl!=="none"||lt.transBrake==="trans_brake"||alsOf(S.cfg);})()?", arms the launch on the ambers":""} and leaves on the green with a good, human light — a red is rare. ${S.env.shiftMode==="manual"?"It shifts near the best point for this engine's curve. ":""}Launch rpm, the nitrous switch and the chute stay as you set them. Steady, not perfect: a sharp light and good shifts beat it.${night?" It drives every pass of the night.":""} Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during a pass to take over.</p>`:"");}
 function rnFmtHtml(){const f=RN_FMT[S.env.dragFmt]?S.env.dragFmt:"test";
   let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   if(f!=="test")h+=`<p class="hint" style="margin-top:-4px"><b>${RN_FMT[f]}</b> · ${f==="elim"?"two qualifying passes set your seed, then quarter-final, semi and final against seven cars of your class. First to the stripe wins — a quick light beats a quick car. Red light or crossing the centreline loses.":"dial in the ET you expect. The slower dial leaves first; first to the stripe wins unless they ran under their dial (a breakout). Both under: the smaller breakout wins. Consistency beats horsepower."} ${career()?`Entry about 8% of the winner's purse (from $150), fuel per pass. Same rules as a pass: certified engine, ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade.`:"Free in the sandbox."} Set the car up below — body, tyre and weight lock when you enter.</p>`;
@@ -643,7 +666,7 @@ function rnRunBtn(){const N=rnCur(),b=$("runTest");if(testing)return;
 function rnRecHtml(){const R=recs();if(!R.nightsRun)return"";return`<div class="rec"><span>Race nights</span><b>${R.nightsWon||0}<i>of ${R.nightsRun} won</i></b><small>best finish: ${(RN_PLACE[R.bestFinish]||"—").toLowerCase()}</small></div>`;}
 function rnSlipHtml(r){const n=r.night;if(!n)return"";return`<div class="sec"><h2>${n.label}${n.win===true?" · won":n.win===false?" · out":""}</h2><div class="log"><div><b>vs</b>${rnEsc(n.opp)} · ${rnEsc(n.car)} — RT ${n.oppRt!=null?n.oppRt.toFixed(3):"—"}${n.oppBroke?" · broke":n.oppEt!=null?" · "+n.oppEt.toFixed(3)+" @ "+Math.round(n.oppMph):""}${n.dialO!=null?" on a "+n.dialO.toFixed(2):""}</div>${n.dialP!=null?`<div><b>Dial</b>${n.dialP.toFixed(2)}${r.et!=null?" · ran "+(r.et-n.dialP>=0?"+":"")+(r.et-n.dialP).toFixed(3):""}</div>`:""}<div>${rnEsc(n.text)}</div></div></div>`;}
 function rnVerdict(r){const n=r.night,R=r.race;const cls=n.win===true?"pass":n.win===false?"fail":r.et==null?"fail":"marg";
-  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${rnEsc(n.text)}</p>${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
+  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${rnEsc(n.text)}</p>${r.auto?`<p>${dragAutoWord(r.auto)}</p>`:""}${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
 function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive");let s=`${n.label} · vs ${rnEsc(R.name)}`;
   if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
   if(st.phase==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";
