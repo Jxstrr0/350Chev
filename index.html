@@ -21298,6 +21298,7 @@ function saltPickup(col, o){
 /* what colour the push truck wears: a colour vis/salt.js sets (SALT.pushColor, or a repaint of saltPushTruck), else whatever stands out from the car */
 function saltPushCol(carCol){
   if(typeof SALT.pushColor==="number") return SALT.pushColor;
+  if(typeof SALT_PUSH_COL==="number") return SALT_PUSH_COL;   /* vis/salt-look.js picks the colour when it has one */
   if(SALT.pushFixed===undefined){ SALT.pushFixed=null;
     try{ var g=saltPushTruck(), c=null; g.traverse(function(q){ if(!c && q.isMesh && q.material && q.material.color) c=q.material.color; });
       var old=sc(0x2c6b3a); if(c && Math.abs(c.r-old.r)+Math.abs(c.g-old.g)+Math.abs(c.b-old.b)>0.02) SALT.pushFixed=c.clone().convertLinearToSRGB().getHex(); }catch(e){} }
@@ -21323,7 +21324,7 @@ function saltSpinPose(V, o, dt, ph){
 }
 /* skid and scuff marks: instanced quads in a ring buffer, laid along each tyre's path */
 function seMarks(){
-  if(SALT.mk) return SALT.mk;
+  if(SALT.mk && SALT.mk.mesh.parent===SALT.scene) return SALT.mk;   /* a quality change rebuilds the flats: start a fresh set in the new scene */
   var cap=GFX==="lite"?240:(GFX==="ultra"?1400:720), g=new THREE.PlaneGeometry(1,1); g.rotateX(-PI/2);
   var m=new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.6, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-4}), cap);
   m.setColorAt(0, _seCol.setRGB(1,1,1)); m.count=0; m.visible=false; m.frustumCulled=false; m.renderOrder=2;
@@ -21371,7 +21372,7 @@ function seSpinDust(o, dt, V){
 }
 /* the safety truck: rolls from the next station down the course to the stopped car, beacon going */
 function seSafety(o, dt, V){
-  var P=SALT.sp, T=SALT.safety;
+  var P=SALT.sp, T=SALT.safety; if(T && T.parent!==SALT.scene) T=SALT.safety=null;
   if(!P || !P.on){ if(T) T.visible=false; return; }
   if(!T){ T=SALT.safety=saltPickup(0xf1efe8, {beacon:true, stripe:0xff6a14, roof:0xff6a14}); SALT.scene.add(T); }
   var u=T.userData, v=Math.max(0,+o.v||0);
@@ -21426,6 +21427,8 @@ function seChutes(o, dt, V, ph){
   if(SALT.cueBack && SALT.t>SALT.cueBack){ SALT.cueBack=0; if(SALT.shot==="heli" && ph==="shutdown") SALT.cue="chute"; }
 }
 
+/* vis/salt-look.js builds the push truck through SALT.makePush when it is there */
+SALT.makePush=function(){ return saltPickup(saltPushCol(null), {crew:true}); };
 /* --- per frame, from saltUpdate after the car is posed --- */
 function saltEventUpdate(o, dt, V, ph){
   var E=SALT.ev||(SALT.ev={ph:null});
