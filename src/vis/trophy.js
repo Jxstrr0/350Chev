@@ -30,7 +30,7 @@ function trMat(k){
   M[k]=defs[k]?defs[k]():std(0x888888,0.5,0); M[k].userData.trophy=true; return M[k];
 }
 function trGeo(k, mk){ var G=TROPHY.geo; if(!G[k]) G[k]=mk(); return G[k]; }
-function trSeg(){ return GFX==="lite"?12:20; }
+function trSeg(){ return GFX==="lite"?12:GFX==="ultra"?32:20; }
 function trLathe(pts, sy){ var v=pts.map(function(p){ return new THREE.Vector2(p[0], p[1]*(sy||1)); }); return new THREE.LatheGeometry(v, trSeg()); }
 var TR_CUP=[[0,0.06],[0.05,0.06],[0.05,0.075],[0.022,0.09],[0.013,0.15],[0.02,0.175],[0.032,0.185],[0.068,0.215],[0.082,0.27],[0.086,0.33],[0.08,0.33],[0.074,0.28],[0.06,0.235],[0,0.225]];
 function trMesh(g, m, x, y, z){ var o=new THREE.Mesh(g, m); o.position.set(x||0, y||0, z||0); return o; }
@@ -117,6 +117,7 @@ function trBuildScene(){
   var key=new THREE.DirectionalLight(0xffe2bc, 0.85); key.position.set(-3,6,8); S5.add(key); S5.add(key.target);
   var p1=new THREE.PointLight(0xffc98e, 0.9, 9, 2); p1.position.set(-2.4,3.2,-1.6); S5.add(p1);
   var p2=new THREE.PointLight(0xffc98e, 0.9, 9, 2); p2.position.set(2.4,3.2,-1.6); S5.add(p2);
+  TROPHY.lights=[key];   /* Ultra: the key casts shadows (ultraTrophy) */
   var p3=new THREE.PointLight(0xfff0dc, 0.55, 9, 2); p3.position.set(0,3.0,1.6); S5.add(p3);
   var R=TR_ROOM, W=R.W, D=R.D, H=R.H, zc=(R.back+R.front)/2, fixed=new THREE.Group(); S5.add(fixed);
   var ft=trFloorTex(); ft.repeat.set(5,6);
@@ -314,7 +315,7 @@ function trRender(){
   cam.fov=cam.aspect<0.8?58:46; cam.updateProjectionMatrix(); trCamApply();
   var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=1.05;
   var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
-  renderer.render(TROPHY.scene, cam);
+  var AO=ultraTrophy(cam); if(AO) AO.render(); else renderer.render(TROPHY.scene, cam);
   TROPHY.stats={calls:inf.render.calls, tris:inf.render.triangles, items:TROPHY.pick.length, engQ:TROPHY.engQ.length}; inf.autoReset=ar;
   renderer.toneMappingExposure=ex;
 }

@@ -153,7 +153,7 @@ function buildRoadWorld(T){
   stands.forEach(function(sq, si){ var ii=(sq+N)%N, h=T.h[ii], len=40;
     for(var r=0;r<rows;r++){ roadPt(T, ii, hw+9+r*0.85, 0, _rA); B.box("solid", _rA.x, 0.45+r*0.5, _rA.z, len, 0.9+r*1.0, 0.85, r%2?0xb9b4a8:0xa9a497, h);
       B.box("solid", _rA.x, 0.95+r*0.5+r*0.5, _rA.z, len, 0.12, 0.5, [0x1d4787,0xff7a1a,0x2c6b3a,0xb7261d][si%4], h);
-      for(var p=-len/2+0.5;p<len/2-0.3;p+=0.62){ if(rng(p*3.1+r*17.7+si*5.3)>(lite?0.35:0.6)) continue; seatPts.push([_rA.x+Math.cos(h)*p, 1.05+r*1.0, _rA.z-Math.sin(h)*p]); } }
+      for(var p=-len/2+0.5;p<len/2-0.3;p+=0.62){ if(rng(p*3.1+r*17.7+si*5.3)>(lite?0.35:ULT()?0.88:0.6)) continue; seatPts.push([_rA.x+Math.cos(h)*p, 1.05+r*1.0, _rA.z-Math.sin(h)*p]); } }
     roadPt(T, ii, hw+9+rows*0.85*0.5, 0, _rA); B.box("solid", _rA.x, 2+rows*1.0+1.6, _rA.z, len+1, 0.25, rows*0.85+2.4, 0xe9e6dc, h);
     for(var pp=-1;pp<=1;pp+=2){ roadPt(T, ii+pp*len/2/ds, hw+9+rows*0.85, 0, _rB); B.box("metal", _rB.x, (2+rows*1.0+1.6)/2, _rB.z, 0.3, 2+rows*1.0+1.6, 0.3, STEEL, h); }
     roadPt(T, ii, hw+8.3, 0, _rB); B.add("sign","plane",[_rB.x, 0.6, _rB.z],[len*0.5,0.55,1],0xffffff,[0,h,0],ROAD_UV.ban[si%6]); });
@@ -174,13 +174,13 @@ function buildRoadWorld(T){
       cc.set(shirts[Math.floor(rng(q*1.3)*shirts.length)]).convertSRGBToLinear(); bodyM.setColorAt(q,cc); cc.set(skin[Math.floor(rng(q*3.7)*skin.length)]).convertSRGBToLinear(); headM.setColorAt(q,cc); }
     S4.add(bodyM); S4.add(headM); }
   /* trees: shelterbelts and copses, kept well clear of the racing surface */
-  (function(){ var pts=[], tries=lite?900:1800, R2=Math.max(T.size[0],T.size[1])*0.5+260, s;
-    for(s=0;s<tries && pts.length<(lite?170:380);s++){ var px=(rng(s*1.7)-0.5)*2*R2, pz=(rng(s*2.9+1)-0.5)*2*R2, ok=true;
+  (function(){ var ult=ULT(), pts=[], tries=lite?900:ult?3600:1800, R2=Math.max(T.size[0],T.size[1])*0.5+260, s;
+    for(s=0;s<tries && pts.length<(lite?170:ult?760:380);s++){ var px=(rng(s*1.7)-0.5)*2*R2, pz=(rng(s*2.9+1)-0.5)*2*R2, ok=true;
       for(var j=0;j<N;j+=6){ var dx=T.x[j]-px, dz=-T.y[j]-pz; if(dx*dx+dz*dz<34*34){ ok=false; break; } }
       if(ok) pts.push([px,pz,3.5+rng(s+3)*3.5]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,qq){ var h=p[2]*1.7; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(qq,mm); cc.setHSL(0.24+rng(qq)*0.06,0.45,0.13+rng(qq+1)*0.06).convertSRGBToLinear(); im.setColorAt(qq,cc); });
-    im.castShadow=!lite; S4.add(im); })();
+    im.castShadow=!lite; S4.add(im); if(ult) ultraRoadTrees(S4, im, pts, rng); })();
   /* coulee hills on the horizon */
   (function(){ var seg=120, R0=2400, pos=[], col=[], idx=[], c1=sc(0x5d6a4a), c2=sc(0x7d8a70);
     for(var s=0;s<=seg;s++){ var a=s/seg*TAU, hgt=Math.max(5, 16+40*Math.pow(0.5+0.5*Math.sin(a*3.0+1.1),2)+18*Math.sin(a*11.0+1.4)*Math.sin(a*5.0)+10*Math.sin(a*23.0));
@@ -215,7 +215,7 @@ function roadSetNight(W, on){
   var h=on?STRIP_HOR_N:STRIP_HOR; W.horLin=new THREE.Color(h[0],h[1],h[2]); W.sunDir=on?STRIP_MOON:STRIP_SUN_DAY;
   W.sun.color.set(on?0x9fb2d6:0xffe2bc); W.sun.intensity=on?0.16:1.45; W.sun.castShadow=!lite;
   W.hemi.intensity=on?0.14:0.22; W.hemi.color.set(on?0x3a4764:0xcfdcf0);
-  W.mats.lamp.color.set(on?0xffffff:0x777777);
+  W.mats.lamp.color.set(on?0xffffff:0x777777); if(!lite) ultraShadow(W.sun, 2048);
   W.scene.environment=stripEnv(on); W.exposure=on?1.05:0.9;
   if(W.fx){ W.fx.mat.uniforms.uAmb.value=on?0.42:1; W.fx.mat.uniforms.uFogN.value=W.fog.near; W.fx.mat.uniforms.uFogF.value=W.fog.far; }
   if(tierChanged && W.sun.shadow.map){ W.sun.shadow.map.dispose(); W.sun.shadow.map=null; }
@@ -258,9 +258,10 @@ function roadFieldUpdate(W, T, field, night){
       fi=((fi%N)+N)%N; h=roadHd(T, fi); roadPt(T, fi, d, 0, _rA); _rQ.setFromAxisAngle(_rY, h); _rM.compose(_rA, _rQ, _rS); }
     A.body.setMatrixAt(i,_rM); A.cab.setMatrixAt(i,_rM); A.head.setMatrixAt(i,_rM); A.tail.setMatrixAt(i,_rM); }
   [A.body,A.cab,A.head,A.tail].forEach(function(m){ m.count=n; m.instanceMatrix.needsUpdate=true; });
+  if(A.wheel||ULT()) ultraRoadWheels(W, A, n);
   var nk=clamp((night-0.25)/0.5,0,1); A.mHead.color.setRGB(0.42+2.2*nk, 0.42+2.1*nk, 0.4+1.8*nk); A.mTail.color.setRGB(0.35+1.6*nk, 0.06+0.12*nk, 0.05+0.08*nk);
 }
-function roadFieldHide(W){ if(W&&W.ai) [W.ai.body,W.ai.cab,W.ai.head,W.ai.tail].forEach(function(m){ m.count=0; }); }
+function roadFieldHide(W){ if(W&&W.ai) [W.ai.body,W.ai.cab,W.ai.head,W.ai.tail,W.ai.wheel].forEach(function(m){ if(m) m.count=0; }); }
 /* continuous sky: n = 0 day … 1 night, warm = dusk/dawn glow. Binary parts (env map, lamps, headlight) switch at half-dark */
 var _skyD=new THREE.Vector3(), _skyE=new THREE.Vector3(), _skyW=new THREE.Vector3(-0.95,0.06,0.3).normalize();
 function roadSetSky(W, n, warm, east){
@@ -307,8 +308,8 @@ function roadDirect(o, dt, W, car){
 }
 function roadComposer(){
   if(ROAD.composer===false) return null;
-  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ROAD.composer;
-  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.rp=new THREE.RenderPass(ROAD.W.scene, ROAD.cam); C.addPass(C.rp);
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(ROAD.composer);
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.rp=new THREE.RenderPass(ROAD.W.scene, ROAD.cam); C.addPass(C.rp);
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); ROAD.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       ROAD.composer=C; ROAD.cSize=""; }catch(e){ ROAD.composer=false; return null; } }

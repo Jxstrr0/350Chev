@@ -166,7 +166,7 @@ function buildBogScene(){
     pts.forEach(function(p,q){ var h=p[2]*1.6; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(q,mm); cc.setHSL(0.24+rng(q)*0.06, 0.45, 0.13+rng(q+1)*0.06).convertSRGBToLinear(); im.setColorAt(q,cc); });
     S3.add(im); })();
   /* the crowd on the bank: standing, some on lawn chairs, thinner on Lite */
-  (function(){ var ppl=[], occ=lite?0.35:0.6, slope=1.7/8;
+  (function(){ var ppl=[], occ=lite?0.35:ULT()?0.88:0.6, slope=1.7/8;
     for(var r=0;r<8;r++){ var rz=-BOG_W/2-4.6-r*1.0, ry=Math.max(0,-BOG_W/2-4.5-rz)*slope;
       for(var xx=-22; xx<104; xx+=0.62){ if(rng(xx*3.1+r*17.7)>occ*(1-r*0.06)) continue; ppl.push([xx+(rng(xx+r)-0.5)*0.3, ry, rz+(rng(xx*1.7+r)-0.5)*0.4]); } }
     var n=ppl.length, bodyM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.46,0.8,0.32), new THREE.MeshStandardMaterial({roughness:0.95}), n),
@@ -213,13 +213,14 @@ function bogSetNight(on){
   BOG.flood.intensity=on?(lite?0.6:0.28):0;
   M.lamp.color.set(on?0xffffff:0x5e5e5e);
   bogMudLook(on, lite);
-  if(BOG.beamMesh){ BOG.beamMesh.visible=on; M.beam.opacity=on?0.014:0; }
+  if(BOG.beamMesh){ BOG.beamMesh.visible=on; M.beam.opacity=on?0.014:0; ultraBeam(BOG.beamMesh, M.beam); }
   S3.environment=stripEnv(on); BOG.exposure=on?1.0:0.9;
   [BOG.fx, BOG.fxSpray].forEach(function(F){ if(F){ F.mat.uniforms.uAmb.value=F===BOG.fx?1:(on?0.45:1); F.mat.uniforms.uFogN.value=S3.fog.near; F.mat.uniforms.uFogF.value=S3.fog.far; } });
   if(tierChanged && BOG.sun.shadow.map){ BOG.sun.shadow.map.dispose(); BOG.sun.shadow.map=null; }
   BOG.spots.forEach(function(sp){ S3.remove(sp); S3.remove(sp.target); if(sp.shadow&&sp.shadow.map) sp.shadow.map.dispose(); }); BOG.spots=[];
   if(on){ for(var i=0;i<(lite?2:3);i++){ var sp=new THREE.SpotLight(0xfff0d8, 1.6, 120, 0.62, 0.6, 1.5); sp.castShadow=!lite && i===0; if(sp.castShadow){ sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.002; sp.shadow.normalBias=0.05; sp.shadow.camera.near=4; sp.shadow.camera.far=120; }
-    S3.add(sp); S3.add(sp.target); BOG.spots.push(sp); } }
+    S3.add(sp); S3.add(sp.target); BOG.spots.push(sp); } ultraSpots(BOG.spots); }
+  if(!lite) ultraShadow(BOG.sun, 2048);
 }
 /* the truck per class: a real one per class at real size on the sim's tyres (vis/bog-trucks.js: bogTruck), no pull gear; k=1 */
 var BOG_LOOK={ street:{k:1.0, tyre:"mt", col:0x1d4787}, modified:{k:1.0, tyre:"swamp", col:0xb7261d}, super:{k:1.0, tyre:"paddle", col:0x2c6b3a} };
@@ -269,8 +270,8 @@ function bogDirect(o, dt, V){
 }
 function bogComposer(){
   if(BOG.composer===false) return null;
-  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=BOG.composer;
-  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.addPass(new THREE.RenderPass(BOG.scene, BOG.cam));
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(BOG.composer);
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(BOG.scene, BOG.cam));
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); BOG.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       BOG.composer=C; BOG.cSize=""; }catch(e){ BOG.composer=false; return null; } }

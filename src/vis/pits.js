@@ -179,7 +179,7 @@ function pitsRender(dt){
   if(GFX!=="lite") pitsAnimate(dt||0.016);
   var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=1.0;
   var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
-  renderer.render(PITS.scene, PITS.cam);
+  if(!ultraPits()) renderer.render(PITS.scene, PITS.cam);
   PITS.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, parts:PITS.fx?PITS.fx.P.length:0}; inf.autoReset=ar;
   renderer.toneMappingExposure=ex; PITS.seen=inf.render.frame; PITS.dirty=Math.max(0,PITS.dirty-1); PITS.renders++;
 }

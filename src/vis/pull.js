@@ -232,7 +232,7 @@ function buildPullScene(){
       PULL.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.7}); } })();
 
   /* crowd on the bleachers */
-  (function(){ var ppl=[], occ=lite?0.45:0.62;
+  (function(){ var ppl=[], occ=lite?0.45:ULT()?0.9:0.62;
     BX.forEach(function(sec){ for(var r=0;r<rows;r++){ for(var xx=sec[0]+0.5; xx<sec[1]-0.4; xx+=0.6){ if(rng(xx*3.1+r*17.7)>occ) continue; ppl.push([xx+(rng(xx+r)-0.5)*0.2, 0.42+r*0.42+0.03, -9.0-r*0.8-0.02]); } } });
     var n=ppl.length, bodyM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.46,0.62,0.34), new THREE.MeshStandardMaterial({roughness:0.95}), n),
         headM=new THREE.InstancedMesh(new THREE.BoxGeometry(0.22,0.25,0.22), new THREE.MeshStandardMaterial({roughness:0.9}), n);
@@ -526,7 +526,7 @@ function pullSetNight(on){
   PULL.hemi.intensity=on?0.12:0.2; PULL.hemi.color.set(on?0x3a4764:0xcfdcf0); PULL.hemi.groundColor.set(on?0x16130e:0x6a5a3c);
   PULL.flood.intensity=on?(lite?0.55:0.25):0;
   M.lamp.color.set(on?0xffffff:0x5e5e5e);
-  if(PULL.beamMesh){ PULL.beamMesh.visible=on; M.beam.opacity=on?0.014:0; }
+  if(PULL.beamMesh){ PULL.beamMesh.visible=on; M.beam.opacity=on?0.014:0; ultraBeam(PULL.beamMesh, M.beam); }
   if(PULL.wheel) PULL.wheel.bulbs.material.color.set(on?0xffc070:0x553322);
   S3.environment=stripEnv(on);
   PULL.exposure=on?0.98:0.9;
@@ -536,7 +536,8 @@ function pullSetNight(on){
   /* floodlights ride the towers nearest the action; only one casts shadows, and only on Full/Ultra */
   PULL.spots.forEach(function(sp){ S3.remove(sp); S3.remove(sp.target); if(sp.shadow&&sp.shadow.map) sp.shadow.map.dispose(); }); PULL.spots=[];
   if(on){ for(var i=0;i<3;i++){ var sp=new THREE.SpotLight(0xfff0d8, 1.5, 130, 0.62, 0.6, 1.5); sp.castShadow=!lite && i===0; if(sp.castShadow){ sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.002; sp.shadow.normalBias=0.05; sp.shadow.camera.near=4; sp.shadow.camera.far=140; }
-    S3.add(sp); S3.add(sp.target); PULL.spots.push(sp); } }
+    S3.add(sp); S3.add(sp.target); PULL.spots.push(sp); } ultraSpots(PULL.spots); }
+  if(!lite) ultraShadow(PULL.sun, 2048);
 }
 
 /* --- effects: roost off the rear tyres, dust over the track, black smoke out the stack(s), confetti --- */
@@ -630,8 +631,8 @@ function pullDirect(o, dt, V){
 }
 function pullComposer(){
   if(PULL.composer===false) return null;
-  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=PULL.composer;
-  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.addPass(new THREE.RenderPass(PULL.scene, PULL.cam));
+  var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(PULL.composer);
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(PULL.scene, PULL.cam));
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); PULL.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       PULL.composer=C; PULL.cSize=""; }catch(e){ PULL.composer=false; return null; } }

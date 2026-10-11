@@ -309,8 +309,8 @@ function boatDirect(o, dt){
   var cam=BOAT.cam; cam.position.copy(BOAT.camPos); cam.lookAt(BOAT.camTgt); cam.fov=BOAT.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function boatComposer(){
-  if(BOAT.composer===false) return null; var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=BOAT.composer;
-  if(!C){ try{ C=new THREE.EffectComposer(renderer); C.addPass(new THREE.RenderPass(BOAT.scene, BOAT.cam)); var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); BOAT.bloom=bp;
+  if(BOAT.composer===false) return null; var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(BOAT.composer);
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(BOAT.scene, BOAT.cam)); var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); BOAT.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader)); BOAT.composer=C; BOAT.cSize=""; }catch(e){ BOAT.composer=false; return null; } }
   var key=sz.x+"x"+sz.y+"@"+pr; if(BOAT.cSize!==key){ if(C.setPixelRatio) C.setPixelRatio(pr); C.setSize(sz.x, sz.y); BOAT.cSize=key; } return C;
 }
@@ -321,6 +321,7 @@ function boatRender(){
   BOAT.wMat.uniforms.uFog.value.copy(BOAT.horLin); [BOAT.fx, BOAT.fxMist].forEach(function(F){ if(F) F.mat.uniforms.uFog.value.copy(BOAT.horLin); });
   [BOAT.wakeMe, BOAT.wakeOpp].forEach(function(w){ w.material.uniforms.uFog.value.copy(BOAT.horLin); });
   var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=BOAT.exposure; var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  if(ULT()) ultraBoatReflect(S3, cam, BOAT.water, [BOAT.wakeMe, BOAT.wakeOpp]);
   if(C) C.render(); else renderer.render(S3, cam);
   BOAT.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, shot:BOAT.shot, parts:BOAT.fx.P.length+(BOAT.fxMist?BOAT.fxMist.P.length:0)}; inf.autoReset=ar; renderer.toneMappingExposure=ex;
 }
