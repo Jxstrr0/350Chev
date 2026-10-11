@@ -439,9 +439,9 @@ function buildStripScene(){
   stripBoardDraw({}, true);
 
   /* effects */
-  STRIP.fx=new StripFx(lite?420:760, "smoke", stripPuffTex()); S2.add(STRIP.fx.mesh);
-  STRIP.fxFire=new StripFx(lite?140:240, "fire", stripFlameTex(true)); S2.add(STRIP.fxFire.mesh);
-  STRIP.fxAdd=new StripFx(lite?140:240, "add", haloTex); S2.add(STRIP.fxAdd.mesh);
+  STRIP.fx=new StripFx(lite?420:760, "smoke", stripSmokeTex(), {lit:true, str:true}); S2.add(STRIP.fx.mesh);   /* v3: lit, normal-mapped smoke; stretched jets/cones */
+  STRIP.fxFire=new StripFx(lite?140:240, "fire", stripFlameTex(true), {str:true}); S2.add(STRIP.fxFire.mesh);
+  STRIP.fxAdd=new StripFx(lite?140:240, "add", haloTex, {str:true}); S2.add(STRIP.fxAdd.mesh);
   STRIP.marks=stripMarksInit(lite?160:260); S2.add(STRIP.marks.mesh);
 
   STRIP.cam=new THREE.PerspectiveCamera(46, 1, 0.3, 4200); STRIP.built=true;
