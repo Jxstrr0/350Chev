@@ -753,6 +753,20 @@ html.desk #dragCtl,html.desk #pullCtl,html.desk #saltCtl,html.desk #bogCtl,html.
 html.desk #dragLive{margin:10px 0 0}html.desk #dragLive:empty{display:none}
 html.desk #pullLive,html.desk #saltLive{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}html.desk #pullLive .ph-row,html.desk #saltLive .ph-row{grid-column:1/-1}
 html.desk #pullLive .pobanner,html.desk #pullLive .rawarn{grid-column:1/-1}
+/* salt flats, desktop: the dock slims to one glass bar along the view's bottom edge (live card in three columns, the button beside it),
+   so the car has the picture; --salthud is the band it covers, read by the salt camera to frame the car above it */
+#view{--salthud:0px}html.desk #view{--salthud:118px}
+html.desk #saltCtl{bottom:14px;width:min(1000px,calc(100% - var(--sbw) - 32px));padding:8px 10px;display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,240px);gap:0 10px;align-items:end}
+html.desk #saltLive{grid-column:1;grid-row:1/3;grid-template-columns:1.3fr 1fr 1.15fr;gap:0 8px;align-items:end}
+html.desk #saltLive .ph-row{grid-column:auto;margin-bottom:0;gap:6px}
+html.desk #saltLive .ph{margin-bottom:0;padding:6px 10px}
+html.desk #saltLive .ph-top b{font-size:28px}html.desk #saltLive .ph-top span{font-size:10.5px;line-height:1.25}
+html.desk #saltLive .ph-bar{height:10px;margin-top:4px}html.desk #saltLive .ph-lbl{margin-top:4px;font-size:10.5px}
+html.desk #saltLive .ph-row .peak{padding:6px 8px}html.desk #saltLive .ph-row .peak b{font-size:17px}html.desk #saltLive .ph-row .peak span{margin-top:2px;font-size:10px}
+html.desk #saltCtl>.row{grid-column:2;grid-row:1}
+html.desk #saltBtn,html.desk #saltShiftBtn{min-height:56px!important;font-size:17px!important;padding:6px 0!important}
+html.desk #saltBtn small{font-size:10.5px!important}
+html.desk #saltWarp{grid-column:2;grid-row:2;margin:6px 0 0!important;justify-content:flex-end}html.desk #saltWarp .chip{min-height:30px;padding:4px 10px}
 /* the sheet becomes a centred dialog */
 html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
 html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
