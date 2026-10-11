@@ -333,16 +333,10 @@ function stripTreeLights(o){
   set("oa1", race&&tr.a1); set("oa2", race&&tr.a2); set("oa3", race&&tr.a3); set("og", race&&tr.green&&!o.ofoul); set("or", race&&!!o.ofoul);
   if(o.otree){ var ot=o.otree; set("oa1", race&&ot.a1); set("oa2", race&&ot.a2); set("oa3", race&&ot.a3); set("og", race&&ot.green&&!o.ofoul); }   /* bracket: the slower dial's tree counts down first */
 }
-/* --- crowd gets up for the launch and the finish --- */
-var _crM=new THREE.Matrix4();
+/* --- crowd gets up for the launch and the finish (billboard crowd: the bounce, sway and poses run in its vertex shader) --- */
 function stripCrowd(dt){
-  var C=STRIP.crowd; if(!C) return; STRIP.cheer=Math.max(0,STRIP.cheer-dt*0.28);
-  if(STRIP.cheer<0.02 && !C.live && !C.wave) return;
-  var t=STRIP.t, amp=STRIP.cheer, i;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.04:0.3)?Math.abs(Math.sin(t*(amp>1?10:8)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
-    if(C.wave) y+=C.wy[i];
-    _crM.makeTranslation(p[0],p[1]+0.31+y,p[2]); C.body.setMatrixAt(i,_crM); _crM.makeTranslation(p[0],p[1]+0.75+y*1.15,p[2]); C.head.setMatrixAt(i,_crM); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=STRIP.cheer>=0.02||!!C.wave;
+  var C=STRIP.crowd; if(!C) return; if(C.tier!==GFX) stripVenueTier(); STRIP.cheer=Math.max(0,STRIP.cheer-dt*0.28);
+  var amp=STRIP.cheer; C.u.value.x=STRIP.t%600; C.u.value.y=amp<0.02?0:amp; C.live=amp>=0.02||!!C.wave;
   if(amp>1 && STRIP.fxAdd){ var fr=(amp>1.8?70:35)*dt, nf=Math.floor(fr)+(Math.random()<fr%1?1:0);   /* a PB: phones and flashes going off in the stands */
     while(nf-->0){ var q=C.base[(Math.random()*C.n)|0]; STRIP.fxAdd.emit(q[0], q[1]+1.0, q[2]+0.3, 0,0,0, 0.16, 0.8, 1.1, 1, 0.97, 0.9, 1, {drag:0, fin:0.01}); } }
 }
@@ -369,22 +363,16 @@ function stripKeySpots(P, O){
     L.position.set(c.position.x+6, 15, zs*9.6); L.target.position.set(c.position.x+0.4, 0.4, c.position.z); L.target.updateMatrixWorld();
     L.angle=0.27; L.penumbra=0.75; L.distance=50; L.intensity=0.95; }
 }
-/* the lit stands: each person glows in their own colour a little under the canopy lights */
+/* the lit stands: each person glows in their own colour a little under the canopy lights (the billboard crowd material does it itself) */
 function stripCrowdLit(m){
   m.onBeforeCompile=function(sh){ sh.uniforms.uCrowdLit=STRIP_U.uCrowdLit;
     sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform float uCrowdLit;").replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*uCrowdLit;"); };
   m.customProgramCacheKey=function(){ return "stripCrowdLit"; };
 }
-/* the crowd colour wave (the final, and won the night): cards up in a band that runs along the stands */
-var STRIP_CARDS=[0x1d4787,0xd9a52b,0xf3efe4].map(function(h){ return new THREE.Color(h).convertSRGBToLinear(); }), _wvC=new THREE.Color();
+/* the crowd colour wave (the final, and won the night): cards up in a band that runs along the stands — two bands 75 m apart, on the GPU */
 function stripWave(t, off){
-  var C=STRIP.crowd; if(!C||!C.col) return; var n=C.n, i, col=C.body.instanceColor.array, base=C.col, wx=t*24, dirty=false;
-  for(i=0;i<n;i++){ var p=C.base[i], xx=p[2]<0?p[0]:(p[0]-272)*2.6-8, dx=((xx-wx)%75+112.5)%75-37.5, b=off?0:Math.exp(-dx*dx/14);   /* two bands, 75 m apart */
-    C.wy[i]=0.36*b;
-    if(b>0.004 || C.cw[i]>0){ var row=p[2]<0?Math.round((p[1]-0.57)/0.46):Math.round((p[1]-0.37)/0.56), cc=STRIP_CARDS[(row+(xx>60?1:0))%3];
-      col[i*3]=base[i*3]+(cc.r-base[i*3])*b; col[i*3+1]=base[i*3+1]+(cc.g-base[i*3+1])*b; col[i*3+2]=base[i*3+2]+(cc.b-base[i*3+2])*b; C.cw[i]=b>0.004?b:0; dirty=true; } }
-  if(dirty) C.body.instanceColor.needsUpdate=true;
-  if(off){ C.live=true; }   /* one more stripCrowd pass puts everyone back down */
+  var C=STRIP.crowd; if(!C||!C.u) return; C.u.value.z=t*24; C.u.value.w=off?0:1;
+  if(off){ C.live=true; }
 }
 function stripPayoffs(o, dt, P, O){
   var ph=o.phase||"run", C=STRIP.crowd, lite=GFX==="lite", i;

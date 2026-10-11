@@ -27,6 +27,7 @@ vis/garage.js
 vis/particles.js
 vis/loop.js
 vis/strip.js
+vis/strip-venue.js
 vis/strip-cars.js
 vis/strip-run.js
 vis/pits.js
