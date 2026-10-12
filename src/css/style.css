@@ -104,6 +104,9 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.3;overflow-wrap:break-word;min-width:0}   /* a long status ("Heads-up eliminations · on now") wraps, never clipped */
 html:not(.desk) .evpick small{font-size:10.5px;letter-spacing:-.01em}
+html:not(.desk) .evpick{gap:4px;margin-bottom:8px}
+html:not(.desk) .evpick button{min-height:40px;padding:4px 8px;grid-template-rows:auto}html:not(.desk) .evpick svg{grid-row:1;width:20px;height:20px}
+html:not(.desk) .evpick small{grid-column:2}html:not(.desk) .evpick button:not(.on):not(.live) small{display:none}html:not(.desk) .evpick button.lock b::after{content:" \1F512";font-size:10px}
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
@@ -386,7 +389,11 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 @keyframes killPulse{from{box-shadow:0 0 0 0 rgba(226,71,60,.65)}to{box-shadow:0 0 0 9px rgba(226,71,60,0)}}
 .pobtns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.pobtns .btn{min-height:44px}.pobtns .btn:not(.pri){--ht:#ece7dc}
 /* stress list */
-.stress{display:flex;flex-direction:column;gap:6px}
+.stress,.stress #stressRest{display:flex;flex-direction:column;gap:6px}.stress #stressRest[hidden]{display:none}.stress #stressMore{align-self:flex-start}
+/* Events, once a pass exists: the result leads and the setup folds to the bottom (a "Change setup" chip jumps to it) */
+#testCore.resfirst{display:flex;flex-direction:column}#testCore.resfirst>*{order:9}
+#testCore.resfirst>#verdict{order:1}#testCore.resfirst>#peaks{order:2}#testCore.resfirst>#setupJump{order:3;align-self:flex-start;margin:0 0 12px}#testCore.resfirst>#testExtra{order:4}#testCore.resfirst>#stressSec{order:5}
+#testCore.resfirst>#chartwrap{order:6}#testCore.resfirst>#curveChips{order:7}#testCore.resfirst>#dynoHint{order:8}#setupJump[hidden]{display:none}
 .st{--lc:var(--steel);display:grid;grid-template-columns:142px 1fr 42px;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 8px 22px;text-align:left;width:100%;position:relative}
 .st::before{content:"";position:absolute;left:8px;top:50%;margin-top:-4px;width:8px;height:8px;border-radius:50%;background:var(--lc);box-shadow:0 0 6px var(--lc),0 0 14px var(--lc)}
 .st.good{--lc:var(--good)}.st.warn{--lc:var(--warn)}.st.crit{--lc:var(--crit)}.st.crit::before{animation:lamp .9s infinite}
@@ -583,8 +590,13 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .cgroup h3{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px;display:flex;align-items:center;gap:8px}
 .cgroup h3 span{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:0}.cgroup h3::after{content:"";flex:1;height:1px;background:var(--rule)}
 .cgroup.g-now h3{color:var(--good)}.cgroup.g-one h3{color:var(--warn)}
-.card.brief .req::before{content:none}
-.card.brief .req{display:grid;grid-template-columns:1fr 56px 52px;gap:10px;align-items:center;font-size:13px;padding:3px 0}
+.sfold{border:1px solid var(--rule);border-radius:6px;background:var(--panel);margin-bottom:8px}
+.sfold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:48px;padding:0 12px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.sfold>summary::-webkit-details-marker{display:none}.sfold>summary .cnt{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none}
+.sfold>summary::after{content:"";margin:0 2px 0 auto;width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .2s}.sfold[open]>summary::after{transform:rotate(45deg)}
+.sfold>.sfb{padding:2px 12px 12px}html.desk .sfold>summary:hover{background:var(--panel2)}
+.card.brief>.btn+.reqs{margin-top:12px}.card.brief .req::before{content:none}
+.card.brief .req{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(52px,auto);gap:10px;align-items:center;font-size:13px;padding:3px 0}
 .card.brief .req .rl{min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .card.brief .req .rl b{font-weight:500;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.brief .req .rl i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -665,11 +677,11 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
 #tabs .dot{position:absolute;top:8px;right:calc(50% - 18px);width:8px;height:8px;border-radius:50%;background:var(--crit);display:none}
 #tabs .dot.on{display:block}
 /* sheet */
-#sheet{position:absolute;left:0;right:0;bottom:0;max-height:72%;background:var(--panel);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;z-index:30;transform:translateY(105%);transition:transform .25s;display:flex;flex-direction:column}
-#sheet.on{transform:none}
-#sheet header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 8px;border-bottom:1px solid var(--rule)}
-#sheet h2{font-size:17px;font-weight:700}
-#sheet .body{overflow-y:auto;padding:10px 16px calc(env(safe-area-inset-bottom) + 16px)}
+#sheet,#setPane{position:absolute;left:0;right:0;bottom:0;max-height:72%;background:var(--panel);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;z-index:30;transform:translateY(105%);transition:transform .25s;display:flex;flex-direction:column}
+#sheet.on,#setPane.on{transform:none}#setPane{z-index:31;max-height:88%;visibility:hidden;transition:transform .25s,visibility 0s .25s}#setPane.on{visibility:visible;transition:transform .25s}
+#sheet header,#setPane header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 8px;border-bottom:1px solid var(--rule)}
+#sheet h2,#setPane h2{font-size:17px;font-weight:700}
+#sheet .body,#setPane .body{overflow-y:auto;padding:10px 16px calc(env(safe-area-inset-bottom) + 16px)}
 .abslot{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;margin-bottom:8px}
 .abslot.on{border-color:var(--orange);box-shadow:inset 0 0 0 1px rgba(255,122,26,.35)}
 .abhead{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
@@ -791,9 +803,9 @@ html.desk #saltBtn,html.desk #saltShiftBtn{min-height:56px!important;font-size:1
 html.desk #saltBtn small{font-size:10.5px!important}
 html.desk #saltWarp{grid-column:2;grid-row:2;margin:6px 0 0!important;justify-content:flex-end}html.desk #saltWarp .chip{min-height:30px;padding:4px 10px}
 /* the sheet becomes a centred dialog */
-html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
-html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
-html.desk #sheet header{padding:14px 20px 10px}html.desk #sheet .body{padding:12px 20px 20px}
+html.desk #sheet,html.desk #setPane{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
+html.desk #sheet.on,html.desk #setPane.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
+html.desk #sheet header,html.desk #setPane header{padding:14px 20px 10px}html.desk #sheet .body,html.desk #setPane .body{padding:12px 20px 20px}
 html.desk #tourBox,html.desk #ffBox{width:400px}
 /* glossary links, card, browser and lessons */
 html:not(.desk) .desk-only{display:none}
