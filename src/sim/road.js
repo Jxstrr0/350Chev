@@ -100,7 +100,7 @@
     // balance off the chassis' design point costs cornering grip (nose-heavy pushes, tail-heavy snaps); tyres lose a little μ per kg
     const kBal = clamp(1 - 1.2 * Math.abs(dF), 0.82, 1), kLoad = Math.pow(m / (C0.mass + 75), -0.12);
     // a swap car runs a real manual driveline: a transaxle loses least, a hypoid rear axle a little more, AWD the most
-    const rw = C0.tyreDia * 0.0254 / 2, eta = sw ? (C0.drive === "awd" ? 0.86 : C0.drive === "fwd" ? 0.92 : 0.9) : C0.drive === "awd" ? 0.8 : 0.85, gears = C0.ratios.slice();
+    const rw = C0.tyreDia * 0.0254 / 2, eta = sw ? (C0.drive === "awd" ? 0.9 : C0.drive === "fwd" ? 0.94 : 0.93) : C0.drive === "awd" ? 0.8 : 0.85, gears = C0.ratios.slice();
     const redline = res.redline || 7000;
     // fit the final drive: top gear lands the engine on its power peak at the speed that power can hold against drag
     const Pw = (res.peakHp || 100) * 745.7 * eta, crr = C0.rr * m * ROAD_G;
@@ -112,9 +112,9 @@
     let fd = ((sw ? Math.max(pkR, redline * 1.05) : pkR) * 2 * Math.PI / 60) * rw / (vPow * top);
     fd = clamp(fd, 0.9, 6.5);
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.7, 1.4), 0.7, 8);
-    const RC = { ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
+    const RC = { sw: !!sw, ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
       muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
-      cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift, engKg: ekg, vPow: vPow,
+      cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1), engKg: ekg, vPow: vPow,
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
     return RC;
@@ -167,7 +167,10 @@
   // the gear that pulls hardest at this speed (steady boost) without going past the redline
   function bestGear(car, E, v, cap) {
     let best = car.gears.length - 1, bf = -1;
-    for (let g = 0; g < car.gears.length; g++) { const r = rpmOf(car, v, g); if (r > car.redline * (cap || 0.995)) continue; const f = E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; if (f > bf) { bf = f; best = g; } }
+    // a swap car's driver knows the tyres: a gear that only has more torque than the tyres can use is no better, so of two gears that both
+    // saturate the grip he takes the taller one (less wheelspin, one shift fewer). The archetype chassis keep the plain force race.
+    const fcap = car.sw ? tractionF(car, v, 0) * car.rw / (car.fd * car.eta) : 0;
+    for (let g = 0; g < car.gears.length; g++) { const r = rpmOf(car, v, g); if (r > car.redline * (cap || 0.995)) continue; let f = E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; if (car.sw && f > fcap) f = fcap; if (car.sw ? f >= bf : f > bf) { bf = f; best = g; } }
     return best;
   }
   const gearPull = (car, E, v, g) => { const r = rpmOf(car, v, g); return r > car.redline ? 0 : E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; };
@@ -183,7 +186,7 @@
     return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - latF * latF));
   }
   // flywheel, gears and wheels have to be spun up too: the usual 1.04 + k·N² effective-mass factor on the overall ratio N
-  const mEff = (car, g) => { const N = car.gears[g] * car.fd; return 1.04 + 0.0008 * N * N; };
+  const mEff = (car, g) => { const N = car.gears[g] * car.fd; return 1.04 + (car.sw ? 0.0006 : 0.0008) * N * N; };
   const dragF = (car, v) => 0.5 * ROAD_RHO * car.cdA * v * v + car.crr;
 
   /* straight line: 0–60 mph, 0–100 km/h, 0–200, the quarter, 80–120 rolling, top speed, 100–0 */
@@ -202,7 +205,13 @@
         const bg = bestGear(car, E, v); if (bg > g && v > 1) { shiftLeft = car.shift; }
         rpm = Math.max(vr, g === 0 ? launch : car.idle);
         F = E.tq(rpm, b) * car.gears[g] * car.fd * car.eta / car.rw;
-        const Ft = tractionF(car, v, 0); if (F > Ft) { spin += dt; F = Ft; }
+        const Ft = tractionF(car, v, 0);
+        if (F > Ft) {
+          // a swap car: the driver and the traction control hold the tyres at the peak while the overshoot is small, and the margin widens
+          // with speed (the contact patch is rolling, not lighting up); only past it do the wheels spin and the grip falls off a little
+          const over = F / Ft - 1, tol = car.sw ? 0.12 + 0.035 * v : 0;
+          if (over > tol) { spin += dt; F = car.sw ? Ft * (1 - 0.08 * Math.min(1, (over - tol) / 0.6)) : Ft; } else F = Ft;
+        }
       }
       b = E.boost(b, dt, rpm, shiftLeft > 0 ? 0.7 : 1);
       const a = (F - dragF(car, v)) / (m * mEff(car, g));
