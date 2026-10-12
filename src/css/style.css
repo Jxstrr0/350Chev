@@ -154,6 +154,14 @@ html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:
 /* eight contract categories: an even grid (two across on a phone, as many as fit on a desk) instead of a ragged wrap */
 #catSeg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 html.desk #catSeg{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+/* phone: one swipeable chip row, so the first offer lands in the first screen instead of under five rows of categories */
+html:not(.desk) #catSeg{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding:0 16px;scrollbar-width:none;margin:0 -16px 10px;padding:0 16px}
+html:not(.desk) #catSeg::-webkit-scrollbar{display:none}
+html:not(.desk) #catSeg button{flex:0 0 auto;min-width:112px;max-width:170px;min-height:46px;scroll-snap-align:start}
+html:not(.desk) #catSeg button small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:not(.desk) #contracts .cgroup h3{margin:10px 0 6px}
+html:not(.desk) #contracts .g-now .hint.idle{display:none}   /* an empty board: the group's "0 / 2" says it, and the offers sit a screen higher */
+html:not(.desk) #contracts .card .client{margin-bottom:5px}
 #catSeg button{padding:7px 6px;min-height:48px;font-size:13.5px}
 #catSeg button small{max-width:100%;font-size:10.5px;white-space:normal;line-height:1.25;overflow:visible}
 .seg button{flex:1 1 auto;min-width:0;min-height:46px;padding:11px 8px;border:1px solid var(--rule);background:var(--panel);border-radius:5px;font-size:14px;font-weight:500;color:var(--chalk);line-height:1.15;position:relative}
@@ -1198,15 +1206,19 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
    sidebar grip that centre on the view keep working; --sbp is the panel alone. */
 #app{--rkh:60px}
 #rail{position:absolute;left:0;right:0;bottom:var(--tabh);z-index:9;display:flex;flex-direction:column;background:var(--soot);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;box-shadow:0 -8px 22px rgba(0,0,0,.28)}
-#app.rkoff #rail,#app.td #rail{display:none}
-#app.rkon:not(.rkoff) #panel{padding-bottom:calc(var(--tabh) + var(--rkh) + 24px)}
-html:not(.desk) #app.rkon:not(.rkoff) #toast{bottom:calc(var(--tabh) + var(--rkh) + 14px)}
-html:not(.desk) #app.rkon:not(.rkoff) #achToast{bottom:calc(var(--tabh) + var(--rkh) + 66px)}
+#app.td #rail{display:none}
+#app.rkon #panel{padding-bottom:calc(var(--tabh) + var(--rkh) + 24px)}
+html:not(.desk) #app.rkon #toast{bottom:calc(var(--tabh) + var(--rkh) + 14px)}
+html:not(.desk) #app.rkon #achToast{bottom:calc(var(--tabh) + var(--rkh) + 66px)}
 .rlhead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"pk chip run";align-items:center;gap:8px;min-height:var(--rkh);padding:8px 12px 8px 14px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
 .rlgrab{position:absolute;left:50%;top:0;width:72px;height:14px;margin-left:-36px;padding:0;background:none;border:0}
 .rlgrab i{display:block;width:36px;height:4px;margin:4px auto 0;border-radius:2px;background:var(--steel)}
 .rlgrab:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 #rlPk{grid-area:pk}#rlChip{grid-area:chip}#rlRun{grid-area:run}
+/* an event run on a phone or narrow window: the slim line (RUNNING + the peaks) keeps the sheet in sight without taking the run's room */
+#app.rkrun{--rkh:44px}
+#app.rkrun .rlhead{padding-top:4px;padding-bottom:4px;cursor:default}
+#app.rkrun #rlRun,#app.rkrun .rlgrab{display:none}
 .rlpk{display:flex;gap:14px;min-width:0}
 .rlp{min-width:0;white-space:nowrap}
 .rlp b{font-family:var(--display);font-size:20px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
@@ -1259,7 +1271,7 @@ html:not(.desk) #app.rkon:not(.rkoff) #achToast{bottom:calc(var(--tabh) + var(--
 .rlnote{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
 /* narrow desktop window (900-1099 px): the sheet docks to the foot of the sidebar */
 html.desk #rail{left:auto;right:0;bottom:0;width:var(--sbw);border-left:1px solid var(--rule);border-radius:0}
-html.desk #app.rkon:not(.rkoff) #panel{padding-bottom:calc(var(--rkh) + 28px)}
+html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 /* desktop 1100 px and wider: the third column */
 @media (min-width:1100px){
   html.desk #app,html.desk #app.mini{--rlw:clamp(300px,22vw,340px);--sbp:min(var(--sbw-user,clamp(360px,30vw,520px)),calc(60vw - var(--rlw)));--sbw:calc(var(--sbp) + var(--rlw));grid-template-columns:minmax(0,1fr) var(--sbp) var(--rlw)}
@@ -1275,3 +1287,12 @@ html.desk #app.rkon:not(.rkoff) #panel{padding-bottom:calc(var(--rkh) + 28px)}
   html.desk #rlTag{display:block;margin-top:-4px}
   html.desk .rlbody{display:block;max-height:none;overflow:visible;padding:0 14px 16px}
 }
+/* 1100-1279 px: panel and rail ease in from 300 + 240 px (the 3D view keeps 560 px at 1100) to 384 + 300 px at 1280 */
+@media (min-width:1100px) and (max-width:1279px){
+  html.desk #app{--rlw:calc(240px + (100vw - 1100px)*.334);--sbp:min(var(--sbw-user,calc(300px + (100vw - 1100px)*.467)),calc(60vw - var(--rlw)))}
+  html.desk .rlp b{font-size:21px}
+  html.desk #tabs button{font-size:9.5px;letter-spacing:.01em}
+}
+/* the dyno's own Run is the rail's Run here: Test keeps #runTest in the DOM (the rail clicks it) but shows one button */
+#app:not(.td) #tab-test #runTest{display:none}
+#app:not(.td) #tab-test #pinBase{flex:1 1 auto}
