@@ -6,7 +6,7 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(e.drv)});}   // a chosen swap car (app/swap.js) stands in for the chassis
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId())});}   // a chosen swap car (app/swap.js) stands in for the chassis
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadRecs(){const R=recs();if(!R.road||typeof R.road!=="object")R.road={};return R.road;}
 /* market: a buyer's road figures for an engine, in the buyer's car (cached like the site runs) */
@@ -107,7 +107,7 @@ function roadFinish(){
   if(r.swap)swapAfter(r);
   RT.lap=null;save();recompute();renderTest();revealVerdict();
 }
-function roadVerdict(res){const r=res.road,z=r.zero100;if(r.swapBroke)return swapRoadVerdict(r);if(r.dtBroke)return `<div class="verdict fail"><div style="flex:1"><div class="big">${r.dtBroke.msg.toUpperCase()}</div><p>${r.chName} — it let go on the exit of ${r.dtBroke.corner}, ${r.dtBroke.t.toFixed(1)} s into the lap. The ${SIM.drivetrain(S.env.drv).n} drivetrain is rated below what this engine makes. No lap time; the engine is fine.</p></div></div>`;
+function roadVerdict(res){const r=res.road,z=r.zero100;if(r.swapBroke)return swapRoadVerdict(r);if(r.dtBroke)return `<div class="verdict fail"><div style="flex:1"><div class="big">${r.dtBroke.msg.toUpperCase()}</div><p>${r.chName} — it let go on the exit of ${r.dtBroke.corner}, ${r.dtBroke.t.toFixed(1)} s into the lap. The ${SIM.drivetrain(drvId()).n} drivetrain is rated below what this engine makes. No lap time; the engine is fine.</p></div></div>`;
   return `<div class="verdict pass"><div style="flex:1"><div class="big">${fmtLap(r.lapT)} · ${rdEsc(r.trkName)}</div><p>0–100 ${z!=null?z.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h · ${rdEsc(r.trkName)} ${fmtLap(r.lapT)} — ${r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD")}, ${r.tyreName.toLowerCase()} tyres, ${r.m.toLocaleString("en-CA")} kg${r.pb&&r.pb.was?` · <b>lap record</b> (was ${fmtLap(r.pb.was,2)})`:""}</p>
     <div class="vstats"><div><b>${z!=null?z.toFixed(1):"—"}</b><span>0–100 km/h s</span></div><div><b>${r.zero60!=null?r.zero60.toFixed(1):"—"}</b><span>0–60 mph s</span></div><div><b>${r.quarter?r.quarter.t.toFixed(1):"—"}</b><span>1/4 mi${r.quarter?" · "+Math.round(r.quarter.kmh)+" km/h":""}</span></div>
     <div><b>${Math.round(r.top.kmh)}</b><span>top km/h · ${r.top.limit==="redline"?"rev limit":"drag"}</span></div><div><b>${r.roll!=null?r.roll.toFixed(1):"—"}</b><span>80–120 s</span></div><div><b>${r.brake100.toFixed(1)}</b><span>100–0 m</span></div></div></div></div>`;}
