@@ -403,8 +403,8 @@ function renderShop(){
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
     const rq=k.req||{},evGo=rq.lap!=null||rq.zero100!=null?`<button class="chip evgo" data-evgo="road" data-ch="${(rq.road&&rq.road.ch)||"coupe"}" data-trk="${rq.lap!=null&&rq.road&&rq.road.trk||""}">Road test it in their car ›</button>`:rq.et!=null?`<button class="chip evgo" data-evgo="drag">Take it to the strip ›</button>`:rq.mph!=null&&rq.lsr?`<button class="chip evgo" data-evgo="salt">Run it on the salt ›</button>`:"";
-    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${evGo}${sc.brk}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
-      <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
+    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
+      <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}<div class="reqs">${rows}</div>${evGo}${sc.brk}</div>`;};   /* verdict, money and the button lead; the requirement rows follow */
   const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
     const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
     const row=b=>{const d=b.d,k=b.k;const cd=coreDeal(k,d.units,cert),pr=b.profit+cd.credit;const fit=Math.round(Math.min(1,d.ok?1:d.m)*100);const full=C().shipped>=MAX_ACTIVE;
@@ -417,10 +417,10 @@ function renderShop(){
   const inbox=(C().inbox||[]).filter(k=>k.expires>=C().week);
   $("contracts").innerHTML=
     `<div class="cgroup g-now"><h3>On the board<span>${C().contracts.length} / ${MAX_ACTIVE}</span></h3>${C().contracts.length?C().contracts.map(k=>cardH(k,"active")).join(""):`<p class="hint">Nothing accepted. Pick a category below and take a job — two at a time, ten percent down, three weeks to ship.</p>`}</div>`+
-    buyersH()+
+    (cert?buyersH():"")+   /* a certified engine: its buyers sit with the board; otherwise they are only a hint, below the offers */
     (inbox.length?`<div class="cgroup g-one"><h3>Repeat orders<span>${inbox.length}</span></h3>${inbox.map(k=>cardH(k,"inbox")).join("")}</div>`:"")+
-    svcBayH()+coreStockH(cert)+
-    `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`;
+    `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`+
+    (cert?"":buyersH())+svcBayH()+coreStockH(cert);
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
   crewRender();   // people, levels, traits, training: app/crew.js
@@ -452,7 +452,12 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
   if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
-$("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
+/* Settings live in their own pane (a button in the Shop), not in the Shop's scroll */
+function setOn(){return $("setPane").classList.contains("on");}
+function setOpen(){closeSheet();$("setPane").classList.add("on");$("scrim").classList.add("on");$("setBody").scrollTop=0;$("setClose").focus({preventScroll:true});}
+function setClose(){if(!setOn())return;$("setPane").classList.remove("on");if(!$("sheet").classList.contains("on"))$("scrim").classList.remove("on");}
+$("setOpen").addEventListener("click",()=>{renderShop();setOpen();});$("setClose").addEventListener("click",setClose);$("scrim").addEventListener("click",setClose);
+$("setPane").addEventListener("click",e=>{if(e.target.closest("#glOpen,#lessonsOpen,#kbHelpBtn,#sndCredBtn,#replayTour,#replayFF"))setClose();});
 $("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}

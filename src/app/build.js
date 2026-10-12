@@ -370,7 +370,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
       + (chips?`<div class="chips">${chips}</div>`:"")
       + (o.info?`<p>${o.info}</p>`:"") + `</div>`;}).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
-function closeSheet(){$("sheet").classList.remove("on");$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
+function closeSheet(){$("sheet").classList.remove("on");if(!setOn())$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
 function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
