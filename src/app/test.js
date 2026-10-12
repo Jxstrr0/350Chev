@@ -210,7 +210,7 @@ function drawDragTrace(r){const INK=getComputedStyle(document.documentElement).g
   x.fillStyle="#ff7a1a";x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("rpm",padL+34,padT+12);
   x.fillStyle=soft;x.textAlign="right";x.fillText(mphMax+" mph",W-padR,padT+12);x.textAlign="left";x.fillText("0",padL+4,padT+ch-4);}
 function lastForChart(){return S.last&&S.last.hash===cfgHash(S.cfg)?S.last.res:null;}
-function drawChart(res,upto){if(res&&res.e24&&upto==null&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const INK_SOFT=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawChart(res,upto,cv){const chart=cv||$("chart");if(res&&res.e24&&upto==null&&!cv&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const INK_SOFT=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;
   if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
@@ -256,7 +256,7 @@ function renderTest(){
   if(S.env.testType==="pull_sled")pullRunBtn();
   if(S.env.testType==="boat")boatRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
-  renderMap();ddRender();
+  renderMap();ddRender();if(typeof railSched==="function")railSched();
 }
 /* ===================== TUNE MAP (dyno) =====================
    S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,

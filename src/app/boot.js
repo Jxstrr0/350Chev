@@ -181,11 +181,11 @@ function setLayout(m){if(S.layoutMode===m)return;S.layoutMode=m;applyLayout();ap
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-lay]");if(b){setLayout(b.dataset.lay);buzz(6);}});
 window.addEventListener("resize",()=>applyLayout(true));
 // panel bottom edge: on the phone the tab bar covers the panel's foot, on desktop the tabs sit on top
-function tabsTop(){return deskOn()?$("panel").getBoundingClientRect().bottom:$("tabs").getBoundingClientRect().top;}
+function tabsTop(){const t=deskOn()?$("panel").getBoundingClientRect().bottom:$("tabs").getBoundingClientRect().top;return typeof railTop==="function"?Math.min(t,railTop()):t;}   // the results sheet covers the foot too
 // tour and First Fire cards on a wide screen: a 400 px card beside its target instead of a full-width strip
 function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
   const a=$("app").getBoundingClientRect(),w=box.offsetWidth||400,h=box.offsetHeight||160;box.style.right="auto";
-  if(!r){box.style.left=Math.round((a.width-$("panel").offsetWidth-w)/2)+"px";return;}
+  if(!r){box.style.left=Math.round(($("panel").getBoundingClientRect().left-a.left-w)/2)+"px";return;}
   const sb=$("panel").getBoundingClientRect().left-a.left,cl=(v,lo,hi)=>Math.round(Math.max(lo,Math.min(hi,v)));let top,left;
   if(r.left-a.left>=sb-2){top=cl(r.top-a.top,12,a.height-h-12);left=sb-w-24;}   // a sidebar target: the card waits beside the sidebar
   else{top=r.bottom-a.top+14;if(r.height>a.height*0.5)top=Math.min(r.bottom,a.bottom)-a.top-h-24;else if(top+h>a.height-12)top=Math.max(12,r.top-a.top-h-14);left=r.left-a.left+r.width/2-w/2;}
@@ -193,7 +193,7 @@ function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
 // sidebar width: drag its edge, double-click to put it back
 (()=>{const g=document.createElement("div");g.id="sbGrip";g.dataset.tip="Drag to resize the sidebar · double-click to reset";$("app").appendChild(g);let on=false;
   g.addEventListener("pointerdown",e=>{e.preventDefault();try{g.setPointerCapture(e.pointerId);}catch(x){}on=true;g.classList.add("on");tipHide();});
-  g.addEventListener("pointermove",e=>{if(!on)return;S.sbw=Math.round(Math.max(360,Math.min(innerWidth*0.6,innerWidth-e.clientX)));document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");});
+  g.addEventListener("pointermove",e=>{if(!on)return;S.sbw=Math.round(Math.max(360,Math.min(innerWidth*0.6,innerWidth-e.clientX-railW())));document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");});
   const end=()=>{if(!on)return;on=false;g.classList.remove("on");save();window.dispatchEvent(new Event("resize"));};
   g.addEventListener("pointerup",end);g.addEventListener("pointercancel",end);
   g.addEventListener("dblclick",()=>{S.sbw=null;applyLayout(true);save();window.dispatchEvent(new Event("resize"));});})();
