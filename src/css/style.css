@@ -1300,3 +1300,8 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 #app:has(#tab-events.on) #rlRun{display:none}
 /* Events shows the run's result once, in the panel under its launch control (with the event's own sheets): the rail keeps the peaks and the curve */
 #app:has(#tab-events.on) #rlV{display:none}
+/* ---- onboarding ---- */
+#tabs .dot.n{display:block;width:auto;min-width:16px;height:16px;padding:0 4px;border-radius:8px;box-sizing:border-box;font:700 10px/16px var(--mono);color:#fff;text-align:center;right:calc(50% - 26px);top:4px;background:var(--orange)}
+html.desk #tabs .dot.n{right:4px;top:6px}
+#pCls .chip[data-pc=starter]{border-color:var(--good);color:var(--good)}
+#pCls .chip[data-pc=starter].on{background:var(--good);color:var(--soot)}

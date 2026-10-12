@@ -277,7 +277,9 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="boat"?0.008:t==="salt"?0.03:t==="road"?0.03:t==="hill"?0.04:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
   return Math.round(lph*hours*fu.costL);}
 function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE,hill:HILL_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
+/* a toast that waits for the one on screen to finish (the goal toast must not hide the sale toast) */
+function toastAfter(msg){setTimeout(()=>toast(msg),Math.max(0,(toast.until||0)-Date.now())+250);}
 
 /* ===================== live compute ===================== */
 /* stress heat-map: zones on the 3D engine tinted by the worst utilisation of the tests that live there */
@@ -353,12 +355,12 @@ function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==
   if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
   return `<b>${cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
-  if(res.fails&&res.fails.length)return{cls:"bad",txt:"✗ BREAKS"};
+  if(res.fails&&res.fails.length)return (S.ranH||[]).includes(h)?{cls:"bad",txt:"✗ BREAKS"}:{cls:"",txt:"○ NOT RUN YET",nr:true};
   if(career()){const inField=C().fleet.filter(f=>f.hash===h&&C().week-f.week<=10).reduce((a,f)=>a+f.units,0);if(inField)return{cls:"fld",txt:`◆ ${inField} IN FIELD`};
     const c=C().cert;if(c&&c.hash===h&&c.ok)return{cls:"ok",txt:"✓ CERTIFIED"};return{cls:"",txt:"○ UNCERTIFIED"};}
   return{cls:"ok",txt:"● TEST CELL"};}
 function engineCard(cfg,res,o){o=o||{};const st=engineStatus(cfg,res);const name=o.name||engineName();
-  const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
+  const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${st.nr?"—":Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
   return `<div class="ecard ${o.cls||""}"><div class="nm">${o.editable?`<input id="nameIn" value="${name.replace(/"/g,"&quot;")}" maxlength="24" aria-label="Engine name">`:name}</div><span class="badge ${st.cls}">${st.txt}</span><div class="spec">${nums}</div><div class="spec">${engineSpecLine(cfg,res)}</div>${launchLine(cfg)?`<div class="spec"><b>Launch</b><i>·</i>${launchLine(cfg,true)}</div>`:""}</div>`;}
 let prevQuick=null;
 function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.querySelector(".d");if(!t){t=document.createElement("span");t.className="d";el.appendChild(t);}
@@ -375,12 +377,13 @@ function recompute(){
   {const cc=quick.Vd<1000;$("sDisp").textContent=cc?Math.round(quick.Vd):(quick.Vd/1000).toFixed(1);$("sDisp").nextElementSibling.textContent=cc?"cc":"Litres";}$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
   const worst=Math.max(...quick.tests.map(t=>t.util));$("sHp").className=worst>1?"critc":worst>.8?"warnc":"";
   const cert=C().cert;
-  $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));
+  $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));if(typeof tabBadges==="function")tabBadges();
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
 }
 function hud(){
+  if(typeof tabBadges==="function")tabBadges();
   if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0]}${dev()?" · DEV":""}`;}
   else{$("cashLbl").textContent="Test cell";$("cashLbl").style.color="var(--chalk)";$("repLbl").textContent="all parts unlocked";$("weekLbl").textContent="SANDBOX";}
 }

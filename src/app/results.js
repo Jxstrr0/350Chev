@@ -88,6 +88,7 @@ chart.style.touchAction="pan-y";chart.addEventListener("pointerdown",e=>{try{cha
 document.addEventListener("click",e=>{const b=e.target.closest("[data-plch]");if(!b)return;const k=b.dataset.plch;PL[k]=PL[k]?0:1;b.classList.toggle("on",!!PL[k]);pullRedraw();});
 
 function showResult(res,env){
+  {const h=cfgHash(S.cfg);S.ranH=(S.ranH||[]).filter(x=>x!==h).concat(h).slice(-30);}   // this build has been run: its card may now say BREAKS
   const b=S.base&&S.base.res;
   const life=res.lifeHours>=5000?"5,000+":res.lifeHours.toLocaleString();
   $("peaks").innerHTML=`<div class="peak"><b>${Math.round(res.peakHp)}<i>hp</i></b>${delta(res.peakHp,b&&b.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()} rpm · SAE ${Math.round(res.correctedHp)}</span></div><div class="peak"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${delta(res.peakTq,b&&b.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()} rpm</span></div><div class="peak"><b>${res.rel}<i>rel</i></b>${delta(res.rel,b&&b.rel)}<span>${env.testType==="endurance"?(res.endurance&&res.endurance.failedAtHour!=null?`failed at ${res.endurance.failedAtHour} h`:`survived ${env.hours} h`):`life ≈ ${life} h`}</span></div>`;
