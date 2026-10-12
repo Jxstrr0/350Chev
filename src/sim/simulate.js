@@ -678,7 +678,7 @@
         + 0.135 * (chargeC - 35)
         + 0.10 * (env.coolantC - 90)
         + 0.85 * tmg
-        - O.headMat.octane
+        - O.headMat.octane - (boosted ? O.icc.octane || 0 : 0)
         - 5.5 * (O.hd.burn - 1)
         - 6.0 * clamp(1.0 - lamE, -0.05, 0.22);
       onReq -= O.block.k > 100 ? 0.4 : 0;                 // alu block pulls heat too
@@ -823,7 +823,7 @@
       const crEff = cfg.cr * Math.pow(pMan / 101325, 0.24) * dyn;
       const chargeC = Tcharge - 273.15;
       knockOnReq = 89.6 + 3.0 * (crEff - 10.55) + 0.095 * (g.b - 86) + 0.135 * (chargeC - 35)
-        + 0.10 * (env.coolantC - 90) + 0.85 * tmgAt(rpm) - O.headMat.octane
+        + 0.10 * (env.coolantC - 90) + 0.85 * tmgAt(rpm) - O.headMat.octane - (boosted ? O.icc.octane || 0 : 0)
         - 5.5 * (O.hd.burn - 1) - 6.0 * clamp(1.0 - lamK, -0.05, 0.22);
       knockOnReq -= O.block.k > 100 ? 0.4 : 0;
       if (rot) knockOnReq = rotOnReq(crEff, chargeC, env.coolantC, cfg.timing, lamK, bBar);
@@ -889,10 +889,10 @@
 
     // --- bearings ---
     const djPin = (dsl ? 0.68 : 0.55) * g.b, wPin = (dsl ? 0.30 : 0.21) * g.b * (O.rod.brgW || 1);   // diesel journals are sized for the firing load
-    const Aproj = djPin * wPin;                                   // mm^2
+    const Aproj = djPin * wPin * (O.brg.areaK || 1);             // mm^2 (oversize race journals)
     const bearMPa = Fcomp / Aproj;
     const filmUm = 0.19 * Math.sqrt(kvOil) * Math.pow(O.oil.hths / 3.6, 0.6)
-      * Math.sqrt(peakHpRpm / 1000) * (60 / Math.max(6, bearMPa));
+      * Math.sqrt(peakHpRpm / 1000) * (60 / Math.max(6, bearMPa)) * (O.osys.filmK || 1);
 
     // --- crank ---
     const overlapMm = 0.585 * g.b - 0.5 * g.s;
@@ -959,7 +959,7 @@
     const scrubUm = dAlpha * deckDT * (0.55 * borePitch) * 1000
       * (1 + 0.004 * ((dsl ? maxPmax / DSL_CLAMP : maxPmax) - 60));
     const gasketShearUtil = scrubUm / O.gsk.shearUm;
-    const gasketPmaxBar = O.gsk.maxPmaxBar * (O.gsk.maxPmaxBar >= 200 ? (O.std.oring || 1) : 1) * (dsl ? DSL_GASKET : 1);
+    const gasketPmaxBar = O.gsk.maxPmaxBar * (O.gsk.maxPmaxBar >= 200 && !O.gsk.fireRing ? (O.std.oring || 1) : 1) * (dsl ? DSL_GASKET : 1);
     const gasketPmaxUtil = maxPmax / gasketPmaxBar;
     // MLS needs a ground deck; a composite-era rough deck defeats it
     const deckRough = (cfg.blockMat === "grey_iron" && cfg.gasket === "mls") ? 1.0 : 1.0;
@@ -968,7 +968,7 @@
     const boreDist = 0.22 * maxPmax / blockStiff * Math.pow(g.b / 86, 1.5)
       * Math.pow(1.18 / O.block.spacing, 0.8);                     // microns
     const wallThicknessMm = (borePitch - g.b) / 2;
-    const wallLimit = cfg.blockMat === "grey_iron" ? 3.0 : cfg.blockMat === "cgi" ? 2.8
+    const wallLimit = cfg.blockMat === "grey_iron" ? 3.0 : (cfg.blockMat === "cgi" || cfg.blockMat === "cgi_filled") ? 2.8
       : cfg.blockMat === "alu_nikasil" ? 3.5 : 4.5;
 
     // --- valvetrain ---
@@ -990,15 +990,16 @@
     const gProfile = env.gLat > 0 ? env.gLat : env.testType === "endurance"   // gLat: a race car's own sustained cornering (the 24 Hours)
       ? (env.loadProfile === "track" ? 1.25 : env.loadProfile === "highway" ? 0.30 : 0.60)
       : 0.35;
-    const pumpLimit = (cfg.oilSystem === "dry" ? 13000 : cfg.oilSystem === "baffled" ? 10000 : 9000) + (rot ? 2500 : 0);   // a rotary's pump is geared down off the e-shaft
+    const pumpLimit = (cfg.oilSystem === "dry" || cfg.oilSystem === "dry_hv" ? 13000 : cfg.oilSystem === "baffled" ? 10000 : 9000) + (rot ? 2500 : 0);   // a rotary's pump is geared down off the e-shaft
     const starveUtil = Math.max(gProfile / O.osys.gLimit, redline / pumpLimit);
     const duty = env.testType === "endurance"
       ? (env.loadProfile === "track" ? 1.0 : env.loadProfile === "highway" ? 0.55 : 0.75) : 0.62;
-    const Qkw = peakHp * KW_PER_HP * 0.82 * duty * (O.fu.lhv < 35e6 ? 0.94 : 1.0) * (rot ? ROT_HEAT : 1);
+    const Qkw = peakHp * KW_PER_HP * 0.82 * duty * (O.fu.lhv < 35e6 ? 0.94 : 1.0) * (rot ? ROT_HEAT : 1) * (boosted && O.icc.heatK ? O.icc.heatK : 1);   // water-meth boils off some of the combustion heat
     const radKw = (g.Vd * 1000) * 72 * O.cool.cap
-      * (cfg.blockMat === "alu_liners" || cfg.blockMat === "alu_nikasil" ? O.deck.cool : 1.0);
+      * (cfg.blockMat === "alu_liners" || cfg.blockMat === "alu_nikasil" ? O.deck.cool : 1.0) * (O.block.cool || 1)
+      + (O.cool.addKw || 0);   // the biggest packs are sized to the car, not the displacement
     const coolUtil = Qkw / radKw;
-    const oilCOut = env.oilC + (O.sq.oilHeatKw > 0 ? 8 : 0) + clamp((coolUtil - 0.7) * 40, 0, 45);
+    const oilCOut = env.oilC + (O.sq.oilHeatKw > 0 ? 8 : 0) + clamp((coolUtil - 0.7) * 40, 0, 45) - (O.cool.oilCoolC || 0);
 
     // --- compressor / turbine ---
     const pd = bm.kind === "roots" || bm.kind === "screw";

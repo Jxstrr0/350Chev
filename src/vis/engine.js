@@ -43,7 +43,7 @@ function buildEngineMesh(cfg, layoutObj){
   var caseTop = L.vee ? bore*0.46 : bore*0.62;    /* where the barrels start */
   var skirt   = caseTop;
 
-  var blockKey = (blockMat==="cgi") ? "cgi" : (blockMat.indexOf("alu")===0 ? "calu" : "iron");
+  var blockKey = (blockMat==="cgi"||blockMat==="cgi_filled") ? "cgi" : (blockMat.indexOf("alu")===0 ? "calu" : "iron");
   var headKey  = (headMat==="iron") ? "iron" : "calu";
   var liner    = (blockMat==="alu_nikasil") ? "nikasil" : "steel";
 
@@ -784,7 +784,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
   var dsl=isDieselCfg(cfg), xp=pick(cfg.xpipe,"chamber"), ind=pick(cfg.induct,"reed"), tsf=pick(cfg.tsFuel,"carb");
   var asp=pick(cfg.asp,"na"), ep=pick(cfg.ePort,185), tp=pick(cfg.tPort,125), pipeRpm=pick(cfg.pipeRpm,8000);
   var blower=(ind==="blower"), unif=(pick(cfg.scav,"loop")==="uniflow"), coverCol=COVER_COLORS[pick(cfg.cover,"red")]||COVER_COLORS.red;
-  var blockMat=pick(cfg.blockMat,"alu_nikasil"), blockKey=(blockMat==="cgi")?"cgi":(blockMat.indexOf("alu")===0?"calu":"iron");
+  var blockMat=pick(cfg.blockMat,"alu_nikasil"), blockKey=(blockMat==="cgi"||blockMat==="cgi_filled")?"cgi":(blockMat.indexOf("alu")===0?"calu":"iron");
   var headKey=(pick(cfg.headMat,"alu")==="iron")?"iron":"calu";
   var big=(n>=3||dsl), finned=(!dsl && blockKey==="iron" && n<=2);
   var r=stroke/2, ch=bore*0.34, Lr=stroke*rr, deckH=r+Lr+ch;
