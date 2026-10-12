@@ -61,6 +61,18 @@ function stripCar(body, color, tyreIn, hw){
 }
 
 /* --- per-frame animation (no allocations) --------------------------------- */
+/* the setup sheet's lean on a road / hill car (after stripCarAnim): su = {dive, lf, lr} from ENGINE_SIM.setupVis, lateral and
+   longitudinal g. Soft cars dive harder under braking and squat more on the power; a stiff axle lifts its inside wheel when
+   it is pushed past about 0.8 g. Stock (su null) leaves the car exactly as stripCarAnim made it. S = the caller's smoothing state. */
+function stripSetupLean(car, su, ayg, axg, S, dt){
+  if(!su) return;
+  var U=car.userData, B=U.bodyGroup, i, k=Math.min(1,dt*6);
+  S.dv+=(clamp(axg,-1.4,0.6)*0.03*(su.dive-1)-S.dv)*k; B.rotation.z+=S.dv;
+  var m=clamp((Math.abs(ayg)-0.8)/0.7,0,1)*0.10, inner=ayg>=0?-1:1;
+  S.lf+=(su.lf*m-S.lf)*k; S.lr+=(su.lr*m-S.lr)*k;
+  for(i=0;i<U.carriers.length;i++){ var Cw=U.carriers[i]; if(Cw.position.z*inner>0) Cw.position.y+=Cw.userData.rear?S.lr:S.lf; }
+  B.updateMatrix();
+}
 function stripCarAnim(car, o, dt, isPlayer){
   var U=car&&car.userData, A=U&&U.anim; if(!A||!o) return;
   if(!(dt>0)) dt=0; if(dt>0.1) dt=0.1;
