@@ -181,11 +181,11 @@ function ddMakeJob(rnd,practice,only){const pool=ddPool();if(!pool.length)return
   j.says=ddFill(F.says[Math.floor(rnd()*F.says.length)],j);j.tag=F.tag;j.hints=0;j.paid=0;
   const ti=career()?repTierIdx():0;j.labour=practice?0:Math.max(250,Math.round(F.hrs*(150+j.cost0*0.05)*(1+0.25*ti)/10)*10);   // shop rate: $150/h plus the engine's worth
   j.budget=Math.max(100,Math.round((j.partsRef*1.25+60)/50)*50);return j;}
-/* the week's walk-ins: 0-4 by rep and dyno, more with a dyno technician (about one a week even for a backyard shop) */
+/* the week's walk-ins: 0-4 by rep and dyno, more with a dyno technician (a backyard shop gets about 1.5 a week; the first two tiers get a lift so the rate climbs, never dips, as you grow) */
 function ddWeek(){if(!career())return;const d=DD();if(d.week===C().week)return;
   if(S.bay&&!S.bay.practice&&!testing){const j=S.bay.job;ddExit();C().rep=Math.max(0,C().rep-1);d.failed++;d.streak=0;logEvent(`Dyno day: ${ddLabel(j)} came back for it unfinished — −1 rep`,"bad");}
   const left=d.jobs.filter(j=>j.st==="open").length;d.jobs=d.jobs.filter(j=>j.st==="bay"&&S.bay&&S.bay.job.id===j.id);d.week=C().week;
-  const rnd=ddRnd(d),lam=0.95+0.32*repTierIdx()+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(4,Math.round(lam+(rnd()-0.5)*1.4)));
+  const rnd=ddRnd(d),lam=0.95+0.32*repTierIdx()+([0.6,0.2][repTierIdx()]||0)+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(4,Math.round(lam+(rnd()-0.5)*1.4)));
   for(let i=0;i<n;i++){const j=ddMakeJob(rnd,false);if(j){j.st="open";d.jobs.push(j);}}
   if(left&&d.week>1)logEvent(`Dyno day: ${left} customer${left>1?"s":""} took ${left>1?"their cars":"the car"} elsewhere`,"");
   const nn=d.jobs.filter(j=>j.st==="open").length;if(nn&&d.week>1)setTimeout(()=>toast(`DYNO DAY · ${nn} customer${nn>1?"s":""} booked in`),2700);}

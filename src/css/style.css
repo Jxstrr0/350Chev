@@ -112,6 +112,8 @@ html:not(.desk) .evpick small{font-size:10.5px;letter-spacing:-.01em}
 /* light: --good / --warn are dark enough for text on white and on --soot (≥4.5:1: stress report figures, the 24 h gate note, "legal");
    the hillclimb's lit LIFT button and the safety-car tag go white on it while they sit in the panel */
 :root[data-theme=light] #panel :is(.hlbtns #hillLift.on,.e24sc){color:#fff}   /* --dim on white is ~3.6:1 and --orange2 on the soot ~3.8:1 at this size */
+/* the section counts ('8/12 clear', 'stint 3 · …') were --dim on the soot: 3.07:1. #6a655b is 4.9:1 there and 5.8:1 on white */
+:root[data-theme=light] #panel :is(.sec>h2 .cnt,.pbar .cnt){color:#6a655b}
 .tbusy{padding:10px 12px;border:1px dashed var(--rule);border-radius:6px}
 .tbusy .chip{margin-left:6px}
 .card .evgo{display:block;margin:8px 0 2px;color:var(--orange2);border-color:var(--orange)}
@@ -330,6 +332,8 @@ html:not(.desk) .e24g i{white-space:normal;font-size:10px;line-height:1.3}
 .e24g b.good{color:var(--good)}.e24g b.warn{color:var(--warn)}.e24g b.crit{color:var(--crit)}
 .e24g i{display:block;font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .e24g .ph-bar{height:5px;margin-top:4px}
+/* the failure-risk note names the part and its wear ('Oil pickup / aeration · wear 0%'): two lines, not an ellipsis that clips it */
+.e24g .e24hz>i{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.25;min-height:2.5em}
 .e24spd{margin-top:8px;gap:6px}.e24spd .btn{min-height:46px;flex:1 1 18%;min-width:0;padding-left:4px;padding-right:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .e24spd .btn.on{border-color:var(--orange);color:var(--orange2)}.e24spd .e24nx{flex:1 1 58%}.e24spd .e24cam{flex:1 1 34%}
 html.desk .e24spd{flex-wrap:nowrap}html.desk .e24spd .btn{flex:1 1 0}html.desk .e24spd .e24nx{flex:2.2 1 0}html.desk .e24spd .e24cam{flex:1.6 1 0}
