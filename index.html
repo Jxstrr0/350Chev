@@ -26660,7 +26660,7 @@ function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null
 function ddSaveAs(o){const B=S.bay,w=B.own;Object.assign(o,{cfg:w.cfg,last:w.last?slimRes(w.last):null,base:w.base?slimRes(w.base):null,env:Object.assign({},S.env,{testType:w.testType||"pull"}),profileId:w.profileId,name:w.name,bay:{job:B.job,practice:!!B.practice,cur:S.cfg}});}
 function ddLoad(o){const b=o.bay;S.bay=null;if(!b||!b.job||!b.cur||typeof b.cur!=="object"||!b.job.cfg)return;
   S.bay={job:b.job,practice:!!b.practice,own:{cfg:S.cfg,last:S.last,base:S.base,testType:S.env.testType,profileId:S.profileId,name:S.name}};S.cfg=Object.assign({},SIM.DEFAULT_CFG,b.cur);S.last=null;S.base=null;S.env.testType="pull";S.name=ddLabel(b.job);}
-function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suH=null;Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
+function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suC=null;Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
   try{fuelMigrate();}catch(e){}
   if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
     S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
@@ -28860,18 +28860,30 @@ function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";i
   if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
 /* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
-/* the setup belongs to the build: S.suMap[cfgHash] = [stiffness, balance, wing], newest 24 kept; an unknown build is stock. The
-   sliders live in S.env (a working copy); suFix swaps them when the build changes and files them back under the build's hash.
-   An older save's single S.env setup moves onto whichever build is on the bench the first time this runs. */
-let suH=null;
+/* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = [stiffness, balance, wing]
+   (newest 24 kept; none = stock). Tweaking the build sliders keeps the id; loading another build (preset, blueprint, trophy, save
+   slot...) swaps S.cfg for a new object, which files the outgoing id under its hash (S.suHm) and picks up the id last filed under
+   the incoming hash, else a fresh stock id. The sliders live in S.env (a working copy) and are filed back under the id here.
+   An older save (setup keyed by build hash, or a single S.env setup) moves onto the build on the bench the first time this runs. */
+let suC=null;
+const suNew=()=>"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;};
   let h=null;try{h=cfgHash(S.cfg);}catch(x){}
   if(h!=null){
-    if(!S.suMap||typeof S.suMap!=="object"||Array.isArray(S.suMap)){S.suMap={};if(e.suSt!==undefined||e.suSp!==undefined||e.suWg!==undefined){c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);if(e.suSt!==50||e.suSp!==0||e.suWg!==0)S.suMap[h]=[e.suSt,e.suSp,e.suWg];}suH=h;}
-    else if(h!==suH){suH=h;const v=Array.isArray(S.suMap[h])?S.suMap[h]:[50,0,0];e.suSt=v[0];e.suSp=v[1];e.suWg=v[2];}
+    const objMap=S.suMap&&typeof S.suMap==="object"&&!Array.isArray(S.suMap);
+    if(typeof S.suId!=="string"||!objMap){const old=objMap&&Array.isArray(S.suMap[h])?S.suMap[h]:null;S.suId=suNew();S.suMap={};S.suHm={};suC=S.cfg;
+      if(old){e.suSt=old[0];e.suSp=old[1];e.suWg=old[2];}
+      else if(!objMap&&(e.suSt!==undefined||e.suSp!==undefined||e.suWg!==undefined)){c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);}
+      else{e.suSt=50;e.suSp=0;e.suWg=0;}}
+    else if(suC!==S.cfg){
+      if(suC){const m=S.suMap;if(!S.suHm||typeof S.suHm!=="object"||Array.isArray(S.suHm))S.suHm={};let oh=null;try{oh=cfgHash(suC);}catch(x){}
+        if(oh!=null&&Array.isArray(m[S.suId])){delete S.suHm[oh];S.suHm[oh]=S.suId;const k=Object.keys(S.suHm);if(k.length>24)delete S.suHm[k[0]];}
+        const nid=S.suHm&&S.suHm[h];S.suId=typeof nid==="string"&&Array.isArray(m[nid])?nid:suNew();
+        const v=Array.isArray(m[S.suId])?m[S.suId]:[50,0,0];e.suSt=v[0];e.suSp=v[1];e.suWg=v[2];}
+      suC=S.cfg;}
   }
   c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);
-  if(h!=null&&S.suMap){const m=S.suMap;if(e.suSt===50&&e.suSp===0&&e.suWg===0)delete m[h];else{const was=m[h];if(!was||was[0]!==e.suSt||was[1]!==e.suSp||was[2]!==e.suWg){delete m[h];m[h]=[e.suSt,e.suSp,e.suWg];const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}}}
+  if(h!=null&&S.suMap&&typeof S.suId==="string"){const m=S.suMap,id=S.suId;if(e.suSt===50&&e.suSp===0&&e.suWg===0)delete m[id];else{const was=m[id];if(!was||was[0]!==e.suSt||was[1]!==e.suSp||was[2]!==e.suWg){delete m[id];m[id]=[e.suSt,e.suSp,e.suWg];const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}}}
 function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
 const suLapCache=new Map();
 function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
