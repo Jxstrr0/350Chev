@@ -173,6 +173,12 @@ const ENGINE_SIM = (function () {
       dens: 7100, E: 145, uts: 450, fatigue: 195, alpha: 11.5e-6, boreAlpha: 11.5e-6, k: 37,
       spacing: 1.13, spacingAdj: 0.98, stiff: 1.26, costPerL: 420, massFac: 0.93, req: "shop1"
     },
+    cgi_filled: {
+      name: "CGI, girdled + half-fill", sub: "450MPa stiff 1.80 cool 0.93",
+      info: "A compacted-iron block with a steel main girdle tying the bulkheads together and the water jacket filled with block filler up to just below the ring travel. The bores cannot walk, so the rings keep sealing at pulling-truck pressures. The filled jacket sheds less heat, and the cooling has to make up for it.",
+      dens: 7100, E: 145, uts: 450, fatigue: 195, alpha: 11.5e-6, boreAlpha: 11.5e-6, k: 37,
+      spacing: 1.13, spacingAdj: 0.98, stiff: 1.80, cool: 0.93, costPerL: 680, massFac: 0.97, req: "race"
+    },
     alu_liners: {
       name: "A356-T6 + Fe liners", sub: "280MPa a21.5 k155 2.7",
       info: "An aluminium casting with iron liners pressed in. Light and cool-running, but it grows twice as much as the steel holding it together.",
@@ -268,6 +274,11 @@ const ENGINE_SIM = (function () {
       alpha: 22.5e-6, k: 155, hot250: 300, dens: 2780, maxCrownC: 470, massFac: 1.14, cost: 2600, brittle: 0.08,
       crownCool: 60, crownFac: 0.58, hotSlope: 0.0038, req: "shop2"
     },
+    gallery_2618: {
+      name: "2618 + cooling gallery", sub: "300MPa@250 gallery+TBC", info: "The billet 2618 crown with a ring-shaped oil gallery machined under the ring belt and electron-beam welded shut. The jets fill it and the oil sloshes heat out of the crown on every stroke, so the aluminium stays strong behind fifty pounds of boost. Heavier, and twice the machining.",
+      alpha: 22.5e-6, k: 155, hot250: 300, dens: 2780, maxCrownC: 480, massFac: 1.20, cost: 4200, brittle: 0.08,
+      crownCool: 95, crownFac: 0.54, hotSlope: 0.0038, req: "race"
+    },
     forged_2618: {
       name: "Forged 2618-T61", sub: "240MPa@250 a22.5 k160", info: "Almost no silicon, which makes it the toughest crown there is under heat and detonation. It grows a lot, so it runs loose and rattles when cold.",
       alpha: 22.5e-6, k: 160, hot250: 240, dens: 2760, maxCrownC: 390, massFac: 1.08, cost: 520, brittle: 0.10, req: "shop2"
@@ -296,6 +307,7 @@ const ENGINE_SIM = (function () {
     forged_4340: { name: "Forged 4340 H-beam", sub: "1080MPa fat430 E205", info: "A chrome-moly forging — the workhorse of every serious build, and the point where the rod stops being the weak link.", E: 205, uts: 1080, fatigue: 430, dens: 7850, massFac: 1.10, cost: 620, req: "shop1" },
     forged_300m: { name: "Forged 300M", sub: "1930MPa fat620 E205", info: "Vacuum-melted aircraft steel, the stuff landing gear is made from. It takes detonation loads that would fold a 4340.", E: 205, uts: 1930, fatigue: 620, dens: 7850, massFac: 1.08, cost: 1600, req: "shop2" },
     alu_billet: { name: "Billet alu rod", sub: "520MPa E72 2.8g/cc", info: "A thick aluminium rod that absorbs detonation instead of passing it into the bearings, and carries a big end wide enough to spread the load. Aluminium has no fatigue limit at all, so it is a service item measured in passes.", E: 72, uts: 520, fatigue: 150, dens: 2800, massFac: 1.70, brgW: 1.21, mpsLim: 30.5, areaFac: 1.70, cost: 3800, alu: 1, req: "race" },
+    heavy_4340: { name: "Heavy-beam 4340 rod", sub: "1150MPa fat470 beam x1.4", info: "A forged 4340 rod with a beam about forty percent bigger and a wider big end, the rod competition pulling diesels run. It will not fold under 400 bar of firing pressure, but it is heavy, so leave it out of anything that revs.", E: 205, uts: 1150, fatigue: 470, dens: 7850, massFac: 1.40, areaFac: 1.40, brgW: 1.12, cost: 1900, req: "shop2" },
     titanium: { name: "Ti-6Al-4V rod", sub: "950MPa E114 4.43g/cc", info: "Far lighter than steel, so inertia loads collapse and the whole bottom end relaxes. Much less stiff in buckling, and it galls against ordinary bearing overlays.", E: 114, uts: 950, fatigue: 480, dens: 4430, massFac: 0.58, cost: 5200, req: "shop2" }
   };
 
@@ -325,14 +337,16 @@ const ENGINE_SIM = (function () {
   OPT.bearings = {
     bimetal: { name: "Bimetal Al-Sn", sub: "55 MPa  embed good", info: "Aluminium-tin on a steel back. Cheap, forgiving of dirt, and eaten by the acids methanol leaves behind.", limitMPa: 55, galling: 1.0, methanolOK: 0, cost: 90 },
     trimetal: { name: "Trimetal Cu-Pb", sub: "80 MPa  overlay Pb", info: "Copper-lead under a soft plated overlay that lets grit bury itself instead of scoring the journal. The classic performance bearing.", limitMPa: 80, galling: 0.85, methanolOK: 1, cost: 210, req: "shop1" },
-    coated: { name: "Poly-coated tri", sub: "95 MPa  PTFE/MoS2", info: "A trimetal with a dry-film coating over it: survives dry starts, and the only overlay that will not gall against a titanium rod.", limitMPa: 95, galling: 0.35, methanolOK: 1, cost: 900, req: "shop2" }
+    coated: { name: "Poly-coated tri", sub: "95 MPa  PTFE/MoS2", info: "A trimetal with a dry-film coating over it: survives dry starts, and the only overlay that will not gall against a titanium rod.", limitMPa: 95, galling: 0.35, methanolOK: 1, cost: 900, req: "shop2" },
+    race_xl: { name: "Race shell, big journal", sub: "140 MPa  +10% journal", info: "A race shell with a harder, thinner overlay and extra eccentricity, run on a crank ground with oversize journals and a fully grooved upper half. About a tenth more bearing area, and far more load before the overlay fatigues, at the price of less tolerance for dirt.", limitMPa: 140, areaK: 1.10, galling: 0.40, methanolOK: 1, cost: 1800, req: "race" }
   };
 
   /* ---- head gasket ---- */
   OPT.gasket = {
     composite: { name: "Composite gasket", sub: "90 bar  shear 65um", info: "Graphite and aramid over a steel core. Soft enough to forgive a rough deck and a head that grows faster than its block — until boost or an overheat stretches it past what it can take.", maxPmaxBar: 90, shearUm: 65, cost: 90 },
     mls: { name: "MLS gasket", sub: "160 bar shear 70um", info: "Layered embossed stainless with a rubber coating. It holds serious pressure, but it wants a deck machined properly flat and will not seal a rough one.", maxPmaxBar: 160, shearUm: 70, cost: 260, req: "shop1" },
-    copper_oring: { name: "Copper + O-ring", sub: "220 bar shear 55um", info: "Solid copper sealing against a wire ring set into the block. Effectively unburstable, and it will not hold water or oil without sealant.", maxPmaxBar: 220, shearUm: 55, cost: 420, req: "shop2" }
+    copper_oring: { name: "Copper + O-ring", sub: "220 bar shear 55um", info: "Solid copper sealing against a wire ring set into the block. Effectively unburstable, and it will not hold water or oil without sealant.", maxPmaxBar: 220, shearUm: 55, cost: 420, req: "shop2" },
+    fire_ring: { name: "Fire ring + receiver", sub: "420 bar shear 150um", info: "A stainless wire ring set in a groove around each bore of the head and pressed into a matching receiver groove in the deck; the gasket body only seals water and oil. The ring itself is the combustion seal, so it holds pulling-diesel cylinder pressure and lets the head slide across a deck that grows at a different rate. Both faces have to be machined for it.", maxPmaxBar: 420, shearUm: 150, fireRing: 1, cost: 1600, req: "race" }
   };
 
   /* ---- head fasteners ---- */
@@ -419,7 +433,9 @@ const ENGINE_SIM = (function () {
     none: { name: "No intercooler", sub: "eff 0%  dP 0.00 bar", info: "Compressor discharge goes straight into the manifold. The charge arrives hot, which costs you density and all of your knock margin.", eff: 0.0, dp: 0.0, soak: 0, massKg: 0, cost: 0 },
     air_air: { name: "Air-to-air core", sub: "eff 70%  dP 0.06 bar", info: "A front-mounted bar-and-plate core. No heat soak while the car is moving, at the price of some pressure drop and a long charge pipe.", eff: 0.70, dp: 0.06, soak: 0.35, massKg: 9, cost: 700 },
     ice_tank: { name: "Ice-tank charge cooler", sub: "97% eff  one pass", info: "A liquid-to-air core fed from a tank of ice water. It drops the charge to near ambient for one pass, then the ice is gone and it is worse than nothing.", eff: 0.97, dp: 0.05, soak: 3.2, massKg: 28, cost: 3200, req: "race" },
-    water_air: { name: "Water-to-air core", sub: "eff 85%  dP 0.04 bar", info: "A compact liquid-cooled core right by the throttle: very effective, with almost no pipework. Over a long session the water heats up and it fades.", eff: 0.85, dp: 0.04, soak: 1.0, massKg: 15, cost: 1300, req: "shop1" }
+    water_air: { name: "Water-to-air core", sub: "eff 85%  dP 0.04 bar", info: "A compact liquid-cooled core right by the throttle: very effective, with almost no pipework. Over a long session the water heats up and it fades.", eff: 0.85, dp: 0.04, soak: 1.0, massKg: 15, cost: 1300, req: "shop1" },
+    a2w_race: { name: "Race water-to-air", sub: "eff 92%  dP 0.03 bar", info: "A big bar-and-plate liquid core with its own front heat exchanger and a high-flow pump. It holds the charge close to ambient at serious boost and fades far less than the compact core.", eff: 0.92, dp: 0.03, soak: 0.6, massKg: 21, cost: 2600, req: "shop2" },
+    wmi: { name: "Race W2A + water-meth", sub: "eff 95%  +4 octane", info: "The race water-to-air core plus a 50/50 water-methanol mist sprayed after it. The mist boils off in the charge, pulling it below what any core can, adds octane and takes some heat out of the combustion before it reaches the coolant. The tank runs dry, and a blocked nozzle at full boost is an expensive noise.", eff: 0.95, dp: 0.04, soak: 0.6, octane: 4, heatK: 0.94, massKg: 30, cost: 3900, req: "race" }
   };
 
   /* ---- fuels (RON/MON, stoich AFR, LHV, heat of vaporisation) ---- */
@@ -481,7 +497,8 @@ const ENGINE_SIM = (function () {
     p255: { name: "255 L/h pump", sub: "255 L/h in-tank", info: "The classic in-tank upgrade, good for around five hundred horsepower on petrol. Its flow falls off as boost raises the pressure it has to push against.", lph: 255, dropBar: 0.13, cost: 140, massKg: 0, short: "255 L/h pump" },
     p340: { name: "340 L/h pump", sub: "340 L/h in-tank", info: "A high-flow in-tank pump with a bigger motor. Around six hundred horsepower on petrol, or four and a half on E85 at moderate boost.", lph: 340, dropBar: 0.14, cost: 230, massKg: 0, short: "340 L/h pump" },
     twin450: { name: "Twin 450 pumps", sub: "900 L/h \u00b7 surge tank", info: "Two 450 L/h pumps in a surge tank, the second one switched in under boost. Four-figure power on E85, as long as the wiring can carry the current.", lph: 900, dropBar: 0.14, cost: 950, massKg: 0, req: "shop2", short: "twin 450s" },
-    mech: { name: "Belt-drive pump", sub: "4000 L/h at 8000 rpm", info: "A gear pump driven off the crank, the way alcohol drag engines are fed. Its flow rises with engine speed and barely notices rail pressure, so it never runs dry at the top of the pull.", lph: 4000, dropBar: 0.02, rpmRef: 8000, cost: 2600, massKg: 3, req: "shop2", short: "belt pump" }
+    mech: { name: "Belt-drive pump", sub: "4000 L/h at 8000 rpm", info: "A gear pump driven off the crank, the way alcohol drag engines are fed. Its flow rises with engine speed and barely notices rail pressure, so it never runs dry at the top of the pull.", lph: 4000, dropBar: 0.02, rpmRef: 8000, cost: 2600, massKg: 3, req: "shop2", short: "belt pump" },
+    mech_xl: { name: "Big belt-drive pump", sub: "6500 L/h at 8000 rpm", info: "The biggest gear pump on the shelf, run with -16 feed lines and twin regulators: what a four-thousand-horsepower methanol engine needs to stay rich at the top of the pull.", lph: 6500, dropBar: 0.02, rpmRef: 8000, cost: 3900, massKg: 4, req: "race", short: "big belt pump" }
   };
 
   /* ---- diesel injection system (only fitted when the fuel is compression ignition) ----
@@ -508,7 +525,8 @@ const ENGINE_SIM = (function () {
     n60: { name: "60 hp nozzles", sub: "x1.6 flow", info: "The usual first step on a turned-up truck. It wants a bigger turbo, or the extra fuel comes out of the stack.", mult: 1.6, cost: 95 },
     n100: { name: "100 hp nozzles", sub: "x2.0 flow", info: "Twice the stock flow per stroke. Hot exhaust and a lot of soot unless there is the air to burn it.", mult: 2.0, cost: 140, req: "shop1" },
     n150: { name: "150 hp nozzles", sub: "x2.5 flow", info: "Competition street nozzles. They only make sense with twin turbos, a pyrometer in the manifold and studs in the head.", mult: 2.5, cost: 210, req: "shop2" },
-    n250: { name: "250 hp sticks", sub: "x3.5 flow  pulling", info: "Pulling sticks: enough fuel to black out the grandstand. A built bottom end, compound turbos and a fire-ringed head, or it will not see the end of the track.", mult: 3.5, cost: 340, req: "shop2" }
+    n250: { name: "250 hp sticks", sub: "x3.5 flow  pulling", info: "Pulling sticks: enough fuel to black out the grandstand. A built bottom end, compound turbos and a fire-ringed head, or it will not see the end of the track.", mult: 3.5, cost: 340, req: "shop2" },
+    n400: { name: "400 hp sticks", sub: "x4.5 flow  pro pulling", info: "Pro-class pulling nozzles: bigger holes again, and more of them. Only worth fitting with a rail pump to feed them, compound turbos to burn it, and a fire-ringed head to hold it in.", mult: 4.5, cost: 520, req: "race" }
   };
 
   /* ---- ROTARY (Wankel) parts: only fitted when the layout is a rotary ----
@@ -613,7 +631,8 @@ const ENGINE_SIM = (function () {
   OPT.oilSystem = {
     wet: { name: "Wet sump", sub: "0.9 g  windage 1.00", info: "A standard pan and pickup. Hard cornering uncovers the pickup, and the crank drags through its own oil mist.", gLimit: 0.9, windage: 1.00, cost: 0, massKg: 0 },
     baffled: { name: "Baffled sump", sub: "1.4 g  windage 0.97", info: "Trap doors and a windage tray keep oil over the pickup through corners and stop the crank whipping it back up.", gLimit: 1.4, windage: 0.97, cost: 380, massKg: 2, req: "shop1" },
-    dry: { name: "Dry sump", sub: "2.5 g  windage 0.90", info: "Scavenge pumps pull the crankcase down to a partial vacuum: no windage, no surge, and a few percent more power at high revs.", gLimit: 2.5, windage: 0.90, cost: 3800, massKg: 11, req: "shop2" }
+    dry: { name: "Dry sump", sub: "2.5 g  windage 0.90", info: "Scavenge pumps pull the crankcase down to a partial vacuum: no windage, no surge, and a few percent more power at high revs.", gLimit: 2.5, windage: 0.90, cost: 3800, massKg: 11, req: "shop2" },
+    dry_hv: { name: "Dry sump, HV pressure", sub: "2.5 g  film x1.15", info: "A dry sump with an oversized pressure stage and big feeds to the mains. More oil through every bearing carries the heat out of the film before it can thin, which is what an engine holding full load for a whole pull or a whole lap needs.", gLimit: 2.5, windage: 0.91, filmK: 1.15, cost: 5600, massKg: 13, req: "race" }
   };
 
   /* ---- piston cooling jets ---- */
@@ -626,7 +645,9 @@ const ENGINE_SIM = (function () {
   OPT.cooling = {
     std: { name: "Stock radiator", sub: "cap 1.00  ~55 kW/L", info: "The original crossflow core and a mechanical fan, sized for stock power and not much more.", cap: 1.00, cost: 0, massKg: 0 },
     uprated: { name: "Uprated 2-row", sub: "cap 1.35  + oil cooler", info: "A bigger aluminium core, a better pump and an oil cooler — about what an extra hundred horsepower asks for.", cap: 1.35, cost: 620, massKg: 5, req: "shop1" },
-    race: { name: "Race cooling pack", sub: "cap 1.80  + ducting", info: "Full-width core, electric pump, ducted in and out, and a large oil cooler. Enough to run flat out continuously.", cap: 1.80, cost: 2600, massKg: 12, req: "shop2" }
+    race: { name: "Race cooling pack", sub: "cap 1.80  + ducting", info: "Full-width core, electric pump, ducted in and out, and a large oil cooler. Enough to run flat out continuously.", cap: 1.80, cost: 2600, massKg: 12, req: "shop2" },
+    race_xl: { name: "Big race radiator", sub: "cap 2.40  +90 kW", info: "A double-thick core as big as the nose will take, twin high-flow fans and a remote expansion tank. It is sized for the car, not the engine, so it carries a small, very powerful engine through a long session.", cap: 2.40, addKw: 90, cost: 4800, massKg: 19, req: "race" },
+    race_oc: { name: "Big rad + oil cooler", sub: "cap 2.60  +150 kW  oil -18C", info: "The big race radiator with a separate engine-oil cooler on its own fan and thermostat, so the oil sheds its heat to the air instead of into the coolant. The water runs cooler and the oil holds its viscosity under sustained load.", cap: 2.60, addKw: 150, oilCoolC: 18, cost: 7200, massKg: 27, req: "race" }
   };
 
   /* ---- exhaust ---- */
@@ -740,8 +761,8 @@ const ENGINE_SIM = (function () {
     },
     {
       title: "Bore & stroke", titleIf: c => isRotary(c) ? "Rotor geometry" : null, fields: [
-        { key: "bore", type: "slider", label: "Bore", labelIf: c => isRotary(c) ? "Rotor width B" : null, min: 68, max: 110, minIf: c => isRotary(c) ? 50 : isTwoStroke(c) ? 38 : 68, maxIf: c => isRotary(c) ? 100 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 140 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
-        { key: "stroke", type: "slider", label: "Stroke", labelIf: c => isRotary(c) ? "Generating radius R" : null, min: 58, max: 120, minIf: c => isRotary(c) ? 85 : isTwoStroke(c) ? 38 : 58, maxIf: c => isRotary(c) ? 125 : isTwoStroke(c) && isDiesel(c) ? 200 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi")) ? 180 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "bore", type: "slider", label: "Bore", labelIf: c => isRotary(c) ? "Rotor width B" : null, min: 68, max: 110, minIf: c => isRotary(c) ? 50 : isTwoStroke(c) ? 38 : 68, maxIf: c => isRotary(c) ? 100 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi" || c.blockMat === "cgi_filled")) ? 140 : 110, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
+        { key: "stroke", type: "slider", label: "Stroke", labelIf: c => isRotary(c) ? "Generating radius R" : null, min: 58, max: 120, minIf: c => isRotary(c) ? 85 : isTwoStroke(c) ? 38 : 58, maxIf: c => isRotary(c) ? 125 : isTwoStroke(c) && isDiesel(c) ? 200 : OPT.blockMat[c.blockMat].billet ? 122 : (isDiesel(c) && (c.blockMat === "grey_iron" || c.blockMat === "cgi" || c.blockMat === "cgi_filled")) ? 180 : 120, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq },
         { key: "ecc", type: "slider", label: "Eccentricity e", min: 11, max: 19, step: 0.25, nudge: 0.25, unit: "mm", fmt: fq, showIf: isRotary },
         { key: "rodRatio", type: "slider", label: "Rod ratio L/r", min: 1.45, max: 2.10, step: 0.01, nudge: 0.01, unit: "", fmt: f2, showIf: notRotary },
         { key: "cr", type: "slider", label: "Compression ratio", labelIf: c => isTwoStroke(c) && !isDiesel(c) ? "Trapped compression ratio" : null, min: 7, max: 15, minIf: c => isDiesel(c) ? 14 : isTwoStroke(c) ? 5.5 : 7, maxIf: c => isDiesel(c) ? 24 : isRotary(c) ? 11.5 : isTwoStroke(c) ? 12 : 15, step: 0.25, nudge: 0.25, unit: ":1", fmt: fq },
@@ -801,7 +822,7 @@ const ENGINE_SIM = (function () {
         { key: "tsFuel", type: "seg", label: "Fuel delivery", optTable: "tsFuel", showIf: (c) => isTwoStroke(c) && !isDiesel(c) && !isGas(c) },
         { key: "asp", type: "seg", label: "Aspiration", optTable: "asp" },
         { key: "boost", type: "slider", label: "Boost pressure", min: 0.2, max: 3.5, step: 0.05, nudge: 0.05,
-          maxIf: c => (isDiesel(c) && OPT.asp[c.asp].compound) ? 7.0 : (OPT.turboSize[c.turboSize].maxFlow >= 100 || OPT.asp[c.asp].compound || OPT.asp[c.asp].kind === "screw") ? 5.5 : 3.5,
+          maxIf: c => isDiesel(c) ? (OPT.asp[c.asp].compound ? 7.5 : 5.5) : (OPT.turboSize[c.turboSize].maxFlow >= 100 || OPT.asp[c.asp].compound || OPT.asp[c.asp].kind === "screw") ? 5.5 : 5.0,
           unit: "bar", fmt: f2, showIf: isBoosted },
         { key: "turboSize", type: "seg", label: "Turbo size", optTable: "turboSize", showIf: (c) => isBoosted(c) && (OPT.asp[c.asp].kind === "turbo" || OPT.asp[c.asp].kind === "centrifugal") },
         { key: "turbineMat", type: "seg", label: "Hot-side material", optTable: "turbineMat", showIf: (c) => isBoosted(c) && OPT.asp[c.asp].kind === "turbo" },
