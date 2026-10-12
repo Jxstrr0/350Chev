@@ -112,8 +112,9 @@ $("replayFF").addEventListener("click",()=>{ensureSound();ffStart(S.mode);});
 // a new player's first tap on the intro runs First Fire before the mode they picked (capture beats the handler above)
 $("intro").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b||S.firstFireDone)return;e.stopPropagation();$("intro").style.display="none";S.seen=true;ensureSound();ffStart(b.dataset.mode);},true);
 // buttons that swap the whole game end First Fire first, so they act on the player's own save
-$("panel").addEventListener("click",e=>{if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
-  if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));},true);
+function ffGuard(e){if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
+  if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));}
+$("panel").addEventListener("click",ffGuard,true);$("setPane").addEventListener("click",ffGuard,true);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)ffSafeSave();});window.addEventListener("pagehide",ffSafeSave);
 window.addEventListener("resize",()=>{if(ff)ffPlace();});$("panel").addEventListener("scroll",()=>{if(ff)ffPlace();},{passive:true});
 

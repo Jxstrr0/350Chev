@@ -256,8 +256,16 @@ function renderTest(){
   if(S.env.testType==="pull_sled")pullRunBtn();
   if(S.env.testType==="boat")boatRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
+  const rf=curTab==="events"&&!!last&&last.env.testType===S.env.testType;$("testCore").classList.toggle("resfirst",rf);$("setupJump").hidden=!rf;
+  resultReveal(last,rf);
   renderMap();ddRender();if(typeof railSched==="function")railSched();
 }
+/* a run just finished: bring the headline numbers (peaks + verdict, or the verdict on Events) to the top of the panel so they aren't left above or below the fold */
+let revKey;
+function resultReveal(last,rf){const k=last?last.res:null;if(testing)return;if(revKey===undefined||k===revKey){revKey=k;return;}revKey=k;if(!k)return;
+  requestAnimationFrame(()=>{const pn=$("panel"),el=rf?$("verdict"):$("peaks");if(!el.offsetHeight||(curTab!=="test"&&curTab!=="events"))return;const pr=pn.getBoundingClientRect(),r=el.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop());
+    if(r.top<pr.top||r.top>pr.top+(bot-pr.top)*0.45)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});}
+$("setupJump").addEventListener("click",()=>{const pn=$("panel"),pr=pn.getBoundingClientRect(),r=$("envBox").getBoundingClientRect();pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
 /* ===================== TUNE MAP (dyno) =====================
    S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,
    a per-rpm boost target). The sim reads its 100% row for the WOT pull and the cruise cell for economy; SIM.mapGrid

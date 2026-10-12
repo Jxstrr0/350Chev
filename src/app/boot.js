@@ -125,7 +125,7 @@ function tick(now){
 let curTab="build";
 /* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
-function showTab(t){tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+function showTab(t){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
   if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
@@ -252,7 +252,7 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
     if(h==="hill"){HC.lastPtr=performance.now();hillPress("push");return;}
     if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else if(h==="bog"){BR.lastPtr=performance.now();bogPress();}else if(h==="boat"){BT.lastPtr=performance.now();boatPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
-  if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
+  if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}else if(setOn()){setClose();e.preventDefault();}return;}
   if(k==="ArrowLeft"||k==="ArrowRight"){const a=document.activeElement,r=a&&a.matches&&a.matches("input[type=range]")?a:kbSlider&&kbSlider.offsetParent?kbSlider:null;if(r&&nudgeSlider(r,k==="ArrowRight"?1:-1))e.preventDefault();return;}
   if(e.repeat)return;
   if(k==="?"){kbHelp();e.preventDefault();return;}
