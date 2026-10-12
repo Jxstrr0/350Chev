@@ -316,8 +316,11 @@
       if (v.dtCap > 0 && !inShift) { if (Ttrans > v.dtCap) Ttrans = v.dtCap; if (!v.noFail && !st.failKind && dtStress(st, Teng / v.dtCap, dt)) { st.failKind = "driveline"; st.failAt = st.t; st.dtMsg = dtPart(st.dtO); } }
       let Fdemand = Ttrans * ratio * eta / rw, F;
       st.spin = false;
-      if (Fdemand > Fmax) { st.spin = true; st.spinTime += dt; F = Fmax * 0.85; st.wSpin += (Ttrans - F * rw / (ratio * eta)) / (I * 2.2) * dt * 60 / (2 * Math.PI); }
-      else { F = Fdemand; st.wSpin = Math.max(0, st.wSpin - st.wSpin * dt / 0.15); }
+      // a swap car (veh.dlCap set): the driver and traction control hold the tyres at the peak while the overshoot is small, and the margin grows
+      // with speed; past it they spin and the grip falls from 97% to the usual 85%. Everything else spins the moment it is over the limit, as ever.
+      const swTol = v.dlCap > 0 ? 0.12 + 0.035 * st.v : 0, swHold = Fdemand > Fmax && Fdemand <= Fmax * (1 + swTol);
+      if (Fdemand > Fmax && !swHold) { st.spin = true; st.spinTime += dt; F = Fmax * (v.dlCap > 0 ? 0.97 - 0.12 * Math.min(1, (Fdemand / Fmax - 1 - swTol) / 0.6) : 0.85); st.wSpin += (Ttrans - F * rw / (ratio * eta)) / (I * 2.2) * dt * 60 / (2 * Math.PI); }
+      else { F = swHold ? Fmax : Fdemand; st.wSpin = Math.max(0, st.wSpin - st.wSpin * dt / 0.15); }
       if (psiShake > 0 && st.v > 6 && st.v < 45 && F > 0.5 * Fmax) { st.shakeT = (st.shakeT || 0) + dt * psiShake; F *= 1 - 0.38 * psiShake * (0.5 + 0.5 * Math.sin(st.t * 60)); }   // tyre shake: the soft sidewall winds up and lets go
       // front-end lift: share of the static front-axle load the launch force takes off the nose
       const lift = F * v.cgH / (v.mass * g * v.wheelbase * Math.max(0.05, 1 - v.rearBias)) * tuneLift(st.t);
