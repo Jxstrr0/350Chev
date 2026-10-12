@@ -126,6 +126,9 @@
      rear-stiff one comes round (over). The chassis' own nose-weight bias (`bias`, + = pushes) is already in the stock numbers,
      so the stock setup is the reference and leaves the car exactly as it was; moving toward neutral gains a little, past it
      loses. The wing trades downforce (clA) for drag (cdA) and loads the tail. Absent / stock = no change at all. */
+  // wing: +100 adds a (+ b per m² the chassis already makes) of downforce at d drag per unit of it (L/D 2.5): it pays in the corners
+  // (a little at club speeds, more on the hill's fast sweepers) and costs top speed on the straights
+  const WK = { bal: 0.05, a: 2.6, b: 0.3, d: 0.4 };
   const SETUP_STOCK = { st: 50, sp: 0, wg: 0 };
   function setupNorm(su) {
     if (!su) return null;
@@ -137,11 +140,12 @@
     const bias = clamp(car.dFront * 8, -0.6, 0.6);
     car.bias = bias; car.su = null; car.bi = bias;
     const su = setupNorm(setup); if (!su) return car;
-    const amp = 0.6 + 0.8 * su.st / 100, r = su.sp / 100 * amp + 0.2 * su.wg / 100, g = r + bias;
+    const amp = 0.6 + 0.8 * su.st / 100, r = su.sp / 100 * amp + WK.bal * su.wg / 100, g = r + bias;
     const kSt = 1 - 1.25e-5 * (Math.pow(su.st - 65, 2) - 225);   // best near 65 (a touch firmer than stock): soft rolls onto its camber, very stiff skips over bumps
     car.muLat *= kSt * (1 - 0.10 * (Math.abs(g) - Math.abs(bias)));
-    const dCl = su.wg / 100 * (0.5 + 0.5 * Math.min(2, Math.max(0, car.clA)));
-    car.clA += dCl; car.cdA = Math.max(0.3, car.cdA + 0.15 * dCl);
+    const dCl = su.wg / 100 * (WK.a + WK.b * Math.min(2, Math.max(0, car.clA)));
+    const cl1 = Math.max(car.clA + dCl, Math.min(car.clA, -0.1));   // a flat wing sheds the downforce, it does not turn into lift
+    car.cdA = Math.max(0.3, car.cdA + WK.d * (cl1 - car.clA)); car.clA = cl1;
     if (r < 0 && car.drive !== "fwd") car.tK = 0.10 * Math.min(1, -r);   // tail-happy: the rear lets go on the throttle out of a corner
     else if (r > 0 && car.drive === "fwd") car.tK = 0.08 * Math.min(1, r);   // front-drive and front-stiff: it pushes wide on the power
     car.su = su; car.bi = clamp(g, -1, 1);
