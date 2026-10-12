@@ -416,11 +416,12 @@ function renderShop(){
   const offers=offersFor(C().cat);
   const inbox=(C().inbox||[]).filter(k=>k.expires>=C().week);
   $("contracts").innerHTML=
-    `<div class="cgroup g-now"><h3>On the board<span>${C().contracts.length} / ${MAX_ACTIVE}</span></h3>${C().contracts.length?C().contracts.map(k=>cardH(k,"active")).join(""):`<p class="hint">Nothing accepted. Pick a category below and take a job — two at a time, ten percent down, three weeks to ship.</p>`}</div>`+
+    `<div class="cgroup g-now"><h3>On the board<span>${C().contracts.length} / ${MAX_ACTIVE}</span></h3>${C().contracts.length?C().contracts.map(k=>cardH(k,"active")).join(""):`<p class="hint idle">Nothing accepted. Pick a category below and take a job — two at a time, ten percent down, three weeks to ship.</p>`}</div>`+
     (cert?buyersH():"")+   /* a certified engine: its buyers sit with the board; otherwise they are only a hint, below the offers */
     (inbox.length?`<div class="cgroup g-one"><h3>Repeat orders<span>${inbox.length}</span></h3>${inbox.map(k=>cardH(k,"inbox")).join("")}</div>`:"")+
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`+
     (cert?"":buyersH())+svcBayH()+coreStockH(cert);
+  {const cs=$("catSeg"),on=cs&&cs.querySelector("button.on");if(on){const x=on.offsetLeft-cs.offsetLeft;if(x+on.offsetWidth>cs.clientWidth)cs.scrollLeft=x-16;}}   // phone: the chip row scrolls; keep the open category in sight
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
   crewRender();   // people, levels, traits, training: app/crew.js

@@ -1,7 +1,7 @@
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
   {tab:"build",sel:"#presets",title:"Pick a starter engine",text:"The five green-tagged base engines use only parts your bay already has. Tap one — the Two-four truck four is a safe first sale."},
-  {tab:"test",sel:"#runTest",title:"Certify it on the dyno",text:"Buyers only look at engines with a certified pull. Arm the dyno and pull ($75). No failures and under the dyno's cap means it's certified."},
+  {tab:"test",sel:"#rlRun",title:"Certify it on the dyno",text:"Buyers only look at engines with a certified pull. Arm the dyno and pull ($75). No failures and under the dyno's cap means it's certified."},
   {tab:"market",sel:"#tabs [data-tab=market]",title:"Sell it in Market",text:"Sell to a buyer group on the open market, or take a contract (10% deposit up front) and ship it. Engines that miss a brief still sell — for less. Then close the week and watch the warranty ledger."}
 ];
 let tourStep=-1;
@@ -14,6 +14,7 @@ function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("to
   accReveal(document.querySelector(st.sel));
   const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){setTimeout(()=>{const pr=$("panel").getBoundingClientRect(),tr=target.getBoundingClientRect();$("panel").scrollTop+= (tr.top-pr.top)-(pr.height*0.38);tourPlace();setTimeout(tourPlace,380);setTimeout(tourPlace,700);},60);}
   $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text;$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
+  if(target&&!$("panel").contains(target)){setTimeout(tourPlace,380);setTimeout(tourPlace,700);}   // the results rail is not in the panel: its layout settles a beat after the tab switch
   requestAnimationFrame(()=>requestAnimationFrame(tourPlace));}
 function tourEnd(){tourStep=-1;$("tour").hidden=true;S.tourDone=true;save();}
 function tourAdvance(fromStep){if(tourStep===fromStep)tourShow(fromStep+1);}
@@ -43,7 +44,7 @@ function ffFloat(res,cfg){const vf=res&&res.tests.find(t=>t.id==="valve_float");
 function ffFailed(l){const r=l.res,e=l.env;return r.fails.length>0||(e.testType==="endurance"&&r.endurance&&r.endurance.failedAtHour!=null)||(e.testType==="overrev"&&r.overrev&&!r.overrev.survived)||(e.testType==="drag"&&!!r.dragFailed);}
 function ffRect(el){if(!el||!el.getClientRects().length)return null;const r=el.getBoundingClientRect();return r.width&&r.height?r:null;}
 const FFT={idle:{under:"view",get:()=>ffRect($("idleBtn"))},view:{get:()=>ffRect($("view"))},
-  run:{tab:"test",get:()=>ffRect($("runTest"))},verdict:{tab:"test",get:()=>ffRect(document.querySelector("#verdict .verdict"))},
+  run:{tab:"test",get:()=>ffRect($("runTest"))||ffRect($("rlRun"))},verdict:{tab:"test",get:()=>ffRect(document.querySelector("#verdict .verdict"))},
   springs:{tab:"build",sec:"Valvetrain",get:()=>{const b=document.querySelector('#buildForm button[data-k="springs"]'),sg=b&&b.parentElement,a=ffRect(sg&&sg.previousElementSibling),c=ffRect(sg);if(!a||!c)return c;
     const l=Math.min(a.left,c.left),r=Math.max(a.right,c.right);return{left:l,right:r,width:r-l,top:a.top,bottom:c.bottom,height:c.bottom-a.top};}}};
 const FF_RUN={t:"Find the limit",x:()=>"Watch the tach — it's going all the way to redline.",tgt:"view",d:1e9};
@@ -311,7 +312,7 @@ const LESSONS=[
   {tab:"build",sel:'[data-k="dInj"]',up:1,lbl:1,title:"How the fuel arrives",text:"Rotary VE pump, inline P-pump, HEUI or common rail. Each trades cost and simplicity against pressure and control. Nozzle size caps how much fuel can go in."},
   {tab:"build",sel:"#r-timing",up:1,lbl:1,title:"Injection timing",text:"When the fuel is injected before top dead centre. Earlier is more peak pressure and a harder knock; later cuts pressure but raises smoke and exhaust heat."},
   {tab:"build",sel:'[data-k="asp"]',up:1,lbl:1,title:"Air is power",text:"Fit a turbo and more fuel fits inside the smoke limit. Diesels spool early because they push full exhaust flow with no throttle, which is why they love boost."},
-  {tab:"test",sel:"#runTest",title:"Run it on the dyno",text:"Arm the dyno and pull. The torque curve of a diesel peaks low and is flat. Check the stress report afterwards: peak cylinder pressure and exhaust temperature are the first limits."},
+  {tab:"test",sel:"#rlRun",title:"Run it on the dyno",text:"Arm the dyno and pull. The torque curve of a diesel peaks low and is flat. Check the stress report afterwards: peak cylinder pressure and exhaust temperature are the first limits."},
   {tab:"analysis",sel:"#tele",title:"Read the telemetry",text:"Analysis shows cetane instead of octane, smoke, peak cylinder pressure and the temperatures. Cold sites need glow plugs and good cetane for the cold start."}]},
  {id:"nitrous",name:"Nitrous 101",sub:"kits, bottle, timing, the line",preset:"n2o632",env:{testType:"drag"},steps:[
   {tab:"build",sel:'[data-k="nitrous"]',up:1,lbl:1,title:"A bottle of oxygen",text:"Nitrous oxide splits in the cylinder and gives up extra oxygen, so more fuel burns. Dry kits add nitrous only, wet kits add their own fuel, direct port feeds every runner, and a progressive controller ramps the shot in, as on this 632 big-block."},

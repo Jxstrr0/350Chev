@@ -10,9 +10,9 @@ const RAIL_MQ=matchMedia("(min-width:1100px)");
 function railCol(){return document.documentElement.classList.contains("desk")&&RAIL_MQ.matches;}
 function railW(){const r=$("rail");return r&&railCol()?r.offsetWidth:0;}
 /* top edge of the docked sheet (phone or narrow desktop), for anything that keeps itself above the panel's foot */
-function railTop(){const r=$("rail");if(!r||railCol()||!r.offsetParent||$("app").classList.contains("rkoff"))return Infinity;return r.getBoundingClientRect().top;}
+function railTop(){const r=$("rail");if(!r||railCol()||!r.offsetParent)return Infinity;return r.getBoundingClientRect().top;}
 function railSched(){if(!RL||RL.raf)return;RL.raf=requestAnimationFrame(()=>{RL.raf=0;try{railRender();}catch(e){console.warn("rail",e);}});}
-function railOpen(on){if(!RL)return;on=on==null?!RL.open:!!on;RL.open=on;$("rail").classList.toggle("open",on);$("rlGrab").setAttribute("aria-expanded",String(on));$("rlGrab").setAttribute("aria-label",on?"Hide results":"Show results");railSched();}
+function railOpen(on){if(!RL)return;on=on==null?!RL.open:!!on;if(on&&$("app").classList.contains("rkrun"))on=false;RL.open=on;$("rail").classList.toggle("open",on);$("rlGrab").setAttribute("aria-expanded",String(on));$("rlGrab").setAttribute("aria-label",on?"Hide results":"Show results");railSched();}
 const RL_TN={pull:"dyno pull",endurance:"endurance",overrev:"over-rev"};
 function rlName(t){return RL_TN[t]||(EV_NAME[t]||t).toLowerCase();}
 /* the worst rows first, as the stress report sorts them */
@@ -45,8 +45,11 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   /* the last drag pass outlives the next dyno pull: keep it apart from S.last */
   if(S.last&&S.last.res&&S.last.res.drag&&S.last.res.drag!==RL.dragRef){const d=S.last.res.drag,R=d.race;RL.dragRef=d;
     RL.drag={hash:S.last.hash,et:d.et,mph:d.mph,sixty:d.sixty?d.sixty.t:null,race:R?(R.foul?"Red light":(R.won?"Won":"Lost")+" by "+Math.abs(R.margin||0).toFixed(3)+" s vs "+R.name):""};}
-  const hide=testing&&ev&&!col;   // a pass, a pull or a lap owns the phone screen while it runs
-  app.classList.toggle("rkon",!col);app.classList.toggle("rkoff",hide);
+  /* a pass, a pull or a lap owns the phone screen while it runs: the sheet shrinks to a slim line (RUNNING + the peaks, no Run, no grip),
+     stays shut, and is back at full size with the result the moment the run ends */
+  const busy=testing&&ev&&!col;
+  if(busy&&RL.open)railOpen(false);
+  app.classList.toggle("rkon",!col);app.classList.toggle("rkrun",busy);
   const L=S.last&&S.last.hash===h&&S.last.res&&S.last.res.rpms?S.last:null,res=L?L.res:quick,prev=!L&&S.last&&S.last.res&&S.last.res.peakHp!=null?S.last.res:null;
   const dl=(a,b)=>prev?delta(a,b):"";
   $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>`;
