@@ -15,8 +15,8 @@ const e24Cls=c=>(SIM.E24_CLASSES[c]||{n:c}).n;
 const e24Min=t=>t<3600?Math.round(t/60)+" min":e24HM(t)+" h";
 const e24HM=t=>{t=Math.max(0,t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60);return h+":"+String(m).padStart(2,"0");};
 /* career: rep, the calendar, a certified engine, the entry */
-function e24Gate(){if(!career())return null;if(C().rep<E24_REP)return `Opens at ${E24_REP} rep — ${(REP_TIERS.find(r=>r[0]===E24_REP)||[0,"Known builder"])[1]}`;const g=e24C();
-  if(C().week<g.next)return `Next running in week ${g.next}`;if(!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg)))return "Certify this engine on the dyno first";if(C().cash<E24_FEE)return `Entry is ${fmt$(E24_FEE)} — not enough cash`;return null;}
+function e24Gate(){if(!career())return null;if(C().rep<E24_REP&&!dev())return `Opens at ${E24_REP} rep — ${(REP_TIERS.find(r=>r[0]===E24_REP)||[0,"Known builder"])[1]}`;const g=e24C();
+  if(C().week<g.next)return `Next running in week ${g.next}`;if(!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg)))return "Certify this engine on the dyno first";if(C().cash<E24_FEE&&!dev())return `Entry is ${fmt$(E24_FEE)} — not enough cash`;return null;}
 /* a race that was running when the page closed: the team packed up, the entry is gone */
 function e24Orphan(){if(!career()||ER)return;const g=e24C();if(!g.live)return;const L=g.live;g.live=null;g.runs=(g.runs||0)+1;const R=recs();R.e24Runs=(R.e24Runs||0)+1;
   logEvent(`24 Hours of Prairie Sky (${e24TrkName(L.trk)}): retired — the team packed up when the shop closed mid-race`,"bad");save();}
@@ -49,7 +49,7 @@ function e24StratHtml(live,P){const e=S.env,pl=live?ER.R.plan:{mode:e.e24Mode,st
   return h;}
 function e24EnvHtml(){e24Orphan();const e=e24EnvFix(),trk=e.e24Trk,ready=!!E24W.done[trk],gate=e24Gate(),o=roadOpt(),C0=SIM.CHASSIS[o.ch];
   let h=`<div class="e24ev"><b>24 Hours of Prairie Sky</b><span>Saturday 2 pm to Sunday 2 pm · about 21 cars in Proto, GT and Stock · dark from 10 pm to 5 am</span>`;
-  if(career()){const g=e24C(),R=recs();h+=`<p class="${gate?"no":"ok"}">${gate?gate:`Entry open · ${fmt$(E24_FEE)}`}${g.runs?` · ${g.runs} run${g.runs>1?"s":""}${R.e24Best?`, best ${ordN(R.e24Best)} in class`:""}`:""}</p>`;}
+  if(career()){const g=e24C(),R=recs();h+=`<p class="${gate?"no":"ok"}">${gate?gate:`Entry open · ${dev()?"free (dev)":fmt$(E24_FEE)}`}${g.runs?` · ${g.runs} run${g.runs>1?"s":""}${R.e24Best?`, best ${ordN(R.e24Best)} in class`:""}`:""}</p>`;}
   h+=`</div>`;
   h+=`<div class="lbl"><span>Circuit</span></div>${e24Seg("e24Trk",trk,Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return [id,t.n,`${(T.len/1000).toFixed(2)} km · ${id==="gp"?"the 24 Hours":"short-course 24"}`];}))}`;
   h+=swapEnvNote();if(!o.car)h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
@@ -85,7 +85,7 @@ function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roa
   const seed=career()?rnHash([C().seed,C().week,"e24",trk].join(":")):rnHash(Date.now()+":"+Math.random());
   const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true}});
   if(career()&&crewPitK()!==1)R.pitK=crewPitK();   // fast hands on the crew: quicker stops (app/crew.js)
-  if(career()){C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${fmt$(E24_FEE)} entry`);hud();save();}
+  if(career()){if(!dev())C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${dev()?"free (dev)":fmt$(E24_FEE)+" entry"}`);hud();save();}
   ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0};
   renderEnv();$("app").classList.add("onstrip");ENGINE_VIS.setAutoRotate(false);$("e24Ctl").style.display="";$("e24Side").style.display="";e24HudInit();e24StratRender();e24FeedRender();e24Hud();
   $("testProg").classList.remove("done");sfx("start");buzz([20,30,20]);toast(`GREEN FLAG · ${e24TrkName(trk).toUpperCase()}`);
@@ -126,7 +126,7 @@ function e24HudInit(){$("e24Hud").innerHTML=`<div class="e24h"><div class="e24c"
   <div class="e24hz"><span data-s="Risk">Failure risk</span><b id="e24Hz">—</b><i id="e24Hw">—</i><div class="ph-bar"><i class="fill" id="e24Hb"></i></div></div>
   <div><span>Track</span><b id="e24Am">—</b><i id="e24Sk">—</i></div></div>`;e24SpdRender();}
 function e24SpdRender(){const b=$("e24Spd");if(!b||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
-  b.innerHTML=end?`<button class="btn pri" data-e24a="end" style="flex:1">${ER.toEnd?"Running the race to the flag…":"To the flag ▸▸"}</button>`
+  b.innerHTML=end?`<button class="btn pri" data-e24a="end" style="flex:1">${ER.toEnd?"Running the race to the flag…":"Skip to flag ▸▸"}</button>`
     :E24_SPEEDS.map(s=>`<button class="btn ${!ER.jump&&ER.speed===s?"on":""}" data-e24s="${s}">${s===1?"1×":s+"×"}</button>`).join("")+`<button class="btn pri e24nx${ER.jump?" on":""}" data-e24a="next">${ER.jump?"Running…":"Next event ▸▸"}</button><button class="btn e24cam" data-e24a="cam">Cam · ${E24_CAMS.find(c=>c[0]===ER.cam)[1]}</button>`;}
 function e24Gap(me,o,ahead){if(!o)return"—";const d=ahead?o.laps-me.laps:me.laps-o.laps;if(d>0)return `${ahead?"+":"−"}${d} lap${d>1?"s":""}`;const g=ahead?me.tLast-o.tLast:o.tLast-me.tLast;return `${ahead?"+":"−"}${Math.abs(g).toFixed(1)} s`;}
 function e24TyreLife(R,c,t){const sky=SIM.e24Sky(t),Ty=SIM.E24_TYRES[c.tyre.c],life=Ty.km*Math.min(1.25,Math.max(0.7,1-0.012*(sky.amb-20)))/SIM.E24_MODES[c.mode].tyre;return 1-c.tyre.km/life;}

@@ -125,7 +125,7 @@ $("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if
 /* opening Test or Events: if S.env.testType belongs to the other tab, switch to this tab's last pick (never mid-run) */
 function evSync(tab){if(testing||(S.bay&&tab==="events"))return;   // a dyno-day engine keeps the bay on its pull
   const ev=trackEvt(S.env.testType);let t=null;
-  if(tab==="events"&&!ev)t=EV_T.includes(S.evPick)?S.evPick:"drag";else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
+  if(tab==="events"){const cur=ev?S.env.testType:S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===S.env.testType)t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
   if(!t)return;S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
 /* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
 const EV_NAME={drag:"Drag strip",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
@@ -159,6 +159,11 @@ function evStatus(t){const cr=career();let s="",k="";
     if(ER){s="racing now";k="live";}else if(g&&/^Opens at/.test(g)){s=`opens at ${E24_REP} rep`;k="lock";}else if(nx)s=`next 24 h in wk ${nx[1]}`;else if(g)s=/Certify/.test(g)?"certify first":g.split(" — ")[0].toLowerCase();else s=km?`best ${Math.round(km).toLocaleString("en-CA")} km`:cr?"entry open":"a day and a night";}
   }catch(err){s="";}
   return{s,k};}
+/* why the dock CTA can't run this event right now ("" when it can): a locked tile, or the 24 Hours' own gate */
+function evBlock(t){if(!career()||!trackEvt(t))return"";
+  if(t==="drag"&&!has("race"))return`Locked · ${(UPGRADES.find(u=>u.id==="race")||{}).name||"race upgrade"}`;
+  if(t==="race24"&&!ER){const g=e24Gate();if(!g)return"";return/^Opens at/.test(g)?`Locked · opens at ${E24_REP} rep`:/^Next running/.test(g)?g.replace("Next running","Next 24 h"):/Certify/.test(g)?"Certify this engine first":g;}
+  return"";}
 function evPickRender(){const box=$("evPick");if(!box)return;const cur=S.env.testType;
   const h=EV_T.map(t=>{const st=evStatus(t),on=t===cur;return `<button data-t="${t}" role="radio" aria-checked="${on}" class="${on?"on":""}${st.k?" "+st.k:""}" title="${EV_NAME[t]}${st.s?" · "+st.s:""}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><b>${EV_NAME[t]}</b><small>${st.s||"&nbsp;"}</small></button>`;}).join("");
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
@@ -246,8 +251,8 @@ function renderTest(){
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=chartRedraw();
-  $("runTest").disabled=testing;const cost=testCost();
-  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Pikes Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
+  const blk=testing?"":evBlock(S.env.testType);$("runTest").disabled=testing||!!blk;$("runTest").classList.toggle("pri",!blk);const cost=testCost();
+  $("runTest").textContent=testing?"Test in progress":blk?blk:`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Pikes Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
   const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="hill"?hillHint():S.env.testType==="race24"?e24Hint():S.env.testType==="road"?roadHint():S.env.testType==="salt"?saltHint():S.env.testType==="bog"?bogHint():S.env.testType==="boat"?boatHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
