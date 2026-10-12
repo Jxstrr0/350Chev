@@ -1186,6 +1186,89 @@ html.troom #tour,html.troom #tip,html.troom #ff,html.troom #les,html.troom #glPo
 html.desk #trCard{left:auto;right:16px;bottom:16px;width:420px}
 html.desk #trList{left:auto;width:min(460px,40vw);border-left:1px solid var(--rule)}
 html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
+/* ---- results rail ---- (app/rail.js) one component, two forms. Phone and narrow windows: a peek sheet docked over
+   the tab bar (peaks, verdict chip, Run; tap or swipe up for the rest). Desktop 1100 px and wider: a third column right
+   of the tab panel. --sbw stays "everything right of the engine view" (panel + rail), so the docks, toasts and the
+   sidebar grip that centre on the view keep working; --sbp is the panel alone. */
+#app{--rkh:60px}
+#rail{position:absolute;left:0;right:0;bottom:var(--tabh);z-index:9;display:flex;flex-direction:column;background:var(--soot);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;box-shadow:0 -8px 22px rgba(0,0,0,.28)}
+#app.rkoff #rail,#app.td #rail{display:none}
+#app.rkon:not(.rkoff) #panel{padding-bottom:calc(var(--tabh) + var(--rkh) + 24px)}
+html:not(.desk) #app.rkon:not(.rkoff) #toast{bottom:calc(var(--tabh) + var(--rkh) + 14px)}
+html:not(.desk) #app.rkon:not(.rkoff) #achToast{bottom:calc(var(--tabh) + var(--rkh) + 66px)}
+.rlhead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"pk chip run";align-items:center;gap:8px;min-height:var(--rkh);padding:8px 12px 8px 14px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
+.rlgrab{position:absolute;left:50%;top:0;width:72px;height:14px;margin-left:-36px;padding:0;background:none;border:0}
+.rlgrab i{display:block;width:36px;height:4px;margin:4px auto 0;border-radius:2px;background:var(--steel)}
+.rlgrab:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+#rlPk{grid-area:pk}#rlChip{grid-area:chip}#rlRun{grid-area:run}
+.rlpk{display:flex;gap:14px;min-width:0}
+.rlp{min-width:0;white-space:nowrap}
+.rlp b{font-family:var(--display);font-size:20px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
+.rlp b i{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
+.rlp .delta{font-family:var(--mono);font-size:11px;margin-left:3px}
+.rlp span:not(.delta){display:none;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px}
+#rail.open .rlp span:not(.delta){display:block}
+#app.rkon #rail:not(.open) .rlp .delta{display:none}
+.rlchip{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.06em;line-height:1;padding:5px 8px;border:1px solid currentColor;border-radius:10px;white-space:nowrap;color:var(--dim)}
+.rlchip.pass{color:var(--good)}.rlchip.fail{color:var(--crit)}.rlchip.marg{color:var(--warn)}
+.rlrun{min-height:44px;padding:8px 16px}
+.rlrt{display:none}
+#rlTag{display:none;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--dim);text-transform:uppercase}
+#rail.open .rlhead{grid-template-areas:"pk chip run" "tag tag tag"}
+#rail.open #rlTag{display:block;grid-area:tag}
+.rlbody{display:none;overflow-y:auto;overscroll-behavior:contain;max-height:min(56vh,460px);padding:0 14px 14px}
+#rail.open .rlbody{display:block}
+.rldyno{margin:2px 0 4px;min-height:36px}
+.rlchart{margin:8px 0 0}
+#rlChart{display:block;width:100%;height:132px}
+.rlv{margin:10px 0 8px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+.rlv b{display:block;font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:.04em;line-height:1.1;color:var(--dim)}
+.rlv.pass{border-color:var(--good)}.rlv.pass b{color:var(--good)}.rlv.fail{border-color:var(--crit)}.rlv.fail b{color:var(--crit)}.rlv.marg{border-color:var(--warn)}.rlv.marg b{color:var(--warn)}
+.rlv small{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;font-size:12.5px;line-height:1.35;color:var(--muted)}
+.rlst{display:flex;flex-direction:column;gap:5px}
+#rail .st{grid-template-columns:minmax(0,1fr) 54px 38px;gap:8px;padding:6px 8px 6px 20px}
+#rail .st .n{font-size:13px}#rail .st .p{font-size:12px}
+.rlsec{margin-top:14px}
+.rlsec h3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rlsec h3 em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;color:var(--warn);margin-right:auto}
+.rlsec h3 .chip{min-height:32px;padding:4px 12px;font-size:12px;text-transform:none;letter-spacing:0}
+.rlk{margin-bottom:8px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+.rlkh span{display:block;font-size:14px;font-weight:600;color:var(--chalk);line-height:1.25}
+.rlkh small{display:block;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.rlks{margin:4px 0 6px;font-family:var(--display);font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+.rlks .good{color:var(--good)}.rlks .warn{color:var(--warn)}.rlks .crit{color:var(--crit)}
+.rlq{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:baseline;padding:3px 0;font-size:12.5px}
+.rlq .n{min-width:0;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlq .n i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.rlq .v{font-family:var(--mono);color:var(--chalk);white-space:nowrap}
+.rlq.no .v{color:var(--crit)}
+.rlq .rb{grid-column:1/-1;position:relative;height:5px;border-radius:2px;overflow:hidden;background:var(--soot)}
+.rlq .rb i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--good)}
+.rlq.no .rb i{background:var(--crit)}
+.rld{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.rld div{padding:7px 8px;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+.rld b{display:block;font-family:var(--display);font-size:18px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rld b i{font-style:normal;font-size:11px;color:var(--muted);margin-left:2px}
+.rld span{display:block;margin-top:3px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rlnote{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+/* narrow desktop window (900-1099 px): the sheet docks to the foot of the sidebar */
+html.desk #rail{left:auto;right:0;bottom:0;width:var(--sbw);border-left:1px solid var(--rule);border-radius:0}
+html.desk #app.rkon:not(.rkoff) #panel{padding-bottom:calc(var(--rkh) + 28px)}
+/* desktop 1100 px and wider: the third column */
+@media (min-width:1100px){
+  html.desk #app,html.desk #app.mini{--rlw:clamp(300px,22vw,340px);--sbp:min(var(--sbw-user,clamp(360px,30vw,520px)),calc(60vw - var(--rlw)));--sbw:calc(var(--sbp) + var(--rlw));grid-template-columns:minmax(0,1fr) var(--sbp) var(--rlw)}
+  html.desk #app.mini{--sbp:max(360px,calc(min(60vw,780px) - var(--rlw)))}
+  html.desk #rail{position:relative;left:auto;right:auto;bottom:auto;width:auto;grid-column:3;grid-row:1/3;min-height:0;display:block;overflow-y:auto;overscroll-behavior:contain;border-top:0;border-left:1px solid var(--rule);border-radius:0;box-shadow:none;scrollbar-width:thin;scrollbar-color:var(--rule) transparent}
+  html.desk .rlhead{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-height:0;padding:14px 14px 0;cursor:default;touch-action:auto;-webkit-user-select:auto;user-select:auto}
+  html.desk .rlgrab,html.desk #rlChip{display:none}
+  html.desk .rlrun{min-height:48px}html.desk .rlrt{display:inline}
+  html.desk .rlpk{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  html.desk .rlp{padding:9px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+  html.desk .rlp b{font-size:24px}
+  html.desk .rlp span:not(.delta){display:block}
+  html.desk #rlTag{display:block;margin-top:-4px}
+  html.desk .rlbody{display:block;max-height:none;overflow:visible;padding:0 14px 16px}
+}
 </style>
 
 <div id="app">
@@ -26611,6 +26694,7 @@ function recompute(){
   $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
+  if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
 }
 function hud(){
   if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0]}${dev()?" · DEV":""}`;}
@@ -27210,7 +27294,7 @@ function drawDragTrace(r){const INK=getComputedStyle(document.documentElement).g
   x.fillStyle="#ff7a1a";x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("rpm",padL+34,padT+12);
   x.fillStyle=soft;x.textAlign="right";x.fillText(mphMax+" mph",W-padR,padT+12);x.textAlign="left";x.fillText("0",padL+4,padT+ch-4);}
 function lastForChart(){return S.last&&S.last.hash===cfgHash(S.cfg)?S.last.res:null;}
-function drawChart(res,upto){if(res&&res.e24&&upto==null&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const INK_SOFT=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawChart(res,upto,cv){const chart=cv||$("chart");if(res&&res.e24&&upto==null&&!cv&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const INK_SOFT=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;
   if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
@@ -27256,7 +27340,7 @@ function renderTest(){
   if(S.env.testType==="pull_sled")pullRunBtn();
   if(S.env.testType==="boat")boatRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
-  renderMap();ddRender();
+  renderMap();ddRender();if(typeof railSched==="function")railSched();
 }
 /* ===================== TUNE MAP (dyno) =====================
    S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,
@@ -31499,6 +31583,94 @@ $("trListBtn").addEventListener("click",()=>tropListShow(!TR.list));
 $("trPhoto").addEventListener("click",async()=>{try{await document.fonts.ready;}catch(e){}tropShareCanvas(tropPhotoCanvas(),"trophy-room.png","Trophy room");});
 document.addEventListener("keydown",e=>{if(!TR.open)return;if(e.key!=="Escape"){e.stopPropagation();return;}e.preventDefault();e.stopPropagation();if(TR.sel)tropPick(null);else tropClose();},true);   // the bench's single-key shortcuts sleep while the room is open
 {const f=renderRecords;renderRecords=function(){f();tropCountSync();};const g=renderShop;renderShop=function(){g.apply(this,arguments);tropCountSync();};}
+/* ===================== RESULTS RAIL =====================
+   One component, two forms, so the build -> dyno -> build loop never has to leave the tab it is on.
+   Desktop 1100 px and wider: a third column right of the tab panel, always in sight. Phone and narrow windows: a peek
+   sheet docked over the tab bar: one line (peaks, verdict chip, Run), tap or drag it up for the whole rail.
+   It renders from the same sources as Test: S.last when it matches the build (else the live estimate, quick), the
+   chart through drawChart() on its own canvas, the verdict headline Test already rendered into #verdict, the
+   stress rows in Test's .st markup, and contract specs through fits(). Run clicks #runTest, so it is the same run. */
+var RL=null;   // var, not const: recompute() can schedule a refresh before this file has run
+const RAIL_MQ=matchMedia("(min-width:1100px)");
+function railCol(){return document.documentElement.classList.contains("desk")&&RAIL_MQ.matches;}
+function railW(){const r=$("rail");return r&&railCol()?r.offsetWidth:0;}
+/* top edge of the docked sheet (phone or narrow desktop), for anything that keeps itself above the panel's foot */
+function railTop(){const r=$("rail");if(!r||railCol()||!r.offsetParent||$("app").classList.contains("rkoff"))return Infinity;return r.getBoundingClientRect().top;}
+function railSched(){if(!RL||RL.raf)return;RL.raf=requestAnimationFrame(()=>{RL.raf=0;try{railRender();}catch(e){console.warn("rail",e);}});}
+function railOpen(on){if(!RL)return;on=on==null?!RL.open:!!on;RL.open=on;$("rail").classList.toggle("open",on);$("rlGrab").setAttribute("aria-expanded",String(on));$("rlGrab").setAttribute("aria-label",on?"Hide results":"Show results");railSched();}
+const RL_TN={pull:"dyno pull",endurance:"endurance",overrev:"over-rev"};
+function rlName(t){return RL_TN[t]||(EV_NAME[t]||t).toLowerCase();}
+/* the worst rows first, as the stress report sorts them */
+function rlWorst(tests,n){const o={crit:0,warn:1,good:2};return (tests||[]).slice().sort((a,b)=>o[a.status]-o[b.status]||b.util-a.util).slice(0,n);}
+function rlStress(tests){return rlWorst(tests,3).map(t=>`<div class="st ${t.status}"><div class="n">${t.name}<small>${t.sub||""}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div></div>`).join("");}
+/* the verdict headline: Test's own when it rendered this run, otherwise the same reading in brief */
+function rlVerdict(L){const v=$("verdict").querySelector(".verdict"),cur=S.last&&L===S.last&&L.env.testType===S.env.testType;
+  if(v&&cur){const k=["pass","fail","marg"].find(c=>v.classList.contains(c))||"marg",b=v.querySelector(".big");const t=b?(b.firstChild&&b.firstChild.nodeType===3?b.firstChild.nodeValue:b.textContent):"";const p=v.querySelector("p");return{k,t:t.trim()||"RESULT",s:p?p.textContent:""};}
+  const r=L.res;if(r.fails&&r.fails.length)return{k:"fail",t:"FAILED",s:r.fails.join(", ")};
+  return{k:r.rel>=85?"pass":"marg",t:r.rel>=85?"CLEAR":"MARGINAL",s:`Reliability ${r.rel}`};}
+function rlChipTxt(t){t=String(t||"").replace(/\s+/g," ").trim();const w=t.split(" · ")[0];return w.length>16?w.slice(0,15)+"…":w;}
+/* contracts on the board, judged the way Market judges them: the standard cell (a site brief: their air) */
+function rlLive(){const ce=career()&&!isStdCell(simEnv());if(!ce)return quick;const key=cfgHash(S.cfg)+JSON.stringify(stdEnv({testType:"pull"}));
+  if(RL.liveK!==key){RL.liveK=key;RL.live=SIM.simulate(S.cfg,stdEnv({testType:"pull"}));}return RL.live;}
+function rlContracts(){if(!career()||S.bay||!C().contracts||!C().contracts.length)return"";
+  const h=cfgHash(S.cfg),cert=C().cert&&C().cert.ok&&C().cert.hash===h?C().cert:null;
+  const key=h+"|"+C().week+"|"+(cert?1:0)+"|"+C().contracts.map(k=>k.id).join(",")+"|"+JSON.stringify(simEnv());
+  if(RL.kKey===key)return RL.kHtml;
+  const live=rlLive();let html="";
+  for(const k of C().contracts){let f;try{f=fits(k,live,S.cfg);}catch(e){continue;}
+    const ready=cert&&f.ok&&fits(k,cert.res,cert.cfg).ok;
+    const st=ready?`<b class="good">Ready to ship</b>`:f.ok?`<b class="warn">Meets brief · cert it</b>`:`<b class="crit">${f.o.filter(q=>!q.ok).length} off brief</b>`;
+    html+=`<div class="rlk"><div class="rlkh"><span>${k.name}</span><small>${k.units} × ${fmt$(k.price)} · due wk ${k.expires}</small></div><div class="rlks">${st}</div>`
+      +f.o.filter(q=>q.q!=="car"&&q.q!=="lsr").map(q=>`<div class="rlq ${q.ok?"ok":"no"}"><span class="n">${q.name} <i>${q.target}</i></span><span class="v">${q.val}</span><span class="rb"><i style="width:${Math.round(Math.min(1,Math.max(0,q.prog))*100)}%"></i></span></div>`).join("")+`</div>`;}
+  RL.kKey=key;RL.kHtml=html?`<div class="rlsec"><h3>Contract${C().contracts.length>1?"s":""} <button class="chip" data-gotab="market">Market</button></h3>${html}</div>`:"";return RL.kHtml;}
+function rlDrag(){const d=RL.drag;if(!d)return"";const old=d.hash!==cfgHash(S.cfg);
+  return `<div class="rlsec"><h3>Last drag pass${old?' <em>older build</em>':""}</h3><div class="rld"><div><b>${d.et!=null?d.et.toFixed(2)+"<i>s</i>":"DNF"}</b><span>ET</span></div><div><b>${d.mph!=null?Math.round(d.mph)+"<i>mph</i>":"—"}</b><span>trap</span></div><div><b>${d.sixty?d.sixty.toFixed(3):"—"}</b><span>60 ft</span></div></div>${d.race?`<p class="rlnote">${d.race}</p>`:""}</div>`;}
+function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
+  const app=$("app"),col=railCol(),t=S.env.testType,ev=trackEvt(t),h=cfgHash(S.cfg);
+  /* the last drag pass outlives the next dyno pull: keep it apart from S.last */
+  if(S.last&&S.last.res&&S.last.res.drag&&S.last.res.drag!==RL.dragRef){const d=S.last.res.drag,R=d.race;RL.dragRef=d;
+    RL.drag={hash:S.last.hash,et:d.et,mph:d.mph,sixty:d.sixty?d.sixty.t:null,race:R?(R.foul?"Red light":(R.won?"Won":"Lost")+" by "+Math.abs(R.margin||0).toFixed(3)+" s vs "+R.name):""};}
+  const hide=testing&&ev&&!col;   // a pass, a pull or a lap owns the phone screen while it runs
+  app.classList.toggle("rkon",!col);app.classList.toggle("rkoff",hide);
+  const L=S.last&&S.last.hash===h&&S.last.res&&S.last.res.rpms?S.last:null,res=L?L.res:quick,prev=!L&&S.last&&S.last.res&&S.last.res.peakHp!=null?S.last.res:null;
+  const dl=(a,b)=>prev?delta(a,b):"";
+  $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>`;
+  const V=L?rlVerdict(L):{k:"est",t:"NOT RUN",s:prev?"Changed since the last run — figures are the live estimate, deltas against that run.":"Live estimate. Run it to lock a result."};
+  const chip=$("rlChip");chip.className="rlchip "+V.k;chip.textContent=testing?"RUNNING":rlChipTxt(V.t);
+  $("rlTag").textContent=L?`${rlName(L.env.testType)} · measured`:"live estimate";
+  const run=$("rlRun");run.disabled=testing;const cost=testCost();
+  run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(t)}${cost?" · "+fmt$(cost):""}</span>`;
+  run.title=ev?`Opens Events and runs the ${rlName(t)}`:`Same run as Test: ${rlName(t)}`;
+  $("rlDyno").hidden=!ev||testing;
+  $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
+  $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();
+  const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
+}
+/* Run: the same run Test arms. An event type opens Events first (its launch control lives there). */
+function railRun(){if(testing)return;const t=S.env.testType;if(trackEvt(t)&&curTab!=="events")showTab("events");$("runTest").click();railSched();}
+function railDyno(){if(testing)return;pickTest(DYNO_T.includes(S.testPick)?S.testPick:"pull");$("runTest").click();railSched();}
+(function railInit(){const app=$("app");if(!app||$("rail"))return;
+  const el=document.createElement("aside");el.id="rail";el.setAttribute("aria-label","Results");
+  el.innerHTML=`<div class="rlhead" id="rlHead"><button class="rlgrab" id="rlGrab" aria-expanded="false" aria-controls="rlBody" aria-label="Show results"><i></i></button>
+    <button class="btn pri rlrun" id="rlRun">Run</button><div class="rlpk" id="rlPk"></div><span class="rlchip" id="rlChip"></span><span class="rltag" id="rlTag"></span></div>
+    <div class="rlbody" id="rlBody"><button class="chip rldyno" id="rlDyno" hidden>Dyno pull instead</button>
+    <div class="rlchart"><canvas id="rlChart"></canvas></div><div id="rlV"></div><div id="rlK"></div><div id="rlD"></div></div>`;
+  app.insertBefore(el,$("tabs"));
+  RL={open:false,raf:0,drag:null,dragRef:null,liveK:"",live:null,kKey:"",kHtml:""};
+  $("rlRun").addEventListener("click",e=>{e.stopPropagation();railRun();});
+  $("rlDyno").addEventListener("click",railDyno);
+  /* the sheet: tap the peek line or its grip to open or close; a swipe up opens, down closes */
+  let y0=null,moved=false;const head=$("rlHead");
+  head.addEventListener("pointerdown",e=>{if(railCol()||e.target.closest("#rlRun"))return;y0=e.clientY;moved=false;});
+  head.addEventListener("pointermove",e=>{if(y0==null)return;const dy=e.clientY-y0;if(Math.abs(dy)>24){moved=true;railOpen(dy<0);y0=null;}});
+  head.addEventListener("pointerup",()=>{y0=null;});head.addEventListener("pointercancel",()=>{y0=null;});
+  head.addEventListener("click",e=>{if(railCol()||e.target.closest("#rlRun")||moved){moved=false;return;}railOpen();});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&RL.open&&!railCol())railOpen(false);});
+  /* contracts, cash and the week move on clicks all over the game: refresh after any of them (one frame, cached) */
+  document.addEventListener("click",railSched);
+  const re=()=>{railSched();};RAIL_MQ.addEventListener?RAIL_MQ.addEventListener("change",re):RAIL_MQ.addListener(re);window.addEventListener("resize",re);
+  new MutationObserver(re).observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});
+  railSched();})();
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
   {tab:"build",sel:"#presets",title:"Pick a starter engine",text:"The five green-tagged base engines use only parts your bay already has. Tap one — the Two-four truck four is a safe first sale."},
@@ -32073,11 +32245,11 @@ function setLayout(m){if(S.layoutMode===m)return;S.layoutMode=m;applyLayout();ap
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-lay]");if(b){setLayout(b.dataset.lay);buzz(6);}});
 window.addEventListener("resize",()=>applyLayout(true));
 // panel bottom edge: on the phone the tab bar covers the panel's foot, on desktop the tabs sit on top
-function tabsTop(){return deskOn()?$("panel").getBoundingClientRect().bottom:$("tabs").getBoundingClientRect().top;}
+function tabsTop(){const t=deskOn()?$("panel").getBoundingClientRect().bottom:$("tabs").getBoundingClientRect().top;return typeof railTop==="function"?Math.min(t,railTop()):t;}   // the results sheet covers the foot too
 // tour and First Fire cards on a wide screen: a 400 px card beside its target instead of a full-width strip
 function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
   const a=$("app").getBoundingClientRect(),w=box.offsetWidth||400,h=box.offsetHeight||160;box.style.right="auto";
-  if(!r){box.style.left=Math.round((a.width-$("panel").offsetWidth-w)/2)+"px";return;}
+  if(!r){box.style.left=Math.round(($("panel").getBoundingClientRect().left-a.left-w)/2)+"px";return;}
   const sb=$("panel").getBoundingClientRect().left-a.left,cl=(v,lo,hi)=>Math.round(Math.max(lo,Math.min(hi,v)));let top,left;
   if(r.left-a.left>=sb-2){top=cl(r.top-a.top,12,a.height-h-12);left=sb-w-24;}   // a sidebar target: the card waits beside the sidebar
   else{top=r.bottom-a.top+14;if(r.height>a.height*0.5)top=Math.min(r.bottom,a.bottom)-a.top-h-24;else if(top+h>a.height-12)top=Math.max(12,r.top-a.top-h-14);left=r.left-a.left+r.width/2-w/2;}
@@ -32085,7 +32257,7 @@ function deskBox(box,r){if(!deskOn()){box.style.left=box.style.right="";return;}
 // sidebar width: drag its edge, double-click to put it back
 (()=>{const g=document.createElement("div");g.id="sbGrip";g.dataset.tip="Drag to resize the sidebar · double-click to reset";$("app").appendChild(g);let on=false;
   g.addEventListener("pointerdown",e=>{e.preventDefault();try{g.setPointerCapture(e.pointerId);}catch(x){}on=true;g.classList.add("on");tipHide();});
-  g.addEventListener("pointermove",e=>{if(!on)return;S.sbw=Math.round(Math.max(360,Math.min(innerWidth*0.6,innerWidth-e.clientX)));document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");});
+  g.addEventListener("pointermove",e=>{if(!on)return;S.sbw=Math.round(Math.max(360,Math.min(innerWidth*0.6,innerWidth-e.clientX-railW())));document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");});
   const end=()=>{if(!on)return;on=false;g.classList.remove("on");save();window.dispatchEvent(new Event("resize"));};
   g.addEventListener("pointerup",end);g.addEventListener("pointercancel",end);
   g.addEventListener("dblclick",()=>{S.sbw=null;applyLayout(true);save();window.dispatchEvent(new Event("resize"));});})();
