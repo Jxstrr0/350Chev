@@ -80,7 +80,8 @@ function railDyno(){if(testing)return;pickTest(DYNO_T.includes(S.testPick)?S.tes
   head.addEventListener("pointermove",e=>{if(y0==null)return;const dy=e.clientY-y0;if(Math.abs(dy)>24){moved=true;railOpen(dy<0);y0=null;}});
   head.addEventListener("pointerup",()=>{y0=null;});head.addEventListener("pointercancel",()=>{y0=null;});
   head.addEventListener("click",e=>{if(railCol()||e.target.closest("#rlRun")||moved){moved=false;return;}railOpen();});
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&RL.open&&!railCol())railOpen(false);});
+  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!RL.open||railCol()||e.defaultPrevented)return;   // a dialog over it (options sheet, Settings) closes first
+    if(["sheet","setPane"].some(id=>$(id)&&$(id).classList.contains("on")))return;railOpen(false);});
   /* contracts, cash and the week move on clicks all over the game: refresh after any of them (one frame, cached) */
   document.addEventListener("click",railSched);
   const re=()=>{railSched();};RAIL_MQ.addEventListener?RAIL_MQ.addEventListener("change",re):RAIL_MQ.addListener(re);window.addEventListener("resize",re);
