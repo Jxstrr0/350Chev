@@ -84,7 +84,7 @@ function pullEnvFix(){const e=S.env;if(PO)e.pullCls=PO.k;if(!SIM.PULL_CLASSES[e.
   e.pullHitch=Math.max(12,Math.min(V.hitchMax,isFinite(+e.pullHitch)&&e.pullHitch!=null?+e.pullHitch:V.hitchMax-4));
   const bMax=V.maxMass-V.mass;e.pullBallast=Math.max(0,Math.min(bMax,isFinite(+e.pullBallast)&&e.pullBallast!=null?+e.pullBallast:Math.round(bMax/20)*10));
   return k;}
-function pullVeh(k){const e=S.env;return{cls:k,gear:+e.pullGear,trans:e.pullTrans,tyre:e.pullTyre,hitch:+e.pullHitch,ballast:+e.pullBallast,redline:S.cfg.redline,idle:pullIsDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850)};}
+function pullVeh(k){const e=S.env;return{cls:k,gear:+e.pullGear,trans:e.pullTrans,tyre:e.pullTyre,hitch:+e.pullHitch,ballast:+e.pullBallast,redline:S.cfg.redline,idle:pullIsDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),dtCap:SIM.dtCapOf(e.drv),dtId:e.drv};}
 /* the rest of the class on the night: 5–7 pullers, the same field all week in career, a fresh one every hook in the cell */
 function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed),names=PULL_NAMES[c.veh.kind].slice(),n=5+Math.floor(r()*3),out=[];
   for(let i=0;i<n;i++){const nm=names.splice(Math.floor(r()*names.length),1)[0];const full=r()<F.full;const gs=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());
@@ -94,7 +94,7 @@ function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed
 function pullHookedWk(k){return career()&&!PO&&pullFmt()==="night"&&(C().pullWk||{})[k]===C().week;}
 function pullSeed(k){const ix=Object.keys(SIM.PULL_CLASSES).indexOf(k)+1;if(!career())return PULL_SB[ix]||(PULL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().pullSeed)C().pullSeed=Math.floor(Math.random()*1e9);return(C().pullSeed^(C().week*7919)^(ix*104729))>>>0;}
 function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
-function pullBreak(kind){PR.failed=true;PR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 function pullStart(){
   $("app").classList.add("onstrip");
   const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
@@ -200,7 +200,7 @@ function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame
     if(r.poPending){logEvent(`Pull: ${C0.n} — FULL PULL, pull-off against ${r.poN}`,"good");toast(`FULL PULL · PULL-OFF against ${r.poN}`);}
     else if(dq){const bill=Math.max(1500,Math.round((res.cost||5000)*0.4/50)*50);r.bill=bill;C().cash-=bill;C().cert=null;C().rep=Math.max(0,C().rep-3);addWear(3,c.hk);
       logEvent(`Pull: ${C0.n} — ran away and grenaded at ${r.distFt.toFixed(0)} ft, DQ. Rebuild ${fmt$(bill)}`,"bad");toast(`GRENADED · DQ · rebuild ${fmt$(bill)}`);}
-    else if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
+    else if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");if(r.broke!=="driveline")toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
     else{const purse=Math.round((PULL_PURSE[r.place-1]||0)*(PULL_PAY[C0.tier]||1)/10)*10,rep=(PULL_REP[r.place-1]||0)+(f1.full?1:0)+(kill?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`Pull: ${C0.n} — ${dist}${c.po!=null?" (pull-off "+(c.conceded?"conceded":c.po.toFixed(1)+" ft")+")":""}${kill?", good kill":""}, ${pl}${r.ser?", series +"+r.ser.pts+" pts":""}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${kill?" · good kill":""}${purse?" · "+fmt$(purse):""}`);}
     if(!r.poPending)spEvent("pull",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
@@ -224,6 +224,7 @@ function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C
   h+=`<p class="hint"><b style="color:${lg.ok?"var(--good)":"var(--crit)"}">${lg.ok?"✓ Legal":"✗ Not legal"}</b> · ${lg.why}. ${C0.d[0].toUpperCase()+C0.d.slice(1)}. ${V.kind==="tractor"?"Two-wheel-drive tractor":"Four-wheel-drive pickup"}, ${V.mass.toLocaleString("en-CA")} kg empty, ${V.maxMass.toLocaleString("en-CA")} kg class limit. Sled: ${C0.sled.box.toLocaleString("en-CA")} kg box that rides up onto the pan.${lk?` <b>Opens at ${lk} rep.</b>`:""}${pullHookedWk(k)?` <b>Hooked this week — next pull night is week ${C().week+1}.</b>`:""}</p>`;
   h+=`<div class="lbl"><span>Pulling gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-pk="pullGear" data-pv="${i}" class="${+e.pullGear===i?"on":""}">${n}<small>${mph} mph</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Driveline</span></div><div class="seg">${[["conv","Converter","multiplies torque when it bogs"],["clutch","Clutch","direct · less heat, no help low"]].map(([id,n,d])=>`<button data-pk="pullTrans" data-pv="${id}" class="${e.pullTrans===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=drvHtml();
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.PULL_TYRES[id];return `<button data-pk="pullTyre" data-pv="${id}" class="${e.pullTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
   h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold to pull, let go to ease off"],["auto","Auto","a steady foot · watch the hook"]].map(([id,n,d])=>`<button data-pk="pullDrive" data-pv="${id}" class="${e.pullDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   if(e.pullDrive==="auto")h+=`<p class="hint">The auto driver holds the slip low in the green band and keeps some pedal in to the end — steady, a little cautious; a good foot can beat it. If it runs away it goes for the kill switch like anyone would, in under a second most hooks. Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during the hook to take over.</p>`;

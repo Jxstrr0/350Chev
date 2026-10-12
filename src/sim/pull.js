@@ -213,6 +213,7 @@
       let Te = engTq(rpmE, thr), Tw;
       if (st.coupled) Tw = Te * G * etaL;
       else { const SR = clamp(wRpm / Math.max(1, rpmE), 0, 1); const TR = conv ? 1 + 1.1 * clamp(1 - SR / 0.85, 0, 1) : 1; Tw = Math.max(0, Te) * TR * G * (conv ? 0.86 : 0.93); }
+      if (v.dtCap > 0 && Tw > 0) { const Tc = v.dtCap * G * etaL; if (Tw > Tc) { if (!v.noFail && dtStress(st, Tw / Tc, dt)) st.dtMsg = dtPart(st.dtO); Tw = Tc; } }   // a drivetrain tier: the clutch slips past its rating; a big overload breaks a part
       if (st.killed) { Tw = 0; st.coupled = false; rpmE = st.rpm * Math.max(0, 1 - dt * 2.5); }   // killed: the driver is in neutral and on the brake, the engine winds down on its own
       st.rpm = rpmE;
       // sled: the box rides toward the pan as the sled travels
@@ -266,6 +267,7 @@
       // something lets go
       if (!v.noFail && !st.broke) {
         if (st.failKind && loadT >= st.failAt) st.broke = st.failKind;
+        else if (st.dtMsg) st.broke = "driveline";
         else if (v.wornAt && loadT >= v.wornAt) st.broke = "worn";   // past its pass budget: something tired gives up
         else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : "piston";
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
@@ -287,7 +289,7 @@
     function result() {
       const ft = Math.round(st.x * 3.28084 * 10) / 10, reasons = [];
       const sw = st.sweet, tn = TY.n.toLowerCase();
-      if (st.broke) reasons.push(st.broke === "runaway" ? `It ran away on its own oil ${Math.round(st.raX * 3.28084)} ft out and nobody pulled the kill switch: ${st.raWin.toFixed(1)} s later it went past ${Math.round(st.rpm).toLocaleString()} rpm and came apart. Disqualified.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C — past what the hot side takes for that long. It let go under the sled.` : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for seconds on end — a diesel crown can't shed that. A piston melted. Less fuel, more air (bigger turbo, intercooler), or shorter bursts.` : st.broke === "worn" ? `Something tired let go ${Math.round(ft)} ft down the track — the build was past its pass budget. Freshen it before the next hook.` : `The engine let go under load ${Math.round(ft)} ft down the track — the dyno sheet already said it was past a limit.`);
+      if (st.broke) reasons.push(st.broke === "runaway" ? `It ran away on its own oil ${Math.round(st.raX * 3.28084)} ft out and nobody pulled the kill switch: ${st.raWin.toFixed(1)} s later it went past ${Math.round(st.rpm).toLocaleString()} rpm and came apart. Disqualified.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C — past what the hot side takes for that long. It let go under the sled.` : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for seconds on end — a diesel crown can't shed that. A piston melted. Less fuel, more air (bigger turbo, intercooler), or shorter bursts.` : st.broke === "driveline" ? `${st.dtMsg} ${Math.round(ft)} ft down the track — the ${drivetrain(v.dtId).n} drivetrain is rated for ${Math.round(v.dtCap)} N·m and the sled asked for ${Math.round(st.dtO * v.dtCap)}. The engine is fine. Fit a stronger drivetrain, or feather the pedal.` : st.broke === "worn" ? `Something tired let go ${Math.round(ft)} ft down the track — the build was past its pass budget. Freshen it before the next hook.` : `The engine let go under load ${Math.round(ft)} ft down the track — the dyno sheet already said it was past a limit.`);
       if (st.full) reasons.push("Full pull — the box was still moving at 300 ft.");
       if (st.killed && st.raOn) reasons.push(`Ran away ${Math.round(st.raX * 3.28084)} ft out — killed it ${st.raT.toFixed(1)} s later at ${st.killRpm.toLocaleString()} rpm. Good kill: the engine lives. Scored where it stopped.`);
       else if (st.killed) reasons.push(`Killed it at ${Math.round(st.killX * 3.28084)} ft — scored where it stopped.`);
@@ -304,7 +306,7 @@
       if (st.smokeMax > 0.7) reasons.push("Black smoke all the way — more fuel than air. It looks the part; it is also heat in the pistons.");
       return { distM: +st.x.toFixed(2), distFt: ft, full: st.full, maxMph: +(st.maxV * 2.23694).toFixed(1), peakSlip: +st.peakSlip.toFixed(3), peakEgt: Math.round(st.egtPeak), broke: st.broke, failKind: st.broke ? st.failKind : null,
         trace: st.trace, smokeMax: +st.smokeMax.toFixed(2), time: +st.t.toFixed(1), stopWhy: st.stopWhy, spinT: +st.spinT.toFixed(1), sweetT: +st.sweetT.toFixed(1), hopT: +st.hopT.toFixed(1), frontUpT: +st.frontUpT.toFixed(1), dig: +st.dig.toFixed(2),
-        boxFrac: +st.boxFrac.toFixed(3), endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, veh: v, tyre: TY.n, sledK: sk,
+        boxFrac: +st.boxFrac.toFixed(3), endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, dtMsg: st.dtMsg || undefined, veh: v, tyre: TY.n, sledK: sk,
         runaway: st.raOn ? { ftAt: Math.round(st.raX * 3.28084 * 10) / 10, killed: st.killed, react: st.killed ? +st.raT.toFixed(2) : null, win: +st.raWin.toFixed(2), grenade: st.broke === "runaway" } : null, killed: st.killed, track: v.track || null };
     }
     return { st: st, step: step, result: result, kill: kill, ratio: G, sweet: st.sweet, full: PULL_FULL };
