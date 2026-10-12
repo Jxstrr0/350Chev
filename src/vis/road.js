@@ -345,7 +345,8 @@ function roadUpdate(o, dt){
   var k=T.k[Math.floor(fi)%N]||0, U=car.userData, stT=Math.atan(2.6*k)*1.15;
   ROAD.steer+=(stT-ROAD.steer)*Math.min(1,dt*10); for(var i=0;i<U.carriers.length;i++){ var Cw=U.carriers[i]; if(!Cw.userData.rear) Cw.rotation.y=ROAD.steer; }
   stripCarAnim(car, {v:v, acc:(+o.ax||0)*9.81, brake:(+o.brk||0)>0.05, night:!!o.night, lift:0}, dt, true);
-  var rollT=clamp(-(+o.ay||0)*0.03,-0.07,0.07); ROAD.roll+=(rollT-ROAD.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=ROAD.roll;
+  var su=o.su||null, rk=su?su.rk:1, rollT=clamp(-(+o.ay||0)*0.03*rk,-0.07*rk,0.07*rk); ROAD.roll+=(rollT-ROAD.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=ROAD.roll;
+  stripSetupLean(car, su, +o.ay||0, +o.ax||0, ROAD.sx||(ROAD.sx={dv:0,lf:0,lr:0}), dt);
   /* a puff of tyre smoke and dust when it runs out of grip on exit, or locks a wheel */
   if(W.fx){ var sl=(+o.slip||0); if(sl>0.2 && v>4 && Math.random()<sl*dt*30){ roadPt(T, fi-1.2, (Math.random()-0.5)*1.6, 0.3, _rA); W.fx.emit(_rA.x,0.25,_rA.z,(Math.random()-0.5),0.35,(Math.random()-0.5),1.3,0.6,2.6,0.84,0.84,0.84,0.18,{drag:0.6,buoy:0.15}); }
     W.fx.step(dt, _rW); }
