@@ -6,7 +6,7 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal});}   // a chosen swap car (app/swap.js) stands in for the chassis
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(e.drv)});}   // a chosen swap car (app/swap.js) stands in for the chassis
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadRecs(){const R=recs();if(!R.road||typeof R.road!=="object")R.road={};return R.road;}
 /* market: a buyer's road figures for an engine, in the buyer's car (cached like the site runs) */
@@ -21,6 +21,7 @@ function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry
 function roadEnvHtml(sl){const e=roadEnvFix(),o=roadOpt(),C0=o.car||SIM.CHASSIS[o.ch],q=quick&&quick.rpms?quick:null;
   let h=o.car?swapEnvNote():swapEnvNote()+`<div class="lbl"><span>Chassis</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.ROAD_TYRES).map(([id,t])=>`<button data-rk="roadTyre" data-rv="${id}" class="${o.tyre===id?"on":""}">${t.n}<small>μ ${t.mu}${C0.tyre===id?" · stock":""}</small></button>`).join("")}</div>`;
+  h+=drvHtml();
   h+=`<div class="lbl"><span>Circuit</span></div><div class="seg">${Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return `<button data-rk="roadTrk" data-rv="${id}" class="${e.roadTrk===id?"on":""}">${t.n}<small>${(T.len/1000).toFixed(2)} km · ${t.d.split(" · ")[1]}</small></button>`;}).join("")}</div>`;
   h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
   if(q){const car=SIM.roadCar(SIM.roadPrep(S.cfg,q),o),fr=Math.round(car.front*100),bal=car.bal==="under"?`nose-heavy (${fr}% front, ${C0.front*100|0}% as designed) — it will push in the slow corners`:car.bal==="over"?`light in the nose (${fr}% front) — the tail steps out on the way in`:`balanced (${fr}% front)`;
@@ -63,6 +64,7 @@ function roadStart(){
   const res=SIM.simulate(snap.cfg,env);
   if(res.fails.length){testing=false;toast(`It wouldn't last a lap — ${String(res.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
+  if(opt.dtCap>0&&res.peakTq/opt.dtCap>1.3){opt.dtBrk=true;opt.dtMsg=SIM.dtPart(res.peakTq/opt.dtCap);}   // a big overload breaks a part on the first hard exit
   const prep=SIM.roadPrep(snap.cfg,res),run0=SIM.roadRun(prep,opt),lap=SIM.lapSim(prep,opt,trk),T=SIM.roadTrack(trk);
   const best=roadRecs()[roadKey(opt.rk||opt.ch,trk)]||null,secCut=[0,lap.sectors[0],lap.sectors[0]+lap.sectors[1],lap.time];
   RT={brk:swapRoadBreak(lap,T,opt),res,env,opt,trk,snap,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:snap.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
@@ -77,7 +79,7 @@ function roadStart(){
     roadHud(f);run.on=true;run.rpm=f.rpm;run.load=Math.max(0.05,f.thr);$("rpmLbl").textContent=Math.round(f.rpm/10)*10;
     $("testProg").style.width=Math.min(100,100*Math.max(0,RT.t)/L.time)+"%";
     if(done&&!RT.crossed){RT.crossed=true;buzz([20,30,20]);}
-    if(RT.brk&&!RT.brkHit&&!pre&&RT.t>=RT.brk.t){RT.brkHit=true;RT.skip=true;sfx("fail");buzz([80,40,120]);toast("DRIVELINE LET GO · the engine is fine");}   // a swap's driveline over its rating
+    if(RT.brk&&!RT.brkHit&&!pre&&RT.t>=RT.brk.t){RT.brkHit=true;RT.skip=true;sfx("fail");buzz([80,40,120]);toast(RT.opt.dtMsg?RT.opt.dtMsg.toUpperCase()+" · the engine is fine":"DRIVELINE LET GO · the engine is fine");}   // a swap's driveline over its rating
     if(RT.skip||RT.t>=L.time+1.6*RT.speed)roadFinish();else requestAnimationFrame(step);};
   requestAnimationFrame(step);
 }
@@ -96,8 +98,8 @@ function roadFinish(){
     zero60:a.zero60,zero100:a.zero100,zero200:a.zero200,quarter:a.quarter,roll:a.roll80120,brake100:a.brake100,top:a.top,spinT:a.spinT,
     lapT:+lap.time.toFixed(3),sectors:lap.sectors.map(x=>+x.toFixed(3)),vmax:+lap.vmax.toFixed(1),vmin:+lap.vmin.toFixed(1),apex:lap.apex,shifts:lap.shifts,fullPct:lap.fullPct,ayPk:lap.ayPk,brakePk:lap.brakePk,tracT:lap.tractionT,trace:dec};
   /* records: best lap per chassis × circuit, best 0–100 per chassis */
-  if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}
-  if(!ff&&same&&!r.swapBroke){const RR=roadRecs(),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
+  if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}else if(RT.brk&&opt.dtMsg)r.dtBroke={msg:opt.dtMsg,t:RT.brk.t,corner:RT.brk.corner};
+  if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=roadRecs(),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
   res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
   if(career()&&same){addWear(0.35,hKey(snap.h));logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");hud();checkGoals();}
@@ -105,7 +107,7 @@ function roadFinish(){
   if(r.swap)swapAfter(r);
   RT.lap=null;save();recompute();renderTest();revealVerdict();
 }
-function roadVerdict(res){const r=res.road,z=r.zero100;if(r.swapBroke)return swapRoadVerdict(r);
+function roadVerdict(res){const r=res.road,z=r.zero100;if(r.swapBroke)return swapRoadVerdict(r);if(r.dtBroke)return `<div class="verdict fail"><div style="flex:1"><div class="big">${r.dtBroke.msg.toUpperCase()}</div><p>${r.chName} — it let go on the exit of ${r.dtBroke.corner}, ${r.dtBroke.t.toFixed(1)} s into the lap. The ${SIM.drivetrain(S.env.drv).n} drivetrain is rated below what this engine makes. No lap time; the engine is fine.</p></div></div>`;
   return `<div class="verdict pass"><div style="flex:1"><div class="big">${fmtLap(r.lapT)} · ${rdEsc(r.trkName)}</div><p>0–100 ${z!=null?z.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h · ${rdEsc(r.trkName)} ${fmtLap(r.lapT)} — ${r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD")}, ${r.tyreName.toLowerCase()} tyres, ${r.m.toLocaleString("en-CA")} kg${r.pb&&r.pb.was?` · <b>lap record</b> (was ${fmtLap(r.pb.was,2)})`:""}</p>
     <div class="vstats"><div><b>${z!=null?z.toFixed(1):"—"}</b><span>0–100 km/h s</span></div><div><b>${r.zero60!=null?r.zero60.toFixed(1):"—"}</b><span>0–60 mph s</span></div><div><b>${r.quarter?r.quarter.t.toFixed(1):"—"}</b><span>1/4 mi${r.quarter?" · "+Math.round(r.quarter.kmh)+" km/h":""}</span></div>
     <div><b>${Math.round(r.top.kmh)}</b><span>top km/h · ${r.top.limit==="redline"?"rev limit":"drag"}</span></div><div><b>${r.roll!=null?r.roll.toFixed(1):"—"}</b><span>80–120 s</span></div><div><b>${r.brake100.toFixed(1)}</b><span>100–0 m</span></div></div></div></div>`;}
