@@ -576,7 +576,7 @@
       : Math.round(clamp(litresPerHour / 100 * 100 * (alsO ? 1 + alsO.fuel : 1), 2, 60) * 10) / 10;  // anti-lag burns fuel on every lift  // L/100 km at 100 km/h
 
     let smooth = L.smooth * (1 - 0.10 * L.secondOrder * (g.s / 86))
-      - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" ? 2 : 0)
+      - 0.18 * cfg.cam + 9 * O.dmp.damping + (cfg.oilSystem === "dry" || cfg.oilSystem === "dry_hv" ? 2 : 0)
       - (cfg.intake === "itb" ? 3 : 0) + 5;
     if (rot) smooth = L.smooth - 18 * O.port.overlap + (cfg.oilSystem === "dry" ? 2 : 0) - (cfg.intake === "itb" ? 2 : 0) + 4;
     if (ts) smooth = L.smooth + 6 - (tm.chamber ? 14 * tm.amp : 0) + 9 * O.dmp.damping - (cfg.induct === "piston" ? 3 : 0) + (tm.blower ? 2 : 0);   // a power stroke every turn evens the torque out
@@ -641,7 +641,7 @@
       peakHp: peakHp, peakHpRpm: peakHpRpm, peakTq: peakTq, peakTqRpm: peakTqRpm,
       correctedHp: correctedHp,
       Vd: (rot || ts ? g.VdNom : g.Vd) * 1e6, n: L.n, kg: kg, cost: cost, econ: econ, smooth: smooth,
-      thermals: { crownC: crownC, egtPeakC: maxEgt, coolantLoadKw: Qkw, chargeC: chargeCOut, oilC: oilCOut },
+      thermals: { crownC: crownC, egtPeakC: maxEgt, coolantLoadKw: Qkw, chargeC: chargeCOut, oilC: oilCOut, coolCap: O.cool.cap },
       clearances: { coldMm: coldMm, hotMm: hotMm, ringGapMm: ringGapMm, ringGapNeededMm: ringGapNeededMm, valvePistonMm: valvePistonMm },
       loads: {
         pmaxMPa: maxPmax / 10, rodTensionKn: Frec / 1000, rodCompKn: Fcomp / 1000,
