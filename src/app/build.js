@@ -14,13 +14,13 @@ function renderPresets(){
   const LORDER=["I1","I2","I3","I4","I5","I6","V4","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4","D18"];
   let list=PRESETS.map((p,i)=>({p,i,disp:presetDisp(p),n:(SIM.LAYOUTS[p.cfg.layout]||{n:0}).n,cls:presetCls(p),fam:FAM_OF(p.cfg.layout),two:p.cfg.cycle==="two"}));
   list=list.filter(e=>fam!=="two"||e.two);if(fam==="two")list.forEach(e=>e.fam="two");   // the two-stroke chip cuts across layouts
-  list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||e.cls===cls));
+  list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||(cls==="starter"?!!e.p.starter:e.cls===cls)));
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
   list.sort((a,b)=>key(a)-key(b));
   const groupOf=e=>sort==="layout"?(SIM.LAYOUTS[e.p.cfg.layout]||{}).name||e.p.cfg.layout:sort==="class"?CLS_LABEL[e.cls]:sort==="size"?(e.disp<1.6?"Under 1.6 L":e.disp<2.6?"1.6 – 2.5 L":e.disp<4.1?"2.6 – 4.0 L":e.disp<6.1?"4.1 – 6.0 L":"Over 6 L"):(e.p.realHp<150?"Under 150 hp":e.p.realHp<300?"150 – 299 hp":e.p.realHp<600?"300 – 599 hp":e.p.realHp<1000?"600 – 999 hp":"1,000 hp and up");
-  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
-  let h="",g=null,buf=[];const flush=()=>{if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.join("")}</div>`;buf=[];};
-  for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push(card(e));}
+  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}" data-id="${p.id}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
+  let h="",g=null,buf=[];const flush=()=>{buf.sort((a,b)=>b.st-a.st);if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.map(x=>x.h).join("")}</div>`;buf=[];};
+  for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push({h:card(e),st:e.p.starter?1:0});}
   flush();
   $("presets").innerHTML=h||`<p class="hint">Nothing matches those filters.</p>`;
   $("presetCnt").textContent=`${list.length} of ${PRESETS.length} · ${PRESETS.filter(p=>p.starter).length} starter`;
