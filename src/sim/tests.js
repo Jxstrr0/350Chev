@@ -130,7 +130,7 @@
     const brgLimit = Math.round(O.brg.limitMPa * ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? 0.80 : 1) * (dsl ? 1.4 : 1) * (tsCaseB ? 1.6 : 1));   // a crankcase two-stroke runs needle rollers   // diesel shells: thicker steel back, harder overlay
     T("bearing_load", "Bearing specific load", bearMPa.toFixed(0) + " / " + brgLimit + " MPa",
       bearMPa / brgLimit,
-      "Peak rod load " + (Fcomp / 1000).toFixed(0) + " kN over a " + djPin.toFixed(0) + " × " + wPin.toFixed(0) + " mm projected area is " + bearMPa.toFixed(0) + " MPa; the overlay is rated " + brgLimit + ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? " (derated 20% — " + O.fu.name + " corrodes a bimetal overlay)" : "") + " MPa.",
+      "Peak rod load " + (Fcomp / 1000).toFixed(0) + " kN over a " + djPin.toFixed(0) + " × " + wPin.toFixed(0) + (O.brg.areaK && O.brg.areaK !== 1 ? " mm base journal, +" + Math.round((O.brg.areaK - 1) * 100) + "% oversize = " + Aproj.toFixed(0) + " mm² projected area," : " mm projected area") + " is " + bearMPa.toFixed(0) + " MPa; the overlay is rated " + brgLimit + ((O.fu.corrosive > 0.5 && !O.brg.methanolOK) ? " (derated 20% — " + O.fu.name + " corrodes a bimetal overlay)" : "") + " MPa.",
       "Wider or larger-diameter journals, or a trimetal/coated bearing with more load capacity.");
 
     const filmMin = +(0.55 + 0.45 * (O.brg.galling == null ? 1 : O.brg.galling)).toFixed(2);
