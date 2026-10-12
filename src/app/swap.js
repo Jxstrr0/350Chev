@@ -25,7 +25,7 @@ function swapDragOv(v){const r=swapLive();return r?Object.assign(v,SIM.swapDragV
 function swapSaltBody(){const r=swapLive();return r?SIM.swapLsrBody(r):null;}
 function swapSaltOv(v){const r=swapLive();if(r){v.bodyObj=SIM.swapLsrBody(r);v.dlCap=r.dlCap;}return v;}
 /* the road lap: a driveline over its rating goes on the first full-throttle exit in a low gear */
-function swapRoadBreak(lap,T,opt){if(!opt||!(opt.dl>1))return null;const tr=lap.trace;let i0=-1;
+function swapRoadBreak(lap,T,opt){if(!opt||!(opt.dl>1||opt.dtBrk))return null;const tr=lap.trace;let i0=-1;
   for(let i=1;i<lap.N;i++)if(tr.thr[i]>=0.98&&tr.g[i]<=3&&tr.t[i]>1){i0=i;break;}
   if(i0<0)i0=Math.min(lap.N-1,Math.floor(lap.N*0.08));const s=i0*lap.ds,c=(T.corners||[]).filter(q=>q.s1<=s+5).pop();
   return{t:tr.t[i0],s:Math.round(s),corner:c&&c.name?c.name:"the first corner"};}

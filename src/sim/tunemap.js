@@ -120,7 +120,7 @@
   return {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
     mapFromSliders: mapFromSliders, mapGrid: mapGrid, mapCell: mapCell, mapAutoTune: mapAutoTune, mapRespace: mapRespace, mapAxis: mapAxis, mapOk: mapOk, mapLook: mapLook, MAP_LOADS: MAP_LOADS,
-    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO,
+    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO, DRIVETRAIN: DRIVETRAIN, drivetrain: drivetrain, dtCapOf: dtCapOf, dtPart: dtPart,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
     isGas: isGas, fuelOf: fuelOf, flexBlend: flexBlend, flexWinterPct: flexWinterPct, propaneBar: propaneBar,

@@ -112,10 +112,12 @@
     let fd = ((sw ? Math.max(pkR, redline * 1.05) : pkR) * 2 * Math.PI / 60) * rw / (vPow * top);
     fd = clamp(fd, 0.9, 6.5);
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.7, 1.4), 0.7, 8);
-    return { ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
+    const RC = { ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
       muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
       cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift, engKg: ekg, vPow: vPow,
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
+    if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
+    return RC;
   }
 
   /* engine model shared by the straight-line run and the lap: torque at rpm with the boost that has actually been built */
@@ -158,6 +160,7 @@
         return clamp(b + (tgt - b) * (1 - Math.exp(-dt / Math.max(0.03, tau))), 0, bT);
       }
     };
+    if (car.dtCap > 0) { const t0 = E.tq, s0 = E.steadyTq; E.tq = (r, b) => Math.min(t0(r, b), car.dtCap); E.steadyTq = r => Math.min(s0(r), car.dtCap); }   // a drivetrain tier: the clutch slips past its rating
     return E;
   }
   const rpmOf = (car, v, g) => v / car.rw * car.gears[g] * car.fd * 60 / (2 * Math.PI);
