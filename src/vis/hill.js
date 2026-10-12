@@ -253,7 +253,8 @@ function hillUpdate(o, dt){
   var k=T.k[gi]||0, U=car.userData, stT=Math.atan(2.6*k)*1.15*(o.off?0.3:1);
   HILL.steer+=(stT-HILL.steer)*Math.min(1,dt*10); for(var i=0;i<U.carriers.length;i++){ var Cw=U.carriers[i]; if(!Cw.userData.rear) Cw.rotation.y=HILL.steer; }
   stripCarAnim(car, {v:v, acc:(+o.thr||0)*3-(+o.brk||0)*8, brake:(+o.brk||0)>0.05, night:false, lift:0}, dt, true);
-  var rollT=clamp(-k*v*v/9.81*0.035,-0.08,0.08); HILL.roll+=(rollT-HILL.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=HILL.roll;
+  var su=o.su||null, rk=su?su.rk:1, rollT=clamp(-k*v*v/9.81*0.035*rk,-0.08*rk,0.08*rk); HILL.roll+=(rollT-HILL.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=HILL.roll;
+  stripSetupLean(car, su, k*v*v/9.81, ((+o.thr||0)*0.3-(+o.brk||0)*0.8), HILL.sx||(HILL.sx={dv:0,lf:0,lr:0}), dt);
   /* dust: off in the gravel, a moment, the verge at the limit */
   if(W.fx){ var dust=o.off?0.9:o.ev==="moment"?0.6:(+o.lat||0)>0.97&&v>15?0.15:0;
     if(dust>0 && Math.random()<dust*dt*40*(GFX==="lite"?0.5:1)){ hillPt(W, fi-1.4, (+o.d||0)+(Math.random()-0.5)*1.8, 0.3, _hA); W.fx.emit(_hA.x,_hA.y,_hA.z,(Math.random()-0.5)*1.2,0.6,(Math.random()-0.5)*1.2,2.2,0.8,4.2,0.72,0.66,0.56,0.32,{drag:0.5,buoy:0.1}); }
