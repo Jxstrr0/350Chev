@@ -89,7 +89,7 @@
     const Nf0 = m * g * (1 - B.rear) - (+v.ballast || 0) * g * 0.4;   // ballast rides over the rear axle
     const rearStatic = m * g - Nf0;
     const peakW = Math.max(1, (res.peakHp || 100) * 745.7), coolKw = (res.thermals && res.thermals.coolantLoadKw) || 0.37 * (res.peakHp || 100);
-    const capKJ = 0.45 * engKg + 50 + (ice ? 420 : 0), kRad = ice ? 0.12 : B.kRad;
+    const capKJ = 0.45 * engKg + 50 + (ice ? 420 : 0), kRad = ice ? 0.12 : B.kRad * (0.75 + 0.25 * ((res.thermals && res.thermals.coolCap) || 1));   // the body radiator is the stock pack; the engine's own cooling choice scales it
     const hasEgt = Array.isArray(res.egtCurve) && res.egtCurve.length === N;
     const isTurbo = (res.aspKind || "na") === "turbo", egtLimit = res.egtLimitC || (res.diesel ? 900 : 0);
     const worst = (res.tests || []).reduce((a, t) => Math.max(a, +t.util || 0), 0);
