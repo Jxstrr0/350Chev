@@ -1302,6 +1302,8 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 /* the dyno's own Run is the rail's Run here: Test keeps #runTest in the DOM (the rail clicks it) but shows one button */
 #app:not(.td) #tab-test #runTest{display:none}
 #app:not(.td) #tab-test #pinBase{flex:1 1 auto}
+/* Events has its own Run dock (it starts the event, with its launch control): the rail's Run steps aside there, kept in the DOM */
+#app:has(#tab-events.on) #rlRun{display:none}
 </style>
 
 <div id="app">
