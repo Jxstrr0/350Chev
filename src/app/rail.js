@@ -56,17 +56,20 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   const V=L?rlVerdict(L):{k:"est",t:"NOT RUN",s:prev?"Changed since the last run — figures are the live estimate, deltas against that run.":"Live estimate. Run it to lock a result."};
   const chip=$("rlChip");chip.className="rlchip "+V.k;chip.textContent=testing?"RUNNING":rlChipTxt(V.t);
   $("rlTag").textContent=L?`${rlName(L.env.testType)} · measured`:"live estimate";
-  const run=$("rlRun");run.disabled=testing;const cost=testCost();
-  run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(t)}${cost?" · "+fmt$(cost):""}</span>`;
-  run.title=ev?`Opens Events and runs the ${rlName(t)}`:`Same run as Test: ${rlName(t)}`;
-  $("rlDyno").hidden=!ev||testing;
+  /* off the Events tab the rail's Run is always the dyno pull, whatever event was picked last (the event runs from its own dock) */
+  const dy=ev&&curTab!=="events",rt=dy?railDynoT():t;let cost;if(dy){S.env.testType=rt;try{cost=testCost();}finally{S.env.testType=t;}}else cost=testCost();
+  const run=$("rlRun");run.disabled=testing;
+  run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(rt)}${cost?" · "+fmt$(cost):""}</span>`;
+  run.title=`Same run as Test: ${rlName(rt)}`;
+  $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
   $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
 }
 /* Run: the same run Test arms. An event type opens Events first (its launch control lives there). */
-function railRun(){if(testing)return;const t=S.env.testType;if(trackEvt(t)&&curTab!=="events")showTab("events");$("runTest").click();railSched();}
-function railDyno(){if(testing)return;pickTest(DYNO_T.includes(S.testPick)?S.testPick:"pull");$("runTest").click();railSched();}
+function railDynoT(){return DYNO_T.includes(S.testPick)?S.testPick:"pull";}
+function railRun(){if(testing)return;const t=S.env.testType;if(trackEvt(t)&&curTab!=="events"){railDyno();return;}$("runTest").click();railSched();}
+function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click();railSched();}
 (function railInit(){const app=$("app");if(!app||$("rail"))return;
   const el=document.createElement("aside");el.id="rail";el.setAttribute("aria-label","Results");
   el.innerHTML=`<div class="rlhead" id="rlHead"><button class="rlgrab" id="rlGrab" aria-expanded="false" aria-controls="rlBody" aria-label="Show results"><i></i></button>
