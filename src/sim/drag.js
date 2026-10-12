@@ -3,6 +3,18 @@
      ===================================================================== */
   /* ---- Drag strip: real-time vehicle pass ---- */
   // heat: how much extra grip a proper burnout is worth on that compound (fraction of μ)
+  /* drivetrain: the clutch, gearbox and axle as one rating, in engine-side N·m (1 lb-ft = 1.356 N·m). Past the rating the clutch slips
+     and the wheels see no more than that; far past it (1.3x and building) something lets go: an axle, the box or the clutch. Stock is sized
+     above every engine in the game, so it never limits and nothing changes until you fit a lighter box. */
+  const DRIVETRAIN = {
+    stock: { n: "Stock", nm: 12000, cost: 0, d: "matched to the engine · never the weak link" },
+    hd: { n: "HD", nm: 1100, cost: 2800, d: "heavy clutch, built box, 9-inch · ~810 lb-ft" },
+    race: { n: "Race", nm: 2500, cost: 9500, d: "multi-disc clutch, dog box, 9-inch / 14-bolt · ~1,840 lb-ft" },
+    pro: { n: "Pro", nm: 4300, cost: 24000, d: "triple-disc, straight-cut dog box, spooled 14-bolt · 3,000+ lb-ft" } };
+  const drivetrain = id => DRIVETRAIN[id] || DRIVETRAIN.stock;
+  const dtCapOf = id => { const D = drivetrain(id); return D === DRIVETRAIN.stock ? 0 : D.nm; };   // 0 = no limit (the default)
+  const dtPart = o => o >= 1.9 ? "Snapped an axle" : o >= 1.6 ? "Stripped the gearbox" : "Exploded the clutch";   // by how far over it was
+  const dtStress = (st, o, dt) => { if (o <= 1.3) return false; st.dtO = Math.max(st.dtO || 0, o); st.dtS = (st.dtS || 0) + (o - 1.3) * dt; return st.dtS > 0.12; };
   const TYRES = { street: { mu: 1.18, n: "Street radial", heat: 0.02 }, radial: { mu: 1.7, n: "Drag radial", heat: 0.08 }, slick: { mu: 2.4, n: "Slick", heat: 0.08 } };
   TYRES.street.psi = 32; TYRES.radial.psi = 16; TYRES.slick.psi = 8;   // where each tyre is set up to run (psi); veh.tyrePsi moves off it
   const AERO = {
@@ -300,6 +312,8 @@
         : bite * muE * v.mass * g * v.rearBias / Math.max(0.3, 1 - muE * v.cgH / v.wheelbase);
       // a swap's driveline (veh.dlCap, engine-side N·m): past its rating at full load it lets go — the engine is fine, the pass is over
       if (v.dlCap > 0 && !v.noFail && !st.failKind && !inShift && Teng > v.dlCap) { st.dlOver = (st.dlOver || 0) + dt; if (st.dlOver > 0.05) { st.failKind = "driveline"; st.failAt = st.t; } }
+      // a drivetrain tier (veh.dtCap, engine-side N·m): the clutch slips past its rating, and a big overload breaks a part (deterministic: stress builds with the overload)
+      if (v.dtCap > 0 && !inShift) { if (Ttrans > v.dtCap) Ttrans = v.dtCap; if (!v.noFail && !st.failKind && dtStress(st, Teng / v.dtCap, dt)) { st.failKind = "driveline"; st.failAt = st.t; st.dtMsg = dtPart(st.dtO); } }
       let Fdemand = Ttrans * ratio * eta / rw, F;
       st.spin = false;
       if (Fdemand > Fmax) { st.spin = true; st.spinTime += dt; F = Fmax * 0.85; st.wSpin += (Ttrans - F * rw / (ratio * eta)) / (I * 2.2) * dt * 60 / (2 * Math.PI); }
@@ -423,7 +437,8 @@
       if (q && (st.trapGear || st.gear) < v.gears && !late.length) reasons.push(`Crossed the line in ${st.trapGear || st.gear}${(st.trapGear||st.gear) === 1 ? "st" : (st.trapGear||st.gear) === 2 ? "nd" : (st.trapGear||st.gear) === 3 ? "rd" : "th"} of ${v.gears} — top gear never used; a shorter final drive would work the engine harder.`);
       if (q && st.trapRpm && st.trapRpm < res.peakHpRpm * 0.85 && st.trapGear === v.gears) reasons.push(`Ran out of gear — only ${Math.round(st.trapRpm).toLocaleString()} rpm at the stripe. Lower (numerically higher) final drive.`);
       if (!q && !st.broke) reasons.push("Did not reach the 1/4-mile mark.");
-      if (st.broke === "driveline") reasons.unshift(`The driveline let go at ${Math.round(st.x)} m — it is rated for ${Math.round(v.dlCap)} N·m and the engine put more than that through it. The engine is fine. A stronger gearbox and axle (Build → Swap), or less torque.`);
+      if (st.broke === "driveline" && st.dtMsg) reasons.unshift(`${st.dtMsg} at ${Math.round(st.x)} m — the ${drivetrain(v.dtId).n} drivetrain is rated for ${Math.round(v.dtCap)} N·m and the engine put ${Math.round(st.dtO * v.dtCap)} through it. The engine is fine. Fit a stronger drivetrain, or use less torque off the line.`);
+      else if (st.broke === "driveline") reasons.unshift(`The driveline let go at ${Math.round(st.x)} m — it is rated for ${Math.round(v.dlCap)} N·m and the engine put more than that through it. The engine is fine. A stronger gearbox and axle (Build → Swap), or less torque.`);
       if (q && q.mph > 150 && !v.chute) reasons.push(`Trapped ${Math.round(q.mph)} mph with no parachute. Anything over 150 gets black-flagged at tech, and it took ${Math.round(st.shutFt)} ft of brakes alone to pull up.`);
       else if (st.shutFt > 1800) reasons.push(`Used ${Math.round(st.shutFt)} ft of shutdown — more road than most strips give you.`);
       if (q && v.body === "street" && q.mph > 160) reasons.push("A full street body is its own parachute at this speed — a slicker shell is worth several mph of trap.");
@@ -443,7 +458,7 @@
         launch: { ctl: lc, brake: tbk, holdRpm: twoStep ? holdRpm : 0, retard: retard, held: +st.armedT.toFixed(2), boost: +st.launchBoost.toFixed(2), boostTarget: bT, rpm: st.launchRpmAct, tyreTemp: +st.tyreTemp.toFixed(2), burnT: +st.burnT.toFixed(1), grip: +(st.gripGain * 100).toFixed(1), egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), boostT: st.boost0T != null ? +st.boost0T.toFixed(2) : null },
         heat: { egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), turbDose: +st.turbDose.toFixed(2), manDose: +st.manDose.toFixed(2), risk: st.risk, lineHeat: +st.lineHeat.toFixed(2), abuse: +clamp(st.lineHeat * 0.5 + st.alsDose, 0, 2.5).toFixed(2), limitC: egtLimit || null, manifold: MH ? MH.n : null },
         n2o: NZ ? { kit: NZ.kind, shotHp: NZ.shotHp, act: nzAct, psi: Math.round(st.n2oS.psi), psiK: +nzPsiK.toFixed(3), on: st.n2oS.on, onT: st.n2oS.on ? +st.n2oS.onT.toFixed(2) : null, onMph: Math.round(st.n2oS.onMph), onGear: st.n2oS.onGear, onFt: Math.round(st.n2oS.onX * 3.28084), purged: +st.n2oS.purged.toFixed(1), lineAtOn: +st.n2oS.lineAtOn.toFixed(2), cut: st.n2oS.cut, risk: st.risk ? { lean: st.risk.lean, backfire: st.risk.backfire } : null } : null,
-        broke: st.broke, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2),
+        broke: st.broke, dtMsg: st.dtMsg || undefined, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2),
         als: ALS ? { type: res.als, fired: +st.alsT.toFixed(2), dose: +st.alsDose.toFixed(2), bangs: st.alsBangs, shiftMin: alsShiftMin() } : null };
     }
     // lowest boost in the 0.7 s after each shift, averaged: what the anti-lag kept in the manifold
