@@ -73,6 +73,7 @@ app/swap.js
 app/career.js
 app/crew.js
 app/trophy.js
+app/rail.js
 app/help.js
 app/boot.js
 html/end.html
