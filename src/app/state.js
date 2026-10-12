@@ -164,7 +164,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.62.1.0";
+const VERSION="1.62.2.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -194,7 +194,7 @@ function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null
 function ddSaveAs(o){const B=S.bay,w=B.own;Object.assign(o,{cfg:w.cfg,last:w.last?slimRes(w.last):null,base:w.base?slimRes(w.base):null,env:Object.assign({},S.env,{testType:w.testType||"pull"}),profileId:w.profileId,name:w.name,bay:{job:B.job,practice:!!B.practice,cur:S.cfg}});}
 function ddLoad(o){const b=o.bay;S.bay=null;if(!b||!b.job||!b.cur||typeof b.cur!=="object"||!b.job.cfg)return;
   S.bay={job:b.job,practice:!!b.practice,own:{cfg:S.cfg,last:S.last,base:S.base,testType:S.env.testType,profileId:S.profileId,name:S.name}};S.cfg=Object.assign({},SIM.DEFAULT_CFG,b.cur);S.last=null;S.base=null;S.env.testType="pull";S.name=ddLabel(b.job);}
-function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suH=null;Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
+function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suC=null;Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
   try{fuelMigrate();}catch(e){}
   if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
     S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
