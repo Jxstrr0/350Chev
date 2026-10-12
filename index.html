@@ -6122,6 +6122,18 @@ const ENGINE_SIM = (function () {
      ===================================================================== */
   /* ---- Drag strip: real-time vehicle pass ---- */
   // heat: how much extra grip a proper burnout is worth on that compound (fraction of μ)
+  /* drivetrain: the clutch, gearbox and axle as one rating, in engine-side N·m (1 lb-ft = 1.356 N·m). Past the rating the clutch slips
+     and the wheels see no more than that; far past it (1.3x and building) something lets go: an axle, the box or the clutch. Stock is sized
+     above every engine in the game, so it never limits and nothing changes until you fit a lighter box. */
+  const DRIVETRAIN = {
+    stock: { n: "Stock", nm: 12000, cost: 0, d: "matched to the engine · never the weak link" },
+    hd: { n: "HD", nm: 1100, cost: 2800, d: "heavy clutch, built box, 9-inch · ~810 lb-ft" },
+    race: { n: "Race", nm: 2500, cost: 9500, d: "multi-disc clutch, dog box, 9-inch / 14-bolt · ~1,840 lb-ft" },
+    pro: { n: "Pro", nm: 4300, cost: 24000, d: "triple-disc, straight-cut dog box, spooled 14-bolt · 3,000+ lb-ft" } };
+  const drivetrain = id => DRIVETRAIN[id] || DRIVETRAIN.stock;
+  const dtCapOf = id => { const D = drivetrain(id); return D === DRIVETRAIN.stock ? 0 : D.nm; };   // 0 = no limit (the default)
+  const dtPart = o => o >= 1.9 ? "Snapped an axle" : o >= 1.6 ? "Stripped the gearbox" : "Exploded the clutch";   // by how far over it was
+  const dtStress = (st, o, dt) => { if (o <= 1.3) return false; st.dtO = Math.max(st.dtO || 0, o); st.dtS = (st.dtS || 0) + (o - 1.3) * dt; return st.dtS > 0.12; };
   const TYRES = { street: { mu: 1.18, n: "Street radial", heat: 0.02 }, radial: { mu: 1.7, n: "Drag radial", heat: 0.08 }, slick: { mu: 2.4, n: "Slick", heat: 0.08 } };
   TYRES.street.psi = 32; TYRES.radial.psi = 16; TYRES.slick.psi = 8;   // where each tyre is set up to run (psi); veh.tyrePsi moves off it
   const AERO = {
@@ -6419,6 +6431,8 @@ const ENGINE_SIM = (function () {
         : bite * muE * v.mass * g * v.rearBias / Math.max(0.3, 1 - muE * v.cgH / v.wheelbase);
       // a swap's driveline (veh.dlCap, engine-side N·m): past its rating at full load it lets go — the engine is fine, the pass is over
       if (v.dlCap > 0 && !v.noFail && !st.failKind && !inShift && Teng > v.dlCap) { st.dlOver = (st.dlOver || 0) + dt; if (st.dlOver > 0.05) { st.failKind = "driveline"; st.failAt = st.t; } }
+      // a drivetrain tier (veh.dtCap, engine-side N·m): the clutch slips past its rating, and a big overload breaks a part (deterministic: stress builds with the overload)
+      if (v.dtCap > 0 && !inShift) { if (Ttrans > v.dtCap) Ttrans = v.dtCap; if (!v.noFail && !st.failKind && dtStress(st, Teng / v.dtCap, dt)) { st.failKind = "driveline"; st.failAt = st.t; st.dtMsg = dtPart(st.dtO); } }
       let Fdemand = Ttrans * ratio * eta / rw, F;
       st.spin = false;
       if (Fdemand > Fmax) { st.spin = true; st.spinTime += dt; F = Fmax * 0.85; st.wSpin += (Ttrans - F * rw / (ratio * eta)) / (I * 2.2) * dt * 60 / (2 * Math.PI); }
@@ -6542,7 +6556,8 @@ const ENGINE_SIM = (function () {
       if (q && (st.trapGear || st.gear) < v.gears && !late.length) reasons.push(`Crossed the line in ${st.trapGear || st.gear}${(st.trapGear||st.gear) === 1 ? "st" : (st.trapGear||st.gear) === 2 ? "nd" : (st.trapGear||st.gear) === 3 ? "rd" : "th"} of ${v.gears} — top gear never used; a shorter final drive would work the engine harder.`);
       if (q && st.trapRpm && st.trapRpm < res.peakHpRpm * 0.85 && st.trapGear === v.gears) reasons.push(`Ran out of gear — only ${Math.round(st.trapRpm).toLocaleString()} rpm at the stripe. Lower (numerically higher) final drive.`);
       if (!q && !st.broke) reasons.push("Did not reach the 1/4-mile mark.");
-      if (st.broke === "driveline") reasons.unshift(`The driveline let go at ${Math.round(st.x)} m — it is rated for ${Math.round(v.dlCap)} N·m and the engine put more than that through it. The engine is fine. A stronger gearbox and axle (Build → Swap), or less torque.`);
+      if (st.broke === "driveline" && st.dtMsg) reasons.unshift(`${st.dtMsg} at ${Math.round(st.x)} m — the ${drivetrain(v.dtId).n} drivetrain is rated for ${Math.round(v.dtCap)} N·m and the engine put ${Math.round(st.dtO * v.dtCap)} through it. The engine is fine. Fit a stronger drivetrain, or use less torque off the line.`);
+      else if (st.broke === "driveline") reasons.unshift(`The driveline let go at ${Math.round(st.x)} m — it is rated for ${Math.round(v.dlCap)} N·m and the engine put more than that through it. The engine is fine. A stronger gearbox and axle (Build → Swap), or less torque.`);
       if (q && q.mph > 150 && !v.chute) reasons.push(`Trapped ${Math.round(q.mph)} mph with no parachute. Anything over 150 gets black-flagged at tech, and it took ${Math.round(st.shutFt)} ft of brakes alone to pull up.`);
       else if (st.shutFt > 1800) reasons.push(`Used ${Math.round(st.shutFt)} ft of shutdown — more road than most strips give you.`);
       if (q && v.body === "street" && q.mph > 160) reasons.push("A full street body is its own parachute at this speed — a slicker shell is worth several mph of trap.");
@@ -6562,7 +6577,7 @@ const ENGINE_SIM = (function () {
         launch: { ctl: lc, brake: tbk, holdRpm: twoStep ? holdRpm : 0, retard: retard, held: +st.armedT.toFixed(2), boost: +st.launchBoost.toFixed(2), boostTarget: bT, rpm: st.launchRpmAct, tyreTemp: +st.tyreTemp.toFixed(2), burnT: +st.burnT.toFixed(1), grip: +(st.gripGain * 100).toFixed(1), egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), boostT: st.boost0T != null ? +st.boost0T.toFixed(2) : null },
         heat: { egtPeak: Math.round(st.egtPeak), egtLine: Math.round(st.egtLine), turbDose: +st.turbDose.toFixed(2), manDose: +st.manDose.toFixed(2), risk: st.risk, lineHeat: +st.lineHeat.toFixed(2), abuse: +clamp(st.lineHeat * 0.5 + st.alsDose, 0, 2.5).toFixed(2), limitC: egtLimit || null, manifold: MH ? MH.n : null },
         n2o: NZ ? { kit: NZ.kind, shotHp: NZ.shotHp, act: nzAct, psi: Math.round(st.n2oS.psi), psiK: +nzPsiK.toFixed(3), on: st.n2oS.on, onT: st.n2oS.on ? +st.n2oS.onT.toFixed(2) : null, onMph: Math.round(st.n2oS.onMph), onGear: st.n2oS.onGear, onFt: Math.round(st.n2oS.onX * 3.28084), purged: +st.n2oS.purged.toFixed(1), lineAtOn: +st.n2oS.lineAtOn.toFixed(2), cut: st.n2oS.cut, risk: st.risk ? { lean: st.risk.lean, backfire: st.risk.backfire } : null } : null,
-        broke: st.broke, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2),
+        broke: st.broke, dtMsg: st.dtMsg || undefined, liftMax: +st.liftMax.toFixed(2), wheelieT: +st.wheelieT.toFixed(2),
         als: ALS ? { type: res.als, fired: +st.alsT.toFixed(2), dose: +st.alsDose.toFixed(2), bangs: st.alsBangs, shiftMin: alsShiftMin() } : null };
     }
     // lowest boost in the 0.7 s after each shift, averaged: what the anti-lag kept in the manifold
@@ -6902,6 +6917,7 @@ const ENGINE_SIM = (function () {
       let Te = engTq(rpmE, thr), Tw;
       if (st.coupled) Tw = Te * G * etaL;
       else { const SR = clamp(wRpm / Math.max(1, rpmE), 0, 1); const TR = conv ? 1 + 1.1 * clamp(1 - SR / 0.85, 0, 1) : 1; Tw = Math.max(0, Te) * TR * G * (conv ? 0.86 : 0.93); }
+      if (v.dtCap > 0 && Tw > 0) { const Tc = v.dtCap * G * etaL; if (Tw > Tc) { if (!v.noFail && dtStress(st, Tw / Tc, dt)) st.dtMsg = dtPart(st.dtO); Tw = Tc; } }   // a drivetrain tier: the clutch slips past its rating; a big overload breaks a part
       if (st.killed) { Tw = 0; st.coupled = false; rpmE = st.rpm * Math.max(0, 1 - dt * 2.5); }   // killed: the driver is in neutral and on the brake, the engine winds down on its own
       st.rpm = rpmE;
       // sled: the box rides toward the pan as the sled travels
@@ -6955,6 +6971,7 @@ const ENGINE_SIM = (function () {
       // something lets go
       if (!v.noFail && !st.broke) {
         if (st.failKind && loadT >= st.failAt) st.broke = st.failKind;
+        else if (st.dtMsg) st.broke = "driveline";
         else if (v.wornAt && loadT >= v.wornAt) st.broke = "worn";   // past its pass budget: something tired gives up
         else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : "piston";
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
@@ -6976,7 +6993,7 @@ const ENGINE_SIM = (function () {
     function result() {
       const ft = Math.round(st.x * 3.28084 * 10) / 10, reasons = [];
       const sw = st.sweet, tn = TY.n.toLowerCase();
-      if (st.broke) reasons.push(st.broke === "runaway" ? `It ran away on its own oil ${Math.round(st.raX * 3.28084)} ft out and nobody pulled the kill switch: ${st.raWin.toFixed(1)} s later it went past ${Math.round(st.rpm).toLocaleString()} rpm and came apart. Disqualified.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C — past what the hot side takes for that long. It let go under the sled.` : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for seconds on end — a diesel crown can't shed that. A piston melted. Less fuel, more air (bigger turbo, intercooler), or shorter bursts.` : st.broke === "worn" ? `Something tired let go ${Math.round(ft)} ft down the track — the build was past its pass budget. Freshen it before the next hook.` : `The engine let go under load ${Math.round(ft)} ft down the track — the dyno sheet already said it was past a limit.`);
+      if (st.broke) reasons.push(st.broke === "runaway" ? `It ran away on its own oil ${Math.round(st.raX * 3.28084)} ft out and nobody pulled the kill switch: ${st.raWin.toFixed(1)} s later it went past ${Math.round(st.rpm).toLocaleString()} rpm and came apart. Disqualified.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C — past what the hot side takes for that long. It let go under the sled.` : st.broke === "piston" ? `Exhaust held ${Math.round(st.egtPeak)} °C for seconds on end — a diesel crown can't shed that. A piston melted. Less fuel, more air (bigger turbo, intercooler), or shorter bursts.` : st.broke === "driveline" ? `${st.dtMsg} ${Math.round(ft)} ft down the track — the ${drivetrain(v.dtId).n} drivetrain is rated for ${Math.round(v.dtCap)} N·m and the sled asked for ${Math.round(st.dtO * v.dtCap)}. The engine is fine. Fit a stronger drivetrain, or feather the pedal.` : st.broke === "worn" ? `Something tired let go ${Math.round(ft)} ft down the track — the build was past its pass budget. Freshen it before the next hook.` : `The engine let go under load ${Math.round(ft)} ft down the track — the dyno sheet already said it was past a limit.`);
       if (st.full) reasons.push("Full pull — the box was still moving at 300 ft.");
       if (st.killed && st.raOn) reasons.push(`Ran away ${Math.round(st.raX * 3.28084)} ft out — killed it ${st.raT.toFixed(1)} s later at ${st.killRpm.toLocaleString()} rpm. Good kill: the engine lives. Scored where it stopped.`);
       else if (st.killed) reasons.push(`Killed it at ${Math.round(st.killX * 3.28084)} ft — scored where it stopped.`);
@@ -6993,7 +7010,7 @@ const ENGINE_SIM = (function () {
       if (st.smokeMax > 0.7) reasons.push("Black smoke all the way — more fuel than air. It looks the part; it is also heat in the pistons.");
       return { distM: +st.x.toFixed(2), distFt: ft, full: st.full, maxMph: +(st.maxV * 2.23694).toFixed(1), peakSlip: +st.peakSlip.toFixed(3), peakEgt: Math.round(st.egtPeak), broke: st.broke, failKind: st.broke ? st.failKind : null,
         trace: st.trace, smokeMax: +st.smokeMax.toFixed(2), time: +st.t.toFixed(1), stopWhy: st.stopWhy, spinT: +st.spinT.toFixed(1), sweetT: +st.sweetT.toFixed(1), hopT: +st.hopT.toFixed(1), frontUpT: +st.frontUpT.toFixed(1), dig: +st.dig.toFixed(2),
-        boxFrac: +st.boxFrac.toFixed(3), endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, veh: v, tyre: TY.n, sledK: sk,
+        boxFrac: +st.boxFrac.toFixed(3), endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, dtMsg: st.dtMsg || undefined, veh: v, tyre: TY.n, sledK: sk,
         runaway: st.raOn ? { ftAt: Math.round(st.raX * 3.28084 * 10) / 10, killed: st.killed, react: st.killed ? +st.raT.toFixed(2) : null, win: +st.raWin.toFixed(2), grenade: st.broke === "runaway" } : null, killed: st.killed, track: v.track || null };
     }
     return { st: st, step: step, result: result, kill: kill, ratio: G, sweet: st.sweet, full: PULL_FULL };
@@ -7411,10 +7428,12 @@ const ENGINE_SIM = (function () {
     let fd = ((sw ? Math.max(pkR, redline * 1.05) : pkR) * 2 * Math.PI / 60) * rw / (vPow * top);
     fd = clamp(fd, 0.9, 6.5);
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.7, 1.4), 0.7, 8);
-    return { ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
+    const RC = { ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
       muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
       cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift, engKg: ekg, vPow: vPow,
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
+    if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
+    return RC;
   }
 
   /* engine model shared by the straight-line run and the lap: torque at rpm with the boost that has actually been built */
@@ -7457,6 +7476,7 @@ const ENGINE_SIM = (function () {
         return clamp(b + (tgt - b) * (1 - Math.exp(-dt / Math.max(0.03, tau))), 0, bT);
       }
     };
+    if (car.dtCap > 0) { const t0 = E.tq, s0 = E.steadyTq; E.tq = (r, b) => Math.min(t0(r, b), car.dtCap); E.steadyTq = r => Math.min(s0(r), car.dtCap); }   // a drivetrain tier: the clutch slips past its rating
     return E;
   }
   const rpmOf = (car, v, g) => v / car.rw * car.gears[g] * car.fd * 60 / (2 * Math.PI);
@@ -9029,7 +9049,7 @@ const ENGINE_SIM = (function () {
   return {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
     mapFromSliders: mapFromSliders, mapGrid: mapGrid, mapCell: mapCell, mapAutoTune: mapAutoTune, mapRespace: mapRespace, mapAxis: mapAxis, mapOk: mapOk, mapLook: mapLook, MAP_LOADS: MAP_LOADS,
-    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO,
+    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO, DRIVETRAIN: DRIVETRAIN, drivetrain: drivetrain, dtCapOf: dtCapOf, dtPart: dtPart,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
     isGas: isGas, fuelOf: fuelOf, flexBlend: flexBlend, flexWinterPct: flexWinterPct, propaneBar: propaneBar,
@@ -26975,7 +26995,7 @@ function renderEnv(){
   if(t==="drag"&&rnCur()){h+=rnPanel();$("envBox").innerHTML=h;pitsSync();return;}
   if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
-    <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>
+    <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>${drvHtml()}
     <div class="lbl"><span>Body &amp; aero</span></div><div class="seg segbody">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div><div class="segbodynote">${(SIM.AERO[e.body]||{}).d||""}</div>${paintHtml()}${shellHtml()}
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
@@ -27008,6 +27028,8 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("b[data-enum]"
   const init=inp.value;let done=false;const finish=ok=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."));if(isFinite(v)&&v!==envStore(k)[k]){b.textContent="";applyEnv(k,v);commitEnv();}}b.textContent=envStore(k)[k]+(b.dataset.unit||"");};
   inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();finish(true);inp.blur();}else if(ev.key==="Escape"){finish(false);inp.blur();}});
   inp.addEventListener("blur",()=>finish(true));b.textContent="";b.appendChild(inp);inp.focus();inp.select();});
+/* the drivetrain tier (clutch, box, axle): one rating, beside the tyres on the strip, the sled and the road. No S.env.drv = Stock, which never limits. */
+function drvHtml(){const cur=SIM.DRIVETRAIN[S.env.drv]?S.env.drv:"stock";return `<div class="lbl"><span>Clutch, box &amp; axle</span></div><div class="seg">${Object.entries(SIM.DRIVETRAIN).map(([k,v])=>`<button data-lp="${k}" data-ek="drv" class="${cur===k?"on":""}">${v.n}<small>${Math.round(v.nm).toLocaleString("en-CA")} N·m${v.cost?" · "+fmt$(v.cost):""}</small></button>`).join("")}</div><div class="segbodynote">${SIM.DRIVETRAIN[cur].d}${cur==="stock"?"":" — past the rating the clutch slips; far past it, something breaks."}</div>`;}
 function carVeh(car){const b=BODY_SETUP[(car&&car.body)||"street"]||BODY_SETUP.street;const v=Object.assign({},b,car||{});v.chute=v.chute==="yes"||v.chute===true;v.body=(car&&car.body)||"street";return v;}
 const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"street",chute:"no",launchRpm:3500,rearBias:0.55,mass:1400},
   outlaw:{gears:3,first:2.1,top:1.0,final:3.25,tyreDia:30,tyre:"radial",chute:"yes",launchRpm:4500,rearBias:0.6,mass:1450},
@@ -27379,7 +27401,7 @@ $("mapBox").addEventListener("wheel",e=>{const td=e.target.closest&&e.target.clo
 function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.abs(d)<0.5)return"";return `<span class="delta ${d>0?"up":"dn"}">${d>0?"+":""}${f(d)}</span>`;}
 /* ---- drag pass driver ---- */
 let DR=null;
-function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass,rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
+function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass,rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(e.drv),dtId:e.drv});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
 function alsOf(cfg){const a=cfg&&cfg.als;return a&&a!=="off"&&OPT.als&&OPT.als[a]&&(OPT.asp[cfg.asp]||{}).kind==="turbo"&&!isCI(cfg.fuel)?a:null;}
@@ -27423,7 +27445,7 @@ function pbPass(r,failed){if(ff||failed||r.et==null||(r.race&&r.race.foul)||(car
 function pbPull(res){const R=recs(),hp=Math.round(res.peakHp),was=career()?Math.round(C().bestHp||0):R.hp?R.hp.v:0,rw=career()?C().bestRel||0:R.rel?R.rel.v:0;
   if(hp>was){R.hp=Object.assign({v:hp},recTag());if(was>0)setTimeout(()=>toast(`New record: ${hp.toLocaleString("en-CA")} hp (was ${was.toLocaleString("en-CA")})`),2700);}
   if(res.rel>rw||(!R.rel&&res.rel>=rw))R.rel=Object.assign({v:res.rel,hp},recTag());}
-function dragBreak(){if(DR&&DR.failKind==="driveline"){if(!DR.dl){DR.dl=true;sfx("fail");buzz([80,40,120]);toast("DRIVELINE LET GO · the engine is fine");}return;}   // a swap car's gearbox or axle: not an engine failure
+function dragBreak(){if(DR&&DR.failKind==="driveline"){if(!DR.dl){DR.dl=true;sfx("fail");buzz([80,40,120]);toast(DR.d&&DR.d.st&&DR.d.st.dtMsg?DR.d.st.dtMsg.toUpperCase()+" · the engine is fine":"DRIVELINE LET GO · the engine is fine");}return;}   // a swap car's gearbox or axle: not an engine failure
   DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 /* ---- compact strip HUD on the 3D view (#stripHud): built when a pass starts, updated in place every frame (only nodes whose
    text changed are touched). It carries what #dragLive carried; while it is up (html.shud) the panel copy and #rpmbox step aside. ---- */
@@ -27552,7 +27574,7 @@ function dragStart(){
   if(dragAuto()){DR.auto=true;DR.drv=SIM.dragDriver(Math.floor(Math.random()*4294967296),res,veh);DR.vt=DR.last;}   // the auto driver: its own seeded hand, on its own fixed clock
   if(env.race==="heads"){
     // the other lane runs the same car and the same launch hardware, with a sensible hold and a tidy burnout
-    const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
+    const opp=SIM.dragPass(res,Object.assign({},veh,{auto:true,mass:veh.mass*(0.97+Math.random()*0.06),holdTime:0.9+Math.random()*0.5,noFail:true,dtCap:0,soakC:0,tyreTemp:veh.transBrake==="line_lock"?0.85:0.36}));const k=0.965+Math.random()*0.075;
     DR.race={trace:oppTrace(opp.trace,Infinity,veh.chute?9:6,(opp.et||30)+40),k,rt:0.03+Math.random()*0.16,et:opp.et!=null?+(opp.et*k).toFixed(3):null,mph:opp.mph,foul:false,rt0:null,tree0:null,green:null,name:["Lane 2","Northwind","Halcyon GT","Coulee","Prairie Fire"][Math.floor(Math.random()*5)]};
     DR.race.look=rivalLook(DR.race.name,"",veh.body,DR.hw);DR.race.fx=oppFx(opp.trace,veh,rnHash(DR.race.name+":"+DR.race.k));}
   n2oStart();
@@ -28184,7 +28206,7 @@ function pullEnvFix(){const e=S.env;if(PO)e.pullCls=PO.k;if(!SIM.PULL_CLASSES[e.
   e.pullHitch=Math.max(12,Math.min(V.hitchMax,isFinite(+e.pullHitch)&&e.pullHitch!=null?+e.pullHitch:V.hitchMax-4));
   const bMax=V.maxMass-V.mass;e.pullBallast=Math.max(0,Math.min(bMax,isFinite(+e.pullBallast)&&e.pullBallast!=null?+e.pullBallast:Math.round(bMax/20)*10));
   return k;}
-function pullVeh(k){const e=S.env;return{cls:k,gear:+e.pullGear,trans:e.pullTrans,tyre:e.pullTyre,hitch:+e.pullHitch,ballast:+e.pullBallast,redline:S.cfg.redline,idle:pullIsDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850)};}
+function pullVeh(k){const e=S.env;return{cls:k,gear:+e.pullGear,trans:e.pullTrans,tyre:e.pullTyre,hitch:+e.pullHitch,ballast:+e.pullBallast,redline:S.cfg.redline,idle:pullIsDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),dtCap:SIM.dtCapOf(e.drv),dtId:e.drv};}
 /* the rest of the class on the night: 5–7 pullers, the same field all week in career, a fresh one every hook in the cell */
 function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed),names=PULL_NAMES[c.veh.kind].slice(),n=5+Math.floor(r()*3),out=[];
   for(let i=0;i<n;i++){const nm=names.splice(Math.floor(r()*names.length),1)[0];const full=r()<F.full;const gs=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());
@@ -28194,7 +28216,7 @@ function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed
 function pullHookedWk(k){return career()&&!PO&&pullFmt()==="night"&&(C().pullWk||{})[k]===C().week;}
 function pullSeed(k){const ix=Object.keys(SIM.PULL_CLASSES).indexOf(k)+1;if(!career())return PULL_SB[ix]||(PULL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().pullSeed)C().pullSeed=Math.floor(Math.random()*1e9);return(C().pullSeed^(C().week*7919)^(ix*104729))>>>0;}
 function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
-function pullBreak(kind){PR.failed=true;PR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
 function pullStart(){
   $("app").classList.add("onstrip");
   const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
@@ -28300,7 +28322,7 @@ function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame
     if(r.poPending){logEvent(`Pull: ${C0.n} — FULL PULL, pull-off against ${r.poN}`,"good");toast(`FULL PULL · PULL-OFF against ${r.poN}`);}
     else if(dq){const bill=Math.max(1500,Math.round((res.cost||5000)*0.4/50)*50);r.bill=bill;C().cash-=bill;C().cert=null;C().rep=Math.max(0,C().rep-3);addWear(3,c.hk);
       logEvent(`Pull: ${C0.n} — ran away and grenaded at ${r.distFt.toFixed(0)} ft, DQ. Rebuild ${fmt$(bill)}`,"bad");toast(`GRENADED · DQ · rebuild ${fmt$(bill)}`);}
-    else if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
+    else if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Pull: ${C0.n} — ${r.broke==="turbo"?"turbo let go":r.broke==="piston"?"melted a piston":"broke"} at ${r.distFt.toFixed(0)} ft`,"bad");if(r.broke!=="driveline")toast(`BROKE UNDER THE SLED · ${r.distFt.toFixed(0)} ft`);}
     else{const purse=Math.round((PULL_PURSE[r.place-1]||0)*(PULL_PAY[C0.tier]||1)/10)*10,rep=(PULL_REP[r.place-1]||0)+(f1.full?1:0)+(kill?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`Pull: ${C0.n} — ${dist}${c.po!=null?" (pull-off "+(c.conceded?"conceded":c.po.toFixed(1)+" ft")+")":""}${kill?", good kill":""}, ${pl}${r.ser?", series +"+r.ser.pts+" pts":""}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${dist} · ${ordN(r.place)}${kill?" · good kill":""}${purse?" · "+fmt$(purse):""}`);}
     if(!r.poPending)spEvent("pull",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
@@ -28324,6 +28346,7 @@ function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C
   h+=`<p class="hint"><b style="color:${lg.ok?"var(--good)":"var(--crit)"}">${lg.ok?"✓ Legal":"✗ Not legal"}</b> · ${lg.why}. ${C0.d[0].toUpperCase()+C0.d.slice(1)}. ${V.kind==="tractor"?"Two-wheel-drive tractor":"Four-wheel-drive pickup"}, ${V.mass.toLocaleString("en-CA")} kg empty, ${V.maxMass.toLocaleString("en-CA")} kg class limit. Sled: ${C0.sled.box.toLocaleString("en-CA")} kg box that rides up onto the pan.${lk?` <b>Opens at ${lk} rep.</b>`:""}${pullHookedWk(k)?` <b>Hooked this week — next pull night is week ${C().week+1}.</b>`:""}</p>`;
   h+=`<div class="lbl"><span>Pulling gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-pk="pullGear" data-pv="${i}" class="${+e.pullGear===i?"on":""}">${n}<small>${mph} mph</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Driveline</span></div><div class="seg">${[["conv","Converter","multiplies torque when it bogs"],["clutch","Clutch","direct · less heat, no help low"]].map(([id,n,d])=>`<button data-pk="pullTrans" data-pv="${id}" class="${e.pullTrans===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=drvHtml();
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.PULL_TYRES[id];return `<button data-pk="pullTyre" data-pv="${id}" class="${e.pullTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
   h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold to pull, let go to ease off"],["auto","Auto","a steady foot · watch the hook"]].map(([id,n,d])=>`<button data-pk="pullDrive" data-pv="${id}" class="${e.pullDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   if(e.pullDrive==="auto")h+=`<p class="hint">The auto driver holds the slip low in the green band and keeps some pedal in to the end — steady, a little cautious; a good foot can beat it. If it runs away it goes for the kill switch like anyone would, in under a second most hooks. Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during the hook to take over.</p>`;
@@ -28562,7 +28585,7 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal});}   // a chosen swap car (app/swap.js) stands in for the chassis
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(e.drv)});}   // a chosen swap car (app/swap.js) stands in for the chassis
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadRecs(){const R=recs();if(!R.road||typeof R.road!=="object")R.road={};return R.road;}
 /* market: a buyer's road figures for an engine, in the buyer's car (cached like the site runs) */
@@ -28577,6 +28600,7 @@ function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry
 function roadEnvHtml(sl){const e=roadEnvFix(),o=roadOpt(),C0=o.car||SIM.CHASSIS[o.ch],q=quick&&quick.rpms?quick:null;
   let h=o.car?swapEnvNote():swapEnvNote()+`<div class="lbl"><span>Chassis</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.ROAD_TYRES).map(([id,t])=>`<button data-rk="roadTyre" data-rv="${id}" class="${o.tyre===id?"on":""}">${t.n}<small>μ ${t.mu}${C0.tyre===id?" · stock":""}</small></button>`).join("")}</div>`;
+  h+=drvHtml();
   h+=`<div class="lbl"><span>Circuit</span></div><div class="seg">${Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return `<button data-rk="roadTrk" data-rv="${id}" class="${e.roadTrk===id?"on":""}">${t.n}<small>${(T.len/1000).toFixed(2)} km · ${t.d.split(" · ")[1]}</small></button>`;}).join("")}</div>`;
   h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
   if(q){const car=SIM.roadCar(SIM.roadPrep(S.cfg,q),o),fr=Math.round(car.front*100),bal=car.bal==="under"?`nose-heavy (${fr}% front, ${C0.front*100|0}% as designed) — it will push in the slow corners`:car.bal==="over"?`light in the nose (${fr}% front) — the tail steps out on the way in`:`balanced (${fr}% front)`;
@@ -28619,6 +28643,7 @@ function roadStart(){
   const res=SIM.simulate(snap.cfg,env);
   if(res.fails.length){testing=false;toast(`It wouldn't last a lap — ${String(res.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
+  if(opt.dtCap>0&&res.peakTq/opt.dtCap>1.3){opt.dtBrk=true;opt.dtMsg=SIM.dtPart(res.peakTq/opt.dtCap);}   // a big overload breaks a part on the first hard exit
   const prep=SIM.roadPrep(snap.cfg,res),run0=SIM.roadRun(prep,opt),lap=SIM.lapSim(prep,opt,trk),T=SIM.roadTrack(trk);
   const best=roadRecs()[roadKey(opt.rk||opt.ch,trk)]||null,secCut=[0,lap.sectors[0],lap.sectors[0]+lap.sectors[1],lap.time];
   RT={brk:swapRoadBreak(lap,T,opt),res,env,opt,trk,snap,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:snap.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
@@ -28633,7 +28658,7 @@ function roadStart(){
     roadHud(f);run.on=true;run.rpm=f.rpm;run.load=Math.max(0.05,f.thr);$("rpmLbl").textContent=Math.round(f.rpm/10)*10;
     $("testProg").style.width=Math.min(100,100*Math.max(0,RT.t)/L.time)+"%";
     if(done&&!RT.crossed){RT.crossed=true;buzz([20,30,20]);}
-    if(RT.brk&&!RT.brkHit&&!pre&&RT.t>=RT.brk.t){RT.brkHit=true;RT.skip=true;sfx("fail");buzz([80,40,120]);toast("DRIVELINE LET GO · the engine is fine");}   // a swap's driveline over its rating
+    if(RT.brk&&!RT.brkHit&&!pre&&RT.t>=RT.brk.t){RT.brkHit=true;RT.skip=true;sfx("fail");buzz([80,40,120]);toast(RT.opt.dtMsg?RT.opt.dtMsg.toUpperCase()+" · the engine is fine":"DRIVELINE LET GO · the engine is fine");}   // a swap's driveline over its rating
     if(RT.skip||RT.t>=L.time+1.6*RT.speed)roadFinish();else requestAnimationFrame(step);};
   requestAnimationFrame(step);
 }
@@ -28652,8 +28677,8 @@ function roadFinish(){
     zero60:a.zero60,zero100:a.zero100,zero200:a.zero200,quarter:a.quarter,roll:a.roll80120,brake100:a.brake100,top:a.top,spinT:a.spinT,
     lapT:+lap.time.toFixed(3),sectors:lap.sectors.map(x=>+x.toFixed(3)),vmax:+lap.vmax.toFixed(1),vmin:+lap.vmin.toFixed(1),apex:lap.apex,shifts:lap.shifts,fullPct:lap.fullPct,ayPk:lap.ayPk,brakePk:lap.brakePk,tracT:lap.tractionT,trace:dec};
   /* records: best lap per chassis × circuit, best 0–100 per chassis */
-  if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}
-  if(!ff&&same&&!r.swapBroke){const RR=roadRecs(),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
+  if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}else if(RT.brk&&opt.dtMsg)r.dtBroke={msg:opt.dtMsg,t:RT.brk.t,corner:RT.brk.corner};
+  if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=roadRecs(),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
   res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
   if(career()&&same){addWear(0.35,hKey(snap.h));logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");hud();checkGoals();}
@@ -28661,7 +28686,7 @@ function roadFinish(){
   if(r.swap)swapAfter(r);
   RT.lap=null;save();recompute();renderTest();revealVerdict();
 }
-function roadVerdict(res){const r=res.road,z=r.zero100;if(r.swapBroke)return swapRoadVerdict(r);
+function roadVerdict(res){const r=res.road,z=r.zero100;if(r.swapBroke)return swapRoadVerdict(r);if(r.dtBroke)return `<div class="verdict fail"><div style="flex:1"><div class="big">${r.dtBroke.msg.toUpperCase()}</div><p>${r.chName} — it let go on the exit of ${r.dtBroke.corner}, ${r.dtBroke.t.toFixed(1)} s into the lap. The ${SIM.drivetrain(S.env.drv).n} drivetrain is rated below what this engine makes. No lap time; the engine is fine.</p></div></div>`;
   return `<div class="verdict pass"><div style="flex:1"><div class="big">${fmtLap(r.lapT)} · ${rdEsc(r.trkName)}</div><p>0–100 ${z!=null?z.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h · ${rdEsc(r.trkName)} ${fmtLap(r.lapT)} — ${r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD")}, ${r.tyreName.toLowerCase()} tyres, ${r.m.toLocaleString("en-CA")} kg${r.pb&&r.pb.was?` · <b>lap record</b> (was ${fmtLap(r.pb.was,2)})`:""}</p>
     <div class="vstats"><div><b>${z!=null?z.toFixed(1):"—"}</b><span>0–100 km/h s</span></div><div><b>${r.zero60!=null?r.zero60.toFixed(1):"—"}</b><span>0–60 mph s</span></div><div><b>${r.quarter?r.quarter.t.toFixed(1):"—"}</b><span>1/4 mi${r.quarter?" · "+Math.round(r.quarter.kmh)+" km/h":""}</span></div>
     <div><b>${Math.round(r.top.kmh)}</b><span>top km/h · ${r.top.limit==="redline"?"rev limit":"drag"}</span></div><div><b>${r.roll!=null?r.roll.toFixed(1):"—"}</b><span>80–120 s</span></div><div><b>${r.brake100.toFixed(1)}</b><span>100–0 m</span></div></div></div></div>`;}
@@ -30475,7 +30500,7 @@ function swapDragOv(v){const r=swapLive();return r?Object.assign(v,SIM.swapDragV
 function swapSaltBody(){const r=swapLive();return r?SIM.swapLsrBody(r):null;}
 function swapSaltOv(v){const r=swapLive();if(r){v.bodyObj=SIM.swapLsrBody(r);v.dlCap=r.dlCap;}return v;}
 /* the road lap: a driveline over its rating goes on the first full-throttle exit in a low gear */
-function swapRoadBreak(lap,T,opt){if(!opt||!(opt.dl>1))return null;const tr=lap.trace;let i0=-1;
+function swapRoadBreak(lap,T,opt){if(!opt||!(opt.dl>1||opt.dtBrk))return null;const tr=lap.trace;let i0=-1;
   for(let i=1;i<lap.N;i++)if(tr.thr[i]>=0.98&&tr.g[i]<=3&&tr.t[i]>1){i0=i;break;}
   if(i0<0)i0=Math.min(lap.N-1,Math.floor(lap.N*0.08));const s=i0*lap.ds,c=(T.corners||[]).filter(q=>q.s1<=s+5).pop();
   return{t:tr.t[i0],s:Math.round(s),corner:c&&c.name?c.name:"the first corner"};}
