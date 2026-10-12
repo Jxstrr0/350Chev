@@ -8,7 +8,18 @@ function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";i
   if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
 /* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
-function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;};c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);}
+/* the setup belongs to the build: S.suMap[cfgHash] = [stiffness, balance, wing], newest 24 kept; an unknown build is stock. The
+   sliders live in S.env (a working copy); suFix swaps them when the build changes and files them back under the build's hash.
+   An older save's single S.env setup moves onto whichever build is on the bench the first time this runs. */
+let suH=null;
+function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;};
+  let h=null;try{h=cfgHash(S.cfg);}catch(x){}
+  if(h!=null){
+    if(!S.suMap||typeof S.suMap!=="object"||Array.isArray(S.suMap)){S.suMap={};if(e.suSt!==undefined||e.suSp!==undefined||e.suWg!==undefined){c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);if(e.suSt!==50||e.suSp!==0||e.suWg!==0)S.suMap[h]=[e.suSt,e.suSp,e.suWg];}suH=h;}
+    else if(h!==suH){suH=h;const v=Array.isArray(S.suMap[h])?S.suMap[h]:[50,0,0];e.suSt=v[0];e.suSp=v[1];e.suWg=v[2];}
+  }
+  c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);
+  if(h!=null&&S.suMap){const m=S.suMap;if(e.suSt===50&&e.suSp===0&&e.suWg===0)delete m[h];else{const was=m[h];if(!was||was[0]!==e.suSt||was[1]!==e.suSp||was[2]!==e.suWg){delete m[h];m[h]=[e.suSt,e.suSp,e.suWg];const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}}}
 function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
 const suLapCache=new Map();
 function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
