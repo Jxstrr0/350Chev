@@ -152,7 +152,7 @@ function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id==
 function prestigePass(){let rp=0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
 function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}if(ok){C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=10;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus, +10 rep`,"good");hit.push(g);}}
-  if(hit.length){toast(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
+  if(hit.length){toastAfter(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
 function warrantyPass(){let claims=0,cost=0,active=0;
   for(const f of C().fleet){const age=C().week-f.week;if(age<1||age>10)continue;active++;
     const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1)*(crewT("lucky")?0.85:1);let n=Math.floor(lam);if(rng()<lam-n)n++;

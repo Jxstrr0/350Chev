@@ -1,22 +1,25 @@
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
-  {tab:"build",sel:"#presets",title:"Pick a starter engine",text:"The five green-tagged base engines use only parts your bay already has. Tap one — the Two-four truck four is a safe first sale."},
+  {tab:"build",sel:'#presets [data-id="22re"]',pre:tourPresetPrep,pre2:tourPresetRow,title:"Tap the Two-four",text:"The {n} green-tagged Starter engines use only parts your bay already has. Tap the Two-four truck four — it is a safe first sale."},
   {tab:"test",sel:"#rlRun",title:"Certify it on the dyno",text:"Buyers only look at engines with a certified pull. Arm the dyno and pull ($75). No failures and under the dyno's cap means it's certified."},
   {tab:"market",sel:"#tabs [data-tab=market]",title:"Sell it in Market",text:"Sell to a buyer group on the open market, or take a contract (10% deposit up front) and ship it. Engines that miss a brief still sell — for less. Then close the week and watch the warranty ledger."}
 ];
 let tourStep=-1;
+function tourPresetPrep(){S.pSort="layout";S.pFam="all";S.pCls="all";renderPresets();tourPresetRow();}
+function tourPresetRow(){const c=document.querySelector('#presets [data-id="22re"]');if(c){const row=c.parentElement,rr=row.getBoundingClientRect(),cr=c.getBoundingClientRect();row.scrollLeft+=cr.left-rr.left-16;}}
+const tourStarters=()=>PRESETS.filter(p=>p.starter&&!presetLocked(p.cfg)).length;
 function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.querySelector(st.sel);if(el&&!el.offsetParent)el=null;const app=$("app").getBoundingClientRect();const spot=$("tourSpot"),box=$("tourBox");
-  if(el){const r=el.getBoundingClientRect();spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
+  if(el){const r=el.getBoundingClientRect();spot.style.display="";const sl=Math.max(4,r.left-app.left-6),st2=Math.max(4,r.top-app.top-6),sr=Math.min(app.width-4,r.right-app.left+6),sb=Math.min(app.height-4,r.bottom-app.top+6);spot.style.left=sl+"px";spot.style.top=st2+"px";spot.style.width=Math.max(20,sr-sl)+"px";spot.style.height=Math.max(20,sb-st2)+"px";
     const below=r.bottom-app.top+16;const boxH=box.offsetHeight||170;if(below+boxH<app.height-70){box.style.top=below+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-(r.top-app.top)+16)+"px";}}
   else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}
   deskBox(box,el&&el.getBoundingClientRect());}
-function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);
+function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);if(st.pre)st.pre();
   accReveal(document.querySelector(st.sel));
-  const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){setTimeout(()=>{const pr=$("panel").getBoundingClientRect(),tr=target.getBoundingClientRect();$("panel").scrollTop+= (tr.top-pr.top)-(pr.height*0.38);tourPlace();setTimeout(tourPlace,380);setTimeout(tourPlace,700);},60);}
-  $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text;$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
+  const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){const go=n=>{if(tourStep!==i)return;if(st.pre2)st.pre2();const t2=document.querySelector(st.sel)||target,pr=$("panel").getBoundingClientRect(),tr=t2.getBoundingClientRect(),dy=(tr.top-pr.top)-(pr.height*0.38);$("panel").scrollTop+=dy;tourPlace();if(n>0&&Math.abs(dy)>3)setTimeout(()=>go(n-1),350);else setTimeout(tourPlace,380);};setTimeout(()=>go(16),60);}
+  $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text.replace("{n}",tourStarters());$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
   if(target&&!$("panel").contains(target)){setTimeout(tourPlace,380);setTimeout(tourPlace,700);}   // the results rail is not in the panel: its layout settles a beat after the tab switch
   requestAnimationFrame(()=>requestAnimationFrame(tourPlace));}
-function tourEnd(){tourStep=-1;$("tour").hidden=true;S.tourDone=true;save();}
+function tourEnd(){tourStep=-1;$("tour").hidden=true;S.tourDone=true;save();touchHint();}
 function tourAdvance(fromStep){if(tourStep===fromStep)tourShow(fromStep+1);}
 function startTour(){if(!career())return;tourShow(0);}
 $("tourNext").addEventListener("click",()=>tourShow(tourStep+1));$("tourSkip").addEventListener("click",tourEnd);
@@ -28,7 +31,7 @@ function setMode(m){
   if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;toast("Career bay can't fit that design yet — starting from the base four.");}
   save();boot();
 }
-document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);}));
+document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);else touchHint();}));
 /* ---- First Fire: a ninety-second scratch run for new players. Fire a V6, rev it past where its
    springs give up, fit a stiffer spring, certify it. It runs in the test cell on a borrowed engine,
    so the career books never see it; the player's own build, name, bench and tab go back after. ---- */
