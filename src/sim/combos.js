@@ -65,13 +65,14 @@
     }
 
     /* --- rods, bolts, bearings ------------------------------------------ */
-    if (cfg.rod === "titanium" && cfg.bearings !== "coated") {
+    if (cfg.rod === "titanium" && cfg.bearings !== "coated" && cfg.bearings !== "race_xl") {
       add("bad", "Titanium rods against an uncoated overlay",
         "Titanium galls against copper-lead and aluminium-tin. Without a resin-bonded PTFE/MoS2 coating the big end picks up material on the first dry start and the bearing is scrap.");
     }
-    if (cfg.rod === "titanium" && cfg.bearings === "coated") {
-      add("good", "Coated bearings solve the titanium galling problem",
-        "The polymer overlay keeps titanium off the copper and survives the dry start. It is the only combination that makes a titanium rod a sensible road part.");
+    if (cfg.rod === "titanium" && (cfg.bearings === "coated" || cfg.bearings === "race_xl")) {
+      add("good", cfg.bearings === "coated" ? "Coated bearings solve the titanium galling problem" : "Race bearings solve the titanium galling problem",
+        cfg.bearings === "coated" ? "The polymer overlay keeps titanium off the copper and survives the dry start. It is the only combination that makes a titanium rod a sensible road part."
+          : "The race shell's hard overlay and low-galling surface keep titanium off the copper through a dry start, on a bigger journal. A race-only pairing.");
     }
     if (cfg.rod === "titanium" && cfg.redline < 7000) {
       add("info", "Titanium rods below 7,000 rpm",
