@@ -42,7 +42,7 @@
       <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
         <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
         <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button><button class="chip" data-pf="rotary">Rotary</button><button class="chip" data-pf="two">Two-stroke</button></div>
-        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
+        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="starter">Starter</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
         <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
         <div id="presets"></div></div></div>
       <div id="buildForm"></div>
@@ -177,7 +177,7 @@
 
   <nav id="tabs"><div id="testProg"></div>
     <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
-    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
+    <button data-tab="test"><span class="dot" id="testDot"></span><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
     <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
     <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
     <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>

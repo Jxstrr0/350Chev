@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.61.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.61.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1352,6 +1352,11 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 #mapBox .maphs{display:none;margin:4px 0 0}
 /* the Analysis readout grid never sizes to its content (a narrow desktop panel scrolled sideways) */
 .tele{grid-template-columns:repeat(2,minmax(0,1fr))}.tele div{min-width:0}.tele b{white-space:normal;overflow-wrap:anywhere;text-align:right;margin-left:auto;min-width:0}
+/* ---- onboarding ---- */
+#tabs .dot.n{display:block;width:auto;min-width:16px;height:16px;padding:0 4px;border-radius:8px;box-sizing:border-box;font:700 10px/16px var(--mono);color:#fff;text-align:center;right:calc(50% - 26px);top:4px;background:var(--orange)}
+html.desk #tabs .dot.n{right:4px;top:6px}
+#pCls .chip[data-pc=starter]{border-color:var(--good);color:var(--good)}
+#pCls .chip[data-pc=starter].on{background:var(--good);color:var(--soot)}
 </style>
 
 <div id="app">
@@ -1396,7 +1401,7 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
       <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
         <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
         <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button><button class="chip" data-pf="rotary">Rotary</button><button class="chip" data-pf="two">Two-stroke</button></div>
-        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
+        <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="starter">Starter</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
         <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
         <div id="presets"></div></div></div>
       <div id="buildForm"></div>
@@ -1531,7 +1536,7 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 
   <nav id="tabs"><div id="testProg"></div>
     <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
-    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
+    <button data-tab="test"><span class="dot" id="testDot"></span><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
     <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
     <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
     <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
@@ -26564,7 +26569,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.61.0.0";
+const VERSION="1.61.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -26677,7 +26682,9 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="boat"?0.008:t==="salt"?0.03:t==="road"?0.03:t==="hill"?0.04:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
   return Math.round(lph*hours*fu.costL);}
 function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE,hill:HILL_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
+/* a toast that waits for the one on screen to finish (the goal toast must not hide the sale toast) */
+function toastAfter(msg){setTimeout(()=>toast(msg),Math.max(0,(toast.until||0)-Date.now())+250);}
 
 /* ===================== live compute ===================== */
 /* stress heat-map: zones on the 3D engine tinted by the worst utilisation of the tests that live there */
@@ -26753,12 +26760,12 @@ function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==
   if(isRot(cfg))return `<b>${L.n}-rotor</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${ROT_PORT_SHORT[cfg.rotPort]||"side port"}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}`;
   return `<b>${cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
-  if(res.fails&&res.fails.length)return{cls:"bad",txt:"✗ BREAKS"};
+  if(res.fails&&res.fails.length)return (S.ranH||[]).includes(h)?{cls:"bad",txt:"✗ BREAKS"}:{cls:"",txt:"○ NOT RUN YET",nr:true};
   if(career()){const inField=C().fleet.filter(f=>f.hash===h&&C().week-f.week<=10).reduce((a,f)=>a+f.units,0);if(inField)return{cls:"fld",txt:`◆ ${inField} IN FIELD`};
     const c=C().cert;if(c&&c.hash===h&&c.ok)return{cls:"ok",txt:"✓ CERTIFIED"};return{cls:"",txt:"○ UNCERTIFIED"};}
   return{cls:"ok",txt:"● TEST CELL"};}
 function engineCard(cfg,res,o){o=o||{};const st=engineStatus(cfg,res);const name=o.name||engineName();
-  const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
+  const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${st.nr?"—":Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
   return `<div class="ecard ${o.cls||""}"><div class="nm">${o.editable?`<input id="nameIn" value="${name.replace(/"/g,"&quot;")}" maxlength="24" aria-label="Engine name">`:name}</div><span class="badge ${st.cls}">${st.txt}</span><div class="spec">${nums}</div><div class="spec">${engineSpecLine(cfg,res)}</div>${launchLine(cfg)?`<div class="spec"><b>Launch</b><i>·</i>${launchLine(cfg,true)}</div>`:""}</div>`;}
 let prevQuick=null;
 function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.querySelector(".d");if(!t){t=document.createElement("span");t.className="d";el.appendChild(t);}
@@ -26775,12 +26782,13 @@ function recompute(){
   {const cc=quick.Vd<1000;$("sDisp").textContent=cc?Math.round(quick.Vd):(quick.Vd/1000).toFixed(1);$("sDisp").nextElementSibling.textContent=cc?"cc":"Litres";}$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);
   const worst=Math.max(...quick.tests.map(t=>t.util));$("sHp").className=worst>1?"critc":worst>.8?"warnc":"";
   const cert=C().cert;
-  $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));
+  $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));if(typeof tabBadges==="function")tabBadges();
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
 }
 function hud(){
+  if(typeof tabBadges==="function")tabBadges();
   if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0]}${dev()?" · DEV":""}`;}
   else{$("cashLbl").textContent="Test cell";$("cashLbl").style.color="var(--chalk)";$("repLbl").textContent="all parts unlocked";$("weekLbl").textContent="SANDBOX";}
 }
@@ -26801,13 +26809,13 @@ function renderPresets(){
   const LORDER=["I1","I2","I3","I4","I5","I6","V4","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4","D18"];
   let list=PRESETS.map((p,i)=>({p,i,disp:presetDisp(p),n:(SIM.LAYOUTS[p.cfg.layout]||{n:0}).n,cls:presetCls(p),fam:FAM_OF(p.cfg.layout),two:p.cfg.cycle==="two"}));
   list=list.filter(e=>fam!=="two"||e.two);if(fam==="two")list.forEach(e=>e.fam="two");   // the two-stroke chip cuts across layouts
-  list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||e.cls===cls));
+  list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||(cls==="starter"?!!e.p.starter:e.cls===cls)));
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
   list.sort((a,b)=>key(a)-key(b));
   const groupOf=e=>sort==="layout"?(SIM.LAYOUTS[e.p.cfg.layout]||{}).name||e.p.cfg.layout:sort==="class"?CLS_LABEL[e.cls]:sort==="size"?(e.disp<1.6?"Under 1.6 L":e.disp<2.6?"1.6 – 2.5 L":e.disp<4.1?"2.6 – 4.0 L":e.disp<6.1?"4.1 – 6.0 L":"Over 6 L"):(e.p.realHp<150?"Under 150 hp":e.p.realHp<300?"150 – 299 hp":e.p.realHp<600?"300 – 599 hp":e.p.realHp<1000?"600 – 999 hp":"1,000 hp and up");
-  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
-  let h="",g=null,buf=[];const flush=()=>{if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.join("")}</div>`;buf=[];};
-  for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push(card(e));}
+  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}" data-id="${p.id}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
+  let h="",g=null,buf=[];const flush=()=>{buf.sort((a,b)=>b.st-a.st);if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.map(x=>x.h).join("")}</div>`;buf=[];};
+  for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push({h:card(e),st:e.p.starter?1:0});}
   flush();
   $("presets").innerHTML=h||`<p class="hint">Nothing matches those filters.</p>`;
   $("presetCnt").textContent=`${list.length} of ${PRESETS.length} · ${PRESETS.filter(p=>p.starter).length} starter`;
@@ -28959,7 +28967,7 @@ const e24Cache=new Map();
 function e24Prep(trk,cfg){cfg=cfg||S.cfg;const o=roadOpt(),k=cfgHash(cfg)+"|"+o.ch+"|"+o.finalK+"|"+trk+(o.car?"|"+o.rk+"|"+o.car.mass+"|"+o.car.cdA+"|"+o.dl+"|"+o.cool:"");let P=e24Cache.get(k);
   if(!P){if(e24Cache.size>10)e24Cache.clear();P=SIM.enduroPrep(cfg,null,o.car?{ch:o.ch,finalK:o.finalK,car:o.car,dl:o.dl,cool:o.cool}:{ch:o.ch,finalK:o.finalK},trk);e24Cache.set(k,P);}return P;}
 const e24Pct=h=>(100*(1-Math.exp(-h))).toFixed(h<0.001?2:1);
-function e24Hint(){return career()?`<b>24 Hours of Prairie Sky</b> · ${fmt$(E24_FEE)} entry, fuel billed by the litre after the flag. Opens at ${E24_REP} rep; one entry every ${E24_GAP} weeks. The top five in each class are paid, every hour is wear on the build, and a failure can end it — the teardown shows what let go.`
+function e24Hint(){return career()?`<b>24 Hours of Prairie Sky</b> · ${fmt$(E24_FEE)} entry, fuel billed by the litre after the flag. Opens at ${E24_REP} rep${C().rep<E24_REP?` (you have ${Math.round(C().rep)} — earn rep by shipping orders, placing in events and signing sponsors)`:""}; one entry every ${E24_GAP} weeks. The top five in each class are paid, every hour is wear on the build, and a failure can end it — the teardown shows what let go.`
   :`<b>24 Hours of Prairie Sky</b> · your engine in the road-test car against twenty cars in three classes, a full day and night in accelerated time. Set the strategy, then watch it at 1× or time-lapse to the next event.`;}
 /* strategy seg rows: pre-race they edit S.env.e24*, live they edit the race plan (mode at once, the rest from the next stop) */
 function e24Seg(k,cur,opts,cls){return `<div class="seg ${cls||""}">${opts.map(([v,n,d])=>`<button data-e24k="${k}" data-e24v="${v}" class="${String(cur)===String(v)?"on":""}">${n}${d?`<small>${d}</small>`:""}</button>`).join("")}</div>`;}
@@ -29470,7 +29478,7 @@ function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${C0.tyres.map(id=>{const t=SIM.HILL_TYRES[id];return `<button data-hk="hillTyre" data-hv="${id}" class="${e.hillTyre===id?"on":""}">${t.n}<small>μ ${t.mu}</small></button>`;}).join("")}</div>`;
   h+=`<div class="lbl"><span>Aero</span></div><div class="seg">${C0.aero.map(id=>{const a=SIM.HILL_AERO[id];return `<button data-hk="hillAero" data-hv="${id}" class="${e.hillAero===id?"on":""}">${a.n}<small>${a.d}</small></button>`;}).join("")}</div>`;
   if(q){try{const p=hillPrepFor(S.cfg),car=SIM.hillCar(p,hillOpt());h+=`<p class="hint"><b>Up the mountain</b> · ${hillAltLine(p)} ${SIM.CHASSIS[e.hillCh].n} at ${Math.round(car.m).toLocaleString("en-CA")} kg${C0.massK<1?" (stripped for the class)":""}, final drive ${car.fd.toFixed(2)}:1 — geared for about 200 km/h.</p>`;}catch(err){}}
-  h+=`<p class="hint">${C0.n}: ${C0.d}. The air at the summit is 40% thinner than at sea level: less power for an atmospheric engine, less drag, less downforce, and less air through the radiator.${lk?` <b>Opens at ${lk} rep.</b>`:""}${hillRanWk(k)?` <b>Run this week — the next running is week ${C().week+1}.</b>`:""}</p>`;
+  h+=`<p class="hint">${C0.n}: ${C0.d}. The air at the summit is 40% thinner than at sea level: less power for an atmospheric engine, less drag, less downforce, and less air through the radiator.${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""}${hillRanWk(k)?` <b>Run this week — the next running is week ${C().week+1}.</b>`:""}</p>`;
   h+=`<div class="envgrid">${sl("hillFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.hillFinal).toFixed(2))}</div>`;
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n4">${HILL_CAMS.map(([id,n,d])=>`<button data-hk="hillCam" data-hv="${id}" class="${e.hillCam===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg n4">${[1,2,4,8].map(v=>`<button data-hk="hillSpd" data-hv="${v}" class="${+e.hillSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double":v===4?"quick":"quicker"}</small></button>`).join("")}</div>`;
@@ -30018,6 +30026,7 @@ chart.style.touchAction="pan-y";chart.addEventListener("pointerdown",e=>{try{cha
 document.addEventListener("click",e=>{const b=e.target.closest("[data-plch]");if(!b)return;const k=b.dataset.plch;PL[k]=PL[k]?0:1;b.classList.toggle("on",!!PL[k]);pullRedraw();});
 
 function showResult(res,env){
+  {const h=cfgHash(S.cfg);S.ranH=(S.ranH||[]).filter(x=>x!==h).concat(h).slice(-30);}   // this build has been run: its card may now say BREAKS
   const b=S.base&&S.base.res;
   const life=res.lifeHours>=5000?"5,000+":res.lifeHours.toLocaleString();
   $("peaks").innerHTML=`<div class="peak"><b>${Math.round(res.peakHp)}<i>hp</i></b>${delta(res.peakHp,b&&b.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()} rpm · SAE ${Math.round(res.correctedHp)}</span></div><div class="peak"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${delta(res.peakTq,b&&b.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()} rpm</span></div><div class="peak"><b>${res.rel}<i>rel</i></b>${delta(res.rel,b&&b.rel)}<span>${env.testType==="endurance"?(res.endurance&&res.endurance.failedAtHour!=null?`failed at ${res.endurance.failedAtHour} h`:`survived ${env.hours} h`):`life ≈ ${life} h`}</span></div>`;
@@ -30567,7 +30576,7 @@ function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id==
 function prestigePass(){let rp=0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
 function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}if(ok){C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=10;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus, +10 rep`,"good");hit.push(g);}}
-  if(hit.length){toast(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
+  if(hit.length){toastAfter(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
 function warrantyPass(){let claims=0,cost=0,active=0;
   for(const f of C().fleet){const age=C().week-f.week;if(age<1||age>10)continue;active++;
     const lam=Math.max(0,f.units-(f.inShop||0)-(f.wDone||0)*0.7)*(1-f.rel/100)*0.05*(f.life<2000?1.5:1)*(age<=3?1.4:1)*(crewT("lucky")?0.85:1);let n=Math.floor(lam);if(rng()<lam-n)n++;
@@ -31087,7 +31096,7 @@ function ddRender(){const sec=$("ddSec");if(!sec)return;const B=S.bay,show=!!B||
       <div class="row ddbtns"><button class="btn pri" data-dd="hand"${testing?" disabled":""}>${B.confirm?(B.practice?"Hand it back as is":"Hand back unfixed · rep hit"):"Hand back"}</button>${j.hints<3?`<button class="btn sm" data-dd="hint">Hint${hc?" · "+fmt$(hc):B.practice||!career()?"":" · free"}</button>`:""}<button class="btn sm ghost" data-dd="walk"${testing?" disabled":""}>${B.practice?"Done":"Walk away"}</button></div>
       <p class="hint">Run pulls, read the stress report, the chart and Analysis, change only what they'll pay for, then pull it again before you hand it back.</p></div>`;return;}
   if(!career()){$("ddCnt").textContent="practice";box.innerHTML=`<p class="hint" style="margin-top:-4px">In career, customers book dyno time for their own sick engines. Practise here: a random engine comes in with one fault and a complaint. Find it, fix it with the parts they'll pay for, and hand it back. Your own build waits in the corner.</p><button class="btn" data-dd="practice" style="width:100%">Practice diagnosis</button>`;return;}
-  ddWeek();const d=DD(),open=d.jobs.filter(j=>j.st==="open");$("ddCnt").textContent=open.length?`${open.length} booked`:"none this week";
+  ddWeek();const d=DD(),open=d.jobs.filter(j=>j.st==="open");$("ddCnt").textContent=open.length?`${open.length} booked · this week only`:"none this week";
   box.innerHTML=`<p class="hint" style="margin-top:-4px">Customers book the dyno for their own engines. Take a job: their engine goes on the dyno in place of yours (yours waits). Find the fault, fix it with the parts they'll pay for, hand it back. Pay = labour + 30% on parts; under budget earns a bonus. A botched job costs rep.${d.passed?` · ${d.passed} fixed so far, ${fmt$(d.earned)} net`:""}</p>`
     +(open.length?open.map(j=>`<div class="card ddjob"><div class="ddh"><b>${ddEsc(ddLabel(j))}</b><span>${ddEsc(j.eng)} · labour ${fmt$(j.labour)}</span></div><p class="ddsay">“${ddEsc(j.says)}”</p><button class="btn sm pri" data-dd="take" data-id="${j.id}" style="width:100%"${testing?" disabled":""}>Take the job</button></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-dd]");if(!b)return;const a=b.dataset.dd;
@@ -31100,7 +31109,7 @@ document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;co
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");crewWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();
+  logEvent(t,"");crewWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -31187,6 +31196,12 @@ function spSign(id){const s=spS();const o=s.offers.find(x=>x.id==id);if(!o||s.ac
   s.active.push(a);s.offers=s.offers.filter(x=>x!==o);s.hist.signed++;s.hist.max=Math.max(s.hist.max,s.active.length);if(!spPrimary()||s.active.length===1)s.primary=a.b;
   logEvent(`Signed with ${spBrand(a.b).name} for ${a.weeks} weeks${a.ret?" — "+fmt$(a.ret)+"/week":""}`,"good");spLivery();achCheck({type:"sponsor"});return true;}
 const spLogoUrl=(()=>{const m={};return b=>m[b.id]||(m[b.id]=ENGINE_VIS.logoCanvas(b,512,192).toDataURL());})();
+/* tab badges: sponsor offers waiting (Market) and booked dyno-day customers (Test) */
+function tabBadges(){const mk=$("mktDot"),td=$("testDot");if(!mk||!td)return;const on=career()&&!ff;
+  const so=on?spS().offers.filter(o=>o.exp>=C().week).length:0,dd=on&&C().dd&&C().dd.week===C().week?C().dd.jobs.filter(j=>j.st==="open").length:0;
+  const set=(el,n,t)=>{el.classList.toggle("n",n>0);if(n>0){el.textContent=n;el.title=t;el.classList.add("on");}else{el.textContent="";el.title="";}};
+  set(td,dd,`${dd} dyno-day customer${dd===1?"":"s"} booked this week`);
+  if(so>0)set(mk,so,`${so} sponsor offer${so===1?"":"s"} waiting`);else if(mk.classList.contains("n")){mk.classList.remove("n");mk.textContent="";mk.title="";mk.classList.remove("on");}}
 function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPrimary()===o.b,live=mode==="active";
   const bo=o.bon||{},cells=[];if(o.ret)cells.push([fmt$(o.ret),"per week"]);if(bo.win)cells.push([fmt$(bo.win),"per win"]);if(bo.record)cells.push([fmt$(bo.record),"per record"]);if(bo.finish)cells.push([fmt$(bo.finish),"top-3 finish"]);
   const obl=o.obl.map(q=>{const c=q.k!=="rep"&&q.k!=="nodiesel",have=q.have||0,ok=c?have>=q.n:q.k==="rep"?C().rep>=q.n:!spDiesel();
@@ -31197,7 +31212,7 @@ function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPri
   const btns=live?`${!prim?`<button class="btn info" data-spprim="${o.b}">Move to hood</button>`:""}<button class="btn danger" data-spdrop="${o.b}">Walk away</button>`
     :`<button class="btn ${full?"ghost":"pri"}" data-spsign="${o.id}" ${full?"disabled":""}>${full?(next?`Slots full · rep ${next} opens one`:"Slots full"):"Sign the deal"}</button><button class="btn ghost" data-spno="${o.id}">Decline</button>`;
   return `<div class="card spon${prim?" prim":""}"><div class="sphead"><img src="${spLogoUrl(b)}" alt="${b.name} logo" width="512" height="192"><div><div class="client">${SP_TYPES[b.type]}${live?(prim?" · on the hood":" · on the sides"):""}</div>
-    <div class="spname"><b>${b.name}</b><span>${live?`week ${Math.min(o.weeks,C().week-o.w0+1)} of ${o.weeks}`:`${o.weeks} weeks · offer open till wk ${o.exp}`}</span></div></div></div>${!live&&o.why?`<p class="spfine">${o.why}</p>`:""}
+    <div class="spname"><b>${b.name}</b><span>${live?`week ${Math.min(o.weeks,C().week-o.w0+1)} of ${o.weeks}`:`${o.weeks} weeks · offer open till wk ${o.exp}${o.exp<=C().week?" · expires this week":""}`}</span></div></div></div>${!live&&o.why?`<p class="spfine">${o.why}</p>`:""}
     <div class="money spm">${cells.map(c=>`<div><b>${c[0]}</b><span>${c[1]}</span></div>`).join("")}</div><div class="spobl">${obl}</div>
     <p class="spfine">Break it: ${fmt$(o.pen)} and ${o.penRep} rep${live?` · earned ${fmt$(o.earned)} so far`:""}</p><div class="spbtns">${btns}</div></div>`;}
 function spRender(){const box=$("spons");if(!box||!career())return;const s=spS(),slots=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
@@ -31241,7 +31256,7 @@ function renderShop(){
     const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;const sc=siteCard(k,lf);
     const btn=mode==="active"
       ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
-      :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
+      :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}"${profit<0?` data-loss="${Math.round(-profit)}"`:""} ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":(profit<0?"Take it at a loss · ":"Take the job · ")+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
     const rq=k.req||{},evGo=rq.lap!=null||rq.zero100!=null?`<button class="chip evgo" data-evgo="road" data-ch="${(rq.road&&rq.road.ch)||"coupe"}" data-trk="${rq.lap!=null&&rq.road&&rq.road.trk||""}">Road test it in their car ›</button>`:rq.et!=null?`<button class="chip evgo" data-evgo="drag">Take it to the strip ›</button>`:rq.mph!=null&&rq.lsr?`<button class="chip evgo" data-evgo="salt">Run it on the salt ›</button>`:"";
     return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
@@ -31263,21 +31278,21 @@ function renderShop(){
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`+
     (cert?"":buyersH())+svcBayH()+coreStockH(cert);
   {const cs=$("catSeg"),on=cs&&cs.querySelector("button.on");if(on){const x=on.offsetLeft-cs.offsetLeft;if(x+on.offsetWidth>cs.clientWidth)cs.scrollLeft=x-16;}}   // phone: the chip row scrolls; keep the open category in sight
-  $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
+  $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
   crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
     return `<div class="up ${done?"owned":""}"><div><h3>${r.name}</h3><p>${r.desc} <b>${rndNeed(r)} wk${rndNeed(r)<r.weeks?` (−25%, was ${r.weeks})`:""}</b></p>${running?`<div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div>`:""}</div>${done?`<div class="price">Done</div>`:running?`<div class="price" style="color:var(--warn)">${pct}%</div>`:`<button class="btn sm ${C().cash>=r.cost&&!act?"pri":""}" data-rnd="${r.id}" ${act?"disabled":""}>${fmt$(r.cost)}</button>`}</div>`;}).join("");
-  $("prestige").innerHTML=PRESTIGE.map(pp=>{const own=!!C().prestige[pp.id];return `<div class="up ${own?"owned":""}"><div><h3>${pp.name}</h3><p>${pp.desc}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=pp.price?"pri":""}" data-prestige="${pp.id}">${fmt$(pp.price)}</button>`}</div>`;}).join("");
-  $("upgrades").innerHTML=UPGRADES.map(u=>{const own=!!C().owned[u.id];const gated=u.needs&&!C().owned[u.needs];
+  $("prestige").innerHTML=shopOrder(PRESTIGE,pp=>!C().prestige[pp.id]&&C().cash>=pp.price).map(pp=>{const own=!!C().prestige[pp.id];return `<div class="up ${own?"owned":""}"><div><h3>${pp.name}</h3><p>${pp.desc}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=pp.price?"pri":""}" data-prestige="${pp.id}">${fmt$(pp.price)}</button>`}</div>`;}).join("");
+  $("upgrades").innerHTML=shopOrder(UPGRADES,u=>!C().owned[u.id]&&!(u.needs&&!C().owned[u.needs])&&C().cash>=u.price).map(u=>{const own=!!C().owned[u.id];const gated=u.needs&&!C().owned[u.needs];
     return `<div class="up ${own?"owned":""}"><div><h3>${u.name}</h3><p>${u.desc}${gated?` <b>Needs ${UPGRADES.find(x=>x.id===u.needs).name}.</b>`:""}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=u.price&&!gated?"pri":""}" data-buy="${u.id}" ${gated?"disabled":""}>${fmt$(u.price)}</button>`}</div>`;}).join("");
 }
 $("contracts").addEventListener("click",e=>{
   const cb=e.target.closest("[data-cat]");if(cb){if(cb.disabled)return;C().cat=cb.dataset.cat;save();renderShop();return;}
   const sp=e.target.closest("[data-siteprev]");if(sp){const k=C().contracts.concat(C().inbox||[],offersFor(C().cat)).find(x=>x.id==sp.dataset.siteprev);if(k&&k.site)previewSite(k.site);return;}
-  const ab=e.target.closest("[data-accept]");if(ab){if(ab.disabled)return;const from=ab.dataset.from;const list=from==="inbox"?(C().inbox||[]):offersFor(C().cat);const k=list.find(x=>x.id==ab.dataset.accept);if(!k)return;if(acceptContract(k,from)){save();hud();renderShop();toast(`${k.name.toUpperCase()} · ${fmt$(k.deposit)} DEPOSIT IN`);buzz(20);}return;}
+  const ab=e.target.closest("[data-accept]");if(ab){if(ab.disabled)return;const from=ab.dataset.from;const list=from==="inbox"?(C().inbox||[]):offersFor(C().cat);const k=list.find(x=>x.id==ab.dataset.accept);if(!k)return;if(ab.dataset.loss&&!confirm(`This job loses about ${fmt$(+ab.dataset.loss)} on the engine you have now. Take it and pay the deposit anyway?`))return;if(acceptContract(k,from)){save();hud();renderShop();toast(`${k.name.toUpperCase()} · ${fmt$(k.deposit)} DEPOSIT IN`);buzz(20);}return;}
   const b=e.target.closest("[data-deliver]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}const k=C().contracts.find(x=>x.id==b.dataset.deliver);const cert=C().cert;if(!k||!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const f=fits(k,cert.res,cert.cfg);const d=deal(k,f);if(!d.want)return;const units=d.units;
   const unit=d.unit;const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(SEGMENTS.find(s=>s.id===k.seg).tier,units,d,f.bonus,k.repeat);C().rep+=repGain;
   const weak=(f.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
@@ -31305,16 +31320,19 @@ $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
   if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);const who=(crewP(st.id)||{}).nm;if(!confirm(`Let ${who?who+", your "+st.name.toLowerCase()+",":"the "+st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
     if(C().cert&&(st.id==="tuner"||st.id==="machinist")){C().cert=null;logEvent(`Cert void — the ${st.name.toLowerCase()} signed it off; pull it again`,"bad");setTimeout(()=>toast("CERT VOID · re-run the dyno"),50);}logEvent(`Let the ${st.name.toLowerCase()} go`,"");save();hud();renderShop();renderBuild();recompute();}});
-$("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(!b||b.disabled)return;const r=RND.find(x=>x.id===b.dataset.rnd);if(C().rndActive||C().rnd[r.id])return;if(C().cash<r.cost){toast(`Need ${fmt$(r.cost-C().cash)} more`);return;}
+/* shop: what you can afford now goes first; a big buy (over ~40% of cash) asks first */
+function shopOrder(list,ok){return list.filter(ok).concat(list.filter(x=>!ok(x)));}
+function bigSpend(what,price){return price<=C().cash*0.4||confirm(`${what} costs ${fmt$(price)} — ${Math.round(price/Math.max(1,C().cash)*100)}% of your ${fmt$(C().cash)} cash. Buy it?`);}
+$("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(!b||b.disabled)return;const r=RND.find(x=>x.id===b.dataset.rnd);if(C().rndActive||C().rnd[r.id])return;if(C().cash<r.cost){toast(`Need ${fmt$(r.cost-C().cash)} more`);return;}if(!bigSpend(r.name,r.cost))return;
   C().cash-=r.cost;C().rndActive={id:r.id,done:0};logEvent(`Funded R&D: ${r.name} (${r.weeks} weeks)`,"");save();hud();renderShop();toast(`R&D STARTED · ${r.weeks} WEEKS`);buzz(20);});
-$("prestige").addEventListener("click",e=>{const b=e.target.closest("[data-prestige]");if(!b)return;const pp=PRESTIGE.find(x=>x.id===b.dataset.prestige);if(C().cash<pp.price){toast(`Need ${fmt$(pp.price-C().cash)} more`);return;}
+$("prestige").addEventListener("click",e=>{const b=e.target.closest("[data-prestige]");if(!b)return;const pp=PRESTIGE.find(x=>x.id===b.dataset.prestige);if(C().cash<pp.price){toast(`Need ${fmt$(pp.price-C().cash)} more`);return;}if(!bigSpend(pp.name,pp.price))return;
   C().cash-=pp.price;C().prestige[pp.id]=C().week;C().rep+=pp.rep*2;logEvent(`Bought the ${pp.name.toLowerCase()}`,"good");save();hud();renderShop();ENGINE_VIS.buildGarage(garageOwned());toast(`${pp.name.toUpperCase()} · INSTALLED`);buzz(30);});
 $("borrow").addEventListener("click",()=>{if(C().loan+LOAN_STEP>LOAN_MAX)return;C().loan+=LOAN_STEP;C().cash+=LOAN_STEP;logEvent(`Borrowed ${fmt$(LOAN_STEP)} from the bank`,"");save();hud();renderShop();toast(`${fmt$(LOAN_STEP)} in the account. The bank takes ${fmt$(loanInt()+loanPay())} a week now.`);});
 $("repay").addEventListener("click",()=>{const amt=Math.min(C().loan,Math.max(0,C().cash));if(amt<=0)return;C().loan-=amt;C().cash-=amt;logEvent(`Repaid ${fmt$(amt)} to the bank`,"good");achCheck({type:"loan"});save();hud();renderShop();toast(C().loan>0?`${fmt$(C().loan)} still owed`:"Loan cleared");});
 function benchUnlock(){if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;S.name=null;}}   // a fresh career can't keep a locked build on the bench
 $("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
-$("upgrades").addEventListener("click",e=>{const b=e.target.closest("[data-buy]");if(!b||b.disabled)return;const u=UPGRADES.find(x=>x.id===b.dataset.buy);if(C().cash<u.price){toast(`Need ${fmt$(u.price-C().cash)} more`);return;}
-  C().cash-=u.price;C().owned[u.id]=true;C().rep+=5;save();hud();renderShop();renderBuild();renderPresets();recompute();ENGINE_VIS.buildGarage(garageOwned());toast(`${u.name.toUpperCase()} · INSTALLED`);buzz(30);});
+$("upgrades").addEventListener("click",e=>{const b=e.target.closest("[data-buy]");if(!b||b.disabled)return;const u=UPGRADES.find(x=>x.id===b.dataset.buy);if(C().cash<u.price){toast(`Need ${fmt$(u.price-C().cash)} more`);return;}if(!bigSpend(u.name,u.price))return;
+  const oh0=overhead();C().cash-=u.price;C().owned[u.id]=true;C().rep+=5;{const dOh=overhead()-oh0;if(dOh>0)logEvent(`${u.name} raised weekly overhead by ${fmt$(dOh)} (plant is charged 2% of its price a week)`,"");}save();hud();renderShop();renderBuild();renderPresets();recompute();ENGINE_VIS.buildGarage(garageOwned());toast(`${u.name.toUpperCase()} · INSTALLED`);buzz(30);});
 $("resetGame").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}if(confirm("Wipe the career save? Cash, upgrades and contracts reset. Blueprints are kept."))
   {S.career=freshCareer();benchUnlock();save();boot();toast("Fresh start. $20,000 and a dream.");}});
 $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
@@ -31786,23 +31804,26 @@ function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click()
   railSched();})();
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
-  {tab:"build",sel:"#presets",title:"Pick a starter engine",text:"The five green-tagged base engines use only parts your bay already has. Tap one — the Two-four truck four is a safe first sale."},
+  {tab:"build",sel:'#presets [data-id="22re"]',pre:tourPresetPrep,pre2:tourPresetRow,title:"Tap the Two-four",text:"The {n} green-tagged Starter engines use only parts your bay already has. Tap the Two-four truck four — it is a safe first sale."},
   {tab:"test",sel:"#rlRun",title:"Certify it on the dyno",text:"Buyers only look at engines with a certified pull. Arm the dyno and pull ($75). No failures and under the dyno's cap means it's certified."},
   {tab:"market",sel:"#tabs [data-tab=market]",title:"Sell it in Market",text:"Sell to a buyer group on the open market, or take a contract (10% deposit up front) and ship it. Engines that miss a brief still sell — for less. Then close the week and watch the warranty ledger."}
 ];
 let tourStep=-1;
+function tourPresetPrep(){S.pSort="layout";S.pFam="all";S.pCls="all";renderPresets();tourPresetRow();}
+function tourPresetRow(){const c=document.querySelector('#presets [data-id="22re"]');if(c){const row=c.parentElement,rr=row.getBoundingClientRect(),cr=c.getBoundingClientRect();row.scrollLeft+=cr.left-rr.left-16;}}
+const tourStarters=()=>PRESETS.filter(p=>p.starter&&!presetLocked(p.cfg)).length;
 function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.querySelector(st.sel);if(el&&!el.offsetParent)el=null;const app=$("app").getBoundingClientRect();const spot=$("tourSpot"),box=$("tourBox");
-  if(el){const r=el.getBoundingClientRect();spot.style.display="";spot.style.left=(r.left-app.left-6)+"px";spot.style.top=(r.top-app.top-6)+"px";spot.style.width=(r.width+12)+"px";spot.style.height=(r.height+12)+"px";
+  if(el){const r=el.getBoundingClientRect();spot.style.display="";const sl=Math.max(4,r.left-app.left-6),st2=Math.max(4,r.top-app.top-6),sr=Math.min(app.width-4,r.right-app.left+6),sb=Math.min(app.height-4,r.bottom-app.top+6);spot.style.left=sl+"px";spot.style.top=st2+"px";spot.style.width=Math.max(20,sr-sl)+"px";spot.style.height=Math.max(20,sb-st2)+"px";
     const below=r.bottom-app.top+16;const boxH=box.offsetHeight||170;if(below+boxH<app.height-70){box.style.top=below+"px";box.style.bottom="auto";}else{box.style.top="auto";box.style.bottom=(app.height-(r.top-app.top)+16)+"px";}}
   else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}
   deskBox(box,el&&el.getBoundingClientRect());}
-function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);
+function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);if(st.pre)st.pre();
   accReveal(document.querySelector(st.sel));
-  const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){setTimeout(()=>{const pr=$("panel").getBoundingClientRect(),tr=target.getBoundingClientRect();$("panel").scrollTop+= (tr.top-pr.top)-(pr.height*0.38);tourPlace();setTimeout(tourPlace,380);setTimeout(tourPlace,700);},60);}
-  $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text;$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
+  const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){const go=n=>{if(tourStep!==i)return;if(st.pre2)st.pre2();const t2=document.querySelector(st.sel)||target,pr=$("panel").getBoundingClientRect(),tr=t2.getBoundingClientRect(),dy=(tr.top-pr.top)-(pr.height*0.38);$("panel").scrollTop+=dy;tourPlace();if(n>0&&Math.abs(dy)>3)setTimeout(()=>go(n-1),350);else setTimeout(tourPlace,380);};setTimeout(()=>go(16),60);}
+  $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text.replace("{n}",tourStarters());$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
   if(target&&!$("panel").contains(target)){setTimeout(tourPlace,380);setTimeout(tourPlace,700);}   // the results rail is not in the panel: its layout settles a beat after the tab switch
   requestAnimationFrame(()=>requestAnimationFrame(tourPlace));}
-function tourEnd(){tourStep=-1;$("tour").hidden=true;S.tourDone=true;save();}
+function tourEnd(){tourStep=-1;$("tour").hidden=true;S.tourDone=true;save();touchHint();}
 function tourAdvance(fromStep){if(tourStep===fromStep)tourShow(fromStep+1);}
 function startTour(){if(!career())return;tourShow(0);}
 $("tourNext").addEventListener("click",()=>tourShow(tourStep+1));$("tourSkip").addEventListener("click",tourEnd);
@@ -31814,7 +31835,7 @@ function setMode(m){
   if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;toast("Career bay can't fit that design yet — starting from the base four.");}
   save();boot();
 }
-document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);}));
+document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);else touchHint();}));
 /* ---- First Fire: a ninety-second scratch run for new players. Fire a V6, rev it past where its
    springs give up, fit a stiffer spring, certify it. It runs in the test cell on a borrowed engine,
    so the career books never see it; the player's own build, name, bench and tab go back after. ---- */
@@ -32381,9 +32402,11 @@ const tipEl=document.createElement("div");tipEl.id="tip";tipEl.setAttribute("rol
 let tipT=null,tipOn=null;
 function tipHide(){clearTimeout(tipT);tipT=null;tipOn=null;tipEl.classList.remove("on");}
 setInterval(()=>{if(tipOn&&tipOn.id==="gl"&&ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene())tipHide();},400);   // an event scene took the canvas under the orbit hint
+const COARSE=!!(window.matchMedia&&matchMedia("(pointer: coarse)").matches);   // a touch screen: say drag and pinch, not wheel and right-drag
+function touchHint(){if(!COARSE||S.touchHint)return;S.touchHint=1;save();toastAfter("Drag the engine to orbit · pinch to zoom");}
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
 const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
-  dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
+  dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:COARSE?"Drag to orbit · pinch to zoom":"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
 function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()))return "";   // the orbit hint is for the engine stand only: no "drag to orbit" over an event scene, the pits or a vis-side scene
   if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
   if(el.matches("#tabs button")){const i=TAB_KEYS.indexOf(el.dataset.tab);return i<0?"":`${el.textContent.trim()} <kbd>${i+1}</kbd>`;}
@@ -32418,7 +32441,7 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}${K("K","truck pull: the kill switch when a diesel runs away")}
     <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test or the event (Test and Events tabs)")}${K("V","view options")}
     <h3>Panel</h3>${K("1 – 6","Build · Test · Events · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("G","the glossary")}${K("?","this list")}
-    <h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}</div>`;
+    ${COARSE?`<h3>Touch</h3>${K("Drag","orbit the engine")}${K("Pinch","zoom")}${K("Tap a slider","then use the − + buttons to nudge it")}`:`<h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}`}</div>`;
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
 const typingIn=el=>!!el&&(el.isContentEditable||/^(TEXTAREA|SELECT)$/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range"));
