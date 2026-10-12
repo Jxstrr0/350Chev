@@ -1304,6 +1304,8 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 #app:not(.td) #tab-test #pinBase{flex:1 1 auto}
 /* Events has its own Run dock (it starts the event, with its launch control): the rail's Run steps aside there, kept in the DOM */
 #app:has(#tab-events.on) #rlRun{display:none}
+/* Events shows the run's result once, in the panel under its launch control (with the event's own sheets): the rail keeps the peaks and the curve */
+#app:has(#tab-events.on) #rlV{display:none}
 </style>
 
 <div id="app">
@@ -27245,7 +27247,7 @@ $("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if
 /* opening Test or Events: if S.env.testType belongs to the other tab, switch to this tab's last pick (never mid-run) */
 function evSync(tab){if(testing||(S.bay&&tab==="events"))return;   // a dyno-day engine keeps the bay on its pull
   const ev=trackEvt(S.env.testType);let t=null;
-  if(tab==="events"&&!ev)t=EV_T.includes(S.evPick)?S.evPick:"drag";else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
+  if(tab==="events"){const cur=ev?S.env.testType:S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===S.env.testType)t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
   if(!t)return;S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
 /* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
 const EV_NAME={drag:"Drag strip",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
@@ -27279,6 +27281,11 @@ function evStatus(t){const cr=career();let s="",k="";
     if(ER){s="racing now";k="live";}else if(g&&/^Opens at/.test(g)){s=`opens at ${E24_REP} rep`;k="lock";}else if(nx)s=`next 24 h in wk ${nx[1]}`;else if(g)s=/Certify/.test(g)?"certify first":g.split(" — ")[0].toLowerCase();else s=km?`best ${Math.round(km).toLocaleString("en-CA")} km`:cr?"entry open":"a day and a night";}
   }catch(err){s="";}
   return{s,k};}
+/* why the dock CTA can't run this event right now ("" when it can): a locked tile, or the 24 Hours' own gate */
+function evBlock(t){if(!career()||!trackEvt(t))return"";
+  if(t==="drag"&&!has("race"))return`Locked · ${(UPGRADES.find(u=>u.id==="race")||{}).name||"race upgrade"}`;
+  if(t==="race24"&&!ER){const g=e24Gate();if(!g)return"";return/^Opens at/.test(g)?`Locked · opens at ${E24_REP} rep`:/^Next running/.test(g)?g.replace("Next running","Next 24 h"):/Certify/.test(g)?"Certify this engine first":g;}
+  return"";}
 function evPickRender(){const box=$("evPick");if(!box)return;const cur=S.env.testType;
   const h=EV_T.map(t=>{const st=evStatus(t),on=t===cur;return `<button data-t="${t}" role="radio" aria-checked="${on}" class="${on?"on":""}${st.k?" "+st.k:""}" title="${EV_NAME[t]}${st.s?" · "+st.s:""}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><b>${EV_NAME[t]}</b><small>${st.s||"&nbsp;"}</small></button>`;}).join("");
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
@@ -27366,8 +27373,8 @@ function renderTest(){
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=chartRedraw();
-  $("runTest").disabled=testing;const cost=testCost();
-  $("runTest").textContent=testing?"Test in progress":`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Pikes Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
+  const blk=testing?"":evBlock(S.env.testType);$("runTest").disabled=testing||!!blk;$("runTest").classList.toggle("pri",!blk);const cost=testCost();
+  $("runTest").textContent=testing?"Test in progress":blk?blk:`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Pikes Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
   const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="hill"?hillHint():S.env.testType==="race24"?e24Hint():S.env.testType==="road"?roadHint():S.env.testType==="salt"?saltHint():S.env.testType==="bog"?bogHint():S.env.testType==="boat"?boatHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
@@ -28887,8 +28894,8 @@ const e24Cls=c=>(SIM.E24_CLASSES[c]||{n:c}).n;
 const e24Min=t=>t<3600?Math.round(t/60)+" min":e24HM(t)+" h";
 const e24HM=t=>{t=Math.max(0,t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60);return h+":"+String(m).padStart(2,"0");};
 /* career: rep, the calendar, a certified engine, the entry */
-function e24Gate(){if(!career())return null;if(C().rep<E24_REP)return `Opens at ${E24_REP} rep — ${(REP_TIERS.find(r=>r[0]===E24_REP)||[0,"Known builder"])[1]}`;const g=e24C();
-  if(C().week<g.next)return `Next running in week ${g.next}`;if(!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg)))return "Certify this engine on the dyno first";if(C().cash<E24_FEE)return `Entry is ${fmt$(E24_FEE)} — not enough cash`;return null;}
+function e24Gate(){if(!career())return null;if(C().rep<E24_REP&&!dev())return `Opens at ${E24_REP} rep — ${(REP_TIERS.find(r=>r[0]===E24_REP)||[0,"Known builder"])[1]}`;const g=e24C();
+  if(C().week<g.next)return `Next running in week ${g.next}`;if(!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg)))return "Certify this engine on the dyno first";if(C().cash<E24_FEE&&!dev())return `Entry is ${fmt$(E24_FEE)} — not enough cash`;return null;}
 /* a race that was running when the page closed: the team packed up, the entry is gone */
 function e24Orphan(){if(!career()||ER)return;const g=e24C();if(!g.live)return;const L=g.live;g.live=null;g.runs=(g.runs||0)+1;const R=recs();R.e24Runs=(R.e24Runs||0)+1;
   logEvent(`24 Hours of Prairie Sky (${e24TrkName(L.trk)}): retired — the team packed up when the shop closed mid-race`,"bad");save();}
@@ -28921,7 +28928,7 @@ function e24StratHtml(live,P){const e=S.env,pl=live?ER.R.plan:{mode:e.e24Mode,st
   return h;}
 function e24EnvHtml(){e24Orphan();const e=e24EnvFix(),trk=e.e24Trk,ready=!!E24W.done[trk],gate=e24Gate(),o=roadOpt(),C0=SIM.CHASSIS[o.ch];
   let h=`<div class="e24ev"><b>24 Hours of Prairie Sky</b><span>Saturday 2 pm to Sunday 2 pm · about 21 cars in Proto, GT and Stock · dark from 10 pm to 5 am</span>`;
-  if(career()){const g=e24C(),R=recs();h+=`<p class="${gate?"no":"ok"}">${gate?gate:`Entry open · ${fmt$(E24_FEE)}`}${g.runs?` · ${g.runs} run${g.runs>1?"s":""}${R.e24Best?`, best ${ordN(R.e24Best)} in class`:""}`:""}</p>`;}
+  if(career()){const g=e24C(),R=recs();h+=`<p class="${gate?"no":"ok"}">${gate?gate:`Entry open · ${dev()?"free (dev)":fmt$(E24_FEE)}`}${g.runs?` · ${g.runs} run${g.runs>1?"s":""}${R.e24Best?`, best ${ordN(R.e24Best)} in class`:""}`:""}</p>`;}
   h+=`</div>`;
   h+=`<div class="lbl"><span>Circuit</span></div>${e24Seg("e24Trk",trk,Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return [id,t.n,`${(T.len/1000).toFixed(2)} km · ${id==="gp"?"the 24 Hours":"short-course 24"}`];}))}`;
   h+=swapEnvNote();if(!o.car)h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
@@ -28957,7 +28964,7 @@ function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roa
   const seed=career()?rnHash([C().seed,C().week,"e24",trk].join(":")):rnHash(Date.now()+":"+Math.random());
   const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true}});
   if(career()&&crewPitK()!==1)R.pitK=crewPitK();   // fast hands on the crew: quicker stops (app/crew.js)
-  if(career()){C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${fmt$(E24_FEE)} entry`);hud();save();}
+  if(career()){if(!dev())C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${dev()?"free (dev)":fmt$(E24_FEE)+" entry"}`);hud();save();}
   ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0};
   renderEnv();$("app").classList.add("onstrip");ENGINE_VIS.setAutoRotate(false);$("e24Ctl").style.display="";$("e24Side").style.display="";e24HudInit();e24StratRender();e24FeedRender();e24Hud();
   $("testProg").classList.remove("done");sfx("start");buzz([20,30,20]);toast(`GREEN FLAG · ${e24TrkName(trk).toUpperCase()}`);
@@ -28998,7 +29005,7 @@ function e24HudInit(){$("e24Hud").innerHTML=`<div class="e24h"><div class="e24c"
   <div class="e24hz"><span data-s="Risk">Failure risk</span><b id="e24Hz">—</b><i id="e24Hw">—</i><div class="ph-bar"><i class="fill" id="e24Hb"></i></div></div>
   <div><span>Track</span><b id="e24Am">—</b><i id="e24Sk">—</i></div></div>`;e24SpdRender();}
 function e24SpdRender(){const b=$("e24Spd");if(!b||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
-  b.innerHTML=end?`<button class="btn pri" data-e24a="end" style="flex:1">${ER.toEnd?"Running the race to the flag…":"To the flag ▸▸"}</button>`
+  b.innerHTML=end?`<button class="btn pri" data-e24a="end" style="flex:1">${ER.toEnd?"Running the race to the flag…":"Skip to flag ▸▸"}</button>`
     :E24_SPEEDS.map(s=>`<button class="btn ${!ER.jump&&ER.speed===s?"on":""}" data-e24s="${s}">${s===1?"1×":s+"×"}</button>`).join("")+`<button class="btn pri e24nx${ER.jump?" on":""}" data-e24a="next">${ER.jump?"Running…":"Next event ▸▸"}</button><button class="btn e24cam" data-e24a="cam">Cam · ${E24_CAMS.find(c=>c[0]===ER.cam)[1]}</button>`;}
 function e24Gap(me,o,ahead){if(!o)return"—";const d=ahead?o.laps-me.laps:me.laps-o.laps;if(d>0)return `${ahead?"+":"−"}${d} lap${d>1?"s":""}`;const g=ahead?me.tLast-o.tLast:o.tLast-me.tLast;return `${ahead?"+":"−"}${Math.abs(g).toFixed(1)} s`;}
 function e24TyreLife(R,c,t){const sky=SIM.e24Sky(t),Ty=SIM.E24_TYRES[c.tyre.c],life=Ty.km*Math.min(1.25,Math.max(0.7,1-0.012*(sky.amb-20)))/SIM.E24_MODES[c.mode].tyre;return 1-c.tyre.km/life;}
@@ -31694,17 +31701,20 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   const V=L?rlVerdict(L):{k:"est",t:"NOT RUN",s:prev?"Changed since the last run — figures are the live estimate, deltas against that run.":"Live estimate. Run it to lock a result."};
   const chip=$("rlChip");chip.className="rlchip "+V.k;chip.textContent=testing?"RUNNING":rlChipTxt(V.t);
   $("rlTag").textContent=L?`${rlName(L.env.testType)} · measured`:"live estimate";
-  const run=$("rlRun");run.disabled=testing;const cost=testCost();
-  run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(t)}${cost?" · "+fmt$(cost):""}</span>`;
-  run.title=ev?`Opens Events and runs the ${rlName(t)}`:`Same run as Test: ${rlName(t)}`;
-  $("rlDyno").hidden=!ev||testing;
+  /* off the Events tab the rail's Run is always the dyno pull, whatever event was picked last (the event runs from its own dock) */
+  const dy=ev&&curTab!=="events",rt=dy?railDynoT():t;let cost;if(dy){S.env.testType=rt;try{cost=testCost();}finally{S.env.testType=t;}}else cost=testCost();
+  const run=$("rlRun");run.disabled=testing;
+  run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(rt)}${cost?" · "+fmt$(cost):""}</span>`;
+  run.title=`Same run as Test: ${rlName(rt)}`;
+  $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
   $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
 }
 /* Run: the same run Test arms. An event type opens Events first (its launch control lives there). */
-function railRun(){if(testing)return;const t=S.env.testType;if(trackEvt(t)&&curTab!=="events")showTab("events");$("runTest").click();railSched();}
-function railDyno(){if(testing)return;pickTest(DYNO_T.includes(S.testPick)?S.testPick:"pull");$("runTest").click();railSched();}
+function railDynoT(){return DYNO_T.includes(S.testPick)?S.testPick:"pull";}
+function railRun(){if(testing)return;const t=S.env.testType;if(trackEvt(t)&&curTab!=="events"){railDyno();return;}$("runTest").click();railSched();}
+function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click();railSched();}
 (function railInit(){const app=$("app");if(!app||$("rail"))return;
   const el=document.createElement("aside");el.id="rail";el.setAttribute("aria-label","Results");
   el.innerHTML=`<div class="rlhead" id="rlHead"><button class="rlgrab" id="rlGrab" aria-expanded="false" aria-controls="rlBody" aria-label="Show results"><i></i></button>
