@@ -350,7 +350,7 @@ function renderMap(){
   box.innerHTML=`<div class="seg n${modeBtns.length}" id="mapMode">${modeBtns.map(x=>`<button data-mm="${x[0]}" class="${MV.mode===x[0]?"on":""}">${x[1]}<small>${x[2]}</small></button>`).join("")}</div>
     <div class="chips" id="mapOver" style="margin-bottom:8px">${overBtns.map(x=>`<button class="chip${MV.over===x[0]?" on":""}" data-mo="${x[0]}">${x[1]}</button>`).join("")}</div>
     <div class="mapwrap" id="mapWrap" tabindex="0" aria-label="Tune map grid">${h}</div>
-    <div class="mapleg"><span>${leg[0]}</span><span>${leg[1]}</span><span class="g" style="background:linear-gradient(90deg,${leg[3]})"></span><span>${leg[2]}</span></div>
+    <p class="hint maphs">Swipe the grid sideways for the higher rpm columns →</p><div class="mapleg"><span>${leg[0]}</span><span>${leg[1]}</span><span class="g" style="background:linear-gradient(90deg,${leg[3]})"></span><span>${leg[2]}</span></div>
     <div class="mapfb" id="mapFb"></div>
     <div class="mapbar"><button class="nud" data-mn="-1" aria-label="Nudge down">−</button><button class="nud" data-mn="1" aria-label="Nudge up">+</button>
       <button class="btn sm ghost${MV.block?" on":""}" data-map="block" title="Then tap the far corner of the block">Block</button><button class="btn sm ghost" data-map="smooth">Smooth</button><button class="btn sm ghost" data-map="interp">Interpolate</button></div>
