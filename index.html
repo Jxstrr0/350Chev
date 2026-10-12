@@ -110,6 +110,9 @@ html.desk #stripCap{left:18px;top:16px}
 .evpick b{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .evpick small{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.3;overflow-wrap:break-word;min-width:0}   /* a long status ("Heads-up eliminations · on now") wraps, never clipped */
 html:not(.desk) .evpick small{font-size:10.5px;letter-spacing:-.01em}
+html:not(.desk) .evpick{gap:4px;margin-bottom:8px}
+html:not(.desk) .evpick button{min-height:40px;padding:4px 8px;grid-template-rows:auto}html:not(.desk) .evpick svg{grid-row:1;width:20px;height:20px}
+html:not(.desk) .evpick small{grid-column:2}html:not(.desk) .evpick button:not(.on):not(.live) small{display:none}html:not(.desk) .evpick button.lock b::after{content:" \1F512";font-size:10px}
 .evpick button.on{border-color:var(--orange);background:linear-gradient(180deg,rgba(255,122,26,.18),rgba(255,122,26,.06))}
 .evpick button.on svg{stroke:var(--orange2)}
 .evpick button.lock small{color:var(--dim)}.evpick button.lock small::before{content:"🔒 ";font-size:9px}.evpick button.live small{color:var(--orange2)}
@@ -392,7 +395,11 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 @keyframes killPulse{from{box-shadow:0 0 0 0 rgba(226,71,60,.65)}to{box-shadow:0 0 0 9px rgba(226,71,60,0)}}
 .pobtns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.pobtns .btn{min-height:44px}.pobtns .btn:not(.pri){--ht:#ece7dc}
 /* stress list */
-.stress{display:flex;flex-direction:column;gap:6px}
+.stress,.stress #stressRest{display:flex;flex-direction:column;gap:6px}.stress #stressRest[hidden]{display:none}.stress #stressMore{align-self:flex-start}
+/* Events, once a pass exists: the result leads and the setup folds to the bottom (a "Change setup" chip jumps to it) */
+#testCore.resfirst{display:flex;flex-direction:column}#testCore.resfirst>*{order:9}
+#testCore.resfirst>#verdict{order:1}#testCore.resfirst>#peaks{order:2}#testCore.resfirst>#setupJump{order:3;align-self:flex-start;margin:0 0 12px}#testCore.resfirst>#testExtra{order:4}#testCore.resfirst>#stressSec{order:5}
+#testCore.resfirst>#chartwrap{order:6}#testCore.resfirst>#curveChips{order:7}#testCore.resfirst>#dynoHint{order:8}#setupJump[hidden]{display:none}
 .st{--lc:var(--steel);display:grid;grid-template-columns:142px 1fr 42px;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px 8px 22px;text-align:left;width:100%;position:relative}
 .st::before{content:"";position:absolute;left:8px;top:50%;margin-top:-4px;width:8px;height:8px;border-radius:50%;background:var(--lc);box-shadow:0 0 6px var(--lc),0 0 14px var(--lc)}
 .st.good{--lc:var(--good)}.st.warn{--lc:var(--warn)}.st.crit{--lc:var(--crit)}.st.crit::before{animation:lamp .9s infinite}
@@ -589,8 +596,13 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .cgroup h3{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px;display:flex;align-items:center;gap:8px}
 .cgroup h3 span{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:0}.cgroup h3::after{content:"";flex:1;height:1px;background:var(--rule)}
 .cgroup.g-now h3{color:var(--good)}.cgroup.g-one h3{color:var(--warn)}
-.card.brief .req::before{content:none}
-.card.brief .req{display:grid;grid-template-columns:1fr 56px 52px;gap:10px;align-items:center;font-size:13px;padding:3px 0}
+.sfold{border:1px solid var(--rule);border-radius:6px;background:var(--panel);margin-bottom:8px}
+.sfold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:48px;padding:0 12px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.sfold>summary::-webkit-details-marker{display:none}.sfold>summary .cnt{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none}
+.sfold>summary::after{content:"";margin:0 2px 0 auto;width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .2s}.sfold[open]>summary::after{transform:rotate(45deg)}
+.sfold>.sfb{padding:2px 12px 12px}html.desk .sfold>summary:hover{background:var(--panel2)}
+.card.brief>.btn+.reqs{margin-top:12px}.card.brief .req::before{content:none}
+.card.brief .req{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(52px,auto);gap:10px;align-items:center;font-size:13px;padding:3px 0}
 .card.brief .req .rl{min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .card.brief .req .rl b{font-weight:500;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.brief .req .rl i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -671,11 +683,11 @@ textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono
 #tabs .dot{position:absolute;top:8px;right:calc(50% - 18px);width:8px;height:8px;border-radius:50%;background:var(--crit);display:none}
 #tabs .dot.on{display:block}
 /* sheet */
-#sheet{position:absolute;left:0;right:0;bottom:0;max-height:72%;background:var(--panel);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;z-index:30;transform:translateY(105%);transition:transform .25s;display:flex;flex-direction:column}
-#sheet.on{transform:none}
-#sheet header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 8px;border-bottom:1px solid var(--rule)}
-#sheet h2{font-size:17px;font-weight:700}
-#sheet .body{overflow-y:auto;padding:10px 16px calc(env(safe-area-inset-bottom) + 16px)}
+#sheet,#setPane{position:absolute;left:0;right:0;bottom:0;max-height:72%;background:var(--panel);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;z-index:30;transform:translateY(105%);transition:transform .25s;display:flex;flex-direction:column}
+#sheet.on,#setPane.on{transform:none}#setPane{z-index:31;max-height:88%;visibility:hidden;transition:transform .25s,visibility 0s .25s}#setPane.on{visibility:visible;transition:transform .25s}
+#sheet header,#setPane header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 8px;border-bottom:1px solid var(--rule)}
+#sheet h2,#setPane h2{font-size:17px;font-weight:700}
+#sheet .body,#setPane .body{overflow-y:auto;padding:10px 16px calc(env(safe-area-inset-bottom) + 16px)}
 .abslot{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;margin-bottom:8px}
 .abslot.on{border-color:var(--orange);box-shadow:inset 0 0 0 1px rgba(255,122,26,.35)}
 .abhead{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
@@ -797,9 +809,9 @@ html.desk #saltBtn,html.desk #saltShiftBtn{min-height:56px!important;font-size:1
 html.desk #saltBtn small{font-size:10.5px!important}
 html.desk #saltWarp{grid-column:2;grid-row:2;margin:6px 0 0!important;justify-content:flex-end}html.desk #saltWarp .chip{min-height:30px;padding:4px 10px}
 /* the sheet becomes a centred dialog */
-html.desk #sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
-html.desk #sheet.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
-html.desk #sheet header{padding:14px 20px 10px}html.desk #sheet .body{padding:12px 20px 20px}
+html.desk #sheet,html.desk #setPane{left:50%;right:auto;top:50%;bottom:auto;width:min(640px,calc(100% - 48px));max-height:min(82%,860px);border:1px solid var(--rule);border-radius:10px;transform:translate(-50%,-47%);opacity:0;visibility:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);transition:transform .2s,opacity .2s,visibility 0s .2s}
+html.desk #sheet.on,html.desk #setPane.on{transform:translate(-50%,-50%);opacity:1;visibility:visible;transition:transform .2s,opacity .2s}
+html.desk #sheet header,html.desk #setPane header{padding:14px 20px 10px}html.desk #sheet .body,html.desk #setPane .body{padding:12px 20px 20px}
 html.desk #tourBox,html.desk #ffBox{width:400px}
 /* glossary links, card, browser and lessons */
 html:not(.desk) .desk-only{display:none}
@@ -1256,9 +1268,10 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
       <div class="chips" id="curveChips">
         <button class="chip on" data-c="power">Power</button><button class="chip on" data-c="torque">Torque</button><button class="chip" data-c="boost">Boost</button><button class="chip" data-c="ve">VE</button><button class="chip" data-c="egt">EGT</button><button class="chip" data-c="base" id="baseChip">vs baseline</button>
       </div>
-      <div class="peaks" id="peaks"></div>
       <p class="hint" id="dynoHint"></p>
+      <div class="peaks" id="peaks"></div>
       <div id="verdict"></div>
+      <button class="chip" id="setupJump" hidden>Change setup &darr;</button>
       <div id="testExtra"></div>
       <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
       </div></div>
@@ -1323,12 +1336,12 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
     <!-- MARKET -->
     <section class="tabpage" id="tab-market">
       <div id="marketBox">
-        <div class="stats" id="gStats"></div>
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
-        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><div id="contracts"></div><button class="btn pri" id="nextWeek">Close the week</button><p class="hint" id="overheadHint"></p></div>
+        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><button class="btn pri" id="nextWeek">Close the week</button><div id="contracts"></div><p class="hint" id="overheadHint"></p></div>
+        <div class="stats" id="gStats"></div>
         <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
-        <div class="sec"><h2>Warranty &amp; ledger</h2><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div>
-        <div class="sec"><h2>Shop goals <span class="cnt" id="goalCnt"></span></h2><div id="goals"></div></div>
+        <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
+        <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
       </div>
       <div id="marketSandbox"><p class="hint">Contracts, warranty claims and goals are a career thing. The test cell has no customers — switch to Career in the Shop tab to start selling.</p></div>
     </section>
@@ -1339,18 +1352,44 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
         <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
         <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
       </div>
+      <div class="row" style="margin:0 0 14px"><button class="btn sm ghost" id="setOpen" style="flex:1" aria-haspopup="dialog">Settings · sound, theme, graphics, help</button></div>
       <div id="careerBox">
         <div class="stats" id="sStats"></div>
         <div class="sec"><h2>Upgrades</h2><div id="upgrades"></div></div>
-        <div class="sec"><h2>Staff <span class="cnt" id="staffCnt"></span></h2><div id="staff"></div></div>
-        <div class="sec"><h2>R&amp;D <span class="cnt" id="rndCnt"></span></h2><p class="hint" id="rndHint"></p><div id="rnd"></div></div>
-        <div class="sec"><h2>Prestige</h2><div id="prestige"></div></div>
-        <div class="sec"><h2>Bank</h2><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div>
+        <details class="sfold"><summary>Staff <span class="cnt" id="staffCnt"></span></summary><div class="sfb"><div id="staff"></div></div></details>
+        <details class="sfold"><summary>R&amp;D <span class="cnt" id="rndCnt"></span></summary><div class="sfb"><p class="hint" id="rndHint"></p><div id="rnd"></div></div></details>
+        <details class="sfold"><summary>Prestige</summary><div class="sfb"><div id="prestige"></div></div></details>
+        <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
       <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
-      <div class="sec"><h2>Settings</h2>
-        <button class="btn sm ghost" id="achBtn" style="margin:0 0 10px;display:flex;justify-content:space-between;width:100%"><span>Achievements</span><b id="achSet"></b></button>
-        <button class="btn sm ghost trgo" data-trophy="1"><span>Trophy room</span><b class="trN"></b></button>
+      <details class="sfold"><summary>Saves <span class="cnt" id="autoLbl">autosave on</span></summary><div class="sfb">
+        <div id="slots"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm info" id="exportSave" style="flex:1">Export code</button>
+          <button class="btn sm info" id="importSave" style="flex:1">Import code</button>
+        </div>
+        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots — save before a risky build, load to roll back. A save code moves everything to another phone.</p>
+        <button class="btn danger" id="resetGame">Wipe career</button>
+        <p class="hint">A game by Prairie Blue Studio.</p>
+      </div></details>
+    </section>
+  </div>
+
+  <nav id="tabs"><div id="testProg"></div>
+    <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
+    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
+    <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
+    <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
+    <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
+    <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
+  </nav>
+
+  <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
+  <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
+  <div id="les" hidden><div id="lesSpot"></div><div id="lesBox" role="dialog" aria-labelledby="lesTitle" aria-live="polite"><div class="step" id="lesStep"></div><h3 id="lesTitle"></h3><p id="lesText"></p><div class="row"><button class="btn sm ghost" id="lesSkip">Skip</button><button class="btn sm" id="lesKeep" style="display:none">Keep this build</button><button class="btn sm pri" id="lesNext" style="flex:1">Next</button></div></div></div>
+  <div id="glPop" role="dialog" aria-live="polite" hidden></div>
+  <div id="scrim"></div>
+  <div id="setPane" role="dialog" aria-labelledby="setTitle"><header><h2 id="setTitle">Settings</h2><button class="btn sm ghost" id="setClose">Close</button></header><div class="body" id="setBody">
         <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
         <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
@@ -1391,34 +1430,7 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
           <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
           <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
-      </div>
-      <div class="sec"><h2>Saves <span class="cnt" id="autoLbl">autosave on</span></h2>
-        <div id="slots"></div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn sm info" id="exportSave" style="flex:1">Export code</button>
-          <button class="btn sm info" id="importSave" style="flex:1">Import code</button>
-        </div>
-        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots — save before a risky build, load to roll back. A save code moves everything to another phone.</p>
-        <button class="btn danger" id="resetGame">Wipe career</button>
-        <p class="hint">A game by Prairie Blue Studio.</p>
-      </div>
-    </section>
-  </div>
-
-  <nav id="tabs"><div id="testProg"></div>
-    <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
-    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
-    <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
-    <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
-    <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
-    <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
-  </nav>
-
-  <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
-  <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
-  <div id="les" hidden><div id="lesSpot"></div><div id="lesBox" role="dialog" aria-labelledby="lesTitle" aria-live="polite"><div class="step" id="lesStep"></div><h3 id="lesTitle"></h3><p id="lesText"></p><div class="row"><button class="btn sm ghost" id="lesSkip">Skip</button><button class="btn sm" id="lesKeep" style="display:none">Keep this build</button><button class="btn sm pri" id="lesNext" style="flex:1">Next</button></div></div></div>
-  <div id="glPop" role="dialog" aria-live="polite" hidden></div>
-  <div id="scrim"></div>
+  </div></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
     <p id="trNote" hidden></p><div id="trList" hidden></div><div id="trCard" role="dialog" aria-label="Plaque" aria-live="polite" hidden></div></div>
@@ -4218,14 +4230,15 @@ const ENGINE_SIM = (function () {
     }
 
     /* --- rods, bolts, bearings ------------------------------------------ */
-    if (cfg.rod === "titanium" && cfg.bearings !== "coated" && cfg.bearings !== "race_xl") {
+    const raceBrg = cfg.bearings === "race_xl" || cfg.bearings === "pro_wide";   // oversize race journals: +10% / +20% bearing area, hard low-galling overlay
+    if (cfg.rod === "titanium" && cfg.bearings !== "coated" && !raceBrg) {
       add("bad", "Titanium rods against an uncoated overlay",
         "Titanium galls against copper-lead and aluminium-tin. Without a resin-bonded PTFE/MoS2 coating the big end picks up material on the first dry start and the bearing is scrap.");
     }
-    if (cfg.rod === "titanium" && (cfg.bearings === "coated" || cfg.bearings === "race_xl")) {
+    if (cfg.rod === "titanium" && (cfg.bearings === "coated" || raceBrg)) {
       add("good", cfg.bearings === "coated" ? "Coated bearings solve the titanium galling problem" : "Race bearings solve the titanium galling problem",
         cfg.bearings === "coated" ? "The polymer overlay keeps titanium off the copper and survives the dry start. It is the only combination that makes a titanium rod a sensible road part."
-          : "The race shell's hard overlay and low-galling surface keep titanium off the copper through a dry start, on a bigger journal. A race-only pairing.");
+          : "The race shell's hard overlay and low-galling surface keep titanium off the copper through a dry start, on a bigger journal (" + (cfg.bearings === "pro_wide" ? "+20%" : "+10%") + " bearing area). A race-only pairing.");
     }
     if (cfg.rod === "titanium" && cfg.redline < 7000) {
       add("info", "Titanium rods below 7,000 rpm",
@@ -26545,7 +26558,7 @@ $("tag").addEventListener("change",e=>{if(e.target.id==="nameIn"){S.name=e.targe
 $("tag").addEventListener("keydown",e=>{if(e.target.id==="nameIn"&&e.key==="Enter")e.target.blur();});
 $("soloSeg").addEventListener("click",e=>{const b=e.target.closest("[data-solo]");if(!b)return;if(b.dataset.solo==="rebuild"){ENGINE_SOUND.rebuild();toast("SOUND GRAPH REBUILT");return;}
   ENGINE_SOUND.solo(b.dataset.solo);document.querySelectorAll("#soloSeg button").forEach(x=>x.classList.toggle("on",x.dataset.solo===b.dataset.solo));toast(`SOLO · ${b.textContent.toUpperCase()}`);});
-setInterval(()=>{const el=$("sdPeak");if(!el||curTab!=="shop")return;const pk=ENGINE_SOUND.peak();el.textContent=pk?`${pk.hz} Hz @ ${pk.db} dB · low ${pk.lo} dB · ${pk.state} ${pk.sr/1000}k`:"—";},400);
+setInterval(()=>{const el=$("sdPeak");if(!el||!setOn())return;const pk=ENGINE_SOUND.peak();el.textContent=pk?`${pk.hz} Hz @ ${pk.db} dB · low ${pk.lo} dB · ${pk.state} ${pk.sr/1000}k`:"—";},400);
 /* frame rate: S.showFps puts a readout in the view; S.fpsCap 60 has ENGINE_VIS (and tick) skip the extra vsyncs of a 90/120 Hz screen */
 function applyFps(){const cap=S.fpsCap===60?60:0;ENGINE_VIS.setFpsCap(cap);$("fpsHud").classList.toggle("on",!!S.showFps);document.querySelectorAll("#fpsSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.fps==="1")===!!S.showFps));document.querySelectorAll("#capSeg button").forEach(b=>b.classList.toggle("on",+b.dataset.cap===cap));fpsShow();}
 function fpsShow(){const f=ENGINE_VIS.fps(),r=Math.round(f.fps);if(S.showFps)$("fpsHud").innerHTML=r?`<b class="${r<30?"crit":r<50?"warn":""}">${r}</b> fps <i>· ${f.ms.toFixed(1)} ms</i>`:"— fps";if(curTab==="shop")$("fpsLbl").textContent=r?`${r} fps · ${f.ms.toFixed(1)} ms`:"—";}
@@ -26561,7 +26574,7 @@ $("sqSeg").addEventListener("click",e=>{const b=e.target.closest("[data-sq]");if
 /* recorded engine layer: Synth / Real recordings / Blend (default Blend) + the credits sheet */
 function applySoundSrc(){const m=S.soundSrc||"blend";if(typeof ENGINE_SAMPLES!=="undefined")ENGINE_SAMPLES.setMode(m);document.querySelectorAll("#srcSeg button").forEach(b=>b.classList.toggle("on",b.dataset.src===m));}
 $("srcSeg").addEventListener("click",e=>{const b=e.target.closest("[data-src]");if(!b)return;S.soundSrc=b.dataset.src;applySoundSrc();save();toast(`ENGINE VOICE · ${b.firstChild.textContent.toUpperCase()}`);});
-setInterval(()=>{const el=$("srcLbl");if(!el||curTab!=="shop"||typeof ENGINE_SAMPLES==="undefined")return;const t=ENGINE_SAMPLES.stats();
+setInterval(()=>{const el=$("srcLbl");if(!el||!setOn()||typeof ENGINE_SAMPLES==="undefined")return;const t=ENGINE_SAMPLES.stats();
   el.textContent=t.mode==="synth"?"synth only":t.set?`${t.setName}${t.set2?" + "+t.set2Name:""} · ${Math.round(t.cover*100)}% recorded`:t.errors&&!t.decoded?"recordings unavailable · synth":t.slow&&t.mode!=="real"?"slow connection · synth":"loads when sound starts";},500);
 function sndCredits(){const E=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const L=(typeof ENGINE_SAMPLES!=="undefined"&&ENGINE_SAMPLES.credits)||[];$("sheetTitle").textContent="Sound credits";
@@ -26989,7 +27002,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
       + (chips?`<div class="chips">${chips}</div>`:"")
       + (o.info?`<p>${o.info}</p>`:"") + `</div>`;}).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
-function closeSheet(){$("sheet").classList.remove("on");$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
+function closeSheet(){$("sheet").classList.remove("on");if(!setOn())$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
 function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
@@ -27256,8 +27269,16 @@ function renderTest(){
   if(S.env.testType==="pull_sled")pullRunBtn();
   if(S.env.testType==="boat")boatRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
+  const rf=curTab==="events"&&!!last&&last.env.testType===S.env.testType;$("testCore").classList.toggle("resfirst",rf);$("setupJump").hidden=!rf;
+  resultReveal(last,rf);
   renderMap();ddRender();
 }
+/* a run just finished: bring the headline numbers (peaks + verdict, or the verdict on Events) to the top of the panel so they aren't left above or below the fold */
+let revKey;
+function resultReveal(last,rf){const k=last?last.res:null;if(testing)return;if(revKey===undefined||k===revKey){revKey=k;return;}revKey=k;if(!k)return;
+  requestAnimationFrame(()=>{const pn=$("panel"),el=rf?$("verdict"):$("peaks");if(!el.offsetHeight||(curTab!=="test"&&curTab!=="events"))return;const pr=pn.getBoundingClientRect(),r=el.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop());
+    if(r.top<pr.top||r.top>pr.top+(bot-pr.top)*0.45)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});}
+$("setupJump").addEventListener("click",()=>{const pn=$("panel"),pr=pn.getBoundingClientRect(),r=$("envBox").getBoundingClientRect();pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
 /* ===================== TUNE MAP (dyno) =====================
    S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,
    a per-rpm boost target). The sim reads its 100% row for the WOT pull and the cruise cell for economy; SIM.mapGrid
@@ -29883,10 +29904,13 @@ function showResult(res,env){
   $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="bog"&&res.bog)bogRedraw();if(env.testType==="boat"&&res.boat)boatRedraw();if(env.testType==="road"&&res.road)roadRedraw();if(env.testType==="hill"&&res.hill)hillRedraw();if(env.testType==="race24"&&res.e24)drawE24Trace(res.e24);
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
-  $("stressList").innerHTML=tests.map(t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`).join("");
+  const stRow=t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`;
+  /* the five worst lines are the report; the rest fold away behind "Show all" (the choice sticks while you re-run) */
+  const STN=5;$("stressList").innerHTML=tests.slice(0,STN).map(stRow).join("")+(tests.length>STN?`<div id="stressRest"${stressAll?"":" hidden"}>${tests.slice(STN).map(stRow).join("")}</div><button class="btn sm ghost" id="stressMore" aria-expanded="${stressAll}">${stressAll?"Show the worst "+STN+" only":"Show all "+tests.length}</button>`:"");
 }
+let stressAll=false;
 function smokeWord(r,short){const s=r.smoke||0,lm=r.fuel&&r.fuel.lamMin,lam=S.cfg.lambda;if(short)return s<8?"clean":s<35?"haze":"black";return s<8?"clean stack":s<35?"light haze":(lm&&lm<lam-0.05?"black under spool":"black at full load");}
-$("stressList").addEventListener("click",e=>{const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
+$("stressList").addEventListener("click",e=>{const m=e.target.closest("#stressMore");if(m){stressAll=!stressAll;const r=$("stressRest");r.hidden=!stressAll;m.setAttribute("aria-expanded",stressAll);m.textContent=stressAll?"Show the worst 5 only":"Show all "+(r.children.length+5);return;}const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
 $("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${cfgLbl(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
 
 function slipLine(r){return [r.race&&r.race.rt!=null?`RT ${r.race.foul?"red":r.race.rt.toFixed(3)}`:null,r.sixty?`60 ft ${r.sixty.t.toFixed(3)}`:null,r.ft330?`330 ${r.ft330.t.toFixed(3)}`:null,r.eighth?`1/8 ${r.eighth.t.toFixed(3)} @ ${Math.round(r.eighth.mph)}`:null,r.ft1000?`1000 ${r.ft1000.t.toFixed(3)}`:null,r.et!=null?`1/4 ${r.et.toFixed(3)} @ ${Math.round(r.mph)}`:null].filter(Boolean).join(" · ");}
@@ -31060,8 +31084,8 @@ function renderShop(){
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}" ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":"Take the job · "+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
     const rq=k.req||{},evGo=rq.lap!=null||rq.zero100!=null?`<button class="chip evgo" data-evgo="road" data-ch="${(rq.road&&rq.road.ch)||"coupe"}" data-trk="${rq.lap!=null&&rq.road&&rq.road.trk||""}">Road test it in their car ›</button>`:rq.et!=null?`<button class="chip evgo" data-evgo="drag">Take it to the strip ›</button>`:rq.mph!=null&&rq.lsr?`<button class="chip evgo" data-evgo="salt">Run it on the salt ›</button>`:"";
-    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}<div class="reqs">${rows}</div>${evGo}${sc.brk}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
-      <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}</div>`;};
+    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
+      <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}<div class="reqs">${rows}</div>${evGo}${sc.brk}</div>`;};   /* verdict, money and the button lead; the requirement rows follow */
   const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
     const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
     const row=b=>{const d=b.d,k=b.k;const cd=coreDeal(k,d.units,cert),pr=b.profit+cd.credit;const fit=Math.round(Math.min(1,d.ok?1:d.m)*100);const full=C().shipped>=MAX_ACTIVE;
@@ -31074,10 +31098,10 @@ function renderShop(){
   const inbox=(C().inbox||[]).filter(k=>k.expires>=C().week);
   $("contracts").innerHTML=
     `<div class="cgroup g-now"><h3>On the board<span>${C().contracts.length} / ${MAX_ACTIVE}</span></h3>${C().contracts.length?C().contracts.map(k=>cardH(k,"active")).join(""):`<p class="hint">Nothing accepted. Pick a category below and take a job — two at a time, ten percent down, three weeks to ship.</p>`}</div>`+
-    buyersH()+
+    (cert?buyersH():"")+   /* a certified engine: its buyers sit with the board; otherwise they are only a hint, below the offers */
     (inbox.length?`<div class="cgroup g-one"><h3>Repeat orders<span>${inbox.length}</span></h3>${inbox.map(k=>cardH(k,"inbox")).join("")}</div>`:"")+
-    svcBayH()+coreStockH(cert)+
-    `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`;
+    `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`+
+    (cert?"":buyersH())+svcBayH()+coreStockH(cert);
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())}${wages()?` (incl. ${fmt$(wages())} wages)`:""}. Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
   crewRender();   // people, levels, traits, training: app/crew.js
@@ -31109,7 +31133,12 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
   logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
   if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
-$("achBtn").addEventListener("click",()=>{showTab("analysis");setTimeout(()=>{const e=$("achSec");if(e)e.scrollIntoView({block:"start"});},60);});
+/* Settings live in their own pane (a button in the Shop), not in the Shop's scroll */
+function setOn(){return $("setPane").classList.contains("on");}
+function setOpen(){closeSheet();$("setPane").classList.add("on");$("scrim").classList.add("on");$("setBody").scrollTop=0;$("setClose").focus({preventScroll:true});}
+function setClose(){if(!setOn())return;$("setPane").classList.remove("on");if(!$("sheet").classList.contains("on"))$("scrim").classList.remove("on");}
+$("setOpen").addEventListener("click",()=>{renderShop();setOpen();});$("setClose").addEventListener("click",setClose);$("scrim").addEventListener("click",setClose);
+$("setPane").addEventListener("click",e=>{if(e.target.closest("#glOpen,#lessonsOpen,#kbHelpBtn,#sndCredBtn,#replayTour,#replayFF"))setClose();});
 $("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
@@ -31613,8 +31642,9 @@ $("replayFF").addEventListener("click",()=>{ensureSound();ffStart(S.mode);});
 // a new player's first tap on the intro runs First Fire before the mode they picked (capture beats the handler above)
 $("intro").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b||S.firstFireDone)return;e.stopPropagation();$("intro").style.display="none";S.seen=true;ensureSound();ffStart(b.dataset.mode);},true);
 // buttons that swap the whole game end First Fire first, so they act on the player's own save
-$("panel").addEventListener("click",e=>{if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
-  if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));},true);
+function ffGuard(e){if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
+  if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));}
+$("panel").addEventListener("click",ffGuard,true);$("setPane").addEventListener("click",ffGuard,true);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)ffSafeSave();});window.addEventListener("pagehide",ffSafeSave);
 window.addEventListener("resize",()=>{if(ff)ffPlace();});$("panel").addEventListener("scroll",()=>{if(ff)ffPlace();},{passive:true});
 
@@ -32017,7 +32047,7 @@ function tick(now){
 let curTab="build";
 /* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
-function showTab(t){tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+function showTab(t){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
   if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
@@ -32144,7 +32174,7 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
     if(h==="hill"){HC.lastPtr=performance.now();hillPress("push");return;}
     if(h==="drag"){DR.lastPtr=performance.now();dragPress();}else if(h==="salt"){SR.lastPtr=performance.now();saltPress();}else if(h==="bog"){BR.lastPtr=performance.now();bogPress();}else if(h==="boat"){BT.lastPtr=performance.now();boatPress();}else{PR.lastPtr=performance.now();pullPress();}return;}
   if($("intro").style.display!=="none")return;
-  if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}return;}
+  if(k==="Escape"){if($("sheet").classList.contains("on")){closeSheet();e.preventDefault();}else if(setOn()){setClose();e.preventDefault();}return;}
   if(k==="ArrowLeft"||k==="ArrowRight"){const a=document.activeElement,r=a&&a.matches&&a.matches("input[type=range]")?a:kbSlider&&kbSlider.offsetParent?kbSlider:null;if(r&&nudgeSlider(r,k==="ArrowRight"?1:-1))e.preventDefault();return;}
   if(e.repeat)return;
   if(k==="?"){kbHelp();e.preventDefault();return;}

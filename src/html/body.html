@@ -68,9 +68,10 @@
       <div class="chips" id="curveChips">
         <button class="chip on" data-c="power">Power</button><button class="chip on" data-c="torque">Torque</button><button class="chip" data-c="boost">Boost</button><button class="chip" data-c="ve">VE</button><button class="chip" data-c="egt">EGT</button><button class="chip" data-c="base" id="baseChip">vs baseline</button>
       </div>
-      <div class="peaks" id="peaks"></div>
       <p class="hint" id="dynoHint"></p>
+      <div class="peaks" id="peaks"></div>
       <div id="verdict"></div>
+      <button class="chip" id="setupJump" hidden>Change setup &darr;</button>
       <div id="testExtra"></div>
       <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
       </div></div>
@@ -135,12 +136,12 @@
     <!-- MARKET -->
     <section class="tabpage" id="tab-market">
       <div id="marketBox">
-        <div class="stats" id="gStats"></div>
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
-        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><div id="contracts"></div><button class="btn pri" id="nextWeek">Close the week</button><p class="hint" id="overheadHint"></p></div>
+        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><button class="btn pri" id="nextWeek">Close the week</button><div id="contracts"></div><p class="hint" id="overheadHint"></p></div>
+        <div class="stats" id="gStats"></div>
         <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
-        <div class="sec"><h2>Warranty &amp; ledger</h2><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div>
-        <div class="sec"><h2>Shop goals <span class="cnt" id="goalCnt"></span></h2><div id="goals"></div></div>
+        <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
+        <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
       </div>
       <div id="marketSandbox"><p class="hint">Contracts, warranty claims and goals are a career thing. The test cell has no customers — switch to Career in the Shop tab to start selling.</p></div>
     </section>
@@ -151,18 +152,44 @@
         <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
         <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
       </div>
+      <div class="row" style="margin:0 0 14px"><button class="btn sm ghost" id="setOpen" style="flex:1" aria-haspopup="dialog">Settings · sound, theme, graphics, help</button></div>
       <div id="careerBox">
         <div class="stats" id="sStats"></div>
         <div class="sec"><h2>Upgrades</h2><div id="upgrades"></div></div>
-        <div class="sec"><h2>Staff <span class="cnt" id="staffCnt"></span></h2><div id="staff"></div></div>
-        <div class="sec"><h2>R&amp;D <span class="cnt" id="rndCnt"></span></h2><p class="hint" id="rndHint"></p><div id="rnd"></div></div>
-        <div class="sec"><h2>Prestige</h2><div id="prestige"></div></div>
-        <div class="sec"><h2>Bank</h2><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div>
+        <details class="sfold"><summary>Staff <span class="cnt" id="staffCnt"></span></summary><div class="sfb"><div id="staff"></div></div></details>
+        <details class="sfold"><summary>R&amp;D <span class="cnt" id="rndCnt"></span></summary><div class="sfb"><p class="hint" id="rndHint"></p><div id="rnd"></div></div></details>
+        <details class="sfold"><summary>Prestige</summary><div class="sfb"><div id="prestige"></div></div></details>
+        <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
       <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
-      <div class="sec"><h2>Settings</h2>
-        <button class="btn sm ghost" id="achBtn" style="margin:0 0 10px;display:flex;justify-content:space-between;width:100%"><span>Achievements</span><b id="achSet"></b></button>
-        <button class="btn sm ghost trgo" data-trophy="1"><span>Trophy room</span><b class="trN"></b></button>
+      <details class="sfold"><summary>Saves <span class="cnt" id="autoLbl">autosave on</span></summary><div class="sfb">
+        <div id="slots"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm info" id="exportSave" style="flex:1">Export code</button>
+          <button class="btn sm info" id="importSave" style="flex:1">Import code</button>
+        </div>
+        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots — save before a risky build, load to roll back. A save code moves everything to another phone.</p>
+        <button class="btn danger" id="resetGame">Wipe career</button>
+        <p class="hint">A game by Prairie Blue Studio.</p>
+      </div></details>
+    </section>
+  </div>
+
+  <nav id="tabs"><div id="testProg"></div>
+    <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
+    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
+    <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
+    <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
+    <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
+    <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
+  </nav>
+
+  <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
+  <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
+  <div id="les" hidden><div id="lesSpot"></div><div id="lesBox" role="dialog" aria-labelledby="lesTitle" aria-live="polite"><div class="step" id="lesStep"></div><h3 id="lesTitle"></h3><p id="lesText"></p><div class="row"><button class="btn sm ghost" id="lesSkip">Skip</button><button class="btn sm" id="lesKeep" style="display:none">Keep this build</button><button class="btn sm pri" id="lesNext" style="flex:1">Next</button></div></div></div>
+  <div id="glPop" role="dialog" aria-live="polite" hidden></div>
+  <div id="scrim"></div>
+  <div id="setPane" role="dialog" aria-labelledby="setTitle"><header><h2 id="setTitle">Settings</h2><button class="btn sm ghost" id="setClose">Close</button></header><div class="body" id="setBody">
         <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
         <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
@@ -203,34 +230,7 @@
           <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
           <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
-      </div>
-      <div class="sec"><h2>Saves <span class="cnt" id="autoLbl">autosave on</span></h2>
-        <div id="slots"></div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn sm info" id="exportSave" style="flex:1">Export code</button>
-          <button class="btn sm info" id="importSave" style="flex:1">Import code</button>
-        </div>
-        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots — save before a risky build, load to roll back. A save code moves everything to another phone.</p>
-        <button class="btn danger" id="resetGame">Wipe career</button>
-        <p class="hint">A game by Prairie Blue Studio.</p>
-      </div>
-    </section>
-  </div>
-
-  <nav id="tabs"><div id="testProg"></div>
-    <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
-    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
-    <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
-    <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
-    <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
-    <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
-  </nav>
-
-  <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
-  <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
-  <div id="les" hidden><div id="lesSpot"></div><div id="lesBox" role="dialog" aria-labelledby="lesTitle" aria-live="polite"><div class="step" id="lesStep"></div><h3 id="lesTitle"></h3><p id="lesText"></p><div class="row"><button class="btn sm ghost" id="lesSkip">Skip</button><button class="btn sm" id="lesKeep" style="display:none">Keep this build</button><button class="btn sm pri" id="lesNext" style="flex:1">Next</button></div></div></div>
-  <div id="glPop" role="dialog" aria-live="polite" hidden></div>
-  <div id="scrim"></div>
+  </div></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
     <p id="trNote" hidden></p><div id="trList" hidden></div><div id="trCard" role="dialog" aria-label="Plaque" aria-live="polite" hidden></div></div>
