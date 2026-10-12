@@ -1306,6 +1306,52 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 #app:has(#tab-events.on) #rlRun{display:none}
 /* Events shows the run's result once, in the panel under its launch control (with the event's own sheets): the rail keeps the peaks and the curve */
 #app:has(#tab-events.on) #rlV{display:none}
+/* ---- phone space ---- (v1.61 B: a shorter view off Build, 44 px touch targets, no iOS input zoom, clipped-text fixes) */
+@media (max-width:600px){
+  /* 1. the engine view is ~200 px on every tab but Build (Build keeps its 40%); a run scene (html.onevent) keeps its own 60% */
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #view{flex-basis:200px;min-height:200px}
+  /* the HUD folds to two corners: brand + cash on top, the engine card and icon-only SOUND / START / VIEW along the foot */
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #hud{bottom:0;padding:8px 12px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #hud .brand small{display:none}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns{position:absolute;right:12px;bottom:8px;flex:none;gap:4px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns>button{width:44px;height:44px;padding:0;justify-content:center}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns>button .lb{display:none}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #viewBtn.lit::after{position:absolute;margin:0;top:6px;right:6px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{bottom:8px;left:12px;right:166px;max-width:none}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag .ecard{grid-template-columns:minmax(0,1fr);padding:3px 8px;gap:0;justify-items:start}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag .ecard .badge{justify-self:start;margin-top:-4px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag .ecard .spec{display:none}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #rpmbox{bottom:auto;top:44px}html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #rpmbox b{font-size:22px}
+  /* 3. touch targets */
+  html:not(.desk) .nud{flex:0 0 44px;height:44px}
+  html:not(.desk) .btn.sm{min-height:44px}
+  html:not(.desk) .evpick button,html:not(.desk) .slot .acts button{min-height:44px}
+  html:not(.desk) #tourBox .btn,html:not(.desk) #ffBox .btn{min-height:46px}
+  html:not(.desk) .rlgrab{left:0;right:0;top:0;bottom:0;width:auto;height:auto;margin:0}
+  html:not(.desk) .rlgrab i{margin-top:5px}
+  html:not(.desk) .rlhead>:not(.rlgrab){position:relative}
+  /* 4. the engine-name field: 16 px stops iOS zooming the page on focus */
+  #tag .ecard .nm input{font-size:16px;min-height:44px;margin:-8px 0}
+  /* 2. the tune map: the nudge bar rides at the foot of the card, next to the selected cell */
+  #mapBox .mapbar:has([data-mn]){position:sticky;bottom:calc(var(--dockh,66px) - 24px);z-index:5;margin:8px -4px;padding:6px 4px;background:var(--soot);border-top:1px solid var(--rule);flex-wrap:nowrap;gap:4px}
+  #mapBox .mapbar:has([data-mn]) .nud{flex:0 0 46px}#mapBox .mapbar:has([data-mn]) .btn.sm{min-width:0;padding:0 4px;font-size:11px;letter-spacing:.02em}
+  #mapBox .maphs{display:block}
+  /* 5. text that clipped or shifted its neighbours: wrap instead */
+  #setPane .seg button{min-width:0;padding-left:6px;padding-right:6px}
+  #setPane .seg button small{display:block;max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.25}
+  #setPane .lbl{flex-wrap:wrap;gap:2px 8px}#setPane .lbl b{min-width:0;max-width:100%;overflow-wrap:anywhere;text-align:right}
+  .card h3{flex-wrap:wrap;gap:2px 10px}.card h3 span{margin-left:auto;text-align:right}
+  #hud .cash span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .peak,.vstats>div{min-width:0}.peak span,.vstats span{white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+  .e24h>*{min-width:0}.e24h i{white-space:normal;line-height:1.2}
+  .rlkh small{white-space:normal;overflow-wrap:anywhere}
+  .ecard .nm{min-width:0}.ecard .badge{flex:none}
+  /* 6. Test: the Pin-baseline bar scrolls with the page where the rail owns Run, so it never rides over the chart axes */
+  #app:not(.td) #tab-test .dockslot{position:static}#app:not(.td) #tab-test #runDock{margin:12px 0 0;padding:0;border:0;background:none}
+}
+#mapBox .maphs{display:none;margin:4px 0 0}
+/* the Analysis readout grid never sizes to its content (a narrow desktop panel scrolled sideways) */
+.tele{grid-template-columns:repeat(2,minmax(0,1fr))}.tele div{min-width:0}.tele b{white-space:normal;overflow-wrap:anywhere;text-align:right;margin-left:auto;min-width:0}
 </style>
 
 <div id="app">
@@ -27472,7 +27518,7 @@ function renderMap(){
   box.innerHTML=`<div class="seg n${modeBtns.length}" id="mapMode">${modeBtns.map(x=>`<button data-mm="${x[0]}" class="${MV.mode===x[0]?"on":""}">${x[1]}<small>${x[2]}</small></button>`).join("")}</div>
     <div class="chips" id="mapOver" style="margin-bottom:8px">${overBtns.map(x=>`<button class="chip${MV.over===x[0]?" on":""}" data-mo="${x[0]}">${x[1]}</button>`).join("")}</div>
     <div class="mapwrap" id="mapWrap" tabindex="0" aria-label="Tune map grid">${h}</div>
-    <div class="mapleg"><span>${leg[0]}</span><span>${leg[1]}</span><span class="g" style="background:linear-gradient(90deg,${leg[3]})"></span><span>${leg[2]}</span></div>
+    <p class="hint maphs">Swipe the grid sideways for the higher rpm columns →</p><div class="mapleg"><span>${leg[0]}</span><span>${leg[1]}</span><span class="g" style="background:linear-gradient(90deg,${leg[3]})"></span><span>${leg[2]}</span></div>
     <div class="mapfb" id="mapFb"></div>
     <div class="mapbar"><button class="nud" data-mn="-1" aria-label="Nudge down">−</button><button class="nud" data-mn="1" aria-label="Nudge up">+</button>
       <button class="btn sm ghost${MV.block?" on":""}" data-map="block" title="Then tap the far corner of the block">Block</button><button class="btn sm ghost" data-map="smooth">Smooth</button><button class="btn sm ghost" data-map="interp">Interpolate</button></div>
@@ -32258,7 +32304,7 @@ function tick(now){
 let curTab="build";
 /* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
-function showTab(t){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+function showTab(t){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.documentElement.setAttribute("data-tab",t);document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
   if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
