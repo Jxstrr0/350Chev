@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.61.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.62.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -217,6 +217,14 @@ html:not(.desk) .seg.segbody button small{display:none}
 .acc.open .accb{display:block}
 .accb .seg button{background:var(--panel2)}
 .envgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin-bottom:4px}
+.su-grid{grid-template-columns:1fr}.su-grid .nud{flex-basis:44px;height:44px}.su-grid input[type=range]{height:44px}
+.lbl .su-rst{min-height:44px;padding:0 14px;font-size:12px}
+.su-live{margin:2px 0 6px}.su-bal{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted)}
+.su-track{position:relative;flex:1;height:12px;border-radius:6px;border:1px solid var(--rule);background:linear-gradient(90deg,var(--info),var(--panel2) 38%,var(--panel2) 62%,var(--warn))}
+.su-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--dim)}.su-pin{position:absolute;top:-4px;width:6px;height:18px;margin-left:-3px;border-radius:3px;background:var(--orange);box-shadow:0 0 0 2px var(--panel);transition:left .15s}
+.su-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;margin:8px 0 0;font-size:13px}
+.su-w{font-family:var(--display);letter-spacing:.04em;text-transform:uppercase}.su-neutral{color:var(--good)}.su-understeer{color:var(--info)}.su-oversteer{color:var(--warn)}
+.su-up{color:var(--good)}.su-dn{color:var(--crit)}.su-txt{margin-top:4px}
 input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orange);background:transparent}
 .srow{display:flex;align-items:center;gap:6px;margin:0 0 6px}.srow input[type=range]{flex:1;min-width:0;margin:0}
 .nud{flex:0 0 40px;height:36px;font-family:var(--display);font-size:20px;line-height:1;color:var(--chalk);background:var(--panel);border:1px solid var(--rule);border-radius:5px;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:manipulation}
@@ -7614,7 +7622,42 @@ const ENGINE_SIM = (function () {
       cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1), engKg: ekg, vPow: vPow,
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
-    return RC;
+    return roadSetup(RC, opt.setup);
+  }
+
+  /* the setup sheet: roll stiffness (soft..stiff, springs + bars together, 0..100, 50 stock), the front/rear split of it
+     (-100 stiffer rear .. +100 stiffer front, 0 stock) and the wing angle (-100 flat .. +100 steep, 0 stock). Lateral grip is
+     the weaker axle's: the stiffer end of the car sheds more grip to load transfer, so a front-stiff car pushes (under) and a
+     rear-stiff one comes round (over). The chassis' own nose-weight bias (`bias`, + = pushes) is already in the stock numbers,
+     so the stock setup is the reference and leaves the car exactly as it was; moving toward neutral gains a little, past it
+     loses. The wing trades downforce (clA) for drag (cdA) and loads the tail. Absent / stock = no change at all. */
+  const SETUP_STOCK = { st: 50, sp: 0, wg: 0 };
+  function setupNorm(su) {
+    if (!su) return null;
+    const st = clamp(Math.round(+su.st), 0, 100), sp = clamp(Math.round(+su.sp), -100, 100), wg = clamp(Math.round(+su.wg), -100, 100);
+    const o = { st: isFinite(st) ? st : 50, sp: isFinite(sp) ? sp : 0, wg: isFinite(wg) ? wg : 0 };
+    return o.st === 50 && o.sp === 0 && o.wg === 0 ? null : o;
+  }
+  function roadSetup(car, setup) {
+    const bias = clamp(car.dFront * 8, -0.6, 0.6);
+    car.bias = bias; car.su = null; car.bi = bias;
+    const su = setupNorm(setup); if (!su) return car;
+    const amp = 0.6 + 0.8 * su.st / 100, r = su.sp / 100 * amp + 0.2 * su.wg / 100, g = r + bias;
+    const kSt = 1 - 1.25e-5 * (Math.pow(su.st - 65, 2) - 225);   // best near 65 (a touch firmer than stock): soft rolls onto its camber, very stiff skips over bumps
+    car.muLat *= kSt * (1 - 0.10 * (Math.abs(g) - Math.abs(bias)));
+    const dCl = su.wg / 100 * (0.5 + 0.5 * Math.min(2, Math.max(0, car.clA)));
+    car.clA += dCl; car.cdA = Math.max(0.3, car.cdA + 0.15 * dCl);
+    if (r < 0 && car.drive !== "fwd") car.tK = 0.10 * Math.min(1, -r);   // tail-happy: the rear lets go on the throttle out of a corner
+    else if (r > 0 && car.drive === "fwd") car.tK = 0.08 * Math.min(1, r);   // front-drive and front-stiff: it pushes wide on the power
+    car.su = su; car.bi = clamp(g, -1, 1);
+    return car;
+  }
+  /* what the 3D car shows: roll gain on the stock lean, brake-dive gain, and how much each axle's inside wheel can lift */
+  function setupVis(setup) {
+    const su = setupNorm(setup) || SETUP_STOCK, t = su.st / 100, sp = su.sp / 100;
+    const gain = t <= 0.5 ? 1 + (0.5 - t) * 2.8 : 1 - (t - 0.5) * 1.6;   // soft 2.4x the stock lean, stiff 0.2x
+    return { rk: +gain.toFixed(3), dive: +gain.toFixed(3),
+      lf: +clamp((t - 0.55) * 2.2 + 0.6 * sp, 0, 1).toFixed(3), lr: +clamp((t - 0.55) * 2.2 - 0.6 * sp, 0, 1).toFixed(3) };
   }
 
   /* engine model shared by the straight-line run and the lap: torque at rpm with the boost that has actually been built */
@@ -7673,7 +7716,7 @@ const ENGINE_SIM = (function () {
   const gearPull = (car, E, v, g) => { const r = rpmOf(car, v, g); return r > car.redline ? 0 : E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; };
   // most force the tyres take for drive (a = 0 weight transfer handled implicitly), and for braking, at speed v with lateral use latF (0..1)
   function tractionF(car, v, latF) {
-    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - latF * latF)), hw = car.h / car.wb;
+    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - latF * latF)) * (car.tK ? 1 - car.tK * latF : 1), hw = car.h / car.wb;
     if (car.drive === "awd") return mu * (mg + DF) * 0.98;
     if (car.drive === "fwd") return mu * (mg * car.front + DF * 0.45) / (1 + mu * hw);
     return mu * (mg * (1 - car.front) + DF * 0.55) / Math.max(0.3, 1 - mu * hw);
@@ -8967,11 +9010,11 @@ const ENGINE_SIM = (function () {
     // top gear on the power peak at about the fastest the mountain allows, not the flat-out top speed
     const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = Math.min(car.vPow, 57);
     car.fdAuto = clamp((pkR * 2 * Math.PI / 60) * car.rw / (vTop * top), 0.9, 7.5); car.fd = clamp(car.fdAuto * clamp(+opt.finalK || 1, 0.75, 1.3), 0.7, 9);
-    return car;
+    return roadSetup(car, opt.setup);
   }
   const hDrag = (car, v, rho) => 0.5 * rho * car.cdA * v * v + car.crr;
   function hTrac(car, v, lat, rho) {
-    const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - lat * lat)), hw = car.h / car.wb;
+    const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - lat * lat)) * (car.tK ? 1 - car.tK * lat : 1), hw = car.h / car.wb;
     if (car.drive === "awd") return mu * (mg + DF) * 0.98;
     if (car.drive === "fwd") return mu * (mg * car.front + DF * 0.45) / (1 + mu * hw);
     return mu * (mg * (1 - car.front) + DF * 0.55) / Math.max(0.3, 1 - mu * hw);
@@ -9250,7 +9293,7 @@ const ENGINE_SIM = (function () {
     pullTrackK: pullTrackK, pullTrackName: pullTrackName, pullRunaway: pullRunaway,
     bogPrep: bogPrep, bogRun: bogRun, bogPass: bogPass, bogNight: bogNight, bogDepth: bogDepth, bogGears: bogGears, bogAiRes: bogAiRes, bogMudName: bogMudName, BOG_CLASSES: BOG_CLASSES, BOG_TYRES: BOG_TYRES,
     boatPrep: boatPrep, boatRun: boatRun, boatPass: boatPass, boatTune: boatTune, boatGuess: boatGuess, boatWater: boatWater, boatTrimRange: boatTrimRange, BOAT_CLASSES: BOAT_CLASSES, BOAT_HULLS: BOAT_HULLS, BOAT_IMP: BOAT_IMP, BOAT_FT: BOAT_FT,
-    roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
+    roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, setupVis: setupVis, setupNorm: setupNorm, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
     enduroPrep: enduroPrep, e24AiPrep: e24Ai, enduroNew: enduroNew, enduroStep: enduroStep, enduroWhere: enduroWhere, enduroResult: enduroResult, enduroClasses: enduroClasses, enduroClassOf: enduroClassOf,
     e24Rates: e24Rates, e24Sky: e24Sky, e24Amb: e24Amb, e24Hour: e24Hour, e24Pos: e24Pos, e24Order: e24Order, e24Need: e24Need, e24Clock: e24Clock, e24Lap: e24Lap,
     E24_MODES: E24_MODES, E24_TYRES: E24_TYRES, E24_CLASSES: E24_CLASSES, E24_CLS_ORDER: E24_CLS_ORDER, E24_FIX: E24_FIX, E24_K: E24_K, E24_TANK: E24_TANK, E24_DUR: E24_DUR,
@@ -17584,6 +17627,18 @@ function stripCar(body, color, tyreIn, hw){
 }
 
 /* --- per-frame animation (no allocations) --------------------------------- */
+/* the setup sheet's lean on a road / hill car (after stripCarAnim): su = {dive, lf, lr} from ENGINE_SIM.setupVis, lateral and
+   longitudinal g. Soft cars dive harder under braking and squat more on the power; a stiff axle lifts its inside wheel when
+   it is pushed past about 0.8 g. Stock (su null) leaves the car exactly as stripCarAnim made it. S = the caller's smoothing state. */
+function stripSetupLean(car, su, ayg, axg, S, dt){
+  if(!su) return;
+  var U=car.userData, B=U.bodyGroup, i, k=Math.min(1,dt*6);
+  S.dv+=(clamp(axg,-1.4,0.6)*0.03*(su.dive-1)-S.dv)*k; B.rotation.z+=S.dv;
+  var m=clamp((Math.abs(ayg)-0.8)/0.7,0,1)*0.10, inner=ayg>=0?-1:1;
+  S.lf+=(su.lf*m-S.lf)*k; S.lr+=(su.lr*m-S.lr)*k;
+  for(i=0;i<U.carriers.length;i++){ var Cw=U.carriers[i]; if(Cw.position.z*inner>0) Cw.position.y+=Cw.userData.rear?S.lr:S.lf; }
+  B.updateMatrix();
+}
 function stripCarAnim(car, o, dt, isPlayer){
   var U=car&&car.userData, A=U&&U.anim; if(!A||!o) return;
   if(!(dt>0)) dt=0; if(dt>0.1) dt=0.1;
@@ -23013,7 +23068,8 @@ function roadUpdate(o, dt){
   var k=T.k[Math.floor(fi)%N]||0, U=car.userData, stT=Math.atan(2.6*k)*1.15;
   ROAD.steer+=(stT-ROAD.steer)*Math.min(1,dt*10); for(var i=0;i<U.carriers.length;i++){ var Cw=U.carriers[i]; if(!Cw.userData.rear) Cw.rotation.y=ROAD.steer; }
   stripCarAnim(car, {v:v, acc:(+o.ax||0)*9.81, brake:(+o.brk||0)>0.05, night:!!o.night, lift:0}, dt, true);
-  var rollT=clamp(-(+o.ay||0)*0.03,-0.07,0.07); ROAD.roll+=(rollT-ROAD.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=ROAD.roll;
+  var su=o.su||null, rk=su?su.rk:1, rollT=clamp(-(+o.ay||0)*0.03*rk,-0.07*rk,0.07*rk); ROAD.roll+=(rollT-ROAD.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=ROAD.roll;
+  stripSetupLean(car, su, +o.ay||0, +o.ax||0, ROAD.sx||(ROAD.sx={dv:0,lf:0,lr:0}), dt);
   /* a puff of tyre smoke and dust when it runs out of grip on exit, or locks a wheel */
   if(W.fx){ var sl=(+o.slip||0); if(sl>0.2 && v>4 && Math.random()<sl*dt*30){ roadPt(T, fi-1.2, (Math.random()-0.5)*1.6, 0.3, _rA); W.fx.emit(_rA.x,0.25,_rA.z,(Math.random()-0.5),0.35,(Math.random()-0.5),1.3,0.6,2.6,0.84,0.84,0.84,0.18,{drag:0.6,buoy:0.15}); }
     W.fx.step(dt, _rW); }
@@ -24828,7 +24884,8 @@ function hillUpdate(o, dt){
   var k=T.k[gi]||0, U=car.userData, stT=Math.atan(2.6*k)*1.15*(o.off?0.3:1);
   HILL.steer+=(stT-HILL.steer)*Math.min(1,dt*10); for(var i=0;i<U.carriers.length;i++){ var Cw=U.carriers[i]; if(!Cw.userData.rear) Cw.rotation.y=HILL.steer; }
   stripCarAnim(car, {v:v, acc:(+o.thr||0)*3-(+o.brk||0)*8, brake:(+o.brk||0)>0.05, night:false, lift:0}, dt, true);
-  var rollT=clamp(-k*v*v/9.81*0.035,-0.08,0.08); HILL.roll+=(rollT-HILL.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=HILL.roll;
+  var su=o.su||null, rk=su?su.rk:1, rollT=clamp(-k*v*v/9.81*0.035*rk,-0.08*rk,0.08*rk); HILL.roll+=(rollT-HILL.roll)*Math.min(1,dt*6); U.bodyGroup.rotation.x+=HILL.roll;
+  stripSetupLean(car, su, k*v*v/9.81, ((+o.thr||0)*0.3-(+o.brk||0)*0.8), HILL.sx||(HILL.sx={dv:0,lf:0,lr:0}), dt);
   /* dust: off in the gravel, a moment, the verge at the limit */
   if(W.fx){ var dust=o.off?0.9:o.ev==="moment"?0.6:(+o.lat||0)>0.97&&v>15?0.15:0;
     if(dust>0 && Math.random()<dust*dt*40*(GFX==="lite"?0.5:1)){ hillPt(W, fi-1.4, (+o.d||0)+(Math.random()-0.5)*1.8, 0.3, _hA); W.fx.emit(_hA.x,_hA.y,_hA.z,(Math.random()-0.5)*1.2,0.6,(Math.random()-0.5)*1.2,2.2,0.8,4.2,0.72,0.66,0.56,0.32,{drag:0.5,buoy:0.1}); }
@@ -26569,7 +26626,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.61.1.0";
+const VERSION="1.62.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -27206,9 +27263,9 @@ function renderEnv(){
   if(t==="hill")h+=hillEnvHtml(sl);
   if(t==="boat")h+=boatEnvHtml(sl);
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
-  $("envBox").innerHTML=h;envFold(t);pitsSync();
+  $("envBox").innerHTML=h;envFold(t);pitsSync();if(t==="road"||t==="hill")suLive();
 }
-function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();}
+function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();if(k.slice(0,2)==="su")suLive();}
 function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="bog"&&l&&l.bog&&S.last.env.testType==="bog")drawBogTrace(l.bog);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
 $("envBox").addEventListener("input",e=>{const r=e.target;if(!r.dataset.e||r.type!=="range")return;applyEnv(r.dataset.e,parseFloat(r.value));});
 $("envBox").addEventListener("change",e=>{if(e.target.type==="range")commitEnv();});
@@ -28796,8 +28853,37 @@ const ROAD_FEE=200,ROAD_CAMS=[["auto","Auto","director"],["chase","Chase","behin
 const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(d||1).padStart(d===2?5:4,"0")}`;
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
-  if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId())});}   // a chosen swap car (app/swap.js) stands in for the chassis
+  if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
+/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
+function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;};c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);}
+function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
+const suLapCache=new Map();
+function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
+function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0);let r=suLapCache.get(k);
+  if(!r){if(suLapCache.size>60)suLapCache.clear();const L=SIM.lapSim(p,o,trk);let w=null;for(const a of L.apex)if(!w||a.kmh<w.kmh)w=a;r={t:L.time,low:w&&w.name,ay:L.ayPk};suLapCache.set(k,r);}return r;}
+/* the live read-out under the sliders: balance bar, lap-time change against stock (Road) or the car's figures (Hill), a plain line */
+function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType==="hill";let car,txt="",dl="";
+  try{
+    if(hill){if(!(quick&&quick.rpms)){box.innerHTML="";return;}const p=hillPrepFor(S.cfg);car=SIM.hillCar(p,hillOpt());const c0=SIM.hillCar(p,Object.assign(hillOpt(),{setup:null}));
+      const hk=o=>cfgHash(S.cfg)+"|"+JSON.stringify(o),hp=o=>{const k=hk(o);let t=suLapCache.get(k);if(t===undefined){if(suLapCache.size>60)suLapCache.clear();const q=SIM.hillPass(p,Object.assign({seed:5},o));t=q.time;suLapCache.set(k,t);}return t;};
+      const ho=hillOpt(),ta=hp(ho),tb=ho.setup?hp(Object.assign({},ho,{setup:null})):ta,d=ta!=null&&tb!=null?ta-tb:null;
+      dl=`climb <b>${fmtHill(ta)}</b> <b class="${d==null||Math.abs(d)<0.05?"":d<0?"su-up":"su-dn"}">${d==null||Math.abs(d)<0.05?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(1)+" s"}</b> <span class="dim">vs stock · downforce ${car.clA.toFixed(2)} m² · drag ${car.cdA.toFixed(2)} m²</span>`;}
+    else{const o=roadOpt(),q=quick&&quick.rpms?quick:null;if(!q){box.innerHTML="";return;}const p=SIM.roadPrep(S.cfg,q);car=SIM.roadCar(p,o);const trk=S.env.roadTrk;
+      const a=suLapFor(p,o,trk),b=o.setup?suLapFor(p,Object.assign({},o,{setup:null}),trk):a,d=a.t-b.t;
+      dl=`lap <b>${fmtLap(a.t,2)}</b> <b class="${Math.abs(d)<0.005?"":d<0?"su-up":"su-dn"}">${Math.abs(d)<0.005?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(2)+" s"}</b> <span class="dim">vs stock setup</span>`;
+      if(b&&a.low&&suBalWord(car.bi)!=="neutral")txt=car.bi>0?`Pushing wide in ${rdEsc(a.low)} — the fronts run out first.`:`The tail steps out on the way out of ${rdEsc(a.low)}.`;
+      else txt=`Neutral — front and rear let go together.`;}
+  }catch(err){box.innerHTML="";return;}
+  const b=car.bi,w=suBalWord(b);if(hill){txt=w==="neutral"?"Neutral — front and rear let go together.":w==="understeer"?"It pushes wide in the tight stuff — the fronts run out first.":"The tail steps out on exit — the rears run out first.";}
+  box.innerHTML=`<div class="su-bal" id="suBal" role="img" aria-label="Balance: ${w}"><span>UNDER</span><div class="su-track"><i class="su-mid"></i><i class="su-pin" style="left:${(50+50*Math.max(-1,Math.min(1,b))).toFixed(1)}%"></i></div><span>OVER</span></div>
+    <div class="su-row"><b class="su-w su-${w}">${w==="neutral"?"Neutral":w==="understeer"?"Understeer":"Oversteer"}</b><span>${dl}</span></div><p class="hint su-txt">${txt}</p>`;}
+function suEnvHtml(sl,hill){const e=S.env;suFix(e);
+  return `<div class="lbl"><span>Setup</span><button class="chip su-rst" data-su-reset>Reset to stock</button></div>
+    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}</div>
+    <div id="suLive" class="su-live"></div>
+    <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. Stock is the chassis as designed.</p>`;}
+$("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;S.env.suSt=50;S.env.suSp=0;S.env.suWg=0;renderEnv();save();buzz(6);});
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadRecs(){const R=recs();if(!R.road||typeof R.road!=="object")R.road={};return R.road;}
 /* market: a buyer's road figures for an engine, in the buyer's car (cached like the site runs) */
@@ -28817,6 +28903,7 @@ function roadEnvHtml(sl){const e=roadEnvFix(),o=roadOpt(),C0=o.car||SIM.CHASSIS[
   h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
   if(q){const car=SIM.roadCar(SIM.roadPrep(S.cfg,q),o),fr=Math.round(car.front*100),bal=car.bal==="under"?`nose-heavy (${fr}% front, ${C0.front*100|0}% as designed) — it will push in the slow corners`:car.bal==="over"?`light in the nose (${fr}% front) — the tail steps out on the way in`:`balanced (${fr}% front)`;
     h+=`<p class="hint"><b>${C0.n}</b> · ${C0.d}. With this ${Math.round(car.engKg)} kg engine and a driver: <b>${Math.round(car.m).toLocaleString("en-CA")} kg</b>, ${bal}. ${car.gears.length}-speed, final drive ${car.fd.toFixed(2)}:1 (fitted ${car.fdAuto.toFixed(2)} — top gear on the power peak at the speed the power can hold). Shorter pulls harder out of corners; taller runs out the straight.</p>`;}
+  h+=suEnvHtml(sl,false);
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n4">${ROAD_CAMS.map(([id,n,d])=>`<button data-rk="roadCam" data-rv="${id}" class="${e.roadCam===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg">${[1,2,4].map(v=>`<button data-rk="roadSpd" data-rv="${v}" class="${+e.roadSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double speed":"quick look"}</small></button>`).join("")}</div>`;
   return h;}
@@ -28858,7 +28945,7 @@ function roadStart(){
   if(opt.dtCap>0&&res.peakTq/opt.dtCap>1.3){opt.dtBrk=true;opt.dtMsg=SIM.dtPart(res.peakTq/opt.dtCap);}   // a big overload breaks a part on the first hard exit
   const prep=SIM.roadPrep(snap.cfg,res),run0=SIM.roadRun(prep,opt),lap=SIM.lapSim(prep,opt,trk),T=SIM.roadTrack(trk);
   const best=roadRecs()[roadKey(opt.rk||opt.ch,trk)]||null,secCut=[0,lap.sectors[0],lap.sectors[0]+lap.sectors[1],lap.time];
-  RT={brk:swapRoadBreak(lap,T,opt),res,env,opt,trk,snap,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:snap.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
+  RT={suVis:SIM.setupVis(opt.setup),brk:swapRoadBreak(lap,T,opt),res,env,opt,trk,snap,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:snap.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("roadCtl").style.display="";roadHudInit();roadBtnText();
   $("testProg").classList.remove("done");sfx("start");
   requestAnimationFrame(()=>{const pn=$("panel"),r=$("roadCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
@@ -28866,7 +28953,7 @@ function roadStart(){
     RT.t+=dt*RT.speed;const L=RT.lap,pre=RT.t<0,f=roadAt(L,RT.t),done=RT.t>=L.time;
     f.pre=pre;f.done=done;f.lapT=pre?0:Math.min(RT.t,L.time);
     RT.bst=f.bst;RT.slip=f.lim&&f.v<30?0.6:f.lim&&f.v<45?0.3:0;
-    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
+    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,su:RT.suVis,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
     roadHud(f);run.on=true;run.rpm=f.rpm;run.load=Math.max(0.05,f.thr);$("rpmLbl").textContent=Math.round(f.rpm/10)*10;
     $("testProg").style.width=Math.min(100,100*Math.max(0,RT.t)/L.time)+"%";
     if(done&&!RT.crossed){RT.crossed=true;buzz([20,30,20]);}
@@ -28885,7 +28972,7 @@ function roadFinish(){
   const C0=opt.car||SIM.CHASSIS[opt.ch],car=lap.car,tr=lap.trace,dec={d:[],v:[],thr:[],brk:[],g:[]};
   for(let i=0;i<lap.N;i+=4){dec.d.push(Math.round(i*lap.ds));dec.v.push(+(tr.v[i]*3.6).toFixed(1));dec.thr.push(+tr.thr[i].toFixed(2));dec.brk.push(+tr.brk[i].toFixed(2));dec.g.push(tr.g[i]);}
   const r={ch:opt.ch,chName:C0.n,tyre:opt.tyre,tyreName:SIM.ROAD_TYRES[opt.tyre].n,trk,trkName:lap.trackName,len:Math.round(lap.len),finalK:opt.finalK,fd:+car.fd.toFixed(2),fdAuto:+car.fdAuto.toFixed(2),gears:car.gears.length,
-    m:Math.round(car.m),front:+car.front.toFixed(3),bal:car.bal,engKg:Math.round(car.engKg),drive:car.drive,
+    m:Math.round(car.m),front:+car.front.toFixed(3),bal:car.bal,su:opt.setup||null,suBal:+car.bi.toFixed(2),engKg:Math.round(car.engKg),drive:car.drive,
     zero60:a.zero60,zero100:a.zero100,zero200:a.zero200,quarter:a.quarter,roll:a.roll80120,brake100:a.brake100,top:a.top,spinT:a.spinT,
     lapT:+lap.time.toFixed(3),sectors:lap.sectors.map(x=>+x.toFixed(3)),vmax:+lap.vmax.toFixed(1),vmin:+lap.vmin.toFixed(1),apex:lap.apex,shifts:lap.shifts,fullPct:lap.fullPct,ayPk:lap.ayPk,brakePk:lap.brakePk,tracT:lap.tractionT,trace:dec};
   /* records: best lap per chassis × circuit, best 0–100 per chassis */
@@ -28911,6 +28998,7 @@ function roadSheet(res){const r=res.road,b=roadRecs()[roadKey(r.ch+(r.swap?"@"+r
     <div><b>Corners</b>${r.apex.map(a=>`${rdEsc(a.name)} ${Math.round(a.kmh)}`).join(" · ")} km/h</div>
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
     <div><b>Car</b>${rdEsc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
+    ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${r.su.sp>0?"+":""}${r.su.sp} (${suBalWord(r.suBal)}) · wing ${r.su.wg>0?"+":""}${r.su.wg}</div>`:""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */
@@ -29426,8 +29514,8 @@ function hillClsLocked(k){const c=SIM.HILL_CLASSES[k];return c&&career()&&!dev()
 function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCls="open";const c=H[e.hillCls];
   if(!SIM.CHASSIS[e.hillCh])e.hillCh="coupe";if(!c.tyres.includes(e.hillTyre))e.hillTyre=c.tyres[c.tyres.length-1];if(!c.aero.includes(e.hillAero))e.hillAero=c.aero[c.aero.length-1];
   if(!(+e.hillFinal>=0.8&&+e.hillFinal<=1.25))e.hillFinal=1;if(![1,2,4,8].includes(+e.hillSpd))e.hillSpd=4;if(!HILL_CAMS.some(q=>q[0]===e.hillCam))e.hillCam="auto";
-  if(e.hillDrive!=="you")e.hillDrive="auto";return e.hillCls;}
-function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal};}
+  if(e.hillDrive!=="you")e.hillDrive="auto";suFix(e);return e.hillCls;}
+function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt()};}
 /* race day: one running per class per week in career (the same calls all week, the same field); a fresh mountain every run in the sandbox */
 function hillSeed(k){const ix=Object.keys(SIM.HILL_CLASSES).indexOf(k)+1;if(!career())return HILL_SB[ix]||(HILL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().hillSeed)C().hillSeed=Math.floor(Math.random()*1e9)+1;return(C().hillSeed^(C().week*7919)^(ix*104729))>>>0;}
 function hillRanWk(k){return career()&&(C().hillWk||{})[k]===C().week;}
@@ -29479,7 +29567,7 @@ function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=
   h+=`<div class="lbl"><span>Aero</span></div><div class="seg">${C0.aero.map(id=>{const a=SIM.HILL_AERO[id];return `<button data-hk="hillAero" data-hv="${id}" class="${e.hillAero===id?"on":""}">${a.n}<small>${a.d}</small></button>`;}).join("")}</div>`;
   if(q){try{const p=hillPrepFor(S.cfg),car=SIM.hillCar(p,hillOpt());h+=`<p class="hint"><b>Up the mountain</b> · ${hillAltLine(p)} ${SIM.CHASSIS[e.hillCh].n} at ${Math.round(car.m).toLocaleString("en-CA")} kg${C0.massK<1?" (stripped for the class)":""}, final drive ${car.fd.toFixed(2)}:1 — geared for about 200 km/h.</p>`;}catch(err){}}
   h+=`<p class="hint">${C0.n}: ${C0.d}. The air at the summit is 40% thinner than at sea level: less power for an atmospheric engine, less drag, less downforce, and less air through the radiator.${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""}${hillRanWk(k)?` <b>Run this week — the next running is week ${C().week+1}.</b>`:""}</p>`;
-  h+=`<div class="envgrid">${sl("hillFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.hillFinal).toFixed(2))}</div>`;
+  h+=`<div class="envgrid">${sl("hillFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.hillFinal).toFixed(2))}</div>`+suEnvHtml(sl,true);
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n4">${HILL_CAMS.map(([id,n,d])=>`<button data-hk="hillCam" data-hv="${id}" class="${e.hillCam===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg n4">${[1,2,4,8].map(v=>`<button data-hk="hillSpd" data-hv="${v}" class="${+e.hillSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double":v===4?"quick":"quicker"}</small></button>`).join("")}</div>`;
   return h;}
@@ -29530,7 +29618,7 @@ function hillStart(){
   const rs=career()?(seed+7919*(C().hillRuns=(C().hillRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);
   const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,0.86,rs)},opt));
   const lead=field.filter(f=>f.t!=null).sort(hillCmp)[0]||null;
-  HC={run,prep,opt,k,snap,env,seed,field,lead,auto:S.env.hillDrive!=="you",took:null,speed:+S.env.hillSpd||4,cam:S.env.hillCam||"auto",push:false,lift:false,pre:2.5,last:performance.now(),finished:false,skip:false,doneAt:null,lastPtr:0,acc:0,color:carPaint()};
+  HC={suVis:SIM.setupVis(opt.setup),run,prep,opt,k,snap,env,seed,field,lead,auto:S.env.hillDrive!=="you",took:null,speed:+S.env.hillSpd||4,cam:S.env.hillCam||"auto",push:false,lift:false,pre:2.5,last:performance.now(),finished:false,skip:false,doneAt:null,lastPtr:0,acc:0,color:carPaint()};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("hillCtl").style.display="";hillHudInit();$("hillPush").dataset.k="";hillHud();
   $("testProg").classList.remove("done");sfx("start");
   requestAnimationFrame(()=>{const pn=$("panel"),r=$("hillCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
@@ -29539,7 +29627,7 @@ function hillStart(){
     if(HC.pre>0)HC.pre-=dt;else if(!st.done){HC.acc+=dt*HC.speed;let n=0;while(HC.acc>=0.02&&!st.done&&n++<800){HC.run.step(0.02,hillCtl());HC.acc-=0.02;}if(n>=800)HC.acc=0;}
     if(st.done&&HC.doneAt==null){HC.doneAt=now;if(st.dnf){$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",300);sfx("fail");buzz([80,40,120]);}else{$("flash").style.background="rgba(79,192,141,.35)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",400);buzz([30,40,30,40,90]);}}
     if(st.ev&&st.ev!==HC.lastEv){HC.lastEv=st.ev;if(st.ev.kind!=="moment"){buzz([60,30,60]);sfx("mudslap");}else buzz([25]);}
-    if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:true,course:HC.run.T,s:st.s,v:st.v,d:st.d,g:st.g+1,rpm:st.rpm,thr:st.thr,brk:st.brk,lat:st.latUse,off:st.off?st.off.kind:null,dnf:st.dnf?st.dnf.kind:null,ev:st.ev&&st.t-st.ev.t<1?st.ev.kind:null,
+    if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:true,su:HC.suVis,course:HC.run.T,s:st.s,v:st.v,d:st.d,g:st.g+1,rpm:st.rpm,thr:st.thr,brk:st.brk,lat:st.latUse,off:st.off?st.off.kind:null,dnf:st.dnf?st.dnf.kind:null,ev:st.ev&&st.t-st.ev.t<1?st.ev.kind:null,
       ch:HC.opt.ch,aero:HC.opt.aero,color:HC.color,cam:HC.cam,pre:HC.pre>0,done:st.done,night:false,dt:dt*(HC.pre>0||st.done?1:HC.speed)});
     if((hudT+=dt)>0.08||st.done){hudT=0;hillHud();}
     run.on=true;run.rpm=st.done?run.rpm+(HC.run.car.idle-run.rpm)*Math.min(1,dt*3):HC.pre>0?HC.run.car.idle+800*Math.max(0,Math.sin(now/180)):st.rpm;run.load=st.done?0:Math.max(0.05,st.thr);$("rpmLbl").textContent=Math.round(run.rpm/10)*10;

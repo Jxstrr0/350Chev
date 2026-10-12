@@ -5,8 +5,37 @@ const ROAD_FEE=200,ROAD_CAMS=[["auto","Auto","director"],["chase","Chase","behin
 const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(d||1).padStart(d===2?5:4,"0")}`;
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
-  if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId())});}   // a chosen swap car (app/swap.js) stands in for the chassis
+  if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
+/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
+function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;};c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);}
+function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
+const suLapCache=new Map();
+function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
+function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0);let r=suLapCache.get(k);
+  if(!r){if(suLapCache.size>60)suLapCache.clear();const L=SIM.lapSim(p,o,trk);let w=null;for(const a of L.apex)if(!w||a.kmh<w.kmh)w=a;r={t:L.time,low:w&&w.name,ay:L.ayPk};suLapCache.set(k,r);}return r;}
+/* the live read-out under the sliders: balance bar, lap-time change against stock (Road) or the car's figures (Hill), a plain line */
+function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType==="hill";let car,txt="",dl="";
+  try{
+    if(hill){if(!(quick&&quick.rpms)){box.innerHTML="";return;}const p=hillPrepFor(S.cfg);car=SIM.hillCar(p,hillOpt());const c0=SIM.hillCar(p,Object.assign(hillOpt(),{setup:null}));
+      const hk=o=>cfgHash(S.cfg)+"|"+JSON.stringify(o),hp=o=>{const k=hk(o);let t=suLapCache.get(k);if(t===undefined){if(suLapCache.size>60)suLapCache.clear();const q=SIM.hillPass(p,Object.assign({seed:5},o));t=q.time;suLapCache.set(k,t);}return t;};
+      const ho=hillOpt(),ta=hp(ho),tb=ho.setup?hp(Object.assign({},ho,{setup:null})):ta,d=ta!=null&&tb!=null?ta-tb:null;
+      dl=`climb <b>${fmtHill(ta)}</b> <b class="${d==null||Math.abs(d)<0.05?"":d<0?"su-up":"su-dn"}">${d==null||Math.abs(d)<0.05?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(1)+" s"}</b> <span class="dim">vs stock · downforce ${car.clA.toFixed(2)} m² · drag ${car.cdA.toFixed(2)} m²</span>`;}
+    else{const o=roadOpt(),q=quick&&quick.rpms?quick:null;if(!q){box.innerHTML="";return;}const p=SIM.roadPrep(S.cfg,q);car=SIM.roadCar(p,o);const trk=S.env.roadTrk;
+      const a=suLapFor(p,o,trk),b=o.setup?suLapFor(p,Object.assign({},o,{setup:null}),trk):a,d=a.t-b.t;
+      dl=`lap <b>${fmtLap(a.t,2)}</b> <b class="${Math.abs(d)<0.005?"":d<0?"su-up":"su-dn"}">${Math.abs(d)<0.005?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(2)+" s"}</b> <span class="dim">vs stock setup</span>`;
+      if(b&&a.low&&suBalWord(car.bi)!=="neutral")txt=car.bi>0?`Pushing wide in ${rdEsc(a.low)} — the fronts run out first.`:`The tail steps out on the way out of ${rdEsc(a.low)}.`;
+      else txt=`Neutral — front and rear let go together.`;}
+  }catch(err){box.innerHTML="";return;}
+  const b=car.bi,w=suBalWord(b);if(hill){txt=w==="neutral"?"Neutral — front and rear let go together.":w==="understeer"?"It pushes wide in the tight stuff — the fronts run out first.":"The tail steps out on exit — the rears run out first.";}
+  box.innerHTML=`<div class="su-bal" id="suBal" role="img" aria-label="Balance: ${w}"><span>UNDER</span><div class="su-track"><i class="su-mid"></i><i class="su-pin" style="left:${(50+50*Math.max(-1,Math.min(1,b))).toFixed(1)}%"></i></div><span>OVER</span></div>
+    <div class="su-row"><b class="su-w su-${w}">${w==="neutral"?"Neutral":w==="understeer"?"Understeer":"Oversteer"}</b><span>${dl}</span></div><p class="hint su-txt">${txt}</p>`;}
+function suEnvHtml(sl,hill){const e=S.env;suFix(e);
+  return `<div class="lbl"><span>Setup</span><button class="chip su-rst" data-su-reset>Reset to stock</button></div>
+    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}</div>
+    <div id="suLive" class="su-live"></div>
+    <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. Stock is the chassis as designed.</p>`;}
+$("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;S.env.suSt=50;S.env.suSp=0;S.env.suWg=0;renderEnv();save();buzz(6);});
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadRecs(){const R=recs();if(!R.road||typeof R.road!=="object")R.road={};return R.road;}
 /* market: a buyer's road figures for an engine, in the buyer's car (cached like the site runs) */
@@ -26,6 +55,7 @@ function roadEnvHtml(sl){const e=roadEnvFix(),o=roadOpt(),C0=o.car||SIM.CHASSIS[
   h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
   if(q){const car=SIM.roadCar(SIM.roadPrep(S.cfg,q),o),fr=Math.round(car.front*100),bal=car.bal==="under"?`nose-heavy (${fr}% front, ${C0.front*100|0}% as designed) — it will push in the slow corners`:car.bal==="over"?`light in the nose (${fr}% front) — the tail steps out on the way in`:`balanced (${fr}% front)`;
     h+=`<p class="hint"><b>${C0.n}</b> · ${C0.d}. With this ${Math.round(car.engKg)} kg engine and a driver: <b>${Math.round(car.m).toLocaleString("en-CA")} kg</b>, ${bal}. ${car.gears.length}-speed, final drive ${car.fd.toFixed(2)}:1 (fitted ${car.fdAuto.toFixed(2)} — top gear on the power peak at the speed the power can hold). Shorter pulls harder out of corners; taller runs out the straight.</p>`;}
+  h+=suEnvHtml(sl,false);
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n4">${ROAD_CAMS.map(([id,n,d])=>`<button data-rk="roadCam" data-rv="${id}" class="${e.roadCam===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg">${[1,2,4].map(v=>`<button data-rk="roadSpd" data-rv="${v}" class="${+e.roadSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double speed":"quick look"}</small></button>`).join("")}</div>`;
   return h;}
@@ -67,7 +97,7 @@ function roadStart(){
   if(opt.dtCap>0&&res.peakTq/opt.dtCap>1.3){opt.dtBrk=true;opt.dtMsg=SIM.dtPart(res.peakTq/opt.dtCap);}   // a big overload breaks a part on the first hard exit
   const prep=SIM.roadPrep(snap.cfg,res),run0=SIM.roadRun(prep,opt),lap=SIM.lapSim(prep,opt,trk),T=SIM.roadTrack(trk);
   const best=roadRecs()[roadKey(opt.rk||opt.ch,trk)]||null,secCut=[0,lap.sectors[0],lap.sectors[0]+lap.sectors[1],lap.time];
-  RT={brk:swapRoadBreak(lap,T,opt),res,env,opt,trk,snap,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:snap.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
+  RT={suVis:SIM.setupVis(opt.setup),brk:swapRoadBreak(lap,T,opt),res,env,opt,trk,snap,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:snap.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("roadCtl").style.display="";roadHudInit();roadBtnText();
   $("testProg").classList.remove("done");sfx("start");
   requestAnimationFrame(()=>{const pn=$("panel"),r=$("roadCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
@@ -75,7 +105,7 @@ function roadStart(){
     RT.t+=dt*RT.speed;const L=RT.lap,pre=RT.t<0,f=roadAt(L,RT.t),done=RT.t>=L.time;
     f.pre=pre;f.done=done;f.lapT=pre?0:Math.min(RT.t,L.time);
     RT.bst=f.bst;RT.slip=f.lim&&f.v<30?0.6:f.lim&&f.v<45?0.3:0;
-    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
+    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,su:RT.suVis,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
     roadHud(f);run.on=true;run.rpm=f.rpm;run.load=Math.max(0.05,f.thr);$("rpmLbl").textContent=Math.round(f.rpm/10)*10;
     $("testProg").style.width=Math.min(100,100*Math.max(0,RT.t)/L.time)+"%";
     if(done&&!RT.crossed){RT.crossed=true;buzz([20,30,20]);}
@@ -94,7 +124,7 @@ function roadFinish(){
   const C0=opt.car||SIM.CHASSIS[opt.ch],car=lap.car,tr=lap.trace,dec={d:[],v:[],thr:[],brk:[],g:[]};
   for(let i=0;i<lap.N;i+=4){dec.d.push(Math.round(i*lap.ds));dec.v.push(+(tr.v[i]*3.6).toFixed(1));dec.thr.push(+tr.thr[i].toFixed(2));dec.brk.push(+tr.brk[i].toFixed(2));dec.g.push(tr.g[i]);}
   const r={ch:opt.ch,chName:C0.n,tyre:opt.tyre,tyreName:SIM.ROAD_TYRES[opt.tyre].n,trk,trkName:lap.trackName,len:Math.round(lap.len),finalK:opt.finalK,fd:+car.fd.toFixed(2),fdAuto:+car.fdAuto.toFixed(2),gears:car.gears.length,
-    m:Math.round(car.m),front:+car.front.toFixed(3),bal:car.bal,engKg:Math.round(car.engKg),drive:car.drive,
+    m:Math.round(car.m),front:+car.front.toFixed(3),bal:car.bal,su:opt.setup||null,suBal:+car.bi.toFixed(2),engKg:Math.round(car.engKg),drive:car.drive,
     zero60:a.zero60,zero100:a.zero100,zero200:a.zero200,quarter:a.quarter,roll:a.roll80120,brake100:a.brake100,top:a.top,spinT:a.spinT,
     lapT:+lap.time.toFixed(3),sectors:lap.sectors.map(x=>+x.toFixed(3)),vmax:+lap.vmax.toFixed(1),vmin:+lap.vmin.toFixed(1),apex:lap.apex,shifts:lap.shifts,fullPct:lap.fullPct,ayPk:lap.ayPk,brakePk:lap.brakePk,tracT:lap.tractionT,trace:dec};
   /* records: best lap per chassis × circuit, best 0–100 per chassis */
@@ -120,6 +150,7 @@ function roadSheet(res){const r=res.road,b=roadRecs()[roadKey(r.ch+(r.swap?"@"+r
     <div><b>Corners</b>${r.apex.map(a=>`${rdEsc(a.name)} ${Math.round(a.kmh)}`).join(" · ")} km/h</div>
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
     <div><b>Car</b>${rdEsc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
+    ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${r.su.sp>0?"+":""}${r.su.sp} (${suBalWord(r.suBal)}) · wing ${r.su.wg>0?"+":""}${r.su.wg}</div>`:""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */

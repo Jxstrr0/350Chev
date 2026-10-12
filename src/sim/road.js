@@ -117,7 +117,42 @@
       cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1), engKg: ekg, vPow: vPow,
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
-    return RC;
+    return roadSetup(RC, opt.setup);
+  }
+
+  /* the setup sheet: roll stiffness (soft..stiff, springs + bars together, 0..100, 50 stock), the front/rear split of it
+     (-100 stiffer rear .. +100 stiffer front, 0 stock) and the wing angle (-100 flat .. +100 steep, 0 stock). Lateral grip is
+     the weaker axle's: the stiffer end of the car sheds more grip to load transfer, so a front-stiff car pushes (under) and a
+     rear-stiff one comes round (over). The chassis' own nose-weight bias (`bias`, + = pushes) is already in the stock numbers,
+     so the stock setup is the reference and leaves the car exactly as it was; moving toward neutral gains a little, past it
+     loses. The wing trades downforce (clA) for drag (cdA) and loads the tail. Absent / stock = no change at all. */
+  const SETUP_STOCK = { st: 50, sp: 0, wg: 0 };
+  function setupNorm(su) {
+    if (!su) return null;
+    const st = clamp(Math.round(+su.st), 0, 100), sp = clamp(Math.round(+su.sp), -100, 100), wg = clamp(Math.round(+su.wg), -100, 100);
+    const o = { st: isFinite(st) ? st : 50, sp: isFinite(sp) ? sp : 0, wg: isFinite(wg) ? wg : 0 };
+    return o.st === 50 && o.sp === 0 && o.wg === 0 ? null : o;
+  }
+  function roadSetup(car, setup) {
+    const bias = clamp(car.dFront * 8, -0.6, 0.6);
+    car.bias = bias; car.su = null; car.bi = bias;
+    const su = setupNorm(setup); if (!su) return car;
+    const amp = 0.6 + 0.8 * su.st / 100, r = su.sp / 100 * amp + 0.2 * su.wg / 100, g = r + bias;
+    const kSt = 1 - 1.25e-5 * (Math.pow(su.st - 65, 2) - 225);   // best near 65 (a touch firmer than stock): soft rolls onto its camber, very stiff skips over bumps
+    car.muLat *= kSt * (1 - 0.10 * (Math.abs(g) - Math.abs(bias)));
+    const dCl = su.wg / 100 * (0.5 + 0.5 * Math.min(2, Math.max(0, car.clA)));
+    car.clA += dCl; car.cdA = Math.max(0.3, car.cdA + 0.15 * dCl);
+    if (r < 0 && car.drive !== "fwd") car.tK = 0.10 * Math.min(1, -r);   // tail-happy: the rear lets go on the throttle out of a corner
+    else if (r > 0 && car.drive === "fwd") car.tK = 0.08 * Math.min(1, r);   // front-drive and front-stiff: it pushes wide on the power
+    car.su = su; car.bi = clamp(g, -1, 1);
+    return car;
+  }
+  /* what the 3D car shows: roll gain on the stock lean, brake-dive gain, and how much each axle's inside wheel can lift */
+  function setupVis(setup) {
+    const su = setupNorm(setup) || SETUP_STOCK, t = su.st / 100, sp = su.sp / 100;
+    const gain = t <= 0.5 ? 1 + (0.5 - t) * 2.8 : 1 - (t - 0.5) * 1.6;   // soft 2.4x the stock lean, stiff 0.2x
+    return { rk: +gain.toFixed(3), dive: +gain.toFixed(3),
+      lf: +clamp((t - 0.55) * 2.2 + 0.6 * sp, 0, 1).toFixed(3), lr: +clamp((t - 0.55) * 2.2 - 0.6 * sp, 0, 1).toFixed(3) };
   }
 
   /* engine model shared by the straight-line run and the lap: torque at rpm with the boost that has actually been built */
@@ -176,7 +211,7 @@
   const gearPull = (car, E, v, g) => { const r = rpmOf(car, v, g); return r > car.redline ? 0 : E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; };
   // most force the tyres take for drive (a = 0 weight transfer handled implicitly), and for braking, at speed v with lateral use latF (0..1)
   function tractionF(car, v, latF) {
-    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - latF * latF)), hw = car.h / car.wb;
+    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - latF * latF)) * (car.tK ? 1 - car.tK * latF : 1), hw = car.h / car.wb;
     if (car.drive === "awd") return mu * (mg + DF) * 0.98;
     if (car.drive === "fwd") return mu * (mg * car.front + DF * 0.45) / (1 + mu * hw);
     return mu * (mg * (1 - car.front) + DF * 0.55) / Math.max(0.3, 1 - mu * hw);
