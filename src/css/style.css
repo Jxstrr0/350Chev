@@ -581,6 +581,13 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .crew .ctrs{display:flex;flex-wrap:wrap;gap:5px}
 .crew .ctr{font-size:12px;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
 .crew .ctr.pos{color:var(--good);border-color:rgba(79,192,141,.45)}.crew .ctr.neg{color:var(--crit);border-color:rgba(226,71,60,.45)}.crew .ctr.hid{border-style:dashed;color:var(--dim)}
+.bayc .bayh{display:flex;align-items:center;justify-content:space-between;gap:8px}.bayc .bst{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
+.bayc .bst.busy{color:var(--orange2);border-color:var(--orange)}.bayc .bst.idle{color:var(--good);border-color:rgba(79,192,141,.45)}
+.bayc .bayj{display:grid;gap:5px;font-size:13px;color:var(--muted)}.bayc .bayj b{color:var(--chalk);font-size:14px}.bayc .bayj em{color:var(--warn);font-style:normal}
+.bayc .bayb2{display:flex;flex-wrap:wrap;gap:8px}.bayc .bayb2 .btn{flex:1 1 140px;min-height:44px}
+.bayc .baypk{display:grid;gap:8px}.bayc .bayo{border:1px solid var(--rule);border-radius:6px;padding:8px;background:var(--panel2);display:grid;gap:6px;min-width:0}.bayc .bayo b{font-size:14px;color:var(--chalk)}.bayc .bayo>span{font-size:12px;color:var(--muted)}
+.bayc .bayb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.bayc .bayb .btn{min-height:48px;flex-direction:column;gap:2px;padding:7px 4px;text-align:center}.bayc .bayb .btn small{display:block;font-size:10.5px;letter-spacing:0;text-transform:none;font-weight:400;line-height:1.25;white-space:normal}
+@media(max-width:480px){.bayc .bayb{grid-template-columns:1fr}}
 .crew h3 .ctr.chief{font-size:11px;padding:2px 7px;vertical-align:2px;color:var(--orange);border-color:var(--orange);font-weight:600;white-space:nowrap}
 .crew p.chist{font-size:12px;color:var(--dim);font-style:italic}
 .crew p.caway{font-size:12px;color:var(--warn)}

@@ -72,6 +72,7 @@ app/market.js
 app/swap.js
 app/career.js
 app/crew.js
+app/bays.js
 app/trophy.js
 app/rail.js
 app/help.js

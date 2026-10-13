@@ -259,7 +259,7 @@ document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;co
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");crewWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
+  logEvent(t,"");crewWeek();bayWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -430,7 +430,7 @@ function renderShop(){
   {const cs=$("catSeg"),on=cs&&cs.querySelector("button.on");if(on){const x=on.offsetLeft-cs.offsetLeft;if(x+on.offsetWidth>cs.clientWidth)cs.scrollLeft=x-16;}}   // phone: the chip row scrolls; keep the open category in sight
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
-  crewRender();   // people, levels, traits, training: app/crew.js
+  bayRender();crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
