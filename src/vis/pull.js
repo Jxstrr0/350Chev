@@ -549,6 +549,7 @@ function pullEffects(o, dt, V){
   var TRK=o.track||null, dustK=TRK?clamp(1+1.6*(0.5-clamp(+TRK.moist,0,1))+0.6*clamp(+TRK.cut||0,0,1),0.3,2.2):1, raV=clamp(+o.runaway||0,0,1);
   /* roost: clods + spray thrown up and back, more with slip and speed */
   var k=pulling ? clamp(slip*1.25+v*0.05, 0, 1.4) : 0;
+  var pk0=clamp(((+o.hp||0)-1500)/3000,0,1.5); k*=1+0.35*pk0;
   if(k>0.02){ for(t=0;t<2;t++){ var s=t?1:-1; _pA.set(V.position.x-U.rr*0.55, U.rr*0.75, s*U.trR);
       var nc=k*rate*70*dt, n=Math.floor(nc)+(R()<nc%1?1:0);
       for(i=0;i<n;i++){ var up=2.5+R()*6.5*(0.4+slip), back=2+R()*5*(0.3+slip);
@@ -561,10 +562,13 @@ function pullEffects(o, dt, V){
   if(pulling && v>0.15){ var S=PULL.sled, nb=rate*(0.6+(+o.boxFrac||0)*1.5)*v*1.4*dt*dustK, mb=Math.floor(nb)+(R()<nb%1?1:0);
     for(i=0;i<mb;i++){ var side=R()<0.5?-1:1; FX.emit(S.position.x-0.2-R()*1.5, 0.25, side*(1.2+R()*0.8), v*0.3, 0.4+R()*0.5, side>0?0.3:-0.9, 3.5+R()*2, 0.8, 3.2+R()*1.6, 0.5, 0.39, 0.27, 0.14, {drag:0.6, buoy:0.15, fin:0.1, spin:0.3}); } }
   /* black smoke: puffs leave the stack fast, slow, swell and drift with the wind */
-  var ns2=rate*(lite?16:30)*(0.25+smoke)*dt;
+  var pk=clamp(((+o.hp||0)-1500)/3000,0,1.5);   /* big builds (Unlimited): more smoke, bigger roost, flames at the stacks */
+  var ns2=rate*(lite?16:30)*(0.25+smoke)*(1+0.8*pk)*dt;
   if(o.killed) ns2=0; else if(raV>0) ns2*=1+3.5*raV;   /* runaway: a grey-white torrent of burnt oil; killed: nothing at all */
   for(t=0;t<U.tips.length;t++){ V.userData.body.localToWorld(_pB.copy(U.tips[t])); _pD.copy(U.dirs[t]).applyQuaternion(U.pivot.quaternion);
     var nn=Math.floor(ns2)+(R()<ns2%1?1:0);
+    if(pk>0.25 && pulling && !o.killed && (+o.throttle||0)>0.6){ var nf2=rate*(lite?10:22)*pk*dt, mf2=Math.floor(nf2)+(R()<nf2%1?1:0);
+      for(i=0;i<mf2;i++) FX.emit(_pB.x+_pD.x*0.1, _pB.y+_pD.y*0.1, _pB.z, _pD.x*(5+R()*3)+v, _pD.y*(5+R()*3), _pD.z*(5+R()*3), 0.12+R()*0.1, 0.3+pk*0.2, 0.9+pk*0.4, 1, 0.55+R()*0.2, 0.15, 0.55, {drag:1.2, buoy:0.3, fin:0.02, spin:0.2}); }
     for(i=0;i<nn;i++){ var sp=1.8+smoke*2.2+R()*1.2, c=lerp(lerp(0.42,0.025,Math.pow(smoke,0.7))+R()*0.03, 0.7+R()*0.12, raV>0?Math.min(1,0.55+raV*1.5):0);
       FX.emit(_pB.x+_pD.x*0.05, _pB.y+_pD.y*0.05, _pB.z, _pD.x*sp+v, _pD.y*sp, _pD.z*sp+(R()-0.5)*0.6, 2.4+R()*1.6+smoke*1.2, 0.3+smoke*0.25, 2+smoke*4+R(), c, c*0.98, c*0.96, 0.22+0.55*smoke, {drag:0.75, buoy:0.12+smoke*0.18, fin:0.03, spin:0.5}); } }
   /* full pull: confetti over the hook */
