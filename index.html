@@ -587,6 +587,13 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .crew .ctrs{display:flex;flex-wrap:wrap;gap:5px}
 .crew .ctr{font-size:12px;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
 .crew .ctr.pos{color:var(--good);border-color:rgba(79,192,141,.45)}.crew .ctr.neg{color:var(--crit);border-color:rgba(226,71,60,.45)}.crew .ctr.hid{border-style:dashed;color:var(--dim)}
+.bayc .bayh{display:flex;align-items:center;justify-content:space-between;gap:8px}.bayc .bst{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:3px 8px;border-radius:11px;border:1px solid var(--rule);color:var(--muted)}
+.bayc .bst.busy{color:var(--orange2);border-color:var(--orange)}.bayc .bst.idle{color:var(--good);border-color:rgba(79,192,141,.45)}
+.bayc .bayj{display:grid;gap:5px;font-size:13px;color:var(--muted)}.bayc .bayj b{color:var(--chalk);font-size:14px}.bayc .bayj em{color:var(--warn);font-style:normal}
+.bayc .bayb2{display:flex;flex-wrap:wrap;gap:8px}.bayc .bayb2 .btn{flex:1 1 140px;min-height:44px}
+.bayc .baypk{display:grid;gap:8px}.bayc .bayo{border:1px solid var(--rule);border-radius:6px;padding:8px;background:var(--panel2);display:grid;gap:6px;min-width:0}.bayc .bayo b{font-size:14px;color:var(--chalk)}.bayc .bayo>span{font-size:12px;color:var(--muted)}
+.bayc .bayb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.bayc .bayb .btn{min-height:48px;flex-direction:column;gap:2px;padding:7px 4px;text-align:center}.bayc .bayb .btn small{display:block;font-size:10.5px;letter-spacing:0;text-transform:none;font-weight:400;line-height:1.25;white-space:normal}
+@media(max-width:480px){.bayc .bayb{grid-template-columns:1fr}}
 .crew h3 .ctr.chief{font-size:11px;padding:2px 7px;vertical-align:2px;color:var(--orange);border-color:var(--orange);font-weight:600;white-space:nowrap}
 .crew p.chist{font-size:12px;color:var(--dim);font-style:italic}
 .crew p.caway{font-size:12px;color:var(--warn)}
@@ -1516,6 +1523,7 @@ html.desk #tabs .dot.n{right:4px;top:6px}
       <div id="marketBox">
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
         <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><button class="btn pri" id="nextWeek">Close the week</button><div id="contracts"></div><p class="hint" id="overheadHint"></p></div>
+        <div class="sec" id="baySec" hidden><h2>Build bays <span class="cnt" id="bayCnt"></span></h2><div id="bayBox"></div></div>
         <div class="stats" id="gStats"></div>
         <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
         <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
@@ -26492,6 +26500,8 @@ const UPGRADES=[
   {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:90000,needs:"dyno2"},
   {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:140000,needs:"bay1"},
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
+  {id:"bay3",name:"Build bay C",desc:"A third bay that builds market contracts on its own. Hire a bay lead; $5,000 a week to run once staffed.",price:350000,needs:"bay2"},
+  {id:"bay4",name:"Build bay D",desc:"A fourth bay for a second contract at a time. Its own bay lead; $8,000 a week to run once staffed.",price:900000,needs:"bay3"},
   {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:240000,needs:"dyno3"},
   {id:"dyno5",name:"Monster dyno cell",desc:"Water-brake cell that reads to 10,000 hp. Built for the four-figure-boost builds that overload the Outlaw cell.",price:400000,needs:"dyno4"}
 ];
@@ -26863,7 +26873,7 @@ function recompute(){
 }
 function hud(){
   if(typeof tabBadges==="function")tabBadges();
-  if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0]}${dev()?" · DEV":""}`;}
+  if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${(has("bay4")?"BAYS A–D":has("bay3")?"BAYS A–C":["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0])}${dev()?" · DEV":""}`;}
   else{$("cashLbl").textContent="Test cell";$("cashLbl").style.color="var(--chalk)";$("repLbl").textContent="all parts unlocked";$("weekLbl").textContent="SANDBOX";}
   if(typeof lgHud==="function")lgHud();
 }
@@ -30710,7 +30720,7 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   if(dsl)sl.push(["lambda",0.1,"lean the full-load λ 0.1"],["lambda",-0.1,"richen the full-load λ 0.1"],["timing",-2,"retard the injection 2°"]);
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
-function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
+function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]&&!/^bay[34]$/.test(u.id)?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
 function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
   if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
@@ -31250,7 +31260,7 @@ document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;co
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");crewWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
+  logEvent(t,"");crewWeek();bayWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -31421,7 +31431,7 @@ function renderShop(){
   {const cs=$("catSeg"),on=cs&&cs.querySelector("button.on");if(on){const x=on.offsetLeft-cs.offsetLeft;if(x+on.offsetWidth>cs.clientWidth)cs.scrollLeft=x-16;}}   // phone: the chip row scrolls; keep the open category in sight
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
-  crewRender();   // people, levels, traits, training: app/crew.js
+  bayRender();crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
@@ -31707,6 +31717,90 @@ ACH.push(
   {g:"shop",id:"crew_crew3",name:"Seasoned crew",desc:"All four roles filled at level 3 or better.",ic:"people",tier:"silver",check:()=>career()&&CREW_ALL.every(r=>{const p=crewP(r);return p&&p.lvl>=3;})},
   {g:"shop",id:"crew_chief",name:"Runs the floor",desc:"Promote a member of staff to crew chief.",ic:"people",tier:"bronze",check:()=>career()&&(crewS().hist.chief||0)>0},
   {g:"shop",id:"crew_lv5",name:"Master hand",desc:"A member of staff reaches level 5.",ic:"star",tier:"gold",check:()=>career()&&crewMaxLv()>=5});
+/* ===================== BUILD BAYS (career) =====================
+   Late-game money sink. Bay C and Bay D are Shop items (UPGRADES bay3 / bay4); each takes a "bay lead" (a named hand with a level
+   and traits) and, once staffed, builds a market contract in the background: the player picks the contract and a budget tier,
+   the bay takes N weeks (set by the contract's difficulty) and delivers when the week advances. Quality comes from the lead's
+   level and traits, the shop's upgrades and the budget; it sets the pay and the small chance of a failed QC (rework or penalty).
+   A staffed bay costs its running cost + the lead's wage every week, busy or idle. State: C().bays, filled by bayS() so a save
+   from before bays loads clean. Own seeded generator (C().bays.seed): never draws from C().seed. Nothing here touches S.cfg,
+   the dyno or cfgHash. */
+const BAYS=[{id:"bay3",nm:"Bay C",run:5000,wage:900},{id:"bay4",nm:"Bay D",run:8000,wage:1200}];
+const BAY_BUD=[{id:"eco",n:"Economy",cost:0.5,q:-12},{id:"std",n:"Standard",cost:0.62,q:0},{id:"prem",n:"Premium",cost:0.74,q:14}];
+const BAY_TR=[
+  {id:"perfect",n:"Perfectionist",pos:1,d:"QC failures half as likely."},
+  {id:"speedy",n:"Fast hands",pos:1,d:"Jobs of 3 weeks or more finish a week sooner."},
+  {id:"thrifty",n:"Thrifty",pos:1,d:"Haggles for parts: build cost −6%."},
+  {id:"closer",n:"Smooth talker",pos:1,d:"Clients pay +3%."},
+  {id:"sloppy",n:"Sloppy",pos:0,d:"Quality −10."},
+  {id:"pricey",n:"Pricey",pos:0,d:"Wage +20%."}];
+const BAY_UPQ={shop1:3,shop2:4,race:4,dyno3:2,dyno4:2,flow:2,boost:2};
+function bayS(){const c=C();if(!c.bays||typeof c.bays!=="object")c.bays={};const k=c.bays;if(!k.seed)k.seed=((c.seed>>>0)^0x2f6e2b1)>>>0||11;
+  if(!k.b||typeof k.b!=="object")k.b={};if(!k.cand||typeof k.cand!=="object")k.cand={};if(!k.hist||typeof k.hist!=="object")k.hist={jobs:0,fail:0,profit:0};
+  for(const b of BAYS)if(!k.b[b.id]||typeof k.b[b.id]!=="object")k.b[b.id]={lead:null,job:null};return k;}
+function bayRnd(){const k=bayS();k.seed=(k.seed*1664525+1013904223)>>>0;return k.seed/4294967296;}
+const bayTr=id=>BAY_TR.find(t=>t.id===id);
+const bayHas=(L,id)=>!!L&&(L.tr||[]).includes(id);
+function bayNew(id){const k=bayS();if(k.cand[id])return k.cand[id];
+  const f=CREW_FIRST[Math.floor(bayRnd()*CREW_FIRST.length)],l=CREW_LAST[Math.floor(bayRnd()*CREW_LAST.length)];const x=bayRnd(),n=x<0.25?0:x<0.8?1:2,tr=[];
+  for(let i=0;i<n;i++){const pos=bayRnd()<0.7,pool=BAY_TR.filter(t=>!!t.pos===pos&&!tr.includes(t.id));if(pool.length)tr.push(pool[Math.floor(bayRnd()*pool.length)].id);}
+  return (k.cand[id]={nm:f+" "+l,lvl:1,xp:0,tr});}
+function bayWage(b,L){return Math.round(b.wage*(1+0.12*((L.lvl|0)-1))*(bayHas(L,"pricey")?1.2:1)/10)*10;}
+function bayQ(L,bud){let u=0;for(const id in BAY_UPQ)if(has(id))u+=BAY_UPQ[id];return Math.max(0,Math.min(100,40+7*(L.lvl|0)+(bayHas(L,"sloppy")?-10:0)+u+bud.q));}
+const bayFail=(q,L)=>Math.max(0.02,Math.min(0.3,0.34-q*0.0034))*(bayHas(L,"perfect")?0.5:1);
+const bayPayK=(q,L)=>0.95+q*0.0015+(bayHas(L,"closer")?0.03:0);
+function bayPlan(k,b,bud){const L=bayS().b[b.id].lead,seg=SEGMENTS.find(s=>s.id===k.seg)||{tier:0},tier=seg.tier;
+  let w=Math.max(1,Math.min(6,Math.round(1+(tier+0.5*k.units)*0.7)));if(L.lvl>=4)w=Math.max(1,w-1);if(bayHas(L,"speedy")&&w>=3)w--;
+  const q=bayQ(L,bud),cost=Math.round(k.price*k.units*bud.cost*(bayHas(L,"thrifty")?0.94:1)/10)*10,pay=Math.round(k.price*k.units*priceBoost()*bayPayK(q,L)/10)*10,run=w*(b.run+bayWage(b,L));
+  return{tier,w,q,cost,pay,run,net:pay-cost-run,fail:bayFail(q,L)};}
+function bayTake(k){C().inbox=(C().inbox||[]).filter(x=>x.id!==k.id);if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);}
+function bayStart(b,k,bud){const B=bayS().b[b.id],L=B.lead;if(!L||B.job)return false;const p=bayPlan(k,b,bud);
+  if(C().cash<p.cost){toast(`Need ${fmt$(p.cost-C().cash)} more for the parts`);return false;}
+  C().cash-=p.cost;bayTake(k);B.job={id:k.id,name:k.name,client:k.client,seg:k.seg,tier:p.tier,units:k.units,bud:bud.id,weeks:p.w,left:p.w,cost:p.cost,pay:p.pay,q:p.q,start:C().week,rw:0,rep:!!k.repeat};
+  logEvent(`${b.nm}: ${L.nm} started ${k.units} × ${k.name} for ${k.client} — ${bud.n.toLowerCase()} budget, ${fmt$(p.cost)} in parts, ${p.w} week${p.w>1?"s":""}`,"");return true;}
+function bayDeliver(b,B,pen){const j=B.job,L=B.lead;let pay=j.pay;if(pen)pay=Math.round(pay*0.55/10)*10;
+  const gain=Math.max(1,Math.round(repFor(j.tier,j.units,{ok:true,m:1},0,j.rep)*0.8))-(pen?3:0),net=pay-j.cost-(j.extra||0);
+  C().cash+=pay;C().profit+=net;C().sold+=j.units;C().rep=Math.max(0,C().rep+gain);const h=bayS().hist;h.jobs++;h.profit+=net;if(pen)h.fail++;
+  if(L){L.xp=(L.xp||0)+25+12*j.tier;while(L.lvl<5&&L.xp>=CREW_XP[L.lvl]){L.lvl++;logEvent(`${L.nm} (${b.nm} lead) made level ${L.lvl}`,"good");}}
+  logEvent(`${b.nm} delivered ${j.units} × ${j.name} to ${j.client} — ${pen?"QC penalty, paid 55%: ":""}${fmt$(pay)} in, ${fmt$(net)} after parts, ${gain>=0?"+":""}${gain} rep`,pen?"bad":"good");B.job=null;}
+function bayWeek(){if(!career())return;const own=BAYS.filter(b=>has(b.id));if(!own.length)return;let run=0;
+  for(const b of own){const B=bayS().b[b.id],L=B.lead;if(!L)continue;run+=b.run+bayWage(b,L);
+    const j=B.job;if(!j)continue;if(--j.left>0)continue;
+    if(!j.rw&&bayRnd()<bayFail(j.q,L)){
+      if(bayRnd()<0.65){j.rw=1;j.left=Math.max(1,Math.ceil(j.weeks/3));const x=Math.round(j.cost*0.15/10)*10;j.extra=x;C().cash-=x;bayS().hist.fail++;
+        logEvent(`${b.nm}: ${j.name} failed QC — rework ${j.left} more week${j.left>1?"s":""}, ${fmt$(x)} in parts`,"bad");}
+      else bayDeliver(b,B,true);}
+    else bayDeliver(b,B,false);}
+  if(run){C().cash-=run;logEvent(`Bays: running costs and lead wages ${fmt$(run)}`,"");}}
+function bayCost(){let t=0;for(const b of BAYS)if(has(b.id)){const L=bayS().b[b.id].lead;if(L)t+=b.run+bayWage(b,L);}return t;}
+let bayPick=null;
+function bayOffers(){const l=(C().inbox||[]).filter(k=>k.expires>=C().week).slice();for(const c of CATS)if(catOpen(c))for(const k of offersFor(c.id))l.push(k);return l;}
+const bayIni=n=>String(n).split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+function bayRender(){const box=$("bayBox"),sec=$("baySec");if(!box||!sec)return;const own=career()?BAYS.filter(b=>has(b.id)):[];
+  sec.hidden=!career()||(!own.length&&C().rep<300);if(sec.hidden)return;const S_=bayS();
+  if(!own.length){box.innerHTML=`<p class="hint">Extra build bays (Bay C, Bay D) are in the Shop. Staff one with a bay lead and it builds market contracts in the background while you work.</p>`;$("bayCnt").textContent="";return;}
+  const run=bayCost(),busy=own.filter(b=>S_.b[b.id].job).length;$("bayCnt").textContent=run?`${fmt$(run)}/wk`:"";
+  const card=b=>{const B=S_.b[b.id],L=B.lead,j=B.job;let h=`<div class="up bayc crew"><div class="bayh"><h3>${b.nm}</h3><span class="bst ${j?"busy":L?"idle":"empty"}">${j?"BUSY":L?"IDLE":"NO LEAD"}</span></div>`;
+    if(!L){const a=bayNew(b.id);h+=`<div class="cwho"><i class="cav off" style="--cc:var(--info)">${bayIni(a.nm)}</i><div><p class="csub">Applicant: <b>${ddEsc(a.nm)}</b> · bay lead, level 1</p><p class="csub">${a.tr.length?a.tr.map(t=>bayTr(t).n).join(" · "):"No standout traits"}</p></div></div>
+      <button class="btn sm pri" data-bayhire="${b.id}">Hire bay lead · ${fmt$(bayWage(b,a))}/wk</button><p class="hint">Running cost ${fmt$(b.run)}/wk once staffed.</p>`;}
+    else{const nx=L.lvl<5?CREW_XP[L.lvl]:null,pv=CREW_XP[L.lvl-1],pct=nx?Math.max(0,Math.min(100,Math.round(100*(L.xp-pv)/(nx-pv)))):100;
+      h+=`<div class="cwho"><i class="cav" style="--cc:var(--info)">${bayIni(L.nm)}</i><div><p class="csub"><b>${ddEsc(L.nm)}</b> · bay lead · <span class="clv">LV ${L.lvl}</span></p>
+        <div class="cbar" title="${Math.floor(L.xp)} XP"><i style="width:${pct}%"></i></div>${L.tr.length?`<div class="ctrs">${L.tr.map(t=>{const T=bayTr(t);return `<span class="ctr ${T.pos?"pos":"neg"}" title="${T.d}">${T.n}</span>`;}).join("")}</div>`:""}</div></div>
+        <p class="csub">${fmt$(b.run)} running + ${fmt$(bayWage(b,L))} wage a week</p>`;
+      if(j){const done=j.weeks+(j.rw?Math.max(1,Math.ceil(j.weeks/3)):0),pc=Math.round(100*(done-j.left)/done);
+        h+=`<div class="bayj"><b>${j.units} × ${ddEsc(j.name)}</b><span>${ddEsc(j.client)} · ${(BAY_BUD.find(x=>x.id===j.bud)||{}).n} budget${j.rw?" · <em>rework</em>":""}</span>
+          <div class="bar"><i style="width:${pc}%"></i></div><span>${done-j.left} / ${done} wk · delivers week ${C().week+j.left} · pays ${fmt$(j.pay)} · quality ${j.q}</span></div>`;}
+      else h+=`<div class="bayb2"><button class="btn sm ${bayPick===b.id?"":"pri"}" data-baypick="${b.id}">${bayPick===b.id?"Close contract list":"Assign a contract"}</button><button class="btn sm danger" data-bayfire="${b.id}">Release lead</button></div>`;
+      if(bayPick===b.id&&!j){const offs=bayOffers().sort((x,y)=>bayPlan(y,b,BAY_BUD[1]).net-bayPlan(x,b,BAY_BUD[1]).net);h+=`<div class="baypk">${offs.length?offs.map(k=>{const bp=BAY_BUD.map(u=>[u,bayPlan(k,b,u)]);
+          return `<div class="bayo"><b>${ddEsc(k.name)}</b><span>${ddEsc(k.client)} · ${k.units} × ${fmt$(k.price)} · ${bp[1][1].w} wk</span><div class="bayb">${bp.map(([u,p])=>`<button class="btn sm ${u.id==="std"&&p.net>0?"pri":""}" data-bayjob="${k.id}" data-bay="${b.id}" data-bud="${u.id}"${C().cash<p.cost?" disabled":""}>${u.n}<small>parts ${fmt$(p.cost)} · net ${p.net<0?"−":""}${fmt$(Math.abs(p.net))} · QC fail ${Math.round(p.fail*100)}%</small></button>`).join("")}</div></div>`;}).join(""):`<p class="hint">No offers on the board. Come back next week.</p>`}</div>`;}}
+    return h+`</div>`;};
+  box.innerHTML=`<p class="hint">${busy} of ${own.length} bay${own.length>1?"s":""} building · lifetime ${S_.hist.jobs} job${S_.hist.jobs===1?"":"s"}, ${fmt$(S_.hist.profit)} after parts, ${S_.hist.fail} QC problem${S_.hist.fail===1?"":"s"}. Net = pay − parts − the bay's running cost over the job. Quality (lead level, traits, shop upgrades, budget) sets the pay and the QC risk.</p>`+own.map(card).join("");}
+$("bayBox").addEventListener("click",e=>{if(!career())return;const t=e.target.closest("button");if(!t||t.disabled)return;const d=t.dataset;
+  if(d.bayhire){const b=BAYS.find(x=>x.id===d.bayhire),B=bayS().b[b.id];if(!b||B.lead)return;const a=bayNew(b.id);B.lead=a;delete bayS().cand[b.id];logEvent(`${a.nm} is the new ${b.nm} lead — ${fmt$(bayWage(b,a))}/week`,"");}
+  else if(d.bayfire){const B=bayS().b[d.bayfire];if(!B||B.job)return;B.lead=null;if(bayPick===d.bayfire)bayPick=null;}
+  else if(d.baypick){bayPick=bayPick===d.baypick?null:d.baypick;}
+  else if(d.bayjob){const b=BAYS.find(x=>x.id===d.bay),u=BAY_BUD.find(x=>x.id===d.bud),k=bayOffers().find(x=>x.id==d.bayjob);if(!b||!u||!k||!bayStart(b,k,u))return;bayPick=null;toast(`${b.nm.toUpperCase()} · JOB STARTED`);buzz(20);}
+  else return;save();hud();renderShop();});
 /* ===================== TROPHY ROOM =====================
    What the shop has won, set and kept, in one room. The game already keeps records (recs()), achievements (S.ach), goals
    (C().goals), sponsors (spS()) and Dyno day counts (DD()); what it didn't keep is a dated history of wins, so this adds
