@@ -384,7 +384,7 @@ function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  spLivery();if(!career())return;
+  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career())return;
   refillContracts();spRender();
   $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
@@ -480,11 +480,11 @@ $("prestige").addEventListener("click",e=>{const b=e.target.closest("[data-prest
 $("borrow").addEventListener("click",()=>{if(C().loan+LOAN_STEP>LOAN_MAX)return;C().loan+=LOAN_STEP;C().cash+=LOAN_STEP;logEvent(`Borrowed ${fmt$(LOAN_STEP)} from the bank`,"");save();hud();renderShop();toast(`${fmt$(LOAN_STEP)} in the account. The bank takes ${fmt$(loanInt()+loanPay())} a week now.`);});
 $("repay").addEventListener("click",()=>{const amt=Math.min(C().loan,Math.max(0,C().cash));if(amt<=0)return;C().loan-=amt;C().cash-=amt;logEvent(`Repaid ${fmt$(amt)} to the bank`,"good");achCheck({type:"loan"});save();hud();renderShop();toast(C().loan>0?`${fmt$(C().loan)} still owed`:"Loan cleared");});
 function benchUnlock(){if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;S.name=null;}}   // a fresh career can't keep a locked build on the bench
-$("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
+$("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();lgApply();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
 $("upgrades").addEventListener("click",e=>{const b=e.target.closest("[data-buy]");if(!b||b.disabled)return;const u=UPGRADES.find(x=>x.id===b.dataset.buy);if(C().cash<u.price){toast(`Need ${fmt$(u.price-C().cash)} more`);return;}if(!bigSpend(u.name,u.price))return;
   const oh0=overhead();C().cash-=u.price;C().owned[u.id]=true;C().rep+=5;{const dOh=overhead()-oh0;if(dOh>0)logEvent(`${u.name} raised weekly overhead by ${fmt$(dOh)} (plant is charged 2% of its price a week)`,"");}save();hud();renderShop();renderBuild();renderPresets();recompute();ENGINE_VIS.buildGarage(garageOwned());toast(`${u.name.toUpperCase()} · INSTALLED`);buzz(30);});
 $("resetGame").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}if(confirm("Wipe the career save? Cash, upgrades and contracts reset. Blueprints are kept."))
-  {S.career=freshCareer();benchUnlock();save();boot();toast("Fresh start. $20,000 and a dream.");}});
+  {S.career=freshCareer();lgApply();benchUnlock();save();boot();toast("Fresh start. $20,000 and a dream.");}});
 $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   if(b.dataset.save){const i=+b.dataset.save;if(readSlot(i)&&!confirm(`Overwrite slot ${i}?`))return;toast(writeSlot(i)?`SLOT ${i} SAVED`:"Couldn't save — storage blocked on this device");renderSaves();}
   else if(b.dataset.load){const i=+b.dataset.load;const o=readSlot(i);if(!o)return;if(!confirm(`Load slot ${i}? Your current game is replaced (it stays in autosave until you make a change).`))return;applyLoaded(o,`Loaded slot ${i}`);}
