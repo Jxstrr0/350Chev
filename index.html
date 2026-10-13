@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.62.2.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.63.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -26630,7 +26630,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.62.2.0";
+const VERSION="1.63.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -27350,22 +27350,26 @@ function oppDyn(now,ox,st){const R=DR&&DR.race,F=R&&R.fx;if(!F)return null;
 $("envBox").addEventListener("click",e=>{if(e.target.closest("[data-stdcell]")){C().cell=stdCell();renderEnv();recompute();commitEnv();renderTest();toast("Cell reset to standard");}});
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-lp]");if(!b)return;const k=b.dataset.ek||"loadProfile";
   if(k==="drv"&&SIM.DRIVETRAIN[b.dataset.lp]&&!drvOwned(b.dataset.lp)){const D=SIM.DRIVETRAIN[b.dataset.lp];if(C().cash<D.cost){toast("Not enough cash for the "+D.n+" drivetrain");return;}C().cash-=D.cost;(C().drvOwn=C().drvOwn||{})[b.dataset.lp]=1;logEvent(`Fitted a ${D.n} clutch, box & axle — ${fmt$(D.cost)}`);hud();toast(`${D.n} drivetrain fitted — ${fmt$(D.cost)}`);}
-  S.env[k]=b.dataset.lp;
+  S.env[k]=b.dataset.lp;if(k==="dragFmt")S.env.dragQuick=false;
   if(k==="body"&&BODY_SETUP[b.dataset.lp]){const bs=Object.assign({},BODY_SETUP[b.dataset.lp]);bs.launchRpm=Math.min(bs.launchRpm,S.cfg.redline);Object.assign(S.env,bs);toast(`${SIM.AERO[b.dataset.lp].n} — typical gearing filled in, edit anything`);}
   renderEnv();save();});
 /* Test holds the dyno work, Events the strip, the sled, the salt, the road and the 24 Hours. Both pick S.env.testType;
    S.testPick / S.evPick remember the last of each so either tab reopens where it was left. */
-const DYNO_T=["pull","endurance","overrev"],EV_T=["drag","pull_sled","salt","bog","boat","road","hill","race24"];
+const DYNO_T=["pull","endurance","overrev"],EV_T=["drag","bracket","pull_sled","salt","bog","boat","road","hill","race24"];
+/* Bracket night is the drag strip in its quick bracket format (S.env.dragFmt "bracket" + dragQuick): the picker shows it as its own tile */
+function evCur(){return S.env.testType==="drag"&&S.env.dragFmt==="bracket"&&S.env.dragQuick?"bracket":S.env.testType;}
+function evApply(t){if(t==="bracket"){S.env.dragFmt="bracket";S.env.dragQuick=true;S.env.testType="drag";}else{if(t==="drag"&&S.env.dragQuick){S.env.dragQuick=false;if(S.env.dragFmt==="bracket")S.env.dragFmt="test";}S.env.testType=t;}}
 function pickTest(t){if(testing&&t!==S.env.testType){toast("Let the run finish first");return;}S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));renderEnv();if(climateCtl())recompute();renderTest();save();}
 $("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;pickTest(b.dataset.t);});
-$("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===S.env.testType;pickTest(b.dataset.t);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});
+$("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===evCur();if(!same&&testing){toast("Let the run finish first");return;}if(!same&&b.dataset.t!=="bracket"&&evBlockPick(b.dataset.t))return;evApply(b.dataset.t);pickTest(S.env.testType);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});
 /* opening Test or Events: if S.env.testType belongs to the other tab, switch to this tab's last pick (never mid-run) */
+function evBlockPick(t){return false;}
 function evSync(tab){if(testing||(S.bay&&tab==="events"))return;   // a dyno-day engine keeps the bay on its pull
   const ev=trackEvt(S.env.testType);let t=null;
-  if(tab==="events"){const cur=ev?S.env.testType:S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===S.env.testType)t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
-  if(!t)return;S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
+  if(tab==="events"){const cur=ev?evCur():S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===evCur())t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
+  if(!t)return;evApply(t);document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
 /* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
-const EV_NAME={drag:"Drag strip",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
+const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
 function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"testSlot"),dock=$(ev?"evDock":"testDock"),core=$("testCore"),rd=$("runDock");
   if(core.parentElement!==slot)slot.appendChild(core);if(rd.parentElement!==dock)dock.appendChild(rd);
   const busy=(id,on,txt)=>{const el=$(id);if(el.hidden!==!on)el.hidden=!on;if(on&&el.dataset.k!==txt){el.dataset.k=txt;el.innerHTML=txt;}};
@@ -27373,16 +27377,19 @@ function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"t
   busy("evBusy",!ev,S.bay?`<b>${S.bay.practice?"Practice":"Customer"} engine on the dyno</b> — events open again once it is handed back or you walk away. <button class="chip" data-gotab="test">Open Test</button>`:`A <b>${(EV_NAME[t]||"dyno").toLowerCase()}</b> ${testing?"is running":"is set up"} in Test. <button class="chip" data-gotab="test">Open Test</button>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-gotab]");if(!b)return;showTab(b.dataset.gotab);});
 /* a brief judged on the road, the strip or the salt: straight to that event (in the buyer's car and circuit for the road) */
-function evGo(t,patch){if(testing){toast("Let the run finish first");return;}if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}Object.assign(S.env,patch||{});S.env.testType=t;S.evPick=t;if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
+function evGo(t,patch){if(testing){toast("Let the run finish first");return;}if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-evgo]");if(!b)return;const t=b.dataset.evgo,p={};if(t==="road"){if(b.dataset.ch)p.roadCh=b.dataset.ch;if(b.dataset.trk)p.roadTrk=b.dataset.trk;}evGo(t,p);});
 /* the picker cards: icon, name and one line of where you stand */
-const EV_IC={drag:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",pull_sled:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",
+const BR_REP=5;   // bracket night: rep to enter in career
+const EV_IC={drag:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",bracket:"M3 5h6v4H3zM3 15h6v4H3zM9 7h4v10H9M13 12h8",pull_sled:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",
   salt:"M4 17a8 8 0 1 1 16 0M12 17l5-3M3 21h18",bog:"M7 15a5 5 0 1 1 10 0M3 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0",boat:"M3 13h18l-3.5 4.5h-11zM12 4v9M12 5l6 6.5h-6M3 21c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0",road:"M7 21c0-5 10-4 10-9S9 8 9 3M15 3c0 3 2 4 4 5",hill:"M2 20l7-12 4 6 3-4 6 10zM9 8l-1.5 2.6M16 10l1.4 2",race24:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"};
 function evCert(){return !career()||!!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg));}
 function evStatus(t){const cr=career();let s="",k="";
   try{
   if(t==="drag"){const up=UPGRADES.find(u=>u.id==="race")||{},b=allBest(),N=rnLive();
     if(cr&&!has("race")){s=`needs ${up.name||"the race upgrade"}`;k="lock";}else if(N){s=`${RN_FMT[N.fmt]||"race night"} · on now`;k="live";}else if(!evCert())s="certify first";else s=b<Infinity?`best ${b.toFixed(2)} s`:"no pass yet";}
+  else if(t==="bracket"){const N=rnLive(),R=recs();
+    if(cr&&!has("race")){s=`needs ${(UPGRADES.find(u=>u.id==="race")||{}).name||"the race upgrade"}`;k="lock";}else if(cr&&C().rep<BR_REP){s=`opens at ${BR_REP} rep`;k="lock";}else if(N&&N.quick){s=`${rnStageName(N,N.stage).toLowerCase()} · on now`;k="live";}else if(!evCert())s="certify first";else s=R.brWon?`${R.brWon} of ${R.brRun} won`:"dial-in · 3 rounds";}
   else if(t==="pull_sled"){const P=recs().pull||{},ks=Object.keys(SIM.PULL_CLASSES).filter(c=>P[c]),full=ks.find(c=>P[c].full),bf=ks.reduce((m,c)=>Math.max(m,P[c].ft||0),0),c0=S.env.pullCls;
     if(PO){s="pull-off · on now";k="live";}else if(!evCert())s="certify first";else if(cr&&SIM.PULL_CLASSES[c0]&&pullHookedWk(c0))s=`hooked · next pull wk ${C().week+1}`;else s=full?`FULL · ${SIM.PULL_CLASSES[full].n}`:bf?`best ${bf.toFixed(1)} ft`:"no pull yet";}
   else if(t==="salt"){const L=saltBook(),bm=Object.values(L.pb).reduce((m,p)=>Math.max(m,p&&p.mph||0),0);s=!evCert()?"certify first":bm?`best ${bm.toFixed(1)} mph`:"no run yet";}
@@ -27398,10 +27405,12 @@ function evStatus(t){const cr=career();let s="",k="";
   return{s,k};}
 /* why the dock CTA can't run this event right now ("" when it can): a locked tile, or the 24 Hours' own gate */
 function evBlock(t){if(!career()||!trackEvt(t))return"";
+  if(t==="drag"&&S.env.dragQuick&&!has("race"))return`Locked · ${(UPGRADES.find(u=>u.id==="race")||{}).name||"race upgrade"}`;
+  if(t==="drag"&&S.env.dragQuick&&C().rep<BR_REP&&!rnLive())return`Locked · opens at ${BR_REP} rep`;
   if(t==="drag"&&!has("race"))return`Locked · ${(UPGRADES.find(u=>u.id==="race")||{}).name||"race upgrade"}`;
   if(t==="race24"&&!ER){const g=e24Gate();if(!g)return"";return/^Opens at/.test(g)?`Locked · opens at ${E24_REP} rep`:/^Next running/.test(g)?g.replace("Next running","Next 24 h"):/Certify/.test(g)?"Certify this engine first":g;}
   return"";}
-function evPickRender(){const box=$("evPick");if(!box)return;const cur=S.env.testType;
+function evPickRender(){const box=$("evPick");if(!box)return;const cur=evCur();
   const h=EV_T.map(t=>{const st=evStatus(t),on=t===cur;return `<button data-t="${t}" role="radio" aria-checked="${on}" class="${on?"on":""}${st.k?" "+st.k:""}" title="${EV_NAME[t]}${st.s?" · "+st.s:""}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><b>${EV_NAME[t]}</b><small>${st.s||"&nbsp;"}</small></button>`;}).join("");
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
   const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));}
@@ -27484,7 +27493,7 @@ function chartRedraw(){const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.e
   if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else if(last&&S.env.testType==="road"&&last.res.road)drawRoadTrace(last.res.road);else if(last&&S.env.testType==="bog"&&last.res.bog)drawBogTrace(last.res.bog);else if(last&&S.env.testType==="boat"&&last.res.boat)drawBoatTrace(last.res.boat);else if(last&&S.env.testType==="race24"&&last.res.e24)drawE24Trace(last.res.e24);else if(last&&S.env.testType==="hill"&&last.res.hill)drawHillChart(last.res.hill);else drawChart(last?last.res:null,null);
   return last;}
 function renderTest(){
-  if(trackEvt(S.env.testType))S.evPick=S.env.testType;else S.testPick=S.env.testType;corePlace();evPickRender();
+  if(trackEvt(S.env.testType))S.evPick=evCur();else S.testPick=S.env.testType;corePlace();evPickRender();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=chartRedraw();
@@ -28104,7 +28113,8 @@ function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
   if(career()){if(!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(!has("race")){toast(`Needs the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade`);return;}}
   const veh=rnVeh(dragVeh()),b=rnBaseline(veh),body=veh.body||"street";
   if(career()&&b.mph>150&&!veh.chute){toast("Tech won't take it — over 150 mph needs a parachute");return;}
-  const rnKey=fmt+":"+body;if(career()&&(C().rnDone||{})[rnKey]===C().week){toast(`One ${RN_FMT[fmt].toLowerCase()} night a week for the ${SIM.AERO[body].n} class — back next week`);return;}
+  const qk=fmt==="bracket"&&!!S.env.dragQuick;if(career()&&qk&&C().rep<BR_REP){toast(`Bracket night opens at ${BR_REP} rep`);return;}
+  const rnKey=fmt+(qk?"q":"")+":"+body;if(career()&&(C().rnDone||{})[rnKey]===C().week){toast(`One ${RN_FMT[fmt].toLowerCase()} night a week for the ${SIM.AERO[body].n} class — back next week`);return;}
   const br=fmt==="bracket",purse=Math.round(Math.max(1500,6*rnPurseEt(b.et))*(br?0.8:1)/50)*50,entry=career()?Math.max(150,Math.round(purse*0.08/50)*50):0;
   if(career()&&C().cash<entry){toast(`Entry is ${fmt$(entry)} — not enough cash`);return;}
   const seed=career()?rnHash([C().seed,C().week,body,fmt].join(":")):rnHash(Date.now()+":"+Math.random()),r=rnRng(rnHash(seed+":air"));
@@ -28115,8 +28125,9 @@ function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
     lock:{mass:veh.mass,rearBias:veh.rearBias,tyre:veh.tyre,tyreDia:veh.tyreDia,gears:veh.gears,top:veh.top,body,chute:veh.chute},
     t0:{first:S.env.first,final:S.env.final,launch:lt.launchCtl!=="none"?lt.twoStepRpm:S.env.launchRpm},
     field:rnField(seed,body,fmt,b.et,b.mph),stage:0,qopp:[q0,q1],q:[[],[]],rounds:[],passes:[],hist:[],dial:br?Math.floor((b.et-0.01)*100)/100:null,done:false,place:null,won:0};
+  if(qk){N.quick=true;N.stage=2;N.seeds=rnSeeds(N);N.rounds=[rnPairs(N.seeds).map(([a,b])=>({a,b,win:null}))];rnResolve(N,0);const lb=(C0=>C0&&C0.dragBest&&C0.dragBest[hKey(cfgHash(S.cfg))])(career()?C():null);if(lb&&lb<b.et+0.5)N.dial=Math.floor((lb-0.01)*100)/100;}   // quick bracket: straight to round 1, dial defaults to your best ET with this engine (else the predicted one)
   if(career()){(C().rnDone=C().rnDone||{})[rnKey]=C().week;C().cash-=entry;logEvent(`Race night: entered ${RN_FMT[fmt].toLowerCase()} (${SIM.AERO[body].n}) — ${fmt$(entry)} entry`);hud();}
-  rnSetN(N);save();renderTest();toast(`${RN_FMT[fmt].toUpperCase()} · ${SIM.AERO[body].n.toUpperCase()} · 8 CARS`);buzz([20,30,20]);}
+  rnSetN(N);save();renderTest();toast(`${qk?"BRACKET NIGHT":RN_FMT[fmt].toUpperCase()} · ${SIM.AERO[body].n.toUpperCase()} · 8 CARS`);buzz([20,30,20]);}
 /* runTest on the drag tab: true when the race night took the click */
 function rnGate(){const N=rnCur();
   if(!N){if(RN_FMT[S.env.dragFmt]){rnEnter();return true;}return false;}
@@ -28185,7 +28196,7 @@ function rnAfterPass(r,failed){const N=rnLive(),n=DR.night;if(!N||!n||n.stage!==
 function rnFinish(N,place){if(N.done)return;N.done=true;N.place=place;N.out=place!==1;
   const rep=N.won+(place===1?2:0)+(N.fmt==="elim"&&N.seeds&&N.seeds[0]===0?1:0),paid=Math.round(N.purse*RN_PAY[place]/50)*50;N.paid=paid;N.rep=rep;
   const best=(N.passes||[]).filter(p=>p.et!=null).reduce((a,p)=>a&&a.et<=p.et?a:p,null);N.best=best?{et:best.et,mph:best.mph}:null;
-  const R=recs();R.nightsRun=(R.nightsRun||0)+1;if(place===1)R.nightsWon=(R.nightsWon||0)+1;if(!(R.bestFinish<=place))R.bestFinish=place;
+  const R=recs();R.nightsRun=(R.nightsRun||0)+1;if(place===1)R.nightsWon=(R.nightsWon||0)+1;if(N.quick){R.brRun=(R.brRun||0)+1;if(place===1)R.brWon=(R.brWon||0)+1;}if(!(R.bestFinish<=place))R.bestFinish=place;
   const cls=SIM.AERO[N.body].n,last=N.hist[N.hist.length-1];
   if(career()){C().cash+=paid;C().rep+=rep;logEvent(`Race night · ${cls} ${N.fmt==="bracket"?"bracket":"heads-up"}: ${place===1?"WON — beat "+(rnPart(N,last.opp).name)+" in the final":(N.left?"left the night":RN_PLACE[place].toLowerCase()+(last&&last.text?", "+last.text.split(" — ")[0].toLowerCase():""))}${best?", best "+best.et.toFixed(2):""} — purse ${fmt$(paid)}${rep?", +"+rep+" rep":""}`,place<=2?"good":paid>0?"":"bad");spEvent("night",{win:place===1,finish:place>1&&place<=3,noCount:!!N.left&&place===9});hud();checkGoals();}}
 function rnLeave(){const N=rnLive();if(!N||testing)return;if(!confirm(N.stage<2?"Leave the night? Your entry is gone and you go home without a seed.":"Leave the night? You forfeit this round and take the purse for going out here."))return;
@@ -28268,8 +28279,8 @@ function rnSummaryHtml(N){const br=N.fmt==="bracket",b=N.best,rts=(N.passes||[])
   <div class="log" style="margin-top:8px">${N.hist.map(x=>`<div><b>${x.label}</b>${x.opp?"vs "+rnEsc(rnPart(N,x.opp).name)+" · ":""}${rnEsc(x.text||"")}</div>`).join("")}</div>
   <button class="btn pri" data-rn="done" style="width:100%;margin-top:10px">Done — back to the pits</button></div>`;}
 function rnPanel(){const N=rnCur();if(!N)return"";const br=N.fmt==="bracket";
-  let h=`<div class="rn"><div class="rnhd"><div><b>${RN_FMT[N.fmt].toUpperCase()}</b><span>${SIM.AERO[N.body].n} · 8 cars · winner ${fmt$(N.purse)}${career()?"":" (sandbox)"}</span></div>${N.done?"":`<button class="btn sm ghost" data-rn="leave">Leave the night</button>`}</div>`;
-  h+=`<div class="rnsteps">${[0,1,2,3,4].map(s=>`<i class="${s<N.stage||N.done&&s<=N.stage?"d":s===N.stage&&!N.done?"on":""}">${br&&s<2?"TT"+(s+1):["Q1","Q2","QF","SF","F"][s]}</i>`).join("")}</div>`;
+  let h=`<div class="rn"><div class="rnhd"><div><b>${N.quick?"BRACKET NIGHT":RN_FMT[N.fmt].toUpperCase()}</b><span>${SIM.AERO[N.body].n} · 8 cars · winner ${fmt$(N.purse)}${career()?"":" (sandbox)"}</span></div>${N.done?"":`<button class="btn sm ghost" data-rn="leave">Leave the night</button>`}</div>`;
+  h+=`<div class="rnsteps">${[0,1,2,3,4].filter(s=>!(N.quick&&s<2)).map(s=>`<i class="${s<N.stage||N.done&&s<=N.stage?"d":s===N.stage&&!N.done?"on":""}">${br&&s<2?"TT"+(s+1):["Q1","Q2","QF","SF","F"][s]}</i>`).join("")}</div>`;
   if(testing&&!N.done)return h+rnNextHtml(N)+`</div>`;   // during the pass: just who's in the other lane
   if(N.done)return h+rnSummaryHtml(N)+(N.rounds.length?rnLadderHtml(N):rnQualHtml(N))+`</div>`;
   h+=rnNextHtml(N)+dragDriveHtml(true);
@@ -28347,13 +28358,14 @@ function dragDriveHtml(night){const on=dragAuto();
   return`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","burnout, stage, the light, the shifts"],["auto","Auto","a steady hand · watch the pass"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragDrive" class="${(on?"auto":"you")===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`
     +(on?`<p class="hint">The auto driver does the burnout, stages${n2oKit()?", purges the nitrous":""}${(()=>{const lt=SIM.launchTech(S.cfg);return lt.launchCtl!=="none"||lt.transBrake==="trans_brake"||alsOf(S.cfg);})()?", arms the launch on the ambers":""} and leaves on the green with a good, human light — a red is rare. ${S.env.shiftMode==="manual"?"It shifts near the best point for this engine's curve. ":""}Launch rpm${n2oKit()?", the nitrous switch":""} and the chute stay as you set them. Steady, not perfect: a sharp light and good shifts beat it.${night?" It drives every pass of the night.":""} Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during a pass to take over.</p>`:"");}
 function rnFmtHtml(){const f=RN_FMT[S.env.dragFmt]?S.env.dragFmt:"test";
-  let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
-  if(f!=="test")h+=`<p class="hint" style="margin-top:-4px"><b>${RN_FMT[f]}</b> · ${f==="elim"?"two qualifying passes set your seed, then quarter-final, semi and final against seven cars of your class. First to the stripe wins — a quick light beats a quick car. Red light or crossing the centreline loses.":"dial in the ET you expect. The slower dial leaves first; first to the stripe wins unless they ran under their dial (a breakout). Both under: the smaller breakout wins. Consistency beats horsepower."} ${career()?`Entry about 8% of the winner's purse (from $150), fuel per pass. Same rules as a pass: certified engine, ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade.`:"Free in the sandbox."} Set the car up below — body, tyre and weight lock when you enter.</p>`;
+  let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k&&!(k==="bracket"&&S.env.dragQuick)?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  if(f==="bracket"&&S.env.dragQuick)h+=`<p class="hint" style="margin-top:-4px"><b>Bracket night</b> · dial in the ET you expect — run quicker than your dial and you break out and lose. Three rounds, no time trials; the slower dial leaves first, so tap on the green of your own tree. ${career()?`Entry about 8% of the winner's purse (from $150), opens at ${BR_REP} rep.`:"Free in the sandbox."}</p>`;
+  else if(f!=="test")h+=`<p class="hint" style="margin-top:-4px"><b>${RN_FMT[f]}</b> · ${f==="elim"?"two qualifying passes set your seed, then quarter-final, semi and final against seven cars of your class. First to the stripe wins — a quick light beats a quick car. Red light or crossing the centreline loses.":"dial in the ET you expect. The slower dial leaves first; first to the stripe wins unless they ran under their dial (a breakout). Both under: the smaller breakout wins. Consistency beats horsepower."} ${career()?`Entry about 8% of the winner's purse (from $150), fuel per pass. Same rules as a pass: certified engine, ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade.`:"Free in the sandbox."} Set the car up below — body, tyre and weight lock when you enter.</p>`;
   return h;}
 function rnTuneEnvHtml(sl){const e=S.env,psi0=(SIM.TYRES[e.tyre]||SIM.TYRES.street).psi||16,sh=e.shocks||"medium";
   return`<div class="envgrid">${sl("tyrePsi","Tyre pressure",+(psi0*0.5).toFixed(1),+(psi0*1.4).toFixed(1),0.5," psi",e.tyrePsi>0?e.tyrePsi:psi0)}</div><div class="lbl"><span>Shocks</span></div><div class="seg n3">${[["soft","Soft","more bite · lifts"],["medium","Medium","as delivered"],["firm","Firm","flat · may spin"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shocks" class="${sh===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;}
 function rnRunBtn(){const N=rnCur(),b=$("runTest");if(testing)return;
-  if(!N){if(RN_FMT[S.env.dragFmt]){b.textContent=`Enter the night · ${RN_FMT[S.env.dragFmt].toLowerCase()}${career()?" · entry":""}`;$("dynoHint").innerHTML=`<b>Race night</b> · ${career()?"the entry is charged when you go in; ":""}two ${S.env.dragFmt==="bracket"?"time trials":"qualifying passes"}, then up to three rounds. Space or the big button drives every pass, same as a single run.`;}return;}
+  if(!N){if(RN_FMT[S.env.dragFmt]){b.textContent=S.env.dragQuick?`Enter bracket night${career()?" · entry":""}`:`Enter the night · ${RN_FMT[S.env.dragFmt].toLowerCase()}${career()?" · entry":""}`;$("dynoHint").innerHTML=`<b>${S.env.dragQuick?"Bracket night":"Race night"}</b> · ${career()?"the entry is charged when you go in; ":""}${S.env.dragQuick?"straight to round one, no time trials; up to three rounds.":`two ${S.env.dragFmt==="bracket"?"time trials":"qualifying passes"}, then up to three rounds.`} Space or the big button drives every pass, same as a single run.`;}return;}
   if(N.done){b.textContent="Close the night";$("dynoHint").innerHTML="";return;}
   const i=rnOppIdx(N),fb=fuelBill();b.textContent=`Stage · ${rnStageName(N,N.stage).toLowerCase().replace(/^./,c=>c.toUpperCase())} vs ${N.field[i-1].name.split(" ")[0]}${career()&&fb?" · fuel "+fmt$(fb):""}`;
   $("dynoHint").innerHTML=N.fmt==="bracket"?`<b>Bracket</b> · your dial ${N.stage>=2?N.dial.toFixed(2):"— set after the time trials"}. Leave on the green of <i>your</i> tree; a red light loses outright.`:`<b>Heads-up</b> · first to the stripe. Your reaction time counts — a good light is under 0.100.`;}
