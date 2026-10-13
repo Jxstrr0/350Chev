@@ -102,7 +102,7 @@ function showResult(res,env){
   else if(env.testType==="bog"&&res.bog)v=bogVerdict(res);
   else if(env.testType==="boat"&&res.boat)v=boatVerdict(res);
   else if(S.bay&&env.testType==="pull"&&!over&&!res.fails.length)v=ddVerdict(res);
-  else if(over)v=`<div class="verdict fail"><div><div class="big">DYNO OVERLOADED</div><p>${dynoCap().n} can't hold ${Math.round(res.peakHp)} hp / ${S.cfg.redline} rpm. It cannot be certified here — upgrade the dyno in the Shop.</p></div></div>`;
+  else if(over)v=`<div class="verdict fail"><div><div class="big">DYNO OVERLOADED</div><p>${dynoCap().n} can't hold ${Math.round(res.peakHp)} hp / ${S.cfg.redline} rpm. It cannot be certified here — ${has("dyno5")?"no cell reads higher; pull some power out.":"upgrade the dyno in the Shop."}</p></div></div>`;
   else if(res.fails.length)v=`<div class="verdict fail"><div><div class="big">FAILED</div><p>${res.fails.length===1?"One subsystem":res.fails.length+" subsystems"} went past its limit.</p>${res.fails.map(n=>{const t=res.tests.find(x=>x.name===n)||{};return `<div class="failnote"><b>${n}</b>${t.sub?` <small>${t.sub}</small>`:""} — ${t.physics||""} <i>${t.fix||""}</i></div>`;}).join("")}</div></div>`;
   else if(env.testType==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)v=`<div class="verdict fail"><div><div class="big">FAILED AT ${res.endurance.failedAtHour} H</div><p>First to go: ${(res.tests.find(t=>t.id===res.firstToFail)||{}).name||res.firstToFail}. It passed the pull but not the hours.</p></div></div>`;
   else if(env.testType==="overrev"&&res.overrev&&!res.overrev.survived)v=`<div class="verdict fail"><div><div class="big">DID NOT SURVIVE</div><p>The missed shift found the weak link.</p></div></div>`;
