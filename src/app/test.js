@@ -113,22 +113,26 @@ function oppDyn(now,ox,st){const R=DR&&DR.race,F=R&&R.fx;if(!F)return null;
 $("envBox").addEventListener("click",e=>{if(e.target.closest("[data-stdcell]")){C().cell=stdCell();renderEnv();recompute();commitEnv();renderTest();toast("Cell reset to standard");}});
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-lp]");if(!b)return;const k=b.dataset.ek||"loadProfile";
   if(k==="drv"&&SIM.DRIVETRAIN[b.dataset.lp]&&!drvOwned(b.dataset.lp)){const D=SIM.DRIVETRAIN[b.dataset.lp];if(C().cash<D.cost){toast("Not enough cash for the "+D.n+" drivetrain");return;}C().cash-=D.cost;(C().drvOwn=C().drvOwn||{})[b.dataset.lp]=1;logEvent(`Fitted a ${D.n} clutch, box & axle — ${fmt$(D.cost)}`);hud();toast(`${D.n} drivetrain fitted — ${fmt$(D.cost)}`);}
-  S.env[k]=b.dataset.lp;
+  S.env[k]=b.dataset.lp;if(k==="dragFmt")S.env.dragQuick=false;
   if(k==="body"&&BODY_SETUP[b.dataset.lp]){const bs=Object.assign({},BODY_SETUP[b.dataset.lp]);bs.launchRpm=Math.min(bs.launchRpm,S.cfg.redline);Object.assign(S.env,bs);toast(`${SIM.AERO[b.dataset.lp].n} — typical gearing filled in, edit anything`);}
   renderEnv();save();});
 /* Test holds the dyno work, Events the strip, the sled, the salt, the road and the 24 Hours. Both pick S.env.testType;
    S.testPick / S.evPick remember the last of each so either tab reopens where it was left. */
-const DYNO_T=["pull","endurance","overrev"],EV_T=["drag","pull_sled","salt","bog","boat","road","hill","race24"];
+const DYNO_T=["pull","endurance","overrev"],EV_T=["drag","bracket","pull_sled","salt","bog","boat","road","hill","race24"];
+/* Bracket night is the drag strip in its quick bracket format (S.env.dragFmt "bracket" + dragQuick): the picker shows it as its own tile */
+function evCur(){return S.env.testType==="drag"&&S.env.dragFmt==="bracket"&&S.env.dragQuick?"bracket":S.env.testType;}
+function evApply(t){if(t==="bracket"){S.env.dragFmt="bracket";S.env.dragQuick=true;S.env.testType="drag";}else{if(t==="drag"&&S.env.dragQuick){S.env.dragQuick=false;if(S.env.dragFmt==="bracket")S.env.dragFmt="test";}S.env.testType=t;}}
 function pickTest(t){if(testing&&t!==S.env.testType){toast("Let the run finish first");return;}S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));renderEnv();if(climateCtl())recompute();renderTest();save();}
 $("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;pickTest(b.dataset.t);});
-$("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===S.env.testType;pickTest(b.dataset.t);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});
+$("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===evCur();if(!same&&testing){toast("Let the run finish first");return;}if(!same&&b.dataset.t!=="bracket"&&evBlockPick(b.dataset.t))return;evApply(b.dataset.t);pickTest(S.env.testType);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});
 /* opening Test or Events: if S.env.testType belongs to the other tab, switch to this tab's last pick (never mid-run) */
+function evBlockPick(t){return false;}
 function evSync(tab){if(testing||(S.bay&&tab==="events"))return;   // a dyno-day engine keeps the bay on its pull
   const ev=trackEvt(S.env.testType);let t=null;
-  if(tab==="events"){const cur=ev?S.env.testType:S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===S.env.testType)t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
-  if(!t)return;S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
+  if(tab==="events"){const cur=ev?evCur():S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===evCur())t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
+  if(!t)return;evApply(t);document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
 /* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
-const EV_NAME={drag:"Drag strip",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
+const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
 function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"testSlot"),dock=$(ev?"evDock":"testDock"),core=$("testCore"),rd=$("runDock");
   if(core.parentElement!==slot)slot.appendChild(core);if(rd.parentElement!==dock)dock.appendChild(rd);
   const busy=(id,on,txt)=>{const el=$(id);if(el.hidden!==!on)el.hidden=!on;if(on&&el.dataset.k!==txt){el.dataset.k=txt;el.innerHTML=txt;}};
@@ -136,16 +140,19 @@ function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"t
   busy("evBusy",!ev,S.bay?`<b>${S.bay.practice?"Practice":"Customer"} engine on the dyno</b> — events open again once it is handed back or you walk away. <button class="chip" data-gotab="test">Open Test</button>`:`A <b>${(EV_NAME[t]||"dyno").toLowerCase()}</b> ${testing?"is running":"is set up"} in Test. <button class="chip" data-gotab="test">Open Test</button>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-gotab]");if(!b)return;showTab(b.dataset.gotab);});
 /* a brief judged on the road, the strip or the salt: straight to that event (in the buyer's car and circuit for the road) */
-function evGo(t,patch){if(testing){toast("Let the run finish first");return;}if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}Object.assign(S.env,patch||{});S.env.testType=t;S.evPick=t;if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
+function evGo(t,patch){if(testing){toast("Let the run finish first");return;}if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-evgo]");if(!b)return;const t=b.dataset.evgo,p={};if(t==="road"){if(b.dataset.ch)p.roadCh=b.dataset.ch;if(b.dataset.trk)p.roadTrk=b.dataset.trk;}evGo(t,p);});
 /* the picker cards: icon, name and one line of where you stand */
-const EV_IC={drag:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",pull_sled:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",
+const BR_REP=5;   // bracket night: rep to enter in career
+const EV_IC={drag:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",bracket:"M3 5h6v4H3zM3 15h6v4H3zM9 7h4v10H9M13 12h8",pull_sled:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",
   salt:"M4 17a8 8 0 1 1 16 0M12 17l5-3M3 21h18",bog:"M7 15a5 5 0 1 1 10 0M3 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0",boat:"M3 13h18l-3.5 4.5h-11zM12 4v9M12 5l6 6.5h-6M3 21c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0",road:"M7 21c0-5 10-4 10-9S9 8 9 3M15 3c0 3 2 4 4 5",hill:"M2 20l7-12 4 6 3-4 6 10zM9 8l-1.5 2.6M16 10l1.4 2",race24:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"};
 function evCert(){return !career()||!!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg));}
 function evStatus(t){const cr=career();let s="",k="";
   try{
   if(t==="drag"){const up=UPGRADES.find(u=>u.id==="race")||{},b=allBest(),N=rnLive();
     if(cr&&!has("race")){s=`needs ${up.name||"the race upgrade"}`;k="lock";}else if(N){s=`${RN_FMT[N.fmt]||"race night"} · on now`;k="live";}else if(!evCert())s="certify first";else s=b<Infinity?`best ${b.toFixed(2)} s`:"no pass yet";}
+  else if(t==="bracket"){const N=rnLive(),R=recs();
+    if(cr&&!has("race")){s=`needs ${(UPGRADES.find(u=>u.id==="race")||{}).name||"the race upgrade"}`;k="lock";}else if(cr&&C().rep<BR_REP){s=`opens at ${BR_REP} rep`;k="lock";}else if(N&&N.quick){s=`${rnStageName(N,N.stage).toLowerCase()} · on now`;k="live";}else if(!evCert())s="certify first";else s=R.brWon?`${R.brWon} of ${R.brRun} won`:"dial-in · 3 rounds";}
   else if(t==="pull_sled"){const P=recs().pull||{},ks=Object.keys(SIM.PULL_CLASSES).filter(c=>P[c]),full=ks.find(c=>P[c].full),bf=ks.reduce((m,c)=>Math.max(m,P[c].ft||0),0),c0=S.env.pullCls;
     if(PO){s="pull-off · on now";k="live";}else if(!evCert())s="certify first";else if(cr&&SIM.PULL_CLASSES[c0]&&pullHookedWk(c0))s=`hooked · next pull wk ${C().week+1}`;else s=full?`FULL · ${SIM.PULL_CLASSES[full].n}`:bf?`best ${bf.toFixed(1)} ft`:"no pull yet";}
   else if(t==="salt"){const L=saltBook(),bm=Object.values(L.pb).reduce((m,p)=>Math.max(m,p&&p.mph||0),0);s=!evCert()?"certify first":bm?`best ${bm.toFixed(1)} mph`:"no run yet";}
@@ -161,10 +168,12 @@ function evStatus(t){const cr=career();let s="",k="";
   return{s,k};}
 /* why the dock CTA can't run this event right now ("" when it can): a locked tile, or the 24 Hours' own gate */
 function evBlock(t){if(!career()||!trackEvt(t))return"";
+  if(t==="drag"&&S.env.dragQuick&&!has("race"))return`Locked · ${(UPGRADES.find(u=>u.id==="race")||{}).name||"race upgrade"}`;
+  if(t==="drag"&&S.env.dragQuick&&C().rep<BR_REP&&!rnLive())return`Locked · opens at ${BR_REP} rep`;
   if(t==="drag"&&!has("race"))return`Locked · ${(UPGRADES.find(u=>u.id==="race")||{}).name||"race upgrade"}`;
   if(t==="race24"&&!ER){const g=e24Gate();if(!g)return"";return/^Opens at/.test(g)?`Locked · opens at ${E24_REP} rep`:/^Next running/.test(g)?g.replace("Next running","Next 24 h"):/Certify/.test(g)?"Certify this engine first":g;}
   return"";}
-function evPickRender(){const box=$("evPick");if(!box)return;const cur=S.env.testType;
+function evPickRender(){const box=$("evPick");if(!box)return;const cur=evCur();
   const h=EV_T.map(t=>{const st=evStatus(t),on=t===cur;return `<button data-t="${t}" role="radio" aria-checked="${on}" class="${on?"on":""}${st.k?" "+st.k:""}" title="${EV_NAME[t]}${st.s?" · "+st.s:""}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><b>${EV_NAME[t]}</b><small>${st.s||"&nbsp;"}</small></button>`;}).join("");
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
   const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));}
@@ -247,7 +256,7 @@ function chartRedraw(){const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.e
   if(last&&S.env.testType==="drag"&&last.res.drag)drawDragTrace(last.res.drag);else if(last&&S.env.testType==="pull_sled"&&last.res.pull)drawPullTrace(last.res.pull);else if(last&&S.env.testType==="salt"&&last.res.salt)drawSaltTrace(last.res.salt);else if(last&&S.env.testType==="road"&&last.res.road)drawRoadTrace(last.res.road);else if(last&&S.env.testType==="bog"&&last.res.bog)drawBogTrace(last.res.bog);else if(last&&S.env.testType==="boat"&&last.res.boat)drawBoatTrace(last.res.boat);else if(last&&S.env.testType==="race24"&&last.res.e24)drawE24Trace(last.res.e24);else if(last&&S.env.testType==="hill"&&last.res.hill)drawHillChart(last.res.hill);else drawChart(last?last.res:null,null);
   return last;}
 function renderTest(){
-  if(trackEvt(S.env.testType))S.evPick=S.env.testType;else S.testPick=S.env.testType;corePlace();evPickRender();
+  if(trackEvt(S.env.testType))S.evPick=evCur();else S.testPick=S.env.testType;corePlace();evPickRender();
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=chartRedraw();
