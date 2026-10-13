@@ -36,7 +36,7 @@ function crewName(){const k=crewS(),used=new Set(Object.values(C().staff||{}).co
 function crewRollTraits(role){const x=crewRnd(),n=x<0.3?0:x<0.75?1:2,out=[];
   for(let i=0;i<n;i++){const pos=crewRnd()<0.62;const pool=CREW_TRAITS.filter(t=>!!t.pos===pos&&t.roles.includes(role)&&!out.some(o=>o.id===t.id)&&!(t.id==="quick"&&out.some(o=>o.id==="slow"))&&!(t.id==="slow"&&out.some(o=>o.id==="quick")));if(pool.length)out.push({id:crewPick(pool).id,rv:false});}
   return out;}
-function crewPerson(role,mig){return{nm:crewName(),role,lvl:1,xp:0,tr:mig?[]:crewRollTraits(role),mor:70,away:0,crs:null,warn:0,wk:0,pulls:0,h:{},hired:C().week};}
+function crewPerson(role,mig){const L=!mig&&typeof lgCrewLv==="function"?lgCrewLv():1;return{nm:crewName(),role,lvl:L,xp:L>1?CREW_XP[L-1]:0,tr:mig?[]:crewRollTraits(role),mor:70,away:0,crs:null,warn:0,wk:0,pulls:0,h:{},hired:C().week};}
 /* the next applicant for an open role: fixed once drawn, so the name on the card is the one you hire */
 function crewCand(role){const k=crewS();if(!k.cand[role])k.cand[role]=crewPerson(role,false);return k.cand[role];}
 function crewNew(role){const k=crewS(),p=crewCand(role);delete k.cand[role];p.hired=C().week;p.mor=70;return p;}

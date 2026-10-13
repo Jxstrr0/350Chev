@@ -71,6 +71,7 @@ app/results.js
 app/market.js
 app/swap.js
 app/career.js
+app/legacy.js
 app/crew.js
 app/trophy.js
 app/rail.js

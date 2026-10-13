@@ -1359,3 +1359,14 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 html.desk #tabs .dot.n{right:4px;top:6px}
 #pCls .chip[data-pc=starter]{border-color:var(--good);color:var(--good)}
 #pCls .chip[data-pc=starter].on{background:var(--good);color:var(--soot)}
+#hud .cash em{display:inline-block;margin-top:2px;padding:1px 6px;border:1px solid var(--orange);border-radius:9px;font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--orange2);line-height:1.3}
+#hud .cash em[hidden]{display:none}
+#lgOver{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.72)}
+#lgOver .lgcard{width:100%;max-width:520px;max-height:100%;overflow-y:auto;background:var(--panel);color:var(--chalk);border:1px solid var(--rule);border-radius:8px;padding:16px}
+#lgOver h2{margin:0 0 6px;font-family:var(--display);font-size:22px;letter-spacing:.04em;text-transform:uppercase;color:var(--orange2)}
+.lgstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px;margin:10px 0}
+.lgstats div{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;min-width:0}
+.lgstats b{display:block;font-family:var(--display);font-size:15px;white-space:nowrap}.lgstats span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lgperk h3 small{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none}
+.lgsel{display:block;margin-top:6px;min-height:44px;max-width:100%;background:var(--panel2);color:var(--chalk);border:1px solid var(--rule);border-radius:4px;padding:0 8px;font:inherit}
+.lgstart{width:100%;min-height:48px;margin-top:12px}
