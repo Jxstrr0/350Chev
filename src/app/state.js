@@ -15,7 +15,7 @@ const UPGRADES=[
   {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:140000,needs:"bay1"},
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
   {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:240000,needs:"dyno3"},
-  {id:"dyno5",name:"Monster dyno cell",desc:"Water-brake cell that reads to 10,000 hp. Built for the four-figure-boost builds that overload the Outlaw cell.",price:650000,needs:"dyno4"}
+  {id:"dyno5",name:"Monster dyno cell",desc:"Water-brake cell that reads to 10,000 hp. Built for the four-figure-boost builds that overload the Outlaw cell.",price:400000,needs:"dyno4"}
 ];
 const STAFF=[
   {id:"machinist",name:"Machinist",wage:350,desc:"Runs the mill and the hone. Unit cost −8%, machining R&D 25% faster."},
@@ -165,7 +165,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.63.1.0";
+const VERSION="1.63.1.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
