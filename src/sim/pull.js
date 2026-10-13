@@ -11,7 +11,9 @@
     ag: { n: "Ag bar tyre", d: "farm lugs · forgiving", mu: 0.80, sp: 0.22, fall: 0.28, dig: 0.6 },
     cut: { n: "Cut pulling tyre", d: "hand-cut lugs · bites, then digs", mu: 0.95, sp: 0.25, fall: 0.42, dig: 1 },
     // wide flotation carcass, every lug cut back to a paddle: enough bite that the engine, not the dirt, sets the speed
-    wide: { n: "Wide full-cut tyre", d: "Super Stock · paddles, needs power", mu: 1.20, sp: 0.28, fall: 0.45, dig: 1 }
+    wide: { n: "Wide full-cut tyre", d: "Super Stock · paddles, needs power", mu: 1.20, sp: 0.28, fall: 0.45, dig: 1 },
+    // 38-inch triple-ply paddle: the most bite there is, and a deep hole when it lets go
+    mega: { n: "Mega paddle tyre", d: "Unlimited · biggest bite, digs deepest", mu: 1.32, sp: 0.30, fall: 0.52, dig: 1.15 }
   };
   const PULL_TRUCK_GEARS = [["2nd", 10], ["3rd", 14], ["4th", 19], ["5th", 25], ["6th", 32]];
   const PULL_TRACTOR_GEARS = [["B2", 6], ["B3", 8], ["C1", 11], ["C2", 14], ["C3", 18]];
@@ -69,6 +71,17 @@
         if (!pullIsD(c)) return { ok: false, why: "diesel only" };
         const t = pullSingleMax(76, "3.0")(c); if (!t.ok) return t;
         return { ok: true, why: t.why };
+      } },
+    unlimited: { n: "Unlimited Modified", d: "2,500–10,000 hp · diesel or alcohol · no limits", tier: 5, rep: 1500, gate: "dyno5", diesel: true,
+      veh: { kind: "truck", drive: "4x4", mass: 4400, maxMass: 5400, wb: 3.90, cgH: 0.78, front: 0.55, tyreDia: 38, tyres: ["wide", "mega"], hitchMax: 26, flyK: 1.6 },
+      // a sled that was built to beat 5,000 hp: heavy, and its box runs at the pan early so the drag climbs steeply
+      sled: { base: 2050, box: 12100, mu: 0.62, travel: 110, ramp: 0.8 }, field: { med: 270, sd: 16, full: 0.22 }, gear0: 3,
+      names: ["Hell on Wheels", "Diesel Dynasty", "Shock Therapy", "Thunder Road", "Double Down", "Overkill", "Ground Pounder", "Kingpin", "Iron Fist", "Wrecking Crew", "Fire Sale", "Blown Away"],
+      gears: [["3rd", 20], ["4th", 26], ["5th", 33], ["6th", 41], ["OD", 50]],
+      legal: function (c) {
+        if (pullIsD(c)) return { ok: true, why: "diesel · no limits" };
+        if (c.fuel === "methanol" || c.fuel === "e85") return { ok: true, why: "alcohol · no limits" };
+        return { ok: false, why: "diesel or alcohol only" };
       } },
     gas: { n: "Gas 4×4 trucks", d: "petrol · 6,500 lb · open induction", tier: 1, rep: 0, diesel: false,
       veh: { kind: "truck", drive: "4x4", mass: 2650, maxMass: 2950, wb: 3.40, cgH: 0.80, front: 0.55, tyreDia: 35, tyres: ["dot", "cut"], hitchMax: 26, flyK: 0.8 },
@@ -217,7 +230,7 @@
       if (st.killed) { Tw = 0; st.coupled = false; rpmE = st.rpm * Math.max(0, 1 - dt * 2.5); }   // killed: the driver is in neutral and on the brake, the engine winds down on its own
       st.rpm = rpmE;
       // sled: the box rides toward the pan as the sled travels
-      st.boxFrac = Math.pow(clamp(st.x / SL.travel, 0, 1), 1.15);
+      st.boxFrac = Math.pow(clamp(st.x / SL.travel, 0, 1), SL.ramp || 1.15);
       const Fs = g * SL.mu * sk * (SL.base + SL.box * st.boxFrac) * (1 + 0.01 * st.v) * TK.sled;
       st.fSled = Fs;
       // axle loads: the chain pulls back at hitch height and lifts the nose; ballast on the front bracket holds it down
