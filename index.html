@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.63.1.1 — major.minor.feature.hotfix -->
+<!-- VERSION 1.64.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1365,6 +1365,17 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
 html.desk #tabs .dot.n{right:4px;top:6px}
 #pCls .chip[data-pc=starter]{border-color:var(--good);color:var(--good)}
 #pCls .chip[data-pc=starter].on{background:var(--good);color:var(--soot)}
+#hud .cash em{display:inline-block;margin-top:2px;padding:1px 6px;border:1px solid var(--orange);border-radius:9px;font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--orange2);line-height:1.3}
+#hud .cash em[hidden]{display:none}
+#lgOver{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.72)}
+#lgOver .lgcard{width:100%;max-width:520px;max-height:100%;overflow-y:auto;background:var(--panel);color:var(--chalk);border:1px solid var(--rule);border-radius:8px;padding:16px}
+#lgOver h2{margin:0 0 6px;font-family:var(--display);font-size:22px;letter-spacing:.04em;text-transform:uppercase;color:var(--orange2)}
+.lgstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px;margin:10px 0}
+.lgstats div{background:var(--panel2);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;min-width:0}
+.lgstats b{display:block;font-family:var(--display);font-size:15px;white-space:nowrap}.lgstats span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lgperk h3 small{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none}
+.lgsel{display:block;margin-top:6px;min-height:44px;max-width:100%;background:var(--panel2);color:var(--chalk);border:1px solid var(--rule);border-radius:4px;padding:0 8px;font:inherit}
+.lgstart{width:100%;min-height:48px;margin-top:12px}
 </style>
 
 <div id="app">
@@ -1373,7 +1384,7 @@ html.desk #tabs .dot.n{right:4px;top:6px}
     <div id="hud">
       <div class="brand">Prairie Engine Works<small id="weekLbl">TEST CELL</small></div>
       <div class="right">
-        <div class="cash"><b id="cashLbl">$20,000</b><span id="repLbl">Rep 0</span></div>
+        <div class="cash"><b id="cashLbl">$20,000</b><span id="repLbl">Rep 0</span><em id="lgBadge" hidden></em></div>
       </div>
       <div class="hudbtns">
         <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
@@ -1526,6 +1537,7 @@ html.desk #tabs .dot.n{right:4px;top:6px}
         <details class="sfold"><summary>Staff <span class="cnt" id="staffCnt"></span></summary><div class="sfb"><div id="staff"></div></div></details>
         <details class="sfold"><summary>R&amp;D <span class="cnt" id="rndCnt"></span></summary><div class="sfb"><p class="hint" id="rndHint"></p><div id="rnd"></div></div></details>
         <details class="sfold"><summary>Prestige</summary><div class="sfb"><div id="prestige"></div></div></details>
+        <div id="legacyBox" style="display:none"></div>
         <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
       <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
@@ -26631,7 +26643,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.63.1.1";
+const VERSION="1.64.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -26654,7 +26666,7 @@ function applyTheme(){const t=S.theme||"dark";const eff=t==="auto"?(window.match
   if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();}
 function buzz(ms){if(S.haptics===false||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
 function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false,psi:false};}
-function save(){try{const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});if(S.bay)ddSaveAs(o);localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
+function save(){try{if(typeof lgSync==="function")lgSync();const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});if(S.bay)ddSaveAs(o);localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
 function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});if(S.bay)ddSaveAs(o);return o;}
 /* a customer engine on the dyno is never saved as the player's build: the build, its last pull and pin go to storage, the customer rides in o.bay */
@@ -26702,7 +26714,7 @@ function dev(){return career()&&!!C().dev;}
 function has(id){return !career()||dev()||!!C().owned[id];}
 function locked(o){return career()&&!dev()&&o&&o.req&&!C().owned[o.req]&&!(C().unlocks&&o._id&&C().unlocks[o._id]);}
 function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]&&crewOn(id)));}   // a person on a course is out of the shop (app/crew.js)
-function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1+0.15*crewL("tuner");if(staffed("machinist"))b.costFac*=0.92-0.01*crewL("machinist");b.costFac*=crewCostK();
+function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1+0.15*crewL("tuner");if(staffed("machinist"))b.costFac*=0.92-0.01*crewL("machinist");b.costFac*=crewCostK();if(typeof lgCostK==="function")b.costFac*=lgCostK();
   for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;}}return b;}
 function syncShop(){S.env.shop=shopBonus();deltaCache.clear();fixCache.clear();}
 function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?crewWage(st):0),0):0;}
@@ -26853,6 +26865,7 @@ function hud(){
   if(typeof tabBadges==="function")tabBadges();
   if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0]}${dev()?" · DEV":""}`;}
   else{$("cashLbl").textContent="Test cell";$("cashLbl").style.color="var(--chalk)";$("repLbl").textContent="all parts unlocked";$("weekLbl").textContent="SANDBOX";}
+  if(typeof lgHud==="function")lgHud();
 }
 
 /* ===================== BUILD ===================== */
@@ -31362,7 +31375,7 @@ function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  spLivery();if(!career())return;
+  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career())return;
   refillContracts();spRender();
   $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
@@ -31458,11 +31471,11 @@ $("prestige").addEventListener("click",e=>{const b=e.target.closest("[data-prest
 $("borrow").addEventListener("click",()=>{if(C().loan+LOAN_STEP>LOAN_MAX)return;C().loan+=LOAN_STEP;C().cash+=LOAN_STEP;logEvent(`Borrowed ${fmt$(LOAN_STEP)} from the bank`,"");save();hud();renderShop();toast(`${fmt$(LOAN_STEP)} in the account. The bank takes ${fmt$(loanInt()+loanPay())} a week now.`);});
 $("repay").addEventListener("click",()=>{const amt=Math.min(C().loan,Math.max(0,C().cash));if(amt<=0)return;C().loan-=amt;C().cash-=amt;logEvent(`Repaid ${fmt$(amt)} to the bank`,"good");achCheck({type:"loan"});save();hud();renderShop();toast(C().loan>0?`${fmt$(C().loan)} still owed`:"Loan cleared");});
 function benchUnlock(){if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;S.name=null;}}   // a fresh career can't keep a locked build on the bench
-$("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
+$("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();lgApply();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
 $("upgrades").addEventListener("click",e=>{const b=e.target.closest("[data-buy]");if(!b||b.disabled)return;const u=UPGRADES.find(x=>x.id===b.dataset.buy);if(C().cash<u.price){toast(`Need ${fmt$(u.price-C().cash)} more`);return;}if(!bigSpend(u.name,u.price))return;
   const oh0=overhead();C().cash-=u.price;C().owned[u.id]=true;C().rep+=5;{const dOh=overhead()-oh0;if(dOh>0)logEvent(`${u.name} raised weekly overhead by ${fmt$(dOh)} (plant is charged 2% of its price a week)`,"");}save();hud();renderShop();renderBuild();renderPresets();recompute();ENGINE_VIS.buildGarage(garageOwned());toast(`${u.name.toUpperCase()} · INSTALLED`);buzz(30);});
 $("resetGame").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}if(confirm("Wipe the career save? Cash, upgrades and contracts reset. Blueprints are kept."))
-  {S.career=freshCareer();benchUnlock();save();boot();toast("Fresh start. $20,000 and a dream.");}});
+  {S.career=freshCareer();lgApply();benchUnlock();save();boot();toast("Fresh start. $20,000 and a dream.");}});
 $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   if(b.dataset.save){const i=+b.dataset.save;if(readSlot(i)&&!confirm(`Overwrite slot ${i}?`))return;toast(writeSlot(i)?`SLOT ${i} SAVED`:"Couldn't save — storage blocked on this device");renderSaves();}
   else if(b.dataset.load){const i=+b.dataset.load;const o=readSlot(i);if(!o)return;if(!confirm(`Load slot ${i}? Your current game is replaced (it stays in autosave until you make a change).`))return;applyLoaded(o,`Loaded slot ${i}`);}
@@ -31478,6 +31491,71 @@ $("importSave").addEventListener("click",()=>{$("sheetTitle").textContent="Impor
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
+/* ============================ LEGACY (career only) ============================
+   At Legend rep the owner can sell the shop. The sale value (cash + half the price of every upgrade and prestige item,
+   less any loan) becomes Legacy points in a record kept under its own localStorage key, so it outlives every new career
+   and every wipe. Points buy permanent perks; the new run starts from a Legacy screen where they are bought and applied.
+   Hooks elsewhere: save() -> lgSync, hud() -> lgHud, shopBonus() -> lgCostK, crewPerson() -> lgCrewLv, renderShop() ->
+   renderLegacy, boot() -> lgBoot, the two "start over" buttons -> lgApply. Nothing here touches the simulation. */
+const LG_KEY="pew2-legacy",LG_PTS_PER=25000,LG_NEED_TIER=5;
+const LG_PERKS=[
+  {id:"cash",name:"Seed money",desc:"Every new career opens with more cash.",tiers:[[3,"+$5,000"],[6,"+$12,000"],[12,"+$25,000"]],val:[5000,12000,25000]},
+  {id:"rep",name:"Name recognition",desc:"Reputation gains from every source run higher.",tiers:[[4,"+10% rep"],[8,"+20% rep"],[14,"+30% rep"]],val:[.1,.2,.3]},
+  {id:"parts",name:"Supplier terms",desc:"Cheaper parts: unit cost on every build.",tiers:[[4,"−3% cost"],[8,"−6% cost"],[14,"−10% cost"]],val:[.03,.06,.1]},
+  {id:"crew",name:"Seasoned hands",desc:"Every hire walks in at level 2.",tiers:[[6,"hires start at Lv 2"]],val:[2]},
+  {id:"upg",name:"Heirloom equipment",desc:"One starter upgrade is already installed in each new shop.",tiers:[[10,"keep one upgrade"]],pick:"upg"},
+  {id:"rnd",name:"Old blueprints",desc:"One R&D unlock (parts, blocks, heads) is already researched.",tiers:[[5,"keep one unlock"]],pick:"rnd"}
+];
+let LG=null;
+function lgBlank(){return{v:1,pts:0,total:0,resets:0,best:{cash:0,rep:0,hp:0,sold:0,week:0,value:0},perk:{},pick:{},pending:false};}
+function lgRec(){if(LG)return LG;let o=null;try{const j=localStorage.getItem(LG_KEY);if(j)o=JSON.parse(j);}catch(e){}
+  LG=Object.assign(lgBlank(),o&&typeof o==="object"?o:{});LG.best=Object.assign(lgBlank().best,LG.best||{});if(!LG.perk||typeof LG.perk!=="object")LG.perk={};if(!LG.pick||typeof LG.pick!=="object")LG.pick={};return LG;}
+function lgSave(){try{localStorage.setItem(LG_KEY,JSON.stringify(lgRec()));}catch(e){}}
+function lgTier(id){return Math.max(0,Math.min(3,lgRec().perk[id]|0));}
+function lgPerk(id){return LG_PERKS.find(p=>p.id===id);}
+function lgVal(id){const t=lgTier(id),p=lgPerk(id);return t&&p.val?p.val[t-1]:0;}
+function lgCostK(){return 1-lgVal("parts");}
+function lgCrewLv(){return career()&&lgTier("crew")?2:1;}
+function lgUpgOpts(){return UPGRADES.filter(u=>!u.needs);}
+function lgRndOpts(){return RND.filter(r=>r.unlock);}
+/* rep bonus: whatever rep arrived since the last save is topped up by the perk %, carrying the fraction */
+function lgSync(){if(!career())return;const c=C();if(c.lgRep==null){c.lgRep=c.rep;return;}const d=c.rep-c.lgRep,pct=lgVal("rep");
+  if(d>0&&pct){const f=(c.lgFrac||0)+d*pct,w=Math.floor(f);c.lgFrac=f-w;c.rep+=w;}c.lgRep=c.rep;}
+function lgSaleValue(){const c=C();let up=0,pr=0;for(const u of UPGRADES)if(c.owned[u.id])up+=u.price;for(const p of PRESTIGE)if(c.prestige&&c.prestige[p.id])pr+=p.price;
+  const loan=c.loan||0,v=Math.max(0,Math.round(c.cash-loan+up*.5+pr*.5));return{cash:c.cash,loan,up:Math.round(up*.5),pr:Math.round(pr*.5),value:v,pts:Math.max(1,Math.floor(v/LG_PTS_PER))};}
+function lgHud(){const b=$("lgBadge");if(!b)return;const n=lgRec().resets;b.hidden=!(career()&&n>0);if(!b.hidden)b.textContent="Legacy "+n;}
+function lgApply(){const c=C(),r=lgRec();c.cash+=lgVal("cash");c.lgRep=0;
+  if(lgTier("upg")&&r.pick.upg&&lgUpgOpts().some(u=>u.id===r.pick.upg))c.owned[r.pick.upg]=true;
+  if(lgTier("rnd")){const x=lgRndOpts().find(q=>q.id===r.pick.rnd);if(x){c.rnd[x.id]=1;for(const u of x.unlock)c.unlocks[u]=true;}}
+  if(typeof syncShop==="function")syncShop();}
+function lgSell(){if(!career())return;if(typeof testing!=="undefined"&&testing){toast("Let the run finish first");return;}
+  const v=lgSaleValue(),r=lgRec();
+  if(!confirm(`Sell the shop?\n\nCash ${fmt$(v.cash)}${v.loan?`, loan −${fmt$(v.loan)}`:""}\nUpgrades (half price) ${fmt$(v.up)}\nPrestige (half price) ${fmt$(v.pr)}\nSale value ${fmt$(v.value)}\n\n= ${v.pts} Legacy point${v.pts===1?"":"s"} (you have ${r.pts}).\nYour career restarts at week 1. Blueprints and Legacy perks are kept.`))return;
+  const c=C(),b=r.best;r.pts+=v.pts;r.total+=v.pts;r.resets++;b.cash=Math.max(b.cash,c.cash);b.rep=Math.max(b.rep,c.rep);b.hp=Math.max(b.hp,c.bestHp||0);b.sold=Math.max(b.sold,c.sold||0);b.week=Math.max(b.week,c.week||0);b.value=Math.max(b.value,v.value);
+  r.pending=true;lgSave();lgOpen();lgHud();}
+function lgStart(){const r=lgRec();r.pending=false;lgSave();lgClose();S.career=freshCareer();lgApply();benchUnlock();save();boot();toast(`Legacy ${r.resets}. New shop, new name.`);}
+function lgBuy(id){const r=lgRec(),p=lgPerk(id),t=lgTier(id);if(!p||t>=p.tiers.length)return;const cost=p.tiers[t][0];if(r.pts<cost)return;r.pts-=cost;r.perk[id]=t+1;
+  if(p.pick==="upg"&&!r.pick.upg)r.pick.upg=lgUpgOpts()[0].id;if(p.pick==="rnd"&&!r.pick.rnd)r.pick.rnd=lgRndOpts()[0].id;lgSave();lgDraw();}
+function lgBodyHtml(buy){const r=lgRec(),b=r.best;
+  return `<div class="lgstats"><div><b>${r.pts}</b><span>points</span></div><div><b>${r.resets}</b><span>sold</span></div><div><b>${fmt$(b.value)}</b><span>best sale</span></div><div><b>${b.rep}</b><span>best rep</span></div><div><b>${b.hp.toLocaleString()}</b><span>best hp</span></div></div>`
+  +LG_PERKS.map(p=>{const t=lgTier(p.id),max=t>=p.tiers.length,nx=max?null:p.tiers[t];
+    const sel=p.pick&&t?`<select class="lgsel" data-lgpick="${p.pick}" aria-label="${p.name}">${(p.pick==="upg"?lgUpgOpts():lgRndOpts()).map(o=>`<option value="${o.id}" ${r.pick[p.pick]===o.id?"selected":""}>${o.name}</option>`).join("")}</select>`:"";
+    return `<div class="up lgperk ${max?"owned":""}"><div><h3>${p.name} <small>${t?p.tiers[t-1][1]:"not owned"}${p.tiers.length>1?` · ${t}/${p.tiers.length}`:""}</small></h3><p>${p.desc}${nx&&t?` Next: ${nx[1]}.`:""}</p>${sel}</div>${max?`<div class="price">Max</div>`:buy?`<button class="btn sm ${r.pts>=nx[0]?"pri":""}" data-lgbuy="${p.id}" ${r.pts<nx[0]?"disabled":""}>${nx[0]} pt${nx[0]===1?"":"s"}</button>`:`<div class="price">${nx[0]} pts</div>`}</div>`;}).join("");}
+function lgDraw(){const o=$("lgOver");if(!o)return;o.querySelector(".lgbody").innerHTML=lgBodyHtml(true);}
+function lgOpen(){let o=$("lgOver");if(!o){o=document.createElement("div");o.id="lgOver";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Legacy");
+    o.innerHTML=`<div class="lgcard"><h2>Legacy <span id="lgN"></span></h2><p class="hint">The shop is sold. Spend points on permanent perks, then open the doors on a new one.</p><div class="lgbody"></div><button class="btn pri lgstart" id="lgStart">Start new run</button></div>`;
+    o.addEventListener("click",e=>{const b=e.target.closest("[data-lgbuy]");if(b)lgBuy(b.dataset.lgbuy);if(e.target.closest("#lgStart"))lgStart();});
+    o.addEventListener("change",e=>{const s=e.target.closest("[data-lgpick]");if(!s)return;lgRec().pick[s.dataset.lgpick]=s.value;lgSave();});
+    document.body.appendChild(o);}
+  $("lgN").textContent=lgRec().resets;lgDraw();o.style.display="flex";o.querySelector(".lgcard").scrollTop=0;}
+function lgClose(){const o=$("lgOver");if(o)o.style.display="none";}
+function lgBoot(){lgHud();if(lgRec().pending&&career())lgOpen();else lgClose();}
+function renderLegacy(){const el=$("legacyBox");if(!el)return;const r=lgRec(),legend=career()&&repTierIdx()>=LG_NEED_TIER;
+  el.style.display=career()&&(legend||r.resets>0||r.pts>0)?"":"none";if(el.style.display==="none")return;
+  const v=legend?lgSaleValue():null;
+  el.innerHTML=`<details class="sfold"><summary>Legacy <span class="cnt">${r.resets?`N${r.resets} · `:""}${r.pts} pts</span></summary><div class="sfb">${lgBodyHtml(false)}
+    ${legend?`<p class="hint" style="margin:10px 0">Legend rep reached. Selling the shop now is worth <b>${fmt$(v.value)}</b> = <b>${v.pts}</b> Legacy point${v.pts===1?"":"s"}.</p><button class="btn danger" id="lgSell" style="width:100%">Sell the shop</button>`:`<p class="hint" style="margin:10px 0">Reach Legend rep to sell the shop for more Legacy points.</p>`}</div></details>`;
+  const s=$("lgSell");if(s)s.addEventListener("click",lgSell);}
 /* ===================== CREW PROGRESSION (career) =====================
    Every STAFF hire is a named person: C().staff[role] = {nm, role, lvl 1-5, xp, tr:[{id,rv}], mor, away, crs, h:{...}, hired}.
    The role's STAFF effect is the base; each level past 1 adds a little to it (and to the wage). Traits (CREW_TRAITS) roll
@@ -31516,7 +31594,7 @@ function crewName(){const k=crewS(),used=new Set(Object.values(C().staff||{}).co
 function crewRollTraits(role){const x=crewRnd(),n=x<0.3?0:x<0.75?1:2,out=[];
   for(let i=0;i<n;i++){const pos=crewRnd()<0.62;const pool=CREW_TRAITS.filter(t=>!!t.pos===pos&&t.roles.includes(role)&&!out.some(o=>o.id===t.id)&&!(t.id==="quick"&&out.some(o=>o.id==="slow"))&&!(t.id==="slow"&&out.some(o=>o.id==="quick")));if(pool.length)out.push({id:crewPick(pool).id,rv:false});}
   return out;}
-function crewPerson(role,mig){return{nm:crewName(),role,lvl:1,xp:0,tr:mig?[]:crewRollTraits(role),mor:70,away:0,crs:null,warn:0,wk:0,pulls:0,h:{},hired:C().week};}
+function crewPerson(role,mig){const L=!mig&&typeof lgCrewLv==="function"?lgCrewLv():1;return{nm:crewName(),role,lvl:L,xp:L>1?CREW_XP[L-1]:0,tr:mig?[]:crewRollTraits(role),mor:70,away:0,crs:null,warn:0,wk:0,pulls:0,h:{},hired:C().week};}
 /* the next applicant for an open role: fixed once drawn, so the name on the card is the one you hire */
 function crewCand(role){const k=crewS();if(!k.cand[role])k.cand[role]=crewPerson(role,false);return k.cand[role];}
 function crewNew(role){const k=crewS(),p=crewCand(role);delete k.cand[role];p.hired=C().week;p.mor=70;return p;}
@@ -32613,6 +32691,7 @@ function boot(){
   if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();spLivery();showTab(curTab);glApply();ddBar();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
+  if(typeof lgBoot==="function")lgBoot();
 }
 function start(hot){
   load();
