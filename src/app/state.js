@@ -14,6 +14,8 @@ const UPGRADES=[
   {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:90000,needs:"dyno2"},
   {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:140000,needs:"bay1"},
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
+  {id:"bay3",name:"Build bay C",desc:"A third bay that builds market contracts on its own. Hire a bay lead; $5,000 a week to run once staffed.",price:350000,needs:"bay2"},
+  {id:"bay4",name:"Build bay D",desc:"A fourth bay for a second contract at a time. Its own bay lead; $8,000 a week to run once staffed.",price:900000,needs:"bay3"},
   {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:240000,needs:"dyno3"},
   {id:"dyno5",name:"Monster dyno cell",desc:"Water-brake cell that reads to 10,000 hp. Built for the four-figure-boost builds that overload the Outlaw cell.",price:400000,needs:"dyno4"}
 ];
@@ -385,7 +387,7 @@ function recompute(){
 }
 function hud(){
   if(typeof tabBadges==="function")tabBadges();
-  if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0]}${dev()?" · DEV":""}`;}
+  if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${(has("bay4")?"BAYS A–D":has("bay3")?"BAYS A–C":["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0])}${dev()?" · DEV":""}`;}
   else{$("cashLbl").textContent="Test cell";$("cashLbl").style.color="var(--chalk)";$("repLbl").textContent="all parts unlocked";$("weekLbl").textContent="SANDBOX";}
   if(typeof lgHud==="function")lgHud();
 }
