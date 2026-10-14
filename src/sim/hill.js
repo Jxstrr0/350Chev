@@ -160,6 +160,9 @@
       pts: pts, refRes: ref, coolQ: Qt / 0.62, radKw: Qt / Math.max(0.05, cool ? cool.util : 0.5), VdL: Math.max(0.3, (ref.Vd || 2000) / 1000), kg: ref.kg, fails: ref.fails || [], redline: cfg.redline };
   }
 
+  /* the gearing target speed: 57 m/s for everything up to about a thousand horsepower (vPow past ~100 m/s), then a slow climb that flattens out around 77 m/s (277 km/h),
+     so monster builds keep getting quicker on the straights but the mountain's corners and the downforce drag, not a flat cap, set the end of it */
+  const hillVTop = vPow => vPow <= 100 ? Math.min(vPow, 57) : 57 + 20 * (1 - Math.exp(-(vPow - 100) / 60));
   /* the class car: the road-test chassis with this engine, stripped to the class weight, on its tyres and aero, geared for the mountain */
   function hillCar(prep, opt) {
     opt = opt || {};
@@ -169,7 +172,7 @@
     car.mu = ty.mu; car.muLat = ty.mu * car.kBal * car.kLoad * 0.97; car.muLong = ty.mu * car.kLoad * 1.12;
     car.clA = car.C.clA + a.clA; car.cdA = car.C.cdA + a.cdA; car.tyre = opt.tyre in HILL_TYRES ? opt.tyre : "sport"; car.aero = opt.aero in HILL_AERO ? opt.aero : "none"; car.cls = opt.cls in HILL_CLASSES ? opt.cls : "open";
     // top gear on the power peak at about the fastest the mountain allows, not the flat-out top speed
-    const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = Math.min(car.vPow, 57);
+    const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = hillVTop(car.vPow);
     car.fdAuto = clamp((pkR * 2 * Math.PI / 60) * car.rw / (vTop * top), 0.9, 7.5); car.fd = clamp(car.fdAuto * clamp(+opt.finalK || 1, 0.75, 1.3), 0.7, 9);
     return roadSetup(car, opt.setup);
   }
