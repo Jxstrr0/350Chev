@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.64.2.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.64.3.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -7642,7 +7642,7 @@ const ENGINE_SIM = (function () {
     const redline = res.redline || 7000;
     // fit the final drive: top gear lands the engine on its power peak at the speed that power can hold against drag
     const Pw = (res.peakHp || 100) * 745.7 * eta, crr = C0.rr * m * ROAD_G;
-    let lo = 5, hi = 140; for (let it = 0; it < 50; it++) { const v = (lo + hi) / 2; if (0.5 * ROAD_RHO * C0.cdA * v * v * v + crr * v > Pw) hi = v; else lo = v; }
+    let lo = 5, hi = 250; for (let it = 0; it < 50; it++) { const v = (lo + hi) / 2; if (0.5 * ROAD_RHO * C0.cdA * v * v * v + crr * v > Pw) hi = v; else lo = v; }
     const vPow = lo, pkR = Math.min(res.peakHpRpm || redline * 0.85, redline);
     const top = gears[gears.length - 1];
     // a swap car is geared like a road car: top gear runs out of revs just short of the drag-limited speed, so the
@@ -7802,7 +7802,7 @@ const ENGINE_SIM = (function () {
     out.zero60 = z60; out.zero100 = z100; out.zero200 = z200; out.quarter = q; out.eighth = e8; out.spinT = +spin.toFixed(2);
     // top speed: the fastest speed where some gear still has force to spare at steady boost
     let vt = 0, gt = car.gears.length - 1, lim = "drag";
-    for (let vv = 5; vv < 140; vv += 0.1) {
+    for (let vv = 5; vv < 250; vv += 0.1) {
       let ok = false, gg = -1; for (let k = 0; k < car.gears.length; k++) { const r = rpmOf(car, vv, k); if (r > car.redline) continue; const f = E.steadyTq(Math.max(r, car.idle)) * car.gears[k] * car.fd * car.eta / car.rw; if (f > dragF(car, vv)) { ok = true; gg = k; } }
       if (!ok) break; vt = vv; gt = gg;
     }
@@ -8093,6 +8093,9 @@ const ENGINE_SIM = (function () {
     let box = !!c.pend;
     const lf = P.modes[c.mode].fuel, left = R.dur - t, lapNow = P.modes[c.mode].lap * c.pace;
     const canFinish = c.fuel >= (left / lapNow + 1) * lf;
+    if (lf > E24_TANK) { c.out = true; c.tNext = Infinity; c.dnf = { t: t, id: null, name: "Out of fuel", sub: "a lap burns more than a full tank", h: t / 3600 };
+      e24Feed(R, t, me ? "dnf" : "ai", me ? `RETIRED — it burns more than a ${E24_TANK} L tank in one lap` : `${e24Name(c)} is out — dry tank`, me, true);
+      e24Check(R, c); return; }
     if (c.fuel < lf * 1.25) box = true;
     if (me) { const pl = R.plan;
       if (pl.box) box = true;
@@ -8473,11 +8476,11 @@ const ENGINE_SIM = (function () {
     const base = vb * 2.23694 * red / Math.max(1, res.peakHpRpm || red * 0.85);
     let best = null;
     for (const f of [0.94, 1.0, 1.06, 1.12]) {
-      const top = Math.round(base * f / 5) * 5;
+      const top = Math.min(520, Math.round(base * f / 5) * 5);   // the Top gear slider stops at 520
       const r = lsrPass(res, Object.assign({}, veh, { topMph: top, noFail: true, noSpin: true, h: 0.004 }));
       const sc = r.mileMph || 0; if (!best || sc > best.mph) best = { topMph: top, mph: sc };
     }
-    return best ? best.topMph : Math.round(base / 5) * 5;
+    return best ? best.topMph : Math.min(520, Math.round(base / 5) * 5);
   }
   /* the record book: every class has a standing record, seeded from what a well-built entry of that class
      runs on this same physics, discounted by how contested the class is (some are soft, some are stout) */
@@ -26670,7 +26673,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.64.2.0";
+const VERSION="1.64.3.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
