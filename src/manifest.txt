@@ -1,6 +1,7 @@
 # build order for index.html: one src/ path per line (node build.js concatenates them)
 html/head.html
 css/style.css
+css/photo.css
 html/body.html
 sim/opt.js
 sim/simulate.js
@@ -54,6 +55,7 @@ vis/band.js
 vis/ultra.js
 vis/api.js
 vis/trophy.js
+vis/photo.js
 vis/teardown.js
 app/state.js
 app/build.js
@@ -75,6 +77,7 @@ app/legacy.js
 app/crew.js
 app/bays.js
 app/trophy.js
+app/photo.js
 app/rail.js
 app/help.js
 app/boot.js
