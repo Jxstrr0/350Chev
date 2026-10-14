@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.65.0.1 — major.minor.feature.hotfix -->
+<!-- VERSION 1.65.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1405,6 +1405,63 @@ html.desk #ovalCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bo
 html.desk.evhud #ovalCtl{left:auto;right:calc(var(--sbw) + 18px);bottom:16px;transform:none;width:280px;padding:8px}
 html.desk #evHud[data-ev=ovalLive]{width:min(720px,calc(100% - 280px - 56px))}   /* the strip and the buttons share the view's foot: the buttons' 280 px comes off the strip */
 html.desk.evhud #ovalCtl .rdbtns{margin-top:6px}
+/* ---- photo mode (app/photo.js, vis/photo.js): the view goes full screen with no panels, a slim dock for light / backdrop / look, a build sheet card ---- */
+html.photo,html.photo body{overflow:hidden}
+html.photo #view,html.photo.desk #view,html.photo #app.mini #view,html.photo.onevent:not(.desk) #app #view{position:fixed;inset:0;z-index:60;min-height:0;flex:none;max-width:none;width:auto;height:auto;transition:none;touch-action:none}
+html.photo #panel,html.photo #tabs,html.photo #hud,html.photo #tag,html.photo #rpmbox,html.photo #fpsHud,html.photo #stripHud,html.photo #stripCap,html.photo #tdCap,html.photo #pitsOv,html.photo #evHud,html.photo #flash,html.photo #phBtn,
+html.photo #dragCtl,html.photo #pullCtl,html.photo #saltCtl,html.photo #bogCtl,html.photo #roadCtl,html.photo #e24Ctl,html.photo #ovalCtl,html.photo #tour,html.photo #tip,html.photo #ff,html.photo #les,html.photo #glPop,html.photo #achToast{display:none!important}
+html.photo #toast{z-index:95;bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
+html.desk.photo #toast{left:50%;top:70px;max-width:min(560px,90%)}
+#phUi{position:absolute;inset:0;z-index:30;color:var(--chalk);font-family:var(--body);-webkit-user-select:none;user-select:none}
+#phUi[hidden]{display:none}
+#phPad{position:absolute;inset:0;touch-action:none;cursor:grab}
+#phPad:active{cursor:grabbing}
+#phGrade,#phVig{position:absolute;inset:0;pointer-events:none}
+#phVig{background:radial-gradient(ellipse farthest-corner at 50% 50%,rgba(0,0,0,0) 52%,rgba(0,0,0,.55) 100%)}
+.phtop{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 14px;pointer-events:none;background:linear-gradient(rgba(12,13,15,.7),rgba(12,13,15,0))}
+.phtop .phh{flex:1;min-width:0;text-shadow:0 1px 3px rgba(0,0,0,.85);font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase}
+.phtop .phh small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--muted);margin-top:2px;transition:opacity 1s 5s;opacity:1}
+#phUi.hush .phtop .phh small{opacity:0}
+.phtop button{pointer-events:auto}
+.phx{flex:none;width:44px;height:44px;border-radius:22px;background:rgba(15,17,20,.78);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:var(--chalk)}
+.phx svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.phdock{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(100%,560px);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(15,17,20,.86);border:1px solid rgba(255,255,255,.12);border-bottom:0;border-radius:14px 14px 0 0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+html.desk .phdock{bottom:16px;border-radius:14px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:10px}
+.phbody{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.phbody[hidden]{display:none}
+.phrow{display:flex;align-items:center;gap:8px}
+.phrow[hidden]{display:none}
+.phl{flex:none;width:64px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.phchips{flex:1;min-width:0;display:flex;gap:6px}
+.phchips button{flex:1 1 0;min-width:0;min-height:44px;padding:0 4px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--muted);font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.03em;white-space:nowrap}
+.phchips button[hidden]{display:none}
+.phchips button.on{border-color:var(--orange);color:var(--orange2);background:rgba(255,122,26,.12)}
+.phact{display:flex;gap:6px}
+.phact button{flex:1 1 0;min-width:0;min-height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:var(--chalk);font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.phact button[hidden]{display:none}
+.phact .phpri{flex:1.5 1 0;background:var(--orange);border-color:var(--orange);color:#1a1206}
+.phact button:disabled{opacity:.55}
+.phchips button:focus-visible,.phact button:focus-visible,.phx:focus-visible,#phSheetBox button:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
+/* the floating camera on event scenes (the engine view has it in the VIEW tray) */
+#phBtn{display:none;position:absolute;right:10px;top:10px;z-index:9;width:44px;height:44px;border-radius:22px;background:rgba(15,17,20,.74);border:1px solid rgba(255,255,255,.2);align-items:center;justify-content:center;color:var(--chalk)}
+#phBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+html.onevent #phBtn{display:flex}
+html.onevent:not(.desk) #phBtn{top:auto;bottom:auto;top:62px}
+html.troom #phBtn{display:none!important}
+.hudtray button.act::after{display:none}
+.hudtray button.act svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* the build sheet, over everything */
+#phSheet{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(6,7,9,.97);color:#f0ece2}
+#phSheet[hidden]{display:none}
+#phSheetBox{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:100%;max-height:100%;min-height:0}
+#phSheetBox img{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);object-fit:contain;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.6);background:#15171b}
+#phSheetBox p{margin:0;font-size:13px;color:#b8b2a3;text-align:center}
+.phsb{display:flex;gap:8px;width:100%;max-width:520px;flex:none}
+.phsb button{flex:1 1 0;min-height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#f0ece2;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.05em;text-transform:uppercase}
+.phsb button[hidden]{display:none}
+.phsb .phpri{background:#ff7a1a;border-color:#ff7a1a;color:#1a1206}
+@media (max-width:420px){.phact button{font-size:13px;letter-spacing:.02em}}
+@media (max-width:374px){.phl{width:54px;font-size:10px}.phchips button{font-size:12px}}
 </style>
 
 <div id="app">
@@ -26583,6 +26640,241 @@ ENGINE_VIS.trophyProject=function(id){   /* screen point of an item (tests, and 
   var c=new THREE.Box3().setFromObject(f).getCenter(new THREE.Vector3()); trCamApply(); c.project(TROPHY.cam); var r=canvasEl.getBoundingClientRect(); return {x:r.left+(c.x+1)/2*r.width, y:r.top+(1-c.y)/2*r.height}; };
 (function(){ var z0=ENGINE_VIS.zoneAt; ENGINE_VIS.zoneAt=function(x,y){ return TROPHY.on?0:z0(x,y); }; })();   /* no part sheets from a tap in the trophy room */
 /* ===========================================================================
+   PHOTO MODE — a free camera on whatever the 3D view is showing, lighting and backdrop presets, and a still frame out.
+   ENGINE_VIS.photoStart() takes over the view (the app hides its own UI, app/photo.js): on the engine stand the orbit camera
+   is free (zoom, pan, any angle) and the lights / backdrop can be swapped; on a venue (strip, pull, salt, bog, boats, road,
+   hill) the venue's own director keeps following the action and the photo camera is an offset on top of it (spin, tilt,
+   zoom, slide), applied only for the render call and undone after, so no event code sees it. Nothing here touches the sim.
+   photoGrab(scale) renders one frame at that pixel ratio and hands back a 2D canvas copy; photoShot(w,h) is a studio-lit
+   three-quarter picture of the engine alone, whatever scene is up (the build sheet's photo).
+   ==========================================================================*/
+var PH={ on:false, scene:"", light:"asis", back:"garage", saved:null, group:null, yaw:0, pitch:0, zoom:1, pan:{x:0,y:0}, D:0, dKey:"", exMul:1,
+         rr:null, glights:null, camSave:null };
+function phSceneOfCam(c){ return !c?"":c===STRIP.cam?"strip":c===PULL.cam?"pull":c===SALT.cam?"salt":c===BOG.cam?"bog":c===BOAT.cam?"boat":c===ROAD.cam?"road":c===HILL.cam?"hill":c===OVAL.cam?"oval":""; }
+function phCamOf(s){ return s==="strip"?STRIP.cam:s==="pull"?PULL.cam:s==="salt"?SALT.cam:s==="bog"?BOG.cam:s==="boat"?BOAT.cam:s==="road"?ROAD.cam:s==="hill"?HILL.cam:s==="oval"?OVAL.cam:null; }
+/* stand lights: [hemi sky, hemi ground, hemi i] [key colour, i, x, y, z] [fill ...] [rim ...]; venues only take the exposure multiplier */
+var PH_LIGHT={
+  studio:{ h:[0xffffff,0xb9bec8,0.65], k:[0xffffff,1.9,12,30,18], f:[0xe4ecff,1.5,-14,10,12], r:[0xffffff,1.3,-16,12,-20], ex:0.95, gl:0.25, vex:1.08 },
+  golden:{ h:[0xffd9a8,0x3a2a1a,0.5], k:[0xffa95a,2.8,26,9,10], f:[0xff7a3a,1.6,-13,8,12], r:[0xffe0b0,1.7,-18,10,-16], ex:1.05, gl:0.3, vex:1.04 },
+  night: { h:[0x3a4a78,0x07080c,0.30], k:[0x7f9bff,0.9,-8,26,10], f:[0xff7a2a,3.2,-9,7,12], r:[0x4cc0ff,2.4,-16,12,-20], ex:0.95, gl:0.12, vex:0.62 }
+};
+/* backdrops: the seamless-paper look (a lit floor fading into a flat colour); the garage hides and the stand stands on its own */
+var PH_BACK={ grey:{bg:0x7d838a,fl:0x8f959b,em:0.15}, white:{bg:0xe0e2e5,fl:0x9a9da2,em:0.0}, black:{bg:0x060607,fl:0x16181c,em:0}, dusk:{bg:0x4b3a52,fl:0x6a5060,em:0.15} };
+
+function phLightGet(l){ return l?{c:l.color.clone(), g:l.groundColor?l.groundColor.clone():null, i:l.intensity, p:l.position.clone()}:null; }
+function phLightPut(l, s){ if(!l||!s) return; l.color.copy(s.c); if(s.g&&l.groundColor) l.groundColor.copy(s.g); l.intensity=s.i; l.position.copy(s.p); }
+function phSnapStand(){
+  var gl=[]; if(garageRoot) garageRoot.traverse(function(o){ if(o.isLight) gl.push([o, o.intensity]); });
+  return { h:phLightGet(hemi), k:phLightGet(keyLight), f:phLightGet(fillLight), r:phLightGet(rimLight), ex:renderer.toneMappingExposure,
+           bg:scene.background, fog:scene.fog?{c:scene.fog.color.clone(), n:scene.fog.near, f:scene.fog.far}:null, gv:garageRoot?garageRoot.visible:true, gl:gl };
+}
+function phRestoreStand(s){
+  if(!s) return;
+  phLightPut(hemi,s.h); phLightPut(keyLight,s.k); phLightPut(fillLight,s.f); phLightPut(rimLight,s.r);
+  renderer.toneMappingExposure=s.ex; scene.background=s.bg;
+  if(s.fog&&scene.fog){ scene.fog.color.copy(s.fog.c); scene.fog.near=s.fog.n; scene.fog.far=s.fog.f; }
+  if(garageRoot) garageRoot.visible=s.gv;
+  s.gl.forEach(function(p){ p[0].intensity=p[1]; });
+  if(PH.group) PH.group.visible=false;
+}
+function phApplyLight(k, s){
+  var P=PH_LIGHT[k];
+  if(!P){ phRestoreStandLights(s); return; }
+  function put(l,a,hasPos){ if(!l) return; l.color.setHex(a[0]); l.intensity=a[1]; if(hasPos) l.position.set(a[2],a[3],a[4]); }
+  hemi.color.setHex(P.h[0]); hemi.groundColor.setHex(P.h[1]); hemi.intensity=P.h[2];
+  put(keyLight,P.k,true); put(fillLight,P.f,true); put(rimLight,P.r,true);
+  renderer.toneMappingExposure=P.ex;
+  s.gl.forEach(function(p){ p[0].intensity=p[1]*P.gl; });
+}
+function phRestoreStandLights(s){
+  phLightPut(hemi,s.h); phLightPut(keyLight,s.k); phLightPut(fillLight,s.f); phLightPut(rimLight,s.r);
+  renderer.toneMappingExposure=s.ex; s.gl.forEach(function(p){ p[0].intensity=p[1]; });
+}
+/* the stand, the dyno bed and a floor on their own (the garage group is hidden for any backdrop but "garage") */
+function phBuildGroup(){
+  if(PH.group) return PH.group;
+  var g=new THREE.Group(), B=new Builder();
+  buildStand(B, !!lastOwned.sandbox);
+  B.add("plate", BOX(16, 1.2, 26, 1/4), 0, 0.6, 0);
+  B.add("panel", BOX(3.0, 3.6, 22, 1/6), -6.6, 2.4, 0);
+  B.add("panel", BOX(3.0, 3.6, 22, 1/6),  6.6, 2.4, 0);
+  for(var ts=0; ts<7; ts++) B.add("blackPlast", BOX(0.5, 0.3, 25, 1/4), -6.0+ts*2.0, 1.25, 0);
+  B.flush(g, {}, true);
+  var fl=new THREE.Mesh(new THREE.CircleGeometry(150, 48), new THREE.MeshStandardMaterial({color:0x888888, roughness:0.9, metalness:0}));
+  fl.rotation.x=-PI/2; fl.receiveShadow=true; fl.name="photoFloor"; g.add(fl);
+  g.visible=false; scene.add(g); PH.group=g; return g;
+}
+function phApplyBack(k, s){
+  if(!PH_BACK[k]){
+    if(garageRoot) garageRoot.visible=s.gv;
+    if(PH.group) PH.group.visible=false;
+    scene.background=s.bg; if(s.fog&&scene.fog){ scene.fog.color.copy(s.fog.c); scene.fog.near=s.fog.n; scene.fog.far=s.fog.f; }
+    return;
+  }
+  var B=PH_BACK[k], g=phBuildGroup(), comp=(GFX!=="lite"&&!!composer);   /* the clear colour and the fog sit in the target's colour space: linear for the composer, raw for the screen */
+  if(garageRoot) garageRoot.visible=false;
+  g.visible=true;
+  var fl=g.getObjectByName("photoFloor"); fl.material.color.copy(sc(B.fl)); fl.material.emissive.copy(sc(B.fl)).multiplyScalar(B.em); fl.material.needsUpdate=true;
+  var c=comp?sc(B.bg):new THREE.Color(B.bg);
+  scene.background=c.clone();
+  if(scene.fog){ scene.fog.color.copy(c); scene.fog.near=k==="white"?55:42; scene.fog.far=k==="white"?150:120; }
+}
+
+/* ---- venue camera: an offset on the director's, applied around the render call ---- */
+var _phV=new THREE.Vector3(), _phF=new THREE.Vector3(), _phT=new THREE.Vector3(), _phR=new THREE.Vector3(), _phU=new THREE.Vector3();
+function phSync(){   /* the scene under the photo camera can change (a race night goes strip -> pits); follow it */
+  var es=ENGINE_VIS.eventScene(), ns=(es==="pits"||es==="trophy")?"x":es;
+  if(ns===PH.scene) return;
+  var was=PH.scene; PH.scene=ns;
+  if(ns===""&&was!==""&&PH.saved){ phApplyLight(PH.light, PH.saved); phApplyBack(PH.back, PH.saved); }
+}
+function phVenueRender(sc2, cam, args){
+  var key=PH.scene;
+  var p0=cam.position.clone(), q0=cam.quaternion.clone();
+  cam.updateMatrixWorld();
+  _phF.set(0,0,-1).applyQuaternion(cam.quaternion);
+  if(PH.dKey!==key){   /* how far the subject is: first thing under the middle of the picture (the car), else a stock distance */
+    PH.dKey=key; PH.D=12;
+    try{
+      var rc=new THREE.Raycaster(), hits; rc.setFromCamera({x:0,y:0}, cam);
+      hits=rc.intersectObjects(sc2.children, true);
+      for(var i=0;i<hits.length;i++){ var o=hits[i].object; if(!o.isMesh||o.isInstancedMesh||o.isSprite||o.isPoints) continue; if(o.material&&(o.material.side===THREE.BackSide||o.material.depthWrite===false)) continue;
+        if(hits[i].distance>2.5 && hits[i].distance<70){ PH.D=hits[i].distance; break; } }
+    }catch(e){}
+  }
+  var D=PH.D;
+  _phT.copy(p0).addScaledVector(_phF, D);
+  _phV.copy(p0).sub(_phT);                                   /* subject -> director camera */
+  var len=_phV.length()*PH.zoom, el0=Math.asin(clamp(_phV.y/Math.max(1e-4,_phV.length()),-1,1)), az0=Math.atan2(_phV.x,_phV.z);
+  var minEl=Math.asin(clamp((0.5-_phT.y)/Math.max(1,len),-1,1));   /* keep the lens above the ground */
+  var el=clamp(el0+PH.pitch, Math.min(minEl,el0), 1.45), az=az0+PH.yaw, ce=Math.cos(el);
+  _phV.set(len*ce*Math.sin(az), len*Math.sin(el), len*ce*Math.cos(az));
+  _phR.set(Math.cos(az),0,-Math.sin(az)); _phU.set(0,1,0);   /* screen-right and up at the new heading, for the slide */
+  _phT.addScaledVector(_phR, PH.pan.x).addScaledVector(_phU, PH.pan.y);
+  cam.position.copy(_phT).add(_phV);
+  cam.lookAt(_phT);
+  var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=ex*PH.exMul;
+  try{ return PH.rr.apply(renderer, args); }
+  finally{ renderer.toneMappingExposure=ex; cam.position.copy(p0); cam.quaternion.copy(q0); }
+}
+function phHook(){
+  if(PH.rr) return;
+  PH.rr=renderer.render;
+  renderer.render=function(sc2, cam){
+    if(PH.on){ var vs=phSceneOfCam(cam); if(vs){ PH.scene=vs; return phVenueRender(sc2, cam, arguments); } }
+    return PH.rr.apply(this, arguments);
+  };
+}
+function phUnhook(){ if(!PH.rr) return; renderer.render=PH.rr; PH.rr=null; }   /* r128 keeps render as an own method of the instance */
+
+function phSizeTo(w, h, pr){
+  renderer.setPixelRatio(pr); renderer.setSize(w, h, false);
+  if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+  [STRIP.cam,PULL.cam,BOG.cam,BOAT.cam,ROAD.cam,HILL.cam,SALT.cam,OVAL.cam].forEach(function(c){ if(c){ c.aspect=w/h; c.updateProjectionMatrix(); } });
+}
+function phRenderNow(){
+  var s=PH.scene;
+  if(s==="road") roadRender(); else if(s==="hill") hillRender(); else if(s==="salt") saltRender(); else if(s==="bog") bogRender();
+  else if(s==="boat") boatRender(); else if(s==="pull") pullRender(); else if(s==="strip") stripRender(); else if(s==="oval") ovalRender();
+  else { if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera); }
+}
+function phCopy(){ var o=document.createElement("canvas"); o.width=canvasEl.width; o.height=canvasEl.height; o.getContext("2d").drawImage(canvasEl,0,0); return o; }
+function phCamPlace(){   /* the orbit camera where the camState says (the frame loop does this each tick; a grab can't wait for it) */
+  camera.position.set(camState.target.x+camState.r*Math.sin(camState.phi)*Math.sin(camState.theta), camState.target.y+camState.r*Math.cos(camState.phi), camState.target.z+camState.r*Math.sin(camState.phi)*Math.cos(camState.theta));
+  camera.lookAt(camState.target);
+}
+function phCamKeep(){ return {t:camState.theta, p:camState.phi, r:camState.r, tg:camState.target.clone(), a:camState.auto}; }
+function phCamBack(k){ camState.theta=k.t; camState.phi=k.p; camState.r=k.r; camState.target.copy(k.tg); camState.auto=k.a; }
+
+ENGINE_VIS.photoStart=function(){
+  if(!renderer||!scene) return {ok:false, scene:"none"};
+  var es=ENGINE_VIS.eventScene();
+  if(es==="trophy"||es==="pits") return {ok:false, scene:es};
+  if(PH.on) return {ok:true, scene:PH.scene};
+  PH.on=true; PH.scene=es; PH.light="asis"; PH.back="garage"; PH.yaw=0; PH.pitch=0; PH.zoom=1; PH.pan.x=PH.pan.y=0; PH.dKey=""; PH.exMul=1;
+  PH.saved=phSnapStand(); PH.camSave=phCamKeep(); PH.autoForce=camState.autoForce;
+  camState.autoForce=false; camState.auto=false;
+  phHook();
+  return {ok:true, scene:es};
+};
+ENGINE_VIS.photoStop=function(){
+  if(!PH.on) return;
+  PH.on=false; phUnhook();
+  if(PH.saved) phRestoreStand(PH.saved);
+  camState.autoForce=PH.autoForce===undefined?null:PH.autoForce;
+  if(PH.camSave) phCamBack(PH.camSave);
+  PH.saved=null; PH.camSave=null; PH.exMul=1; PH.scene="";
+  if(PH.group){ disposeTree(PH.group); scene.remove(PH.group); PH.group=null; }
+};
+ENGINE_VIS.photoLight=function(k){
+  if(!PH.on) return null; PH.light=PH_LIGHT[k]?k:"asis";
+  if(!PH.scene) phApplyLight(PH.light, PH.saved); else PH.exMul=PH_LIGHT[PH.light]?PH_LIGHT[PH.light].vex:1;
+  return PH.light;
+};
+ENGINE_VIS.photoBack=function(k){
+  if(!PH.on) return null; PH.back=PH_BACK[k]?k:"garage"; if(!PH.scene) phApplyBack(PH.back, PH.saved); return PH.back;
+};
+/* camera moves in screen pixels: orbit [dx,dy], zoom factor, pan [dx,dy]; reset puts the shot back */
+ENGINE_VIS.photoView=function(o){
+  if(!PH.on||!o) return;
+  phSync(); if(PH.scene==="x") return;
+  var h=canvasEl.clientHeight||600;
+  if(!PH.scene){
+    camState.idle=0; camState.auto=false;
+    if(o.reset){ frameEngine(); camState.theta=0.72; camState.phi=1.06; return; }
+    if(o.orbit){ camState.theta-=o.orbit[0]*0.0085; camState.phi=clamp(camState.phi-o.orbit[1]*0.0065, 0.12, 1.53); }
+    if(o.zoom) camState.r=clamp(camState.r*o.zoom, 3.5, 32);
+    if(o.pan){ var k=2*camState.r*Math.tan(camera.fov*Math.PI/360)/h, th=camState.theta, ph=camState.phi, cp=Math.cos(ph), T=camState.target, dx=o.pan[0], dy=o.pan[1];
+      T.x=clamp(T.x-dx*k*Math.cos(th)-dy*k*cp*Math.sin(th), -9, 9); T.y=clamp(T.y+dy*k*Math.sin(ph), 0.5, 16); T.z=clamp(T.z+dx*k*Math.sin(th)-dy*k*cp*Math.cos(th), -9, 9); }
+  } else {
+    if(o.reset){ PH.yaw=PH.pitch=0; PH.zoom=1; PH.pan.x=PH.pan.y=0; return; }
+    if(o.orbit){ PH.yaw-=o.orbit[0]*0.0085; PH.pitch=clamp(PH.pitch+o.orbit[1]*0.0065, -0.9, 1.2); }
+    if(o.zoom) PH.zoom=clamp(PH.zoom*o.zoom, 0.2, 3.2);
+    if(o.pan){ var cam=phCamOf(PH.scene), k2=2*PH.D*PH.zoom*Math.tan((cam?cam.fov:45)*Math.PI/360)/h; PH.pan.x=clamp(PH.pan.x-o.pan[0]*k2, -40, 40); PH.pan.y=clamp(PH.pan.y+o.pan[1]*k2, -20, 20); }
+  }
+};
+ENGINE_VIS.photoState=function(){ return {on:PH.on, scene:PH.scene, light:PH.light, back:PH.back, yaw:+PH.yaw.toFixed(3), pitch:+PH.pitch.toFixed(3), zoom:+PH.zoom.toFixed(3), D:+PH.D.toFixed(2), garageHidden:garageRoot?!garageRoot.visible:null, hooked:!!PH.rr, r:+camState.r.toFixed(2), th:+camState.theta.toFixed(3), ph:+camState.phi.toFixed(3), auto:camState.autoForce}; };
+ENGINE_VIS.photoSpin=function(on){ camState.autoForce=on?true:false; camState.auto=!!on; camState.idle=0; };
+/* one frame at `scale` x CSS pixels (capped to what the card can hold), copied to a 2D canvas */
+ENGINE_VIS.photoGrab=function(scale){
+  if(!renderer||!PH.on) return null;
+  phSync(); if(PH.scene==="x") return null;
+  var host=canvasEl.parentElement, w=host?host.clientWidth:canvasEl.clientWidth, h=host?host.clientHeight:canvasEl.clientHeight;
+  var cap=Math.min(renderer.capabilities.maxTextureSize||4096, 6000), pr=Math.max(0.5, Math.min(+scale||1, cap/Math.max(w,h), Math.sqrt(16e6/(w*h))));
+  var keep=phCamKeep(), out=null;
+  try{
+    phSizeTo(w, h, pr);
+    if(!PH.scene) phCamPlace();
+    phRenderNow();
+    out=phCopy();
+  } finally {
+    ENGINE_VIS.resize(); phCamBack(keep);
+  }
+  return out;
+};
+/* a studio picture of the engine on its stand, whatever is on screen */
+ENGINE_VIS.photoShot=function(w, h){
+  if(!renderer||!scene||!engineRoot) return null;
+  var host=canvasEl.parentElement, vw=host?host.clientWidth:canvasEl.clientWidth, vh=host?host.clientHeight:canvasEl.clientHeight;
+  var snap=phSnapStand(), keep=phCamKeep(), fxv=fxRoot?fxRoot.visible:true, out=null, hadGroup=!!PH.group, gvis=hadGroup&&PH.group.visible;
+  try{
+    phSizeTo(w, h, 1);
+    if(fxRoot) fxRoot.visible=false;
+    phApplyLight("studio", snap); phApplyBack("grey", snap);
+    frameEngine(); camState.theta=0.62; camState.phi=1.14; camState.r=Math.min(camState.r*0.84, 24);
+    phCamPlace();
+    if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
+    out=phCopy();
+  } finally {
+    if(fxRoot) fxRoot.visible=fxv;
+    phRestoreStand(snap);
+    if(!hadGroup&&PH.group){ disposeTree(PH.group); scene.remove(PH.group); PH.group=null; } else if(PH.group) PH.group.visible=gvis;
+    ENGINE_VIS.resize(); phCamBack(keep);
+  }
+  return out;
+};
+/* ===========================================================================
    TEARDOWN VIEW — after a failure: an exploded section of this engine (block
    barrel, lifted head, the failed cylinder's piston and rod pulled out, crank
    throw, bearings, valves, turbo as needed) built on demand over the stand,
@@ -27271,7 +27563,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.65.0.1";
+const VERSION="1.65.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -32927,6 +33219,228 @@ $("trListBtn").addEventListener("click",()=>tropListShow(!TR.list));
 $("trPhoto").addEventListener("click",async()=>{try{await document.fonts.ready;}catch(e){}tropShareCanvas(tropPhotoCanvas(),"trophy-room.png","Trophy room");});
 document.addEventListener("keydown",e=>{if(!TR.open)return;if(e.key!=="Escape"){e.stopPropagation();return;}e.preventDefault();e.stopPropagation();if(TR.sel)tropPick(null);else tropClose();},true);   // the bench's single-key shortcuts sleep while the room is open
 {const f=renderRecords;renderRecords=function(){f();tropCountSync();};const g=renderShop;renderShop=function(){g.apply(this,arguments);tropCountSync();};}
+/* ===================== PHOTO MODE + BUILD SHEET =====================
+   Photo mode (html.photo): the view goes full screen, the panels fold away and the 3D camera is free (vis/photo.js does the camera, lights and
+   backdrop; this file is the controls, the gestures, the capture and the share/download). A dock holds light presets, backdrops and a few looks
+   (vignette, caption, turntable, 2x). Venue scenes (strip, pull, salt, bog, boats, road, hill) take the camera as an offset on their own director;
+   light there is an exposure change plus a colour grade laid over the picture. Esc or the X leaves.
+   The build sheet is a 1200x1600 spec card: the engine in a studio, peak numbers, the hp / torque curve, key parts, best results. It works from
+   the VIEW tray too, with no photo mode needed. Both end in a PNG: saved with a download link, or the phone's share sheet. No sim is touched. */
+const PHO={on:false,scene:"",light:"asis",back:"garage",vig:true,cap:false,big:true,spin:false,open:true,busy:false,poll:0,from:null};
+const PHO_ICON={cam:'<svg viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>',
+  doc:'<svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg>',x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>'};
+/* venue "light": a colour laid over the frame (CSS blend in the preview, the same canvas blend in the saved picture) */
+const PHO_GRADE={golden:{col:"rgba(255,150,60,.42)",op:"soft-light"},night:{col:"rgba(28,52,140,.55)",op:"multiply"}};
+const phoSlug=s=>String(s||"engine").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,32)||"engine";
+const phoCanShare=()=>{try{return !!(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([new Blob(["x"])],"a.png",{type:"image/png"})]}));}catch(e){return false;}};
+function phoBuild(){
+  const v=$("view");if(!v||$("phUi"))return;
+  const chips=(k,a)=>`<div class="phchips" data-ph="${k}">${a.map(([x,t])=>`<button type="button" data-v="${x}" aria-pressed="false">${t}</button>`).join("")}</div>`;
+  const ui=document.createElement("div");ui.id="phUi";ui.hidden=true;
+  ui.innerHTML=`<div id="phPad" aria-hidden="true"></div><div id="phGrade"></div><div id="phVig"></div>
+    <div class="phtop"><div class="phh">Photo mode<small id="phHint"></small></div><button type="button" class="phx" id="phX" aria-label="Exit photo mode">${PHO_ICON.x}</button></div>
+    <div class="phdock" role="group" aria-label="Photo controls"><div class="phbody" id="phBody">
+      <div class="phrow"><span class="phl">Light</span>${chips("light",[["asis","As is"],["studio","Studio"],["golden","Golden"],["night","Night"]])}</div>
+      <div class="phrow" id="phRowBack"><span class="phl">Backdrop</span>${chips("back",[["garage","Garage"],["grey","Grey"],["white","White"],["black","Black"],["dusk","Dusk"]])}</div>
+      <div class="phrow"><span class="phl">Look</span><div class="phchips" data-ph="opt"><button type="button" data-o="vig" aria-pressed="true">Vignette</button><button type="button" data-o="cap" aria-pressed="false">Caption</button><button type="button" data-o="spin" id="phSpin" aria-pressed="false">Spin</button><button type="button" data-o="big" aria-pressed="true">2×</button></div></div>
+    </div><div class="phact"><button type="button" class="phpri" id="phShot">Save photo</button><button type="button" id="phShare" hidden>Share</button><button type="button" id="phSheetBtn">Build sheet</button><button type="button" id="phMore" aria-expanded="true" aria-controls="phBody">Look ▾</button></div></div>`;
+  v.appendChild(ui);
+  const fab=document.createElement("button");fab.type="button";fab.id="phBtn";fab.setAttribute("aria-label","Photo mode");fab.innerHTML=PHO_ICON.cam;v.appendChild(fab);
+  const tr=$("viewTray");
+  if(tr){const mk=(id,ic,t)=>{const b=document.createElement("button");b.type="button";b.id=id;b.className="act";b.innerHTML=ic+"<span>"+t+"</span>";tr.appendChild(b);};
+    mk("phTray",PHO_ICON.cam,"Photo mode");mk("phSheetTray",PHO_ICON.doc,"Build sheet");}
+  const sh=document.createElement("div");sh.id="phSheet";sh.hidden=true;sh.setAttribute("role","dialog");sh.setAttribute("aria-modal","true");sh.setAttribute("aria-label","Build sheet");
+  sh.innerHTML=`<div id="phSheetBox"><img id="phSheetImg" alt="Build sheet card"><p id="phSheetNote"></p><div class="phsb"><button type="button" class="phpri" id="phSheetSave">Download PNG</button><button type="button" id="phSheetShare" hidden>Share</button><button type="button" id="phSheetClose">Close</button></div></div>`;
+  document.body.appendChild(sh);
+  phoWire();
+}
+function phoSync(){
+  const st=ENGINE_VIS.photoState?ENGINE_VIS.photoState():{scene:""};PHO.scene=st.scene;const venue=!!st.scene&&st.scene!=="x";
+  document.querySelectorAll('#phUi [data-ph="light"] button').forEach(b=>{const on=b.dataset.v===PHO.light;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);});
+  document.querySelectorAll('#phUi [data-ph="back"] button').forEach(b=>{const on=b.dataset.v===PHO.back;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);});
+  const o={vig:PHO.vig,cap:PHO.cap,spin:PHO.spin,big:PHO.big};
+  document.querySelectorAll('#phUi [data-o]').forEach(b=>{const on=!!o[b.dataset.o];b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);});
+  $("phRowBack").hidden=venue;$("phSpin").hidden=venue;
+  $("phHint").textContent=venue?"Drag to look around the action · pinch or scroll to zoom · two fingers slide · double-tap resets":"Drag to orbit · pinch or scroll to zoom · two fingers slide · double-tap resets";
+  $("phVig").style.display=PHO.vig?"":"none";
+  const g=venue?PHO_GRADE[PHO.light]:null,ge=$("phGrade");ge.style.background=g?g.col:"none";ge.style.mixBlendMode=g?g.op:"normal";
+  $("phMore").setAttribute("aria-expanded",PHO.open);$("phMore").textContent=PHO.open?"Look ▾":"Look ▴";$("phBody").hidden=!PHO.open;
+  $("phShare").hidden=!phoCanShare();
+}
+function phoOpen(){
+  if(PHO.on||!ENGINE_VIS.photoStart)return;
+  if(typeof TR!=="undefined"&&TR.open){toast("Leave the trophy room first");return;}
+  const r=ENGINE_VIS.photoStart();if(!r.ok){toast("Photo mode isn't available in this view");return;}
+  PHO.on=true;PHO.from=document.activeElement;PHO.light="asis";PHO.back="garage";PHO.spin=false;
+  if(!$("viewTray").hidden)viewTray(false);
+  document.documentElement.classList.add("photo");$("phUi").hidden=false;$("phUi").classList.remove("hush");
+  window.dispatchEvent(new Event("resize"));ENGINE_VIS.resize();
+  phoSync();setTimeout(()=>$("phUi").classList.add("hush"),60);
+  PHO.poll=setInterval(phoSync,900);
+  $("phShot").focus({preventScroll:true});
+}
+function phoClose(){
+  if(!PHO.on)return;
+  PHO.on=false;clearInterval(PHO.poll);phoSheetClose();
+  document.documentElement.classList.remove("photo");$("phUi").hidden=true;
+  ENGINE_VIS.resize();ENGINE_VIS.photoStop();   // the view's size back first, then the camera and lights the way they were
+  window.dispatchEvent(new Event("resize"));
+  const f=PHO.from;PHO.from=null;try{if(f&&f.isConnected&&f.offsetParent&&f.focus)f.focus({preventScroll:true});else $("viewBtn").focus({preventScroll:true});}catch(e){}
+}
+function phoGrade(){const g=PHO.scene&&PHO.scene!=="x"?PHO_GRADE[PHO.light]:null;return g;}
+/* the saved picture: the frame, the grade, the vignette, the caption */
+function phoCompose(cv){
+  const w=cv.width,h=cv.height,out=document.createElement("canvas");out.width=w;out.height=h;const x=out.getContext("2d");x.drawImage(cv,0,0);
+  const g=phoGrade();if(g){x.save();x.globalCompositeOperation=g.op;x.fillStyle=g.col;x.fillRect(0,0,w,h);x.restore();}
+  if(PHO.vig){x.save();x.translate(w/2,h/2);x.scale(w/2*Math.SQRT2,h/2*Math.SQRT2);const gr=x.createRadialGradient(0,0,0,0,0,1);gr.addColorStop(0,"rgba(0,0,0,0)");gr.addColorStop(.52,"rgba(0,0,0,0)");gr.addColorStop(1,"rgba(0,0,0,.55)");x.fillStyle=gr;x.fillRect(-1,-1,2,2);x.restore();}
+  if(PHO.cap){const u=Math.max(1,Math.round(Math.min(w,h)/900*10)),pad=u*3.2;x.save();x.textBaseline="alphabetic";x.shadowColor="rgba(0,0,0,.7)";x.shadowBlur=u*1.5;
+    x.fillStyle="rgba(255,255,255,.92)";x.font=`700 ${u*2.6}px "Chakra Petch","Barlow Condensed","Arial Narrow",sans-serif`;x.fillText(phoFit(x,engineName().toUpperCase(),w-pad*2),pad,h-pad-u*2.4);
+    x.fillStyle="rgba(255,255,255,.7)";x.font=`500 ${u*1.7}px "IBM Plex Mono",Menlo,Consolas,monospace`;x.fillText("PRAIRIE ENGINE WORKS",pad,h-pad);x.restore();}
+  return out;
+}
+function phoFit(x,s,max){s=String(s==null?"":s);while(s.length>3&&x.measureText(s).width>max)s=s.slice(0,-2)+"…";return s;}
+/* a canvas to a file: the host's download service, the phone's share sheet when asked, or a download link */
+async function phoSave(c,fn,title,share){
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob){toast("Couldn't make the picture here");return false;}
+  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  if(dl){try{await dl.save({filename:fn,data:blob});toast("Picture saved");return true;}catch(e){if(e&&e.code!=="declined")toast("Couldn't save the picture here");return false;}}
+  if(share){const file=new File([blob],fn,{type:"image/png"});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});return true;}catch(e){if(e&&e.name==="AbortError")return false;}}}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000);toast("Picture saved");return true;
+}
+async function phoShot(share){
+  if(PHO.busy||!PHO.on)return;PHO.busy=true;const b=$(share?"phShare":"phShot");b.disabled=true;
+  try{await new Promise(r=>requestAnimationFrame(r));
+    const cv=ENGINE_VIS.photoGrab(PHO.big?2:1);if(!cv){toast("Nothing to photograph in this view");return;}
+    const out=phoCompose(cv),st=new Date().toISOString().slice(0,16).replace(/[-:T]/g,"");
+    await phoSave(out,`prairie-${phoSlug(engineName())}-${PHO.scene&&PHO.scene!=="x"?PHO.scene:"engine"}-${st}.png`,engineName(),share);}
+  catch(e){toast("Couldn't take the picture here");}
+  finally{PHO.busy=false;b.disabled=false;}
+}
+/* ---- gestures on the view ---- */
+function phoWire(){
+  const pad=$("phPad"),G={p:new Map(),dist:0,cx:0,cy:0,pan:false,tap:null,lt:0,lx:0,ly:0};
+  const two=()=>{const [a,b]=[...G.p.values()];return{d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};};
+  pad.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button>2)return;try{pad.setPointerCapture(e.pointerId);}catch(_){}
+    G.p.set(e.pointerId,{x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,t0:performance.now()});G.pan=e.pointerType==="mouse"&&(e.button===1||e.button===2||e.shiftKey);
+    if(G.p.size===2){const t=two();G.dist=t.d;G.cx=t.cx;G.cy=t.cy;}e.preventDefault();});
+  pad.addEventListener("pointermove",e=>{const o=G.p.get(e.pointerId);if(!o)return;const dx=e.clientX-o.x,dy=e.clientY-o.y;o.x=e.clientX;o.y=e.clientY;
+    if(G.p.size===1)ENGINE_VIS.photoView(G.pan?{pan:[dx,dy]}:{orbit:[dx,dy]});
+    else if(G.p.size===2){const t=two();ENGINE_VIS.photoView({zoom:G.dist>0&&t.d>0?G.dist/t.d:1,pan:[t.cx-G.cx,t.cy-G.cy]});G.dist=t.d;G.cx=t.cx;G.cy=t.cy;}});
+  const up=e=>{const o=G.p.get(e.pointerId);if(!o)return;G.p.delete(e.pointerId);if(G.p.size<2)G.dist=0;
+    /* touch has no dblclick: two quick still taps reset the shot */
+    if(e.type==="pointerup"&&e.pointerType!=="mouse"&&Math.hypot(e.clientX-o.x0,e.clientY-o.y0)<10&&performance.now()-o.t0<300){const n=performance.now();
+      if(n-G.lt<380&&Math.hypot(e.clientX-G.lx,e.clientY-G.ly)<40){ENGINE_VIS.photoView({reset:true});G.lt=0;}else{G.lt=n;G.lx=e.clientX;G.ly=e.clientY;}}};
+  pad.addEventListener("pointerup",up);pad.addEventListener("pointercancel",up);
+  pad.addEventListener("wheel",e=>{e.preventDefault();ENGINE_VIS.photoView({zoom:Math.max(.5,Math.min(2,1+e.deltaY*(e.ctrlKey?0.01:0.0012)))});},{passive:false});
+  pad.addEventListener("dblclick",()=>ENGINE_VIS.photoView({reset:true}));
+  pad.addEventListener("contextmenu",e=>e.preventDefault());
+  $("phX").addEventListener("click",phoClose);
+  $("phShot").addEventListener("click",()=>phoShot(false));$("phShare").addEventListener("click",()=>phoShot(true));
+  $("phSheetBtn").addEventListener("click",()=>phoSheet());
+  $("phMore").addEventListener("click",()=>{PHO.open=!PHO.open;phoSync();});
+  $("phUi").addEventListener("click",e=>{const b=e.target.closest("[data-ph] button");if(!b||!PHO.on)return;const k=b.parentElement.dataset.ph;
+    if(k==="light"){PHO.light=b.dataset.v;ENGINE_VIS.photoLight(PHO.light);}
+    else if(k==="back"){PHO.back=b.dataset.v;ENGINE_VIS.photoBack(PHO.back);}
+    else{const o=b.dataset.o;PHO[o]=!PHO[o];if(o==="spin")ENGINE_VIS.photoSpin(PHO.spin);}
+    phoSync();});
+  $("phBtn").addEventListener("click",phoOpen);$("phTray").addEventListener("click",phoOpen);
+  $("phSheetTray").addEventListener("click",()=>{if(!$("viewTray").hidden)viewTray(false);phoSheet();});
+  $("phSheetClose").addEventListener("click",phoSheetClose);$("phSheetSave").addEventListener("click",()=>phoSheetSave(false));$("phSheetShare").addEventListener("click",()=>phoSheetSave(true));
+  $("phSheet").addEventListener("pointerdown",e=>{if(e.target===$("phSheet"))phoSheetClose();});
+  /* keys while photo mode is up belong to it: Esc closes the sheet then the mode, arrows orbit, + / - zoom, 0 resets */
+  window.addEventListener("keydown",e=>{
+    if(!$("phSheet").hidden){e.stopPropagation();if(e.key==="Escape"){e.preventDefault();phoSheetClose();}
+      else if(e.key==="Tab"){const f=[...$("phSheet").querySelectorAll("button:not([hidden]):not(:disabled)")];if(!f.length)return;const i=f.indexOf(document.activeElement),n=e.shiftKey?(i<=0?f.length-1:i-1):(i<0||i===f.length-1?0:i+1);e.preventDefault();f[n].focus();}return;}
+    if(!PHO.on)return;e.stopPropagation();
+    if(e.key==="Escape"){e.preventDefault();phoClose();return;}
+    if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
+    const k=e.key,s=e.shiftKey?60:24;
+    if(k==="ArrowLeft"){ENGINE_VIS.photoView({orbit:[-s,0]});e.preventDefault();}else if(k==="ArrowRight"){ENGINE_VIS.photoView({orbit:[s,0]});e.preventDefault();}
+    else if(k==="ArrowUp"){ENGINE_VIS.photoView({orbit:[0,-s]});e.preventDefault();}else if(k==="ArrowDown"){ENGINE_VIS.photoView({orbit:[0,s]});e.preventDefault();}
+    else if(k==="+"||k==="="){ENGINE_VIS.photoView({zoom:.88});}else if(k==="-"||k==="_"){ENGINE_VIS.photoView({zoom:1.14});}else if(k==="0"){ENGINE_VIS.photoView({reset:true});}
+    else if(k==="Tab"){const f=[...$("phUi").querySelectorAll("button:not([hidden]):not(:disabled)")];if(!f.length)return;const i=f.indexOf(document.activeElement),n=e.shiftKey?(i<=0?f.length-1:i-1):(i<0||i===f.length-1?0:i+1);e.preventDefault();f[n].focus();}
+  },true);
+}
+/* ---- build sheet ---- */
+const PHS={url:"",canvas:null,from:null};
+const phoN=v=>Math.round(v).toLocaleString("en-CA");
+function phoParts(cfg){
+  const want=["layout","asp","rotHousing","apexSeal","head","blockMat","piston","rod","crank","ic","nitrous","intake","exhaust","cooling"],rows=[];
+  const F={};for(const sec of FORM)for(const f of sec.fields)if(f.type==="seg"||f.type==="swatch")F[f.key]=f;
+  for(const k of want){const f=F[k];if(!f||(f.showIf&&!f.showIf(cfg)))continue;const t=OPT[f.optTable||f.key],o=t&&t[cfg[k]];if(!o)continue;const nm=o.name||String(cfg[k]);if(/^(none|no |off)/i.test(nm)&&(k==="ic"||k==="nitrous"))continue;
+    let v=nm;if(k==="asp"&&cfg.asp!=="na")v=nm+" · "+bv(cfg.boost)+" "+pU();rows.push([(f.labelIf&&f.labelIf(cfg))||f.label,v]);}
+  return rows;
+}
+async function phoSheetCanvas(){
+  const W=1200,H=1600,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  try{await Promise.race([Promise.all(['700 40px "Chakra Petch"','600 30px "Chakra Petch"','500 24px "IBM Plex Mono"'].map(f=>document.fonts.load(f))),new Promise(r=>setTimeout(r,1500))]);}catch(e){}
+  const F=(sz,w)=>`${w||600} ${sz}px "Chakra Petch","Barlow Condensed","Arial Narrow",sans-serif`,M=(sz,w)=>`${w||500} ${sz}px "IBM Plex Mono",Menlo,Consolas,monospace`;
+  const INK="#f0ece2",MUTE="#a8a295",ORG="#ff7a1a",ORG2="#ffa04d",LINE="#343941",PNL="#1e2126",L=60,R=W-60;
+  const q=quick,cfg=S.cfg,name=engineName(),h=cfgHash(cfg);
+  x.fillStyle="#15171b";x.fillRect(0,0,W,H);
+  {const g=x.createLinearGradient(0,0,0,300);g.addColorStop(0,"rgba(255,122,26,.16)");g.addColorStop(1,"rgba(255,122,26,0)");x.fillStyle=g;x.fillRect(0,0,W,300);}
+  x.fillStyle=ORG;x.fillRect(L,44,6,92);
+  x.textAlign="left";x.textBaseline="alphabetic";x.fillStyle=ORG2;x.font=M(24,600);x.fillText("PRAIRIE ENGINE WORKS · BUILD SHEET",L+24,70);
+  x.fillStyle=INK;{let fz=64;x.font=F(fz,700);while(fz>36&&x.measureText(name).width>R-L-24){fz-=4;x.font=F(fz,700);}x.fillText(phoFit(x,name,R-L-24),L+24,126);}
+  x.fillStyle=MUTE;x.font=M(24);x.fillText(phoFit(x,cfgLbl(cfg),R-L),L,170);
+  /* the engine in a studio */
+  const PX=L,PY=192,PW=R-L,PH2=480;let shot=null;try{shot=ENGINE_VIS.photoShot?ENGINE_VIS.photoShot(1620,Math.round(1620*PH2/PW)):null;}catch(e){shot=null;}
+  x.save();x.beginPath();x.roundRect?x.roundRect(PX,PY,PW,PH2,10):x.rect(PX,PY,PW,PH2);x.clip();
+  if(shot&&shot.width){x.drawImage(shot,0,0,shot.width,shot.height,PX,PY,PW,PH2);}else{x.fillStyle=PNL;x.fillRect(PX,PY,PW,PH2);x.fillStyle=MUTE;x.font=F(34,600);x.textAlign="center";x.fillText("No 3D view on this device",W/2,PY+PH2/2);x.textAlign="left";}
+  x.restore();x.strokeStyle=LINE;x.lineWidth=2;x.strokeRect(PX,PY,PW,PH2);
+  /* the numbers */
+  const asp=OPT.asp[cfg.asp],fu=OPT.fuel[cfg.fuel];
+  const st=[["PEAK POWER",phoN(q.peakHp)+" hp","@ "+phoN(q.peakHpRpm)+" rpm",1],["PEAK TORQUE",phoN(q.peakTq)+" Nm","@ "+phoN(q.peakTqRpm)+" rpm",0],["DISPLACEMENT",q.Vd<1000?Math.round(q.Vd)+" cc":(q.Vd/1000).toFixed(1)+" L",phoN(q.Vd*0.0610237)+" cu in",0],["REDLINE",phoN(cfg.redline||0)+" rpm","",0],
+    ["ASPIRATION",cfg.asp==="na"?"NA":(asp&&asp.name?asp.name:(ASP_SYM[cfg.asp]||cfg.asp.toUpperCase())),cfg.asp==="na"?"Naturally aspirated":bv(cfg.boost)+" "+pU()+" boost",0],["FUEL",fuelShort(cfg.fuel),fu&&fu.name?fu.name:"",0],["WEIGHT",phoN(q.kg)+" kg","",0],["RELIABILITY",isFinite(q.rel)?String(Math.round(q.rel)):"—","of 100",0]];
+  const cw=(R-L)/4,SY=692;
+  st.forEach((s,i)=>{const cx=L+(i%4)*cw,cy=SY+Math.floor(i/4)*122;x.fillStyle=PNL;x.fillRect(cx+(i%4?6:0),cy,cw-(i%4?6:0),112);
+    const tx=cx+(i%4?6:0)+16;x.fillStyle=MUTE;x.font=M(18,600);x.fillText(s[0],tx,cy+30);x.fillStyle=s[3]?ORG2:INK;{let fz=44;x.font=F(fz,700);while(fz>26&&x.measureText(s[1]).width>cw-44){fz-=2;x.font=F(fz,700);}x.fillText(phoFit(x,s[1],cw-40),tx,cy+72);}x.fillStyle=MUTE;x.font=M(18);x.fillText(phoFit(x,s[2],cw-40),tx,cy+100);});
+  /* the curve */
+  const CY=946,CH=270,padL=70,padR=70,padT=34,padB=34,cx0=L+padL,cx1=R-padR,cy0=CY+padT,cy1=CY+CH-padB;
+  x.fillStyle=PNL;x.fillRect(L,CY,R-L,CH);
+  {const rp=q.rpms,n=rp.length,r0=Math.floor(rp[0]/1000)*1000,r1=Math.ceil(rp[n-1]/1000)*1000,tmax=Math.max(50,Math.ceil(Math.max(...q.torque)*1.1/50)*50),pmax=Math.max(50,Math.ceil(Math.max(...q.power)*1.1/50)*50);
+    const X=r=>cx0+(r-r0)/Math.max(1,r1-r0)*(cx1-cx0),YT=v=>cy1-v/tmax*(cy1-cy0),YP=v=>cy1-v/pmax*(cy1-cy0);
+    x.lineWidth=1;x.font=M(16);for(let i=0;i<=4;i++){const y=cy1-i*(cy1-cy0)/4;x.strokeStyle="rgba(255,255,255,.08)";x.beginPath();x.moveTo(cx0,y);x.lineTo(cx1,y);x.stroke();
+      x.textAlign="right";x.fillStyle=ORG;x.fillText(phoN(tmax*i/4),cx0-8,y+5);x.textAlign="left";x.fillStyle=INK;x.fillText(phoN(pmax*i/4),cx1+8,y+5);}
+    const st2=Math.max(1000,Math.ceil((r1-r0)/6/1000)*1000);x.textAlign="center";x.fillStyle=MUTE;for(let r=r0;r<=r1;r+=st2){x.strokeStyle="rgba(255,255,255,.05)";x.beginPath();x.moveTo(X(r),cy0);x.lineTo(X(r),cy1);x.stroke();x.fillText((r/1000)+"k",X(r),cy1+22);}
+    const line=(arr,Y,col)=>{x.strokeStyle=col;x.lineWidth=4;x.lineJoin="round";x.beginPath();for(let i=0;i<n;i++){const px=X(rp[i]),py=Y(arr[i]);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();};
+    x.fillStyle="rgba(255,122,26,.12)";x.beginPath();x.moveTo(X(rp[0]),cy1);for(let i=0;i<n;i++)x.lineTo(X(rp[i]),YT(q.torque[i]));x.lineTo(X(rp[n-1]),cy1);x.closePath();x.fill();
+    line(q.torque,YT,ORG);line(q.power,YP,INK);
+    const dot=(r,v,Y,col)=>{x.fillStyle="#15171b";x.strokeStyle=col;x.lineWidth=4;x.beginPath();x.arc(X(r),Y(v),9,0,Math.PI*2);x.fill();x.stroke();};
+    dot(q.peakHpRpm,q.peakHp,YP,INK);dot(q.peakTqRpm,q.peakTq,YT,ORG);
+    x.textAlign="left";x.font=M(18,600);x.fillStyle=ORG;x.fillText("TORQUE  Nm",cx0+8,CY+24);x.fillStyle=INK;x.fillText("POWER  hp",cx0+190,CY+24);x.textAlign="right";x.fillStyle=MUTE;x.fillText("RPM",cx1,CY+24);}
+  /* key parts and results */
+  const BY=1262,half=(R-L-40)/2,rx=L+half+40;
+  x.textAlign="left";x.fillStyle=ORG2;x.font=M(20,600);x.fillText("KEY PARTS",L,BY);x.fillText("RESULTS",rx,BY);x.fillStyle=LINE;x.fillRect(L,BY+10,half,2);x.fillRect(rx,BY+10,half,2);
+  const row=(cx,y,k,v,w)=>{x.textAlign="left";x.fillStyle=MUTE;x.font=M(19);x.fillText(phoFit(x,k.toUpperCase(),w*0.42),cx,y);x.textAlign="right";x.fillStyle=INK;x.font=F(25,600);x.fillText(phoFit(x,v,w*0.56),cx+w,y);};
+  phoParts(cfg).slice(0,7).forEach((r,i)=>row(L,BY+46+i*32,r[0],r[1],half));
+  let res=[];try{res=tropBest(name,h);}catch(e){res=[];}
+  let wins=0;try{wins=tropBook().log.filter(e=>!e.seed&&e.slot!=="pennant"&&(e.h===h||e.eng===name)).length;}catch(e){}
+  if(!res.length){x.textAlign="left";x.fillStyle=MUTE;x.font=F(25,500);x.fillText("No event results for this build yet.",rx,BY+46);x.font=F(22,500);x.fillText("Take it to the strip, the pull or the salt.",rx,BY+80);}
+  else res.slice(0,6).forEach((r,i)=>row(rx,BY+46+i*32,r[0],String(r[1]),half));
+  if(wins)row(rx,BY+46+Math.min(res.length,6)*32,"Trophies",String(wins),half);
+  /* footer */
+  x.fillStyle=LINE;x.fillRect(L,H-62,R-L,2);x.textAlign="left";x.fillStyle=MUTE;x.font=M(18);x.fillText((career()?"Career · week "+C().week:"Test cell")+" · "+new Date().toLocaleDateString("en-CA"),L,H-28);
+  x.textAlign="right";x.fillStyle=ORG2;x.font=F(22,700);x.fillText("PRAIRIE ENGINE WORKS",R,H-28);
+  return c;
+}
+async function phoSheet(){
+  if(PHS.busy)return;PHS.busy=true;
+  try{if(!quick){toast("Nothing to sheet yet");return;}
+    toast("Building the sheet…");await new Promise(r=>requestAnimationFrame(r));
+    const c=await phoSheetCanvas();PHS.canvas=c;
+    const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob){toast("Couldn't make the sheet here");return;}
+    if(PHS.url)URL.revokeObjectURL(PHS.url);PHS.url=URL.createObjectURL(blob);
+    $("phSheetImg").src=PHS.url;$("phSheetNote").textContent="1200 × 1600 PNG";$("phSheetShare").hidden=!phoCanShare();
+    PHS.from=document.activeElement;$("phSheet").hidden=false;$("phSheetSave").focus({preventScroll:true});}
+  catch(e){toast("Couldn't make the sheet here");}
+  finally{PHS.busy=false;}
+}
+function phoSheetClose(){if($("phSheet").hidden)return;$("phSheet").hidden=true;$("phSheetImg").removeAttribute("src");if(PHS.url){URL.revokeObjectURL(PHS.url);PHS.url="";}PHS.canvas=null;
+  const f=PHS.from;PHS.from=null;try{if(f&&f.isConnected&&f.focus)f.focus({preventScroll:true});}catch(e){}}
+async function phoSheetSave(share){if(!PHS.canvas)return;await phoSave(PHS.canvas,`prairie-${phoSlug(engineName())}-build-sheet.png`,engineName()+" · build sheet",share);}
+phoBuild();
 /* ===================== RESULTS RAIL =====================
    One component, two forms, so the build -> dyno -> build loop never has to leave the tab it is on.
    Desktop 1100 px and wider: a third column right of the tab panel, always in sight. Phone and narrow windows: a peek
