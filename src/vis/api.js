@@ -94,6 +94,7 @@ const ENGINE_VIS = {
     if(BOAT.cam){ BOAT.cam.aspect=w/h; BOAT.cam.updateProjectionMatrix(); }
     if(ROAD.cam){ ROAD.cam.aspect=w/h; ROAD.cam.updateProjectionMatrix(); }
     if(HILL.cam){ HILL.cam.aspect=w/h; HILL.cam.updateProjectionMatrix(); }
+    if(OVAL.cam){ OVAL.cam.aspect=w/h; OVAL.cam.updateProjectionMatrix(); }
     if(SALT.cam){ SALT.cam.aspect=w/h; SALT.cam.updateProjectionMatrix(); SALT.viewH=h; saltBandRead(); }
     if(PITS.cam) PITS.dirty=2;
     frameEngine();
@@ -163,7 +164,7 @@ const ENGINE_VIS = {
     pitsUpdate(o); return PITS.stats;
   },
   /* fix pack: which event scene owns the canvas ("" = the engine stand, where orbiting works); the app hides the orbit hint otherwise */
-  eventScene: function(){ return (TROPHY.on&&TROPHY.built)?"trophy":(ROAD.on&&ROAD.W)?"road":(HILL.on&&HILL.W)?"hill":(BOAT.on&&BOAT.built)?"boat":(SALT.on&&SALT.built)?"salt":(BOG.on&&BOG.built)?"bog":(PULL.on&&PULL.built)?"pull":(STRIP.on&&STRIP.built)?"strip":(PITS.on&&PITS.built&&!TD.on)?"pits":""; },
+  eventScene: function(){ return (TROPHY.on&&TROPHY.built)?"trophy":(OVAL.on&&OVAL.built)?"oval":(ROAD.on&&ROAD.W)?"road":(HILL.on&&HILL.W)?"hill":(BOAT.on&&BOAT.built)?"boat":(SALT.on&&SALT.built)?"salt":(BOG.on&&BOG.built)?"bog":(PULL.on&&PULL.built)?"pull":(STRIP.on&&STRIP.built)?"strip":(PITS.on&&PITS.built&&!TD.on)?"pits":""; },
   pitsAnchors: function(){ return pitsAnchors(); },   /* {w, h, launch|wear|gear|psi|shocks|dial: [x, y, inFront]} in canvas CSS px */
   pitsState: function(){ return {on:PITS.on, built:PITS.built, renders:PITS.renders, stats:PITS.stats, nightK:PITS.nightK, heat:+PITS.heat.toFixed(2), car:PITS.carKey,
     cam:PITS.cam?PITS.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null}; },   /* harness */
@@ -227,6 +228,16 @@ const ENGINE_VIS = {
     var rdt=o.dt!=null ? +o.dt : (now-HILL.lastT)/1000; HILL.lastT=now; hillUpdate(o, clamp(rdt||0, 0, 0.4));
     return HILL.stats||null;
   },
+  /* DIRT OVAL: fed every frame {on, track:{R, ls, w, bank}, cars:[{s, v, color, me, num, n, groove, gone, slide, thr, brk, spin}], pre, done, flag, cam:"auto"|"chase"|"tv"|"heli"|"onboard", night, lastLap, toFlag, order, boardHead, cheer, dt}; {on:false} leaves */
+  setOval: function(o){
+    if(!renderer) return;
+    if(!o || o.on===false){ if(OVAL.on){ OVAL.on=false; if(OVAL.fx) OVAL.fx.clear(); } return; }
+    var now=performance.now();
+    if(!OVAL.on){ OVAL.on=true; OVAL.snap=true; OVAL.shot=null; OVAL.lastT=now; if(!OVAL.cam) OVAL.cam=new THREE.PerspectiveCamera(50, 1, 0.3, 4200); ENGINE_VIS.resize(); }
+    var rdt=o.dt!=null ? +o.dt : (now-OVAL.lastT)/1000; OVAL.lastT=now; ovalUpdate(o, clamp(rdt||0, 0, 0.2));
+    return OVAL.stats||null;
+  },
+  ovalState: function(){ return {on:OVAL.on, built:OVAL.built, shot:OVAL.shot, stats:OVAL.stats, cars:OVAL.list.length, cam:OVAL.cam?OVAL.cam.position.toArray().map(function(v){ return Math.round(v); }):null}; },   /* harness */
   hillState: function(){ return {on:HILL.on, built:!!HILL.W, shot:HILL.shot, stats:HILL.stats, cam:HILL.cam?HILL.cam.position.toArray().map(function(v){ return Math.round(v); }):null}; },   /* harness */
   /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
      failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
