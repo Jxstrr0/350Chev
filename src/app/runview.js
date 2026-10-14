@@ -5,7 +5,7 @@
    its own #stripHud), the live card (#pullLive, #saltLive, #bogLive, #roadLive, #e24Hud, #hillLive, #boatLive) moves from its control block into
    #evHud on the view's bottom edge (html.evhud) and goes home when the run view ends. The band it covers goes to the scene
    cameras through ENGINE_VIS.setBand. All driven by observers: no event's start / finish code needs to know. */
-const RV_LIVE=[["dragCtl",null],["pullCtl","pullLive"],["saltCtl","saltLive"],["bogCtl","bogLive"],["roadCtl","roadLive"],["e24Ctl","e24Hud"],["hillCtl","hillLive"],["boatCtl","boatLive"]];
+const RV_LIVE=[["dragCtl",null],["pullCtl","pullLive"],["saltCtl","saltLive"],["bogCtl","bogLive"],["roadCtl","roadLive"],["e24Ctl","e24Hud"],["hillCtl","hillLive"],["ovalCtl","ovalLive"],["boatCtl","boatLive"]];
 const RV={live:null,home:null,band:-1,h:-1,raf:0};
 /* an event scene owns the 3D view (also the race-night pits): no "drag to orbit" over it */
 function evScene(){const a=$("app"),d=document.documentElement.classList;return a.classList.contains("onstrip")||a.classList.contains("pits")||d.contains("onstrip")||d.contains("onevent");}
