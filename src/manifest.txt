@@ -1,6 +1,7 @@
 # build order for index.html: one src/ path per line (node build.js concatenates them)
 html/head.html
 css/style.css
+css/oval.css
 html/body.html
 sim/opt.js
 sim/simulate.js
@@ -16,6 +17,7 @@ sim/salt.js
 sim/boat.js
 sim/swap.js
 sim/hill.js
+sim/oval.js
 sim/tunemap.js
 sound/profile.js
 sound/synth.js
@@ -50,6 +52,7 @@ vis/salt-look.js
 vis/salt-event.js
 vis/hill.js
 vis/hill-lod.js
+vis/oval.js
 vis/band.js
 vis/ultra.js
 vis/api.js
@@ -65,6 +68,7 @@ app/road.js
 app/e24.js
 app/salt.js
 app/hill.js
+app/oval.js
 app/boat.js
 app/runview.js
 app/results.js
