@@ -206,6 +206,9 @@
     let box = !!c.pend;
     const lf = P.modes[c.mode].fuel, left = R.dur - t, lapNow = P.modes[c.mode].lap * c.pace;
     const canFinish = c.fuel >= (left / lapNow + 1) * lf;
+    if (lf > E24_TANK) { c.out = true; c.tNext = Infinity; c.dnf = { t: t, id: null, name: "Out of fuel", sub: "a lap burns more than a full tank", h: t / 3600 };
+      e24Feed(R, t, me ? "dnf" : "ai", me ? `RETIRED — it burns more than a ${E24_TANK} L tank in one lap` : `${e24Name(c)} is out — dry tank`, me, true);
+      e24Check(R, c); return; }
     if (c.fuel < lf * 1.25) box = true;
     if (me) { const pl = R.plan;
       if (pl.box) box = true;
