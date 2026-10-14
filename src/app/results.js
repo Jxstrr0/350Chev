@@ -97,6 +97,7 @@ function showResult(res,env){
   if(env.testType==="race24"&&res.e24)v=e24Verdict(res);
   else if(env.testType==="road"&&res.road)v=roadVerdict(res);
   else if(env.testType==="hill"&&res.hill)v=hillVerdict(res);
+  else if(env.testType==="oval"&&res.oval)v=ovalVerdict(res);
   else if(env.testType==="pull_sled"&&res.pull)v=pullVerdict(res);
   else if(env.testType==="salt"&&res.salt)v=saltVerdict(res);
   else if(env.testType==="bog"&&res.bog)v=bogVerdict(res);
@@ -129,10 +130,11 @@ function showResult(res,env){
   if(env.testType==="bog"&&res.bog)extra+=bogSheet(res);
   if(env.testType==="boat"&&res.boat)extra+=boatSheet(res);
   if(env.testType==="hill"&&res.hill)extra+=hillSheet(res);
+  if(env.testType==="oval"&&res.oval)extra+=ovalSheet(res);
   if(env.testType==="drag"&&res.drag)extra+=dlCard("dlR",res);   /* datalog: its own block after the timing slip */
   if(env.testType==="overrev"&&res.overrev)extra+=`<div class="sec"><h2>What the missed shift did</h2><div class="log">${res.overrev.events.map(e=>`<div>${e}</div>`).join("")||"<div>Nothing. It shrugged it off.</div>"}</div></div>`;
-  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt)||(env.testType==="bog"&&res.bog)||(env.testType==="boat"&&res.boat)||(env.testType==="road"&&res.road)||(env.testType==="race24"&&res.e24)||(env.testType==="hill"&&res.hill))extra=spSlipHtml()+extra;
-  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="bog"&&res.bog)bogRedraw();if(env.testType==="boat"&&res.boat)boatRedraw();if(env.testType==="road"&&res.road)roadRedraw();if(env.testType==="hill"&&res.hill)hillRedraw();if(env.testType==="race24"&&res.e24)drawE24Trace(res.e24);
+  if((env.testType==="drag"&&res.drag)||(env.testType==="pull_sled"&&res.pull)||(env.testType==="salt"&&res.salt)||(env.testType==="bog"&&res.bog)||(env.testType==="boat"&&res.boat)||(env.testType==="road"&&res.road)||(env.testType==="race24"&&res.e24)||(env.testType==="hill"&&res.hill)||(env.testType==="oval"&&res.oval))extra=spSlipHtml()+extra;
+  $("testExtra").innerHTML=extra;if(env.testType==="drag"&&res.drag)dlMount();if(env.testType==="pull_sled"&&res.pull)pullRedraw();if(env.testType==="salt"&&res.salt)saltRedraw();if(env.testType==="bog"&&res.bog)bogRedraw();if(env.testType==="boat"&&res.boat)boatRedraw();if(env.testType==="road"&&res.road)roadRedraw();if(env.testType==="hill"&&res.hill)hillRedraw();if(env.testType==="oval"&&res.oval)ovalRedraw();if(env.testType==="race24"&&res.e24)drawE24Trace(res.e24);
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   const stRow=t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`;
@@ -187,6 +189,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="bog"){const k=bogEnvFix(),l=bogClsLocked(k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[k].n} this week — the next mud bog is week ${C().week+1}`);return;}}
   if(S.env.testType==="hill"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
   if(S.env.testType==="hill"){const k=hillEnvFix(),l=hillClsLocked(k);if(l){toast(`${SIM.HILL_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(hillRanWk(k)){toast(`Already ran ${SIM.HILL_CLASSES[k].n} this week — the next running is week ${C().week+1}`);return;}}
+  if(S.env.testType==="oval"&&ovalGate())return;
   if(S.env.testType==="boat"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
   if(S.env.testType==="boat"){const k=boatEnvFix(),l=boatClsLocked(k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(!boatLive()&&boatRanWk(k)){toast(`Already ran ${SIM.BOAT_CLASSES[k].n} this week — the next night is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
@@ -198,6 +201,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType!=="bog"&&ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});
   if(S.env.testType!=="boat"&&ENGINE_VIS.setBoat)ENGINE_VIS.setBoat({on:false});
   if(S.env.testType!=="hill"&&ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:false});
+  if(S.env.testType!=="oval"&&ENGINE_VIS.setOval)ENGINE_VIS.setOval({on:false});
   if(S.env.testType!=="road"&&S.env.testType!=="race24"&&ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:false});
   if(S.env.testType!=="drag"&&S.env.testType!=="pull_sled"&&S.env.testType!=="salt"&&S.env.testType!=="road"&&S.env.testType!=="race24"&&S.env.testType!=="bog"&&S.env.testType!=="boat"&&S.env.testType!=="hill")$("app").classList.remove("onstrip");
   if(S.env.testType==="drag"){dragStart();return;}
@@ -206,6 +210,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="salt"){saltStart();return;}
   if(S.env.testType==="bog"){bogStart();return;}
   if(S.env.testType==="hill"){hillStart();return;}
+  if(S.env.testType==="oval"){ovalStart();return;}
   if(S.env.testType==="boat"){boatStart();return;}
   const snap=testSnap(),cfg0=snap.cfg;
   const env=simEnv(ddEnvX());const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
@@ -477,7 +482,7 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
-  const pr=pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+hillRecHtml()+e24RecHtml();
+  const pr=pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+hillRecHtml()+ovalRecHtml()+e24RecHtml();
   if(!best&&!hp&&!rel&&!pr){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
