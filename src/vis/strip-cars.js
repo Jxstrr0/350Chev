@@ -278,14 +278,14 @@ function sc_decalMat(num, color, kind){
   if(kind==="banner"){
     c=sc_canvas(512,64); x=c.getContext("2d");
     x.fillStyle="rgba(12,16,22,0.92)"; x.fillRect(0,0,512,64);
-    x.fillStyle="#e9e4d6"; x.font="bold 40px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("PRAIRIE BLUE STUDIO", 256, 34, 480);
+    x.fillStyle="#e9e4d6"; x.font="bold 40px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("LONGLIGHT INTERACTIVE", 256, 34, 480);
   } else {
     c=sc_canvas(512,200); x=c.getContext("2d");
     x.fillStyle="#f3efe4"; x.beginPath(); x.arc(118,96,78,0,TAU); x.fill();
     x.lineWidth=6; x.strokeStyle=ac; x.stroke();
     x.fillStyle="#141518"; x.font="bold 104px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(num, 118, 102);
-    x.textAlign="left"; x.fillStyle=fg; x.font="bold 46px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.fillText("PRAIRIE BLUE", 216, 74, 284);
-    x.font="bold 30px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.fillText("STUDIO · RACING", 218, 116, 280);
+    x.textAlign="left"; x.fillStyle=fg; x.font="bold 46px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.fillText("LONGLIGHT", 216, 74, 284);
+    x.font="bold 30px 'Barlow Condensed','Arial Narrow',Arial,sans-serif"; x.fillText("INTERACTIVE · RACING", 218, 116, 280);
     x.fillStyle=ac; x.fillRect(216,142,280,9); x.fillStyle=fg; x.fillRect(216,158,210,5);
   }
   var q=new THREE.MeshStandardMaterial({map:sc_ctex(c), transparent:true, depthWrite:false, roughness:0.3, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-3});
@@ -331,7 +331,7 @@ function livMat(sp){
   var env=sc_env(); if(env) q.envMap=env;
   LIV_MAT[sp.id]=q; return q;
 }
-/* the strip car's door decal: the race number, with the side sponsors where the studio's name went (one, or two stacked) */
+/* the strip car's door decal: the race number, with the side sponsors where the studio name (Longlight Interactive) went (one, or two stacked) */
 function livDoorMat(num, color){
   var key="door|"+num+"|"+LIVERY.key; if(LIV_MAT[key]) return LIV_MAT[key];
   var c=sc_canvas(512,200), x=c.getContext("2d"), L=LIVERY.sides.length?LIVERY.sides.slice(0,2):[LIVERY.hood];
