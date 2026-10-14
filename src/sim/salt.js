@@ -6,7 +6,7 @@
      simulate() re-run at 1,290 m and 32 °C (lsrPrep), so an atmospheric engine is down
      about 13% on its cell figure and a blown one much less.
        drive  = engine torque × gear × efficiency ÷ tyre radius, until the tyre lets go:
-                salt grips about μ 0.55 against a tyre slipping ~8%, less once it spins,
+                salt grips about μ 0.6 against a tyre slipping ~8%, less once it spins,
                 so the early gears are traction-limited and the driver feathers them
        drag   = ½ ρ CdA v²  (a streamliner's CdA is a third of a street body's)
        lift   = ½ ρ ClA v², mostly over the front: past half the front's static load the
@@ -94,7 +94,7 @@
     const isTurbo = (res.aspKind || "na") === "turbo", egtLimit = res.egtLimitC || (res.diesel ? 900 : 0);
     const worst = (res.tests || []).reduce((a, t) => Math.max(a, +t.util || 0), 0);
     const hazK = 0.0003 * Math.exp((clamp(worst, 0.5, 1.2) - 0.85) * 14);
-    const muPk = 0.72, sPk = 0.08, muSlide = 0.52;
+    const muPk = 0.78, sPk = 0.08, muSlide = 0.56;
     function mu(s) { const a = Math.abs(s); return (a < sPk ? muPk * Math.sin(Math.PI / 2 * a / sPk) : muSlide + (muPk - muSlide) * Math.exp(-(a - sPk) / 0.18)) * Math.sign(s || 1); }
     const x0 = CO.runup * LSR_MILE, x1 = x0 + LSR_MILE, k0 = (x0 + x1) / 2 - 500, k1 = k0 + 1000, xEnd = x1 + CO.shut * LSR_MILE;
     const st = { t: 0, x: 0, v: 0, w: 0, rpm: v.idle, gear: 0, thr: 0, foot: 0, phase: "stage", done: false, slip: 0, light: 1, loose: 0, Nf: Nf0, Nr: rearStatic, lift: 0, drag: 0, acc: 0,
@@ -250,7 +250,7 @@
       if (st.mileMph != null && st.vOut != null && st.vIn != null && st.vOut > st.vIn * 1.04) reasons.push(`Still pulling through the mile: ${Math.round(mph(st.vIn))} mph in, ${Math.round(mph(st.vOut))} out. ${v.course === "long" ? "It needs to get there sooner — more grip early (ballast), more power through the gears, or less drag." : "More run-up (the long course) or more power low down would show up on the clocks."}`);
       if (lim > 2) reasons.push(`On the rev limiter for ${lim.toFixed(1)} s — the top gear is too short. Taller gearing would let it pull further.`);
       else if (st.mileMph != null && st.gear === NG - 1 && st.rpm < 0.8 * (res.peakHpRpm || red) && st.vOut != null && Math.abs(st.vOut - st.vIn) < 2) reasons.push(`Top gear too tall: it ran out of power at ${Math.round(st.rpm).toLocaleString()} rpm, well under the ${(res.peakHpRpm || red).toLocaleString()} rpm power peak. Shorter gearing would be faster.`);
-      if (st.spinT > 2 && st.stopWhy !== "spun") reasons.push(`${st.spinT.toFixed(1)} s of wheelspin at speed — salt is about μ 0.55. Ballast on the rear, or ease into the low gears.`);
+      if (st.spinT > 2 && st.stopWhy !== "spun") reasons.push(`${st.spinT.toFixed(1)} s of wheelspin at speed — salt is about μ 0.6. Ballast on the rear, or ease into the low gears.`);
       if (st.liftEarly) reasons.push(`Lifted early at ${(st.x / LSR_MILE).toFixed(2)} mi — at ${Math.round(st.v * 2.23694)} mph the ${CH.n.toLowerCase()} could not open before the end of the course. A drogue + main pack opens far higher.`);
       if (st.wanderT > 1 && st.stopWhy !== "spun") reasons.push(`The front was light for ${st.wanderT.toFixed(1)} s (down to ${Math.round(st.lightMin * 100)}%) — the car wanders when the nose lifts. ${v.aero ? "" : "The " + aeroN + " would hold it down."}`);
       if (st.coolMax > 112 && st.broke !== "steam") reasons.push(`Coolant peaked at ${Math.round(st.coolMax)} °C — hot enough to pull timing and cost power.`);
