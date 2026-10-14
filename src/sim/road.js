@@ -104,7 +104,7 @@
     const redline = res.redline || 7000;
     // fit the final drive: top gear lands the engine on its power peak at the speed that power can hold against drag
     const Pw = (res.peakHp || 100) * 745.7 * eta, crr = C0.rr * m * ROAD_G;
-    let lo = 5, hi = 140; for (let it = 0; it < 50; it++) { const v = (lo + hi) / 2; if (0.5 * ROAD_RHO * C0.cdA * v * v * v + crr * v > Pw) hi = v; else lo = v; }
+    let lo = 5, hi = 250; for (let it = 0; it < 50; it++) { const v = (lo + hi) / 2; if (0.5 * ROAD_RHO * C0.cdA * v * v * v + crr * v > Pw) hi = v; else lo = v; }
     const vPow = lo, pkR = Math.min(res.peakHpRpm || redline * 0.85, redline);
     const top = gears[gears.length - 1];
     // a swap car is geared like a road car: top gear runs out of revs just short of the drag-limited speed, so the
@@ -264,7 +264,7 @@
     out.zero60 = z60; out.zero100 = z100; out.zero200 = z200; out.quarter = q; out.eighth = e8; out.spinT = +spin.toFixed(2);
     // top speed: the fastest speed where some gear still has force to spare at steady boost
     let vt = 0, gt = car.gears.length - 1, lim = "drag";
-    for (let vv = 5; vv < 140; vv += 0.1) {
+    for (let vv = 5; vv < 250; vv += 0.1) {
       let ok = false, gg = -1; for (let k = 0; k < car.gears.length; k++) { const r = rpmOf(car, vv, k); if (r > car.redline) continue; const f = E.steadyTq(Math.max(r, car.idle)) * car.gears[k] * car.fd * car.eta / car.rw; if (f > dragF(car, vv)) { ok = true; gg = k; } }
       if (!ok) break; vt = vv; gt = gg;
     }
