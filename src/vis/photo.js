@@ -9,16 +9,16 @@
    ==========================================================================*/
 var PH={ on:false, scene:"", light:"asis", back:"garage", saved:null, group:null, yaw:0, pitch:0, zoom:1, pan:{x:0,y:0}, D:0, dKey:"", exMul:1,
          rr:null, glights:null, camSave:null };
-function phSceneOfCam(c){ return !c?"":c===STRIP.cam?"strip":c===PULL.cam?"pull":c===SALT.cam?"salt":c===BOG.cam?"bog":c===BOAT.cam?"boat":c===ROAD.cam?"road":c===HILL.cam?"hill":""; }
-function phCamOf(s){ return s==="strip"?STRIP.cam:s==="pull"?PULL.cam:s==="salt"?SALT.cam:s==="bog"?BOG.cam:s==="boat"?BOAT.cam:s==="road"?ROAD.cam:s==="hill"?HILL.cam:null; }
+function phSceneOfCam(c){ return !c?"":c===STRIP.cam?"strip":c===PULL.cam?"pull":c===SALT.cam?"salt":c===BOG.cam?"bog":c===BOAT.cam?"boat":c===ROAD.cam?"road":c===HILL.cam?"hill":c===OVAL.cam?"oval":""; }
+function phCamOf(s){ return s==="strip"?STRIP.cam:s==="pull"?PULL.cam:s==="salt"?SALT.cam:s==="bog"?BOG.cam:s==="boat"?BOAT.cam:s==="road"?ROAD.cam:s==="hill"?HILL.cam:s==="oval"?OVAL.cam:null; }
 /* stand lights: [hemi sky, hemi ground, hemi i] [key colour, i, x, y, z] [fill ...] [rim ...]; venues only take the exposure multiplier */
 var PH_LIGHT={
-  studio:{ h:[0xffffff,0xb9bec8,1.0], k:[0xffffff,2.5,12,30,18], f:[0xe4ecff,2.2,-14,10,12], r:[0xffffff,1.5,-16,12,-20], ex:1.0, gl:0.5, vex:1.08 },
+  studio:{ h:[0xffffff,0xb9bec8,0.65], k:[0xffffff,1.9,12,30,18], f:[0xe4ecff,1.5,-14,10,12], r:[0xffffff,1.3,-16,12,-20], ex:0.95, gl:0.25, vex:1.08 },
   golden:{ h:[0xffd9a8,0x3a2a1a,0.5], k:[0xffa95a,2.8,26,9,10], f:[0xff7a3a,1.6,-13,8,12], r:[0xffe0b0,1.7,-18,10,-16], ex:1.05, gl:0.3, vex:1.04 },
   night: { h:[0x3a4a78,0x07080c,0.30], k:[0x7f9bff,0.9,-8,26,10], f:[0xff7a2a,3.2,-9,7,12], r:[0x4cc0ff,2.4,-16,12,-20], ex:0.95, gl:0.12, vex:0.62 }
 };
 /* backdrops: the seamless-paper look (a lit floor fading into a flat colour); the garage hides and the stand stands on its own */
-var PH_BACK={ grey:{bg:0x7d838a,fl:0x8f959b}, white:{bg:0xeceef0,fl:0xf4f5f6}, black:{bg:0x060607,fl:0x16181c}, dusk:{bg:0x4b3a52,fl:0x6a5060} };
+var PH_BACK={ grey:{bg:0x7d838a,fl:0x8f959b,em:0.15}, white:{bg:0xe0e2e5,fl:0x9a9da2,em:0.0}, black:{bg:0x060607,fl:0x16181c,em:0}, dusk:{bg:0x4b3a52,fl:0x6a5060,em:0.15} };
 
 function phLightGet(l){ return l?{c:l.color.clone(), g:l.groundColor?l.groundColor.clone():null, i:l.intensity, p:l.position.clone()}:null; }
 function phLightPut(l, s){ if(!l||!s) return; l.color.copy(s.c); if(s.g&&l.groundColor) l.groundColor.copy(s.g); l.intensity=s.i; l.position.copy(s.p); }
@@ -73,7 +73,7 @@ function phApplyBack(k, s){
   var B=PH_BACK[k], g=phBuildGroup(), comp=(GFX!=="lite"&&!!composer);   /* the clear colour and the fog sit in the target's colour space: linear for the composer, raw for the screen */
   if(garageRoot) garageRoot.visible=false;
   g.visible=true;
-  var fl=g.getObjectByName("photoFloor"); fl.material.color.copy(sc(B.fl)); fl.material.emissive.copy(sc(B.fl)).multiplyScalar(k==="black"?0.0:0.35); fl.material.needsUpdate=true;
+  var fl=g.getObjectByName("photoFloor"); fl.material.color.copy(sc(B.fl)); fl.material.emissive.copy(sc(B.fl)).multiplyScalar(B.em); fl.material.needsUpdate=true;
   var c=comp?sc(B.bg):new THREE.Color(B.bg);
   scene.background=c.clone();
   if(scene.fog){ scene.fog.color.copy(c); scene.fog.near=k==="white"?55:42; scene.fog.far=k==="white"?150:120; }
@@ -130,12 +130,12 @@ function phSizeTo(w, h, pr){
   renderer.setPixelRatio(pr); renderer.setSize(w, h, false);
   if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
   camera.aspect=w/h; camera.updateProjectionMatrix();
-  [STRIP.cam,PULL.cam,BOG.cam,BOAT.cam,ROAD.cam,HILL.cam,SALT.cam].forEach(function(c){ if(c){ c.aspect=w/h; c.updateProjectionMatrix(); } });
+  [STRIP.cam,PULL.cam,BOG.cam,BOAT.cam,ROAD.cam,HILL.cam,SALT.cam,OVAL.cam].forEach(function(c){ if(c){ c.aspect=w/h; c.updateProjectionMatrix(); } });
 }
 function phRenderNow(){
   var s=PH.scene;
   if(s==="road") roadRender(); else if(s==="hill") hillRender(); else if(s==="salt") saltRender(); else if(s==="bog") bogRender();
-  else if(s==="boat") boatRender(); else if(s==="pull") pullRender(); else if(s==="strip") stripRender();
+  else if(s==="boat") boatRender(); else if(s==="pull") pullRender(); else if(s==="strip") stripRender(); else if(s==="oval") ovalRender();
   else { if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera); }
 }
 function phCopy(){ var o=document.createElement("canvas"); o.width=canvasEl.width; o.height=canvasEl.height; o.getContext("2d").drawImage(canvasEl,0,0); return o; }

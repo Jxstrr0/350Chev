@@ -2,7 +2,7 @@
 html.photo,html.photo body{overflow:hidden}
 html.photo #view,html.photo.desk #view,html.photo #app.mini #view,html.photo.onevent:not(.desk) #app #view{position:fixed;inset:0;z-index:60;min-height:0;flex:none;max-width:none;width:auto;height:auto;transition:none;touch-action:none}
 html.photo #panel,html.photo #tabs,html.photo #hud,html.photo #tag,html.photo #rpmbox,html.photo #fpsHud,html.photo #stripHud,html.photo #stripCap,html.photo #tdCap,html.photo #pitsOv,html.photo #evHud,html.photo #flash,html.photo #phBtn,
-html.photo #dragCtl,html.photo #pullCtl,html.photo #saltCtl,html.photo #bogCtl,html.photo #roadCtl,html.photo #e24Ctl,html.photo #tour,html.photo #tip,html.photo #ff,html.photo #les,html.photo #glPop,html.photo #achToast{display:none!important}
+html.photo #dragCtl,html.photo #pullCtl,html.photo #saltCtl,html.photo #bogCtl,html.photo #roadCtl,html.photo #e24Ctl,html.photo #ovalCtl,html.photo #tour,html.photo #tip,html.photo #ff,html.photo #les,html.photo #glPop,html.photo #achToast{display:none!important}
 html.photo #toast{z-index:95;bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
 html.desk.photo #toast{left:50%;top:70px;max-width:min(560px,90%)}
 #phUi{position:absolute;inset:0;z-index:30;color:var(--chalk);font-family:var(--body);-webkit-user-select:none;user-select:none}
