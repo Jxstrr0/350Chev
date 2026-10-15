@@ -220,14 +220,13 @@ function fuelMigrate(){const m={},fitted=[];
     for(const o in m)for(const [a,b] of [[o,m[o]],[hKey(o),hKey(m[o])]])if(a in w&&!(b in w)){w[b]=w[a];delete w[a];}}
   if(S.mode==="career")for(const c of fitted)for(const k of ["injectors","fuelPump"]){const o=OPT[k][c[k]];if(locked(o))(K.unlocks=K.unlocks||{})[o._id]=true;}}
 function load(){S=freshState();try{const j=localStorage.getItem("pew2-save");if(j)hydrate(JSON.parse(j));}catch(e){}}
-/* manual save slots + portable save codes */
+/* manual save slots, plus the older one-game "PEW2:" save codes (Restore still reads them; Back up codes are app/savecode.js) */
 const SLOTS=3,slotKey=i=>"pew2-slot"+i;
 function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?JSON.parse(j):null;}catch(e){return null;}}
 function writeSlot(i){try{const o=snapshot();o.savedAt=Date.now();localStorage.setItem(slotKey(i),JSON.stringify(o));return true;}catch(e){return false;}}
 function clearSlot(i){try{localStorage.removeItem(slotKey(i));}catch(e){}}
 function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt):null;const when=d?d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-CA",{hour:"2-digit",minute:"2-digit"}):"";
   const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
-function encodeSave(o){return"PEW2:"+btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
 function decodeSave(t){t=(t||"").trim();if(t.startsWith("PEW2:"))t=t.slice(5);const o=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,"")))));if(!o||!o.cfg)throw new Error("bad");return o;}
 function renderSaves(){const box=$("slots");if(!box)return;let h="";for(let i=1;i<=SLOTS;i++){const o=readSlot(i);h+=`<div class="slot ${o?"full":""}"><div><h3>Slot ${i}${o?"":"<small>empty</small>"}</h3><p>${slotSummary(o)}</p></div><div class="acts"><button class="pri" data-save="${i}">Save</button><button data-load="${i}" ${o?"":"disabled"}>Load</button><button class="del" data-clear="${i}" ${o?"":"disabled"}>Clear</button></div></div>`;}box.innerHTML=h;}
 function applyLoaded(o,msg){if(testing){toast("Let the run finish first");return;}if(!hydrate(o)){toast("That save didn't read right.");return;}save();curTab="shop";boot();toast(msg);}
