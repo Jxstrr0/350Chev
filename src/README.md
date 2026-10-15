@@ -91,11 +91,22 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 | `app/results.js` | datalog `dl*`, `showResult`, achievements, teardown panel, `renderAnalysis`, `renderRecords` |
 | `app/market.js` | Shop contracts, briefs (`fits`, `deal`, `buyers`, `oneChange`), weekly passes (rnd, warranty, goals), rebuilds & cores |
 | `app/career.js` | dyno day, `advanceWeek`, sponsors, `renderShop`, volume |
+| `app/savecode.js` | save codes: **Back up** / **Restore** in Shop → Saves (`buCode`, `buRead`, `buWrite`, the two sheets). See "Save codes" below |
 | `app/help.js` | onboarding tour, First Fire, glossary/tap-to-explain, guided lessons |
 | `app/boot.js` | sound & idle, sound bench (AB), `tick`, tabs `showTab`, desktop layout, tooltips, keyboard, `boot`/`start`, `</script>` |
 | `html/end.html` | `</body></html>` (no trailing newline) |
 
 To find code, grep `src/`: `grep -rn "function pullRun" src/`.
+
+## Save codes (Back up / Restore)
+
+Everything the game keeps is in the browser's localStorage, under five keys: `pew2-save` (the current game, settings included), `pew2-slot1` to `pew2-slot3` (the save slots) and `pew2-legacy` (Legacy points). **Back up** turns all of it into one text code, and **Restore** puts all of it back, on any phone or browser. Nothing is sent anywhere.
+
+- A code looks like `PEW1:` + letters, numbers, `-` and `_` + a 6-character checksum. Inside, it's the saves as JSON, squeezed with LZW (the same idea as Garage to Glory's `GG1:` codes).
+- Restore checks the whole code before it changes anything. A code that's cut off, has a typo, comes from another game or from a newer version gets a plain message and nothing is written.
+- Older `PEW2:` codes (one game, from the old Export button) still work in Restore. They load as the current game and leave slots and Legacy alone. Because `PEW2:` is taken, the next version of the backup format should be `PEW3:`.
+- If you add a new localStorage key, add it to `buMake` and `buWrite` in `app/savecode.js` so backups carry it.
+- Check it with `node check-savecode.js` (repo root, no install needed). It runs the code in plain node with a pretend localStorage: round trip, damaged and cut-off codes, codes from other games or newer versions, empty saves, a full storage halfway through a restore.
 
 ## Merge conflicts
 
