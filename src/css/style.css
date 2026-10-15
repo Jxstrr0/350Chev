@@ -689,6 +689,10 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .slot .acts button[disabled]{opacity:.35;cursor:default}
 .slot .acts button.del{color:var(--crit)}
 textarea.code{width:100%;min-height:120px;resize:vertical;font-family:var(--mono);font-size:12px;line-height:1.4;color:var(--chalk);background:var(--soot);border:1px solid var(--rule);border-radius:4px;padding:8px;word-break:break-all}
+textarea.code:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
+@media (pointer:coarse){#codeIn{font-size:16px}}   /* 16px or phones zoom the page when the paste box gets focus */
+.bucount{font-family:var(--mono);font-size:12px;margin:4px 0 10px}
+.buerr{color:var(--crit);font-weight:600;margin:6px 0 10px}.buerr:empty{display:none}
 /* tabs */
 #tabs{position:absolute;left:0;right:0;bottom:0;height:var(--tabh);display:grid;grid-template-columns:repeat(6,1fr);background:var(--tabbg);border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom)}
 #testProg{position:absolute;left:0;top:-2px;height:2px;width:0;background:var(--orange);transition:width .12s linear;box-shadow:0 0 6px var(--orange)}

@@ -489,14 +489,8 @@ $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   if(b.dataset.save){const i=+b.dataset.save;if(readSlot(i)&&!confirm(`Overwrite slot ${i}?`))return;toast(writeSlot(i)?`SLOT ${i} SAVED`:"Couldn't save — storage blocked on this device");renderSaves();}
   else if(b.dataset.load){const i=+b.dataset.load;const o=readSlot(i);if(!o)return;if(!confirm(`Load slot ${i}? Your current game is replaced (it stays in autosave until you make a change).`))return;applyLoaded(o,`Loaded slot ${i}`);}
   else if(b.dataset.clear){const i=+b.dataset.clear;if(!confirm(`Clear slot ${i}?`))return;clearSlot(i);renderSaves();toast(`SLOT ${i} CLEARED`);}});
-$("exportSave").addEventListener("click",()=>{const code=encodeSave(snapshot());$("sheetTitle").textContent="Save code";
-  $("sheetBody").innerHTML=`<p class="hint" style="margin-top:0">Copy this and paste it into <b>Import save code</b> on another device. It holds your career, blueprints and settings.</p><textarea class="code" id="codeOut" readonly></textarea><div class="row" style="margin-top:10px"><button class="btn pri" id="copyCode" style="flex:1">Copy code</button></div>`;
-  $("codeOut").value=code;$("sheet").classList.add("on");$("scrim").classList.add("on");
-  $("copyCode").addEventListener("click",async()=>{const ta=$("codeOut");try{await navigator.clipboard.writeText(ta.value);toast("Copied");}catch(e){ta.focus();ta.select();try{document.execCommand("copy");toast("Copied");}catch(_){toast("Select the text and copy it manually");}}});});
-$("importSave").addEventListener("click",()=>{$("sheetTitle").textContent="Import save code";
-  $("sheetBody").innerHTML=`<p class="hint" style="margin-top:0">Paste a PEW2 save code. Importing replaces your current game — save it to a slot first if you want to keep it.</p><textarea class="code" id="codeIn" placeholder="PEW2:…"></textarea><div class="row" style="margin-top:10px"><button class="btn pri" id="doImport" style="flex:1">Import</button></div>`;
-  $("sheet").classList.add("on");$("scrim").classList.add("on");
-  $("doImport").addEventListener("click",()=>{let o;try{o=decodeSave($("codeIn").value);}catch(e){toast("That code didn't decode — check you copied all of it");return;}closeSheet();applyLoaded(o,"Save imported");});});
+$("exportSave").addEventListener("click",buBackupOpen);   // Back up / Restore: save codes, app/savecode.js
+$("importSave").addEventListener("click",buRestoreOpen);
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
