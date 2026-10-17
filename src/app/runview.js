@@ -24,6 +24,9 @@ function rvSync(){const on=rvActive(),de=document.documentElement;
 /* the band: from the view's bottom edge up to the top of whatever covers its middle (the overlay; on desktop the slim dock too) */
 function rvBandSoon(){if(!RV.raf)RV.raf=requestAnimationFrame(rvBand);}
 function rvBand(){RV.raf=0;if(!ENGINE_VIS.setBand)return;const v=$("view"),vr=v.getBoundingClientRect();let px=0;
+  /* desktop: the HUD bar stacks above the run's dock (bottom-right, fixed), so it needs the dock's height (--rdock on #view) */
+  {let dh=0;if(document.documentElement.classList.contains("desk"))RV_LIVE.forEach(([c])=>{const e=$(c);if(!e||e.style.display==="none")return;const r=e.getBoundingClientRect();if(r.height&&getComputedStyle(e).position==="fixed")dh=Math.max(dh,innerHeight-r.top);});
+    dh=Math.round(dh);if(dh!==RV.dh){RV.dh=dh;v.style.setProperty("--rdock",dh+"px");}}
   if(RV.live&&vr.height>0){const cx0=vr.left+vr.width*0.3,cx1=vr.right-vr.width*0.3;
     [$("evHud")].concat(RV_LIVE.map(([c])=>$(c))).forEach(e=>{if(!e||e.hidden||e.style.display==="none")return;const r=e.getBoundingClientRect();
       if(!r.height||r.right<cx0||r.left>cx1||r.top>=vr.bottom||r.bottom<vr.top+vr.height*0.5)return;px=Math.max(px,vr.bottom-r.top);});}
