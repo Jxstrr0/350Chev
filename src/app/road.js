@@ -89,19 +89,19 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");i
 /* perf: a live mini-map's size and ink, read once per layout (window size, desk/theme classes) instead of a forced
    style + layout every frame right after the HUD text was written */
 function cvBox(cv){const de=document.documentElement,k=innerWidth+"x"+innerHeight+"|"+de.className+"|"+(de.getAttribute("data-theme")||""),m=cv._box;if(m&&m.k===k)return m;
-  const W=cv.clientWidth,H=cv.clientHeight,b={k:W&&H?k:"",W:W||120,H:H||90,ink:getComputedStyle(cv).color||"#f0ece2"};cv._box=b;return b;}
+  const W=cv.clientWidth,H=cv.clientHeight,b={k:W&&H?k:"",W:W||120,H:H||90,ink:getComputedStyle(cv).color||"#faf9f5"};cv._box=b;return b;}
 function roadMapDraw(cv,T,s){if(!cv)return;const B=cvBox(cv),dpr=Math.min(devicePixelRatio||1,2),W=B.W,H=B.H;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const sc=Math.min((W-12)/T.size[0],(H-12)/T.size[1]),P=i=>[W/2+T.x[i]*sc,H/2-T.y[i]*sc];
   const ink=B.ink;x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.22;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
   x.globalAlpha=.75;x.lineWidth=1.6;x.stroke();x.globalAlpha=1;
-  const p0=P(0),h0=T.h[0];x.strokeStyle="#ff7a1a";x.lineWidth=2;x.beginPath();x.moveTo(p0[0]-Math.sin(h0)*6,p0[1]-Math.cos(h0)*6);x.lineTo(p0[0]+Math.sin(h0)*6,p0[1]+Math.cos(h0)*6);x.stroke();
-  if(s!=null){const i=Math.floor(((s/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#ff7a1a";x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();x.strokeStyle="#15171b";x.lineWidth=1.2;x.stroke();}}
+  const p0=P(0),h0=T.h[0];x.strokeStyle="#d97757";x.lineWidth=2;x.beginPath();x.moveTo(p0[0]-Math.sin(h0)*6,p0[1]-Math.cos(h0)*6);x.lineTo(p0[0]+Math.sin(h0)*6,p0[1]+Math.cos(h0)*6);x.stroke();
+  if(s!=null){const i=Math.floor(((s/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#d97757";x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();x.strokeStyle="#141413";x.lineWidth=1.2;x.stroke();}}
 function roadHudInit(){const L=$("roadLive");L.innerHTML=`<div class="rdh"><div class="rd-spd"><b id="rdV">0</b><i>km/h</i></div><div class="rd-g"><b id="rdG">–</b><i>gear</i></div><div class="rd-lt"><b id="rdT">0:00.0</b><i id="rdTi">lap</i></div><canvas id="rdMap" class="rd-map"></canvas></div>
   <div class="ph-bar rd-rpm"><i class="fill" id="rdR"></i><i class="mk" style="left:${Math.round(100*(RT.redline*0.9)/(RT.redline*1.04))}%"></i></div><div class="ph-lbl" style="margin-top:4px"><span id="rdRpm">0 rpm</span><span id="rdPd"></span></div>
   <div class="rd-sec" id="rdS"></div>`;}
 function roadHud(f){if(!RT)return;const v=$("rdV");if(!v)return;
   v.textContent=Math.round(f.v*3.6);$("rdG").textContent=f.g||"–";$("rdT").textContent=fmtLap(Math.max(0,f.lapT));$("rdTi").textContent=f.pre?"flying start":f.done?"lap":"lap time";
-  $("rdR").style.width=Math.min(100,100*f.rpm/(RT.redline*1.04))+"%";$("rdR").style.background=f.rpm>RT.redline*0.97?"linear-gradient(90deg,rgba(226,71,60,.4),rgba(226,71,60,.9))":"";
+  $("rdR").style.width=Math.min(100,100*f.rpm/(RT.redline*1.04))+"%";$("rdR").style.background=f.rpm>RT.redline*0.97?"linear-gradient(90deg,rgba(238,90,94,.4),rgba(238,90,94,.9))":"";
   $("rdRpm").textContent=`${(Math.round(f.rpm/10)*10).toLocaleString("en-CA")} rpm${RT.boostT>0?` · ${bv(f.bst)} ${pU()}`:""}`;$("rdPd").innerHTML=f.brk>0.05?`<b style="color:var(--crit)">BRAKE ${Math.round(f.brk*100)}%</b>`:`throttle <b>${Math.round(f.thr*100)}%</b>${f.lim?` · <b style="color:var(--warn)">grip</b>`:""}`;
   const sec=RT.lap.sectors,cut=RT.secCut,best=RT.best&&RT.best.sec;let h="";
   for(let k=0;k<3;k++){const done=!f.pre&&f.lapT>=cut[k+1]-1e-6,t=sec[k],d=best&&done?t-best[k]:null;
@@ -177,7 +177,7 @@ function roadSheet(res){const r=res.road,b=roadRecs()[roadKey(r.ch+(r.swap?"@"+r
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */
-function drawRoadTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawRoadTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#edeae1";const soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=r.trace;if(!tr||!tr.d||tr.d.length<3)return;
   const padL=34,padR=12,padT=24,padB=34,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*d/r.len,mx=Math.max(60,Math.ceil(Math.max(...tr.v)/50)*50),Y=v=>padT+ch*(1-v/mx);
@@ -185,11 +185,11 @@ function drawRoadTrace(r){const INK=getComputedStyle(document.documentElement).g
   for(let v=0;v<=mx;v+=50){const py=Y(v);x.beginPath();x.moveTo(padL,py);x.lineTo(W-padR,py);x.stroke();x.fillStyle=soft;x.textAlign="right";x.fillText(v,padL-4,py+3);}
   x.textAlign="center";for(let d=0;d<=r.len;d+=500){const px=X(d);x.fillStyle=soft;x.fillText(d===0?"0":(d/1000).toFixed(1)+" km",px,H-4);}
   let cum=0;x.setLineDash([3,4]);x.strokeStyle=soft;r.sectors.slice(0,2).forEach((t,k)=>{cum+=t;const T=SIM.roadTrack(r.trk),dd=T.sec[k]*T.len,px=X(dd);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText("S"+(k+2),px+9,padT+ch-4);});x.setLineDash([]);
-  const bandY=H-padB+6,bh=6;for(let i=0;i<tr.d.length-1;i++){const x0=X(tr.d[i]),x1=X(tr.d[i+1]);if(tr.brk[i]>0.05){x.fillStyle=`rgba(226,71,60,${0.3+0.6*tr.brk[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}else if(tr.thr[i]>0.02){x.fillStyle=`rgba(79,192,141,${0.2+0.7*tr.thr[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}}
-  const gm=Math.max(...tr.g);x.strokeStyle="rgba(95,168,230,.7)";x.lineWidth=1.2;x.beginPath();tr.d.forEach((d,i)=>{const py=padT+ch*(1-0.32*tr.g[i]/gm);i?x.lineTo(X(d),py):x.moveTo(X(d),py);});x.stroke();
-  x.strokeStyle="#ff7a1a";x.lineWidth=2.2;x.beginPath();tr.d.forEach((d,i)=>{i?x.lineTo(X(d),Y(tr.v[i])):x.moveTo(X(d),Y(tr.v[i]));});x.stroke();
+  const bandY=H-padB+6,bh=6;for(let i=0;i<tr.d.length-1;i++){const x0=X(tr.d[i]),x1=X(tr.d[i+1]);if(tr.brk[i]>0.05){x.fillStyle=`rgba(238,90,94,${0.3+0.6*tr.brk[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}else if(tr.thr[i]>0.02){x.fillStyle=`rgba(92,191,138,${0.2+0.7*tr.thr[i]})`;x.fillRect(x0,bandY,x1-x0+0.5,bh);}}
+  const gm=Math.max(...tr.g);x.strokeStyle="rgba(120,169,221,.7)";x.lineWidth=1.2;x.beginPath();tr.d.forEach((d,i)=>{const py=padT+ch*(1-0.32*tr.g[i]/gm);i?x.lineTo(X(d),py):x.moveTo(X(d),py);});x.stroke();
+  x.strokeStyle="#d97757";x.lineWidth=2.2;x.beginPath();tr.d.forEach((d,i)=>{i?x.lineTo(X(d),Y(tr.v[i])):x.moveTo(X(d),Y(tr.v[i]));});x.stroke();
   x.font="9.5px "+F;x.fillStyle=INK;(r.apex||[]).forEach((a,k)=>{const px=X(a.s),py=Y(a.kmh);x.beginPath();x.arc(px,py,2.2,0,7);x.fill();if(W>520||k%2===0){x.textAlign="center";x.fillText(Math.round(a.kmh),px,py+12);}});
-  x.textAlign="left";x.font="11px "+F;x.fillStyle="#ff7a1a";x.fillText("km/h",padL+4,13);x.fillStyle="rgba(95,168,230,.9)";x.fillText("gear",padL+40,13);x.fillStyle="#4fc08d";x.fillText("throttle",padL+72,13);x.fillStyle="#e2473c";x.fillText("brake",padL+122,13);
+  x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText("km/h",padL+4,13);x.fillStyle="rgba(120,169,221,.9)";x.fillText("gear",padL+40,13);x.fillStyle="#5cbf8a";x.fillText("throttle",padL+72,13);x.fillStyle="#ee5a5e";x.fillText("brake",padL+122,13);
   x.fillStyle=soft;x.textAlign="right";x.fillText(`${rdEsc(r.trkName)} · ${fmtLap(r.lapT)}`,W-padR,13);}
 function roadRedraw(){const l=lastForChart();if(S.env.testType==="road"&&l&&l.road)drawRoadTrace(l.road);}
 function roadRecHtml(){const P=roadRecs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].t);if(!ks.length)return"";ks.sort((a,b)=>(P[a].trk>P[b].trk?1:P[a].trk<P[b].trk?-1:P[a].t-P[b].t));
