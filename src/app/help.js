@@ -441,5 +441,10 @@ function hfScan(root){if(!root||root.nodeType!==1)return;
   const h=root.closest&&root.closest(HF_TXT+","+HF_ONE);if(h&&h!==root)hfFold(h);}
 const HF_ROOTS=["tab-test","tab-events","tab-analysis","tab-market","tab-shop"];
 const HF={q:new Set(),sch:0,mo:new MutationObserver(ms=>{for(const m of ms){if(m.target.nodeType===1)HF.q.add(m.target);m.addedNodes.forEach(a=>{if(a.nodeType===1)HF.q.add(a);});}
-  if(HF.q.size&&!HF.sch){HF.sch=1;queueMicrotask(()=>{HF.sch=0;const q=[...HF.q];HF.q.clear();for(const e of q){if(e.isConnected)hfScan(e);}});}})};
+  if(HF.q.size&&!HF.sch){HF.sch=1;queueMicrotask(()=>{HF.sch=0;const q=[...HF.q];HF.q.clear();for(const e of q){if(e.isConnected){hfScan(e);hmRestore(e);}}});}})};
 HF_ROOTS.forEach(id=>{const r=$(id);if(r){HF.mo.observe(r,{childList:true,subtree:true});hfScan(r);}});
+/* an open ⓘ survives its panel re-rendering: the open ones are remembered by their text and re-opened on the fresh markup */
+const HM_OPEN=new Set();
+function hmKey(d){const x=d.querySelector(":scope > div");return x?x.textContent.trim().slice(0,90):"";}
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.matches||!d.matches("details.more"))return;const k=hmKey(d);if(!k)return;if(d.open)HM_OPEN.add(k);else HM_OPEN.delete(k);},true);
+function hmRestore(root){if(!HM_OPEN.size||!root||root.nodeType!==1)return;(root.matches("details.more")?[root]:[...root.querySelectorAll("details.more")]).forEach(d=>{if(!d.open&&HM_OPEN.has(hmKey(d)))d.open=true;});}
