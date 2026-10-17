@@ -1,0 +1,22 @@
+/* ===================== UI-HEAD (v1.66): icon-only header buttons + the Settings gear ===================== */
+/* SOUND / START / VIEW / SETTINGS are 44 px round icon buttons on every screen; the words live in aria-label and title (the .lb spans stay in the DOM) */
+.hudbtns{gap:6px}
+.hudbtns>button,#app.mini .hudbtns>button,html.desk #app.mini .hudbtns>button{width:44px;height:44px;padding:0;gap:0;justify-content:center;position:relative}
+.hudbtns>button .lb{display:none}
+.hudbtns>button svg{width:20px;height:20px}
+#setOpen.open{border-color:var(--orange);color:var(--orange2);background:rgba(38,22,9,.84)}
+#viewBtn.lit::after{position:absolute;margin:0;top:7px;right:7px}
+/* phone, off Build: four buttons along the foot instead of three, so the engine card gives up a little width */
+@media (max-width:600px){
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{right:206px}
+}
+/* ---- Settings pane: five labelled sections ---- */
+#setPane .setsec{margin-bottom:22px}
+#setPane .setsec:last-child{margin-bottom:6px}
+#setPane .setsec>h2{font-size:12px;font-weight:600;letter-spacing:.14em;margin:4px 0 6px}
+#setPane .setsec .lbl:first-of-type{margin-top:2px}
+#setPane .modebox{margin-bottom:10px}
+#setPane .modebox button{padding:10px 12px}
+#setPane .setsec .row,#setPane .setsec>.btn{margin-top:4px}
+#setPane #slots{margin-top:6px}
+#setPane #resetGame{margin-top:2px}
