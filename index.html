@@ -1,6 +1,6 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.68.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.69.0.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -1650,6 +1650,16 @@ html.troom #phBtn{display:none!important}
 #sandboxBox>.sec>.btn,#sandboxBox .row .btn{min-height:44px}
 .sbp details.more>div{font-family:var(--body);font-size:13px}
 .sbp details.more>div p{font-size:13px;margin:0 0 4px}
+/* ===================== PWA (app/pwa.js): "new version ready" bar, Install row in Settings ===================== */
+#pwaBar{position:absolute;left:50%;bottom:calc(var(--tabh) + 84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(16px);z-index:60;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 24px);box-sizing:border-box;padding:8px 8px 8px 14px;border-radius:10px;background:#1c1b19;color:#faf9f5;border:1px solid #d97757;box-shadow:0 6px 24px rgba(0,0,0,.45);font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#pwaBar.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#pwaBar span{min-width:0;line-height:1.25}
+#pwaBar .btn{flex:0 0 auto;min-height:44px;min-width:44px;width:auto}
+#pwaBar .pwalater{flex:0 0 auto;min-height:44px;min-width:44px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#b4b1aa;font:inherit;font-weight:500}
+#pwaBar .pwalater:hover{color:#faf9f5}
+html.desk #pwaBar{left:calc((100% - var(--sbw))/2);bottom:20px}
+html.photo #pwaBar{display:none}
+@media (prefers-reduced-motion:reduce){#pwaBar{transition:none}}
 </style>
 
 <div id="app">
@@ -1890,6 +1900,12 @@ html.troom #phBtn{display:none!important}
           <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
           <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
+</div>
+<div class="sec setsec" id="set-app" hidden><h2>App</h2>
+<button class="btn sm pri" id="pwaInstall" hidden style="margin:0 0 6px">Install app</button>
+<p class="hint" id="pwaInstallHint" hidden>Opens full screen from your home screen or desktop and works offline once loaded.</p>
+<div id="pwaIos" hidden><p class="hint"><b>Add to Home Screen:</b> tap <b>Share</b> in the browser bar, then <b>Add to Home Screen</b>. It then opens full screen and works offline.</p>
+<p class="hint">Home-screen app has its own saves — move your career with the save code.</p></div>
 </div>
 <div class="sec setsec" id="set-help"><h2>Help</h2>
 <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
@@ -27782,7 +27798,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.68.1.0";
+const VERSION="1.69.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -34435,6 +34451,44 @@ const HF_ROOTS=["tab-test","tab-events","tab-analysis","tab-market","tab-shop"];
 const HF={q:new Set(),sch:0,mo:new MutationObserver(ms=>{for(const m of ms){if(m.target.nodeType===1)HF.q.add(m.target);m.addedNodes.forEach(a=>{if(a.nodeType===1)HF.q.add(a);});}
   if(HF.q.size&&!HF.sch){HF.sch=1;queueMicrotask(()=>{HF.sch=0;const q=[...HF.q];HF.q.clear();for(const e of q){if(e.isConnected)hfScan(e);}});}})};
 HF_ROOTS.forEach(id=>{const r=$(id);if(r){HF.mo.observe(r,{childList:true,subtree:true});hfScan(r);}});
+/* ===== PWA: service worker registration, "new version ready" bar, Install app (Settings › App) ===== */
+(()=>{
+  const bar=document.createElement("div");bar.id="pwaBar";bar.setAttribute("role","status");
+  bar.innerHTML='<span>New version ready — </span><button type="button" class="btn sm pri" id="pwaReload">Reload</button><button type="button" class="pwalater" id="pwaLater" aria-label="Dismiss until next visit">Later</button>';
+  ($("app")||document.body).appendChild(bar);
+  let waiting=null,reloading=false,deferred=null;
+  const standalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  const ios=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  /* Settings › App: shown only when there is something to offer */
+  function sync(){
+    const inst=!!deferred&&!standalone(),tip=ios()&&!standalone();
+    $("pwaInstall").hidden=!inst;$("pwaInstallHint").hidden=!inst;$("pwaIos").hidden=!tip;$("set-app").hidden=!(inst||tip);
+  }
+  window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;sync();});
+  window.addEventListener("appinstalled",()=>{deferred=null;sync();});
+  $("pwaInstall").addEventListener("click",async()=>{
+    if(!deferred)return;const p=deferred;deferred=null;sync();
+    try{p.prompt();const r=await p.userChoice;if(r&&r.outcome==="accepted")toast("Installed");}catch(_){}
+  });
+  sync();
+  /* update bar: a new worker is installed and waiting; Reload tells it to take over, the page reloads once it has */
+  function offer(w){waiting=w;bar.classList.add("on");}
+  $("pwaLater").addEventListener("click",()=>bar.classList.remove("on"));
+  $("pwaReload").addEventListener("click",()=>{if(waiting)waiting.postMessage({type:"SKIP_WAITING"});else location.reload();});
+  /* register on a real host (not localhost, so dev and smoke tests are never cached), or anywhere over http(s) with ?sw=1; never on file:// */
+  const host=location.hostname,web=/^https?:$/.test(location.protocol),local=/^(localhost|127\.\d+\.\d+\.\d+|\[?::1\]?|0\.0\.0\.0)$/.test(host);
+  if(!("serviceWorker" in navigator)||!web||(local&&!/[?&]sw=1(&|$)/.test(location.search)))return;
+  const sw=navigator.serviceWorker;
+  sw.addEventListener("controllerchange",()=>{if(reloading||!waiting)return;reloading=true;location.reload();});
+  sw.register("sw.js").then(reg=>{
+    const watch=w=>w&&w.addEventListener("statechange",()=>{if(w.state==="installed"&&sw.controller)offer(w);});
+    if(reg.waiting&&sw.controller)offer(reg.waiting);
+    watch(reg.installing);reg.addEventListener("updatefound",()=>watch(reg.installing));
+    /* an installed app can stay open for days: look for a new version when it comes back to the front and every few hours */
+    const chk=()=>{try{reg.update().catch(()=>{});}catch(_){}};
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)chk();});setInterval(chk,4*3600*1000);
+  }).catch(()=>{});
+})();
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
 /* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */
