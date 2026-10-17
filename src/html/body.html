@@ -9,9 +9,10 @@
         <div class="cash"><b id="cashLbl">$20,000</b><span id="repLbl">Rep 0</span><em id="lgBadge" hidden></em></div>
       </div>
       <div class="hudbtns">
-        <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
-        <button id="idleBtn" aria-label="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
-        <button id="viewBtn" aria-label="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
+        <button id="sndBtn" aria-label="Engine sound" title="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
+        <button id="idleBtn" aria-label="Start engine" title="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
+        <button id="viewBtn" aria-label="View options" title="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
+        <button id="setOpen" aria-label="Settings" title="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="lb">Settings</span></button>
         <div class="hudtray" id="viewTray" role="group" aria-label="View options" hidden>
           <button id="sizeBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M12 7V4M12 17v3"/><path d="M8 20h8"/><path d="M5 12h14"/><path d="M9 9l3-3 3 3"/><path d="M9 15l3 3 3-3"/></svg><span>Small view</span></button>
           <button id="xrayBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V6M12 18v-3"/></svg><span>X-ray</span></button>
@@ -150,11 +151,6 @@
 
     <!-- SHOP -->
     <section class="tabpage" id="tab-shop">
-      <div class="modebox" id="modeBox">
-        <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
-        <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
-      </div>
-      <div class="row" style="margin:0 0 14px"><button class="btn sm ghost" id="setOpen" style="flex:1" aria-haspopup="dialog">Settings · sound, theme, graphics, help</button></div>
       <div id="careerBox">
         <div class="stats" id="sStats"></div>
         <div class="sec"><h2>Upgrades</h2><div id="upgrades"></div></div>
@@ -165,16 +161,6 @@
         <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
       <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
-      <details class="sfold"><summary>Saves <span class="cnt" id="autoLbl">autosave on</span></summary><div class="sfb">
-        <div id="slots"></div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn sm info" id="exportSave" style="flex:1" aria-haspopup="dialog">Back up</button>
-          <button class="btn sm info" id="importSave" style="flex:1" aria-haspopup="dialog">Restore</button>
-        </div>
-        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
-        <button class="btn danger" id="resetGame">Wipe career</button>
-        <p class="hint">A game by Longlight Interactive.</p>
-      </div></details>
     </section>
   </div>
 
@@ -193,30 +179,13 @@
   <div id="glPop" role="dialog" aria-live="polite" hidden></div>
   <div id="scrim"></div>
   <div id="setPane" role="dialog" aria-labelledby="setTitle"><header><h2 id="setTitle">Settings</h2><button class="btn sm ghost" id="setClose">Close</button></header><div class="body" id="setBody">
-        <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
-        <div class="lbl"><span>Theme</span></div>
-        <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
-        <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
-        <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
-        <div class="lbl"><span>Glossary links</span></div>
-        <div class="seg n2" id="glSeg"><button data-gl="1">On<small>dotted terms explain themselves</small></button><button data-gl="0">Off</button></div>
-        <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
-        <div id="layBox"><div class="lbl"><span>Layout</span></div>
-        <div class="seg n2" id="laySeg"><button data-lay="phone">Phone<small>one column, thumb-sized</small></button><button data-lay="desktop">Desktop<small>wide view + sidebar</small></button></div>
-        <button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
-        <div class="lbl"><span>Graphics</span></div>
-        <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
-        <div class="lbl"><span>Camera follows edits</span></div>
-        <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
-        <div class="lbl"><span>Engine sound</span></div>
-        <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
-        <div class="lbl"><span>Engine voice</span><b id="srcLbl">—</b></div>
-        <div class="seg n3" id="srcSeg"><button data-src="synth">Synth<small>your build</small></button><button data-src="real">Real<small>recordings</small></button><button data-src="blend">Blend<small>both</small></button></div>
-        <button class="btn sm ghost" id="sndCredBtn" style="margin:0 0 10px">Sound credits</button>
-        <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
-        <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
-        <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
-        <div class="lbl"><span>Haptics</span></div>
+<div class="sec setsec" id="set-game"><h2>Game</h2>
+<div class="lbl"><span>Mode</span></div>
+<div class="modebox" id="modeBox">
+        <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
+        <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
+      </div>
+<div class="lbl"><span>Haptics</span></div>
         <div class="seg n2" id="hapSeg"><button data-hap="1">On<small>slider ticks, bangs</small></button><button data-hap="0">Off</button></div>
         <div class="lbl"><span>Pressure units</span></div>
         <div class="seg n2" id="puSeg"><button data-pu="bar">Bar<small>boost, cylinder pressure</small></button><button data-pu="psi">PSI<small>pounds per square inch</small></button></div>
@@ -226,13 +195,56 @@
           <div class="row" id="devRow" style="display:none;margin-bottom:8px"><button class="btn sm info" id="devCash" style="flex:1">+ $1,000,000</button><button class="btn sm info" id="devRep" style="flex:1">+ 500 rep</button><button class="btn sm info" id="devWeek" style="flex:1">Skip week</button></div>
           <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
         </div>
-        <div id="fpsBox">
+</div>
+<div class="sec setsec" id="set-sound"><h2>Sound</h2>
+<div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
+        <div class="lbl"><span>Engine sound</span></div>
+        <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
+        <div class="lbl"><span>Engine voice</span><b id="srcLbl">—</b></div>
+        <div class="seg n3" id="srcSeg"><button data-src="synth">Synth<small>your build</small></button><button data-src="real">Real<small>recordings</small></button><button data-src="blend">Blend<small>both</small></button></div>
+        <button class="btn sm ghost" id="sndCredBtn" style="margin:0 0 10px">Sound credits</button>
+        <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
+        <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
+        <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
+</div>
+<div class="sec setsec" id="set-display"><h2>Display</h2>
+<div class="lbl"><span>Theme</span></div>
+        <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
+        <div class="lbl"><span>Graphics</span></div>
+        <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
+        <div class="lbl"><span>Camera follows edits</span></div>
+        <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
+        <div id="layBox"><div class="lbl"><span>Layout</span></div>
+        <div class="seg n2" id="laySeg"><button data-lay="phone">Phone<small>one column, thumb-sized</small></button><button data-lay="desktop">Desktop<small>wide view + sidebar</small></button></div>
+        </div>
+<div id="fpsBox">
           <div class="lbl"><span>Show FPS</span><b id="fpsLbl">—</b></div>
           <div class="seg n2" id="fpsSeg"><button data-fps="1">On<small>in the engine view</small></button><button data-fps="0">Off</button></div>
           <div class="lbl"><span>Frame-rate cap</span></div>
           <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
           <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
+</div>
+<div class="sec setsec" id="set-help"><h2>Help</h2>
+<button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
+        <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
+        <div class="lbl"><span>Glossary links</span></div>
+        <div class="seg n2" id="glSeg"><button data-gl="1">On<small>dotted terms explain themselves</small></button><button data-gl="0">Off</button></div>
+        <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
+        <div id="kbBox"><button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
+</div>
+<div class="sec setsec" id="set-save"><h2>Save</h2>
+<div class="lbl"><span>Autosave</span><b id="autoLbl">autosave on</b></div>
+
+        <div id="slots"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm info" id="exportSave" style="flex:1" aria-haspopup="dialog">Back up</button>
+          <button class="btn sm info" id="importSave" style="flex:1" aria-haspopup="dialog">Restore</button>
+        </div>
+        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
+        <button class="btn danger" id="resetGame">Wipe career</button>
+        <p class="hint">A game by Longlight Interactive.</p>
+</div>
   </div></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>

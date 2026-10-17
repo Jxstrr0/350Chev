@@ -1435,6 +1435,28 @@ html.desk #tabs .dot.n{right:4px;top:6px}
 html.desk #tabs{border-bottom:0;border-left:0;box-shadow:0 1px 0 var(--edge)}
 html.desk #tabs button.on::before{bottom:0;height:3px;border-radius:3px 3px 0 0}
 html.desk #panel{border-left:0;box-shadow:inset 1px 0 0 var(--edge)}
+/* ===================== UI-HEAD (v1.66): icon-only header buttons + the Settings gear ===================== */
+/* SOUND / START / VIEW / SETTINGS are 44 px round icon buttons on every screen; the words live in aria-label and title (the .lb spans stay in the DOM) */
+.hudbtns{gap:6px}
+.hudbtns>button,#app.mini .hudbtns>button,html.desk #app.mini .hudbtns>button{width:44px;height:44px;padding:0;gap:0;justify-content:center;position:relative}
+.hudbtns>button .lb{display:none}
+.hudbtns>button svg{width:20px;height:20px}
+#setOpen.open{border-color:var(--orange);color:var(--orange2);background:rgba(38,22,9,.84)}
+#viewBtn.lit::after{position:absolute;margin:0;top:7px;right:7px}
+/* phone, off Build: four buttons along the foot instead of three, so the engine card gives up a little width */
+@media (max-width:600px){
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{right:206px}
+}
+/* ---- Settings pane: five labelled sections ---- */
+#setPane .setsec{margin-bottom:22px}
+#setPane .setsec:last-child{margin-bottom:6px}
+#setPane .setsec>h2{font-size:12px;font-weight:600;letter-spacing:.14em;margin:4px 0 6px}
+#setPane .setsec .lbl:first-of-type{margin-top:2px}
+#setPane .modebox{margin-bottom:10px}
+#setPane .modebox button{padding:10px 12px}
+#setPane .setsec .row,#setPane .setsec>.btn{margin-top:4px}
+#setPane #slots{margin-top:6px}
+#setPane #resetGame{margin-top:2px}
 /* ===== dirt oval (v1.65): the track map, the night ladder, and the event card / run strip wired like the hillclimb's ===== */
 .ovtrk{display:block;width:100%;height:92px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
 .ovn{display:flex;align-items:stretch;gap:0;margin:0 0 10px}.ovn i{flex:0 0 16px;align-self:center;height:2px;background:var(--rule)}
@@ -1525,9 +1547,10 @@ html.troom #phBtn{display:none!important}
         <div class="cash"><b id="cashLbl">$20,000</b><span id="repLbl">Rep 0</span><em id="lgBadge" hidden></em></div>
       </div>
       <div class="hudbtns">
-        <button id="sndBtn" aria-label="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
-        <button id="idleBtn" aria-label="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
-        <button id="viewBtn" aria-label="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
+        <button id="sndBtn" aria-label="Engine sound" title="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
+        <button id="idleBtn" aria-label="Start engine" title="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
+        <button id="viewBtn" aria-label="View options" title="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
+        <button id="setOpen" aria-label="Settings" title="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="lb">Settings</span></button>
         <div class="hudtray" id="viewTray" role="group" aria-label="View options" hidden>
           <button id="sizeBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 4h8"/><path d="M12 7V4M12 17v3"/><path d="M8 20h8"/><path d="M5 12h14"/><path d="M9 9l3-3 3 3"/><path d="M9 15l3 3 3-3"/></svg><span>Small view</span></button>
           <button id="xrayBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V6M12 18v-3"/></svg><span>X-ray</span></button>
@@ -1666,11 +1689,6 @@ html.troom #phBtn{display:none!important}
 
     <!-- SHOP -->
     <section class="tabpage" id="tab-shop">
-      <div class="modebox" id="modeBox">
-        <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
-        <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
-      </div>
-      <div class="row" style="margin:0 0 14px"><button class="btn sm ghost" id="setOpen" style="flex:1" aria-haspopup="dialog">Settings · sound, theme, graphics, help</button></div>
       <div id="careerBox">
         <div class="stats" id="sStats"></div>
         <div class="sec"><h2>Upgrades</h2><div id="upgrades"></div></div>
@@ -1681,16 +1699,6 @@ html.troom #phBtn{display:none!important}
         <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
       <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
-      <details class="sfold"><summary>Saves <span class="cnt" id="autoLbl">autosave on</span></summary><div class="sfb">
-        <div id="slots"></div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn sm info" id="exportSave" style="flex:1" aria-haspopup="dialog">Back up</button>
-          <button class="btn sm info" id="importSave" style="flex:1" aria-haspopup="dialog">Restore</button>
-        </div>
-        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
-        <button class="btn danger" id="resetGame">Wipe career</button>
-        <p class="hint">A game by Longlight Interactive.</p>
-      </div></details>
     </section>
   </div>
 
@@ -1709,30 +1717,13 @@ html.troom #phBtn{display:none!important}
   <div id="glPop" role="dialog" aria-live="polite" hidden></div>
   <div id="scrim"></div>
   <div id="setPane" role="dialog" aria-labelledby="setTitle"><header><h2 id="setTitle">Settings</h2><button class="btn sm ghost" id="setClose">Close</button></header><div class="body" id="setBody">
-        <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
-        <div class="lbl"><span>Theme</span></div>
-        <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
-        <button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
-        <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
-        <div class="lbl"><span>Glossary links</span></div>
-        <div class="seg n2" id="glSeg"><button data-gl="1">On<small>dotted terms explain themselves</small></button><button data-gl="0">Off</button></div>
-        <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
-        <div id="layBox"><div class="lbl"><span>Layout</span></div>
-        <div class="seg n2" id="laySeg"><button data-lay="phone">Phone<small>one column, thumb-sized</small></button><button data-lay="desktop">Desktop<small>wide view + sidebar</small></button></div>
-        <button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
-        <div class="lbl"><span>Graphics</span></div>
-        <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
-        <div class="lbl"><span>Camera follows edits</span></div>
-        <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
-        <div class="lbl"><span>Engine sound</span></div>
-        <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
-        <div class="lbl"><span>Engine voice</span><b id="srcLbl">—</b></div>
-        <div class="seg n3" id="srcSeg"><button data-src="synth">Synth<small>your build</small></button><button data-src="real">Real<small>recordings</small></button><button data-src="blend">Blend<small>both</small></button></div>
-        <button class="btn sm ghost" id="sndCredBtn" style="margin:0 0 10px">Sound credits</button>
-        <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
-        <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
-        <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
-        <div class="lbl"><span>Haptics</span></div>
+<div class="sec setsec" id="set-game"><h2>Game</h2>
+<div class="lbl"><span>Mode</span></div>
+<div class="modebox" id="modeBox">
+        <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
+        <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
+      </div>
+<div class="lbl"><span>Haptics</span></div>
         <div class="seg n2" id="hapSeg"><button data-hap="1">On<small>slider ticks, bangs</small></button><button data-hap="0">Off</button></div>
         <div class="lbl"><span>Pressure units</span></div>
         <div class="seg n2" id="puSeg"><button data-pu="bar">Bar<small>boost, cylinder pressure</small></button><button data-pu="psi">PSI<small>pounds per square inch</small></button></div>
@@ -1742,13 +1733,56 @@ html.troom #phBtn{display:none!important}
           <div class="row" id="devRow" style="display:none;margin-bottom:8px"><button class="btn sm info" id="devCash" style="flex:1">+ $1,000,000</button><button class="btn sm info" id="devRep" style="flex:1">+ 500 rep</button><button class="btn sm info" id="devWeek" style="flex:1">Skip week</button></div>
           <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
         </div>
-        <div id="fpsBox">
+</div>
+<div class="sec setsec" id="set-sound"><h2>Sound</h2>
+<div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
+        <div class="lbl"><span>Engine sound</span></div>
+        <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
+        <div class="lbl"><span>Engine voice</span><b id="srcLbl">—</b></div>
+        <div class="seg n3" id="srcSeg"><button data-src="synth">Synth<small>your build</small></button><button data-src="real">Real<small>recordings</small></button><button data-src="blend">Blend<small>both</small></button></div>
+        <button class="btn sm ghost" id="sndCredBtn" style="margin:0 0 10px">Sound credits</button>
+        <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
+        <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
+        <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
+</div>
+<div class="sec setsec" id="set-display"><h2>Display</h2>
+<div class="lbl"><span>Theme</span></div>
+        <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
+        <div class="lbl"><span>Graphics</span></div>
+        <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
+        <div class="lbl"><span>Camera follows edits</span></div>
+        <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
+        <div id="layBox"><div class="lbl"><span>Layout</span></div>
+        <div class="seg n2" id="laySeg"><button data-lay="phone">Phone<small>one column, thumb-sized</small></button><button data-lay="desktop">Desktop<small>wide view + sidebar</small></button></div>
+        </div>
+<div id="fpsBox">
           <div class="lbl"><span>Show FPS</span><b id="fpsLbl">—</b></div>
           <div class="seg n2" id="fpsSeg"><button data-fps="1">On<small>in the engine view</small></button><button data-fps="0">Off</button></div>
           <div class="lbl"><span>Frame-rate cap</span></div>
           <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
           <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
+</div>
+<div class="sec setsec" id="set-help"><h2>Help</h2>
+<button class="btn sm ghost" id="replayTour" style="margin:6px 0 10px">Replay the career tour</button>
+        <button class="btn sm ghost" id="replayFF" style="margin:0 0 10px">Replay First Fire</button>
+        <div class="lbl"><span>Glossary links</span></div>
+        <div class="seg n2" id="glSeg"><button data-gl="1">On<small>dotted terms explain themselves</small></button><button data-gl="0">Off</button></div>
+        <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
+        <div id="kbBox"><button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
+</div>
+<div class="sec setsec" id="set-save"><h2>Save</h2>
+<div class="lbl"><span>Autosave</span><b id="autoLbl">autosave on</b></div>
+
+        <div id="slots"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm info" id="exportSave" style="flex:1" aria-haspopup="dialog">Back up</button>
+          <button class="btn sm info" id="importSave" style="flex:1" aria-haspopup="dialog">Restore</button>
+        </div>
+        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
+        <button class="btn danger" id="resetGame">Wipe career</button>
+        <p class="hint">A game by Longlight Interactive.</p>
+</div>
   </div></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
@@ -32721,10 +32755,10 @@ $("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell
   if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
 /* Settings live in their own pane (a button in the Shop), not in the Shop's scroll */
 function setOn(){return $("setPane").classList.contains("on");}
-function setOpen(){closeSheet();$("setPane").classList.add("on");$("scrim").classList.add("on");$("setBody").scrollTop=0;$("setClose").focus({preventScroll:true});}
-function setClose(){if(!setOn())return;$("setPane").classList.remove("on");if(!$("sheet").classList.contains("on"))$("scrim").classList.remove("on");}
-$("setOpen").addEventListener("click",()=>{renderShop();setOpen();});$("setClose").addEventListener("click",setClose);$("scrim").addEventListener("click",setClose);
-$("setPane").addEventListener("click",e=>{if(e.target.closest("#glOpen,#lessonsOpen,#kbHelpBtn,#sndCredBtn,#replayTour,#replayFF"))setClose();});
+function setOpen(){closeSheet();$("setOpen").classList.add("open");$("setPane").classList.add("on");$("scrim").classList.add("on");$("setBody").scrollTop=0;$("setClose").focus({preventScroll:true});}
+function setClose(){if(!setOn())return;$("setOpen").classList.remove("open");$("setPane").classList.remove("on");if(!$("sheet").classList.contains("on"))$("scrim").classList.remove("on");}
+$("setOpen").addEventListener("click",()=>{if(setOn()){setClose();return;}renderShop();setOpen();});$("setClose").addEventListener("click",setClose);$("scrim").addEventListener("click",setClose);
+$("setPane").addEventListener("click",e=>{if(e.target.closest("#glOpen,#lessonsOpen,#kbHelpBtn,#sndCredBtn,#replayTour,#replayFF,#modeBox button"))setClose();});
 $("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
@@ -34149,7 +34183,7 @@ $("lesNext").addEventListener("click",()=>{if(!LS)return;if(LS.i>=LS.L.steps.len
 $("lesSkip").addEventListener("click",()=>lsEnd(false));$("lesKeep").addEventListener("click",()=>lsEnd(true));
 $("lessonsOpen").addEventListener("click",lsMenu);
 $("sheetBody").addEventListener("click",e=>{const b=e.target.closest("[data-les]");if(b)lsAsk(b.dataset.les);});
-$("panel").addEventListener("click",e=>{if(!LS)return;const b=e.target.closest(LS_WALK);if(!b)return;if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}lsEnd(false);},true);
+[$("panel"),$("setPane")].forEach(el=>el.addEventListener("click",e=>{if(!LS)return;const b=e.target.closest(LS_WALK);if(!b)return;if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}lsEnd(false);},true));
 document.addEventListener("visibilitychange",()=>{if(document.hidden)lsSafeSave();});window.addEventListener("pagehide",lsSafeSave);
 window.addEventListener("resize",()=>{if(LS)lsPlace();});$("panel").addEventListener("scroll",()=>{if(LS)lsPlace();},{passive:true});
 
@@ -34328,7 +34362,7 @@ function deskGfx(){if(S.layoutMode!=="desktop")return null;if(gpuTier)return gpu
   return gpuTier;}
 function applyLayout(fromResize){const want=S.layoutMode==="desktop"&&innerWidth>=DESK_MIN,was=deskOn();document.documentElement.classList.toggle("desk",want);
   document.querySelectorAll("[data-lay]").forEach(b=>b.classList.toggle("on",b.dataset.lay===(S.layoutMode||"phone")));
-  $("layBox").hidden=!bigScreen()&&S.layoutMode!=="desktop";$("introLay").hidden=!bigScreen();
+  $("layBox").hidden=$("kbBox").hidden=!bigScreen()&&S.layoutMode!=="desktop";$("introLay").hidden=!bigScreen();
   if(S.sbw)document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");else document.documentElement.style.removeProperty("--sbw-user");
   if(want!==was){tipHide();if(!$("viewTray").hidden)viewTray(false);if(!fromResize)window.dispatchEvent(new Event("resize"));}}
 function setLayout(m){if(S.layoutMode===m)return;S.layoutMode=m;applyLayout();applyGfx();applySoundQuality();save();
@@ -34360,7 +34394,7 @@ setInterval(()=>{if(tipOn&&tipOn.id==="gl"&&ENGINE_VIS.eventScene&&ENGINE_VIS.ev
 const COARSE=!!(window.matchMedia&&matchMedia("(pointer: coarse)").matches);   // a touch screen: say drag and pinch, not wheel and right-drag
 function touchHint(){if(!COARSE||S.touchHint)return;S.touchHint=1;save();toastAfter("Drag the engine to orbit · pinch to zoom");}
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
-const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
+const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",setOpen:"Settings · sound, display, help, saves",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:COARSE?"Drag to orbit · pinch to zoom":"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
 function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()))return "";   // the orbit hint is for the engine stand only: no "drag to orbit" over an event scene, the pits or a vis-side scene
   if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
@@ -34372,7 +34406,7 @@ function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_
   if(el.matches("input[type=range]"))return "Click it, then <kbd>←</kbd><kbd>→</kbd> or the wheel to nudge";
   if(el.matches("b.tap"))return "Click to type a value";
   return "";}
-document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const el=e.target.closest&&e.target.closest("[data-tip],#sndBtn,#idleBtn,#viewBtn,#runTest,#dragBtn,#pullBtn,#gl,#kbHelpBtn,#tabs button,#buildForm .seg button,.lbl .q,.nud,input[type=range],b.tap");
+document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const el=e.target.closest&&e.target.closest("[data-tip],#sndBtn,#idleBtn,#viewBtn,#setOpen,#runTest,#dragBtn,#pullBtn,#gl,#kbHelpBtn,#tabs button,#buildForm .seg button,.lbl .q,.nud,input[type=range],b.tap");
   if(el===tipOn)return;tipHide();if(!el)return;tipOn=el;
   tipT=setTimeout(()=>{if(tipOn!==el||!el.isConnected)return;const t=tipText(el);if(!t)return;tipEl.innerHTML=t;const r=el.getBoundingClientRect(),w=tipEl.offsetWidth,h=tipEl.offsetHeight;
     const top=r.bottom+8+h<innerHeight?r.bottom+8:r.top-8-h;tipEl.style.left=Math.round(Math.max(8,Math.min(innerWidth-w-8,el.id==="gl"?e.clientX-w/2:r.left+r.width/2-w/2)))+"px";tipEl.style.top=Math.round(el.id==="gl"?e.clientY+18:top)+"px";tipEl.classList.add("on");},el.id==="gl"?1200:450);});
