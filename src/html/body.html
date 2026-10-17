@@ -162,7 +162,19 @@
         <div id="legacyBox" style="display:none"></div>
         <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
-      <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
+      <div id="sandboxBox">
+        <div class="hint sbhead">Test cell: every part and dyno is open, and nothing costs money.<details class="more"><summary aria-label="More info">ⓘ</summary><div>Career progress is kept separately, so switching back loses nothing. Parts tagged Career show which Career upgrade would unlock them there.</div></details></div>
+        <div class="sec"><h2>Bench <span class="cnt" id="sbBenchCnt"></span></h2>
+          <div class="hint">Your build against every saved blueprint, best figure of each in clay.<details class="more"><summary aria-label="More info">ⓘ</summary><div>Figures are a standard pull in the current test-cell conditions: peak hp, peak torque, reliability score and engine weight. Load swaps a blueprint in; blueprints are also kept in the Build tab.</div></details></div>
+          <div id="sbBench"></div>
+          <button class="btn sm info" id="sbSave" style="margin-top:8px">Save current to bench</button></div>
+        <div class="sec"><h2>Parts</h2>
+          <div class="hint">Every part this build can take. Fit swaps one in.<details class="more"><summary aria-label="More info">ⓘ</summary><div>The list follows the current build: a rotary shows rotor parts, a diesel hides carburettors. Search looks across every group at once. ⓘ on a part gives its figures and what it does.</div></details></div>
+          <div class="sbfind"><input type="search" id="sbQ" placeholder="Search parts, e.g. turbo" autocomplete="off" aria-label="Search parts"><select id="sbSec" aria-label="Part group"></select></div>
+          <div id="sbList"></div><p class="hint" id="sbMore"></p></div>
+        <div class="sec"><h2>Quick starts</h2>
+          <div class="row"><button class="btn sm info" id="sbStock" style="flex:1">Stock engine</button><button class="btn sm info" id="sbRand" style="flex:1">Random preset</button></div></div>
+      </div>
     </section>
   </div>
 
