@@ -59,7 +59,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   /* off the Events tab the rail's Run is always the dyno pull, whatever event was picked last (the event runs from its own dock) */
   const dy=ev&&curTab!=="events",rt=dy?railDynoT():t;let cost;if(dy){S.env.testType=rt;try{cost=testCost();}finally{S.env.testType=t;}}else cost=testCost();
   const run=$("rlRun");run.disabled=testing;
-  run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(rt)}${cost?" · "+fmt$(cost):""}</span>`;
+  run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(rt).replace(/^./,c=>c.toUpperCase())}${cost?" · "+fmt$(cost):""}</span>`;
   run.title=`Same run as Test: ${rlName(rt)}`;
   $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
