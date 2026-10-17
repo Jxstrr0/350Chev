@@ -66,7 +66,7 @@ function pullAtlas(){
   panel(342,0,340,64,"#141413","#d97757","COULEE FUELS",42,"#d97757");
   panel(684,0,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
   panel(0,66,1024,62,"#141413","#d97757","PRAIRIE ENGINE WORKS · TRUCK & TRACTOR PULL",40,"#d97757");
-  panel(0,130,254,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",34,"#d9a52b"); panel(256,130,254,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
+  panel(0,130,254,64,"#1d4787","#f4f1e8","SECTION LINE",34,"#d9a52b"); panel(256,130,254,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
   panel(512,130,254,64,"#2c6b3a","#f4f1e8","HALCYON GT",36); panel(768,130,256,64,"#f1ede2","#141413","DIESEL DAYS",36,"#d97757");
   var mk=["50","100","150","200","250","300"];
   for(i=0;i<6;i++){ var bx=i*171; x.fillStyle="#141413"; x.fillRect(bx,196,169,122); x.fillStyle=i===5?"#d97757":"#f4efe2"; x.fillRect(bx+6,202,157,110); x.fillStyle="#141413"; x.font="700 76px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+84, 252); x.font="700 22px "+F; x.fillText("FEET", bx+84, 298); }
