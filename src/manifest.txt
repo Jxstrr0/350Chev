@@ -7,6 +7,7 @@ css/ui-build.css
 css/oval.css
 css/photo.css
 css/ui-shop.css
+css/ui-career.css
 css/ui-pwa.css
 html/body.html
 html/ld-libs.html
@@ -88,6 +89,7 @@ app/results.js
 app/market.js
 app/swap.js
 app/career.js
+app/rivals.js
 app/legacy.js
 app/savecode.js
 app/crew.js
