@@ -384,7 +384,7 @@ function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career())return;
+  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
   refillContracts();spRender();
   $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
