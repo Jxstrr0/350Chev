@@ -586,7 +586,7 @@ function buildMaterials(){
   MAT.wireRed     = new THREE.MeshStandardMaterial({color:sc(0x431310), roughness:0.88, metalness:0.0, envMapIntensity:0.18});
 
   /* tinted clones (share textures, differ only by .color) */
-  MAT.paintOrange = tint(MAT.paint, 0xa8541d);
+  MAT.paintOrange = tint(MAT.paint, 0xa65a40);   /* Longlight clay, shaded */
   MAT.paintBlue   = tint(MAT.paint, 0x2b5183);
   MAT.paintGrey   = tint(MAT.paint, 0x5d646b);
   MAT.blockPaint  = tint(MAT.block, 0xbdb9ac);
