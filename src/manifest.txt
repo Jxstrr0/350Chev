@@ -6,6 +6,7 @@ css/ui-help.css
 css/ui-build.css
 css/oval.css
 css/photo.css
+css/ui-shop.css
 html/body.html
 sim/opt.js
 sim/simulate.js
@@ -87,6 +88,7 @@ app/bays.js
 app/trophy.js
 app/photo.js
 app/rail.js
+app/shopsb.js
 app/help.js
 app/boot.js
 html/end.html
