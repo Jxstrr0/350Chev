@@ -119,6 +119,7 @@ const ENGINE_VIS = {
     }
     var tierChanged = (GFX !== want);
     GFX = want;
+    if(tierChanged && MATS_BUILT) matTierChanged();   /* v1.70: painted maps swap to / paint the tier's size; anti-tiling shaders recompile */
     if(tierChanged && lastCfg && engineRoot) ENGINE_VIS.buildEngine(lastCfg, lastLayout);   /* v1.6: model detail follows the tier */
     if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } if(GFX==="ultra") ultraShadow(keyLight, 2048); }
     ENGINE_VIS.resize();
