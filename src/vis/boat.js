@@ -25,6 +25,9 @@ function boatWaterMat(lite){
           :" float a=0.0; vec2 g=vec2(0.0); float k=0.6+1.6*uChop; vec2 D[4]; D[0]=vec2(0.94,0.34); D[1]=vec2(0.6,-0.8); D[2]=vec2(-0.3,0.95); D[3]=vec2(0.85,-0.52); float F[4]; F[0]=0.31; F[1]=0.53; F[2]=0.87; F[3]=1.9;"+
            " for(int i=0;i<4;i++){ float ph=dot(D[i],p)*F[i]-uT*sqrt(9.8*F[i]); g+=D[i]*cos(ph)*F[i]*0.04*k/(1.0+float(i)); }"+
            " vec2 q=p*1.7+vec2(uT*0.5,uT*0.3); g+=vec2(sn(q)-0.5,sn(q+7.3)-0.5)*0.22*k*(1.0-smoothstep(10.0,80.0,d));"+
+           /* finer capillary ripples near the camera (a second on Ultra) so the glint breaks up instead of sliding as one smooth sheet */
+           " vec2 q2=p*5.3+vec2(-uT*0.9,uT*0.6); g+=vec2(sn(q2)-0.5,sn(q2+3.1)-0.5)*0.1*k*(1.0-smoothstep(5.0,45.0,d));"+(GFX==="ultra"?
+           " vec2 q3=p*14.0+vec2(uT*1.3,-uT*0.8); g+=vec2(sn(q3)-0.5,sn(q3+5.7)-0.5)*0.07*k*(1.0-smoothstep(3.0,22.0,d));":"")+
            " vec3 N=normalize(vec3(-g.x,1.0,-g.y));",
       " float fr=0.03+0.97*pow(1.0-max(dot(N,V),0.0),5.0); vec3 R=reflect(-V,N); float up=clamp(R.y,0.0,1.0);",
       " vec3 sky=mix(uHor,uZen,pow(up,0.6)); vec3 c=mix(uDeep*(0.8+0.4*sn(p*0.02)),sky*vec3(0.85,0.95,1.0),clamp(fr,0.0,0.85));",
@@ -48,6 +51,13 @@ var BOAT_GLSL_GROUND=[
   "  vec2 q=(p+vec2(800.0,800.0))/650.0; vec2 cell=floor(q); float h=sh(cell+5.0);",
   "  vec3 fc= h<0.3?vec3(0.42,0.34,0.13): h<0.55?vec3(0.13,0.2,0.06): h<0.8?vec3(0.5,0.44,0.05):vec3(0.2,0.15,0.09);",
   "  fc*=0.9+0.2*(sn(p*0.006+cell*7.0)-0.5)*mid;",
+  "#if STRIP_TIER>=1",
+  "  float gh, dh, gvH; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.35,dh), gvm=sfGravelFx(p,gvH);",
+  "  float rip=0.5+0.5*sin(p.y*2.3+3.0*sn(p*0.5)); dm*=1.0+0.08*(rip-0.5);",
+  "  grass*=gm; sand*=dm; c=mix(grass,sand,edge); c=mix(c,vec3(0.3,0.28,0.24)*(0.8+0.3*sn(p*0.8)),lot); c*=mix(vec3(1.0),gvm,lot);",
+  "  gH=mix(mix(gh,dh+0.008*rip,edge),gvH,lot); gHK=1.0;",
+  "  float fa=1.0-smoothstep(150.0,190.0,abs(p.y)); gH*=fa;",
+  "#endif",
   "  c=mix(fc,c,1.0-smoothstep(150.0,190.0,abs(p.y)));",
   "  rough=mix(0.95,0.6,edge); return c; }"].join("\n");
 /* a hull lofted through cross-sections: secs = [{x, p:[[z,y]...]}] keel to gunwale on one side, mirrored; the deck is closed between the gunwales */
