@@ -7,6 +7,7 @@ css/ui-build.css
 css/oval.css
 css/photo.css
 css/ui-shop.css
+css/ui-pwa.css
 html/body.html
 html/ld-libs.html
 sim/opt.js
@@ -95,5 +96,6 @@ app/photo.js
 app/rail.js
 app/shopsb.js
 app/help.js
+app/pwa.js
 app/boot.js
 html/end.html
