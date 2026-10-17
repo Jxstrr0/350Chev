@@ -17998,6 +17998,15 @@ var STRIP_GLSL_TRACK=[
   "  float jx=abs(fract(x/4.57+0.5)-0.5)*4.57, jz=abs(fract((z+7.5)/3.75+0.5)-0.5)*3.75;",
   "  cr*=1.0-0.4*max(1.0-smoothstep(0.012,0.04,jx),1.0-smoothstep(0.012,0.04,jz))*(1.0-smoothstep(12.0,55.0,d));",
   "  vec3 c=mix(asph,cr,conc); rough=mix(0.9,0.8,conc);",
+  /* Full/Ultra: aggregate grain + tar snakes + repair patches on the asphalt, slab-by-slab tone and grooved joints on the concrete, a tar-sealed ragged seam
+     where the two meet with a patched strip behind it */
+  "#if STRIP_TIER>=1",
+  "  float aH; vec3 am=sfAsphFx(w.xz,fine,aH); float slab=sh(vec2(floor(x/4.57),floor((z+7.5)/3.75))), jm=max(1.0-smoothstep(0.012,0.04,jx),1.0-smoothstep(0.012,0.04,jz))*(1.0-smoothstep(12.0,70.0,d));",
+  "  vec3 cm=vec3(1.0+0.1*(slab-0.5)+0.12*(sn(w.xz*47.0)-0.5)*aaf(0.021))*(1.0-0.3*sfBlot(w.xz*vec2(0.6,2.0),0.5,0.6,0.85,4.0));",
+  "  c*=mix(am,cm,conc); gH=mix(aH,0.0026*sn(w.xz*61.0)*aaf(0.0165)-0.008*jm,conc); gHK=0.6;",
+  "  float sx=x-100.0+(sn(vec2(z*2.3,5.0))-0.5)*0.07, seam=1.0-smoothstep(0.012,0.032,abs(sx)), rp=step(0.03,sx)*(1.0-smoothstep(1.1,1.3,sx))*(1.0-conc);",
+  "  c*=1.0-0.5*seam-0.16*rp; gH-=0.009*seam; gH*=1.0-0.6*rp;",
+  "#endif",
   "  c*=1.0-0.7*(1.0-smoothstep(0.025,0.07,abs(x-100.0)))-0.12*(1.0-smoothstep(0.07,0.5,abs(x-100.0)))*step(100.0,x);",
   "  float lc=z>0.0?2.5:-2.5; float dz=abs(z-lc);",
   "  float tyre=exp(-pow((dz-0.82)/0.30,2.0)), broad=exp(-pow(dz/1.45,2.0));",
@@ -18007,6 +18016,12 @@ var STRIP_GLSL_TRACK=[
   "  float rub=clamp(tyre*launch*1.35*streak+broad*launch*0.55,0.0,0.95);",
   "  float bo=smoothstep(-5.6,-4.8,x)*(1.0-smoothstep(-0.4,0.6,x))*tyre*(0.55+0.45*sn(vec2(x*2.5,dz*28.0)));",
   "  rub=max(rub,bo*0.97);",
+  /* Full/Ultra: rubber fills the grain, flung marbles pile along the lane's outer edge, the hit leaves tread-patterned burnout */
+  "#if STRIP_TIER>=1",
+  "  float mb=fx*launch*smoothstep(1.2,1.7,dz)*(1.0-smoothstep(3.4,4.2,dz))*smoothstep(0.7,0.92,sn(w.xz*vec2(23.0,29.0)))*aaf(0.04);",
+  "  float trd=smoothstep(0.35,0.7,sin(dz*22.0+sin(x*1.9)*2.2+x*3.5)*0.5+0.5)*bo;",
+  "  rub=min(rub*(1.0-0.22*trd),0.97); gH*=1.0-0.75*rub; gH-=0.0022*trd; gH+=0.004*mb; rub=max(rub,mb*0.3);",
+  "#endif",
   "  c=mix(c,vec3(0.018,0.018,0.02),rub); rough=mix(rough,0.55,rub);",
   "  float prep=fx*exp(-pow((dz-0.82)/0.42,2.0))*(0.5+0.5*exp(-max(x,0.0)/260.0))*(1.0-smoothstep(560.0,700.0,x))*(0.85+0.15*n2);",
   "  c=mix(c,vec3(0.021,0.02,0.021),prep*0.55); rough=mix(rough,0.4,prep*0.7); gRefl=prep*0.12;",
@@ -18042,10 +18057,17 @@ var STRIP_GLSL_TRACK=[
   "  if(x>690.0) ln=max(ln,dcl(w.xz,vec2(714.0,4.4),normalize(vec2(1.0,0.42)),vec2(0.8,2.3),vec4(0.5,0.5,0.125,0.5))+dcl(w.xz,vec2(744.0,5.6),normalize(vec2(1.0,0.42)),vec2(0.8,2.3),vec4(0.5,0.5,0.125,0.5)));",
   "  float st=(1.0-smoothstep(0.04,0.06,abs(x+0.18)))*(1.0-smoothstep(1.9,2.0,dz))*0.6;",
   "  ln=max(ln,st*step(0.5,fract(dz*2.5)));",
+  "#if STRIP_TIER>=1",
+  "  ln*=(0.8+0.2*smoothstep(0.25,0.7,sn(w.xz*vec2(4.0,26.0))))*(1.0-0.4*sfBlot(w.xz,31.0,0.7,0.9,1.0)*aaf(0.03)); gH+=0.0015*ln;",
+  "#endif",
   "  c=mix(c,vec3(0.74,0.73,0.69),ln*(1.0-rub*0.5));",
   "  float cl=(1.0-smoothstep(0.05,0.075,az))*smoothstep(-2.0,-1.0,x);",
   "  c=mix(c,vec3(0.78,0.52,0.06),cl);",
   "  vec3 vdr=normalize(w-cameraPosition); gRefl*=pow(1.0-clamp(-vdr.y,0.0,1.0),4.0)*(1.0-ln);",
+  /* a mirror-wet or rubber-glazed surface shows its grain as flicker, not relief: let the bump die out where it is glossy */
+  "#if STRIP_TIER>=1",
+  "  gH*=(1.0-0.92*gWet)*(1.0-0.8*shn)*(1.0-0.6*prep)*(1.0-0.7*vht)*(1.0-0.9*gMir);",
+  "#endif",
   "  return c; }"].join("\n");
 var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "vec3 stripSurf(vec3 w, out float rough){",
@@ -18059,18 +18081,34 @@ var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "  fc*=0.9+0.14*(0.5+0.5*sin(co*1.3))*mid+0.22*(sn(p*0.006+cell*7.0)-0.5);",
   "  vec2 rp=abs(fract((p+vec2(402.0,402.0))/1609.0+0.5)-0.5)*1609.0; float road=1.0-smoothstep(4.0,7.0,min(rp.x,rp.y));",
   "  fc=mix(fc,vec3(0.34,0.30,0.24),road);",
+  /* Full/Ultra: tufted, sun-cured grass whose mowing edges wander; the field patchwork stays flat */
+  "#if STRIP_TIER>=1",
+  "  float gh; grass*=sfGrassFx(p,gh); float mowW=step(0.5,fract((p.x+(sn(p*0.02)-0.5)*2.6)/8.0)); grass*=(1.0+(mowW-0.5)*0.16*mid)/(1.0+(mow-0.5)*0.16*mid); gH=gh*inf; gHK=1.0;",
+  "#endif",
   "  vec3 c=mix(fc,grass,inf);",
   "  float rr=(1.0-smoothstep(2.7,3.0,abs(p.y-13.5)))*smoothstep(-95.0,-90.0,p.x)*(1.0-smoothstep(775.0,780.0,p.x));",
   "  c=mix(c,vec3(0.07,0.07,0.075)*(0.85+0.3*sn(p*0.4)),rr);",
   "  float pit=smoothstep(-162.0,-157.0,p.x)*(1.0-smoothstep(336.0,341.0,p.x))*smoothstep(17.0,18.0,p.y)*(1.0-smoothstep(68.0,69.0,p.y));",
   "  c=mix(c,vec3(0.25,0.23,0.20)*(0.8+0.4*sn(p*1.1)),pit);",
+  "#if STRIP_TIER>=1",
+  "  float gvH; vec3 gvm=sfGravelFx(p,gvH); c*=mix(vec3(1.0),gvm,pit); gH=mix(gH,gvH,pit);",
+  "#endif",
   "  float sp=(1.0-smoothstep(7.4,8.2,abs(p.y)))*smoothstep(-80.0,-75.0,p.x)*(1.0-smoothstep(785.0,790.0,p.x));",
   "  c=mix(c,vec3(0.2,0.19,0.17),sp);",
+  "#if STRIP_TIER>=1",
+  "  float spH; vec3 spm=sfDirtFx(p,0.3,spH); c*=mix(vec3(1.0),spm,sp); gH=mix(gH,spH,sp);",
+  "#endif",
   "  float ap=smoothstep(-153.0,-151.0,p.x)*(1.0-smoothstep(-80.5,-79.5,p.x))*(1.0-smoothstep(11.5,12.2,abs(p.y)));",
   "  float tf=smoothstep(736.0,738.0,p.x)*(1.0-smoothstep(772.0,774.0,p.x))*smoothstep(6.8,7.2,p.y)*(1.0-smoothstep(11.0,11.6,p.y));",
   "  c=mix(c,vec3(0.07,0.07,0.075)*(0.85+0.3*sn(p*0.4)),max(ap,tf));",
+  "#if STRIP_TIER>=1",
+  "  float ah=max(rr,max(ap,tf)); float rh; vec3 rm=sfAsphFx(p,fine,rh); c*=mix(vec3(1.0),rm,ah); gH=mix(gH,rh,ah);",
+  "#endif",
   "  float sand=smoothstep(783.0,785.0,p.x)*(1.0-smoothstep(855.0,857.0,p.x))*(1.0-smoothstep(8.6,9.1,abs(p.y)));",
   "  c=mix(c,vec3(0.44,0.36,0.24)*(0.82+0.3*sn(p*0.7)+0.12*(sn(p*6.0)-0.5)*fine)*(1.0+0.09*sin(p.y*21.0)*fine),sand);",
+  "#if STRIP_TIER>=1",
+  "  gH=mix(gH,0.012*sin(p.y*21.0+sn(p*0.5)*3.0)*aaf(0.3)+0.004*sn(p*23.0)*aaf(0.04),sand);",
+  "#endif",
   "  float ry=abs(p.y-13.5), rl=rr*(1.0-smoothstep(0.05,0.08,abs(ry-2.7)));",
   "  if(ry<3.0 && p.x<640.0){ vec2 fb=vec2(-1.0,0.0), hw=vec2(2.2,4.2), ha=vec2(0.85,2.3); vec4 cw=vec4(0.0,0.0,0.5,0.5), ca=vec4(0.5,0.5,0.125,0.5);",
   "    float dm=dcl(p,vec2(560.0,13.5),fb,hw,cw)+dcl(p,vec2(260.0,13.5),fb,hw,cw)+dcl(p,vec2(-40.0,13.5),fb,hw,cw)+dcl(p,vec2(60.0,13.5),fb,hw,vec4(0.5,0.0,0.5,0.5));",
@@ -18079,19 +18117,72 @@ var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "  rough=0.96; return c; }"].join("\n");
 var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*(gMir+gRefl)+uGlareC*gGlare;",
   light:"reflectedLight.directSpecular=min(reflectedLight.directSpecular, vec3(mix(64.0,0.14,uGlare))); reflectedLight.indirectSpecular=min(reflectedLight.indirectSpecular, vec3(mix(64.0,0.3,uGlare)));" };
+/* Full / Ultra ground detail (STRIP_TIER 1 / 2; Lite is tier 0 and compiles none of it). A surface's stripSurf() may set gH (a height in
+   metres) and gHK (its strength) and the material perturbs the lit normal from the screen-space slope of gH, so grain, ruts, clods and
+   crust edges catch the sun; gFP is the world size of a pixel here, so a fine octave can fade out before it shimmers (aaf). stripMacro is
+   a three-scale, never-repeating tint that keeps a long straight from reading as one tiled noise; gMacroK scales it per surface. */
+var STRIP_GLSL_DETAIL=[
+  "vec3 stripMacro(vec2 p){ float a=sn(p*0.0023+vec2(3.1,8.7)), b=sn(p*0.0091+vec2(19.3,4.4)), c=sn(p*0.037+vec2(7.7,13.1)), l=(a-0.5)*0.26+(b-0.5)*0.2+(c-0.5)*0.12;",
+  "  return vec3(1.0+l+(b-0.5)*0.05, 1.0+l, 1.0+l-(b-0.5)*0.06); }",
+  "float aaf(float cell){ return 1.0-smoothstep(0.3*cell,0.85*cell,gFP); }",
+  /* thin wandering lines (tar snakes, cracks, mud cracks): the contour of a warped noise; f frequency, w half width in noise units */
+  "float sfLine(vec2 p, float f, float w, float s){ vec2 q=p*f+s; q+=vec2(sn(q*1.7+3.0),sn(q*1.7+9.0))*0.9; float n=sn(q); return 1.0-smoothstep(w*0.4,w,abs(n-0.5)); }",
+  /* rectangular repair patches on a jittered grid: cell size c (m); returns a mask with a slightly ragged edge */
+  "float sfPatch(vec2 p, vec2 c, float s, float prob){ vec2 g=p/c, i=floor(g), f=fract(g); float r=sh(i+s); if(r>prob) return 0.0; vec2 o=vec2(sh(i+s+7.1),sh(i+s+13.3))*0.4, z=vec2(0.25+0.3*sh(i+s+3.7),0.25+0.3*sh(i+s+5.9));",
+  "  vec2 d=abs(f-0.5-(o-0.2))-z; float e=max(d.x,d.y)+(sn(p*3.0)-0.5)*0.05; return 1.0-smoothstep(-0.01,0.015,e); }",
+  /* round blotches (oil, damp, scuffs) */
+  "float sfBlot(vec2 p, float f, float lo, float hi, float s){ return smoothstep(lo,hi,sn(p*f+s)); }",
+  /* grass: a multiplier on the venue's own green (tufts, blades, sun-cured patches); h = blade height for the bump */
+  "vec3 sfGrassFx(vec2 p, out float h){ float tuft=sn(p*7.0), blade=sn(p*29.0), clump=sn(p*0.9+5.0), dry=sn(p*0.17+11.0), fa=aaf(0.14), fb=aaf(0.034);",
+  "  h=0.06*tuft*fa+0.025*blade*fb; float v=1.0+0.2*(clump-0.5)+0.24*(tuft-0.5)*fa+0.22*(blade-0.5)*fb;",
+  "  return mix(vec3(v), v*vec3(1.5,1.32,0.6), smoothstep(0.62,0.86,dry)*0.4); }",
+  /* packed dirt / clay: clods and crumbs; k = 0 smooth .. 1 loose and lumpy. Returns a multiplier; h = lump height */
+  "vec3 sfDirtFx(vec2 p, float k, out float h){ float cl=sn(p*vec2(5.0,6.5)+2.0), cr=sn(p*17.0), gr=sn(p*61.0), fa=aaf(0.06), fb=aaf(0.0165);",
+  "  float lump=smoothstep(0.38,0.8,cl); h=k*(0.085*lump+0.03*cr*fa)+0.006*gr*fb; float v=1.0+0.28*k*(lump-0.4)+0.16*(cr-0.5)*fa+0.12*(gr-0.5)*fb;",
+  "  return vec3(v, v*(1.0+0.05*(cl-0.5)), v*(1.0-0.06*(cl-0.5))); }",
+  /* loose gravel: stones with a lit side; h = stone height. Multiplier on the lot's colour */
+  "vec3 sfGravelFx(vec2 p, out float h){ float s1=sn(p*26.0), s2=sn(p*71.0+4.0), fa=aaf(0.038), fb=aaf(0.014); h=0.02*smoothstep(0.35,0.85,s1)*fa+0.008*smoothstep(0.4,0.9,s2)*fb;",
+  "  float v=1.0+0.34*(s1-0.5)*fa+0.3*(s2-0.5)*fb; return vec3(v)*(1.0+0.1*(sn(p*3.0)-0.5)); }",
+  /* road asphalt: grain bump, tar snakes, repair patches, oil. Multiplier on the asphalt colour; h = surface height; fine 0..1 near-camera weight */
+  "vec3 sfAsphFx(vec2 p, float fine, out float h){ float g1=sn(p*13.0), g2=sn(p*47.0), g3=sn(p*131.0), fa=aaf(0.077), fb=aaf(0.021), fc=aaf(0.0076);",
+  "  h=0.0036*g1*fa+0.0036*g2*fb+0.002*g3*fc; float v=1.0+0.2*(g2-0.5)*fb+0.16*(g3-0.5)*fc+0.07*(g1-0.5)*fa;",
+  "  float snake=sfLine(p*vec2(0.22,0.8),1.0,0.016,5.0)*smoothstep(0.52,0.72,sn(p*0.07+9.0))*aaf(0.022);",
+  "  float web=sfLine(p*1.6,1.0,0.014,17.0)*smoothstep(0.66,0.8,sn(p*0.11+4.0))*aaf(0.018);",
+  "  float cr=max(snake,web); v*=1.0-0.62*cr; h-=0.006*cr;",
+  "  float pat=sfPatch(p,vec2(23.0,31.0),11.0,0.34); v*=1.0-0.2*pat; h-=0.0025*pat; h*=1.0-0.5*pat;",
+  "  float oil=sfBlot(p*vec2(1.0,2.2),0.23,0.62,0.86,3.0)*0.5+sfBlot(p,1.1,0.66,0.9,8.0)*0.25; v*=1.0-0.4*oil;",
+  "  return vec3(v); }"].join("\n");
 function stripSurfMat(glsl, extra, uni, post){
+  var tier=GFX==="ultra"?2:GFX==="lite"?0:1;
   var m=new THREE.MeshStandardMaterial(Object.assign({color:0xffffff, roughness:0.9, metalness:0}, extra||{}));
+  m.defines.STRIP_TIER=tier; if(tier) m.extensions={ derivatives:true };
   m.onBeforeCompile=function(sh){
     if(uni) for(var uk in uni) sh.uniforms[uk]=uni[uk];
     if(post){ if(post.normal) sh.fragmentShader=sh.fragmentShader.replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n"+post.normal);
       if(post.emissive) sh.fragmentShader=sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n"+post.emissive);
       if(post.light) sh.fragmentShader=sh.fragmentShader.replace("#include <lights_fragment_end>", "#include <lights_fragment_end>\n"+post.light); }
-    sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;").replace("#include <project_vertex>", "#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;");
-    sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nfloat gRough;\n"+STRIP_GLSL_NOISE+"\n"+glsl)
-      .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb*=stripSurf(vWp,gRough);")
-      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor=gRough;");
+    stripPatchSh(sh, glsl);
   };
   m.customProgramCacheKey=function(){ return "strip_"+glsl.length; };
+  return m;
+}
+/* the shared shader patch: world position varying, the noise kit, the surface function (a colour that multiplies diffuse, or a multiplier on a map),
+   roughness, and (tier 1+) the macro tint + bump. The bump is added before any post.normal so the ripples sit on top of it. */
+function stripPatchSh(sh, glsl){
+  sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;").replace("#include <project_vertex>", "#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;");
+  sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nfloat gRough; float gH=0.0, gHK=0.0, gFP=0.0, gMacroK=1.0;\n"+STRIP_GLSL_NOISE+"\n#if STRIP_TIER>=1\n"+STRIP_GLSL_DETAIL+"\n#endif\n"+glsl)
+    .replace("#include <color_fragment>", "#include <color_fragment>\n#if STRIP_TIER>=1\ngFP=length(fwidth(vWp));\n#endif\ndiffuseColor.rgb*=stripSurf(vWp,gRough);\n#if STRIP_TIER>=1\ndiffuseColor.rgb*=mix(vec3(1.0),stripMacro(vWp.xz),gMacroK);\n#endif")
+    .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor=gRough;")
+    .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n#if STRIP_TIER>=1\nif(gHK>0.0){ vec3 bSx=dFdx(-vViewPosition), bSy=dFdy(-vViewPosition); vec3 bR1=cross(bSy,normal), bR2=cross(normal,bSx); float bDet=dot(bSx,bR1)*faceDirection;\n  vec3 bGr=sign(bDet)*(dFdx(gH)*gHK*bR1+dFdy(gH)*gHK*bR2); float bL=length(bGr), bM=0.35*abs(bDet); if(bL>bM) bGr*=bM/bL; normal=normalize(abs(bDet)*normal-bGr); }\n#endif");
+}
+
+/* a textured material (road asphalt, kerbs, gravel, the pits floor) with the same Full / Ultra detail: stripSurf returns a multiplier on the map,
+   world-space so a repeating canvas gets macro variation and a real bump. Lite gets the material back untouched. key names the program. */
+function stripMapMat(m, glsl, key){
+  if(GFX==="lite") return m;
+  m.defines.STRIP_TIER=GFX==="ultra"?2:1; m.extensions={ derivatives:true };
+  m.onBeforeCompile=function(sh){ stripPatchSh(sh, glsl); };
+  m.customProgramCacheKey=function(){ return "stripmap_"+key; };
   return m;
 }
 
@@ -21156,7 +21247,7 @@ function pitsMats(){
   for(i=0;i<2600;i++){ var g=30+Math.random()*40|0; x.fillStyle="rgba("+g+","+g+","+(g+2)+","+(0.35+Math.random()*0.5)+")"; x.fillRect(Math.random()*256, Math.random()*256, 1+Math.random()*2, 1+Math.random()*2); }
   for(i=0;i<5;i++){ var px=Math.random()*256, py=Math.random()*256, r=10+Math.random()*26, gr=x.createRadialGradient(px,py,0,px,py,r); gr.addColorStop(0,"rgba(8,8,10,0.45)"); gr.addColorStop(1,"rgba(8,8,10,0)"); x.fillStyle=gr; x.fillRect(px-r,py-r,2*r,2*r); }
   var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(30,30); t.encoding=THREE.sRGBEncoding; t.anisotropy=4;
-  M.ground=new THREE.MeshStandardMaterial({map:t, roughness:0.92});
+  M.ground=stripMapMat(new THREE.MeshStandardMaterial({map:t, roughness:0.92}), ROAD_GLSL_ASPH, "pits_floor");   /* Full / Ultra: world-space grain, cracks, patches and a macro tint over the 5 m tile */
   /* the hauler's side: the shop's colours and name */
   c=newCanvas(1024,256); x=c.getContext("2d"); var gg=x.createLinearGradient(0,0,0,256); gg.addColorStop(0,"#25303f"); gg.addColorStop(1,"#141a23"); x.fillStyle=gg; x.fillRect(0,0,1024,256);
   x.fillStyle="#e5562b"; x.beginPath(); x.moveTo(0,212); x.bezierCurveTo(300,204,620,190,1024,180); x.lineTo(1024,200); x.bezierCurveTo(620,210,300,224,0,234); x.fill();
@@ -21363,6 +21454,11 @@ var PULL_GLSL_TRACK=[
   "  c=mix(c,c*1.14+vec3(0.025,0.018,0.01),pan*0.45*(1.0-rut*0.6));",
   "  float berm=exp(-pow((az-1.7)/0.12,2.0))*smoothstep(-8.0,-2.0,x)*(0.6+0.4*n2);",
   "  c=mix(c,c*0.78,berm*0.6);",
+  /* Full/Ultra: loose clods at the edges, a packed smooth pan band, ruts sunk with lugged floors, throw-berms along them */
+  "#if STRIP_TIER>=1",
+  "  float dh; vec3 dm=sfDirtFx(w.xz,clamp(0.3+0.7*smoothstep(1.6,4.5,az)-0.55*pan,0.0,1.0),dh); c*=mix(vec3(1.0),dm,0.75);",
+  "  c*=1.0-0.14*rut; gH=dh-0.065*rut+0.045*berm+0.014*(lug-0.55)*rut; gHK=1.0;",
+  "#endif",
   "  float edge=smoothstep(4.4,6.1,az); c=mix(c,c*vec3(0.72,0.7,0.68)+vec3(0.0,0.0,0.0),edge*(0.6+0.4*n1));",
   "  float ln=1.0-smoothstep(0.06,0.09,abs(x));",
   "  ln=max(ln,1.0-smoothstep(0.15,0.19,abs(x-91.44)));",
@@ -21378,15 +21474,24 @@ var PULL_GLSL_GROUND=[
   "  vec3 grass=vec3(0.11,0.155,0.055)*(0.8+0.35*sn(p*0.08))*(0.9+0.2*sn(p*1.9)*fine);",
   "  float worn=smoothstep(0.5,0.8,sn(p*0.06+3.0))*0.6;",
   "  vec3 c=mix(grass,vec3(0.27,0.21,0.14)*(0.85+0.3*sn(p*0.7)),worn);",
+  "#if STRIP_TIER>=1",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.5,dh); c*=mix(vec3(1.0),mix(gm,dm,worn/0.6),0.75); gH=mix(gh,dh,worn/0.6); gHK=1.0;",
+  "#endif",
   "  float apron=(1.0-smoothstep(9.0,9.5,abs(p.y)))*smoothstep(-36.0,-35.0,p.x)*(1.0-smoothstep(128.0,129.0,p.x));",
   "  c=mix(c,vec3(0.34,0.31,0.27)*(0.8+0.4*sn(p*2.3)),apron);",
   "  float pit=smoothstep(19.0,20.0,p.y)*(1.0-smoothstep(54.0,55.0,p.y))*smoothstep(-42.0,-41.0,p.x)*(1.0-smoothstep(122.0,123.0,p.x));",
   "  c=mix(c,vec3(0.30,0.27,0.22)*(0.8+0.35*sn(p*0.9)),pit);",
+  "#if STRIP_TIER>=1",
+  "  float gvH; vec3 gvm=sfGravelFx(p,gvH); float gv=max(apron,pit); c*=mix(vec3(1.0),gvm,gv); gH=mix(gH,gvH,gv);",
+  "#endif",
   "  vec2 q=(p+vec2(800.0,800.0))/805.0; vec2 cell=floor(q); float h=sh(cell+11.0);",
   "  vec3 fc= h<0.25?vec3(0.40,0.30,0.11): h<0.45?vec3(0.50,0.42,0.03): h<0.62?vec3(0.11,0.17,0.05): h<0.8?vec3(0.30,0.23,0.12):vec3(0.18,0.13,0.08);",
   "  float dir=step(0.5,sh(cell+3.0)); fc*=0.9+0.14*(0.5+0.5*sin(mix(p.x,p.y,dir)*1.3))*mid+0.22*(sn(p*0.006+cell*7.0)-0.5);",
   "  vec2 rp=abs(fract((p+vec2(800.0,800.0))/1609.0+0.5)-0.5)*1609.0; fc=mix(fc,vec3(0.34,0.30,0.24),1.0-smoothstep(4.0,7.0,min(rp.x,rp.y)));",
   "  float fair=1.0-smoothstep(150.0,175.0,max(abs(p.x-40.0),abs(p.y)));",
+  "#if STRIP_TIER>=1",
+  "  gH*=fair;",
+  "#endif",
   "  c=mix(fc,c,fair); rough=0.96; return c; }"].join("\n");
 
 /* --- canvas art: banners, distance markers, the sled's sign, door decal --- */
@@ -22090,13 +22195,25 @@ var BOG_GLSL_GROUND=[
   "  float wet=(1.0-smoothstep(7.0,10.0,abs(p.y)))*smoothstep(-4.0,0.0,p.x)*(1.0-smoothstep(uLen,uLen+8.0,p.x));",
   "  dirt=mix(dirt,vec3(0.16,0.11,0.07)*(0.85+0.3*sn(p*1.3)),wet*0.8);",
   "  c=mix(c,dirt,max(lane,wet*0.9));",
+  /* Full/Ultra: grass tufts, a lumpy rutted run-up, standing puddles in the wet lane */
+  "#if STRIP_TIER>=1",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.75,dh); float wd=max(lane,wet*0.9); c*=mix(mix(gm,dm,worn/0.6),dm,wd); gH=mix(mix(gh,dh,worn/0.6),dh,wd); gHK=1.0;",
+  "  gH-=0.05*tr*lane; float pud=wet*smoothstep(0.6,0.68,sn(p*0.85+4.0)+0.12*sn(p*4.0)); c*=1.0-0.45*pud; gH*=1.0-pud;",
+  "#endif",
   "  float lot=smoothstep(16.0,17.0,p.y)*(1.0-smoothstep(46.0,47.0,p.y))*smoothstep(-50.0,-49.0,p.x)*(1.0-smoothstep(uLen+20.0,uLen+21.0,p.x));",
   "  c=mix(c,vec3(0.30,0.27,0.22)*(0.8+0.35*sn(p*0.9)),lot);",
+  "#if STRIP_TIER>=1",
+  "  float gvH; vec3 gvm=sfGravelFx(p,gvH); c*=mix(vec3(1.0),gvm,lot); gH=mix(gH,gvH,lot);",
+  "#endif",
   "  vec2 q=(p+vec2(800.0,800.0))/805.0; vec2 cell=floor(q); float h=sh(cell+11.0);",
   "  vec3 fc= h<0.25?vec3(0.40,0.30,0.11): h<0.45?vec3(0.50,0.42,0.03): h<0.62?vec3(0.11,0.17,0.05): h<0.8?vec3(0.30,0.23,0.12):vec3(0.18,0.13,0.08);",
   "  fc*=0.9+0.22*(sn(p*0.006+cell*7.0)-0.5)*mid;",
   "  float fair=1.0-smoothstep(140.0,170.0,max(abs(p.x-40.0),abs(p.y)));",
-  "  c=mix(fc,c,fair); rough=mix(0.96,0.7,wet); return c; }"].join("\n");
+  "#if STRIP_TIER>=1",
+  "  gH*=fair; rough=mix(0.96,0.7,wet); rough=mix(rough,0.12,pud*fair); c=mix(fc,c,fair); return c; }",
+  "#else",
+  "  c=mix(fc,c,fair); rough=mix(0.96,0.7,wet); return c; }",
+  "#endif"].join("\n");
 
 /* the night's mud: colour by consistency (soupy = milky chocolate, sticky = grey clay), puddles, foam, the edges */
 function bogMudPaint(cv, len, cons, seed){
@@ -23471,6 +23588,9 @@ function boatWaterMat(lite){
           :" float a=0.0; vec2 g=vec2(0.0); float k=0.6+1.6*uChop; vec2 D[4]; D[0]=vec2(0.94,0.34); D[1]=vec2(0.6,-0.8); D[2]=vec2(-0.3,0.95); D[3]=vec2(0.85,-0.52); float F[4]; F[0]=0.31; F[1]=0.53; F[2]=0.87; F[3]=1.9;"+
            " for(int i=0;i<4;i++){ float ph=dot(D[i],p)*F[i]-uT*sqrt(9.8*F[i]); g+=D[i]*cos(ph)*F[i]*0.04*k/(1.0+float(i)); }"+
            " vec2 q=p*1.7+vec2(uT*0.5,uT*0.3); g+=vec2(sn(q)-0.5,sn(q+7.3)-0.5)*0.22*k*(1.0-smoothstep(10.0,80.0,d));"+
+           /* finer capillary ripples near the camera (a second on Ultra) so the glint breaks up instead of sliding as one smooth sheet */
+           " vec2 q2=p*5.3+vec2(-uT*0.9,uT*0.6); g+=vec2(sn(q2)-0.5,sn(q2+3.1)-0.5)*0.1*k*(1.0-smoothstep(5.0,45.0,d));"+(GFX==="ultra"?
+           " vec2 q3=p*14.0+vec2(uT*1.3,-uT*0.8); g+=vec2(sn(q3)-0.5,sn(q3+5.7)-0.5)*0.07*k*(1.0-smoothstep(3.0,22.0,d));":"")+
            " vec3 N=normalize(vec3(-g.x,1.0,-g.y));",
       " float fr=0.03+0.97*pow(1.0-max(dot(N,V),0.0),5.0); vec3 R=reflect(-V,N); float up=clamp(R.y,0.0,1.0);",
       " vec3 sky=mix(uHor,uZen,pow(up,0.6)); vec3 c=mix(uDeep*(0.8+0.4*sn(p*0.02)),sky*vec3(0.85,0.95,1.0),clamp(fr,0.0,0.85));",
@@ -23494,6 +23614,13 @@ var BOAT_GLSL_GROUND=[
   "  vec2 q=(p+vec2(800.0,800.0))/650.0; vec2 cell=floor(q); float h=sh(cell+5.0);",
   "  vec3 fc= h<0.3?vec3(0.42,0.34,0.13): h<0.55?vec3(0.13,0.2,0.06): h<0.8?vec3(0.5,0.44,0.05):vec3(0.2,0.15,0.09);",
   "  fc*=0.9+0.2*(sn(p*0.006+cell*7.0)-0.5)*mid;",
+  "#if STRIP_TIER>=1",
+  "  float gh, dh, gvH; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.35,dh), gvm=sfGravelFx(p,gvH);",
+  "  float rip=0.5+0.5*sin(p.y*2.3+3.0*sn(p*0.5)); dm*=1.0+0.08*(rip-0.5);",
+  "  grass*=gm; sand*=dm; c=mix(grass,sand,edge); c=mix(c,vec3(0.3,0.28,0.24)*(0.8+0.3*sn(p*0.8)),lot); c*=mix(vec3(1.0),gvm,lot);",
+  "  gH=mix(mix(gh,dh+0.008*rip,edge),gvH,lot); gHK=1.0;",
+  "  float fa=1.0-smoothstep(150.0,190.0,abs(p.y)); gH*=fa;",
+  "#endif",
   "  c=mix(fc,c,1.0-smoothstep(150.0,190.0,abs(p.y)));",
   "  rough=mix(0.95,0.6,edge); return c; }"].join("\n");
 /* a hull lofted through cross-sections: secs = [{x, p:[[z,y]...]}] keel to gunwale on one side, mirrored; the deck is closed between the gunwales */
@@ -23831,7 +23958,24 @@ var ROAD_GLSL_GROUND=[
   "  vec3 fc= h<0.22?vec3(0.40,0.30,0.11): h<0.40?vec3(0.50,0.42,0.03): h<0.56?vec3(0.11,0.17,0.05): h<0.72?vec3(0.30,0.23,0.12): h<0.86?vec3(0.18,0.13,0.08):vec3(0.16,0.19,0.08);",
   "  float dir=step(0.5,sh(cell+3.0)); fc*=0.9+0.14*(0.5+0.5*sin(mix(p.x,p.y,dir)*1.3))*mid+0.22*(sn(p*0.006+cell*7.0)-0.5);",
   "  vec2 rp=abs(fract((p+vec2(402.0,402.0))/1609.0+0.5)-0.5)*1609.0; fc=mix(fc,vec3(0.34,0.30,0.24),1.0-smoothstep(4.0,7.0,min(rp.x,rp.y)));",
+  "#if STRIP_TIER>=1",
+  "  float gh; vec3 gm=sfGrassFx(p,gh); grass*=gm; fc*=mix(vec3(1.0),gm,0.55); gH=gh; gHK=1.0;",
+  "#endif",
   "  vec3 c=mix(fc,grass,inf); rough=0.96; return c; }"].join("\n");
+/* Full / Ultra multipliers on the painted maps: asphalt (grain, tar snakes, repair patches, oil), kerbs (chips, scuffs), gravel (stones), verge */
+var ROAD_GLSL_ASPH=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=0.88; gMacroK=0.55; float h; vec3 v=sfAsphFx(w.xz,1.0,h);",
+  "  float rub=smoothstep(0.55,0.8,sn(w.xz*vec2(0.5,0.09)+3.0)); v*=1.0-0.1*rub; rough=mix(rough,0.8,rub); gH=h; gHK=1.0; return v; }"].join("\n");
+var ROAD_GLSL_KERB=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=0.7; gMacroK=0.3; vec2 p=w.xz; float g1=sn(p*23.0), g2=sn(p*79.0), fa=aaf(0.043), fb=aaf(0.0127);",
+  "  float chip=smoothstep(0.7,0.9,sn(p*7.0+2.0)); float scuff=smoothstep(0.5,0.85,sn(p*vec2(0.8,2.6)+5.0));",
+  "  gH=0.0032*g1*fa+0.0018*g2*fb-0.004*chip; gHK=1.0;",
+  "  return vec3(1.0+0.14*(g1-0.5)*fa+0.14*(g2-0.5)*fb)*(1.0-0.32*scuff)*(1.0-0.18*chip); }"].join("\n");
+var ROAD_GLSL_GRAV=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=1.0; gMacroK=0.5; float h; vec3 v=sfGravelFx(w.xz,h); float rake=0.5+0.5*sin(dot(w.xz,vec2(0.4,0.9))*1.6+4.0*sn(w.xz*0.3));",
+  "  gH=h+0.012*rake*aaf(0.2); gHK=1.0; return v*(1.0+0.1*(rake-0.5)); }"].join("\n");
+var ROAD_GLSL_VERGE=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=0.92; gMacroK=0.7; float h; vec3 v=sfAsphFx(w.xz*0.8,0.5,h); gH=h; gHK=1.0; return v; }"].join("\n");
 
 /* --- canvas art: asphalt, kerb stripes, gravel, chequer line, banners --- */
 function roadAsphaltTex(){
@@ -23898,10 +24042,10 @@ function buildRoadWorld(T){
   gm.customProgramCacheKey=function(){ return "road_ground_"+T.id; };
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), gm); ground.rotation.x=-PI/2; ground.position.y=-0.05; ground.receiveShadow=true; S4.add(ground);
   /* asphalt, kerbs, gravel, start line */
-  M.asph=new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2});
-  M.kerb=new THREE.MeshStandardMaterial({map:roadKerbTex(), roughness:0.7, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-3});
-  M.grav=new THREE.MeshStandardMaterial({map:roadGravelTex(), roughness:1, color:0xd8ccb4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
-  M.verge=new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "road_asph");
+  M.kerb=stripMapMat(new THREE.MeshStandardMaterial({map:roadKerbTex(), roughness:0.7, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-3}), ROAD_GLSL_KERB, "road_kerb");
+  M.grav=stripMapMat(new THREE.MeshStandardMaterial({map:roadGravelTex(), roughness:1, color:0xd8ccb4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_GRAV, "road_grav");
+  M.verge=stripMapMat(new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_VERGE, "road_verge");
   M.sign=new THREE.MeshStandardMaterial({map:roadAtlas(T.n), roughness:0.72});
   M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.86}); M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.42, metalness:0.65});
   M.lamp=new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false, color:0x777777});
@@ -24199,11 +24343,15 @@ var SALT_GLSL_GROUND=[
   "  vec2 q=p*0.42; float r1=1.0-abs(sn(q)*2.0-1.0), r2=1.0-abs(sn(q*1.9+5.0)*2.0-1.0);",
   "  float ridge=(pow(r1,7.0)+0.6*pow(r2,9.0))*(1.0-fine)*mid*0.5;",
   "  vec3 c=vec3(0.84,0.785,0.685)*(0.95+0.08*(n2-0.5)*mid+0.06*(n3-0.5)*fine+0.07*(n4-0.5));",
-  "  float sk=uStreak*(1.0-smoothstep(2.0,30.0,d));",
+  "  float sk=uStreak*(1.0-smoothstep(2.0,30.0,d)), sH=0.0;",
   "  if(fine>0.0){ vec2 pv=p*1.7+vec2(sn(p*0.6),sn(p*0.6+5.3))*1.3; float cx=cameraPosition.x*1.7; pv.x=cx+(pv.x-cx)/(1.0+sk*5.0);",
   "    vec2 vv=saltVor(pv); float e=1.0-smoothstep(0.0,0.075,vv.y-vv.x); vec2 v2=saltVor(pv+uRelief); float e2=1.0-smoothstep(0.0,0.075,v2.y-v2.x);",
   "    float fk=fine*(1.0-0.75*sk); c*=1.0+fk*(0.11*e-0.09*e2*(1.0-e)); c*=1.0-fk*0.05*smoothstep(0.2,0.6,vv.x);",
-  "    c*=1.0+fine*sk*(sn(vec2(w.x*0.06,w.z*12.0))-0.5)*0.3; }",
+  "    c*=1.0+fine*sk*(sn(vec2(w.x*0.06,w.z*12.0))-0.5)*0.3;",
+  "#if STRIP_TIER>=1",
+  "    sH=fk*(0.012*e-0.008*e2*(1.0-e)+0.004*smoothstep(0.2,0.6,vv.x));",
+  "#endif",
+  "  }",
   "  c-=vec3(0.10,0.09,0.07)*ridge;",
   "  float damp=smoothstep(0.6,0.82,sn(p*0.0019+3.0))*smoothstep(60.0,400.0,abs(w.z));",
   "  c=mix(c,vec3(0.52,0.50,0.46),damp*0.5);",
@@ -24214,7 +24362,12 @@ var SALT_GLSL_GROUND=[
   "  float tr=exp(-pow((az-0.75)/0.32,2.0))+0.55*exp(-pow((az-2.6)/0.5,2.0))+0.35*exp(-pow((az-5.2)/0.9,2.0));",
   "  c*=1.0-crs*0.17*tr*(0.55+0.45*sn(vec2(w.x*0.04,w.z*2.5)));",
   "  c*=1.0+crs*0.03;",
-  "  float bl=(1.0-smoothstep(0.10,0.15,az))*step(-40.0,w.x)*(1.0-step(12350.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
+  "  float azb=az;",
+  "#if STRIP_TIER>=1",
+  "  azb=abs(w.z+(sn(vec2(w.x*0.045,3.0))-0.5)*0.07+(sn(vec2(w.x*0.8,5.0))-0.5)*0.02);",
+  "  c*=1.0-0.09*(1.0-smoothstep(0.15,0.7,azb))*crs;",
+  "#endif",
+  "  float bl=(1.0-smoothstep(0.10,0.15,azb))*step(-40.0,w.x)*(1.0-step(12350.0,w.x))*(0.82+0.18*sn(vec2(w.x*0.35,1.0)));",
   "  c=mix(c,vec3(0.03,0.03,0.035),bl);",
   "  float sl=(1.0-smoothstep(0.08,0.13,abs(w.x)))*(1.0-smoothstep(5.0,5.4,az));",
   "  c=mix(c,vec3(0.04,0.04,0.05),sl*0.9);",
@@ -24222,6 +24375,10 @@ var SALT_GLSL_GROUND=[
   "  c*=1.0-pit*0.08*(0.6+0.4*sn(p*0.8));",
   "  vec3 vd=normalize(w-cameraPosition); float gs=max(dot(vec3(vd.x,-vd.y,vd.z),uSunG),0.0);",
   "  gGlare=uGlareC*uGlare*(pow(gs,14.0)*0.16+pow(gs,120.0)*0.8)*(1.0-0.7*max(bl,ol))*(0.7+0.6*n3*fine+0.3*(1.0-fine));",
+  "#if STRIP_TIER>=1",
+  "  float spk=smoothstep(0.8,0.93,sn(p*83.0))*aaf(0.012)*fine; c*=1.0+0.35*spk*(1.0-bl);",
+  "  gH=sH-0.003*crs*tr; gHK=1.0; gMacroK=0.6;",
+  "#endif",
   "  rough=0.93-crs*0.05; return c; }"].join("\n");
 /* sky: deep desert blue overhead to a pale hazy horizon, the sun, no clouds to speak of */
 function saltSkyMat(){
@@ -25745,7 +25902,13 @@ var HILL_GLSL_TERR=[
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(25.0,140.0,d);",
   "  float n=0.82+0.3*sn(p*0.045)+0.12*sn(p*0.31)*fine+0.07*sn(p*2.3)*fine;",
+  /* Full / Ultra: scree and duff grain, granite facets, and the bump to catch the low sun */
+  "#if STRIP_TIER>=1",
+  "  float dh, gh; vec3 dm=sfDirtFx(p*0.8,0.6,dh), gm=sfGrassFx(p,gh); float rk=1.0-abs(2.0*sn(p*0.6+7.0)-1.0), rkf=aaf(0.5);",
+  "  gH=0.5*(dh+gh)+0.14*rk*rk*rkf; gHK=1.0; gMacroK=0.8; rough=0.95; return vec3(n)*(0.5*(dm+gm))*(1.0-0.16*rk*rkf);",
+  "#else",
   "  rough=0.95; return vec3(n);",
+  "#endif",
   "}"].join("\n");
 /* course sample → world (fractional i ok), lateral offset d (+ left), height above the road */
 function hillPt(W, i, d, y, out){ var T=W.T, N=T.N, f=clamp(i,0,N-1.001), i0=Math.floor(f), t=f-i0, a=i0, b=Math.min(N-1,i0+1);
@@ -25817,8 +25980,8 @@ function buildHillWorld(T){
     if(!lite) mat.customProgramCacheKey=function(){ return "hill_terr"; };
     var tm=new THREE.Mesh(g, mat); tm.receiveShadow=!lite; S5.add(tm); W.terr=tm; if(lite||ultra) hillTiles(W, S5, tm, G); })();
   /* road, centre lines, gravel verges sloping out to the terrain */
-  M.asph=new THREE.MeshStandardMaterial({map:hillAsphaltTex(), roughness:0.86, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
-  M.verge=new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:hillAsphaltTex(), roughness:0.86, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "hill_asph");
+  M.verge=stripMapMat(new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_GRAV, "hill_verge");
   (function(){ var step=lite?2:1, n=Math.floor((N-1)/step)+1, pos=new Float32Array(n*6), nor=new Float32Array(n*6), uv=new Float32Array(n*4), idx=[];
     for(q=0;q<n;q++){ var ii=Math.min(N-1,q*step); hillPt(W, ii, hw, 0.04, _hA); hillPt(W, ii, -hw, 0.04, _hB);
       pos.set([_hA.x,_hA.y,_hA.z,_hB.x,_hB.y,_hB.z], q*6); nor[q*6+1]=1; nor[q*6+4]=1; var vv=ii*ds/16; uv.set([0,vv,1,vv], q*4);
@@ -26106,14 +26269,27 @@ var OVAL_GLSL=[
   "  clay=mix(clay,clay*0.62,groove*(1.0-uDry*0.5)); clay=mix(clay,vec3(0.38,0.27,0.18),cush*(0.5+uDry*0.4));",
   "  float rut=sn(vec2(p.x*0.6+p.y*0.6,rho*3.0)); clay*=1.0-0.18*smoothstep(0.55,0.8,rut)*groove*fine;",
   "  float onT=1.0-smoothstep(uW*0.5,uW*0.5+0.5,abs(rho));",
+  /* Full / Ultra: harrow lines and a packed, rubbered groove, loose marbles and clods up by the cushion, the seam where the bank begins, tufted grass */
+  "#if STRIP_TIER>=1",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh); vec3 dm=sfDirtFx(p,clamp(0.2+0.85*cush+0.4*(1.0-groove),0.0,1.0),dh);",
+  "  float ln=0.5+0.5*sin(rho*13.0+2.5*sn(p*0.4)), sm=1.0-smoothstep(0.0,0.4,abs(abs(p.x)-uLs*0.5)), mb=smoothstep(0.62,0.82,sn(p*3.1+8.0))*aaf(0.3)*(1.0-groove);",
+  "  dm*=(1.0+0.09*(ln-0.5)*groove*aaf(0.2))*(1.0-0.12*sm*(1.0-0.5*groove))*(1.0+0.16*mb); dh+=0.011*ln*groove*aaf(0.2)-0.01*sm+0.012*mb;",
+  "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0;",
+  "#endif",
   "  vec3 apron=vec3(0.36,0.33,0.28)*(0.85+0.3*sn(p*0.6)); float inner=smoothstep(uW*0.5,uW*0.5+0.4,rho)*(1.0-smoothstep(uW*0.5+0.8,uW*0.5+1.2,rho));",
   "  vec3 c=mix(grass,clay,onT); c=mix(c,apron*0.6,inner*0.0);",
   "  float lot=smoothstep(uW*0.5+13.0,uW*0.5+14.0,-rho)*(1.0-smoothstep(uW*0.5+60.0,uW*0.5+61.0,-rho));",
   "  c=mix(c,vec3(0.30,0.27,0.21)*(0.8+0.35*sn(p*0.9)),lot*0.65);",
+  "#if STRIP_TIER>=1",
+  "  float gvH; vec3 gvm=sfGravelFx(p,gvH); c*=mix(vec3(1.0),gvm,lot*0.65); gH=mix(gH,gvH,lot*0.65);",
+  "#endif",
   "  vec2 q=(p+vec2(800.0,800.0))/805.0; vec2 cell=floor(q); float h=sh(cell+11.0);",
   "  vec3 fc= h<0.25?vec3(0.40,0.30,0.11): h<0.45?vec3(0.50,0.42,0.03): h<0.62?vec3(0.11,0.17,0.05): h<0.8?vec3(0.30,0.23,0.12):vec3(0.18,0.13,0.08);",
   "  fc*=0.9+0.22*(sn(p*0.006+cell*7.0)-0.5)*mid;",
   "  float fair=1.0-smoothstep(150.0,190.0,-rho); c=mix(fc,c,fair);",
+  "#if STRIP_TIER>=1",
+  "  gH*=fair;",
+  "#endif",
   "  rough=mix(0.97,0.82,onT); return c; }"].join("\n");
 function ovalAtlas(){
   var c=newCanvas(1024,128), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i, labels=["PRAIRIE ENGINE WORKS","COULEE FUELS","NORTHWIND TYRE","CANOLA CO-OP","BIG SKY SALVAGE","ELEVATOR FEEDS"], cols=[["#d97757","#141413"],["#141413","#d97757"],["#f2c22c","#131416"],["#1d4787","#f4efe2"],["#b7261d","#f4efe2"],["#2c6b3a","#f4efe2"]];
