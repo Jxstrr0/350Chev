@@ -55,7 +55,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>`;
   const V=L?rlVerdict(L):{k:"est",t:"NOT RUN",s:prev?"Changed since the last run — figures are the live estimate, deltas against that run.":"Live estimate. Run it to lock a result."};
   const chip=$("rlChip");chip.className="rlchip "+V.k;chip.textContent=testing?"RUNNING":rlChipTxt(V.t);
-  $("rlTag").textContent=L?`${rlName(L.env.testType)} · measured`:"live estimate";
+  $("rlTag").textContent=L?`${rlName(L.env.testType).replace(/^./,c=>c.toUpperCase())} · measured`:"live estimate";
   /* off the Events tab the rail's Run is always the dyno pull, whatever event was picked last (the event runs from its own dock) */
   const dy=ev&&curTab!=="events",rt=dy?railDynoT():t;let cost;if(dy){S.env.testType=rt;try{cost=testCost();}finally{S.env.testType=t;}}else cost=testCost();
   const run=$("rlRun");run.disabled=testing;

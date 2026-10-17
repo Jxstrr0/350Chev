@@ -1429,3 +1429,13 @@ html.desk #tabs .dot.n{right:4px;top:6px}
 html.desk #tabs{border-bottom:0;border-left:0;box-shadow:0 1px 0 var(--edge)}
 html.desk #tabs button.on::before{bottom:0;height:3px;border-radius:3px 3px 0 0}
 html.desk #panel{border-left:0;box-shadow:inset 1px 0 0 var(--edge)}
+/* v1.68 QA: desktop run HUD (#stripHud, #evHud) stacks above the run's dock instead of beside it. The dock is a fixed box measured against the
+   window, the HUD against the narrower view, so side by side they overlapped. runview.js sets --rdock (the dock's top edge up from the window foot) on #view. */
+html.desk #stripHud,html.desk #evHud{right:18px;width:auto;max-width:720px;bottom:calc(10px + var(--rdock,0px))}
+html.desk #view{--shud-h:200px}
+html.desk #evHud #saltLive{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}html.desk #evHud #saltLive .ph-row{grid-column:1/-1;margin-top:6px}html.desk #evHud #saltLive .ph-top span{white-space:nowrap}
+.vstats span span,.vstats span abbr,.vstats span .gl{display:inline;margin:0;white-space:inherit}   /* a glossary term inside a result label stays on its line ("EGT °C") */
+/* phone: the salt and boat readouts' side notes take the line under the big number instead of a 4-line sliver beside it */
+html:not(.desk) #evHud :is(#saltLive,#boatLive) .ph-top{flex-wrap:wrap;row-gap:2px}
+html:not(.desk) #evHud :is(#saltLive,#boatLive) .ph-top span{flex:1 1 100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:not(.desk) #evHud .e24gp{white-space:normal}html:not(.desk) #evHud .e24gp span{white-space:normal;overflow:visible;line-height:1.15}   /* "ahead +26 laps · #86" wraps instead of cutting at the map */
