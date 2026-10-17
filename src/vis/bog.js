@@ -26,13 +26,25 @@ var BOG_GLSL_GROUND=[
   "  float wet=(1.0-smoothstep(7.0,10.0,abs(p.y)))*smoothstep(-4.0,0.0,p.x)*(1.0-smoothstep(uLen,uLen+8.0,p.x));",
   "  dirt=mix(dirt,vec3(0.16,0.11,0.07)*(0.85+0.3*sn(p*1.3)),wet*0.8);",
   "  c=mix(c,dirt,max(lane,wet*0.9));",
+  /* Full/Ultra: grass tufts, a lumpy rutted run-up, standing puddles in the wet lane */
+  "#if STRIP_TIER>=1",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.75,dh); float wd=max(lane,wet*0.9); c*=mix(mix(gm,dm,worn/0.6),dm,wd); gH=mix(mix(gh,dh,worn/0.6),dh,wd); gHK=1.0;",
+  "  gH-=0.05*tr*lane; float pud=wet*smoothstep(0.6,0.68,sn(p*0.85+4.0)+0.12*sn(p*4.0)); c*=1.0-0.45*pud; gH*=1.0-pud;",
+  "#endif",
   "  float lot=smoothstep(16.0,17.0,p.y)*(1.0-smoothstep(46.0,47.0,p.y))*smoothstep(-50.0,-49.0,p.x)*(1.0-smoothstep(uLen+20.0,uLen+21.0,p.x));",
   "  c=mix(c,vec3(0.30,0.27,0.22)*(0.8+0.35*sn(p*0.9)),lot);",
+  "#if STRIP_TIER>=1",
+  "  float gvH; vec3 gvm=sfGravelFx(p,gvH); c*=mix(vec3(1.0),gvm,lot); gH=mix(gH,gvH,lot);",
+  "#endif",
   "  vec2 q=(p+vec2(800.0,800.0))/805.0; vec2 cell=floor(q); float h=sh(cell+11.0);",
   "  vec3 fc= h<0.25?vec3(0.40,0.30,0.11): h<0.45?vec3(0.50,0.42,0.03): h<0.62?vec3(0.11,0.17,0.05): h<0.8?vec3(0.30,0.23,0.12):vec3(0.18,0.13,0.08);",
   "  fc*=0.9+0.22*(sn(p*0.006+cell*7.0)-0.5)*mid;",
   "  float fair=1.0-smoothstep(140.0,170.0,max(abs(p.x-40.0),abs(p.y)));",
-  "  c=mix(fc,c,fair); rough=mix(0.96,0.7,wet); return c; }"].join("\n");
+  "#if STRIP_TIER>=1",
+  "  gH*=fair; rough=mix(0.96,0.7,wet); rough=mix(rough,0.12,pud*fair); c=mix(fc,c,fair); return c; }",
+  "#else",
+  "  c=mix(fc,c,fair); rough=mix(0.96,0.7,wet); return c; }",
+  "#endif"].join("\n");
 
 /* the night's mud: colour by consistency (soupy = milky chocolate, sticky = grey clay), puddles, foam, the edges */
 function bogMudPaint(cv, len, cons, seed){
