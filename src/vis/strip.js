@@ -224,11 +224,11 @@ function stripAtlas(){
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2);
     if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
   /* row 0: wall banners (340×64 each) */
-  panel(0,0,340,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",42,"#d9a52b");
+  panel(0,0,340,64,"#1d4787","#f4f1e8","SECTION LINE",42,"#d9a52b");
   panel(342,0,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414");
   panel(684,0,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
   /* row 1: long raceway sign */
-  panel(0,66,1024,62,"#f1ede2","#1d4787","PRAIRIE BLUE RACEWAY · SASKATOON",46,"#1d4787");
+  panel(0,66,1024,62,"#f1ede2","#1d4787","SECTION LINE DRAGWAY · SASKATOON",46,"#1d4787");
   /* row 2: finish checker + second-tier banners */
   for(var i=0;i<32;i++) for(var j=0;j<4;j++){ x.fillStyle=((i+j)&1)?"#111":"#f2f2f2"; x.fillRect(i*16, 130+j*16, 16,16); }
   panel(512,130,256,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
@@ -237,7 +237,7 @@ function stripAtlas(){
   var mk=["60 FT","330","1/8","1000","1/4"];
   for(i=0;i<5;i++){ var bx=i*205; x.fillStyle="#1a1a1a"; x.fillRect(bx,196,203,122); x.fillStyle="#f4efe2"; x.fillRect(bx+6,202,191,110); x.fillStyle="#141414"; x.font="700 "+(mk[i].length>4?66:78)+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+101, 260); }
   /* row 4: hauler liveries 512×120 ×2 */
-  panel(0,322,510,120,"#e9e6dc","#1d4787","PRAIRIE BLUE RACING",50,"#d9a52b");
+  panel(0,322,510,120,"#e9e6dc","#1d4787","SECTION LINE RACING",50,"#d9a52b");
   panel(512,322,512,120,"#1b1d20","#e5701f","COULEE FUELS",64,"#e5701f");
   /* row 5: tower windows strip */
   x.fillStyle="#0e1418"; x.fillRect(0,446,1024,64); for(i=0;i<16;i++){ x.fillStyle="#26343d"; x.fillRect(i*64+4,450,56,56); x.fillStyle="rgba(170,200,220,0.25)"; x.fillRect(i*64+6,452,20,52); }

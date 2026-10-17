@@ -165,7 +165,7 @@ function stripBoardDraw(d, force){
 /* v2: the title line over the boards: the round on a race night, the raceway otherwise, the winner's call after the final */
 function stripTitleDraw(force){
   var T=STRIP.title; if(!T) return; var X=STRIP.rn||{}, hon=!!STRIP.honour;
-  var txt=hon?"WON THE NIGHT":X.round?String(X.round):"PRAIRIE BLUE RACEWAY", key=txt+"|"+hon;
+  var txt=hon?"WON THE NIGHT":X.round?String(X.round):"SECTION LINE DRAGWAY", key=txt+"|"+hon;
   if(!force && key===T.key) return; T.key=key;
   var x=T.cv.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
   x.fillStyle="#060607"; x.fillRect(0,0,512,64); x.strokeStyle="#34373c"; x.lineWidth=6; x.strokeRect(3,3,506,58);
