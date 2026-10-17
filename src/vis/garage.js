@@ -58,6 +58,8 @@ function buildGarageMesh(owned){
   B.flush(G, {}, true);
   for(var li=0; li<lights.length; li++) G.add(lights[li]);
   G.userData.roomW=W; G.userData.roomD=D; G.userData.roomH=Hh;
+  G.userData.sceneArgs={W:W, D:D, Hh:Hh, owned:owned, sandbox:sandbox, bay:bay};
+  scenePolish(G);                       /* Full / Ultra: floor details, props, warm lamps (props.js); Lite is left alone */
   return G;
 }
 function extrasPush(arr){ return function(o){ arr.push(o); }; }
@@ -178,6 +180,7 @@ function buildShop(B, G, addLight, W, D, Hh, owned, bay){
     }
   }
   var pl=new THREE.PointLight(0xffe9c8, 0.42, 70, 2.0); pl.position.set(0, Hh-5, 0); addLight(pl);
+  G.userData.workLight=pl;
 }
 
 function buildTestCell(B, G, addLight, W, D, Hh){
