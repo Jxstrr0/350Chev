@@ -155,10 +155,10 @@ async function phoSheetCanvas(){
   const W=1200,H=1600,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
   try{await Promise.race([Promise.all(['700 40px "Chakra Petch"','600 30px "Chakra Petch"','500 24px "IBM Plex Mono"'].map(f=>document.fonts.load(f))),new Promise(r=>setTimeout(r,1500))]);}catch(e){}
   const F=(sz,w)=>`${w||600} ${sz}px "Chakra Petch","Barlow Condensed","Arial Narrow",sans-serif`,M=(sz,w)=>`${w||500} ${sz}px "IBM Plex Mono",Menlo,Consolas,monospace`;
-  const INK="#f0ece2",MUTE="#a8a295",ORG="#ff7a1a",ORG2="#ffa04d",LINE="#343941",PNL="#1e2126",L=60,R=W-60;
+  const INK="#faf9f5",MUTE="#a8a295",ORG="#d97757",ORG2="#e8956f",LINE="#2e2d2b",PNL="#1c1b19",L=60,R=W-60;
   const q=quick,cfg=S.cfg,name=engineName(),h=cfgHash(cfg);
-  x.fillStyle="#15171b";x.fillRect(0,0,W,H);
-  {const g=x.createLinearGradient(0,0,0,300);g.addColorStop(0,"rgba(255,122,26,.16)");g.addColorStop(1,"rgba(255,122,26,0)");x.fillStyle=g;x.fillRect(0,0,W,300);}
+  x.fillStyle="#141413";x.fillRect(0,0,W,H);
+  {const g=x.createLinearGradient(0,0,0,300);g.addColorStop(0,"rgba(217,119,87,.16)");g.addColorStop(1,"rgba(217,119,87,0)");x.fillStyle=g;x.fillRect(0,0,W,300);}
   x.fillStyle=ORG;x.fillRect(L,44,6,92);
   x.textAlign="left";x.textBaseline="alphabetic";x.fillStyle=ORG2;x.font=M(24,600);x.fillText("PRAIRIE ENGINE WORKS · BUILD SHEET",L+24,70);
   x.fillStyle=INK;{let fz=64;x.font=F(fz,700);while(fz>36&&x.measureText(name).width>R-L-24){fz-=4;x.font=F(fz,700);}x.fillText(phoFit(x,name,R-L-24),L+24,126);}
@@ -184,9 +184,9 @@ async function phoSheetCanvas(){
       x.textAlign="right";x.fillStyle=ORG;x.fillText(phoN(tmax*i/4),cx0-8,y+5);x.textAlign="left";x.fillStyle=INK;x.fillText(phoN(pmax*i/4),cx1+8,y+5);}
     const st2=Math.max(1000,Math.ceil((r1-r0)/6/1000)*1000);x.textAlign="center";x.fillStyle=MUTE;for(let r=r0;r<=r1;r+=st2){x.strokeStyle="rgba(255,255,255,.05)";x.beginPath();x.moveTo(X(r),cy0);x.lineTo(X(r),cy1);x.stroke();x.fillText((r/1000)+"k",X(r),cy1+22);}
     const line=(arr,Y,col)=>{x.strokeStyle=col;x.lineWidth=4;x.lineJoin="round";x.beginPath();for(let i=0;i<n;i++){const px=X(rp[i]),py=Y(arr[i]);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();};
-    x.fillStyle="rgba(255,122,26,.12)";x.beginPath();x.moveTo(X(rp[0]),cy1);for(let i=0;i<n;i++)x.lineTo(X(rp[i]),YT(q.torque[i]));x.lineTo(X(rp[n-1]),cy1);x.closePath();x.fill();
+    x.fillStyle="rgba(217,119,87,.12)";x.beginPath();x.moveTo(X(rp[0]),cy1);for(let i=0;i<n;i++)x.lineTo(X(rp[i]),YT(q.torque[i]));x.lineTo(X(rp[n-1]),cy1);x.closePath();x.fill();
     line(q.torque,YT,ORG);line(q.power,YP,INK);
-    const dot=(r,v,Y,col)=>{x.fillStyle="#15171b";x.strokeStyle=col;x.lineWidth=4;x.beginPath();x.arc(X(r),Y(v),9,0,Math.PI*2);x.fill();x.stroke();};
+    const dot=(r,v,Y,col)=>{x.fillStyle="#141413";x.strokeStyle=col;x.lineWidth=4;x.beginPath();x.arc(X(r),Y(v),9,0,Math.PI*2);x.fill();x.stroke();};
     dot(q.peakHpRpm,q.peakHp,YP,INK);dot(q.peakTqRpm,q.peakTq,YT,ORG);
     x.textAlign="left";x.font=M(18,600);x.fillStyle=ORG;x.fillText("TORQUE  Nm",cx0+8,CY+24);x.fillStyle=INK;x.fillText("POWER  hp",cx0+190,CY+24);x.textAlign="right";x.fillStyle=MUTE;x.fillText("RPM",cx1,CY+24);}
   /* key parts and results */
