@@ -1,0 +1,10 @@
+/* ===================== PWA (app/pwa.js): "new version ready" bar, Install row in Settings ===================== */
+#pwaBar{position:absolute;left:50%;bottom:calc(var(--tabh) + 84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(16px);z-index:60;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 24px);box-sizing:border-box;padding:8px 8px 8px 14px;border-radius:10px;background:#1c1b19;color:#faf9f5;border:1px solid #d97757;box-shadow:0 6px 24px rgba(0,0,0,.45);font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#pwaBar.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#pwaBar span{min-width:0;line-height:1.25}
+#pwaBar .btn{flex:0 0 auto;min-height:44px;min-width:44px;width:auto}
+#pwaBar .pwalater{flex:0 0 auto;min-height:44px;min-width:44px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#b4b1aa;font:inherit;font-weight:500}
+#pwaBar .pwalater:hover{color:#faf9f5}
+html.desk #pwaBar{left:calc((100% - var(--sbw))/2);bottom:20px}
+html.photo #pwaBar{display:none}
+@media (prefers-reduced-motion:reduce){#pwaBar{transition:none}}
