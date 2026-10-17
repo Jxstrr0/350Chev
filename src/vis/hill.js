@@ -28,7 +28,13 @@ var HILL_GLSL_TERR=[
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(25.0,140.0,d);",
   "  float n=0.82+0.3*sn(p*0.045)+0.12*sn(p*0.31)*fine+0.07*sn(p*2.3)*fine;",
+  /* Full / Ultra: scree and duff grain, granite facets, and the bump to catch the low sun */
+  "#if STRIP_TIER>=1",
+  "  float dh, gh; vec3 dm=sfDirtFx(p*0.8,0.6,dh), gm=sfGrassFx(p,gh); float rk=1.0-abs(2.0*sn(p*0.6+7.0)-1.0), rkf=aaf(0.5);",
+  "  gH=0.5*(dh+gh)+0.14*rk*rk*rkf; gHK=1.0; gMacroK=0.8; rough=0.95; return vec3(n)*(0.5*(dm+gm))*(1.0-0.16*rk*rkf);",
+  "#else",
   "  rough=0.95; return vec3(n);",
+  "#endif",
   "}"].join("\n");
 /* course sample → world (fractional i ok), lateral offset d (+ left), height above the road */
 function hillPt(W, i, d, y, out){ var T=W.T, N=T.N, f=clamp(i,0,N-1.001), i0=Math.floor(f), t=f-i0, a=i0, b=Math.min(N-1,i0+1);
@@ -100,8 +106,8 @@ function buildHillWorld(T){
     if(!lite) mat.customProgramCacheKey=function(){ return "hill_terr"; };
     var tm=new THREE.Mesh(g, mat); tm.receiveShadow=!lite; S5.add(tm); W.terr=tm; if(lite||ultra) hillTiles(W, S5, tm, G); })();
   /* road, centre lines, gravel verges sloping out to the terrain */
-  M.asph=new THREE.MeshStandardMaterial({map:hillAsphaltTex(), roughness:0.86, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
-  M.verge=new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:hillAsphaltTex(), roughness:0.86, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "hill_asph");
+  M.verge=stripMapMat(new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_GRAV, "hill_verge");
   (function(){ var step=lite?2:1, n=Math.floor((N-1)/step)+1, pos=new Float32Array(n*6), nor=new Float32Array(n*6), uv=new Float32Array(n*4), idx=[];
     for(q=0;q<n;q++){ var ii=Math.min(N-1,q*step); hillPt(W, ii, hw, 0.04, _hA); hillPt(W, ii, -hw, 0.04, _hB);
       pos.set([_hA.x,_hA.y,_hA.z,_hB.x,_hB.y,_hB.z], q*6); nor[q*6+1]=1; nor[q*6+4]=1; var vv=ii*ds/16; uv.set([0,vv,1,vv], q*4);

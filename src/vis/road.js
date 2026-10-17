@@ -22,7 +22,24 @@ var ROAD_GLSL_GROUND=[
   "  vec3 fc= h<0.22?vec3(0.40,0.30,0.11): h<0.40?vec3(0.50,0.42,0.03): h<0.56?vec3(0.11,0.17,0.05): h<0.72?vec3(0.30,0.23,0.12): h<0.86?vec3(0.18,0.13,0.08):vec3(0.16,0.19,0.08);",
   "  float dir=step(0.5,sh(cell+3.0)); fc*=0.9+0.14*(0.5+0.5*sin(mix(p.x,p.y,dir)*1.3))*mid+0.22*(sn(p*0.006+cell*7.0)-0.5);",
   "  vec2 rp=abs(fract((p+vec2(402.0,402.0))/1609.0+0.5)-0.5)*1609.0; fc=mix(fc,vec3(0.34,0.30,0.24),1.0-smoothstep(4.0,7.0,min(rp.x,rp.y)));",
+  "#if STRIP_TIER>=1",
+  "  float gh; vec3 gm=sfGrassFx(p,gh); grass*=gm; fc*=mix(vec3(1.0),gm,0.55); gH=gh; gHK=1.0;",
+  "#endif",
   "  vec3 c=mix(fc,grass,inf); rough=0.96; return c; }"].join("\n");
+/* Full / Ultra multipliers on the painted maps: asphalt (grain, tar snakes, repair patches, oil), kerbs (chips, scuffs), gravel (stones), verge */
+var ROAD_GLSL_ASPH=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=0.88; gMacroK=0.55; float h; vec3 v=sfAsphFx(w.xz,1.0,h);",
+  "  float rub=smoothstep(0.55,0.8,sn(w.xz*vec2(0.5,0.09)+3.0)); v*=1.0-0.1*rub; rough=mix(rough,0.8,rub); gH=h; gHK=1.0; return v; }"].join("\n");
+var ROAD_GLSL_KERB=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=0.7; gMacroK=0.3; vec2 p=w.xz; float g1=sn(p*23.0), g2=sn(p*79.0), fa=aaf(0.043), fb=aaf(0.0127);",
+  "  float chip=smoothstep(0.7,0.9,sn(p*7.0+2.0)); float scuff=smoothstep(0.5,0.85,sn(p*vec2(0.8,2.6)+5.0));",
+  "  gH=0.0032*g1*fa+0.0018*g2*fb-0.004*chip; gHK=1.0;",
+  "  return vec3(1.0+0.14*(g1-0.5)*fa+0.14*(g2-0.5)*fb)*(1.0-0.32*scuff)*(1.0-0.18*chip); }"].join("\n");
+var ROAD_GLSL_GRAV=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=1.0; gMacroK=0.5; float h; vec3 v=sfGravelFx(w.xz,h); float rake=0.5+0.5*sin(dot(w.xz,vec2(0.4,0.9))*1.6+4.0*sn(w.xz*0.3));",
+  "  gH=h+0.012*rake*aaf(0.2); gHK=1.0; return v*(1.0+0.1*(rake-0.5)); }"].join("\n");
+var ROAD_GLSL_VERGE=[
+  "vec3 stripSurf(vec3 w, out float rough){ rough=0.92; gMacroK=0.7; float h; vec3 v=sfAsphFx(w.xz*0.8,0.5,h); gH=h; gHK=1.0; return v; }"].join("\n");
 
 /* --- canvas art: asphalt, kerb stripes, gravel, chequer line, banners --- */
 function roadAsphaltTex(){
@@ -89,10 +106,10 @@ function buildRoadWorld(T){
   gm.customProgramCacheKey=function(){ return "road_ground_"+T.id; };
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), gm); ground.rotation.x=-PI/2; ground.position.y=-0.05; ground.receiveShadow=true; S4.add(ground);
   /* asphalt, kerbs, gravel, start line */
-  M.asph=new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2});
-  M.kerb=new THREE.MeshStandardMaterial({map:roadKerbTex(), roughness:0.7, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-3});
-  M.grav=new THREE.MeshStandardMaterial({map:roadGravelTex(), roughness:1, color:0xd8ccb4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
-  M.verge=new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "road_asph");
+  M.kerb=stripMapMat(new THREE.MeshStandardMaterial({map:roadKerbTex(), roughness:0.7, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-3}), ROAD_GLSL_KERB, "road_kerb");
+  M.grav=stripMapMat(new THREE.MeshStandardMaterial({map:roadGravelTex(), roughness:1, color:0xd8ccb4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_GRAV, "road_grav");
+  M.verge=stripMapMat(new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_VERGE, "road_verge");
   M.sign=new THREE.MeshStandardMaterial({map:roadAtlas(T.n), roughness:0.72});
   M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.86}); M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.42, metalness:0.65});
   M.lamp=new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false, color:0x777777});

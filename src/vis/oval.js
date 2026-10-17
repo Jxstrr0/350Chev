@@ -37,14 +37,27 @@ var OVAL_GLSL=[
   "  clay=mix(clay,clay*0.62,groove*(1.0-uDry*0.5)); clay=mix(clay,vec3(0.38,0.27,0.18),cush*(0.5+uDry*0.4));",
   "  float rut=sn(vec2(p.x*0.6+p.y*0.6,rho*3.0)); clay*=1.0-0.18*smoothstep(0.55,0.8,rut)*groove*fine;",
   "  float onT=1.0-smoothstep(uW*0.5,uW*0.5+0.5,abs(rho));",
+  /* Full / Ultra: harrow lines and a packed, rubbered groove, loose marbles and clods up by the cushion, the seam where the bank begins, tufted grass */
+  "#if STRIP_TIER>=1",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh); vec3 dm=sfDirtFx(p,clamp(0.2+0.85*cush+0.4*(1.0-groove),0.0,1.0),dh);",
+  "  float ln=0.5+0.5*sin(rho*13.0+2.5*sn(p*0.4)), sm=1.0-smoothstep(0.0,0.4,abs(abs(p.x)-uLs*0.5)), mb=smoothstep(0.62,0.82,sn(p*3.1+8.0))*aaf(0.3)*(1.0-groove);",
+  "  dm*=(1.0+0.09*(ln-0.5)*groove*aaf(0.2))*(1.0-0.12*sm*(1.0-0.5*groove))*(1.0+0.16*mb); dh+=0.011*ln*groove*aaf(0.2)-0.01*sm+0.012*mb;",
+  "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0;",
+  "#endif",
   "  vec3 apron=vec3(0.36,0.33,0.28)*(0.85+0.3*sn(p*0.6)); float inner=smoothstep(uW*0.5,uW*0.5+0.4,rho)*(1.0-smoothstep(uW*0.5+0.8,uW*0.5+1.2,rho));",
   "  vec3 c=mix(grass,clay,onT); c=mix(c,apron*0.6,inner*0.0);",
   "  float lot=smoothstep(uW*0.5+13.0,uW*0.5+14.0,-rho)*(1.0-smoothstep(uW*0.5+60.0,uW*0.5+61.0,-rho));",
   "  c=mix(c,vec3(0.30,0.27,0.21)*(0.8+0.35*sn(p*0.9)),lot*0.65);",
+  "#if STRIP_TIER>=1",
+  "  float gvH; vec3 gvm=sfGravelFx(p,gvH); c*=mix(vec3(1.0),gvm,lot*0.65); gH=mix(gH,gvH,lot*0.65);",
+  "#endif",
   "  vec2 q=(p+vec2(800.0,800.0))/805.0; vec2 cell=floor(q); float h=sh(cell+11.0);",
   "  vec3 fc= h<0.25?vec3(0.40,0.30,0.11): h<0.45?vec3(0.50,0.42,0.03): h<0.62?vec3(0.11,0.17,0.05): h<0.8?vec3(0.30,0.23,0.12):vec3(0.18,0.13,0.08);",
   "  fc*=0.9+0.22*(sn(p*0.006+cell*7.0)-0.5)*mid;",
   "  float fair=1.0-smoothstep(150.0,190.0,-rho); c=mix(fc,c,fair);",
+  "#if STRIP_TIER>=1",
+  "  gH*=fair;",
+  "#endif",
   "  rough=mix(0.97,0.82,onT); return c; }"].join("\n");
 function ovalAtlas(){
   var c=newCanvas(1024,128), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i, labels=["PRAIRIE ENGINE WORKS","COULEE FUELS","NORTHWIND TYRE","CANOLA CO-OP","BIG SKY SALVAGE","ELEVATOR FEEDS"], cols=[["#d97757","#141413"],["#141413","#d97757"],["#f2c22c","#131416"],["#1d4787","#f4efe2"],["#b7261d","#f4efe2"],["#2c6b3a","#f4efe2"]];

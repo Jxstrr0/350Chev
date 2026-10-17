@@ -22,7 +22,7 @@ function pitsMats(){
   for(i=0;i<2600;i++){ var g=30+Math.random()*40|0; x.fillStyle="rgba("+g+","+g+","+(g+2)+","+(0.35+Math.random()*0.5)+")"; x.fillRect(Math.random()*256, Math.random()*256, 1+Math.random()*2, 1+Math.random()*2); }
   for(i=0;i<5;i++){ var px=Math.random()*256, py=Math.random()*256, r=10+Math.random()*26, gr=x.createRadialGradient(px,py,0,px,py,r); gr.addColorStop(0,"rgba(8,8,10,0.45)"); gr.addColorStop(1,"rgba(8,8,10,0)"); x.fillStyle=gr; x.fillRect(px-r,py-r,2*r,2*r); }
   var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(30,30); t.encoding=THREE.sRGBEncoding; t.anisotropy=4;
-  M.ground=new THREE.MeshStandardMaterial({map:t, roughness:0.92});
+  M.ground=stripMapMat(new THREE.MeshStandardMaterial({map:t, roughness:0.92}), ROAD_GLSL_ASPH, "pits_floor");   /* Full / Ultra: world-space grain, cracks, patches and a macro tint over the 5 m tile */
   /* the hauler's side: the shop's colours and name */
   c=newCanvas(1024,256); x=c.getContext("2d"); var gg=x.createLinearGradient(0,0,0,256); gg.addColorStop(0,"#25303f"); gg.addColorStop(1,"#141a23"); x.fillStyle=gg; x.fillRect(0,0,1024,256);
   x.fillStyle="#e5562b"; x.beginPath(); x.moveTo(0,212); x.bezierCurveTo(300,204,620,190,1024,180); x.lineTo(1024,200); x.bezierCurveTo(620,210,300,224,0,234); x.fill();
