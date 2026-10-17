@@ -58,8 +58,10 @@ function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]
   if(b.classList.contains("on")){d.innerHTML="<i style=\"color:var(--orange2)\">fitted</i>";return;}if(b.classList.contains("lock")){d.innerHTML="";return;}
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
 const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
+/* parts a build can take next to the current one (no carb on a diesel, nitrous for the other fuel family stays out of the way, a Wankel takes no diesel) */
+const famOKf=(f,c)=>(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="fuel"&&o.ci&&isRot(c))&&!(f.key==="layout"&&c[f.key]!==k&&(isTs(c)?!!o.rotary||!!(SIM.LAYOUTS[k]||{}).rotary:!!o.two))&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="fuel"&&o.ci&&isRot(c))&&!(f.key==="layout"&&c[f.key]!==k&&(isTs(c)?!!o.rotary||!!(SIM.LAYOUTS[k]||{}).rotary:!!o.two))&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);   // no carb on a diesel;   // nitrous kits for the other fuel family stay out of the way; a Wankel takes no diesel   // nitrous kits for the other fuel family stay out of the way
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=famOKf(f,c);   // no carb on a diesel;   // nitrous kits for the other fuel family stay out of the way; a Wankel takes no diesel   // nitrous kits for the other fuel family stay out of the way
   let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).filter(k=>famOK(opts[k],k)).length}">`;
   for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
@@ -136,13 +138,16 @@ $("buildForm").addEventListener("click",e=>{
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
+  applyOpt(b.dataset.k,b.dataset.v);});
+/* fit one option (shared by the Build segments and the sandbox Shop parts catalogue) */
+function applyOpt(k,v){
   if(testing){toast("Let the run finish first");return;}
-  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg),wasT=isTs(S.cfg);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
-  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):b.dataset.k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):b.dataset.k==="cycle"?twoStrokeFamilyDefaults(S.cfg,wasT):null;if(fam)delete S.cfg.map;
-  if(fam&&b.dataset.k==="fuel"&&isTs(S.cfg)&&isCI(S.cfg.fuel)){S.cfg.induct="blower";S.cfg.scav="uniflow";S.cfg.xpipe="muffled";}   // a two-stroke diesel needs a blower to breathe
+  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg),wasT=isTs(S.cfg);S.cfg[k]=v;S.profileId=null;
+  const fam=k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):k==="cycle"?twoStrokeFamilyDefaults(S.cfg,wasT):null;if(fam)delete S.cfg.map;
+  if(fam&&k==="fuel"&&isTs(S.cfg)&&isCI(S.cfg.fuel)){S.cfg.induct="blower";S.cfg.scav="uniflow";S.cfg.xpipe="muffled";}   // a two-stroke diesel needs a blower to breathe
   const moved=clampCfgLimits();
   if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
-  afterCfgChange(true);});
+  afterCfgChange(true);}
 let dragBase=null,baseTimer=null,baseField=null;
 const HOLD_MS=2000;                       // how long the reading stays up after you stop
 function chips(){return document.querySelectorAll("#buildForm .lbl b .d");}
