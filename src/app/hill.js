@@ -49,7 +49,7 @@ function hillProfileSvg(cls,mark){const T=SIM.hillCourse(),W=320,H=64,a0=2800,a1
   const ty=Y(SIM.HILL_TREE),secs=T.sections.slice(0,-1).map(s=>`<line x1="${X(s.s1)}" x2="${X(s.s1)}" y1="${Y(s.alt1)}" y2="${H}" stroke="var(--dim)" stroke-width="1" stroke-dasharray="2 2"/>`).join("");
   const mk=mark!=null?`<circle cx="${X(mark)}" cy="${Y(SIM.hillZ(T,mark))}" r="3" fill="var(--orange)"/>`:"";
   return `<svg class="${cls||"hlprof"}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Elevation along the course"><path d="${p}" fill="rgba(140,130,118,.35)" stroke="rgba(170,160,145,.9)" stroke-width="1.2"/>`+
-    `<line x1="0" x2="${W}" y1="${ty}" y2="${ty}" stroke="rgba(79,192,141,.55)" stroke-width="1" stroke-dasharray="4 3"/>${secs}${mk}</svg>`;}
+    `<line x1="0" x2="${W}" y1="${ty}" y2="${ty}" stroke="rgba(92,191,138,.55)" stroke-width="1" stroke-dasharray="4 3"/>${secs}${mk}</svg>`;}
 function hillAltLine(p){const pk=p.pts,top=pk[pk.length-1],dn=Math.round(100*(1-top.hp/p.ref.hp)),d0=Math.round(100*(1-pk[0].hp/p.ref.hp));
   let s=`At the shop (500 m) <b>${Math.round(p.ref.hp)} hp</b>; at the line <b>${Math.round(pk[0].hp)}</b> (−${d0}%), on the summit <b>${Math.round(top.hp)}</b> (−${dn}%).`;
   if(p.kind==="turbo"){const lim=pk.find(q=>q.lim);s+=lim?` The turbo holds the shop's manifold pressure to about ${lim.alt.toLocaleString("en-CA")} m, then the compressor runs out of ${lim.lim==="flow"?"flow":"pressure ratio"} (${bv(top.boost)} ${pU()} on top).`:` The turbo holds the shop's manifold pressure all the way up (${bv(top.boost)} ${pU()} on top).`;}
@@ -124,7 +124,7 @@ function hillStart(){
   let hudT=0;
   const step=()=>{if(!HC||HC.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-HC.last)/1000);HC.last=now;const st=HC.run.st;
     if(HC.pre>0)HC.pre-=dt;else if(!st.done){HC.acc+=dt*HC.speed;let n=0;while(HC.acc>=0.02&&!st.done&&n++<800){HC.run.step(0.02,hillCtl());HC.acc-=0.02;}if(n>=800)HC.acc=0;}
-    if(st.done&&HC.doneAt==null){HC.doneAt=now;if(st.dnf){$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",300);sfx("fail");buzz([80,40,120]);}else{$("flash").style.background="rgba(79,192,141,.35)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",400);buzz([30,40,30,40,90]);}}
+    if(st.done&&HC.doneAt==null){HC.doneAt=now;if(st.dnf){$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",300);sfx("fail");buzz([80,40,120]);}else{$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}}
     if(st.ev&&st.ev!==HC.lastEv){HC.lastEv=st.ev;if(st.ev.kind!=="moment"){buzz([60,30,60]);sfx("mudslap");}else buzz([25]);}
     if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:true,su:HC.suVis,course:HC.run.T,s:st.s,v:st.v,d:st.d,g:st.g+1,rpm:st.rpm,thr:st.thr,brk:st.brk,lat:st.latUse,off:st.off?st.off.kind:null,dnf:st.dnf?st.dnf.kind:null,ev:st.ev&&st.t-st.ev.t<1?st.ev.kind:null,
       ch:HC.opt.ch,aero:HC.opt.aero,color:HC.color,cam:HC.cam,pre:HC.pre>0,done:st.done,night:false,dt:dt*(HC.pre>0||st.done?1:HC.speed)});
@@ -191,7 +191,7 @@ function hillSheet(res){const r=res.hill,b=hillRecs()[r.cls],L=r.lead;let pt=0,l
     <div><b>Car</b>${hlEsc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}</div>
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${hlEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
-function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#e8e3d6",soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const hp=r.hp;if(!hp||!hp.length)return;
   const F=getComputedStyle(document.body).fontFamily,padL=40,padR=14,padT=24,padB=26,cw=W-padL-padR,ch=H-padT-padB,a0=2800,a1=4360,X=a=>padL+cw*(a-a0)/(a1-a0),mx=Math.ceil(r.refHp*1.08/50)*50,Y=v=>padT+ch*(1-v/mx);
@@ -199,16 +199,16 @@ function drawHillChart(r){const css=getComputedStyle(document.documentElement),I
   const stp=mx>600?200:mx>300?100:50;for(let v=0;v<=mx;v+=stp){const py=Y(v);x.beginPath();x.moveTo(padL,py);x.lineTo(W-padR,py);x.stroke();x.fillStyle=soft;x.textAlign="right";x.fillText(v,padL-4,py+3);}
   x.textAlign="center";for(let a=3000;a<=4300;a+=W>480?250:500){x.fillStyle=soft;x.fillText(a.toLocaleString("en-CA")+" m",X(a),H-8);}
   // treeline, sections up top
-  x.setLineDash([3,4]);x.strokeStyle="rgba(79,192,141,.5)";x.beginPath();x.moveTo(X(SIM.HILL_TREE),padT);x.lineTo(X(SIM.HILL_TREE),padT+ch);x.stroke();x.setLineDash([]);
-  x.fillStyle="rgba(79,192,141,.8)";x.textAlign="left";x.fillText("treeline",X(SIM.HILL_TREE)+4,padT+ch-4);
+  x.setLineDash([3,4]);x.strokeStyle="rgba(92,191,138,.5)";x.beginPath();x.moveTo(X(SIM.HILL_TREE),padT);x.lineTo(X(SIM.HILL_TREE),padT+ch);x.stroke();x.setLineDash([]);
+  x.fillStyle="rgba(92,191,138,.8)";x.textAlign="left";x.fillText("treeline",X(SIM.HILL_TREE)+4,padT+ch-4);
   // the shop figure, an atmospheric engine of the same shop power (∝ density^1.1), this engine
   x.strokeStyle=soft;x.setLineDash([2,3]);x.beginPath();x.moveTo(padL,Y(r.refHp));x.lineTo(W-padR,Y(r.refHp));x.stroke();x.fillStyle=soft;x.textAlign="right";x.fillText(`${r.refHp} hp at the shop`,W-padR,Y(r.refHp)-4);
   const rho=a=>Math.pow(1-2.25577e-5*a,5.25588)/(273.15+16-6.5*(a-2862)/1000),r500=Math.pow(1-2.25577e-5*500,5.25588)/293.15;
-  x.strokeStyle="rgba(95,168,230,.85)";x.setLineDash([5,4]);x.lineWidth=1.6;x.beginPath();for(let a=2862;a<=4302;a+=20){const v=r.refHp*Math.pow(rho(a)/r500,1.1);a===2862?x.moveTo(X(a),Y(v)):x.lineTo(X(a),Y(v));}x.stroke();x.setLineDash([]);
-  x.strokeStyle="#ff7a1a";x.lineWidth=2.4;x.beginPath();hp.forEach((p,i)=>{i?x.lineTo(X(p.alt),Y(p.hp)):x.moveTo(X(p.alt),Y(p.hp));});x.stroke();
-  x.fillStyle="#ff7a1a";hp.forEach(p=>{x.beginPath();x.arc(X(p.alt),Y(p.hp),3,0,7);x.fill();});
+  x.strokeStyle="rgba(120,169,221,.85)";x.setLineDash([5,4]);x.lineWidth=1.6;x.beginPath();for(let a=2862;a<=4302;a+=20){const v=r.refHp*Math.pow(rho(a)/r500,1.1);a===2862?x.moveTo(X(a),Y(v)):x.lineTo(X(a),Y(v));}x.stroke();x.setLineDash([]);
+  x.strokeStyle="#d97757";x.lineWidth=2.4;x.beginPath();hp.forEach((p,i)=>{i?x.lineTo(X(p.alt),Y(p.hp)):x.moveTo(X(p.alt),Y(p.hp));});x.stroke();
+  x.fillStyle="#d97757";hp.forEach(p=>{x.beginPath();x.arc(X(p.alt),Y(p.hp),3,0,7);x.fill();});
   x.font="10.5px "+F;x.textAlign="center";x.fillStyle=INK;hp.forEach((p,i)=>{if(W>420||i%2===0)x.fillText(p.hp,X(p.alt),Y(p.hp)-8);});
-  x.textAlign="left";x.font="11px "+F;x.fillStyle="#ff7a1a";x.fillText(r.kind==="turbo"?"this engine (turbo)":r.kind==="na"?"this engine":"this engine (blown)",padL+4,13);x.fillStyle="rgba(95,168,230,.95)";x.fillText("atmospheric",padL+(r.kind==="turbo"?122:r.kind==="na"?80:118),13);
+  x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText(r.kind==="turbo"?"this engine (turbo)":r.kind==="na"?"this engine":"this engine (blown)",padL+4,13);x.fillStyle="rgba(120,169,221,.95)";x.fillText("atmospheric",padL+(r.kind==="turbo"?122:r.kind==="na"?80:118),13);
   x.fillStyle=soft;x.textAlign="right";if(W>420)x.fillText(`hp vs altitude · ${r.dnf?"DNF":fmtHill(r.time)}`,W-padR,13);}
 function hillRedraw(){const l=lastForChart();if(S.env.testType==="hill"&&l&&l.hill)drawHillChart(l.hill);}
 function hillRecHtml(){const P=hillRecs(),ks=Object.keys(SIM.HILL_CLASSES).filter(k=>P[k]&&P[k].t);if(!ks.length)return "";

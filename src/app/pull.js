@@ -96,7 +96,7 @@ function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed
 function pullHookedWk(k){return career()&&!PO&&pullFmt()==="night"&&(C().pullWk||{})[k]===C().week;}
 function pullSeed(k){const ix=Object.keys(SIM.PULL_CLASSES).indexOf(k)+1;if(!career())return PULL_SB[ix]||(PULL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().pullSeed)C().pullSeed=Math.floor(Math.random()*1e9);return(C().pullSeed^(C().week*7919)^(ix*104729))>>>0;}
 function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
-function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
 function pullStart(){
   $("app").classList.add("onstrip");
   const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
@@ -122,7 +122,7 @@ function pullStart(){
     if(st.broke&&!PR.failed)pullBreak(st.broke);
     if(st.raOn&&!PR.raSeen&&!st.killed&&!st.done&&!PR.failed){PR.raSeen=true;sfx("runaway");buzz([120,60,120,60,120]);
       pullHud(st);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
-    if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){$("flash").style.background="rgba(79,192,141,.35)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
     if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:st.phase,x:st.x,v:st.v,boxFrac:st.boxFrac,slip:st.slip,hop:st.hop,smoke:st.smoke||0,rpm:PR.failed||PR.killed?run.rpm:st.rpm,vehicle:PR.kind,full:st.full,night:!!S.night,cls:k,distFt:st.x*3.28084,
       dt,throttle:st.foot,boost:st.boost,sweet:st.sweet,failed:PR.failed,failKind:PR.failed?run.failKind:null,hitch:veh.hitch,ballast:veh.ballast,tyre:veh.tyre,hp:PR.res&&PR.res.peakHp||0,track:PR.trk||undefined,runaway:st.raOn&&!st.killed&&!PR.failed?Math.max(0.2,st.ra):0,killed:!!st.killed});
     pullHud(st);
@@ -162,7 +162,7 @@ function pullPress(){if(!PR||PR.finished)return;const st=PR.p.st;if(st.done||PR.
 function pullRelease(){if(!PR)return;PR.down=false;}
 /* the kill switch: only live while it is running away. Air and fuel off — the truck rolls to a stop and is scored there */
 function pullKill(){if(!PR||PR.finished||!PR.p)return false;const st=PR.p.st;if(!st.raOn||st.killed||st.done||PR.failed||!PR.p.kill())return false;
-  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",160);pullHud(st);return true;}
+  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",160);pullHud(st);return true;}
 $("killBtn").addEventListener("pointerdown",e=>{e.preventDefault();pullKill();});
 $("killBtn").addEventListener("click",()=>pullKill());
 /* the pull-off buttons on the verdict */
@@ -238,17 +238,17 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-pk]");i
   if(k==="pullCls"){const l=pullClsLocked(v);if(l){toast(`${SIM.PULL_CLASSES[v].n} needs the ${pullLockTxt(v)}`);return;}if(v!==S.env.pullCls)S.env.pullGear=null;}   /* each class has its own gear ladder: start from its default, not the old button position */
   S.env[k]=k==="pullGear"?+v:v;pullEnvFix();renderEnv();save();buzz(6);});
 /* the pull sheet's trace: speed and slip against distance, the sweet spot shaded */
-function drawPullTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawPullTrace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#edeae1";const soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=r.trace||[];if(!tr.length)return;
   const padL=34,padR=34,padT=12,padB=22,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*Math.min(1,d/SIM.PULL_FULL),mx=Math.max(10,Math.ceil((r.maxMph||10)/5)*5);
   x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;x.font="10px "+getComputedStyle(document.body).fontFamily;x.textAlign="center";
   for(let f=0;f<=300;f+=50){const px=X(f*0.3048);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText(f+"'",px,H-6);}
-  const sw=r.sweet||[0.15,0.3];x.fillStyle="rgba(79,192,141,.12)";x.fillRect(padL,padT+ch*(1-sw[1]),cw,ch*(sw[1]-sw[0]));
+  const sw=r.sweet||[0.15,0.3];x.fillStyle="rgba(92,191,138,.12)";x.fillRect(padL,padT+ch*(1-sw[1]),cw,ch*(sw[1]-sw[0]));
   const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
-  line(p=>p.boxFrac,soft,1,[4,4]);line(p=>p.slip,"rgba(95,168,230,.9)",1.5);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
+  line(p=>p.boxFrac,soft,1,[4,4]);line(p=>p.slip,"rgba(120,169,221,.9)",1.5);line(p=>p.v*2.23694/mx,"#d97757",2.2);
   const rm=Math.max(4000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000),em=Math.max(800,Math.ceil(Math.max(...tr.map(p=>p.egt||0))/100)*100),hasE=tr[0].egt!=null;if(hasE&&PL.rpm)line(p=>p.rpm/rm,"#e8c14a",1.3,[2,3]);if(hasE&&PL.egt)line(p=>p.egt/em,"#c58be0",1.3);
-  x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(95,168,230,.9)";x.fillText("slip",padL+34,padT+12);x.fillStyle=soft;x.fillText("box",padL+62,padT+12);if(hasE&&PL.rpm){x.fillStyle="#e8c14a";x.fillText("rpm",padL+88,padT+12);}if(hasE&&PL.egt){x.fillStyle="#c58be0";x.fillText("EGT",padL+116,padT+12);}x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,padT+12);pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK);}
+  x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#d97757";x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(120,169,221,.9)";x.fillText("slip",padL+34,padT+12);x.fillStyle=soft;x.fillText("box",padL+62,padT+12);if(hasE&&PL.rpm){x.fillStyle="#e8c14a";x.fillText("rpm",padL+88,padT+12);}if(hasE&&PL.egt){x.fillStyle="#c58be0";x.fillText("EGT",padL+116,padT+12);}x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,padT+12);pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK);}
 function pullVerdict(res){const r=res.pull;
   if(r.dq)return `<div class="verdict fail"><div><div class="big">RAN AWAY · GRENADED</div><p>It ran away on its own oil ${r.runaway?Math.round(r.runaway.ftAt)+" ft out":""} and came apart before ${r.auto&&r.auto.took==null?"the auto driver found ":""}the kill switch — disqualified${career()?`. Certification void, rebuild bill ${fmt$(r.bill||0)}`:""}.</p></div></div>`;
   if(r.poPending&&PO)return `<div class="verdict pass"><div style="flex:1"><div class="big">FULL PULL · PULL-OFF</div><p>${r.poN} other${r.poN>1?"s":""} full-pulled too. The sled goes 15% heavier and you drive it again — the longest pull-off wins. Pits are open below: gear, driveline, tyres, hitch and ballast.</p><div class="pobtns"><button class="btn pri" data-po="go">Hook up for the pull-off</button><button class="btn" data-po="concede">Concede</button></div></div></div>`;

@@ -96,7 +96,7 @@ function e24Frame(now){if(!ER||ER.finished)return;const R=ER.R,me=R.cars[0];
   if(ER.toEnd&&now>=ER.toEnd){while(performance.now()-t0<11&&!R.done)SIM.enduroStep(R,R.dur+14400,300);}
   else if(ER.jump){const n0=R.stopN||0;while(performance.now()-t0<9&&!R.done){SIM.enduroStep(R,R.dur+14400,150,true);if((R.stopN||0)>n0){ER.jump=false;e24SpdRender();break;}}}
   else if(!ER.toEnd){const target=R.t+dt*ER.speed;while(performance.now()-t0<9&&!R.done&&R.t<target){if(!SIM.enduroStep(R,target,150))break;}}
-  if((me.out||me.fin)&&!ER.toEnd){ER.toEnd=now+(me.out?1800:900);ER.jump=false;if(me.out&&me.dnf&&me.dnf.id){$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}e24SpdRender();e24StratRender();}
+  if((me.out||me.fin)&&!ER.toEnd){ER.toEnd=now+(me.out?1800:900);ER.jump=false;if(me.out&&me.dnf&&me.dnf.id){$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}e24SpdRender();e24StratRender();}
   if(R.done){e24Hud();e24FeedRender();e24Finish();return;}
   if(now-ER.lastHud>150){ER.lastHud=now;e24Hud();}
   if(me.pits!==ER.pits){ER.pits=me.pits;e24StratRender();}   // a stop clears "box this lap" and starts a stint
@@ -150,9 +150,9 @@ function e24MapDraw(){const cv=$("e24Map");if(!cv||!ER)return;const T=ER.T,R=ER.
   if(cv.width!==Math.round(Wd*dpr)){cv.width=Math.round(Wd*dpr);cv.height=Math.round(H*dpr);}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,Wd,H);const sc=Math.min((Wd-12)/T.size[0],(H-12)/T.size[1]),Pt=i=>[Wd/2+T.x[i]*sc,H/2-T.y[i]*sc];
   const ink=B.ink;x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.2;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=Pt(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();x.globalAlpha=.7;x.lineWidth=1.4;x.stroke();x.globalAlpha=1;
-  const W=SIM.enduroWhere(R,R.t),L=ER.L,col=["#e8e6df","#5fa8e6","#e5b73b"];
+  const W=SIM.enduroWhere(R,R.t),L=ER.L,col=["#e8e6df","#78a9dd","#e2b24a"];
   for(let k=W.length-1;k>=0;k--){const w=W[k],c=R.cars[k];if(w.out)continue;let p;if(w.pit||w.fin){p=Pt(Math.max(0,T.N-14));p[1]+=6;}else{const s=roadAt(L,w.f*L.time).s,i=Math.floor(((s/T.ds)%T.N+T.N)%T.N);p=Pt(i);}
-    if(c.me){x.fillStyle="#ff7a1a";x.beginPath();x.arc(p[0],p[1],4.6,0,7);x.fill();x.strokeStyle="#15171b";x.lineWidth=1.3;x.stroke();}
+    if(c.me){x.fillStyle="#d97757";x.beginPath();x.arc(p[0],p[1],4.6,0,7);x.fill();x.strokeStyle="#141413";x.lineWidth=1.3;x.stroke();}
     else{x.fillStyle=col[Math.max(0,SIM.E24_CLS_ORDER.indexOf(c.cls))];x.globalAlpha=c.cls===R.cars[0].cls?1:.55;x.beginPath();x.arc(p[0],p[1],2.6,0,7);x.fill();x.globalAlpha=1;}}}
 function e24StratRender(){const el=$("e24Side");if(!el||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
   el.innerHTML=`<div class="sec e24strat"><h2>Strategy <span class="cnt">${end?"race over":`stint ${me.stints.length} · ${me.drv[me.drvI%3]}`}</span></h2>${end?`<p class="hint">${me.out?(me.dnf&&me.dnf.id?"Out of the race. The rest of the field runs to the flag.":"Retired. The rest of the field runs to the flag."):"Chequered flag. The field is finishing its last laps."}</p>`:e24StratHtml(true,ER.P)+`<div class="row e24act"><button class="btn${R.plan.box?" on":""}" data-e24a="box">${R.plan.box?"Boxing this lap":"Box this lap"}</button><button class="btn" data-e24a="swap">Box · swap driver</button><button class="btn danger" data-e24a="retire">Retire</button></div>`}</div>
@@ -215,7 +215,7 @@ function e24Sheet(res){const r=res.e24,TY=SIM.E24_TYRES,MO=SIM.E24_MODES;
     <h3 class="e24h3">Stints</h3><div class="e24tbl e24st"><div class="hd"><b>#</b><span>Driver</span><span>Tyre</span><span>Mode</span><span>Laps</span><span>Fuel</span><span>Out</span></div>${st}</div>
     <h3 class="e24h3">Classification</h3><div class="e24tbl e24cl"><div class="hd"><b>Pos</b><span>Class</span><span>Car</span><span>Laps</span><span>Best</span></div>${fieldRows}</div></div>`;}
 /* the lap-time trace across the 24 hours: green laps, pit laps (orange ticks), safety-car laps (amber), night shaded */
-function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#e8e3d6",soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=r.trace;if(!tr||tr.length<2)return;
   const padL=40,padR=12,padT=22,padB=24,cw=W-padL-padR,ch=H-padT-padB,X=t=>padL+cw*Math.min(1,t/86400);
@@ -225,11 +225,11 @@ function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).ge
   x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;
   const stp=hi-lo>12?5:hi-lo>5?2:1;for(let v=Math.ceil(lo);v<=hi;v+=stp){const py=Y(v);x.beginPath();x.moveTo(padL,py);x.lineTo(W-padR,py);x.stroke();x.fillStyle=soft;x.textAlign="right";x.fillText(fmtLap(v,0).replace(/\.0$/,""),padL-4,py+3);}
   x.textAlign="center";for(let h=0;h<=24;h+=W>520?3:6){x.fillStyle=soft;x.fillText(SIM.e24Clock(h*3600),X(h*3600),H-6);}
-  x.fillStyle="rgba(229,183,59,.8)";tr.forEach(l=>{if(l[2]===2)x.fillRect(X(l[0])-1,padT+ch-5,2,5);});
-  x.strokeStyle="#ff7a1a";x.lineWidth=1.6;x.beginPath();let pen=false;tr.forEach(l=>{if(l[2]){pen=false;return;}const px=X(l[0]),py=Y(l[1]);pen?x.lineTo(px,py):x.moveTo(px,py);pen=true;});x.stroke();
-  x.fillStyle="#ff7a1a";tr.forEach(l=>{if(l[2]===1){x.fillRect(X(l[0])-0.75,padT,1.5,6);}});
-  if(r.dnf){const px=X(r.dnf.h*3600);x.strokeStyle="#e2473c";x.setLineDash([4,4]);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.setLineDash([]);x.fillStyle="#e2473c";x.textAlign=px>W-80?"right":"left";x.fillText(r.dnf.id?"failure":"retired",px+(px>W-80?-4:4),padT+12);}
-  x.textAlign="left";x.font="11px "+F;x.fillStyle="#ff7a1a";x.fillText("lap time",padL+4,13);x.fillStyle="#ff7a1a";x.fillText("▮ pit",padL+62,13);x.fillStyle="rgba(229,183,59,.95)";x.fillText("▮ safety car",padL+98,13);x.fillStyle="rgba(120,140,220,.95)";x.fillText("▮ night",padL+176,13);
+  x.fillStyle="rgba(226,178,74,.8)";tr.forEach(l=>{if(l[2]===2)x.fillRect(X(l[0])-1,padT+ch-5,2,5);});
+  x.strokeStyle="#d97757";x.lineWidth=1.6;x.beginPath();let pen=false;tr.forEach(l=>{if(l[2]){pen=false;return;}const px=X(l[0]),py=Y(l[1]);pen?x.lineTo(px,py):x.moveTo(px,py);pen=true;});x.stroke();
+  x.fillStyle="#d97757";tr.forEach(l=>{if(l[2]===1){x.fillRect(X(l[0])-0.75,padT,1.5,6);}});
+  if(r.dnf){const px=X(r.dnf.h*3600);x.strokeStyle="#ee5a5e";x.setLineDash([4,4]);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.setLineDash([]);x.fillStyle="#ee5a5e";x.textAlign=px>W-80?"right":"left";x.fillText(r.dnf.id?"failure":"retired",px+(px>W-80?-4:4),padT+12);}
+  x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText("lap time",padL+4,13);x.fillStyle="#d97757";x.fillText("▮ pit",padL+62,13);x.fillStyle="rgba(226,178,74,.95)";x.fillText("▮ safety car",padL+98,13);x.fillStyle="rgba(120,140,220,.95)";x.fillText("▮ night",padL+176,13);
   if(W>520){x.fillStyle=soft;x.textAlign="right";x.fillText(`${r.trkName} · ${r.laps} laps`,W-padR,13);}}
 function e24RecHtml(){const P=e24Recs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].km);if(!ks.length)return"";ks.sort((a,b)=>P[b].km-P[a].km);
   return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
