@@ -259,7 +259,7 @@ document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;co
 function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");crewWeek();bayWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
+  logEvent(t,"");crewWeek();bayWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();rivalsWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
 /* ===================== SPONSORS (career) =====================
@@ -332,7 +332,7 @@ function spWeek(){if(!career())return;const s=spS();let paid=0;
   if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
   spLivery();}
 /* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
-function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
+function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};rivalsEvent(kind,o);s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
   if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
   const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
   if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
@@ -385,7 +385,7 @@ function renderShop(){
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
   spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
-  refillContracts();spRender();
+  refillContracts();spRender();rivalsRender();
   $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${dc.hp.toLocaleString()}</b><span>dyno hp cap</span></div><div><b>${C().loan>0?fmt$(C().loan):Object.keys(C().owned).length}</b><span>${C().loan>0?"bank loan":"upgrades owned"}</span></div>`;
@@ -395,7 +395,7 @@ function renderShop(){
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(LOAN_RATE*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
-  $("goals").innerHTML=GOALS.map(g=>`<div class="goal ${C().goals[g.id]?"done":""}"><div><h3>${g.name}</h3><p>${g.desc}</p></div><div class="price">${C().goals[g.id]?"✓ wk "+C().goals[g.id]:fmt$(g.cash)}</div></div>`).join("");
+  $("goals").innerHTML=goalsHtml();
   const inField=C().fleet.filter(f=>C().week-f.week<=10&&C().week-f.week>=1);$("fleetHint").textContent=inField.length?`${inField.reduce((a,f)=>a+f.units,0)} engines in the field under warranty · ${fmt$(C().warranty)} paid out to date · ${C().cleanWeeks} clean week${C().cleanWeeks===1?"":"s"}. Reliability and life hours set the claim rate.`:"Engines you deliver stay under warranty for ten weeks. Low reliability comes back to bite.";
   const live=career()&&!isStdCell(simEnv())?SIM.simulate(S.cfg,stdEnv({testType:"pull"})):quick;const liveFit=k=>fits(k,live,S.cfg);
   if(!C().cat||!catOpen(CATS.find(c=>c.id===C().cat)||CATS[0]))C().cat="prod";
@@ -409,7 +409,7 @@ function renderShop(){
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}"${profit<0?` data-loss="${Math.round(-profit)}"`:""} ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":(profit<0?"Take it at a loss · ":"Take the job · ")+fmt$(dep)+" deposit"}</button>`;
     const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
     const rq=k.req||{},evGo=rq.lap!=null||rq.zero100!=null?`<button class="chip evgo" data-evgo="road" data-ch="${(rq.road&&rq.road.ch)||"coupe"}" data-trk="${rq.lap!=null&&rq.road&&rq.road.trk||""}">Road test it in their car ›</button>`:rq.et!=null?`<button class="chip evgo" data-evgo="drag">Take it to the strip ›</button>`:rq.mph!=null&&rq.lsr?`<button class="chip evgo" data-evgo="salt">Run it on the salt ›</button>`:"";
-    return `<div class="card brief ${k.repeat?"repeat":""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}</div><h3>${k.name}<span>${meta}</span></h3>${sc.top}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
+    return `<div class="card brief ${k.repeat?"repeat":""}${k.tag?" sp-"+(k.rush?"rush":"order"):""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}${k.tag?`<em class="ctag${k.rush?" rush":""}">${k.tag}</em>`:""}</div><h3>${k.name}<span>${meta}</span></h3>${k.note&&mode!=="active"?`<p class="cnote">${k.note}</p>`:""}${sc.top}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
       <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}<div class="reqs">${rows}</div>${evGo}${sc.brk}</div>`;};   /* verdict, money and the button lead; the requirement rows follow */
   const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
     const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
@@ -447,7 +447,7 @@ $("contracts").addEventListener("click",e=>{
   const unit=d.unit;const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(SEGMENTS.find(s=>s.id===k.seg).tier,units,d,f.bonus,k.repeat);C().rep+=repGain;
   const weak=(f.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
   C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units,hash:cfgHash(S.cfg),engine:engineName(),rel:k.site&&f.res.fails.length?Math.min(f.res.rel,55):f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,basePrice:k.price,weak,claims:0,repeated:!!k.repeat||!f.ok,...(k.site?{site:k.site}:{})});
-  if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;
+  if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;cxDeliver(k,f);
   logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}${coreLog(cd,cr)}`,f.ok?"good":"");
   if(tourStep>=0)tourEnd();
   C().contracts=C().contracts.filter(x=>x.id!==k.id);spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
@@ -494,3 +494,87 @@ $("importSave").addEventListener("click",buRestoreOpen);
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
+
+/* ===================== SPECIAL ORDERS & MILESTONES (career) =====================
+   A category of customer jobs with a story: a restomod, a pull-season rebuild, a fleet that counts days off the road, a rush job
+   with a short fuse, and budget-capped builds (the brief caps what an engine may cost you to build). They ride the normal
+   contract framework: real SEGMENTS (so fits/deal/fleet/warranty/repeat orders all work) kept out of CATS[].segs, so they never
+   become open-market buyers; catPool/genContract/acceptContract/fits/segCat are wrapped below. Counters live on C().cx
+   (cxS(), filled lazily, so old saves load clean). The milestone goals at the bottom use them, and the rival shops (rivals.js). */
+const RUSH_K=1.3,RUSH_REP=2;
+const RUSH_SEG={id:"rush",name:"Rush job",tier:0,units:[1,2],price:0,req:{},rush:true};
+const SPECIAL_SEGS=[
+  {id:"bud_econ",name:"Budget commuter · cost-capped",tier:0,units:[3,7],price:2300,tag:"Budget cap",cx:"budget",dut:"prod",
+    note:"A ride-share start-up with a thick spreadsheet: every engine has to come in under the cap.",req:{hp:[70,95],rel:82,fuel:"r87",kg:175,cost:1700}},
+  {id:"resto",name:"Restomod · period body, modern heart",tier:1,units:[1,3],price:4400,tag:"Restomod",cx:"resto",dut:"perf",
+    note:"A '67 body with a new heart: smooth, quiet enough to talk over, and period-correct on the outside. The owner will drive it every Sunday.",req:{hp:[165,205],smooth:70,kg:245,fuel:"r91",rel:84}},
+  {id:"bud_truck",name:"Municipal pickup tender · cost-capped",tier:1,dsl:true,gas:true,units:[3,6],price:3600,tag:"Budget cap",cx:"budget",dut:"truck",
+    note:"A county fleet tender: lowest bid wins, so the cap is written into the contract.",req:{tq:[280,380],tqrpm:3600,rel:85,fuel:"r87",cost:2400}},
+  {id:"pullrebuild",name:"Farm tractor pull rebuild",tier:2,units:[1,2],price:9600,tag:"Pull rebuild",cx:"pullrebuild",dut:"diesel",
+    note:"Pull season is six weeks out and the old tractor let go at the last meet. Torque low down, and it has to survive hooking to the sled.",req:{tq:[800,1100],tqrpm:2400,life:1500,rel:75,passes:150,fuel:"diesel"}},
+  {id:"fleetrel",name:"Endurance fleet order · reliability contract",tier:2,dsl:true,gas:true,units:[4,7],price:3900,tag:"Fleet order",cx:"fleet",dut:"truck",
+    note:"A depot that counts days off the road. They would rather buy fewer engines that never come back than more that do.",req:{hp:[110,150],life:4800,rel:95,fuel:"r87"}},
+  {id:"bud_perf",name:"Track-day club bulk buy · cost-capped",tier:2,units:[2,3],price:4200,tag:"Budget cap",cx:"budget",dut:"perf",
+    note:"A track-day club buying in bulk: fast, reliable enough for a weekend, and nowhere near supercar money.",req:{hp:[200,235],rel:75,fuel:"r91",cost:3000}}];
+SEGMENTS.push(...SPECIAL_SEGS);
+CATS.push({id:"special",name:"Special orders",sub:"restomods · rush jobs · budget caps · fleets",segs:[],rep:30});
+Object.assign(CORE_LAY,{bud_econ:["I4"],resto:["V8","V6"],bud_truck:["V6","V8"],pullrebuild:["I6","V8"],fleetrel:["I6","V6"],bud_perf:["I4","V6"]});
+REQ_LABEL.cost=["Build cost",v=>`≤ ${fmt$(+v)} an engine`];
+MISS_W.cost=2;
+{ /* the wrappers: market.js is not touched, so each function is replaced here and calls the original */
+  const _catPool=catPool,_gen=genContract,_acc=acceptContract,_fits=fits,_segCat=segCat,_boost=priceBoost;
+  catPool=function(cat){if(!cat||cat.id!=="special")return _catPool(cat);
+    const tier=repTierIdx(),cap=dynoCap();
+    return SPECIAL_SEGS.filter(s=>s.tier<=tier&&(!s.req.hp||s.req.hp[0]<=cap.hp)).concat([RUSH_SEG]);};   // all of them: the variety is the point
+  genContract=function(seg){let rush=false;
+    if(seg&&seg.rush){   // a rush job is an ordinary job from any open category, wanted fast and paid over the odds
+      const bases=[];for(const c of CATS)if(["prod","truck","perf","diesel","altfuel","race"].includes(c.id)&&catOpen(c))for(const s of _catPool(c))bases.push(s);
+      seg=bases.length?bases[Math.floor(rng()*bases.length)]:undefined;rush=true;}
+    const k=_gen(seg);const sg=SEGMENTS.find(s=>s.id===k.seg);
+    if(sg&&sg.req.cost!=null)k.req.cost=sg.req.cost;
+    if(sg&&sg.tag){k.tag=sg.tag;k.note=sg.note;}
+    if(rush){k.rush=1;k.tag="Rush";k.price=Math.round(k.price*RUSH_K/10)*10;k.note=`${k.client} needs it fast: two weeks to ship once you take it, not four. They pay ${Math.round((RUSH_K-1)*100)}% over the usual price, and +${RUSH_REP} rep for being on time.`;}
+    return k;};
+  acceptContract=function(k,from){const ok=_acc(k,from);
+    if(ok&&k.rush){k.expires=C().week+1;logEvent(`Rush job: ${k.client} needs the ${k.name} by week ${k.expires}`,"");}return ok;};
+  fits=function(k,res,cfg){const f=_fits(k,res,cfg);const cap=k&&k.req&&k.req.cost;
+    if(cap!=null&&f.res&&f.res.cost!=null){const cost=f.res.cost,ok=cost<=cap;
+      f.o.push({q:"cost",name:"Build cost",target:reqTarget("cost",cap),label:describeReq("cost",cap),val:fmt$(Math.round(cost)),ok,prog:clamp(cap/Math.max(1,cost),0,1.25)});
+      if(!ok)f.ok=false;else f.bonus+=clamp(1-cost/cap,0,0.2)*0.3;}   // well under the cap earns a little more
+    return f;};
+  segCat=function(seg){const s=SPECIAL_SEGS.find(x=>x.id===seg);return s?s.dut:_segCat(seg);};
+  priceBoost=function(){let b=_boost();if(career()){const g=C().goals||{};b*=1+0.01*((g.rep100?1:0)+(g.rep200?1:0));}return b;};   // the rep-100 and rep-200 milestones: clients pay 1% more each
+}
+function cxS(){const c=C();if(!c.cx||typeof c.cx!=="object")c.cx={};return c.cx;}
+/* a delivered order that met the brief: count it toward the milestones; a rush job in time earns a little rep */
+function cxDeliver(k,f){if(!f||!f.ok)return 0;const x=cxS(),sg=SEGMENTS.find(s=>s.id===k.seg)||{};let add=0;
+  if(sg.cx)x[sg.cx]=(x[sg.cx]||0)+1;
+  if(k.rush){x.rush=(x.rush||0)+1;add=RUSH_REP;C().rep+=add;logEvent(`${k.client}: rush job in on time — +${add} rep`,"good");}
+  return add;}
+const cxN=(c,k)=>(c.cx&&c.cx[k])||0;
+const cxProg=(k,n)=>c=>[Math.min(n,cxN(c,k)),n];
+/* milestones: the rep ladder from 30 to 200 (cash only, so the ladder doesn't feed itself), then the special-order and rival goals */
+GOALS.push(
+  {id:"rep30",name:"Word gets around",desc:"Reach 30 reputation.",cash:1500,rep:0,check:c=>c.rep>=30,prog:c=>[Math.min(30,c.rep),30]},
+  {id:"rep60",name:"Name on the door",desc:"Reach 60 reputation.",cash:3000,rep:0,check:c=>c.rep>=60,prog:c=>[Math.min(60,c.rep),60]},
+  {id:"rep100",name:"Three digits",desc:"Reach 100 reputation. From here every client pays 1% more.",cash:6000,rep:0,check:c=>c.rep>=100,prog:c=>[Math.min(100,c.rep),100]},
+  {id:"rep150",name:"Waiting list",desc:"Reach 150 reputation.",cash:10000,rep:0,check:c=>c.rep>=150,prog:c=>[Math.min(150,c.rep),150]},
+  {id:"rep200",name:"Industry name",desc:"Reach 200 reputation. Another 1% on every unit price.",cash:15000,rep:0,check:c=>c.rep>=200,prog:c=>[Math.min(200,c.rep),200]},
+  {id:"pullr",name:"Back in the pull",desc:"Rebuild a farm tractor pull engine to the brief.",cash:4000,check:c=>cxN(c,"pullrebuild")>=1},
+  {id:"budget3",name:"Penny wise",desc:"Ship three budget-capped orders under the cap.",cash:5000,check:c=>cxN(c,"budget")>=3,prog:cxProg("budget",3)},
+  {id:"resto3",name:"Restomod regular",desc:"Ship three restomod orders that meet the brief.",cash:5000,check:c=>cxN(c,"resto")>=3,prog:cxProg("resto",3)},
+  {id:"rush3",name:"Beat the clock",desc:"Ship three rush jobs in time.",cash:6000,check:c=>cxN(c,"rush")>=3,prog:cxProg("rush",3)},
+  {id:"fleet3",name:"Nothing comes back",desc:"Fill three endurance fleet orders (reliability 95, 4,800 h).",cash:7000,check:c=>cxN(c,"fleet")>=3,prog:cxProg("fleet",3)},
+  {id:"h2h1",name:"First blood",desc:"Win a head-to-head challenge against a rival shop.",cash:3000,check:c=>rivH2h(c).won>=1},
+  {id:"h2h5",name:"Local legend",desc:"Win five head-to-head challenges.",cash:12000,check:c=>rivH2h(c).won>=5,prog:c=>[Math.min(5,rivH2h(c).won),5]},
+  {id:"top",name:"Top of the board",desc:"Hold more reputation than all three rival shops (from 60 rep up).",cash:8000,check:c=>c.rep>=60&&rivTop(c)},
+  {id:"spec5",name:"Specialist",desc:"Ship one of each special order: restomod, pull rebuild, fleet, rush and budget-capped.",cash:12000,check:c=>["resto","pullrebuild","fleet","rush","budget"].every(k=>cxN(c,k)>=1),
+    prog:c=>[["resto","pullrebuild","fleet","rush","budget"].filter(k=>cxN(c,k)>=1).length,5]});
+/* market.js's checkGoals, with a per-goal rep reward (default 10) and a look at the rival board after every result */
+checkGoals=function(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}
+    if(ok){const rp=g.rep!=null?g.rep:10;C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=rp;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus${rp?`, +${rp} rep`:""}`,"good");hit.push(g);}}
+  if(hit.length){toastAfter(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}
+  rivalsPos();return hit.length;};
+function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.prog){try{pg=g.prog(C());}catch(e){}}
+    return `<div class="goal ${w?"done":""}"><div><h3>${g.name}</h3><p>${g.desc}</p>${pg?`<div class="gprog"><i style="width:${Math.round(100*pg[0]/pg[1])}%"></i></div>`:""}</div><div class="price">${w?"✓ wk "+w:pg?`<small>${Math.floor(pg[0])} / ${pg[1]}</small>${fmt$(g.cash)}`:fmt$(g.cash)}</div></div>`;};
+  return GOALS.filter(g=>!C().goals[g.id]).map(one).join("")+GOALS.filter(g=>C().goals[g.id]).map(one).join("");}

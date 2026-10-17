@@ -1,0 +1,25 @@
+/* career content: special orders, milestones and the rival board (app/career.js, app/rivals.js). Existing card/tile styles, nothing new in 3D. */
+.card .client .ctag{font-style:normal;margin-left:8px;padding:1px 7px;border-radius:9px;border:1px solid var(--rule);font-size:11px;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.card .client .ctag.rush{border-color:var(--orange);color:var(--orange2)}
+.card.sp-rush{border-left:3px solid var(--orange)}
+.card.sp-order{border-left:3px solid var(--info)}
+.card .cnote{margin:-2px 0 10px;font-size:13px;line-height:1.45;color:var(--muted);font-style:italic}
+.goal .gprog{height:5px;margin-top:7px;background:var(--soot);border-radius:2px;overflow:hidden}
+.goal .gprog i{display:block;height:100%;background:var(--orange);border-radius:2px}
+.goal .price small{display:block;text-align:right;font-family:var(--mono);font-size:11px;font-weight:400;color:var(--dim)}
+/* rival board */
+.rvboard{border:1px solid var(--edge);border-radius:8px;background:var(--panel);overflow:hidden;margin-bottom:8px}
+.rvrow{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 12px;border-top:1px solid var(--edge)}
+.rvrow:first-child{border-top:0}
+.rvrow .rvn{font-family:var(--display);font-size:15px;font-weight:700;color:var(--dim);text-align:center}
+.rvrow .rvnm{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.rvrow .rvnm b{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rvrow .rvnm i{font-style:normal;font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rvrow .rvp{font-family:var(--display);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.rvrow.you{background:linear-gradient(90deg,rgba(217,119,87,.16),rgba(217,119,87,.04));box-shadow:inset 3px 0 0 var(--orange)}
+.rvrow.you .rvn,.rvrow.you .rvp{color:var(--orange2)}
+.rvhint{font-size:13px}
+.card.rvch{border-left:3px solid var(--orange)}
+.card.rvch .rvbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+:root[data-theme=light] .rvrow.you{background:linear-gradient(90deg,rgba(217,119,87,.14),rgba(217,119,87,.03))}
+@media (prefers-reduced-motion:no-preference){.card.rvch{transition:box-shadow .2s}}
