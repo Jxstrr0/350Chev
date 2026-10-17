@@ -26429,7 +26429,7 @@ function ovalSetNight(on){
   M.ground.userData.U.uDry.value=on?0.3:0.5;
   if(tierChanged && OVAL.sun.shadow.map){ OVAL.sun.shadow.map.dispose(); OVAL.sun.shadow.map=null; }
   OVAL.spots.forEach(function(sp){ S3.remove(sp); S3.remove(sp.target); if(sp.shadow&&sp.shadow.map) sp.shadow.map.dispose(); }); OVAL.spots=[];
-  if(on){ for(var i=0;i<(lite?2:3);i++){ var sp=new THREE.SpotLight(0xfff0d8,2.2,200,0.7,0.6,1.4); sp.castShadow=!lite && i===0; if(sp.castShadow){ sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.002; sp.shadow.normalBias=0.05; sp.shadow.camera.near=4; sp.shadow.camera.far=220; }
+  if(on){ for(var i=0;i<(lite?2:3);i++){ var sp=new THREE.SpotLight(0xfff0d8,lite?2.2:1.1,200,0.7,0.6,1.4); sp.castShadow=!lite && i===0; if(sp.castShadow){ sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.002; sp.shadow.normalBias=0.05; sp.shadow.camera.near=4; sp.shadow.camera.far=220; }
     S3.add(sp); S3.add(sp.target); OVAL.spots.push(sp); } ultraSpots(OVAL.spots); }
   if(!lite) ultraShadow(OVAL.sun,2048);
 }
