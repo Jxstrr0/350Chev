@@ -1,8 +1,22 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION v1.68.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.68.1.0 — major.minor.feature.hotfix -->
+<div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
+<script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
+(function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
+window.__ld=function(p,s,secs){if(fin)return;f.style.transitionDuration=secs?secs+"s":"";f.style.transform="scaleX("+p+")";bar.setAttribute("aria-valuenow",Math.round(p*100));if(s&&!bad)m.textContent=s;};
+window.__ldGo=function(fn){var r=0,go=function(){if(!r){r=1;fn();}};window.__ld(.95,"Building the workshop…",4);requestAnimationFrame(function(){setTimeout(go,0);});setTimeout(go,300);};
+window.__ldDone=function(){if(fin)return;fin=1;f.style.transitionDuration=".2s";f.style.transform="scaleX(1)";bar.setAttribute("aria-valuenow",100);b.className="done";setTimeout(function(){b.remove();},500);
+ var c=q;q=null;var iv=document.getElementById("intro");if(iv&&iv.style.display!=="none")c.forEach(function(x){x.click();});};
+/* a programmatic click on the intro before the game has booted waits for it, then plays */
+document.addEventListener("click",function(e){var t=q&&e.target.closest&&e.target.closest("#intro button");if(t){e.stopImmediatePropagation();e.preventDefault();q.push(t);}},true);
+function fail(s){if(bad)return;bad=1;b.classList.add("err");m.textContent=s;rl.hidden=false;}
+rl.onclick=function(){location.reload();};
+window.addEventListener("error",function(e){if(fin)return;var t=e.target;if(t&&t.tagName==="SCRIPT")fail("Couldn't load "+(/three/.test(t.src)?"the 3D library":"a game library")+". Check your connection and reload.");else if(e.message)fail("Something went wrong while loading. Reload to try again.");},true);
+setTimeout(function(){if(!fin&&!bad)m.textContent="Still loading… slow connection?";},9000);
+})();</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
 <style>
 :root{
   --soot:#141413; --panel:#1c1b19; --panel2:#252421; --rule:#2e2d2b; --steel:#4a4843; --edge:rgba(255,255,255,.055);
@@ -1930,6 +1944,7 @@ html.troom #phBtn{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+<script>__ld(.22,"Graphics library loaded")</script>
 <script>
 /* =====================================================================
    Prairie Engine Works v2 — physics core (sim.js)
@@ -9864,6 +9879,7 @@ if (typeof module !== "undefined") module.exports = ENGINE_SIM;
 if (typeof window !== "undefined") window.ENGINE_SIM = ENGINE_SIM;
 
 </script>
+<script>__ld(.36,"Physics model loaded")</script>
 <script>
 /* ============================================================================
    Prairie Engine Works v2 — ENGINE_SOUND
@@ -11446,6 +11462,7 @@ if (typeof module !== "undefined") module.exports = ENGINE_SOUND;
 if (typeof window !== "undefined") window.ENGINE_SOUND = ENGINE_SOUND;
 
 </script>
+<script>__ld(.40,"Sound engine loaded")</script>
 <!-- ENGINE_SAMPLES:BEGIN -->
 <script>
 /* ============================================================================
@@ -11725,6 +11742,7 @@ const ENGINE_SAMPLES = (function () {
 if (typeof window !== "undefined") window.ENGINE_SAMPLES = ENGINE_SAMPLES;
 </script>
 <!-- ENGINE_SAMPLES:END -->
+<script>__ld(.43,"Engine recordings loaded")</script>
 <script>
 /* ============================================================================
    Prairie Engine Works — visuals.js  (ENGINE_VIS)
@@ -26144,7 +26162,7 @@ const ENGINE_VIS = {
     ENGINE_VIS.resize();
     if(typeof window!=="undefined") window.addEventListener("resize", ENGINE_VIS.resize);
     running=true;
-    loop();
+    requestAnimationFrame(function(){ setTimeout(loop, 0); });   /* perf: the first frame (texture painting, shader compiles) waits until the menus have painted */
     return ENGINE_VIS;
   },
 
@@ -27594,6 +27612,7 @@ if(typeof window!=="undefined")window.ENGINE_VIS=ENGINE_VIS;
 })();
 
 </script>
+<script>__ld(.55,"3D scenes loaded")</script>
 <script>
 /* ===================== Prairie Engine Works — app ===================== */
 const SIM=ENGINE_SIM,{LAYOUTS,OPT,FORM,PRESETS}=SIM;
@@ -27763,7 +27782,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="v1.68.0.0";
+const VERSION="1.68.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -34712,8 +34731,10 @@ function start(hot){
   window.claude?.hot?.snapshot?.(()=>({S:Object.assign({},S,{last:null,base:S.base}),tab:curTab}));
   window.addEventListener("resize",()=>{ENGINE_VIS.resize();if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();});
   setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle
+  ENGINE_VIS.resize();   // the observer on #view fired before boot, while there was no renderer to size
+  if(window.__ldDone)__ldDone();
 }
-window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+(window.__ldGo||(f=>f()))(()=>{window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});});
 
 </script>
 

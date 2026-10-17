@@ -55,7 +55,7 @@ const ENGINE_VIS = {
     ENGINE_VIS.resize();
     if(typeof window!=="undefined") window.addEventListener("resize", ENGINE_VIS.resize);
     running=true;
-    loop();
+    requestAnimationFrame(function(){ setTimeout(loop, 0); });   /* perf: the first frame (texture painting, shader compiles) waits until the menus have painted */
     return ENGINE_VIS;
   },
 
