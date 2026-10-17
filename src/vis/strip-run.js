@@ -853,12 +853,12 @@ function stripUpdate(o, dt, rdt){
      own car {color, hw:{...style}}. Both optional: without them the cars are the v1.5 ones (charcoal mirror opponent). */
   var CS=STRIP.cars, hwK=o.hw===CS.hwRef?CS.hwK:(o.hw?JSON.stringify(o.hw):""), opK=o.opp===CS.opRef?CS.opK:(o.opp?JSON.stringify(o.opp):""), liteK=(hwK||opK)?GFX==="lite":false;
   CS.hwRef=o.hw; CS.hwK=hwK; CS.opRef=o.opp; CS.opK=opK;
-  if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn || CS.bHw!==hwK || CS.bOp!==opK || CS.bLite!==liteK)){
+  if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn || CS.bHw!==hwK || CS.bOp!==opK || CS.bLite!==liteK || CS.bWb!==!!o.wbar)){
     if(STRIP.cars.p) S2.remove(STRIP.cars.p); if(STRIP.cars.o) S2.remove(STRIP.cars.o);
-    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); stripCarMeta(STRIP.cars.p); stripContact(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
+    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); if(o.wbar && !STRIP.cars.p.userData.meta.bars) stripAddBars(STRIP.cars.p); stripCarMeta(STRIP.cars.p); stripContact(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
     var op=o.opp||{};
     STRIP.cars.o=stripCar(op.body||o.body, op.color!=null?op.color:0x3a3f46, op.tyreIn||(op.body&&op.body!==o.body?undefined:o.tyreIn), op.hw); stripCarMeta(STRIP.cars.o); stripContact(STRIP.cars.o);   /* op.body: the rival's own class (fix pack plumbing) */ STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
-    CS.bHw=hwK; CS.bOp=opK; CS.bLite=liteK;
+    CS.bHw=hwK; CS.bOp=opK; CS.bLite=liteK; CS.bWb=!!o.wbar;
   }
   var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return; stripLivery(P);
   var ph=o.phase||"run", v=o.v||0;

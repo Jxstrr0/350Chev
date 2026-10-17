@@ -7006,7 +7006,7 @@ const ENGINE_SIM = (function () {
       const lift = F * v.cgH / (v.mass * g * v.wheelbase * Math.max(0.05, 1 - v.rearBias)) * tuneLift(st.t);
       st.lift = clamp(lift, 0, 1); st.liftMax = Math.max(st.liftMax, lift); st.onBars = false;
       if (lift >= 1 && st.v < 60) {
-        if (BODY.bars) { st.onBars = true; F *= 1 - Math.min(0.04, (lift - 1) * 0.03); }
+        if (BODY.bars || v.wbar) { st.onBars = true; F *= 1 - Math.min(0.04, (lift - 1) * 0.03); }
         else { st.wheelieT += dt; F *= 0.9; }            // no bars: the driver has to pedal it to keep it straight
       }
       const Fres = 0.5 * rho * cdA0 * st.v * st.v + crr * v.mass * g;
@@ -7112,7 +7112,7 @@ const ENGINE_SIM = (function () {
       if (st.spinTime > 0.25) reasons.push(`Wheelspin for ${st.spinTime.toFixed(1)} s — ${TY.n.toLowerCase()}s can only plant about ${Math.round(Fmax0() / 1000)} kN. Softer tyre, taller first gear, more rear weight, or a lower launch rpm.`);
       if ((st.shakeT || 0) > 0.1) reasons.push(`Tyre shake for ${st.shakeT.toFixed(1)} s — ${v.tyrePsi} psi is too soft for ${TY.n.toLowerCase()}s (they're set up around ${psiNom}); the sidewall winds up and lets go. A pound or two more.`);
       if (st.bog) reasons.push(`Bogged off the line — rpm fell to ${Math.round(st.minRpm)}. Launch higher or shorten first gear.`);
-      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — ${v.body === "gasser" ? "a gasser has no wheelie bars" : "a street shell has no wheelie bars"}, so the driver had to pedal it straight. Less rear weight bias, or a body with bars.`);
+      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — ${v.body === "gasser" ? "a gasser has no wheelie bars" : "a street shell has no wheelie bars"}, so the driver had to pedal it straight. Bolt on wheelie bars in the drag setup (about 14 kg), take some rear weight bias off, or pick a body with bars.`);
       if (st.limiterTime > 0.3) reasons.push(`${st.limiterTime.toFixed(1)} s on the rev limiter. Shift sooner or lengthen the gearing.`);
       if (st.overrev > 1.06) reasons.push(`Over-revved to ${Math.round(st.overrev * v.redline).toLocaleString()} rpm on a shift.`);
       const late = st.shifts.filter(x => x.rpm < res.peakHpRpm * 0.92);
@@ -19111,11 +19111,11 @@ function stripCarAnim(car, o, dt, isPlayer){
   var wt=me.wrinkle*clamp((acc-4)/12,0,1)*clamp(1-v/16,0,1);
   if(burn) wt=Math.max(wt, me.wrinkle*0.35);
   var n=Math.min(12, Math.ceil(dt/0.012)), h=n?dt/n:0, s;
-  var ptT=0, pitchMax=me.maxPitch;
+  var ptT=0, pitchMax=U.wbar?U.maxPitch:me.maxPitch;
   var lift=isPlayer ? (o.lift||0) : (o.olift!==undefined ? o.olift : clamp((acc-12)/18,0,1)*0.6);
   var onBars=isPlayer ? !!o.onBars : !!o.oOnBars;
   ptT=clamp(lift,0,1)*pitchMax;
-  if(me.bars && onBars) ptT=pitchMax;
+  if((me.bars||U.wbar) && onBars) ptT=pitchMax;
   ptT += clamp(acc/25,-0.5,1)*me.squat;
   var sh=isPlayer ? !!o.shifting : !!o.oshifting;
   if(sh && !A.shifting) A.pv -= me.shiftKick;
@@ -19127,7 +19127,7 @@ function stripCarAnim(car, o, dt, isPlayer){
     A.sqv += (om2*om2*(wt-A.sq) - 2*ze2*om2*A.sqv)*h; A.sq += A.sqv*h;
   }
   if(A.pitch>pitchMax+0.02) { A.pitch=pitchMax+0.02; if(A.pv>0) A.pv=0; }
-  if(me.bars && A.pitch>pitchMax){ A.pitch=pitchMax; if(A.pv>0) A.pv*=-0.25; }
+  if((me.bars||U.wbar) && A.pitch>pitchMax){ A.pitch=pitchMax; if(A.pv>0) A.pv*=-0.25; }
   if(A.pitch<-0.035){ A.pitch=-0.035; if(A.pv<0) A.pv=0; }
   var sq=clamp(A.sq,-0.4,1.2);
   A.roll += (clamp(acc/30,-0.3,1)*0.010 - A.roll)*Math.min(1,dt*6);
@@ -19513,6 +19513,23 @@ function sc_foil(chord, thick, span, b){
   for(i=N-1;i>0;i--){ u=(1-Math.cos(PI*i/N))/2; yt=5*thick*(0.2969*Math.sqrt(u)-0.126*u-0.3516*u*u+0.2843*u*u*u-0.1036*u*u*u*u); pts.push([chord/2-u*chord, yt*0.55+0.02*chord*Math.sin(PI*u)]); }
   pts.reverse();
   return sc_prof(pts, span, SC.lite?0:(b||0.004));
+}
+/* r6: bolt-on wheelie bars for a shell that has none (drag setup). A handful of rods + two skid wheels on the body frame;
+   U.wbar makes the pitch code treat it like a bars body (lower pitch stop, rides the bars). Same look as the factory bars above. */
+function stripAddBars(car){
+  var U=car.userData, me=U.meta, inner=U.bodyGroup.children[0], M=sc_mats(), br=0.065, maxP=deg(5);
+  var bb=new THREE.Box3().setFromObject(car), cs=U.chute; if(cs&&cs.parent===car) bb.expandByObject(cs);
+  var bx0=me.xr-0.05, bx1=Math.min(bb.min.x-0.12, me.xr-1.15), rr=me.rr, dxB=bx1-me.xr, cy=(br-rr-dxB*Math.sin(maxP))/Math.cos(maxP)+rr;
+  var g=new THREE.Group(); g.name="sc_wbar";
+  function add(geo, mat, m){ var me2=new THREE.Mesh(geo, mat); me2.applyMatrix4(m); me2.matrixAutoUpdate=false; me2.castShadow=true; g.add(me2); }
+  [-1,1].forEach(function(sd){
+    var a=new THREE.Vector3(bx0, 0.3, sd*0.36), b=new THREE.Vector3(bx1, cy, sd*0.3);
+    add(sc_cyl(0.022,8), M.tube, sc_rodM(a,b));
+    add(sc_cyl(0.014,6), M.tube, sc_rodM(new THREE.Vector3(bx0, 0.46, sd*0.36), b));
+    add(new THREE.CylinderGeometry(br,br,0.045,SC.lite?8:14), M.rubber, sc_M(bx1, cy, sd*0.3, PI/2,0,0));
+  });
+  add(sc_cyl(0.018,8), M.tube, sc_rodM(new THREE.Vector3(bx1+0.05, cy, -0.3), new THREE.Vector3(bx1+0.05, cy, 0.3)));
+  inner.add(g); U.wbar=true; U.maxPitch=Math.min(me.maxPitch, maxP);
 }
 function sc_rodM(a, b){ /* matrix mapping a unit Y cylinder (centre origin, h=1) onto segment a->b */
   var d=new THREE.Vector3().subVectors(b,a), L=d.length(), q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), d.clone().normalize());
@@ -21454,12 +21471,12 @@ function stripUpdate(o, dt, rdt){
      own car {color, hw:{...style}}. Both optional: without them the cars are the v1.5 ones (charcoal mirror opponent). */
   var CS=STRIP.cars, hwK=o.hw===CS.hwRef?CS.hwK:(o.hw?JSON.stringify(o.hw):""), opK=o.opp===CS.opRef?CS.opK:(o.opp?JSON.stringify(o.opp):""), liteK=(hwK||opK)?GFX==="lite":false;
   CS.hwRef=o.hw; CS.hwK=hwK; CS.opRef=o.opp; CS.opK=opK;
-  if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn || CS.bHw!==hwK || CS.bOp!==opK || CS.bLite!==liteK)){
+  if(o.body && (!STRIP.cars.p || STRIP.cars.p.userData.body!==o.body || STRIP.cars.pcolor!==o.color || STRIP.cars.ptyre!==o.tyreIn || CS.bHw!==hwK || CS.bOp!==opK || CS.bLite!==liteK || CS.bWb!==!!o.wbar)){
     if(STRIP.cars.p) S2.remove(STRIP.cars.p); if(STRIP.cars.o) S2.remove(STRIP.cars.o);
-    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); stripCarMeta(STRIP.cars.p); stripContact(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
+    STRIP.cars.p=stripCar(o.body, o.color||0xa32a26, o.tyreIn, o.hw); if(o.wbar && !STRIP.cars.p.userData.meta.bars) stripAddBars(STRIP.cars.p); stripCarMeta(STRIP.cars.p); stripContact(STRIP.cars.p); STRIP.cars.p.position.z=STRIP_LANE; S2.add(STRIP.cars.p); STRIP.cars.pcolor=o.color; STRIP.cars.ptyre=o.tyreIn;
     var op=o.opp||{};
     STRIP.cars.o=stripCar(op.body||o.body, op.color!=null?op.color:0x3a3f46, op.tyreIn||(op.body&&op.body!==o.body?undefined:o.tyreIn), op.hw); stripCarMeta(STRIP.cars.o); stripContact(STRIP.cars.o);   /* op.body: the rival's own class (fix pack plumbing) */ STRIP.cars.o.position.z=-STRIP_LANE; STRIP.cars.o.visible=!!o.race; S2.add(STRIP.cars.o);
-    CS.bHw=hwK; CS.bOp=opK; CS.bLite=liteK;
+    CS.bHw=hwK; CS.bOp=opK; CS.bLite=liteK; CS.bWb=!!o.wbar;
   }
   var P=STRIP.cars.p, O=STRIP.cars.o; if(!P) return; stripLivery(P);
   var ph=o.phase||"run", v=o.v||0;
@@ -29830,6 +29847,7 @@ function renderEnv(){
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>${drvHtml()}
     <div class="lbl"><span>Body &amp; aero</span></div><div class="seg segbody">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div><div class="segbodynote">${(SIM.AERO[e.body]||{}).d||""}</div>${paintHtml()}${shellHtml()}
+    ${(SIM.AERO[e.body||"street"]||{}).bars?"":`<div class="lbl"><span>Wheelie bars</span></div><div class="seg">${[["no","Not fitted","the nose may come up"],["yes","Bolt-on bars","+14 kg · rides the bars, no DQ"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="wbar" class="${(e.wbar||"no")===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
@@ -30267,7 +30285,9 @@ $("mapBox").addEventListener("wheel",e=>{const td=e.target.closest&&e.target.clo
 function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.abs(d)<0.5)return"";return `<span class="delta ${d>0?"up":"dn"}">${d>0?"+":""}${f(d)}</span>`;}
 /* ---- drag pass driver ---- */
 let DR=null;
-function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass,rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
+/* bolt-on wheelie bars: only for bodies that do not already have them; ~14 kg on the tail */
+const WBAR_KG=14;function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&!(SIM.AERO[e.body||"street"]||{}).bars;}
+function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass+(wbarOn(e)?WBAR_KG:0),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
 function alsOf(cfg){const a=cfg&&cfg.als;return a&&a!=="off"&&OPT.als&&OPT.als[a]&&(OPT.asp[cfg.asp]||{}).kind==="turbo"&&!isCI(cfg.fuel)?a:null;}
@@ -30466,7 +30486,7 @@ function dragStart(){
       // test & tune heads-up: the other lane's RT once it leaves, its ET/MPH once it's through the traps, and the same verdict as the slip
       let hx=null;if(R&&!DR.night){const fin=R.et!=null&&ox>=402.336;hx={ort:R.green!=null&&(now-R.green)/1000>=R.rt?R.rt:undefined,oet:fin?R.et:undefined,omph:fin?R.mph:undefined,
         win:st.phase==="shutdown"||st.phase==="done"?!DR.failed&&!R.foul&&!!m4&&(R.et==null||m4.t+Math.max(0,R.rt0||0)<R.et+R.rt):undefined};}
-      ENGINE_VIS.setStrip(Object.assign({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,tyreIn:veh.tyreDia,color:carPaint(),hw:DR.hw,opp:R?R.look:undefined,
+      ENGINE_VIS.setStrip(Object.assign({on:true,et:m4?m4.t:undefined,mph:m4?m4.mph:undefined,dt,x:st.x,v:st.v,ox,ov,acc,spin:st.spin,phase:st.phase,chute:st.chuteOut,race:!!R,foul:!!(R&&R.foul),body:veh.body,wbar:!!veh.wbar,tyreIn:veh.tyreDia,color:carPaint(),hw:DR.hw,opp:R?R.look:undefined,
         tree:{staged:!!st.rolled&&st.phase!=="burnout",a1:dtT>=0,a2:dtT>=0.5,a3:dtT>=1.0,green:!!(R&&R.green!=null)},
         shifting:st.shiftT>0,boost:st.boost,boostTarget:st.boostTarget,rpm:st.rpm,redline:veh.redline,gear:st.gear,
         launch:{armed:!!st.launch.armed,twoStep:st.launch.twoStep,transBrake:st.launch.transBrake,held:st.launch.held,retard:st.launch.retard,pops:st.launch.pops},
@@ -30738,7 +30758,7 @@ function rnFrame(now,st,dtT){const R=DR.race,n=DR.night;if(!R||!n)return;
     if(n.stage>=2&&n.verdict.win&&n.stage===4){n.cheer=true;ENGINE_VIS.stripWin&&ENGINE_VIS.stripWin();buzz([30,40,30,40,90]);}}
   ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace({round:n.label,nightK:rnNightK(n.stage),pdial:n.dialP,odial:n.dialO,otree:R.otree0!=null?{a1:dO>=0,a2:dO>=0.5,a3:dO>=1.0,green:dO>=1.5}:undefined,
     ort:left?R.rt:undefined,ofoul:!!(R.ofoul&&left),oet:R.et!=null&&ox>=402.336?R.et:undefined,omph:R.et!=null&&ox>=402.336?R.mph:undefined,win:n.verdict&&n.stage>=2?!!n.verdict.win:undefined});}
-function rnJudgePass(n,st){const R=DR.race,q=st.marks.find(m=>m.n==="1/4 mi"),bars=(SIM.AERO[DR.veh.body]||{}).bars;
+function rnJudgePass(n,st){const R=DR.race,q=st.marks.find(m=>m.n==="1/4 mi"),bars=(SIM.AERO[DR.veh.body]||{}).bars||DR.veh.wbar;
   const rr=rnRng(rnHash(n.label+":"+(R.rt0||0)+":"+Math.round(st.x)));const pq=Math.min(0.8,(bars?0:Math.max(0,(st.wheelieT-0.35)*1.2))+Math.max(0,((st.shakeT||0)-0.25)*1.0));
   const dq=!DR.failed&&!R.foul&&pq>0&&rr()<pq;   // pedalling a wheelie or riding out tyre shake can put it over the centreline
   const a={rt:R.rt0,et:DR.failed||!q?null:q.t,dial:n.dialP,dq,x:st.x},b={rt:R.rt,et:R.et,dial:n.dialO,dq:false,x:n.op.broke?402*n.op.at:402};
