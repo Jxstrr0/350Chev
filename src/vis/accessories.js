@@ -90,11 +90,7 @@ function buildFAD(B, p, extras){
       B.add("calu", BOX(bore*0.40,bore*0.04,bore*0.14), tcF+bore*0.20, thY-bore*0.05, wpZ+bore*0.18);
       B.hw("hex", tcF+bore*0.03, thY-bore*0.03, wpZ+bore*0.18, 0,0,0, bore*0.08); B.hw("hex", tcF+bore*0.37, thY-bore*0.03, wpZ+bore*0.18, 0,0,0, bore*0.08);
       B.add("calu", CYL(bore*0.08,bore*0.09,bore*0.12,12), tcF+bore*0.20, thY+bore*0.10, wpZ+bore*0.18);
-      if(!ve && !bx){
-        var hs0=V3(tcF+bore*0.20, thY+bore*0.12, wpZ+bore*0.18);
-        hoseMesh([hs0, hs0.clone().add(V3(0,bore*0.20,0)), hs0.clone().add(V3(bore*0.10,bore*0.32,0)), hs0.clone().add(V3(bore*0.26,bore*0.36,0))], bore*0.085);
-        B.add("brass", CYL(bore*0.07,bore*0.07,bore*0.10,12), hs0.x+bore*0.31, hs0.y+bore*0.36, hs0.z, 0,0,PI/2);
-      }
+      ENGD.pump={tcF:tcF, wpY:wpY, wpZ:wpZ, thY:thY, ve:ve, bx:bx};   /* the hoses themselves are laid by engineDetail (every layout) */
     }
     var pitems=[{g:CYL(wpR,wpR,bore*0.15,28,false,1.6), m:new THREE.Matrix4().makeRotationZ(PI/2)},
                 {g:CYL(wpR*0.50,wpR*0.50,bore*0.26,20,false,1.6), m:new THREE.Matrix4().makeRotationZ(PI/2)}];
@@ -273,6 +269,31 @@ function blockMarkMat(blockKey, disp){
   }, 3.0); return [q.mask, q.normal]; });
   return decalMat(MATHI[blockKey]||MATHI.iron, {mask:mk[0], normal:mk[1]}, {ns:1.3, perBuild:true, sharedMaps:true});
 }
+/* part number cast into the other crankcase flank (a different string for each block material, so no two blocks share it) */
+function castNumMat(blockKey){
+  var no={iron:"3 7 4 8 0 2", calu:"5 5 2 1 1 9", cgi:"8 8 0 6 4 1"}[blockKey]||"3 7 4 8 0 2";
+  var mk=lruGet("castno|"+no, function(){ var q=castMaskMaps(320,56,function(x,w,h){
+    x.font=heavyFont(h*0.62); x.textAlign="left"; x.textBaseline="middle"; x.fillText("PEW", w*0.02, h*0.52, w*0.2);
+    x.font=heavyFont(h*0.62); x.fillText(no, w*0.27, h*0.52, w*0.70);
+  }, 2.6); return [q.mask, q.normal]; });
+  return decalMat(MATHI[blockKey]||MATHI.iron, {mask:mk[0], normal:mk[1]}, {ns:1.2, perBuild:true, sharedMaps:true});
+}
+/* little oil-grade sticker on the valve cover (printed, not cast; texture cached) */
+function stickerMat(){
+  var t=lruGet("sticker|oil", function(){
+    var c=newCanvas(192,128), x=c.getContext("2d"), w=192, h=128;
+    x.fillStyle="#d8b24a"; x.fillRect(0,0,w,h);
+    x.strokeStyle="#2a2418"; x.lineWidth=6; x.strokeRect(5,5,w-10,h-10);
+    x.fillStyle="#2a2418"; x.textAlign="center"; x.textBaseline="middle";
+    x.font="700 17px 'Arial Narrow', Arial, sans-serif"; x.fillText("SYNTHETIC ONLY", w/2, 28, w-24);
+    x.font=heavyFont(50); x.fillText("5W-30", w/2, 70, w-26);
+    x.font="700 14px 'Arial Narrow', Arial, sans-serif"; x.fillText("CHECK OIL EVERY FILL-UP", w/2, 106, w-24);
+    var tx=tex(c,true); tx.wrapS=tx.wrapT=THREE.ClampToEdgeWrapping; return [tx];
+  })[0];
+  var m=new THREE.MeshStandardMaterial({map:t, roughness:0.55, metalness:0.05, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+  m.userData={hi:true, perBuild:true};
+  return m;
+}
 /* cast name on the cover's outboard wall, and the firing-order tag behind it (bank space) */
 function coverDecor(B, p, c){
   var bore=p.bore, zs=c.zs, covY=c.covY, covW=c.covW, covL=c.covL, coverH=c.coverH, wallZ, wy, wh;
@@ -295,6 +316,10 @@ function coverDecor(B, p, c){
   DECALS.decalPlate=DECALS.decalPlate||plateMat(fo, D.n+" CYL  ·  "+disp.toFixed(1)+" L  ·  SASKATOON SK");
   B.add("decalPlate", PLANE(pw*0.98, ph*0.98), px, wy, wz(0.0145), 0, ry, 0);
   if(DET>=2) [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(q){ B.hw("rivet", px+q[0]*pw*0.42, wy+q[1]*ph*0.34, wz(0.014), 0,0,0, bore*0.028); });
+  /* oil-grade sticker toward the front end of the same wall (clear of the cast name, which ends near 0.36 of the cover) */
+  var sw=Math.min(covL*0.11, wh*1.15, bore*0.8), sh=sw*0.667;
+  DECALS.decalSticker=DECALS.decalSticker||stickerMat();
+  B.add("decalSticker", PLANE(sw, sh), covL*0.425, wy, wz(0.005), 0, ry, 0);
 }
 /* after intake / aspiration / FAD: harness trunk + main connector, PCV, throttle actuator, crankcase mark */
 function buildDetailPost(B, c){
@@ -364,7 +389,12 @@ function buildDetailPost(B, c){
     DECALS.decalBlock=blockMarkMat(c.blockKey, disp.toFixed(1)+" L");
     var mh=bore*0.34, mw=mh*4, caseSpan=c.caseTop-c.caseBot;
     B.add("decalBlock", PLANE(mw, mh), -bankLen*0.28, c.caseBot+caseSpan*0.66, -(c.caseW*0.5+0.004), 0, PI, 0);
+    /* casting number on the opposite flank, low and toward the rear */
+    DECALS.decalCastNo=castNumMat(c.blockKey);
+    var nh=bore*0.13;
+    B.add("decalCastNo", PLANE(nh*5.7, nh), -bankLen*0.22, c.caseBot+caseSpan*0.30, c.caseW*0.5+0.004, 0, 0, 0);
   }
   setZone(0);
+  engineDetail(B, c, mc);
 }
 
