@@ -11,22 +11,31 @@ function renderPresets(){
   document.querySelectorAll("#pFam .chip").forEach(x=>x.classList.toggle("on",x.dataset.pf===fam));
   document.querySelectorAll("#pCls .chip").forEach(x=>x.classList.toggle("on",x.dataset.pc===cls));
   $("pReset").hidden=(sort==="layout"&&fam==="all"&&cls==="all");
+  const showAll=!career()||!!S.pAll;$("pAvail").hidden=!career();   // sandbox: everything is available, so the chips would only hide
+  document.querySelectorAll("#pAvail .chip").forEach(x=>x.classList.toggle("on",(x.dataset.pa==="all")===showAll));
+  $("pMoreSum").textContent=({layout:"by layout",size:"by size",power:"by power",class:"by class"})[sort]+(fam!=="all"||cls!=="all"?" · filtered":"");
   const LORDER=["I1","I2","I3","I4","I5","I6","V4","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4","D18"];
   let list=PRESETS.map((p,i)=>({p,i,disp:presetDisp(p),n:(SIM.LAYOUTS[p.cfg.layout]||{n:0}).n,cls:presetCls(p),fam:FAM_OF(p.cfg.layout),two:p.cfg.cycle==="two"}));
   list=list.filter(e=>fam!=="two"||e.two);if(fam==="two")list.forEach(e=>e.fam="two");   // the two-stroke chip cuts across layouts
   list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||(cls==="starter"?!!e.p.starter:e.cls===cls)));
+  list.forEach(e=>{e.lk=career()?presetLocked(e.p.cfg):null;});const nLocked=list.filter(e=>e.lk).length;
+  if(!showAll)list=list.filter(e=>!e.lk);   // Available: what the bay can build now; All also shows the locked ones, dimmed, with what unlocks them
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
   list.sort((a,b)=>key(a)-key(b));
   const groupOf=e=>sort==="layout"?(SIM.LAYOUTS[e.p.cfg.layout]||{}).name||e.p.cfg.layout:sort==="class"?CLS_LABEL[e.cls]:sort==="size"?(e.disp<1.6?"Under 1.6 L":e.disp<2.6?"1.6 – 2.5 L":e.disp<4.1?"2.6 – 4.0 L":e.disp<6.1?"4.1 – 6.0 L":"Over 6 L"):(e.p.realHp<150?"Under 150 hp":e.p.realHp<300?"150 – 299 hp":e.p.realHp<600?"300 – 599 hp":e.p.realHp<1000?"600 – 999 hp":"1,000 hp and up");
-  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}" data-id="${p.id}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
-  let h="",g=null,buf=[];const flush=()=>{buf.sort((a,b)=>b.st-a.st);if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.map(x=>x.h).join("")}</div>`;buf=[];};
-  for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push({h:card(e),st:e.p.starter?1:0});}
-  flush();
+  const row=e=>{const p=e.p,lk=e.lk;return `<button class="prow${lk?" lock":""}${p.starter?" starter":""}" data-p="${e.i}" data-id="${p.id}"><span class="pn"><b>${p.name}</b><small>${p.starter?"Starter · ":""}${p.basedOn}${lk?` · needs ${lk}`:""}</small></span><span class="pm">${e.two?"2T ":""}${p.cfg.layout} · ${fmtDisp(e.disp)} · ${p.realHp} hp</span></button>`;};
+  const groups=[];for(const e of list){const gg=groupOf(e);let G=groups[groups.length-1];if(!G||G.g!==gg){G={g:gg,es:[]};groups.push(G);}G.es.push(e);}
+  const cur=new Set();for(const G of groups)if(G.es.some(e=>e.p.name===S.name||(sort==="layout"&&e.p.cfg.layout===S.cfg.layout)))cur.add(G.g);if(!cur.size&&groups.length)cur.add(groups[0].g);
+  let h="";for(const G of groups){const pk=sort+"|"+G.g,open=tourStep>=0||list.length<=14||(pk in pgOpen?pgOpen[pk]:cur.has(G.g));G.es.sort((a,b)=>(b.p.starter?1:0)-(a.p.starter?1:0));
+    h+=`<div class="pg"><button class="pgh" data-pg="${pk}" aria-expanded="${open}"><span>${G.g}</span><i>${G.es.length}</i><span class="chev"></span></button><div class="plist"${open?"":" hidden"}>${G.es.map(row).join("")}</div></div>`;}
   $("presets").innerHTML=h||`<p class="hint">Nothing matches those filters.</p>`;
-  $("presetCnt").textContent=`${list.length} of ${PRESETS.length} · ${PRESETS.filter(p=>p.starter).length} starter`;
+  $("presetCnt").textContent=`${list.length} of ${PRESETS.length}`+(!showAll&&nLocked?` · ${nLocked} locked hidden`:"");
   const avail=career()?PRESETS.filter(p=>!presetLocked(p.cfg)).length:PRESETS.length;
   $("presetSum").textContent=(career()?`${avail} of ${PRESETS.length} buildable`:`${PRESETS.length} engines`)+(fam!=="all"||cls!=="all"?" · filtered":"");
 }
+const pgOpen={};   // picker group headers the player opened or closed (session only)
+$("pAvail").addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;S.pAll=b.dataset.pa==="all";renderPresets();save();});
+$("presets").addEventListener("click",e=>{const g=e.target.closest("[data-pg]");if(!g)return;const o=g.getAttribute("aria-expanded")!=="true";pgOpen[g.dataset.pg]=o;g.setAttribute("aria-expanded",o);g.nextElementSibling.hidden=!o;});
 $("pSort").addEventListener("click",e=>{const b=e.target.closest("[data-ps]");if(!b)return;S.pSort=b.dataset.ps;renderPresets();save();});
 $("pFam").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(!b)return;S.pFam=b.dataset.pf;renderPresets();save();});
 $("pCls").addEventListener("click",e=>{const b=e.target.closest("[data-pc]");if(!b)return;S.pCls=b.dataset.pc;renderPresets();save();});
@@ -110,7 +119,7 @@ function renderBuild(){
   altFuelFill(S.cfg);
   let h="";
   for(const sec of FORM){if(!sec.fields.some(f=>!f.showIf||f.showIf(S.cfg)))continue;   // a rotary has no pistons, rods or head gasket to show
-    const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
+    const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}" aria-expanded="${open}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);   // perf: closed sections fill when opened (toggleSec)
@@ -118,7 +127,7 @@ function renderBuild(){
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
 function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
-    document.querySelectorAll("#tab-build .acc").forEach(el=>{const k=el.querySelector("[data-sec]").dataset.sec;el.classList.toggle("open",!!openSec[k]);});
+    document.querySelectorAll("#tab-build .acc").forEach(el=>{const h=el.querySelector("[data-sec]"),k=h.dataset.sec;el.classList.toggle("open",!!openSec[k]);h.setAttribute("aria-expanded",!!openSec[k]);});
     if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),ar=a.getBoundingClientRect(),top=(document.querySelector("#tab-build .strip")||pn).getBoundingClientRect().bottom+8;if(ar.top<top)pn.scrollTop+=ar.top-top;}
     if(tourStep>=0)requestAnimationFrame(tourPlace);}
 $("presetAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
