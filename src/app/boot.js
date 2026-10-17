@@ -173,7 +173,7 @@ function deskGfx(){if(S.layoutMode!=="desktop")return null;if(gpuTier)return gpu
   return gpuTier;}
 function applyLayout(fromResize){const want=S.layoutMode==="desktop"&&innerWidth>=DESK_MIN,was=deskOn();document.documentElement.classList.toggle("desk",want);
   document.querySelectorAll("[data-lay]").forEach(b=>b.classList.toggle("on",b.dataset.lay===(S.layoutMode||"phone")));
-  $("layBox").hidden=!bigScreen()&&S.layoutMode!=="desktop";$("introLay").hidden=!bigScreen();
+  $("layBox").hidden=$("kbBox").hidden=!bigScreen()&&S.layoutMode!=="desktop";$("introLay").hidden=!bigScreen();
   if(S.sbw)document.documentElement.style.setProperty("--sbw-user",S.sbw+"px");else document.documentElement.style.removeProperty("--sbw-user");
   if(want!==was){tipHide();if(!$("viewTray").hidden)viewTray(false);if(!fromResize)window.dispatchEvent(new Event("resize"));}}
 function setLayout(m){if(S.layoutMode===m)return;S.layoutMode=m;applyLayout();applyGfx();applySoundQuality();save();
@@ -205,7 +205,7 @@ setInterval(()=>{if(tipOn&&tipOn.id==="gl"&&ENGINE_VIS.eventScene&&ENGINE_VIS.ev
 const COARSE=!!(window.matchMedia&&matchMedia("(pointer: coarse)").matches);   // a touch screen: say drag and pinch, not wheel and right-drag
 function touchHint(){if(!COARSE||S.touchHint)return;S.touchHint=1;save();toastAfter("Drag the engine to orbit · pinch to zoom");}
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
-const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",runTest:"Run the test <kbd>R</kbd>",
+const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",setOpen:"Settings · sound, display, help, saves",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:COARSE?"Drag to orbit · pinch to zoom":"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
 function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()))return "";   // the orbit hint is for the engine stand only: no "drag to orbit" over an event scene, the pits or a vis-side scene
   if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
@@ -217,7 +217,7 @@ function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_
   if(el.matches("input[type=range]"))return "Click it, then <kbd>←</kbd><kbd>→</kbd> or the wheel to nudge";
   if(el.matches("b.tap"))return "Click to type a value";
   return "";}
-document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const el=e.target.closest&&e.target.closest("[data-tip],#sndBtn,#idleBtn,#viewBtn,#runTest,#dragBtn,#pullBtn,#gl,#kbHelpBtn,#tabs button,#buildForm .seg button,.lbl .q,.nud,input[type=range],b.tap");
+document.addEventListener("pointerover",e=>{if(e.pointerType!=="mouse")return;const el=e.target.closest&&e.target.closest("[data-tip],#sndBtn,#idleBtn,#viewBtn,#setOpen,#runTest,#dragBtn,#pullBtn,#gl,#kbHelpBtn,#tabs button,#buildForm .seg button,.lbl .q,.nud,input[type=range],b.tap");
   if(el===tipOn)return;tipHide();if(!el)return;tipOn=el;
   tipT=setTimeout(()=>{if(tipOn!==el||!el.isConnected)return;const t=tipText(el);if(!t)return;tipEl.innerHTML=t;const r=el.getBoundingClientRect(),w=tipEl.offsetWidth,h=tipEl.offsetHeight;
     const top=r.bottom+8+h<innerHeight?r.bottom+8:r.top-8-h;tipEl.style.left=Math.round(Math.max(8,Math.min(innerWidth-w-8,el.id==="gl"?e.clientX-w/2:r.left+r.width/2-w/2)))+"px";tipEl.style.top=Math.round(el.id==="gl"?e.clientY+18:top)+"px";tipEl.classList.add("on");},el.id==="gl"?1200:450);});
