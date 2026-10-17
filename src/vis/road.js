@@ -50,7 +50,7 @@ function roadAtlas(name){
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2);
     if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
   panel(0,0,1024,96,"#f1ede2","#1d4787",String(name).toUpperCase(),62,"#d97757");
-  panel(0,98,340,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",42,"#d9a52b"); panel(342,98,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414"); panel(684,98,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
+  panel(0,98,340,64,"#1d4787","#f4f1e8","SECTION LINE",42,"#d9a52b"); panel(342,98,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414"); panel(684,98,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
   panel(0,164,340,64,"#2c6b3a","#f4f1e8","HALCYON GT",42); panel(342,164,340,64,"#141413","#d97757","PRAIRIE ENGINE WORKS",30,"#d97757"); panel(684,164,340,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",40);
   for(var i=0;i<64;i++) for(var j=0;j<4;j++){ x.fillStyle=((i+j)&1)?"#111":"#f2f2f2"; x.fillRect(i*16, 232+j*16, 16,16); }
   panel(0,300,256,96,"#141413","#f4efe2","PIT",64,"#d97757"); panel(258,300,256,96,"#f4efe2","#c8261c","3",80); panel(514,300,256,96,"#f4efe2","#c8261c","2",80); panel(770,300,254,96,"#f4efe2","#c8261c","1",80);

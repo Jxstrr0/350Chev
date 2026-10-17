@@ -265,7 +265,7 @@ function sc_letterTex(){
     for(i=0;i<txt.length;i++){ var da=ws[i]/tw*span; x.save(); x.translate(256,256); x.rotate(a+da/2+PI/2); x.fillText(txt[i], -ws[i]/2, -r); x.restore(); a+=da; }
   }
   x.fillStyle="rgba(240,236,226,0.95)"; x.textBaseline="middle";
-  arc("PRAIRIE BLUE", 204, -PI/2, 1.25, 46); arc("PRAIRIE BLUE", 204, PI/2, 1.25, 46);
+  arc("SECTION LINE", 204, -PI/2, 1.25, 46); arc("SECTION LINE", 204, PI/2, 1.25, 46);
   x.fillStyle="rgba(240,236,226,0.7)";
   arc("DRAG · RADIAL · 15", 204, 0, 0.9, 26); arc("DRAG · RADIAL · 15", 204, PI, 0.9, 26);
   return sc_ctex(c);
