@@ -1,0 +1,28 @@
+/* ===================== HELP: one-line summary + ⓘ that unfolds the full text (v1.66 UI cleanup) =====================
+   Markup (any lane): <details class="more"><summary aria-label="More info">ⓘ</summary><div>full text</div></details>
+   placed right after the one-line summary. Inside text (a .hint, a card line) it sits inline after the last word; opened, the
+   text drops below, full width. hl() in app/help.js builds `<div class="hint hl">summary + ⓘ</div>` for dynamic strings.
+   Uses only the shared tokens (--muted --dim --rule --panel2 --orange --info --chalk) so a restyle carries over. */
+details.more{display:inline;color:var(--muted)}
+details.more>summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;margin:-14px -10px -14px -6px;vertical-align:middle;cursor:pointer;
+  font-family:var(--body,inherit);font-size:16px;line-height:1;font-weight:400;font-style:normal;color:var(--muted);border-radius:50%;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::marker{content:""}
+details.more[open]>summary,details.more>summary:hover{color:var(--orange2,var(--orange))}
+details.more>summary:focus-visible{outline:2px solid var(--orange);outline-offset:-4px}
+details.more>div{display:block;margin:6px 0 4px;padding:2px 0 2px 10px;border-left:2px solid var(--rule);color:var(--muted);font-size:13px;line-height:1.5;font-weight:400;font-style:normal;letter-spacing:0;text-transform:none;text-align:left}
+details.more>div p{margin:0 0 6px}details.more>div p:last-child{margin-bottom:0}
+details.more>div b{color:var(--chalk)}
+/* a hint that is its own box (summary + ⓘ) keeps the usual .hint spacing */
+.hl{display:block}
+@media (prefers-reduced-motion:no-preference){details.more>div{animation:morein .15s ease-out}}
+@keyframes morein{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+/* hfFold() output: .hms is the summary; .hm1 is the one-line card blurb (clipped to the row, the ⓘ stays visible) */
+.hmx>.hms{display:inline}
+.hm1{white-space:nowrap}
+.hm1>.hms{display:inline-block;max-width:calc(100% - 26px);overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.hm1>details.more>div{white-space:normal}
+div.up>div,.goal>div{min-width:0}
+div.up p.uneed{margin-top:1px;font-size:12px}div.up p.uneed b{color:var(--warn)}
+.hmx-full:has(>details.more[open])>.hms{display:none}

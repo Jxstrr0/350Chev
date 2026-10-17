@@ -393,4 +393,53 @@ $("sheetBody").addEventListener("click",e=>{const b=e.target.closest("[data-les]
 $("panel").addEventListener("click",e=>{if(!LS)return;const b=e.target.closest(LS_WALK);if(!b)return;if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}lsEnd(false);},true);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)lsSafeSave();});window.addEventListener("pagehide",lsSafeSave);
 window.addEventListener("resize",()=>{if(LS)lsPlace();});$("panel").addEventListener("scroll",()=>{if(LS)lsPlace();},{passive:true});
-
+/* ===== HELP (v1.66 UI cleanup): long explainer text folds to a one-line summary + an ⓘ that opens the full text =====
+   moreI(full)/hintMore(summary,full) build the markup by hand; hfFold() does it for any long .hint (and the Shop's one-line card blurbs)
+   on the Test/Events/Analysis/Market/Shop pages: summary = the first sentence (cut short at a clause if it runs long), the ⓘ holds the whole
+   original text. A MutationObserver folds whatever those pages re-render, so JS-built text needs no per-site change. Build, the settings pane
+   and sheets are not observed. CSS: css/ui-help.css. */
+function moreI(full,label){return `<details class="more"><summary aria-label="${label||"More info"}">ⓘ</summary><div>${full}</div></details>`;}
+function hintMore(sum,full,attrs){return `<div class="hint hmx"${attrs?" "+attrs:""}><span class="hms">${sum}</span>${moreI(full)}</div>`;}
+/* [summary html, true] for html whose first sentence (at tag depth 0) ends before the last ~16 characters, or whose first sentence is over max */
+function hfCut(html,max,ms){ms=ms||34;
+  const n=html.length;let depth=0,txt=0,sent=-1,soft=-1,softT=0,sentT=0;
+  for(let i=0;i<n;i++){const ch=html[i];
+    if(ch==="<"){const j=html.indexOf(">",i);if(j<0)break;const tag=html.slice(i+1,j);if(tag[0]==="/")depth--;else if(!/\/$|^(br|img|input|hr|wbr)\b/i.test(tag))depth++;i=j;continue;}
+    if(ch==="&"){const j=html.indexOf(";",i);if(j>0&&j-i<8){txt++;i=j;continue;}}
+    txt++;
+    if(depth!==0)continue;
+    if((ch==="."||ch==="!"||ch==="?")&&html[i+1]===" "&&/^\s+(?:[A-Z<“"($\d⚠✓✗]|&[a-z]+;)/.test(html.slice(i+1,i+4))&&sent<0&&txt>=12){sent=i+1;sentT=txt;break;}
+    if(txt>=ms&&txt<=max&&(ch===";"||ch===":"||(ch===","&&html[i+1]===" ")||(ch==="—"&&html[i-1]===" "))){soft=i;softT=txt;}
+    else if(txt>=ms&&txt<=max&&ch==="·"&&html[i-1]===" "&&html[i+1]===" "){soft=i-1;softT=txt-1;}
+  }
+  let total=0;{let d=0;for(let i=0;i<n;i++){if(html[i]==="<"){const j=html.indexOf(">",i);if(j<0)break;i=j;continue;}total++;}}
+  if(sent>=0&&sentT<=max&&total-sentT>=16)return [html.slice(0,sent).trim(),true];
+  if(total<=max)return null;
+  if(sent>=0&&sentT>max||sent<0){   // first sentence is long (or the text is one long sentence): cut at the last clause break that fits, else at a word
+    if(soft>0)return [html.slice(0,soft).replace(/[\s,;:.—·-]+$/,"")+"…",true];
+    let cut=-1,t=0,dd=0;for(let i=0;i<n;i++){const ch=html[i];if(ch==="<"){const j=html.indexOf(">",i);if(j<0)break;const tag=html.slice(i+1,j);if(tag[0]==="/")dd--;else if(!/\/$|^(br|img|input|hr|wbr)\b/i.test(tag))dd++;i=j;continue;}t++;if(dd===0&&ch===" "&&t>=Math.min(30,ms+8)&&t<=max)cut=i;}
+    if(cut>0)return [html.slice(0,cut).replace(/[\s,;:.—·-]+$/,"")+"…",true];}
+  return null;}
+const HF_SKIP="button,input,select,textarea,a,svg,canvas,details,.warn,.crit";
+const HF_TXT=".hint,.combo>p";
+/* one-line blurbs on cards (Shop): the same split, but the summary is clipped to the row by CSS */
+const HF_ONE=".up>div>p:not(.csub):not(.cxp):not(.uneed),.goal>div>p";
+function hfFold(el){
+  if(!el||el.nodeType!==1||el.__hf===el.innerHTML)return;
+  if(el.querySelector(":scope > .hms,:scope > details.more"))return;
+  if(el.matches(".ddsay,.maphs,.bucount,.buerr,.su-txt,.swnote,[data-nofold]")||el.closest("[data-nofold],#setPane,#sheet,#buildForm,#tab-build,.sheet"))return;
+  const one=el.matches(HF_ONE),html=el.innerHTML,plain=el.textContent.trim();
+  if(plain.length<(one?44:64)||el.querySelector(HF_SKIP)||(one&&el.querySelector("b")))return;
+  if(el.matches("[style*='color']")||[...el.querySelectorAll("[style*='color']")].some(c=>c!==el.firstElementChild))return;   // a warning inside the text stays in view; a leading ✓ Legal / ✗ status may head the summary
+  let r=hfCut(html,one?40:92,one?16:34);if(!r&&one)r=[html,true];if(!r){el.__hf=html;return;}
+  const sum=r[0],rest=html.length-sum.length;if(rest<12&&!one){el.__hf=html;return;}
+  const cutS=sum.length<html.length&&!/…$/.test(sum)&&html.startsWith(sum);   // cut at a sentence end: the ⓘ continues it; a clause cut or a whole line: the ⓘ holds the full text and replaces the summary while open
+  el.innerHTML=`<span class="hms">${sum}</span>${moreI(cutS?html.slice(sum.length).trim():html)}`;el.classList.add("hmx");if(!cutS)el.classList.add("hmx-full");if(one)el.classList.add("hm1");el.__hf=el.innerHTML;}
+function hfScan(root){if(!root||root.nodeType!==1)return;
+  if(root.matches&&root.matches(HF_TXT+","+HF_ONE))hfFold(root);
+  root.querySelectorAll(HF_TXT+","+HF_ONE).forEach(hfFold);
+  const h=root.closest&&root.closest(HF_TXT+","+HF_ONE);if(h&&h!==root)hfFold(h);}
+const HF_ROOTS=["tab-test","tab-events","tab-analysis","tab-market","tab-shop"];
+const HF={q:new Set(),sch:0,mo:new MutationObserver(ms=>{for(const m of ms){if(m.target.nodeType===1)HF.q.add(m.target);m.addedNodes.forEach(a=>{if(a.nodeType===1)HF.q.add(a);});}
+  if(HF.q.size&&!HF.sch){HF.sch=1;queueMicrotask(()=>{HF.sch=0;const q=[...HF.q];HF.q.clear();for(const e of q){if(e.isConnected)hfScan(e);}});}})};
+HF_ROOTS.forEach(id=>{const r=$(id);if(r){HF.mo.observe(r,{childList:true,subtree:true});hfScan(r);}});
