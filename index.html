@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.67.2.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.67.3.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -17570,11 +17570,11 @@ function stripAtlas(){
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2);
     if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
   /* row 0: wall banners (340×64 each) */
-  panel(0,0,340,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",42,"#d9a52b");
+  panel(0,0,340,64,"#1d4787","#f4f1e8","SECTION LINE",42,"#d9a52b");
   panel(342,0,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414");
   panel(684,0,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
   /* row 1: long raceway sign */
-  panel(0,66,1024,62,"#f1ede2","#1d4787","PRAIRIE BLUE RACEWAY · SASKATOON",46,"#1d4787");
+  panel(0,66,1024,62,"#f1ede2","#1d4787","SECTION LINE DRAGWAY · SASKATOON",46,"#1d4787");
   /* row 2: finish checker + second-tier banners */
   for(var i=0;i<32;i++) for(var j=0;j<4;j++){ x.fillStyle=((i+j)&1)?"#111":"#f2f2f2"; x.fillRect(i*16, 130+j*16, 16,16); }
   panel(512,130,256,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
@@ -17583,7 +17583,7 @@ function stripAtlas(){
   var mk=["60 FT","330","1/8","1000","1/4"];
   for(i=0;i<5;i++){ var bx=i*205; x.fillStyle="#1a1a1a"; x.fillRect(bx,196,203,122); x.fillStyle="#f4efe2"; x.fillRect(bx+6,202,191,110); x.fillStyle="#141414"; x.font="700 "+(mk[i].length>4?66:78)+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+101, 260); }
   /* row 4: hauler liveries 512×120 ×2 */
-  panel(0,322,510,120,"#e9e6dc","#1d4787","PRAIRIE BLUE RACING",50,"#d9a52b");
+  panel(0,322,510,120,"#e9e6dc","#1d4787","SECTION LINE RACING",50,"#d9a52b");
   panel(512,322,512,120,"#1b1d20","#e5701f","COULEE FUELS",64,"#e5701f");
   /* row 5: tower windows strip */
   x.fillStyle="#0e1418"; x.fillRect(0,446,1024,64); for(i=0;i<16;i++){ x.fillStyle="#26343d"; x.fillRect(i*64+4,450,56,56); x.fillStyle="rgba(170,200,220,0.25)"; x.fillRect(i*64+6,452,20,52); }
@@ -18342,7 +18342,7 @@ function sc_letterTex(){
     for(i=0;i<txt.length;i++){ var da=ws[i]/tw*span; x.save(); x.translate(256,256); x.rotate(a+da/2+PI/2); x.fillText(txt[i], -ws[i]/2, -r); x.restore(); a+=da; }
   }
   x.fillStyle="rgba(240,236,226,0.95)"; x.textBaseline="middle";
-  arc("PRAIRIE BLUE", 204, -PI/2, 1.25, 46); arc("PRAIRIE BLUE", 204, PI/2, 1.25, 46);
+  arc("SECTION LINE", 204, -PI/2, 1.25, 46); arc("SECTION LINE", 204, PI/2, 1.25, 46);
   x.fillStyle="rgba(240,236,226,0.7)";
   arc("DRAG · RADIAL · 15", 204, 0, 0.9, 26); arc("DRAG · RADIAL · 15", 204, PI, 0.9, 26);
   return sc_ctex(c);
@@ -19830,7 +19830,7 @@ function stripBoardDraw(d, force){
 /* v2: the title line over the boards: the round on a race night, the raceway otherwise, the winner's call after the final */
 function stripTitleDraw(force){
   var T=STRIP.title; if(!T) return; var X=STRIP.rn||{}, hon=!!STRIP.honour;
-  var txt=hon?"WON THE NIGHT":X.round?String(X.round):"PRAIRIE BLUE RACEWAY", key=txt+"|"+hon;
+  var txt=hon?"WON THE NIGHT":X.round?String(X.round):"SECTION LINE DRAGWAY", key=txt+"|"+hon;
   if(!force && key===T.key) return; T.key=key;
   var x=T.cv.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
   x.fillStyle="#060607"; x.fillRect(0,0,512,64); x.strokeStyle="#34373c"; x.lineWidth=6; x.strokeRect(3,3,506,58);
@@ -20827,7 +20827,7 @@ function pullAtlas(){
   panel(342,0,340,64,"#141413","#d97757","COULEE FUELS",42,"#d97757");
   panel(684,0,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
   panel(0,66,1024,62,"#141413","#d97757","PRAIRIE ENGINE WORKS · TRUCK & TRACTOR PULL",40,"#d97757");
-  panel(0,130,254,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",34,"#d9a52b"); panel(256,130,254,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
+  panel(0,130,254,64,"#1d4787","#f4f1e8","SECTION LINE",34,"#d9a52b"); panel(256,130,254,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
   panel(512,130,254,64,"#2c6b3a","#f4f1e8","HALCYON GT",36); panel(768,130,256,64,"#f1ede2","#141413","DIESEL DAYS",36,"#d97757");
   var mk=["50","100","150","200","250","300"];
   for(i=0;i<6;i++){ var bx=i*171; x.fillStyle="#141413"; x.fillRect(bx,196,169,122); x.fillStyle=i===5?"#d97757":"#f4efe2"; x.fillRect(bx+6,202,157,110); x.fillStyle="#141413"; x.font="700 76px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+84, 252); x.font="700 22px "+F; x.fillText("FEET", bx+84, 298); }
@@ -23288,7 +23288,7 @@ function roadAtlas(name){
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2);
     if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
   panel(0,0,1024,96,"#f1ede2","#1d4787",String(name).toUpperCase(),62,"#d97757");
-  panel(0,98,340,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",42,"#d9a52b"); panel(342,98,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414"); panel(684,98,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
+  panel(0,98,340,64,"#1d4787","#f4f1e8","SECTION LINE",42,"#d9a52b"); panel(342,98,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414"); panel(684,98,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
   panel(0,164,340,64,"#2c6b3a","#f4f1e8","HALCYON GT",42); panel(342,164,340,64,"#141413","#d97757","PRAIRIE ENGINE WORKS",30,"#d97757"); panel(684,164,340,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",40);
   for(var i=0;i<64;i++) for(var j=0;j<4;j++){ x.fillStyle=((i+j)&1)?"#111":"#f2f2f2"; x.fillRect(i*16, 232+j*16, 16,16); }
   panel(0,300,256,96,"#141413","#f4efe2","PIT",64,"#d97757"); panel(258,300,256,96,"#f4efe2","#c8261c","3",80); panel(514,300,256,96,"#f4efe2","#c8261c","2",80); panel(770,300,254,96,"#f4efe2","#c8261c","1",80);
@@ -27719,7 +27719,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.67.2.0";
+const VERSION="1.67.3.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -28907,7 +28907,7 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
     car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg${r.auto?r.auto.took!=null?" · you took over":" · Auto driver":""}`};}
 function dragSlipCard(r,res){const D=slipData(r,res),two=!!D.R,lamp=w=>two&&D.win!=null?`<i class="lamp${w?" on":""}"></i>`:"";
   const pb=r.pb&&r.et!=null?(()=>{const f=etFix(r.et,+r.pb.was);return`<div class="stamp">${r.pb.all?"PERSONAL BEST":"ENGINE BEST"}<br><s>${(+r.pb.was).toFixed(f)}</s> ${r.et.toFixed(f)}</div>`;})():"";
-  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE BLUE RACEWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
+  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>SECTION LINE DRAGWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
     <div class="tsc"><strong>${rnEsc(D.car)}</strong>${rnEsc(D.spec)}</div>
     <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(D.win===true)}You</th>${two?`<th><small>Left lane</small>${lamp(D.win===false)}${rnEsc(D.opp)}</th>`:""}</tr></thead>
     <tbody>${D.rows.map(x=>`<tr class="${x[3]||""}"><td>${x[0]}</td><td>${x[1]}</td>${two?`<td>${x[2]==null?"—":x[2]}</td>`:""}</tr>`).join("")}</tbody></table>
@@ -28924,7 +28924,7 @@ function slipCanvas(l){const r=l.res.drag,res=l.res,D=slipData(r,res),W=1080,H=1
   {const g=x.createLinearGradient(0,T,0,B);g.addColorStop(0,"rgba(0,0,0,.05)");g.addColorStop(.15,"rgba(0,0,0,0)");g.addColorStop(.88,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.06)");x.fillStyle=g;x.fillRect(L,T,Rt-L,B-T);}
   const dash=y=>{x.save();x.strokeStyle="rgba(45,43,54,.45)";x.setLineDash([10,8]);x.lineWidth=2;x.beginPath();x.moveTo(L+40,y);x.lineTo(Rt-40,y);x.stroke();x.restore();};
   const fit=(t,font,max)=>{x.font=font;let s=String(t);while(s.length>3&&x.measureText(s).width>max)s=s.slice(0,-2)+"…";return s;};
-  x.textAlign="center";x.fillStyle=ink;{let fs=58;x.font=F(fs,700);while(fs>34&&x.measureText("PRAIRIE BLUE RACEWAY").width>Rt-L-80){fs-=2;x.font=F(fs,700);}}x.fillText("PRAIRIE BLUE RACEWAY",W/2,150);
+  x.textAlign="center";x.fillStyle=ink;{let fs=58;x.font=F(fs,700);while(fs>34&&x.measureText("SECTION LINE DRAGWAY").width>Rt-L-80){fs-=2;x.font=F(fs,700);}}x.fillText("SECTION LINE DRAGWAY",W/2,150);
   x.fillStyle=ink2;x.font=M(26);x.fillText(fit(("1/4 MILE · "+D.round).toUpperCase(),M(26),Rt-L-80),W/2,196);x.fillText(D.date,W/2,232);dash(262);
   x.fillStyle=ink;x.fillText(fit(D.car,M(32,500),Rt-L-80),W/2,312);x.fillStyle=ink2;x.font=M(23);x.fillText(fit(D.spec,M(23),Rt-L-80),W/2,350);dash(380);
   // the times: label on the left, your lane, then theirs
