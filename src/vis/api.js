@@ -108,8 +108,7 @@ const ENGINE_VIS = {
         composer=new THREE.EffectComposer(renderer); composer.userData_tier=want;
         var ds=renderer.getDrawingBufferSize(new THREE.Vector2());
         if(want==="ultra" && THREE.SSAOPass){
-          var ao=new THREE.SSAOPass(scene, camera, ds.x, ds.y);
-          ao.kernelRadius=0.9; ao.minDistance=0.0008; ao.maxDistance=0.06; ao.output=THREE.SSAOPass.OUTPUT.Default;
+          var ao=ultraSSAO(scene, camera, ds.x, ds.y, ULTRA_AOV.shop);
           composer.addPass(ao); composer.aoPass=ao;
         } else composer.addPass(new THREE.RenderPass(scene, camera));
         bloomPass=new THREE.UnrealBloomPass(new THREE.Vector2(ds.x/2, ds.y/2), 0.55, 0.45, 0.80);
@@ -339,7 +338,7 @@ const ENGINE_VIS = {
     /* the module runs its own rAF loop; this is a no-op hook for external ticks */
     if(!renderer) return;
     if(running) return;
-    tick(dt||0.016, (clock?clock.elapsedTime:0));
+    tick(dt||0.016, (clock?clock.elapsedTime:0)); ultraFloor();
     if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene,camera);
   },
 
