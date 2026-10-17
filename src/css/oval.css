@@ -6,7 +6,7 @@
 .ovn .ovs.on{opacity:1;border-color:var(--orange)}.ovn .ovs.on b{color:var(--orange2)}.ovn .ovs.done{opacity:1}.ovn .ovs.done b::after{content:" ✓";color:var(--good)}
 :root[data-theme=light] .ovn .ovs.on b{color:var(--orange)}
 #ovalCtl{margin-bottom:10px}
-.hlbtns #ovalPush{flex:1.6}.hlbtns #ovalSave.on{background:var(--warn);color:#1b1a17;border-color:var(--warn)}.hlbtns #ovalPush.on{background:var(--good);border-color:var(--good)}
+.hlbtns #ovalPush{flex:1.6}.hlbtns #ovalSave.on{background:var(--warn);color:#141413;border-color:var(--warn)}.hlbtns #ovalPush.on{background:var(--good);border-color:var(--good)}
 :root[data-theme=light] #panel :is(.hlbtns #ovalSave.on){color:#fff}
 .rdbtns #ovalSkip{flex:1.2}.rdbtns #ovalSpdB{flex:.8}.rdbtns #ovalCamB{flex:1.5}
 .rtop.ovlaps div{grid-template-columns:22px minmax(0,1fr) auto 56px}
@@ -15,8 +15,8 @@
 #evHud #ovalLive .hl-bar{height:7px;margin-top:5px}
 html:not(.desk) #evHud[data-ev=ovalLive]{padding-top:8px}
 html:not(.desk) #evHud #ovalLive .hlh .rd-spd b{font-size:24px}html:not(.desk) #evHud #ovalLive .hlh .rd-g b{font-size:19px}html:not(.desk) #evHud #ovalLive .hlh .rd-lt b{font-size:16px}
-html.desk #ovalCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(15,17,20,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  --soot:#15171b;--panel:#1e2126;--panel2:#262a31;--rule:#343941;--chalk:#f0ece2;--muted:#b8b2a3;--dim:#8e887b;--orange:#ff7a1a;--orange2:#ffa04d;--good:#4fc08d;--warn:#e5b73b;--crit:#e2473c;--info:#5fa8e6;color:var(--chalk)}
+html.desk #ovalCtl{position:fixed;z-index:12;left:calc((100% - var(--sbw))/2);bottom:18px;transform:translateX(-50%);width:min(660px,calc(100% - var(--sbw) - 40px));padding:12px;border-radius:10px;background:rgba(20,20,19,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  --soot:#141413;--panel:#1c1b19;--panel2:#252421;--rule:#2e2d2b;--chalk:#faf9f5;--muted:#b4b1aa;--dim:#9a9791;--orange:#d97757;--orange2:#e8956f;--good:#5cbf8a;--warn:#e2b24a;--crit:#ee5a5e;--info:#78a9dd;--accent2:#b48ce8;color:var(--chalk)}
 html.desk.evhud #ovalCtl{left:auto;right:calc(var(--sbw) + 18px);bottom:16px;transform:none;width:280px;padding:8px}
 html.desk #evHud[data-ev=ovalLive]{width:min(720px,calc(100% - 280px - 56px))}   /* the strip and the buttons share the view's foot: the buttons' 280 px comes off the strip */
 html.desk.evhud #ovalCtl .rdbtns{margin-top:6px}

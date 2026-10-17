@@ -62,7 +62,7 @@ function boatNext(N){const prev=N.rounds[N.stage],w=prev.map(m=>m.win),out=[];fo
 function boatMyMatch(N){const r=N.rounds[N.stage];return r?r.find(m=>m.a===0||m.b===0):null;}
 function boatPart(N,i){return i===0?{name:"You",boat:engineName().slice(0,22),you:true}:N.field[i-1];}
 function boatBtnText(t,sub){const b=$("boatBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small>${sub}</small>`:"");}
-function boatBreak(kind){BT.failed=true;BT.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||"rod";$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function boatBreak(kind){BT.failed=true;BT.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||"rod";$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
 function boatStart(){
   $("app").classList.add("onstrip");
   const k=boatEnvFix();let N=boatLive();
@@ -86,7 +86,7 @@ function boatStart(){
     if(st.hops>BT.hops){BT.hops=st.hops;sfx("mudslap");}
     if(st.blown&&!BT.blown)buzz([12]);BT.blown=st.blown;
     const og=now<BT.green?0:st.t,o=boatOppAt(og);BT.ox=o.x;BT.ov=o.v;BT.oDone=o.done;
-    if(st.done&&BT.doneAt==null&&(BT.oDone||st.t-st.doneT>1.2)){BT.doneAt=now;const w=boatWinNow();if(w===true){$("flash").style.background="rgba(79,192,141,.35)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(st.done&&BT.doneAt==null&&(BT.oDone||st.t-st.doneT>1.2)){BT.doneAt=now;const w=boatWinNow();if(w===true){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
     if(ENGINE_VIS.setBoat)ENGINE_VIS.setBoat(boatVisFrame(now,dt));
     boatHud();
     run.on=true;
@@ -236,17 +236,17 @@ function boatRunBtn(){const N=boatLive(),b=$("runTest");if(testing)return;const 
   if(N&&N.cls===k){const m=boatMyMatch(N),oi=m?(m.a===0?m.b:m.a):null;b.textContent=`To the line · ${BOAT_RND[N.stage].toLowerCase()}${oi?" vs "+N.field[oi-1].name.split(" ").pop():""}`;}
   else{const c=testCost();b.textContent=`Enter the boat drags${c?" · "+fmt$(c):""}`;}}
 /* the run sheet's trace: speed and prop slip against distance, the trim under them */
-function drawBoatTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawBoatTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1";const soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=(r.trace||[]).filter(p=>p.x<=SIM.BOAT_FT+30);if(!tr.length)return;
   const L=SIM.BOAT_FT,padL=34,padR=34,padT=12,padB=22,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*Math.max(0,Math.min(1,d/(L+20))),mx=Math.max(20,Math.ceil(Math.max(...tr.map(p=>p.v))*2.23694/20)*20);
   x.strokeStyle=css.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;x.font="10px "+getComputedStyle(document.body).fontFamily;x.textAlign="center";
   for(let f=0;f<=1000;f+=200){const px=X(f/3.28084);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText(f+" ft",px,H-6);}
-  x.fillStyle="rgba(226,71,60,.14)";tr.forEach((p,i)=>{if(p.b&&i)x.fillRect(X(tr[i-1].x),padT,Math.max(1,X(p.x)-X(tr[i-1].x)),ch);});
+  x.fillStyle="rgba(238,90,94,.14)";tr.forEach((p,i)=>{if(p.b&&i)x.fillRect(X(tr[i-1].x),padT,Math.max(1,X(p.x)-X(tr[i-1].x)),ch);});
   const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
-  const tR=SIM.boatTrimRange();line(p=>(p.trim-tR[0])/(tR[1]-tR[0]),"rgba(79,192,141,.85)",1.2,[2,3]);line(p=>Math.max(0,p.slip),"rgba(95,168,230,.9)",1.5);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
+  const tR=SIM.boatTrimRange();line(p=>(p.trim-tR[0])/(tR[1]-tR[0]),"rgba(92,191,138,.85)",1.2,[2,3]);line(p=>Math.max(0,p.slip),"rgba(120,169,221,.9)",1.5);line(p=>p.v*2.23694/mx,"#d97757",2.2);
   x.strokeStyle=INK;x.lineWidth=1;x.setLineDash([3,3]);x.beginPath();x.moveTo(X(L),padT);x.lineTo(X(L),padT+ch);x.stroke();x.setLineDash([]);
-  const ly=padT+ch-6;x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,ly);x.fillStyle="rgba(95,168,230,.9)";x.fillText("slip",padL+34,ly);x.fillStyle="rgba(79,192,141,.95)";x.fillText("trim",padL+60,ly);x.fillStyle="rgba(226,71,60,.8)";x.fillText("blown",padL+88,ly);
+  const ly=padT+ch-6;x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#d97757";x.fillText("mph",padL+4,ly);x.fillStyle="rgba(120,169,221,.9)";x.fillText("slip",padL+34,ly);x.fillStyle="rgba(92,191,138,.95)";x.fillText("trim",padL+60,ly);x.fillStyle="rgba(238,90,94,.8)";x.fillText("blown",padL+88,ly);
   x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,ly);}
 function boatRedraw(){const l=lastForChart();if(S.env.testType==="boat"&&l&&l.boat)drawBoatTrace(l.boat);}
 function boatSlipCard(r,res){const M=r.match||{},f3=v=>v==null?"—":(+v).toFixed(3),rt=v=>v==null?"—":v<0?"RED":(+v).toFixed(3),mk=n=>(r.marks||[]).find(q=>q.n===n),failed=!!res.boatFailed;

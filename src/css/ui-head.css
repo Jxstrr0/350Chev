@@ -4,7 +4,7 @@
 .hudbtns>button,#app.mini .hudbtns>button,html.desk #app.mini .hudbtns>button{width:44px;height:44px;padding:0;gap:0;justify-content:center;position:relative}
 .hudbtns>button .lb{display:none}
 .hudbtns>button svg{width:20px;height:20px}
-#setOpen.open{border-color:var(--orange);color:var(--orange2);background:rgba(38,22,9,.84)}
+#setOpen.open{border-color:var(--orange);color:var(--orange2);background:rgba(44,26,17,.84)}
 #viewBtn.lit::after{position:absolute;margin:0;top:7px;right:7px}
 /* phone, off Build: four buttons along the foot instead of three, so the engine card gives up a little width */
 @media (max-width:600px){
