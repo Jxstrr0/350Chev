@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.70.2.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.70.3.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -17890,6 +17890,7 @@ function loop(now){
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ if(STRIP.post) stripPostStep(); stripRender(); return; }
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
+  ultraFloor();   /* Ultra: the sealed floor's mirror pass (and the stock floor back when the tier drops) */
   if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
 }
 
@@ -20992,7 +20993,7 @@ function stripBlur(P, dt){
 function stripComposer(){
   if(STRIP.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(STRIP.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(STRIP.scene, STRIP.cam));
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(ultraRenderPass(STRIP.scene, STRIP.cam, "strip"));
       var hp=new THREE.ShaderPass(STRIP_HEAT_SHADER); hp.enabled=false; C.addPass(hp); STRIP.heatPass=hp;
       var mb=new THREE.ShaderPass(STRIP_BLUR_SHADER); mb.enabled=false; C.addPass(mb); STRIP.blurPass=mb;
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); STRIP.bloom=bp;
@@ -22073,7 +22074,7 @@ function pullDirect(o, dt, V){
 function pullComposer(){
   if(PULL.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(PULL.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(PULL.scene, PULL.cam));
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(ultraRenderPass(PULL.scene, PULL.cam, "pull"));
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); PULL.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       PULL.composer=C; PULL.cSize=""; }catch(e){ PULL.composer=false; return null; } }
@@ -22452,7 +22453,7 @@ function bogDirect(o, dt, V){
 function bogComposer(){
   if(BOG.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(BOG.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(BOG.scene, BOG.cam));
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(ultraRenderPass(BOG.scene, BOG.cam, "bog"));
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); BOG.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       BOG.composer=C; BOG.cSize=""; }catch(e){ BOG.composer=false; return null; } }
@@ -23883,7 +23884,7 @@ function boatDirect(o, dt){
 }
 function boatComposer(){
   if(BOAT.composer===false) return null; var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(BOAT.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(BOAT.scene, BOAT.cam)); var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); BOAT.bloom=bp;
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(ultraRenderPass(BOAT.scene, BOAT.cam, "boat")); var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); BOAT.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader)); BOAT.composer=C; BOAT.cSize=""; }catch(e){ BOAT.composer=false; return null; } }
   var key=sz.x+"x"+sz.y+"@"+pr; if(BOAT.cSize!==key){ if(C.setPixelRatio) C.setPixelRatio(pr); C.setSize(sz.x, sz.y); BOAT.cSize=key; } return C;
 }
@@ -24262,7 +24263,7 @@ function roadDirect(o, dt, W, car){
 function roadComposer(){
   if(ROAD.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(ROAD.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.rp=new THREE.RenderPass(ROAD.W.scene, ROAD.cam); C.addPass(C.rp);
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.rp=ultraRenderPass(ROAD.W.scene, ROAD.cam, "road"); C.addPass(C.rp);
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); ROAD.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       ROAD.composer=C; ROAD.cSize=""; }catch(e){ ROAD.composer=false; return null; } }
@@ -26494,7 +26495,7 @@ function ovalDirect(o, dt, me, V){
 function ovalComposer(){
   if(OVAL.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(OVAL.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(OVAL.scene, OVAL.cam));
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(ultraRenderPass(OVAL.scene, OVAL.cam, "oval"));
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); OVAL.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       OVAL.composer=C; OVAL.cSize=""; }catch(e){ OVAL.composer=false; return null; } }
@@ -26618,14 +26619,15 @@ function ultraRT(){
   var rt=new THREE.WebGLMultisampleRenderTarget(Math.max(1,ds.x), Math.max(1,ds.y), {minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat});
   rt.samples=4; return rt;
 }
-/* a cached composer stays while its multisampling matches the tier; a tier change drops it (null) so it is rebuilt */
+/* a cached composer stays while its Ultra setup (multisampling, AO pass) matches the tier; a tier change drops it (null) so it is rebuilt */
+function ultraKey(){ return (ULT()?1:0)+(ultraMSOk()?2:0); }
 function ultraComposerKeep(C){
   if(!C) return C;
-  if(!!C.ultraMS===!!ultraMSOk()) return C;
+  if(C.ultraMS===ultraKey()) return C;
   try{ C.passes.forEach(function(p){ if(p.dispose) p.dispose(); }); C.renderTarget1.dispose(); C.renderTarget2.dispose(); }catch(e){}
   return null;
 }
-function ultraComposerMark(C){ if(C) C.ultraMS=!!ultraMSOk(); return C; }
+function ultraComposerMark(C){ if(C) C.ultraMS=ultraKey(); return C; }
 /* sun shadow map: twice Full's size on Ultra (full = Full's size); resets when the size changes */
 function ultraShadow(light, full){
   if(!light||!light.shadow) return;
@@ -26668,7 +26670,34 @@ function ultraBeam(mesh, base){
     mesh.onBeforeRender=function(){ var m=this.material; if(m===this.userData.ultraBeam){ m.uniforms.uOp.value=this.userData.beamBase.opacity*ULTRA_BEAM_K; m.uniforms.uT.value=performance.now()/1000; } }; }
   mesh.material=U.ultraBeam;
 }
-/* --- SSAO for the small on-demand scenes --- */
+/* --- SSAO ---
+   One SSAOPass recipe for every Ultra scene: a 24-bit depth buffer (the stock 16-bit one bands badly at range), an AO strength
+   and a distance fade (far pixels have no useful AO, only noise), no see-through bits in the normal/depth pass (smoke, glass,
+   sky), no second run of the shadow maps for that pass, and optionally a 4x multisampled beauty target. o: r = sample radius
+   (world units), min / max = depth gap window (world units), k = strength, f0 / f1 = fade-out distance, ms = multisampled. */
+function ultraSSAO(S, cam, w, h, o){
+  var ao=new THREE.SSAOPass(S, cam, w, h), span=Math.max(1, cam.far-cam.near);
+  ao.kernelRadius=o.r; ao.minDistance=o.min/span; ao.maxDistance=o.max/span; ao.output=THREE.SSAOPass.OUTPUT.Default;
+  var dt=new THREE.DepthTexture(w, h); dt.type=THREE.UnsignedIntType; var nrt=ao.normalRenderTarget;
+  nrt.depthTexture.dispose(); nrt.depthTexture=dt; ao.ssaoMaterial.uniforms.tDepth.value=dt; ao.depthRenderMaterial.uniforms.tDepth.value=dt;
+  var sm=ao.ssaoMaterial, U=sm.uniforms; U.uK={value:o.k||1}; U.uFade={value:new THREE.Vector2(o.f0||1e9, o.f1||2e9)};
+  sm.fragmentShader=sm.fragmentShader.replace("uniform float kernelRadius;", "uniform float kernelRadius; uniform float uK; uniform vec2 uFade;")
+    .replace("gl_FragColor = vec4( vec3( 1.0 - occlusion ), 1.0 );", "occlusion *= uK*(1.0-smoothstep(uFade.x, uFade.y, -viewZ)); gl_FragColor = vec4( vec3( 1.0 - occlusion ), 1.0 );");
+  if(o.ms && ultraMSOk()){
+    var m=new THREE.WebGLMultisampleRenderTarget(Math.max(1,w), Math.max(1,h), {minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat}); m.samples=4;
+    ao.beautyRenderTarget.dispose(); ao.beautyRenderTarget=m; U.tDiffuse.value=m.texture; }
+  var hidden=[], orig=ao.renderOverride, r0=ao.render;
+  ao.render=function(){   /* the stock pass reads the lens once; an event camera's fov and lens shift change every frame */
+    var u=this.ssaoMaterial.uniforms, c=this.camera; u.cameraProjectionMatrix.value.copy(c.projectionMatrix); u.cameraInverseProjectionMatrix.value.copy(c.projectionMatrixInverse);
+    u.cameraNear.value=c.near; u.cameraFar.value=c.far; r0.apply(this, arguments); };
+  ao.renderOverride=function(){   /* the normal/depth pass: no smoke, glass or other see-through bits, and the shadow maps stay as the beauty pass drew them */
+    hidden.length=0; this.scene.traverseVisible(function(q){ var m=q.material; if((q.isMesh||q.isPoints||q.isSprite) && m && (m.transparent || m.depthWrite===false || q.isPoints)){ hidden.push(q); } });
+    hidden.forEach(function(q){ q.visible=false; }); var au=renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate=false;
+    orig.apply(this, arguments);
+    renderer.shadowMap.autoUpdate=au; hidden.forEach(function(q){ q.visible=true; }); };
+  return ao;
+}
+/* the small on-demand scenes (race night pits, trophy room) draw through their own composer: SSAO and a gamma pass */
 var ULTRA_AO={};
 function ultraAO(key, S, cam, o){
   if(!ULT() || !THREE.SSAOPass || !THREE.EffectComposer) return null;
@@ -26676,17 +26705,29 @@ function ultraAO(key, S, cam, o){
   if(A===false) return null;
   if(!A || A.scene!==S || A.cam!==cam){
     try{ if(A&&A.C) A.C.passes.forEach(function(p){ if(p.dispose) p.dispose(); });
-      var C=new THREE.EffectComposer(renderer), ao=new THREE.SSAOPass(S, cam, ds.x, ds.y);
-      ao.kernelRadius=o.r; ao.minDistance=o.min; ao.maxDistance=o.max; ao.output=THREE.SSAOPass.OUTPUT.Default;
-      var hidden=[], orig=ao.renderOverride;
-      ao.renderOverride=function(){   /* the normal/depth pass: no smoke, glass or other see-through bits */
-        hidden.length=0; S.traverseVisible(function(q){ var m=q.material; if((q.isMesh||q.isPoints||q.isSprite) && m && (m.transparent || m.depthWrite===false || q.isPoints)){ hidden.push(q); } });
-        hidden.forEach(function(q){ q.visible=false; }); orig.apply(this, arguments); hidden.forEach(function(q){ q.visible=true; }); };
+      var C=new THREE.EffectComposer(renderer), ao=ultraSSAO(S, cam, ds.x, ds.y, {r:o.r, min:o.min*(cam.far-cam.near), max:o.max*(cam.far-cam.near)});
       C.addPass(ao); if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       A=ULTRA_AO[key]={C:C, ao:ao, scene:S, cam:cam, size:""}; }
     catch(e){ ULTRA_AO[key]=false; return null; } }
   var sk=ds.x+"x"+ds.y; if(A.size!==sk){ var cs=renderer.getSize(new THREE.Vector2()); if(A.C.setPixelRatio) A.C.setPixelRatio(renderer.getPixelRatio()); A.C.setSize(cs.x, cs.y); A.size=sk; }
   return A.C;
+}
+/* the event composers' first pass: Full draws the scene (RenderPass); Ultra draws it through SSAO, so cars sit on the track,
+   the stands, crowd and buildings get contact shading, and the multisampled beauty keeps the edges clean */
+var ULTRA_AOV={
+  shop:{r:0.9, min:0.2, max:15, k:1.5, f0:70, f1:130, ms:1},   /* the workshop's own composer (api.js setQuality) */
+  strip:{r:1.3, min:0.07, max:1.8, k:0.85, f0:55, f1:130, ms:1},
+  pull:{r:1.4, min:0.08, max:2.0, k:0.85, f0:60, f1:140, ms:1},
+  bog:{r:1.4, min:0.08, max:2.0, k:0.8, f0:55, f1:130, ms:1},
+  oval:{r:1.4, min:0.08, max:2.0, k:0.85, f0:60, f1:140, ms:1},
+  road:{r:1.4, min:0.08, max:2.0, k:0.8, f0:60, f1:140, ms:1},
+  boat:{r:1.3, min:0.07, max:1.8, k:0.8, f0:55, f1:130, ms:1}
+};
+function ultraRenderPass(S, cam, key){
+  if(ULT() && THREE.SSAOPass && THREE.DepthTexture && ULTRA_AOV[key] && ULTRA_AO[key]!==false){
+    try{ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()), ao=ultraSSAO(S, cam, ds.x, ds.y, ULTRA_AOV[key]); ao.ultraAO=true; return ao; }
+    catch(e){ ULTRA_AO[key]=false; } }
+  return new THREE.RenderPass(S, cam);
 }
 /* --- road course / 24 h --- */
 /* trees: a faceted two-crown broadleaf on a trunk (Full: one icosahedron blob sunk in the ground). The trees go into
@@ -26752,9 +26793,14 @@ function ultraBoatReflect(S, cam, water, hide){
   var mat=water.material; if(!mat||!mat.uniforms) return; ultraWaterPatch(mat);
   var R=ultraReflState(), ds=renderer.getDrawingBufferSize(new THREE.Vector2()), w=Math.max(2,Math.round(ds.x/2)), h=Math.max(2,Math.round(ds.y/2)), sk=w+"x"+h;
   if(R.size!==sk){ R.rt.setSize(w,h); R.size=sk; }
-  var y0=water.position.y, vc=R.cam;
+  mat.uniforms.uRK.value=ultraMirror(R, S, cam, water.position.y, [water].concat(hide||[]))?1:0;
+}
+/* render S as seen from cam mirrored in the horizontal plane y=y0 into R.rt (oblique near plane: nothing below the plane shows);
+   R.tm then maps a world point to the reflection's uv. hide = objects left out (the reflecting surface itself). false = the camera is under the plane. */
+function ultraMirror(R, S, cam, y0, hide){
+  var vc=R.cam;
   cam.updateMatrixWorld(); _urC.setFromMatrixPosition(cam.matrixWorld);
-  if(_urC.y<=y0+0.05){ mat.uniforms.uRK.value=0; return; } mat.uniforms.uRK.value=1;
+  if(_urC.y<=y0+0.05) return false;
   _urR.extractRotation(cam.matrixWorld); _urL.set(0,0,-1).applyMatrix4(_urR).add(_urC);
   vc.position.set(_urC.x, 2*y0-_urC.y, _urC.z); _urT.set(_urL.x, 2*y0-_urL.y, _urL.z);
   vc.up.set(0,1,0).applyMatrix4(_urR); vc.up.y=-vc.up.y; vc.lookAt(_urT);
@@ -26766,10 +26812,62 @@ function ultraBoatReflect(S, cam, water, hide){
   _urV.multiplyScalar(2/_urV.dot(_urQ)); pm.elements[2]=_urV.x; pm.elements[6]=_urV.y; pm.elements[10]=_urV.z+1-0.003; pm.elements[14]=_urV.w;
   vc.projectionMatrixInverse.copy(pm).invert();
   R.tm.set(0.5,0,0,0.5, 0,0.5,0,0.5, 0,0,0.5,0.5, 0,0,0,1).multiply(pm).multiply(vc.matrixWorldInverse);
-  var vis=[water.visible]; water.visible=false; (hide||[]).forEach(function(o,i){ vis[i+1]=o.visible; o.visible=false; });
+  var vis=hide.map(function(o){ var v=o.visible; o.visible=false; return v; });
   var rtk=renderer.getRenderTarget(), au=renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate=false;
   renderer.setRenderTarget(R.rt); renderer.clear(); renderer.render(S, vc); renderer.setRenderTarget(rtk); renderer.shadowMap.autoUpdate=au;
-  water.visible=vis[0]; (hide||[]).forEach(function(o,i){ o.visible=vis[i+1]; });
+  hide.forEach(function(o,i){ o.visible=vis[i]; });
+  return true;
+}
+/* --- workshop: sealed floor ---
+   Full's concrete is matte with a little env sheen. On Ultra the floor is sealed: the room is drawn once more from the camera
+   mirrored in the floor (half resolution, with mip levels for the blur), and the floor shader lays that over its own light
+   by Fresnel and by how glossy its roughness map says each spot is (oil stains and polished tyre tracks shine, joints and
+   rough aggregate don't). Two lookups, one sharp and one wide, make the reflection tighten where things touch the floor. */
+var ULTRA_FLOOR={mesh:null, base:null, mat:null, R:null, size:"", G:null};
+function ultraFloorState(){
+  if(ULTRA_FLOOR.R) return ULTRA_FLOOR.R;
+  var mip=!!renderer.capabilities.isWebGL2;
+  var rt=new THREE.WebGLRenderTarget(512, 256, {minFilter:mip?THREE.LinearMipmapLinearFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat}); rt.texture.generateMipmaps=mip;
+  return (ULTRA_FLOOR.R={rt:rt, cam:new THREE.PerspectiveCamera(), tm:new THREE.Matrix4(), size:"", mip:mip});
+}
+function ultraFloorMat(base){
+  var R=ultraFloorState(), m=base.clone(); m.userData={perBuild:true};
+  var U={uRefl:{value:R.rt.texture}, uRM:{value:R.tm}, uRK:{value:1}};
+  m.onBeforeCompile=function(sh){
+    for(var k in U) sh.uniforms[k]=U[k];
+    sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;")
+      .replace("#include <project_vertex>", "#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;");
+    sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nuniform sampler2D uRefl; uniform mat4 uRM; uniform float uRK; varying vec3 vWp;")
+      .replace("#include <aomap_fragment>", "#include <aomap_fragment>\n"+
+        "{ vec3 nG=normalize(vNormal), vd=normalize(vViewPosition); float cg=clamp(dot(nG,vd),0.0,1.0);\n"+
+        "  float fr=0.06+0.94*pow(1.0-cg,4.0);\n"+                                                   /* Fresnel: strongest at a low angle */
+        "  vec4 rp=uRM*vec4(vWp,1.0); vec2 ruv=rp.xy/rp.w+(normal.xy-nG.xy)*0.05;\n"+                 /* the normal map breaks the image up */
+        "  float gl=smoothstep(0.95,0.38,roughnessFactor);\n"+                                         /* glossy where the roughness map is low */
+        "  vec3 sharp=texture2D(uRefl,clamp(ruv,0.002,0.998),0.8).rgb;\n"+
+        "  vec3 wide=(texture2D(uRefl,clamp(ruv+vec2(0.012,0.004),0.002,0.998),3.2).rgb+texture2D(uRefl,clamp(ruv-vec2(0.011,0.006),0.002,0.998),3.2).rgb+texture2D(uRefl,clamp(ruv+vec2(-0.004,0.013),0.002,0.998),3.2).rgb)*0.3333;\n"+
+        "  vec3 rc=mix(wide,sharp,0.4*(1.0-roughnessFactor)+0.1);\n"+
+        "  reflectedLight.indirectSpecular+=rc*(fr*1.4+0.55)*gl*uRK; }");
+  };
+  m.customProgramCacheKey=function(){ return "workshop_floor_ultra"; };
+  m.userData.uni=U; return m;
+}
+/* find the room's floor plane (the big PlaneGeometry on MAT.concrete / MAT.tile) in the current garage group */
+function ultraFloorFind(){
+  var G=garageRoot&&garageRoot.children[0]; if(!G) return null; if(G===ULTRA_FLOOR.G) return ULTRA_FLOOR.mesh;
+  ULTRA_FLOOR.G=G; var f=null;
+  for(var i=0;i<G.children.length&&!f;i++){ var c=G.children[i]; if(c.isMesh && c.geometry && c.geometry.type==="PlaneGeometry" && (c.material===MAT.concrete||c.material===MAT.tile)) f=c; }
+  if(ULTRA_FLOOR.mat){ ULTRA_FLOOR.mat.dispose(); ULTRA_FLOOR.mat=null; }
+  ULTRA_FLOOR.mesh=f; ULTRA_FLOOR.base=f?f.material:null; return f;
+}
+/* call just before the workshop composer draws: on Ultra the mirror pass and the sealed material, off Ultra the stock floor back */
+function ultraFloor(){
+  var f=ultraFloorFind(); if(!f) return;
+  if(!ULT() || !garageRoot.visible || XRAY){ if(f.material!==ULTRA_FLOOR.base) f.material=ULTRA_FLOOR.base; return; }
+  if(!ULTRA_FLOOR.mat) ULTRA_FLOOR.mat=ultraFloorMat(ULTRA_FLOOR.base);
+  var R=ultraFloorState(), M=ULTRA_FLOOR.mat, ds=renderer.getDrawingBufferSize(new THREE.Vector2()), w=Math.max(2,Math.round(ds.x/2)), h=Math.max(2,Math.round(ds.y/2)), sk=w+"x"+h;
+  if(R.size!==sk){ R.rt.setSize(w,h); R.size=sk; }
+  var on=ultraMirror(R, scene, camera, f.position.y, [f]);
+  M.userData.uni.uRK.value=on?1:0; if(f.material!==M) f.material=M;
 }
 /* --- trophy room: shadows from the key light, SSAO contact shading (the room redraws only when
    something changes, so this costs nothing while it sits still) --- */
@@ -26900,8 +26998,7 @@ const ENGINE_VIS = {
         composer=new THREE.EffectComposer(renderer); composer.userData_tier=want;
         var ds=renderer.getDrawingBufferSize(new THREE.Vector2());
         if(want==="ultra" && THREE.SSAOPass){
-          var ao=new THREE.SSAOPass(scene, camera, ds.x, ds.y);
-          ao.kernelRadius=0.9; ao.minDistance=0.0008; ao.maxDistance=0.06; ao.output=THREE.SSAOPass.OUTPUT.Default;
+          var ao=ultraSSAO(scene, camera, ds.x, ds.y, ULTRA_AOV.shop);
           composer.addPass(ao); composer.aoPass=ao;
         } else composer.addPass(new THREE.RenderPass(scene, camera));
         bloomPass=new THREE.UnrealBloomPass(new THREE.Vector2(ds.x/2, ds.y/2), 0.55, 0.45, 0.80);
@@ -27132,7 +27229,7 @@ const ENGINE_VIS = {
     /* the module runs its own rAF loop; this is a no-op hook for external ticks */
     if(!renderer) return;
     if(running) return;
-    tick(dt||0.016, (clock?clock.elapsedTime:0));
+    tick(dt||0.016, (clock?clock.elapsedTime:0)); ultraFloor();
     if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene,camera);
   },
 
@@ -28824,7 +28921,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.70.2.0";
+const VERSION="1.70.3.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
