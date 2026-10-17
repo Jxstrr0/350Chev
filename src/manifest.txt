@@ -38,6 +38,7 @@ vis/bank.js
 vis/exhaust.js
 vis/intake.js
 vis/accessories.js
+vis/engdetail.js
 vis/garage.js
 vis/particles.js
 vis/loop.js
