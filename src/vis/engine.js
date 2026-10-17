@@ -50,7 +50,7 @@ function buildEngineMesh(cfg, layoutObj){
   var B = new Builder();
   DET = (GFX==="ultra") ? 2 : (GFX==="full") ? 1 : 0;   /* 0 Lite = the v1.5 model, 1 Full = medium detail, 2 Ultra = everything */
   if(DET) buildHiMaterials();
-  HW = DET ? {} : null; CUR_B = B; DCTX = { cfg:cfg, L:L, bore:bore, stroke:stroke, per:per, n:n };
+  HW = DET ? {} : null; CUR_B = B; DCTX = { cfg:cfg, L:L, bore:bore, stroke:stroke, per:per, n:n }; ENGD = {};
   var G = new THREE.Group();               /* engine assembly group        */
   var extras = [];                         /* separately-animated meshes   */
   ZONE_MARKS=[]; ZONE_EXTRAS=extras; setZone(1);   /* 1 crankcase: rods, crank, bearings */
