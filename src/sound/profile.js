@@ -67,6 +67,30 @@ const ENGINE_SOUND = (function () {
   }
   function isTwoCfg(cfg) { return !!(cfg && cfg.cycle === "two" && !/^R[1-4]$/.test(cfg.layout || "")); }
 
+  /* Per-layout character, on top of what the firing order already gives the wavetable.
+     lump  : idle roughness (cycle-to-cycle level wander, see set()); a big cam adds to it
+     rasp  : dB on the top exhaust formant (and 0.4x on the middle one): the edge / buzz / scream
+     body  : dB on the bottom formant: the thump / rumble
+     bright: low-pass multiplier;  drive: waveshaper drive multiplier
+     tilt / spread / decay: nudges to the pulse shape, applied to derived (custom-engine) profiles only
+     I4 buzz, I6 silk, cross-plane V8 burble, flat-plane scream, boxer thrum; rotaries, two-strokes and diesels
+     carry their own voicing and take CH0. */
+  var CH0 = { lump: 0, rasp: 0, body: 0, bright: 1, drive: 1, tilt: 0, spread: 1, decay: 1 };
+  function CHR(lump, rasp, body, bright, drive, tilt, spread, decay) { return { lump: lump, rasp: rasp, body: body, bright: bright, drive: drive, tilt: tilt, spread: spread, decay: decay }; }
+  var CHAR = {
+    I3:  CHR(0.30,  0.0,  1.5, 0.94, 1.00, -0.02, 1.05, 0.95),   // off-beat shudder
+    I4:  CHR(0.04,  2.5, -1.0, 1.10, 1.06,  0.03, 0.95, 1.05),   // second-order buzz
+    I5:  CHR(0.14,  1.2,  0.0, 1.00, 1.00,  0.00, 1.00, 1.00),
+    I6:  CHR(0.00, -2.5,  1.5, 0.88, 0.86, -0.03, 1.06, 0.92),   // silk
+    V6:  CHR(0.10,  0.5,  0.5, 1.00, 1.00,  0.00, 1.00, 1.00),
+    V8:  CHR(0.32, -1.0,  3.0, 0.86, 1.00, -0.04, 1.10, 0.90),   // cross-plane burble and lope
+    V8F: CHR(0.00,  5.0, -2.0, 1.32, 1.16,  0.06, 0.88, 1.15),   // flat-plane scream
+    V10: CHR(0.00,  3.0, -2.5, 1.25, 1.10,  0.03, 0.92, 1.08),
+    V12: CHR(0.00,  1.5, -1.0, 1.14, 0.95,  0.00, 0.95, 1.05),
+    F4:  CHR(0.22, -0.5,  2.5, 0.90, 1.00, -0.02, 1.05, 0.95),   // uneven thrum
+    F6:  CHR(0.00,  2.5,  0.0, 1.10, 1.05,  0.02, 1.00, 1.00)
+  };
+
   /* ------------------------------------------------------------------ *
    * 2. Exhaust-system voicing tables
    * ------------------------------------------------------------------ */
@@ -292,6 +316,8 @@ const ENGINE_SOUND = (function () {
     // compression ignition: pressure rises almost instantly (hard edge), and the pipe is a duller,
     // heavier, lower note (big slow cylinders, a muffler and often a turbine in the way)
     if (dz) { tilt = clamp(tilt * 0.62, 0.18, 0.55); spread = clamp(spread * 1.08, 0.92, 1.9); decay = clamp(decay * 0.82, 2.6, 8.0); }
+    var chL = (dz || rot || two) ? CH0 : (CHAR[lk] || CH0);        // layout character (rotary / two-stroke / diesel voice themselves)
+    if (chL !== CH0) { tilt = clamp(tilt + chL.tilt, 0.22, 0.99); spread = clamp(spread * chL.spread, 0.85, 1.9); decay = clamp(decay * chL.decay, 2.6, 10.5); }
 
     // bank asymmetry: only V/F engines have two pipes at all
     var bg = [1, 1], bp = [0, 0], bdel = 0;
@@ -339,7 +365,7 @@ const ENGINE_SOUND = (function () {
       cylJitter: jit, lope: lope, intake: iv, vvl: vvl, ind: ind,
       mech: { tick: tick, whine: whine },
       n2o: num((OPTN2O[cfg.nitrous] || 0), 0), n2oProg: (cfg.nitrous === "prog400" || cfg.nitrous === "prog700") ? 1 : 0,
-      cyl: cc, dz: dz, attack: dz ? 75 : 0, sys: sysVoice(cfg),
+      cyl: cc, dz: dz, attack: dz ? 75 : 0, sys: sysVoice(cfg), ch: chL,
       sub: clamp(0.34 + 0.62 * Math.min(1.35, big) - cam * 0.42 + (dz ? 0.16 : 0), 0.30, 1.25),
       level: clamp(1.06 - n * 0.017 + (big - 1) * 0.07, 0.84, 1.14),
       wet: 0.19, redline: num(cfg.redline, 7000)

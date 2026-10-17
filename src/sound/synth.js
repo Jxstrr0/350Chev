@@ -24,7 +24,7 @@
     var amp = 0; try { if (!peak.td) peak.td = new Float32Array(watchAn.fftSize); watchAn.getFloatTimeDomainData(peak.td); for (i = 0; i < peak.td.length; i++) amp = Math.max(amp, Math.abs(peak.td[i])); } catch (e) {}
     return { hz: Math.round(bi * binHz), db: Math.round(best), lo: Math.round(lo), amp: +amp.toFixed(3), state: ctx.state, sr: ctx.sampleRate };   // amp: sample peak over the last ~43 ms (catches a bang)
   }   /* lite: no reverb, no valvetrain/gear layer — cheaper and never shrill on a phone speaker */
-  function setQuality(q) { LITE = (q === "lite"); if (wetG && dryG) { ap(wetG.gain, LITE ? 0 : (curProf ? curProf.wet : 0.18), 0.1); ap(dryG.gain, LITE ? 1 : (1 - (curProf ? curProf.wet : 0.18) * 0.6), 0.1); } }
+  function setQuality(q) { LITE = (q === "lite"); if (!LITE && N && !N.roarG && ctx) buildRoar(N); if (wetG && dryG) { ap(wetG.gain, LITE ? 0 : (curProf ? curProf.wet : 0.18), 0.1); ap(dryG.gain, LITE ? 1 : (1 - (curProf ? curProf.wet : 0.18) * 0.6), 0.1); } }
   var master = null, limiter = null, bus = null, conv = null, wetG = null, dryG = null;
   var N = null;                    // persistent node bag
   var curProf = null, curLayoutKey = null, curWaveKey = "";
@@ -138,6 +138,13 @@
   /* ------------------------------------------------------------------ *
    * 10. Voice graph construction (once per start())
    * ------------------------------------------------------------------ */
+  /* intake roar under load (full only): a low band of the shared noise, so lite never builds it */
+  function buildRoar(g) {
+    if (!g || g.roarG || !g.noise) return;
+    g.roarBP = ctx.createBiquadFilter(); g.roarBP.type = "bandpass"; g.roarBP.frequency.value = 260; g.roarBP.Q.value = 0.8;
+    g.roarG = ctx.createGain(); g.roarG.gain.value = 0;
+    g.noise.connect(g.roarBP); g.roarBP.connect(g.roarG); g.roarG.connect(bus);
+  }
   function buildGraph() {
     if (N) return;
     graphGen++;
@@ -178,6 +185,7 @@
     g.noise.connect(g.inNoiseG); g.inNoiseG.connect(g.inBP);
     g.exhOsc.connect(g.inToneG); g.inToneG.connect(g.inBP);
     g.inBP.connect(g.inG); g.inG.connect(bus);
+    if (!LITE) buildRoar(g);
 
     /* --- mechanical: valvetrain tick + gear whine ---------------------- */
     g.mechOsc = ctx.createOscillator(); g.mechOsc.setPeriodicWave(buildMechWave(ctx));
@@ -274,10 +282,10 @@
       curWaveKey = wk;
     }
     var ex = EXH[p.exh] || EXH.cast_tubular;
-    var f = ex.form, sv = p.sys || null, fq = sv ? sv.fq : 1;
-    apNow(N.f1.frequency, f[0][0] * fq); N.f1.Q.value = f[0][1]; apNow(N.f1.gain, f[0][2] + (sv ? sv.body : 0));
-    apNow(N.f2.frequency, f[1][0] * fq); N.f2.Q.value = f[1][1]; apNow(N.f2.gain, f[1][2] + (sv ? sv.rasp * 0.4 : 0));
-    apNow(N.f3.frequency, f[2][0] * fq); N.f3.Q.value = f[2][1]; apNow(N.f3.gain, f[2][2] + (sv ? sv.rasp : 0));
+    var f = ex.form, sv = p.sys || null, fq = sv ? sv.fq : 1, ch = p.ch || CHAR[p.layout] || CH0;
+    apNow(N.f1.frequency, f[0][0] * fq); N.f1.Q.value = f[0][1]; apNow(N.f1.gain, f[0][2] + (sv ? sv.body : 0) + ch.body);
+    apNow(N.f2.frequency, f[1][0] * fq); N.f2.Q.value = f[1][1]; apNow(N.f2.gain, f[1][2] + (sv ? sv.rasp * 0.4 : 0) + ch.rasp * 0.4);
+    apNow(N.f3.frequency, f[2][0] * fq); N.f3.Q.value = f[2][1]; apNow(N.f3.gain, f[2][2] + (sv ? sv.rasp : 0) + ch.rasp);
     N.inBP.Q.value = p.intake.q;
     ap(wetG.gain, LITE ? 0 : p.wet, 0.08);
     ap(dryG.gain, LITE ? 1 : 1 - p.wet * 0.6, 0.08);
@@ -402,9 +410,21 @@
     st.boostPeak = Math.max(boost, (st.boostPeak || 0) * Math.pow(0.30, dtSec));
 
     phaseBandApply(rpm);
+    var cyc0 = rpm / 120;
     var cyc = rpm / 120;                     // engine-cycle fundamental (Hz)
     var fire = cyc * n;                      // firing frequency (Hz)
     var rn = clamp(rpm / (p.redline || 7000), 0, 1.4);
+    var ch = p.ch || CHAR[p.layout] || CH0;
+    /* idle lump: a big cam (and a layout's own nature) makes the cycles uneven. Once per engine cycle a new level is
+       drawn, now and then a weak cycle, and the level glides to it, so the idle surges and sags instead of sitting on a sine.
+       It also nudges the pitch (the revs hunt a little). Fades with revs and throttle. */
+    var lopeAmt = ((p.lope || 0) + ch.lump + 0.25 * wear) * clamp(1 - rpm / 2600, 0, 1) * clamp(1 - load * 1.3, 0, 1), lumpP = 0;
+    if (lopeAmt > 0.01 && live) {
+      st.lumpAcc = (st.lumpAcc || 0) + cyc0 * dtSec;
+      if (st.lumpAcc >= 1) { st.lumpAcc -= Math.floor(st.lumpAcc); var rr = Math.random(); st.lumpTgt = rr < 0.18 ? -1 : rr * 1.1 - 0.5; }
+      st.lumpV = (st.lumpV || 0) + ((st.lumpTgt || 0) - (st.lumpV || 0)) * (1 - Math.exp(-dtSec * cyc0 * 4));
+      lumpP = lopeAmt * st.lumpV;
+    } else st.lumpV = (st.lumpV || 0) * 0.9;
 
     /* --- VVL / VTEC crossover ---------------------------------------- */
     var vvlOn = !!(p.vvl && rpm >= p.vvl.rpm);
@@ -419,7 +439,7 @@
     var ind0 = (cfg && cfg.asp) ? indFor(cfg) : p.ind, bt0 = ind0.type;
 
     /* --- exhaust ------------------------------------------------------ */
-    ap(N.exhOsc.frequency, cyc, 0.012);
+    ap(N.exhOsc.frequency, cyc * (1 + 0.010 * lumpP), 0.012);
     var ex = EXH[p.exh] || EXH.cast_tubular;
 
     // drive/distortion grows with load and rpm. Boost mutes the pulse: a turbine
@@ -429,13 +449,13 @@
     // retarded timing dumps burning charge into the pipe: hotter, flatter, harsher
     var sv = p.sys || null;                  // pipe, muffler, cat, cutout (derived profiles only)
     var drive = ex.drive * (0.55 + load * 1.9 + rn * 0.35) * (vvlOn ? 1.12 : 1)
-                * clamp(muff, 0.45, 1) * (1 + knock * 0.45) * (dz ? 0.55 : 1) * (sv ? sv.drive : 1);
+                * clamp(muff, 0.45, 1) * (1 + knock * 0.45) * (dz ? 0.55 : 1) * (sv ? sv.drive : 1) * ch.drive;
     ap(N.pre.gain, 0.8 + drive * 2.4, 0.05);
     ap(N.post.gain, 0.62 / (1 + drive * 0.55), 0.05);
 
     // brightness: low load = closed throttle = muffled
     var lpf = clamp((900 + fire * 9 * (0.35 + 0.85 * load) * (0.35 + 1.1 * ex.tilt)) * vBright
-                    * clamp(muff + 0.10, 0.5, 1.1) * (dz ? 0.62 : 1) * (sv ? sv.bright : 1) * (p.rotary ? 1.30 : 1), dz ? 520 : 700, 7500);
+                    * clamp(muff + 0.10, 0.5, 1.1) * (dz ? 0.62 : 1) * (sv ? sv.bright : 1) * (p.rotary ? 1.30 : 1) * ch.bright, dz ? 520 : 700, 7500);
     ap(N.lp.frequency, lpf, 0.04);
     ap(N.hp.frequency, clamp(38 + rn * 30, 35, 90), 0.08);
 
@@ -480,13 +500,30 @@
     st.onPipe = onPipe;
     // lope: a big cam breathes unevenly at low load and smooths out as it comes
     // on the cam, so the wander dies away with rpm and with throttle
-    var lopeAmt = ((p.lope || 0) + 0.25 * wear) * clamp(1 - rpm / 2600, 0, 1) * clamp(1 - load * 1.3, 0, 1);
     if (lopeAmt > 0.01) {
-      st.lopePh = (st.lopePh || 0) + 0.0135 + Math.random() * 0.018;
-      exhLvl *= 1 + lopeAmt * 0.42 * Math.sin(st.lopePh) * (0.6 + 0.4 * Math.sin(st.lopePh * 2.7));
+      st.lopePh = (st.lopePh || 0) + dtSec * (0.8 + Math.random() * 1.1);
+      exhLvl *= (1 + lopeAmt * 0.30 * Math.sin(st.lopePh) * (0.6 + 0.4 * Math.sin(st.lopePh * 2.7))) * (1 + 0.55 * lumpP);
     }
+    /* rev limiter: an ignition cut. Once the revs sit at the limit the spark is dropped in bursts, so the note
+       stutters (cut 50-100 ms, back on 30-100 ms), the first cycle after a cut comes in hot, and a rich tune
+       dumps fuel into the pipe on every cut: pops. Diesels have a governor instead; the two-step has its own cut below. */
+    var limMul = 1, limTc = 0.03, redl = p.redline || 7000, twoOn = !!(o.twoStep && o.twoStep.on);
+    if (live && !dz && load > 0.5 && rpm >= redl * 0.994 && !twoOn) st.limHold = nowS + 0.22;
+    if (live && !dz && load > 0.4 && nowS < (st.limHold || 0) && !twoOn) {
+      if (nowS >= (st.cutT || 0)) {
+        st.cutting = !st.cutting;
+        st.cutT = nowS + (st.cutting ? 0.05 + 0.05 * Math.random() : 0.03 + 0.07 * Math.random());
+        if (st.cutting) {
+          st.limCuts = (st.limCuts || 0) + 1;
+          var rch = clamp((0.95 - st.lambda) / 0.15, 0, 1);
+          if ((rch > 0.2 || ex.tilt > 0.7) && Math.random() < (LITE ? 0.25 : 0.5) * (0.35 + rch) && nowS - (st.popT || -9) > 0.09) { st.popT = nowS; pop(0.35 + 0.5 * rch * Math.random()); }
+        } else st.uncutT = nowS;
+      }
+      limMul = st.cutting ? 0.10 : (nowS - (st.uncutT || -9) < 0.035 ? 1.35 : 1);
+      limTc = 0.008;
+    } else { st.cutting = false; st.cutT = 0; }
     if (!(st.flareUntil && ctx.currentTime < st.flareUntil))
-      ap(N.exhG.gain, live * exhLvl * (1 + 0.30 * n2oBite) * 0.55 * soloGain("exhaust"), 0.03);
+      ap(N.exhG.gain, live * exhLvl * limMul * (1 + 0.30 * n2oBite) * 0.55 * soloGain("exhaust"), limTc);
     ap(N.brD.gain, brap > 0.005 ? live * exhLvl * 0.55 * 0.9 * brap * soloGain("exhaust") : 0, 0.04);
     /* two-step: the limiter cuts spark on random cycles, so the note stutters; retard makes the
        unburnt charge light off in the pipe as pops (fired from the sim's own bang envelope) */
@@ -537,6 +574,13 @@
       ap(N.inG.gain, live * iv.g * flow * 0.55 * soloGain("intake"), 0.05);
     }
 
+    /* intake roar under load (full tier): the low growl of air rushing the plenum, which a throttle-body honk lacks */
+    if (N.roarG) {
+      var roar = (LITE || !live) ? 0 : iv.g * Math.pow(load, 1.5) * clamp((rpm - 1200) / 3000, 0, 1) * (1 + 0.25 * clamp(boost, 0, 2)) * (iv.type === "itb" ? 1.25 : 1) * 0.14 * soloGain("intake");
+      ap(N.roarG.gain, roar > 0.002 ? roar : 0.0001, 0.06);
+      ap(N.roarBP.frequency, clamp(iv.type === "itb" ? 260 + rpm * 0.09 : 150 + rpm * 0.045, 120, 900), 0.06);
+    }
+
     /* --- mechanical --------------------------------------------------- */
     // two valve events per cylinder per 720 degrees: intake and exhaust
     ap(N.mechOsc.frequency, clamp(fire * 2, 8, 1800), 0.02);
@@ -561,6 +605,7 @@
     // bolted to the engine decides the induction layer
     var ind = ind0, bt = bt0;
     if (bt === "na" || rpm < 400 || !live) {
+      st.spoolV = 0;
       ap(N.blowG.gain, 0.0001, 0.08);
       // an armed bottle hisses through the jets even with no blower fitted
       ap(N.wgHP.frequency, 3400, 0.1);
@@ -594,7 +639,12 @@
       // turbo / twin / compound — whine tracks a turbo-speed proxy
       var ts = TURBO_SIZE[ind.size] || TURBO_SIZE.medium;
       var proxy = clamp(rpm * (1 + boost * 0.55) / 8000, 0, 1.8);
-      var wf = clamp(ts.base * (0.42 + 0.72 * proxy) * (dz ? 0.82 : 1), 900, 9500);
+      /* the wheel has inertia: it takes a moment to wind up and, with the throttle shut, coasts down for a second
+         or more, the whistle sliding down in pitch (a big wheel coasts longest) */
+      var sp0 = st.spoolV || 0, spTau = proxy > sp0 ? 0.45 - 0.35 * ts.spool : 0.6 + 0.7 * (1 - ts.spool);
+      st.spoolV = sp0 + (proxy - sp0) * (1 - Math.exp(-dtSec / spTau));
+      var coast = clamp(st.spoolV - proxy, 0, 1.2);
+      var wf = clamp(ts.base * (0.42 + 0.72 * st.spoolV) * (dz ? 0.82 : 1), 900, 9500);
       if (N.blowA.type === "custom") { N.blowA.type = "sine"; }
       ap(N.blowA.frequency, wf, 0.05);
       // a compound pair is two stages in series: the small high-pressure wheel
@@ -606,7 +656,7 @@
       var spooled = clamp(boost / (0.5 / Math.max(0.3, ts.spool / 0.7)), 0, 1);
       ap(N.blowG.gain, (0.018 * clamp(boost / 0.15, 0, 1) + 0.075 * spooled + 0.05 * load * spooled)
                         * clamp(rpm / 4000, 0.15, 1.3) * 0.6 * (bt === "comp" ? 1.25 : 1)
-                        * (ts2 ? 1 + 0.5 * clamp(boost / 1.5, 0, 1) : 1), 0.06);
+                        * (ts2 ? 1 + 0.5 * clamp(boost / 1.5, 0, 1) : 1) + 0.035 * clamp(coast * 1.5, 0, 1), 0.06);
       // wastegate: a big frame vents through a far bigger valve
       var wgAmt = clamp((boost - 0.55) / 1.6, 0, 1);
       ap(N.wgHP.frequency, clamp((1800 + boost * 900) / Math.max(0.6, ts.wg), 700, 6000), 0.08);
@@ -624,12 +674,19 @@
     var ex2 = st.exhaust || p.exh;
     var freeExh = (ex2 === "headers_equal" || ex2 === "headers_merge") ? 1
                 : (ex2 === "cast_tubular") ? 0.55 : 0.3;
-    if (!dz && load < 0.18 && rpm > 2000 && (richness * 0.8 + freeExh * 0.4 + (p.rotary ? 0.35 : 0)) > 0.3) {   // a rotary's open port pops on every lift
+    /* the overrun burble: the hot pipe is fullest of unburnt fuel just after the lift and it thins out over the next
+       second or two (longer when rich), so the pops come thick and loud at first and then straggle */
+    if (load > 0.55 && rpm > 3000) st.hotT = t;
+    var fresh = Math.exp(-(t - (st.hotT || -99)) / (0.8 + 1.8 * richness));
+    if (!dz && load < 0.18 && rpm > (richness > 0.6 ? 1500 : 2000) && (richness * 0.8 + freeExh * 0.4 + (p.rotary ? 0.35 : 0)) > 0.3) {   // a rotary's open port pops on every lift
       // mean interval between pops, as a rate rather than a switch
-      var mean = 0.085 / (clamp(rpm / 6000, 0.35, 1.5) * (0.45 + 1.7 * richness) * freeExh);
+      var mean = 0.085 / (clamp(rpm / 6000, 0.35, 1.5) * (0.45 + 1.7 * richness) * freeExh * (0.4 + 1.2 * fresh));
       if (t >= st.crackleT) {
         st.crackleT = t + 0.02 + Math.random() * mean * 2;
-        pop(0.28 + Math.random() * 0.5);
+        var pa = (0.28 + Math.random() * 0.5) * (0.6 + 0.4 * fresh);
+        pop(pa);
+        /* a rich tune doubles up: a second, smaller pop on the heels of the first */
+        if (!LITE && richness > 0.25 && Math.random() < 0.35 * richness + 0.1 * fresh) setTimeout(function () { if (ctx && running) pop(pa * 0.55); }, 28 + Math.random() * 45);
       }
     } else st.crackleT = t + 0.25;
   }
@@ -823,6 +880,20 @@
         o.start(t1); o.stop(t1 + 0.36);
         noiseVoice(0.30, "highpass", 2200, 0.8, 0.13 * amt);   // the "tsh"
         reap([o, bp, g], 0.4);
+        /* full tier: a hard lift off a big boost leaves the compressor fluttering, a couple of fading chirps after the first */
+        if (!LITE && amt > 0.45) {
+          for (var fi = 1; fi <= (amt > 0.9 ? 2 : 1); fi++) (function (k) {
+            setTimeout(function () {
+              if (!ctx || !running) return;
+              var tf = ctx.currentTime, fo = ctx.createOscillator(); fo.type = "sawtooth";
+              fo.frequency.setValueAtTime(1000 * amt * (1 - 0.22 * k) + 500, tf); fo.frequency.exponentialRampToValueAtTime(420, tf + 0.15);
+              var fb = ctx.createBiquadFilter(); fb.type = "bandpass"; fb.Q.value = 4;
+              fb.frequency.setValueAtTime(2000, tf); fb.frequency.exponentialRampToValueAtTime(800, tf + 0.16);
+              var fg = ctx.createGain(); fg.gain.setValueAtTime(0, tf); fg.gain.linearRampToValueAtTime(0.085 * amt / (k + 0.6), tf + 0.012); fg.gain.exponentialRampToValueAtTime(0.0001, tf + 0.17);
+              fo.connect(fb); fb.connect(fg); fg.connect(bus); fo.start(tf); fo.stop(tf + 0.19); reap([fo, fb, fg], 0.2);
+            }, 95 * k + Math.random() * 25);
+          })(fi);
+        }
         break;
       }
       case "purge": {
