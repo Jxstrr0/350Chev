@@ -121,7 +121,7 @@ function swapRender(){if(!SW_READY)return;const box=$("swapBody"),sum=$("swapSum
   if(sum)sum.innerHTML=!V?"on the stand":`${swEsc(V.n)}${r?" · "+["r","a"].map(s=>{const n=r.items.filter(x=>x.st===s).length;return n?`<i class="sw-${s}">${n} ${s==="r"?"red":"amber"}</i>`:"";}).filter(Boolean).join(" ")||" · all green":""}`;
   if(!$("swapAcc").classList.contains("open"))return;   // perf: the body fills when the section is open
   const g0=swOpenG||(V&&V.g)||"muscle";
-  let h=`<p class="hint">Put this engine in a car: size, torque, heat and weight decide the fit. The road test, strip, salt and 24 Hours run in the car you pick; pull and bog keep their class trucks.</p>`;
+  let h=`<div class="hint swhint"><span>Put this engine in a car: size, torque, heat and weight decide the fit.</span><details class="more"><summary aria-label="More info">ⓘ</summary><div>The road test, strip, salt and 24 Hours run in the car you pick; pull and bog keep their class trucks.</div></details></div>`;
   h+=`<div class="chips swg">${SIM.VEH_GROUPS.map(([id,n])=>`<button class="chip${g0===id?" on":""}" data-swg="${id}">${n}</button>`).join("")}<button class="chip${!V?" on":""}" data-swv="">None</button></div>`;
   h+=`<div class="seg wide swvs">${Object.values(SIM.VEHICLES).filter(x=>x.g===g0).map(x=>`<button data-swv="${x.id}" class="${v===x.id?"on":""}">${swEsc(x.n)}<small>${x.mass.toLocaleString("en-CA")} kg · ${x.drive.toUpperCase()}${swapOwns(x.id)?"":` · ${fmt$(x.price)}`}</small></button>`).join("")}</div>`;
   if(!V){box.innerHTML=h;return;}
