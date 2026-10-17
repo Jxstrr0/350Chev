@@ -87,9 +87,9 @@ function bogMudReset(){
 function bogAtlas(){
   var c=newCanvas(1024,256), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2, w-16); if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
-  panel(0,0,1024,62,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS · MUD BOG",40,"#ff7a1a");
-  panel(0,64,340,60,"#ff7a1a","#15171b","PRAIRIE ENGINE WORKS",30,"#15171b"); panel(342,64,340,60,"#15171b","#ff7a1a","COULEE FUELS",40,"#ff7a1a"); panel(684,64,340,60,"#131416","#f2c22c","NORTHWIND TYRE",38,"#f2c22c");
-  for(i=0;i<9;i++){ var bx=i*113; x.fillStyle="#15171b"; x.fillRect(bx,128,111,126); x.fillStyle=i%2?"#f4efe2":"#ff7a1a"; x.fillRect(bx+5,133,101,116); x.fillStyle="#15171b"; x.font="700 56px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String((i+1)*10), bx+55, 180); x.font="700 18px "+F; x.fillText("METRES", bx+55, 228); }
+  panel(0,0,1024,62,"#141413","#d97757","PRAIRIE ENGINE WORKS · MUD BOG",40,"#d97757");
+  panel(0,64,340,60,"#d97757","#141413","PRAIRIE ENGINE WORKS",30,"#141413"); panel(342,64,340,60,"#141413","#d97757","COULEE FUELS",40,"#d97757"); panel(684,64,340,60,"#131416","#f2c22c","NORTHWIND TYRE",38,"#f2c22c");
+  for(i=0;i<9;i++){ var bx=i*113; x.fillStyle="#141413"; x.fillRect(bx,128,111,126); x.fillStyle=i%2?"#f4efe2":"#d97757"; x.fillRect(bx+5,133,101,116); x.fillStyle="#141413"; x.font="700 56px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String((i+1)*10), bx+55, 180); x.font="700 18px "+F; x.fillText("METRES", bx+55, 228); }
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
 var BOG_UV={ long:[0,1-62/256,1,1], ban:[[0,1-124/256,340/1024,1-64/256],[342/1024,1-124/256,682/1024,1-64/256],[684/1024,1-124/256,1,1-64/256]], mark:function(i){ return [i*113/1024, 1-254/256, (i*113+111)/1024, 1-128/256]; } };
