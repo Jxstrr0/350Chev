@@ -665,7 +665,7 @@ function stripBlur(P, dt){
 function stripComposer(){
   if(STRIP.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(STRIP.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(STRIP.scene, STRIP.cam));
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(ultraRenderPass(STRIP.scene, STRIP.cam, "strip"));
       var hp=new THREE.ShaderPass(STRIP_HEAT_SHADER); hp.enabled=false; C.addPass(hp); STRIP.heatPass=hp;
       var mb=new THREE.ShaderPass(STRIP_BLUR_SHADER); mb.enabled=false; C.addPass(mb); STRIP.blurPass=mb;
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); STRIP.bloom=bp;
