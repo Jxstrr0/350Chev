@@ -7,6 +7,7 @@ css/ui-build.css
 css/oval.css
 css/photo.css
 html/body.html
+html/ld-libs.html
 sim/opt.js
 sim/simulate.js
 sim/tests.js
@@ -23,9 +24,12 @@ sim/swap.js
 sim/hill.js
 sim/oval.js
 sim/tunemap.js
+html/ld-sim.html
 sound/profile.js
 sound/synth.js
+html/ld-sound.html
 sound/samples.js
+html/ld-samples.html
 vis/core.js
 vis/engine.js
 vis/bank.js
@@ -63,6 +67,7 @@ vis/api.js
 vis/trophy.js
 vis/photo.js
 vis/teardown.js
+html/ld-vis.html
 app/state.js
 app/build.js
 app/test.js

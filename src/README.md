@@ -27,10 +27,11 @@ node build.js --absorb <edited.html> <base.html>   # port a pre-split branch (se
 
 | file | what is in it |
 |---|---|
-| `html/head.html` | doctype, inline critical style, `<title>`, **VERSION comment**, fonts, the `<style>` line |
+| `html/head.html` | doctype, inline critical style (+ the loading splash CSS), `<title>`, **VERSION comment**, the `#boot` loading splash + its loader script (`__ld`, `__ldGo`, `__ldDone`), fonts (non-blocking), the `<style>` line |
 | `css/style.css` | all of the page CSS: theme vars, layout, desktop `html.desk`, HUDs, timing slip, race-night ladder |
 | `css/oval.css` | the dirt oval's track map, night ladder and run strip / buttons wired like the hillclimb's |
 | `html/body.html` | `</style>`, all of the markup (`#app`, `#view`, tabs, panels, sheets), three.js r128 CDN script tags |
+| `html/ld-libs.html`, `ld-sim.html`, `ld-sound.html`, `ld-samples.html`, `ld-vis.html` | one-line `<script>__ld(fraction,"message")</script>` steps of the loading bar, each listed in the manifest right after the script block it reports (three.js tags, sim, sound, samples, vis). `__ldGo`/`__ldDone` are called from `app/boot.js`. |
 | **ENGINE_SIM** (physics) | |
 | `sim/opt.js` | `<script>`, header, helpers, 1. LAYOUTS, 2. OPT part tables, 3. FORM (UI description), 4. DEFAULT_CFG / DEFAULT_ENV |
 | `sim/simulate.js` | 5–9: atmosphere, geometry, VE, boost model, calibration, 9r rotary cycle, 9t two-stroke cycle; 10: exhaust system (exhParts/exhSysOf), `simulate()` up to 11. component loads |
