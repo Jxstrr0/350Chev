@@ -31,7 +31,7 @@ function saltNum(meet){let h=2166136261;const s="lsrnum|"+meet.id+"|"+(career()?
 function saltFee(){return career()&&!dev()?SALT_FEE[S.env.saltCourse==="long"?"long":"short"]:0;}
 function saltBtnText(t,sub){const b=$("saltBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 function saltBreak(kind){if(kind==="driveline"){if(!SR.dl){SR.dl=true;sfx("fail");buzz([80,40,120]);toast("DRIVELINE LET GO · the engine is fine");}return;}   // a swap car's gearbox or axle
-  SR.failed=true;SR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":kind==="steam"?"steam":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+  SR.failed=true;SR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":kind==="steam"?"steam":"rod");$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
 function saltStart(){
   $("app").classList.add("onstrip");
   const k=saltEnvFix(),env=stdEnv(),base=saltRes();
@@ -183,18 +183,18 @@ $("envBox").addEventListener("click",e=>{const g=e.target.closest("[data-saltgea
   if(k==="saltBody"){const l=saltBodyLocked(v);if(l){toast(`${SIM.LSR_BODIES[v].n} opens at ${l} rep`);return;}if(v!==S.env.saltBody){S.env.saltCourse=SIM.LSR_BODIES[v].course;S.env.saltCool=v==="streamliner"?"ice":"radiator";S.env.saltChute=v==="streamliner"||v==="lakester"?"dual":"single";S.env.saltTop=0;}}
   S.env[k]=v;saltEnvFix();renderEnv();save();buzz(6);});
 /* the run sheet's trace: speed and rpm against distance, the timed mile shaded */
-function drawSaltTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawSaltTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1";const soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=r.trace||[];if(!tr.length)return;
   const MI=SIM.LSR_MILE,xe=r.xEnd||tr[tr.length-1].x,padL=34,padR=34,padT=16,padB=22,cw=W-padL-padR,ch=H-padT-padB,X=d=>padL+cw*Math.min(1,Math.max(0,d/xe));
   const mx=Math.max(50,Math.ceil((r.peakMph||50)/50)*50),rm=Math.max(3000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000),font=getComputedStyle(document.body).fontFamily;
-  x.fillStyle="rgba(255,122,26,.10)";x.fillRect(X(r.x0),padT,X(r.x1)-X(r.x0),ch);
+  x.fillStyle="rgba(217,119,87,.10)";x.fillRect(X(r.x0),padT,X(r.x1)-X(r.x0),ch);
   x.strokeStyle=css.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;x.font="10px "+font;x.textAlign="center";
   for(let m=0;m*MI<=xe+1;m++){const px=X(m*MI);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText(m+" mi",px,H-6);}
   for(let v=50;v<mx;v+=50){const py=padT+ch*(1-v/mx);x.beginPath();x.moveTo(padL,py);x.lineTo(padL+cw,py);x.stroke();}
   const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
-  line(p=>p.rpm/rm,"#e8c14a",1.2,[2,3]);line(p=>(p.tc-20)/120,"#c58be0",1.2);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
-  x.textAlign="left";x.font="11px "+font;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,padT+10);x.fillStyle="#e8c14a";x.fillText("rpm",padL+34,padT+10);x.fillStyle="#c58be0";x.fillText("water",padL+62,padT+10);
+  line(p=>p.rpm/rm,"#e8c14a",1.2,[2,3]);line(p=>(p.tc-20)/120,"#c58be0",1.2);line(p=>p.v*2.23694/mx,"#d97757",2.2);
+  x.textAlign="left";x.font="11px "+font;x.fillStyle="#d97757";x.fillText("mph",padL+4,padT+10);x.fillStyle="#e8c14a";x.fillText("rpm",padL+34,padT+10);x.fillStyle="#c58be0";x.fillText("water",padL+62,padT+10);
   x.textAlign="right";x.fillStyle=soft;x.fillText(mx+" mph",W-padR,padT+10);
   if(r.mileMph!=null){x.textAlign="center";x.fillStyle=INK;x.font="600 12px "+font;x.fillText(r.mileMph.toFixed(2)+" mph",(X(r.x0)+X(r.x1))/2,padT+ch*(1-Math.min(1,r.mileMph/mx))-8);}}
 function saltRedraw(){const l=lastForChart();if(S.env.testType==="salt"&&l&&l.salt)drawSaltTrace(l.salt);}

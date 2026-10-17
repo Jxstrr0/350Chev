@@ -32,7 +32,7 @@ function bogField(k,seed){const key=k+"|"+seed;if(bogFieldCache.has(key))return 
 const bogCmp=(a,b)=>(a.dq?1:0)-(b.dq?1:0)||(b.cleared?1:0)-(a.cleared?1:0)||(a.cleared?a.t-b.t:b.m-a.m)||(a.me?-1:b.me?1:0);
 const bogScore=f=>f.dq?"DQ":f.cleared?f.t.toFixed(2)+" s":f.m.toFixed(1)+" m";
 function bogBtnText(t,sub){const b=$("bogBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
-function bogBreak(kind){BR.failed=true;BR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+function bogBreak(kind){BR.failed=true;BR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
 function bogStart(){
   $("app").classList.add("onstrip");
   const k=bogEnvFix(),env=stdEnv();const res=SIM.bogPrep(S.cfg,env);
@@ -50,7 +50,7 @@ function bogStart(){
   const step=()=>{if(!BR||BR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-BR.last)/1000);BR.last=now;const st=p.st;
     let left=dt;while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,bogThr(st));}
     if(st.broke&&!BR.failed)bogBreak(st.broke);
-    if(st.done&&BR.doneAt==null){BR.doneAt=now;if(st.cleared&&!BR.failed){$("flash").style.background="rgba(79,192,141,.35)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(st.done&&BR.doneAt==null){BR.doneAt=now;if(st.cleared&&!BR.failed){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
     // mud slaps: the pit entry, a ridge, a rut, a landing — and the wheels throwing it while they spin
     let slap=0;if(st.phase==="pit"&&BR.ph!=="pit")slap=1;if(st.hzHit.length>BR.hz){BR.hz=st.hzHit.length;slap=Math.max(slap,0.8);}if(st.slaps>BR.slaps){BR.slaps=st.slaps;slap=Math.max(slap,0.9);}
     if(slap)sfx("mudslap");else if(st.phase==="pit"&&!st.done&&st.slip>0.2&&now-BR.slapT>Math.max(140,520-600*st.slip)){BR.slapT=now;sfx("mudslap");}
@@ -159,7 +159,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-bk]");i
   if(k==="bogCls"){const l=bogClsLocked(v);if(l){toast(`${SIM.BOG_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.bogCls){S.env.bogGear=null;S.env.bogTyre=null;}}
   S.env[k]=k==="bogGear"?+v:v;bogEnvFix();renderEnv();save();buzz(6);});
 /* the run sheet's trace: speed and wheelspin against distance, the mud's depth shaded under them */
-function drawBogTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#e8e3d6";const soft=INK.startsWith("#1")?"rgba(27,26,23,.45)":"rgba(232,227,214,.45)";
+function drawBogTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1";const soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const tr=(r.trace||[]).filter(p=>p.x>-15);if(!tr.length)return;
   const L=r.len||70,padL=34,padR=34,padT=12,padB=22,cw=W-padL-padR,ch=H-padT-padB,X0=-15,X=d=>padL+cw*Math.max(0,Math.min(1,(d-X0)/(L+5-X0))),mx=Math.max(10,Math.ceil((r.maxMph||10)/5)*5);
@@ -167,12 +167,12 @@ function drawBogTrace(r){const css=getComputedStyle(document.documentElement),IN
   for(let f=0;f<=L;f+=10){const px=X(f);x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();x.fillStyle=soft;x.fillText(f+" m",px,H-6);}
   // the mud: depth hangs down from the top of the plot
   x.fillStyle="rgba(122,86,52,.28)";x.beginPath();x.moveTo(X(0),padT);tr.forEach(p=>{if(p.x>=0)x.lineTo(X(p.x),padT+ch*Math.min(1,p.d/1.6));});x.lineTo(X(Math.min(L,tr[tr.length-1].x)),padT);x.closePath();x.fill();
-  const sw=r.sweet||[0.1,0.26];x.fillStyle="rgba(79,192,141,.10)";x.fillRect(X(0),padT+ch*(1-sw[1]),X(L)-X(0),ch*(sw[1]-sw[0]));
+  const sw=r.sweet||[0.1,0.26];x.fillStyle="rgba(92,191,138,.10)";x.fillRect(X(0),padT+ch*(1-sw[1]),X(L)-X(0),ch*(sw[1]-sw[0]));
   const line=(f,col,w,dash)=>{x.strokeStyle=col;x.lineWidth=w;x.setLineDash(dash||[]);x.beginPath();tr.forEach((p,i)=>{const px=X(p.x),py=padT+ch*(1-Math.max(0,Math.min(1,f(p))));i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);};
   const rm=Math.max(3000,Math.ceil(Math.max(...tr.map(p=>p.rpm))/1000)*1000);
-  line(p=>p.slip,"rgba(95,168,230,.9)",1.5);line(p=>p.rpm/rm,"#e8c14a",1.2,[2,3]);line(p=>p.v*2.23694/mx,"#ff7a1a",2.2);
+  line(p=>p.slip,"rgba(120,169,221,.9)",1.5);line(p=>p.rpm/rm,"#e8c14a",1.2,[2,3]);line(p=>p.v*2.23694/mx,"#d97757",2.2);
   x.strokeStyle=INK;x.lineWidth=1;x.setLineDash([3,3]);x.beginPath();x.moveTo(X(L),padT);x.lineTo(X(L),padT+ch);x.stroke();x.setLineDash([]);
-  const ly=padT+ch-6;x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#ff7a1a";x.fillText("mph",padL+4,ly);x.fillStyle="rgba(95,168,230,.9)";x.fillText("spin",padL+34,ly);x.fillStyle="#e8c14a";x.fillText("rpm",padL+62,ly);x.fillStyle="rgba(160,120,80,.95)";x.fillText("depth",padL+88,ly);
+  const ly=padT+ch-6;x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillStyle="#d97757";x.fillText("mph",padL+4,ly);x.fillStyle="rgba(120,169,221,.9)";x.fillText("spin",padL+34,ly);x.fillStyle="#e8c14a";x.fillText("rpm",padL+62,ly);x.fillStyle="rgba(160,120,80,.95)";x.fillText("depth",padL+88,ly);
   x.fillStyle=soft;x.textAlign="right";x.fillText(mx+" mph",W-padR,ly);}
 function bogRedraw(){const l=lastForChart();if(S.env.testType==="bog"&&l&&l.bog)drawBogTrace(l.bog);}
 function bogVerdict(res){const r=res.bog;

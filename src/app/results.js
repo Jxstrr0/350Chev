@@ -1,5 +1,5 @@
 /* ---- datalog: the pass, channel by channel. Trace rows: [t, m, mph, rpm, gear, spin, bar, wheel mph, EGT C, throttle, n2o] ---- */
-const DL={on:{rpm:1,spd:1,whl:1,boost:1,egt:0,n2o:1},mode:"t"},DLM={},DLC={rpm:["rpm","rgba(95,168,230,.95)"],spd:["ground","#ff7a1a"],whl:["wheel","INK"],boost:["boost","#4fc08d"],egt:["EGT","#c58be0"],n2o:["N₂O","#e8c14a"]};
+const DL={on:{rpm:1,spd:1,whl:1,boost:1,egt:0,n2o:1},mode:"t"},DLM={},DLC={rpm:["rpm","rgba(120,169,221,.95)"],spd:["ground","#d97757"],whl:["wheel","INK"],boost:["boost","#5cbf8a"],egt:["EGT","#c58be0"],n2o:["N₂O","#e8c14a"]};
 const dlCache=new WeakMap();
 function dlPrep(r,res){if(!r||!r.trace||r.trace.length<4||r.trace[0].length<8)return null;let D=dlCache.get(r.trace);if(D)return D;
   const T=r.trace,n=T.length,col=i=>T.map(p=>p[i]==null?0:p[i]);
@@ -25,7 +25,7 @@ function dlHtml(id,r,res){const D=dlPrep(r,res);if(!D)return `<p class="hint">Th
   return `<div class="dlbox"><div class="chips dlchips">${chips}</div><canvas class="dlcv" id="${id}Cv"></canvas><div class="dlread" id="${id}Rd"></div><div class="dldiag${D.spinR.length||D.bogR.length?" bad":""}">${dlDiag(r,res)}</div></div>`;}
 function dlCard(id,res){return `<div class="sec"><h2>Datalog</h2>${dlHtml(id,res.drag,res)}</div>`;}
 function dlDraw(id){const M=DLM[id],cv=$(id+"Cv");if(!M||!cv||!cv.isConnected)return;const D=dlPrep(M.r,M.res);if(!D)return;
-  const cs=getComputedStyle(cv),INK=cs.getPropertyValue("--ink").trim()||"#e8e3d6",soft=INK.startsWith("#1")?"rgba(27,26,23,.5)":"rgba(232,227,214,.5)",crit=cs.getPropertyValue("--crit").trim()||"#e2473c",grid=cs.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)",ff=getComputedStyle(document.body).fontFamily;
+  const cs=getComputedStyle(cv),INK=cs.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.5)":"rgba(237,234,225,.5)",crit=cs.getPropertyValue("--crit").trim()||"#ee5a5e",grid=cs.getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)",ff=getComputedStyle(document.body).fontFamily;
   const dpr=Math.min(devicePixelRatio||1,2),W=cv.clientWidth,H=cv.clientHeight;if(!W||!H)return;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
   const padL=8,padR=8,padT=38,padB=32,cw=W-padL-padR,ch=H-padT-padB,byT=DL.mode==="t",xs=byT?D.t:D.x,xEnd=byT?D.tEnd:402.336,X=v=>padL+cw*Math.min(1,v/xEnd),Y=(v,m)=>padT+ch*(1-Math.max(0,Math.min(1,v/m)));
@@ -35,7 +35,7 @@ function dlDraw(id){const M=DLM[id],cv=$(id+"Cv");if(!M||!cv||!cv.isConnected)re
   if(byT){const st=xEnd>14?2:1;for(let t=0;t<=xEnd;t+=st){x.beginPath();x.moveTo(X(t),padT);x.lineTo(X(t),padT+ch);x.stroke();x.fillText(t+"s",X(t),H-3);}}else{for(let f=0;f<=1320;f+=330){x.beginPath();x.moveTo(X(f*0.3048),padT);x.lineTo(X(f*0.3048),padT+ch);x.stroke();x.fillText(f+"'",X(f*0.3048),H-3);}}
   // spin and bog zones, then the gap between wheel and ground speed
   const zone=(g,c)=>{x.fillStyle=c;const a=X(xs[g.a]),b=X(xs[g.e]);x.fillRect(a,padT,Math.max(2,b-a),ch);};
-  if(DL.on.whl)D.spinR.forEach(g=>zone(g,"rgba(226,71,60,.10)"));D.bogR.forEach(g=>zone(g,"rgba(232,193,74,.12)"));
+  if(DL.on.whl)D.spinR.forEach(g=>zone(g,"rgba(238,90,94,.10)"));D.bogR.forEach(g=>zone(g,"rgba(232,193,74,.12)"));
   if(DL.on.n2o&&D.hasN){x.fillStyle="rgba(232,193,74,.35)";for(let i=1;i<D.n;i++)if(D.n2o[i]>0.02){const a=X(xs[i-1]),b=X(xs[i]);x.fillRect(a,padT+ch-5,Math.max(1,b-a),5);}}
   if(DL.on.whl&&DL.on.spd){x.fillStyle=crit;x.globalAlpha=.55;const run=[];for(let i=0;i<D.n;i++)run.push(D.whl[i]>D.mph[i]*1.03+0.5);
     for(let i=0;i<D.n;i++){if(!run[i]||(i>0&&run[i-1]))continue;let e=i;while(e+1<D.n&&run[e+1])e++;x.beginPath();for(let j=i;j<=e;j++){const px=X(xs[j]),py=Y(D.whl[j],D.mphMax);j===i?x.moveTo(px,py):x.lineTo(px,py);}for(let j=e;j>=i;j--)x.lineTo(X(xs[j]),Y(D.mph[j],D.mphMax));x.closePath();x.fill();}x.globalAlpha=1;}
@@ -78,10 +78,10 @@ function pullDiag(r){const tr=r.trace||[],sw=r.sweet||[0.15,0.3];if(tr.length<3)
 function pullLog(r){PL.cur=null;const tr=r.trace||[];if(!tr.length||tr[0].egt==null)return "";
   return `<div class="dlbox" style="margin-top:10px"><div class="chips dlchips"><button class="chip dlch${PL.rpm?" on":""}" data-plch="rpm"><i style="background:#e8c14a"></i>rpm</button><button class="chip dlch${PL.egt?" on":""}" data-plch="egt"><i style="background:#c58be0"></i>EGT</button></div><div class="dlread" id="plRd"><span class="hint">Touch or hover the chart above to read the pull at that instant.</span></div><div class="dldiag${/above|Bogged|lugging/.test(pullDiag(r))?" bad":""}">${pullDiag(r)}</div></div>`;}
 function pullCursor(x,r,tr,X,padT,ch,mx,rm,em,INK){const i=PL.cur,p=tr[i];if(i==null||!p)return;const px=X(p.x);x.strokeStyle=INK;x.lineWidth=1;x.beginPath();x.moveTo(px,padT);x.lineTo(px,padT+ch);x.stroke();
-  const dot=(f,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,padT+ch*(1-Math.max(0,Math.min(1,f))),3.2,0,7);x.fill();};dot(p.v*2.23694/mx,"#ff7a1a");dot(p.slip,"rgba(95,168,230,.95)");if(PL.rpm)dot(p.rpm/rm,"#e8c14a");if(PL.egt&&p.egt!=null)dot(p.egt/em,"#c58be0");
+  const dot=(f,c)=>{x.fillStyle=c;x.beginPath();x.arc(px,padT+ch*(1-Math.max(0,Math.min(1,f))),3.2,0,7);x.fill();};dot(p.v*2.23694/mx,"#d97757");dot(p.slip,"rgba(120,169,221,.95)");if(PL.rpm)dot(p.rpm/rm,"#e8c14a");if(PL.egt&&p.egt!=null)dot(p.egt/em,"#c58be0");
   const sw=r.sweet||[0.15,0.3],st=p.slip>sw[1]+0.02?"over the band":p.slip<sw[0]?"under the band":"in the band",W=chart.clientWidth,rt=px<W/2,l1=`${p.t.toFixed(1)} s · ${Math.round(p.x*3.28084)} ft · ${(p.v*2.23694).toFixed(1)} mph`,l2=`slip ${Math.round(p.slip*100)}% ${st} · ${p.rpm.toLocaleString()} rpm${p.egt!=null?" · "+p.egt+"°C":""}`;
   x.font="10px "+getComputedStyle(document.body).fontFamily;x.textAlign=rt?"left":"right";x.fillStyle=INK;x.fillText(l1,px+(rt?6:-6),padT+28);x.fillText(l2,px+(rt?6:-6),padT+40);
-  const rd=$("plRd");if(rd){rd.innerHTML=`<b>${p.t.toFixed(1)} s</b><b>${Math.round(p.x*3.28084)} ft</b><span style="color:#ff7a1a">${(p.v*2.23694).toFixed(1)} mph</span><span style="color:rgba(95,168,230,.95)">slip ${Math.round(p.slip*100)}% · ${st}</span><span style="color:#e8c14a">${p.rpm.toLocaleString()} rpm</span>${p.egt!=null?`<span style="color:#c58be0">${p.egt} °C</span>`:""}<span>throttle ${Math.round(p.throttle*100)}%</span>`;}}
+  const rd=$("plRd");if(rd){rd.innerHTML=`<b>${p.t.toFixed(1)} s</b><b>${Math.round(p.x*3.28084)} ft</b><span style="color:#d97757">${(p.v*2.23694).toFixed(1)} mph</span><span style="color:rgba(120,169,221,.95)">slip ${Math.round(p.slip*100)}% · ${st}</span><span style="color:#e8c14a">${p.rpm.toLocaleString()} rpm</span>${p.egt!=null?`<span style="color:#c58be0">${p.egt} °C</span>`:""}<span>throttle ${Math.round(p.throttle*100)}%</span>`;}}
 function pullScrub(e){if(S.env.testType!=="pull_sled"||testing||(e.type==="pointermove"&&e.pointerType!=="mouse"&&!(e.buttons&1)))return;const l=lastForChart(),r=l&&l.pull,tr=r&&r.trace;if(!tr||!tr.length)return;
   const rc=chart.getBoundingClientRect(),d=Math.max(0,Math.min(1,(e.clientX-rc.left-34)/(rc.width-68)))*SIM.PULL_FULL;let b=0;for(let i=1;i<tr.length;i++)if(Math.abs(tr[i].x-d)<Math.abs(tr[b].x-d))b=i;PL.cur=b;pullRedraw();}
 chart.style.touchAction="pan-y";chart.addEventListener("pointerdown",e=>{try{chart.setPointerCapture(e.pointerId);}catch(_){}pullScrub(e);});chart.addEventListener("pointermove",pullScrub);
@@ -227,7 +227,7 @@ $("runTest").addEventListener("click",()=>{
     if(env.testType==="pull"){if(t<dur){i=Math.floor(N*(t/dur));run.rpm=res.rpms[Math.min(N-1,i)];}else run.rpm=cfg0.redline+Math.sin(t/40)*40;run.load=1;}
     else if(env.testType==="endurance"){const ph=t/dur;const prof={highway:.35,mixed:.6,track:.95}[env.loadProfile];run.rpm=1500+(cfg0.redline-1500)*prof*(0.55+0.45*Math.abs(Math.sin(t/230)));run.load=prof*(0.6+0.4*Math.abs(Math.sin(t/230+1)));i=N;label=`${Math.min(env.hours,Math.round(env.hours*Math.min(1,ph)))} h`;}
     else{if(t<dur*0.5)run.rpm=1000+(cfg0.redline-1000)*(t/(dur*0.5));else if(t<dur)run.rpm=cfg0.redline*(1+0.15*Math.min(1,(t-dur*0.5)/120));else run.rpm=Math.max(1000,cfg0.redline*1.15-(t-dur)*4);run.load=t<dur*0.5?1:0.2;}
-    if(t>failAt&&!failed){failed=true;run.fail=true;run.failKind=failKind;$("flash").style.background="rgba(226,71,60,.45)";setTimeout(()=>$("flash").style.background="rgba(226,71,60,0)",250);sfx("fail");buzz([80,40,120]);}
+    if(t>failAt&&!failed){failed=true;run.fail=true;run.failKind=failKind;$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
     if(failed){const since=t-failAt;const d=failKind==="seize"?(since>1600?900:rpmDecay):failKind==="knock"?(since>1200?140:rpmDecay):rpmDecay;run.rpm=Math.max(0,run.rpm-d);if(failKind==="knock"||failKind==="steam")run.rpm+=(Math.random()-0.5)*120;}
     run.on=true;$("rpmLbl").textContent=label||Math.round(run.rpm/10)*10;
     if(env.testType==="pull")drawChart(res,Math.min(N,i+1));
