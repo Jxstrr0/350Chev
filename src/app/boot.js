@@ -294,7 +294,9 @@ function start(hot){
   window.claude?.hot?.snapshot?.(()=>({S:Object.assign({},S,{last:null,base:S.base}),tab:curTab}));
   window.addEventListener("resize",()=>{ENGINE_VIS.resize();if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();});
   setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle
+  ENGINE_VIS.resize();   // the observer on #view fired before boot, while there was no renderer to size
+  if(window.__ldDone)__ldDone();
 }
-window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+(window.__ldGo||(f=>f()))(()=>{window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});});
 
 </script>
