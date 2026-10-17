@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.67.3.0 — major.minor.feature.hotfix -->
+<!-- VERSION v1.68.0.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1604,6 +1604,38 @@ html.troom #phBtn{display:none!important}
 .phsb .phpri{background:#d97757;border-color:#d97757;color:#141413}
 @media (max-width:420px){.phact button{font-size:13px;letter-spacing:.02em}}
 @media (max-width:374px){.phl{width:54px;font-size:10px}.phchips button{font-size:12px}}
+/* ===================== SANDBOX SHOP (v1.68): bench + parts catalogue, markup in #sandboxBox, logic in app/shopsb.js ===================== */
+#sandboxBox .hint{margin:0 0 10px}
+#sandboxBox .sbhead{margin-bottom:14px}
+#sbBench{display:flex;flex-direction:column;gap:6px}
+.sbrow{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:8px 10px}
+.sbrow.cur{border-left:4px solid var(--orange)}
+.sbn{display:flex;align-items:center;gap:6px;min-height:44px}
+.sbn>b{flex:1 1 auto;min-width:0;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sbn>small{flex:0 1 auto;min-width:0;max-width:60%;font-family:var(--mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sbn .btn{flex:0 0 auto;min-height:44px;min-width:44px}
+.sbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:2px}
+.sbs span{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
+.sbs b{font-size:15px;font-weight:600;color:var(--chalk);margin-right:3px}
+.sbs .best b{color:var(--orange2)}
+.sbfind{display:flex;gap:8px;margin-bottom:6px}
+.sbfind input,.sbfind select{min-height:44px;border:1px solid var(--edge);border-radius:8px;background:var(--panel);color:var(--chalk);font:inherit;font-size:14px;padding:0 10px}
+.sbfind input{flex:1 1 auto;min-width:0}
+.sbfind select{flex:1 1 40%;min-width:0;max-width:100%}
+.sbf{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 0;border-bottom:1px solid var(--rule);padding-bottom:4px}
+.sbf small{font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim);margin-left:4px}
+.sbp .oh{align-items:flex-start}
+.sbt{flex:1 1 auto;min-width:0}
+.sbt .tag{display:block;margin-top:2px}
+.sbl{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.4}
+.sbp .btn{flex:0 0 auto;min-width:64px;min-height:44px}
+.sbp .btn:disabled{opacity:.55}
+.sbp details.more>div .chips{margin:0 0 6px}
+.sbp details.more>div .chips i{font-style:normal;display:inline-flex;gap:5px;font-size:12px;color:var(--chalk);background:var(--panel2);border:1px solid var(--edge);border-radius:3px;padding:3px 7px}
+.sbp details.more>div .chips i em{font-style:normal;color:var(--dim)}
+#sandboxBox>.sec>.btn,#sandboxBox .row .btn{min-height:44px}
+.sbp details.more>div{font-family:var(--body);font-size:13px}
+.sbp details.more>div p{font-size:13px;margin:0 0 4px}
 </style>
 
 <div id="app">
@@ -1768,7 +1800,19 @@ html.troom #phBtn{display:none!important}
         <div id="legacyBox" style="display:none"></div>
         <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
-      <div id="sandboxBox"><p class="hint">The test cell has every part, every dyno and no bills. Career progress is kept separately, so switching back loses nothing.</p></div>
+      <div id="sandboxBox">
+        <div class="hint sbhead">Test cell: every part and dyno is open, and nothing costs money.<details class="more"><summary aria-label="More info">ⓘ</summary><div>Career progress is kept separately, so switching back loses nothing. Parts tagged Career show which Career upgrade would unlock them there.</div></details></div>
+        <div class="sec"><h2>Bench <span class="cnt" id="sbBenchCnt"></span></h2>
+          <div class="hint">Your build against every saved blueprint, best figure of each in clay.<details class="more"><summary aria-label="More info">ⓘ</summary><div>Figures are a standard pull in the current test-cell conditions: peak hp, peak torque, reliability score and engine weight. Load swaps a blueprint in; blueprints are also kept in the Build tab.</div></details></div>
+          <div id="sbBench"></div>
+          <button class="btn sm info" id="sbSave" style="margin-top:8px">Save current to bench</button></div>
+        <div class="sec"><h2>Parts</h2>
+          <div class="hint">Every part this build can take. Fit swaps one in.<details class="more"><summary aria-label="More info">ⓘ</summary><div>The list follows the current build: a rotary shows rotor parts, a diesel hides carburettors. Search looks across every group at once. ⓘ on a part gives its figures and what it does.</div></details></div>
+          <div class="sbfind"><input type="search" id="sbQ" placeholder="Search parts, e.g. turbo" autocomplete="off" aria-label="Search parts"><select id="sbSec" aria-label="Part group"></select></div>
+          <div id="sbList"></div><p class="hint" id="sbMore"></p></div>
+        <div class="sec"><h2>Quick starts</h2>
+          <div class="row"><button class="btn sm info" id="sbStock" style="flex:1">Stock engine</button><button class="btn sm info" id="sbRand" style="flex:1">Random preset</button></div></div>
+      </div>
     </section>
   </div>
 
@@ -27719,7 +27763,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.67.3.0";
+const VERSION="v1.68.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -28003,8 +28047,10 @@ function fillDeltas(root){if(!quick)return;root.querySelectorAll("button[data-k]
   if(b.classList.contains("on")){d.innerHTML="<i style=\"color:var(--orange2)\">fitted</i>";return;}if(b.classList.contains("lock")){d.innerHTML="";return;}
   d.innerHTML=fmtDelta(probe(b.dataset.k,isNaN(+b.dataset.v)?b.dataset.v:b.dataset.v),quick);});}
 const fLabel=(f,c)=>(f.labelIf&&f.labelIf(c||S.cfg))||f.label;   // a FORM field can rename itself for the build (diesel timing / lambda)
+/* parts a build can take next to the current one (no carb on a diesel, nitrous for the other fuel family stays out of the way, a Wankel takes no diesel) */
+const famOKf=(f,c)=>(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="fuel"&&o.ci&&isRot(c))&&!(f.key==="layout"&&c[f.key]!==k&&(isTs(c)?!!o.rotary||!!(SIM.LAYOUTS[k]||{}).rotary:!!o.two))&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);
 function segRow(f){
-  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=(o,k)=>(!o.fam||o.fam===(isCI(c.fuel)?"ci":"si")||c[f.key]===k)&&!(f.key==="fuel"&&o.ci&&isRot(c))&&!(f.key==="layout"&&c[f.key]!==k&&(isTs(c)?!!o.rotary||!!(SIM.LAYOUTS[k]||{}).rotary:!!o.two))&&!(f.key==="intake"&&k==="carb"&&isCI(c.fuel)&&c[f.key]!==k);   // no carb on a diesel;   // nitrous kits for the other fuel family stay out of the way; a Wankel takes no diesel   // nitrous kits for the other fuel family stay out of the way
+  const c=S.cfg,opts=OPT[f.optTable||f.key],lb=fLabel(f);const famOK=famOKf(f,c);   // no carb on a diesel;   // nitrous kits for the other fuel family stay out of the way; a Wankel takes no diesel   // nitrous kits for the other fuel family stay out of the way
   let h=`<div class="lbl"><span>${lb}</span><button class="q" data-info="${f.optTable||f.key}" data-ckey="${f.key}" data-lbl="${lb}" aria-label="About ${lb}">${opts[c[f.key]]?specLine(f.optTable||f.key,opts[c[f.key]]):"details"} ›</button></div><div class="seg n${Object.keys(opts).filter(k=>famOK(opts[k],k)).length}">`;
   for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;const lk=locked(o);const req=lk?UPGRADES.find(u=>u.id===o.req):null;
     h+=`<button data-k="${f.key}" data-v="${k}" class="${c[f.key]===k?"on":""}${lk?" lock":""}" ${lk?`data-req="${req?req.name:""}"`:""}>${o.name}<small class="d"></small></button>`;}
@@ -28081,13 +28127,16 @@ $("buildForm").addEventListener("click",e=>{
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
+  applyOpt(b.dataset.k,b.dataset.v);});
+/* fit one option (shared by the Build segments and the sandbox Shop parts catalogue) */
+function applyOpt(k,v){
   if(testing){toast("Let the run finish first");return;}
-  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg),wasT=isTs(S.cfg);S.cfg[b.dataset.k]=b.dataset.v;S.profileId=null;
-  const fam=b.dataset.k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):b.dataset.k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):b.dataset.k==="cycle"?twoStrokeFamilyDefaults(S.cfg,wasT):null;if(fam)delete S.cfg.map;
-  if(fam&&b.dataset.k==="fuel"&&isTs(S.cfg)&&isCI(S.cfg.fuel)){S.cfg.induct="blower";S.cfg.scav="uniflow";S.cfg.xpipe="muffled";}   // a two-stroke diesel needs a blower to breathe
+  const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg),wasT=isTs(S.cfg);S.cfg[k]=v;S.profileId=null;
+  const fam=k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):k==="cycle"?twoStrokeFamilyDefaults(S.cfg,wasT):null;if(fam)delete S.cfg.map;
+  if(fam&&k==="fuel"&&isTs(S.cfg)&&isCI(S.cfg.fuel)){S.cfg.induct="blower";S.cfg.scav="uniflow";S.cfg.xpipe="muffled";}   // a two-stroke diesel needs a blower to breathe
   const moved=clampCfgLimits();
   if(fam)toast(fam);else if(moved)toast(`${fLabel(moved)} pulled back to ${S.cfg[moved.key]}${moved.unit?" "+moved.unit:""} — that part will not carry more`);
-  afterCfgChange(true);});
+  afterCfgChange(true);}
 let dragBase=null,baseTimer=null,baseField=null;
 const HOLD_MS=2000;                       // how long the reading stays up after you stop
 function chips(){return document.querySelectorAll("#buildForm .lbl b .d");}
@@ -32757,7 +32806,7 @@ function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career())return;
+  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
   refillContracts();spRender();
   $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
@@ -33870,6 +33919,58 @@ function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click()
   const re=()=>{railSched();};RAIL_MQ.addEventListener?RAIL_MQ.addEventListener("change",re):RAIL_MQ.addListener(re);window.addEventListener("resize",re);
   new MutationObserver(re).observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});
   railSched();})();
+/* ===================== SANDBOX SHOP (v1.68): the Shop tab in the test cell =====================
+   Career's Shop sells upgrades; the test cell has everything, so its Shop is a bench instead:
+   · Bench: the current build next to every saved blueprint (hp, Nm, reliability, kg; best of each in clay), tap to load
+   · Parts: a catalogue of every part the build can take, with stats, the Career upgrade that gates it, and a Fit button
+   · Quick starts: back to the stock engine, or a random preset to poke at
+   Called from renderShop() when career() is false. Markup lives in #sandboxBox (body.html); styles in css/ui-shop.css. */
+const SB={sec:"",q:"",sims:new Map()};
+function sbSim(cfg){const k=cfgHash(cfg)+"|"+envHash();let r=SB.sims.get(k);if(r)return r;
+  r=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:r.peakHp,tq:r.peakTq,rel:r.rel,kg:r.kg,nr:engineStatus(cfg,r).nr};
+  if(SB.sims.size>200)SB.sims.clear();SB.sims.set(k,r);return r;}
+function sbBench(){
+  const rows=[{cur:true,name:"Current build",cfg:S.cfg}].concat(S.blueprints.map((b,i)=>({i,name:b.title||b.name||"Blueprint",cfg:Object.assign({},SIM.DEFAULT_CFG,b.cfg)})));
+  for(const r of rows)r.s=sbSim(r.cfg);
+  const ok=rows.filter(r=>!r.s.nr),best=(f,hi)=>ok.length>1?ok.reduce((a,r)=>hi?Math.max(a,f(r)):Math.min(a,f(r)),hi?-1e9:1e9):null;
+  const bHp=best(r=>Math.round(r.s.hp),1),bTq=best(r=>Math.round(r.s.tq),1),bRel=best(r=>Math.round(r.s.rel),1),bKg=best(r=>Math.round(r.s.kg),0);
+  const cell=(l,v,b)=>`<span class="${v!=null&&b!=null&&v===b?"best":""}"><b>${v==null?"—":v.toLocaleString()}</b>${l}</span>`;
+  $("sbBench").innerHTML=rows.map(r=>{const s=r.s,ok=!s.nr;
+    return `<div class="sbrow${r.cur?" cur":""}"><div class="sbn"><b title="${String(r.name).replace(/"/g,"&quot;")}">${r.name}</b>${r.cur?`<small>${cfgLbl(r.cfg)}</small>`:`<button class="btn sm" data-sbload="${r.i}">Load</button><button class="btn sm ghost" data-sbdel="${r.i}" aria-label="Remove ${String(r.name).replace(/"/g,"&quot;")}">✕</button>`}</div>`
+      +`<div class="sbs">${cell("hp",ok?Math.round(s.hp):null,bHp)}${cell("Nm",ok?Math.round(s.tq):null,bTq)}${cell("rel",ok?Math.round(s.rel):null,bRel)}${cell("kg",Math.round(s.kg),bKg)}</div></div>`;}).join("");
+  $("sbBenchCnt").textContent=`${S.blueprints.length} / 12`;$("sbSave").disabled=S.blueprints.length>=12;}
+/* every seg field the current build shows, grouped by its Build section */
+function sbSections(){const out=[];for(const sec of FORM){const fs=sec.fields.filter(f=>f.type==="seg"&&(!f.showIf||f.showIf(S.cfg)));if(fs.length)out.push({t:(sec.titleIf&&sec.titleIf(S.cfg))||sec.title,fs});}return out;}
+function sbParts(){
+  const secs=sbSections();if(!secs.some(x=>x.t===SB.sec))SB.sec=secs.length?secs[0].t:"";
+  const sel=$("sbSec");sel.innerHTML=secs.map(x=>`<option value="${x.t.replace(/"/g,"&quot;")}">${x.t}</option>`).join("");sel.value=SB.sec;
+  const q=SB.q.trim().toLowerCase(),c=S.cfg;let n=0,h="";const CAP=40;
+  for(const sec of secs){if(!q&&sec.t!==SB.sec)continue;
+    for(const f of sec.fs){const tbl=f.optTable||f.key,opts=OPT[tbl],lb=fLabel(f),famOK=famOKf(f,c);let fh="";
+      for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;
+        if(q&&!(`${lb} ${o.name} ${o.sub||""} ${o.info||""}`.toLowerCase().includes(q)))continue;
+        if(n>=CAP){n++;continue;}n++;
+        const fit=c[f.key]===k,req=o.req?UPGRADES.find(u=>u.id===o.req):null;
+        const chips=chipsFor(tbl,o).map(([l,v])=>`<i><em>${l}</em>${v}</i>`).join("");
+        const more=(chips||o.info)?`<details class="more"><summary aria-label="More info">ⓘ</summary><div>${chips?`<div class="chips">${chips}</div>`:""}${o.info?`<p>${o.info}</p>`:""}</div></details>`:"";
+        fh+=`<div class="opt sbp${fit?" cur":""}"><div class="oh"><div class="sbt"><b>${o.name}</b>${req?`<span class="tag lk">Career: ${req.name}</span>`:""}<div class="sbl">${specLine(tbl,o)}${more}</div></div>`
+          +`<button class="btn sm" data-sbfit="${f.key}" data-v="${k}" ${fit?"disabled":""}>${fit?"Fitted":"Fit"}</button></div></div>`;}
+      if(fh)h+=`<h3 class="sbf">${lb}${q?` <small>${sec.t}</small>`:""}</h3>`+fh;}}
+  $("sbList").innerHTML=h||`<p class="hint">${q?"No part matches that.":"Nothing to show."}</p>`;
+  $("sbMore").textContent=n>CAP?`Showing ${CAP} of ${n}. Narrow the search to see the rest.`:"";$("sbSec").style.display=q?"none":"";}
+function renderSbShop(){if(!$("sbBench"))return;sbBench();sbParts();}
+(function(){const root=$("sandboxBox");if(!root)return;
+  root.addEventListener("click",e=>{
+    const ld=e.target.closest("[data-sbload]");if(ld){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+ld.dataset.sbload];if(!bp)return;S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;resetBase();afterCfgChange(true);renderSbShop();toast("BLUEPRINT LOADED");return;}
+    const dl=e.target.closest("[data-sbdel]");if(dl){S.blueprints.splice(+dl.dataset.sbdel,1);renderBlueprints();save();renderSbShop();return;}
+    if(e.target.closest("#sbSave")){$("saveBp").click();renderSbShop();return;}
+    const ft=e.target.closest("[data-sbfit]");if(ft){if(ft.disabled)return;applyOpt(ft.dataset.sbfit,ft.dataset.v);renderSbShop();return;}
+    if(e.target.closest("#sbStock")){if(testing){toast("Let the run finish first");return;}if(!confirm("Replace the current build with the stock engine? Save it to the bench first to keep it."))return;
+      S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;S.name=null;resetBase();afterCfgChange(true);renderSbShop();toast("STOCK ENGINE");return;}
+    if(e.target.closest("#sbRand")){if(testing){toast("Let the run finish first");return;}const p=PRESETS[Math.floor(Math.random()*PRESETS.length)];
+      S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg);S.profileId=p.soundProfile;S.name=p.name;resetBase();afterCfgChange(true);renderSbShop();toast(`${p.name} loaded — ${p.blurb}`);}});
+  $("sbSec").addEventListener("change",e=>{SB.sec=e.target.value;sbParts();});
+  $("sbQ").addEventListener("input",e=>{SB.q=e.target.value;sbParts();});})();
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
   {tab:"build",sel:'#presets [data-id="22re"]',pre:tourPresetPrep,pre2:tourPresetRow,title:"Tap the Two-four",text:"The {n} green-tagged Starter engines use only parts your bay already has. Tap the Two-four truck four — it is a safe first sale."},
