@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.70.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.70.1.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -11807,6 +11807,28 @@ function vnoise(x,y,per,s){
   var ab=a+(b-a)*u, cd=c+(d-c)*u;
   return ab+(cd-ab)*v;
 }
+/* anisotropic tileable value noise: fx x fy lattice cells over the unit square (long scratches, streaks, drip marks) */
+function vnoiseA(u,v,fx,fy,s){
+  var x=u*fx, y=v*fy, xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
+  var ux=xf*xf*(3-2*xf), vy=yf*yf*(3-2*yf);
+  var x0=xi%fx; if(x0<0) x0+=fx; var x1=x0+1; if(x1===fx) x1=0;
+  var y0=yi%fy; if(y0<0) y0+=fy; var y1=y0+1; if(y1===fy) y1=0;
+  var a=hashi(x0,y0,s), b=hashi(x1,y0,s), c=hashi(x0,y1,s), d=hashi(x1,y1,s);
+  var ab=a+(b-a)*ux, cd=c+(d-c)*ux;
+  return ab+(cd-ab)*vy;
+}
+/* overlapping circular tool marks (engine-turned / spun finish): n x n jittered cells over the unit square.
+   Returns the distance to the nearest cell centre in cell units; SW_H is that cell's own random 0..1 */
+var SW_H=0;
+function swirlD(u,v,n,s){
+  var x=u*n, y=v*n, ix=Math.floor(x), iy=Math.floor(y), best=9, dj, di;
+  for(dj=-1;dj<=1;dj++) for(di=-1;di<=1;di++){
+    var cx=ix+di, cy=iy+dj, wx=((cx%n)+n)%n, wy=((cy%n)+n)%n;
+    var jx=cx+0.15+hashi(wx,wy,s)*0.7-x, jy=cy+0.15+hashi(wx,wy,s+1)*0.7-y, d=jx*jx+jy*jy;
+    if(d<best){ best=d; SW_H=hashi(wx,wy,s+2); }
+  }
+  return Math.sqrt(best);
+}
 /* fbm on unit square, tileable. f0 must be an integer frequency. */
 function fbm(u,v,oct,f0,s){
   var f=f0, amp=1, sum=0, tot=0;
@@ -11827,44 +11849,63 @@ function newCanvas(w,h){
   var c=document.createElement("canvas"); c.width=w; c.height=h||w; return c;
 }
 /* Build colour + packed(rough/metal) + normal canvases from one per-pixel fn.
-   fn(u,v,out,i,j): out=[r,g,b, height0..1, rough0..1, metal0..1]           */
-function buildMaps(size, fn, nstr){
-  var cC=newCanvas(size), cR=newCanvas(size);
-  var xC=cC.getContext("2d"), xR=cR.getContext("2d");
-  var iC=xC.createImageData(size,size), iR=xR.createImageData(size,size);
-  var dC=iC.data, dR=iR.data;
-  var H=new Float32Array(size*size);
-  var out=[128,128,128,0.5,0.7,0.0];
-  var k=0, inv=1/size;
-  for(var j=0;j<size;j++){
-    for(var i=0;i<size;i++){
-      out[0]=128;out[1]=128;out[2]=128;out[3]=0.5;out[4]=0.7;out[5]=0.0;
-      fn(i*inv, j*inv, out, i, j);
-      dC[k]=out[0]; dC[k+1]=out[1]; dC[k+2]=out[2]; dC[k+3]=255;
-      dR[k]=255;    dR[k+1]=out[4]*255; dR[k+2]=out[5]*255; dR[k+3]=255;
-      H[j*size+i]=out[3];
-      k+=4;
-    }
-  }
-  xC.putImageData(iC,0,0); xR.putImageData(iR,0,0);
-  return { color:cC, orm:cR, normal:sobelNormal(H,size, nstr===undefined?2.0:nstr) };
+   fn(u,v,out,i,j): out=[r,g,b, height0..1, rough0..1, metal0..1]
+   v1.70: painted by a MapJob, which can also run in time slices (the Full / Ultra hi-res upgrade, see pmUpgrade). HQ is the
+   detail level the painters read: 1 = the base set (what Lite always uses), 2+ = a bigger set that earns extra octaves. */
+var HQ = 1;
+function MapJob(size, fn, nstr, hq){
+  this.size=size; this.fn=fn; this.hq=hq||1; this.str=(nstr===undefined?2.0:nstr)*this.hq;
+  this.cC=newCanvas(size); this.cR=newCanvas(size);
+  this.xC=this.cC.getContext("2d"); this.xR=this.cR.getContext("2d");
+  this.iC=this.xC.createImageData(size,size); this.iR=this.xR.createImageData(size,size);
+  this.H=new Float32Array(size*size); this.cN=newCanvas(size); this.xN=this.cN.getContext("2d"); this.iN=this.xN.createImageData(size,size);
+  this.out=[128,128,128,0.5,0.7,0.0]; this.j=0; this.ph=0; this.res=null;
 }
-/* Sobel height -> tangent-space normal map canvas */
-function sobelNormal(H,size,strength){
-  var c=newCanvas(size), x=c.getContext("2d");
-  var img=x.createImageData(size,size), d=img.data, k=0;
+/* paint / sobel for up to budget ms (checked every 4 rows); true when the maps are done */
+MapJob.prototype.step=function(budget){
+  var t0=budget<1e9?performance.now():0, size=this.size, inv=1/size, out=this.out, fn=this.fn, dC=this.iC.data, dR=this.iR.data, H=this.H, j, i, k;
+  if(this.ph===0){
+    HQ=this.hq;
+    while(this.j<size){
+      j=this.j; k=j*size*4;
+      for(i=0;i<size;i++){
+        out[0]=128;out[1]=128;out[2]=128;out[3]=0.5;out[4]=0.7;out[5]=0.0;
+        fn(i*inv, j*inv, out, i, j);
+        dC[k]=out[0]; dC[k+1]=out[1]; dC[k+2]=out[2]; dC[k+3]=255;
+        dR[k]=255;    dR[k+1]=out[4]*255; dR[k+2]=out[5]*255; dR[k+3]=255;
+        H[j*size+i]=out[3];
+        k+=4;
+      }
+      this.j++;
+      if(t0 && (this.j&3)===0 && performance.now()-t0>budget){ HQ=1; return false; }
+    }
+    HQ=1; this.xC.putImageData(this.iC,0,0); this.xR.putImageData(this.iR,0,0); this.ph=1; this.j=0;
+  }
+  while(this.j<size){
+    sobelRows(H,size,this.str,this.iN.data,this.j,Math.min(size,this.j+4)); this.j+=4;
+    if(t0 && performance.now()-t0>budget) return false;
+  }
+  this.xN.putImageData(this.iN,0,0);
+  this.res={ color:this.cC, orm:this.cR, normal:this.cN, size:size };
+  return true;
+};
+function buildMaps(size, fn, nstr, hq){
+  var job=new MapJob(size, fn, nstr, hq); job.step(1e12); return job.res;
+}
+/* Sobel height -> tangent-space normal map rows y0..y1-1 */
+function sobelRows(H,size,strength,d,y0,y1){
   function at(px,py){ return H[(py<0?py+size:py>=size?py-size:py)*size + (px<0?px+size:px>=size?px-size:px)]; }   /* perf: px,py only step one past an edge */
-  for(var y=0;y<size;y++){
+  var k=y0*size*4;
+  for(var y=y0;y<y1;y++){
     for(var px=0;px<size;px++){
       var gx = (at(px+1,y-1)+2*at(px+1,y)+at(px+1,y+1)) - (at(px-1,y-1)+2*at(px-1,y)+at(px-1,y+1));
       var gy = (at(px-1,y+1)+2*at(px,y+1)+at(px+1,y+1)) - (at(px-1,y-1)+2*at(px,y-1)+at(px+1,y-1));
-      var nx=-gx*strength, ny=-gy*strength, nz=1;
+      var nx=-gx*strength, ny=-gy*strength;
       var l=Math.sqrt(nx*nx+ny*ny+1)||1;
-      d[k]=(nx/l*0.5+0.5)*255; d[k+1]=(ny/l*0.5+0.5)*255; d[k+2]=(nz/l*0.5+0.5)*255; d[k+3]=255;
+      d[k]=(nx/l*0.5+0.5)*255; d[k+1]=(ny/l*0.5+0.5)*255; d[k+2]=(1/l*0.5+0.5)*255; d[k+3]=255;
       k+=4;
     }
   }
-  x.putImageData(img,0,0); return c;
 }
 
 var MAXANISO = 4;
@@ -11884,14 +11925,110 @@ function lazyTex(get, srgb){
   Object.defineProperty(t, "image", { configurable:true, enumerable:true, get:function(){ if(!img) img=get(); return img; }, set:function(v){ img=v; } });
   return t;
 }
+/* v1.70: a pmat's maps come in two sets. The base set (size px) is painted on first use, exactly as before, and is all Lite ever
+   has. On Full / Ultra a bigger set (2x, 4x for the Ultra floor and walls) is then painted in the background, a few ms per tick
+   once the first frame is up, and swapped in: boot costs the same, the surfaces sharpen a moment later. A tier change swaps
+   between the sets (painting the bigger one if it isn't there yet). */
+var PM_ALL=[], PM_Q=[], PM_T=0;
+function pmScale(pm){ return GFX==="lite" ? 1 : (GFX==="ultra" && pm.hero ? 4 : 2); }
+/* the size the current tier wants; a 4x set is reached through the 2x one so the floor sharpens in two steps, not one long wait */
+function pmTarget(pm){
+  var s=pmScale(pm), sz=pm.size*s;
+  if(s>2 && !pm.sets[pm.size*2]) sz=pm.size*2;
+  return Math.min(2048, sz);
+}
+function pmTex(pm, kind, srgb){
+  var t=tex(undefined, srgb);
+  Object.defineProperty(t, "image", { configurable:true, enumerable:true, get:function(){ if(!pm.cur) pmBase(pm); return pm.cur[kind]; }, set:function(){} });
+  pm.texs.push(t); return t;
+}
+function pmBase(pm){
+  pm.base=buildMaps(pm.size, pm.fn, pm.nstr, 1); pm.cur=pm.base; pm.sets[pm.size]=pm.base;
+  if(GFX!=="lite") pmWant(pm, 1500);   /* the first frame is being painted: leave the bigger set until the menus are up */
+}
+function pmSwap(pm, set){
+  if(pm.cur===set) return; pm.cur=set;
+  for(var i=0;i<pm.texs.length;i++){ pm.texs[i].dispose(); pm.texs[i].needsUpdate=true; }
+}
+/* make pm's current set match the tier: swap, or queue the bigger set's painting (one stage at a time) */
+function pmWant(pm, delay){
+  if(!pm.cur) return;                       /* never painted: the base set will be asked for when something first draws it */
+  var sz=pmTarget(pm), top=Math.min(2048, pm.size*pmScale(pm)), k;
+  if(pm.job && pm.job.size>top){ var qi=PM_Q.indexOf(pm.job); if(qi>=0) PM_Q.splice(qi,1); pm.job=null; }   /* the tier dropped under a job in flight */
+  for(k in pm.sets) if(+k>top){ if(pm.cur===pm.sets[k]) pmSwap(pm, pm.sets[pm.size]); delete pm.sets[k]; }   /* and under sets it no longer wants */
+  if(sz<=pm.size){ if(pm.cur!==pm.base) pmSwap(pm, pm.base); return; }
+  if(pm.sets[sz]){ pmSwap(pm, pm.sets[sz]); return; }
+  if(pm.job && pm.job.size===sz) return;
+  if(pm.job){ var qj=PM_Q.indexOf(pm.job); if(qj>=0) PM_Q.splice(qj,1); }
+  pm.job=new MapJob(sz, pm.fn, pm.nstr, sz/pm.size); pm.job.pm=pm; PM_Q.push(pm.job);
+  if(!PM_T) PM_T=setTimeout(pmTick, delay||60);
+}
+function pmTick(){
+  PM_T=0; var job=PM_Q[0]; if(!job) return;
+  if(typeof document!=="undefined" && document.hidden){ PM_T=setTimeout(pmTick, 500); return; }
+  var done=false;
+  try{ done=job.step(7); }catch(e){ PM_Q.shift(); job.pm.job=null; if(PM_Q.length) PM_T=setTimeout(pmTick,60); return; }
+  if(done){
+    PM_Q.shift(); var pm=job.pm, k; pm.job=null; pm.sets[job.size]=job.res;
+    if(job.size>pm.cur.size && job.size<=Math.min(2048, pm.size*pmScale(pm))){
+      pmSwap(pm, job.res);
+      for(k in pm.sets) if(+k!==pm.size && +k<job.size) delete pm.sets[k];     /* a bigger set replaces the middle one: free its canvases */
+    }
+    pmWant(pm, 24);                                   /* the next stage, if the tier wants one */
+  }
+  if(PM_Q.length) PM_T=setTimeout(pmTick, 20);
+}
+/* the graphics tier changed (ENGINE_VIS.setQuality): swap / queue every painted set, and let the anti-tiling shaders recompile */
+function matTierChanged(){
+  for(var i=0;i<PM_ALL.length;i++) pmWant(PM_ALL[i], 60);
+  for(i=0;i<AA_MATS.length;i++) AA_MATS[i].needsUpdate=true;
+}
+/* v1.70 anti-tiling (Full / Ultra): the garage's repeating surfaces get a slow macro tint + a mid-scale breakup from one shared
+   256px noise map, sampled at scales that never line up with the texture's own repeat. Albedo and roughness only: the joints, mortar
+   lines and ribs stay put. Lite compiles the unpatched shader (the program key tells the two apart). */
+var AA_MATS=[], AA_NOISE=null;
+function aaNoise(){
+  return AA_NOISE||(AA_NOISE=lazyTex(function(){
+    var n=256, c=newCanvas(n), x=c.getContext("2d"), im=x.createImageData(n,n), d=im.data, i, j, k=0, u, v;
+    function nz(a){ return clamp((a-0.5)*2.7+0.5,0,1)*255; }
+    for(j=0;j<n;j++) for(i=0;i<n;i++){
+      u=i/n; v=j/n;
+      d[k]=nz(fbm(u,v,3,3,3101)); d[k+1]=nz(fbm(u,v,3,9,3111)); d[k+2]=nz(fbm(u,v,3,6,3121)); d[k+3]=255; k+=4;
+    }
+    x.putImageData(im,0,0); return c;
+  }, false));
+}
+var AA_GLSL_PRE="uniform sampler2D uAAN;\nuniform vec4 uAAk;\n";
+function aaPatch(mat, albedo, detail, rough){
+  if(!mat) return mat;
+  var k=new THREE.Vector4(albedo, detail, rough, 0);
+  mat.userData.aa=true;
+  mat.onBeforeCompile=function(sh){
+    if(GFX==="lite") return;
+    sh.uniforms.uAAN={value:aaNoise()}; sh.uniforms.uAAk={value:k};
+    sh.fragmentShader=AA_GLSL_PRE+sh.fragmentShader
+      .replace("#include <map_fragment>",
+        "vec2 aaR = vec2(vUv.x*0.8776-vUv.y*0.4794, vUv.x*0.4794+vUv.y*0.8776);\n"+
+        "vec3 aaA = texture2D(uAAN, aaR*0.173+vec2(0.37,0.11)).rgb;\n"+
+        "vec3 aaB = texture2D(uAAN, vUv*0.617+vec2(0.71,0.53)).rgb;\n"+
+        "#include <map_fragment>\n"+
+        "#ifdef USE_MAP\n  diffuseColor.rgb *= 1.0 + (aaA.r-0.5)*uAAk.x + (aaB.g-0.5)*uAAk.y;\n#endif")
+      .replace("#include <roughnessmap_fragment>",
+        "#include <roughnessmap_fragment>\n  roughnessFactor = clamp(roughnessFactor + (aaA.b-0.5)*uAAk.z + (aaB.r-0.5)*uAAk.z*0.6, 0.04, 1.0);");
+  };
+  mat.customProgramCacheKey=function(){ return "aa"+(GFX==="lite"?"0":"1"); };
+  AA_MATS.push(mat); mat.needsUpdate=true;
+  return mat;
+}
 function pmat(size, fn, o){
   o=o||{};
-  var mm=null, M=function(){ return mm||(mm=buildMaps(size, fn, o.nstr)); };
+  var pm={ size:size, fn:fn, nstr:o.nstr, hero:!!o.hero, base:null, sets:{}, cur:null, job:null, texs:[] };
+  PM_ALL.push(pm);
   var mat=new THREE.MeshStandardMaterial({
-    map: lazyTex(function(){ return M().color; },true),
-    normalMap: lazyTex(function(){ return M().normal; },false),
-    roughnessMap: lazyTex(function(){ return M().orm; },false),
-    metalnessMap: lazyTex(function(){ return M().orm; },false),
+    map: pmTex(pm,"color",true),
+    normalMap: pmTex(pm,"normal",false),
+    roughnessMap: pmTex(pm,"orm",false),
+    metalnessMap: pmTex(pm,"orm",false),
     roughness: 1, metalness: 1,
     color: o.tint===undefined?0xffffff:sc(o.tint).getHex(),
     envMapIntensity: o.env===undefined?1.0:o.env,
@@ -11963,7 +12100,8 @@ var MAT = {};           /* key -> MeshStandardMaterial (cached, shared)      */
 var MATS_BUILT = false;
 
 /* --- surface fns -------------------------------------------------------- */
-function fnCastIron(u,v,o){
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnCastIron0(u,v,o){
   var g = fbm(u,v,4,24,11);            /* sand grain            */
   var fine = fbm(u,v,2,110,31);        /* fine speckle          */
   var blot = fbm(u,v,3,5,23);          /* casting blotch        */
@@ -11977,6 +12115,28 @@ function fnCastIron(u,v,o){
   o[4]=clamp(0.70+(1-g)*0.16+rust*0.14,0,1);
   o[5]=0.55*(1-rust*0.75);
 }
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnCastIron(u,v,o,i,j){         /* sand-cast iron: orange-peel lumps, sand inclusions, gas pits, burnished high spots; rust blooms in the low ones */
+  if(HQ<=1) return fnCastIron0(u,v,o,i,j);
+  var g = fbm(u,v,4,24,11);            /* sand grain            */
+  var lump = fbm(u,v,3,9,13);          /* casting waviness      */
+  var fine = fbm(u,v,2,110,31);        /* fine speckle          */
+  var blot = fbm(u,v,3,5,23);          /* casting blotch        */
+  var sand = vnoise(u*170,v*170,170,17);
+  if(HQ>1) sand = sand*0.65 + vnoise(u*340,v*340,340,41)*0.35;
+  var pit = smoothstep(0.80,0.92,fbm(u,v,2,70,19))*(0.5+0.5*lump);
+  var inc = smoothstep(0.84,0.93,vnoise(u*220,v*220,220,29));        /* pale sand grains */
+  var burn = smoothstep(0.55,0.85,lump)*smoothstep(0.45,0.8,g);      /* handled / machined-bright high spots */
+  var l = 98 + (g-0.5)*26 + (blot-0.5)*16 + (fine-0.5)*14 + (sand-0.5)*18 - pit*26 + inc*14 + burn*10;
+  o[0]=l*0.99; o[1]=l*0.985; o[2]=l*1.05;
+  /* rust settles in the low spots */
+  var rec = 1-smoothstep(0.34,0.62,g);
+  var rust = clamp(rec*rec*(fbm(u,v,3,9,7)-0.50)*2.0,0,1);
+  o[0]=lerp(o[0],128,rust); o[1]=lerp(o[1],72,rust); o[2]=lerp(o[2],42,rust);
+  o[3]=lump*0.40+g*0.30+sand*0.22+fine*0.08-pit*0.55;
+  o[4]=clamp(0.74+(1-g)*0.14+rust*0.12+pit*0.08-burn*0.18+(sand-0.5)*0.10,0,1);
+  o[5]=0.55*(1-rust*0.75)+burn*0.10;
+}
 function fnCGI(u,v,o){
   var g=fbm(u,v,4,52,53), fine=fbm(u,v,2,170,61);
   var l=78+(g-0.5)*14+(fine-0.5)*11;
@@ -11984,7 +12144,8 @@ function fnCGI(u,v,o){
   o[3]=g*0.5+fine*0.5;
   o[4]=0.58+(1-g)*0.10; o[5]=0.72;
 }
-function fnCastAlu(u,v,o){          /* A356 sand cast: matte, porous, light */
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnCastAlu0(u,v,o){          /* A356 sand cast: matte, porous, light */
   var g=fbm(u,v,4,26,101), fine=fbm(u,v,2,140,107);
   var l=128+(g-0.5)*20+(fine-0.5)*15;
   o[0]=l; o[1]=l*1.005; o[2]=l*1.02;
@@ -11996,7 +12157,23 @@ function fnCastAlu(u,v,o){          /* A356 sand cast: matte, porous, light */
   o[4]=clamp(0.62+(1-g)*0.14+pit*0.20,0,1);
   o[5]=0.86;
 }
-function fnMachinedAlu(u,v,o){      /* fine brushed / turned tool marks */
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnCastAlu(u,v,o,i,j){          /* A356 sand cast: matte, porous, light, a little oxide mottling and bright metal grains */
+  if(HQ<=1) return fnCastAlu0(u,v,o,i,j);
+  var g=fbm(u,v,4,26,101), fine=fbm(u,v,2,140,107), mott=fbm(u,v,3,6,121), sand=vnoise(u*190,v*190,190,127);
+  var l=130+(g-0.5)*22+(fine-0.5)*14+(sand-0.5)*16+(mott-0.5)*14;
+  if(HQ>1) l += (vnoise(u*380,v*380,380,137)-0.5)*11;
+  /* porosity pits */
+  var pit=smoothstep(0.78,0.92,fbm(u,v,2,64,113));
+  var spark=smoothstep(0.88,0.95,vnoise(u*260,v*260,260,131));
+  l += spark*22 - pit*48;
+  o[0]=l*0.99; o[1]=l*1.005; o[2]=l*1.03+(1-mott)*3;
+  o[3]=g*0.45+fine*0.20+sand*0.20+mott*0.15-pit*0.55;
+  o[4]=clamp(0.60+(1-g)*0.14+pit*0.20+(mott-0.5)*0.12-spark*0.15,0,1);
+  o[5]=0.86;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnMachinedAlu0(u,v,o){      /* fine brushed / turned tool marks */
   var streak=fbm(u*0.09,v,3,128,201);
   var fineline=vnoise(u*4,v*420,420,7);
   var l=154+(streak-0.5)*15+(fineline-0.5)*12;
@@ -12005,11 +12182,38 @@ function fnMachinedAlu(u,v,o){      /* fine brushed / turned tool marks */
   o[4]=clamp(0.24+(streak-0.5)*0.13+(fineline-0.5)*0.08,0.06,0.6);
   o[5]=1.0;
 }
-function fnPolishedAlu(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnMachinedAlu(u,v,o,i,j){      /* machined: fine feed lines along u with chatter, and overlapping cutter-swirl patches */
+  if(HQ<=1) return fnMachinedAlu0(u,v,o,i,j);
+  var streak=vnoiseA(u,v,8,160,201)*0.6+vnoiseA(u,v,16,300,203)*0.4;
+  var fineline=vnoiseA(u,v,4,420,207);
+  var d=swirlD(u,v,5,211), h=SW_H;
+  var ring=0.5+0.5*Math.sin(d*TAU*13+h*TAU);
+  var lines=streak*0.55+fineline*0.45;
+  var m=lerp(lines, ring, smoothstep(0.30,0.60,h)*(1-smoothstep(0.50,0.80,d))*0.42);
+  var l=152+(m-0.5)*26+(streak-0.5)*8+(h-0.5)*9;
+  if(HQ>1) l += (vnoiseA(u,v,3,900,223)-0.5)*7;
+  o[0]=l*0.995; o[1]=l; o[2]=l*1.03;
+  o[3]=m*0.65+streak*0.35;
+  o[4]=clamp(0.23+(1-m)*0.07+(streak-0.5)*0.12+(fineline-0.5)*0.06,0.06,0.6);
+  o[5]=1.0;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnPolishedAlu0(u,v,o){
   var n=fbm(u,v,3,90,301);
   var l=178+(n-0.5)*10;
   o[0]=l*0.99; o[1]=l; o[2]=l*1.04;
   o[3]=n; o[4]=clamp(0.10+(n-0.5)*0.07,0.04,0.3); o[5]=1.0;
+}
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnPolishedAlu(u,v,o,i,j){      /* buffed: faint swirl from the mop, hairline scratches, a little haze */
+  if(HQ<=1) return fnPolishedAlu0(u,v,o,i,j);
+  var n=fbm(u,v,3,90,301), d=swirlD(u,v,3,311), buff=0.5+0.5*Math.sin(d*TAU*26+SW_H*TAU);
+  var hz=fbm(u,v,2,5,317), sc1=smoothstep(0.82,0.93,vnoiseA(u,v,3,170,321));
+  var l=176+(n-0.5)*8+(buff-0.5)*5+(hz-0.5)*8-sc1*16;
+  o[0]=l*0.99; o[1]=l; o[2]=l*1.04;
+  o[3]=n*0.5+buff*0.5-sc1*0.3;
+  o[4]=clamp(0.10+(n-0.5)*0.05+(1-buff)*0.03+sc1*0.12+(hz-0.5)*0.05,0.04,0.35); o[5]=1.0;
 }
 function fnNikasil(u,v,o){          /* mirror bore plating */
   var n=fbm(u,v,2,200,401);
@@ -12018,7 +12222,8 @@ function fnNikasil(u,v,o){          /* mirror bore plating */
   o[0]=l; o[1]=l*1.01; o[2]=l*1.06;
   o[3]=n*0.5+hone*0.5; o[4]=clamp(0.07+hone*0.05,0.04,0.2); o[5]=1.0;
 }
-function fnWrinkle(u,v,o){          /* wrinkle-finish powder coat (tinted) */
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnWrinkle0(u,v,o){          /* wrinkle-finish powder coat (tinted) */
   var r1=ridge(u,v,3,7,501);
   var r2=ridge(u,v,2,16,517);
   var w=r1*0.70+r2*0.30;
@@ -12029,7 +12234,22 @@ function fnWrinkle(u,v,o){          /* wrinkle-finish powder coat (tinted) */
   o[4]=clamp(0.60+(1-w)*0.26,0,1);
   o[5]=0.06;
 }
-function fnAnodised(u,v,o){         /* bead-blasted anodised plenum (tinted) */
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnWrinkle(u,v,o,i,j){          /* wrinkle-finish powder coat (tinted): crisp ridges, dark troughs, a few metallic flake glints */
+  if(HQ<=1) return fnWrinkle0(u,v,o,i,j);
+  var r1=ridge(u,v,3,7,501);
+  var r2=ridge(u,v,2,16,517);
+  var w=r1*0.62+r2*0.28+(HQ>1?ridge(u,v,2,36,527):r2)*0.10;
+  w=w*w*(3-2*w);
+  var fl=smoothstep(0.86,0.95,vnoise(u*230,v*230,230,531));
+  var l=174+(w-0.5)*50+fl*14;
+  o[0]=l; o[1]=l; o[2]=l;
+  o[3]=w;
+  o[4]=clamp(0.52+(1-w)*0.30-fl*0.10,0,1);
+  o[5]=0.06+fl*0.15;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnAnodised0(u,v,o){         /* bead-blasted anodised plenum (tinted) */
   var b=fbm(u,v,2,190,601), c=fbm(u,v,3,30,613);
   var l=146+(b-0.5)*20+(c-0.5)*10;
   o[0]=l; o[1]=l; o[2]=l;
@@ -12037,7 +12257,20 @@ function fnAnodised(u,v,o){         /* bead-blasted anodised plenum (tinted) */
   o[4]=clamp(0.40+(b-0.5)*0.14,0.2,0.7);
   o[5]=0.80;
 }
-function fnStainless(u,v,o){        /* heat-tinted header: u = along the tube */
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnAnodised(u,v,o,i,j){     /* bead-blasted anodised plenum (tinted): fine pitted peen with a sparkle */
+  if(HQ<=1) return fnAnodised0(u,v,o,i,j);
+  var b=fbm(u,v,2,190,601), c=fbm(u,v,3,30,613), pp=hashi(i,j,607);
+  var l=146+(b-0.5)*20+(c-0.5)*10+(pp-0.5)*14;
+  o[0]=l; o[1]=l; o[2]=l;
+  o[3]=b*0.5+c*0.2+pp*0.3;
+  o[4]=clamp(0.42+(b-0.5)*0.14+(pp-0.5)*0.10,0.2,0.7);
+  o[5]=0.80;
+}
+var STAIN_BANDS=[[0.00,[196,176,128]],[0.05,[178,140,58]],[0.10,[132,94,134]],
+             [0.16,[78,102,166]],[0.24,[110,132,172]],[0.34,[164,170,178]],[1.0,[174,178,184]]];
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnStainless0(u,v,o){        /* heat-tinted header: u = along the tube */
   var grain=fbm(u*3,v,3,64,701);
   var base=[172,175,180];
   /* heat tint bands close to the flange (u small) */
@@ -12059,12 +12292,36 @@ function fnStainless(u,v,o){        /* heat-tinted header: u = along the tube */
   o[4]=clamp(0.26+(grain-0.5)*0.16,0.1,0.6);
   o[5]=1.0;
 }
-function fnCastExh(u,v,o){          /* fresh cast-iron exhaust manifold: even dark grey, sand-cast grain, no rust */
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnStainless(u,v,o,i,j){        /* heat-tinted header: u = along the tube. Bands wander, brushed along the tube, soot specks */
+  if(HQ<=1) return fnStainless0(u,v,o,i,j);
+  var grain=fbm(u*3,v,3,64,701), br=vnoiseA(u,v,6,220,713), wob=fbm(u,v,2,6,709);
+  var uu=clamp(u+(wob-0.5)*0.07,0,1);
+  var col=heatBands(uu, STAIN_BANDS);
+  var soot=smoothstep(0.86,0.97,vnoise(u*90,v*90,90,719))*0.5;
+  var gm=(grain-0.5)*14+(br-0.5)*10;
+  o[0]=col[0]+gm-soot*22; o[1]=col[1]+gm-soot*22; o[2]=col[2]+gm-soot*20;
+  o[3]=grain*0.5+br*0.5;
+  o[4]=clamp(0.26+(grain-0.5)*0.14+(br-0.5)*0.10+soot*0.2,0.1,0.6);
+  o[5]=1.0;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnCastExh0(u,v,o){          /* fresh cast-iron exhaust manifold: even dark grey, sand-cast grain, no rust */
   var g=fbm(u,v,4,24,801), fine=fbm(u,v,2,120,811), pit=smoothstep(0.84,0.96,fbm(u,v,2,64,821));
   var l=100+(g-0.5)*12+(fine-0.5)*10-pit*20;
   o[0]=l+2; o[1]=l+1; o[2]=l+2;
   o[3]=g*0.55+fine*0.45-pit*0.4;
   o[4]=clamp(0.66+(1-g)*0.10+pit*0.10,0,1);
+  o[5]=0.5;
+}
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnCastExh(u,v,o,i,j){          /* fresh cast-iron exhaust manifold: even dark grey, sand-cast grain, no rust */
+  if(HQ<=1) return fnCastExh0(u,v,o,i,j);
+  var g=fbm(u,v,4,24,801), fine=fbm(u,v,2,120,811), pit=smoothstep(0.84,0.96,fbm(u,v,2,64,821)), lump=fbm(u,v,3,8,827), sand=vnoise(u*180,v*180,180,829);
+  var l=100+(g-0.5)*12+(fine-0.5)*10+(sand-0.5)*14+(lump-0.5)*8-pit*20;
+  o[0]=l+2; o[1]=l+1; o[2]=l+2;
+  o[3]=lump*0.30+g*0.35+fine*0.15+sand*0.2-pit*0.4;
+  o[4]=clamp(0.66+(1-g)*0.10+pit*0.10+(sand-0.5)*0.08,0,1);
   o[5]=0.5;
 }
 function fnTurbine(u,v,o){          /* clean sand-cast turbine housing: even grey, fine grain, no stain */
@@ -12075,7 +12332,8 @@ function fnTurbine(u,v,o){          /* clean sand-cast turbine housing: even gre
   o[4]=clamp(0.58+(1-g)*0.10,0,1);
   o[5]=0.6;
 }
-function fnRubberBelt(u,v,o){       /* ribbed serpentine belt */
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnRubberBelt0(u,v,o){       /* ribbed serpentine belt */
   var rib=Math.abs(Math.sin(v*PI*26));
   var n=fbm(u,v,2,60,1001);
   var l=26+rib*10+(n-0.5)*8;
@@ -12083,18 +12341,49 @@ function fnRubberBelt(u,v,o){       /* ribbed serpentine belt */
   o[3]=rib*0.8+n*0.2;
   o[4]=0.86-rib*0.10; o[5]=0.02;
 }
-function fnHose(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnRubberBelt(u,v,o,i,j){       /* ribbed serpentine belt: dusty worn rib tops, fine cross-cracks */
+  if(HQ<=1) return fnRubberBelt0(u,v,o,i,j);
+  var rib=Math.abs(Math.sin(v*PI*26));
+  var n=fbm(u,v,2,60,1001), dust=fbm(u,v,3,8,1009);
+  var ck=1-smoothstep(0.0,0.04,Math.abs(vnoiseA(u,v,52,4,1007)-0.5));
+  var worn=smoothstep(0.7,0.95,rib)*dust;
+  var l=26+rib*10+(n-0.5)*8+worn*9+dust*3-ck*5;
+  o[0]=l; o[1]=l; o[2]=l*1.05;
+  o[3]=rib*0.8+n*0.2-ck*0.15;
+  o[4]=0.86-rib*0.10-worn*0.06; o[5]=0.02;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnHose0(u,v,o){
   var weave=Math.abs(Math.sin(u*PI*70))*0.4+Math.abs(Math.sin(v*PI*70))*0.4;
   var n=fbm(u,v,2,50,1101);
   var l=27+(n-0.5)*8+weave*4;
   o[0]=l; o[1]=l; o[2]=l;
   o[3]=n*0.6+weave*0.4; o[4]=0.80; o[5]=0.03;
 }
-function fnSteel(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnHose(u,v,o,i,j){
+  if(HQ<=1) return fnHose0(u,v,o,i,j);
+  var weave=Math.abs(Math.sin(u*PI*70))*0.4+Math.abs(Math.sin(v*PI*70))*0.4;
+  var n=fbm(u,v,2,50,1101), dust=fbm(u,v,3,7,1103), sc=smoothstep(0.88,0.96,vnoiseA(u,v,5,140,1107));
+  var l=27+(n-0.5)*8+weave*4+dust*5+sc*8;
+  o[0]=l; o[1]=l; o[2]=l;
+  o[3]=n*0.6+weave*0.4-sc*0.1; o[4]=0.80-sc*0.1; o[5]=0.03;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnSteel0(u,v,o){
   var n=fbm(u,v,3,70,1201), fine=vnoise(u*300,v*8,300,3);
   var l=104+(n-0.5)*16+(fine-0.5)*8;
   o[0]=l; o[1]=l*1.01; o[2]=l*1.04;
   o[3]=n*0.7+fine*0.3; o[4]=clamp(0.34+(n-0.5)*0.15,0.12,0.7); o[5]=0.95;
+}
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnSteel(u,v,o,i,j){            /* ground / brushed steel: feed lines, the odd scratch, oil sheen patches */
+  if(HQ<=1) return fnSteel0(u,v,o,i,j);
+  var n=fbm(u,v,3,70,1201), fine=vnoiseA(u,v,300,8,3), sc=smoothstep(0.86,0.95,vnoiseA(u,v,5,220,1207)), oil=fbm(u,v,2,4,1209);
+  var l=104+(n-0.5)*16+(fine-0.5)*10+sc*18-(oil-0.5)*8;
+  o[0]=l; o[1]=l*1.01; o[2]=l*1.04;
+  o[3]=n*0.6+fine*0.3+0.1-sc*0.12; o[4]=clamp(0.34+(n-0.5)*0.15+(oil-0.5)*0.08-sc*0.06,0.12,0.7); o[5]=0.95;
 }
 function fnDarkComposite(u,v,o){
   var n=fbm(u,v,3,44,1301), crinkle=ridge(u,v,2,90,1311);
@@ -12102,7 +12391,8 @@ function fnDarkComposite(u,v,o){
   o[0]=l; o[1]=l*1.01; o[2]=l*1.06;
   o[3]=n*0.4+crinkle*0.6; o[4]=0.62+(1-crinkle)*0.14; o[5]=0.08;
 }
-function fnPaintChipped(u,v,o){     /* painted steel, chipped to rust (tinted) */
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnPaintChipped0(u,v,o){     /* painted steel, chipped to rust (tinted) */
   var chip=fbm(u,v,3,5,1401);
   var scuff=fbm(u,v,3,22,1411);
   var bare=smoothstep(0.78,0.90,chip)*0.8;
@@ -12116,8 +12406,29 @@ function fnPaintChipped(u,v,o){     /* painted steel, chipped to rust (tinted) *
   o[4]=clamp(0.42+bare*0.34+(scuff-0.5)*0.12,0,1);
   o[5]=bare*0.5;
 }
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnPaintChipped(u,v,o,i,j){     /* painted steel (tinted): orange peel, scuffs, scratches and crisp-edged chips down to primer and rust */
+  if(HQ<=1) return fnPaintChipped0(u,v,o,i,j);
+  var chip=fbm(u,v,3,5,1401), scuff=fbm(u,v,3,22,1411), peel=fbm(u,v,2,90,1417);
+  var zone=smoothstep(0.64,0.80,chip);                                   /* where the paint has been knocked about */
+  var cn=vnoise(u*44,v*44,44,1421)*0.65+vnoise(u*90,v*90,90,1423)*0.35;
+  var bare=zone*smoothstep(0.56,0.59,cn);                               /* flake-shaped, crisp edged */
+  var ring=zone*smoothstep(0.51,0.56,cn)*(1-bare);                       /* lifted rim round a chip */
+  var rustc=smoothstep(0.45,0.8,fbm(u,v,3,11,1427))*bare;
+  var sc=smoothstep(0.88,0.95,vnoiseA(u,v,4,120,1431))*(0.4+0.6*scuff);
+  var l=186+(scuff-0.5)*20+(peel-0.5)*8+ring*8-sc*30;
+  o[0]=l; o[1]=l; o[2]=l;
+  /* primer / bare metal / rust under the paint — desaturate away from the tint */
+  if(bare>0){
+    o[0]=lerp(o[0],lerp(118,128,rustc),bare); o[1]=lerp(o[1],lerp(100,76,rustc),bare); o[2]=lerp(o[2],lerp(88,48,rustc),bare);
+  }
+  o[3]=0.62+peel*0.06+(scuff-0.5)*0.10-bare*0.30+ring*0.10-sc*0.05;
+  o[4]=clamp(0.42+bare*0.36+rustc*0.10+(scuff-0.5)*0.12+ring*0.04+sc*0.1,0,1);
+  o[5]=bare*0.5*(1-rustc*0.8);
+}
 /* --- garage surfaces ---------------------------------------------------- */
-function fnConcrete(u,v,o){
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnConcrete0(u,v,o){
   var agg=fbm(u,v,3,18,1501), fine=fbm(u,v,2,64,1511), broad=fbm(u,v,3,4,1521);
   var l=86+(agg-0.5)*16+(fine-0.5)*11+(broad-0.5)*13;
   /* expansion joints on the tile edges */
@@ -12134,7 +12445,37 @@ function fnConcrete(u,v,o){
   o[4]=clamp(0.62+(agg-0.5)*0.16 - stain*0.20 + joint*0.24,0.3,1);
   o[5]=0.03;
 }
-function fnTileFloor(u,v,o){        /* sandbox / test-cell white epoxy tile */
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnConcrete(u,v,o,i,j){
+  if(HQ<=1) return fnConcrete0(u,v,o,i,j);
+  var agg=fbm(u,v,3,18,1501), fine=fbm(u,v,2,64,1511), broad=fbm(u,v,3,4,1521);
+  var l=86+(agg-0.5)*14+(fine-0.5)*10+(broad-0.5)*13;
+  /* hand-trowelled sweeps: soft arcs, the contours of a slow noise field */
+  var tw=Math.sin(fbm(u,v,2,3,1561)*26)*0.5+0.5;
+  l += (tw-0.5)*7;
+  /* sealed patches: darker, tighter and glossier, with a crisp lap line at the edge */
+  var sf=fbm(u,v,3,3,1571), seal=smoothstep(0.54,0.575,sf), lap=seal*(1-smoothstep(0.575,0.60,sf));
+  l = l*(1-seal*0.075) - lap*4;
+  /* expansion joints on the tile edges, chipped */
+  var jx=Math.min(u,1-u), jy=Math.min(v,1-v), cj=(fine-0.5)*0.012;
+  var joint=clamp((1-smoothstep(0.004,0.013,jx+cj))+(1-smoothstep(0.004,0.013,jy+cj)),0,1);
+  /* oil stains: dark core, a faint ring round it */
+  var sn=fbm(u,v,3,6,1531), sm=fbm(u,v,2,3,1541);
+  var stain=smoothstep(0.62,0.86,sn)*smoothstep(0.4,0.7,sm), ring=smoothstep(0.55,0.62,sn)*(1-smoothstep(0.62,0.7,sn))*smoothstep(0.4,0.7,sm);
+  /* tyre marks: broad dark streaks along v */
+  var tyre=smoothstep(0.72,0.9,vnoiseA(u,v,18,3,1551)*0.65+vnoiseA(u,v,36,6,1552)*0.35)*0.55;
+  /* aggregate speckle, pores, hairline cracks */
+  var spk=smoothstep(0.70,0.90,vnoise(u*100,v*100,100,1581)), prs=smoothstep(0.78,0.92,vnoise(u*130,v*130,130,1583));
+  var cr=(1-smoothstep(0.0,0.014,Math.abs(fbm(u,v,2,7,1591)-0.5)))*smoothstep(0.5,0.68,fbm(u,v,2,2,1593));
+  l += spk*6 - prs*9 - cr*16 - stain*68 - ring*8 - tyre*36 - joint*54;
+  if(HQ>1) l += (vnoise(u*260,v*260,260,1597)-0.5)*5;
+  o[0]=l*1.0; o[1]=l*0.99; o[2]=l*0.96;
+  o[3]=agg*0.26+fine*0.10+broad*0.50+tw*0.06 - joint*0.9 - prs*0.12 - cr*0.45 - seal*0.04;
+  o[4]=clamp(0.64+(agg-0.5)*0.16 - stain*0.22 - seal*0.14 + joint*0.24 + tyre*0.10 + prs*0.10,0.3,1);
+  o[5]=0.03;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnTileFloor0(u,v,o){        /* sandbox / test-cell white epoxy tile */
   var gx=wrap(u*4,1), gy=wrap(v*4,1);
   var g=Math.min(Math.min(gx,1-gx),Math.min(gy,1-gy));
   var grout=1-smoothstep(0.008,0.022,g);
@@ -12145,7 +12486,28 @@ function fnTileFloor(u,v,o){        /* sandbox / test-cell white epoxy tile */
   o[4]=clamp(0.16+grout*0.34+(n-0.5)*0.06,0.06,1);
   o[5]=0.02;
 }
-function fnCinderBlock(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnTileFloor(u,v,o,i,j){        /* sandbox / test-cell white epoxy tile: dirty grout, chipped glaze at the edges, heel scuffs */
+  if(HQ<=1) return fnTileFloor0(u,v,o,i,j);
+  var tu=u*4, tv=v*4, ci=Math.floor(tu), cj=Math.floor(tv), gx=tu-ci, gy=tv-cj;
+  var g=Math.min(Math.min(gx,1-gx),Math.min(gy,1-gy));
+  var th=hashi(ci,cj,1611), n=fbm(u,v,3,60,1601), nn=fbm(u,v,2,9,1603), dirt=fbm(u,v,3,28,1613);
+  var grout=1-smoothstep(0.008,0.022,g);
+  var cn=vnoise(u*72,v*72,72,1607);
+  var chip=(1-smoothstep(0.022,0.05,g))*smoothstep(0.70,0.78,cn)*(1-grout);
+  var l=206+(th-0.5)*7+(n-0.5)*8+(nn-0.5)*6;
+  l=lerp(l,188,chip);
+  var gl=152-dirt*44+(vnoise(u*160,v*160,160,1609)-0.5)*14;
+  l=lerp(l,gl,grout);
+  var sc=smoothstep(0.80,0.92,vnoiseA(u,v,9,40,1617))*(0.4+0.6*dirt);
+  l-=sc*7;
+  o[0]=l; o[1]=l*1.005; o[2]=l*1.01;
+  o[3]=0.70+n*0.20+(th-0.5)*0.06-grout*0.80-chip*0.30;
+  o[4]=clamp(0.16+grout*0.38+chip*0.20+sc*0.12+(nn-0.5)*0.08+(n-0.5)*0.05,0.06,1);
+  o[5]=0.02;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnCinderBlock0(u,v,o){
   var rows=8, cols=4;
   var ry=v*rows, r=Math.floor(ry), fy=ry-r;
   var off=(r%2)?0.5:0.0;
@@ -12164,7 +12526,34 @@ function fnCinderBlock(u,v,o){
   o[4]=clamp(0.72+(grit-0.5)*0.16+mortar*0.14,0,1);
   o[5]=0.02;
 }
-function fnCorrugated(u,v,o){       /* roll-up door: vertical ribs + slats */
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnCinderBlock(u,v,o,i,j){
+  if(HQ<=1) return fnCinderBlock0(u,v,o,i,j);
+  var rows=8, cols=4;
+  var ry=v*rows, r=Math.floor(ry), fy=ry-r;
+  var off=(r%2)?0.5:0.0;
+  var rx=wrap(u*cols+off,cols), cIdx=Math.floor(rx), fx=rx-cIdx;
+  var mx=Math.min(fx,1-fx)*  (1/cols), my=Math.min(fy,1-fy)*(1/rows);
+  var mortar=1-smoothstep(0.0035,0.0075,Math.min(mx,my));
+  var grit=fbm(u,v,4,64,1701), broad=fbm(u,v,3,7,1711);
+  var per=hashi(cIdx,r,1721), per2=hashi(cIdx,r,1723);
+  var pore=smoothstep(0.74,0.95,vnoise(u*96,v*96,96,1741)), pore2=smoothstep(0.80,0.95,vnoise(u*150,v*150,150,1743));
+  var l=130+(grit-0.5)*16+(broad-0.5)*12+(per-0.5)*10;
+  /* grime creeping up from the floor, rain streaks running down from the joints */
+  var grime=(1-smoothstep(0.0,0.30,v))*0.30*fbm(u,v,3,10,1731);
+  var drip=smoothstep(0.55,0.85,vnoiseA(u,v,28,3,1751))*0.35*fbm(u,v,2,5,1753);
+  l -= grime*70 + drip*22 + pore*15 + pore2*7;
+  /* mortar: sandy, a little lighter than the dirty face */
+  var ml=112+(vnoise(u*200,v*200,200,1761)-0.5)*26+(grit-0.5)*10-grime*30;
+  l = lerp(l, ml, mortar);
+  var tn=(per2-0.5)*0.025;
+  o[0]=l*(0.99+tn); o[1]=l; o[2]=l*(0.97-tn);
+  o[3]=0.15+grit*0.38+broad*0.36 - mortar*0.60 - pore*0.25 - pore2*0.10;
+  o[4]=clamp(0.72+(grit-0.5)*0.16+mortar*0.14+pore*0.12,0,1);
+  o[5]=0.02;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnCorrugated0(u,v,o){       /* roll-up door: vertical ribs + slats */
   var rib=Math.sin(u*PI*2*9);
   var slat=wrap(v*7,1);
   var seam=1-smoothstep(0.01,0.05,Math.min(slat,1-slat));
@@ -12176,7 +12565,24 @@ function fnCorrugated(u,v,o){       /* roll-up door: vertical ribs + slats */
   o[4]=clamp(0.44+(n-0.5)*0.14+scuff*0.2,0.1,1);
   o[5]=0.55;
 }
-function fnDiamondPlate(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnCorrugated(u,v,o,i,j){       /* roll-up door: vertical ribs + slats; rust weeping from the seams, scratches, dents */
+  if(HQ<=1) return fnCorrugated0(u,v,o,i,j);
+  var rib=Math.sin(u*PI*2*9);
+  var sr=Math.floor(v*7), slat=wrap(v*7,1), sh=hashi(sr,3,1821);
+  var seam=1-smoothstep(0.01,0.05,Math.min(slat,1-slat));
+  var n=fbm(u,v,3,50,1801), dent=fbm(u,v,3,6,1823);
+  var scuff=smoothstep(0.6,0.86,fbm(u,v,3,12,1811))*(1-smoothstep(0.0,0.4,v));
+  var rusty=smoothstep(0.50,0.75,fbm(u,v,3,9,1827))*clamp(seam*0.9+(1-smoothstep(0.0,0.25,v))*0.6,0,1);
+  var scr=smoothstep(0.88,0.96,vnoiseA(u,v,4,170,1831));
+  var l=96+rib*15+(n-0.5)*12+(sh-0.5)*8+(dent-0.5)*10 - seam*34 - scuff*28 + scr*22;
+  o[0]=lerp(l*0.96,112,rusty*0.7); o[1]=lerp(l*0.99,64,rusty*0.7); o[2]=lerp(l*1.05,38,rusty*0.7);
+  o[3]=(rib*0.5+0.5)*0.7+n*0.2+dent*0.1 - seam*0.5 - scr*0.08;
+  o[4]=clamp(0.44+(n-0.5)*0.14+scuff*0.2+rusty*0.3-scr*0.08,0.1,1);
+  o[5]=0.55*(1-rusty*0.7)+scr*0.2;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnDiamondPlate0(u,v,o){
   var s=6;
   var uu=wrap(u*s,1), vv=wrap(v*s,1);
   var cell=Math.floor(v*s);
@@ -12192,7 +12598,28 @@ function fnDiamondPlate(u,v,o){
   o[3]=lug*0.85+n*0.15;
   o[4]=clamp(0.40-lug*0.12+(n-0.5)*0.1,0.1,1); o[5]=0.9;
 }
-function fnPegboard(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnDiamondPlate(u,v,o,i,j){
+  if(HQ<=1) return fnDiamondPlate0(u,v,o,i,j);
+  var s=6;
+  var uu=wrap(u*s,1), vv=wrap(v*s,1);
+  var cell=Math.floor(v*s);
+  var a=wrap(uu+ (cell%2?0.5:0),1);
+  /* two opposing diagonal lozenges per cell */
+  var d1=Math.abs((a*2-1)+(vv*2-1)*0.55);
+  var d2=Math.abs((a*2-1)-(vv*2-1)*0.55);
+  var lug=Math.max(1-smoothstep(0.15,0.42,d1)*1.0, 1-smoothstep(0.15,0.42,d2));
+  lug *= 1-smoothstep(0.3,0.48,Math.abs(vv-0.5));
+  var n=fbm(u,v,3,80,1901), dirt=fbm(u,v,3,12,1903), wear=smoothstep(0.45,0.8,fbm(u,v,3,7,1907));
+  var scr=smoothstep(0.86,0.95,vnoiseA(u,v,5,230,1911))+smoothstep(0.88,0.96,vnoiseA(u,v,230,5,1913));
+  /* tops polished bright by boots, dirt packed into the valleys */
+  var l=94+lug*40+(n-0.5)*12 + lug*wear*22 - (1-lug)*dirt*26 + scr*14;
+  o[0]=l; o[1]=l*1.01; o[2]=l*1.05;
+  o[3]=lug*0.85+n*0.15-scr*0.05;
+  o[4]=clamp(0.40-lug*0.12-lug*wear*0.14+(1-lug)*dirt*0.2+(n-0.5)*0.1,0.1,1); o[5]=0.9-(1-lug)*dirt*0.3;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnPegboard0(u,v,o){
   var s=26;
   var hu=wrap(u*s,1)-0.5, hv=wrap(v*s,1)-0.5;
   var d=Math.sqrt(hu*hu+hv*hv);
@@ -12203,7 +12630,24 @@ function fnPegboard(u,v,o){
   o[3]=n*0.4 - hole*0.9;
   o[4]=0.78+(n-0.5)*0.1; o[5]=0.02;
 }
-function fnWood(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnPegboard(u,v,o,i,j){
+  if(HQ<=1) return fnPegboard0(u,v,o,i,j);
+  var s=26;
+  var hu=wrap(u*s,1)-0.5, hv=wrap(v*s,1)-0.5;
+  var d=Math.sqrt(hu*hu+hv*hv);
+  var hole=1-smoothstep(0.12,0.20,d);
+  var rim=smoothstep(0.20,0.27,d)*(1-smoothstep(0.27,0.36,d));      /* worn, greasy rim round each hole */
+  var n=fbm(u,v,3,50,2001), fib=hashi(i,j,2003), dirt=fbm(u,v,3,6,2005);
+  var l=116+(n-0.5)*17+(fib-0.5)*12 - hole*88 - rim*10*dirt - dirt*8;
+  o[0]=l*1.02; o[1]=l*0.92; o[2]=l*0.76;
+  o[3]=0.2+n*0.3+fib*0.08 - hole*0.95 + rim*0.06;
+  o[4]=0.78+(n-0.5)*0.1-rim*0.08; o[5]=0.02;
+}
+/* distance to a knot at (cx,cy): wrapped on the unit square and stretched along the grain (u) */
+function knotD(u,v,cx,cy){ var du=Math.abs(u-cx), dv=Math.abs(v-cy); if(du>0.5) du=1-du; if(dv>0.5) dv=1-dv; du*=0.45; return Math.sqrt(du*du+dv*dv); }
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnWood0(u,v,o){
   var rings=fbm(u*0.2,v,3,26,2101);
   var grain=Math.abs(Math.sin((v*11+rings*3)*PI));
   var n=fbm(u,v,2,120,2111);
@@ -12211,11 +12655,38 @@ function fnWood(u,v,o){
   o[0]=l*1.12; o[1]=l*0.86; o[2]=l*0.6;
   o[3]=grain*0.6+n*0.4; o[4]=0.74+(1-grain)*0.12; o[5]=0.02;
 }
-function fnPaintedSteelPanel(u,v,o){
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnWood(u,v,o,i,j){
+  if(HQ<=1) return fnWood0(u,v,o,i,j);
+  /* two knots (wrapped distance, stretched along the grain) bend the rings round them */
+  var k1=knotD(u,v,0.31,0.62), k2=knotD(u,v,0.79,0.21);
+  var kn=(1-smoothstep(0.010,0.028,k1))+(1-smoothstep(0.008,0.022,k2));
+  var bend=(1-smoothstep(0.02,0.16,k1))*0.6-(1-smoothstep(0.02,0.14,k2))*0.5;
+  var rings=fbm(u*0.2,v,3,26,2101);
+  var grain=Math.abs(Math.sin((v*11+rings*3+bend)*PI));
+  var n=fbm(u,v,2,120,2111);
+  var pores=smoothstep(0.78,0.90,vnoiseA(u,v,24,230,2121));        /* open pores: short dark dashes along the grain */
+  var wear=fbm(u,v,3,5,2123);
+  var l=94+grain*26+(n-0.5)*12 - pores*20 - kn*34 + (wear-0.5)*10;
+  o[0]=l*1.12; o[1]=l*0.86; o[2]=l*0.6;
+  o[3]=0.2+grain*0.45+n*0.2 - pores*0.3 - kn*0.12; o[4]=0.74+(1-grain)*0.12+pores*0.1-(wear-0.5)*0.1; o[5]=0.02;
+}
+/* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+function fnPaintedSteelPanel0(u,v,o){
   var n=fbm(u,v,3,54,2201), dent=fbm(u,v,3,9,2211);
   var l=118+(n-0.5)*13+(dent-0.5)*9;
   o[0]=l; o[1]=l; o[2]=l;
   o[3]=n*0.5+dent*0.5; o[4]=0.45+(n-0.5)*0.12; o[5]=0.35;
+}
+/* hi-res set (Full / Ultra, painted in the background): the detailed painter */
+function fnPaintedSteelPanel(u,v,o,i,j){
+  if(HQ<=1) return fnPaintedSteelPanel0(u,v,o,i,j);
+  var n=fbm(u,v,3,54,2201), dent=fbm(u,v,3,9,2211), peel=fbm(u,v,2,120,2213);
+  var sc=smoothstep(0.88,0.96,vnoiseA(u,v,5,200,2217))+smoothstep(0.9,0.97,vnoiseA(u,v,200,5,2219));
+  var wear=smoothstep(0.62,0.85,fbm(u,v,3,14,2221));
+  var l=118+(n-0.5)*12+(dent-0.5)*9+(peel-0.5)*6+sc*18-wear*10;
+  o[0]=l; o[1]=l; o[2]=l;
+  o[3]=0.1+n*0.3+dent*0.4+peel*0.2-sc*0.15; o[4]=0.45+(n-0.5)*0.12+wear*0.18-sc*0.10; o[5]=0.35;
 }
 function fnGlassish(u,v,o){
   var n=fbm(u,v,2,40,2301);
@@ -12345,7 +12816,7 @@ function buildMaterials(){
   MAT.dark        = pmat(S, fnDarkComposite, {ns:0.9, env:0.6});
   MAT.paint       = pmat(S, fnPaintChipped,  {ns:0.55,env:0.85});
 
-  MAT.concrete    = pmat(L, fnConcrete,      {ns:0.55,env:0.35});
+  MAT.concrete    = pmat(L, fnConcrete,      {ns:0.55,env:0.35, hero:true});   /* hero: the Ultra floor goes to 2048 */
   MAT.tile        = pmat(L, fnTileFloor,     {ns:0.6, env:0.8});
   MAT.block       = pmat(L, fnCinderBlock,   {ns:0.85,env:0.3});
   MAT.door        = pmat(S, fnCorrugated,    {ns:1.4, env:0.7});
@@ -12364,6 +12835,12 @@ function buildMaterials(){
   MAT.blockPaint  = tint(MAT.block, 0xbdb9ac);
   MAT.blockWhite  = tint(MAT.block, 0xeceeef);
   MAT.woodDark    = tint(MAT.wood,  0x9a7a52);
+
+  /* anti-tiling layer (Full / Ultra) on the garage's repeating surfaces: (macro tint, mid-scale breakup, roughness) */
+  aaPatch(MAT.concrete, 0.26, 0.15, 0.20); aaPatch(MAT.tile, 0.12, 0.08, 0.12); aaPatch(MAT.block, 0.20, 0.12, 0.14);
+  aaPatch(MAT.blockPaint, 0.20, 0.12, 0.14); aaPatch(MAT.blockWhite, 0.16, 0.10, 0.14);
+  aaPatch(MAT.door, 0.14, 0.08, 0.14); aaPatch(MAT.plate, 0.14, 0.08, 0.12); aaPatch(MAT.peg, 0.16, 0.10, 0.10);
+  aaPatch(MAT.wood, 0.20, 0.10, 0.10); aaPatch(MAT.woodDark, 0.20, 0.10, 0.10); aaPatch(MAT.panel, 0.12, 0.08, 0.12);
 
   /* emissive / flat helpers */
   MAT.lamp   = new THREE.MeshStandardMaterial({color:sc(0xfff6e4), emissive:sc(0xfff2dc), emissiveIntensity:2.3, roughness:0.4});
@@ -12765,13 +13242,15 @@ function heatPatch(mat){
   if(!mat || mat.userData.heat) return mat;
   mat.userData.heat = true;
   if(mat.userData.hi){ heatPatchHi(mat); mat.needsUpdate = true; return mat; }
+  var prevO = mat.userData.aa ? mat.onBeforeCompile : null, prevK = mat.userData.aa ? mat.customProgramCacheKey : null;
   mat.onBeforeCompile = function(shader){
+    if(prevO) prevO.call(this, shader);
     shader.uniforms.uHeat = HEAT_UNIFORM; shader.uniforms.uGrime = GRIME_UNIFORM;
     shader.vertexShader = "attribute float zone;\nvarying float vZone;\n" + shader.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvZone = zone;");
     shader.fragmentShader = "varying float vZone;\nuniform vec4 uHeat[16];\nuniform float uGrime;\n" + shader.fragmentShader.replace("#include <dithering_fragment>",
       "#include <dithering_fragment>\n{ vec4 h = uHeat[int(vZone + 0.5)]; gl_FragColor.rgb = mix(gl_FragColor.rgb, h.rgb, h.a); if(vZone > 0.5){ float gr = uGrime * (0.55 + 0.45 * fract(sin(dot(gl_FragCoord.xy * 0.021, vec2(12.9898, 78.233))) * 43758.5453)); gl_FragColor.rgb *= 1.0 - 0.30 * gr; gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.16,0.13,0.09), 0.22 * gr); } }");
   };
-  mat.customProgramCacheKey = function(){ return "heat"; };
+  mat.customProgramCacheKey = function(){ return "heat"+(prevK ? prevK.call(this) : ""); };
   mat.needsUpdate = true;
   return mat;
 }
@@ -26256,6 +26735,7 @@ const ENGINE_VIS = {
     }
     var tierChanged = (GFX !== want);
     GFX = want;
+    if(tierChanged && MATS_BUILT) matTierChanged();   /* v1.70: painted maps swap to / paint the tier's size; anti-tiling shaders recompile */
     if(tierChanged && lastCfg && engineRoot) ENGINE_VIS.buildEngine(lastCfg, lastLayout);   /* v1.6: model detail follows the tier */
     if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } if(GFX==="ultra") ultraShadow(keyLight, 2048); }
     ENGINE_VIS.resize();
@@ -28168,7 +28648,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.70.0.0";
+const VERSION="1.70.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
