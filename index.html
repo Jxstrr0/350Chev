@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.71.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.71.1.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -1671,6 +1671,12 @@ html.troom #phBtn{display:none!important}
 html.desk #pwaBar{left:calc((100% - var(--sbw))/2);bottom:20px}
 html.photo #pwaBar{display:none}
 @media (prefers-reduced-motion:reduce){#pwaBar{transition:none}}
+/* v1.71 perf lane: the Events tile that reports a live race night ("Heads-up eliminations · on now") keeps its status on ONE line
+   under the title (two lines in all): the status drops under the icon and takes the full tile width instead of the narrow text column */
+.evpick button.live svg{grid-row:1}
+.evpick button.live small{grid-column:1/-1;grid-row:2;white-space:nowrap;letter-spacing:-.01em;margin-top:1px}
+html:not(.desk) .evpick button.live small{font-size:clamp(10.5px,2.95vw,12px)}
+@media (max-width:359px){.evpick button.live small{white-space:normal}}
 </style>
 
 <div id="app">
@@ -1899,6 +1905,8 @@ html.photo #pwaBar{display:none}
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
         <div class="lbl"><span>Graphics</span></div>
         <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
+        <div class="lbl"><span>Auto-adjust graphics</span></div>
+        <div class="seg n2" id="gfxAutoSeg"><button data-gauto="1" class="on">On<small>drops a tier if it stutters</small></button><button data-gauto="0">Off<small>keep my pick</small></button></div>
         <div class="lbl"><span>Camera follows edits</span></div>
         <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
         <div id="layBox"><div class="lbl"><span>Layout</span></div>
@@ -28921,7 +28929,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.71.0.0";
+const VERSION="1.71.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -35620,6 +35628,39 @@ function hmRestore(root){if(!HM_OPEN.size||!root||root.nodeType!==1)return;(root
     document.addEventListener("visibilitychange",()=>{if(!document.hidden)chk();});setInterval(chk,4*3600*1000);
   }).catch(()=>{});
 })();
+/* ===================== AUTO-ADJUST GRAPHICS (v1.71) =====================
+   S.gfxAuto (on unless false): once the scene has settled, watch the frame rate ENGINE_VIS already measures. If it
+   stays under ~27 fps for ~8 s (a 30 Hz power-saver screen doesn't count), step ONE tier down (ultra>full>lite) and say
+   so. It never steps up. A manual tier pick after an auto-drop is respected for the rest of the session.
+   Skipped while the tab is hidden, before the first ~6 s, for 3 s after a tier / tab change, and whenever the view isn't
+   drawing. Automated browsers (navigator.webdriver) are left alone unless PERF.force is set (test hook: PERF.force=12). */
+const PERF={T:["lite","full","ultra"],LOW:27,NEED:8000,SETTLE:6000,HOLD:3000,boot:performance.now(),f:null,fAt:0,sAt:0,low:0,tier:null,tab:null,holdTo:0,dropped:false,manual:false,force:null};
+function perfTier(){return S.gfx||deskGfx()||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");}
+function perfReset(hold){PERF.low=0;PERF.sAt=0;if(hold)PERF.holdTo=performance.now()+PERF.HOLD;}
+function perfUi(){const on=!S||S.gfxAuto!==false;document.querySelectorAll("#gfxAutoSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.gauto==="1")===on));}
+function perfPoll(){
+  if(!S||typeof ENGINE_VIS==="undefined")return;
+  perfUi();
+  const now=performance.now();
+  if(S.gfxAuto===false||(PERF.dropped&&PERF.manual)||document.hidden||now-PERF.boot<PERF.SETTLE){perfReset(true);return;}
+  if(navigator.webdriver&&PERF.force==null)return;
+  const tier=perfTier();if(tier!==PERF.tier){PERF.tier=tier;perfReset(true);}
+  if(curTab!==PERF.tab){PERF.tab=curTab;perfReset(true);}
+  if(now<PERF.holdTo)return;
+  const f=ENGINE_VIS.fps();let fps;
+  if(PERF.force!=null){fps=PERF.force;if(!PERF.sAt){PERF.sAt=now;return;}}
+  else if(f!==PERF.f){PERF.f=f;PERF.fAt=now;fps=f.fps;if(!PERF.sAt){PERF.sAt=now;return;}}
+  else{if(now-PERF.fAt>1500)perfReset(false);return;}          // nothing drawn lately (view off-screen / paused): start over
+  const el=Math.min(now-PERF.sAt,1000);PERF.sAt=now;
+  if(fps>0&&fps<PERF.LOW)PERF.low+=el;else PERF.low=Math.max(0,PERF.low-2*el);
+  if(PERF.low<PERF.NEED)return;
+  PERF.low=0;const i=PERF.T.indexOf(tier);if(i<1)return;     // already Lite: nothing lower to give
+  const n=PERF.T[i-1];PERF.dropped=true;S.gfx=n;applyGfx();save();perfReset(true);
+  toast(`Graphics lowered to ${n[0].toUpperCase()+n.slice(1)} to keep things smooth — change in Settings`);}
+setInterval(perfPoll,500);
+$("gfxSeg").addEventListener("click",e=>{if(e.target.closest("[data-gfx]")){PERF.manual=true;perfReset(true);}});
+$("gfxAutoSeg").addEventListener("click",e=>{const b=e.target.closest("[data-gauto]");if(!b)return;S.gfxAuto=b.dataset.gauto==="1";PERF.dropped=PERF.manual=false;perfReset(true);perfUi();save();
+  toast(S.gfxAuto?"AUTO-ADJUST ON · lowers graphics if it stutters":"AUTO-ADJUST OFF");});
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
 /* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */

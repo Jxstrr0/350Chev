@@ -1,0 +1,6 @@
+/* v1.71 perf lane: the Events tile that reports a live race night ("Heads-up eliminations · on now") keeps its status on ONE line
+   under the title (two lines in all): the status drops under the icon and takes the full tile width instead of the narrow text column */
+.evpick button.live svg{grid-row:1}
+.evpick button.live small{grid-column:1/-1;grid-row:2;white-space:nowrap;letter-spacing:-.01em;margin-top:1px}
+html:not(.desk) .evpick button.live small{font-size:clamp(10.5px,2.95vw,12px)}
+@media (max-width:359px){.evpick button.live small{white-space:normal}}
