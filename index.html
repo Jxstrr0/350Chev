@@ -1387,6 +1387,34 @@ html.desk #tabs .dot.n{right:4px;top:6px}
 .lgperk h3 small{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none}
 .lgsel{display:block;margin-top:6px;min-height:44px;max-width:100%;background:var(--panel2);color:var(--chalk);border:1px solid var(--rule);border-radius:4px;padding:0 8px;font:inherit}
 .lgstart{width:100%;min-height:48px;margin-top:12px}
+/* ===================== HELP: one-line summary + ⓘ that unfolds the full text (v1.66 UI cleanup) =====================
+   Markup (any lane): <details class="more"><summary aria-label="More info">ⓘ</summary><div>full text</div></details>
+   placed right after the one-line summary. Inside text (a .hint, a card line) it sits inline after the last word; opened, the
+   text drops below, full width. hl() in app/help.js builds `<div class="hint hl">summary + ⓘ</div>` for dynamic strings.
+   Uses only the shared tokens (--muted --dim --rule --panel2 --orange --info --chalk) so a restyle carries over. */
+details.more{display:inline;color:var(--muted)}
+details.more>summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;margin:-14px -10px -14px -6px;vertical-align:middle;cursor:pointer;
+  font-family:var(--body,inherit);font-size:16px;line-height:1;font-weight:400;font-style:normal;color:var(--muted);border-radius:50%;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::marker{content:""}
+details.more[open]>summary,details.more>summary:hover{color:var(--orange2,var(--orange))}
+details.more>summary:focus-visible{outline:2px solid var(--orange);outline-offset:-4px}
+details.more>div{display:block;margin:6px 0 4px;padding:2px 0 2px 10px;border-left:2px solid var(--rule);color:var(--muted);font-size:13px;line-height:1.5;font-weight:400;font-style:normal;letter-spacing:0;text-transform:none;text-align:left}
+details.more>div p{margin:0 0 6px}details.more>div p:last-child{margin-bottom:0}
+details.more>div b{color:var(--chalk)}
+/* a hint that is its own box (summary + ⓘ) keeps the usual .hint spacing */
+.hl{display:block}
+@media (prefers-reduced-motion:no-preference){details.more>div{animation:morein .15s ease-out}}
+@keyframes morein{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+/* hfFold() output: .hms is the summary; .hm1 is the one-line card blurb (clipped to the row, the ⓘ stays visible) */
+.hmx>.hms{display:inline}
+.hm1{white-space:nowrap}
+.hm1>.hms{display:inline-block;max-width:calc(100% - 26px);overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.hm1>details.more>div{white-space:normal}
+div.up>div,.goal>div{min-width:0}
+div.up p.uneed{margin-top:1px;font-size:12px}div.up p.uneed b{color:var(--warn)}
+.hmx-full:has(>details.more[open])>.hms{display:none}
 /* ===== dirt oval (v1.65): the track map, the night ladder, and the event card / run strip wired like the hillclimb's ===== */
 .ovtrk{display:block;width:100%;height:92px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
 .ovn{display:flex;align-items:stretch;gap:0;margin:0 0 10px}.ovn i{flex:0 0 16px;align-self:center;height:2px;background:var(--rule)}
@@ -32646,10 +32674,10 @@ function renderShop(){
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
-    return `<div class="up ${done?"owned":""}"><div><h3>${r.name}</h3><p>${r.desc} <b>${rndNeed(r)} wk${rndNeed(r)<r.weeks?` (−25%, was ${r.weeks})`:""}</b></p>${running?`<div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div>`:""}</div>${done?`<div class="price">Done</div>`:running?`<div class="price" style="color:var(--warn)">${pct}%</div>`:`<button class="btn sm ${C().cash>=r.cost&&!act?"pri":""}" data-rnd="${r.id}" ${act?"disabled":""}>${fmt$(r.cost)}</button>`}</div>`;}).join("");
+    return `<div class="up ${done?"owned":""}"><div><h3>${r.name}</h3><p>${r.desc}</p><p class="uneed"><b>${rndNeed(r)} wk${rndNeed(r)<r.weeks?` (−25%, was ${r.weeks})`:""}</b></p>${running?`<div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div>`:""}</div>${done?`<div class="price">Done</div>`:running?`<div class="price" style="color:var(--warn)">${pct}%</div>`:`<button class="btn sm ${C().cash>=r.cost&&!act?"pri":""}" data-rnd="${r.id}" ${act?"disabled":""}>${fmt$(r.cost)}</button>`}</div>`;}).join("");
   $("prestige").innerHTML=shopOrder(PRESTIGE,pp=>!C().prestige[pp.id]&&C().cash>=pp.price).map(pp=>{const own=!!C().prestige[pp.id];return `<div class="up ${own?"owned":""}"><div><h3>${pp.name}</h3><p>${pp.desc}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=pp.price?"pri":""}" data-prestige="${pp.id}">${fmt$(pp.price)}</button>`}</div>`;}).join("");
   $("upgrades").innerHTML=shopOrder(UPGRADES,u=>!C().owned[u.id]&&!(u.needs&&!C().owned[u.needs])&&C().cash>=u.price).map(u=>{const own=!!C().owned[u.id];const gated=u.needs&&!C().owned[u.needs];
-    return `<div class="up ${own?"owned":""}"><div><h3>${u.name}</h3><p>${u.desc}${gated?` <b>Needs ${UPGRADES.find(x=>x.id===u.needs).name}.</b>`:""}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=u.price&&!gated?"pri":""}" data-buy="${u.id}" ${gated?"disabled":""}>${fmt$(u.price)}</button>`}</div>`;}).join("");
+    return `<div class="up ${own?"owned":""}"><div><h3>${u.name}</h3><p>${u.desc}</p>${gated?`<p class="uneed"><b>Needs ${UPGRADES.find(x=>x.id===u.needs).name}.</b></p>`:""}</div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=u.price&&!gated?"pri":""}" data-buy="${u.id}" ${gated?"disabled":""}>${fmt$(u.price)}</button>`}</div>`;}).join("");
 }
 $("contracts").addEventListener("click",e=>{
   const cb=e.target.closest("[data-cat]");if(cb){if(cb.disabled)return;C().cat=cb.dataset.cat;save();renderShop();return;}
@@ -34104,7 +34132,56 @@ $("sheetBody").addEventListener("click",e=>{const b=e.target.closest("[data-les]
 $("panel").addEventListener("click",e=>{if(!LS)return;const b=e.target.closest(LS_WALK);if(!b)return;if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}lsEnd(false);},true);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)lsSafeSave();});window.addEventListener("pagehide",lsSafeSave);
 window.addEventListener("resize",()=>{if(LS)lsPlace();});$("panel").addEventListener("scroll",()=>{if(LS)lsPlace();},{passive:true});
-
+/* ===== HELP (v1.66 UI cleanup): long explainer text folds to a one-line summary + an ⓘ that opens the full text =====
+   moreI(full)/hintMore(summary,full) build the markup by hand; hfFold() does it for any long .hint (and the Shop's one-line card blurbs)
+   on the Test/Events/Analysis/Market/Shop pages: summary = the first sentence (cut short at a clause if it runs long), the ⓘ holds the whole
+   original text. A MutationObserver folds whatever those pages re-render, so JS-built text needs no per-site change. Build, the settings pane
+   and sheets are not observed. CSS: css/ui-help.css. */
+function moreI(full,label){return `<details class="more"><summary aria-label="${label||"More info"}">ⓘ</summary><div>${full}</div></details>`;}
+function hintMore(sum,full,attrs){return `<div class="hint hmx"${attrs?" "+attrs:""}><span class="hms">${sum}</span>${moreI(full)}</div>`;}
+/* [summary html, true] for html whose first sentence (at tag depth 0) ends before the last ~16 characters, or whose first sentence is over max */
+function hfCut(html,max,ms){ms=ms||34;
+  const n=html.length;let depth=0,txt=0,sent=-1,soft=-1,softT=0,sentT=0;
+  for(let i=0;i<n;i++){const ch=html[i];
+    if(ch==="<"){const j=html.indexOf(">",i);if(j<0)break;const tag=html.slice(i+1,j);if(tag[0]==="/")depth--;else if(!/\/$|^(br|img|input|hr|wbr)\b/i.test(tag))depth++;i=j;continue;}
+    if(ch==="&"){const j=html.indexOf(";",i);if(j>0&&j-i<8){txt++;i=j;continue;}}
+    txt++;
+    if(depth!==0)continue;
+    if((ch==="."||ch==="!"||ch==="?")&&html[i+1]===" "&&/^\s+(?:[A-Z<“"($\d⚠✓✗]|&[a-z]+;)/.test(html.slice(i+1,i+4))&&sent<0&&txt>=12){sent=i+1;sentT=txt;break;}
+    if(txt>=ms&&txt<=max&&(ch===";"||ch===":"||(ch===","&&html[i+1]===" ")||(ch==="—"&&html[i-1]===" "))){soft=i;softT=txt;}
+    else if(txt>=ms&&txt<=max&&ch==="·"&&html[i-1]===" "&&html[i+1]===" "){soft=i-1;softT=txt-1;}
+  }
+  let total=0;{let d=0;for(let i=0;i<n;i++){if(html[i]==="<"){const j=html.indexOf(">",i);if(j<0)break;i=j;continue;}total++;}}
+  if(sent>=0&&sentT<=max&&total-sentT>=16)return [html.slice(0,sent).trim(),true];
+  if(total<=max)return null;
+  if(sent>=0&&sentT>max||sent<0){   // first sentence is long (or the text is one long sentence): cut at the last clause break that fits, else at a word
+    if(soft>0)return [html.slice(0,soft).replace(/[\s,;:.—·-]+$/,"")+"…",true];
+    let cut=-1,t=0,dd=0;for(let i=0;i<n;i++){const ch=html[i];if(ch==="<"){const j=html.indexOf(">",i);if(j<0)break;const tag=html.slice(i+1,j);if(tag[0]==="/")dd--;else if(!/\/$|^(br|img|input|hr|wbr)\b/i.test(tag))dd++;i=j;continue;}t++;if(dd===0&&ch===" "&&t>=Math.min(30,ms+8)&&t<=max)cut=i;}
+    if(cut>0)return [html.slice(0,cut).replace(/[\s,;:.—·-]+$/,"")+"…",true];}
+  return null;}
+const HF_SKIP="button,input,select,textarea,a,svg,canvas,details,.warn,.crit";
+const HF_TXT=".hint,.combo>p";
+/* one-line blurbs on cards (Shop): the same split, but the summary is clipped to the row by CSS */
+const HF_ONE=".up>div>p:not(.csub):not(.cxp):not(.uneed),.goal>div>p";
+function hfFold(el){
+  if(!el||el.nodeType!==1||el.__hf===el.innerHTML)return;
+  if(el.querySelector(":scope > .hms,:scope > details.more"))return;
+  if(el.matches(".ddsay,.maphs,.bucount,.buerr,.su-txt,.swnote,[data-nofold]")||el.closest("[data-nofold],#setPane,#sheet,#buildForm,#tab-build,.sheet"))return;
+  const one=el.matches(HF_ONE),html=el.innerHTML,plain=el.textContent.trim();
+  if(plain.length<(one?44:64)||el.querySelector(HF_SKIP)||(one&&el.querySelector("b")))return;
+  if(el.matches("[style*='color']")||[...el.querySelectorAll("[style*='color']")].some(c=>c!==el.firstElementChild))return;   // a warning inside the text stays in view; a leading ✓ Legal / ✗ status may head the summary
+  let r=hfCut(html,one?40:92,one?16:34);if(!r&&one)r=[html,true];if(!r){el.__hf=html;return;}
+  const sum=r[0],rest=html.length-sum.length;if(rest<12&&!one){el.__hf=html;return;}
+  const cutS=sum.length<html.length&&!/…$/.test(sum)&&html.startsWith(sum);   // cut at a sentence end: the ⓘ continues it; a clause cut or a whole line: the ⓘ holds the full text and replaces the summary while open
+  el.innerHTML=`<span class="hms">${sum}</span>${moreI(cutS?html.slice(sum.length).trim():html)}`;el.classList.add("hmx");if(!cutS)el.classList.add("hmx-full");if(one)el.classList.add("hm1");el.__hf=el.innerHTML;}
+function hfScan(root){if(!root||root.nodeType!==1)return;
+  if(root.matches&&root.matches(HF_TXT+","+HF_ONE))hfFold(root);
+  root.querySelectorAll(HF_TXT+","+HF_ONE).forEach(hfFold);
+  const h=root.closest&&root.closest(HF_TXT+","+HF_ONE);if(h&&h!==root)hfFold(h);}
+const HF_ROOTS=["tab-test","tab-events","tab-analysis","tab-market","tab-shop"];
+const HF={q:new Set(),sch:0,mo:new MutationObserver(ms=>{for(const m of ms){if(m.target.nodeType===1)HF.q.add(m.target);m.addedNodes.forEach(a=>{if(a.nodeType===1)HF.q.add(a);});}
+  if(HF.q.size&&!HF.sch){HF.sch=1;queueMicrotask(()=>{HF.sch=0;const q=[...HF.q];HF.q.clear();for(const e of q){if(e.isConnected)hfScan(e);}});}})};
+HF_ROOTS.forEach(id=>{const r=$(id);if(r){HF.mo.observe(r,{childList:true,subtree:true});hfScan(r);}});
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
 /* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */
