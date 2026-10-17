@@ -136,7 +136,7 @@ function boatWakeStep(V, wm, x, z, v, beam, live){
 }
 function boatBoardTex(lane){ var c=newCanvas(256,128), t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.userData={cv:c, lane:lane}; boatBoardDraw(t,null,null); return t; }
 function boatBoardDraw(t, et, mph){ var c=t.userData.cv, x=c.getContext("2d"); x.fillStyle="#0b0c0e"; x.fillRect(0,0,256,128); x.font="700 22px 'Chakra Petch','Arial Narrow',sans-serif"; x.textAlign="center"; x.fillStyle="#8a8f96"; x.fillText(t.userData.lane,128,24);
-  x.font="700 54px 'IBM Plex Mono',monospace"; x.fillStyle="#ff9a2a"; x.fillText(et!=null?(+et).toFixed(3):"-.---",128,78); x.font="700 30px 'IBM Plex Mono',monospace"; x.fillStyle="#f2c22c"; x.fillText(mph!=null?(+mph).toFixed(1)+" mph":"",128,116); t.needsUpdate=true; }
+  x.font="700 54px 'IBM Plex Mono',monospace"; x.fillStyle="#e8956f"; x.fillText(et!=null?(+et).toFixed(3):"-.---",128,78); x.font="700 30px 'IBM Plex Mono',monospace"; x.fillStyle="#f2c22c"; x.fillText(mph!=null?(+mph).toFixed(1)+" mph":"",128,116); t.needsUpdate=true; }
 function boatBuild(B,key,mat,shadow){ var keep=STRIP.scene; STRIP.scene=BOAT.scene; var m=B.build(key,mat,shadow); STRIP.scene=keep; return m; }
 function buildBoatScene(){
   var S3=new THREE.Scene(); BOAT.scene=S3; BOAT.tier=GFX; var lite=GFX==="lite", M=BOAT.mats, i, k, x, z;

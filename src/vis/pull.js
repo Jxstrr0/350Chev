@@ -62,18 +62,18 @@ function pullAtlas(){
   var c=newCanvas(1024,512), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2, w-16);
     if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
-  panel(0,0,340,64,"#ff7a1a","#15171b","PRAIRIE ENGINE WORKS",31,"#15171b");
-  panel(342,0,340,64,"#15171b","#ff7a1a","COULEE FUELS",42,"#ff7a1a");
+  panel(0,0,340,64,"#d97757","#141413","PRAIRIE ENGINE WORKS",31,"#141413");
+  panel(342,0,340,64,"#141413","#d97757","COULEE FUELS",42,"#d97757");
   panel(684,0,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
-  panel(0,66,1024,62,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS · TRUCK & TRACTOR PULL",40,"#ff7a1a");
+  panel(0,66,1024,62,"#141413","#d97757","PRAIRIE ENGINE WORKS · TRUCK & TRACTOR PULL",40,"#d97757");
   panel(0,130,254,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",34,"#d9a52b"); panel(256,130,254,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
-  panel(512,130,254,64,"#2c6b3a","#f4f1e8","HALCYON GT",36); panel(768,130,256,64,"#f1ede2","#15171b","DIESEL DAYS",36,"#ff7a1a");
+  panel(512,130,254,64,"#2c6b3a","#f4f1e8","HALCYON GT",36); panel(768,130,256,64,"#f1ede2","#141413","DIESEL DAYS",36,"#d97757");
   var mk=["50","100","150","200","250","300"];
-  for(i=0;i<6;i++){ var bx=i*171; x.fillStyle="#15171b"; x.fillRect(bx,196,169,122); x.fillStyle=i===5?"#ff7a1a":"#f4efe2"; x.fillRect(bx+6,202,157,110); x.fillStyle="#15171b"; x.font="700 76px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+84, 252); x.font="700 22px "+F; x.fillText("FEET", bx+84, 298); }
-  panel(0,322,510,120,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS",54,"#ff7a1a");
-  panel(512,322,512,120,"#ff7a1a","#15171b","PULL OFF",70,"#15171b");
+  for(i=0;i<6;i++){ var bx=i*171; x.fillStyle="#141413"; x.fillRect(bx,196,169,122); x.fillStyle=i===5?"#d97757":"#f4efe2"; x.fillRect(bx+6,202,157,110); x.fillStyle="#141413"; x.font="700 76px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+84, 252); x.font="700 22px "+F; x.fillText("FEET", bx+84, 298); }
+  panel(0,322,510,120,"#141413","#d97757","PRAIRIE ENGINE WORKS",54,"#d97757");
+  panel(512,322,512,120,"#d97757","#141413","PULL OFF",70,"#141413");
   panel(0,446,510,64,"#f1ede2","#9e2a22","FRIES · PIE · LEMONADE",34,"#9e2a22");
-  panel(512,446,512,64,"#15171b","#f1ede2","GRANDSTAND · SECTION B",34,"#ff7a1a");
+  panel(512,446,512,64,"#141413","#f1ede2","GRANDSTAND · SECTION B",34,"#d97757");
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
 var PULL_UV={ ban:[[0,1-64/512,340/1024,1],[342/1024,1-64/512,682/1024,1],[684/1024,1-64/512,1,1],[0,1-194/512,254/1024,1-130/512],[256/1024,1-194/512,510/1024,1-130/512],[512/1024,1-194/512,766/1024,1-130/512],[768/1024,1-194/512,1,1-130/512]],
@@ -83,8 +83,8 @@ function pullDecalMat(num){
   var c=newCanvas(512,160), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
   x.clearRect(0,0,512,160); x.textAlign="left"; x.textBaseline="middle";
   x.font="italic 700 92px "+F; x.lineWidth=10; x.strokeStyle="#111"; x.strokeText(num, 14, 66); x.fillStyle="#f4f1e8"; x.fillText(num, 14, 66);
-  x.font="700 34px "+F; x.fillStyle="#ff7a1a"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 132); x.fillText("PRAIRIE ENGINE WORKS", 14, 132);
-  x.fillStyle="#ff7a1a"; x.fillRect(150,40,340,10); x.fillRect(150,62,300,10); x.fillRect(150,84,260,10);
+  x.font="700 34px "+F; x.fillStyle="#d97757"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 132); x.fillText("PRAIRIE ENGINE WORKS", 14, 132);
+  x.fillStyle="#d97757"; x.fillRect(150,40,340,10); x.fillRect(150,62,300,10); x.fillRect(150,84,260,10);
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
   return new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.45, metalness:0.1, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
 }
@@ -225,8 +225,8 @@ function buildPullScene(){
     cars.instanceMatrix.setUsage(THREE.DynamicDrawUsage); S3.add(cars);
     PULL.wheel={g:W, cars:cars, hub:hub, R:R, bulbs:bulbs}; })();
   /* flags on the berm */
-  (function(){ var c=newCanvas(256,160), x=c.getContext("2d"); x.fillStyle="#ff7a1a"; x.fillRect(0,0,256,160); x.fillStyle="#15171b"; x.fillRect(0,112,256,48);
-    x.font="700 64px 'Chakra Petch','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("PEW", 128, 58); x.fillStyle="#ff7a1a"; x.fillRect(0,124,256,6);
+  (function(){ var c=newCanvas(256,160), x=c.getContext("2d"); x.fillStyle="#d97757"; x.fillRect(0,0,256,160); x.fillStyle="#141413"; x.fillRect(0,112,256,48);
+    x.font="700 64px 'Chakra Petch','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("PEW", 128, 58); x.fillStyle="#d97757"; x.fillRect(0,124,256,6);
     var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; var fm=new THREE.MeshStandardMaterial({map:t, roughness:0.8, side:THREE.DoubleSide});
     for(var q=-1;q<=1;q++){ var g=new THREE.PlaneGeometry(2.2,1.35,10,1); g.translate(1.1,0,0); var fl=new THREE.Mesh(g, fm); fl.position.set(PULL_END+6, 4.5, q*5.5-1); fl.rotation.y=-PI*0.38; S3.add(fl);
       PULL.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.7}); } })();
@@ -331,7 +331,7 @@ function pullLivDecalMat(num){
   x.clearRect(0,0,512,160); x.textAlign="left"; x.textBaseline="middle";
   x.font="italic 700 92px "+F; x.lineWidth=10; x.strokeStyle="#111"; x.strokeText(num, 14, 66); x.fillStyle="#f4f1e8"; x.fillText(num, 14, 66);
   var nw=Math.min(230, x.measureText(num).width+30); x.drawImage(spLogoCanvas(sp,512,192), nw, 8, Math.min(290, 500-nw), Math.min(290, 500-nw)*0.375);
-  x.font="700 34px "+F; x.fillStyle="#ff7a1a"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 136); x.fillText("PRAIRIE ENGINE WORKS", 14, 136);
+  x.font="700 34px "+F; x.fillStyle="#d97757"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 136); x.fillText("PRAIRIE ENGINE WORKS", 14, 136);
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
   LIV_MAT[key]=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.45, metalness:0.1, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
   return LIV_MAT[key];
@@ -500,11 +500,11 @@ function pullBoardDraw(o, force){
   B.key=key; B.at=PULL.t;
   var x=B.cv.getContext("2d"), MONO="'IBM Plex Mono','Courier New',monospace", F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
   x.fillStyle="#060607"; x.fillRect(0,0,512,256); x.strokeStyle="#34373c"; x.lineWidth=10; x.strokeRect(5,5,502,246);
-  x.fillStyle="#ff7a1a"; x.fillRect(10,10,492,6);
-  x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#ff7a1a"; x.font="700 30px "+F; x.fillText(String(o.cls||"OPEN CLASS").toUpperCase(), 24, 42, 330);
+  x.fillStyle="#d97757"; x.fillRect(10,10,492,6);
+  x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#d97757"; x.font="700 30px "+F; x.fillText(String(o.cls||"OPEN CLASS").toUpperCase(), 24, 42, 330);
   x.textAlign="right"; x.fillStyle="#9aa0a8"; x.font="700 24px "+F; x.fillText(ph==="stage"?"HOOKED":ph==="pull"?"PULLING":"FINAL", 488, 42);
   if(full){
-    x.textAlign="center"; x.fillStyle=flash?"#ff7a1a":"#f4efe2"; x.font="700 96px "+F; x.fillText("FULL PULL", 256, 132, 470);
+    x.textAlign="center"; x.fillStyle=flash?"#d97757":"#f4efe2"; x.font="700 96px "+F; x.fillText("FULL PULL", 256, 132, 470);
     x.fillStyle="#ffcf73"; x.font="700 44px "+MONO; x.fillText((ds||"300.00")+" FT", 256, 212);
   } else {
     x.textAlign="right"; x.fillStyle="#ffb22c"; x.font="700 112px "+MONO; x.fillText(ds!=null&&ph!=="stage"?ds:"---.--", 420, 142);
