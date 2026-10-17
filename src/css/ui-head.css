@@ -8,7 +8,8 @@
 #viewBtn.lit::after{position:absolute;margin:0;top:7px;right:7px}
 /* phone, off Build: four buttons along the foot instead of three, so the engine card gives up a little width */
 @media (max-width:600px){
-  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{right:206px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{right:216px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns{gap:4px}   /* v1.68: tighter row, a clear gutter to the engine card */
 }
 /* ---- Settings pane: five labelled sections ---- */
 #setPane .setsec{margin-bottom:22px}

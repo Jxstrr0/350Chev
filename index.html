@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.69.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.69.0.1 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -1449,6 +1449,16 @@ html.desk #tabs .dot.n{right:4px;top:6px}
 html.desk #tabs{border-bottom:0;border-left:0;box-shadow:0 1px 0 var(--edge)}
 html.desk #tabs button.on::before{bottom:0;height:3px;border-radius:3px 3px 0 0}
 html.desk #panel{border-left:0;box-shadow:inset 1px 0 0 var(--edge)}
+/* v1.68 QA: desktop run HUD (#stripHud, #evHud) stacks above the run's dock instead of beside it. The dock is a fixed box measured against the
+   window, the HUD against the narrower view, so side by side they overlapped. runview.js sets --rdock (the dock's top edge up from the window foot) on #view. */
+html.desk #stripHud,html.desk #evHud{right:18px;width:auto;max-width:720px;bottom:calc(10px + var(--rdock,0px))}
+html.desk #view{--shud-h:200px}
+html.desk #evHud #saltLive{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}html.desk #evHud #saltLive .ph-row{grid-column:1/-1;margin-top:6px}html.desk #evHud #saltLive .ph-top span{white-space:nowrap}
+.vstats span span,.vstats span abbr,.vstats span .gl{display:inline;margin:0;white-space:inherit}   /* a glossary term inside a result label stays on its line ("EGT °C") */
+/* phone: the salt and boat readouts' side notes take the line under the big number instead of a 4-line sliver beside it */
+html:not(.desk) #evHud :is(#saltLive,#boatLive) .ph-top{flex-wrap:wrap;row-gap:2px}
+html:not(.desk) #evHud :is(#saltLive,#boatLive) .ph-top span{flex:1 1 100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:not(.desk) #evHud .e24gp{white-space:normal}html:not(.desk) #evHud .e24gp span{white-space:normal;overflow:visible;line-height:1.15}   /* "ahead +26 laps · #86" wraps instead of cutting at the map */
 /* ===================== UI-HEAD (v1.66): icon-only header buttons + the Settings gear ===================== */
 /* SOUND / START / VIEW / SETTINGS are 44 px round icon buttons on every screen; the words live in aria-label and title (the .lb spans stay in the DOM) */
 .hudbtns{gap:6px}
@@ -1459,7 +1469,8 @@ html.desk #panel{border-left:0;box-shadow:inset 1px 0 0 var(--edge)}
 #viewBtn.lit::after{position:absolute;margin:0;top:7px;right:7px}
 /* phone, off Build: four buttons along the foot instead of three, so the engine card gives up a little width */
 @media (max-width:600px){
-  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{right:206px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{right:216px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns{gap:4px}   /* v1.68: tighter row, a clear gutter to the engine card */
 }
 /* ---- Settings pane: five labelled sections ---- */
 #setPane .setsec{margin-bottom:22px}
@@ -27798,7 +27809,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.69.0.0";
+const VERSION="1.69.0.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -31529,6 +31540,9 @@ function rvSync(){const on=rvActive(),de=document.documentElement;
 /* the band: from the view's bottom edge up to the top of whatever covers its middle (the overlay; on desktop the slim dock too) */
 function rvBandSoon(){if(!RV.raf)RV.raf=requestAnimationFrame(rvBand);}
 function rvBand(){RV.raf=0;if(!ENGINE_VIS.setBand)return;const v=$("view"),vr=v.getBoundingClientRect();let px=0;
+  /* desktop: the HUD bar stacks above the run's dock (bottom-right, fixed), so it needs the dock's height (--rdock on #view) */
+  {let dh=0;if(document.documentElement.classList.contains("desk"))RV_LIVE.forEach(([c])=>{const e=$(c);if(!e||e.style.display==="none")return;const r=e.getBoundingClientRect();if(r.height&&getComputedStyle(e).position==="fixed")dh=Math.max(dh,innerHeight-r.top);});
+    dh=Math.round(dh);if(dh!==RV.dh){RV.dh=dh;v.style.setProperty("--rdock",dh+"px");}}
   if(RV.live&&vr.height>0){const cx0=vr.left+vr.width*0.3,cx1=vr.right-vr.width*0.3;
     [$("evHud")].concat(RV_LIVE.map(([c])=>$(c))).forEach(e=>{if(!e||e.hidden||e.style.display==="none")return;const r=e.getBoundingClientRect();
       if(!r.height||r.right<cx0||r.left>cx1||r.top>=vr.bottom||r.bottom<vr.top+vr.height*0.5)return;px=Math.max(px,vr.bottom-r.top);});}
@@ -33916,7 +33930,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>`;
   const V=L?rlVerdict(L):{k:"est",t:"NOT RUN",s:prev?"Changed since the last run — figures are the live estimate, deltas against that run.":"Live estimate. Run it to lock a result."};
   const chip=$("rlChip");chip.className="rlchip "+V.k;chip.textContent=testing?"RUNNING":rlChipTxt(V.t);
-  $("rlTag").textContent=L?`${rlName(L.env.testType)} · measured`:"live estimate";
+  $("rlTag").textContent=L?`${rlName(L.env.testType).replace(/^./,c=>c.toUpperCase())} · measured`:"live estimate";
   /* off the Events tab the rail's Run is always the dyno pull, whatever event was picked last (the event runs from its own dock) */
   const dy=ev&&curTab!=="events",rt=dy?railDynoT():t;let cost;if(dy){S.env.testType=rt;try{cost=testCost();}finally{S.env.testType=t;}}else cost=testCost();
   const run=$("rlRun");run.disabled=testing;
@@ -34449,8 +34463,13 @@ function hfScan(root){if(!root||root.nodeType!==1)return;
   const h=root.closest&&root.closest(HF_TXT+","+HF_ONE);if(h&&h!==root)hfFold(h);}
 const HF_ROOTS=["tab-test","tab-events","tab-analysis","tab-market","tab-shop"];
 const HF={q:new Set(),sch:0,mo:new MutationObserver(ms=>{for(const m of ms){if(m.target.nodeType===1)HF.q.add(m.target);m.addedNodes.forEach(a=>{if(a.nodeType===1)HF.q.add(a);});}
-  if(HF.q.size&&!HF.sch){HF.sch=1;queueMicrotask(()=>{HF.sch=0;const q=[...HF.q];HF.q.clear();for(const e of q){if(e.isConnected)hfScan(e);}});}})};
+  if(HF.q.size&&!HF.sch){HF.sch=1;queueMicrotask(()=>{HF.sch=0;const q=[...HF.q];HF.q.clear();for(const e of q){if(e.isConnected){hfScan(e);hmRestore(e);}}});}})};
 HF_ROOTS.forEach(id=>{const r=$(id);if(r){HF.mo.observe(r,{childList:true,subtree:true});hfScan(r);}});
+/* an open ⓘ survives its panel re-rendering: the open ones are remembered by their text and re-opened on the fresh markup */
+const HM_OPEN=new Set();
+function hmKey(d){const x=d.querySelector(":scope > div");return x?x.textContent.trim().slice(0,90):"";}
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.matches||!d.matches("details.more"))return;const k=hmKey(d);if(!k)return;if(d.open)HM_OPEN.add(k);else HM_OPEN.delete(k);},true);
+function hmRestore(root){if(!HM_OPEN.size||!root||root.nodeType!==1)return;(root.matches("details.more")?[root]:[...root.querySelectorAll("details.more")]).forEach(d=>{if(!d.open&&HM_OPEN.has(hmKey(d)))d.open=true;});}
 /* ===== PWA: service worker registration, "new version ready" bar, Install app (Settings › App) ===== */
 (()=>{
   const bar=document.createElement("div");bar.id="pwaBar";bar.setAttribute("role","status");
