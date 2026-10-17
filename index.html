@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.67.0.1 — major.minor.feature.hotfix -->
+<!-- VERSION 1.67.1.0 — major.minor.feature.hotfix -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -20823,18 +20823,18 @@ function pullAtlas(){
   var c=newCanvas(1024,512), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2, w-16);
     if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
-  panel(0,0,340,64,"#ff7a1a","#15171b","PRAIRIE ENGINE WORKS",31,"#15171b");
-  panel(342,0,340,64,"#15171b","#ff7a1a","COULEE FUELS",42,"#ff7a1a");
+  panel(0,0,340,64,"#d97757","#141413","PRAIRIE ENGINE WORKS",31,"#141413");
+  panel(342,0,340,64,"#141413","#d97757","COULEE FUELS",42,"#d97757");
   panel(684,0,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
-  panel(0,66,1024,62,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS · TRUCK & TRACTOR PULL",40,"#ff7a1a");
+  panel(0,66,1024,62,"#141413","#d97757","PRAIRIE ENGINE WORKS · TRUCK & TRACTOR PULL",40,"#d97757");
   panel(0,130,254,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",34,"#d9a52b"); panel(256,130,254,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",34);
-  panel(512,130,254,64,"#2c6b3a","#f4f1e8","HALCYON GT",36); panel(768,130,256,64,"#f1ede2","#15171b","DIESEL DAYS",36,"#ff7a1a");
+  panel(512,130,254,64,"#2c6b3a","#f4f1e8","HALCYON GT",36); panel(768,130,256,64,"#f1ede2","#141413","DIESEL DAYS",36,"#d97757");
   var mk=["50","100","150","200","250","300"];
-  for(i=0;i<6;i++){ var bx=i*171; x.fillStyle="#15171b"; x.fillRect(bx,196,169,122); x.fillStyle=i===5?"#ff7a1a":"#f4efe2"; x.fillRect(bx+6,202,157,110); x.fillStyle="#15171b"; x.font="700 76px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+84, 252); x.font="700 22px "+F; x.fillText("FEET", bx+84, 298); }
-  panel(0,322,510,120,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS",54,"#ff7a1a");
-  panel(512,322,512,120,"#ff7a1a","#15171b","PULL OFF",70,"#15171b");
+  for(i=0;i<6;i++){ var bx=i*171; x.fillStyle="#141413"; x.fillRect(bx,196,169,122); x.fillStyle=i===5?"#d97757":"#f4efe2"; x.fillRect(bx+6,202,157,110); x.fillStyle="#141413"; x.font="700 76px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(mk[i], bx+84, 252); x.font="700 22px "+F; x.fillText("FEET", bx+84, 298); }
+  panel(0,322,510,120,"#141413","#d97757","PRAIRIE ENGINE WORKS",54,"#d97757");
+  panel(512,322,512,120,"#d97757","#141413","PULL OFF",70,"#141413");
   panel(0,446,510,64,"#f1ede2","#9e2a22","FRIES · PIE · LEMONADE",34,"#9e2a22");
-  panel(512,446,512,64,"#15171b","#f1ede2","GRANDSTAND · SECTION B",34,"#ff7a1a");
+  panel(512,446,512,64,"#141413","#f1ede2","GRANDSTAND · SECTION B",34,"#d97757");
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
 var PULL_UV={ ban:[[0,1-64/512,340/1024,1],[342/1024,1-64/512,682/1024,1],[684/1024,1-64/512,1,1],[0,1-194/512,254/1024,1-130/512],[256/1024,1-194/512,510/1024,1-130/512],[512/1024,1-194/512,766/1024,1-130/512],[768/1024,1-194/512,1,1-130/512]],
@@ -20844,8 +20844,8 @@ function pullDecalMat(num){
   var c=newCanvas(512,160), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
   x.clearRect(0,0,512,160); x.textAlign="left"; x.textBaseline="middle";
   x.font="italic 700 92px "+F; x.lineWidth=10; x.strokeStyle="#111"; x.strokeText(num, 14, 66); x.fillStyle="#f4f1e8"; x.fillText(num, 14, 66);
-  x.font="700 34px "+F; x.fillStyle="#ff7a1a"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 132); x.fillText("PRAIRIE ENGINE WORKS", 14, 132);
-  x.fillStyle="#ff7a1a"; x.fillRect(150,40,340,10); x.fillRect(150,62,300,10); x.fillRect(150,84,260,10);
+  x.font="700 34px "+F; x.fillStyle="#d97757"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 132); x.fillText("PRAIRIE ENGINE WORKS", 14, 132);
+  x.fillStyle="#d97757"; x.fillRect(150,40,340,10); x.fillRect(150,62,300,10); x.fillRect(150,84,260,10);
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
   return new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.45, metalness:0.1, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
 }
@@ -20986,8 +20986,8 @@ function buildPullScene(){
     cars.instanceMatrix.setUsage(THREE.DynamicDrawUsage); S3.add(cars);
     PULL.wheel={g:W, cars:cars, hub:hub, R:R, bulbs:bulbs}; })();
   /* flags on the berm */
-  (function(){ var c=newCanvas(256,160), x=c.getContext("2d"); x.fillStyle="#ff7a1a"; x.fillRect(0,0,256,160); x.fillStyle="#15171b"; x.fillRect(0,112,256,48);
-    x.font="700 64px 'Chakra Petch','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("PEW", 128, 58); x.fillStyle="#ff7a1a"; x.fillRect(0,124,256,6);
+  (function(){ var c=newCanvas(256,160), x=c.getContext("2d"); x.fillStyle="#d97757"; x.fillRect(0,0,256,160); x.fillStyle="#141413"; x.fillRect(0,112,256,48);
+    x.font="700 64px 'Chakra Petch','Arial Narrow',Arial,sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("PEW", 128, 58); x.fillStyle="#d97757"; x.fillRect(0,124,256,6);
     var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; var fm=new THREE.MeshStandardMaterial({map:t, roughness:0.8, side:THREE.DoubleSide});
     for(var q=-1;q<=1;q++){ var g=new THREE.PlaneGeometry(2.2,1.35,10,1); g.translate(1.1,0,0); var fl=new THREE.Mesh(g, fm); fl.position.set(PULL_END+6, 4.5, q*5.5-1); fl.rotation.y=-PI*0.38; S3.add(fl);
       PULL.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.7}); } })();
@@ -21092,7 +21092,7 @@ function pullLivDecalMat(num){
   x.clearRect(0,0,512,160); x.textAlign="left"; x.textBaseline="middle";
   x.font="italic 700 92px "+F; x.lineWidth=10; x.strokeStyle="#111"; x.strokeText(num, 14, 66); x.fillStyle="#f4f1e8"; x.fillText(num, 14, 66);
   var nw=Math.min(230, x.measureText(num).width+30); x.drawImage(spLogoCanvas(sp,512,192), nw, 8, Math.min(290, 500-nw), Math.min(290, 500-nw)*0.375);
-  x.font="700 34px "+F; x.fillStyle="#ff7a1a"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 136); x.fillText("PRAIRIE ENGINE WORKS", 14, 136);
+  x.font="700 34px "+F; x.fillStyle="#d97757"; x.strokeStyle="#111"; x.lineWidth=6; x.strokeText("PRAIRIE ENGINE WORKS", 14, 136); x.fillText("PRAIRIE ENGINE WORKS", 14, 136);
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;
   LIV_MAT[key]=new THREE.MeshStandardMaterial({map:t, transparent:true, depthWrite:false, roughness:0.45, metalness:0.1, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
   return LIV_MAT[key];
@@ -21261,11 +21261,11 @@ function pullBoardDraw(o, force){
   B.key=key; B.at=PULL.t;
   var x=B.cv.getContext("2d"), MONO="'IBM Plex Mono','Courier New',monospace", F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
   x.fillStyle="#060607"; x.fillRect(0,0,512,256); x.strokeStyle="#34373c"; x.lineWidth=10; x.strokeRect(5,5,502,246);
-  x.fillStyle="#ff7a1a"; x.fillRect(10,10,492,6);
-  x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#ff7a1a"; x.font="700 30px "+F; x.fillText(String(o.cls||"OPEN CLASS").toUpperCase(), 24, 42, 330);
+  x.fillStyle="#d97757"; x.fillRect(10,10,492,6);
+  x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#d97757"; x.font="700 30px "+F; x.fillText(String(o.cls||"OPEN CLASS").toUpperCase(), 24, 42, 330);
   x.textAlign="right"; x.fillStyle="#9aa0a8"; x.font="700 24px "+F; x.fillText(ph==="stage"?"HOOKED":ph==="pull"?"PULLING":"FINAL", 488, 42);
   if(full){
-    x.textAlign="center"; x.fillStyle=flash?"#ff7a1a":"#f4efe2"; x.font="700 96px "+F; x.fillText("FULL PULL", 256, 132, 470);
+    x.textAlign="center"; x.fillStyle=flash?"#d97757":"#f4efe2"; x.font="700 96px "+F; x.fillText("FULL PULL", 256, 132, 470);
     x.fillStyle="#ffcf73"; x.font="700 44px "+MONO; x.fillText((ds||"300.00")+" FT", 256, 212);
   } else {
     x.textAlign="right"; x.fillStyle="#ffb22c"; x.font="700 112px "+MONO; x.fillText(ds!=null&&ph!=="stage"?ds:"---.--", 420, 142);
@@ -21580,9 +21580,9 @@ function bogMudReset(){
 function bogAtlas(){
   var c=newCanvas(1024,256), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i;
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2, w-16); if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
-  panel(0,0,1024,62,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS · MUD BOG",40,"#ff7a1a");
-  panel(0,64,340,60,"#ff7a1a","#15171b","PRAIRIE ENGINE WORKS",30,"#15171b"); panel(342,64,340,60,"#15171b","#ff7a1a","COULEE FUELS",40,"#ff7a1a"); panel(684,64,340,60,"#131416","#f2c22c","NORTHWIND TYRE",38,"#f2c22c");
-  for(i=0;i<9;i++){ var bx=i*113; x.fillStyle="#15171b"; x.fillRect(bx,128,111,126); x.fillStyle=i%2?"#f4efe2":"#ff7a1a"; x.fillRect(bx+5,133,101,116); x.fillStyle="#15171b"; x.font="700 56px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String((i+1)*10), bx+55, 180); x.font="700 18px "+F; x.fillText("METRES", bx+55, 228); }
+  panel(0,0,1024,62,"#141413","#d97757","PRAIRIE ENGINE WORKS · MUD BOG",40,"#d97757");
+  panel(0,64,340,60,"#d97757","#141413","PRAIRIE ENGINE WORKS",30,"#141413"); panel(342,64,340,60,"#141413","#d97757","COULEE FUELS",40,"#d97757"); panel(684,64,340,60,"#131416","#f2c22c","NORTHWIND TYRE",38,"#f2c22c");
+  for(i=0;i<9;i++){ var bx=i*113; x.fillStyle="#141413"; x.fillRect(bx,128,111,126); x.fillStyle=i%2?"#f4efe2":"#d97757"; x.fillRect(bx+5,133,101,116); x.fillStyle="#141413"; x.font="700 56px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(String((i+1)*10), bx+55, 180); x.font="700 18px "+F; x.fillText("METRES", bx+55, 228); }
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
 var BOG_UV={ long:[0,1-62/256,1,1], ban:[[0,1-124/256,340/1024,1-64/256],[342/1024,1-124/256,682/1024,1-64/256],[684/1024,1-124/256,1,1-64/256]], mark:function(i){ return [i*113/1024, 1-254/256, (i*113+111)/1024, 1-128/256]; } };
@@ -23011,7 +23011,7 @@ function boatWakeStep(V, wm, x, z, v, beam, live){
 }
 function boatBoardTex(lane){ var c=newCanvas(256,128), t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.userData={cv:c, lane:lane}; boatBoardDraw(t,null,null); return t; }
 function boatBoardDraw(t, et, mph){ var c=t.userData.cv, x=c.getContext("2d"); x.fillStyle="#0b0c0e"; x.fillRect(0,0,256,128); x.font="700 22px 'Chakra Petch','Arial Narrow',sans-serif"; x.textAlign="center"; x.fillStyle="#8a8f96"; x.fillText(t.userData.lane,128,24);
-  x.font="700 54px 'IBM Plex Mono',monospace"; x.fillStyle="#ff9a2a"; x.fillText(et!=null?(+et).toFixed(3):"-.---",128,78); x.font="700 30px 'IBM Plex Mono',monospace"; x.fillStyle="#f2c22c"; x.fillText(mph!=null?(+mph).toFixed(1)+" mph":"",128,116); t.needsUpdate=true; }
+  x.font="700 54px 'IBM Plex Mono',monospace"; x.fillStyle="#e8956f"; x.fillText(et!=null?(+et).toFixed(3):"-.---",128,78); x.font="700 30px 'IBM Plex Mono',monospace"; x.fillStyle="#f2c22c"; x.fillText(mph!=null?(+mph).toFixed(1)+" mph":"",128,116); t.needsUpdate=true; }
 function boatBuild(B,key,mat,shadow){ var keep=STRIP.scene; STRIP.scene=BOAT.scene; var m=B.build(key,mat,shadow); STRIP.scene=keep; return m; }
 function buildBoatScene(){
   var S3=new THREE.Scene(); BOAT.scene=S3; BOAT.tier=GFX; var lite=GFX==="lite", M=BOAT.mats, i, k, x, z;
@@ -23287,11 +23287,11 @@ function roadAtlas(name){
   var c=newCanvas(1024,512), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
   function panel(x0,y0,w,h,bg,fg,txt,sz,sub){ x.fillStyle=bg; x.fillRect(x0,y0,w,h); x.fillStyle=fg; x.font="700 "+sz+"px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt, x0+w/2, y0+h/2+2);
     if(sub){ x.fillStyle=sub; x.fillRect(x0,y0+h-7,w,5); } }
-  panel(0,0,1024,96,"#f1ede2","#1d4787",String(name).toUpperCase(),62,"#ff7a1a");
+  panel(0,0,1024,96,"#f1ede2","#1d4787",String(name).toUpperCase(),62,"#d97757");
   panel(0,98,340,64,"#1d4787","#f4f1e8","PRAIRIE BLUE",42,"#d9a52b"); panel(342,98,340,64,"#e5701f","#141414","COULEE FUELS",42,"#141414"); panel(684,98,340,64,"#131416","#f2c22c","NORTHWIND TYRE",40,"#f2c22c");
-  panel(0,164,340,64,"#2c6b3a","#f4f1e8","HALCYON GT",42); panel(342,164,340,64,"#15171b","#ff7a1a","PRAIRIE ENGINE WORKS",30,"#ff7a1a"); panel(684,164,340,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",40);
+  panel(0,164,340,64,"#2c6b3a","#f4f1e8","HALCYON GT",42); panel(342,164,340,64,"#141413","#d97757","PRAIRIE ENGINE WORKS",30,"#d97757"); panel(684,164,340,64,"#b7261d","#f4f1e8","PRAIRIE FIRE",40);
   for(var i=0;i<64;i++) for(var j=0;j<4;j++){ x.fillStyle=((i+j)&1)?"#111":"#f2f2f2"; x.fillRect(i*16, 232+j*16, 16,16); }
-  panel(0,300,256,96,"#15171b","#f4efe2","PIT",64,"#ff7a1a"); panel(258,300,256,96,"#f4efe2","#c8261c","3",80); panel(514,300,256,96,"#f4efe2","#c8261c","2",80); panel(770,300,254,96,"#f4efe2","#c8261c","1",80);
+  panel(0,300,256,96,"#141413","#f4efe2","PIT",64,"#d97757"); panel(258,300,256,96,"#f4efe2","#c8261c","3",80); panel(514,300,256,96,"#f4efe2","#c8261c","2",80); panel(770,300,254,96,"#f4efe2","#c8261c","1",80);
   x.fillStyle="#0e1418"; x.fillRect(0,400,1024,110); for(i=0;i<16;i++){ x.fillStyle="#26343d"; x.fillRect(i*64+4,404,56,102); x.fillStyle="rgba(170,200,220,0.25)"; x.fillRect(i*64+6,406,20,98); }
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
@@ -23706,12 +23706,12 @@ function saltAtlas(){
     x.font="700 "+(big.length>2?Math.round(h*0.34):Math.round(h*0.55))+"px "+F; x.fillText(big, x0+w/2, y0+h*(small?0.42:0.52), w-16); if(small){ x.font="700 "+Math.round(h*0.17)+"px "+F; x.fillText(small, x0+w/2, y0+h*0.82, w-16); } }
   for(i=0;i<7;i++) board(i*146,0,144,180,"#f4efe2","#141414",String(i+1),"MILE");
   board(0,182,250,120,"#f4efe2","#b7261d","START","");
-  board(252,182,250,120,"#ff7a1a","#141414","TIMING","");
+  board(252,182,250,120,"#d97757","#141414","TIMING","");
   board(504,182,250,120,"#f4efe2","#1d4787","1 KM","");
-  board(756,182,268,120,"#141414","#ff7a1a","TIMED","MILE");
+  board(756,182,268,120,"#141414","#d97757","TIMED","MILE");
   x.fillStyle="#f4efe2"; x.fillRect(0,304,1024,72); x.fillStyle="#1d4787"; x.fillRect(0,366,1024,10);
   x.fillStyle="#1d4787"; x.font="700 44px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText("SALT FLATS SPEED TRIALS · PRAIRIE ENGINE WORKS", 512, 336, 1000);
-  x.fillStyle="#1b1d20"; x.fillRect(0,380,510,130); x.fillStyle="#ff7a1a"; x.font="700 60px "+F; x.fillText("COULEE FUELS", 255, 445, 480);
+  x.fillStyle="#1b1d20"; x.fillRect(0,380,510,130); x.fillStyle="#d97757"; x.font="700 60px "+F; x.fillText("COULEE FUELS", 255, 445, 480);
   x.fillStyle="#e9e6dc"; x.fillRect(512,380,512,130); x.fillStyle="#1d4787"; x.font="700 52px "+F; x.fillText("WENDOVER FLYERS", 768, 445, 490);
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
@@ -25545,24 +25545,24 @@ var OVAL_GLSL=[
   "  float fair=1.0-smoothstep(150.0,190.0,-rho); c=mix(fc,c,fair);",
   "  rough=mix(0.97,0.82,onT); return c; }"].join("\n");
 function ovalAtlas(){
-  var c=newCanvas(1024,128), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i, labels=["PRAIRIE ENGINE WORKS","COULEE FUELS","NORTHWIND TYRE","CANOLA CO-OP","BIG SKY SALVAGE","ELEVATOR FEEDS"], cols=[["#ff7a1a","#15171b"],["#15171b","#ff7a1a"],["#f2c22c","#131416"],["#1d4787","#f4efe2"],["#b7261d","#f4efe2"],["#2c6b3a","#f4efe2"]];
+  var c=newCanvas(1024,128), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i, labels=["PRAIRIE ENGINE WORKS","COULEE FUELS","NORTHWIND TYRE","CANOLA CO-OP","BIG SKY SALVAGE","ELEVATOR FEEDS"], cols=[["#d97757","#141413"],["#141413","#d97757"],["#f2c22c","#131416"],["#1d4787","#f4efe2"],["#b7261d","#f4efe2"],["#2c6b3a","#f4efe2"]];
   for(i=0;i<6;i++){ var bx=i*170; x.fillStyle=cols[i][0]; x.fillRect(bx,0,168,128); x.fillStyle=cols[i][1]; x.font="700 26px "+F; x.textAlign="center"; x.textBaseline="middle";
     var w=labels[i].split(" "), half=Math.ceil(w.length/2); x.fillText(w.slice(0,half).join(" "),bx+84,46,156); x.fillText(w.slice(half).join(" "),bx+84,82,156); }
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
 function ovalFlagTex(kind){
   var c=newCanvas(128,80), x=c.getContext("2d");
-  if(kind==="checker"){ for(var j=0;j<5;j++) for(var i=0;i<8;i++){ x.fillStyle=(i+j)%2?"#f4f4f0":"#15171b"; x.fillRect(i*16,j*16,16,16); } }
+  if(kind==="checker"){ for(var j=0;j<5;j++) for(var i=0;i<8;i++){ x.fillStyle=(i+j)%2?"#f4f4f0":"#141413"; x.fillRect(i*16,j*16,16,16); } }
   else { x.fillStyle=kind==="green"?"#2fb24c":kind==="yellow"?"#f2c22c":kind==="red"?"#d63a2c":"#f4f4f0"; x.fillRect(0,0,128,80); }
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; return t;
 }
 function ovalBoardTex(){ var c=newCanvas(256,512), t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; t.userData={cv:c}; return t; }
 function ovalBoardDraw(t, rows, head){
   var c=t.userData.cv, x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
-  x.fillStyle="#101215"; x.fillRect(0,0,256,512); x.fillStyle="#ff7a1a"; x.fillRect(0,0,256,46); x.fillStyle="#15171b"; x.font="700 26px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(head||"PRAIRIE SPEEDWAY",128,24,240);
+  x.fillStyle="#1c1b19"; x.fillRect(0,0,256,512); x.fillStyle="#d97757"; x.fillRect(0,0,256,46); x.fillStyle="#141413"; x.font="700 26px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(head||"PRAIRIE SPEEDWAY",128,24,240);
   x.textAlign="left"; x.font="700 25px "+F;
-  for(var i=0;i<Math.min(12,rows.length);i++){ var r=rows[i], y=60+i*37; x.fillStyle=r.me?"#ff7a1a":i%2?"#161a1e":"#1b2025"; if(r.me) x.fillRect(4,y-17,248,34); else x.fillRect(4,y-17,248,34);
-    x.fillStyle=r.me?"#15171b":"#f2c22c"; x.fillText(String(i+1),12,y+1); x.fillStyle=r.me?"#15171b":"#f0ece2"; x.fillText(String(r.num).padStart(2," "),52,y+1);
+  for(var i=0;i<Math.min(12,rows.length);i++){ var r=rows[i], y=60+i*37; x.fillStyle=r.me?"#d97757":i%2?"#161a1e":"#1b2025"; if(r.me) x.fillRect(4,y-17,248,34); else x.fillRect(4,y-17,248,34);
+    x.fillStyle=r.me?"#141413":"#f2c22c"; x.fillText(String(i+1),12,y+1); x.fillStyle=r.me?"#141413":"#f0ece2"; x.fillText(String(r.num).padStart(2," "),52,y+1);
     x.font="600 19px "+F; x.fillText(String(r.n||"").slice(0,12),96,y+1); x.font="700 25px "+F; }
   t.needsUpdate=true;
 }
@@ -27719,7 +27719,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.67.0.1";
+const VERSION="1.67.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}

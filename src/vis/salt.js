@@ -110,12 +110,12 @@ function saltAtlas(){
     x.font="700 "+(big.length>2?Math.round(h*0.34):Math.round(h*0.55))+"px "+F; x.fillText(big, x0+w/2, y0+h*(small?0.42:0.52), w-16); if(small){ x.font="700 "+Math.round(h*0.17)+"px "+F; x.fillText(small, x0+w/2, y0+h*0.82, w-16); } }
   for(i=0;i<7;i++) board(i*146,0,144,180,"#f4efe2","#141414",String(i+1),"MILE");
   board(0,182,250,120,"#f4efe2","#b7261d","START","");
-  board(252,182,250,120,"#ff7a1a","#141414","TIMING","");
+  board(252,182,250,120,"#d97757","#141414","TIMING","");
   board(504,182,250,120,"#f4efe2","#1d4787","1 KM","");
-  board(756,182,268,120,"#141414","#ff7a1a","TIMED","MILE");
+  board(756,182,268,120,"#141414","#d97757","TIMED","MILE");
   x.fillStyle="#f4efe2"; x.fillRect(0,304,1024,72); x.fillStyle="#1d4787"; x.fillRect(0,366,1024,10);
   x.fillStyle="#1d4787"; x.font="700 44px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText("SALT FLATS SPEED TRIALS · PRAIRIE ENGINE WORKS", 512, 336, 1000);
-  x.fillStyle="#1b1d20"; x.fillRect(0,380,510,130); x.fillStyle="#ff7a1a"; x.font="700 60px "+F; x.fillText("COULEE FUELS", 255, 445, 480);
+  x.fillStyle="#1b1d20"; x.fillRect(0,380,510,130); x.fillStyle="#d97757"; x.font="700 60px "+F; x.fillText("COULEE FUELS", 255, 445, 480);
   x.fillStyle="#e9e6dc"; x.fillRect(512,380,512,130); x.fillStyle="#1d4787"; x.font="700 52px "+F; x.fillText("WENDOVER FLYERS", 768, 445, 490);
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t;
 }
