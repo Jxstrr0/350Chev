@@ -16,9 +16,9 @@ html.desk.photo #toast{left:50%;top:70px;max-width:min(560px,90%)}
 .phtop .phh small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--muted);margin-top:2px;transition:opacity 1s 5s;opacity:1}
 #phUi.hush .phtop .phh small{opacity:0}
 .phtop button{pointer-events:auto}
-.phx{flex:none;width:44px;height:44px;border-radius:22px;background:rgba(15,17,20,.78);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:var(--chalk)}
+.phx{flex:none;width:44px;height:44px;border-radius:22px;background:rgba(20,20,19,.78);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:var(--chalk)}
 .phx svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-.phdock{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(100%,560px);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(15,17,20,.86);border:1px solid rgba(255,255,255,.12);border-bottom:0;border-radius:14px 14px 0 0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.phdock{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(100%,560px);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(20,20,19,.86);border:1px solid rgba(255,255,255,.12);border-bottom:0;border-radius:14px 14px 0 0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 html.desk .phdock{bottom:16px;border-radius:14px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:10px}
 .phbody{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
 .phbody[hidden]{display:none}
@@ -28,15 +28,15 @@ html.desk .phdock{bottom:16px;border-radius:14px;border-bottom:1px solid rgba(25
 .phchips{flex:1;min-width:0;display:flex;gap:6px}
 .phchips button{flex:1 1 0;min-width:0;min-height:44px;padding:0 4px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--muted);font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.03em;white-space:nowrap}
 .phchips button[hidden]{display:none}
-.phchips button.on{border-color:var(--orange);color:var(--orange2);background:rgba(255,122,26,.12)}
+.phchips button.on{border-color:var(--orange);color:var(--orange2);background:rgba(217,119,87,.12)}
 .phact{display:flex;gap:6px}
 .phact button{flex:1 1 0;min-width:0;min-height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:var(--chalk);font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 .phact button[hidden]{display:none}
-.phact .phpri{flex:1.5 1 0;background:var(--orange);border-color:var(--orange);color:#1a1206}
+.phact .phpri{flex:1.5 1 0;background:var(--orange);border-color:var(--orange);color:#141413}
 .phact button:disabled{opacity:.55}
 .phchips button:focus-visible,.phact button:focus-visible,.phx:focus-visible,#phSheetBox button:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
 /* the floating camera on event scenes (the engine view has it in the VIEW tray) */
-#phBtn{display:none;position:absolute;right:10px;top:10px;z-index:9;width:44px;height:44px;border-radius:22px;background:rgba(15,17,20,.74);border:1px solid rgba(255,255,255,.2);align-items:center;justify-content:center;color:var(--chalk)}
+#phBtn{display:none;position:absolute;right:10px;top:10px;z-index:9;width:44px;height:44px;border-radius:22px;background:rgba(20,20,19,.74);border:1px solid rgba(255,255,255,.2);align-items:center;justify-content:center;color:var(--chalk)}
 #phBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 html.onevent #phBtn{display:flex}
 html.onevent:not(.desk) #phBtn{top:auto;bottom:auto;top:62px}
@@ -44,14 +44,14 @@ html.troom #phBtn{display:none!important}
 .hudtray button.act::after{display:none}
 .hudtray button.act svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 /* the build sheet, over everything */
-#phSheet{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(6,7,9,.97);color:#f0ece2}
+#phSheet{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(8,8,7,.97);color:#faf9f5}
 #phSheet[hidden]{display:none}
 #phSheetBox{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:100%;max-height:100%;min-height:0}
-#phSheetBox img{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);object-fit:contain;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.6);background:#15171b}
-#phSheetBox p{margin:0;font-size:13px;color:#b8b2a3;text-align:center}
+#phSheetBox img{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);object-fit:contain;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.6);background:#141413}
+#phSheetBox p{margin:0;font-size:13px;color:#b4b1aa;text-align:center}
 .phsb{display:flex;gap:8px;width:100%;max-width:520px;flex:none}
-.phsb button{flex:1 1 0;min-height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#f0ece2;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.05em;text-transform:uppercase}
+.phsb button{flex:1 1 0;min-height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#faf9f5;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.05em;text-transform:uppercase}
 .phsb button[hidden]{display:none}
-.phsb .phpri{background:#ff7a1a;border-color:#ff7a1a;color:#1a1206}
+.phsb .phpri{background:#d97757;border-color:#d97757;color:#141413}
 @media (max-width:420px){.phact button{font-size:13px;letter-spacing:.02em}}
 @media (max-width:374px){.phl{width:54px;font-size:10px}.phchips button{font-size:12px}}
