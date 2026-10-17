@@ -1387,6 +1387,46 @@ html.desk #tabs .dot.n{right:4px;top:6px}
 .lgperk h3 small{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none}
 .lgsel{display:block;margin-top:6px;min-height:44px;max-width:100%;background:var(--panel2);color:var(--chalk);border:1px solid var(--rule);border-radius:4px;padding:0 8px;font:inherit}
 .lgstart{width:100%;min-height:48px;margin-top:12px}
+/* ===================== BUILD TAB (v1.66 cleanup): base-engine list, accordion headers ===================== */
+#presetAcc .pbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:0;margin:0 0 6px}
+#pAvail{margin:0;flex:0 0 auto;flex-wrap:nowrap}
+#pAvail[hidden]{display:none}
+#pAvail .chip{min-height:40px;margin:0}
+#presetAcc .pbar .cnt{flex:1 1 120px;min-width:0}
+.pmore{margin:0 0 8px}
+.pmore>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pmore>summary::-webkit-details-marker{display:none}
+.pmore>summary::before{content:"";width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .2s;margin:0 4px 0 2px}
+.pmore[open]>summary::before{transform:rotate(45deg)}
+.pmore>summary span{font-family:var(--mono);letter-spacing:0;text-transform:none;color:var(--dim)}
+.pmore>.seg,.pmore>.chips{margin-bottom:8px}
+.pg{margin-bottom:2px}
+.pgh{width:100%;display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 2px;text-align:left;border-bottom:1px solid var(--rule);font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--chalk)}
+.pgh span:first-child{flex:1 1 auto;min-width:0}
+.pgh i{font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:0;color:var(--dim)}
+.pgh .chev{width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .2s;margin-right:2px}
+.pgh[aria-expanded=true] .chev{transform:rotate(45deg)}
+.plist{display:grid;gap:6px;padding:8px 0 10px}
+.plist[hidden]{display:none}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 12px;width:100%;min-height:48px;padding:8px 12px;text-align:left;background:var(--panel2);border:1px solid var(--rule);border-radius:6px}
+:root[data-theme=light] #presetAcc .prow{background:var(--panel)}
+.prow .pn{min-width:0}
+.prow .pn b{display:block;font-family:var(--display);font-size:14.5px;font-weight:700;line-height:1.15;white-space:normal;overflow-wrap:anywhere}
+.prow .pn small{display:block;font-size:11px;line-height:1.25;color:var(--orange2);letter-spacing:.04em;margin-top:2px;white-space:normal;overflow-wrap:anywhere}
+.prow.starter .pn small{color:var(--good)}
+.prow .pm{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;text-align:right}
+.prow.lock{opacity:.5}
+.prow.lock .pn small{color:var(--muted)}
+html.desk .prow:hover{border-color:var(--steel);background:var(--panel2)}
+.swhint{display:flex;align-items:flex-start;gap:6px}
+.swhint>span{flex:1 1 auto;min-width:0}
+/* accordion headers in the Build tab: title + chevron on one line, the current choice under it (wraps, never cut off) */
+#tab-build .acch{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t chev" "sum sum";gap:2px 10px;padding:10px 12px}
+#tab-build .acch .t{grid-area:t;white-space:normal}
+#tab-build .acch .chev{grid-area:chev}
+#tab-build .acch .sum{grid-area:sum;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.35}
+#tab-build .acch .sum:empty{display:none}
+#tab-build .acc.open .acch .sum{display:none}
 /* ===== dirt oval (v1.65): the track map, the night ladder, and the event card / run strip wired like the hillclimb's ===== */
 .ovtrk{display:block;width:100%;height:92px;margin:0 0 8px;border-radius:8px;background:var(--panel2)}
 .ovn{display:flex;align-items:stretch;gap:0;margin:0 0 10px}.ovn i{flex:0 0 16px;align-self:center;height:2px;background:var(--rule)}
@@ -1507,14 +1547,16 @@ html.troom #phBtn{display:none!important}
         <div><b id="sKg">0</b><span>kg</span></div>
         <div><b id="sCost">$0</b><span>unit cost</span></div>
       </div>
-      <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
+      <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines" aria-expanded="false"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
+        <div class="pbar"><div class="chips" id="pAvail"><button class="chip on" data-pa="avail">Available</button><button class="chip" data-pa="all">All</button></div><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
+        <details class="pmore" id="pMore"><summary>Sort &amp; filter <span id="pMoreSum"></span></summary>
         <div class="seg n4" id="pSort"><button data-ps="layout">Layout<small>by cylinders</small></button><button data-ps="size">Size<small>displacement</small></button><button data-ps="power">Power<small>hp</small></button><button data-ps="class">Class<small>what it's for</small></button></div>
         <div class="chips" id="pFam"><button class="chip on" data-pf="all">All layouts</button><button class="chip" data-pf="inline">Inline</button><button class="chip" data-pf="vee">V</button><button class="chip" data-pf="flat">Flat</button><button class="chip" data-pf="rotary">Rotary</button><button class="chip" data-pf="two">Two-stroke</button></div>
         <div class="chips" id="pCls"><button class="chip on" data-pc="all">All classes</button><button class="chip" data-pc="starter">Starter</button><button class="chip" data-pc="economy">Economy</button><button class="chip" data-pc="truck">Truck</button><button class="chip" data-pc="classic">Classic</button><button class="chip" data-pc="performance">Performance</button><button class="chip" data-pc="motorsport">Motorsport</button><button class="chip" data-pc="outlaw">Outlaw</button><button class="chip" data-pc="diesel">Diesel</button><button class="chip" data-pc="pulling">Pulling</button><button class="chip" data-pc="rotary">Rotary</button></div>
-        <div class="pbar"><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
+        </details>
         <div id="presets"></div></div></div>
       <div id="buildForm"></div>
-      <div class="sec acc" id="swapAcc"><button class="acch" data-sec="Swap"><span class="t">Swap · put it in a car</span><span class="sum" id="swapSum"></span><span class="chev"></span></button><div class="accb" id="swapBody"></div></div>
+      <div class="sec acc" id="swapAcc"><button class="acch" data-sec="Swap" aria-expanded="false"><span class="t">Swap · put it in a car</span><span class="sum" id="swapSum"></span><span class="chev"></span></button><div class="accb" id="swapBody"></div></div>
       <div class="sec">
         <h2>Blueprints</h2>
         <div id="bpList"></div>
@@ -27804,22 +27846,31 @@ function renderPresets(){
   document.querySelectorAll("#pFam .chip").forEach(x=>x.classList.toggle("on",x.dataset.pf===fam));
   document.querySelectorAll("#pCls .chip").forEach(x=>x.classList.toggle("on",x.dataset.pc===cls));
   $("pReset").hidden=(sort==="layout"&&fam==="all"&&cls==="all");
+  const showAll=!career()||!!S.pAll;$("pAvail").hidden=!career();   // sandbox: everything is available, so the chips would only hide
+  document.querySelectorAll("#pAvail .chip").forEach(x=>x.classList.toggle("on",(x.dataset.pa==="all")===showAll));
+  $("pMoreSum").textContent=({layout:"by layout",size:"by size",power:"by power",class:"by class"})[sort]+(fam!=="all"||cls!=="all"?" · filtered":"");
   const LORDER=["I1","I2","I3","I4","I5","I6","V4","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4","D18"];
   let list=PRESETS.map((p,i)=>({p,i,disp:presetDisp(p),n:(SIM.LAYOUTS[p.cfg.layout]||{n:0}).n,cls:presetCls(p),fam:FAM_OF(p.cfg.layout),two:p.cfg.cycle==="two"}));
   list=list.filter(e=>fam!=="two"||e.two);if(fam==="two")list.forEach(e=>e.fam="two");   // the two-stroke chip cuts across layouts
   list=list.filter(e=>(fam==="all"||e.fam===fam)&&(cls==="all"||(cls==="starter"?!!e.p.starter:e.cls===cls)));
+  list.forEach(e=>{e.lk=career()?presetLocked(e.p.cfg):null;});const nLocked=list.filter(e=>e.lk).length;
+  if(!showAll)list=list.filter(e=>!e.lk);   // Available: what the bay can build now; All also shows the locked ones, dimmed, with what unlocks them
   const key=e=>sort==="size"?e.disp:sort==="power"?-e.p.realHp:sort==="class"?Object.keys(CLS_LABEL).indexOf(e.cls)*1000+e.disp:LORDER.indexOf(e.p.cfg.layout)*1000+e.disp;
   list.sort((a,b)=>key(a)-key(b));
   const groupOf=e=>sort==="layout"?(SIM.LAYOUTS[e.p.cfg.layout]||{}).name||e.p.cfg.layout:sort==="class"?CLS_LABEL[e.cls]:sort==="size"?(e.disp<1.6?"Under 1.6 L":e.disp<2.6?"1.6 – 2.5 L":e.disp<4.1?"2.6 – 4.0 L":e.disp<6.1?"4.1 – 6.0 L":"Over 6 L"):(e.p.realHp<150?"Under 150 hp":e.p.realHp<300?"150 – 299 hp":e.p.realHp<600?"300 – 599 hp":e.p.realHp<1000?"600 – 999 hp":"1,000 hp and up");
-  const card=e=>{const p=e.p,lk=career()&&presetLocked(p.cfg);return `<button class="preset ${lk?"lock":""}${p.starter?" starter":""}" data-p="${e.i}" data-id="${p.id}"><span>${p.starter?"Starter · ":""}${p.basedOn}</span><b>${p.name}</b><small>${e.two?"2T ":""}${p.cfg.layout} ${fmtDisp(e.disp)} · ${p.realHp} hp${lk?` · needs ${lk}`:""}</small></button>`;};
-  let h="",g=null,buf=[];const flush=()=>{buf.sort((a,b)=>b.st-a.st);if(buf.length)h+=`<div class="pgroup">${g}<i>${buf.length}</i></div><div class="presets">${buf.map(x=>x.h).join("")}</div>`;buf=[];};
-  for(const e of list){const gg=groupOf(e);if(gg!==g){flush();g=gg;}buf.push({h:card(e),st:e.p.starter?1:0});}
-  flush();
+  const row=e=>{const p=e.p,lk=e.lk;return `<button class="prow${lk?" lock":""}${p.starter?" starter":""}" data-p="${e.i}" data-id="${p.id}"><span class="pn"><b>${p.name}</b><small>${p.starter?"Starter · ":""}${p.basedOn}${lk?` · needs ${lk}`:""}</small></span><span class="pm">${e.two?"2T ":""}${p.cfg.layout} · ${fmtDisp(e.disp)} · ${p.realHp} hp</span></button>`;};
+  const groups=[];for(const e of list){const gg=groupOf(e);let G=groups[groups.length-1];if(!G||G.g!==gg){G={g:gg,es:[]};groups.push(G);}G.es.push(e);}
+  const cur=new Set();for(const G of groups)if(G.es.some(e=>e.p.name===S.name||(sort==="layout"&&e.p.cfg.layout===S.cfg.layout)))cur.add(G.g);if(!cur.size&&groups.length)cur.add(groups[0].g);
+  let h="";for(const G of groups){const pk=sort+"|"+G.g,open=tourStep>=0||list.length<=14||(pk in pgOpen?pgOpen[pk]:cur.has(G.g));G.es.sort((a,b)=>(b.p.starter?1:0)-(a.p.starter?1:0));
+    h+=`<div class="pg"><button class="pgh" data-pg="${pk}" aria-expanded="${open}"><span>${G.g}</span><i>${G.es.length}</i><span class="chev"></span></button><div class="plist"${open?"":" hidden"}>${G.es.map(row).join("")}</div></div>`;}
   $("presets").innerHTML=h||`<p class="hint">Nothing matches those filters.</p>`;
-  $("presetCnt").textContent=`${list.length} of ${PRESETS.length} · ${PRESETS.filter(p=>p.starter).length} starter`;
+  $("presetCnt").textContent=`${list.length} of ${PRESETS.length}`+(!showAll&&nLocked?` · ${nLocked} locked hidden`:"");
   const avail=career()?PRESETS.filter(p=>!presetLocked(p.cfg)).length:PRESETS.length;
   $("presetSum").textContent=(career()?`${avail} of ${PRESETS.length} buildable`:`${PRESETS.length} engines`)+(fam!=="all"||cls!=="all"?" · filtered":"");
 }
+const pgOpen={};   // picker group headers the player opened or closed (session only)
+$("pAvail").addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;S.pAll=b.dataset.pa==="all";renderPresets();save();});
+$("presets").addEventListener("click",e=>{const g=e.target.closest("[data-pg]");if(!g)return;const o=g.getAttribute("aria-expanded")!=="true";pgOpen[g.dataset.pg]=o;g.setAttribute("aria-expanded",o);g.nextElementSibling.hidden=!o;});
 $("pSort").addEventListener("click",e=>{const b=e.target.closest("[data-ps]");if(!b)return;S.pSort=b.dataset.ps;renderPresets();save();});
 $("pFam").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(!b)return;S.pFam=b.dataset.pf;renderPresets();save();});
 $("pCls").addEventListener("click",e=>{const b=e.target.closest("[data-pc]");if(!b)return;S.pCls=b.dataset.pc;renderPresets();save();});
@@ -27903,7 +27954,7 @@ function renderBuild(){
   altFuelFill(S.cfg);
   let h="";
   for(const sec of FORM){if(!sec.fields.some(f=>!f.showIf||f.showIf(S.cfg)))continue;   // a rotary has no pistons, rods or head gasket to show
-    const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
+    const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}" aria-expanded="${open}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);   // perf: closed sections fill when opened (toggleSec)
@@ -27911,7 +27962,7 @@ function renderBuild(){
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
 function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
-    document.querySelectorAll("#tab-build .acc").forEach(el=>{const k=el.querySelector("[data-sec]").dataset.sec;el.classList.toggle("open",!!openSec[k]);});
+    document.querySelectorAll("#tab-build .acc").forEach(el=>{const h=el.querySelector("[data-sec]"),k=h.dataset.sec;el.classList.toggle("open",!!openSec[k]);h.setAttribute("aria-expanded",!!openSec[k]);});
     if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),ar=a.getBoundingClientRect(),top=(document.querySelector("#tab-build .strip")||pn).getBoundingClientRect().bottom+8;if(ar.top<top)pn.scrollTop+=ar.top-top;}
     if(tourStep>=0)requestAnimationFrame(tourPlace);}
 $("presetAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
@@ -32174,7 +32225,7 @@ function swapRender(){if(!SW_READY)return;const box=$("swapBody"),sum=$("swapSum
   if(sum)sum.innerHTML=!V?"on the stand":`${swEsc(V.n)}${r?" · "+["r","a"].map(s=>{const n=r.items.filter(x=>x.st===s).length;return n?`<i class="sw-${s}">${n} ${s==="r"?"red":"amber"}</i>`:"";}).filter(Boolean).join(" ")||" · all green":""}`;
   if(!$("swapAcc").classList.contains("open"))return;   // perf: the body fills when the section is open
   const g0=swOpenG||(V&&V.g)||"muscle";
-  let h=`<p class="hint">Put this engine in a car: size, torque, heat and weight decide the fit. The road test, strip, salt and 24 Hours run in the car you pick; pull and bog keep their class trucks.</p>`;
+  let h=`<div class="hint swhint"><span>Put this engine in a car: size, torque, heat and weight decide the fit.</span><details class="more"><summary aria-label="More info">ⓘ</summary><div>The road test, strip, salt and 24 Hours run in the car you pick; pull and bog keep their class trucks.</div></details></div>`;
   h+=`<div class="chips swg">${SIM.VEH_GROUPS.map(([id,n])=>`<button class="chip${g0===id?" on":""}" data-swg="${id}">${n}</button>`).join("")}<button class="chip${!V?" on":""}" data-swv="">None</button></div>`;
   h+=`<div class="seg wide swvs">${Object.values(SIM.VEHICLES).filter(x=>x.g===g0).map(x=>`<button data-swv="${x.id}" class="${v===x.id?"on":""}">${swEsc(x.n)}<small>${x.mass.toLocaleString("en-CA")} kg · ${x.drive.toUpperCase()}${swapOwns(x.id)?"":` · ${fmt$(x.price)}`}</small></button>`).join("")}</div>`;
   if(!V){box.innerHTML=h;return;}
