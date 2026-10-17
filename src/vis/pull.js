@@ -650,7 +650,7 @@ function pullDirect(o, dt, V){
 function pullComposer(){
   if(PULL.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(PULL.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(new THREE.RenderPass(PULL.scene, PULL.cam));
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.addPass(ultraRenderPass(PULL.scene, PULL.cam, "pull"));
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.3, 0.4, 0.9); C.addPass(bp); PULL.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       PULL.composer=C; PULL.cSize=""; }catch(e){ PULL.composer=false; return null; } }

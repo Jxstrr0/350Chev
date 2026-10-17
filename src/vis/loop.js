@@ -274,6 +274,7 @@ function loop(now){
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ if(STRIP.post) stripPostStep(); stripRender(); return; }
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
+  ultraFloor();   /* Ultra: the sealed floor's mirror pass (and the stock floor back when the tier drops) */
   if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
 }
 

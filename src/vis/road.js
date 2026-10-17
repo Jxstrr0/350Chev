@@ -326,7 +326,7 @@ function roadDirect(o, dt, W, car){
 function roadComposer(){
   if(ROAD.composer===false) return null;
   var sz=renderer.getSize(new THREE.Vector2()), pr=renderer.getPixelRatio(), C=ultraComposerKeep(ROAD.composer);
-  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.rp=new THREE.RenderPass(ROAD.W.scene, ROAD.cam); C.addPass(C.rp);
+  if(!C){ try{ C=ultraComposerMark(new THREE.EffectComposer(renderer, ultraRT())); C.rp=ultraRenderPass(ROAD.W.scene, ROAD.cam, "road"); C.addPass(C.rp);
       var bp=new THREE.UnrealBloomPass(new THREE.Vector2(Math.max(1,sz.x*pr/2), Math.max(1,sz.y*pr/2)), 0.25, 0.4, 0.92); C.addPass(bp); ROAD.bloom=bp;
       if(THREE.GammaCorrectionShader) C.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       ROAD.composer=C; ROAD.cSize=""; }catch(e){ ROAD.composer=false; return null; } }
