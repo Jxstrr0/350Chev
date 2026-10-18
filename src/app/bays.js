@@ -15,7 +15,7 @@ const BAY_TR=[
   {id:"closer",n:"Smooth talker",pos:1,d:"Clients pay +3%."},
   {id:"sloppy",n:"Sloppy",pos:0,d:"Quality −10."},
   {id:"pricey",n:"Pricey",pos:0,d:"Wage +20%."}];
-const BAY_UPQ={shop1:3,shop2:4,race:4,dyno3:2,dyno4:2,flow:2,boost:2};
+const BAY_UPQ={shop1:3,shop2:4,race:4,dyno3:2,dyno4:2,flow:2,boost:2,tool:3,qlab:8};
 function bayS(){const c=C();if(!c.bays||typeof c.bays!=="object")c.bays={};const k=c.bays;if(!k.seed)k.seed=((c.seed>>>0)^0x2f6e2b1)>>>0||11;
   if(!k.b||typeof k.b!=="object")k.b={};if(!k.cand||typeof k.cand!=="object")k.cand={};if(!k.hist||typeof k.hist!=="object")k.hist={jobs:0,fail:0,profit:0};
   for(const b of BAYS)if(!k.b[b.id]||typeof k.b[b.id]!=="object")k.b[b.id]={lead:null,job:null};return k;}
@@ -31,7 +31,7 @@ function bayQ(L,bud){let u=0;for(const id in BAY_UPQ)if(has(id))u+=BAY_UPQ[id];r
 const bayFail=(q,L)=>Math.max(0.02,Math.min(0.3,0.34-q*0.0034))*(bayHas(L,"perfect")?0.5:1);
 const bayPayK=(q,L)=>0.95+q*0.0015+(bayHas(L,"closer")?0.03:0);
 function bayPlan(k,b,bud){const L=bayS().b[b.id].lead,seg=SEGMENTS.find(s=>s.id===k.seg)||{tier:0},tier=seg.tier;
-  let w=Math.max(1,Math.min(6,Math.round(1+(tier+0.5*k.units)*0.7)));if(L.lvl>=4)w=Math.max(1,w-1);if(bayHas(L,"speedy")&&w>=3)w--;
+  let w=Math.max(1,Math.min(6,Math.round(1+(tier+0.5*k.units)*0.7)));if(L.lvl>=4)w=Math.max(1,w-1);if(bayHas(L,"speedy")&&w>=3)w--;if(has("tool")&&w>=3)w--;
   const q=bayQ(L,bud),cost=Math.round(k.price*k.units*bud.cost*(bayHas(L,"thrifty")?0.94:1)/10)*10,pay=Math.round(k.price*k.units*priceBoost()*bayPayK(q,L)/10)*10,run=w*(b.run+bayWage(b,L));
   return{tier,w,q,cost,pay,run,net:pay-cost-run,fail:bayFail(q,L)};}
 function bayTake(k){C().inbox=(C().inbox||[]).filter(x=>x.id!==k.id);if(C().offers&&C().offers.byCat)for(const c in C().offers.byCat)C().offers.byCat[c]=C().offers.byCat[c].filter(x=>x.id!==k.id);}
