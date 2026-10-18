@@ -191,37 +191,50 @@ function evPickRender(){const box=$("evPick");if(!box)return;const cur=evCur();
    m = selectors for more groups the Events tab moves out of Setup (a .seg's label and note, or the suspension grid with its read-out),
    anything built with data-evadv goes too. The Events tab shows the fold as its Advanced tab (evLayout), the Test tab as the "Cell" fold. */
 const ADV={cell:{e:["ambientC","altitudeM","coolantC","oilC"]},
-  drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],m:['[data-ek="drv"]','[data-ek="body"]','[data-shell]','[data-ek="wbar"]','[data-ek="race"]','[data-ek="shiftMode"]'],paint:1,hint:"Rear-drive on a prepped strip",sum:"weight · gearing · tyre psi · shocks · chute · paint"},
+  drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],m:['[data-ek="drv"]','[data-ek="body"]','[data-shell]','[data-ek="wbar"]','[data-ek="race"]','[data-ek="shiftMode"]'],paint:1,hint:"Rear-drive on a prepped strip",s:[["Car",["e:mass","e:rearBias",'[data-ek="body"]',"[data-shell]"]],["Gearing",["e:gears","e:first","e:top","e:final","e:tyreDia",'[data-ek="shiftMode"]']],["Driveline",['[data-ek="drv"]',"e:tyrePsi","ek:shocks",'[data-ek="race"]',"hint"]],["Extras",["paint",'[data-ek="wbar"]',"ek:chute"]]],sum:"weight · gearing · tyre psi · shocks · chute · paint"},
   pull_sled:{e:["pullHitch","pullBallast"],m:['[data-pk="pullTrans"]','[data-ek="drv"]'],hint:"A higher hitch plants",sum:"hitch height · front ballast"},
-  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],m:['[data-sk="saltShift"]'],x:["[data-saltgear]"],paint:1,sum:"gearing · ballast · aero · cooling · chutes · paint"},
+  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],m:['[data-sk="saltShift"]'],x:["[data-saltgear]"],paint:1,s:[["Gearing",["e:saltTop","e:saltBallast","[data-saltgear]",'[data-sk="saltShift"]']],["Body",["paint","sk:saltAero","sk:saltCool","sk:saltChute"]]],sum:"gearing · ballast · aero · cooling · chutes · paint"},
   bog:{k:[["bk","bogGear"],["bk","bogTyre"]],sum:"gear · tyres"},
   boat:{e:["boatPitch","boatGear","boatTrim"],k:[["tk","boatImp"]],hint:"Boat drags:",sum:"prop pitch · gear · trim · prop shop"},
-  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],m:['[data-rk="roadCh"]','[data-ek="drv"]',".su-grid"],sum:"final drive · camera · playback"},
-  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],m:['[data-hk="hillCh"]','[data-hk="hillAero"]',".su-grid"],sum:"final drive · camera · playback"},
+  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],m:['[data-rk="roadCh"]','[data-ek="drv"]',".su-grid"],s:[["Chassis",['[data-rk="roadCh"]','[data-ek="drv"]']],["Suspension",[".su-grid"]],["Drive & view",["e:roadFinal","rk:roadCam","rk:roadSpd"]]],sum:"final drive · camera · playback"},
+  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],m:['[data-hk="hillCh"]','[data-hk="hillAero"]',".su-grid"],s:[["Car",['[data-hk="hillCh"]','[data-hk="hillAero"]']],["Suspension",[".su-grid"]],["Drive & view",["e:hillFinal","hk:hillCam","hk:hillSpd"]]],sum:"final drive · camera · playback"},
   oval:{e:["ovalFinal"],k:[["ok","ovalGrille"],["ok","ovalCam"],["ok","ovalSpd"]],sum:"rear end · grille · camera · playback"},
   race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],m:['[data-rk="roadCh"]'],sum:"fuel · tyre changes · safety cars"}};
-function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envBox");if(!A)return;const nodes=[],add=n=>{if(n&&!nodes.includes(n))nodes.push(n);};
-  const seg=b=>{const g=b&&b.closest(".seg");if(!g)return;const l=g.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(g);for(let n=g.nextElementSibling;n&&n.classList.contains("segbodynote");n=n.nextElementSibling)add(n);};
+function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envBox");if(!A)return;const nodes=[],kof=new Map,add=(n,kk)=>{if(n&&!nodes.includes(n)){nodes.push(n);if(kk)kof.set(n,kk);}};
+  const seg=(b,kk)=>{const g=b&&b.closest(".seg");if(!g)return;const l=g.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l,kk);add(g,kk);for(let n=g.nextElementSibling;n&&n.classList.contains("segbodynote");n=n.nextElementSibling)add(n,kk);};
   const evT=trackEvt(t);
-  (A.e||[]).forEach(k=>{const r=$("er-"+k);if(r&&box.contains(r))add(r.closest(".env"));});
-  (A.k||[]).forEach(([a,k])=>seg(box.querySelector(`[data-${a}="${k}"]`)));
-  (A.x||[]).forEach(q=>{const b=box.querySelector(q);if(b)add(b.closest(".row")||b);});
-  if(A.paint){const p=box.querySelector(".paints");if(p){const l=p.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(p);}}
+  (A.e||[]).forEach(k=>{const r=$("er-"+k);if(r&&box.contains(r))add(r.closest(".env"),"e:"+k);});
+  (A.k||[]).forEach(([a,k])=>seg(box.querySelector(`[data-${a}="${k}"]`),a.slice(0,-1)+"k:"+k));
+  (A.x||[]).forEach(q=>{const b=box.querySelector(q);if(b)add(b.closest(".row")||b,q);});
+  if(A.paint){const p=box.querySelector(".paints");if(p){const l=p.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l,"paint");add(p,"paint");}}
   if(evT){(A.m||[]).forEach(q=>{const b=box.querySelector(q);if(!b)return;
-      if(b.matches(".su-grid")){const l=b.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(b);const lv=$("suLive");if(lv&&box.contains(lv))add(lv);const n=lv&&lv.nextElementSibling;if(n&&n.matches("p.hint"))add(n);}else seg(b);});
+      if(b.matches(".su-grid")){const l=b.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l,q);add(b,q);const lv=$("suLive");if(lv&&box.contains(lv))add(lv,q);const n=lv&&lv.nextElementSibling;if(n&&n.matches("p.hint"))add(n,q);}else seg(b,q);});
     box.querySelectorAll("[data-evadv]").forEach(add);}
-  if(A.hint)box.querySelectorAll(":scope > p.hint").forEach(p=>{if(p.textContent.trim().startsWith(A.hint))add(p);});
+  if(A.hint)box.querySelectorAll(":scope > p.hint").forEach(p=>{if(p.textContent.trim().startsWith(A.hint))add(p,"hint");});
   if(!nodes.length)return;nodes.sort((a,b)=>a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
   const open=evT||!!(S.advOpen&&S.advOpen[key]),es=k=>envStore(k)[k];   // Events: the fold is the Advanced tab, always open
   const sum=key==="cell"?`${es("ambientC")} °C · ${es("altitudeM")} m · coolant ${es("coolantC")} · oil ${es("oilC")}`:A.sum;
   const f=document.createElement("div");f.className="acc advf"+(open?" open":"");f.dataset.adv=key;
   f.innerHTML=`<button class="acch" aria-expanded="${open}"><span class="t">${key==="cell"?"Cell":"Advanced"}</span><span class="sum">${sum}</span><span class="chev"></span></button><div class="accb"></div>`;
-  const body=f.lastElementChild;let grid=null;
-  for(const n of nodes){const g=n.parentElement;if(n.classList.contains("env")){if(!grid){grid=document.createElement("div");grid.className="envgrid";body.appendChild(grid);}grid.appendChild(n);if(g&&g.classList.contains("envgrid")&&!g.children.length)g.remove();}else{grid=null;body.appendChild(n);}}
+  const body=f.lastElementChild;
+  /* a long Advanced splits into named sections (ADV[].s): a chip row on top, one section shown; S.advSec[event] remembers which */
+  const SP=evT&&A.s&&A.s.length>1?A.s:null;
+  const fill=(host,list)=>{let grid=null;for(const n of list){const g=n.parentElement;if(n.classList.contains("env")){if(!grid){grid=document.createElement("div");grid.className="envgrid";host.appendChild(grid);}grid.appendChild(n);if(g&&g.classList.contains("envgrid")&&!g.children.length)g.remove();}else{grid=null;host.appendChild(n);}}};
+  if(SP){const nm=SP.map(x=>x[0]),cur=advSecCur(nm),idx=k=>{const i=SP.findIndex(x=>x[1].includes(k));return i<0?0:i;};
+    const chips=document.createElement("div");chips.className="advchips seg n"+nm.length;chips.setAttribute("role","tablist");
+    chips.innerHTML=nm.map(x=>`<button role="tab" data-as="${x}" class="${x===cur?"on":""}" aria-selected="${x===cur}">${x}</button>`).join("");body.appendChild(chips);
+    SP.forEach(([x],i)=>{const d=document.createElement("div");d.className="advsec"+(x===cur?" on":"");d.dataset.sec=x;fill(d,nodes.filter(n=>idx(kof.get(n))===i));body.appendChild(d);});}
+  else fill(body,nodes);
   box.appendChild(f);}
+function advSecCur(nm){const c=(S.advSec||{})[evCur()];return nm.includes(c)?c:nm[0];}
+function advSecSet(name,scroll){const f=document.querySelector("#envBox .advf");if(!f)return;const bs=[...f.querySelectorAll(".advchips [data-as]")];if(!bs.some(b=>b.dataset.as===name))return;
+  S.advSec=Object.assign({},S.advSec,{[evCur()]:name});save();
+  bs.forEach(b=>{const on=b.dataset.as===name;b.classList.toggle("on",on);b.setAttribute("aria-selected",String(on));});
+  f.querySelectorAll(".advsec").forEach(d=>d.classList.toggle("on",d.dataset.sec===name));
+  if(scroll){const pn=$("panel"),tb=$("evTabs");if(pn&&tb){const d=tb.getBoundingClientRect().top-pn.getBoundingClientRect().top;if(d<0)pn.scrollTop=Math.max(0,pn.scrollTop+d-6);}}}
 function advSet(f,on){if(!f)return;f.classList.toggle("open",on);const h=f.querySelector(".acch");if(h)h.setAttribute("aria-expanded",String(on));S.advOpen=Object.assign({},S.advOpen,{[f.dataset.adv]:on});save();}
 /* a lesson, tour or tip pointing into a closed fold opens it (Build's accordion or an Advanced fold) */
-function accReveal(el){const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+function accReveal(el){const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const sc=el&&el.closest&&el.closest(".advsec");if(sc&&!sc.classList.contains("on"))advSecSet(sc.dataset.sec);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
 /* Events panel tabs: Setup (the essentials) · Advanced (the fold) · Results. S.evTab[event] remembers the open one; old saves have none = Setup.
    Panes are CSS (#evSlot[data-evt]); a run always shows Setup. */
 function evTabNow(){const t=(S.evTab||{})[evCur()];return t==="adv"||t==="res"?t:"setup";}
@@ -233,6 +246,7 @@ function evLayout(){const sl=$("evSlot"),tabs=$("evTabs"),pg=$("tab-events");if(
   tabs.querySelectorAll("button").forEach(b=>{const on=b.dataset.evt===pane;b.classList.toggle("on",on);b.setAttribute("aria-selected",String(on));if(b.dataset.evt==="adv")b.hidden=!hasAdv;if(b.dataset.evt==="res")b.classList.toggle("has",hasRes);});
   tabs.classList.toggle("n2",!hasAdv);pg.classList.toggle("evbusy",!!testing);}
 $("evTabs").addEventListener("click",e=>{const b=e.target.closest("[data-evt]");if(!b||testing)return;evTabSet(b.dataset.evt,true);buzz(4);});
+$("envBox").addEventListener("click",e=>{const b=e.target.closest(".advchips [data-as]");if(!b||testing)return;advSecSet(b.dataset.as,true);buzz(4);});
 $("envBox").addEventListener("click",e=>{const h=e.target.closest(".advf > .acch");if(!h)return;advSet(h.parentElement,!h.parentElement.classList.contains("open"));buzz(4);});
 $("curveChips").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;curves[b.dataset.c]=!curves[b.dataset.c];b.classList.toggle("on",curves[b.dataset.c]);drawChart(lastForChart(),null);});
 function quickForChart(){return quick;}
