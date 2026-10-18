@@ -127,13 +127,11 @@
 
     <!-- ANALYSIS -->
     <section class="tabpage" id="tab-analysis">
-      <div class="sec" id="tdAna" hidden></div>
       <div class="sec"><h2>Material &amp; combo interactions <span class="cnt" id="comboCnt"></span></h2><div id="combos"></div></div>
-      <div class="sec"><h2>Telemetry at the last run</h2><div class="tele" id="tele"></div></div>
+      <details class="sfold" id="teleFold"><summary>Telemetry at the last run</summary><div class="sfb"><div class="tele" id="tele"></div></div></details>
       <div class="sec" id="notesSec"><h2>Engineer's notes</h2><div class="log" id="notes"></div></div>
       <div class="sec" id="recSec"><h2>Records <span class="cnt" id="recCnt"></span></h2><button class="btn sm ghost trgo" data-trophy="1"><span>Trophy room</span><b class="trN"></b></button><div id="recBox"></div></div>
-      <div class="sec" id="achSec"><h2>Achievements <span class="cnt" id="achCnt"></span></h2><div id="achBox"></div></div>
-      <div class="sec" id="dlSec" style="display:none"><h2>Last pass datalog</h2><div id="dlBox"></div></div>
+      <details class="sfold" id="achFold"><summary>Achievements <span class="cnt" id="achCnt"></span></summary><div class="sfb" id="achBox"></div></details>
     </section>
 
     <!-- MARKET -->
