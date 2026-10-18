@@ -1,7 +1,8 @@
 /* ---- drag pass driver ---- */
 let DR=null;
 /* bolt-on wheelie bars: only for bodies that do not already have them; ~14 kg on the tail */
-const WBAR_KG=14;function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&!(SIM.AERO[e.body||"street"]||{}).bars;}
+const WBAR_KG=14,WBAR_COST=1500;function wbarOwned(){return !career()||!!C().wbarOwn;}   // career: paid once (C().wbarOwn), then re-fitted free; sandbox free
+function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&wbarOwned()&&!(SIM.AERO[e.body||"street"]||{}).bars;}
 function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass+(wbarOn(e)?WBAR_KG:0),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
@@ -638,7 +639,7 @@ function pitsSync(){if(!ENGINE_VIS.setPits)return;let ov=$("pitsOv");
   ov.hidden=false;$("app").classList.add("pits");
   const np=(N.passes||[]).length;if(np!==pitsPass.n){pitsPass={n:np,t:pitsPass.n>=0&&np>0?Date.now():0};}   // just off the strip: hot tyres
   const veh=rnVeh(dragVeh());
-  ENGINE_VIS.setPits({on:true,body:N.body,color:carPaint(),hw:stripHw(S.cfg),tyreIn:veh.tyreDia,nightK:rnNightK(N.stage),
+  ENGINE_VIS.setPits({on:true,body:N.body,color:carPaint(),hw:stripHw(S.cfg),tyreIn:veh.tyreDia,wbar:wbarOn({wbar:S.env.wbar,body:N.body}),nightK:rnNightK(N.stage),
     heat:pitsPass.t?Math.max(0,1-(Date.now()-pitsPass.t)/90000):0,poke:pitsPokeK});pitsPokeK=null;
   const T=pitsTags();if(pitsSel&&!T.some(x=>x.k===pitsSel))pitsSel=null;
   const key=JSON.stringify(T.map(x=>[x.k,x.v]))+"|"+pitsSel+"|"+N.stage+"|"+((T.find(x=>x.k===pitsSel)||{}).wi?$("envBox").querySelector('[data-rn="freshen"]')?1:0:"");
