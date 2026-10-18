@@ -111,3 +111,116 @@ function engineDetail(B, c, mc){
   engBolts(B, c);
   setZone(0);
 }
+
+/* ===========================================================================
+   7g2. TWO-STROKE DIESEL DETAIL, round 7 (Full / Ultra): the old Detroit uniflow (6-71, 8V-92) and the Deltic never went
+   through buildEngine's front-drive / harness path, so none of the round-5 hardware reached them. They have no throttle body,
+   no MAP sensor and no valve-cover wiring; what they do have is air-box hand-hole covers, a bolted rocker cover, exhaust
+   manifold flanges, a bolted blower, a front damper, a fuel manifold with a filter and a spin-on oil filter. Every piece is
+   merged into an existing bucket or is instanced hardware. Lite (DET 0) never calls any of it.
+   ==========================================================================*/
+/* a hand-hole cover (plate + four bolts) on an outboard face of a bank (local frame: x along the bank, z out) */
+function tsHandhole(B, x, y, z, side, w, h, bore){
+  var sx, sy;
+  B.add("steel", RBOX(w, h, bore*0.03, 0.012), x, y, z+side*bore*0.015);
+  for(sx=-1;sx<=1;sx+=2) for(sy=-1;sy<=1;sy+=2) B.hw("hex", x+sx*w*0.38, y+sy*h*0.36, z+side*bore*0.035, side>0?PI/2:-PI/2,0,0, bore*0.07);
+}
+/* one Detroit bank, in the bank's own frame (called inside buildTwoStrokeMesh's bank loop, uniflow only) */
+function tsDetroitBank(B, o){
+  var b=o.bore, i, x, sg, ful=DET>=2, zs=o.zs, yc=(o.bdc+o.trTop)*0.5, h=Math.max(b*0.40, (o.trTop-o.bdc)*0.62), rx=zs>0?PI/2:-PI/2;
+  /* air-box hand-hole covers on the outboard face */
+  setZone(2);
+  for(i=0;i<o.per;i++) tsHandhole(B, o.cx(i), yc, zs*b*0.81, zs, b*0.86, h, b);
+  /* rocker-cover lip with a hold-down bolt a side per cylinder (two on Ultra), and the oil filler */
+  setZone(3);
+  var yl=o.y1+b*0.555;
+  B.add("steel", BOX(o.bankLen*0.95, b*0.035, b*1.40), 0, yl, 0);
+  for(i=0;i<o.per;i++){ x=o.cx(i);
+    for(sg=-1;sg<=1;sg+=2){
+      B.hw("hex", x, yl+b*0.02, sg*b*0.66, 0,0,0, b*0.08);
+      if(ful) B.hw("hex", x+o.bspace*0.30, yl+b*0.02, sg*b*0.66, 0,0,0, b*0.08);
+    }
+  }
+  B.add("steel", CYL(b*0.13, b*0.13, b*0.09, 14), o.cx(0)-o.bspace*0.20, o.y1+b*0.995, 0);
+  B.add("dark", CYL(b*0.09, b*0.09, b*0.07, 12), o.cx(0)-o.bspace*0.20, o.y1+b*1.06, 0);
+  /* exhaust-manifold flanges: a plate at each head port with a bolt above and below the pipe */
+  setZone(4);
+  var ye=o.y1+b*0.22, ze=zs*b*1.0;
+  for(i=0;i<o.per;i++){ x=o.cx(i);
+    B.add("steel", BOX(b*0.70, b*0.80, b*0.05), x, ye, ze);
+    for(sg=-1;sg<=1;sg+=2){ B.hw("hex", x-b*0.20, ye+sg*b*0.37, ze+zs*b*0.03, rx,0,0, b*0.07); B.hw("hex", x+b*0.20, ye+sg*b*0.37, ze+zs*b*0.03, rx,0,0, b*0.07); }
+  }
+  /* fuel manifold along the cover side of the head (an inline: a vee's faces the valley) with a union per injector */
+  if(!o.vee){
+    setZone(3);
+    var yf=o.y1+b*0.30, zf=-zs*b*0.82;
+    B.add("steel", CYL(b*0.055, b*0.055, o.bankLen*0.95, 10), 0, yf, zf, 0,0,PI/2);
+    for(i=0;i<o.per;i++) B.add("brass", BOX(b*0.16, b*0.15, b*0.14), o.cx(i), yf, zf+zs*b*0.04);
+  }
+  setZone(0);
+}
+/* front end and side hardware of a Detroit, in engine space (an inline gets the fuel filter and its hose as well) */
+function tsDetroitFront(B, extras, o){
+  var b=o.bore, j, ful=DET>=2, xF=o.bankLen*0.5+b*0.15, dR=o.caseR*0.60;
+  setZone(1);
+  B.add("calu", RBOX(b*0.22, o.caseR*1.9, o.caseW*0.98, 0.03), xF+b*0.11, -o.caseR*0.05, 0);          /* front cover */
+  B.add("steel", CYL(dR, dR, b*0.20, 28, false, 1.6), xF+b*0.32, 0, 0, 0,0,PI/2);                      /* viscous damper */
+  B.add("dark", CYL(dR*0.70, dR*0.70, b*0.12, 24, false, 1.6), xF+b*0.48, 0, 0, 0,0,PI/2);             /* belt pulley */
+  B.add("steel", CYL(b*0.16, b*0.14, b*0.16, 12), xF+b*0.62, 0, 0, 0,0,PI/2);                           /* crank nose */
+  for(j=0;j<6;j++){ var fa=j/6*TAU; B.hw("pbolt", xF+b*0.42, Math.cos(fa)*dR*0.84, Math.sin(fa)*dR*0.84, 0,0,0, b*0.09); }
+  /* spin-on oil filter on the exhaust side low down, with a pair of lines to the block */
+  setZone(2);
+  var fz=o.caseW*0.5+b*0.42, fy=-o.caseR*0.15, fx=o.bankLen*0.28;
+  B.add("calu", RBOX(b*0.70, b*0.30, b*0.40, 0.03), fx, fy+b*0.52, fz-b*0.20);
+  B.add("dark", CYL(b*0.30, b*0.30, b*0.88, 20, false, 1.6), fx, fy, fz);
+  B.add("steel", CYL(b*0.31, b*0.31, b*0.05, 20), fx, fy-b*0.44, fz);
+  extras.push(hoseMesh([V3(fx+b*0.22, fy+b*0.64, fz-b*0.20), V3(fx+b*0.22, fy+b*0.84, fz-b*0.34), V3(fx+b*0.22, fy+b*0.62, o.caseW*0.5)], b*0.045, MAT.steel));
+  extras.push(hoseMesh([V3(fx-b*0.22, fy+b*0.64, fz-b*0.20), V3(fx-b*0.22, fy+b*0.88, fz-b*0.34), V3(fx-b*0.22, fy+b*0.64, o.caseW*0.5)], b*0.045, MAT.steel));
+  /* fuel filter at the front end of the head, fed from the manifold by a clamped hose (inline only) */
+  if(!o.vee){
+    setZone(3);
+    var yf=o.y1+b*0.30, zf=-b*0.82, qx=xF+b*0.30, qy=o.y1+b*0.12, qz=zf-b*0.12;
+    B.add("dark", CYL(b*0.20, b*0.20, b*0.70, 18, false, 1.6), qx, qy, qz);
+    B.add("calu", CYL(b*0.22, b*0.22, b*0.08, 18), qx, qy+b*0.38, qz);
+    B.add("brass", CYL(b*0.06, b*0.06, b*0.12, 10), qx, qy+b*0.46, qz);
+    extras.push(hoseMesh([V3(o.bankLen*0.475, yf, zf), V3(o.bankLen*0.5+b*0.12, yf+b*0.10, zf), V3(qx-b*0.12, qy+b*0.50, qz+b*0.02), V3(qx, qy+b*0.50, qz)], b*0.05));
+  }
+  setZone(0);
+}
+/* the blower's end-plate bolts and inlet collar bolts (a Detroit's, in engine space) */
+function tsBlowerBolts(B, bLen, bY, bZ, bH, bW, bore, zin){
+  var k, j, sz, fa;
+  setZone(5);
+  for(k=-1;k<=1;k+=2) for(j=-1;j<=1;j++) for(sz=-1;sz<=1;sz+=2)
+    B.hw("hex", k*(bLen/2+bore*0.18), bY+j*bH*0.36, bZ+sz*bW*0.40, 0,0,k>0?-PI/2:PI/2, bore*0.08);
+  for(j=0;j<6;j++){ fa=j/6*TAU; B.hw("hex", zin.x+Math.cos(fa)*bore*0.40, zin.y, bZ+Math.sin(fa)*bore*0.40, 0,0,0, bore*0.07); }
+  setZone(0);
+}
+/* the Deltic: one bank (local frame, outZ faces away from the triangle's centre) */
+function tsDelticBank(B, o){
+  var b=o.bore, i, x, sg, zo=o.outZ, rx=zo>0?PI/2:-PI/2;
+  setZone(4);
+  for(i=0;i<o.nC;i++){ x=-o.bankLen/2+o.bspace*(i+0.5);
+    B.add("steel", BOX(b*0.62, b*0.80, b*0.05), x, o.half*0.30, zo*b*0.97);
+    for(sg=-1;sg<=1;sg+=2){ B.hw("hex", x-b*0.18, o.half*0.30+sg*b*0.38, zo*b*1.0, rx,0,0, b*0.07); B.hw("hex", x+b*0.18, o.half*0.30+sg*b*0.38, zo*b*1.0, rx,0,0, b*0.07); }
+  }
+  setZone(2);
+  for(i=0;i<o.nC;i++) tsHandhole(B, -o.bankLen/2+o.bspace*(i+0.5), -o.half*0.28, zo*b*0.775, zo, b*0.80, b*0.50, b);
+  setZone(0);
+}
+/* the Deltic: blower casing bolts, the corner crank end caps, and an inspection plate on the phasing-gear case */
+function tsDelticEnds(B, o){
+  var b=o.bore, i, j, fa, x1=o.bankLen*0.5+b*1.2;
+  setZone(5);
+  for(j=0;j<12;j++){ fa=j/12*TAU; B.hw("hex", x1, Math.cos(fa)*o.Rt*0.66, Math.sin(fa)*o.Rt*0.66, 0,0,-PI/2, b*0.10); }
+  setZone(1);
+  for(i=0;i<3;i++){
+    var c=o.corners[i], xe=o.bankLen*0.5+b*0.17;
+    B.add("steel", CYL(o.caseR*0.80, o.caseR*0.80, b*0.05, 24), xe, c.y, c.z, 0,0,PI/2);
+    for(j=0;j<6;j++){ fa=j/6*TAU; B.hw("hex", xe+b*0.03, c.y+Math.cos(fa)*o.caseR*0.62, c.z+Math.sin(fa)*o.caseR*0.62, 0,0,-PI/2, b*0.09); }
+  }
+  var xg=-o.bankLen*0.5-b*0.99;
+  B.add("calu", CYL(b*0.60, b*0.60, b*0.06, 24), xg, 0, 0, 0,0,PI/2);
+  for(j=0;j<8;j++){ fa=j/8*TAU; B.hw("hex", xg-b*0.04, Math.cos(fa)*b*0.46, Math.sin(fa)*b*0.46, 0,0,PI/2, b*0.09); }
+  setZone(0);
+}
