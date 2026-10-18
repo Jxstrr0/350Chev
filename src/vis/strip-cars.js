@@ -98,11 +98,11 @@ function stripCarAnim(car, o, dt, isPlayer){
   var wt=me.wrinkle*clamp((acc-4)/12,0,1)*clamp(1-v/16,0,1);
   if(burn) wt=Math.max(wt, me.wrinkle*0.35);
   var n=Math.min(12, Math.ceil(dt/0.012)), h=n?dt/n:0, s;
-  var ptT=0, pitchMax=me.maxPitch;
+  var ptT=0, pitchMax=U.wbar?U.maxPitch:me.maxPitch;
   var lift=isPlayer ? (o.lift||0) : (o.olift!==undefined ? o.olift : clamp((acc-12)/18,0,1)*0.6);
   var onBars=isPlayer ? !!o.onBars : !!o.oOnBars;
   ptT=clamp(lift,0,1)*pitchMax;
-  if(me.bars && onBars) ptT=pitchMax;
+  if((me.bars||U.wbar) && onBars) ptT=pitchMax;
   ptT += clamp(acc/25,-0.5,1)*me.squat;
   var sh=isPlayer ? !!o.shifting : !!o.oshifting;
   if(sh && !A.shifting) A.pv -= me.shiftKick;
@@ -114,7 +114,7 @@ function stripCarAnim(car, o, dt, isPlayer){
     A.sqv += (om2*om2*(wt-A.sq) - 2*ze2*om2*A.sqv)*h; A.sq += A.sqv*h;
   }
   if(A.pitch>pitchMax+0.02) { A.pitch=pitchMax+0.02; if(A.pv>0) A.pv=0; }
-  if(me.bars && A.pitch>pitchMax){ A.pitch=pitchMax; if(A.pv>0) A.pv*=-0.25; }
+  if((me.bars||U.wbar) && A.pitch>pitchMax){ A.pitch=pitchMax; if(A.pv>0) A.pv*=-0.25; }
   if(A.pitch<-0.035){ A.pitch=-0.035; if(A.pv<0) A.pv=0; }
   var sq=clamp(A.sq,-0.4,1.2);
   A.roll += (clamp(acc/30,-0.3,1)*0.010 - A.roll)*Math.min(1,dt*6);
@@ -500,6 +500,23 @@ function sc_foil(chord, thick, span, b){
   for(i=N-1;i>0;i--){ u=(1-Math.cos(PI*i/N))/2; yt=5*thick*(0.2969*Math.sqrt(u)-0.126*u-0.3516*u*u+0.2843*u*u*u-0.1036*u*u*u*u); pts.push([chord/2-u*chord, yt*0.55+0.02*chord*Math.sin(PI*u)]); }
   pts.reverse();
   return sc_prof(pts, span, SC.lite?0:(b||0.004));
+}
+/* r6: bolt-on wheelie bars for a shell that has none (drag setup). A handful of rods + two skid wheels on the body frame;
+   U.wbar makes the pitch code treat it like a bars body (lower pitch stop, rides the bars). Same look as the factory bars above. */
+function stripAddBars(car){
+  var U=car.userData, me=U.meta, inner=U.bodyGroup.children[0], M=sc_mats(), br=0.065, maxP=deg(5);
+  var bb=new THREE.Box3().setFromObject(car), cs=U.chute; if(cs&&cs.parent===car) bb.expandByObject(cs);
+  var bx0=me.xr-0.05, bx1=Math.min(bb.min.x-0.12, me.xr-1.15), rr=me.rr, dxB=bx1-me.xr, cy=(br-rr-dxB*Math.sin(maxP))/Math.cos(maxP)+rr;
+  var g=new THREE.Group(); g.name="sc_wbar";
+  function add(geo, mat, m){ var me2=new THREE.Mesh(geo, mat); me2.applyMatrix4(m); me2.matrixAutoUpdate=false; me2.castShadow=true; g.add(me2); }
+  [-1,1].forEach(function(sd){
+    var a=new THREE.Vector3(bx0, 0.3, sd*0.36), b=new THREE.Vector3(bx1, cy, sd*0.3);
+    add(sc_cyl(0.022,8), M.tube, sc_rodM(a,b));
+    add(sc_cyl(0.014,6), M.tube, sc_rodM(new THREE.Vector3(bx0, 0.46, sd*0.36), b));
+    add(new THREE.CylinderGeometry(br,br,0.045,SC.lite?8:14), M.rubber, sc_M(bx1, cy, sd*0.3, PI/2,0,0));
+  });
+  add(sc_cyl(0.018,8), M.tube, sc_rodM(new THREE.Vector3(bx1+0.05, cy, -0.3), new THREE.Vector3(bx1+0.05, cy, 0.3)));
+  inner.add(g); U.wbar=true; U.maxPitch=Math.min(me.maxPitch, maxP);
 }
 function sc_rodM(a, b){ /* matrix mapping a unit Y cylinder (centre origin, h=1) onto segment a->b */
   var d=new THREE.Vector3().subVectors(b,a), L=d.length(), q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), d.clone().normalize());
