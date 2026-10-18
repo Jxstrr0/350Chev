@@ -126,7 +126,7 @@ function phHook(){
 }
 function phUnhook(){ if(!PH.rr) return; renderer.render=PH.rr; PH.rr=null; }   /* r128 keeps render as an own method of the instance */
 
-function phSizeTo(w, h, pr){
+function phSizeTo(w, h, pr){ RSZ.k="";
   renderer.setPixelRatio(pr); renderer.setSize(w, h, false);
   if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
   camera.aspect=w/h; camera.updateProjectionMatrix();
