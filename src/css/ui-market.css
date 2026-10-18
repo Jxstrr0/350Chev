@@ -53,3 +53,12 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
 @media (min-width:1100px){
   html.desk[data-tab=market] :is(#rlHead,.rlchart,#rlV,#rlD,#rlDyno){display:none}
 }
+/* rival board (app/rivals.js): a trend arrow by each rep, the last head-to-head under the name, an open challenge marked on its row; every line ellipsises, so a row stays one row at 390 */
+.rvrow{grid-template-columns:24px minmax(0,1fr) auto;gap:8px;padding:8px 12px}
+.rvrow .rvnm i.rvh{font-size:12px;color:var(--muted)}
+.rvrow .rvp{display:flex;align-items:baseline;gap:5px;justify-content:flex-end}
+.rvrow .rvt{font-style:normal;font-family:var(--body);font-size:11px;font-weight:600;line-height:1;min-width:12px;text-align:center;color:var(--dim)}
+.rvrow .rvt.up{color:var(--good)}.rvrow .rvt.dn{color:var(--crit)}
+.rvrow.pend{box-shadow:inset 3px 0 0 var(--warn)}
+.rvrow.pend .rvh{color:var(--chalk)}
+.rvchip{display:inline-block;margin-right:6px;padding:2px 7px;font-size:11px;vertical-align:1px;color:var(--warn)}
