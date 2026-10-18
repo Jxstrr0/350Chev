@@ -42,6 +42,7 @@ html.onevent #hud{background:none}
 html.onevent #hud .brand,html.onevent #hud .right,html.onevent .hudbtns{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility 0s .2s}
 #stripCap{position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:3;display:flex;align-items:center;gap:10px;pointer-events:none;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em}
 #stripCap[hidden]{display:none}
+html[data-tab=shop] #stripCap,html[data-tab=market] #stripCap,html[data-tab=analysis] #stripCap{display:none}   /* a replay still running behind a menu tab: its caption would sit on the shop name */
 #stripCap b{font-size:13px;font-weight:700;color:#fff;background:#d42b20;padding:5px 10px 5px 22px;border-radius:3px;position:relative;line-height:1}
 #stripCap b::before{content:"";position:absolute;left:9px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:#fff;animation:lamp 1s infinite}
 #stripCap span{font-size:12px;font-weight:600;color:#faf9f5;text-shadow:0 1px 3px rgba(0,0,0,.8)}
@@ -74,8 +75,8 @@ html.desk #stripCap{left:18px;top:16px}
 @media (max-width:374px){#hud .brand{font-size:14px}}
 /* engine card: the one object that represents "this engine" everywhere */
 .ecard{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:rgba(20,20,19,.72);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 10px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.ecard .nm{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.03em;line-height:1.05;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
-.ecard .nm input{font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px dashed var(--dim);padding:0;min-width:0;width:100%}
+.ecard .nm{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.03em;line-height:1.05;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;min-width:0}
+.ecard .nm input{font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px dashed var(--dim);padding:0;min-width:0;width:100%;text-overflow:ellipsis}
 .ecard .badge{--lc:var(--dim);font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.06em;padding:3px 8px 3px 6px;border-radius:12px;border:1px solid var(--lc);color:var(--lc);white-space:nowrap;justify-self:end;display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.25);box-shadow:0 0 10px -2px var(--lc)}
 .ecard .badge::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--lc);box-shadow:0 0 6px var(--lc),0 0 12px var(--lc)}
 .ecard .badge.ok{--lc:var(--good)}.ecard .badge.bad{--lc:var(--crit)}.ecard .badge.bad::before{animation:lamp 1s infinite}.ecard .badge.fld{--lc:var(--info)}
