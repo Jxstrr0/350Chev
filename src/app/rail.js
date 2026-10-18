@@ -65,6 +65,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
   $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
+  toastPlace();
 }
 /* Run: the same run Test arms. An event type opens Events first (its launch control lives there). */
 function railDynoT(){return DYNO_T.includes(S.testPick)?S.testPick:"pull";}
