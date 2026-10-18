@@ -21769,8 +21769,10 @@ function pitsProps(car){
     B.add("metal","cone",[sx, 0.16, sz],[0.42,0.32,0.42],STAND,[0,PI/4,0]); B.add("metal","cyl",[sx, (0.3+top)/2, sz],[0.055,top-0.3+0.04,0.055],0xb9bec4);
     B.box("metal", sx, top-0.015, sz, 0.16, 0.03, 0.1, STAND); B.box("solid", sx, 0.014, sz, 0.5, 0.004, 0.5, 0x161719); } });
   /* floor jack behind the car, handle up */
-  B.box("metal", x0-0.55, 0.09, 0.15, 0.9, 0.12, 0.34, RED); B.add("metal","cyl",[x0-1.2, 0.55, 0.15],[0.05,1.1,0.05],0x9a9ea4,[0,0,0.9]);
-  for(k=0;k<4;k++) B.add("solid","cyl",[x0-0.2-(k>>1)*0.7, 0.05, 0.15+((k&1)?0.16:-0.16)],[0.1,0.05,0.1],0x111111,[PI/2,0,0]);
+  /* r8: well back and to the far side, so it no longer sits in the line of sight to the wheelie bars (x0 already includes the bars) */
+  var jx=x0-1.5, jz=-0.55;
+  B.box("metal", jx-0.35, 0.09, jz, 0.9, 0.12, 0.34, RED); B.add("metal","cyl",[jx-1.0, 0.55, jz],[0.05,1.1,0.05],0x9a9ea4,[0,0,0.9]);
+  for(k=0;k<4;k++) B.add("solid","cyl",[jx-0.0-(k>>1)*0.7, 0.05, jz+((k&1)?0.16:-0.16)],[0.1,0.05,0.1],0x111111,[PI/2,0,0]);
   /* tool cart: red, drawers, a tray of tools, on casters */
   var cx=x0-1.55, cz=1.55;
   B.box("metal", cx, 0.62, cz, 1.05, 0.95, 0.55, RED); B.box("metal", cx, 1.11, cz, 1.09, 0.04, 0.59, 0x8d9298);
@@ -21788,18 +21790,19 @@ function pitsProps(car){
   pitsBuild(B, "solid", M.solid, true, G); pitsBuild(B, "metal", M.metal, true, G); pitsBuild(B, "glow", M.glow, false, G);
   PITS.spot.position.set(wx-0.1, 1.95, wz-0.05); PITS.spot.target.position.set((x0+x1)/2-0.4, 0.4, 0); PITS.spot.target.updateMatrixWorld();
   /* crew: one on the rear tyre with the gauge, one leaning into the engine bay */
-  var A=pitsPerson(0xe5562b, "kneel"); A.position.set(rearX+0.05, 0, rearZ+F.tw*0.5+0.62); A.rotation.y=0.12; G.add(A); A.userData.key="psi";
+  var A=pitsPerson(0xe5562b, "kneel"); A.position.set(rearX+0.05, 0, -(rearZ+F.tw*0.5+0.62)); A.rotation.y=PI+0.12;   /* r8: far side of the rear tyre: on the near side he stood in front of the rear wheel and the bars */
+   G.add(A); A.userData.key="psi";
   var eng=u._eng.clone(); eng.x+=ox; var Bm=pitsPerson(0x22262c, "lean"); G.add(Bm); Bm.userData.key="launch";
-  if(u.body==="rail"){ Bm.position.set(eng.x, 0, hw+0.42); Bm.rotation.y=-0.08; } else { Bm.position.set(x1+0.42, 0, 0.3); Bm.rotation.y=PI/2; }   /* over the motor: alongside a rail, over the nose of a car */
+  if(u.body==="rail"){ Bm.position.set(eng.x, 0, -(hw+0.42)); Bm.rotation.y=PI-0.08; } else { Bm.position.set(x1+0.42, 0, 0.3); Bm.rotation.y=PI/2; }   /* over the motor: alongside a rail, over the nose of a car */
   PITS.crew=[A, Bm];
 }
 /* fixed camera: front three-quarter from the near side, fitted to the car and the props around it; room left for the header */
 function pitsFrame(){
   var cam=PITS.cam, F=PITS.fit, el=renderer.domElement, w=el.clientWidth||400, h=el.clientHeight||300, asp=w/Math.max(1,h);
   var small=h<520, vf=asp<0.9?50:asp>1.9?30:asp>1.4?36:42; cam.fov=vf; cam.aspect=asp;   /* small: the phone view, where the header covers the top third */
-  var tv=Math.tan(vf*PI/360), th=tv*asp, halfW=(F.x1-F.x0)*0.5+(small?0.8:1.2), halfH=small?1.05:1.3;
+  var tv=Math.tan(vf*PI/360), th=tv*asp, xe=Math.min(F.x1, F.x0+(small?5.4:6.2)), halfW=(xe-F.x0)*0.5+(small?0.8:1.2), halfH=small?1.05:1.3;
   var d=Math.max(halfW/th, halfH/tv)+1.0;
-  var tx=(F.x0+F.x1)/2-(small?0.25:0.5), tgt=_ptA.set(tx, 0.8+(small?0.2:0.05)*d*tv, 0.35), dir=_ptB.set(0.34,small?0.13:0.17,0.93).normalize();
+  var tx=(F.x0+xe)/2-(small?0.25:0.5), tgt=_ptA.set(tx, 0.8+(small?0.2:0.05)*d*tv, 0.35), dir=_ptB.set(0.2,small?0.16:0.21,0.93).normalize();   /* r8: a touch more side-on and higher: the rear corner and bars read */
   cam.position.copy(tgt).addScaledVector(dir, d); cam.lookAt(tgt); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
   PITS.fitKey=w+"x"+h;
 }
