@@ -1,0 +1,55 @@
+/* Market tab: a slim strip (engine, cert, board, Close week), Jobs | Sponsors & Rivals | Shop tabs, short contract cards (app/career.js) */
+.mkstrip{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.mks{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:3px 8px}
+.mks b{flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--display);font-size:15px;line-height:1.2}
+.mkc{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 8px;border:1px solid currentColor;border-radius:10px;white-space:nowrap;color:var(--dim)}
+.mkc.ok{color:var(--good)}.mkc.bad{color:var(--crit)}.mkc.none{color:var(--warn)}.mkc.bay{color:var(--info)}
+.mkb{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.mkstrip #nextWeek{flex:0 0 auto;width:auto;min-height:44px;padding:8px 16px;white-space:nowrap}
+.mkoh{flex:0 0 auto;position:relative;width:28px;height:28px;border:1px solid var(--rule);border-radius:50%;font-family:Georgia,serif;font-style:italic;font-size:14px;line-height:1;color:var(--muted)}
+.mkoh::after{content:"";position:absolute;inset:-8px}
+.mkoh[aria-expanded=true]{border-color:var(--orange);color:var(--orange2)}
+.mkhint{margin:-2px 0 8px;font-size:13px}
+.mktabs{margin:0 0 10px}
+.mktabs.seg button{flex:1 1 0%}
+.mktabs.seg button[data-mk=spons]{flex:1.9 1 0%}
+.mktabs button{padding-left:4px;padding-right:4px;font-size:13.5px}
+.mktabs .evdot{right:9px;top:9px}
+.mktabs button{white-space:nowrap}
+#marketBox:not([data-mk=jobs]) #mkJobs,#marketBox:not([data-mk=spons]) #mkSpons,#marketBox:not([data-mk=shop]) #mkShop{display:none}
+.mkline{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0 0 10px;font-size:12px;color:var(--muted)}
+.mkline b{font-weight:600;color:var(--chalk)}.mkline b.warnc{color:var(--warn)}
+#mkSpons .sec{margin-top:0}
+#sponHint{margin-top:-4px}
+/* the short contract card: name and deadline, only what fails, profit and the one button; the full brief behind the (i) */
+.card.cc{padding:10px 12px;margin-bottom:8px}
+.cc .cch{display:flex;align-items:flex-start;gap:8px}
+.card.cc h3{display:block;flex:1 1 auto;min-width:0;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cci{flex:0 0 auto;position:relative;width:28px;height:28px;margin:-1px -2px 0 0;border:1px solid var(--rule);border-radius:50%;font-family:Georgia,serif;font-style:italic;font-size:14px;line-height:1;color:var(--muted)}
+.cci::after{content:"";position:absolute;inset:-8px}
+.cci[aria-expanded=true]{border-color:var(--orange);color:var(--orange2)}
+.cc .ccm{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;margin:1px 0 4px;font-size:12px;color:var(--muted)}
+.cc .ccm>span{white-space:nowrap}
+.cc .ccm .client{margin:0;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.cc .cs.ok{color:var(--good)}.cc .cs.off{color:var(--warn)}
+.cc .cfq{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:2px 0 6px}
+.fq{font-size:12px;line-height:1.3;color:var(--crit);background:var(--soot);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.fq::before{content:"\2717 "}
+.fq b{font-weight:500}.fq i{font-style:normal;color:var(--dim);margin-left:5px}
+button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content:""}
+.cfix{font-size:12px;color:var(--muted)}.cfix b{font-weight:500;color:var(--chalk)}
+.cc .cstat.brk{margin:2px 0 6px;font-size:12px;padding:4px 8px}
+.cc .cact{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;margin-top:6px}
+.cmon b{display:block;font-family:var(--display);font-size:18px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.cmon b.pos{color:var(--good)}.cmon b.neg{color:var(--crit)}
+.cmon span{display:block;font-size:12px;color:var(--muted);white-space:nowrap}
+.cc .cact .btn{min-height:44px;padding:6px 10px;font-size:14px;line-height:1.15;text-align:center}
+.cdet{margin-top:10px;padding-top:8px;border-top:1px solid var(--rule)}
+.cdet .cmeta{margin:0 0 6px;font-size:12px;color:var(--muted)}
+.cdet .cnote{margin:0 0 8px}
+.cdet .money{margin-bottom:8px}.cdet .reqs{margin-bottom:6px}
+.cc.cx{border-color:var(--steel)}
+/* desktop, three columns: the rail's dyno panel (Run, peaks, curve, stress) has no place beside the Market; contract progress stays */
+@media (min-width:1100px){
+  html.desk[data-tab=market] :is(#rlHead,.rlchart,#rlV,#rlD,#rlDyno){display:none}
+}
