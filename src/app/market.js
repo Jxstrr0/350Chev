@@ -145,11 +145,11 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   if(dsl)sl.push(["lambda",0.1,"lean the full-load λ 0.1"],["lambda",-0.1,"richen the full-load λ 0.1"],["timing",-2,"retard the injection 2°"]);
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
-function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]&&!/^bay[34]$/.test(u.id)?u.price:0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
+function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]&&!/^bay[34]$/.test(u.id)?u.price*(u.oh||1):0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
 function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
   if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
-function prestigePass(){let rp=0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
+function prestigePass(){let rp=has("hall")&&career()?5:0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
 function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}if(ok){C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=10;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus, +10 rep`,"good");hit.push(g);}}
   if(hit.length){toastAfter(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}return hit.length;}
