@@ -83,9 +83,13 @@ const ENGINE_VIS = {
     var w = host? host.clientWidth : canvasEl.clientWidth;
     var h = host? host.clientHeight : canvasEl.clientHeight;
     if(!w||!h){ w=canvasEl.clientWidth||400; h=canvasEl.clientHeight||340; }
-    renderer.setPixelRatio(ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5)));
-    renderer.setSize(w, h, false);
-    if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
+    var pr=ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5)), rk=w+"x"+h+"@"+pr+(composer?composer.userData_tier+(composer.aoPass?"a":""):"-");
+    if(RSZ.k!==rk){   /* same size, ratio and passes as last time: the buffers are already right (a tab swap that doesn't move the view costs nothing) */
+      RSZ.k=rk;
+      renderer.setPixelRatio(pr);
+      renderer.setSize(w, h, false);
+      if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
+    }
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
     if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; stripBandRead(); }
