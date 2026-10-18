@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.76.0.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.76.1.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -7217,8 +7217,8 @@ const ENGINE_SIM = (function () {
       const lift = F * v.cgH / (v.mass * g * v.wheelbase * Math.max(0.05, 1 - v.rearBias)) * tuneLift(st.t);
       st.lift = clamp(lift, 0, 1); st.liftMax = Math.max(st.liftMax, lift); st.onBars = false;
       if (lift >= 1 && st.v < 60) {
-        if (BODY.bars || v.wbar) { st.onBars = true; F *= 1 - Math.min(0.04, (lift - 1) * 0.03); }
-        else { st.wheelieT += dt; F *= 0.9; }            // no bars: the driver has to pedal it to keep it straight
+        if (BODY.bars || v.wbar) st.onBars = true;   // the bars take the pitch and the car keeps driving
+        else { st.wheelieT += dt; F *= 1 - Math.min(0.3, 0.1 + 0.25 * (lift - 1)); }   // no bars: the higher the nose, the more drive the driver has to pedal off to keep it straight
       }
       const Fres = 0.5 * rho * cdA0 * st.v * st.v + crr * v.mass * g;
       acc = (F - Fres) / v.mass;
@@ -7323,7 +7323,7 @@ const ENGINE_SIM = (function () {
       if (st.spinTime > 0.25) reasons.push(`Wheelspin for ${st.spinTime.toFixed(1)} s — ${TY.n.toLowerCase()}s can only plant about ${Math.round(Fmax0() / 1000)} kN. Softer tyre, taller first gear, more rear weight, or a lower launch rpm.`);
       if ((st.shakeT || 0) > 0.1) reasons.push(`Tyre shake for ${st.shakeT.toFixed(1)} s — ${v.tyrePsi} psi is too soft for ${TY.n.toLowerCase()}s (they're set up around ${psiNom}); the sidewall winds up and lets go. A pound or two more.`);
       if (st.bog) reasons.push(`Bogged off the line — rpm fell to ${Math.round(st.minRpm)}. Launch higher or shorten first gear.`);
-      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — ${v.body === "gasser" ? "a gasser has no wheelie bars" : "a street shell has no wheelie bars"}, so the driver had to pedal it straight. Bolt on wheelie bars in the drag setup (about 14 kg), take some rear weight bias off, or pick a body with bars.`);
+      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — ${v.body === "gasser" ? "a gasser has no wheelie bars" : "a street shell has no wheelie bars"}, so the driver had to pedal it straight. Bolt on wheelie bars in the drag setup (about 10 kg), take some rear weight bias off, or pick a body with bars.`);
       if (st.limiterTime > 0.3) reasons.push(`${st.limiterTime.toFixed(1)} s on the rev limiter. Shift sooner or lengthen the gearing.`);
       if (st.overrev > 1.06) reasons.push(`Over-revved to ${Math.round(st.overrev * v.redline).toLocaleString()} rpm on a shift.`);
       const late = st.shifts.filter(x => x.rpm < res.peakHpRpm * 0.92);
@@ -29607,7 +29607,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.0.0";
+const VERSION="1.76.1.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -30258,7 +30258,7 @@ function renderEnv(){
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>${drvHtml()}
     <div class="lbl"><span>Body &amp; aero</span></div><div class="seg segbody">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div><div class="segbodynote">${(SIM.AERO[e.body]||{}).d||""}</div>${paintHtml()}${shellHtml()}
-    ${(SIM.AERO[e.body||"street"]||{}).bars?"":`<div class="lbl"><span>Wheelie bars</span></div><div class="seg">${[["no","Not fitted","the nose may come up"],["yes","Bolt-on bars",`+14 kg · rides the bars, no DQ${career()?(wbarOwned()?" · owned":" · "+fmt$(WBAR_COST)):""}`]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="wbar" class="${(e.wbar||"no")===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
+    ${(SIM.AERO[e.body||"street"]||{}).bars?"":`<div class="lbl"><span>Wheelie bars</span></div><div class="seg">${[["no","Not fitted","the nose may come up"],["yes","Bolt-on bars",`+10 kg · rides the bars, no DQ${career()?(wbarOwned()?" · owned":" · "+fmt$(WBAR_COST)):""}`]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="wbar" class="${(e.wbar||"no")===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Parachute</span></div><div class="seg">${[["no","Not fitted","brakes only"],["yes","Fitted","required over 150 mph"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="chute" class="${e.chute===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
     ${RN_FMT[S.env.dragFmt]?"":`<div class="lbl"><span>Other lane</span></div><div class="seg">${[["solo","Time trial","just you and the clocks"],["heads","Heads-up race","tree, reaction time, a rival"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="race" class="${e.race===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`}
     <div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts near redline"],["manual","Manual","tap SHIFT — miss it and over-rev"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="shiftMode" class="${e.shiftMode===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>
@@ -30733,8 +30733,8 @@ $("mapBox").addEventListener("wheel",e=>{const td=e.target.closest&&e.target.clo
 function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.abs(d)<0.5)return"";return `<span class="delta ${d>0?"up":"dn"}">${d>0?"+":""}${f(d)}</span>`;}
 /* ---- drag pass driver ---- */
 let DR=null;
-/* bolt-on wheelie bars: only for bodies that do not already have them; ~14 kg on the tail */
-const WBAR_KG=14,WBAR_COST=1500;function wbarOwned(){if(career()&&!C().wbarOwn&&S.env&&S.env.wbar==="yes")C().wbarOwn=1;return !career()||!!C().wbarOwn;}   // career: paid once (C().wbarOwn), then re-fitted free; sandbox free; saves fitted before the price keep theirs
+/* bolt-on wheelie bars: only for bodies that do not already have them; ~10 kg on the tail */
+const WBAR_KG=10,WBAR_COST=1500;function wbarOwned(){if(career()&&!C().wbarOwn&&S.env&&S.env.wbar==="yes")C().wbarOwn=1;return !career()||!!C().wbarOwn;}   // career: paid once (C().wbarOwn), then re-fitted free; sandbox free; saves fitted before the price keep theirs
 function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&wbarOwned()&&!(SIM.AERO[e.body||"street"]||{}).bars;}
 function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass+(wbarOn(e)?WBAR_KG:0),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
