@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.72.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.72.2.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -18151,6 +18151,7 @@ function loop(now){
   if(!frameDue(now)) return;
   if(viewOff){ clock.getDelta(); return; }
   fpsCount(now);
+  renderer.shadowMap.autoUpdate=true;   /* only the Ultra garage gate below turns it off, and only around its own draw */
   var dt=Math.min(clock.getDelta(), 0.05);
   if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
@@ -18164,8 +18165,34 @@ function loop(now){
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ if(STRIP.post) stripPostStep(); stripRender(); return; }
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
+  garageShadowGate(now);   /* Ultra: the key light's 4096 shadow map is redrawn only when a caster, the light or the tier changed (or once a second) */
   ultraFloor();   /* Ultra: the sealed floor's mirror pass (and the stock floor back when the tier drops) */
   if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
+  renderer.shadowMap.autoUpdate=true;   /* photo, resize and every other draw path see the stock behaviour */
+}
+/* Ultra garage shadow gate. The 4096 map costs ~a quarter of the frame's draws and nearly all of its fill, yet a still room never changes it.
+   Fingerprint every visible shadow caster (world matrix, instance matrices, geometry, draw range) plus the light and tier; on any change
+   redraw for a few frames, and always while the engine runs, a part build/teardown is in flight, or an effect is live. Safety net: once a second. */
+var _gs={sig:"", hold:0, t:-1e9, a:0, b:0, n:0};
+function gsCaster(o){
+  if(!o.castShadow) return;
+  var e=o.matrixWorld.elements, g=o.geometry, k=++_gs.n, v=e[12]*1.31+e[13]*1.73+e[14]*2.11+e[0]*0.37+e[5]*0.53+e[10]*0.71+e[1]*0.19+e[4]*0.29+e[8]*0.43;
+  if(g){ v+=g.id*0.01; if(g.drawRange) v+=g.drawRange.count*1e-3; if(g.attributes&&g.attributes.position) v+=g.attributes.position.version*0.5; }
+  if(o.isInstancedMesh) v+=o.count*0.7+(o.instanceMatrix?o.instanceMatrix.version:0)*0.3;
+  _gs.a+=v; _gs.b+=v*k;
+}
+function garageShadowGate(now){
+  var sm=renderer.shadowMap, ls=keyLight&&keyLight.shadow;
+  if(GFX!=="ultra"||!ls||!keyLight.castShadow){ sm.autoUpdate=true; return; }
+  _gs.a=_gs.b=_gs.n=0; scene.traverseVisible(gsCaster);
+  var kp=keyLight.position, kt=keyLight.target.position, sc=ls.camera;
+  var sig=_gs.n+"|"+_gs.a.toFixed(4)+"|"+_gs.b.toFixed(3)+"|"+kp.x+","+kp.y+","+kp.z+"|"+kt.x+","+kt.y+","+kt.z+"|"+sc.left+","+sc.right+","+sc.top+","+sc.bottom+","+sc.near+","+sc.far+"|"+ls.mapSize.x+(ls.map?"m":"-")+"|"+sm.type+sm.enabled+"|"+keyLight.intensity;
+  if(sig!==_gs.sig){ _gs.sig=sig; _gs.hold=4; }
+  var live = run.on || run.fail || failFx.started || failFx.debris.length || particles.length || XRAY || TD.on || Math.abs(mnt.roll)>1e-4 || Math.abs(mnt.rollV)>1e-3 || camState.shake>0.0001;
+  var draw = live || _gs.hold>0 || now-_gs.t>=1000 || now<_gs.t;
+  if(_gs.hold>0) _gs.hold--;
+  if(draw) _gs.t=now;
+  sm.autoUpdate=draw;
 }
 
 /* ===========================================================================
@@ -29216,7 +29243,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.72.1.0";
+const VERSION="1.72.2.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
