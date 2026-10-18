@@ -1705,6 +1705,55 @@ html.photo #pwaBar{display:none}
 .evpick button.live small{grid-column:1/-1;grid-row:2;white-space:nowrap;letter-spacing:-.01em;margin-top:1px}
 html:not(.desk) .evpick button.live small{font-size:clamp(10.5px,2.95vw,12px)}
 @media (max-width:359px){.evpick button.live small{white-space:normal}}
+/* Events tab: a one-row chip picker, then Setup | Advanced | Results panes (evLayout sets #evSlot[data-evt]); no chart on Events */
+.evpick{display:flex;flex-wrap:nowrap;gap:6px;margin:0 -16px 8px;padding:0 16px 2px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.evpick::-webkit-scrollbar{display:none}
+.evpick button,html:not(.desk) .evpick button{flex:0 0 auto;display:grid;grid-template-columns:22px auto;grid-template-rows:auto;column-gap:7px;align-items:center;min-height:44px;max-height:56px;padding:4px 11px 4px 9px;scroll-snap-align:center;position:relative}
+.evpick button:last-child:nth-child(odd){grid-column:auto}
+.evpick svg,html:not(.desk) .evpick svg{grid-row:1/3;width:22px;height:22px}
+.evpick b{font-size:14px;max-width:none;overflow:visible}
+.evpick small,html:not(.desk) .evpick small{grid-column:2;grid-row:2;display:none;white-space:nowrap;font-size:12px;line-height:1.2;letter-spacing:-.01em;margin:0}
+.evpick button.on small,.evpick button.live small,html:not(.desk) .evpick button.on small,html:not(.desk) .evpick button.live small{display:block;grid-column:2;grid-row:2;font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.evpick button.lock small::before{content:""}
+.evpick button.lock:not(.on) b::after,html:not(.desk) .evpick button.lock:not(.on) b::after{content:" \1F512";font-size:11px}
+.evpick button.live:not(.on)::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--orange2)}
+.evpick button.live:not(.on) small{display:none}
+/* the panel tabs */
+.evtabs{margin:0 0 10px;gap:4px;flex-wrap:nowrap}
+.evtabs button{flex:1 1 0;min-height:42px;padding:6px 8px;border-radius:8px;position:relative}
+.evtabs button[hidden]{display:none}
+.evtabs .evdot{display:none;position:absolute;top:7px;right:calc(50% - 38px);width:7px;height:7px;border-radius:50%;background:var(--orange2)}
+.evtabs button.has:not(.on) .evdot{display:inline-block}
+html.onevent:not(.desk) #tab-events.evbusy :is(#evPick,#evTabs){display:none}
+#tab-events.evbusy #evTabs{pointer-events:none;opacity:.6}
+/* panes */
+#evSlot :is(#chartwrap,#curveChips){display:none!important}
+#evSlot[data-evt=setup] :is(#peaks,#verdict,#setupJump,#testExtra,#stressSec,#dynoHint){display:none!important}
+#evSlot[data-evt=setup] #envBox>.advf{display:none}
+#evSlot[data-evt=adv] #testCore>:not(#envBox){display:none!important}
+#evSlot[data-evt=adv] #envBox>:not(.advf){display:none!important}
+#evSlot[data-evt=res] #envBox{display:none}
+#evSlot[data-evt=res]:not(.nores) #dynoHint{display:none}
+#evSlot .advf{margin:0}#evSlot .advf>.acch{display:none}#evSlot .advf .accb{padding-top:0}
+/* the dock never clips the last hint line */
+#panel{scroll-padding-bottom:140px}
+#tab-events{padding-bottom:12px}
+/* one Driver toggle: label, two buttons, a small (i) for the notes */
+.drvrow{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.drvrow .dl{flex:0 0 auto;font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.drvrow .drvseg{flex:1 1 auto;margin:0;flex-wrap:nowrap}
+.drvrow .drvseg button{min-height:40px;padding:6px 10px}
+.drvrow details.more{flex:0 0 auto}
+/* phone: event header cards (salt / bog / hill / oval / boat) shrink to one line; the picker already shows the status */
+html:not(.desk) #evSlot .saltcls{gap:6px;margin-bottom:6px}
+html:not(.desk) #evSlot .saltcls>div{display:flex;align-items:baseline;gap:6px;padding:5px 8px;flex-wrap:nowrap}
+html:not(.desk) #evSlot .saltcls span{display:inline;font-size:11px}
+html:not(.desk) #evSlot .saltcls b{display:inline;font-size:16px}
+html:not(.desk) #evSlot .saltcls small:not(:has(em)){display:none}
+html:not(.desk) #evSlot .e24ev{display:none}
+/* long hints in the panes clamp to one line with their (i) */
+#evSlot .hint.hmx>.hms{display:inline-block;max-width:calc(100% - 28px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+#evSlot .segbodynote{font-size:12px}
 </style>
 
 <div id="app">
@@ -1781,7 +1830,7 @@ html:not(.desk) .evpick button.live small{font-size:clamp(10.5px,2.95vw,12px)}
       <p class="hint" id="dynoHint"></p>
       <div class="peaks" id="peaks"></div>
       <div id="verdict"></div>
-      <button class="chip" id="setupJump" hidden>Change setup &darr;</button>
+      <button class="chip" id="setupJump" hidden>Change setup</button>
       <div id="testExtra"></div>
       <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
       </div></div>
@@ -1816,8 +1865,9 @@ html:not(.desk) .evpick button.live small{font-size:clamp(10.5px,2.95vw,12px)}
     <!-- EVENTS: the strip, the sled, the salt, the road and the 24 Hours (the test core moves here with them) -->
     <section class="tabpage" id="tab-events">
       <div class="evpick" id="evPick" role="radiogroup" aria-label="Event"></div>
+      <div class="evtabs seg n3" id="evTabs" role="tablist" aria-label="Event panel"><button role="tab" data-evt="setup">Setup</button><button role="tab" data-evt="adv">Advanced</button><button role="tab" data-evt="res">Results<i class="evdot" aria-hidden="true"></i></button></div>
       <p class="hint tbusy" id="evBusy" hidden></p>
-      <div class="coreslot" id="evSlot"></div>
+      <div class="coreslot" id="evSlot" data-evt="setup"></div>
       <div id="e24Ctl" style="display:none"><div id="e24Hud"></div><div class="row e24spd" id="e24Spd"></div></div>
       <div id="e24Side" style="display:none"></div>
       <div id="evCtls">
@@ -30044,6 +30094,9 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("b[data-enum]"
 /* career: a tier is bought once (C().drvOwn), then re-fitted free; an unowned one counts as Stock. Sandbox: every tier free. */
 function drvOwned(id){return !career()||id==="stock"||!!(C().drvOwn&&C().drvOwn[id]);}
 function drvId(){const id=S.env.drv;return SIM.DRIVETRAIN[id]&&drvOwned(id)?id:"stock";}
+/* the one Driver toggle every event shares: You drive | Auto in a single row, the two one-line notes behind a small (i).
+   attrs(id) gives the button its event's data attributes ("you" / "auto"); cur is the chosen id. */
+function driverToggle(attrs,cur,you,auto){return `<div class="drvrow"><span class="dl">Driver</span><div class="seg n2 drvseg">${[["you","You drive"],["auto","Auto"]].map(([id,n])=>`<button ${attrs(id)} class="${cur===id?"on":""}">${n}</button>`).join("")}</div>${moreI(`<b>You drive</b> · ${you}<br><b>Auto</b> · ${auto}`,"About the driver")}</div>`;}
 function drvHtml(){const cur=drvId();return `<div class="lbl"><span>Clutch, box &amp; axle</span></div><div class="seg">${Object.entries(SIM.DRIVETRAIN).map(([k,v])=>`<button data-lp="${k}" data-ek="drv" class="${cur===k?"on":""}">${v.n}<small>${Math.round(v.nm).toLocaleString("en-CA")} N·m${v.cost&&!drvOwned(k)?" · "+fmt$(v.cost):v.cost&&career()?" · owned":""}</small></button>`).join("")}</div><div class="segbodynote">${SIM.DRIVETRAIN[cur].d}${cur==="stock"?"":" — past the rating the clutch slips; far past it, something breaks."}</div>`;}
 function carVeh(car){const b=BODY_SETUP[(car&&car.body)||"street"]||BODY_SETUP.street;const v=Object.assign({},b,car||{});v.chute=v.chute==="yes"||v.chute===true;v.body=(car&&car.body)||"street";return v;}
 const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"street",chute:"no",launchRpm:3500,rearBias:0.55,mass:1400},
@@ -30176,25 +30229,32 @@ function evPickRender(){const box=$("evPick");if(!box)return;const cur=evCur();
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
   const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));}
 /* Advanced: the settings a racer rarely touches fold away under the essentials (open state per test in S.advOpen) */
+/* ADV: what folds away under an event's essentials. e = sliders, k = [data-attr, key] segs (label + seg + its note), x = extra selectors,
+   m = selectors for more groups the Events tab moves out of Setup (a .seg's label and note, or the suspension grid with its read-out),
+   anything built with data-evadv goes too. The Events tab shows the fold as its Advanced tab (evLayout), the Test tab as the "Cell" fold. */
 const ADV={cell:{e:["ambientC","altitudeM","coolantC","oilC"]},
-  drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],paint:1,hint:"Rear-drive on a prepped strip",sum:"weight · gearing · tyre psi · shocks · chute · paint"},
-  pull_sled:{e:["pullHitch","pullBallast"],hint:"A higher hitch plants",sum:"hitch height · front ballast"},
-  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],x:["[data-saltgear]"],paint:1,sum:"gearing · ballast · aero · cooling · chutes · paint"},
+  drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],m:['[data-ek="drv"]','[data-ek="body"]','[data-shell]','[data-ek="wbar"]','[data-ek="race"]','[data-ek="shiftMode"]'],paint:1,hint:"Rear-drive on a prepped strip",sum:"weight · gearing · tyre psi · shocks · chute · paint"},
+  pull_sled:{e:["pullHitch","pullBallast"],m:['[data-pk="pullTrans"]','[data-ek="drv"]'],hint:"A higher hitch plants",sum:"hitch height · front ballast"},
+  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],m:['[data-sk="saltShift"]'],x:["[data-saltgear]"],paint:1,sum:"gearing · ballast · aero · cooling · chutes · paint"},
   bog:{k:[["bk","bogGear"],["bk","bogTyre"]],sum:"gear · tyres"},
   boat:{e:["boatPitch","boatGear","boatTrim"],k:[["tk","boatImp"]],hint:"Boat drags:",sum:"prop pitch · gear · trim · prop shop"},
-  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],sum:"final drive · camera · playback"},
-  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],sum:"final drive · camera · playback"},
+  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],m:['[data-rk="roadCh"]','[data-ek="drv"]',".su-grid"],sum:"final drive · camera · playback"},
+  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],m:['[data-hk="hillCh"]','[data-hk="hillAero"]',".su-grid"],sum:"final drive · camera · playback"},
   oval:{e:["ovalFinal"],k:[["ok","ovalGrille"],["ok","ovalCam"],["ok","ovalSpd"]],sum:"rear end · grille · camera · playback"},
-  race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],sum:"fuel · tyre changes · safety cars"}};
+  race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],m:['[data-rk="roadCh"]'],sum:"fuel · tyre changes · safety cars"}};
 function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envBox");if(!A)return;const nodes=[],add=n=>{if(n&&!nodes.includes(n))nodes.push(n);};
-  const seg=b=>{const g=b&&b.closest(".seg");if(!g)return;const l=g.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(g);};
+  const seg=b=>{const g=b&&b.closest(".seg");if(!g)return;const l=g.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(g);for(let n=g.nextElementSibling;n&&n.classList.contains("segbodynote");n=n.nextElementSibling)add(n);};
+  const evT=trackEvt(t);
   (A.e||[]).forEach(k=>{const r=$("er-"+k);if(r&&box.contains(r))add(r.closest(".env"));});
   (A.k||[]).forEach(([a,k])=>seg(box.querySelector(`[data-${a}="${k}"]`)));
   (A.x||[]).forEach(q=>{const b=box.querySelector(q);if(b)add(b.closest(".row")||b);});
   if(A.paint){const p=box.querySelector(".paints");if(p){const l=p.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(p);}}
+  if(evT){(A.m||[]).forEach(q=>{const b=box.querySelector(q);if(!b)return;
+      if(b.matches(".su-grid")){const l=b.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(b);const lv=$("suLive");if(lv&&box.contains(lv))add(lv);const n=lv&&lv.nextElementSibling;if(n&&n.matches("p.hint"))add(n);}else seg(b);});
+    box.querySelectorAll("[data-evadv]").forEach(add);}
   if(A.hint)box.querySelectorAll(":scope > p.hint").forEach(p=>{if(p.textContent.trim().startsWith(A.hint))add(p);});
   if(!nodes.length)return;nodes.sort((a,b)=>a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
-  const open=!!(S.advOpen&&S.advOpen[key]),es=k=>envStore(k)[k];
+  const open=evT||!!(S.advOpen&&S.advOpen[key]),es=k=>envStore(k)[k];   // Events: the fold is the Advanced tab, always open
   const sum=key==="cell"?`${es("ambientC")} °C · ${es("altitudeM")} m · coolant ${es("coolantC")} · oil ${es("oilC")}`:A.sum;
   const f=document.createElement("div");f.className="acc advf"+(open?" open":"");f.dataset.adv=key;
   f.innerHTML=`<button class="acch" aria-expanded="${open}"><span class="t">${key==="cell"?"Cell":"Advanced"}</span><span class="sum">${sum}</span><span class="chev"></span></button><div class="accb"></div>`;
@@ -30203,7 +30263,18 @@ function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envB
   box.appendChild(f);}
 function advSet(f,on){if(!f)return;f.classList.toggle("open",on);const h=f.querySelector(".acch");if(h)h.setAttribute("aria-expanded",String(on));S.advOpen=Object.assign({},S.advOpen,{[f.dataset.adv]:on});save();}
 /* a lesson, tour or tip pointing into a closed fold opens it (Build's accordion or an Advanced fold) */
-function accReveal(el){const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+function accReveal(el){const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+/* Events panel tabs: Setup (the essentials) · Advanced (the fold) · Results. S.evTab[event] remembers the open one; old saves have none = Setup.
+   Panes are CSS (#evSlot[data-evt]); a run always shows Setup. */
+function evTabNow(){const t=(S.evTab||{})[evCur()];return t==="adv"||t==="res"?t:"setup";}
+function evPaneOf(el){const sl=$("evSlot");if(!el||!sl||curTab!=="events"||!sl.contains(el))return null;return el.closest(".advf")?"adv":el.closest("#peaks,#verdict,#testExtra,#stressSec,#dynoHint,#setupJump")?"res":"setup";}
+function evTabSet(tab,scroll){S.evTab=Object.assign({},S.evTab,{[evCur()]:tab});save();evLayout();if(scroll){const pn=$("panel"),tb=$("evTabs");if(pn&&tb){const d=tb.getBoundingClientRect().top-pn.getBoundingClientRect().top;if(d<0)pn.scrollTop=Math.max(0,pn.scrollTop+d-6);}}}
+function evLayout(){const sl=$("evSlot"),tabs=$("evTabs"),pg=$("tab-events");if(!sl||!tabs)return;
+  const hasAdv=!!document.querySelector("#envBox .advf"),hasRes=!!($("verdict").firstElementChild||$("peaks").firstElementChild);let tab=evTabNow();if(tab==="adv"&&!hasAdv)tab="setup";
+  const pane=testing?"setup":tab;sl.dataset.evt=pane;sl.classList.toggle("nores",!hasRes);
+  tabs.querySelectorAll("button").forEach(b=>{const on=b.dataset.evt===pane;b.classList.toggle("on",on);b.setAttribute("aria-selected",String(on));if(b.dataset.evt==="adv")b.hidden=!hasAdv;if(b.dataset.evt==="res")b.classList.toggle("has",hasRes);});
+  tabs.classList.toggle("n2",!hasAdv);pg.classList.toggle("evbusy",!!testing);}
+$("evTabs").addEventListener("click",e=>{const b=e.target.closest("[data-evt]");if(!b||testing)return;evTabSet(b.dataset.evt,true);buzz(4);});
 $("envBox").addEventListener("click",e=>{const h=e.target.closest(".advf > .acch");if(!h)return;advSet(h.parentElement,!h.parentElement.classList.contains("open"));buzz(4);});
 $("curveChips").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;curves[b.dataset.c]=!curves[b.dataset.c];b.classList.toggle("on",curves[b.dataset.c]);drawChart(lastForChart(),null);});
 function quickForChart(){return quick;}
@@ -30271,15 +30342,16 @@ function renderTest(){
   if(S.env.testType==="oval")ovalRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
   const rf=curTab==="events"&&!!last&&last.env.testType===S.env.testType;$("testCore").classList.toggle("resfirst",rf);$("setupJump").hidden=!rf;
-  resultReveal(last,rf);
+  resultReveal(last,rf);evLayout();
   renderMap();ddRender();if(typeof railSched==="function")railSched();
 }
 /* a run just finished: bring the headline numbers (peaks + verdict, or the verdict on Events) to the top of the panel so they aren't left above or below the fold */
 let revKey;
 function resultReveal(last,rf){const k=last?last.res:null;if(testing)return;if(revKey===undefined||k===revKey){revKey=k;return;}revKey=k;if(!k)return;
+  if(rf&&trackEvt(S.env.testType)){evTabSet("res",true);return;}   // Events: a fresh result opens the Results tab
   requestAnimationFrame(()=>{const pn=$("panel"),el=rf?$("verdict"):$("peaks");if(!el.offsetHeight||(curTab!=="test"&&curTab!=="events"))return;const pr=pn.getBoundingClientRect(),r=el.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop());
     if(r.top<pr.top||r.top>pr.top+(bot-pr.top)*0.45)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});}
-$("setupJump").addEventListener("click",()=>{const pn=$("panel"),pr=pn.getBoundingClientRect(),r=$("envBox").getBoundingClientRect();pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
+$("setupJump").addEventListener("click",()=>{if(curTab==="events"){evTabSet("setup",true);return;}const pn=$("panel"),pr=pn.getBoundingClientRect(),r=$("envBox").getBoundingClientRect();pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
 /* ===================== TUNE MAP (dyno) =====================
    S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,
    a per-rpm boost target). The sim reads its 100% row for the WOT pull and the cruise cell for economy; SIM.mapGrid
@@ -31121,7 +31193,7 @@ function pitsPlace(){const ov=$("pitsOv");if(!ov||ov.hidden)return;const svg=ov.
   svg.innerHTML=lines;}
 /* Driver: you, or the auto driver (S.env.dragDrive; env only, never cfg or cfgHash). On a race night it is set once and drives every pass. */
 function dragDriveHtml(night){const on=dragAuto();
-  return`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","burnout, stage, the light, the shifts"],["auto","Auto","a steady hand · watch the pass"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragDrive" class="${(on?"auto":"you")===k?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`
+  return driverToggle(k=>`data-lp="${k}" data-ek="dragDrive"`,on?"auto":"you","burnout, stage, the light, the shifts","a steady hand · watch the pass")
     +(on?`<p class="hint">The auto driver does the burnout, stages${n2oKit()?", purges the nitrous":""}${(()=>{const lt=SIM.launchTech(S.cfg);return lt.launchCtl!=="none"||lt.transBrake==="trans_brake"||alsOf(S.cfg);})()?", arms the launch on the ambers":""} and leaves on the green with a good, human light — a red is rare. ${S.env.shiftMode==="manual"?"It shifts near the best point for this engine's curve. ":""}Launch rpm${n2oKit()?", the nitrous switch":""} and the chute stay as you set them. Steady, not perfect: a sharp light and good shifts beat it.${night?" It drives every pass of the night.":""} Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during a pass to take over.</p>`:"");}
 function rnFmtHtml(){const f=RN_FMT[S.env.dragFmt]?S.env.dragFmt:"test";
   let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k&&!(k==="bracket"&&S.env.dragQuick)?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
@@ -31401,7 +31473,7 @@ function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C
   h+=`<div class="lbl"><span>Driveline</span></div><div class="seg">${[["conv","Converter","multiplies torque when it bogs"],["clutch","Clutch","direct · less heat, no help low"]].map(([id,n,d])=>`<button data-pk="pullTrans" data-pv="${id}" class="${e.pullTrans===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=drvHtml();
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.PULL_TYRES[id];return `<button data-pk="pullTyre" data-pv="${id}" class="${e.pullTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
-  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold to pull, let go to ease off"],["auto","Auto","a steady foot · watch the hook"]].map(([id,n,d])=>`<button data-pk="pullDrive" data-pv="${id}" class="${e.pullDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=driverToggle(id=>`data-pk="pullDrive" data-pv="${id}"`,e.pullDrive,"hold to pull, let go to ease off","a steady foot · watch the hook");
   if(e.pullDrive==="auto")h+=`<p class="hint">The auto driver holds the slip low in the green band and keeps some pedal in to the end — steady, a little cautious; a good foot can beat it. If it runs away it goes for the kill switch like anyone would, in under a second most hooks. Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during the hook to take over.</p>`;
   h+=`<div class="envgrid">${sl("pullHitch","Hitch height",12,V.hitchMax,1," in",e.pullHitch)}${sl("pullBallast","Front ballast",0,V.maxMass-V.mass,10," kg",e.pullBallast)}</div>`;
   h+=`<p class="hint">A higher hitch plants the rear tyres but lifts the nose — past a point the front hops and the grip goes with it. Weight on the front bracket holds it down${V.drive==="rwd"?", though on a two-wheel-drive tractor it takes a little off the rear":" and the front axle pulls too"}. A tall gear carries speed into the heavy end; a short one digs if you stay flat on it.</p>`;
@@ -31591,7 +31663,7 @@ function bogEnvHtml(sl){const e=S.env,k=bogEnvFix(),C0=SIM.BOG_CLASSES[k],V=C0.v
   const thru=field.filter(f=>f.cleared).length,lead=field.slice().sort(bogCmp)[0];
   let h=`<div class="saltcls"><div><span>Tonight's pit</span><b>${night.len} m</b><small>${bogEsc(night.name)} · ${Math.round(night.d0*(V.pitK||1)*100)} cm deep</small></div><div><span>To beat</span><b>${lead?bogScore(lead):"—"}</b><small>${thru} of ${field.length} got through</small></div><div><span>Your best</span><b>${pb?(pb.c?pb.t.toFixed(2)+" s":pb.m.toFixed(1)+" m"):"—"}</b><small>${pb?(pb.c?"through the pit":"farthest"):"no run yet"}</small></div></div>${bogPitSvg(night,V.pitK||1,field)}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOG_CLASSES).map(([id,c])=>{const l=bogClsLocked(id);return `<button data-bk="bogCls" data-bv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
-  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold for throttle, feather the spin"],["auto","Auto","a steady foot · watch the run"]].map(([id,n,d])=>`<button data-bk="bogDrive" data-bv="${id}" class="${e.bogDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=driverToggle(id=>`data-bk="bogDrive" data-bv="${id}"`,e.bogDrive,"hold for throttle, feather the spin","a steady foot · watch the run");
   h+=`<div class="lbl"><span>Gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-bk="bogGear" data-bv="${i}" class="${+e.bogGear===i?"on":""}">${n}<small>${mph} mph at redline</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.BOG_TYRES[id];return `<button data-bk="bogTyre" data-bv="${id}" class="${e.bogTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
   h+=`<p class="hint">${C0.n}: ${V.mass.toLocaleString("en-CA")} kg truck, ${V.tyreDia}" tyres, ${V.driveN}, ${V.trans==="clutch"?"clutch — it can stall":"automatic"}, ${Math.round(V.clear*100)} cm under the frame. ${V.runup} m run-up. A tall gear carries more speed into the mud but bogs sooner in the deep end; a short one keeps the engine up in its band and spins easier. ${night.cons>0.6?"Sticky clay grabs the tyres and packs slow lugs solid":"Soupy mud lets the tyres sink to the floor but lets go of them"}.${lk?` <b>Opens at ${lk} rep.</b>`:""}${bogHookedWk(k)?` <b>Run this week — the next mud bog is week ${C().week+1}.</b>`:""}</p>`;
@@ -32236,9 +32308,9 @@ function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_
   {const est=saltTopEst(k),rated=SIM.lsrChuteMax(e.saltChute)*2.23694;
    if(e.saltChute==="none"&&est>175)h+=`<p class="hint" style="color:var(--warn)">⚠ This car can do ~${Math.round(est)} mph — over 175 mph tech wants a parachute, or the run won't count.</p>`;
    else if(e.saltChute!=="none"&&est>rated*0.98)h+=`<p class="hint" style="color:var(--warn)">⚠ Chute rated ${Math.round(rated)} mph, this car can do ~${Math.round(est)}. It has to coast down to ${Math.round(rated)} before the chute can open — a long shutdown, and the auto driver lifts early if the course would run out${e.saltChute==="single"?"; the drogue + main pack opens far higher":""}.</p>`;}
-  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold to run, let go to feather"],["auto","Auto","a steady hand · watch the run"]].map(([id,n,d])=>`<button data-sk="saltDrive" data-sv="${id}" class="${e.saltDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=driverToggle(id=>`data-sk="saltDrive" data-sv="${id}"`,e.saltDrive,"hold to run, let go to feather","a steady hand · watch the run");
   if(e.saltDrive!=="auto")h+=`<div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts at the power peak"],["manual","Manual","SHIFT, ↑ or G — four gears"]].map(([id,n,d])=>`<button data-sk="saltShift" data-sv="${id}" class="${e.saltShift===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
-  h+=`<p class="hint">${B.n}: ${B.d}. Car ${Math.round(B.mass+res.kg)} kg with this engine · CdA ${(B.cdA+(e.saltAero==="on"?B.aero.cd:0)+(e.saltCool==="ice"?0:B.radDrag)).toFixed(2)} m². Top gear is the road speed at the redline in fourth. Tall gearing is free speed only if the engine can pull it — too tall and it runs out of power below the peak; too short and it sits on the limiter. Lift at speed unloads the front: past half its weight the car wanders. Ballast plants the rear tyres but has to be pushed through the air like everything else.${lk?` <b>Opens at ${lk} rep.</b>`:""}${career()?"":` <button class="chip" data-saltmeet style="margin-left:4px">New meet</button>`}</p>`;
+  h+=hintMore(`${B.n}: ${B.d}.`,`Car ${Math.round(B.mass+res.kg)} kg with this engine · CdA ${(B.cdA+(e.saltAero==="on"?B.aero.cd:0)+(e.saltCool==="ice"?0:B.radDrag)).toFixed(2)} m². Top gear is the road speed at the redline in fourth. Tall gearing is free speed only if the engine can pull it — too tall and it runs out of power below the peak; too short and it sits on the limiter. Lift at speed unloads the front: past half its weight the car wanders. Ballast plants the rear tyres but has to be pushed through the air like everything else.${lk?` <b>Opens at ${lk} rep.</b>`:""}${career()?"":` <button class="chip" data-saltmeet style="margin-left:4px">New meet</button>`}`,"data-evadv");
   return h;}
 $("envBox").addEventListener("click",e=>{const g=e.target.closest("[data-saltgear]");if(g){const k=saltEnvFix();S.env.saltTop=0;const v=saltVeh(k);S.env.saltTop=SIM.lsrGearing(saltRes(),v);renderEnv();save();toast(`Gearing set: ${S.env.saltTop} mph at redline in top`);return;}
   if(e.target.closest("[data-saltmeet]")){S.saltMeetId=(S.saltMeetId||1)+1;renderEnv();save();toast("New meet — impound cleared");return;}
@@ -32368,7 +32440,7 @@ function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=
   const fin=field?field.filter(f=>f.t!=null).length:0;
   let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?hlEsc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=hillClsLocked(id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
-  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","push or lift into each corner"],["auto","Auto","reads the calls · watch the run"]].map(([id,n,d])=>`<button data-hk="hillDrive" data-hv="${id}" class="${e.hillDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=driverToggle(id=>`data-hk="hillDrive" data-hv="${id}"`,e.hillDrive,"push or lift into each corner","reads the calls · watch the run");
   h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-hk="hillCh" data-hv="${id}" class="${e.hillCh===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${C0.tyres.map(id=>{const t=SIM.HILL_TYRES[id];return `<button data-hk="hillTyre" data-hv="${id}" class="${e.hillTyre===id?"on":""}">${t.n}<small>μ ${t.mu}</small></button>`;}).join("")}</div>`;
   h+=`<div class="lbl"><span>Aero</span></div><div class="seg">${C0.aero.map(id=>{const a=SIM.HILL_AERO[id];return `<button data-hk="hillAero" data-hv="${id}" class="${e.hillAero===id?"on":""}">${a.n}<small>${a.d}</small></button>`;}).join("")}</div>`;
@@ -32605,7 +32677,7 @@ function ovalLadder(n,k){const C0=SIM.OVAL_CLASSES[k],h=n.heat,st=n.stage;
 function ovalEnvHtml(sl){const e=S.env,k=ovalEnvFix(),C0=SIM.OVAL_CLASSES[k],lk=ovalClsLocked(k),lg=ovalLegal(k),R=ovalOpen(),n=ovalNight(k),rec=ovalRecs()[k],q=quick&&quick.rpms?quick:null;
   let h=`<div class="saltcls"><div><span>Tonight's track</span><b>3/8 mile</b><small>22° bank · ${ovEsc(SIM.ovalNight(n.seed).name)}</small></div><div><span>The night</span><b>${n.stage==="done"?"over":n.stage==="feature"?"feature":"heat"}</b><small>${n.stage==="feature"?`starts ${ordN(n.gridMe+1)} of 12`:n.stage==="done"?(n.feat?`finished ${ordN(n.feat.place)}`:"—"):`${OVAL_HEAT} laps, then ${OVAL_FEAT}`}</small></div><div><span>Your best</span><b>${rec&&rec.lap?fmtOv(rec.lap)+" s":"—"}</b><small>${rec?(rec.wins?rec.wins+" feature win"+(rec.wins===1?"":"s"):"best finish "+ordN(rec.best)):"no night yet"}</small></div></div>${ovalTrackSvg()}${ovalLadder(n,k)}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.OVAL_CLASSES).map(([id,c])=>{const l=ovalClsLocked(id),ok=ovalCiNow()<=c.ci;return `<button data-ok="ovalCls" data-ov="${id}" class="${k===id?"on":""}${l||!ok?" lock":""}">${c.n}<small>${l?l+" rep":c.ci>=9999?"no ci limit":"up to "+c.ci+" ci"+(ok?"":" · too big")}</small></button>`;}).join("")}</div>`;
-  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","hold PUSH or SAVE for the pace"],["auto","Auto","a steady driver · watch the race"]].map(([id,nm,d])=>`<button data-ok="ovalDrive" data-ov="${id}" class="${e.ovalDrive===id?"on":""}">${nm}<small>${d}</small></button>`).join("")}</div>`;
+  h+=driverToggle(id=>`data-ok="ovalDrive" data-ov="${id}"`,e.ovalDrive,"hold PUSH or SAVE for the pace","a steady driver · watch the race");
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.OVAL_TYRES).map(([id,t])=>`<button data-ok="ovalTyre" data-ov="${id}" class="${e.ovalTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Grille</span></div><div class="seg">${Object.entries(SIM.OVAL_GRILLES).map(([id,t])=>`<button data-ok="ovalGrille" data-ov="${id}" class="${e.ovalGrille===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="envgrid">${sl("ovalFinal","Rear end ratio",0.8,1.25,0.01," × fitted",(+e.ovalFinal).toFixed(2))}</div>`;
@@ -33024,7 +33096,7 @@ function boatEnvHtml(sl){const e=S.env,k=boatEnvFix(),C0=SIM.BOAT_CLASSES[k],HU=
     else h+=`<p class="hint">${BOAT_PLACE[N.place]||"Night over"}${N.purse?" · "+fmt$(N.purse):""}. ${career()&&boatRanWk(k)?`The next ${C0.n} night is week ${C().week+1}.`:"Run again to start a new night."}</p>`;}
   else h+=`<div class="saltcls"><div><span>Course</span><b>1,000 ft</b><small>river · two lanes · a tree</small></div><div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div><div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOAT_CLASSES).map(([id,c])=>{const l=boatClsLocked(id);return `<button data-tk="boatCls" data-tv="${id}" class="${k===id?"on":""}${l?" lock":""}"${live&&live.cls!==id?" disabled":""}>${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
-  h+=`<div class="lbl"><span>Driver</span></div><div class="seg">${[["you","You drive","throttle, trim · feather the hump"],["auto","Auto","a steady hand · tap to take over"]].map(([id,n,d])=>`<button data-tk="boatDrive" data-tv="${id}" class="${e.boatDrive===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
+  h+=driverToggle(id=>`data-tk="boatDrive" data-tv="${id}"`,e.boatDrive,"throttle, trim · feather the hump","a steady hand · tap to take over");
   if(C0.drive==="jet")h+=`<div class="lbl"><span>Impeller</span></div><div class="seg">${SIM.BOAT_IMP.map(([c,n,cj,d],i)=>`<button data-tk="boatImp" data-tv="${i}" class="${e.boatImp===i?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   else h+=`<div class="envgrid">${sl("boatPitch","Prop pitch",C0.pitch[0],C0.pitch[1],1,'"',e.boatPitch)}</div>`;
   h+=`<div class="envgrid">${sl("boatGear",C0.drive==="jet"?"Drive ratio":C0.id==="outboard"?"Lower-unit gear":"V-drive box",C0.gear[0],C0.gear[1],0.05,":1",e.boatGear)}${sl("boatTrim","Trim at the start",SIM.boatTrimRange()[0],SIM.boatTrimRange()[1],0.5,"°",e.boatTrim)}</div>`;
