@@ -109,8 +109,8 @@ function crewWeek(){if(!career()||!C().staff)return;const k=crewS();let changed=
     else if(p.mor>=35)p.warn=0;}
   if(changed)syncShop();}
 /* training: a course costs money and takes them away for its weeks. Skills = XP; specialist = a chosen good trait */
-function crewCourses(p){const L=p.lvl|0;return{xp:{k:"xp",n:"Skills course",wk:2,cost:1500+500*L,xp:Math.round(CREW_XP[Math.min(4,L)]*0.35+30)},
-  tr:{k:"tr",n:"Specialist course",wk:4,cost:4500+900*L}};}
+function crewCourses(p){const L=p.lvl|0;return{xp:{k:"xp",n:"Skills course",wk:has("acad")?1:2,cost:1500+500*L,xp:Math.round((CREW_XP[Math.min(4,L)]*0.35+30)*(has("acad")?1.25:1))},
+  tr:{k:"tr",n:"Specialist course",wk:has("acad")?3:4,cost:4500+900*L}};}
 function crewTrainable(p){return CREW_TRAITS.filter(t=>t.pos&&t.roles.includes(p.role)&&!p.tr.some(x=>x.id===t.id)&&!(t.id==="quick"&&p.tr.some(x=>x.id==="slow")));}
 function crewCanLearn(p){return p.tr.length<2||p.tr.some(t=>!crewTr(t.id).pos&&t.rv);}
 function crewTrain(role,kind,tid){const p=crewP(role);if(!p||p.away>C().week)return;const cs=crewCourses(p),c=cs[kind];if(!c)return;
