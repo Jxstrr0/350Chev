@@ -28,7 +28,11 @@ const RIVALS=[
     chal:["\"Torque doesn't lie. Come get muddy.\"","\"Meet us where it's wet. Bring a spare.\""],
     won:["Tidewater took the win and left a mud-caked trophy on your doorstep.","Tidewater Diesel & Marine beat you and towed the trophy home behind a boat."],
     lost:["Tidewater lost to you and sent a case of coolant as a \"gift\".","You beat Tidewater Diesel & Marine. The foreman asked what you were running. You did not say."]}];
-const RIV_MAX=1800;
+/* tuning (round 6): a rival used to stop at 1800 while your rep has no ceiling, so the board was dead by about week 100 (a good shop is #1 by week 5 and 4x the field by week 80).
+   Now a rival's weekly gain is (RIV_GAIN[0] + rep * RIV_GAIN[1]) * pace * noise; behind you it multiplies by 1 + min(RIV_CATCH[1], gap * RIV_CATCH[0]), ahead of you it eases off to RIV_EASE at the least,
+   so the three shops hold roughly 60-100% of a good player's rep all career instead of falling away. The ceiling only stops a runaway. */
+const RIV_MAX=40000,RIV_GAIN=[2,0.005],RIV_CATCH=[2,6],RIV_EASE=0.25;
+const RIV_WIN_TIER=5,RIV_LOSE_PCT=0.3,RIV_PURSE_CAP=40000,RIV_FLIP=0.03;   // stakes grow with tier and rep (they were a flat +3..13 rep, -2 rep and $2,500 at any size of shop); a rival passes you only by a 3% margin so the log doesn't chatter
 const rivTier=r=>{let i=0;for(let j=0;j<REP_TIERS.length;j++)if(r>=REP_TIERS[j][0])i=j;return i;};
 function rivS(){const c=C();const s=c.riv&&typeof c.riv==="object"?c.riv:(c.riv={});
   if(!s.r||typeof s.r!=="object")s.r={};if(!s.pos||typeof s.pos!=="object")s.pos={};if(!s.tier||typeof s.tier!=="object")s.tier={};
@@ -44,18 +48,18 @@ function rivTop(c){const r=(c.riv&&c.riv.r)||{};return RIVALS.every(v=>(+r[v.id]
 function rivalsPos(){if(!career())return;const s=rivS(),pl=C().rep;
   for(const v of RIVALS){const r=s.r[v.id];let p=s.pos[v.id];
     if(p==null){s.pos[v.id]=pl>=r?1:-1;continue;}
-    if(p===1&&r>=pl+2){s.pos[v.id]=-1;logEvent(rivPick(v.up),"bad");}
-    else if(p===-1&&pl>=r+2){s.pos[v.id]=1;logEvent(rivPick(v.down),"good");toastAfter(`You passed ${v.name}`);}}}
+    const mg=Math.max(2,pl*RIV_FLIP);if(p===1&&r>=pl+mg){s.pos[v.id]=-1;logEvent(rivPick(v.up),"bad");}
+    else if(p===-1&&pl>=r+mg){s.pos[v.id]=1;logEvent(rivPick(v.down),"good");toastAfter(`You passed ${v.name}`);}}}
 function rivalsWeek(){if(!career())return;const s=rivS(),c=C(),pl=c.rep;
   for(const v of RIVALS){let r=s.r[v.id];
-    let g=(0.5+r*0.012)*v.pace*(0.4+rivRng()*1.2);
-    const gap=(pl-r)/Math.max(40,r);g*=gap>0?1+Math.min(1.5,gap*0.6):Math.max(0.35,1+gap*0.5);   // the board stays a race: they chase a runaway and ease off a laggard
+    let g=(RIV_GAIN[0]+r*RIV_GAIN[1])*v.pace*(0.4+rivRng()*1.2);
+    const gap=(pl-r)/Math.max(40,r);g*=gap>0?1+Math.min(RIV_CATCH[1],gap*RIV_CATCH[0]):Math.max(RIV_EASE,1+gap*0.5);   // the board stays a race: they chase a runaway and ease off a laggard
     s.r[v.id]=r=Math.min(RIV_MAX,r+g);
     const ti=rivTier(r);if(s.tier[v.id]==null)s.tier[v.id]=ti;else if(ti>s.tier[v.id]){s.tier[v.id]=ti;if(c.rep>=10)logEvent(`${v.name} has made ${REP_TIERS[ti][1]} — ${REP_TIERS[ti][0]} rep on the board`,"");}}
   const ch=s.ch;
   if(ch){const v=RIVALS.find(x=>x.id===ch.rv);
     if(ch.st==="offer"&&c.week>ch.exp){logEvent(`${v.name} withdrew the challenge`,"");s.ch=null;s.cool=2;}
-    else if(ch.st==="on"&&c.week>ch.exp){s.hist.forfeit++;s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+2);
+    else if(ch.st==="on"&&c.week>ch.exp){s.hist.forfeit++;s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+Math.max(2,s.r[v.id]*0.02));
       logEvent(`You never showed for ${v.name}'s challenge — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`Challenge forfeited · −${ch.lose} rep`);s.ch=null;s.cool=3;}}
   else if(s.cool>0)s.cool--;
   else if(c.rep>=30&&rivRng()<0.45)rivIssue();
@@ -67,8 +71,8 @@ function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
   const w=cand.map(x=>1/(0.4+Math.abs(Math.log((s.r[x.v.id]+10)/(pl+10)))));let t=w.reduce((a,b)=>a+b,0)*rivRng(),i=0;while(i<w.length-1&&t>w[i]){t-=w[i];i++;}
   const v=cand[i].v,ev=rivPick(cand[i].evs),tier=repTierIdx(),ahead=s.r[v.id]>pl;
   const need=ev==="drag"||ahead?"win":"podium";
-  const win=Math.round((3+tier*2)*(need==="win"?1.3:1)),purse=Math.min(2500,Math.round((150+pl*7)/50)*50);
-  s.ch={id:Math.floor(rivRng()*1e9),rv:v.id,ev,need,st:"offer",wk:c.week,exp:c.week+2,win,lose:2,purse};
+  const win=Math.round((3+tier*RIV_WIN_TIER)*(need==="win"?1.3:1)),purse=Math.min(RIV_PURSE_CAP,Math.round((150+pl*7)/50)*50);
+  s.ch={id:Math.floor(rivRng()*1e9),rv:v.id,ev,need,st:"offer",wk:c.week,exp:c.week+2,win,lose:Math.max(2,Math.round(win*RIV_LOSE_PCT)),purse};
   logEvent(`${v.name} challenges you at ${RIV_EV_TXT[ev]} — see Market`,"");toastAfter(`${v.name} wants a head-to-head`);}
 /* a result in the field: the open challenge, if it is on and about this event */
 function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!==kind)return;
@@ -76,7 +80,7 @@ function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!
   const v=RIVALS.find(x=>x.id===ch.rv),c=C();const won=ch.need==="win"?!!o.win:!!(o.win||o.finish);s.ch=null;s.cool=3;
   if(won){s.hist.won++;c.rep+=ch.win;c.cash+=ch.purse;s.r[v.id]=Math.max(0,s.r[v.id]-Math.max(3,s.r[v.id]*0.04));
     logEvent(`Head-to-head beat ${v.name} at ${RIV_EV_TXT[ch.ev]} — ${fmt$(ch.purse)} side bet, +${ch.win} rep. ${rivPick(v.lost)}`,"good");toastAfter(`BEAT ${v.name.toUpperCase()} · +${ch.win} REP · ${fmt$(ch.purse)}`);}
-  else{s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+2);
+  else{s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+Math.max(2,s.r[v.id]*0.02));
     logEvent(`Head-to-head lost to ${v.name} at ${RIV_EV_TXT[ch.ev]} — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`${v.name} won the head-to-head · −${ch.lose} rep`);}
   rivalsPos();}
 function rivalsRender(){let sec=$("rivSec");

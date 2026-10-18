@@ -560,15 +560,15 @@ GOALS.push(
   {id:"rep100",name:"Three digits",desc:"Reach 100 reputation. From here every client pays 1% more.",cash:6000,rep:0,check:c=>c.rep>=100,prog:c=>[Math.min(100,c.rep),100]},
   {id:"rep150",name:"Waiting list",desc:"Reach 150 reputation.",cash:10000,rep:0,check:c=>c.rep>=150,prog:c=>[Math.min(150,c.rep),150]},
   {id:"rep200",name:"Industry name",desc:"Reach 200 reputation. Another 1% on every unit price.",cash:15000,rep:0,check:c=>c.rep>=200,prog:c=>[Math.min(200,c.rep),200]},
-  {id:"pullr",name:"Back in the pull",desc:"Rebuild a farm tractor pull engine to the brief.",cash:4000,check:c=>cxN(c,"pullrebuild")>=1},
+  {id:"pullr",name:"Back in the pull",desc:"Rebuild a farm tractor pull engine to the brief.",cash:7000,check:c=>cxN(c,"pullrebuild")>=1},
   {id:"budget3",name:"Penny wise",desc:"Ship three budget-capped orders under the cap.",cash:5000,check:c=>cxN(c,"budget")>=3,prog:cxProg("budget",3)},
-  {id:"resto3",name:"Restomod regular",desc:"Ship three restomod orders that meet the brief.",cash:5000,check:c=>cxN(c,"resto")>=3,prog:cxProg("resto",3)},
-  {id:"rush3",name:"Beat the clock",desc:"Ship three rush jobs in time.",cash:6000,check:c=>cxN(c,"rush")>=3,prog:cxProg("rush",3)},
-  {id:"fleet3",name:"Nothing comes back",desc:"Fill three endurance fleet orders (reliability 95, 4,800 h).",cash:7000,check:c=>cxN(c,"fleet")>=3,prog:cxProg("fleet",3)},
+  {id:"resto3",name:"Restomod regular",desc:"Ship three restomod orders that meet the brief.",cash:8000,check:c=>cxN(c,"resto")>=3,prog:cxProg("resto",3)},
+  {id:"rush3",name:"Beat the clock",desc:"Ship three rush jobs in time.",cash:9000,check:c=>cxN(c,"rush")>=3,prog:cxProg("rush",3)},
+  {id:"fleet3",name:"Nothing comes back",desc:"Fill three endurance fleet orders (reliability 95, 4,800 h).",cash:10000,check:c=>cxN(c,"fleet")>=3,prog:cxProg("fleet",3)},
   {id:"h2h1",name:"First blood",desc:"Win a head-to-head challenge against a rival shop.",cash:3000,check:c=>rivH2h(c).won>=1},
-  {id:"h2h5",name:"Local legend",desc:"Win five head-to-head challenges.",cash:12000,check:c=>rivH2h(c).won>=5,prog:c=>[Math.min(5,rivH2h(c).won),5]},
+  {id:"h2h5",name:"Local legend",desc:"Win five head-to-head challenges.",cash:25000,check:c=>rivH2h(c).won>=5,prog:c=>[Math.min(5,rivH2h(c).won),5]},
   {id:"top",name:"Top of the board",desc:"Hold more reputation than all three rival shops (from 60 rep up).",cash:8000,check:c=>c.rep>=60&&rivTop(c)},
-  {id:"spec5",name:"Specialist",desc:"Ship one of each special order: restomod, pull rebuild, fleet, rush and budget-capped.",cash:12000,check:c=>["resto","pullrebuild","fleet","rush","budget"].every(k=>cxN(c,k)>=1),
+  {id:"spec5",name:"Specialist",desc:"Ship one of each special order: restomod, pull rebuild, fleet, rush and budget-capped.",cash:30000,check:c=>["resto","pullrebuild","fleet","rush","budget"].every(k=>cxN(c,k)>=1),
     prog:c=>[["resto","pullrebuild","fleet","rush","budget"].filter(k=>cxN(c,k)>=1).length,5]});
 /* market.js's checkGoals, with a per-goal rep reward (default 10) and a look at the rival board after every result */
 checkGoals=function(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}
