@@ -142,12 +142,19 @@
     <section class="tabpage" id="tab-market">
       <div id="marketBox">
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
-        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><button class="btn pri" id="nextWeek">Close the week</button><div id="contracts"></div><p class="hint" id="overheadHint"></p></div>
-        <div class="sec" id="baySec" hidden><h2>Build bays <span class="cnt" id="bayCnt"></span></h2><div id="bayBox"></div></div>
-        <div class="stats" id="gStats"></div>
-        <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
-        <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
-        <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
+        <div class="mkstrip" id="mkStrip"><div class="mks"><b id="mkEng"></b><span class="mkc" id="mkCert"></span><span class="mkb" id="mkBoard"></span></div><button class="mkoh" id="mkOh" aria-expanded="false" aria-controls="overheadHint" aria-label="Weekly overhead and shipping limit">i</button><button class="btn pri" id="nextWeek">Close week</button></div>
+        <p class="hint mkhint" id="overheadHint" hidden></p>
+        <p class="hint" id="mktHint" hidden></p>
+        <div class="evtabs seg n3 mktabs" id="mkTabs" role="tablist" aria-label="Market sections"><button role="tab" data-mk="jobs">Jobs<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="spons">Sponsors &amp; Rivals<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="shop">Shop<i class="evdot" aria-hidden="true"></i></button></div>
+        <div class="mkpane" id="mkJobs"><div id="contracts"></div></div>
+        <div class="mkpane" id="mkSpons"><div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div></div>
+        <div class="mkpane" id="mkShop">
+          <p class="mkline" id="mkLine"></p>
+          <div class="sec" id="baySec" hidden><h2>Build bays <span class="cnt" id="bayCnt"></span></h2><div id="bayBox"></div></div>
+          <div id="mkSvc"></div>
+          <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
+          <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
+        </div>
       </div>
       <div id="marketSandbox"><p class="hint">Contracts, warranty claims and goals are a career thing. The test cell has no customers — switch to Career in the Shop tab to start selling.</p></div>
     </section>

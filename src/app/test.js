@@ -234,7 +234,7 @@ function advSecSet(name,scroll){const f=document.querySelector("#envBox .advf");
   if(scroll){const pn=$("panel"),tb=$("evTabs");if(pn&&tb){const d=tb.getBoundingClientRect().top-pn.getBoundingClientRect().top;if(d<0)pn.scrollTop=Math.max(0,pn.scrollTop+d-6);}}}
 function advSet(f,on){if(!f)return;f.classList.toggle("open",on);const h=f.querySelector(".acch");if(h)h.setAttribute("aria-expanded",String(on));S.advOpen=Object.assign({},S.advOpen,{[f.dataset.adv]:on});save();}
 /* a lesson, tour or tip pointing into a closed fold opens it (Build's accordion or an Advanced fold) */
-function accReveal(el){const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const sc=el&&el.closest&&el.closest(".advsec");if(sc&&!sc.classList.contains("on"))advSecSet(sc.dataset.sec);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+function accReveal(el){if(typeof mkReveal==="function")mkReveal(el);const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const sc=el&&el.closest&&el.closest(".advsec");if(sc&&!sc.classList.contains("on"))advSecSet(sc.dataset.sec);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
 /* Events panel tabs: Setup (the essentials) · Advanced (the fold) · Results. S.evTab[event] remembers the open one; old saves have none = Setup.
    Panes are CSS (#evSlot[data-evt]); a run always shows Setup. */
 function evTabNow(){const t=(S.evTab||{})[evCur()];return t==="adv"||t==="res"?t:"setup";}
