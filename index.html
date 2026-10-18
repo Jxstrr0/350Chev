@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.75.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.75.2.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -765,10 +765,10 @@ textarea.code:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
 #ffBox p{margin:0 0 10px;font-size:15px;color:var(--chalk);line-height:1.45}
 #ffBox .btn{min-height:46px}
 /* toast */
-#toast{position:absolute;left:50%;bottom:calc(var(--tabh) + 14px);transform:translateX(-50%) translateY(20px);background:var(--chalk);color:var(--soot);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;z-index:40}
+#toast{position:absolute;left:50%;bottom:var(--tbot,calc(var(--tabh) + 14px));transform:translateX(-50%) translateY(20px);background:var(--chalk);color:var(--soot);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;z-index:40}
 #toast.on{opacity:1;transform:translateX(-50%)}
 /* achievements */
-#achToast{position:absolute;left:50%;bottom:calc(var(--tabh) + 66px);transform:translateX(-50%) translateY(20px);display:flex;gap:12px;align-items:center;background:var(--panel2);color:var(--chalk);border:1px solid var(--edge);border-left:3px solid var(--orange);padding:10px 16px 10px 12px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.35);opacity:0;transition:.3s;pointer-events:none;width:max-content;max-width:min(92%,420px);z-index:41}
+#achToast{position:absolute;left:50%;bottom:var(--abot,calc(var(--tabh) + 66px));transform:translateX(-50%) translateY(20px);display:flex;gap:12px;align-items:center;background:var(--panel2);color:var(--chalk);border:1px solid var(--edge);border-left:3px solid var(--orange);padding:10px 16px 10px 12px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.35);opacity:0;transition:.3s;pointer-events:none;width:max-content;max-width:min(92%,420px);z-index:41}
 #achToast.on{opacity:1;transform:translateX(-50%)}
 #achToast .at{min-width:0}#achToast small{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted)}#achToast b{display:block;font-family:var(--display);font-size:17px;line-height:1.2}#achToast span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
 .ai{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:2px solid currentColor;background:color-mix(in srgb,currentColor 14%,transparent)}
@@ -786,7 +786,7 @@ textarea.code:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
 .ach.off{border-style:dashed}.ach.off .ai{color:var(--dim);background:none;border-style:dashed;opacity:.6}.ach.off b{color:var(--muted)}.ach.on small{color:var(--good)}
 .ach .ai{width:34px;height:34px}.ach .ai svg{width:18px;height:18px}
 @media(max-width:380px){.achs{grid-template-columns:1fr}}
-html.desk #achToast{left:calc((100% - var(--sbw))/2);bottom:auto;top:140px}
+html.desk #achToast{left:calc((100% - var(--sbw))/2);bottom:auto;top:var(--atop,140px)}
 html.desk .achs{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 /* intro */
 #intro{position:absolute;inset:0;background:rgba(20,20,19,.94);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
@@ -1244,8 +1244,10 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
 #rail{position:absolute;left:0;right:0;bottom:var(--tabh);z-index:9;display:flex;flex-direction:column;background:var(--soot);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;box-shadow:0 -8px 22px rgba(0,0,0,.28)}
 #app.td #rail{display:none}
 #app.rkon #panel{padding-bottom:calc(var(--tabh) + var(--rkh) + 24px)}
-html:not(.desk) #app.rkon #toast{bottom:calc(var(--tabh) + var(--rkh) + 14px)}
-html:not(.desk) #app.rkon #achToast{bottom:calc(var(--tabh) + var(--rkh) + 66px)}
+html:not(.desk) #app.rkon #toast{bottom:var(--tbot,calc(var(--tabh) + var(--rkh) + 14px))}
+html:not(.desk) #app.rkon #achToast{bottom:var(--abot,calc(var(--tabh) + var(--rkh) + 66px))}
+/* the Test tab already lists every stress row: the rail keeps the verdict, chart and peaks there */
+html[data-tab=test] #rail .rlst{display:none}
 .rlhead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"pk chip run";align-items:center;gap:8px;min-height:var(--rkh);padding:8px 12px 8px 14px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
 .rlgrab{position:absolute;left:50%;top:0;width:72px;height:14px;margin-left:-36px;padding:0;background:none;border:0}
 .rlgrab i{display:block;width:36px;height:4px;margin:4px auto 0;border-radius:2px;background:var(--steel)}
@@ -29509,7 +29511,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.75.1.0";
+const VERSION="1.75.2.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -29621,7 +29623,19 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="boat"?0.008:t==="salt"?0.03:t==="road"?0.03:t==="hill"?0.04:t==="oval"?0.03:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
   return Math.round(lph*hours*fu.costL);}
 function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="oval")return ovalCost();if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE,hill:HILL_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
-function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");toastPlace();clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
+/* the toast and the achievement banner share the foot of the screen. Phone: the toast sits just above whatever is docked there
+   (the tab bar, or the results sheet, measured: it can be taller than its peek line) and the banner stacks above the toast.
+   Desktop: the toast sits at the top of the view and the banner drops below it. Neither ever hides the other. */
+function toastPlace(){const t=$("toast"),a=$("achToast");if(!t||!a)return;
+  if(!toastPlace.raf&&(t.classList.contains("on")||a.classList.contains("on")))toastPlace.raf=requestAnimationFrame(()=>{toastPlace.raf=0;toastPlace();});   // follow the dock while either is showing (the sheet can resize under them)
+  if(document.documentElement.classList.contains("desk")){t.style.removeProperty("--tbot");a.style.removeProperty("--abot");
+    const th=t.classList.contains("on")?Math.round(t.getBoundingClientRect().height):0;a.style.setProperty("--atop",Math.max(140,84+th+10)+"px");return;}
+  const app=$("app"),tabs=$("tabs");if(!app||!tabs)return;const ab=app.getBoundingClientRect().bottom;
+  let top=tabs.getBoundingClientRect().top;if(typeof railTop==="function"){const r=railTop();if(r<top)top=r;}
+  const tb=Math.max(0,Math.round(ab-top))+14,th=t.classList.contains("on")?Math.round(t.getBoundingClientRect().height):38;
+  t.style.setProperty("--tbot",tb+"px");a.style.setProperty("--abot",(tb+th+8)+"px");a.style.removeProperty("--atop");}
+window.addEventListener("resize",()=>{try{toastPlace();}catch(e){}});
 /* a toast that waits for the one on screen to finish (the goal toast must not hide the sale toast) */
 function toastAfter(msg){setTimeout(()=>toast(msg),Math.max(0,(toast.until||0)-Date.now())+250);}
 
@@ -33677,7 +33691,7 @@ function achCheck(x){
 function achShow(){if(achBusy||!achQ.length)return;const a=achQ.shift(),el=$("achToast");if(!el)return;achBusy=true;
   el.innerHTML=a.sum?`<div class="ai t-gold"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS.star}"/></svg></div><div class="at"><small>Achievements</small><b>${a.sum} unlocked from your records</b></div>`
     :`<div class="ai t-${a.tier}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[a.ic]}"/></svg></div><div class="at"><small>Achievement · ${ACH_TIER[a.tier]}</small><b>${a.name}</b><span>${a.desc}</span></div>`;
-  el.classList.add("on");
+  el.classList.add("on");toastPlace();
   setTimeout(()=>{el.classList.remove("on");setTimeout(()=>{achBusy=false;achShow();},350);},achQ.length?2200:3400);}
 function achRefresh(){const s=$("achSet");if(s)s.textContent=achN()+" / "+ACH.length;const c=$("achCnt");if(c)c.textContent=achN()+" / "+ACH.length;}
 function achWhen(e){return e.w!=null?"week "+e.w:new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"});}
@@ -35956,6 +35970,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
   $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
+  toastPlace();
 }
 /* Run: the same run Test arms. An event type opens Events first (its launch control lives there). */
 function railDynoT(){return DYNO_T.includes(S.testPick)?S.testPick:"pull";}
@@ -36768,12 +36783,15 @@ const tipEl=document.createElement("div");tipEl.id="tip";tipEl.setAttribute("rol
 let tipT=null,tipOn=null;
 function tipHide(){clearTimeout(tipT);tipT=null;tipOn=null;tipEl.classList.remove("on");}
 setInterval(()=>{if(tipOn&&tipOn.id==="gl"&&ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene())tipHide();},400);   // an event scene took the canvas under the orbit hint
+/* the visible height of the engine view: above the panel on a phone, the whole window beside it on desktop */
+function glShort(){const p=$("panel");return !document.documentElement.classList.contains("desk")&&!!p&&p.getBoundingClientRect().top<300;}
 const COARSE=!!(window.matchMedia&&matchMedia("(pointer: coarse)").matches);   // a touch screen: say drag and pinch, not wheel and right-drag
 function touchHint(){if(!COARSE||S.touchHint)return;S.touchHint=1;save();toastAfter("Drag the engine to orbit · pinch to zoom");}
 const TAB_KEYS=["build","test","events","analysis","market","shop"];
 const KEY_TIP={sndBtn:"Engine sound on / off <kbd>S</kbd>",idleBtn:"Start or stop the idle <kbd>I</kbd>",viewBtn:"Size, X-ray, heat map <kbd>V</kbd>",setOpen:"Settings · sound, display, help, saves",runTest:"Run the test <kbd>R</kbd>",
   dragBtn:"Hold the button or <kbd>Space</kbd>",pullBtn:"Hold the button or <kbd>Space</kbd> for throttle",gl:COARSE?"Drag to orbit · pinch to zoom":"Drag to orbit · right-drag to pan · wheel to zoom · double-click to reframe",kbHelpBtn:"Or press <kbd>?</kbd>"};
-function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()))return "";   // the orbit hint is for the engine stand only: no "drag to orbit" over an event scene, the pits or a vis-side scene
+function tipText(el){if(el.id==="gl"&&(evScene()||ENGINE_VIS.eventScene&&ENGINE_VIS.eventScene()))return "";
+  if(el.id==="gl"&&glShort())return "";   // a short view (the panel up close under it) has no room for the hint: it would sit on the brand and the buttons   // the orbit hint is for the engine stand only: no "drag to orbit" over an event scene, the pits or a vis-side scene
   if(el.dataset.tip)return el.dataset.tip;if(KEY_TIP[el.id])return KEY_TIP[el.id];
   if(el.matches("#tabs button")){const i=TAB_KEYS.indexOf(el.dataset.tab);return i<0?"":`${el.textContent.trim()} <kbd>${i+1}</kbd>`;}
   if(el.matches("#buildForm .seg button[data-k][data-v]")){const f=sliderField(el.dataset.k),o=f&&(OPT[f.optTable||f.key]||{})[el.dataset.v];if(!o)return "";
