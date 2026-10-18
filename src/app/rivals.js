@@ -85,8 +85,8 @@ function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!
   rivalsPos();}
 function rivalsRender(){let sec=$("rivSec");
   if(!career()){if(sec)sec.hidden=true;return;}
-  if(!sec){const anchor=document.querySelector("#marketBox details.sfold");if(!anchor)return;
-    sec=document.createElement("div");sec.className="sec";sec.id="rivSec";sec.innerHTML=`<h2>Rival shops <span class="cnt" id="rivCnt"></span></h2><div id="rivBox"></div>`;anchor.parentNode.insertBefore(sec,anchor);
+  if(!sec){const anchor=$("mkSpons");if(!anchor)return;
+    sec=document.createElement("div");sec.className="sec";sec.id="rivSec";sec.innerHTML=`<h2>Rival shops <span class="cnt" id="rivCnt"></span></h2><div id="rivBox"></div>`;anchor.appendChild(sec);
     sec.addEventListener("click",rivClick);}
   const s=rivS(),pl=C().rep;sec.hidden=pl<10&&!s.ch;if(sec.hidden)return;
   const rows=RIVALS.map(v=>({v,r:Math.round(s.r[v.id])})).concat([{v:null,r:pl}]).sort((a,b)=>b.r-a.r||(a.v?1:-1));
