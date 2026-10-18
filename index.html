@@ -30319,7 +30319,7 @@ function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.a
 /* ---- drag pass driver ---- */
 let DR=null;
 /* bolt-on wheelie bars: only for bodies that do not already have them; ~14 kg on the tail */
-const WBAR_KG=14,WBAR_COST=1500;function wbarOwned(){return !career()||!!C().wbarOwn;}   // career: paid once (C().wbarOwn), then re-fitted free; sandbox free
+const WBAR_KG=14,WBAR_COST=1500;function wbarOwned(){if(career()&&!C().wbarOwn&&S.env&&S.env.wbar==="yes")C().wbarOwn=1;return !career()||!!C().wbarOwn;}   // career: paid once (C().wbarOwn), then re-fitted free; sandbox free; saves fitted before the price keep theirs
 function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&wbarOwned()&&!(SIM.AERO[e.body||"street"]||{}).bars;}
 function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass+(wbarOn(e)?WBAR_KG:0),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
