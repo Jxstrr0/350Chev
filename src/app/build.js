@@ -115,10 +115,10 @@ function twoStrokeFamilyDefaults(c,wasT){const D=SIM.DEFAULT_CFG;
   if(!isCI(c.fuel)){c.cr=c.asp!=="na"?9.0:D.cr;c.lambda=0.9;}
   return `Four-stroke: valves and a cam again, ${c.layout}, ${c.cr.toFixed(1)}:1`;}
 function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"><span>${fLabel(f)}</span></div><div class="swatches">`+Object.keys(opts).map(k=>`<button data-k="${f.key}" data-v="${k}" class="${S.cfg[f.key]===k?"on":""}" style="background:${opts[k].hex}" aria-label="${opts[k].name}"></button>`).join("")+"</div>";}
-const openSec={"Bore & stroke":true};
+const openSec={};   // the one open accordion section (Base engines / a FORM section / Swap / Blueprints); remembered in S.bOpen (lazy: a fresh or old save starts all closed)
 function secSummary(sec){return sec.fields.filter(f=>!f.showIf||f.showIf(S.cfg)).map(f=>{const v=S.cfg[f.key];if(f.type==="slider")return (f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");const o=OPT[f.optTable||f.key][v];return o?o.name:v;}).join(" · ");}
 function renderBuild(){
-  altFuelFill(S.cfg);
+  altFuelFill(S.cfg);syncOpenSec();
   let h="";
   for(const sec of FORM){if(!sec.fields.some(f=>!f.showIf||f.showIf(S.cfg)))continue;   // a rotary has no pistons, rods or head gasket to show
     const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}" aria-expanded="${open}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
@@ -128,11 +128,14 @@ function renderBuild(){
   fuelHdr();ddMarkBuild();swapRender();
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
-function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
+function syncOpenSec(){const k=S.bOpen||"";for(const x in openSec)openSec[x]=false;if(k)openSec[k]=true;
+  for(const id of ["presetAcc","swapAcc","bpAcc"]){const el=$(id),h=el&&el.querySelector("[data-sec]");if(!h)continue;const o=!!openSec[h.dataset.sec];el.classList.toggle("open",o);h.setAttribute("aria-expanded",o);}}
+function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;S.bOpen=openSec[key]?key:"";save();
     document.querySelectorAll("#tab-build .acc").forEach(el=>{const h=el.querySelector("[data-sec]"),k=h.dataset.sec;el.classList.toggle("open",!!openSec[k]);h.setAttribute("aria-expanded",!!openSec[k]);});
     if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),ar=a.getBoundingClientRect(),top=(document.querySelector("#tab-build .strip")||pn).getBoundingClientRect().bottom+8;if(ar.top<top)pn.scrollTop+=ar.top-top;}
     if(tourStep>=0)requestAnimationFrame(tourPlace);}
 $("presetAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
+$("bpAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
 $("buildForm").addEventListener("click",e=>{
   const a=e.target.closest("[data-sec]");if(a){toggleSec(a);return;}
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
@@ -386,7 +389,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 function closeSheet(){$("sheet").classList.remove("on");if(!setOn())$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
-function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
+function renderBlueprints(){$("bpSum").textContent=S.blueprints.length?`${S.blueprints.length} saved`:"none saved";$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
   if(l){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}

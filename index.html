@@ -1834,6 +1834,32 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
 @media (min-width:1100px){
   html.desk[data-tab=market] :is(#rlHead,.rlchart,#rlV,#rlD,#rlDyno){display:none}
 }
+/* r13: Settings folds, Dyno day one-line rows, the Pin-baseline chip */
+#setPane .setfold{margin-bottom:10px}
+#setPane .setfold>summary{min-height:50px}
+#setPane .setfold>summary .cnt{margin-left:auto;margin-right:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#setPane .setfold>summary::after{margin-left:0;flex:0 0 auto}
+#setPane .setfold>.sfb{padding-top:6px}
+#setPane .setfold>.sfb>.lbl:first-child{margin-top:2px}
+.ddrow{border:1px solid var(--edge);border-radius:8px;background:var(--panel);margin-bottom:6px;padding:0 6px 0 12px}
+.ddl{display:flex;align-items:center;gap:8px;min-height:48px}
+.ddl b{flex:1 1 auto;min-width:0;font-family:var(--display);font-size:14px;color:var(--chalk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ddp{flex:0 0 auto;font-size:12px;color:var(--muted)}
+.ddi{flex:0 0 auto;width:36px;height:44px;margin:0 -4px;color:var(--muted);font-size:16px;background:none;border:0;cursor:pointer}
+.ddi[aria-expanded=true]{color:var(--orange2,var(--orange))}
+.ddl .btn{flex:0 0 auto;min-width:64px;min-height:40px}
+.ddx{margin:0 6px 8px 0;padding:2px 0 2px 10px;border-left:2px solid var(--rule);color:var(--muted);font-size:13px;line-height:1.5}
+.ddx b{color:var(--chalk)}
+.ddx[hidden]{display:none}
+#pinBase:disabled{opacity:.45}
+#app:not(.td) #tab-test .dockslot{display:none}
+#sbMore:empty{display:none}
+.sthead{display:flex;align-items:center;gap:8px;margin-top:-4px}
+.sthead .hint{flex:1 1 auto;min-width:0;margin:0}
+.sthead .chip{flex:0 0 auto;min-height:40px}
+.ddhint{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;margin-top:-4px}
+.ddhint details.more{flex:0 0 auto}.ddhint details.more[open]{flex:1 0 100%}
+.sthead .chip{padding:0 14px}
 </style>
 
 <div id="app">
@@ -1886,11 +1912,10 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
         <div id="presets"></div></div></div>
       <div id="buildForm"></div>
       <div class="sec acc" id="swapAcc"><button class="acch" data-sec="Swap" aria-expanded="false"><span class="t">Swap · put it in a car</span><span class="sum" id="swapSum"></span><span class="chev"></span></button><div class="accb" id="swapBody"></div></div>
-      <div class="sec">
-        <h2>Blueprints</h2>
+      <div class="sec acc" id="bpAcc"><button class="acch" data-sec="Blueprints" aria-expanded="false"><span class="t">Blueprints</span><span class="sum" id="bpSum">none saved</span><span class="chev"></span></button><div class="accb">
         <div id="bpList"></div>
         <button class="btn sm info" id="saveBp">Save blueprint</button>
-      </div>
+      </div></div>
     </section>
 
     <!-- TEST -->
@@ -1912,7 +1937,7 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
       <div id="verdict"></div>
       <button class="chip" id="setupJump" hidden>Change setup</button>
       <div id="testExtra"></div>
-      <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
+      <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><div class="sthead"><p class="hint">Tap a line for the physics behind it.</p><button class="chip" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button></div><div class="stress" id="stressList"></div></div>
       </div></div>
       <div class="sec" id="ddSec" hidden><h2>Dyno day <span class="cnt" id="ddCnt"></span></h2><div id="ddBox"></div></div>
       <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
@@ -1938,7 +1963,6 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
 
       <div class="dockslot" id="testDock"><div class="row" id="runDock">
         <button class="btn pri" id="runTest" style="flex:2">Run test</button>
-        <button class="btn sm" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button>
       </div></div>
     </section>
 
@@ -2055,7 +2079,7 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
           <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
         </div>
 </div>
-<div class="sec setsec" id="set-sound"><h2>Sound</h2>
+<details class="sfold setfold" id="set-sound" data-fold="sound"><summary>Sound <span class="cnt" id="setSumSound"></span></summary><div class="sfb">
 <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
         <div class="lbl"><span>Engine sound</span></div>
         <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
@@ -2065,8 +2089,8 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
         <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
         <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
         <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
-</div>
-<div class="sec setsec" id="set-display"><h2>Display</h2>
+</div></details>
+<details class="sfold setfold" id="set-display" data-fold="display"><summary>Display <span class="cnt" id="setSumDisplay"></span></summary><div class="sfb">
 <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
         <div class="lbl"><span>Graphics</span></div>
@@ -2085,7 +2109,7 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
           <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
           <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
-</div>
+</div></details>
 <div class="sec setsec" id="set-app" hidden><h2>App</h2>
 <button class="btn sm pri" id="pwaInstall" hidden style="margin:0 0 6px">Install app</button>
 <p class="hint" id="pwaInstallHint" hidden>Opens full screen from your home screen or desktop and works offline once loaded.</p>
@@ -2100,7 +2124,7 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
         <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
         <div id="kbBox"><button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
 </div>
-<div class="sec setsec" id="set-save"><h2>Save</h2>
+<details class="sfold setfold" id="set-save" data-fold="save"><summary>Save <span class="cnt" id="setSumSave"></span></summary><div class="sfb">
 <div class="lbl"><span>Autosave</span><b id="autoLbl">autosave on</b></div>
 
         <div id="slots"></div>
@@ -2111,7 +2135,7 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
         <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
         <button class="btn danger" id="resetGame">Wipe career</button>
         <p class="hint">A game by Longlight Interactive.</p>
-</div>
+</div></details>
   </div></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
@@ -29850,10 +29874,10 @@ function twoStrokeFamilyDefaults(c,wasT){const D=SIM.DEFAULT_CFG;
   if(!isCI(c.fuel)){c.cr=c.asp!=="na"?9.0:D.cr;c.lambda=0.9;}
   return `Four-stroke: valves and a cam again, ${c.layout}, ${c.cr.toFixed(1)}:1`;}
 function swatchRow(f){const opts=OPT[f.optTable||f.key];return `<div class="lbl"><span>${fLabel(f)}</span></div><div class="swatches">`+Object.keys(opts).map(k=>`<button data-k="${f.key}" data-v="${k}" class="${S.cfg[f.key]===k?"on":""}" style="background:${opts[k].hex}" aria-label="${opts[k].name}"></button>`).join("")+"</div>";}
-const openSec={"Bore & stroke":true};
+const openSec={};   // the one open accordion section (Base engines / a FORM section / Swap / Blueprints); remembered in S.bOpen (lazy: a fresh or old save starts all closed)
 function secSummary(sec){return sec.fields.filter(f=>!f.showIf||f.showIf(S.cfg)).map(f=>{const v=S.cfg[f.key];if(f.type==="slider")return (f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");const o=OPT[f.optTable||f.key][v];return o?o.name:v;}).join(" · ");}
 function renderBuild(){
-  altFuelFill(S.cfg);
+  altFuelFill(S.cfg);syncOpenSec();
   let h="";
   for(const sec of FORM){if(!sec.fields.some(f=>!f.showIf||f.showIf(S.cfg)))continue;   // a rotary has no pistons, rods or head gasket to show
     const open=!!openSec[sec.title];h+=`<div class="sec acc ${open?"open":""}"><button class="acch" data-sec="${sec.title}" aria-expanded="${open}"><span class="t">${(sec.titleIf&&sec.titleIf(S.cfg))||sec.title}</span><span class="sum">${secSummary(sec)}</span><span class="chev"></span></button><div class="accb">`;
@@ -29863,11 +29887,14 @@ function renderBuild(){
   fuelHdr();ddMarkBuild();swapRender();
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
-function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;
+function syncOpenSec(){const k=S.bOpen||"";for(const x in openSec)openSec[x]=false;if(k)openSec[k]=true;
+  for(const id of ["presetAcc","swapAcc","bpAcc"]){const el=$(id),h=el&&el.querySelector("[data-sec]");if(!h)continue;const o=!!openSec[h.dataset.sec];el.classList.toggle("open",o);h.setAttribute("aria-expanded",o);}}
+function toggleSec(a){const key=a.dataset.sec,wasOpen=!!openSec[key];for(const k in openSec)openSec[k]=false;openSec[key]=!wasOpen;S.bOpen=openSec[key]?key:"";save();
     document.querySelectorAll("#tab-build .acc").forEach(el=>{const h=el.querySelector("[data-sec]"),k=h.dataset.sec;el.classList.toggle("open",!!openSec[k]);h.setAttribute("aria-expanded",!!openSec[k]);});
     if(openSec[key]){const sec=FORM.find(x=>x.title===key);if(sec){const ff=sec.fields.find(f=>FOCUS_OF[f.key]);if(ff)autoFocus(ff.key);}fillDeltas(a.parentElement);const pn=$("panel"),ar=a.getBoundingClientRect(),top=(document.querySelector("#tab-build .strip")||pn).getBoundingClientRect().bottom+8;if(ar.top<top)pn.scrollTop+=ar.top-top;}
     if(tourStep>=0)requestAnimationFrame(tourPlace);}
 $("presetAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
+$("bpAcc").querySelector(".acch").addEventListener("click",e=>toggleSec(e.currentTarget));
 $("buildForm").addEventListener("click",e=>{
   const a=e.target.closest("[data-sec]");if(a){toggleSec(a);return;}
   const q=e.target.closest("[data-info]");if(q){openSheet(q.dataset.lbl,q.dataset.info,q.dataset.ckey);return;}
@@ -30121,7 +30148,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 function closeSheet(){$("sheet").classList.remove("on");if(!setOn())$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
-function renderBlueprints(){$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
+function renderBlueprints(){$("bpSum").textContent=S.blueprints.length?`${S.blueprints.length} saved`:"none saved";$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
   if(l){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}
@@ -33433,12 +33460,12 @@ function showResult(res,env){
   $("stressSec").style.display="";$("stressCnt").textContent=`${res.tests.filter(t=>t.status==="good").length}/${res.tests.length} clear`;
   const order={crit:0,warn:1,good:2};const tests=res.tests.slice().sort((a,b)=>order[a.status]-order[b.status]||b.util-a.util);
   const stRow=t=>`<button class="st ${t.status}" data-st="${t.id}"><div class="n">${t.name}<small>${t.sub}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div><div class="stx" hidden><b>Measured:</b> ${t.physics}<br><b>Fix:</b> ${t.fix}</div></button>`;
-  /* the five worst lines are the report; the rest fold away behind "Show all" (the choice sticks while you re-run) */
-  const STN=5;$("stressList").innerHTML=tests.slice(0,STN).map(stRow).join("")+(tests.length>STN?`<div id="stressRest"${stressAll?"":" hidden"}>${tests.slice(STN).map(stRow).join("")}</div><button class="btn sm ghost" id="stressMore" aria-expanded="${stressAll}">${stressAll?"Show the worst "+STN+" only":"Show all "+tests.length}</button>`:"");
+  /* the three worst lines are the report; the rest fold away behind "Show all" (the choice sticks while you re-run) */
+  const STN=3;$("stressList").innerHTML=tests.slice(0,STN).map(stRow).join("")+(tests.length>STN?`<div id="stressRest"${stressAll?"":" hidden"}>${tests.slice(STN).map(stRow).join("")}</div><button class="btn sm ghost" id="stressMore" aria-expanded="${stressAll}">${stressAll?"Show the worst "+STN+" only":"Show all "+tests.length}</button>`:"");
 }
 let stressAll=false;
 function smokeWord(r,short){const s=r.smoke||0,lm=r.fuel&&r.fuel.lamMin,lam=S.cfg.lambda;if(short)return s<8?"clean":s<35?"haze":"black";return s<8?"clean stack":s<35?"light haze":(lm&&lm<lam-0.05?"black under spool":"black at full load");}
-$("stressList").addEventListener("click",e=>{const m=e.target.closest("#stressMore");if(m){stressAll=!stressAll;const r=$("stressRest");r.hidden=!stressAll;m.setAttribute("aria-expanded",stressAll);m.textContent=stressAll?"Show the worst 5 only":"Show all "+(r.children.length+5);return;}const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
+$("stressList").addEventListener("click",e=>{const m=e.target.closest("#stressMore");if(m){stressAll=!stressAll;const r=$("stressRest");r.hidden=!stressAll;m.setAttribute("aria-expanded",stressAll);m.textContent=stressAll?"Show the worst 3 only":"Show all "+(r.children.length+3);return;}const b=e.target.closest("[data-st]");if(!b)return;const x=b.querySelector(".stx");x.hidden=!x.hidden;});
 $("pinBase").addEventListener("click",()=>{const last=S.last;if(!last)return;S.base={cfg:last.cfg,env:last.env,label:`${cfgLbl(last.cfg).split(" · ").slice(0,2).join(" ")} ${Math.round(last.res.peakHp)} hp`,res:last.res};curves.base=true;$("baseChip").classList.add("on");save();renderTest();toast("Baseline pinned — new runs overlay it");});
 
 function slipLine(r){return [r.race&&r.race.rt!=null?`RT ${r.race.foul?"red":r.race.rt.toFixed(3)}`:null,r.sixty?`60 ft ${r.sixty.t.toFixed(3)}`:null,r.ft330?`330 ${r.ft330.t.toFixed(3)}`:null,r.eighth?`1/8 ${r.eighth.t.toFixed(3)} @ ${Math.round(r.eighth.mph)}`:null,r.ft1000?`1000 ${r.ft1000.t.toFixed(3)}`:null,r.et!=null?`1/4 ${r.et.toFixed(3)} @ ${Math.round(r.mph)}`:null].filter(Boolean).join(" · ");}
@@ -34461,8 +34488,8 @@ function ddRender(){const sec=$("ddSec");if(!sec)return;const B=S.bay,show=!!B||
       <p class="hint">Run pulls, read the stress report, the chart and Analysis, change only what they'll pay for, then pull it again before you hand it back.</p></div>`;return;}
   if(!career()){$("ddCnt").textContent="practice";box.innerHTML=`<p class="hint" style="margin-top:-4px">In career, customers book dyno time for their own sick engines. Practise here: a random engine comes in with one fault and a complaint. Find it, fix it with the parts they'll pay for, and hand it back. Your own build waits in the corner.</p><button class="btn" data-dd="practice" style="width:100%">Practice diagnosis</button>`;return;}
   ddWeek();const d=DD(),open=d.jobs.filter(j=>j.st==="open");$("ddCnt").textContent=open.length?`${open.length} booked · this week only`:"none this week";
-  box.innerHTML=`<p class="hint" style="margin-top:-4px">Customers book the dyno for their own engines. Take a job: their engine goes on the dyno in place of yours (yours waits). Find the fault, fix it with the parts they'll pay for, hand it back. Pay = labour + 30% on parts; under budget earns a bonus. A botched job costs rep.${d.passed?` · ${d.passed} fixed so far, ${fmt$(d.earned)} net`:""}</p>`
-    +(open.length?open.map(j=>`<div class="card ddjob"><div class="ddh"><b>${ddEsc(ddLabel(j))}</b><span>${ddEsc(j.eng)} · labour ${fmt$(j.labour)}</span></div><p class="ddsay">“${ddEsc(j.says)}”</p><button class="btn sm pri" data-dd="take" data-id="${j.id}" style="width:100%"${testing?" disabled":""}>Take the job</button></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
+  box.innerHTML=`<div class="hint ddhint">Customers book the dyno.${moreI(`Customers book the dyno for their own engines. Take a job: their engine goes on the dyno in place of yours (yours waits). Find the fault, fix it with the parts they'll pay for, hand it back. Pay = labour + 30% on parts; under budget earns a bonus. A botched job costs rep.${d.passed?` ${d.passed} fixed so far, ${fmt$(d.earned)} net.`:""}`,"How dyno day works")}</div>`
+    +(open.length?open.map(j=>`<div class="ddrow"><div class="ddl"><b>${ddEsc(ddLabel(j))}</b><span class="ddp">${fmt$(j.labour)}</span><button class="ddi" data-ddx aria-expanded="false" aria-label="About ${ddEsc(ddLabel(j))}'s job">ⓘ</button><button class="btn sm pri" data-dd="take" data-id="${j.id}"${testing?" disabled":""}>Take</button></div><div class="ddx" hidden><b>${ddEsc(j.eng)}</b> · labour ${fmt$(j.labour)}<br>“${ddEsc(j.says)}”</div></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-dd]");if(!b)return;const a=b.dataset.dd;
   if(a==="goto"){showTab("test");requestAnimationFrame(()=>{const s=$("ddSec");if(s)s.scrollIntoView({block:"start",behavior:calmScroll()});});return;}
   if(a==="practice"){ddPractice();return;}if(a==="hint"){ddHint();return;}if(a==="hand"){ddHand();return;}if(a==="walk"){ddWalk();return;}
@@ -35990,7 +36017,7 @@ function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click()
    · Parts: a catalogue of every part the build can take, with stats, the Career upgrade that gates it, and a Fit button
    · Quick starts: back to the stock engine, or a random preset to poke at
    Called from renderShop() when career() is false. Markup lives in #sandboxBox (body.html); styles in css/ui-shop.css. */
-const SB={sec:"",q:"",sims:new Map()};
+const SB={sec:"",q:"",all:false,sims:new Map()};
 function sbSim(cfg){const k=cfgHash(cfg)+"|"+envHash();let r=SB.sims.get(k);if(r)return r;
   r=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:r.peakHp,tq:r.peakTq,rel:r.rel,kg:r.kg,nr:engineStatus(cfg,r).nr};
   if(SB.sims.size>200)SB.sims.clear();SB.sims.set(k,r);return r;}
@@ -36009,7 +36036,7 @@ function sbSections(){const out=[];for(const sec of FORM){const fs=sec.fields.fi
 function sbParts(){
   const secs=sbSections();if(!secs.some(x=>x.t===SB.sec))SB.sec=secs.length?secs[0].t:"";
   const sel=$("sbSec");sel.innerHTML=secs.map(x=>`<option value="${x.t.replace(/"/g,"&quot;")}">${x.t}</option>`).join("");sel.value=SB.sec;
-  const q=SB.q.trim().toLowerCase(),c=S.cfg;let n=0,h="";const CAP=40;
+  const q=SB.q.trim().toLowerCase(),c=S.cfg;let n=0,h="";const CAP=SB.all?400:8;
   for(const sec of secs){if(!q&&sec.t!==SB.sec)continue;
     for(const f of sec.fs){const tbl=f.optTable||f.key,opts=OPT[tbl],lb=fLabel(f),famOK=famOKf(f,c);let fh="";
       for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;
@@ -36022,12 +36049,13 @@ function sbParts(){
           +`<button class="btn sm" data-sbfit="${f.key}" data-v="${k}" ${fit?"disabled":""}>${fit?"Fitted":"Fit"}</button></div></div>`;}
       if(fh)h+=`<h3 class="sbf">${lb}${q?` <small>${sec.t}</small>`:""}</h3>`+fh;}}
   $("sbList").innerHTML=h||`<p class="hint">${q?"No part matches that.":"Nothing to show."}</p>`;
-  $("sbMore").textContent=n>CAP?`Showing ${CAP} of ${n}. Narrow the search to see the rest.`:"";$("sbSec").style.display=q?"none":"";}
+  $("sbMore").innerHTML=n>8?`<button class="btn sm ghost" id="sbAll" aria-expanded="${SB.all}">${SB.all?"Show the first 8 only":"Show all "+n}</button>`:"";$("sbSec").style.display=q?"none":"";}
 function renderSbShop(){if(!$("sbBench"))return;sbBench();sbParts();}
 (function(){const root=$("sandboxBox");if(!root)return;
   root.addEventListener("click",e=>{
     const ld=e.target.closest("[data-sbload]");if(ld){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+ld.dataset.sbload];if(!bp)return;S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;resetBase();afterCfgChange(true);renderSbShop();toast("BLUEPRINT LOADED");return;}
     const dl=e.target.closest("[data-sbdel]");if(dl){S.blueprints.splice(+dl.dataset.sbdel,1);renderBlueprints();save();renderSbShop();return;}
+    if(e.target.closest("#sbAll")){SB.all=!SB.all;sbParts();return;}
     if(e.target.closest("#sbSave")){$("saveBp").click();renderSbShop();return;}
     const ft=e.target.closest("[data-sbfit]");if(ft){if(ft.disabled)return;applyOpt(ft.dataset.sbfit,ft.dataset.v);renderSbShop();return;}
     if(e.target.closest("#sbStock")){if(testing){toast("Let the run finish first");return;}if(!confirm("Replace the current build with the stock engine? Save it to the bench first to keep it."))return;
@@ -36523,6 +36551,31 @@ function hmRestore(root){if(!HM_OPEN.size||!root||root.nodeType!==1)return;(root
     const chk=()=>{try{reg.update().catch(()=>{});}catch(_){}};
     document.addEventListener("visibilitychange",()=>{if(!document.hidden)chk();});setInterval(chk,4*3600*1000);
   }).catch(()=>{});
+})();
+/* ===== folds: Settings (Sound / Display / Save) and Dyno day rows =====
+   Settings folds are <details class="setfold" data-fold> headed by a one-line summary; the open ones are remembered per fold in
+   S.folds (lazy: a fresh or older save has none, so every fold starts closed). accReveal() also opens the fold around a target. */
+(()=>{
+  let busy=false;
+  const cap=t=>t?t.charAt(0).toUpperCase()+t.slice(1):"";
+  function foldSums(){if(!S)return;
+    const set=(id,t)=>{const el=$(id);if(el&&el.textContent!==t)el.textContent=t;};
+    set("setSumSound",`${S.sound===false?"off":"on"} · ${S.vol}%`);
+    const g=document.querySelector("#gfxSeg button.on");
+    set("setSumDisplay",`${cap(S.theme||"dark")}${g&&g.firstChild?" · "+g.firstChild.textContent.trim():""}`);
+    let n=0;for(let i=1;i<=SLOTS;i++)if(readSlot(i))n++;
+    const au=$("autoLbl");set("setSumSave",`${au?au.textContent:"autosave on"} · ${n} of ${SLOTS} slots`);}
+  function foldApply(){if(!S)return;const f=S.folds||{};busy=true;
+    document.querySelectorAll("#setBody .setfold").forEach(d=>{d.open=!!f[d.dataset.fold];});
+    setTimeout(()=>{busy=false;},0);foldSums();}
+  $("setBody").addEventListener("toggle",e=>{const d=e.target;if(busy||!d.classList||!d.classList.contains("setfold")||!S)return;
+    S.folds=Object.assign({},S.folds);if(d.open)S.folds[d.dataset.fold]=1;else delete S.folds[d.dataset.fold];save();},true);
+  $("setOpen").addEventListener("click",()=>setTimeout(foldApply,0));
+  for(const ev of ["click","input"])$("setBody").addEventListener(ev,()=>setTimeout(foldSums,30));
+  if(typeof accReveal==="function"){const ar=accReveal;accReveal=function(el){const f=el&&el.closest&&el.closest(".setfold");if(f&&!f.open)f.open=true;return ar.apply(this,arguments);};}
+  /* Dyno day: the job's details sit behind its (i) */
+  document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ddx]");if(!b)return;
+    const x=b.closest(".ddrow").querySelector(".ddx"),o=x.hidden;x.hidden=!o;b.setAttribute("aria-expanded",o);});
 })();
 /* ===================== AUTO-ADJUST GRAPHICS (v1.71) =====================
    S.gfxAuto (on unless false): once the scene has settled, watch the frame rate ENGINE_VIS already measures. If it
