@@ -745,10 +745,10 @@ textarea.code:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
 #ffBox p{margin:0 0 10px;font-size:15px;color:var(--chalk);line-height:1.45}
 #ffBox .btn{min-height:46px}
 /* toast */
-#toast{position:absolute;left:50%;bottom:calc(var(--tabh) + 14px);transform:translateX(-50%) translateY(20px);background:var(--chalk);color:var(--soot);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;z-index:40}
+#toast{position:absolute;left:50%;bottom:var(--tbot,calc(var(--tabh) + 14px));transform:translateX(-50%) translateY(20px);background:var(--chalk);color:var(--soot);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;z-index:40}
 #toast.on{opacity:1;transform:translateX(-50%)}
 /* achievements */
-#achToast{position:absolute;left:50%;bottom:calc(var(--tabh) + 66px);transform:translateX(-50%) translateY(20px);display:flex;gap:12px;align-items:center;background:var(--panel2);color:var(--chalk);border:1px solid var(--edge);border-left:3px solid var(--orange);padding:10px 16px 10px 12px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.35);opacity:0;transition:.3s;pointer-events:none;width:max-content;max-width:min(92%,420px);z-index:41}
+#achToast{position:absolute;left:50%;bottom:var(--abot,calc(var(--tabh) + 66px));transform:translateX(-50%) translateY(20px);display:flex;gap:12px;align-items:center;background:var(--panel2);color:var(--chalk);border:1px solid var(--edge);border-left:3px solid var(--orange);padding:10px 16px 10px 12px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.35);opacity:0;transition:.3s;pointer-events:none;width:max-content;max-width:min(92%,420px);z-index:41}
 #achToast.on{opacity:1;transform:translateX(-50%)}
 #achToast .at{min-width:0}#achToast small{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted)}#achToast b{display:block;font-family:var(--display);font-size:17px;line-height:1.2}#achToast span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
 .ai{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:2px solid currentColor;background:color-mix(in srgb,currentColor 14%,transparent)}
@@ -766,7 +766,7 @@ textarea.code:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
 .ach.off{border-style:dashed}.ach.off .ai{color:var(--dim);background:none;border-style:dashed;opacity:.6}.ach.off b{color:var(--muted)}.ach.on small{color:var(--good)}
 .ach .ai{width:34px;height:34px}.ach .ai svg{width:18px;height:18px}
 @media(max-width:380px){.achs{grid-template-columns:1fr}}
-html.desk #achToast{left:calc((100% - var(--sbw))/2);bottom:auto;top:140px}
+html.desk #achToast{left:calc((100% - var(--sbw))/2);bottom:auto;top:var(--atop,140px)}
 html.desk .achs{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 /* intro */
 #intro{position:absolute;inset:0;background:rgba(20,20,19,.94);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
@@ -1224,8 +1224,10 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
 #rail{position:absolute;left:0;right:0;bottom:var(--tabh);z-index:9;display:flex;flex-direction:column;background:var(--soot);border-top:1px solid var(--rule);border-radius:12px 12px 0 0;box-shadow:0 -8px 22px rgba(0,0,0,.28)}
 #app.td #rail{display:none}
 #app.rkon #panel{padding-bottom:calc(var(--tabh) + var(--rkh) + 24px)}
-html:not(.desk) #app.rkon #toast{bottom:calc(var(--tabh) + var(--rkh) + 14px)}
-html:not(.desk) #app.rkon #achToast{bottom:calc(var(--tabh) + var(--rkh) + 66px)}
+html:not(.desk) #app.rkon #toast{bottom:var(--tbot,calc(var(--tabh) + var(--rkh) + 14px))}
+html:not(.desk) #app.rkon #achToast{bottom:var(--abot,calc(var(--tabh) + var(--rkh) + 66px))}
+/* the Test tab already lists every stress row: the rail keeps the verdict, chart and peaks there */
+html[data-tab=test] #rail .rlst{display:none}
 .rlhead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"pk chip run";align-items:center;gap:8px;min-height:var(--rkh);padding:8px 12px 8px 14px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
 .rlgrab{position:absolute;left:50%;top:0;width:72px;height:14px;margin-left:-36px;padding:0;background:none;border:0}
 .rlgrab i{display:block;width:36px;height:4px;margin:4px auto 0;border-radius:2px;background:var(--steel)}

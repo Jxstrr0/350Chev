@@ -382,7 +382,7 @@ function achCheck(x){
 function achShow(){if(achBusy||!achQ.length)return;const a=achQ.shift(),el=$("achToast");if(!el)return;achBusy=true;
   el.innerHTML=a.sum?`<div class="ai t-gold"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS.star}"/></svg></div><div class="at"><small>Achievements</small><b>${a.sum} unlocked from your records</b></div>`
     :`<div class="ai t-${a.tier}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[a.ic]}"/></svg></div><div class="at"><small>Achievement · ${ACH_TIER[a.tier]}</small><b>${a.name}</b><span>${a.desc}</span></div>`;
-  el.classList.add("on");
+  el.classList.add("on");toastPlace();
   setTimeout(()=>{el.classList.remove("on");setTimeout(()=>{achBusy=false;achShow();},350);},achQ.length?2200:3400);}
 function achRefresh(){const s=$("achSet");if(s)s.textContent=achN()+" / "+ACH.length;const c=$("achCnt");if(c)c.textContent=achN()+" / "+ACH.length;}
 function achWhen(e){return e.w!=null?"week "+e.w:new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"});}
