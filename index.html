@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.74.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.75.0.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -172,19 +172,15 @@ html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 #catSeg button:disabled{opacity:.6}
-/* eight contract categories: an even grid (two across on a phone, as many as fit on a desk) instead of a ragged wrap */
-#catSeg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-html.desk #catSeg{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
-/* phone: one swipeable chip row, so the first offer lands in the first screen instead of under five rows of categories */
-html:not(.desk) #catSeg{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding:0 16px;scrollbar-width:none;margin:0 -16px 10px;padding:0 16px}
-html:not(.desk) #catSeg::-webkit-scrollbar{display:none}
-html:not(.desk) #catSeg button{flex:0 0 auto;min-width:112px;max-width:170px;min-height:46px;scroll-snap-align:start}
-html:not(.desk) #catSeg button small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* contract categories: one swipeable chip row on every width (the open one and any locked one say their sub-line), so the first offer lands in the first screen */
+#catSeg{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding:0 16px;scrollbar-width:none;margin:0 -16px 10px;padding:0 16px}
+#catSeg::-webkit-scrollbar{display:none}
+#catSeg button{flex:0 0 auto;min-width:92px;max-width:170px;min-height:44px;padding:6px 12px;font-size:13.5px;scroll-snap-align:start}
+#catSeg button small{display:none;max-width:100%;font-size:12px;white-space:nowrap;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
+#catSeg button.on small,#catSeg button:disabled small{display:block}
 html:not(.desk) #contracts .cgroup h3{margin:10px 0 6px}
 html:not(.desk) #contracts .g-now .hint.idle{display:none}   /* an empty board: the group's "0 / 2" says it, and the offers sit a screen higher */
 html:not(.desk) #contracts .card .client{margin-bottom:5px}
-#catSeg button{padding:7px 6px;min-height:48px;font-size:13.5px}
-#catSeg button small{max-width:100%;font-size:12px;white-space:normal;line-height:1.25;overflow:visible}
 .seg button{flex:1 1 auto;min-width:0;min-height:46px;padding:11px 8px;border:1px solid var(--edge);background:var(--panel);border-radius:8px;font-size:14px;font-weight:500;color:var(--chalk);line-height:1.15;position:relative}
 .seg button small{display:block;font-family:var(--body);font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
@@ -1758,6 +1754,61 @@ html:not(.desk) #evSlot .e24ev{display:none}
 #evSlot .advchips{margin:0 0 10px;gap:4px;flex-wrap:nowrap}
 #evSlot .advchips button{flex:1 1 0;min-height:40px;padding:6px 6px;font-size:13px;border-radius:8px}
 .advsec{display:none}.advsec.on{display:block}
+/* Market tab: a slim strip (engine, cert, board, Close week), Jobs | Sponsors & Rivals | Shop tabs, short contract cards (app/career.js) */
+.mkstrip{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.mks{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:3px 8px}
+.mks b{flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--display);font-size:15px;line-height:1.2}
+.mkc{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 8px;border:1px solid currentColor;border-radius:10px;white-space:nowrap;color:var(--dim)}
+.mkc.ok{color:var(--good)}.mkc.bad{color:var(--crit)}.mkc.none{color:var(--warn)}.mkc.bay{color:var(--info)}
+.mkb{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.mkstrip #nextWeek{flex:0 0 auto;width:auto;min-height:44px;padding:8px 16px;white-space:nowrap}
+.mkoh{flex:0 0 auto;position:relative;width:28px;height:28px;border:1px solid var(--rule);border-radius:50%;font-family:Georgia,serif;font-style:italic;font-size:14px;line-height:1;color:var(--muted)}
+.mkoh::after{content:"";position:absolute;inset:-8px}
+.mkoh[aria-expanded=true]{border-color:var(--orange);color:var(--orange2)}
+.mkhint{margin:-2px 0 8px;font-size:13px}
+.mktabs{margin:0 0 10px}
+.mktabs.seg button{flex:1 1 0%}
+.mktabs.seg button[data-mk=spons]{flex:1.9 1 0%}
+.mktabs button{padding-left:4px;padding-right:4px;font-size:13.5px}
+.mktabs .evdot{right:9px;top:9px}
+.mktabs button{white-space:nowrap}
+#marketBox:not([data-mk=jobs]) #mkJobs,#marketBox:not([data-mk=spons]) #mkSpons,#marketBox:not([data-mk=shop]) #mkShop{display:none}
+.mkline{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0 0 10px;font-size:12px;color:var(--muted)}
+.mkline b{font-weight:600;color:var(--chalk)}.mkline b.warnc{color:var(--warn)}
+#mkSpons .sec{margin-top:0}
+#sponHint{margin-top:-4px}
+/* the short contract card: name and deadline, only what fails, profit and the one button; the full brief behind the (i) */
+.card.cc{padding:10px 12px;margin-bottom:8px}
+.cc .cch{display:flex;align-items:flex-start;gap:8px}
+.card.cc h3{display:block;flex:1 1 auto;min-width:0;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cci{flex:0 0 auto;position:relative;width:28px;height:28px;margin:-1px -2px 0 0;border:1px solid var(--rule);border-radius:50%;font-family:Georgia,serif;font-style:italic;font-size:14px;line-height:1;color:var(--muted)}
+.cci::after{content:"";position:absolute;inset:-8px}
+.cci[aria-expanded=true]{border-color:var(--orange);color:var(--orange2)}
+.cc .ccm{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;margin:1px 0 4px;font-size:12px;color:var(--muted)}
+.cc .ccm>span{white-space:nowrap}
+.cc .ccm .client{margin:0;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.cc .cs.ok{color:var(--good)}.cc .cs.off{color:var(--warn)}
+.cc .cfq{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:2px 0 6px}
+.fq{font-size:12px;line-height:1.3;color:var(--crit);background:var(--soot);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.fq::before{content:"\2717 "}
+.fq b{font-weight:500}.fq i{font-style:normal;color:var(--dim);margin-left:5px}
+button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content:""}
+.cfix{font-size:12px;color:var(--muted)}.cfix b{font-weight:500;color:var(--chalk)}
+.cc .cstat.brk{margin:2px 0 6px;font-size:12px;padding:4px 8px}
+.cc .cact{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;margin-top:6px}
+.cmon b{display:block;font-family:var(--display);font-size:18px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.cmon b.pos{color:var(--good)}.cmon b.neg{color:var(--crit)}
+.cmon span{display:block;font-size:12px;color:var(--muted);white-space:nowrap}
+.cc .cact .btn{min-height:44px;padding:6px 10px;font-size:14px;line-height:1.15;text-align:center}
+.cdet{margin-top:10px;padding-top:8px;border-top:1px solid var(--rule)}
+.cdet .cmeta{margin:0 0 6px;font-size:12px;color:var(--muted)}
+.cdet .cnote{margin:0 0 8px}
+.cdet .money{margin-bottom:8px}.cdet .reqs{margin-bottom:6px}
+.cc.cx{border-color:var(--steel)}
+/* desktop, three columns: the rail's dyno panel (Run, peaks, curve, stress) has no place beside the Market; contract progress stays */
+@media (min-width:1100px){
+  html.desk[data-tab=market] :is(#rlHead,.rlchart,#rlV,#rlD,#rlDyno){display:none}
+}
 </style>
 
 <div id="app">
@@ -1902,12 +1953,19 @@ html:not(.desk) #evSlot .e24ev{display:none}
     <section class="tabpage" id="tab-market">
       <div id="marketBox">
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
-        <div class="sec"><h2>Contracts &amp; buyers</h2><p class="hint" id="mktHint"></p><button class="btn pri" id="nextWeek">Close the week</button><div id="contracts"></div><p class="hint" id="overheadHint"></p></div>
-        <div class="sec" id="baySec" hidden><h2>Build bays <span class="cnt" id="bayCnt"></span></h2><div id="bayBox"></div></div>
-        <div class="stats" id="gStats"></div>
-        <div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div>
-        <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
-        <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
+        <div class="mkstrip" id="mkStrip"><div class="mks"><b id="mkEng"></b><span class="mkc" id="mkCert"></span><span class="mkb" id="mkBoard"></span></div><button class="mkoh" id="mkOh" aria-expanded="false" aria-controls="overheadHint" aria-label="Weekly overhead and shipping limit">i</button><button class="btn pri" id="nextWeek">Close week</button></div>
+        <p class="hint mkhint" id="overheadHint" hidden></p>
+        <p class="hint" id="mktHint" hidden></p>
+        <div class="evtabs seg n3 mktabs" id="mkTabs" role="tablist" aria-label="Market sections"><button role="tab" data-mk="jobs">Jobs<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="spons">Sponsors &amp; Rivals<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="shop">Shop<i class="evdot" aria-hidden="true"></i></button></div>
+        <div class="mkpane" id="mkJobs"><div id="contracts"></div></div>
+        <div class="mkpane" id="mkSpons"><div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div></div>
+        <div class="mkpane" id="mkShop">
+          <p class="mkline" id="mkLine"></p>
+          <div class="sec" id="baySec" hidden><h2>Build bays <span class="cnt" id="bayCnt"></span></h2><div id="bayBox"></div></div>
+          <div id="mkSvc"></div>
+          <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
+          <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
+        </div>
       </div>
       <div id="marketSandbox"><p class="hint">Contracts, warranty claims and goals are a career thing. The test cell has no customers — switch to Career in the Shop tab to start selling.</p></div>
     </section>
@@ -29425,7 +29483,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.74.1.0";
+const VERSION="1.75.0.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -30280,7 +30338,7 @@ function advSecSet(name,scroll){const f=document.querySelector("#envBox .advf");
   if(scroll){const pn=$("panel"),tb=$("evTabs");if(pn&&tb){const d=tb.getBoundingClientRect().top-pn.getBoundingClientRect().top;if(d<0)pn.scrollTop=Math.max(0,pn.scrollTop+d-6);}}}
 function advSet(f,on){if(!f)return;f.classList.toggle("open",on);const h=f.querySelector(".acch");if(h)h.setAttribute("aria-expanded",String(on));S.advOpen=Object.assign({},S.advOpen,{[f.dataset.adv]:on});save();}
 /* a lesson, tour or tip pointing into a closed fold opens it (Build's accordion or an Advanced fold) */
-function accReveal(el){const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const sc=el&&el.closest&&el.closest(".advsec");if(sc&&!sc.classList.contains("on"))advSecSet(sc.dataset.sec);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+function accReveal(el){if(typeof mkReveal==="function")mkReveal(el);const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const sc=el&&el.closest&&el.closest(".advsec");if(sc&&!sc.classList.contains("on"))advSecSet(sc.dataset.sec);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
 /* Events panel tabs: Setup (the essentials) · Advanced (the fold) · Results. S.evTab[event] remembers the open one; old saves have none = Setup.
    Panes are CSS (#evSlot[data-evt]); a run always shows Setup. */
 function evTabNow(){const t=(S.evTab||{})[evCur()];return t==="adv"||t==="res"?t:"setup";}
@@ -33952,19 +34010,21 @@ function svcBayH(){const c=SV();const cap=svcCap(),free=cap-c.svcUsed;const jobs
       <div class="svcworn"><b>${t.name}</b><span>${t.worn}</span><i>${j.name} · ≈ ${j.hrs.toLocaleString()} h on a ${j.life.toLocaleString()} h build</i></div>
       <div class="money"><div><b>${j.warranty?"$0":fmt$(j.pay)}</b><span>${j.warranty?"no pay":"pay / unit"}</span></div><div><b>${fmt$(j.parts)}</b><span>parts / unit</span></div><div><b class="${net>=0?"pos":"neg"}">${fmt$(net*left)}</b><span>${j.warranty?"your bill":"margin"}</span></div></div>
       <button class="btn ${n>0?(j.warranty?"danger":"pri"):""}" data-rebuild="${j.id}" ${n>0?"":"disabled"}>${n>0?`Rebuild ${n} unit${n>1?"s":""}${n<left?" (bay limit)":""}`:"Bay full this week"}</button></div>`;};
-  return `<div class="cgroup g-svc"><h3>Service bay<span>${c.svcUsed} / ${cap} this week</span></h3>${jobs.length?jobs.map(card).join(""):`<p class="hint">No engines in for service. Deliveries come back for rebuilds once their warranty runs out — short-lived builds sooner, and on your bill.</p>`}
+  if(!jobs.length&&!c.rebuildJobs)return"";   // never used and nothing in: no empty block (the Shop tab shows it once an engine comes back)
+  return `<div class="cgroup g-svc"><h3>Service bay<span>${c.svcUsed} / ${cap} this week</span></h3>${jobs.length?jobs.map(card).join(""):""}
     <p class="hint svchint">${c.rebuildJobs} job${c.rebuildJobs===1?"":"s"} done · ${c.rebuiltUnits} engines rebuilt · ${fmt$(c.svcIncome)} service margin. Bay: ${cap} rebuilds a week${cap<16?" — a machinist and the machine shops add more":""}.</p></div>`;}
 function coreStockH(cert){const c=SV();const by={};for(const x of c.cores)by[x.lay]=(by[x.lay]||0)+1;const lay=S.cfg.layout;
   const rows=Object.keys(by).sort().map(l=>{const ok=l===lay;const per=ok&&cert?Math.min(Math.round(cert.res.cost*CORE_FRAC/10)*10,coreBook(l)):coreBook(l);
     return `<div class="buyer corerow"><div class="bh"><span><b>${by[l]} × ${l} core${by[l]>1?"s":""}</b><i>${(OPT.layout[l]||{}).name||l} · block, crank and rods</i></span><span class="bfit ${ok?"ok":""}">${ok?"fits this build":"other layout"}</span></div>
       <div class="bdeal"><span>${ok&&cert?`−${fmt$(per)} a unit on this build`:`worth up to ${fmt$(coreBook(l))} a unit on ${l} builds`}</span><b>${fmt$(coreScrapVal(l))}</b><button class="btn sm ghost" data-corescrap="${l}">Scrap 1</button></div></div>`;}).join("");
-  return `<div class="cgroup g-core"><h3>Core stock<span>${c.cores.length} / ${CORE_MAX}</span></h3>${rows||`<p class="hint">Empty. Buyers sometimes trade in an old engine; a core of your build's layout knocks ${Math.round(CORE_FRAC*100)}% off a unit's cost, the rest wait here.</p>`}
+  if(!c.cores.length&&!c.coresUsed&&!c.coreScrap)return"";   // no cores ever traded in: nothing to show
+  return `<div class="cgroup g-core"><h3>Core stock<span>${c.cores.length} / ${CORE_MAX}</span></h3>${rows||`<p class="hint">Empty. A core of your build's layout knocks ${Math.round(CORE_FRAC*100)}% off a unit's cost.</p>`}
     ${c.coresUsed||c.coreScrap?`<p class="hint">${c.coresUsed} core${c.coresUsed===1?"":"s"} re-used · ${fmt$(c.coreCredit)} saved · ${fmt$(c.coreScrap)} scrap</p>`:""}</div>`;}
 GOALS.push({id:"svc5",name:"Back in service",desc:"Complete 5 rebuild jobs in the service bay.",cash:6000,check:c=>(c.rebuildJobs||0)>=5},
   {id:"cores10",name:"Core business",desc:"Re-use 10 trade-in cores in new builds.",cash:4000,check:c=>(c.coresUsed||0)>=10});
 function coreHint(cert){const l=(cert.cfg||S.cfg).layout;const n=SV().cores.filter(x=>x.lay===l).length;return n?` · ${n} ${l} core${n>1?"s":""} in stock: −${fmt$(Math.min(Math.round(cert.res.cost*CORE_FRAC/10)*10,coreBook(l)))} a unit on up to ${n}`:"";}
 function coreLog(cd,cr){const p=[];if(cd.credit)p.push(`${cd.tUse+cd.sUse} ${cd.lay} core${cd.tUse+cd.sUse>1?"s":""} re-used, −${fmt$(cd.credit)}`);if(cr&&cr.kept)p.push(`${cr.kept} ${cd.inLay} core${cr.kept>1?"s":""} to stock`);if(cr&&cr.scrap)p.push(`stock full, ${fmt$(cr.scrap)} scrap`);return p.length?" · "+p.join(", "):"";}
-$("contracts").addEventListener("click",e=>{const rb=e.target.closest("[data-rebuild]");if(rb){if(rb.disabled)return;const r=doRebuild(rb.dataset.rebuild);if(!r)return;save();hud();renderShop();
+$("mkSvc").addEventListener("click",e=>{const rb=e.target.closest("[data-rebuild]");if(rb){if(rb.disabled)return;const r=doRebuild(rb.dataset.rebuild);if(!r)return;save();hud();renderShop();
     toast(r.j.warranty?`WARRANTY REBUILD · ${r.n} DONE · ${fmt$(r.parts)} PARTS`:`REBUILT ${r.n} · +${fmt$(r.net)}${r.j.done>=r.j.units?" · JOB DONE":""}`);buzz(25);return;}
   const cs=e.target.closest("[data-corescrap]");if(cs){const v=sellCore(cs.dataset.corescrap);if(v){save();hud();renderShop();toast(`CORE SOLD · ${fmt$(v)}`);}}});
 /* ===================== ENGINE SWAPS: Build › Swap — pick a car, read the fit, buy the fixes ===================== */
@@ -34474,6 +34534,21 @@ function spSign(id){const s=spS();const o=s.offers.find(x=>x.id==id);if(!o||s.ac
   s.active.push(a);s.offers=s.offers.filter(x=>x!==o);s.hist.signed++;s.hist.max=Math.max(s.hist.max,s.active.length);if(!spPrimary()||s.active.length===1)s.primary=a.b;
   logEvent(`Signed with ${spBrand(a.b).name} for ${a.weeks} weeks${a.ret?" — "+fmt$(a.ret)+"/week":""}`,"good");spLivery();achCheck({type:"sponsor"});return true;}
 const spLogoUrl=(()=>{const m={};return b=>m[b.id]||(m[b.id]=ENGINE_VIS.logoCanvas(b,512,192).toDataURL());})();
+/* Market sub-tabs: Jobs | Sponsors & Rivals | Shop. S.mkTab remembers the open one; an old save has none = Jobs. */
+const MK_TABS=["jobs","spons","shop"];
+function mkTabNow(){const t=S.mkTab;return MK_TABS.includes(t)?t:"jobs";}
+function mkTabSet(tab,scroll){if(!MK_TABS.includes(tab))return;if(S.mkTab!==tab){S.mkTab=tab;save();}mkLayout();
+  if(scroll){const pn=$("panel"),tb=$("mkTabs");if(pn&&tb){const d=tb.getBoundingClientRect().top-pn.getBoundingClientRect().top;if(d<0)pn.scrollTop=Math.max(0,pn.scrollTop+d-6);}}}
+function mkLayout(){const box=$("marketBox"),tabs=$("mkTabs");if(!box||!tabs)return;const t=mkTabNow();box.dataset.mk=t;
+  tabs.querySelectorAll("[data-mk]").forEach(b=>{const on=b.dataset.mk===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",String(on));});
+  if(!career())return;
+  /* a dot on a tab that has something waiting: a sponsor offer or rival challenge, a repeat order, a service job */
+  const so=spS().offers.filter(o=>o.exp>=C().week).length,rc=(typeof rivS==="function"&&rivS().ch)?1:0,inb=(C().inbox||[]).filter(k=>k.expires>=C().week).length,sv=(C().service||[]).length;
+  const has={jobs:inb>0,spons:so+rc>0,shop:sv>0},why={jobs:`${inb} repeat order${inb===1?"":"s"} waiting`,spons:`${so} sponsor offer${so===1?"":"s"}${rc?" · a rival challenge":""}`,shop:`${sv} service job${sv===1?"":"s"} in`};
+  tabs.querySelectorAll("[data-mk]").forEach(b=>{const k=b.dataset.mk;b.classList.toggle("has",has[k]);b.title=has[k]?why[k]:"";});}
+$("mkTabs").addEventListener("click",e=>{const b=e.target.closest("[data-mk]");if(!b)return;mkTabSet(b.dataset.mk,true);buzz(4);});
+/* a lesson, tour or tip pointing at something in a hidden Market tab opens that tab first */
+function mkReveal(el){const p=el&&el.closest&&el.closest("#mkJobs,#mkSpons,#mkShop");if(!p)return;const t={mkJobs:"jobs",mkSpons:"spons",mkShop:"shop"}[p.id];if(t&&mkTabNow()!==t)mkTabSet(t);}
 /* tab badges: sponsor offers waiting (Market) and booked dyno-day customers (Test) */
 function tabBadges(){const mk=$("mktDot"),td=$("testDot");if(!mk||!td)return;const on=career()&&!ff;
   const so=on?spS().offers.filter(o=>o.exp>=C().week).length:0,dd=on&&C().dd&&C().dd.week===C().week?C().dd.jobs.filter(j=>j.st==="open").length:0;
@@ -34495,7 +34570,7 @@ function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPri
     <p class="spfine">Break it: ${fmt$(o.pen)} and ${o.penRep} rep${live?` · earned ${fmt$(o.earned)} so far`:""}</p><div class="spbtns">${btns}</div></div>`;}
 function spRender(){const box=$("spons");if(!box||!career())return;const s=spS(),slots=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
   $("sponCnt").textContent=`${s.active.length} / ${slots}`;
-  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}. Brands notice shops that race and win: race nights, pulls, the salt (all on the Events tab) and delivered orders. The primary sponsor goes on the hood, the rest on the sides.`;
+  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}`;$("sponHint").title="Brands notice shops that race and win: race nights, pulls, the salt (all on the Events tab) and delivered orders. The primary sponsor goes on the hood, the rest on the sides.";
   box.innerHTML=(s.active.length?`<div class="cgroup g-now"><h3>Signed<span>${s.active.length}</span></h3>${s.active.map(a=>spCard(a,"active")).join("")}</div>`:"")
     +`<div class="cgroup g-far"><h3>Offers<span>${s.offers.length}</span></h3>${s.offers.length?s.offers.map(o=>spCard(o,"offer")).join(""):`<p class="hint">No one is calling yet. Put the shop's name out there — enter a race night, a pull or a speed trial. <button class="chip" data-gotab="events">Open Events</button></p>`}</div>`;}
 function spSlipHtml(){if(!career())return"";const s=spS();if(!s.active.length)return"";const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
@@ -34508,17 +34583,24 @@ $("spons").addEventListener("click",e=>{if(!career())return;const s=spS();
   const pr=e.target.closest("[data-spprim]");if(pr){s.primary=pr.dataset.spprim;spLivery();save();renderShop();toast(`${spBrand(s.primary).name.toUpperCase()} · ON THE HOOD`);return;}
   const dr=e.target.closest("[data-spdrop]");if(dr){const a=s.active.find(x=>x.b===dr.dataset.spdrop);if(!a)return;if(!confirm(`Walk away from ${spBrand(a.b).name}? It costs ${fmt$(a.pen)} and ${a.penRep} rep.`))return;
     spBreak(a,"you walked away");spLivery();save();hud();renderShop();}});
+/* Market: compact cards (the full brief opens behind the (i); ids of the open ones live here) and the Jobs | Sponsors & Rivals | Shop tabs */
+const mkX=new Set();
 function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
   spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
   refillContracts();spRender();rivalsRender();
-  $("gStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${C().rep}</b><span>reputation</span></div><div><b>${C().sold}</b><span>engines sold</span></div><div><b>${fmt$(C().profit)}</b><span>lifetime profit</span></div><div><b>${C().week}</b><span>week</span></div><div><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b><span>warranty paid</span></div>`;
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${dc.hp.toLocaleString()}</b><span>dyno hp cap</span></div><div><b>${C().loan>0?fmt$(C().loan):Object.keys(C().owned).length}</b><span>${C().loan>0?"bank loan":"upgrades owned"}</span></div>`;
   const cert=C().cert&&C().cert.hash===cfgHash(S.cfg)&&C().cert.ok?C().cert:null;const lastCert=C().cert&&C().cert.hash===cfgHash(S.cfg)?C().cert:null;
-  $("mktHint").innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":ddEsc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:cert?`<div style="margin-bottom:8px">${engineCard(S.cfg,cert.res,{cls:"inline"})}</div>ON OFFER · unit cost ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`NO CERT — last pull: ${lastCert.why}.`:"NO CERT ON FILE — run a dyno pull in Test; buyers only look at certified engines.";
+  {const eng=engineName(),q=S.bay?"":(cert?"ok":lastCert&&!lastCert.ok?"bad":"none");
+    $("mkEng").textContent=eng;$("mkEng").title=eng;
+    $("mkCert").className="mkc "+(q||"bay");$("mkCert").textContent=S.bay?"ON THE DYNO":q==="ok"?"CERTIFIED":q==="bad"?"CERT FAILED":"NO CERT";
+    $("mkCert").title=S.bay?"":cert?`On offer at a unit cost of ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`Last pull: ${lastCert.why}.`:"Run a dyno pull in Test; buyers only look at certified engines.";
+    $("mkBoard").textContent=`${C().contracts.length}/${MAX_ACTIVE} board`;$("mkBoard").title=`${C().contracts.length} of ${MAX_ACTIVE} contracts on the board`;
+    const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":ddEsc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
+    $("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span><b>${C().sold}</b> engines sold</span><span><b>${fmt$(C().profit)}</b> lifetime profit</span><span><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b> warranty paid</span>`;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(LOAN_RATE*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
@@ -34530,16 +34612,25 @@ function renderShop(){
   const cardH=(k,mode)=>{const lf=liveFit(k);const failing=lf.o.filter(q=>!q.ok).length;const fix=(!lf.ok&&failing<=3)?oneChange(k):null;
     const f=cert?fits(k,cert.res,cert.cfg):null;const d=deal(k,f||lf);const unit=d.unit;const cost=f?cert.res.cost:live.cost;const cd=mode==="active"&&f&&d.want?coreDeal(k,d.units,cert):null;const profit=(unit-cost)*d.units+(cd?cd.credit:0);
     const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}${q.q==="lap"||q.q==="zero100"?" rq-road":""}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
-    const status=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):`<div class="cstat off">◐ OFF BRIEF · ${d.want?`they'd take ${d.units} of ${k.units} at ${Math.round(Math.pow(d.m,0.7)*100)}%`:"too far off — they'd walk"} <small>${missTxt(d)}</small>${fix?`<span>Full price with one change: <b>${fix.label}</b></span>`:""}</div>`;
-    const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;const sc=siteCard(k,lf);
+    const bad=lf.o.filter(q=>!q.ok),open=mkX.has(String(k.id)),sc=siteCard(k,lf);
+    const chips=bad.slice(0,open?0:3).map(q=>`<span class="fq"><b>${q.name}</b> ${q.val}${bad.length===1?`<i>${q.target}</i>`:""}</span>`).join("")+(!open&&bad.length>3?`<button class="fq more" data-ccx="${k.id}">+${bad.length-3}</button>`:"");
+    const sub=lf.ok?`${d.units} × ${fmt$(unit)}`:d.want?`${d.units} of ${k.units} units · ${fmt$(unit)} ea`:"they'd walk";
+    const stFull=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):`<div class="cstat off">◐ OFF BRIEF · ${d.want?`they'd take ${d.units} of ${k.units} at ${Math.round(Math.pow(d.m,0.7)*100)}%`:"too far off — they'd walk"} <small>${missTxt(d)}</small></div>`;
+    const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;
     const btn=mode==="active"
       ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
       :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}"${profit<0?` data-loss="${Math.round(-profit)}"`:""} ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":(profit<0?"Take it at a loss · ":"Take the job · ")+fmt$(dep)+" deposit"}</button>`;
-    const meta=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
+    const metaFull=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
+    const metaShort=mode==="active"?`${k.units} units · due wk ${k.expires}`:`${k.units} units · ${mode==="inbox"||k.repeat?`till wk ${k.expires}`:"this week only"}`;
     const rq=k.req||{},evGo=rq.lap!=null||rq.zero100!=null?`<button class="chip evgo" data-evgo="road" data-ch="${(rq.road&&rq.road.ch)||"coupe"}" data-trk="${rq.lap!=null&&rq.road&&rq.road.trk||""}">Road test it in their car ›</button>`:rq.et!=null?`<button class="chip evgo" data-evgo="drag">Take it to the strip ›</button>`:rq.mph!=null&&rq.lsr?`<button class="chip evgo" data-evgo="salt">Run it on the salt ›</button>`:"";
-    return `<div class="card brief ${k.repeat?"repeat":""}${k.tag?" sp-"+(k.rush?"rush":"order"):""}"><div class="client">${k.client}${k.repeat?" · repeat client · +10%":""}${k.tag?`<em class="ctag${k.rush?" rush":""}">${k.tag}</em>`:""}</div><h3>${k.name}<span>${meta}</span></h3>${k.note&&mode!=="active"?`<p class="cnote">${k.note}</p>`:""}${sc.top}${status}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
-      <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":""}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div>${btn}<div class="reqs">${rows}</div>${evGo}${sc.brk}</div>`;};   /* verdict, money and the button lead; the requirement rows follow */
-  const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
+    const bonus=d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":"";
+    /* a short card: name and deadline, only what fails, the profit and the one button; the full brief opens behind the (i) */
+    return `<div class="card brief cc ${k.repeat?"repeat":""}${k.tag?" sp-"+(k.rush?"rush":"order"):""}${open?" cx":""}"><div class="cch"><h3>${k.name}</h3><button class="cci" data-ccx="${k.id}" aria-expanded="${open}" aria-label="${open?"Hide":"Show"} the full brief for ${k.name}">i</button></div>
+      <div class="ccm"><span class="client">${k.client}${k.repeat?" · repeat +10%":""}${k.tag?`<em class="ctag${k.rush?" rush":""}">${k.tag}</em>`:""}</span><span>${metaShort}</span>${lf.ok?`<span class="cs ok">✓ meets brief</span>`:""}</div>${chips||fix?`<div class="cfq">${chips}${fix?`<span class="cfix">One change: <b>${fix.label}</b></span>`:""}</div>`:""}${sc.brk}
+      <div class="cact"><div class="cmon"><b class="${profit>=0?"pos":"neg"}">${profit<0?"−":""}${fmt$(Math.abs(profit))}</b><span>profit · ${sub}</span></div>${btn}</div>
+      ${open?`<div class="cdet">${k.note&&mode!=="active"?`<p class="cnote">${k.note}</p>`:""}<p class="cmeta">${metaFull}</p>${sc.top}${stFull}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
+        <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${bonus}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div><div class="reqs">${rows}</div>${evGo}</div>`:""}</div>`;};
+  const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">${lastCert&&lastCert.why?`Last pull: ${lastCert.why}. `:""}Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
     const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
     const row=b=>{const d=b.d,k=b.k;const cd=coreDeal(k,d.units,cert),pr=b.profit+cd.credit;const fit=Math.round(Math.min(1,d.ok?1:d.m)*100);const full=C().shipped>=MAX_ACTIVE;
       return `<div class="buyer"><div class="bh"><span><b>${k.name}</b><i>${k.cat}${k.recent?" · supplied recently":""}</i></span><span class="bfit ${d.ok?"ok":fit>=60?"mid":"low"}">${k.crate?"any engine":d.ok?"fits brief":fit+"% fit"}</span></div>
@@ -34554,9 +34645,11 @@ function renderShop(){
     (cert?buyersH():"")+   /* a certified engine: its buyers sit with the board; otherwise they are only a hint, below the offers */
     (inbox.length?`<div class="cgroup g-one"><h3>Repeat orders<span>${inbox.length}</span></h3>${inbox.map(k=>cardH(k,"inbox")).join("")}</div>`:"")+
     `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`+
-    (cert?"":buyersH())+svcBayH()+coreStockH(cert);
+    (cert?"":buyersH());
+  $("mkSvc").innerHTML=svcBayH()+coreStockH(cert);   // the Shop tab: the service bay and core stock, each only once it has something to show
   {const cs=$("catSeg"),on=cs&&cs.querySelector("button.on");if(on){const x=on.offsetLeft-cs.offsetLeft;if(x+on.offsetWidth>cs.clientWidth)cs.scrollLeft=x-16;}}   // phone: the chip row scrolls; keep the open category in sight
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
+  mkLayout();
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
   bayRender();crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
@@ -34568,6 +34661,7 @@ function renderShop(){
     return `<div class="up ${own?"owned":""}"><div><h3>${u.name}</h3><p>${u.desc}</p>${gated?`<p class="uneed"><b>${u.needs&&!C().owned[u.needs]?`Needs ${UPGRADES.find(x=>x.id===u.needs).name}.`:""}${repLk?` Opens at ${u.rep} rep.`:""}</b></p>`:""}</div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=u.price&&!gated?"pri":""}" data-buy="${u.id}" ${gated?"disabled":""}>${fmt$(u.price)}</button>`}</div>`;}).join("");
 }
 $("contracts").addEventListener("click",e=>{
+  const cx=e.target.closest("[data-ccx]");if(cx){const id=cx.dataset.ccx;if(mkX.has(id))mkX.delete(id);else mkX.add(id);renderShop();return;}
   const cb=e.target.closest("[data-cat]");if(cb){if(cb.disabled)return;C().cat=cb.dataset.cat;save();renderShop();return;}
   const sp=e.target.closest("[data-siteprev]");if(sp){const k=C().contracts.concat(C().inbox||[],offersFor(C().cat)).find(x=>x.id==sp.dataset.siteprev);if(k&&k.site)previewSite(k.site);return;}
   const ab=e.target.closest("[data-accept]");if(ab){if(ab.disabled)return;const from=ab.dataset.from;const list=from==="inbox"?(C().inbox||[]):offersFor(C().cat);const k=list.find(x=>x.id==ab.dataset.accept);if(!k)return;if(ab.dataset.loss&&!confirm(`This job loses about ${fmt$(+ab.dataset.loss)} on the engine you have now. Take it and pay the deposit anyway?`))return;if(acceptContract(k,from)){save();hud();renderShop();toast(`${k.name.toUpperCase()} · ${fmt$(k.deposit)} DEPOSIT IN`);buzz(20);}return;}
@@ -34593,6 +34687,7 @@ function setOpen(){closeSheet();$("setOpen").classList.add("open");$("setPane").
 function setClose(){if(!setOn())return;$("setOpen").classList.remove("open");$("setPane").classList.remove("on");if(!$("sheet").classList.contains("on"))$("scrim").classList.remove("on");}
 $("setOpen").addEventListener("click",()=>{if(setOn()){setClose();return;}renderShop();setOpen();});$("setClose").addEventListener("click",setClose);$("scrim").addEventListener("click",setClose);
 $("setPane").addEventListener("click",e=>{if(e.target.closest("#glOpen,#lessonsOpen,#kbHelpBtn,#sndCredBtn,#replayTour,#replayFF,#modeBox button"))setClose();});
+$("mkOh").addEventListener("click",()=>{const h=$("overheadHint"),on=h.hidden;h.hidden=!on;$("mkOh").setAttribute("aria-expanded",String(on));});
 $("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
@@ -34813,8 +34908,8 @@ function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!
   rivalsPos();}
 function rivalsRender(){let sec=$("rivSec");
   if(!career()){if(sec)sec.hidden=true;return;}
-  if(!sec){const anchor=document.querySelector("#marketBox details.sfold");if(!anchor)return;
-    sec=document.createElement("div");sec.className="sec";sec.id="rivSec";sec.innerHTML=`<h2>Rival shops <span class="cnt" id="rivCnt"></span></h2><div id="rivBox"></div>`;anchor.parentNode.insertBefore(sec,anchor);
+  if(!sec){const anchor=$("mkSpons");if(!anchor)return;
+    sec=document.createElement("div");sec.className="sec";sec.id="rivSec";sec.innerHTML=`<h2>Rival shops <span class="cnt" id="rivCnt"></span></h2><div id="rivBox"></div>`;anchor.appendChild(sec);
     sec.addEventListener("click",rivClick);}
   const s=rivS(),pl=C().rep;sec.hidden=pl<10&&!s.ch;if(sec.hidden)return;
   const rows=RIVALS.map(v=>({v,r:Math.round(s.r[v.id])})).concat([{v:null,r:pl}]).sort((a,b)=>b.r-a.r||(a.v?1:-1));
