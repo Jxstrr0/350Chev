@@ -14,7 +14,7 @@ function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.query
   else{spot.style.display="none";box.style.top="auto";box.style.bottom="90px";}
   deskBox(box,el&&el.getBoundingClientRect());}
 function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);if(st.pre)st.pre();
-  accReveal(document.querySelector(st.sel));
+  accReveal(document.querySelector(st.sel));anaReveal(document.querySelector(st.sel));
   const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){const go=n=>{if(tourStep!==i)return;if(st.pre2)st.pre2();const t2=document.querySelector(st.sel)||target,pr=$("panel").getBoundingClientRect(),tr=t2.getBoundingClientRect(),dy=(tr.top-pr.top)-(pr.height*0.38);$("panel").scrollTop+=dy;tourPlace();if(n>0&&Math.abs(dy)>3)setTimeout(()=>go(n-1),350);else setTimeout(tourPlace,380);};setTimeout(()=>go(16),60);}
   $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text.replace("{n}",tourStarters());$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
   if(target&&!$("panel").contains(target)){setTimeout(tourPlace,380);setTimeout(tourPlace,700);}   // the results rail is not in the panel: its layout settles a beat after the tab switch
@@ -353,7 +353,7 @@ function lsPlace(){if(!LS)return;const st=LS.L.steps[LS.i];if(!st)return;const a
 function lsShow(i){if(!LS)return;LS.i=i;const L=LS.L,st=L.steps[i];if(!st){lsEnd(false);return;}glPopClose();
   if((st.tab==="test"||st.tab==="events")&&S.env.testType!==L.env.testType&&!testing)pickTest(L.env.testType);
   if(curTab!==st.tab)showTab(st.tab);
-  accReveal(document.querySelector(st.sel));
+  accReveal(document.querySelector(st.sel));anaReveal(document.querySelector(st.sel));
   const last=i===L.steps.length-1;
   $("lesStep").textContent=`${L.name} · ${i+1} of ${L.steps.length}`;$("lesTitle").textContent=st.title;$("lesText").textContent=st.text;
   $("lesSkip").style.display=last?"none":"";$("lesKeep").style.display=last?"":"none";$("lesNext").textContent=last?"Back to my engine":"Next";
