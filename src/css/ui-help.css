@@ -26,3 +26,8 @@ details.more>div b{color:var(--chalk)}
 div.up>div,.goal>div{min-width:0}
 div.up p.uneed{margin-top:1px;font-size:12px}div.up p.uneed b{color:var(--warn)}
 .hmx-full:has(>details.more[open])>.hms{display:none}
+/* the Lessons list (eleven rows): name + step count + one line on the left, the button on the right; the sheet scrolls */
+.opt.les{display:flex;align-items:center;gap:12px;padding:9px 0}
+.opt.les .lsx{flex:1 1 auto;min-width:0}
+.opt.les .lsx p{margin:2px 0 0;font-size:13px;line-height:1.35;color:var(--muted)}
+.opt.les .btn{flex:0 0 auto;min-width:76px;margin:0}
