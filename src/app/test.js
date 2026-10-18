@@ -52,6 +52,9 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("b[data-enum]"
 /* career: a tier is bought once (C().drvOwn), then re-fitted free; an unowned one counts as Stock. Sandbox: every tier free. */
 function drvOwned(id){return !career()||id==="stock"||!!(C().drvOwn&&C().drvOwn[id]);}
 function drvId(){const id=S.env.drv;return SIM.DRIVETRAIN[id]&&drvOwned(id)?id:"stock";}
+/* the one Driver toggle every event shares: You drive | Auto in a single row, the two one-line notes behind a small (i).
+   attrs(id) gives the button its event's data attributes ("you" / "auto"); cur is the chosen id. */
+function driverToggle(attrs,cur,you,auto){return `<div class="drvrow"><span class="dl">Driver</span><div class="seg n2 drvseg">${[["you","You drive"],["auto","Auto"]].map(([id,n])=>`<button ${attrs(id)} class="${cur===id?"on":""}">${n}</button>`).join("")}</div>${moreI(`<b>You drive</b> · ${you}<br><b>Auto</b> · ${auto}`,"About the driver")}</div>`;}
 function drvHtml(){const cur=drvId();return `<div class="lbl"><span>Clutch, box &amp; axle</span></div><div class="seg">${Object.entries(SIM.DRIVETRAIN).map(([k,v])=>`<button data-lp="${k}" data-ek="drv" class="${cur===k?"on":""}">${v.n}<small>${Math.round(v.nm).toLocaleString("en-CA")} N·m${v.cost&&!drvOwned(k)?" · "+fmt$(v.cost):v.cost&&career()?" · owned":""}</small></button>`).join("")}</div><div class="segbodynote">${SIM.DRIVETRAIN[cur].d}${cur==="stock"?"":" — past the rating the clutch slips; far past it, something breaks."}</div>`;}
 function carVeh(car){const b=BODY_SETUP[(car&&car.body)||"street"]||BODY_SETUP.street;const v=Object.assign({},b,car||{});v.chute=v.chute==="yes"||v.chute===true;v.body=(car&&car.body)||"street";return v;}
 const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"street",chute:"no",launchRpm:3500,rearBias:0.55,mass:1400},
@@ -184,25 +187,32 @@ function evPickRender(){const box=$("evPick");if(!box)return;const cur=evCur();
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
   const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));}
 /* Advanced: the settings a racer rarely touches fold away under the essentials (open state per test in S.advOpen) */
+/* ADV: what folds away under an event's essentials. e = sliders, k = [data-attr, key] segs (label + seg + its note), x = extra selectors,
+   m = selectors for more groups the Events tab moves out of Setup (a .seg's label and note, or the suspension grid with its read-out),
+   anything built with data-evadv goes too. The Events tab shows the fold as its Advanced tab (evLayout), the Test tab as the "Cell" fold. */
 const ADV={cell:{e:["ambientC","altitudeM","coolantC","oilC"]},
-  drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],paint:1,hint:"Rear-drive on a prepped strip",sum:"weight · gearing · tyre psi · shocks · chute · paint"},
-  pull_sled:{e:["pullHitch","pullBallast"],hint:"A higher hitch plants",sum:"hitch height · front ballast"},
-  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],x:["[data-saltgear]"],paint:1,sum:"gearing · ballast · aero · cooling · chutes · paint"},
+  drag:{e:["mass","rearBias","gears","first","top","final","tyreDia","tyrePsi"],k:[["ek","chute"],["ek","shocks"]],m:['[data-ek="drv"]','[data-ek="body"]','[data-shell]','[data-ek="wbar"]','[data-ek="race"]','[data-ek="shiftMode"]'],paint:1,hint:"Rear-drive on a prepped strip",sum:"weight · gearing · tyre psi · shocks · chute · paint"},
+  pull_sled:{e:["pullHitch","pullBallast"],m:['[data-pk="pullTrans"]','[data-ek="drv"]'],hint:"A higher hitch plants",sum:"hitch height · front ballast"},
+  salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],m:['[data-sk="saltShift"]'],x:["[data-saltgear]"],paint:1,sum:"gearing · ballast · aero · cooling · chutes · paint"},
   bog:{k:[["bk","bogGear"],["bk","bogTyre"]],sum:"gear · tyres"},
   boat:{e:["boatPitch","boatGear","boatTrim"],k:[["tk","boatImp"]],hint:"Boat drags:",sum:"prop pitch · gear · trim · prop shop"},
-  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],sum:"final drive · camera · playback"},
-  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],sum:"final drive · camera · playback"},
+  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],m:['[data-rk="roadCh"]','[data-ek="drv"]',".su-grid"],sum:"final drive · camera · playback"},
+  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],m:['[data-hk="hillCh"]','[data-hk="hillAero"]',".su-grid"],sum:"final drive · camera · playback"},
   oval:{e:["ovalFinal"],k:[["ok","ovalGrille"],["ok","ovalCam"],["ok","ovalSpd"]],sum:"rear end · grille · camera · playback"},
-  race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],sum:"fuel · tyre changes · safety cars"}};
+  race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],m:['[data-rk="roadCh"]'],sum:"fuel · tyre changes · safety cars"}};
 function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envBox");if(!A)return;const nodes=[],add=n=>{if(n&&!nodes.includes(n))nodes.push(n);};
-  const seg=b=>{const g=b&&b.closest(".seg");if(!g)return;const l=g.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(g);};
+  const seg=b=>{const g=b&&b.closest(".seg");if(!g)return;const l=g.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(g);for(let n=g.nextElementSibling;n&&n.classList.contains("segbodynote");n=n.nextElementSibling)add(n);};
+  const evT=trackEvt(t);
   (A.e||[]).forEach(k=>{const r=$("er-"+k);if(r&&box.contains(r))add(r.closest(".env"));});
   (A.k||[]).forEach(([a,k])=>seg(box.querySelector(`[data-${a}="${k}"]`)));
   (A.x||[]).forEach(q=>{const b=box.querySelector(q);if(b)add(b.closest(".row")||b);});
   if(A.paint){const p=box.querySelector(".paints");if(p){const l=p.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(p);}}
+  if(evT){(A.m||[]).forEach(q=>{const b=box.querySelector(q);if(!b)return;
+      if(b.matches(".su-grid")){const l=b.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l);add(b);const lv=$("suLive");if(lv&&box.contains(lv))add(lv);const n=lv&&lv.nextElementSibling;if(n&&n.matches("p.hint"))add(n);}else seg(b);});
+    box.querySelectorAll("[data-evadv]").forEach(add);}
   if(A.hint)box.querySelectorAll(":scope > p.hint").forEach(p=>{if(p.textContent.trim().startsWith(A.hint))add(p);});
   if(!nodes.length)return;nodes.sort((a,b)=>a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
-  const open=!!(S.advOpen&&S.advOpen[key]),es=k=>envStore(k)[k];
+  const open=evT||!!(S.advOpen&&S.advOpen[key]),es=k=>envStore(k)[k];   // Events: the fold is the Advanced tab, always open
   const sum=key==="cell"?`${es("ambientC")} °C · ${es("altitudeM")} m · coolant ${es("coolantC")} · oil ${es("oilC")}`:A.sum;
   const f=document.createElement("div");f.className="acc advf"+(open?" open":"");f.dataset.adv=key;
   f.innerHTML=`<button class="acch" aria-expanded="${open}"><span class="t">${key==="cell"?"Cell":"Advanced"}</span><span class="sum">${sum}</span><span class="chev"></span></button><div class="accb"></div>`;
@@ -211,7 +221,18 @@ function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envB
   box.appendChild(f);}
 function advSet(f,on){if(!f)return;f.classList.toggle("open",on);const h=f.querySelector(".acch");if(h)h.setAttribute("aria-expanded",String(on));S.advOpen=Object.assign({},S.advOpen,{[f.dataset.adv]:on});save();}
 /* a lesson, tour or tip pointing into a closed fold opens it (Build's accordion or an Advanced fold) */
-function accReveal(el){const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+function accReveal(el){const p=evPaneOf(el);if(p&&!testing&&evTabNow()!==p)evTabSet(p);const ac=el&&el.closest(".acc");if(!ac||ac.classList.contains("open"))return;if(ac.classList.contains("advf"))advSet(ac,true);else{const a=ac.querySelector("[data-sec]");if(a)toggleSec(a);}}
+/* Events panel tabs: Setup (the essentials) · Advanced (the fold) · Results. S.evTab[event] remembers the open one; old saves have none = Setup.
+   Panes are CSS (#evSlot[data-evt]); a run always shows Setup. */
+function evTabNow(){const t=(S.evTab||{})[evCur()];return t==="adv"||t==="res"?t:"setup";}
+function evPaneOf(el){const sl=$("evSlot");if(!el||!sl||curTab!=="events"||!sl.contains(el))return null;return el.closest(".advf")?"adv":el.closest("#peaks,#verdict,#testExtra,#stressSec,#dynoHint,#setupJump")?"res":"setup";}
+function evTabSet(tab,scroll){S.evTab=Object.assign({},S.evTab,{[evCur()]:tab});save();evLayout();if(scroll){const pn=$("panel"),tb=$("evTabs");if(pn&&tb){const d=tb.getBoundingClientRect().top-pn.getBoundingClientRect().top;if(d<0)pn.scrollTop=Math.max(0,pn.scrollTop+d-6);}}}
+function evLayout(){const sl=$("evSlot"),tabs=$("evTabs"),pg=$("tab-events");if(!sl||!tabs)return;
+  const hasAdv=!!document.querySelector("#envBox .advf"),hasRes=!!($("verdict").firstElementChild||$("peaks").firstElementChild);let tab=evTabNow();if(tab==="adv"&&!hasAdv)tab="setup";
+  const pane=testing?"setup":tab;sl.dataset.evt=pane;sl.classList.toggle("nores",!hasRes);
+  tabs.querySelectorAll("button").forEach(b=>{const on=b.dataset.evt===pane;b.classList.toggle("on",on);b.setAttribute("aria-selected",String(on));if(b.dataset.evt==="adv")b.hidden=!hasAdv;if(b.dataset.evt==="res")b.classList.toggle("has",hasRes);});
+  tabs.classList.toggle("n2",!hasAdv);pg.classList.toggle("evbusy",!!testing);}
+$("evTabs").addEventListener("click",e=>{const b=e.target.closest("[data-evt]");if(!b||testing)return;evTabSet(b.dataset.evt,true);buzz(4);});
 $("envBox").addEventListener("click",e=>{const h=e.target.closest(".advf > .acch");if(!h)return;advSet(h.parentElement,!h.parentElement.classList.contains("open"));buzz(4);});
 $("curveChips").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;curves[b.dataset.c]=!curves[b.dataset.c];b.classList.toggle("on",curves[b.dataset.c]);drawChart(lastForChart(),null);});
 function quickForChart(){return quick;}
@@ -279,15 +300,16 @@ function renderTest(){
   if(S.env.testType==="oval")ovalRunBtn();
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
   const rf=curTab==="events"&&!!last&&last.env.testType===S.env.testType;$("testCore").classList.toggle("resfirst",rf);$("setupJump").hidden=!rf;
-  resultReveal(last,rf);
+  resultReveal(last,rf);evLayout();
   renderMap();ddRender();if(typeof railSched==="function")railSched();
 }
 /* a run just finished: bring the headline numbers (peaks + verdict, or the verdict on Events) to the top of the panel so they aren't left above or below the fold */
 let revKey;
 function resultReveal(last,rf){const k=last?last.res:null;if(testing)return;if(revKey===undefined||k===revKey){revKey=k;return;}revKey=k;if(!k)return;
+  if(rf&&trackEvt(S.env.testType)){evTabSet("res",true);return;}   // Events: a fresh result opens the Results tab
   requestAnimationFrame(()=>{const pn=$("panel"),el=rf?$("verdict"):$("peaks");if(!el.offsetHeight||(curTab!=="test"&&curTab!=="events"))return;const pr=pn.getBoundingClientRect(),r=el.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop());
     if(r.top<pr.top||r.top>pr.top+(bot-pr.top)*0.45)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});}
-$("setupJump").addEventListener("click",()=>{const pn=$("panel"),pr=pn.getBoundingClientRect(),r=$("envBox").getBoundingClientRect();pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
+$("setupJump").addEventListener("click",()=>{if(curTab==="events"){evTabSet("setup",true);return;}const pn=$("panel"),pr=pn.getBoundingClientRect(),r=$("envBox").getBoundingClientRect();pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
 /* ===================== TUNE MAP (dyno) =====================
    S.cfg.map is an rpm x load table that replaces the single timing / lambda sliders (and, on a boosted engine,
    a per-rpm boost target). The sim reads its 100% row for the WOT pull and the cruise cell for economy; SIM.mapGrid

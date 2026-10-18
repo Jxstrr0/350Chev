@@ -1,0 +1,49 @@
+/* Events tab: a one-row chip picker, then Setup | Advanced | Results panes (evLayout sets #evSlot[data-evt]); no chart on Events */
+.evpick{display:flex;flex-wrap:nowrap;gap:6px;margin:0 -16px 8px;padding:0 16px 2px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.evpick::-webkit-scrollbar{display:none}
+.evpick button,html:not(.desk) .evpick button{flex:0 0 auto;display:grid;grid-template-columns:22px auto;grid-template-rows:auto;column-gap:7px;align-items:center;min-height:44px;max-height:56px;padding:4px 11px 4px 9px;scroll-snap-align:center;position:relative}
+.evpick button:last-child:nth-child(odd){grid-column:auto}
+.evpick svg,html:not(.desk) .evpick svg{grid-row:1/3;width:22px;height:22px}
+.evpick b{font-size:14px;max-width:none;overflow:visible}
+.evpick small,html:not(.desk) .evpick small{grid-column:2;grid-row:2;display:none;white-space:nowrap;font-size:12px;line-height:1.2;letter-spacing:-.01em;margin:0}
+.evpick button.on small,.evpick button.live small,html:not(.desk) .evpick button.on small,html:not(.desk) .evpick button.live small{display:block;grid-column:2;grid-row:2;font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.evpick button.lock small::before{content:""}
+.evpick button.lock:not(.on) b::after,html:not(.desk) .evpick button.lock:not(.on) b::after{content:" \1F512";font-size:11px}
+.evpick button.live:not(.on)::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--orange2)}
+.evpick button.live:not(.on) small{display:none}
+/* the panel tabs */
+.evtabs{margin:0 0 10px;gap:4px;flex-wrap:nowrap}
+.evtabs button{flex:1 1 0;min-height:42px;padding:6px 8px;border-radius:8px;position:relative}
+.evtabs button[hidden]{display:none}
+.evtabs .evdot{display:none;position:absolute;top:7px;right:calc(50% - 38px);width:7px;height:7px;border-radius:50%;background:var(--orange2)}
+.evtabs button.has:not(.on) .evdot{display:inline-block}
+html.onevent:not(.desk) #tab-events.evbusy :is(#evPick,#evTabs){display:none}
+#tab-events.evbusy #evTabs{pointer-events:none;opacity:.6}
+/* panes */
+#evSlot :is(#chartwrap,#curveChips){display:none!important}
+#evSlot[data-evt=setup] :is(#peaks,#verdict,#setupJump,#testExtra,#stressSec,#dynoHint){display:none!important}
+#evSlot[data-evt=setup] #envBox>.advf{display:none}
+#evSlot[data-evt=adv] #testCore>:not(#envBox){display:none!important}
+#evSlot[data-evt=adv] #envBox>:not(.advf){display:none!important}
+#evSlot[data-evt=res] #envBox{display:none}
+#evSlot[data-evt=res]:not(.nores) #dynoHint{display:none}
+#evSlot .advf{margin:0}#evSlot .advf>.acch{display:none}#evSlot .advf .accb{padding-top:0}
+/* the dock never clips the last hint line */
+#panel{scroll-padding-bottom:140px}
+#tab-events{padding-bottom:12px}
+/* one Driver toggle: label, two buttons, a small (i) for the notes */
+.drvrow{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.drvrow .dl{flex:0 0 auto;font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.drvrow .drvseg{flex:1 1 auto;margin:0;flex-wrap:nowrap}
+.drvrow .drvseg button{min-height:40px;padding:6px 10px}
+.drvrow details.more{flex:0 0 auto}
+/* phone: event header cards (salt / bog / hill / oval / boat) shrink to one line; the picker already shows the status */
+html:not(.desk) #evSlot .saltcls{gap:6px;margin-bottom:6px}
+html:not(.desk) #evSlot .saltcls>div{display:flex;align-items:baseline;gap:6px;padding:5px 8px;flex-wrap:nowrap}
+html:not(.desk) #evSlot .saltcls span{display:inline;font-size:11px}
+html:not(.desk) #evSlot .saltcls b{display:inline;font-size:16px}
+html:not(.desk) #evSlot .saltcls small:not(:has(em)){display:none}
+html:not(.desk) #evSlot .e24ev{display:none}
+/* long hints in the panes clamp to one line with their (i) */
+#evSlot .hint.hmx>.hms{display:inline-block;max-width:calc(100% - 28px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+#evSlot .segbodynote{font-size:12px}
