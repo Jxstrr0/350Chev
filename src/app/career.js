@@ -404,7 +404,7 @@ function renderShop(){
   spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
   refillContracts();spRender();rivalsRender();
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
-  const dc=dynoCap();$("sStats").innerHTML=`<div><b class="${C().cash<0?"critc":""}">${fmt$(C().cash)}</b><span>cash</span></div><div><b>${dc.hp.toLocaleString()}</b><span>dyno hp cap</span></div><div><b>${C().loan>0?fmt$(C().loan):Object.keys(C().owned).length}</b><span>${C().loan>0?"bank loan":"upgrades owned"}</span></div>`;
+  const dc=dynoCap();$("sStats").innerHTML=`<span>Dyno reads to <b>${dc.hp.toLocaleString()} hp</b></span>${C().loan>0?`<span>Bank loan <b>${fmt$(C().loan)}</b></span>`:""}${C().cash<0?`<span><b class="warnc">${fmt$(C().cash)}</b> in the red</span>`:""}`;   // cash is in the header; the upgrade count sits in the list heading
   const cert=C().cert&&C().cert.hash===cfgHash(S.cfg)&&C().cert.ok?C().cert:null;const lastCert=C().cert&&C().cert.hash===cfgHash(S.cfg)?C().cert:null;
   {const eng=engineName(),q=S.bay?"":(cert?"ok":lastCert&&!lastCert.ok?"bad":"none");
     $("mkEng").textContent=eng;$("mkEng").title=eng;
@@ -469,8 +469,8 @@ function renderShop(){
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
     return `<div class="up ${done?"owned":""}"><div><h3>${r.name}</h3><p>${r.desc}</p><p class="uneed"><b>${rndNeed(r)} wk${rndNeed(r)<r.weeks?` (−25%, was ${r.weeks})`:""}</b></p>${running?`<div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div>`:""}</div>${done?`<div class="price">Done</div>`:running?`<div class="price" style="color:var(--warn)">${pct}%</div>`:`<button class="btn sm ${C().cash>=r.cost&&!act?"pri":""}" data-rnd="${r.id}" ${act?"disabled":""}>${fmt$(r.cost)}</button>`}</div>`;}).join("");
   $("prestige").innerHTML=shopOrder(PRESTIGE,pp=>!C().prestige[pp.id]&&C().cash>=pp.price).map(pp=>{const own=!!C().prestige[pp.id];return `<div class="up ${own?"owned":""}"><div><h3>${pp.name}</h3><p>${pp.desc}</p></div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=pp.price?"pri":""}" data-prestige="${pp.id}">${fmt$(pp.price)}</button>`}</div>`;}).join("");
-  $("upgrades").innerHTML=shopOrder(UPGRADES,u=>!C().owned[u.id]&&!(u.needs&&!C().owned[u.needs])&&!(u.rep>C().rep)&&C().cash>=u.price).map(u=>{const own=!!C().owned[u.id];const gated=(u.needs&&!C().owned[u.needs])||u.rep>C().rep;const repLk=u.rep>C().rep;
-    return `<div class="up ${own?"owned":""}"><div><h3>${u.name}</h3><p>${u.desc}</p>${gated?`<p class="uneed"><b>${u.needs&&!C().owned[u.needs]?`Needs ${UPGRADES.find(x=>x.id===u.needs).name}.`:""}${repLk?` Opens at ${u.rep} rep.`:""}</b></p>`:""}</div>${own?`<div class="price">Owned</div>`:`<button class="btn sm ${C().cash>=u.price&&!gated?"pri":""}" data-buy="${u.id}" ${gated?"disabled":""}>${fmt$(u.price)}</button>`}</div>`;}).join("");
+  upRender();
+  $("prCnt").textContent=`${Object.keys(C().prestige||{}).length} / ${PRESTIGE.length}`;
 }
 $("contracts").addEventListener("click",e=>{
   const cx=e.target.closest("[data-ccx]");if(cx){const id=cx.dataset.ccx;if(mkX.has(id))mkX.delete(id);else mkX.add(id);renderShop();return;}
@@ -507,6 +507,30 @@ $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),
     if(C().cert&&(st.id==="tuner"||st.id==="machinist")){C().cert=null;logEvent(`Cert void — the ${st.name.toLowerCase()} signed it off; pull it again`,"bad");setTimeout(()=>toast("CERT VOID · re-run the dyno"),50);}logEvent(`Let the ${st.name.toLowerCase()} go`,"");save();hud();renderShop();renderBuild();recompute();}});
 /* shop: what you can afford now goes first; a big buy (over ~40% of cash) asks first */
 function shopOrder(list,ok){return list.filter(ok).concat(list.filter(x=>!ok(x)));}
+/* Shop upgrades: what you can still buy as short rows (area chips once the list is long), the ones you own folded into an "Owned" row.
+   S.shopCat = the open chip, S.shopOwn = the Owned row open; old saves have neither (Can buy when something is, else All; folded). */
+const UP_CATS=[["dyno","Test cell",["dyno2","dyno3","dyno4","dyno5"]],["parts","Parts",["shop1","flow","boost","shop2","race"]],["bays","Bays",["bay1","bay2","bay3","bay4"]],["plant","Late game",["tool","qlab","acad","hall"]]];
+const upCat=u=>(UP_CATS.find(k=>k[2].includes(u.id))||UP_CATS[3])[0];
+function upRender(){
+  const c=C(),own=UPGRADES.filter(u=>c.owned[u.id]),left=UPGRADES.filter(u=>!c.owned[u.id]);
+  const need=u=>u.needs&&!c.owned[u.needs]?UPGRADES.find(x=>x.id===u.needs).name:"";
+  const lock=u=>need(u)||u.rep>c.rep,can=u=>!lock(u)&&c.cash>=u.price;
+  const nCan=left.filter(can).length,cats=UP_CATS.filter(k=>left.some(u=>upCat(u)===k[0])),chips=left.length>5&&cats.length>1;
+  let f=S.shopCat||(nCan?"buy":"all");if(!chips||!(f==="buy"?nCan>0:cats.some(k=>k[0]===f)))f="all";
+  const chip=(k,t,n)=>`<button data-upf="${k}" class="${f===k?"on":""}" aria-pressed="${f===k}">${t} <b>${n}</b></button>`;
+  const ch=$("upChips");ch.hidden=!chips;ch.innerHTML=chips?chip("all","All",left.length)+(nCan?chip("buy","Can buy",nCan):"")+cats.map(k=>chip(k[0],k[1],left.filter(u=>upCat(u)===k[0]).length)).join(""):"";
+  $("upCnt").textContent=left.length?`${nCan?nCan+" to buy now · ":""}${left.length} left`:"all built";
+  const row=u=>{const n=need(u),r=u.rep>c.rep,lk=n||r,ok=can(u);
+    const tag=lk?`<em class="utag">${[n?"needs "+n:"",r?"rep "+u.rep:""].filter(Boolean).join(" · ")}</em>`:"";
+    return `<div class="up ur${lk?" lock":ok?" can":""}"><div><h3>${u.name}${tag}</h3><p>${u.desc}</p></div><button class="btn sm ${ok?"pri":""}" data-buy="${u.id}" ${lk?"disabled":""}>${fmt$(u.price)}</button></div>`;};
+  const shown=left.filter(u=>f==="all"||(f==="buy"?can(u):upCat(u)===f));
+  $("upgrades").innerHTML=left.length?shopOrder(shown,can).map(row).join(""):`<p class="hint">Every upgrade is installed.</p>`;
+  const od=$("upOwn");od.hidden=!own.length;$("upOwnCnt").textContent=`${own.length} / ${UPGRADES.length}`;
+  $("upOwned").innerHTML=own.map(u=>`<div class="up uo"><div><h3>${u.name}${moreI(u.desc)}</h3></div></div>`).join("");
+  if(od.open!==!!S.shopOwn)od.open=!!S.shopOwn;
+}
+$("upChips").addEventListener("click",e=>{const b=e.target.closest("[data-upf]");if(!b)return;S.shopCat=b.dataset.upf;save();renderShop();buzz(4);});
+$("upOwn").addEventListener("toggle",e=>{const o=e.currentTarget.open;if(!!S.shopOwn!==o){S.shopOwn=o;save();}});
 function bigSpend(what,price){return price<=C().cash*0.4||confirm(`${what} costs ${fmt$(price)} — ${Math.round(price/Math.max(1,C().cash)*100)}% of your ${fmt$(C().cash)} cash. Buy it?`);}
 $("rnd").addEventListener("click",e=>{const b=e.target.closest("[data-rnd]");if(!b||b.disabled)return;const r=RND.find(x=>x.id===b.dataset.rnd);if(C().rndActive||C().rnd[r.id])return;if(C().cash<r.cost){toast(`Need ${fmt$(r.cost-C().cash)} more`);return;}if(!bigSpend(r.name,r.cost))return;
   C().cash-=r.cost;C().rndActive={id:r.id,done:0};logEvent(`Funded R&D: ${r.name} (${r.weeks} weeks)`,"");save();hud();renderShop();toast(`R&D STARTED · ${r.weeks} WEEKS`);buzz(20);});
