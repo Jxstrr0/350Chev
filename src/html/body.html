@@ -74,7 +74,7 @@
       <p class="hint" id="dynoHint"></p>
       <div class="peaks" id="peaks"></div>
       <div id="verdict"></div>
-      <button class="chip" id="setupJump" hidden>Change setup &darr;</button>
+      <button class="chip" id="setupJump" hidden>Change setup</button>
       <div id="testExtra"></div>
       <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
       </div></div>
@@ -109,8 +109,9 @@
     <!-- EVENTS: the strip, the sled, the salt, the road and the 24 Hours (the test core moves here with them) -->
     <section class="tabpage" id="tab-events">
       <div class="evpick" id="evPick" role="radiogroup" aria-label="Event"></div>
+      <div class="evtabs seg n3" id="evTabs" role="tablist" aria-label="Event panel"><button role="tab" data-evt="setup">Setup</button><button role="tab" data-evt="adv">Advanced</button><button role="tab" data-evt="res">Results<i class="evdot" aria-hidden="true"></i></button></div>
       <p class="hint tbusy" id="evBusy" hidden></p>
-      <div class="coreslot" id="evSlot"></div>
+      <div class="coreslot" id="evSlot" data-evt="setup"></div>
       <div id="e24Ctl" style="display:none"><div id="e24Hud"></div><div class="row e24spd" id="e24Spd"></div></div>
       <div id="e24Side" style="display:none"></div>
       <div id="evCtls">

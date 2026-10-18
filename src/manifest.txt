@@ -10,6 +10,7 @@ css/ui-shop.css
 css/ui-career.css
 css/ui-pwa.css
 css/ui-perf.css
+css/ui-evtabs.css
 html/body.html
 html/ld-libs.html
 sim/opt.js
