@@ -16,6 +16,10 @@ const UPGRADES=[
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
   {id:"bay3",name:"Build bay C",desc:"A third bay that builds market contracts on its own. Hire a bay lead; $5,000 a week to run once staffed.",price:350000,needs:"bay2"},
   {id:"bay4",name:"Build bay D",desc:"A fourth bay for a second contract at a time. Its own bay lead; $8,000 a week to run once staffed.",price:900000,needs:"bay3"},
+  {id:"tool",name:"Tooling hall",desc:"Fixtures, jigs and a second mill. Bay jobs of three weeks or more finish a week sooner and QC improves a little. Opens at 300 rep; adds a little to weekly overhead.",price:250000,needs:"race",rep:300,oh:0.4},
+  {id:"qlab",name:"Quality lab",desc:"CMM bench and a bore-gauge wall. Bay builds pass QC more often and the pay for them improves. Opens at 700 rep.",price:450000,needs:"tool",rep:700,oh:0.4},
+  {id:"acad",name:"Training academy",desc:"A classroom over the shop. Staff and bay-lead courses run a week shorter and teach 25% more. Opens at 700 rep.",price:800000,needs:"race",rep:700,oh:0.4},
+  {id:"hall",name:"Showroom hall",desc:"A glass-fronted hall for finished engines. +5 rep a week and a steady trickle of visitors. Opens at the Legend tier (1,500 rep).",price:2500000,needs:"qlab",rep:1500,oh:0.3},
   {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:240000,needs:"dyno3"},
   {id:"dyno5",name:"Monster dyno cell",desc:"Water-brake cell that reads to 10,000 hp. Built for the four-figure-boost builds that overload the Outlaw cell.",price:400000,needs:"dyno4"}
 ];
@@ -167,7 +171,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.72.5.0";
+const VERSION="1.72.6.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
