@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.72.3.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.72.4.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -14458,6 +14458,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
         exPorts.push({bk:bk, ci:ci, x:xu, y:y1+bore*0.22, z:zs*bore*0.98, zs:zs, M:B.top().clone(), head:true});
       }
     }
+    if(DET && unif) tsDetroitBank(B, {bore:bore, per:per, cx:cx, zs:zs, bdc:bdc, trTop:trTop, y1:y1, bankLen:bankLen, bspace:bspace, vee:vee});
     heads.push({y1:y1, zs:zs, ang:ang});
     B.pop();
   }
@@ -14468,6 +14469,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
     setZone(5);
     var bLen=bankLen*0.86, bH=bore*0.95, bW=bore*1.05, bY, bZ;
     if(vee){ bY=deckH*Math.cos(a)*0.62+bH*0.35; bZ=0; }
+    else if(unif){ bY=(bdc+trTop)*0.5; bZ=-(bore*0.81+bW*0.5); }   /* a Detroit's blower bolts to the air box itself */
     else { bY=caseR*0.15+bH*0.2; bZ=-(caseW*0.5+bW*0.55); }
     B.add("calu", RBOX(bLen, bH, bW, 0.10), 0, bY, bZ);
     for(k=-1;k<=1;k+=2) B.add("calu", RBOX(bore*0.20, bH*1.10, bW*1.08, 0.04), k*(bLen/2+bore*0.08), bY, bZ);
@@ -14476,6 +14478,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
     var aiY=bY+bH*0.5+bore*0.25;
     B.add("dark", CYL(bore*0.42, bore*0.36, bore*0.40, 22), bLen*0.18, aiY, bZ);      /* air inlet */
     B.add("filterRed", CYL(bore*0.55, bore*0.55, bore*0.35, 24), bLen*0.18, aiY+bore*0.36, bZ);
+    if(DET && unif){ tsBlowerBolts(B, bLen, bY, bZ, bH, bW, bore, {x:bLen*0.18, y:aiY+bore*0.17}); tsDetroitFront(B, extras, {bore:bore, bankLen:bankLen, caseR:caseR, caseW:caseW, vee:vee, y1:deckH, per:per}); }
     if(asp!=="na"){
       /* the turbo feeds the blower: a compressor on top of the inlet, its turbine fed from the exhaust */
       var tY=aiY+bore*0.95, tX=-bLen*0.20;
@@ -14696,6 +14699,7 @@ function buildDelticMesh(cfg, L, B, G, extras, t0){
     for(s=0;s<nC;s++) B.add("castexh", BOX(bore*0.5, bore*0.35, bore*0.25), -bankLen/2+bspace*(s+0.5), half*0.30, outZ*bore*0.80);
     setZone(5);
     B.add("calu", RBOX(bankLen*0.96, bore*0.6, bore*0.5, 0.05), 0, -half*0.30, -outZ*bore*0.90);           /* air manifold, inside */
+    if(DET) tsDelticBank(B, {bore:bore, nC:nC, bankLen:bankLen, bspace:bspace, half:half, outZ:outZ});
     banksInfo.push({M:M.clone(), outZ:outZ, A:A, Bc:Bc, dir:dir});
     if(i===1){ exhaustTip=B.pt(bankLen*0.45, half*0.30, outZ*bore*1.3); CRACK={pt:B.pt(0, half*0.30, outZ*bore*1.1), dir:V3(0,0,outZ).transformDirection(B.top()).normalize(), len:bore*0.5}; }
     B.pop();
@@ -14705,6 +14709,7 @@ function buildDelticMesh(cfg, L, B, G, extras, t0){
   B.add("calu", CYL(Rt*0.75, Rt*0.75, bore*0.9, 30), bankLen/2+bore*0.75, 0, 0, 0,0,PI/2);
   B.add("calu", TOR(Rt*0.75, bore*0.35, 10, 30), bankLen/2+bore*0.75, 0, 0, 0,PI/2,0);
   B.add("dark", CYL(Rt*0.32, Rt*0.40, bore*0.6, 24), bankLen/2+bore*1.45, 0, 0, 0,0,PI/2);
+  if(DET) tsDelticEnds(B, {bore:bore, bankLen:bankLen, Rt:Rt, caseR:caseR, corners:corners});
   /* exhaust stacks up from the two top banks' manifolds */
   setZone(4);
   var topY=Math.max(corners[1].y, corners[2].y)+caseR;
@@ -17149,6 +17154,119 @@ function engineDetail(B, c, mc){
   engCoolant(B, c, mc);
   engVacuum(B, c, mc);
   engBolts(B, c);
+  setZone(0);
+}
+
+/* ===========================================================================
+   7g2. TWO-STROKE DIESEL DETAIL, round 7 (Full / Ultra): the old Detroit uniflow (6-71, 8V-92) and the Deltic never went
+   through buildEngine's front-drive / harness path, so none of the round-5 hardware reached them. They have no throttle body,
+   no MAP sensor and no valve-cover wiring; what they do have is air-box hand-hole covers, a bolted rocker cover, exhaust
+   manifold flanges, a bolted blower, a front damper, a fuel manifold with a filter and a spin-on oil filter. Every piece is
+   merged into an existing bucket or is instanced hardware. Lite (DET 0) never calls any of it.
+   ==========================================================================*/
+/* a hand-hole cover (plate + four bolts) on an outboard face of a bank (local frame: x along the bank, z out) */
+function tsHandhole(B, x, y, z, side, w, h, bore){
+  var sx, sy;
+  B.add("steel", RBOX(w, h, bore*0.03, 0.012), x, y, z+side*bore*0.015);
+  for(sx=-1;sx<=1;sx+=2) for(sy=-1;sy<=1;sy+=2) B.hw("hex", x+sx*w*0.38, y+sy*h*0.36, z+side*bore*0.035, side>0?PI/2:-PI/2,0,0, bore*0.07);
+}
+/* one Detroit bank, in the bank's own frame (called inside buildTwoStrokeMesh's bank loop, uniflow only) */
+function tsDetroitBank(B, o){
+  var b=o.bore, i, x, sg, ful=DET>=2, zs=o.zs, yc=(o.bdc+o.trTop)*0.5, h=Math.max(b*0.40, (o.trTop-o.bdc)*0.62), rx=zs>0?PI/2:-PI/2;
+  /* air-box hand-hole covers on the outboard face */
+  setZone(2);
+  for(i=0;i<o.per;i++) tsHandhole(B, o.cx(i), yc, zs*b*0.81, zs, b*0.86, h, b);
+  /* rocker-cover lip with a hold-down bolt a side per cylinder (two on Ultra), and the oil filler */
+  setZone(3);
+  var yl=o.y1+b*0.555;
+  B.add("steel", BOX(o.bankLen*0.95, b*0.035, b*1.40), 0, yl, 0);
+  for(i=0;i<o.per;i++){ x=o.cx(i);
+    for(sg=-1;sg<=1;sg+=2){
+      B.hw("hex", x, yl+b*0.02, sg*b*0.66, 0,0,0, b*0.08);
+      if(ful) B.hw("hex", x+o.bspace*0.30, yl+b*0.02, sg*b*0.66, 0,0,0, b*0.08);
+    }
+  }
+  B.add("steel", CYL(b*0.13, b*0.13, b*0.09, 14), o.cx(0)-o.bspace*0.20, o.y1+b*0.995, 0);
+  B.add("dark", CYL(b*0.09, b*0.09, b*0.07, 12), o.cx(0)-o.bspace*0.20, o.y1+b*1.06, 0);
+  /* exhaust-manifold flanges: a plate at each head port with a bolt above and below the pipe */
+  setZone(4);
+  var ye=o.y1+b*0.22, ze=zs*b*1.0;
+  for(i=0;i<o.per;i++){ x=o.cx(i);
+    B.add("steel", BOX(b*0.70, b*0.80, b*0.05), x, ye, ze);
+    for(sg=-1;sg<=1;sg+=2){ B.hw("hex", x-b*0.20, ye+sg*b*0.37, ze+zs*b*0.03, rx,0,0, b*0.07); B.hw("hex", x+b*0.20, ye+sg*b*0.37, ze+zs*b*0.03, rx,0,0, b*0.07); }
+  }
+  /* fuel manifold along the cover side of the head (an inline: a vee's faces the valley) with a union per injector */
+  if(!o.vee){
+    setZone(3);
+    var yf=o.y1+b*0.30, zf=-zs*b*0.82;
+    B.add("steel", CYL(b*0.055, b*0.055, o.bankLen*0.95, 10), 0, yf, zf, 0,0,PI/2);
+    for(i=0;i<o.per;i++) B.add("brass", BOX(b*0.16, b*0.15, b*0.14), o.cx(i), yf, zf+zs*b*0.04);
+  }
+  setZone(0);
+}
+/* front end and side hardware of a Detroit, in engine space (an inline gets the fuel filter and its hose as well) */
+function tsDetroitFront(B, extras, o){
+  var b=o.bore, j, ful=DET>=2, xF=o.bankLen*0.5+b*0.15, dR=o.caseR*0.60;
+  setZone(1);
+  B.add("calu", RBOX(b*0.22, o.caseR*1.9, o.caseW*0.98, 0.03), xF+b*0.11, -o.caseR*0.05, 0);          /* front cover */
+  B.add("steel", CYL(dR, dR, b*0.20, 28, false, 1.6), xF+b*0.32, 0, 0, 0,0,PI/2);                      /* viscous damper */
+  B.add("dark", CYL(dR*0.70, dR*0.70, b*0.12, 24, false, 1.6), xF+b*0.48, 0, 0, 0,0,PI/2);             /* belt pulley */
+  B.add("steel", CYL(b*0.16, b*0.14, b*0.16, 12), xF+b*0.62, 0, 0, 0,0,PI/2);                           /* crank nose */
+  for(j=0;j<6;j++){ var fa=j/6*TAU; B.hw("pbolt", xF+b*0.42, Math.cos(fa)*dR*0.84, Math.sin(fa)*dR*0.84, 0,0,0, b*0.09); }
+  /* spin-on oil filter on the exhaust side low down, with a pair of lines to the block */
+  setZone(2);
+  var fz=o.caseW*0.5+b*0.42, fy=-o.caseR*0.15, fx=o.bankLen*0.28;
+  B.add("calu", RBOX(b*0.70, b*0.30, b*0.40, 0.03), fx, fy+b*0.52, fz-b*0.20);
+  B.add("dark", CYL(b*0.30, b*0.30, b*0.88, 20, false, 1.6), fx, fy, fz);
+  B.add("steel", CYL(b*0.31, b*0.31, b*0.05, 20), fx, fy-b*0.44, fz);
+  extras.push(hoseMesh([V3(fx+b*0.22, fy+b*0.64, fz-b*0.20), V3(fx+b*0.22, fy+b*0.84, fz-b*0.34), V3(fx+b*0.22, fy+b*0.62, o.caseW*0.5)], b*0.045, MAT.steel));
+  extras.push(hoseMesh([V3(fx-b*0.22, fy+b*0.64, fz-b*0.20), V3(fx-b*0.22, fy+b*0.88, fz-b*0.34), V3(fx-b*0.22, fy+b*0.64, o.caseW*0.5)], b*0.045, MAT.steel));
+  /* fuel filter at the front end of the head, fed from the manifold by a clamped hose (inline only) */
+  if(!o.vee){
+    setZone(3);
+    var yf=o.y1+b*0.30, zf=-b*0.82, qx=xF+b*0.30, qy=o.y1+b*0.12, qz=zf-b*0.12;
+    B.add("dark", CYL(b*0.20, b*0.20, b*0.70, 18, false, 1.6), qx, qy, qz);
+    B.add("calu", CYL(b*0.22, b*0.22, b*0.08, 18), qx, qy+b*0.38, qz);
+    B.add("brass", CYL(b*0.06, b*0.06, b*0.12, 10), qx, qy+b*0.46, qz);
+    extras.push(hoseMesh([V3(o.bankLen*0.475, yf, zf), V3(o.bankLen*0.5+b*0.12, yf+b*0.10, zf), V3(qx-b*0.12, qy+b*0.50, qz+b*0.02), V3(qx, qy+b*0.50, qz)], b*0.05));
+  }
+  setZone(0);
+}
+/* the blower's end-plate bolts and inlet collar bolts (a Detroit's, in engine space) */
+function tsBlowerBolts(B, bLen, bY, bZ, bH, bW, bore, zin){
+  var k, j, sz, fa;
+  setZone(5);
+  for(k=-1;k<=1;k+=2) for(j=-1;j<=1;j++) for(sz=-1;sz<=1;sz+=2)
+    B.hw("hex", k*(bLen/2+bore*0.18), bY+j*bH*0.36, bZ+sz*bW*0.40, 0,0,k>0?-PI/2:PI/2, bore*0.08);
+  for(j=0;j<6;j++){ fa=j/6*TAU; B.hw("hex", zin.x+Math.cos(fa)*bore*0.40, zin.y, bZ+Math.sin(fa)*bore*0.40, 0,0,0, bore*0.07); }
+  setZone(0);
+}
+/* the Deltic: one bank (local frame, outZ faces away from the triangle's centre) */
+function tsDelticBank(B, o){
+  var b=o.bore, i, x, sg, zo=o.outZ, rx=zo>0?PI/2:-PI/2;
+  setZone(4);
+  for(i=0;i<o.nC;i++){ x=-o.bankLen/2+o.bspace*(i+0.5);
+    B.add("steel", BOX(b*0.62, b*0.80, b*0.05), x, o.half*0.30, zo*b*0.97);
+    for(sg=-1;sg<=1;sg+=2){ B.hw("hex", x-b*0.18, o.half*0.30+sg*b*0.38, zo*b*1.0, rx,0,0, b*0.07); B.hw("hex", x+b*0.18, o.half*0.30+sg*b*0.38, zo*b*1.0, rx,0,0, b*0.07); }
+  }
+  setZone(2);
+  for(i=0;i<o.nC;i++) tsHandhole(B, -o.bankLen/2+o.bspace*(i+0.5), -o.half*0.28, zo*b*0.775, zo, b*0.80, b*0.50, b);
+  setZone(0);
+}
+/* the Deltic: blower casing bolts, the corner crank end caps, and an inspection plate on the phasing-gear case */
+function tsDelticEnds(B, o){
+  var b=o.bore, i, j, fa, x1=o.bankLen*0.5+b*1.2;
+  setZone(5);
+  for(j=0;j<12;j++){ fa=j/12*TAU; B.hw("hex", x1, Math.cos(fa)*o.Rt*0.66, Math.sin(fa)*o.Rt*0.66, 0,0,-PI/2, b*0.10); }
+  setZone(1);
+  for(i=0;i<3;i++){
+    var c=o.corners[i], xe=o.bankLen*0.5+b*0.17;
+    B.add("steel", CYL(o.caseR*0.80, o.caseR*0.80, b*0.05, 24), xe, c.y, c.z, 0,0,PI/2);
+    for(j=0;j<6;j++){ fa=j/6*TAU; B.hw("hex", xe+b*0.03, c.y+Math.cos(fa)*o.caseR*0.62, c.z+Math.sin(fa)*o.caseR*0.62, 0,0,-PI/2, b*0.09); }
+  }
+  var xg=-o.bankLen*0.5-b*0.99;
+  B.add("calu", CYL(b*0.60, b*0.60, b*0.06, 24), xg, 0, 0, 0,0,PI/2);
+  for(j=0;j<8;j++){ fa=j/8*TAU; B.hw("hex", xg-b*0.04, Math.cos(fa)*b*0.46, Math.sin(fa)*b*0.46, 0,0,PI/2, b*0.09); }
   setZone(0);
 }
 /* ===========================================================================
@@ -29243,7 +29361,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.72.3.0";
+const VERSION="1.72.4.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
