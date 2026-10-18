@@ -94,7 +94,7 @@ function tropItems(){const T=tropBook(),R=recs(),cr=career(),items=[];
   if(R.e24&&typeof R.e24==="object")Object.keys(R.e24).forEach(k=>{const e=R.e24[k],c=e&&SIM.CHASSIS[e.ch],t=e&&SIM.ROAD_TRACKS[e.trk];if(e&&e.km&&c&&t)slip("e"+k,"24 h · "+t.n,Math.round(e.km).toLocaleString("en-CA"),"km","Longest distance in 24 hours.",e,[["Distance",Math.round(e.km).toLocaleString("en-CA")+" km"],["Laps",e.laps],["Finish",e.pc?ordN(e.pc)+" in class":"DNF"]],c.n);});
   /* medals: achievements (shared by both modes) */
   const A=S.ach||{};for(const a of ACH){const e=A[a.id];if(!e)continue;items.push({id:"A"+a.id,slot:"medal",tier:TR_TIER_ACH[a.tier]||"bronze",card:{kick:"Achievement · "+ACH_TIER[a.tier],title:a.name,what:a.desc,when:achWhen(e),nums:[],ic:a.ic,tier:a.tier}});}
-  if(cr){for(const g of GOALS){const w=C().goals[g.id];if(w)items.push({id:"G"+g.id,slot:"cert",card:{kick:"Shop goal",title:g.name,what:g.desc,when:"Week "+w,nums:[["Bonus",fmt$(g.cash)],["Rep","+10"]],ic:"tick",tier:"silver"}});}}
+  if(cr){for(const g of GOALS){const w=C().goals[g.id];if(w)items.push({id:"G"+g.id,slot:"cert",card:{kick:"Shop goal",title:g.name,what:g.desc,when:"Week "+w,nums:[["Bonus",fmt$(g.cash)],["Rep","+"+(g.rep!=null?g.rep:10)]],ic:"tick",tier:"silver"}});}}
   return items;}
 function tropEngines(){const T=tropBook();return T.retired.map(e=>({id:"E"+e.id,name:String(e.name||"Engine").slice(0,26),sub:`${Math.round(e.hp||0).toLocaleString("en-CA")} hp · ${e.label||""}`.slice(0,34),cfg:Object.assign({},SIM.DEFAULT_CFG,e.cfg),layout:LAYOUTS[e.cfg.layout]||LAYOUTS[SIM.DEFAULT_CFG.layout],src:e}));}
 /* ---- retiring a build ---- */
