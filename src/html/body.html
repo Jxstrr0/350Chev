@@ -162,11 +162,12 @@
     <!-- SHOP -->
     <section class="tabpage" id="tab-shop">
       <div id="careerBox">
-        <div class="stats" id="sStats"></div>
-        <div class="sec"><h2>Upgrades</h2><div id="upgrades"></div></div>
+        <p class="mkline" id="sStats"></p>
+        <div class="sec" id="upSec"><h2>Upgrades <span class="cnt" id="upCnt"></span></h2><div class="seg" id="upChips" role="group" aria-label="Upgrade areas" hidden></div><div id="upgrades"></div>
+          <details class="sfold" id="upOwn" hidden><summary>Owned <span class="cnt" id="upOwnCnt"></span></summary><div class="sfb"><div id="upOwned"></div></div></details></div>
         <details class="sfold"><summary>Staff <span class="cnt" id="staffCnt"></span></summary><div class="sfb"><div id="staff"></div></div></details>
         <details class="sfold"><summary>R&amp;D <span class="cnt" id="rndCnt"></span></summary><div class="sfb"><p class="hint" id="rndHint"></p><div id="rnd"></div></div></details>
-        <details class="sfold"><summary>Prestige</summary><div class="sfb"><div id="prestige"></div></div></details>
+        <details class="sfold"><summary>Prestige <span class="cnt" id="prCnt"></span></summary><div class="sfb"><div id="prestige"></div></div></details>
         <div id="legacyBox" style="display:none"></div>
         <details class="sfold"><summary>Bank</summary><div class="sfb"><div class="row"><button class="btn sm info" id="borrow" style="flex:1">Draw</button><button class="btn sm info" id="repay" style="flex:1">Repay</button></div><p class="hint" id="bankHint"></p></div></details>
       </div>
