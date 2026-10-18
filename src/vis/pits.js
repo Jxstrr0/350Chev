@@ -96,6 +96,12 @@ function pitsProps(car){
   var ox=car.position.x, L=u._len||4.6, hw=Math.max(0.5,bb.max.z), H=bb.max.y-PITS_LIFT;
   var rearX=u._tyres[0].x+ox, rearZ=u._tyres[0].z, rr=u.rr||0.35, frontX=rearX, frontZ=hw*0.8, frontR=rr;
   (me.wheels||[]).forEach(function(w){ if(w.x+ox>frontX){ frontX=w.x+ox; frontZ=Math.abs(w.z); frontR=w.r; } });
+  /* r13: how tall the car is over its last and first 1.2 m (the wing over the slicks, the nose), for the camera fit: one pass over the vertices when the car changes */
+  var hR=0, hF=0; car.traverse(function(m){ if(!m.isMesh||!m.geometry||m.visible===false) return; for(var o=m; o; o=o.parent) if(o===u.chute) return;
+    var pa=m.geometry.attributes.position; if(!pa) return; m.updateWorldMatrix(true,false); var e=m.matrixWorld.elements, st=pa.count>40000?3:1;
+    for(var q=0;q<pa.count;q+=st){ var px=pa.getX(q), py=pa.getY(q), pz=pa.getZ(q), wx=e[0]*px+e[4]*py+e[8]*pz+e[12], wy=e[1]*px+e[5]*py+e[9]*pz+e[13];
+      if(wx<bb.min.x+1.2){ if(wy>hR) hR=wy; } else if(wx>bb.max.x-1.2){ if(wy>hF) hF=wy; } } });
+  F.hR=Math.max(hR,0.6+PITS_LIFT)-PITS_LIFT; F.hF=Math.max(hF,0.4+PITS_LIFT)-PITS_LIFT;
   F.L=L; F.hw=hw; F.H=H; F.rearX=rearX; F.rearZ=rearZ; F.rr=rr; F.frontX=frontX; F.tw=u._tyreW||0.35; F.x0=bb.min.x; F.x1=bb.max.x;
   var x0=bb.min.x, x1=bb.max.x, RED=0xb3261e, STAND=0xd2471f;
   B.box("solid", (x0+x1)/2, 0.006, 0, L+1.8, 0.012, 2*hw+1.4, 0x232528);   /* the pit mat */
@@ -141,7 +147,29 @@ function pitsFrame(){
   var d=Math.max(halfW/th, halfH/tv)+1.0;
   var tx=(F.x0+xe)/2-(small?0.25:0.5), tgt=_ptA.set(tx, 0.8+(small?0.2:0.05)*d*tv, 0.35), dir=_ptB.set(0.2,small?0.16:0.21,0.93).normalize();   /* r8: a touch more side-on and higher: the rear corner and bars read */
   cam.position.copy(tgt).addScaledVector(dir, d); cam.lookAt(tgt); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  pitsFit(cam, F, tgt, dir, d, tv, small);
   PITS.fitKey=w+"x"+h;
+}
+/* r13: fit to the car's bounds. The framing above is for a street-length car; a funny car, a dragster (wing, long nose) or a car on its bars can run past
+   the edge. Project the car's outline (rear and nose ends at their own heights, mid-car at full height); while any of it is outside the safe window, back the
+   camera off and slide it toward the car's middle. Cars that already fit are left exactly as framed. */
+function pitsFit(cam, F, tgt, dir, d, tv, small){
+  var lift=PITS_LIFT, hw=F.hw, xm=(F.x0+F.x1)/2, P=[], i, it, LX=small?0.95:0.93, LB=small?-0.9:-0.88, LT=small?0.62:0.86, ok;
+  if(F.x0==null||F.hR==null) return;
+  [-1,1].forEach(function(s){ var z=s*hw;
+    P.push([F.x0,lift,z],[F.x0,F.hR+lift,z],[F.x1,lift,z],[F.x1,F.hF+lift,z],[xm,F.H+lift,z*0.7],[xm,lift,z]); });
+  var th=Math.tan(cam.fov*PI/360)*cam.aspect, right=new THREE.Vector3(1,0,0).applyQuaternion(cam.quaternion), mnx, mxx, mny, mxy, v=new THREE.Vector3();
+  for(it=0;it<14;it++){
+    mnx=mny=9; mxx=mxy=-9;
+    for(i=0;i<P.length;i++){ v.set(P[i][0],P[i][1],P[i][2]).project(cam); if(v.x<mnx) mnx=v.x; if(v.x>mxx) mxx=v.x; if(v.y<mny) mny=v.y; if(v.y>mxy) mxy=v.y; }
+    ok=mnx>=-LX && mxx<=LX && mny>=LB && mxy<=LT; if(ok) break;
+    var kx=(mxx-mnx)/(2*LX), ky=(mxy-mny)/(LT-LB), k=Math.max(kx,ky,1.02);
+    var cx=(mxx+mnx)/2, cy=(mxy+mny)/2-(LT+LB)/2;
+    tgt.addScaledVector(right, cx*d*th); tgt.y+=cy*d*tv;
+    d*=Math.min(k,1.5)*1.01;
+    cam.position.copy(tgt).addScaledVector(dir, d); cam.lookAt(tgt); cam.updateMatrixWorld();
+  }
+  PITS.ndc={x0:mnx, x1:mxx, y0:mny, y1:mxy, d:d, it:it, ok:ok};
 }
 function pitsUpdate(o){
   if(!PITS.built) buildPitsScene();
