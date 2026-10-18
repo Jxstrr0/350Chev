@@ -141,7 +141,7 @@ function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if
   const top=pr.top+pn.clientTop+(sc&&sc.position==="sticky"?parseFloat(getComputedStyle(pn).paddingTop)+(parseFloat(sc.top)||0)+st.offsetHeight:0)+8;
   const dk=$("runDock"),dr=dk&&dk.offsetParent?dk.getBoundingClientRect():null,bot=Math.min(pr.bottom,tabsTop(),dr&&dr.top>pr.top?dr.top:Infinity)-8;
   if(vr.top>=top&&vr.bottom<=bot)return;pn.scrollTo({top:pn.scrollTop+vr.top-top,behavior:calmScroll()});}
-document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab,true);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab,!again);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
