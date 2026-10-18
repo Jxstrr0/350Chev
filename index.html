@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.75.2.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.75.3.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -1836,6 +1836,15 @@ button.fq.more{color:var(--muted);padding:4px 9px}button.fq.more::before{content
 @media (min-width:1100px){
   html.desk[data-tab=market] :is(#rlHead,.rlchart,#rlV,#rlD,#rlDyno){display:none}
 }
+/* rival board (app/rivals.js): a trend arrow by each rep, the last head-to-head under the name, an open challenge marked on its row; every line ellipsises, so a row stays one row at 390 */
+.rvrow{grid-template-columns:24px minmax(0,1fr) auto;gap:8px;padding:8px 12px}
+.rvrow .rvnm i.rvh{font-size:12px;color:var(--muted)}
+.rvrow .rvp{display:flex;align-items:baseline;gap:5px;justify-content:flex-end}
+.rvrow .rvt{font-style:normal;font-family:var(--body);font-size:11px;font-weight:600;line-height:1;min-width:12px;text-align:center;color:var(--dim)}
+.rvrow .rvt.up{color:var(--good)}.rvrow .rvt.dn{color:var(--crit)}
+.rvrow.pend{box-shadow:inset 3px 0 0 var(--warn)}
+.rvrow.pend .rvh{color:var(--chalk)}
+.rvchip{display:inline-block;margin-right:6px;padding:2px 7px;font-size:11px;vertical-align:1px;color:var(--warn)}
 </style>
 
 <div id="app">
@@ -29511,7 +29520,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.75.2.0";
+const VERSION="1.75.3.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -34893,12 +34902,15 @@ function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.
 const RIV_EV={drag:"drag",pull:"pull_sled",hill:"hill",bog:"bog",boat:"boat",endurance:"race24"};   // spEvent kind -> Events tab key
 const RIV_EV_TXT={drag:"a heads-up pass at the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours"};
 const RIV_EV_BTN={drag:"Take it to the strip",pull:"Go to the truck pull",hill:"Go to Pikes Peak",bog:"Go to the mud bog",boat:"Go to the boat drags",endurance:"Go to the 24 Hours"};
+const RIV_EV_SHORT={drag:"the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours"};   // the board's last-head-to-head line
+const RIV_TOP_WEEKS=40;   // weeks at #1 over all three before each shop says its piece (once)
 const RIVALS=[
   {id:"hollis",name:"Hollis Hot Rods",town:"Tulsa",base:22,share:0.6,pace:1.1,evs:["drag"],
     tag:"Strip-first, mouth-first. The number is on the door before the dyno sheet is printed.",
     up:["Hollis Hot Rods moved past you on the board. \"Figured it was my turn.\"","Hollis Hot Rods is ahead of you again. Somebody at the shop wrote it on the door in chalk."],
     down:["You passed Hollis Hot Rods. Dale Hollis is calling it a rebuilding year.","You are ahead of Hollis Hot Rods now. They say the chart is wrong."],
     chal:["\"Think you're quick? Meet me at the strip.\"","\"One pass. Loser buys the tyres.\""],
+    top:["Dale Hollis scrubbed the chalk off the shop door himself. \"Forty weeks. All right, you're quick.\"","He still wants a rematch at the strip, but he asked for it quietly."],
     won:["Hollis took the pass and had the win painted on the trailer before you cleared the lights.","Hollis Hot Rods beat you off the line and made sure the whole pit heard."],
     lost:["Hollis lost to you and blamed the tyres. He wants a rematch anyway.","You beat Hollis Hot Rods. The tailgate was quiet for almost a minute."]},
   {id:"marlow",name:"Marlow & Daughters",town:"Duluth",base:38,share:0.85,pace:0.95,evs:["hill","endurance"],
@@ -34906,6 +34918,7 @@ const RIVALS=[
     up:["Marlow & Daughters edged past you. A note arrived: \"Good effort. See attached curves.\"","Marlow & Daughters are ahead of you on the board, as the spreadsheet predicted."],
     down:["You pulled ahead of Marlow & Daughters. Their reply: a spreadsheet, politely marked \"for your records\".","You are ahead of Marlow & Daughters. They have requested your test conditions."],
     chal:["\"Put your engine where the air is thin. We will compare notes after.\"","\"Twenty-four hours is the only honest test. Shall we?\""],
+    top:["Marlow & Daughters mailed a card: \"Forty weeks ahead of us, by our own spreadsheet. Well measured.\"","The youngest Marlow added a line in pencil: \"We have not stopped measuring.\""],
     won:["Marlow & Daughters beat you and sent the timing sheet, annotated.","Marlow & Daughters took it. The cover letter was three paragraphs, all of them kind."],
     lost:["You beat Marlow & Daughters. They sent a very polite, very short congratulation.","Marlow & Daughters lost to you and asked for your log. They did not say why."]},
   {id:"tidewater",name:"Tidewater Diesel & Marine",town:"Galveston",base:14,share:0.5,pace:1.2,evs:["pull","bog","boat"],
@@ -34913,6 +34926,7 @@ const RIVALS=[
     up:["Tidewater Diesel & Marine is ahead of you now. The crew painted a boast on the shop truck.","Tidewater Diesel & Marine passed you on the board. Torque, they say, doesn't lie."],
     down:["You passed Tidewater Diesel & Marine. Somebody over there is blaming the fuel.","You are ahead of Tidewater Diesel & Marine. They are not taking it well, or badly. They are not taking it."],
     chal:["\"Torque doesn't lie. Come get muddy.\"","\"Meet us where it's wet. Bring a spare.\""],
+    top:["The Tidewater foreman sent a thermos of coffee across the county line. \"Forty weeks on top. Torque still doesn't lie.\"","The crab boat crew hung a flag half-mast on the shop truck, as a joke. Mostly a joke."],
     won:["Tidewater took the win and left a mud-caked trophy on your doorstep.","Tidewater Diesel & Marine beat you and towed the trophy home behind a boat."],
     lost:["Tidewater lost to you and sent a case of coolant as a \"gift\".","You beat Tidewater Diesel & Marine. The foreman asked what you were running. You did not say."]}];
 /* tuning (round 6): a rival used to stop at 1800 while your rep has no ceiling, so the board was dead by about week 100 (a good shop is #1 by week 5 and 4x the field by week 80).
@@ -34924,6 +34938,7 @@ const rivTier=r=>{let i=0;for(let j=0;j<REP_TIERS.length;j++)if(r>=REP_TIERS[j][
 function rivS(){const c=C();const s=c.riv&&typeof c.riv==="object"?c.riv:(c.riv={});
   if(!s.r||typeof s.r!=="object")s.r={};if(!s.pos||typeof s.pos!=="object")s.pos={};if(!s.tier||typeof s.tier!=="object")s.tier={};
   if(!s.hist||typeof s.hist!=="object")s.hist={};for(const k of ["won","lost","declined","forfeit"])s.hist[k]=+s.hist[k]||0;
+  if(!Array.isArray(s.rh))s.rh=[];if(!s.last||typeof s.last!=="object")s.last={};if(!s.ack||typeof s.ack!=="object")s.ack={};s.top=+s.top||0;   // r13: 4-week rep ring, last head-to-head per rival, #1 streak and the one-time late-game words
   if(!s.seed)s.seed=((c.seed||1)^0x2c9277b5)>>>0||11;if(!(s.cool>=0))s.cool=0;
   for(const v of RIVALS)if(!(s.r[v.id]>=0))s.r[v.id]=Math.round(Math.max(v.base,(c.rep||0)*v.share));
   return s;}
@@ -34947,10 +34962,19 @@ function rivalsWeek(){if(!career())return;const s=rivS(),c=C(),pl=c.rep;
   if(ch){const v=RIVALS.find(x=>x.id===ch.rv);
     if(ch.st==="offer"&&c.week>ch.exp){logEvent(`${v.name} withdrew the challenge`,"");s.ch=null;s.cool=2;}
     else if(ch.st==="on"&&c.week>ch.exp){s.hist.forfeit++;s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+Math.max(2,s.r[v.id]*0.02));
-      logEvent(`You never showed for ${v.name}'s challenge — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`Challenge forfeited · −${ch.lose} rep`);s.ch=null;s.cool=3;}}
+      s.last[v.id]={w:c.week,pw:0,ev:ch.ev,ns:1};logEvent(`You never showed for ${v.name}'s challenge — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`Challenge forfeited · −${ch.lose} rep`);s.ch=null;s.cool=3;}}
   else if(s.cool>0)s.cool--;
   else if(c.rep>=30&&rivRng()<0.45)rivIssue();
-  rivalsPos();}
+  rivalsPos();rivRing();rivTopWeek();}
+/* r13: a short ring of the board (the last 8 weeks, rounded) so the table can show a 4-week trend; the #1 streak and the once-only late-game words */
+function rivRing(){const s=rivS(),c=C(),e={w:c.week,p:Math.round(c.rep),r:{}};for(const v of RIVALS)e.r[v.id]=Math.round(s.r[v.id]);
+  if(s.rh.length&&s.rh[s.rh.length-1].w===c.week)s.rh.pop();s.rh.push(e);if(s.rh.length>8)s.rh.splice(0,s.rh.length-8);}
+function rivTrend(id){const s=rivS(),c=C(),now=id?s.r[id]:c.rep;let ref=null;
+  for(const e of s.rh)if(e.w<=c.week-4)ref=e;if(!ref&&s.rh.length&&s.rh[0].w<c.week-1)ref=s.rh[0];   // a young ring uses what it has (2+ weeks)
+  const v=ref?(id?ref.r[id]:ref.p):null;if(v==null||!isFinite(v))return{k:"fl",d:0,n:0};
+  const d=Math.round(now-v),pc=(now-v)/Math.max(10,v);return{k:pc>=0.025?"up":pc<=-0.01?"dn":"fl",d,n:c.week-ref.w};}
+function rivTopWeek(){const s=rivS(),c=C();s.top=rivTop(c)&&RIVALS.every(v=>s.pos[v.id]===1)?s.top+1:0;
+  if(s.top>=RIV_TOP_WEEKS){const v=RIVALS.find(x=>!s.ack[x.id]);if(v){s.ack[v.id]=1;logEvent(v.top.join(" "),"good");}}}   // one shop a week, so the log doesn't dump three at once
 function rivEvOpen(ev){try{return evStatus(RIV_EV[ev]).k!=="lock";}catch(e){return false;}}
 function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
   const cand=RIVALS.map(v=>({v,evs:v.evs.filter(rivEvOpen)})).filter(x=>x.evs.length);if(!cand.length)return;
@@ -34965,6 +34989,7 @@ function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
 function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!==kind)return;
   if(kind==="drag"){const d=S.last&&S.last.res&&S.last.res.drag;if(!(d&&d.race)||(typeof DR!=="undefined"&&DR&&DR.night))return;}   // a heads-up pass only: not a solo pass, not race night
   const v=RIVALS.find(x=>x.id===ch.rv),c=C();const won=ch.need==="win"?!!o.win:!!(o.win||o.finish);s.ch=null;s.cool=3;
+  s.last[v.id]={w:c.week,pw:won?1:0,ev:ch.ev};
   if(won){s.hist.won++;if(!s.hist.beat||typeof s.hist.beat!=="object")s.hist.beat={};s.hist.beat[v.id]=(s.hist.beat[v.id]||0)+1;c.rep+=ch.win;c.cash+=ch.purse;s.r[v.id]=Math.max(0,s.r[v.id]-Math.max(3,s.r[v.id]*0.04));
     logEvent(`Head-to-head beat ${v.name} at ${RIV_EV_TXT[ch.ev]} — ${fmt$(ch.purse)} side bet, +${ch.win} rep. ${rivPick(v.lost)}`,"good");toastAfter(`BEAT ${v.name.toUpperCase()} · +${ch.win} REP · ${fmt$(ch.purse)}`);}
   else{s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+Math.max(2,s.r[v.id]*0.02));
@@ -34976,11 +35001,15 @@ function rivalsRender(){let sec=$("rivSec");
     sec=document.createElement("div");sec.className="sec";sec.id="rivSec";sec.innerHTML=`<h2>Rival shops <span class="cnt" id="rivCnt"></span></h2><div id="rivBox"></div>`;anchor.appendChild(sec);
     sec.addEventListener("click",rivClick);}
   const s=rivS(),pl=C().rep;sec.hidden=pl<10&&!s.ch;if(sec.hidden)return;
-  const rows=RIVALS.map(v=>({v,r:Math.round(s.r[v.id])})).concat([{v:null,r:pl}]).sort((a,b)=>b.r-a.r||(a.v?1:-1));
+  const rows=RIVALS.map(v=>({v,r:Math.round(s.r[v.id])})).concat([{v:null,r:Math.round(pl)}]).sort((a,b)=>b.r-a.r||(a.v?1:-1));
   const me=rows.findIndex(x=>!x.v)+1;$("rivCnt").textContent=`you are #${me} of ${rows.length}`;
-  const h=s.hist;const board=rows.map((x,i)=>x.v
-    ?`<div class="rvrow"><b class="rvn">${i+1}</b><span class="rvnm"><b>${x.v.name}</b><i>${REP_TIERS[rivTier(x.r)][1]} · ${x.v.town}</i></span><span class="rvp">${x.r}</span></div>`
-    :`<div class="rvrow you"><b class="rvn">${i+1}</b><span class="rvnm"><b>Your shop</b><i>${repTier()[1]}</i></span><span class="rvp">${x.r}</span></div>`).join("");
+  const h=s.hist,chv=s.ch?s.ch.rv:null;
+  const trend=id=>{const t=rivTrend(id),w=t.k==="up"?"up":t.k==="dn"?"down":"flat",a=t.k==="up"?"▲":t.k==="dn"?"▼":"—";   // rep vs 4 weeks ago (2+ on a young ring)
+    return`<em class="rvt ${t.k}" role="img" aria-label="${t.n?`${w}, ${t.d>0?"+":""}${t.d} rep over ${t.n} weeks`:"no trend yet"}" title="${t.n?`${t.d>0?"+":""}${t.d} rep in ${t.n} wk`:"no trend yet"}">${a}</em>`;};
+  const last=v=>{const L=s.last[v.id];return!L?"No head-to-head yet":L.ns?`You never showed, wk ${L.w}`:`${L.pw?"Lost to you":"Beat you"} at ${RIV_EV_SHORT[L.ev]||"the track"}, wk ${L.w}`;};
+  const board=rows.map((x,i)=>x.v
+    ?`<div class="rvrow${x.v.id===chv?" pend":""}"><b class="rvn">${i+1}</b><span class="rvnm"><b>${x.v.name}</b><i>${REP_TIERS[rivTier(x.r)][1]} · ${x.v.town}</i><i class="rvh">${x.v.id===chv?`<span class="mkc rvchip">${s.ch.st==="on"?"Challenge on":"Challenge"}</span>${s.ch.st==="on"?"run it":"answer"} by wk ${s.ch.exp}`:last(x.v)}</i></span><span class="rvp">${x.r}${trend(x.v.id)}</span></div>`
+    :`<div class="rvrow you"><b class="rvn">${i+1}</b><span class="rvnm"><b>Your shop</b><i>${repTier()[1]}</i></span><span class="rvp">${x.r}${trend(null)}</span></div>`).join("");
   const near=RIVALS.slice().sort((a,b)=>Math.abs(s.r[a.id]-pl)-Math.abs(s.r[b.id]-pl))[0];
   const ch=s.ch;let card="";
   if(ch){const v=RIVALS.find(x=>x.id===ch.rv),on=ch.st==="on";
@@ -34989,7 +35018,7 @@ function rivalsRender(){let sec=$("rivSec");
       <div class="money"><div><b class="pos">+${ch.win}</b><span>rep if you win</span></div><div><b class="pos">${fmt$(ch.purse)}</b><span>side bet</span></div><div><b class="neg">−${ch.lose}</b><span>rep if you lose</span></div></div>
       <div class="cstat off">${ch.need==="win"?"Win it outright":"Finish on the podium (top three)"}${ch.ev==="drag"?" in a heads-up pass (Events · Drag strip · race the other lane)":""}. Solo runs and race nights don't count.</div>
       ${on?`<button class="btn pri" data-rvgo="${ch.ev}">${RIV_EV_BTN[ch.ev]} ›</button>`:`<div class="rvbtns"><button class="btn pri" data-rvacc="1">Accept</button><button class="btn ghost" data-rvno="1">Turn it down</button></div>`}</div>`;}
-  $("rivBox").innerHTML=`<div class="rvboard">${board}</div><p class="hint rvhint">${near.name}: ${near.tag}</p>${card}<p class="hint rvhint">Head-to-heads: ${h.won} won · ${h.lost} lost${h.declined?" · "+h.declined+" turned down":""}. A rival throws down every few weeks once you are past 30 rep.</p>`;}
+  $("rivBox").innerHTML=`<div class="rvboard">${board}</div><p class="hint rvhint">${near.name}: ${near.tag}</p>${card}<p class="hint rvhint">Head-to-heads: ${h.won} won · ${h.lost} lost${h.declined?" · "+h.declined+" turned down":""}. A rival throws down every few weeks once you are past 30 rep. Arrows: rep against 4 weeks ago.</p>`;}
 function rivClick(e){const s=rivS(),ch=s.ch;
   const go=e.target.closest("[data-rvgo]");if(go){if(!ch||ch.st!=="on")return;evGo(RIV_EV[ch.ev],ch.ev==="drag"?{race:"heads"}:{});return;}
   if(!ch)return;const v=RIVALS.find(x=>x.id===ch.rv);
