@@ -865,6 +865,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
         exPorts.push({bk:bk, ci:ci, x:xu, y:y1+bore*0.22, z:zs*bore*0.98, zs:zs, M:B.top().clone(), head:true});
       }
     }
+    if(DET && unif) tsDetroitBank(B, {bore:bore, per:per, cx:cx, zs:zs, bdc:bdc, trTop:trTop, y1:y1, bankLen:bankLen, bspace:bspace, vee:vee});
     heads.push({y1:y1, zs:zs, ang:ang});
     B.pop();
   }
@@ -875,6 +876,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
     setZone(5);
     var bLen=bankLen*0.86, bH=bore*0.95, bW=bore*1.05, bY, bZ;
     if(vee){ bY=deckH*Math.cos(a)*0.62+bH*0.35; bZ=0; }
+    else if(unif){ bY=(bdc+trTop)*0.5; bZ=-(bore*0.81+bW*0.5); }   /* a Detroit's blower bolts to the air box itself */
     else { bY=caseR*0.15+bH*0.2; bZ=-(caseW*0.5+bW*0.55); }
     B.add("calu", RBOX(bLen, bH, bW, 0.10), 0, bY, bZ);
     for(k=-1;k<=1;k+=2) B.add("calu", RBOX(bore*0.20, bH*1.10, bW*1.08, 0.04), k*(bLen/2+bore*0.08), bY, bZ);
@@ -883,6 +885,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
     var aiY=bY+bH*0.5+bore*0.25;
     B.add("dark", CYL(bore*0.42, bore*0.36, bore*0.40, 22), bLen*0.18, aiY, bZ);      /* air inlet */
     B.add("filterRed", CYL(bore*0.55, bore*0.55, bore*0.35, 24), bLen*0.18, aiY+bore*0.36, bZ);
+    if(DET && unif){ tsBlowerBolts(B, bLen, bY, bZ, bH, bW, bore, {x:bLen*0.18, y:aiY+bore*0.17}); tsDetroitFront(B, extras, {bore:bore, bankLen:bankLen, caseR:caseR, caseW:caseW, vee:vee, y1:deckH, per:per}); }
     if(asp!=="na"){
       /* the turbo feeds the blower: a compressor on top of the inlet, its turbine fed from the exhaust */
       var tY=aiY+bore*0.95, tX=-bLen*0.20;
@@ -1103,6 +1106,7 @@ function buildDelticMesh(cfg, L, B, G, extras, t0){
     for(s=0;s<nC;s++) B.add("castexh", BOX(bore*0.5, bore*0.35, bore*0.25), -bankLen/2+bspace*(s+0.5), half*0.30, outZ*bore*0.80);
     setZone(5);
     B.add("calu", RBOX(bankLen*0.96, bore*0.6, bore*0.5, 0.05), 0, -half*0.30, -outZ*bore*0.90);           /* air manifold, inside */
+    if(DET) tsDelticBank(B, {bore:bore, nC:nC, bankLen:bankLen, bspace:bspace, half:half, outZ:outZ});
     banksInfo.push({M:M.clone(), outZ:outZ, A:A, Bc:Bc, dir:dir});
     if(i===1){ exhaustTip=B.pt(bankLen*0.45, half*0.30, outZ*bore*1.3); CRACK={pt:B.pt(0, half*0.30, outZ*bore*1.1), dir:V3(0,0,outZ).transformDirection(B.top()).normalize(), len:bore*0.5}; }
     B.pop();
@@ -1112,6 +1116,7 @@ function buildDelticMesh(cfg, L, B, G, extras, t0){
   B.add("calu", CYL(Rt*0.75, Rt*0.75, bore*0.9, 30), bankLen/2+bore*0.75, 0, 0, 0,0,PI/2);
   B.add("calu", TOR(Rt*0.75, bore*0.35, 10, 30), bankLen/2+bore*0.75, 0, 0, 0,PI/2,0);
   B.add("dark", CYL(Rt*0.32, Rt*0.40, bore*0.6, 24), bankLen/2+bore*1.45, 0, 0, 0,0,PI/2);
+  if(DET) tsDelticEnds(B, {bore:bore, bankLen:bankLen, Rt:Rt, caseR:caseR, corners:corners});
   /* exhaust stacks up from the two top banks' manifolds */
   setZone(4);
   var topY=Math.max(corners[1].y, corners[2].y)+caseR;
