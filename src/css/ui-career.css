@@ -23,3 +23,5 @@
 .card.rvch .rvbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 :root[data-theme=light] .rvrow.you{background:linear-gradient(90deg,rgba(217,119,87,.14),rgba(217,119,87,.03))}
 @media (prefers-reduced-motion:no-preference){.card.rvch{transition:box-shadow .2s}}
+.goalsec{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--edge);font-family:var(--display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--orange2)}
+.goalsec span{font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;font-weight:400;color:var(--dim);text-align:right}
