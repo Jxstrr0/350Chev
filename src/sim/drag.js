@@ -326,7 +326,7 @@
       const lift = F * v.cgH / (v.mass * g * v.wheelbase * Math.max(0.05, 1 - v.rearBias)) * tuneLift(st.t);
       st.lift = clamp(lift, 0, 1); st.liftMax = Math.max(st.liftMax, lift); st.onBars = false;
       if (lift >= 1 && st.v < 60) {
-        if (BODY.bars) { st.onBars = true; F *= 1 - Math.min(0.04, (lift - 1) * 0.03); }
+        if (BODY.bars || v.wbar) { st.onBars = true; F *= 1 - Math.min(0.04, (lift - 1) * 0.03); }
         else { st.wheelieT += dt; F *= 0.9; }            // no bars: the driver has to pedal it to keep it straight
       }
       const Fres = 0.5 * rho * cdA0 * st.v * st.v + crr * v.mass * g;
@@ -432,7 +432,7 @@
       if (st.spinTime > 0.25) reasons.push(`Wheelspin for ${st.spinTime.toFixed(1)} s — ${TY.n.toLowerCase()}s can only plant about ${Math.round(Fmax0() / 1000)} kN. Softer tyre, taller first gear, more rear weight, or a lower launch rpm.`);
       if ((st.shakeT || 0) > 0.1) reasons.push(`Tyre shake for ${st.shakeT.toFixed(1)} s — ${v.tyrePsi} psi is too soft for ${TY.n.toLowerCase()}s (they're set up around ${psiNom}); the sidewall winds up and lets go. A pound or two more.`);
       if (st.bog) reasons.push(`Bogged off the line — rpm fell to ${Math.round(st.minRpm)}. Launch higher or shorten first gear.`);
-      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — ${v.body === "gasser" ? "a gasser has no wheelie bars" : "a street shell has no wheelie bars"}, so the driver had to pedal it straight. Less rear weight bias, or a body with bars.`);
+      if (st.wheelieT > 0.15) reasons.push(`The front wheels were off the ground for ${st.wheelieT.toFixed(1)} s — ${v.body === "gasser" ? "a gasser has no wheelie bars" : "a street shell has no wheelie bars"}, so the driver had to pedal it straight. Bolt on wheelie bars in the drag setup (about 14 kg), take some rear weight bias off, or pick a body with bars.`);
       if (st.limiterTime > 0.3) reasons.push(`${st.limiterTime.toFixed(1)} s on the rev limiter. Shift sooner or lengthen the gearing.`);
       if (st.overrev > 1.06) reasons.push(`Over-revved to ${Math.round(st.overrev * v.redline).toLocaleString()} rpm on a shift.`);
       const late = st.shifts.filter(x => x.rpm < res.peakHpRpm * 0.92);
