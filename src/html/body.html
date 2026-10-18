@@ -50,11 +50,10 @@
         <div id="presets"></div></div></div>
       <div id="buildForm"></div>
       <div class="sec acc" id="swapAcc"><button class="acch" data-sec="Swap" aria-expanded="false"><span class="t">Swap · put it in a car</span><span class="sum" id="swapSum"></span><span class="chev"></span></button><div class="accb" id="swapBody"></div></div>
-      <div class="sec">
-        <h2>Blueprints</h2>
+      <div class="sec acc" id="bpAcc"><button class="acch" data-sec="Blueprints" aria-expanded="false"><span class="t">Blueprints</span><span class="sum" id="bpSum">none saved</span><span class="chev"></span></button><div class="accb">
         <div id="bpList"></div>
         <button class="btn sm info" id="saveBp">Save blueprint</button>
-      </div>
+      </div></div>
     </section>
 
     <!-- TEST -->
@@ -76,7 +75,7 @@
       <div id="verdict"></div>
       <button class="chip" id="setupJump" hidden>Change setup</button>
       <div id="testExtra"></div>
-      <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><p class="hint" style="margin-top:-4px">Tap a line for the physics behind it.</p><div class="stress" id="stressList"></div></div>
+      <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><div class="sthead"><p class="hint">Tap a line for the physics behind it.</p><button class="chip" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button></div><div class="stress" id="stressList"></div></div>
       </div></div>
       <div class="sec" id="ddSec" hidden><h2>Dyno day <span class="cnt" id="ddCnt"></span></h2><div id="ddBox"></div></div>
       <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
@@ -102,7 +101,6 @@
 
       <div class="dockslot" id="testDock"><div class="row" id="runDock">
         <button class="btn pri" id="runTest" style="flex:2">Run test</button>
-        <button class="btn sm" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button>
       </div></div>
     </section>
 
@@ -219,7 +217,7 @@
           <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
         </div>
 </div>
-<div class="sec setsec" id="set-sound"><h2>Sound</h2>
+<details class="sfold setfold" id="set-sound" data-fold="sound"><summary>Sound <span class="cnt" id="setSumSound"></span></summary><div class="sfb">
 <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
         <div class="lbl"><span>Engine sound</span></div>
         <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
@@ -229,8 +227,8 @@
         <div class="lbl"><span>Sound diagnostics</span><b id="sdPeak">—</b></div>
         <div class="seg n4" id="soloSeg"><button data-solo="all" class="on">All</button><button data-solo="exhaust">Exhaust</button><button data-solo="intake">Intake</button><button data-solo="sub">Sub</button><button data-solo="mech">Mech</button><button data-solo="raw">Raw exhaust</button><button data-solo="nolimiter">No limiter</button><button data-solo="rebuild">Rebuild</button></div>
         <p class="hint">If you hear a stuck tone: turn sound on, start the idle or a pull, then solo layers until it disappears. The readout shows the loudest frequency the mix is producing right now.</p>
-</div>
-<div class="sec setsec" id="set-display"><h2>Display</h2>
+</div></details>
+<details class="sfold setfold" id="set-display" data-fold="display"><summary>Display <span class="cnt" id="setSumDisplay"></span></summary><div class="sfb">
 <div class="lbl"><span>Theme</span></div>
         <div class="seg n3" id="themeSeg"><button data-theme="dark">Dark<small>shop at night</small></button><button data-theme="light">Light<small>outdoors</small></button><button data-theme="auto">Auto<small>follow the phone</small></button></div>
         <div class="lbl"><span>Graphics</span></div>
@@ -249,7 +247,7 @@
           <div class="seg n2" id="capSeg"><button data-cap="0">Max<small>the display's rate</small></button><button data-cap="60">60 fps<small>saves battery</small></button></div>
           <p class="hint">iPhone and iPad browsers hold web pages to 60 fps unless Settings › Apps › Safari › Advanced › Feature Flags › ‘Prefer Page Rendering Updates near 60fps’ is turned off.</p>
         </div>
-</div>
+</div></details>
 <div class="sec setsec" id="set-app" hidden><h2>App</h2>
 <button class="btn sm pri" id="pwaInstall" hidden style="margin:0 0 6px">Install app</button>
 <p class="hint" id="pwaInstallHint" hidden>Opens full screen from your home screen or desktop and works offline once loaded.</p>
@@ -264,7 +262,7 @@
         <div class="row" style="margin:0 0 10px"><button class="btn sm ghost" id="glOpen" style="flex:1">Glossary<span class="desk-only"> · G</span></button><button class="btn sm ghost" id="lessonsOpen" style="flex:1">Lessons</button></div>
         <div id="kbBox"><button class="btn sm ghost" id="kbHelpBtn" style="margin:0 0 10px">Keyboard shortcuts · ?</button></div>
 </div>
-<div class="sec setsec" id="set-save"><h2>Save</h2>
+<details class="sfold setfold" id="set-save" data-fold="save"><summary>Save <span class="cnt" id="setSumSave"></span></summary><div class="sfb">
 <div class="lbl"><span>Autosave</span><b id="autoLbl">autosave on</b></div>
 
         <div id="slots"></div>
@@ -275,7 +273,7 @@
         <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
         <button class="btn danger" id="resetGame">Wipe career</button>
         <p class="hint">A game by Longlight Interactive.</p>
-</div>
+</div></details>
   </div></div>
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
