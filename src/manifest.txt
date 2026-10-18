@@ -12,6 +12,7 @@ css/ui-pwa.css
 css/ui-perf.css
 css/ui-evtabs.css
 css/ui-market.css
+css/ui-analysis.css
 html/body.html
 html/ld-libs.html
 sim/opt.js
