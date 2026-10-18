@@ -4,7 +4,7 @@
    · Parts: a catalogue of every part the build can take, with stats, the Career upgrade that gates it, and a Fit button
    · Quick starts: back to the stock engine, or a random preset to poke at
    Called from renderShop() when career() is false. Markup lives in #sandboxBox (body.html); styles in css/ui-shop.css. */
-const SB={sec:"",q:"",sims:new Map()};
+const SB={sec:"",q:"",all:false,sims:new Map()};
 function sbSim(cfg){const k=cfgHash(cfg)+"|"+envHash();let r=SB.sims.get(k);if(r)return r;
   r=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:r.peakHp,tq:r.peakTq,rel:r.rel,kg:r.kg,nr:engineStatus(cfg,r).nr};
   if(SB.sims.size>200)SB.sims.clear();SB.sims.set(k,r);return r;}
@@ -23,7 +23,7 @@ function sbSections(){const out=[];for(const sec of FORM){const fs=sec.fields.fi
 function sbParts(){
   const secs=sbSections();if(!secs.some(x=>x.t===SB.sec))SB.sec=secs.length?secs[0].t:"";
   const sel=$("sbSec");sel.innerHTML=secs.map(x=>`<option value="${x.t.replace(/"/g,"&quot;")}">${x.t}</option>`).join("");sel.value=SB.sec;
-  const q=SB.q.trim().toLowerCase(),c=S.cfg;let n=0,h="";const CAP=40;
+  const q=SB.q.trim().toLowerCase(),c=S.cfg;let n=0,h="";const CAP=SB.all?400:8;
   for(const sec of secs){if(!q&&sec.t!==SB.sec)continue;
     for(const f of sec.fs){const tbl=f.optTable||f.key,opts=OPT[tbl],lb=fLabel(f),famOK=famOKf(f,c);let fh="";
       for(const k in opts){const o=opts[k];if(!famOK(o,k))continue;
@@ -36,12 +36,13 @@ function sbParts(){
           +`<button class="btn sm" data-sbfit="${f.key}" data-v="${k}" ${fit?"disabled":""}>${fit?"Fitted":"Fit"}</button></div></div>`;}
       if(fh)h+=`<h3 class="sbf">${lb}${q?` <small>${sec.t}</small>`:""}</h3>`+fh;}}
   $("sbList").innerHTML=h||`<p class="hint">${q?"No part matches that.":"Nothing to show."}</p>`;
-  $("sbMore").textContent=n>CAP?`Showing ${CAP} of ${n}. Narrow the search to see the rest.`:"";$("sbSec").style.display=q?"none":"";}
+  $("sbMore").innerHTML=n>8?`<button class="btn sm ghost" id="sbAll" aria-expanded="${SB.all}">${SB.all?"Show the first 8 only":"Show all "+n}</button>`:"";$("sbSec").style.display=q?"none":"";}
 function renderSbShop(){if(!$("sbBench"))return;sbBench();sbParts();}
 (function(){const root=$("sandboxBox");if(!root)return;
   root.addEventListener("click",e=>{
     const ld=e.target.closest("[data-sbload]");if(ld){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+ld.dataset.sbload];if(!bp)return;S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;resetBase();afterCfgChange(true);renderSbShop();toast("BLUEPRINT LOADED");return;}
     const dl=e.target.closest("[data-sbdel]");if(dl){S.blueprints.splice(+dl.dataset.sbdel,1);renderBlueprints();save();renderSbShop();return;}
+    if(e.target.closest("#sbAll")){SB.all=!SB.all;sbParts();return;}
     if(e.target.closest("#sbSave")){$("saveBp").click();renderSbShop();return;}
     const ft=e.target.closest("[data-sbfit]");if(ft){if(ft.disabled)return;applyOpt(ft.dataset.sbfit,ft.dataset.v);renderSbShop();return;}
     if(e.target.closest("#sbStock")){if(testing){toast("Let the run finish first");return;}if(!confirm("Replace the current build with the stock engine? Save it to the bench first to keep it."))return;
