@@ -335,7 +335,7 @@ const ACH=[
   {g:"shop",id:"ddclean",name:"No hints needed",desc:"Fix a Dyno day job with no hints, on budget.",ic:"bolt",tier:"silver",check:x=>!!x.ddClean},
   {g:"shop",id:"dd10",name:"House calls",desc:"Fix ten customers' engines in one career.",ic:"shield",tier:"gold",check:()=>career()&&!!C().dd&&C().dd.passed>=10}
 ];
-let achQ=[],achBusy=false,achOpen=null;
+let achQ=[],achBusy=false,achAll=false;   // achAll: the list shows every row, not the first ACH_CAP (this visit only)
 const achN=()=>ACH.filter(a=>S.ach&&S.ach[a.id]).length;
 function achFacts(x){
   const f={};const R=recs();
@@ -386,13 +386,38 @@ function achShow(){if(achBusy||!achQ.length)return;const a=achQ.shift(),el=$("ac
   setTimeout(()=>{el.classList.remove("on");setTimeout(()=>{achBusy=false;achShow();},350);},achQ.length?2200:3400);}
 function achRefresh(){const s=$("achSet");if(s)s.textContent=achN()+" / "+ACH.length;const c=$("achCnt");if(c)c.textContent=achN()+" / "+ACH.length;}
 function achWhen(e){return e.w!=null?"week "+e.w:new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"});}
-function renderAch(){const box=$("achBox");if(!box)return;const have=S.ach||{};
-  if(!achOpen)achOpen=new Set(ACH_GROUPS.filter(([g])=>ACH.some(a=>a.g===g&&have[a.id])).map(g=>g[0]));
-  const card=a=>{const e=have[a.id];return `<div class="ach ${e?"on":"off"}"><div class="ai t-${a.tier}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[a.ic]}"/></svg></div><div class="at"><b>${a.name}</b><span>${a.desc}</span><small>${e?achWhen(e):ACH_TIER[a.tier]}</small></div></div>`;};
-  box.innerHTML=`<div class="achhead"><b>${achN()}<i> / ${ACH.length}</i></b><span>${["gold","silver","bronze"].map(t=>`<em class="t-${t}">${ACH.filter(a=>a.tier===t&&have[a.id]).length}/${ACH.filter(a=>a.tier===t).length} ${t}</em>`).join("")}</span></div>`
-    +ACH_GROUPS.map(([g,n])=>{const L=ACH.filter(a=>a.g===g),k=L.filter(a=>have[a.id]).length;return `<details class="achg" data-g="${g}"${achOpen.has(g)?" open":""}><summary>${n}<span>${k} / ${L.length}</span></summary><div class="achs">${L.map(card).join("")}</div></details>`;}).join("");
+/* Achievements list: a closed fold headed "Achievements n / 83"; inside, a status row (Not yet | Done | All), a scrolling group row and short rows
+   (icon, name with the description behind an (i), a tick and the date or the tier). Eight rows, then "Show all". S.achOpen = fold open, S.achF = status,
+   S.achG = group; old saves have none (closed, Not yet, every group). */
+const ACH_CAP=8;
+function renderAch(){const box=$("achBox");if(!box)return;const have=S.ach||{},fold=$("achFold");
+  const nDone=ACH.filter(a=>have[a.id]).length,nTodo=ACH.length-nDone;
+  let f=S.achF==="all"||S.achF==="done"||S.achF==="todo"?S.achF:(nTodo?"todo":"done");if(f==="todo"&&!nTodo)f="done";if(f==="done"&&!nDone)f=nTodo?"todo":"all";
+  const inF=a=>f==="all"||(f==="done")===!!have[a.id];
+  const gs=ACH_GROUPS.map(([g,n])=>({g,n,k:ACH.filter(a=>a.g===g&&inF(a)).length})).filter(x=>x.k);
+  let g=S.achG&&gs.some(x=>x.g===S.achG)?S.achG:"";
+  const L=ACH.filter(a=>inF(a)&&(!g||a.g===g));if(f==="done")L.sort((x,y)=>have[y.id].d-have[x.id].d);
+  const vis=achAll?L:L.slice(0,ACH_CAP);
+  const row=a=>{const e=have[a.id];return `<div class="ach ${e?"on":"off"}"><div class="ai t-${a.tier}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[a.ic]}"/></svg></div><div class="at"><b>${a.name}${moreI(a.desc)}</b></div><small>${e?"&#10003; "+achWhen(e):ACH_TIER[a.tier]}</small></div>`;};
+  const st=(k,t,n)=>`<button data-achf="${k}" class="${f===k?"on":""}" aria-pressed="${f===k}">${t} <b>${n}</b></button>`;
+  const gc=(k,t,n)=>`<button data-achg="${k}" class="${g===k?"on":""}" aria-pressed="${g===k}">${t} <b>${n}</b></button>`;
+  box.innerHTML=`<p class="achsum">${["gold","silver","bronze"].map(t=>`<em class="t-${t}">${ACH.filter(a=>a.tier===t&&have[a.id]).length}/${ACH.filter(a=>a.tier===t).length} ${t}</em>`).join("")}</p>`
+    +`<div class="seg achst">${st("todo","Not yet",nTodo)}${st("done","Done",nDone)}${st("all","All",ACH.length)}</div>`
+    +(gs.length>1?`<div class="seg achgr" role="group" aria-label="Achievement groups">${gc("","All groups",gs.reduce((q,x)=>q+x.k,0))}${gs.map(x=>gc(x.g,x.n,x.k)).join("")}</div>`:"")
+    +`<div class="achl">${vis.map(row).join("")||`<p class="hint">${f==="todo"?"Every achievement is earned.":"Nothing here yet."}</p>`}</div>`
+    +(L.length>ACH_CAP?`<button class="btn sm ghost achmore" data-achall="1">${achAll?"Show fewer":"Show all "+L.length}</button>`:"");
+  if(fold&&fold.open!==!!S.achOpen)fold.open=!!S.achOpen;
   achRefresh();}
-document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("achg")&&achOpen){if(d.open)achOpen.add(d.dataset.g);else achOpen.delete(d.dataset.g);}},true);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-achf],[data-achg],[data-achall]");if(!b||!b.closest("#achBox"))return;
+  if(b.dataset.achf){S.achF=b.dataset.achf;S.achG="";achAll=false;save();}else if(b.dataset.achg!=null){S.achG=b.dataset.achg;achAll=false;save();}else achAll=!achAll;
+  renderAch();buzz(4);});
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.id)return;if(d.id==="achFold"){const o=d.open;if(!!S.achOpen!==o){S.achOpen=o;save();}}
+  else if(d.id==="teleFold"&&!teleSilent){const o=d.open;if(S.anaTele!==o){S.anaTele=o;save();}}},true);
+/* Analysis folds: Telemetry (closed unless opened once, then remembered) and the combo rows (title only, tap for the text).
+   anaReveal(el) opens the fold around a tour/lesson target, without remembering it. */
+let teleSilent=false;const comboOpen=new Set();
+function anaReveal(el){const d=el&&el.closest&&el.closest("#teleFold");if(d&&!d.open){teleSilent=true;d.open=true;setTimeout(()=>{teleSilent=false;},60);}}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("combo")&&d.dataset.t){if(d.open)comboOpen.add(d.dataset.t);else comboOpen.delete(d.dataset.t);}},true);
 /* ===================== TEARDOWN (exploded view of what broke) ===================== */
 const TD_SPECIAL={lean:1,backfire:1,panel:1,turbo:1,manifold:1,piston:1,worn:1};
 function tdFail(L){   // {id, test} for a run that broke, else null
@@ -442,7 +467,7 @@ $("runTest").addEventListener("click",tdClose,true);   // a new run always start
 function renderAnalysis(){
   $("comboCnt").textContent=combosNow.length+" found";
   const order={bad:0,warn:1,good:2,info:3};
-  $("combos").innerHTML=combosNow.slice().sort((a,b)=>order[a.severity]-order[b.severity]).map(c=>`<div class="combo ${c.severity}"><h3>${c.title}</h3><p>${c.text}</p></div>`).join("")||`<p class="hint">Nothing notable — a conventional combination.</p>`;
+  $("combos").innerHTML=combosNow.slice().sort((a,b)=>order[a.severity]-order[b.severity]).map(c=>`<details class="combo ${c.severity}" data-t="${c.title.replace(/"/g,"&quot;")}"${comboOpen.has(c.title)?" open":""}><summary><h3>${c.title}</h3></summary><p>${c.text}</p></details>`).join("")||`<p class="hint">Nothing notable — a conventional combination.</p>`;
   const r=(S.last&&S.last.hash===cfgHash(S.cfg))?S.last.res:quick;const T=r.thermals,L=r.loads,Cl=r.clearances,K=r.knock;
   const rows=[["Peak cylinder pressure",`${(L.pmaxMPa*10).toFixed(0)} bar`],K.onRequired==null?["Fuel cetane",`${K.cetane}`]:["Octane required",`${K.onRequired.toFixed(1)} (margin ${K.margin>=0?"+":""}${K.margin.toFixed(1)})`],...(r.diesel?[["Smoke (peak)",`${Math.round(r.smoke||0)}% · ${smokeWord(r)}`],["Clatter",`${Math.round((r.clatter||0)*100)}% · ${r.clatter>0.66?"loud":r.clatter>0.4?"audible":"quiet"}`],["Full-load λ (leanest / spool)",r.fuel?`${(+(r.fuel.lamTop||S.cfg.lambda)).toFixed(2)} / ${(r.fuel.lamMin||0).toFixed(2)}`:"—"],["Injection used",r.fuel?`${Math.round(r.fuel.injUtil*100)}%`:"—"]]:[["Knock retard",`${K.retardDeg.toFixed(1)}°`]]),["Piston crown",`${Math.round(T.crownC)} °C`],["Peak EGT",`${Math.round(T.egtPeakC)} °C`],["Charge temp",`${Math.round(T.chargeC)} °C`],["Heat to coolant",`${Math.round(T.coolantLoadKw)} kW`],["Mean piston speed",`${L.pistonSpeedMs.toFixed(1)} m/s`],["Piston accel",`${Math.round(L.pistonAccelG).toLocaleString()} g`],["Rod tension / comp",`${L.rodTensionKn.toFixed(0)} / ${L.rodCompKn.toFixed(0)} kN`],["Bearing load",`${L.bearingMPa.toFixed(0)} MPa`],["Oil film",`${L.filmUm.toFixed(2)} µm`],["Rod bolt stretch",`${L.boltStretchPct.toFixed(1)}%`],["Torsional margin",`${L.torsionalMarginPct.toFixed(0)}%`],["Cylinder wall",`${L.wallThicknessMm.toFixed(1)} mm`],["Piston clearance cold/hot",`${(Cl.coldMm*1000).toFixed(0)} / ${(Cl.hotMm*1000).toFixed(0)} µm`],["Ring gap set / needed",`${Cl.ringGapMm.toFixed(2)} / ${Cl.ringGapNeededMm.toFixed(2)} mm`],["Valve-to-piston",`${Cl.valvePistonMm.toFixed(1)} mm`],["Dry weight",`${Math.round(r.kg)} kg`],["Unit cost",fmt$(r.cost)]];
   if(r.rotary){const R=r.rotary;rows.splice(0,rows.length,   // a rotary: the eccentric shaft, the seals and the hot lobe instead of pistons and rods
@@ -473,6 +498,7 @@ function renderAnalysis(){
   {const nz=r.noiseDb!=null?{db:r.noiseDb,dbOpen:r.noiseDbOpen}:SIM.exhaustNoise(S.cfg),nw=v=>v<=74?"quiet":v<=80?"road legal":v<=86?"loud":"track only";
     rows.push(["Drive-by noise",`${Math.round(nz.db)} dB · ${nw(nz.db)}`]);if(nz.dbOpen>nz.db+0.5)rows.push(["Cutout open",`${Math.round(nz.dbOpen)} dB`]);   // short values: .tele b never wraps
     if(r.exhaustSys)rows.push(["Exhaust backpressure",r.exhaustSys.open?"none · open":`${r.exhaustSys.dpBar.toFixed(2)} bar`]);}
+  {const tf=$("teleFold");if(tf&&tf.open!==!!S.anaTele){teleSilent=true;tf.open=!!S.anaTele;setTimeout(()=>{teleSilent=false;},60);}}
   $("tele").classList.toggle("rot",!!(r.rotary||r.twoStroke));$("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
   renderRecords();renderAch();dlAnalysis();tdAnaRender();
