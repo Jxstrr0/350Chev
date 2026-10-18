@@ -332,7 +332,7 @@ function spWeek(){if(!career())return;const s=spS();let paid=0;
   if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
   spLivery();}
 /* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
-function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};rivalsEvent(kind,o);s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
+function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};rivalsEvent(kind,o);dwinCount(kind,o);s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
   if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
   const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
   if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
@@ -570,6 +570,25 @@ GOALS.push(
   {id:"top",name:"Top of the board",desc:"Hold more reputation than all three rival shops (from 60 rep up).",cash:8000,check:c=>c.rep>=60&&rivTop(c)},
   {id:"spec5",name:"Specialist",desc:"Ship one of each special order: restomod, pull rebuild, fleet, rush and budget-capped.",cash:30000,check:c=>["resto","pullrebuild","fleet","rush","budget"].every(k=>cxN(c,k)>=1),
     prog:c=>[["resto","pullrebuild","fleet","rush","budget"].filter(k=>cxN(c,k)>=1).length,5]});
+/* late game (round 9): long targets for a rich shop. Wins per discipline are a lazily-filled counter, C().dw (old saves start at zero and fill as they race);
+   rivals beaten one by one live in C().riv.hist.beat. Cash is small and the rep rungs pay cash only, so none of this feeds the economy. */
+const DW_KINDS=[["drag","drag or race night"],["pull","truck pull"],["bog","mud bog"],["hill","Pikes Peak"],["oval","dirt oval"],["boat","boat drags"],["endurance","24 Hours"],["salt","Bonneville record"]];
+function dwinCount(kind,o){if(!o||!(o.win||(kind==="salt"&&o.record)))return;const k=kind==="night"?"drag":kind;if(!DW_KINDS.some(d=>d[0]===k))return;const c=C();if(!c.dw||typeof c.dw!=="object")c.dw={};c.dw[k]=(c.dw[k]||0)+1;}
+const dwN=c=>DW_KINDS.filter(d=>c.dw&&c.dw[d[0]]>0).length;
+const rivBeaten=c=>RIVALS.filter(v=>c.riv&&c.riv.hist&&c.riv.hist.beat&&c.riv.hist.beat[v.id]>0).length;
+const LATE_UP=["tool","qlab","acad","hall"],lateUp=c=>LATE_UP.filter(k=>c.owned&&c.owned[k]).length;
+const lateProg=(v,n)=>c=>[Math.min(n,v(c)),n];
+GOALS.push(
+  {id:"lateall",late:1,name:"Fully tooled",desc:"Own the Tooling hall, Quality lab, Training academy and Showroom hall.",cash:60000,rep:40,check:c=>lateUp(c)>=4,prog:lateProg(lateUp,4)},
+  {id:"rep500",late:1,name:"Regional name",desc:"Reach 500 reputation.",cash:30000,rep:0,check:c=>c.rep>=500,prog:lateProg(c=>c.rep,500)},
+  {id:"rep1000",late:1,name:"Household name",desc:"Reach 1,000 reputation.",cash:60000,rep:0,check:c=>c.rep>=1000,prog:lateProg(c=>c.rep,1000)},
+  {id:"rep1500",late:1,name:"Legend",desc:"Reach 1,500 reputation, the Legend tier.",cash:100000,rep:0,check:c=>c.rep>=1500,prog:lateProg(c=>c.rep,1500)},
+  {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Pikes Peak, dirt oval, boat drags and the 24 Hours, and set a Bonneville record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
+  {id:"hp2000",late:1,name:"Two thousand",desc:"Certify a 2,000 hp engine.",cash:80000,rep:30,check:c=>c.bestHp>=2000,prog:lateProg(c=>c.bestHp||0,2000)},
+  {id:"sold500",late:1,name:"Five hundred out the door",desc:"Sell 500 engines.",cash:40000,rep:15,check:c=>c.sold>=500,prog:lateProg(c=>c.sold,500)},
+  {id:"sold1000",late:1,name:"A thousand engines",desc:"Sell 1,000 engines.",cash:70000,rep:25,check:c=>c.sold>=1000,prog:lateProg(c=>c.sold,1000)},
+  {id:"profit5m",late:1,name:"Five million",desc:"Make $5,000,000 in lifetime profit.",cash:100000,rep:40,check:c=>c.profit>=5e6,prog:lateProg(c=>Math.max(0,c.profit||0),5e6)},
+  {id:"sweep",late:1,name:"Clean sweep",desc:"Beat all three rival shops head-to-head at least once each. Counts from this save on.",cash:50000,rep:40,check:c=>rivBeaten(c)>=RIVALS.length,prog:c=>[rivBeaten(c),RIVALS.length]});
 /* market.js's checkGoals, with a per-goal rep reward (default 10) and a look at the rival board after every result */
 checkGoals=function(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}
     if(ok){const rp=g.rep!=null?g.rep:10;C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=rp;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus${rp?`, +${rp} rep`:""}`,"good");hit.push(g);}}
@@ -577,4 +596,5 @@ checkGoals=function(){let hit=[];for(const g of GOALS){if(C().goals[g.id])contin
   rivalsPos();return hit.length;};
 function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.prog){try{pg=g.prog(C());}catch(e){}}
     return `<div class="goal ${w?"done":""}"><div><h3>${g.name}</h3><p>${g.desc}</p>${pg?`<div class="gprog"><i style="width:${Math.round(100*pg[0]/pg[1])}%"></i></div>`:""}</div><div class="price">${w?"✓ wk "+w:pg?`<small>${Math.floor(pg[0])} / ${pg[1]}</small>${fmt$(g.cash)}`:fmt$(g.cash)}</div></div>`;};
-  return GOALS.filter(g=>!C().goals[g.id]).map(one).join("")+GOALS.filter(g=>C().goals[g.id]).map(one).join("");}
+  const open=GOALS.filter(g=>!C().goals[g.id]),late=open.filter(g=>g.late);
+  return open.filter(g=>!g.late).map(one).join("")+(late.length?`<h3 class="goalsec">Late game<span>${late.length} to go</span></h3>`+late.map(one).join(""):"")+GOALS.filter(g=>C().goals[g.id]).map(one).join("");}
