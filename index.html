@@ -13560,6 +13560,7 @@ var running=true, rafId=0;
 var lastOwned={}, lastCfg=null, lastLayout=null;
 var anim = { spin:[], turbos:[], belts:[], hot:[], fans:[], glowMats:[], internals:null };
 var composer=null, bloomPass=null, GFX="lite", XRAY=false;
+var RSZ={k:""};   /* ENGINE_VIS.resize: the size it last applied to the renderer and composer */
 var GRIME_UNIFORM={ value:0 };
 var heatZones=null, _ndc=new THREE.Vector2(), _ray=new THREE.Raycaster();
 var engBox = new THREE.Box3(new THREE.Vector3(-3,6,-2), new THREE.Vector3(3,12,2));
@@ -27246,9 +27247,13 @@ const ENGINE_VIS = {
     var w = host? host.clientWidth : canvasEl.clientWidth;
     var h = host? host.clientHeight : canvasEl.clientHeight;
     if(!w||!h){ w=canvasEl.clientWidth||400; h=canvasEl.clientHeight||340; }
-    renderer.setPixelRatio(ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5)));
-    renderer.setSize(w, h, false);
-    if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
+    var pr=ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5)), rk=w+"x"+h+"@"+pr+(composer?composer.userData_tier+(composer.aoPass?"a":""):"-");
+    if(RSZ.k!==rk){   /* same size, ratio and passes as last time: the buffers are already right (a tab swap that doesn't move the view costs nothing) */
+      RSZ.k=rk;
+      renderer.setPixelRatio(pr);
+      renderer.setSize(w, h, false);
+      if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
+    }
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
     if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; stripBandRead(); }
@@ -28397,7 +28402,7 @@ function phHook(){
 }
 function phUnhook(){ if(!PH.rr) return; renderer.render=PH.rr; PH.rr=null; }   /* r128 keeps render as an own method of the instance */
 
-function phSizeTo(w, h, pr){
+function phSizeTo(w, h, pr){ RSZ.k="";
   renderer.setPixelRatio(pr); renderer.setSize(w, h, false);
   if(composer){ var ds=renderer.getDrawingBufferSize(new THREE.Vector2()); composer.setSize(ds.x, ds.y); if(bloomPass) bloomPass.setSize(ds.x/2, ds.y/2); if(composer.aoPass) composer.aoPass.setSize(ds.x, ds.y); }
   camera.aspect=w/h; camera.updateProjectionMatrix();
@@ -36243,8 +36248,15 @@ function tick(now){
 let curTab="build";
 /* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
-function showTab(t){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.documentElement.setAttribute("data-tab",t);document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
-  if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);}
+/* A tap on the tab bar swaps the page and lets it paint first; the renders (bench, events, analysis, shop) run right after
+   that frame. Anything else that calls showTab (tour, links, loading a build) still renders at once. */
+let tabTok=0;
+function tabRender(t){if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();}
+function showTab(t,defer){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.documentElement.setAttribute("data-tab",t);document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+  const tok=++tabTok,fin=()=>{if(tok!==tabTok)return;tabTok++;tabRender(t);$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);};
+  if(!defer){fin();return;}
+  const pn=$("panel");if(pn.scrollTop||tabScroll[t])pn.scrollTop=tabScroll[t]||0;   // (a page both at the top needs no scroll, so no forced layout here)
+  requestAnimationFrame(()=>setTimeout(fin,0));setTimeout(fin,300);}   // the timer is for a hidden page, where frames don't come
 /* a run just finished: the verdict sits under the run button and the sound bench, often below the fold.
    If it isn't fully in sight, bring it up just under the sticky strip (if this tab has one) — bench only. */
 function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if(ff||(curTab!=="test"&&curTab!=="events")||!v)return;
@@ -36252,7 +36264,7 @@ function revealVerdict(){const pn=$("panel"),v=$("verdict").firstElementChild;if
   const top=pr.top+pn.clientTop+(sc&&sc.position==="sticky"?parseFloat(getComputedStyle(pn).paddingTop)+(parseFloat(sc.top)||0)+st.offsetHeight:0)+8;
   const dk=$("runDock"),dr=dk&&dk.offsetParent?dk.getBoundingClientRect():null,bot=Math.min(pr.bottom,tabsTop(),dr&&dr.top>pr.top?dr.top:Infinity)-8;
   if(vr.top>=top&&vr.bottom<=bot)return;pn.scrollTo({top:pn.scrollTop+vr.top-top,behavior:calmScroll()});}
-document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>{const again=b.dataset.tab===curTab;showTab(b.dataset.tab,true);if(again)$("panel").scrollTo({top:0,behavior:calmScroll()});}));
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
