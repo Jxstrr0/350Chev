@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.76.1.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.76.2.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -290,7 +290,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .peak{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:10px 10px}
 .peak b{font-family:var(--display);font-size:22px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 .peak b i{font-style:normal;font-size:14px;color:var(--muted);margin-left:2px}
-.peak span{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted);margin-top:4px}
+.peak span{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted);margin-top:4px;white-space:nowrap}
 .peak .delta{font-family:var(--mono);font-size:12px;margin-left:4px}
 .delta.up{color:var(--good)}.delta.dn{color:var(--crit)}
 /* truck pull HUD: distance, slip against its sweet spot, the sled's box, the track with the field's marks */
@@ -673,7 +673,7 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .buyer .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.buyer .bh>span:first-child{min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .buyer .bh b{font-weight:600;color:var(--chalk);font-size:14px}.buyer .bh i{font-style:normal;font-size:12px;color:var(--dim)}
 .buyer .bfit{font-family:var(--body);font-size:12px;white-space:nowrap;padding:2px 6px;border-radius:3px;background:var(--soot)}.bfit.ok{color:var(--good)}.bfit.mid{color:var(--warn)}.bfit.low{color:var(--crit)}
-.buyer .bmiss{font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px}
+.buyer .bmiss{font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap}
 .buyer .bdeal{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;margin-top:8px}.buyer .bdeal>span{font-family:var(--mono);font-size:13px;color:var(--chalk)}
 .buyer .bdeal b{font-family:var(--display);font-size:16px}.buyer .bdeal b.pos{color:var(--good)}.buyer .bdeal b.neg{color:var(--crit)}.buyer .bdeal .btn{min-height:44px;min-width:86px}
 .moreb summary{cursor:pointer;color:var(--muted);font-size:13px;padding:10px 2px;min-height:44px;display:flex;align-items:center}
@@ -1173,7 +1173,7 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
 .swsil .sw-wh{fill:var(--soot);stroke:var(--dim);stroke-width:2}.swsil .sw-hub{fill:var(--dim)}
 .swsil .sw-bay{fill:none;stroke:var(--accent2);stroke-width:2;stroke-dasharray:6 5}
 .swsil .sw-eng{fill:rgba(217,119,87,.55);stroke:var(--orange);stroke-width:2.5}.swsil .sw-eng.out{fill:rgba(238,90,94,.5);stroke:var(--crit)}
-.swcap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px}
+.swcap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap}
 .swrep{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 .swit{display:grid;grid-template-columns:14px 1fr;gap:4px 10px;padding:9px 10px;border:1px solid var(--edge);border-left-width:3px;border-radius:8px;background:var(--panel)}
 .swit .dot{width:12px;height:12px;border-radius:50%;margin-top:3px}
@@ -1259,6 +1259,7 @@ html[data-tab=test] #rail .rlst{display:none}
 #app.rkrun #rlRun,#app.rkrun .rlgrab{display:none}
 .rlpk{display:flex;gap:14px;min-width:0}
 .rlp{min-width:0;white-space:nowrap}
+.pwr{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap}
 .rlp b{font-family:var(--display);font-size:20px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 .rlp b i{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
 .rlp .delta{font-family:var(--mono);font-size:12px;margin-left:3px}
@@ -1319,6 +1320,7 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
   html.desk .rlgrab,html.desk #rlChip{display:none}
   html.desk .rlrun{min-height:48px}html.desk .rlrt{display:inline}
   html.desk .rlpk{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  html.desk .rlp.pw{grid-column:1/-1}
   html.desk .rlp{padding:9px 10px;border:1px solid var(--edge);border-radius:8px;background:var(--panel)}
   html.desk .rlp b{font-size:24px}
   html.desk .rlp span:not(.delta){display:block}
@@ -29607,7 +29609,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.1.0";
+const VERSION="1.76.2.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -30254,7 +30256,7 @@ function renderEnv(){
     h+=`<div class="envgrid">${sl("ambientC","Ambient",-25,45,1," °C",e.ambientC)}${sl("altitudeM","Altitude",0,3500,50," m",e.altitudeM)}${sl("coolantC","Coolant",70,118,1," °C",e.coolantC)}${sl("oilC","Oil temp",70,150,1," °C",e.oilC)}</div>`;
   }
   if(t==="drag"&&rnCur()){h+=rnPanel();$("envBox").innerHTML=h;pitsSync();return;}
-  if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass)}${sl("rearBias","Rear weight",0.4,e.body==="rail"?0.85:0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
+  if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass).replace(/<\/div>$/,`<div class="pwr" id="evPw">${quick?pwTxt(quick.peakHp):""}</div></div>`)}${sl("rearBias","Rear weight",0.4,e.body==="rail"?0.85:0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",1.5,4.5,0.25,":1",e.first)}${sl("top","Top gear",0.5,1.2,0.05,":1",e.top)}${sl("final","Final drive",2.5,5.5,0.25,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?"":sl("launchRpm","Launch rpm",1500,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm":"")+". Tune it in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
     <div class="lbl"><span>Tyre</span></div><div class="seg">${Object.entries(SIM.TYRES).map(([k,v])=>`<button data-lp="${k}" data-ek="tyre" class="${e.tyre===k?"on":""}">${v.n}<small>μ ${v.mu}</small></button>`).join("")}</div>${drvHtml()}
     <div class="lbl"><span>Body &amp; aero</span></div><div class="seg segbody">${Object.entries(SIM.AERO).map(([k,v])=>`<button data-lp="${k}" data-ek="body" class="${e.body===k?"on":""}">${v.n}<small>${v.d}</small></button>`).join("")}</div><div class="segbodynote">${(SIM.AERO[e.body]||{}).d||""}</div>${paintHtml()}${shellHtml()}
@@ -30277,7 +30279,7 @@ function renderEnv(){
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;envFold(t);pitsSync();if(t==="road"||t==="hill")suLive();
 }
-function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();if(k.slice(0,2)==="su")suLive();}
+function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();pwUpd();if(k.slice(0,2)==="su")suLive();}
 function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="bog"&&l&&l.bog&&S.last.env.testType==="bog")drawBogTrace(l.bog);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
 $("envBox").addEventListener("input",e=>{const r=e.target;if(!r.dataset.e||r.type!=="range")return;applyEnv(r.dataset.e,parseFloat(r.value));});
 $("envBox").addEventListener("change",e=>{if(e.target.type==="range")commitEnv();});
@@ -30736,6 +30738,10 @@ let DR=null;
 /* bolt-on wheelie bars: only for bodies that do not already have them; ~10 kg on the tail */
 const WBAR_KG=10,WBAR_COST=1500;function wbarOwned(){if(career()&&!C().wbarOwn&&S.env&&S.env.wbar==="yes")C().wbarOwn=1;return !career()||!!C().wbarOwn;}   // career: paid once (C().wbarOwn), then re-fitted free; sandbox free; saves fitted before the price keep theirs
 function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&wbarOwned()&&!(SIM.AERO[e.body||"street"]||{}).bars;}
+/* power-to-weight against the drag car as set up (weight slider, bolt-on bars, a swap car's own weight) */
+function pwRatio(hp){let m=S.env.mass||1400;try{m=dragVeh().mass||m;}catch(e){}return {m:Math.round(m),hpt:hp>0?Math.round(hp/(m/1000)):0,kgHp:hp>0?m/hp:0};}
+function pwTxt(hp){const r=pwRatio(hp);return `${r.hpt.toLocaleString("en-CA")} hp/t · ${r.kgHp.toFixed(r.kgHp<10?2:1)} kg/hp`;}
+function pwUpd(){const el=$("evPw");if(el&&quick)el.textContent=pwTxt(quick.peakHp);}
 function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass+(wbarOn(e)?WBAR_KG:0),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
@@ -36102,7 +36108,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   app.classList.toggle("rkon",!col);app.classList.toggle("rkrun",busy);
   const L=S.last&&S.last.hash===h&&S.last.res&&S.last.res.rpms?S.last:null,res=L?L.res:quick,prev=!L&&S.last&&S.last.res&&S.last.res.peakHp!=null?S.last.res:null;
   const dl=(a,b)=>prev?delta(a,b):"";
-  $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>`;
+  $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>${(()=>{const p=pwRatio(res.peakHp);return `<div class="rlp pw" title="Power to weight against the ${p.m.toLocaleString("en-CA")} kg drag car"><b>${p.hpt.toLocaleString("en-CA")}<i>hp/t</i></b><span>${p.kgHp.toFixed(p.kgHp<10?2:1)} kg/hp · ${p.m.toLocaleString("en-CA")} kg</span></div>`;})()}`;
   const V=L?rlVerdict(L):{k:"est",t:"NOT RUN",s:prev?"Changed since the last run — figures are the live estimate, deltas against that run.":"Live estimate. Run it to lock a result."};
   const chip=$("rlChip");chip.className="rlchip "+V.k;chip.textContent=testing?"RUNNING":rlChipTxt(V.t);
   $("rlTag").textContent=L?`${rlName(L.env.testType).replace(/^./,c=>c.toUpperCase())} · measured`:"live estimate";
@@ -36113,7 +36119,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   run.title=`Same run as Test: ${rlName(rt)}`;
   $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
-  $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();
+  $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();pwUpd();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
   toastPlace();
 }

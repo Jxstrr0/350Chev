@@ -270,7 +270,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 .peak{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:10px 10px}
 .peak b{font-family:var(--display);font-size:22px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 .peak b i{font-style:normal;font-size:14px;color:var(--muted);margin-left:2px}
-.peak span{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted);margin-top:4px}
+.peak span{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted);margin-top:4px;white-space:nowrap}
 .peak .delta{font-family:var(--mono);font-size:12px;margin-left:4px}
 .delta.up{color:var(--good)}.delta.dn{color:var(--crit)}
 /* truck pull HUD: distance, slip against its sweet spot, the sled's box, the track with the field's marks */
@@ -653,7 +653,7 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .buyer .bh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.buyer .bh>span:first-child{min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .buyer .bh b{font-weight:600;color:var(--chalk);font-size:14px}.buyer .bh i{font-style:normal;font-size:12px;color:var(--dim)}
 .buyer .bfit{font-family:var(--body);font-size:12px;white-space:nowrap;padding:2px 6px;border-radius:3px;background:var(--soot)}.bfit.ok{color:var(--good)}.bfit.mid{color:var(--warn)}.bfit.low{color:var(--crit)}
-.buyer .bmiss{font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px}
+.buyer .bmiss{font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap}
 .buyer .bdeal{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;margin-top:8px}.buyer .bdeal>span{font-family:var(--mono);font-size:13px;color:var(--chalk)}
 .buyer .bdeal b{font-family:var(--display);font-size:16px}.buyer .bdeal b.pos{color:var(--good)}.buyer .bdeal b.neg{color:var(--crit)}.buyer .bdeal .btn{min-height:44px;min-width:86px}
 .moreb summary{cursor:pointer;color:var(--muted);font-size:13px;padding:10px 2px;min-height:44px;display:flex;align-items:center}
@@ -1153,7 +1153,7 @@ html.desk #panel.ddon .strip{top:calc(var(--ddh,58px) - 16px)}
 .swsil .sw-wh{fill:var(--soot);stroke:var(--dim);stroke-width:2}.swsil .sw-hub{fill:var(--dim)}
 .swsil .sw-bay{fill:none;stroke:var(--accent2);stroke-width:2;stroke-dasharray:6 5}
 .swsil .sw-eng{fill:rgba(217,119,87,.55);stroke:var(--orange);stroke-width:2.5}.swsil .sw-eng.out{fill:rgba(238,90,94,.5);stroke:var(--crit)}
-.swcap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px}
+.swcap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-family:var(--body);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap}
 .swrep{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 .swit{display:grid;grid-template-columns:14px 1fr;gap:4px 10px;padding:9px 10px;border:1px solid var(--edge);border-left-width:3px;border-radius:8px;background:var(--panel)}
 .swit .dot{width:12px;height:12px;border-radius:50%;margin-top:3px}
@@ -1239,6 +1239,7 @@ html[data-tab=test] #rail .rlst{display:none}
 #app.rkrun #rlRun,#app.rkrun .rlgrab{display:none}
 .rlpk{display:flex;gap:14px;min-width:0}
 .rlp{min-width:0;white-space:nowrap}
+.pwr{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap}
 .rlp b{font-family:var(--display);font-size:20px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 .rlp b i{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
 .rlp .delta{font-family:var(--mono);font-size:12px;margin-left:3px}
@@ -1299,6 +1300,7 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
   html.desk .rlgrab,html.desk #rlChip{display:none}
   html.desk .rlrun{min-height:48px}html.desk .rlrt{display:inline}
   html.desk .rlpk{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  html.desk .rlp.pw{grid-column:1/-1}
   html.desk .rlp{padding:9px 10px;border:1px solid var(--edge);border-radius:8px;background:var(--panel)}
   html.desk .rlp b{font-size:24px}
   html.desk .rlp span:not(.delta){display:block}

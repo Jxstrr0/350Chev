@@ -52,7 +52,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   app.classList.toggle("rkon",!col);app.classList.toggle("rkrun",busy);
   const L=S.last&&S.last.hash===h&&S.last.res&&S.last.res.rpms?S.last:null,res=L?L.res:quick,prev=!L&&S.last&&S.last.res&&S.last.res.peakHp!=null?S.last.res:null;
   const dl=(a,b)=>prev?delta(a,b):"";
-  $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>`;
+  $("rlPk").innerHTML=`<div class="rlp"><b>${Math.round(res.peakHp)}<i>hp</i></b>${dl(res.peakHp,prev&&prev.peakHp)}<span>@ ${res.peakHpRpm.toLocaleString()}</span></div><div class="rlp"><b>${Math.round(res.peakTq)}<i>Nm</i></b>${dl(res.peakTq,prev&&prev.peakTq)}<span>@ ${res.peakTqRpm.toLocaleString()}</span></div>${(()=>{const p=pwRatio(res.peakHp);return `<div class="rlp pw" title="Power to weight against the ${p.m.toLocaleString("en-CA")} kg drag car"><b>${p.hpt.toLocaleString("en-CA")}<i>hp/t</i></b><span>${p.kgHp.toFixed(p.kgHp<10?2:1)} kg/hp · ${p.m.toLocaleString("en-CA")} kg</span></div>`;})()}`;
   const V=L?rlVerdict(L):{k:"est",t:"NOT RUN",s:prev?"Changed since the last run — figures are the live estimate, deltas against that run.":"Live estimate. Run it to lock a result."};
   const chip=$("rlChip");chip.className="rlchip "+V.k;chip.textContent=testing?"RUNNING":rlChipTxt(V.t);
   $("rlTag").textContent=L?`${rlName(L.env.testType).replace(/^./,c=>c.toUpperCase())} · measured`:"live estimate";
@@ -63,7 +63,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   run.title=`Same run as Test: ${rlName(rt)}`;
   $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
-  $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();
+  $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();pwUpd();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
   toastPlace();
 }
