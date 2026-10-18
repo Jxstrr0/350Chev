@@ -78,7 +78,7 @@ function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
 function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!==kind)return;
   if(kind==="drag"){const d=S.last&&S.last.res&&S.last.res.drag;if(!(d&&d.race)||(typeof DR!=="undefined"&&DR&&DR.night))return;}   // a heads-up pass only: not a solo pass, not race night
   const v=RIVALS.find(x=>x.id===ch.rv),c=C();const won=ch.need==="win"?!!o.win:!!(o.win||o.finish);s.ch=null;s.cool=3;
-  if(won){s.hist.won++;c.rep+=ch.win;c.cash+=ch.purse;s.r[v.id]=Math.max(0,s.r[v.id]-Math.max(3,s.r[v.id]*0.04));
+  if(won){s.hist.won++;if(!s.hist.beat||typeof s.hist.beat!=="object")s.hist.beat={};s.hist.beat[v.id]=(s.hist.beat[v.id]||0)+1;c.rep+=ch.win;c.cash+=ch.purse;s.r[v.id]=Math.max(0,s.r[v.id]-Math.max(3,s.r[v.id]*0.04));
     logEvent(`Head-to-head beat ${v.name} at ${RIV_EV_TXT[ch.ev]} — ${fmt$(ch.purse)} side bet, +${ch.win} rep. ${rivPick(v.lost)}`,"good");toastAfter(`BEAT ${v.name.toUpperCase()} · +${ch.win} REP · ${fmt$(ch.purse)}`);}
   else{s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+Math.max(2,s.r[v.id]*0.02));
     logEvent(`Head-to-head lost to ${v.name} at ${RIV_EV_TXT[ch.ev]} — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`${v.name} won the head-to-head · −${ch.lose} rep`);}
