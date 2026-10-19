@@ -202,7 +202,7 @@
       launch: { armed: false, twoStep: twoStep, transBrake: transBrake, held: 0, retard: retard, pops: 0 },
       armedT: 0, egt: 420 + (+v.soakC || 0), egtPeak: 0, egtLine: 0, turbDose: 0, manDose: 0, lineHeat: 0, launchBoost: 0, launchRpmAct: 0,
       lift: 0, liftMax: 0, onBars: false, wheelieT: 0, conv: false, failKind: null, failAt: Infinity, broke: null, risk: null, gripGain: 0, boost0T: null };
-    st.egtPeak = st.egt;
+    st.egtPeak = st.egt; st.tMetal = st.egt; st.mMetal = st.egt;   // the turbine wheel and housing: pounds of superalloy and cast steel, they soak up a spike before they reach it
     st.als = 0; st.alsT = 0; st.alsDose = 0; st.alsBangs = 0;   // anti-lag: firing now 0..1, seconds fired, wear from it, bangs
     /* anti-lag firing (off throttle above its rpm floor): bangs and flames out of the pipe, a hotter turbine, wear */
     function alsFire(dt, on, wear) {
@@ -224,8 +224,10 @@
       if (st.phase === "run" || st.phase === "shutdown") return;
       st.egtLine = Math.max(st.egtLine, st.egt);
       // only line abuse counts: the dyno already proved the engine can live at full load
-      if (isTurbo && st.egt > egtLimit) st.turbDose += dt * (st.egt - egtLimit) / 50;
-      if (MH && st.egt > MH.crackC) st.manDose += dt * (st.egt - MH.crackC) / 60 * (MH.cast ? 1.3 : 1);
+      st.tMetal += (st.egt - st.tMetal) * (1 - Math.exp(-dt / (res.turbineMat === "inconel" ? 2.6 : 0.7)));   // a cast Ni-resist wheel runs thinner on margin than an Inconel one
+      if (isTurbo && st.tMetal > egtLimit) st.turbDose += dt * (st.tMetal - egtLimit) / 50;   // the hot side dies of soak, not of one bang off the limiter
+      st.mMetal += (st.egt - st.mMetal) * (1 - Math.exp(-dt / (MH && MH.cast ? 2.2 : 1.4)));   // thin-wall tube heats through faster than a casting
+      if (MH && st.mMetal > MH.crackC) st.manDose += dt * (st.mMetal - MH.crackC) / 60 * (MH.cast ? 1.3 : 1);
       if (st.egt > 850) st.lineHeat += dt * (st.egt - 850) / 100;
     }
     function shift() { if (st.phase !== "run" || st.gear >= v.gears || st.shiftT > 0) return; st.shifts.push({ rpm: Math.round(st.rpm), gear: st.gear, x: st.x, t: st.t, boost: +st.boost.toFixed(2) }); st.gear++; st.shiftT = 0.18; if (isTurbo) st.launch.pops = Math.max(st.launch.pops, 0.35 * clamp(st.boost / 1.2, 0.3, 1)); }
