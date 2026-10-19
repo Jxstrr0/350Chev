@@ -875,6 +875,7 @@ function beltMesh(x, pl, bt, rad, o){
   var pts=beltLoop(x, ccwOrder(pl), bt);
   var curve=new THREE.CatmullRomCurve3(pts, true, "centripetal");
   var g=new THREE.TubeGeometry(curve, Math.max(96, pts.length*2), rad, 6, true);
+  beltUvU(g.attributes.uv, curve.getLength(), pl[0].r+bt);
   if(CUR_B){ CUR_B.addW("belt", g); return null; }
   var m=new THREE.Mesh(g, MAT.belt);
   m.castShadow=true; return m;
@@ -892,25 +893,35 @@ function flatBeltGeo(x, pl, o){
   if(ribs){ for(i=0;i<ribs;i++){ var a0=w/2-(i+0.5)*w/ribs; prof.push([a0,-t*0.5-rd],[a0-w/ribs*0.5,-t*0.5]); } }
   prof.push([-w/2,-t*0.5]);
   var M=prof.length, pos=[], uv=[], idx=[], tan=new THREE.Vector3(), nrm=new THREE.Vector3(), X=new THREE.Vector3(1,0,0);
-  for(j=0;j<N;j++){
-    var u=j/N, c=curve.getPointAt(u); curve.getTangentAt(u, tan);
+  for(j=0;j<=N;j++){                                    /* N+1 rings: the last sits on the first, so u runs 0..1 with no seam */
+    var u=j/N, c=curve.getPointAt(u%1); curve.getTangentAt(u, tan);
     nrm.set(0, -tan.z, tan.y).normalize();               /* outward, in the belt plane (loop runs ccw in z,y) */
-    var tooth = cog ? ((u*len/cog)%1 < 0.5 ? 1 : 0) : 0;
+    var tooth = cog ? (((u%1)*len/cog)%1 < 0.5 ? 1 : 0) : 0;
     for(i=0;i<M;i++){
       var d=prof[i][1]; if(cog && d<0) d-=tooth*t*0.55;
       pos.push(c.x+prof[i][0], c.y+nrm.y*d, c.z+nrm.z*d);
-      uv.push(u*len*3.0, i/(M-1));
+      uv.push(u, i===0?0:0.5+0.5*(i-1)/(M-2));   /* the back face gets v 0..0.5 (where the print runs), the ribs the rest */
     }
   }
   for(j=0;j<N;j++) for(i=0;i<M;i++){
-    var a=j*M+i, bb=((j+1)%N)*M+i, c2=((j+1)%N)*M+(i+1)%M, d2=j*M+(i+1)%M;
+    var a=j*M+i, bb=(j+1)*M+i, c2=(j+1)*M+(i+1)%M, d2=j*M+(i+1)%M;
     idx.push(a,d2,bb, bb,d2,c2);
   }
   var g=new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv,2));
   g.setIndex(idx); g.computeVertexNormals();
+  beltUvU(g.attributes.uv, len, pl[0].r+t*0.5);
   return g;
+}
+/* belt texture u counts crank-pulley angle (BELT_UV per radian at the pulley it is cut for, pl[0], the crank in every caller),
+   rounded to whole repeats so the loop has no seam: scrolling the map by BELT_UV x crank angle (loop.js) then moves every belt
+   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. */
+var BELT_UV = 1.5;
+function beltUvU(a, len, R0){
+  var rep=Math.max(1, Math.round(len/R0*BELT_UV)), i, n=a.count;
+  for(i=0;i<n;i++) a.setX(i, a.getX(i)*rep);
+  a.needsUpdate=true;
 }
 /* a spinning pulley on the X axis: plain disc with a flange lip each side */
 function pulleyMesh(r, w, mat, o){
