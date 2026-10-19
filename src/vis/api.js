@@ -375,6 +375,9 @@ const ENGINE_VIS = {
     if(phi!==undefined) camState.phi=phi;
     if(rk!==undefined) camState.r=clamp(camState.r*rk, 7, 30);
   },
+  /* the engine layout the vis reads off a cfg {kind,n,rotors}: the drag cars size their pipes from it */
+  engOf: function(cfg){ return slEngOf(cfg); },
+
   _debug: function(){
     var b=new THREE.Box3().setFromObject(engineRoot);
     return { min:b.min.toArray().map(function(v){return +v.toFixed(2);}),

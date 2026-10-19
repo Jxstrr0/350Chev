@@ -307,11 +307,11 @@ function sc_gasChassis(C){   /* straight front axle on leaf springs, shocks */
     B.add("chrome", sc_cyl(0.022, 8), sc_rodM(new THREE.Vector3(C.xf+0.08, y+0.03, z), new THREE.Vector3(C.xf+0.12, P.zb+0.05, z)));
     B.add("black", sc_rbox(0.08, Math.max(0.05, P.zb-y-0.02), 0.08, 0.01), sc_M(C.xf+0.4, (P.zb+y)/2+0.04, z)); });
 }
-function sc_gasExhaust(C){   /* four short pipes per side out of the front fender, up and back */
-  var P=sc_at(C.D, C.xf-0.6);
-  [-1,1].forEach(function(sd){ for(var i=0;i<4;i++){
-    var x0=C.xf-0.42-i*0.11, y=C.dLift||0, a=new THREE.Vector3(x0+0.05, 0.42+y, sd*(P.w-0.12)), b=new THREE.Vector3(x0, 0.45+y, sd*(P.w+0.02)), c=new THREE.Vector3(x0-0.1, 0.6+i*0.01+y, sd*(P.w+0.1));
-    C.B.add("chrome", sc_pipe([a,b,c], 0.026)); sc_pipeEnd(C.B, "chrome", b, c, 0.026);
+function sc_gasExhaust(C){   /* short pipes out of the front fender, up and back: one per cylinder, a bank a side (inline: one side) */
+  var P=sc_at(C.D, C.xf-0.6), PO=sc_ports(C.H), sp=Math.min(0.11, 0.4/Math.max(1,PO.per-1)), r=0.026*PO.r, yF=PO.flat?-0.06:0, x00=C.xf-0.42-Math.max(0,4-PO.per)*sp*0.5;
+  PO.sides.forEach(function(sd){ for(var i=0;i<PO.per;i++){
+    var x0=x00-i*sp, y=(C.dLift||0)+yF, a=new THREE.Vector3(x0+0.05, 0.42+y, sd*(P.w-0.12)), b=new THREE.Vector3(x0, 0.45+y, sd*(P.w+0.02)), c=new THREE.Vector3(x0-0.1, 0.6+i*0.01+y, sd*(P.w+0.1));
+    C.B.add("chrome", sc_pipe([a,b,c], r)); sc_pipeEnd(C.B, "chrome", b, c, r);
     C.tips.push(c.clone()); C.dirs.push(c.clone().sub(b).normalize()); } });
 }
 var SC_GAS={
