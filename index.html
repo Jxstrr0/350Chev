@@ -29669,7 +29669,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.11.0";
+const VERSION="1.76.12.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -32276,8 +32276,9 @@ function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roa
   const seed=career()?rnHash([C().seed,C().week,"e24",trk].join(":")):rnHash(Date.now()+":"+Math.random());
   const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true}});
   if(career()&&crewPitK()!==1)R.pitK=crewPitK();   // fast hands on the crew: quicker stops (app/crew.js)
+  const rv=rivE24Car(R);   // a rival's head-to-head: their car in your class
   if(career()){if(!dev())C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${dev()?"free (dev)":fmt$(E24_FEE)+" entry"}`);hud();save();}
-  ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0};
+  ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0,rv};
   renderEnv();$("app").classList.add("onstrip");ENGINE_VIS.setAutoRotate(false);$("e24Ctl").style.display="";$("e24Side").style.display="";e24HudInit();e24StratRender();e24FeedRender();e24Hud();
   $("testProg").classList.remove("done");sfx("start");buzz([20,30,20]);toast(`GREEN FLAG · ${e24TrkName(trk).toUpperCase()}`);
   requestAnimationFrame(()=>{const pn=$("panel"),r=$("e24Ctl").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(!deskOn()&&(r.top<pr.top||r.top>pr.top+pr.height*0.5))pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
@@ -32323,7 +32324,7 @@ function e24Gap(me,o,ahead){if(!o)return"—";const d=ahead?o.laps-me.laps:me.la
 function e24TyreLife(R,c,t){const sky=SIM.e24Sky(t),Ty=SIM.E24_TYRES[c.tyre.c],life=Ty.km*Math.min(1.25,Math.max(0.7,1-0.012*(sky.amb-20)))/SIM.E24_MODES[c.mode].tyre;return 1-c.tyre.km/life;}
 function e24Hud(){if(!ER||!$("e24Clk"))return;const R=ER.R,me=R.cars[0],t=R.t,P=ER.P,sky=SIM.e24Sky(t),p=SIM.e24Pos(R,me),m=P.modes[me.mode],nCls=R.cars.filter(c=>c.cls===me.cls).length;
   $("e24Clk").textContent=SIM.e24Clock(t);$("e24El").textContent=`race ${e24HM(Math.min(t,R.dur))} of 24:00`;
-  $("e24P").textContent=me.out?"OUT":me.fin?"FLAG":"P"+p.all;$("e24Pc").textContent=`${e24Cls(me.cls)} P${p.cls} of ${nCls}`;
+  $("e24P").textContent=me.out?"OUT":me.fin?"FLAG":"P"+p.all;const rv=ER.rv&&R.cars[ER.rv.i];$("e24Pc").textContent=`${e24Cls(me.cls)} P${p.cls} of ${nCls}${rv?` · ${ER.rv.n} ${rv.out?"out":"P"+SIM.e24Pos(R,rv).cls}`:""}`;
   $("e24Ga").textContent=p.ahead?`${e24Gap(me,p.ahead,true)} #${p.ahead.no}`:"leading";$("e24Gb").textContent=p.behind?`${e24Gap(me,p.behind,false)} #${p.behind.no}`:"—";
   $("e24Pr").style.width=Math.min(100,100*t/R.dur)+"%";$("e24Sc").hidden=!R.sc;
   $("e24Lp").textContent=me.laps;$("e24Lt").textContent=`last ${fmtLap(me.last)} · best ${fmtLap(me.best)}`;
@@ -32379,7 +32380,8 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
     C().cash+=prize-fuelBill;C().rep=Math.max(0,C().rep+rep);r.prize=prize;r.fuelBill=fuelBill;r.rep=rep;
     addWear(+(hrs/40*({push:1.6,race:1.25,save:0.95}[stints.length?stints[stints.length-1].mode:"race"]||1.25)).toFixed(2),snap?hKey(snap.h):undefined);
     logEvent(`24 Hours of Prairie Sky: ${r.dnf?(r.dnf.id?"out after "+r.dnf.h+" h — "+r.dnf.name.toLowerCase():"retired after "+r.dnf.h+" h"):r.classified?`${ordN(r.posCls)} in ${r.clsName}, ${ordN(r.pos)} overall`:"not classified"} — ${r.laps} laps${prize?", "+fmt$(prize)+" prize":""}, fuel ${fmt$(fuelBill)}${rep?", "+(rep>0?"+":"")+rep+" rep":""}`,r.classified&&r.posCls<=3?"good":r.dnf&&r.dnf.id?"bad":"");
-    spEvent("endurance",{finish:r.classified&&r.posCls<=3,win:r.classified&&r.posCls===1});hud();checkGoals();}
+    const rx=ER.rv&&all.find(x=>x.i===ER.rv.i),cp=x=>x.classified?ordN(x.posCls)+" in class":"not classified";
+    spEvent("endurance",Object.assign({finish:r.classified&&r.posCls<=3,win:r.classified&&r.posCls===1},rx?{ahead:all.indexOf(mine)<all.indexOf(rx),rvTxt:`you ${cp(mine)}, ${ER.rv.n} ${cp(rx)}`}:{}));hud();checkGoals();}
   /* records: the longest distance per car and circuit */
   if(!ff&&same){const E=e24Recs(),k=roadKey(opt.rk||opt.ch,trk),was=E[k];if(!was||r.km>was.km){E[k]=Object.assign({km:r.km,laps:r.laps,pc:r.classified?r.posCls:null,cls,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());r.pb=was?{was:was.km}:{first:true};}
     const RR=recs();RR.e24Runs=(RR.e24Runs||0)+1;if(r.classified&&!(RR.e24Best<=r.posCls))RR.e24Best=r.posCls;
@@ -32727,7 +32729,7 @@ function hillAltLine(p){const pk=p.pts,top=pk[pk.length-1],dn=Math.round(100*(1-
   else if(p.kind!=="na")s+=" The blower keeps its pressure ratio, so it makes the same ratio of thinner air.";else s+=" Atmospheric: the power follows the air.";
   s+=p.carb?` Carburettor: it meters by air speed, so it runs rich as the air thins (λ ${(+p.ref.lambda).toFixed(2)} → ${(+top.lambda).toFixed(2)} on top).`:" Injection trims the mixture for the altitude.";
   return s;}
-function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=hillClsLocked(k),seed=hillSeed(k),field=hillField(k,seed),R=hillRecs(),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
+function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=hillClsLocked(k),seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed)),R=hillRecs(),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
   const fin=field?field.filter(f=>f.t!=null).length:0;
   let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?hlEsc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=hillClsLocked(id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
@@ -32784,7 +32786,7 @@ function hillStart(){
   try{prep=hillPrepFor(snap.cfg);}catch(err){testing=false;renderTest();toast("The engine wouldn't run at altitude");return;}
   if(prep.fails.length){testing=false;toast(`It wouldn't make the summit — ${String(prep.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
-  const seed=hillSeed(k),field=hillField(k,seed,true),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
+  const seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed,true)),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
   const rs=career()?(seed+7919*(C().hillRuns=(C().hillRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);
   const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,0.86,rs)},opt));
   const lead=field.filter(f=>f.t!=null).sort(hillCmp)[0]||null;
@@ -32837,7 +32839,7 @@ function hillFinish(){
     if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Pikes Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
     else{const purse=Math.round((HILL_PURSE[r.place-1]||0)*(HILL_PAY[C0.tier]||1)/10)*10,rep=(HILL_REP[r.place-1]||0)+1;r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`Pikes Peak: ${C0.n} — ${sc}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${sc} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
-    spEvent("hill",{win:!r.dnf&&r.place===1,finish:!r.dnf&&r.place>1&&r.place<=3,record:!!(r.pb&&r.pb.was)});hud();checkGoals();}
+    spEvent("hill",{win:!r.dnf&&r.place===1,finish:!r.dnf&&r.place>1&&r.place<=3,record:!!(r.pb&&r.pb.was),k,t:r.dnf?null:r.time});hud();checkGoals();}
   else toast(r.dnf?`DNF · ${sc}`:`${sc} · ${pl}`);
   if(!career())delete HILL_SB[Object.keys(SIM.HILL_CLASSES).indexOf(k)+1];   // a fresh mountain next run
   achCheck({type:"hill",r});
@@ -32860,7 +32862,7 @@ function hillSheet(res){const r=res.hill,b=hillRecs()[r.cls],L=r.lead;let pt=0,l
     <div><b>Driving</b>${r.auto?"Auto driver all the way":r.took!=null?`Auto to ${(r.took/1000).toFixed(1)} km, then you`:"You drove"}${r.handed?` to ${(r.handed/1000).toFixed(1)} km, then the auto driver took the rest`:""} · ${r.moments} moment${r.moments===1?"":"s"}${offs?" · "+offs:" · no offs"}</div>
     <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · on top the air is ${Math.round(100*(1-0.69))}% thinner, so the radiator sheds about ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less heat per degree</div>
     <div><b>Car</b>${hlEsc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}</div>
-    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${hlEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${hlEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}${f.rv?" · rival":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
 function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
@@ -35098,14 +35100,15 @@ function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.
    Three made-up shops share the reputation board with you. Their rep grows week by week (a little noisy, and pulled toward
    yours so the table stays a race), the Market tab shows the standings, and now and then one of them throws down a
    head-to-head: a real result in a real event (the strip, the truck pull, Pikes Peak, the mud bog, the boat drags, the 24 Hours,
-   the oval). The track day and the salt have no field, so there the rival posts a number a little past your own best and your
-   next lap (that car, that circuit) or run (that class) has to beat it.
+   the oval). The track day, the salt and Pikes Peak are run against the clock, so there the rival posts a number a little past
+   your own best and your next lap (that car, that circuit) or run (that class) has to beat it; on the mountain their car runs
+   in the field with that time. At the 24 Hours they enter a car in your class and you have to finish ahead of it.
    Nothing here touches S.cfg or the dyno. State lives on C().riv; rivS() fills its defaults, so old saves load clean. */
 const RIV_EV={drag:"drag",pull:"pull_sled",hill:"hill",bog:"bog",boat:"boat",endurance:"race24",oval:"oval",road:"road",salt:"salt"};   // spEvent kind -> Events tab key
 const RIV_EV_TXT={drag:"a heads-up pass at the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt flats"};
 const RIV_EV_BTN={drag:"Take it to the strip",pull:"Go to the truck pull",hill:"Go to Pikes Peak",bog:"Go to the mud bog",boat:"Go to the boat drags",endurance:"Go to the 24 Hours",oval:"Go to the oval",road:"Go to the track day",salt:"Go to the salt"};
 const RIV_EV_SHORT={drag:"the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt"};   // the board's last-head-to-head line
-const RIV_BEAT=["road","salt"];   // posted-number challenges: beat the time or the speed, not a field
+const RIV_BEAT=["road","salt","hill"];   // posted-number challenges: beat the time or the speed, not a field
 const RIV_TOP_WEEKS=40;   // weeks at #1 over all three before each shop says its piece (once)
 const RIVALS=[
   {id:"hollis",name:"Hollis Hot Rods",town:"Tulsa",base:22,share:0.6,pace:1.1,evs:["drag","oval","salt"],
@@ -35122,7 +35125,7 @@ const RIVALS=[
     up:["Marlow & Daughters edged past you. A note arrived: \"Good effort. See attached curves.\"","Marlow & Daughters are ahead of you on the board, as the spreadsheet predicted."],
     down:["You pulled ahead of Marlow & Daughters. Their reply: a spreadsheet, politely marked \"for your records\".","You are ahead of Marlow & Daughters. They have requested your test conditions."],
     chal:["\"Put your engine where the air is thin. We will compare notes after.\"","\"Twenty-four hours is the only honest test. Shall we?\""],
-    chalEv:{road:"\"A lap time is a measurement. We have taken ours. Your turn.\""},
+    chalEv:{road:"\"A lap time is a measurement. We have taken ours. Your turn.\"",hill:"\"We have been up the mountain. The time is attached. Our car will be in the field.\"",endurance:"\"We have entered a car in your class. Twenty-four hours, and we will see who is still running.\""},
     top:["Marlow & Daughters mailed a card: \"Forty weeks ahead of us, by our own spreadsheet. Well measured.\"","The youngest Marlow added a line in pencil: \"We have not stopped measuring.\""],
     won:["Marlow & Daughters beat you and sent the timing sheet, annotated.","Marlow & Daughters took it. The cover letter was three paragraphs, all of them kind."],
     lost:["You beat Marlow & Daughters. They sent a very polite, very short congratulation.","Marlow & Daughters lost to you and asked for your log. They did not say why."]},
@@ -35180,35 +35183,46 @@ function rivTrend(id){const s=rivS(),c=C(),now=id?s.r[id]:c.rep;let ref=null;
   const d=Math.round(now-v),pc=(now-v)/Math.max(10,v);return{k:pc>=0.025?"up":pc<=-0.01?"dn":"fl",d,n:c.week-ref.w};}
 function rivTopWeek(){const s=rivS(),c=C();s.top=rivTop(c)&&RIVALS.every(v=>s.pos[v.id]===1)?s.top+1:0;
   if(s.top>=RIV_TOP_WEEKS){const v=RIVALS.find(x=>!s.ack[x.id]);if(v){s.ack[v.id]=1;logEvent(v.top.join(" "),"good");}}}   // one shop a week, so the log doesn't dump three at once
-function rivEvOpen(ev){try{return evStatus(RIV_EV[ev]).k!=="lock"&&(!RIV_BEAT.includes(ev)||rivBests(ev).length>0);}catch(e){return false;}}
+function rivEvOpen(ev){try{return evStatus(RIV_EV[ev]).k!=="lock"&&(!RIV_BEAT.includes(ev)||rivBests(ev).length>0)&&(ev!=="endurance"||e24C().next<=C().week+2);}catch(e){return false;}}   // the 24 Hours: only when a running falls inside the challenge
 /* the bests a posted-number challenge can be set against: plain-chassis laps (no swap cars) and salt class bests */
 function rivBests(ev){
   if(ev==="road")return Object.values(roadRecs()).filter(x=>x&&x.t>0&&!x.sw&&SIM.CHASSIS[x.ch]&&SIM.ROAD_TRACKS[x.trk]).map(x=>({car:x.ch,trk:x.trk,b:x.t}));
   if(ev==="salt"){const pb=saltBook().pb||{};return Object.keys(pb).filter(k=>pb[k]&&pb[k].mph>0).map(k=>({k,b:pb[k].mph}));}
+  if(ev==="hill"){const R=hillRecs();return Object.keys(R).filter(k=>R[k]&&R[k].t>0&&SIM.HILL_CLASSES[k]&&!hillClsLocked(k)).map(k=>({k,b:R[k].t}));}
   return[];}
 /* a rival ahead of you posts a number 1.2-2.2% past your best, one behind 0.4-1.2% */
 function rivPost(ev,ahead){const x=rivPick(rivBests(ev)),m=ahead?0.012+rivRng()*0.01:0.004+rivRng()*0.008;
-  return ev==="road"?{car:x.car,trk:x.trk,tgt:Math.floor(x.b*(1-m)*10)/10}:{k:x.k,tgt:Math.ceil(x.b*(1+m)*10)/10};}
-const rivTgtTxt=ch=>ch.ev==="road"?fmtLap(ch.tgt,1):ch.tgt.toFixed(1)+" mph";
-const rivWhere=ch=>ch.ev==="road"?`${(SIM.ROAD_TRACKS[ch.trk]||{}).n||"the circuit"} in ${roadCarTxt({ch:ch.car})}`:`class ${ch.k} on the salt`;
+  return ev==="road"?{car:x.car,trk:x.trk,tgt:Math.floor(x.b*(1-m)*10)/10}:ev==="hill"?{k:x.k,tgt:Math.floor(x.b*(1-m)*10)/10}:{k:x.k,tgt:Math.ceil(x.b*(1+m)*10)/10};}
+const rivTgtTxt=ch=>ch.ev==="road"?fmtLap(ch.tgt,1):ch.ev==="hill"?fmtHill(ch.tgt):ch.tgt.toFixed(1)+" mph";
+const rivWhere=ch=>ch.ev==="road"?`${(SIM.ROAD_TRACKS[ch.trk]||{}).n||"the circuit"} in ${roadCarTxt({ch:ch.car})}`:ch.ev==="hill"?`${(SIM.HILL_CLASSES[ch.k]||{}).n||"the class"} at Pikes Peak`:`class ${ch.k} on the salt`;
+/* Pikes Peak: the rival's car in the field, on the posted time (splits paced off your own record in that class) */
+function rivHillRow(k){if(!career())return null;const ch=rivS().ch;if(!ch||ch.st!=="on"||ch.ev!=="hill"||ch.k!==k)return null;
+  const v=RIVALS.find(x=>x.id===ch.rv),pb=hillRecs()[k],F=SIM.HILL_CLASSES[k].field,sp=pb&&pb.t>0&&pb.splits?pb.splits.map(x=>+(x*ch.tgt/pb.t).toFixed(3)):[];
+  return{n:v.name,rv:true,hp:Math.round(F.hp*1.05),turbo:F.turbo>=0.5,ch:pb&&pb.ch||"coupe",skill:0.9,t:ch.tgt,dnf:null,splits:sp,offs:0,paint:HILL_PAINT[2]};}
+function hillWithRv(k,f){const x=f&&rivHillRow(k);return x?f.concat([x]):f;}
+/* the 24 Hours: one car in your class runs under the rival's name — a touch quicker than yours if they are ahead on the board */
+function rivE24Car(R){if(!career())return null;const ch=rivS().ch;if(!ch||ch.st!=="on"||ch.need!=="ahead")return null;
+  const me=R.cars[0],v=RIVALS.find(x=>x.id===ch.rv),L=c=>c.P.modes.race.lap*c.pace,want=L(me)*(ch.ah?0.995:1.005),pool=R.cars.filter(c=>!c.me&&c.cls===me.cls);if(!pool.length)return null;
+  pool.sort((a,b)=>Math.abs(L(a)-want)-Math.abs(L(b)-want));const c=pool[0];c.team=v.name;return{i:c.i,n:v.name.split(" ")[0]};}
 function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
   const cand=RIVALS.map(v=>({v,evs:v.evs.filter(rivEvOpen)})).filter(x=>x.evs.length);if(!cand.length)return;
   // lean toward a rival who is close to you in the table
   const w=cand.map(x=>1/(0.4+Math.abs(Math.log((s.r[x.v.id]+10)/(pl+10)))));let t=w.reduce((a,b)=>a+b,0)*rivRng(),i=0;while(i<w.length-1&&t>w[i]){t-=w[i];i++;}
   const v=cand[i].v,ev=rivPick(cand[i].evs),tier=repTierIdx(),ahead=s.r[v.id]>pl;
-  const beat=RIV_BEAT.includes(ev),need=beat?"beat":ev==="drag"||ahead?"win":"podium";
-  const win=Math.round((3+tier*RIV_WIN_TIER)*(need==="win"||(beat&&ahead)?1.3:1)),purse=Math.min(RIV_PURSE_CAP,Math.round((150+pl*7)/50)*50);
-  s.ch=Object.assign({id:Math.floor(rivRng()*1e9),rv:v.id,ev,need,st:"offer",wk:c.week,exp:c.week+2,win,lose:Math.max(2,Math.round(win*RIV_LOSE_PCT)),purse},beat?rivPost(ev,ahead):{});
+  const beat=RIV_BEAT.includes(ev),need=beat?"beat":ev==="endurance"?"ahead":ev==="drag"||ahead?"win":"podium";
+  const win=Math.round((3+tier*RIV_WIN_TIER)*(need==="win"||(need!=="podium"&&ahead)?1.3:1)),purse=Math.min(RIV_PURSE_CAP,Math.round((150+pl*7)/50)*50);
+  s.ch=Object.assign({id:Math.floor(rivRng()*1e9),rv:v.id,ev,need,st:"offer",wk:c.week,exp:c.week+2,win,lose:Math.max(2,Math.round(win*RIV_LOSE_PCT)),purse},beat?rivPost(ev,ahead):need==="ahead"?{ah:ahead?1:0}:{});
   logEvent(beat?`${v.name} posted ${rivTgtTxt(s.ch)} — ${rivWhere(s.ch)} — and dares you to beat it. See Market`:`${v.name} challenges you at ${RIV_EV_TXT[ev]} — see Market`,"");toastAfter(`${v.name} wants a head-to-head`);}
 /* a result in the field: the open challenge, if it is on and about this event */
 function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!==kind)return;
   if(kind==="drag"){const d=S.last&&S.last.res&&S.last.res.drag;if(!(d&&d.race)||(typeof DR!=="undefined"&&DR&&DR.night))return;}   // a heads-up pass only: not a solo pass, not race night
   if(kind==="oval"&&o.heat)return;   // the feature decides it
   if(kind==="road"&&(o.sw||o.ch!==ch.car||o.trk!==ch.trk))return;   // only a lap in the posted car on the posted circuit
-  if(kind==="salt"&&o.k!==ch.k)return;   // only a run in the posted class
+  if((kind==="salt"||kind==="hill")&&ch.need==="beat"&&o.k!==ch.k)return;   // only a run in the posted class
   const v=RIVALS.find(x=>x.id===ch.rv),c=C();
-  const won=ch.need==="beat"?(kind==="road"?o.t!=null&&o.t<ch.tgt:o.mph!=null&&o.mph>ch.tgt):ch.need==="win"?!!o.win:!!(o.win||o.finish);s.ch=null;s.cool=3;
-  const vs=ch.need==="beat"?` (${o.t!=null||o.mph!=null?(kind==="road"?fmtLap(o.t,2):o.mph.toFixed(2)+" mph"):"no time"} against ${rivTgtTxt(ch)})`:"";
+  const lo=kind!=="salt",val=lo?o.t:o.mph;   // a time to get under, or a speed to get over
+  const won=ch.need==="beat"?val!=null&&(lo?val<ch.tgt:val>ch.tgt):ch.need==="ahead"&&o.ahead!=null?!!o.ahead:ch.need==="win"?!!o.win:!!(o.win||o.finish);s.ch=null;s.cool=3;   // no rival car on the grid (an empty class): a podium will do
+  const vs=ch.need==="beat"?` (${val!=null?(kind==="road"?fmtLap(val,2):kind==="hill"?fmtHill(val):val.toFixed(2)+" mph"):"no time"} against ${rivTgtTxt(ch)})`:o.rvTxt?` (${o.rvTxt})`:"";
   s.last[v.id]={w:c.week,pw:won?1:0,ev:ch.ev};
   if(won){s.hist.won++;if(!s.hist.beat||typeof s.hist.beat!=="object")s.hist.beat={};s.hist.beat[v.id]=(s.hist.beat[v.id]||0)+1;c.rep+=ch.win;c.cash+=ch.purse;s.r[v.id]=Math.max(0,s.r[v.id]-Math.max(3,s.r[v.id]*0.04));
     logEvent(`Head-to-head beat ${v.name} at ${RIV_EV_TXT[ch.ev]}${vs} — ${fmt$(ch.purse)} side bet, +${ch.win} rep. ${rivPick(v.lost)}`,"good");toastAfter(`BEAT ${v.name.toUpperCase()} · +${ch.win} REP · ${fmt$(ch.purse)}`);}
@@ -35233,15 +35247,15 @@ function rivalsRender(){let sec=$("rivSec");
   const near=RIVALS.slice().sort((a,b)=>Math.abs(s.r[a.id]-pl)-Math.abs(s.r[b.id]-pl))[0];
   const ch=s.ch;let card="";
   if(ch){const v=RIVALS.find(x=>x.id===ch.rv),on=ch.st==="on";
-    card=`<div class="card rvch"><div class="client">${on?"Challenge accepted":"Challenge"} · ${v.name}<em class="ctag">Head-to-head</em></div><h3>${ch.ev==="drag"?"Heads-up pass at the strip":ch.need==="beat"?`Beat ${rivTgtTxt(ch)} · ${rivWhere(ch)}`:"Beat them at "+RIV_EV_TXT[ch.ev]}<span>${on?"run it by wk "+ch.exp:"answer by wk "+ch.exp}</span></h3>
+    card=`<div class="card rvch"><div class="client">${on?"Challenge accepted":"Challenge"} · ${v.name}<em class="ctag">Head-to-head</em></div><h3>${ch.ev==="drag"?"Heads-up pass at the strip":ch.need==="ahead"?"Finish ahead of their car at the 24 Hours":ch.need==="beat"?`Beat ${rivTgtTxt(ch)} · ${rivWhere(ch)}`:"Beat them at "+RIV_EV_TXT[ch.ev]}<span>${on?"run it by wk "+ch.exp:"answer by wk "+ch.exp}</span></h3>
       <p class="cnote">${on?v.tag:(v.chalEv&&v.chalEv[ch.ev])||rivPick(v.chal)}</p>
       <div class="money"><div><b class="pos">+${ch.win}</b><span>rep if you win</span></div><div><b class="pos">${fmt$(ch.purse)}</b><span>side bet</span></div><div><b class="neg">−${ch.lose}</b><span>rep if you lose</span></div></div>
-      <div class="cstat off">${ch.need==="beat"?(ch.ev==="road"?`${v.name} lapped ${rivWhere(ch)} in ${rivTgtTxt(ch)}. Your next lap in that car on that circuit decides it; a swap car doesn't count.`:`${v.name} ran ${rivTgtTxt(ch)} through the mile in ${ch.k}. Your next run in that class decides it; a run that breaks or books no time loses.`)
+      <div class="cstat off">${ch.need==="ahead"?`${v.name} enter a car in your class at your next 24 Hours. Finish ahead of it in the classification; if your class has no other car, a podium will do.`:ch.need==="beat"?(ch.ev==="road"?`${v.name} lapped ${rivWhere(ch)} in ${rivTgtTxt(ch)}. Your next lap in that car on that circuit decides it; a swap car doesn't count.`:ch.ev==="hill"?`${v.name} climbed ${rivWhere(ch)} in ${rivTgtTxt(ch)}, and their car runs in the field on that time. Your next climb in that class decides it; a DNF loses.`:`${v.name} ran ${rivTgtTxt(ch)} through the mile in ${ch.k}. Your next run in that class decides it; a run that breaks or books no time loses.`)
         :`${ch.need==="win"?"Win it outright":"Finish on the podium (top three)"}${ch.ev==="drag"?" in a heads-up pass (Events · Drag strip · race the other lane)":ch.ev==="oval"?" in the feature (the heat doesn't count)":""}.${ch.ev==="drag"?" Solo runs and race nights don't count.":""}`}</div>
       ${on?`<button class="btn pri" data-rvgo="${ch.ev}">${RIV_EV_BTN[ch.ev]} ›</button>`:`<div class="rvbtns"><button class="btn pri" data-rvacc="1">Accept</button><button class="btn ghost" data-rvno="1">Turn it down</button></div>`}</div>`;}
   $("rivBox").innerHTML=`<div class="rvboard">${board}</div><p class="hint rvhint">${near.name}: ${near.tag}</p>${card}<p class="hint rvhint">Head-to-heads: ${h.won} won · ${h.lost} lost${h.declined?" · "+h.declined+" turned down":""}. A rival throws down every few weeks once you are past 30 rep. Arrows: rep against 4 weeks ago.</p>`;}
 function rivClick(e){const s=rivS(),ch=s.ch;
-  const go=e.target.closest("[data-rvgo]");if(go){if(!ch||ch.st!=="on")return;evGo(RIV_EV[ch.ev],ch.ev==="drag"?{race:"heads"}:ch.ev==="road"?{roadCh:ch.car,roadTrk:ch.trk}:{});return;}
+  const go=e.target.closest("[data-rvgo]");if(go){if(!ch||ch.st!=="on")return;evGo(RIV_EV[ch.ev],ch.ev==="drag"?{race:"heads"}:ch.ev==="road"?{roadCh:ch.car,roadTrk:ch.trk}:ch.ev==="hill"?{hillCls:ch.k}:{});return;}
   if(!ch)return;const v=RIVALS.find(x=>x.id===ch.rv);
   if(e.target.closest("[data-rvacc]")){ch.st="on";ch.exp=C().week+3;logEvent(`Accepted ${v.name}'s challenge at ${RIV_EV_TXT[ch.ev]} — run it by week ${ch.exp}`,"");save();renderShop();toast(`CHALLENGE ON · ${v.name.toUpperCase()}`);buzz(20);return;}
   if(e.target.closest("[data-rvno]")){s.hist.declined++;s.ch=null;s.cool=3;logEvent(`Turned down ${v.name}. They'll tell people.`,"");save();renderShop();}}
