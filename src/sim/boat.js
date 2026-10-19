@@ -19,13 +19,13 @@
   const BOAT_IMP = [["A", "A-cut", 0.50, "light · revs, holeshot"], ["B", "B-cut", 0.56, "medium"], ["C", "C-cut", 0.62, "heavy"], ["D", "D-cut", 0.68, "racing · top end"]];
   const BOAT_CLASSES = {
     outboard: { n: "Outboard · Stock", d: "V-bottom · outboard · ≤ 3.3 L", tier: 1, rep: 0, hull: "vee", drive: "prop", hullKg: 560, rigKg: 90, maxL: 3.3,
-      gear: [1.5, 3.0, 1.85], pitch: [17, 37, 26], Kq0: 0.348, Tc0: 0.62, field: { hp: 185, sd: 22, mph: 64, dsl: 0, red: [5600, 6400] }, fee: 150, purse: 2000 },
+      gear: [1.5, 3.0, 1.85], pitch: [17, 37, 26], Kq0: 0.348, Tc0: 0.62, field: { hp: 185, sd: 22, mph: 64, dsl: 0, red: [5600, 6400] }, fee: 300, purse: 2000 },
     jet: { n: "Jet boat", d: "flat-bottom · pump drive, no prop", tier: 2, rep: 30, hull: "flat", drive: "jet", hullKg: 900, rigKg: 60, maxL: 0, A: 0.0042,
-      gear: [0.45, 1.3, 1.0], imp: 1, Tc0: 0.95, field: { hp: 520, sd: 90, mph: 94, dsl: 0.25 }, fee: 250, purse: 4000 },
+      gear: [0.45, 1.3, 1.0], imp: 1, Tc0: 0.95, field: { hp: 520, sd: 90, mph: 94, dsl: 0.25 }, fee: 600, purse: 4000 },
     pro: { n: "Pro Eliminator", d: "blown flat · V-drive, cleaver prop", tier: 3, rep: 100, hull: "flat", drive: "prop", hullKg: 820, rigKg: 60, maxL: 0,
-      gear: [0.75, 1.35, 1.0], pitch: [24, 44, 32], Kq0: 0.219, Tc0: 1.7, field: { hp: 1900, sd: 280, mph: 163, dsl: 0, red: [7200, 8200] }, fee: 600, purse: 9000 },
+      gear: [0.75, 1.35, 1.0], pitch: [24, 44, 32], Kq0: 0.219, Tc0: 1.7, field: { hp: 1900, sd: 280, mph: 163, dsl: 0, red: [7200, 8200] }, fee: 1350, purse: 9000 },
     tfh: { n: "Top Fuel Hydro", d: "three-point hydro · rides on its prop", tier: 4, rep: 250, hull: "hydro", drive: "prop", hullKg: 600, rigKg: 60, maxL: 0,
-      gear: [0.7, 1.25, 1.0], pitch: [28, 50, 36], Kq0: 0.304, Tc0: 2.2, field: { hp: 2900, sd: 380, mph: 192, dsl: 0, red: [7400, 8400] }, fee: 1200, purse: 20000 }
+      gear: [0.7, 1.25, 1.0], pitch: [28, 50, 36], Kq0: 0.304, Tc0: 2.2, field: { hp: 2900, sd: 380, mph: 192, dsl: 0, red: [7400, 8400] }, fee: 3000, purse: 20000 }
   };
   for (const k in BOAT_CLASSES) BOAT_CLASSES[k].id = k;
   /* a run's water: headwind (m/s, − is a tailwind) and chop (0 glassy … 1 rough). Same seed, same water. */
@@ -55,6 +55,9 @@
       air: 0, airT: 0, hops: 0, kick: 0, hopV: 0, cool: 58, coolPeak: 58, debris: null, dnf: null, broke: null, failKind: null, limT: 0, peakRpm: 0, maxV: 0, trace: [], blowAt: [], humpT: null, planeT: null, vy: 0, lastTr: -1, acc: 0, doneT: null };
     let failAt = Infinity, failKind = null, loadT = 0, nextHop = 0, airLeft = 0, lrT = 0;
     if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(x => x.name === res.fails[0]); failKind = t0 ? t0.id : "rod_tension"; failAt = 0.5 + rng() * 4.5; }
+    // an engine run near its limits can let go at full load: each part past 80% of its limit adds a little risk per second (a rival's 4% a pass, roughly, at the edge)
+    const hz = (res.tests || []).map(t => ({ id: t.id, h: Math.max(0, (t.util || 0) - 0.8) * 0.025 })).filter(q => q.h > 0), hzTot = hz.reduce((a, q) => a + q.h, 0);
+    const hzR = pullRng(((v.seed >>> 0) ^ 0x7A11ED) >>> 0); let hzAcc = 0; const hzRoll = -Math.log(Math.max(1e-9, hzR()));
     const limTrip = 0.9 + rng() * 0.9;
     const deb = !v.noFail && rng() < 0.035 ? { x: 40 + rng() * 230, kind: jet ? "grate" : "weed" } : null;
     const hopR = pullRng(((v.seed >>> 0) ^ 0x5EA5) >>> 0); nextHop = 0.4 + hopR() * 1.2;
@@ -134,6 +137,7 @@
           else if (v.wornAt && loadT >= v.wornAt) st.broke = "worn";
           else if (st.limT > limTrip) st.broke = "valve_float";
           else if (st.cool > 124) st.broke = "head_lift";
+          else if (hzTot > 0 && thr > 0.6 && (hzAcc += hzTot * dt) > hzRoll) { const pick = hzR() * hzTot; let c = 0; st.broke = hz[0].id; for (const q of hz) { c += q.h; if (pick <= c) { st.broke = q.id; break; } } }
           if (st.broke) st.failKind = st.broke;
         }
       }
