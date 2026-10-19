@@ -373,32 +373,31 @@ function fnCGI(u,v,o){
   o[4]=0.58+(1-g)*0.10; o[5]=0.72;
 }
 /* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
-function fnCastAlu0(u,v,o){          /* A356 sand cast: matte, porous, light */
+function fnCastAlu0(u,v,o){          /* A356 permanent-mould cast: a fine satin skin, faint mottling, the odd pore */
   var g=fbm(u,v,4,26,101), fine=fbm(u,v,2,140,107);
-  var l=128+(g-0.5)*20+(fine-0.5)*15;
-  o[0]=l; o[1]=l*1.005; o[2]=l*1.02;
-  /* porosity pits */
-  var p=fbm(u,v,2,64,113);
-  var pit=smoothstep(0.80,0.94,p);
-  o[0]-=pit*46; o[1]-=pit*46; o[2]-=pit*44;
-  o[3]=g*0.55+fine*0.45-pit*0.55;
-  o[4]=clamp(0.62+(1-g)*0.14+pit*0.20,0,1);
-  o[5]=0.86;
+  var l=140+(g-0.5)*9+(fine-0.5)*6;
+  o[0]=l; o[1]=l*1.005; o[2]=l*1.025;
+  /* porosity: rare and small */
+  var pit=smoothstep(0.88,0.97,fbm(u,v,2,64,113));
+  o[0]-=pit*22; o[1]-=pit*22; o[2]-=pit*21;
+  o[3]=g*0.30+fine*0.22-pit*0.25+0.24;
+  o[4]=clamp(0.44+(1-g)*0.08+pit*0.14,0,1);
+  o[5]=0.92;
 }
 /* hi-res set (Full / Ultra, painted in the background): the detailed painter */
-function fnCastAlu(u,v,o,i,j){          /* A356 sand cast: matte, porous, light, a little oxide mottling and bright metal grains */
+function fnCastAlu(u,v,o,i,j){          /* A356 permanent-mould cast: satin skin, soft oxide mottling, a fine metallic glint, the odd pore */
   if(HQ<=1) return fnCastAlu0(u,v,o,i,j);
   var g=fbm(u,v,4,26,101), fine=fbm(u,v,2,140,107), mott=fbm(u,v,3,6,121), sand=vnoise(u*190,v*190,190,127);
-  var l=130+(g-0.5)*22+(fine-0.5)*14+(sand-0.5)*16+(mott-0.5)*14;
-  if(HQ>1) l += (vnoise(u*380,v*380,380,137)-0.5)*11;
-  /* porosity pits */
-  var pit=smoothstep(0.78,0.92,fbm(u,v,2,64,113));
-  var spark=smoothstep(0.88,0.95,vnoise(u*260,v*260,260,131));
-  l += spark*22 - pit*48;
+  var l=142+(g-0.5)*8+(fine-0.5)*5+(sand-0.5)*5+(mott-0.5)*12;
+  if(HQ>1) l += (vnoise(u*380,v*380,380,137)-0.5)*4;
+  /* porosity: rare and small */
+  var pit=smoothstep(0.88,0.97,fbm(u,v,2,64,113));
+  var spark=smoothstep(0.90,0.97,vnoise(u*260,v*260,260,131));
+  l += spark*10 - pit*24;
   o[0]=l*0.99; o[1]=l*1.005; o[2]=l*1.03+(1-mott)*3;
-  o[3]=g*0.45+fine*0.20+sand*0.20+mott*0.15-pit*0.55;
-  o[4]=clamp(0.60+(1-g)*0.14+pit*0.20+(mott-0.5)*0.12-spark*0.15,0,1);
-  o[5]=0.86;
+  o[3]=g*0.22+fine*0.10+sand*0.08+mott*0.20-pit*0.25+0.20;
+  o[4]=clamp(0.42+(1-g)*0.07+pit*0.14+(mott-0.5)*0.10-spark*0.10,0,1);
+  o[5]=0.92;
 }
 /* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
 function fnMachinedAlu0(u,v,o){      /* fine brushed / turned tool marks */
@@ -1036,7 +1035,7 @@ function buildMaterials(){
 
   MAT.iron        = pmat(S, fnCastIron,      {ns:1.1, env:0.9});
   MAT.cgi         = pmat(S, fnCGI,           {ns:0.8, env:1.0});
-  MAT.calu        = pmat(S, fnCastAlu,       {ns:1.0, env:1.0});
+  MAT.calu        = pmat(S, fnCastAlu,       {ns:0.45, env:1.0});
   MAT.malu        = pmat(S, fnMachinedAlu,   {ns:0.55,env:1.2});
   MAT.palu        = pmat(S, fnPolishedAlu,   {ns:0.35,env:1.5});
   MAT.nikasil     = pmat(128,fnNikasil,      {ns:0.3, env:1.6});
@@ -1205,7 +1204,7 @@ function buildHiMaterials(){
   });
   /* painted parts get a real clear coat; bare castings stay rough */
   ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key]=hiFlag(toPhysical(MATHI[key], 0.55, 0.22)); });
-  MATHI.iron.normalScale.set(1.3,1.3); MATHI.stainless.normalScale.set(0.35,0.35); MATHI.calu.normalScale.set(1.15,1.15); MATHI.castexh.normalScale.set(1.4,1.4);
+  MATHI.iron.normalScale.set(1.3,1.3); MATHI.stainless.normalScale.set(0.35,0.35); MATHI.calu.normalScale.set(0.5,0.5); MATHI.castexh.normalScale.set(1.4,1.4);
   /* new surfaces */
   MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:1.2, env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
   MATHI.turned    = hiFlag(pmat(S, fnTurned,      {ns:0.7, env:1.3}));
