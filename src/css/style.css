@@ -924,7 +924,6 @@ html:not(.desk) #kbHelpBtn{display:none}
 #app.td #view{flex-basis:64%}#app.td.mini #view{flex-basis:64%;min-height:220px}
 #app.td #tag,#app.td #rpmbox{display:none!important}
 .tdgo{margin-top:8px}
-#tdAna .tdrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}#tdAna p{margin:0;font-size:14px;color:var(--muted);flex:1 1 200px}
 html.desk #tdCap{left:18px;right:auto;bottom:16px;width:min(480px,calc(100% - 36px));padding:14px 16px}
 html.desk #tdCap b{font-size:22px}html.desk #tdCap p{font-size:14px}
 /* ---- drag HUD on the 3D view's bottom edge: tree, gap, tyre heat, ET/mph, boost, nitrous, ALS. It sits inside #view, so it follows
@@ -1227,8 +1226,6 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
 #app.rkon #panel{padding-bottom:calc(var(--tabh) + var(--rkh) + 24px)}
 html:not(.desk) #app.rkon #toast{bottom:var(--tbot,calc(var(--tabh) + var(--rkh) + 14px))}
 html:not(.desk) #app.rkon #achToast{bottom:var(--abot,calc(var(--tabh) + var(--rkh) + 66px))}
-/* the Test tab already lists every stress row: the rail keeps the verdict, chart and peaks there */
-html[data-tab=test] #rail .rlst{display:none}
 .rlhead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"pk chip run";align-items:center;gap:8px;min-height:var(--rkh);padding:8px 12px 8px 14px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
 .rlgrab{position:absolute;left:50%;top:0;width:72px;height:14px;margin-left:-36px;padding:0;background:none;border:0}
 .rlgrab i{display:block;width:36px;height:4px;margin:4px auto 0;border-radius:2px;background:var(--steel)}
@@ -1263,9 +1260,6 @@ html[data-tab=test] #rail .rlst{display:none}
 .rlv b{display:block;font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:.04em;line-height:1.1;color:var(--dim)}
 .rlv.pass{border-color:var(--good)}.rlv.pass b{color:var(--good)}.rlv.fail{border-color:var(--crit)}.rlv.fail b{color:var(--crit)}.rlv.marg{border-color:var(--warn)}.rlv.marg b{color:var(--warn)}
 .rlv small{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;font-size:13px;line-height:1.35;color:var(--muted)}
-.rlst{display:flex;flex-direction:column;gap:5px}
-#rail .st{grid-template-columns:minmax(0,1fr) 54px 38px;gap:8px;padding:6px 8px 6px 20px}
-#rail .st .n{font-size:13px}#rail .st .p{font-size:12px}
 .rlsec{margin-top:14px}
 .rlsec h3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .rlsec h3 em{font-style:normal;font-family:var(--body);font-size:12px;letter-spacing:0;text-transform:none;color:var(--warn);margin-right:auto}
