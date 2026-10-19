@@ -9790,10 +9790,24 @@ const ENGINE_SIM = (function () {
          trades cooling against drag; past 112 °C the engine pulls power, past 122 it lifts a head
        - the dyno's own failures strike at some point under load, as everywhere else
      The same step drives the AI cars (a made-up engine and a driver's skill) and the player's car.
+     The PAVED half-mile (v1.77) is the same step on another set of numbers (OVAL_TRACKS): 805 m, 70 m radius turns banked 13°, two 183 m
+     straights, asphalt at μ about 1.05–1.15 that holds steady all night (the night's temperature moves it a little, and a hot night
+     greases the tyres over the race), little rolling drag, no clay dust to clog the radiator, a car geared for the longer straight.
+     The clay track's numbers are the originals, untouched.
      ===================================================================== */
   const OVAL_R = 52, OVAL_LEN = 600, OVAL_LS = (OVAL_LEN - 2 * Math.PI * OVAL_R) / 2, OVAL_BANK = 22 * Math.PI / 180, OVAL_W = 18, OVAL_G = 9.81;
+  /* the tracks: geometry (R turn radius m, len lap m, ls straight m, bank rad, w width m) and what the surface does
+     (crr rolling, scrub cornering scrub, dirtyK pace lost in the car ahead's air, dust radiator clogging, brakeK braking grip, vTopK the speed the rear end is
+     sized for, lapRef seconds a lap for the failure clock, wearMu how much worn tyres lose) */
+  const OVAL_TRACKS = {
+    clay: { id: "clay", n: "Clay 3/8", surf: "clay", dist: "3/8 mile", R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, bankDeg: 22, w: OVAL_W,
+      crr: 0.05, scrub: 0.10, dirtyK: 0.014, dust: 1, brakeK: 1, vTopK: 1, lapRef: 19, wearMu: 0.22 },
+    paved: { id: "paved", n: "Paved half-mile", surf: "asphalt", dist: "1/2 mile", R: 70, len: 805, ls: (805 - 2 * Math.PI * 70) / 2, bank: 13 * Math.PI / 180, bankDeg: 13, w: 20,
+      crr: 0.022, scrub: 0.07, dirtyK: 0.006, dust: 0.12, brakeK: 1.35, vTopK: 1.1, lapRef: 21, wearMu: 0.2 }
+  };
+  const ovalTrack = t => typeof t === "object" && t ? t : OVAL_TRACKS[t] || OVAL_TRACKS.clay;
   const OVAL_TYRES = {
-    soft: { n: "Soft", d: "tacky early · fades late", mu: 1.045, wear: 1.9 },
+    soft: { n: "Soft", d: "bites early · fades late", mu: 1.045, wear: 1.9 },
     med: { n: "Medium", d: "the all-rounder", mu: 1.0, wear: 1.0 },
     hard: { n: "Hard", d: "lasts · less bite", mu: 0.965, wear: 0.5 }
   };
@@ -9814,12 +9828,16 @@ const ENGINE_SIM = (function () {
   const ovalCi = res => (+res.VdEq || +res.Vd || 5000) / 16.387;
   function ovalGaussian(r) { return Math.sqrt(-2 * Math.log(Math.max(1e-9, r()))) * Math.cos(2 * Math.PI * r()); }
   /* the night's clay: base grip, how tacky it starts, its name */
-  function ovalNight(seed) {
+  function ovalNight(seed, track) {
+    if (ovalTrack(track).surf === "asphalt") {   // asphalt has no moisture: the night's temperature moves the grip (cool = more) and the cooling (hot air = less); a hot track greases the tyres over a race
+      const q = pullRng(((seed >>> 0) ^ 0x0A5F17) >>> 0), t = q(), j = q(), f = q();
+      return { seed: seed >>> 0, mu: +(1.13 - 0.09 * t + (j - 0.5) * 0.04).toFixed(3), wet: 0, name: t < 0.34 ? "cool" : t < 0.67 ? "mild" : "hot", fast: 0.5 + f * 0.4, amb: +(14 + 18 * t).toFixed(1), grease: +(0.15 + 0.85 * t).toFixed(2), temp: t };
+    }
     const r = pullRng(((seed >>> 0) ^ 0x0D17A1) >>> 0), mu = +(0.64 + r() * 0.1).toFixed(3), wet = +(0.35 + r() * 0.5).toFixed(2);
     return { seed: seed >>> 0, mu: mu, wet: wet, name: wet > 0.7 ? "wet and tacky" : wet > 0.5 ? "tacky" : "medium", fast: 0.55 + r() * 0.4 };
   }
   /* the banked-turn grip limit for a given μ */
-  function ovalVlim(mu) { const tb = Math.tan(OVAL_BANK); return Math.sqrt(OVAL_R * OVAL_G * (tb + mu) / (1 - mu * tb)); }
+  function ovalVlim(mu, track) { const TR = ovalTrack(track), tb = Math.tan(TR.bank); return Math.sqrt(TR.R * OVAL_G * (tb + mu) / (1 - mu * tb)); }
   /* the engine as the car sees it: the strip's prep (boost split, turbo size, EGT limit) */
   function ovalPrep(cfg, env, res) { return dragPrep(cfg, env, res); }
 
@@ -9828,17 +9846,17 @@ const ENGINE_SIM = (function () {
      step(dt, ctl) takes ctl {c} (pace multiplier) or null for the auto driver. */
   function ovalNew(res, veh) {
     const C0 = OVAL_CLASSES[veh && veh.cls] || OVAL_CLASSES.street, CV = C0.veh;
-    const v = Object.assign({ cls: C0.id, tyre: "med", grille: "mid", finalK: 1, redline: 6500, idle: 850, seed: 1, noFail: false, laps: 25, off: 0, night: null, moist: 0.5, lap0: 0, skill: 0.88 }, veh || {});
-    const N0 = v.night || ovalNight(v.seed), L = OVAL_LEN, R = OVAL_R, Ls = OVAL_LS, PR = Math.PI * R;
+    const v = Object.assign({ cls: C0.id, track: "clay", tyre: "med", grille: "mid", finalK: 1, redline: 6500, idle: 850, seed: 1, noFail: false, laps: 25, off: 0, night: null, moist: 0.5, lap0: 0, skill: 0.88 }, veh || {});
+    const TR = ovalTrack(v.track), N0 = v.night || ovalNight(v.seed, TR), L = TR.len, R = TR.R, Ls = TR.ls, PR = Math.PI * R, clayT = TR.surf === "clay", amb = N0.amb != null ? N0.amb : 30;
     const rpms = res.rpms, tq = res.torque, NR = rpms.length, rng = pullRng(v.seed), rngLap = pullRng(((v.seed >>> 0) ^ 0x7A11) >>> 0);
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[NR - 1]) return arr[NR - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const TY = OVAL_TYRES[v.tyre] || OVAL_TYRES.med, GR = OVAL_GRILLES[v.grille] || OVAL_GRILLES.mid;
     const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000), kg = +res.kg || CV.engRef;
     const m = CV.mass + 0.35 * (kg - CV.engRef), rf = CV.rf - 0.0002 * (kg - CV.engRef), rw = CV.tyreDia * 0.0254 / 2;
-    const G = (v.redline * 2 * Math.PI / 60) * rw / CV.vTop / clamp(+v.finalK || 1, 0.7, 1.4), eta = 0.9, red = v.redline, lim = red * 1.03;
+    const G = (v.redline * 2 * Math.PI / 60) * rw / (CV.vTop * TR.vTopK) / clamp(+v.finalK || 1, 0.7, 1.4), eta = 0.9, red = v.redline, lim = red * 1.03;
     const Tfric = 0.10 * (res.peakTq || 300), pkTq = Math.max.apply(null, tq), tqLow = interp(tq, 0.45 * red) / Math.max(1, pkTq);
     const tauEng = 0.05 + 0.3 * Math.pow(clamp(1 - tqLow, 0, 1), 1.5);
-    const cdA = CV.cdA * GR.cd, crr = 0.05, cgwb = 0.2;
+    const cdA = CV.cdA * GR.cd, crr = TR.crr, cgwb = 0.2;
     const kind = res.aspKind || "na", bT = +res.boostTarget || 0;
     let trans = kind !== "na" && bT > 0 && Array.isArray(res.naTorque) && res.naTorque.length === NR && Array.isArray(res.boostCurve) && res.boostCurve.length === NR, gpb = null;
     if (trans) { gpb = new Array(NR); const valid = [];
@@ -9864,23 +9882,24 @@ const ENGINE_SIM = (function () {
       wear: 0, lap: 0, laps: [], lapT0: 0, cid: 0, xi: 1, aim: 0.98, over: 0, slideK: 0, vlimE: 25, slideT: 0, slides: 0, spinT: 0, wot: 0, loadT: 0, maxV: 0, broke: null, failKind: null, failAt: Infinity, done: false, finish: null,
       mu: 0.7, vlim: 25, vc: 25, dirty: 0, derate: 1, derT: 0, trace: [], bestLap: Infinity, last: 0, spin: 0, lugT: 0, thrN: 0, thrT: 0, stopWhy: null, rpmCorner: 0, rpmExit: 0 };
     st.coolPeak = st.cool;
-    if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(x => x.name === res.fails[0]); st.failKind = t0 ? t0.id : "rod_tension"; st.failAt = (v.laps * 19) * (0.12 + 0.55 * rng()); }
+    if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(x => x.name === res.fails[0]); st.failKind = t0 ? t0.id : "rod_tension"; st.failAt = (v.laps * TR.lapRef) * (0.12 + 0.55 * rng()); }
     const egtTrip = 25 + rng() * 55;
     let hzRoll = rng() * 1, hzAcc = 0, lastTrace = -1, cornerRho = 0, cornerN = 0, loadT = 0;
-    const ab = CV.brake * OVAL_G, feel = clamp(v.skill, 0.2, 1);
+    const ab = CV.brake * TR.brakeK * OVAL_G, feel = clamp(v.skill, 0.2, 1);
     function lapNoise(k) { return rngLapAt(k); }
     const noiseCache = {}; function rngLapAt(k) { if (noiseCache[k] == null) noiseCache[k] = ovalGaussian(rngLap); return noiseCache[k]; }
     function sub(dt) {
       st.t += dt;
       // the clay: tacky at the flag, drying with every lap the field has run on it; tyres wear on top
       const laps = (v.lap0 || 0) + Math.max(0, st.s) / L, tack = clamp(v.moist * N0.wet * 1.2, 0, 1) * Math.exp(-laps / (6 + 8 * N0.fast));
-      const wearK = 1 - 0.22 * Math.pow(clamp(st.wear, 0, 1.3), 1.3);
+      const wearK = 1 - TR.wearMu * Math.pow(clamp(st.wear, 0, 1.3), 1.3);
       st.mu = N0.mu * CV.mu / 0.7 * (1 + 0.10 * tack) * TY.mu * wearK;
-      st.vlim = ovalVlim(st.mu);
+      if (!clayT) st.mu *= 1 - 0.05 * N0.grease * (1 - Math.exp(-laps / 12));   // asphalt: no clay to dry out, but the rubber and the heat grease it a little
+      st.vlim = ovalVlim(st.mu, TR);
       // the speed a corner can be HELD at: the thrust it takes to keep rolling (air, clay, the scrub of a car that is always slightly sideways) is carried by the same
       // tyres, so it eats into the lateral grip. Solve for the fraction of the pure banked-turn limit that leaves that much traction.
       const muxE = st.mu * (1 + 0.05 * clamp(v.moist * N0.wet * 1.2, 0, 1) * Math.exp(-laps / (6 + 8 * N0.fast))), FtrE = muxE * m * OVAL_G * rf / (1 - muxE * cgwb), Frr0 = crr * m * OVAL_G;
-      let rs = 0.96; for (let it = 0; it < 3; it++) { const v1 = rs * st.vlim, F = 0.5 * 1.15 * cdA * v1 * v1 + Frr0 + m * (v1 * v1 / R) * 0.10; rs = Math.pow(Math.max(0.02, 1 - Math.pow(Math.min(0.999, F / FtrE), 2)), 0.25); }
+      let rs = 0.96; for (let it = 0; it < 3; it++) { const v1 = rs * st.vlim, F = 0.5 * 1.15 * cdA * v1 * v1 + Frr0 + m * (v1 * v1 / R) * TR.scrub; rs = Math.pow(Math.max(0.02, 1 - Math.pow(Math.min(0.999, F / FtrE), 2)), 0.25); }
       st.vlimE = st.vlim * rs;
       // where on the oval
       const sl = ((st.s % L) + L) % L, sp = (sl + Ls / 2) % L;
@@ -9891,7 +9910,7 @@ const ENGINE_SIM = (function () {
       if (st.cid !== cid) { st.cid = cid; if (cid) { st.xi = 1 + 0.02 * ovalGaussian(rng); const aim = st.c * (1 + ((1 - feel) * 0.028 + 0.004 * clamp((st.c - 0.97) / 0.03, 0, 1)) * ovalGaussian(rng)); st.aim = Math.min(aim, 1); st.over = Math.max(0, aim - 1); if (st.over > 0.003) { st.slides++; st.slideT = 0.9; st.slideK = clamp(st.over / 0.012, 0.15, 1); st.slideEv = { t: st.t, lap: lapNow + 1, over: st.over }; } cornerRho = 0; cornerN = 0; } }
       const gap = v.gap ? v.gap(st.s, st.t) : Infinity;
       st.dirty += ((gap < 18 ? clamp(1 - gap / 18, 0, 1) : 0) - st.dirty) * Math.min(1, dt * 2);
-      const hold = st.xi * st.aim * (1 - 2.2 * (st.over > 0.003 ? st.over : 0)) * (1 - 0.014 * st.dirty);
+      const hold = st.xi * st.aim * (1 - 2.2 * (st.over > 0.003 ? st.over : 0)) * (1 - TR.dirtyK * st.dirty);
       st.vc = st.vlimE * hold;
       const vt = inC ? st.vc : Math.sqrt(st.vc * st.vc + 2 * ab * Math.max(0, dEnt - 4));
       // engine speed, torque, the demand
@@ -9903,7 +9922,7 @@ const ENGINE_SIM = (function () {
       const Tfull = fullTq(rpm) * derate * (rpm > red ? clamp((lim - rpm) / (lim - red), 0, 1) : 1);
       const Fe_full = Math.max(1, Tfull * G * eta / rw);
       // wheel resistance: air, the clay, a cornering car's scrub
-      const aLat = inC ? sp0 * sp0 / R : 0, Fair = 0.5 * 1.15 * cdA * sp0 * sp0, Frr = crr * m * OVAL_G, Fscrub = inC ? m * aLat * (0.10 + (st.slideT > 0 ? 0.12 * st.slideK : 0)) : 0;
+      const aLat = inC ? sp0 * sp0 / R : 0, Fair = 0.5 * 1.15 * cdA * sp0 * sp0, Frr = crr * m * OVAL_G, Fscrub = inC ? m * aLat * (TR.scrub + (st.slideT > 0 ? 0.12 * st.slideK : 0)) : 0;
       const Fres = Fair + Frr + Fscrub;
       // traction: the rear tyres' limit on the clay, what the corner has already used
       const mux = st.mu * (1 + 0.05 * tack), Ftr0 = mux * m * OVAL_G * rf / (1 - mux * cgwb), rho = inC ? clamp(sp0 / st.vlim, 0, 1.2) : 0;
@@ -9935,8 +9954,8 @@ const ENGINE_SIM = (function () {
       st.wear += dt * TY.wear * 0.45 * (0.0005 + 0.0021 * Math.pow(rho, 4) + (st.slideT > 0 ? 0.004 * st.slideK : 0) + 0.0018 * clamp(spin - 1, 0, 1) + 0.0004 * (1 - tack));
       // heat
       const Pk = Math.max(0, Te) * rpm * 2 * Math.PI / 60, air = 0.28 + 0.72 * clamp(st.v / 16, 0, 1);
-      st.radPack = clamp(st.radPack + dt * (st.dirty * 0.0034 * GR.pk + 0.0003 * GR.pk - (gap > 30 ? 0.004 : 0.0006) * (0.4 + st.radPack)), 0, 0.85);
-      st.cool += dt * (hFrac * Pk - UA * (st.cool - 30) * air * clamp((st.cool - 78) / 14, 0.15, 1) * (1 - 0.6 * st.radPack)) / Cth;   // the thermostat keeps it warm
+      st.radPack = clamp(st.radPack + dt * (st.dirty * 0.0034 * GR.pk * TR.dust + 0.0003 * GR.pk * TR.dust - (gap > 30 ? 0.004 : 0.0006) * (0.4 + st.radPack)), 0, 0.85);
+      st.cool += dt * (hFrac * Pk - UA * (st.cool - amb) * air * clamp((st.cool - 78) / 14, 0.15, 1) * (1 - 0.6 * st.radPack)) / Cth;   // the thermostat keeps it warm
       st.coolPeak = Math.max(st.coolPeak, st.cool); if (st.cool > 122) st.hotT += dt; else st.hotT = Math.max(0, st.hotT - dt * 0.5);
       if (st.cool > 112) st.derT += dt;
       const egtT = (hasEgt ? interp(res.egtCurve, rpm) : (res.diesel ? 720 : 800)) * (0.4 + 0.6 * st.tf);
@@ -9977,16 +9996,16 @@ const ENGINE_SIM = (function () {
     }
     function result() {
       const reasons = [], laps = st.laps, best = laps.length ? Math.min.apply(null, laps) : null;
-      if (st.broke) reasons.push(st.broke === "head_lift" ? `The water hit ${Math.round(st.coolPeak)} °C with the radiator ${Math.round(st.radPack * 100)}% clogged with clay: it lifted the head. A more open grille, or less time in the car ahead's dust.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C: the hot side let go.` : st.broke === "piston" || st.broke === "crown_temp" ? `The exhaust ran at ${Math.round(st.egtPeak)} °C: it burned a piston.` : "A part gave up under load.");
+      if (st.broke) reasons.push(st.broke === "head_lift" ? clayT ? `The water hit ${Math.round(st.coolPeak)} °C with the radiator ${Math.round(st.radPack * 100)}% clogged with clay: it lifted the head. A more open grille, or less time in the car ahead's dust.` : `The water hit ${Math.round(st.coolPeak)} °C: a lap of mostly full throttle at these speeds gives it little rest, and it lifted the head. A more open grille, or SAVE on the straights.` : st.broke === "turbo" ? `The turbine inlet sat at ${Math.round(st.egtPeak)} °C: the hot side let go.` : st.broke === "piston" || st.broke === "crown_temp" ? `The exhaust ran at ${Math.round(st.egtPeak)} °C: it burned a piston.` : "A part gave up under load.");
       if (st.derT > 4) reasons.push(`${st.derT.toFixed(0)} s above 112 °C with the engine pulling power to save itself.`);
-      if (st.spinT > 3) reasons.push(`${st.spinT.toFixed(1)} s of wheelspin: more torque than the clay would take at that gearing.`);
+      if (st.spinT > 3) reasons.push(`${st.spinT.toFixed(1)} s of wheelspin: more torque than the ${clayT ? "clay" : "asphalt"} would take at that gearing.`);
       if (st.lugT > 3) reasons.push(`${st.lugT.toFixed(1)} s lugging under ${Math.round(v.idle * 2).toLocaleString()} rpm. A shorter gear would keep it on the cam.`);
       if (st.slides > 0) reasons.push(`${st.slides} slide${st.slides === 1 ? "" : "s"}: pace past what the corner held.`);
       return { laps: laps, lapN: laps.length, best: best, time: st.finish, finished: st.done && !st.broke, broke: st.broke, failKind: st.broke ? st.failKind : null, coolPeak: Math.round(st.coolPeak), radPack: +st.radPack.toFixed(2), wear: +st.wear.toFixed(2),
         peakEgt: Math.round(st.egtPeak), maxKmh: Math.round(st.maxV * 3.6), slides: st.slides, spinT: +st.spinT.toFixed(1), derT: +st.derT.toFixed(1), lugT: +st.lugT.toFixed(1), mu: +st.mu.toFixed(3), reasons: reasons,
-        ratio: +G.toFixed(2), mass: Math.round(m), tyre: TY.n, grille: GR.n, cls: v.cls, rpmCorner: Math.round(st.rpmCorner), rpmExit: Math.round(st.rpmExit), trace: st.trace };
+        ratio: +G.toFixed(2), mass: Math.round(m), tyre: TY.n, grille: GR.n, cls: v.cls, track: TR.id, rpmCorner: Math.round(st.rpmCorner), rpmExit: Math.round(st.rpmExit), trace: st.trace };
     }
-    return { st: st, step: step, auto: auto, result: result, night: N0, G: G, mass: m, vc0: ovalVlim(N0.mu * CV.mu / 0.7 * TY.mu) };
+    return { st: st, step: step, auto: auto, result: result, night: N0, G: G, mass: m, vc0: ovalVlim(N0.mu * CV.mu / 0.7 * TY.mu, TR), track: TR };
   }
   /* a rival's engine: a broad petrol torque curve for the class's power, redline 6.2–7.4k */
   function ovalAiRes(hp, seed) {
@@ -9996,11 +10015,11 @@ const ENGINE_SIM = (function () {
   function ovalPass(res, veh, skill, dt) { const p = ovalNew(res, Object.assign({}, veh, { skill: skill == null ? 0.88 : skill })); let n = 0; while (!p.st.done && n++ < 200000) p.step(dt || 0.04, null); return p; }
   /* what this build does in this class with this gearing, at a glance: corner speed and rpm, torque there, the fit */
   function ovalSetup(res, veh) {
-    const C0 = OVAL_CLASSES[veh.cls] || OVAL_CLASSES.street, CV = C0.veh, red = veh.redline || 6500, rw = CV.tyreDia * 0.0254 / 2;
-    const G = red * 2 * Math.PI / 60 * rw / CV.vTop / clamp(+veh.finalK || 1, 0.7, 1.4), N0 = ovalNight(veh.seed || 1), TY = OVAL_TYRES[veh.tyre] || OVAL_TYRES.med;
-    const vc = ovalVlim(N0.mu * CV.mu / 0.7 * TY.mu), rpmC = vc * G / rw * 60 / (2 * Math.PI), rpmE = clamp(rpmC * 1.15, 0, red), top = red * 2 * Math.PI / 60 * rw / G;
+    const C0 = OVAL_CLASSES[veh.cls] || OVAL_CLASSES.street, CV = C0.veh, red = veh.redline || 6500, rw = CV.tyreDia * 0.0254 / 2, TR = ovalTrack(veh.track);
+    const G = red * 2 * Math.PI / 60 * rw / (CV.vTop * TR.vTopK) / clamp(+veh.finalK || 1, 0.7, 1.4), N0 = ovalNight(veh.seed || 1, TR), TY = OVAL_TYRES[veh.tyre] || OVAL_TYRES.med;
+    const vc = ovalVlim(N0.mu * CV.mu / 0.7 * TY.mu, TR), rpmC = vc * G / rw * 60 / (2 * Math.PI), rpmE = clamp(rpmC * 1.15, 0, red), top = red * 2 * Math.PI / 60 * rw / G;
     const rp = res.rpms, tq = res.torque, at = r => { if (r <= rp[0]) return tq[0]; if (r >= rp[rp.length - 1]) return tq[tq.length - 1]; let i = 1; while (rp[i] < r) i++; return tq[i - 1] + (tq[i] - tq[i - 1]) * (r - rp[i - 1]) / (rp[i] - rp[i - 1]); };
-    return { ratio: G, vc: vc, rpmC: rpmC, rpmE: rpmE, tqC: at(rpmC), tqE: at(rpmE), topKmh: top * 3.6, topMs: top, redline: red, vTop: CV.vTop };
+    return { ratio: G, vc: vc, rpmC: rpmC, rpmE: rpmE, tqC: at(rpmC), tqE: at(rpmE), topKmh: top * 3.6, topMs: top, redline: red, vTop: CV.vTop * TR.vTopK };
   }
   /* =====================================================================
      Tune map tools (the dyno's map editor). A map lives on cfg.map:
@@ -10143,7 +10162,7 @@ const ENGINE_SIM = (function () {
     VEHICLES: VEHICLES, VEH_GROUPS: VEH_GROUPS, SWAP_FIX: SWAP_FIX, engineDims: engineDims, swapFit: swapFit, swapFixSet: swapFixSet, swapDragVeh: swapDragVeh, swapLsrBody: swapLsrBody,
     hillCourse: hillCourse, hillPrep: hillPrep, hillCar: hillCar, hillNew: hillNew, hillPass: hillPass, hillCalls: hillCalls, hillPlan: hillPlan, hillAiPrep: hillAiPrep, hillZ: hillZ,
     HILL_CLASSES: HILL_CLASSES, HILL_TYRES: HILL_TYRES, HILL_AERO: HILL_AERO, HILL_SECTIONS: HILL_SECTIONS, HILL_ALTS: HILL_ALTS, HILL_TREE: HILL_TREE, HILL_ALT0: HILL_ALT0, HILL_ALT1: HILL_ALT1,
-    ovalPrep: ovalPrep, ovalNew: ovalNew, ovalPass: ovalPass, ovalNight: ovalNight, ovalAiRes: ovalAiRes, ovalSetup: ovalSetup, ovalVlim: ovalVlim, ovalCi: ovalCi, OVAL_CLASSES: OVAL_CLASSES, OVAL_TYRES: OVAL_TYRES, OVAL_GRILLES: OVAL_GRILLES, OVAL: { R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, w: OVAL_W },
+    ovalPrep: ovalPrep, ovalNew: ovalNew, ovalPass: ovalPass, ovalNight: ovalNight, ovalAiRes: ovalAiRes, ovalSetup: ovalSetup, ovalVlim: ovalVlim, ovalCi: ovalCi, OVAL_CLASSES: OVAL_CLASSES, OVAL_TYRES: OVAL_TYRES, OVAL_GRILLES: OVAL_GRILLES, OVAL: { R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, w: OVAL_W }, OVAL_TRACKS: OVAL_TRACKS, ovalTrack: ovalTrack,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel,
     exhaustNoise: exhaustNoise, exhaustInfo: exhaustInfo, exhSysOf: exhSysOf, exhParts: exhParts
   };
@@ -26917,7 +26936,7 @@ function hillLodUpdate(W, cam){
     else if(C.tree){ c.lo.visible=c.loT.visible=d<C.tree; } }
 }
 /* ===========================================================================
-   DIRT OVAL SCENE: a 3/8-mile banked clay track the view cuts to while ENGINE_VIS.setOval({on, track, cars:[...], ...}) is fed
+   OVAL SCENE: a banked track the view cuts to (the 3/8-mile clay, or the paved half-mile: G.surf "clay" | "asphalt" picks the surface, the dust and the painted lines) while ENGINE_VIS.setOval({on, track, cars:[...], ...}) is fed
    every frame. Units metres. The track is a stadium: two straights joined by two 180° left-hand turns, driven
    anticlockwise seen from above. Distance sp runs along the centre line from the start of the front straight
    (x = -ls/2, z = +R), lateral offset d is + toward the infield. The turns bank up toward the wall: height above the
@@ -26944,7 +26963,7 @@ function ovalPt(sp, d, out){
 }
 /* the clay, the grass, the groove: everything from world x,z and the stadium's own distance field */
 var OVAL_GLSL=[
-  "uniform float uR; uniform float uLs; uniform float uW; uniform float uDry;",
+  "uniform float uR; uniform float uLs; uniform float uW; uniform float uDry; uniform float uAsph;",
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float dc=length(p-cameraPosition.xz); float fine=1.0-smoothstep(18.0,110.0,dc), mid=1.0-smoothstep(100.0,900.0,dc);",
   "  float rho=uR-length(vec2(max(abs(p.x)-uLs*0.5,0.0),p.y));",
@@ -26962,6 +26981,12 @@ var OVAL_GLSL=[
   "  dm*=(1.0+0.09*(ln-0.5)*groove*aaf(0.2))*(1.0-0.12*sm*(1.0-0.5*groove))*(1.0+0.16*mb); dh+=0.011*ln*groove*aaf(0.2)-0.01*sm+0.012*mb;",
   "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0;",
   "#endif",
+  /* asphalt instead of clay: dark grey with a rubbered racing line, tar snakes, white edge lines inside and out, a faint lighter apron */
+  "  if(uAsph>0.5){ vec3 asp=vec3(0.092,0.095,0.102)*(0.8+0.36*sn(p*0.31))+vec3(0.02)*(sn(p*6.0)-0.5)*fine;",
+  "    asp=mix(asp,asp*0.7,groove*0.75); asp=mix(asp,vec3(0.15,0.15,0.16),smoothstep(0.62,0.8,sn(p*0.9+4.0))*0.35*(1.0-groove));",
+  "    float eIn=1.0-smoothstep(0.12,0.3,abs(rho-(uW*0.5-0.9))), eOut=1.0-smoothstep(0.12,0.3,abs(rho+(uW*0.5-0.9)));",
+  "    asp=mix(asp,vec3(0.72,0.72,0.69),0.85*max(eIn,eOut));",
+  "    clay=asp; }",
   "  vec3 apron=vec3(0.36,0.33,0.28)*(0.85+0.3*sn(p*0.6)); float inner=smoothstep(uW*0.5,uW*0.5+0.4,rho)*(1.0-smoothstep(uW*0.5+0.8,uW*0.5+1.2,rho));",
   "  vec3 c=mix(grass,clay,onT); c=mix(c,apron*0.6,inner*0.0);",
   "  float lot=smoothstep(uW*0.5+13.0,uW*0.5+14.0,-rho)*(1.0-smoothstep(uW*0.5+60.0,uW*0.5+61.0,-rho));",
@@ -26976,7 +27001,7 @@ var OVAL_GLSL=[
   "#if STRIP_TIER>=1",
   "  gH*=fair;",
   "#endif",
-  "  rough=mix(0.97,0.82,onT); return c; }"].join("\n");
+  "  rough=mix(0.97,mix(0.82,0.9,uAsph),onT); return c; }"].join("\n");
 function ovalAtlas(){
   var c=newCanvas(1024,128), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i, labels=["PRAIRIE ENGINE WORKS","COULEE FUELS","NORTHWIND TYRE","CANOLA CO-OP","BIG SKY SALVAGE","ELEVATOR FEEDS"], cols=[["#d97757","#141413"],["#141413","#d97757"],["#f2c22c","#131416"],["#1d4787","#f4efe2"],["#b7261d","#f4efe2"],["#2c6b3a","#f4efe2"]];
   for(i=0;i<6;i++){ var bx=i*170; x.fillStyle=cols[i][0]; x.fillRect(bx,0,168,128); x.fillStyle=cols[i][1]; x.font="700 26px "+F; x.textAlign="center"; x.textBaseline="middle";
@@ -27010,7 +27035,7 @@ function buildOvalScene(G){
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,60,40); S3.add(flood); S3.add(flood.target); OVAL.flood=flood;
   var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); OVAL.sky=sky;
   S3.fog=new THREE.Fog(0xffffff,150,2700); OVAL.fog=S3.fog;
-  var U={ uR:{value:R}, uLs:{value:ls}, uW:{value:W}, uDry:{value:0} };
+  var U={ uR:{value:R}, uLs:{value:ls}, uW:{value:W}, uDry:{value:0}, uAsph:{value:G.surf==="asphalt"?1:0} };
   var gm=stripSurfMat(OVAL_GLSL, null, U); gm.customProgramCacheKey=function(){ return "oval_ground"; }; gm.userData.U=U; M.ground=gm;
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000), gm); ground.rotation.x=-PI/2; ground.position.y=-0.03; ground.receiveShadow=true; S3.add(ground);
   /* the banked ribbon: inner edge low, outer high; one row of samples every 2.5 m, 13 across and a sloped berm out to the ground */
@@ -27213,8 +27238,8 @@ function ovalSetFlag(kind){
 }
 /* o: {on, track:{R, ls, w, bank, len}, cars:[{s (total m, + along), v, color, me, num, n, groove, gone, slide (0..1), thr}], pre, done, flag:"green"|"white"|"checker"|"yellow", cam, night, lastLap, toFlag, order:[{num,n,me}], boardHead, cheer, dt} */
 function ovalUpdate(o, dt){
-  var T=o.track||{}, G={R:+T.R||52, ls:+T.ls||136.6, w:+T.w||18, bank:+T.bank||0.384}; G.L=2*G.ls+2*Math.PI*G.R;
-  var gk=[G.R,G.ls,G.w,G.bank,GFX].join("|");
+  var T=o.track||{}, G={R:+T.R||52, ls:+T.ls||136.6, w:+T.w||18, bank:+T.bank||0.384, surf:T.surf==="asphalt"?"asphalt":"clay"}; G.L=2*G.ls+2*Math.PI*G.R;
+  var gk=[G.R,G.ls,G.w,G.bank,G.surf,GFX].join("|");
   if(!OVAL.built||OVAL.gkey!==gk){ if(OVAL.scene){ OVAL.list.forEach(function(c){ if(c.parent) c.parent.remove(c); }); disposeTree(OVAL.scene); OVAL.composer=null; } OVAL.gkey=gk; buildOvalScene(G); }
   var S3=OVAL.scene; OVAL.t+=dt;
   if(OVAL.night!==!!o.night) ovalSetNight(!!o.night);
@@ -27234,11 +27259,11 @@ function ovalUpdate(o, dt){
     var roll=clamp(-(inT?1:0)*0.012-slide*0.02,-0.05,0.05); U.roll+=(roll-U.roll)*Math.min(1,dt*5); U.bodyGroup.rotation.x+=U.roll;
     car.updateMatrixWorld(true);
     /* dust off the rear tyres: more in a slide and on the throttle, thin on Lite */
-    var v=Math.max(0,+c.v||0), rate=(v>8?(0.6+3.4*slide+1.0*(+c.thr||0)*(+c.spin||0))*(inT?1.0:0.7)*dt*(v/30)*(GFX==="lite"?18:34):0);
+    var v=Math.max(0,+c.v||0), asph=G.surf==="asphalt", rate=(v>8?(asph?0.04+2.6*slide+1.2*(+c.thr||0)*(+c.spin||0):0.6+3.4*slide+1.0*(+c.thr||0)*(+c.spin||0))*(inT?1.0:0.7)*dt*(v/30)*(GFX==="lite"?18:34):0);
     if(OVAL.fx && rate>0){ var fx=Math.cos(yaw), fz=-Math.sin(yaw); rate*=(c.me?1.1:0.8);
       while(rate>0){ if(rate<1 && Math.random()>rate) break; rate-=1;
         var side=Math.random()<0.5?-1:1, ox=-fx*2.3+(-fz)*side*0.8*-1, oz=-fz*2.3+(fx)*side*0.8*-1;
-        OVAL.fx.emit(car.position.x+ox, car.position.y+0.3, car.position.z+oz, (Math.random()-0.5)*1.4-fx*v*0.05, 0.5+Math.random()*0.7, (Math.random()-0.5)*1.4-fz*v*0.05, 1.7+Math.random()*0.9, 0.7, 3.6+slide*2.4, 0.56, 0.46, 0.35, 0.26+0.12*slide, {drag:0.55, buoy:0.12}); } }
+        OVAL.fx.emit(car.position.x+ox, car.position.y+0.3, car.position.z+oz, (Math.random()-0.5)*1.4-fx*v*0.05, 0.5+Math.random()*0.7, (Math.random()-0.5)*1.4-fz*v*0.05, 1.7+Math.random()*0.9, 0.7, 3.6+slide*2.4, asph?0.8:0.56, asph?0.8:0.46, asph?0.82:0.35, asph?0.2+0.1*slide:0.26+0.12*slide, {drag:0.55, buoy:0.12}); } }
     if(c.me) V=car;
   }
   if(!V) V=OVAL.list[0];
@@ -30388,7 +30413,7 @@ function evSync(tab){if(testing||(S.bay&&tab==="events"))return;   // a dyno-day
   if(tab==="events"){const cur=ev?evCur():S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===evCur())t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
   if(!t)return;evApply(t);document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
 /* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
-const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Dirt oval",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
+const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Oval racing",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
 function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"testSlot"),dock=$(ev?"evDock":"testDock"),core=$("testCore"),rd=$("runDock");
   if(core.parentElement!==slot)slot.appendChild(core);if(rd.parentElement!==dock)dock.appendChild(rd);
   const busy=(id,on,txt)=>{const el=$(id);if(el.hidden!==!on)el.hidden=!on;if(on&&el.dataset.k!==txt){el.dataset.k=txt;el.innerHTML=txt;}};
@@ -32829,11 +32854,13 @@ function drawHillChart(r){const css=getComputedStyle(document.documentElement),I
 function hillRedraw(){const l=lastForChart();if(S.env.testType==="hill"&&l&&l.hill)drawHillChart(l.hill);}
 function hillRecHtml(){const P=hillRecs(),ks=Object.keys(SIM.HILL_CLASSES).filter(k=>P[k]&&P[k].t);if(!ks.length)return "";
   return `<div class="rtop"><span>Pikes Peak · best per class</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch];return `<div><b>▲</b><span class="et">${fmtHill(e.t)}</span><span></span><span class="nm" title="${hlEsc(e.n)}">${hlEsc(SIM.HILL_CLASSES[k].n)}${c?" · "+hlEsc(c.n):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
-/* ===================== DIRT OVAL: race night on the clay ===================== */
+/* ===================== OVAL: race night on the clay, or on the paved half-mile ===================== */
 /* A heat race (8 laps) against seven rivals sets the feature grid, then the feature (25 laps) against the whole night's field.
    The rivals are made-up engines and drivers run through the same lap sim (SIM.ovalNew) the car runs on; their laps are done
    before the green, the player's car is driven live against them. Career: one night per class a week, rep to enter, a
-   certified engine, an entry fee, a purse for each race. Sandbox: always open, a fresh night every time. */
+   certified engine, an entry fee, a purse for each race. Sandbox: always open, a fresh night every time.
+   Two tracks (SIM.OVAL_TRACKS): the clay 3/8 mile (the default; every old save and record is this one) and the paved half-mile.
+   The pick lives in S.env.ovalTrack; the night book and the records are kept per track (clay keeps its old keys). */
 let OV=null;
 const OVAL_FEE=200,OVAL_HEAT=8,OVAL_FEAT=25,OVAL_REP=10,OVAL_FPURSE=[3200,1700,1000,600,350,200],OVAL_HPURSE=[300,180,120,80],OVAL_PAY={1:1,2:1.8,3:3},OVAL_FREP=[4,3,2,1],OVAL_SB={};
 const OVAL_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],["tv","Trackside","TV tower"],["heli","Blimp","from above"],["onboard","Onboard","driver's eye"]];
@@ -32843,12 +32870,18 @@ const OVAL_PAINT=[0x1d4787,0xb7261d,0xe8e6df,0x2c6b3a,0xd9a52b,0x16181b,0x5b2a86
 const ovEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const fmtOv=t=>t==null||!isFinite(t)?"—":t.toFixed(2);
 const fmtOvRace=t=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(1).padStart(4,"0")}`;
-const ovalRecs=()=>{const R=recs();if(!R.oval||typeof R.oval!=="object")R.oval={};return R.oval;};
+const OVAL_TRK=["clay","paved"];
+const ovalTk=()=>{const t=S.env.ovalTrack;return SIM.OVAL_TRACKS&&SIM.OVAL_TRACKS[t]?t:"clay";};
+const ovalTT=t=>SIM.ovalTrack(t||ovalTk());
+const ovalBK=(k,t)=>{t=t||ovalTk();return t==="clay"?k:k+"@"+t;};   // the night book's key: clay keeps the class key, so old saves read as clay
+const ovalLabel=t=>(t||ovalTk())==="clay"?"Dirt oval":"Paved oval";
+const ovalRecs=t=>{const R=recs(),f=(t||ovalTk())==="clay"?"oval":"oval_"+(t||ovalTk());if(!R[f]||typeof R[f]!=="object")R[f]={};return R[f];};
 function ovalOpen(){return career()&&!dev()&&C().rep<OVAL_REP?OVAL_REP:0;}
 function ovalClsLocked(k){const c=SIM.OVAL_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 function ovalCiNow(){return quick&&quick.rpms?SIM.ovalCi(quick):0;}
 function ovalFitCls(){const ci=ovalCiNow(),O=SIM.OVAL_CLASSES;return["street","late","open"].find(k=>ci<=O[k].ci)||"open";}
 function ovalEnvFix(){const e=S.env,O=SIM.OVAL_CLASSES;
+  if(!SIM.OVAL_TRACKS[e.ovalTrack])e.ovalTrack="clay";
   if(!O[e.ovalCls])e.ovalCls=ovalFitCls();
   if(!SIM.OVAL_TYRES[e.ovalTyre])e.ovalTyre="med";if(!SIM.OVAL_GRILLES[e.ovalGrille])e.ovalGrille="mid";
   if(!(+e.ovalFinal>=0.8&&+e.ovalFinal<=1.25))e.ovalFinal=1;if(![1,2,4,8].includes(+e.ovalSpd))e.ovalSpd=4;if(!OVAL_CAMS.some(q=>q[0]===e.ovalCam))e.ovalCam="auto";
@@ -32856,13 +32889,15 @@ function ovalEnvFix(){const e=S.env,O=SIM.OVAL_CLASSES;
 function ovalLegal(k){const c=SIM.OVAL_CLASSES[k],ci=ovalCiNow();return ci<=c.ci?{ok:true,ci,why:c.ci>=9999?"no displacement limit":`${Math.round(ci)} of ${c.ci} ci`}:{ok:false,ci,why:`${Math.round(ci)} ci is over the ${c.ci} ci limit`};}
 /* ---- the night: per class, kept (career: in the save, one a week; sandbox: in memory, gone when the feature is run) ---- */
 function ovalBook(){if(!career())return OVAL_SB;if(!C().ovalN||typeof C().ovalN!=="object")C().ovalN={};return C().ovalN;}
-function ovalNight(k,fresh){const B=ovalBook();let n=B[k];
-  if(n&&career()&&n.week!==C().week){delete B[k];n=null;}
-  if(!n||fresh){const ix=Object.keys(SIM.OVAL_CLASSES).indexOf(k)+1;let seed;
-    if(career()){if(!C().ovalSeed)C().ovalSeed=Math.floor(Math.random()*1e9)+1;seed=(C().ovalSeed^(C().week*7919)^(ix*104729))>>>0;}else seed=Math.floor(Math.random()*1e9)+1;
-    n=B[k]={seed,week:career()?C().week:0,stage:"heat",heat:null,grid:null,hash:null};}
+function ovalNight(k,fresh){const B=ovalBook(),t=ovalTk(),bk=ovalBK(k,t);let n=B[bk];
+  if(n&&career()&&n.week!==C().week){delete B[bk];n=null;}
+  if(!n||fresh){const ix=Object.keys(SIM.OVAL_CLASSES).indexOf(k)+1,ti=OVAL_TRK.indexOf(t);let seed;
+    if(career()){if(!C().ovalSeed)C().ovalSeed=Math.floor(Math.random()*1e9)+1;seed=(C().ovalSeed^(C().week*7919)^(ix*104729)^(ti*1299709))>>>0;}else seed=Math.floor(Math.random()*1e9)+1;
+    n=B[bk]={seed,week:career()?C().week:0,stage:"heat",heat:null,grid:null,hash:null};}
   return n;}
-function ovalRanWk(k){const n=career()?ovalBook()[k]:null;return !!(n&&n.week===C().week&&n.stage==="done");}
+/* career: a class races one night a week, on either track. This week's night for the class on any track that is over, or on the other track and begun */
+function ovalRanWk(k){if(!career())return false;const B=ovalBook();return OVAL_TRK.some(t=>{const n=B[ovalBK(k,t)];return !!(n&&n.week===C().week&&n.stage==="done");});}
+function ovalOther(k){if(!career())return null;const B=ovalBook(),t0=ovalTk();return OVAL_TRK.find(t=>{if(t===t0)return false;const n=B[ovalBK(k,t)];return !!(n&&n.week===C().week&&n.stage!=="heat");})||null;}
 function ovalStageNow(){const k=ovalEnvFix(),n=ovalNight(k);return n.stage==="feature"?"feature":"heat";}
 /* ---- the field: eleven rivals a night, each a made-up engine and a driver ---- */
 const ovalRosterCache=new Map(),ovalRunCache=new Map();
@@ -32874,15 +32909,15 @@ function ovalRoster(k,seed){const key=k+"|"+seed;let R=ovalRosterCache.get(key);
   if(ovalRosterCache.size>8)ovalRosterCache.clear();ovalRosterCache.set(key,R);return R;}
 function ovalGridOff(g){return Math.floor(g/2)*9+(g%2)*4.5;}
 /* a rival's race, run through the sim: trace samples (t, s every 0.25 s), line crossings, a DNF if the dice say so */
-function ovalCarRun(R,k,seed,stage,laps,off,lap0,moist){
-  const key=[k,seed,stage,R.i,laps,off,lap0].join("|");let c=ovalRunCache.get(key);if(c)return c;
-  const night=SIM.ovalNight(seed),res=R.res||(R.res=SIM.ovalAiRes(R.hp,(seed^((R.i+1)*977))>>>0));
-  const veh={cls:k,tyre:R.tyre,grille:"mid",finalK:R.fk,redline:res.redline,idle:850,seed:(seed^((R.i+1)*2654435761)^(stage==="heat"?1:2))>>>0,noFail:true,laps,off,night,moist,lap0};
+function ovalCarRun(R,k,seed,stage,laps,off,lap0,moist,tk){
+  tk=tk||ovalTk();const key=[k,seed,stage,R.i,laps,off,lap0,tk].join("|");let c=ovalRunCache.get(key);if(c)return c;
+  const night=SIM.ovalNight(seed,tk),res=R.res||(R.res=SIM.ovalAiRes(R.hp,(seed^((R.i+1)*977))>>>0));
+  const veh={cls:k,track:tk,tyre:R.tyre,grille:"mid",finalK:R.fk,redline:res.redline,idle:850,seed:(seed^((R.i+1)*2654435761)^(stage==="heat"?1:2))>>>0,noFail:true,laps,off,night,moist,lap0};
   let p;try{p=SIM.ovalPass(res,veh,R.skill,0.05);}catch(e){p=null;}
   const T=[0],Sx=[-off],cross=[];
   if(p){p.st.trace.forEach(q=>{T.push(q[0]);Sx.push(q[1]);});let a=0;p.st.laps.forEach(x=>{a+=x;cross.push(a);});}
-  const L=SIM.OVAL.len;if(!cross.length){for(let i=1;i<=laps;i++)cross.push(i*26);}
-  c={id:R.i,n:R.n,num:R.num,color:R.paint,groove:R.groove,hp:R.hp,skill:R.skill,t:Float32Array.from(T),s:Float32Array.from(Sx),cross,fin:cross.length>=laps?cross[laps-1]:null,dnf:null,cut:null,best:p?p.st.bestLap:null,laps:p?p.st.laps.slice():[]};
+  const L=SIM.ovalTrack(tk).len;if(!cross.length){for(let i=1;i<=laps;i++)cross.push(i*26);}
+  c={id:R.i,len:L,n:R.n,num:R.num,color:R.paint,groove:R.groove,hp:R.hp,skill:R.skill,t:Float32Array.from(T),s:Float32Array.from(Sx),cross,fin:cross.length>=laps?cross[laps-1]:null,dnf:null,cut:null,best:p?p.st.bestLap:null,laps:p?p.st.laps.slice():[]};
   if((stage==="heat"?R.dnfH:R.dnfF)&&laps>=4){const lap=2+Math.floor(R.dnfAt*(laps-3));c.dnf={lap,t:cross[lap-1]+0.3*(cross[lap]-cross[lap-1])};c.fin=null;}
   if(ovalRunCache.size>80)ovalRunCache.clear();ovalRunCache.set(key,c);return c;}
 /* where a rival is at race time t: total distance and speed (null once he is out) */
@@ -32894,52 +32929,54 @@ function ovalAt(c,t){if(c.dnf&&t>=c.dnf.t)return null;const T=c.t,Sx=c.s,n=T.len
 /* the order the flag comes out in: laps first, then the clock; the ones that broke last */
 function ovalSortRows(rows){return rows.sort((a,b)=>(a.dnf?1:0)-(b.dnf?1:0)||b.laps-a.laps||(a.dnf?0:a.time-b.time)||(a.me?-1:b.me?1:0));}
 function ovalCutAt(c,Tw,laps){if(c.dnf){c.cut=null;return{laps:c.cross.filter(x=>x<c.dnf.t).length,time:null,dnf:true};}
-  let k=0;while(k<c.cross.length-1&&c.cross[k]<Tw-1e-6)k++;k=Math.min(k,laps-1);c.cut={t:c.cross[k],s:(k+1)*SIM.OVAL.len};return{laps:k+1,time:c.cross[k],dnf:false};}
+  let k=0;while(k<c.cross.length-1&&c.cross[k]<Tw-1e-6)k++;k=Math.min(k,laps-1);c.cut={t:c.cross[k],s:(k+1)*c.len};return{laps:k+1,time:c.cross[k],dnf:false};}
 /* the feature's field is eleven whole races: run them one at a time in the idle moments after the heat, so the green is not a pause */
-function ovalWarm(k,n){if(!n||!n.grid||n.stage!=="feature")return;const R=ovalRoster(k,n.seed),q=n.grid.map((id,g)=>[id,g]).filter(x=>x[0]!=="me");let i=0;
-  const nx=()=>{if(i>=q.length||testing||n.stage!=="feature")return;const[id,g]=q[i++];try{ovalCarRun(R[id],k,n.seed,"feature",OVAL_FEAT,ovalGridOff(g),OVAL_HEAT,0.6);}catch(e){}setTimeout(nx,50);};nx();}
+function ovalWarm(k,n,tk){if(!n||!n.grid||n.stage!=="feature")return;const R=ovalRoster(k,n.seed),q=n.grid.map((id,g)=>[id,g]).filter(x=>x[0]!=="me");let i=0;
+  const nx=()=>{if(i>=q.length||testing||n.stage!=="feature")return;const[id,g]=q[i++];try{ovalCarRun(R[id],k,n.seed,"feature",OVAL_FEAT,ovalGridOff(g),OVAL_HEAT,0.6,tk);}catch(e){}setTimeout(nx,50);};nx();}
 /* the other heat: four rivals racing without us, to interleave with ours for the feature grid */
-function ovalHeatB(k,seed){const R=ovalRoster(k,seed),ids=ovalSplit(seed).b,g=ids.slice();const cars=g.map((id,gi)=>ovalCarRun(R[id],k,seed,"heatB",OVAL_HEAT,ovalGridOff(gi),0,0.9));
+function ovalHeatB(k,seed,tk){const R=ovalRoster(k,seed),ids=ovalSplit(seed).b,g=ids.slice();const cars=g.map((id,gi)=>ovalCarRun(R[id],k,seed,"heatB",OVAL_HEAT,ovalGridOff(gi),0,0.9,tk));
   const win=Math.min(...cars.filter(c=>!c.dnf).map(c=>c.fin));return ovalSortRows(cars.map(c=>Object.assign({id:c.id},ovalCutAt(c,win,OVAL_HEAT)))).map(r=>r.id);}
 function ovalSplit(seed){const r=pullRand((seed^0x5E17)>>>0),ids=[0,1,2,3,4,5,6,7,8,9,10];for(let i=ids.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]];}return{a:ids.slice(0,7),b:ids.slice(7)};}
 /* ---- the sheet that sets the race up ---- */
-function ovalSetupFor(res){const e=S.env,k=ovalEnvFix();return SIM.ovalSetup(res,{cls:k,tyre:e.ovalTyre,finalK:+e.ovalFinal,redline:S.cfg.redline,seed:ovalNight(k).seed});}
-function ovalTrackSvg(){const O=SIM.OVAL,R=O.R,ls=O.ls,W=ls+2*R+40,H=2*R+30,x0=-W/2,y0=-H/2;
+function ovalSetupFor(res){const e=S.env,k=ovalEnvFix();return SIM.ovalSetup(res,{cls:k,track:ovalTk(),tyre:e.ovalTyre,finalK:+e.ovalFinal,redline:S.cfg.redline,seed:ovalNight(k).seed});}
+function ovalTrackSvg(){const TT=ovalTT(),pv=TT.surf==="asphalt",O=TT,R=O.R,ls=O.ls,W=ls+2*R+40,H=2*R+30,x0=-W/2,y0=-H/2,fs=Math.max(1,W/330);
   const d=`M${-ls/2},${R} L${ls/2},${R} A${R},${R} 0 0 0 ${ls/2},${-R} L${-ls/2},${-R} A${R},${R} 0 0 0 ${-ls/2},${R} Z`;
-  return `<svg class="ovtrk" viewBox="${x0} ${y0} ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The track: a banked three-eighths-mile oval, driven anticlockwise"><path d="${d}" fill="none" stroke="rgba(150,110,70,.55)" stroke-width="${O.w+6}" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="rgba(190,150,100,.8)" stroke-width="1.6" stroke-dasharray="5 6"/><line x1="0" x2="0" y1="${R-12}" y2="${R+12}" stroke="var(--chalk)" stroke-width="3"/><text x="0" y="${R+26}" font-size="14" text-anchor="middle" fill="var(--muted)">start / finish</text><text x="${ls/2+R*0.1}" y="4" font-size="11" text-anchor="middle" fill="var(--muted)">turns 1+2</text><text x="${-ls/2-R*0.1}" y="4" font-size="11" text-anchor="middle" fill="var(--muted)">turns 3+4</text><text x="0" y="5" font-size="13" text-anchor="middle" fill="var(--dim)">22° banked clay</text></svg>`;}
+  return `<svg class="ovtrk" viewBox="${x0} ${y0} ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The track: a banked ${pv?"half-mile paved":"three-eighths-mile clay"} oval, driven anticlockwise"><path d="${d}" fill="none" stroke="${pv?"rgba(96,102,110,.8)":"rgba(150,110,70,.55)"}" stroke-width="${O.w+6}" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${pv?"rgba(235,235,230,.75)":"rgba(190,150,100,.8)"}" stroke-width="1.6" stroke-dasharray="${pv?"9 7":"5 6"}"/><line x1="0" x2="0" y1="${R-12}" y2="${R+12}" stroke="var(--chalk)" stroke-width="3"/><text x="0" y="${R+26*fs}" font-size="${14*fs}" text-anchor="middle" fill="var(--muted)">start / finish</text><text x="${ls/2+R*0.1}" y="4" font-size="${11*fs}" text-anchor="middle" fill="var(--muted)">turns 1+2</text><text x="${-ls/2-R*0.1}" y="4" font-size="${11*fs}" text-anchor="middle" fill="var(--muted)">turns 3+4</text><text x="0" y="5" font-size="${13*fs}" text-anchor="middle" fill="var(--dim)">${TT.bankDeg}° banked ${pv?"asphalt":"clay"}</text></svg>`;}
 function ovalLadder(n,k){const C0=SIM.OVAL_CLASSES[k],h=n.heat,st=n.stage;
   const step=(on,done,lbl,sub)=>`<div class="ovs${done?" done":on?" on":""}"><b>${lbl}</b><small>${sub}</small></div>`;
   return `<div class="ovn">${step(st==="heat",st!=="heat",`Heat race`,st==="heat"?`${OVAL_HEAT} laps · 8 cars`:h?(h.dnf?"DNF":ordN(h.place)+" of "+h.of):"")}<i></i>${step(st==="feature",st==="done",`Feature`,st==="feature"?`${OVAL_FEAT} laps · starts ${ordN(n.gridMe+1)}`:st==="done"&&n.feat?ordN(n.feat.place)+" of "+n.feat.of:`${OVAL_FEAT} laps · 12 cars`)}</div>`;}
-function ovalEnvHtml(sl){const e=S.env,k=ovalEnvFix(),C0=SIM.OVAL_CLASSES[k],lk=ovalClsLocked(k),lg=ovalLegal(k),R=ovalOpen(),n=ovalNight(k),rec=ovalRecs()[k],q=quick&&quick.rpms?quick:null;
-  let h=`<div class="saltcls"><div><span>Tonight's track</span><b>3/8 mile</b><small>22° bank · ${ovEsc(SIM.ovalNight(n.seed).name)}</small></div><div><span>The night</span><b>${n.stage==="done"?"over":n.stage==="feature"?"feature":"heat"}</b><small>${n.stage==="feature"?`starts ${ordN(n.gridMe+1)} of 12`:n.stage==="done"?(n.feat?`finished ${ordN(n.feat.place)}`:"—"):`${OVAL_HEAT} laps, then ${OVAL_FEAT}`}</small></div><div><span>Your best</span><b>${rec&&rec.lap?fmtOv(rec.lap)+" s":"—"}</b><small>${rec?(rec.wins?rec.wins+" feature win"+(rec.wins===1?"":"s"):"best finish "+ordN(rec.best)):"no night yet"}</small></div></div>${ovalTrackSvg()}${ovalLadder(n,k)}`;
+function ovalEnvHtml(sl){const e=S.env,k=ovalEnvFix(),tk=ovalTk(),TT=ovalTT(tk),pv=TT.surf==="asphalt",C0=SIM.OVAL_CLASSES[k],lk=ovalClsLocked(k),lg=ovalLegal(k),R=ovalOpen(),n=ovalNight(k),rec=ovalRecs()[k],q=quick&&quick.rpms?quick:null;
+  let h=`<div class="saltcls"><div><span>Tonight's track</span><b>${TT.dist}</b><small>${TT.bankDeg}° bank · ${ovEsc(SIM.ovalNight(n.seed,tk).name)}${TT.surf==="asphalt"?" asphalt":""}</small></div><div><span>The night</span><b>${n.stage==="done"?"over":n.stage==="feature"?"feature":"heat"}</b><small>${n.stage==="feature"?`starts ${ordN(n.gridMe+1)} of 12`:n.stage==="done"?(n.feat?`finished ${ordN(n.feat.place)}`:"—"):`${OVAL_HEAT} laps, then ${OVAL_FEAT}`}</small></div><div><span>Your best</span><b>${rec&&rec.lap?fmtOv(rec.lap)+" s":"—"}</b><small>${rec?(rec.wins?rec.wins+" feature win"+(rec.wins===1?"":"s"):"best finish "+ordN(rec.best)):"no night yet"}</small></div></div>${ovalTrackSvg()}${ovalLadder(n,k)}`;
+  h+=`<div class="lbl"><span>Track</span></div><div class="seg n2">${OVAL_TRK.map(id=>{const t=SIM.OVAL_TRACKS[id];return `<button data-ok="ovalTrack" data-ov="${id}" class="${tk===id?"on":""}">${t.n}<small>${t.dist} · ${t.bankDeg}° · ${t.surf}</small></button>`;}).join("")}</div>`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.OVAL_CLASSES).map(([id,c])=>{const l=ovalClsLocked(id),ok=ovalCiNow()<=c.ci;return `<button data-ok="ovalCls" data-ov="${id}" class="${k===id?"on":""}${l||!ok?" lock":""}">${c.n}<small>${l?l+" rep":c.ci>=9999?"no ci limit":"up to "+c.ci+" ci"+(ok?"":" · too big")}</small></button>`;}).join("")}</div>`;
   h+=driverToggle(id=>`data-ok="ovalDrive" data-ov="${id}"`,e.ovalDrive,"hold PUSH or SAVE for the pace","a steady driver · watch the race");
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.OVAL_TYRES).map(([id,t])=>`<button data-ok="ovalTyre" data-ov="${id}" class="${e.ovalTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Grille</span></div><div class="seg">${Object.entries(SIM.OVAL_GRILLES).map(([id,t])=>`<button data-ok="ovalGrille" data-ov="${id}" class="${e.ovalGrille===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="envgrid">${sl("ovalFinal","Rear end ratio",0.8,1.25,0.01," × fitted",(+e.ovalFinal).toFixed(2))}</div>`;
-  if(q){try{const res=quick,su=ovalSetupFor(res);h+=`<p class="hint"><b>One gear</b> · the car has no gearbox to speak of: engine speed is road speed times the rear end. At ${su.ratio.toFixed(2)}:1 the corners (${Math.round(su.vc*3.6)} km/h) turn it ${Math.round(su.rpmC).toLocaleString("en-CA")} rpm, where it makes <b>${Math.round(su.tqC)} Nm</b>; the redline is the top of the straight (${Math.round(su.topKmh)} km/h). The corner exit wants torque, not peak power. A taller ratio (below 1.00) trades corner exit for the straight.</p>`;}catch(err){}}
-  h+=`<p class="hint">${C0.n}: ${C0.d}. ${lg.ok?`Your engine is ${Math.round(lg.ci)} ci.`:`<b style="color:var(--crit)">${lg.why}</b> — pick a bigger class.`}${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""} The clay starts tacky and dries slick as the laps pile up; softer tyres bite early and fade late. The heat sets the feature grid; the rivals' lap times are real, from the same sim you drive.${ovalRanWk(k)?` <b>Run this week — the next night is week ${C().week+1}.</b>`:""}${R?` <b>The oval opens at ${R} rep.</b>`:""}</p>`;
+  if(q){try{const res=quick,su=ovalSetupFor(res);h+=`<p class="hint"><b>One gear</b> · the car has no gearbox to speak of: engine speed is road speed times the rear end. At ${su.ratio.toFixed(2)}:1 the corners (${Math.round(su.vc*3.6)} km/h) turn it ${Math.round(su.rpmC).toLocaleString("en-CA")} rpm, where it makes <b>${Math.round(su.tqC)} Nm</b>; the redline is the top of the straight (${Math.round(su.topKmh)} km/h). The corner exit wants torque, not peak power. A taller ratio (below 1.00) trades corner exit for the straight.${pv?" The half-mile has long straights and fast corners: the top end, the gearing and the cooling count for more here.":""}</p>`;}catch(err){}}
+  h+=`<p class="hint">${C0.n}: ${C0.d}. ${lg.ok?`Your engine is ${Math.round(lg.ci)} ci.`:`<b style="color:var(--crit)">${lg.why}</b> — pick a bigger class.`}${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""} ${pv?"The pavement grips hard and steady and only greases up a little as the rubber and the heat build, with hardly any dust to clog the grille; the long straights make cooling and drag the hard part.":"The clay starts tacky and dries slick as the laps pile up."} Softer tyres bite early and fade late. The heat sets the feature grid; the rivals' lap times are real, from the same sim you drive.${ovalRanWk(k)?` <b>Run this week — the next night is week ${C().week+1}.</b>`:ovalOther(k)?` <b>${C0.n} already raced the other track this week — one night per class a week.</b>`:""}${R?` <b>The oval opens at ${R} rep.</b>`:""}</p>`;
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n5">${OVAL_CAMS.map(([id,nm,d])=>`<button data-ok="ovalCam" data-ov="${id}" class="${e.ovalCam===id?"on":""}">${nm}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg n4">${[1,2,4,8].map(v=>`<button data-ok="ovalSpd" data-ov="${v}" class="${+e.ovalSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double":v===4?"quick":"quicker"}</small></button>`).join("")}</div>`;
   return h;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-ok]");if(!b)return;const k=b.dataset.ok,v=b.dataset.ov;
   if(k==="ovalCls"){const l=ovalClsLocked(v);if(l){toast(`${SIM.OVAL_CLASSES[v].n} opens at ${l} rep`);return;}if(ovalCiNow()>SIM.OVAL_CLASSES[v].ci){toast(`${Math.round(ovalCiNow())} ci is over the ${SIM.OVAL_CLASSES[v].ci} ci limit for ${SIM.OVAL_CLASSES[v].n}`);return;}}
+  if(k==="ovalTrack"&&OV&&!OV.finished){toast("Finish this race first");return;}
   S.env[k]=(k==="ovalSpd")?+v:v;ovalEnvFix();if(OV&&!OV.finished){if(k==="ovalCam")OV.cam=v;if(k==="ovalSpd")OV.speed=+v;}renderEnv();save();buzz(6);});
-function ovalHint(){return career()?`<b>Dirt oval</b> · ${fmt$(OVAL_FEE)} entry for the night: a ${OVAL_HEAT}-lap heat, then the ${OVAL_FEAT}-lap feature from the grid the heat sets. Needs a certified engine; one night per class a week. Opens at ${OVAL_REP} rep: ${SIM.OVAL_CLASSES.street.n} ${SIM.OVAL_CLASSES.street.rep}, ${SIM.OVAL_CLASSES.late.n} ${SIM.OVAL_CLASSES.late.rep}, ${SIM.OVAL_CLASSES.open.n} ${SIM.OVAL_CLASSES.open.rep}. Purses by finish, up to ${fmt$(OVAL_FPURSE[0]*OVAL_PAY[3])} in the feature. Heat and radiator dust are the hard part: running in the car ahead's dirt clogs the grille.`
-  :`<b>Dirt oval</b> · a heat race, then the feature. It is one gear and a lot of throttle: hold <b>PUSH</b> to attack, <b>SAVE</b> to cool the engine and the tyres. <b>Space</b> pushes. Class by cubic inches.`;}
+function ovalHint(){const pv=ovalTT().surf==="asphalt",lb=ovalLabel();return career()?`<b>${lb}</b> · ${fmt$(OVAL_FEE)} entry for the night: a ${OVAL_HEAT}-lap heat, then the ${OVAL_FEAT}-lap feature from the grid the heat sets. Needs a certified engine; one night per class a week, on either track. Opens at ${OVAL_REP} rep: ${SIM.OVAL_CLASSES.street.n} ${SIM.OVAL_CLASSES.street.rep}, ${SIM.OVAL_CLASSES.late.n} ${SIM.OVAL_CLASSES.late.rep}, ${SIM.OVAL_CLASSES.open.n} ${SIM.OVAL_CLASSES.open.rep}. Purses by finish, up to ${fmt$(OVAL_FPURSE[0]*OVAL_PAY[3])} in the feature. ${pv?"Heat and the long straights are the hard part: there is little dust, but the engine works flat out.":"Heat and radiator dust are the hard part: running in the car ahead's dirt clogs the grille."}`
+  :`<b>${lb}</b> · a heat race, then the feature. It is one gear and a lot of throttle: hold <b>PUSH</b> to attack, <b>SAVE</b> to cool the engine and the tyres. <b>Space</b> pushes. Class by cubic inches.`;}
 /* the dock button: the stage that is up, the price */
 function ovalRunBtn(){if(S.env.testType!=="oval"||testing)return;const k=ovalEnvFix(),n=ovalNight(k),b=$("runTest");if(b.disabled)return;const cost=testCost();
-  if(career()&&n.stage==="done"){b.textContent=`Night over · next night wk ${C().week+1}`;$("dynoHint").innerHTML=ovalHint();return;}
+  if(career()&&(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))){b.textContent=`Night over · next night wk ${C().week+1}`;$("dynoHint").innerHTML=ovalHint();return;}
   const txt=n.stage==="feature"?`Take the green · feature, from ${ordN(n.gridMe+1)}`:"Take the green · heat race";
   b.textContent=txt+(cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":""):"");$("dynoHint").innerHTML=ovalHint();}
-function ovalCost(){if(!career())return 0;const n=ovalNight(ovalEnvFix());if(n.stage==="done")return 0;return(n.stage==="heat"?OVAL_FEE:0)+fuelBill();}
+function ovalCost(){if(!career())return 0;const k=ovalEnvFix(),n=ovalNight(k);if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))return 0;return(n.stage==="heat"?OVAL_FEE:0)+fuelBill();}
 /* the gate in front of the run: false lets it run (the toast says why not) */
 function ovalGate(){if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return true;}
   const k=ovalEnvFix(),o=ovalOpen(),l=ovalClsLocked(k),lg=ovalLegal(k),n=ovalNight(k);
   if(o){toast(`The oval opens at ${o} rep`);return true;}if(l){toast(`${SIM.OVAL_CLASSES[k].n} opens at ${l} rep`);return true;}
   if(!lg.ok){toast(`Not legal for ${SIM.OVAL_CLASSES[k].n} — ${lg.why}`);return true;}
   if(career()){const cert=C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg);
-    if(n.stage==="done"){toast(`Already raced ${SIM.OVAL_CLASSES[k].n} this week — the next night is week ${C().week+1}`);return true;}
+    if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k))){toast(`Already raced ${SIM.OVAL_CLASSES[k].n} this week${n.stage==="heat"?" on the other track":""} — the next night is week ${C().week+1}`);return true;}
     if(n.stage==="heat"&&!cert){toast("Certify this engine on the dyno first");return true;}
     if(n.stage==="feature"&&!cert&&!(n.hash===hKey(cfgHash(S.cfg))&&!(n.heat&&n.heat.dnf))){toast(n.heat&&n.heat.dnf?"Certify the rebuilt engine to take the feature":"The engine changed since the heat — certify it to take the feature");return true;}}
   return false;}
@@ -32948,11 +32985,11 @@ function ovalHudInit(){$("ovalLive").innerHTML=`<div class="rdh hlh"><div class=
   <div class="ph-bar hl-bar"><i class="fill" id="ovF"></i><i class="mk lead" id="ovL" style="left:0"></i></div>
   <div class="ph-lbl" style="margin-top:4px"><span id="ovA">—</span><span id="ovB"></span></div>
   <div class="hl-next" id="ovN"></div><div class="hl-meters" id="ovM"></div>`;}
-function ovalRanks(t){const me=OV.p.st,L=SIM.OVAL.len,out=[{me:true,key:ovalMeProg(),c:null,t:OV.meCut?OV.meCut.t:0}];
+function ovalRanks(t){const me=OV.p.st,L=OV.L,out=[{me:true,key:ovalMeProg(),c:null,t:OV.meCut?OV.meCut.t:0}];
   OV.cars.forEach(c=>{const a=ovalAt(c,t);if(!a){out.push({key:-1e9+(c.dnf?c.dnf.lap:0),c,out:true,t:0});return;}out.push({key:c.cut&&t>=c.cut.t?c.cut.s+1e-3*(1-c.cut.t/1e4):a.s,c,s:a.s,v:a.v,t:c.cut?c.cut.t:0});});
   out.sort((x,y)=>y.key-x.key);return out;}
 function ovalMeProg(){const st=OV.p.st;return OV.meCut?Math.min(st.s,OV.meCut.s)+1e-3*(1-OV.meCut.t/1e4):st.s;}
-function ovalHud(rk){if(!OV||!$("ovV"))return;const st=OV.p.st,t=st.t,pos=rk.findIndex(r=>r.me)+1,N=OV.laps,L=SIM.OVAL.len;
+function ovalHud(rk){if(!OV||!$("ovV"))return;const st=OV.p.st,t=st.t,pos=rk.findIndex(r=>r.me)+1,N=OV.laps,L=OV.L;
   $("ovV").textContent=Math.round(st.v*3.6);$("ovP").textContent=pos||"–";$("ovPi").textContent=`of ${OV.cars.length+1}`;
   $("ovLap").textContent=`${Math.min(N,st.lap+1)}/${N}`;$("ovT").textContent=fmtOvRace(t);$("ovTi").textContent=OV.pre>0?"on the grid":st.done?(st.broke?"out":"flag"):OV.stageName;
   $("ovF").style.width=(100*Math.min(1,Math.max(0,st.s)/(N*L))).toFixed(2)+"%";
@@ -32984,20 +33021,20 @@ function ovalStart(){
   let res;try{res=SIM.ovalPrep(S.cfg,env);}catch(err){testing=false;renderTest();toast("The engine wouldn't run");return;}
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   $("app").classList.add("onstrip");
-  const snap=testSnap(),hk=hKey(snap.h),roster=ovalRoster(k,n.seed),laps=stage==="heat"?OVAL_HEAT:OVAL_FEAT,L=SIM.OVAL.len;let cars,gridMe,order;
+  const tk=ovalTk(),snap=testSnap(),hk=hKey(snap.h),roster=ovalRoster(k,n.seed),laps=stage==="heat"?OVAL_HEAT:OVAL_FEAT,L=SIM.ovalTrack(tk).len;let cars,gridMe,order;
   if(stage==="heat"){const sp=ovalSplit(n.seed),ids=sp.a.slice(),r=pullRand((n.seed^0x6A1D)>>>0);ids.push("me");for(let i=ids.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]];}
-    order=ids;gridMe=ids.indexOf("me");cars=[];ids.forEach((id,g)=>{if(id!=="me")cars.push(ovalCarRun(roster[id],k,n.seed,"heat",laps,ovalGridOff(g),0,0.9));});}
-  else{order=n.grid.slice();gridMe=order.indexOf("me");cars=[];order.forEach((id,g)=>{if(id!=="me")cars.push(ovalCarRun(roster[id],k,n.seed,"feature",laps,ovalGridOff(g),OVAL_HEAT,0.6));});}
+    order=ids;gridMe=ids.indexOf("me");cars=[];ids.forEach((id,g)=>{if(id!=="me")cars.push(ovalCarRun(roster[id],k,n.seed,"heat",laps,ovalGridOff(g),0,0.9,tk));});}
+  else{order=n.grid.slice();gridMe=order.indexOf("me");cars=[];order.forEach((id,g)=>{if(id!=="me")cars.push(ovalCarRun(roster[id],k,n.seed,"feature",laps,ovalGridOff(g),OVAL_HEAT,0.6,tk));});}
   cars.forEach(c=>{c.cut=null;});
   if(career()&&stage==="heat"){n.hash=hKey(cfgHash(S.cfg));}
   const winAi=Math.min(...cars.filter(c=>!c.dnf&&c.fin!=null).map(c=>c.fin));
-  const veh={cls:k,tyre:e.ovalTyre,grille:e.ovalGrille,finalK:+e.ovalFinal,redline:S.cfg.redline,idle:SIM.isDiesel&&SIM.isDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),seed:career()?(n.seed+7919*(C().ovalRuns=(C().ovalRuns||0)+1))>>>0:Math.floor(Math.random()*1e9),laps,off:ovalGridOff(gridMe),night:SIM.ovalNight(n.seed),
+  const veh={cls:k,track:tk,tyre:e.ovalTyre,grille:e.ovalGrille,finalK:+e.ovalFinal,redline:S.cfg.redline,idle:SIM.isDiesel&&SIM.isDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),seed:career()?(n.seed+7919*(C().ovalRuns=(C().ovalRuns||0)+1))>>>0:Math.floor(Math.random()*1e9),laps,off:ovalGridOff(gridMe),night:SIM.ovalNight(n.seed,tk),
     moist:stage==="heat"?0.9:0.6,lap0:stage==="heat"?0:OVAL_HEAT,skill:0.9};
   if(wi&&wi.w>=1)veh.wornAt=Math.max(2,Math.round(laps*(0.3+0.5*Math.random())));
   veh.gap=(s,t)=>{let g=Infinity;for(let i=0;i<cars.length;i++){const a=ovalAt(cars[i],t);if(!a)continue;const d=(((a.s-s)%L)+L)%L;if(d<g&&d>1.2)g=d;}return g;};
   const p=SIM.ovalNew(res,veh);
   let meNum=(parseInt(hk,36)%97)+2;while(roster.some(q=>q.num===meNum))meNum=meNum%98+1;
-  OV={p,res,env,veh,k,stage,stageName:stage==="heat"?"heat":"feature",snap,hk,night:n,laps,cars,order,gridMe,winT:winAi,flagged:false,cutDone:false,meCut:null,auto:e.ovalDrive!=="you",took:null,push:false,save:false,speed:+e.ovalSpd||4,cam:e.ovalCam||"auto",pre:3,last:performance.now(),finished:false,skip:false,doneAt:null,acc:0,feed:[],posLaps:[],lapSeen:0,meNum,color:carPaint(),roster};
+  OV={p,res,env,veh,k,tk,L,stage,stageName:stage==="heat"?"heat":"feature",snap,hk,night:n,laps,cars,order,gridMe,winT:winAi,flagged:false,cutDone:false,meCut:null,auto:e.ovalDrive!=="you",took:null,push:false,save:false,speed:+e.ovalSpd||4,cam:e.ovalCam||"auto",pre:3,last:performance.now(),finished:false,skip:false,doneAt:null,acc:0,feed:[],posLaps:[],lapSeen:0,meNum,color:carPaint(),roster};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("ovalCtl").style.display="";ovalHudInit();$("ovalPush").dataset.k="";
   $("testProg").classList.remove("done");sfx("start");
   requestAnimationFrame(()=>{const pn=$("panel"),r=$("ovalCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
@@ -33006,13 +33043,13 @@ function ovalStart(){
     if(OV.pre>0)OV.pre-=dt;
     else if(!st.done){OV.acc+=dt*OV.speed;let nn=0;while(OV.acc>=0.02&&!st.done&&nn++<800){OV.p.step(0.02,ovalCtl());OV.acc-=0.02;ovalWatch();}if(nn>=800)OV.acc=0;}
     if(st.done&&OV.doneAt==null){OV.doneAt=now;if(st.broke){$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",300);sfx("fail");buzz([80,40,120]);}else{$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}}
-    const t=st.t,rk=ovalRanks(t),L2=SIM.OVAL.len,after=st.done?(now-OV.doneAt)/1000:0;
+    const t=st.t,rk=ovalRanks(t),L2=OV.L,after=st.done?(now-OV.doneAt)/1000:0;
     const meS=st.done?(OV.meCut?OV.meCut.s+(st.broke?0:20)*after:st.s+(st.broke?0:20*after)):st.s;
     const carsV=[{me:true,s:meS,v:st.done?(st.broke?Math.max(0,st.v-8*after):20):st.v,color:OV.color,num:OV.meNum,n:engineName().slice(0,12),groove:1.6,slide:st.slideT>0?Math.min(1,st.slideT+0.2):0,thr:st.tf,brk:st.thr<0.02&&st.acc<-2?1:0,spin:Math.min(1,Math.max(0,st.spin-1))}];
     OV.cars.forEach(c=>{const a=OV.pre>0?{s:-ovalGridOff(OV.order.indexOf(c.id)),v:0}:ovalAt(c,t);carsV.push(a?{s:a.s,v:a.v,color:c.color,num:c.num,n:c.n,groove:c.groove,thr:0.6,brk:0}:{gone:true,s:0,v:0,color:c.color});});
     if(OV.pre>0){carsV[0].s=-OV.veh.off;carsV[0].v=0;}
     const top=rk.filter(r=>!r.out).slice(0,12).map(r=>r.me?{num:OV.meNum,n:"YOU",me:true}:{num:r.c.num,n:r.c.n.split(" ").pop()});
-    if(ENGINE_VIS.setOval)ENGINE_VIS.setOval({on:true,track:SIM.OVAL,cars:carsV,pre:OV.pre>0,done:st.done&&after>0.4,flag:st.done?"checker":OV.pre>0?"yellow":st.lap>=OV.laps-1?"white":"green",cam:OV.cam,night:!!S.night,lastLap:st.lap>=OV.laps-1,toFlag:(OV.laps*L2-st.s)/Math.max(10,st.v),order:top,boardHead:OV.stage==="heat"?"HEAT RACE":"FEATURE",dt:dt*(OV.pre>0||st.done?1:OV.speed)});
+    if(ENGINE_VIS.setOval)ENGINE_VIS.setOval({on:true,track:SIM.ovalTrack(OV.tk),cars:carsV,pre:OV.pre>0,done:st.done&&after>0.4,flag:st.done?"checker":OV.pre>0?"yellow":st.lap>=OV.laps-1?"white":"green",cam:OV.cam,night:!!S.night,lastLap:st.lap>=OV.laps-1,toFlag:(OV.laps*L2-st.s)/Math.max(10,st.v),order:top,boardHead:OV.stage==="heat"?"HEAT RACE":"FEATURE",dt:dt*(OV.pre>0||st.done?1:OV.speed)});
     if((hudT+=dt)>0.1||st.done){hudT=0;ovalHud(rk);}
     run.on=true;run.rpm=st.done?run.rpm+(OV.veh.idle-run.rpm)*Math.min(1,dt*3):OV.pre>0?OV.veh.idle+900*Math.max(0,Math.sin(now/200)):st.rpm;run.load=st.done?0:Math.max(0.05,st.tf);$("rpmLbl").textContent=Math.round(run.rpm/10)*10;
     $("testProg").style.width=Math.min(100,100*Math.max(0,st.s)/(OV.laps*L2))+"%";
@@ -33021,7 +33058,7 @@ function ovalStart(){
 }
 /* what the flag, the line and the pit board do each step */
 function ovalFlag(Tw){OV.cars.forEach(c=>ovalCutAt(c,Tw,OV.laps));OV.winT=Tw;OV.cutDone=true;}
-function ovalWatch(){const st=OV.p.st,L=SIM.OVAL.len;
+function ovalWatch(){const st=OV.p.st,L=OV.L;
   if(!OV.cutDone&&!st.done&&isFinite(OV.winT)&&st.t>=OV.winT){OV.flagged=true;ovalFlag(OV.winT);}
   if(st.lap>OV.lapSeen){OV.lapSeen=st.lap;const rk=ovalRanks(st.t),pos=rk.findIndex(r=>r.me)+1,prev=OV.posLaps.length?OV.posLaps[OV.posLaps.length-1]:OV.gridMe+1;OV.posLaps.push(pos);
     const lt=st.laps[st.laps.length-1],best=Math.min.apply(null,st.laps),ah=pos>1?rk[pos-2]:null,gp=ah&&!ah.out?Math.abs(st.s-(ah.s||st.s))/Math.max(8,st.v):null;
@@ -33044,7 +33081,7 @@ function ovalSkip(){if(!OV||OV.finished)return;const p=OV.p,st=p.st;OV.pre=0;if(
   document.addEventListener("keyup",e=>{if(!OV||!OV.spaceHeld)return;if(e.key===" "||e.key==="Spacebar"){OV.spaceHeld=false;ovalRelease("push");}});})();
 /* ---- the flag: classification, money, records ---- */
 function ovalFinish(){
-  if(!OV||OV.finished)return;OV.finished=true;const {p,res,env,k,stage,snap,hk,night:n,laps:N}=OV,C0=SIM.OVAL_CLASSES[k],same=testSame(snap),st=p.st,r=p.result(),failed=!!st.broke;
+  if(!OV||OV.finished)return;OV.finished=true;const {p,res,env,k,tk,stage,snap,hk,night:n,laps:N}=OV,TT=SIM.ovalTrack(tk),C0=SIM.OVAL_CLASSES[k],same=testSame(snap),st=p.st,r=p.result(),failed=!!st.broke;
   setTimeout(()=>{if(!testing){if(ENGINE_VIS.setOval)ENGINE_VIS.setOval({on:false});$("app").classList.remove("onstrip");}},OV.skip?300:1800);
   testing=false;run.on=false;run.rpm=0;$("rpmbox").style.display="none";$("ovalCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
   const meLaps=st.lap,meT=failed?null:st.t;
@@ -33052,45 +33089,45 @@ function ovalFinish(){
   const rows=OV.cars.map(c=>{const q=ovalCutAt(c,win,N);return{n:c.n,num:c.num,hp:c.hp,id:c.id,laps:q.laps,time:q.time,dnf:q.dnf,best:c.best};});
   const me={n:engineName().slice(0,26),num:OV.meNum,me:true,id:"me",laps:meLaps,time:meT,dnf:failed,best:isFinite(st.bestLap)?st.bestLap:null};
   rows.push(me);ovalSortRows(rows);const place=rows.indexOf(me)+1;
-  Object.assign(r,{stage,cls:k,clsName:C0.n,tier:C0.tier,place,of:rows.length,field:rows,N,lapsDone:meLaps,auto:OV.auto&&OV.took==null,took:OV.took,gridMe:OV.gridMe+1,posLaps:OV.posLaps.slice(),finished:!failed,tyreName:SIM.OVAL_TYRES[env.ovalTyre]?SIM.OVAL_TYRES[env.ovalTyre].n:"",night:SIM.ovalNight(n.seed).name,ci:Math.round(SIM.ovalCi(res)),final:+(OV.veh.finalK||1).toFixed(2),muStart:+(SIM.ovalNight(n.seed).mu).toFixed(2),dnfLap:failed?meLaps+1:null});
+  Object.assign(r,{stage,cls:k,clsName:C0.n,tier:C0.tier,place,of:rows.length,field:rows,N,lapsDone:meLaps,auto:OV.auto&&OV.took==null,took:OV.took,gridMe:OV.gridMe+1,posLaps:OV.posLaps.slice(),finished:!failed,tyreName:SIM.OVAL_TYRES[env.ovalTyre]?SIM.OVAL_TYRES[env.ovalTyre].n:"",track:tk,trackName:TT.n,surf:TT.surf,night:SIM.ovalNight(n.seed,tk).name,ci:Math.round(SIM.ovalCi(res)),final:+(OV.veh.finalK||1).toFixed(2),muStart:+(SIM.ovalNight(n.seed,tk).mu).toFixed(2),dnfLap:failed?meLaps+1:null});
   r.time=meT;r.best=me.best;
   const pl=ordN(place)+" of "+rows.length,sc=failed?`DNF · lap ${meLaps+1}`:`${ordN(place)}`;
   // money, rep, wear
   if(same&&career()){addWear((stage==="heat"?0.4:0.9)+(r.coolPeak>112?0.4:0),hk);
-    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-(stage==="feature"?2:1));logEvent(`Dirt oval ${stage}: ${C0.n} — ${r.broke==="head_lift"?"cooked it":"engine failed"} on lap ${meLaps+1}`,"bad");toast(`OUT · ${ovalFailWord(r.broke)}`);}
+    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-(stage==="feature"?2:1));logEvent(`${ovalLabel(tk)} ${stage}: ${C0.n} — ${r.broke==="head_lift"?"cooked it":"engine failed"} on lap ${meLaps+1}`,"bad");toast(`OUT · ${ovalFailWord(r.broke)}`);}
     else{const tab=stage==="heat"?OVAL_HPURSE:OVAL_FPURSE,purse=Math.round((tab[place-1]||0)*(OVAL_PAY[C0.tier]||1)/10)*10,rep=stage==="heat"?(place===1?1:0):((OVAL_FREP[place-1]||0)+1);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
-      logEvent(`Dirt oval ${stage}: ${C0.n} — ${ordN(place)} of ${rows.length}${purse?", purse "+fmt$(purse):""}`,place<=3?"good":"");toast(`${stage==="heat"?"Heat":"Feature"} · ${ordN(place)}${purse?" · "+fmt$(purse):""}`);}
+      logEvent(`${ovalLabel(tk)} ${stage}: ${C0.n} — ${ordN(place)} of ${rows.length}${purse?", purse "+fmt$(purse):""}`,place<=3?"good":"");toast(`${stage==="heat"?"Heat":"Feature"} · ${ordN(place)}${purse?" · "+fmt$(purse):""}`);}
     spEvent("oval",{win:!failed&&stage==="feature"&&place===1,finish:!failed&&stage==="feature"&&place>1&&place<=3});hud();checkGoals();}
   else toast(failed?`OUT · ${ovalFailWord(r.broke)}`:`${stage==="heat"?"Heat":"Feature"} · ${pl}`);
   // the night moves on
     if(stage==="heat"){n.heat={place,of:rows.length,dnf:failed,time:meT,best:r.best,purse:r.purse||0};
-    const bIds=ovalHeatB(k,n.seed),aIds=rows.map(q=>q.id),g=[];
+    const bIds=ovalHeatB(k,n.seed,tk),aIds=rows.map(q=>q.id),g=[];
     for(let i=0;i<Math.max(aIds.length,bIds.length);i++){if(i<aIds.length)g.push(aIds[i]);if(i<bIds.length)g.push(bIds[i]);}
     n.grid=g;n.gridMe=g.indexOf("me");n.stage="feature";n.hash=hKey(cfgHash(S.cfg));r.nextGrid=n.gridMe+1;
     if(!failed)setTimeout(()=>toast(`Heat ${ordN(place)} — feature starts ${ordN(n.gridMe+1)}`),2800);
-    setTimeout(()=>ovalWarm(k,n),1500);}
+    setTimeout(()=>ovalWarm(k,n,tk),1500);}
   else{n.feat={place,of:rows.length,dnf:failed,time:meT,best:r.best,purse:r.purse||0};n.stage="done";}
   // records: best lap per class, best finish, feature wins
-  if(same&&!ff&&!failed){const RR=ovalRecs(),was=RR[k]||{};const nw=Object.assign({},was);
+  if(same&&!ff&&!failed){const RR=ovalRecs(tk),was=RR[k]||{};const nw=Object.assign({},was);
     if(r.best&&(!was.lap||r.best<was.lap)){nw.lap=+r.best.toFixed(3);r.pb={lap:was.lap||null};if(was.lap)setTimeout(()=>toast(`CLASS BEST LAP · ${r.best.toFixed(2)} s (was ${was.lap.toFixed(2)})`),2700);}
     if(stage==="feature"){nw.best=Math.min(was.best||99,place);if(place===1)nw.wins=(was.wins||0)+1;nw.feats=(was.feats||0)+1;}
     RR[k]=Object.assign(nw,recTag());}
   res.oval=r;res.ovalFailed=failed;res.ovalFailKind=failed?r.broke:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   achCheck({type:"oval",r,failed});
-  if(stage==="feature"&&!career())delete OVAL_SB[k];
+  if(stage==="feature"&&!career())delete OVAL_SB[ovalBK(k,tk)];
   OV.p=null;save();recompute();renderTest();
   revealVerdict();
 }
 /* ---- the sheet ---- */
 function ovalVerdict(res){const r=res.oval,st=r.stage==="heat"?"HEAT":"FEATURE";
   if(res.ovalFailed){const ft=(res.tests||[]).find(x=>x.id===r.broke);return `<div class="verdict fail"><div><div class="big">${ovalFailWord(r.broke)} · ${st}</div><p>Lap ${r.dnfLap} of ${r.N} · classified ${ordN(r.place)} of ${r.of}${ft?" · "+ovEsc(ft.name)+" failed":""}${career()?" — certification is void and reputation took a hit":""}.${r.reasons&&r.reasons[0]&&!ft?" "+ovEsc(r.reasons[0]):""}</p></div></div>`;}
-  const cls=r.place===1?"pass":r.place<=(r.stage==="heat"?4:OVAL_FPURSE.length)?"marg":"fail",avg=r.time&&r.N?SIM.OVAL.len*r.N/r.time*3.6:0;
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${ordN(r.place)} · ${st}</div><p>${ovEsc(r.clsName)} · ${ordN(r.place)} of ${r.of} · started ${ordN(r.gridMe)} · ${r.N} laps in ${fmtOvRace(r.time)} on ${ovEsc(r.night)} clay${r.auto?" · auto driver":r.took!=null?` · you took over on lap ${r.took}`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.stage==="heat"&&r.nextGrid?` · feature from ${ordN(r.nextGrid)}`:""}${r.pb?` · class best lap${r.pb.lap?` (was ${r.pb.lap.toFixed(2)})`:""}`:""}</p>
+  const cls=r.place===1?"pass":r.place<=(r.stage==="heat"?4:OVAL_FPURSE.length)?"marg":"fail",avg=r.time&&r.N?SIM.ovalTrack(r.track).len*r.N/r.time*3.6:0;
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${ordN(r.place)} · ${st}</div><p>${ovEsc(r.clsName)} · ${ordN(r.place)} of ${r.of} · started ${ordN(r.gridMe)} · ${r.N} laps in ${fmtOvRace(r.time)} on ${ovEsc(r.night)} ${r.surf==="asphalt"?"asphalt":"clay"}${r.auto?" · auto driver":r.took!=null?` · you took over on lap ${r.took}`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.stage==="heat"&&r.nextGrid?` · feature from ${ordN(r.nextGrid)}`:""}${r.pb?` · class best lap${r.pb.lap?` (was ${r.pb.lap.toFixed(2)})`:""}`:""}</p>
     <div class="vstats"><div><b>${r.best?r.best.toFixed(2):"—"}</b><span>best lap (s)</span></div><div><b>${Math.round(avg)}</b><span>avg km/h</span></div><div><b>${r.maxKmh}</b><span>top km/h</span></div><div><b>${r.coolPeak}</b><span>water °C peak</span></div><div><b>${Math.round(r.wear*100)}</b><span>% tyres worn</span></div><div><b>${r.slides}</b><span>slide${r.slides===1?"":"s"}</span></div></div></div></div>`;}
 function ovalSheet(res){const r=res.oval,laps=r.laps||[],best=laps.length?Math.min.apply(null,laps):0;
   const wi=wearInfo(res),wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
   const lapRows=laps.map((t,i)=>{const pos=r.posLaps[i];return `<div><b>${i+1}</b><span class="nm">${pos?"P"+pos:""}${i>0&&r.posLaps[i-1]&&pos?(pos<r.posLaps[i-1]?" ▲":pos>r.posLaps[i-1]?" ▼":""):""}</span><span class="${Math.abs(t-best)<1e-6?"et":""}">${t.toFixed(2)}</span><span>${(t-best>0.005?"+"+(t-best).toFixed(2):"best")}</span></div>`;}).join("");
-  return `<div class="sec"><h2>Dirt oval sheet · ${r.stage==="heat"?"heat race":"feature"}</h2><div class="log">
+  return `<div class="sec"><h2>${r.surf==="asphalt"?"Paved oval":"Dirt oval"} sheet · ${r.stage==="heat"?"heat race":"feature"}</h2><div class="log">
     <div><b>Race</b>${ordN(r.place)} of ${r.of} · ${r.lapsDone}${r.finished?"":" (out)"} of ${r.N} laps · ${r.finished?fmtOvRace(r.time):"DNF"} · started ${ordN(r.gridMe)}</div>
     <div><b>Setup</b>${ovEsc(r.clsName)} · ${r.ci} ci · ${ovEsc(r.tyre)} tyres · ${ovEsc(r.grille.toLowerCase())} grille · ${r.ratio}:1 rear end · ${r.mass.toLocaleString("en-CA")} kg</div>
     ${r.rpmCorner>0?`<div><b>Gearing</b>${r.rpmCorner.toLocaleString("en-CA")} rpm mid-corner · ${r.rpmExit.toLocaleString("en-CA")} rpm at the end of the straight · ${r.maxKmh} km/h top</div>`:""}
@@ -33112,8 +33149,8 @@ function drawOvalChart(r){const css=getComputedStyle(document.documentElement),I
   x.fillStyle="#d97757";laps.forEach((v,i)=>{x.beginPath();x.arc(X(i),Y(v),n>14?2:3,0,7);x.fill();});
   x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText("lap s",padL+4,12);x.fillStyle="rgba(120,169,221,.95)";x.fillText("water",padL+44,12);x.fillStyle="#e8c14a";x.fillText("tyres",padL+88,12);x.fillStyle=soft;x.textAlign="right";if(W>420)x.fillText(`lap time by lap · ${r.stage==="heat"?"heat":"feature"}`,W-padR,12);}
 function ovalRedraw(){const l=lastForChart();if(S.env.testType==="oval"&&l&&l.oval)drawOvalChart(l.oval);}
-function ovalRecHtml(){const P=ovalRecs(),ks=Object.keys(SIM.OVAL_CLASSES).filter(k=>P[k]&&P[k].lap);if(!ks.length)return "";
-  return `<div class="rtop"><span>Dirt oval · best lap per class</span>${ks.map(k=>{const e=P[k];return `<div><b>◐</b><span class="et">${e.lap.toFixed(2)}</span><span>s</span><span class="nm" title="${ovEsc(e.n)}">${ovEsc(SIM.OVAL_CLASSES[k].n)}${e.wins?" · "+e.wins+" win"+(e.wins===1?"":"s"):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+function ovalRecHtml(){return OVAL_TRK.map(t=>{const P=ovalRecs(t),ks=Object.keys(SIM.OVAL_CLASSES).filter(k=>P[k]&&P[k].lap);if(!ks.length)return "";
+  return `<div class="rtop"><span>${t==="clay"?"Dirt oval":"Paved half-mile"} · best lap per class</span>${ks.map(k=>{const e=P[k];return `<div><b>◐</b><span class="et">${e.lap.toFixed(2)}</span><span>s</span><span class="nm" title="${ovEsc(e.n)}">${ovEsc(SIM.OVAL_CLASSES[k].n)}${e.wins?" · "+e.wins+" win"+(e.wins===1?"":"s"):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}).join("");}
 /* ===================== BOAT DRAGS: 1,000 ft of river, heads-up eliminations ===================== */
 /* a night is eight boats on a ladder: round 1, the semi, the final. Each round is one pass against the boat in the other lane:
    reaction time plus elapsed time, first to the far buoys wins. Lose (or break, or go red) and the night is over. */
@@ -35666,7 +35703,7 @@ const TROPHY_EV=[
   {k:"pikes",n:"Pikes Peak",shape:"peak",types:["pikes","hill","hillclimb","pikes_peak"],win:x=>{const r=x.r;if(!r||r.dnf||r.place!==1)return null;
     return{t:`${r.clsName||"Pikes Peak"} — King of the Mountain`,what:`To the summit in ${fmtHill(r.time)}, quickest of ${r.of}.`,nums:[["Time",fmtHill(r.time)],["Average",r.avgKmh!=null?r.avgKmh+" km/h":"—"],["Field",r.of||"—"],["Driver",r.auto?"auto":"you"]],veh:r.chName||""};}},
   {k:"oval",n:"Dirt oval",shape:"cup",types:["oval"],win:x=>{const r=x.r;if(x.failed||!r||r.stage!=="feature"||r.place!==1)return null;
-    return{t:`${r.clsName||"Dirt oval"} feature — first`,what:`Won the ${r.N}-lap feature on ${r.night} clay from ${ordN(r.gridMe)} on the grid, against ${r.of-1} others.`,nums:[["Time",fmtOvRace(r.time)],["Best lap",fmtOv(r.best)+" s"],["Started",ordN(r.gridMe)],["Field",r.of]],veh:r.clsName||"",u:"ovf"+(r.at||Date.now())};},
+    return{t:`${r.clsName||"Dirt oval"} feature — first`,what:`Won the ${r.N}-lap feature on ${r.night} ${r.surf==="asphalt"?"asphalt":"clay"} from ${ordN(r.gridMe)} on the grid, against ${r.of-1} others.`,nums:[["Time",fmtOvRace(r.time)],["Best lap",fmtOv(r.best)+" s"],["Started",ordN(r.gridMe)],["Field",r.of]],veh:r.clsName||"",u:"ovf"+(r.at||Date.now())};},
     extra:x=>{const r=x.r;if(x.failed||!r||r.stage!=="heat"||r.place!==1)return null;return{t:`${r.clsName||"Dirt oval"} heat — first`,tier:"bronze",what:`Won the ${r.N}-lap heat, which put the car on the front row for the feature.`,nums:[["Time",fmtOvRace(r.time)],["Best lap",fmtOv(r.best)+" s"],["Field",r.of]],veh:r.clsName||"",u:"ovh"+(r.at||Date.now())};}},
   {k:"boat",n:"Boat drags",shape:"prop",types:["boat","boatdrag","boat_drag"]},
   {k:"dd",n:"Dyno day",shape:"gauge",types:["dd"],win:x=>{if(!career()||!x.pass)return null;const d=DD(),n=d.passed,T=tropBook();const mk=[1,5,10,25,50,100];
@@ -36610,13 +36647,13 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"To the line",text:"Start the climb. Auto reads the corner calls for you. In You drive, hold PUSH into grippy corners and LIFT into dusty ones. Too fast is a moment, or a trip through the gravel."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the climb",text:"The result shows your time for the climb. If the engine is weak up high, boost or a shorter gear helps. If you lose time in the corners, look at the tyres, the car and the suspension."}]},
  {id:"oval",name:"Dirt oval 101",sub:"class, one gear, tyres, grille",preset:"sbc350",env:{testType:"oval"},steps:[
-  {tab:"events",sel:'#evPick [data-t="oval"]',title:"Heat race, then feature",text:"Dirt oval is a heat race and then the feature. The clay starts tacky and dries out slick as the laps pile up, and the rivals' lap times come from the same sim you drive."},
+  {tab:"events",sel:'#evPick [data-t="oval"]',title:"Heat race, then feature",text:"The oval is a heat race and then the feature, on the clay 3/8 mile or the paved half-mile (pick the track first). Clay starts tacky and dries out slick as the laps pile up; pavement grips steadily and rewards gearing, top end and cooling. The rivals' lap times come from the same sim you drive."},
   {tab:"events",sel:'#envBox [data-ok="ovalCls"]',up:1,lbl:1,title:"Class by cubic inches",text:"Street Stock takes up to 360 ci, Late Model up to 430, and Open has no limit. Your engine's size decides which class it can enter."},
   {tab:"events",sel:"#er-ovalFinal",wrap:".env",title:"One gear",text:"Under Advanced, in Rear end. The car has no gearbox to speak of: engine speed is road speed times the rear end. The corner exit wants torque, not peak power. A taller ratio trades exit for the straight."},
-  {tab:"events",sel:'#envBox [data-ok="ovalTyre"]',up:1,lbl:1,title:"Tyres and the clay",text:"Soft tyres bite early and fade late. Hard ones last and bite less. The track dries out as the laps pile up, so match the tyre to how long the race is."},
+  {tab:"events",sel:'#envBox [data-ok="ovalTyre"]',up:1,lbl:1,title:"Tyres and the track",text:"Soft tyres bite early and fade late. Hard ones last and bite less. The track dries out (or greases up) as the laps pile up, so match the tyre to how long the race is."},
   {tab:"events",sel:'#envBox [data-ok="ovalGrille"]',up:1,lbl:1,title:"Grille",text:"Under Advanced. An open grille cools best but adds drag and clogs with dirt. Taping it up is slippery on the straight, and the engine runs hot."},
   {tab:"events",sel:"#runTest",title:"Take the green",text:"Hold PUSH to attack and SAVE to cool the engine and the tyres. Space pushes. If the heat is already safe, save the engine for the feature."},
-  {tab:"events",sel:"#dynoHint,#verdict",title:"Read the night",text:"The heat sets the feature grid, so a good heat gets you a good start. Watch the lap times fall off as the tyres fade and the clay dries. That is when to SAVE."}]},
+  {tab:"events",sel:"#dynoHint,#verdict",title:"Read the night",text:"The heat sets the feature grid, so a good heat gets you a good start. Watch the lap times fall off as the tyres fade and the track changes. That is when to SAVE."}]},
  {id:"race24",name:"24 Hours 101",sub:"circuit, engine mode, stints, tyres",preset:"gt3r",env:{testType:"race24"},steps:[
   {tab:"events",sel:'#evPick [data-t="race24"]',title:"A day and a night",text:"The 24 Hours puts your engine in the road-test car against twenty others in three classes. A full day and night runs in accelerated time. Pace matters, and so does making it to the end."},
   {tab:"events",sel:'#envBox [data-e24k="e24Trk"]',up:1,lbl:1,title:"Pick a circuit",text:"Coulee Park is a short-course 24. Prairie Sky Raceway is the 24 Hours itself, on a 4.48 km lap."},
