@@ -21,12 +21,15 @@ function sc_bigBlower(B, x, y, len, hatMat){
   return sc_V(x+0.1, y+0.86, 0);
 }
 /* eight short zoomies per side, up and back; pushes every outlet to flames, two per side to the exhaust tips */
-function sc_zoomies(B, x0, dx, y, z0, len, tips, dirs, flames, out){
-  [-1,1].forEach(function(sd){ for(var i=0;i<8;i++){
-    var x=x0-i*dx, a=sc_V(x, y, sd*z0), b=sc_V(x-0.02, y+0.05, sd*(z0+0.1)), c=sc_V(x-len*0.55, y+len*0.85, sd*(z0+0.1+len*(out||0.3)));
-    if(!SC.lite || i%2===0){ B.add("alu", TUBE([a,b,c], 0.027, SC.lite?2:6, SC.lite?5:10)); sc_pipeEnd(B, "alu", b, c, 0.027); }   /* Lite: every other pipe, coarser */
+function sc_zoomies(B, x0, dx, y, z0, len, tips, dirs, flames, out, H){
+  /* a pipe per cylinder over the same engine length (V8: four a bank); inline / rotary one side; flat lower and wider */
+  var PO=sc_ports(H), n=PO.per, sp=n>1?Math.min(dx*2, dx*7/(n-1)):0, xs=x0-dx*3.5+sp*(n-1)/2, r=0.027*PO.r;
+  if(PO.flat){ y-=0.12; z0+=0.06; out=(out||0.3)+0.15; }
+  PO.sides.forEach(function(sd){ for(var i=0;i<n;i++){
+    var x=xs-i*sp, a=sc_V(x, y, sd*z0), b=sc_V(x-0.02, y+0.05, sd*(z0+0.1)), c=sc_V(x-len*0.55, y+len*0.85, sd*(z0+0.1+len*(out||0.3)));
+    if(!SC.lite || n<=4 || i%2===0){ B.add("alu", TUBE([a,b,c], r, SC.lite?2:6, SC.lite?5:10)); sc_pipeEnd(B, "alu", b, c, r); }   /* Lite: every other pipe past four, coarser */
     var d=c.clone().sub(b).normalize(); flames.push({p:c.clone(), d:d});
-    if(i===2||i===5){ tips.push(c.clone()); dirs.push(d.clone()); }
+    if(PO.tip(i)){ tips.push(c.clone()); dirs.push(d.clone()); }
   } });
 }
 
@@ -67,7 +70,10 @@ function sc_tfrail(B, rr, tails, heads, res, H){
   var ex=-2.5, gates=[], hat=null, tips=[], dirs=[], flames=[], ra=H.asp;
   B.add("engine", sc_rbox(0.82,0.42,0.42,0.03), sc_M(ex, 0.48, 0));
   B.add("engine", sc_rbox(0.6,0.12,0.3,0.03), sc_M(ex, 0.24, 0));
-  [-1,1].forEach(function(sd){ B.add("alu", sc_rbox(0.78,0.1,0.2,0.03), sc_M(ex, 0.76, sd*0.21, sd*-0.55,0,0)); B.add("engine", sc_rbox(0.8,0.2,0.16,0.02), sc_M(ex, 0.64, sd*0.2, sd*-0.55,0,0)); });
+  var PO=sc_ports(H);   /* heads to match: a V pair, one upright head (inline / rotary housing), or flat out to the sides */
+  if(PO.one){ B.add("alu", sc_rbox(0.78,0.1,0.24,0.03), sc_M(ex, 0.8, 0)); B.add("engine", sc_rbox(0.8,0.16,0.3,0.02), sc_M(ex, 0.7, 0)); }
+  else if(PO.flat) [-1,1].forEach(function(sd){ B.add("alu", sc_rbox(0.78,0.2,0.1,0.03), sc_M(ex, 0.5, sd*0.36)); B.add("engine", sc_rbox(0.8,0.24,0.16,0.02), sc_M(ex, 0.5, sd*0.26)); });
+  else [-1,1].forEach(function(sd){ B.add("alu", sc_rbox(0.78,0.1,0.2,0.03), sc_M(ex, 0.76, sd*0.21, sd*-0.55,0,0)); B.add("engine", sc_rbox(0.8,0.2,0.16,0.02), sc_M(ex, 0.64, sd*0.2, sd*-0.55,0,0)); });
   if(ra==="blower") hat=sc_bigBlower(B, ex, 0.8, 0.86, "paint");
   else if(ra==="na"){ B.add("satin", sc_rbox(0.6,0.06,0.3,0.012), sc_M(ex, 0.85, 0)); B.add("paint", sc_prof([[0.18,0],[0.22,0.28],[0.06,0.32],[-0.2,0.25],[-0.2,0]], 0.3, 0.015), sc_M(ex+0.05, 0.87, 0)); B.add("well", sc_rbox(0.02,0.2,0.22,0.01), sc_M(ex+0.265, 1.02, 0, 0,0,0.15)); hat=V(ex+0.08, 1.2, 0); }
   else { B.add("satin", sc_rbox(0.6,0.06,0.3,0.012), sc_M(ex, 0.85, 0));
@@ -76,7 +82,7 @@ function sc_tfrail(B, rr, tails, heads, res, H){
       B.add("barrel", new THREE.TorusGeometry(0.15,0.035,6,16), sc_M(ex+0.12, 0.98, sd*0.36));
       sc_bell(B, ex+0.3, 0.98, sd*0.36, 0.085);
       if(ra!=="centri"){ var a=V(ex-0.12, 0.9, sd*0.34), b=V(ex-0.2, 1.22, sd*0.38); B.add("chrome", sc_cyl(0.028,10), sc_rodM(a,b)); gates.push({p:b.clone(), d:V(-0.3,1,sd*0.1).normalize()}); } }); }
-  sc_zoomies(B, ex+0.3, 0.085, 0.64, 0.3, 0.3, tips, dirs, flames, 0.25);
+  sc_zoomies(B, ex+0.3, 0.085, PO.one?0.68:0.64, PO.one?0.17:0.3, 0.3, tips, dirs, flames, 0.25, H);
   /* biplane rear wing high over the slicks, on struts from the axle */
   var wx=-4.0, wl=1.72, wu=2.1;
   B.add("carbonS", sc_foil(0.78, 0.13, 1.3), sc_M(wx, wl, 0, 0,0,-0.32));
@@ -155,7 +161,7 @@ function sc_funny(B, rr, tails, heads, res, H){
   else { (H.asp==="twin"||H.asp==="turbo"?[-1,1]:[1]).forEach(function(sd){ sc_bell(B, ex+0.3, P.yt+0.08, sd*0.22, 0.09); });
     B.add("carbonS", sc_prof([[0.42,0],[0.3,0.1],[-0.36,0.12],[-0.42,0]], 0.7, 0.02), sc_M(ex, P.yt-0.02, 0)); }
   var hp=sc_at(D, ex+0.1);
-  sc_zoomies(B, ex+0.32, 0.09, 0.52, hp.w-0.12, 0.26, tips, dirs, flames, 0.45);
+  sc_zoomies(B, ex+0.32, 0.09, 0.52, hp.w-0.12, 0.26, tips, dirs, flames, 0.45, H);
   /* wheelie bars, twin chutes */
   var maxP=deg(4), bx0=-2.3, bx1=-3.9, br=0.06, dxB=bx1-xr, cy=(br-rr-dxB*Math.sin(maxP))/Math.cos(maxP)+rr;
   [-1,1].forEach(function(sd){ var b=V(bx1,cy,sd*0.24);

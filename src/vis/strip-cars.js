@@ -548,6 +548,17 @@ function sc_pipeEnd(B, mat, b, c, r){
   B.add("well", bore, new THREE.Matrix4().compose(c.clone().addScaledVector(d, -r*0.6), q, _scOne));
 }
 /* pipe bends: Full/Ultra round, Lite as before */
+/* header ports for the engine layout: V / flat a bank a side, inline and two-stroke one side only, rotary one fat pipe per rotor.
+   tip(i) = the outlets the effects (heat, pops) ride on, about two a side. No hw = a V8. */
+function sc_ports(H){
+  var E=(H&&H.eng)||{kind:"v", n:8}, k=E.kind, P;
+  if(k==="rotary") P={sides:[-1], per:E.rotors||2, r:1.45};
+  else if(k==="i"||k==="two") P={sides:[-1], per:Math.min(8,E.n), r:k==="two"?1.25:1};
+  else P={sides:[-1,1], per:Math.min(8,Math.ceil(E.n/2)), r:1};
+  P.kind=k; P.flat=k==="flat"; P.one=P.sides.length===1;
+  var q=Math.floor(P.per/3); P.tip=function(i){ return i===q || i===P.per-1-q; };
+  return P;
+}
 function sc_pipe(pts, r){ return TUBE(pts, r, SC.lite?5:8, SC.lite?6:10); }
 function sc_bin(){ var B={}; B.add=function(k,g,m){ (B[k]||(B[k]=[])).push({g:g, m:m||new THREE.Matrix4()}); }; return B; }
 function sc_merge(list){ return mergeGeos(list); }
@@ -665,7 +676,9 @@ function sc_hw(hw, body){
   var st=sc_styleFor(body, String(hw.style||""), !!hw.diesel);   /* v3: per-class shell (strip-cars-shells.js) */
   var H={asp:a, ic:!!hw.ic && a!=="na" && a!=="blower", als:!!hw.als && (a==="turbo"||a==="twin"), n2o:!!hw.n2o, diesel:!!hw.diesel, style:st, lite:GFX==="lite"};
   H.boost=a!=="na"; H.turbo=(a==="turbo"||a==="twin");
-  H.key=[a, H.ic?1:0, H.diesel?1:0, st, H.lite?1:0].join(",");
+  var E=hw.eng&&typeof hw.eng==="object"?hw.eng:null, ek=E&&/^(i|v|flat|rotary|two)$/.test(E.kind)?E.kind:"v";
+  H.eng={kind:ek, n:Math.max(1,Math.min(18,(+(E&&E.n)||8)|0)), rotors:Math.max(1,Math.min(4,(+(E&&E.rotors)||2)|0))};
+  H.key=[a, H.ic?1:0, H.diesel?1:0, st, H.lite?1:0, ek+H.eng.n+(ek==="rotary"?"r"+H.eng.rotors:"")].join(",");
   return H;
 }
 /* door-car shells: loft rows (see sc_def) + where the glass, wheels and hood hardware go */
@@ -901,14 +914,16 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
       B.add("well", new THREE.CircleGeometry(0.04,12), sc_M(p.x+0.03, p.y, p.z, 0,-PI/2,0));
       tips.push(p); dirs.push(new THREE.Vector3(-1,0,0)); });
   } else {
-    var nP=pm?4:2, ex0=pm?0.66:0.62;
-    [-1,1].forEach(function(sd){
+    /* Pro Mod: a pipe per cylinder out of the fender; outlaw: merged pairs. Same engine length whatever the count */
+    var PO=sc_ports(H), nP=pm?PO.per:Math.max(1,Math.ceil(PO.per/2)), ex0=pm?0.66:0.62, sp=Math.min(pm?0.075:0.1, (pm?0.3:0.2)/Math.max(1,nP-1)), rP=(pm?0.028:0.034)*PO.r, yF=PO.flat?-0.08:0;
+    if(nP<(pm?4:2)) ex0+=((pm?4:2)-nP)*sp*0.5;
+    PO.sides.forEach(function(sd){
       sc_params(D, ex0, P);
       for(var i=0;i<nP;i++){
-        var x0=ex0+i*(pm?0.075:0.1), y0=(pm?0.5:0.42)+dLift, a=new THREE.Vector3(x0+0.06, y0, sd*(P.w-0.1)), b=new THREE.Vector3(x0+0.02, y0+0.03, sd*(P.w+0.05));
+        var x0=ex0+i*sp, y0=(pm?0.5:0.42)+dLift+yF, a=new THREE.Vector3(x0+0.06, y0, sd*(P.w-0.1)), b=new THREE.Vector3(x0+0.02, y0+0.03, sd*(P.w+0.05));
         var c=pm?new THREE.Vector3(x0-0.16, y0+0.2+i*0.012, sd*(P.w+0.16)):new THREE.Vector3(x0-0.12, y0-0.06, sd*(P.w+0.13));
-        B.add("alu", sc_pipe([a,b,c], pm?0.028:0.034)); sc_pipeEnd(B, "alu", b, c, pm?0.028:0.034);
-        if(pm?(i===1||i===2):true){ tips.push(c.clone()); dirs.push(c.clone().sub(b).normalize()); }
+        B.add("alu", sc_pipe([a,b,c], rP)); sc_pipeEnd(B, "alu", b, c, rP);
+        if(pm?(nP<3||(PO.one?true:PO.tip(i))):true){ tips.push(c.clone()); dirs.push(c.clone().sub(b).normalize()); }
       }
     });
   }
