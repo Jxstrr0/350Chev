@@ -93,9 +93,40 @@ function roadPt(T, i, d, y, out){ var N=T.N, i0=Math.floor(i), f=i-i0, a=((i0%N)
   return out.set(x-Math.sin(h)*d, y, -(yy+Math.cos(h)*d)); }
 function roadHd(T, i){ var N=T.N, i0=Math.floor(i), f=i-i0, a=((i0%N)+N)%N, b=(a+1)%N; return T.h[a]+((T.h[b]-T.h[a]+PI*3)%TAU-PI)*f; }
 
+/* the street circuit: a wall along both edges (tyres on the outside of the corners), pavement behind it, and a grid of low
+   downtown blocks and grain elevators in the gaps the circuit leaves. Pushes footprints into W.bld so the trees keep clear. */
+function roadStreetScenery(W, B, T, s0, s1, rng, lite){
+  var N=T.N, ds=T.ds, hw=ROAD_W/2, q, sd, CONC=0xc9c4b6, TYRE=0x1a1a1c, bld=W.bld=[], S4=W.scene, M=W.mats;
+  var cap=function(i,d){ var k=T.k[i%N]; return (d*k>0)?Math.sign(d)*Math.min(Math.abs(d),0.9/Math.abs(k)):d; };   // an offset on the inside of a tight corner may not pass the centre of the arc
+  var inPit=function(i){ var u=i>N/2?i-N:i; return u>=s0-12 && u<=s1+12; };
+  for(sd=-1;sd<=1;sd+=2){ var pv=new THREE.Mesh(roadRibbon(T, 0, 0, function(i){ return cap(i,sd*(hw+1.5)); }, function(i){ return cap(i,sd*(hw+9)); }, 0.02, 20, true), M.verge); pv.receiveShadow=true; S4.add(pv); }
+  var stp=lite?3:2;
+  for(q=0;q<N;q+=stp){ if(inPit(q)) continue; var h=T.h[q], out=Math.abs(T.k[q])>1/260;
+    for(sd=-1;sd<=1;sd+=2){ var dw=cap(q,sd*(hw+3)), outside=out&&sd*T.k[q]<0;
+      roadPt(T, q, dw, 0, _rA); B.box("solid", _rA.x, 0.5, _rA.z, stp*ds+0.4, 1.0, 0.5, CONC, h);
+      if(outside){ roadPt(T, q, dw-sd*0.4, 0, _rB); B.box("solid", _rB.x, 0.36, _rB.z, stp*ds+0.2, 0.62, 0.4, (q/stp)%2?TYRE:0x2b2d30, h); }
+      if((q/stp)%4===0){ roadPt(T, q, dw-sd*0.55, 0, _rB); B.add("sign","plane",[_rB.x, 0.62, _rB.z],[4.6,0.5,1],0xffffff,[0,h+(sd<0?PI:0),0],ROAD_UV.ban[((q/stp/4)|0)%6]); } } }
+  /* blocks: a 44 m lattice over the map, a building wherever the circuit (and its pit buildings) leaves room */
+  var cols=[0x8a4a38,0xb9a57a,0x9a9a94,0xd8d0bc,0x7d6a58,0xa4553f], roofs=[0x3c3f44,0x5a5a5a,0x4a4644], gx, gz, cell=0, nB=0, maxB=lite?46:140, R=Math.max(T.size[0],T.size[1]);
+  function elev(ex, ez, s, col){
+    B.box("solid", ex, 11*s, ez, 11*s, 22*s, 11*s, col); B.add("solid","prism",[ex,22*s,ez],[11.4*s,3.2*s,11.4*s],col);
+    B.box("solid", ex, 27*s, ez, 4.8*s, 5*s, 5.2*s, col); B.add("solid","prism",[ex,29.5*s,ez],[5.2*s,1.8*s,5.6*s],0x4a4644);
+    B.box("solid", ex+9.5*s, 7*s, ez, 8*s, 14*s, 9*s, col); B.add("solid","prism",[ex+9.5*s,14*s,ez],[8.2*s,2*s,9.4*s],0x4a4644); B.box("solid", ex-8*s, 3*s, ez, 6*s, 6*s, 7*s, 0x8a8478); }
+  for(gx=-T.size[0]/2-110; gx<=T.size[0]/2+110 && nB<maxB; gx+=44){ for(gz=-T.size[1]/2-110; gz<=T.size[1]/2+110 && nB<maxB; gz+=44){ cell++;
+    var r1=rng(cell*3.17), r2=rng(cell*5.41+1), r3=rng(cell*7.93+2), r4=rng(cell*2.71+3);
+    var isEl=r1>0.94, w=isEl?24:18+r2*14, d=isEl?16:18+r3*14, hgt=6+r4*r4*14, cx=gx+(r2-0.5)*8, cz=gz+(r3-0.5)*8, hd=Math.hypot(w,d)/2, ok=r1>0.22;
+    for(var j=0;ok&&j<N;j+=2){ var dx=T.x[j]-cx, dz=-T.y[j]-cz, lim=hd+(inPit(j)?44:20); if(dx*dx+dz*dz<lim*lim) ok=false; }
+    if(!ok) continue; nB++; bld.push([cx,cz,w/2,d/2]);
+    if(isEl){ elev(cx-3, cz, 0.62, r4>0.5?0x8e2f23:0xb9a57a); continue; }
+    B.box("solid", cx, hgt/2, cz, w, hgt, d, cols[Math.floor(r1*cols.length*1.3)%cols.length]);
+    if(r2>0.5) B.add("solid","prism",[cx,hgt,cz],[w+0.4,2+r3*2.5,d+0.4],roofs[Math.floor(r4*3)%3]); else B.box("solid", cx, hgt+0.15, cz, w+0.6, 0.3, d+0.6, roofs[Math.floor(r4*3)%3]);
+    if(hgt>8){ var wy=hgt*0.55, wh=Math.min(hgt*0.5,5); B.add("sign","plane",[cx, wy, cz+d/2+0.06],[w*0.92,wh,1],0xffffff,[0,0,0],ROAD_UV.win); B.add("sign","plane",[cx, wy, cz-d/2-0.06],[w*0.92,wh,1],0xffffff,[0,PI,0],ROAD_UV.win); } } }
+}
+
 function buildRoadWorld(T){
   var W={T:T, scene:new THREE.Scene(), mats:{}, stations:[]}, S4=W.scene, lite=(GFX==="lite"), M=W.mats, N=T.N, ds=T.ds, hw=ROAD_W/2, i, k, q;
   var rng=function(s){ var t=Math.sin(s*127.1+3.7)*43758.5453; return t-Math.floor(t); };
+  var street=(T.id==="street");   // the downtown circuit: walls instead of gravel, blocks of low buildings
   /* lights + sky + ground */
   var hemi=new THREE.HemisphereLight(0xcfdcf0, 0x5a5a3c, 0.22); S4.add(hemi); W.hemi=hemi;
   var sun=new THREE.DirectionalLight(0xffe6c4, 1.45); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-30; shc.right=30; shc.top=30; shc.bottom=-30; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
@@ -125,8 +156,8 @@ function buildRoadWorld(T){
     var kout=new THREE.Mesh(roadRibbon(T, a0, b0, -sg*hw, -sg*(hw+1.5), 0.035, 4, false), M.kerb); kout.receiveShadow=true; S4.add(kout);
     var len=(b-a), ga=(a-2+N)%N, gb=(b+Math.round(36/ds)+N)%N, R=1/Math.abs(T.k[mid]||1/100), gw=clamp(9+260/R,10,22);
     var taper=function(ii){ var u=(((ii-ga)%N)+N)%N, L=(((gb-ga)%N)+N)%N, f=Math.min(1, u/6, (L-u)/10); return -sg*(hw+1.5+0.2+gw*clamp(f,0.15,1)); };
-    var gr=new THREE.Mesh(roadRibbon(T, ga, gb, -sg*(hw+1.6), taper, 0.015, 8, false), M.grav); gr.receiveShadow=true; S4.add(gr);
-    r.sg=sg; r.ga=ga; r.gb=gb; r.gw=gw; r.R=R; r.len=len; });
+    if(!street){ var gr=new THREE.Mesh(roadRibbon(T, ga, gb, -sg*(hw+1.6), taper, 0.015, 8, false), M.grav); gr.receiveShadow=true; S4.add(gr); }
+    r.sg=sg; r.ga=ga; r.gb=gb; r.gw=street?1:gw; r.R=R; r.len=len; });
   /* start/finish chequer across the track */
   var cq=new THREE.Mesh(roadRibbon(T, N-1, 0, hw, -hw, 0.04, 1, false), new THREE.MeshStandardMaterial({map:M.sign.map, roughness:0.7, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-4}));
   (function(){ var uv=cq.geometry.attributes.uv; var R=ROAD_UV.cheq; for(var j=0;j<uv.count;j++){ uv.setXY(j, lerp(R[0],R[2],uv.getX(j)), lerp(R[1],R[3],uv.getY(j)>0?1:0)); } uv.needsUpdate=true; })();
@@ -135,7 +166,7 @@ function buildRoadWorld(T){
   var B=new StripBatch(), CONC=0xc9c4b6, STEEL=0x8d9296, DARK=0x2a2c2f, TYRE=0x1a1a1c;
   /* barriers: tyre-faced walls behind every gravel trap, armco on the open stretches of the outside */
   runs.forEach(function(r, ri){ var L=(((r.gb-r.ga)%N)+N)%N;
-    for(q=0;q<=L;q+=2){ var ii=(r.ga+q)%N, f=Math.min(1,q/6,(L-q)/10), d=-r.sg*(hw+1.9+r.gw*clamp(f,0.15,1)+0.6), h=T.h[ii]; roadPt(T, ii, d, 0, _rA);
+    for(q=0;!street&&q<=L;q+=2){ var ii=(r.ga+q)%N, f=Math.min(1,q/6,(L-q)/10), d=-r.sg*(hw+1.9+r.gw*clamp(f,0.15,1)+0.6), h=T.h[ii]; roadPt(T, ii, d, 0, _rA);
       B.box("solid", _rA.x, 0.45, _rA.z, 5.3, 0.9, 0.5, CONC, h); B.box("solid", _rA.x-Math.sin(h)*r.sg*0.32, 0.38, _rA.z-Math.cos(h)*r.sg*0.32, 5.3, 0.62, 0.36, q%4?TYRE:0x2b2d30, h);
       if(q%4===0) B.add("sign","plane",[_rA.x-Math.sin(h)*r.sg*0.52, 0.62, _rA.z-Math.cos(h)*r.sg*0.52],[4.6,0.5,1],0xffffff,[0,h+(r.sg>0?PI:0),0],ROAD_UV.ban[(ri+q/4)%6]); }
     /* brake boards 150 / 100 / 50 m before the slow corners */
@@ -178,6 +209,7 @@ function buildRoadWorld(T){
   for(q=s0+6;q<=s1-6;q+=4){ var i3=(q+N)%N; roadPt(T, i3, hw+3.5, 0, _rA); B.box("metal", _rA.x, 1.8, _rA.z, 0.1, 3.6, 0.1, STEEL, T.h[i3]); roadPt(T, i3, hw+3.5, 0, _rA); B.box("solid", _rA.x, 0.5, _rA.z, 10.2, 1.0, 0.45, CONC, T.h[i3]); }
   /* floodlight masts down the pit straight: lamp heads that light up after dark */
   for(q=s0+10;q<=s1-10;q+=20){ var i4=(q+N)%N, h4=T.h[i4]; for(var sd2=-1;sd2<=1;sd2+=2){ roadPt(T, i4, sd2>0?hw+6.5:-(hw+3.2), 0, _rA); B.box("metal", _rA.x, 7, _rA.z, 0.35, 14, 0.35, STEEL, h4); B.box("lamp", _rA.x, 14.1, _rA.z, 2.2, 0.5, 1.0, 0xfff2d8, h4); } }
+  if(street) roadStreetScenery(W, B, T, s0, s1, rng, lite);
   /* a grain elevator and a red barn beyond the back of the circuit, sheds round the paddock */
   var far=Math.max(T.size[0],T.size[1])/2;
   B.box("solid", far+180, 14, -far*0.4, 14, 28, 14, 0x8e2f23, 0.3); B.add("solid","prism",[far+180,28,-far*0.4],[14.4,3.6,14.4],0x4a4644,[0,0.3,0]); B.box("solid", far+180, 33, -far*0.4, 6, 7, 6.4, 0x8e2f23, 0.3);
@@ -194,6 +226,7 @@ function buildRoadWorld(T){
   (function(){ var ult=ULT(), pts=[], tries=lite?900:ult?3600:1800, R2=Math.max(T.size[0],T.size[1])*0.5+260, s;
     for(s=0;s<tries && pts.length<(lite?170:ult?760:380);s++){ var px=(rng(s*1.7)-0.5)*2*R2, pz=(rng(s*2.9+1)-0.5)*2*R2, ok=true;
       for(var j=0;j<N;j+=6){ var dx=T.x[j]-px, dz=-T.y[j]-pz; if(dx*dx+dz*dz<34*34){ ok=false; break; } }
+      var bl=W.bld||[]; for(var bi=0;ok&&bi<bl.length;bi++){ if(Math.abs(px-bl[bi][0])<bl[bi][2]+5 && Math.abs(pz-bl[bi][1])<bl[bi][3]+5) ok=false; }
       if(ok) pts.push([px,pz,3.5+rng(s+3)*3.5]); }
     var im=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0), new THREE.MeshStandardMaterial({roughness:1}), pts.length), mm=new THREE.Matrix4(), cc=new THREE.Color();
     pts.forEach(function(p,qq){ var h=p[2]*1.7; mm.compose(_sbP.set(p[0],h*0.8,p[1]), _sbQ.set(0,0,0,1), _sbS.set(p[2],h,p[2])); im.setMatrixAt(qq,mm); cc.setHSL(0.24+rng(qq)*0.06,0.45,0.13+rng(qq+1)*0.06).convertSRGBToLinear(); im.setColorAt(qq,cc); });
