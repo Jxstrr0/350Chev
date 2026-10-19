@@ -5,7 +5,7 @@
 let ER=null;
 const E24_FEE=3500,E24_GAP=6,E24_REP=120,E24_SPEEDS=[1,60,600,3600],E24_CAMS=[["auto","Auto"],["tower","Tower"],["chase","Chase"],["onboard","Onboard"]];
 const E24_STINTS=[[0,"Max","to the fuel"],[45,"45 min","short, light"],[60,"60 min","an hour"],[90,"90 min","long"]];
-function e24EnvFix(){const e=S.env;if(!SIM.ROAD_TRACKS[e.e24Trk])e.e24Trk="gp";if(!SIM.E24_MODES[e.e24Mode])e.e24Mode="race";if(!E24_STINTS.some(s=>s[0]===+e.e24Stint))e.e24Stint=0;
+function e24EnvFix(){const e=S.env;if(!SIM.ROAD_TRACKS[e.e24Trk]||SIM.ROAD_TRACKS[e.e24Trk].no24)e.e24Trk="gp";if(!SIM.E24_MODES[e.e24Mode])e.e24Mode="race";if(!E24_STINTS.some(s=>s[0]===+e.e24Stint))e.e24Stint=0;
   if(e.e24Fuel!=="full"&&e.e24Fuel!=="stint")e.e24Fuel="full";if(!SIM.E24_TYRES[e.e24Tyre])e.e24Tyre="medium";if(e.e24Chg!=="every"&&e.e24Chg!=="double")e.e24Chg="every";
   if(typeof e.e24SC!=="boolean")e.e24SC=true;if(!E24_SPEEDS.includes(+e.e24Spd))e.e24Spd=600;if(!E24_CAMS.some(c=>c[0]===e.e24Cam))e.e24Cam="auto";roadEnvFix();return e;}
 function e24C(){const c=C();if(!c.e24||typeof c.e24!=="object")c.e24={next:0,runs:0,live:null};return c.e24;}
@@ -51,7 +51,7 @@ function e24EnvHtml(){e24Orphan();const e=e24EnvFix(),trk=e.e24Trk,ready=!!E24W.
   let h=`<div class="e24ev"><b>24 Hours of Prairie Sky</b><span>Saturday 2 pm to Sunday 2 pm · about 21 cars in Proto, GT and Stock · dark from 10 pm to 5 am</span>`;
   if(career()){const g=e24C(),R=recs();h+=`<p class="${gate?"no":"ok"}">${gate?gate:`Entry open · ${dev()?"free (dev)":fmt$(E24_FEE)}`}${g.runs?` · ${g.runs} run${g.runs>1?"s":""}${R.e24Best?`, best ${ordN(R.e24Best)} in class`:""}`:""}</p>`;}
   h+=`</div>`;
-  h+=`<div class="lbl"><span>Circuit</span></div>${e24Seg("e24Trk",trk,Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return [id,t.n,`${(T.len/1000).toFixed(2)} km · ${id==="gp"?"the 24 Hours":"short-course 24"}`];}))}`;
+  h+=`<div class="lbl"><span>Circuit</span></div>${e24Seg("e24Trk",trk,Object.entries(SIM.ROAD_TRACKS).filter(([id,t])=>!t.no24).map(([id,t])=>{const T=SIM.roadTrack(id);return [id,t.n,`${(T.len/1000).toFixed(2)} km · ${id==="gp"?"the 24 Hours":"short-course 24"}`];}))}`;
   h+=swapEnvNote();if(!o.car)h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-rk="roadCh" data-rv="${id}" class="${o.ch===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   let P=null;
   if(!ready){h+=`<div class="e24scr"><b>Scrutineering</b><p>Checking the field in… <span class="e24spin"></span></p></div>`;e24Warm(trk,()=>{if(S.env.testType==="race24"&&!ER&&curTab==="events")renderEnv();});}
@@ -232,4 +232,4 @@ function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).ge
   x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText("lap time",padL+4,13);x.fillStyle="#d97757";x.fillText("▮ pit",padL+62,13);x.fillStyle="rgba(226,178,74,.95)";x.fillText("▮ safety car",padL+98,13);x.fillStyle="rgba(120,140,220,.95)";x.fillText("▮ night",padL+176,13);
   if(W>520){x.fillStyle=soft;x.textAlign="right";x.fillText(`${r.trkName} · ${r.laps} laps`,W-padR,13);}}
 function e24RecHtml(){const P=e24Recs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].km);if(!ks.length)return"";ks.sort((a,b)=>P[b].km-P[a].km);
-  return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":e.trk==="street"?"ST":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
