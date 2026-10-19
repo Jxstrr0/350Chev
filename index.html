@@ -29566,7 +29566,7 @@ const MAX_ACTIVE=2,DEPOSIT=0.10,EXPIRE_REP=8;
 const CATS=[
   {id:"prod",name:"Production run",sub:"volume · economy · warranty",segs:["hatch","sedan","taxi","flagship"],rep:0},
   {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
-  {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","sport","gt","super","hyper"],rep:40},
+  {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","streetcup","sport","gt","super","hyper"],rep:40},
   {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
   {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb","lsr"],rep:120},
   {id:"altfuel",name:"Fleet & alt-fuel",sub:"propane · CNG · depot-fuelled fleets",segs:["forklift","cngvan","lpgbus","wellsite"],rep:20},
@@ -29585,6 +29585,7 @@ const SEGMENTS=[
   {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[2,5],price:3800,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86,noise:78}},
   {id:"hot",name:"Hot hatch",tier:1,units:[2,4],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76,road:{ch:"hatch"},zero100:[7.4,8.8]}},
   {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[3,7],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87",noise:74}},
+  {id:"streetcup",name:"Street-circuit cup car",tier:1,units:[2,4],price:5800,req:{hp:[180,260],kg:170,fuel:"r91",rel:78,noise:77,road:{ch:"hatch",trk:"street"},lap:[105.2,107.8]}},
   {id:"sport",name:"Sports coupé",tier:1,units:[1,3],price:6200,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78,road:{ch:"coupe",trk:"club"},lap:[75.5,78.5]}},
   /* tier 2 — Known builder */
   {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[1,2],price:11000,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
@@ -29668,7 +29669,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.9.0";
+const VERSION="1.76.10.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -34186,7 +34187,7 @@ const SVC_TIERS=[{id:"top",name:"Top end",worn:"valves, guides and stem seals",p
   {id:"rb",name:"Rings & bearings",worn:"rings, rod and main bearings",parts:0.20,lab:0.14},
   {id:"full",name:"Full rebuild",worn:"bores, crank, rings, bearings and valves",parts:0.32,lab:0.18}];
 const CORE_MAX=6,CORE_FRAC=0.12,CORE_SCRAP=0.4;
-const CORE_LAY={hatch:["I3","I4"],sedan:["I4","V6"],van:["I4","V6"],pump:["I3","I4"],truck:["V6","V8"],hot:["I4","I4","F4"],taxi:["I4","V6"],sport:["I6","V6","F6"],
+const CORE_LAY={hatch:["I3","I4"],sedan:["I4","V6"],van:["I4","V6"],pump:["I3","I4"],truck:["V6","V8"],hot:["I4","I4","F4"],streetcup:["I4","I4","V6"],taxi:["I4","V6"],sport:["I6","V6","F6"],
   club:["I4"],gt:["V8","V12","V10"],rally:["I4","F4"],drift:["I6","V8"],genset:["I6","V8"],tractor:["I6","I4"],super:["V8","V10"],endur:["V8","V6"],attack:["I4","V6"],
   drag:["V8"],hyper:["V8","V12"],flagship:["V12"],stripcar:["V8"],grudge:["V8"],radial:["V8"],promod:["V8"],smallblock:["V8"],
   hdpickup:["V8","I6"],mdtruck:["I6","I4"],workboat:["I6"],dtractor:["I6"],minegen:["I6","V8"],class8:["I6"],puller:["I6","V8"]};
