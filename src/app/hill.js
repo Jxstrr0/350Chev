@@ -56,7 +56,7 @@ function hillAltLine(p){const pk=p.pts,top=pk[pk.length-1],dn=Math.round(100*(1-
   else if(p.kind!=="na")s+=" The blower keeps its pressure ratio, so it makes the same ratio of thinner air.";else s+=" Atmospheric: the power follows the air.";
   s+=p.carb?` Carburettor: it meters by air speed, so it runs rich as the air thins (λ ${(+p.ref.lambda).toFixed(2)} → ${(+top.lambda).toFixed(2)} on top).`:" Injection trims the mixture for the altitude.";
   return s;}
-function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=hillClsLocked(k),seed=hillSeed(k),field=hillField(k,seed),R=hillRecs(),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
+function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=hillClsLocked(k),seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed)),R=hillRecs(),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
   const fin=field?field.filter(f=>f.t!=null).length:0;
   let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?hlEsc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=hillClsLocked(id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
@@ -113,7 +113,7 @@ function hillStart(){
   try{prep=hillPrepFor(snap.cfg);}catch(err){testing=false;renderTest();toast("The engine wouldn't run at altitude");return;}
   if(prep.fails.length){testing=false;toast(`It wouldn't make the summit — ${String(prep.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
-  const seed=hillSeed(k),field=hillField(k,seed,true),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
+  const seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed,true)),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
   const rs=career()?(seed+7919*(C().hillRuns=(C().hillRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);
   const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,0.86,rs)},opt));
   const lead=field.filter(f=>f.t!=null).sort(hillCmp)[0]||null;
@@ -166,7 +166,7 @@ function hillFinish(){
     if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Pikes Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
     else{const purse=Math.round((HILL_PURSE[r.place-1]||0)*(HILL_PAY[C0.tier]||1)/10)*10,rep=(HILL_REP[r.place-1]||0)+1;r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`Pikes Peak: ${C0.n} — ${sc}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${sc} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
-    spEvent("hill",{win:!r.dnf&&r.place===1,finish:!r.dnf&&r.place>1&&r.place<=3,record:!!(r.pb&&r.pb.was)});hud();checkGoals();}
+    spEvent("hill",{win:!r.dnf&&r.place===1,finish:!r.dnf&&r.place>1&&r.place<=3,record:!!(r.pb&&r.pb.was),k,t:r.dnf?null:r.time});hud();checkGoals();}
   else toast(r.dnf?`DNF · ${sc}`:`${sc} · ${pl}`);
   if(!career())delete HILL_SB[Object.keys(SIM.HILL_CLASSES).indexOf(k)+1];   // a fresh mountain next run
   achCheck({type:"hill",r});
@@ -189,7 +189,7 @@ function hillSheet(res){const r=res.hill,b=hillRecs()[r.cls],L=r.lead;let pt=0,l
     <div><b>Driving</b>${r.auto?"Auto driver all the way":r.took!=null?`Auto to ${(r.took/1000).toFixed(1)} km, then you`:"You drove"}${r.handed?` to ${(r.handed/1000).toFixed(1)} km, then the auto driver took the rest`:""} · ${r.moments} moment${r.moments===1?"":"s"}${offs?" · "+offs:" · no offs"}</div>
     <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · on top the air is ${Math.round(100*(1-0.69))}% thinner, so the radiator sheds about ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less heat per degree</div>
     <div><b>Car</b>${hlEsc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}</div>
-    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${hlEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${hlEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}${f.rv?" · rival":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
 function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
