@@ -86,7 +86,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-shell]"
 function stripHw(c){const k=c.asp||"na",asp=k==="na"?"na":k==="roots"||k==="screw"?"blower":k==="centrifugal"?"centri":k==="twin_turbo"||k==="compound"?"twin":"turbo";
   const diesel=!!SIM.isDiesel(c);return{asp,ic:!!c.ic&&c.ic!=="none",als:!!c.als&&c.als!=="off",n2o:!!c.nitrous&&c.nitrous!=="none",diesel,style:carShell((S.env&&S.env.body)||"street",diesel),eng:stripEng(c)};}
 /* the engine layout the strip car's headers follow: how many pipes, which side(s) */
-function stripEng(c){try{const E=slEngOf(c);return{kind:E.kind,n:E.n,rotors:E.rotors};}catch(e){return null;}}
+function stripEng(c){try{const E=ENGINE_VIS.engOf(c);return{kind:E.kind,n:E.n,rotors:E.rotors};}catch(e){return null;}}
 /* a rival's layout read off its car name; anything else keeps the V8 pipes */
 function rivalEng(n){return/rx-?7|rx-?8|13b|rotary/.test(n)?{kind:"rotary",n:2,rotors:2}:/20b|cosmo/.test(n)?{kind:"rotary",n:3,rotors:3}:/wrx|sti|subaru|impreza/.test(n)?{kind:"flat",n:4}:/porsche|911/.test(n)?{kind:"flat",n:6}:/supra|skyline|gt-?r|bmw|2jz|rb26|inline.?6|cummins|ram 2500/.test(n)?{kind:"i",n:6}:/civic|crx|golf|integra|evo|honda|4.?cyl/.test(n)?{kind:"i",n:4}:/duramax|grand national|regal|v6/.test(n)?{kind:"v",n:6}:null;}
 /* the other lane's own car: shell from the car's name, paint and hardware seeded from the name (hw0: the test & tune mirror runs your engine) */
