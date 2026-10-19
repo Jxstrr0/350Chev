@@ -578,7 +578,7 @@ function rnQualHtml(N){const br=N.fmt==="bracket",ids=[0,1,2,3,4,5,6,7],q=N.stag
     return`<div class="${i===0?"you":""}"><i>${q>0&&!br?k+1:""}</i><span>${rnEsc(P.name)}<small>${rnEsc(P.car)}</small></span><b>${b?b.et.toFixed(3):q>0?"—":br&&rv?"dial "+rv.dial.toFixed(2):""}</b></div>`;}).join("")}</div>`;}
 function rnTuneRows(N){const lt=SIM.launchTech(S.cfg),two=lt.launchCtl!=="none",t0=N.t0,psi0=SIM.TYRES[N.lock.tyre].psi||16,psi=S.env.tyrePsi>0?S.env.tyrePsi:psi0,sh=S.env.shocks||"medium";
   const L=two?lt.twoStepRpm:Math.min(S.env.launchRpm,S.cfg.redline);
-  const row=(k,lbl,val,sub)=>`<div class="rnt"><span>${lbl}<small>${sub||""}</small></span><button class="nud" data-rn="tune" data-k="${k}" data-d="-1" aria-label="less">−</button><b>${val}</b><button class="nud" data-rn="tune" data-k="${k}" data-d="1" aria-label="more">+</button></div>`;
+  const row=(k,lbl,val,sub)=>{const m=rnTuneLim(N,k);return`<div class="rnt"><span>${lbl}<small>${sub||""}</small></span><button class="nud" data-rn="tune" data-k="${k}" data-d="-1" aria-label="less">−</button><b id="rnv-${k}">${val}</b><button class="nud" data-rn="tune" data-k="${k}" data-d="1" aria-label="more">+</button></div><input type="range" class="rnr" data-rnr="${k}" min="${m.lo}" max="${m.hi}" step="${m.step}" value="${m.v}" aria-label="${lbl}">`;};
   return row("launch",two?"Two-step rpm":"Launch rpm",L.toLocaleString(),two?"sets the hold on the line":"where you feed the clutch")
     +row("first","1st gear",(+S.env.first).toFixed(2)+":1",`was ${(+t0.first).toFixed(2)} · shorter = harder hit`)
     +row("final","Final drive",(+S.env.final).toFixed(2)+":1",`was ${(+t0.final).toFixed(2)}`)
@@ -703,15 +703,25 @@ function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive")
   if(n.verdict&&n.stage>=2)s+=` · <b style="color:${n.verdict.win?"var(--good)":"var(--crit)"}">${n.verdict.win?"WIN":"LOSS"}</b>`;
   L.insertAdjacentHTML("afterbegin",`<div class="peak rnhud" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">${s}</span></div>`);
   if(n.cheer&&st.phase==="shutdown"&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText("WON THE NIGHT","tap to go back to the car");}
+/* r15: one place for the between-rounds limits, shared by the − / + steps and the sliders. 1st and final are held to a band
+   around the night's starting setup (never snapping a value already outside it); psi to half..1.4× the tyre's baseline */
+function rnTuneLim(N,k){const lt=SIM.launchTech(S.cfg),t0=N.t0;
+  if(k==="launch")return lt.launchCtl!=="none"?{lo:2000,hi:S.cfg.redline,step:100,v:lt.twoStepRpm}:{lo:1500,hi:S.cfg.redline,step:100,v:Math.min(S.env.launchRpm,S.cfg.redline)};
+  if(k==="first"){const v=+S.env.first;return{lo:+Math.min(v,t0.first*0.8).toFixed(2),hi:+Math.max(v,t0.first*1.25).toFixed(2),step:0.05,v};}
+  if(k==="final"){const v=+S.env.final;return{lo:+Math.min(v,t0.final*0.85).toFixed(2),hi:+Math.max(v,t0.final*1.2).toFixed(2),step:0.05,v};}
+  const p0=SIM.TYRES[N.lock.tyre].psi||16;return{lo:+(p0*0.5).toFixed(1),hi:+(p0*1.4).toFixed(1),step:0.5,v:S.env.tyrePsi>0?S.env.tyrePsi:p0};}
+function rnTuneSet(k,v,m){v=Math.min(m.hi,Math.max(m.lo,v));
+  if(k==="launch"){v=Math.round(v/100)*100;if(SIM.launchTech(S.cfg).launchCtl!=="none")S.cfg.twoStepRpm=v;else S.env.launchRpm=v;}
+  else if(k==="psi")S.env.tyrePsi=+v.toFixed(1);else S.env[k]=+v.toFixed(2);}
+$("envBox").addEventListener("input",e=>{const r=e.target,k=r.dataset&&r.dataset.rnr,N=rnCur();if(!k||!N||N.done||testing)return;
+  rnTuneSet(k,parseFloat(r.value),rnTuneLim(N,k));const m=rnTuneLim(N,k),o=$("rnv-"+k);
+  if(o)o.textContent=k==="launch"?m.v.toLocaleString():k==="psi"?m.v.toFixed(1)+" psi":m.v.toFixed(2)+":1";});
+$("envBox").addEventListener("change",e=>{if(!(e.target.dataset&&e.target.dataset.rnr))return;save();const sc=$("panel").scrollTop;renderEnv();$("panel").scrollTop=sc;});
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rn]");if(!b)return;const a=b.dataset.rn,N=rnCur();
   if(a==="done"){rnSetN(null);save();renderTest();return;}
   if(a==="leave"){rnLeave();return;}
   if(!N||N.done||testing)return;
-  if(a==="tune"){const k=b.dataset.k,d=+b.dataset.d,lt=SIM.launchTech(S.cfg),t0=N.t0,cl=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
-    if(k==="launch"){if(lt.launchCtl!=="none")S.cfg.twoStepRpm=cl(lt.twoStepRpm+100*d,2000,S.cfg.redline);else S.env.launchRpm=cl(Math.min(S.env.launchRpm,S.cfg.redline)+100*d,1500,S.cfg.redline);}
-    else if(k==="first")S.env.first=+cl(+S.env.first+0.05*d,Math.min(+S.env.first,t0.first*0.8),Math.max(+S.env.first,t0.first*1.25)).toFixed(2);
-    else if(k==="final")S.env.final=+cl(+S.env.final+0.05*d,Math.min(+S.env.final,t0.final*0.85),Math.max(+S.env.final,t0.final*1.2)).toFixed(2);
-    else if(k==="psi"){const p0=SIM.TYRES[N.lock.tyre].psi||16;S.env.tyrePsi=+cl((S.env.tyrePsi>0?S.env.tyrePsi:p0)+0.5*d,+(p0*0.5).toFixed(1),+(p0*1.4).toFixed(1)).toFixed(1);}
+  if(a==="tune"){const k=b.dataset.k,m=rnTuneLim(N,k);rnTuneSet(k,m.v+m.step*+b.dataset.d,m);
     buzz(3);}
   else if(a==="shock"){S.env.shocks=b.dataset.k;}
   else if(a==="dial"){N.dial=+(N.dial+0.01*+b.dataset.d).toFixed(2);rnSetN(N);}
