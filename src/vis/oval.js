@@ -1,5 +1,5 @@
 /* ===========================================================================
-   DIRT OVAL SCENE: a 3/8-mile banked clay track the view cuts to while ENGINE_VIS.setOval({on, track, cars:[...], ...}) is fed
+   OVAL SCENE: a banked track the view cuts to (the 3/8-mile clay, or the paved half-mile: G.surf "clay" | "asphalt" picks the surface, the dust and the painted lines) while ENGINE_VIS.setOval({on, track, cars:[...], ...}) is fed
    every frame. Units metres. The track is a stadium: two straights joined by two 180° left-hand turns, driven
    anticlockwise seen from above. Distance sp runs along the centre line from the start of the front straight
    (x = -ls/2, z = +R), lateral offset d is + toward the infield. The turns bank up toward the wall: height above the
@@ -26,7 +26,7 @@ function ovalPt(sp, d, out){
 }
 /* the clay, the grass, the groove: everything from world x,z and the stadium's own distance field */
 var OVAL_GLSL=[
-  "uniform float uR; uniform float uLs; uniform float uW; uniform float uDry;",
+  "uniform float uR; uniform float uLs; uniform float uW; uniform float uDry; uniform float uAsph;",
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float dc=length(p-cameraPosition.xz); float fine=1.0-smoothstep(18.0,110.0,dc), mid=1.0-smoothstep(100.0,900.0,dc);",
   "  float rho=uR-length(vec2(max(abs(p.x)-uLs*0.5,0.0),p.y));",
@@ -44,6 +44,12 @@ var OVAL_GLSL=[
   "  dm*=(1.0+0.09*(ln-0.5)*groove*aaf(0.2))*(1.0-0.12*sm*(1.0-0.5*groove))*(1.0+0.16*mb); dh+=0.011*ln*groove*aaf(0.2)-0.01*sm+0.012*mb;",
   "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0;",
   "#endif",
+  /* asphalt instead of clay: dark grey with a rubbered racing line, tar snakes, white edge lines inside and out, a faint lighter apron */
+  "  if(uAsph>0.5){ vec3 asp=vec3(0.092,0.095,0.102)*(0.8+0.36*sn(p*0.31))+vec3(0.02)*(sn(p*6.0)-0.5)*fine;",
+  "    asp=mix(asp,asp*0.7,groove*0.75); asp=mix(asp,vec3(0.15,0.15,0.16),smoothstep(0.62,0.8,sn(p*0.9+4.0))*0.35*(1.0-groove));",
+  "    float eIn=1.0-smoothstep(0.12,0.3,abs(rho-(uW*0.5-0.9))), eOut=1.0-smoothstep(0.12,0.3,abs(rho+(uW*0.5-0.9)));",
+  "    asp=mix(asp,vec3(0.72,0.72,0.69),0.85*max(eIn,eOut));",
+  "    clay=asp; }",
   "  vec3 apron=vec3(0.36,0.33,0.28)*(0.85+0.3*sn(p*0.6)); float inner=smoothstep(uW*0.5,uW*0.5+0.4,rho)*(1.0-smoothstep(uW*0.5+0.8,uW*0.5+1.2,rho));",
   "  vec3 c=mix(grass,clay,onT); c=mix(c,apron*0.6,inner*0.0);",
   "  float lot=smoothstep(uW*0.5+13.0,uW*0.5+14.0,-rho)*(1.0-smoothstep(uW*0.5+60.0,uW*0.5+61.0,-rho));",
@@ -58,7 +64,7 @@ var OVAL_GLSL=[
   "#if STRIP_TIER>=1",
   "  gH*=fair;",
   "#endif",
-  "  rough=mix(0.97,0.82,onT); return c; }"].join("\n");
+  "  rough=mix(0.97,mix(0.82,0.9,uAsph),onT); return c; }"].join("\n");
 function ovalAtlas(){
   var c=newCanvas(1024,128), x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif", i, labels=["PRAIRIE ENGINE WORKS","COULEE FUELS","NORTHWIND TYRE","CANOLA CO-OP","BIG SKY SALVAGE","ELEVATOR FEEDS"], cols=[["#d97757","#141413"],["#141413","#d97757"],["#f2c22c","#131416"],["#1d4787","#f4efe2"],["#b7261d","#f4efe2"],["#2c6b3a","#f4efe2"]];
   for(i=0;i<6;i++){ var bx=i*170; x.fillStyle=cols[i][0]; x.fillRect(bx,0,168,128); x.fillStyle=cols[i][1]; x.font="700 26px "+F; x.textAlign="center"; x.textBaseline="middle";
@@ -92,7 +98,7 @@ function buildOvalScene(G){
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,60,40); S3.add(flood); S3.add(flood.target); OVAL.flood=flood;
   var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); OVAL.sky=sky;
   S3.fog=new THREE.Fog(0xffffff,150,2700); OVAL.fog=S3.fog;
-  var U={ uR:{value:R}, uLs:{value:ls}, uW:{value:W}, uDry:{value:0} };
+  var U={ uR:{value:R}, uLs:{value:ls}, uW:{value:W}, uDry:{value:0}, uAsph:{value:G.surf==="asphalt"?1:0} };
   var gm=stripSurfMat(OVAL_GLSL, null, U); gm.customProgramCacheKey=function(){ return "oval_ground"; }; gm.userData.U=U; M.ground=gm;
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000), gm); ground.rotation.x=-PI/2; ground.position.y=-0.03; ground.receiveShadow=true; S3.add(ground);
   /* the banked ribbon: inner edge low, outer high; one row of samples every 2.5 m, 13 across and a sloped berm out to the ground */
@@ -295,8 +301,8 @@ function ovalSetFlag(kind){
 }
 /* o: {on, track:{R, ls, w, bank, len}, cars:[{s (total m, + along), v, color, me, num, n, groove, gone, slide (0..1), thr}], pre, done, flag:"green"|"white"|"checker"|"yellow", cam, night, lastLap, toFlag, order:[{num,n,me}], boardHead, cheer, dt} */
 function ovalUpdate(o, dt){
-  var T=o.track||{}, G={R:+T.R||52, ls:+T.ls||136.6, w:+T.w||18, bank:+T.bank||0.384}; G.L=2*G.ls+2*Math.PI*G.R;
-  var gk=[G.R,G.ls,G.w,G.bank,GFX].join("|");
+  var T=o.track||{}, G={R:+T.R||52, ls:+T.ls||136.6, w:+T.w||18, bank:+T.bank||0.384, surf:T.surf==="asphalt"?"asphalt":"clay"}; G.L=2*G.ls+2*Math.PI*G.R;
+  var gk=[G.R,G.ls,G.w,G.bank,G.surf,GFX].join("|");
   if(!OVAL.built||OVAL.gkey!==gk){ if(OVAL.scene){ OVAL.list.forEach(function(c){ if(c.parent) c.parent.remove(c); }); disposeTree(OVAL.scene); OVAL.composer=null; } OVAL.gkey=gk; buildOvalScene(G); }
   var S3=OVAL.scene; OVAL.t+=dt;
   if(OVAL.night!==!!o.night) ovalSetNight(!!o.night);
@@ -316,11 +322,11 @@ function ovalUpdate(o, dt){
     var roll=clamp(-(inT?1:0)*0.012-slide*0.02,-0.05,0.05); U.roll+=(roll-U.roll)*Math.min(1,dt*5); U.bodyGroup.rotation.x+=U.roll;
     car.updateMatrixWorld(true);
     /* dust off the rear tyres: more in a slide and on the throttle, thin on Lite */
-    var v=Math.max(0,+c.v||0), rate=(v>8?(0.6+3.4*slide+1.0*(+c.thr||0)*(+c.spin||0))*(inT?1.0:0.7)*dt*(v/30)*(GFX==="lite"?18:34):0);
+    var v=Math.max(0,+c.v||0), asph=G.surf==="asphalt", rate=(v>8?(asph?0.04+2.6*slide+1.2*(+c.thr||0)*(+c.spin||0):0.6+3.4*slide+1.0*(+c.thr||0)*(+c.spin||0))*(inT?1.0:0.7)*dt*(v/30)*(GFX==="lite"?18:34):0);
     if(OVAL.fx && rate>0){ var fx=Math.cos(yaw), fz=-Math.sin(yaw); rate*=(c.me?1.1:0.8);
       while(rate>0){ if(rate<1 && Math.random()>rate) break; rate-=1;
         var side=Math.random()<0.5?-1:1, ox=-fx*2.3+(-fz)*side*0.8*-1, oz=-fz*2.3+(fx)*side*0.8*-1;
-        OVAL.fx.emit(car.position.x+ox, car.position.y+0.3, car.position.z+oz, (Math.random()-0.5)*1.4-fx*v*0.05, 0.5+Math.random()*0.7, (Math.random()-0.5)*1.4-fz*v*0.05, 1.7+Math.random()*0.9, 0.7, 3.6+slide*2.4, 0.56, 0.46, 0.35, 0.26+0.12*slide, {drag:0.55, buoy:0.12}); } }
+        OVAL.fx.emit(car.position.x+ox, car.position.y+0.3, car.position.z+oz, (Math.random()-0.5)*1.4-fx*v*0.05, 0.5+Math.random()*0.7, (Math.random()-0.5)*1.4-fz*v*0.05, 1.7+Math.random()*0.9, 0.7, 3.6+slide*2.4, asph?0.8:0.56, asph?0.8:0.46, asph?0.82:0.35, asph?0.2+0.1*slide:0.26+0.12*slide, {drag:0.55, buoy:0.12}); } }
     if(c.me) V=car;
   }
   if(!V) V=OVAL.list[0];
