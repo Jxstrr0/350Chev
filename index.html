@@ -12692,10 +12692,17 @@ function fnTurbine(u,v,o){          /* clean sand-cast turbine housing: even gre
   o[5]=0.6;
 }
 /* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+/* the maker's print along a belt: a short run of pale "lettering" once per texture repeat, so a moving belt reads as moving */
+function beltPrint(u,v,v0,v1){
+  var f=u-Math.floor(u); if(f>0.42||v<v0||v>v1) return 0;
+  var a=(f/0.42)*34, ch=a-Math.floor(a);                /* 34 glyph cells */
+  if(Math.floor(a)%9===8||ch>0.72) return 0;            /* word gaps and letter spacing */
+  var row=(v-v0)/(v1-v0), h=Math.sin(Math.floor(a)*12.9898)*43758.5453; h-=Math.floor(h);
+  return (row>0.18&&row<0.82&&(ch<0.2||row<0.3||row>0.7||h<0.35&&Math.abs(row-0.5)<0.1)) ? 1 : 0;}
 function fnRubberBelt0(u,v,o){       /* ribbed serpentine belt */
   var rib=Math.abs(Math.sin(v*PI*26));
   var n=fbm(u,v,2,60,1001);
-  var l=26+rib*10+(n-0.5)*8;
+  var l=26+rib*10+(n-0.5)*8+beltPrint(u,v,0.36,0.64)*70;
   o[0]=l; o[1]=l; o[2]=l*1.05;
   o[3]=rib*0.8+n*0.2;
   o[4]=0.86-rib*0.10; o[5]=0.02;
@@ -12707,7 +12714,7 @@ function fnRubberBelt(u,v,o,i,j){       /* ribbed serpentine belt: dusty worn ri
   var n=fbm(u,v,2,60,1001), dust=fbm(u,v,3,8,1009);
   var ck=1-smoothstep(0.0,0.04,Math.abs(vnoiseA(u,v,52,4,1007)-0.5));
   var worn=smoothstep(0.7,0.95,rib)*dust;
-  var l=26+rib*10+(n-0.5)*8+worn*9+dust*3-ck*5;
+  var l=26+rib*10+(n-0.5)*8+worn*9+dust*3-ck*5+beltPrint(u,v,0.36,0.64)*70;
   o[0]=l; o[1]=l; o[2]=l*1.05;
   o[3]=rib*0.8+n*0.2-ck*0.15;
   o[4]=0.86-rib*0.10-worn*0.06; o[5]=0.02;
@@ -13140,7 +13147,7 @@ function fnZinc(u,v,o){             /* zinc-plated fastener: faint yellow-blue p
 function fnBeltFlat(u,v,o){         /* flat belt back: rubber over a fabric weave (u along the belt, uv scaled to length) */
   var wv=Math.abs(Math.sin(u*PI*90))*Math.abs(Math.sin(v*PI*14));
   var n=fbm(u,v,2,40,2503);
-  var l=24+wv*9+(n-0.5)*6;
+  var l=24+wv*9+(n-0.5)*6+beltPrint(u,v,0.1,0.4)*80;   /* the back face is v 0..0.5 (flatBeltGeo) */
   o[0]=l; o[1]=l; o[2]=l*1.05;
   o[3]=wv*0.7+n*0.3; o[4]=0.74-wv*0.08; o[5]=0.02;
 }
@@ -16802,6 +16809,7 @@ function beltMesh(x, pl, bt, rad, o){
   var pts=beltLoop(x, ccwOrder(pl), bt);
   var curve=new THREE.CatmullRomCurve3(pts, true, "centripetal");
   var g=new THREE.TubeGeometry(curve, Math.max(96, pts.length*2), rad, 6, true);
+  beltUvU(g.attributes.uv, curve.getLength(), pl[0].r+bt);
   if(CUR_B){ CUR_B.addW("belt", g); return null; }
   var m=new THREE.Mesh(g, MAT.belt);
   m.castShadow=true; return m;
@@ -16819,25 +16827,35 @@ function flatBeltGeo(x, pl, o){
   if(ribs){ for(i=0;i<ribs;i++){ var a0=w/2-(i+0.5)*w/ribs; prof.push([a0,-t*0.5-rd],[a0-w/ribs*0.5,-t*0.5]); } }
   prof.push([-w/2,-t*0.5]);
   var M=prof.length, pos=[], uv=[], idx=[], tan=new THREE.Vector3(), nrm=new THREE.Vector3(), X=new THREE.Vector3(1,0,0);
-  for(j=0;j<N;j++){
-    var u=j/N, c=curve.getPointAt(u); curve.getTangentAt(u, tan);
+  for(j=0;j<=N;j++){                                    /* N+1 rings: the last sits on the first, so u runs 0..1 with no seam */
+    var u=j/N, c=curve.getPointAt(u%1); curve.getTangentAt(u, tan);
     nrm.set(0, -tan.z, tan.y).normalize();               /* outward, in the belt plane (loop runs ccw in z,y) */
-    var tooth = cog ? ((u*len/cog)%1 < 0.5 ? 1 : 0) : 0;
+    var tooth = cog ? (((u%1)*len/cog)%1 < 0.5 ? 1 : 0) : 0;
     for(i=0;i<M;i++){
       var d=prof[i][1]; if(cog && d<0) d-=tooth*t*0.55;
       pos.push(c.x+prof[i][0], c.y+nrm.y*d, c.z+nrm.z*d);
-      uv.push(u*len*3.0, i/(M-1));
+      uv.push(u, i===0?0:0.5+0.5*(i-1)/(M-2));   /* the back face gets v 0..0.5 (where the print runs), the ribs the rest */
     }
   }
   for(j=0;j<N;j++) for(i=0;i<M;i++){
-    var a=j*M+i, bb=((j+1)%N)*M+i, c2=((j+1)%N)*M+(i+1)%M, d2=j*M+(i+1)%M;
+    var a=j*M+i, bb=(j+1)*M+i, c2=(j+1)*M+(i+1)%M, d2=j*M+(i+1)%M;
     idx.push(a,d2,bb, bb,d2,c2);
   }
   var g=new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv,2));
   g.setIndex(idx); g.computeVertexNormals();
+  beltUvU(g.attributes.uv, len, pl[0].r+t*0.5);
   return g;
+}
+/* belt texture u counts crank-pulley angle (BELT_UV per radian at the pulley it is cut for, pl[0], the crank in every caller),
+   rounded to whole repeats so the loop has no seam: scrolling the map by BELT_UV x crank angle (loop.js) then moves every belt
+   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. */
+var BELT_UV = 1.5;
+function beltUvU(a, len, R0){
+  var rep=Math.max(1, Math.round(len/R0*BELT_UV)), i, n=a.count;
+  for(i=0;i<n;i++) a.setX(i, a.getX(i)*rep);
+  a.needsUpdate=true;
 }
 /* a spinning pulley on the X axis: plain disc with a flange lip each side */
 function pulleyMesh(r, w, mat, o){
@@ -18331,6 +18349,10 @@ function tick(dt, t){
   for(i=0;i<anim.spin.length;i++){
     var sp=anim.spin[i]; sp.o.rotation.x += spin*sp.k*0.16;
   }
+  /* belts: one texture scroll per belt material, in step with the crank (their uv counts crank angle, see beltUvU) */
+  if(spin){ BELT_OFF=(BELT_OFF+spin*0.16*BELT_UV)%1;
+    if(MAT.belt) MAT.belt.map.offset.x=BELT_OFF;               /* MATHI.belt is a clone: same texture, so it scrolls too */
+    if(MATHI.beltFlat) MATHI.beltFlat.map.offset.x=BELT_OFF; }
   for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
   if(anim.internals){
     var IN=anim.internals; IN.theta += spin*0.16; IN.crank.rotation.x = IN.theta;
@@ -18465,6 +18487,7 @@ function tick(dt, t){
   }
 }
 var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
+var BELT_OFF=0;
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
@@ -28013,7 +28036,10 @@ const ENGINE_VIS = {
              cam:camera.position.toArray().map(function(v){return +v.toFixed(2);}),
              aspect:+camera.aspect.toFixed(3),
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
-                if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })() };
+                if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
+             belt:(function(){ var n=0, a=MAT.belt&&MAT.belt.map, b=MATHI.beltFlat&&MATHI.beltFlat.map;
+                engineRoot.traverse(function(m){ var t=m.material&&m.material.map; if(t&&(t===a||t===b)) n++; });
+                return { off:+BELT_OFF.toFixed(3), meshes:n }; })() };
   },
   start: function(){ if(!running){ running=true; clock.getDelta(); loop(); } },
   stop:  function(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=0; },
@@ -29669,7 +29695,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.12.0";
+const VERSION="1.76.13.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
