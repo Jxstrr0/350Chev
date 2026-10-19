@@ -561,10 +561,17 @@ function fnTurbine(u,v,o){          /* clean sand-cast turbine housing: even gre
   o[5]=0.6;
 }
 /* base set (Lite, and the first paint on Full / Ultra): the original, cheap painter */
+/* the maker's print along a belt: a short run of pale "lettering" once per texture repeat, so a moving belt reads as moving */
+function beltPrint(u,v,v0,v1){
+  var f=u-Math.floor(u); if(f>0.42||v<v0||v>v1) return 0;
+  var a=(f/0.42)*34, ch=a-Math.floor(a);                /* 34 glyph cells */
+  if(Math.floor(a)%9===8||ch>0.72) return 0;            /* word gaps and letter spacing */
+  var row=(v-v0)/(v1-v0), h=Math.sin(Math.floor(a)*12.9898)*43758.5453; h-=Math.floor(h);
+  return (row>0.18&&row<0.82&&(ch<0.2||row<0.3||row>0.7||h<0.35&&Math.abs(row-0.5)<0.1)) ? 1 : 0;}
 function fnRubberBelt0(u,v,o){       /* ribbed serpentine belt */
   var rib=Math.abs(Math.sin(v*PI*26));
   var n=fbm(u,v,2,60,1001);
-  var l=26+rib*10+(n-0.5)*8;
+  var l=26+rib*10+(n-0.5)*8+beltPrint(u,v,0.36,0.64)*70;
   o[0]=l; o[1]=l; o[2]=l*1.05;
   o[3]=rib*0.8+n*0.2;
   o[4]=0.86-rib*0.10; o[5]=0.02;
@@ -576,7 +583,7 @@ function fnRubberBelt(u,v,o,i,j){       /* ribbed serpentine belt: dusty worn ri
   var n=fbm(u,v,2,60,1001), dust=fbm(u,v,3,8,1009);
   var ck=1-smoothstep(0.0,0.04,Math.abs(vnoiseA(u,v,52,4,1007)-0.5));
   var worn=smoothstep(0.7,0.95,rib)*dust;
-  var l=26+rib*10+(n-0.5)*8+worn*9+dust*3-ck*5;
+  var l=26+rib*10+(n-0.5)*8+worn*9+dust*3-ck*5+beltPrint(u,v,0.36,0.64)*70;
   o[0]=l; o[1]=l; o[2]=l*1.05;
   o[3]=rib*0.8+n*0.2-ck*0.15;
   o[4]=0.86-rib*0.10-worn*0.06; o[5]=0.02;
@@ -1009,7 +1016,7 @@ function fnZinc(u,v,o){             /* zinc-plated fastener: faint yellow-blue p
 function fnBeltFlat(u,v,o){         /* flat belt back: rubber over a fabric weave (u along the belt, uv scaled to length) */
   var wv=Math.abs(Math.sin(u*PI*90))*Math.abs(Math.sin(v*PI*14));
   var n=fbm(u,v,2,40,2503);
-  var l=24+wv*9+(n-0.5)*6;
+  var l=24+wv*9+(n-0.5)*6+beltPrint(u,v,0.1,0.4)*80;   /* the back face is v 0..0.5 (flatBeltGeo) */
   o[0]=l; o[1]=l; o[2]=l*1.05;
   o[3]=wv*0.7+n*0.3; o[4]=0.74-wv*0.08; o[5]=0.02;
 }
