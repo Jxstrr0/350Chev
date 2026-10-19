@@ -241,7 +241,7 @@ function ovalFinish(){
     if(failed){C().cert=null;C().rep=Math.max(0,C().rep-(stage==="feature"?2:1));logEvent(`${ovalLabel(tk)} ${stage}: ${C0.n} — ${r.broke==="head_lift"?"cooked it":"engine failed"} on lap ${meLaps+1}`,"bad");toast(`OUT · ${ovalFailWord(r.broke)}`);}
     else{const tab=stage==="heat"?OVAL_HPURSE:OVAL_FPURSE,purse=Math.round((tab[place-1]||0)*(OVAL_PAY[C0.tier]||1)/10)*10,rep=stage==="heat"?(place===1?1:0):((OVAL_FREP[place-1]||0)+1);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
       logEvent(`${ovalLabel(tk)} ${stage}: ${C0.n} — ${ordN(place)} of ${rows.length}${purse?", purse "+fmt$(purse):""}`,place<=3?"good":"");toast(`${stage==="heat"?"Heat":"Feature"} · ${ordN(place)}${purse?" · "+fmt$(purse):""}`);}
-    spEvent("oval",{win:!failed&&stage==="feature"&&place===1,finish:!failed&&stage==="feature"&&place>1&&place<=3});hud();checkGoals();}
+    spEvent("oval",{win:!failed&&stage==="feature"&&place===1,finish:!failed&&stage==="feature"&&place>1&&place<=3,heat:stage==="heat"});hud();checkGoals();}
   else toast(failed?`OUT · ${ovalFailWord(r.broke)}`:`${stage==="heat"?"Heat":"Feature"} · ${pl}`);
   // the night moves on
     if(stage==="heat"){n.heat={place,of:rows.length,dnf:failed,time:meT,best:r.best,purse:r.purse||0};
