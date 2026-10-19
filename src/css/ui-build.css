@@ -31,10 +31,8 @@
 html.desk .prow:hover{border-color:var(--steel);background:var(--panel2)}
 .swhint{display:flex;align-items:flex-start;gap:6px}
 .swhint>span{flex:1 1 auto;min-width:0}
-/* accordion headers in the Build tab: title + chevron on one line, the current choice under it (wraps, never cut off) */
-#tab-build .acch{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t chev" "sum sum";gap:2px 10px;padding:10px 12px}
-#tab-build .acch .t{grid-area:t;white-space:normal}
+/* accordion headers in the Build tab: one line each, title left, the current choice right-aligned and ellipsised, chevron */
+#tab-build .acch{grid-template-columns:minmax(0,max-content) minmax(0,1fr) auto;grid-template-areas:"t sum chev";gap:10px;padding:8px 12px;min-height:46px}
+#tab-build .acch .t{grid-area:t;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#tab-build .acch .sum{grid-area:sum}
 #tab-build .acch .chev{grid-area:chev}
-#tab-build .acch .sum{grid-area:sum;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.35}
-#tab-build .acch .sum:empty{display:none}
-#tab-build .acc.open .acch .sum{display:none}

@@ -63,7 +63,6 @@ function dlScrub(e){const cv=e.target.closest&&e.target.closest(".dlcv");if(!cv|
 document.addEventListener("pointerdown",e=>{if(e.target.closest&&e.target.closest(".dlcv")){try{e.target.setPointerCapture(e.pointerId);}catch(_){}dlScrub(e);}});document.addEventListener("pointermove",dlScrub);
 addEventListener("resize",dlSched);new MutationObserver(dlSched).observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});
 function dlMount(){for(const id in DLM)if(!$(id+"Cv"))delete DLM[id];dlAll();}
-function dlAnalysis(){const sec=$("dlSec");if(!sec)return;const l=S.last,ok=l&&l.res&&l.res.drag&&dlPrep(l.res.drag,l.res);sec.style.display=ok?"":"none";if(!ok){delete DLM.dlA;return;}$("dlBox").innerHTML=dlHtml("dlA",l.res.drag,l.res);requestAnimationFrame(dlAll);}
 /* ---- pull datalog: the same scrub cursor on the pull sheet's chart, plus rpm and EGT ---- */
 const PL={rpm:1,egt:1,cur:null};
 function pullRedraw(){const l=lastForChart();if(S.env.testType==="pull_sled"&&l&&l.pull)drawPullTrace(l.pull);}
@@ -437,9 +436,6 @@ function tdFail(L){   // {id, test} for a run that broke, else null
 function tdRunName(L){const tt=L.env&&L.env.testType;return tt==="bog"?"mud bog run":tt==="boat"?"boat pass":tt==="race24"?"24-hour race":tt==="drag"?"strip pass":tt==="pull_sled"?"sled pull":tt==="endurance"?"endurance run":tt==="overrev"?"over-rev test":"dyno pull";}
 function tdVerdict(res,env){const f=tdFail({res,env});const v=$("verdict").firstElementChild;if(!f||!v)return;const box=v.firstElementChild||v;
   box.insertAdjacentHTML("beforeend",`<div class="tdgo"><button class="btn sm danger" data-td="1">Teardown — see what broke</button></div>`);}
-function tdAnaRender(){const el=$("tdAna");if(!el)return;const f=tdFail(S.last);if(!f){el.hidden=true;el.innerHTML="";return;}
-  const tx=ENGINE_VIS.teardownText?ENGINE_VIS.teardownText(f.id):null;el.hidden=false;
-  el.innerHTML=`<h2>Last failure <span class="cnt">${tdRunName(S.last)}</span></h2><div class="tdrow"><p><b style="color:var(--crit)">${tx?tx.part:"Broken part"}</b> — ${tx?tx.what:""}.</p><button class="btn sm danger" data-td="1">Teardown</button></div>`;}
 let tdIsOpen=false;
 function tdShort(x,n){x=String(x||"").replace(/<[^>]*>/g,"");const m=x.match(/^.*?[.!?](\s|$)/);x=(m?m[0]:x).trim();return x.length>n?x.slice(0,n-1).trim()+"…":x;}
 function tdOpen(){const L=S.last,f=tdFail(L);if(!f||testing||!ENGINE_VIS.teardown)return;
@@ -501,7 +497,7 @@ function renderAnalysis(){
   {const tf=$("teleFold");if(tf&&tf.open!==!!S.anaTele){teleSilent=true;tf.open=!!S.anaTele;setTimeout(()=>{teleSilent=false;},60);}}
   $("tele").classList.toggle("rot",!!(r.rotary||r.twoStroke));$("tele").innerHTML=rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
-  renderRecords();renderAch();dlAnalysis();tdAnaRender();
+  renderRecords();renderAch();
 }
 function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
