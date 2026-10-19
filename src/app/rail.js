@@ -15,9 +15,6 @@ function railSched(){if(!RL||RL.raf)return;RL.raf=requestAnimationFrame(()=>{RL.
 function railOpen(on){if(!RL)return;on=on==null?!RL.open:!!on;if(on&&$("app").classList.contains("rkrun"))on=false;RL.open=on;$("rail").classList.toggle("open",on);$("rlGrab").setAttribute("aria-expanded",String(on));$("rlGrab").setAttribute("aria-label",on?"Hide results":"Show results");railSched();}
 const RL_TN={pull:"dyno pull",endurance:"endurance",overrev:"over-rev"};
 function rlName(t){return RL_TN[t]||(EV_NAME[t]||t).toLowerCase();}
-/* the worst rows first, as the stress report sorts them */
-function rlWorst(tests,n){const o={crit:0,warn:1,good:2};return (tests||[]).slice().sort((a,b)=>o[a.status]-o[b.status]||b.util-a.util).slice(0,n);}
-function rlStress(tests){return rlWorst(tests,3).map(t=>`<div class="st ${t.status}"><div class="n">${t.name}<small>${t.sub||""}</small></div><div class="bar"><i style="width:${Math.min(100,t.util/1.25*100)}%"></i></div><div class="p">${Math.round(t.util*100)}%</div></div>`).join("");}
 /* the verdict headline: Test's own when it rendered this run, otherwise the same reading in brief */
 function rlVerdict(L){const v=$("verdict").querySelector(".verdict"),cur=S.last&&L===S.last&&L.env.testType===S.env.testType;
   if(v&&cur){const k=["pass","fail","marg"].find(c=>v.classList.contains(c))||"marg",b=v.querySelector(".big");const t=b?(b.firstChild&&b.firstChild.nodeType===3?b.firstChild.nodeValue:b.textContent):"";const p=v.querySelector("p");return{k,t:t.trim()||"RESULT",s:p?p.textContent:""};}
@@ -62,7 +59,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   run.innerHTML=testing?"Running…":`<span class="rlrl">Run</span><span class="rlrt"> · ${rlName(rt).replace(/^./,c=>c.toUpperCase())}${cost?" · "+fmt$(cost):""}</span>`;
   run.title=`Same run as Test: ${rlName(rt)}`;
   $("rlDyno").hidden=!ev||testing||curTab!=="events";
-  $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div><div class="rlst">${rlStress(res.tests)}</div>`;
+  $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div>`;
   $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();pwUpd();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
   toastPlace();
