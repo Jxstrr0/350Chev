@@ -139,7 +139,7 @@
     VEHICLES: VEHICLES, VEH_GROUPS: VEH_GROUPS, SWAP_FIX: SWAP_FIX, engineDims: engineDims, swapFit: swapFit, swapFixSet: swapFixSet, swapDragVeh: swapDragVeh, swapLsrBody: swapLsrBody,
     hillCourse: hillCourse, hillPrep: hillPrep, hillCar: hillCar, hillNew: hillNew, hillPass: hillPass, hillCalls: hillCalls, hillPlan: hillPlan, hillAiPrep: hillAiPrep, hillZ: hillZ,
     HILL_CLASSES: HILL_CLASSES, HILL_TYRES: HILL_TYRES, HILL_AERO: HILL_AERO, HILL_SECTIONS: HILL_SECTIONS, HILL_ALTS: HILL_ALTS, HILL_TREE: HILL_TREE, HILL_ALT0: HILL_ALT0, HILL_ALT1: HILL_ALT1,
-    ovalPrep: ovalPrep, ovalNew: ovalNew, ovalPass: ovalPass, ovalNight: ovalNight, ovalAiRes: ovalAiRes, ovalSetup: ovalSetup, ovalVlim: ovalVlim, ovalCi: ovalCi, OVAL_CLASSES: OVAL_CLASSES, OVAL_TYRES: OVAL_TYRES, OVAL_GRILLES: OVAL_GRILLES, OVAL: { R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, w: OVAL_W },
+    ovalPrep: ovalPrep, ovalNew: ovalNew, ovalPass: ovalPass, ovalNight: ovalNight, ovalAiRes: ovalAiRes, ovalSetup: ovalSetup, ovalVlim: ovalVlim, ovalCi: ovalCi, OVAL_CLASSES: OVAL_CLASSES, OVAL_TYRES: OVAL_TYRES, OVAL_GRILLES: OVAL_GRILLES, OVAL: { R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, w: OVAL_W }, OVAL_TRACKS: OVAL_TRACKS, ovalTrack: ovalTrack,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel,
     exhaustNoise: exhaustNoise, exhaustInfo: exhaustInfo, exhSysOf: exhSysOf, exhParts: exhParts
   };
