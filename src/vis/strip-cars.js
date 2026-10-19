@@ -504,9 +504,10 @@ function sc_foil(chord, thick, span, b){
 /* r6: bolt-on wheelie bars for a shell that has none (drag setup). A handful of rods + two skid wheels on the body frame;
    U.wbar makes the pitch code treat it like a bars body (lower pitch stop, rides the bars). Same look as the factory bars above. */
 function stripAddBars(car){
-  var U=car.userData, me=U.meta, inner=U.bodyGroup.children[0], M=sc_mats(), br=0.065, maxP=deg(5);
+  var U=car.userData, me=U.meta, inner=U.bodyGroup.children[0], M=sc_mats(), br=0.08, maxP=deg(5);
   var bb=new THREE.Box3().setFromObject(car), cs=U.chute; if(cs&&cs.parent===car) bb.expandByObject(cs);
-  var bx0=me.xr-0.05, bx1=Math.min(bb.min.x-0.12, me.xr-1.15), rr=me.rr, dxB=bx1-me.xr, cy=(br-rr-dxB*Math.sin(maxP))/Math.cos(maxP)+rr;
+  /* r14: well clear of the bumper: a street or gasser shell's long rear overhang hid all but the last 12 cm */
+  var bx0=me.xr-0.05, bx1=Math.min(bb.min.x-0.45, me.xr-1.5), rr=me.rr, dxB=bx1-me.xr, cy=(br-rr-dxB*Math.sin(maxP))/Math.cos(maxP)+rr;
   var g=new THREE.Group(); g.name="sc_wbar";
   function add(geo, mat, m){ var me2=new THREE.Mesh(geo, mat); me2.applyMatrix4(m); me2.matrixAutoUpdate=false; me2.castShadow=true; g.add(me2); }
   [-1,1].forEach(function(sd){
@@ -514,8 +515,11 @@ function stripAddBars(car){
     add(sc_cyl(0.022,8), M.tube, sc_rodM(a,b));
     add(sc_cyl(0.014,6), M.tube, sc_rodM(new THREE.Vector3(bx0, 0.46, sd*0.36), b));
     add(new THREE.CylinderGeometry(br,br,0.045,SC.lite?8:14), M.rubber, sc_M(bx1, cy, sd*0.3, PI/2,0,0));
+    add(new THREE.CylinderGeometry(br*0.55,br*0.55,0.05,SC.lite?6:10), M.alu, sc_M(bx1, cy, sd*0.3, PI/2,0,0));
   });
   add(sc_cyl(0.018,8), M.tube, sc_rodM(new THREE.Vector3(bx1+0.05, cy, -0.3), new THREE.Vector3(bx1+0.05, cy, 0.3)));
+  var mx=(bx0+bx1)/2, my=(0.3+cy)/2;
+  add(sc_cyl(0.018,8), M.tube, sc_rodM(new THREE.Vector3(mx, my, -0.33), new THREE.Vector3(mx, my, 0.33)));
   inner.add(g); U.wbar=true; U.maxPitch=Math.min(me.maxPitch, maxP);
 }
 function sc_rodM(a, b){ /* matrix mapping a unit Y cylinder (centre origin, h=1) onto segment a->b */
