@@ -138,7 +138,7 @@ function evSync(tab){if(testing||(S.bay&&tab==="events"))return;   // a dyno-day
   if(tab==="events"){const cur=ev?evCur():S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===evCur())t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
   if(!t)return;evApply(t);document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
 /* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
-const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Dirt oval",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
+const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Oval racing",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
 function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"testSlot"),dock=$(ev?"evDock":"testDock"),core=$("testCore"),rd=$("runDock");
   if(core.parentElement!==slot)slot.appendChild(core);if(rd.parentElement!==dock)dock.appendChild(rd);
   const busy=(id,on,txt)=>{const el=$(id);if(el.hidden!==!on)el.hidden=!on;if(on&&el.dataset.k!==txt){el.dataset.k=txt;el.innerHTML=txt;}};
