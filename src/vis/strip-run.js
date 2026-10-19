@@ -250,15 +250,17 @@ function stripCarMeta(car){
   u._tyres=[new THREE.Vector3(minx,0,zmax), new THREE.Vector3(minx,0,zmin)];
   var tw=0.35; if(wmax){ var wb=new THREE.Box3().setFromObject(wmax); tw=clamp(wb.max.z-wb.min.z,0.18,0.6); } u._tyreW=tw;
   var rr=u.rr||0.35;
-  u._tips=(u.exhaustTips&&u.exhaustTips.length)? u.exhaustTips.map(function(t){ return t.clone(); }) : [new THREE.Vector3(bb.min.x+0.1, Math.max(0.3,rr*0.9), 0.45), new THREE.Vector3(bb.min.x+0.1, Math.max(0.3,rr*0.9), -0.45)];
-  u._dirs=u._tips.map(function(t,k){ if(u.exhaustDirs&&u.exhaustDirs[k]) return u.exhaustDirs[k].clone().normalize();
+  /* the car's own outlet arrays, not copies: stripCarAnim moves them with the body every frame (wheelie, squat, roll) */
+  var live=!!(u.exhaustTips&&u.exhaustTips.length&&u.exhaustDirs&&u.exhaustDirs.length===u.exhaustTips.length);
+  u._tips=live? u.exhaustTips : [new THREE.Vector3(bb.min.x+0.1, Math.max(0.3,rr*0.9), 0.45), new THREE.Vector3(bb.min.x+0.1, Math.max(0.3,rr*0.9), -0.45)];
+  u._dirs=live? u.exhaustDirs : u._tips.map(function(t,k){
     var sz=t.z>=0?1:-1; if(t.y>bb.max.y*0.8 && t.y>1.1) return new THREE.Vector3(-0.35,0.9,sz*0.15).normalize();
     if(Math.abs(t.z)>(bb.max.z-bb.min.z)*0.38 && t.x>bb.min.x+0.6) return new THREE.Vector3(-0.35,0.12,sz*0.93).normalize();
     return new THREE.Vector3(-1,0.14,sz*0.08).normalize(); });
   u._eng=u.enginePos? u.enginePos.clone() : (u.body==="rail" ? new THREE.Vector3(bb.min.x+(bb.max.x-bb.min.x)*0.3, bb.max.y*0.7, 0) : new THREE.Vector3(bb.max.x-(bb.max.x-bb.min.x)*0.24, bb.max.y*0.72, 0));
   u._chuteA=u.chuteAnchor? u.chuteAnchor.clone() : new THREE.Vector3(bb.min.x-0.3, bb.max.y*0.5, 0);
   u._len=bb.max.x-bb.min.x; u._bbMinX=bb.min.x; u._markLast=[]; u._acc=0; u._markT=0;
-  var me=u.meta||{}; u._gates=(me.gates||[]).map(function(q){ return {p:q.p.clone(), d:q.d.clone()}; }); u._hat=me.hat?me.hat.clone():null; u._ex=null;
+  u._gates=u.gates||[]; u._hat=u.hat||null; u._ex=null; u._hdr=undefined;
 }
 
 /* --- effects --- */
@@ -330,10 +332,13 @@ function stripN2O(o, dt, P){
 /* v3 header flames (nitro rail, funny car): one cone per header outlet, tall at night. Outlets come from the shell's
    meta.headers [{p,d}] (same frame as meta.gates); a rail or funny car without them uses its exhaust tips. */
 function stripHeaderPts(car){
+  /* every header outlet is in flameTips (rail, funny car, gasser); pro stock's headers are its exhaust tips. Both are the
+     live per-frame points, so the flames sit on the pipes through a wheelie */
   var u=car.userData; if(u._hdr!==undefined) return u._hdr;
-  var me=u.meta||{}, A=u.anim, off=(A&&A.anchorRest&&me.anchor)?A.anchorRest.clone().sub(me.anchor):new THREE.Vector3(), L=null;
-  if(me.headers && me.headers.length) L=me.headers.map(function(h){ return {p:h.p.clone().add(off), d:h.d.clone().normalize()}; });
-  else if((u.body==="rail"||u.body==="funny") && u._tips) L=u._tips.map(function(p,k){ return {p:p.clone(), d:u._dirs[k].clone()}; });
+  var me=u.meta||{}, L=null, T=null, D=null;
+  if(u.flameTips && u.flameTips.length){ T=u.flameTips; D=u.flameDirs; }
+  else if((me.headers && me.headers.length) || u.body==="rail" || u.body==="funny"){ T=u._tips; D=u._dirs; }
+  if(T) L=T.map(function(p,k){ return {p:p, d:D[k]}; });
   u._hdr=L; return L;
 }
 function stripHeaders(o, dt, car, isP){
