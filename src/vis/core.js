@@ -333,15 +333,15 @@ function fnCastIron0(u,v,o){
   var g = fbm(u,v,4,24,11);            /* sand grain            */
   var fine = fbm(u,v,2,110,31);        /* fine speckle          */
   var blot = fbm(u,v,3,5,23);          /* casting blotch        */
-  var l = 104 + (g-0.5)*26 + (blot-0.5)*15 + (fine-0.5)*20;
+  var l = 104 + (g-0.5)*15 + (blot-0.5)*13 + (fine-0.5)*8;
   o[0]=l*0.99; o[1]=l*0.99; o[2]=l*1.06;
   /* rust settles in the low spots */
   var rec = 1-smoothstep(0.34,0.62,g);
   var rust = clamp(rec*rec*(fbm(u,v,3,9,7)-0.50)*2.0,0,1);
-  o[0]=lerp(o[0],124,rust); o[1]=lerp(o[1],70,rust); o[2]=lerp(o[2],42,rust);
-  o[3]=g*0.62+fine*0.38;
-  o[4]=clamp(0.70+(1-g)*0.16+rust*0.14,0,1);
-  o[5]=0.55*(1-rust*0.75);
+  o[0]=lerp(o[0],124,rust*0.6); o[1]=lerp(o[1],70,rust*0.6); o[2]=lerp(o[2],42,rust*0.6);
+  o[3]=g*0.80+fine*0.20;
+  o[4]=clamp(0.62+(1-g)*0.10+rust*0.12,0,1);
+  o[5]=0.60*(1-rust*0.6);
 }
 /* hi-res set (Full / Ultra, painted in the background): the detailed painter */
 function fnCastIron(u,v,o,i,j){         /* sand-cast iron: orange-peel lumps, sand inclusions, gas pits, burnished high spots; rust blooms in the low ones */
@@ -352,18 +352,18 @@ function fnCastIron(u,v,o,i,j){         /* sand-cast iron: orange-peel lumps, sa
   var blot = fbm(u,v,3,5,23);          /* casting blotch        */
   var sand = vnoise(u*170,v*170,170,17);
   if(HQ>1) sand = sand*0.65 + vnoise(u*340,v*340,340,41)*0.35;
-  var pit = smoothstep(0.80,0.92,fbm(u,v,2,70,19))*(0.5+0.5*lump);
+  var pit = smoothstep(0.85,0.95,fbm(u,v,2,70,19))*(0.5+0.5*lump);
   var inc = smoothstep(0.84,0.93,vnoise(u*220,v*220,220,29));        /* pale sand grains */
   var burn = smoothstep(0.55,0.85,lump)*smoothstep(0.45,0.8,g);      /* handled / machined-bright high spots */
-  var l = 98 + (g-0.5)*26 + (blot-0.5)*16 + (fine-0.5)*14 + (sand-0.5)*18 - pit*26 + inc*14 + burn*10;
+  var l = 100 + (g-0.5)*14 + (blot-0.5)*14 + (fine-0.5)*6 + (sand-0.5)*7 - pit*14 + inc*6 + burn*10;   /* r19: a fettled, smoother skin: grit and pits about half what they were */
   o[0]=l*0.99; o[1]=l*0.985; o[2]=l*1.05;
   /* rust settles in the low spots */
   var rec = 1-smoothstep(0.34,0.62,g);
   var rust = clamp(rec*rec*(fbm(u,v,3,9,7)-0.50)*2.0,0,1);
-  o[0]=lerp(o[0],128,rust); o[1]=lerp(o[1],72,rust); o[2]=lerp(o[2],42,rust);
-  o[3]=lump*0.40+g*0.30+sand*0.22+fine*0.08-pit*0.55;
-  o[4]=clamp(0.74+(1-g)*0.14+rust*0.12+pit*0.08-burn*0.18+(sand-0.5)*0.10,0,1);
-  o[5]=0.55*(1-rust*0.75)+burn*0.10;
+  o[0]=lerp(o[0],128,rust*0.6); o[1]=lerp(o[1],72,rust*0.6); o[2]=lerp(o[2],42,rust*0.6);
+  o[3]=lump*0.58+g*0.26+sand*0.10+fine*0.06-pit*0.30;
+  o[4]=clamp(0.64+(1-g)*0.10+rust*0.10+pit*0.06-burn*0.16+(sand-0.5)*0.05,0,1);
+  o[5]=0.60*(1-rust*0.6)+burn*0.10;
 }
 function fnCGI(u,v,o){
   var g=fbm(u,v,4,52,53), fine=fbm(u,v,2,170,61);
@@ -1033,7 +1033,7 @@ function buildMaterials(){
   MATS_BUILT=true;
   var S=256, L=512;
 
-  MAT.iron        = pmat(S, fnCastIron,      {ns:1.1, env:0.9});
+  MAT.iron        = pmat(S, fnCastIron,      {ns:0.7, env:0.9});
   MAT.cgi         = pmat(S, fnCGI,           {ns:0.8, env:1.0});
   MAT.calu        = pmat(S, fnCastAlu,       {ns:0.45, env:1.0});
   MAT.malu        = pmat(S, fnMachinedAlu,   {ns:0.55,env:1.2});
@@ -1204,7 +1204,7 @@ function buildHiMaterials(){
   });
   /* painted parts get a real clear coat; bare castings stay rough */
   ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key]=hiFlag(toPhysical(MATHI[key], 0.55, 0.22)); });
-  MATHI.iron.normalScale.set(1.3,1.3); MATHI.stainless.normalScale.set(0.35,0.35); MATHI.calu.normalScale.set(0.5,0.5); MATHI.castexh.normalScale.set(1.4,1.4);
+  MATHI.iron.normalScale.set(0.8,0.8); MATHI.stainless.normalScale.set(0.35,0.35); MATHI.calu.normalScale.set(0.5,0.5); MATHI.castexh.normalScale.set(1.4,1.4);
   /* new surfaces */
   MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:1.2, env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
   MATHI.turned    = hiFlag(pmat(S, fnTurned,      {ns:0.7, env:1.3}));
