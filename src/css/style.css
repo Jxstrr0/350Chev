@@ -486,7 +486,8 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .rnt{display:flex;align-items:center;gap:8px;padding:4px 0;min-width:0}
 .rnt>span{flex:1;min-width:0;font-size:14px;color:var(--chalk)}.rnt>span small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
 .rnt>b{min-width:76px;text-align:center;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--chalk)}
-.rnt .nud{flex:0 0 44px;height:44px}.rnt.dial>b{font-size:17px;color:var(--orange2)}
+.rnt .nud{flex:0 0 44px;height:44px}
+.rnr{display:block;width:100%;margin:0 0 6px}.rnt.dial>b{font-size:17px;color:var(--orange2)}
 /* race night pits vignette: tune tags over the 3D view (it is always a dark night scene, so the tags are dark glass in both themes) */
 #pitsOv{position:absolute;inset:0;pointer-events:none;z-index:3;--pg:rgba(20,20,19,.82);--pgl:rgba(255,255,255,.16);--pt:#faf9f5;--pm:#b3ac9c}
 #pitsOv[hidden],#app.onstrip #pitsOv,html.onstrip #pitsOv,#app.td #pitsOv{display:none}

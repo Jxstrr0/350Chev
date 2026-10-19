@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel=manifest href=manifest.webmanifest><meta name=theme-color content="#d97757"><link rel=apple-touch-icon href=icons/apple-touch-icon.png><meta name=apple-mobile-web-app-capable content=yes><meta name=mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-title content="Engine Works"><meta name=apple-mobile-web-app-status-bar-style content=black><link rel=preconnect href=https://cdnjs.cloudflare.com><link rel=preconnect href=https://cdn.jsdelivr.net><link rel=preload as=script href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#141413;color:#faf9f5}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot{position:fixed;inset:0;z-index:99999;background:#141413;color:#faf9f5;display:flex;align-items:center;justify-content:center;padding:24px;font-family:"Chakra Petch",-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity .35s ease}#boot.done{opacity:0;pointer-events:none}#boot .ldx{width:min(320px,100%)}#boot h1{margin:0 0 22px;font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:.95}#boot em{font-style:normal;color:var(--orange,#d97757)}#boot .ldbar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#boot .ldbar i{display:block;height:100%;background:var(--orange,#d97757);transform-origin:0 50%;transform:scaleX(.04);transition:transform .9s cubic-bezier(.2,.7,.2,1)}#boot.err .ldbar i{background:var(--crit,#ee5a5e)}#boot .ldmsg{margin:12px 0 0;font-size:12px;letter-spacing:.06em;color:#9a9791}#boot .ldrl{margin-top:14px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-weight:600}#boot .ldrl[hidden]{display:none}</style></head><body>
 <title>Prairie Engine Works</title>
-<!-- VERSION 1.76.3.0 — major.minor.feature.hotfix -->
+<!-- VERSION 1.76.4.0 — major.minor.feature.hotfix -->
 <div id="boot" role="status" aria-live="polite"><div class="ldx"><h1>Prairie<br>Engine <em>Works</em></h1><div class="ldbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4"><i></i></div><p class="ldmsg">Loading…</p><button type="button" class="ldrl" hidden>Reload</button></div></div>
 <script>/* loading bar: __ld(fraction, message, creepSeconds) between the big script blocks, __ldGo(fn) paints then runs fn, __ldDone() at the end of start() */
 (function(){var b=document.getElementById("boot"),bar=b.querySelector(".ldbar"),f=bar.querySelector("i"),m=b.querySelector(".ldmsg"),rl=b.querySelector(".ldrl"),q=[],fin=0,bad=0;
@@ -506,7 +506,8 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .rnt{display:flex;align-items:center;gap:8px;padding:4px 0;min-width:0}
 .rnt>span{flex:1;min-width:0;font-size:14px;color:var(--chalk)}.rnt>span small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
 .rnt>b{min-width:76px;text-align:center;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--chalk)}
-.rnt .nud{flex:0 0 44px;height:44px}.rnt.dial>b{font-size:17px;color:var(--orange2)}
+.rnt .nud{flex:0 0 44px;height:44px}
+.rnr{display:block;width:100%;margin:0 0 6px}.rnt.dial>b{font-size:17px;color:var(--orange2)}
 /* race night pits vignette: tune tags over the 3D view (it is always a dark night scene, so the tags are dark glass in both themes) */
 #pitsOv{position:absolute;inset:0;pointer-events:none;z-index:3;--pg:rgba(20,20,19,.82);--pgl:rgba(255,255,255,.16);--pt:#faf9f5;--pm:#b3ac9c}
 #pitsOv[hidden],#app.onstrip #pitsOv,html.onstrip #pitsOv,#app.td #pitsOv{display:none}
@@ -29613,7 +29614,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.3.0";
+const VERSION="1.76.4.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -31317,7 +31318,7 @@ function rnQualHtml(N){const br=N.fmt==="bracket",ids=[0,1,2,3,4,5,6,7],q=N.stag
     return`<div class="${i===0?"you":""}"><i>${q>0&&!br?k+1:""}</i><span>${rnEsc(P.name)}<small>${rnEsc(P.car)}</small></span><b>${b?b.et.toFixed(3):q>0?"—":br&&rv?"dial "+rv.dial.toFixed(2):""}</b></div>`;}).join("")}</div>`;}
 function rnTuneRows(N){const lt=SIM.launchTech(S.cfg),two=lt.launchCtl!=="none",t0=N.t0,psi0=SIM.TYRES[N.lock.tyre].psi||16,psi=S.env.tyrePsi>0?S.env.tyrePsi:psi0,sh=S.env.shocks||"medium";
   const L=two?lt.twoStepRpm:Math.min(S.env.launchRpm,S.cfg.redline);
-  const row=(k,lbl,val,sub)=>`<div class="rnt"><span>${lbl}<small>${sub||""}</small></span><button class="nud" data-rn="tune" data-k="${k}" data-d="-1" aria-label="less">−</button><b>${val}</b><button class="nud" data-rn="tune" data-k="${k}" data-d="1" aria-label="more">+</button></div>`;
+  const row=(k,lbl,val,sub)=>{const m=rnTuneLim(N,k);return`<div class="rnt"><span>${lbl}<small>${sub||""}</small></span><button class="nud" data-rn="tune" data-k="${k}" data-d="-1" aria-label="less">−</button><b id="rnv-${k}">${val}</b><button class="nud" data-rn="tune" data-k="${k}" data-d="1" aria-label="more">+</button></div><input type="range" class="rnr" data-rnr="${k}" min="${m.lo}" max="${m.hi}" step="${m.step}" value="${m.v}" aria-label="${lbl}">`;};
   return row("launch",two?"Two-step rpm":"Launch rpm",L.toLocaleString(),two?"sets the hold on the line":"where you feed the clutch")
     +row("first","1st gear",(+S.env.first).toFixed(2)+":1",`was ${(+t0.first).toFixed(2)} · shorter = harder hit`)
     +row("final","Final drive",(+S.env.final).toFixed(2)+":1",`was ${(+t0.final).toFixed(2)}`)
@@ -31442,15 +31443,25 @@ function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive")
   if(n.verdict&&n.stage>=2)s+=` · <b style="color:${n.verdict.win?"var(--good)":"var(--crit)"}">${n.verdict.win?"WIN":"LOSS"}</b>`;
   L.insertAdjacentHTML("afterbegin",`<div class="peak rnhud" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">${s}</span></div>`);
   if(n.cheer&&st.phase==="shutdown"&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText("WON THE NIGHT","tap to go back to the car");}
+/* r15: one place for the between-rounds limits, shared by the − / + steps and the sliders. 1st and final are held to a band
+   around the night's starting setup (never snapping a value already outside it); psi to half..1.4× the tyre's baseline */
+function rnTuneLim(N,k){const lt=SIM.launchTech(S.cfg),t0=N.t0;
+  if(k==="launch")return lt.launchCtl!=="none"?{lo:2000,hi:S.cfg.redline,step:100,v:lt.twoStepRpm}:{lo:1500,hi:S.cfg.redline,step:100,v:Math.min(S.env.launchRpm,S.cfg.redline)};
+  if(k==="first"){const v=+S.env.first;return{lo:+Math.min(v,t0.first*0.8).toFixed(2),hi:+Math.max(v,t0.first*1.25).toFixed(2),step:0.05,v};}
+  if(k==="final"){const v=+S.env.final;return{lo:+Math.min(v,t0.final*0.85).toFixed(2),hi:+Math.max(v,t0.final*1.2).toFixed(2),step:0.05,v};}
+  const p0=SIM.TYRES[N.lock.tyre].psi||16;return{lo:+(p0*0.5).toFixed(1),hi:+(p0*1.4).toFixed(1),step:0.5,v:S.env.tyrePsi>0?S.env.tyrePsi:p0};}
+function rnTuneSet(k,v,m){v=Math.min(m.hi,Math.max(m.lo,v));
+  if(k==="launch"){v=Math.round(v/100)*100;if(SIM.launchTech(S.cfg).launchCtl!=="none")S.cfg.twoStepRpm=v;else S.env.launchRpm=v;}
+  else if(k==="psi")S.env.tyrePsi=+v.toFixed(1);else S.env[k]=+v.toFixed(2);}
+$("envBox").addEventListener("input",e=>{const r=e.target,k=r.dataset&&r.dataset.rnr,N=rnCur();if(!k||!N||N.done||testing)return;
+  rnTuneSet(k,parseFloat(r.value),rnTuneLim(N,k));const m=rnTuneLim(N,k),o=$("rnv-"+k);
+  if(o)o.textContent=k==="launch"?m.v.toLocaleString():k==="psi"?m.v.toFixed(1)+" psi":m.v.toFixed(2)+":1";});
+$("envBox").addEventListener("change",e=>{if(!(e.target.dataset&&e.target.dataset.rnr))return;save();const sc=$("panel").scrollTop;renderEnv();$("panel").scrollTop=sc;});
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rn]");if(!b)return;const a=b.dataset.rn,N=rnCur();
   if(a==="done"){rnSetN(null);save();renderTest();return;}
   if(a==="leave"){rnLeave();return;}
   if(!N||N.done||testing)return;
-  if(a==="tune"){const k=b.dataset.k,d=+b.dataset.d,lt=SIM.launchTech(S.cfg),t0=N.t0,cl=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
-    if(k==="launch"){if(lt.launchCtl!=="none")S.cfg.twoStepRpm=cl(lt.twoStepRpm+100*d,2000,S.cfg.redline);else S.env.launchRpm=cl(Math.min(S.env.launchRpm,S.cfg.redline)+100*d,1500,S.cfg.redline);}
-    else if(k==="first")S.env.first=+cl(+S.env.first+0.05*d,Math.min(+S.env.first,t0.first*0.8),Math.max(+S.env.first,t0.first*1.25)).toFixed(2);
-    else if(k==="final")S.env.final=+cl(+S.env.final+0.05*d,Math.min(+S.env.final,t0.final*0.85),Math.max(+S.env.final,t0.final*1.2)).toFixed(2);
-    else if(k==="psi"){const p0=SIM.TYRES[N.lock.tyre].psi||16;S.env.tyrePsi=+cl((S.env.tyrePsi>0?S.env.tyrePsi:p0)+0.5*d,+(p0*0.5).toFixed(1),+(p0*1.4).toFixed(1)).toFixed(1);}
+  if(a==="tune"){const k=b.dataset.k,m=rnTuneLim(N,k);rnTuneSet(k,m.v+m.step*+b.dataset.d,m);
     buzz(3);}
   else if(a==="shock"){S.env.shocks=b.dataset.k;}
   else if(a==="dial"){N.dial=+(N.dial+0.01*+b.dataset.d).toFixed(2);rnSetN(N);}
