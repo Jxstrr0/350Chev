@@ -703,12 +703,12 @@ function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive")
   if(n.verdict&&n.stage>=2)s+=` · <b style="color:${n.verdict.win?"var(--good)":"var(--crit)"}">${n.verdict.win?"WIN":"LOSS"}</b>`;
   L.insertAdjacentHTML("afterbegin",`<div class="peak rnhud" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">${s}</span></div>`);
   if(n.cheer&&st.phase==="shutdown"&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText("WON THE NIGHT","tap to go back to the car");}
-/* r15: one place for the between-rounds limits, shared by the − / + steps and the sliders. 1st and final are held to a band
-   around the night's starting setup (never snapping a value already outside it); psi to half..1.4× the tyre's baseline */
-function rnTuneLim(N,k){const lt=SIM.launchTech(S.cfg),t0=N.t0;
+/* r15: one place for the between-rounds limits, shared by the − / + steps and the sliders. 1st and final get the same full range
+   as the test-cell sliders (r16; was a band around the night's start); psi is half..1.4× the tyre's baseline */
+function rnTuneLim(N,k){const lt=SIM.launchTech(S.cfg);
   if(k==="launch")return lt.launchCtl!=="none"?{lo:2000,hi:S.cfg.redline,step:100,v:lt.twoStepRpm}:{lo:1500,hi:S.cfg.redline,step:100,v:Math.min(S.env.launchRpm,S.cfg.redline)};
-  if(k==="first"){const v=+S.env.first;return{lo:+Math.min(v,t0.first*0.8).toFixed(2),hi:+Math.max(v,t0.first*1.25).toFixed(2),step:0.05,v};}
-  if(k==="final"){const v=+S.env.final;return{lo:+Math.min(v,t0.final*0.85).toFixed(2),hi:+Math.max(v,t0.final*1.2).toFixed(2),step:0.05,v};}
+  if(k==="first"){const v=+S.env.first;return{lo:Math.min(v,1.5),hi:Math.max(v,4.5),step:0.05,v};}
+  if(k==="final"){const v=+S.env.final;return{lo:Math.min(v,2.5),hi:Math.max(v,5.5),step:0.05,v};}
   const p0=SIM.TYRES[N.lock.tyre].psi||16;return{lo:+(p0*0.5).toFixed(1),hi:+(p0*1.4).toFixed(1),step:0.5,v:S.env.tyrePsi>0?S.env.tyrePsi:p0};}
 function rnTuneSet(k,v,m){v=Math.min(m.hi,Math.max(m.lo,v));
   if(k==="launch"){v=Math.round(v/100)*100;if(SIM.launchTech(S.cfg).launchCtl!=="none")S.cfg.twoStepRpm=v;else S.env.launchRpm=v;}
