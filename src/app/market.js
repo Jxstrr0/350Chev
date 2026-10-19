@@ -178,7 +178,7 @@ const SVC_TIERS=[{id:"top",name:"Top end",worn:"valves, guides and stem seals",p
   {id:"rb",name:"Rings & bearings",worn:"rings, rod and main bearings",parts:0.20,lab:0.14},
   {id:"full",name:"Full rebuild",worn:"bores, crank, rings, bearings and valves",parts:0.32,lab:0.18}];
 const CORE_MAX=6,CORE_FRAC=0.12,CORE_SCRAP=0.4;
-const CORE_LAY={hatch:["I3","I4"],sedan:["I4","V6"],van:["I4","V6"],pump:["I3","I4"],truck:["V6","V8"],hot:["I4","I4","F4"],taxi:["I4","V6"],sport:["I6","V6","F6"],
+const CORE_LAY={hatch:["I3","I4"],sedan:["I4","V6"],van:["I4","V6"],pump:["I3","I4"],truck:["V6","V8"],hot:["I4","I4","F4"],streetcup:["I4","I4","V6"],taxi:["I4","V6"],sport:["I6","V6","F6"],
   club:["I4"],gt:["V8","V12","V10"],rally:["I4","F4"],drift:["I6","V8"],genset:["I6","V8"],tractor:["I6","I4"],super:["V8","V10"],endur:["V8","V6"],attack:["I4","V6"],
   drag:["V8"],hyper:["V8","V12"],flagship:["V12"],stripcar:["V8"],grudge:["V8"],radial:["V8"],promod:["V8"],smallblock:["V8"],
   hdpickup:["V8","I6"],mdtruck:["I6","I4"],workboat:["I6"],dtractor:["I6"],minegen:["I6","V8"],class8:["I6"],puller:["I6","V8"]};

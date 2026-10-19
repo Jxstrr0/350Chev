@@ -69,7 +69,7 @@ const MAX_ACTIVE=2,DEPOSIT=0.10,EXPIRE_REP=8;
 const CATS=[
   {id:"prod",name:"Production run",sub:"volume · economy · warranty",segs:["hatch","sedan","taxi","flagship"],rep:0},
   {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
-  {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","sport","gt","super","hyper"],rep:40},
+  {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","streetcup","sport","gt","super","hyper"],rep:40},
   {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
   {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb","lsr"],rep:120},
   {id:"altfuel",name:"Fleet & alt-fuel",sub:"propane · CNG · depot-fuelled fleets",segs:["forklift","cngvan","lpgbus","wellsite"],rep:20},
@@ -88,6 +88,7 @@ const SEGMENTS=[
   {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[2,5],price:3800,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86,noise:78}},
   {id:"hot",name:"Hot hatch",tier:1,units:[2,4],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76,road:{ch:"hatch"},zero100:[7.4,8.8]}},
   {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[3,7],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87",noise:74}},
+  {id:"streetcup",name:"Street-circuit cup car",tier:1,units:[2,4],price:5800,req:{hp:[180,260],kg:170,fuel:"r91",rel:78,noise:77,road:{ch:"hatch",trk:"street"},lap:[105.2,107.8]}},
   {id:"sport",name:"Sports coupé",tier:1,units:[1,3],price:6200,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78,road:{ch:"coupe",trk:"club"},lap:[75.5,78.5]}},
   /* tier 2 — Known builder */
   {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[1,2],price:11000,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
@@ -171,7 +172,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.9.0";
+const VERSION="1.76.10.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
