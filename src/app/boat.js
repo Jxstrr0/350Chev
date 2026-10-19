@@ -27,7 +27,9 @@ function boatVeh(k){const e=S.env;return{cls:k,pitch:e.boatPitch,imp:e.boatImp,g
 function boatCur(){const n=career()?C().boatN:S.boatSb;return n&&n.v===1&&SIM.BOAT_CLASSES[n.cls]?n:null;}
 function boatSetN(n){if(career())C().boatN=n;else S.boatSb=n;}
 function boatLive(){const n=boatCur();return n&&!n.done?n:null;}
-function boatRanWk(k){return career()&&(C().boatWk||{})[k]===C().week;}
+/* career: one boat night a week, in one class. The class run this week, or null */
+function boatWkCls(){if(!career())return null;const w=C().boatWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+function boatRanWk(k){return !!boatWkCls();}
 function boatFee(){if(!career()||dev()||boatLive())return 0;return (SIM.BOAT_CLASSES[S.env.boatCls]||SIM.BOAT_CLASSES.outboard).fee;}
 function boatGauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307*r());}
 function boatNew(k){const ix=Object.keys(SIM.BOAT_CLASSES).indexOf(k)+1;
@@ -198,7 +200,7 @@ function boatPb(r,bad){if(ff||bad||r.et==null)return;const R=recs();if(!R.boat||
   if(was){r.pb={was:was.et.toFixed(3)};setTimeout(()=>toast(`CLASS BEST · ${r.et.toFixed(3)} s (was ${r.pb.was})`),3200);}}
 function boatRecHtml(){const R=recs(),P=R.boat;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOAT_CLASSES).filter(k=>P[k]&&P[k].et);if(!ks.length)return "";
   return `<div class="rtop"><span>Boat drags · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>⚓</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${boatEsc(e.n)}">${boatEsc(SIM.BOAT_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
-function boatHint(){const c=SIM.BOAT_CLASSES;return career()?`<b>Boat drags</b> · one night per class a week, entry ${fmt$(c.outboard.fee)}–${fmt$(c.tfh.fee)}. Needs a certified engine. Eight boats, heads-up: lose once and you're out. ${c.jet.n} opens at ${c.jet.rep} rep, ${c.pro.n} at ${c.pro.rep}, ${c.tfh.n} at ${c.tfh.rep}. The winner takes up to ${fmt$(c.tfh.purse)}.`
+function boatHint(){const c=SIM.BOAT_CLASSES;return career()?`<b>Boat drags</b> · one night a week in one class, entry ${fmt$(c.outboard.fee)}–${fmt$(c.tfh.fee)}. Needs a certified engine. Eight boats, heads-up: lose once and you're out. ${c.jet.n} opens at ${c.jet.rep} rep, ${c.pro.n} at ${c.pro.rep}, ${c.tfh.n} at ${c.tfh.rep}. The winner takes up to ${fmt$(c.tfh.purse)}.`
   :`<b>Boat drags</b> · 1,000 ft of river, heads-up. Wait for the green, then hold for throttle. Feather it if the prop blows out off the line, trim in for the hump and out once it's on plane — too far out and it porpoises, walks, or blows over.`;}
 /* the prop shop: the quickest pitch and gear (or impeller and drive ratio) for this engine on glassy water */
 const boatShopC=new Map();
