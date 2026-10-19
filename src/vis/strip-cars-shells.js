@@ -310,8 +310,8 @@ function sc_gasChassis(C){   /* straight front axle on leaf springs, shocks */
 function sc_gasExhaust(C){   /* four short pipes per side out of the front fender, up and back */
   var P=sc_at(C.D, C.xf-0.6);
   [-1,1].forEach(function(sd){ for(var i=0;i<4;i++){
-    var x0=C.xf-0.42-i*0.11, a=new THREE.Vector3(x0+0.05, 0.42, sd*(P.w-0.12)), b=new THREE.Vector3(x0, 0.45, sd*(P.w+0.02)), c=new THREE.Vector3(x0-0.1, 0.6+i*0.01, sd*(P.w+0.1));
-    C.B.add("chrome", TUBE([a,b,c], 0.026, 5, 6));
+    var x0=C.xf-0.42-i*0.11, y=C.dLift||0, a=new THREE.Vector3(x0+0.05, 0.42+y, sd*(P.w-0.12)), b=new THREE.Vector3(x0, 0.45+y, sd*(P.w+0.02)), c=new THREE.Vector3(x0-0.1, 0.6+i*0.01+y, sd*(P.w+0.1));
+    C.B.add("chrome", sc_pipe([a,b,c], 0.026)); sc_pipeEnd(C.B, "chrome", b, c, 0.026);
     C.tips.push(c.clone()); C.dirs.push(c.clone().sub(b).normalize()); } });
 }
 var SC_GAS={
