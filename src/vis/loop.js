@@ -94,6 +94,10 @@ function tick(dt, t){
   for(i=0;i<anim.spin.length;i++){
     var sp=anim.spin[i]; sp.o.rotation.x += spin*sp.k*0.16;
   }
+  /* belts: one texture scroll per belt material, in step with the crank (their uv counts crank angle, see beltUvU) */
+  if(spin){ BELT_OFF=(BELT_OFF+spin*0.16*BELT_UV)%1;
+    if(MAT.belt) MAT.belt.map.offset.x=BELT_OFF;               /* MATHI.belt is a clone: same texture, so it scrolls too */
+    if(MATHI.beltFlat) MATHI.beltFlat.map.offset.x=BELT_OFF; }
   for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
   if(anim.internals){
     var IN=anim.internals; IN.theta += spin*0.16; IN.crank.rotation.x = IN.theta;
@@ -228,6 +232,7 @@ function tick(dt, t){
   }
 }
 var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
+var BELT_OFF=0;
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);

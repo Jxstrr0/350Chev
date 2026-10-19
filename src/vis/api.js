@@ -384,7 +384,10 @@ const ENGINE_VIS = {
              cam:camera.position.toArray().map(function(v){return +v.toFixed(2);}),
              aspect:+camera.aspect.toFixed(3),
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
-                if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })() };
+                if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
+             belt:(function(){ var n=0, a=MAT.belt&&MAT.belt.map, b=MATHI.beltFlat&&MATHI.beltFlat.map;
+                engineRoot.traverse(function(m){ var t=m.material&&m.material.map; if(t&&(t===a||t===b)) n++; });
+                return { off:+BELT_OFF.toFixed(3), meshes:n }; })() };
   },
   start: function(){ if(!running){ running=true; clock.getDelta(); loop(); } },
   stop:  function(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=0; },
