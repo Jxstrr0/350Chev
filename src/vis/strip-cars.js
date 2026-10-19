@@ -46,16 +46,22 @@ function stripCar(body, color, tyreIn, hw){
   }
   /* parachute */
   var chute=sc_chute(me, M); chute.position.copy(me.anchor); chute.visible=false; inner.add(chute);
-  var tips=[], dirs=[], tipR=[], dirR=[];
-  for(var t=0;t<me.tips.length;t++){ tips.push(me.tips[t].clone()); dirs.push(me.dirs[t].clone()); tipR.push(me.tips[t].clone().add(inner.position)); dirR.push(me.dirs[t].clone()); }
+  /* outlets: *Rest in the body group's frame; the live copies (car frame, at rest here) are moved by stripCarAnim every
+     frame so the flames and smoke leave the pipes where they are, wheelie and squat included */
+  bodyG.updateMatrix();
+  var tips=[], dirs=[], tipR=[], dirR=[], BM=bodyG.matrix;
+  for(var t=0;t<me.tips.length;t++){ tipR.push(me.tips[t].clone().add(inner.position)); dirR.push(me.dirs[t].clone().normalize()); tips.push(tipR[t].clone().applyMatrix4(BM)); dirs.push(dirR[t].clone()); }
   /* v3: header flame anchors (every primary of a nitro car; body frame, follow the pitch like the exhaust tips) */
   var fl=me.flames||[], fT=[], fD=[], fTR=[], fDR=[];
-  for(t=0;t<fl.length;t++){ fT.push(fl[t].p.clone()); fD.push(fl[t].d.clone()); fTR.push(fl[t].p.clone().add(inner.position)); fDR.push(fl[t].d.clone()); }
+  for(t=0;t<fl.length;t++){ fTR.push(fl[t].p.clone().add(inner.position)); fDR.push(fl[t].d.clone().normalize()); fT.push(fTR[t].clone().applyMatrix4(BM)); fD.push(fDR[t].clone()); }
+  var gR=(me.gates||[]).map(function(q){ return {p:q.p.clone().add(inner.position), d:q.d.clone().normalize()}; }),
+      gL=gR.map(function(q){ return {p:q.p.clone().applyMatrix4(BM), d:q.d.clone()}; }),
+      hR=me.hat?me.hat.clone().add(inner.position):null, hL=hR?hR.clone().applyMatrix4(BM):null;
   g.userData={ body:body, hw:H, rr:me.rr, fr:me.fr, wheels:wheels, carriers:carriers, chute:chute, exhaustTips:tips, exhaustDirs:dirs, flameTips:fT, flameDirs:fD, flip:flip,
-    enginePos:me.eng?me.eng.clone():undefined, style:H?H.style:"",
+    gates:gL, hat:hL, enginePos:me.eng?me.eng.clone():undefined, style:H?H.style:"",
     chuteAnchor:me.anchor.clone(), lights:lights, bodyGroup:bodyG, meta:me, paint:paint, lampMats:{tail:tail, head:head}, liv:liv,
     anim:{ pitch:0, pv:0, sq:0, sqv:0, roll:0, lastV:0, accF:0, shifting:false, chT:0, chC:0, chS:0, tailI:-1, headI:-1,
-      tipRest:tipR, dirRest:dirR, flameRest:fTR, flameDirRest:fDR, anchorRest:me.anchor.clone().add(inner.position) } };
+      tipRest:tipR, dirRest:dirR, flameRest:fTR, flameDirRest:fDR, gateRest:gR, hatRest:hR, anchorRest:me.anchor.clone().add(inner.position) } };
   g.traverse(function(q){ if(q.geometry) q.geometry.__cached=true; });   /* shared by both lanes + later rebuilds: disposeTree must skip them */
   return g;
 }
@@ -137,6 +143,8 @@ function stripCarAnim(car, o, dt, isPlayer){
   B.updateMatrix();
   for(i=0;i<A.tipRest.length;i++){ U.exhaustTips[i].copy(A.tipRest[i]).applyMatrix4(B.matrix); U.exhaustDirs[i].copy(A.dirRest[i]).transformDirection(B.matrix); }
   for(i=0;i<A.flameRest.length;i++){ U.flameTips[i].copy(A.flameRest[i]).applyMatrix4(B.matrix); U.flameDirs[i].copy(A.flameDirRest[i]).transformDirection(B.matrix); }
+  if(A.gateRest) for(i=0;i<A.gateRest.length;i++){ U.gates[i].p.copy(A.gateRest[i].p).applyMatrix4(B.matrix); U.gates[i].d.copy(A.gateRest[i].d).transformDirection(B.matrix); }
+  if(A.hatRest) U.hat.copy(A.hatRest).applyMatrix4(B.matrix);
   U.chuteAnchor.copy(A.anchorRest).applyMatrix4(B.matrix);
   /* lamps */
   var brake=isPlayer ? !!o.brake : (o.obrake!==undefined ? !!o.obrake : ((o.ox||0)>402.336 && v>1));
@@ -529,6 +537,18 @@ function sc_rodM(a, b){ /* matrix mapping a unit Y cylinder (centre origin, h=1)
 function sc_cyl(r, seg){ if(SC.lite){ var kl="cyL"+r3(r)+"_"+Math.min(seg||8,6); return SC.geo[kl]||(SC.geo[kl]=new THREE.CylinderGeometry(r,r,1,Math.min(seg||8,6),1,true)); }   /* v3: Lite rods: 6 sides, no caps */
   var key="cy"+r3(r)+"_"+seg; return SC.geo[key]||(SC.geo[key]=new THREE.CylinderGeometry(r,r,1,seg||8,1,false)); }
 function sc_M(x,y,z,rx,ry,rz,sx,sy,sz){ return mkM(x,y,z,rx,ry,rz,sx,sy,sz); }
+/* a finished open pipe end at c (last leg b->c): a rolled lip and the dark bore just inside, square to the pipe.
+   Existing material bins only (no new draws); Lite gets coarser rings */
+var _scZ=new THREE.Vector3(0,0,1), _scOne=new THREE.Vector3(1,1,1);
+function sc_pipeEnd(B, mat, b, c, r){
+  var d=new THREE.Vector3().subVectors(c,b).normalize(), q=new THREE.Quaternion().setFromUnitVectors(_scZ, d), k=r3(r)+(SC.lite?"l":"");
+  var ring=SC.geo["pl"+k]||(SC.geo["pl"+k]=new THREE.TorusGeometry(r, r*0.2, SC.lite?3:5, SC.lite?8:14)),
+      bore=SC.geo["pb"+k]||(SC.geo["pb"+k]=new THREE.CircleGeometry(r*0.95, SC.lite?8:14));
+  B.add(mat, ring, new THREE.Matrix4().compose(c, q, _scOne));
+  B.add("well", bore, new THREE.Matrix4().compose(c.clone().addScaledVector(d, -r*0.6), q, _scOne));
+}
+/* pipe bends: Full/Ultra round, Lite as before */
+function sc_pipe(pts, r){ return TUBE(pts, r, SC.lite?5:8, SC.lite?6:10); }
 function sc_bin(){ var B={}; B.add=function(k,g,m){ (B[k]||(B[k]=[])).push({g:g, m:m||new THREE.Matrix4()}); }; return B; }
 function sc_merge(list){ return mergeGeos(list); }
 
@@ -862,7 +882,9 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
   }
   /* exhaust */
   var tips=[], dirs=[];
-  if(SY && SY.exhaust) SY.exhaust({B:B, D:D, H:H, tips:tips, dirs:dirs, xR:xR, xf:xf, cR:cR, deck:deck, body:body});
+  /* side pipes are placed for the class's own tyre; a taller or shorter tyre lifts the body, so they ride with it */
+  var dLift=lift-((SC_BODY_TYRE[body]||30)*0.0127-rr0)*0.7;
+  if(SY && SY.exhaust) SY.exhaust({B:B, D:D, H:H, tips:tips, dirs:dirs, xR:xR, xf:xf, cR:cR, deck:deck, body:body, dLift:dLift});
   else if(H && H.diesel && SY && SY.bed){
     [-1,1].forEach(function(sd){ var x0=deck+0.02, z0=sd*0.62, y1=1.84;
       B.add("chrome", sc_cyl(0.06,12), sc_rodM(new THREE.Vector3(x0, 0.86, z0), new THREE.Vector3(x0, y1, z0)));
@@ -883,9 +905,9 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
     [-1,1].forEach(function(sd){
       sc_params(D, ex0, P);
       for(var i=0;i<nP;i++){
-        var x0=ex0+i*(pm?0.075:0.1), y0=pm?0.5:0.42, a=new THREE.Vector3(x0+0.06, y0, sd*(P.w-0.1)), b=new THREE.Vector3(x0+0.02, y0+0.03, sd*(P.w+0.05));
+        var x0=ex0+i*(pm?0.075:0.1), y0=(pm?0.5:0.42)+dLift, a=new THREE.Vector3(x0+0.06, y0, sd*(P.w-0.1)), b=new THREE.Vector3(x0+0.02, y0+0.03, sd*(P.w+0.05));
         var c=pm?new THREE.Vector3(x0-0.16, y0+0.2+i*0.012, sd*(P.w+0.16)):new THREE.Vector3(x0-0.12, y0-0.06, sd*(P.w+0.13));
-        B.add("alu", TUBE([a,b,c], pm?0.028:0.034, 5, 6));
+        B.add("alu", sc_pipe([a,b,c], pm?0.028:0.034)); sc_pipeEnd(B, "alu", b, c, pm?0.028:0.034);
         if(pm?(i===1||i===2):true){ tips.push(c.clone()); dirs.push(c.clone().sub(b).normalize()); }
       }
     });
@@ -976,7 +998,7 @@ function sc_rail(B, rr, tails, heads, res, H){
   var tips=[], dirs=[];
   [-1,1].forEach(function(sd){ for(var i=0;i<4;i++){
     var x0=ex+0.27-i*0.18, a=V(x0,0.66,sd*0.3), b=V(x0-0.02,0.74,sd*0.44), c=V(x0-0.26,1.08,sd*0.52);
-    B.add("alu", TUBE([a,b,c], 0.026, 5, 6));
+    B.add("alu", sc_pipe([a,b,c], 0.026)); sc_pipeEnd(B, "alu", b, c, 0.026);
     if(i===1||i===2){ tips.push(c.clone()); dirs.push(c.clone().sub(b).normalize()); }
   } });
   /* rear wing + front wing */
