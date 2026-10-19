@@ -84,7 +84,11 @@ function shellHtml(){const body=S.env.body||"street",L=SHELLS[body];if(!L)return
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-shell]");if(!b)return;const o=career()?C():S;o.shell=Object.assign({},o.shell||{},{[S.env.body||"street"]:b.dataset.shell});renderEnv();save();});
 /* drag v2: what the strip car carries, read off the build (hood hardware, intercooler, exhaust effects) */
 function stripHw(c){const k=c.asp||"na",asp=k==="na"?"na":k==="roots"||k==="screw"?"blower":k==="centrifugal"?"centri":k==="twin_turbo"||k==="compound"?"twin":"turbo";
-  const diesel=!!SIM.isDiesel(c);return{asp,ic:!!c.ic&&c.ic!=="none",als:!!c.als&&c.als!=="off",n2o:!!c.nitrous&&c.nitrous!=="none",diesel,style:carShell((S.env&&S.env.body)||"street",diesel)};}
+  const diesel=!!SIM.isDiesel(c);return{asp,ic:!!c.ic&&c.ic!=="none",als:!!c.als&&c.als!=="off",n2o:!!c.nitrous&&c.nitrous!=="none",diesel,style:carShell((S.env&&S.env.body)||"street",diesel),eng:stripEng(c)};}
+/* the engine layout the strip car's headers follow: how many pipes, which side(s) */
+function stripEng(c){try{const E=slEngOf(c);return{kind:E.kind,n:E.n,rotors:E.rotors};}catch(e){return null;}}
+/* a rival's layout read off its car name; anything else keeps the V8 pipes */
+function rivalEng(n){return/rx-?7|rx-?8|13b|rotary/.test(n)?{kind:"rotary",n:2,rotors:2}:/20b|cosmo/.test(n)?{kind:"rotary",n:3,rotors:3}:/wrx|sti|subaru|impreza/.test(n)?{kind:"flat",n:4}:/porsche|911/.test(n)?{kind:"flat",n:6}:/supra|skyline|gt-?r|bmw|2jz|rb26|inline.?6|cummins|ram 2500/.test(n)?{kind:"i",n:6}:/civic|crx|golf|integra|evo|honda|4.?cyl/.test(n)?{kind:"i",n:4}:/duramax|grand national|regal|v6/.test(n)?{kind:"v",n:6}:null;}
 /* the other lane's own car: shell from the car's name, paint and hardware seeded from the name (hw0: the test & tune mirror runs your engine) */
 const RIVAL_PAINT=[0x1f4fa8,0xe2b21b,0x1e6a3b,0xe6e4de,0x16181b,0x5b2a86,0xd85f14,0x7a1f1f,0x2b8a9e,0xa9aeb5,0xc23b6e,0x55602f];
 /* v3: the shell each rival's car name reads as, per class (unnamed test & tune rivals get a seeded one) */
@@ -99,7 +103,7 @@ function rivalLook(name,car,body,hw0){const h=rnHash(String(name)+"|"+String(car
   else{const pool=body==="street"?["na","na","turbo","blower","centri"]:body==="outlaw"?["turbo","twin","blower","na","centri"]:body==="funny"?["blower"]:body==="prostock"?["na"]:body==="gasser"?["na","blower","na","blower","turbo"]:["blower","twin","turbo","blower","na"];
     let asp=/turbo|grand national|supra/.test(n)?(r()<0.5?"twin":"turbo"):/nitrous|pro stock/.test(n)?"na":/nitro|top dragster|funny/.test(n)?"blower":pool[Math.floor(r()*pool.length)];
     const tb=asp==="turbo"||asp==="twin",dsl=style==="truck"&&(/duramax|cummins|diesel/.test(n)||r()<0.5);if(dsl&&asp==="na")asp="turbo";
-    hw={asp,ic:tb||asp==="centri"||dsl,als:(tb&&!dsl&&body!=="street"&&r()<0.6)||(tb&&r()<0.2),n2o:/nitrous/.test(n)||(!dsl&&r()<0.2),diesel:dsl};}
+    hw={asp,ic:tb||asp==="centri"||dsl,als:(tb&&!dsl&&body!=="street"&&r()<0.6)||(tb&&r()<0.2),n2o:/nitrous/.test(n)||(!dsl&&r()<0.2),diesel:dsl,eng:rivalEng(n)};}
   hw.style=style;const mine=carPaint();let c=RIVAL_PAINT[h%RIVAL_PAINT.length];if(c===mine)c=RIVAL_PAINT[(h+5)%RIVAL_PAINT.length];
   return{color:c,hw,body:body||"street"};}
 /* what the other lane's car does (from a full dragPass trace): shift times, how long it spins, a seeded wheelie, chute */
