@@ -30,7 +30,11 @@
       [-120, -230, 38, "Slough"], [-390, -130, 110, "Canola sweep"]] },
     gp: { n: "Prairie Sky Raceway", d: "GP circuit · 12 turns", start: 380, sec: [0.33, 0.67], scale: 1, pts: [
       [-760, 330, 90, "Coulee"], [560, 330, 26, "Elevator"], [640, 60, 150, "Chinook kink"], [560, -170, 60, "Badlands"], [330, -170, 42, "Canola esses"],
-      [190, -330, 42, ""], [-420, -380, 21, "Grain Bin hairpin"], [-140, -200, 160, "Big Sky sweeper"], [-80, 30, 52, "Gopher"], [-420, 60, 36, "Slough"], [-600, -120, 70, "Badger"], [-860, -60, 120, ""]] }
+      [190, -330, 42, ""], [-420, -380, 21, "Grain Bin hairpin"], [-140, -200, 160, "Big Sky sweeper"], [-80, 30, 52, "Gopher"], [-420, 60, 36, "Slough"], [-600, -120, 70, "Badger"], [-860, -60, 120, ""]] },
+    street: { n: "Grain Exchange Street Circuit", d: "street circuit · 13 turns", no24: true, start: 150, sec: [0.33, 0.67], scale: 1, pts: [
+      [-230, 190, 26, "Depot Street"], [220, 190, 24, "Grain Exchange"], [220, 120, 20, ""], [300, 120, 20, "Stockyard"], [300, -180, 28, "Elevator Row"],
+      [120, -180, 20, "Bank Street"], [120, -60, 20, "Courthouse"], [-110, -60, 14, "Mill hairpin"], [-30, -120, 18, ""], [-30, -240, 22, "Rail Crossing"],
+      [-280, -240, 26, "Depot Yard"], [-280, -60, 18, "Weigh Station"], [-230, -60, 18, ""]] }
   };
   const ROAD_DS = 2.5, ROAD_G = 9.81, ROAD_RHO = 1.2;
   const TRACK_CACHE = {};
