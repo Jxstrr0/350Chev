@@ -14,7 +14,7 @@ function saltEnvFix(){const e=S.env,B=SIM.LSR_BODIES;if(!B[e.saltBody])e.saltBod
   if(e.saltShift!=="manual")e.saltShift="auto";if(e.saltDrive!=="auto")e.saltDrive="you";
   e.saltAero=e.saltAero==="on"?"on":"off";
   e.saltBallast=Math.max(0,Math.min(300,isFinite(+e.saltBallast)&&e.saltBallast!==""&&e.saltBallast!=null?Math.round(+e.saltBallast/10)*10:0));
-  e.saltTop=isFinite(+e.saltTop)&&+e.saltTop>0?Math.max(100,Math.min(520,Math.round(+e.saltTop/5)*5)):0;
+  e.saltTop=isFinite(+e.saltTop)&&+e.saltTop>0?Math.max(60,Math.min(650,Math.round(+e.saltTop/5)*5)):0;
   return swapLive()?"altered":k;}   // a swap car runs in an altered class
 const saltCache=new Map();
 /* the engine at Bonneville's 1,290 m and 32 °C — simulate() re-run in that air, cached per build */
@@ -166,7 +166,7 @@ function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_
   h+=swapEnvNote();if(!swapLive())h+=`<div class="lbl"><span>Body</span></div><div class="seg wide">${Object.entries(SIM.LSR_BODIES).map(([id,b])=>{const l=saltBodyLocked(id);return `<button data-sk="saltBody" data-sv="${id}" class="${k===id?"on":""}${l?" lock":""}">${b.n}<small>${l?l+" rep":b.d}</small></button>`;}).join("")}</div>`;
   h+=paintHtml();   /* the strip's paint: the salt car wears it too */
   h+=`<div class="lbl"><span>Course</span></div><div class="seg">${Object.entries(SIM.LSR_COURSES).map(([id,c])=>`<button data-sk="saltCourse" data-sv="${id}" class="${e.saltCourse===id?"on":""}">${c.n}<small>${c.d}${career()?" · $"+SALT_FEE[id]:""}</small></button>`).join("")}</div>`;
-  h+=`<div class="envgrid">${sl("saltTop","Top gear",100,520,5," mph",e.saltTop||saltVeh(k).topMph)}${sl("saltBallast","Rear ballast",0,300,10," kg",e.saltBallast)}</div><div class="row" style="margin:-2px 0 8px"><button class="chip" data-saltgear>Suggest gearing</button></div>`;
+  h+=`<div class="envgrid">${sl("saltTop","Top gear",60,650,5," mph",e.saltTop||saltVeh(k).topMph)}${sl("saltBallast","Rear ballast",0,300,10," kg",e.saltBallast)}</div><div class="row" style="margin:-2px 0 8px"><button class="chip" data-saltgear>Suggest gearing</button></div>`;
   h+=`<div class="lbl"><span>Aero</span></div><div class="seg">${[["off","Clean","least drag"],["on",B.aero.n,"holds the nose down · more drag"]].map(([id,n,d])=>`<button data-sk="saltAero" data-sv="${id}" class="${e.saltAero===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Cooling</span></div><div class="seg">${[["radiator","Radiator",B.radDrag?"costs drag in this body":"sheds heat at speed"],["ice","Ice tank","sealed nose · soaks a run's heat"]].map(([id,n,d])=>`<button data-sk="saltCool" data-sv="${id}" class="${e.saltCool===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Parachute</span></div><div class="seg">${Object.entries(SIM.LSR_CHUTES).map(([id,c])=>`<button data-sk="saltChute" data-sv="${id}" class="${e.saltChute===id?"on":""}">${c.n}<small>${id==="none"?"tech says 175 mph max":c.drogue?"drogue to "+Math.round(c.drogue.rated*2.23694)+", main "+Math.round(c.rated*2.23694)+" mph":"rated "+Math.round(c.rated*2.23694)+" mph"}</small></button>`).join("")}</div>`;
