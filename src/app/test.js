@@ -48,14 +48,15 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("b[data-enum]"
   const init=inp.value;let done=false;const finish=ok=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."));if(isFinite(v)&&v!==envStore(k)[k]){b.textContent="";applyEnv(k,v);commitEnv();}}b.textContent=envStore(k)[k]+(b.dataset.unit||"");};
   inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();finish(true);inp.blur();}else if(ev.key==="Escape"){finish(false);inp.blur();}});
   inp.addEventListener("blur",()=>finish(true));b.textContent="";b.appendChild(inp);inp.focus();inp.select();});
-/* the drivetrain tier (clutch, box, axle): one rating, beside the tyres on the strip, the sled and the road. No S.env.drv = Stock, which never limits. */
+/* the drivetrain tier (clutch, box, axle): shift time and driveline loss, beside the tyres on the strip, the sled and the road. Every tier is sized
+   to the engine (sim/drag.js DRIVETRAIN), so none is ever the weak link; an upgrade only shifts quicker and wastes less. No S.env.drv = Stock. */
 /* career: a tier is bought once (C().drvOwn), then re-fitted free; an unowned one counts as Stock. Sandbox: every tier free. */
 function drvOwned(id){return !career()||id==="stock"||!!(C().drvOwn&&C().drvOwn[id]);}
 function drvId(){const id=S.env.drv;return SIM.DRIVETRAIN[id]&&drvOwned(id)?id:"stock";}
 /* the one Driver toggle every event shares: You drive | Auto in a single row, the two one-line notes behind a small (i).
    attrs(id) gives the button its event's data attributes ("you" / "auto"); cur is the chosen id. */
 function driverToggle(attrs,cur,you,auto){return `<div class="drvrow"><span class="dl">Driver</span><div class="seg n2 drvseg">${[["you","You drive"],["auto","Auto"]].map(([id,n])=>`<button ${attrs(id)} class="${cur===id?"on":""}">${n}</button>`).join("")}</div>${moreI(`<b>You drive</b> · ${you}<br><b>Auto</b> · ${auto}`,"About the driver")}</div>`;}
-function drvHtml(){const cur=drvId();return `<div class="lbl"><span>Clutch, box &amp; axle</span></div><div class="seg">${Object.entries(SIM.DRIVETRAIN).map(([k,v])=>`<button data-lp="${k}" data-ek="drv" class="${cur===k?"on":""}">${v.n}<small>${Math.round(v.nm).toLocaleString("en-CA")} N·m${v.cost&&!drvOwned(k)?" · "+fmt$(v.cost):v.cost&&career()?" · owned":""}</small></button>`).join("")}</div><div class="segbodynote">${SIM.DRIVETRAIN[cur].d}${cur==="stock"?"":" — past the rating the clutch slips; far past it, something breaks."}</div>`;}
+function drvHtml(){const cur=drvId();return `<div class="lbl"><span>Clutch, box &amp; axle</span></div><div class="seg">${Object.entries(SIM.DRIVETRAIN).map(([k,v])=>`<button data-lp="${k}" data-ek="drv" class="${cur===k?"on":""}">${v.n}<small>${Math.round(v.shift*1000)} ms shifts · ${Math.round((1-v.eta)*100)}% loss${v.cost&&!drvOwned(k)?" · "+fmt$(v.cost):v.cost&&career()?" · owned":""}</small></button>`).join("")}</div><div class="segbodynote">${SIM.DRIVETRAIN[cur].d}${cur==="stock"?"":" — sized to the engine like Stock, so it never slips or breaks"}</div>`;}
 function carVeh(car){const b=BODY_SETUP[(car&&car.body)||"street"]||BODY_SETUP.street;const v=Object.assign({},b,car||{});v.chute=v.chute==="yes"||v.chute===true;v.body=(car&&car.body)||"street";return v;}
 const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"street",chute:"no",launchRpm:3500,rearBias:0.55,mass:1400},
   outlaw:{gears:3,first:2.1,top:1.0,final:3.25,tyreDia:30,tyre:"radial",chute:"yes",launchRpm:4500,rearBias:0.6,mass:1450},

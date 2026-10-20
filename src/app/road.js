@@ -6,7 +6,7 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
 /* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
 /* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = [stiffness, balance, wing]
    (newest 24 kept; none = stock). Tweaking the build sliders keeps the id; loading another build (preset, blueprint, trophy, save
@@ -35,7 +35,7 @@ function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)
 function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
 const suLapCache=new Map();
 function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
-function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0);let r=suLapCache.get(k);
+function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0)+"|"+(o.dtId||"");let r=suLapCache.get(k);
   if(!r){if(suLapCache.size>60)suLapCache.clear();const L=SIM.lapSim(p,o,trk);let w=null;for(const a of L.apex)if(!w||a.kmh<w.kmh)w=a;r={t:L.time,low:w&&w.name,ay:L.ayPk};suLapCache.set(k,r);}return r;}
 /* the live read-out under the sliders: balance bar, lap-time change against stock (Road) or the car's figures (Hill), a plain line */
 function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType==="hill";let car,txt="",dl="";

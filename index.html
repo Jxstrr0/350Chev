@@ -6889,16 +6889,20 @@ const ENGINE_SIM = (function () {
      ===================================================================== */
   /* ---- Drag strip: real-time vehicle pass ---- */
   // heat: how much extra grip a proper burnout is worth on that compound (fraction of μ)
-  /* drivetrain: the clutch, gearbox and axle as one rating, in engine-side N·m (1 lb-ft = 1.356 N·m). Past the rating the clutch slips
-     and the wheels see no more than that; far past it (1.3x and building) something lets go: an axle, the box or the clutch. Stock is sized
-     above every engine in the game, so it never limits and nothing changes until you fit a lighter box. */
+  /* drivetrain: the clutch, gearbox and axle as one tier. Every tier is sized to the engine, so none of them slips or breaks:
+     Stock is matched to whatever is bolted to it, and an upgrade is never weaker than that. What an upgrade buys is in the
+     parts: a dog box shifts in a fraction of the time (shift, seconds of no drive per gear change) and a race driveline
+     wastes less of the engine between the flywheel and the tyre (eta, the share of torque that reaches the wheels).
+     veh.dtCap (engine-side N·m) is still honoured by the pass, the sled and the road for a driveline that does have a
+     rating — a swap car's, say — but no tier sets one. */
   const DRIVETRAIN = {
-    stock: { n: "Stock", nm: 12000, cost: 0, d: "matched to the engine · never the weak link" },
-    hd: { n: "HD", nm: 1100, cost: 2800, d: "heavy clutch, built box, 9-inch · ~810 lb-ft" },
-    race: { n: "Race", nm: 2500, cost: 9500, d: "multi-disc clutch, dog box, 9-inch / 14-bolt · ~1,840 lb-ft" },
-    pro: { n: "Pro", nm: 4300, cost: 24000, d: "triple-disc, straight-cut dog box, spooled 14-bolt · 3,000+ lb-ft" } };
+    stock: { n: "Stock", shift: 0.18, eta: 0.90, cost: 0, d: "matched to the engine · never the weak link" },
+    hd: { n: "HD", shift: 0.15, eta: 0.91, cost: 2800, d: "heavy clutch, built box, 9-inch · a little quicker through the gears" },
+    race: { n: "Race", shift: 0.11, eta: 0.92, cost: 9500, d: "multi-disc clutch, dog box, 9-inch / 14-bolt · fast shifts, less loss" },
+    pro: { n: "Pro", shift: 0.08, eta: 0.935, cost: 24000, d: "triple-disc, straight-cut dog box, spooled 14-bolt · snap shifts, least loss" } };
   const drivetrain = id => DRIVETRAIN[id] || DRIVETRAIN.stock;
-  const dtCapOf = id => { const D = drivetrain(id); return D === DRIVETRAIN.stock ? 0 : D.nm; };   // 0 = no limit (the default)
+  const dtCapOf = id => 0;   // a tier never limits (0 = no cap); kept so the call sites read the same as any other rated driveline
+  const dtShiftK = id => drivetrain(id).shift / DRIVETRAIN.stock.shift, dtEtaK = id => drivetrain(id).eta / DRIVETRAIN.stock.eta;   // against Stock, for sims with their own base figures
   const dtPart = o => o >= 1.9 ? "Snapped an axle" : o >= 1.6 ? "Stripped the gearbox" : "Exploded the clutch";   // by how far over it was
   const dtStress = (st, o, dt) => { if (o <= 1.3) return false; st.dtO = Math.max(st.dtO || 0, o); st.dtS = (st.dtS || 0) + (o - 1.3) * dt; return st.dtS > 0.12; };
   const TYRES = { street: { mu: 1.18, n: "Street radial", heat: 0.02 }, radial: { mu: 1.7, n: "Drag radial", heat: 0.08 }, slick: { mu: 2.4, n: "Slick", heat: 0.08 } };
@@ -6996,7 +7000,8 @@ const ENGINE_SIM = (function () {
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const torqueAt = r => { if (r <= rpms[0]) return tq[0] * Math.max(0.3, r / rpms[0]); if (r >= rpms[N - 1]) return tq[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return tq[i - 1] + f * (tq[i] - tq[i - 1]); };
     const ratios = []; for (let i = 0; i < v.gears; i++) ratios.push(v.gears === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (v.gears - 1)));
-    const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = 0.90, TY = TYRES[v.tyre] || TYRES.street;
+    const DT = drivetrain(v.dtId), shiftTime = v.shiftTime > 0 ? +v.shiftTime : DT.shift;   // the tier's box and driveline (veh.dtId); veh.eta / veh.shiftTime override
+    const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = v.eta > 0 ? +v.eta : DT.eta, TY = TYRES[v.tyre] || TYRES.street;
     let mu = TY.mu;
     if (veh && veh.body && !(veh.wheelbase > 0)) v.wheelbase = (AERO[veh.body] || AERO.street).wb;
     if (veh && veh.body && !(veh.cgH > 0) && AERO[veh.body] && AERO[veh.body].cgH) v.cgH = AERO[veh.body].cgH;   // v3 classes only
@@ -7116,7 +7121,7 @@ const ENGINE_SIM = (function () {
       if (MH && st.mMetal > MH.crackC) st.manDose += dt * (st.mMetal - MH.crackC) / 60 * (MH.cast ? 1.3 : 1);
       if (st.egt > 850) st.lineHeat += dt * (st.egt - 850) / 100;
     }
-    function shift() { if (st.phase !== "run" || st.gear >= v.gears || st.shiftT > 0) return; st.shifts.push({ rpm: Math.round(st.rpm), gear: st.gear, x: st.x, t: st.t, boost: +st.boost.toFixed(2) }); st.gear++; st.shiftT = 0.18; if (isTurbo) st.launch.pops = Math.max(st.launch.pops, 0.35 * clamp(st.boost / 1.2, 0.3, 1)); }
+    function shift() { if (st.phase !== "run" || st.gear >= v.gears || st.shiftT > 0) return; st.shifts.push({ rpm: Math.round(st.rpm), gear: st.gear, x: st.x, t: st.t, boost: +st.boost.toFixed(2) }); st.gear++; st.shiftT = shiftTime; if (isTurbo) st.launch.pops = Math.max(st.launch.pops, 0.35 * clamp(st.boost / 1.2, 0.3, 1)); }
     function step(dt) { dt = Math.min(1, dt); while (dt > 0 && !st.done) { const h = Math.min(0.004, dt); dt -= h; sub(h); } return st; }
     function sub(dt) {
       if (st.done) return st;
@@ -7180,9 +7185,13 @@ const ENGINE_SIM = (function () {
       if (st.failKind && st.t >= st.failAt) { st.broke = st.failKind; st.phase = "done"; st.done = true; st.load = 0; return st; }
       let Teng = inShift ? 0 : engTq(st.rpm);
       if (NZ && !inShift && st.n2oS.frac < 1) Teng -= (1 - st.n2oS.frac) * interp(res.n2oTq, st.rpm);   // the part of the shot that is not in
-      if (st.rpm >= limiter) { Teng = Teng * 0.15; st.limiterTime += dt; }
-      let Ttrans;
       const driveRpm0 = wheelRpm + st.wSpin;
+      /* the rev limiter: a slipping clutch or converter lets the engine bounce on it and still feed the box about 15% on average;
+         once the wheels are driving the engine at the limiter (coupled, or the converter all but locked) there is nothing left
+         to push with — the cut is total, and the car can go no faster in that gear. The limiter never set the road speed before:
+         the 15% of a big engine's torque kept pushing at any speed, so a short-geared car ran past the stripe on the cut alone. */
+      if (st.rpm >= limiter) { st.limiterTime += dt; Teng = (st.conv ? driveRpm0 / 0.96 : !st.slipping ? driveRpm0 : 0) >= limiter ? 0 : Teng * 0.15; }
+      let Ttrans;
       if (st.conv) {
         // torque converter off the trans-brake: multiplies torque while it slips, never lets the engine fall below stall
         const SR = clamp(driveRpm0 / Math.max(1, st.rpm), 0, 1);
@@ -7617,7 +7626,7 @@ const ENGINE_SIM = (function () {
     const gears = C0.gears || (v.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS);
     const mph = v.mph || (gears[clamp(Math.round(v.gear), 0, gears.length - 1)] || gears[1])[1];
     const G = (v.redline * 2 * Math.PI / 60) / (mph * 0.44704 / rw);          // overall ratio, engine : wheel
-    const conv = v.trans !== "clutch", etaL = conv ? 0.91 : 0.95;
+    const conv = v.trans !== "clutch", etaL = Math.min(0.99, (conv ? 0.91 : 0.95) * dtEtaK(v.dtId));   // the drivetrain tier (sim/drag.js) wastes a little less of the engine
     const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000);
     const Ie = (0.12 + 0.07 * VdL) * (v.flyK || 1), Iw = (v.kind === "tractor" ? 2 * 260 : 4 * 32) * rw * rw * 0.6;   // flywheel + crank; tyres and rims
     const m = v.mass + v.ballast, crr = 0.03 * TK.crr, ballX = 0.75;               // ballast hangs ~0.75 m ahead of the front axle
@@ -8219,7 +8228,7 @@ const ENGINE_SIM = (function () {
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.7, 1.4), 0.7, 8);
     const RC = { sw: !!sw, ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
       muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
-      cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1), engKg: ekg, vPow: vPow,
+      cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1) * dtShiftK(opt.dtId), engKg: ekg, vPow: vPow,   // a dog box (the drivetrain tier, sim/drag.js) shifts quicker
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
     return roadSetup(RC, opt.setup);
@@ -29751,7 +29760,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.18.0";
+const VERSION="1.76.19.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -30435,14 +30444,15 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("b[data-enum]"
   const init=inp.value;let done=false;const finish=ok=>{if(done)return;done=true;if(ok&&inp.value!==init){const v=parseFloat(inp.value.replace(",","."));if(isFinite(v)&&v!==envStore(k)[k]){b.textContent="";applyEnv(k,v);commitEnv();}}b.textContent=envStore(k)[k]+(b.dataset.unit||"");};
   inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();finish(true);inp.blur();}else if(ev.key==="Escape"){finish(false);inp.blur();}});
   inp.addEventListener("blur",()=>finish(true));b.textContent="";b.appendChild(inp);inp.focus();inp.select();});
-/* the drivetrain tier (clutch, box, axle): one rating, beside the tyres on the strip, the sled and the road. No S.env.drv = Stock, which never limits. */
+/* the drivetrain tier (clutch, box, axle): shift time and driveline loss, beside the tyres on the strip, the sled and the road. Every tier is sized
+   to the engine (sim/drag.js DRIVETRAIN), so none is ever the weak link; an upgrade only shifts quicker and wastes less. No S.env.drv = Stock. */
 /* career: a tier is bought once (C().drvOwn), then re-fitted free; an unowned one counts as Stock. Sandbox: every tier free. */
 function drvOwned(id){return !career()||id==="stock"||!!(C().drvOwn&&C().drvOwn[id]);}
 function drvId(){const id=S.env.drv;return SIM.DRIVETRAIN[id]&&drvOwned(id)?id:"stock";}
 /* the one Driver toggle every event shares: You drive | Auto in a single row, the two one-line notes behind a small (i).
    attrs(id) gives the button its event's data attributes ("you" / "auto"); cur is the chosen id. */
 function driverToggle(attrs,cur,you,auto){return `<div class="drvrow"><span class="dl">Driver</span><div class="seg n2 drvseg">${[["you","You drive"],["auto","Auto"]].map(([id,n])=>`<button ${attrs(id)} class="${cur===id?"on":""}">${n}</button>`).join("")}</div>${moreI(`<b>You drive</b> · ${you}<br><b>Auto</b> · ${auto}`,"About the driver")}</div>`;}
-function drvHtml(){const cur=drvId();return `<div class="lbl"><span>Clutch, box &amp; axle</span></div><div class="seg">${Object.entries(SIM.DRIVETRAIN).map(([k,v])=>`<button data-lp="${k}" data-ek="drv" class="${cur===k?"on":""}">${v.n}<small>${Math.round(v.nm).toLocaleString("en-CA")} N·m${v.cost&&!drvOwned(k)?" · "+fmt$(v.cost):v.cost&&career()?" · owned":""}</small></button>`).join("")}</div><div class="segbodynote">${SIM.DRIVETRAIN[cur].d}${cur==="stock"?"":" — past the rating the clutch slips; far past it, something breaks."}</div>`;}
+function drvHtml(){const cur=drvId();return `<div class="lbl"><span>Clutch, box &amp; axle</span></div><div class="seg">${Object.entries(SIM.DRIVETRAIN).map(([k,v])=>`<button data-lp="${k}" data-ek="drv" class="${cur===k?"on":""}">${v.n}<small>${Math.round(v.shift*1000)} ms shifts · ${Math.round((1-v.eta)*100)}% loss${v.cost&&!drvOwned(k)?" · "+fmt$(v.cost):v.cost&&career()?" · owned":""}</small></button>`).join("")}</div><div class="segbodynote">${SIM.DRIVETRAIN[cur].d}${cur==="stock"?"":" — sized to the engine like Stock, so it never slips or breaks"}</div>`;}
 function carVeh(car){const b=BODY_SETUP[(car&&car.body)||"street"]||BODY_SETUP.street;const v=Object.assign({},b,car||{});v.chute=v.chute==="yes"||v.chute===true;v.body=(car&&car.body)||"street";return v;}
 const BODY_SETUP={street:{gears:6,first:3.3,top:0.8,final:3.75,tyreDia:27,tyre:"street",chute:"no",launchRpm:3500,rearBias:0.55,mass:1400},
   outlaw:{gears:3,first:2.1,top:1.0,final:3.25,tyreDia:30,tyre:"radial",chute:"yes",launchRpm:4500,rearBias:0.6,mass:1450},
@@ -32091,7 +32101,7 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
 /* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
 /* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = [stiffness, balance, wing]
    (newest 24 kept; none = stock). Tweaking the build sliders keeps the id; loading another build (preset, blueprint, trophy, save
@@ -32120,7 +32130,7 @@ function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)
 function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
 const suLapCache=new Map();
 function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
-function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0);let r=suLapCache.get(k);
+function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0)+"|"+(o.dtId||"");let r=suLapCache.get(k);
   if(!r){if(suLapCache.size>60)suLapCache.clear();const L=SIM.lapSim(p,o,trk);let w=null;for(const a of L.apex)if(!w||a.kmh<w.kmh)w=a;r={t:L.time,low:w&&w.name,ay:L.ayPk};suLapCache.set(k,r);}return r;}
 /* the live read-out under the sliders: balance bar, lap-time change against stock (Road) or the car's figures (Hill), a plain line */
 function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType==="hill";let car,txt="",dl="";

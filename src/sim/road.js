@@ -118,7 +118,7 @@
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.7, 1.4), 0.7, 8);
     const RC = { sw: !!sw, ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
       muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
-      cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1), engKg: ekg, vPow: vPow,
+      cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1) * dtShiftK(opt.dtId), engKg: ekg, vPow: vPow,   // a dog box (the drivetrain tier, sim/drag.js) shifts quicker
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
     return roadSetup(RC, opt.setup);
