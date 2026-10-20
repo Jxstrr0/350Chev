@@ -7926,7 +7926,7 @@ const ENGINE_SIM = (function () {
     const hasEgt = Array.isArray(res.egtCurve) && res.egtCurve.length === NR;
     const egtLimit = res.egtLimitC || (res.diesel ? 900 : 960);
     const tU = id => { const t = (res.tests || []).find(x => x.id === id); return t ? t.util : 0; };
-    const kW = Math.max(60, (res.peakHp || 250) * 0.7457), Cth = (7 + 2.6 * VdL) * 1000, UA = kW * 1000 * 0.5 / 62;   // a radiator sized to hold full power at full airflow
+    const kW = Math.max(60, Math.min(res.peakHp || 250, C0.field.hp * 1.4) * 0.7457), Cth = (7 + 2.6 * VdL) * 1000, UA = kW * 1000 * 0.5 / 62;   // the truck's radiator holds full power at full airflow, but only as big as the class carries (about 1.4× the field): a big swap runs hot
     const hFrac = res.diesel ? 0.42 : 0.52;
     const sw = [Math.max(0.05, TY.sp - 0.06), TY.sp + 0.1], digS = TY.sp + 0.28 + 0.1 * TY.paddle;
     const st = { t: 0, tPit: null, tOut: null, x: -CV.runup, v: 0, w: 0, rpm: v.idle, thr: 0, foot: 0, slip: 0, phase: "stage", done: false, cleared: false,
@@ -9099,13 +9099,13 @@ const ENGINE_SIM = (function () {
   const BOAT_IMP = [["A", "A-cut", 0.50, "light · revs, holeshot"], ["B", "B-cut", 0.56, "medium"], ["C", "C-cut", 0.62, "heavy"], ["D", "D-cut", 0.68, "racing · top end"]];
   const BOAT_CLASSES = {
     outboard: { n: "Outboard · Stock", d: "V-bottom · outboard · ≤ 3.3 L", tier: 1, rep: 0, hull: "vee", drive: "prop", hullKg: 560, rigKg: 90, maxL: 3.3,
-      gear: [1.5, 3.0, 1.85], pitch: [17, 37, 26], Kq0: 0.348, Tc0: 0.62, field: { hp: 185, sd: 22, mph: 64, dsl: 0, red: [5600, 6400] }, fee: 150, purse: 2000 },
+      gear: [1.5, 3.0, 1.85], pitch: [17, 37, 26], Kq0: 0.348, Tc0: 0.62, field: { hp: 185, sd: 22, mph: 64, dsl: 0, red: [5600, 6400] }, fee: 300, purse: 2000 },
     jet: { n: "Jet boat", d: "flat-bottom · pump drive, no prop", tier: 2, rep: 30, hull: "flat", drive: "jet", hullKg: 900, rigKg: 60, maxL: 0, A: 0.0042,
-      gear: [0.45, 1.3, 1.0], imp: 1, Tc0: 0.95, field: { hp: 520, sd: 90, mph: 94, dsl: 0.25 }, fee: 250, purse: 4000 },
+      gear: [0.45, 1.3, 1.0], imp: 1, Tc0: 0.95, field: { hp: 520, sd: 90, mph: 94, dsl: 0.25 }, fee: 600, purse: 4000 },
     pro: { n: "Pro Eliminator", d: "blown flat · V-drive, cleaver prop", tier: 3, rep: 100, hull: "flat", drive: "prop", hullKg: 820, rigKg: 60, maxL: 0,
-      gear: [0.75, 1.35, 1.0], pitch: [24, 44, 32], Kq0: 0.219, Tc0: 1.7, field: { hp: 1900, sd: 280, mph: 163, dsl: 0, red: [7200, 8200] }, fee: 600, purse: 9000 },
+      gear: [0.75, 1.35, 1.0], pitch: [24, 44, 32], Kq0: 0.219, Tc0: 1.7, field: { hp: 1900, sd: 280, mph: 163, dsl: 0, red: [7200, 8200] }, fee: 1350, purse: 9000 },
     tfh: { n: "Top Fuel Hydro", d: "three-point hydro · rides on its prop", tier: 4, rep: 250, hull: "hydro", drive: "prop", hullKg: 600, rigKg: 60, maxL: 0,
-      gear: [0.7, 1.25, 1.0], pitch: [28, 50, 36], Kq0: 0.304, Tc0: 2.2, field: { hp: 2900, sd: 380, mph: 192, dsl: 0, red: [7400, 8400] }, fee: 1200, purse: 20000 }
+      gear: [0.7, 1.25, 1.0], pitch: [28, 50, 36], Kq0: 0.304, Tc0: 2.2, field: { hp: 2900, sd: 380, mph: 192, dsl: 0, red: [7400, 8400] }, fee: 3000, purse: 20000 }
   };
   for (const k in BOAT_CLASSES) BOAT_CLASSES[k].id = k;
   /* a run's water: headwind (m/s, − is a tailwind) and chop (0 glassy … 1 rough). Same seed, same water. */
@@ -9135,6 +9135,9 @@ const ENGINE_SIM = (function () {
       air: 0, airT: 0, hops: 0, kick: 0, hopV: 0, cool: 58, coolPeak: 58, debris: null, dnf: null, broke: null, failKind: null, limT: 0, peakRpm: 0, maxV: 0, trace: [], blowAt: [], humpT: null, planeT: null, vy: 0, lastTr: -1, acc: 0, doneT: null };
     let failAt = Infinity, failKind = null, loadT = 0, nextHop = 0, airLeft = 0, lrT = 0;
     if (!v.noFail && res.fails && res.fails.length) { const t0 = (res.tests || []).find(x => x.name === res.fails[0]); failKind = t0 ? t0.id : "rod_tension"; failAt = 0.5 + rng() * 4.5; }
+    // an engine run near its limits can let go at full load: each part past 80% of its limit adds a little risk per second (a rival's 4% a pass, roughly, at the edge)
+    const hz = (res.tests || []).map(t => ({ id: t.id, h: Math.max(0, (t.util || 0) - 0.8) * 0.025 })).filter(q => q.h > 0), hzTot = hz.reduce((a, q) => a + q.h, 0);
+    const hzR = pullRng(((v.seed >>> 0) ^ 0x7A11ED) >>> 0); let hzAcc = 0; const hzRoll = -Math.log(Math.max(1e-9, hzR()));
     const limTrip = 0.9 + rng() * 0.9;
     const deb = !v.noFail && rng() < 0.035 ? { x: 40 + rng() * 230, kind: jet ? "grate" : "weed" } : null;
     const hopR = pullRng(((v.seed >>> 0) ^ 0x5EA5) >>> 0); nextHop = 0.4 + hopR() * 1.2;
@@ -9214,6 +9217,7 @@ const ENGINE_SIM = (function () {
           else if (v.wornAt && loadT >= v.wornAt) st.broke = "worn";
           else if (st.limT > limTrip) st.broke = "valve_float";
           else if (st.cool > 124) st.broke = "head_lift";
+          else if (hzTot > 0 && thr > 0.6 && (hzAcc += hzTot * dt) > hzRoll) { const pick = hzR() * hzTot; let c = 0; st.broke = hz[0].id; for (const q of hz) { c += q.h; if (pick <= c) { st.broke = q.id; break; } } }
           if (st.broke) st.failKind = st.broke;
         }
       }
@@ -29747,7 +29751,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.17.0";
+const VERSION="1.76.18.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -29858,7 +29862,7 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="boat"?0.008:t==="salt"?0.03:t==="road"?0.03:t==="hill"?0.04:t==="oval"?0.03:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="oval")return ovalCost();if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE,hill:HILL_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="oval")return ovalCost();if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:bogFee(S.env.bogCls),hill:hillFee(S.env.hillCls)}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");toastPlace();clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
 /* the toast and the achievement banner share the foot of the screen. Phone: the toast sits just above whatever is docked there
    (the tab bar, or the results sheet, measured: it can be taller than its peek line) and the banner stacks above the toast.
@@ -31887,7 +31891,7 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
 /* ===================== MUD BOG: the engine in a truck, a pit of mud ===================== */
 /* run up on the dirt, hit the mud with whatever speed you've got and keep the wheels turning: stuck scores the distance, through scores the time */
 let BR=null;
-const BOG_FEE=120,BOG_PURSE=[2500,1200,700,400,200],BOG_PAY={1:1,2:1.8,3:3},BOG_REP=[3,2,1],BOG_SB={};
+const BOG_PURSE=[2500,1200,700,400,200],BOG_PAY={1:1,2:1.8,3:3},BOG_REP=[3,2,1],BOG_SB={};
 const BOG_NAMES=["Swamp Thing","Mud Butter","Gumbo","Sloppy Joe","Bog Hog","Muddy Waters","Dirty Bird","Low Ground","Sink Hole","Gator Bait","Brown Out","Clay Pigeon","Backwater","Slough Monster","Rooster Tail","Wet Willy","Gravy Train","Stuck Up"];
 const BOG_COLORS={street:0x1d4787,modified:0xb7261d,super:0x2c6b3a};
 const bogEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
@@ -31901,7 +31905,11 @@ function bogEnvFix(){const e=S.env,B=SIM.BOG_CLASSES;if(!B[e.bogCls])e.bogCls="s
 function bogVeh(k){const e=S.env;return{cls:k,gear:+e.bogGear,tyre:e.bogTyre,redline:S.cfg.redline,idle:bogIsD(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850)};}
 /* the night: one pit per class per week in career (the same mud all week), a fresh one every run in the sandbox */
 function bogSeed(k){const ix=Object.keys(SIM.BOG_CLASSES).indexOf(k)+1;if(!career())return BOG_SB[ix]||(BOG_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().bogSeed)C().bogSeed=Math.floor(Math.random()*1e9)+1;return(C().bogSeed^(C().week*7919)^(ix*104729))>>>0;}
-function bogHookedWk(k){return career()&&(C().bogWk||{})[k]===C().week;}
+/* career: one mud bog run a week, in one class. The class run this week, or null */
+function bogWkCls(){if(!career())return null;const w=C().bogWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+function bogHookedWk(k){return !!bogWkCls();}
+/* entry: about 15% of the class's winning purse */
+function bogFee(k){const C0=SIM.BOG_CLASSES[k]||SIM.BOG_CLASSES.street;return Math.round(BOG_PURSE[0]*(BOG_PAY[C0.tier]||1)*0.15/5)*5;}
 const bogNightCache=new Map(),bogFieldCache=new Map();
 function bogNight(seed){let n=bogNightCache.get(seed);if(!n){if(bogNightCache.size>12)bogNightCache.clear();n=SIM.bogNight(seed);bogNightCache.set(seed,n);}return n;}
 /* the rest of the class: 5–7 trucks, each its own engine and driver run through the same sim and the same mud */
@@ -32024,7 +32032,7 @@ function bogPb(r,failed){if(ff||failed)return;const R=recs();if(!R.bog||typeof R
   if(was){r.pb={was:was.c?was.t.toFixed(2)+" s":was.m.toFixed(1)+" m"};setTimeout(()=>toast(`CLASS BEST · ${r.cleared?r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} (was ${r.pb.was})`),2700);}}
 function bogRecHtml(){const R=recs(),P=R.bog;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOG_CLASSES).filter(k=>P[k]);if(!ks.length)return "";
   return `<div class="rtop"><span>Mud bog · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.c?"✓":"·"}</b><span class="et">${e.c?e.t.toFixed(2):e.m.toFixed(1)}</span><span>${e.c?"s":"m"}</span><span class="nm" title="${bogEsc(e.n)}">${bogEsc(SIM.BOG_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
-function bogHint(){const c=SIM.BOG_CLASSES;return career()?`<b>Mud bog</b> · $${BOG_FEE} entry, one run per class a week. Needs a certified engine. ${c.street.n} is open to anyone; ${c.modified.n} at ${c.modified.rep} rep, ${c.super.n} at ${c.super.rep}. Through the pit beats stuck in it — quickest time wins, then farthest. Purse by placing, up to ${fmt$(BOG_PURSE[0]*BOG_PAY[3])} in Super. Every run is wear, and the mud packs the radiator.`
+function bogHint(){const c=SIM.BOG_CLASSES;return career()?`<b>Mud bog</b> · ${fmt$(bogFee("street"))}–${fmt$(bogFee("super"))} entry, one run a week in one class. Needs a certified engine. ${c.street.n} is open to anyone; ${c.modified.n} at ${c.modified.rep} rep, ${c.super.n} at ${c.super.rep}. Through the pit beats stuck in it — quickest time wins, then farthest. Purse by placing, up to ${fmt$(BOG_PURSE[0]*BOG_PAY[3])} in Super. Every run is wear, the mud packs the radiator, and each truck's radiator is sized for its class: a big swap runs hot.`
   :`<b>Mud bog</b> · hold the button for throttle, let go to feather. Carry speed off the run-up, then keep the wheels turning in the mud: a little wheelspin cleans the lugs, too much digs a hole. Stuck scores the distance; through scores the time.`;}
 /* a quick look at the night's pit before you run it: length, mud, the depth along it, where the field got to */
 function bogPitSvg(night,pitK,field){const L=night.len,W=300,H=40,pts=[];for(let x=0;x<=L;x+=1)pts.push([x/L*W,4+Math.min(1.6,SIM.bogDepth(night,x)*pitK)/1.6*(H-8)]);
@@ -32757,7 +32765,7 @@ function lsrFitMph(res,cfg,body){const key=cfgHash(cfg)+"|"+body;if(lsrFitCache.
 /* 19.99 km, 156 turns, 2,862 m to 4,302 m. The engine is run at five altitudes on the way up (SIM.hillPrep); the car is the
    road test's chassis on the class's tyres and aero. Auto drives the corner calls; You drive holds PUSH or LIFT into each corner. */
 let HC=null;
-const HILL_FEE=400,HILL_PURSE=[4000,2000,1200,700,400],HILL_PAY={1:1,2:1.8,3:3,4:5},HILL_REP=[4,3,2,1],HILL_SB={};
+const HILL_PURSE=[4000,2000,1200,700,400],HILL_PAY={1:1,2:1.8,3:3,4:5},HILL_REP=[4,3,2,1],HILL_SB={};
 const HILL_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],["heli","Helicopter","from above"],["onboard","Onboard","driver's eye"]];
 const HILL_C={lift:0.962,steady:1.0,push:1.035};
 const HILL_NAMES=["R. Okafor","D. Lindqvist","M. Tanaka","J. Whitehorse","C. Duval","T. Brennan","A. Kovač","S. Moreau","L. Haugen","P. Rinaldi","K. Mbeki","E. Castellanos","N. Fairweather","B. Ostrowski","H. Nakamura","F. Leclair","G. Running Elk","V. Sørensen"];
@@ -32772,7 +32780,11 @@ function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCl
 function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt()};}
 /* race day: one running per class per week in career (the same calls all week, the same field); a fresh mountain every run in the sandbox */
 function hillSeed(k){const ix=Object.keys(SIM.HILL_CLASSES).indexOf(k)+1;if(!career())return HILL_SB[ix]||(HILL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().hillSeed)C().hillSeed=Math.floor(Math.random()*1e9)+1;return(C().hillSeed^(C().week*7919)^(ix*104729))>>>0;}
-function hillRanWk(k){return career()&&(C().hillWk||{})[k]===C().week;}
+/* career: one climb a week, in one class. The class run this week, or null */
+function hillWkCls(){if(!career())return null;const w=C().hillWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+function hillRanWk(k){return !!hillWkCls();}
+/* entry: about 15% of the class's winning purse */
+function hillFee(k){const C0=SIM.HILL_CLASSES[k]||SIM.HILL_CLASSES.open;return Math.round(HILL_PURSE[0]*(HILL_PAY[C0.tier]||1)*0.15/5)*5;}
 function hillRecs(){const R=recs();if(!R.hill||typeof R.hill!=="object")R.hill={};return R.hill;}
 /* the engine at altitude, cached by build: five dyno runs up the mountain */
 const hillPrepCache=new Map();
@@ -32796,7 +32808,7 @@ function hillFieldJob(k,seed){const key=k+"|"+seed;
   return J;}
 const hillDnfWord=k=>({edge:"OVER THE EDGE",boil:"BOILED OVER",stall:"COULDN'T CLIMB",time:"FLAGGED OFF"})[k]||"DNF";
 const hillCmp=(a,b)=>(a.t==null?1:0)-(b.t==null?1:0)||(a.t!=null?a.t-b.t:0)||(a.me?-1:b.me?1:0);
-function hillHint(){const c=SIM.HILL_CLASSES;return career()?`<b>Pikes Peak</b> · ${fmt$(HILL_FEE)} entry, one run per class a week. Needs a certified engine. ${c.open.n} is open to anyone; ${c.ta.n} at ${c.ta.rep} rep, ${c.ppo.n} at ${c.ppo.rep}, ${c.unl.n} at ${c.unl.rep}. Purse by placing, up to ${fmt$(HILL_PURSE[0]*HILL_PAY[4])} in ${c.unl.n}. Thin air costs an atmospheric engine about a third of its power; a turbo holds on.`
+function hillHint(){const c=SIM.HILL_CLASSES;return career()?`<b>Pikes Peak</b> · ${fmt$(hillFee("open"))}–${fmt$(hillFee("unl"))} entry, one run a week in one class. Needs a certified engine. ${c.open.n} is open to anyone; ${c.ta.n} at ${c.ta.rep} rep, ${c.ppo.n} at ${c.ppo.rep}, ${c.unl.n} at ${c.unl.rep}. Purse by placing, up to ${fmt$(HILL_PURSE[0]*HILL_PAY[4])} in ${c.unl.n}. Thin air costs an atmospheric engine about a third of its power; a turbo holds on.`
   :`<b>Pikes Peak</b> · 19.99 km, 156 turns, 2,862 m to 4,302 m. Auto reads the corner calls for you; in <b>You drive</b>, hold <b>PUSH</b> into grippy corners and <b>LIFT</b> into dusty ones. Too fast is a moment, a trip through the gravel, or — where there's a drop and no rail — the end of the run. <b>Space</b> pushes.`;}
 /* the mountain in profile: altitude against distance, the sections, the treeline, where you are */
 function hillProfileSvg(cls,mark){const T=SIM.hillCourse(),W=320,H=64,a0=2800,a1=4360,X=s=>(s/T.len*W).toFixed(1),Y=z=>(H-4-(z-a0)/(a1-a0)*(H-10)).toFixed(1);
@@ -32976,7 +32988,7 @@ function hillRecHtml(){const P=hillRecs(),ks=Object.keys(SIM.HILL_CLASSES).filte
    Two tracks (SIM.OVAL_TRACKS): the clay 3/8 mile (the default; every old save and record is this one) and the paved half-mile.
    The pick lives in S.env.ovalTrack; the night book and the records are kept per track (clay keeps its old keys). */
 let OV=null;
-const OVAL_FEE=200,OVAL_HEAT=8,OVAL_FEAT=25,OVAL_REP=10,OVAL_FPURSE=[3200,1700,1000,600,350,200],OVAL_HPURSE=[300,180,120,80],OVAL_PAY={1:1,2:1.8,3:3},OVAL_FREP=[4,3,2,1],OVAL_SB={};
+const OVAL_HEAT=8,OVAL_FEAT=25,OVAL_REP=10,OVAL_FPURSE=[3200,1700,1000,600,350,200],OVAL_HPURSE=[300,180,120,80],OVAL_PAY={1:1,2:1.8,3:3},OVAL_FREP=[4,3,2,1],OVAL_SB={};
 const OVAL_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],["tv","Trackside","TV tower"],["heli","Blimp","from above"],["onboard","Onboard","driver's eye"]];
 const OVAL_PACE={save:0.955,steady:0.985,push:0.998};
 const OVAL_NAMES=["D. Halvorsen","B. Kowalchuk","R. Whitehorse","T. Lindgren","M. Boucher","C. Yurchak","J. Dufresne","K. Sorenson","A. Pelletier","L. Bergstrom","W. Maddox","S. Okonkwo","G. Tremblay","H. Nordquist","P. Lavallee","E. Stoll","N. Redcrow","F. Haugen","V. Moreau","Z. Kruger"];
@@ -33009,9 +33021,11 @@ function ovalNight(k,fresh){const B=ovalBook(),t=ovalTk(),bk=ovalBK(k,t);let n=B
     if(career()){if(!C().ovalSeed)C().ovalSeed=Math.floor(Math.random()*1e9)+1;seed=(C().ovalSeed^(C().week*7919)^(ix*104729)^(ti*1299709))>>>0;}else seed=Math.floor(Math.random()*1e9)+1;
     n=B[bk]={seed,week:career()?C().week:0,stage:"heat",heat:null,grid:null,hash:null};}
   return n;}
-/* career: a class races one night a week, on either track. This week's night for the class on any track that is over, or on the other track and begun */
+/* career: one oval night a week, one class, either track. This week's night for the class on any track that is over; or another night (any class, the other track) begun */
 function ovalRanWk(k){if(!career())return false;const B=ovalBook();return OVAL_TRK.some(t=>{const n=B[ovalBK(k,t)];return !!(n&&n.week===C().week&&n.stage==="done");});}
-function ovalOther(k){if(!career())return null;const B=ovalBook(),t0=ovalTk();return OVAL_TRK.find(t=>{if(t===t0)return false;const n=B[ovalBK(k,t)];return !!(n&&n.week===C().week&&n.stage!=="heat");})||null;}
+function ovalOther(k){if(!career())return null;const B=ovalBook(),me=ovalBK(k,ovalTk());for(const bk in B){const n=B[bk];if(bk!==me&&n&&n.week===C().week&&n.stage!=="heat")return bk;}return null;}
+/* entry for the night: about 15% of the class's feature win */
+function ovalFee(k){const C0=SIM.OVAL_CLASSES[k]||SIM.OVAL_CLASSES.street;return Math.round(OVAL_FPURSE[0]*(OVAL_PAY[C0.tier]||1)*0.15/5)*5;}
 function ovalStageNow(){const k=ovalEnvFix(),n=ovalNight(k);return n.stage==="feature"?"feature":"heat";}
 /* ---- the field: eleven rivals a night, each a made-up engine and a driver ---- */
 const ovalRosterCache=new Map(),ovalRunCache=new Map();
@@ -33068,7 +33082,7 @@ function ovalEnvHtml(sl){const e=S.env,k=ovalEnvFix(),tk=ovalTk(),TT=ovalTT(tk),
   h+=`<div class="lbl"><span>Grille</span></div><div class="seg">${Object.entries(SIM.OVAL_GRILLES).map(([id,t])=>`<button data-ok="ovalGrille" data-ov="${id}" class="${e.ovalGrille===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="envgrid">${sl("ovalFinal","Rear end ratio",0.8,1.25,0.01," × fitted",(+e.ovalFinal).toFixed(2))}</div>`;
   if(q){try{const res=quick,su=ovalSetupFor(res);h+=`<p class="hint"><b>One gear</b> · the car has no gearbox to speak of: engine speed is road speed times the rear end. At ${su.ratio.toFixed(2)}:1 the corners (${Math.round(su.vc*3.6)} km/h) turn it ${Math.round(su.rpmC).toLocaleString("en-CA")} rpm, where it makes <b>${Math.round(su.tqC)} Nm</b>; the redline is the top of the straight (${Math.round(su.topKmh)} km/h). The corner exit wants torque, not peak power. A taller ratio (below 1.00) trades corner exit for the straight.${pv?" The half-mile has long straights and fast corners: the top end, the gearing and the cooling count for more here.":""}</p>`;}catch(err){}}
-  h+=`<p class="hint">${C0.n}: ${C0.d}. ${lg.ok?`Your engine is ${Math.round(lg.ci)} ci.`:`<b style="color:var(--crit)">${lg.why}</b> — pick a bigger class.`}${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""} ${pv?"The pavement grips hard and steady and only greases up a little as the rubber and the heat build, with hardly any dust to clog the grille; the long straights make cooling and drag the hard part.":"The clay starts tacky and dries slick as the laps pile up."} Softer tyres bite early and fade late. The heat sets the feature grid; the rivals' lap times are real, from the same sim you drive.${ovalRanWk(k)?` <b>Run this week — the next night is week ${C().week+1}.</b>`:ovalOther(k)?` <b>${C0.n} already raced the other track this week — one night per class a week.</b>`:""}${R?` <b>The oval opens at ${R} rep.</b>`:""}</p>`;
+  h+=`<p class="hint">${C0.n}: ${C0.d}. ${lg.ok?`Your engine is ${Math.round(lg.ci)} ci.`:`<b style="color:var(--crit)">${lg.why}</b> — pick a bigger class.`}${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""} ${pv?"The pavement grips hard and steady and only greases up a little as the rubber and the heat build, with hardly any dust to clog the grille; the long straights make cooling and drag the hard part.":"The clay starts tacky and dries slick as the laps pile up."} Softer tyres bite early and fade late. The heat sets the feature grid; the rivals' lap times are real, from the same sim you drive.${ovalRanWk(k)?` <b>Run this week — the next night is week ${C().week+1}.</b>`:ovalOther(k)?` <b>You've raced an oval night this week — one night a week.</b>`:""}${R?` <b>The oval opens at ${R} rep.</b>`:""}</p>`;
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n5">${OVAL_CAMS.map(([id,nm,d])=>`<button data-ok="ovalCam" data-ov="${id}" class="${e.ovalCam===id?"on":""}">${nm}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg n4">${[1,2,4,8].map(v=>`<button data-ok="ovalSpd" data-ov="${v}" class="${+e.ovalSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double":v===4?"quick":"quicker"}</small></button>`).join("")}</div>`;
   return h;}
@@ -33076,21 +33090,21 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-ok]");i
   if(k==="ovalCls"){const l=ovalClsLocked(v);if(l){toast(`${SIM.OVAL_CLASSES[v].n} opens at ${l} rep`);return;}if(ovalCiNow()>SIM.OVAL_CLASSES[v].ci){toast(`${Math.round(ovalCiNow())} ci is over the ${SIM.OVAL_CLASSES[v].ci} ci limit for ${SIM.OVAL_CLASSES[v].n}`);return;}}
   if(k==="ovalTrack"&&OV&&!OV.finished){toast("Finish this race first");return;}
   S.env[k]=(k==="ovalSpd")?+v:v;ovalEnvFix();if(OV&&!OV.finished){if(k==="ovalCam")OV.cam=v;if(k==="ovalSpd")OV.speed=+v;}renderEnv();save();buzz(6);});
-function ovalHint(){const pv=ovalTT().surf==="asphalt",lb=ovalLabel();return career()?`<b>${lb}</b> · ${fmt$(OVAL_FEE)} entry for the night: a ${OVAL_HEAT}-lap heat, then the ${OVAL_FEAT}-lap feature from the grid the heat sets. Needs a certified engine; one night per class a week, on either track. Opens at ${OVAL_REP} rep: ${SIM.OVAL_CLASSES.street.n} ${SIM.OVAL_CLASSES.street.rep}, ${SIM.OVAL_CLASSES.late.n} ${SIM.OVAL_CLASSES.late.rep}, ${SIM.OVAL_CLASSES.open.n} ${SIM.OVAL_CLASSES.open.rep}. Purses by finish, up to ${fmt$(OVAL_FPURSE[0]*OVAL_PAY[3])} in the feature. ${pv?"Heat and the long straights are the hard part: there is little dust, but the engine works flat out.":"Heat and radiator dust are the hard part: running in the car ahead's dirt clogs the grille."}`
+function ovalHint(){const pv=ovalTT().surf==="asphalt",lb=ovalLabel();return career()?`<b>${lb}</b> · ${fmt$(ovalFee("street"))}–${fmt$(ovalFee("open"))} entry for the night: a ${OVAL_HEAT}-lap heat, then the ${OVAL_FEAT}-lap feature from the grid the heat sets. Needs a certified engine; one night a week, in one class, on either track. Opens at ${OVAL_REP} rep: ${SIM.OVAL_CLASSES.street.n} ${SIM.OVAL_CLASSES.street.rep}, ${SIM.OVAL_CLASSES.late.n} ${SIM.OVAL_CLASSES.late.rep}, ${SIM.OVAL_CLASSES.open.n} ${SIM.OVAL_CLASSES.open.rep}. Purses by finish, up to ${fmt$(OVAL_FPURSE[0]*OVAL_PAY[3])} in the feature. ${pv?"Heat and the long straights are the hard part: there is little dust, but the engine works flat out.":"Heat and radiator dust are the hard part: running in the car ahead's dirt clogs the grille."}`
   :`<b>${lb}</b> · a heat race, then the feature. It is one gear and a lot of throttle: hold <b>PUSH</b> to attack, <b>SAVE</b> to cool the engine and the tyres. <b>Space</b> pushes. Class by cubic inches.`;}
 /* the dock button: the stage that is up, the price */
 function ovalRunBtn(){if(S.env.testType!=="oval"||testing)return;const k=ovalEnvFix(),n=ovalNight(k),b=$("runTest");if(b.disabled)return;const cost=testCost();
   if(career()&&(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))){b.textContent=`Night over · next night wk ${C().week+1}`;$("dynoHint").innerHTML=ovalHint();return;}
   const txt=n.stage==="feature"?`Take the green · feature, from ${ordN(n.gridMe+1)}`:"Take the green · heat race";
   b.textContent=txt+(cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":""):"");$("dynoHint").innerHTML=ovalHint();}
-function ovalCost(){if(!career())return 0;const k=ovalEnvFix(),n=ovalNight(k);if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))return 0;return(n.stage==="heat"?OVAL_FEE:0)+fuelBill();}
+function ovalCost(){if(!career())return 0;const k=ovalEnvFix(),n=ovalNight(k);if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))return 0;return(n.stage==="heat"?ovalFee(k):0)+fuelBill();}
 /* the gate in front of the run: false lets it run (the toast says why not) */
 function ovalGate(){if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return true;}
   const k=ovalEnvFix(),o=ovalOpen(),l=ovalClsLocked(k),lg=ovalLegal(k),n=ovalNight(k);
   if(o){toast(`The oval opens at ${o} rep`);return true;}if(l){toast(`${SIM.OVAL_CLASSES[k].n} opens at ${l} rep`);return true;}
   if(!lg.ok){toast(`Not legal for ${SIM.OVAL_CLASSES[k].n} — ${lg.why}`);return true;}
   if(career()){const cert=C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg);
-    if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k))){toast(`Already raced ${SIM.OVAL_CLASSES[k].n} this week${n.stage==="heat"?" on the other track":""} — the next night is week ${C().week+1}`);return true;}
+    if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k))){toast(`Already raced the oval this week — one night a week; the next is week ${C().week+1}`);return true;}
     if(n.stage==="heat"&&!cert){toast("Certify this engine on the dyno first");return true;}
     if(n.stage==="feature"&&!cert&&!(n.hash===hKey(cfgHash(S.cfg))&&!(n.heat&&n.heat.dnf))){toast(n.heat&&n.heat.dnf?"Certify the rebuilt engine to take the feature":"The engine changed since the heat — certify it to take the feature");return true;}}
   return false;}
@@ -33294,7 +33308,9 @@ function boatVeh(k){const e=S.env;return{cls:k,pitch:e.boatPitch,imp:e.boatImp,g
 function boatCur(){const n=career()?C().boatN:S.boatSb;return n&&n.v===1&&SIM.BOAT_CLASSES[n.cls]?n:null;}
 function boatSetN(n){if(career())C().boatN=n;else S.boatSb=n;}
 function boatLive(){const n=boatCur();return n&&!n.done?n:null;}
-function boatRanWk(k){return career()&&(C().boatWk||{})[k]===C().week;}
+/* career: one boat night a week, in one class. The class run this week, or null */
+function boatWkCls(){if(!career())return null;const w=C().boatWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+function boatRanWk(k){return !!boatWkCls();}
 function boatFee(){if(!career()||dev()||boatLive())return 0;return (SIM.BOAT_CLASSES[S.env.boatCls]||SIM.BOAT_CLASSES.outboard).fee;}
 function boatGauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307*r());}
 function boatNew(k){const ix=Object.keys(SIM.BOAT_CLASSES).indexOf(k)+1;
@@ -33465,7 +33481,7 @@ function boatPb(r,bad){if(ff||bad||r.et==null)return;const R=recs();if(!R.boat||
   if(was){r.pb={was:was.et.toFixed(3)};setTimeout(()=>toast(`CLASS BEST · ${r.et.toFixed(3)} s (was ${r.pb.was})`),3200);}}
 function boatRecHtml(){const R=recs(),P=R.boat;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOAT_CLASSES).filter(k=>P[k]&&P[k].et);if(!ks.length)return "";
   return `<div class="rtop"><span>Boat drags · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>⚓</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${boatEsc(e.n)}">${boatEsc(SIM.BOAT_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
-function boatHint(){const c=SIM.BOAT_CLASSES;return career()?`<b>Boat drags</b> · one night per class a week, entry ${fmt$(c.outboard.fee)}–${fmt$(c.tfh.fee)}. Needs a certified engine. Eight boats, heads-up: lose once and you're out. ${c.jet.n} opens at ${c.jet.rep} rep, ${c.pro.n} at ${c.pro.rep}, ${c.tfh.n} at ${c.tfh.rep}. The winner takes up to ${fmt$(c.tfh.purse)}.`
+function boatHint(){const c=SIM.BOAT_CLASSES;return career()?`<b>Boat drags</b> · one night a week in one class, entry ${fmt$(c.outboard.fee)}–${fmt$(c.tfh.fee)}. Needs a certified engine. Eight boats, heads-up: lose once and you're out. ${c.jet.n} opens at ${c.jet.rep} rep, ${c.pro.n} at ${c.pro.rep}, ${c.tfh.n} at ${c.tfh.rep}. The winner takes up to ${fmt$(c.tfh.purse)}.`
   :`<b>Boat drags</b> · 1,000 ft of river, heads-up. Wait for the green, then hold for throttle. Feather it if the prop blows out off the line, trim in for the hump and out once it's on plane — too far out and it porpoises, walks, or blows over.`;}
 /* the prop shop: the quickest pitch and gear (or impeller and drive ratio) for this engine on glassy water */
 const boatShopC=new Map();
@@ -33765,12 +33781,12 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} needs the ${pullLockTxt(k)}`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(pullHookedWk(k)){toast(`Already hooked in ${SIM.PULL_CLASSES[k].n} this week — next pull night is week ${C().week+1}`);return;}}
   if(pullGate())return;
   if(S.env.testType==="bog"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}   // dyno day: no mud bog with a customer's engine
-  if(S.env.testType==="bog"){const k=bogEnvFix(),l=bogClsLocked(k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[k].n} this week — the next mud bog is week ${C().week+1}`);return;}}
+  if(S.env.testType==="bog"){const k=bogEnvFix(),l=bogClsLocked(k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[bogWkCls()].n} this week — one class a week; the next mud bog is week ${C().week+1}`);return;}}
   if(S.env.testType==="hill"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
-  if(S.env.testType==="hill"){const k=hillEnvFix(),l=hillClsLocked(k);if(l){toast(`${SIM.HILL_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(hillRanWk(k)){toast(`Already ran ${SIM.HILL_CLASSES[k].n} this week — the next running is week ${C().week+1}`);return;}}
+  if(S.env.testType==="hill"){const k=hillEnvFix(),l=hillClsLocked(k);if(l){toast(`${SIM.HILL_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(hillRanWk(k)){toast(`Already ran ${SIM.HILL_CLASSES[hillWkCls()].n} this week — one class a week; the next running is week ${C().week+1}`);return;}}
   if(S.env.testType==="oval"&&ovalGate())return;
   if(S.env.testType==="boat"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
-  if(S.env.testType==="boat"){const k=boatEnvFix(),l=boatClsLocked(k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(!boatLive()&&boatRanWk(k)){toast(`Already ran ${SIM.BOAT_CLASSES[k].n} this week — the next night is week ${C().week+1}`);return;}}
+  if(S.env.testType==="boat"){const k=boatEnvFix(),l=boatClsLocked(k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(boatRanWk(k)&&!(boatLive()&&boatLive().cls===k)){toast(`Already ran ${SIM.BOAT_CLASSES[boatWkCls()].n} this week — one class a week; the next night is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;abStop();renderTest();ensureSound();
