@@ -23,7 +23,6 @@ node check-savecode.js   # must pass (save code round trips)
 
 - Every release bumps `const VERSION="x.y.z.w";` in `src/app/state.js` (major.minor.feature.hotfix). The build folds it into the `sw.js` cache name, which is what shows installed copies the "New version ready" bar.
 - A gameplay or feature change bumps the third number; a fix to the last release bumps the fourth.
-- The `<!-- VERSION -->` comment in `src/html/head.html` is stale and nothing reads it.
 
 ## Testing the sim in node
 
