@@ -5,7 +5,7 @@ const ROAD_FEE=200,ROAD_CAMS=[["auto","Auto","director"],["chase","Chase","behin
 const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(d||1).padStart(d===2?5:4,"0")}`;
 const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
-  if(!(+e.roadFinal>=0.8&&+e.roadFinal<=1.25))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
+  if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
 /* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
 /* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = [stiffness, balance, wing]
@@ -75,7 +75,7 @@ function roadEnvHtml(sl){const e=roadEnvFix(),o=roadOpt(),C0=o.car||SIM.CHASSIS[
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.ROAD_TYRES).map(([id,t])=>`<button data-rk="roadTyre" data-rv="${id}" class="${o.tyre===id?"on":""}">${t.n}<small>μ ${t.mu}${C0.tyre===id?" · stock":""}</small></button>`).join("")}</div>`;
   h+=drvHtml();
   h+=`<div class="lbl"><span>Circuit</span></div><div class="seg n3">${Object.entries(SIM.ROAD_TRACKS).map(([id,t])=>{const T=SIM.roadTrack(id);return `<button data-rk="roadTrk" data-rv="${id}" class="${e.roadTrk===id?"on":""}">${t.n}<small>${(T.len/1000).toFixed(2)} km · ${t.d.split(" · ")[1]}</small></button>`;}).join("")}</div>`;
-  h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
+  h+=`<div class="envgrid">${sl("roadFinal","Final drive",0.6,1.6,0.01," × fitted",(+e.roadFinal).toFixed(2))}</div>`;
   if(q){const car=SIM.roadCar(SIM.roadPrep(S.cfg,q),o),fr=Math.round(car.front*100),bal=car.bal==="under"?`nose-heavy (${fr}% front, ${C0.front*100|0}% as designed) — it will push in the slow corners`:car.bal==="over"?`light in the nose (${fr}% front) — the tail steps out on the way in`:`balanced (${fr}% front)`;
     h+=`<p class="hint"><b>${C0.n}</b> · ${C0.d}. With this ${Math.round(car.engKg)} kg engine and a driver: <b>${Math.round(car.m).toLocaleString("en-CA")} kg</b>, ${bal}. ${car.gears.length}-speed, final drive ${car.fd.toFixed(2)}:1 (fitted ${car.fdAuto.toFixed(2)} — top gear on the power peak at the speed the power can hold). Shorter pulls harder out of corners; taller runs out the straight.</p>`;}
   h+=suEnvHtml(sl,false);

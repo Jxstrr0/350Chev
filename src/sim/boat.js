@@ -19,13 +19,13 @@
   const BOAT_IMP = [["A", "A-cut", 0.50, "light · revs, holeshot"], ["B", "B-cut", 0.56, "medium"], ["C", "C-cut", 0.62, "heavy"], ["D", "D-cut", 0.68, "racing · top end"]];
   const BOAT_CLASSES = {
     outboard: { n: "Outboard · Stock", d: "V-bottom · outboard · ≤ 3.3 L", tier: 1, rep: 0, hull: "vee", drive: "prop", hullKg: 560, rigKg: 90, maxL: 3.3,
-      gear: [1.5, 3.0, 1.85], pitch: [17, 37, 26], Kq0: 0.348, Tc0: 0.62, field: { hp: 185, sd: 22, mph: 64, dsl: 0, red: [5600, 6400] }, fee: 300, purse: 2000 },
+      gear: [1.2, 3.6, 1.85], pitch: [17, 37, 26], Kq0: 0.348, Tc0: 0.62, field: { hp: 185, sd: 22, mph: 64, dsl: 0, red: [5600, 6400] }, fee: 300, purse: 2000 },
     jet: { n: "Jet boat", d: "flat-bottom · pump drive, no prop", tier: 2, rep: 30, hull: "flat", drive: "jet", hullKg: 900, rigKg: 60, maxL: 0, A: 0.0042,
-      gear: [0.45, 1.3, 1.0], imp: 1, Tc0: 0.95, field: { hp: 520, sd: 90, mph: 94, dsl: 0.25 }, fee: 600, purse: 4000 },
+      gear: [0.35, 1.6, 1.0], imp: 1, Tc0: 0.95, field: { hp: 520, sd: 90, mph: 94, dsl: 0.25 }, fee: 600, purse: 4000 },
     pro: { n: "Pro Eliminator", d: "blown flat · V-drive, cleaver prop", tier: 3, rep: 100, hull: "flat", drive: "prop", hullKg: 820, rigKg: 60, maxL: 0,
-      gear: [0.75, 1.35, 1.0], pitch: [24, 44, 32], Kq0: 0.219, Tc0: 1.7, field: { hp: 1900, sd: 280, mph: 163, dsl: 0, red: [7200, 8200] }, fee: 1350, purse: 9000 },
+      gear: [0.6, 1.7, 1.0], pitch: [24, 44, 32], Kq0: 0.219, Tc0: 1.7, field: { hp: 1900, sd: 280, mph: 163, dsl: 0, red: [7200, 8200] }, fee: 1350, purse: 9000 },
     tfh: { n: "Top Fuel Hydro", d: "three-point hydro · rides on its prop", tier: 4, rep: 250, hull: "hydro", drive: "prop", hullKg: 600, rigKg: 60, maxL: 0,
-      gear: [0.7, 1.25, 1.0], pitch: [28, 50, 36], Kq0: 0.304, Tc0: 2.2, field: { hp: 2900, sd: 380, mph: 192, dsl: 0, red: [7400, 8400] }, fee: 3000, purse: 20000 }
+      gear: [0.55, 1.6, 1.0], pitch: [28, 50, 36], Kq0: 0.304, Tc0: 2.2, field: { hp: 2900, sd: 380, mph: 192, dsl: 0, red: [7400, 8400] }, fee: 3000, purse: 20000 }
   };
   for (const k in BOAT_CLASSES) BOAT_CLASSES[k].id = k;
   /* a run's water: headwind (m/s, − is a tailwind) and chop (0 glassy … 1 rough). Same seed, same water. */
@@ -42,7 +42,7 @@
     const torqueAt = r => r <= rpms[0] ? tq[0] * Math.max(0.3, r / rpms[0]) : interp(tq, r);
     const turbo = res.aspKind === "turbo" && Array.isArray(res.naTorque) && res.naTorque.length === NR;
     const pkRpm = res.peakHpRpm || v.redline * 0.85, VdL = Math.max(0.2, (res.VdEq || res.Vd || 2000) / 1000);
-    const Gr = clamp(+v.gear || C0.gear[2], 0.3, 3), lim = v.redline * 1.03, Tfric = 0.1 * (res.peakTq || 300);
+    const Gr = clamp(+v.gear || C0.gear[2], 0.3, 4), lim = v.redline * 1.03, Tfric = 0.1 * (res.peakTq || 300);
     const Ie = 0.1 + 0.07 * VdL + 0.03 / (Gr * Gr);
     const engKg = Math.max(20, +res.kg || 200), m = (v.mass || (C0.hullKg + C0.rigKg + 90 + engKg)), Wt = m * g;
     const pitchIn = jet ? 0 : clamp(+v.pitch || C0.pitch[2], C0.pitch[0], C0.pitch[1]), Pm = pitchIn * 0.0254;

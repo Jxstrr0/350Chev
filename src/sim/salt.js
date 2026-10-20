@@ -286,11 +286,11 @@
     const base = vb * 2.23694 * red / Math.max(1, res.peakHpRpm || red * 0.85);
     let best = null;
     for (const f of [0.94, 1.0, 1.06, 1.12]) {
-      const top = Math.min(520, Math.round(base * f / 5) * 5);   // the Top gear slider stops at 520
+      const top = Math.min(650, Math.round(base * f / 5) * 5);   // the Top gear slider stops at 650
       const r = lsrPass(res, Object.assign({}, veh, { topMph: top, noFail: true, noSpin: true, h: 0.004 }));
       const sc = r.mileMph || 0; if (!best || sc > best.mph) best = { topMph: top, mph: sc };
     }
-    return best ? best.topMph : Math.min(520, Math.round(base / 5) * 5);
+    return best ? best.topMph : Math.min(650, Math.round(base / 5) * 5);
   }
   /* the record book: every class has a standing record, seeded from what a well-built entry of that class
      runs on this same physics, discounted by how contested the class is (some are soft, some are stout) */
