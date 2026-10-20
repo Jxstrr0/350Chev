@@ -1,19 +1,19 @@
 # Fastest quarter mile in PEW — with engine weight on the strip
 
-All three cars were run in the real app (Events → Drag strip, Auto driver, three passes each) on v1.76.21.0, branch `claude/drivetrain-tiers-limiter`. ET and trap speed are from the timing slip.
+All four cars were run in the real app (Events → Drag strip, Auto driver, three passes each) on v1.76.21.0, branch `claude/drivetrain-tiers-limiter`. ET and trap speed are from the timing slip.
 
 Two rule changes since the last sheet:
 
 - **The strip counts engine weight.** The car-weight slider means the car with a typical 230 kg V8 in it; the engine you actually fit adds or saves the difference. The readout under the slider shows the total ("1,013 kg with this engine"). A 1,228 kg Deltic now drags 998 kg of its own iron down the track.
 - **The Monster dyno cell (and the sandbox cell) read to 15,000 hp / 14,000 rpm.** So the 12,674 hp engine is now certifiable in career: there is no longer a separate career-legal build.
 
-| | Fastest overall | Four-stroke, no Deltic, sane weight |
-|---|---|---|
-| Engine | 12,674 hp · 15,665 N·m · 1,228 kg · Deltic two-stroke, twin-screw + 700 progressive nitrous | **4,371 hp · 4,674 N·m · 443 kg · V12 60° four-stroke, compound turbos on methanol, no nitrous** |
-| Car on the strip | 1,968 kg (slider 970) | 1,013 kg (slider 800) |
-| In-app passes | 4.268 · 4.404 · 4.268 s @ 358 mph | 4.620 · 4.612 · 4.612 s @ 315 mph |
-| Passes before a freshen | 175 | 28 |
-| Breaks in 12 sim passes | none | none |
+| | Fastest overall | Four-stroke, no Deltic, sane weight | Two-stroke, no Deltic |
+|---|---|---|---|
+| Engine | 12,674 hp · 15,665 N·m · 1,228 kg · Deltic two-stroke, twin-screw + 700 progressive nitrous | **4,371 hp · 4,674 N·m · 443 kg · V12 60° four-stroke, compound turbos on methanol, no nitrous** | 4,511 hp · 4,277 N·m · 443 kg · V12 60° two-stroke, Roots scavenge blower, NA + 700 progressive nitrous |
+| Car on the strip | 1,968 kg (slider 970) | 1,013 kg (slider 800) | 1,013 kg (slider 800) |
+| In-app passes | 4.268 · 4.404 · 4.268 s @ 358 mph | 4.620 · 4.612 · 4.612 s @ 315 mph | 4.664 · 4.668 · 4.664 s @ 308 mph |
+| Passes before a freshen | 175 | 28 | 20 |
+| Breaks in 12 sim passes | none | none | none |
 
 The 9,497 hp / 736 kg Deltic (wrc16 seed) ties the big one at 4.268–4.272 s @ 364 mph with a 1,306 kg car, and it is the better car of the two: the 1,228 kg engine only matches it because it has 3,000 hp more to drag itself with. Its sheet is at the end if you want it.
 
@@ -119,6 +119,103 @@ Lines marked _(default)_ are untouched.
 **Sealing**  
 - Head gasket: Copper + O-ring
 - Head fasteners: 9/16 studs, six
+
+## The two-stroke that isn’t a Deltic
+
+A two-stroke on any ordinary layout caps out around 4,500 hp, barely above the four-stroke wall, and for a different reason. Every cylinder fires every turn, so a 12.1 L two-stroke V12 breathes like a 24 L four-stroke, and the next step in boost, revs or port timing trips Crank torsional, Head clamp margin and Heat rejection all at once. The Deltic gets round that because it has no heads to clamp (opposed pistons) and 36 pistons to share the load. This one is a 12,145 cc V12 on methanol with a Roots scavenge blower, no turbo, 700 progressive nitrous and a chamber cut for 7,400 rpm, revving to 8,400. It weighs the same as the four-stroke V12 (443 kg) and makes 140 hp more, but its usable band is only 6,000–8,400 rpm, so it wants a five-speed and still runs 0.05 s behind the four-stroke.
+
+Of the two-stroke builds tried (seeds from the pool plus the three Deltic winners re-laid as V12s and repaired): this NA V12 4.66 s · compound-turbo V12 (4,391 hp, 411 kg) 4.70 s · long-stroke NA V12 (4,540 hp, 463 kg) 4.79 s · twin-screw V12 (4,185 hp) 4.81 s · V10s and V8s 4.95 s and up. Rotaries cannot run the two-stroke cycle, and the single, twin and V4 two-stroke layouts are too small to matter.
+
+### Car setup — two-stroke V12 (4.66 s)
+
+| Setting | Value |
+|---|---|
+| Body | Dragster (rail) — pick it, then edit the rest |
+| Car weight (slider) | 800 kg (1,013 kg with this engine) |
+| Rear weight | 0.85 |
+| Tyre | Slick, 23.75" |
+| Gears | 5 |
+| 1st gear | 1.75:1 |
+| Top gear | 0.65:1 |
+| Final drive | 3.00:1 |
+| Shifting | Manual box (the Auto driver shifts it at the torque crossover) |
+| Clutch, box & axle | Pro (Advanced → Driveline) |
+| Tyre pressure | 6 psi (Advanced → Driveline) |
+| Shocks | Soft |
+| Chute | Yes |
+| Nitrous | 700 progressive, armed in the window |
+| Launch | Two-step at 6600 rpm with 20° launch retard (set on the build) · line lock |
+| Driver | Auto |
+
+### Build sheet — two-stroke V12 (4,511 hp, 443 kg)
+
+Lines marked _(default)_ are untouched.
+
+**Engine layout**  
+- Layout: V12 60°
+- Cycle: Two-stroke
+
+**Bore & stroke**  
+- Bore: 110.0 mm
+- Stroke: 106.5 mm
+- Rod ratio L/r: 1.69
+- Trapped compression ratio: 12.0 :1
+
+**Block & head materials**  
+- Block material: Nikasil alu (AlSi17)
+- Deck construction: Closed deck
+- Head material: Aluminium head
+
+**Pistons & rings**  
+- Piston alloy: Forged 2618-T61
+- Piston clearance: Standard 0.0030 in _(default)_
+- Ring pack: Gas-nitrided steel
+
+**Rods & crank**  
+- Connecting rods: Billet alu rod
+- Rod bolts: ARP2000 bolt
+- Crankshaft: Forged 4340 crank
+- Torsional damper: Solid hub
+- Main/rod bearings: Trimetal Cu-Pb
+
+**Ports & revs**  
+- Scavenging: Loop (Schnürle) _(default)_
+- Exhaust port duration: 183 °
+- Transfer port duration: 145 °
+- Power valve: No power valve _(default)_
+- Redline: 8400 rpm
+
+**Induction & boost**  
+- Induction: Roots scavenge blower
+- Fuel delivery: Carburettor _(default)_
+- Aspiration: Naturally aspirated _(default)_
+
+**Exhaust system**  
+- Two-stroke exhaust: Expansion chamber _(default)_
+- Pipe tuned to: 7400 rpm
+- Pipe size: Open headers
+
+**Fuel & tune**  
+- Fuel: Methanol M100
+- Fuel pump: Big belt-drive pump
+- Nitrous: 700 progressive
+- CDI timing vs MBT: 0.0 ° _(default)_
+- Lambda: 0.81 λ
+
+**Launch control**  
+- Launch control: Two-step limiter
+- Two-step rpm: 6600 rpm
+- Brake aids: Line lock
+
+**Lubrication & cooling**  
+- Oil grade: 0W-20 full syn
+- Oil system: Dry sump
+- Piston cooling jets: Piston cooling jets
+- Cooling package: Stock radiator _(default)_
+
+**Sealing**  
+- Head gasket: MLS gasket
+- Head fasteners: ARP head studs
 
 ## Fastest overall — 12,674 hp Deltic
 
