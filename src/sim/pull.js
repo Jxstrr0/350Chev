@@ -141,7 +141,7 @@
     const gears = C0.gears || (v.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS);
     const mph = v.mph || (gears[clamp(Math.round(v.gear), 0, gears.length - 1)] || gears[1])[1];
     const G = (v.redline * 2 * Math.PI / 60) / (mph * 0.44704 / rw);          // overall ratio, engine : wheel
-    const conv = v.trans !== "clutch", etaL = conv ? 0.91 : 0.95;
+    const conv = v.trans !== "clutch", etaL = Math.min(0.99, (conv ? 0.91 : 0.95) * dtEtaK(v.dtId));   // the drivetrain tier (sim/drag.js) wastes a little less of the engine
     const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000);
     const Ie = (0.12 + 0.07 * VdL) * (v.flyK || 1), Iw = (v.kind === "tractor" ? 2 * 260 : 4 * 32) * rw * rw * 0.6;   // flywheel + crank; tyres and rims
     const m = v.mass + v.ballast, crr = 0.03 * TK.crr, ballX = 0.75;               // ballast hangs ~0.75 m ahead of the front axle

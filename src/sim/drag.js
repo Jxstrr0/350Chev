@@ -3,16 +3,23 @@
      ===================================================================== */
   /* ---- Drag strip: real-time vehicle pass ---- */
   // heat: how much extra grip a proper burnout is worth on that compound (fraction of μ)
-  /* drivetrain: the clutch, gearbox and axle as one rating, in engine-side N·m (1 lb-ft = 1.356 N·m). Past the rating the clutch slips
-     and the wheels see no more than that; far past it (1.3x and building) something lets go: an axle, the box or the clutch. Stock is sized
-     above every engine in the game, so it never limits and nothing changes until you fit a lighter box. */
+  /* drivetrain: the clutch, gearbox and axle as one tier. Every tier is sized to the engine, so none of them slips or breaks:
+     Stock is matched to whatever is bolted to it, and an upgrade is never weaker than that. What an upgrade buys is in the
+     parts: a dog box shifts in a fraction of the time (shift, seconds of no drive per gear change) and a race driveline
+     wastes less of the engine between the flywheel and the tyre (eta, the share of torque that reaches the wheels).
+     veh.dtCap (engine-side N·m) is still honoured by the pass, the sled and the road for a driveline that does have a
+     rating — a swap car's, say — but no tier sets one. */
   const DRIVETRAIN = {
-    stock: { n: "Stock", nm: 12000, cost: 0, d: "matched to the engine · never the weak link" },
-    hd: { n: "HD", nm: 1100, cost: 2800, d: "heavy clutch, built box, 9-inch · ~810 lb-ft" },
-    race: { n: "Race", nm: 2500, cost: 9500, d: "multi-disc clutch, dog box, 9-inch / 14-bolt · ~1,840 lb-ft" },
-    pro: { n: "Pro", nm: 4300, cost: 24000, d: "triple-disc, straight-cut dog box, spooled 14-bolt · 3,000+ lb-ft" } };
+    stock: { n: "Stock", shift: 0.18, eta: 0.90, cost: 0, d: "matched to the engine · never the weak link" },
+    hd: { n: "HD", shift: 0.15, eta: 0.91, cost: 2800, d: "heavy clutch, built box, 9-inch · a little quicker through the gears" },
+    race: { n: "Race", shift: 0.11, eta: 0.92, cost: 9500, d: "multi-disc clutch, dog box, 9-inch / 14-bolt · fast shifts, less loss" },
+    pro: { n: "Pro", shift: 0.08, eta: 0.935, cost: 24000, d: "triple-disc, straight-cut dog box, spooled 14-bolt · snap shifts, least loss" } };
   const drivetrain = id => DRIVETRAIN[id] || DRIVETRAIN.stock;
-  const dtCapOf = id => { const D = drivetrain(id); return D === DRIVETRAIN.stock ? 0 : D.nm; };   // 0 = no limit (the default)
+  const dtCapOf = id => 0;   // a tier never limits (0 = no cap); kept so the call sites read the same as any other rated driveline
+  const dtShiftK = id => drivetrain(id).shift / DRIVETRAIN.stock.shift, dtEtaK = id => drivetrain(id).eta / DRIVETRAIN.stock.eta;   // against Stock, for sims with their own base figures
+  /* the strip car's weight is set with a typical 230 kg V8 in it; the engine actually fitted adds or saves the difference */
+  const DRAG_ENG_REF = 230;
+  const dragMass = (mass, engKg) => Math.max(400, Math.round(+mass + (+engKg > 0 ? +engKg - DRAG_ENG_REF : 0)));
   const dtPart = o => o >= 1.9 ? "Snapped an axle" : o >= 1.6 ? "Stripped the gearbox" : "Exploded the clutch";   // by how far over it was
   const dtStress = (st, o, dt) => { if (o <= 1.3) return false; st.dtO = Math.max(st.dtO || 0, o); st.dtS = (st.dtS || 0) + (o - 1.3) * dt; return st.dtS > 0.12; };
   const TYRES = { street: { mu: 1.18, n: "Street radial", heat: 0.02 }, radial: { mu: 1.7, n: "Drag radial", heat: 0.08 }, slick: { mu: 2.4, n: "Slick", heat: 0.08 } };
@@ -110,7 +117,8 @@
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const torqueAt = r => { if (r <= rpms[0]) return tq[0] * Math.max(0.3, r / rpms[0]); if (r >= rpms[N - 1]) return tq[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return tq[i - 1] + f * (tq[i] - tq[i - 1]); };
     const ratios = []; for (let i = 0; i < v.gears; i++) ratios.push(v.gears === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (v.gears - 1)));
-    const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = 0.90, TY = TYRES[v.tyre] || TYRES.street;
+    const DT = drivetrain(v.dtId), shiftTime = v.shiftTime > 0 ? +v.shiftTime : DT.shift;   // the tier's box and driveline (veh.dtId); veh.eta / veh.shiftTime override
+    const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = v.eta > 0 ? +v.eta : DT.eta, TY = TYRES[v.tyre] || TYRES.street;
     let mu = TY.mu;
     if (veh && veh.body && !(veh.wheelbase > 0)) v.wheelbase = (AERO[veh.body] || AERO.street).wb;
     if (veh && veh.body && !(veh.cgH > 0) && AERO[veh.body] && AERO[veh.body].cgH) v.cgH = AERO[veh.body].cgH;   // v3 classes only
@@ -230,7 +238,7 @@
       if (MH && st.mMetal > MH.crackC) st.manDose += dt * (st.mMetal - MH.crackC) / 60 * (MH.cast ? 1.3 : 1);
       if (st.egt > 850) st.lineHeat += dt * (st.egt - 850) / 100;
     }
-    function shift() { if (st.phase !== "run" || st.gear >= v.gears || st.shiftT > 0) return; st.shifts.push({ rpm: Math.round(st.rpm), gear: st.gear, x: st.x, t: st.t, boost: +st.boost.toFixed(2) }); st.gear++; st.shiftT = 0.18; if (isTurbo) st.launch.pops = Math.max(st.launch.pops, 0.35 * clamp(st.boost / 1.2, 0.3, 1)); }
+    function shift() { if (st.phase !== "run" || st.gear >= v.gears || st.shiftT > 0) return; st.shifts.push({ rpm: Math.round(st.rpm), gear: st.gear, x: st.x, t: st.t, boost: +st.boost.toFixed(2) }); st.gear++; st.shiftT = shiftTime; if (isTurbo) st.launch.pops = Math.max(st.launch.pops, 0.35 * clamp(st.boost / 1.2, 0.3, 1)); }
     function step(dt) { dt = Math.min(1, dt); while (dt > 0 && !st.done) { const h = Math.min(0.004, dt); dt -= h; sub(h); } return st; }
     function sub(dt) {
       if (st.done) return st;
@@ -294,9 +302,13 @@
       if (st.failKind && st.t >= st.failAt) { st.broke = st.failKind; st.phase = "done"; st.done = true; st.load = 0; return st; }
       let Teng = inShift ? 0 : engTq(st.rpm);
       if (NZ && !inShift && st.n2oS.frac < 1) Teng -= (1 - st.n2oS.frac) * interp(res.n2oTq, st.rpm);   // the part of the shot that is not in
-      if (st.rpm >= limiter) { Teng = Teng * 0.15; st.limiterTime += dt; }
-      let Ttrans;
       const driveRpm0 = wheelRpm + st.wSpin;
+      /* the rev limiter: a slipping clutch or converter lets the engine bounce on it and still feed the box about 15% on average;
+         once the wheels are driving the engine at the limiter (coupled, or the converter all but locked) there is nothing left
+         to push with — the cut is total, and the car can go no faster in that gear. The limiter never set the road speed before:
+         the 15% of a big engine's torque kept pushing at any speed, so a short-geared car ran past the stripe on the cut alone. */
+      if (st.rpm >= limiter) { st.limiterTime += dt; Teng = (st.conv ? driveRpm0 / 0.96 : !st.slipping ? driveRpm0 : 0) >= limiter ? 0 : Teng * 0.15; }
+      let Ttrans;
       if (st.conv) {
         // torque converter off the trans-brake: multiplies torque while it slips, never lets the engine fall below stall
         const SR = clamp(driveRpm0 / Math.max(1, st.rpm), 0, 1);

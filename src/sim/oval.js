@@ -79,7 +79,7 @@
     const TY = OVAL_TYRES[v.tyre] || OVAL_TYRES.med, GR = OVAL_GRILLES[v.grille] || OVAL_GRILLES.mid;
     const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000), kg = +res.kg || CV.engRef;
     const m = CV.mass + 0.35 * (kg - CV.engRef), rf = CV.rf - 0.0002 * (kg - CV.engRef), rw = CV.tyreDia * 0.0254 / 2;
-    const G = (v.redline * 2 * Math.PI / 60) * rw / (CV.vTop * TR.vTopK) / clamp(+v.finalK || 1, 0.7, 1.4), eta = 0.9, red = v.redline, lim = red * 1.03;
+    const G = (v.redline * 2 * Math.PI / 60) * rw / (CV.vTop * TR.vTopK) / clamp(+v.finalK || 1, 0.6, 1.6), eta = 0.9, red = v.redline, lim = red * 1.03;
     const Tfric = 0.10 * (res.peakTq || 300), pkTq = Math.max.apply(null, tq), tqLow = interp(tq, 0.45 * red) / Math.max(1, pkTq);
     const tauEng = 0.05 + 0.3 * Math.pow(clamp(1 - tqLow, 0, 1), 1.5);
     const cdA = CV.cdA * GR.cd, crr = TR.crr, cgwb = 0.2;
@@ -242,7 +242,7 @@
   /* what this build does in this class with this gearing, at a glance: corner speed and rpm, torque there, the fit */
   function ovalSetup(res, veh) {
     const C0 = OVAL_CLASSES[veh.cls] || OVAL_CLASSES.street, CV = C0.veh, red = veh.redline || 6500, rw = CV.tyreDia * 0.0254 / 2, TR = ovalTrack(veh.track);
-    const G = red * 2 * Math.PI / 60 * rw / (CV.vTop * TR.vTopK) / clamp(+veh.finalK || 1, 0.7, 1.4), N0 = ovalNight(veh.seed || 1, TR), TY = OVAL_TYRES[veh.tyre] || OVAL_TYRES.med;
+    const G = red * 2 * Math.PI / 60 * rw / (CV.vTop * TR.vTopK) / clamp(+veh.finalK || 1, 0.6, 1.6), N0 = ovalNight(veh.seed || 1, TR), TY = OVAL_TYRES[veh.tyre] || OVAL_TYRES.med;
     const vc = ovalVlim(N0.mu * CV.mu / 0.7 * TY.mu, TR), rpmC = vc * G / rw * 60 / (2 * Math.PI), rpmE = clamp(rpmC * 1.15, 0, red), top = red * 2 * Math.PI / 60 * rw / G;
     const rp = res.rpms, tq = res.torque, at = r => { if (r <= rp[0]) return tq[0]; if (r >= rp[rp.length - 1]) return tq[tq.length - 1]; let i = 1; while (rp[i] < r) i++; return tq[i - 1] + (tq[i] - tq[i - 1]) * (r - rp[i - 1]) / (rp[i] - rp[i - 1]); };
     return { ratio: G, vc: vc, rpmC: rpmC, rpmE: rpmE, tqC: at(rpmC), tqE: at(rpmE), topKmh: top * 3.6, topMs: top, redline: red, vTop: CV.vTop * TR.vTopK };
