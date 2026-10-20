@@ -12,7 +12,7 @@ const fmtHill=t=>t==null||!isFinite(t)?"DNF":`${Math.floor(t/60)}:${(t%60).toFix
 function hillClsLocked(k){const c=SIM.HILL_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCls="open";const c=H[e.hillCls];
   if(!SIM.CHASSIS[e.hillCh])e.hillCh="coupe";if(!c.tyres.includes(e.hillTyre))e.hillTyre=c.tyres[c.tyres.length-1];if(!c.aero.includes(e.hillAero))e.hillAero=c.aero[c.aero.length-1];
-  if(!(+e.hillFinal>=0.8&&+e.hillFinal<=1.25))e.hillFinal=1;if(![1,2,4,8].includes(+e.hillSpd))e.hillSpd=4;if(!HILL_CAMS.some(q=>q[0]===e.hillCam))e.hillCam="auto";
+  if(!(+e.hillFinal>=0.6&&+e.hillFinal<=1.6))e.hillFinal=1;if(![1,2,4,8].includes(+e.hillSpd))e.hillSpd=4;if(!HILL_CAMS.some(q=>q[0]===e.hillCam))e.hillCam="auto";
   if(e.hillDrive!=="you")e.hillDrive="auto";suFix(e);return e.hillCls;}
 function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt()};}
 /* race day: one running per class per week in career (the same calls all week, the same field); a fresh mountain every run in the sandbox */
@@ -70,7 +70,7 @@ function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=
   h+=`<div class="lbl"><span>Aero</span></div><div class="seg">${C0.aero.map(id=>{const a=SIM.HILL_AERO[id];return `<button data-hk="hillAero" data-hv="${id}" class="${e.hillAero===id?"on":""}">${a.n}<small>${a.d}</small></button>`;}).join("")}</div>`;
   if(q){try{const p=hillPrepFor(S.cfg),car=SIM.hillCar(p,hillOpt());h+=`<p class="hint"><b>Up the mountain</b> · ${hillAltLine(p)} ${SIM.CHASSIS[e.hillCh].n} at ${Math.round(car.m).toLocaleString("en-CA")} kg${C0.massK<1?" (stripped for the class)":""}, final drive ${car.fd.toFixed(2)}:1 — geared for about 200 km/h.</p>`;}catch(err){}}
   h+=`<p class="hint">${C0.n}: ${C0.d}. The air at the summit is 40% thinner than at sea level: less power for an atmospheric engine, less drag, less downforce, and less air through the radiator.${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""}${hillRanWk(k)?` <b>Run this week — the next running is week ${C().week+1}.</b>`:""}</p>`;
-  h+=`<div class="envgrid">${sl("hillFinal","Final drive",0.8,1.25,0.01," × fitted",(+e.hillFinal).toFixed(2))}</div>`+suEnvHtml(sl,true);
+  h+=`<div class="envgrid">${sl("hillFinal","Final drive",0.6,1.6,0.01," × fitted",(+e.hillFinal).toFixed(2))}</div>`+suEnvHtml(sl,true);
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n4">${HILL_CAMS.map(([id,n,d])=>`<button data-hk="hillCam" data-hv="${id}" class="${e.hillCam===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg n4">${[1,2,4,8].map(v=>`<button data-hk="hillSpd" data-hv="${v}" class="${+e.hillSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double":v===4?"quick":"quicker"}</small></button>`).join("")}</div>`;
   return h;}

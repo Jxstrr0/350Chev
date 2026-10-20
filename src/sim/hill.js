@@ -173,7 +173,7 @@
     car.clA = car.C.clA + a.clA; car.cdA = car.C.cdA + a.cdA; car.tyre = opt.tyre in HILL_TYRES ? opt.tyre : "sport"; car.aero = opt.aero in HILL_AERO ? opt.aero : "none"; car.cls = opt.cls in HILL_CLASSES ? opt.cls : "open";
     // top gear on the power peak at about the fastest the mountain allows, not the flat-out top speed
     const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = hillVTop(car.vPow);
-    car.fdAuto = clamp((pkR * 2 * Math.PI / 60) * car.rw / (vTop * top), 0.9, 7.5); car.fd = clamp(car.fdAuto * clamp(+opt.finalK || 1, 0.75, 1.3), 0.7, 9);
+    car.fdAuto = clamp((pkR * 2 * Math.PI / 60) * car.rw / (vTop * top), 0.9, 7.5); car.fd = clamp(car.fdAuto * clamp(+opt.finalK || 1, 0.6, 1.6), 0.7, 9);
     return roadSetup(car, opt.setup);
   }
   const hDrag = (car, v, rho) => 0.5 * rho * car.cdA * v * v + car.crr;
