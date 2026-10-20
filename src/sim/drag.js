@@ -347,7 +347,10 @@
       acc = (F - Fres) / v.mass;
       st.v = Math.max(0, st.v + acc * dt); st.x += st.v * dt;
       const driveRpm = wheelRpm + st.wSpin;
-      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(holdRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), driveRpm / 0.96); st.slipping = false; }   // the converter flashes past the brake rpm, then couples
+      /* the converter flashes past the brake rpm, then couples. The flash never reaches the shift point: a brake rpm set close
+         to it would otherwise hold the engine above shiftAt off the line, so the box ran up through every gear in the first
+         half-second and the pass was made in top gear (or, above the limiter, on 15% of the engine) */
+      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(Math.min(holdRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), shiftAt * 0.97), driveRpm / 0.96); st.slipping = false; }
       else if (st.slipping) { st.rpm += (Teng - Ttrans) / I * dt * 60 / (2 * Math.PI); if (st.rpm < driveRpm) { st.rpm = driveRpm; st.slipping = false; } }
       else st.rpm = Math.max(v.idle, driveRpm);
       if (st.rpm > limiter + 40) st.rpm = Math.min(st.rpm, limiter + 300);
