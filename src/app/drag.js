@@ -5,9 +5,11 @@ const WBAR_KG=10,WBAR_COST=1500;function wbarOwned(){if(career()&&!C().wbarOwn&&
 function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&wbarOwned()&&!(SIM.AERO[e.body||"street"]||{}).bars;}
 /* power-to-weight against the drag car as set up (weight slider, bolt-on bars, a swap car's own weight) */
 function pwRatio(hp){let m=S.env.mass||1400;try{m=dragVeh().mass||m;}catch(e){}return {m:Math.round(m),hpt:hp>0?Math.round(hp/(m/1000)):0,kgHp:hp>0?m/hp:0};}
-function pwTxt(hp){const r=pwRatio(hp);return `${r.hpt.toLocaleString("en-CA")} hp/t · ${r.kgHp.toFixed(r.kgHp<10?2:1)} kg/hp`;}
+function pwTxt(hp){const r=pwRatio(hp),d=r.m-(S.env.mass||0)-(wbarOn()?WBAR_KG:0);return `${d&&!swapLive()?`${r.m.toLocaleString("en-CA")} kg with this engine · `:""}${r.hpt.toLocaleString("en-CA")} hp/t · ${r.kgHp.toFixed(r.kgHp<10?2:1)} kg/hp`;}
 function pwUpd(){const el=$("evPw");if(el&&quick)el.textContent=pwTxt(quick.peakHp);}
-function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass+(wbarOn(e)?WBAR_KG:0),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
+/* the engine as built, for its weight on the strip (the live result when it is current) */
+function engKgNow(){if(quick&&quick.kg>0)return quick.kg;try{return SIM.simulate(S.cfg,simEnv({testType:"pull"})).kg||0;}catch(e){return 0;}}
+function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg),ekg=engKgNow();return swapDragOv({mass:SIM.dragMass(e.mass,ekg)+(wbarOn(e)?WBAR_KG:0),engKg:Math.round(ekg),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
 function alsOf(cfg){const a=cfg&&cfg.als;return a&&a!=="off"&&OPT.als&&OPT.als[a]&&(OPT.asp[cfg.asp]||{}).kind==="turbo"&&!isCI(cfg.fuel)?a:null;}

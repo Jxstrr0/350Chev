@@ -6903,6 +6903,9 @@ const ENGINE_SIM = (function () {
   const drivetrain = id => DRIVETRAIN[id] || DRIVETRAIN.stock;
   const dtCapOf = id => 0;   // a tier never limits (0 = no cap); kept so the call sites read the same as any other rated driveline
   const dtShiftK = id => drivetrain(id).shift / DRIVETRAIN.stock.shift, dtEtaK = id => drivetrain(id).eta / DRIVETRAIN.stock.eta;   // against Stock, for sims with their own base figures
+  /* the strip car's weight is set with a typical 230 kg V8 in it; the engine actually fitted adds or saves the difference */
+  const DRAG_ENG_REF = 230;
+  const dragMass = (mass, engKg) => Math.max(400, Math.round(+mass + (+engKg > 0 ? +engKg - DRAG_ENG_REF : 0)));
   const dtPart = o => o >= 1.9 ? "Snapped an axle" : o >= 1.6 ? "Stripped the gearbox" : "Exploded the clutch";   // by how far over it was
   const dtStress = (st, o, dt) => { if (o <= 1.3) return false; st.dtO = Math.max(st.dtO || 0, o); st.dtS = (st.dtS || 0) + (o - 1.3) * dt; return st.dtS > 0.12; };
   const TYRES = { street: { mu: 1.18, n: "Street radial", heat: 0.02 }, radial: { mu: 1.7, n: "Drag radial", heat: 0.08 }, slick: { mu: 2.4, n: "Slick", heat: 0.08 } };
@@ -10154,7 +10157,7 @@ const ENGINE_SIM = (function () {
   return {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
     mapFromSliders: mapFromSliders, mapGrid: mapGrid, mapCell: mapCell, mapAutoTune: mapAutoTune, mapRespace: mapRespace, mapAxis: mapAxis, mapOk: mapOk, mapLook: mapLook, MAP_LOADS: MAP_LOADS,
-    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO, DRIVETRAIN: DRIVETRAIN, drivetrain: drivetrain, dtCapOf: dtCapOf, dtPart: dtPart,
+    DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO, DRIVETRAIN: DRIVETRAIN, drivetrain: drivetrain, dtCapOf: dtCapOf, dragMass: dragMass, DRAG_ENG_REF: DRAG_ENG_REF, dtPart: dtPart,
     dragPrep: dragPrep, launchTech: launchTech, TURBO_MM: TURBO_MM, MANIFOLD_HEAT: MANIFOLD_HEAT,
     fitFuel: fitFuel,
     isGas: isGas, fuelOf: fuelOf, flexBlend: flexBlend, flexWinterPct: flexWinterPct, propaneBar: propaneBar,
@@ -29760,7 +29763,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.19.0";
+const VERSION="1.76.20.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -30896,9 +30899,11 @@ const WBAR_KG=10,WBAR_COST=1500;function wbarOwned(){if(career()&&!C().wbarOwn&&
 function wbarOn(e){e=e||S.env;return e.wbar==="yes"&&wbarOwned()&&!(SIM.AERO[e.body||"street"]||{}).bars;}
 /* power-to-weight against the drag car as set up (weight slider, bolt-on bars, a swap car's own weight) */
 function pwRatio(hp){let m=S.env.mass||1400;try{m=dragVeh().mass||m;}catch(e){}return {m:Math.round(m),hpt:hp>0?Math.round(hp/(m/1000)):0,kgHp:hp>0?m/hp:0};}
-function pwTxt(hp){const r=pwRatio(hp);return `${r.hpt.toLocaleString("en-CA")} hp/t · ${r.kgHp.toFixed(r.kgHp<10?2:1)} kg/hp`;}
+function pwTxt(hp){const r=pwRatio(hp),d=r.m-(S.env.mass||0)-(wbarOn()?WBAR_KG:0);return `${d&&!swapLive()?`${r.m.toLocaleString("en-CA")} kg with this engine · `:""}${r.hpt.toLocaleString("en-CA")} hp/t · ${r.kgHp.toFixed(r.kgHp<10?2:1)} kg/hp`;}
 function pwUpd(){const el=$("evPw");if(el&&quick)el.textContent=pwTxt(quick.peakHp);}
-function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg);return swapDragOv({mass:e.mass+(wbarOn(e)?WBAR_KG:0),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
+/* the engine as built, for its weight on the strip (the live result when it is current) */
+function engKgNow(){if(quick&&quick.kg>0)return quick.kg;try{return SIM.simulate(S.cfg,simEnv({testType:"pull"})).kg||0;}catch(e){return 0;}}
+function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg),ekg=engKgNow();return swapDragOv({mass:SIM.dragMass(e.mass,ekg)+(wbarOn(e)?WBAR_KG:0),engKg:Math.round(ekg),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
 function alsOf(cfg){const a=cfg&&cfg.als;return a&&a!=="off"&&OPT.als&&OPT.als[a]&&(OPT.asp[cfg.asp]||{}).kind==="turbo"&&!isCI(cfg.fuel)?a:null;}
@@ -34210,7 +34215,7 @@ function fits(k,res,cfg){
   if(r.lsr)add("lsr",true,"",1);
   if(r.swap&&res.peakTq!=null){const q=swapReqFit(r.swap,res,c);add("swap",q.ok,q.val,q.prog);}   // a swap job: it has to go in their car (app/swap.js)
   if(r.mph!=null&&res.rpms){const m=lsrFitMph(res,c,(r.lsr&&r.lsr.body)||"lakester");add("mph",m>=r.mph,m?m.toFixed(1)+" mph":"no time",ge(m,r.mph));}
-  if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
+  if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));veh.mass=SIM.dragMass(veh.mass,res.kg);const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if((r.lap!=null||r.zero100!=null)&&res.rpms){const R0=roadFor(res,c,Object.assign({ch:"coupe"},r.road,r.lap!=null?{}:{trk:null}),k.site?k.site.name:"");   // judged in their car (a site brief: in their air too)
     if(r.zero100!=null)add("zero100",R0.z100!=null&&R0.z100<=r.zero100,R0.z100!=null?R0.z100.toFixed(1)+" s":"—",R0.z100!=null?le(R0.z100,r.zero100):0);
     if(r.lap!=null)add("lap",R0.lap!=null&&R0.lap<=r.lap+1e-6,fmtLap(R0.lap),R0.lap!=null?le(R0.lap,r.lap):0);}
@@ -36765,7 +36770,7 @@ const LESSONS=[
   {tab:"events",sel:'#envBox [data-ek="tyre"]',up:1,lbl:1,title:"Grip is repeatability",text:"Street radial, drag radial or slick. A tyre that spins one pass in three gives you a different ET each round, and your dial is worthless. Pick the grip that lets the car do the same thing every time."},
   {tab:"events",sel:"#er-launchRpm",wrap:".env",title:"Launch rpm",text:"Where the clutch lets go. Too high and the tyres spin, too low and the engine bogs. You are chasing a number you can repeat, so find a launch rpm you can hit every pass."},
   {tab:"events",sel:'#envBox [data-ek="dragDrive"]',up:2,title:"You drive, or Auto",text:"Auto stages and leaves on the green with a good, human light, and drives every pass of the night. Drive it yourself and you tap on the green of your own tree, because the slower dial leaves first."},
-  {tab:"events",sel:"#er-mass",wrap:".env",title:"Weight",text:"Under Advanced, in Car. Car weight and the rear weight split both change the ET. For a dial it matters less how light the car is than that it stays the same between rounds."},
+  {tab:"events",sel:"#er-mass",wrap:".env",title:"Weight",text:"Under Advanced, in Car. Car weight is the car with a typical 230 kg V8 in it; a heavier engine adds the difference and a lighter one saves it. Car weight and the rear weight split both change the ET. For a dial it matters less how light the car is than that it stays the same between rounds."},
   {tab:"events",sel:"#er-tyrePsi",wrap:".env",title:"Pressure and shocks",text:"Under Advanced, in Driveline. Tyre pressure and the shocks are what a tuner changes between rounds: soft shocks bite harder and lift the nose, firm ones keep it flat but may spin."},
   {tab:"events",sel:"#runTest",title:"Enter the night",text:"Tap to enter. Leave on the green of your own tree. A red light loses outright, and running quicker than your dial is a breakout. Entry is free in the sandbox."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the slip",text:"After each round the slip shows your ET against your dial, your rival's ET and dial, and who went through. Ran a hair over your dial is a good round. Ran under it, and you broke out and lost, however quick it was."}]},
