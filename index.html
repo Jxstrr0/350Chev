@@ -7233,7 +7233,10 @@ const ENGINE_SIM = (function () {
       acc = (F - Fres) / v.mass;
       st.v = Math.max(0, st.v + acc * dt); st.x += st.v * dt;
       const driveRpm = wheelRpm + st.wSpin;
-      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(holdRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), driveRpm / 0.96); st.slipping = false; }   // the converter flashes past the brake rpm, then couples
+      /* the converter flashes past the brake rpm, then couples. The flash never reaches the shift point: a brake rpm set close
+         to it would otherwise hold the engine above shiftAt off the line, so the box ran up through every gear in the first
+         half-second and the pass was made in top gear (or, above the limiter, on 15% of the engine) */
+      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(Math.min(holdRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), shiftAt * 0.97), driveRpm / 0.96); st.slipping = false; }
       else if (st.slipping) { st.rpm += (Teng - Ttrans) / I * dt * 60 / (2 * Math.PI); if (st.rpm < driveRpm) { st.rpm = driveRpm; st.slipping = false; } }
       else st.rpm = Math.max(v.idle, driveRpm);
       if (st.rpm > limiter + 40) st.rpm = Math.min(st.rpm, limiter + 300);
@@ -29763,7 +29766,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.22.0";
+const VERSION="1.76.23.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
