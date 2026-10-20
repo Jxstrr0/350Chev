@@ -91,7 +91,7 @@ function fits(k,res,cfg){
   if(r.lsr)add("lsr",true,"",1);
   if(r.swap&&res.peakTq!=null){const q=swapReqFit(r.swap,res,c);add("swap",q.ok,q.val,q.prog);}   // a swap job: it has to go in their car (app/swap.js)
   if(r.mph!=null&&res.rpms){const m=lsrFitMph(res,c,(r.lsr&&r.lsr.body)||"lakester");add("mph",m>=r.mph,m?m.toFixed(1)+" mph":"no time",ge(m,r.mph));}
-  if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
+  if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));veh.mass=SIM.dragMass(veh.mass,res.kg);const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if((r.lap!=null||r.zero100!=null)&&res.rpms){const R0=roadFor(res,c,Object.assign({ch:"coupe"},r.road,r.lap!=null?{}:{trk:null}),k.site?k.site.name:"");   // judged in their car (a site brief: in their air too)
     if(r.zero100!=null)add("zero100",R0.z100!=null&&R0.z100<=r.zero100,R0.z100!=null?R0.z100.toFixed(1)+" s":"—",R0.z100!=null?le(R0.z100,r.zero100):0);
     if(r.lap!=null)add("lap",R0.lap!=null&&R0.lap<=r.lap+1e-6,fmtLap(R0.lap),R0.lap!=null?le(R0.lap,r.lap):0);}

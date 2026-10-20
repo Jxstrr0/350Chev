@@ -17,6 +17,9 @@
   const drivetrain = id => DRIVETRAIN[id] || DRIVETRAIN.stock;
   const dtCapOf = id => 0;   // a tier never limits (0 = no cap); kept so the call sites read the same as any other rated driveline
   const dtShiftK = id => drivetrain(id).shift / DRIVETRAIN.stock.shift, dtEtaK = id => drivetrain(id).eta / DRIVETRAIN.stock.eta;   // against Stock, for sims with their own base figures
+  /* the strip car's weight is set with a typical 230 kg V8 in it; the engine actually fitted adds or saves the difference */
+  const DRAG_ENG_REF = 230;
+  const dragMass = (mass, engKg) => Math.max(400, Math.round(+mass + (+engKg > 0 ? +engKg - DRAG_ENG_REF : 0)));
   const dtPart = o => o >= 1.9 ? "Snapped an axle" : o >= 1.6 ? "Stripped the gearbox" : "Exploded the clutch";   // by how far over it was
   const dtStress = (st, o, dt) => { if (o <= 1.3) return false; st.dtO = Math.max(st.dtO || 0, o); st.dtS = (st.dtS || 0) + (o - 1.3) * dt; return st.dtS > 0.12; };
   const TYRES = { street: { mu: 1.18, n: "Street radial", heat: 0.02 }, radial: { mu: 1.7, n: "Drag radial", heat: 0.08 }, slick: { mu: 2.4, n: "Slick", heat: 0.08 } };
