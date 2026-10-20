@@ -1,7 +1,7 @@
 /* ===================== MUD BOG: the engine in a truck, a pit of mud ===================== */
 /* run up on the dirt, hit the mud with whatever speed you've got and keep the wheels turning: stuck scores the distance, through scores the time */
 let BR=null;
-const BOG_FEE=120,BOG_PURSE=[2500,1200,700,400,200],BOG_PAY={1:1,2:1.8,3:3},BOG_REP=[3,2,1],BOG_SB={};
+const BOG_PURSE=[2500,1200,700,400,200],BOG_PAY={1:1,2:1.8,3:3},BOG_REP=[3,2,1],BOG_SB={};
 const BOG_NAMES=["Swamp Thing","Mud Butter","Gumbo","Sloppy Joe","Bog Hog","Muddy Waters","Dirty Bird","Low Ground","Sink Hole","Gator Bait","Brown Out","Clay Pigeon","Backwater","Slough Monster","Rooster Tail","Wet Willy","Gravy Train","Stuck Up"];
 const BOG_COLORS={street:0x1d4787,modified:0xb7261d,super:0x2c6b3a};
 const bogEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
@@ -15,7 +15,11 @@ function bogEnvFix(){const e=S.env,B=SIM.BOG_CLASSES;if(!B[e.bogCls])e.bogCls="s
 function bogVeh(k){const e=S.env;return{cls:k,gear:+e.bogGear,tyre:e.bogTyre,redline:S.cfg.redline,idle:bogIsD(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850)};}
 /* the night: one pit per class per week in career (the same mud all week), a fresh one every run in the sandbox */
 function bogSeed(k){const ix=Object.keys(SIM.BOG_CLASSES).indexOf(k)+1;if(!career())return BOG_SB[ix]||(BOG_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().bogSeed)C().bogSeed=Math.floor(Math.random()*1e9)+1;return(C().bogSeed^(C().week*7919)^(ix*104729))>>>0;}
-function bogHookedWk(k){return career()&&(C().bogWk||{})[k]===C().week;}
+/* career: one mud bog run a week, in one class. The class run this week, or null */
+function bogWkCls(){if(!career())return null;const w=C().bogWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+function bogHookedWk(k){return !!bogWkCls();}
+/* entry: about 15% of the class's winning purse */
+function bogFee(k){const C0=SIM.BOG_CLASSES[k]||SIM.BOG_CLASSES.street;return Math.round(BOG_PURSE[0]*(BOG_PAY[C0.tier]||1)*0.15/5)*5;}
 const bogNightCache=new Map(),bogFieldCache=new Map();
 function bogNight(seed){let n=bogNightCache.get(seed);if(!n){if(bogNightCache.size>12)bogNightCache.clear();n=SIM.bogNight(seed);bogNightCache.set(seed,n);}return n;}
 /* the rest of the class: 5–7 trucks, each its own engine and driver run through the same sim and the same mud */
@@ -138,7 +142,7 @@ function bogPb(r,failed){if(ff||failed)return;const R=recs();if(!R.bog||typeof R
   if(was){r.pb={was:was.c?was.t.toFixed(2)+" s":was.m.toFixed(1)+" m"};setTimeout(()=>toast(`CLASS BEST · ${r.cleared?r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} (was ${r.pb.was})`),2700);}}
 function bogRecHtml(){const R=recs(),P=R.bog;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOG_CLASSES).filter(k=>P[k]);if(!ks.length)return "";
   return `<div class="rtop"><span>Mud bog · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.c?"✓":"·"}</b><span class="et">${e.c?e.t.toFixed(2):e.m.toFixed(1)}</span><span>${e.c?"s":"m"}</span><span class="nm" title="${bogEsc(e.n)}">${bogEsc(SIM.BOG_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
-function bogHint(){const c=SIM.BOG_CLASSES;return career()?`<b>Mud bog</b> · $${BOG_FEE} entry, one run per class a week. Needs a certified engine. ${c.street.n} is open to anyone; ${c.modified.n} at ${c.modified.rep} rep, ${c.super.n} at ${c.super.rep}. Through the pit beats stuck in it — quickest time wins, then farthest. Purse by placing, up to ${fmt$(BOG_PURSE[0]*BOG_PAY[3])} in Super. Every run is wear, and the mud packs the radiator.`
+function bogHint(){const c=SIM.BOG_CLASSES;return career()?`<b>Mud bog</b> · ${fmt$(bogFee("street"))}–${fmt$(bogFee("super"))} entry, one run a week in one class. Needs a certified engine. ${c.street.n} is open to anyone; ${c.modified.n} at ${c.modified.rep} rep, ${c.super.n} at ${c.super.rep}. Through the pit beats stuck in it — quickest time wins, then farthest. Purse by placing, up to ${fmt$(BOG_PURSE[0]*BOG_PAY[3])} in Super. Every run is wear, the mud packs the radiator, and each truck's radiator is sized for its class: a big swap runs hot.`
   :`<b>Mud bog</b> · hold the button for throttle, let go to feather. Carry speed off the run-up, then keep the wheels turning in the mud: a little wheelspin cleans the lugs, too much digs a hole. Stuck scores the distance; through scores the time.`;}
 /* a quick look at the night's pit before you run it: length, mud, the depth along it, where the field got to */
 function bogPitSvg(night,pitK,field){const L=night.len,W=300,H=40,pts=[];for(let x=0;x<=L;x+=1)pts.push([x/L*W,4+Math.min(1.6,SIM.bogDepth(night,x)*pitK)/1.6*(H-8)]);

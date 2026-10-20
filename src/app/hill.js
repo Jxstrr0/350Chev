@@ -2,7 +2,7 @@
 /* 19.99 km, 156 turns, 2,862 m to 4,302 m. The engine is run at five altitudes on the way up (SIM.hillPrep); the car is the
    road test's chassis on the class's tyres and aero. Auto drives the corner calls; You drive holds PUSH or LIFT into each corner. */
 let HC=null;
-const HILL_FEE=400,HILL_PURSE=[4000,2000,1200,700,400],HILL_PAY={1:1,2:1.8,3:3,4:5},HILL_REP=[4,3,2,1],HILL_SB={};
+const HILL_PURSE=[4000,2000,1200,700,400],HILL_PAY={1:1,2:1.8,3:3,4:5},HILL_REP=[4,3,2,1],HILL_SB={};
 const HILL_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],["heli","Helicopter","from above"],["onboard","Onboard","driver's eye"]];
 const HILL_C={lift:0.962,steady:1.0,push:1.035};
 const HILL_NAMES=["R. Okafor","D. Lindqvist","M. Tanaka","J. Whitehorse","C. Duval","T. Brennan","A. Kovač","S. Moreau","L. Haugen","P. Rinaldi","K. Mbeki","E. Castellanos","N. Fairweather","B. Ostrowski","H. Nakamura","F. Leclair","G. Running Elk","V. Sørensen"];
@@ -17,7 +17,11 @@ function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCl
 function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt()};}
 /* race day: one running per class per week in career (the same calls all week, the same field); a fresh mountain every run in the sandbox */
 function hillSeed(k){const ix=Object.keys(SIM.HILL_CLASSES).indexOf(k)+1;if(!career())return HILL_SB[ix]||(HILL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().hillSeed)C().hillSeed=Math.floor(Math.random()*1e9)+1;return(C().hillSeed^(C().week*7919)^(ix*104729))>>>0;}
-function hillRanWk(k){return career()&&(C().hillWk||{})[k]===C().week;}
+/* career: one climb a week, in one class. The class run this week, or null */
+function hillWkCls(){if(!career())return null;const w=C().hillWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+function hillRanWk(k){return !!hillWkCls();}
+/* entry: about 15% of the class's winning purse */
+function hillFee(k){const C0=SIM.HILL_CLASSES[k]||SIM.HILL_CLASSES.open;return Math.round(HILL_PURSE[0]*(HILL_PAY[C0.tier]||1)*0.15/5)*5;}
 function hillRecs(){const R=recs();if(!R.hill||typeof R.hill!=="object")R.hill={};return R.hill;}
 /* the engine at altitude, cached by build: five dyno runs up the mountain */
 const hillPrepCache=new Map();
@@ -41,7 +45,7 @@ function hillFieldJob(k,seed){const key=k+"|"+seed;
   return J;}
 const hillDnfWord=k=>({edge:"OVER THE EDGE",boil:"BOILED OVER",stall:"COULDN'T CLIMB",time:"FLAGGED OFF"})[k]||"DNF";
 const hillCmp=(a,b)=>(a.t==null?1:0)-(b.t==null?1:0)||(a.t!=null?a.t-b.t:0)||(a.me?-1:b.me?1:0);
-function hillHint(){const c=SIM.HILL_CLASSES;return career()?`<b>Pikes Peak</b> · ${fmt$(HILL_FEE)} entry, one run per class a week. Needs a certified engine. ${c.open.n} is open to anyone; ${c.ta.n} at ${c.ta.rep} rep, ${c.ppo.n} at ${c.ppo.rep}, ${c.unl.n} at ${c.unl.rep}. Purse by placing, up to ${fmt$(HILL_PURSE[0]*HILL_PAY[4])} in ${c.unl.n}. Thin air costs an atmospheric engine about a third of its power; a turbo holds on.`
+function hillHint(){const c=SIM.HILL_CLASSES;return career()?`<b>Pikes Peak</b> · ${fmt$(hillFee("open"))}–${fmt$(hillFee("unl"))} entry, one run a week in one class. Needs a certified engine. ${c.open.n} is open to anyone; ${c.ta.n} at ${c.ta.rep} rep, ${c.ppo.n} at ${c.ppo.rep}, ${c.unl.n} at ${c.unl.rep}. Purse by placing, up to ${fmt$(HILL_PURSE[0]*HILL_PAY[4])} in ${c.unl.n}. Thin air costs an atmospheric engine about a third of its power; a turbo holds on.`
   :`<b>Pikes Peak</b> · 19.99 km, 156 turns, 2,862 m to 4,302 m. Auto reads the corner calls for you; in <b>You drive</b>, hold <b>PUSH</b> into grippy corners and <b>LIFT</b> into dusty ones. Too fast is a moment, a trip through the gravel, or — where there's a drop and no rail — the end of the run. <b>Space</b> pushes.`;}
 /* the mountain in profile: altitude against distance, the sections, the treeline, where you are */
 function hillProfileSvg(cls,mark){const T=SIM.hillCourse(),W=320,H=64,a0=2800,a1=4360,X=s=>(s/T.len*W).toFixed(1),Y=z=>(H-4-(z-a0)/(a1-a0)*(H-10)).toFixed(1);

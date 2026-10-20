@@ -87,7 +87,7 @@
     const hasEgt = Array.isArray(res.egtCurve) && res.egtCurve.length === NR;
     const egtLimit = res.egtLimitC || (res.diesel ? 900 : 960);
     const tU = id => { const t = (res.tests || []).find(x => x.id === id); return t ? t.util : 0; };
-    const kW = Math.max(60, (res.peakHp || 250) * 0.7457), Cth = (7 + 2.6 * VdL) * 1000, UA = kW * 1000 * 0.5 / 62;   // a radiator sized to hold full power at full airflow
+    const kW = Math.max(60, Math.min(res.peakHp || 250, C0.field.hp * 1.4) * 0.7457), Cth = (7 + 2.6 * VdL) * 1000, UA = kW * 1000 * 0.5 / 62;   // the truck's radiator holds full power at full airflow, but only as big as the class carries (about 1.4× the field): a big swap runs hot
     const hFrac = res.diesel ? 0.42 : 0.52;
     const sw = [Math.max(0.05, TY.sp - 0.06), TY.sp + 0.1], digS = TY.sp + 0.28 + 0.1 * TY.paddle;
     const st = { t: 0, tPit: null, tOut: null, x: -CV.runup, v: 0, w: 0, rpm: v.idle, thr: 0, foot: 0, slip: 0, phase: "stage", done: false, cleared: false,
