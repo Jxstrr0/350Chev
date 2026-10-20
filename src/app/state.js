@@ -172,7 +172,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.17.0";
+const VERSION="1.76.18.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -283,7 +283,7 @@ function fuelBill(){if(!career()||dev())return 0;const fu=SIM.fuelOf(S.cfg)||SIM
   // endurance is an accelerated cycle, not real hours: cell burn ≈ 0.6·√hours (50 h → 4 h, 1,000 h → 19 h)
   const hours=t==="endurance"?0.6*Math.sqrt(S.env.hours)*({highway:.2,mixed:.45,track:.9}[S.env.loadProfile]||.45):t==="drag"?0.012:t==="pull_sled"?0.01:t==="bog"?0.012:t==="boat"?0.008:t==="salt"?0.03:t==="road"?0.03:t==="hill"?0.04:t==="oval"?0.03:t==="race24"?0:t==="overrev"?0.008:0.02;   // the 24 Hours bills its fuel by the litre after the flag
   return Math.round(lph*hours*fu.costL);}
-function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="oval")return ovalCost();if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:BOG_FEE,hill:HILL_FEE}[S.env.testType]||75):0;return cell+fuelBill();}
+function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.env.testType==="oval")return ovalCost();if(S.env.testType==="salt")return saltFee()+fuelBill();if(S.env.testType==="race24")return career()?E24_FEE:0;if(S.env.testType==="boat")return boatFee()+fuelBill();const tt=S.env.testType,cell=career()&&!(staffed("dynotech")&&(tt==="pull"||tt==="endurance"||tt==="overrev"))?({pull:75,endurance:450,overrev:150,drag:rnLive()?0:250,pull_sled:150,road:ROAD_FEE,bog:bogFee(S.env.bogCls),hill:hillFee(S.env.hillCls)}[S.env.testType]||75):0;return cell+fuelBill();}
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");toastPlace();clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
 /* the toast and the achievement banner share the foot of the screen. Phone: the toast sits just above whatever is docked there
    (the tab bar, or the results sheet, measured: it can be taller than its peek line) and the banner stacks above the toast.

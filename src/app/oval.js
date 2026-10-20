@@ -6,7 +6,7 @@
    Two tracks (SIM.OVAL_TRACKS): the clay 3/8 mile (the default; every old save and record is this one) and the paved half-mile.
    The pick lives in S.env.ovalTrack; the night book and the records are kept per track (clay keeps its old keys). */
 let OV=null;
-const OVAL_FEE=200,OVAL_HEAT=8,OVAL_FEAT=25,OVAL_REP=10,OVAL_FPURSE=[3200,1700,1000,600,350,200],OVAL_HPURSE=[300,180,120,80],OVAL_PAY={1:1,2:1.8,3:3},OVAL_FREP=[4,3,2,1],OVAL_SB={};
+const OVAL_HEAT=8,OVAL_FEAT=25,OVAL_REP=10,OVAL_FPURSE=[3200,1700,1000,600,350,200],OVAL_HPURSE=[300,180,120,80],OVAL_PAY={1:1,2:1.8,3:3},OVAL_FREP=[4,3,2,1],OVAL_SB={};
 const OVAL_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],["tv","Trackside","TV tower"],["heli","Blimp","from above"],["onboard","Onboard","driver's eye"]];
 const OVAL_PACE={save:0.955,steady:0.985,push:0.998};
 const OVAL_NAMES=["D. Halvorsen","B. Kowalchuk","R. Whitehorse","T. Lindgren","M. Boucher","C. Yurchak","J. Dufresne","K. Sorenson","A. Pelletier","L. Bergstrom","W. Maddox","S. Okonkwo","G. Tremblay","H. Nordquist","P. Lavallee","E. Stoll","N. Redcrow","F. Haugen","V. Moreau","Z. Kruger"];
@@ -39,9 +39,11 @@ function ovalNight(k,fresh){const B=ovalBook(),t=ovalTk(),bk=ovalBK(k,t);let n=B
     if(career()){if(!C().ovalSeed)C().ovalSeed=Math.floor(Math.random()*1e9)+1;seed=(C().ovalSeed^(C().week*7919)^(ix*104729)^(ti*1299709))>>>0;}else seed=Math.floor(Math.random()*1e9)+1;
     n=B[bk]={seed,week:career()?C().week:0,stage:"heat",heat:null,grid:null,hash:null};}
   return n;}
-/* career: a class races one night a week, on either track. This week's night for the class on any track that is over, or on the other track and begun */
+/* career: one oval night a week, one class, either track. This week's night for the class on any track that is over; or another night (any class, the other track) begun */
 function ovalRanWk(k){if(!career())return false;const B=ovalBook();return OVAL_TRK.some(t=>{const n=B[ovalBK(k,t)];return !!(n&&n.week===C().week&&n.stage==="done");});}
-function ovalOther(k){if(!career())return null;const B=ovalBook(),t0=ovalTk();return OVAL_TRK.find(t=>{if(t===t0)return false;const n=B[ovalBK(k,t)];return !!(n&&n.week===C().week&&n.stage!=="heat");})||null;}
+function ovalOther(k){if(!career())return null;const B=ovalBook(),me=ovalBK(k,ovalTk());for(const bk in B){const n=B[bk];if(bk!==me&&n&&n.week===C().week&&n.stage!=="heat")return bk;}return null;}
+/* entry for the night: about 15% of the class's feature win */
+function ovalFee(k){const C0=SIM.OVAL_CLASSES[k]||SIM.OVAL_CLASSES.street;return Math.round(OVAL_FPURSE[0]*(OVAL_PAY[C0.tier]||1)*0.15/5)*5;}
 function ovalStageNow(){const k=ovalEnvFix(),n=ovalNight(k);return n.stage==="feature"?"feature":"heat";}
 /* ---- the field: eleven rivals a night, each a made-up engine and a driver ---- */
 const ovalRosterCache=new Map(),ovalRunCache=new Map();
@@ -98,7 +100,7 @@ function ovalEnvHtml(sl){const e=S.env,k=ovalEnvFix(),tk=ovalTk(),TT=ovalTT(tk),
   h+=`<div class="lbl"><span>Grille</span></div><div class="seg">${Object.entries(SIM.OVAL_GRILLES).map(([id,t])=>`<button data-ok="ovalGrille" data-ov="${id}" class="${e.ovalGrille===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="envgrid">${sl("ovalFinal","Rear end ratio",0.8,1.25,0.01," × fitted",(+e.ovalFinal).toFixed(2))}</div>`;
   if(q){try{const res=quick,su=ovalSetupFor(res);h+=`<p class="hint"><b>One gear</b> · the car has no gearbox to speak of: engine speed is road speed times the rear end. At ${su.ratio.toFixed(2)}:1 the corners (${Math.round(su.vc*3.6)} km/h) turn it ${Math.round(su.rpmC).toLocaleString("en-CA")} rpm, where it makes <b>${Math.round(su.tqC)} Nm</b>; the redline is the top of the straight (${Math.round(su.topKmh)} km/h). The corner exit wants torque, not peak power. A taller ratio (below 1.00) trades corner exit for the straight.${pv?" The half-mile has long straights and fast corners: the top end, the gearing and the cooling count for more here.":""}</p>`;}catch(err){}}
-  h+=`<p class="hint">${C0.n}: ${C0.d}. ${lg.ok?`Your engine is ${Math.round(lg.ci)} ci.`:`<b style="color:var(--crit)">${lg.why}</b> — pick a bigger class.`}${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""} ${pv?"The pavement grips hard and steady and only greases up a little as the rubber and the heat build, with hardly any dust to clog the grille; the long straights make cooling and drag the hard part.":"The clay starts tacky and dries slick as the laps pile up."} Softer tyres bite early and fade late. The heat sets the feature grid; the rivals' lap times are real, from the same sim you drive.${ovalRanWk(k)?` <b>Run this week — the next night is week ${C().week+1}.</b>`:ovalOther(k)?` <b>${C0.n} already raced the other track this week — one night per class a week.</b>`:""}${R?` <b>The oval opens at ${R} rep.</b>`:""}</p>`;
+  h+=`<p class="hint">${C0.n}: ${C0.d}. ${lg.ok?`Your engine is ${Math.round(lg.ci)} ci.`:`<b style="color:var(--crit)">${lg.why}</b> — pick a bigger class.`}${lk?` <b>Opens at ${lk} rep</b> — earn it by shipping orders and placing in events.`:""} ${pv?"The pavement grips hard and steady and only greases up a little as the rubber and the heat build, with hardly any dust to clog the grille; the long straights make cooling and drag the hard part.":"The clay starts tacky and dries slick as the laps pile up."} Softer tyres bite early and fade late. The heat sets the feature grid; the rivals' lap times are real, from the same sim you drive.${ovalRanWk(k)?` <b>Run this week — the next night is week ${C().week+1}.</b>`:ovalOther(k)?` <b>You've raced an oval night this week — one night a week.</b>`:""}${R?` <b>The oval opens at ${R} rep.</b>`:""}</p>`;
   h+=`<div class="lbl"><span>Camera</span></div><div class="seg n5">${OVAL_CAMS.map(([id,nm,d])=>`<button data-ok="ovalCam" data-ov="${id}" class="${e.ovalCam===id?"on":""}">${nm}<small>${d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg n4">${[1,2,4,8].map(v=>`<button data-ok="ovalSpd" data-ov="${v}" class="${+e.ovalSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double":v===4?"quick":"quicker"}</small></button>`).join("")}</div>`;
   return h;}
@@ -106,21 +108,21 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-ok]");i
   if(k==="ovalCls"){const l=ovalClsLocked(v);if(l){toast(`${SIM.OVAL_CLASSES[v].n} opens at ${l} rep`);return;}if(ovalCiNow()>SIM.OVAL_CLASSES[v].ci){toast(`${Math.round(ovalCiNow())} ci is over the ${SIM.OVAL_CLASSES[v].ci} ci limit for ${SIM.OVAL_CLASSES[v].n}`);return;}}
   if(k==="ovalTrack"&&OV&&!OV.finished){toast("Finish this race first");return;}
   S.env[k]=(k==="ovalSpd")?+v:v;ovalEnvFix();if(OV&&!OV.finished){if(k==="ovalCam")OV.cam=v;if(k==="ovalSpd")OV.speed=+v;}renderEnv();save();buzz(6);});
-function ovalHint(){const pv=ovalTT().surf==="asphalt",lb=ovalLabel();return career()?`<b>${lb}</b> · ${fmt$(OVAL_FEE)} entry for the night: a ${OVAL_HEAT}-lap heat, then the ${OVAL_FEAT}-lap feature from the grid the heat sets. Needs a certified engine; one night per class a week, on either track. Opens at ${OVAL_REP} rep: ${SIM.OVAL_CLASSES.street.n} ${SIM.OVAL_CLASSES.street.rep}, ${SIM.OVAL_CLASSES.late.n} ${SIM.OVAL_CLASSES.late.rep}, ${SIM.OVAL_CLASSES.open.n} ${SIM.OVAL_CLASSES.open.rep}. Purses by finish, up to ${fmt$(OVAL_FPURSE[0]*OVAL_PAY[3])} in the feature. ${pv?"Heat and the long straights are the hard part: there is little dust, but the engine works flat out.":"Heat and radiator dust are the hard part: running in the car ahead's dirt clogs the grille."}`
+function ovalHint(){const pv=ovalTT().surf==="asphalt",lb=ovalLabel();return career()?`<b>${lb}</b> · ${fmt$(ovalFee("street"))}–${fmt$(ovalFee("open"))} entry for the night: a ${OVAL_HEAT}-lap heat, then the ${OVAL_FEAT}-lap feature from the grid the heat sets. Needs a certified engine; one night a week, in one class, on either track. Opens at ${OVAL_REP} rep: ${SIM.OVAL_CLASSES.street.n} ${SIM.OVAL_CLASSES.street.rep}, ${SIM.OVAL_CLASSES.late.n} ${SIM.OVAL_CLASSES.late.rep}, ${SIM.OVAL_CLASSES.open.n} ${SIM.OVAL_CLASSES.open.rep}. Purses by finish, up to ${fmt$(OVAL_FPURSE[0]*OVAL_PAY[3])} in the feature. ${pv?"Heat and the long straights are the hard part: there is little dust, but the engine works flat out.":"Heat and radiator dust are the hard part: running in the car ahead's dirt clogs the grille."}`
   :`<b>${lb}</b> · a heat race, then the feature. It is one gear and a lot of throttle: hold <b>PUSH</b> to attack, <b>SAVE</b> to cool the engine and the tyres. <b>Space</b> pushes. Class by cubic inches.`;}
 /* the dock button: the stage that is up, the price */
 function ovalRunBtn(){if(S.env.testType!=="oval"||testing)return;const k=ovalEnvFix(),n=ovalNight(k),b=$("runTest");if(b.disabled)return;const cost=testCost();
   if(career()&&(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))){b.textContent=`Night over · next night wk ${C().week+1}`;$("dynoHint").innerHTML=ovalHint();return;}
   const txt=n.stage==="feature"?`Take the green · feature, from ${ordN(n.gridMe+1)}`:"Take the green · heat race";
   b.textContent=txt+(cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":""):"");$("dynoHint").innerHTML=ovalHint();}
-function ovalCost(){if(!career())return 0;const k=ovalEnvFix(),n=ovalNight(k);if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))return 0;return(n.stage==="heat"?OVAL_FEE:0)+fuelBill();}
+function ovalCost(){if(!career())return 0;const k=ovalEnvFix(),n=ovalNight(k);if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))return 0;return(n.stage==="heat"?ovalFee(k):0)+fuelBill();}
 /* the gate in front of the run: false lets it run (the toast says why not) */
 function ovalGate(){if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return true;}
   const k=ovalEnvFix(),o=ovalOpen(),l=ovalClsLocked(k),lg=ovalLegal(k),n=ovalNight(k);
   if(o){toast(`The oval opens at ${o} rep`);return true;}if(l){toast(`${SIM.OVAL_CLASSES[k].n} opens at ${l} rep`);return true;}
   if(!lg.ok){toast(`Not legal for ${SIM.OVAL_CLASSES[k].n} — ${lg.why}`);return true;}
   if(career()){const cert=C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg);
-    if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k))){toast(`Already raced ${SIM.OVAL_CLASSES[k].n} this week${n.stage==="heat"?" on the other track":""} — the next night is week ${C().week+1}`);return true;}
+    if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k))){toast(`Already raced the oval this week — one night a week; the next is week ${C().week+1}`);return true;}
     if(n.stage==="heat"&&!cert){toast("Certify this engine on the dyno first");return true;}
     if(n.stage==="feature"&&!cert&&!(n.hash===hKey(cfgHash(S.cfg))&&!(n.heat&&n.heat.dnf))){toast(n.heat&&n.heat.dnf?"Certify the rebuilt engine to take the feature":"The engine changed since the heat — certify it to take the feature");return true;}}
   return false;}
