@@ -6,11 +6,12 @@
    and the prairie are procedural shaders (crisp at any distance, 1 draw each);
    smoke/flames are two instanced billboard systems (1 draw each).
    ==========================================================================*/
-var STRIP={ on:false, scene:null, cam:null, built:false, sun:null, hemi:null, cars:{}, tree:null, smoke:[], lastX:0,
+function stripInit(){ return { on:false, scene:null, cam:null, built:false, sun:null, hemi:null, cars:{}, tree:null, smoke:[], lastX:0,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), t:0,
   shot:null, shotT:0, cutT:9, runT:0, shake:0, cheer:0, night:null, tier:null, prev:{},
   fx:null, fxAdd:null, marks:null, board:null, tm:null, sky:null, env:{}, spots:[], poles:[], mats:{}, composer:null, heatPass:null,
-  flash:null, fog:null, crowd:null, halos:[], exposure:0.95 };
+  flash:null, fog:null, crowd:null, halos:[], exposure:0.95 }; }
+var STRIP=stripInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var STRIP_TRACK_END=780, STRIP_Q=402.336, STRIP_LANE=2.5;
 /* v2 world: uniforms shared by the track and crowd shaders (time, midday mirage, fresh burnout shine per lane, water-box ripples, lit stands) */
 var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2()}, uRip:{value:0}, uHorC:{value:new THREE.Color(0.52,0.6,0.7)}, uCrowdLit:{value:0},

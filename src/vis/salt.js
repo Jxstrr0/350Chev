@@ -12,11 +12,12 @@
    strip's muscle shell). Built on first use.
    ==========================================================================*/
 var LSR_MILE_V=1609.344, SALT_PUSH_COL=0x56707e;   /* the push truck: weathered slate, clear of every class colour */
-var SALT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
+function saltInit(){ var o={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:46, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false, horLin:null,
   t:0, runT:0, doneT:0, prev:{}, composer:null, shimmer:null, exposure:0.74, stats:null, tier:null, fx:null, flags:[], fixX:0, fixZ:0, seq:0,
   course:null, crowd:null, shake:0, pushX:0, pushZ:0, pushV:0 };
-SALT.course={x0:LSR_MILE_V, x1:2*LSR_MILE_V, k0:1.5*LSR_MILE_V-500, k1:1.5*LSR_MILE_V+500, xEnd:3.5*LSR_MILE_V};
+  o.course={x0:LSR_MILE_V, x1:2*LSR_MILE_V, k0:1.5*LSR_MILE_V-500, k1:1.5*LSR_MILE_V+500, xEnd:3.5*LSR_MILE_V}; return o; }
+var SALT=saltInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var _sA=new THREE.Vector3(), _sB=new THREE.Vector3(), _sC=new THREE.Vector3(), _sw=new THREE.Vector3(), _st=new THREE.Vector3(), _sr=new THREE.Vector3(), _srt=new THREE.Vector3(), _sM=new THREE.Matrix4(), _sQ=new THREE.Quaternion(), _sS=new THREE.Vector3();
 var SALT_SUN=new THREE.Vector3(0.42,0.66,0.62).normalize(), SALT_HOR=[0.56,0.64,0.74], SALT_WIND=new THREE.Vector3(-1.6,0,0.7);
 /* salt: warm cream crust of small, uneven polygons with raised edges (lit on the sun side, a shadow on the lee), low ridges further
@@ -174,8 +175,8 @@ function buildSaltScene(){
     spots.forEach(function(sp,q){ var pole=new THREE.Mesh(SALT.g.cyl, sc_mats().alu); pole.scale.set(0.06,6.5,0.06); pole.position.set(sp[0],3.25,sp[1]); S4.add(pole);
       var g=new THREE.PlaneGeometry(2.0,1.25,10,1); g.translate(1.0,0,0); var fl=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(fc[q%fc.length]), roughness:0.8, side:THREE.DoubleSide})); fl.position.set(sp[0],5.8,sp[1]); fl.rotation.y=-2.7; S4.add(fl);
       SALT.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.3}); }); })();
-  /* the push truck: SALT.makePush (vis/salt-event.js) builds a real pickup with a crew member in the bed; the pit town has the people */
-  SALT.push=(SALT.makePush||saltPushTruck)(); S4.add(SALT.push);   /* hook: SALT.makePush() may build a different truck */
+  /* the push truck: saltMakePush (vis/salt-event.js) builds a real pickup with a crew member in the bed; the pit town has the people */
+  SALT.push=(typeof saltMakePush==="function"?saltMakePush:saltPushTruck)(); S4.add(SALT.push);   /* hook: saltMakePush() may build a different truck */
   /* effects: salt thrown off the tyres and hanging behind the car; exhaust */
   SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1600:1100), "smoke", stripPuffTex()); S4.add(SALT.fx.mesh);
   SALT.fx.mat.uniforms.uFogN.value=S4.fog.near; SALT.fx.mat.uniforms.uFogF.value=S4.fog.far;

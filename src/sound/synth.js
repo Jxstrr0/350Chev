@@ -43,23 +43,26 @@
      440 Hz (1,760 / 3,520 Hz = the 4th and 8th orders of an inline-four wave) and gains never
      followed load. Direct .value writes did work, so all per-frame control is now a JS smoother
      that writes .value toward a target with the requested time constant. */
-  var SMOOTH = [], smoothT = null, smoothLast = 0, graphGen = 0;
+  var SMOOTH = [], smoothT = null, smoothLast = 0, graphGen = 0, smoothIdle = 0;
   function ap(param, v, tc) {
     if (!param || !isFinite(v)) return;
     param._tgt = v; param._tc = tc || 0.03;
     if (param._gen !== graphGen) { param._gen = graphGen; SMOOTH.push(param); }
     if (param._cur === undefined) { param._cur = (typeof param.value === "number" && isFinite(param.value)) ? param.value : v; }
+    startSmoother();   /* phones: the 16 ms smoother sleeps once every param has settled; a new target wakes it */
   }
   function smoothTick() {
     var now = (typeof performance !== "undefined") ? performance.now() : Date.now();
     var dt = smoothLast ? Math.min(0.06, (now - smoothLast) / 1000) : 0.016; smoothLast = now;
-    var keep = [];
+    var j = 0, busy = false;
     for (var i = 0; i < SMOOTH.length; i++) {
       var p = SMOOTH[i];
       if (p._gen !== graphGen && p._gen !== -1) continue;       /* param of a torn-down graph */
-      keep.push(p);
+      SMOOTH[j++] = p;                                           /* compacted in place: no per-tick allocation */
       if (p._tgt === undefined) continue;
       var cur = p._cur, tgt = p._tgt;
+      if (cur === tgt) continue;                                 /* settled */
+      busy = true;
       if (!isFinite(cur)) cur = tgt;
       var a = 1 - Math.exp(-dt / Math.max(0.004, p._tc));
       var nv = cur + (tgt - cur) * a;
@@ -67,9 +70,11 @@
       if (nv !== cur) { try { p.value = nv; } catch (e) {} }
       p._cur = nv;
     }
-    SMOOTH = keep;
+    SMOOTH.length = j;
+    if (busy) smoothIdle = 0;
+    else if (++smoothIdle > 30 && smoothT) { clearInterval(smoothT); smoothT = null; }   /* ~half a second with nothing moving: sleep until ap() queues a target */
   }
-  function startSmoother() { if (!smoothT) smoothT = setInterval(smoothTick, 16); }
+  function startSmoother() { if (!smoothT) { smoothIdle = 0; smoothLast = 0; smoothT = setInterval(smoothTick, 16); } }
   function apNow(param, v) {
     if (!param || !isFinite(v)) return;
     try { param.cancelScheduledValues(ctx.currentTime); } catch (e) {}
@@ -90,8 +95,14 @@
     return ctx;
   }
 
+  /* phones: with the engine off (the app feeds rpm 0) and no sound effect for a few seconds, the context is suspended so the DSP graph stops
+     costing battery; the next rpm > 0, event or gesture resumes it. iOS unlocks only inside a gesture, which the start tap and the wake listeners are. */
+  var idleAt = 0, selfSusp = false, selfResume = false;
   function resume() {
-    if (ctx && ctx.state === "suspended" && ctx.resume) { try { ctx.resume(); } catch (e) {} }
+    if (ctx && ctx.state === "suspended" && ctx.resume) {
+      if (selfSusp) { selfSusp = false; idleAt = 0; selfResume = true; }   /* our own idle suspend: the graph is intact, no rebuild on the way back */
+      try { ctx.resume(); } catch (e) {}
+    }
   }
 
   function init() {
@@ -326,13 +337,13 @@
   }
   function armWatch() {
     if (watchT) return;
-    watchT = setInterval(function () { if (running && !(typeof document !== "undefined" && document.hidden)) watchdog(); }, 450);   /* perf: no FFT polling in a hidden tab (the context is suspended) */
+    watchT = setInterval(function () { if (running && !selfSusp && !(typeof document !== "undefined" && document.hidden)) watchdog(); }, 450);   /* perf: no FFT polling in a hidden tab (the context is suspended) */
     if (ctx && !ctx._pewState) {
       ctx._pewState = true;
       var prev = ctx.state;
       ctx.addEventListener("statechange", function () {
         var st2 = ctx.state;
-        if (st2 === "running" && running) setTimeout(function () { rebuildGraph("context resumed (was " + prev + ")"); }, 60);
+        if (st2 === "running" && running) { if (selfResume) selfResume = false; else setTimeout(function () { rebuildGraph("context resumed (was " + prev + ")"); }, 60); }
         prev = st2;
       });
     }
@@ -367,6 +378,9 @@
   function set(o) {
     if (!ctx || !N || !running) return;
     o = o || {};
+    var rpm0 = num(o.rpm, 0);
+    if (rpm0 > 0) { idleAt = 0; if (selfSusp) resume(); }
+    else { var tn = Date.now(); if (!idleAt) idleAt = tn; else if (!selfSusp && tn - idleAt > 3000 && ctx.state === "running") { selfSusp = true; try { ctx.suspend(); } catch (e) {} } }
     // a failure silences the engine; spinning back up brings it back, so a failed
     // pull does not leave the idle mute until the player toggles the sound
     if (dead) { if (num(o.rpm, 0) > 400) dead = false; else return; }
@@ -826,6 +840,7 @@
   function event(name) {
     if (!init()) return;
     if (!ctx) return;
+    idleAt = 0;   /* a sound effect holds the idle suspend off for its length */
     switch (name) {
       case "start": {
         buildGraph();

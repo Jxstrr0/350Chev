@@ -60,7 +60,8 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   run.title=`Same run as Test: ${rlName(rt)}`;
   $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div>`;
-  $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();pwUpd();
+  if(col||RL.open)$("rlK").innerHTML=rlContracts();   // phones: the contract list is the dear part and sits behind the closed peek sheet; railOpen schedules a render, so it fills on the way up
+  $("rlD").innerHTML=rlDrag();pwUpd();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
   toastPlace();
 }
