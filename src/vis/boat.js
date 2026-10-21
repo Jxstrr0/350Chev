@@ -282,11 +282,9 @@ function boatSpray(V, s, dt){
   /* exhaust: a whisp, black for a diesel */
   var smk=clamp(+s.smoke||0,0,1), ne=(lite?3:8)*(0.15+smk)*thr*dt; if(R()<ne){ V.localToWorld(_btA.set(L.len*0.3, 1.6, 0)); var c=lerp(0.42,0.05,smk); (FM||FX).emit(_btA.x, _btA.y, _btA.z, v-0.6, 2, 0, 1.5, 0.3, 1.5+smk*2, c,c,c, 0.25+0.4*smk, {drag:0.7, buoy:0.15, fin:0.03, spin:0.5}); }
 }
-function boatCrowd(dt){ var C=BOAT.crowd; if(!C) return; BOAT.cheer=Math.max(0,BOAT.cheer-dt*0.3); if(BOAT.cheer<0.02&&!C.live) return;
-  var t=BOAT.t, amp=BOAT.cheer, m=_btM; for(var i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>0.35?Math.abs(Math.sin(t*8+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.4+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.93+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=BOAT.cheer>=0.02; }
-function boatCut(n){ if(BOAT.shot!==n){ BOAT.shot=n; BOAT.shotT=0; BOAT.snap=true; } }
+/* the shore crowd bounces at one pace whatever the cheer (no wild mode: same bar and beat at cheer>1) */
+var BOAT_CROWD={decay:0.3, lo:0.35, hi:0.35, f0:8, f1:8, amp:0.18, body:0.4, head:0.93};
+function boatCrowd(dt){ crowdTick(BOAT, dt, BOAT_CROWD); }
 /* the camera: behind the boats at the tree, low beside them off the line, a chase, the helicopter and the bank, the finish tower, a slow look after */
 function boatDirect(o, dt){
   var ph=o.phase||"tree", me=o.me||{}, mx=+me.x||0, ox=(o.opp&&+o.opp.x)||0, v=+me.v||0, lead=Math.abs(ox-mx)<40?(mx+ox)/2:mx, s=BOAT.shot, L=(BOAT.me&&BOAT.me.userData.L)||BOAT_LOOK.outboard;
@@ -300,7 +298,7 @@ function boatDirect(o, dt){
   else if(s==="heli"&&BOAT.shotT>2.6) s="bank";
   else if(s==="bank"&&BOAT.shotT>2.6) s="chase";
   if(s!==BOAT.shot&&s==="bank") BOAT.fixX=Math.min(BOAT_FIN-20, mx+20+v*1.4);
-  boatCut(s); BOAT.shotT+=dt; var T=BOAT.shotT, fov=45, rel=false, ax=0, sm=0, zz=BOAT_LZ;
+  sceneCut(BOAT, s); BOAT.shotT+=dt; var T=BOAT.shotT, fov=45, rel=false, ax=0, sm=0, zz=BOAT_LZ;
   switch(s){
     case "tree": { var push=Math.min(2,T*0.4); _btw.set(-L.len-11+push, 3.0, 1.5); _btt.set(22, 1.2, 0); fov=46; break; }
     case "launch": _btw.set(10, 1.2, zz+14); _btt.set(mx-L.len*0.5, 0.8, zz*0.3); fov=44; break;

@@ -24,13 +24,12 @@ function bogTruckHw(){
   var c=lastCfg||{}, a=String(c.asp||"na"), d=false; try{ d=isDieselCfg(c); }catch(e){ d=false; }
   return (d?"d":"g")+(a==="roots"||a==="screw"?"B":a==="na"?"N":a==="centrifugal"?"C":"T");
 }
-function bogtCanvasTex(c, srgb){ var t=new THREE.CanvasTexture(c); if(srgb!==false) t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; return t; }
 /* chrome: a banded "reflection" across u so a stack reads as polished metal, not a white tube */
 function bogtChromeTex(){
   if(BOGT.tex.chrome) return BOGT.tex.chrome;
   var c=newCanvas(128,4), x=c.getContext("2d"), g=x.createLinearGradient(0,0,128,0);
   [[0,"#8a929b"],[0.1,"#ffffff"],[0.17,"#c4cad1"],[0.3,"#5e646c"],[0.42,"#eef1f4"],[0.5,"#ffffff"],[0.58,"#aab1b9"],[0.7,"#565b62"],[0.82,"#e2e6ea"],[0.92,"#ffffff"],[1,"#8a929b"]].forEach(function(s){ g.addColorStop(s[0],s[1]); });
-  x.fillStyle=g; x.fillRect(0,0,128,4); return (BOGT.tex.chrome=bogtCanvasTex(c));
+  x.fillStyle=g; x.fillRect(0,0,128,4); return (BOGT.tex.chrome=ctex(c));
 }
 /* the sidewall: rubber everywhere, raised letters round the outer wall (v 0.2..0.8 = rim..shoulder, see bogTyreGeo; the rest stays plain) */
 function bogtSideTex(cls, kind, dia, wIn, rimIn, lite){
@@ -45,7 +44,7 @@ function bogtSideTex(cls, kind, dia, wIn, rimIn, lite){
     x.font="700 "+Math.round(H*0.2)+"px "+F; x.fillStyle="#cdc6b8"; x.fillText(T.brand, cx, y, W*0.2);
     x.font="700 "+Math.round(H*0.11)+"px "+F; x.fillStyle="#b7b0a3"; x.fillText(T.model, cx+W*0.17, y, W*0.1); x.fillText(size, cx-W*0.17, y, W*0.11); }
   x.setTransform(1,0,0,1,0,0);
-  return (BOGT.tex[key]=bogtCanvasTex(c));
+  return (BOGT.tex[key]=ctex(c));
 }
 function bogtLugBox(){
   if(BOGT.geo.lug) return BOGT.geo.lug;
@@ -320,7 +319,7 @@ function bogtBlobTex(){
   if(BOGT.tex.blob) return BOGT.tex.blob;
   var c=newCanvas(64,64), x=c.getContext("2d"), gr=x.createRadialGradient(32,32,2,32,32,31);
   gr.addColorStop(0,"rgba(255,255,255,1)"); gr.addColorStop(0.45,"rgba(255,255,255,0.75)"); gr.addColorStop(1,"rgba(255,255,255,0)");
-  x.fillStyle=gr; x.fillRect(0,0,64,64); return (BOGT.tex.blob=bogtCanvasTex(c, false));
+  x.fillStyle=gr; x.fillRect(0,0,64,64); return (BOGT.tex.blob=ctex(c, false));
 }
 function bogtBlob(U){
   var pl=BOGT.geo.blobPlane||(BOGT.geo.blobPlane=new THREE.PlaneGeometry(1,1).rotateX(-PI/2)), parts=[], s, lite=GFX==="lite";
