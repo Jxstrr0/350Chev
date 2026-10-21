@@ -4,7 +4,7 @@
    Same-origin sounds/ are cached as they are fetched (the cache name hashes the sounds/ listing); three.js (CDN) and the Google fonts are cached
    cache-first in a long-lived cache. Only good (2xx, CORS-readable) responses are cached: an opaque or failed CDN reply must never stick. */
 "use strict";
-const CACHE = "pew-shell-v1.76.24.0-4301bb2a12", MEDIA = "pew-media-v1-463f6093", LIBS = "pew-libs-v1";
+const CACHE = "pew-shell-v1.76.25.0-6f84aca058", MEDIA = "pew-media-v1-463f6093", LIBS = "pew-libs-v1";
 const PRECACHE = ["index.html","manifest.webmanifest","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512-maskable.png","icons/icon-512.png"], CDN = ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
 const LIB_HOSTS = ["cdnjs.cloudflare.com", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const BASE = new URL("./", self.location).pathname;
