@@ -9,10 +9,10 @@ const UPGRADES=[
   {id:"shop1",name:"Machine shop I",desc:"Forged pistons and rods, forged cranks, better bolts, baffled sump.",price:14000},
   {id:"flow",name:"Flow bench",desc:"Variable valve timing and lift, individual throttles, tuned runners.",price:16000},
   {id:"boost",name:"Boost bench",desc:"Turbochargers, superchargers, intercoolers and the fuels that like them.",price:24000},
-  {id:"bay1",name:"Second bay",desc:"Room for inline-5, inline-6, V8 and flat-6 blocks.",price:36000},
+  {id:"bay1",name:"Second bay",desc:"Room for inline-5, inline-6, V8 (cross or flat-plane), flat-6 and three-rotor blocks.",price:36000},
   {id:"shop2",name:"Machine shop II",desc:"Billet cranks, titanium, 300M, coated bearings, dry sumps, exotic fuels \u2014 and the pulling parts: billet TBC pistons, drag-gap rings, 9/16 studs, compound turbos and 250 hp sticks.",price:60000,needs:"shop1"},
   {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:90000,needs:"dyno2"},
-  {id:"bay2",name:"Race bay",desc:"V10 and V12 blocks and the contracts that want them.",price:140000,needs:"bay1"},
+  {id:"bay2",name:"Race bay",desc:"V10, V12, four-rotor and Deltic blocks and the contracts that want them.",price:140000,needs:"bay1"},
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
   {id:"bay3",name:"Build bay C",desc:"A third bay that builds market contracts on its own. Hire a bay lead; $5,000 a week to run once staffed.",price:350000,needs:"bay2"},
   {id:"bay4",name:"Build bay D",desc:"A fourth bay for a second contract at a time. Its own bay lead; $8,000 a week to run once staffed.",price:900000,needs:"bay3"},
@@ -35,14 +35,21 @@ const RND=[
   {id:"forge",name:"Forging supplier deal",cost:8000,weeks:3,desc:"A supply contract for forged 4032 pistons and 4340 rods without the full machine shop.",unlock:["piston:forged_4032","rod:forged_4340"]},
   {id:"plating",name:"Bore plating process",cost:12000,weeks:5,mach:true,desc:"Ni-SiC plating in house. Unlocks the Nikasil aluminium block.",unlock:["blockMat:alu_nikasil"]},
   {id:"vvt",name:"Cam phaser licence",cost:10000,weeks:4,desc:"Licensed phaser hardware. Unlocks DOHC 4v + VVT ahead of the flow bench.",unlock:["head:dohc4v_vvt"]},
-  {id:"calib",name:"Calibration suite",cost:7000,weeks:3,desc:"Knock sensing and a proper base map. +0.5 octane number of margin, permanently.",effect:{octane:0.5}}
+  {id:"calib",name:"Calibration suite",cost:7000,weeks:3,desc:"Knock sensing and a proper base map. +0.5 octane number of margin, permanently.",effect:{octane:0.5}},
+  /* late projects: each one lets a shop-gated part through without the upgrade that normally carries it (app/state.js locked) */
+  {id:"tirods",name:"Titanium rod programme",cost:16000,weeks:6,mach:true,desc:"Beams machined from Ti-6Al-4V bar, in house. Unlocks titanium rods.",unlock:["rod:titanium"]},
+  {id:"inconel",name:"Exotic valve supplier",cost:11000,weeks:4,desc:"A nickel-superalloy supplier for the hot side. Unlocks Inconel valves.",unlock:["valveMat:inconel"]},
+  {id:"drysump",name:"Dry-sump development",cost:13000,weeks:5,mach:true,desc:"A multi-stage pump and a pan of our own. Unlocks the high-volume dry sump.",unlock:["oilSystem:dry_hv"]},
+  {id:"wmi",name:"Water-meth injection",cost:9000,weeks:3,desc:"Nozzle sizing and a tested controller. Unlocks water-methanol charge cooling.",unlock:["ic:wmi"]},
+  {id:"fuelbench",name:"Fuel flow rig",cost:12000,weeks:4,desc:"An injector and pump flow bench. Unlocks the 2,200 cc injectors and the big belt-drive pump.",unlock:["injectors:i2200x4","fuelPump:mech_xl"]},
+  {id:"lean",name:"Lean build cell",cost:15000,weeks:5,desc:"Kitting, fixtures and a build sheet for every job. Build cost −4% on every engine, permanently.",effect:{costFac:0.96}}
 ];
 const PRESTIGE=[
   {id:"sign",name:"Illuminated shop sign",price:10000,rep:1,desc:"Your name over the door, lit. +1 rep a week."},
   {id:"trophy",name:"Trophy wall",price:30000,rep:2,desc:"A wall of certified builds and client plaques. +2 rep a week."},
   {id:"display",name:"Show engine plinth",price:60000,rep:4,desc:"A polished display engine in the front window. +4 rep a week and contracts pay +3%."}
 ];
-const REP_TIERS=[[0,"Backyard"],[40,"Local shop"],[120,"Known builder"],[300,"Regional supplier"],[700,"OEM partner"],[1500,"Legend"]];
+const REP_TIERS=[[0,"Backyard"],[40,"Local shop"],[120,"Known builder"],[300,"Regional supplier"],[700,"OEM partner"],[1500,"Legend"],[3000,"Dynasty"]];
 const GOALS=[
   {id:"first",name:"First sale",desc:"Deliver any contract.",cash:1000,check:c=>c.sold>0},
   {id:"hp200",name:"Two hundred",desc:"Certify a 200 hp engine.",cash:3000,check:c=>c.bestHp>=200},
@@ -62,7 +69,8 @@ const LOAN_STEP=10000,LOAN_MAX=50000,LOAN_RATE=0.02,LOAN_PAY=0.04,LOAN_MIN_PAY=2
 /* the bank: every week-close takes the interest and a slice of the balance (LOAN_PAY, at least LOAN_MIN_PAY) out of cash.
    Nothing is added to the balance; a shop that cannot pay goes overdrawn, and below FORECLOSE_AT the bank takes it. */
 function loanPay(){const l=C().loan||0;return l>0?Math.min(l,Math.max(LOAN_MIN_PAY,Math.round(l*LOAN_PAY/10)*10)):0;}
-function loanInt(){return Math.round((C().loan||0)*LOAN_RATE);}
+function loanRate(){return typeof lgLoanRate==="function"?lgLoanRate():LOAN_RATE;}   // app/legacy.js: the Good credit perk lowers it
+function loanInt(){return Math.round((C().loan||0)*loanRate());}
 function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loanPay();c.cash-=i+p;c.loan-=p;c.loanPaid=(c.loanPaid||0)+i+p;
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 const MAX_ACTIVE=2,DEPOSIT=0.10,EXPIRE_REP=8;
@@ -71,9 +79,9 @@ const CATS=[
   {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
   {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","streetcup","sport","gt","super","hyper"],rep:40},
   {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
-  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb","lsr"],rep:120},
+  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb","lsr","hydro","unlpull"],rep:120},
   {id:"altfuel",name:"Fleet & alt-fuel",sub:"propane · CNG · depot-fuelled fleets",segs:["forklift","cngvan","lpgbus","wellsite"],rep:20},
-  {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod"],rep:700,needs:"race"}
+  {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod","topalc","funny"],rep:700,needs:"race"}
 ];
 const CLIENTS=["Kestrel Automotive","Bison Truck Co.","Aurora Compact","Northwind Racing","Meridian Motors","Tamarack Vans","Saskatoon Speed Shop","Halcyon GT","Coulee Ag Equipment","Prairie Fire Motorsport","Redwater Fleet","Glacier Coachworks"];
 const FUEL_RANK={r87:0,r91:1,r94:2,race100:3,e85:4,methanol:5,
@@ -105,12 +113,19 @@ const SEGMENTS=[
   /* tier 4 — OEM partner */
   {id:"hyper",name:"Hypercar",tier:4,units:[1,2],price:48000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82,road:{ch:"super",trk:"gp"},lap:[109.5,112.5],zero100:[3.15,3.45]}},
   {id:"flagship",name:"OEM V12 flagship",tier:4,units:[2,4],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94",noise:80}},
-  /* tier 5 — Outlaw racing */
+  /* tiers 4–5 — Outlaw racing. The Outlaw & drag category opens at 700 rep (OEM partner) with the Outlaw shop, so the
+     street-tyre cars sit at tier 4 and only the big-tyre outlaws (radial, pro mod) wait for Legend */
   {id:"stripcar",name:"Street/strip coupe",tier:4,units:[1,2],price:20000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
-  {id:"grudge",name:"Grudge car · no time",tier:5,units:[1,2],price:44000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
+  {id:"grudge",name:"Grudge car · no time",tier:4,units:[1,2],price:44000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
   {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:58000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
   {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:60000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
-  {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:52000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
+  {id:"smallblock",name:"Small-tyre outlaw",tier:4,units:[1,2],price:52000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
+  /* tier 6 — Dynasty (3,000 rep). The only contracts that need the Monster cell: the Outlaw cell stops reading at 3,500 hp.
+     No ET or lap targets here; a twelve-cylinder compound-boosted engine is the only thing that gets there (3,500–3,600 hp) */
+  {id:"topalc",name:"Top alcohol dragster",tier:6,units:[1,1],price:110000,req:{hp:[3100,3500],passes:15,rel:30,fuel:"methanol"}},
+  {id:"funny",name:"Alcohol funny car",tier:6,units:[1,1],price:90000,req:{hp:[2700,3200],passes:20,rel:35,fuel:"methanol"}},
+  {id:"hydro",name:"Unlimited hydroplane",tier:6,units:[1,1],price:100000,req:{hp:[2600,3100],cyl:12,rel:45,life:10}},
+  {id:"unlpull",name:"Unlimited modified puller",tier:6,units:[1,1],price:85000,req:{hp:[2800,3300],passes:30,rel:40,fuel:"methanol"}},
   /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't.
      Road segments also cap drive-by noise (dBA, judged with any cutout shut) */
   {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[2,5],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel",noise:80}},
@@ -172,7 +187,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.23.0";
+const VERSION="1.76.26.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -243,7 +258,7 @@ function has(id){return !career()||dev()||!!C().owned[id];}
 function locked(o){return career()&&!dev()&&o&&o.req&&!C().owned[o.req]&&!(C().unlocks&&o._id&&C().unlocks[o._id]);}
 function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]&&crewOn(id)));}   // a person on a course is out of the shop (app/crew.js)
 function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1+0.15*crewL("tuner");if(staffed("machinist"))b.costFac*=0.92-0.01*crewL("machinist");b.costFac*=crewCostK();if(typeof lgCostK==="function")b.costFac*=lgCostK();
-  for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;}}return b;}
+  for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;if(r.effect.costFac)b.costFac*=r.effect.costFac;}}return b;}
 function syncShop(){S.env.shop=shopBonus();deltaCache.clear();fixCache.clear();}
 function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?crewWage(st):0),0):0;}
 function dynoCap(){if(!career())return{hp:15000,rpm:14000,n:"Test cell dyno"};return has("dyno5")?{hp:15000,rpm:14000,n:"Monster cell"}:has("dyno4")?{hp:3500,rpm:12500,n:"Outlaw cell"}:has("dyno3")?{hp:2000,rpm:12500,n:"Pro cell"}:has("dyno2")?{hp:1000,rpm:10000,n:"Engine dyno"}:{hp:400,rpm:8000,n:"Chassis dyno"};}

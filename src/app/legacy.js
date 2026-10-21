@@ -11,7 +11,10 @@ const LG_PERKS=[
   {id:"parts",name:"Supplier terms",desc:"Cheaper parts: unit cost on every build.",tiers:[[4,"−3% cost"],[8,"−6% cost"],[14,"−10% cost"]],val:[.03,.06,.1]},
   {id:"crew",name:"Seasoned hands",desc:"Every hire walks in at level 2.",tiers:[[6,"hires start at Lv 2"]],val:[2]},
   {id:"upg",name:"Heirloom equipment",desc:"One starter upgrade is already installed in each new shop.",tiers:[[10,"keep one upgrade"]],pick:"upg"},
-  {id:"rnd",name:"Old blueprints",desc:"One R&D unlock (parts, blocks, heads) is already researched.",tiers:[[5,"keep one unlock"]],pick:"rnd"}
+  {id:"rnd",name:"Old blueprints",desc:"One R&D unlock (parts, blocks, heads) is already researched.",tiers:[[5,"keep one unlock"]],pick:"rnd"},
+  {id:"spons",name:"Sponsor pull",desc:"Sponsors come to the table with bigger retainers and bonuses.",tiers:[[4,"+10% sponsor money"],[8,"+20% sponsor money"],[14,"+35% sponsor money"]],val:[.1,.2,.35]},
+  {id:"lease",name:"Lease terms",desc:"Cheaper plant: the weekly overhead on every upgrade runs lower.",tiers:[[4,"−5% overhead"],[8,"−10% overhead"],[12,"−15% overhead"]],val:[.05,.1,.15]},
+  {id:"bank",name:"Good credit",desc:"The bank charges less interest on the credit line.",tiers:[[3,"1.5% a week"],[6,"1.0% a week"]],val:[.015,.01]}
 ];
 let LG=null;
 function lgBlank(){return{v:1,pts:0,total:0,resets:0,best:{cash:0,rep:0,hp:0,sold:0,week:0,value:0},perk:{},pick:{},pending:false};}
@@ -22,6 +25,8 @@ function lgTier(id){return Math.max(0,Math.min(3,lgRec().perk[id]|0));}
 function lgPerk(id){return LG_PERKS.find(p=>p.id===id);}
 function lgVal(id){const t=lgTier(id),p=lgPerk(id);return t&&p.val?p.val[t-1]:0;}
 function lgCostK(){return 1-lgVal("parts");}
+function lgLoanRate(){return lgVal("bank")||LOAN_RATE;}      // state.js loanRate(): the perk's weekly rate, else the bank's
+function lgLeaseK(){return 1-lgVal("lease");}                  // market.js overhead(): factor on the plant part of the weekly overhead
 function lgCrewLv(){return career()&&lgTier("crew")?2:1;}
 function lgUpgOpts(){return UPGRADES.filter(u=>!u.needs);}
 function lgRndOpts(){return RND.filter(r=>r.unlock);}

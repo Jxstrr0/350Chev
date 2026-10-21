@@ -57,6 +57,20 @@
       }
     }),
     P({
+      id: "lpg_lift", name: "Propane forklift four", basedOn: "Toyota 4Y forklift (LPG)", cls: "truck",
+      blurb: "The warehouse engine: a 2.4 L truck four on a propane mixer, 10.5:1 because propane lets it, and a cam so mild it peaks at 2,900 rpm. A hundred horsepower, no plugs fouled, a lift truck that idles eight hours a day.",
+      soundProfile: null, realHp: 68, realRpm: 3600, realNm: 155,
+      cfg: {
+        layout: "I4", bore: 92, stroke: 89, rodRatio: 1.6, cr: 10.5, blockMat: "grey_iron", deck: "open",
+        headMat: "alu", head: "sohc2v", valveMat: "steel", springs: "single", cam: 20, lift: 42, redline: 4400,
+        piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "cast_steel", rodBolts: "oem",
+        crank: "cast_nodular", damper: "rubber", bearings: "bimetal", gasket: "composite", studs: "bolts_tty",
+        intake: "single_tb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6,
+        fuel: "lpg", timing: 0, lambda: 0.93, oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none",
+        cooling: "std", exhaust: "cast_log", cover: "blue", gasSys: "mixer"
+      }
+    }),
+    P({
       id: "ea82", name: "Flat-four 1.8 SOHC", basedOn: "Subaru EA82", starter: true,
       blurb: "Oversquare 92×67 boxer, 1.8 L, single cam per bank. Only 90 horsepower, but the opposed layout makes it the smoothest thing in the starter bay.",
       soundProfile: "f4_rumble", realHp: 90, realRpm: 5600, realNm: 137,
@@ -125,6 +139,21 @@
       }
     }),
     P({
+      id: "jz_e85", name: "Drift-spec 3.0 on E85", basedOn: "Toyota 2JZ-GTE single turbo (E85)", cls: "performance",
+      blurb: "The iron six with the sequential twins swapped for a pair of medium parallel turbos at 1.3 bar, 1,000 cc injectors and a 340 L/h pump feeding E85. Six hundred and fifty newton-metres from 3,900 rpm and a dead-smooth curve: what a drift car wants.",
+      soundProfile: null, realHp: 480, realRpm: 6600, realNm: 640,
+      cfg: {
+        layout: "I6", bore: 86, stroke: 86, rodRatio: 1.607, cr: 8.5, blockMat: "grey_iron", deck: "closed",
+        headMat: "alu", head: "dohc4v_vvt", valveMat: "sodium", springs: "dual", cam: 38, lift: 86,
+        redline: 7800, piston: "forged_4032", pistonClearance: "standard", rings: "moly", rod: "forged_4340",
+        rodBolts: "arp2000", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls",
+        studs: "arp_studs", intake: "plenum_long", asp: "twin_turbo", turboSize: "medium", turbineMat: "cast_iron",
+        ic: "air_air", boost: 1.3, fuel: "e85", timing: 0, lambda: 0.82, oilGrade: "w10_40", oilSystem: "wet",
+        oilSquirters: "fitted", cooling: "uprated", exhaust: "cast_log", cover: "black", injectors: "i1000",
+        fuelPump: "p340"
+      }
+    }),
+    P({
       id: "rb26", name: "Godzilla 2.6 ITB", basedOn: "Nissan RB26DETT",
       blurb: "Iron block, six individual throttles and parallel twins. 276 hp on the official paperwork; nearer 320 on a real dyno.",
       soundProfile: "i6_turbo", realHp: 320, realRpm: 6800, realNm: 368,
@@ -176,6 +205,21 @@
       }
     }),
     P({
+      id: "coyote_flex", name: "Flex-fuel 5.0", basedOn: "Ford Coyote 5.0 (F-150 flex-fuel)", cls: "performance",
+      blurb: "The quad-cam V8 with a flex-fuel sensor, 650 cc injectors and the bigger pump, so it runs whatever the pump gives it: 485 hp on E10, 510 on E85 with the timing the sensor allows.",
+      soundProfile: null, realHp: 400, realRpm: 6000, realNm: 542,
+      cfg: {
+        layout: "V8", bore: 92.2, stroke: 92.7, rodRatio: 1.657, cr: 12, blockMat: "alu_liners",
+        deck: "semi_closed", headMat: "alu", head: "dohc4v_vvt", valveMat: "steel", springs: "beehive",
+        cam: 45, lift: 54, redline: 7500, piston: "hyper", pistonClearance: "standard", rings: "moly",
+        rod: "forged_4340", rodBolts: "arp2000", crank: "forged_4340", damper: "rubber", bearings: "trimetal",
+        gasket: "mls", studs: "bolts_tty", intake: "plenum_short", asp: "na", turboSize: "medium",
+        turbineMat: "cast_iron", ic: "none", boost: 0.6, fuel: "flex", timing: 0, lambda: 0.92,
+        oilGrade: "w5_30", oilSystem: "wet", oilSquirters: "fitted", cooling: "uprated",
+        exhaust: "cast_tubular", cover: "blue", injectors: "i650", fuelPump: "p255", ethanolPct: 85
+      }
+    }),
+    P({
       id: "ej257", name: "Boxer 2.5 Turbo", basedOn: "Subaru EJ257",
       blurb: "Semi-closed-deck aluminium boxer, 8.2:1 and about a bar of boost. Hypereutectic pistons and a famously narrow ringland margin.",
       soundProfile: "f4_rumble", realHp: 300, realRpm: 6000, realNm: 393,
@@ -224,6 +268,21 @@
         ic: "none", boost: 0.6, fuel: "r94", timing: 0, lambda: 0.92,
         oilGrade: "w10_40", oilSystem: "baffled", oilSquirters: "none",
         cooling: "uprated", exhaust: "headers_equal", cover: "silver"
+      }
+    }),
+    P({
+      id: "s54_spec", name: "Spec-series 3.2", basedOn: "BMW S54B32 (spec GT, control fuel)", cls: "motorsport",
+      blurb: "The six-throttle six on the series' sealed 104 unleaded, 12:1, a 7,800 rpm limiter, race cooling and a dry sump. Three hundred and fifty horsepower that has to last a season of sprints.",
+      soundProfile: null, realHp: 350, realRpm: 7600, realNm: 380,
+      cfg: {
+        layout: "I6", bore: 87, stroke: 91, rodRatio: 1.51, cr: 12, blockMat: "grey_iron", deck: "closed",
+        headMat: "alu", head: "dohc4v_vvt", valveMat: "steel", springs: "dual", cam: 82, lift: 54,
+        redline: 7800, piston: "forged_4032", pistonClearance: "standard", rings: "moly", rod: "forged_4340",
+        rodBolts: "arp2000", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls",
+        studs: "arp_studs", intake: "itb", asp: "na", turboSize: "medium", turbineMat: "cast_iron", ic: "none",
+        boost: 0.6, fuel: "race104u", timing: 0, lambda: 0.92, oilGrade: "w10_40", oilSystem: "dry",
+        oilSquirters: "none", cooling: "race", exhaust: "headers_equal", cover: "silver", injectors: "i440",
+        fuelPump: "p190"
       }
     }),
     P({
@@ -496,6 +555,21 @@
       }
     }),
     P({
+      id: "cng_well", name: "Wellsite gas six", basedOn: "Ford 300 (natural-gas stationary)", cls: "truck",
+      blurb: "The straight six as a compressor drive: heavy-duty vapour carburation on field gas, 12:1, a 3,000 rpm governor, forged rod and crank, trimetal bearings and 15W-50. It runs for months at a time and nobody visits.",
+      soundProfile: null, realHp: 120, realRpm: 2800, realNm: 360,
+      cfg: {
+        layout: "I6", bore: 98, stroke: 104, rodRatio: 1.63, cr: 12, blockMat: "grey_iron", deck: "open",
+        headMat: "iron", head: "pushrod2v", valveMat: "steel", springs: "single", cam: 10, lift: 34,
+        redline: 3000, piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "trimetal", gasket: "composite",
+        studs: "bolts_tty", intake: "single_tb", asp: "na", turboSize: "medium", turbineMat: "cast_iron",
+        ic: "none", boost: 0.6, nitrous: "none", fuel: "cng", timing: 0, lambda: 0.94, oilGrade: "w15_50",
+        oilSystem: "baffled", oilSquirters: "none", cooling: "uprated", exhaust: "cast_log", cover: "blue",
+        injectors: "i440", fuelPump: "p190", gasSys: "hdvap"
+      }
+    }),
+    P({
       id: "vortec43", name: "Vortec four-three", basedOn: "GM 4.3 Vortec V6", cls: "truck",
       blurb: "A small-block with two cylinders missing: 101.6×88.4, 9.2:1, central port injection. Half-ton and van duty.",
       soundProfile: null, realHp: 200, realRpm: 4600, realNm: 352,
@@ -507,6 +581,21 @@
         intake: "plenum_long", asp: "na", turboSize: "medium", turbineMat: "cast_iron", ic: "none", boost: 0.6,
         nitrous: "none", fuel: "r87", timing: -6, lambda: 0.94, oilGrade: "w5_30", oilSystem: "wet",
         oilSquirters: "none", cooling: "std", exhaust: "cast_log", cover: "black"
+      }
+    }),
+    P({
+      id: "cng_van", name: "Depot-fuelled CNG V6", basedOn: "GM 4.3 Vortec V6 (CNG conversion)", cls: "truck",
+      blurb: "The fleet-van six on vapour-phase methane injection and 11.5:1 to use the 120 octane. Same lazy pushrod torque curve, cleaner oil, a tank that fills at the depot overnight.",
+      soundProfile: null, realHp: 195, realRpm: 4600, realNm: 380,
+      cfg: {
+        layout: "V6", bore: 101.6, stroke: 88.4, rodRatio: 1.66, cr: 11.5, blockMat: "grey_iron", deck: "open",
+        headMat: "iron", head: "pushrod2v", valveMat: "steel", springs: "single", cam: 14, lift: 38,
+        redline: 4800, piston: "cast_alu", pistonClearance: "standard", rings: "moly", rod: "pm_forged",
+        rodBolts: "oem", crank: "cast_nodular", damper: "rubber", bearings: "bimetal", gasket: "composite",
+        studs: "bolts_tty", intake: "plenum_long", asp: "na", turboSize: "medium", turbineMat: "cast_iron",
+        ic: "none", boost: 0.6, nitrous: "none", fuel: "cng", timing: 0, lambda: 0.94, oilGrade: "w5_30",
+        oilSystem: "wet", oilSquirters: "none", cooling: "std", exhaust: "cast_log", cover: "black",
+        injectors: "i440", fuelPump: "p190", gasSys: "vapinj"
       }
     }),
     P({
@@ -538,6 +627,21 @@
       }
     }),
     P({
+      id: "lpg_bus", name: "Propane school-bus V8", basedOn: "Ford 7.3 Godzilla (propane autogas)", cls: "truck",
+      blurb: "The big pushrod V8 on vapour injection, 10.5:1, a 20° cam and a 4,000 rpm redline, run a shade lean. Six hundred and sixty newton-metres at 3,000 rpm and a life measured in school years.",
+      soundProfile: null, realHp: 335, realRpm: 3900, realNm: 640,
+      cfg: {
+        layout: "V8", bore: 107.2, stroke: 101, rodRatio: 1.62, cr: 10.5, blockMat: "grey_iron", deck: "open",
+        headMat: "alu", head: "pushrod2v", valveMat: "sodium", springs: "beehive", cam: 20, lift: 44,
+        redline: 4000, piston: "hyper", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "rubber", bearings: "trimetal", gasket: "mls",
+        studs: "bolts_tty", intake: "plenum_long", asp: "na", turboSize: "medium", turbineMat: "cast_iron",
+        ic: "none", boost: 0.6, nitrous: "none", fuel: "lpg", timing: 0, lambda: 1.03, oilGrade: "w10_40",
+        oilSystem: "baffled", oilSquirters: "none", cooling: "uprated", exhaust: "cast_log", cover: "blue",
+        injectors: "i440", fuelPump: "p190", gasSys: "vapinj"
+      }
+    }),
+    P({
       id: "sbc350", name: "Three-fifty small-block", basedOn: "Chevrolet 350 (4-bbl)", cls: "classic",
       blurb: "101.6×88.4 iron pushrod V8 on a four-barrel carb, 8.5:1 and a mild cam. The engine every garage has rebuilt.",
       soundProfile: "pushrod_v8", realHp: 210, realRpm: 4400, realNm: 400,
@@ -549,6 +653,21 @@
         intake: "carb", asp: "na", turboSize: "medium", turbineMat: "cast_iron", ic: "none", boost: 0.6,
         nitrous: "none", fuel: "r87", timing: -8, lambda: 0.9, oilGrade: "w5_30", oilSystem: "wet",
         oilSquirters: "none", cooling: "std", exhaust: "cast_log", cover: "orange"
+      }
+    }),
+    P({
+      id: "sbc_110", name: "Sportsman small-block on 110", basedOn: "Chevrolet 383 small-block (bracket racer)", cls: "outlaw",
+      blurb: "A 104 × 95 stroker small-block on leaded 110: 13.5:1, a 62° cam, titanium retainers, a carburettor on merge headers and a dry sump. Four hundred horsepower from a heads-and-cam pushrod engine, and a bracket car that runs the same number all day.",
+      soundProfile: null, realHp: 420, realRpm: 6200, realNm: 600,
+      cfg: {
+        layout: "V8", bore: 104, stroke: 95.3, rodRatio: 1.64, cr: 13.5, blockMat: "grey_iron", deck: "open",
+        headMat: "alu", head: "pushrod2v", valveMat: "sodium", springs: "ti_retainers", cam: 62, lift: 54,
+        redline: 7200, piston: "forged_2618", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "arp2000", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls",
+        studs: "arp_studs", intake: "carb", asp: "na", turboSize: "medium", turbineMat: "cast_iron",
+        ic: "none", boost: 0.6, nitrous: "none", fuel: "race110", timing: 0, lambda: 0.88, oilGrade: "w5_30",
+        oilSystem: "dry", oilSquirters: "none", cooling: "race", exhaust: "headers_merge", cover: "orange",
+        injectors: "i240", fuelPump: "p190"
       }
     }),
     P({
@@ -591,6 +710,21 @@
         intake: "single_tb", asp: "turbo", turboSize: "medium", turbineMat: "cast_iron", ic: "air_air", boost: 1.15,
         nitrous: "none", fuel: "r94", timing: 0, lambda: 0.88, oilGrade: "w5_30", oilSystem: "baffled",
         oilSquirters: "fitted", cooling: "uprated", exhaust: "cast_tubular", cover: "red"
+      }
+    }),
+    P({
+      id: "4g63_hill", name: "Hill-climb two-litre", basedOn: "Mitsubishi 4G63T hill-climb special", cls: "motorsport",
+      blurb: "The rally four on oxygenated leaded 116 at 2.0 bar through a large turbo and a water-to-air core: billet pistons, Inconel valves, wide bearings, a dry sump, an aluminium block to make the weight. Four hundred and sixty-six horsepower in 186 kg for a ten-minute climb.",
+      soundProfile: null, realHp: 470, realRpm: 7500, realNm: 540,
+      cfg: {
+        layout: "I4", bore: 85, stroke: 88, rodRatio: 1.7, cr: 9, blockMat: "alu_liners", deck: "closed",
+        headMat: "alu", head: "dohc4v_vvt", valveMat: "inconel", springs: "dual", cam: 54, lift: 58,
+        redline: 8000, piston: "billet_tbc", pistonClearance: "loose", rings: "steel", rod: "forged_4340",
+        rodBolts: "arp2000", crank: "forged_4340", damper: "rubber", bearings: "pro_wide", gasket: "mls",
+        studs: "arp_studs", intake: "single_tb", asp: "turbo", turboSize: "large", turbineMat: "cast_iron",
+        ic: "water_air", boost: 2, nitrous: "none", fuel: "ox116", timing: 0, lambda: 0.8, oilGrade: "w5_30",
+        oilSystem: "dry", oilSquirters: "fitted", cooling: "race", exhaust: "cast_tubular", cover: "red",
+        injectors: "i1650", fuelPump: "p340"
       }
     }),
     P({
@@ -689,6 +823,21 @@
         intake: "plenum_short", asp: "screw", turboSize: "medium", turbineMat: "cast_iron", ic: "water_air", boost: 0.95,
         nitrous: "none", fuel: "r94", timing: 0, lambda: 0.86, oilGrade: "w5_30", oilSystem: "baffled",
         oilSquirters: "fitted", cooling: "uprated", exhaust: "cast_tubular", cover: "red"
+      }
+    }),
+    P({
+      id: "hellcat_112", name: "Pulleyed six-two on 112", basedOn: "Chrysler 6.2 Hellcat Redeye, smaller pulley", cls: "performance",
+      blurb: "The supercharged Hemi with a smaller blower pulley, 0.4 bar more boost and oxygenated 112 in the tank to keep it out of knock. Eight hundred and thirty horsepower on the stock bottom end, and the blower whine to go with it.",
+      soundProfile: null, realHp: 820, realRpm: 6200, realNm: 1100,
+      cfg: {
+        layout: "V8", bore: 103.9, stroke: 90.9, rodRatio: 1.6, cr: 9.5, blockMat: "grey_iron", deck: "closed",
+        headMat: "alu", head: "pushrod2v", valveMat: "sodium", springs: "beehive", cam: 48, lift: 58,
+        redline: 6200, piston: "forged_4032", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "arp2000", crank: "forged_4340", damper: "rubber", bearings: "trimetal", gasket: "mls",
+        studs: "arp_studs", intake: "plenum_short", asp: "screw", turboSize: "medium", turbineMat: "cast_iron",
+        ic: "water_air", boost: 1.35, nitrous: "none", fuel: "ox112", timing: 0, lambda: 0.86,
+        oilGrade: "w5_30", oilSystem: "baffled", oilSquirters: "fitted", cooling: "uprated",
+        exhaust: "cast_tubular", cover: "red", injectors: "i1000", fuelPump: "twin450"
       }
     }),
     P({
@@ -890,6 +1039,21 @@
       }
     }),
     P({
+      id: "b100_6bt", name: "Biodiesel fleet six", basedOn: "Cummins 6BT on B100", cls: "diesel",
+      blurb: "The twelve-valve turned up for a biodiesel fleet: 1.6 bar from the same turbo and 30% bigger nozzles to make up for the fuel's lower energy. Six hundred and seventy newton-metres at 1,900 rpm with the smoke still at zero.",
+      soundProfile: null, realHp: 230, realRpm: 2500, realNm: 680,
+      cfg: {
+        layout: "I6", bore: 102, stroke: 120, rodRatio: 1.6, cr: 17.5, blockMat: "grey_iron", deck: "open",
+        headMat: "iron", head: "pushrod2v", valveMat: "steel", springs: "single", cam: 5, lift: 45,
+        redline: 2800, piston: "cast_alu", pistonClearance: "standard", rings: "steel", rod: "forged_4340",
+        rodBolts: "oem", crank: "forged_4340", damper: "viscous", bearings: "trimetal", gasket: "mls",
+        studs: "bolts_tty", intake: "single_tb", asp: "turbo", turboSize: "large", turbineMat: "cast_iron",
+        ic: "air_air", boost: 1.6, nitrous: "none", fuel: "b100", dInj: "inline_mech", dNoz: "n30",
+        injectors: "i240", fuelPump: "p190", timing: 0, lambda: 2.1, oilGrade: "w15_50", oilSystem: "wet",
+        oilSquirters: "fitted", cooling: "std", exhaust: "cast_log", cover: "red"
+      }
+    }),
+    P({
       id: "lb7", name: "Six-six common rail V8", basedOn: "Duramax LB7 6.6", cls: "diesel",
       blurb: "103×99 iron V8 with aluminium four-valve heads and a 1,350-bar common rail. The pilot shot takes the rattle out, and the ECU only adds fuel as fast as the turbo brings air.",
       soundProfile: null, realHp: 300, realRpm: 3100, realNm: 705,
@@ -1029,6 +1193,19 @@
       }
     }),
     P({
+      id: "kkm502", name: "Single-rotor Spider", basedOn: "NSU KKM 502 (Wankel Spider)", cls: "rotary",
+      blurb: "The first production Wankel: one 498 cc rotor (R 100, e 14, 67 mm wide), a side port and a single carburettor. Fifty horsepower at 6,000 rpm in a package the size of a beer crate, and it still needs the one-rotor bay.",
+      soundProfile: null, realHp: 50, realRpm: 6000, realNm: 70,
+      cfg: {
+        layout: "R1", bore: 67, stroke: 100, ecc: 14, cr: 8.6, rotPort: "side", apexSeal: "oem3",
+        rotHousing: "chrome", sidePlate: "iron", eshaft: "stock", oilMeter: "omp", bearings: "bimetal",
+        redline: 7000, intake: "carb", asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none",
+        boost: 0.6, nitrous: "none", fuel: "r87", timing: 0, lambda: 0.92, oilGrade: "w10_40",
+        oilSystem: "wet", cooling: "std", exhaust: "cast_log", cover: "silver", injectors: "i240",
+        fuelPump: "p190"
+      }
+    }),
+    P({
       id: "13b_fc", name: "Thirteen-B six-port", basedOn: "Mazda 13B (FC RX-7 NA)", cls: "rotary",
       blurb: "Two 654 cc rotors, side ports and the six-port induction that opens extra runners above 5,000 rpm. 146 hp, a torque peak a piston engine of its size would envy, and the economy of a V8.",
       soundProfile: null, realHp: 146, realRpm: 6500, realNm: 187,
@@ -1143,6 +1320,23 @@
         asp: "na", turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "muffled", pipeRpm: 5500,
         fuel: "r91", injectors: "i440", fuelPump: "p255", timing: 0, lambda: 0.86, lube: "inject", premix: 50, cooling: "uprated", cover: "black",
         head: "sohc2v", valveMat: "steel", springs: "single", cam: 40, lift: 60, intake: "single_tb", exhaust: "cast_tubular", oilGrade: "w10_40", oilSystem: "wet", oilSquirters: "none" }
+    }),
+    P({
+      id: "nsr500", name: "Five-hundred GP V4", basedOn: "Honda NSR500 (1984)", cls: "motorsport",
+      blurb: "Four 125 cc cylinders in a 90° vee, disc-valve induction, power valves, four expansion chambers tuned to 11,000 rpm, premix at 30:1 and 100 octane. A hundred and fifty horsepower from half a litre, all of it above nine thousand.",
+      soundProfile: null, realHp: 150, realRpm: 11500, realNm: 95,
+      cfg: {
+        cycle: "two", layout: "V4", bore: 54, stroke: 54.5, rodRatio: 1.9, cr: 8.8, ccr: 1.4,
+        blockMat: "alu_nikasil", deck: "open", headMat: "alu", piston: "forged_2618",
+        pistonClearance: "standard", rings: "steel", rod: "forged_4340", rodBolts: "oem", crank: "forged_4340",
+        damper: "none", bearings: "trimetal", gasket: "copper_oring", studs: "arp_studs", scav: "loop",
+        ePort: 195, tPort: 130, pv: "fitted", redline: 12000, induct: "disc", tsFuel: "carb", asp: "na",
+        turboSize: "small", turbineMat: "cast_iron", ic: "none", boost: 0.6, nitrous: "none", xpipe: "chamber",
+        pipeRpm: 11000, fuel: "race100", injectors: "i240", fuelPump: "p190", timing: 0, lambda: 0.86,
+        lube: "premix", premix: 30, cooling: "race", cover: "red", head: "sohc2v", valveMat: "steel",
+        springs: "single", cam: 40, lift: 60, intake: "carb", exhaust: "cast_tubular", oilGrade: "w10_40",
+        oilSystem: "wet", oilSquirters: "none"
+      }
     }),
     P({
       id: "saab96", name: "Three-cylinder Swedish two-stroke", basedOn: "Saab 96 841 cc", cls: "classic",

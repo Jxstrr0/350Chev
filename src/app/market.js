@@ -147,7 +147,7 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   if(dsl)sl.push(["lambda",0.1,"lean the full-load λ 0.1"],["lambda",-0.1,"richen the full-load λ 0.1"],["timing",-2,"retard the injection 2°"]);
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
-function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]&&!/^bay[34]$/.test(u.id)?u.price*(u.oh||1):0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
+function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]&&!/^bay[34]$/.test(u.id)?u.price*(u.oh||1):0),0);return 500+Math.round(plant*0.02*(typeof lgLeaseK==="function"?lgLeaseK():1)/10)*10+wages();}
 function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
   if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
