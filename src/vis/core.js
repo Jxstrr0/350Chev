@@ -1663,7 +1663,7 @@ var keyLight=null, fillLight=null, rimLight=null, hemi=null;
 var running=true, rafId=0;
 var lastOwned={}, lastCfg=null, lastLayout=null;
 var anim = { spin:[], turbos:[], belts:[], hot:[], fans:[], glowMats:[], internals:null };
-var composer=null, bloomPass=null, GFX="lite", XRAY=false;
+var composer=null, bloomPass=null, GFX="lite", XRAY=false, postLoading=false;   /* postLoading: the bloom/SSAO addons are being fetched (body.html __pewPost) */
 var RSZ={k:""};   /* ENGINE_VIS.resize: the size it last applied to the renderer and composer */
 var GRIME_UNIFORM={ value:0 };
 var heatZones=null, _ndc=new THREE.Vector2(), _ray=new THREE.Raycaster();

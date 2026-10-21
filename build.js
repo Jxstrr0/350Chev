@@ -5,6 +5,7 @@
  *
  *   node build.js                 concatenate the files listed in src/manifest.txt into index.html, then write sw.js (the PWA service worker)
  *   node build.js --check         exit 1 if index.html or sw.js is not exactly what src/ builds (names the first differing src file)
+ *                                 both also refuse a script block that does not compile, or that declares a function twice
  *   node build.js --absorb <edited.html> <base.html>
  *                                 port a branch that still edits the old single-file index.html: diff base -> edited,
  *                                 write each hunk into the src file that holds those lines, rebuild, verify byte for byte
@@ -64,6 +65,34 @@ function parts(list) {
 }
 function build(ps) { ps = ps || parts(); return Buffer.concat(ps.map(x => x.b)); }
 
+/* ---- lint the built page: every inline <script> must compile (vm.Script parses, runs nothing), and no block may declare the same
+   column-0 function twice (the files are slices of one scope, so a second declaration silently replaces the first) ---- */
+function lint(ps, out) {
+  const vm = require("vm"), txt = out.toString("latin1"), re = /<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g;
+  let m, n = 0;
+  while ((m = re.exec(txt))) {
+    const src = m[1], at = m.index + m[0].indexOf(src); n++;
+    try { new vm.Script(src, { filename: "block" + n }); }
+    catch (e) {
+      const ln = +((e.stack || "").match(/block\d+:(\d+)/) || [0, 1])[1], off = at + src.split("\n").slice(0, ln - 1).join("\n").length + (ln > 1 ? 1 : 0), w = where(ps, off);
+      die("script block " + n + " does not compile: " + e.message + "\n  at src/" + w.p + " line " + w.line + " (index.html line " + lineAt(out, off) + ")");
+    }
+    const seen = new Map(), dr = /^function\s+([A-Za-z_$][\w$]*)\s*\(/gm; let d;
+    while ((d = dr.exec(src))) {
+      const w = where(ps, at + d.index);
+      if (seen.has(d[1])) die("function " + d[1] + " is declared twice in script block " + n + ": src/" + seen.get(d[1]) + " and src/" + w.p + " line " + w.line);
+      seen.set(d[1], w.p + " line " + w.line);
+    }
+  }
+  return n;
+}
+function sizes(ps, out) {
+  const zlib = require("zlib"), by = {};
+  for (const x of ps) { const k = x.p.split("/")[0]; (by[k] = by[k] || []).push(x.b); }
+  const row = (k, b) => k.padEnd(6) + String(b.length).padStart(9) + String(zlib.gzipSync(b, { level: 9 }).length).padStart(9);
+  return ["       " + "raw".padStart(8) + "gzip".padStart(9)].concat(Object.keys(by).map(k => row(k, Buffer.concat(by[k])))).concat([row("total", out)]).join("\n");
+}
+
 /* ---- sw.js: the service worker, generated so its cache name carries the version and a hash of everything it precaches ----
    PRECACHE = every file this build emits (index.html now; add lazy chunks here if the build starts emitting more) + manifest + icons.
    Any change to those bytes changes the hash, so sw.js changes, so browsers install it as an update (and show the "New version ready" bar). */
@@ -81,16 +110,25 @@ function swSource(page) {
   const hash = h.digest("hex").slice(0, 10);
   const vf = fs.readdirSync(path.join(SRC, "app")).map(n => path.join(SRC, "app", n)).find(f => /const VERSION="/.test(fs.readFileSync(f, "latin1")));
   const ver = vf ? fs.readFileSync(vf, "latin1").match(/const VERSION="([^"]+)"/)[1] : "0";
-  /* third-party scripts the page loads (three.js and its examples): kept in a separate, long-lived cache so the game also boots offline */
-  const cdn = [...new Set([...page.toString("latin1").matchAll(/<script[^>]*\ssrc="(https:\/\/[^"]+)"/g)].map(m => m[1]))];
-  return SW_TEMPLATE.replace("__CACHE__", () => "pew-shell-v" + ver + "-" + hash).replace("__PRECACHE__", () => JSON.stringify(list)).replace("__CDN__", () => JSON.stringify(cdn));
+  /* third-party scripts the page loads (three.js and its examples): kept in a separate, long-lived cache so the game also boots offline.
+     <script src> tags plus the PEW_LIBS array in body.html (the post-processing addons a Lite phone loads on demand). */
+  const txt = page.toString("latin1"), libs = txt.match(/PEW_LIBS=(\[[^\]]*\])/);
+  const cdn = [...new Set([...txt.matchAll(/<script[^>]*\ssrc="(https:\/\/[^"]+)"/g)].map(m => m[1]).concat(libs ? JSON.parse(libs[1]) : []))];
+  return SW_TEMPLATE.replace("__CACHE__", () => "pew-shell-v" + ver + "-" + hash).replace("__MEDIA__", () => "pew-media-v1-" + soundsHash()).replace("__PRECACHE__", () => JSON.stringify(list)).replace("__CDN__", () => JSON.stringify(cdn));
+}
+/* sounds/ is cached as it is fetched; the cache name carries a hash of the listing (names + sizes) so a replaced or added file retires the old cache */
+function soundsHash() {
+  const d = path.join(ROOT, "sounds"), h = require("crypto").createHash("sha256");
+  if (fs.existsSync(d)) for (const n of fs.readdirSync(d).sort()) { const st = fs.statSync(path.join(d, n)); if (st.isFile()) h.update(n + "\0" + st.size + "\0"); }
+  return h.digest("hex").slice(0, 8);
 }
 const SW_TEMPLATE = `/* Prairie Engine Works service worker. GENERATED by build.js: do not edit (edit SW_TEMPLATE in build.js, then node build.js).
    App shell: cache-first from a cache named for this version + content hash; old shell caches are deleted on activate.
    A new version installs in the background and waits: the page shows "New version ready" and sends SKIP_WAITING when tapped.
-   Same-origin sounds/ are cached as they are fetched; three.js (CDN) and the Google fonts are cached cache-first in a long-lived cache. */
+   Same-origin sounds/ are cached as they are fetched (the cache name hashes the sounds/ listing); three.js (CDN) and the Google fonts are cached
+   cache-first in a long-lived cache. Only good (2xx, CORS-readable) responses are cached: an opaque or failed CDN reply must never stick. */
 "use strict";
-const CACHE = "__CACHE__", MEDIA = "pew-media-v1", LIBS = "pew-libs-v1";
+const CACHE = "__CACHE__", MEDIA = "__MEDIA__", LIBS = "pew-libs-v1";
 const PRECACHE = __PRECACHE__, CDN = __CDN__;
 const LIB_HOSTS = ["cdnjs.cloudflare.com", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const BASE = new URL("./", self.location).pathname;
@@ -103,12 +141,14 @@ self.addEventListener("install", e => {
       await c.put(f, r);
     }));
     const l = await caches.open(LIBS);   /* best effort: a CDN hiccup must not block the app from installing; the fetch handler fills gaps */
-    await Promise.all(CDN.map(async u => { try { if (await l.match(u)) return; const r = await fetch(u, { mode: "no-cors" }); if (r.ok || r.type === "opaque") await l.put(u, r); } catch (_) {} }));
+    await Promise.all(CDN.map(async u => { try { if (await l.match(u)) return; const r = await fetch(u, { mode: "cors" }); if (r.ok) await l.put(u, r); } catch (_) {} }));
   })());
 });
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
     for (const k of await caches.keys()) if (k.startsWith("pew-") && k !== CACHE && k !== MEDIA && k !== LIBS) await caches.delete(k);
+    /* scripts this build no longer loads (an old three.js, a dropped addon) leave the library cache; font files stay */
+    try { const l = await caches.open(LIBS); for (const q of await l.keys()) if (/\.js$/.test(new URL(q.url).pathname) && !CDN.includes(q.url)) await l.delete(q); } catch (_) {}
     await self.clients.claim();
   })());
 });
@@ -140,13 +180,13 @@ self.addEventListener("fetch", e => {
       const hit = await (await caches.open(LIBS)).match(q);
       if (hit) return hit;
       const r = await fetch(q);
-      if (r.ok || r.type === "opaque") e.waitUntil(put(LIBS, q, r.clone()));
+      if (r.ok && r.type !== "opaque") e.waitUntil(put(LIBS, q, r.clone()));
       return r;
     })());
   }
 });
 `;
-function writeSw(page) { const s = swSource(page); if (!fs.existsSync(SW_OUT) || fs.readFileSync(SW_OUT, "utf8") !== s) fs.writeFileSync(SW_OUT, s); return s; }
+function writeSw(page) { const s = swSource(page); try { new (require("vm").Script)(s, { filename: "sw.js" }); } catch (e) { die("sw.js template does not compile: " + e.message); } if (!fs.existsSync(SW_OUT) || fs.readFileSync(SW_OUT, "utf8") !== s) fs.writeFileSync(SW_OUT, s); return s; }
 
 function lineAt(buf, off) { let n = 1; for (let i = 0; i < off && i < buf.length; i++) if (buf[i] === NL) n++; return n; }
 /* split a buffer into lines that keep their "\n" (the last one may not have it) */
@@ -167,15 +207,18 @@ function where(ps, off) {
 
 function cmdBuild() {
   const ps = parts(), out = build(ps);
+  lint(ps, out);
   const old = fs.existsSync(OUT) ? fs.readFileSync(OUT) : null;
   const sw0 = fs.existsSync(SW_OUT) ? fs.readFileSync(SW_OUT, "utf8") : null;
   if (!(old && old.equals(out))) { fs.writeFileSync(OUT, out); console.log(`index.html written (${out.length} bytes, ${ps.length} files)`); }
   else console.log(`index.html unchanged (${out.length} bytes, ${ps.length} files)`);
   const sw = writeSw(out); console.log(sw === sw0 ? "sw.js unchanged" : "sw.js written (" + (sw.match(/pew-shell-[^"]+/) || [""])[0] + ")");
+  console.log(sizes(ps, out));
 }
 
 function cmdCheck() {
   const ps = parts(), out = build(ps);
+  lint(ps, out);
   if (!fs.existsSync(OUT)) die("index.html is missing; run node build.js");
   const cur = fs.readFileSync(OUT), d = firstDiff(out, cur);
   if (d < 0) {
