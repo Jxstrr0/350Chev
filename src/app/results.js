@@ -520,7 +520,7 @@ function renderAnalysis(){
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
   renderRecords();renderAch();
 }
-function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career();
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);

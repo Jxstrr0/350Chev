@@ -29842,6 +29842,7 @@ if(typeof window!=="undefined")window.ENGINE_VIS=ENGINE_VIS;
 /* ===================== Prairie Engine Works — app ===================== */
 const SIM=ENGINE_SIM,{LAYOUTS,OPT,FORM,PRESETS}=SIM;
 const $=id=>document.getElementById(id);
+const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt$=n=>(n<0?"-$":"$")+Math.round(Math.abs(n)).toLocaleString("en-CA");
 const UPGRADES=[
@@ -30206,10 +30207,10 @@ function applySoundSrc(){const m=S.soundSrc||"blend";if(typeof ENGINE_SAMPLES!==
 $("srcSeg").addEventListener("click",e=>{const b=e.target.closest("[data-src]");if(!b)return;S.soundSrc=b.dataset.src;applySoundSrc();save();toast(`ENGINE VOICE · ${b.firstChild.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("srcLbl");if(!el||!setOn()||typeof ENGINE_SAMPLES==="undefined")return;const t=ENGINE_SAMPLES.stats();
   el.textContent=t.mode==="synth"?"synth only":t.set?`${t.setName}${t.set2?" + "+t.set2Name:""} · ${Math.round(t.cover*100)}% recorded`:t.errors&&!t.decoded?"recordings unavailable · synth":t.slow&&t.mode!=="real"?"slow connection · synth":"loads when sound starts";},500);
-function sndCredits(){const E=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function sndCredits(){
   const L=(typeof ENGINE_SAMPLES!=="undefined"&&ENGINE_SAMPLES.credits)||[];$("sheetTitle").textContent="Sound credits";
   $("sheetBody").innerHTML=`<p class="hint">Real engine recordings used by the Real and Blend engine voices. All are openly licensed; files were trimmed, looped, level-matched, converted to mono MP3 and are pitch-shifted live. Full list: <a href="sounds/CREDITS.md" target="_blank" rel="noopener" style="color:var(--orange)">sounds/CREDITS.md</a>.</p>`
-    +L.map(c=>`<div class="opt"><div class="oh"><b>${E(c.title)}</b><span class="tag">${E(c.license)}</span></div><p>${E(c.use)} · by ${E(c.author)} · <a href="${E(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${E(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${E(c.mods)}</small>`:""}</p></div>`).join("");
+    +L.map(c=>`<div class="opt"><div class="oh"><b>${esc(c.title)}</b><span class="tag">${esc(c.license)}</span></div><p>${esc(c.use)} · by ${esc(c.author)} · <a href="${esc(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${esc(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${esc(c.mods)}</small>`:""}</p></div>`).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 $("sndCredBtn").addEventListener("click",sndCredits);
 $("themeSeg").addEventListener("click",e=>{const b=e.target.closest("[data-theme]");if(!b)return;S.theme=b.dataset.theme;applyTheme();save();});
@@ -31206,7 +31207,7 @@ function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.
 function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!R.topBy||typeof R.topBy!=="object")R.topBy={};if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
 /* the strip's per-body book: top five passes in each body class (R.topBy[body]); R.top stays the all-bodies top five that older saves carry */
 function dragTopBy(b){const R=recs();if(!Array.isArray(R.topBy[b]))R.topBy[b]=[];return R.topBy[b];}
-function dragRecHtml(){const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]),R=recs(),ks=Object.keys(SIM.AERO).filter(k=>Array.isArray(R.topBy[k])&&R.topBy[k][0]);if(!ks.length)return "";
+function dragRecHtml(){const R=recs(),ks=Object.keys(SIM.AERO).filter(k=>Array.isArray(R.topBy[k])&&R.topBy[k][0]);if(!ks.length)return "";
   return `<div class="rtop"><span>Strip · quickest per body</span>${ks.map(k=>{const e=R.topBy[k][0],n=R.topBy[k].length;return `<div><b>${n}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${esc(e.n)} · ${n} pass${n>1?"es":""} booked">${esc(SIM.AERO[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 function engBest(h){return career()?(C().dragBest||{})[h]:recs().eng[h];}
 function allBest(){const t=recs().top[0];return Math.min(t?t.et:Infinity,career()&&C().bestEt||Infinity);}
@@ -31251,7 +31252,7 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
       c.push(["egt","EGT",`${Math.round(st.egt)}<i>°C</i>`,st.egt>950?"bad":st.egt>850?"warn":""]);}}
   else{if(R){const ox=oppX(now),gap=(st.x-ox)*3.281;let mg=null;   // past the stripe the gap means nothing: once both are through, the margin
       if(m4&&!foul){if(n&&n.verdict&&n.verdict.margin!=null)mg=n.verdict.win?n.verdict.margin:-n.verdict.margin;else if(!n&&R.et!=null&&ox>=402.336)mg=(R.et+R.rt)-(m4.t+Math.max(0,R.rt0||0));}
-      c.push(mg!=null?["gap","Margin",(mg>=0?"+":"−")+Math.abs(mg).toFixed(3).replace(/^0(?=\.)/,"")+"<i>s</i>",mg>=0?"good":"bad"]:["gap","vs "+rnEsc(shOpp(R.name)),foul?"RED":m4&&gap<0?"—":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>",foul||gap<0?"bad":"good"]);}
+      c.push(mg!=null?["gap","Margin",(mg>=0?"+":"−")+Math.abs(mg).toFixed(3).replace(/^0(?=\.)/,"")+"<i>s</i>",mg>=0?"good":"bad"]:["gap","vs "+esc(shOpp(R.name)),foul?"RED":m4&&gap<0?"—":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>",foul||gap<0?"bad":"good"]);}
     c.push(["et",m4?"ET":"Clock",m4?m4.t.toFixed(3):st.t.toFixed(2)+"<i>s</i>",st.spin&&!m4?"bad":""]);
     c.push(["mph",m4?"Trap mph":"mph",String(Math.round(m4?m4.mph:st.v*2.237)),""]);
     if(st.boostTarget>0)c.push(["boost","Boost",`${bv(st.boost)}<i>${pU()}</i>`,st.als>0.2?"hot":""]);}
@@ -31262,9 +31263,9 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   const keys=c.map(x=>x[0]).join();if(keys!==SH.keys){SH.keys=keys;SH.row.innerHTML=c.map(()=>`<div class="shx"><span></span><b></b></div>`).join("");SH.nodes=Array.from(SH.row.children);SH.m={};}
   c.forEach((x,i)=>{const nd=SH.nodes[i];shudSet("c"+i,nd,"shx sh-"+x[0]+(x[3]?" "+x[3]:""),"cls");shudSet("l"+i,nd.firstChild,x[1]);shudSet("v"+i,nd.lastChild,x[2]);});
   // caption: the round and who's in the other lane, then what to do now
-  let s="";if(n){s=`${n.label} · vs ${rnEsc(R.name)}`;if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
+  let s="";if(n){s=`${n.label} · vs ${esc(R.name)}`;if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
     if(ph==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";}
-  else if(R)s=`Heads-up · vs ${rnEsc(R.name)}`;
+  else if(R)s=`Heads-up · vs ${esc(R.name)}`;
   let h="";
   if(DR.failed)h=`<em class="l">${DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":DR.failKind==="backfire"?"INTAKE BACKFIRE":DR.failKind==="lean"?"MELTED A PISTON":"BROKE"}</em>`;
   else if(ph==="burnout")h=st.burning?`burning · ${st.burnT.toFixed(1)} s${st.burnT>4?" · too long, it's going greasy":st.burnT>2.5?" · that's about right":""}`:st.burnT>0?"tap to roll into the beams":"in the water box"+(DR.veh.transBrake==="line_lock"?" · line lock on":" · no line lock — it will creep");
@@ -31304,9 +31305,9 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
     car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg${r.auto?r.auto.took!=null?" · you took over":" · Auto driver":""}`};}
 function dragSlipCard(r,res){const D=slipData(r,res),two=!!D.R,lamp=w=>two&&D.win!=null?`<i class="lamp${w?" on":""}"></i>`:"";
   const pb=r.pb&&r.et!=null?(()=>{const f=etFix(r.et,+r.pb.was);return`<div class="stamp">${r.pb.all?"PERSONAL BEST":"ENGINE BEST"}<br><s>${(+r.pb.was).toFixed(f)}</s> ${r.et.toFixed(f)}</div>`;})():"";
-  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>SECTION LINE DRAGWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
-    <div class="tsc"><strong>${rnEsc(D.car)}</strong>${rnEsc(D.spec)}</div>
-    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(D.win===true)}You</th>${two?`<th><small>Left lane</small>${lamp(D.win===false)}${rnEsc(D.opp)}</th>`:""}</tr></thead>
+  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>SECTION LINE DRAGWAY</b><small>1/4 mile · ${esc(D.round)}</small><small>${D.date}</small></div>
+    <div class="tsc"><strong>${esc(D.car)}</strong>${esc(D.spec)}</div>
+    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(D.win===true)}You</th>${two?`<th><small>Left lane</small>${lamp(D.win===false)}${esc(D.opp)}</th>`:""}</tr></thead>
     <tbody>${D.rows.map(x=>`<tr class="${x[3]||""}"><td>${x[0]}</td><td>${x[1]}</td>${two?`<td>${x[2]==null?"—":x[2]}</td>`:""}</tr>`).join("")}</tbody></table>
     <div class="tsw"><b class="${D.win===true?"w":D.win===false||D.verdict==="RED LIGHT"||D.verdict==="BROKE"?"l":""}">${D.verdict}</b><span>${D.margin}</span></div>
     ${pb}<div class="tsf">Thank you for racing</div></div>`;}
@@ -31707,7 +31708,6 @@ function rnLeave(){const N=rnLive();if(!N||testing)return;if(!confirm(N.stage<2?
   else{N.left=true;N.hist.push({stage:N.stage,label:rnStageName(N,N.stage),text:"Left the night"});rnFinish(N,9);}
   rnSetN(N);save();renderTest();toast("Loaded up and went home");}
 /* ---- race-night panel (replaces the drag set-up on the Test tab while a night is on) ---- */
-const rnEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function rnPT(p,br){if(!p)return"—";if(p.rt!=null&&p.rt<0)return`<span class="rnr">RED</span>`;if(p.dq)return`<span class="rnr">X-LINE</span>`;if(p.et==null)return`<span class="rnr">${p.broke?"BROKE":"DNF"}</span>`;return p.et.toFixed(3)+(br&&p.dial!=null&&p.et<p.dial?`<span class="rnr"> BO</span>`:"");}
 /* the ladder as a bracket of cars: quarter → semi → final → trophy. Winners slide forward the first time they show up in the next
    round; tap a car for the driver, the car and how their night went. */
@@ -31733,19 +31733,19 @@ function rnLadderHtml(N){const br=N.fmt==="bracket",seedOf=i=>N.seeds?N.seeds.in
         if(i==null){chips+=`<div class="rnk tbd" style="${row}" aria-hidden="true"><em></em><span>—</span></div>`;return;}
         const P=rnPart(N,i),p=m[pk],done=m.win!=null,key=ri+":"+s+":"+i,adv=ri>0&&!first&&!seen.has(key);seen.add(key);
         const cls=`rnk${i===0?" you":""}${done&&m.win===i?" w":done?" l":""}${ri===cur&&(m.a===0||m.b===0)?" nx":""}${RNLG.sel===i?" sel":""}${adv?" adv":""}`;
-        chips+=`<button class="${cls}" style="${row}" data-rnlg="${i}" aria-label="${rnEsc(P.name)}${i?" · "+rnEsc(P.car):""}">${rnSil(N.body,rnPaint(N,i))}<em${done&&p&&br&&p.dial!=null&&p.et!=null&&p.et<p.dial?' class="bo" title="broke out"':""}>${done&&p?rnPT(p,false):seedOf(i)?"#"+seedOf(i):""}</em><span>${i===0?"YOU":rnEsc(shSur(P.name))}</span></button>`;});
+        chips+=`<button class="${cls}" style="${row}" data-rnlg="${i}" aria-label="${esc(P.name)}${i?" · "+esc(P.car):""}">${rnSil(N.body,rnPaint(N,i))}<em${done&&p&&br&&p.dial!=null&&p.et!=null&&p.et<p.dial?' class="bo" title="broke out"':""}>${done&&p?rnPT(p,false):seedOf(i)?"#"+seedOf(i):""}</em><span>${i===0?"YOU":esc(shSur(P.name))}</span></button>`;});
       // the bracket lines into the next round, the winner's path drawn over in green (orange when it's you)
       const ya=yc(ri,mi*2),yb=yc(ri,mi*2+1),ym=ri<2?yc(ri+1,mi):50,xm=(xr[ri]+xl[ri])/2;
       lines+=`<path d="M${xr[ri]} ${ya}H${xm}V${yb}H${xr[ri]}M${xm} ${(ya+yb)/2}V${ym}H${xl[ri]}"/>`;
       if(m.win!=null){const yw=m.win===m.a?ya:yb;lit+=`<path class="${m.win===0?"y":"w"}" d="M${xr[ri]} ${yw}H${xm}V${ym}H${xl[ri]}"/>`;}});}
   RNLG.seen=seen;
   const fm=N.rounds[2]&&N.rounds[2][0],champ=fm&&fm.win!=null?fm.win:null;
-  const tro=`<div class="rntro${champ!=null?" on":""}${champ===0?" you":""}"><svg viewBox="0 0 36 40" aria-hidden="true"><path d="M9 3h18v8c0 6-4 10.5-9 10.5S9 17 9 11zM9 6H3.5c0 5 2.5 8 6.5 8.5M27 6h5.5c0 5-2.5 8-6.5 8.5M15.5 21.5h5v6h-5zM11 27.5h14l1.5 6h-17z"/></svg><small>${champ!=null?(champ===0?"YOU":rnEsc(shSur(rnPart(N,champ).name))):N.purse>=1000?"$"+Math.round(N.purse/1000)+"k":fmt$(N.purse)}</small></div>`;
+  const tro=`<div class="rntro${champ!=null?" on":""}${champ===0?" you":""}"><svg viewBox="0 0 36 40" aria-hidden="true"><path d="M9 3h18v8c0 6-4 10.5-9 10.5S9 17 9 11zM9 6H3.5c0 5 2.5 8 6.5 8.5M27 6h5.5c0 5-2.5 8-6.5 8.5M15.5 21.5h5v6h-5zM11 27.5h14l1.5 6h-17z"/></svg><small>${champ!=null?(champ===0?"YOU":esc(shSur(rnPart(N,champ).name))):N.purse>=1000?"$"+Math.round(N.purse/1000)+"k":fmt$(N.purse)}</small></div>`;
   const sel=RNLG.sel!=null&&(RNLG.sel===0||N.field[RNLG.sel-1])?rnLgDetail(N,RNLG.sel):"";
   return`<div class="rnlg"><div class="rnlgh"><i>Quarter</i><i>Semi</i><i>Final</i><i>Cup</i></div><div class="rnlgb"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}${lit}</svg>${chips}${tro}</div><div class="rnlgx"${sel?"":" hidden"}>${sel}</div></div>`;}
-function rnLgDetail(N,i){const P=rnPart(N,i),br=N.fmt==="bracket",q=rnQualBest(N,i),rv=i?N.field[i-1]:null,seed=N.seeds?N.seeds.indexOf(i)+1:null;let h=`<b>${rnEsc(i===0?"You · "+P.car:P.name)}</b><span>${i===0?(SIM.AERO[N.body]||{}).n||"":rnEsc(P.car)}${seed?" · seed #"+seed:""}${br&&rv?" · dial "+rv.dial.toFixed(2):""}${q?` · qualified ${q.et.toFixed(3)}`:""}</span>`;
+function rnLgDetail(N,i){const P=rnPart(N,i),br=N.fmt==="bracket",q=rnQualBest(N,i),rv=i?N.field[i-1]:null,seed=N.seeds?N.seeds.indexOf(i)+1:null;let h=`<b>${esc(i===0?"You · "+P.car:P.name)}</b><span>${i===0?(SIM.AERO[N.body]||{}).n||"":esc(P.car)}${seed?" · seed #"+seed:""}${br&&rv?" · dial "+rv.dial.toFixed(2):""}${q?` · qualified ${q.et.toFixed(3)}`:""}</span>`;
   (N.rounds||[]).forEach((ms,ri)=>{const m=ms.find(x=>x.a===i||x.b===i);if(!m)return;const o=m.a===i?m.b:m.a,p=m.a===i?m.pa:m.pb;if(o==null)return;
-    h+=`<div><span>${["QF","SF","Final"][ri]} vs ${o===0?"you":rnEsc(rnPart(N,o).name)}</span><span>${p?rnPT(p,br):""}${m.win==null?" · to run":m.win===i?' · <span style="color:var(--good)">won</span>':" · out"}</span></div>`;});
+    h+=`<div><span>${["QF","SF","Final"][ri]} vs ${o===0?"you":esc(rnPart(N,o).name)}</span><span>${p?rnPT(p,br):""}${m.win==null?" · to run":m.win===i?' · <span style="color:var(--good)">won</span>':" · out"}</span></div>`;});
   return h;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rnlg]");if(!b)return;const N=rnCur();if(!N)return;const i=+b.dataset.rnlg,box=b.closest(".rnlg");
   RNLG.sel=RNLG.sel===i?null:i;box.querySelectorAll(".rnk.sel").forEach(x=>x.classList.remove("sel"));box.querySelectorAll(".rnk.adv").forEach(x=>x.classList.remove("adv"));
@@ -31753,7 +31753,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rnlg]")
 function rnQualHtml(N){const br=N.fmt==="bracket",ids=[0,1,2,3,4,5,6,7],q=N.stage,best=i=>{const b=rnQualBest(N,i);return b?b.et:Infinity;};
   const ord=q>0?ids.slice().sort((a,b)=>best(a)-best(b)||a-b):ids;
   return`<div class="rnq">${ord.map((i,k)=>{const P=rnPart(N,i),rv=i?N.field[i-1]:null,b=rnQualBest(N,i);
-    return`<div class="${i===0?"you":""}"><i>${q>0&&!br?k+1:""}</i><span>${rnEsc(P.name)}<small>${rnEsc(P.car)}</small></span><b>${b?b.et.toFixed(3):q>0?"—":br&&rv?"dial "+rv.dial.toFixed(2):""}</b></div>`;}).join("")}</div>`;}
+    return`<div class="${i===0?"you":""}"><i>${q>0&&!br?k+1:""}</i><span>${esc(P.name)}<small>${esc(P.car)}</small></span><b>${b?b.et.toFixed(3):q>0?"—":br&&rv?"dial "+rv.dial.toFixed(2):""}</b></div>`;}).join("")}</div>`;}
 function rnTuneRows(N){const lt=SIM.launchTech(S.cfg),two=lt.launchCtl!=="none",t0=N.t0,psi0=SIM.TYRES[N.lock.tyre].psi||16,psi=S.env.tyrePsi>0?S.env.tyrePsi:psi0,sh=S.env.shocks||"medium";
   const L=two?lt.twoStepRpm:Math.min(S.env.launchRpm,S.cfg.redline);
   const row=(k,lbl,val,sub)=>{const m=rnTuneLim(N,k);return`<div class="rnt"><span>${lbl}<small>${sub||""}</small></span><button class="nud" data-rn="tune" data-k="${k}" data-d="-1" aria-label="less">−</button><b id="rnv-${k}">${val}</b><button class="nud" data-rn="tune" data-k="${k}" data-d="1" aria-label="more">+</button></div><input type="range" class="rnr" data-rnr="${k}" min="${m.lo}" max="${m.hi}" step="${m.step}" value="${m.v}" aria-label="${lbl}">`;};
@@ -31774,11 +31774,11 @@ function rnPitsHtml(N){const br=N.fmt==="bracket",p=N.last,i=rnOppIdx(N),rv=N.fi
 function rnNextHtml(N){const br=N.fmt==="bracket",i=rnOppIdx(N),rv=N.field[i-1],qb=rnQualBest(N,i),rd=N.stage>=2,ri=N.stage-2;
   const win=rd?Math.round(N.purse*(ri===2?1:ri===1?0.45:0.2)/50)*50:0,lose=rd?Math.round(N.purse*RN_PAY[ri===0?5:ri===1?3:2]/50)*50:0;
   const h=rd&&br?rnTreeOffsets(N.dial,rv.dial):null;
-  return`<div class="rnnext"><span>NEXT · ${rnStageName(N,N.stage)}</span><b>${rd&&N.seeds?"#"+(N.seeds.indexOf(i)+1)+" ":""}${rnEsc(rv.name)}</b><small>${rnEsc(rv.car)}${br?` · dial ${rv.dial.toFixed(2)}`:qb&&qb.et!=null?` · qualified ${qb.et.toFixed(3)}`:` · runs about ${rv.mean.toFixed(2)}`}${rd?` · win ${fmt$(win)} / out ${fmt$(lose)}${career()?"":" (sandbox)"}`:""}</small>${h?`<small>${h.p>0?`Their tree starts first — you go ${h.p.toFixed(2)} s after them`:h.o>0?`Your tree starts first — ${h.o.toFixed(2)} s head start`:"Same dial — the trees come down together"}</small>`:""}</div>`;}
+  return`<div class="rnnext"><span>NEXT · ${rnStageName(N,N.stage)}</span><b>${rd&&N.seeds?"#"+(N.seeds.indexOf(i)+1)+" ":""}${esc(rv.name)}</b><small>${esc(rv.car)}${br?` · dial ${rv.dial.toFixed(2)}`:qb&&qb.et!=null?` · qualified ${qb.et.toFixed(3)}`:` · runs about ${rv.mean.toFixed(2)}`}${rd?` · win ${fmt$(win)} / out ${fmt$(lose)}${career()?"":" (sandbox)"}`:""}</small>${h?`<small>${h.p>0?`Their tree starts first — you go ${h.p.toFixed(2)} s after them`:h.o>0?`Your tree starts first — ${h.o.toFixed(2)} s head start`:"Same dial — the trees come down together"}</small>`:""}</div>`;}
 function rnSummaryHtml(N){const br=N.fmt==="bracket",b=N.best,rts=(N.passes||[]).filter(p=>p.rt!=null&&p.rt>=0).map(p=>p.rt);
   return`<div class="rnsum ${N.place===1?"won":""}"><div class="big">${N.left&&N.place===9?"LEFT THE NIGHT":RN_PLACE[N.place].toUpperCase()}</div><p>${RN_FMT[N.fmt]} · ${SIM.AERO[N.body].n}${N.week!=null?" · week "+N.week:""}</p>
   <div class="vstats"><div><b>${N.won}</b><span>rounds won</span></div><div><b>${b?b.et.toFixed(3):"—"}</b><span>best ET${b&&b.mph?" · "+Math.round(b.mph):""}</span></div><div><b>${rts.length?Math.min.apply(null,rts).toFixed(3):"—"}</b><span>best light</span></div><div><b>${fmt$(N.paid||0)}</b><span>purse${career()?"":" (sandbox)"}</span></div><div><b>${career()?"+"+(N.rep||0):"—"}</b><span>rep</span></div></div>
-  <div class="log" style="margin-top:8px">${N.hist.map(x=>`<div><b>${x.label}</b>${x.opp?"vs "+rnEsc(rnPart(N,x.opp).name)+" · ":""}${rnEsc(x.text||"")}</div>`).join("")}</div>
+  <div class="log" style="margin-top:8px">${N.hist.map(x=>`<div><b>${x.label}</b>${x.opp?"vs "+esc(rnPart(N,x.opp).name)+" · ":""}${esc(x.text||"")}</div>`).join("")}</div>
   <button class="btn pri" data-rn="done" style="width:100%;margin-top:10px">Done — back to the pits</button></div>`;}
 function rnPanel(){const N=rnCur();if(!N)return"";const br=N.fmt==="bracket";
   let h=`<div class="rn"><div class="rnhd"><div><b>${N.quick?"BRACKET NIGHT":RN_FMT[N.fmt].toUpperCase()}</b><span>${SIM.AERO[N.body].n} · 8 cars · winner ${fmt$(N.purse)}${career()?"":" (sandbox)"}</span></div>${N.done?"":`<button class="btn sm ghost" data-rn="leave">Leave the night</button>`}</div>`;
@@ -31872,10 +31872,10 @@ function rnRunBtn(){const N=rnCur(),b=$("runTest");if(testing)return;
   const i=rnOppIdx(N),fb=fuelBill();b.textContent=`Stage · ${rnStageName(N,N.stage).toLowerCase().replace(/^./,c=>c.toUpperCase())} vs ${N.field[i-1].name.split(" ")[0]}${career()&&fb?" · fuel "+fmt$(fb):""}`;
   $("dynoHint").innerHTML=N.fmt==="bracket"?`<b>Bracket</b> · your dial ${N.stage>=2?N.dial.toFixed(2):"— set after the time trials"}. Leave on the green of <i>your</i> tree; a red light loses outright.`:`<b>Heads-up</b> · first to the stripe. Your reaction time counts — a good light is under 0.100.`;}
 function rnRecHtml(){const R=recs();if(!R.nightsRun)return"";return`<div class="rec"><span>Race nights</span><b>${R.nightsWon||0}<i>of ${R.nightsRun} won</i></b><small>best finish: ${(RN_PLACE[R.bestFinish]||"—").toLowerCase()}</small></div>`;}
-function rnSlipHtml(r){const n=r.night;if(!n)return"";return`<div class="sec"><h2>${n.label}${n.win===true?" · won":n.win===false?" · out":""}</h2><div class="log"><div><b>vs</b>${rnEsc(n.opp)} · ${rnEsc(n.car)} — RT ${n.oppRt!=null?n.oppRt.toFixed(3):"—"}${n.oppBroke?" · broke":n.oppEt!=null?" · "+n.oppEt.toFixed(3)+" @ "+Math.round(n.oppMph):""}${n.dialO!=null?" on a "+n.dialO.toFixed(2):""}</div>${n.dialP!=null?`<div><b>Dial</b>${n.dialP.toFixed(2)}${r.et!=null?" · ran "+(r.et-n.dialP>=0?"+":"")+(r.et-n.dialP).toFixed(3):""}</div>`:""}<div>${rnEsc(n.text)}</div></div></div>`;}
+function rnSlipHtml(r){const n=r.night;if(!n)return"";return`<div class="sec"><h2>${n.label}${n.win===true?" · won":n.win===false?" · out":""}</h2><div class="log"><div><b>vs</b>${esc(n.opp)} · ${esc(n.car)} — RT ${n.oppRt!=null?n.oppRt.toFixed(3):"—"}${n.oppBroke?" · broke":n.oppEt!=null?" · "+n.oppEt.toFixed(3)+" @ "+Math.round(n.oppMph):""}${n.dialO!=null?" on a "+n.dialO.toFixed(2):""}</div>${n.dialP!=null?`<div><b>Dial</b>${n.dialP.toFixed(2)}${r.et!=null?" · ran "+(r.et-n.dialP>=0?"+":"")+(r.et-n.dialP).toFixed(3):""}</div>`:""}<div>${esc(n.text)}</div></div></div>`;}
 function rnVerdict(r){const n=r.night,R=r.race;const cls=n.win===true?"pass":n.win===false?"fail":r.et==null?"fail":"marg";
-  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${rnEsc(n.text)}</p>${r.auto?`<p>${dragAutoWord(r.auto)}</p>`:""}${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
-function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive");let s=`${n.label} · vs ${rnEsc(R.name)}`;
+  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${esc(n.text)}</p>${r.auto?`<p>${dragAutoWord(r.auto)}</p>`:""}${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
+function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive");let s=`${n.label} · vs ${esc(R.name)}`;
   if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
   if(st.phase==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";
   if(n.verdict&&n.stage>=2)s+=` · <b style="color:${n.verdict.win?"var(--good)":"var(--crit)"}">${n.verdict.win?"WIN":"LOSS"}</b>`;
@@ -31967,12 +31967,12 @@ function pullTitle(k,s,r){const C0=SIM.PULL_CLASSES[k],bonus=Math.round(PULL_TIT
   const R=recs();if(!Array.isArray(R.pullTitles))R.pullTitles=[];R.pullTitles.push(Object.assign({k,season:s.season,pts:s.me.pts},recTag()));
   if(career()){C().cash+=bonus;C().rep+=8;C().pullTitles=(C().pullTitles||[]).concat([{k,season:s.season,w:C().week}]);logEvent(`Champion: ${C0.n} pulling series, season ${s.season} — ${fmt$(bonus)} bonus, +8 rep, a cup for the shop`,"good");try{ENGINE_VIS.buildGarage(garageOwned());}catch(e){}}
   setTimeout(()=>toast(`SERIES CHAMPION · ${C0.n}${career()?" · "+fmt$(bonus):""}`),3200);}
-function pullStandHtml(st,o){o=o||{};const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,"");const rows=o.short?st.filter((x,i)=>i<4||x.me):st;
+function pullStandHtml(st,o){o=o||{};const rows=o.short?st.filter((x,i)=>i<4||x.me):st;
   return `<div class="pstand"><span></span><span class="h">${o.title||"Standings"}</span><span class="h">pts</span><span class="h">W · full</span>${rows.map(x=>{const i=st.indexOf(x);return `<b>${i+1}</b><span class="nm${x.me?" me":""}">${x.me?"▶ ":""}${esc(x.n)}${o.champ&&i===0?` <i class="champ">CHAMPION</i>`:""}</span><span class="${x.me?"me":""}">${x.pts}</span><span>${x.wins} · ${x.fulls}</span>`;}).join("")}</div>`;}
 function pullSerCard(z){const C0=SIM.PULL_CLASSES[z.k];
-  return `<div class="sec"><h2>Pulling series <span class="cnt">${C0?C0.n:""} · season ${z.season} · round ${z.round} of ${z.n}</span></h2><p class="hint">${z.done?(z.champMe?`<b style="color:var(--good)">Series champion.</b> ${career()?"The cup goes on the shop shelf and the bonus is in the account.":"It's in the records."}`:`<b>Season over</b> — ${String(z.champ).replace(/[&<>"]/g,"")} takes the title. A new season starts with the next round.`):`<b>+${z.pts} points</b> tonight.`} Points by place ${PULL_PTS.slice(0,4).join(", ")}… plus ${PULL_FULL_PTS} for a full pull; a DQ scores nothing. Ties go to wins, then full pulls, then the latest round.</p>${pullStandHtml(z.stand,{champ:z.done})}</div>`;}
+  return `<div class="sec"><h2>Pulling series <span class="cnt">${C0?C0.n:""} · season ${z.season} · round ${z.round} of ${z.n}</span></h2><p class="hint">${z.done?(z.champMe?`<b style="color:var(--good)">Series champion.</b> ${career()?"The cup goes on the shop shelf and the bonus is in the account.":"It's in the records."}`:`<b>Season over</b> — ${esc(z.champ)} takes the title. A new season starts with the next round.`):`<b>+${z.pts} points</b> tonight.`} Points by place ${PULL_PTS.slice(0,4).join(", ")}… plus ${PULL_FULL_PTS} for a full pull; a DQ scores nothing. Ties go to wins, then full pulls, then the latest round.</p>${pullStandHtml(z.stand,{champ:z.done})}</div>`;}
 /* standings and titles on the Records card: rows in the records' own five-column format */
-function pullSerRecHtml(){const st=pullSerStore(),R=recs(),T=Array.isArray(R.pullTitles)?R.pullTitles:[],esc=v=>String(v==null?"":v).replace(/[&<>"]/g,"");let h="";
+function pullSerRecHtml(){const st=pullSerStore(),R=recs(),T=Array.isArray(R.pullTitles)?R.pullTitles:[];let h="";
   Object.keys(st).filter(k=>SIM.PULL_CLASSES[k]&&st[k]&&st[k].round>0).forEach(k=>{const s=st[k],sd=pullStand(s);
     h+=`<div class="rtop"><span>Pulling series · ${SIM.PULL_CLASSES[k].n} · season ${s.season} · ${s.done?"final":"round "+s.round+" of "+PULL_SER_N}</span>${sd.map((x,i)=>`<div><b>${i+1}</b><span class="et">${x.pts}</span><span>${x.wins}W ${x.fulls}F</span><span class="nm"${x.me?' style="color:var(--chalk);font-weight:600"':""}>${x.me?"▶ ":""}${esc(x.n)}</span><span>${s.done&&i===0?"champ":""}</span></div>`).join("")}</div>`;});
   if(T.length)h+=`<div class="rtop"><span>Pulling championships won · ${T.length}</span>${T.map(t=>`<div><b>★</b><span class="et">S${t.season}</span><span>${t.pts} pts</span><span class="nm">${esc(SIM.PULL_CLASSES[t.k]?SIM.PULL_CLASSES[t.k].n:t.k)}</span><span>${t.w!=null?"wk "+t.w:t.d?new Date(t.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`).join("")}</div>`;
@@ -32136,7 +32136,7 @@ function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame
 function pullPb(r,failed){if(ff||failed)return;const R=recs();if(!R.pull||typeof R.pull!=="object")R.pull={};const was=R.pull[r.cls];
   if(was&&!(r.distFt>was.ft))return;R.pull[r.cls]=Object.assign({ft:r.distFt,full:r.full},recTag());
   if(was){r.pb={was:was.ft};setTimeout(()=>toast(`CLASS BEST · ${r.full?"FULL PULL":r.distFt.toFixed(1)+" ft"} (was ${was.ft.toFixed(1)})`),2700);}}
-function pullRecHtml(){const R=recs(),P=R.pull,sr=pullSerRecHtml();if(!P||typeof P!=="object")return sr;const ks=Object.keys(SIM.PULL_CLASSES).filter(k=>P[k]);if(!ks.length)return sr;const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function pullRecHtml(){const R=recs(),P=R.pull,sr=pullSerRecHtml();if(!P||typeof P!=="object")return sr;const ks=Object.keys(SIM.PULL_CLASSES).filter(k=>P[k]);if(!ks.length)return sr;
   return `<div class="rtop"><span>Truck pull · longest per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.full?"✓":"·"}</b><span class="et">${e.full?"FULL":e.ft.toFixed(1)}</span><span>${e.full?"300 ft":"ft"}</span><span class="nm" title="${esc(e.n)}">${esc(SIM.PULL_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`+sr;}
 function pullHint(){const c=SIM.PULL_CLASSES;return career()?`<b>Pull night</b> · $150 entry. Needs a certified engine — no shop upgrade, this is a county-fair event. ${c.street.n} and ${c.gas.n} are open to anyone; ${c.smoker26.n} at ${c.smoker26.rep} rep, ${c.hotfarm.n} at ${c.hotfarm.rep}, ${c.superstock.n} at ${c.superstock.rep}; ${c.unlimited.n} needs the Monster dyno cell or Legend rep. Purse by placing — 1st pays ${fmt$(PULL_PURSE[0])} in the street classes, up to ${fmt$(PULL_PURSE[0]*PULL_PAY[4])} in Super Stock and ${fmt$(PULL_PURSE[0]*PULL_PAY[5])} in Unlimited. Every hook is wear on the build.`
   :`<b>Sled</b> · hold the button for throttle, let go to ease off. The box slides up the sled toward the pan as you go, so the drag keeps building — keep the wheel slip in the green band and carry speed into the heavy end. 300 ft is a full pull.`;}
@@ -32182,7 +32182,7 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
     <div><b>Setup</b>${r.clsName} · ${r.gearName} (${r.mphGear} mph) · ${v.trans==="clutch"?"clutch":"converter"} · ${r.tyre.toLowerCase()} · ${v.hitch} in hitch · ${v.ballast} kg front · ${r.ratio}:1 overall</div>
     <div><b>Tyres</b>peak slip ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s spinning${r.hopT>0?" · hopped "+r.hopT.toFixed(1)+" s":""}</div>
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
-    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${String(f.n).replace(/[&<>"]/g,"")}</span><span class="${f.me?"me":""}">${f.dq?"DQ":f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):f.me&&r.poPending?" · pull-off next":""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>${r.ser?pullSerCard(r.ser):""}`;}
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}</span><span class="${f.me?"me":""}">${f.dq?"DQ":f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):f.me&&r.poPending?" · pull-off next":""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>${r.ser?pullSerCard(r.ser):""}`;}
 
 
 /* ===================== MUD BOG: the engine in a truck, a pit of mud ===================== */
@@ -32191,7 +32191,6 @@ let BR=null;
 const BOG_PURSE=[2500,1200,700,400,200],BOG_PAY={1:1,2:1.8,3:3},BOG_REP=[3,2,1],BOG_SB={};
 const BOG_NAMES=["Swamp Thing","Mud Butter","Gumbo","Sloppy Joe","Bog Hog","Muddy Waters","Dirty Bird","Low Ground","Sink Hole","Gator Bait","Brown Out","Clay Pigeon","Backwater","Slough Monster","Rooster Tail","Wet Willy","Gravy Train","Stuck Up"];
 const BOG_COLORS={street:0x1d4787,modified:0xb7261d,super:0x2c6b3a};
-const bogEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const bogIsD=c=>SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
 function bogClsLocked(k){const c=SIM.BOG_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 /* the truck setup lives on S.env beside the sled's and the salt's; anything a class doesn't run is pulled back in */
@@ -32271,7 +32270,7 @@ function bogHud(st,force){if(!BR||!hudDue(BR,st,force))return;const L=BR.night.l
   const d=st.phase==="pit"?st.depth:0,lead=BR.lead;
   $("bogLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${say}${st.phase==="pit"&&!st.done?"<br>"+pitT.toFixed(1)+" s in the mud":""}</span></div>
     <div class="ph-bar"><i class="fill" style="width:${pc(x)}%"></i>${marks}</div><div class="ph-lbl"><span>0</span><span>leader <b>${lead?bogScore(lead):"—"}</b></span><span>${L} m</span></div>
-    <div class="ph-lbl"><span>Mud <b>${bogEsc(BR.night.name)}</b></span><span>${st.phase==="pit"?`depth <b>${Math.round(d*100)} cm</b>`:`${SIM.BOG_CLASSES[BR.k].n}`}</span></div></div>
+    <div class="ph-lbl"><span>Mud <b>${esc(BR.night.name)}</b></span><span>${st.phase==="pit"?`depth <b>${Math.round(d*100)} cm</b>`:`${SIM.BOG_CLASSES[BR.k].n}`}</span></div></div>
     <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>Wheelspin <b>${sp}%</b></span><span>${st.pack>0.5?`<b style="color:var(--warn)">LUGS PACKED</b>`:st.dig>0.4?`<b style="color:var(--crit)">DIGGING</b>`:st.belly>0.3?`<b style="color:var(--crit)">ON THE FRAME</b>`:st.air?`<b style="color:var(--info)">AIRBORNE</b>`:`dig past ${dg}%`}</span></div>
     <div class="ph-bar"><i class="sw" style="left:${Math.round(sw[0]*100)}%;width:${Math.round((sw[1]-sw[0])*100)}%"></i><i class="mk" style="left:${dg}%"></i><i class="nd ${st.slip>BR.p.digS?"hot":st.slip>=sw[0]&&st.slip<=sw[1]+0.06?"ok":""}" style="left:${Math.min(99,sp)}%"></i></div>
     <div class="ph-lbl"><span>rpm <b style="color:${st.phase==="pit"&&st.rpm<band[1]?"var(--crit)":""}">${Math.round(st.rpm/10)*10}</b></span><span>${st.stalled?`<b style="color:var(--crit)">STALLED</b>`:st.phase==="pit"&&st.rpm<band[1]?`<b style="color:var(--warn)">BOGGING</b>`:`bog under ${band[1].toLocaleString()}`}</span></div>
@@ -32328,7 +32327,7 @@ function bogPb(r,failed){if(ff||failed)return;const R=recs();if(!R.bog||typeof R
   R.bog[r.cls]=Object.assign({c:!!r.cleared,t:r.cleared?r.pitT:null,m:r.distM,len:r.len},recTag());
   if(was){r.pb={was:was.c?was.t.toFixed(2)+" s":was.m.toFixed(1)+" m"};setTimeout(()=>toast(`CLASS BEST · ${r.cleared?r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} (was ${r.pb.was})`),2700);}}
 function bogRecHtml(){const R=recs(),P=R.bog;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOG_CLASSES).filter(k=>P[k]);if(!ks.length)return "";
-  return `<div class="rtop"><span>Mud bog · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.c?"✓":"·"}</b><span class="et">${e.c?e.t.toFixed(2):e.m.toFixed(1)}</span><span>${e.c?"s":"m"}</span><span class="nm" title="${bogEsc(e.n)}">${bogEsc(SIM.BOG_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop"><span>Mud bog · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.c?"✓":"·"}</b><span class="et">${e.c?e.t.toFixed(2):e.m.toFixed(1)}</span><span>${e.c?"s":"m"}</span><span class="nm" title="${esc(e.n)}">${esc(SIM.BOG_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 function bogHint(){const c=SIM.BOG_CLASSES;return career()?`<b>Mud bog</b> · ${fmt$(bogFee("street"))}–${fmt$(bogFee("super"))} entry, one run a week in one class. Needs a certified engine. ${c.street.n} is open to anyone; ${c.modified.n} at ${c.modified.rep} rep, ${c.super.n} at ${c.super.rep}. Through the pit beats stuck in it — quickest time wins, then farthest. Purse by placing, up to ${fmt$(BOG_PURSE[0]*BOG_PAY[3])} in Super. Every run is wear, the mud packs the radiator, and each truck's radiator is sized for its class: a big swap runs hot.`
   :`<b>Mud bog</b> · hold the button for throttle, let go to feather. Carry speed off the run-up, then keep the wheels turning in the mud: a little wheelspin cleans the lugs, too much digs a hole. Stuck scores the distance; through scores the time.`;}
 /* a quick look at the night's pit before you run it: length, mud, the depth along it, where the field got to */
@@ -32339,7 +32338,7 @@ function bogPitSvg(night,pitK,field){const L=night.len,W=300,H=40,pts=[];for(let
   return `<svg class="bogpit" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Depth along the pit"><path d="${path}" fill="rgba(122,86,52,.55)" stroke="rgba(160,120,80,.9)" stroke-width="1"/>${mk}${hz}</svg>`;}
 function bogEnvHtml(sl){const e=S.env,k=bogEnvFix(),C0=SIM.BOG_CLASSES[k],V=C0.veh,G=C0.gears,lk=bogClsLocked(k),seed=bogSeed(k),night=bogNight(seed),field=bogField(k,seed),R=recs().bog||{},pb=R[k];
   const thru=field.filter(f=>f.cleared).length,lead=field.slice().sort(bogCmp)[0];
-  let h=`<div class="saltcls"><div><span>Tonight's pit</span><b>${night.len} m</b><small>${bogEsc(night.name)} · ${Math.round(night.d0*(V.pitK||1)*100)} cm deep</small></div><div><span>To beat</span><b>${lead?bogScore(lead):"—"}</b><small>${thru} of ${field.length} got through</small></div><div><span>Your best</span><b>${pb?(pb.c?pb.t.toFixed(2)+" s":pb.m.toFixed(1)+" m"):"—"}</b><small>${pb?(pb.c?"through the pit":"farthest"):"no run yet"}</small></div></div>${bogPitSvg(night,V.pitK||1,field)}`;
+  let h=`<div class="saltcls"><div><span>Tonight's pit</span><b>${night.len} m</b><small>${esc(night.name)} · ${Math.round(night.d0*(V.pitK||1)*100)} cm deep</small></div><div><span>To beat</span><b>${lead?bogScore(lead):"—"}</b><small>${thru} of ${field.length} got through</small></div><div><span>Your best</span><b>${pb?(pb.c?pb.t.toFixed(2)+" s":pb.m.toFixed(1)+" m"):"—"}</b><small>${pb?(pb.c?"through the pit":"farthest"):"no run yet"}</small></div></div>${bogPitSvg(night,V.pitK||1,field)}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOG_CLASSES).map(([id,c])=>{const l=bogClsLocked(id);return `<button data-bk="bogCls" data-bv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
   h+=driverToggle(id=>`data-bk="bogDrive" data-bv="${id}"`,e.bogDrive,"hold for throttle, feather the spin","a steady foot · watch the run");
   h+=`<div class="lbl"><span>Gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-bk="bogGear" data-bv="${i}" class="${+e.bogGear===i?"on":""}">${n}<small>${mph} mph at redline</small></button>`).join("")}</div>`;
@@ -32369,7 +32368,7 @@ function bogRedraw(){const l=lastForChart();if(S.env.testType==="bog"&&l&&l.bog)
 function bogVerdict(res){const r=res.bog;
   if(res.bogFailed)return `<div class="verdict fail"><div><div class="big">${r.broke==="head_lift"?"COOKED IT IN THE MUD":r.broke==="turbo"?"TURBO LET GO":r.broke==="piston"||r.broke==="crown_temp"?"MELTED A PISTON":"GRENADED IN THE PIT"}</div><p>${r.distM.toFixed(1)} m into the pit before it let go · scored ${ordN(r.place)} of ${r.of} on distance${career()?" — certification is void and reputation took a hit":""}.</p></div></div>`;
   const cls=r.place===1?"pass":r.place<=BOG_PURSE.length?"marg":"fail";
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${r.cleared?"THROUGH · "+r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} · ${ordN(r.place)}</div><p>${r.clsName} · ${ordN(r.place)} of ${r.of} · ${r.len} m of ${bogEsc(r.mud)} mud${r.auto?" · auto driver":""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb?` · class best (was ${r.pb.was})`:""}</p>
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${r.cleared?"THROUGH · "+r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} · ${ordN(r.place)}</div><p>${r.clsName} · ${ordN(r.place)} of ${r.of} · ${r.len} m of ${esc(r.mud)} mud${r.auto?" · auto driver":""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb?` · class best (was ${r.pb.was})`:""}</p>
     <div class="vstats"><div><b>${r.cleared?r.pitT.toFixed(2):r.distM.toFixed(1)}</b><span>${r.cleared?"seconds":"metres"}</span></div><div><b>${Math.round(r.entryMph)}</b><span>mph in</span></div><div><b>${r.avgMph!=null?Math.round(r.avgMph):Math.round(r.maxMph)}</b><span>${r.avgMph!=null?"avg mph":"top mph"}</span></div><div><b>${r.sweetT.toFixed(1)}</b><span>s in the band</span></div><div><b>${r.coolPeak}</b><span>water °C</span></div><div><b>${r.peakEgt}</b><span>EGT °C</span></div></div></div></div>`;}
 function bogSheet(res){const r=res.bog;const why={cleared:"through",bogged:"bogged down",stalled:"stalled",highcentre:"high-centred",dug:"dug in",packed:"lugs packed",lifted:"lifted",stuck:"stuck",broke:"broke",time:"flagged"}[r.stopWhy]||"stopped";
   const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
@@ -32378,14 +32377,13 @@ function bogSheet(res){const r=res.bog;const why={cleared:"through",bogged:"bogg
     <div><b>Tyres</b>peak spin ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s past the dig point · lugs ${Math.round(r.pack*100)}% packed · ${r.mudKg} kg of mud on it</div>
     <div><b>Heat</b>water ${r.coolPeak} °C peak · radiator ${Math.round(r.radPack*100)}% packed · EGT ${r.peakEgt} °C${r.bogT>0.3?" · "+r.bogT.toFixed(1)+" s lugging under "+r.bogBand[1].toLocaleString()+" rpm":""}</div>
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>
-    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${bogEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.dsl?" diesel":""}</small>`}</span><span class="${f.me?"me":""}">${f.broke&&!f.cleared?"broke · ":""}${bogScore(f)}</span>`).join("")}</div></div>`;}
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.dsl?" diesel":""}</small>`}</span><span class="${f.me?"me":""}">${f.broke&&!f.cleared?"broke · ":""}${bogScore(f)}</span>`).join("")}</div></div>`;}
 
 /* ===================== ROAD TEST: the engine in a car ===================== */
 /* pick a chassis, tyres and a circuit; the sim runs 0–100, the quarter, top speed and a flying lap, the view plays the lap */
 let RT=null;
 const ROAD_FEE=200,ROAD_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],["side","Trackside","corner cameras"],["onboard","Onboard","driver's eye"]];
 const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(d||1).padStart(d===2?5:4,"0")}`;
-const rdEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
@@ -32429,7 +32427,7 @@ function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType
     else{const o=roadOpt(),q=quick&&quick.rpms?quick:null;if(!q){box.innerHTML="";return;}const p=SIM.roadPrep(S.cfg,q);car=SIM.roadCar(p,o);const trk=S.env.roadTrk;
       const a=suLapFor(p,o,trk),b=o.setup?suLapFor(p,Object.assign({},o,{setup:null}),trk):a,d=a.t-b.t;
       dl=`lap <b>${fmtLap(a.t,2)}</b> <b class="${Math.abs(d)<0.005?"":d<0?"su-up":"su-dn"}">${Math.abs(d)<0.005?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(2)+" s"}</b> <span class="dim">vs stock setup</span>`;
-      if(b&&a.low&&suBalWord(car.bi)!=="neutral")txt=car.bi>0?`Pushing wide in ${rdEsc(a.low)} — the fronts run out first.`:`The tail steps out on the way out of ${rdEsc(a.low)}.`;
+      if(b&&a.low&&suBalWord(car.bi)!=="neutral")txt=car.bi>0?`Pushing wide in ${esc(a.low)} — the fronts run out first.`:`The tail steps out on the way out of ${esc(a.low)}.`;
       else txt=`Neutral — front and rear let go together.`;}
   }catch(err){box.innerHTML="";return;}
   const b=car.bi,w=suBalWord(b);if(hill){txt=w==="neutral"?"Neutral — front and rear let go together.":w==="understeer"?"It pushes wide in the tight stuff — the fronts run out first.":"The tail steps out on exit — the rears run out first.";}
@@ -32547,18 +32545,18 @@ function roadFinish(){
   RT.lap=null;save();recompute();renderTest();revealVerdict();
 }
 function roadVerdict(res){const r=res.road,z=r.zero100;if(r.swapBroke)return swapRoadVerdict(r);if(r.dtBroke)return `<div class="verdict fail"><div style="flex:1"><div class="big">${r.dtBroke.msg.toUpperCase()}</div><p>${r.chName} — it let go on the exit of ${r.dtBroke.corner}, ${r.dtBroke.t.toFixed(1)} s into the lap. The ${SIM.drivetrain(drvId()).n} drivetrain is rated below what this engine makes. No lap time; the engine is fine.</p></div></div>`;
-  return `<div class="verdict pass"><div style="flex:1"><div class="big">${fmtLap(r.lapT)} · ${rdEsc(r.trkName)}</div><p>0–100 ${z!=null?z.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h · ${rdEsc(r.trkName)} ${fmtLap(r.lapT)} — ${r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD")}, ${r.tyreName.toLowerCase()} tyres, ${r.m.toLocaleString("en-CA")} kg${r.pb&&r.pb.was?` · <b>lap record</b> (was ${fmtLap(r.pb.was,2)})`:""}</p>
+  return `<div class="verdict pass"><div style="flex:1"><div class="big">${fmtLap(r.lapT)} · ${esc(r.trkName)}</div><p>0–100 ${z!=null?z.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h · ${esc(r.trkName)} ${fmtLap(r.lapT)} — ${r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD")}, ${r.tyreName.toLowerCase()} tyres, ${r.m.toLocaleString("en-CA")} kg${r.pb&&r.pb.was?` · <b>lap record</b> (was ${fmtLap(r.pb.was,2)})`:""}</p>
     <div class="vstats"><div><b>${z!=null?z.toFixed(1):"—"}</b><span>0–100 km/h s</span></div><div><b>${r.zero60!=null?r.zero60.toFixed(1):"—"}</b><span>0–60 mph s</span></div><div><b>${r.quarter?r.quarter.t.toFixed(1):"—"}</b><span>1/4 mi${r.quarter?" · "+Math.round(r.quarter.kmh)+" km/h":""}</span></div>
     <div><b>${Math.round(r.top.kmh)}</b><span>top km/h · ${r.top.limit==="redline"?"rev limit":"drag"}</span></div><div><b>${r.roll!=null?r.roll.toFixed(1):"—"}</b><span>80–120 s</span></div><div><b>${r.brake100.toFixed(1)}</b><span>100–0 m</span></div></div></div></div>`;}
 function roadSheet(res){const r=res.road,b=roadRecs()[roadKey(r.ch+(r.swap?"@"+r.swap.v:""),r.trk)],bs=b&&b.t<r.lapT-1e-6?b.sec:null;
   const balTxt=r.bal==="under"?`nose-heavy at ${Math.round(r.front*100)}% front — the ${r.engKg} kg engine makes it push in the slow corners`:r.bal==="over"?`light nose at ${Math.round(r.front*100)}% front — loose on turn-in`:`${Math.round(r.front*100)}% front, as the chassis was designed`;
   const drv={rwd:"rear-drive",fwd:"front-drive",awd:"all-wheel drive"}[r.drive]||r.drive;
-  return `<div class="sec"><h2>Lap sheet</h2><div class="log"><div><b>Lap</b>${fmtLap(r.lapT,2)} · ${rdEsc(r.trkName)} ${(r.len/1000).toFixed(2)} km · ${(r.len/r.lapT*3.6).toFixed(1)} km/h average</div>
+  return `<div class="sec"><h2>Lap sheet</h2><div class="log"><div><b>Lap</b>${fmtLap(r.lapT,2)} · ${esc(r.trkName)} ${(r.len/1000).toFixed(2)} km · ${(r.len/r.lapT*3.6).toFixed(1)} km/h average</div>
     <div><b>Sectors</b>${r.sectors.map((t,i)=>`S${i+1} ${t.toFixed(2)}${bs?` <span style="color:${t<=bs[i]?"var(--good)":"var(--crit)"}">(${t<=bs[i]?"−":"+"}${Math.abs(t-bs[i]).toFixed(2)})</span>`:""}`).join(" · ")}${bs?" vs the record":""}</div>
     <div><b>Speed</b>${Math.round(r.vmax)} km/h on the straight · slowest ${Math.round(r.vmin)} km/h · ${r.fullPct}% of the lap flat · ${r.shifts} upshifts</div>
-    <div><b>Corners</b>${r.apex.map(a=>`${rdEsc(a.name)} ${Math.round(a.kmh)}`).join(" · ")} km/h</div>
+    <div><b>Corners</b>${r.apex.map(a=>`${esc(a.name)} ${Math.round(a.kmh)}`).join(" · ")} km/h</div>
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
-    <div><b>Car</b>${rdEsc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
+    <div><b>Car</b>${esc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
     ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${r.su.sp>0?"+":""}${r.su.sp} (${suBalWord(r.suBal)}) · wing ${r.su.wg>0?"+":""}${r.su.wg}</div>`:""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
@@ -32576,10 +32574,10 @@ function drawRoadTrace(r){const INK=getComputedStyle(document.documentElement).g
   x.strokeStyle="#d97757";x.lineWidth=2.2;x.beginPath();tr.d.forEach((d,i)=>{i?x.lineTo(X(d),Y(tr.v[i])):x.moveTo(X(d),Y(tr.v[i]));});x.stroke();
   x.font="9.5px "+F;x.fillStyle=INK;(r.apex||[]).forEach((a,k)=>{const px=X(a.s),py=Y(a.kmh);x.beginPath();x.arc(px,py,2.2,0,7);x.fill();if(W>520||k%2===0){x.textAlign="center";x.fillText(Math.round(a.kmh),px,py+12);}});
   x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText("km/h",padL+4,13);x.fillStyle="rgba(120,169,221,.9)";x.fillText("gear",padL+40,13);x.fillStyle="#5cbf8a";x.fillText("throttle",padL+72,13);x.fillStyle="#ee5a5e";x.fillText("brake",padL+122,13);
-  x.fillStyle=soft;x.textAlign="right";x.fillText(`${rdEsc(r.trkName)} · ${fmtLap(r.lapT)}`,W-padR,13);}
+  x.fillStyle=soft;x.textAlign="right";x.fillText(`${esc(r.trkName)} · ${fmtLap(r.lapT)}`,W-padR,13);}
 function roadRedraw(){const l=lastForChart();if(S.env.testType==="road"&&l&&l.road)drawRoadTrace(l.road);}
 function roadRecHtml(){const P=roadRecs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].t);if(!ks.length)return"";ks.sort((a,b)=>(P[a].trk>P[b].trk?1:P[a].trk<P[b].trk?-1:P[a].t-P[b].t));
-  return `<div class="rtop rdrec"><span>Road test · best lap per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":e.trk==="street"?"ST":"C"}</b><span class="et">${fmtLap(e.t,2)}</span><span>${e.z!=null?e.z.toFixed(1)+" s":""}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop rdrec"><span>Road test · best lap per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":e.trk==="street"?"ST":"C"}</b><span class="et">${fmtLap(e.t,2)}</span><span>${e.z!=null?e.z.toFixed(1)+" s":""}</span><span class="nm" title="${esc(e.n)}">${esc(c.n)} · ${esc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 /* ===================== 24 HOURS OF PRAIRIE SKY: the endurance race ===================== */
 /* The road-test car on race slicks against ~20 AI cars in three classes, simulated in accelerated time (SIM.enduroStep in
    slices per frame). Strategy lives in S.env.e24* before the race and in ER.R.plan during it; the live race is not saved —
@@ -32642,7 +32640,7 @@ function e24EnvHtml(){e24Orphan();const e=e24EnvFix(),trk=e.e24Trk,ready=!!E24W.
       const top=rt.top>=0?P.tests[rt.top]:null,crit=P.critN||[];
       h+=`<div class="e24scr"><b>Scrutineering · ${e24Cls(cls)}</b><p>Classed <b>${e24Cls(cls)}</b> on pace: ${fmtLap(m.lap)} a lap in ${C0.n.toLowerCase().replace("gt","GT").replace("awd","AWD")} trim against a class running ${fmtLap(K.med)} (fastest ${fmtLap(K.best)}). ${m.fuel.toFixed(2)} L a lap — about ${Math.floor(perTank)} laps, ${Math.round(perTank*m.lap/60)} min, on a ${SIM.E24_TANK} L tank.</p>
         <p>Failure risk about <b class="${rt.haz>0.03?"crit":rt.haz>0.012?"warn":"good"}">${e24Pct(rt.haz)}% an hour</b> in ${SIM.E24_MODES[e.e24Mode].n} at 24 °C — ${e24Pct(rt.haz*24)}% over the full 24 h (Push ${e24Pct(rp.haz)}%/h, Conserve ${e24Pct(rs.haz)}%/h).${top?` The worry is <b>${top.name.toLowerCase()}</b>${top.id==="oil_starvation"?` — ${P.gLat.toFixed(2)} g sustained in the corners on a ${String(S.cfg.oilSystem||"wet")} sump`:""}.`:""}</p>
-        ${crit.length?`<p class="crit">Past its limit at race pace: <b>${crit.map(n=>rdEsc(n)).join(", ")}</b>. It will start, but expect it to let go.${crit.some(n=>/Oil pickup/.test(n))?" A baffled or dry sump fixes the oil.":""}</p>`:""}</div>`;}}
+        ${crit.length?`<p class="crit">Past its limit at race pace: <b>${crit.map(n=>esc(n)).join(", ")}</b>. It will start, but expect it to let go.${crit.some(n=>/Oil pickup/.test(n))?" A baffled or dry sump fixes the oil.":""}</p>`:""}</div>`;}}
   h+=e24StratHtml(false,P);
   return h;}
 /* strategy clicks: env before, plan during */
@@ -32742,7 +32740,7 @@ function e24StratRender(){const el=$("e24Side");if(!el||!ER)return;const R=ER.R,
     <div class="sec e24feedsec"><h2>Race feed <span class="cnt" id="e24FeedCnt"></span></h2><div class="e24feed" id="e24Feed"></div></div>`;e24FeedRender(true);}
 const E24_FEEDK={pit:"pit",pass:"pass",fail:"warn",inc:"warn",dnf:"crit",ai:"aif",sc:"sc",sky:"sky",hour:"hour",start:"sky",flag:"sky"};
 function e24FeedRender(force){const el=$("e24Feed");if(!el||!ER)return;const F=ER.R.feed,lf=F[F.length-1];if(!force&&lf&&lf.n===ER.feedN)return;ER.feedN=lf?lf.n:0;
-  el.innerHTML=F.slice(-40).reverse().map(f=>`<div class="e24f ${E24_FEEDK[f.k]||""}${f.me?" me":""}"><time>${SIM.e24Clock(f.t)}</time><span>${rdEsc(f.txt)}</span></div>`).join("");const c=$("e24FeedCnt");if(c)c.textContent=F.length+" events";}
+  el.innerHTML=F.slice(-40).reverse().map(f=>`<div class="e24f ${E24_FEEDK[f.k]||""}${f.me?" me":""}"><time>${SIM.e24Clock(f.t)}</time><span>${esc(f.txt)}</span></div>`).join("");const c=$("e24FeedCnt");if(c)c.textContent=F.length+" events";}
 document.addEventListener("click",e=>{const s=e.target.closest("[data-e24s]"),a=e.target.closest("[data-e24a]");if(!ER||ER.finished||(!s&&!a))return;
   if(s){ER.speed=+s.dataset.e24s;ER.jump=false;S.env.e24Spd=ER.speed;e24SpdRender();save();buzz(6);return;}
   const k=a.dataset.e24a,R=ER.R;
@@ -32785,17 +32783,17 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
   ER=null;save();recompute();renderTest();revealVerdict();}
 function e24Verdict(res){const r=res.e24,cls=r.dnf&&r.dnf.id?"fail":r.classified&&r.posCls<=3?"pass":"marg";
   const big=r.dnf?(r.dnf.id?`OUT AFTER ${r.dnf.h} H`:`RETIRED AFTER ${r.dnf.h} H`):r.classified?`${ordN(r.posCls).toUpperCase()} IN ${r.clsName.toUpperCase()}`:"NOT CLASSIFIED";
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${big}</div><p>24 Hours of Prairie Sky · ${rdEsc(r.trkName)} · ${rdEsc(r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD"))} in ${r.clsName} · ${ordN(r.pos)} of ${r.of} overall${r.dnf&&r.dnf.id?` — ${rdEsc(r.dnf.name.toLowerCase())} let go`:""}${r.prize?` · prize ${fmt$(r.prize)}`:""}${r.rep?` · ${r.rep>0?"+":""}${r.rep} rep`:""}${r.pb&&r.pb.was!=null?` · <b>distance record</b> (was ${r.pb.was} km)`:""}</p>
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${big}</div><p>24 Hours of Prairie Sky · ${esc(r.trkName)} · ${esc(r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD"))} in ${r.clsName} · ${ordN(r.pos)} of ${r.of} overall${r.dnf&&r.dnf.id?` — ${esc(r.dnf.name.toLowerCase())} let go`:""}${r.prize?` · prize ${fmt$(r.prize)}`:""}${r.rep?` · ${r.rep>0?"+":""}${r.rep} rep`:""}${r.pb&&r.pb.was!=null?` · <b>distance record</b> (was ${r.pb.was} km)`:""}</p>
     <div class="vstats"><div><b>${r.laps}</b><span>laps</span></div><div><b>${fmtLap(r.best,2)}</b><span>fastest lap</span></div><div><b>${r.avg?fmtLap(r.avg,1):"—"}</b><span>avg green lap</span></div>
     <div><b>${r.pits}</b><span>pit stops</span></div><div><b>${r.fuel.toLocaleString("en-CA")}</b><span>litres</span></div><div><b>${r.win-r.laps>0?"−"+(r.win-r.laps):"0"}</b><span>to class win</span></div></div></div></div>`;}
 function e24Sheet(res){const r=res.e24,TY=SIM.E24_TYRES,MO=SIM.E24_MODES;
-  const fieldRows=r.field.map((f,i)=>`<div class="${f.me?"me":""}${f.out?" out":""}"><b>${i+1}</b><span class="c${SIM.E24_CLS_ORDER.indexOf(f.cls)}">${e24Cls(f.cls)}${f.cl?" "+f.pc:""}</span><span class="nm">${f.me?"▶ ":""}#${f.no} ${rdEsc(f.team)}${f.eng?` <i>${rdEsc(f.eng)}</i>`:""}</span><span>${f.out?(f.dnf?"DNF "+f.dnf.h+" h":"DNF"):f.laps}</span><span>${f.out?f.laps+" laps":fmtLap(f.best,1)}</span></div>`).join("");
-  const st=r.stints.map((s,i)=>`<div><b>${i+1}</b><span>${rdEsc(s.drv)}</span><span>${TY[s.c]?TY[s.c].n:s.c}</span><span>${MO[s.mode]?MO[s.mode].n:""}</span><span>${s.laps}</span><span>${s.fuel} L</span><span>${SIM.e24Clock(s.t0)}</span></div>`).join("");
-  return `<div class="sec"><h2>Race report</h2><div class="log"><div><b>Distance</b>${r.laps} laps · ${r.km.toLocaleString("en-CA")} km of ${rdEsc(r.trkName)} (${(r.len/1000).toFixed(2)} km a lap) · ${r.hrs} h on track</div>
+  const fieldRows=r.field.map((f,i)=>`<div class="${f.me?"me":""}${f.out?" out":""}"><b>${i+1}</b><span class="c${SIM.E24_CLS_ORDER.indexOf(f.cls)}">${e24Cls(f.cls)}${f.cl?" "+f.pc:""}</span><span class="nm">${f.me?"▶ ":""}#${f.no} ${esc(f.team)}${f.eng?` <i>${esc(f.eng)}</i>`:""}</span><span>${f.out?(f.dnf?"DNF "+f.dnf.h+" h":"DNF"):f.laps}</span><span>${f.out?f.laps+" laps":fmtLap(f.best,1)}</span></div>`).join("");
+  const st=r.stints.map((s,i)=>`<div><b>${i+1}</b><span>${esc(s.drv)}</span><span>${TY[s.c]?TY[s.c].n:s.c}</span><span>${MO[s.mode]?MO[s.mode].n:""}</span><span>${s.laps}</span><span>${s.fuel} L</span><span>${SIM.e24Clock(s.t0)}</span></div>`).join("");
+  return `<div class="sec"><h2>Race report</h2><div class="log"><div><b>Distance</b>${r.laps} laps · ${r.km.toLocaleString("en-CA")} km of ${esc(r.trkName)} (${(r.len/1000).toFixed(2)} km a lap) · ${r.hrs} h on track</div>
     <div><b>Pace</b>fastest ${fmtLap(r.best,2)} on lap ${r.bestLap||"—"}${r.avg?` · average green lap ${fmtLap(r.avg,2)}`:""} · class best ${fmtLap(r.clsBest,2)}</div>
     <div><b>Pits</b>${r.pits} stops · ${e24Min(r.pitT)} lost in the lane and the box · ${r.stints.length} stints · ${r.sc} safety car${r.sc===1?"":"s"}</div>
     <div><b>Fuel</b>${r.fuel.toLocaleString("en-CA")} L · ${r.laps?(r.fuel/r.laps).toFixed(2):"—"} L a lap${r.fuelBill!=null?` · bill ${fmt$(r.fuelBill)}`:""}</div>
-    ${r.dnf?`<div><b>Out</b>${rdEsc(r.dnf.name)} after ${r.dnf.h} h${r.dnf.id?" — open the teardown to see it":""}</div>`:""}</div>
+    ${r.dnf?`<div><b>Out</b>${esc(r.dnf.name)} after ${r.dnf.h} h${r.dnf.id?" — open the teardown to see it":""}</div>`:""}</div>
     <h3 class="e24h3">Stints</h3><div class="e24tbl e24st"><div class="hd"><b>#</b><span>Driver</span><span>Tyre</span><span>Mode</span><span>Laps</span><span>Fuel</span><span>Out</span></div>${st}</div>
     <h3 class="e24h3">Classification</h3><div class="e24tbl e24cl"><div class="hd"><b>Pos</b><span>Class</span><span>Car</span><span>Laps</span><span>Best</span></div>${fieldRows}</div></div>`;}
 /* the lap-time trace across the 24 hours: green laps, pit laps (orange ticks), safety-car laps (amber), night shaded */
@@ -32816,14 +32814,13 @@ function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).ge
   x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText("lap time",padL+4,13);x.fillStyle="#d97757";x.fillText("▮ pit",padL+62,13);x.fillStyle="rgba(226,178,74,.95)";x.fillText("▮ safety car",padL+98,13);x.fillStyle="rgba(120,140,220,.95)";x.fillText("▮ night",padL+176,13);
   if(W>520){x.fillStyle=soft;x.textAlign="right";x.fillText(`${r.trkName} · ${r.laps} laps`,W-padR,13);}}
 function e24RecHtml(){const P=e24Recs(),ks=Object.keys(P).filter(k=>P[k]&&P[k].km);if(!ks.length)return"";ks.sort((a,b)=>P[b].km-P[a].km);
-  return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":e.trk==="street"?"ST":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${rdEsc(e.n)}">${rdEsc(c.n)} · ${rdEsc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":e.trk==="street"?"ST":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${esc(e.n)}">${esc(c.n)} · ${esc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 /* ---- Bonneville: salt-flat land-speed runs. A push off the line, a run-up, the timed mile, the chute.
    A class record (body × displacement letter × fuel, B for blown) stands until a run beats it AND the backup run
    at the same meet does too: the record is the average of the two. Career meet = the week; sandbox meet = until "New meet". ---- */
 let SR=null;
 const SALT_FEE={short:350,long:600},SALT_PURSE={altered:1500,roadster:2000,lakester:3500,streamliner:6000},SALT_REP={altered:6,roadster:8,lakester:12,streamliner:18};
 const SALT_COLORS={altered:0x2c6b3a,roadster:0xb7261d,lakester:0xd9a52b,streamliner:0x1d4787};
-const saltEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function saltBodyLocked(k){const b=SIM.LSR_BODIES[k];return b&&career()&&!dev()&&C().rep<b.rep?b.rep:0;}
 /* the run setup lives on S.env beside the strip's and the sled's; anything out of range is pulled back in */
 function saltEnvFix(){const e=S.env,B=SIM.LSR_BODIES;if(!B[e.saltBody])e.saltBody="altered";const k=e.saltBody;
@@ -32980,7 +32977,7 @@ function saltTopEst(k){const v=saltVeh(k),key=[cfgHash(S.cfg),k,v.course,v.topMp
   const r=SIM.lsrPass(saltRes(),Object.assign({},v,{noFail:true,noSpin:true,autoLift:false,h:0.004}));if(saltTopCache.size>40)saltTopCache.clear();saltTopCache.set(key,r.peakMph);return r.peakMph;}
 function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_BODIES[k],cls=saltCls(k),rec=saltRecord(cls.key),L=saltBook(),pb=L.pb[cls.key],meet=saltMeet(),res=saltRes(),cell=quick,lk=saltBodyLocked(k);
   const loss=cell&&cell.peakHp>0?Math.round((1-res.peakHp/cell.peakHp)*100):0;
-  let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+saltEsc(rec.holder||""):saltEsc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
+  let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+esc(rec.holder||""):esc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
   h+=`<p class="hint">At Bonneville — ${SIM.SALT_ENV.altitudeM.toLocaleString("en-CA")} m and ${SIM.SALT_ENV.ambientC} °C — this engine makes <b>${Math.round(res.peakHp)} hp</b>${loss>0?`, ${loss}% down on the cell`:""}${cls.blown?" (boost makes up most of the thin air)":" (no boost to make up the thin air)"}.</p>`;
   h+=swapEnvNote();if(!swapLive())h+=`<div class="lbl"><span>Body</span></div><div class="seg wide">${Object.entries(SIM.LSR_BODIES).map(([id,b])=>{const l=saltBodyLocked(id);return `<button data-sk="saltBody" data-sv="${id}" class="${k===id?"on":""}${l?" lock":""}">${b.n}<small>${l?l+" rep":b.d}</small></button>`;}).join("")}</div>`;
   h+=paintHtml();   /* the strip's paint: the salt car wears it too */
@@ -33023,7 +33020,7 @@ function saltVerdict(res){const r=res.salt,c=r.cls||{},R=r.rec;
   if(r.stopWhy==="spun")return `<div class="verdict fail"><div><div class="big">SPUN AT ${Math.round(r.peakMph)} MPH</div><p>${c.key||""} · no time. ${career()?"$800 to straighten the body.":""}</p></div></div>`;
   const big=r.outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)}`:r.outcome==="impound"?`${mph} · IMPOUND`:r.dq?`${mph} · NOT ACCEPTED`:r.mileMph!=null?`${mph} MPH`:"NO TIME";
   const cls=r.outcome==="record"||r.outcome==="impound"?"pass":r.valid?"marg":"fail";
-  const sub=r.outcome==="record"?`${c.key} · ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — the old mark was ${R.mph.toFixed(3)} (${saltEsc(R.holder)}).${r.club?" Welcome to the 200 MPH Club.":""}${career()&&r.purse?" Contingency "+fmt$(r.purse)+".":""}`
+  const sub=r.outcome==="record"?`${c.key} · ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — the old mark was ${R.mph.toFixed(3)} (${esc(R.holder)}).${r.club?" Welcome to the 200 MPH Club.":""}${career()&&r.purse?" Contingency "+fmt$(r.purse)+".":""}`
     :r.outcome==="impound"?`${c.key} · over the ${R.mph.toFixed(3)} record. The car goes to impound — back it up on your next run this ${career()?"week":"meet"} and the average stands.`
     :r.outcome==="backupslow"?`${c.key} · backup run: ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — short of the ${R.mph.toFixed(3)} record. It stands.`
     :r.outcome==="backupfail"?`${c.key} · no backup time — the record attempt is over.`
@@ -33034,7 +33031,7 @@ function saltVerdict(res){const r=res.salt,c=r.cls||{},R=r.rec;
 function saltSheet(res){const r=res.salt,v=r.veh||{},c=r.cls||{};
   const why={done:"chute out, stopped",spun:"spun",broke:"broke",lifted:"lifted before the clocks",time:"flagged"}[r.stopWhy]||"stopped";
   const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
-  return `<div class="sec"><h2>Time slip · ${saltEsc(c.key||"")}</h2><div class="log"><div><b>Mile</b>${r.mileMph!=null?r.mileMph.toFixed(3)+" mph · "+r.mileT.toFixed(3)+" s · in "+r.inMph+" out "+r.outMph+" mph":"no time"}</div>
+  return `<div class="sec"><h2>Time slip · ${esc(c.key||"")}</h2><div class="log"><div><b>Mile</b>${r.mileMph!=null?r.mileMph.toFixed(3)+" mph · "+r.mileT.toFixed(3)+" s · in "+r.inMph+" out "+r.outMph+" mph":"no time"}</div>
     <div><b>Km</b>${r.kmMph!=null?r.kmMph.toFixed(3)+" mph · "+r.kmT.toFixed(3)+" s":"—"} · peak ${r.peakMph} mph · ${r.time.toFixed(1)} s · ${why}</div>
     <div><b>Setup</b>${r.clsName} · ${r.courseName} · ${v.topMph} mph top gear (${r.ratios.map(x=>x.toFixed(2)).join(" / ")}:1) · ${v.aero?"aero on":"clean"} · ${v.ballast} kg ballast · ${v.cooling==="ice"?"ice tank":"radiator"} · ${(SIM.LSR_CHUTES[v.chute]||{}).n||""} · ${r.mass} kg · CdA ${r.cdA}</div>
     <div><b>Car</b>front down to ${Math.round(r.lightMin*100)}% · ${r.spinT.toFixed(1)} s of wheelspin · ${r.shifts} shift${r.shifts===1?"":"s"}${r.limT>0?" · "+r.limT.toFixed(1)+" s on the limiter":""} · water ${r.coolMax} °C · EGT ${r.peakEgt} °C${r.chute.out?` · chute at ${r.chute.mph} mph${r.chute.blown?" (tore off)":""}`:""}</div>
@@ -33052,7 +33049,7 @@ function lsrWarm(keys,cb){if(!keys){keys=[];try{keys=Object.keys(SIM.LSR_BODIES)
 function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).concat(Object.keys(L.pb)));let cur=[];try{cur=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){}cur.forEach(k=>keys.add(k));if(!keys.size)return"";
   const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length){lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});return `<div class="rtop saltrec"><span>Salt flats · class records</span><div><span>working out the class records…</span></div></div>`;}
   const rows=[...keys].map(k=>{const r=saltRecord(k),pb=L.pb[k];return{k,r,pb};}).filter(o=>o.r).sort((a,b)=>(b.pb?1:0)-(a.pb?1:0)||(b.r.mph-a.r.mph)).slice(0,10);
-  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${saltEsc(o.k)}</span><span class="nm" title="${saltEsc(o.r.holder)}">${o.r.mine?"you":saltEsc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
+  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
 /* land-speed buyers: their car, your engine, the same salt — the mile they need, estimated with a steady driver */
 const lsrFitCache=new Map();
 function lsrFitMph(res,cfg,body){const key=cfgHash(cfg)+"|"+body;if(lsrFitCache.has(key))return lsrFitCache.get(key);
@@ -33071,7 +33068,6 @@ const HILL_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],[
 const HILL_C={lift:0.962,steady:1.0,push:1.035};
 const HILL_NAMES=["R. Okafor","D. Lindqvist","M. Tanaka","J. Whitehorse","C. Duval","T. Brennan","A. Kovač","S. Moreau","L. Haugen","P. Rinaldi","K. Mbeki","E. Castellanos","N. Fairweather","B. Ostrowski","H. Nakamura","F. Leclair","G. Running Elk","V. Sørensen"];
 const HILL_PAINT=[0x1d4787,0xb7261d,0xe8e6df,0x2c6b3a,0xd9a52b,0x16181b,0x5b2a86,0xd85f14,0x2a6db5];
-const hlEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const fmtHill=t=>t==null||!isFinite(t)?"DNF":`${Math.floor(t/60)}:${(t%60).toFixed(2).padStart(5,"0")}`;
 function hillClsLocked(k){const c=SIM.HILL_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCls="open";const c=H[e.hillCls];
@@ -33126,7 +33122,7 @@ function hillAltLine(p){const pk=p.pts,top=pk[pk.length-1],dn=Math.round(100*(1-
   return s;}
 function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=hillClsLocked(k),seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed)),R=hillRecs(),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
   const fin=field?field.filter(f=>f.t!=null).length:0;
-  let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?hlEsc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
+  let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?esc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=hillClsLocked(id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
   h+=driverToggle(id=>`data-hk="hillDrive" data-hv="${id}"`,e.hillDrive,"push or lift into each corner","reads the calls · watch the run");
   h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-hk="hillCh" data-hv="${id}" class="${e.hillCh===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
@@ -33149,19 +33145,19 @@ function hillHudInit(){$("hillLive").innerHTML=`<div class="rdh hlh"><div class=
 function hillLeadS(t){const L=HC.lead;if(!L||!L.splits||!L.splits.length)return null;const T=SIM.hillCourse(),S0=T.sections;let pt=0;
   for(let i=0;i<L.splits.length;i++){const st=L.splits[i];if(t<=st){const f=(t-pt)/Math.max(0.01,st-pt);return S0[i].s0+(S0[i].s1-S0[i].s0)*f;}pt=st;}return T.len;}
 function hillCornerTxt(c,call){const dir=c.deg>0?"left":"right",kind=c.hp?"hairpin":c.R<40?"tight":c.R<110?"":"fast",cl=call&&call.call;
-  return `<b>${c.name?hlEsc(c.name):kind?kind[0].toUpperCase()+kind.slice(1)+" "+dir:dir[0].toUpperCase()+dir.slice(1)}</b><span>${c.name?(kind?kind+" ":"")+dir+" · ":""}R ${Math.round(c.R)} m${c.drop?c.rail?" · drop, railed":` · <em class="dr">DROP · no rail</em>`:""}</span><i class="call ${cl}">${cl==="dusty"?"DUSTY — lift":cl==="grippy"?"GRIPPY — push":"clean"}</i>`;}
+  return `<b>${c.name?esc(c.name):kind?kind[0].toUpperCase()+kind.slice(1)+" "+dir:dir[0].toUpperCase()+dir.slice(1)}</b><span>${c.name?(kind?kind+" ":"")+dir+" · ":""}R ${Math.round(c.R)} m${c.drop?c.rail?" · drop, railed":` · <em class="dr">DROP · no rail</em>`:""}</span><i class="call ${cl}">${cl==="dusty"?"DUSTY — lift":cl==="grippy"?"GRIPPY — push":"clean"}</i>`;}
 function hillHud(){if(!HC)return;const st=HC.run.st,T=HC.run.T,v=$("hlV");if(!v)return;
   v.textContent=Math.round(st.v*3.6);$("hlG").textContent=st.off?"–":st.g+1;$("hlT").textContent=fmtHill(st.t);$("hlA").textContent=Math.round(st.alt).toLocaleString("en-CA");
   $("hlTi").textContent=HC.pre>0?"on the line":st.done?(st.dnf?"DNF":"summit"):"clock";
   $("hlF").style.width=(100*st.s/T.len).toFixed(2)+"%";const ls=hillLeadS(st.t);if(ls!=null)$("hlL").style.left=(100*Math.min(1,ls/T.len)).toFixed(2)+"%";
-  const sec=T.sections[Math.min(T.sections.length-1,st.sec)];$("hlSec").innerHTML=`<b>${hlEsc(sec.n)}</b> · ${(st.s/1000).toFixed(2)} km`;
-  const L=HC.lead,ns=st.splits.length;let gap="";if(L&&L.splits&&ns&&L.splits[ns-1]!=null){const d=st.splits[ns-1]-L.splits[ns-1];gap=`split ${ns} <b style="color:${d<=0?"var(--good)":"var(--crit)"}">${d<=0?"−":"+"}${Math.abs(d).toFixed(2)}</b> vs ${hlEsc(L.n)}`;}
+  const sec=T.sections[Math.min(T.sections.length-1,st.sec)];$("hlSec").innerHTML=`<b>${esc(sec.n)}</b> · ${(st.s/1000).toFixed(2)} km`;
+  const L=HC.lead,ns=st.splits.length;let gap="";if(L&&L.splits&&ns&&L.splits[ns-1]!=null){const d=st.splits[ns-1]-L.splits[ns-1];gap=`split ${ns} <b style="color:${d<=0?"var(--good)":"var(--crit)"}">${d<=0?"−":"+"}${Math.abs(d).toFixed(2)}</b> vs ${esc(L.n)}`;}
   $("hlD").innerHTML=gap;
   // the next two corners and their calls; the event of the moment over them
   const K=T.corners,c0=K[Math.min(K.length-1,st.k)],c1=K[Math.min(K.length-1,st.k+1)],ev=st.ev&&st.t-st.ev.t<2.5?st.ev:null;
-  let nx="";if(st.dnf)nx=`<div class="hl-ev bad">${hillDnfWord(st.dnf.kind)} · ${hlEsc(st.dnf.name)}</div>`;
+  let nx="";if(st.dnf)nx=`<div class="hl-ev bad">${hillDnfWord(st.dnf.kind)} · ${esc(st.dnf.name)}</div>`;
   else if(st.off)nx=`<div class="hl-ev bad">${st.off.kind==="rail"?"INTO THE GUARDRAIL":st.off.kind==="bank"?"INTO THE BANK":"OFF · GRAVEL"} · +${st.off.T.toFixed(1)} s</div>`;
-  else if(ev&&ev.kind==="moment")nx=`<div class="hl-ev warn">MOMENT! · ${hlEsc(K[ev.k].name||"held it")}</div>`;
+  else if(ev&&ev.kind==="moment")nx=`<div class="hl-ev warn">MOMENT! · ${esc(K[ev.k].name||"held it")}</div>`;
   else if(st.done)nx=`<div class="hl-ev good">SUMMIT · ${fmtHill(st.t)}</div>`;
   else nx=`<div class="hl-c">${hillCornerTxt(c0,HC.run.calls[c0.i])}</div>${c1!==c0?`<div class="hl-c dim">${hillCornerTxt(c1,HC.run.calls[c1.i])}</div>`:""}`;
   const nk=nx;if($("hlN").dataset.k!==nk){$("hlN").dataset.k=nk;$("hlN").innerHTML=nk;}
@@ -33241,23 +33237,23 @@ function hillFinish(){
   HC.run=null;HC.prep=null;save();recompute();renderTest();revealVerdict();
 }
 function hillVerdict(res){const r=res.hill;
-  if(r.dnf)return `<div class="verdict fail"><div><div class="big">${hillDnfWord(r.dnf.kind)} · DNF</div><p>${r.dnf.kind==="edge"?`Too fast into ${hlEsc(r.dnf.name)} with a drop on the outside and no guardrail`:r.dnf.kind==="boil"?`The water went past boiling in ${hlEsc(r.dnf.name)} — thin air through the radiator`:r.dnf.kind==="stall"?`Not enough torque to pull the car up the grade in ${hlEsc(r.dnf.name)} — a shorter final drive, or more engine`:`Still on the mountain at half an hour, in ${hlEsc(r.dnf.name)}`} · ${(r.dnf.s/1000).toFixed(2)} km up, ${fmtHill(r.dnf.t)} in${career()?" — reputation took a hit":""}.</p></div></div>`;
+  if(r.dnf)return `<div class="verdict fail"><div><div class="big">${hillDnfWord(r.dnf.kind)} · DNF</div><p>${r.dnf.kind==="edge"?`Too fast into ${esc(r.dnf.name)} with a drop on the outside and no guardrail`:r.dnf.kind==="boil"?`The water went past boiling in ${esc(r.dnf.name)} — thin air through the radiator`:r.dnf.kind==="stall"?`Not enough torque to pull the car up the grade in ${esc(r.dnf.name)} — a shorter final drive, or more engine`:`Still on the mountain at half an hour, in ${esc(r.dnf.name)}`} · ${(r.dnf.s/1000).toFixed(2)} km up, ${fmtHill(r.dnf.t)} in${career()?" — reputation took a hit":""}.</p></div></div>`;
   const cls=r.place===1?"pass":r.place<=HILL_PURSE.length?"marg":"fail",hp=r.hp,top=hp[hp.length-1];
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${fmtHill(r.time)} · ${ordN(r.place)}</div><p>${hlEsc(r.clsName)} · ${ordN(r.place)} of ${r.of} · ${hlEsc(r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD"))}, ${r.tyreName.toLowerCase()} tyres${r.aero!=="none"?", "+r.aeroName.toLowerCase():""}${r.auto?" · auto driver":r.took!=null?` · you took over at ${(r.took/1000).toFixed(1)} km`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb&&r.pb.was?` · class record (was ${fmtHill(r.pb.was)})`:""}</p>
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${fmtHill(r.time)} · ${ordN(r.place)}</div><p>${esc(r.clsName)} · ${ordN(r.place)} of ${r.of} · ${esc(r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD"))}, ${r.tyreName.toLowerCase()} tyres${r.aero!=="none"?", "+r.aeroName.toLowerCase():""}${r.auto?" · auto driver":r.took!=null?` · you took over at ${(r.took/1000).toFixed(1)} km`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb&&r.pb.was?` · class record (was ${fmtHill(r.pb.was)})`:""}</p>
     <div class="vstats"><div><b>${r.avgKmh}</b><span>avg km/h</span></div><div><b>${Math.round(r.vmax)}</b><span>top km/h</span></div><div><b>${r.offs.length}</b><span>off${r.offs.length===1?"":"s"} · ${r.moments} moment${r.moments===1?"":"s"}</span></div><div><b>${top.hp}</b><span>hp on top · ${Math.round(100*top.hp/r.refHp)}%</span></div><div><b>${r.coolPeak}</b><span>water °C peak</span></div><div><b>${r.m.toLocaleString("en-CA")}</b><span>kg</span></div></div></div></div>`;}
 function hillSheet(res){const r=res.hill,b=hillRecs()[r.cls],L=r.lead;let pt=0,lt=0;
   const rows=r.secNames.map((n,i)=>{const t=r.splits[i],sec=t!=null?t-pt:null;const lsec=L&&L.splits&&L.splits[i]!=null?L.splits[i]-lt:null;if(t!=null)pt=t;if(L&&L.splits&&L.splits[i]!=null)lt=L.splits[i];
-    const d=sec!=null&&lsec!=null?sec-lsec:null;return `<div><b>${i+1}</b><span class="nm">${hlEsc(n)}</span><span>${sec!=null?sec.toFixed(2):"—"}</span><span class="et">${t!=null?fmtHill(t):"—"}</span><span style="color:${d==null?"":d<=0?"var(--good)":"var(--crit)"}">${d!=null?(d<=0?"−":"+")+Math.abs(d).toFixed(2):""}</span></div>`;}).join("");
-  const offs=r.offs.map(o=>`${o.kind==="rail"?"guardrail":o.kind==="bank"?"into the bank":"gravel"} at ${hlEsc(o.name||r.secNames[o.sec])} (+${o.loss} s)`).join(" · ");
+    const d=sec!=null&&lsec!=null?sec-lsec:null;return `<div><b>${i+1}</b><span class="nm">${esc(n)}</span><span>${sec!=null?sec.toFixed(2):"—"}</span><span class="et">${t!=null?fmtHill(t):"—"}</span><span style="color:${d==null?"":d<=0?"var(--good)":"var(--crit)"}">${d!=null?(d<=0?"−":"+")+Math.abs(d).toFixed(2):""}</span></div>`;}).join("");
+  const offs=r.offs.map(o=>`${o.kind==="rail"?"guardrail":o.kind==="bank"?"into the bank":"gravel"} at ${esc(o.name||r.secNames[o.sec])} (+${o.loss} s)`).join(" · ");
   const hp=r.hp.map(p=>`${p.alt.toLocaleString("en-CA")} m <b>${p.hp}</b>${p.boost?" @ "+bv(p.boost)+" "+pU():""}`).join(" · ");
   const wi=wearInfo(res),wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span></div>`:"";
-  return `<div class="sec"><h2>Hillclimb sheet</h2><div class="rtop hlsplit"><span>Splits${L?" · against "+hlEsc(L.n)+", the class's best":""}</span>${rows}</div><div class="log" style="margin-top:8px">
+  return `<div class="sec"><h2>Hillclimb sheet</h2><div class="rtop hlsplit"><span>Splits${L?" · against "+esc(L.n)+", the class's best":""}</span>${rows}</div><div class="log" style="margin-top:8px">
     <div><b>Run</b>${r.dnf?"DNF":fmtHill(r.time)} · ${(r.len/1000).toFixed(2)} km · ${r.avgKmh!=null?r.avgKmh+" km/h average · ":""}${Math.round(r.vmax)} km/h top${b&&!r.dnf?` · class record ${fmtHill(b.t)}`:""}</div>
     <div><b>Power</b>${hp} hp — ${r.refHp} hp at the shop${r.carb?" · carburettor running rich up top":""}</div>
     <div><b>Driving</b>${r.auto?"Auto driver all the way":r.took!=null?`Auto to ${(r.took/1000).toFixed(1)} km, then you`:"You drove"}${r.handed?` to ${(r.handed/1000).toFixed(1)} km, then the auto driver took the rest`:""} · ${r.moments} moment${r.moments===1?"":"s"}${offs?" · "+offs:" · no offs"}</div>
     <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · on top the air is ${Math.round(100*(1-0.69))}% thinner, so the radiator sheds about ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less heat per degree</div>
-    <div><b>Car</b>${hlEsc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}</div>
-    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${hlEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}${f.rv?" · rival":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
+    <div><b>Car</b>${esc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}</div>
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}${f.rv?" · rival":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
 function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
@@ -33280,7 +33276,7 @@ function drawHillChart(r){const css=getComputedStyle(document.documentElement),I
   x.fillStyle=soft;x.textAlign="right";if(W>420)x.fillText(`hp vs altitude · ${r.dnf?"DNF":fmtHill(r.time)}`,W-padR,13);}
 function hillRedraw(){const l=lastForChart();if(S.env.testType==="hill"&&l&&l.hill)drawHillChart(l.hill);}
 function hillRecHtml(){const P=hillRecs(),ks=Object.keys(SIM.HILL_CLASSES).filter(k=>P[k]&&P[k].t);if(!ks.length)return "";
-  return `<div class="rtop"><span>Pikes Peak · best per class</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch];return `<div><b>▲</b><span class="et">${fmtHill(e.t)}</span><span></span><span class="nm" title="${hlEsc(e.n)}">${hlEsc(SIM.HILL_CLASSES[k].n)}${c?" · "+hlEsc(c.n):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop"><span>Pikes Peak · best per class</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch];return `<div><b>▲</b><span class="et">${fmtHill(e.t)}</span><span></span><span class="nm" title="${esc(e.n)}">${esc(SIM.HILL_CLASSES[k].n)}${c?" · "+esc(c.n):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 /* ===================== OVAL: race night on the clay, or on the paved half-mile ===================== */
 /* A heat race (8 laps) against seven rivals sets the feature grid, then the feature (25 laps) against the whole night's field.
    The rivals are made-up engines and drivers run through the same lap sim (SIM.ovalNew) the car runs on; their laps are done
@@ -33294,7 +33290,6 @@ const OVAL_CAMS=[["auto","Auto","director"],["chase","Chase","behind the car"],[
 const OVAL_PACE={save:0.955,steady:0.985,push:0.998};
 const OVAL_NAMES=["D. Halvorsen","B. Kowalchuk","R. Whitehorse","T. Lindgren","M. Boucher","C. Yurchak","J. Dufresne","K. Sorenson","A. Pelletier","L. Bergstrom","W. Maddox","S. Okonkwo","G. Tremblay","H. Nordquist","P. Lavallee","E. Stoll","N. Redcrow","F. Haugen","V. Moreau","Z. Kruger"];
 const OVAL_PAINT=[0x1d4787,0xb7261d,0xe8e6df,0x2c6b3a,0xd9a52b,0x16181b,0x5b2a86,0xd85f14,0x2a6db5,0x8e2f23,0x3a8f8a,0xc23a7a];
-const ovEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const fmtOv=t=>t==null||!isFinite(t)?"—":t.toFixed(2);
 const fmtOvRace=t=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(1).padStart(4,"0")}`;
 const OVAL_TRK=["clay","paved"];
@@ -33375,7 +33370,7 @@ function ovalLadder(n,k){const C0=SIM.OVAL_CLASSES[k],h=n.heat,st=n.stage;
   const step=(on,done,lbl,sub)=>`<div class="ovs${done?" done":on?" on":""}"><b>${lbl}</b><small>${sub}</small></div>`;
   return `<div class="ovn">${step(st==="heat",st!=="heat",`Heat race`,st==="heat"?`${OVAL_HEAT} laps · 8 cars`:h?(h.dnf?"DNF":ordN(h.place)+" of "+h.of):"")}<i></i>${step(st==="feature",st==="done",`Feature`,st==="feature"?`${OVAL_FEAT} laps · starts ${ordN(n.gridMe+1)}`:st==="done"&&n.feat?ordN(n.feat.place)+" of "+n.feat.of:`${OVAL_FEAT} laps · 12 cars`)}</div>`;}
 function ovalEnvHtml(sl){const e=S.env,k=ovalEnvFix(),tk=ovalTk(),TT=ovalTT(tk),pv=TT.surf==="asphalt",C0=SIM.OVAL_CLASSES[k],lk=ovalClsLocked(k),lg=ovalLegal(k),R=ovalOpen(),n=ovalNight(k),rec=ovalRecs()[k],q=quick&&quick.rpms?quick:null;
-  let h=`<div class="saltcls"><div><span>Tonight's track</span><b>${TT.dist}</b><small>${TT.bankDeg}° bank · ${ovEsc(SIM.ovalNight(n.seed,tk).name)}${TT.surf==="asphalt"?" asphalt":""}</small></div><div><span>The night</span><b>${n.stage==="done"?"over":n.stage==="feature"?"feature":"heat"}</b><small>${n.stage==="feature"?`starts ${ordN(n.gridMe+1)} of 12`:n.stage==="done"?(n.feat?`finished ${ordN(n.feat.place)}`:"—"):`${OVAL_HEAT} laps, then ${OVAL_FEAT}`}</small></div><div><span>Your best</span><b>${rec&&rec.lap?fmtOv(rec.lap)+" s":"—"}</b><small>${rec?(rec.wins?rec.wins+" feature win"+(rec.wins===1?"":"s"):"best finish "+ordN(rec.best)):"no night yet"}</small></div></div>${ovalTrackSvg()}${ovalLadder(n,k)}`;
+  let h=`<div class="saltcls"><div><span>Tonight's track</span><b>${TT.dist}</b><small>${TT.bankDeg}° bank · ${esc(SIM.ovalNight(n.seed,tk).name)}${TT.surf==="asphalt"?" asphalt":""}</small></div><div><span>The night</span><b>${n.stage==="done"?"over":n.stage==="feature"?"feature":"heat"}</b><small>${n.stage==="feature"?`starts ${ordN(n.gridMe+1)} of 12`:n.stage==="done"?(n.feat?`finished ${ordN(n.feat.place)}`:"—"):`${OVAL_HEAT} laps, then ${OVAL_FEAT}`}</small></div><div><span>Your best</span><b>${rec&&rec.lap?fmtOv(rec.lap)+" s":"—"}</b><small>${rec?(rec.wins?rec.wins+" feature win"+(rec.wins===1?"":"s"):"best finish "+ordN(rec.best)):"no night yet"}</small></div></div>${ovalTrackSvg()}${ovalLadder(n,k)}`;
   h+=`<div class="lbl"><span>Track</span></div><div class="seg n2">${OVAL_TRK.map(id=>{const t=SIM.OVAL_TRACKS[id];return `<button data-ok="ovalTrack" data-ov="${id}" class="${tk===id?"on":""}">${t.n}<small>${t.dist} · ${t.bankDeg}° · ${t.surf}</small></button>`;}).join("")}</div>`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.OVAL_CLASSES).map(([id,c])=>{const l=ovalClsLocked(id),ok=ovalCiNow()<=c.ci;return `<button data-ok="ovalCls" data-ov="${id}" class="${k===id?"on":""}${l||!ok?" lock":""}">${c.n}<small>${l?l+" rep":c.ci>=9999?"no ci limit":"up to "+c.ci+" ci"+(ok?"":" · too big")}</small></button>`;}).join("")}</div>`;
   h+=driverToggle(id=>`data-ok="ovalDrive" data-ov="${id}"`,e.ovalDrive,"hold PUSH or SAVE for the pace","a steady driver · watch the race");
@@ -33424,7 +33419,7 @@ function ovalHud(rk){if(!OV||!$("ovV"))return;const st=OV.p.st,t=st.t,pos=rk.fin
   $("ovF").style.width=(100*Math.min(1,Math.max(0,st.s)/(N*L))).toFixed(2)+"%";
   const leader=rk[0];$("ovL").style.left=(100*Math.min(1,Math.max(0,leader.me?st.s:(leader.s||0))/(N*L))).toFixed(2)+"%";
   const ahead=pos>1?rk[pos-2]:null,behind=pos<rk.length?rk[pos]:null,vv=Math.max(8,st.v),gp=(a,b)=>Math.abs((a.me?st.s:a.s||0)-(b.me?st.s:b.s||0))/vv;
-  $("ovA").innerHTML=ahead&&!ahead.out?`<b>#${ahead.c?ahead.c.num:"—"}</b> ${ahead.c?ovEsc(ahead.c.n):""} <b style="color:var(--crit)">+${gp(rk[pos-1],ahead).toFixed(1)}s</b>`:`<b>leading</b>`;
+  $("ovA").innerHTML=ahead&&!ahead.out?`<b>#${ahead.c?ahead.c.num:"—"}</b> ${ahead.c?esc(ahead.c.n):""} <b style="color:var(--crit)">+${gp(rk[pos-1],ahead).toFixed(1)}s</b>`:`<b>leading</b>`;
   $("ovB").innerHTML=behind&&!behind.out?`<b>#${behind.c?behind.c.num:"—"}</b> <b style="color:var(--good)">−${gp(rk[pos-1],behind).toFixed(1)}s</b>`:"";
   const fd=OV.feed.slice(-2).map(x=>`<div class="hl-c">${x}</div>`).join("");
   let nx=st.broke?`<div class="hl-ev bad">${ovalFailWord(st.broke)}</div>`:st.done?`<div class="hl-ev good">CHEQUERED · ${ordN(pos)}</div>`:OV.pre>0?`<div class="hl-ev">GREEN IN ${Math.ceil(OV.pre)}…</div>`:fd||`<div class="hl-c dim">Green flag. ${OV.stage==="heat"?"Eight laps":"Twenty-five laps"} to go.</div>`;
@@ -33549,21 +33544,21 @@ function ovalFinish(){
 }
 /* ---- the sheet ---- */
 function ovalVerdict(res){const r=res.oval,st=r.stage==="heat"?"HEAT":"FEATURE";
-  if(res.ovalFailed){const ft=(res.tests||[]).find(x=>x.id===r.broke);return `<div class="verdict fail"><div><div class="big">${ovalFailWord(r.broke)} · ${st}</div><p>Lap ${r.dnfLap} of ${r.N} · classified ${ordN(r.place)} of ${r.of}${ft?" · "+ovEsc(ft.name)+" failed":""}${career()?" — certification is void and reputation took a hit":""}.${r.reasons&&r.reasons[0]&&!ft?" "+ovEsc(r.reasons[0]):""}</p></div></div>`;}
+  if(res.ovalFailed){const ft=(res.tests||[]).find(x=>x.id===r.broke);return `<div class="verdict fail"><div><div class="big">${ovalFailWord(r.broke)} · ${st}</div><p>Lap ${r.dnfLap} of ${r.N} · classified ${ordN(r.place)} of ${r.of}${ft?" · "+esc(ft.name)+" failed":""}${career()?" — certification is void and reputation took a hit":""}.${r.reasons&&r.reasons[0]&&!ft?" "+esc(r.reasons[0]):""}</p></div></div>`;}
   const cls=r.place===1?"pass":r.place<=(r.stage==="heat"?4:OVAL_FPURSE.length)?"marg":"fail",avg=r.time&&r.N?SIM.ovalTrack(r.track).len*r.N/r.time*3.6:0;
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${ordN(r.place)} · ${st}</div><p>${ovEsc(r.clsName)} · ${ordN(r.place)} of ${r.of} · started ${ordN(r.gridMe)} · ${r.N} laps in ${fmtOvRace(r.time)} on ${ovEsc(r.night)} ${r.surf==="asphalt"?"asphalt":"clay"}${r.auto?" · auto driver":r.took!=null?` · you took over on lap ${r.took}`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.stage==="heat"&&r.nextGrid?` · feature from ${ordN(r.nextGrid)}`:""}${r.pb?` · class best lap${r.pb.lap?` (was ${r.pb.lap.toFixed(2)})`:""}`:""}</p>
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${ordN(r.place)} · ${st}</div><p>${esc(r.clsName)} · ${ordN(r.place)} of ${r.of} · started ${ordN(r.gridMe)} · ${r.N} laps in ${fmtOvRace(r.time)} on ${esc(r.night)} ${r.surf==="asphalt"?"asphalt":"clay"}${r.auto?" · auto driver":r.took!=null?` · you took over on lap ${r.took}`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.stage==="heat"&&r.nextGrid?` · feature from ${ordN(r.nextGrid)}`:""}${r.pb?` · class best lap${r.pb.lap?` (was ${r.pb.lap.toFixed(2)})`:""}`:""}</p>
     <div class="vstats"><div><b>${r.best?r.best.toFixed(2):"—"}</b><span>best lap (s)</span></div><div><b>${Math.round(avg)}</b><span>avg km/h</span></div><div><b>${r.maxKmh}</b><span>top km/h</span></div><div><b>${r.coolPeak}</b><span>water °C peak</span></div><div><b>${Math.round(r.wear*100)}</b><span>% tyres worn</span></div><div><b>${r.slides}</b><span>slide${r.slides===1?"":"s"}</span></div></div></div></div>`;}
 function ovalSheet(res){const r=res.oval,laps=r.laps||[],best=laps.length?Math.min.apply(null,laps):0;
   const wi=wearInfo(res),wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
   const lapRows=laps.map((t,i)=>{const pos=r.posLaps[i];return `<div><b>${i+1}</b><span class="nm">${pos?"P"+pos:""}${i>0&&r.posLaps[i-1]&&pos?(pos<r.posLaps[i-1]?" ▲":pos>r.posLaps[i-1]?" ▼":""):""}</span><span class="${Math.abs(t-best)<1e-6?"et":""}">${t.toFixed(2)}</span><span>${(t-best>0.005?"+"+(t-best).toFixed(2):"best")}</span></div>`;}).join("");
   return `<div class="sec"><h2>${r.surf==="asphalt"?"Paved oval":"Dirt oval"} sheet · ${r.stage==="heat"?"heat race":"feature"}</h2><div class="log">
     <div><b>Race</b>${ordN(r.place)} of ${r.of} · ${r.lapsDone}${r.finished?"":" (out)"} of ${r.N} laps · ${r.finished?fmtOvRace(r.time):"DNF"} · started ${ordN(r.gridMe)}</div>
-    <div><b>Setup</b>${ovEsc(r.clsName)} · ${r.ci} ci · ${ovEsc(r.tyre)} tyres · ${ovEsc(r.grille.toLowerCase())} grille · ${r.ratio}:1 rear end · ${r.mass.toLocaleString("en-CA")} kg</div>
+    <div><b>Setup</b>${esc(r.clsName)} · ${r.ci} ci · ${esc(r.tyre)} tyres · ${esc(r.grille.toLowerCase())} grille · ${r.ratio}:1 rear end · ${r.mass.toLocaleString("en-CA")} kg</div>
     ${r.rpmCorner>0?`<div><b>Gearing</b>${r.rpmCorner.toLocaleString("en-CA")} rpm mid-corner · ${r.rpmExit.toLocaleString("en-CA")} rpm at the end of the straight · ${r.maxKmh} km/h top</div>`:""}
     <div><b>Heat</b>water ${r.coolPeak} °C peak · radiator ${Math.round(r.radPack*100)}% clogged${r.derT>0.5?` · ${r.derT.toFixed(0)} s pulling power to save itself`:""} · tyres ${Math.round(r.wear*100)}% worn · grip ${r.muStart} → ${r.mu}</div>
-    ${r.reasons.map(x=>`<div>${ovEsc(x)}</div>`).join("")}${wear}</div>
+    ${r.reasons.map(x=>`<div>${esc(x)}</div>`).join("")}${wear}</div>
     ${lapRows?`<div class="rtop ovlaps" style="margin-top:8px"><span>Lap by lap</span>${lapRows}</div>`:""}
-    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}#${f.num} ${ovEsc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp</small>`}</span><span class="${f.me?"me":""}">${f.dnf?"out · lap "+(f.laps+1):f.laps<r.N?"−"+(r.N-f.laps)+" lap"+(r.N-f.laps===1?"":"s"):(i===0?fmtOvRace(f.time):"+"+(f.time-r.field[0].time).toFixed(1)+" s")}</span>`).join("")}</div></div>`;}
+    <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}#${f.num} ${esc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp</small>`}</span><span class="${f.me?"me":""}">${f.dnf?"out · lap "+(f.laps+1):f.laps<r.N?"−"+(r.N-f.laps)+" lap"+(r.N-f.laps===1?"":"s"):(i===0?fmtOvRace(f.time):"+"+(f.time-r.field[0].time).toFixed(1)+" s")}</span>`).join("")}</div></div>`;}
 /* the chart: lap time by lap with the water and tyres under it */
 function drawOvalChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
   const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
@@ -33579,7 +33574,7 @@ function drawOvalChart(r){const css=getComputedStyle(document.documentElement),I
   x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText("lap s",padL+4,12);x.fillStyle="rgba(120,169,221,.95)";x.fillText("water",padL+44,12);x.fillStyle="#e8c14a";x.fillText("tyres",padL+88,12);x.fillStyle=soft;x.textAlign="right";if(W>420)x.fillText(`lap time by lap · ${r.stage==="heat"?"heat":"feature"}`,W-padR,12);}
 function ovalRedraw(){const l=lastForChart();if(S.env.testType==="oval"&&l&&l.oval)drawOvalChart(l.oval);}
 function ovalRecHtml(){return OVAL_TRK.map(t=>{const P=ovalRecs(t),ks=Object.keys(SIM.OVAL_CLASSES).filter(k=>P[k]&&P[k].lap);if(!ks.length)return "";
-  return `<div class="rtop"><span>${t==="clay"?"Dirt oval":"Paved half-mile"} · best lap per class</span>${ks.map(k=>{const e=P[k];return `<div><b>◐</b><span class="et">${e.lap.toFixed(2)}</span><span>s</span><span class="nm" title="${ovEsc(e.n)}">${ovEsc(SIM.OVAL_CLASSES[k].n)}${e.wins?" · "+e.wins+" win"+(e.wins===1?"":"s"):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}).join("");}
+  return `<div class="rtop"><span>${t==="clay"?"Dirt oval":"Paved half-mile"} · best lap per class</span>${ks.map(k=>{const e=P[k];return `<div><b>◐</b><span class="et">${e.lap.toFixed(2)}</span><span>s</span><span class="nm" title="${esc(e.n)}">${esc(SIM.OVAL_CLASSES[k].n)}${e.wins?" · "+e.wins+" win"+(e.wins===1?"":"s"):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}).join("");}
 /* ===================== BOAT DRAGS: 1,000 ft of river, heads-up eliminations ===================== */
 /* a night is eight boats on a ladder: round 1, the semi, the final. Each round is one pass against the boat in the other lane:
    reaction time plus elapsed time, first to the far buoys wins. Lose (or break, or go red) and the night is over. */
@@ -33591,7 +33586,6 @@ const BOAT_HN={outboard:["Bass Assassin","Reel Deal","Hook Shot","Lake Effect","
   pro:["Blown Away","Flat Out","Liquid Asset","Wet Dream","Prairie Fire","Hole Shot","Spray Day","Cleaver Fever"],
   tfh:["Nitro Fish","Sky Pilot","Air Time","Big Water","Final Approach","Prop Rider","Tail Dragger","Kingfisher"]};
 const BOAT_COLORS=[0x1d4787,0xb7261d,0x2c6b3a,0xe8c14a,0x6b3d8f,0x0e8a8a,0xd94e8f,0x8e8e8e];
-const boatEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const boatIsD=c=>SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
 function boatClsLocked(k){const c=SIM.BOAT_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 function boatLitres(){const q=quick;return q?(q.Vd||q.VdEq||0)/1000:0;}
@@ -33708,9 +33702,9 @@ function boatHud(){if(!BT)return;const st=BT.p.st,now=performance.now(),pre=now<
   const ratio=st.T/Math.max(1,BT.p.Tc0*(1+Math.pow(st.v/12,2))),lp=Math.min(100,Math.round(ratio/1.4*100)),tr=SIM.boatTrimRange(),tp=v=>Math.round(100*(v-tr[0])/(tr[1]-tr[0]));
   const f=st.v/(SIM.BOAT_HULLS[BT.p.hull].vh),opt=f<0.8?-2:f>2.2?BT.p.opt:-2+(BT.p.opt+2)*Math.min(1,Math.max(0,(f-0.8)/1.4));
   const warn=st.dnf?"":st.Lr>0.75?`<b style="color:var(--crit)">NOSE LIGHT</b>`:st.walk>0.4?`<b style="color:var(--crit)">CHINE WALK</b>`:st.porp>0.3?`<b style="color:var(--warn)">PORPOISING</b>`:st.blown?`<b style="color:var(--crit)">BLOWN OUT</b>`:st.air?`<b style="color:var(--info)">AIRBORNE</b>`:st.debris?`<b style="color:var(--warn)">${st.debris.kind==="grate"?"STICK IN THE GRATE":"WEED"}</b>`:`blowout past 100%`;
-  $("boatLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${BT.label} · vs ${boatEsc(BT.of.name)}<br>${say}</span></div>
-    <div class="ph-bar"><i class="fill" style="width:${pc(st.x)}%"></i><i class="mk lead" style="left:${pc(BT.ox)}%"></i></div><div class="ph-lbl"><span>0</span><span>${boatEsc(BT.of.boat)} <b>${Math.round(BT.ox*3.28084)} ft</b></span><span>1,000 ft</span></div>
-    <div class="ph-lbl"><span>Water <b>${boatEsc(BT.water.name)}</b></span><span>${BT.water.wind>=0?"head":"tail"}wind <b>${Math.abs(BT.water.wind).toFixed(1)} m/s</b></span></div></div>
+  $("boatLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${BT.label} · vs ${esc(BT.of.name)}<br>${say}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${pc(st.x)}%"></i><i class="mk lead" style="left:${pc(BT.ox)}%"></i></div><div class="ph-lbl"><span>0</span><span>${esc(BT.of.boat)} <b>${Math.round(BT.ox*3.28084)} ft</b></span><span>1,000 ft</span></div>
+    <div class="ph-lbl"><span>Water <b>${esc(BT.water.name)}</b></span><span>${BT.water.wind>=0?"head":"tail"}wind <b>${Math.abs(BT.water.wind).toFixed(1)} m/s</b></span></div></div>
     <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>${BT.p.jet?"Pump":"Prop"} load <b>${Math.round(ratio*100)}%</b></span><span>${warn}</span></div>
     <div class="ph-bar"><i class="zone" style="left:${Math.round(100/1.4)}%;width:${100-Math.round(100/1.4)}%"></i><i class="fill${st.blown?" ra":""}" style="width:${lp}%"></i></div>
     <div class="ph-lbl"><span>Trim <b>${st.trim>=0?"+":""}${st.trim.toFixed(1)}°</b></span><span>${f<1?"in for the hump":"out with speed"}</span></div>
@@ -33781,7 +33775,7 @@ function boatPb(r,bad){if(ff||bad||r.et==null)return;const R=recs();if(!R.boat||
   R.boat[r.cls]=Object.assign({et:r.et,mph:r.mph,top:Math.max(r.mph,was&&was.top||0)},recTag());
   if(was){r.pb={was:was.et.toFixed(3)};setTimeout(()=>toast(`CLASS BEST · ${r.et.toFixed(3)} s (was ${r.pb.was})`),3200);}}
 function boatRecHtml(){const R=recs(),P=R.boat;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOAT_CLASSES).filter(k=>P[k]&&P[k].et);if(!ks.length)return "";
-  return `<div class="rtop"><span>Boat drags · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>⚓</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${boatEsc(e.n)}">${boatEsc(SIM.BOAT_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop"><span>Boat drags · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>⚓</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${esc(e.n)}">${esc(SIM.BOAT_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 function boatHint(){const c=SIM.BOAT_CLASSES;return career()?`<b>Boat drags</b> · one night a week in one class, entry ${fmt$(c.outboard.fee)}–${fmt$(c.tfh.fee)}. Needs a certified engine. Eight boats, heads-up: lose once and you're out. ${c.jet.n} opens at ${c.jet.rep} rep, ${c.pro.n} at ${c.pro.rep}, ${c.tfh.n} at ${c.tfh.rep}. The winner takes up to ${fmt$(c.tfh.purse)}.`
   :`<b>Boat drags</b> · 1,000 ft of river, heads-up. Wait for the green, then hold for throttle. Feather it if the prop blows out off the line, trim in for the hump and out once it's on plane — too far out and it porpoises, walks, or blows over.`;}
 /* the prop shop: the quickest pitch and gear (or impeller and drive ratio) for this engine on glassy water */
@@ -33789,14 +33783,14 @@ const boatShopC=new Map();
 function boatShop(){const k=boatEnvFix(),key=k+"|"+cfgHash(S.cfg);if(boatShopC.has(key))return boatShopC.get(key);const res=SIM.boatPrep(S.cfg,stdEnv());
   const b=SIM.boatTune(res,k,{redline:S.cfg.redline,idle:boatIdle(),trim:S.env.boatTrim});if(boatShopC.size>20)boatShopC.clear();boatShopC.set(key,b);return b;}
 function boatShopTxt(b,C0){return b?(C0.drive==="jet"?`${SIM.BOAT_IMP[b.imp][1]} impeller · ${b.gear.toFixed(2)}:1`:`${b.pitch}" pitch · ${b.gear.toFixed(2)}:1`)+(b.et?` → ${b.et.toFixed(2)} s on glassy water`:""):"";}
-function boatLadderHtml(N){const nm=i=>i==null?"—":i===0?"<b>You</b>":boatEsc(N.field[i-1].name.split(" ").pop());
+function boatLadderHtml(N){const nm=i=>i==null?"—":i===0?"<b>You</b>":esc(N.field[i-1].name.split(" ").pop());
   const pt=p=>!p?"":p.rt!=null&&p.rt<0?"RED":p.et==null?(p.dnf==="broke"?"BROKE":"DNF"):p.et.toFixed(2);
   return `<div class="bladder">${N.rounds.map((R,ri)=>`<div class="blr"><span class="blh">${BOAT_RND[ri]}</span>${R.map(m=>`<div class="blm${m.a===0||m.b===0?" me":""}"><span class="${m.win===m.a?"w":m.win!=null?"l":""}">${nm(m.a)} <i>${pt(m.pa)}</i></span><span class="${m.win===m.b?"w":m.win!=null?"l":""}">${nm(m.b)} <i>${pt(m.pb)}</i></span></div>`).join("")}</div>`).join("")}</div>`;}
 function boatEnvHtml(sl){const e=S.env,k=boatEnvFix(),C0=SIM.BOAT_CLASSES[k],HU=SIM.BOAT_HULLS[C0.hull],lk=boatClsLocked(k),N=boatCur(),live=boatLive(),R=recs().boat||{},pb=R[k];let h="";
   if(N&&N.cls===k){const st=live?N.stage:null,m=live?boatMyMatch(N):null,oi=m?(m.a===0?m.b:m.a):null,of=oi?N.field[oi-1]:null,w=live?boatWaterAt(N,st):null;
-    h+=`<div class="saltcls"><div><span>${live?BOAT_RND[st]:"Last night"}</span><b>${live?(of?boatEsc(of.name.split(" ").pop()):"—"):({1:"Won",2:"Runner-up",3:"Semi",5:"Round 1"}[N.place]||"—")}</b><small>${live?(of?`${boatEsc(of.boat)} · ${of.hp.toLocaleString()} hp`:""):N.purse?"purse "+fmt$(N.purse):"no purse"}</small></div>${w?`<div><span>Water</span><b>${(w.wind>=0?"+":"")+w.wind.toFixed(1)}<i style="font-size:12px;font-style:normal"> m/s</i></b><small>${boatEsc(w.name)} · ${w.wind>=0?"headwind":"tailwind"}</small></div>`:`<div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div>`}<div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
+    h+=`<div class="saltcls"><div><span>${live?BOAT_RND[st]:"Last night"}</span><b>${live?(of?esc(of.name.split(" ").pop()):"—"):({1:"Won",2:"Runner-up",3:"Semi",5:"Round 1"}[N.place]||"—")}</b><small>${live?(of?`${esc(of.boat)} · ${of.hp.toLocaleString()} hp`:""):N.purse?"purse "+fmt$(N.purse):"no purse"}</small></div>${w?`<div><span>Water</span><b>${(w.wind>=0?"+":"")+w.wind.toFixed(1)}<i style="font-size:12px;font-style:normal"> m/s</i></b><small>${esc(w.name)} · ${w.wind>=0?"headwind":"tailwind"}</small></div>`:`<div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div>`}<div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
     h+=boatLadderHtml(N);
-    if(live)h+=`<p class="hint">${of?`Next: <b>${boatEsc(of.name)}</b> in ${boatEsc(of.boat)}. `:""}Tune between rounds — the setup below goes on the boat for the next pass. <button class="chip" data-boatleave>Leave the night</button></p>`;
+    if(live)h+=`<p class="hint">${of?`Next: <b>${esc(of.name)}</b> in ${esc(of.boat)}. `:""}Tune between rounds — the setup below goes on the boat for the next pass. <button class="chip" data-boatleave>Leave the night</button></p>`;
     else h+=`<p class="hint">${BOAT_PLACE[N.place]||"Night over"}${N.purse?" · "+fmt$(N.purse):""}. ${career()&&boatRanWk(k)?`The next ${C0.n} night is week ${C().week+1}.`:"Run again to start a new night."}</p>`;}
   else h+=`<div class="saltcls"><div><span>Course</span><b>1,000 ft</b><small>river · two lanes · a tree</small></div><div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div><div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOAT_CLASSES).map(([id,c])=>{const l=boatClsLocked(id);return `<button data-tk="boatCls" data-tv="${id}" class="${k===id?"on":""}${l?" lock":""}"${live&&live.cls!==id?" disabled":""}>${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
@@ -33838,22 +33832,22 @@ function boatSlipCard(r,res){const M=r.match||{},f3=v=>v==null?"—":(+v).toFixe
     ["1000'",failed?"BROKE":r.et!=null?f3(r.et):({blowover:"BLEW OVER",hooked:"HOOKED",stuffed:"STUFFED"}[r.dnf]||"DNF"),M.oppDnf?(M.oppDnf==="broke"?"BROKE":"DNF"):f3(M.oppEt),"et"],["MPH",r.mph!=null&&!failed?r.mph.toFixed(2):"—",M.oppMph!=null&&!M.oppDnf?M.oppMph.toFixed(2):"—","mph"]];
   const verdict=failed?"BROKE":M.foul?"RED LIGHT":M.won?"WIN":"LOSS",when=new Date(r.at||Date.now()),lamp=w=>`<i class="lamp${w?" on":""}"></i>`;
   const pb=r.pb&&r.et!=null?`<div class="stamp">CLASS BEST<br><s>${r.pb.was}</s> ${r.et.toFixed(3)}</div>`:"";
-  return`<div class="tslip${M.won?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE RIVER DRAGS</b><small>1,000 ft · ${boatEsc(r.clsName)} · ${boatEsc(M.label||"")}</small><small>${when.toLocaleDateString("en-CA")} ${String(when.getHours()).padStart(2,"0")}:${String(when.getMinutes()).padStart(2,"0")}</small></div>
-    <div class="tsc"><strong>${boatEsc((S.name||engineName()||"").slice(0,40))}</strong>${Math.round(res.peakHp)} hp · ${boatEsc(SIM.BOAT_HULLS[r.hull].n)} · ${r.drive==="jet"?r.imp+"-cut pump":r.pitch+'" prop'} · ${r.gear}:1 · ${r.mass.toLocaleString("en-CA")} kg${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}</div>
-    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(M.won)}You</th><th><small>Left lane</small>${lamp(!M.won)}${boatEsc(String(M.opp||"").split(" ").pop())}</th></tr></thead>
+  return`<div class="tslip${M.won?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE RIVER DRAGS</b><small>1,000 ft · ${esc(r.clsName)} · ${esc(M.label||"")}</small><small>${when.toLocaleDateString("en-CA")} ${String(when.getHours()).padStart(2,"0")}:${String(when.getMinutes()).padStart(2,"0")}</small></div>
+    <div class="tsc"><strong>${esc((S.name||engineName()||"").slice(0,40))}</strong>${Math.round(res.peakHp)} hp · ${esc(SIM.BOAT_HULLS[r.hull].n)} · ${r.drive==="jet"?r.imp+"-cut pump":r.pitch+'" prop'} · ${r.gear}:1 · ${r.mass.toLocaleString("en-CA")} kg${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}</div>
+    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(M.won)}You</th><th><small>Left lane</small>${lamp(!M.won)}${esc(String(M.opp||"").split(" ").pop())}</th></tr></thead>
     <tbody>${rows.map(x=>`<tr class="${x[3]||""}"><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]===""?"":x[2]}</td></tr>`).join("")}</tbody></table>
-    <div class="tsw"><b class="${M.won?"w":"l"}">${verdict}</b><span>${M.margin!=null?"by "+Math.abs(M.margin).toFixed(3)+" s":""}</span></div>${pb}<div class="tsf">Wind ${r.water.wind>=0?"+":""}${r.water.wind} m/s · ${boatEsc(r.water.name)}</div></div>`;}
+    <div class="tsw"><b class="${M.won?"w":"l"}">${verdict}</b><span>${M.margin!=null?"by "+Math.abs(M.margin).toFixed(3)+" s":""}</span></div>${pb}<div class="tsf">Wind ${r.water.wind>=0?"+":""}${r.water.wind} m/s · ${esc(r.water.name)}</div></div>`;}
 function boatVerdict(res){const r=res.boat,M=r.match||{},nt=r.night||{};
-  const head=res.boatFailed?(r.broke==="valve_float"?"FLOATED THE VALVES":r.broke==="head_lift"?"COOKED IT":"BROKE ON THE RIVER"):M.foul?"RED LIGHT":r.dnf==="blowover"?"BLEW OVER":r.dnf==="hooked"?"HOOKED IT":r.dnf==="stuffed"?"STUFFED IT":M.won?`WON ${boatEsc(M.label)}`:`LOST ${boatEsc(M.label)}`;
+  const head=res.boatFailed?(r.broke==="valve_float"?"FLOATED THE VALVES":r.broke==="head_lift"?"COOKED IT":"BROKE ON THE RIVER"):M.foul?"RED LIGHT":r.dnf==="blowover"?"BLEW OVER":r.dnf==="hooked"?"HOOKED IT":r.dnf==="stuffed"?"STUFFED IT":M.won?`WON ${esc(M.label)}`:`LOST ${esc(M.label)}`;
   const cls=res.boatFailed||r.dnf||M.foul?"fail":M.won?"pass":"marg";
   const sub=nt.done?`${BOAT_PLACE[nt.place]||""}${r.purse?` · purse ${fmt$(r.purse)}`:""}`:`On to the ${BOAT_RND[nt.stage+1]?BOAT_RND[nt.stage+1].toLowerCase():"next round"}`;
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${head}${r.et!=null&&!res.boatFailed?`<br><span style="font-size:.7em;opacity:.85">${r.et.toFixed(3)} s @ ${r.mph.toFixed(1)} mph</span>`:""}</div><p>${boatEsc(r.clsName)} · vs ${boatEsc(M.opp)} (${M.oppDnf?M.oppDnf==="broke"?"broke":"DNF":M.oppEt!=null?M.oppEt.toFixed(3)+" @ "+Math.round(M.oppMph):"—"}) · ${sub}${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}${r.pb?` · class best (was ${r.pb.was})`:""}${res.boatFailed&&career()?" — certification is void and reputation took a hit":""}</p>
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${head}${r.et!=null&&!res.boatFailed?`<br><span style="font-size:.7em;opacity:.85">${r.et.toFixed(3)} s @ ${r.mph.toFixed(1)} mph</span>`:""}</div><p>${esc(r.clsName)} · vs ${esc(M.opp)} (${M.oppDnf?M.oppDnf==="broke"?"broke":"DNF":M.oppEt!=null?M.oppEt.toFixed(3)+" @ "+Math.round(M.oppMph):"—"}) · ${sub}${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}${r.pb?` · class best (was ${r.pb.was})`:""}${res.boatFailed&&career()?" — certification is void and reputation took a hit":""}</p>
     <div class="vstats"><div><b>${r.rt!=null&&!M.foul?r.rt.toFixed(3):"RED"}</b><span>reaction</span></div><div><b>${r.humpT!=null?r.humpT.toFixed(2):"—"}</b><span>s to the hump</span></div><div><b>${r.blowN}</b><span>blowouts</span></div><div><b>${r.maxMph.toFixed(0)}</b><span>top mph</span></div></div></div></div>`;}
 function boatSheet(res){const r=res.boat,N=boatCur();
   const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
   return `<div class="sec"><h2>Timing slip</h2><div class="tslipw">${boatSlipCard(r,res)}</div>
     <div class="log" style="margin-top:12px"><div><b>Setup</b>${r.drive==="jet"?r.imp+"-cut impeller":r.pitch+'" pitch'} · ${r.gear}:1 · trim ${r.trim0>=0?"+":""}${r.trim0}° at the start · ${r.mass.toLocaleString("en-CA")} kg</div>
-    <div><b>Water</b>${boatEsc(r.water.name)} (chop ${Math.round(r.water.chop*100)}%) · ${Math.abs(r.water.wind)} m/s ${r.water.wind>=0?"headwind":"tailwind"}</div>
+    <div><b>Water</b>${esc(r.water.name)} (chop ${Math.round(r.water.chop*100)}%) · ${Math.abs(r.water.wind)} m/s ${r.water.wind>=0?"headwind":"tailwind"}</div>
     <div><b>Engine</b>${r.peakRpm.toLocaleString()} rpm peak · ${r.limT>0.05?r.limT.toFixed(1)+" s on the limiter · ":""}raw water ${r.coolPeak} °C${r.slipEnd!=null?` · ${Math.round(r.slipEnd*100)}% slip at the line`:""}</div>
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>
     ${N&&N.cls===r.cls?`<h2 style="margin-top:12px">The ladder</h2>${boatLadderHtml(N)}`:""}</div>`;}
@@ -34417,7 +34411,7 @@ function renderAnalysis(){
   $("notes").innerHTML=r.notes.length?r.notes.map(n=>`<div>${n}</div>`).join(""):"<div>No notes — nothing is being wasted or hidden in this build.</div>";
   renderRecords();renderAch();
 }
-function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career(),esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=career();
   const when=(e,sh)=>e.w!=null?(sh?"wk ":"week ")+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):"";
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
@@ -34707,7 +34701,6 @@ $("mkSvc").addEventListener("click",e=>{const rb=e.target.closest("[data-rebuild
    their rules define the truck, so a swap there would be a different class, not the same event in your car.
    No swapV (the default) → every event runs exactly as before. */
 const SW_DOT={g:"good",a:"warn",r:"crit"},SW_WORD={g:"fits",a:"tight",r:"no"};
-const swEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function swapStore(){if(career()){const c=C();if(!c.swap||typeof c.swap!=="object")c.swap={};const s=c.swap;if(!s.own||typeof s.own!=="object")s.own={};if(!s.fx||typeof s.fx!=="object")s.fx={};return s;}
   if(!S.swapSb||typeof S.swapSb!=="object")S.swapSb={};const s=S.swapSb;if(!s.own||typeof s.own!=="object")s.own={};if(!s.fx||typeof s.fx!=="object")s.fx={};return s;}
 const swapFree=()=>!career()||dev();
@@ -34747,13 +34740,13 @@ function swapQuips(r){const q=[],V=r.V,n=V.n,hp=Math.round((quick&&quick.peakHp)
 function swapTag(){const r=swapLive();if(!r)return null;return{v:r.v,n:r.V.n,q:swapQuips(r)[0],mostly:!!r.mostly,inf:!!r.inf,mass:Math.round(r.mass),front:+r.front.toFixed(3),dl:+r.dlRatio.toFixed(2),cool:+r.coolRatio.toFixed(2),eng:S.cfg.layout};}
 /* a result screen banner: which car, the quip, what broke */
 function swapVerdict(res){const r=res&&(res.road||res.drag||res.salt||res.e24);const t=r&&r.swap;if(!t)return"";const brk=r.swapBroke||r.broke==="driveline"||(r.dnf&&r.dnf.id==="swap_driveline");
-  return `<div class="swban${brk?" brk":""}"><b>${swEsc(t.n)} · engine swap</b><span>${swEsc(t.q)}${brk?" The driveline let go — the engine is fine; the car needs a stronger gearbox and axle.":""}</span></div>`;}
-function swapRoadVerdict(r){const b=r.swapBroke;return `<div class="verdict fail"><div style="flex:1"><div class="big">DRIVELINE LET GO</div><p>${swEsc(r.chName)} — it broke on the exit of ${swEsc(b.corner)}, ${b.t.toFixed(1)} s into the lap. The gearbox and axle are rated below what this engine makes. No lap time; the engine is fine.</p></div></div>`;}
+  return `<div class="swban${brk?" brk":""}"><b>${esc(t.n)} · engine swap</b><span>${esc(t.q)}${brk?" The driveline let go — the engine is fine; the car needs a stronger gearbox and axle.":""}</span></div>`;}
+function swapRoadVerdict(r){const b=r.swapBroke;return `<div class="verdict fail"><div style="flex:1"><div class="big">DRIVELINE LET GO</div><p>${esc(r.chName)} — it broke on the exit of ${esc(b.corner)}, ${b.t.toFixed(1)} s into the lap. The gearbox and axle are rated below what this engine makes. No lap time; the engine is fine.</p></div></div>`;}
 /* the note on each car event's panel */
 function swapEnvNote(){const v=S.env&&S.env.swapV,V=v&&SIM.VEHICLES[v];if(!V)return"";const r=swapLive();
-  if(!r)return `<p class="hint swnote">Your ${swEsc(V.n)} swap ${swapOwns(v)?"doesn't fit yet (Build › Swap)":"isn't bought yet"} — this runs in the event car. <button class="chip" data-swoff>Clear the swap</button></p>`;
+  if(!r)return `<p class="hint swnote">Your ${esc(V.n)} swap ${swapOwns(v)?"doesn't fit yet (Build › Swap)":"isn't bought yet"} — this runs in the event car. <button class="chip" data-swoff>Clear the swap</button></p>`;
   const bad=r.items.filter(x=>x.st==="r"&&x.k!=="mass").map(x=>x.n.split(" · ")[0].toLowerCase());
-  return `<div class="swnote on"><b>Car · ${swEsc(V.n)}</b><span>engine swap · ${Math.round(r.mass+75).toLocaleString("en-CA")} kg with a driver · ${Math.round(r.front*100)}% front · ${V.drive.toUpperCase()}${bad.length?` · <em>${bad.join(", ")} red</em>`:""}. Body, weight, tyres and drag come from the car.</span><button class="chip" data-swoff>Use the event cars</button></div>`;}
+  return `<div class="swnote on"><b>Car · ${esc(V.n)}</b><span>engine swap · ${Math.round(r.mass+75).toLocaleString("en-CA")} kg with a driver · ${Math.round(r.front*100)}% front · ${V.drive.toUpperCase()}${bad.length?` · <em>${bad.join(", ")} red</em>`:""}. Body, weight, tyres and drag come from the car.</span><button class="chip" data-swoff>Use the event cars</button></div>`;}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-swoff]");if(!b)return;if(testing){toast("Let the run finish first");return;}S.env.swapV=null;save();if(typeof renderEnv==="function")renderEnv();swapRender();toast("Back to the event cars");});
 /* ---- achievements: the swap group ---- */
 ACH_GROUPS.push(["swap","Swaps"]);
@@ -34811,7 +34804,7 @@ function swapSil(r){const V=r.V,sh=SW_SHAPE[V.shape]||SW_SHAPE.sedan,tyR=V.tyre*
   const wheel=(x,rr)=>`<circle cx="${X(x)}" cy="${Y(rr)}" r="${(rr*100).toFixed(1)}" class="sw-wh"/><circle cx="${X(x)}" cy="${Y(rr)}" r="${(rr*45).toFixed(1)}" class="sw-hub"/>`;
   const frR=V.shape==="tractor"?tyR*0.55:tyR;
   const pokes=eH>bayH+0.001||eL>bayL+0.001;
-  return `<svg class="swsil" viewBox="0 0 ${(W*100).toFixed(0)} ${(H*100).toFixed(0)}" role="img" aria-label="${swEsc(V.n)} side view with the engine to scale">
+  return `<svg class="swsil" viewBox="0 0 ${(W*100).toFixed(0)} ${(H*100).toFixed(0)}" role="img" aria-label="${esc(V.n)} side view with the engine to scale">
     <line x1="0" y1="${Y(0)}" x2="${(W*100).toFixed(0)}" y2="${Y(0)}" class="sw-gnd"/>
     <path d="${body}" class="sw-body"/>${wheel(fa,frR)}${wheel(ra,tyR)}
     <rect x="${X(bx[0])}" y="${Y(floor+bayH)}" width="${(bayL*100).toFixed(1)}" height="${(bayH*100).toFixed(1)}" class="sw-bay"/>
@@ -34820,17 +34813,17 @@ function swapSil(r){const V=r.V,sh=SW_SHAPE[V.shape]||SW_SHAPE.sedan,tyR=V.tyre*
 /* ---- the Build section ---- */
 let swOpenG=null;
 function swapRender(){if(!SW_READY)return;const box=$("swapBody"),sum=$("swapSum");if(!box||!S)return;const v=S.env&&S.env.swapV,V=v&&SIM.VEHICLES[v],r=V&&quick?swapRep(S.cfg,quick,v):null;
-  if(sum)sum.innerHTML=!V?"on the stand":`${swEsc(V.n)}${r?" · "+["r","a"].map(s=>{const n=r.items.filter(x=>x.st===s).length;return n?`<i class="sw-${s}">${n} ${s==="r"?"red":"amber"}</i>`:"";}).filter(Boolean).join(" ")||" · all green":""}`;
+  if(sum)sum.innerHTML=!V?"on the stand":`${esc(V.n)}${r?" · "+["r","a"].map(s=>{const n=r.items.filter(x=>x.st===s).length;return n?`<i class="sw-${s}">${n} ${s==="r"?"red":"amber"}</i>`:"";}).filter(Boolean).join(" ")||" · all green":""}`;
   if(!$("swapAcc").classList.contains("open"))return;   // perf: the body fills when the section is open
   const g0=swOpenG||(V&&V.g)||"muscle";
   let h=`<div class="hint swhint"><span>Put this engine in a car: size, torque, heat and weight decide the fit.</span><details class="more"><summary aria-label="More info">ⓘ</summary><div>The road test, strip, salt and 24 Hours run in the car you pick; pull and bog keep their class trucks.</div></details></div>`;
   h+=`<div class="chips swg">${SIM.VEH_GROUPS.map(([id,n])=>`<button class="chip${g0===id?" on":""}" data-swg="${id}">${n}</button>`).join("")}<button class="chip${!V?" on":""}" data-swv="">None</button></div>`;
-  h+=`<div class="seg wide swvs">${Object.values(SIM.VEHICLES).filter(x=>x.g===g0).map(x=>`<button data-swv="${x.id}" class="${v===x.id?"on":""}">${swEsc(x.n)}<small>${x.mass.toLocaleString("en-CA")} kg · ${x.drive.toUpperCase()}${swapOwns(x.id)?"":` · ${fmt$(x.price)}`}</small></button>`).join("")}</div>`;
+  h+=`<div class="seg wide swvs">${Object.values(SIM.VEHICLES).filter(x=>x.g===g0).map(x=>`<button data-swv="${x.id}" class="${v===x.id?"on":""}">${esc(x.n)}<small>${x.mass.toLocaleString("en-CA")} kg · ${x.drive.toUpperCase()}${swapOwns(x.id)?"":` · ${fmt$(x.price)}`}</small></button>`).join("")}</div>`;
   if(!V){box.innerHTML=h;return;}
-  if(!swapOwns(v)){h+=`<div class="swbuy"><span>${swEsc(V.n)} — the donor car costs <b>${fmt$(V.price)}</b>.</span><button class="btn sm pri" data-swbuy="${v}" ${C().cash<V.price?"disabled":""}>Buy it</button></div>`;box.innerHTML=h;return;}
+  if(!swapOwns(v)){h+=`<div class="swbuy"><span>${esc(V.n)} — the donor car costs <b>${fmt$(V.price)}</b>.</span><button class="btn sm pri" data-swbuy="${v}" ${C().cash<V.price?"disabled":""}>Buy it</button></div>`;box.innerHTML=h;return;}
   if(!r){box.innerHTML=h;return;}
   const own=swapOwnFx(v),D=r.dims;
-  h+=`<div class="swsilw">${swapSil(r)}<div class="swcap"><span>Engine ${D.L} × ${D.W} × ${D.H} mm${V.tv?" · turned across the car":""}</span><span>Bay ${V.bay.join(" × ")} mm · stock ${swEsc(V.famN)}</span></div></div>`;
+  h+=`<div class="swsilw">${swapSil(r)}<div class="swcap"><span>Engine ${D.L} × ${D.W} × ${D.H} mm${V.tv?" · turned across the car":""}</span><span>Bay ${V.bay.join(" × ")} mm · stock ${esc(V.famN)}</span></div></div>`;
   const shellAt=r.items.findIndex(x=>x.st==="r"&&(x.k==="len"||x.k==="wid"||x.k==="hgt"));   // the shell is offered once, on the first red bay item
   h+=`<div class="swrep">${r.items.map((it,ii)=>{const st=it.st;let val,why;
     if(it.k==="len"||it.k==="wid"||it.k==="hgt"){val=it.room==null?`${it.have} mm · any`:`${it.have} / ${it.room} mm`;why=it.room==null?"the shell goes over it":st==="r"?`${it.over} mm too big`:st==="a"?"tight — a pry bar and patience":`${-it.over} mm spare`;}
@@ -34838,12 +34831,12 @@ function swapRender(){if(!SW_READY)return;const box=$("swapBody"),sum=$("swapSum
     else if(it.k==="rad"){val=`${it.have} / ${it.room} kW`;why=st==="r"?"overheats in long events (24 h, salt)":st==="a"?"runs hot in long events":"keeps up";}
     else{val=`${it.have.toLocaleString("en-CA")} / ${it.room.toLocaleString("en-CA")} N·m`;why=st==="r"?"breaks the first time it sees full load":st==="a"?"near its rating":"inside its rating";}
     const fxBtns=st==="g"?"":it.fixes.filter(id=>{const f=SIM.SWAP_FIX[id];if(own.includes(id)||(f.inf&&ii!==shellAt))return false;if(f.tier){const cur=own.map(o=>SIM.SWAP_FIX[o]).filter(o=>o.grp===f.grp).reduce((a,o)=>Math.max(a,o.tier),0);if(f.tier<=cur)return false;}return true;})
-      .map(id=>{const f=SIM.SWAP_FIX[id],lk=f.need&&!own.includes(f.need);return `<button class="chip swfx${lk?" lk":""}" data-swf="${id}"${lk?` title="needs ${swEsc(SIM.SWAP_FIX[f.need].n)} first"`:""}>${swEsc(f.n)}<small>${swapFree()?"":fmt$(f.cost)+" · "}${swEsc(f.d)}</small></button>`;}).join("");
-    const have=own.filter(id=>it.fixes.includes(id)&&!(SIM.SWAP_FIX[id].inf&&ii>0)).map(id=>`<button class="chip swhave" data-swr="${id}" title="remove">${swEsc(SIM.SWAP_FIX[id].n)} ✕</button>`).join("");
+      .map(id=>{const f=SIM.SWAP_FIX[id],lk=f.need&&!own.includes(f.need);return `<button class="chip swfx${lk?" lk":""}" data-swf="${id}"${lk?` title="needs ${esc(SIM.SWAP_FIX[f.need].n)} first"`:""}>${esc(f.n)}<small>${swapFree()?"":fmt$(f.cost)+" · "}${esc(f.d)}</small></button>`;}).join("");
+    const have=own.filter(id=>it.fixes.includes(id)&&!(SIM.SWAP_FIX[id].inf&&ii>0)).map(id=>`<button class="chip swhave" data-swr="${id}" title="remove">${esc(SIM.SWAP_FIX[id].n)} ✕</button>`).join("");
     return `<div class="swit s-${st}"><i class="dot" aria-label="${SW_WORD[st]}"></i><div class="swt"><b>${it.n}</b><span>${val}</span><small>${why}</small></div>${have||fxBtns?`<div class="swfxs">${have}${fxBtns}</div>`:""}</div>`;}).join("")}</div>`;
   // the result: the car on this engine (a standing start and top speed, judged with the road test's own sim)
   if(r.fits){let z="—",tp="—",qm="—";try{const p=SIM.roadPrep(S.cfg,quick),a=SIM.roadRun(p,{ch:r.look,car:r.car,tyre:r.car.tyre});z=a.zero100!=null?a.zero100.toFixed(1)+" s":"—";tp=Math.round(a.top.kmh)+" km/h";qm=a.quarter?a.quarter.t.toFixed(1)+" s":"—";}catch(e){}
-    h+=`<div class="swres"><div class="vstats"><div><b>${z}</b><span>0–100 km/h</span></div><div><b>${qm}</b><span>1/4 mile</span></div><div><b>${tp}</b><span>top speed</span></div><div><b>${Math.round((quick.peakHp||0)/(r.mass/1000))}</b><span>hp / tonne</span></div></div><p class="swq">${swEsc(swapQuips(r).slice(0,2).join(" "))}</p></div>`;}
+    h+=`<div class="swres"><div class="vstats"><div><b>${z}</b><span>0–100 km/h</span></div><div><b>${qm}</b><span>1/4 mile</span></div><div><b>${tp}</b><span>top speed</span></div><div><b>${Math.round((quick.peakHp||0)/(r.mass/1000))}</b><span>hp / tonne</span></div></div><p class="swq">${esc(swapQuips(r).slice(0,2).join(" "))}</p></div>`;}
   else h+=`<p class="hint" style="color:var(--crit)">It doesn't go in yet — fix the red bay items. Until then the events run in their own cars.</p>`;
   if(r.cost&&swapFree())h+=`<p class="hint">Fixes fitted: ${fmt$(r.cost)} worth (free in the sandbox).</p>`;
   box.innerHTML=h;}
@@ -35025,7 +35018,6 @@ function DD(){const c=C();if(!c.dd||typeof c.dd!=="object")c.dd={};const d=c.dd;
 function ddRnd(o){return()=>{o.seed=(o.seed*1664525+1013904223)>>>0;return o.seed/4294967296;};}
 const ddFault=id=>DD_FAULTS.find(f=>f.id===id)||DD_FAULTS[0];
 const ddFill=(s,j)=>String(s).replace(/\{r\}/g,(+j.r||0).toLocaleString("en-CA")).replace(/\{rl\}/g,(+j.rl||0).toLocaleString("en-CA")).replace(/\{b\}/g,(+j.b||0).toFixed(1));
-const ddEsc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function ddKeyLbl(k){if(k==="map")return "Tune map";const f=FORM.flatMap(x=>x.fields).find(x=>x.key===k);return f?fLabel(f):k;}
 const ddLabel=j=>`${j.who}'s ${j.veh}`;
 const ddEnvX=()=>S&&S.bay&&S.bay.job.env?S.bay.job.env:null;
@@ -35069,7 +35061,7 @@ function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hi
 function ddHint(){const B=S.bay;if(!B)return;const j=B.job;if(j.hints>=3)return;const c=ddHintCost(j);j.hints++;if(c)j.paid+=c;save();ddRender();
   toast(c?`Hint · ${fmt$(c)} off the labour`:j.hints===1&&staffed("tuner")&&career()?"Your calibration engineer has a look — free":"Hint");}
 function ddVerdict(res){const B=S.bay,j=B.job,ck=ddCheck(j,S.cfg,res);
-  return `<div class="verdict ${ck.ok?"pass":"marg"}"><div style="flex:1"><div class="big">${ck.ok?"READY TO HAND BACK":"CUSTOMER ENGINE"}</div><p>${ck.ok?`It's clean and it meets what ${ddEsc(j.who)} asked for. Hand it back from the Dyno day card.`:ck.issues.map(ddEsc).join(" · ")}</p>
+  return `<div class="verdict ${ck.ok?"pass":"marg"}"><div style="flex:1"><div class="big">${ck.ok?"READY TO HAND BACK":"CUSTOMER ENGINE"}</div><p>${ck.ok?`It's clean and it meets what ${esc(j.who)} asked for. Hand it back from the Dyno day card.`:ck.issues.map(esc).join(" · ")}</p>
     <div class="vstats"><div><b>${Math.round(res.peakHp)}</b><span>hp · wants ${j.hpMin}+</span></div>${res.diesel?`<div><b>${Math.round(res.smoke||0)}%</b><span>Smoke${j.smokeMax!=null?" · max "+j.smokeMax+"%":""}</span></div>`:`<div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div>`}<div><b>${res.rel}</b><span>Reliability</span></div><div><b>${fmt$(ddParts())}<i style="font-style:normal;font-size:.75em;color:var(--muted)"> / ${fmt$(j.budget)}</i></b><span>Parts / budget</span></div></div></div></div>`;}
 function ddHand(){const B=S.bay;if(!B||testing)return;const j=B.job;const last=S.last&&S.last.hash===cfgHash(S.cfg)?S.last:null;
   if(!last){toast("Pull it as it sits first — the customer wants the dyno sheet");return;}
@@ -35089,27 +35081,27 @@ function ddWalk(){const B=S.bay;if(!B||testing)return;const j=B.job;
   ddExit();hud();toast(B.practice?"Practice engine off the dyno":"Customer sent away — −1 rep");}
 function ddPractice(){const o={seed:1+Math.floor(Math.random()*1e9)};const j=ddMakeJob(ddRnd(o),true);if(!j){toast("Couldn't find a sick engine — try again");return;}j.st="bay";if(ddEnter(j,true)){renderTest();toast(`Practice: ${ddLabel(j)} — "${j.tag}"`);}}
 function ddBar(){const b=$("ddBar");if(!b)return;const B=S&&S.bay;$("panel").classList.toggle("ddon",!!B);if(!B){b.hidden=true;b.innerHTML="";return;}
-  b.hidden=false;b.innerHTML=`<div class="ddbt"><small>${B.practice?"Practice bay":"Customer bay"}</small><b>${B.practice?"Practice":"Customer"}: ${ddEsc(ddLabel(B.job))} — ‘${ddEsc(B.job.tag)}’</b></div><button class="btn sm" data-dd="goto">Job ›</button>`;
+  b.hidden=false;b.innerHTML=`<div class="ddbt"><small>${B.practice?"Practice bay":"Customer bay"}</small><b>${B.practice?"Practice":"Customer"}: ${esc(ddLabel(B.job))} — ‘${esc(B.job.tag)}’</b></div><button class="btn sm" data-dd="goto">Job ›</button>`;
   requestAnimationFrame(()=>$("panel").style.setProperty("--ddh",b.offsetHeight+"px"));}
 function ddReqHtml(j){const F=ddFault(j.fault),t=[`No failures on the dyno`,`At least ${j.hpMin.toLocaleString("en-CA")} hp`];
   if(j.smokeMax!=null)t.push(`Smoke ${j.smokeMax}% or less`);if(j.fuels)t.push(`Fuel: ${j.fuels.map(f=>(OPT.fuel[f]||{}).name||f).join(" / ")} only`);if(j.redlineMin)t.push(`Redline stays at ${j.redlineMin.toLocaleString("en-CA")} rpm`);
   if(F.internal)t.push("No internal work — the head stays on");if(j.env&&j.env.gLat)t.push(`Duty: ${j.env.gLat.toFixed(2)} g sustained cornering (set on this job's pulls)`);
-  return `<ul class="ddreq">${t.map(x=>`<li>${ddEsc(x)}</li>`).join("")}</ul>`;}
+  return `<ul class="ddreq">${t.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;}
 function ddRender(){const sec=$("ddSec");if(!sec)return;const B=S.bay,show=!!B||S.env.testType==="pull";sec.hidden=!show;if(!show)return;const box=$("ddBox");
   if(B){const j=B.job,F=ddFault(j.fault),parts=ddParts(),hc=ddHintCost(j);$("ddCnt").textContent=B.practice?"practice":"on the dyno";
-    box.innerHTML=`<div class="card ddjob on"><div class="ddh"><b>${ddEsc(ddLabel(j))}</b><span>${ddEsc(j.eng)}${B.practice?"":" · labour "+fmt$(j.labour)}</span></div>
-      <p class="ddsay">“${ddEsc(j.says)}”</p>
-      <div class="ddk"><span>They'll pay for</span><b>${j.allowed.map(ddKeyLbl).map(ddEsc).join(" · ")}</b></div>
+    box.innerHTML=`<div class="card ddjob on"><div class="ddh"><b>${esc(ddLabel(j))}</b><span>${esc(j.eng)}${B.practice?"":" · labour "+fmt$(j.labour)}</span></div>
+      <p class="ddsay">“${esc(j.says)}”</p>
+      <div class="ddk"><span>They'll pay for</span><b>${j.allowed.map(ddKeyLbl).map(esc).join(" · ")}</b></div>
       ${ddReqHtml(j)}
       ${B.practice?"":`<div class="ddk"><span>Parts so far</span><b class="${parts>j.budget?"crit":""}">${fmt$(parts)} of ${fmt$(j.budget)} budget</b></div>`}
-      ${j.hints?`<ol class="ddhints">${F.hints.slice(0,j.hints).map(h=>`<li>${ddEsc(ddFill(h,j))}</li>`).join("")}</ol>`:""}
-      ${B.confirm&&B.issues?`<div class="ddiss">${B.issues.map(x=>`<div>${ddEsc(x)}</div>`).join("")}</div>`:""}
+      ${j.hints?`<ol class="ddhints">${F.hints.slice(0,j.hints).map(h=>`<li>${esc(ddFill(h,j))}</li>`).join("")}</ol>`:""}
+      ${B.confirm&&B.issues?`<div class="ddiss">${B.issues.map(x=>`<div>${esc(x)}</div>`).join("")}</div>`:""}
       <div class="row ddbtns"><button class="btn pri" data-dd="hand"${testing?" disabled":""}>${B.confirm?(B.practice?"Hand it back as is":"Hand back unfixed · rep hit"):"Hand back"}</button>${j.hints<3?`<button class="btn sm" data-dd="hint">Hint${hc?" · "+fmt$(hc):B.practice||!career()?"":" · free"}</button>`:""}<button class="btn sm ghost" data-dd="walk"${testing?" disabled":""}>${B.practice?"Done":"Walk away"}</button></div>
       <p class="hint">Run pulls, read the stress report, the chart and Analysis, change only what they'll pay for, then pull it again before you hand it back.</p></div>`;return;}
   if(!career()){$("ddCnt").textContent="practice";box.innerHTML=`<p class="hint" style="margin-top:-4px">In career, customers book dyno time for their own sick engines. Practise here: a random engine comes in with one fault and a complaint. Find it, fix it with the parts they'll pay for, and hand it back. Your own build waits in the corner.</p><button class="btn" data-dd="practice" style="width:100%">Practice diagnosis</button>`;return;}
   ddWeek();const d=DD(),open=d.jobs.filter(j=>j.st==="open");$("ddCnt").textContent=open.length?`${open.length} booked · this week only`:"none this week";
   box.innerHTML=`<div class="hint ddhint">Customers book the dyno.${moreI(`Customers book the dyno for their own engines. Take a job: their engine goes on the dyno in place of yours (yours waits). Find the fault, fix it with the parts they'll pay for, hand it back. Pay = labour + 30% on parts; under budget earns a bonus. A botched job costs rep.${d.passed?` ${d.passed} fixed so far, ${fmt$(d.earned)} net.`:""}`,"How dyno day works")}</div>`
-    +(open.length?open.map(j=>`<div class="ddrow"><div class="ddl"><b>${ddEsc(ddLabel(j))}</b><span class="ddp">${fmt$(j.labour)}</span><button class="ddi" data-ddx aria-expanded="false" aria-label="About ${ddEsc(ddLabel(j))}'s job">ⓘ</button><button class="btn sm pri" data-dd="take" data-id="${j.id}"${testing?" disabled":""}>Take</button></div><div class="ddx" hidden><b>${ddEsc(j.eng)}</b> · labour ${fmt$(j.labour)}<br>“${ddEsc(j.says)}”</div></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
+    +(open.length?open.map(j=>`<div class="ddrow"><div class="ddl"><b>${esc(ddLabel(j))}</b><span class="ddp">${fmt$(j.labour)}</span><button class="ddi" data-ddx aria-expanded="false" aria-label="About ${esc(ddLabel(j))}'s job">ⓘ</button><button class="btn sm pri" data-dd="take" data-id="${j.id}"${testing?" disabled":""}>Take</button></div><div class="ddx" hidden><b>${esc(j.eng)}</b> · labour ${fmt$(j.labour)}<br>“${esc(j.says)}”</div></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-dd]");if(!b)return;const a=b.dataset.dd;
   if(a==="goto"){showTab("test");requestAnimationFrame(()=>{const s=$("ddSec");if(s)s.scrollIntoView({block:"start",behavior:calmScroll()});});return;}
   if(a==="practice"){ddPractice();return;}if(a==="hint"){ddHint();return;}if(a==="hand"){ddHand();return;}if(a==="walk"){ddWalk();return;}
@@ -35275,7 +35267,7 @@ function renderShop(){
     $("mkCert").className="mkc "+(q||"bay");$("mkCert").textContent=S.bay?"ON THE DYNO":q==="ok"?"CERTIFIED":q==="bad"?"CERT FAILED":"NO CERT";
     $("mkCert").title=S.bay?"":cert?`On offer at a unit cost of ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`Last pull: ${lastCert.why}.`:"Run a dyno pull in Test; buyers only look at certified engines.";
     $("mkBoard").textContent=`${C().contracts.length}/${MAX_ACTIVE} board`;$("mkBoard").title=`${C().contracts.length} of ${MAX_ACTIVE} contracts on the board`;
-    const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":ddEsc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
+    const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":esc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
     $("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span><b>${C().sold}</b> engines sold</span><span><b>${fmt$(C().profit)}</b> lifetime profit</span><span><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b> warranty paid</span>`;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(loanRate()*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
@@ -36055,18 +36047,18 @@ function crewMaxLv(){let m=0;for(const r of CREW_ALL){const p=crewP(r);if(p)m=Ma
 /* the Staff section: one card per role, a person or the next applicant */
 function crewRender(){const box=$("staff");if(!box||!career())return;let open=null;const chief=crewChiefRole();try{open=box.dataset.open||null;}catch(e){}
   box.innerHTML=`<p class="hint crewi">Staff learn on the job and level up to 5: each level adds a little to what they do, and to their wage. Everyone has a trait or two that shows in time. Overwork or a bounced payroll sours morale, and an unhappy hand warns you once before they quit. Promote one hand at level ${CHIEF_LV}+ to <b>crew chief</b>: the others learn ${Math.round((CHIEF_XP-1)*100)}% faster and a busy week wears on them half as much, for +${Math.round(CHIEF_PAY*100)}% on the chief's wage.</p>`+STAFF.map(st=>{const p=crewP(st.id);
-    if(!p){const a=crewCand(st.id);return `<div class="up crew"><div class="cwho"><i class="cav off" style="--cc:${CREW_COL[st.id]}">${crewIni(a.nm)}</i><div><h3>${st.name}</h3><p class="csub">Applicant: <b>${ddEsc(a.nm)}</b> · level 1</p></div></div><p>${st.desc} <b>${fmt$(st.wage)}/week, ${fmt$(st.wage*2)} to hire</b></p><div class="cbtn"><button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire ${ddEsc(crewFirst(a))}</button></div></div>`;}
+    if(!p){const a=crewCand(st.id);return `<div class="up crew"><div class="cwho"><i class="cav off" style="--cc:${CREW_COL[st.id]}">${crewIni(a.nm)}</i><div><h3>${st.name}</h3><p class="csub">Applicant: <b>${esc(a.nm)}</b> · level 1</p></div></div><p>${st.desc} <b>${fmt$(st.wage)}/week, ${fmt$(st.wage*2)} to hire</b></p><div class="cbtn"><button class="btn sm ${C().cash>=st.wage*2?"pri":""}" data-hire="${st.id}">Hire ${esc(crewFirst(a))}</button></div></div>`;}
     const L=p.lvl|0,nx=L<5?CREW_XP[L]:null,pv=CREW_XP[L-1],pct=nx?Math.max(0,Math.min(100,Math.round(100*(p.xp-pv)/(nx-pv)))):100,away=p.away>C().week,hid=p.tr.filter(t=>!t.rv).length;
-    const chips=p.tr.filter(t=>t.rv).map(t=>{const T=crewTr(t.id);return `<span class="ctr ${T.pos?"pos":"neg"}" title="${ddEsc(T.d)}">${T.n}</span>`;}).join("")+(hid?`<span class="ctr hid">${hid===1?"one trait":"two traits"} still to show</span>`:"");
+    const chips=p.tr.filter(t=>t.rv).map(t=>{const T=crewTr(t.id);return `<span class="ctr ${T.pos?"pos":"neg"}" title="${esc(T.d)}">${T.n}</span>`;}).join("")+(hid?`<span class="ctr hid">${hid===1?"one trait":"two traits"} still to show</span>`:"");
     const mor=Math.round(p.mor||0),mc=mor<25?"crit":mor<45?"warn":"good";const cs=crewCourses(p);
-    const train=away?`<p class="caway">On the ${ddEsc(p.crs?p.crs.n.toLowerCase():"course")} · back week ${p.away}. The role's effect is off till then.</p>`
+    const train=away?`<p class="caway">On the ${esc(p.crs?p.crs.n.toLowerCase():"course")} · back week ${p.away}. The role's effect is off till then.</p>`
       :`<details class="ctrain" data-role="${st.id}"${open===st.id?" open":""}><summary>Training</summary><p class="hint">A course takes them out of the shop: no ${st.name.toLowerCase()} effect while they're away. Wages still run.</p>
         ${L<5?`<button class="ccrs" data-crs="xp" data-role="${st.id}">${cs.xp.n} · ${cs.xp.wk} wk · ${fmt$(cs.xp.cost)}<small>+${cs.xp.xp} XP</small></button>`:`<p class="hint">Top level — nothing left to teach them.</p>`}
         ${crewCanLearn(p)?crewTrainable(p).map(t=>`<button class="ccrs" data-crs="tr" data-t="${t.id}" data-role="${st.id}">${t.n} · ${cs.tr.wk} wk · ${fmt$(cs.tr.cost)}<small>${t.d}</small></button>`).join(""):`<p class="hint">Already two traits — a specialist course only replaces a known bad habit.</p>`}</details>`;
-    return `<div class="up owned crew${away?" away":""}"><div class="cwho"><i class="cav" style="--cc:${CREW_COL[st.id]}">${crewIni(p.nm)}</i><div><h3>${ddEsc(p.nm)}${chief===st.id?` <span class="ctr chief">Crew chief</span>`:""}</h3><p class="csub">${st.name} · since week ${p.hired||1}${away?" · on course":""}</p></div><b class="clv">LV ${L}</b></div>
+    return `<div class="up owned crew${away?" away":""}"><div class="cwho"><i class="cav" style="--cc:${CREW_COL[st.id]}">${crewIni(p.nm)}</i><div><h3>${esc(p.nm)}${chief===st.id?` <span class="ctr chief">Crew chief</span>`:""}</h3><p class="csub">${st.name} · since week ${p.hired||1}${away?" · on course":""}</p></div><b class="clv">LV ${L}</b></div>
       <div class="cbar" title="${Math.floor(p.xp)} XP"><i style="width:${pct}%"></i></div><p class="cxp">${nx?`${Math.floor(p.xp)} / ${nx} XP to level ${L+1}`:`${Math.floor(p.xp)} XP · top level`}<span class="cmor ${mc}">morale ${mor}</span></p>
       ${chips?`<div class="ctrs">${chips}</div>`:""}
-      <p>${crewFx(st.id,L)} <b>${fmt$(crewWage(st))}/week</b></p><p class="chist">${ddEsc(crewHistTxt(p))}</p>
+      <p>${crewFx(st.id,L)} <b>${fmt$(crewWage(st))}/week</b></p><p class="chist">${esc(crewHistTxt(p))}</p>
       ${train}<div class="cbtn">${chief===st.id?`<button class="btn sm ghost" data-chief="">Step down as chief</button>`:!chief&&L>=CHIEF_LV?`<button class="btn sm info" data-chief="${st.id}">Make crew chief</button>`:""}<button class="btn sm danger" data-fire="${st.id}">Release</button></div></div>`;}).join("");}
 const crewIni=n=>String(n).split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
 $("staff").addEventListener("click",e=>{const c=e.target.closest("[data-chief]");if(c){crewSetChief(c.dataset.chief);return;}const b=e.target.closest("[data-crs]");if(!b)return;crewTrain(b.dataset.role,b.dataset.crs,b.dataset.t);});
@@ -36146,18 +36138,18 @@ function bayRender(){const box=$("bayBox"),sec=$("baySec");if(!box||!sec)return;
   if(!own.length){box.innerHTML=`<p class="hint">Extra build bays (Bay C, Bay D) are in the Shop. Staff one with a bay lead and it builds market contracts in the background while you work.</p>`;$("bayCnt").textContent="";return;}
   const run=bayCost(),busy=own.filter(b=>S_.b[b.id].job).length;$("bayCnt").textContent=run?`${fmt$(run)}/wk`:"";
   const card=b=>{const B=S_.b[b.id],L=B.lead,j=B.job;let h=`<div class="up bayc crew"><div class="bayh"><h3>${b.nm}</h3><span class="bst ${j?"busy":L?"idle":"empty"}">${j?"BUSY":L?"IDLE":"NO LEAD"}</span></div>`;
-    if(!L){const a=bayNew(b.id);h+=`<div class="cwho"><i class="cav off" style="--cc:var(--info)">${bayIni(a.nm)}</i><div><p class="csub">Applicant: <b>${ddEsc(a.nm)}</b> · bay lead, level 1</p><p class="csub">${a.tr.length?a.tr.map(t=>bayTr(t).n).join(" · "):"No standout traits"}</p></div></div>
+    if(!L){const a=bayNew(b.id);h+=`<div class="cwho"><i class="cav off" style="--cc:var(--info)">${bayIni(a.nm)}</i><div><p class="csub">Applicant: <b>${esc(a.nm)}</b> · bay lead, level 1</p><p class="csub">${a.tr.length?a.tr.map(t=>bayTr(t).n).join(" · "):"No standout traits"}</p></div></div>
       <button class="btn sm pri" data-bayhire="${b.id}">Hire bay lead · ${fmt$(bayWage(b,a))}/wk</button><p class="hint">Running cost ${fmt$(b.run)}/wk once staffed.</p>`;}
     else{const nx=L.lvl<5?CREW_XP[L.lvl]:null,pv=CREW_XP[L.lvl-1],pct=nx?Math.max(0,Math.min(100,Math.round(100*(L.xp-pv)/(nx-pv)))):100;
-      h+=`<div class="cwho"><i class="cav" style="--cc:var(--info)">${bayIni(L.nm)}</i><div><p class="csub"><b>${ddEsc(L.nm)}</b> · bay lead · <span class="clv">LV ${L.lvl}</span></p>
+      h+=`<div class="cwho"><i class="cav" style="--cc:var(--info)">${bayIni(L.nm)}</i><div><p class="csub"><b>${esc(L.nm)}</b> · bay lead · <span class="clv">LV ${L.lvl}</span></p>
         <div class="cbar" title="${Math.floor(L.xp)} XP"><i style="width:${pct}%"></i></div>${L.tr.length?`<div class="ctrs">${L.tr.map(t=>{const T=bayTr(t);return `<span class="ctr ${T.pos?"pos":"neg"}" title="${T.d}">${T.n}</span>`;}).join("")}</div>`:""}</div></div>
         <p class="csub">${fmt$(b.run)} running + ${fmt$(bayWage(b,L))} wage a week</p>`;
       if(j){const done=j.weeks+(j.rw?Math.max(1,Math.ceil(j.weeks/3)):0),pc=Math.round(100*(done-j.left)/done);
-        h+=`<div class="bayj"><b>${j.units} × ${ddEsc(j.name)}</b><span>${ddEsc(j.client)} · ${(BAY_BUD.find(x=>x.id===j.bud)||{}).n} budget${j.rw?" · <em>rework</em>":""}</span>
+        h+=`<div class="bayj"><b>${j.units} × ${esc(j.name)}</b><span>${esc(j.client)} · ${(BAY_BUD.find(x=>x.id===j.bud)||{}).n} budget${j.rw?" · <em>rework</em>":""}</span>
           <div class="bar"><i style="width:${pc}%"></i></div><span>${done-j.left} / ${done} wk · delivers week ${C().week+j.left} · pays ${fmt$(j.pay)} · quality ${j.q}</span></div>`;}
       else h+=`<div class="bayb2"><button class="btn sm ${bayPick===b.id?"":"pri"}" data-baypick="${b.id}">${bayPick===b.id?"Close contract list":"Assign a contract"}</button><button class="btn sm danger" data-bayfire="${b.id}">Release lead</button></div>`;
       if(bayPick===b.id&&!j){const offs=bayOffers().sort((x,y)=>bayPlan(y,b,BAY_BUD[1]).net-bayPlan(x,b,BAY_BUD[1]).net);h+=`<div class="baypk">${offs.length?offs.map(k=>{const bp=BAY_BUD.map(u=>[u,bayPlan(k,b,u)]);
-          return `<div class="bayo"><b>${ddEsc(k.name)}</b><span>${ddEsc(k.client)} · ${k.units} × ${fmt$(k.price)} · ${bp[1][1].w} wk</span><div class="bayb">${bp.map(([u,p])=>`<button class="btn sm ${u.id==="std"&&p.net>0?"pri":""}" data-bayjob="${k.id}" data-bay="${b.id}" data-bud="${u.id}"${C().cash<p.cost?" disabled":""}>${u.n}<small>parts ${fmt$(p.cost)} · net ${p.net<0?"−":""}${fmt$(Math.abs(p.net))} · QC fail ${Math.round(p.fail*100)}%</small></button>`).join("")}</div></div>`;}).join(""):`<p class="hint">No offers on the board. Come back next week.</p>`}</div>`;}}
+          return `<div class="bayo"><b>${esc(k.name)}</b><span>${esc(k.client)} · ${k.units} × ${fmt$(k.price)} · ${bp[1][1].w} wk</span><div class="bayb">${bp.map(([u,p])=>`<button class="btn sm ${u.id==="std"&&p.net>0?"pri":""}" data-bayjob="${k.id}" data-bay="${b.id}" data-bud="${u.id}"${C().cash<p.cost?" disabled":""}>${u.n}<small>parts ${fmt$(p.cost)} · net ${p.net<0?"−":""}${fmt$(Math.abs(p.net))} · QC fail ${Math.round(p.fail*100)}%</small></button>`).join("")}</div></div>`;}).join(""):`<p class="hint">No offers on the board. Come back next week.</p>`}</div>`;}}
     return h+`</div>`;};
   box.innerHTML=`<p class="hint">${busy} of ${own.length} bay${own.length>1?"s":""} building · lifetime ${S_.hist.jobs} job${S_.hist.jobs===1?"":"s"}, ${fmt$(S_.hist.profit)} after parts, ${S_.hist.fail} QC problem${S_.hist.fail===1?"":"s"}. Net = pay − parts − the bay's running cost over the job. Quality (lead level, traits, shop upgrades, budget) sets the pay and the QC risk.</p>`+own.map(card).join("");}
 $("bayBox").addEventListener("click",e=>{if(!career())return;const t=e.target.closest("button");if(!t||t.disabled)return;const d=t.dataset;
@@ -36175,7 +36167,6 @@ $("bayBox").addEventListener("click",e=>{if(!career())return;const t=e.target.cl
    no entry still lands on the shelf when its result has place 1 (an obelisk until someone gives it a shape).
    Retired engines are snapshots (cfg, name, peak hp, best results) shown on stands in the room and loadable again. */
 const TROPHY_LOG_MAX=240,TROPHY_RET_MAX=24,TR_STANDS=6;   // TR_STANDS matches the vis room's stand count
-const trEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const trF=(v,d)=>v==null||!isFinite(v)?"—":(+v).toFixed(d);
 const trCls=(T,k)=>T&&T[k]&&T[k].n||k||"";
 const trHill=k=>trCls(SIM.HILL_CLASSES,k),trCh=e=>e&&SIM.CHASSIS&&SIM.CHASSIS[e.ch]?SIM.CHASSIS[e.ch].n:"";   // Pikes Peak: class name, and the car the record was set in
@@ -36311,21 +36302,21 @@ function tropRefresh(){const items=tropItems(),eng=tropEngines(),cr=career();TR.
 function tropPick(id){if(!TR.open)return;if(!id||!TR.map[id]){tropCard(null);if(TR.gl)ENGINE_VIS.trophyFocus(null);return;}tropCard(id);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(id);}
 function tropCard(id){const box=$("trCard");TR.sel=id||null;$("troom").classList.toggle("crd",!!(id&&TR.map[id]));if(!id||!TR.map[id]){box.hidden=true;box.innerHTML="";return;}const it=TR.map[id];let h="";
   if(it.eng){const e=it.eng.src,b=e.best||[];
-    h=`<div class="trk">Retired engine${e.cert?" · certified":""} · ${trEsc(trWhen(e))}</div><h3>${trEsc(e.name)}</h3><p>${trEsc(e.label||"")}</p><div class="trnums">${[["Peak",Math.round(e.hp||0).toLocaleString("en-CA")+" hp"],["Torque",Math.round(e.tq||0).toLocaleString("en-CA")+" Nm"],["Reliability",e.rel!=null?e.rel:"—"]].concat(b).map(([k,v])=>`<div><span>${trEsc(k)}</span><b>${trEsc(v)}</b></div>`).join("")}</div>
-      <div class="trbtns"><button class="btn sm pri" data-tra="load" data-id="${trEsc(e.id)}">Load this build</button>${tropBook().retired.indexOf(e)>=TR_STANDS?`<button class="btn sm ghost" data-tra="front" data-id="${trEsc(e.id)}">Put on a stand</button>`:""}<button class="btn sm ghost" data-tra="share" data-id="${trEsc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="remove" data-id="${trEsc(e.id)}">Take down</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
-  else{const c=it.card;h=`<div class="trk t-${trEsc(c.tier||"gold")}">${trEsc(c.kick)}${c.when?" · "+trEsc(c.when):""}</div><h3>${trEsc(c.title)}</h3>${c.what?`<p>${trEsc(c.what)}</p>`:""}${c.nums&&c.nums.length?`<div class="trnums">${c.nums.map(([k,v])=>`<div><span>${trEsc(k)}</span><b>${trEsc(v)}</b></div>`).join("")}</div>`:""}
-      ${c.veh||c.eng?`<p class="trveh">${c.veh?`<span>Vehicle</span> ${trEsc(c.veh)}`:""}${c.veh&&c.eng?" · ":""}${c.eng?`<span>Engine</span> ${trEsc(c.eng)}`:""}</p>`:""}
-      <div class="trbtns"><button class="btn sm pri" data-tra="share" data-id="${trEsc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
+    h=`<div class="trk">Retired engine${e.cert?" · certified":""} · ${esc(trWhen(e))}</div><h3>${esc(e.name)}</h3><p>${esc(e.label||"")}</p><div class="trnums">${[["Peak",Math.round(e.hp||0).toLocaleString("en-CA")+" hp"],["Torque",Math.round(e.tq||0).toLocaleString("en-CA")+" Nm"],["Reliability",e.rel!=null?e.rel:"—"]].concat(b).map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>
+      <div class="trbtns"><button class="btn sm pri" data-tra="load" data-id="${esc(e.id)}">Load this build</button>${tropBook().retired.indexOf(e)>=TR_STANDS?`<button class="btn sm ghost" data-tra="front" data-id="${esc(e.id)}">Put on a stand</button>`:""}<button class="btn sm ghost" data-tra="share" data-id="${esc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="remove" data-id="${esc(e.id)}">Take down</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
+  else{const c=it.card;h=`<div class="trk t-${esc(c.tier||"gold")}">${esc(c.kick)}${c.when?" · "+esc(c.when):""}</div><h3>${esc(c.title)}</h3>${c.what?`<p>${esc(c.what)}</p>`:""}${c.nums&&c.nums.length?`<div class="trnums">${c.nums.map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>`:""}
+      ${c.veh||c.eng?`<p class="trveh">${c.veh?`<span>Vehicle</span> ${esc(c.veh)}`:""}${c.veh&&c.eng?" · ":""}${c.eng?`<span>Engine</span> ${esc(c.eng)}`:""}</p>`:""}
+      <div class="trbtns"><button class="btn sm pri" data-tra="share" data-id="${esc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
   box.innerHTML=h;box.hidden=false;}
 function tropListShow(on){TR.list=!!on;$("trList").hidden=!on;$("trListBtn").setAttribute("aria-pressed",String(!!on));$("trListBtn").textContent=on&&TR.gl?"Room":"List";$("trListBtn").hidden=!TR.gl;$("troom").classList.toggle("lst",!!on);}
 function tropListRender(items,eng){const sec=(t,L,f,empty)=>`<div class="trsec"><h4>${t}<span>${L.length}</span></h4>${L.length?`<div class="trgrid">${L.map(f).join("")}</div>`:`<p class="hint">${empty}</p>`}</div>`;
-  const card=i=>{const c=i.card;return `<button class="trc t-${trEsc(c.tier||"gold")}" data-trp="${trEsc(i.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[c.ic]||ACH_ICONS.trophy}"/></svg><b>${trEsc(c.title)}</b><small>${trEsc(c.kick)}${c.when?" · "+trEsc(c.when):""}</small></button>`;};
+  const card=i=>{const c=i.card;return `<button class="trc t-${esc(c.tier||"gold")}" data-trp="${esc(i.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[c.ic]||ACH_ICONS.trophy}"/></svg><b>${esc(c.title)}</b><small>${esc(c.kick)}${c.when?" · "+esc(c.when):""}</small></button>`;};
   const by=s=>items.filter(i=>i.slot===s),shelf=items.filter(i=>i.slot==="shelf"||i.slot==="pennant");
   const T=tropBook(),h=cfgHash(S.cfg),on=T.retired.some(e=>e.h===h);
-  let o=`<div class="trret"><button class="btn sm info" data-tra="retire">${on?"Update this build's plaque":"Retire this build to the room"}</button><small>${trEsc(engineName())} — a snapshot of the build, its peak and best results, on an engine stand. Up to ${TR_STANDS} on stands, the rest listed.</small></div>`;
+  let o=`<div class="trret"><button class="btn sm info" data-tra="retire">${on?"Update this build's plaque":"Retire this build to the room"}</button><small>${esc(engineName())} — a snapshot of the build, its peak and best results, on an engine stand. Up to ${TR_STANDS} on stands, the rest listed.</small></div>`;
   o+=sec("Trophies",shelf,card,"Empty shelf — go win something: a race night, a pull, a bog, a salt record or a 24 h podium.");
   o+=sec("Record slips",by("slip"),card,"No records yet — a dyno pull or a pass on the strip starts the wall.");
-  o+=sec("Engines on stands",eng,e=>`<button class="trc eng" data-trp="${trEsc(e.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS.gauge}"/></svg><b>${trEsc(e.name)}</b><small>${trEsc(e.sub)}${T.retired.indexOf(e.src)>=TR_STANDS?" · in storage":""}</small></button>`,"No retired engines — retire a build you're proud of.");
+  o+=sec("Engines on stands",eng,e=>`<button class="trc eng" data-trp="${esc(e.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS.gauge}"/></svg><b>${esc(e.name)}</b><small>${esc(e.sub)}${T.retired.indexOf(e.src)>=TR_STANDS?" · in storage":""}</small></button>`,"No retired engines — retire a build you're proud of.");
   o+=sec("Medals",by("medal"),card,"No achievements yet.");
   if(career())o+=sec("Shop goals",by("cert"),card,"No goals completed yet.");
   $("trList").innerHTML=o;}

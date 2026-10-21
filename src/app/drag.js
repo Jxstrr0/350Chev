@@ -37,7 +37,7 @@ function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.
 function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!R.topBy||typeof R.topBy!=="object")R.topBy={};if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
 /* the strip's per-body book: top five passes in each body class (R.topBy[body]); R.top stays the all-bodies top five that older saves carry */
 function dragTopBy(b){const R=recs();if(!Array.isArray(R.topBy[b]))R.topBy[b]=[];return R.topBy[b];}
-function dragRecHtml(){const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]),R=recs(),ks=Object.keys(SIM.AERO).filter(k=>Array.isArray(R.topBy[k])&&R.topBy[k][0]);if(!ks.length)return "";
+function dragRecHtml(){const R=recs(),ks=Object.keys(SIM.AERO).filter(k=>Array.isArray(R.topBy[k])&&R.topBy[k][0]);if(!ks.length)return "";
   return `<div class="rtop"><span>Strip · quickest per body</span>${ks.map(k=>{const e=R.topBy[k][0],n=R.topBy[k].length;return `<div><b>${n}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${esc(e.n)} · ${n} pass${n>1?"es":""} booked">${esc(SIM.AERO[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 function engBest(h){return career()?(C().dragBest||{})[h]:recs().eng[h];}
 function allBest(){const t=recs().top[0];return Math.min(t?t.et:Infinity,career()&&C().bestEt||Infinity);}
@@ -82,7 +82,7 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
       c.push(["egt","EGT",`${Math.round(st.egt)}<i>°C</i>`,st.egt>950?"bad":st.egt>850?"warn":""]);}}
   else{if(R){const ox=oppX(now),gap=(st.x-ox)*3.281;let mg=null;   // past the stripe the gap means nothing: once both are through, the margin
       if(m4&&!foul){if(n&&n.verdict&&n.verdict.margin!=null)mg=n.verdict.win?n.verdict.margin:-n.verdict.margin;else if(!n&&R.et!=null&&ox>=402.336)mg=(R.et+R.rt)-(m4.t+Math.max(0,R.rt0||0));}
-      c.push(mg!=null?["gap","Margin",(mg>=0?"+":"−")+Math.abs(mg).toFixed(3).replace(/^0(?=\.)/,"")+"<i>s</i>",mg>=0?"good":"bad"]:["gap","vs "+rnEsc(shOpp(R.name)),foul?"RED":m4&&gap<0?"—":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>",foul||gap<0?"bad":"good"]);}
+      c.push(mg!=null?["gap","Margin",(mg>=0?"+":"−")+Math.abs(mg).toFixed(3).replace(/^0(?=\.)/,"")+"<i>s</i>",mg>=0?"good":"bad"]:["gap","vs "+esc(shOpp(R.name)),foul?"RED":m4&&gap<0?"—":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>",foul||gap<0?"bad":"good"]);}
     c.push(["et",m4?"ET":"Clock",m4?m4.t.toFixed(3):st.t.toFixed(2)+"<i>s</i>",st.spin&&!m4?"bad":""]);
     c.push(["mph",m4?"Trap mph":"mph",String(Math.round(m4?m4.mph:st.v*2.237)),""]);
     if(st.boostTarget>0)c.push(["boost","Boost",`${bv(st.boost)}<i>${pU()}</i>`,st.als>0.2?"hot":""]);}
@@ -93,9 +93,9 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   const keys=c.map(x=>x[0]).join();if(keys!==SH.keys){SH.keys=keys;SH.row.innerHTML=c.map(()=>`<div class="shx"><span></span><b></b></div>`).join("");SH.nodes=Array.from(SH.row.children);SH.m={};}
   c.forEach((x,i)=>{const nd=SH.nodes[i];shudSet("c"+i,nd,"shx sh-"+x[0]+(x[3]?" "+x[3]:""),"cls");shudSet("l"+i,nd.firstChild,x[1]);shudSet("v"+i,nd.lastChild,x[2]);});
   // caption: the round and who's in the other lane, then what to do now
-  let s="";if(n){s=`${n.label} · vs ${rnEsc(R.name)}`;if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
+  let s="";if(n){s=`${n.label} · vs ${esc(R.name)}`;if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
     if(ph==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";}
-  else if(R)s=`Heads-up · vs ${rnEsc(R.name)}`;
+  else if(R)s=`Heads-up · vs ${esc(R.name)}`;
   let h="";
   if(DR.failed)h=`<em class="l">${DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":DR.failKind==="backfire"?"INTAKE BACKFIRE":DR.failKind==="lean"?"MELTED A PISTON":"BROKE"}</em>`;
   else if(ph==="burnout")h=st.burning?`burning · ${st.burnT.toFixed(1)} s${st.burnT>4?" · too long, it's going greasy":st.burnT>2.5?" · that's about right":""}`:st.burnT>0?"tap to roll into the beams":"in the water box"+(DR.veh.transBrake==="line_lock"?" · line lock on":" · no line lock — it will creep");
@@ -135,9 +135,9 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
     car:(S.name||engineName()||"").slice(0,40),spec:`${Math.round(res.peakHp)} hp · ${(SIM.AERO[r.body]||SIM.AERO.street).n} · ${SIM.TYRES[r.veh.tyre].n} · ${r.veh.mass} kg${r.auto?r.auto.took!=null?" · you took over":" · Auto driver":""}`};}
 function dragSlipCard(r,res){const D=slipData(r,res),two=!!D.R,lamp=w=>two&&D.win!=null?`<i class="lamp${w?" on":""}"></i>`:"";
   const pb=r.pb&&r.et!=null?(()=>{const f=etFix(r.et,+r.pb.was);return`<div class="stamp">${r.pb.all?"PERSONAL BEST":"ENGINE BEST"}<br><s>${(+r.pb.was).toFixed(f)}</s> ${r.et.toFixed(f)}</div>`;})():"";
-  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>SECTION LINE DRAGWAY</b><small>1/4 mile · ${rnEsc(D.round)}</small><small>${D.date}</small></div>
-    <div class="tsc"><strong>${rnEsc(D.car)}</strong>${rnEsc(D.spec)}</div>
-    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(D.win===true)}You</th>${two?`<th><small>Left lane</small>${lamp(D.win===false)}${rnEsc(D.opp)}</th>`:""}</tr></thead>
+  return`<div class="tslip${D.win===true?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>SECTION LINE DRAGWAY</b><small>1/4 mile · ${esc(D.round)}</small><small>${D.date}</small></div>
+    <div class="tsc"><strong>${esc(D.car)}</strong>${esc(D.spec)}</div>
+    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(D.win===true)}You</th>${two?`<th><small>Left lane</small>${lamp(D.win===false)}${esc(D.opp)}</th>`:""}</tr></thead>
     <tbody>${D.rows.map(x=>`<tr class="${x[3]||""}"><td>${x[0]}</td><td>${x[1]}</td>${two?`<td>${x[2]==null?"—":x[2]}</td>`:""}</tr>`).join("")}</tbody></table>
     <div class="tsw"><b class="${D.win===true?"w":D.win===false||D.verdict==="RED LIGHT"||D.verdict==="BROKE"?"l":""}">${D.verdict}</b><span>${D.margin}</span></div>
     ${pb}<div class="tsf">Thank you for racing</div></div>`;}
@@ -538,7 +538,6 @@ function rnLeave(){const N=rnLive();if(!N||testing)return;if(!confirm(N.stage<2?
   else{N.left=true;N.hist.push({stage:N.stage,label:rnStageName(N,N.stage),text:"Left the night"});rnFinish(N,9);}
   rnSetN(N);save();renderTest();toast("Loaded up and went home");}
 /* ---- race-night panel (replaces the drag set-up on the Test tab while a night is on) ---- */
-const rnEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function rnPT(p,br){if(!p)return"—";if(p.rt!=null&&p.rt<0)return`<span class="rnr">RED</span>`;if(p.dq)return`<span class="rnr">X-LINE</span>`;if(p.et==null)return`<span class="rnr">${p.broke?"BROKE":"DNF"}</span>`;return p.et.toFixed(3)+(br&&p.dial!=null&&p.et<p.dial?`<span class="rnr"> BO</span>`:"");}
 /* the ladder as a bracket of cars: quarter → semi → final → trophy. Winners slide forward the first time they show up in the next
    round; tap a car for the driver, the car and how their night went. */
@@ -564,19 +563,19 @@ function rnLadderHtml(N){const br=N.fmt==="bracket",seedOf=i=>N.seeds?N.seeds.in
         if(i==null){chips+=`<div class="rnk tbd" style="${row}" aria-hidden="true"><em></em><span>—</span></div>`;return;}
         const P=rnPart(N,i),p=m[pk],done=m.win!=null,key=ri+":"+s+":"+i,adv=ri>0&&!first&&!seen.has(key);seen.add(key);
         const cls=`rnk${i===0?" you":""}${done&&m.win===i?" w":done?" l":""}${ri===cur&&(m.a===0||m.b===0)?" nx":""}${RNLG.sel===i?" sel":""}${adv?" adv":""}`;
-        chips+=`<button class="${cls}" style="${row}" data-rnlg="${i}" aria-label="${rnEsc(P.name)}${i?" · "+rnEsc(P.car):""}">${rnSil(N.body,rnPaint(N,i))}<em${done&&p&&br&&p.dial!=null&&p.et!=null&&p.et<p.dial?' class="bo" title="broke out"':""}>${done&&p?rnPT(p,false):seedOf(i)?"#"+seedOf(i):""}</em><span>${i===0?"YOU":rnEsc(shSur(P.name))}</span></button>`;});
+        chips+=`<button class="${cls}" style="${row}" data-rnlg="${i}" aria-label="${esc(P.name)}${i?" · "+esc(P.car):""}">${rnSil(N.body,rnPaint(N,i))}<em${done&&p&&br&&p.dial!=null&&p.et!=null&&p.et<p.dial?' class="bo" title="broke out"':""}>${done&&p?rnPT(p,false):seedOf(i)?"#"+seedOf(i):""}</em><span>${i===0?"YOU":esc(shSur(P.name))}</span></button>`;});
       // the bracket lines into the next round, the winner's path drawn over in green (orange when it's you)
       const ya=yc(ri,mi*2),yb=yc(ri,mi*2+1),ym=ri<2?yc(ri+1,mi):50,xm=(xr[ri]+xl[ri])/2;
       lines+=`<path d="M${xr[ri]} ${ya}H${xm}V${yb}H${xr[ri]}M${xm} ${(ya+yb)/2}V${ym}H${xl[ri]}"/>`;
       if(m.win!=null){const yw=m.win===m.a?ya:yb;lit+=`<path class="${m.win===0?"y":"w"}" d="M${xr[ri]} ${yw}H${xm}V${ym}H${xl[ri]}"/>`;}});}
   RNLG.seen=seen;
   const fm=N.rounds[2]&&N.rounds[2][0],champ=fm&&fm.win!=null?fm.win:null;
-  const tro=`<div class="rntro${champ!=null?" on":""}${champ===0?" you":""}"><svg viewBox="0 0 36 40" aria-hidden="true"><path d="M9 3h18v8c0 6-4 10.5-9 10.5S9 17 9 11zM9 6H3.5c0 5 2.5 8 6.5 8.5M27 6h5.5c0 5-2.5 8-6.5 8.5M15.5 21.5h5v6h-5zM11 27.5h14l1.5 6h-17z"/></svg><small>${champ!=null?(champ===0?"YOU":rnEsc(shSur(rnPart(N,champ).name))):N.purse>=1000?"$"+Math.round(N.purse/1000)+"k":fmt$(N.purse)}</small></div>`;
+  const tro=`<div class="rntro${champ!=null?" on":""}${champ===0?" you":""}"><svg viewBox="0 0 36 40" aria-hidden="true"><path d="M9 3h18v8c0 6-4 10.5-9 10.5S9 17 9 11zM9 6H3.5c0 5 2.5 8 6.5 8.5M27 6h5.5c0 5-2.5 8-6.5 8.5M15.5 21.5h5v6h-5zM11 27.5h14l1.5 6h-17z"/></svg><small>${champ!=null?(champ===0?"YOU":esc(shSur(rnPart(N,champ).name))):N.purse>=1000?"$"+Math.round(N.purse/1000)+"k":fmt$(N.purse)}</small></div>`;
   const sel=RNLG.sel!=null&&(RNLG.sel===0||N.field[RNLG.sel-1])?rnLgDetail(N,RNLG.sel):"";
   return`<div class="rnlg"><div class="rnlgh"><i>Quarter</i><i>Semi</i><i>Final</i><i>Cup</i></div><div class="rnlgb"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}${lit}</svg>${chips}${tro}</div><div class="rnlgx"${sel?"":" hidden"}>${sel}</div></div>`;}
-function rnLgDetail(N,i){const P=rnPart(N,i),br=N.fmt==="bracket",q=rnQualBest(N,i),rv=i?N.field[i-1]:null,seed=N.seeds?N.seeds.indexOf(i)+1:null;let h=`<b>${rnEsc(i===0?"You · "+P.car:P.name)}</b><span>${i===0?(SIM.AERO[N.body]||{}).n||"":rnEsc(P.car)}${seed?" · seed #"+seed:""}${br&&rv?" · dial "+rv.dial.toFixed(2):""}${q?` · qualified ${q.et.toFixed(3)}`:""}</span>`;
+function rnLgDetail(N,i){const P=rnPart(N,i),br=N.fmt==="bracket",q=rnQualBest(N,i),rv=i?N.field[i-1]:null,seed=N.seeds?N.seeds.indexOf(i)+1:null;let h=`<b>${esc(i===0?"You · "+P.car:P.name)}</b><span>${i===0?(SIM.AERO[N.body]||{}).n||"":esc(P.car)}${seed?" · seed #"+seed:""}${br&&rv?" · dial "+rv.dial.toFixed(2):""}${q?` · qualified ${q.et.toFixed(3)}`:""}</span>`;
   (N.rounds||[]).forEach((ms,ri)=>{const m=ms.find(x=>x.a===i||x.b===i);if(!m)return;const o=m.a===i?m.b:m.a,p=m.a===i?m.pa:m.pb;if(o==null)return;
-    h+=`<div><span>${["QF","SF","Final"][ri]} vs ${o===0?"you":rnEsc(rnPart(N,o).name)}</span><span>${p?rnPT(p,br):""}${m.win==null?" · to run":m.win===i?' · <span style="color:var(--good)">won</span>':" · out"}</span></div>`;});
+    h+=`<div><span>${["QF","SF","Final"][ri]} vs ${o===0?"you":esc(rnPart(N,o).name)}</span><span>${p?rnPT(p,br):""}${m.win==null?" · to run":m.win===i?' · <span style="color:var(--good)">won</span>':" · out"}</span></div>`;});
   return h;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rnlg]");if(!b)return;const N=rnCur();if(!N)return;const i=+b.dataset.rnlg,box=b.closest(".rnlg");
   RNLG.sel=RNLG.sel===i?null:i;box.querySelectorAll(".rnk.sel").forEach(x=>x.classList.remove("sel"));box.querySelectorAll(".rnk.adv").forEach(x=>x.classList.remove("adv"));
@@ -584,7 +583,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rnlg]")
 function rnQualHtml(N){const br=N.fmt==="bracket",ids=[0,1,2,3,4,5,6,7],q=N.stage,best=i=>{const b=rnQualBest(N,i);return b?b.et:Infinity;};
   const ord=q>0?ids.slice().sort((a,b)=>best(a)-best(b)||a-b):ids;
   return`<div class="rnq">${ord.map((i,k)=>{const P=rnPart(N,i),rv=i?N.field[i-1]:null,b=rnQualBest(N,i);
-    return`<div class="${i===0?"you":""}"><i>${q>0&&!br?k+1:""}</i><span>${rnEsc(P.name)}<small>${rnEsc(P.car)}</small></span><b>${b?b.et.toFixed(3):q>0?"—":br&&rv?"dial "+rv.dial.toFixed(2):""}</b></div>`;}).join("")}</div>`;}
+    return`<div class="${i===0?"you":""}"><i>${q>0&&!br?k+1:""}</i><span>${esc(P.name)}<small>${esc(P.car)}</small></span><b>${b?b.et.toFixed(3):q>0?"—":br&&rv?"dial "+rv.dial.toFixed(2):""}</b></div>`;}).join("")}</div>`;}
 function rnTuneRows(N){const lt=SIM.launchTech(S.cfg),two=lt.launchCtl!=="none",t0=N.t0,psi0=SIM.TYRES[N.lock.tyre].psi||16,psi=S.env.tyrePsi>0?S.env.tyrePsi:psi0,sh=S.env.shocks||"medium";
   const L=two?lt.twoStepRpm:Math.min(S.env.launchRpm,S.cfg.redline);
   const row=(k,lbl,val,sub)=>{const m=rnTuneLim(N,k);return`<div class="rnt"><span>${lbl}<small>${sub||""}</small></span><button class="nud" data-rn="tune" data-k="${k}" data-d="-1" aria-label="less">−</button><b id="rnv-${k}">${val}</b><button class="nud" data-rn="tune" data-k="${k}" data-d="1" aria-label="more">+</button></div><input type="range" class="rnr" data-rnr="${k}" min="${m.lo}" max="${m.hi}" step="${m.step}" value="${m.v}" aria-label="${lbl}">`;};
@@ -605,11 +604,11 @@ function rnPitsHtml(N){const br=N.fmt==="bracket",p=N.last,i=rnOppIdx(N),rv=N.fi
 function rnNextHtml(N){const br=N.fmt==="bracket",i=rnOppIdx(N),rv=N.field[i-1],qb=rnQualBest(N,i),rd=N.stage>=2,ri=N.stage-2;
   const win=rd?Math.round(N.purse*(ri===2?1:ri===1?0.45:0.2)/50)*50:0,lose=rd?Math.round(N.purse*RN_PAY[ri===0?5:ri===1?3:2]/50)*50:0;
   const h=rd&&br?rnTreeOffsets(N.dial,rv.dial):null;
-  return`<div class="rnnext"><span>NEXT · ${rnStageName(N,N.stage)}</span><b>${rd&&N.seeds?"#"+(N.seeds.indexOf(i)+1)+" ":""}${rnEsc(rv.name)}</b><small>${rnEsc(rv.car)}${br?` · dial ${rv.dial.toFixed(2)}`:qb&&qb.et!=null?` · qualified ${qb.et.toFixed(3)}`:` · runs about ${rv.mean.toFixed(2)}`}${rd?` · win ${fmt$(win)} / out ${fmt$(lose)}${career()?"":" (sandbox)"}`:""}</small>${h?`<small>${h.p>0?`Their tree starts first — you go ${h.p.toFixed(2)} s after them`:h.o>0?`Your tree starts first — ${h.o.toFixed(2)} s head start`:"Same dial — the trees come down together"}</small>`:""}</div>`;}
+  return`<div class="rnnext"><span>NEXT · ${rnStageName(N,N.stage)}</span><b>${rd&&N.seeds?"#"+(N.seeds.indexOf(i)+1)+" ":""}${esc(rv.name)}</b><small>${esc(rv.car)}${br?` · dial ${rv.dial.toFixed(2)}`:qb&&qb.et!=null?` · qualified ${qb.et.toFixed(3)}`:` · runs about ${rv.mean.toFixed(2)}`}${rd?` · win ${fmt$(win)} / out ${fmt$(lose)}${career()?"":" (sandbox)"}`:""}</small>${h?`<small>${h.p>0?`Their tree starts first — you go ${h.p.toFixed(2)} s after them`:h.o>0?`Your tree starts first — ${h.o.toFixed(2)} s head start`:"Same dial — the trees come down together"}</small>`:""}</div>`;}
 function rnSummaryHtml(N){const br=N.fmt==="bracket",b=N.best,rts=(N.passes||[]).filter(p=>p.rt!=null&&p.rt>=0).map(p=>p.rt);
   return`<div class="rnsum ${N.place===1?"won":""}"><div class="big">${N.left&&N.place===9?"LEFT THE NIGHT":RN_PLACE[N.place].toUpperCase()}</div><p>${RN_FMT[N.fmt]} · ${SIM.AERO[N.body].n}${N.week!=null?" · week "+N.week:""}</p>
   <div class="vstats"><div><b>${N.won}</b><span>rounds won</span></div><div><b>${b?b.et.toFixed(3):"—"}</b><span>best ET${b&&b.mph?" · "+Math.round(b.mph):""}</span></div><div><b>${rts.length?Math.min.apply(null,rts).toFixed(3):"—"}</b><span>best light</span></div><div><b>${fmt$(N.paid||0)}</b><span>purse${career()?"":" (sandbox)"}</span></div><div><b>${career()?"+"+(N.rep||0):"—"}</b><span>rep</span></div></div>
-  <div class="log" style="margin-top:8px">${N.hist.map(x=>`<div><b>${x.label}</b>${x.opp?"vs "+rnEsc(rnPart(N,x.opp).name)+" · ":""}${rnEsc(x.text||"")}</div>`).join("")}</div>
+  <div class="log" style="margin-top:8px">${N.hist.map(x=>`<div><b>${x.label}</b>${x.opp?"vs "+esc(rnPart(N,x.opp).name)+" · ":""}${esc(x.text||"")}</div>`).join("")}</div>
   <button class="btn pri" data-rn="done" style="width:100%;margin-top:10px">Done — back to the pits</button></div>`;}
 function rnPanel(){const N=rnCur();if(!N)return"";const br=N.fmt==="bracket";
   let h=`<div class="rn"><div class="rnhd"><div><b>${N.quick?"BRACKET NIGHT":RN_FMT[N.fmt].toUpperCase()}</b><span>${SIM.AERO[N.body].n} · 8 cars · winner ${fmt$(N.purse)}${career()?"":" (sandbox)"}</span></div>${N.done?"":`<button class="btn sm ghost" data-rn="leave">Leave the night</button>`}</div>`;
@@ -703,10 +702,10 @@ function rnRunBtn(){const N=rnCur(),b=$("runTest");if(testing)return;
   const i=rnOppIdx(N),fb=fuelBill();b.textContent=`Stage · ${rnStageName(N,N.stage).toLowerCase().replace(/^./,c=>c.toUpperCase())} vs ${N.field[i-1].name.split(" ")[0]}${career()&&fb?" · fuel "+fmt$(fb):""}`;
   $("dynoHint").innerHTML=N.fmt==="bracket"?`<b>Bracket</b> · your dial ${N.stage>=2?N.dial.toFixed(2):"— set after the time trials"}. Leave on the green of <i>your</i> tree; a red light loses outright.`:`<b>Heads-up</b> · first to the stripe. Your reaction time counts — a good light is under 0.100.`;}
 function rnRecHtml(){const R=recs();if(!R.nightsRun)return"";return`<div class="rec"><span>Race nights</span><b>${R.nightsWon||0}<i>of ${R.nightsRun} won</i></b><small>best finish: ${(RN_PLACE[R.bestFinish]||"—").toLowerCase()}</small></div>`;}
-function rnSlipHtml(r){const n=r.night;if(!n)return"";return`<div class="sec"><h2>${n.label}${n.win===true?" · won":n.win===false?" · out":""}</h2><div class="log"><div><b>vs</b>${rnEsc(n.opp)} · ${rnEsc(n.car)} — RT ${n.oppRt!=null?n.oppRt.toFixed(3):"—"}${n.oppBroke?" · broke":n.oppEt!=null?" · "+n.oppEt.toFixed(3)+" @ "+Math.round(n.oppMph):""}${n.dialO!=null?" on a "+n.dialO.toFixed(2):""}</div>${n.dialP!=null?`<div><b>Dial</b>${n.dialP.toFixed(2)}${r.et!=null?" · ran "+(r.et-n.dialP>=0?"+":"")+(r.et-n.dialP).toFixed(3):""}</div>`:""}<div>${rnEsc(n.text)}</div></div></div>`;}
+function rnSlipHtml(r){const n=r.night;if(!n)return"";return`<div class="sec"><h2>${n.label}${n.win===true?" · won":n.win===false?" · out":""}</h2><div class="log"><div><b>vs</b>${esc(n.opp)} · ${esc(n.car)} — RT ${n.oppRt!=null?n.oppRt.toFixed(3):"—"}${n.oppBroke?" · broke":n.oppEt!=null?" · "+n.oppEt.toFixed(3)+" @ "+Math.round(n.oppMph):""}${n.dialO!=null?" on a "+n.dialO.toFixed(2):""}</div>${n.dialP!=null?`<div><b>Dial</b>${n.dialP.toFixed(2)}${r.et!=null?" · ran "+(r.et-n.dialP>=0?"+":"")+(r.et-n.dialP).toFixed(3):""}</div>`:""}<div>${esc(n.text)}</div></div></div>`;}
 function rnVerdict(r){const n=r.night,R=r.race;const cls=n.win===true?"pass":n.win===false?"fail":r.et==null?"fail":"marg";
-  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${rnEsc(n.text)}</p>${r.auto?`<p>${dragAutoWord(r.auto)}</p>`:""}${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
-function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive");let s=`${n.label} · vs ${rnEsc(R.name)}`;
+  return`<div class="verdict ${cls}"><div style="flex:1"><div class="big">${n.label}${n.win===true?" · WON":n.win===false?" · OUT":""}<br><span style="font-size:.7em;opacity:.85">${r.et!=null?r.et.toFixed(3)+" s @ "+Math.round(r.mph)+" mph":"DID NOT FINISH"}${R&&R.rt!=null?" · RT "+(R.foul?"red":R.rt.toFixed(3)):""}</span></div><p>${esc(n.text)}</p>${r.auto?`<p>${dragAutoWord(r.auto)}</p>`:""}${n.place?`<p><b>${RN_PLACE[n.place]}</b> — the night's summary is up top.</p>`:""}<div class="vstats">${r.marks.map(m=>`<div><b>${m.t.toFixed(2)}</b><span>${m.n}${m.n==="1/8 mi"||m.n==="1/4 mi"?" · "+Math.round(m.mph)+" mph":""}</span></div>`).join("")}</div></div></div>`;}
+function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive");let s=`${n.label} · vs ${esc(R.name)}`;
   if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
   if(st.phase==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";
   if(n.verdict&&n.stage>=2)s+=` · <b style="color:${n.verdict.win?"var(--good)":"var(--crit)"}">${n.verdict.win?"WIN":"LOSS"}</b>`;
