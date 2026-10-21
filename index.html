@@ -29628,14 +29628,21 @@ const RND=[
   {id:"forge",name:"Forging supplier deal",cost:8000,weeks:3,desc:"A supply contract for forged 4032 pistons and 4340 rods without the full machine shop.",unlock:["piston:forged_4032","rod:forged_4340"]},
   {id:"plating",name:"Bore plating process",cost:12000,weeks:5,mach:true,desc:"Ni-SiC plating in house. Unlocks the Nikasil aluminium block.",unlock:["blockMat:alu_nikasil"]},
   {id:"vvt",name:"Cam phaser licence",cost:10000,weeks:4,desc:"Licensed phaser hardware. Unlocks DOHC 4v + VVT ahead of the flow bench.",unlock:["head:dohc4v_vvt"]},
-  {id:"calib",name:"Calibration suite",cost:7000,weeks:3,desc:"Knock sensing and a proper base map. +0.5 octane number of margin, permanently.",effect:{octane:0.5}}
+  {id:"calib",name:"Calibration suite",cost:7000,weeks:3,desc:"Knock sensing and a proper base map. +0.5 octane number of margin, permanently.",effect:{octane:0.5}},
+  /* late projects: each one lets a shop-gated part through without the upgrade that normally carries it (app/state.js locked) */
+  {id:"tirods",name:"Titanium rod programme",cost:16000,weeks:6,mach:true,desc:"Beams machined from Ti-6Al-4V bar, in house. Unlocks titanium rods.",unlock:["rod:titanium"]},
+  {id:"inconel",name:"Exotic valve supplier",cost:11000,weeks:4,desc:"A nickel-superalloy supplier for the hot side. Unlocks Inconel valves.",unlock:["valveMat:inconel"]},
+  {id:"drysump",name:"Dry-sump development",cost:13000,weeks:5,mach:true,desc:"A multi-stage pump and a pan of our own. Unlocks the high-volume dry sump.",unlock:["oilSystem:dry_hv"]},
+  {id:"wmi",name:"Water-meth injection",cost:9000,weeks:3,desc:"Nozzle sizing and a tested controller. Unlocks water-methanol charge cooling.",unlock:["ic:wmi"]},
+  {id:"fuelbench",name:"Fuel flow rig",cost:12000,weeks:4,desc:"An injector and pump flow bench. Unlocks the 2,200 cc injectors and the big belt-drive pump.",unlock:["injectors:i2200x4","fuelPump:mech_xl"]},
+  {id:"lean",name:"Lean build cell",cost:15000,weeks:5,desc:"Kitting, fixtures and a build sheet for every job. Build cost −4% on every engine, permanently.",effect:{costFac:0.96}}
 ];
 const PRESTIGE=[
   {id:"sign",name:"Illuminated shop sign",price:10000,rep:1,desc:"Your name over the door, lit. +1 rep a week."},
   {id:"trophy",name:"Trophy wall",price:30000,rep:2,desc:"A wall of certified builds and client plaques. +2 rep a week."},
   {id:"display",name:"Show engine plinth",price:60000,rep:4,desc:"A polished display engine in the front window. +4 rep a week and contracts pay +3%."}
 ];
-const REP_TIERS=[[0,"Backyard"],[40,"Local shop"],[120,"Known builder"],[300,"Regional supplier"],[700,"OEM partner"],[1500,"Legend"]];
+const REP_TIERS=[[0,"Backyard"],[40,"Local shop"],[120,"Known builder"],[300,"Regional supplier"],[700,"OEM partner"],[1500,"Legend"],[3000,"Dynasty"]];
 const GOALS=[
   {id:"first",name:"First sale",desc:"Deliver any contract.",cash:1000,check:c=>c.sold>0},
   {id:"hp200",name:"Two hundred",desc:"Certify a 200 hp engine.",cash:3000,check:c=>c.bestHp>=200},
@@ -29655,7 +29662,8 @@ const LOAN_STEP=10000,LOAN_MAX=50000,LOAN_RATE=0.02,LOAN_PAY=0.04,LOAN_MIN_PAY=2
 /* the bank: every week-close takes the interest and a slice of the balance (LOAN_PAY, at least LOAN_MIN_PAY) out of cash.
    Nothing is added to the balance; a shop that cannot pay goes overdrawn, and below FORECLOSE_AT the bank takes it. */
 function loanPay(){const l=C().loan||0;return l>0?Math.min(l,Math.max(LOAN_MIN_PAY,Math.round(l*LOAN_PAY/10)*10)):0;}
-function loanInt(){return Math.round((C().loan||0)*LOAN_RATE);}
+function loanRate(){return typeof lgLoanRate==="function"?lgLoanRate():LOAN_RATE;}   // app/legacy.js: the Good credit perk lowers it
+function loanInt(){return Math.round((C().loan||0)*loanRate());}
 function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loanPay();c.cash-=i+p;c.loan-=p;c.loanPaid=(c.loanPaid||0)+i+p;
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 const MAX_ACTIVE=2,DEPOSIT=0.10,EXPIRE_REP=8;
@@ -29664,9 +29672,9 @@ const CATS=[
   {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
   {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","streetcup","sport","gt","super","hyper"],rep:40},
   {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
-  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb","lsr"],rep:120},
+  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb","lsr","hydro","unlpull"],rep:120},
   {id:"altfuel",name:"Fleet & alt-fuel",sub:"propane · CNG · depot-fuelled fleets",segs:["forklift","cngvan","lpgbus","wellsite"],rep:20},
-  {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod"],rep:700,needs:"race"}
+  {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod","topalc","funny"],rep:700,needs:"race"}
 ];
 const CLIENTS=["Kestrel Automotive","Bison Truck Co.","Aurora Compact","Northwind Racing","Meridian Motors","Tamarack Vans","Saskatoon Speed Shop","Halcyon GT","Coulee Ag Equipment","Prairie Fire Motorsport","Redwater Fleet","Glacier Coachworks"];
 const FUEL_RANK={r87:0,r91:1,r94:2,race100:3,e85:4,methanol:5,
@@ -29705,6 +29713,12 @@ const SEGMENTS=[
   {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:58000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
   {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:60000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
   {id:"smallblock",name:"Small-tyre outlaw",tier:4,units:[1,2],price:52000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
+  /* tier 6 — Dynasty (3,000 rep). The only contracts that need the Monster cell: the Outlaw cell stops reading at 3,500 hp.
+     No ET or lap targets here; a twelve-cylinder compound-boosted engine is the only thing that gets there (3,500–3,600 hp) */
+  {id:"topalc",name:"Top alcohol dragster",tier:6,units:[1,1],price:110000,req:{hp:[3100,3500],passes:15,rel:30,fuel:"methanol"}},
+  {id:"funny",name:"Alcohol funny car",tier:6,units:[1,1],price:90000,req:{hp:[2700,3200],passes:20,rel:35,fuel:"methanol"}},
+  {id:"hydro",name:"Unlimited hydroplane",tier:6,units:[1,1],price:100000,req:{hp:[2600,3100],cyl:12,rel:45,life:10}},
+  {id:"unlpull",name:"Unlimited modified puller",tier:6,units:[1,1],price:85000,req:{hp:[2800,3300],passes:30,rel:40,fuel:"methanol"}},
   /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't.
      Road segments also cap drive-by noise (dBA, judged with any cutout shut) */
   {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[2,5],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel",noise:80}},
@@ -29837,7 +29851,7 @@ function has(id){return !career()||dev()||!!C().owned[id];}
 function locked(o){return career()&&!dev()&&o&&o.req&&!C().owned[o.req]&&!(C().unlocks&&o._id&&C().unlocks[o._id]);}
 function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]&&crewOn(id)));}   // a person on a course is out of the shop (app/crew.js)
 function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1+0.15*crewL("tuner");if(staffed("machinist"))b.costFac*=0.92-0.01*crewL("machinist");b.costFac*=crewCostK();if(typeof lgCostK==="function")b.costFac*=lgCostK();
-  for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;}}return b;}
+  for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;if(r.effect.costFac)b.costFac*=r.effect.costFac;}}return b;}
 function syncShop(){S.env.shop=shopBonus();deltaCache.clear();fixCache.clear();}
 function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?crewWage(st):0),0):0;}
 function dynoCap(){if(!career())return{hp:15000,rpm:14000,n:"Test cell dyno"};return has("dyno5")?{hp:15000,rpm:14000,n:"Monster cell"}:has("dyno4")?{hp:3500,rpm:12500,n:"Outlaw cell"}:has("dyno3")?{hp:2000,rpm:12500,n:"Pro cell"}:has("dyno2")?{hp:1000,rpm:10000,n:"Engine dyno"}:{hp:400,rpm:8000,n:"Chassis dyno"};}
@@ -31721,8 +31735,8 @@ function pullEnvTop(k){const fmt=pullFmt(),dk=document.documentElement.classList
   if(pv.ser&&pv.ser.round>0)h+=pullStandHtml(pullStand(pv.ser),{short:true,title:"Series standings"});
   return h;}
 /* a class gate: rep, or (Unlimited) owning the Monster dyno cell or reaching Legend rep; the lock text says which */
-function pullClsLocked(k){const c=SIM.PULL_CLASSES[k];if(!c||!career()||dev())return 0;return c.gate?(has(c.gate)||repTierIdx()>=REP_TIERS.length-1?0:c.rep||1):C().rep<c.rep?c.rep:0;}
-function pullLockTxt(k){const c=SIM.PULL_CLASSES[k];return c.gate==="dyno5"?"Monster cell or "+REP_TIERS[REP_TIERS.length-1][1]+" rep":c.rep+" rep";}
+function pullClsLocked(k){const c=SIM.PULL_CLASSES[k];if(!c||!career()||dev())return 0;return c.gate?(has(c.gate)||repTierIdx()>=5?0:c.rep||1):C().rep<c.rep?c.rep:0;}
+function pullLockTxt(k){const c=SIM.PULL_CLASSES[k];return c.gate==="dyno5"?"Monster cell or "+REP_TIERS[5][1]+" rep":c.rep+" rep";}
 function pullLegal(k,cfg){const c=SIM.PULL_CLASSES[k];if(!c)return{ok:false,why:"no such class"};try{return c.legal(cfg||S.cfg);}catch(e){return{ok:false,why:"can't be teched"};}}
 /* the pull setup lives on S.env next to the strip's; anything a class doesn't allow is pulled back inside its rules */
 function pullEnvFix(){const e=S.env;if(PO)e.pullCls=PO.k;if(!SIM.PULL_CLASSES[e.pullCls])e.pullCls=pullIsDiesel(S.cfg)?"street":"gas";const k=e.pullCls,V=SIM.PULL_CLASSES[k].veh,G=SIM.pullGears(k);
@@ -33946,7 +33960,8 @@ const ACH=[
   {g:"shop",id:"repeat",name:"Repeat customer",desc:"Deliver a repeat order from a happy client.",ic:"people",tier:"silver",check:()=>career()&&C().repeats>0},
   {g:"shop",id:"sold50",name:"Fifty out the door",desc:"Sell 50 engines.",ic:"engine",tier:"silver",check:()=>career()&&C().sold>=50},
   {g:"shop",id:"sold200",name:"Production line",desc:"Sell 200 engines.",ic:"engine",tier:"gold",check:()=>career()&&C().sold>=200},
-  {g:"shop",id:"legend",name:"Legend",desc:"Reach the Legend reputation tier.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=REP_TIERS.length-1},
+  {g:"shop",id:"legend",name:"Legend",desc:"Reach the Legend reputation tier.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=5},
+  {g:"shop",id:"dynasty",name:"Dynasty",desc:"Reach the Dynasty reputation tier, 3,000 rep.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=6},
   {g:"shop",id:"zero",name:"Zero defects",desc:"Ten straight weeks in the field with no warranty claim.",ic:"shield",tier:"silver",check:()=>career()&&C().cleanWeeks>=10},
   {g:"shop",id:"debtfree",name:"Debt-free",desc:"Take a loan, then pay the bank back in full.",ic:"coin",tier:"bronze",check:()=>career()&&!!(S.achN||{}).loan&&C().loan<=0},
   {g:"shop",id:"cash100",name:"Six figures",desc:"Hold $100,000 in cash.",ic:"coin",tier:"silver",check:()=>career()&&C().cash>=1e5},
@@ -34302,7 +34317,7 @@ function oneChange(k){const key=cfgHash(S.cfg)+"|"+k.id+"|"+(career()?Object.key
   if(dsl)sl.push(["lambda",0.1,"lean the full-load λ 0.1"],["lambda",-0.1,"richen the full-load λ 0.1"],["timing",-2,"retard the injection 2°"]);
   for(const [kk,d,label] of sl){if(kk==="boost"&&S.cfg.asp==="na")continue;const f=FORM.flatMap(x=>x.fields).find(x=>x.key===kk);if(f&&f.showIf&&!f.showIf(S.cfg))continue;const v=clamp(S.cfg[kk]+d,f?fMin(f):-1e9,f?fMax(f):1e9);if(v===S.cfg[kk])continue;tryCfg(Object.assign({},S.cfg,{[kk]:v}),label);}
   if(fixCache.size>400)fixCache.clear();fixCache.set(key,best);return best;}
-function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]&&!/^bay[34]$/.test(u.id)?u.price*(u.oh||1):0),0);return 500+Math.round(plant*0.02/10)*10+wages();}
+function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]&&!/^bay[34]$/.test(u.id)?u.price*(u.oh||1):0),0);return 500+Math.round(plant*0.02*(typeof lgLeaseK==="function"?lgLeaseK():1)/10)*10+wages();}
 function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
 function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
   if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
@@ -34742,7 +34757,7 @@ const DD_VEH={g10:"'99 city hatch","4ac":"'87 hatchback","22re":"'89 compact pic
   compound402:"outlaw truck",p4236:"'78 tractor",c59_12v:"'95 three-quarter-ton",lb7:"'03 heavy-duty pickup",psd73:"'99 super-duty",psd67:"'19 super-duty",alh:"'02 diesel wagon",om606:"'97 diesel sedan",s60:"'05 highway tractor",
   ["1kd"]:"'10 diesel 4x4",smoker26:"pulling truck",ss_triple:"super stock puller",["12a_sa"]:"'79 rotary coupe",["13b_fc"]:"'88 rotary coupe",["13b_rew"]:"'94 twin-turbo rotary",renesis:"'05 rotary coupe",["20b_rew"]:"'96 three-rotor",
   ["13b_bp"]:"rotary club racer",r26b:"four-rotor prototype"};
-const DD_COST=[3000,4500,6500,9500,16000,1e9];
+const DD_COST=[3000,4500,6500,9500,16000,1e9,1e9];
 const DD_EASY_HRS=2.5,DD_EASY_W=1.6,DD_EASY_TIER=1;   // a backyard or local shop mostly sees the quick, readable faults (one stress-report line, a part or a setting)   // dearest customer engine by rep tier: a backyard shop sees commuters
 function DD(){const c=C();if(!c.dd||typeof c.dd!=="object")c.dd={};const d=c.dd;if(!Array.isArray(d.jobs))d.jobs=[];
   for(const k of ["week","passed","failed","earned","streak"])if(typeof d[k]!=="number")d[k]=0;if(!d.seed)d.seed=1+Math.floor(Math.random()*1e9);return d;}
@@ -34890,7 +34905,7 @@ function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s
   const pool=SP_BRANDS.filter(b=>!taken.has(b.id));if(!pool.length)return null;
   const w=pool.map(b=>0.4+SP_LIKES[b.type].reduce((a,k)=>a+(s.form[k]||0),0)+(kind&&SP_LIKES[b.type].includes(kind)?3:0));
   let r=spRng()*w.reduce((a,v)=>a+v,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;const b=pool[i],likes=SP_LIKES[b.type];
-  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.5+Math.min(1,C().rep/500),style=spRng();
+  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=(1+tier*0.5+Math.min(1,C().rep/500))*(typeof lgVal==="function"?1+lgVal("spons"):1),style=spRng();
   const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
   const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull"||k==="bog"||k==="boat"||k==="hill"||k==="oval")?spR50(80*scale*bm):0,record:likes.some(k=>k==="salt"||k==="road")?spR50(800*scale*bm):0};
   const able=SP_OBL[b.type].filter(spOblOpen),pick=able.length?able[Math.floor(spRng()*able.length)]:null;
@@ -35002,7 +35017,7 @@ function renderShop(){
     const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":ddEsc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
     $("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span><b>${C().sold}</b> engines sold</span><span><b>${fmt$(C().profit)}</b> lifetime profit</span><span><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b> warranty paid</span>`;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
-  $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(LOAN_RATE*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
+  $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(loanRate()*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
   $("goals").innerHTML=goalsHtml();
@@ -35230,6 +35245,7 @@ GOALS.push(
   {id:"rep500",late:1,name:"Regional name",desc:"Reach 500 reputation.",cash:30000,rep:0,check:c=>c.rep>=500,prog:lateProg(c=>c.rep,500)},
   {id:"rep1000",late:1,name:"Household name",desc:"Reach 1,000 reputation.",cash:60000,rep:0,check:c=>c.rep>=1000,prog:lateProg(c=>c.rep,1000)},
   {id:"rep1500",late:1,name:"Legend",desc:"Reach 1,500 reputation, the Legend tier.",cash:100000,rep:0,check:c=>c.rep>=1500,prog:lateProg(c=>c.rep,1500)},
+  {id:"rep3000",late:1,name:"Dynasty",desc:"Reach 3,000 reputation, the Dynasty tier, where the alcohol cars and unlimited pullers come knocking.",cash:150000,rep:0,check:c=>c.rep>=3000,prog:lateProg(c=>c.rep,3000)},
   {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Pikes Peak, dirt oval, boat drags and the 24 Hours, and set a Bonneville record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
   {id:"hp2000",late:1,name:"Two thousand",desc:"Certify a 2,000 hp engine.",cash:80000,rep:30,check:c=>c.bestHp>=2000,prog:lateProg(c=>c.bestHp||0,2000)},
   {id:"sold500",late:1,name:"Five hundred out the door",desc:"Sell 500 engines.",cash:40000,rep:15,check:c=>c.sold>=500,prog:lateProg(c=>c.sold,500)},
@@ -35421,7 +35437,10 @@ const LG_PERKS=[
   {id:"parts",name:"Supplier terms",desc:"Cheaper parts: unit cost on every build.",tiers:[[4,"−3% cost"],[8,"−6% cost"],[14,"−10% cost"]],val:[.03,.06,.1]},
   {id:"crew",name:"Seasoned hands",desc:"Every hire walks in at level 2.",tiers:[[6,"hires start at Lv 2"]],val:[2]},
   {id:"upg",name:"Heirloom equipment",desc:"One starter upgrade is already installed in each new shop.",tiers:[[10,"keep one upgrade"]],pick:"upg"},
-  {id:"rnd",name:"Old blueprints",desc:"One R&D unlock (parts, blocks, heads) is already researched.",tiers:[[5,"keep one unlock"]],pick:"rnd"}
+  {id:"rnd",name:"Old blueprints",desc:"One R&D unlock (parts, blocks, heads) is already researched.",tiers:[[5,"keep one unlock"]],pick:"rnd"},
+  {id:"spons",name:"Sponsor pull",desc:"Sponsors come to the table with bigger retainers and bonuses.",tiers:[[4,"+10% sponsor money"],[8,"+20% sponsor money"],[14,"+35% sponsor money"]],val:[.1,.2,.35]},
+  {id:"lease",name:"Lease terms",desc:"Cheaper plant: the weekly overhead on every upgrade runs lower.",tiers:[[4,"−5% overhead"],[8,"−10% overhead"],[12,"−15% overhead"]],val:[.05,.1,.15]},
+  {id:"bank",name:"Good credit",desc:"The bank charges less interest on the credit line.",tiers:[[3,"1.5% a week"],[6,"1.0% a week"]],val:[.015,.01]}
 ];
 let LG=null;
 function lgBlank(){return{v:1,pts:0,total:0,resets:0,best:{cash:0,rep:0,hp:0,sold:0,week:0,value:0},perk:{},pick:{},pending:false};}
@@ -35432,6 +35451,8 @@ function lgTier(id){return Math.max(0,Math.min(3,lgRec().perk[id]|0));}
 function lgPerk(id){return LG_PERKS.find(p=>p.id===id);}
 function lgVal(id){const t=lgTier(id),p=lgPerk(id);return t&&p.val?p.val[t-1]:0;}
 function lgCostK(){return 1-lgVal("parts");}
+function lgLoanRate(){return lgVal("bank")||LOAN_RATE;}      // state.js loanRate(): the perk's weekly rate, else the bank's
+function lgLeaseK(){return 1-lgVal("lease");}                  // market.js overhead(): factor on the plant part of the weekly overhead
 function lgCrewLv(){return career()&&lgTier("crew")?2:1;}
 function lgUpgOpts(){return UPGRADES.filter(u=>!u.needs);}
 function lgRndOpts(){return RND.filter(r=>r.unlock);}
