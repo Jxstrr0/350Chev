@@ -105,12 +105,13 @@ const SEGMENTS=[
   /* tier 4 — OEM partner */
   {id:"hyper",name:"Hypercar",tier:4,units:[1,2],price:48000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82,road:{ch:"super",trk:"gp"},lap:[109.5,112.5],zero100:[3.15,3.45]}},
   {id:"flagship",name:"OEM V12 flagship",tier:4,units:[2,4],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94",noise:80}},
-  /* tier 5 — Outlaw racing */
+  /* tiers 4–5 — Outlaw racing. The Outlaw & drag category opens at 700 rep (OEM partner) with the Outlaw shop, so the
+     street-tyre cars sit at tier 4 and only the big-tyre outlaws (radial, pro mod) wait for Legend */
   {id:"stripcar",name:"Street/strip coupe",tier:4,units:[1,2],price:20000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
-  {id:"grudge",name:"Grudge car · no time",tier:5,units:[1,2],price:44000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
+  {id:"grudge",name:"Grudge car · no time",tier:4,units:[1,2],price:44000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
   {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:58000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
   {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:60000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
-  {id:"smallblock",name:"Small-tyre outlaw",tier:5,units:[1,2],price:52000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
+  {id:"smallblock",name:"Small-tyre outlaw",tier:4,units:[1,2],price:52000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
   /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't.
      Road segments also cap drive-by noise (dBA, judged with any cutout shut) */
   {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[2,5],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel",noise:80}},
