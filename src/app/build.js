@@ -171,9 +171,8 @@ const lastNotch={};
 function applySlider(k,v,r){mapShiftTo(k,v);S.cfg[k]=v;if(r&&parseFloat(r.value)!==v)r.value=v;
   const nt=NOTCH[k]||1;const ni=Math.floor(v/nt+1e-6);if(lastNotch[k]!==undefined&&ni!==lastNotch[k])buzz(4);lastNotch[k]=ni;
   const f=FORM.flatMap(s=>s.fields).find(x=>x.key===k);const lab=$("v-"+k);if(lab)lab.textContent=(f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");
-  recompute();
-  if(lab&&dragBase){const dh=Math.round(quick.peakHp-dragBase.hp),dr=Math.round(quick.rel-dragBase.rel);const bits=[];if(dh)bits.push(`<i class="${dh>0?"up":"dn"}">${dh>0?"+":"−"}${Math.abs(dh)} hp</i>`);if(dr)bits.push(`<i class="${dr>0?"up":"dn"}">${dr>0?"+":"−"}${Math.abs(dr)} rel</i>`);
-    if(bits.length)lab.insertAdjacentHTML("beforeend",`<span class="d">${bits.join("")}</span>`);}
+  recomputeSoon("s:"+k,()=>{if(lab&&dragBase){const dh=Math.round(quick.peakHp-dragBase.hp),dr=Math.round(quick.rel-dragBase.rel);const bits=[];if(dh)bits.push(`<i class="${dh>0?"up":"dn"}">${dh>0?"+":"−"}${Math.abs(dh)} hp</i>`);if(dr)bits.push(`<i class="${dr>0?"up":"dn"}">${dr>0?"+":"−"}${Math.abs(dr)} rel</i>`);
+    if(bits.length)lab.insertAdjacentHTML("beforeend",`<span class="d">${bits.join("")}</span>`);}});
   const sec=r&&r.closest(".acc");if(sec){const fs=FORM.find(x=>x.title===sec.querySelector("[data-sec]").dataset.sec);sec.querySelector(".sum").textContent=secSummary(fs);}}
 const FOCUS_OF={bore:"engine",stroke:"engine",cr:"engine",rodRatio:"engine",blockMat:"engine",deck:"engine",piston:"engine",pistonClearance:"engine",rings:"engine",rod:"engine",rodBolts:"engine",crank:"engine",bearings:"engine",oilSystem:"engine",oilGrade:"engine",oilSquirters:"engine",
   head:"top",headMat:"top",valveMat:"top",springs:"top",cam:"top",lift:"top",gasket:"top",studs:"top",cover:"top",redline:"top",
@@ -186,7 +185,7 @@ Object.assign(FOCUS_OF,{pipe:"exhaust",muffler:"exhaust",cat:"exhaust",cutout:"e
 Object.assign(FOCUS_OF,{turbine:"turbo",als:"exhaust"});
 let lastFocus=null;
 function autoFocus(key){if(testing||S.followCam===false)return;let part=FOCUS_OF[key];if(!part)return;if(part==="turbo"&&S.cfg.asp==="na")part="intake";if(part===lastFocus)return;lastFocus=part;ENGINE_VIS.focus(part);}
-function commitSlider(){S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);}   // perf: closed sections fill when opened (toggleSec)
+function commitSlider(){recomputeFlush();S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);}   // perf: closed sections fill when opened (toggleSec)
 function sliderField(k){return FORM.flatMap(s=>s.fields).find(x=>x.key===k);}
 function snapVal(f,v){const st=f.step||1,lo=fMin(f),hi=fMax(f);v=Math.round((v-lo)/st)*st+lo;v=Math.min(hi,Math.max(lo,v));return +v.toFixed(4);}
 $("buildForm").addEventListener("input",e=>{const r=e.target;if(!r.dataset||!r.dataset.k||r.type!=="range")return;autoFocus(r.dataset.k);applySlider(r.dataset.k,parseFloat(r.value),r);});
@@ -389,7 +388,9 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 function closeSheet(){$("sheet").classList.remove("on");if(!setOn())$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
-function renderBlueprints(){$("bpSum").textContent=S.blueprints.length?`${S.blueprints.length} saved`:"none saved";$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
+const bpCache=new Map();   // phones: a blueprint card runs the same dyno pull every render; keyed by cfg hash + env
+function bpSim(cfg,env){const key=cfgHash(cfg)+"|"+JSON.stringify(env);let r=bpCache.get(key);if(!r){if(bpCache.size>200)bpCache.clear();r=SIM.simulate(cfg,env);bpCache.set(key,r);}return r;}
+function renderBlueprints(){$("bpSum").textContent=S.blueprints.length?`${S.blueprints.length} saved`:"none saved";$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=bpSim(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
   if(l){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}

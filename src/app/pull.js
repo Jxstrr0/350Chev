@@ -121,7 +121,7 @@ function pullStart(){
       if(left>1e-9&&!st.done)st=p.step(left,PR.down&&!PR.failed?1:0);}   // taken over part way through the frame
     if(st.broke&&!PR.failed)pullBreak(st.broke);
     if(st.raOn&&!PR.raSeen&&!st.killed&&!st.done&&!PR.failed){PR.raSeen=true;sfx("runaway");buzz([120,60,120,60,120]);
-      pullHud(st);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
+      pullHud(st,true);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
     if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
     if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:st.phase,x:st.x,v:st.v,boxFrac:st.boxFrac,slip:st.slip,hop:st.hop,smoke:st.smoke||0,rpm:PR.failed||PR.killed?run.rpm:st.rpm,vehicle:PR.kind,full:st.full,night:!!S.night,cls:k,distFt:st.x*3.28084,
       dt,throttle:st.foot,boost:st.boost,sweet:st.sweet,failed:PR.failed,failKind:PR.failed?run.failKind:null,hitch:veh.hitch,ballast:veh.ballast,tyre:veh.tyre,hp:PR.res&&PR.res.peakHp||0,track:PR.trk||undefined,runaway:st.raOn&&!st.killed&&!PR.failed?Math.max(0.2,st.ra):0,killed:!!st.killed});
@@ -136,7 +136,7 @@ function pullStart(){
   requestAnimationFrame(step);
 }
 /* the live card: distance first, then the two things the driver's foot is managing — slip and the box */
-function pullHud(st){if(!PR)return;const ft=st.x*3.28084,sw=st.sweet,lo=Math.round(sw[0]*100),hi=Math.round(sw[1]*100),sp=Math.round(st.slip*100);
+function pullHud(st,force){if(!PR||!hudDue(PR,st,force))return;const ft=st.x*3.28084,sw=st.sweet,lo=Math.round(sw[0]*100),hi=Math.round(sw[1]*100),sp=Math.round(st.slip*100);
   const stat=PR.failed?"broke":st.full?"full":"";
   const say=PR.failed?(PR.failKind==="runaway"?"GRENADED":"BROKE"):st.killed?(st.done?"killed":"KILLED — rolling"):st.raOn?"RUNAWAY":st.full?"FULL PULL":st.done?(st.stopWhy==="spun"?"spun out":st.stopWhy==="lifted"?"lifted":"stopped"):st.phase==="stage"?"hooked to the sled":Math.round(st.v*2.237)+" mph";
   const marks=PR.field.map(f=>`<i class="mk${f.ft===PR.lead?" lead":""}" style="left:${Math.min(99.5,f.ft/3)}%"></i>`).join("");
@@ -162,7 +162,7 @@ function pullPress(){if(!PR||PR.finished)return;const st=PR.p.st;if(st.done||PR.
 function pullRelease(){if(!PR)return;PR.down=false;}
 /* the kill switch: only live while it is running away. Air and fuel off — the truck rolls to a stop and is scored there */
 function pullKill(){if(!PR||PR.finished||!PR.p)return false;const st=PR.p.st;if(!st.raOn||st.killed||st.done||PR.failed||!PR.p.kill())return false;
-  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",160);pullHud(st);return true;}
+  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",160);pullHud(st,true);return true;}
 $("killBtn").addEventListener("pointerdown",e=>{e.preventDefault();pullKill();});
 $("killBtn").addEventListener("click",()=>pullKill());
 /* the pull-off buttons on the verdict */

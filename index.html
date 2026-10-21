@@ -11088,23 +11088,26 @@ const ENGINE_SOUND = (function () {
      440 Hz (1,760 / 3,520 Hz = the 4th and 8th orders of an inline-four wave) and gains never
      followed load. Direct .value writes did work, so all per-frame control is now a JS smoother
      that writes .value toward a target with the requested time constant. */
-  var SMOOTH = [], smoothT = null, smoothLast = 0, graphGen = 0;
+  var SMOOTH = [], smoothT = null, smoothLast = 0, graphGen = 0, smoothIdle = 0;
   function ap(param, v, tc) {
     if (!param || !isFinite(v)) return;
     param._tgt = v; param._tc = tc || 0.03;
     if (param._gen !== graphGen) { param._gen = graphGen; SMOOTH.push(param); }
     if (param._cur === undefined) { param._cur = (typeof param.value === "number" && isFinite(param.value)) ? param.value : v; }
+    startSmoother();   /* phones: the 16 ms smoother sleeps once every param has settled; a new target wakes it */
   }
   function smoothTick() {
     var now = (typeof performance !== "undefined") ? performance.now() : Date.now();
     var dt = smoothLast ? Math.min(0.06, (now - smoothLast) / 1000) : 0.016; smoothLast = now;
-    var keep = [];
+    var j = 0, busy = false;
     for (var i = 0; i < SMOOTH.length; i++) {
       var p = SMOOTH[i];
       if (p._gen !== graphGen && p._gen !== -1) continue;       /* param of a torn-down graph */
-      keep.push(p);
+      SMOOTH[j++] = p;                                           /* compacted in place: no per-tick allocation */
       if (p._tgt === undefined) continue;
       var cur = p._cur, tgt = p._tgt;
+      if (cur === tgt) continue;                                 /* settled */
+      busy = true;
       if (!isFinite(cur)) cur = tgt;
       var a = 1 - Math.exp(-dt / Math.max(0.004, p._tc));
       var nv = cur + (tgt - cur) * a;
@@ -11112,9 +11115,11 @@ const ENGINE_SOUND = (function () {
       if (nv !== cur) { try { p.value = nv; } catch (e) {} }
       p._cur = nv;
     }
-    SMOOTH = keep;
+    SMOOTH.length = j;
+    if (busy) smoothIdle = 0;
+    else if (++smoothIdle > 30 && smoothT) { clearInterval(smoothT); smoothT = null; }   /* ~half a second with nothing moving: sleep until ap() queues a target */
   }
-  function startSmoother() { if (!smoothT) smoothT = setInterval(smoothTick, 16); }
+  function startSmoother() { if (!smoothT) { smoothIdle = 0; smoothLast = 0; smoothT = setInterval(smoothTick, 16); } }
   function apNow(param, v) {
     if (!param || !isFinite(v)) return;
     try { param.cancelScheduledValues(ctx.currentTime); } catch (e) {}
@@ -11135,8 +11140,14 @@ const ENGINE_SOUND = (function () {
     return ctx;
   }
 
+  /* phones: with the engine off (the app feeds rpm 0) and no sound effect for a few seconds, the context is suspended so the DSP graph stops
+     costing battery; the next rpm > 0, event or gesture resumes it. iOS unlocks only inside a gesture, which the start tap and the wake listeners are. */
+  var idleAt = 0, selfSusp = false, selfResume = false;
   function resume() {
-    if (ctx && ctx.state === "suspended" && ctx.resume) { try { ctx.resume(); } catch (e) {} }
+    if (ctx && ctx.state === "suspended" && ctx.resume) {
+      if (selfSusp) { selfSusp = false; idleAt = 0; selfResume = true; }   /* our own idle suspend: the graph is intact, no rebuild on the way back */
+      try { ctx.resume(); } catch (e) {}
+    }
   }
 
   function init() {
@@ -11371,13 +11382,13 @@ const ENGINE_SOUND = (function () {
   }
   function armWatch() {
     if (watchT) return;
-    watchT = setInterval(function () { if (running && !(typeof document !== "undefined" && document.hidden)) watchdog(); }, 450);   /* perf: no FFT polling in a hidden tab (the context is suspended) */
+    watchT = setInterval(function () { if (running && !selfSusp && !(typeof document !== "undefined" && document.hidden)) watchdog(); }, 450);   /* perf: no FFT polling in a hidden tab (the context is suspended) */
     if (ctx && !ctx._pewState) {
       ctx._pewState = true;
       var prev = ctx.state;
       ctx.addEventListener("statechange", function () {
         var st2 = ctx.state;
-        if (st2 === "running" && running) setTimeout(function () { rebuildGraph("context resumed (was " + prev + ")"); }, 60);
+        if (st2 === "running" && running) { if (selfResume) selfResume = false; else setTimeout(function () { rebuildGraph("context resumed (was " + prev + ")"); }, 60); }
         prev = st2;
       });
     }
@@ -11412,6 +11423,9 @@ const ENGINE_SOUND = (function () {
   function set(o) {
     if (!ctx || !N || !running) return;
     o = o || {};
+    var rpm0 = num(o.rpm, 0);
+    if (rpm0 > 0) { idleAt = 0; if (selfSusp) resume(); }
+    else { var tn = Date.now(); if (!idleAt) idleAt = tn; else if (!selfSusp && tn - idleAt > 3000 && ctx.state === "running") { selfSusp = true; try { ctx.suspend(); } catch (e) {} } }
     // a failure silences the engine; spinning back up brings it back, so a failed
     // pull does not leave the idle mute until the player toggles the sound
     if (dead) { if (num(o.rpm, 0) > 400) dead = false; else return; }
@@ -11871,6 +11885,7 @@ const ENGINE_SOUND = (function () {
   function event(name) {
     if (!init()) return;
     if (!ctx) return;
+    idleAt = 0;   /* a sound effect holds the idle suspend off for its length */
     switch (name) {
       case "start": {
         buildGraph();
@@ -18711,12 +18726,12 @@ function exhaustPoint(){
    keeps running, so the next frame's dt covers the gap. The drawn frames follow a 1/cap grid, so a
    90 or 144 Hz screen still averages the cap instead of dropping to half. Every rAF loop that asks
    in the same vsync gets the same answer (they share the timestamp), so the app's tick skips with it. */
-var viewOff=false, capMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
+var viewOff=false, capMs=0, idleMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
 function frameDue(now){
   if(now===gateT) return gateOk;
-  gateT=now; var el=now-lastDraw;
-  gateOk = !capMs || el<0 || el>=capMs-1;
-  if(gateOk) lastDraw = (!capMs || el<0 || el>2*capMs) ? now : Math.min(now, lastDraw+capMs);
+  gateT=now; var el=now-lastDraw, cm=Math.max(capMs, idleMs);   /* idleMs: the still garage settles to ~30 fps (loop sets it) */
+  gateOk = !cm || el<0 || el>=cm-1;
+  if(gateOk) lastDraw = (!cm || el<0 || el>2*cm) ? now : Math.min(now, lastDraw+cm);
   return gateOk;
 }
 /* fps meter: drawn frames over ~0.5 s of rAF timestamps; a gap over 3 s (hidden tab) restarts it */
@@ -18734,7 +18749,8 @@ function loop(now){
   if(!frameDue(now)) return;
   if(viewOff){ clock.getDelta(); return; }
   fpsCount(now);
-  renderer.shadowMap.autoUpdate=true;   /* only the Ultra garage gate below turns it off, and only around its own draw */
+  idleMs=0;   /* every drawn frame decides again; only the still garage below slows the next one */
+  renderer.shadowMap.autoUpdate=true;   /* only the garage shadow gate below turns it off, and only around its own draw */
   var dt=Math.min(clock.getDelta(), 0.05);
   if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
@@ -18748,12 +18764,13 @@ function loop(now){
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ if(STRIP.post) stripPostStep(); stripRender(); return; }
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
-  garageShadowGate(now);   /* Ultra: the key light's 4096 shadow map is redrawn only when a caster, the light or the tier changed (or once a second) */
+  idleMs = (capMs && !garageLive() && !camState.dragging) ? 1000/30 : 0;   /* phones: engine off, nothing but the slow orbit moving and a cap set: the garage draws at ~30 fps */
+  garageShadowGate(now);   /* every tier: the key light's shadow map is redrawn only when a caster, the light or the tier changed (or once a second) */
   ultraFloor();   /* Ultra: the sealed floor's mirror pass (and the stock floor back when the tier drops) */
   if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
   renderer.shadowMap.autoUpdate=true;   /* photo, resize and every other draw path see the stock behaviour */
 }
-/* Ultra garage shadow gate. The 4096 map costs ~a quarter of the frame's draws and nearly all of its fill, yet a still room never changes it.
+/* Garage shadow gate, every tier (Ultra's 4096 map was the first reason; a phone's 1024 map is the same share of its frame). The map costs ~a quarter of the frame's draws and nearly all of its fill, yet a still room never changes it.
    Fingerprint every visible shadow caster (world matrix, instance matrices, geometry, draw range) plus the light and tier; on any change
    redraw for a few frames, and always while the engine runs, a part build/teardown is in flight, or an effect is live. Safety net: once a second. */
 var _gs={sig:"", hold:0, t:-1e9, a:0, b:0, n:0};
@@ -18764,14 +18781,16 @@ function gsCaster(o){
   if(o.isInstancedMesh) v+=o.count*0.7+(o.instanceMatrix?o.instanceMatrix.version:0)*0.3;
   _gs.a+=v; _gs.b+=v*k;
 }
+/* anything in the garage that moves by itself (the frame gate and the shadow gate both ask) */
+function garageLive(){ return !!(run.on || run.fail || failFx.started || failFx.debris.length || particles.length || XRAY || TD.on || Math.abs(mnt.roll)>1e-4 || Math.abs(mnt.rollV)>1e-3 || camState.shake>0.0001); }
 function garageShadowGate(now){
   var sm=renderer.shadowMap, ls=keyLight&&keyLight.shadow;
-  if(GFX!=="ultra"||!ls||!keyLight.castShadow){ sm.autoUpdate=true; return; }
+  if(!ls||!keyLight.castShadow||!sm.enabled){ sm.autoUpdate=true; return; }
   _gs.a=_gs.b=_gs.n=0; scene.traverseVisible(gsCaster);
   var kp=keyLight.position, kt=keyLight.target.position, sc=ls.camera;
   var sig=_gs.n+"|"+_gs.a.toFixed(4)+"|"+_gs.b.toFixed(3)+"|"+kp.x+","+kp.y+","+kp.z+"|"+kt.x+","+kt.y+","+kt.z+"|"+sc.left+","+sc.right+","+sc.top+","+sc.bottom+","+sc.near+","+sc.far+"|"+ls.mapSize.x+(ls.map?"m":"-")+"|"+sm.type+sm.enabled+"|"+keyLight.intensity;
   if(sig!==_gs.sig){ _gs.sig=sig; _gs.hold=4; }
-  var live = run.on || run.fail || failFx.started || failFx.debris.length || particles.length || XRAY || TD.on || Math.abs(mnt.roll)>1e-4 || Math.abs(mnt.rollV)>1e-3 || camState.shake>0.0001;
+  var live = garageLive();
   var draw = live || _gs.hold>0 || now-_gs.t>=1000 || now<_gs.t;
   if(_gs.hold>0) _gs.hold--;
   if(draw) _gs.t=now;
@@ -18808,11 +18827,12 @@ function frameEngine(){
    and the prairie are procedural shaders (crisp at any distance, 1 draw each);
    smoke/flames are two instanced billboard systems (1 draw each).
    ==========================================================================*/
-var STRIP={ on:false, scene:null, cam:null, built:false, sun:null, hemi:null, cars:{}, tree:null, smoke:[], lastX:0,
+function stripInit(){ return { on:false, scene:null, cam:null, built:false, sun:null, hemi:null, cars:{}, tree:null, smoke:[], lastX:0,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), t:0,
   shot:null, shotT:0, cutT:9, runT:0, shake:0, cheer:0, night:null, tier:null, prev:{},
   fx:null, fxAdd:null, marks:null, board:null, tm:null, sky:null, env:{}, spots:[], poles:[], mats:{}, composer:null, heatPass:null,
-  flash:null, fog:null, crowd:null, halos:[], exposure:0.95 };
+  flash:null, fog:null, crowd:null, halos:[], exposure:0.95 }; }
+var STRIP=stripInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var STRIP_TRACK_END=780, STRIP_Q=402.336, STRIP_LANE=2.5;
 /* v2 world: uniforms shared by the track and crowd shaders (time, midday mirage, fresh burnout shine per lane, water-box ripples, lit stands) */
 var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2()}, uRip:{value:0}, uHorC:{value:new THREE.Color(0.52,0.6,0.7)}, uCrowdLit:{value:0},
@@ -22415,11 +22435,12 @@ function pitsAnchors(){
    Scenery goes through StripBatch like the strip; dirt, dust, diesel smoke and
    confetti are StripFx billboard systems (one draw each). Built on first use.
    ==========================================================================*/
-var PULL={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, geo:{},
+function pullInit(){ return { on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, geo:{},
   veh:{}, cur:null, sled:null, chain:null, board:null, crowd:null, poles:[], spots:[], fx:null, fxDirt:null, fxConf:null,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:44, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false,
   t:0, pullT:0, doneT:0, cheer:0, night:null, tier:null, prev:{}, x0:null, lastT:0, composer:null, exposure:0.92, stats:null,
-  flags:[], wheel:null, ruts:null, horLin:null, sunDir:null, tension:0, shake:0, fixX:0 };
+  flags:[], wheel:null, ruts:null, horLin:null, sunDir:null, tension:0, shake:0, fixX:0 }; }
+var PULL=pullInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var PULL_LINE=91.44, PULL_END=112, PULL_CHAIN=1.4, PULL_BOX0=-8.25, PULL_BOX1=-1.55, PULL_SLED_L=9.9;
 var PULL_WIND=new THREE.Vector3(-1.1,0,-0.75), _sbX=new THREE.Vector3(1,0,0), _pA=new THREE.Vector3(), _pB=new THREE.Vector3(), _pC=new THREE.Vector3(), _pD=new THREE.Vector3(),
   _pw=new THREE.Vector3(), _pt=new THREE.Vector3(), _pr=new THREE.Vector3(), _prt=new THREE.Vector3(), _pM=new THREE.Matrix4(), _pQ=new THREE.Quaternion();
@@ -23159,10 +23180,11 @@ function pullUpdate(o, dt){
    pressed down into ruts behind the tyres. Berms both sides, a crowd on the bank, light poles, the pull pickup on
    bigger tyres (swampers, paddles) sinking and pitching with the mud, rooster tails scaled by wheelspin.
    ==========================================================================*/
-var BOG={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, veh:{}, cur:null, curKey:"",
+function bogInit(){ return { on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, veh:{}, cur:null, curKey:"",
   mud:null, mudKey:"", mudCv:null, mudTex:null, mudGeo:null, mudBase:null, ruts:null, rutDirty:0, paintAt:-1, paintX:-1e9, crowd:null, poles:[], spots:[], fx:null, fxSpray:null,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:46, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false,
-  t:0, doneT:0, cheer:0, night:null, tier:null, prev:{}, lastT:0, composer:null, exposure:0.92, stats:null, horLin:null, sunDir:null, shake:0, fixX:0, coat:0, slapT:0, pitch:0, pv:0, roll:0 };
+  t:0, doneT:0, cheer:0, night:null, tier:null, prev:{}, lastT:0, composer:null, exposure:0.92, stats:null, horLin:null, sunDir:null, shake:0, fixX:0, coat:0, slapT:0, pitch:0, pv:0, roll:0 }; }
+var BOG=bogInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var BOG_W=10, BOG_WIND=new THREE.Vector3(-0.8,0,0.6), _bA=new THREE.Vector3(), _bB=new THREE.Vector3(), _bw=new THREE.Vector3(), _bt=new THREE.Vector3(), _br=new THREE.Vector3(), _brt=new THREE.Vector3();
 /* fairground grass, a dirt run-up lane, the dark ground round the pit, the pits and lot off to the side */
 var BOG_GLSL_GROUND=[
@@ -24554,9 +24576,10 @@ function bogFrameY(U){ return (U.frameY!=null?U.frameY:U.rr*1.3)*(U.k||1); }
    float between the lanes, timing towers at the finish, buoys that bob. Each boat sits in the water, climbs the hump and
    planes (a hydro props-rides and skips on its sponsons); rooster tails, hull spray and a foam wake behind it.
    ==========================================================================*/
-var BOAT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, fog:null, mats:{}, water:null, wMat:null, boats:{}, me:null, opp:null, fx:null, fxMist:null,
+function boatInit(){ return { on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, fog:null, mats:{}, water:null, wMat:null, boats:{}, me:null, opp:null, fx:null, fxMist:null,
   tree:null, lamps:null, boards:[], crowd:null, buoys:null, camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:45, shot:null, shotT:0, snap:true, relOn:false, skip:false,
-  t:0, doneT:0, cheer:0, tier:null, prev:{}, lastT:0, composer:null, exposure:0.9, stats:null, horLin:null, sunDir:null, shake:0, fixX:0, night:null, st:{me:{}, opp:{}} };
+  t:0, doneT:0, cheer:0, tier:null, prev:{}, lastT:0, composer:null, exposure:0.9, stats:null, horLin:null, sunDir:null, shake:0, fixX:0, night:null, st:{me:{}, opp:{}} }; }
+var BOAT=boatInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 /* night: light poles along both banks (built the first night only, vis/boat.js boatNightKit); the water mirrors them */
 var BOAT_POLES=[[20,71],[105,71],[190,71],[262,73],[-8,-66],[80,-66],[170,-66],[258,-66]], BOAT_POLE_H=15, BOAT_FLOOD=new THREE.Vector3(0.18,1,0.42).normalize();
 var BOAT_LZ=6, BOAT_FIN=304.8, BOAT_WIND=new THREE.Vector3(-1.2,0,0.5), _btA=new THREE.Vector3(), _btw=new THREE.Vector3(), _btt=new THREE.Vector3(), _btr=new THREE.Vector3(), _btrt=new THREE.Vector3(), _btM=new THREE.Matrix4(), _btQ=new THREE.Quaternion(), _btS=new THREE.Vector3(1,1,1), _btE=new THREE.Euler();
@@ -25341,11 +25364,12 @@ function roadUpdate(o, dt){
    strip's muscle shell). Built on first use.
    ==========================================================================*/
 var LSR_MILE_V=1609.344, SALT_PUSH_COL=0x56707e;   /* the push truck: weathered slate, clear of every class colour */
-var SALT={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
+function saltInit(){ var o={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:46, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false, horLin:null,
   t:0, runT:0, doneT:0, prev:{}, composer:null, shimmer:null, exposure:0.74, stats:null, tier:null, fx:null, flags:[], fixX:0, fixZ:0, seq:0,
   course:null, crowd:null, shake:0, pushX:0, pushZ:0, pushV:0 };
-SALT.course={x0:LSR_MILE_V, x1:2*LSR_MILE_V, k0:1.5*LSR_MILE_V-500, k1:1.5*LSR_MILE_V+500, xEnd:3.5*LSR_MILE_V};
+  o.course={x0:LSR_MILE_V, x1:2*LSR_MILE_V, k0:1.5*LSR_MILE_V-500, k1:1.5*LSR_MILE_V+500, xEnd:3.5*LSR_MILE_V}; return o; }
+var SALT=saltInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var _sA=new THREE.Vector3(), _sB=new THREE.Vector3(), _sC=new THREE.Vector3(), _sw=new THREE.Vector3(), _st=new THREE.Vector3(), _sr=new THREE.Vector3(), _srt=new THREE.Vector3(), _sM=new THREE.Matrix4(), _sQ=new THREE.Quaternion(), _sS=new THREE.Vector3();
 var SALT_SUN=new THREE.Vector3(0.42,0.66,0.62).normalize(), SALT_HOR=[0.56,0.64,0.74], SALT_WIND=new THREE.Vector3(-1.6,0,0.7);
 /* salt: warm cream crust of small, uneven polygons with raised edges (lit on the sun side, a shadow on the lee), low ridges further
@@ -25503,8 +25527,8 @@ function buildSaltScene(){
     spots.forEach(function(sp,q){ var pole=new THREE.Mesh(SALT.g.cyl, sc_mats().alu); pole.scale.set(0.06,6.5,0.06); pole.position.set(sp[0],3.25,sp[1]); S4.add(pole);
       var g=new THREE.PlaneGeometry(2.0,1.25,10,1); g.translate(1.0,0,0); var fl=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(fc[q%fc.length]), roughness:0.8, side:THREE.DoubleSide})); fl.position.set(sp[0],5.8,sp[1]); fl.rotation.y=-2.7; S4.add(fl);
       SALT.flags.push({m:fl, base:Float32Array.from(g.attributes.position.array), ph:q*1.3}); }); })();
-  /* the push truck: SALT.makePush (vis/salt-event.js) builds a real pickup with a crew member in the bed; the pit town has the people */
-  SALT.push=(SALT.makePush||saltPushTruck)(); S4.add(SALT.push);   /* hook: SALT.makePush() may build a different truck */
+  /* the push truck: saltMakePush (vis/salt-event.js) builds a real pickup with a crew member in the bed; the pit town has the people */
+  SALT.push=(typeof saltMakePush==="function"?saltMakePush:saltPushTruck)(); S4.add(SALT.push);   /* hook: saltMakePush() may build a different truck */
   /* effects: salt thrown off the tyres and hanging behind the car; exhaust */
   SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1600:1100), "smoke", stripPuffTex()); S4.add(SALT.fx.mesh);
   SALT.fx.mat.uniforms.uFogN.value=S4.fog.near; SALT.fx.mat.uniforms.uFogF.value=S4.fog.far;
@@ -26876,8 +26900,8 @@ function seChutes(o, dt, V, ph){
   if(SALT.cueBack && SALT.t>SALT.cueBack){ SALT.cueBack=0; if(SALT.shot==="heli" && ph==="shutdown") SALT.cue="chute"; }
 }
 
-/* vis/salt-look.js builds the push truck through SALT.makePush when it is there */
-SALT.makePush=function(){ return saltPickup(saltPushCol(null), {crew:true}); };
+/* vis/salt-look.js builds the push truck through saltMakePush when it is there */
+function saltMakePush(){ return saltPickup(saltPushCol(null), {crew:true}); }
 /* --- per frame, from saltUpdate after the car is posed --- */
 function saltEventUpdate(o, dt, V, ph){
   var E=SALT.ev||(SALT.ev={ph:null});
@@ -27911,6 +27935,28 @@ function ultraPits(){
   var f=S.fog, keep=f?f.color.clone():null; if(f) f.color.convertSRGBToLinear();   /* the composer works in linear: the pits' fog colour is sRGB */
   C.render(); if(f) f.color.copy(keep); return true;
 }
+/* phones: buildEngine is asked for after every committed slider, yet most sliders (compression, cam, redline, boost, timing...) change nothing the
+   model shows. The visual key is the cfg minus the keys the model never reads; an unchanged key skips the rebuild. A key not in VIS_SKIP counts
+   as visual, so a new cfg field is safe by default; a tier change (force), a blown engine and an empty stand always rebuild. */
+var lastVisKey="";
+var VIS_SKIP={cr:1, cam:1, lift:1, redline:1, boost:1, timing:1, lambda:1, pistonClearance:1, deck:1, valveMat:1, springs:1, piston:1, rings:1, rod:1, rodBolts:1, crank:1, bearings:1, gasket:1, studs:1,
+  fuelPump:1, dNoz:1, oilGrade:1, oilSquirters:1, launchCtl:1, twoStepRpm:1, launchRetard:1, transBrake:1, apexSeal:1, eshaft:1, turbine:1, als:1, pv:1, lube:1, premix:1, ccr:1};
+function visKey(cfg){ var o={}, ks=Object.keys(cfg||{}).sort(); for(var i=0;i<ks.length;i++) if(!VIS_SKIP[ks[i]]) o[ks[i]]=cfg[ks[i]]; return JSON.stringify(o)+"|"+GFX; }
+/* phones (Lite): the event scenes are heavy and a career evening walks through several of them. On Lite only one of strip / pull / bog / boat /
+   salt stays built: entering one frees the others (off-path first, then the composer, the shadow maps and the tree), and a scene entered again
+   later builds from its factory. The road and hill worlds, the oval, the pits and the trophy room keep their own lifecycles. */
+function sceneFree(n){
+  var X=n==="strip"?STRIP:n==="pull"?PULL:n==="bog"?BOG:n==="boat"?BOAT:SALT;
+  if(!X.built) return;
+  if(n==="strip") ENGINE_VIS.setStrip({on:false}); else if(n==="pull") ENGINE_VIS.setPull({on:false}); else if(n==="bog") ENGINE_VIS.setBog({on:false}); else if(n==="boat") ENGINE_VIS.setBoat({on:false}); else ENGINE_VIS.setSalt({on:false});
+  try{ var C=X.composer; if(C){ C.renderTarget1.dispose(); C.renderTarget2.dispose(); C.passes.forEach(function(ps){ if(ps.dispose) ps.dispose(); }); } }catch(e){}
+  try{ if(X.scene){ X.scene.traverse(function(o){ if(o.isLight && o.shadow && o.shadow.map){ o.shadow.map.dispose(); o.shadow.map=null; } }); disposeTree(X.scene); } }catch(e){}
+  if(n==="bog" && BOG.mudTex){ try{ BOG.mudTex.dispose(); }catch(e){} }
+  if(n==="strip"){ var rn=STRIP.rn; STRIP=stripInit(); STRIP.rn=rn; }   /* the race-night extras the app set ahead of the pass stay */
+  else if(n==="pull") PULL=pullInit(); else if(n==="bog") BOG=bogInit(); else if(n==="boat") BOAT=boatInit();
+  else { var lk=SALT.look; SALT=saltInit(); SALT.look=lk; }   /* the look the app chose for the next run stays */
+}
+function freeOthers(keep){ if(GFX!=="lite") return; ["strip","pull","bog","boat","salt"].forEach(function(n){ if(n!==keep) sceneFree(n); }); }
 const ENGINE_VIS = {
 
   init: function(canvas){
@@ -28040,7 +28086,7 @@ const ENGINE_VIS = {
     var tierChanged = (GFX !== want);
     GFX = want;
     if(tierChanged && MATS_BUILT) matTierChanged();   /* v1.70: painted maps swap to / paint the tier's size; anti-tiling shaders recompile */
-    if(tierChanged && lastCfg && engineRoot) ENGINE_VIS.buildEngine(lastCfg, lastLayout);   /* v1.6: model detail follows the tier */
+    if(tierChanged && lastCfg && engineRoot) ENGINE_VIS.buildEngine(lastCfg, lastLayout, true);   /* v1.6: model detail follows the tier */
     if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } if(GFX==="ultra") ultraShadow(keyLight, 2048); }
     ENGINE_VIS.resize();
   },
@@ -28051,7 +28097,7 @@ const ENGINE_VIS = {
   setStrip: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(STRIP.on){ stripPostEnd(); STRIP.on=false; STRIP.honour=0; STRIP.rec=null; STRIP.recPre=null; stripReset(); } document.documentElement.classList.remove("onstrip"); return; }
-    if(!STRIP.on){ STRIP.on=true; document.documentElement.classList.add("onstrip"); if(!STRIP.built) buildStripScene(); STRIP.shot=null; STRIP.snap=true; ENGINE_VIS.resize(); }
+    if(!STRIP.on){ freeOthers("strip"); STRIP.on=true; document.documentElement.classList.add("onstrip"); if(!STRIP.built) buildStripScene(); STRIP.shot=null; STRIP.snap=true; ENGINE_VIS.resize(); }
     if(STRIP.post){ if(o.phase==="done") return STRIP.stats||null; stripPostEnd(); }
     if(STRIP.rn) for(var rk in STRIP.rn) if(o[rk]===undefined) o[rk]=STRIP.rn[rk];   /* race night extras: round, dials, the other lane's tree/RT/ET, win */
     var rdt=Math.max(0, +o.dt||0.016); stripUpdate(o, Math.min(0.1, rdt), Math.min(0.5, rdt));
@@ -28094,7 +28140,7 @@ const ENGINE_VIS = {
   setPull: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(PULL.on){ PULL.on=false; pullReset(); } return; }
-    var now=performance.now(); if(!PULL.on){ PULL.on=true; if(!PULL.built) buildPullScene(); pullReset(); PULL.snap=true; PULL.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!PULL.on){ freeOthers("pull"); PULL.on=true; if(!PULL.built) buildPullScene(); pullReset(); PULL.snap=true; PULL.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-PULL.lastT)/1000; PULL.lastT=now; pullUpdate(o, clamp(rdt||0, 0, 0.1));
     return PULL.stats||null;
   },
@@ -28105,7 +28151,7 @@ const ENGINE_VIS = {
   setBog: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(BOG.on){ BOG.on=false; bogReset(); } return; }
-    var now=performance.now(); if(!BOG.on){ BOG.on=true; if(!BOG.built) buildBogScene(); bogReset(); BOG.snap=true; BOG.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!BOG.on){ freeOthers("bog"); BOG.on=true; if(!BOG.built) buildBogScene(); bogReset(); BOG.snap=true; BOG.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-BOG.lastT)/1000; BOG.lastT=now; bogUpdate(o, clamp(rdt||0, 0, 0.1));
     return BOG.stats||null;
   },
@@ -28116,7 +28162,7 @@ const ENGINE_VIS = {
   setBoat: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(BOAT.on){ BOAT.on=false; boatReset(); } return; }
-    var now=performance.now(); if(!BOAT.on){ BOAT.on=true; if(!BOAT.built) buildBoatScene(); boatReset(); BOAT.snap=true; BOAT.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!BOAT.on){ freeOthers("boat"); BOAT.on=true; if(!BOAT.built) buildBoatScene(); boatReset(); BOAT.snap=true; BOAT.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-BOAT.lastT)/1000; BOAT.lastT=now; boatUpdate(o, clamp(rdt||0, 0, 0.1));
     return BOAT.stats||null;
   },
@@ -28165,7 +28211,7 @@ const ENGINE_VIS = {
   setSalt: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(SALT.on){ SALT.on=false; saltReset(); } return; }
-    var now=performance.now(); if(!SALT.on){ SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!SALT.on){ freeOthers("salt"); SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
     if(SALT.tier!==GFX && SALT.built){ saltRebuild(); ENGINE_VIS.resize(); }   /* a new quality tier: build the flats again at it */
     var rdt=o.dt!=null ? +o.dt : (now-SALT.lastT)/1000; SALT.lastT=now; saltUpdate(o, clamp(rdt||0, 0, 0.1));
     return SALT.stats||null;
@@ -28190,9 +28236,12 @@ const ENGINE_VIS = {
     if(anim.internals) anim.internals.group.visible=XRAY;
   },
 
-  buildEngine: function(cfg, layoutObj){
+  buildEngine: function(cfg, layoutObj, force){
     lastCfg=cfg; lastLayout=layoutObj;
     if(!renderer) return;
+    var vk=visKey(cfg);
+    if(!force && vk===lastVisKey && engineRoot && engineRoot.children.length && !failFx.started && !run.fail) return 0;   /* nothing the model shows changed */
+    lastVisKey=vk;
     disposeTree(engineRoot);
     anim={ spin:[], turbos:[], belts:[], hot:[], fans:[], glowMats:[], internals:null };
     var G=buildEngineMesh(cfg, layoutObj);
@@ -29978,7 +30027,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.25.0";
+const VERSION="1.76.26.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -30141,7 +30190,7 @@ $("soloSeg").addEventListener("click",e=>{const b=e.target.closest("[data-solo]"
   ENGINE_SOUND.solo(b.dataset.solo);document.querySelectorAll("#soloSeg button").forEach(x=>x.classList.toggle("on",x.dataset.solo===b.dataset.solo));toast(`SOLO · ${b.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("sdPeak");if(!el||!setOn())return;const pk=ENGINE_SOUND.peak();el.textContent=pk?`${pk.hz} Hz @ ${pk.db} dB · low ${pk.lo} dB · ${pk.state} ${pk.sr/1000}k`:"—";},400);
 /* frame rate: S.showFps puts a readout in the view; S.fpsCap 60 has ENGINE_VIS (and tick) skip the extra vsyncs of a 90/120 Hz screen */
-function applyFps(){const cap=S.fpsCap===60?60:0;ENGINE_VIS.setFpsCap(cap);$("fpsHud").classList.toggle("on",!!S.showFps);document.querySelectorAll("#fpsSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.fps==="1")===!!S.showFps));document.querySelectorAll("#capSeg button").forEach(b=>b.classList.toggle("on",+b.dataset.cap===cap));fpsShow();}
+function applyFps(){const cap=S.fpsCap==null?(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?60:0):(S.fpsCap===60?60:0);   /* phones default to the 60 cap (a 120 Hz screen otherwise spends its battery on the garage); the toggle stores 0 or 60 and wins once touched */ENGINE_VIS.setFpsCap(cap);$("fpsHud").classList.toggle("on",!!S.showFps);document.querySelectorAll("#fpsSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.fps==="1")===!!S.showFps));document.querySelectorAll("#capSeg button").forEach(b=>b.classList.toggle("on",+b.dataset.cap===cap));fpsShow();}
 function fpsShow(){const f=ENGINE_VIS.fps(),r=Math.round(f.fps);if(S.showFps)$("fpsHud").innerHTML=r?`<b class="${r<30?"crit":r<50?"warn":""}">${r}</b> fps <i>· ${f.ms.toFixed(1)} ms</i>`:"— fps";if(curTab==="shop")$("fpsLbl").textContent=r?`${r} fps · ${f.ms.toFixed(1)} ms`:"—";}
 setInterval(fpsShow,500);
 $("fpsSeg").addEventListener("click",e=>{const b=e.target.closest("[data-fps]");if(!b)return;S.showFps=b.dataset.fps==="1";applyFps();save();});
@@ -30187,10 +30236,16 @@ function engineStatus(cfg,res){const h=cfgHash(cfg);
 function engineCard(cfg,res,o){o=o||{};const st=engineStatus(cfg,res);const name=o.name||engineName();
   const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${st.nr?"—":Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
   return `<div class="ecard ${o.cls||""}"><div class="nm">${o.editable?`<input id="nameIn" value="${name.replace(/"/g,"&quot;")}" maxlength="24" aria-label="Engine name">`:name}</div><span class="badge ${st.cls}">${st.txt}</span><div class="spec">${nums}</div><div class="spec">${engineSpecLine(cfg,res)}</div>${launchLine(cfg)?`<div class="spec"><b>Launch</b><i>·</i>${launchLine(cfg,true)}</div>`:""}</div>`;}
+/* phones: slider and env input events ask for one recompute per animation frame (recomputeSoon); the label writes stay synchronous, the
+   after-work (delta chips, power window) runs once the sim has caught up, and a commit (change / pointerup / Enter) flushes at once */
+let rcRaf=0,rcAfter=new Map();
+function recomputeSoon(key,fn){if(fn)rcAfter.set(key,fn);if(!rcRaf)rcRaf=requestAnimationFrame(()=>{rcRaf=0;recompute();});}
+function recomputeFlush(){if(rcRaf){cancelAnimationFrame(rcRaf);rcRaf=0;recompute();}}
 let prevQuick=null;
 function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.querySelector(".d");if(!t){t=document.createElement("span");t.className="d";el.appendChild(t);}
   if(!d){t.classList.remove("show");return;}t.textContent=(d>0?"▲":"▼")+fmt(Math.abs(d));t.classList.toggle("dn",lowGood?d>0:d<0);t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
 function recompute(){
+  if(rcRaf){cancelAnimationFrame(rcRaf);rcRaf=0;}   // a direct call covers the pending frame
   if(S.bay)ddGuard();   // dyno day: only the parts the customer OK'd
   altFuelFill(S.cfg);   // flex needs a blend and a gas fuel a gas system before the engine is run
   prevQuick=quick;
@@ -30206,6 +30261,7 @@ function recompute(){
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
+  if(rcAfter.size){const a=[...rcAfter.values()];rcAfter.clear();a.forEach(f=>f());}   // what recomputeSoon callers queued
 }
 function hud(){
   if(typeof tabBadges==="function")tabBadges();
@@ -30387,9 +30443,8 @@ const lastNotch={};
 function applySlider(k,v,r){mapShiftTo(k,v);S.cfg[k]=v;if(r&&parseFloat(r.value)!==v)r.value=v;
   const nt=NOTCH[k]||1;const ni=Math.floor(v/nt+1e-6);if(lastNotch[k]!==undefined&&ni!==lastNotch[k])buzz(4);lastNotch[k]=ni;
   const f=FORM.flatMap(s=>s.fields).find(x=>x.key===k);const lab=$("v-"+k);if(lab)lab.textContent=(f.fmt?f.fmt(v):v)+(f.unit?" "+f.unit:"");
-  recompute();
-  if(lab&&dragBase){const dh=Math.round(quick.peakHp-dragBase.hp),dr=Math.round(quick.rel-dragBase.rel);const bits=[];if(dh)bits.push(`<i class="${dh>0?"up":"dn"}">${dh>0?"+":"−"}${Math.abs(dh)} hp</i>`);if(dr)bits.push(`<i class="${dr>0?"up":"dn"}">${dr>0?"+":"−"}${Math.abs(dr)} rel</i>`);
-    if(bits.length)lab.insertAdjacentHTML("beforeend",`<span class="d">${bits.join("")}</span>`);}
+  recomputeSoon("s:"+k,()=>{if(lab&&dragBase){const dh=Math.round(quick.peakHp-dragBase.hp),dr=Math.round(quick.rel-dragBase.rel);const bits=[];if(dh)bits.push(`<i class="${dh>0?"up":"dn"}">${dh>0?"+":"−"}${Math.abs(dh)} hp</i>`);if(dr)bits.push(`<i class="${dr>0?"up":"dn"}">${dr>0?"+":"−"}${Math.abs(dr)} rel</i>`);
+    if(bits.length)lab.insertAdjacentHTML("beforeend",`<span class="d">${bits.join("")}</span>`);}});
   const sec=r&&r.closest(".acc");if(sec){const fs=FORM.find(x=>x.title===sec.querySelector("[data-sec]").dataset.sec);sec.querySelector(".sum").textContent=secSummary(fs);}}
 const FOCUS_OF={bore:"engine",stroke:"engine",cr:"engine",rodRatio:"engine",blockMat:"engine",deck:"engine",piston:"engine",pistonClearance:"engine",rings:"engine",rod:"engine",rodBolts:"engine",crank:"engine",bearings:"engine",oilSystem:"engine",oilGrade:"engine",oilSquirters:"engine",
   head:"top",headMat:"top",valveMat:"top",springs:"top",cam:"top",lift:"top",gasket:"top",studs:"top",cover:"top",redline:"top",
@@ -30402,7 +30457,7 @@ Object.assign(FOCUS_OF,{pipe:"exhaust",muffler:"exhaust",cat:"exhaust",cutout:"e
 Object.assign(FOCUS_OF,{turbine:"turbo",als:"exhaust"});
 let lastFocus=null;
 function autoFocus(key){if(testing||S.followCam===false)return;let part=FOCUS_OF[key];if(!part)return;if(part==="turbo"&&S.cfg.asp==="na")part="intake";if(part===lastFocus)return;lastFocus=part;ENGINE_VIS.focus(part);}
-function commitSlider(){S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);}   // perf: closed sections fill when opened (toggleSec)
+function commitSlider(){recomputeFlush();S.profileId=null;if(mapFitAxis())recompute();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);save();if(curTab==="analysis")renderAnalysis();releaseBase();document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);}   // perf: closed sections fill when opened (toggleSec)
 function sliderField(k){return FORM.flatMap(s=>s.fields).find(x=>x.key===k);}
 function snapVal(f,v){const st=f.step||1,lo=fMin(f),hi=fMax(f);v=Math.round((v-lo)/st)*st+lo;v=Math.min(hi,Math.max(lo,v));return +v.toFixed(4);}
 $("buildForm").addEventListener("input",e=>{const r=e.target;if(!r.dataset||!r.dataset.k||r.type!=="range")return;autoFocus(r.dataset.k);applySlider(r.dataset.k,parseFloat(r.value),r);});
@@ -30605,7 +30660,9 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 function closeSheet(){$("sheet").classList.remove("on");if(!setOn())$("scrim").classList.remove("on");const q=document.activeElement;if(q&&q.id==="glQ")q.blur();}
 $("sheetClose").addEventListener("click",closeSheet);$("scrim").addEventListener("click",closeSheet);
-function renderBlueprints(){$("bpSum").textContent=S.blueprints.length?`${S.blueprints.length} saved`:"none saved";$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=SIM.simulate(cfg,simEnv({testType:"pull"}));
+const bpCache=new Map();   // phones: a blueprint card runs the same dyno pull every render; keyed by cfg hash + env
+function bpSim(cfg,env){const key=cfgHash(cfg)+"|"+JSON.stringify(env);let r=bpCache.get(key);if(!r){if(bpCache.size>200)bpCache.clear();r=SIM.simulate(cfg,env);bpCache.set(key,r);}return r;}
+function renderBlueprints(){$("bpSum").textContent=S.blueprints.length?`${S.blueprints.length} saved`:"none saved";$("bpList").innerHTML=S.blueprints.map((b,i)=>{const cfg=Object.assign({},SIM.DEFAULT_CFG,b.cfg);const r=bpSim(cfg,simEnv({testType:"pull"}));
   return `<div class="bp" style="display:block;padding:6px">${engineCard(cfg,r,{name:b.title||b.name,cls:"mini inline"})}<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-load="${i}" style="flex:1">Load</button><button class="btn sm ghost" data-del="${i}">✕</button></div></div>`;}).join("")||`<p class="hint">Save designs here to come back to them or A/B them.</p>`;}
 $("bpList").addEventListener("click",e=>{const l=e.target.closest("[data-load]"),d=e.target.closest("[data-del]");
   if(l){if(testing){toast("Let the run finish first");return;}const bp=S.blueprints[+l.dataset.load];if(career()&&presetLocked(bp.cfg)){toast(`Needs the ${presetLocked(bp.cfg)} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,bp.cfg);S.profileId=null;S.name=bp.title||null;afterCfgChange(true);toast("BLUEPRINT LOADED");}
@@ -30648,8 +30705,11 @@ function renderEnv(){
   if(t==="endurance"){h+=sl("hours","Test length",5,1000,5," h",e.hours)+`<div class="lbl"><span>Load profile</span></div><div class="seg">${["highway","mixed","track"].map(p=>`<button data-lp="${p}" class="${e.loadProfile===p?"on":""}">${p[0].toUpperCase()+p.slice(1)}<small>${{highway:"steady 20% load",mixed:"street + spirited",track:"WOT, 1.3 g corners"}[p]}</small></button>`).join("")}</div>`;}
   $("envBox").innerHTML=h;envFold(t);pitsSync();if(t==="road"||t==="hill")suLive();
 }
-function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recompute();pwUpd();if(k.slice(0,2)==="su")suLive();}
-function commitEnv(){save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="bog"&&l&&l.bog&&S.last.env.testType==="bog")drawBogTrace(l.bog);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
+function applyEnv(k,v){const r=$("er-"+k);if(!r)return;const st=parseFloat(r.step)||1,mn=parseFloat(r.min),mx=parseFloat(r.max);v=Math.round((v-mn)/st)*st+mn;v=Math.min(mx,Math.max(mn,+v.toFixed(4)));envStore(k)[k]=v;r.value=v;const lab=$("ev-"+k);if(lab&&!lab.querySelector("input"))lab.textContent=v+(lab.dataset.unit||"");recomputeSoon("e:"+k,()=>{pwUpd();if(k.slice(0,2)==="su")suLive();});}
+/* phones: the live HUDs of the drag, pull, bog and salt runs redraw at ~10 Hz instead of every frame (innerHTML is the dearest thing a phone does
+   mid-run); a phase change, a failure and the frame the run finishes on go through at once, so the end state is exact. force draws regardless. */
+function hudDue(X,st,force){const now=performance.now(),dn=!!st.done,fl=!!X.failed,due=force||dn!==X.hudD||st.phase!==X.hudPh||fl!==X.hudF||now-(X.hudT||0)>=100;if(due){X.hudT=now;X.hudD=dn;X.hudPh=st.phase;X.hudF=fl;}return due;}
+function commitEnv(){recomputeFlush();save();if(climateCtl()&&!trackEvt(S.env.testType)&&isStdCell(simEnv())!==envStdShown)renderEnv();const l=lastForChart();if(S.env.testType==="drag"&&l&&l.drag&&S.last.env.testType==="drag")drawDragTrace(l.drag);else if(S.env.testType==="pull_sled"&&l&&l.pull&&S.last.env.testType==="pull_sled")drawPullTrace(l.pull);else if(S.env.testType==="salt"&&l&&l.salt&&S.last.env.testType==="salt")drawSaltTrace(l.salt);else if(S.env.testType==="bog"&&l&&l.bog&&S.last.env.testType==="bog")drawBogTrace(l.bog);else if(S.env.testType==="road"&&l&&l.road&&S.last.env.testType==="road")drawRoadTrace(l.road);else drawChart(quickForChart(),null);if(S.env.testType==="road")renderEnv();}
 $("envBox").addEventListener("input",e=>{const r=e.target;if(!r.dataset.e||r.type!=="range")return;applyEnv(r.dataset.e,parseFloat(r.value));});
 $("envBox").addEventListener("change",e=>{if(e.target.type==="range")commitEnv();});
 (()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
@@ -31312,6 +31372,7 @@ function dragStart(){
   DR.failKind=failKindOf(res,env)||"rod";
   DR.lv=0;DR.lox=0;
   const step=()=>{const now=performance.now();const dt=(now-DR.last)/1000;DR.last=now;const st=DR.auto?dragAutoStep(now):d.step(dt);const R=DR.race;
+    {const dn=!!st.done,fl=!!DR.failed;DR.hudOn=dn!==DR.hudD||st.phase!==DR.hudPh||fl!==DR.hudF||now-(DR.hudT||0)>=100;if(DR.hudOn){DR.hudT=now;DR.hudD=dn;DR.hudPh=st.phase;DR.hudF=fl;}}   // phones: the live HUD redraws at ~10 Hz; a phase change, a failure and the finish go through at once
     if(R&&st.phase==="staged"&&st.rolled&&R.tree0==null)R.tree0=now+1200+Math.random()*1800;
     const dtT=R&&R.tree0!=null?(now-R.tree0)/1000:-1;if(R&&dtT>=1.5&&R.green==null)R.green=R.tree0+1500;
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
@@ -31329,26 +31390,26 @@ function dragStart(){
         launch:{armed:!!st.launch.armed,twoStep:st.launch.twoStep,transBrake:st.launch.transBrake,held:st.launch.held,retard:st.launch.retard,pops:st.launch.pops},
         tyreTemp:st.tyreTemp,burnout:st.phase==="burnout",lift:st.lift,onBars:!!st.onBars,brake:st.phase==="shutdown",failed:!!DR.failed,failKind:DR.failed?DR.failKind:null,night:!!(S.night||DR.night),rt:R?R.rt0:null},R?oppDyn(now,ox,st):null,hx));}
     if(st.phase==="burnout"){const ll=veh.transBrake==="line_lock";
-      $("dragLive").innerHTML=`<div class="peak" style="grid-column:1/-1"><b>${Math.round(st.tyreTemp*100)}<i>% tyre heat</i></b><span>${st.burning?"burning · "+st.burnT.toFixed(1)+" s"+(st.burnT>4?" · too long, it's going greasy":st.burnT>2.5?" · that's about right":""):st.burnT>0?"tap to roll into the beams":"in the water box"}${ll?" · line lock on":" · no line lock — it will creep"}</span></div>`;
+      if(DR.hudOn)$("dragLive").innerHTML=`<div class="peak" style="grid-column:1/-1"><b>${Math.round(st.tyreTemp*100)}<i>% tyre heat</i></b><span>${st.burning?"burning · "+st.burnT.toFixed(1)+" s"+(st.burnT>4?" · too long, it's going greasy":st.burnT>2.5?" · that's about right":""):st.burnT>0?"tap to roll into the beams":"in the water box"}${ll?" · line lock on":" · no line lock — it will creep"}</span></div>`;
       if(st.burning)dragBtnText("BURNING…","let go when the smoke rolls");else if(st.burnT>0)dragBtnText("TAP TO STAGE","or hold to burn some more");else dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");}
     else if(st.phase==="staged"){const bT=st.boostTarget;let h="";
       if(R){const bulbs=[dtT>=0,dtT>=0.5,dtT>=1.0,dtT>=1.5];h+=`<div class="peak" style="grid-column:1/-1"><b style="letter-spacing:6px">${bulbs.slice(0,3).map(b=>b?"🟠":"⚫").join("")}${bulbs[3]?"🟢":"⚫"}</b><span>${!st.rolled?"rolling into the beams":dtT<0?"staged — wait for the ambers":dtT<1.5?"…":"GO"}</span></div>`;}
       else h+=`<div class="peak" style="grid-column:1/-1"><b>${st.rolled?"STAGED":"…"}</b><span>${st.rolled?"time trial — leave when you like":"rolling into the beams"}</span></div>`;
       if(d.canArm)h+=`<div class="peak"><b>${bT>0?bv(st.boost):"—"}<i>${bT>0?pU():""}</i></b><span>${bT>0?"of "+bv(bT)+" on the line":"no boost to build"}</span></div><div class="peak"><b>${st.launch.held.toFixed(1)}<i>s</i></b><span>${st.launch.armed?(st.launch.twoStep?"on the two-step":st.launch.transBrake?"on the trans-brake":"ALS armed — foot on the throttle"):"not armed"}</span></div><div class="peak"><b style="color:${st.egt>950?"var(--crit)":st.egt>850?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>turbine inlet</span></div>`;
-      $("dragLive").innerHTML=h;
+      if(DR.hudOn)$("dragLive").innerHTML=h;
       if(!st.rolled)dragBtnText("ROLLING IN…");else if(d.canArm)dragBtnText(st.launch.armed?"RELEASE ON GREEN":"HOLD · RELEASE ON GREEN",st.launch.armed?(st.launch.twoStep?`two-step ${d.holdRpm.toLocaleString()} rpm`:st.launch.transBrake?"on the brake":`ALS armed · ${d.holdRpm.toLocaleString()} rpm`):"arm it on the ambers — every second holding is heat");else dragBtnText("LAUNCH",R?"tap on the green":"tap to go");}
     run.on=true;run.rpm=DR.failed?Math.max(0,run.rpm-380):st.rpm;run.load=DR.failed?0:st.load;
     $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
     if(st.phase==="run"||st.phase==="shutdown"||st.phase==="done"){$("testProg").style.width=Math.min(100,100*st.x/402.336)+"%";
       const m=st.marks.slice(-1)[0];let lane="";if(R){const ox=oppX(now);
         const gap=(st.x-ox)*3.281;lane=`<div class="peak" style="grid-column:1/-1"><b style="color:${R.foul?"var(--crit)":gap>=0?"var(--good)":"var(--crit)"}">${R.foul?"RED LIGHT":(gap>=0?"+":"")+Math.round(gap)+"<i>ft</i>"}</b><span>${R.name} · RT ${R.rt0!=null?R.rt0.toFixed(3):"—"}</span></div>`;}
-      $("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.als>0.2?' · <span style="color:var(--orange)">ALS</span>':""}${st.onBars?" · on the bars":""}</span></div>`:""}${DR.res.als&&DR.res.als!=="off"&&st.phase==="run"?`<div class="peak" style="grid-column:1/-1"><b style="font-size:15px;color:var(--orange)">ALS armed</b><span>boost held through shifts · ${Math.round(st.egt)} °C at the turbine</span></div>`:""}`;
+      if(DR.hudOn)$("dragLive").innerHTML=lane+`<div class="peak"><b>${st.t.toFixed(2)}<i>s</i></b><span>${Math.round(st.x*3.281)} ft · gear ${st.gear}${st.spin?" · <span style=\"color:var(--crit)\">SPIN</span>":""}</span></div><div class="peak"><b>${Math.round(st.v*2.237)}<i>mph</i></b><span>${st.phase==="shutdown"?(st.chuteOut?"chute out · "+Math.round(st.shutFt)+" ft":"on the brakes · "+Math.round(st.shutFt)+" ft"):m?m.n+" "+m.t.toFixed(2)+" s":"—"}</span></div>${st.boostTarget>0?`<div class="peak"><b>${st.boost.toFixed(1)}<i>bar</i></b><span>boost${st.als>0.2?' · <span style="color:var(--orange)">ALS</span>':""}${st.onBars?" · on the bars":""}</span></div>`:""}${DR.res.als&&DR.res.als!=="off"&&st.phase==="run"?`<div class="peak" style="grid-column:1/-1"><b style="font-size:15px;color:var(--orange)">ALS armed</b><span>boost held through shifts · ${Math.round(st.egt)} °C at the turbine</span></div>`:""}`;
       if(DR.failed)dragBtnText(DR.failKind==="manifold"?"MANIFOLD CRACKED":DR.failKind==="turbo"?"TURBO GONE":DR.failKind==="backfire"?"INTAKE BACKFIRE":DR.failKind==="lean"?"MELTED A PISTON":"BROKE");
       else if(st.phase==="shutdown"){if(DR.pb&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText(DR.pb.kind>1?"PERSONAL BEST":"ENGINE PB","tap to go back to the car");else dragBtnText(st.chuteOut?"CHUTE OUT":"SHUT DOWN");}
       else if(!veh.auto)dragBtnText(st.gear<veh.gears?"SHIFT ▲":"FLAT OUT");else dragBtnText("RUNNING");}
     if(DR.n2o)n2oFrame(st,dt);
     if(DR.night)rnHud(st);
-    if(DR.auto&&!DR.failed&&st.phase!=="done"){const w=DR.drv.say(d,dragTree(now));if(w)$("dragLive").insertAdjacentHTML("afterbegin",`<div class="peak dauto" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">Auto · <b>${w}</b> — tap to take over</span></div>`);}
+    if(DR.hudOn&&DR.auto&&!DR.failed&&st.phase!=="done"){const w=DR.drv.say(d,dragTree(now));if(w)$("dragLive").insertAdjacentHTML("afterbegin",`<div class="peak dauto" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">Auto · <b>${w}</b> — tap to take over</span></div>`);}
     shudFrame(st,now,dtT);
     if(!st.done||(DR.failed&&run.rpm>0))requestAnimationFrame(step);else dragFinish();};
   requestAnimationFrame(step);
@@ -31818,7 +31879,7 @@ function rnHud(st){const n=DR.night,R=DR.race;if(!n)return;const L=$("dragLive")
   if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
   if(st.phase==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";
   if(n.verdict&&n.stage>=2)s+=` · <b style="color:${n.verdict.win?"var(--good)":"var(--crit)"}">${n.verdict.win?"WIN":"LOSS"}</b>`;
-  L.insertAdjacentHTML("afterbegin",`<div class="peak rnhud" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">${s}</span></div>`);
+  if(DR.hudOn)L.insertAdjacentHTML("afterbegin",`<div class="peak rnhud" style="grid-column:1/-1;padding:6px 10px"><span style="margin:0">${s}</span></div>`);
   if(n.cheer&&st.phase==="shutdown"&&ENGINE_VIS.stripPb().shot==="crowd")dragBtnText("WON THE NIGHT","tap to go back to the car");}
 /* r15: one place for the between-rounds limits, shared by the − / + steps and the sliders. 1st and final get the same full range
    as the test-cell sliders (r16; was a band around the night's start); psi is half..1.4× the tyre's baseline */
@@ -31979,7 +32040,7 @@ function pullStart(){
       if(left>1e-9&&!st.done)st=p.step(left,PR.down&&!PR.failed?1:0);}   // taken over part way through the frame
     if(st.broke&&!PR.failed)pullBreak(st.broke);
     if(st.raOn&&!PR.raSeen&&!st.killed&&!st.done&&!PR.failed){PR.raSeen=true;sfx("runaway");buzz([120,60,120,60,120]);
-      pullHud(st);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
+      pullHud(st,true);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
     if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
     if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:st.phase,x:st.x,v:st.v,boxFrac:st.boxFrac,slip:st.slip,hop:st.hop,smoke:st.smoke||0,rpm:PR.failed||PR.killed?run.rpm:st.rpm,vehicle:PR.kind,full:st.full,night:!!S.night,cls:k,distFt:st.x*3.28084,
       dt,throttle:st.foot,boost:st.boost,sweet:st.sweet,failed:PR.failed,failKind:PR.failed?run.failKind:null,hitch:veh.hitch,ballast:veh.ballast,tyre:veh.tyre,hp:PR.res&&PR.res.peakHp||0,track:PR.trk||undefined,runaway:st.raOn&&!st.killed&&!PR.failed?Math.max(0.2,st.ra):0,killed:!!st.killed});
@@ -31994,7 +32055,7 @@ function pullStart(){
   requestAnimationFrame(step);
 }
 /* the live card: distance first, then the two things the driver's foot is managing — slip and the box */
-function pullHud(st){if(!PR)return;const ft=st.x*3.28084,sw=st.sweet,lo=Math.round(sw[0]*100),hi=Math.round(sw[1]*100),sp=Math.round(st.slip*100);
+function pullHud(st,force){if(!PR||!hudDue(PR,st,force))return;const ft=st.x*3.28084,sw=st.sweet,lo=Math.round(sw[0]*100),hi=Math.round(sw[1]*100),sp=Math.round(st.slip*100);
   const stat=PR.failed?"broke":st.full?"full":"";
   const say=PR.failed?(PR.failKind==="runaway"?"GRENADED":"BROKE"):st.killed?(st.done?"killed":"KILLED — rolling"):st.raOn?"RUNAWAY":st.full?"FULL PULL":st.done?(st.stopWhy==="spun"?"spun out":st.stopWhy==="lifted"?"lifted":"stopped"):st.phase==="stage"?"hooked to the sled":Math.round(st.v*2.237)+" mph";
   const marks=PR.field.map(f=>`<i class="mk${f.ft===PR.lead?" lead":""}" style="left:${Math.min(99.5,f.ft/3)}%"></i>`).join("");
@@ -32020,7 +32081,7 @@ function pullPress(){if(!PR||PR.finished)return;const st=PR.p.st;if(st.done||PR.
 function pullRelease(){if(!PR)return;PR.down=false;}
 /* the kill switch: only live while it is running away. Air and fuel off — the truck rolls to a stop and is scored there */
 function pullKill(){if(!PR||PR.finished||!PR.p)return false;const st=PR.p.st;if(!st.raOn||st.killed||st.done||PR.failed||!PR.p.kill())return false;
-  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",160);pullHud(st);return true;}
+  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",160);pullHud(st,true);return true;}
 $("killBtn").addEventListener("pointerdown",e=>{e.preventDefault();pullKill();});
 $("killBtn").addEventListener("click",()=>pullKill());
 /* the pull-off buttons on the verdict */
@@ -32201,7 +32262,7 @@ function bogStart(){
 /* the driver's foot: yours (the button), or the auto driver every 20 ms */
 function bogThr(st){if(!BR.auto)return BR.down&&!BR.failed?1:0;if(st.phase==="stage")return BR.go?1:0;return BR.failed?0:BR.p.auto(0.92);}
 /* the live card: distance (or the clock once through), the pit with the field on it, then the two things the foot manages — wheel speed and rpm */
-function bogHud(st){if(!BR)return;const L=BR.night.len,x=Math.max(0,st.x),pc=v=>Math.min(100,100*v/L);
+function bogHud(st,force){if(!BR||!hudDue(BR,st,force))return;const L=BR.night.len,x=Math.max(0,st.x),pc=v=>Math.min(100,100*v/L);
   const stat=BR.failed?"broke":st.cleared?"full":"";
   const say=BR.failed?"BROKE":st.cleared?"THROUGH!":st.done?({stalled:"stalled",highcentre:"high-centred",dug:"dug in",bogged:"bogged down",packed:"packed up",lifted:"lifted"}[st.stopWhy]||"stuck"):st.phase==="stage"?"at the line":st.phase==="runup"?`${Math.round(-st.x)} m to the mud`:Math.round(st.v*2.237)+" mph";
   const pitT=st.tPit!=null?(st.cleared?st.tOut:st.t)-st.tPit:0,big=st.cleared?`${pitT.toFixed(2)}<i>s</i>`:`${x.toFixed(1)}<i>m</i>`;
@@ -32830,7 +32891,7 @@ function saltThr(st){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="s
   const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;SR.thrAI=bad?Math.max(0.04,SR.thrAI*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,SR.thrAI+0.03);return SR.thrAI;}
 function saltWarpUi(){document.querySelectorAll("#saltWarp [data-warp]").forEach(b=>b.classList.toggle("on",+b.dataset.warp===(SR?SR.warp:1)));}
 /* the live card: speed first, then the course with the timed mile on it, then what the driver is managing */
-function saltHud(st){if(!SR)return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
+function saltHud(st,force){if(!SR||!hudDue(SR,st,force))return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
   const stat=SR.failed?"broke":st.phase==="spin"?"broke":st.tOut!=null&&!SR.failed?"full":"";
   const say=SR.failed?"BROKE":st.phase==="spin"?"SPUN":st.phase==="stage"?"on the line":st.phase==="push"?"push truck":st.phase==="run"?(st.x<p.x0?`${((p.x0-st.x)/SIM.LSR_MILE).toFixed(2)} mi to the clocks`:"IN THE MILE"):st.phase==="shutdown"?(st.chuteWait?"coasting to chute speed":st.chuteBlown?"chute tore off":st.chuteOut?"chute out":st.drogueOut?"drogue out":"shut off"):"stopped";
   const split=st.tIn!=null&&st.tOut==null&&st.t>st.tIn?`${(SIM.LSR_MILE*Math.min(1,(st.x-p.x0)/SIM.LSR_MILE)/Math.max(0.01,st.t-st.tIn)*2.23694).toFixed(1)} avg`:st.mileMph!=null?`<b>${st.mileMph.toFixed(3)}</b>`:"—";
@@ -34433,6 +34494,8 @@ function siteCard(k,lf){const s=k.site;if(!s)return{top:"",brk:""};const b=lf.o.
   return{top:`<div class="sitebar"><b>Judged at ${siteTxt(s)}</b><span>${s.name} · site premium +${Math.round(s.prem*100)}%</span>${has("dyno3")?`<button class="chip" data-siteprev="${k.id}">Preview it: set the cell to these conditions</button>`:`<small>The Pro dyno cell can preview site conditions.</small>`}</div>`,
     brk:b?`<div class="cstat brk">✗ Breaks at ${siteAt(s)}: ${b.why}</div>`:""};}
 function previewSite(s){if(testing){toast("Let the run finish first");return;}C().cell=Object.assign(stdCell(),{ambientC:s.ambientC,altitudeM:s.altitudeM});S.env.testType="pull";save();recompute();showTab("test");toast(`Cell set to ${siteTxt(s)} — a pull here is test only`);}
+const etCache=new WeakMap();   // phones: the quarter-mile pass behind an ET requirement, memoised per sim result + car + redline (quick is a new object whenever cfg or env changes)
+function fitsEt(res,car,redline){let m=etCache.get(res);if(!m){m=new Map();etCache.set(res,m);}const key=redline+"|"+JSON.stringify(car);let d=m.get(key);if(d===undefined){const veh=Object.assign({redline,auto:true},carVeh(car));veh.mass=SIM.dragMass(veh.mass,res.kg);d=SIM.dragPass(res,veh);m.set(key,d);}return d;}
 function fits(k,res,cfg){
   const r=k.req,c=cfg||S.cfg,o=[];let ok=true;
   if(k.site)res=siteRun(k.site,c);   // a site brief ignores the cell figures: the client re-runs the engine in their own air
@@ -34461,7 +34524,7 @@ function fits(k,res,cfg){
   if(r.lsr)add("lsr",true,"",1);
   if(r.swap&&res.peakTq!=null){const q=swapReqFit(r.swap,res,c);add("swap",q.ok,q.val,q.prog);}   // a swap job: it has to go in their car (app/swap.js)
   if(r.mph!=null&&res.rpms){const m=lsrFitMph(res,c,(r.lsr&&r.lsr.body)||"lakester");add("mph",m>=r.mph,m?m.toFixed(1)+" mph":"no time",ge(m,r.mph));}
-  if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));veh.mass=SIM.dragMass(veh.mass,res.kg);const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
+  if(r.et!=null&&res.rpms){const d=fitsEt(res,r.car,c.redline);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if((r.lap!=null||r.zero100!=null)&&res.rpms){const R0=roadFor(res,c,Object.assign({ch:"coupe"},r.road,r.lap!=null?{}:{trk:null}),k.site?k.site.name:"");   // judged in their car (a site brief: in their air too)
     if(r.zero100!=null)add("zero100",R0.z100!=null&&R0.z100<=r.zero100,R0.z100!=null?R0.z100.toFixed(1)+" s":"—",R0.z100!=null?le(R0.z100,r.zero100):0);
     if(r.lap!=null)add("lap",R0.lap!=null&&R0.lap<=r.lap+1e-6,fmtLap(R0.lap),R0.lap!=null?le(R0.lap,r.lap):0);}
@@ -36598,7 +36661,8 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   run.title=`Same run as Test: ${rlName(rt)}`;
   $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div>`;
-  $("rlK").innerHTML=rlContracts();$("rlD").innerHTML=rlDrag();pwUpd();
+  if(col||RL.open)$("rlK").innerHTML=rlContracts();   // phones: the contract list is the dear part and sits behind the closed peek sheet; railOpen schedules a render, so it fills on the way up
+  $("rlD").innerHTML=rlDrag();pwUpd();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
   toastPlace();
 }
