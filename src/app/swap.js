@@ -4,7 +4,7 @@
    and hands the car to the road test, the strip, the salt and the 24 Hours. Pull and bog keep their class trucks:
    their rules define the truck, so a swap there would be a different class, not the same event in your car.
    No swapV (the default) → every event runs exactly as before. */
-const SW_DOT={g:"good",a:"warn",r:"crit"},SW_WORD={g:"fits",a:"tight",r:"no"};
+const SW_WORD={g:"fits",a:"tight",r:"no"};
 function swapStore(){if(career()){const c=C();if(!c.swap||typeof c.swap!=="object")c.swap={};const s=c.swap;if(!s.own||typeof s.own!=="object")s.own={};if(!s.fx||typeof s.fx!=="object")s.fx={};return s;}
   if(!S.swapSb||typeof S.swapSb!=="object")S.swapSb={};const s=S.swapSb;if(!s.own||typeof s.own!=="object")s.own={};if(!s.fx||typeof s.fx!=="object")s.fx={};return s;}
 const swapFree=()=>!career()||dev();

@@ -3,6 +3,34 @@
 const SIM=ENGINE_SIM,{LAYOUTS,OPT,FORM,PRESETS}=SIM;
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+/* ---- helpers every event shares (drag, pull, bog, boat, salt, hill, oval, road, e24) ---- */
+/* one bucket of records per event, created on first use */
+function recBucket(k){const R=recs();if(!R[k]||typeof R[k]!=="object")R[k]={};return R[k];}
+/* a class is locked while the career is short of its rep (0 = open) */
+function clsLocked(T,k){const c=T[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
+/* which class this week's hook was in (one run a week per event) */
+function wkCls(key){if(!career())return null;const w=C()[key]||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+/* an entry fee: 15% of the bottom purse, scaled by the class tier, rounded to $5 */
+function evFee(purse,pay,tier){return Math.round(purse*(pay[tier]||1)*0.15/5)*5;}
+/* the full-screen flash: a colour, then back to clear after ms */
+function screenFlash(bg,ms){const f=$("flash");if(!f)return;f.style.background=bg;setTimeout(()=>f.style.background="rgba(238,90,94,0)",ms);}
+function failFlash(ms){screenFlash("rgba(238,90,94,.45)",ms||250);sfx("fail");buzz([80,40,120]);}
+function winFlash(){screenFlash("rgba(92,191,138,.35)",400);}
+/* scroll the panel so an event's control strip sits above the tabs */
+function scrollCtlIntoView(id){requestAnimationFrame(()=>{const pn=$("panel"),el=$(id);if(!pn||!el)return;const r=el.getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;
+  if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});}
+/* a hold-to-drive button: pointer capture, Space/Enter on the button, and a click fallback for assistive tech
+   (a click within 800 ms of a real pointer is the same press, so it is ignored). run() is the live run object;
+   release(cancel) gets true on pointercancel. */
+function holdBtn(b,run,press,release,onClick){
+  const mark=()=>{const r=run();if(r)r.lastPtr=performance.now();};
+  b.addEventListener("pointerdown",e=>{e.preventDefault();mark();try{b.setPointerCapture(e.pointerId);}catch(x){}press();});
+  b.addEventListener("pointerup",()=>{mark();release(false);});
+  b.addEventListener("pointercancel",()=>{mark();release(true);});
+  b.addEventListener("contextmenu",e=>e.preventDefault());
+  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();press();}});
+  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();release(false);}});
+  b.addEventListener("click",()=>{const r=run();if(!r||performance.now()-(r.lastPtr||0)<800)return;onClick(r);});}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt$=n=>(n<0?"-$":"$")+Math.round(Math.abs(n)).toLocaleString("en-CA");
 const UPGRADES=[

@@ -8,7 +8,6 @@ const HILL_C={lift:0.962,steady:1.0,push:1.035};
 const HILL_NAMES=["R. Okafor","D. Lindqvist","M. Tanaka","J. Whitehorse","C. Duval","T. Brennan","A. Kovač","S. Moreau","L. Haugen","P. Rinaldi","K. Mbeki","E. Castellanos","N. Fairweather","B. Ostrowski","H. Nakamura","F. Leclair","G. Running Elk","V. Sørensen"];
 const HILL_PAINT=[0x1d4787,0xb7261d,0xe8e6df,0x2c6b3a,0xd9a52b,0x16181b,0x5b2a86,0xd85f14,0x2a6db5];
 const fmtHill=t=>t==null||!isFinite(t)?"DNF":`${Math.floor(t/60)}:${(t%60).toFixed(2).padStart(5,"0")}`;
-function hillClsLocked(k){const c=SIM.HILL_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCls="open";const c=H[e.hillCls];
   if(!SIM.CHASSIS[e.hillCh])e.hillCh="coupe";if(!c.tyres.includes(e.hillTyre))e.hillTyre=c.tyres[c.tyres.length-1];if(!c.aero.includes(e.hillAero))e.hillAero=c.aero[c.aero.length-1];
   if(!(+e.hillFinal>=0.6&&+e.hillFinal<=1.6))e.hillFinal=1;if(![1,2,4,8].includes(+e.hillSpd))e.hillSpd=4;if(!HILL_CAMS.some(q=>q[0]===e.hillCam))e.hillCam="auto";
@@ -17,11 +16,9 @@ function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,t
 /* race day: one running per class per week in career (the same calls all week, the same field); a fresh mountain every run in the sandbox */
 function hillSeed(k){const ix=Object.keys(SIM.HILL_CLASSES).indexOf(k)+1;if(!career())return HILL_SB[ix]||(HILL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().hillSeed)C().hillSeed=Math.floor(Math.random()*1e9)+1;return(C().hillSeed^(C().week*7919)^(ix*104729))>>>0;}
 /* career: one climb a week, in one class. The class run this week, or null */
-function hillWkCls(){if(!career())return null;const w=C().hillWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
-function hillRanWk(k){return !!hillWkCls();}
+function hillRanWk(k){return !!wkCls("hillWk");}
 /* entry: about 15% of the class's winning purse */
-function hillFee(k){const C0=SIM.HILL_CLASSES[k]||SIM.HILL_CLASSES.open;return Math.round(HILL_PURSE[0]*(HILL_PAY[C0.tier]||1)*0.15/5)*5;}
-function hillRecs(){const R=recs();if(!R.hill||typeof R.hill!=="object")R.hill={};return R.hill;}
+function hillFee(k){return evFee(HILL_PURSE[0],HILL_PAY,(SIM.HILL_CLASSES[k]||SIM.HILL_CLASSES.open).tier);}
 /* the engine at altitude, cached by build: five dyno runs up the mountain */
 const hillPrepCache=new Map();
 function hillPrepFor(cfg){const k=cfgHash(cfg);let p=hillPrepCache.get(k);if(!p){if(hillPrepCache.size>6)hillPrepCache.clear();p=SIM.hillPrep(cfg,stdEnv());hillPrepCache.set(k,p);}return p;}
@@ -59,10 +56,10 @@ function hillAltLine(p){const pk=p.pts,top=pk[pk.length-1],dn=Math.round(100*(1-
   else if(p.kind!=="na")s+=" The blower keeps its pressure ratio, so it makes the same ratio of thinner air.";else s+=" Atmospheric: the power follows the air.";
   s+=p.carb?` Carburettor: it meters by air speed, so it runs rich as the air thins (λ ${(+p.ref.lambda).toFixed(2)} → ${(+top.lambda).toFixed(2)} on top).`:" Injection trims the mixture for the altitude.";
   return s;}
-function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=hillClsLocked(k),seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed)),R=hillRecs(),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
+function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=clsLocked(SIM.HILL_CLASSES,k),seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed)),R=recBucket("hill"),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
   const fin=field?field.filter(f=>f.t!=null).length:0;
   let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?esc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
-  h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=hillClsLocked(id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
+  h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.HILL_CLASSES,id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
   h+=driverToggle(id=>`data-hk="hillDrive" data-hv="${id}"`,e.hillDrive,"push or lift into each corner","reads the calls · watch the run");
   h+=`<div class="lbl"><span>Car</span></div><div class="seg wide">${Object.entries(SIM.CHASSIS).map(([id,c])=>`<button data-hk="hillCh" data-hv="${id}" class="${e.hillCh===id?"on":""}">${c.n}<small>${c.d.split(" · ").slice(0,2).reverse().join(" · ")}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${C0.tyres.map(id=>{const t=SIM.HILL_TYRES[id];return `<button data-hk="hillTyre" data-hv="${id}" class="${e.hillTyre===id?"on":""}">${t.n}<small>μ ${t.mu}</small></button>`;}).join("")}</div>`;
@@ -74,7 +71,7 @@ function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=
   h+=`<div class="lbl"><span>Playback</span></div><div class="seg n4">${[1,2,4,8].map(v=>`<button data-hk="hillSpd" data-hv="${v}" class="${+e.hillSpd===v?"on":""}">${v}×<small>${v===1?"real time":v===2?"double":v===4?"quick":"quicker"}</small></button>`).join("")}</div>`;
   return h;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-hk]");if(!b)return;const k=b.dataset.hk,v=b.dataset.hv;
-  if(k==="hillCls"){const l=hillClsLocked(v);if(l){toast(`${SIM.HILL_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.hillCls){S.env.hillTyre=null;S.env.hillAero=null;}}
+  if(k==="hillCls"){const l=clsLocked(SIM.HILL_CLASSES,v);if(l){toast(`${SIM.HILL_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.hillCls){S.env.hillTyre=null;S.env.hillAero=null;}}
   S.env[k]=k==="hillSpd"?+v:v;hillEnvFix();if(HC&&!HC.finished){if(k==="hillCam")HC.cam=v;if(k==="hillSpd")HC.speed=+v;}renderEnv();save();buzz(6);});
 /* the live card */
 function hillHudInit(){$("hillLive").innerHTML=`<div class="rdh hlh"><div class="rd-spd"><b id="hlV">0</b><i>km/h</i></div><div class="rd-g"><b id="hlG">–</b><i>gear</i></div><div class="rd-lt"><b id="hlT">0:00.00</b><i id="hlTi">clock</i></div><div class="rd-lt"><b id="hlA">2,862</b><i>metres</i></div></div>
@@ -123,11 +120,11 @@ function hillStart(){
   HC={suVis:SIM.setupVis(opt.setup),run,prep,opt,k,snap,env,seed,field,lead,auto:S.env.hillDrive!=="you",took:null,speed:+S.env.hillSpd||4,cam:S.env.hillCam||"auto",push:false,lift:false,pre:2.5,last:performance.now(),finished:false,skip:false,doneAt:null,lastPtr:0,acc:0,color:carPaint()};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("hillCtl").style.display="";hillHudInit();$("hillPush").dataset.k="";hillHud();
   $("testProg").classList.remove("done");sfx("start");
-  requestAnimationFrame(()=>{const pn=$("panel"),r=$("hillCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  scrollCtlIntoView("hillCtl");
   let hudT=0;
   const step=()=>{if(!HC||HC.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-HC.last)/1000);HC.last=now;const st=HC.run.st;
     if(HC.pre>0)HC.pre-=dt;else if(!st.done){HC.acc+=dt*HC.speed;let n=0;while(HC.acc>=0.02&&!st.done&&n++<800){HC.run.step(0.02,hillCtl());HC.acc-=0.02;}if(n>=800)HC.acc=0;}
-    if(st.done&&HC.doneAt==null){HC.doneAt=now;if(st.dnf){$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",300);sfx("fail");buzz([80,40,120]);}else{$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}}
+    if(st.done&&HC.doneAt==null){HC.doneAt=now;if(st.dnf){failFlash(300);}else{winFlash();buzz([30,40,30,40,90]);}}
     if(st.ev&&st.ev!==HC.lastEv){HC.lastEv=st.ev;if(st.ev.kind!=="moment"){buzz([60,30,60]);sfx("mudslap");}else buzz([25]);}
     if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:true,su:HC.suVis,course:HC.run.T,s:st.s,v:st.v,d:st.d,g:st.g+1,rpm:st.rpm,thr:st.thr,brk:st.brk,lat:st.latUse,off:st.off?st.off.kind:null,dnf:st.dnf?st.dnf.kind:null,ev:st.ev&&st.t-st.ev.t<1?st.ev.kind:null,
       ch:HC.opt.ch,aero:HC.opt.aero,color:HC.color,cam:HC.cam,pre:HC.pre>0,done:st.done,night:false,dt:dt*(HC.pre>0||st.done?1:HC.speed)});
@@ -144,10 +141,7 @@ function hillRelease(which){if(!HC)return;if(which==="lift")HC.lift=false;else H
 /* skip: the auto driver takes the rest of the climb at once (a run you were driving keeps what you did up to here) */
 function hillSkip(){if(!HC||HC.finished)return;const st=HC.run.st;HC.pre=0;if(!HC.auto&&HC.took==null&&st.s>1)HC.handed=Math.round(st.s);let n=0;while(!st.done&&n++<120000)HC.run.step(0.02,null);HC.skip=true;if(HC.doneAt==null)HC.doneAt=performance.now()-3000;}
 (()=>{const bind=(id,w)=>{const b=$(id);
-  b.addEventListener("pointerdown",e=>{e.preventDefault();HC&&(HC.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}hillPress(w);});
-  b.addEventListener("pointerup",()=>{HC&&(HC.lastPtr=performance.now());hillRelease(w);});b.addEventListener("pointercancel",()=>hillRelease(w));b.addEventListener("contextmenu",e=>e.preventDefault());
-  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();hillPress(w);}});b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();hillRelease(w);}});
-  b.addEventListener("click",()=>{if(!HC||performance.now()-(HC.lastPtr||0)<800)return;hillPress(w);setTimeout(()=>hillRelease(w),400);});};
+  holdBtn(b,()=>HC,()=>hillPress(w),()=>hillRelease(w),()=>{hillPress(w);setTimeout(()=>hillRelease(w),400);});};
   bind("hillPush","push");bind("hillLift","lift");
   $("hillSkip").addEventListener("click",()=>hillSkip());
   $("hillSpdB").addEventListener("click",()=>{if(!HC)return;HC.speed=HC.speed>=8?1:HC.speed*2;S.env.hillSpd=HC.speed;hillBtnText();$("hillSpdB").textContent=HC.speed+"×";save();});
@@ -162,7 +156,7 @@ function hillFinish(){
   Object.assign(r,{field:rows,place:rows.indexOf(me)+1,of:rows.length,clsName:C0.n,tier:C0.tier,auto:HC.auto&&HC.took==null,took:HC.took,handed:HC.handed||null,chName:SIM.CHASSIS[opt.ch].n,tyreName:SIM.HILL_TYRES[opt.tyre].n,aeroName:SIM.HILL_AERO[opt.aero].n,
     secNames:T.sections.map(s=>s.n),lead:HC.lead?{n:HC.lead.n,t:HC.lead.t,splits:HC.lead.splits}:null});
   if(r.dnf)r.place=rows.indexOf(me)+1;
-  if(same&&!r.dnf&&!ff){const RR=hillRecs(),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
+  if(same&&!r.dnf&&!ff){const RR=recBucket("hill"),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
   const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:r.dnf.kind==="boil"?"boiled over in "+r.dnf.name:r.dnf.kind==="stall"?"couldn't climb the grade":"flagged off in "+r.dnf.name):fmtHill(r.time);
   if(career()&&same){addWear(0.6+(r.coolPeak>112?0.4:0)+(r.dmg>0?0.3:0),hKey(snap.h));
@@ -180,7 +174,7 @@ function hillVerdict(res){const r=res.hill;
   const cls=r.place===1?"pass":r.place<=HILL_PURSE.length?"marg":"fail",hp=r.hp,top=hp[hp.length-1];
   return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${fmtHill(r.time)} · ${ordN(r.place)}</div><p>${esc(r.clsName)} · ${ordN(r.place)} of ${r.of} · ${esc(r.chName.toLowerCase().replace("gt","GT").replace("awd","AWD"))}, ${r.tyreName.toLowerCase()} tyres${r.aero!=="none"?", "+r.aeroName.toLowerCase():""}${r.auto?" · auto driver":r.took!=null?` · you took over at ${(r.took/1000).toFixed(1)} km`:""}${career()&&r.purse?` · purse ${fmt$(r.purse)}`:""}${r.pb&&r.pb.was?` · class record (was ${fmtHill(r.pb.was)})`:""}</p>
     <div class="vstats"><div><b>${r.avgKmh}</b><span>avg km/h</span></div><div><b>${Math.round(r.vmax)}</b><span>top km/h</span></div><div><b>${r.offs.length}</b><span>off${r.offs.length===1?"":"s"} · ${r.moments} moment${r.moments===1?"":"s"}</span></div><div><b>${top.hp}</b><span>hp on top · ${Math.round(100*top.hp/r.refHp)}%</span></div><div><b>${r.coolPeak}</b><span>water °C peak</span></div><div><b>${r.m.toLocaleString("en-CA")}</b><span>kg</span></div></div></div></div>`;}
-function hillSheet(res){const r=res.hill,b=hillRecs()[r.cls],L=r.lead;let pt=0,lt=0;
+function hillSheet(res){const r=res.hill,b=recBucket("hill")[r.cls],L=r.lead;let pt=0,lt=0;
   const rows=r.secNames.map((n,i)=>{const t=r.splits[i],sec=t!=null?t-pt:null;const lsec=L&&L.splits&&L.splits[i]!=null?L.splits[i]-lt:null;if(t!=null)pt=t;if(L&&L.splits&&L.splits[i]!=null)lt=L.splits[i];
     const d=sec!=null&&lsec!=null?sec-lsec:null;return `<div><b>${i+1}</b><span class="nm">${esc(n)}</span><span>${sec!=null?sec.toFixed(2):"—"}</span><span class="et">${t!=null?fmtHill(t):"—"}</span><span style="color:${d==null?"":d<=0?"var(--good)":"var(--crit)"}">${d!=null?(d<=0?"−":"+")+Math.abs(d).toFixed(2):""}</span></div>`;}).join("");
   const offs=r.offs.map(o=>`${o.kind==="rail"?"guardrail":o.kind==="bank"?"into the bank":"gravel"} at ${esc(o.name||r.secNames[o.sec])} (+${o.loss} s)`).join(" · ");
@@ -214,5 +208,5 @@ function drawHillChart(r){const css=getComputedStyle(document.documentElement),I
   x.textAlign="left";x.font="11px "+F;x.fillStyle="#d97757";x.fillText(r.kind==="turbo"?"this engine (turbo)":r.kind==="na"?"this engine":"this engine (blown)",padL+4,13);x.fillStyle="rgba(120,169,221,.95)";x.fillText("atmospheric",padL+(r.kind==="turbo"?122:r.kind==="na"?80:118),13);
   x.fillStyle=soft;x.textAlign="right";if(W>420)x.fillText(`hp vs altitude · ${r.dnf?"DNF":fmtHill(r.time)}`,W-padR,13);}
 function hillRedraw(){const l=lastForChart();if(S.env.testType==="hill"&&l&&l.hill)drawHillChart(l.hill);}
-function hillRecHtml(){const P=hillRecs(),ks=Object.keys(SIM.HILL_CLASSES).filter(k=>P[k]&&P[k].t);if(!ks.length)return "";
+function hillRecHtml(){const P=recBucket("hill"),ks=Object.keys(SIM.HILL_CLASSES).filter(k=>P[k]&&P[k].t);if(!ks.length)return "";
   return `<div class="rtop"><span>Pikes Peak · best per class</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch];return `<div><b>▲</b><span class="et">${fmtHill(e.t)}</span><span></span><span class="nm" title="${esc(e.n)}">${esc(SIM.HILL_CLASSES[k].n)}${c?" · "+esc(c.n):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
