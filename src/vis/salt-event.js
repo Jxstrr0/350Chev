@@ -416,8 +416,8 @@ function seChutes(o, dt, V, ph){
   if(SALT.cueBack && SALT.t>SALT.cueBack){ SALT.cueBack=0; if(SALT.shot==="heli" && ph==="shutdown") SALT.cue="chute"; }
 }
 
-/* vis/salt-look.js builds the push truck through SALT.makePush when it is there */
-SALT.makePush=function(){ return saltPickup(saltPushCol(null), {crew:true}); };
+/* vis/salt-look.js builds the push truck through saltMakePush when it is there */
+function saltMakePush(){ return saltPickup(saltPushCol(null), {crew:true}); }
 /* --- per frame, from saltUpdate after the car is posed --- */
 function saltEventUpdate(o, dt, V, ph){
   var E=SALT.ev||(SALT.ev={ph:null});

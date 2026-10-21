@@ -63,6 +63,8 @@ function siteCard(k,lf){const s=k.site;if(!s)return{top:"",brk:""};const b=lf.o.
   return{top:`<div class="sitebar"><b>Judged at ${siteTxt(s)}</b><span>${s.name} · site premium +${Math.round(s.prem*100)}%</span>${has("dyno3")?`<button class="chip" data-siteprev="${k.id}">Preview it: set the cell to these conditions</button>`:`<small>The Pro dyno cell can preview site conditions.</small>`}</div>`,
     brk:b?`<div class="cstat brk">✗ Breaks at ${siteAt(s)}: ${b.why}</div>`:""};}
 function previewSite(s){if(testing){toast("Let the run finish first");return;}C().cell=Object.assign(stdCell(),{ambientC:s.ambientC,altitudeM:s.altitudeM});S.env.testType="pull";save();recompute();showTab("test");toast(`Cell set to ${siteTxt(s)} — a pull here is test only`);}
+const etCache=new WeakMap();   // phones: the quarter-mile pass behind an ET requirement, memoised per sim result + car + redline (quick is a new object whenever cfg or env changes)
+function fitsEt(res,car,redline){let m=etCache.get(res);if(!m){m=new Map();etCache.set(res,m);}const key=redline+"|"+JSON.stringify(car);let d=m.get(key);if(d===undefined){const veh=Object.assign({redline,auto:true},carVeh(car));veh.mass=SIM.dragMass(veh.mass,res.kg);d=SIM.dragPass(res,veh);m.set(key,d);}return d;}
 function fits(k,res,cfg){
   const r=k.req,c=cfg||S.cfg,o=[];let ok=true;
   if(k.site)res=siteRun(k.site,c);   // a site brief ignores the cell figures: the client re-runs the engine in their own air
@@ -91,7 +93,7 @@ function fits(k,res,cfg){
   if(r.lsr)add("lsr",true,"",1);
   if(r.swap&&res.peakTq!=null){const q=swapReqFit(r.swap,res,c);add("swap",q.ok,q.val,q.prog);}   // a swap job: it has to go in their car (app/swap.js)
   if(r.mph!=null&&res.rpms){const m=lsrFitMph(res,c,(r.lsr&&r.lsr.body)||"lakester");add("mph",m>=r.mph,m?m.toFixed(1)+" mph":"no time",ge(m,r.mph));}
-  if(r.et!=null&&res.rpms){const veh=Object.assign({redline:c.redline,auto:true},carVeh(r.car));veh.mass=SIM.dragMass(veh.mass,res.kg);const d=SIM.dragPass(res,veh);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
+  if(r.et!=null&&res.rpms){const d=fitsEt(res,r.car,c.redline);add("et",d.et!=null&&d.et<=r.et,d.et!=null?d.et.toFixed(2)+" s":"DNF",d.et!=null?le(d.et,r.et):0);}
   if((r.lap!=null||r.zero100!=null)&&res.rpms){const R0=roadFor(res,c,Object.assign({ch:"coupe"},r.road,r.lap!=null?{}:{trk:null}),k.site?k.site.name:"");   // judged in their car (a site brief: in their air too)
     if(r.zero100!=null)add("zero100",R0.z100!=null&&R0.z100<=r.zero100,R0.z100!=null?R0.z100.toFixed(1)+" s":"—",R0.z100!=null?le(R0.z100,r.zero100):0);
     if(r.lap!=null)add("lap",R0.lap!=null&&R0.lap<=r.lap+1e-6,fmtLap(R0.lap),R0.lap!=null?le(R0.lap,r.lap):0);}

@@ -335,7 +335,7 @@ $("soloSeg").addEventListener("click",e=>{const b=e.target.closest("[data-solo]"
   ENGINE_SOUND.solo(b.dataset.solo);document.querySelectorAll("#soloSeg button").forEach(x=>x.classList.toggle("on",x.dataset.solo===b.dataset.solo));toast(`SOLO · ${b.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("sdPeak");if(!el||!setOn())return;const pk=ENGINE_SOUND.peak();el.textContent=pk?`${pk.hz} Hz @ ${pk.db} dB · low ${pk.lo} dB · ${pk.state} ${pk.sr/1000}k`:"—";},400);
 /* frame rate: S.showFps puts a readout in the view; S.fpsCap 60 has ENGINE_VIS (and tick) skip the extra vsyncs of a 90/120 Hz screen */
-function applyFps(){const cap=S.fpsCap===60?60:0;ENGINE_VIS.setFpsCap(cap);$("fpsHud").classList.toggle("on",!!S.showFps);document.querySelectorAll("#fpsSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.fps==="1")===!!S.showFps));document.querySelectorAll("#capSeg button").forEach(b=>b.classList.toggle("on",+b.dataset.cap===cap));fpsShow();}
+function applyFps(){const cap=S.fpsCap==null?(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?60:0):(S.fpsCap===60?60:0);   /* phones default to the 60 cap (a 120 Hz screen otherwise spends its battery on the garage); the toggle stores 0 or 60 and wins once touched */ENGINE_VIS.setFpsCap(cap);$("fpsHud").classList.toggle("on",!!S.showFps);document.querySelectorAll("#fpsSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.fps==="1")===!!S.showFps));document.querySelectorAll("#capSeg button").forEach(b=>b.classList.toggle("on",+b.dataset.cap===cap));fpsShow();}
 function fpsShow(){const f=ENGINE_VIS.fps(),r=Math.round(f.fps);if(S.showFps)$("fpsHud").innerHTML=r?`<b class="${r<30?"crit":r<50?"warn":""}">${r}</b> fps <i>· ${f.ms.toFixed(1)} ms</i>`:"— fps";if(curTab==="shop")$("fpsLbl").textContent=r?`${r} fps · ${f.ms.toFixed(1)} ms`:"—";}
 setInterval(fpsShow,500);
 $("fpsSeg").addEventListener("click",e=>{const b=e.target.closest("[data-fps]");if(!b)return;S.showFps=b.dataset.fps==="1";applyFps();save();});
@@ -381,10 +381,16 @@ function engineStatus(cfg,res){const h=cfgHash(cfg);
 function engineCard(cfg,res,o){o=o||{};const st=engineStatus(cfg,res);const name=o.name||engineName();
   const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${st.nr?"—":Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
   return `<div class="ecard ${o.cls||""}"><div class="nm">${o.editable?`<input id="nameIn" value="${name.replace(/"/g,"&quot;")}" maxlength="24" aria-label="Engine name">`:name}</div><span class="badge ${st.cls}">${st.txt}</span><div class="spec">${nums}</div><div class="spec">${engineSpecLine(cfg,res)}</div>${launchLine(cfg)?`<div class="spec"><b>Launch</b><i>·</i>${launchLine(cfg,true)}</div>`:""}</div>`;}
+/* phones: slider and env input events ask for one recompute per animation frame (recomputeSoon); the label writes stay synchronous, the
+   after-work (delta chips, power window) runs once the sim has caught up, and a commit (change / pointerup / Enter) flushes at once */
+let rcRaf=0,rcAfter=new Map();
+function recomputeSoon(key,fn){if(fn)rcAfter.set(key,fn);if(!rcRaf)rcRaf=requestAnimationFrame(()=>{rcRaf=0;recompute();});}
+function recomputeFlush(){if(rcRaf){cancelAnimationFrame(rcRaf);rcRaf=0;recompute();}}
 let prevQuick=null;
 function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.querySelector(".d");if(!t){t=document.createElement("span");t.className="d";el.appendChild(t);}
   if(!d){t.classList.remove("show");return;}t.textContent=(d>0?"▲":"▼")+fmt(Math.abs(d));t.classList.toggle("dn",lowGood?d>0:d<0);t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
 function recompute(){
+  if(rcRaf){cancelAnimationFrame(rcRaf);rcRaf=0;}   // a direct call covers the pending frame
   if(S.bay)ddGuard();   // dyno day: only the parts the customer OK'd
   altFuelFill(S.cfg);   // flex needs a blend and a gas fuel a gas system before the engine is run
   prevQuick=quick;
@@ -400,6 +406,7 @@ function recompute(){
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
+  if(rcAfter.size){const a=[...rcAfter.values()];rcAfter.clear();a.forEach(f=>f());}   // what recomputeSoon callers queued
 }
 function hud(){
   if(typeof tabBadges==="function")tabBadges();

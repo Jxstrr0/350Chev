@@ -243,12 +243,12 @@ function exhaustPoint(){
    keeps running, so the next frame's dt covers the gap. The drawn frames follow a 1/cap grid, so a
    90 or 144 Hz screen still averages the cap instead of dropping to half. Every rAF loop that asks
    in the same vsync gets the same answer (they share the timestamp), so the app's tick skips with it. */
-var viewOff=false, capMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
+var viewOff=false, capMs=0, idleMs=0, gateT=-1, gateOk=true, lastDraw=0, fpsWin={t0:0, last:0, n:0}, fpsStat={fps:0, ms:0};
 function frameDue(now){
   if(now===gateT) return gateOk;
-  gateT=now; var el=now-lastDraw;
-  gateOk = !capMs || el<0 || el>=capMs-1;
-  if(gateOk) lastDraw = (!capMs || el<0 || el>2*capMs) ? now : Math.min(now, lastDraw+capMs);
+  gateT=now; var el=now-lastDraw, cm=Math.max(capMs, idleMs);   /* idleMs: the still garage settles to ~30 fps (loop sets it) */
+  gateOk = !cm || el<0 || el>=cm-1;
+  if(gateOk) lastDraw = (!cm || el<0 || el>2*cm) ? now : Math.min(now, lastDraw+cm);
   return gateOk;
 }
 /* fps meter: drawn frames over ~0.5 s of rAF timestamps; a gap over 3 s (hidden tab) restarts it */
@@ -266,7 +266,8 @@ function loop(now){
   if(!frameDue(now)) return;
   if(viewOff){ clock.getDelta(); return; }
   fpsCount(now);
-  renderer.shadowMap.autoUpdate=true;   /* only the Ultra garage gate below turns it off, and only around its own draw */
+  idleMs=0;   /* every drawn frame decides again; only the still garage below slows the next one */
+  renderer.shadowMap.autoUpdate=true;   /* only the garage shadow gate below turns it off, and only around its own draw */
   var dt=Math.min(clock.getDelta(), 0.05);
   if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
@@ -280,12 +281,13 @@ function loop(now){
   if(PULL.on && PULL.built){ pullRender(); return; }
   if(STRIP.on && STRIP.built){ if(STRIP.post) stripPostStep(); stripRender(); return; }
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
-  garageShadowGate(now);   /* Ultra: the key light's 4096 shadow map is redrawn only when a caster, the light or the tier changed (or once a second) */
+  idleMs = (capMs && !garageLive() && !camState.dragging) ? 1000/30 : 0;   /* phones: engine off, nothing but the slow orbit moving and a cap set: the garage draws at ~30 fps */
+  garageShadowGate(now);   /* every tier: the key light's shadow map is redrawn only when a caster, the light or the tier changed (or once a second) */
   ultraFloor();   /* Ultra: the sealed floor's mirror pass (and the stock floor back when the tier drops) */
   if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
   renderer.shadowMap.autoUpdate=true;   /* photo, resize and every other draw path see the stock behaviour */
 }
-/* Ultra garage shadow gate. The 4096 map costs ~a quarter of the frame's draws and nearly all of its fill, yet a still room never changes it.
+/* Garage shadow gate, every tier (Ultra's 4096 map was the first reason; a phone's 1024 map is the same share of its frame). The map costs ~a quarter of the frame's draws and nearly all of its fill, yet a still room never changes it.
    Fingerprint every visible shadow caster (world matrix, instance matrices, geometry, draw range) plus the light and tier; on any change
    redraw for a few frames, and always while the engine runs, a part build/teardown is in flight, or an effect is live. Safety net: once a second. */
 var _gs={sig:"", hold:0, t:-1e9, a:0, b:0, n:0};
@@ -296,14 +298,16 @@ function gsCaster(o){
   if(o.isInstancedMesh) v+=o.count*0.7+(o.instanceMatrix?o.instanceMatrix.version:0)*0.3;
   _gs.a+=v; _gs.b+=v*k;
 }
+/* anything in the garage that moves by itself (the frame gate and the shadow gate both ask) */
+function garageLive(){ return !!(run.on || run.fail || failFx.started || failFx.debris.length || particles.length || XRAY || TD.on || Math.abs(mnt.roll)>1e-4 || Math.abs(mnt.rollV)>1e-3 || camState.shake>0.0001); }
 function garageShadowGate(now){
   var sm=renderer.shadowMap, ls=keyLight&&keyLight.shadow;
-  if(GFX!=="ultra"||!ls||!keyLight.castShadow){ sm.autoUpdate=true; return; }
+  if(!ls||!keyLight.castShadow||!sm.enabled){ sm.autoUpdate=true; return; }
   _gs.a=_gs.b=_gs.n=0; scene.traverseVisible(gsCaster);
   var kp=keyLight.position, kt=keyLight.target.position, sc=ls.camera;
   var sig=_gs.n+"|"+_gs.a.toFixed(4)+"|"+_gs.b.toFixed(3)+"|"+kp.x+","+kp.y+","+kp.z+"|"+kt.x+","+kt.y+","+kt.z+"|"+sc.left+","+sc.right+","+sc.top+","+sc.bottom+","+sc.near+","+sc.far+"|"+ls.mapSize.x+(ls.map?"m":"-")+"|"+sm.type+sm.enabled+"|"+keyLight.intensity;
   if(sig!==_gs.sig){ _gs.sig=sig; _gs.hold=4; }
-  var live = run.on || run.fail || failFx.started || failFx.debris.length || particles.length || XRAY || TD.on || Math.abs(mnt.roll)>1e-4 || Math.abs(mnt.rollV)>1e-3 || camState.shake>0.0001;
+  var live = garageLive();
   var draw = live || _gs.hold>0 || now-_gs.t>=1000 || now<_gs.t;
   if(_gs.hold>0) _gs.hold--;
   if(draw) _gs.t=now;

@@ -7,11 +7,12 @@
    Scenery goes through StripBatch like the strip; dirt, dust, diesel smoke and
    confetti are StripFx billboard systems (one draw each). Built on first use.
    ==========================================================================*/
-var PULL={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, geo:{},
+function pullInit(){ return { on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, geo:{},
   veh:{}, cur:null, sled:null, chain:null, board:null, crowd:null, poles:[], spots:[], fx:null, fxDirt:null, fxConf:null,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:44, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false,
   t:0, pullT:0, doneT:0, cheer:0, night:null, tier:null, prev:{}, x0:null, lastT:0, composer:null, exposure:0.92, stats:null,
-  flags:[], wheel:null, ruts:null, horLin:null, sunDir:null, tension:0, shake:0, fixX:0 };
+  flags:[], wheel:null, ruts:null, horLin:null, sunDir:null, tension:0, shake:0, fixX:0 }; }
+var PULL=pullInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var PULL_LINE=91.44, PULL_END=112, PULL_CHAIN=1.4, PULL_BOX0=-8.25, PULL_BOX1=-1.55, PULL_SLED_L=9.9;
 var PULL_WIND=new THREE.Vector3(-1.1,0,-0.75), _sbX=new THREE.Vector3(1,0,0), _pA=new THREE.Vector3(), _pB=new THREE.Vector3(), _pC=new THREE.Vector3(), _pD=new THREE.Vector3(),
   _pw=new THREE.Vector3(), _pt=new THREE.Vector3(), _pr=new THREE.Vector3(), _prt=new THREE.Vector3(), _pM=new THREE.Matrix4(), _pQ=new THREE.Quaternion();

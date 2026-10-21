@@ -1,3 +1,25 @@
+/* phones: buildEngine is asked for after every committed slider, yet most sliders (compression, cam, redline, boost, timing...) change nothing the
+   model shows. The visual key is the cfg minus the keys the model never reads; an unchanged key skips the rebuild. A key not in VIS_SKIP counts
+   as visual, so a new cfg field is safe by default; a tier change (force), a blown engine and an empty stand always rebuild. */
+var lastVisKey="";
+var VIS_SKIP={cr:1, cam:1, lift:1, redline:1, boost:1, timing:1, lambda:1, pistonClearance:1, deck:1, valveMat:1, springs:1, piston:1, rings:1, rod:1, rodBolts:1, crank:1, bearings:1, gasket:1, studs:1,
+  fuelPump:1, dNoz:1, oilGrade:1, oilSquirters:1, launchCtl:1, twoStepRpm:1, launchRetard:1, transBrake:1, apexSeal:1, eshaft:1, turbine:1, als:1, pv:1, lube:1, premix:1, ccr:1};
+function visKey(cfg){ var o={}, ks=Object.keys(cfg||{}).sort(); for(var i=0;i<ks.length;i++) if(!VIS_SKIP[ks[i]]) o[ks[i]]=cfg[ks[i]]; return JSON.stringify(o)+"|"+GFX; }
+/* phones (Lite): the event scenes are heavy and a career evening walks through several of them. On Lite only one of strip / pull / bog / boat /
+   salt stays built: entering one frees the others (off-path first, then the composer, the shadow maps and the tree), and a scene entered again
+   later builds from its factory. The road and hill worlds, the oval, the pits and the trophy room keep their own lifecycles. */
+function sceneFree(n){
+  var X=n==="strip"?STRIP:n==="pull"?PULL:n==="bog"?BOG:n==="boat"?BOAT:SALT;
+  if(!X.built) return;
+  if(n==="strip") ENGINE_VIS.setStrip({on:false}); else if(n==="pull") ENGINE_VIS.setPull({on:false}); else if(n==="bog") ENGINE_VIS.setBog({on:false}); else if(n==="boat") ENGINE_VIS.setBoat({on:false}); else ENGINE_VIS.setSalt({on:false});
+  try{ var C=X.composer; if(C){ C.renderTarget1.dispose(); C.renderTarget2.dispose(); C.passes.forEach(function(ps){ if(ps.dispose) ps.dispose(); }); } }catch(e){}
+  try{ if(X.scene){ X.scene.traverse(function(o){ if(o.isLight && o.shadow && o.shadow.map){ o.shadow.map.dispose(); o.shadow.map=null; } }); disposeTree(X.scene); } }catch(e){}
+  if(n==="bog" && BOG.mudTex){ try{ BOG.mudTex.dispose(); }catch(e){} }
+  if(n==="strip"){ var rn=STRIP.rn; STRIP=stripInit(); STRIP.rn=rn; }   /* the race-night extras the app set ahead of the pass stay */
+  else if(n==="pull") PULL=pullInit(); else if(n==="bog") BOG=bogInit(); else if(n==="boat") BOAT=boatInit();
+  else { var lk=SALT.look; SALT=saltInit(); SALT.look=lk; }   /* the look the app chose for the next run stays */
+}
+function freeOthers(keep){ if(GFX!=="lite") return; ["strip","pull","bog","boat","salt"].forEach(function(n){ if(n!==keep) sceneFree(n); }); }
 const ENGINE_VIS = {
 
   init: function(canvas){
@@ -123,7 +145,7 @@ const ENGINE_VIS = {
     var tierChanged = (GFX !== want);
     GFX = want;
     if(tierChanged && MATS_BUILT) matTierChanged();   /* v1.70: painted maps swap to / paint the tier's size; anti-tiling shaders recompile */
-    if(tierChanged && lastCfg && engineRoot) ENGINE_VIS.buildEngine(lastCfg, lastLayout);   /* v1.6: model detail follows the tier */
+    if(tierChanged && lastCfg && engineRoot) ENGINE_VIS.buildEngine(lastCfg, lastLayout, true);   /* v1.6: model detail follows the tier */
     if(keyLight){ keyLight.shadow.mapSize.set(GFX!=="lite"?2048:1024, GFX!=="lite"?2048:1024); if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map=null; } if(GFX==="ultra") ultraShadow(keyLight, 2048); }
     ENGINE_VIS.resize();
   },
@@ -134,7 +156,7 @@ const ENGINE_VIS = {
   setStrip: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(STRIP.on){ stripPostEnd(); STRIP.on=false; STRIP.honour=0; STRIP.rec=null; STRIP.recPre=null; stripReset(); } document.documentElement.classList.remove("onstrip"); return; }
-    if(!STRIP.on){ STRIP.on=true; document.documentElement.classList.add("onstrip"); if(!STRIP.built) buildStripScene(); STRIP.shot=null; STRIP.snap=true; ENGINE_VIS.resize(); }
+    if(!STRIP.on){ freeOthers("strip"); STRIP.on=true; document.documentElement.classList.add("onstrip"); if(!STRIP.built) buildStripScene(); STRIP.shot=null; STRIP.snap=true; ENGINE_VIS.resize(); }
     if(STRIP.post){ if(o.phase==="done") return STRIP.stats||null; stripPostEnd(); }
     if(STRIP.rn) for(var rk in STRIP.rn) if(o[rk]===undefined) o[rk]=STRIP.rn[rk];   /* race night extras: round, dials, the other lane's tree/RT/ET, win */
     var rdt=Math.max(0, +o.dt||0.016); stripUpdate(o, Math.min(0.1, rdt), Math.min(0.5, rdt));
@@ -177,7 +199,7 @@ const ENGINE_VIS = {
   setPull: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(PULL.on){ PULL.on=false; pullReset(); } return; }
-    var now=performance.now(); if(!PULL.on){ PULL.on=true; if(!PULL.built) buildPullScene(); pullReset(); PULL.snap=true; PULL.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!PULL.on){ freeOthers("pull"); PULL.on=true; if(!PULL.built) buildPullScene(); pullReset(); PULL.snap=true; PULL.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-PULL.lastT)/1000; PULL.lastT=now; pullUpdate(o, clamp(rdt||0, 0, 0.1));
     return PULL.stats||null;
   },
@@ -188,7 +210,7 @@ const ENGINE_VIS = {
   setBog: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(BOG.on){ BOG.on=false; bogReset(); } return; }
-    var now=performance.now(); if(!BOG.on){ BOG.on=true; if(!BOG.built) buildBogScene(); bogReset(); BOG.snap=true; BOG.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!BOG.on){ freeOthers("bog"); BOG.on=true; if(!BOG.built) buildBogScene(); bogReset(); BOG.snap=true; BOG.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-BOG.lastT)/1000; BOG.lastT=now; bogUpdate(o, clamp(rdt||0, 0, 0.1));
     return BOG.stats||null;
   },
@@ -199,7 +221,7 @@ const ENGINE_VIS = {
   setBoat: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(BOAT.on){ BOAT.on=false; boatReset(); } return; }
-    var now=performance.now(); if(!BOAT.on){ BOAT.on=true; if(!BOAT.built) buildBoatScene(); boatReset(); BOAT.snap=true; BOAT.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!BOAT.on){ freeOthers("boat"); BOAT.on=true; if(!BOAT.built) buildBoatScene(); boatReset(); BOAT.snap=true; BOAT.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-BOAT.lastT)/1000; BOAT.lastT=now; boatUpdate(o, clamp(rdt||0, 0, 0.1));
     return BOAT.stats||null;
   },
@@ -248,7 +270,7 @@ const ENGINE_VIS = {
   setSalt: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(SALT.on){ SALT.on=false; saltReset(); } return; }
-    var now=performance.now(); if(!SALT.on){ SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
+    var now=performance.now(); if(!SALT.on){ freeOthers("salt"); SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
     if(SALT.tier!==GFX && SALT.built){ saltRebuild(); ENGINE_VIS.resize(); }   /* a new quality tier: build the flats again at it */
     var rdt=o.dt!=null ? +o.dt : (now-SALT.lastT)/1000; SALT.lastT=now; saltUpdate(o, clamp(rdt||0, 0, 0.1));
     return SALT.stats||null;
@@ -273,9 +295,12 @@ const ENGINE_VIS = {
     if(anim.internals) anim.internals.group.visible=XRAY;
   },
 
-  buildEngine: function(cfg, layoutObj){
+  buildEngine: function(cfg, layoutObj, force){
     lastCfg=cfg; lastLayout=layoutObj;
     if(!renderer) return;
+    var vk=visKey(cfg);
+    if(!force && vk===lastVisKey && engineRoot && engineRoot.children.length && !failFx.started && !run.fail) return 0;   /* nothing the model shows changed */
+    lastVisKey=vk;
     disposeTree(engineRoot);
     anim={ spin:[], turbos:[], belts:[], hot:[], fans:[], glowMats:[], internals:null };
     var G=buildEngineMesh(cfg, layoutObj);
