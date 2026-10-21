@@ -535,7 +535,6 @@ function stripPayoffs(o, dt, P, O){
 
 /* --- camera direction: a cut list, not a lerp between distant spots --- */
 var STRIP_PAN_X=26, STRIP_WALL_X=64, STRIP_FIN_X=386, _cw=new THREE.Vector3(), _ct=new THREE.Vector3(), _cr=new THREE.Vector3(), _crt=new THREE.Vector3();
-function stripCut(name){ if(STRIP.shot!==name){ STRIP.shot=name; STRIP.shotT=0; STRIP.cutT=0; STRIP.snap=true; } }
 function stripDirect(o, dt, P, O){
   var ph=o.phase||"run", v=Math.max(0,o.v||0), race=!!(o.race&&O&&O.visible);
   var px=P.position.x, pz=P.position.z, ox=race?O.position.x:px, lead=Math.max(px,ox), trail=Math.min(px,ox), gap=Math.abs(px-ox);
@@ -554,7 +553,7 @@ function stripDirect(o, dt, P, O){
     else if(s==="crowd" && (STRIP.pbCut>1 || STRIP.shotT>(STRIP.win?2.8:STRIP.pb>1?2.3:1.7))) s="shutdown";
   } else if(ph==="done"){ s=(s==="shutdown"&&STRIP.shotT<0.8)?"shutdown":"board"; }
   if(STRIP.post) s=STRIP.post.seg;   /* after the pass: board close-up, instant replay, lap of honour */
-  stripCut(s);
+  sceneCut(STRIP, s);
   STRIP.shotT+=dt; STRIP.cutT+=dt;
   var T=STRIP.shotT, fov=46, rel=false, ax=0, sm=0, d;
   switch(s){

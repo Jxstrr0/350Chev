@@ -332,19 +332,18 @@ function roadSetSky(W, n, warm, east){
   if(W.head) W.head.intensity=n>0.3?3.2:0;
 }
 function roadSkyReset(W){ if(!W||W.skyKey==null) return; W.skyKey=null; W.night=null; var U=W.sky.material.uniforms; U.uHor.value.fromArray(STRIP_HOR); U.uSun.value.copy(STRIP_SUN_DAY); }
-function roadCut(name){ if(ROAD.shot!==name){ ROAD.shot=name; ROAD.shotT=0; ROAD.cutT=0; ROAD.snap=true; } }
 function roadDirect(o, dt, W, car){
   var T=W.T, N=T.N, fi=(o.s||0)/T.ds, h=roadHd(T, fi), v=Math.max(0,+o.v||0), mode=o.cam||"auto", s=ROAD.shot;
   var fx=Math.cos(h), fz=-Math.sin(h);
   /* the 24 Hours at time-lapse speed: a tower shot down the pit straight, the field streaming at it */
-  if(mode==="tower"){ var i1=W.pit[1]-6; roadPt(T, i1, ROAD_W/2+30, 21, ROAD.camPos); roadPt(T, i1-Math.round(190/T.ds), -3, 0, ROAD.camTgt); roadCut("tower"); ROAD.shotT+=dt; ROAD.fov=46; ROAD.snap=false;
+  if(mode==="tower"){ var i1=W.pit[1]-6; roadPt(T, i1, ROAD_W/2+30, 21, ROAD.camPos); roadPt(T, i1-Math.round(190/T.ds), -3, 0, ROAD.camTgt); sceneCut(ROAD, "tower"); ROAD.shotT+=dt; ROAD.fov=46; ROAD.snap=false;
     var tc=ROAD.cam; tc.position.copy(ROAD.camPos); tc.lookAt(ROAD.camTgt); tc.fov=46; tc.updateProjectionMatrix(); bandLens(tc); return; }
   /* nearest trackside camera ahead of (or just past) the car */
   var best=-1, bd=1e9; for(var q=0;q<W.stations.length;q++){ var st=W.stations[q], d=((st.i-fi)%N+N)%N; if(d>N/2) d-=N; var m=d*T.ds; if(m>-45 && m<150 && Math.abs(m-30)<bd){ bd=Math.abs(m-30); best=q; } }
   if(mode==="chase") s="chase"; else if(mode==="onboard") s="onboard"; else if(mode==="side") s=best>=0?"side":"chase";
   else { if(o.pre) s="gantry"; else if(s==="gantry" && ROAD.shotT<2.6) s="gantry"; else if(best>=0 && (s!=="side"||ROAD.st===best) && !(s==="chase" && ROAD.shotT<3.5)) s="side"; else if(s==="side" && best!==ROAD.st) s=(ROAD.shotT>3.2 && best>=0)?"side":"chase"; else if(s!=="side") s=(s==="onboard"&&ROAD.shotT<5)?"onboard":(s==="chase"&&ROAD.shotT>9&&v>25)?"onboard":"chase"; }
   if(s==="side" && best!==ROAD.st){ ROAD.st=best; ROAD.shot=null; }
-  roadCut(s); ROAD.shotT+=dt; ROAD.cutT+=dt;
+  sceneCut(ROAD, s); ROAD.shotT+=dt; ROAD.cutT+=dt;
   var cp=car.position, fov=50;
   if(s==="chase"){ _rA.set(cp.x-fx*6.8, cp.y+2.25, cp.z-fz*6.8); _rB.set(cp.x+fx*5, cp.y+0.8, cp.z+fz*5);
     if(ROAD.snap){ ROAD.chP.copy(_rA); ROAD.chT.copy(_rB); } else { var k1=1-Math.exp(-dt*7), k2=1-Math.exp(-dt*12); ROAD.chP.lerp(_rA,k1); ROAD.chT.lerp(_rB,k2); }

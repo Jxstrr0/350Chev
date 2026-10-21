@@ -11,7 +11,7 @@
 var OVAL={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, cars:{}, list:[], fx:null, G:null, gkey:"",
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:50, shot:null, shotT:0, cutT:0, snap:true, relOn:false, t:0, night:null, tier:null, prev:{}, lastT:0,
   composer:null, exposure:0.92, stats:null, horLin:null, sunDir:null, shake:0, crowd:null, poles:[], spots:[], board:null, lane:{}, flagMesh:null, flagKey:"", cheer:0, lapSeen:0, tvA:0 };
-var OVAL_WIND=new THREE.Vector3(-0.8,0,0.6), _oA=new THREE.Vector3(), _oB=new THREE.Vector3(), _oC=new THREE.Vector3(), _oD=new THREE.Vector3(), _oM=new THREE.Matrix4(),
+var OVAL_WIND=new THREE.Vector3(-0.8,0,0.6), _oA=new THREE.Vector3(), _oB=new THREE.Vector3(), _oC=new THREE.Vector3(), _oD=new THREE.Vector3(),
   _oPt={x:0,z:0,psi:0,nx:0,nz:0,y:0,bank:0};
 function ovalSmooth(a,b,x){ var t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }
 /* track point at sp (m along the centre line), lateral d: fills _oPt {x, z, psi (yaw), nx, nz (unit normal toward the infield), bank (rad), y (surface height)} */
@@ -235,7 +235,6 @@ function ovalLanes(list, dt){
 }
 function hw0(){ return OVAL.G.w/2-1.3; }
 /* ---- the director ---- */
-function ovalCut(name){ if(OVAL.shot!==name){ OVAL.shot=name; OVAL.shotT=0; OVAL.cutT=0; OVAL.snap=true; } }
 function ovalDirect(o, dt, me, V){
   var G=OVAL.G, L=G.L, s=OVAL.shot, mode=o.cam||"auto", ph=o.pre?"pre":o.done?"done":"race", sp=me.s+G.ls/2, fov=50, rel=false;
   var pos=_oA, tgt=_oB;
@@ -246,7 +245,7 @@ function ovalDirect(o, dt, me, V){
     if(!s||cyc.indexOf(s)<0){ s="chase"; OVAL.cyc=0; }
     if(OVAL.shotT>lens[OVAL.cyc%cyc.length]){ OVAL.cyc=(OVAL.cyc+1)%cyc.length; s=cyc[OVAL.cyc]; } else s=cyc[OVAL.cyc%cyc.length];
     if(o.lastLap && (o.toFlag||0)<1) s="finish"; }
-  ovalCut(s); OVAL.shotT+=dt; OVAL.cutT+=dt;
+  sceneCut(OVAL, s); OVAL.shotT+=dt; OVAL.cutT+=dt;
   var cp=V.position, yaw=V.rotation.y, fx=Math.cos(yaw), fz=-Math.sin(yaw);
   switch(s){
     case "start": { var t0=Math.min(1,OVAL.shotT/8); ovalPt(G.ls/2+34-10*t0, G.w/2+11, _oPt); pos.set(_oPt.x, 3.3+1.4*t0, _oPt.z); ovalPt(G.ls/2-20, 0, _oPt); tgt.set(_oPt.x, 1.1, _oPt.z); fov=52; break; }
@@ -288,14 +287,8 @@ function ovalRender(){
   renderer.toneMappingExposure=ex;
 }
 function ovalReset(){ if(OVAL.fx) OVAL.fx.clear(); OVAL.shot=null; OVAL.prev={}; OVAL.shake=0; OVAL.cheer=0; OVAL.lane={}; OVAL.snap=true; OVAL.relOn=false; OVAL.lapSeen=0; }
-function ovalCrowd(dt){
-  var C=OVAL.crowd; if(!C) return; OVAL.cheer=Math.max(0,OVAL.cheer-dt*0.3);
-  if(OVAL.cheer<0.02 && !C.live) return;
-  var t=OVAL.t, amp=OVAL.cheer, i, m=_oM;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.05:0.4)?Math.abs(Math.sin(t*(amp>1?9:7)+C.phase[i]))*0.16*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.35+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.83+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=OVAL.cheer>=0.02;
-}
+var OVAL_CROWD={decay:0.3, lo:0.4, hi:0.05, f0:7, f1:9, amp:0.16, body:0.35, head:0.83};
+function ovalCrowd(dt){ crowdTick(OVAL, dt, OVAL_CROWD); }
 function ovalSetFlag(kind){
   if(OVAL.flagKey===kind||!OVAL.flagMesh) return; OVAL.flagKey=kind; var t=OVAL.flagTex[kind]||(OVAL.flagTex[kind]=ovalFlagTex(kind)); OVAL.flagMesh.material.map=t; OVAL.flagMesh.material.needsUpdate=true;
 }

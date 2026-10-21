@@ -210,7 +210,6 @@ function hillCarMesh(ch, color, aero){
   car.traverse(function(o){ if(o.isMesh){ o.castShadow=true; } });
   return car;
 }
-function hillCut(name){ if(HILL.shot!==name){ HILL.shot=name; HILL.shotT=0; HILL.snap=true; } }
 function hillDirect(o, dt, W, car){
   var T=W.T, fi=(o.s||0)/T.ds, h=hillHd(T, fi), v=Math.max(0,+o.v||0), mode=o.cam||"auto", s=HILL.shot;
   var fx=Math.cos(h), fz=-Math.sin(h), cp=car.position, fov=50;
@@ -224,7 +223,7 @@ function hillDirect(o, dt, W, car){
     else if(!s) s="chase";
     if(o.off && s!=="side") s="heli"; }
   if(s==="side" && best!==HILL.st){ HILL.st=best; HILL.shot=null; }
-  hillCut(s); HILL.shotT+=dt;
+  sceneCut(HILL, s); HILL.shotT+=dt;
   if(s==="chase"){ var gr=Math.atan(T.grade[Math.min(T.N-1,Math.floor(fi))]||0); _hA.set(cp.x-fx*7.2, cp.y+2.4-7.2*Math.tan(gr)*0.6, cp.z-fz*7.2); _hB.set(cp.x+fx*6, cp.y+0.9+6*Math.tan(gr), cp.z+fz*6);
     if(HILL.snap){ HILL.chP.copy(_hA); HILL.chT.copy(_hB); } else { HILL.chP.lerp(_hA,1-Math.exp(-dt*6)); HILL.chT.lerp(_hB,1-Math.exp(-dt*11)); }
     HILL.camPos.copy(HILL.chP); HILL.camTgt.copy(HILL.chT); fov=56+Math.min(10,v*0.12); }
