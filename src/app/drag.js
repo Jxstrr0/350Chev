@@ -34,7 +34,11 @@ function rnFreshCost(res){const c=freshenCost(res),k=career()?crewRnFreshK():1;r
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
 function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
-function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
+function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!R.topBy||typeof R.topBy!=="object")R.topBy={};if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
+/* the strip's per-body book: top five passes in each body class (R.topBy[body]); R.top stays the all-bodies top five that older saves carry */
+function dragTopBy(b){const R=recs();if(!Array.isArray(R.topBy[b]))R.topBy[b]=[];return R.topBy[b];}
+function dragRecHtml(){const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]),R=recs(),ks=Object.keys(SIM.AERO).filter(k=>Array.isArray(R.topBy[k])&&R.topBy[k][0]);if(!ks.length)return "";
+  return `<div class="rtop"><span>Strip · quickest per body</span>${ks.map(k=>{const e=R.topBy[k][0],n=R.topBy[k].length;return `<div><b>${n}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${esc(e.n)} · ${n} pass${n>1?"es":""} booked">${esc(SIM.AERO[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 function engBest(h){return career()?(C().dragBest||{})[h]:recs().eng[h];}
 function allBest(){const t=recs().top[0];return Math.min(t?t.et:Infinity,career()&&C().bestEt||Infinity);}
 function recTag(){const e={n:engineName().slice(0,28),d:Date.now()};if(career())e.w=C().week;return e;}
@@ -43,7 +47,9 @@ const etFix=(a,b)=>a.toFixed(2)===b.toFixed(2)?3:2;   // two decimals unless tha
 function dragPbCheck(q){if(ff||!q||DR.failed||(DR.race&&DR.race.foul)||(career()&&q.mph>150&&!DR.veh.chute))return null;const all=allBest(),eb=engBest(DR.hk);
   if(all<Infinity&&q.t<all)return{kind:2,was:all};if(eb!=null&&q.t<eb)return{kind:1,was:eb};return null;}
 function pbPass(r,failed){if(ff||failed||r.et==null||(r.race&&r.race.foul)||(career()&&r.mph>150&&!r.chute))return;const R=recs(),h=DR.hk;
-  R.top.push(Object.assign({et:r.et,mph:r.mph},recTag()));R.top.sort((a,b)=>a.et-b.et);if(R.top.length>5)R.top.length=5;
+  const body=(DR.veh&&DR.veh.body)||"street",e=Object.assign({et:r.et,mph:r.mph,body},recTag());
+  R.top.push(e);R.top.sort((a,b)=>a.et-b.et);if(R.top.length>5)R.top.length=5;
+  const B=dragTopBy(body);B.push(e);B.sort((a,b)=>a.et-b.et);if(B.length>5)B.length=5;
   if(career()){const m=C().dragBest=C().dragBest||{};if(!(m[h]<=r.et))m[h]=r.et;if(!(C().bestEt<=r.et))C().bestEt=r.et;}
   else{const m=R.eng;if(!(m[h]<=r.et)){delete m[h];m[h]=r.et;const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}
   const pb=DR.pb;if(!pb)return;r.pb={was:pb.was,all:pb.kind>1};const f=etFix(r.et,pb.was);

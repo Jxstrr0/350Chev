@@ -374,6 +374,7 @@ function achFacts(x){
   else if(x.type==="pull"){const r=x.r;if(!x.failed){f.pullDone=true;if(r.full)f.full=true;if(r.place===1){f.pullWin=true;if(r.cls==="hotfarm")f.hotfarm=true;if(r.full&&r.pullOff!=null)f.pullOff=true;}}}
   else if(x.type==="retro"){const hp=R.hp?R.hp.v:career()&&C().bestHp>0?C().bestHp:0,rel=R.rel?R.rel.v:career()&&C().bestRel>0?C().bestRel:0,et=allBest(),P=R.pull&&typeof R.pull==="object"?Object.values(R.pull):[];
     if(hp>0){f.ok=true;f.hp=hp;}if(rel>0)f.rel=rel;if(et<Infinity)f.et=et;if(R.top&&R.top[0])f.mph=Math.max.apply(null,R.top.map(e=>e.mph||0));
+    if(R.topBy&&typeof R.topBy==="object")for(const L of Object.values(R.topBy))if(Array.isArray(L))for(const e of L)if(e&&e.mph>(f.mph||0))f.mph=e.mph;
     if(career()&&C().enduranceOk)f.hours=100;if(career()&&C().boostedCert)f.boosted=true;
     if(P.length){f.pullDone=true;if(P.some(e=>e.full))f.full=true;}if(R.bog&&typeof R.bog==="object"&&Object.values(R.bog).some(e=>e&&e.c))f.bogThru=true;if(R.bestFinish<=5)f.qualified=true;
     if(S.firstFireDone)f.firstfire=true;if(R.e24Best){f.e24Fin=true;if(R.e24Best<=3)f.e24Pod=true;if(R.e24Best===1)f.e24Win=true;}
@@ -523,10 +524,10 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
-  const pr=pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+hillRecHtml()+ovalRecHtml()+e24RecHtml();
+  const pr=dragRecHtml()+pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+hillRecHtml()+ovalRecHtml()+e24RecHtml();
   if(!best&&!hp&&!rel&&!pr){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Best certified rel":"Best reliability"}</span>${rel?`<b>${rel.v}<i>${rel.hp?"@ "+rel.hp+" hp":"rel"}</i></b>${sub(rel)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
-    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm">${esc(e.n)}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+pr+rnRecHtml()+`</div>`;}
+    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${esc(e.n)}">${esc(e.n)}${e.body&&SIM.AERO[e.body]?" · "+esc(SIM.AERO[e.body].n):""}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+pr+rnRecHtml()+`</div>`;}
 
