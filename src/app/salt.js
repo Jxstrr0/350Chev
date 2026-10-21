@@ -4,7 +4,6 @@
 let SR=null;
 const SALT_FEE={short:350,long:600},SALT_PURSE={altered:1500,roadster:2000,lakester:3500,streamliner:6000},SALT_REP={altered:6,roadster:8,lakester:12,streamliner:18};
 const SALT_COLORS={altered:0x2c6b3a,roadster:0xb7261d,lakester:0xd9a52b,streamliner:0x1d4787};
-const saltEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function saltBodyLocked(k){const b=SIM.LSR_BODIES[k];return b&&career()&&!dev()&&C().rep<b.rep?b.rep:0;}
 /* the run setup lives on S.env beside the strip's and the sled's; anything out of range is pulled back in */
 function saltEnvFix(){const e=S.env,B=SIM.LSR_BODIES;if(!B[e.saltBody])e.saltBody="altered";const k=e.saltBody;
@@ -161,7 +160,7 @@ function saltTopEst(k){const v=saltVeh(k),key=[cfgHash(S.cfg),k,v.course,v.topMp
   const r=SIM.lsrPass(saltRes(),Object.assign({},v,{noFail:true,noSpin:true,autoLift:false,h:0.004}));if(saltTopCache.size>40)saltTopCache.clear();saltTopCache.set(key,r.peakMph);return r.peakMph;}
 function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_BODIES[k],cls=saltCls(k),rec=saltRecord(cls.key),L=saltBook(),pb=L.pb[cls.key],meet=saltMeet(),res=saltRes(),cell=quick,lk=saltBodyLocked(k);
   const loss=cell&&cell.peakHp>0?Math.round((1-res.peakHp/cell.peakHp)*100):0;
-  let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+saltEsc(rec.holder||""):saltEsc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
+  let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+esc(rec.holder||""):esc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
   h+=`<p class="hint">At Bonneville — ${SIM.SALT_ENV.altitudeM.toLocaleString("en-CA")} m and ${SIM.SALT_ENV.ambientC} °C — this engine makes <b>${Math.round(res.peakHp)} hp</b>${loss>0?`, ${loss}% down on the cell`:""}${cls.blown?" (boost makes up most of the thin air)":" (no boost to make up the thin air)"}.</p>`;
   h+=swapEnvNote();if(!swapLive())h+=`<div class="lbl"><span>Body</span></div><div class="seg wide">${Object.entries(SIM.LSR_BODIES).map(([id,b])=>{const l=saltBodyLocked(id);return `<button data-sk="saltBody" data-sv="${id}" class="${k===id?"on":""}${l?" lock":""}">${b.n}<small>${l?l+" rep":b.d}</small></button>`;}).join("")}</div>`;
   h+=paintHtml();   /* the strip's paint: the salt car wears it too */
@@ -204,7 +203,7 @@ function saltVerdict(res){const r=res.salt,c=r.cls||{},R=r.rec;
   if(r.stopWhy==="spun")return `<div class="verdict fail"><div><div class="big">SPUN AT ${Math.round(r.peakMph)} MPH</div><p>${c.key||""} · no time. ${career()?"$800 to straighten the body.":""}</p></div></div>`;
   const big=r.outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)}`:r.outcome==="impound"?`${mph} · IMPOUND`:r.dq?`${mph} · NOT ACCEPTED`:r.mileMph!=null?`${mph} MPH`:"NO TIME";
   const cls=r.outcome==="record"||r.outcome==="impound"?"pass":r.valid?"marg":"fail";
-  const sub=r.outcome==="record"?`${c.key} · ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — the old mark was ${R.mph.toFixed(3)} (${saltEsc(R.holder)}).${r.club?" Welcome to the 200 MPH Club.":""}${career()&&r.purse?" Contingency "+fmt$(r.purse)+".":""}`
+  const sub=r.outcome==="record"?`${c.key} · ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — the old mark was ${R.mph.toFixed(3)} (${esc(R.holder)}).${r.club?" Welcome to the 200 MPH Club.":""}${career()&&r.purse?" Contingency "+fmt$(r.purse)+".":""}`
     :r.outcome==="impound"?`${c.key} · over the ${R.mph.toFixed(3)} record. The car goes to impound — back it up on your next run this ${career()?"week":"meet"} and the average stands.`
     :r.outcome==="backupslow"?`${c.key} · backup run: ${r.firstMph.toFixed(3)} and ${mph} average ${r.avg.toFixed(3)} — short of the ${R.mph.toFixed(3)} record. It stands.`
     :r.outcome==="backupfail"?`${c.key} · no backup time — the record attempt is over.`
@@ -215,7 +214,7 @@ function saltVerdict(res){const r=res.salt,c=r.cls||{},R=r.rec;
 function saltSheet(res){const r=res.salt,v=r.veh||{},c=r.cls||{};
   const why={done:"chute out, stopped",spun:"spun",broke:"broke",lifted:"lifted before the clocks",time:"flagged"}[r.stopWhy]||"stopped";
   const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
-  return `<div class="sec"><h2>Time slip · ${saltEsc(c.key||"")}</h2><div class="log"><div><b>Mile</b>${r.mileMph!=null?r.mileMph.toFixed(3)+" mph · "+r.mileT.toFixed(3)+" s · in "+r.inMph+" out "+r.outMph+" mph":"no time"}</div>
+  return `<div class="sec"><h2>Time slip · ${esc(c.key||"")}</h2><div class="log"><div><b>Mile</b>${r.mileMph!=null?r.mileMph.toFixed(3)+" mph · "+r.mileT.toFixed(3)+" s · in "+r.inMph+" out "+r.outMph+" mph":"no time"}</div>
     <div><b>Km</b>${r.kmMph!=null?r.kmMph.toFixed(3)+" mph · "+r.kmT.toFixed(3)+" s":"—"} · peak ${r.peakMph} mph · ${r.time.toFixed(1)} s · ${why}</div>
     <div><b>Setup</b>${r.clsName} · ${r.courseName} · ${v.topMph} mph top gear (${r.ratios.map(x=>x.toFixed(2)).join(" / ")}:1) · ${v.aero?"aero on":"clean"} · ${v.ballast} kg ballast · ${v.cooling==="ice"?"ice tank":"radiator"} · ${(SIM.LSR_CHUTES[v.chute]||{}).n||""} · ${r.mass} kg · CdA ${r.cdA}</div>
     <div><b>Car</b>front down to ${Math.round(r.lightMin*100)}% · ${r.spinT.toFixed(1)} s of wheelspin · ${r.shifts} shift${r.shifts===1?"":"s"}${r.limT>0?" · "+r.limT.toFixed(1)+" s on the limiter":""} · water ${r.coolMax} °C · EGT ${r.peakEgt} °C${r.chute.out?` · chute at ${r.chute.mph} mph${r.chute.blown?" (tore off)":""}`:""}</div>
@@ -233,7 +232,7 @@ function lsrWarm(keys,cb){if(!keys){keys=[];try{keys=Object.keys(SIM.LSR_BODIES)
 function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).concat(Object.keys(L.pb)));let cur=[];try{cur=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){}cur.forEach(k=>keys.add(k));if(!keys.size)return"";
   const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length){lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});return `<div class="rtop saltrec"><span>Salt flats · class records</span><div><span>working out the class records…</span></div></div>`;}
   const rows=[...keys].map(k=>{const r=saltRecord(k),pb=L.pb[k];return{k,r,pb};}).filter(o=>o.r).sort((a,b)=>(b.pb?1:0)-(a.pb?1:0)||(b.r.mph-a.r.mph)).slice(0,10);
-  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${saltEsc(o.k)}</span><span class="nm" title="${saltEsc(o.r.holder)}">${o.r.mine?"you":saltEsc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
+  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
 /* land-speed buyers: their car, your engine, the same salt — the mile they need, estimated with a steady driver */
 const lsrFitCache=new Map();
 function lsrFitMph(res,cfg,body){const key=cfgHash(cfg)+"|"+body;if(lsrFitCache.has(key))return lsrFitCache.get(key);

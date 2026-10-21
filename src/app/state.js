@@ -2,6 +2,7 @@
 /* ===================== Prairie Engine Works — app ===================== */
 const SIM=ENGINE_SIM,{LAYOUTS,OPT,FORM,PRESETS}=SIM;
 const $=id=>document.getElementById(id);
+const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt$=n=>(n<0?"-$":"$")+Math.round(Math.abs(n)).toLocaleString("en-CA");
 const UPGRADES=[
@@ -366,10 +367,10 @@ function applySoundSrc(){const m=S.soundSrc||"blend";if(typeof ENGINE_SAMPLES!==
 $("srcSeg").addEventListener("click",e=>{const b=e.target.closest("[data-src]");if(!b)return;S.soundSrc=b.dataset.src;applySoundSrc();save();toast(`ENGINE VOICE · ${b.firstChild.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("srcLbl");if(!el||!setOn()||typeof ENGINE_SAMPLES==="undefined")return;const t=ENGINE_SAMPLES.stats();
   el.textContent=t.mode==="synth"?"synth only":t.set?`${t.setName}${t.set2?" + "+t.set2Name:""} · ${Math.round(t.cover*100)}% recorded`:t.errors&&!t.decoded?"recordings unavailable · synth":t.slow&&t.mode!=="real"?"slow connection · synth":"loads when sound starts";},500);
-function sndCredits(){const E=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function sndCredits(){
   const L=(typeof ENGINE_SAMPLES!=="undefined"&&ENGINE_SAMPLES.credits)||[];$("sheetTitle").textContent="Sound credits";
   $("sheetBody").innerHTML=`<p class="hint">Real engine recordings used by the Real and Blend engine voices. All are openly licensed; files were trimmed, looped, level-matched, converted to mono MP3 and are pitch-shifted live. Full list: <a href="sounds/CREDITS.md" target="_blank" rel="noopener" style="color:var(--orange)">sounds/CREDITS.md</a>.</p>`
-    +L.map(c=>`<div class="opt"><div class="oh"><b>${E(c.title)}</b><span class="tag">${E(c.license)}</span></div><p>${E(c.use)} · by ${E(c.author)} · <a href="${E(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${E(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${E(c.mods)}</small>`:""}</p></div>`).join("");
+    +L.map(c=>`<div class="opt"><div class="oh"><b>${esc(c.title)}</b><span class="tag">${esc(c.license)}</span></div><p>${esc(c.use)} · by ${esc(c.author)} · <a href="${esc(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${esc(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${esc(c.mods)}</small>`:""}</p></div>`).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 $("sndCredBtn").addEventListener("click",sndCredits);
 $("themeSeg").addEventListener("click",e=>{const b=e.target.closest("[data-theme]");if(!b)return;S.theme=b.dataset.theme;applyTheme();save();});
