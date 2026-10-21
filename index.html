@@ -12505,6 +12505,22 @@ function tex(canvas, srgb){
   return t;
 }
 
+/* ---- event-scene helpers shared by pull, bog, boat, oval, road, hill, salt and the strip ---- */
+/* crowd: Z is the scene state (.crowd, .cheer, .t); o holds the scene's constants: cheer decay per second,
+   the excitement a figure needs to bounce (lo) and the lower bar once the crowd is wild (hi, cheer>1), the slow
+   and wild bounce frequencies (f0, f1), bounce height (amp), and the body/head rest heights */
+var _crM=new THREE.Matrix4();
+function crowdTick(Z, dt, o){
+  var C=Z.crowd; if(!C) return; Z.cheer=Math.max(0,Z.cheer-dt*o.decay);
+  if(Z.cheer<0.02 && !C.live) return;
+  var t=Z.t, amp=Z.cheer, wild=amp>1, th=wild?o.hi:o.lo, f=wild?o.f1:o.f0, i, m=_crM;
+  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>th?Math.abs(Math.sin(t*f+C.phase[i]))*o.amp*Math.min(amp,2)*e:0;
+    m.makeTranslation(p[0],p[1]+o.body+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+o.head+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
+  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=Z.cheer>=0.02;
+}
+/* camera cut: a new shot name restarts the shot clocks and asks the director for a hard snap (no easing in) */
+function sceneCut(Z, name){ if(Z.shot!==name){ Z.shot=name; Z.shotT=0; Z.cutT=0; Z.snap=true; if(Z.seq!=null) Z.seq++; } }
+
 /* Make a MeshStandardMaterial from a per-pixel fn. */
 /* perf: the maps are painted the first time three.js uploads one of them (texture.image is read on upload), so a
    surface nothing on screen uses (a turbine, a belt, the glass…) costs nothing at boot. Same pixels, just later. */
@@ -21831,7 +21847,6 @@ function stripPayoffs(o, dt, P, O){
 
 /* --- camera direction: a cut list, not a lerp between distant spots --- */
 var STRIP_PAN_X=26, STRIP_WALL_X=64, STRIP_FIN_X=386, _cw=new THREE.Vector3(), _ct=new THREE.Vector3(), _cr=new THREE.Vector3(), _crt=new THREE.Vector3();
-function stripCut(name){ if(STRIP.shot!==name){ STRIP.shot=name; STRIP.shotT=0; STRIP.cutT=0; STRIP.snap=true; } }
 function stripDirect(o, dt, P, O){
   var ph=o.phase||"run", v=Math.max(0,o.v||0), race=!!(o.race&&O&&O.visible);
   var px=P.position.x, pz=P.position.z, ox=race?O.position.x:px, lead=Math.max(px,ox), trail=Math.min(px,ox), gap=Math.abs(px-ox);
@@ -21850,7 +21865,7 @@ function stripDirect(o, dt, P, O){
     else if(s==="crowd" && (STRIP.pbCut>1 || STRIP.shotT>(STRIP.win?2.8:STRIP.pb>1?2.3:1.7))) s="shutdown";
   } else if(ph==="done"){ s=(s==="shutdown"&&STRIP.shotT<0.8)?"shutdown":"board"; }
   if(STRIP.post) s=STRIP.post.seg;   /* after the pass: board close-up, instant replay, lap of honour */
-  stripCut(s);
+  sceneCut(STRIP, s);
   STRIP.shotT+=dt; STRIP.cutT+=dt;
   var T=STRIP.shotT, fov=46, rel=false, ax=0, sm=0, d;
   switch(s){
@@ -23020,14 +23035,8 @@ function pullEffects(o, dt, V){
   FX.step(dt, PULL_WIND); FD.step(dt, PULL_WIND); PULL.fxConf.step(dt, PULL_WIND);
 }
 /* --- the crowd comes up off the planks for the hook and for a full pull --- */
-function pullCrowd(dt){
-  var C=PULL.crowd; if(!C) return; PULL.cheer=Math.max(0,PULL.cheer-dt*0.25);
-  if(PULL.cheer<0.02 && !C.live) return;
-  var t=PULL.t, amp=PULL.cheer, i, m=_pM;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.05:0.35)?Math.abs(Math.sin(t*(amp>1?9:7)+C.phase[i]))*0.17*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.31+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.75+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=PULL.cheer>=0.02;
-}
+var PULL_CROWD={decay:0.25, lo:0.35, hi:0.05, f0:7, f1:9, amp:0.17, body:0.31, head:0.75};
+function pullCrowd(dt){ crowdTick(PULL, dt, PULL_CROWD); }
 /* --- the chain: links along a sagging line from the hitch to the sled hook --- */
 function pullChain(a, b, sag){
   var C=PULL.chain, n=C.count, i; _pD.subVectors(b,a); var L=_pD.length(); if(L<1e-4) return; _pD.divideScalar(L);
@@ -23039,7 +23048,6 @@ function pullChain(a, b, sag){
 }
 
 /* --- camera direction: stage, launch, side tracking, low front for the hop, sled, the line, the stop --- */
-function pullCut(name){ if(PULL.shot!==name){ PULL.shot=name; PULL.shotT=0; PULL.cutT=0; PULL.snap=true; } }
 function pullDirect(o, dt, V){
   var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, vx=V.position.x, fx=vx+U.front, S=PULL.sled, sf=S.position.x, sr=sf-PULL_SLED_L, hx=+o.x||0;
   var s=PULL.shot, T;
@@ -23055,7 +23063,7 @@ function pullDirect(o, dt, V){
     else if(s==="line" && PULL.fixX-fx<5.5) s="side";
   } else { if(s!=="stop" && !(s==="line" && PULL.doneT<1.6)) s="stop"; }
   if(s!==PULL.shot){ if(s==="low") PULL.fixX=fx+7+v*0.8; if(s==="line") PULL.fixX=PULL_LINE+14; }
-  pullCut(s);
+  sceneCut(PULL, s);
   PULL.shotT+=dt; PULL.cutT+=dt; T=PULL.shotT;
   var fov=44, rel=false, ax=0, sm=0, cx=vx+U.mid;
   switch(s){
@@ -23418,15 +23426,8 @@ function bogVehicle(cls, tyre, color, hw){
 }
 /* the mud thrown about: rooster tails, the bow wave, splashes, spray, exhaust (vis/bog-fx.js) */
 function bogEffects(o, dt, V){ bogFxUpdate(o, dt, V); }
-function bogCrowd(dt){
-  var C=BOG.crowd; if(!C) return; BOG.cheer=Math.max(0,BOG.cheer-dt*0.3);
-  if(BOG.cheer<0.02 && !C.live) return;
-  var t=BOG.t, amp=BOG.cheer, i, m=_pM;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.05:0.4)?Math.abs(Math.sin(t*(amp>1?9:7)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.4+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.93+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=BOG.cheer>=0.02;
-}
-function bogCut(name){ if(BOG.shot!==name){ BOG.shot=name; BOG.shotT=0; BOG.cutT=0; BOG.snap=true; } }
+var BOG_CROWD={decay:0.3, lo:0.4, hi:0.05, f0:7, f1:9, amp:0.18, body:0.4, head:0.93};
+function bogCrowd(dt){ crowdTick(BOG, dt, BOG_CROWD); }
 function bogDirect(o, dt, V){
   var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, k=U.k||1, fx=+o.x||0, len=+o.len||70, cx=V.position.x+U.wb*k*0.5, s=BOG.shot;
   if(o.shot) s=o.shot;
@@ -23438,7 +23439,7 @@ function bogDirect(o, dt, V){
     else if(s==="front" && (BOG.fixX-fx<4 || BOG.shotT>3.4)) s=GFX==="lite"?"side":"high";
     else if(s==="high" && BOG.shotT>2.6) s="side"; }
   if(s!==BOG.shot){ if(s==="front") BOG.fixX=Math.min(len+5, fx+7+v*0.9); }
-  bogCut(s); BOG.shotT+=dt; BOG.cutT+=dt; var T=BOG.shotT, fov=46, rel=false, ax=0, sm=0;
+  sceneCut(BOG, s); BOG.shotT+=dt; BOG.cutT+=dt; var T=BOG.shotT, fov=46, rel=false, ax=0, sm=0;
   switch(s){
     case "stage": { var dS=bogFitDist(U, 46), pu=1-0.08*Math.min(1,T/5); _bw.set(cx-dS*0.6*pu, 0.9+dS*0.2, -dS*0.8*pu); _bt.set(cx+0.6, (U.top||2)*0.42, 0); fov=46; break; }   /* the whole truck in frame on any aspect */
     case "chase": rel=true; ax=cx; _bw.set(-9.5, 2.6, 2.2); _bt.set(6, 1.0, 0); fov=50; sm=4; break;
@@ -24852,11 +24853,9 @@ function boatSpray(V, s, dt){
   /* exhaust: a whisp, black for a diesel */
   var smk=clamp(+s.smoke||0,0,1), ne=(lite?3:8)*(0.15+smk)*thr*dt; if(R()<ne){ V.localToWorld(_btA.set(L.len*0.3, 1.6, 0)); var c=lerp(0.42,0.05,smk); (FM||FX).emit(_btA.x, _btA.y, _btA.z, v-0.6, 2, 0, 1.5, 0.3, 1.5+smk*2, c,c,c, 0.25+0.4*smk, {drag:0.7, buoy:0.15, fin:0.03, spin:0.5}); }
 }
-function boatCrowd(dt){ var C=BOAT.crowd; if(!C) return; BOAT.cheer=Math.max(0,BOAT.cheer-dt*0.3); if(BOAT.cheer<0.02&&!C.live) return;
-  var t=BOAT.t, amp=BOAT.cheer, m=_btM; for(var i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>0.35?Math.abs(Math.sin(t*8+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.4+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.93+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=BOAT.cheer>=0.02; }
-function boatCut(n){ if(BOAT.shot!==n){ BOAT.shot=n; BOAT.shotT=0; BOAT.snap=true; } }
+/* the shore crowd bounces at one pace whatever the cheer (no wild mode: same bar and beat at cheer>1) */
+var BOAT_CROWD={decay:0.3, lo:0.35, hi:0.35, f0:8, f1:8, amp:0.18, body:0.4, head:0.93};
+function boatCrowd(dt){ crowdTick(BOAT, dt, BOAT_CROWD); }
 /* the camera: behind the boats at the tree, low beside them off the line, a chase, the helicopter and the bank, the finish tower, a slow look after */
 function boatDirect(o, dt){
   var ph=o.phase||"tree", me=o.me||{}, mx=+me.x||0, ox=(o.opp&&+o.opp.x)||0, v=+me.v||0, lead=Math.abs(ox-mx)<40?(mx+ox)/2:mx, s=BOAT.shot, L=(BOAT.me&&BOAT.me.userData.L)||BOAT_LOOK.outboard;
@@ -24870,7 +24869,7 @@ function boatDirect(o, dt){
   else if(s==="heli"&&BOAT.shotT>2.6) s="bank";
   else if(s==="bank"&&BOAT.shotT>2.6) s="chase";
   if(s!==BOAT.shot&&s==="bank") BOAT.fixX=Math.min(BOAT_FIN-20, mx+20+v*1.4);
-  boatCut(s); BOAT.shotT+=dt; var T=BOAT.shotT, fov=45, rel=false, ax=0, sm=0, zz=BOAT_LZ;
+  sceneCut(BOAT, s); BOAT.shotT+=dt; var T=BOAT.shotT, fov=45, rel=false, ax=0, sm=0, zz=BOAT_LZ;
   switch(s){
     case "tree": { var push=Math.min(2,T*0.4); _btw.set(-L.len-11+push, 3.0, 1.5); _btt.set(22, 1.2, 0); fov=46; break; }
     case "launch": _btw.set(10, 1.2, zz+14); _btt.set(mx-L.len*0.5, 0.8, zz*0.3); fov=44; break;
@@ -25276,19 +25275,18 @@ function roadSetSky(W, n, warm, east){
   if(W.head) W.head.intensity=n>0.3?3.2:0;
 }
 function roadSkyReset(W){ if(!W||W.skyKey==null) return; W.skyKey=null; W.night=null; var U=W.sky.material.uniforms; U.uHor.value.fromArray(STRIP_HOR); U.uSun.value.copy(STRIP_SUN_DAY); }
-function roadCut(name){ if(ROAD.shot!==name){ ROAD.shot=name; ROAD.shotT=0; ROAD.cutT=0; ROAD.snap=true; } }
 function roadDirect(o, dt, W, car){
   var T=W.T, N=T.N, fi=(o.s||0)/T.ds, h=roadHd(T, fi), v=Math.max(0,+o.v||0), mode=o.cam||"auto", s=ROAD.shot;
   var fx=Math.cos(h), fz=-Math.sin(h);
   /* the 24 Hours at time-lapse speed: a tower shot down the pit straight, the field streaming at it */
-  if(mode==="tower"){ var i1=W.pit[1]-6; roadPt(T, i1, ROAD_W/2+30, 21, ROAD.camPos); roadPt(T, i1-Math.round(190/T.ds), -3, 0, ROAD.camTgt); roadCut("tower"); ROAD.shotT+=dt; ROAD.fov=46; ROAD.snap=false;
+  if(mode==="tower"){ var i1=W.pit[1]-6; roadPt(T, i1, ROAD_W/2+30, 21, ROAD.camPos); roadPt(T, i1-Math.round(190/T.ds), -3, 0, ROAD.camTgt); sceneCut(ROAD, "tower"); ROAD.shotT+=dt; ROAD.fov=46; ROAD.snap=false;
     var tc=ROAD.cam; tc.position.copy(ROAD.camPos); tc.lookAt(ROAD.camTgt); tc.fov=46; tc.updateProjectionMatrix(); bandLens(tc); return; }
   /* nearest trackside camera ahead of (or just past) the car */
   var best=-1, bd=1e9; for(var q=0;q<W.stations.length;q++){ var st=W.stations[q], d=((st.i-fi)%N+N)%N; if(d>N/2) d-=N; var m=d*T.ds; if(m>-45 && m<150 && Math.abs(m-30)<bd){ bd=Math.abs(m-30); best=q; } }
   if(mode==="chase") s="chase"; else if(mode==="onboard") s="onboard"; else if(mode==="side") s=best>=0?"side":"chase";
   else { if(o.pre) s="gantry"; else if(s==="gantry" && ROAD.shotT<2.6) s="gantry"; else if(best>=0 && (s!=="side"||ROAD.st===best) && !(s==="chase" && ROAD.shotT<3.5)) s="side"; else if(s==="side" && best!==ROAD.st) s=(ROAD.shotT>3.2 && best>=0)?"side":"chase"; else if(s!=="side") s=(s==="onboard"&&ROAD.shotT<5)?"onboard":(s==="chase"&&ROAD.shotT>9&&v>25)?"onboard":"chase"; }
   if(s==="side" && best!==ROAD.st){ ROAD.st=best; ROAD.shot=null; }
-  roadCut(s); ROAD.shotT+=dt; ROAD.cutT+=dt;
+  sceneCut(ROAD, s); ROAD.shotT+=dt; ROAD.cutT+=dt;
   var cp=car.position, fov=50;
   if(s==="chase"){ _rA.set(cp.x-fx*6.8, cp.y+2.25, cp.z-fz*6.8); _rB.set(cp.x+fx*5, cp.y+0.8, cp.z+fz*5);
     if(ROAD.snap){ ROAD.chP.copy(_rA); ROAD.chT.copy(_rB); } else { var k1=1-Math.exp(-dt*7), k2=1-Math.exp(-dt*12); ROAD.chP.lerp(_rA,k1); ROAD.chT.lerp(_rB,k2); }
@@ -25612,7 +25610,6 @@ function saltEffects(o, dt, V){
   FX.step(dt, SALT_WIND);
 }
 /* --- camera direction: the push, chase, the helicopter, an on-board nose cam, trackside and the traps, the chute, the stop --- */
-function saltCut(name){ if(SALT.shot!==name){ SALT.shot=name; SALT.shotT=0; SALT.cutT=0; SALT.snap=true; SALT.seq++; } }
 function saltDirect(o, dt, V){
   var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, me=U.me, x=V.position.x, C=SALT.course, s=SALT.shot, T, sTo=function(X){ return (X-x)/Math.max(8,v); };
   var L=Math.max(2,me.nose-me.tail), mid=(me.tail+me.nose)/2, cx=x+mid, side=(SALT.seq%2?1:-1);
@@ -25638,7 +25635,7 @@ function saltDirect(o, dt, V){
   else if(ph==="spin"){ s="spin"; }
   else { if(s!=="stop") s="stop"; }
   if(SALT.cue){ if(!o.shot && !SALT.skip && ph==="shutdown") s=SALT.cue; SALT.cue=null; }   /* a one-frame cut asked for elsewhere (vis/salt-event.js: the chute) */
-  saltCut(s);
+  sceneCut(SALT, s);
   SALT.shotT+=dt; SALT.cutT+=dt; T=SALT.shotT;
   var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, lens=0, asp=SALT.cam.aspect||1.5, buf=0, D, fit=0;
   /* a vertical fov that shows a W-metre-wide slice at distance D (the long lenses size the car by this) */
@@ -27126,7 +27123,6 @@ function hillCarMesh(ch, color, aero){
   car.traverse(function(o){ if(o.isMesh){ o.castShadow=true; } });
   return car;
 }
-function hillCut(name){ if(HILL.shot!==name){ HILL.shot=name; HILL.shotT=0; HILL.snap=true; } }
 function hillDirect(o, dt, W, car){
   var T=W.T, fi=(o.s||0)/T.ds, h=hillHd(T, fi), v=Math.max(0,+o.v||0), mode=o.cam||"auto", s=HILL.shot;
   var fx=Math.cos(h), fz=-Math.sin(h), cp=car.position, fov=50;
@@ -27140,7 +27136,7 @@ function hillDirect(o, dt, W, car){
     else if(!s) s="chase";
     if(o.off && s!=="side") s="heli"; }
   if(s==="side" && best!==HILL.st){ HILL.st=best; HILL.shot=null; }
-  hillCut(s); HILL.shotT+=dt;
+  sceneCut(HILL, s); HILL.shotT+=dt;
   if(s==="chase"){ var gr=Math.atan(T.grade[Math.min(T.N-1,Math.floor(fi))]||0); _hA.set(cp.x-fx*7.2, cp.y+2.4-7.2*Math.tan(gr)*0.6, cp.z-fz*7.2); _hB.set(cp.x+fx*6, cp.y+0.9+6*Math.tan(gr), cp.z+fz*6);
     if(HILL.snap){ HILL.chP.copy(_hA); HILL.chT.copy(_hB); } else { HILL.chP.lerp(_hA,1-Math.exp(-dt*6)); HILL.chT.lerp(_hB,1-Math.exp(-dt*11)); }
     HILL.camPos.copy(HILL.chP); HILL.camTgt.copy(HILL.chT); fov=56+Math.min(10,v*0.12); }
@@ -27285,7 +27281,7 @@ function hillLodUpdate(W, cam){
 var OVAL={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, cars:{}, list:[], fx:null, G:null, gkey:"",
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:50, shot:null, shotT:0, cutT:0, snap:true, relOn:false, t:0, night:null, tier:null, prev:{}, lastT:0,
   composer:null, exposure:0.92, stats:null, horLin:null, sunDir:null, shake:0, crowd:null, poles:[], spots:[], board:null, lane:{}, flagMesh:null, flagKey:"", cheer:0, lapSeen:0, tvA:0 };
-var OVAL_WIND=new THREE.Vector3(-0.8,0,0.6), _oA=new THREE.Vector3(), _oB=new THREE.Vector3(), _oC=new THREE.Vector3(), _oD=new THREE.Vector3(), _oM=new THREE.Matrix4(),
+var OVAL_WIND=new THREE.Vector3(-0.8,0,0.6), _oA=new THREE.Vector3(), _oB=new THREE.Vector3(), _oC=new THREE.Vector3(), _oD=new THREE.Vector3(),
   _oPt={x:0,z:0,psi:0,nx:0,nz:0,y:0,bank:0};
 function ovalSmooth(a,b,x){ var t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }
 /* track point at sp (m along the centre line), lateral d: fills _oPt {x, z, psi (yaw), nx, nz (unit normal toward the infield), bank (rad), y (surface height)} */
@@ -27509,7 +27505,6 @@ function ovalLanes(list, dt){
 }
 function hw0(){ return OVAL.G.w/2-1.3; }
 /* ---- the director ---- */
-function ovalCut(name){ if(OVAL.shot!==name){ OVAL.shot=name; OVAL.shotT=0; OVAL.cutT=0; OVAL.snap=true; } }
 function ovalDirect(o, dt, me, V){
   var G=OVAL.G, L=G.L, s=OVAL.shot, mode=o.cam||"auto", ph=o.pre?"pre":o.done?"done":"race", sp=me.s+G.ls/2, fov=50, rel=false;
   var pos=_oA, tgt=_oB;
@@ -27520,7 +27515,7 @@ function ovalDirect(o, dt, me, V){
     if(!s||cyc.indexOf(s)<0){ s="chase"; OVAL.cyc=0; }
     if(OVAL.shotT>lens[OVAL.cyc%cyc.length]){ OVAL.cyc=(OVAL.cyc+1)%cyc.length; s=cyc[OVAL.cyc]; } else s=cyc[OVAL.cyc%cyc.length];
     if(o.lastLap && (o.toFlag||0)<1) s="finish"; }
-  ovalCut(s); OVAL.shotT+=dt; OVAL.cutT+=dt;
+  sceneCut(OVAL, s); OVAL.shotT+=dt; OVAL.cutT+=dt;
   var cp=V.position, yaw=V.rotation.y, fx=Math.cos(yaw), fz=-Math.sin(yaw);
   switch(s){
     case "start": { var t0=Math.min(1,OVAL.shotT/8); ovalPt(G.ls/2+34-10*t0, G.w/2+11, _oPt); pos.set(_oPt.x, 3.3+1.4*t0, _oPt.z); ovalPt(G.ls/2-20, 0, _oPt); tgt.set(_oPt.x, 1.1, _oPt.z); fov=52; break; }
@@ -27562,14 +27557,8 @@ function ovalRender(){
   renderer.toneMappingExposure=ex;
 }
 function ovalReset(){ if(OVAL.fx) OVAL.fx.clear(); OVAL.shot=null; OVAL.prev={}; OVAL.shake=0; OVAL.cheer=0; OVAL.lane={}; OVAL.snap=true; OVAL.relOn=false; OVAL.lapSeen=0; }
-function ovalCrowd(dt){
-  var C=OVAL.crowd; if(!C) return; OVAL.cheer=Math.max(0,OVAL.cheer-dt*0.3);
-  if(OVAL.cheer<0.02 && !C.live) return;
-  var t=OVAL.t, amp=OVAL.cheer, i, m=_oM;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.05:0.4)?Math.abs(Math.sin(t*(amp>1?9:7)+C.phase[i]))*0.16*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.35+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.83+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=OVAL.cheer>=0.02;
-}
+var OVAL_CROWD={decay:0.3, lo:0.4, hi:0.05, f0:7, f1:9, amp:0.16, body:0.35, head:0.83};
+function ovalCrowd(dt){ crowdTick(OVAL, dt, OVAL_CROWD); }
 function ovalSetFlag(kind){
   if(OVAL.flagKey===kind||!OVAL.flagMesh) return; OVAL.flagKey=kind; var t=OVAL.flagTex[kind]||(OVAL.flagTex[kind]=ovalFlagTex(kind)); OVAL.flagMesh.material.map=t; OVAL.flagMesh.material.needsUpdate=true;
 }

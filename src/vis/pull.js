@@ -592,14 +592,8 @@ function pullEffects(o, dt, V){
   FX.step(dt, PULL_WIND); FD.step(dt, PULL_WIND); PULL.fxConf.step(dt, PULL_WIND);
 }
 /* --- the crowd comes up off the planks for the hook and for a full pull --- */
-function pullCrowd(dt){
-  var C=PULL.crowd; if(!C) return; PULL.cheer=Math.max(0,PULL.cheer-dt*0.25);
-  if(PULL.cheer<0.02 && !C.live) return;
-  var t=PULL.t, amp=PULL.cheer, i, m=_pM;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.05:0.35)?Math.abs(Math.sin(t*(amp>1?9:7)+C.phase[i]))*0.17*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.31+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.75+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=PULL.cheer>=0.02;
-}
+var PULL_CROWD={decay:0.25, lo:0.35, hi:0.05, f0:7, f1:9, amp:0.17, body:0.31, head:0.75};
+function pullCrowd(dt){ crowdTick(PULL, dt, PULL_CROWD); }
 /* --- the chain: links along a sagging line from the hitch to the sled hook --- */
 function pullChain(a, b, sag){
   var C=PULL.chain, n=C.count, i; _pD.subVectors(b,a); var L=_pD.length(); if(L<1e-4) return; _pD.divideScalar(L);
@@ -611,7 +605,6 @@ function pullChain(a, b, sag){
 }
 
 /* --- camera direction: stage, launch, side tracking, low front for the hop, sled, the line, the stop --- */
-function pullCut(name){ if(PULL.shot!==name){ PULL.shot=name; PULL.shotT=0; PULL.cutT=0; PULL.snap=true; } }
 function pullDirect(o, dt, V){
   var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, vx=V.position.x, fx=vx+U.front, S=PULL.sled, sf=S.position.x, sr=sf-PULL_SLED_L, hx=+o.x||0;
   var s=PULL.shot, T;
@@ -627,7 +620,7 @@ function pullDirect(o, dt, V){
     else if(s==="line" && PULL.fixX-fx<5.5) s="side";
   } else { if(s!=="stop" && !(s==="line" && PULL.doneT<1.6)) s="stop"; }
   if(s!==PULL.shot){ if(s==="low") PULL.fixX=fx+7+v*0.8; if(s==="line") PULL.fixX=PULL_LINE+14; }
-  pullCut(s);
+  sceneCut(PULL, s);
   PULL.shotT+=dt; PULL.cutT+=dt; T=PULL.shotT;
   var fov=44, rel=false, ax=0, sm=0, cx=vx+U.mid;
   switch(s){
