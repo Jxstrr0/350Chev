@@ -15,7 +15,7 @@ window.addEventListener("error",function(e){if(fin)return;var t=e.target;if(t&&t
 setTimeout(function(){if(!fin&&!bad)m.textContent="Still loading… slow connection?";},9000);
 })();</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
+<link rel="preload" as="style" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
 <style>
 :root{
   --soot:#141413; --panel:#1c1b19; --panel2:#252421; --rule:#2e2d2b; --steel:#4a4843; --edge:rgba(255,255,255,.055);
@@ -2197,18 +2197,18 @@ html.desk details.combo>summary:hover h3{color:var(--orange2,var(--orange))}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+<script>/* three.js post-processing addons (bloom, SSAO). Only Full and Ultra use them, so a phone on Lite skips these ten CDN round trips at boot:
+   they are written in here when the saved tier (or a desktop UA) will want them, else ENGINE_VIS.setQuality loads them on demand through
+   window.__pewPost. build.js reads PEW_LIBS so the service worker precaches every URL. Order matters (Composer before the passes). */
+(function(){window.PEW_LIBS=["https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
+var ready=function(){return !!(window.THREE&&THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.SSAOPass);},p=null;
+window.__pewPost=function(cb){if(ready()){cb&&cb(true);return;}
+ if(!p)p=new Promise(function(res){var i=0;(function next(){if(i>=PEW_LIBS.length){res(ready());return;}var s=document.createElement("script");s.src=PEW_LIBS[i++];s.async=false;s.crossOrigin="anonymous";s.onload=next;s.onerror=function(){p=null;res(false);};document.head.appendChild(s);})();});
+ p.then(function(ok){cb&&cb(ok);});};
+var ua=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent),sv=null;try{sv=JSON.parse(localStorage.getItem("pew2-save")||"null");}catch(e){}
+if(!ua||(sv&&(sv.gfx==="full"||sv.gfx==="ultra"||(!sv.gfx&&sv.layoutMode==="desktop"))))document.write(PEW_LIBS.map(function(u){return '<script src="'+u+'" crossorigin="anonymous"><\/script>';}).join(""));
+})();</script>
 <script>__ld(.22,"Graphics library loaded")</script>
 <script>
 /* =====================================================================
@@ -13814,7 +13814,7 @@ var keyLight=null, fillLight=null, rimLight=null, hemi=null;
 var running=true, rafId=0;
 var lastOwned={}, lastCfg=null, lastLayout=null;
 var anim = { spin:[], turbos:[], belts:[], hot:[], fans:[], glowMats:[], internals:null };
-var composer=null, bloomPass=null, GFX="lite", XRAY=false;
+var composer=null, bloomPass=null, GFX="lite", XRAY=false, postLoading=false;   /* postLoading: the bloom/SSAO addons are being fetched (body.html __pewPost) */
 var RSZ={k:""};   /* ENGINE_VIS.resize: the size it last applied to the renderer and composer */
 var GRIME_UNIFORM={ value:0 };
 var heatZones=null, _ndc=new THREE.Vector2(), _ray=new THREE.Raycaster();
@@ -27825,6 +27825,10 @@ const ENGINE_VIS = {
   setQuality: function(q){
     var want = (q==="ultra") ? "ultra" : (q==="full") ? "full" : "lite";
     if(!renderer){ GFX=want; return; }
+    /* a Lite boot leaves the post-processing addons off the page; fetch them now and come back once they are in */
+    if(want!=="lite" && !(THREE.EffectComposer && THREE.UnrealBloomPass) && window.__pewPost && !postLoading){
+      postLoading=true; window.__pewPost(function(ok){ postLoading=false; if(ok && GFX!=="lite") ENGINE_VIS.setQuality(GFX); });
+    }
     if(want!=="lite" && THREE.EffectComposer && THREE.UnrealBloomPass && (!composer || composer.userData_tier!==want)){
       try{
         if(composer){ composer.passes.forEach(function(ps){ if(ps.dispose) ps.dispose(); }); composer=null; bloomPass=null; }
@@ -29765,7 +29769,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.23.0";
+const VERSION="1.76.24.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
