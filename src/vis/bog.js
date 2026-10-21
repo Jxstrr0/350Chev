@@ -375,5 +375,4 @@ function bogUpdate(o, dt){
   bogTruckFrame(V, o, dt);   /* blob shadow on the ground, the flagman, night spots off the run-up (vis/bog-trucks.js) */
   BOG.prev={phase:ph, cleared:!!o.cleared};
 }
-var _mudC=new THREE.Color(0.11,0.075,0.045);
 

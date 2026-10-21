@@ -121,7 +121,6 @@ function stripSmokeTex(){
   var t=new THREE.DataTexture(d, N, N, THREE.RGBAFormat); t.magFilter=THREE.LinearFilter; t.minFilter=THREE.LinearMipmapLinearFilter; t.generateMipmaps=true; t.needsUpdate=true;
   STRIP_SMOKE_TEX=t; return t;
 }
-function stripSmoke(x,z,v){ if(STRIP.fx) STRIP.fx.emit(x,0.5,z,-v*0.15-1,0.9,(Math.random()-0.5)*1.2,1.4,1.2,4.7,0.8,0.8,0.8,0.5); }
 
 /* --- rubber laid on the track: instanced dark quads in a ring buffer --- */
 function stripMarksInit(cap){
