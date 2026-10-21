@@ -293,7 +293,6 @@ function tdBuild(info){
   var Dk=cr+L+cH, wall=info.diesel?0.30*B:0.24*B, W=B+2*wall, D=B+2*wall, pitch=B+0.22*B+(info.diesel?0.06*B:0);
   var alu=/alu/.test(info.blockMat||""), headAlu=!/iron/.test(info.headMat||"alu");
   var two=(Lo.banks||1)===1 && (info.cyl||Lo.n||4)>=2;
-  var hotSet={ piston:/ringland|holed|crowncrack|scuffed|valvebent|cold/.test(d) };
   var M={};
   function pick(base, hot){ return tdMat(base, hot?"hot":"dim"); }
   M.piston=pick(MAT.palu,false); M.pistonHot=pick(MAT.palu,true); M.dark=tdFlat(0x16171a,{r:0.8,m:0.2}); M.darkIn=tdFlat(0x2a2b2e,{r:0.8,m:0.2,side:THREE.BackSide});
