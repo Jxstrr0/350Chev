@@ -144,6 +144,13 @@ function tex(canvas, srgb){
   if(srgb) t.encoding=THREE.sRGBEncoding;
   return t;
 }
+/* decal / sprite sheet variant: sRGB unless srgb===false, edges clamped (no repeat), anisotropy aniso or the device max */
+function ctex(canvas, srgb, aniso){
+  var t=new THREE.CanvasTexture(canvas);
+  if(srgb!==false) t.encoding=THREE.sRGBEncoding;
+  t.anisotropy=aniso||MAXANISO;
+  return t;
+}
 
 /* ---- event-scene helpers shared by pull, bog, boat, oval, road, hill, salt and the strip ---- */
 /* crowd: Z is the scene state (.crowd, .cheer, .t); o holds the scene's constants: cheer decay per second,

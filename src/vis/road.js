@@ -49,13 +49,13 @@ function roadAsphaltTex(){
     d[k]=v; d[k+1]=v+1; d[k+2]=v+4; d[k+3]=255; }
   x.putImageData(img,0,0);
   x.fillStyle="rgba(236,234,226,0.92)"; x.fillRect(5,0,7,512); x.fillRect(244,0,7,512);
-  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=MAXANISO; return t;
+  return tex(c, true);
 }
 function roadKerbTex(){
   var c=newCanvas(64,128), x=c.getContext("2d");
   for(var j=0;j<4;j++){ x.fillStyle=(j&1)?"#f0ede4":"#c8261c"; x.fillRect(0,j*32,64,32); }
   x.fillStyle="rgba(0,0,0,0.18)"; x.fillRect(0,0,6,128);
-  var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=MAXANISO; return t;
+  return tex(c, true);
 }
 function roadGravelTex(){
   var c=newCanvas(128,128), x=c.getContext("2d"), img=x.createImageData(128,128), d=img.data;
