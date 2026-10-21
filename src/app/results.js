@@ -259,7 +259,7 @@ $("runTest").addEventListener("click",()=>{
    ({id:{d:ms,w:week|null}}) - shared by sandbox and career. Shop badges read the career state directly. */
 const ACH_ICONS={flame:"M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",bolt:"M13 2 5 14h6l-1 8 8-12h-6z",gauge:"M4 17a8 8 0 1 1 16 0M12 17l4-6",clock:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",flag:"M5 21V4M5 4h11l-2 4 2 4H5",shield:"M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z",coin:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M9 10c0-2 6-2 6 0s-6 2-6 4 6 2 6 0",star:"M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",cloud:"M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.5-1A4.5 4.5 0 0 1 17 18z",snow:"M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7",drop:"M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z",hook:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",trophy:"M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8",chev:"M6 7l6 5-6 5M12 7l6 5-6 5",wheel:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 3v6.5M12 14.5V21M3.5 8l6.5 4M14 12l6.5 4",tree:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",cal:"M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",tick:"M5 12l5 5 9-10",engine:"M4 9h14l2 3v5H4zM8 9V6h6v3",target:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",people:"M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 10a2.5 2.5 0 1 0 0-5M18 15c2 .5 3 2.5 3 5"};
 const ACH_TIER={bronze:"Bronze",silver:"Silver",gold:"Gold"};
-const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["bog","Mud bog"],["boat","Boat drags"],["hill","Pikes Peak"],["endure","Endurance"],["shop","Shop & career"]];
+const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["bog","Mud bog"],["boat","Boat drags"],["hill","Pikes Peak"],["salt","Salt"],["oval","Oval"],["road","Road course"],["endure","Endurance"],["shop","Shop & career"]];
 const ACH=[
   {g:"dyno",id:"firstfire",name:"First fire",desc:"Light an engine for the first time.",ic:"flame",tier:"bronze",check:x=>!!x.firstfire},
   {g:"dyno",id:"certified",name:"Certified",desc:"Pull a clean engine (career: certify one).",ic:"tick",tier:"bronze",check:x=>!!x.ok},
@@ -322,7 +322,8 @@ const ACH=[
   {g:"shop",id:"repeat",name:"Repeat customer",desc:"Deliver a repeat order from a happy client.",ic:"people",tier:"silver",check:()=>career()&&C().repeats>0},
   {g:"shop",id:"sold50",name:"Fifty out the door",desc:"Sell 50 engines.",ic:"engine",tier:"silver",check:()=>career()&&C().sold>=50},
   {g:"shop",id:"sold200",name:"Production line",desc:"Sell 200 engines.",ic:"engine",tier:"gold",check:()=>career()&&C().sold>=200},
-  {g:"shop",id:"legend",name:"Legend",desc:"Reach the Legend reputation tier.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=REP_TIERS.length-1},
+  {g:"shop",id:"legend",name:"Legend",desc:"Reach the Legend reputation tier.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=5},
+  {g:"shop",id:"dynasty",name:"Dynasty",desc:"Reach the Dynasty reputation tier, 3,000 rep.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=6},
   {g:"shop",id:"zero",name:"Zero defects",desc:"Ten straight weeks in the field with no warranty claim.",ic:"shield",tier:"silver",check:()=>career()&&C().cleanWeeks>=10},
   {g:"shop",id:"debtfree",name:"Debt-free",desc:"Take a loan, then pay the bank back in full.",ic:"coin",tier:"bronze",check:()=>career()&&!!(S.achN||{}).loan&&C().loan<=0},
   {g:"shop",id:"cash100",name:"Six figures",desc:"Hold $100,000 in cash.",ic:"coin",tier:"silver",check:()=>career()&&C().cash>=1e5},
@@ -332,7 +333,20 @@ const ACH=[
   {g:"shop",id:"sponfull",name:"Full livery",desc:"Carry three sponsors at once.",ic:"trophy",tier:"gold",check:()=>career()&&spS().hist.max>=3},
   {g:"shop",id:"ddfirst",name:"Diagnosed",desc:"Find and fix a sick engine on Dyno day (practice counts).",ic:"tick",tier:"bronze",check:x=>!!x.ddPass},
   {g:"shop",id:"ddclean",name:"No hints needed",desc:"Fix a Dyno day job with no hints, on budget.",ic:"bolt",tier:"silver",check:x=>!!x.ddClean},
-  {g:"shop",id:"dd10",name:"House calls",desc:"Fix ten customers' engines in one career.",ic:"shield",tier:"gold",check:()=>career()&&!!C().dd&&C().dd.passed>=10}
+  {g:"shop",id:"dd10",name:"House calls",desc:"Fix ten customers' engines in one career.",ic:"shield",tier:"gold",check:()=>career()&&!!C().dd&&C().dd.passed>=10},
+  // salt, oval and road course: the facts come from the run just finished (achFacts salt/oval/road) or the record book (retro)
+  {g:"salt",id:"salt1",name:"Salt flat",desc:"Post a timed mile on the salt.",ic:"flag",tier:"bronze",check:x=>x.saltMph>0},
+  {g:"salt",id:"salt200",name:"200 MPH Club",desc:"Average 200 mph or better over the timed mile.",ic:"star",tier:"silver",check:x=>x.saltMph>=200},
+  {g:"salt",id:"saltrec",name:"Record holder",desc:"Set a class record with a two-way average on the salt.",ic:"trophy",tier:"gold",check:x=>!!x.saltRec},
+  {g:"salt",id:"salt300",name:"Three hundred",desc:"A 300 mph timed mile.",ic:"bolt",tier:"gold",check:x=>x.saltMph>=300},
+  {g:"oval",id:"oval1",name:"Hot laps",desc:"Finish a feature on the oval.",ic:"wheel",tier:"bronze",check:x=>!!x.ovalFin},
+  {g:"oval",id:"ovalwin",name:"Feature winner",desc:"Win a feature on the oval.",ic:"trophy",tier:"silver",check:x=>!!x.ovalWin},
+  {g:"oval",id:"ovalback",name:"From the back",desc:"Win a feature from sixth on the grid or worse.",ic:"target",tier:"gold",check:x=>!!x.ovalBack},
+  {g:"oval",id:"ovalpave",name:"Under the lights",desc:"Win a feature on the paved oval.",ic:"star",tier:"gold",check:x=>!!x.ovalPave},
+  {g:"road",id:"road1",name:"Track day",desc:"Set a lap on a road course.",ic:"flag",tier:"bronze",check:x=>x.roadT>0},
+  {g:"road",id:"roadrec",name:"Sharpening",desc:"Beat your own lap record in a car on a circuit.",ic:"clock",tier:"silver",check:x=>!!x.roadRec},
+  {g:"road",id:"road4s",name:"Hundred in four",desc:"0–100 km/h in under four seconds on a track day.",ic:"bolt",tier:"silver",check:x=>x.roadZ>0&&x.roadZ<4},
+  {g:"road",id:"roadriv",name:"Head-to-head",desc:"Beat a rival's posted lap on a road course.",ic:"trophy",tier:"gold",check:x=>!!x.roadRiv}
 ];
 let achQ=[],achBusy=false,achAll=false;   // achAll: the list shows every row, not the first ACH_CAP (this visit only)
 const achN=()=>ACH.filter(a=>S.ach&&S.ach[a.id]).length;
@@ -355,12 +369,19 @@ function achFacts(x){
   else if(x.type==="hill"){const r=x.r;if(!r.dnf&&r.time>0){f.hillFin=true;f.hillT=r.time;if(r.place===1)f.hillWin=true;}}
   else if(x.type==="boat"){const r=x.r;if(!x.failed&&r.et!=null&&!(r.match&&r.match.foul)){f.boatPass=true;f.boatMph=r.mph||0;}if(x.place===1)f.boatWin=true;}
   else if(x.type==="e24"){const r=x.r;if(r.classified){f.e24Fin=true;if(r.posCls<=3)f.e24Pod=true;if(r.posCls===1)f.e24Win=true;}}
+  else if(x.type==="salt"){const r=x.r;if(!x.failed&&r){if(r.valid&&r.mileMph>0)f.saltMph=r.mileMph;if(r.outcome==="record")f.saltRec=true;}}
+  else if(x.type==="oval"){const r=x.r;if(!x.failed&&r&&r.stage==="feature"){f.ovalFin=true;if(r.place===1){f.ovalWin=true;if(r.gridMe>=6)f.ovalBack=true;if(r.surf==="asphalt")f.ovalPave=true;}}}
+  else if(x.type==="road"){const r=x.r;if(!x.failed&&r&&r.lapT>0){f.roadT=r.lapT;if(r.zero100>0)f.roadZ=r.zero100;if(r.pb&&r.pb.was)f.roadRec=true;if(r.rivBeat)f.roadRiv=true;}}
   else if(x.type==="pull"){const r=x.r;if(!x.failed){f.pullDone=true;if(r.full)f.full=true;if(r.place===1){f.pullWin=true;if(r.cls==="hotfarm")f.hotfarm=true;if(r.full&&r.pullOff!=null)f.pullOff=true;}}}
   else if(x.type==="retro"){const hp=R.hp?R.hp.v:career()&&C().bestHp>0?C().bestHp:0,rel=R.rel?R.rel.v:career()&&C().bestRel>0?C().bestRel:0,et=allBest(),P=R.pull&&typeof R.pull==="object"?Object.values(R.pull):[];
     if(hp>0){f.ok=true;f.hp=hp;}if(rel>0)f.rel=rel;if(et<Infinity)f.et=et;if(R.top&&R.top[0])f.mph=Math.max.apply(null,R.top.map(e=>e.mph||0));
+    if(R.topBy&&typeof R.topBy==="object")for(const L of Object.values(R.topBy))if(Array.isArray(L))for(const e of L)if(e&&e.mph>(f.mph||0))f.mph=e.mph;
     if(career()&&C().enduranceOk)f.hours=100;if(career()&&C().boostedCert)f.boosted=true;
     if(P.length){f.pullDone=true;if(P.some(e=>e.full))f.full=true;}if(R.bog&&typeof R.bog==="object"&&Object.values(R.bog).some(e=>e&&e.c))f.bogThru=true;if(R.bestFinish<=5)f.qualified=true;
-    if(S.firstFireDone)f.firstfire=true;if(R.e24Best){f.e24Fin=true;if(R.e24Best<=3)f.e24Pod=true;if(R.e24Best===1)f.e24Win=true;}}
+    if(S.firstFireDone)f.firstfire=true;if(R.e24Best){f.e24Fin=true;if(R.e24Best<=3)f.e24Pod=true;if(R.e24Best===1)f.e24Win=true;}
+    if(R.lsr&&typeof R.lsr==="object"){const pb=R.lsr.pb&&typeof R.lsr.pb==="object"?Object.values(R.lsr.pb):[];if(pb.length)f.saltMph=Math.max.apply(null,pb.map(e=>e&&e.mph||0));if(R.lsr.rec&&Object.values(R.lsr.rec).some(e=>e&&e.mph))f.saltRec=true;}
+    for(const k in R)if(k==="oval"||k.indexOf("oval_")===0){const O=R[k];if(O&&typeof O==="object")for(const e of Object.values(O))if(e){if(e.feats>0)f.ovalFin=true;if(e.wins>0)f.ovalWin=true;}}
+    if(R.road&&typeof R.road==="object")for(const e of Object.values(R.road))if(e&&e.t>0){f.roadT=e.t;if(e.z>0&&!(f.roadZ<e.z))f.roadZ=e.z;}}
   else if(x.type==="dd"){f.ddPass=!!x.pass;f.ddClean=!!x.clean;}
   else if(x.type==="ff")f.firstfire=true;
   else if(x.type==="swap")Object.assign(f,x.f||{});
@@ -504,10 +525,10 @@ function renderRecords(){const box=$("recBox");if(!box)return;const R=recs(),cr=
   const sub=e=>e.n?`<small>${esc(e.n)}${when(e)?" · "+when(e):""}</small>`:"<small>set earlier</small>";
   const top=R.top,be=cr&&C().bestEt||Infinity,best=top[0]&&top[0].et<=be?top[0]:(be<Infinity?{et:be}:null),hp=R.hp||(cr&&C().bestHp>0?{v:Math.round(C().bestHp)}:null),rel=R.rel||(cr&&C().bestRel>0?{v:C().bestRel}:null);
   $("recCnt").textContent=cr?"career":"sandbox";
-  const pr=pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+hillRecHtml()+ovalRecHtml()+e24RecHtml();
+  const pr=dragRecHtml()+pullRecHtml()+bogRecHtml()+boatRecHtml()+saltRecHtml()+roadRecHtml()+hillRecHtml()+ovalRecHtml()+e24RecHtml();
   if(!best&&!hp&&!rel&&!pr){box.innerHTML=`<p class="hint">No records yet. ${cr?"Certify an engine on the dyno or take it down the strip":"Pull an engine on the dyno or make a pass on the strip"} — the best numbers you set land here.</p>`;return;}
   box.innerHTML=`<div class="recs"><div class="rec big"><span>Quickest ET</span>${best?`<b>${best.et.toFixed(3)}<i>s${best.mph?" @ "+Math.round(best.mph)+" mph":""}</i></b>${sub(best)}`:`<b>—</b><small>no clean pass yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Top certified":"Top pulled"}</span>${hp?`<b>${hp.v.toLocaleString("en-CA")}<i>hp</i></b>${sub(hp)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
     +`<div class="rec"><span>${cr?"Best certified rel":"Best reliability"}</span>${rel?`<b>${rel.v}<i>${rel.hp?"@ "+rel.hp+" hp":"rel"}</i></b>${sub(rel)}`:`<b>—</b><small>${cr?"nothing certified":"no clean pull"} yet</small>`}</div>`
-    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm">${esc(e.n)}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+pr+rnRecHtml()+`</div>`;}
+    +(top.length?`<div class="rtop"><span>Top ${top.length===1?"pass":top.length+" passes"}</span>${top.map((e,i)=>`<div><b>${i+1}</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${esc(e.n)}">${esc(e.n)}${e.body&&SIM.AERO[e.body]?" · "+esc(SIM.AERO[e.body].n):""}</span><span>${when(e,1)}</span></div>`).join("")}</div>`:"")+pr+rnRecHtml()+`</div>`;}
 

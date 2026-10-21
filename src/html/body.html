@@ -293,15 +293,15 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+<script>/* three.js post-processing addons (bloom, SSAO). Only Full and Ultra use them, so a phone on Lite skips these ten CDN round trips at boot:
+   they are written in here when the saved tier (or a desktop UA) will want them, else ENGINE_VIS.setQuality loads them on demand through
+   window.__pewPost. build.js reads PEW_LIBS so the service worker precaches every URL. Order matters (Composer before the passes). */
+(function(){window.PEW_LIBS=["https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
+var ready=function(){return !!(window.THREE&&THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.SSAOPass);},p=null;
+window.__pewPost=function(cb){if(ready()){cb&&cb(true);return;}
+ if(!p)p=new Promise(function(res){var i=0;(function next(){if(i>=PEW_LIBS.length){res(ready());return;}var s=document.createElement("script");s.src=PEW_LIBS[i++];s.async=false;s.crossOrigin="anonymous";s.onload=next;s.onerror=function(){p=null;res(false);};document.head.appendChild(s);})();});
+ p.then(function(ok){cb&&cb(ok);});};
+var ua=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent),sv=null;try{sv=JSON.parse(localStorage.getItem("pew2-save")||"null");}catch(e){}
+if(!ua||(sv&&(sv.gfx==="full"||sv.gfx==="ultra"||(!sv.gfx&&sv.layoutMode==="desktop"))))document.write(PEW_LIBS.map(function(u){return '<script src="'+u+'" crossorigin="anonymous"><\/script>';}).join(""));
+})();</script>

@@ -157,7 +157,7 @@ const DD_VEH={g10:"'99 city hatch","4ac":"'87 hatchback","22re":"'89 compact pic
   compound402:"outlaw truck",p4236:"'78 tractor",c59_12v:"'95 three-quarter-ton",lb7:"'03 heavy-duty pickup",psd73:"'99 super-duty",psd67:"'19 super-duty",alh:"'02 diesel wagon",om606:"'97 diesel sedan",s60:"'05 highway tractor",
   ["1kd"]:"'10 diesel 4x4",smoker26:"pulling truck",ss_triple:"super stock puller",["12a_sa"]:"'79 rotary coupe",["13b_fc"]:"'88 rotary coupe",["13b_rew"]:"'94 twin-turbo rotary",renesis:"'05 rotary coupe",["20b_rew"]:"'96 three-rotor",
   ["13b_bp"]:"rotary club racer",r26b:"four-rotor prototype"};
-const DD_COST=[3000,4500,6500,9500,16000,1e9];
+const DD_COST=[3000,4500,6500,9500,16000,1e9,1e9];
 const DD_EASY_HRS=2.5,DD_EASY_W=1.6,DD_EASY_TIER=1;   // a backyard or local shop mostly sees the quick, readable faults (one stress-report line, a part or a setting)   // dearest customer engine by rep tier: a backyard shop sees commuters
 function DD(){const c=C();if(!c.dd||typeof c.dd!=="object")c.dd={};const d=c.dd;if(!Array.isArray(d.jobs))d.jobs=[];
   for(const k of ["week","passed","failed","earned","streak"])if(typeof d[k]!=="number")d[k]=0;if(!d.seed)d.seed=1+Math.floor(Math.random()*1e9);return d;}
@@ -281,12 +281,15 @@ const SP_BRANDS=[
   {id:"wildoat",name:"Wild Oat",tag:"Energy soda",type:"energy",shape:"star",c1:"#e2541c",c2:"#fff3b0",c3:"#ffffff"},
   {id:"northlight",name:"Northlight",tag:"Race fuels",type:"fuel",shape:"star",c1:"#0e1f3d",c2:"#ff7a1a",c3:"#f4f1e8"}];
 const SP_TYPES={oil:"Oil company",parts:"Parts maker",feed:"Local feed store",tyre:"Tyre brand",energy:"Energy drink",fuel:"Fuel supplier"};
-const SP_LIKES={oil:["night","pull","salt","endurance","boat"],parts:["sale","night","salt"],feed:["pull","bog"],tyre:["night","drag","endurance","bog","hill"],energy:["night","drag","salt","hill"],fuel:["salt","night","endurance","boat","hill"]};
+const SP_LIKES={oil:["night","pull","salt","endurance","boat","oval"],parts:["sale","night","salt","road"],feed:["pull","bog","oval"],tyre:["night","drag","endurance","bog","hill","road","oval"],energy:["night","drag","salt","hill","road"],fuel:["salt","night","endurance","boat","hill","road"]};
 const SP_OBL={oil:["nights","pulls"],parts:["deliver"],feed:["pulls"],tyre:["nights"],energy:["nights","nodiesel"],fuel:["salt","nodiesel"]};
 const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
   deliver:n=>`Ship at least ${n} engine order${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
 const SP_SLOT_REP=[0,120,300];
-const SP_EVT={hill:"Pikes Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines"};
+const SP_EVT={hill:"Pikes Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines",oval:"the oval",road:"the track day"};
+/* an obligation the shop can actually meet: a brand never asks for race nights before the Outlaw shop opens the strip, pulls before
+   a pull class is open, or salt runs before the salt is open — the same gates the rivals use (rivEvOpen). deliver/nodiesel always fit */
+function spOblOpen(k){try{if(k==="nights")return evStatus("drag").k!=="lock";if(k==="pulls")return Object.keys(SIM.PULL_CLASSES).some(c=>!pullClsLocked(c));if(k==="salt")return evStatus("salt").k!=="lock";}catch(e){return false;}return true;}
 function spS(){const c=C();const s=c.spons&&typeof c.spons==="object"?c.spons:(c.spons={});
   if(!Array.isArray(s.active))s.active=[];if(!Array.isArray(s.offers))s.offers=[];if(!s.form||typeof s.form!=="object")s.form={};
   if(!s.hist||typeof s.hist!=="object")s.hist={};for(const k of ["signed","done","broken","earned","max"])s.hist[k]=+s.hist[k]||0;
@@ -302,12 +305,12 @@ function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s
   const pool=SP_BRANDS.filter(b=>!taken.has(b.id));if(!pool.length)return null;
   const w=pool.map(b=>0.4+SP_LIKES[b.type].reduce((a,k)=>a+(s.form[k]||0),0)+(kind&&SP_LIKES[b.type].includes(kind)?3:0));
   let r=spRng()*w.reduce((a,v)=>a+v,0),i=0;while(i<pool.length-1&&(r-=w[i])>0)i++;const b=pool[i],likes=SP_LIKES[b.type];
-  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=1+tier*0.5+Math.min(1,C().rep/500),style=spRng();
+  const weeks=4+Math.floor(spRng()*5)+(tier>=3?2:0),scale=(1+tier*0.5+Math.min(1,C().rep/500))*(typeof lgVal==="function"?1+lgVal("spons"):1),style=spRng();
   const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
-  const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull"||k==="bog"||k==="boat"||k==="hill")?spR50(80*scale*bm):0,record:likes.includes("salt")?spR50(800*scale*bm):0};
-  const pick=SP_OBL[b.type][Math.floor(spRng()*SP_OBL[b.type].length)];
-  const n={nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick];
-  const obl=[{k:pick,n:n||0}];if(C().rep>=10&&spRng()<0.5)obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
+  const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull"||k==="bog"||k==="boat"||k==="hill"||k==="oval")?spR50(80*scale*bm):0,record:likes.some(k=>k==="salt"||k==="road")?spR50(800*scale*bm):0};
+  const able=SP_OBL[b.type].filter(spOblOpen),pick=able.length?able[Math.floor(spRng()*able.length)]:null;
+  const n=pick?{nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick]:0;
+  const obl=pick?[{k:pick,n:n||0}]:[];if(!pick||(C().rep>=10&&spRng()<0.5))obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
   const o={id:Math.floor(spRng()*1e9),b:b.id,weeks,ret,bon,obl,pen:spR50(Math.max(500,ret*2+bon.win*0.5)),penRep:4+tier*2,exp:C().week+2,
     why:kind&&SP_EVT[kind]?`Saw what you did at ${SP_EVT[kind]}.`:""};
   s.offers.push(o);return o;}
@@ -414,7 +417,7 @@ function renderShop(){
     const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":ddEsc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
     $("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span><b>${C().sold}</b> engines sold</span><span><b>${fmt$(C().profit)}</b> lifetime profit</span><span><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b> warranty paid</span>`;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
-  $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(LOAN_RATE*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
+  $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(loanRate()*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
   $("goals").innerHTML=goalsHtml();
@@ -642,6 +645,7 @@ GOALS.push(
   {id:"rep500",late:1,name:"Regional name",desc:"Reach 500 reputation.",cash:30000,rep:0,check:c=>c.rep>=500,prog:lateProg(c=>c.rep,500)},
   {id:"rep1000",late:1,name:"Household name",desc:"Reach 1,000 reputation.",cash:60000,rep:0,check:c=>c.rep>=1000,prog:lateProg(c=>c.rep,1000)},
   {id:"rep1500",late:1,name:"Legend",desc:"Reach 1,500 reputation, the Legend tier.",cash:100000,rep:0,check:c=>c.rep>=1500,prog:lateProg(c=>c.rep,1500)},
+  {id:"rep3000",late:1,name:"Dynasty",desc:"Reach 3,000 reputation, the Dynasty tier, where the alcohol cars and unlimited pullers come knocking.",cash:150000,rep:0,check:c=>c.rep>=3000,prog:lateProg(c=>c.rep,3000)},
   {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Pikes Peak, dirt oval, boat drags and the 24 Hours, and set a Bonneville record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
   {id:"hp2000",late:1,name:"Two thousand",desc:"Certify a 2,000 hp engine.",cash:80000,rep:30,check:c=>c.bestHp>=2000,prog:lateProg(c=>c.bestHp||0,2000)},
   {id:"sold500",late:1,name:"Five hundred out the door",desc:"Sell 500 engines.",cash:40000,rep:15,check:c=>c.sold>=500,prog:lateProg(c=>c.sold,500)},

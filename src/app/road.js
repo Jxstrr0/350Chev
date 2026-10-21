@@ -155,7 +155,11 @@ function roadFinish(){
   if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=roadRecs(),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
   res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
-  if(career()&&same){addWear(0.35,hKey(snap.h));logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");if(!ff)rivalsEvent("road",{ch:opt.ch,trk,sw:!!opt.sw,t:r.swapBroke||r.dtBroke?null:r.lapT});hud();checkGoals();}
+  // a track day counts like any other event: sponsors see it (form, record bonus, offers), the crew learn from it, a rival's posted lap is decided — spEvent does all of that
+  if(career()&&same){addWear(0.35,hKey(snap.h));logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");
+    if(!ff){const won0=(rivS().hist&&rivS().hist.won)||0;spEvent("road",{ch:opt.ch,trk,sw:!!opt.sw,t:r.swapBroke||r.dtBroke?null:r.lapT,record:!!(r.pb&&r.pb.was)});r.rivBeat=((rivS().hist&&rivS().hist.won)||0)>won0;}
+    hud();checkGoals();}
+  if(same&&!ff)achCheck({type:"road",r,failed:!!(r.swapBroke||r.dtBroke)});
   toast(`${fmtLap(r.lapT)} · ${r.trkName}`);
   if(r.swap)swapAfter(r);
   RT.lap=null;save();recompute();renderTest();revealVerdict();

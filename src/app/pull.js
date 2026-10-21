@@ -75,8 +75,8 @@ function pullEnvTop(k){const fmt=pullFmt(),dk=document.documentElement.classList
   if(pv.ser&&pv.ser.round>0)h+=pullStandHtml(pullStand(pv.ser),{short:true,title:"Series standings"});
   return h;}
 /* a class gate: rep, or (Unlimited) owning the Monster dyno cell or reaching Legend rep; the lock text says which */
-function pullClsLocked(k){const c=SIM.PULL_CLASSES[k];if(!c||!career()||dev())return 0;return c.gate?(has(c.gate)||repTierIdx()>=REP_TIERS.length-1?0:c.rep||1):C().rep<c.rep?c.rep:0;}
-function pullLockTxt(k){const c=SIM.PULL_CLASSES[k];return c.gate==="dyno5"?"Monster cell or "+REP_TIERS[REP_TIERS.length-1][1]+" rep":c.rep+" rep";}
+function pullClsLocked(k){const c=SIM.PULL_CLASSES[k];if(!c||!career()||dev())return 0;return c.gate?(has(c.gate)||repTierIdx()>=5?0:c.rep||1):C().rep<c.rep?c.rep:0;}
+function pullLockTxt(k){const c=SIM.PULL_CLASSES[k];return c.gate==="dyno5"?"Monster cell or "+REP_TIERS[5][1]+" rep":c.rep+" rep";}
 function pullLegal(k,cfg){const c=SIM.PULL_CLASSES[k];if(!c)return{ok:false,why:"no such class"};try{return c.legal(cfg||S.cfg);}catch(e){return{ok:false,why:"can't be teched"};}}
 /* the pull setup lives on S.env next to the strip's; anything a class doesn't allow is pulled back inside its rules */
 function pullEnvFix(){const e=S.env;if(PO)e.pullCls=PO.k;if(!SIM.PULL_CLASSES[e.pullCls])e.pullCls=pullIsDiesel(S.cfg)?"street":"gas";const k=e.pullCls,V=SIM.PULL_CLASSES[k].veh,G=SIM.pullGears(k);
