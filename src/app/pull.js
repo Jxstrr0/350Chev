@@ -1,6 +1,5 @@
 /* ---- truck pull driver: a sled, a class, a field of local pullers ---- */
 let PR=null;
-const pullIsDiesel=c=>SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
 const PULL_PURSE=[4000,2000,1200,600,300],PULL_PAY={1:1,2:1.5,3:2,4:3,5:4},PULL_REP=[3,2,1];
 const PULL_NAMES={truck:["Dirty Deeds","Smoke Show","Black Gold","Coal Roller","Prairie Thunder","Mud Hen","Night Shift","Holy Roller","Rusty Nail","Stack Attack","Bad Habit","Gravel Pit"],tractor:["Sod Buster","Iron Horse","Field General","Green Machine","Big Red","Grain Train","Hay Fever","Dust Devil","Plow Boy","Farmall Fury","Quarter Section","Swather"]};
 const ordN=n=>n+(n%10===1&&n%100!==11?"st":n%10===2&&n%100!==12?"nd":n%10===3&&n%100!==13?"rd":"th");
@@ -24,7 +23,7 @@ const poTrack=()=>PO&&PO.ev&&PO.ev.track?{moist:+Math.min(0.95,PO.ev.track.moist
 function pullEvent(k,fseed,live){const fmt=pullFmt(),s=fmt==="series"?(live?pullSerCur(k):pullSerPeek(k)):null;let field=s?pullSerField(k,s):pullField(k,fseed),track=null,draw=null;const n=field.length+1;
   if(fmt!=="practice"){const night=pullNight(k,fseed,n),rd=pullRand((fseed^0x3C6EF372)>>>0);draw=Math.floor(rd()*n);let j=0;field=field.map(f=>{if(j===draw)j++;return pullTrkAdj(f,night[j++]);});track=night[draw];}
   return{fmt,field,track,draw,n,ser:s};}
-function pullRaRisk(){if(!quick||!pullIsDiesel(S.cfg)||!SIM.pullRunaway)return null;const wi=wearInfo(quick);return SIM.pullRunaway(quick,S.cfg,wi?wi.w:0);}
+function pullRaRisk(){if(!quick||!SIM.isDiesel(S.cfg)||!SIM.pullRunaway)return null;const wi=wearInfo(quick);return SIM.pullRunaway(quick,S.cfg,wi?wi.w:0);}
 /* ---- points series: the same named rivals all season, points by place plus a bonus for a full pull ---- */
 function pullSerStore(){const o=career()?C():S;if(!o.pullSer||typeof o.pullSer!=="object")o.pullSer={};return o.pullSer;}
 function pullSerSeed(){if(career())return(C().seed>>>0)||1;if(!S.pullSerSeed)S.pullSerSeed=Math.floor(Math.random()*1e9)+1;return S.pullSerSeed;}
@@ -79,14 +78,14 @@ function pullClsLocked(k){const c=SIM.PULL_CLASSES[k];if(!c||!career()||dev())re
 function pullLockTxt(k){const c=SIM.PULL_CLASSES[k];return c.gate==="dyno5"?"Monster cell or "+REP_TIERS[5][1]+" rep":c.rep+" rep";}
 function pullLegal(k,cfg){const c=SIM.PULL_CLASSES[k];if(!c)return{ok:false,why:"no such class"};try{return c.legal(cfg||S.cfg);}catch(e){return{ok:false,why:"can't be teched"};}}
 /* the pull setup lives on S.env next to the strip's; anything a class doesn't allow is pulled back inside its rules */
-function pullEnvFix(){const e=S.env;if(PO)e.pullCls=PO.k;if(!SIM.PULL_CLASSES[e.pullCls])e.pullCls=pullIsDiesel(S.cfg)?"street":"gas";const k=e.pullCls,V=SIM.PULL_CLASSES[k].veh,G=SIM.pullGears(k);
+function pullEnvFix(){const e=S.env;if(PO)e.pullCls=PO.k;if(!SIM.PULL_CLASSES[e.pullCls])e.pullCls=SIM.isDiesel(S.cfg)?"street":"gas";const k=e.pullCls,V=SIM.PULL_CLASSES[k].veh,G=SIM.pullGears(k);
   if(!V.tyres.includes(e.pullTyre))e.pullTyre=V.tyres[V.tyres.length-1];
   e.pullGear=Math.max(0,Math.min(G.length-1,Math.round(isFinite(+e.pullGear)&&e.pullGear!==""&&e.pullGear!=null?+e.pullGear:SIM.PULL_CLASSES[k].gear0||2)));
   if(e.pullTrans!=="clutch")e.pullTrans="conv";if(e.pullDrive!=="auto")e.pullDrive="you";
   e.pullHitch=Math.max(12,Math.min(V.hitchMax,isFinite(+e.pullHitch)&&e.pullHitch!=null?+e.pullHitch:V.hitchMax-4));
   const bMax=V.maxMass-V.mass;e.pullBallast=Math.max(0,Math.min(bMax,isFinite(+e.pullBallast)&&e.pullBallast!=null?+e.pullBallast:Math.round(bMax/20)*10));
   return k;}
-function pullVeh(k){const e=S.env;return{cls:k,gear:+e.pullGear,trans:e.pullTrans,tyre:e.pullTyre,hitch:+e.pullHitch,ballast:+e.pullBallast,redline:S.cfg.redline,idle:pullIsDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),dtCap:SIM.dtCapOf(drvId()),dtId:drvId()};}
+function pullVeh(k){const e=S.env;return{cls:k,gear:+e.pullGear,trans:e.pullTrans,tyre:e.pullTyre,hitch:+e.pullHitch,ballast:+e.pullBallast,redline:S.cfg.redline,idle:SIM.isDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),dtCap:SIM.dtCapOf(drvId()),dtId:drvId()};}
 /* the rest of the class on the night: 5–7 pullers, the same field all week in career, a fresh one every hook in the cell */
 function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed),names=(c.names||PULL_NAMES[c.veh.kind]).slice(),n=5+Math.floor(r()*3),out=[];
   for(let i=0;i<n;i++){const nm=names.splice(Math.floor(r()*names.length),1)[0];const full=r()<F.full;const gs=Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());
@@ -96,7 +95,7 @@ function pullField(k,seed){const c=SIM.PULL_CLASSES[k],F=c.field,r=pullRand(seed
 function pullHookedWk(k){return career()&&!PO&&pullFmt()==="night"&&(C().pullWk||{})[k]===C().week;}
 function pullSeed(k){const ix=Object.keys(SIM.PULL_CLASSES).indexOf(k)+1;if(!career())return PULL_SB[ix]||(PULL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().pullSeed)C().pullSeed=Math.floor(Math.random()*1e9);return(C().pullSeed^(C().week*7919)^(ix*104729))>>>0;}
 function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
-function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
+function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");failFlash();}
 function pullStart(){
   $("app").classList.add("onstrip");
   const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
@@ -112,7 +111,7 @@ function pullStart(){
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("pullCtl").style.display="";$("pullBtn").dataset.k="";if(PR.auto)pullBtnText("AUTO","hooked up — tap to drive it yourself");else pullBtnText("HOLD TO PULL","let go to ease off — keep the slip in the green");$("pullBtn").disabled=false;
   $("testProg").classList.remove("done");sfx("start");pullHud(p.st);
   // the button and the card have to be under the thumb: bring them up above the tab bar
-  requestAnimationFrame(()=>{const pn=$("panel"),r=$("pullCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  scrollCtlIntoView("pullCtl");
   const step=()=>{if(!PR||PR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-PR.last)/1000);PR.last=now;
     let st=p.st;
     if(!PR.auto)st=p.step(dt,PR.down&&!PR.failed?1:0);
@@ -122,7 +121,7 @@ function pullStart(){
     if(st.broke&&!PR.failed)pullBreak(st.broke);
     if(st.raOn&&!PR.raSeen&&!st.killed&&!st.done&&!PR.failed){PR.raSeen=true;sfx("runaway");buzz([120,60,120,60,120]);
       pullHud(st,true);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
-    if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
     if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:st.phase,x:st.x,v:st.v,boxFrac:st.boxFrac,slip:st.slip,hop:st.hop,smoke:st.smoke||0,rpm:PR.failed||PR.killed?run.rpm:st.rpm,vehicle:PR.kind,full:st.full,night:!!S.night,cls:k,distFt:st.x*3.28084,
       dt,throttle:st.foot,boost:st.boost,sweet:st.sweet,failed:PR.failed,failKind:PR.failed?run.failKind:null,hitch:veh.hitch,ballast:veh.ballast,tyre:veh.tyre,hp:PR.res&&PR.res.peakHp||0,track:PR.trk||undefined,runaway:st.raOn&&!st.killed&&!PR.failed?Math.max(0.2,st.ra):0,killed:!!st.killed});
     pullHud(st);
@@ -162,20 +161,15 @@ function pullPress(){if(!PR||PR.finished)return;const st=PR.p.st;if(st.done||PR.
 function pullRelease(){if(!PR)return;PR.down=false;}
 /* the kill switch: only live while it is running away. Air and fuel off — the truck rolls to a stop and is scored there */
 function pullKill(){if(!PR||PR.finished||!PR.p)return false;const st=PR.p.st;if(!st.raOn||st.killed||st.done||PR.failed||!PR.p.kill())return false;
-  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);$("flash").style.background="rgba(240,236,226,.3)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",160);pullHud(st,true);return true;}
+  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);screenFlash("rgba(240,236,226,.3)",160);pullHud(st,true);return true;}
 $("killBtn").addEventListener("pointerdown",e=>{e.preventDefault();pullKill();});
 $("killBtn").addEventListener("click",()=>pullKill());
 /* the pull-off buttons on the verdict */
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-po]");if(!b||testing)return;if(b.dataset.po==="go"&&PO){S.env.testType="pull_sled";$("runTest").click();}else if(b.dataset.po==="concede")poConcede("Pull-off conceded");});
+function pullRedraw(){const l=lastForChart();if(S.env.testType==="pull_sled"&&l&&l.pull)drawPullTrace(l.pull);}
 function pullSkip(){if(!PR||PR.finished)return;if(ENGINE_VIS.pullSkip)ENGINE_VIS.pullSkip();PR.skip=true;}
 (()=>{const b=$("pullBtn");
-  b.addEventListener("pointerdown",e=>{e.preventDefault();PR&&(PR.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}pullPress();});
-  b.addEventListener("pointerup",()=>{PR&&(PR.lastPtr=performance.now());pullRelease();});
-  b.addEventListener("pointercancel",()=>{PR&&(PR.lastPtr=performance.now());pullRelease();});
-  b.addEventListener("contextmenu",e=>e.preventDefault());
-  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();pullPress();}});
-  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();pullRelease();}});
-  b.addEventListener("click",()=>{if(!PR||!PR.p||performance.now()-(PR.lastPtr||0)<800)return;const st=PR.p.st;if(st.done||PR.failed)pullSkip();});})();
+  holdBtn(b,()=>PR,pullPress,pullRelease,r=>{if(!r.p)return;if(r.p.st.done||r.failed)pullSkip();});})();
 function pullFinish(){
   if(!PR||PR.finished)return;PR.finished=true;const {p,res,env,k,snap}=PR;const r=p.result();if(PR.drv)r.auto=PR.took!=null?{took:Math.round(PR.took*10)/10}:{};const failed=PR.failed;const C0=SIM.PULL_CLASSES[k];const same=testSame(snap);
   setTimeout(()=>{if(!testing){if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});$("app").classList.remove("onstrip");}},2200);
@@ -214,8 +208,8 @@ function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame
   revealVerdict();
 }
 /* records: the longest clean pull per class */
-function pullPb(r,failed){if(ff||failed)return;const R=recs();if(!R.pull||typeof R.pull!=="object")R.pull={};const was=R.pull[r.cls];
-  if(was&&!(r.distFt>was.ft))return;R.pull[r.cls]=Object.assign({ft:r.distFt,full:r.full},recTag());
+function pullPb(r,failed){if(ff||failed)return;const P=recBucket("pull"),was=P[r.cls];
+  if(was&&!(r.distFt>was.ft))return;P[r.cls]=Object.assign({ft:r.distFt,full:r.full},recTag());
   if(was){r.pb={was:was.ft};setTimeout(()=>toast(`CLASS BEST · ${r.full?"FULL PULL":r.distFt.toFixed(1)+" ft"} (was ${was.ft.toFixed(1)})`),2700);}}
 function pullRecHtml(){const R=recs(),P=R.pull,sr=pullSerRecHtml();if(!P||typeof P!=="object")return sr;const ks=Object.keys(SIM.PULL_CLASSES).filter(k=>P[k]);if(!ks.length)return sr;
   return `<div class="rtop"><span>Truck pull · longest per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.full?"✓":"·"}</b><span class="et">${e.full?"FULL":e.ft.toFixed(1)}</span><span>${e.full?"300 ft":"ft"}</span><span class="nm" title="${esc(e.n)}">${esc(SIM.PULL_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`+sr;}

@@ -4,21 +4,18 @@ let BR=null;
 const BOG_PURSE=[2500,1200,700,400,200],BOG_PAY={1:1,2:1.8,3:3},BOG_REP=[3,2,1],BOG_SB={};
 const BOG_NAMES=["Swamp Thing","Mud Butter","Gumbo","Sloppy Joe","Bog Hog","Muddy Waters","Dirty Bird","Low Ground","Sink Hole","Gator Bait","Brown Out","Clay Pigeon","Backwater","Slough Monster","Rooster Tail","Wet Willy","Gravy Train","Stuck Up"];
 const BOG_COLORS={street:0x1d4787,modified:0xb7261d,super:0x2c6b3a};
-const bogIsD=c=>SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
-function bogClsLocked(k){const c=SIM.BOG_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 /* the truck setup lives on S.env beside the sled's and the salt's; anything a class doesn't run is pulled back in */
 function bogEnvFix(){const e=S.env,B=SIM.BOG_CLASSES;if(!B[e.bogCls])e.bogCls="street";const k=e.bogCls,V=B[k].veh,G=B[k].gears;
   if(!V.tyres.includes(e.bogTyre))e.bogTyre=V.tyres[V.tyres.length-1];
   e.bogGear=Math.max(0,Math.min(G.length-1,Math.round(isFinite(+e.bogGear)&&e.bogGear!==""&&e.bogGear!=null?+e.bogGear:1)));
   if(e.bogDrive!=="auto")e.bogDrive="you";return k;}
-function bogVeh(k){const e=S.env;return{cls:k,gear:+e.bogGear,tyre:e.bogTyre,redline:S.cfg.redline,idle:bogIsD(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850)};}
+function bogVeh(k){const e=S.env;return{cls:k,gear:+e.bogGear,tyre:e.bogTyre,redline:S.cfg.redline,idle:SIM.isDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850)};}
 /* the night: one pit per class per week in career (the same mud all week), a fresh one every run in the sandbox */
 function bogSeed(k){const ix=Object.keys(SIM.BOG_CLASSES).indexOf(k)+1;if(!career())return BOG_SB[ix]||(BOG_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().bogSeed)C().bogSeed=Math.floor(Math.random()*1e9)+1;return(C().bogSeed^(C().week*7919)^(ix*104729))>>>0;}
 /* career: one mud bog run a week, in one class. The class run this week, or null */
-function bogWkCls(){if(!career())return null;const w=C().bogWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
-function bogHookedWk(k){return !!bogWkCls();}
+function bogHookedWk(k){return !!wkCls("bogWk");}
 /* entry: about 15% of the class's winning purse */
-function bogFee(k){const C0=SIM.BOG_CLASSES[k]||SIM.BOG_CLASSES.street;return Math.round(BOG_PURSE[0]*(BOG_PAY[C0.tier]||1)*0.15/5)*5;}
+function bogFee(k){return evFee(BOG_PURSE[0],BOG_PAY,(SIM.BOG_CLASSES[k]||SIM.BOG_CLASSES.street).tier);}
 const bogNightCache=new Map(),bogFieldCache=new Map();
 function bogNight(seed){let n=bogNightCache.get(seed);if(!n){if(bogNightCache.size>12)bogNightCache.clear();n=SIM.bogNight(seed);bogNightCache.set(seed,n);}return n;}
 /* the rest of the class: 5–7 trucks, each its own engine and driver run through the same sim and the same mud */
@@ -35,7 +32,7 @@ function bogField(k,seed){const key=k+"|"+seed;if(bogFieldCache.has(key))return 
 const bogCmp=(a,b)=>(a.dq?1:0)-(b.dq?1:0)||(b.cleared?1:0)-(a.cleared?1:0)||(a.cleared?a.t-b.t:b.m-a.m)||(a.me?-1:b.me?1:0);
 const bogScore=f=>f.dq?"DQ":f.cleared?f.t.toFixed(2)+" s":f.m.toFixed(1)+" m";
 function bogBtnText(t,sub){const b=$("bogBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
-function bogBreak(kind){BR.failed=true;BR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
+function bogBreak(kind){BR.failed=true;BR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");failFlash();}
 function bogStart(){
   $("app").classList.add("onstrip");
   const k=bogEnvFix(),env=stdEnv();const res=SIM.bogPrep(S.cfg,env);
@@ -49,11 +46,11 @@ function bogStart(){
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("bogCtl").style.display="";$("bogBtn").dataset.k="";$("bogBtn").disabled=false;
   bogBtnText(BR.auto?"START THE RUN":"HOLD TO DRIVE",BR.auto?"the driver takes it from here":"hold for throttle · let go to feather the wheelspin");
   $("testProg").classList.remove("done");sfx("start");bogHud(p.st);
-  requestAnimationFrame(()=>{const pn=$("panel"),r=$("bogCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  scrollCtlIntoView("bogCtl");
   const step=()=>{if(!BR||BR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-BR.last)/1000);BR.last=now;const st=p.st;
     let left=dt;while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,bogThr(st));}
     if(st.broke&&!BR.failed)bogBreak(st.broke);
-    if(st.done&&BR.doneAt==null){BR.doneAt=now;if(st.cleared&&!BR.failed){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(st.done&&BR.doneAt==null){BR.doneAt=now;if(st.cleared&&!BR.failed){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
     // mud slaps: the pit entry, a ridge, a rut, a landing — and the wheels throwing it while they spin
     let slap=0;if(st.phase==="pit"&&BR.ph!=="pit")slap=1;if(st.hzHit.length>BR.hz){BR.hz=st.hzHit.length;slap=Math.max(slap,0.8);}if(st.slaps>BR.slaps){BR.slaps=st.slaps;slap=Math.max(slap,0.9);}
     if(slap)sfx("mudslap");else if(st.phase==="pit"&&!st.done&&st.slip>0.2&&now-BR.slapT>Math.max(140,520-600*st.slip)){BR.slapT=now;sfx("mudslap");}
@@ -104,13 +101,7 @@ function bogSkip(){if(!BR||BR.finished)return;const p=BR.p,st=p.st;if(st.phase==
   if(!st.done){let n=0;while(!st.done&&n++<20000)p.step(0.02,BR.auto?p.auto(0.92):BR.down?1:p.auto(0.92));if(st.broke&&!BR.failed)bogBreak(st.broke);}
   if(ENGINE_VIS.bogSkip)ENGINE_VIS.bogSkip();BR.skip=true;if(BR.doneAt==null)BR.doneAt=performance.now()-2000;}
 (()=>{const b=$("bogBtn");
-  b.addEventListener("pointerdown",e=>{e.preventDefault();BR&&(BR.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}bogPress();});
-  b.addEventListener("pointerup",()=>{BR&&(BR.lastPtr=performance.now());bogRelease();});
-  b.addEventListener("pointercancel",()=>{BR&&(BR.lastPtr=performance.now());bogRelease();});
-  b.addEventListener("contextmenu",e=>e.preventDefault());
-  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();bogPress();}});
-  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();bogRelease();}});
-  b.addEventListener("click",()=>{if(!BR||!BR.p||performance.now()-(BR.lastPtr||0)<800)return;bogPress();setTimeout(bogRelease,60);});})();
+  holdBtn(b,()=>BR,bogPress,bogRelease,r=>{if(!r.p)return;bogPress();setTimeout(bogRelease,60);});})();
 function bogFinish(){
   if(!BR||BR.finished)return;BR.finished=true;const {p,res,env,k,snap,hk}=BR;const r=p.result();const failed=BR.failed,C0=SIM.BOG_CLASSES[k];const same=testSame(snap);
   setTimeout(()=>{if(!testing){if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});$("app").classList.remove("onstrip");}},2200);
@@ -135,9 +126,9 @@ function bogFinish(){
   revealVerdict();
 }
 /* records: per class, the quickest time through, or the farthest anyone got */
-function bogPb(r,failed){if(ff||failed)return;const R=recs();if(!R.bog||typeof R.bog!=="object")R.bog={};const was=R.bog[r.cls];
+function bogPb(r,failed){if(ff||failed)return;const P=recBucket("bog"),was=P[r.cls];
   const better=!was||(r.cleared&&(!was.c||r.pitT<was.t))||(!r.cleared&&!was.c&&r.distM>was.m);if(!better)return;
-  R.bog[r.cls]=Object.assign({c:!!r.cleared,t:r.cleared?r.pitT:null,m:r.distM,len:r.len},recTag());
+  P[r.cls]=Object.assign({c:!!r.cleared,t:r.cleared?r.pitT:null,m:r.distM,len:r.len},recTag());
   if(was){r.pb={was:was.c?was.t.toFixed(2)+" s":was.m.toFixed(1)+" m"};setTimeout(()=>toast(`CLASS BEST · ${r.cleared?r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} (was ${r.pb.was})`),2700);}}
 function bogRecHtml(){const R=recs(),P=R.bog;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOG_CLASSES).filter(k=>P[k]);if(!ks.length)return "";
   return `<div class="rtop"><span>Mud bog · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>${e.c?"✓":"·"}</b><span class="et">${e.c?e.t.toFixed(2):e.m.toFixed(1)}</span><span>${e.c?"s":"m"}</span><span class="nm" title="${esc(e.n)}">${esc(SIM.BOG_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
@@ -149,17 +140,17 @@ function bogPitSvg(night,pitK,field){const L=night.len,W=300,H=40,pts=[];for(let
   const mk=(field||[]).map(f=>`<line x1="${((f.cleared?L:f.m)/L*W).toFixed(1)}" x2="${((f.cleared?L:f.m)/L*W).toFixed(1)}" y1="0" y2="${H}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 2"/>`).join("");
   const hz=night.hz.map(h=>`<text x="${(h.x/L*W).toFixed(1)}" y="${H-1}" font-size="8" text-anchor="middle" fill="var(--dim)">${h.kind==="rut"?"▾":"▴"}</text>`).join("");
   return `<svg class="bogpit" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Depth along the pit"><path d="${path}" fill="rgba(122,86,52,.55)" stroke="rgba(160,120,80,.9)" stroke-width="1"/>${mk}${hz}</svg>`;}
-function bogEnvHtml(sl){const e=S.env,k=bogEnvFix(),C0=SIM.BOG_CLASSES[k],V=C0.veh,G=C0.gears,lk=bogClsLocked(k),seed=bogSeed(k),night=bogNight(seed),field=bogField(k,seed),R=recs().bog||{},pb=R[k];
+function bogEnvHtml(sl){const e=S.env,k=bogEnvFix(),C0=SIM.BOG_CLASSES[k],V=C0.veh,G=C0.gears,lk=clsLocked(SIM.BOG_CLASSES,k),seed=bogSeed(k),night=bogNight(seed),field=bogField(k,seed),R=recs().bog||{},pb=R[k];
   const thru=field.filter(f=>f.cleared).length,lead=field.slice().sort(bogCmp)[0];
   let h=`<div class="saltcls"><div><span>Tonight's pit</span><b>${night.len} m</b><small>${esc(night.name)} · ${Math.round(night.d0*(V.pitK||1)*100)} cm deep</small></div><div><span>To beat</span><b>${lead?bogScore(lead):"—"}</b><small>${thru} of ${field.length} got through</small></div><div><span>Your best</span><b>${pb?(pb.c?pb.t.toFixed(2)+" s":pb.m.toFixed(1)+" m"):"—"}</b><small>${pb?(pb.c?"through the pit":"farthest"):"no run yet"}</small></div></div>${bogPitSvg(night,V.pitK||1,field)}`;
-  h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOG_CLASSES).map(([id,c])=>{const l=bogClsLocked(id);return `<button data-bk="bogCls" data-bv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
+  h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOG_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.BOG_CLASSES,id);return `<button data-bk="bogCls" data-bv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
   h+=driverToggle(id=>`data-bk="bogDrive" data-bv="${id}"`,e.bogDrive,"hold for throttle, feather the spin","a steady foot · watch the run");
   h+=`<div class="lbl"><span>Gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-bk="bogGear" data-bv="${i}" class="${+e.bogGear===i?"on":""}">${n}<small>${mph} mph at redline</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.BOG_TYRES[id];return `<button data-bk="bogTyre" data-bv="${id}" class="${e.bogTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
   h+=`<p class="hint">${C0.n}: ${V.mass.toLocaleString("en-CA")} kg truck, ${V.tyreDia}" tyres, ${V.driveN}, ${V.trans==="clutch"?"clutch — it can stall":"automatic"}, ${Math.round(V.clear*100)} cm under the frame. ${V.runup} m run-up. A tall gear carries more speed into the mud but bogs sooner in the deep end; a short one keeps the engine up in its band and spins easier. ${night.cons>0.6?"Sticky clay grabs the tyres and packs slow lugs solid":"Soupy mud lets the tyres sink to the floor but lets go of them"}.${lk?` <b>Opens at ${lk} rep.</b>`:""}${bogHookedWk(k)?` <b>Run this week — the next mud bog is week ${C().week+1}.</b>`:""}</p>`;
   return h;}
 $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-bk]");if(!b)return;const k=b.dataset.bk,v=b.dataset.bv;
-  if(k==="bogCls"){const l=bogClsLocked(v);if(l){toast(`${SIM.BOG_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.bogCls){S.env.bogGear=null;S.env.bogTyre=null;}}
+  if(k==="bogCls"){const l=clsLocked(SIM.BOG_CLASSES,v);if(l){toast(`${SIM.BOG_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.bogCls){S.env.bogGear=null;S.env.bogTyre=null;}}
   S.env[k]=k==="bogGear"?+v:v;bogEnvFix();renderEnv();save();buzz(6);});
 /* the run sheet's trace: speed and wheelspin against distance, the mud's depth shaded under them */
 function drawBogTrace(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1";const soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";

@@ -21,7 +21,7 @@ function saltRes(){const h=cfgHash(S.cfg);let r=saltCache.get(h);if(!r){if(saltC
 function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCourse,redline:S.cfg.redline,aero:e.saltAero==="on",ballast:+e.saltBallast,cooling:e.saltCool,chute:e.saltChute,shift:e.saltDrive==="auto"?"auto":e.saltShift,autoLift:e.saltDrive==="auto",idle:SIM.isDiesel(S.cfg)?720:Math.max(800,S.cfg.cam>70?1100:850)};
   swapSaltOv(v);if(!e.saltTop){e.saltTop=SIM.lsrGearing(res,v);}v.topMph=+e.saltTop;return v;}
 function saltCls(k){const r=quick||saltRes();return SIM.lsrClass(S.cfg,r,k||S.env.saltBody);}
-function saltBook(){const R=recs();if(!R.lsr||typeof R.lsr!=="object")R.lsr={};const L=R.lsr;if(!L.rec||typeof L.rec!=="object")L.rec={};if(!L.pb||typeof L.pb!=="object")L.pb={};return L;}
+function saltBook(){const L=recBucket("lsr");if(!L.rec||typeof L.rec!=="object")L.rec={};if(!L.pb||typeof L.pb!=="object")L.pb={};return L;}
 /* the standing record for a class: yours if you set it, otherwise the seeded book */
 function saltRecord(key){const L=saltBook(),mine=L.rec[key],seed=SIM.lsrRecord(key);return mine&&(!seed||mine.mph>seed.mph)?Object.assign({mine:true,holder:mine.n},mine):seed;}
 function saltMeet(){const L=saltBook(),id=career()?"w"+C().week:"s"+(S.saltMeetId||(S.saltMeetId=1));if(!L.meet||L.meet.id!==id)L.meet={id,runs:0,best:{},imp:null};return L.meet;}
@@ -30,7 +30,7 @@ function saltNum(meet){let h=2166136261;const s="lsrnum|"+meet.id+"|"+(career()?
 function saltFee(){return career()&&!dev()?SALT_FEE[S.env.saltCourse==="long"?"long":"short"]:0;}
 function saltBtnText(t,sub){const b=$("saltBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 function saltBreak(kind){if(kind==="driveline"){if(!SR.dl){SR.dl=true;sfx("fail");buzz([80,40,120]);toast("DRIVELINE LET GO · the engine is fine");}return;}   // a swap car's gearbox or axle
-  SR.failed=true;SR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":kind==="steam"?"steam":"rod");$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
+  SR.failed=true;SR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":kind==="steam"?"steam":"rod");failFlash();}
 function saltStart(){
   $("app").classList.add("onstrip");
   const k=saltEnvFix(),env=stdEnv(),base=saltRes();
@@ -46,7 +46,7 @@ function saltStart(){
   $("saltShiftBtn").style.display=!SR.auto&&veh.shift==="manual"?"":"none";saltWarpUi();
   saltBtnText(SR.auto?"START THE PUSH":"HOLD TO RUN",SR.auto?"the driver takes it from here":"push off · hold for throttle, let go to feather");
   $("testProg").classList.remove("done");sfx("start");saltHud(p.st);
-  requestAnimationFrame(()=>{const pn=$("panel"),r=$("saltCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  scrollCtlIntoView("saltCtl");
   const course={x0:p.x0,x1:p.x1,k0:p.k0,k1:p.k1,xEnd:p.xEnd};
   const step=()=>{if(!SR||SR.finished)return;const now=performance.now();const rdt=Math.min(0.25,(now-SR.last)/1000);SR.last=now;const st=p.st;
     const wp=st.phase==="run"||st.phase==="shutdown"?SR.warp:1;let left=rdt*wp;
@@ -104,13 +104,7 @@ function saltSkip(){if(!SR||SR.finished)return;const p=SR.p,st=p.st;if(st.phase=
     if(st.broke&&!SR.failed)saltBreak(st.broke);}
   if(ENGINE_VIS.saltSkip)ENGINE_VIS.saltSkip();SR.skip=true;if(SR.doneAt==null)SR.doneAt=performance.now()-2000;}
 (()=>{const b=$("saltBtn");
-  b.addEventListener("pointerdown",e=>{e.preventDefault();SR&&(SR.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}saltPress();});
-  b.addEventListener("pointerup",()=>{SR&&(SR.lastPtr=performance.now());saltRelease();});
-  b.addEventListener("pointercancel",()=>{SR&&(SR.lastPtr=performance.now());saltRelease();});
-  b.addEventListener("contextmenu",e=>e.preventDefault());
-  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();saltPress();}});
-  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();saltRelease();}});
-  b.addEventListener("click",()=>{if(!SR||!SR.p||performance.now()-(SR.lastPtr||0)<800)return;saltPress();setTimeout(saltRelease,60);});
+  holdBtn(b,()=>SR,saltPress,saltRelease,r=>{if(!r.p)return;saltPress();setTimeout(saltRelease,60);});
   $("saltShiftBtn").addEventListener("pointerdown",e=>{e.preventDefault();saltShift();});
   $("saltWarp").addEventListener("click",e=>{const w=e.target.closest("[data-warp]");if(!w||!SR)return;SR.warp=+w.dataset.warp;saltWarpUi();buzz(6);});
   document.addEventListener("keydown",e=>{if(!SR||SR.finished||e.repeat||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;if(e.key==="ArrowUp"||e.key.toLowerCase()==="g"){e.preventDefault();saltShift();}});})();

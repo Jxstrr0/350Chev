@@ -60,7 +60,7 @@ function pbPull(res){const R=recs(),hp=Math.round(res.peakHp),was=career()?Math.
   if(hp>was){R.hp=Object.assign({v:hp},recTag());if(was>0)setTimeout(()=>toast(`New record: ${hp.toLocaleString("en-CA")} hp (was ${was.toLocaleString("en-CA")})`),2700);}
   if(res.rel>rw||(!R.rel&&res.rel>=rw))R.rel=Object.assign({v:res.rel,hp},recTag());}
 function dragBreak(){if(DR&&DR.failKind==="driveline"){if(!DR.dl){DR.dl=true;sfx("fail");buzz([80,40,120]);toast(DR.d&&DR.d.st&&DR.d.st.dtMsg?DR.d.st.dtMsg.toUpperCase()+" · the engine is fine":"DRIVELINE LET GO · the engine is fine");}return;}   // a swap car's gearbox or axle: not an engine failure
-  DR.failed=true;run.fail=true;run.failKind=DR.failKind;$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
+  DR.failed=true;run.fail=true;run.failKind=DR.failKind;failFlash();}
 /* ---- compact strip HUD on the 3D view (#stripHud): built when a pass starts, updated in place every frame (only nodes whose
    text changed are touched). It carries what #dragLive carried; while it is up (html.shud) the panel copy and #rpmbox step aside. ---- */
 let SH=null,SHgen=0;
@@ -283,11 +283,7 @@ function dragRelease(cancel){if(!DR||!DR.d)return;const d=DR.d,st=d.st,now=perfo
   if(st.phase==="burnout"&&DR.downAt!=null){const held=now-DR.downAt;DR.downAt=null;d.burn(false);if(held<300&&!cancel)dragStage();return;}
   if(st.phase==="staged"&&st.launch.armed){if(cancel){d.disarm();return;}dragGo(now);}}
 (()=>{const b=$("dragBtn");
-  b.addEventListener("pointerdown",e=>{e.preventDefault();DR&&(DR.lastPtr=performance.now());try{b.setPointerCapture(e.pointerId);}catch(x){}dragPress();});
-  b.addEventListener("pointerup",e=>{DR&&(DR.lastPtr=performance.now());dragRelease(false);});
-  b.addEventListener("pointercancel",e=>{DR&&(DR.lastPtr=performance.now());dragRelease(true);});
-  b.addEventListener("contextmenu",e=>e.preventDefault());
-  b.addEventListener("click",()=>{if(!DR||!DR.d||performance.now()-(DR.lastPtr||0)<800)return;const st=DR.d.st;
+  holdBtn(b,()=>DR,dragPress,dragRelease,()=>{if(!DR.d)return;const st=DR.d.st;
     if(DR.auto&&!DR.failed&&(st.phase==="burnout"||st.phase==="staged"||st.phase==="run")){dragTakeOver();return;}
     if(st.phase==="burnout")dragStage();else if(st.phase==="staged"){if(st.rolled)dragGo(performance.now());}else if(st.phase==="run")DR.d.shift();else if(st.phase==="shutdown"&&DR.pb)ENGINE_VIS.skipCut();});})();
 /* ---- nitrous on the strip: bottle pressure (heater or weather), when the shot comes on, and a purge on the line ---- */

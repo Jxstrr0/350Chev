@@ -88,9 +88,9 @@ function rivTopWeek(){const s=rivS(),c=C();s.top=rivTop(c)&&RIVALS.every(v=>s.po
 function rivEvOpen(ev){try{return evStatus(RIV_EV[ev]).k!=="lock"&&(!RIV_BEAT.includes(ev)||rivBests(ev).length>0)&&(ev!=="endurance"||e24C().next<=C().week+2);}catch(e){return false;}}   // the 24 Hours: only when a running falls inside the challenge
 /* the bests a posted-number challenge can be set against: plain-chassis laps (no swap cars) and salt class bests */
 function rivBests(ev){
-  if(ev==="road")return Object.values(roadRecs()).filter(x=>x&&x.t>0&&!x.sw&&SIM.CHASSIS[x.ch]&&SIM.ROAD_TRACKS[x.trk]).map(x=>({car:x.ch,trk:x.trk,b:x.t}));
+  if(ev==="road")return Object.values(recBucket("road")).filter(x=>x&&x.t>0&&!x.sw&&SIM.CHASSIS[x.ch]&&SIM.ROAD_TRACKS[x.trk]).map(x=>({car:x.ch,trk:x.trk,b:x.t}));
   if(ev==="salt"){const pb=saltBook().pb||{};return Object.keys(pb).filter(k=>pb[k]&&pb[k].mph>0).map(k=>({k,b:pb[k].mph}));}
-  if(ev==="hill"){const R=hillRecs();return Object.keys(R).filter(k=>R[k]&&R[k].t>0&&SIM.HILL_CLASSES[k]&&!hillClsLocked(k)).map(k=>({k,b:R[k].t}));}
+  if(ev==="hill"){const R=recBucket("hill");return Object.keys(R).filter(k=>R[k]&&R[k].t>0&&SIM.HILL_CLASSES[k]&&!clsLocked(SIM.HILL_CLASSES,k)).map(k=>({k,b:R[k].t}));}
   return[];}
 /* a rival ahead of you posts a number 1.2-2.2% past your best, one behind 0.4-1.2% */
 function rivPost(ev,ahead){const x=rivPick(rivBests(ev)),m=ahead?0.012+rivRng()*0.01:0.004+rivRng()*0.008;
@@ -99,7 +99,7 @@ const rivTgtTxt=ch=>ch.ev==="road"?fmtLap(ch.tgt,1):ch.ev==="hill"?fmtHill(ch.tg
 const rivWhere=ch=>ch.ev==="road"?`${(SIM.ROAD_TRACKS[ch.trk]||{}).n||"the circuit"} in ${roadCarTxt({ch:ch.car})}`:ch.ev==="hill"?`${(SIM.HILL_CLASSES[ch.k]||{}).n||"the class"} at Pikes Peak`:`class ${ch.k} on the salt`;
 /* Pikes Peak: the rival's car in the field, on the posted time (splits paced off your own record in that class) */
 function rivHillRow(k){if(!career())return null;const ch=rivS().ch;if(!ch||ch.st!=="on"||ch.ev!=="hill"||ch.k!==k)return null;
-  const v=RIVALS.find(x=>x.id===ch.rv),pb=hillRecs()[k],F=SIM.HILL_CLASSES[k].field,sp=pb&&pb.t>0&&pb.splits?pb.splits.map(x=>+(x*ch.tgt/pb.t).toFixed(3)):[];
+  const v=RIVALS.find(x=>x.id===ch.rv),pb=recBucket("hill")[k],F=SIM.HILL_CLASSES[k].field,sp=pb&&pb.t>0&&pb.splits?pb.splits.map(x=>+(x*ch.tgt/pb.t).toFixed(3)):[];
   return{n:v.name,rv:true,hp:Math.round(F.hp*1.05),turbo:F.turbo>=0.5,ch:pb&&pb.ch||"coupe",skill:0.9,t:ch.tgt,dnf:null,splits:sp,offs:0,paint:HILL_PAINT[2]};}
 function hillWithRv(k,f){const x=f&&rivHillRow(k);return x?f.concat([x]):f;}
 /* the 24 Hours: one car in your class runs under the rival's name — a touch quicker than yours if they are ahead on the board */

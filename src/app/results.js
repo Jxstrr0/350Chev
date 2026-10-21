@@ -65,7 +65,6 @@ addEventListener("resize",dlSched);new MutationObserver(dlSched).observe(documen
 function dlMount(){for(const id in DLM)if(!$(id+"Cv"))delete DLM[id];dlAll();}
 /* ---- pull datalog: the same scrub cursor on the pull sheet's chart, plus rpm and EGT ---- */
 const PL={rpm:1,egt:1,cur:null};
-function pullRedraw(){const l=lastForChart();if(S.env.testType==="pull_sled"&&l&&l.pull)drawPullTrace(l.pull);}
 function pullDiag(r){const tr=r.trace||[],sw=r.sweet||[0.15,0.3];if(tr.length<3)return "";let best=null,a=-1,low=0,lowA=-1,lowB=0;
   for(let i=0;i<=tr.length;i++){const on=i<tr.length&&tr[i].slip>sw[1]+0.02;if(on&&a<0)a=i;if(!on&&a>=0){const d=tr[i-1].t-tr[a].t+0.1;if(!best||d>best.d)best={a,e:i-1,d};a=-1;}}
   for(let i=0;i<tr.length;i++)if(tr[i].t>1&&tr[i].throttle>0.8&&tr[i].slip<sw[0]-0.03&&tr[i].v>0.5)low+=0.1;
@@ -185,12 +184,12 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} needs the ${pullLockTxt(k)}`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(pullHookedWk(k)){toast(`Already hooked in ${SIM.PULL_CLASSES[k].n} this week — next pull night is week ${C().week+1}`);return;}}
   if(pullGate())return;
   if(S.env.testType==="bog"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}   // dyno day: no mud bog with a customer's engine
-  if(S.env.testType==="bog"){const k=bogEnvFix(),l=bogClsLocked(k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[bogWkCls()].n} this week — one class a week; the next mud bog is week ${C().week+1}`);return;}}
+  if(S.env.testType==="bog"){const k=bogEnvFix(),l=clsLocked(SIM.BOG_CLASSES,k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[wkCls("bogWk")].n} this week — one class a week; the next mud bog is week ${C().week+1}`);return;}}
   if(S.env.testType==="hill"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
-  if(S.env.testType==="hill"){const k=hillEnvFix(),l=hillClsLocked(k);if(l){toast(`${SIM.HILL_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(hillRanWk(k)){toast(`Already ran ${SIM.HILL_CLASSES[hillWkCls()].n} this week — one class a week; the next running is week ${C().week+1}`);return;}}
+  if(S.env.testType==="hill"){const k=hillEnvFix(),l=clsLocked(SIM.HILL_CLASSES,k);if(l){toast(`${SIM.HILL_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(hillRanWk(k)){toast(`Already ran ${SIM.HILL_CLASSES[wkCls("hillWk")].n} this week — one class a week; the next running is week ${C().week+1}`);return;}}
   if(S.env.testType==="oval"&&ovalGate())return;
   if(S.env.testType==="boat"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
-  if(S.env.testType==="boat"){const k=boatEnvFix(),l=boatClsLocked(k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(boatRanWk(k)&&!(boatLive()&&boatLive().cls===k)){toast(`Already ran ${SIM.BOAT_CLASSES[boatWkCls()].n} this week — one class a week; the next night is week ${C().week+1}`);return;}}
+  if(S.env.testType==="boat"){const k=boatEnvFix(),l=clsLocked(SIM.BOAT_CLASSES,k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(boatRanWk(k)&&!(boatLive()&&boatLive().cls===k)){toast(`Already ran ${SIM.BOAT_CLASSES[wkCls("boatWk")].n} this week — one class a week; the next night is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
   testing=true;abStop();renderTest();ensureSound();
@@ -226,7 +225,7 @@ $("runTest").addEventListener("click",()=>{
     if(env.testType==="pull"){if(t<dur){i=Math.floor(N*(t/dur));run.rpm=res.rpms[Math.min(N-1,i)];}else run.rpm=cfg0.redline+Math.sin(t/40)*40;run.load=1;}
     else if(env.testType==="endurance"){const ph=t/dur;const prof={highway:.35,mixed:.6,track:.95}[env.loadProfile];run.rpm=1500+(cfg0.redline-1500)*prof*(0.55+0.45*Math.abs(Math.sin(t/230)));run.load=prof*(0.6+0.4*Math.abs(Math.sin(t/230+1)));i=N;label=`${Math.min(env.hours,Math.round(env.hours*Math.min(1,ph)))} h`;}
     else{if(t<dur*0.5)run.rpm=1000+(cfg0.redline-1000)*(t/(dur*0.5));else if(t<dur)run.rpm=cfg0.redline*(1+0.15*Math.min(1,(t-dur*0.5)/120));else run.rpm=Math.max(1000,cfg0.redline*1.15-(t-dur)*4);run.load=t<dur*0.5?1:0.2;}
-    if(t>failAt&&!failed){failed=true;run.fail=true;run.failKind=failKind;$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
+    if(t>failAt&&!failed){failed=true;run.fail=true;run.failKind=failKind;failFlash();}
     if(failed){const since=t-failAt;const d=failKind==="seize"?(since>1600?900:rpmDecay):failKind==="knock"?(since>1200?140:rpmDecay):rpmDecay;run.rpm=Math.max(0,run.rpm-d);if(failKind==="knock"||failKind==="steam")run.rpm+=(Math.random()-0.5)*120;}
     run.on=true;$("rpmLbl").textContent=label||Math.round(run.rpm/10)*10;
     if(env.testType==="pull")drawChart(res,Math.min(N,i+1));
@@ -461,7 +460,7 @@ let tdIsOpen=false;
 function tdShort(x,n){x=String(x||"").replace(/<[^>]*>/g,"");const m=x.match(/^.*?[.!?](\s|$)/);x=(m?m[0]:x).trim();return x.length>n?x.slice(0,n-1).trim()+"…":x;}
 function tdOpen(){const L=S.last,f=tdFail(L);if(!f||testing||!ENGINE_VIS.teardown)return;
   const c=L.cfg||S.cfg,lay=LAYOUTS[c.layout]||{banks:1,angle:0,n:4};
-  const isD=SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
+  const isD=SIM.isDiesel(c);
   const tx=ENGINE_VIS.teardown({failId:f.id,layout:{banks:lay.banks,angle:lay.angle,n:lay.n},bore:c.bore,stroke:c.stroke,rodRatio:c.rodRatio,diesel:isD,cyl:lay.n,asp:c.asp,blockMat:c.blockMat,headMat:c.headMat});
   if(!tx)return;tdIsOpen=true;$("app").classList.remove("onstrip");$("app").classList.add("td");
   const t=f.test,r=L.res;let meas=t?`${t.name}: ${t.sub}`:"";
