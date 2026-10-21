@@ -106,6 +106,10 @@ const ENGINE_VIS = {
   setQuality: function(q){
     var want = (q==="ultra") ? "ultra" : (q==="full") ? "full" : "lite";
     if(!renderer){ GFX=want; return; }
+    /* a Lite boot leaves the post-processing addons off the page; fetch them now and come back once they are in */
+    if(want!=="lite" && !(THREE.EffectComposer && THREE.UnrealBloomPass) && window.__pewPost && !postLoading){
+      postLoading=true; window.__pewPost(function(ok){ postLoading=false; if(ok && GFX!=="lite") ENGINE_VIS.setQuality(GFX); });
+    }
     if(want!=="lite" && THREE.EffectComposer && THREE.UnrealBloomPass && (!composer || composer.userData_tier!==want)){
       try{
         if(composer){ composer.passes.forEach(function(ps){ if(ps.dispose) ps.dispose(); }); composer=null; bloomPass=null; }
