@@ -29,7 +29,12 @@ const ENGINE_VIS = {
     /* perf: no drawing while the 3D view is scrolled out of sight (an embedded page, a squeezed layout) */
     if(window.IntersectionObserver){ try{ new IntersectionObserver(function(es){ viewOff=!es[es.length-1].isIntersecting; }).observe(canvasEl); }catch(e){} }
 
-    renderer=new THREE.WebGLRenderer({canvas:canvasEl, antialias:true, alpha:false,
+    /* MSAA on a 2x+ phone canvas costs fill rate for an edge the pixel density already hides. The tier is applied after
+       init (applyGfx), so decide a Lite start the way body.html's loader does: a phone UA unless the save asks for more */
+    var ua=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent), sv=null;
+    try{ sv=JSON.parse(localStorage.getItem("pew2-save")||"null"); }catch(e){}
+    var liteStart=ua && !(sv&&(sv.gfx==="full"||sv.gfx==="ultra"||(!sv.gfx&&sv.layoutMode==="desktop")));
+    renderer=new THREE.WebGLRenderer({canvas:canvasEl, antialias:!(liteStart && (window.devicePixelRatio||1)>=2), alpha:false,
                                       powerPreference:"high-performance"});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
     renderer.outputEncoding=THREE.sRGBEncoding;
