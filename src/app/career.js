@@ -164,7 +164,6 @@ function DD(){const c=C();if(!c.dd||typeof c.dd!=="object")c.dd={};const d=c.dd;
 function ddRnd(o){return()=>{o.seed=(o.seed*1664525+1013904223)>>>0;return o.seed/4294967296;};}
 const ddFault=id=>DD_FAULTS.find(f=>f.id===id)||DD_FAULTS[0];
 const ddFill=(s,j)=>String(s).replace(/\{r\}/g,(+j.r||0).toLocaleString("en-CA")).replace(/\{rl\}/g,(+j.rl||0).toLocaleString("en-CA")).replace(/\{b\}/g,(+j.b||0).toFixed(1));
-const ddEsc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function ddKeyLbl(k){if(k==="map")return "Tune map";const f=FORM.flatMap(x=>x.fields).find(x=>x.key===k);return f?fLabel(f):k;}
 const ddLabel=j=>`${j.who}'s ${j.veh}`;
 const ddEnvX=()=>S&&S.bay&&S.bay.job.env?S.bay.job.env:null;
@@ -208,7 +207,7 @@ function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hi
 function ddHint(){const B=S.bay;if(!B)return;const j=B.job;if(j.hints>=3)return;const c=ddHintCost(j);j.hints++;if(c)j.paid+=c;save();ddRender();
   toast(c?`Hint · ${fmt$(c)} off the labour`:j.hints===1&&staffed("tuner")&&career()?"Your calibration engineer has a look — free":"Hint");}
 function ddVerdict(res){const B=S.bay,j=B.job,ck=ddCheck(j,S.cfg,res);
-  return `<div class="verdict ${ck.ok?"pass":"marg"}"><div style="flex:1"><div class="big">${ck.ok?"READY TO HAND BACK":"CUSTOMER ENGINE"}</div><p>${ck.ok?`It's clean and it meets what ${ddEsc(j.who)} asked for. Hand it back from the Dyno day card.`:ck.issues.map(ddEsc).join(" · ")}</p>
+  return `<div class="verdict ${ck.ok?"pass":"marg"}"><div style="flex:1"><div class="big">${ck.ok?"READY TO HAND BACK":"CUSTOMER ENGINE"}</div><p>${ck.ok?`It's clean and it meets what ${esc(j.who)} asked for. Hand it back from the Dyno day card.`:ck.issues.map(esc).join(" · ")}</p>
     <div class="vstats"><div><b>${Math.round(res.peakHp)}</b><span>hp · wants ${j.hpMin}+</span></div>${res.diesel?`<div><b>${Math.round(res.smoke||0)}%</b><span>Smoke${j.smokeMax!=null?" · max "+j.smokeMax+"%":""}</span></div>`:`<div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div>`}<div><b>${res.rel}</b><span>Reliability</span></div><div><b>${fmt$(ddParts())}<i style="font-style:normal;font-size:.75em;color:var(--muted)"> / ${fmt$(j.budget)}</i></b><span>Parts / budget</span></div></div></div></div>`;}
 function ddHand(){const B=S.bay;if(!B||testing)return;const j=B.job;const last=S.last&&S.last.hash===cfgHash(S.cfg)?S.last:null;
   if(!last){toast("Pull it as it sits first — the customer wants the dyno sheet");return;}
@@ -228,27 +227,27 @@ function ddWalk(){const B=S.bay;if(!B||testing)return;const j=B.job;
   ddExit();hud();toast(B.practice?"Practice engine off the dyno":"Customer sent away — −1 rep");}
 function ddPractice(){const o={seed:1+Math.floor(Math.random()*1e9)};const j=ddMakeJob(ddRnd(o),true);if(!j){toast("Couldn't find a sick engine — try again");return;}j.st="bay";if(ddEnter(j,true)){renderTest();toast(`Practice: ${ddLabel(j)} — "${j.tag}"`);}}
 function ddBar(){const b=$("ddBar");if(!b)return;const B=S&&S.bay;$("panel").classList.toggle("ddon",!!B);if(!B){b.hidden=true;b.innerHTML="";return;}
-  b.hidden=false;b.innerHTML=`<div class="ddbt"><small>${B.practice?"Practice bay":"Customer bay"}</small><b>${B.practice?"Practice":"Customer"}: ${ddEsc(ddLabel(B.job))} — ‘${ddEsc(B.job.tag)}’</b></div><button class="btn sm" data-dd="goto">Job ›</button>`;
+  b.hidden=false;b.innerHTML=`<div class="ddbt"><small>${B.practice?"Practice bay":"Customer bay"}</small><b>${B.practice?"Practice":"Customer"}: ${esc(ddLabel(B.job))} — ‘${esc(B.job.tag)}’</b></div><button class="btn sm" data-dd="goto">Job ›</button>`;
   requestAnimationFrame(()=>$("panel").style.setProperty("--ddh",b.offsetHeight+"px"));}
 function ddReqHtml(j){const F=ddFault(j.fault),t=[`No failures on the dyno`,`At least ${j.hpMin.toLocaleString("en-CA")} hp`];
   if(j.smokeMax!=null)t.push(`Smoke ${j.smokeMax}% or less`);if(j.fuels)t.push(`Fuel: ${j.fuels.map(f=>(OPT.fuel[f]||{}).name||f).join(" / ")} only`);if(j.redlineMin)t.push(`Redline stays at ${j.redlineMin.toLocaleString("en-CA")} rpm`);
   if(F.internal)t.push("No internal work — the head stays on");if(j.env&&j.env.gLat)t.push(`Duty: ${j.env.gLat.toFixed(2)} g sustained cornering (set on this job's pulls)`);
-  return `<ul class="ddreq">${t.map(x=>`<li>${ddEsc(x)}</li>`).join("")}</ul>`;}
+  return `<ul class="ddreq">${t.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;}
 function ddRender(){const sec=$("ddSec");if(!sec)return;const B=S.bay,show=!!B||S.env.testType==="pull";sec.hidden=!show;if(!show)return;const box=$("ddBox");
   if(B){const j=B.job,F=ddFault(j.fault),parts=ddParts(),hc=ddHintCost(j);$("ddCnt").textContent=B.practice?"practice":"on the dyno";
-    box.innerHTML=`<div class="card ddjob on"><div class="ddh"><b>${ddEsc(ddLabel(j))}</b><span>${ddEsc(j.eng)}${B.practice?"":" · labour "+fmt$(j.labour)}</span></div>
-      <p class="ddsay">“${ddEsc(j.says)}”</p>
-      <div class="ddk"><span>They'll pay for</span><b>${j.allowed.map(ddKeyLbl).map(ddEsc).join(" · ")}</b></div>
+    box.innerHTML=`<div class="card ddjob on"><div class="ddh"><b>${esc(ddLabel(j))}</b><span>${esc(j.eng)}${B.practice?"":" · labour "+fmt$(j.labour)}</span></div>
+      <p class="ddsay">“${esc(j.says)}”</p>
+      <div class="ddk"><span>They'll pay for</span><b>${j.allowed.map(ddKeyLbl).map(esc).join(" · ")}</b></div>
       ${ddReqHtml(j)}
       ${B.practice?"":`<div class="ddk"><span>Parts so far</span><b class="${parts>j.budget?"crit":""}">${fmt$(parts)} of ${fmt$(j.budget)} budget</b></div>`}
-      ${j.hints?`<ol class="ddhints">${F.hints.slice(0,j.hints).map(h=>`<li>${ddEsc(ddFill(h,j))}</li>`).join("")}</ol>`:""}
-      ${B.confirm&&B.issues?`<div class="ddiss">${B.issues.map(x=>`<div>${ddEsc(x)}</div>`).join("")}</div>`:""}
+      ${j.hints?`<ol class="ddhints">${F.hints.slice(0,j.hints).map(h=>`<li>${esc(ddFill(h,j))}</li>`).join("")}</ol>`:""}
+      ${B.confirm&&B.issues?`<div class="ddiss">${B.issues.map(x=>`<div>${esc(x)}</div>`).join("")}</div>`:""}
       <div class="row ddbtns"><button class="btn pri" data-dd="hand"${testing?" disabled":""}>${B.confirm?(B.practice?"Hand it back as is":"Hand back unfixed · rep hit"):"Hand back"}</button>${j.hints<3?`<button class="btn sm" data-dd="hint">Hint${hc?" · "+fmt$(hc):B.practice||!career()?"":" · free"}</button>`:""}<button class="btn sm ghost" data-dd="walk"${testing?" disabled":""}>${B.practice?"Done":"Walk away"}</button></div>
       <p class="hint">Run pulls, read the stress report, the chart and Analysis, change only what they'll pay for, then pull it again before you hand it back.</p></div>`;return;}
   if(!career()){$("ddCnt").textContent="practice";box.innerHTML=`<p class="hint" style="margin-top:-4px">In career, customers book dyno time for their own sick engines. Practise here: a random engine comes in with one fault and a complaint. Find it, fix it with the parts they'll pay for, and hand it back. Your own build waits in the corner.</p><button class="btn" data-dd="practice" style="width:100%">Practice diagnosis</button>`;return;}
   ddWeek();const d=DD(),open=d.jobs.filter(j=>j.st==="open");$("ddCnt").textContent=open.length?`${open.length} booked · this week only`:"none this week";
   box.innerHTML=`<div class="hint ddhint">Customers book the dyno.${moreI(`Customers book the dyno for their own engines. Take a job: their engine goes on the dyno in place of yours (yours waits). Find the fault, fix it with the parts they'll pay for, hand it back. Pay = labour + 30% on parts; under budget earns a bonus. A botched job costs rep.${d.passed?` ${d.passed} fixed so far, ${fmt$(d.earned)} net.`:""}`,"How dyno day works")}</div>`
-    +(open.length?open.map(j=>`<div class="ddrow"><div class="ddl"><b>${ddEsc(ddLabel(j))}</b><span class="ddp">${fmt$(j.labour)}</span><button class="ddi" data-ddx aria-expanded="false" aria-label="About ${ddEsc(ddLabel(j))}'s job">ⓘ</button><button class="btn sm pri" data-dd="take" data-id="${j.id}"${testing?" disabled":""}>Take</button></div><div class="ddx" hidden><b>${ddEsc(j.eng)}</b> · labour ${fmt$(j.labour)}<br>“${ddEsc(j.says)}”</div></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
+    +(open.length?open.map(j=>`<div class="ddrow"><div class="ddl"><b>${esc(ddLabel(j))}</b><span class="ddp">${fmt$(j.labour)}</span><button class="ddi" data-ddx aria-expanded="false" aria-label="About ${esc(ddLabel(j))}'s job">ⓘ</button><button class="btn sm pri" data-dd="take" data-id="${j.id}"${testing?" disabled":""}>Take</button></div><div class="ddx" hidden><b>${esc(j.eng)}</b> · labour ${fmt$(j.labour)}<br>“${esc(j.says)}”</div></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-dd]");if(!b)return;const a=b.dataset.dd;
   if(a==="goto"){showTab("test");requestAnimationFrame(()=>{const s=$("ddSec");if(s)s.scrollIntoView({block:"start",behavior:calmScroll()});});return;}
   if(a==="practice"){ddPractice();return;}if(a==="hint"){ddHint();return;}if(a==="hand"){ddHand();return;}if(a==="walk"){ddWalk();return;}
@@ -414,7 +413,7 @@ function renderShop(){
     $("mkCert").className="mkc "+(q||"bay");$("mkCert").textContent=S.bay?"ON THE DYNO":q==="ok"?"CERTIFIED":q==="bad"?"CERT FAILED":"NO CERT";
     $("mkCert").title=S.bay?"":cert?`On offer at a unit cost of ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`Last pull: ${lastCert.why}.`:"Run a dyno pull in Test; buyers only look at certified engines.";
     $("mkBoard").textContent=`${C().contracts.length}/${MAX_ACTIVE} board`;$("mkBoard").title=`${C().contracts.length} of ${MAX_ACTIVE} contracts on the board`;
-    const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":ddEsc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
+    const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":esc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
     $("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span><b>${C().sold}</b> engines sold</span><span><b>${fmt$(C().profit)}</b> lifetime profit</span><span><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b> warranty paid</span>`;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(loanRate()*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;

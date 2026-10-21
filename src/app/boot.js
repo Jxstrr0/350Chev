@@ -48,7 +48,7 @@ $("abSec").addEventListener("input",e=>{
 
 /* diesel exhaust opacity at this rpm: the sim's smoke curve, scaled by how hard the pedal is down */
 function dieselSmoke(q,rpm,load){
-  const isD=SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci;
+  const isD=SIM.isDiesel(S.cfg);
   if(!isD||!q||!q.smokeCurve||!q.rpms)return 0;
   const R=q.rpms,C=q.smokeCurve;let i=0;while(i<R.length-1&&R[i+1]<rpm)i++;
   const k=R[i+1]>R[i]?Math.min(1,Math.max(0,(rpm-R[i])/(R[i+1]-R[i]))):0,v=C[i]+((C[Math.min(i+1,C.length-1)]??C[i])-C[i])*k;
@@ -61,7 +61,7 @@ function tick(now){
   let rpm=run.rpm,load=run.load,on=run.on;
   const rotP=isRot(S.cfg)?(SIM.OPT.rotPort[S.cfg.rotPort]||SIM.OPT.rotPort.side):null,camV=rotP?30+75*rotP.overlap:S.cfg.cam;   // a rotary's port overlap plays the part of a cam
   const tsIdle=!rotP&&isTs(S.cfg)&&quick&&quick.twoStroke?quick.twoStroke.idleRpm:0;
-  if(!testing){const idleBase=rotP?rotP.idle:tsIdle?tsIdle:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
+  if(!testing){const idleBase=rotP?rotP.idle:tsIdle?tsIdle:SIM.isDiesel(S.cfg)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
   /* the picture follows the rpm with inertia: a test ending or a stall spins down instead of freezing */
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
@@ -85,7 +85,7 @@ function tick(now){
         bb=bc[i]*AB.load;
       }
       ENGINE_SOUND.set({rpm:AB.rpm,load:AB.load,cfg:c,layout:LAYOUTS[c.layout],boostBar:bb,
-        knock:r.knock.retardDeg,profileId:undefined,diesel:(SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci),clatter:r.clatter||0});
+        knock:r.knock.retardDeg,profileId:undefined,diesel:SIM.isDiesel(c),clatter:r.clatter||0});
     }
     const cl=LAYOUTS[c.layout];
     ENGINE_VIS.setRun({on:true,rpm:AB.rpm,load:AB.load,fail:null,failKind:null,redline:c.redline,
@@ -117,7 +117,7 @@ function tick(now){
     if(testing&&BR&&BR.p&&S.env.testType==="bog"&&!BR.failed){const st=BR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase!=="stage"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.08)*1.6))*(st.phase==="pit"?0.8:1):0};}   // the mud bog: boost from the run, tyre noise from the wheelspin
     if(testing&&PR&&PR.p&&S.env.testType==="pull_sled"&&!PR.failed){const st=PR.p.st;boostBar=st.boost*(on?1:0);dx={tyre:st.phase==="pull"&&!st.done?Math.min(1,Math.max(0,(st.slip-0.1)*1.5)):0};}   // the sled: load from the run, tyre noise from the slip
     ENGINE_SOUND.set(Object.assign({rpm:on?rpm:0,load,cfg:S.cfg,layout:L,boostBar,wear:wi?wi.w:0,als:alsAct,
-      knock:quick?quick.knock.retardDeg:0,profileId:S.profileId||undefined,diesel:(SIM.isDiesel?SIM.isDiesel(S.cfg):!!(SIM.OPT.fuel[S.cfg.fuel]||{}).ci),clatter:(quick&&quick.clatter)||0},dx||{}));}
+      knock:quick?quick.knock.retardDeg:0,profileId:S.profileId||undefined,diesel:SIM.isDiesel(S.cfg),clatter:(quick&&quick.clatter)||0},dx||{}));}
   requestAnimationFrame(tick);
 }
 

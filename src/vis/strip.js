@@ -19,8 +19,6 @@ var STRIP_U={ uTime:{value:0}, uHaze:{value:0}, uShine:{value:new THREE.Vector2(
 var STRIP_SUN_DAY=new THREE.Vector3(-0.55,0.36,0.75).normalize(), STRIP_MOON=new THREE.Vector3(0.45,0.42,-0.78).normalize();
 var STRIP_HOR=[0.52,0.60,0.70], STRIP_HOR_N=[0.016,0.019,0.03], STRIP_HOR_D=[0.2,0.1,0.1];
 var STRIP_SUN_DUSK=new THREE.Vector3(0.86,0.03,-0.5).normalize(), STRIP_DUSK_LIGHT=new THREE.Vector3(0.82,0.2,-0.54).normalize();
-function stripMat(c, r, m){ return new THREE.MeshStandardMaterial({color:c, roughness:r===undefined?0.7:r, metalness:m||0}); }
-function stripBox(w,h,d,mat,x,y,z){ var mm=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); mm.position.set(x,y,z); mm.castShadow=true; mm.receiveShadow=true; return mm; }
 function stripLabel(txt, w, h){ var c=document.createElement("canvas"); c.width=256; c.height=96; var x=c.getContext("2d"); x.fillStyle="#f4efe2"; x.fillRect(0,0,256,96); x.fillStyle="#1a1a1a"; x.font="bold 54px 'Barlow Condensed','Arial Narrow',sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(txt,128,50);
   var t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; var m=new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshStandardMaterial({map:t, roughness:0.8})); return m; }
 

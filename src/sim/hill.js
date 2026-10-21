@@ -14,7 +14,7 @@
      little hidden variance. Arrive faster than the corner holds and it costs a moment, a trip
      through the gravel, or — over a drop with no guardrail — the run.
      ===================================================================== */
-  const HILL_LEN = 19990, HILL_ALT0 = 2862, HILL_ALT1 = 4302, HILL_TREE = 3560, HILL_DS = 2.5, HILL_SEED = 1916;
+  const HILL_ALT0 = 2862, HILL_ALT1 = 4302, HILL_TREE = 3560, HILL_DS = 2.5, HILL_SEED = 1916;
   /* sections in order: length (km), altitude at the end (m), corners, the corner mix, the bearing the road climbs on
      (radians, 0 = east, π/2 = north), the share of corners with a drop on the outside, and named corners [index, name] */
   const HILL_SECTIONS = [

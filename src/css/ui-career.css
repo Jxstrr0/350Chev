@@ -1,8 +1,6 @@
 /* career content: special orders, milestones and the rival board (app/career.js, app/rivals.js). Existing card/tile styles, nothing new in 3D. */
 .card .client .ctag{font-style:normal;margin-left:8px;padding:1px 7px;border-radius:9px;border:1px solid var(--rule);font-size:11px;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
 .card .client .ctag.rush{border-color:var(--orange);color:var(--orange2)}
-.card.sp-rush{border-left:3px solid var(--orange)}
-.card.sp-order{border-left:3px solid var(--info)}
 .card .cnote{margin:-2px 0 10px;font-size:13px;line-height:1.45;color:var(--muted);font-style:italic}
 .goal .gprog{height:5px;margin-top:7px;background:var(--soot);border-radius:2px;overflow:hidden}
 .goal .gprog i{display:block;height:100%;background:var(--orange);border-radius:2px}
