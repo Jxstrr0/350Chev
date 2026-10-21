@@ -246,7 +246,7 @@ function sc_paint(color){
   SC.paint[key]=q; return q;
 }
 function sc_canvas(w,h){ var c=document.createElement("canvas"); c.width=w; c.height=h; return c; }
-function sc_ctex(c, srgb){ var t=new THREE.CanvasTexture(c); if(srgb!==false) t.encoding=THREE.sRGBEncoding; t.anisotropy=4; return t; }
+function sc_ctex(c, srgb){ return ctex(c, srgb, 4); }
 /* v3: 2x2 twill weave: each tow is a rounded ribbon (sheen across it, dark at the edges), alternating direction on the twill diagonal */
 function sc_carbonTex(){
   var c=sc_canvas(128,128), x=c.getContext("2d"), i, j, s=16;
