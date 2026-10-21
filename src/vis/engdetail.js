@@ -5,13 +5,6 @@
    Anchors that the front-drive builder knows (water pump, thermostat housing) arrive through ENGD.
    ==========================================================================*/
 var ENGD = {};
-/* a small hose between two fixed points, clamped at both ends: leaves the first point along d0 and arrives along d1 */
-function engHose(a, d0, b, d1, rad, lift){
-  var l=a.distanceTo(b), k=Math.max(rad*3, l*0.33);
-  var p1=a.clone().addScaledVector(d0, k), p2=b.clone().addScaledVector(d1, -k);
-  if(lift){ p1.y+=lift; p2.y+=lift; }
-  hoseMesh([a, p1, p2, b], rad);
-}
 /* a wire (merged into the black wire bucket) through engine-space points */
 function engWire(B, pts, r){ B.addW("wireBlk", TUBE(pts, r, Math.max(8, pts.length*6), 4)); }
 /* water neck, lower pump inlet, heater loop and coolant-temp sender */

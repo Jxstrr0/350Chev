@@ -260,7 +260,6 @@ function saltEffects(o, dt, V){
   FX.step(dt, SALT_WIND);
 }
 /* --- camera direction: the push, chase, the helicopter, an on-board nose cam, trackside and the traps, the chute, the stop --- */
-function saltCut(name){ if(SALT.shot!==name){ SALT.shot=name; SALT.shotT=0; SALT.cutT=0; SALT.snap=true; SALT.seq++; } }
 function saltDirect(o, dt, V){
   var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, me=U.me, x=V.position.x, C=SALT.course, s=SALT.shot, T, sTo=function(X){ return (X-x)/Math.max(8,v); };
   var L=Math.max(2,me.nose-me.tail), mid=(me.tail+me.nose)/2, cx=x+mid, side=(SALT.seq%2?1:-1);
@@ -286,7 +285,7 @@ function saltDirect(o, dt, V){
   else if(ph==="spin"){ s="spin"; }
   else { if(s!=="stop") s="stop"; }
   if(SALT.cue){ if(!o.shot && !SALT.skip && ph==="shutdown") s=SALT.cue; SALT.cue=null; }   /* a one-frame cut asked for elsewhere (vis/salt-event.js: the chute) */
-  saltCut(s);
+  sceneCut(SALT, s);
   SALT.shotT+=dt; SALT.cutT+=dt; T=SALT.shotT;
   var fov=46, rel=false, sm=0, ax=x, top=me.top||1.2, lens=0, asp=SALT.cam.aspect||1.5, buf=0, D, fit=0;
   /* a vertical fov that shows a W-metre-wide slice at distance D (the long lenses size the car by this) */

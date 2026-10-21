@@ -174,11 +174,11 @@ function evStatus(t){const cr=career();let s="",k="";
     s=!evCert()?"certify first":cr&&SIM.BOG_CLASSES[c0]&&bogHookedWk(c0)?`ran · next bog wk ${C().week+1}`:cl.length?`best ${Math.min(...cl.map(x=>x.t)).toFixed(2)} s through`:bm?`best ${bm.toFixed(1)} m`:"no run yet";}
   else if(t==="boat"){const R=recs().boat||{},b=Object.values(R).filter(x=>x&&x.et>0),N=boatLive(),c0=S.env.boatCls;
     if(N){s=`${(BOAT_RND[N.stage]||"").toLowerCase()} · on now`;k="live";}else if(!evCert())s="certify first";else if(cr&&SIM.BOAT_CLASSES[c0]&&boatRanWk(c0))s=`ran · next night wk ${C().week+1}`;else s=b.length?`best ${Math.min(...b.map(x=>x.et)).toFixed(2)} s`:"no pass yet";}
-  else if(t==="road"){const P=roadRecs(),o=roadOpt(),r=P[roadKey(o.rk||o.ch,S.env.roadTrk)],any=Object.values(P).some(x=>x&&x.t);s=!evCert()?"certify first":r&&r.t?`best ${fmtLap(r.t,1)} · ${SIM.ROAD_TRACKS[S.env.roadTrk].n.split(" ")[0]}`:any?"no lap in this car yet":"no lap yet";}
-  else if(t==="hill"){const P=hillRecs(),k0=S.env.hillCls,r=P[k0],any=Object.values(P).some(x=>x&&x.t);s=!evCert()?"certify first":cr&&SIM.HILL_CLASSES[k0]&&hillRanWk(k0)?`ran · next wk ${C().week+1}`:r&&r.t?`best ${fmtHill(r.t)}`:any?"no run in this class":"no run yet";}
+  else if(t==="road"){const P=recBucket("road"),o=roadOpt(),r=P[roadKey(o.rk||o.ch,S.env.roadTrk)],any=Object.values(P).some(x=>x&&x.t);s=!evCert()?"certify first":r&&r.t?`best ${fmtLap(r.t,1)} · ${SIM.ROAD_TRACKS[S.env.roadTrk].n.split(" ")[0]}`:any?"no lap in this car yet":"no lap yet";}
+  else if(t==="hill"){const P=recBucket("hill"),k0=S.env.hillCls,r=P[k0],any=Object.values(P).some(x=>x&&x.t);s=!evCert()?"certify first":cr&&SIM.HILL_CLASSES[k0]&&hillRanWk(k0)?`ran · next wk ${C().week+1}`:r&&r.t?`best ${fmtHill(r.t)}`:any?"no run in this class":"no run yet";}
   else if(t==="oval"){const o=ovalOpen(),b=Object.values(ovalRecs()).filter(x=>x&&x.lap),k0=S.env.ovalCls,n=SIM.OVAL_CLASSES[k0]?ovalNight(k0):null;
     if(o){s=`opens at ${o} rep`;k="lock";}else if(n&&n.stage==="feature"){s="feature next";k="live";}else if(!evCert())s="certify first";else if(cr&&n&&ovalRanWk(k0))s=`ran · next night wk ${C().week+1}`;else s=b.length?`best lap ${Math.min(...b.map(x=>x.lap)).toFixed(2)} s`:"no night yet";}
-  else if(t==="race24"){const g=cr?e24Gate():null,P=e24Recs(),km=Object.values(P).reduce((m,x)=>Math.max(m,x&&x.km||0),0),nx=g&&/^Next running in week (\d+)/.exec(g);
+  else if(t==="race24"){const g=cr?e24Gate():null,P=recBucket("e24"),km=Object.values(P).reduce((m,x)=>Math.max(m,x&&x.km||0),0),nx=g&&/^Next running in week (\d+)/.exec(g);
     if(ER){s="racing now";k="live";}else if(g&&/^Opens at/.test(g)){s=`opens at ${E24_REP} rep`;k="lock";}else if(nx)s=`next 24 h in wk ${nx[1]}`;else if(g)s=/Certify/.test(g)?"certify first":g.split(" — ")[0].toLowerCase();else s=km?`best ${Math.round(km).toLocaleString("en-CA")} km`:cr?"entry open":"a day and a night";}
   }catch(err){s="";}
   return{s,k};}

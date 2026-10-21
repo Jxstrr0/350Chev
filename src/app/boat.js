@@ -9,9 +9,6 @@ const BOAT_HN={outboard:["Bass Assassin","Reel Deal","Hook Shot","Lake Effect","
   pro:["Blown Away","Flat Out","Liquid Asset","Wet Dream","Prairie Fire","Hole Shot","Spray Day","Cleaver Fever"],
   tfh:["Nitro Fish","Sky Pilot","Air Time","Big Water","Final Approach","Prop Rider","Tail Dragger","Kingfisher"]};
 const BOAT_COLORS=[0x1d4787,0xb7261d,0x2c6b3a,0xe8c14a,0x6b3d8f,0x0e8a8a,0xd94e8f,0x8e8e8e];
-const boatEsc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
-const boatIsD=c=>SIM.isDiesel?SIM.isDiesel(c):!!(SIM.OPT.fuel[c.fuel]||{}).ci;
-function boatClsLocked(k){const c=SIM.BOAT_CLASSES[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
 function boatLitres(){const q=quick;return q?(q.Vd||q.VdEq||0)/1000:0;}
 function boatLegal(k){const c=SIM.BOAT_CLASSES[k];if(c&&c.maxL&&boatLitres()>c.maxL+0.005)return{ok:false,why:`${boatLitres().toFixed(1)} L — the class is ${c.maxL} L and under`};return{ok:true};}
 /* the boat's setup lives on S.env (never cfg): class, driver, prop pitch or impeller, gear, trim at the start */
@@ -21,15 +18,14 @@ function boatEnvFix(){const e=S.env,B=SIM.BOAT_CLASSES;if(!B[e.boatCls])e.boatCl
   e.boatImp=Math.max(0,Math.min(3,Math.round(num(e.boatImp,1))));
   const tr=SIM.boatTrimRange();e.boatTrim=+Math.max(tr[0],Math.min(tr[1],num(e.boatTrim,0))).toFixed(1);
   if(e.boatDrive!=="auto")e.boatDrive="you";return e.boatCls;}
-function boatIdle(){return boatIsD(S.cfg)?650:Math.max(750,S.cfg.cam>70?1100:850);}
+function boatIdle(){return SIM.isDiesel(S.cfg)?650:Math.max(750,S.cfg.cam>70?1100:850);}
 function boatVeh(k){const e=S.env;return{cls:k,pitch:e.boatPitch,imp:e.boatImp,gear:e.boatGear,trim:e.boatTrim,redline:S.cfg.redline,idle:boatIdle()};}
 /* the night: one per class a week in career; the sandbox keeps one going until it is over */
 function boatCur(){const n=career()?C().boatN:S.boatSb;return n&&n.v===1&&SIM.BOAT_CLASSES[n.cls]?n:null;}
 function boatSetN(n){if(career())C().boatN=n;else S.boatSb=n;}
 function boatLive(){const n=boatCur();return n&&!n.done?n:null;}
 /* career: one boat night a week, in one class. The class run this week, or null */
-function boatWkCls(){if(!career())return null;const w=C().boatWk||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
-function boatRanWk(k){return !!boatWkCls();}
+function boatRanWk(k){return !!wkCls("boatWk");}
 function boatFee(){if(!career()||dev()||boatLive())return 0;return (SIM.BOAT_CLASSES[S.env.boatCls]||SIM.BOAT_CLASSES.outboard).fee;}
 function boatGauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307*r());}
 function boatNew(k){const ix=Object.keys(SIM.BOAT_CLASSES).indexOf(k)+1;
@@ -62,9 +58,8 @@ function boatJudge(a,b){const ra=a.rt!=null&&a.rt<0,rb=b.rt!=null&&b.rt<0;if(ra&
 function boatResolve(N,ri){for(const m of N.rounds[ri]){if(m.win!=null||m.a===0||m.b===0)continue;const pa=boatRivalPass(N,ri,m.a),pb=boatRivalPass(N,ri,m.b);m.pa=pa;m.pb=pb;m.win=boatJudge(pa,pb)==="a"?m.a:m.b;}}
 function boatNext(N){const prev=N.rounds[N.stage],w=prev.map(m=>m.win),out=[];for(let i=0;i<w.length;i+=2)out.push({a:w[i],b:w[i+1],win:null});return out;}
 function boatMyMatch(N){const r=N.rounds[N.stage];return r?r.find(m=>m.a===0||m.b===0):null;}
-function boatPart(N,i){return i===0?{name:"You",boat:engineName().slice(0,22),you:true}:N.field[i-1];}
 function boatBtnText(t,sub){const b=$("boatBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small>${sub}</small>`:"");}
-function boatBreak(kind){BT.failed=true;BT.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||"rod";$("flash").style.background="rgba(238,90,94,.45)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",250);sfx("fail");buzz([80,40,120]);}
+function boatBreak(kind){BT.failed=true;BT.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||"rod";failFlash();}
 function boatStart(){
   $("app").classList.add("onstrip");
   const k=boatEnvFix();let N=boatLive();
@@ -80,7 +75,7 @@ function boatStart(){
   BT.green=BT.t0+3000;
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("boatCtl").style.display="";$("boatBtn").dataset.k="";$("boatBtn").disabled=false;
   $("testProg").classList.remove("done");sfx("start");boatHud();
-  requestAnimationFrame(()=>{const pn=$("panel"),r=$("boatCtl").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});
+  scrollCtlIntoView("boatCtl");
   const step=()=>{if(!BT||BT.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-BT.last)/1000);BT.last=now;const st=p.st;
     if(now>=BT.green){let left=Math.min(dt,(now-BT.green)/1000);while(left>1e-6&&st.t<60){const d=Math.min(0.02,left);left-=d;const c=boatCtl(st);p.step(d,c.thr,c.trim);}}
     else if(BT.down&&!BT.foul&&!BT.auto){BT.foul=true;buzz([60,30,60]);}
@@ -88,7 +83,7 @@ function boatStart(){
     if(st.hops>BT.hops){BT.hops=st.hops;sfx("mudslap");}
     if(st.blown&&!BT.blown)buzz([12]);BT.blown=st.blown;
     const og=now<BT.green?0:st.t,o=boatOppAt(og);BT.ox=o.x;BT.ov=o.v;BT.oDone=o.done;
-    if(st.done&&BT.doneAt==null&&(BT.oDone||st.t-st.doneT>1.2)){BT.doneAt=now;const w=boatWinNow();if(w===true){$("flash").style.background="rgba(92,191,138,.35)";setTimeout(()=>$("flash").style.background="rgba(238,90,94,0)",400);buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(st.done&&BT.doneAt==null&&(BT.oDone||st.t-st.doneT>1.2)){BT.doneAt=now;const w=boatWinNow();if(w===true){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
     if(ENGINE_VIS.setBoat)ENGINE_VIS.setBoat(boatVisFrame(now,dt));
     boatHud();
     run.on=true;
@@ -126,9 +121,9 @@ function boatHud(){if(!BT)return;const st=BT.p.st,now=performance.now(),pre=now<
   const ratio=st.T/Math.max(1,BT.p.Tc0*(1+Math.pow(st.v/12,2))),lp=Math.min(100,Math.round(ratio/1.4*100)),tr=SIM.boatTrimRange(),tp=v=>Math.round(100*(v-tr[0])/(tr[1]-tr[0]));
   const f=st.v/(SIM.BOAT_HULLS[BT.p.hull].vh),opt=f<0.8?-2:f>2.2?BT.p.opt:-2+(BT.p.opt+2)*Math.min(1,Math.max(0,(f-0.8)/1.4));
   const warn=st.dnf?"":st.Lr>0.75?`<b style="color:var(--crit)">NOSE LIGHT</b>`:st.walk>0.4?`<b style="color:var(--crit)">CHINE WALK</b>`:st.porp>0.3?`<b style="color:var(--warn)">PORPOISING</b>`:st.blown?`<b style="color:var(--crit)">BLOWN OUT</b>`:st.air?`<b style="color:var(--info)">AIRBORNE</b>`:st.debris?`<b style="color:var(--warn)">${st.debris.kind==="grate"?"STICK IN THE GRATE":"WEED"}</b>`:`blowout past 100%`;
-  $("boatLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${BT.label} · vs ${boatEsc(BT.of.name)}<br>${say}</span></div>
-    <div class="ph-bar"><i class="fill" style="width:${pc(st.x)}%"></i><i class="mk lead" style="left:${pc(BT.ox)}%"></i></div><div class="ph-lbl"><span>0</span><span>${boatEsc(BT.of.boat)} <b>${Math.round(BT.ox*3.28084)} ft</b></span><span>1,000 ft</span></div>
-    <div class="ph-lbl"><span>Water <b>${boatEsc(BT.water.name)}</b></span><span>${BT.water.wind>=0?"head":"tail"}wind <b>${Math.abs(BT.water.wind).toFixed(1)} m/s</b></span></div></div>
+  $("boatLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${BT.label} · vs ${esc(BT.of.name)}<br>${say}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${pc(st.x)}%"></i><i class="mk lead" style="left:${pc(BT.ox)}%"></i></div><div class="ph-lbl"><span>0</span><span>${esc(BT.of.boat)} <b>${Math.round(BT.ox*3.28084)} ft</b></span><span>1,000 ft</span></div>
+    <div class="ph-lbl"><span>Water <b>${esc(BT.water.name)}</b></span><span>${BT.water.wind>=0?"head":"tail"}wind <b>${Math.abs(BT.water.wind).toFixed(1)} m/s</b></span></div></div>
     <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>${BT.p.jet?"Pump":"Prop"} load <b>${Math.round(ratio*100)}%</b></span><span>${warn}</span></div>
     <div class="ph-bar"><i class="zone" style="left:${Math.round(100/1.4)}%;width:${100-Math.round(100/1.4)}%"></i><i class="fill${st.blown?" ra":""}" style="width:${lp}%"></i></div>
     <div class="ph-lbl"><span>Trim <b>${st.trim>=0?"+":""}${st.trim.toFixed(1)}°</b></span><span>${f<1?"in for the hump":"out with speed"}</span></div>
@@ -151,13 +146,8 @@ function boatTrim(d){if(!BT||BT.finished)return;if(BT.auto){if(performance.now()
 function boatSkip(){if(!BT||BT.finished)return;const p=BT.p,st=p.st;
   if(!st.done){if(performance.now()<BT.green)BT.green=performance.now();let n=0;while(!st.done&&n++<3000){const c=BT.auto?p.auto(0.95):{thr:BT.down?1:p.auto(0.95).thr,trim:BT.tc};p.step(0.02,c.thr,c.trim);}if(st.broke&&!BT.failed)boatBreak(st.broke);}
   if(ENGINE_VIS.boatSkip)ENGINE_VIS.boatSkip();BT.skip=true;if(BT.doneAt==null)BT.doneAt=performance.now()-2600;}
-(()=>{const b=$("boatBtn"),tI=$("boatTrimIn"),tO=$("boatTrimOut"),mark=()=>{BT&&(BT.lastPtr=performance.now());};
-  b.addEventListener("pointerdown",e=>{e.preventDefault();mark();try{b.setPointerCapture(e.pointerId);}catch(x){}boatPress();});
-  b.addEventListener("pointerup",()=>{mark();boatRelease();});b.addEventListener("pointercancel",()=>{mark();boatRelease();});
-  b.addEventListener("contextmenu",e=>e.preventDefault());
-  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();boatPress();}});
-  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();boatRelease();}});
-  b.addEventListener("click",()=>{if(!BT||!BT.p||performance.now()-(BT.lastPtr||0)<800)return;boatPress();setTimeout(boatRelease,60);});
+(()=>{const b=$("boatBtn"),tI=$("boatTrimIn"),tO=$("boatTrimOut");
+  holdBtn(b,()=>BT,boatPress,boatRelease,r=>{if(!r.p)return;boatPress();setTimeout(boatRelease,60);});
   [[tI,-1],[tO,1]].forEach(([el,d])=>{el.addEventListener("pointerdown",e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(x){}boatTrim(d);});
     ["pointerup","pointercancel"].forEach(ev=>el.addEventListener(ev,()=>{if(BT&&BT.tc===d)BT.tc=0;}));el.addEventListener("contextmenu",e=>e.preventDefault());});
   /* arrow keys trim while a boat is on the course: up = out (bow up), down = in */
@@ -194,12 +184,12 @@ function boatFinish(){
   revealVerdict();
 }
 /* records: per class, the quickest clean pass and the top speed anyone saw */
-function boatPb(r,bad){if(ff||bad||r.et==null)return;const R=recs();if(!R.boat||typeof R.boat!=="object")R.boat={};const was=R.boat[r.cls];
+function boatPb(r,bad){if(ff||bad||r.et==null)return;const P=recBucket("boat"),was=P[r.cls];
   if(was&&!(r.et<was.et)){if(r.mph>(was.top||0))was.top=r.mph;return;}
-  R.boat[r.cls]=Object.assign({et:r.et,mph:r.mph,top:Math.max(r.mph,was&&was.top||0)},recTag());
+  P[r.cls]=Object.assign({et:r.et,mph:r.mph,top:Math.max(r.mph,was&&was.top||0)},recTag());
   if(was){r.pb={was:was.et.toFixed(3)};setTimeout(()=>toast(`CLASS BEST · ${r.et.toFixed(3)} s (was ${r.pb.was})`),3200);}}
 function boatRecHtml(){const R=recs(),P=R.boat;if(!P||typeof P!=="object")return "";const ks=Object.keys(SIM.BOAT_CLASSES).filter(k=>P[k]&&P[k].et);if(!ks.length)return "";
-  return `<div class="rtop"><span>Boat drags · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>⚓</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${boatEsc(e.n)}">${boatEsc(SIM.BOAT_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop"><span>Boat drags · best per class</span>${ks.map(k=>{const e=P[k];return `<div><b>⚓</b><span class="et">${e.et.toFixed(3)}</span><span>${Math.round(e.mph)} mph</span><span class="nm" title="${esc(e.n)}">${esc(SIM.BOAT_CLASSES[k].n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 function boatHint(){const c=SIM.BOAT_CLASSES;return career()?`<b>Boat drags</b> · one night a week in one class, entry ${fmt$(c.outboard.fee)}–${fmt$(c.tfh.fee)}. Needs a certified engine. Eight boats, heads-up: lose once and you're out. ${c.jet.n} opens at ${c.jet.rep} rep, ${c.pro.n} at ${c.pro.rep}, ${c.tfh.n} at ${c.tfh.rep}. The winner takes up to ${fmt$(c.tfh.purse)}.`
   :`<b>Boat drags</b> · 1,000 ft of river, heads-up. Wait for the green, then hold for throttle. Feather it if the prop blows out off the line, trim in for the hump and out once it's on plane — too far out and it porpoises, walks, or blows over.`;}
 /* the prop shop: the quickest pitch and gear (or impeller and drive ratio) for this engine on glassy water */
@@ -207,17 +197,17 @@ const boatShopC=new Map();
 function boatShop(){const k=boatEnvFix(),key=k+"|"+cfgHash(S.cfg);if(boatShopC.has(key))return boatShopC.get(key);const res=SIM.boatPrep(S.cfg,stdEnv());
   const b=SIM.boatTune(res,k,{redline:S.cfg.redline,idle:boatIdle(),trim:S.env.boatTrim});if(boatShopC.size>20)boatShopC.clear();boatShopC.set(key,b);return b;}
 function boatShopTxt(b,C0){return b?(C0.drive==="jet"?`${SIM.BOAT_IMP[b.imp][1]} impeller · ${b.gear.toFixed(2)}:1`:`${b.pitch}" pitch · ${b.gear.toFixed(2)}:1`)+(b.et?` → ${b.et.toFixed(2)} s on glassy water`:""):"";}
-function boatLadderHtml(N){const nm=i=>i==null?"—":i===0?"<b>You</b>":boatEsc(N.field[i-1].name.split(" ").pop());
+function boatLadderHtml(N){const nm=i=>i==null?"—":i===0?"<b>You</b>":esc(N.field[i-1].name.split(" ").pop());
   const pt=p=>!p?"":p.rt!=null&&p.rt<0?"RED":p.et==null?(p.dnf==="broke"?"BROKE":"DNF"):p.et.toFixed(2);
   return `<div class="bladder">${N.rounds.map((R,ri)=>`<div class="blr"><span class="blh">${BOAT_RND[ri]}</span>${R.map(m=>`<div class="blm${m.a===0||m.b===0?" me":""}"><span class="${m.win===m.a?"w":m.win!=null?"l":""}">${nm(m.a)} <i>${pt(m.pa)}</i></span><span class="${m.win===m.b?"w":m.win!=null?"l":""}">${nm(m.b)} <i>${pt(m.pb)}</i></span></div>`).join("")}</div>`).join("")}</div>`;}
-function boatEnvHtml(sl){const e=S.env,k=boatEnvFix(),C0=SIM.BOAT_CLASSES[k],HU=SIM.BOAT_HULLS[C0.hull],lk=boatClsLocked(k),N=boatCur(),live=boatLive(),R=recs().boat||{},pb=R[k];let h="";
+function boatEnvHtml(sl){const e=S.env,k=boatEnvFix(),C0=SIM.BOAT_CLASSES[k],HU=SIM.BOAT_HULLS[C0.hull],lk=clsLocked(SIM.BOAT_CLASSES,k),N=boatCur(),live=boatLive(),R=recs().boat||{},pb=R[k];let h="";
   if(N&&N.cls===k){const st=live?N.stage:null,m=live?boatMyMatch(N):null,oi=m?(m.a===0?m.b:m.a):null,of=oi?N.field[oi-1]:null,w=live?boatWaterAt(N,st):null;
-    h+=`<div class="saltcls"><div><span>${live?BOAT_RND[st]:"Last night"}</span><b>${live?(of?boatEsc(of.name.split(" ").pop()):"—"):({1:"Won",2:"Runner-up",3:"Semi",5:"Round 1"}[N.place]||"—")}</b><small>${live?(of?`${boatEsc(of.boat)} · ${of.hp.toLocaleString()} hp`:""):N.purse?"purse "+fmt$(N.purse):"no purse"}</small></div>${w?`<div><span>Water</span><b>${(w.wind>=0?"+":"")+w.wind.toFixed(1)}<i style="font-size:12px;font-style:normal"> m/s</i></b><small>${boatEsc(w.name)} · ${w.wind>=0?"headwind":"tailwind"}</small></div>`:`<div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div>`}<div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
+    h+=`<div class="saltcls"><div><span>${live?BOAT_RND[st]:"Last night"}</span><b>${live?(of?esc(of.name.split(" ").pop()):"—"):({1:"Won",2:"Runner-up",3:"Semi",5:"Round 1"}[N.place]||"—")}</b><small>${live?(of?`${esc(of.boat)} · ${of.hp.toLocaleString()} hp`:""):N.purse?"purse "+fmt$(N.purse):"no purse"}</small></div>${w?`<div><span>Water</span><b>${(w.wind>=0?"+":"")+w.wind.toFixed(1)}<i style="font-size:12px;font-style:normal"> m/s</i></b><small>${esc(w.name)} · ${w.wind>=0?"headwind":"tailwind"}</small></div>`:`<div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div>`}<div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
     h+=boatLadderHtml(N);
-    if(live)h+=`<p class="hint">${of?`Next: <b>${boatEsc(of.name)}</b> in ${boatEsc(of.boat)}. `:""}Tune between rounds — the setup below goes on the boat for the next pass. <button class="chip" data-boatleave>Leave the night</button></p>`;
+    if(live)h+=`<p class="hint">${of?`Next: <b>${esc(of.name)}</b> in ${esc(of.boat)}. `:""}Tune between rounds — the setup below goes on the boat for the next pass. <button class="chip" data-boatleave>Leave the night</button></p>`;
     else h+=`<p class="hint">${BOAT_PLACE[N.place]||"Night over"}${N.purse?" · "+fmt$(N.purse):""}. ${career()&&boatRanWk(k)?`The next ${C0.n} night is week ${C().week+1}.`:"Run again to start a new night."}</p>`;}
   else h+=`<div class="saltcls"><div><span>Course</span><b>1,000 ft</b><small>river · two lanes · a tree</small></div><div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div><div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
-  h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOAT_CLASSES).map(([id,c])=>{const l=boatClsLocked(id);return `<button data-tk="boatCls" data-tv="${id}" class="${k===id?"on":""}${l?" lock":""}"${live&&live.cls!==id?" disabled":""}>${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
+  h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOAT_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.BOAT_CLASSES,id);return `<button data-tk="boatCls" data-tv="${id}" class="${k===id?"on":""}${l?" lock":""}"${live&&live.cls!==id?" disabled":""}>${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
   h+=driverToggle(id=>`data-tk="boatDrive" data-tv="${id}"`,e.boatDrive,"throttle, trim · feather the hump","a steady hand · tap to take over");
   if(C0.drive==="jet")h+=`<div class="lbl"><span>Impeller</span></div><div class="seg">${SIM.BOAT_IMP.map(([c,n,cj,d],i)=>`<button data-tk="boatImp" data-tv="${i}" class="${e.boatImp===i?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   else h+=`<div class="envgrid">${sl("boatPitch","Prop pitch",C0.pitch[0],C0.pitch[1],1,'"',e.boatPitch)}</div>`;
@@ -232,7 +222,7 @@ $("envBox").addEventListener("click",e=>{
     if(!boatShopC.has(key)){const b=e.target.closest("[data-boatshop]");b.textContent="Prop shop is running the numbers…";b.disabled=true;setTimeout(()=>{boatShop();renderEnv();},30);return;}
     const s=boatShopC.get(key);if(s){if(C0.drive==="jet")S.env.boatImp=s.imp;else S.env.boatPitch=s.pitch;S.env.boatGear=s.gear;boatEnvFix();renderEnv();save();toast("Fitted · "+boatShopTxt(s,C0).split(" → ")[0]);}return;}
   const b=e.target.closest("[data-tk]");if(!b)return;const k=b.dataset.tk,v=b.dataset.tv;
-  if(k==="boatCls"){const l=boatClsLocked(v);if(l){toast(`${SIM.BOAT_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.boatCls){S.env.boatPitch=null;S.env.boatGear=null;S.env.boatImp=null;}}
+  if(k==="boatCls"){const l=clsLocked(SIM.BOAT_CLASSES,v);if(l){toast(`${SIM.BOAT_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.boatCls){S.env.boatPitch=null;S.env.boatGear=null;S.env.boatImp=null;}}
   S.env[k]=k==="boatImp"?+v:v;boatEnvFix();renderEnv();save();buzz(6);evPickRender();});
 function boatRunBtn(){const N=boatLive(),b=$("runTest");if(testing)return;const k=S.env.boatCls;
   if(N&&N.cls===k){const m=boatMyMatch(N),oi=m?(m.a===0?m.b:m.a):null;b.textContent=`To the line · ${BOAT_RND[N.stage].toLowerCase()}${oi?" vs "+N.field[oi-1].name.split(" ").pop():""}`;}
@@ -256,22 +246,22 @@ function boatSlipCard(r,res){const M=r.match||{},f3=v=>v==null?"—":(+v).toFixe
     ["1000'",failed?"BROKE":r.et!=null?f3(r.et):({blowover:"BLEW OVER",hooked:"HOOKED",stuffed:"STUFFED"}[r.dnf]||"DNF"),M.oppDnf?(M.oppDnf==="broke"?"BROKE":"DNF"):f3(M.oppEt),"et"],["MPH",r.mph!=null&&!failed?r.mph.toFixed(2):"—",M.oppMph!=null&&!M.oppDnf?M.oppMph.toFixed(2):"—","mph"]];
   const verdict=failed?"BROKE":M.foul?"RED LIGHT":M.won?"WIN":"LOSS",when=new Date(r.at||Date.now()),lamp=w=>`<i class="lamp${w?" on":""}"></i>`;
   const pb=r.pb&&r.et!=null?`<div class="stamp">CLASS BEST<br><s>${r.pb.was}</s> ${r.et.toFixed(3)}</div>`:"";
-  return`<div class="tslip${M.won?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE RIVER DRAGS</b><small>1,000 ft · ${boatEsc(r.clsName)} · ${boatEsc(M.label||"")}</small><small>${when.toLocaleDateString("en-CA")} ${String(when.getHours()).padStart(2,"0")}:${String(when.getMinutes()).padStart(2,"0")}</small></div>
-    <div class="tsc"><strong>${boatEsc((S.name||engineName()||"").slice(0,40))}</strong>${Math.round(res.peakHp)} hp · ${boatEsc(SIM.BOAT_HULLS[r.hull].n)} · ${r.drive==="jet"?r.imp+"-cut pump":r.pitch+'" prop'} · ${r.gear}:1 · ${r.mass.toLocaleString("en-CA")} kg${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}</div>
-    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(M.won)}You</th><th><small>Left lane</small>${lamp(!M.won)}${boatEsc(String(M.opp||"").split(" ").pop())}</th></tr></thead>
+  return`<div class="tslip${M.won?" won":""}" role="group" aria-label="Timing slip"><div class="tsh"><b>PRAIRIE RIVER DRAGS</b><small>1,000 ft · ${esc(r.clsName)} · ${esc(M.label||"")}</small><small>${when.toLocaleDateString("en-CA")} ${String(when.getHours()).padStart(2,"0")}:${String(when.getMinutes()).padStart(2,"0")}</small></div>
+    <div class="tsc"><strong>${esc((S.name||engineName()||"").slice(0,40))}</strong>${Math.round(res.peakHp)} hp · ${esc(SIM.BOAT_HULLS[r.hull].n)} · ${r.drive==="jet"?r.imp+"-cut pump":r.pitch+'" prop'} · ${r.gear}:1 · ${r.mass.toLocaleString("en-CA")} kg${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}</div>
+    <table><thead><tr><th></th><th class="you"><small>Right lane</small>${lamp(M.won)}You</th><th><small>Left lane</small>${lamp(!M.won)}${esc(String(M.opp||"").split(" ").pop())}</th></tr></thead>
     <tbody>${rows.map(x=>`<tr class="${x[3]||""}"><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]===""?"":x[2]}</td></tr>`).join("")}</tbody></table>
-    <div class="tsw"><b class="${M.won?"w":"l"}">${verdict}</b><span>${M.margin!=null?"by "+Math.abs(M.margin).toFixed(3)+" s":""}</span></div>${pb}<div class="tsf">Wind ${r.water.wind>=0?"+":""}${r.water.wind} m/s · ${boatEsc(r.water.name)}</div></div>`;}
+    <div class="tsw"><b class="${M.won?"w":"l"}">${verdict}</b><span>${M.margin!=null?"by "+Math.abs(M.margin).toFixed(3)+" s":""}</span></div>${pb}<div class="tsf">Wind ${r.water.wind>=0?"+":""}${r.water.wind} m/s · ${esc(r.water.name)}</div></div>`;}
 function boatVerdict(res){const r=res.boat,M=r.match||{},nt=r.night||{};
-  const head=res.boatFailed?(r.broke==="valve_float"?"FLOATED THE VALVES":r.broke==="head_lift"?"COOKED IT":"BROKE ON THE RIVER"):M.foul?"RED LIGHT":r.dnf==="blowover"?"BLEW OVER":r.dnf==="hooked"?"HOOKED IT":r.dnf==="stuffed"?"STUFFED IT":M.won?`WON ${boatEsc(M.label)}`:`LOST ${boatEsc(M.label)}`;
+  const head=res.boatFailed?(r.broke==="valve_float"?"FLOATED THE VALVES":r.broke==="head_lift"?"COOKED IT":"BROKE ON THE RIVER"):M.foul?"RED LIGHT":r.dnf==="blowover"?"BLEW OVER":r.dnf==="hooked"?"HOOKED IT":r.dnf==="stuffed"?"STUFFED IT":M.won?`WON ${esc(M.label)}`:`LOST ${esc(M.label)}`;
   const cls=res.boatFailed||r.dnf||M.foul?"fail":M.won?"pass":"marg";
   const sub=nt.done?`${BOAT_PLACE[nt.place]||""}${r.purse?` · purse ${fmt$(r.purse)}`:""}`:`On to the ${BOAT_RND[nt.stage+1]?BOAT_RND[nt.stage+1].toLowerCase():"next round"}`;
-  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${head}${r.et!=null&&!res.boatFailed?`<br><span style="font-size:.7em;opacity:.85">${r.et.toFixed(3)} s @ ${r.mph.toFixed(1)} mph</span>`:""}</div><p>${boatEsc(r.clsName)} · vs ${boatEsc(M.opp)} (${M.oppDnf?M.oppDnf==="broke"?"broke":"DNF":M.oppEt!=null?M.oppEt.toFixed(3)+" @ "+Math.round(M.oppMph):"—"}) · ${sub}${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}${r.pb?` · class best (was ${r.pb.was})`:""}${res.boatFailed&&career()?" — certification is void and reputation took a hit":""}</p>
+  return `<div class="verdict ${cls}"><div style="flex:1"><div class="big">${head}${r.et!=null&&!res.boatFailed?`<br><span style="font-size:.7em;opacity:.85">${r.et.toFixed(3)} s @ ${r.mph.toFixed(1)} mph</span>`:""}</div><p>${esc(r.clsName)} · vs ${esc(M.opp)} (${M.oppDnf?M.oppDnf==="broke"?"broke":"DNF":M.oppEt!=null?M.oppEt.toFixed(3)+" @ "+Math.round(M.oppMph):"—"}) · ${sub}${r.auto?r.auto.took!=null?" · you took over":" · auto driver":""}${r.pb?` · class best (was ${r.pb.was})`:""}${res.boatFailed&&career()?" — certification is void and reputation took a hit":""}</p>
     <div class="vstats"><div><b>${r.rt!=null&&!M.foul?r.rt.toFixed(3):"RED"}</b><span>reaction</span></div><div><b>${r.humpT!=null?r.humpT.toFixed(2):"—"}</b><span>s to the hump</span></div><div><b>${r.blowN}</b><span>blowouts</span></div><div><b>${r.maxMph.toFixed(0)}</b><span>top mph</span></div></div></div></div>`;}
 function boatSheet(res){const r=res.boat,N=boatCur();
   const wi=wearInfo(res);const wear=wi?`<div><b>Wear</b>${wi.passes} of ${wi.budget} pass${wi.budget===1?"":"es"} · <span style="color:${wi.w>=1?"var(--crit)":wi.w>0.6?"var(--warn)":"var(--good)"}">${Math.round(wi.w*100)}%</span>${res.wornBy?" · down "+res.wornBy+"% on power":""}${wi.w>0?` <button class="btn sm" id="freshen" style="margin-left:8px">Freshen · ${fmt$(freshenCost(res))}</button>`:""}</div>`:"";
   return `<div class="sec"><h2>Timing slip</h2><div class="tslipw">${boatSlipCard(r,res)}</div>
     <div class="log" style="margin-top:12px"><div><b>Setup</b>${r.drive==="jet"?r.imp+"-cut impeller":r.pitch+'" pitch'} · ${r.gear}:1 · trim ${r.trim0>=0?"+":""}${r.trim0}° at the start · ${r.mass.toLocaleString("en-CA")} kg</div>
-    <div><b>Water</b>${boatEsc(r.water.name)} (chop ${Math.round(r.water.chop*100)}%) · ${Math.abs(r.water.wind)} m/s ${r.water.wind>=0?"headwind":"tailwind"}</div>
+    <div><b>Water</b>${esc(r.water.name)} (chop ${Math.round(r.water.chop*100)}%) · ${Math.abs(r.water.wind)} m/s ${r.water.wind>=0?"headwind":"tailwind"}</div>
     <div><b>Engine</b>${r.peakRpm.toLocaleString()} rpm peak · ${r.limT>0.05?r.limT.toFixed(1)+" s on the limiter · ":""}raw water ${r.coolPeak} °C${r.slipEnd!=null?` · ${Math.round(r.slipEnd*100)}% slip at the line`:""}</div>
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>
     ${N&&N.cls===r.cls?`<h2 style="margin-top:12px">The ladder</h2>${boatLadderHtml(N)}`:""}</div>`;}

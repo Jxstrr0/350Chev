@@ -2,6 +2,35 @@
 /* ===================== Prairie Engine Works — app ===================== */
 const SIM=ENGINE_SIM,{LAYOUTS,OPT,FORM,PRESETS}=SIM;
 const $=id=>document.getElementById(id);
+const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+/* ---- helpers every event shares (drag, pull, bog, boat, salt, hill, oval, road, e24) ---- */
+/* one bucket of records per event, created on first use */
+function recBucket(k){const R=recs();if(!R[k]||typeof R[k]!=="object")R[k]={};return R[k];}
+/* a class is locked while the career is short of its rep (0 = open) */
+function clsLocked(T,k){const c=T[k];return c&&career()&&!dev()&&C().rep<c.rep?c.rep:0;}
+/* which class this week's hook was in (one run a week per event) */
+function wkCls(key){if(!career())return null;const w=C()[key]||{};return Object.keys(w).find(k=>w[k]===C().week)||null;}
+/* an entry fee: 15% of the bottom purse, scaled by the class tier, rounded to $5 */
+function evFee(purse,pay,tier){return Math.round(purse*(pay[tier]||1)*0.15/5)*5;}
+/* the full-screen flash: a colour, then back to clear after ms */
+function screenFlash(bg,ms){const f=$("flash");if(!f)return;f.style.background=bg;setTimeout(()=>f.style.background="rgba(238,90,94,0)",ms);}
+function failFlash(ms){screenFlash("rgba(238,90,94,.45)",ms||250);sfx("fail");buzz([80,40,120]);}
+function winFlash(){screenFlash("rgba(92,191,138,.35)",400);}
+/* scroll the panel so an event's control strip sits above the tabs */
+function scrollCtlIntoView(id){requestAnimationFrame(()=>{const pn=$("panel"),el=$(id);if(!pn||!el)return;const r=el.getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;
+  if(r.bottom>bot||r.top<pr.top)pn.scrollTo({top:pn.scrollTop+(r.height>bot-pr.top?r.top-pr.top-4:r.bottom-bot),behavior:calmScroll()});});}
+/* a hold-to-drive button: pointer capture, Space/Enter on the button, and a click fallback for assistive tech
+   (a click within 800 ms of a real pointer is the same press, so it is ignored). run() is the live run object;
+   release(cancel) gets true on pointercancel. */
+function holdBtn(b,run,press,release,onClick){
+  const mark=()=>{const r=run();if(r)r.lastPtr=performance.now();};
+  b.addEventListener("pointerdown",e=>{e.preventDefault();mark();try{b.setPointerCapture(e.pointerId);}catch(x){}press();});
+  b.addEventListener("pointerup",()=>{mark();release(false);});
+  b.addEventListener("pointercancel",()=>{mark();release(true);});
+  b.addEventListener("contextmenu",e=>e.preventDefault());
+  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();press();}});
+  b.addEventListener("keyup",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();release(false);}});
+  b.addEventListener("click",()=>{const r=run();if(!r||performance.now()-(r.lastPtr||0)<800)return;onClick(r);});}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt$=n=>(n<0?"-$":"$")+Math.round(Math.abs(n)).toLocaleString("en-CA");
 const UPGRADES=[
@@ -187,7 +216,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.26.0";
+const VERSION="1.76.27.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -366,10 +395,10 @@ function applySoundSrc(){const m=S.soundSrc||"blend";if(typeof ENGINE_SAMPLES!==
 $("srcSeg").addEventListener("click",e=>{const b=e.target.closest("[data-src]");if(!b)return;S.soundSrc=b.dataset.src;applySoundSrc();save();toast(`ENGINE VOICE · ${b.firstChild.textContent.toUpperCase()}`);});
 setInterval(()=>{const el=$("srcLbl");if(!el||!setOn()||typeof ENGINE_SAMPLES==="undefined")return;const t=ENGINE_SAMPLES.stats();
   el.textContent=t.mode==="synth"?"synth only":t.set?`${t.setName}${t.set2?" + "+t.set2Name:""} · ${Math.round(t.cover*100)}% recorded`:t.errors&&!t.decoded?"recordings unavailable · synth":t.slow&&t.mode!=="real"?"slow connection · synth":"loads when sound starts";},500);
-function sndCredits(){const E=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function sndCredits(){
   const L=(typeof ENGINE_SAMPLES!=="undefined"&&ENGINE_SAMPLES.credits)||[];$("sheetTitle").textContent="Sound credits";
   $("sheetBody").innerHTML=`<p class="hint">Real engine recordings used by the Real and Blend engine voices. All are openly licensed; files were trimmed, looped, level-matched, converted to mono MP3 and are pitch-shifted live. Full list: <a href="sounds/CREDITS.md" target="_blank" rel="noopener" style="color:var(--orange)">sounds/CREDITS.md</a>.</p>`
-    +L.map(c=>`<div class="opt"><div class="oh"><b>${E(c.title)}</b><span class="tag">${E(c.license)}</span></div><p>${E(c.use)} · by ${E(c.author)} · <a href="${E(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${E(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${E(c.mods)}</small>`:""}</p></div>`).join("");
+    +L.map(c=>`<div class="opt"><div class="oh"><b>${esc(c.title)}</b><span class="tag">${esc(c.license)}</span></div><p>${esc(c.use)} · by ${esc(c.author)} · <a href="${esc(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${esc(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${esc(c.mods)}</small>`:""}</p></div>`).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 $("sndCredBtn").addEventListener("click",sndCredits);
 $("themeSeg").addEventListener("click",e=>{const b=e.target.closest("[data-theme]");if(!b)return;S.theme=b.dataset.theme;applyTheme();save();});

@@ -1,5 +1,8 @@
 # Fastest quarter mile in PEW — with engine weight on the strip
 
+> **Stale.** These builds and numbers were run on v1.76.21.0. Drivetrain tiers, the rev limiter, the strip's engine-weight rule and several later physics changes have moved the slips since, so treat this as a how-to for building a fast car rather than a leaderboard. Re-run the passes in the app before quoting a number.
+
+
 All four cars were run in the real app (Events → Drag strip, Auto driver, three passes each) on v1.76.21.0, branch `claude/drivetrain-tiers-limiter`. ET and trap speed are from the timing slip.
 
 Two rule changes since the last sheet:

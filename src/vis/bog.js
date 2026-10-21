@@ -243,15 +243,8 @@ function bogVehicle(cls, tyre, color, hw){
 }
 /* the mud thrown about: rooster tails, the bow wave, splashes, spray, exhaust (vis/bog-fx.js) */
 function bogEffects(o, dt, V){ bogFxUpdate(o, dt, V); }
-function bogCrowd(dt){
-  var C=BOG.crowd; if(!C) return; BOG.cheer=Math.max(0,BOG.cheer-dt*0.3);
-  if(BOG.cheer<0.02 && !C.live) return;
-  var t=BOG.t, amp=BOG.cheer, i, m=_pM;
-  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>(amp>1?0.05:0.4)?Math.abs(Math.sin(t*(amp>1?9:7)+C.phase[i]))*0.18*Math.min(amp,2)*e:0;
-    m.makeTranslation(p[0],p[1]+0.4+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+0.93+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
-  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=BOG.cheer>=0.02;
-}
-function bogCut(name){ if(BOG.shot!==name){ BOG.shot=name; BOG.shotT=0; BOG.cutT=0; BOG.snap=true; } }
+var BOG_CROWD={decay:0.3, lo:0.4, hi:0.05, f0:7, f1:9, amp:0.18, body:0.4, head:0.93};
+function bogCrowd(dt){ crowdTick(BOG, dt, BOG_CROWD); }
 function bogDirect(o, dt, V){
   var ph=o.phase||"stage", v=Math.max(0,+o.v||0), U=V.userData, k=U.k||1, fx=+o.x||0, len=+o.len||70, cx=V.position.x+U.wb*k*0.5, s=BOG.shot;
   if(o.shot) s=o.shot;
@@ -263,7 +256,7 @@ function bogDirect(o, dt, V){
     else if(s==="front" && (BOG.fixX-fx<4 || BOG.shotT>3.4)) s=GFX==="lite"?"side":"high";
     else if(s==="high" && BOG.shotT>2.6) s="side"; }
   if(s!==BOG.shot){ if(s==="front") BOG.fixX=Math.min(len+5, fx+7+v*0.9); }
-  bogCut(s); BOG.shotT+=dt; BOG.cutT+=dt; var T=BOG.shotT, fov=46, rel=false, ax=0, sm=0;
+  sceneCut(BOG, s); BOG.shotT+=dt; BOG.cutT+=dt; var T=BOG.shotT, fov=46, rel=false, ax=0, sm=0;
   switch(s){
     case "stage": { var dS=bogFitDist(U, 46), pu=1-0.08*Math.min(1,T/5); _bw.set(cx-dS*0.6*pu, 0.9+dS*0.2, -dS*0.8*pu); _bt.set(cx+0.6, (U.top||2)*0.42, 0); fov=46; break; }   /* the whole truck in frame on any aspect */
     case "chase": rel=true; ax=cx; _bw.set(-9.5, 2.6, 2.2); _bt.set(6, 1.0, 0); fov=50; sm=4; break;
@@ -382,5 +375,4 @@ function bogUpdate(o, dt){
   bogTruckFrame(V, o, dt);   /* blob shadow on the ground, the flagman, night spots off the run-up (vis/bog-trucks.js) */
   BOG.prev={phase:ph, cleared:!!o.cleared};
 }
-var _mudC=new THREE.Color(0.11,0.075,0.045);
 

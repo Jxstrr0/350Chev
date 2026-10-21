@@ -144,6 +144,29 @@ function tex(canvas, srgb){
   if(srgb) t.encoding=THREE.sRGBEncoding;
   return t;
 }
+/* decal / sprite sheet variant: sRGB unless srgb===false, edges clamped (no repeat), anisotropy aniso or the device max */
+function ctex(canvas, srgb, aniso){
+  var t=new THREE.CanvasTexture(canvas);
+  if(srgb!==false) t.encoding=THREE.sRGBEncoding;
+  t.anisotropy=aniso||MAXANISO;
+  return t;
+}
+
+/* ---- event-scene helpers shared by pull, bog, boat, oval, road, hill, salt and the strip ---- */
+/* crowd: Z is the scene state (.crowd, .cheer, .t); o holds the scene's constants: cheer decay per second,
+   the excitement a figure needs to bounce (lo) and the lower bar once the crowd is wild (hi, cheer>1), the slow
+   and wild bounce frequencies (f0, f1), bounce height (amp), and the body/head rest heights */
+var _crM=new THREE.Matrix4();
+function crowdTick(Z, dt, o){
+  var C=Z.crowd; if(!C) return; Z.cheer=Math.max(0,Z.cheer-dt*o.decay);
+  if(Z.cheer<0.02 && !C.live) return;
+  var t=Z.t, amp=Z.cheer, wild=amp>1, th=wild?o.hi:o.lo, f=wild?o.f1:o.f0, i, m=_crM;
+  for(i=0;i<C.n;i++){ var p=C.base[i], e=C.excite[i], y=amp>0.02&&e>th?Math.abs(Math.sin(t*f+C.phase[i]))*o.amp*Math.min(amp,2)*e:0;
+    m.makeTranslation(p[0],p[1]+o.body+y,p[2]); C.body.setMatrixAt(i,m); m.makeTranslation(p[0],p[1]+o.head+y*1.15,p[2]); C.head.setMatrixAt(i,m); }
+  C.body.instanceMatrix.needsUpdate=true; C.head.instanceMatrix.needsUpdate=true; C.live=Z.cheer>=0.02;
+}
+/* camera cut: a new shot name restarts the shot clocks and asks the director for a hard snap (no easing in) */
+function sceneCut(Z, name){ if(Z.shot!==name){ Z.shot=name; Z.shotT=0; Z.cutT=0; Z.snap=true; if(Z.seq!=null) Z.seq++; } }
 
 /* Make a MeshStandardMaterial from a per-pixel fn. */
 /* perf: the maps are painted the first time three.js uploads one of them (texture.image is read on upload), so a
@@ -1407,7 +1430,7 @@ function mkM(x,y,z,rx,ry,rz,sx,sy,sz){
 }
 
 /* ---- merge (BufferGeometryUtils-free) --------------------------------- */
-var _m4 = new THREE.Matrix4(), _m3 = new THREE.Matrix3(), _v3 = new THREE.Vector3();
+var _m3 = new THREE.Matrix3(), _v3 = new THREE.Vector3();
 function nonIndexed(g){
   if(!g.index) return g;
   if(!g.__ni) g.__ni = g.toNonIndexed();
