@@ -75,7 +75,7 @@ function bogStart(){
 /* the driver's foot: yours (the button), or the auto driver every 20 ms */
 function bogThr(st){if(!BR.auto)return BR.down&&!BR.failed?1:0;if(st.phase==="stage")return BR.go?1:0;return BR.failed?0:BR.p.auto(0.92);}
 /* the live card: distance (or the clock once through), the pit with the field on it, then the two things the foot manages — wheel speed and rpm */
-function bogHud(st){if(!BR)return;const L=BR.night.len,x=Math.max(0,st.x),pc=v=>Math.min(100,100*v/L);
+function bogHud(st,force){if(!BR||!hudDue(BR,st,force))return;const L=BR.night.len,x=Math.max(0,st.x),pc=v=>Math.min(100,100*v/L);
   const stat=BR.failed?"broke":st.cleared?"full":"";
   const say=BR.failed?"BROKE":st.cleared?"THROUGH!":st.done?({stalled:"stalled",highcentre:"high-centred",dug:"dug in",bogged:"bogged down",packed:"packed up",lifted:"lifted"}[st.stopWhy]||"stuck"):st.phase==="stage"?"at the line":st.phase==="runup"?`${Math.round(-st.x)} m to the mud`:Math.round(st.v*2.237)+" mph";
   const pitT=st.tPit!=null?(st.cleared?st.tOut:st.t)-st.tPit:0,big=st.cleared?`${pitT.toFixed(2)}<i>s</i>`:`${x.toFixed(1)}<i>m</i>`;

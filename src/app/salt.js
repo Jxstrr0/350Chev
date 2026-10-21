@@ -72,7 +72,7 @@ function saltThr(st){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="s
   const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;SR.thrAI=bad?Math.max(0.04,SR.thrAI*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,SR.thrAI+0.03);return SR.thrAI;}
 function saltWarpUi(){document.querySelectorAll("#saltWarp [data-warp]").forEach(b=>b.classList.toggle("on",+b.dataset.warp===(SR?SR.warp:1)));}
 /* the live card: speed first, then the course with the timed mile on it, then what the driver is managing */
-function saltHud(st){if(!SR)return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
+function saltHud(st,force){if(!SR||!hudDue(SR,st,force))return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
   const stat=SR.failed?"broke":st.phase==="spin"?"broke":st.tOut!=null&&!SR.failed?"full":"";
   const say=SR.failed?"BROKE":st.phase==="spin"?"SPUN":st.phase==="stage"?"on the line":st.phase==="push"?"push truck":st.phase==="run"?(st.x<p.x0?`${((p.x0-st.x)/SIM.LSR_MILE).toFixed(2)} mi to the clocks`:"IN THE MILE"):st.phase==="shutdown"?(st.chuteWait?"coasting to chute speed":st.chuteBlown?"chute tore off":st.chuteOut?"chute out":st.drogueOut?"drogue out":"shut off"):"stopped";
   const split=st.tIn!=null&&st.tOut==null&&st.t>st.tIn?`${(SIM.LSR_MILE*Math.min(1,(st.x-p.x0)/SIM.LSR_MILE)/Math.max(0.01,st.t-st.tIn)*2.23694).toFixed(1)} avg`:st.mileMph!=null?`<b>${st.mileMph.toFixed(3)}</b>`:"—";
