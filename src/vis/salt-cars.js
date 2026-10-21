@@ -164,7 +164,6 @@ function slRod(B, key, a, b, r, seg){ B.add(key, sc_cyl(r, GFX==="lite"?Math.min
 function slV(x,y,z){ return new THREE.Vector3(x,y,z); }
 /* a cylinder along x (centre cx) or z */
 function slCylX(B, key, cx, y, z, r, len, seg){ B.add(key, sc_cyl(r, GFX==="lite"?Math.min(8, seg||10):(seg||10)), sc_M(cx, y, z, 0, 0, -PI/2, 1, len, 1)); }
-function slCylZ(B, key, x, y, cz, r, len, seg){ B.add(key, sc_cyl(r, GFX==="lite"?Math.min(8, seg||10):(seg||10)), sc_M(x, y, cz, PI/2, 0, 0, 1, len, 1)); }
 function slSph(r, ws, hs){ var key="sph"+r3(r)+"_"+ws; return SLC.geo[key]||(SLC.geo[key]=new THREE.SphereGeometry(r, ws||12, hs||8)); }
 /* a Moon disc: a polished spherical cap over the whole rim (dome along +y before placing) */
 function slMoonGeo(R, h, seg){ var key="moon"+r3(R)+"_"+r3(h)+"_"+seg; if(SLC.geo[key]) return SLC.geo[key];

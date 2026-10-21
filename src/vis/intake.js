@@ -14,17 +14,6 @@ function buildIntake(B, p, extras){
   if(boxer && boosted && intake==="itb") intake = "plenum_short";   /* boxer stacks sit on two separate heads: no single boost box */
   var valleyY = boxer ? bore*0.85 : (p.deckH + p.headH*0.92)*Math.cos(a);
 
-  function runnerTrumpets(mtx, zsign){
-    /* ITB stacks on one bank */
-    var i;
-    for(i=0;i<per;i++){
-      var x=-bankLen/2 + bspace*(i+0.5);
-      B.addM("malu", CYL(bore*0.20,bore*0.20,bore*0.36,16,false,2.2),
-        new THREE.Matrix4().compose(new THREE.Vector3(x, bi0.headY+p.headH*0.55, zsign*(bi0.headW*0.52+bore*0.20)),
-          new THREE.Quaternion().setFromEuler(new THREE.Euler(zsign*PI/2,0,0)), new THREE.Vector3(1,1,1)));
-    }
-  }
-
   if(intake==="itb" && (vee||boxer)){
     /* V / boxer: stacks stand vertically out of the valley, runners curve down to the ports */
     /* stacks stand clear above the valley-side ports (vee) or straight up off each head (boxer) */

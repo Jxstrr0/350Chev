@@ -30,7 +30,6 @@ const ENGINE_SIM = (function () {
   const sq = (x) => x * x;
   const R_AIR = 287.05;      // J/kg/K dry air
   const R_VAP = 461.495;     // J/kg/K water vapour
-  const HP_PER_KW = 1.34102;
   const KW_PER_HP = 0.745699;
 
   /* =====================================================================

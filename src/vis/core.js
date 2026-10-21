@@ -1430,7 +1430,7 @@ function mkM(x,y,z,rx,ry,rz,sx,sy,sz){
 }
 
 /* ---- merge (BufferGeometryUtils-free) --------------------------------- */
-var _m4 = new THREE.Matrix4(), _m3 = new THREE.Matrix3(), _v3 = new THREE.Vector3();
+var _m3 = new THREE.Matrix3(), _v3 = new THREE.Vector3();
 function nonIndexed(g){
   if(!g.index) return g;
   if(!g.__ni) g.__ni = g.toNonIndexed();
