@@ -465,6 +465,15 @@ function fnPolishedAlu(u,v,o,i,j){      /* buffed: faint swirl from the mop, hai
   o[3]=n*0.5+buff*0.5-sc1*0.3;
   o[4]=clamp(0.10+(n-0.5)*0.05+(1-buff)*0.03+sc1*0.12+(hz-0.5)*0.05,0.04,0.35); o[5]=1.0;
 }
+/* mandrel-bent aluminium charge pipe (u along the tube, v round it, both scaled to world size by tubeUV): a smooth satin skin,
+   faint draw lines along the length and a soft broad sheen. Kept nearly flat: any bump on a long shiny tube reads as clay. */
+function fnTubeAlu(u,v,o){
+  var draw=vnoiseA(u,v,3,160,331), broad=fbm(u,v,2,3,337);
+  var l=172+(broad-0.5)*10+(draw-0.5)*6;
+  o[0]=l*0.99; o[1]=l; o[2]=l*1.03;
+  o[3]=draw*0.25+broad*0.1;
+  o[4]=clamp(0.24+(broad-0.5)*0.08+(draw-0.5)*0.05,0.12,0.4); o[5]=1.0;
+}
 function fnNikasil(u,v,o){          /* mirror bore plating */
   var n=fbm(u,v,2,200,401);
   var hone=Math.abs(Math.sin((u*38+v*38)*PI))*0.5+Math.abs(Math.sin((u*38-v*38)*PI))*0.5;
@@ -1061,6 +1070,7 @@ function buildMaterials(){
   MAT.calu        = pmat(S, fnCastAlu,       {ns:0.45, env:1.0});
   MAT.malu        = pmat(S, fnMachinedAlu,   {ns:0.55,env:1.2});
   MAT.palu        = pmat(S, fnPolishedAlu,   {ns:0.35,env:1.5});
+  MAT.tubeAlu     = pmat(S, fnTubeAlu,       {ns:0.12,env:1.3});
   MAT.nikasil     = pmat(128,fnNikasil,      {ns:0.3, env:1.6});
   MAT.wrinkle     = pmat(S, fnWrinkle,       {ns:1.05,env:0.7});
   MAT.anod        = pmat(S, fnAnodised,      {ns:0.7, env:1.1});
@@ -1221,7 +1231,7 @@ function buildHiMaterials(){
   if(HI_BUILT) return; HI_BUILT=true;
   var S=256, k;
   /* 1:1 clones of the shared engine materials (hi-tier grime shader) */
-  ["iron","cgi","calu","malu","palu","nikasil","wrinkle","anod","stainless","castexh","turbine","belt","hose","steel","dark",
+  ["iron","cgi","calu","malu","palu","tubeAlu","nikasil","wrinkle","anod","stainless","castexh","turbine","belt","hose","steel","dark",
    "paint","paintOrange","paintBlue","paintGrey","rubberFlat","blackPlast","chrome","copper"].forEach(function(key){
      var m=MAT[key].clone(); m.userData={}; MATHI[key]=hiFlag(m);
   });
