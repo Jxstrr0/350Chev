@@ -12805,6 +12805,15 @@ function fnPolishedAlu(u,v,o,i,j){      /* buffed: faint swirl from the mop, hai
   o[3]=n*0.5+buff*0.5-sc1*0.3;
   o[4]=clamp(0.10+(n-0.5)*0.05+(1-buff)*0.03+sc1*0.12+(hz-0.5)*0.05,0.04,0.35); o[5]=1.0;
 }
+/* mandrel-bent aluminium charge pipe (u along the tube, v round it, both scaled to world size by tubeUV): a smooth satin skin,
+   faint draw lines along the length and a soft broad sheen. Kept nearly flat: any bump on a long shiny tube reads as clay. */
+function fnTubeAlu(u,v,o){
+  var draw=vnoiseA(u,v,3,160,331), broad=fbm(u,v,2,3,337);
+  var l=172+(broad-0.5)*10+(draw-0.5)*6;
+  o[0]=l*0.99; o[1]=l; o[2]=l*1.03;
+  o[3]=draw*0.25+broad*0.1;
+  o[4]=clamp(0.24+(broad-0.5)*0.08+(draw-0.5)*0.05,0.12,0.4); o[5]=1.0;
+}
 function fnNikasil(u,v,o){          /* mirror bore plating */
   var n=fbm(u,v,2,200,401);
   var hone=Math.abs(Math.sin((u*38+v*38)*PI))*0.5+Math.abs(Math.sin((u*38-v*38)*PI))*0.5;
@@ -13401,6 +13410,7 @@ function buildMaterials(){
   MAT.calu        = pmat(S, fnCastAlu,       {ns:0.45, env:1.0});
   MAT.malu        = pmat(S, fnMachinedAlu,   {ns:0.55,env:1.2});
   MAT.palu        = pmat(S, fnPolishedAlu,   {ns:0.35,env:1.5});
+  MAT.tubeAlu     = pmat(S, fnTubeAlu,       {ns:0.12,env:1.3});
   MAT.nikasil     = pmat(128,fnNikasil,      {ns:0.3, env:1.6});
   MAT.wrinkle     = pmat(S, fnWrinkle,       {ns:1.05,env:0.7});
   MAT.anod        = pmat(S, fnAnodised,      {ns:0.7, env:1.1});
@@ -13561,7 +13571,7 @@ function buildHiMaterials(){
   if(HI_BUILT) return; HI_BUILT=true;
   var S=256, k;
   /* 1:1 clones of the shared engine materials (hi-tier grime shader) */
-  ["iron","cgi","calu","malu","palu","nikasil","wrinkle","anod","stainless","castexh","turbine","belt","hose","steel","dark",
+  ["iron","cgi","calu","malu","palu","tubeAlu","nikasil","wrinkle","anod","stainless","castexh","turbine","belt","hose","steel","dark",
    "paint","paintOrange","paintBlue","paintGrey","rubberFlat","blackPlast","chrome","copper"].forEach(function(key){
      var m=MAT[key].clone(); m.userData={}; MATHI[key]=hiFlag(m);
   });
@@ -16153,7 +16163,7 @@ function pipeMesh(B, localPts, rad, matKey, seg){
   PIPE_LOG.push({pts:world, rad:rad});
   if(CUR_B){
     var tg=TUBE(world, rad, seg||18, 10);
-    if(DET && (matKey==="palu" || matKey==="castexh")) tubeUV(tg, rad);   /* stainless keeps u 0..1: its heat tint runs from the flange */
+    if(DET && (matKey==="palu" || matKey==="tubeAlu" || matKey==="castexh")) tubeUV(tg, rad);   /* stainless keeps u 0..1: its heat tint runs from the flange */
     else if(DET){ var tuv=tg.attributes.uv, kv=Math.max(1, Math.round(TAU*rad*TK*2)); for(var ti=0;ti<tuv.count;ti++) tuv.setY(ti, tuv.getY(ti)*kv); }   /* finer grain round the pipe */
     CUR_B.addW(matKey, tg); return null;                                   /* the bucket gets the live material */
   }
@@ -16535,7 +16545,7 @@ function buildAspiration(B, p, extras){
         extras.push(pipeMesh(B, [t1.to, t1.to.clone().addScaledVector(t1.toDir, bore*0.30), t2.ti.clone().addScaledVector(t2.tiDir, bore*0.40), t2.ti], s1*0.30, "stainless", 18));
         var hp = t1.ci.clone().addScaledVector(t1.ciDir, bore*0.35);
         extras.push(pipeMesh(B, [t2.co, t2.co.clone().addScaledVector(t2.coDir, bore*0.55),
-          V3(hp.x + t1.ciDir.x*bore*0.55, Math.max(t2.co.y, hp.y) + bore*0.45, (t2.co.z + hp.z)/2), hp, t1.ci], s1*0.26, "palu", 24));
+          V3(hp.x + t1.ciDir.x*bore*0.55, Math.max(t2.co.y, hp.y) + bore*0.45, (t2.co.z + hp.z)/2), hp, t1.ci], s1*0.26, "tubeAlu", 24));
         t1.tip = t2.tip;
       }
       out.cout.push({pt:t1.co, dir:t1.coDir});
@@ -16949,7 +16959,7 @@ function buildChargeAir(B, p, extras, ai){
   var fx=bankLen*0.5+bore*0.45;
   var tIn=ai.tb.pt.clone(), tA=tIn.clone().addScaledVector(ai.tb.dir, bore*0.55), tB=tIn.clone().addScaledVector(ai.tb.dir, bore*1.10);
   var flts=ai.filt||[], clear=function(pts){ return clearOfFilters(pts, flts, rc+bore*0.06); };
-  var pipe=function(pts){ pts=clear(pts); extras.push(pipeMesh(B, pts, rc, "palu", Math.max(24, pts.length*(pts.length>20?2:10)))); };
+  var pipe=function(pts){ pts=clear(pts); extras.push(pipeMesh(B, pts, rc, "tubeAlu", Math.max(24, pts.length*(pts.length>20?2:10)))); };
   if(F){
     var top=F.y0+F.h+bore*0.10, lo=F.y0-bore*0.50, fr=F.x+F.t*0.5+bore*0.55;
     var both=false, pos=false, neg=false;
@@ -30011,7 +30021,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.27.1";
+const VERSION="1.76.27.2";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}

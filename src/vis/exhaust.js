@@ -358,7 +358,7 @@ function pipeMesh(B, localPts, rad, matKey, seg){
   PIPE_LOG.push({pts:world, rad:rad});
   if(CUR_B){
     var tg=TUBE(world, rad, seg||18, 10);
-    if(DET && (matKey==="palu" || matKey==="castexh")) tubeUV(tg, rad);   /* stainless keeps u 0..1: its heat tint runs from the flange */
+    if(DET && (matKey==="palu" || matKey==="tubeAlu" || matKey==="castexh")) tubeUV(tg, rad);   /* stainless keeps u 0..1: its heat tint runs from the flange */
     else if(DET){ var tuv=tg.attributes.uv, kv=Math.max(1, Math.round(TAU*rad*TK*2)); for(var ti=0;ti<tuv.count;ti++) tuv.setY(ti, tuv.getY(ti)*kv); }   /* finer grain round the pipe */
     CUR_B.addW(matKey, tg); return null;                                   /* the bucket gets the live material */
   }

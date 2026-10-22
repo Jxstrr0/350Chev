@@ -370,7 +370,7 @@ function buildAspiration(B, p, extras){
         extras.push(pipeMesh(B, [t1.to, t1.to.clone().addScaledVector(t1.toDir, bore*0.30), t2.ti.clone().addScaledVector(t2.tiDir, bore*0.40), t2.ti], s1*0.30, "stainless", 18));
         var hp = t1.ci.clone().addScaledVector(t1.ciDir, bore*0.35);
         extras.push(pipeMesh(B, [t2.co, t2.co.clone().addScaledVector(t2.coDir, bore*0.55),
-          V3(hp.x + t1.ciDir.x*bore*0.55, Math.max(t2.co.y, hp.y) + bore*0.45, (t2.co.z + hp.z)/2), hp, t1.ci], s1*0.26, "palu", 24));
+          V3(hp.x + t1.ciDir.x*bore*0.55, Math.max(t2.co.y, hp.y) + bore*0.45, (t2.co.z + hp.z)/2), hp, t1.ci], s1*0.26, "tubeAlu", 24));
         t1.tip = t2.tip;
       }
       out.cout.push({pt:t1.co, dir:t1.coDir});
@@ -784,7 +784,7 @@ function buildChargeAir(B, p, extras, ai){
   var fx=bankLen*0.5+bore*0.45;
   var tIn=ai.tb.pt.clone(), tA=tIn.clone().addScaledVector(ai.tb.dir, bore*0.55), tB=tIn.clone().addScaledVector(ai.tb.dir, bore*1.10);
   var flts=ai.filt||[], clear=function(pts){ return clearOfFilters(pts, flts, rc+bore*0.06); };
-  var pipe=function(pts){ pts=clear(pts); extras.push(pipeMesh(B, pts, rc, "palu", Math.max(24, pts.length*(pts.length>20?2:10)))); };
+  var pipe=function(pts){ pts=clear(pts); extras.push(pipeMesh(B, pts, rc, "tubeAlu", Math.max(24, pts.length*(pts.length>20?2:10)))); };
   if(F){
     var top=F.y0+F.h+bore*0.10, lo=F.y0-bore*0.50, fr=F.x+F.t*0.5+bore*0.55;
     var both=false, pos=false, neg=false;
