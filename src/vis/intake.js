@@ -636,28 +636,30 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
     }
     if(!o.extWG){ B.add("steel", CYL(s*0.05,s*0.05,s*0.05,8), s*0.02,-s*0.72,0, 0,0,PI/2); B.add("steel", BOX(s*0.04,s*0.10,s*0.10), -s*0.02,-s*0.66,0); }  /* rod end + clip */
   }
-  /* compressor cover (cold side), inlet facing away from the turbine */
+  /* compressor cover (cold side), inlet facing away from the turbine: a satin cast cover with a machined inlet, the way
+     they come off the shelf (the mop-polished finish read as plaster) */
   /* back plate, then the scroll: it grows round the wheel and leaves tangentially along the discharge direction */
-  B.add("palu", CYL(s*0.62,s*0.62,s*0.10,24,false,2.0), s*0.66,0,0, 0,0,PI/2);
+  var cc="scalu", ci="malu";
+  B.add(cc, CYL(s*0.62,s*0.62,s*0.10,24,false,2.0), s*0.66,0,0, 0,0,PI/2);
   var cE=Math.atan2(-lo.y, lo.z), cA=cE-SW, cR=s*0.62, cr=s*0.25;
-  B.add("palu", VOLUTE(s*0.50, cR, s*0.11, cr, SW, VT, VR, 2.0), s*0.86,0,0, cA,0,0);
-  B.add("palu", CYL(s*0.46,s*0.46,s*0.28,26,false,2.0), s*0.86,0,0, 0,0,PI/2);
-  B.add("palu", SPH(s*0.11, 10, 2.0), s*0.86, s*0.50*Math.cos(cA), s*0.50*Math.sin(cA));
+  B.add(cc, VOLUTE(s*0.50, cR, s*0.11, cr, SW, VT, VR, 2.0), s*0.86,0,0, cA,0,0);
+  B.add(cc, CYL(s*0.46,s*0.46,s*0.28,26,false,2.0), s*0.86,0,0, 0,0,PI/2);
+  B.add(cc, SPH(s*0.11, 10, 2.0), s*0.86, s*0.50*Math.cos(cA), s*0.50*Math.sin(cA));
   /* stepped inlet: shroud, a raised ring and a rolled lip like a cast cover */
-  B.add("palu", CYL(s*0.50,s*0.54,s*0.16,26,false,2.0), s*1.08,0,0, 0,0,PI/2);
-  B.add("palu", CONE(s*0.46,s*0.48,s*0.26,24,2.0), s*1.29,0,0, 0,0,PI/2);
-  B.add("palu", CONE(s*0.49,s*0.49,s*0.06,24,2.0), s*1.36,0,0, 0,0,PI/2);
-  B.add("palu", RING(s*0.46,s*0.49,24,2.0), s*1.39,0,0, 0,PI/2,0);
-  B.add("palu", RING(s*0.46,s*0.49,24,2.0), s*1.33,0,0, 0,-PI/2,0);
-  B.add("palu", CONE(s*0.44,s*0.48,s*0.17,24,2.0), s*1.475,0,0, 0,0,-PI/2);
+  B.add(cc, CYL(s*0.50,s*0.54,s*0.16,26,false,2.0), s*1.08,0,0, 0,0,PI/2);
+  B.add(ci, CONE(s*0.46,s*0.48,s*0.26,24,2.0), s*1.29,0,0, 0,0,PI/2);
+  B.add(ci, CONE(s*0.49,s*0.49,s*0.06,24,2.0), s*1.36,0,0, 0,0,PI/2);
+  B.add(ci, RING(s*0.46,s*0.49,24,2.0), s*1.39,0,0, 0,PI/2,0);
+  B.add(ci, RING(s*0.46,s*0.49,24,2.0), s*1.33,0,0, 0,-PI/2,0);
+  B.add(ci, CONE(s*0.44,s*0.48,s*0.17,24,2.0), s*1.475,0,0, 0,0,-PI/2);
   /* open inlet: the bore, a step ring part way down and the wheel sitting inside it */
-  B.add("palu", BORE(s*0.37, s*0.30, 24, 2.0), s*1.41,0,0, 0,0,PI/2);
-  B.add("palu", BORE(s*0.33, s*0.16, 24, 2.0), s*1.20,0,0, 0,0,PI/2);
-  B.add("palu", RING(s*0.33,s*0.37,24,2.0), s*1.26,0,0, 0,PI/2,0);
-  B.add("palu", RING(s*0.37,s*0.44,24,2.0), s*1.56,0,0, 0,PI/2,0);
-  B.add("palu", TOR(s*0.405, s*0.03, 6, 24, 2.0), s*1.56,0,0, 0,PI/2,0);
+  B.add(ci, BORE(s*0.37, s*0.30, 24, 2.0), s*1.41,0,0, 0,0,PI/2);
+  B.add(ci, BORE(s*0.33, s*0.16, 24, 2.0), s*1.20,0,0, 0,0,PI/2);
+  B.add(ci, RING(s*0.33,s*0.37,24,2.0), s*1.26,0,0, 0,PI/2,0);
+  B.add(ci, RING(s*0.37,s*0.44,24,2.0), s*1.56,0,0, 0,PI/2,0);
+  B.add(ci, TOR(s*0.405, s*0.03, 6, 24, 2.0), s*1.56,0,0, 0,PI/2,0);
   if(DET){ for(var bs=0; bs<3; bs++){ var ab=cA+0.9+bs*1.7;          /* cast bosses on the cover face */
-    B.add("palu", CYL(s*0.045,s*0.05,s*0.05,10,false,2.0), s*1.05, Math.cos(ab)*s*0.60, Math.sin(ab)*s*0.60, 0,0,PI/2); } }
+    B.add(cc, CYL(s*0.045,s*0.05,s*0.05,10,false,2.0), s*1.05, Math.cos(ab)*s*0.60, Math.sin(ab)*s*0.60, 0,0,PI/2); } }
   /* tangential discharge: straight off the end of the scroll, with a hose bead */
   var cEy=Math.cos(cE)*cR, cEz=Math.sin(cE)*cR, dL=s*0.50;
   B.add("palu", CYL(cr,cr*1.02,dL,18,false,2.0), s*0.86, cEy+lo.y*dL*0.5, cEz+lo.z*dL*0.5, ao,0,0);
@@ -942,6 +944,6 @@ function pulleyHi(r, w, mat, o){
   if(o.fan){ /* alternator cooling fan between pulley and case */
     var nf=10; for(i=0;i<nf;i++){ var af=i/nf*TAU; items.push({g:BOX(b*0.022, b*0.12, b*0.028, 6), m:mkM(-w*0.62-b*0.016, Math.cos(af)*r*1.08, Math.sin(af)*r*1.08, af+0.35,0,0)}); }
     items.push({g:CYL(r*0.62,r*0.62,b*0.012,20,false,6), m:mkM(-w*0.62-b*0.016,0,0,0,0,PI/2)}); }
-  var m=new THREE.Mesh(mergeGeos(items), mat||MAT.steel); m.castShadow=true; m.receiveShadow=true; return m;
+  var m=new THREE.Mesh(mergeGeos(items), mat||MATHI.lathe||MAT.steel); m.castShadow=true; m.receiveShadow=true; return m;   /* turned steel: rings round the axis, not brushed streaks */
 }
 
