@@ -357,12 +357,12 @@ function pipeMesh(B, localPts, rad, matKey, seg){
   LAST_PIPE_END = world[world.length-1].clone();
   PIPE_LOG.push({pts:world, rad:rad});
   if(CUR_B){
-    var tg=TUBE(world, rad, seg||18, 10);
+    var tg=TUBE(world, rad, DET?(seg||18)*3:(seg||18), DET?24:10);   /* Full / Ultra: a round section and smooth bends; ten sides kink a long shiny pipe */
     if(DET && (matKey==="palu" || matKey==="tubeAlu" || matKey==="castexh")) tubeUV(tg, rad);   /* stainless keeps u 0..1: its heat tint runs from the flange */
     else if(DET){ var tuv=tg.attributes.uv, kv=Math.max(1, Math.round(TAU*rad*TK*2)); for(var ti=0;ti<tuv.count;ti++) tuv.setY(ti, tuv.getY(ti)*kv); }   /* finer grain round the pipe */
     CUR_B.addW(matKey, tg); return null;                                   /* the bucket gets the live material */
   }
-  var m=new THREE.Mesh(TUBE(world, rad, seg||18, 10), MAT[matKey]);
+  var m=new THREE.Mesh(TUBE(world, rad, DET?(seg||18)*3:(seg||18), DET?24:10), MAT[matKey]);
   m.userData.liveKey = matKey;
   m.castShadow=true; m.receiveShadow=true;
   return m;
