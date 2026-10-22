@@ -411,14 +411,14 @@ function fnCastAlu0(u,v,o){          /* A356 permanent-mould cast: a fine satin 
 function fnCastAlu(u,v,o,i,j){          /* A356 permanent-mould cast: satin skin, soft oxide mottling, a fine metallic glint, the odd pore */
   if(HQ<=1) return fnCastAlu0(u,v,o,i,j);
   var g=fbm(u,v,4,26,101), fine=fbm(u,v,2,140,107), mott=fbm(u,v,3,6,121), sand=vnoise(u*190,v*190,190,127);
-  var l=142+(g-0.5)*8+(fine-0.5)*5+(sand-0.5)*5+(mott-0.5)*12;
-  if(HQ>1) l += (vnoise(u*380,v*380,380,137)-0.5)*4;
+  var l=142+(g-0.5)*8+(fine-0.5)*4+(sand-0.5)*3+(mott-0.5)*12;
+  if(HQ>1) l += (vnoise(u*380,v*380,380,137)-0.5)*2;
   /* porosity: rare and small */
   var pit=smoothstep(0.88,0.97,fbm(u,v,2,64,113));
   var spark=smoothstep(0.90,0.97,vnoise(u*260,v*260,260,131));
-  l += spark*10 - pit*24;
+  l += spark*7 - pit*24;
   o[0]=l*0.99; o[1]=l*1.005; o[2]=l*1.03+(1-mott)*3;
-  o[3]=g*0.22+fine*0.10+sand*0.08+mott*0.20-pit*0.25+0.20;
+  o[3]=g*0.24+fine*0.07+sand*0.05+mott*0.22-pit*0.25+0.20;
   o[4]=clamp(0.42+(1-g)*0.07+pit*0.14+(mott-0.5)*0.10-spark*0.10,0,1);
   o[5]=0.92;
 }
@@ -468,11 +468,11 @@ function fnPolishedAlu(u,v,o,i,j){      /* buffed: faint swirl from the mop, hai
 /* mandrel-bent aluminium charge pipe (u along the tube, v round it, both scaled to world size by tubeUV): a smooth satin skin,
    faint draw lines along the length and a soft broad sheen. Kept nearly flat: any bump on a long shiny tube reads as clay. */
 function fnTubeAlu(u,v,o){
-  var draw=vnoiseA(u,v,3,160,331), broad=fbm(u,v,2,3,337);
-  var l=172+(broad-0.5)*10+(draw-0.5)*6;
+  var draw=vnoiseA(u,v,3,160,331)*0.75+vnoiseA(u,v,2,240,333)*0.25, broad=fbm(u,v,2,3,337), haze=fbm(u,v,2,12,339);
+  var l=182+(broad-0.5)*8+(draw-0.5)*4;
   o[0]=l*0.99; o[1]=l; o[2]=l*1.03;
-  o[3]=draw*0.25+broad*0.1;
-  o[4]=clamp(0.24+(broad-0.5)*0.08+(draw-0.5)*0.05,0.12,0.4); o[5]=1.0;
+  o[3]=draw*0.16+broad*0.08;
+  o[4]=clamp(0.17+(broad-0.5)*0.06+(haze-0.5)*0.06+(draw-0.5)*0.04,0.10,0.34); o[5]=1.0;
 }
 function fnNikasil(u,v,o){          /* mirror bore plating */
   var n=fbm(u,v,2,200,401);
@@ -1003,11 +1003,25 @@ function fnInconelCast(u,v,o){      /* investment-cast Inconel turbine housing, 
   o[0]=l+6+tint*8; o[1]=l+3+tint*4; o[2]=l-tint*4;
   o[3]=g*0.5+fine*0.5; o[4]=clamp(0.40+(1-g)*0.08,0,1); o[5]=0.85;
 }
-function fnTurbineHi(u,v,o){        /* Ni-resist housing, fresh: even cast grey, crisp sand grain, satin sheen */
-  var g=fbm(u,v,4,30,2521), fine=fbm(u,v,2,140,2527), pit=smoothstep(0.84,0.96,fbm(u,v,2,70,2533));
-  var l=116+(g-0.5)*12+(fine-0.5)*12-pit*24;
+function fnTurbineHi(u,v,o){        /* Ni-resist housing, fresh: even cast grey, fine tight sand grain, satin sheen */
+  var g=fbm(u,v,4,30,2521), fine=fbm(u,v,2,140,2527), pit=smoothstep(0.86,0.97,fbm(u,v,2,70,2533)), sand=vnoise(u*220,v*220,220,2537);
+  var l=118+(g-0.5)*10+(fine-0.5)*8+(sand-0.5)*6-pit*18;
   o[0]=l+3; o[1]=l+1; o[2]=l;
-  o[3]=g*0.5+fine*0.5-pit*0.4; o[4]=clamp(0.56+(1-g)*0.10+pit*0.12,0,1); o[5]=0.62;
+  o[3]=g*0.45+fine*0.30+sand*0.25-pit*0.3; o[4]=clamp(0.52+(1-g)*0.08+pit*0.10,0,1); o[5]=0.62;
+}
+function fnCoverAlu(u,v,o){         /* compressor cover: a cast aluminium skin with the sand knocked back, soft mottle and a satin sheen, no sparkle */
+  var g=fbm(u,v,3,18,2701), mott=fbm(u,v,3,5,2703), fine=fbm(u,v,2,90,2707);
+  var l=150+(g-0.5)*7+(mott-0.5)*10+(fine-0.5)*3;
+  o[0]=l*0.99; o[1]=l*1.005; o[2]=l*1.03;
+  o[3]=g*0.35+mott*0.25+fine*0.12+0.2;
+  o[4]=clamp(0.36+(1-g)*0.06+(mott-0.5)*0.08,0.26,0.5); o[5]=0.92;
+}
+function fnLathe(u,v,o){            /* lathe-turned steel pulley (u round the axis, v along the profile): fine turning rings, a little chatter, a dull oily satin */
+  var ring=vnoiseA(u,v,2,120,2601)*0.7+vnoiseA(u,v,3,240,2603)*0.3, chat=fbm(u,v,2,24,2607), oil=fbm(u,v,2,3,2609);
+  var l=120+(ring-0.5)*16+(chat-0.5)*6-(oil-0.5)*6;
+  o[0]=l*0.99; o[1]=l; o[2]=l*1.03;
+  o[3]=ring*0.7+chat*0.3;
+  o[4]=clamp(0.30+(1-ring)*0.10+(oil-0.5)*0.08,0.14,0.55); o[5]=1.0;
 }
 function fnLoom(u,v,o){             /* split corrugated wiring conduit: ribs along u (uv scaled to length) */
   var rib=0.5+0.5*Math.cos(u*TAU*24);
@@ -1065,12 +1079,13 @@ function buildMaterials(){
   MATS_BUILT=true;
   var S=256, L=512;
 
-  MAT.iron        = pmat(S, fnCastIron,      {ns:0.7, env:0.9});
-  MAT.cgi         = pmat(S, fnCGI,           {ns:0.8, env:1.0});
-  MAT.calu        = pmat(S, fnCastAlu,       {ns:0.45, env:1.0});
+  MAT.iron        = pmat(S, fnCastIron,      {ns:0.7, env:0.9, hero:true});   /* hero: block and head castings go to 1024 on Ultra */
+  MAT.cgi         = pmat(S, fnCGI,           {ns:0.8, env:1.0, hero:true});
+  MAT.calu        = pmat(S, fnCastAlu,       {ns:0.45, env:1.0, hero:true});
   MAT.malu        = pmat(S, fnMachinedAlu,   {ns:0.55,env:1.2});
   MAT.palu        = pmat(S, fnPolishedAlu,   {ns:0.35,env:1.5});
-  MAT.tubeAlu     = pmat(S, fnTubeAlu,       {ns:0.12,env:1.3});
+  MAT.tubeAlu     = pmat(S, fnTubeAlu,       {ns:0.14,env:1.4});
+  MAT.scalu       = pmat(S, fnCoverAlu,      {ns:0.32,env:1.1});   /* compressor cover */
   MAT.nikasil     = pmat(128,fnNikasil,      {ns:0.3, env:1.6});
   MAT.wrinkle     = pmat(S, fnWrinkle,       {ns:1.05,env:0.7});
   MAT.anod        = pmat(S, fnAnodised,      {ns:0.7, env:1.1});
@@ -1231,16 +1246,17 @@ function buildHiMaterials(){
   if(HI_BUILT) return; HI_BUILT=true;
   var S=256, k;
   /* 1:1 clones of the shared engine materials (hi-tier grime shader) */
-  ["iron","cgi","calu","malu","palu","tubeAlu","nikasil","wrinkle","anod","stainless","castexh","turbine","belt","hose","steel","dark",
+  ["iron","cgi","calu","malu","palu","tubeAlu","scalu","nikasil","wrinkle","anod","stainless","castexh","turbine","belt","hose","steel","dark",
    "paint","paintOrange","paintBlue","paintGrey","rubberFlat","blackPlast","chrome","copper"].forEach(function(key){
      var m=MAT[key].clone(); m.userData={}; MATHI[key]=hiFlag(m);
   });
   /* painted parts get a real clear coat; bare castings stay rough */
   ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key]=hiFlag(toPhysical(MATHI[key], 0.55, 0.22)); });
-  MATHI.iron.normalScale.set(0.8,0.8); MATHI.stainless.normalScale.set(0.35,0.35); MATHI.calu.normalScale.set(0.5,0.5); MATHI.castexh.normalScale.set(1.4,1.4);
+  MATHI.iron.normalScale.set(0.8,0.8); MATHI.stainless.normalScale.set(0.35,0.35); MATHI.calu.normalScale.set(0.42,0.42); MATHI.castexh.normalScale.set(1.4,1.4);
   /* new surfaces */
-  MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:1.2, env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
+  MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:0.75,env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
   MATHI.turned    = hiFlag(pmat(S, fnTurned,      {ns:0.7, env:1.3}));
+  MATHI.lathe     = hiFlag(pmat(S, fnLathe,       {ns:0.5, env:1.1}));
   MATHI.carbon    = hiFlag(toPhysical(pmat(S, fnCarbon, {ns:0.9, env:1.0}), 1.0, 0.06));
   MATHI.inconel   = hiFlag(pmat(S, fnInconel,     {ns:0.5, env:1.1, emissive:0xff4a08, emissiveIntensity:0}));
   MATHI.inconelCast=hiFlag(pmat(S, fnInconelCast, {ns:0.8, env:0.9, emissive:0xff3a06, emissiveIntensity:0}));
@@ -1658,23 +1674,28 @@ function buildEnvMap(renderer){
   var s=new THREE.Scene();
   s.background=new THREE.Color(0x14171b);
   var shell=new THREE.Mesh(new THREE.BoxGeometry(24,11,26),
-    new THREE.MeshBasicMaterial({color:0x3b4046, side:THREE.BackSide}));
+    new THREE.MeshBasicMaterial({color:0x3f444a, side:THREE.BackSide}));
   s.add(shell);
   var floor=new THREE.Mesh(new THREE.PlaneGeometry(24,26), new THREE.MeshBasicMaterial({color:0x22262b}));
   floor.rotation.x=-PI/2; floor.position.y=-5.4; s.add(floor);
-  /* ceiling strip lights */
-  var i;
-  for(i=-1;i<=1;i++){
-    var strip=new THREE.Mesh(new THREE.PlaneGeometry(1.7,17), new THREE.MeshBasicMaterial({color:0xffffff}));
-    strip.rotation.x=PI/2; strip.position.set(i*6.5,5.35,0); s.add(strip);
+  /* v1.76.28: the room has structure, so a reflection reads as metal rather than a gradient: a dark lower wall with a pale
+     wainscot line (the horizon every shiny part picks up), tube fixtures with dark housings, and window panes with mullions */
+  var i, mk=function(w,h,c){ return new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({color:c})); }, m;
+  var band=[[0,-12.95,0],[0,12.95,PI],[-11.95,0,PI/2],[11.95,0,-PI/2]];
+  for(i=0;i<4;i++){
+    m=mk(26,4.2,0x1f2327); m.position.set(band[i][0],-3.3,band[i][1]); m.rotation.y=band[i][2]; s.add(m);
+    m=mk(26,0.14,0x737a82); m.position.set(band[i][0],-1.15,band[i][1]); m.rotation.y=band[i][2]; s.add(m);
   }
-  /* one big warm panel (window / door light) and a cool one opposite */
-  var warm=new THREE.Mesh(new THREE.PlaneGeometry(11,6), new THREE.MeshBasicMaterial({color:0xffd9a8}));
-  warm.position.set(0,0.6,-12.9); s.add(warm);
-  var cool=new THREE.Mesh(new THREE.PlaneGeometry(7,5), new THREE.MeshBasicMaterial({color:0x8fb6dd}));
-  cool.position.set(0,1.2,12.9); cool.rotation.y=PI; s.add(cool);
+  /* ceiling strip lights: a white tube in a dark housing */
+  for(i=-1;i<=1;i++){
+    m=mk(2.4,17.6,0x2a2e33); m.rotation.x=PI/2; m.position.set(i*6.5,5.42,0); s.add(m);
+    m=mk(1.4,17,0xffffff); m.rotation.x=PI/2; m.position.set(i*6.5,5.35,0); s.add(m);
+  }
+  /* warm window light (three panes) at one end, a cool pair opposite */
+  for(i=-1;i<=1;i++){ m=mk(3.2,4.8,0xffd9a8); m.position.set(i*3.9,0.9,-12.9); s.add(m); }
+  for(i=-1;i<=1;i+=2){ m=mk(3.0,4.4,0x8fb6dd); m.position.set(i*1.9,1.3,12.9); m.rotation.y=PI; s.add(m); }
 
-  var rt=new THREE.WebGLCubeRenderTarget(128,{format:THREE.RGBAFormat, generateMipmaps:true,
+  var rt=new THREE.WebGLCubeRenderTarget(256,{format:THREE.RGBAFormat, generateMipmaps:true,
         minFilter:THREE.LinearMipmapLinearFilter});
   var cam=new THREE.CubeCamera(0.1,120,rt);
   cam.update(renderer,s);
