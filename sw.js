@@ -2,14 +2,27 @@
    App shell: cache-first from a cache named for this version + content hash; old shell caches are deleted on activate.
    A new version installs in the background and waits: the page shows "New version ready" and sends SKIP_WAITING when tapped.
    Same-origin sounds/ are cached as they are fetched (the cache name hashes the sounds/ listing); three.js (CDN) and the Google fonts are cached
-   cache-first in a long-lived cache. Only good (2xx, CORS-readable) responses are cached: an opaque or failed CDN reply must never stick. */
+   cache-first in a long-lived cache. Only good (2xx, CORS-readable) responses are cached: an opaque or failed CDN reply must never stick.
+   The library cache is v2: workers before 1.76.24.0 stored three.js opaque in v1, and the page now loads it with crossorigin, which an
+   opaque copy fails. A worker that finds such a copy takes over at once instead of waiting, because that page cannot boot to offer it. */
 "use strict";
-const CACHE = "pew-shell-v1.76.27.0-ed8a3344bd", MEDIA = "pew-media-v1-463f6093", LIBS = "pew-libs-v1";
+const CACHE = "pew-shell-v1.76.27.1-61d9ffb920", MEDIA = "pew-media-v1-463f6093", LIBS = "pew-libs-v2";
 const PRECACHE = ["index.html","manifest.webmanifest","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512-maskable.png","icons/icon-512.png"], CDN = ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
 const LIB_HOSTS = ["cdnjs.cloudflare.com", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const BASE = new URL("./", self.location).pathname;
+/* an opaque script in any library cache means the page that cache serves cannot load three.js (see above) */
+async function brokenLibs() {
+  try {
+    for (const k of await caches.keys()) if (k.startsWith("pew-libs-")) {
+      const l = await caches.open(k);
+      for (const q of await l.keys()) if (/.js$/.test(new URL(q.url).pathname)) { const r = await l.match(q); if (r && r.type === "opaque") return true; }
+    }
+  } catch (_) {}
+  return false;
+}
 self.addEventListener("install", e => {
   e.waitUntil((async () => {
+    if (await brokenLibs()) self.skipWaiting();
     const c = await caches.open(CACHE);
     await Promise.all(PRECACHE.map(async f => {
       const r = await fetch(new Request(f, { cache: "reload" }));
@@ -17,7 +30,7 @@ self.addEventListener("install", e => {
       await c.put(f, r);
     }));
     const l = await caches.open(LIBS);   /* best effort: a CDN hiccup must not block the app from installing; the fetch handler fills gaps */
-    await Promise.all(CDN.map(async u => { try { if (await l.match(u)) return; const r = await fetch(u, { mode: "cors" }); if (r.ok) await l.put(u, r); } catch (_) {} }));
+    await Promise.all(CDN.map(async u => { try { const h = await l.match(u); if (h && h.type !== "opaque") return; const r = await fetch(u, { mode: "cors" }); if (r.ok) await l.put(u, r); } catch (_) {} }));
   })());
 });
 self.addEventListener("activate", e => {
@@ -54,7 +67,7 @@ self.addEventListener("fetch", e => {
   } else if (LIB_HOSTS.includes(u.hostname)) {
     e.respondWith((async () => {
       const hit = await (await caches.open(LIBS)).match(q);
-      if (hit) return hit;
+      if (hit && (hit.type !== "opaque" || q.mode === "no-cors")) return hit;   /* an opaque copy would fail a crossorigin script */
       const r = await fetch(q);
       if (r.ok && r.type !== "opaque") e.waitUntil(put(LIBS, q, r.clone()));
       return r;
