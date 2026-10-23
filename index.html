@@ -227,7 +227,7 @@ html:not(.desk) .seg.segbody button small{display:none}
 .accb{display:none;padding:2px 12px 10px;border-top:1px solid var(--rule)}
 .acc.open .accb{display:block}
 .accb .seg button{background:var(--panel2)}
-.envgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin-bottom:4px}
+.envgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 14px;margin-bottom:4px}   /* minmax(0,…): a long line under one slider must not widen its column and push the other off the screen */
 .su-grid{grid-template-columns:1fr}.su-grid .nud{flex-basis:44px;height:44px}.su-grid input[type=range]{height:44px}
 .lbl .su-rst{min-height:44px;padding:0 14px;font-size:12px}
 .su-live{margin:2px 0 6px}.su-bal{display:flex;align-items:center;gap:8px;font-family:var(--body);font-size:12px;letter-spacing:.06em;color:var(--muted)}
@@ -1239,7 +1239,7 @@ html:not(.desk) #app.rkon #achToast{bottom:var(--abot,calc(var(--tabh) + var(--r
 #app.rkrun #rlRun,#app.rkrun .rlgrab{display:none}
 .rlpk{display:flex;gap:14px;min-width:0}
 .rlp{min-width:0;white-space:nowrap}
-.pwr{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap}
+.pwr{font-family:var(--mono);font-size:12px;line-height:1.35;color:var(--muted);margin-top:4px}   /* wraps: "1,334 kg with this engine · …" is wider than half a phone */
 .rlp b{font-family:var(--display);font-size:20px;font-weight:700;line-height:1;color:var(--chalk);font-variant-numeric:tabular-nums}
 .rlp b i{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
 .rlp .delta{font-family:var(--mono);font-size:12px;margin-left:3px}
@@ -30044,7 +30044,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.28.0";
+const VERSION="1.76.28.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
