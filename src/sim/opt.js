@@ -435,7 +435,8 @@ const ENGINE_SIM = (function () {
     ice_tank: { name: "Ice-tank charge cooler", sub: "97% eff  one pass", info: "A liquid-to-air core fed from a tank of ice water. It drops the charge to near ambient for one pass, then the ice is gone and it is worse than nothing.", eff: 0.97, dp: 0.05, soak: 3.2, massKg: 28, cost: 3200, req: "race" },
     water_air: { name: "Water-to-air core", sub: "eff 85%  dP 0.04 bar", info: "A compact liquid-cooled core right by the throttle: very effective, with almost no pipework. Over a long session the water heats up and it fades.", eff: 0.85, dp: 0.04, soak: 1.0, massKg: 15, cost: 1300, req: "shop1" },
     a2w_race: { name: "Race water-to-air", sub: "eff 92%  dP 0.03 bar", info: "A big bar-and-plate liquid core with its own front heat exchanger and a high-flow pump. It holds the charge close to ambient at serious boost and fades far less than the compact core.", eff: 0.92, dp: 0.03, soak: 0.6, massKg: 21, cost: 2600, req: "shop2" },
-    wmi: { name: "Race W2A + water-meth", sub: "eff 95%  +4 octane", info: "The race water-to-air core plus a 50/50 water-methanol mist sprayed after it. The mist boils off in the charge, pulling it below what any core can, adds octane and takes some heat out of the combustion before it reaches the coolant. The tank runs dry, and a blocked nozzle at full boost is an expensive noise.", eff: 0.95, dp: 0.04, soak: 0.6, octane: 4, heatK: 0.94, massKg: 30, cost: 3900, req: "race" }
+    wmi: { name: "Race W2A + water-meth", sub: "eff 95%  +4 octane", info: "The race water-to-air core plus a 50/50 water-methanol mist sprayed after it. The mist boils off in the charge, pulling it below what any core can, adds octane and takes some heat out of the combustion before it reaches the coolant. The tank runs dry, and a blocked nozzle at full boost is an expensive noise.", eff: 0.95, dp: 0.04, soak: 0.6, octane: 4, heatK: 0.94, massKg: 30, cost: 3900, req: "race" },
+    wmi_stage: { name: "Race W2A + staged water", sub: "eff 96%  +5 octane  EGT -45 C", info: "The water-meth kit with a second, larger stage that comes in at full load: plain water through a nozzle in every runner. Each cylinder gets its own share, and the water that survives the charge boils off in the burn, so the exhaust leaves about 45 \u00b0C cooler. That is headroom at the turbine and the top ring. It drinks a tank a pass, and a dead pump at full boost is the same expensive noise.", eff: 0.96, dp: 0.04, soak: 0.6, octane: 5, heatK: 0.92, egtC: 45, massKg: 36, cost: 5200, req: "race" }
   };
 
   /* ---- fuels (RON/MON, stoich AFR, LHV, heat of vaporisation) ---- */
@@ -638,7 +639,8 @@ const ENGINE_SIM = (function () {
   /* ---- piston cooling jets ---- */
   OPT.oilSquirters = {
     none: { name: "No oil jets", sub: "crown +0 C", info: "Nothing cools the piston from below, so the crown sheds heat through the rings and skirt alone. Fine at modest output.", crownC: 0, oilHeatKw: 0, cost: 0 },
-    fitted: { name: "Piston cooling jets", sub: "crown -40 C  +oil heat", info: "Jets spray oil onto the underside of the crown, worth a serious drop in piston temperature. That heat ends up in the oil.", crownC: 40, oilHeatKw: 1.0, cost: 320, req: "shop1" }
+    fitted: { name: "Piston cooling jets", sub: "crown -40 C  +oil heat", info: "Jets spray oil onto the underside of the crown, worth a serious drop in piston temperature. That heat ends up in the oil.", crownC: 40, oilHeatKw: 1.0, cost: 320, req: "shop1" },
+    twin: { name: "Twin targeted jets", sub: "crown -40 C, rise -5%", info: "Two jets a cylinder, aimed through the skirt at the cooling gallery inlet and the underside of the bowl, on a dedicated gallery with its own pressure valve. On top of what a single jet takes out, the crown runs 5% less hot over the coolant. More oil to the pistons means more heat in the sump.", crownC: 40, crownK: 0.95, oilHeatKw: 1.3, cost: 780, req: "race" }
   };
 
   /* ---- cooling package ---- */

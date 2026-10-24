@@ -275,6 +275,7 @@ const SPECS={
     ["Removes",o=>o.eff?Math.round(o.eff*100)+"% of charge heat":"nothing"],
     ["Pressure drop",o=>o.dp?Math.round(o.dp*100)+"%":"none"],
     ["Heat soak",o=>o.soak>=1?"soaks quickly":o.soak>0?"soaks slowly":"none"],
+    ["Exhaust",o=>o.egtC?"−"+o.egtC+" °C under boost":null],
     ["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
   fuel:{line:o=>{if(!o.flex||S.cfg.fuel!=="flex")return null;const b=SIM.fuelOf(S.cfg);return "E"+b.ePct+" · "+Math.round(b.ron)+" RON / "+Math.round(b.mon)+" MON";},price:o=>o.flex?OPT.fuel.e85.costL+"–"+OPT.fuel.r91.costL+"/L":o.costL+"/"+(o.unit||"L"),specs:[
     ["Cetane",o=>o.ci?"CN "+o.cetane:null],
@@ -316,7 +317,7 @@ const SPECS={
     ["Drag",o=>fac(o.fricFac)],["Cold flow",o=>o.vi>=160?"excellent":o.vi>=145?"good":o.vi>=130?"fair":"poor"]]},
   oilSystem:{specs:[
     ["Holds prime to",o=>x1(o.gLimit)+" g"],["Windage loss",o=>fac(o.windage)],["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
-  oilSquirters:{specs:[["Crown cooling",o=>o.crownC?"−"+o.crownC+" °C":"none"]]},
+  oilSquirters:{specs:[["Crown cooling",o=>o.crownC?"−"+o.crownC+" °C":"none"],["Crown heat rise",o=>o.crownK?"−"+Math.round((1-o.crownK)*100)+"%":null]]},
   cooling:{specs:[["Heat rejection",o=>fac(o.cap)],["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
   exhaust:{specs:[
     ["Airflow",o=>o.veBonus?(o.veBonus>0?"+":"")+Math.round(o.veBonus*100)+"%":"standard"],["Backpressure",o=>fac(o.backP)],
