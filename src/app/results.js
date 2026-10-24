@@ -405,7 +405,7 @@ function achShow(){if(achBusy||!achQ.length)return;const a=achQ.shift(),el=$("ac
   setTimeout(()=>{el.classList.remove("on");setTimeout(()=>{achBusy=false;achShow();},350);},achQ.length?2200:3400);}
 function achRefresh(){const s=$("achSet");if(s)s.textContent=achN()+" / "+ACH.length;const c=$("achCnt");if(c)c.textContent=achN()+" / "+ACH.length;}
 function achWhen(e){return e.w!=null?"week "+e.w:new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"});}
-/* Achievements list: a closed fold headed "Achievements n / 83"; inside, a status row (Not yet | Done | All), a scrolling group row and short rows
+/* Achievements list: a closed fold headed "Achievements n / total"; inside, a status row (Not yet | Done | All), a scrolling group row and short rows
    (icon, name with the description behind an (i), a tick and the date or the tier). Eight rows, then "Show all". S.achOpen = fold open, S.achF = status,
    S.achG = group; old saves have none (closed, Not yet, every group). */
 const ACH_CAP=8;
