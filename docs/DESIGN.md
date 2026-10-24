@@ -133,7 +133,6 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 Only things the code or docs themselves flag:
 
 - `docs/fastest-drag-car.md` says it is stale: its build sheets were run on 1.76.21.0 before drivetrain tiers, the rev limiter and the strip's engine-weight rule.
-- The intro copy says "sixty-five base engines" while `PRESETS` holds 96; a comment in `app/results.js` says "Achievements n / 83" while `ACH` holds 85. Copy and comments to tidy, not bugs.
 - `app/salt.js` shows a placeholder line in Analysis while a salt record it has not computed yet is being worked out.
 
 Nothing else is stubbed or marked unfinished in `src/`.

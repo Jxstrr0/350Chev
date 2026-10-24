@@ -85,8 +85,8 @@ When changing physics, run a before/after comparison on the affected events and 
 - Real design decisions get asked, not guessed.
 - The site and the game use the name Kelbo only, never a real name. Studio name: Longlight Interactive.
 
-## Current status (1.76.28.1, October 2026)
+## Current status (1.76.28.2, October 2026)
 
 - Built and live: the whole loop. 19 layouts, 56 part tables (266 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career with contracts, certification, sponsors, crew, R&D, prestige, build bays, rival shops, Legacy, achievements, trophy room, photo mode, sound synth with real recordings, offline PWA, save codes.
-- Known loose ends: `docs/fastest-drag-car.md` is stale (it says so). The intro copy says "sixty-five base engines" while `PRESETS` holds 96, and a comment in `results.js` says 83 achievements while `ACH` holds 85; both are copy, not bugs, but worth a tidy.
+- Known loose ends: `docs/fastest-drag-car.md` is stale (it says so).
 - What to test on a phone after any change: the loading bar finishes and the garage renders on Lite; Build, Test (a dyno pull) and one event run with touch; the results rail opens as a sheet; Back up and Restore round trip; portrait and landscape; no console errors on desktop.
