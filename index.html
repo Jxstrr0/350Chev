@@ -2628,7 +2628,8 @@ const ENGINE_SIM = (function () {
     ice_tank: { name: "Ice-tank charge cooler", sub: "97% eff  one pass", info: "A liquid-to-air core fed from a tank of ice water. It drops the charge to near ambient for one pass, then the ice is gone and it is worse than nothing.", eff: 0.97, dp: 0.05, soak: 3.2, massKg: 28, cost: 3200, req: "race" },
     water_air: { name: "Water-to-air core", sub: "eff 85%  dP 0.04 bar", info: "A compact liquid-cooled core right by the throttle: very effective, with almost no pipework. Over a long session the water heats up and it fades.", eff: 0.85, dp: 0.04, soak: 1.0, massKg: 15, cost: 1300, req: "shop1" },
     a2w_race: { name: "Race water-to-air", sub: "eff 92%  dP 0.03 bar", info: "A big bar-and-plate liquid core with its own front heat exchanger and a high-flow pump. It holds the charge close to ambient at serious boost and fades far less than the compact core.", eff: 0.92, dp: 0.03, soak: 0.6, massKg: 21, cost: 2600, req: "shop2" },
-    wmi: { name: "Race W2A + water-meth", sub: "eff 95%  +4 octane", info: "The race water-to-air core plus a 50/50 water-methanol mist sprayed after it. The mist boils off in the charge, pulling it below what any core can, adds octane and takes some heat out of the combustion before it reaches the coolant. The tank runs dry, and a blocked nozzle at full boost is an expensive noise.", eff: 0.95, dp: 0.04, soak: 0.6, octane: 4, heatK: 0.94, massKg: 30, cost: 3900, req: "race" }
+    wmi: { name: "Race W2A + water-meth", sub: "eff 95%  +4 octane", info: "The race water-to-air core plus a 50/50 water-methanol mist sprayed after it. The mist boils off in the charge, pulling it below what any core can, adds octane and takes some heat out of the combustion before it reaches the coolant. The tank runs dry, and a blocked nozzle at full boost is an expensive noise.", eff: 0.95, dp: 0.04, soak: 0.6, octane: 4, heatK: 0.94, massKg: 30, cost: 3900, req: "race" },
+    wmi_stage: { name: "Race W2A + staged water", sub: "eff 96%  +5 octane  EGT -45 C", info: "The water-meth kit with a second, larger stage that comes in at full load: plain water through a nozzle in every runner. Each cylinder gets its own share, and the water that survives the charge boils off in the burn, so the exhaust leaves about 45 \u00b0C cooler. That is headroom at the turbine and the top ring. It drinks a tank a pass, and a dead pump at full boost is the same expensive noise.", eff: 0.96, dp: 0.04, soak: 0.6, octane: 5, heatK: 0.92, egtC: 45, massKg: 36, cost: 5200, req: "race" }
   };
 
   /* ---- fuels (RON/MON, stoich AFR, LHV, heat of vaporisation) ---- */
@@ -2831,7 +2832,8 @@ const ENGINE_SIM = (function () {
   /* ---- piston cooling jets ---- */
   OPT.oilSquirters = {
     none: { name: "No oil jets", sub: "crown +0 C", info: "Nothing cools the piston from below, so the crown sheds heat through the rings and skirt alone. Fine at modest output.", crownC: 0, oilHeatKw: 0, cost: 0 },
-    fitted: { name: "Piston cooling jets", sub: "crown -40 C  +oil heat", info: "Jets spray oil onto the underside of the crown, worth a serious drop in piston temperature. That heat ends up in the oil.", crownC: 40, oilHeatKw: 1.0, cost: 320, req: "shop1" }
+    fitted: { name: "Piston cooling jets", sub: "crown -40 C  +oil heat", info: "Jets spray oil onto the underside of the crown, worth a serious drop in piston temperature. That heat ends up in the oil.", crownC: 40, oilHeatKw: 1.0, cost: 320, req: "shop1" },
+    twin: { name: "Twin targeted jets", sub: "crown -40 C, rise -5%", info: "Two jets a cylinder, aimed through the skirt at the cooling gallery inlet and the underside of the bowl, on a dedicated gallery with its own pressure valve. On top of what a single jet takes out, the crown runs 5% less hot over the coolant. More oil to the pistons means more heat in the sump.", crownC: 40, crownK: 0.95, oilHeatKw: 1.3, cost: 780, req: "race" }
   };
 
   /* ---- cooling package ---- */
@@ -3895,6 +3897,7 @@ const ENGINE_SIM = (function () {
       if (n2oDry) egt += 900 * Math.max(0, lamE - lamC) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
       if (rot) egt += ROT_EGT + O.rh.egtC;
       if (ts) egt += TS_EGT - (dsl ? 0 : 30 * tm.sc * (1 / tb.te - 1));
+      if (boosted) egt -= O.icc.egtC || 0;                 // staged water boils off in the burn
       egt = clamp(egt, 380, 1150);
       if (ts) tsPipeT = 0.82 * egt;                         // the pipe runs a little cooler than the port: the next rpm's tune
 
@@ -4037,6 +4040,7 @@ const ENGINE_SIM = (function () {
     if (!dsl) crownC += 200 * clamp(lamTop - lamAt(leanRpm), 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
     if (n2oDry) crownC += 1600 * clamp(n2oLeanPk, 0, 0.3) * clamp(n2oBite, 0.25, 1.5);   // a lean nitrous cylinder: the crown edge goes first
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
+    crownC = env.coolantC + (crownC - env.coolantC) * (O.sq.crownK || 1);   // twin jets: the crown runs 5% less hot over the coolant
     if (ts) crownC = env.coolantC + (crownC - env.coolantC) * TS_CROWN * O.scv.crownK;   // a power stroke every turn
     crownC = clamp(crownC, env.coolantC + 40, 900);
     const skirtC = 0.22 * crownC + 0.78 * (env.coolantC + 15);
@@ -4951,7 +4955,7 @@ const ENGINE_SIM = (function () {
       add("bad", "Cast pistons and boost do not mix",
         "A gravity-cast A332 crown holds about 130 MPa at 250 °C and it will be well past that under boost. The failure is a hole melted through the crown between the exhaust valves.");
     }
-    if (cfg.piston === "forged_2618" && cfg.oilSquirters === "fitted") {
+    if (cfg.piston === "forged_2618" && cfg.oilSquirters !== "none") {
       add("good", "2618 plus cooling jets is the boost recipe",
         "2618 keeps ~240 MPa at 250 °C and its high conductivity moves heat to the skirt; oil jets take another 40 °C out of the crown. This is what every serious turbo engine runs.");
     }
@@ -9568,7 +9572,7 @@ const ENGINE_SIM = (function () {
     else if (asp.compound) { wid += 300; hgt += 80; }
     else if (kind === "turbo") wid += (asp.units || 1) > 1 ? 240 : 160;
     else if (kind === "centrifugal") wid += 180;
-    if (cfg.ic === "air_air") len += 90; else if (cfg.ic === "water_air" || cfg.ic === "a2w_race" || cfg.ic === "wmi") hgt += 40;
+    if (cfg.ic === "air_air") len += 90; else if (cfg.ic === "water_air" || cfg.ic === "a2w_race" || cfg.ic === "wmi" || cfg.ic === "wmi_stage") hgt += 40;
     if (dsl) wid += 60;
     return { L: Math.round(len), W: Math.round(wid), H: Math.round(hgt), shape: shape };
   }
@@ -16950,7 +16954,7 @@ function addIntercooler(B, p, extras, boosted, out){
   B.add("palu", CYL(bore*0.09,bore*0.09,bore*0.24,12), pb.x+bore*0.12, pb.y, pb.z, 0,0,PI/2);
   pa=pa.clone().add(V3(bore*0.24,0,0)); pb=pb.clone().add(V3(bore*0.24,0,0));
   var fxH=fx+bore*0.30;                     /* hoses drop ahead of the belt planes (serpentine + blower belt) */
-  if(p.ic==="water_air"||p.ic==="a2w_race"||p.ic==="wmi"){
+  if(p.ic==="water_air"||p.ic==="a2w_race"||p.ic==="wmi"||p.ic==="wmi_stage"){
     var hx=out.fmic ? null : frontCore(0.70, 0.22, false);
     if(hx){
       var hT=hx.y0+hx.h;
@@ -30044,7 +30048,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.28.3";
+const VERSION="1.76.29.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -30564,6 +30568,7 @@ const SPECS={
     ["Removes",o=>o.eff?Math.round(o.eff*100)+"% of charge heat":"nothing"],
     ["Pressure drop",o=>o.dp?Math.round(o.dp*100)+"%":"none"],
     ["Heat soak",o=>o.soak>=1?"soaks quickly":o.soak>0?"soaks slowly":"none"],
+    ["Exhaust",o=>o.egtC?"−"+o.egtC+" °C under boost":null],
     ["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
   fuel:{line:o=>{if(!o.flex||S.cfg.fuel!=="flex")return null;const b=SIM.fuelOf(S.cfg);return "E"+b.ePct+" · "+Math.round(b.ron)+" RON / "+Math.round(b.mon)+" MON";},price:o=>o.flex?OPT.fuel.e85.costL+"–"+OPT.fuel.r91.costL+"/L":o.costL+"/"+(o.unit||"L"),specs:[
     ["Cetane",o=>o.ci?"CN "+o.cetane:null],
@@ -30605,7 +30610,7 @@ const SPECS={
     ["Drag",o=>fac(o.fricFac)],["Cold flow",o=>o.vi>=160?"excellent":o.vi>=145?"good":o.vi>=130?"fair":"poor"]]},
   oilSystem:{specs:[
     ["Holds prime to",o=>x1(o.gLimit)+" g"],["Windage loss",o=>fac(o.windage)],["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
-  oilSquirters:{specs:[["Crown cooling",o=>o.crownC?"−"+o.crownC+" °C":"none"]]},
+  oilSquirters:{specs:[["Crown cooling",o=>o.crownC?"−"+o.crownC+" °C":"none"],["Crown heat rise",o=>o.crownK?"−"+Math.round((1-o.crownK)*100)+"%":null]]},
   cooling:{specs:[["Heat rejection",o=>fac(o.cap)],["Weight",o=>o.massKg?"+"+o.massKg+" kg":null]]},
   exhaust:{specs:[
     ["Airflow",o=>o.veBonus?(o.veBonus>0?"+":"")+Math.round(o.veBonus*100)+"%":"standard"],["Backpressure",o=>fac(o.backP)],
@@ -37145,7 +37150,7 @@ const LESSONS=[
   {tab:"build",sel:'[data-k="asp"]',up:1,lbl:1,title:"Ways to force air in",text:"A single turbo, twin turbos, a Roots blower, a centrifugal, a twin-screw, or a turbo and blower compounded. Turbos run on exhaust energy and spool late; blowers are belt-driven, instant and cost power to turn. This 2JZ runs a pair of parallel turbos."},
   {tab:"build",sel:'[data-k="turboSize"]',up:1,lbl:1,title:"Sizing",text:"A small turbo spools early and runs out of flow up top; a large one makes the big number and does nothing below 4,000 rpm. The stress report's Compressor flow line tells you when the turbo has run out of map."},
   {tab:"build",sel:"#r-boost",up:1,lbl:1,title:"Boost",text:"Pressure above atmospheric, in bar. More boost is more air, more power and more heat and cylinder pressure, all at once. Every half bar wants more fuel, a stronger bottom end and a colder charge."},
-  {tab:"build",sel:'[data-k="ic"]',up:1,lbl:1,title:"Cool the charge",text:"Compressed air is hot air. An air-to-air core, a water-to-air core, an ice tank for the strip, a race water-to-air, or water-methanol injection. A colder charge is denser and further from detonation, so the intercooler decides how much boost the fuel can stand."},
+  {tab:"build",sel:'[data-k="ic"]',up:1,lbl:1,title:"Cool the charge",text:"Compressed air is hot air. An air-to-air core, a water-to-air core, an ice tank for the strip, a race water-to-air, water-methanol injection, or staged water that also cools the exhaust. A colder charge is denser and further from detonation, so the intercooler decides how much boost the fuel can stand."},
   {tab:"build",sel:'[data-info="fuel"]',up:1,title:"Fuel and octane",text:"Boost raises cylinder pressure, and pressure is what makes the charge knock. Pump fuel runs out of octane around a bar; E85, race fuel and methanol take more boost before they detonate. The Detonation margin line in the stress report is the number to watch."},
   {tab:"build",sel:"#r-lambda",up:1,lbl:1,title:"Mixture under boost",text:"Boosted engines run rich at full load, around 0.80 to 0.85 lambda, because the extra fuel cools the chamber. Lean it out for power and the detonation margin goes first, then the pistons."},
   {tab:"build",sel:'[data-k="injectors"]',up:1,lbl:1,title:"Feed it",text:"Injectors and the pump have to supply the fuel the boost demands. Past about 90% injector duty the engine leans out at the top of the pull, which is where it is hottest. The Fuel delivery line in the stress report says how much is in hand."},

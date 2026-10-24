@@ -782,6 +782,7 @@
       if (n2oDry) egt += 900 * Math.max(0, lamE - lamC) * Math.min(1, 4 * n2oFrac);   // lean on the bottle
       if (rot) egt += ROT_EGT + O.rh.egtC;
       if (ts) egt += TS_EGT - (dsl ? 0 : 30 * tm.sc * (1 / tb.te - 1));
+      if (boosted) egt -= O.icc.egtC || 0;                 // staged water boils off in the burn
       egt = clamp(egt, 380, 1150);
       if (ts) tsPipeT = 0.82 * egt;                         // the pipe runs a little cooler than the port: the next rpm's tune
 
@@ -924,6 +925,7 @@
     if (!dsl) crownC += 200 * clamp(lamTop - lamAt(leanRpm), 0, 0.35); // a starved rail leans the cylinders unevenly; the worst one melts
     if (n2oDry) crownC += 1600 * clamp(n2oLeanPk, 0, 0.3) * clamp(n2oBite, 0.25, 1.5);   // a lean nitrous cylinder: the crown edge goes first
     crownC *= (1 - 0.05 * (O.block.k > 100 ? 1 : 0));
+    crownC = env.coolantC + (crownC - env.coolantC) * (O.sq.crownK || 1);   // twin jets: the crown runs 5% less hot over the coolant
     if (ts) crownC = env.coolantC + (crownC - env.coolantC) * TS_CROWN * O.scv.crownK;   // a power stroke every turn
     crownC = clamp(crownC, env.coolantC + 40, 900);
     const skirtC = 0.22 * crownC + 0.78 * (env.coolantC + 15);

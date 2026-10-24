@@ -59,7 +59,7 @@
       add("bad", "Cast pistons and boost do not mix",
         "A gravity-cast A332 crown holds about 130 MPa at 250 °C and it will be well past that under boost. The failure is a hole melted through the crown between the exhaust valves.");
     }
-    if (cfg.piston === "forged_2618" && cfg.oilSquirters === "fitted") {
+    if (cfg.piston === "forged_2618" && cfg.oilSquirters !== "none") {
       add("good", "2618 plus cooling jets is the boost recipe",
         "2618 keeps ~240 MPa at 250 °C and its high conductivity moves heat to the skirt; oil jets take another 40 °C out of the crown. This is what every serious turbo engine runs.");
     }
