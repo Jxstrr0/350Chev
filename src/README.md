@@ -31,7 +31,8 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | file | what is in it |
 |---|---|
 | `html/head.html` | doctype, inline critical style (+ the loading splash CSS), `<title>`, the `#boot` loading splash + its loader script (`__ld`, `__ldGo`, `__ldDone`), fonts (non-blocking), the `<style>` line |
-| `css/style.css` | all of the page CSS: theme vars, layout, desktop `html.desk`, HUDs, timing slip, race-night ladder |
+| `css/style.css` | the base page CSS: theme vars, layout, desktop `html.desk`, HUDs, timing slip, race-night ladder |
+| `css/ui-head.css`, `ui-help.css`, `ui-build.css`, `photo.css`, `ui-shop.css`, `ui-career.css`, `ui-pwa.css`, `ui-perf.css`, `ui-evtabs.css`, `ui-market.css`, `ui-folds.css`, `ui-analysis.css` | one CSS lane per feature, in manifest order after `oval.css`; each starts with a comment saying what it styles (header icon buttons, the ⓘ help folds, the Build tab, photo mode, the sandbox Shop, career cards, the update bar, the live Events tile, the Events chip picker, the Market tab, Settings folds, the Analysis tab) |
 | `css/oval.css` | the dirt oval's track map, night ladder and run strip / buttons wired like the hillclimb's |
 | `html/body.html` | `</style>`, all of the markup (`#app`, `#view`, tabs, panels, sheets), three.js r128 CDN script tags |
 | `html/ld-libs.html`, `ld-sim.html`, `ld-sound.html`, `ld-samples.html`, `ld-vis.html` | one-line `<script>__ld(fraction,"message")</script>` steps of the loading bar, each listed in the manifest right after the script block it reports (three.js tags, sim, sound, samples, vis). `__ldGo`/`__ldDone` are called from `app/boot.js`. |
@@ -100,6 +101,40 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/pwa.js` | PWA: service worker registration (https non-localhost, or `?sw=1`; never file://), the "New version ready — Reload" bar (`css/ui-pwa.css`), Settings › App: Install app / iOS Add to Home Screen tip |
 | `app/boot.js` | sound & idle, sound bench (AB), `tick`, tabs `showTab`, desktop layout, tooltips, keyboard, `boot`/`start`, `</script>` |
 | `html/end.html` | `</body></html>` (no trailing newline) |
+
+Files added after the map above was written (their place in the order is in `manifest.txt`; each file's opening comment says more):
+
+| file | what is in it |
+|---|---|
+| `sim/boat.js` | boat drags: 1,000 ft of river, prop or jet pump, hump then plane, wind and chop; BOAT_CLASSES/HULLS, `boatRun`, `boatPass` |
+| `sim/swap.js` | engine swaps: the VEHICLES catalogue (20 cars in 5 groups), `engineDims`, `swapFit`, SWAP_FIX; shared by road, drag, salt and the 24 Hours |
+| `vis/engdetail.js` | 7g. engine detail for Full / Ultra: coolant plumbing, MAP sensor, senders, flange bolts |
+| `vis/strip-ground.js` | drag cars grounded: contact-shadow decals and tyre patches under each car |
+| `vis/bog-trucks.js` | one real-size truck per mud bog class |
+| `vis/bog-fx.js` | the bog's mud: clods, spray, rooster tails, splats |
+| `vis/boat.js` | boat drags scene: the river course, water shader, both boats |
+| `vis/salt-cars.js` | the Bonneville cars (altered, roadster, lakester, streamliner) |
+| `vis/salt-look.js` | salt flats light, mountains, heat shimmer / mirage post pass |
+| `vis/salt-event.js` | Speed Week: the pit town, return road, spectators |
+| `vis/hill-lod.js` | Pikes Peak culling and LOD for Lite and Ultra |
+| `vis/band.js` | the run view HUD band every event but the strip reports to the 3D view |
+| `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
+| `vis/props.js` | 8b. workshop polish for Full / Ultra: floor details, props, lamps |
+| `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |
+| `vis/photo.js` | photo mode camera, lighting and backdrop presets, still frame out |
+| `app/boat.js` | boat drags UI (BT): eight-boat ladder nights |
+| `app/runview.js` | the run view: `html.onevent`, the big 3D view and HUD band during every event |
+| `app/swap.js` | Build > Swap: pick a car, read the fit, buy the fixes |
+| `app/rivals.js` | the three rival shops, the reputation board, head-to-head challenges |
+| `app/legacy.js` | Legacy: sell the shop at Legend rep, points and perks under `pew2-legacy` |
+| `app/crew.js` | crew progression: named staff with levels 1 to 5, traits, morale |
+| `app/bays.js` | build bays C and D: a lead builds a contract in the background |
+| `app/trophy.js` | the trophy room's dated log of wins per mode |
+| `app/photo.js` | photo mode controls, gestures, capture and share, the build sheet card |
+| `app/rail.js` | the results rail: a third column on desktop, a peek sheet over the tab bar on a phone |
+| `app/shopsb.js` | the sandbox Shop: bench and parts catalogue |
+| `app/folds.js` | Settings folds and Dyno day rows, open state remembered in `S.folds` |
+| `app/perf.js` | auto-adjust graphics: steps one tier down (ultra > full > lite) when the frame rate stays low |
 
 To find code, grep `src/`: `grep -rn "function pullRun" src/`.
 

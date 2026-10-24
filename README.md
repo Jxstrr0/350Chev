@@ -10,7 +10,7 @@ It runs on phones and desktops. Install it from the browser ("Add to Home Screen
 
 - **Build:** layout, bore and stroke, heads, cams, induction, boost, fuel, exhaust and materials, with a 3D engine that follows your choices.
 - **Test:** dyno pulls, endurance runs to failure and over-rev tests.
-- **Events:** the drag strip, truck and tractor pulls, mud bogs, boat drags, the salt flats, a road test, the Pikes Peak hill climb, a dirt oval, the 24 Hours of Prairie Sky endurance race, and swap jobs that put your engine in someone else's car.
+- **Events:** the drag strip, truck and tractor pulls, mud bogs, boat drags, the salt flats, a road test (a track day in career), the Pikes Peak hill climb, a dirt oval, the 24 Hours of Prairie Sky endurance race, and swap jobs that put your engine in someone else's car.
 - **Analysis:** material and combo interactions, telemetry and the engineer's notes.
 - **Career:** run the shop. Certify engines, sell them on the market, hire crew and buy upgrades.
 - **Sound:** a live engine synth, optionally blended with real recordings (credits in [`sounds/CREDITS.md`](sounds/CREDITS.md)).
@@ -18,7 +18,7 @@ It runs on phones and desktops. Install it from the browser ("Add to Home Screen
 
 ## Working on it
 
-There are no dependencies and no package.json, only node (14 or newer).
+There are no dependencies and no package.json, only node (16 or newer).
 
 - `index.html` and `sw.js` are generated. Edit the files in `src/`, then rebuild:
 
@@ -30,6 +30,7 @@ There are no dependencies and no package.json, only node (14 or newer).
 
 - [`src/README.md`](src/README.md) has the file map and the build details.
 - [`CLAUDE.md`](CLAUDE.md) has the project rules: versions, commits, and how to run the physics in node.
+- [`docs/DESIGN.md`](docs/DESIGN.md) describes the game as built: the loop, the screens, every system and the content counts.
 - To play a local copy, serve the folder with any static file server (for example `python3 -m http.server`) and open it in a browser.
 
 GitHub Pages serves `index.html` from `main`.
