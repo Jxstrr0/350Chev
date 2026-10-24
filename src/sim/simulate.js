@@ -1005,7 +1005,7 @@
 
     // --- compressor / turbine ---
     const pd = bm.kind === "roots" || bm.kind === "screw";
-    const compCap = boosted && !pd ? O.ts.maxFlow * bm.units * (bm.compound ? 1.35 : 1) * (bm.kind === "centrifugal" ? 1.35 : 1) : 999;   // a centrifugal head unit of a given wheel size flows a little more than the same turbo wheel (no turbine back-pressure)
+    const compCap = boosted && !pd ? O.ts.maxFlow * bm.units * (bm.compound ? 1.42 : 1) * (bm.kind === "centrifugal" ? 1.35 : 1) : 999;   // a centrifugal head unit of a given wheel size flows a little more than the same turbo wheel (no turbine back-pressure)
     const compUtil = boosted ? (pd ? 0.55 : maxFlowLb / compCap) : 0.15;
     const turbUtil = (bm.kind === "turbo") ? maxEgt / O.tm.maxEgtC : (boosted ? 0.35 : 0.15);
 
