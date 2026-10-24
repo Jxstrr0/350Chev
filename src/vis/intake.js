@@ -754,7 +754,7 @@ function addIntercooler(B, p, extras, boosted, out){
   B.add("palu", CYL(bore*0.09,bore*0.09,bore*0.24,12), pb.x+bore*0.12, pb.y, pb.z, 0,0,PI/2);
   pa=pa.clone().add(V3(bore*0.24,0,0)); pb=pb.clone().add(V3(bore*0.24,0,0));
   var fxH=fx+bore*0.30;                     /* hoses drop ahead of the belt planes (serpentine + blower belt) */
-  if(p.ic==="water_air"||p.ic==="a2w_race"||p.ic==="wmi"){
+  if(p.ic==="water_air"||p.ic==="a2w_race"||p.ic==="wmi"||p.ic==="wmi_stage"){
     var hx=out.fmic ? null : frontCore(0.70, 0.22, false);
     if(hx){
       var hT=hx.y0+hx.h;

@@ -90,7 +90,7 @@
     else if (asp.compound) { wid += 300; hgt += 80; }
     else if (kind === "turbo") wid += (asp.units || 1) > 1 ? 240 : 160;
     else if (kind === "centrifugal") wid += 180;
-    if (cfg.ic === "air_air") len += 90; else if (cfg.ic === "water_air" || cfg.ic === "a2w_race" || cfg.ic === "wmi") hgt += 40;
+    if (cfg.ic === "air_air") len += 90; else if (cfg.ic === "water_air" || cfg.ic === "a2w_race" || cfg.ic === "wmi" || cfg.ic === "wmi_stage") hgt += 40;
     if (dsl) wid += 60;
     return { L: Math.round(len), W: Math.round(wid), H: Math.round(hgt), shape: shape };
   }

@@ -48,7 +48,7 @@ Content in the sim:
 | Table | Count | What |
 |---|---|---|
 | `LAYOUTS` | 19 | single, parallel twin, inline 3 to 6, V4, V6, V8 crossplane, V8 flat-plane, V10, V12, flat 4, flat 6, 1- to 4-rotor Wankels, the Deltic triangle (two-stroke only) |
-| `OPT` | 56 tables, 266 options | every part choice: block and head materials, pistons, rings, rods, cranks, bearings, valves, springs, intakes, 7 aspiration types, 7 turbo sizes, 15 fuels, injectors, pumps, diesel hardware, rotary ports and seals, two-stroke scavenging and pipes, oil, cooling, exhaust, mufflers, launch control, 6 finishes |
+| `OPT` | 56 tables, 268 options | every part choice: block and head materials, pistons, rings, rods, cranks, bearings, valves, springs, intakes, 7 aspiration types, 7 turbo sizes, 15 fuels, injectors, pumps, diesel hardware, rotary ports and seals, two-stroke scavenging and pipes, oil, cooling, exhaust, mufflers, launch control, 6 finishes |
 | `PRESETS` | 96 | base engines modelled on real ones, with their fuel |
 | `combos()` | n/a | the material and part interactions shown in Analysis, with two-stroke and rotary variants |
 | tune map | n/a | `mapAxis`, `mapGrid`, `mapAutoTune` and friends: a dyno tune map by rpm and load |
@@ -110,7 +110,7 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | What | Count | Source |
 |---|---|---|
 | Engine layouts | 19 | `LAYOUTS` |
-| Part tables / options | 56 / 266 | `OPT` |
+| Part tables / options | 56 / 268 | `OPT` |
 | Config settings on a build | 73 | `DEFAULT_CFG` |
 | Build form groups | 14 | `FORM` |
 | Base engines | 96 | `PRESETS` |
