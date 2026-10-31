@@ -14,3 +14,17 @@
 #pitBox .log .good{color:var(--good)}
 #pitBox .log .bad{color:var(--crit)}
 #sandboxBox.pit .sbhead{display:none}
+/* the season: budget bar, standings table, season-over card */
+#pitBox .pcbud{margin:6px 0}
+#pitBox .pcbar{height:8px;border-radius:4px;background:var(--soot);overflow:hidden}
+#pitBox .pcbar i{display:block;height:100%;background:var(--orange)}
+#pitBox .pcbad{color:var(--crit)}
+#pitBox .pctab{font-size:13px;margin:4px 0 8px}
+#pitBox .pctab div{display:grid;grid-template-columns:2em 1fr auto;gap:6px;padding:3px 0;border-bottom:1px dashed var(--rule)}
+#pitBox .pctab div:last-child{border:0}
+#pitBox .pctab .me{color:var(--orange);font-weight:600}
+#pitBox .pcl .good{color:var(--good)}
+#pitBox .pcl .bad{color:var(--crit)}
+#pitBox .pcend{margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--soot)}
+#pitBox .pcend.win{outline:1px solid var(--good)}
+#pitBox .pcend h3{margin:0 0 4px}

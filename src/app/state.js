@@ -216,7 +216,7 @@ const SITES={
 
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.31.0";
+const VERSION="1.76.32.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
@@ -275,7 +275,7 @@ function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?JSON.
 function writeSlot(i){try{const o=snapshot();o.savedAt=Date.now();localStorage.setItem(slotKey(i),JSON.stringify(o));return true;}catch(e){return false;}}
 function clearSlot(i){try{localStorage.removeItem(slotKey(i));}catch(e){}}
 function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt):null;const when=d?d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-CA",{hour:"2-digit",minute:"2-digit"}):"";
-  const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:o.mode==="pit"?`Pit Crew · wk ${o.pit?.week??1} · ${fmt$(o.pit?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
+  const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:o.mode==="pit"?`Pit Crew · season ${o.pit?.season??1} · ${fmt$(o.pit?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
 function decodeSave(t){t=(t||"").trim();if(t.startsWith("PEW2:"))t=t.slice(5);const o=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,"")))));if(!o||!o.cfg)throw new Error("bad");return o;}
 function renderSaves(){const box=$("slots");if(!box)return;let h="";for(let i=1;i<=SLOTS;i++){const o=readSlot(i);h+=`<div class="slot ${o?"full":""}"><div><h3>Slot ${i}${o?"":"<small>empty</small>"}</h3><p>${slotSummary(o)}</p></div><div class="acts"><button class="pri" data-save="${i}">Save</button><button data-load="${i}" ${o?"":"disabled"}>Load</button><button class="del" data-clear="${i}" ${o?"":"disabled"}>Clear</button></div></div>`;}box.innerHTML=h;}
 function applyLoaded(o,msg){if(testing){toast("Let the run finish first");return;}if(!hydrate(o)){toast("That save didn't read right.");return;}save();curTab="shop";boot();toast(msg);}
@@ -421,7 +421,7 @@ function engineStatus(cfg,res){const h=cfgHash(cfg);
   if(res.fails&&res.fails.length)return (S.ranH||[]).includes(h)?{cls:"bad",txt:"✗ BREAKS"}:{cls:"",txt:"○ NOT RUN YET",nr:true};
   if(career()){const inField=C().fleet.filter(f=>f.hash===h&&C().week-f.week<=10).reduce((a,f)=>a+f.units,0);if(inField)return{cls:"fld",txt:`◆ ${inField} IN FIELD`};
     const c=C().cert;if(c&&c.hash===h&&c.ok)return{cls:"ok",txt:"✓ CERTIFIED"};return{cls:"",txt:"○ UNCERTIFIED"};}
-  if(pcMode()){const R=pcJob();if(!R||h!==cfgHash(S.cfg))return{cls:"ok",txt:"● PIT CREW"};const F=pcFirst(R).toUpperCase();return pcChecks(R).ok?{cls:"ok",txt:`✓ READY FOR ${F}`}:Math.round(res.cost)>R.budget?{cls:"bad",txt:"✗ OVER BUDGET"}:{cls:"",txt:`○ FOR ${F}`};}
+  if(pcMode()){const T=pcTeam();if(!T||h!==cfgHash(S.cfg))return{cls:"ok",txt:"● PIT CREW"};const c=pcChecks(T),n=T.round+1;return c.ok?{cls:"ok",txt:`✓ READY FOR ROUND ${n}`}:c.need>pcLeft(T)?{cls:"bad",txt:"✗ OVER BUDGET"}:{cls:"",txt:`○ ROUND ${n}`};}
   return{cls:"ok",txt:"● TEST CELL"};}
 function engineCard(cfg,res,o){o=o||{};const st=engineStatus(cfg,res);const name=o.name||engineName();
   const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${st.nr?"—":Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
