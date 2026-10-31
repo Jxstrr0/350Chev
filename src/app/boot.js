@@ -151,7 +151,7 @@ document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",
    on every tab, across sessions. */
 let miniView=false;
 function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);if(miniView)$("app").classList.remove("peek");if(typeof detentLabel==="function")detentLabel();$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
-$("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;save();buzz(8);});
+$("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;S.viewPeek=false;save();buzz(8);});
 /* ===================== GESTURES (UI-GLASS-PLAN PR 5) =====================
    Phone layout only (html.desk keeps the mouse and keyboard exactly as they were), touch and pen only, pointer events throughout.
    1. Swipe the panel sideways to move to the next or previous tab (same path as a tab tap or the 1-6 keys), with a light rubber band
@@ -197,7 +197,7 @@ document.addEventListener("click",e=>{if(Date.now()<swipeSkipClick){e.preventDef
 /* panel heights */
 const DETENTS=["half","tall","peek"];   // tap order; "tall" = a tall panel under the small engine view
 function detentNow(){return miniView?"tall":$("app").classList.contains("peek")?"peek":"half";}
-function detentSet(d){setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";detentLabel();}
+function detentSet(d){setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";S.viewPeek=d==="peek";detentLabel();}   // both saved with S, so the panel comes back at the height it was left
 function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Panel height: "+detentNow()+". Tap or drag to change");}
 (function detentInit(){const g=$("pgrab"),v=$("view"),app=$("app");if(!g)return;
   let d=null,moved=false,swallow=0;
@@ -369,7 +369,7 @@ function boot(){
   advSet($("abSec"),!!(S.advOpen&&S.advOpen.ab));
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
   if(typeof lgBoot==="function")lgBoot();

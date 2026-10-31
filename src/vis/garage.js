@@ -67,12 +67,13 @@ function buildGarageMesh(owned){
 function extrasPush(arr){ return function(o){ arr.push(o); }; }
 
 /* ---- the workshop monitor ----
-   A screen on a rolling stand behind and left of the engine stand, as the opening camera sees it, far enough out that the orbiting
-   camera passes inside it. The app draws the picture on its own canvas (the live dyno curve, the last result, or the shop's name) and
+   A screen on a low rolling stand behind and left of the engine stand, as the opening camera sees it: low and to the left so a phone in
+   portrait sees it between the top buttons and the engine card, near enough the middle that the narrow desktop view keeps it in frame.
+   Its top (about 6.3) sits below the lowest the orbiting camera goes (the target height), so the camera passes over it. The app draws the picture on its own canvas (the live dyno curve, the last result, or the shop's name) and
    hands it over with ENGINE_VIS.setScreen; this side only uploads that canvas as a texture when told it changed. The stand and bezel
    merge with the room; the screen is one plane of its own sharing MAT.dynoLive, so a garage rebuild keeps the picture.
    The career dyno console (buildUpgrades) shows the same texture. */
-var SCREEN_SPOT={x:-13.5, z:-10.8, ry:0.72, y:9.0, w:8.0, h:4.0};   /* centre on the floor, turn, screen height and size */
+var SCREEN_SPOT={x:-11.5, z:-5.5, ry:0.97, y:4.3, w:8.0, h:4.0};   /* centre on the floor, turn, screen height and size */
 /* Ultra only, during a dyno pull: the camera eases toward the monitor (look: share of the way the aim swings to it, push: units the camera
    moves toward it, fov: degrees narrower, ease: 1/s, minDot: how squarely ahead of the camera the monitor must be (cosine), or the move is skipped for that pull) */
 var SCREEN_DOLLY={look:0.32, push:2.6, fov:-5, ease:1.4, minDot:0.55};
