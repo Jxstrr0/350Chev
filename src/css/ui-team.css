@@ -27,3 +27,8 @@
 #mkTeam .pcend{margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--soot)}
 #mkTeam .pcend.win{outline:1px solid var(--good)}
 #mkTeam .pcend h3{margin:0 0 4px}
+/* the round's forecast, the engine's place on power, and the mid-season beat (1.76.35) */
+#mkTeam .pcwx{color:var(--info)}
+#mkTeam .pcread{color:var(--chalk)}
+#mkTeam .pcmid{font-size:13px;line-height:1.45;margin:6px 0;padding:6px 10px;border-radius:8px;border:1px solid var(--orange);background:var(--soot)}
+#mkTeam .pcmid i{display:block;font-style:normal;color:var(--muted);margin-top:2px}
