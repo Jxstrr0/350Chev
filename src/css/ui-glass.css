@@ -206,3 +206,33 @@ html.noglass:not(.desk) #panel{box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 
 @keyframes glassshake{20%{transform:translate3d(-4px,0,0)}40%{transform:translate3d(4px,1px,0)}60%{transform:translate3d(-3px,-1px,0)}80%{transform:translate3d(2px,0,0)}}
 /* the rims flash white for a beat */
 html.glassflash:not(.desk) #panel,html.glassflash:not(.desk) #tabs,html.glassflash .hudbtns>button,html.glassflash:not(.desk) #rail{box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 0 16px rgba(255,255,255,.35)}
+/* ===================== GESTURES (UI-GLASS-PLAN PR 5) =====================
+   Swipe between tabs (app/boot.js), the panel-height grabber on the panel's top lip, and the long-press compare card (app/build.js).
+   Touch-action is set per element: the panel hands sideways drags to the swipe and keeps vertical ones for scrolling, the grabber
+   takes everything, and a row that scrolls sideways keeps pan-x. The grabber is a zero-height flex item between the view and the
+   panel; its pill and its (bigger) touch area are pseudo-elements hanging up over the panel's lip. Phone layout only. */
+#pgrab{display:none}
+html:not(.desk) #pgrab{display:block;position:relative;flex:0 0 0;height:0;width:100%;padding:0;border:0;background:none;z-index:4;overflow:visible;touch-action:none;-webkit-user-select:none;user-select:none}
+html.onevent #pgrab,html.photo #pgrab,html.troom #pgrab,#app.td #pgrab,#app.pits #pgrab{display:none}
+#pgrab::before{content:"";position:absolute;left:50%;top:-22px;width:150px;height:40px;translate:-50% 0}
+#pgrab::after{content:"";position:absolute;left:50%;top:-15px;width:40px;height:5px;border-radius:3px;translate:-50% 0;background:rgba(255,255,255,.4);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:background .15s,width .15s}
+:root[data-theme=light] #pgrab::after{background:rgba(20,20,19,.3);box-shadow:none}
+#pgrab.drag::after,#pgrab:active::after{width:52px;background:rgba(255,255,255,.75)}
+:root[data-theme=light] #pgrab.drag::after,:root[data-theme=light] #pgrab:active::after{background:rgba(20,20,19,.55)}
+#pgrab:focus-visible{outline:0}#pgrab:focus-visible::after{outline:2px solid var(--orange2);outline-offset:3px}
+html:not(.desk) #panel{touch-action:pan-y}
+html:not(.desk) #panel .seg,html:not(.desk) #panel [data-noswipe]{touch-action:pan-x pan-y}
+/* peek: a tall engine view over a short panel. Outranks the per-tab 200 px view rule; not in a run scene or teardown */
+html[data-tab]:not(.desk):not(.onevent) #app.peek:not(.mini):not(.td):not(.pits) #view{flex-basis:62%;min-height:260px}
+#buildForm .seg button{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* long-press compare card: a glass popover above the pressed option (the .glass class gives blur, rim and shine; the strong tint keeps text readable) */
+#cmpPop{position:fixed;z-index:75;width:min(284px,calc(100vw - 20px));padding:12px 14px 10px;border-radius:22px;background:var(--glass-bg-strong);color:var(--chalk);pointer-events:none;font-size:13px;line-height:1.35}
+#cmpPop .ch{display:flex;flex-direction:column;margin-bottom:6px}#cmpPop .ch b{font-family:var(--display);font-size:16px;line-height:1.2}#cmpPop .ch small{color:var(--muted);font-size:12px}
+#cmpPop .cr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 10px;align-items:baseline;padding:3px 0;border-top:1px solid var(--rule)}
+#cmpPop .cr span{color:var(--muted)}#cmpPop .cr b{font-family:var(--mono);font-weight:500;font-size:12px;text-align:right}
+#cmpPop .cr i{font-style:normal;font-family:var(--mono);font-size:12px;min-width:44px;text-align:right;color:var(--dim)}
+#cmpPop .cr i.up{color:var(--good)}#cmpPop .cr i.dn{color:var(--crit)}
+#cmpPop .cr.cp b{grid-column:2/4}
+#cmpPop .cw{margin-top:6px;color:var(--warn);font-size:12px}
+@media (prefers-reduced-motion:no-preference){#cmpPop{animation:cmpin .16s cubic-bezier(.34,1.4,.64,1)}}
+@keyframes cmpin{from{opacity:0;transform:scale(.92)}}

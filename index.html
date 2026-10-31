@@ -2070,6 +2070,36 @@ html.noglass:not(.desk) #panel{box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 
 @keyframes glassshake{20%{transform:translate3d(-4px,0,0)}40%{transform:translate3d(4px,1px,0)}60%{transform:translate3d(-3px,-1px,0)}80%{transform:translate3d(2px,0,0)}}
 /* the rims flash white for a beat */
 html.glassflash:not(.desk) #panel,html.glassflash:not(.desk) #tabs,html.glassflash .hudbtns>button,html.glassflash:not(.desk) #rail{box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 0 16px rgba(255,255,255,.35)}
+/* ===================== GESTURES (UI-GLASS-PLAN PR 5) =====================
+   Swipe between tabs (app/boot.js), the panel-height grabber on the panel's top lip, and the long-press compare card (app/build.js).
+   Touch-action is set per element: the panel hands sideways drags to the swipe and keeps vertical ones for scrolling, the grabber
+   takes everything, and a row that scrolls sideways keeps pan-x. The grabber is a zero-height flex item between the view and the
+   panel; its pill and its (bigger) touch area are pseudo-elements hanging up over the panel's lip. Phone layout only. */
+#pgrab{display:none}
+html:not(.desk) #pgrab{display:block;position:relative;flex:0 0 0;height:0;width:100%;padding:0;border:0;background:none;z-index:4;overflow:visible;touch-action:none;-webkit-user-select:none;user-select:none}
+html.onevent #pgrab,html.photo #pgrab,html.troom #pgrab,#app.td #pgrab,#app.pits #pgrab{display:none}
+#pgrab::before{content:"";position:absolute;left:50%;top:-22px;width:150px;height:40px;translate:-50% 0}
+#pgrab::after{content:"";position:absolute;left:50%;top:-15px;width:40px;height:5px;border-radius:3px;translate:-50% 0;background:rgba(255,255,255,.4);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:background .15s,width .15s}
+:root[data-theme=light] #pgrab::after{background:rgba(20,20,19,.3);box-shadow:none}
+#pgrab.drag::after,#pgrab:active::after{width:52px;background:rgba(255,255,255,.75)}
+:root[data-theme=light] #pgrab.drag::after,:root[data-theme=light] #pgrab:active::after{background:rgba(20,20,19,.55)}
+#pgrab:focus-visible{outline:0}#pgrab:focus-visible::after{outline:2px solid var(--orange2);outline-offset:3px}
+html:not(.desk) #panel{touch-action:pan-y}
+html:not(.desk) #panel .seg,html:not(.desk) #panel [data-noswipe]{touch-action:pan-x pan-y}
+/* peek: a tall engine view over a short panel. Outranks the per-tab 200 px view rule; not in a run scene or teardown */
+html[data-tab]:not(.desk):not(.onevent) #app.peek:not(.mini):not(.td):not(.pits) #view{flex-basis:62%;min-height:260px}
+#buildForm .seg button{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* long-press compare card: a glass popover above the pressed option (the .glass class gives blur, rim and shine; the strong tint keeps text readable) */
+#cmpPop{position:fixed;z-index:75;width:min(284px,calc(100vw - 20px));padding:12px 14px 10px;border-radius:22px;background:var(--glass-bg-strong);color:var(--chalk);pointer-events:none;font-size:13px;line-height:1.35}
+#cmpPop .ch{display:flex;flex-direction:column;margin-bottom:6px}#cmpPop .ch b{font-family:var(--display);font-size:16px;line-height:1.2}#cmpPop .ch small{color:var(--muted);font-size:12px}
+#cmpPop .cr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 10px;align-items:baseline;padding:3px 0;border-top:1px solid var(--rule)}
+#cmpPop .cr span{color:var(--muted)}#cmpPop .cr b{font-family:var(--mono);font-weight:500;font-size:12px;text-align:right}
+#cmpPop .cr i{font-style:normal;font-family:var(--mono);font-size:12px;min-width:44px;text-align:right;color:var(--dim)}
+#cmpPop .cr i.up{color:var(--good)}#cmpPop .cr i.dn{color:var(--crit)}
+#cmpPop .cr.cp b{grid-column:2/4}
+#cmpPop .cw{margin-top:6px;color:var(--warn);font-size:12px}
+@media (prefers-reduced-motion:no-preference){#cmpPop{animation:cmpin .16s cubic-bezier(.34,1.4,.64,1)}}
+@keyframes cmpin{from{opacity:0;transform:scale(.92)}}
 </style>
 
 <div id="app">
@@ -2102,6 +2132,7 @@ html.glassflash:not(.desk) #panel,html.glassflash:not(.desk) #tabs,html.glassfla
       <div class="tdbtns"><button class="btn sm ghost" id="tdSpin" aria-pressed="false">Rotate</button><button class="btn sm pri" id="tdBack">Back to the engine</button></div></div>
   </div>
 
+  <button id="pgrab" aria-label="Panel height: half. Tap or drag to change"></button>
   <div id="panel">
     <!-- BUILD -->
     <section class="tabpage on" id="tab-build">
@@ -30282,7 +30313,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.39.0";
+const VERSION="1.76.40.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -30593,7 +30624,7 @@ $("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");i
 /* live deltas: what each option would do to hp / reliability / unit cost, from a real simulate() call (cached) */
 const deltaCache=new Map();
 function probe(k,v){const key=cfgHash(S.cfg)+"|"+envHash()+"|"+k+"="+v;let r=deltaCache.get(key);if(r)return r;
-  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel),S.cfg.fuel);clampCfgLimits(cfg);const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
+  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel),S.cfg.fuel);clampCfgLimits(cfg);const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,kg:q.kg,fails:q.fails.length};
   if(deltaCache.size>1500)deltaCache.clear();deltaCache.set(key,r);return r;}
 const money=n=>{const a=Math.abs(n);return (n<0?"−$":"+$")+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+"k":String(Math.round(a)));};
 function fmtDelta(r,base){if(!base)return"";const dh=Math.round(r.hp-base.peakHp),dr=Math.round(r.rel-base.rel),dc=Math.round(r.cost-base.cost);
@@ -30690,6 +30721,45 @@ $("buildForm").addEventListener("click",e=>{
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
   applyOpt(b.dataset.k,b.dataset.v);});
+/* ---- long-press compare (UI-GLASS-PLAN PR 5): hold a part option (Build segments, or an option in a parts sheet) for ~450 ms and a glass
+   card shows it against the fitted part: peak power, reliability, build cost and weight, from the same probe() the delta line uses.
+   Let go to close it. Touch and pen only (a mouse has the tooltips); moving more than 8 px or scrolling cancels; the click that
+   follows is swallowed so the part is not fitted. */
+const CMP_MS=450,CMP_SLOP=8;
+let cmpEl=null,cmpTimer=0,cmpDown=null,cmpEat=0;
+function cmpHide(){clearTimeout(cmpTimer);cmpTimer=0;cmpDown=null;if(cmpEl){cmpEl.remove();cmpEl=null;}}
+function cmpRows(key,v){const f=sliderField(key);if(!f||!quick)return null;const tbl=f.optTable||f.key,opts=OPT[tbl],o=opts&&opts[v],cur=opts&&opts[S.cfg[key]];if(!o)return null;
+  const r=probe(key,v),b=quick,fitted=S.cfg[key]===v;
+  const row=(lab,a,z,unit,dl,goodUp)=>{const d=z-a,q=unit==="kg"?+d.toFixed(1):Math.round(d),s=q===0?"":`${q>0?"+":"−"}${Math.abs(q)}`;
+    return `<div class="cr"><span>${lab}</span><b>${dl(a)} → ${dl(z)}</b><i class="${!s?"":(d>0)===goodUp?"up":"dn"}">${s||"same"}</i></div>`;};
+  const cost=r.cost-b.cost,cs=Math.abs(cost)<5?"same":money(Math.round(cost/5)*5);
+  let h=`<div class="ch"><b>${o.name}</b><small>${fitted?"fitted now":cur?"vs "+cur.name+" (fitted)":""}</small></div>`;
+  if(!fitted){
+    h+=row("Peak power",b.peakHp,r.hp,"hp",x=>Math.round(x)+" hp",true)
+      +(b.rel>0||r.rel>0?row("Reliability",b.rel,r.rel,"",x=>Math.round(x),true):"")
+      +`<div class="cr"><span>Build cost</span><b>${fmt$(Math.round(b.cost))} → ${fmt$(Math.round(r.cost))}</b><i class="${Math.abs(cost)<5?"":cost<0?"up":"dn"}">${cs}</i></div>`
+      +(b.kg!=null&&r.kg!=null?row("Weight",b.kg,r.kg,"kg",x=>x.toFixed(1)+" kg",false):"");
+    if(r.fails&&!b.fails.length)h+=`<div class="cw">This would break something at this load.</div>`;}
+  else h+=`<div class="cr"><span>Peak power</span><b>${Math.round(b.peakHp)} hp</b></div><div class="cr"><span>Reliability</span><b>${Math.round(b.rel)}</b></div><div class="cr"><span>Weight</span><b>${b.kg!=null?b.kg.toFixed(1)+" kg":"-"}</b></div>`;
+  const price=priceOf(tbl,o);if(price)h+=`<div class="cr cp"><span>Part price</span><b>${price}</b></div>`;
+  if(locked(o)){const req=UPGRADES.find(u=>u.id===o.req);h+=`<div class="cw">Needs ${req?req.name:"an upgrade"}</div>`;}
+  return h;}
+function cmpShow(anchor,key,v){const h=cmpRows(key,v);if(!h)return false;if(cmpEl){cmpEl.remove();cmpEl=null;}
+  const el=document.createElement("div");el.id="cmpPop";el.className="glass";el.setAttribute("aria-hidden","true");el.innerHTML=h;document.body.appendChild(el);cmpEl=el;
+  const r=anchor.getBoundingClientRect(),w=el.offsetWidth,ht=el.offsetHeight;let top=r.top-ht-12;if(top<10)top=Math.min(innerHeight-ht-10,r.bottom+12);
+  el.style.left=Math.round(Math.max(10,Math.min(innerWidth-w-10,r.left+r.width/2-w/2)))+"px";el.style.top=Math.round(top)+"px";
+  buzz(10);return true;}
+(function cmpInit(){const SEL="#buildForm .seg button[data-k][data-v],#sheetBody .opt[data-ck]";
+  document.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"||!e.isPrimary||!e.target.closest)return;const a=e.target.closest(SEL);if(!a||testing)return;
+    cmpHide();const key=a.dataset.k||a.dataset.ck,v=a.dataset.v||a.dataset.ov;cmpDown={x:e.clientX,y:e.clientY,id:e.pointerId};
+    cmpTimer=setTimeout(()=>{cmpTimer=0;if(cmpDown&&cmpShow(a,key,v))cmpEat=Date.now()+1500;},CMP_MS);},true);
+  document.addEventListener("pointermove",e=>{if(!cmpDown||e.pointerId!==cmpDown.id)return;if(Math.hypot(e.clientX-cmpDown.x,e.clientY-cmpDown.y)>CMP_SLOP&&!cmpEl)cmpHide();},true);
+  const up=e=>{if(!cmpDown||e.pointerId!==cmpDown.id)return;const shown=!!cmpEl;cmpHide();if(shown)cmpEat=Date.now()+400;};
+  document.addEventListener("pointerup",up,true);document.addEventListener("pointercancel",e=>{if(cmpDown&&e.pointerId===cmpDown.id){const shown=!!cmpEl;cmpHide();cmpEat=shown?Date.now()+400:0;}},true);
+  document.addEventListener("scroll",()=>{if(cmpTimer||cmpEl)cmpHide();},true);
+  document.addEventListener("contextmenu",e=>{if(cmpTimer||cmpEl||Date.now()<cmpEat)e.preventDefault();},true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cmpEl)cmpHide();});
+  document.addEventListener("click",e=>{if(Date.now()<cmpEat&&e.target.closest&&e.target.closest(SEL)){e.preventDefault();e.stopPropagation();cmpEat=0;}},true);})();
 /* fit one option (shared by the Build segments and the sandbox Shop parts catalogue) */
 function applyOpt(k,v){
   if(testing){toast("Let the run finish first");return;}
@@ -30931,7 +31001,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
       :lk?`<span class="tag lk">Needs ${req?req.name:"an upgrade"}</span>`
       :`<span class="tag">${priceOf(tbl,o)}</span>`;
     const chips=chipsFor(tbl,o).map(([l,v])=>`<i><em>${l}</em>${v}</i>`).join("");
-    return `<div class="opt${k===cur?" cur":""}"><div class="oh"><b>${o.name}</b>${tag}</div>`
+    return `<div class="opt${k===cur?" cur":""}"${cfgKey&&typeof tbl==="string"?` data-ck="${cfgKey}" data-ov="${k}"`:""}><div class="oh"><b>${o.name}</b>${tag}</div>`
       + (chips?`<div class="chips">${chips}</div>`:"")
       + (o.info?`<p>${o.info}</p>`:"") + `</div>`;}).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
@@ -37387,8 +37457,78 @@ document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
-function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
+function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);if(miniView)$("app").classList.remove("peek");if(typeof detentLabel==="function")detentLabel();$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
 $("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;save();buzz(8);});
+/* ===================== GESTURES (UI-GLASS-PLAN PR 5) =====================
+   Phone layout only (html.desk keeps the mouse and keyboard exactly as they were), touch and pen only, pointer events throughout.
+   1. Swipe the panel sideways to move to the next or previous tab (same path as a tab tap or the 1-6 keys), with a light rubber band
+      at the first and last tab. Never from the 3D view, a slider or any input, a chart canvas, the tune map, a row that scrolls
+      sideways, the results sheet, an open sheet or Settings, a tour, or while a test or an event scene is running.
+   2. The grabber on the panel's top lip drags the panel between three heights: tall panel (the small engine view, #app.mini, the same
+      state as the VIEW > Size button), half (the default) and peek (#app.peek: a tall engine view). Tap it to step through them.
+      The view resizes live while you drag; the ResizeObserver on #view above keeps ENGINE_VIS in step. */
+const SWIPE_PX=60;
+function swipeTabs(){return [...document.querySelectorAll("#tabs button[data-tab]")].filter(b=>b.offsetParent!==null).map(b=>b.dataset.tab);}
+function swipeOff(t){const h=document.documentElement.classList;
+  if(deskOn()||testing||h.contains("onevent")||h.contains("photo")||h.contains("troom"))return true;
+  if($("sheet").classList.contains("on")||setOn()||$("intro").style.display!=="none"||tourStep>=0||ff)return true;
+  if(t.closest("input,select,textarea,canvas,#rail,.mapt,.nud,.hlbtns,.boatbtns,#killBtn,#dragBtn,#pullBtn,[data-noswipe]"))return true;
+  for(let el=t;el&&el!==$("panel");el=el.parentElement){if(el.scrollWidth>el.clientWidth+2){const ox=getComputedStyle(el).overflowX;if(ox==="auto"||ox==="scroll")return true;}}   // a row that scrolls sideways keeps its own swipe
+  return false;}
+let swipeSkipClick=0;
+document.addEventListener("click",e=>{if(Date.now()<swipeSkipClick){e.preventDefault();e.stopPropagation();}},true);
+(function swipeInit(){const pn=$("panel");let g=null;
+  const page=()=>$("tab-"+curTab);
+  const band=(dx,has)=>has?Math.max(-70,Math.min(70,dx*0.45)):Math.sign(dx)*28*(1-Math.exp(-Math.abs(dx)/80));   // follows the finger with resistance; at the ends it barely gives
+  function settle(el,spring){if(!el)return;if(!spring||matchMedia("(prefers-reduced-motion: reduce)").matches){el.style.transition="";el.style.transform="";return;}
+    el.style.transition="transform .3s cubic-bezier(.34,1.56,.64,1)";el.style.transform="";setTimeout(()=>{if(el.style.transform==="")el.style.transition="";},320);}
+  function end(commit){if(!g)return;const s=g;g=null;const el=s.el;
+    if(s.lock){
+      if(commit&&s.to){const dir=s.dx<0?1:-1;el.style.transition="";el.style.transform="";const b=document.querySelector(`#tabs [data-tab="${s.to}"]`);if(b)b.click();buzz(6);
+        const np=$("tab-"+s.to);if(np&&np.animate&&!matchMedia("(prefers-reduced-motion: reduce)").matches)np.animate([{transform:`translateX(${dir*32}px)`,opacity:.35},{transform:"none",opacity:1}],{duration:240,easing:"cubic-bezier(.2,.8,.2,1)"});}
+      else settle(el,true);
+      swipeSkipClick=Date.now()+350;}}   // after the tab click above, so only the stray click from lifting the finger is eaten
+  pn.addEventListener("pointerdown",e=>{if(g){end(false);return;}
+    if(e.pointerType==="mouse"||!e.isPrimary||!e.target.closest||swipeOff(e.target))return;
+    g={x:e.clientX,y:e.clientY,t:e.timeStamp,id:e.pointerId,lock:false,dx:0,v:0,el:page(),to:null};});
+  pn.addEventListener("pointermove",e=>{if(!g||e.pointerId!==g.id)return;const dx=e.clientX-g.x,dy=e.clientY-g.y,ax=Math.abs(dx),ay=Math.abs(dy);
+    if(!g.lock){if(ay>10&&ay>ax){g=null;return;}   // it is a scroll
+      if(ax<12||ax<ay*1.6)return;
+      g.lock=true;g.el.style.transition="none";}
+    const list=swipeTabs(),i=list.indexOf(curTab),to=list[i+(dx<0?1:-1)]||null;g.dx=dx;g.to=to;g.v=dx/Math.max(1,e.timeStamp-g.t);
+    g.el.style.transform=`translateX(${band(dx,!!to).toFixed(1)}px)`;});
+  pn.addEventListener("pointerup",e=>{if(!g||e.pointerId!==g.id)return;const ax=Math.abs(g.dx);end(g.lock&&!!g.to&&(ax>=SWIPE_PX||(ax>=36&&Math.abs(g.v)>0.55)));});
+  pn.addEventListener("pointercancel",e=>{if(g&&e.pointerId===g.id)end(false);});
+  window.addEventListener("blur",()=>end(false));})();
+
+/* panel heights */
+const DETENTS=["half","tall","peek"];   // tap order; "tall" = a tall panel under the small engine view
+function detentNow(){return miniView?"tall":$("app").classList.contains("peek")?"peek":"half";}
+function detentSet(d){setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";detentLabel();}
+function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Panel height: "+detentNow()+". Tap or drag to change");}
+(function detentInit(){const g=$("pgrab"),v=$("view"),app=$("app");if(!g)return;
+  let d=null,moved=false,swallow=0;
+  /* the engine view's height in each state, measured once per drag with the transition off */
+  function measure(){const H={},keep=[app.classList.contains("mini"),app.classList.contains("peek")],tr=v.style.transition;v.style.transition="none";
+    for(const k of ["tall","half","peek"]){app.classList.toggle("mini",k==="tall");app.classList.toggle("peek",k==="peek");H[k]=v.getBoundingClientRect().height;}
+    app.classList.toggle("mini",keep[0]);app.classList.toggle("peek",keep[1]);v.getBoundingClientRect();v.style.transition=tr;return H;}
+  g.addEventListener("pointerdown",e=>{if(e.button>0||testing)return;try{g.setPointerCapture(e.pointerId);}catch(x){}
+    d={id:e.pointerId,y:e.clientY,h0:v.getBoundingClientRect().height,H:measure(),raf:0,h:0,last:[e.clientY,e.timeStamp],vel:0};moved=false;});
+  g.addEventListener("pointermove",e=>{if(!d||e.pointerId!==d.id)return;const dy=e.clientY-d.y;
+    if(!moved&&Math.abs(dy)<6)return;if(!moved){moved=true;v.style.transition="none";g.classList.add("drag");tipHide();}
+    d.vel=(e.clientY-d.last[0])/Math.max(1,e.timeStamp-d.last[1]);d.last=[e.clientY,e.timeStamp];
+    d.h=Math.max(d.H.tall,Math.min(d.H.peek,d.h0+dy));
+    if(!d.raf)d.raf=requestAnimationFrame(()=>{if(!d)return;d.raf=0;v.style.flexBasis=d.h+"px";v.style.minHeight=Math.min(d.h,d.H.tall)+"px";});});   // min-height drops to the small view's so the drag can go that low
+  function done(cancel){if(!d)return;const s=d;d=null;if(s.raf)cancelAnimationFrame(s.raf);g.classList.remove("drag");
+    if(!moved){v.style.transition="";return;}
+    const was=detentNow();let pick=was;
+    if(!cancel){const proj=s.h+s.vel*140;let best=1e9;for(const k of ["tall","half","peek"]){const dd=Math.abs(proj-s.H[k]);if(dd<best){best=dd;pick=k;}}}
+    v.style.transition="";v.style.flexBasis="";v.style.minHeight="";detentSet(pick);if(pick!==was){buzz(8);save();}
+    swallow=Date.now()+300;}
+  g.addEventListener("pointerup",e=>{if(d&&e.pointerId===d.id)done(false);});
+  g.addEventListener("pointercancel",e=>{if(d&&e.pointerId===d.id)done(true);});
+  g.addEventListener("click",()=>{if(swallow>Date.now()||testing)return;detentSet(DETENTS[(DETENTS.indexOf(detentNow())+1)%3]);buzz(8);save();});
+  detentLabel();})();
 /* HUD toggles mirror their .on class into aria-pressed however they get flipped; START reads STOP
    while the engine idles, and VIEW wears a dot when anything in its tray is on */
 function hudSync(){const on=id=>$(id).classList.contains("on");["sndBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>$(id).setAttribute("aria-pressed",on(id)));
