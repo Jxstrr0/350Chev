@@ -90,17 +90,18 @@ function tick(dt, t){
   /* --- running parts --- */
   var frac = run.on ? clamp(run.rpm/Math.max(1000, run.redline), 0, 1.25) : 0;
   var spin = run.on ? (run.rpm/60)*TAU*dt : 0;
+  var crank = run.on ? visCrank(run.rpm, dt) : 0;   /* the crank's drawn turn this frame (VIS_SPIN) */
   var i;
   for(i=0;i<anim.spin.length;i++){
-    var sp=anim.spin[i]; sp.o.rotation.x += spin*sp.k*0.16;
+    var sp=anim.spin[i]; sp.o.rotation.x = (sp.o.rotation.x + crank*sp.k) % TAU;
   }
   /* belts: one texture scroll per belt material, in step with the crank (their uv counts crank angle, see beltUvU) */
-  if(spin){ BELT_OFF=(BELT_OFF+spin*0.16*BELT_UV)%1;
+  if(crank){ BELT_OFF=(BELT_OFF+crank*BELT_UV)%1;
     if(MAT.belt) MAT.belt.map.offset.x=BELT_OFF;               /* MATHI.belt is a clone: same texture, so it scrolls too */
     if(MATHI.beltFlat) MATHI.beltFlat.map.offset.x=BELT_OFF; }
   for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
   if(anim.internals){
-    var IN=anim.internals; IN.theta += spin*0.16; IN.crank.rotation.x = IN.theta;
+    var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
     /* rotary: each rotor rides its eccentric lobe and turns at a third of shaft speed (that is what makes the apexes trace the housing) */
     if(XRAY && IN.ports) for(var pi2=0; pi2<IN.ports.length; pi2++){   /* two-stroke: a port window glows while the crown is below its top edge */
       var po=IN.ports[pi2], cy2=po.cyl, f2=IN.theta+cy2.phase, ca2=Math.cos(cy2.ang), sa2=Math.sin(cy2.ang), py2=IN.r*Math.cos(f2), pz2=IN.r*Math.sin(f2), ly2=ca2*py2+sa2*pz2, lz2=-sa2*py2+ca2*pz2, crown=ly2+Math.sqrt(Math.max(0, IN.L*IN.L-lz2*lz2))+IN.ch;
@@ -233,6 +234,14 @@ function tick(dt, t){
 }
 var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
 var BELT_OFF=0;
+/* How fast the crank is drawn turning. A real crank turns 13 to 150 times a second, far more than a 30-60 fps screen can show:
+   drawn true to speed (or at the old fixed sixth of it) a pulley's paint mark or a ring of bolts lands almost anywhere each
+   frame, so it looks stopped, jerky or running backwards (the wagon-wheel effect), and a phone at 30 fps gets it worst. So the
+   drawn speed eases from about 1.2 turns a second at idle toward max (rad/s) up the rev range (half of max at `half` rpm), and
+   one frame never turns more than `step` radians, a slow phone drawing it a little slower rather than strobing. The pulleys,
+   belts, damper, flywheel and the X-ray crank and pistons all take this one number, so they stay in step with each other. */
+var VIS_SPIN={max:17, half:1000, step:0.34};
+function visCrank(rpm, dt){ return rpm>0 ? Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SPIN.half)*dt, VIS_SPIN.step) : 0; }
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
@@ -317,6 +326,23 @@ function garageShadowGate(now){
 /* ===========================================================================
    12. FRAMING
    ==========================================================================*/
+/* the engine stand (garage.js buildStand), rebuilt to fit whenever the engine or the room changes. The seat the engine builder left
+   (G.userData.seat) goes through the engine's resting transform (engineRoot, not the shake group above it, so a running engine's
+   jiggle at the moment of a rebuild does not move the stand) into scene units. */
+function fitStand(){
+  if(!standRoot) return;
+  disposeTree(standRoot);
+  var f=null, G=engineRoot && engineRoot.children[0], s=G && G.userData.seat;
+  if(s){
+    engineRoot.updateMatrix(); G.updateMatrix();
+    var M=new THREE.Matrix4().multiplyMatrices(engineRoot.matrix, G.matrix);
+    var a=new THREE.Vector3(s.x0, s.y, s.z0).applyMatrix4(M), b=new THREE.Vector3(s.x1, s.y, s.z1).applyMatrix4(M);
+    f={x0:Math.min(a.x,b.x), x1:Math.max(a.x,b.x), z0:Math.min(a.z,b.z), z1:Math.max(a.z,b.z), y:a.y, r:(s.r||0)*G.scale.y};
+  }
+  var B=new Builder();
+  buildStand(B, !!(lastOwned && lastOwned.sandbox), f);
+  B.flush(standRoot, {}, true);
+}
 function frameEngine(){
   if(TD.on){ tdFrame(true); return; }   /* teardown view frames the failed part instead */
   if(!engineRoot) return;
