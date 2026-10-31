@@ -196,7 +196,7 @@ Camera-as-navigation between tabs, tapping the 3D engine to pick parts (pitch it
 ## Checklist
 
 - [x] PR 1: Glass foundation, ambient backdrop, floating tab bar, HUD (1.76.36.0). Lite deviation: the panel and the HUD buttons over the live 3D view get a stronger tint, not a blur, to keep frame rate.
-- [ ] PR 2: Panels, seg controls, CTAs, popups, sliders
+- [x] PR 2: Panels, seg controls, CTAs, popups, sliders (1.76.37.0). Note: the race buttons had lost their chamfer in the v1.66 look refresh, so this PR brings it back on .btn.pri/.ok/.danger only. WebKit sliders show no orange fill (Firefox does): a fill would need JS on every slider.
 - [ ] PR 3: Crack on failure, RPM-reactive glass, venue tint
 - [ ] PR 4: Results card, holo trophies, share, morph transition
 - [ ] PR 5: Tab swipe, sheet detents, long-press compare
