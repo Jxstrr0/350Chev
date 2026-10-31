@@ -5,7 +5,7 @@ function renderEnv(){
   const e=S.env,t=e.testType;let h="";
   const sl=(k,l,min,max,step,unit,val)=>`<div class="env"><div class="lbl"><span>${l}</span><b id="ev-${k}" class="tap" data-enum="${k}" data-unit="${unit}">${val}${unit}</b></div><div class="srow"><button class="nud" data-enud="-1" data-ek="${k}">−</button><input type="range" id="er-${k}" data-e="${k}" min="${min}" max="${max}" step="${step}" value="${val}"><button class="nud" data-enud="1" data-ek="${k}">+</button></div></div>`;
   if(career()&&!trackEvt(t)){const ce=simEnv(),std=isStdCell(ce);envStdShown=std;
-    h+=`<p class="hint">${climateCtl()?`<b>Climate control</b> · ${std?"standard cell — a clean pull certifies for contracts.":`<b>off-standard</b> — test only. Contracts certify at 20 °C · 500 m · coolant 90 °C · oil 100 °C. <button class="chip" data-stdcell style="margin-top:6px">Reset to standard</button>`}`:`Cell conditions: ${ce.ambientC} °C · ${ce.altitudeM} m · coolant ${ce.coolantC} °C · oil ${ce.oilC} °C.`} ${t==="endurance"?`Endurance runs ${e.hours} h on a ${e.loadProfile} profile.`:t==="overrev"?"A missed downshift to 115% of redline for half a second.":"A full-throttle sweep to redline, then held there under load."}</p>`;
+    h+=`<p class="hint">${climateCtl()?`<b>Climate control</b> · ${std?"standard cell — a clean pull certifies the build for teams and events.":`<b>off-standard</b> — test only. Certification is at 20 °C · 500 m · coolant 90 °C · oil 100 °C. <button class="chip" data-stdcell style="margin-top:6px">Reset to standard</button>`}`:`Cell conditions: ${ce.ambientC} °C · ${ce.altitudeM} m · coolant ${ce.coolantC} °C · oil ${ce.oilC} °C.`} ${t==="endurance"?`Endurance runs ${e.hours} h on a ${e.loadProfile} profile.`:t==="overrev"?"A missed downshift to 115% of redline for half a second.":"A full-throttle sweep to redline, then held there under load."}</p>`;
     if(climateCtl())h+=`<div class="envgrid">${sl("ambientC","Ambient",-25,45,1," °C",ce.ambientC)}${sl("altitudeM","Altitude",0,3500,50," m",ce.altitudeM)}${sl("coolantC","Coolant",70,118,1," °C",ce.coolantC)}${sl("oilC","Oil temp",70,150,1," °C",ce.oilC)}</div>`;}
   else if(!trackEvt(t)){
     h+=`<div class="envgrid">${sl("ambientC","Ambient",-25,45,1," °C",e.ambientC)}${sl("altitudeM","Altitude",0,3500,50," m",e.altitudeM)}${sl("coolantC","Coolant",70,118,1," °C",e.coolantC)}${sl("oilC","Oil temp",70,150,1," °C",e.oilC)}</div>`;
@@ -141,7 +141,7 @@ $("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");
 $("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===evCur();if(!same&&testing){toast("Let the run finish first");return;}if(!same&&b.dataset.t!=="bracket"&&evBlockPick(b.dataset.t))return;evApply(b.dataset.t);pickTest(S.env.testType);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});
 /* opening Test or Events: if S.env.testType belongs to the other tab, switch to this tab's last pick (never mid-run) */
 function evBlockPick(t){return false;}
-function evSync(tab){if(testing||(S.bay&&tab==="events"))return;   // a dyno-day engine keeps the bay on its pull
+function evSync(tab){if(testing)return;
   const ev=trackEvt(S.env.testType);let t=null;
   if(tab==="events"){const cur=ev?evCur():S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===evCur())t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
   if(!t)return;evApply(t);document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
@@ -151,10 +151,10 @@ function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"t
   if(core.parentElement!==slot)slot.appendChild(core);if(rd.parentElement!==dock)dock.appendChild(rd);
   const busy=(id,on,txt)=>{const el=$(id);if(el.hidden!==!on)el.hidden=!on;if(on&&el.dataset.k!==txt){el.dataset.k=txt;el.innerHTML=txt;}};
   busy("testBusy",ev,`<b>${EV_NAME[t]}</b> ${testing?"is running":"is set up"} in Events. <button class="chip" data-gotab="events">Open Events</button>`);
-  busy("evBusy",!ev,S.bay?`<b>${S.bay.practice?"Practice":"Customer"} engine on the dyno</b> — events open again once it is handed back or you walk away. <button class="chip" data-gotab="test">Open Test</button>`:`A <b>${(EV_NAME[t]||"dyno").toLowerCase()}</b> ${testing?"is running":"is set up"} in Test. <button class="chip" data-gotab="test">Open Test</button>`);}
+  busy("evBusy",!ev,`A <b>${(EV_NAME[t]||"dyno").toLowerCase()}</b> ${testing?"is running":"is set up"} in Test. <button class="chip" data-gotab="test">Open Test</button>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-gotab]");if(!b)return;showTab(b.dataset.gotab);});
 /* a brief judged on the road, the strip or the salt: straight to that event (in the buyer's car and circuit for the road) */
-function evGo(t,patch){if(testing){toast("Let the run finish first");return;}if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
+function evGo(t,patch){if(testing){toast("Let the run finish first");return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-evgo]");if(!b)return;const t=b.dataset.evgo,p={};if(t==="road"){if(b.dataset.ch)p.roadCh=b.dataset.ch;if(b.dataset.trk)p.roadTrk=b.dataset.trk;}evGo(t,p);});
 /* the picker cards: icon, name and one line of where you stand */
 const BR_REP=5;   // bracket night: rep to enter in career
@@ -323,7 +323,7 @@ function renderTest(){
   if(last)showResult(last.res,last.env);else{$("peaks").innerHTML="";$("verdict").innerHTML="";$("testExtra").innerHTML="";$("stressSec").style.display="none";}
   const rf=curTab==="events"&&!!last&&last.env.testType===S.env.testType;$("testCore").classList.toggle("resfirst",rf);$("setupJump").hidden=!rf;
   resultReveal(last,rf);evLayout();
-  renderMap();ddRender();if(typeof railSched==="function")railSched();
+  renderMap();if(typeof railSched==="function")railSched();
 }
 /* a run just finished: bring the headline numbers (peaks + verdict, or the verdict on Events) to the top of the panel so they aren't left above or below the fold */
 let revKey;

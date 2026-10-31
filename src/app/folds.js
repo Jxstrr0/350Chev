@@ -1,4 +1,4 @@
-/* ===== folds: Settings (Sound / Display / Save) and Dyno day rows =====
+/* ===== folds: Settings (Sound / Display / Save) =====
    Settings folds are <details class="setfold" data-fold> headed by a one-line summary; the open ones are remembered per fold in
    S.folds (lazy: a fresh or older save has none, so every fold starts closed). accReveal() also opens the fold around a target. */
 (()=>{
@@ -19,7 +19,4 @@
   $("setOpen").addEventListener("click",()=>setTimeout(foldApply,0));
   for(const ev of ["click","input"])$("setBody").addEventListener(ev,()=>setTimeout(foldSums,30));
   if(typeof accReveal==="function"){const ar=accReveal;accReveal=function(el){const f=el&&el.closest&&el.closest(".setfold");if(f&&!f.open)f.open=true;return ar.apply(this,arguments);};}
-  /* Dyno day: the job's details sit behind its (i) */
-  document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ddx]");if(!b)return;
-    const x=b.closest(".ddrow").querySelector(".ddx"),o=x.hidden;x.hidden=!o;b.setAttribute("aria-expanded",o);});
 })();

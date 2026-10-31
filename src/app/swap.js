@@ -65,17 +65,6 @@ ACH.push(
 function swapAfter(r){const t=r&&r.swap;if(!t)return;const f={swapRun:true,swapMostly:t.mostly,swapDeltic:t.eng==="D18"&&t.v==="trabant",swapHat:t.inf,
   swapFuse:!!(r.swapBroke||r.broke==="driveline"||(r.dnf&&r.dnf.id==="swap_driveline")),swapSleeper:["trabant","saab96","beetle","mini","mower"].includes(t.v)&&r.zero100!=null&&r.zero100<4.5};
   achCheck({type:"swap",f});}
-/* ---- market: swap jobs ("put a V8 in my C10"). The brief passes when the engine goes in with the fixes the owner pays for ---- */
-function swapReqFit(q,res,cfg){const r=SIM.swapFit(cfg,res,q.v,q.fx||[]);if(!r)return{ok:true,val:"",prog:1};const bad=r.items.filter(x=>x.st==="r");
-  return{ok:!bad.length,val:bad.length?bad.map(x=>x.n.split(" · ")[0].toLowerCase()).join(", ")+" red":"goes in",prog:clamp(1-bad.length/4,0,1)};}
-REQ_LABEL.swap=["Their car",v=>`${(SIM.VEHICLES[v.v]||{}).n||"car"} · ${(v.fx||[]).length?(v.fx||[]).map(id=>(SIM.SWAP_FIX[id]||{}).n||id).join(", ").toLowerCase():"no cutting"}`];
-MISS_W.swap=4;
-SEGMENTS.push(
-  {id:"swc10",name:"C10 restomod · put a V8 in it",tier:1,units:[1,2],price:7800,req:{hp:[300,420],rel:80,swap:{v:"c10",fx:["firewall","scoop","gbx1","rad1"]}}},
-  {id:"swbeetle",name:"Beetle sleeper",tier:1,units:[1,1],price:8600,req:{hp:[160,240],rel:72,swap:{v:"beetle",fx:["firewall","scoop","gbx1","axle1","rad2"]}}},
-  {id:"swmiata",name:"Miata V8 conversion",tier:2,units:[1,2],price:12500,req:{hp:[300,450],rel:75,swap:{v:"miata",fx:["firewall","tubs","scoop","gbx1","axle1","rad2"]}}},
-  {id:"swsemi",name:"Show-truck highway tractor",tier:3,units:[1,1],price:21000,req:{tq:[2400,3000],rel:75,fuel:"diesel",swap:{v:"semi",fx:["gbx2","axle2","rad1"]}}});
-CATS.push({id:"swap",name:"Swap jobs",sub:"their car · your engine · it has to fit",segs:["swc10","swbeetle","swmiata","swsemi"],rep:20});
 /* ---- the silhouette: the car side-on, the bay dashed, the engine to scale (it pokes out when it doesn't fit) ---- */
 const SW_SHAPE={   // length m; profile [x from the front bumper, height] m; fa: front axle x
   sedan:{L:5.0,fa:0.95,p:[[0,.35],[.05,.72],[1.55,.86],[2.15,1.36],[3.35,1.38],[4.15,.98],[5,.92],[5,.35]]},

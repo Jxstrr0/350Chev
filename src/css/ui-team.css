@@ -1,0 +1,29 @@
+/* Team seasons (app/team.js): the team offers, the season card, standings and the race-day result in the Team tab */
+#mkTeam .pcst{font-size:14px;line-height:1.45;margin:0 0 6px}
+#mkTeam .pcr .row{gap:8px;margin-top:8px}
+#mkTeam .pcr.job{border-color:var(--orange)}
+#mkTeam .pcchk{font-size:13px;line-height:1.5;margin:6px 0 8px;padding:6px 10px;border-radius:8px;background:var(--soot)}
+#mkTeam .pcchk .ok{color:var(--good)}
+#mkTeam .pcchk .no{color:var(--warn)}
+#mkTeam .pcres.win{border-color:var(--good)}
+#mkTeam .pcres.bad{border-color:var(--crit)}
+#mkTeam .pcl{font-size:13px;line-height:1.5;color:var(--muted);margin:4px 0 8px}
+#mkTeam .pcl div{padding:2px 0;border-bottom:1px dashed var(--rule)}
+#mkTeam .pcl div:last-child{border:0}
+#mkTeam .log .good{color:var(--good)}
+#mkTeam .log .bad{color:var(--crit)}
+#sandboxBox.pit .sbhead{display:none}
+/* the season: budget bar, standings table, season-over card */
+#mkTeam .pcbud{margin:6px 0}
+#mkTeam .pcbar{height:8px;border-radius:4px;background:var(--soot);overflow:hidden}
+#mkTeam .pcbar i{display:block;height:100%;background:var(--orange)}
+#mkTeam .pcbad{color:var(--crit)}
+#mkTeam .pctab{font-size:13px;margin:4px 0 8px}
+#mkTeam .pctab div{display:grid;grid-template-columns:2em 1fr auto;gap:6px;padding:3px 0;border-bottom:1px dashed var(--rule)}
+#mkTeam .pctab div:last-child{border:0}
+#mkTeam .pctab .me{color:var(--orange);font-weight:600}
+#mkTeam .pcl .good{color:var(--good)}
+#mkTeam .pcl .bad{color:var(--crit)}
+#mkTeam .pcend{margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--soot)}
+#mkTeam .pcend.win{outline:1px solid var(--good)}
+#mkTeam .pcend h3{margin:0 0 4px}

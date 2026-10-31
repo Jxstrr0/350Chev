@@ -31,7 +31,6 @@
   </div>
 
   <div id="panel">
-    <div id="ddBar" hidden></div>
     <!-- BUILD -->
     <section class="tabpage on" id="tab-build">
       <div class="strip">
@@ -77,7 +76,6 @@
       <div id="testExtra"></div>
       <div class="sec" id="stressSec" style="display:none"><h2>Stress report <span class="cnt" id="stressCnt"></span></h2><div class="sthead"><p class="hint">Tap a line for the physics behind it.</p><button class="chip" id="pinBase" title="Keep this run as the baseline overlay">Pin baseline</button></div><div class="stress" id="stressList"></div></div>
       </div></div>
-      <div class="sec" id="ddSec" hidden><h2>Dyno day <span class="cnt" id="ddCnt"></span></h2><div id="ddBox"></div></div>
       <div class="sec" id="mapSec" style="display:none"><h2>Tune map <span class="cnt" id="mapCnt"></span></h2><div id="mapBox"></div></div>
 
       <div class="sec acc advf" id="abSec" data-adv="ab"><button class="acch" aria-expanded="false"><span class="t">Sound bench</span><span class="sum" id="abCnt">A / B · two builds back to back</span><span class="chev"></span></button><div class="accb">
@@ -134,32 +132,28 @@
       <details class="sfold" id="achFold"><summary>Achievements <span class="cnt" id="achCnt"></span></summary><div class="sfb" id="achBox"></div></details>
     </section>
 
-    <!-- MARKET -->
+    <!-- TEAM (the career's race team, sponsors and rivals, the week) -->
     <section class="tabpage" id="tab-market">
       <div id="marketBox">
-        <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Sell certified engines to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
-        <div class="mkstrip" id="mkStrip"><div class="mks"><b id="mkEng"></b><span class="mkc" id="mkCert"></span><span class="mkb" id="mkBoard"></span></div><button class="mkoh" id="mkOh" aria-expanded="false" aria-controls="overheadHint" aria-label="Weekly overhead and shipping limit">i</button><button class="btn pri" id="nextWeek">Close week</button></div>
+        <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Win at the events or finish the team's season to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
+        <div class="mkstrip" id="mkStrip"><div class="mks"><b id="mkEng"></b><span class="mkc" id="mkCert"></span><span class="mkb" id="mkBoard"></span></div><button class="mkoh" id="mkOh" aria-expanded="false" aria-controls="overheadHint" aria-label="Weekly overhead and race weeks">i</button><button class="btn pri" id="nextWeek">Close week</button></div>
         <p class="hint mkhint" id="overheadHint" hidden></p>
-        <p class="hint" id="mktHint" hidden></p>
-        <div class="evtabs seg n3 mktabs" id="mkTabs" role="tablist" aria-label="Market sections"><button role="tab" data-mk="jobs">Jobs<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="spons">Sponsors &amp; Rivals<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="shop">Shop<i class="evdot" aria-hidden="true"></i></button></div>
-        <div class="mkpane" id="mkJobs"><div id="contracts"></div></div>
+        <div class="evtabs seg n3 mktabs" id="mkTabs" role="tablist" aria-label="Team sections"><button role="tab" data-mk="team">Team<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="spons">Sponsors &amp; Rivals<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="log">Log<i class="evdot" aria-hidden="true"></i></button></div>
+        <div class="mkpane" id="mkTeam">
+          <p class="mkline" id="pcStats"></p>
+          <div id="pcLast"></div>
+          <div id="pcJob"></div>
+          <div class="sec" id="pcOfSec"><h2>Teams calling <span class="cnt" id="pcCnt"></span></h2><p class="hint" id="pcNext"></p><div id="pcRoster"></div></div>
+          <details class="sfold"><summary>Race log</summary><div class="sfb"><div class="log" id="pcLog"></div></div></details>
+        </div>
         <div class="mkpane" id="mkSpons"><div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div></div>
-        <div class="mkpane" id="mkShop">
+        <div class="mkpane" id="mkLog">
           <p class="mkline" id="mkLine"></p>
-          <div class="sec" id="baySec" hidden><h2>Build bays <span class="cnt" id="bayCnt"></span></h2><div id="bayBox"></div></div>
-          <div id="mkSvc"></div>
-          <details class="sfold"><summary>Warranty &amp; ledger</summary><div class="sfb"><p class="hint" id="fleetHint"></p><div class="log ledger" id="ledger"></div></div></details>
+          <details class="sfold" open><summary>Ledger</summary><div class="sfb"><div class="log ledger" id="ledger"></div></div></details>
           <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
         </div>
       </div>
-      <div id="pitBox" style="display:none">
-        <p class="mkline" id="pcStats"></p>
-        <div id="pcLast"></div>
-        <div id="pcJob"></div>
-        <div class="sec" id="pcOfSec"><h2>Teams calling <span class="cnt" id="pcCnt"></span></h2><p class="hint" id="pcNext"></p><div id="pcRoster"></div></div>
-        <details class="sfold"><summary>Race log</summary><div class="sfb"><div class="log" id="pcLog"></div></div></details>
-      </div>
-      <div id="marketSandbox"><p class="hint">Contracts, warranty claims and goals are a career thing. The test cell has no customers — switch to Career in the Shop tab to start selling.</p></div>
+      <div id="marketSandbox"><p class="hint">Race teams, sponsors and goals are a career thing. Switch to Career in Settings to supply a team for a season.</p></div>
     </section>
 
     <!-- SHOP -->
@@ -192,10 +186,10 @@
 
   <nav id="tabs"><div id="testProg"></div>
     <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
-    <button data-tab="test"><span class="dot" id="testDot"></span><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
+    <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
     <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
     <button data-tab="analysis"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Analysis</button>
-    <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Market</button>
+    <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Team</button>
     <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
   </nav>
 
@@ -209,8 +203,7 @@
 <div class="lbl"><span>Mode</span></div>
 <div class="modebox" id="modeBox">
         <button data-mode="sandbox"><b>Test cell</b><small>Everything unlocked. Break things on purpose.</small></button>
-        <button data-mode="career"><b>Career</b><small>Start with $20k, earn every upgrade.</small></button>
-        <button data-mode="pit"><b>Pit Crew</b><small>Build to order for local racers: their budget, their race day.</small></button>
+        <button data-mode="career"><b>Career</b><small>Start with $20k, supply race teams, earn every upgrade.</small></button>
       </div>
 <div class="lbl"><span>Haptics</span></div>
         <div class="seg n2" id="hapSeg"><button data-hap="1">On<small>slider ticks, bangs</small></button><button data-hap="0">Off</button></div>
@@ -220,7 +213,7 @@
           <div class="lbl"><span>Career dev mode</span></div>
           <div class="seg n2" id="devSeg"><button data-dev="0">Off<small>play it straight</small></button><button data-dev="1">On<small>every part, upgrade and staff · tests free</small></button></div>
           <div class="row" id="devRow" style="display:none;margin-bottom:8px"><button class="btn sm info" id="devCash" style="flex:1">+ $1,000,000</button><button class="btn sm info" id="devRep" style="flex:1">+ 500 rep</button><button class="btn sm info" id="devWeek" style="flex:1">Skip week</button></div>
-          <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; contracts and certs still work normally so you can test the whole loop.</p>
+          <p class="hint">A cheat switch for this save only. The HUD says DEV while it is on; team seasons and certs still work normally so you can test the whole loop.</p>
         </div>
 </div>
 <details class="sfold setfold" id="set-sound" data-fold="sound"><summary>Sound <span class="cnt" id="setSumSound"></span></summary><div class="sfb">
@@ -294,8 +287,7 @@
       <div id="introLay" hidden><span>Play on</span><div class="seg n2"><button data-lay="phone">Phone<small>portrait, touch</small></button><button data-lay="desktop">Desktop<small>wide screen, mouse + keys</small></button></div></div>
       <div class="modebox">
         <button data-mode="sandbox"><b>Test cell</b><small>Sandbox — everything unlocked, no money. For testing theories.</small></button>
-        <button data-mode="career"><b>Career</b><small>$20,000, a chassis dyno, five stock starter engines. Sell certified engines, survive the warranty claims, grow.</small></button>
-        <button data-mode="pit"><b>Pit Crew</b><small>Build engines to order for local racers, each with a budget and a style. Race day decides your rep.</small></button>
+        <button data-mode="career"><b>Career</b><small>$20,000, a chassis dyno, five stock starter engines. Build engines for race teams a season at a time, race the events, grow the shop.</small></button>
       </div>
       <div class="credit">A game by Longlight Interactive · <span id="verLbl"></span></div>
     </div>
