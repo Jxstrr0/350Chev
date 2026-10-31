@@ -18143,12 +18143,13 @@ function buildGarageMesh(owned){
 function extrasPush(arr){ return function(o){ arr.push(o); }; }
 
 /* ---- the workshop monitor ----
-   A screen on a rolling stand behind and left of the engine stand, as the opening camera sees it, far enough out that the orbiting
-   camera passes inside it. The app draws the picture on its own canvas (the live dyno curve, the last result, or the shop's name) and
+   A screen on a low rolling stand behind and left of the engine stand, as the opening camera sees it: low and to the left so a phone in
+   portrait sees it between the top buttons and the engine card, near enough the middle that the narrow desktop view keeps it in frame.
+   Its top (about 6.3) sits below the lowest the orbiting camera goes (the target height), so the camera passes over it. The app draws the picture on its own canvas (the live dyno curve, the last result, or the shop's name) and
    hands it over with ENGINE_VIS.setScreen; this side only uploads that canvas as a texture when told it changed. The stand and bezel
    merge with the room; the screen is one plane of its own sharing MAT.dynoLive, so a garage rebuild keeps the picture.
    The career dyno console (buildUpgrades) shows the same texture. */
-var SCREEN_SPOT={x:-13.5, z:-10.8, ry:0.72, y:9.0, w:8.0, h:4.0};   /* centre on the floor, turn, screen height and size */
+var SCREEN_SPOT={x:-11.5, z:-5.5, ry:0.97, y:4.3, w:8.0, h:4.0};   /* centre on the floor, turn, screen height and size */
 /* Ultra only, during a dyno pull: the camera eases toward the monitor (look: share of the way the aim swings to it, push: units the camera
    moves toward it, fov: degrees narrower, ease: 1/s, minDot: how squarely ahead of the camera the monitor must be (cosine), or the move is skipped for that pull) */
 var SCREEN_DOLLY={look:0.32, push:2.6, fov:-5, ease:1.4, minDot:0.55};
@@ -28988,6 +28989,7 @@ const ENGINE_VIS = {
              r:+camState.r.toFixed(2), target:camState.target.toArray().map(function(v){return +v.toFixed(2);}),
              cam:camera.position.toArray().map(function(v){return +v.toFixed(2);}),
              aspect:+camera.aspect.toFixed(3),
+             scr:(function(){ if(!SCREEN.mesh) return null; var v=SCREEN.mesh.getWorldPosition(new THREE.Vector3()).project(camera); return [+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(3)]; })(),
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
                 if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
              belt:(function(){ var n=0, a=MAT.belt&&MAT.belt.map, b=MATHI.beltFlat&&MATHI.beltFlat.map;
@@ -30601,7 +30603,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.43.0";
+const VERSION="1.76.44.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -37916,7 +37918,7 @@ document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",
    on every tab, across sessions. */
 let miniView=false;
 function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);if(miniView)$("app").classList.remove("peek");if(typeof detentLabel==="function")detentLabel();$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
-$("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;save();buzz(8);});
+$("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;S.viewPeek=false;save();buzz(8);});
 /* ===================== GESTURES (UI-GLASS-PLAN PR 5) =====================
    Phone layout only (html.desk keeps the mouse and keyboard exactly as they were), touch and pen only, pointer events throughout.
    1. Swipe the panel sideways to move to the next or previous tab (same path as a tab tap or the 1-6 keys), with a light rubber band
@@ -37962,7 +37964,7 @@ document.addEventListener("click",e=>{if(Date.now()<swipeSkipClick){e.preventDef
 /* panel heights */
 const DETENTS=["half","tall","peek"];   // tap order; "tall" = a tall panel under the small engine view
 function detentNow(){return miniView?"tall":$("app").classList.contains("peek")?"peek":"half";}
-function detentSet(d){setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";detentLabel();}
+function detentSet(d){setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";S.viewPeek=d==="peek";detentLabel();}   // both saved with S, so the panel comes back at the height it was left
 function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Panel height: "+detentNow()+". Tap or drag to change");}
 (function detentInit(){const g=$("pgrab"),v=$("view"),app=$("app");if(!g)return;
   let d=null,moved=false,swallow=0;
@@ -38134,7 +38136,7 @@ function boot(){
   advSet($("abSec"),!!(S.advOpen&&S.advOpen.ab));
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
   if(typeof lgBoot==="function")lgBoot();
