@@ -35,7 +35,7 @@ function setMode(m){
   if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.profileId=null;toast("Career bay can't fit that design yet — starting from the base four.");}
   save();boot();
 }
-document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);else if(pcMode()){showTab("market");toast("Pit Crew: pick a racer to build for");}else touchHint();}));
+document.querySelectorAll("#modeBox button, #intro [data-mode]").forEach(b=>b.addEventListener("click",()=>{$("intro").style.display="none";S.seen=true;ensureSound();setMode(b.dataset.mode);save();if(career()&&!S.tourDone)setTimeout(startTour,350);else if(pcMode()){showTab("market");toast("Pit Crew: pick a team to supply for the season");}else touchHint();}));
 /* ---- First Fire: a ninety-second scratch run for new players. Fire a V6, rev it past where its
    springs give up, fit a stiffer spring, certify it. It runs in the test cell on a borrowed engine,
    so the career books never see it; the player's own build, name, bench and tab go back after. ---- */
@@ -64,7 +64,7 @@ const FF={
   fix:{go:{t:"Fix it with one change",x:()=>"Valve float is a spring problem. Under Valve springs, fit a stiffer one — try the Beehive.",tgt:"springs",d:3500},
     ok:{t:"Fix it with one change",x:()=>`${S.cfg.springs!=="single"?OPT.springs[S.cfg.springs].name+" fitted. ":""}The valves now follow the cam to about ${ffFloat(quick,S.cfg)} rpm — past the ${S.cfg.redline.toLocaleString()} redline.`,tgt:"springs",auto:2600}},
   cert:{go:{t:"Certify it",x:()=>"Same pull, one part changed. Arm the dyno and run it again.",tgt:"run",d:3000},run:Object.assign({},FF_RUN,{t:"Certify it"}),
-    done:{t:"Build, break, fix",x:()=>`${S.last&&S.last.res.rel<85?"Certified — marginal, but it holds. ":"Certified. "}That's the game — build it, break it on the dyno, fix the weak link.`,tgt:"verdict",n:()=>ff.to==="career"?"Open my shop":ff.to==="pit"?"Meet the racers":"Open the test cell",last:1},
+    done:{t:"Build, break, fix",x:()=>`${S.last&&S.last.res.rel<85?"Certified — marginal, but it holds. ":"Certified. "}That's the game — build it, break it on the dyno, fix the weak link.`,tgt:"verdict",n:()=>ff.to==="career"?"Open my shop":ff.to==="pit"?"Meet the teams":"Open the test cell",last:1},
     still:{t:"Still breaking",x:()=>"Something else let go — the red bars in the stress report say what. Fix it and pull again, or finish here.",tgt:"verdict",n:"Finish"}}};
 const ffCur=()=>FF[FF_STEPS[ff.step]][ff.phase];
 function ffSet(ph){ff.phase=ph;ff.t0=performance.now();const P=ffCur();
