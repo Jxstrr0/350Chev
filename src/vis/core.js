@@ -1135,6 +1135,7 @@ function buildMaterials(){
   MAT.chrome     =new THREE.MeshStandardMaterial({color:sc(0xbcc2c8), roughness:0.16, metalness:1.0});
   MAT.copper     =new THREE.MeshStandardMaterial({color:sc(0xc07434), roughness:0.34, metalness:1.0});
   MAT.filterRed  =new THREE.MeshStandardMaterial({color:sc(0xa3241d), roughness:0.86, metalness:0.0, envMapIntensity:0.4});   /* oiled cotton filter element */
+  MAT.paintMark  =new THREE.MeshStandardMaterial({color:sc(0xd9d0a0), roughness:0.62, metalness:0.0, envMapIntensity:0.4});   /* torque-stripe paint on the pulleys and the damper's timing mark */
 
   /* signage */
   MAT.sign = drawMat(1024,256,function(x,w,h){
@@ -1712,7 +1713,7 @@ function buildEnvMap(renderer){
    ==========================================================================*/
 var renderer=null, scene=null, camera=null, canvasEl=null, clock=null;
 var envMap=null;
-var garageRoot=null, engineRoot=null, engineShake=null, fxRoot=null;
+var garageRoot=null, engineRoot=null, engineShake=null, fxRoot=null, standRoot=null;
 var keyLight=null, fillLight=null, rimLight=null, hemi=null;
 var running=true, rafId=0;
 var lastOwned={}, lastCfg=null, lastLayout=null;
