@@ -217,6 +217,7 @@ $("runTest").addEventListener("click",()=>{
   else{dur=1800;hold=1200;if(failing)failAt=dur+hold*0.45;}
   sfx("start");
   $("testProg").classList.remove("done");
+  if(env.testType==="pull"&&monDollyOk())ENGINE_VIS.setScreen({dolly:true});   // Ultra: the camera eases toward the garage monitor
   const step=()=>{const t=performance.now()-t0;let i=N;$("testProg").style.width=Math.min(100,100*t/(dur+hold))+"%";
     if(env.testType==="pull"){if(t<dur){i=Math.floor(N*(t/dur));run.rpm=res.rpms[Math.min(N-1,i)];}else run.rpm=cfg0.redline+Math.sin(t/40)*40;run.load=1;}
     else if(env.testType==="endurance"){const ph=t/dur;const prof={highway:.35,mixed:.6,track:.95}[env.loadProfile];run.rpm=1500+(cfg0.redline-1500)*prof*(0.55+0.45*Math.abs(Math.sin(t/230)));run.load=prof*(0.6+0.4*Math.abs(Math.sin(t/230+1)));i=N;label=`${Math.min(env.hours,Math.round(env.hours*Math.min(1,ph)))} h`;}
@@ -225,8 +226,9 @@ $("runTest").addEventListener("click",()=>{
     if(failed){const since=t-failAt;const d=failKind==="seize"?(since>1600?900:rpmDecay):failKind==="knock"?(since>1200?140:rpmDecay):rpmDecay;run.rpm=Math.max(0,run.rpm-d);if(failKind==="knock"||failKind==="steam")run.rpm+=(Math.random()-0.5)*120;}
     run.on=true;$("rpmLbl").textContent=label||Math.round(run.rpm/10)*10;
     if(env.testType==="pull")drawChart(res,Math.min(N,i+1));
+    monLive({res,upto:env.testType==="pull"?Math.min(N,i+1):null,rpm:run.rpm,right:label||Math.round(res.power[Math.min(N-1,i)]||0)+" HP",fail:failed});   // the garage monitor, throttled inside
     if(t<dur+hold)requestAnimationFrame(step);
-    else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
+    else{testing=false;run.on=false;run.fail=false;run.rpm=0;ENGINE_VIS.setScreen({dolly:false});$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
       if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);

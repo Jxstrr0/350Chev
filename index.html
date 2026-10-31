@@ -18092,8 +18092,11 @@ function buildGarageMesh(owned){
 
   /* engine stand */
   buildStand(B, sandbox);
+  /* the workshop monitor beside it (the app draws on it through ENGINE_VIS.setScreen) */
+  var mon=buildMonitor(B, G);
 
   B.flush(G, {}, true);
+  G.userData.liveScreen=mon; SCREEN.mesh=mon;
   for(var li=0; li<lights.length; li++) G.add(lights[li]);
   G.userData.roomW=W; G.userData.roomD=D; G.userData.roomH=Hh;
   G.userData.sceneArgs={W:W, D:D, Hh:Hh, owned:owned, sandbox:sandbox, bay:bay};
@@ -18101,6 +18104,56 @@ function buildGarageMesh(owned){
   return G;
 }
 function extrasPush(arr){ return function(o){ arr.push(o); }; }
+
+/* ---- the workshop monitor ----
+   A screen on a rolling stand behind and left of the engine stand, as the opening camera sees it, far enough out that the orbiting
+   camera passes inside it. The app draws the picture on its own canvas (the live dyno curve, the last result, or the shop's name) and
+   hands it over with ENGINE_VIS.setScreen; this side only uploads that canvas as a texture when told it changed. The stand and bezel
+   merge with the room; the screen is one plane of its own sharing MAT.dynoLive, so a garage rebuild keeps the picture.
+   The career dyno console (buildUpgrades) shows the same texture. */
+var SCREEN_SPOT={x:-13.5, z:-10.8, ry:0.72, y:9.0, w:8.0, h:4.0};   /* centre on the floor, turn, screen height and size */
+/* Ultra only, during a dyno pull: the camera eases toward the monitor (look: share of the way the aim swings to it, push: units the camera
+   moves toward it, fov: degrees narrower, ease: 1/s, minDot: how squarely ahead of the camera the monitor must be (cosine), or the move is skipped for that pull) */
+var SCREEN_DOLLY={look:0.32, push:2.6, fov:-5, ease:1.4, minDot:0.55};
+var SCREEN={canvas:null, tex:null, mesh:null, dolly:false, k:0, skip:false, fov0:0, uploads:0};
+var _scrV=new THREE.Vector3(), _scrL=new THREE.Vector3(), _scrF=new THREE.Vector3();
+function screenMat(){
+  if(!MAT.dynoLive) MAT.dynoLive=new THREE.MeshBasicMaterial({map:SCREEN.tex||MAT.dynoScreen.map, toneMapped:false, fog:false});
+  return MAT.dynoLive;
+}
+function buildMonitor(B, G){
+  var s=SCREEN_SPOT;
+  B.push(new THREE.Matrix4().makeRotationY(s.ry).setPosition(s.x, 0, s.z));
+  B.add("blackPlast", BOX(4.2, 0.4, 3.0, 1/4), 0, 0.5, 0);                    /* wheeled base */
+  for(var c=0;c<4;c++) B.add("rubberFlat", CYL(0.3,0.3,0.3,10,false,2), (c%2?1.7:-1.7), 0.3, (c<2?1.1:-1.1), 0,0,PI/2);
+  B.add("steel", CYL(0.28,0.28,s.y-s.h/2, 10,false,1/3), 0, (s.y-s.h/2)/2+0.6, -0.4);   /* post */
+  B.add("blackPlast", RBOX(s.w+0.6, s.h+0.6, 0.5, 0.12, 1/6), 0, s.y, -0.3);    /* bezel */
+  B.add("blackPlast", BOX(2.4, 0.5, 1.2, 1/4), 0, 0.95, 0.6);                  /* a keyboard shelf on the base */
+  B.pop();
+  var m=new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.h), screenMat());
+  m.position.set(s.x+Math.sin(s.ry)*0.02, s.y, s.z+Math.cos(s.ry)*0.02); m.rotation.y=s.ry; m.name="liveScreen";
+  G.add(m);
+  return m;
+}
+/* the camera move, called from tick() after the orbit has placed the camera; returns the point to look at */
+function screenCam(dt, tgt){
+  var on=SCREEN.dolly && GFX==="ultra" && !SCREEN.skip && SCREEN.mesh && SCREEN.mesh.parent && !TD.on;
+  if(on && SCREEN.k===0){   /* starting: only when the monitor is ahead of the camera and beyond the engine (seen past it, not under the lens) */
+    SCREEN.mesh.getWorldPosition(_scrV);
+    _scrF.subVectors(tgt, camera.position);
+    var far=_scrV.distanceTo(camera.position)>_scrF.length(); _scrF.normalize();
+    if(!far || _scrF.dot(_scrL.subVectors(_scrV, camera.position).normalize())<SCREEN_DOLLY.minDot){ SCREEN.skip=true; on=false; }
+  }
+  SCREEN.k = on ? Math.min(1, SCREEN.k+dt*SCREEN_DOLLY.ease) : Math.max(0, SCREEN.k-dt*SCREEN_DOLLY.ease);
+  if(SCREEN.k<=0){ if(SCREEN.fov0){ camera.fov=SCREEN.fov0; SCREEN.fov0=0; camera.updateProjectionMatrix(); } return tgt; }
+  var e=SCREEN.k*SCREEN.k*(3-2*SCREEN.k);
+  SCREEN.mesh.getWorldPosition(_scrV);
+  _scrL.copy(tgt).lerp(_scrV, e*SCREEN_DOLLY.look);
+  camera.position.addScaledVector(_scrF.subVectors(_scrV, camera.position).normalize(), e*SCREEN_DOLLY.push);
+  if(!SCREEN.fov0) SCREEN.fov0=camera.fov;
+  camera.fov=SCREEN.fov0+e*SCREEN_DOLLY.fov; camera.updateProjectionMatrix();
+  return _scrL;
+}
 
 function buildStand(B, sandbox){
   var pk = sandbox ? "paintGrey" : "paintOrange";
@@ -18310,7 +18363,7 @@ function buildUpgrades(B, G, addLight, W, D, Hh, owned, sandbox){
     B.add("malu", CYL(1.0,1.0,3.0,16,false,1.6), dx-4.6, 10.6, dz, 0,0,PI/2);
     /* console */
     B.add("panel", RBOX(7.0, 9.0, 3.0, 0.2, 1/8), dx-1, 4.5, dz-9.5);
-    var scr=new THREE.Mesh(new THREE.PlaneGeometry(5.4,3.4), MAT.dynoScreen);
+    var scr=new THREE.Mesh(new THREE.PlaneGeometry(5.4,3.4), screenMat());   /* the same picture as the workshop monitor */
     scr.position.set(dx-1, 7.2, dz-11.1); scr.rotation.x=-0.22; G.add(scr);
     B.add("blackPlast", BOX(5.0, 1.4, 1.2, 1/6), dx-1, 4.6, dz-11.0);
     if(has("dyno3")){
@@ -18859,7 +18912,7 @@ function tick(dt, t){
     camera.position.y += Math.sin(t*83)*sh*0.7;
     camera.position.z += Math.cos(t*47)*sh;
   }
-  camera.lookAt(camState.target);
+  camera.lookAt(screenCam(dt, camState.target));   /* Ultra: the dyno-pull move toward the workshop monitor (garage.js) */
   camState.shake *= Math.max(0, 1-dt*3.2);
 
   /* --- running parts --- */
@@ -28678,6 +28731,25 @@ const ENGINE_VIS = {
     return G;
   },
 
+  /* the workshop monitor (garage.js): {canvas} hands over the app's 2D canvas (a new one replaces and frees the old texture), {dirty:true}
+     uploads it again after the app drew on it, {dolly:true|false} starts / ends the Ultra camera move toward it (other tiers ignore it).
+     The app does the drawing; this side never draws on the canvas. */
+  setScreen: function(o){
+    o=o||{};
+    if(o.canvas && o.canvas!==SCREEN.canvas){
+      var old=SCREEN.tex, t=new THREE.CanvasTexture(o.canvas);
+      t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;
+      t.generateMipmaps=false; t.minFilter=THREE.LinearFilter;   /* no mip chain to rebuild on every upload */
+      SCREEN.canvas=o.canvas; SCREEN.tex=t;
+      if(MAT.dynoLive){ MAT.dynoLive.map=t; MAT.dynoLive.needsUpdate=true; }
+      if(old) old.dispose();
+    } else if(o.dirty && SCREEN.tex){ SCREEN.tex.needsUpdate=true; SCREEN.uploads++; }
+    if(o.dolly!==undefined){ SCREEN.dolly=!!o.dolly; if(!SCREEN.dolly) SCREEN.skip=false; }
+    return ENGINE_VIS.screen();
+  },
+  screen: function(){ return {canvas:SCREEN.canvas?SCREEN.canvas.width+"x"+SCREEN.canvas.height:null, uploads:SCREEN.uploads, mesh:!!(SCREEN.mesh&&SCREEN.mesh.parent),
+    live:!!(MAT.dynoLive&&SCREEN.tex&&MAT.dynoLive.map===SCREEN.tex), dolly:SCREEN.dolly, k:+SCREEN.k.toFixed(2), skip:SCREEN.skip}; },   /* harness */
+
   setRun: function(s){
     s=s||{};
     if(s.on!==undefined) run.on=!!s.on;
@@ -30365,7 +30437,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.41.0";
+const VERSION="1.76.42.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -30508,7 +30580,7 @@ function heatZones(){if(!quick)return null;const worst={};for(const t of quick.t
     if(!worst[z]||t.util>worst[z])worst[z]=t.util;}
   return Object.keys(worst).map(z=>{const u=worst[z];let c,a,pulse=false;if(u>1){c=[0.95,0.18,0.12];a=0.62;pulse=true;}else if(u>0.8){c=[1,0.66,0.15];a=0.28+0.3*(u-0.8)/0.2;}else{c=[0.25,0.85,0.5];a=0.10+0.18*Math.max(0,(u-0.4)/0.4);}
     return{zone:+z,r:c[0],g:c[1],b:c[2],amount:a,pulse};});}
-function applyGfx(){const q=S.gfx||deskGfx()||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_VIS.setQuality(q);document.documentElement.dataset.gfx=q;document.querySelectorAll("#gfxSeg button").forEach(b=>b.classList.toggle("on",b.dataset.gfx===q));applyGlass();}
+function applyGfx(){const q=S.gfx||deskGfx()||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_VIS.setQuality(q);document.documentElement.dataset.gfx=q;document.querySelectorAll("#gfxSeg button").forEach(b=>b.classList.toggle("on",b.dataset.gfx===q));applyGlass();if(typeof monIdle==="function")monIdle();}
 /* Shop Glass (css/ui-glass.css): S.glass false, or perf.js giving it up on a phone that still stutters at Lite, puts html.noglass (solid panels, no blur) */
 function applyGlass(){const off=S.glass===false||!!(typeof PERF!=="undefined"&&PERF.noglass&&S.glass!==true);document.documentElement.classList.toggle("noglass",off);document.querySelectorAll("#glassSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.glass==="1")===!off));}
 /* Shop Glass PR 3: the glass takes on the light of the scene that's up (the garage when no event scene is showing). --glass-tint
@@ -30620,6 +30692,7 @@ function recompute(){
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
+  if(typeof monIdle==="function")monIdle();   // so does the garage monitor (app/test.js), only when its picture changed
   if(rcAfter.size){const a=[...rcAfter.values()];rcAfter.clear();a.forEach(f=>f());}   // what recomputeSoon callers queued
 }
 function hud(){
@@ -31344,11 +31417,11 @@ function drawDragTrace(r){const INK=getComputedStyle(document.documentElement).g
   x.fillStyle="#d97757";x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(120,169,221,.9)";x.fillText("rpm",padL+34,padT+12);
   x.fillStyle=soft;x.textAlign="right";x.fillText(mphMax+" mph",W-padR,padT+12);x.textAlign="left";x.fillText("0",padL+4,padT+ch-4);}
 function lastForChart(){return S.last&&S.last.hash===cfgHash(S.cfg)?S.last.res:null;}
-function drawChart(res,upto,cv){const chart=cv||$("chart");const OR2=getComputedStyle(document.documentElement).getPropertyValue("--orange2").trim()||"#e8956f";if(res&&res.e24&&upto==null&&!cv&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#edeae1";const INK_SOFT=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
-  const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;
+function drawChart(res,upto,cv,o){o=o||{};const chart=cv||$("chart");const OR2=getComputedStyle(document.documentElement).getPropertyValue("--orange2").trim()||"#e8956f";if(res&&res.e24&&upto==null&&!cv&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=o.ink||getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#edeae1";const INK_SOFT=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
+  const W=o.w||chart.clientWidth,H=o.h||chart.clientHeight,dpr=o.w?chart.width/o.w:Math.min(devicePixelRatio,2);   // o.w/o.h: an offscreen canvas (the garage monitor) laid out at that size, whatever its pixel count
   if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
-  const padL=34,padR=34,padT=12,padB=22,cw=W-padL-padR,ch=H-padT-padB;
+  const padL=34,padR=34,padT=12+(o.padT||0),padB=22,cw=W-padL-padR,ch=H-padT-padB;
   const base=curves.base&&S.base?S.base.res:null;
   const src=res||quick;const rmin=1000;const rmax=Math.max(4000,Math.ceil(Math.max(src.rpms[src.rpms.length-1],base?base.rpms[base.rpms.length-1]:0)/1000)*1000);
   const tmax=Math.max(50,Math.ceil(Math.max(...src.torque,base?Math.max(...base.torque):0)*1.1/50)*50),pmax=Math.max(50,Math.ceil(Math.max(...src.power,base?Math.max(...base.power):0)*1.1/50)*50);
@@ -31370,6 +31443,34 @@ function drawChart(res,upto,cv){const chart=cv||$("chart");const OR2=getComputed
   if(N>0&&N<res.rpms.length){x.fillStyle=INK;x.beginPath();x.arc(X(res.rpms[N-1]),YP(res.power[N-1]),3,0,7);x.fill();}
   x.fillStyle=OR2;x.textAlign="left";x.fillText("Nm",padL+2,padT+6);x.fillStyle=INK;x.textAlign="right";x.fillText("hp",padL+cw-2,padT+6);x.lineWidth=1;
 }
+/* ---- the workshop monitor in the garage ----
+   vis/garage.js puts a screen beside the engine stand; the app draws its picture here on an offscreen canvas and hands it over with
+   ENGINE_VIS.setScreen (the 3D side only uploads it). During a dyno run: the curve as it draws plus a big rpm / hp readout, redrawn at
+   most every MON_TIER ms. Idle: the last result for this build, or the shop's name when there is none, drawn once and again only when
+   what it shows changes (nothing per frame, on any tier). On Ultra a dyno pull also eases the camera toward it, unless the system asks
+   for reduced motion. */
+const MON_TIER={lite:{w:256,h:128,ms:125},full:{w:512,h:256,ms:67},ultra:{w:512,h:256,ms:67}};   // canvas pixels and ms between live redraws (8 Hz / 15 Hz)
+const MON_LAY={w:256,h:128,head:26,bg:"#070b10",ink:"#edeae1",hot:"#e8956f",bad:"#ee5a5e"};   // drawing units (scaled to the canvas), readout band over the chart, colours
+const MON={cv:null,tier:"",key:"",t:0};
+function monTier(){const g=document.documentElement.dataset.gfx;return MON_TIER[g]?g:"lite";}
+function monCanvas(){const tr=monTier(),T=MON_TIER[tr];if(!MON.cv||MON.tier!==tr){const cv=document.createElement("canvas");cv.width=T.w;cv.height=T.h;MON.cv=cv;MON.tier=tr;MON.key="";try{ENGINE_VIS.setScreen({canvas:cv});}catch(e){}}return MON.cv;}
+function monPaint(fn){const cv=monCanvas(),x=cv.getContext("2d"),k=cv.width/MON_LAY.w;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);fn(cv,x,k);
+  x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="destination-over";x.fillStyle=MON_LAY.bg;x.fillRect(0,0,cv.width,cv.height);x.globalCompositeOperation="source-over";
+  try{ENGINE_VIS.setScreen({dirty:true});}catch(e){}}
+function monHead(x,k,left,right,bad){x.setTransform(k,0,0,k,0,0);x.textBaseline="middle";x.font="700 17px 'IBM Plex Mono',monospace";x.textAlign="left";x.fillStyle=bad?MON_LAY.bad:MON_LAY.ink;x.fillText(left,8,15);x.textAlign="right";x.fillStyle=bad?MON_LAY.bad:MON_LAY.hot;x.fillText(right,MON_LAY.w-8,15);}
+function monChart(cv,res,upto){drawChart(res,upto,cv,{w:MON_LAY.w,h:MON_LAY.h,ink:MON_LAY.ink,padT:MON_LAY.head});}
+function monSaver(x,k){const L=MON_LAY;x.setTransform(k,0,0,k,0,0);x.textAlign="center";x.textBaseline="middle";
+  x.fillStyle=L.ink;x.font="700 21px 'Chakra Petch','Arial Narrow',sans-serif";x.fillText("PRAIRIE ENGINE WORKS",L.w/2,L.h/2-12);
+  x.fillStyle=L.hot;x.fillRect(L.w/2-60,L.h/2+2,120,2);x.fillStyle="#9a9484";x.font="11px 'IBM Plex Mono',monospace";x.fillText("DYNO READY",L.w/2,L.h/2+18);}
+/* idle picture: called from renderTest and applyGfx; returns at once unless what it would show changed */
+function monIdle(){if(testing)return;const res=lastForChart(),tr=monTier();const key=[tr,res?S.last.hash+"|"+res.peakHp:"-",curves.torque,curves.power,curves.boost,curves.ve,curves.egt,curves.base&&S.base?1:0,S.psi?1:0].join("|");
+  if(key===MON.key)return;MON.key=key;
+  monPaint((cv,x,k)=>{if(res&&res.rpms&&res.rpms.length){monChart(cv,res,null);monHead(x,k,`PEAK ${Math.round(res.peakHp)} HP`,`@ ${Math.round(res.peakHpRpm||0)} RPM`,false);}else monSaver(x,k);});}
+/* live picture, from the dyno run's frame loop: {res, upto (null = the whole curve), rpm, right (hp or hours), fail} */
+function monLive(o){const now=performance.now();if(now-MON.t<MON_TIER[monTier()].ms&&now>=MON.t)return;MON.t=now;MON.key="";
+  monPaint((cv,x,k)=>{monChart(cv,o.res,o.upto);monHead(x,k,`${Math.round(o.rpm/10)*10} RPM`,o.fail?"FAIL":o.right,!!o.fail);});}
+function monDollyOk(){return monTier()==="ultra"&&!matchMedia("(prefers-reduced-motion: reduce)").matches;}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{try{MON.key="";monIdle();}catch(e){}}).catch(()=>{});   // the first idle frame may have been drawn before the fonts arrived
 let testing=false;
 /* the chart for the current test: the last run's trace when it matches the build and the test type, otherwise the live curve */
 function chartRedraw(){const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.env.testType===S.env.testType?S.last:null;
@@ -31380,6 +31481,7 @@ function renderTest(){
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=chartRedraw();
+  monIdle();
   const blk=testing?"":evBlock(S.env.testType);$("runTest").disabled=testing||!!blk;$("runTest").classList.toggle("pri",!blk);const cost=testCost();
   $("runTest").textContent=testing?"Test in progress":blk?blk:`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Pikes Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
@@ -34445,6 +34547,7 @@ $("runTest").addEventListener("click",()=>{
   else{dur=1800;hold=1200;if(failing)failAt=dur+hold*0.45;}
   sfx("start");
   $("testProg").classList.remove("done");
+  if(env.testType==="pull"&&monDollyOk())ENGINE_VIS.setScreen({dolly:true});   // Ultra: the camera eases toward the garage monitor
   const step=()=>{const t=performance.now()-t0;let i=N;$("testProg").style.width=Math.min(100,100*t/(dur+hold))+"%";
     if(env.testType==="pull"){if(t<dur){i=Math.floor(N*(t/dur));run.rpm=res.rpms[Math.min(N-1,i)];}else run.rpm=cfg0.redline+Math.sin(t/40)*40;run.load=1;}
     else if(env.testType==="endurance"){const ph=t/dur;const prof={highway:.35,mixed:.6,track:.95}[env.loadProfile];run.rpm=1500+(cfg0.redline-1500)*prof*(0.55+0.45*Math.abs(Math.sin(t/230)));run.load=prof*(0.6+0.4*Math.abs(Math.sin(t/230+1)));i=N;label=`${Math.min(env.hours,Math.round(env.hours*Math.min(1,ph)))} h`;}
@@ -34453,8 +34556,9 @@ $("runTest").addEventListener("click",()=>{
     if(failed){const since=t-failAt;const d=failKind==="seize"?(since>1600?900:rpmDecay):failKind==="knock"?(since>1200?140:rpmDecay):rpmDecay;run.rpm=Math.max(0,run.rpm-d);if(failKind==="knock"||failKind==="steam")run.rpm+=(Math.random()-0.5)*120;}
     run.on=true;$("rpmLbl").textContent=label||Math.round(run.rpm/10)*10;
     if(env.testType==="pull")drawChart(res,Math.min(N,i+1));
+    monLive({res,upto:env.testType==="pull"?Math.min(N,i+1):null,rpm:run.rpm,right:label||Math.round(res.power[Math.min(N-1,i)]||0)+" HP",fail:failed});   // the garage monitor, throttled inside
     if(t<dur+hold)requestAnimationFrame(step);
-    else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
+    else{testing=false;run.on=false;run.fail=false;run.rpm=0;ENGINE_VIS.setScreen({dolly:false});$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
       if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);

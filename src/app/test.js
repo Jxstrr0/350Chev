@@ -274,11 +274,11 @@ function drawDragTrace(r){const INK=getComputedStyle(document.documentElement).g
   x.fillStyle="#d97757";x.textAlign="left";x.font="11px "+getComputedStyle(document.body).fontFamily;x.fillText("mph",padL+4,padT+12);x.fillStyle="rgba(120,169,221,.9)";x.fillText("rpm",padL+34,padT+12);
   x.fillStyle=soft;x.textAlign="right";x.fillText(mphMax+" mph",W-padR,padT+12);x.textAlign="left";x.fillText("0",padL+4,padT+ch-4);}
 function lastForChart(){return S.last&&S.last.hash===cfgHash(S.cfg)?S.last.res:null;}
-function drawChart(res,upto,cv){const chart=cv||$("chart");const OR2=getComputedStyle(document.documentElement).getPropertyValue("--orange2").trim()||"#e8956f";if(res&&res.e24&&upto==null&&!cv&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#edeae1";const INK_SOFT=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
-  const dpr=Math.min(devicePixelRatio,2),W=chart.clientWidth,H=chart.clientHeight;
+function drawChart(res,upto,cv,o){o=o||{};const chart=cv||$("chart");const OR2=getComputedStyle(document.documentElement).getPropertyValue("--orange2").trim()||"#e8956f";if(res&&res.e24&&upto==null&&!cv&&S.env.testType==="race24"){drawE24Trace(res.e24);return;}const INK=o.ink||getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#edeae1";const INK_SOFT=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
+  const W=o.w||chart.clientWidth,H=o.h||chart.clientHeight,dpr=o.w?chart.width/o.w:Math.min(devicePixelRatio,2);   // o.w/o.h: an offscreen canvas (the garage monitor) laid out at that size, whatever its pixel count
   if(chart.width!==W*dpr){chart.width=W*dpr;chart.height=H*dpr;}
   const x=chart.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
-  const padL=34,padR=34,padT=12,padB=22,cw=W-padL-padR,ch=H-padT-padB;
+  const padL=34,padR=34,padT=12+(o.padT||0),padB=22,cw=W-padL-padR,ch=H-padT-padB;
   const base=curves.base&&S.base?S.base.res:null;
   const src=res||quick;const rmin=1000;const rmax=Math.max(4000,Math.ceil(Math.max(src.rpms[src.rpms.length-1],base?base.rpms[base.rpms.length-1]:0)/1000)*1000);
   const tmax=Math.max(50,Math.ceil(Math.max(...src.torque,base?Math.max(...base.torque):0)*1.1/50)*50),pmax=Math.max(50,Math.ceil(Math.max(...src.power,base?Math.max(...base.power):0)*1.1/50)*50);
@@ -300,6 +300,34 @@ function drawChart(res,upto,cv){const chart=cv||$("chart");const OR2=getComputed
   if(N>0&&N<res.rpms.length){x.fillStyle=INK;x.beginPath();x.arc(X(res.rpms[N-1]),YP(res.power[N-1]),3,0,7);x.fill();}
   x.fillStyle=OR2;x.textAlign="left";x.fillText("Nm",padL+2,padT+6);x.fillStyle=INK;x.textAlign="right";x.fillText("hp",padL+cw-2,padT+6);x.lineWidth=1;
 }
+/* ---- the workshop monitor in the garage ----
+   vis/garage.js puts a screen beside the engine stand; the app draws its picture here on an offscreen canvas and hands it over with
+   ENGINE_VIS.setScreen (the 3D side only uploads it). During a dyno run: the curve as it draws plus a big rpm / hp readout, redrawn at
+   most every MON_TIER ms. Idle: the last result for this build, or the shop's name when there is none, drawn once and again only when
+   what it shows changes (nothing per frame, on any tier). On Ultra a dyno pull also eases the camera toward it, unless the system asks
+   for reduced motion. */
+const MON_TIER={lite:{w:256,h:128,ms:125},full:{w:512,h:256,ms:67},ultra:{w:512,h:256,ms:67}};   // canvas pixels and ms between live redraws (8 Hz / 15 Hz)
+const MON_LAY={w:256,h:128,head:26,bg:"#070b10",ink:"#edeae1",hot:"#e8956f",bad:"#ee5a5e"};   // drawing units (scaled to the canvas), readout band over the chart, colours
+const MON={cv:null,tier:"",key:"",t:0};
+function monTier(){const g=document.documentElement.dataset.gfx;return MON_TIER[g]?g:"lite";}
+function monCanvas(){const tr=monTier(),T=MON_TIER[tr];if(!MON.cv||MON.tier!==tr){const cv=document.createElement("canvas");cv.width=T.w;cv.height=T.h;MON.cv=cv;MON.tier=tr;MON.key="";try{ENGINE_VIS.setScreen({canvas:cv});}catch(e){}}return MON.cv;}
+function monPaint(fn){const cv=monCanvas(),x=cv.getContext("2d"),k=cv.width/MON_LAY.w;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);fn(cv,x,k);
+  x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="destination-over";x.fillStyle=MON_LAY.bg;x.fillRect(0,0,cv.width,cv.height);x.globalCompositeOperation="source-over";
+  try{ENGINE_VIS.setScreen({dirty:true});}catch(e){}}
+function monHead(x,k,left,right,bad){x.setTransform(k,0,0,k,0,0);x.textBaseline="middle";x.font="700 17px 'IBM Plex Mono',monospace";x.textAlign="left";x.fillStyle=bad?MON_LAY.bad:MON_LAY.ink;x.fillText(left,8,15);x.textAlign="right";x.fillStyle=bad?MON_LAY.bad:MON_LAY.hot;x.fillText(right,MON_LAY.w-8,15);}
+function monChart(cv,res,upto){drawChart(res,upto,cv,{w:MON_LAY.w,h:MON_LAY.h,ink:MON_LAY.ink,padT:MON_LAY.head});}
+function monSaver(x,k){const L=MON_LAY;x.setTransform(k,0,0,k,0,0);x.textAlign="center";x.textBaseline="middle";
+  x.fillStyle=L.ink;x.font="700 21px 'Chakra Petch','Arial Narrow',sans-serif";x.fillText("PRAIRIE ENGINE WORKS",L.w/2,L.h/2-12);
+  x.fillStyle=L.hot;x.fillRect(L.w/2-60,L.h/2+2,120,2);x.fillStyle="#9a9484";x.font="11px 'IBM Plex Mono',monospace";x.fillText("DYNO READY",L.w/2,L.h/2+18);}
+/* idle picture: called from renderTest and applyGfx; returns at once unless what it would show changed */
+function monIdle(){if(testing)return;const res=lastForChart(),tr=monTier();const key=[tr,res?S.last.hash+"|"+res.peakHp:"-",curves.torque,curves.power,curves.boost,curves.ve,curves.egt,curves.base&&S.base?1:0,S.psi?1:0].join("|");
+  if(key===MON.key)return;MON.key=key;
+  monPaint((cv,x,k)=>{if(res&&res.rpms&&res.rpms.length){monChart(cv,res,null);monHead(x,k,`PEAK ${Math.round(res.peakHp)} HP`,`@ ${Math.round(res.peakHpRpm||0)} RPM`,false);}else monSaver(x,k);});}
+/* live picture, from the dyno run's frame loop: {res, upto (null = the whole curve), rpm, right (hp or hours), fail} */
+function monLive(o){const now=performance.now();if(now-MON.t<MON_TIER[monTier()].ms&&now>=MON.t)return;MON.t=now;MON.key="";
+  monPaint((cv,x,k)=>{monChart(cv,o.res,o.upto);monHead(x,k,`${Math.round(o.rpm/10)*10} RPM`,o.fail?"FAIL":o.right,!!o.fail);});}
+function monDollyOk(){return monTier()==="ultra"&&!matchMedia("(prefers-reduced-motion: reduce)").matches;}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{try{MON.key="";monIdle();}catch(e){}}).catch(()=>{});   // the first idle frame may have been drawn before the fonts arrived
 let testing=false;
 /* the chart for the current test: the last run's trace when it matches the build and the test type, otherwise the live curve */
 function chartRedraw(){const last=S.last&&S.last.hash===cfgHash(S.cfg)&&S.last.env.testType===S.env.testType?S.last:null;
@@ -310,6 +338,7 @@ function renderTest(){
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   renderEnv();
   const last=chartRedraw();
+  monIdle();
   const blk=testing?"":evBlock(S.env.testType);$("runTest").disabled=testing||!!blk;$("runTest").classList.toggle("pri",!blk);const cost=testCost();
   $("runTest").textContent=testing?"Test in progress":blk?blk:`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Pikes Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";

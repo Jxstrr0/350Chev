@@ -53,8 +53,11 @@ function buildGarageMesh(owned){
 
   /* engine stand */
   buildStand(B, sandbox);
+  /* the workshop monitor beside it (the app draws on it through ENGINE_VIS.setScreen) */
+  var mon=buildMonitor(B, G);
 
   B.flush(G, {}, true);
+  G.userData.liveScreen=mon; SCREEN.mesh=mon;
   for(var li=0; li<lights.length; li++) G.add(lights[li]);
   G.userData.roomW=W; G.userData.roomD=D; G.userData.roomH=Hh;
   G.userData.sceneArgs={W:W, D:D, Hh:Hh, owned:owned, sandbox:sandbox, bay:bay};
@@ -62,6 +65,56 @@ function buildGarageMesh(owned){
   return G;
 }
 function extrasPush(arr){ return function(o){ arr.push(o); }; }
+
+/* ---- the workshop monitor ----
+   A screen on a rolling stand behind and left of the engine stand, as the opening camera sees it, far enough out that the orbiting
+   camera passes inside it. The app draws the picture on its own canvas (the live dyno curve, the last result, or the shop's name) and
+   hands it over with ENGINE_VIS.setScreen; this side only uploads that canvas as a texture when told it changed. The stand and bezel
+   merge with the room; the screen is one plane of its own sharing MAT.dynoLive, so a garage rebuild keeps the picture.
+   The career dyno console (buildUpgrades) shows the same texture. */
+var SCREEN_SPOT={x:-13.5, z:-10.8, ry:0.72, y:9.0, w:8.0, h:4.0};   /* centre on the floor, turn, screen height and size */
+/* Ultra only, during a dyno pull: the camera eases toward the monitor (look: share of the way the aim swings to it, push: units the camera
+   moves toward it, fov: degrees narrower, ease: 1/s, minDot: how squarely ahead of the camera the monitor must be (cosine), or the move is skipped for that pull) */
+var SCREEN_DOLLY={look:0.32, push:2.6, fov:-5, ease:1.4, minDot:0.55};
+var SCREEN={canvas:null, tex:null, mesh:null, dolly:false, k:0, skip:false, fov0:0, uploads:0};
+var _scrV=new THREE.Vector3(), _scrL=new THREE.Vector3(), _scrF=new THREE.Vector3();
+function screenMat(){
+  if(!MAT.dynoLive) MAT.dynoLive=new THREE.MeshBasicMaterial({map:SCREEN.tex||MAT.dynoScreen.map, toneMapped:false, fog:false});
+  return MAT.dynoLive;
+}
+function buildMonitor(B, G){
+  var s=SCREEN_SPOT;
+  B.push(new THREE.Matrix4().makeRotationY(s.ry).setPosition(s.x, 0, s.z));
+  B.add("blackPlast", BOX(4.2, 0.4, 3.0, 1/4), 0, 0.5, 0);                    /* wheeled base */
+  for(var c=0;c<4;c++) B.add("rubberFlat", CYL(0.3,0.3,0.3,10,false,2), (c%2?1.7:-1.7), 0.3, (c<2?1.1:-1.1), 0,0,PI/2);
+  B.add("steel", CYL(0.28,0.28,s.y-s.h/2, 10,false,1/3), 0, (s.y-s.h/2)/2+0.6, -0.4);   /* post */
+  B.add("blackPlast", RBOX(s.w+0.6, s.h+0.6, 0.5, 0.12, 1/6), 0, s.y, -0.3);    /* bezel */
+  B.add("blackPlast", BOX(2.4, 0.5, 1.2, 1/4), 0, 0.95, 0.6);                  /* a keyboard shelf on the base */
+  B.pop();
+  var m=new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.h), screenMat());
+  m.position.set(s.x+Math.sin(s.ry)*0.02, s.y, s.z+Math.cos(s.ry)*0.02); m.rotation.y=s.ry; m.name="liveScreen";
+  G.add(m);
+  return m;
+}
+/* the camera move, called from tick() after the orbit has placed the camera; returns the point to look at */
+function screenCam(dt, tgt){
+  var on=SCREEN.dolly && GFX==="ultra" && !SCREEN.skip && SCREEN.mesh && SCREEN.mesh.parent && !TD.on;
+  if(on && SCREEN.k===0){   /* starting: only when the monitor is ahead of the camera and beyond the engine (seen past it, not under the lens) */
+    SCREEN.mesh.getWorldPosition(_scrV);
+    _scrF.subVectors(tgt, camera.position);
+    var far=_scrV.distanceTo(camera.position)>_scrF.length(); _scrF.normalize();
+    if(!far || _scrF.dot(_scrL.subVectors(_scrV, camera.position).normalize())<SCREEN_DOLLY.minDot){ SCREEN.skip=true; on=false; }
+  }
+  SCREEN.k = on ? Math.min(1, SCREEN.k+dt*SCREEN_DOLLY.ease) : Math.max(0, SCREEN.k-dt*SCREEN_DOLLY.ease);
+  if(SCREEN.k<=0){ if(SCREEN.fov0){ camera.fov=SCREEN.fov0; SCREEN.fov0=0; camera.updateProjectionMatrix(); } return tgt; }
+  var e=SCREEN.k*SCREEN.k*(3-2*SCREEN.k);
+  SCREEN.mesh.getWorldPosition(_scrV);
+  _scrL.copy(tgt).lerp(_scrV, e*SCREEN_DOLLY.look);
+  camera.position.addScaledVector(_scrF.subVectors(_scrV, camera.position).normalize(), e*SCREEN_DOLLY.push);
+  if(!SCREEN.fov0) SCREEN.fov0=camera.fov;
+  camera.fov=SCREEN.fov0+e*SCREEN_DOLLY.fov; camera.updateProjectionMatrix();
+  return _scrL;
+}
 
 function buildStand(B, sandbox){
   var pk = sandbox ? "paintGrey" : "paintOrange";
@@ -271,7 +324,7 @@ function buildUpgrades(B, G, addLight, W, D, Hh, owned, sandbox){
     B.add("malu", CYL(1.0,1.0,3.0,16,false,1.6), dx-4.6, 10.6, dz, 0,0,PI/2);
     /* console */
     B.add("panel", RBOX(7.0, 9.0, 3.0, 0.2, 1/8), dx-1, 4.5, dz-9.5);
-    var scr=new THREE.Mesh(new THREE.PlaneGeometry(5.4,3.4), MAT.dynoScreen);
+    var scr=new THREE.Mesh(new THREE.PlaneGeometry(5.4,3.4), screenMat());   /* the same picture as the workshop monitor */
     scr.position.set(dx-1, 7.2, dz-11.1); scr.rotation.x=-0.22; G.add(scr);
     B.add("blackPlast", BOX(5.0, 1.4, 1.2, 1/6), dx-1, 4.6, dz-11.0);
     if(has("dyno3")){
