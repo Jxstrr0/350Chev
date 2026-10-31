@@ -62,8 +62,8 @@ function sc_beltTrim(C, x0, x1){ C.B.add("chromeT", sc_patch(C.D, x0, x1, 5.22, 
 /* a lip spoiler on the deck */
 function sc_lip(C, x, h, span){ var P=sc_at(C.D, x); C.B.add(C.mat||"paint", sc_prof([[0.1,0],[0.0,h],[-0.08,h*1.1],[-0.1,0]], span||P.wt*2*0.95, 0.008), sc_M(x, P.yt-0.012, 0)); }
 /* brake calipers on the rear rotors (merged into the body pack: they sit on the axle, not the spinning wheel) */
-function sc_calipers(B, wh){
-  wh.forEach(function(w){ if(!w.rear) return; var sd=w.z<0?-1:1, a=2.2, rc=w.rimR*0.74;
+function sc_calipers(B, wh, all){   /* all: the front wheels get one too (door cars with a cabin) */
+  wh.forEach(function(w){ if(!w.rear && !all) return; var sd=w.z<0?-1:1, a=w.rear?2.2:0.94, rc=w.rimR*0.74;
     B.add("caliper", sc_rbox(0.06, 0.15, 0.06, 0.016), sc_M(w.x+Math.cos(a)*rc, w.r+Math.sin(a)*rc, w.z+sd*w.w*0.14, 0,0,a)); });
 }
 /* rear exhaust pair under the bumper (shared by the shells that keep their pipes out back) */
