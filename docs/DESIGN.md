@@ -92,7 +92,7 @@ Engine swaps (`swap.js`): 20 vehicles in 5 groups and 15 fixes; one fit check sh
 
 three.js r128. The engine mesh is built from the config: banks, heads, intake, turbos and blowers, exhaust, accessory drive, belts that move with the pulleys, lettering and wiring at higher detail. Scenes: the garage and workshop, the strip (venue, crowd, cars per class, nitro classes), pits, pull track, bog (trucks per class, mud FX, heightfield pit), boats, road course, salt flats (Speed Week pit town), Pikes Peak (heightfield mountain with LOD), the oval, the trophy room, photo mode, and a teardown view after a failure.
 
-Three tiers, `lite`, `full`, `ultra` (`app/perf.js`). Lite is the phone default. Auto-adjust watches the frame rate and steps one tier down if it stays under about 27 fps for about 8 s; it never steps up. Bloom and SSAO addons load only for Full and Ultra.
+Three tiers, `lite`, `full`, `ultra` (`app/perf.js`). Lite is the phone default. Since 1.76.36.0 every door car (the strip's street to pro stock shells, and the road, hill, oval, pits and salt cars built on them) has open windows on Full and Ultra: tinted see-through glass with a black border, a cabin behind it (dash, seats, wheel, a helmeted driver, a cage on the race classes), door handles, hood and boot shut lines, front and rear brakes, round tyres with lug nuts; Lite keeps the old dark glass and is drawn exactly as before. Auto-adjust watches the frame rate and steps one tier down if it stays under about 27 fps for about 8 s; it never steps up. Bloom and SSAO addons load only for Full and Ultra.
 
 ### Sound (`src/sound/`)
 
