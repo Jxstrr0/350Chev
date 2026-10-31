@@ -21,10 +21,14 @@ function stripCar(body, color, tyreIn, hw){
   var bodyG=new THREE.Group(); bodyG.position.set(me.xr, me.rr-scRide(me, body), 0); g.add(bodyG);   /* scRide: the fix pack's lower ride height */
   var inner=new THREE.Group(); inner.position.set(-me.xr, -me.rr, 0); bodyG.add(inner);
   var k, mesh;
+  var drv=null, DRV={drvSuit:M.suit, drvHelm:paint, drvVisor:M.visor};
   for(k in P.parts){
+    if(DRV[k]){ if(!drv){ drv=new THREE.Group(); drv.name="sc_driver"; inner.add(drv); }
+      mesh=new THREE.Mesh(P.parts[k], DRV[k]); mesh.name="sc_"+k; mesh.castShadow=true; drv.add(mesh); continue; }
     var mat = k==="paint"?paint : (M[k]||M.black);
-    mesh=new THREE.Mesh(P.parts[k], mat); mesh.name="sc_"+k; mesh.castShadow=(k!=="glass"); mesh.receiveShadow=true; inner.add(mesh);
+    mesh=new THREE.Mesh(P.parts[k], mat); mesh.name="sc_"+k; mesh.castShadow=(k!=="glass"&&k!=="glassT"); mesh.receiveShadow=true; inner.add(mesh);
   }
+  if(P.liner && P.parts.paint){ mesh=new THREE.Mesh(P.parts.paint, M.liner); mesh.name="sc_liner"; mesh.receiveShadow=true; inner.add(mesh); }   /* the body's inside, seen through the open windows */
   /* v3: a flip-up body (funny car) is its own group hinged at the back, so the pits can lift it (userData.flip) */
   var flip=null;
   if(P.flip){ flip=new THREE.Group(); flip.name="sc_flip"; flip.position.copy(me.hinge); inner.add(flip);
@@ -57,7 +61,7 @@ function stripCar(body, color, tyreIn, hw){
   var gR=(me.gates||[]).map(function(q){ return {p:q.p.clone().add(inner.position), d:q.d.clone().normalize()}; }),
       gL=gR.map(function(q){ return {p:q.p.clone().applyMatrix4(BM), d:q.d.clone()}; }),
       hR=me.hat?me.hat.clone().add(inner.position):null, hL=hR?hR.clone().applyMatrix4(BM):null;
-  g.userData={ body:body, hw:H, rr:me.rr, fr:me.fr, wheels:wheels, carriers:carriers, chute:chute, exhaustTips:tips, exhaustDirs:dirs, flameTips:fT, flameDirs:fD, flip:flip,
+  g.userData={ driver:drv, body:body, hw:H, rr:me.rr, fr:me.fr, wheels:wheels, carriers:carriers, chute:chute, exhaustTips:tips, exhaustDirs:dirs, flameTips:fT, flameDirs:fD, flip:flip,
     gates:gL, hat:hL, enginePos:me.eng?me.eng.clone():undefined, style:H?H.style:"",
     chuteAnchor:me.anchor.clone(), lights:lights, bodyGroup:bodyG, meta:me, paint:paint, lampMats:{tail:tail, head:head}, liv:liv,
     anim:{ pitch:0, pv:0, sq:0, sqv:0, roll:0, lastV:0, accF:0, shifting:false, chT:0, chC:0, chS:0, tailI:-1, headI:-1,
@@ -234,6 +238,13 @@ function sc_mats(){
   M.canopy=m(0xffffff, 0.85, 0.0, 0.4, {map:sc_stripeTex(), side:THREE.DoubleSide});
   M.letters=new THREE.MeshStandardMaterial({map:sc_letterTex(), transparent:true, depthWrite:false, roughness:0.85, polygonOffset:true, polygonOffsetFactor:-2});
   if(env) M.letters.envMap=env;
+  /* Full / Ultra door cars: window openings in the body, see-through tinted glass with a black ceramic border (the frit), and
+     a cabin behind it: the headliner and door cards (the body's own inside, drawn back faces only), dash, seats, floor */
+  M.glassT=m(0xffffff, 0.02, 0.35, 2.0, {map:sc_fritTex(), transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+  M.liner=m(0x1e1f22, 0.92, 0.0, 0.25, {side:THREE.BackSide});
+  M.cabin=m(0x232427, 0.85, 0.05, 0.4);
+  M.seat=m(0x1a1b1e, 0.7, 0.0, 0.45);
+  M.suit=m(0x2b3242, 0.85, 0.0, 0.4);
   SC.mat=M; return M;
 }
 function sc_paint(color){
@@ -257,6 +268,16 @@ function sc_carbonTex(){
     x.fillStyle=gr; x.fillRect(x0+0.5,y0+0.5,s-1,s-1);
     x.strokeStyle="rgba(0,0,0,0.35)"; x.lineWidth=1; for(var q=1;q<4;q++){ x.beginPath(); if(on){ x.moveTo(x0+q*s/4,y0); x.lineTo(x0+q*s/4,y0+s); } else { x.moveTo(x0,y0+q*s/4); x.lineTo(x0+s,y0+q*s/4); } x.stroke(); } }
   var t=sc_ctex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,5); return t;
+}
+/* window glass: a dark smoke tint you can see through, a solid black border with the dot fade real windscreens have */
+function sc_fritTex(){
+  var c=sc_canvas(128,128), x=c.getContext("2d"), i, j, b=9, f=7;
+  x.clearRect(0,0,128,128); x.fillStyle="rgba(26,33,38,0.5)"; x.fillRect(0,0,128,128);
+  x.clearRect(b+f,b+f,128-2*(b+f),128-2*(b+f)); x.fillStyle="rgba(26,33,38,0.5)"; x.fillRect(b+f,b+f,128-2*(b+f),128-2*(b+f));
+  x.fillStyle="#08090a"; x.fillRect(0,0,128,b); x.fillRect(0,128-b,128,b); x.fillRect(0,0,b,128); x.fillRect(128-b,0,b,128);
+  for(i=0;i<128;i+=3) for(j=0;j<f;j+=3){ var r=1.4*(1-j/f)+0.3;
+    [[i,b+j],[i,127-b-j],[b+j,i],[127-b-j,i]].forEach(function(q){ x.beginPath(); x.arc(q[0]+1,q[1]+1,r,0,TAU); x.fill(); }); }
+  return sc_ctex(c);
 }
 function sc_stripeTex(){
   var c=sc_canvas(128,16), x=c.getContext("2d");
@@ -441,17 +462,32 @@ function sc_pt(D, x, k, out, P, R){
   k=((k%20)+20)%20; var k0=Math.floor(k), f=k-k0, k1=(k0+1)%20;
   return out.set(x, lerp(R[2*k0],R[2*k1],f), lerp(R[2*k0+1],R[2*k1+1],f));
 }
-/* returns {paint, well, capF:{x,p}, capR} ; the underside (k 19->0->1) is the dark wheel-well / floor */
-function sc_loft(D){
-  var X=D.X, nX=X.length, NS=20, pos=[], iP=[], iW=[], P={}, R=new Float32Array(40), i, k;
-  for(i=0;i<nX;i++){ sc_params(D,X[i],P); sc_ring(P,R); for(k=0;k<NS;k++) pos.push(X[i], R[2*k], R[2*k+1]); }
+/* returns {paint, well, capF:{x,p}, capR} ; the underside (k 19->0->1) is the dark wheel-well / floor.
+   holes (Full / Ultra door cars): [{x0,x1,k0,k1}] window openings. Their edges become loft stations (added to D.X, so the
+   glass patches line up with them) and extra ring points (on the straight line between the old ones, so the shape does
+   not change), and the faces inside them are left out: the see-through glass covers the opening and the cabin shows. */
+function sc_loft(D, holes){
+  var KS=[], i, j, k;
+  for(k=0;k<20;k++) KS.push(k);
+  if(holes && holes.length){
+    holes.forEach(function(h){ [h.k0,h.k1].forEach(function(q){ if(KS.indexOf(q)<0) KS.push(q); }); });
+    KS.sort(function(a,b){ return a-b; });
+    var hx=[]; holes.forEach(function(h){ hx.push(h.x0, h.x1); });
+    var X0=D.X.filter(function(x){ for(var q=0;q<hx.length;q++) if(Math.abs(x-hx[q])<0.004) return false; return true; }).concat(hx);
+    X0.sort(function(a,b){ return a-b; }); D.X=X0.filter(function(x,q){ return q===0 || x-X0[q-1]>1e-6; });
+  }
+  var X=D.X, nX=X.length, NS=KS.length, pos=[], iP=[], iW=[], P={}, R=new Float32Array(40);
+  function ring(){ for(var q=0;q<NS;q++){ var kq=KS[q], k0=Math.floor(kq), f=kq-k0, k1=(k0+1)%20; pos.push(0, lerp(R[2*k0],R[2*k1],f), lerp(R[2*k0+1],R[2*k1+1],f)); } }
+  function cut(a, b, ka, kb){ if(!holes) return false; for(var q=0;q<holes.length;q++){ var h=holes[q]; if(a>=h.x0-1e-4 && b<=h.x1+1e-4 && ka>=h.k0-1e-4 && kb<=h.k1+1e-4) return true; } return false; }
+  for(i=0;i<nX;i++){ sc_params(D,X[i],P); sc_ring(P,R); var b0=pos.length; ring(); for(j=b0;j<pos.length;j+=3) pos[j]=X[i]; }
   for(i=0;i<nX-1;i++) for(k=0;k<NS;k++){
-    var kn=(k+1)%NS, a=i*NS+k, b=(i+1)*NS+k, c=(i+1)*NS+kn, d=i*NS+kn, dst=(k===0||k===NS-1)?iW:iP;
+    var kn=(k+1)%NS, a=i*NS+k, b=(i+1)*NS+k, c=(i+1)*NS+kn, d=i*NS+kn, dst=(KS[k]===0||k===NS-1)?iW:iP;
+    if(kn && cut(X[i], X[i+1], KS[k], KS[kn])) continue;
     dst.push(a,b,c, a,c,d);
   }
   function cap(ii, front){
     sc_params(D,X[ii],P); sc_ring(P,R); var base=pos.length/3, cy=(P.zb+P.yt)/2;
-    pos.push(X[ii], cy, 0); for(k=0;k<NS;k++) pos.push(X[ii], R[2*k], R[2*k+1]);
+    pos.push(X[ii], cy, 0); var b0=pos.length; ring(); for(j=b0;j<pos.length;j+=3) pos[j]=X[ii];
     for(k=0;k<NS;k++){ var p0=base+1+k, p1=base+1+(k+1)%NS; if(front) iP.push(base,p1,p0); else iP.push(base,p0,p1); }
     return {x:X[ii], zb:P.zb, ys:P.ys, yt:P.yt, w:P.w, wt:P.wt};
   }
@@ -530,6 +566,10 @@ function stripAddBars(car){
   add(sc_cyl(0.018,8), M.tube, sc_rodM(new THREE.Vector3(mx, my, -0.33), new THREE.Vector3(mx, my, 0.33)));
   inner.add(g); U.wbar=true; U.maxPitch=Math.min(me.maxPitch, maxP);
 }
+function sc_segM(a, b){ /* like sc_rodM but unscaled: a part built to length (a box) laid along a->b, centred on it */
+  var d=new THREE.Vector3().subVectors(b,a).normalize(), q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), d);
+  return new THREE.Matrix4().compose(new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5), q, new THREE.Vector3(1,1,1));
+}
 function sc_rodM(a, b){ /* matrix mapping a unit Y cylinder (centre origin, h=1) onto segment a->b */
   var d=new THREE.Vector3().subVectors(b,a), L=d.length(), q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), d.clone().normalize());
   return new THREE.Matrix4().compose(new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5), q, new THREE.Vector3(1,L,1));
@@ -565,12 +605,13 @@ function sc_merge(list){ return mergeGeos(list); }
 
 /* --- wheels -------------------------------------------------------------- */
 function sc_tyreGeo(r, w, rimR){
-  var key="ty"+[r,w,rimR].map(r3).join("_"); if(SC.geo[key]) return SC.geo[key];
+  var seg=GFX==="lite"?18:36;   /* Full / Ultra: a round tyre, not an 18-sided one */
+  var key="ty"+[r,w,rimR].map(r3).join("_")+(seg>18?"s":""); if(SC.geo[key]) return SC.geo[key];
   var hw=w/2, sh=Math.min(0.055,(r-rimR)*0.3), pr=[
     [rimR+0.004, 0.86], [lerp(rimR,r,0.34), 1], [lerp(rimR,r,0.74), 1], [r-sh, 0.965], [r-sh*0.22, 0.82]], pts=[], i;
   for(i=0;i<pr.length;i++) pts.push(new THREE.Vector2(pr[i][0], -hw*pr[i][1]));
   for(i=pr.length-1;i>=0;i--) pts.push(new THREE.Vector2(pr[i][0], hw*pr[i][1]));
-  return (SC.geo[key]=new THREE.LatheGeometry(pts, 18));
+  return (SC.geo[key]=new THREE.LatheGeometry(pts, seg));
 }
 function sc_rimGeo(rimR, w, style, brk){
   var key="rim"+[rimR,w].map(r3).join("_")+style+(brk?"b":""); if(SC.geo[key]) return SC.geo[key];
@@ -589,6 +630,7 @@ function sc_rimGeo(rimR, w, style, brk){
   var lip=new THREE.LatheGeometry([new THREE.Vector2(rimR*0.86, hw*0.8), new THREE.Vector2(rimR*0.9, hw*0.9), new THREE.Vector2(rimR*1.02, hw*0.92), new THREE.Vector2(rimR*1.04, hw*0.84)], 16);
   var cap=new THREE.CylinderGeometry(rimR*0.17, rimR*0.23, 0.05, 8); cap.translate(0, hw*0.78+0.03, 0);
   var parts=[{g:face,m:new THREE.Matrix4()},{g:lip,m:new THREE.Matrix4()},{g:cap,m:new THREE.Matrix4()}];
+  if(brk) for(var ln=0;ln<5;ln++){ var la=ln*TAU/5+0.3, lg=new THREE.CylinderGeometry(0.0085, 0.0095, 0.03, 6); lg.translate(Math.cos(la)*rimR*0.27, hw*0.78+0.025, Math.sin(la)*rimR*0.27); parts.push({g:lg,m:new THREE.Matrix4()}); }   /* lug nuts (Full / Ultra) */
   if(style==="bead"){ var ring=new THREE.LatheGeometry([new THREE.Vector2(rimR*0.9, hw*0.92), new THREE.Vector2(rimR*0.92, hw+0.012), new THREE.Vector2(rimR*1.06, hw+0.012), new THREE.Vector2(rimR*1.08, hw*0.9)], 16); parts.push({g:ring,m:new THREE.Matrix4()}); }
   var rimG=mergeGeos(parts);
   /* barrel (inside, seen through the windows) + dark hub backing so you can't see through the wheel */
@@ -713,7 +755,7 @@ function sc_ic(B, x, y, w, h){
 
 /* --- body packs (cached geometry per body + tyre) --------------------------- */
 function sc_pack(body, tIn, H){
-  var key=body+"|"+tIn+(H?"|"+H.key:""); if(SC.geo[key]) return SC.geo[key];
+  var key=body+"|"+tIn+(H?"|"+H.key:(GFX!=="lite"?"|d":""));   /* no hw (road, hill, oval): Full / Ultra get the cabin, Lite does not */ if(SC.geo[key]) return SC.geo[key];
   var rr=tIn*0.0254/2, B=sc_bin(), me, res={parts:{}, decals:[], tail:null, head:null};
   var tails=[], heads=[]; SC.lite=!!(H && H.lite);
   if(body==="rail") me=H?sc_tfrail(B, rr, tails, heads, res, H):sc_rail(B, rr, tails, heads, res, H);
@@ -803,17 +845,22 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
   if(SY && SY.gapF) gapF=SY.gapF;
   var rake=SY&&SY.rake!=null?SY.rake:ol?-0.012:pm?-0.006:0;
   var D=sc_def(rows, {arches:[{x:xr, y:rr, R:rr+gapR},{x:xf, y:fr, R:fr+gapF}], rake:rake, rakeX:xr, lift:lift+(ol?0.02:0)+(SY&&SY.lift||0), flares:flares, sub:(H && !H.lite)?3:2});
-  var L=sc_loft(D);
-  B.add("paint", L.paint); B.add("well", L.well);
   var P={}, R=new Float32Array(40), v=new THREE.Vector3();
   /* glass: windshield, backlight, door + quarter glass both sides */
   var roofF=SY?SY.roofF:pm?-0.2:0.18, cowl=SY?SY.cowl:pm?0.64:0.98, roofR=SY?SY.roofR:pm?-0.9:-0.5, deck=SY?SY.deck:pm?-1.5:-1.62;
-  B.add("glass", sc_patch(D, roofF+0.03, cowl-0.03, 8.28, 11.72, 0.006));
-  if(roofR-deck>0.1) B.add("glass", sc_patch(D, deck+0.06, roofR-0.03, 8.28, 11.72, 0.006));
   var dG0=SY?SY.dG0:pm?-0.62:-0.52, dG1=cowl-0.06, qG0=SY?SY.qG0:pm?-1.05:-1.12, qG1=dG0-0.07;
-  [[dG0,dG1],[qG0,qG1]].forEach(function(r){ if(r[0]==null) return; B.add("glass", sc_patch(D, r[0], r[1], 5.42, 7.7, 0.006)); B.add("glass", sc_patch(D, r[0], r[1], 12.3, 14.58, 0.006, "L")); });
+  var WIN=[{x0:roofF+0.03, x1:cowl-0.03, k0:8.28, k1:11.72}];
+  if(roofR-deck>0.1) WIN.push({x0:deck+0.06, x1:roofR-0.03, k0:8.28, k1:11.72});
+  [[dG0,dG1],[qG0,qG1]].forEach(function(r){ if(r[0]==null) return; WIN.push({x0:r[0], x1:r[1], k0:5.42, k1:7.7}, {x0:r[0], x1:r[1], k0:12.3, k1:14.58, L:true}); });
+  /* Full / Ultra: the windows are open in the body, the glass is see-through and there is a cabin behind it (Lite: the old dark glass) */
+  var det=H?!H.lite:GFX!=="lite";
+  var L=sc_loft(D, det?WIN:null);
+  B.add("paint", L.paint); B.add("well", L.well);
+  WIN.forEach(function(w){ B.add(det?"glassT":"glass", sc_patch(D, w.x0, w.x1, w.k0, w.k1, 0.006, w.L?"L":null)); });
   /* door shut lines */
   [dG1+0.02, dG0-0.1].concat(SY&&SY.seams||[]).forEach(function(x){ B.add("seam", sc_patch(D, x, x+0.009, 1.6, 5.2, 0.002)); B.add("seam", sc_patch(D, x, x+0.009, 14.8, 18.4, 0.002)); });
+  if(det) res.liner=true;
+  if(det) sc_detail(B, D, {body:body, st:st, ol:ol, pm:pm, gs:gs, SY:SY, H:H, rows:rows, cowl:cowl, roofF:roofF, roofR:roofR, deck:deck, dG0:dG0, dG1:dG1, xr:xr, xf:xf, rr:rr, fr:fr});
   /* door decals + windshield banner */
   var dx0=SY&&SY.door?SY.door[0]:pm?-0.5:-0.42, dx1=SY&&SY.door?SY.door[1]:pm?0.5:0.58;
   sc_decal(res, sc_patch(D, dx0, dx1, 2.3, 4.75, 0.004, null, 0.5)); sc_decal(res, sc_patch(D, dx0, dx1, 15.25, 17.7, 0.004, "L", 0.5));
@@ -831,6 +878,8 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
   [-1,1].forEach(function(sd){
     heads.push({g:hl, m:sc_M(cF.x, hy, sd*cF.w*0.56)});
     if(!pm) B.add("black", sc_rbox(0.03,0.05,0.12,0.01), sc_M(cF.x+0.004, hy-0.075, sd*cF.w*0.8));
+    if(det){ B.add("black", sc_rbox(0.03, pm?0.1:0.122, pm?0.29:0.33, 0.012), sc_M(cF.x-0.007, hy, sd*cF.w*0.56));   /* the lamp's housing round the lens, two projector bezels in it */
+      [-1,1].forEach(function(q){ B.add("chromeT", sc_bezel(pm?0.026:0.032, 0.007), sc_M(cF.x+0.017, hy, sd*cF.w*0.56+q*(pm?0.065:0.075))); }); }
   });
   B.add("black", sc_rbox(0.04, pm?0.07:0.09, cF.w*(pm?1.2:0.95), 0.02), sc_M(cF.x, ly, 0));
   if(!pm) B.add("satin", sc_rbox(0.03, 0.06, cF.w*0.5, 0.012), sc_M(cF.x+0.005, hy, 0));
@@ -838,6 +887,8 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
   var ty=lerp(cR.zb,cR.ys,0.74);
   tails.push({g:sc_rbox(0.03, 0.11, cR.w*(st?1.85:0.55), 0.015), m:sc_M(cR.x-0.004, ty, 0)});
   if(!st) [-1,1].forEach(function(sd){ tails.push({g:sc_rbox(0.03,0.09,0.36,0.015), m:sc_M(cR.x-0.004, ty, sd*cR.w*0.68)}); });
+  if(det && st){ B.add("black", sc_rbox(0.03, 0.13, cR.w*1.89, 0.015), sc_M(cR.x+0.004, ty, 0));   /* tail-lamp surround and the lens split into lamps */
+    [-0.62,-0.2,0.2,0.62].forEach(function(f){ B.add("seam", sc_rbox(0.012, 0.11, 0.012, 0.003), sc_M(cR.x-0.02, ty, f*cR.w)); }); }
   B.add("black", sc_rbox(0.05, 0.12, cR.w*1.9, 0.025), sc_M(cR.x+0.01, lerp(cR.zb,cR.ys,0.22), 0));
   /* mirrors */
   sc_params(D, cowl-0.04, P);
@@ -853,12 +904,12 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
   /* wheels */
   var rw=H?rwH:st?0.26:ol?0.34:0.43, fw=SY&&SY.fw?(SY.fw<0?rw:SY.fw):st?0.225:0.115;
   sc_params(D, xr, P); var zr=P.w-(st?0.015:0.05)-rw/2; sc_params(D, xf, P); var zf=SY&&SY.fz!=null?P.w-SY.fz-fw/2:st?P.w-0.02-fw/2:P.w-0.11-fw/2;
-  var wh=[], brk=!!(H && !H.lite);
+  var wh=[], brk=det;
   [-1,1].forEach(function(sd){
     wh.push({x:xr, z:sd*zr, r:rr, w:rw, rimR:pm?0.205:0.19, style:SY&&SY.rimR?SY.rimR:st?"star":pm?"bead":"weld", rimMat:SY&&SY.rimMat?SY.rimMat:pm?"rimBlack":"alu", rear:true, letters:true, brake:brk});
     wh.push({x:xf, z:sd*zf, r:fr, w:fw, rimR:0.19, style:SY&&SY.rimF?SY.rimF:st?"star":"weld", rimMat:SY&&SY.rimMat?SY.rimMat:pm?"rimBlack":"alu", rear:false, letters:SY&&SY.lettersF!=null?SY.lettersF:st, brake:brk});
   });
-  if(brk) sc_calipers(B, wh);
+  if(brk) sc_calipers(B, wh, true);
   if(SY && SY.chassis) SY.chassis({B:B, D:D, H:H, xr:xr, xf:xf, rr:rr, fr:fr, zf:zf, zr:zr, fw:fw, rw:rw, cF:cF, cR:cR});
   /* hood: outlaw scoop, promod blower + injector hat */
   var hx=SY?SY.hx:pm?1.05:1.3; sc_params(D, hx, P); var hood=P.yt;
@@ -951,6 +1002,91 @@ function sc_door(B, body, rr, tails, heads, res, H, tIn){
     squat:st?deg(1.6):deg(0.7), squatDrop:st?0.035:0.015, shiftKick:st?0.22:0.12, pitchW:st?6.5:8.5, droop:st?0.07:0.04, wrinkle:st?0.55:1,
     chuteLen:pm?5.2:4.4, chuteRise:pm?0.45:0.35, chuteR:pm?0.95:0.8, flames:SY&&SY.flames?tips.map(function(t,i){ return {p:t.clone(), d:dirs[i].clone()}; }):null,
     headers:SY&&(SY.flames||ps)?tips.map(function(t,i){ return {p:t.clone(), d:dirs[i].clone()}; }):undefined };   /* v3: night header flames (dragfx) for gassers + pro stock */
+}
+
+/* Full / Ultra door cars: what the open windows show, and the small body detail that makes a shell read as a real car.
+   Cabin (left-hand drive, so the driver sits at -z): floor, firewall and dash with the gauge binnacle, transmission tunnel and
+   shifter, bucket seat(s) (race classes: one, with head wings), a parcel shelf and rear bulkhead (street road cars: a rear
+   bench), the steering wheel on its column, a driver in a firesuit and a helmet in the car's colour. Race classes add a cage
+   (street drag cars: a four-point roll bar). Outside: a door handle each side, the hood and boot shut lines. Every height
+   is a fraction of floor-to-roof at that x, so the same code fits a low pro mod and a tall crew-cab pickup. */
+var _sdQ=new THREE.Quaternion(), _sdN=new THREE.Vector3(), _sdZ=new THREE.Vector3(0,0,1), _sdS=new THREE.Vector3(1,1,1), _sdP=new THREE.Vector3();
+function sc_detail(B, D, o){
+  var V=function(x,y,z){ return new THREE.Vector3(x,y,z); }, at=function(x){ return sc_params(D, x, {}); };
+  var race=!!o.H && !(o.st && !o.gs), road=!o.H, i;
+  var xH=clamp(o.dG0+0.3, o.roofR+0.15, o.roofF-0.12), Ph=at(xH), fl=Ph.zb+0.07, hy=lerp(fl, Ph.yt, 0.72);
+  var zD=-Math.min(0.37, Ph.w*0.42), wIn=Ph.w-0.07;
+  /* floor, firewall, dash */
+  var yD=at(o.cowl).yt-0.05, xb=Math.max(o.deck+0.03, xH-(road?0.95:0.42)), xF=o.cowl-0.06;
+  B.add("cabin", sc_rbox(xF-xb, 0.03, wIn*2, 0.01), sc_M((xF+xb)/2, fl, 0));
+  var wD=at(o.cowl-0.2).w-0.06;
+  B.add("cabin", sc_prof([[0,0],[-0.34,-0.02],[-0.41,-0.08],[-0.39,-0.25],[-0.2,-0.3],[0,-0.32]], wD*2, 0.02), sc_M(o.cowl-0.02, yD, 0));
+  B.add("cabin", sc_rbox(0.04, Math.max(0.05, yD-0.3-fl), wD*2, 0.01), sc_M(o.cowl-0.1, (yD-0.3+fl)/2, 0));
+  B.add("cabin", sc_rbox(0.16, 0.07, 0.34, 0.02), sc_M(o.cowl-0.36, yD+0.015, zD));                  /* gauge binnacle */
+  B.add("well", sc_rbox(0.01, 0.05, 0.28, 0.004), sc_M(o.cowl-0.443, yD+0.0, zD));                   /* the gauges' dark faces */
+  /* tunnel + shifter */
+  B.add("cabin", sc_rbox(0.9, 0.16, 0.22, 0.04), sc_M(xH+0.3, fl+0.08, 0));
+  B.add("black", sc_cyl(0.008, 6), sc_rodM(V(xH+0.42, fl+0.16, 0), V(xH+0.36, fl+0.36, 0)));
+  B.add("chrome", new THREE.SphereGeometry(0.024, 10, 8), sc_M(xH+0.36, fl+0.37, 0));
+  /* seats: a bucket = cushion, a reclined back, side bolsters; race seats add head wings */
+  function seat(z, wings){
+    B.add("seat", sc_rbox(0.46, 0.1, 0.44, 0.035), sc_M(xH+0.26, fl+0.17, z));
+    var a=V(xH+0.02, fl+0.2, z), b=V(xH-0.1, hy+(wings?0.1:0.02), z), len=a.distanceTo(b);
+    B.add("seat", sc_rbox(0.09, len, 0.46, 0.035), sc_segM(a,b));
+    [-1,1].forEach(function(sd){ B.add("seat", sc_rbox(0.16, len*0.62, 0.05, 0.02), sc_segM(V(a.x+0.04, a.y, z+sd*0.22), V(lerp(a.x,b.x,0.62)+0.04, lerp(a.y,b.y,0.62), z+sd*0.22)));
+      B.add("seat", sc_rbox(0.4, 0.07, 0.06, 0.02), sc_M(xH+0.24, fl+0.24, z+sd*0.2));
+      if(wings) B.add("seat", sc_rbox(0.14, 0.2, 0.04, 0.015), sc_M(b.x+0.06, hy, z+sd*0.17)); });
+  }
+  seat(zD, race);
+  if(!o.pm) seat(-zD, race);
+  /* behind the seats: a bulkhead up to the parcel shelf, the shelf under the rear glass; road cars a rear bench */
+  var Pb=at(xb), ysh=Pb.ys-0.03;
+  if(ysh-fl>0.1) B.add("cabin", sc_rbox(0.03, ysh-fl, (Pb.w-0.07)*2, 0.01), sc_M(xb, (ysh+fl)/2, 0));
+  if(xb-o.deck>0.1) B.add("cabin", sc_rbox(xb-o.deck, 0.025, (Pb.w-0.07)*2, 0.008), sc_M((xb+o.deck)/2, ysh, 0));
+  if(road && xH-0.42-xb>0.3){ B.add("seat", sc_rbox(0.4, 0.1, (Pb.w-0.12)*2, 0.04), sc_M(xb+0.25, fl+0.16, 0));
+    B.add("seat", sc_rbox(0.1, ysh-fl-0.18, (Pb.w-0.12)*2, 0.04), sc_M(xb+0.07, (ysh+fl+0.18)/2, 0, 0,0,0.18)); }
+  /* steering wheel, its plane facing the driver, and the column into the dash */
+  var wc=V(xH+0.5, hy-0.29, zD), n=_sdN.set(-0.9, 0.44, 0).normalize();
+  var wm=new THREE.Matrix4().compose(wc, _sdQ.setFromUnitVectors(_sdZ, n), _sdS);
+  B.add("black", new THREE.TorusGeometry(0.17, 0.017, 6, 22), wm);
+  [0, 2.2, 4.1].forEach(function(a){ var sp=new THREE.Matrix4().makeRotationZ(a).multiply(new THREE.Matrix4().makeTranslation(0.085, 0, 0)); B.add("black", sc_rbox(0.17, 0.03, 0.012, 0.004), wm.clone().multiply(sp)); });
+  B.add("black", sc_cyl(0.022, 8), sc_rodM(wc, V(o.cowl-0.38, wc.y-0.12, zD)));
+  if(race) B.add("alu", new THREE.CylinderGeometry(0.05, 0.05, 0.05, 14), new THREE.Matrix4().compose(V(wc.x+0.1, wc.y+0.17, zD), _sdQ.setFromUnitVectors(new THREE.Vector3(0,1,0), n), _sdS));   /* the shift light / tach on the column */
+  /* the driver (own bins: stripCar puts them in userData.driver so the pits can leave the seat empty): legs under the dash,
+     torso against the seat back, arms to the wheel, a helmet in the car's colour with a dark visor */
+  [-1,1].forEach(function(sd){ var z=zD+sd*0.1;
+    B.add("drvSuit", sc_cyl(0.065, 8), sc_rodM(V(xH+0.12, fl+0.25, z), V(xH+0.58, fl+0.34, z)));
+    B.add("drvSuit", sc_cyl(0.05, 8), sc_rodM(V(xH+0.58, fl+0.34, z), V(xH+0.8, fl+0.1, z))); });
+  var sh=V(xH-0.02, hy-0.22, zD), hp=V(xH+0.1, fl+0.24, zD);
+  B.add("drvSuit", sc_rbox(0.22, sh.distanceTo(hp)+0.06, 0.4, 0.08), sc_segM(hp, sh));
+  B.add("drvSuit", sc_cyl(0.05, 8), sc_rodM(V(sh.x, sh.y+0.02, zD), V(sh.x+0.02, hy-0.08, zD)));
+  [-1,1].forEach(function(sd){ var s0=V(sh.x+0.03, sh.y-0.02, zD+sd*0.19), h1=V(wc.x-0.04, wc.y+0.08, zD+sd*0.14), el=V(lerp(s0.x,h1.x,0.5), Math.min(s0.y,h1.y)-0.09, zD+sd*0.2);
+    B.add("drvSuit", sc_cyl(0.042, 8), sc_rodM(s0, el)); B.add("drvSuit", sc_cyl(0.036, 8), sc_rodM(el, h1)); });
+  B.add("drvHelm", new THREE.SphereGeometry(0.135, 16, 12), sc_M(xH+0.02, hy, zD));
+  B.add("drvVisor", new THREE.SphereGeometry(0.137, 12, 8, -0.95, 1.9, 1.25, 0.62), sc_M(xH+0.02, hy, zD, 0, PI, 0));
+  /* cage: the main hoop behind the seats; race classes add halo bars to the A-pillars, A-pillar bars and driver's door bars */
+  if(o.H){
+    var xh=xH-0.2, Pm=at(xh), top=Pm.yt-0.08, zt=Math.max(0.2, Pm.wt-0.1), zb=Pm.w-0.1, yb=Pm.ys-0.05;
+    [-1,1].forEach(function(sd){ B.add("tube", sc_cyl(0.022, 8), sc_rodM(V(xh, fl, sd*zb), V(xh, yb, sd*zb))); B.add("tube", sc_cyl(0.022, 8), sc_rodM(V(xh, yb, sd*zb), V(xh, top, sd*zt)));
+      B.add("tube", sc_cyl(0.018, 8), sc_rodM(V(xh, top, sd*zt), V(xh-0.55, Math.max(fl+0.1, at(xh-0.55).ys-0.08), sd*Math.min(zb, at(xh-0.55).w-0.12)))); });
+    B.add("tube", sc_cyl(0.022, 8), sc_rodM(V(xh, top, -zt), V(xh, top, zt)));
+    B.add("tube", sc_cyl(0.018, 8), sc_rodM(V(xh, top, zt), V(xh, fl, -zb)));
+    if(race){ var xa=o.roofF-0.06, Pa=at(xa), za=Math.max(0.2, Pa.wt-0.1), xp=o.cowl-0.12, Pp=at(xp), zp=Pp.w-0.12;
+      [-1,1].forEach(function(sd){ B.add("tube", sc_cyl(0.02, 8), sc_rodM(V(xh, top, sd*zt), V(xa, Pa.yt-0.08, sd*za))); B.add("tube", sc_cyl(0.02, 8), sc_rodM(V(xa, Pa.yt-0.08, sd*za), V(xp, yD-0.04, sd*zp))); });
+      B.add("tube", sc_cyl(0.02, 8), sc_rodM(V(xa, Pa.yt-0.08, -za), V(xa, Pa.yt-0.08, za)));
+      [0.2, 0.4].forEach(function(h, j){ B.add("tube", sc_cyl(0.02, 8), sc_rodM(V(xh, fl+(j?0.18:0.42), -zb), V(xp, fl+h+0.08, -zp))); }); }
+  }
+  /* door handles (street, outlaw, gasser; pro mods run flush doors) */
+  if(!o.pm){ var x0=o.dG0-0.06, x1=o.dG0+0.08;
+    B.add("seam", sc_patch(D, x0, x1, 4.5, 4.78, 0.003)); B.add("seam", sc_patch(D, x0, x1, 15.22, 15.5, 0.003));
+    B.add("chromeT", sc_patch(D, x0+0.012, x1-0.012, 4.58, 4.7, 0.009)); B.add("chromeT", sc_patch(D, x0+0.012, x1-0.012, 15.3, 15.42, 0.009)); }
+  /* hood and boot shut lines (a pro mod's hood is the carbon panel, its own edge) */
+  if(!o.pm){ var hF=o.rows[o.rows.length-1][0]-0.14, hx0=o.cowl+0.05, xR=o.rows[0][0];
+    if(hF-hx0>0.3){ B.add("seam", sc_patch(D, hx0, hx0+0.008, 7.9, 12.1, 0.002));
+      B.add("seam", sc_patch(D, hx0, hF, 7.86, 7.93, 0.002)); B.add("seam", sc_patch(D, hx0, hF, 12.07, 12.14, 0.002)); }
+    if(!(o.SY && o.SY.bed) && o.deck-xR>0.3){ var tx=o.deck-0.03, tR=xR+0.1;
+      B.add("seam", sc_patch(D, tx-0.008, tx, 7.9, 12.1, 0.002));
+      B.add("seam", sc_patch(D, tR, tx, 7.86, 7.93, 0.002)); B.add("seam", sc_patch(D, tR, tx, 12.07, 12.14, 0.002)); } }
 }
 
 /* rear-engine dragster */

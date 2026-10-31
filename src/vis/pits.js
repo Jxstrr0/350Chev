@@ -177,7 +177,7 @@ function pitsUpdate(o){
   var key=(o.body||"street")+"|"+(o.color>>>0)+"|"+(+o.tyreIn||0)+(o.hw?"|"+JSON.stringify(o.hw)+(GFX==="lite"):"")+(o.wbar?"|wb":"");   /* hw: the strip car's hardware (drag v2 A) */
   if(key!==PITS.carKey){
     if(PITS.car) S5.remove(PITS.car);
-    var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn, o.hw); if(o.wbar && !car.userData.meta.bars) stripAddBars(car); stripCarMeta(car);
+    var car=stripCar(o.body||"street", o.color==null?0xa32a26:o.color, o.tyreIn, o.hw); if(o.wbar && !car.userData.meta.bars) stripAddBars(car); stripCarMeta(car); if(car.userData.driver) car.userData.driver.visible=false;   /* up on the stands between rounds: nobody in the seat */
     car.position.set(-(car.userData._bbMinX+car.userData._len/2), PITS_LIFT, 0); car.updateMatrixWorld(true);
     S5.add(car); PITS.car=car; PITS.carKey=key; pitsProps(car); stripContact(car, {soft:true, y:0.01-PITS_LIFT, opacity:0.8}); PITS.fitKey=""; ch=true;   /* floor shadow under the raised car */
   }
