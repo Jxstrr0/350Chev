@@ -2100,6 +2100,55 @@ html[data-tab]:not(.desk):not(.onevent) #app.peek:not(.mini):not(.td):not(.pits)
 #cmpPop .cw{margin-top:6px;color:var(--warn);font-size:12px}
 @media (prefers-reduced-motion:no-preference){#cmpPop{animation:cmpin .16s cubic-bezier(.34,1.4,.64,1)}}
 @keyframes cmpin{from{opacity:0;transform:scale(.92)}}
+
+/* ===================== RESULTS CARD + HOLO TROPHIES (UI-GLASS-PLAN PR 4) =====================
+   #rcard (app/rcard.js): a full-screen scrim with one strong-glass card after a run the player drives. On a phone it
+   sits over the bottom of the screen like a sheet; on desktop it is centred. view-transition-name "rcmorph" is lent to
+   the engine card and then the results card for the grow-in. Holo cards ([data-holo]): a rainbow sheen and a small 3D
+   tilt from --tilt-x / --tilt-y (-1..1), set by the phone's tilt or a finger; Lite and reduced motion keep it still. */
+#rcard{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:12px 10px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(10,10,9,.45)}
+#rcard[hidden]{display:none}
+html.desk #rcard{align-items:center}
+#rcBox{position:relative;width:min(440px,100%);max-height:calc(100% - 20px);overflow:auto;overscroll-behavior:contain;padding:18px 18px 14px;border-radius:26px;background:var(--glass-bg-strong);color:var(--chalk);box-shadow:var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.18);touch-action:pan-y;transition:translate .2s}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#rcBox{-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))}}
+html[data-gfx=lite] #rcBox{background:var(--glass-pop);-webkit-backdrop-filter:none;backdrop-filter:none}   /* Lite: no blur over the live view */
+html.noglass #rcBox{background:var(--panel);-webkit-backdrop-filter:none;backdrop-filter:none}
+@media (prefers-reduced-motion:no-preference){#rcard:not([hidden]){animation:rcfade .2s ease-out}#rcard:not([hidden]) #rcBox{animation:rcin .34s cubic-bezier(.34,1.3,.64,1)}}
+#rcard.out{opacity:0;transition:opacity .18s}#rcard.out #rcBox{translate:0 30px;transition:translate .18s}
+@keyframes rcfade{from{opacity:0}}@keyframes rcin{from{opacity:0;transform:translateY(40px) scale(.96)}}
+::view-transition-group(rcmorph){animation-duration:.38s;animation-timing-function:cubic-bezier(.3,1.1,.4,1)}
+.rcx{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:var(--muted);font-size:15px;cursor:pointer}
+:root[data-theme=light] .rcx{background:rgba(20,20,19,.06)}
+.rckick{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-right:40px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rchero{display:flex;align-items:baseline;gap:8px;margin:6px 0 0;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums;line-height:.95}
+.rchero b{font-size:clamp(64px,24vw,96px);font-weight:700;letter-spacing:-.02em;text-shadow:0 0 30px rgba(var(--glass-tint),.35)}
+.rchero i{font-style:normal;font-size:26px;font-weight:600;color:rgb(var(--glass-tint))}
+.rchero.rctext b{font-size:clamp(30px,9vw,42px);line-height:1.05}
+.rchero.rctext.pass b{color:var(--good)}.rchero.rctext.fail b{color:var(--crit)}.rchero.rctext.marg b{color:var(--warn)}
+.rcsub{font-family:var(--mono);font-size:14px;color:var(--muted);margin-top:4px}
+.rcdelta{margin-top:6px;font-family:var(--mono);font-size:14px;color:var(--dim)}.rcdelta em{font-style:normal;color:var(--muted)}
+.rcdelta.rcup{color:var(--good)}.rcdelta.rcdn{color:var(--crit)}
+.rcchip{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:999px;font-family:"Chakra Petch",sans-serif;font-weight:600;font-size:14px;letter-spacing:.03em;border:1px solid currentColor;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rcchip.pass{color:var(--good);background:rgba(92,191,138,.12)}.rcchip.fail{color:var(--crit);background:rgba(238,90,94,.12)}.rcchip.marg{color:var(--warn);background:rgba(232,193,74,.12)}
+#rcCv{display:block;width:100%;height:150px;margin:12px 0 4px}
+.rcstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.rcstats div{padding:8px 10px;border-radius:14px;background:var(--glass-fill2);box-shadow:inset 0 0 0 1px var(--glass-line)}
+.rcstats b{display:block;font-family:var(--mono);font-weight:500;font-size:16px}.rcstats span{font-size:11.5px;color:var(--muted)}
+.rcp{margin:10px 0 0;font-size:13.5px;line-height:1.4;color:var(--muted)}
+.rcact{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.rcact .btn{flex:1 1 30%;min-width:0}
+.rctrop{margin-top:12px;padding:12px 14px;border-radius:16px;display:flex;flex-direction:column;gap:2px;background:linear-gradient(135deg,rgba(217,169,58,.22),rgba(217,169,58,.06));box-shadow:inset 0 0 0 1px rgba(217,169,58,.45);touch-action:none}
+.rctrop small{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#d9a93a}.rctrop b{font-family:"Chakra Petch",sans-serif;font-size:18px}.rctrop span{font-size:12.5px;color:var(--muted)}
+.rctrop[data-tier=silver]{background:linear-gradient(135deg,rgba(201,206,214,.22),rgba(201,206,214,.06));box-shadow:inset 0 0 0 1px rgba(201,206,214,.45)}.rctrop[data-tier=silver] small{color:#c9ced6}
+.rctrop[data-tier=bronze]{background:linear-gradient(135deg,rgba(176,106,52,.24),rgba(176,106,52,.06));box-shadow:inset 0 0 0 1px rgba(176,106,52,.5)}.rctrop[data-tier=bronze] small{color:#c98448}
+/* holo: the sheen is a child (.hsheen) so it never fights an element's own ::before / ::after */
+.holo{position:relative;isolation:isolate;transform:perspective(700px) rotateY(calc(var(--tilt-x,0) * 7deg)) rotateX(calc(var(--tilt-y,0) * -7deg));transition:transform .12s linear}
+.holo>.hsheen{position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:.5;mix-blend-mode:screen;
+  background:linear-gradient(calc(110deg + var(--tilt-x,0) * 35deg),transparent 25%,rgba(255,255,255,.4) calc(48% + var(--tilt-y,0) * 18%),transparent 72%),
+    linear-gradient(calc(60deg + var(--tilt-y,0) * 50deg),rgba(255,110,140,.35),rgba(255,214,110,.3),rgba(110,255,180,.3),rgba(110,200,255,.35),rgba(200,140,255,.35));
+  background-size:100% 100%,240% 240%;background-position:center,calc(50% + var(--tilt-x,0) * 40%) calc(50% + var(--tilt-y,0) * 40%)}
+:root[data-theme=light] .holo>.hsheen{mix-blend-mode:multiply;opacity:.28}
+html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
+@media (prefers-reduced-motion:reduce){.holo{transform:none}}
 </style>
 
 <div id="app">
@@ -2337,6 +2386,8 @@ html[data-tab]:not(.desk):not(.onevent) #app.peek:not(.mini):not(.td):not(.pits)
         <div class="seg n2" id="gfxAutoSeg"><button data-gauto="1" class="on">On<small>drops a tier if it stutters</small></button><button data-gauto="0">Off<small>keep my pick</small></button></div>
         <div class="lbl"><span>Glass effects</span></div>
         <div class="seg n2" id="glassSeg"><button data-glass="1" class="on">On<small>frosted panels</small></button><button data-glass="0">Off<small>solid, lighter on the phone</small></button></div>
+        <div class="lbl"><span>Results card</span></div>
+        <div class="seg n2" id="rcSeg"><button data-rcs="1" class="on">After runs<small>full-screen card with the headline</small></button><button data-rcs="0">Off<small>results stay in the panel</small></button></div>
         <div class="lbl"><span>Camera follows edits</span></div>
         <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
         <div id="layBox"><div class="lbl"><span>Layout</span></div>
@@ -2380,6 +2431,7 @@ html[data-tab]:not(.desk):not(.onevent) #app.peek:not(.mini):not(.td):not(.pits)
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
     <p id="trNote" hidden></p><div id="trList" hidden></div><div id="trCard" role="dialog" aria-label="Plaque" aria-live="polite" hidden></div></div>
+  <div id="rcard" hidden role="dialog" aria-modal="true" aria-labelledby="rcHero"><div id="rcBox"></div></div>
   <div id="toast"></div>
   <div id="achToast"></div>
 
@@ -30313,7 +30365,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.40.0";
+const VERSION="1.76.41.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -31345,7 +31397,7 @@ function renderTest(){
 }
 /* a run just finished: bring the headline numbers (peaks + verdict, or the verdict on Events) to the top of the panel so they aren't left above or below the fold */
 let revKey;
-function resultReveal(last,rf){const k=last?last.res:null;if(testing)return;if(revKey===undefined||k===revKey){revKey=k;return;}revKey=k;if(!k)return;
+function resultReveal(last,rf){const k=last?last.res:null;if(typeof rcSeen==="function")rcSeen(last);if(testing)return;if(revKey===undefined||k===revKey){revKey=k;return;}revKey=k;if(!k)return;
   if(rf&&trackEvt(S.env.testType)){evTabSet("res",true);return;}   // Events: a fresh result opens the Results tab
   requestAnimationFrame(()=>{const pn=$("panel"),el=rf?$("verdict"):$("peaks");if(!el.offsetHeight||(curTab!=="test"&&curTab!=="events"))return;const pr=pn.getBoundingClientRect(),r=el.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop());
     if(r.top<pr.top||r.top>pr.top+(bot-pr.top)*0.45)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});}
@@ -35769,7 +35821,7 @@ function tropHook(x){if(!x||ff||!S||!S.mode)return;
   for(const z of [e,more]){if(!z)continue;if(z.u&&T.log.some(q=>q.u===z.u))continue;
     const ent=tropStamp(Object.assign({id:"t"+Date.now().toString(36)+(n++),ev:k,eng:engineName().slice(0,28),h:cfgHash(S.cfg)},z));T.log.push(ent);
     if(T.log.length>TROPHY_LOG_MAX)T.log.splice(T.log.findIndex(q=>q.seed)>=0?T.log.findIndex(q=>q.seed):0,1);
-    if(ent.slot!=="pennant"&&k!=="dd")setTimeout(()=>toast(`TROPHY ROOM · ${ent.t}`),5600);}
+    if(ent.slot!=="pennant"&&k!=="dd"){setTimeout(()=>toast(`TROPHY ROOM · ${ent.t}`),5600);if(typeof rcTrophy==="function")rcTrophy(ent);}}
   if(n){tropCountSync();if(TR.open)tropRefresh();}}
 /* ---- the room's contents: one list of items, each with its plaque card ---- */
 const TR_TIER_ACH={gold:"gold",silver:"silver",bronze:"bronze"};
@@ -35846,7 +35898,7 @@ function tropCard(id){const box=$("trCard");TR.sel=id||null;$("troom").classList
   else{const c=it.card;h=`<div class="trk t-${esc(c.tier||"gold")}">${esc(c.kick)}${c.when?" · "+esc(c.when):""}</div><h3>${esc(c.title)}</h3>${c.what?`<p>${esc(c.what)}</p>`:""}${c.nums&&c.nums.length?`<div class="trnums">${c.nums.map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>`:""}
       ${c.veh||c.eng?`<p class="trveh">${c.veh?`<span>Vehicle</span> ${esc(c.veh)}`:""}${c.veh&&c.eng?" · ":""}${c.eng?`<span>Engine</span> ${esc(c.eng)}`:""}</p>`:""}
       <div class="trbtns"><button class="btn sm pri" data-tra="share" data-id="${esc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
-  box.innerHTML=h;box.hidden=false;}
+  box.innerHTML=h+`<i class="hsheen" aria-hidden="true"></i>`;box.classList.add("holo");box.dataset.tier=it.eng?"eng":(it.card&&it.card.tier)||"gold";box.dataset.holo="";box.hidden=false;if(typeof holoWire==="function")holoWire(box);}
 function tropListShow(on){TR.list=!!on;$("trList").hidden=!on;$("trListBtn").setAttribute("aria-pressed",String(!!on));$("trListBtn").textContent=on&&TR.gl?"Room":"List";$("trListBtn").hidden=!TR.gl;$("troom").classList.toggle("lst",!!on);}
 function tropListRender(items,eng){const sec=(t,L,f,empty)=>`<div class="trsec"><h4>${t}<span>${L.length}</span></h4>${L.length?`<div class="trgrid">${L.map(f).join("")}</div>`:`<p class="hint">${empty}</p>`}</div>`;
   const card=i=>{const c=i.card;return `<button class="trc t-${esc(c.tier||"gold")}" data-trp="${esc(i.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[c.ic]||ACH_ICONS.trophy}"/></svg><b>${esc(c.title)}</b><small>${esc(c.kick)}${c.when?" · "+esc(c.when):""}</small></button>`;};
@@ -36213,6 +36265,144 @@ function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click()
   const re=()=>{railSched();};RAIL_MQ.addEventListener?RAIL_MQ.addEventListener("change",re):RAIL_MQ.addListener(re);window.addEventListener("resize",re);
   new MutationObserver(re).observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});
   railSched();})();
+/* ===================== RESULTS CARD (UI-GLASS-PLAN PR 4) =====================
+   After a run the player drives (a dyno test or an event), a full-screen glass card shows the headline: the hero number,
+   the verdict chip, the change from the last run of the same test, and on the dyno the curve over a faint ghost of the
+   previous pull (or the pinned baseline). Team race days and Close week never set `testing`, so they never arm it.
+   A trophy won on the run shows as a holographic card that tilts with the phone (or a finger); the trophy room's plaque
+   card gets the same sheen. Share draws the card to a picture and hands it to phoSave. Where the browser has View
+   Transitions the engine card (.ecard) grows into the results card. Settings › Display › Results card turns it off (S.rcOff).
+   Hooks: resultReveal() in test.js calls rcSeen(); tropHook() in trophy.js calls rcTrophy(); tropCard() calls holoWire(). */
+const RC={armed:false,open:false,res:null,env:null,ghost:null,lastDyno:null,prev:{},cmp:null,trop:null,tropAt:0,wait:0,tries:0};
+const RC_DELAY=450,RC_WAIT=250,RC_TRIES=48;   // ms after a dyno test; events wait for the scene to end, checking every 250 ms for up to 12 s
+const RC_KICK={pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev",drag:"Drag pass",pull_sled:"Truck pull",salt:"Salt run",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Dirt oval",race24:"24 Hours"};
+/* the hero number for each test: v (shown), u (unit), n (number for the delta), lo (lower is better), key (only compare runs with the same key), d (delta decimals) */
+const RC_HERO={
+  pull:res=>({v:Math.round(res.peakHp),u:"hp",n:res.peakHp,key:"dyno",d:0}),
+  drag:res=>{const r=res.drag;if(res.dragFailed||!r||r.et==null)return null;return{v:r.et.toFixed(2),u:"s",n:r.et,lo:true,key:"d"+(r.body||""),d:2,sub:Math.round(r.mph)+" mph"};},
+  salt:res=>{const r=res.salt;if(res.saltFailed||!r||r.mileMph==null)return null;return{v:r.mileMph.toFixed(1),u:"mph",n:r.mileMph,key:"s"+(r.cls&&r.cls.key||""),d:1};},
+  pull_sled:res=>{const r=res.pull;if(res.pullFailed||!r||r.dq||r.poPending)return null;return{v:r.full?"FULL":r.distFt.toFixed(1),u:r.full?"pull":"ft",n:r.distFt,key:"p"+(r.cls||""),d:1};},
+  bog:res=>{const r=res.bog;if(res.bogFailed||!r)return null;return r.cleared?{v:r.pitT.toFixed(2),u:"s",n:r.pitT,lo:true,key:"bc"+(r.cls||""),d:2}:{v:r.distM.toFixed(1),u:"m",n:r.distM,key:"bd"+(r.cls||""),d:1};},
+  hill:res=>{const r=res.hill;if(!r||r.dnf)return null;return{v:fmtHill(r.time),u:"",n:r.time,lo:true,key:"h"+(r.clsName||""),d:2,dt:1};},
+  road:res=>{const r=res.road;if(!r||r.lapT==null||r.dtBroke||r.swapBroke)return null;return{v:fmtLap(r.lapT,2),u:"lap",n:r.lapT,lo:true,key:"r"+(r.trkName||"")+(r.chName||""),d:2,dt:1};},
+  oval:res=>{const r=res.oval;if(res.ovalFailed||!r)return null;return{v:ordN(r.place),u:r.stage==="heat"?"heat":"feature"};}
+};
+RC_HERO.endurance=RC_HERO.overrev=RC_HERO.pull;
+const rcDyno=t=>t==="pull"||t==="endurance"||t==="overrev";
+const rcReduced=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* called from resultReveal on every Test/Events render: arm while a run is going, fire once on the first new result after it */
+function rcSeen(last){if(testing){if(!RC.armed){RC.armed=true;RC.before=last&&last.res;}clearTimeout(RC.wait);return;}
+  if(!RC.armed)return;RC.armed=false;if(!last||!last.res||last.res===RC.before)return;const t=last.env.testType;   // a run that stopped before it ran leaves the old result: no card
+  /* the ghost and the delta come from the run before, whether or not its card showed */
+  if(rcDyno(t)){RC.ghost=RC.lastDyno;RC.lastDyno=last.res;}
+  else{RC.cmp=RC.prev[t]||null;let h=null;try{h=RC_HERO[t]?RC_HERO[t](last.res):null;}catch(e){}if(h&&h.n!=null)RC.prev[t]={n:h.n,key:h.key};}
+  if(S.rcOff)return;
+  RC.res=last.res;RC.env=last.env;RC.tries=0;clearTimeout(RC.wait);RC.wait=setTimeout(rcTry,rcDyno(last.env.testType)?RC_DELAY:RC_WAIT);}
+/* something else owns the screen: a tour, First Fire, a lesson, teardown, the photo mode or trophy room, an open sheet or Settings */
+function rcBlocked(){const vis=id=>{const e=$(id);return !!(e&&!e.hidden&&e.offsetParent!==null&&getComputedStyle(e).display!=="none");};
+  const a=$("app").classList,d=document.documentElement.classList;
+  return a.contains("td")||d.contains("photo")||d.contains("troom")||vis("tourBox")||vis("ffBox")||vis("lesBox")||$("setPane").classList.contains("on")||($("sheet")&&$("sheet").classList.contains("on"));}
+function rcTry(){if(testing||!RC.res||S.rcOff)return;
+  if($("app").classList.contains("onstrip")||rcBlocked()){if(++RC.tries<RC_TRIES)RC.wait=setTimeout(rcTry,RC_WAIT);return;}   // wait out the after-run beat
+  if(curTab!=="test"&&curTab!=="events")return;
+  if($("verdict").querySelector("button"))return;   // a verdict with its own buttons (the pull-off) needs the panel, not the card
+  rcShow();}
+
+/* ---- building the card ---- */
+function rcVerdict(){const v=$("verdict").querySelector(".verdict");if(!v)return null;const b=v.querySelector(".big"),p=v.querySelector("p");
+  const big=b?b.innerHTML.replace(/<br\s*\/?>/gi," · ").replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/\s+/g," ").trim():"";
+  return{cls:v.classList.contains("pass")?"pass":v.classList.contains("fail")?"fail":"marg",big,p:p?p.textContent.replace(/\s+/g," ").trim():""};}
+function rcHero(){const t=RC.env.testType,f=RC_HERO[t];let h=null;try{h=f?f(RC.res):null;}catch(e){h=null;}return h;}
+function rcDelta(h){const t=RC.env.testType;let ref=null,lbl="";
+  if(rcDyno(t)){const g=S.base?S.base.res:RC.ghost;if(g&&g!==RC.res){ref=g.peakHp;lbl=S.base?S.base.label:"last pull";}}
+  else{const p=RC.cmp;if(p&&p.key===h.key){ref=p.n;lbl="last run";}}
+  if(ref==null||h.n==null)return "";const dv=h.n-ref,good=h.lo?dv<0:dv>0,z=Math.abs(dv)<Math.pow(10,-(h.d||0))/2;
+  const s=(dv>=0?"+":"−")+Math.abs(dv).toFixed(h.d||0)+(h.u&&!h.dt?" "+h.u:" s");
+  return `<div class="rcdelta ${z?"":good?"rcup":"rcdn"}">${z?"Same as":s+" vs"} <em>${esc(lbl)}</em></div>`;}
+function rcPaint(){const t=RC.env.testType,res=RC.res,h=rcHero(),v=rcVerdict(),dy=rcDyno(t);
+  const kick=`${RC_KICK[t]||"Run"} · ${esc(engineName())}`;
+  const hero=h?`<div class="rchero"><b id="rcHero">${esc(h.v)}</b>${h.u?`<i>${esc(h.u)}</i>`:""}</div>${h.sub?`<div class="rcsub">${esc(h.sub)}</div>`:""}${rcDelta(h)}`
+    :`<div class="rchero rctext ${v?v.cls:""}"><b id="rcHero">${esc(v&&v.big||"Run complete")}</b></div>`;
+  const chip=h&&v&&v.big?`<div class="rcchip ${v.cls}">${esc(v.big)}</div>`:"";
+  const stats=dy?`<div class="rcstats"><div><b>${Math.round(res.peakTq)}</b><span>Nm @ ${res.peakTqRpm.toLocaleString()}</span></div><div><b>${Math.round(res.rel)}</b><span>reliability</span></div><div><b>${res.peakHpRpm.toLocaleString()}</b><span>rpm at peak</span></div></div>`
+    :v&&v.p?`<p class="rcp">${esc(v.p.length>170?v.p.slice(0,168)+"…":v.p)}</p>`:"";
+  const trop=rcTrop(),tr=trop?`<div class="rctrop holo" data-tier="${esc(trop.tier||"gold")}" data-holo tabindex="0" aria-label="Trophy: ${esc(trop.t)}"><small>TROPHY ROOM</small><b>${esc(trop.t)}</b>${trop.nums&&trop.nums.length?`<span>${trop.nums.slice(0,2).map(([k,x])=>`${esc(k)} ${esc(x)}`).join(" · ")}</span>`:""}<i class="hsheen" aria-hidden="true"></i></div>`:"";
+  const again=$("runTest");
+  $("rcBox").innerHTML=`<button class="rcx" data-rc="close" aria-label="Close">✕</button><div class="rckick">${kick}</div>${hero}${chip}${dy?`<canvas id="rcCv" aria-hidden="true"></canvas>`:""}${stats}${tr}
+    <div class="rcact"><button class="btn pri" data-rc="again"${again&&again.disabled?" disabled":""}>Run it again</button><button class="btn" data-rc="build">Back to build</button><button class="btn" data-rc="share">Share</button></div>`;
+}
+/* the dyno curve, with the ghost behind: drawChart draws S.base as its dashed baseline, so lend it the ghost for one draw */
+function rcChart(){const cv=$("rcCv");if(!cv||!RC.res||!RC.res.rpms)return;const g=S.base?S.base.res:(RC.ghost!==RC.res?RC.ghost:null),sb=S.base,cb=curves.base;
+  try{S.base=g?{res:g,label:sb?sb.label:"last pull"}:null;curves.base=!!g;drawChart(RC.res,null,cv);}catch(e){}finally{S.base=sb;curves.base=cb;}}
+function rcShow(){if(RC.open)return;const box=$("rcBox"),wrap=$("rcard");
+  const ec=[...document.querySelectorAll(".ecard:not(.inline)")].find(e=>e.offsetParent&&e.getBoundingClientRect().height>0);
+  const go=()=>{rcPaint();wrap.hidden=false;document.documentElement.classList.add("rcon");RC.open=true;rcChart();holoWire(box);};
+  if(document.startViewTransition&&ec&&!rcReduced()){ec.style.viewTransitionName="rcmorph";
+    try{const vt=document.startViewTransition(()=>{ec.style.viewTransitionName="";box.style.viewTransitionName="rcmorph";go();});
+      vt.finished.finally(()=>{box.style.viewTransitionName="";});}catch(e){ec.style.viewTransitionName="";go();}}
+  else go();
+  buzz(12);setTimeout(()=>{const b=box.querySelector("[data-rc=again]:not([disabled])")||box.querySelector("[data-rc=build]");if(b&&RC.open)b.focus({preventScroll:true});},60);}
+function rcClose(then){if(!RC.open)return;RC.open=false;RC.trop=null;
+  const wrap=$("rcard"),fin=()=>{wrap.hidden=true;wrap.classList.remove("out");$("rcBox").style.translate="";document.documentElement.classList.remove("rcon");if(then)then();};
+  if(rcReduced())fin();else{wrap.classList.add("out");setTimeout(fin,180);}}
+
+/* ---- share: the card as a 1080 × 1350 picture ---- */
+function rcShareCanvas(){const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d"),t=RC.env.testType,h=rcHero(),v=rcVerdict();
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,"#26221d");g.addColorStop(1,"#121110");x.fillStyle=g;x.fillRect(0,0,W,H);
+  const tint=getComputedStyle(document.documentElement).getPropertyValue("--glass-tint").trim()||"217,119,87";
+  const r=x.createRadialGradient(W*.2,H*.12,0,W*.2,H*.12,W*.9);r.addColorStop(0,`rgba(${tint},.35)`);r.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=r;x.fillRect(0,0,W,H);
+  const D='"Chakra Petch","Barlow Condensed",sans-serif',M='"IBM Plex Mono",Menlo,monospace',P=72;x.textBaseline="alphabetic";
+  x.fillStyle="rgba(255,255,255,.6)";x.font=`500 34px ${M}`;x.fillText(phoFit(x,(RC_KICK[t]||"Run").toUpperCase(),W-P*2),P,130);
+  x.fillStyle="#f2efe6";x.font=`700 56px ${D}`;x.fillText(phoFit(x,engineName(),W-P*2),P,200);
+  let y=470;if(h){x.font=`700 260px ${D}`;x.fillStyle="#fff";const hv=String(h.v);x.fillText(phoFit(x,hv,W-P*2-160),P,y);const w=x.measureText(hv).width;x.font=`600 72px ${D}`;x.fillStyle=`rgb(${tint})`;x.fillText(h.u||"",P+w+18,y);}
+  else{x.font=`700 96px ${D}`;x.fillStyle="#fff";x.fillText(phoFit(x,v&&v.big||"Run complete",W-P*2),P,y-60);}
+  if(h&&h.sub){x.font=`500 40px ${M}`;x.fillStyle="rgba(255,255,255,.7)";x.fillText(h.sub,P,y+64);y+=56;}
+  y+=80;if(v&&v.big&&h){x.font=`600 44px ${D}`;x.fillStyle=v.cls==="pass"?"#5cbf8a":v.cls==="fail"?"#ee5a5e":"#e8c14a";x.fillText(phoFit(x,v.big,W-P*2),P,y);y+=30;}
+  const dl=$("rcBox").querySelector(".rcdelta");if(dl){x.font=`500 36px ${M}`;x.fillStyle=dl.classList.contains("rcup")?"#5cbf8a":dl.classList.contains("rcdn")?"#ee5a5e":"rgba(255,255,255,.6)";x.fillText(phoFit(x,dl.textContent.replace(/\s+/g," ").trim(),W-P*2),P,y+30);y+=60;}
+  if(v&&v.p&&!rcDyno(t)){x.font=`400 36px "Barlow",sans-serif`;x.fillStyle="rgba(255,255,255,.72)";const words=v.p.split(" ");let ln="",n=0;y+=30;
+    for(const w of words){const tt=ln?ln+" "+w:w;if(x.measureText(tt).width>W-P*2&&ln){x.fillText(ln,P,y);y+=50;ln=w;if(++n>=4)break;}else ln=tt;}if(n<4&&ln){x.fillText(ln,P,y);y+=50;}}
+  const cv=$("rcCv");if(cv&&cv.width){const ch=Math.round((W-P*2)*cv.height/cv.width);x.drawImage(cv,P,y+20,W-P*2,ch);y+=ch+40;}
+  const trop=rcTrop();if(trop){y+=40;x.fillStyle="rgba(217,169,58,.18)";x.fillRect(P,y,W-P*2,120);x.fillStyle="#d9a93a";x.font=`500 28px ${M}`;x.fillText("TROPHY ROOM",P+28,y+46);x.fillStyle="#fff";x.font=`700 40px ${D}`;x.fillText(phoFit(x,trop.t,W-P*2-56),P+28,y+96);}
+  x.fillStyle="rgba(255,255,255,.55)";x.font=`500 30px ${M}`;x.fillText("PRAIRIE ENGINE WORKS",P,H-70);return c;}
+async function rcShare(b){if(b)b.disabled=true;try{const c=rcShareCanvas(),st=new Date().toISOString().slice(0,16).replace(/[-:T]/g,"");
+  await phoSave(c,`prairie-${phoSlug(engineName())}-${RC.env.testType}-${st}.png`,engineName(),true);}catch(e){toast("Couldn't make the picture here");}finally{if(b)b.disabled=false;}}
+
+/* ---- input: buttons, tap outside, swipe down, Esc ---- */
+$("rcard").addEventListener("click",e=>{const b=e.target.closest("[data-rc]");if(!b){if(e.target===$("rcard"))rcClose();return;}const k=b.dataset.rc;
+  if(k==="close")rcClose();else if(k==="build")rcClose(()=>showTab("build"));else if(k==="share")rcShare(b);
+  else if(k==="again")rcClose(()=>{const r=$("runTest");if(r&&!r.disabled)r.click();});});
+{let sy=null,dy=0;const box=$("rcBox");
+  box.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"||e.target.closest("button,[data-holo]"))return;sy=e.clientY;dy=0;});
+  box.addEventListener("pointermove",e=>{if(sy==null)return;dy=Math.max(0,e.clientY-sy);box.style.translate=`0 ${dy}px`;});
+  const up=()=>{if(sy==null)return;sy=null;if(dy>90)rcClose();else box.style.translate="";};box.addEventListener("pointerup",up);box.addEventListener("pointercancel",up);}
+document.addEventListener("keydown",e=>{if(!RC.open)return;if(e.key==="Escape"){e.preventDefault();rcClose();}else if(e.key!=="Tab"&&e.key!=="Enter"&&e.key!==" ")e.preventDefault();},true);
+/* Settings › Display › Results card */
+function rcSegSync(){const s=$("rcSeg");if(s&&S)s.querySelectorAll("button").forEach(b=>b.classList.toggle("on",(b.dataset.rcs==="0")===!!S.rcOff));}
+$("rcSeg").addEventListener("click",e=>{const b=e.target.closest("[data-rcs]");if(!b)return;S.rcOff=b.dataset.rcs==="0";save();rcSegSync();toast(S.rcOff?"No results card: results stay in the panel":"The results card shows after each run");});
+$("setOpen").addEventListener("click",rcSegSync);
+
+/* ---- holographic trophy cards: a rainbow sheen and a small tilt that follow the phone, or a finger ---- */
+const HOLO={asked:false,on:false,b0:null,g0:null,raf:0,tx:0,ty:0};
+function rcTrophy(ent){if(!ent)return;RC.trop=ent;RC.tropAt=Date.now();}   // tropHook: a trophy just went on the shelf
+const rcTrop=()=>RC.trop&&Date.now()-RC.tropAt<20000?RC.trop:null;   // only one won on the run the card is about
+const holoStatic=()=>document.documentElement.dataset.gfx==="lite"||rcReduced();
+function holoSet(el,tx,ty){el.style.setProperty("--tilt-x",tx.toFixed(3));el.style.setProperty("--tilt-y",ty.toFixed(3));}
+function holoVisible(){return [...document.querySelectorAll("[data-holo]")].filter(e=>e.offsetParent!==null);}
+function holoOrient(e){if(e.beta==null||e.gamma==null)return;if(HOLO.b0==null){HOLO.b0=e.beta;HOLO.g0=e.gamma;}
+  HOLO.tx=Math.max(-1,Math.min(1,(e.gamma-HOLO.g0)/25));HOLO.ty=Math.max(-1,Math.min(1,(e.beta-HOLO.b0)/25));
+  if(!HOLO.raf)HOLO.raf=requestAnimationFrame(()=>{HOLO.raf=0;const L=holoVisible();if(!L.length){holoStop();return;}L.forEach(el=>{if(!el.dataset.hdrag)holoSet(el,HOLO.tx,HOLO.ty);});});}
+function holoStart(){if(HOLO.on||holoStatic())return;HOLO.on=true;HOLO.b0=null;addEventListener("deviceorientation",holoOrient);}
+function holoStop(){if(!HOLO.on)return;HOLO.on=false;removeEventListener("deviceorientation",holoOrient);}
+/* iOS asks before it shares the tilt, and only from a tap: the first tap on a holo card asks */
+function holoAsk(){if(HOLO.asked)return;HOLO.asked=true;const D=window.DeviceOrientationEvent;
+  if(D&&typeof D.requestPermission==="function")D.requestPermission().then(s=>{if(s==="granted"){HOLO.on=false;holoStart();}}).catch(()=>{});}
+function holoWire(root){const L=[...root.querySelectorAll("[data-holo]")].concat(root.matches&&root.matches("[data-holo]")?[root]:[]);if(!L.length)return;
+  const D=window.DeviceOrientationEvent;if(!(D&&typeof D.requestPermission==="function"))holoStart();else if(HOLO.asked)holoStart();
+  L.forEach(el=>{if(el.dataset.hw)return;el.dataset.hw="1";
+    el.addEventListener("pointerdown",e=>{holoAsk();if(holoStatic())return;el.dataset.hdrag="1";try{el.setPointerCapture(e.pointerId);}catch(_){}});
+    el.addEventListener("pointermove",e=>{if(holoStatic()||(e.pointerType!=="mouse"&&!el.dataset.hdrag))return;const r=el.getBoundingClientRect();holoSet(el,((e.clientX-r.left)/r.width-.5)*2,((e.clientY-r.top)/r.height-.5)*2);});
+    const end=()=>{delete el.dataset.hdrag;holoSet(el,HOLO.on?HOLO.tx:0,HOLO.on?HOLO.ty:0);};el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);el.addEventListener("pointerleave",end);});}
 /* ===================== SANDBOX SHOP (v1.68): the Shop tab in the test cell =====================
    Career's Shop sells upgrades; the test cell has everything, so its Shop is a bench instead:
    · Bench: the current build next to every saved blueprint (hp, Nm, reliability, kg; best of each in clay), tap to load

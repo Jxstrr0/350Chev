@@ -235,6 +235,8 @@
         <div class="seg n2" id="gfxAutoSeg"><button data-gauto="1" class="on">On<small>drops a tier if it stutters</small></button><button data-gauto="0">Off<small>keep my pick</small></button></div>
         <div class="lbl"><span>Glass effects</span></div>
         <div class="seg n2" id="glassSeg"><button data-glass="1" class="on">On<small>frosted panels</small></button><button data-glass="0">Off<small>solid, lighter on the phone</small></button></div>
+        <div class="lbl"><span>Results card</span></div>
+        <div class="seg n2" id="rcSeg"><button data-rcs="1" class="on">After runs<small>full-screen card with the headline</small></button><button data-rcs="0">Off<small>results stay in the panel</small></button></div>
         <div class="lbl"><span>Camera follows edits</span></div>
         <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
         <div id="layBox"><div class="lbl"><span>Layout</span></div>
@@ -278,6 +280,7 @@
   <div id="sheet"><header><h2 id="sheetTitle">Options</h2><button class="btn sm ghost" id="sheetClose">Close</button></header><div class="body" id="sheetBody"></div></div>
   <div id="troom" hidden><div class="trtop"><button class="btn sm ghost" id="trBack" aria-label="Leave the trophy room">&larr; Back</button><div class="trtt"><b>Trophy room</b><small id="trSub"></small></div><button class="btn sm ghost" id="trListBtn" aria-pressed="false">List</button><button class="btn sm ghost" id="trPhoto">Photo</button></div>
     <p id="trNote" hidden></p><div id="trList" hidden></div><div id="trCard" role="dialog" aria-label="Plaque" aria-live="polite" hidden></div></div>
+  <div id="rcard" hidden role="dialog" aria-modal="true" aria-labelledby="rcHero"><div id="rcBox"></div></div>
   <div id="toast"></div>
   <div id="achToast"></div>
 
