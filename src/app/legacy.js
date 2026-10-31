@@ -26,7 +26,7 @@ function lgPerk(id){return LG_PERKS.find(p=>p.id===id);}
 function lgVal(id){const t=lgTier(id),p=lgPerk(id);return t&&p.val?p.val[t-1]:0;}
 function lgCostK(){return 1-lgVal("parts");}
 function lgLoanRate(){return lgVal("bank")||LOAN_RATE;}      // state.js loanRate(): the perk's weekly rate, else the bank's
-function lgLeaseK(){return 1-lgVal("lease");}                  // market.js overhead(): factor on the plant part of the weekly overhead
+function lgLeaseK(){return 1-lgVal("lease");}                  // career.js overhead(): factor on the plant part of the weekly overhead
 function lgCrewLv(){return career()&&lgTier("crew")?2:1;}
 function lgUpgOpts(){return UPGRADES.filter(u=>!u.needs);}
 function lgRndOpts(){return RND.filter(r=>r.unlock);}
@@ -43,7 +43,7 @@ function lgApply(){const c=C(),r=lgRec();c.cash+=lgVal("cash");c.lgRep=0;
 function lgSell(){if(!career())return;if(typeof testing!=="undefined"&&testing){toast("Let the run finish first");return;}
   const v=lgSaleValue(),r=lgRec();
   if(!confirm(`Sell the shop?\n\nCash ${fmt$(v.cash)}${v.loan?`, loan −${fmt$(v.loan)}`:""}\nUpgrades (half price) ${fmt$(v.up)}\nPrestige (half price) ${fmt$(v.pr)}\nSale value ${fmt$(v.value)}\n\n= ${v.pts} Legacy point${v.pts===1?"":"s"} (you have ${r.pts}).\nYour career restarts at week 1. Blueprints and Legacy perks are kept.`))return;
-  const c=C(),b=r.best;r.pts+=v.pts;r.total+=v.pts;r.resets++;b.cash=Math.max(b.cash,c.cash);b.rep=Math.max(b.rep,c.rep);b.hp=Math.max(b.hp,c.bestHp||0);b.sold=Math.max(b.sold,c.sold||0);b.week=Math.max(b.week,c.week||0);b.value=Math.max(b.value,v.value);
+  const c=C(),b=r.best;r.pts+=v.pts;r.total+=v.pts;r.resets++;b.cash=Math.max(b.cash,c.cash);b.rep=Math.max(b.rep,c.rep);b.hp=Math.max(b.hp,c.bestHp||0);b.week=Math.max(b.week,c.week||0);b.value=Math.max(b.value,v.value);
   r.pending=true;lgSave();lgOpen();lgHud();}
 function lgStart(){const r=lgRec();r.pending=false;lgSave();lgClose();S.career=freshCareer();lgApply();benchUnlock();save();boot();toast(`Legacy ${r.resets}. New shop, new name.`);}
 function lgBuy(id){const r=lgRec(),p=lgPerk(id),t=lgTier(id);if(!p||t>=p.tiers.length)return;const cost=p.tiers[t][0];if(r.pts<cost)return;r.pts-=cost;r.perk[id]=t+1;

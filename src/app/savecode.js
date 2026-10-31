@@ -82,10 +82,10 @@ function buSaveOk(o){
   if(!buObj(o)||!buObj(o.cfg))return false;
   if("env" in o&&!buObj(o.env))return false;
   if("blueprints" in o&&!Array.isArray(o.blueprints))return false;
-  if(o.mode!=null&&o.mode!=="career"&&o.mode!=="sandbox"&&o.mode!=="pit")return false;
+  if(o.mode!=null&&o.mode!=="career"&&o.mode!=="sandbox"&&o.mode!=="pit")return false;   // "pit": a Pit Crew game from 1.76.31-32, which loads as a career
   if("pit" in o&&o.pit!=null&&!buObj(o.pit))return false;
   if("career" in o){const c=o.career;if(!buObj(c))return false;
-    for(const k of ["contracts","log","fleet","inbox"])if(k in c&&!Array.isArray(c[k]))return false;
+    if("log" in c&&!Array.isArray(c.log))return false;if("pc" in c&&c.pc!=null&&!buObj(c.pc))return false;
     for(const k of ["owned","staff","rnd","unlocks","prestige","goals"])if(k in c&&!buObj(c[k]))return false;
     for(const k of ["cash","rep","week","loan"])if(k in c&&!buNum(c[k]))return false;}
   return buTry(o);}

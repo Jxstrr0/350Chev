@@ -1,268 +1,26 @@
-/* ===================== DYNO DAY (career customer jobs) — core =====================
-   A customer books dyno time for their own engine: a preset with one deliberate fault injected. Every fault is built by
-   search (step the part or the number until the dyno shows the fault) and is only offered when a reference fix, using parts the
-   shop can fit, clears it. ddCheck() judges a hand-back against the job's targets. Pure: SIM in, data out (tested in node). */
-const DD_FREE={cover:1,twoStepRpm:1,launchRetard:1,launchCtl:1,transBrake:1};   // cosmetic / launch keys: never a customer's business
-const DD_PUMP=["r87","r91","r94"];
-const ddCl=o=>JSON.parse(JSON.stringify(o));
-const ddT=(r,id)=>(r.tests||[]).find(t=>t.id===id);
-const ddCrit=(r,id)=>{const t=ddT(r,id);return !!t&&t.status==="crit";};
-const ddSpark=c=>!SIM.isDiesel(c)&&!(SIM.OPT.fuel[c.fuel]||{}).gas;
-const ddTurbo=c=>/turbo|compound/.test(c.asp);
-const ddBoosted=c=>c.asp!=="na";
-const ddFuelOk=f=>{const o=SIM.OPT.fuel[f];return !!o&&!o.ci&&!o.gas&&f!=="flex";};
-function ddOrder(key,by){const t=SIM.OPT[key];const ks=Object.keys(t);return by?ks.slice().sort((a,b)=>by(t[a])-by(t[b])):ks;}
-function ddBelow(key,cur,by){const o=ddOrder(key,by),i=o.indexOf(cur);return i>0?o.slice(0,i).reverse():[];}   // weaker parts, nearest first
-const DD_FAULTS=[
- {id:"lean",tag:"lean at the top end",name:"Fuel delivery",hrs:2.5,allowed:["injectors","fuelPump","lambda","timing"],k:0.97,
-  says:["Pulls hard to {r} and then falls on its face.","Feels great down low, goes flat above {r} — like it's starving.","Lays down at the top of every gear, right around {r}."],
-  hints:["It's a fuel problem, not a spark one. Run a pull and read Fuel delivery in the stress report.","The injectors (or the pump) can't keep up: past about 85% duty the top of the pull goes lean.","Fit bigger injectors or a bigger fuel pump — what a healthy one of these runs."],
-  gen(c0,r0,X){if(!ddSpark(c0))return null;
-    for(const k of ["injectors","fuelPump"])for(const v of ddBelow(k,c0[k]).slice(0,3)){const c=Object.assign({},c0,{[k]:v});const r=X.sim(c);if(ddCrit(r,"fuel_delivery")&&r.peakHp>=0.7*r0.peakHp&&r.fails.length<=3)return{cfg:c,fix:[[k,c0[k]]],sig:"fuel_delivery"};}
-    return null;}},
- {id:"knock_tim",tag:"pings under load",name:"Ignition timing",hrs:2,allowed:["timing","lambda","fuel"],k:0.95,pump:true,
-  says:["A buddy 'tuned' it. Now it pings when I lean on it.","Rattles like marbles in a can when I floor it uphill.","Pings on the highway, worst in top gear climbing hills."],
-  hints:["That rattle is knock. Read Detonation margin in the stress report.","Someone put too much timing in it for the fuel it runs: the margin is below zero.","Pull the ignition timing back toward where it should be — don't fix it with race gas."],
-  gen(c0,r0,X){if(!ddSpark(c0))return null;
-    for(let d=2;d<=14;d+=2){const c=Object.assign({},c0,{timing:c0.timing+d});if(c.timing>15)break;const r=X.sim(c);if(ddCrit(r,"detonation")&&r.fails.length<=2)return{cfg:c,fix:[["timing",c0.timing]],sig:"detonation"};}
-    return null;}},
- {id:"knock_fuel",tag:"pings on regular",name:"Fuel vs timing",hrs:3,allowed:["timing","lambda","boost"],k:0.9,
-  says:["Pings on the highway since I started filling it with regular.","Knocks going up hills. The guy at the counter said 87 is fine. I'm not paying for premium.","Sounds like gravel in the motor when I pass — and I only buy regular."],
-  hints:["Listen for knock: read Detonation margin on a pull.","It was built for premium and it's running 87 regular. The customer won't change fuel.","Take timing out (and boost, if it has any) until the margin is positive — keep the power loss small."],
-  gen(c0,r0,X){if(!ddSpark(c0)||DD_PUMP.indexOf(c0.fuel)<1)return null;const c=Object.assign({},c0,{fuel:"r87"});const r=X.sim(c);
-    if(!ddCrit(r,"detonation")||r.fails.length>2)return null;
-    for(let d=1;d<=14;d++){const f=Object.assign({},c,{timing:c.timing-d});if(f.timing<-15)break;const rf=X.sim(f);if(!rf.fails.length&&rf.peakHp>=0.85*r0.peakHp)return{cfg:c,fix:[["timing",f.timing]],sig:"detonation",fuels:["r87"],refHp:rf.peakHp};}
-    return null;}},
- {id:"knock_cr",tag:"knocks since the rebuild",name:"Compression vs fuel",hrs:3,allowed:["timing","lambda","fuel"],k:0.93,internal:true,
-  says:["Fresh rebuild — the machinist milled the head. Since then it knocks under load.","Had the head skimmed, now it pings and the pistons sound like they're rattling.","It's been knocking ever since the head came back from the shop."],
-  hints:["That's knock. The Detonation margin on a pull shows it.","Milling the head raised the compression ratio — more octane needed than the tune allows for. The head stays on: no internal work.","Retard the timing, or put it on a higher-octane fuel. Don't touch the compression."],
-  gen(c0,r0,X){if(!ddSpark(c0))return null;
-    for(let d=0.5;d<=2.5;d+=0.5){const c=Object.assign({},c0,{cr:+(c0.cr+d).toFixed(2)});if(c.cr>15)break;const r=X.sim(c);if(ddCrit(r,"detonation")&&r.fails.length<=2){
-      for(let t=1;t<=14;t++){const f=Object.assign({},c,{timing:c.timing-t});if(f.timing<-15)break;const rf=X.sim(f);if(!rf.fails.length)return{cfg:c,fix:[["timing",f.timing]],sig:"detonation",refHp:rf.peakHp};}
-      return null;}}
-    return null;}},
- {id:"vfloat",tag:"misses at the limiter",name:"Valve float",hrs:3,allowed:["springs","redline","valveMat"],k:0.97,internal:false,
-  says:["Stumbles and misses right before the limiter at {rl}.","Above {r} it breaks up like it's hitting a rev limiter early.","Had the limiter raised to {rl}. Now it pops and misses near the top."],
-  hints:["A miss only at the very top is the valvetrain. Read Valve float in the stress report.","The springs can't close the valves at that rpm — the customer wants the redline kept where it is.","Fit stiffer or lighter valve springs (dual, beehive, titanium retainers). Leave the redline."],
-  gen(c0,r0,X){if(SIM.isRotary(c0))return null;const tryF=c=>{const r=X.sim(c);return ddCrit(r,"valve_float")&&r.fails.length===1?r:null;};
-    for(const v of ddBelow("springs",c0.springs)){const c=Object.assign({},c0,{springs:v});if(tryF(c))return{cfg:c,fix:[["springs",c0.springs]],sig:"valve_float",redlineMin:c.redline};}
-    for(let d=200;d<=1600;d+=200){const c=Object.assign({},c0,{redline:c0.redline+d});if(c.redline>12500)break;if(tryF(c)){
-      for(const v of ddOrder("springs"))if(v!==c.springs&&X.ok("springs",v)){const f=Object.assign({},c,{springs:v});const rf=X.sim(f);if(!rf.fails.length)return{cfg:c,fix:[["springs",v]],sig:"valve_float",redlineMin:c.redline};}
-      return null;}}
-    return null;}},
- {id:"oil",tag:"oil light in long corners",name:"Oil starvation",hrs:3.5,w:0.4,allowed:["oilSystem","oilGrade","redline"],k:0.95,
-  says:["Track car. The oil light flickers in long sweepers.","Oil pressure drops out in the long right-hander at the club track.","Spun a bearing last year. Now the oil light blinks in fast corners again."],
-  hints:["Run a pull: the customer's duty — sustained cornering — is set on this job. Read Oil pickup / aeration.","A plain wet sump uncovers the pickup under sustained g; the oil sloshes away from it.","Fit a baffled or dry sump."],
-  gen(c0,r0,X){if(c0.oilSystem==="dry"&&!X.ok("oilSystem","baffled"))return null;const g=+(1.1+0.2*X.rnd()).toFixed(2),env={gLat:g};
-    const c=Object.assign({},c0,{oilSystem:"wet"});const r=X.sim(c,env);if(!ddCrit(r,"oil_starvation")||r.fails.length>1)return null;
-    return{cfg:c,env,fix:[["oilSystem",c0.oilSystem==="wet"?"baffled":c0.oilSystem]],alt:[["oilSystem","baffled"],["oilSystem","dry"]],sig:"oil_starvation"};}},
- {id:"hot_turbo",tag:"cooks the turbo",name:"Lean on boost",hrs:2.5,allowed:["lambda","turbineMat","timing","boost"],k:0.95,
-  says:["The exhaust manifold glows on a long pull and the turbo smells hot.","Went through a turbo last summer. This one's already smoking after long highway pulls.","Hot-side glows cherry red after a couple of hard runs."],
-  hints:["Read Turbine inlet temp in the stress report (and EGT on the chart).","The tune runs it too lean on boost: lean burns hot, and the turbine takes the heat.","Richen the full-load λ back to where a boosted engine wants it (or fit an Inconel hot side)."],
-  gen(c0,r0,X){if(!ddSpark(c0)||!ddTurbo(c0))return null;
-    for(let d=0.03;d<=0.16;d+=0.03){const c=Object.assign({},c0,{lambda:+(c0.lambda+d).toFixed(2)});const r=X.sim(c);if(ddCrit(r,"turbine_temp")&&r.fails.length<=3)return{cfg:c,fix:[["lambda",c0.lambda]],sig:"turbine_temp"};}
-    return null;}},
- {id:"creep",tag:"boost creep up top",name:"Boost creep",hrs:3.5,allowed:["map","boost"],k:0.96,map:true,
-  says:["Boost won't hold — it keeps climbing past {b} bar up top, then it pings.","Gauge creeps way over target near the redline. The wastegate can't hold it.","Boost spikes at the top of third and it knocks or cuts out."],
-  hints:["Boost creep: look at the Boost row of the tune map and the boost trace on a pull.","The boost target climbs in the top rpm columns — more than the turbo and the fuel can live with.","Pull the high-rpm boost cells back down to the rest of the row (select them, Interpolate or nudge)."],
-  gen(c0,r0,X){if(!ddSpark(c0)||!ddTurbo(c0)||c0.turbine==="vgt")return null;const m0=SIM.mapFromSliders(c0);if(!m0.boost)return null;const n=m0.rpm.length,k0=n-Math.max(2,Math.round(n/3));
-    for(let d=0.2;d<=1.2;d+=0.2){const m=ddCl(m0);for(let i=k0;i<n;i++)m.boost[i]=+(m0.boost[i]+d*(i-k0+1)/(n-k0)).toFixed(2);
-      const c=Object.assign({},c0,{map:m,boost:Math.max(...m.boost)});const r=X.sim(c);if(r.fails.length&&r.fails.length<=3)return{cfg:c,fix:[["map",m0]],sig:null,b:c0.boost};}
-    return null;}},
- {id:"cell",tag:"stumble in one spot",name:"Wrong map cell",hrs:3,allowed:["map","boost"],k:0.97,map:true,
-  says:["Bought it with an aftermarket ECU. Around {r} it knocks, then it's fine again.","There's one spot near {r} where it rattles under full throttle.","Flat spot and a ping right about {r}. Clean either side of it."],
-  hints:["It's only one band of rpm: read the tune map with the Knock and EGT overlays.","One or two full-load (100%) cells near {r} are way off the rest of the row.","Bring those cells back in line with their neighbours (select them and Interpolate, or nudge)."],
-  gen(c0,r0,X){if(!ddSpark(c0))return null;const m0=SIM.mapFromSliders(c0),n=m0.rpm.length,W=m0.load.length-1;
-    let i0=m0.rpm.reduce((bi,x,i)=>Math.abs(x-r0.peakTqRpm)<Math.abs(m0.rpm[bi]-r0.peakTqRpm)?i:bi,0);i0=Math.max(1,Math.min(n-3,i0));
-    for(let d=4;d<=18;d+=2){const m=ddCl(m0);m.ign[W][i0]+=d;m.ign[W][i0+1]+=d;const c=Object.assign({},c0,{map:m});const r=X.sim(c);if(r.fails.length&&r.fails.length<=3)return{cfg:c,fix:[["map",m0]],sig:null,r:m0.rpm[i0]};}
-    for(let d=0.06;d<=0.3;d+=0.04){const m=ddCl(m0);m.lam[W][i0]=+(m.lam[W][i0]+d).toFixed(2);m.lam[W][i0+1]=+(m.lam[W][i0+1]+d).toFixed(2);const c=Object.assign({},c0,{map:m});const r=X.sim(c);if(r.fails.length&&r.fails.length<=3)return{cfg:c,fix:[["map",m0]],sig:null,r:m0.rpm[i0]};}
-    return null;}},
- {id:"smoke",tag:"rolling coal",name:"Over-fuelled diesel",hrs:2.5,allowed:["lambda","turboSize","dNoz","timing","ic"],k:0.95,
-  says:["Smokes like a chimney. I'm getting looks — the inspection's next week.","Black smoke every time I touch the throttle. Smells like a cookstove.","Someone turned up the fuel. It rolls coal and the EGTs scare me."],
-  hints:["Read Smoke on the verdict, and λ on the chart or the datalog: it's a diesel fuelling problem.","The fuel limiter lets in more fuel than the air can burn. The customer still wants it to pull.","Raise the full-load λ (fuel limiter) back toward stock, or give it more air with a bigger turbo."],
-  gen(c0,r0,X){if(!SIM.isDiesel(c0))return null;
-    for(let d=0.05;d<=0.9;d+=0.05){const c=Object.assign({},c0,{lambda:+(c0.lambda-d).toFixed(2)});if(c.lambda<1.05)break;const r=X.sim(c);if(r.fails.length)return null;if((r.smoke||0)>=35)return{cfg:c,fix:[["lambda",c0.lambda]],sig:"smoke",smokeMax:Math.max(12,Math.round((r0.smoke||0)+8))};}
-    return null;}},
- {id:"small_turbo",tag:"runs out of breath",name:"Turbo too small",hrs:3,allowed:["turboSize","boost","ic"],k:0.97,
-  says:["Pulls hard low, then it's like it hits a wall up top. Turbo screams.","Lost power after the turbo was replaced — it whistles and goes flat.","Spools instantly but it's done by {r}. The turbo sounds like a dentist's drill."],
-  hints:["Read Compressor flow in the stress report.","The compressor is past its choke line: it only heats the air up top. Someone swapped in a smaller turbo.","Fit a turbo that flows what this engine needs — about what it came with."],
-  gen(c0,r0,X){if(!ddTurbo(c0))return null;
-    for(const v of ddBelow("turboSize",c0.turboSize,o=>o.maxFlow||0)){const c=Object.assign({},c0,{turboSize:v});const r=X.sim(c);if(ddCrit(r,"compressor_map")&&r.fails.length<=2)return{cfg:c,fix:[["turboSize",c0.turboSize]],sig:"compressor_map"};}
-    return null;}},
- {id:"gasket",tag:"pushing coolant",name:"Head gasket",hrs:4,allowed:["gasket","studs","boost"],k:0.97,
-  says:["Pushes coolant out of the overflow under boost. No milkshake in the oil — yet.","Bubbles in the radiator after a hard run, and the overflow's always full.","Lost coolant every hard pull since I turned the boost up."],
-  hints:["Coolant pushed out under load means combustion gas getting past the head joint: read Head gasket and Head clamp margin.","The gasket can't seal the cylinder pressure this engine makes now.","Fit an MLS or copper O-ring gasket (and studs if the clamp is short). Keep the boost."],
-  gen(c0,r0,X){if(!ddBoosted(c0)&&!SIM.isDiesel(c0))return null;
-    for(const v of ddBelow("gasket",c0.gasket)){const c=Object.assign({},c0,{gasket:v});const r=X.sim(c);if((ddCrit(r,"gasket_shear")||ddCrit(r,"head_lift"))&&r.fails.length<=2)return{cfg:c,fix:[["gasket",c0.gasket]],sig:"gasket_shear"};}
-    return null;}},
- {id:"thin_oil",tag:"bottom-end knock when hot",name:"Oil too thin",hrs:1.5,allowed:["oilGrade","oilSystem"],k:0.97,
-  says:["Oil pressure falls off when it's hot and there's a knock from the bottom end.","Quick lube put 'the good thin stuff' in. Now the bottom end rattles when it's warm.","Low oil pressure light at hot idle, and a deep knock under load."],
-  hints:["A hot-oil knock lives in the bearings: read Hydrodynamic film and Bearing specific load.","The oil is too thin for the bearing load: the film breaks down when it's hot.","Change to the oil grade this engine should run — thicker."],
-  gen(c0,r0,X){if(SIM.isRotary(c0))return null;
-    for(const v of ddBelow("oilGrade",c0.oilGrade,o=>o.kv100)){const c=Object.assign({},c0,{oilGrade:v});const r=X.sim(c);if((ddCrit(r,"oil_film")||ddCrit(r,"bearing_load"))&&r.fails.length<=2)return{cfg:c,fix:[["oilGrade",c0.oilGrade]],sig:"oil_film"};}
-    return null;}},
- {id:"overheat",tag:"runs hot",name:"Cooling",hrs:3,allowed:["cooling","oilSquirters"],k:0.97,
-  says:["Temperature gauge climbs on every long pull. Had to back out of it last weekend.","Boils over after two hard runs.","Runs hot under load — fine cruising, overheats when I lean on it."],
-  hints:["Read Heat rejection in the stress report.","The radiator can't shed the heat this power level makes: someone fitted a cheaper core.","Fit a bigger cooling package."],
-  gen(c0,r0,X){
-    for(const v of ddBelow("cooling",c0.cooling)){const c=Object.assign({},c0,{cooling:v});const r=X.sim(c);if(ddCrit(r,"cooling")&&r.fails.length<=2)return{cfg:c,fix:[["cooling",c0.cooling]],sig:"cooling"};}
-    return null;}}
-];
-/* parts the customer buys: list price of every part swapped in (tune numbers and map cells are labour) */
-function ddPartsOf(a,b){let s=0;for(const k in b){const t=SIM.OPT[k];if(!t||typeof b[k]!=="string"||b[k]===a[k]||!t[b[k]])continue;s+=+t[b[k]].cost||0;}return Math.round(s);}
-/* hand-back judge: {ok, issues:[...], newFails:[...], fixed} — cfg is the customer's engine as it is now, res a pull of it in the job's env */
-function ddCheck(job,cfg,res){const iss=[],o=job.cfg,A=new Set(job.allowed);
-  const nf=res.fails.filter(n=>job.f0.indexOf(n)<0),still=res.fails.filter(n=>job.f0.indexOf(n)>=0);
-  if(still.length)iss.push("Still failing: "+still.join(", "));
-  if(nf.length)iss.push("New failure: "+nf.join(", "));
-  if(job.smokeMax!=null&&(res.smoke||0)>job.smokeMax)iss.push(`Smoke ${Math.round(res.smoke||0)}% — the customer wants ${job.smokeMax}% or less`);
-  if(job.hpMin&&res.peakHp<job.hpMin)iss.push(`${Math.round(res.peakHp)} hp — the customer wants at least ${job.hpMin} hp`);
-  if(job.fuels&&job.fuels.indexOf(cfg.fuel)<0)iss.push(`Fuel: the customer will only run ${job.fuels.map(f=>(SIM.OPT.fuel[f]||{}).name||f).join(" / ")}`);
-  if(job.redlineMin&&cfg.redline<job.redlineMin)iss.push(`Redline ${cfg.redline} — the customer wants it kept at ${job.redlineMin}`);
-  const bad=Object.keys(Object.assign({},o,cfg)).filter(k=>!A.has(k)&&!DD_FREE[k]&&JSON.stringify(cfg[k])!==JSON.stringify(o[k]));
-  if(bad.length)iss.push("Work the customer didn't OK: "+bad.join(", "));
-  return {ok:!iss.length,issues:iss,newFails:nf,botched:nf.length>0||bad.length>0,fixed:!still.length&&!(job.smokeMax!=null&&(res.smoke||0)>job.smokeMax)};}
-/* make one job: X = {sim(cfg,envExtra), rnd(), ok(key,val), pool:[preset], f:[fault ids] (optional)} — null if nothing fits */
-function ddMake(X){const tries=24;
-  for(let n=0;n<tries;n++){const p=X.pool[Math.floor(X.rnd()*X.pool.length)];if(!p)return null;
-    const fl=DD_FAULTS.filter(f=>!X.f||X.f.indexOf(f.id)>=0),fw=f=>(f.w||1)*(X.easy&&f.hrs<=DD_EASY_HRS?DD_EASY_W:1);let u=X.rnd()*fl.reduce((a,f)=>a+fw(f),0),F=fl[fl.length-1];for(const f of fl){u-=fw(f);if(u<0){F=f;break;}}
-    const c0=Object.assign({},SIM.DEFAULT_CFG,ddCl(p.cfg));const r0=X.sim(c0);if(r0.fails.length)continue;
-    let g=null;try{g=F.gen(c0,r0,X);}catch(e){g=null;}if(!g)continue;
-    const env=g.env||{},rf0=X.sim(g.cfg,env);
-    const job={v:1,id:Math.floor(X.rnd()*1e9),preset:p.id,fault:F.id,cfg:g.cfg,env,allowed:F.allowed.slice(),f0:rf0.fails.slice(),hp0:Math.round(r0.peakHp),hpF:Math.round(rf0.peakHp),cost0:rf0.cost,
-      smokeMax:g.smokeMax!=null?g.smokeMax:null,fuels:g.fuels||(F.pump&&DD_PUMP.indexOf(c0.fuel)>=0?DD_PUMP.slice():null),redlineMin:g.redlineMin||null,sig:g.sig,r:g.r||Math.round(c0.redline*0.72/100)*100,b:g.b||c0.boost,rl:g.cfg.redline};
-    /* the reference fix must use parts the shop can fit, pass every target, and set the hp floor */
-    const cands=[g.fix].concat((g.alt||[]).map(a=>[a]));let ref=null;
-    for(const fx of cands){if(fx.some(([k,v])=>typeof v==="string"&&SIM.OPT[k]&&!X.ok(k,v)))continue;const fc=Object.assign({},g.cfg);fx.forEach(([k,v])=>fc[k]=typeof v==="object"?ddCl(v):v);
-      if(fc.map&&fc.map.boost&&g.cfg.map)fc.boost=Math.max(...fc.map.boost);const rr=X.sim(fc,env);if(!rr.fails.length&&(job.smokeMax==null||(rr.smoke||0)<=job.smokeMax)){ref={fx,cfg:fc,res:rr};break;}}
-    if(!ref)continue;
-    job.hpMin=Math.floor(Math.min(F.k*r0.peakHp,0.985*ref.res.peakHp));
-    if(!ddCheck(job,ref.cfg,ref.res).ok)continue;
-    if(!(rf0.fails.length||(job.smokeMax!=null&&(rf0.smoke||0)>job.smokeMax)))continue;   // the fault must show on the dyno
-    job.fix=ref.fx.map(([k,v])=>[k,typeof v==="object"?"(map)":v]);job.partsRef=ddPartsOf(g.cfg,ref.cfg);
-    return job;}
-  return null;}
-/* ---- DYNO DAY core end ---- */
-/* ---- DYNO DAY in the shop: the week's customers (C().dd), the customer bay (S.bay) and the hand-back.
-   S.bay holds the player's own build while a customer's engine sits on the dyno: save()/snapshot() write the player's build
-   (the customer engine rides along in o.bay.cur), the dyno never certifies, wears or records a customer engine, and recompute()
-   puts back any part the customer didn't OK. Sandbox: "Practice diagnosis" — the same bay, no money. ---- */
-const DD_WHO=["Dale","Marie","Kev","Priya","Earl","Tanya","Lou","Gus","Rosa","Wes","Darlene","Hank","Mo","Jules","Shane","Bev","Corey","Nadia","Ray","Fern","Lyle","Joanne","Arjun","Cass"];
-const DD_VEH={g10:"'99 city hatch","4ac":"'87 hatchback","22re":"'89 compact pickup",ea82:"'88 wagon",l36:"'04 sedan",k20a:"'03 hot hatch","2jzgte":"'97 GT coupe",rb26:"'99 AWD coupe",ls3:"'10 muscle car",
-  coyote:"'16 pony car",ej257:"'08 rally sedan",f6_38:"'09 rear-engined coupe",s54:"'04 sport coupe",v8fp45:"track-day exotic",v12_65:"'12 grand tourer",v10_52:"'10 supercar",i3_1000:"'17 city car",ea888:"'15 hot hatch",
-  m133:"'14 AWD hatch",hemi64:"'70 muscle car",i5_25t:"'18 five-pot hatch",outlaw_radial:"radial drag car",outlaw_promod:"Pro Mod",d15b:"'95 commuter",ea211:"'19 compact",["2zr"]:"'12 compact",skyg25:"'16 crossover",
-  kent:"'71 club racer",lima23:"'84 pony car",ford300:"'86 farm truck",vortec43:"'05 Silverado",["1gr"]:"'08 4x4",godzilla73:"'21 three-quarter-ton",sbc350:"'79 street rod",f20c:"'02 roadster",["4age20v"]:"'85 sprint coupe",
-  ["4g63"]:"'98 rally sedan",b58:"'20 sport sedan",vr38:"'12 AWD supercar",["9a2tt"]:"'18 sports car",p997t:"'11 turbo coupe",m156:"'09 super-sedan",voodoo:"'16 track pony car",hellcat:"'19 blown coupe",lt4:"'17 blown coupe",
-  s85:"'07 super-sedan",["1lr"]:"V10 exotic",dfv:"historic Grand Prix car",wrc16:"rally car",gt3r:"cup car",valkyrie:"hypercar",k24_1000:"drag hatch",jz_1500:"drag coupe",n2o632:"nitrous dragster",pro540:"blown drag car",
-  compound402:"outlaw truck",p4236:"'78 tractor",c59_12v:"'95 three-quarter-ton",lb7:"'03 heavy-duty pickup",psd73:"'99 super-duty",psd67:"'19 super-duty",alh:"'02 diesel wagon",om606:"'97 diesel sedan",s60:"'05 highway tractor",
-  ["1kd"]:"'10 diesel 4x4",smoker26:"pulling truck",ss_triple:"super stock puller",["12a_sa"]:"'79 rotary coupe",["13b_fc"]:"'88 rotary coupe",["13b_rew"]:"'94 twin-turbo rotary",renesis:"'05 rotary coupe",["20b_rew"]:"'96 three-rotor",
-  ["13b_bp"]:"rotary club racer",r26b:"four-rotor prototype"};
-const DD_COST=[3000,4500,6500,9500,16000,1e9,1e9];
-const DD_EASY_HRS=2.5,DD_EASY_W=1.6,DD_EASY_TIER=1;   // a backyard or local shop mostly sees the quick, readable faults (one stress-report line, a part or a setting)   // dearest customer engine by rep tier: a backyard shop sees commuters
-function DD(){const c=C();if(!c.dd||typeof c.dd!=="object")c.dd={};const d=c.dd;if(!Array.isArray(d.jobs))d.jobs=[];
-  for(const k of ["week","passed","failed","earned","streak"])if(typeof d[k]!=="number")d[k]=0;if(!d.seed)d.seed=1+Math.floor(Math.random()*1e9);return d;}
-function ddRnd(o){return()=>{o.seed=(o.seed*1664525+1013904223)>>>0;return o.seed/4294967296;};}
-const ddFault=id=>DD_FAULTS.find(f=>f.id===id)||DD_FAULTS[0];
-const ddFill=(s,j)=>String(s).replace(/\{r\}/g,(+j.r||0).toLocaleString("en-CA")).replace(/\{rl\}/g,(+j.rl||0).toLocaleString("en-CA")).replace(/\{b\}/g,(+j.b||0).toFixed(1));
-function ddKeyLbl(k){if(k==="map")return "Tune map";const f=FORM.flatMap(x=>x.fields).find(x=>x.key===k);return f?fLabel(f):k;}
-const ddLabel=j=>`${j.who}'s ${j.veh}`;
-const ddEnvX=()=>S&&S.bay&&S.bay.job.env?S.bay.job.env:null;
-let ddPresetHp=null;
-function ddPool(){const dc=career()?dynoCap():{hp:1e9,rpm:1e9},ti=career()?repTierIdx():5,e=simEnv({testType:"pull"}),k=envHash();
-  if(!ddPresetHp||ddPresetHp.k!==k){ddPresetHp={k,m:{}};}
-  return PRESETS.filter(p=>{if(!p||!p.cfg||!p.id)return false;if(career()&&(locked(OPT.layout[p.cfg.layout])||(p.cfg.redline||0)>dc.rpm))return false;
-    let m=ddPresetHp.m[p.id];if(!m){try{const r=SIM.simulate(Object.assign({},SIM.DEFAULT_CFG,p.cfg),e);m={hp:r.peakHp,cost:r.cost};}catch(x){m={hp:1e9,cost:1e9};}ddPresetHp.m[p.id]=m;}
-    return m.hp<=dc.hp*0.9&&(!career()||m.cost<=DD_COST[ti]);});}
-function ddMakeJob(rnd,practice,only){const pool=ddPool();if(!pool.length)return null;
-  const X={sim:(cfg,ex)=>SIM.simulate(cfg,simEnv(Object.assign({testType:"pull"},ex||{}))),rnd,ok:(k,v)=>!(career()&&OPT[k]&&OPT[k][v]&&locked(OPT[k][v])),pool,f:only,easy:!practice&&career()&&repTierIdx()<=DD_EASY_TIER};
-  const j=ddMake(X);if(!j)return null;const F=ddFault(j.fault),p=PRESETS.find(q=>q.id===j.preset)||{};
-  j.who=DD_WHO[Math.floor(rnd()*DD_WHO.length)];j.veh=DD_VEH[j.preset]||("'"+String(90+Math.floor(rnd()*30)).slice(-2)+" "+(presetCls(p)==="truck"?"pickup":"car"));j.eng=p.name||j.preset;
-  j.says=ddFill(F.says[Math.floor(rnd()*F.says.length)],j);j.tag=F.tag;j.hints=0;j.paid=0;
-  const ti=career()?repTierIdx():0;j.labour=practice?0:Math.max(250,Math.round(F.hrs*(150+j.cost0*0.05)*(1+0.25*ti)/10)*10);   // shop rate: $150/h plus the engine's worth
-  j.budget=Math.max(100,Math.round((j.partsRef*1.25+60)/50)*50);return j;}
-/* the week's walk-ins: 0-4 by rep and dyno, more with a dyno technician (a backyard shop gets about 1.5 a week; the first two tiers get a lift so the rate climbs, never dips, as you grow) */
-function ddWeek(){if(!career())return;const d=DD();if(d.week===C().week)return;
-  if(S.bay&&!S.bay.practice&&!testing){const j=S.bay.job;ddExit();C().rep=Math.max(0,C().rep-1);d.failed++;d.streak=0;logEvent(`Dyno day: ${ddLabel(j)} came back for it unfinished — −1 rep`,"bad");}
-  const left=d.jobs.filter(j=>j.st==="open").length;d.jobs=d.jobs.filter(j=>j.st==="bay"&&S.bay&&S.bay.job.id===j.id);d.week=C().week;
-  const rnd=ddRnd(d),lam=0.95+0.32*repTierIdx()+([0.6,0.2][repTierIdx()]||0)+(staffed("dynotech")?0.45+0.08*crewL("dynotech"):0)+(has("dyno2")?0.15:0);let n=Math.max(0,Math.min(4,Math.round(lam+(rnd()-0.5)*1.4)));
-  for(let i=0;i<n;i++){const j=ddMakeJob(rnd,false);if(j){j.st="open";d.jobs.push(j);}}
-  if(left&&d.week>1)logEvent(`Dyno day: ${left} customer${left>1?"s":""} took ${left>1?"their cars":"the car"} elsewhere`,"");
-  const nn=d.jobs.filter(j=>j.st==="open").length;if(nn&&d.week>1)setTimeout(()=>toast(`DYNO DAY · ${nn} customer${nn>1?"s":""} booked in`),2700);}
-function ddEnter(j,practice){if(testing){toast("Let the run finish first");return false;}if(S.bay)return false;if(rnLive()||PO||ER){toast("Finish the event first");return false;}
-  S.bay={job:j,practice:!!practice,own:{cfg:S.cfg,last:S.last,base:S.base,testType:S.env.testType,profileId:S.profileId,name:S.name}};
-  S.cfg=Object.assign({},SIM.DEFAULT_CFG,ddCl(j.cfg));S.last=null;S.base=null;S.env.testType="pull";S.profileId=(PRESETS.find(p=>p.id===j.preset)||{}).soundProfile||null;S.name=ddLabel(j);
-  resetBase();afterCfgChange(true);ddBar();save();return true;}
-function ddExit(){const B=S.bay;if(!B)return;const o=B.own;S.bay=null;S.cfg=o.cfg;S.last=o.last;S.base=o.base;S.env.testType=o.testType||"pull";S.profileId=o.profileId;S.name=o.name;
-  resetBase();afterCfgChange(true);ddBar();if(curTab==="test")renderTest();save();}
-/* the customer only pays for what they OK'd: anything else goes back as it came (fuel stays a liquid spark fuel) */
-let ddGuardT=0;
-function ddGuard(){const B=S.bay;if(!B)return;const o=B.job.cfg,A=new Set(B.job.allowed),back=[];
-  for(const k of Object.keys(Object.assign({},o,S.cfg))){if(A.has(k)&&!(k==="fuel"&&!ddFuelOk(S.cfg.fuel))||DD_FREE[k])continue;
-    if(JSON.stringify(S.cfg[k])===JSON.stringify(o[k]))continue;if(o[k]===undefined)delete S.cfg[k];else S.cfg[k]=ddCl(o[k]);back.push(k);}
-  if(back.length&&!ddGuardT){ddGuardT=setTimeout(()=>{ddGuardT=0;renderBuild();ENGINE_VIS.buildEngine(S.cfg,LAYOUTS[S.cfg.layout]);},0);toast(`${B.job.who} didn't OK that — ${back.map(ddKeyLbl).join(", ")} put back`);}}
-function ddMarkBuild(){if(!S.bay)return;const A=new Set(S.bay.job.allowed);
-  document.querySelectorAll("#buildForm [data-k],#buildForm [data-nk],#buildForm [data-num]").forEach(el=>{const k=el.dataset.k||el.dataset.nk||el.dataset.num;if(A.has(k)||DD_FREE[k])return;el.classList.add("ddno");if(el.tagName==="INPUT")el.disabled=true;});}
-function ddParts(){const B=S.bay;return B?ddPartsOf(B.job.cfg,S.cfg):0;}
-function ddHintCost(j){if(S.bay&&S.bay.practice||!career())return 0;return (j.hints===0&&staffed("tuner"))?0:crewT("wizard")?Math.max(10,Math.round(j.labour*0.06/10)*10):Math.max(20,Math.round(j.labour*0.12/10)*10);}
-function ddHint(){const B=S.bay;if(!B)return;const j=B.job;if(j.hints>=3)return;const c=ddHintCost(j);j.hints++;if(c)j.paid+=c;save();ddRender();
-  toast(c?`Hint · ${fmt$(c)} off the labour`:j.hints===1&&staffed("tuner")&&career()?"Your calibration engineer has a look — free":"Hint");}
-function ddVerdict(res){const B=S.bay,j=B.job,ck=ddCheck(j,S.cfg,res);
-  return `<div class="verdict ${ck.ok?"pass":"marg"}"><div style="flex:1"><div class="big">${ck.ok?"READY TO HAND BACK":"CUSTOMER ENGINE"}</div><p>${ck.ok?`It's clean and it meets what ${esc(j.who)} asked for. Hand it back from the Dyno day card.`:ck.issues.map(esc).join(" · ")}</p>
-    <div class="vstats"><div><b>${Math.round(res.peakHp)}</b><span>hp · wants ${j.hpMin}+</span></div>${res.diesel?`<div><b>${Math.round(res.smoke||0)}%</b><span>Smoke${j.smokeMax!=null?" · max "+j.smokeMax+"%":""}</span></div>`:`<div><b>${res.knock.margin>=0?"+":""}${res.knock.margin.toFixed(1)}</b><span>Knock margin</span></div>`}<div><b>${res.rel}</b><span>Reliability</span></div><div><b>${fmt$(ddParts())}<i style="font-style:normal;font-size:.75em;color:var(--muted)"> / ${fmt$(j.budget)}</i></b><span>Parts / budget</span></div></div></div></div>`;}
-function ddHand(){const B=S.bay;if(!B||testing)return;const j=B.job;const last=S.last&&S.last.hash===cfgHash(S.cfg)?S.last:null;
-  if(!last){toast("Pull it as it sits first — the customer wants the dyno sheet");return;}
-  const ck=ddCheck(j,S.cfg,last.res);if(!ck.ok&&!B.confirm){B.confirm=true;B.issues=ck.issues;ddRender();toast("Not right yet — see the job card");return;}
-  const parts=ddParts(),under=parts<=j.budget,clean=ck.ok&&!j.hints&&under,F=ddFault(j.fault);
-  if(B.practice){S.achN=S.achN||{};if(ck.ok)S.achN.ddp=(S.achN.ddp||0)+1;ddExit();toast(ck.ok?`FIXED · ${F.name} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`:`NOT FIXED · it was ${F.name.toLowerCase()} — ${j.fix.map(x=>ddKeyLbl(x[0])).join(", ")}`);
-    if(ck.ok)achCheck({type:"dd",pass:true,clean});return;}
-  const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st=ck.ok?"done":"failed";if(dj)dj.st=j.st;crewWork("dd",{job:j,ok:ck.ok});
-  if(ck.ok){const lab=Math.max(0,j.labour-j.paid),bonus=under?Math.round(j.labour*0.15/10)*10:0,bill=lab+Math.round(Math.min(parts,j.budget)*1.3)+bonus,net=bill-parts;
-    C().cash+=net;C().rep+=clean?2:1;d.passed++;d.earned+=net;d.streak++;j.net=net;
-    logEvent(`Dyno day: ${ddLabel(j)} fixed (${F.name.toLowerCase()}) — billed ${fmt$(bill)}${bonus?", under budget":""}, net ${fmt$(net)}`,"good");toast(`FIXED · ${fmt$(net)} net${bonus?" · under budget":""}`);}
-  else{const hit=ck.botched?3:2;C().cash-=parts;C().rep=Math.max(0,C().rep-hit);d.failed++;d.streak=0;
-    logEvent(`Dyno day: ${ddLabel(j)} handed back ${ck.botched?"worse than it came in":"unfixed"} (${F.name.toLowerCase()}) — −${hit} rep${parts?", "+fmt$(parts)+" in parts on you":""}`,"bad");toast(`${ck.botched?"BOTCHED":"NOT FIXED"} · −${hit} rep`);}
-  ddExit();hud();if(ck.ok)achCheck({type:"dd",pass:true,clean});checkGoals();save();}
-function ddWalk(){const B=S.bay;if(!B||testing)return;const j=B.job;
-  if(!B.practice){const d=DD(),dj=d.jobs.find(x=>x.id===j.id);j.st="failed";if(dj)dj.st="failed";d.failed++;d.streak=0;C().rep=Math.max(0,C().rep-1);logEvent(`Dyno day: sent ${ddLabel(j)} away unfixed — −1 rep`,"");}
-  ddExit();hud();toast(B.practice?"Practice engine off the dyno":"Customer sent away — −1 rep");}
-function ddPractice(){const o={seed:1+Math.floor(Math.random()*1e9)};const j=ddMakeJob(ddRnd(o),true);if(!j){toast("Couldn't find a sick engine — try again");return;}j.st="bay";if(ddEnter(j,true)){renderTest();toast(`Practice: ${ddLabel(j)} — "${j.tag}"`);}}
-function ddBar(){const b=$("ddBar");if(!b)return;const B=S&&S.bay;$("panel").classList.toggle("ddon",!!B);if(!B){b.hidden=true;b.innerHTML="";return;}
-  b.hidden=false;b.innerHTML=`<div class="ddbt"><small>${B.practice?"Practice bay":"Customer bay"}</small><b>${B.practice?"Practice":"Customer"}: ${esc(ddLabel(B.job))} — ‘${esc(B.job.tag)}’</b></div><button class="btn sm" data-dd="goto">Job ›</button>`;
-  requestAnimationFrame(()=>$("panel").style.setProperty("--ddh",b.offsetHeight+"px"));}
-function ddReqHtml(j){const F=ddFault(j.fault),t=[`No failures on the dyno`,`At least ${j.hpMin.toLocaleString("en-CA")} hp`];
-  if(j.smokeMax!=null)t.push(`Smoke ${j.smokeMax}% or less`);if(j.fuels)t.push(`Fuel: ${j.fuels.map(f=>(OPT.fuel[f]||{}).name||f).join(" / ")} only`);if(j.redlineMin)t.push(`Redline stays at ${j.redlineMin.toLocaleString("en-CA")} rpm`);
-  if(F.internal)t.push("No internal work — the head stays on");if(j.env&&j.env.gLat)t.push(`Duty: ${j.env.gLat.toFixed(2)} g sustained cornering (set on this job's pulls)`);
-  return `<ul class="ddreq">${t.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;}
-function ddRender(){const sec=$("ddSec");if(!sec)return;const B=S.bay,show=!!B||S.env.testType==="pull";sec.hidden=!show;if(!show)return;const box=$("ddBox");
-  if(B){const j=B.job,F=ddFault(j.fault),parts=ddParts(),hc=ddHintCost(j);$("ddCnt").textContent=B.practice?"practice":"on the dyno";
-    box.innerHTML=`<div class="card ddjob on"><div class="ddh"><b>${esc(ddLabel(j))}</b><span>${esc(j.eng)}${B.practice?"":" · labour "+fmt$(j.labour)}</span></div>
-      <p class="ddsay">“${esc(j.says)}”</p>
-      <div class="ddk"><span>They'll pay for</span><b>${j.allowed.map(ddKeyLbl).map(esc).join(" · ")}</b></div>
-      ${ddReqHtml(j)}
-      ${B.practice?"":`<div class="ddk"><span>Parts so far</span><b class="${parts>j.budget?"crit":""}">${fmt$(parts)} of ${fmt$(j.budget)} budget</b></div>`}
-      ${j.hints?`<ol class="ddhints">${F.hints.slice(0,j.hints).map(h=>`<li>${esc(ddFill(h,j))}</li>`).join("")}</ol>`:""}
-      ${B.confirm&&B.issues?`<div class="ddiss">${B.issues.map(x=>`<div>${esc(x)}</div>`).join("")}</div>`:""}
-      <div class="row ddbtns"><button class="btn pri" data-dd="hand"${testing?" disabled":""}>${B.confirm?(B.practice?"Hand it back as is":"Hand back unfixed · rep hit"):"Hand back"}</button>${j.hints<3?`<button class="btn sm" data-dd="hint">Hint${hc?" · "+fmt$(hc):B.practice||!career()?"":" · free"}</button>`:""}<button class="btn sm ghost" data-dd="walk"${testing?" disabled":""}>${B.practice?"Done":"Walk away"}</button></div>
-      <p class="hint">Run pulls, read the stress report, the chart and Analysis, change only what they'll pay for, then pull it again before you hand it back.</p></div>`;return;}
-  if(!career()){$("ddCnt").textContent="practice";box.innerHTML=`<p class="hint" style="margin-top:-4px">In career, customers book dyno time for their own sick engines. Practise here: a random engine comes in with one fault and a complaint. Find it, fix it with the parts they'll pay for, and hand it back. Your own build waits in the corner.</p><button class="btn" data-dd="practice" style="width:100%">Practice diagnosis</button>`;return;}
-  ddWeek();const d=DD(),open=d.jobs.filter(j=>j.st==="open");$("ddCnt").textContent=open.length?`${open.length} booked · this week only`:"none this week";
-  box.innerHTML=`<div class="hint ddhint">Customers book the dyno.${moreI(`Customers book the dyno for their own engines. Take a job: their engine goes on the dyno in place of yours (yours waits). Find the fault, fix it with the parts they'll pay for, hand it back. Pay = labour + 30% on parts; under budget earns a bonus. A botched job costs rep.${d.passed?` ${d.passed} fixed so far, ${fmt$(d.earned)} net.`:""}`,"How dyno day works")}</div>`
-    +(open.length?open.map(j=>`<div class="ddrow"><div class="ddl"><b>${esc(ddLabel(j))}</b><span class="ddp">${fmt$(j.labour)}</span><button class="ddi" data-ddx aria-expanded="false" aria-label="About ${esc(ddLabel(j))}'s job">ⓘ</button><button class="btn sm pri" data-dd="take" data-id="${j.id}"${testing?" disabled":""}>Take</button></div><div class="ddx" hidden><b>${esc(j.eng)}</b> · labour ${fmt$(j.labour)}<br>“${esc(j.says)}”</div></div>`).join(""):`<p class="hint">No customers booked this week. More come in as the shop's reputation grows — a dyno technician brings in more.</p>`);}
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-dd]");if(!b)return;const a=b.dataset.dd;
-  if(a==="goto"){showTab("test");requestAnimationFrame(()=>{const s=$("ddSec");if(s)s.scrollIntoView({block:"start",behavior:calmScroll()});});return;}
-  if(a==="practice"){ddPractice();return;}if(a==="hint"){ddHint();return;}if(a==="hand"){ddHand();return;}if(a==="walk"){ddWalk();return;}
-  if(a==="take"){const j=DD().jobs.find(x=>String(x.id)===b.dataset.id&&x.st==="open");if(!j)return;if(ddEnter(j,false)){j.st="bay";renderTest();toast(`${j.who}'s engine is on the dyno — "${j.tag}"`);}}});
-/* while a customer engine is on the dyno, nothing swaps the whole engine or the game out from under it */
-document.addEventListener("click",e=>{if(!S||!S.bay||!e.target.closest)return;const no=e.target.closest("#buildForm .ddno");if(no){e.stopPropagation();e.preventDefault();toast(`${S.bay.job.who} isn't paying for that — ${ddKeyLbl(no.dataset.k||no.dataset.nk||no.dataset.num)}`);return;}const b=e.target.closest("#presets [data-p],#bpList [data-load],[data-abload],#modeBox button,#testType button,#evPick button,[data-evgo],#slots [data-load],#importSave,#replayFF");if(!b)return;
-  if(b.matches("#testType button")&&b.dataset.t==="pull")return;e.stopPropagation();e.preventDefault();toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);},true);
-function advanceWeek(){C().week++;C().shipped=0;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
+/* ===================== CAREER: the week, sponsors, the shop and goals =====================
+   The career shop builds engines for race teams (app/team.js: one team a season, a round every other week) and races its own
+   engines at the events for purses and rep. Close week charges overhead and wages, runs a team round that is due, pays
+   sponsors, moves R&D on and checks the goals. Selling engines to buyers, contracts, warranty, cores, build bays and
+   Dyno day were removed in 1.76.33: careers from before that start over (app/state.js hydrate). */
+const degC=t=>`${t<0?"−"+(-t):t} °C`;
+/* weekly overhead: $500, plus 2% of what the plant you own cost (some late plant counts less, u.oh), plus wages */
+function overhead(){const plant=UPGRADES.reduce((a,u)=>a+(C().owned[u.id]?u.price*(u.oh||1):0),0);return 500+Math.round(plant*0.02*(typeof lgLeaseK==="function"?lgLeaseK():1)/10)*10+wages();}
+function rndNeed(r){return r.mach&&staffed("machinist")?Math.ceil(r.weeks*(0.75-0.025*crewL("machinist"))):r.weeks;}   // machinist: machining projects 25% shorter
+function rndPass(){const a=C().rndActive;if(!a)return;const r=RND.find(x=>x.id===a.id);if(!r)return;a.done+=1;
+  if(a.done>=rndNeed(r)){C().rnd[r.id]=C().week;C().rndActive=null;crewWork("rnd",{r});if(r.unlock)for(const u of r.unlock)C().unlocks[u]=true;syncShop();C().rep+=8;logEvent(`R&D complete: ${r.name} — ${r.desc.split(".")[1]||r.desc}`,"good");toast(`R&D COMPLETE · ${r.name.toUpperCase()}`);renderBuild();renderPresets();recompute();}}
+function prestigePass(){let rp=has("hall")&&career()?5:0;for(const p of PRESTIGE)if(C().prestige[p.id])rp+=p.rep;if(rp){C().rep+=rp;}}
+function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.length>16)C().log.length=16;}
+/* Close week: a team round due this week runs first (with the season engine as it stands), then the week turns over */
+function advanceWeek(){const rd=pcWeek();C().week++;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");crewWeek();bayWeek();warrantyPass();repeatPass();servicePass();rndPass();prestigePass();refillContracts();spWeek();rivalsWeek();checkGoals();achCheck({type:"week"});ddWeek();{const so=spS().offers.length,dj=(C().dd&&C().dd.jobs||[]).filter(j=>j.st==="open").length;if(so||dj)toastAfter([so?`${so} sponsor offer${so>1?"s":""} in Market`:"",dj?`${dj} dyno-day job${dj>1?"s":""} in Test`:""].filter(Boolean).join(" · "));}
+  logEvent(t,"");crewWeek();rndPass();prestigePass();spWeek();rivalsWeek();pcWeekAfter();checkGoals();achCheck({type:"week"});
+  {const so=spS().offers.length;const msg=[rd||"",so?`${so} sponsor offer${so>1?"s":""} in Team`:""].filter(Boolean).join(" · ");if(msg)toastAfter(msg);}
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
-  else if(C().cash<-5000)toast("The bank is calling. Sell something.");}
+  else if(C().cash<-5000)toast("The bank is calling. Win something.");}
 /* ===================== SPONSORS (career) =====================
-   Made-up brands approach the shop on reputation and results: race nights, pulls, the salt, delivered orders. An offer pays a
+   Made-up brands approach the shop on reputation and results: race nights, pulls, the salt, team results. An offer pays a
    weekly retainer and/or bonuses per win, record or top-3 class finish, for a set number of weeks, and comes with obligations.
    Break one and the deal ends with a cash penalty and a rep hit. Slots open with rep (SP_SLOT_REP). State lives on C().spons;
    spS() fills its defaults, so old saves load clean. The primary sponsor goes on the hood and the rest on the sides
@@ -280,14 +38,14 @@ const SP_BRANDS=[
   {id:"wildoat",name:"Wild Oat",tag:"Energy soda",type:"energy",shape:"star",c1:"#e2541c",c2:"#fff3b0",c3:"#ffffff"},
   {id:"northlight",name:"Northlight",tag:"Race fuels",type:"fuel",shape:"star",c1:"#0e1f3d",c2:"#ff7a1a",c3:"#f4f1e8"}];
 const SP_TYPES={oil:"Oil company",parts:"Parts maker",feed:"Local feed store",tyre:"Tyre brand",energy:"Energy drink",fuel:"Fuel supplier"};
-const SP_LIKES={oil:["night","pull","salt","endurance","boat","oval"],parts:["sale","night","salt","road"],feed:["pull","bog","oval"],tyre:["night","drag","endurance","bog","hill","road","oval"],energy:["night","drag","salt","hill","road"],fuel:["salt","night","endurance","boat","hill","road"]};
-const SP_OBL={oil:["nights","pulls"],parts:["deliver"],feed:["pulls"],tyre:["nights"],energy:["nights","nodiesel"],fuel:["salt","nodiesel"]};
+const SP_LIKES={oil:["night","pull","salt","endurance","boat","oval","team"],parts:["team","night","salt","road"],feed:["pull","bog","oval"],tyre:["night","drag","endurance","bog","hill","road","oval"],energy:["night","drag","salt","hill","road"],fuel:["salt","night","endurance","boat","hill","road","team"]};
+const SP_OBL={oil:["nights","pulls"],parts:["rounds"],feed:["pulls"],tyre:["nights"],energy:["nights","nodiesel"],fuel:["salt","nodiesel"]};
 const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
-  deliver:n=>`Ship at least ${n} engine order${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
+  rounds:n=>`Supply your team for at least ${n} round${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
 const SP_SLOT_REP=[0,120,300];
-const SP_EVT={hill:"Pikes Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",sale:"your engines",oval:"the oval",road:"the track day"};
+const SP_EVT={hill:"Pikes Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",team:"your team's results",oval:"the oval",road:"the track day"};
 /* an obligation the shop can actually meet: a brand never asks for race nights before the Outlaw shop opens the strip, pulls before
-   a pull class is open, or salt runs before the salt is open — the same gates the rivals use (rivEvOpen). deliver/nodiesel always fit */
+   a pull class is open, or salt runs before the salt is open — the same gates the rivals use (rivEvOpen). rounds/nodiesel always fit */
 function spOblOpen(k){try{if(k==="nights")return evStatus("drag").k!=="lock";if(k==="pulls")return Object.keys(SIM.PULL_CLASSES).some(c=>!pullClsLocked(c));if(k==="salt")return evStatus("salt").k!=="lock";}catch(e){return false;}return true;}
 function spS(){const c=C();const s=c.spons&&typeof c.spons==="object"?c.spons:(c.spons={});
   if(!Array.isArray(s.active))s.active=[];if(!Array.isArray(s.offers))s.offers=[];if(!s.form||typeof s.form!=="object")s.form={};
@@ -308,7 +66,7 @@ function spGen(kind){const s=spS();const tier=repTierIdx();const taken=new Set(s
   const ret=style<0.25?0:spR10((100+spRng()*100)*scale*(style>0.75?1.5:1)),bm=style<0.25?2:style>0.75?0.5:1;
   const bon={win:spR50(250*scale*bm),finish:likes.some(k=>k==="night"||k==="pull"||k==="bog"||k==="boat"||k==="hill"||k==="oval")?spR50(80*scale*bm):0,record:likes.some(k=>k==="salt"||k==="road")?spR50(800*scale*bm):0};
   const able=SP_OBL[b.type].filter(spOblOpen),pick=able.length?able[Math.floor(spRng()*able.length)]:null;
-  const n=pick?{nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),deliver:Math.max(1,Math.round(weeks/3))}[pick]:0;
+  const n=pick?{nights:Math.max(1,Math.round(weeks/4)),pulls:Math.max(1,Math.round(weeks/4)),salt:1+(weeks>=7?1:0),rounds:Math.max(1,Math.round(weeks/3))}[pick]:0;
   const obl=pick?[{k:pick,n:n||0}]:[];if(!pick||(C().rep>=10&&spRng()<0.5))obl.push({k:"rep",n:Math.max(5,Math.floor(C().rep*0.85))});
   const o={id:Math.floor(spRng()*1e9),b:b.id,weeks,ret,bon,obl,pen:spR50(Math.max(500,ret*2+bon.win*0.5)),penRep:4+tier*2,exp:C().week+2,
     why:kind&&SP_EVT[kind]?`Saw what you did at ${SP_EVT[kind]}.`:""};
@@ -331,44 +89,43 @@ function spWeek(){if(!career())return;const s=spS();let paid=0;
   for(const k in s.form)s.form[k]=Math.round(s.form[k]*70)/100;
   s.offers=s.offers.filter(o=>o.exp>=C().week);
   const tot=Object.values(s.form).reduce((a,v)=>a+v,0);
-  if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Market`,"good");}
+  if(s.offers.length<3&&(C().rep>=10||tot>0.5)&&spRng()<0.22+0.08*repTierIdx()+Math.min(0.4,tot*0.08)){const o=spGen(null);if(o)logEvent(`${spBrand(o.b).name} (${SP_TYPES[spBrand(o.b).type].toLowerCase()}) wants to sponsor the shop — see Team`,"good");}
   spLivery();}
 /* a result: obligations count, bans bite, bonuses pay, and a good night can bring a brand to the pits */
 function spEvent(kind,o){if(!career()||ff)return;crewWork(kind,o);const s=spS();o=o||{};rivalsEvent(kind,o);dwinCount(kind,o);s.form[kind]=(s.form[kind]||0)+(o.win||o.record?2:1);
-  if(kind!=="sale"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
-  const cnt={night:"nights",pull:"pulls",salt:"salt",sale:"deliver"}[kind];
+  if(kind!=="team"&&spDiesel())for(const a of s.active.slice())if(a.obl.some(q=>q.k==="nodiesel"))spBreak(a,"you ran a diesel at the track");
+  const cnt={night:"nights",pull:"pulls",salt:"salt",team:"rounds"}[kind];
   if(cnt&&!o.noCount)for(const a of s.active)for(const q of a.obl)if(q.k===cnt)q.have=(q.have||0)+1;
   const t=o.record?"record":o.win?"win":o.finish?"finish":null,got=[];let sum=0;
   if(t)for(const a of s.active){const v=a.bon&&a.bon[t];if(v){C().cash+=v;a.earned+=v;s.hist.earned+=v;sum+=v;got.push(`${spBrand(a.b).name} ${fmt$(v)}`);}}
   if(got.length){logEvent(`Sponsor bonus (${t==="finish"?"top-3 finish":t}): ${got.join(", ")}`,"good");setTimeout(()=>toast(`SPONSOR BONUS · +${fmt$(sum)}`),3400);}
-  if(t&&s.offers.length<3&&spRng()<(t==="record"?0.7:t==="win"?0.45:0.2)){const of=spGen(kind);if(of)logEvent(`${spBrand(of.b).name} saw that and wants to talk — see Market`,"good");}
+  if(t&&s.offers.length<3&&spRng()<(t==="record"?0.7:t==="win"?0.45:0.2)){const of=spGen(kind);if(of)logEvent(`${spBrand(of.b).name} saw that and wants to talk — see Team`,"good");}
   spLivery();}
 function spSign(id){const s=spS();const o=s.offers.find(x=>x.id==id);if(!o||s.active.length>=spSlots())return false;
   const a=Object.assign({},o,{w0:C().week,end:C().week+o.weeks,earned:0,obl:o.obl.map(q=>({k:q.k,n:q.n,have:0}))});delete a.exp;delete a.why;
   s.active.push(a);s.offers=s.offers.filter(x=>x!==o);s.hist.signed++;s.hist.max=Math.max(s.hist.max,s.active.length);if(!spPrimary()||s.active.length===1)s.primary=a.b;
   logEvent(`Signed with ${spBrand(a.b).name} for ${a.weeks} weeks${a.ret?" — "+fmt$(a.ret)+"/week":""}`,"good");spLivery();achCheck({type:"sponsor"});return true;}
 const spLogoUrl=(()=>{const m={};return b=>m[b.id]||(m[b.id]=ENGINE_VIS.logoCanvas(b,512,192).toDataURL());})();
-/* Market sub-tabs: Jobs | Sponsors & Rivals | Shop. S.mkTab remembers the open one; an old save has none = Jobs. */
-const MK_TABS=["jobs","spons","shop"];
-function mkTabNow(){const t=S.mkTab;return MK_TABS.includes(t)?t:"jobs";}
+/* Team tab sections: Team | Sponsors & Rivals | Log. S.mkTab remembers the open one; an old save (jobs, shop) opens Team. */
+const MK_TABS=["team","spons","log"];
+function mkTabNow(){const t=S.mkTab;return MK_TABS.includes(t)?t:"team";}
 function mkTabSet(tab,scroll){if(!MK_TABS.includes(tab))return;if(S.mkTab!==tab){S.mkTab=tab;save();}mkLayout();
   if(scroll){const pn=$("panel"),tb=$("mkTabs");if(pn&&tb){const d=tb.getBoundingClientRect().top-pn.getBoundingClientRect().top;if(d<0)pn.scrollTop=Math.max(0,pn.scrollTop+d-6);}}}
 function mkLayout(){const box=$("marketBox"),tabs=$("mkTabs");if(!box||!tabs)return;const t=mkTabNow();box.dataset.mk=t;
   tabs.querySelectorAll("[data-mk]").forEach(b=>{const on=b.dataset.mk===t;b.classList.toggle("on",on);b.setAttribute("aria-selected",String(on));});
   if(!career())return;
-  /* a dot on a tab that has something waiting: a sponsor offer or rival challenge, a repeat order, a service job */
-  const so=spS().offers.filter(o=>o.exp>=C().week).length,rc=(typeof rivS==="function"&&rivS().ch)?1:0,inb=(C().inbox||[]).filter(k=>k.expires>=C().week).length,sv=(C().service||[]).length;
-  const has={jobs:inb>0,spons:so+rc>0,shop:sv>0},why={jobs:`${inb} repeat order${inb===1?"":"s"} waiting`,spons:`${so} sponsor offer${so===1?"":"s"}${rc?" · a rival challenge":""}`,shop:`${sv} service job${sv===1?"":"s"} in`};
+  /* a dot on a tab that has something waiting: teams calling or a round due (Team), a sponsor offer or rival challenge */
+  const so=spS().offers.filter(o=>o.exp>=C().week).length,rc=(typeof rivS==="function"&&rivS().ch)?1:0,tm=pcWaiting();
+  const has={team:!!tm,spons:so+rc>0,log:false},why={team:tm,spons:`${so} sponsor offer${so===1?"":"s"}${rc?" · a rival challenge":""}`,log:""};
   tabs.querySelectorAll("[data-mk]").forEach(b=>{const k=b.dataset.mk;b.classList.toggle("has",has[k]);b.title=has[k]?why[k]:"";});}
 $("mkTabs").addEventListener("click",e=>{const b=e.target.closest("[data-mk]");if(!b)return;mkTabSet(b.dataset.mk,true);buzz(4);});
-/* a lesson, tour or tip pointing at something in a hidden Market tab opens that tab first */
-function mkReveal(el){const p=el&&el.closest&&el.closest("#mkJobs,#mkSpons,#mkShop");if(!p)return;const t={mkJobs:"jobs",mkSpons:"spons",mkShop:"shop"}[p.id];if(t&&mkTabNow()!==t)mkTabSet(t);}
-/* tab badges: sponsor offers waiting (Market) and booked dyno-day customers (Test) */
-function tabBadges(){const mk=$("mktDot"),td=$("testDot");if(!mk||!td)return;const on=career()&&!ff;
-  const so=on?spS().offers.filter(o=>o.exp>=C().week).length:0,dd=on&&C().dd&&C().dd.week===C().week?C().dd.jobs.filter(j=>j.st==="open").length:0;
-  const set=(el,n,t)=>{el.classList.toggle("n",n>0);if(n>0){el.textContent=n;el.title=t;el.classList.add("on");}else{el.textContent="";el.title="";}};
-  set(td,dd,`${dd} dyno-day customer${dd===1?"":"s"} booked this week`);
-  if(so>0)set(mk,so,`${so} sponsor offer${so===1?"":"s"} waiting`);else if(mk.classList.contains("n")){mk.classList.remove("n");mk.textContent="";mk.title="";mk.classList.remove("on");}}
+/* a lesson, tour or tip pointing at something in a hidden Team section opens that section first */
+function mkReveal(el){const p=el&&el.closest&&el.closest("#mkTeam,#mkSpons,#mkLog");if(!p)return;const t={mkTeam:"team",mkSpons:"spons",mkLog:"log"}[p.id];if(t&&mkTabNow()!==t)mkTabSet(t);}
+/* the Team tab's badge: sponsor offers waiting, or a team round due this week */
+function tabBadges(){const mk=$("mktDot");if(!mk)return;const on=career()&&!ff;
+  const so=on?spS().offers.filter(o=>o.exp>=C().week).length:0,due=on&&pcDue()?1:0,n=so+due;
+  if(n>0){mk.classList.add("n","on");mk.textContent=n;mk.title=[due?"A team round is due this week":"",so?`${so} sponsor offer${so===1?"":"s"} waiting`:""].filter(Boolean).join(" · ");}
+  else if(mk.classList.contains("n")){mk.classList.remove("n");mk.textContent="";mk.title="";mk.classList.remove("on");}}
 function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPrimary()===o.b,live=mode==="active";
   const bo=o.bon||{},cells=[];if(o.ret)cells.push([fmt$(o.ret),"per week"]);if(bo.win)cells.push([fmt$(bo.win),"per win"]);if(bo.record)cells.push([fmt$(bo.record),"per record"]);if(bo.finish)cells.push([fmt$(bo.finish),"top-3 finish"]);
   const obl=o.obl.map(q=>{const c=q.k!=="rep"&&q.k!=="nodiesel",have=q.have||0,ok=c?have>=q.n:q.k==="rep"?C().rep>=q.n:!spDiesel();
@@ -384,7 +141,7 @@ function spCard(o,mode){const b=spBrand(o.b),s=spS(),prim=mode==="active"&&spPri
     <p class="spfine">Break it: ${fmt$(o.pen)} and ${o.penRep} rep${live?` · earned ${fmt$(o.earned)} so far`:""}</p><div class="spbtns">${btns}</div></div>`;}
 function spRender(){const box=$("spons");if(!box||!career())return;const s=spS(),slots=spSlots(),next=SP_SLOT_REP.find(r=>r>C().rep);
   $("sponCnt").textContent=`${s.active.length} / ${slots}`;
-  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}`;$("sponHint").title="Brands notice shops that race and win: race nights, pulls, the salt (all on the Events tab) and delivered orders. The primary sponsor goes on the hood, the rest on the sides.";
+  $("sponHint").textContent=`${slots} slot${slots>1?"s":""}${next?` · another opens at ${next} rep`:""}`;$("sponHint").title="Brands notice shops that race and win: race nights, pulls, the salt (all on the Events tab) and your team's results. The primary sponsor goes on the hood, the rest on the sides.";
   box.innerHTML=(s.active.length?`<div class="cgroup g-now"><h3>Signed<span>${s.active.length}</span></h3>${s.active.map(a=>spCard(a,"active")).join("")}</div>`:"")
     +`<div class="cgroup g-far"><h3>Offers<span>${s.offers.length}</span></h3>${s.offers.length?s.offers.map(o=>spCard(o,"offer")).join(""):`<p class="hint">No one is calling yet. Put the shop's name out there — enter a race night, a pull or a speed trial. <button class="chip" data-gotab="events">Open Events</button></p>`}</div>`;}
 function spSlipHtml(){if(!career())return"";const s=spS();if(!s.active.length)return"";const p=spPrimary(),L=[p].concat(s.active.map(a=>a.b).filter(b=>b!==p));
@@ -397,75 +154,26 @@ $("spons").addEventListener("click",e=>{if(!career())return;const s=spS();
   const pr=e.target.closest("[data-spprim]");if(pr){s.primary=pr.dataset.spprim;spLivery();save();renderShop();toast(`${spBrand(s.primary).name.toUpperCase()} · ON THE HOOD`);return;}
   const dr=e.target.closest("[data-spdrop]");if(dr){const a=s.active.find(x=>x.b===dr.dataset.spdrop);if(!a)return;if(!confirm(`Walk away from ${spBrand(a.b).name}? It costs ${fmt$(a.pen)} and ${a.penRep} rep.`))return;
     spBreak(a,"you walked away");spLivery();save();hud();renderShop();}});
-/* Market: compact cards (the full brief opens behind the (i); ids of the open ones live here) and the Jobs | Sponsors & Rivals | Shop tabs */
-const mkX=new Set();
+/* the Shop and Team tabs. Team: the strip (engine, team status, Close week), then Team | Sponsors & Rivals | Log */
 function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
-  const pit=pcMode();$("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";$("sandboxBox").classList.toggle("pit",pit);renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()||pit?"none":"";$("pitBox").style.display=pit?"":"none";
+  $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){if(pit)pcRender();renderSbShop();return;}
-  refillContracts();spRender();rivalsRender();
+  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
+  pcRender();spRender();rivalsRender();
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<span>Dyno reads to <b>${dc.hp.toLocaleString()} hp</b></span>${C().loan>0?`<span>Bank loan <b>${fmt$(C().loan)}</b></span>`:""}${C().cash<0?`<span><b class="warnc">${fmt$(C().cash)}</b> in the red</span>`:""}`;   // cash is in the header; the upgrade count sits in the list heading
-  const cert=C().cert&&C().cert.hash===cfgHash(S.cfg)&&C().cert.ok?C().cert:null;const lastCert=C().cert&&C().cert.hash===cfgHash(S.cfg)?C().cert:null;
-  {const eng=engineName(),q=S.bay?"":(cert?"ok":lastCert&&!lastCert.ok?"bad":"none");
-    $("mkEng").textContent=eng;$("mkEng").title=eng;
-    $("mkCert").className="mkc "+(q||"bay");$("mkCert").textContent=S.bay?"ON THE DYNO":q==="ok"?"CERTIFIED":q==="bad"?"CERT FAILED":"NO CERT";
-    $("mkCert").title=S.bay?"":cert?`On offer at a unit cost of ${fmt$(cert.res.cost)}${coreHint(cert)}.`:lastCert&&lastCert.why?`Last pull: ${lastCert.why}.`:"Run a dyno pull in Test; buyers only look at certified engines.";
-    $("mkBoard").textContent=`${C().contracts.length}/${MAX_ACTIVE} board`;$("mkBoard").title=`${C().contracts.length} of ${MAX_ACTIVE} contracts on the board`;
-    const mh=$("mktHint");mh.hidden=!S.bay;mh.innerHTML=S.bay?`<span class="ddmkt">${S.bay.practice?"The practice":esc(S.bay.job.who)+"'s"} engine is on the dyno: it isn't yours to sell or contract. Hand it back first.</span>`:"";
-    $("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span><b>${C().sold}</b> engines sold</span><span><b>${fmt$(C().profit)}</b> lifetime profit</span><span><b class="${C().warranty>0?"warnc":""}">${fmt$(C().warranty)}</b> warranty paid</span>`;}
+  {const eng=engineName(),st=pcStrip();$("mkEng").textContent=eng;$("mkEng").title=eng;$("mkCert").className="mkc "+st.cls;$("mkCert").textContent=st.txt;$("mkCert").title=st.tip;$("mkBoard").textContent=st.when;$("mkBoard").title=st.whenTip||"";
+    const p=pcS();$("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span>Season <b>${p.season}</b></span><span><b>${p.titles}</b> title${p.titles===1?"":"s"}</span><span><b>${fmt$(p.earned)}</b> team pay</span>`;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(loanRate()*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
-  $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Certify an engine and take a contract.</div>`;
+  $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Sign a team, or race an event.</div>`;
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
   $("goals").innerHTML=goalsHtml();
-  const inField=C().fleet.filter(f=>C().week-f.week<=10&&C().week-f.week>=1);$("fleetHint").textContent=inField.length?`${inField.reduce((a,f)=>a+f.units,0)} engines in the field under warranty · ${fmt$(C().warranty)} paid out to date · ${C().cleanWeeks} clean week${C().cleanWeeks===1?"":"s"}. Reliability and life hours set the claim rate.`:"Engines you deliver stay under warranty for ten weeks. Low reliability comes back to bite.";
-  const live=career()&&!isStdCell(simEnv())?SIM.simulate(S.cfg,stdEnv({testType:"pull"})):quick;const liveFit=k=>fits(k,live,S.cfg);
-  if(!C().cat||!catOpen(CATS.find(c=>c.id===C().cat)||CATS[0]))C().cat="prod";
-  const cardH=(k,mode)=>{const lf=liveFit(k);const failing=lf.o.filter(q=>!q.ok).length;const fix=(!lf.ok&&failing<=3)?oneChange(k):null;
-    const f=cert?fits(k,cert.res,cert.cfg):null;const d=deal(k,f||lf);const unit=d.unit;const cost=f?cert.res.cost:live.cost;const cd=mode==="active"&&f&&d.want?coreDeal(k,d.units,cert):null;const profit=(unit-cost)*d.units+(cd?cd.credit:0);
-    const rows=lf.o.map(q=>`<div class="req ${q.ok?"ok":"no"}${q.q==="lap"||q.q==="zero100"?" rq-road":""}"><span class="rl"><b>${q.name}</b><i>${q.target}</i></span><span class="rb"><i style="width:${Math.round(Math.min(1,q.prog/1.0)*100)}%"></i></span><span class="rv">${q.val}</span></div>`).join("");
-    const bad=lf.o.filter(q=>!q.ok),open=mkX.has(String(k.id)),sc=siteCard(k,lf);
-    const chips=bad.slice(0,open?0:3).map(q=>`<span class="fq"><b>${q.name}</b> ${q.val}${bad.length===1?`<i>${q.target}</i>`:""}</span>`).join("")+(!open&&bad.length>3?`<button class="fq more" data-ccx="${k.id}">+${bad.length-3}</button>`:"");
-    const sub=lf.ok?`${d.units} × ${fmt$(unit)}`:d.want?`${d.units} of ${k.units} units · ${fmt$(unit)} ea`:"they'd walk";
-    const stFull=lf.ok?(cert&&f&&f.ok?`<div class="cstat ok">● CERT OK · MEETS BRIEF</div>`:`<div class="cstat ok">◐ MEETS BRIEF · CERT REQUIRED</div>`):`<div class="cstat off">◐ OFF BRIEF · ${d.want?`they'd take ${d.units} of ${k.units} at ${Math.round(Math.pow(d.m,0.7)*100)}%`:"too far off — they'd walk"} <small>${missTxt(d)}</small></div>`;
-    const dep=Math.round(k.price*k.units*DEPOSIT/10)*10;
-    const btn=mode==="active"
-      ?`<button class="btn ${f&&f.ok?"ok":""}" data-deliver="${k.id}" ${f&&d.want&&C().shipped<MAX_ACTIVE?"":"disabled"}>${C().shipped>=MAX_ACTIVE?"Two shipped this week":f&&!d.want?"Too far off brief":f?"Ship "+d.units+" units"+(f.ok?"":" off brief"):"Cert required"}</button>`
-      :`<button class="btn ${lf.ok?"pri":""}" data-accept="${k.id}" data-from="${mode}"${profit<0?` data-loss="${Math.round(-profit)}"`:""} ${C().contracts.length>=MAX_ACTIVE?"disabled":""}>${C().contracts.length>=MAX_ACTIVE?"Board is full":(profit<0?"Take it at a loss · ":"Take the job · ")+fmt$(dep)+" deposit"}</button>`;
-    const metaFull=mode==="active"?`${k.units} units · due wk ${k.expires}${k.deposit?" · "+fmt$(k.deposit)+" deposit in":""}`:`${k.units} units · ${mode==="inbox"||k.repeat?`repeat order · open till wk ${k.expires}`:"offer · this week only"}`;
-    const metaShort=mode==="active"?`${k.units} units · due wk ${k.expires}`:`${k.units} units · ${mode==="inbox"||k.repeat?`till wk ${k.expires}`:"this week only"}`;
-    const rq=k.req||{},evGo=rq.lap!=null||rq.zero100!=null?`<button class="chip evgo" data-evgo="road" data-ch="${(rq.road&&rq.road.ch)||"coupe"}" data-trk="${rq.lap!=null&&rq.road&&rq.road.trk||""}">Road test it in their car ›</button>`:rq.et!=null?`<button class="chip evgo" data-evgo="drag">Take it to the strip ›</button>`:rq.mph!=null&&rq.lsr?`<button class="chip evgo" data-evgo="salt">Run it on the salt ›</button>`:"";
-    const bonus=d.ok&&(f?f.bonus:lf.bonus)>0?" · +"+Math.round((f?f.bonus:lf.bonus)*100)+"%":"";
-    /* a short card: name and deadline, only what fails, the profit and the one button; the full brief opens behind the (i) */
-    return `<div class="card brief cc ${k.repeat?"repeat":""}${k.tag?" sp-"+(k.rush?"rush":"order"):""}${open?" cx":""}"><div class="cch"><h3>${k.name}</h3><button class="cci" data-ccx="${k.id}" aria-expanded="${open}" aria-label="${open?"Hide":"Show"} the full brief for ${k.name}">i</button></div>
-      <div class="ccm"><span class="client">${k.client}${k.repeat?" · repeat +10%":""}${k.tag?`<em class="ctag${k.rush?" rush":""}">${k.tag}</em>`:""}</span><span>${metaShort}</span>${lf.ok?`<span class="cs ok">✓ meets brief</span>`:""}</div>${chips||fix?`<div class="cfq">${chips}${fix?`<span class="cfix">One change: <b>${fix.label}</b></span>`:""}</div>`:""}${sc.brk}
-      <div class="cact"><div class="cmon"><b class="${profit>=0?"pos":"neg"}">${profit<0?"−":""}${fmt$(Math.abs(profit))}</b><span>profit · ${sub}</span></div>${btn}</div>
-      ${open?`<div class="cdet">${k.note&&mode!=="active"?`<p class="cnote">${k.note}</p>`:""}<p class="cmeta">${metaFull}</p>${sc.top}${stFull}${cd&&(cd.credit||cd.inN)?`<div class="coreln">${coreTxt(cd)}</div>`:""}
-        <div class="money"><div><b>${fmt$(unit)}</b><span>per unit${bonus}</span></div><div><b>${fmt$(cost)}</b><span>your cost</span></div><div><b class="${profit>=0?"pos":"neg"}">${fmt$(profit)}</b><span>profit</span></div></div><div class="reqs">${rows}</div>${evGo}</div>`:""}</div>`;};
-  const buyersH=()=>{if(!cert)return `<div class="cgroup g-mkt"><h3>Open market</h3><p class="hint">${lastCert&&lastCert.why?`Last pull: ${lastCert.why}. `:""}Certify an engine on the dyno and every buyer group you can reach will bid on it — no deposit, no deadline.</p></div>`;
-    const all=buyers(cert);const top=all.slice(0,3);if(!top.some(b=>b.k.crate))top.push(all.find(b=>b.k.crate));const rest=all.filter(b=>!top.includes(b));
-    const row=b=>{const d=b.d,k=b.k;const cd=coreDeal(k,d.units,cert),pr=b.profit+cd.credit;const fit=Math.round(Math.min(1,d.ok?1:d.m)*100);const full=C().shipped>=MAX_ACTIVE;
-      return `<div class="buyer"><div class="bh"><span><b>${k.name}</b><i>${k.cat}${k.recent?" · supplied recently":""}</i></span><span class="bfit ${d.ok?"ok":fit>=60?"mid":"low"}">${k.crate?"any engine":d.ok?"fits brief":fit+"% fit"}</span></div>
-        ${d.ok||k.crate?"":`<div class="bmiss">${missTxt(d)}</div>`}${cd.credit||cd.inN?`<div class="coreln">${coreTxt(cd)}</div>`:""}<div class="bdeal"><span>${d.units} × ${fmt$(d.unit)}</span><b class="${pr>=0?"pos":"neg"}">${fmt$(pr)}</b><button class="btn sm ${pr>0&&!full?"pri":""}" data-sell="${k.seg}" ${full?"disabled":""}>${full?"Week full":"Sell "+d.units}</button></div></div>`;};
-    return `<div class="cgroup g-mkt"><h3>Open market<span>who wants this engine</span></h3>${top.map(row).join("")}${rest.length?`<details class="moreb"><summary>All buyer groups (${all.length})</summary>${rest.map(row).join("")}</details>`:""}</div>`;};
-  const tier=repTierIdx();
-  const catSeg=`<div class="seg" id="catSeg">${CATS.map(c=>{const open=catOpen(c);return `<button data-cat="${c.id}" class="${C().cat===c.id?"on":""}" ${open?"":"disabled"}>${c.name}<small>${open?c.sub:c.needs&&!has(c.needs)?"needs the Outlaw shop":"rep "+c.rep+" · "+(REP_TIERS.filter(r=>r[0]<=c.rep).pop()||REP_TIERS[0])[1]}</small></button>`;}).join("")}</div>`;
-  const offers=offersFor(C().cat);
-  const inbox=(C().inbox||[]).filter(k=>k.expires>=C().week);
-  $("contracts").innerHTML=
-    `<div class="cgroup g-now"><h3>On the board<span>${C().contracts.length} / ${MAX_ACTIVE}</span></h3>${C().contracts.length?C().contracts.map(k=>cardH(k,"active")).join(""):`<p class="hint idle">Nothing accepted. Pick a category below and take a job — two at a time, ten percent down, three weeks to ship.</p>`}</div>`+
-    (cert?buyersH():"")+   /* a certified engine: its buyers sit with the board; otherwise they are only a hint, below the offers */
-    (inbox.length?`<div class="cgroup g-one"><h3>Repeat orders<span>${inbox.length}</span></h3>${inbox.map(k=>cardH(k,"inbox")).join("")}</div>`:"")+
-    `<div class="cgroup g-far"><h3>Offers this week<span>${CATS.find(c=>c.id===C().cat).name}</span></h3>${catSeg}${offers.length?offers.map(k=>cardH(k,"offer")).join(""):`<p class="hint">Nothing in this category yet at your reputation.</p>`}</div>`+
-    (cert?"":buyersH());
-  $("mkSvc").innerHTML=svcBayH()+coreStockH(cert);   // the Shop tab: the service bay and core stock, each only once it has something to show
-  {const cs=$("catSeg"),on=cs&&cs.querySelector("button.on");if(on){const x=on.offsetLeft-cs.offsetLeft;if(x+on.offsetWidth>cs.clientWidth)cs.scrollLeft=x-16;}}   // phone: the chip row scrolls; keep the open category in sight
-  $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). Shipped ${C().shipped} of ${MAX_ACTIVE} this week. A job you take and don't ship by its week costs the deposit and ${EXPIRE_REP} rep.`;
+  $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). A team round runs every other week: race it from the Team section, or Close week races it with the season engine as it stands.`;
   mkLayout();
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
-  bayRender();crewRender();   // people, levels, traits, training: app/crew.js
+  crewRender();   // people, levels, traits, training: app/crew.js
   const act=C().rndActive;$("rndCnt").textContent=`${Object.keys(C().rnd).length} / ${RND.length}`;
   $("rndHint").textContent=act?`In progress: ${RND.find(r=>r.id===act.id).name} — week ${Math.min(rndNeed(RND.find(r=>r.id===act.id)),Math.floor(act.done)+1)} of ${rndNeed(RND.find(r=>r.id===act.id))}.`:"Fund one project at a time. It runs while you advance weeks.";
   $("rnd").innerHTML=RND.map(r=>{const done=!!C().rnd[r.id];const running=act&&act.id===r.id;const pct=running?Math.min(100,Math.round(100*act.done/rndNeed(r))):0;
@@ -474,27 +182,6 @@ function renderShop(){
   upRender();
   $("prCnt").textContent=`${Object.keys(C().prestige||{}).length} / ${PRESTIGE.length}`;
 }
-$("contracts").addEventListener("click",e=>{
-  const cx=e.target.closest("[data-ccx]");if(cx){const id=cx.dataset.ccx;if(mkX.has(id))mkX.delete(id);else mkX.add(id);renderShop();return;}
-  const cb=e.target.closest("[data-cat]");if(cb){if(cb.disabled)return;C().cat=cb.dataset.cat;save();renderShop();return;}
-  const sp=e.target.closest("[data-siteprev]");if(sp){const k=C().contracts.concat(C().inbox||[],offersFor(C().cat)).find(x=>x.id==sp.dataset.siteprev);if(k&&k.site)previewSite(k.site);return;}
-  const ab=e.target.closest("[data-accept]");if(ab){if(ab.disabled)return;const from=ab.dataset.from;const list=from==="inbox"?(C().inbox||[]):offersFor(C().cat);const k=list.find(x=>x.id==ab.dataset.accept);if(!k)return;if(ab.dataset.loss&&!confirm(`This job loses about ${fmt$(+ab.dataset.loss)} on the engine you have now. Take it and pay the deposit anyway?`))return;if(acceptContract(k,from)){save();hud();renderShop();toast(`${k.name.toUpperCase()} · ${fmt$(k.deposit)} DEPOSIT IN`);buzz(20);}return;}
-  const b=e.target.closest("[data-deliver]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}const k=C().contracts.find(x=>x.id==b.dataset.deliver);const cert=C().cert;if(!k||!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const f=fits(k,cert.res,cert.cfg);const d=deal(k,f);if(!d.want)return;const units=d.units;
-  const unit=d.unit;const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit-(k.deposit||0);C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(SEGMENTS.find(s=>s.id===k.seg).tier,units,d,f.bonus,k.repeat);C().rep+=repGain;
-  const weak=(f.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
-  C().fleet.push({week:C().week,client:k.client,name:k.name,seg:k.seg,req:k.req,units,hash:cfgHash(S.cfg),engine:engineName(),rel:k.site&&f.res.fails.length?Math.min(f.res.rel,55):f.res.rel,life:f.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,basePrice:k.price,weak,claims:0,repeated:!!k.repeat||!f.ok,...(k.site?{site:k.site}:{})});
-  if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);if(k.repeat)C().repeats++;cxDeliver(k,f);
-  logEvent(`Delivered ${units} × ${engineName()} (${k.name}${f.ok?"":", off brief"}) to ${k.client} — ${fmt$(profit)} profit, +${repGain} rep${k.repeat?" (repeat order)":""}${coreLog(cd,cr)}`,f.ok?"good":"");
-  if(tourStep>=0)tourEnd();
-  C().contracts=C().contracts.filter(x=>x.id!==k.id);spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`PAID ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
-$("contracts").addEventListener("click",e=>{const b=e.target.closest("[data-sell]");if(!b||b.disabled)return;if(C().shipped>=MAX_ACTIVE){toast("Two shipped this week — close the week first");return;}
-  const cert=C().cert;if(!cert||!cert.ok||cert.hash!==cfgHash(S.cfg))return;const o=buyers(cert).find(x=>x.k.seg===b.dataset.sell);if(!o)return;const k=o.k,d=o.d,units=d.units,unit=d.unit;
-  const cd=coreDeal(k,units,cert);const profit=Math.round((unit-cert.res.cost)*units)+cd.credit;const cr=applyCores(cd);C().cash+=profit;C().profit+=profit;C().sold+=units;C().shipped=(C().shipped||0)+1;const repGain=repFor(k.tier,units,d,o.f.bonus,false);C().rep+=repGain;
-  (C().mkt=C().mkt||{})[k.seg]=C().week;const weak=(cert.res.tests.slice().sort((a,b)=>b.util-a.util)[0]||{}).name||"wear";
-  C().fleet.push({week:C().week,client:k.name,name:k.name,seg:k.seg,req:k.req,units,hash:cert.hash,engine:engineName(),rel:cert.res.rel,life:cert.res.lifeHours,unitCost:cert.res.cost,unitPrice:unit,weak,claims:0,repeated:true});
-  if(C().fleet.length>40)C().fleet.splice(0,C().fleet.length-40);
-  logEvent(`Sold ${units} × ${engineName()} on the open market to ${k.name.toLowerCase()} buyers — ${fmt$(profit)} profit, +${repGain} rep${coreLog(cd,cr)}`,profit>=0?"good":"");
-  if(tourStep>=0)tourEnd();spEvent("sale");achCheck({type:"sale"});save();hud();renderShop();recompute();toast(`SOLD ${units} · ${fmt$(unit*units)} · REP +${repGain}${C().shipped>=MAX_ACTIVE?" · WEEK FULL":""}`);buzz(30);if(checkGoals()){save();hud();renderShop();}});
 /* Settings live in their own pane (a button in the Shop), not in the Shop's scroll */
 function setOn(){return $("setPane").classList.contains("on");}
 function setOpen(){closeSheet();$("setOpen").classList.add("open");$("setPane").classList.add("on");$("scrim").classList.add("on");$("setBody").scrollTop=0;$("setClose").focus({preventScroll:true});}
@@ -502,7 +189,7 @@ function setClose(){if(!setOn())return;$("setOpen").classList.remove("open");$("
 $("setOpen").addEventListener("click",()=>{if(setOn()){setClose();return;}renderShop();setOpen();});$("setClose").addEventListener("click",setClose);$("scrim").addEventListener("click",setClose);
 $("setPane").addEventListener("click",e=>{if(e.target.closest("#glOpen,#lessonsOpen,#kbHelpBtn,#sndCredBtn,#replayTour,#replayFF,#modeBox button"))setClose();});
 $("mkOh").addEventListener("click",()=>{const h=$("overheadHint"),on=h.hidden;h.hidden=!on;$("mkOh").setAttribute("aria-expanded",String(on));});
-$("nextWeek").addEventListener("click",()=>{if(S.bay&&!S.bay.practice&&!testing&&!confirm("Customer collects it unfinished, −1 rep. Close the week?"))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
+$("nextWeek").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}const due=pcDue();if(due&&!confirm(due))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
   if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);const who=(crewP(st.id)||{}).nm;if(!confirm(`Let ${who?who+", your "+st.name.toLowerCase()+",":"the "+st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();
@@ -511,7 +198,7 @@ $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),
 function shopOrder(list,ok){return list.filter(ok).concat(list.filter(x=>!ok(x)));}
 /* Shop upgrades: what you can still buy as short rows (area chips once the list is long), the ones you own folded into an "Owned" row.
    S.shopCat = the open chip, S.shopOwn = the Owned row open; old saves have neither (Can buy when something is, else All; folded). */
-const UP_CATS=[["dyno","Test cell",["dyno2","dyno3","dyno4","dyno5"]],["parts","Parts",["shop1","flow","boost","shop2","race"]],["bays","Bays",["bay1","bay2","bay3","bay4"]],["plant","Late game",["tool","qlab","acad","hall"]]];
+const UP_CATS=[["dyno","Test cell",["dyno2","dyno3","dyno4","dyno5"]],["parts","Parts",["shop1","flow","boost","shop2","race"]],["bays","Bays",["bay1","bay2"]],["plant","Late game",["tool","qlab","acad","hall"]]];
 const upCat=u=>(UP_CATS.find(k=>k[2].includes(u.id))||UP_CATS[3])[0];
 function upRender(){
   const c=C(),own=UPGRADES.filter(u=>c.owned[u.id]),left=UPGRADES.filter(u=>!c.owned[u.id]);
@@ -544,7 +231,7 @@ function benchUnlock(){if(career()&&presetLocked(S.cfg)){S.cfg=Object.assign({},
 $("foreclose").addEventListener("click",e=>{if(!e.target.closest("[data-restart]"))return;if(testing){toast("Let the run finish first");return;}if(!confirm("Hand the keys to the bank and start over? Blueprints are kept."))return;S.career=freshCareer();lgApply();benchUnlock();save();boot();toast("New shop, same dream. $20,000.");});
 $("upgrades").addEventListener("click",e=>{const b=e.target.closest("[data-buy]");if(!b||b.disabled)return;const u=UPGRADES.find(x=>x.id===b.dataset.buy);if(u.rep>C().rep){toast(`Opens at ${u.rep} rep`);return;}if(C().cash<u.price){toast(`Need ${fmt$(u.price-C().cash)} more`);return;}if(!bigSpend(u.name,u.price))return;
   const oh0=overhead();C().cash-=u.price;C().owned[u.id]=true;C().rep+=5;{const dOh=overhead()-oh0;if(dOh>0)logEvent(`${u.name} raised weekly overhead by ${fmt$(dOh)} (plant is charged a share of its price each week)`,"");}save();hud();renderShop();renderBuild();renderPresets();recompute();ENGINE_VIS.buildGarage(garageOwned());toast(`${u.name.toUpperCase()} · INSTALLED`);buzz(30);});
-$("resetGame").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}if(confirm("Wipe the career save? Cash, upgrades and contracts reset. Blueprints are kept."))
+$("resetGame").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}if(confirm("Wipe the career save? Cash, upgrades and the team reset. Blueprints are kept."))
   {S.career=freshCareer();lgApply();benchUnlock();save();boot();toast("Fresh start. $20,000 and a dream.");}});
 $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   if(b.dataset.save){const i=+b.dataset.save;if(readSlot(i)&&!confirm(`Overwrite slot ${i}?`))return;toast(writeSlot(i)?`SLOT ${i} SAVED`:"Couldn't save — storage blocked on this device");renderSaves();}
@@ -554,85 +241,20 @@ $("exportSave").addEventListener("click",buBackupOpen);   // Back up / Restore: 
 $("importSave").addEventListener("click",buRestoreOpen);
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
-function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=C().fleet.length;o.pullCups=(C().pullTitles||[]).length;}return o;}
-
-/* ===================== SPECIAL ORDERS & MILESTONES (career) =====================
-   A category of customer jobs with a story: a restomod, a pull-season rebuild, a fleet that counts days off the road, a rush job
-   with a short fuse, and budget-capped builds (the brief caps what an engine may cost you to build). They ride the normal
-   contract framework: real SEGMENTS (so fits/deal/fleet/warranty/repeat orders all work) kept out of CATS[].segs, so they never
-   become open-market buyers; catPool/genContract/acceptContract/fits/segCat are wrapped below. Counters live on C().cx
-   (cxS(), filled lazily, so old saves load clean). The milestone goals at the bottom use them, and the rival shops (rivals.js). */
-const RUSH_K=1.3,RUSH_REP=2;
-const RUSH_SEG={id:"rush",name:"Rush job",tier:0,units:[1,2],price:0,req:{},rush:true};
-const SPECIAL_SEGS=[
-  {id:"bud_econ",name:"Budget commuter · cost-capped",tier:0,units:[3,7],price:2300,tag:"Budget cap",cx:"budget",dut:"prod",
-    note:"A ride-share start-up with a thick spreadsheet: every engine has to come in under the cap.",req:{hp:[70,95],rel:82,fuel:"r87",kg:175,cost:1700}},
-  {id:"resto",name:"Restomod · period body, modern heart",tier:1,units:[1,3],price:4400,tag:"Restomod",cx:"resto",dut:"perf",
-    note:"A '67 body with a new heart: smooth, quiet enough to talk over, and period-correct on the outside. The owner will drive it every Sunday.",req:{hp:[165,205],smooth:70,kg:245,fuel:"r91",rel:84}},
-  {id:"bud_truck",name:"Municipal pickup tender · cost-capped",tier:1,dsl:true,gas:true,units:[3,6],price:3600,tag:"Budget cap",cx:"budget",dut:"truck",
-    note:"A county fleet tender: lowest bid wins, so the cap is written into the contract.",req:{tq:[280,380],tqrpm:3600,rel:85,fuel:"r87",cost:2400}},
-  {id:"pullrebuild",name:"Farm tractor pull rebuild",tier:2,units:[1,2],price:9600,tag:"Pull rebuild",cx:"pullrebuild",dut:"diesel",
-    note:"Pull season is six weeks out and the old tractor let go at the last meet. Torque low down, and it has to survive hooking to the sled.",req:{tq:[800,1100],tqrpm:2400,life:1500,rel:75,passes:150,fuel:"diesel"}},
-  {id:"fleetrel",name:"Endurance fleet order · reliability contract",tier:2,dsl:true,gas:true,units:[4,7],price:3900,tag:"Fleet order",cx:"fleet",dut:"truck",
-    note:"A depot that counts days off the road. They would rather buy fewer engines that never come back than more that do.",req:{hp:[110,150],life:4800,rel:95,fuel:"r87"}},
-  {id:"bud_perf",name:"Track-day club bulk buy · cost-capped",tier:2,units:[2,3],price:4200,tag:"Budget cap",cx:"budget",dut:"perf",
-    note:"A track-day club buying in bulk: fast, reliable enough for a weekend, and nowhere near supercar money.",req:{hp:[200,235],rel:75,fuel:"r91",cost:3000}}];
-SEGMENTS.push(...SPECIAL_SEGS);
-CATS.push({id:"special",name:"Special orders",sub:"restomods · rush jobs · budget caps · fleets",segs:[],rep:30});
-Object.assign(CORE_LAY,{bud_econ:["I4"],resto:["V8","V6"],bud_truck:["V6","V8"],pullrebuild:["I6","V8"],fleetrel:["I6","V6"],bud_perf:["I4","V6"]});
-REQ_LABEL.cost=["Build cost",v=>`≤ ${fmt$(+v)} an engine`];
-MISS_W.cost=2;
-{ /* the wrappers: market.js is not touched, so each function is replaced here and calls the original */
-  const _catPool=catPool,_gen=genContract,_acc=acceptContract,_fits=fits,_segCat=segCat,_boost=priceBoost;
-  catPool=function(cat){if(!cat||cat.id!=="special")return _catPool(cat);
-    const tier=repTierIdx(),cap=dynoCap();
-    return SPECIAL_SEGS.filter(s=>s.tier<=tier&&(!s.req.hp||s.req.hp[0]<=cap.hp)).concat([RUSH_SEG]);};   // all of them: the variety is the point
-  genContract=function(seg){let rush=false;
-    if(seg&&seg.rush){   // a rush job is an ordinary job from any open category, wanted fast and paid over the odds
-      const bases=[];for(const c of CATS)if(["prod","truck","perf","diesel","altfuel","race"].includes(c.id)&&catOpen(c))for(const s of _catPool(c))bases.push(s);
-      seg=bases.length?bases[Math.floor(rng()*bases.length)]:undefined;rush=true;}
-    const k=_gen(seg);const sg=SEGMENTS.find(s=>s.id===k.seg);
-    if(sg&&sg.req.cost!=null)k.req.cost=sg.req.cost;
-    if(sg&&sg.tag){k.tag=sg.tag;k.note=sg.note;}
-    if(rush){k.rush=1;k.tag="Rush";k.price=Math.round(k.price*RUSH_K/10)*10;k.note=`${k.client} needs it fast: two weeks to ship once you take it, not four. They pay ${Math.round((RUSH_K-1)*100)}% over the usual price, and +${RUSH_REP} rep for being on time.`;}
-    return k;};
-  acceptContract=function(k,from){const ok=_acc(k,from);
-    if(ok&&k.rush){k.expires=C().week+1;logEvent(`Rush job: ${k.client} needs the ${k.name} by week ${k.expires}`,"");}return ok;};
-  fits=function(k,res,cfg){const f=_fits(k,res,cfg);const cap=k&&k.req&&k.req.cost;
-    if(cap!=null&&f.res&&f.res.cost!=null){const cost=f.res.cost,ok=cost<=cap;
-      f.o.push({q:"cost",name:"Build cost",target:reqTarget("cost",cap),label:describeReq("cost",cap),val:fmt$(Math.round(cost)),ok,prog:clamp(cap/Math.max(1,cost),0,1.25)});
-      if(!ok)f.ok=false;else f.bonus+=clamp(1-cost/cap,0,0.2)*0.3;}   // well under the cap earns a little more
-    return f;};
-  segCat=function(seg){const s=SPECIAL_SEGS.find(x=>x.id===seg);return s?s.dut:_segCat(seg);};
-  priceBoost=function(){let b=_boost();if(career()){const g=C().goals||{};b*=1+0.01*((g.rep100?1:0)+(g.rep200?1:0));}return b;};   // the rep-100 and rep-200 milestones: clients pay 1% more each
-}
-function cxS(){const c=C();if(!c.cx||typeof c.cx!=="object")c.cx={};return c.cx;}
-/* a delivered order that met the brief: count it toward the milestones; a rush job in time earns a little rep */
-function cxDeliver(k,f){if(!f||!f.ok)return 0;const x=cxS(),sg=SEGMENTS.find(s=>s.id===k.seg)||{};let add=0;
-  if(sg.cx)x[sg.cx]=(x[sg.cx]||0)+1;
-  if(k.rush){x.rush=(x.rush||0)+1;add=RUSH_REP;C().rep+=add;logEvent(`${k.client}: rush job in on time — +${add} rep`,"good");}
-  return add;}
-const cxN=(c,k)=>(c.cx&&c.cx[k])||0;
-const cxProg=(k,n)=>c=>[Math.min(n,cxN(c,k)),n];
-/* milestones: the rep ladder from 30 to 200 (cash only, so the ladder doesn't feed itself), then the special-order and rival goals */
+function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=pcS().raced;o.pullCups=(C().pullTitles||[]).length;}return o;}
+/* milestones: the rep ladder from 30 to 200 (cash only, so the ladder doesn't feed itself), then the rival goals */
+const pcN=(c,k)=>(c.pc&&+c.pc[k])||0;
 GOALS.push(
   {id:"rep30",name:"Word gets around",desc:"Reach 30 reputation.",cash:1500,rep:0,check:c=>c.rep>=30,prog:c=>[Math.min(30,c.rep),30]},
   {id:"rep60",name:"Name on the door",desc:"Reach 60 reputation.",cash:3000,rep:0,check:c=>c.rep>=60,prog:c=>[Math.min(60,c.rep),60]},
-  {id:"rep100",name:"Three digits",desc:"Reach 100 reputation. From here every client pays 1% more.",cash:6000,rep:0,check:c=>c.rep>=100,prog:c=>[Math.min(100,c.rep),100]},
+  {id:"rep100",name:"Three digits",desc:"Reach 100 reputation.",cash:6000,rep:0,check:c=>c.rep>=100,prog:c=>[Math.min(100,c.rep),100]},
   {id:"rep150",name:"Waiting list",desc:"Reach 150 reputation.",cash:10000,rep:0,check:c=>c.rep>=150,prog:c=>[Math.min(150,c.rep),150]},
-  {id:"rep200",name:"Industry name",desc:"Reach 200 reputation. Another 1% on every unit price.",cash:15000,rep:0,check:c=>c.rep>=200,prog:c=>[Math.min(200,c.rep),200]},
-  {id:"pullr",name:"Back in the pull",desc:"Rebuild a farm tractor pull engine to the brief.",cash:7000,check:c=>cxN(c,"pullrebuild")>=1},
-  {id:"budget3",name:"Penny wise",desc:"Ship three budget-capped orders under the cap.",cash:5000,check:c=>cxN(c,"budget")>=3,prog:cxProg("budget",3)},
-  {id:"resto3",name:"Restomod regular",desc:"Ship three restomod orders that meet the brief.",cash:8000,check:c=>cxN(c,"resto")>=3,prog:cxProg("resto",3)},
-  {id:"rush3",name:"Beat the clock",desc:"Ship three rush jobs in time.",cash:9000,check:c=>cxN(c,"rush")>=3,prog:cxProg("rush",3)},
-  {id:"fleet3",name:"Nothing comes back",desc:"Fill three endurance fleet orders (reliability 95, 4,800 h).",cash:10000,check:c=>cxN(c,"fleet")>=3,prog:cxProg("fleet",3)},
+  {id:"rep200",name:"Industry name",desc:"Reach 200 reputation.",cash:15000,rep:0,check:c=>c.rep>=200,prog:c=>[Math.min(200,c.rep),200]},
   {id:"h2h1",name:"First blood",desc:"Win a head-to-head challenge against a rival shop.",cash:3000,check:c=>rivH2h(c).won>=1},
   {id:"h2h5",name:"Local legend",desc:"Win five head-to-head challenges.",cash:25000,check:c=>rivH2h(c).won>=5,prog:c=>[Math.min(5,rivH2h(c).won),5]},
-  {id:"top",name:"Top of the board",desc:"Hold more reputation than all three rival shops (from 60 rep up).",cash:8000,check:c=>c.rep>=60&&rivTop(c)},
-  {id:"spec5",name:"Specialist",desc:"Ship one of each special order: restomod, pull rebuild, fleet, rush and budget-capped.",cash:30000,check:c=>["resto","pullrebuild","fleet","rush","budget"].every(k=>cxN(c,k)>=1),
-    prog:c=>[["resto","pullrebuild","fleet","rush","budget"].filter(k=>cxN(c,k)>=1).length,5]});
+  {id:"top",name:"Top of the board",desc:"Hold more reputation than all three rival shops (from 60 rep up).",cash:8000,check:c=>c.rep>=60&&rivTop(c)});
 /* late game (round 9): long targets for a rich shop. Wins per discipline are a lazily-filled counter, C().dw (old saves start at zero and fill as they race);
-   rivals beaten one by one live in C().riv.hist.beat. Cash is small and the rep rungs pay cash only, so none of this feeds the economy. */
+   rivals beaten one by one live in C().riv.hist.beat. Cash is small next to a late team's pay, and the rep rungs pay cash only. */
 const DW_KINDS=[["drag","drag or race night"],["pull","truck pull"],["bog","mud bog"],["hill","Pikes Peak"],["oval","dirt oval"],["boat","boat drags"],["endurance","24 Hours"],["salt","Bonneville record"]];
 function dwinCount(kind,o){if(!o||!(o.win||(kind==="salt"&&o.record)))return;const k=kind==="night"?"drag":kind;if(!DW_KINDS.some(d=>d[0]===k))return;const c=C();if(!c.dw||typeof c.dw!=="object")c.dw={};c.dw[k]=(c.dw[k]||0)+1;}
 const dwN=c=>DW_KINDS.filter(d=>c.dw&&c.dw[d[0]]>0).length;
@@ -647,15 +269,15 @@ GOALS.push(
   {id:"rep3000",late:1,name:"Dynasty",desc:"Reach 3,000 reputation, the Dynasty tier, where the alcohol cars and unlimited pullers come knocking.",cash:150000,rep:0,check:c=>c.rep>=3000,prog:lateProg(c=>c.rep,3000)},
   {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Pikes Peak, dirt oval, boat drags and the 24 Hours, and set a Bonneville record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
   {id:"hp2000",late:1,name:"Two thousand",desc:"Certify a 2,000 hp engine.",cash:80000,rep:30,check:c=>c.bestHp>=2000,prog:lateProg(c=>c.bestHp||0,2000)},
-  {id:"sold500",late:1,name:"Five hundred out the door",desc:"Sell 500 engines.",cash:40000,rep:15,check:c=>c.sold>=500,prog:lateProg(c=>c.sold,500)},
-  {id:"sold1000",late:1,name:"A thousand engines",desc:"Sell 1,000 engines.",cash:70000,rep:25,check:c=>c.sold>=1000,prog:lateProg(c=>c.sold,1000)},
-  {id:"profit5m",late:1,name:"Five million",desc:"Make $5,000,000 in lifetime profit.",cash:100000,rep:40,check:c=>c.profit>=5e6,prog:lateProg(c=>Math.max(0,c.profit||0),5e6)},
+  {id:"titles5",late:1,name:"Dynasty builder",desc:"Win five team championships.",cash:70000,rep:25,check:c=>pcN(c,"titles")>=5,prog:lateProg(c=>pcN(c,"titles"),5)},
+  {id:"nitro",late:1,name:"Nitro money",desc:"Supply a funny car or a top dragster team for a season.",cash:40000,rep:15,check:c=>pcN(c,"nitro")>=1},
+  {id:"earn5m",late:1,name:"Five million",desc:"Earn $5,000,000 in team pay.",cash:100000,rep:40,check:c=>pcN(c,"earned")>=5e6,prog:lateProg(c=>pcN(c,"earned"),5e6)},
   {id:"sweep",late:1,name:"Clean sweep",desc:"Beat all three rival shops head-to-head at least once each. Counts from this save on.",cash:50000,rep:40,check:c=>rivBeaten(c)>=RIVALS.length,prog:c=>[rivBeaten(c),RIVALS.length]});
-/* market.js's checkGoals, with a per-goal rep reward (default 10) and a look at the rival board after every result */
-checkGoals=function(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}
+/* goals pay their cash and rep (default 10) once; then a look at the rival board */
+function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}
     if(ok){const rp=g.rep!=null?g.rep:10;C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=rp;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus${rp?`, +${rp} rep`:""}`,"good");hit.push(g);}}
   if(hit.length){toastAfter(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}
-  rivalsPos();return hit.length;};
+  rivalsPos();return hit.length;}
 function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.prog){try{pg=g.prog(C());}catch(e){}}
     return `<div class="goal ${w?"done":""}"><div><h3>${g.name}</h3><p>${g.desc}</p>${pg?`<div class="gprog"><i style="width:${Math.round(100*pg[0]/pg[1])}%"></i></div>`:""}</div><div class="price">${w?"✓ wk "+w:pg?`<small>${Math.floor(pg[0])} / ${pg[1]}</small>${fmt$(g.cash)}`:fmt$(g.cash)}</div></div>`;};
   const open=GOALS.filter(g=>!C().goals[g.id]),late=open.filter(g=>g.late);

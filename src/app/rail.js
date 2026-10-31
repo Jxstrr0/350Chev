@@ -4,7 +4,7 @@
    sheet docked over the tab bar: one line (peaks, verdict chip, Run), tap or drag it up for the whole rail.
    It renders from the same sources as Test: S.last when it matches the build (else the live estimate, quick), the
    chart through drawChart() on its own canvas, the verdict headline Test already rendered into #verdict, the
-   stress rows in Test's .st markup, and contract specs through fits(). Run clicks #runTest, so it is the same run. */
+   stress rows in Test's .st markup, and the career team's race-day checks (rlTeam). Run clicks #runTest, so it is the same run. */
 var RL=null;   // var, not const: recompute() can schedule a refresh before this file has run
 const RAIL_MQ=matchMedia("(min-width:1100px)");
 function railCol(){return document.documentElement.classList.contains("desk")&&RAIL_MQ.matches;}
@@ -21,20 +21,10 @@ function rlVerdict(L){const v=$("verdict").querySelector(".verdict"),cur=S.last&
   const r=L.res;if(r.fails&&r.fails.length)return{k:"fail",t:"FAILED",s:r.fails.join(", ")};
   return{k:r.rel>=85?"pass":"marg",t:r.rel>=85?"CLEAR":"MARGINAL",s:`Reliability ${r.rel}`};}
 function rlChipTxt(t){t=String(t||"").replace(/\s+/g," ").trim();const w=t.split(" · ")[0];return w.length>16?w.slice(0,15)+"…":w;}
-/* contracts on the board, judged the way Market judges them: the standard cell (a site brief: their air) */
-function rlLive(){const ce=career()&&!isStdCell(simEnv());if(!ce)return quick;const key=cfgHash(S.cfg)+JSON.stringify(stdEnv({testType:"pull"}));
-  if(RL.liveK!==key){RL.liveK=key;RL.live=SIM.simulate(S.cfg,stdEnv({testType:"pull"}));}return RL.live;}
-function rlContracts(){if(!career()||S.bay||!C().contracts||!C().contracts.length)return"";
-  const h=cfgHash(S.cfg),cert=C().cert&&C().cert.ok&&C().cert.hash===h?C().cert:null;
-  const key=h+"|"+C().week+"|"+(cert?1:0)+"|"+C().contracts.map(k=>k.id).join(",")+"|"+JSON.stringify(simEnv());
-  if(RL.kKey===key)return RL.kHtml;
-  const live=rlLive();let html="";
-  for(const k of C().contracts){let f;try{f=fits(k,live,S.cfg);}catch(e){continue;}
-    const ready=cert&&f.ok&&fits(k,cert.res,cert.cfg).ok;
-    const st=ready?`<b class="good">Ready to ship</b>`:f.ok?`<b class="warn">Meets brief · cert it</b>`:`<b class="crit">${f.o.filter(q=>!q.ok).length} off brief</b>`;
-    html+=`<div class="rlk"><div class="rlkh"><span>${k.name}</span><small>${k.units} × ${fmt$(k.price)} · due wk ${k.expires}</small></div><div class="rlks">${st}</div>`
-      +f.o.filter(q=>q.q!=="car"&&q.q!=="lsr").map(q=>`<div class="rlq ${q.ok?"ok":"no"}"><span class="n">${q.name} <i>${q.target}</i></span><span class="v">${q.val}</span><span class="rb"><i style="width:${Math.round(Math.min(1,Math.max(0,q.prog))*100)}%"></i></span></div>`).join("")+`</div>`;}
-  RL.kKey=key;RL.kHtml=html?`<div class="rlsec"><h3>Contract${C().contracts.length>1?"s":""} <button class="chip" data-gotab="market">Market</button></h3>${html}</div>`:"";return RL.kHtml;}
+/* the career team's season: what stands between the bench build and race day (team.js pcChecks, no extra sim run) */
+function rlTeam(){const T=typeof pcTeam==="function"?pcTeam():null;if(!T)return"";let c;try{c=pcChecks(T);}catch(e){return"";}const E=PC_EVENTS[T.ev],due=C().week>=T.due;
+  return `<div class="rlsec"><h3>${esc(T.team)} <button class="chip" data-gotab="market">Team</button></h3><div class="rlk"><div class="rlkh"><span>${E.n} · round ${T.round+1} of ${PC_ROUNDS}</span><small>${due?"race week now":"race week "+T.due} · ${fmt$(pcLeft(T))} left</small></div><div class="rlks">${c.ok?'<b class="good">Ready for race day</b>':'<b class="warn">Not ready</b>'}</div>`
+    +c.o.map(q=>`<div class="rlq ${q.ok?"ok":"no"}"><span class="n">${esc(q.t)}</span><span class="v">${q.ok?"✓":"✗"}</span></div>`).join("")+`</div></div>`;}
 function rlDrag(){const d=RL.drag;if(!d)return"";const old=d.hash!==cfgHash(S.cfg);
   return `<div class="rlsec"><h3>Last drag pass${old?' <em>older build</em>':""}</h3><div class="rld"><div><b>${d.et!=null?d.et.toFixed(2)+"<i>s</i>":"DNF"}</b><span>ET</span></div><div><b>${d.mph!=null?Math.round(d.mph)+"<i>mph</i>":"—"}</b><span>trap</span></div><div><b>${d.sixty?d.sixty.toFixed(3):"—"}</b><span>60 ft</span></div></div>${d.race?`<p class="rlnote">${d.race}</p>`:""}</div>`;}
 function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
@@ -60,7 +50,7 @@ function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
   run.title=`Same run as Test: ${rlName(rt)}`;
   $("rlDyno").hidden=!ev||testing||curTab!=="events";
   $("rlV").innerHTML=`<div class="rlv ${V.k}"><b>${V.t}</b>${V.s?`<small>${V.s}</small>`:""}</div>`;
-  if(col||RL.open)$("rlK").innerHTML=rlContracts();   // phones: the contract list is the dear part and sits behind the closed peek sheet; railOpen schedules a render, so it fills on the way up
+  if(col||RL.open)$("rlK").innerHTML=rlTeam();   // phones: the team list is the dear part and sits behind the closed peek sheet; railOpen schedules a render, so it fills on the way up
   $("rlD").innerHTML=rlDrag();pwUpd();
   const cv=$("rlChart");if(cv.offsetParent&&cv.clientWidth>0){try{drawChart(res,null,cv);}catch(e){}}
   toastPlace();
@@ -87,7 +77,7 @@ function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click()
   head.addEventListener("click",e=>{if(railCol()||e.target.closest("#rlRun")||moved){moved=false;return;}railOpen();});
   document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!RL.open||railCol()||e.defaultPrevented)return;   // a dialog over it (options sheet, Settings) closes first
     if(["sheet","setPane"].some(id=>$(id)&&$(id).classList.contains("on")))return;railOpen(false);});
-  /* contracts, cash and the week move on clicks all over the game: refresh after any of them (one frame, cached) */
+  /* the team, cash and the week move on clicks all over the game: refresh after any of them (one frame, cached) */
   document.addEventListener("click",railSched);
   const re=()=>{railSched();};RAIL_MQ.addEventListener?RAIL_MQ.addEventListener("change",re):RAIL_MQ.addListener(re);window.addEventListener("resize",re);
   new MutationObserver(re).observe(document.documentElement,{attributes:true,attributeFilter:["class","data-theme"]});

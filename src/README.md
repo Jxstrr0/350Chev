@@ -82,7 +82,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `vis/api.js` | **the `ENGINE_VIS` public object** (`setStrip`, `setPull`, `setSalt` …, and `_state`/`_root` debug hooks) |
 | `vis/teardown.js` | teardown/exploded view after a failure, `window.ENGINE_VIS=`, IIFE close, `</script>` |
 | **app** | |
-| `app/state.js` | `<script>`, SIM aliases, `$`, career tables (UPGRADES, STAFF, RND, PRESTIGE, GOALS, CATS, SEGMENTS, SITES, loans), `S` state, **VERSION**, psi display, `save`/`hydrate`/`fuelMigrate`/save slots, `C()`/`career()`, env helpers, `cfgHash` (+HASH_SKIP), live compute (`recompute`, `hud`), engine card |
+| `app/state.js` | `<script>`, SIM aliases, `$`, career tables (UPGRADES, STAFF, RND, PRESTIGE, GOALS, loans), `S` state, **VERSION**, psi display, `save`/`hydrate`/`fuelMigrate`/save slots, `C()`/`career()`, env helpers, `cfgHash` (+HASH_SKIP), live compute (`recompute`, `hud`), engine card |
 | `app/build.js` | Build tab: `renderBuild`, segRow/sliderRow, SPECS, sheets, blueprints |
 | `app/test.js` | Test and Events tabs: env panel, car bodies/paint/rival looks, test/event picker (`evPickRender`, EV_T), Advanced folds, charts, `renderTest`, dyno tune map editor (MV, `renderMap`) |
 | `app/drag.js` | drag pass driver (DR, `dragStart`/`dragFinish`), strip HUD, timing slip, nitrous, race nights `rn*` |
@@ -94,8 +94,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/hill.js` | Pikes Peak UI (HC): classes, field, live card with corner calls, PUSH/LIFT, splits sheet, power-vs-altitude chart, records |
 | `app/oval.js` | dirt oval race night: heat then feature, the rivals' laps, the live strip and PUSH / SAVE, classification, purses, records |
 | `app/results.js` | datalog `dl*`, `showResult`, achievements, teardown panel, `renderAnalysis`, `renderRecords` |
-| `app/market.js` | Shop contracts, briefs (`fits`, `deal`, `buyers`, `oneChange`), weekly passes (rnd, warranty, goals), rebuilds & cores |
-| `app/career.js` | dyno day, `advanceWeek`, sponsors, `renderShop`, volume |
+| `app/career.js` | `advanceWeek` (Close week), overhead, sponsors, the Team tab's strip and sections, `renderShop`, upgrades, goals |
 | `app/savecode.js` | save codes: **Back up** / **Restore** in Shop → Saves (`buCode`, `buRead`, `buWrite`, the two sheets). See "Save codes" below |
 | `app/help.js` | onboarding tour, First Fire, glossary/tap-to-explain, guided lessons |
 | `app/pwa.js` | PWA: service worker registration (https non-localhost, or `?sw=1`; never file://), the "New version ready — Reload" bar (`css/ui-pwa.css`), Settings › App: Install app / iOS Add to Home Screen tip |
@@ -118,8 +117,8 @@ Files added after the map above was written (their place in the order is in `man
 | `vis/salt-event.js` | Speed Week: the pit town, return road, spectators |
 | `vis/hill-lod.js` | Pikes Peak culling and LOD for Lite and Ultra |
 | `vis/band.js` | the run view HUD band every event but the strip reports to the 3D view |
-| `app/pitcrew.js` | Pit Crew, the third mode: an 8-round season supplying one team (`PC_EVENTS`, `PC_STYLES`, season tables), contract offers, season budget and engine wear, auto-simulated race day (drag ladder, oval feature), points table, title, pay and rep, the Market-tab cards (`#pitBox`) |
-| `css/ui-pitcrew.css` | the Pit Crew team, offer and result cards, budget bar, standings, the third mode button |
+| `app/team.js` | career team seasons (the Team tab): one team a season for 8 rounds, a round every other week (`PC_EVENTS`, `PC_STYLES`, season and pay tables), offers gated by rep and dyno, the team's parts budget and engine wear, auto-simulated race day (drag ladder, oval feature), Close week racing a due round, points table, title, pay and rep, the Market-tab cards (`#pitBox`) |
+| `css/ui-team.css` | the team offer, season and result cards, budget bar, standings |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
 | `vis/props.js` | 8b. workshop polish for Full / Ultra: floor details, props, lamps |
 | `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |
@@ -130,12 +129,11 @@ Files added after the map above was written (their place in the order is in `man
 | `app/rivals.js` | the three rival shops, the reputation board, head-to-head challenges |
 | `app/legacy.js` | Legacy: sell the shop at Legend rep, points and perks under `pew2-legacy` |
 | `app/crew.js` | crew progression: named staff with levels 1 to 5, traits, morale |
-| `app/bays.js` | build bays C and D: a lead builds a contract in the background |
 | `app/trophy.js` | the trophy room's dated log of wins per mode |
 | `app/photo.js` | photo mode controls, gestures, capture and share, the build sheet card |
 | `app/rail.js` | the results rail: a third column on desktop, a peek sheet over the tab bar on a phone |
 | `app/shopsb.js` | the sandbox Shop: bench and parts catalogue |
-| `app/folds.js` | Settings folds and Dyno day rows, open state remembered in `S.folds` |
+| `app/folds.js` | Settings folds, open state remembered in `S.folds` |
 | `app/perf.js` | auto-adjust graphics: steps one tier down (ultra > full > lite) when the frame rate stays low |
 
 To find code, grep `src/`: `grep -rn "function pullRun" src/`.

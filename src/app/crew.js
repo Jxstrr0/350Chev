@@ -3,22 +3,21 @@
    The role's STAFF effect is the base; each level past 1 adds a little to it (and to the wage). Traits (CREW_TRAITS) roll
    at hire, stay hidden until they show (level 2 / 8 weeks, level 3 / 16 weeks) and only act once revealed. Level 1 with no
    traits is exactly the old flat staff effect, so a save from before people (staff[role] = hire week) reads the same.
-   The crew has its own seeded generator (C().crew.seed): it never draws from C().seed, so contracts, claims and the
-   week's walk-ins roll as they always did. */
+   The crew has its own seeded generator (C().crew.seed): it never draws from C().seed, so team offers, race days and
+   rival shops roll as they always did. */
 const CREW_XP=[0,80,200,380,640];   // cumulative XP for levels 1..5
 const CREW_FIRST=["Dale","Marie","Kev","Priya","Earl","Tanya","Lou","Gus","Rosa","Wes","Darlene","Hank","Mo","Jules","Shane","Bev","Corey","Nadia","Ray","Fern","Lyle","Joanne","Arjun","Cass","Tomasz","Ingrid","Dwayne","Leah","Bao","Colette","Rune","Amrit","Sheila","Travis","Noreen","Elias"];
 const CREW_LAST=["Kowalski","Lindqvist","Fontaine","Gill","Thiessen","McAllister","Boychuk","Nakamura","Dumont","Halvorsen","Okafor","Penner","Sandhu","Lavoie","Reimer","Fraser","Hryniuk","Olsen","Cardinal","Mbeki","Wiebe","Larocque","Tkachuk","Ferreira","Bjornson","Desjarlais","Kaur","Doucette","Friesen","Abbott"];
-const CREW_ALL=["machinist","tuner","dynotech","sales"];
+const CREW_ALL=["machinist","tuner","dynotech"];
 const CREW_TRAITS=[
-  {id:"wizard",v:"is a tuning wizard",n:"Tuning wizard",pos:1,roles:["tuner","dynotech"],d:"Dyno-day hints cost half, and auto-tune lands closer to the edge."},
+  {id:"wizard",v:"is a tuning wizard",n:"Tuning wizard",pos:1,roles:["tuner","dynotech"],d:"Auto-tune lands closer to the edge."},
   {id:"hands",v:"has fast hands",n:"Fast hands",pos:1,roles:CREW_ALL,d:"24 Hours pit stops 15% quicker; race-night freshens cost a quarter less."},
-  {id:"owl",v:"is a night owl",n:"Night owl",pos:1,roles:["machinist","dynotech","tuner"],d:"Works late: the rebuild bay takes 2 more units a week."},
+  {id:"owl",v:"is a night owl",n:"Night owl",pos:1,roles:["machinist","dynotech","tuner"],d:"Works late: a team engine's freshen-up costs 20% less."},
   {id:"frugal",v:"is frugal",n:"Frugal",pos:1,roles:CREW_ALL,d:"Haggles with every supplier: unit cost −2%."},
-  {id:"diesel",v:"is a diesel whisperer",n:"Diesel whisperer",pos:1,roles:CREW_ALL,d:"Diesel engines sell for 4% more."},
-  {id:"twostroke",v:"is a two-stroke nut",n:"Two-stroke nut",pos:1,roles:CREW_ALL,d:"Two-stroke engines sell for 6% more."},
-  {id:"lucky",v:"is lucky",n:"Lucky",pos:1,roles:CREW_ALL,d:"Warranty claims come back 15% less often."},
-  {id:"meticulous",v:"is meticulous",n:"Meticulous",pos:1,roles:["machinist","dynotech"],d:"Rebuilds last 8% longer."},
-  {id:"smooth",v:"is a smooth talker",n:"Smooth talker",pos:1,roles:["sales"],d:"Contracts and buyers pay +2%."},
+  {id:"diesel",v:"is a diesel whisperer",n:"Diesel whisperer",pos:1,roles:CREW_ALL,d:"A team running a diesel pays 4% more."},
+  {id:"twostroke",v:"is a two-stroke nut",n:"Two-stroke nut",pos:1,roles:CREW_ALL,d:"A team running a two-stroke pays 6% more."},
+  {id:"lucky",v:"is lucky",n:"Lucky",pos:1,roles:CREW_ALL,d:"Team engines let go 15% less often on race day."},
+  {id:"meticulous",v:"is meticulous",n:"Meticulous",pos:1,roles:["machinist","dynotech"],d:"Team engines wear 10% slower."},
   {id:"quick",v:"is a quick study",n:"Quick study",pos:1,roles:CREW_ALL,d:"Learns 40% faster."},
   {id:"workhorse",v:"is a workhorse",n:"Workhorse",pos:1,roles:CREW_ALL,d:"Busy weeks don't wear on morale."},
   {id:"clumsy",v:"is clumsy with sensors",n:"Clumsy with sensors",pos:0,roles:["dynotech","tuner"],d:"Knocks a sensor loose now and then: about one cert pull in twelve reads wrong and has to be pulled again."},
@@ -28,7 +27,7 @@ const CREW_TRAITS=[
   {id:"heavy",v:"is heavy-handed",n:"Heavy-handed",pos:0,roles:["machinist","tuner","dynotech"],d:"Goes through parts: unit cost +1.5%."}
 ];
 const crewTr=id=>CREW_TRAITS.find(t=>t.id===id);
-const CREW_COL={machinist:"var(--info)",tuner:"var(--orange)",dynotech:"var(--good)",sales:"var(--warn)"};
+const CREW_COL={machinist:"var(--info)",tuner:"var(--orange)",dynotech:"var(--good)"};
 function crewS(){const c=C();if(!c.crew||typeof c.crew!=="object")c.crew={};const k=c.crew;if(!k.seed)k.seed=((c.seed>>>0)^0x5bd1e995)>>>0||7;if(!k.cand||typeof k.cand!=="object")k.cand={};if(!k.hist||typeof k.hist!=="object")k.hist={lv:0,max:1,crs:0,rv:0,quit:0};return k;}
 function crewRnd(){const k=crewS();k.seed=(k.seed*1664525+1013904223)>>>0;return k.seed/4294967296;}
 const crewPick=a=>a[Math.floor(crewRnd()*a.length)];
@@ -56,18 +55,16 @@ function crewChief(){if(dev())return null;const r=crewChiefRole();return r&&crew
 function crewWage(st){const p=crewP(st.id);const L=p?Math.max(1,Math.min(5,p.lvl|0)):1;const w=L===1?st.wage:Math.round(st.wage*(1+0.12*(L-1))/10)*10;return p&&crewChiefRole()===st.id?Math.round(w*(1+CHIEF_PAY)/10)*10:w;}
 /* trait effects the rest of the shop reads (all exactly 1 / 0 with no revealed trait) */
 function crewCostK(){return (crewT("frugal")?0.98:1)*(crewT("heavy")?1.015:1);}
-function crewPriceK(){return crewT("smooth")?1.02:1;}
 function crewFamK(res){return res&&res.diesel&&crewT("diesel")?1.04:res&&res.twoStroke&&crewT("twostroke")?1.06:1;}
 function crewPitK(){return crewT("hands")?0.85:1;}
 function crewRnFreshK(){return (crewT("hands")?0.75:1)*(crewT("nervous")?1.25:1);}
 function crewBadRead(){return crewT("clumsy")>0&&crewRnd()<1/12;}
 /* the role's effect at its level, in words */
 function crewFx(role,L){L=L||1;const k=L-1;
-  return role==="machinist"?`Unit cost −${8+k}%, machining R&D ${25+2.5*k}% faster, rebuild bay +${4+k} a week.`
-    :role==="tuner"?`+${(1+0.15*k).toFixed(k?2:0)} octane number of knock margin on every build; auto-tune and a free first dyno-day hint.`
-    :role==="dynotech"?`Dyno pulls, endurance and over-rev runs are free; +${(0.45+0.08*k).toFixed(2)} dyno-day customers a week on average.`
-    :role==="sales"?`Contracts pay +${+(6+1.25*k).toFixed(2)}% and every category shows a third offer.`:"";}
-const CREW_HIST={eng:["built","engine","engines"],cal:["calibrated","engine","engines"],jobs:["fixed","customer engine","customer engines"],rb:["rebuilt","engine","engines"],pulls:["ran","dyno pull","dyno pulls"],ev:["crewed at","event","events"],deals:["closed","deal","deals"],rnd:["saw through","R&D project","R&D projects"]};
+  return role==="machinist"?`Unit cost −${8+k}%, machining R&D ${25+2.5*k}% faster.`
+    :role==="tuner"?`+${(1+0.15*k).toFixed(k?2:0)} octane number of knock margin on every build; and auto-tune.`
+    :role==="dynotech"?`Dyno pulls, endurance and over-rev runs are free.`:"";}
+const CREW_HIST={eng:["built","engine","engines"],cal:["calibrated","engine","engines"],team:["crewed","team round","team rounds"],pulls:["ran","dyno pull","dyno pulls"],ev:["crewed at","event","events"],rnd:["saw through","R&D project","R&D projects"]};
 function crewHistTxt(p){const o=[];for(const k in CREW_HIST){const n=p.h[k]|0;if(n>0){const w=CREW_HIST[k];o.push(`${w[0]} ${n} ${n===1?w[1]:w[2]}`);}}return o.length?o.join(" · "):"Nothing on the board yet.";}
 const crewRole=r=>(STAFF.find(s=>s.id===r)||{name:r}).name;
 const crewFirst=p=>String(p.nm).split(" ")[0];
@@ -85,9 +82,7 @@ function crewReveal(p){const wks=C().week-(p.hired||C().week);let any=false;
 /* game hooks: one call per kind of work */
 function crewWork(kind,o){if(!career()||!C().staff)return;o=o||{};try{
   if(kind==="dyno"||kind==="drag"){const p=crewP("dynotech");if(p&&(p.pulls|0)<6){p.pulls=(p.pulls|0)+1;crewXP("dynotech",o.tt==="endurance"?4:o.tt==="overrev"?3:kind==="drag"?1:2,kind==="drag"?null:"pulls");}}
-  else if(kind==="dd"){const tune=(o.job.fix||[]).some(f=>["timing","lambda","map","boost","fuel"].includes(f[0]));const r=tune?"tuner":"machinist";crewXP(r,o.ok?14:4,o.ok?"jobs":null);crewXP("dynotech",o.ok?5:2);}
-  else if(kind==="sale"){const f=C().fleet[C().fleet.length-1],u=f?f.units|0:1;crewXP("sales",6,"deals");crewXP("machinist",3,"eng",u);crewXP("tuner",2,"cal",u);crewXP("dynotech",1.5);}
-  else if(kind==="rebuild"){crewXP("machinist",0.5*(o.n||1),"rb",o.n||1);}
+  else if(kind==="team"){const w=o.win?1.5:1;crewXP("machinist",6*w,"team");crewXP("tuner",4*w,"team");crewXP("dynotech",3*w,"team");}   // a team round: the season engine's build and care
   else if(kind==="rnd"){crewXP(o.r&&o.r.mach?"machinist":"tuner",20,"rnd");}
   else{const w=!!(o.win||o.record);for(const r of CREW_ALL){const p=crewP(r);if(!p||p.away>C().week||p.tr.some(t=>t.id==="nervous"&&t.rv))continue;p.evn=(p.evn|0)+1;if(p.evn<=4)crewXP(r,r==="dynotech"?(w?6:4):(w?2:1.5),"ev");else p.h.ev=(p.h.ev||0)+1;}}   // track days: the first four a week teach them something
   }catch(e){}}
