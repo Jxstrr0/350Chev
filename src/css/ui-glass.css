@@ -4,7 +4,9 @@
    class, blur by graphics tier (html[data-gfx], set in applyGfx), the off switch (html.noglass: Settings › Display ›
    Glass effects, perf.js auto-off, or the system Reduce Transparency), the ambient backdrop behind the panel, the panel
    sitting on the 3D view, the floating tab bar with its sliding bead (#tabBead, moved by tabBead() in boot.js), and the
-   HUD buttons and VIEW tray. Race buttons (.btn.pri/.ok/.danger) keep their chamfer; that's PR 2.
+   HUD buttons and VIEW tray (PR 1); then the panel's own surfaces: build rows, cards, option buttons, the race buttons
+   (chamfered gel: .btn.pri/.ok/.danger), other buttons, the results rail, the engine card, popups, toasts and sliders (PR 2).
+   Glass inside the panel or a popup is a translucent fill with a rim and never a second backdrop-filter.
    Lite budget: the tab bar and the VIEW tray blur; the panel and the HUD buttons over the live 3D view don't (re-blurring
    a moving canvas every frame is what costs a phone its frame rate), they get a stronger tint instead. */
 :root{
@@ -37,11 +39,12 @@ html.noglass .glass,html.noglass #tabs,html.noglass .hudtray,html.noglass .hudbt
 
 /* ---- ambient backdrop: two big soft glows (venue tint, steel blue) behind the panel, drifting on a slow loop. z-index -1 inside #app
    paints them over #app's own background and under everything else; the 3D view's opaque canvas hides them up top. */
-#app::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;opacity:var(--glass-glow);
+#app::before{content:"";position:absolute;inset:-20%;z-index:-1;pointer-events:none;opacity:var(--glass-glow);
   background:radial-gradient(38% 30% at 22% 70%,rgb(var(--glass-tint)),transparent 70%),radial-gradient(34% 28% at 80% 88%,var(--info),transparent 70%),radial-gradient(30% 24% at 70% 52%,rgb(var(--glass-tint)),transparent 72%)}
 @media (prefers-reduced-motion:no-preference){html:not([data-gfx=lite]) #app::before{animation:glassdrift 70s ease-in-out infinite alternate}}
 @keyframes glassdrift{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(6%,-4%,0)}100%{transform:translate3d(-5%,3%,0)}}
 html.noglass #app::before{display:none}
+#app{overflow:clip}   /* the glows stay inside the game column on a wide screen (clip, not hidden: no scroll box, fixed children unaffected) */
 
 /* ---- the panel sits on the 3D view: pulled up by --lap, rounded top, glass, a bright top rim and a shadow up onto the scene.
    Phone layout only; the run view (html.onevent) needs its HUD band clear, so no overlap there. */
@@ -87,3 +90,93 @@ html.noglass .hudtray{background:#1c1b19}
 /* First Fire's highlight: a glass ring with an inner glow instead of the hard orange border */
 #ffSpot{border:1px solid rgba(255,255,255,.4);border-radius:14px;box-shadow:0 0 0 9999px rgba(10,10,9,.6),inset 0 0 14px rgba(var(--glass-tint),.55),0 0 14px rgba(var(--glass-tint),.4)}
 @keyframes ffPulse{50%{border-color:rgba(255,255,255,.7);box-shadow:0 0 0 9999px rgba(10,10,9,.6),inset 0 0 20px rgba(var(--glass-tint),.8),0 0 20px 3px rgba(var(--glass-tint),.55)}}
+
+/* ===================== PR 2: panels, controls, popups ===================== */
+:root{--glass-fill:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.025));--glass-fill2:rgba(255,255,255,.045);--glass-line:rgba(255,255,255,.09);--glass-pop:rgba(28,27,25,.84)}
+:root[data-theme=light]{--glass-fill:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.7));--glass-fill2:rgba(255,255,255,.7);--glass-line:rgba(20,20,19,.1);--glass-pop:rgba(255,255,255,.86)}
+html.noglass{--glass-fill:var(--panel);--glass-fill2:var(--panel2);--glass-pop:var(--panel)}
+@media (prefers-reduced-transparency:reduce){:root{--glass-fill:var(--panel);--glass-fill2:var(--panel2);--glass-pop:var(--panel)}}
+
+/* ---- build rows and cards: a lighter glass fill on the panel, 18px radius, the gradient rim; coloured edges (sponsor, repeat,
+   foreclosure, service job) keep their border on top */
+.acc,.card{position:relative;background:var(--glass-fill);border-color:transparent;border-radius:var(--r-glass);box-shadow:var(--glass-shine),0 4px 14px rgba(0,0,0,.18)}
+:root[data-theme=light] .acc,:root[data-theme=light] .card{box-shadow:var(--glass-shine),0 1px 3px rgba(20,20,19,.08),0 4px 14px rgba(20,20,19,.08)}
+.acc{margin-bottom:10px}
+.acc::before,.card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:var(--glass-rim);pointer-events:none;z-index:0;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.accb{border-top-color:var(--glass-line)}
+.accb .seg button{background:var(--glass-fill2)}
+/* the sticky numbers strip and the money tiles sit as glass chips too */
+.strip{border-radius:14px}
+.money div{background:var(--glass-fill2);border-radius:12px}
+
+/* ---- option buttons: faint glass; the pick is orange-tinted glass with an inner glow, no hard orange border. The .d delta colours stay. */
+.seg button{background:var(--glass-fill2);border-color:var(--glass-line);border-radius:12px;box-shadow:var(--glass-shine)}
+.seg button.on,:root[data-theme] .seg button.on{background:linear-gradient(180deg,rgba(var(--glass-tint),.28),rgba(var(--glass-tint),.10));border-color:rgba(var(--glass-tint),.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 0 14px rgba(var(--glass-tint),.28)}
+:root[data-theme=light] .seg button.on{background:linear-gradient(180deg,rgba(var(--glass-tint),.22),rgba(var(--glass-tint),.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 12px rgba(var(--glass-tint),.2)}
+.evpick button{background:var(--glass-fill2);border-color:var(--glass-line);border-radius:12px}
+.evpick button.on,:root[data-theme] .evpick button.on{background:linear-gradient(180deg,rgba(var(--glass-tint),.26),rgba(var(--glass-tint),.08));border-color:rgba(var(--glass-tint),.45);box-shadow:inset 0 0 14px rgba(var(--glass-tint),.25)}
+.nud{background:var(--glass-fill2);border-color:var(--glass-line);border-radius:12px}
+
+/* ---- race buttons (Run, Stage the car, sign, the orange one on every screen; green go, red danger): the chamfer and glow lines
+   come back, over a glossy gel: a top highlight and an inner shadow on the fill */
+.btn.pri,.btn.ok,.btn.danger{border-radius:0;clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 48%),linear-gradient(180deg,var(--hb),var(--hb2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -10px 18px -10px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.12)}
+.btn.sm.pri,.btn.sm.ok,.btn.sm.danger{clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,7px 100%,0 calc(100% - 7px),0 7px)}
+.btn.pri::before,.btn.pri::after,.btn.ok::before,.btn.ok::after,.btn.danger::before,.btn.danger::after{display:block}
+.btn.pri{--ht:var(--hud-ink)}
+/* everything else is glass: the plain button a faint fill, the ghost button clear */
+.btn:not(.pri):not(.ok):not(.danger):not(.info){--hb:transparent;--hb2:transparent;background:var(--glass-fill2);border-radius:12px;box-shadow:var(--glass-shine),inset 0 0 0 1px var(--glass-line)}
+.btn.ghost{background:rgba(255,255,255,.02)}
+:root[data-theme=light] .btn.ghost{background:rgba(255,255,255,.4)}
+.btn.info{border-radius:12px;background-image:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(180deg,var(--hb),var(--hb2))}
+
+/* ---- press feel: glass controls dip a touch */
+.seg button,.evpick button,.acch,.nud,.btn:not(.pri):not(.ok):not(.danger),.hudbtns>button,#tabs button{transition:transform .12s ease,background-color .2s,box-shadow .2s}
+.seg button:active,.evpick button:active,.acch:active,.nud:active,.btn:not(.pri):not(.ok):not(.danger):active,.hudbtns>button:active,#tabs button:active{transform:scale(.97);filter:none}
+
+/* ---- the results rail's docked bar and the engine card: floating glass capsules. The rail is one of the four blurred layers Lite
+   allows; the engine card over the live view takes a stronger tint on Lite instead of a blur. .ecard.inline stays solid. */
+html:not(.desk) #rail{background:var(--glass-bg-strong);border-top:0;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));box-shadow:var(--glass-shine),var(--glass-shadow)}
+html:not(.desk) #rail::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:var(--glass-rim);pointer-events:none;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.ecard{background:rgba(20,20,19,.5);border-color:transparent;border-radius:14px;box-shadow:var(--glass-shine),0 6px 18px rgba(0,0,0,.3);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))}
+html[data-gfx=lite] .ecard{background:rgba(20,20,19,.7);-webkit-backdrop-filter:none;backdrop-filter:none}
+html.noglass .ecard{background:rgba(20,20,19,.86);-webkit-backdrop-filter:none;backdrop-filter:none}
+.ecard.inline{background:var(--soot);border-color:var(--rule);border-radius:12px;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* ---- popups (parts sheet, Settings, tour, First Fire, lessons, toasts, tooltips): strong glass (they hold text), 22px radius,
+   a spring in. The sheets are the one popup blur Lite spends; the cards and toasts are small. */
+#sheet,#setPane{background:var(--glass-bg-strong);border-top:0;border-radius:22px 22px 0 0;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));box-shadow:var(--glass-shine),0 -12px 36px rgba(0,0,0,.45)}
+#sheet::before,#setPane::before,#tourBox::before,#ffBox::before,#lesBox::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:var(--glass-rim);pointer-events:none;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+#sheet header,#setPane header{border-bottom-color:var(--glass-line)}
+@media (prefers-reduced-motion:no-preference){html:not(.desk) #sheet,html:not(.desk) #setPane{transition-duration:.34s;transition-timing-function:cubic-bezier(.34,1.18,.64,1)}}
+html.desk #sheet,html.desk #setPane{border:0;border-radius:22px}
+#tourBox,#ffBox,#lesBox{background:var(--glass-pop);border-color:transparent;border-radius:22px;padding:14px 16px;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));box-shadow:var(--glass-shine),var(--glass-shadow)}
+#ffBox,#lesBox{border-left:0;box-shadow:var(--glass-shine),inset 3px 0 0 var(--orange),var(--glass-shadow)}
+@media (prefers-reduced-motion:no-preference){#tour:not([hidden]) #tourBox,#ff:not([hidden]) #ffBox,#les:not([hidden]) #lesBox{animation:glasspop .32s cubic-bezier(.34,1.3,.64,1)}}
+@keyframes glasspop{from{opacity:0;transform:translateY(12px) scale(.98)}}
+/* toasts: dark glass in both themes, springing up */
+#toast,:root[data-theme=light] #toast{background:rgba(28,27,25,.84);color:#faf9f5;border-radius:16px;padding:11px 18px;transform:translateX(-50%) translateY(12px) scale(.98);-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 0 1px rgba(255,255,255,.1),0 10px 28px rgba(0,0,0,.4)}
+#toast.on{transform:translateX(-50%)}
+@media (prefers-reduced-motion:no-preference){#toast{transition:opacity .25s,transform .32s cubic-bezier(.34,1.4,.64,1)}}
+#achToast{background:var(--glass-pop);border-color:transparent;border-left:0;border-radius:16px;-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%);box-shadow:inset 3px 0 0 var(--orange),var(--glass-shine),0 0 0 1px var(--glass-line),var(--glass-shadow)}
+#tip{background:rgba(11,11,10,.86);border-color:rgba(255,255,255,.16);border-radius:12px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+html.noglass #toast,html.noglass #achToast,html.noglass #tip,html.noglass #sheet,html.noglass #setPane,html.noglass #tourBox,html.noglass #ffBox,html.noglass #lesBox,html.noglass #rail{-webkit-backdrop-filter:none;backdrop-filter:none}
+html.noglass #toast{background:#1c1b19}
+@media (prefers-reduced-transparency:reduce){#toast,#achToast,#tip,#sheet,#setPane,#tourBox,#ffBox,#lesBox,#rail{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}#toast{background:#1c1b19}}
+
+/* ---- sliders: a glass track and a glossy orange thumb, drawn over the native range input (still the real control underneath) */
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:var(--glass-fill2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35),inset 0 0 0 1px var(--glass-line)}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:var(--glass-fill2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35),inset 0 0 0 1px var(--glass-line)}
+input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:linear-gradient(180deg,var(--orange2),var(--orange))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-8px;border:0;border-radius:50%;
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.75),rgba(255,255,255,0) 55%),linear-gradient(180deg,var(--orange2),var(--orange));box-shadow:inset 0 -2px 3px rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.35),0 2px 8px rgba(0,0,0,.4),0 0 10px rgba(var(--glass-tint),.4)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:50%;
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.75),rgba(255,255,255,0) 55%),linear-gradient(180deg,var(--orange2),var(--orange));box-shadow:inset 0 -2px 3px rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.35),0 2px 8px rgba(0,0,0,.4)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]:disabled{opacity:.45;cursor:default}
+.btn.on:not(.pri):not(.ok):not(.danger):not(.info){color:var(--orange2);box-shadow:var(--glass-shine),inset 0 0 0 1px rgba(var(--glass-tint),.45),inset 0 0 14px rgba(var(--glass-tint),.3)}
