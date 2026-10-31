@@ -119,7 +119,7 @@ Files added after the map above was written (their place in the order is in `man
 | `vis/band.js` | the run view HUD band every event but the strip reports to the 3D view |
 | `app/team.js` | career team seasons (the Team tab): one team a season for 8 rounds, a round every other week (`PC_EVENTS`, `PC_STYLES`, season and pay tables), offers gated by rep and dyno, the team's parts budget and engine wear, auto-simulated race day (drag ladder, oval feature), Close week racing a due round, points table, title, pay and rep, the Market-tab cards (`#pitBox`) |
 | `css/ui-team.css` | the team offer, season and result cards, budget bar, standings |
-| `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders. Last CSS file, so it overrides the rest |
+| `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders; the rev glow, failure crack overlay and venue tint styling. Last CSS file, so it overrides the rest |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
 | `vis/props.js` | 8b. workshop polish for Full / Ultra: floor details, props, lamps |
 | `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |
