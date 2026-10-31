@@ -1,0 +1,89 @@
+/* ===================== SHOP GLASS (UI-GLASS-PLAN PR 1) =====================
+   Frosted, translucent surfaces with a bright rim, over an ambient glow, so the UI reads as glass in an engine shop at night.
+   Loaded last of the CSS, so it overrides the base rules without editing them. Holds: the glass tokens, the shared .glass
+   class, blur by graphics tier (html[data-gfx], set in applyGfx), the off switch (html.noglass: Settings › Display ›
+   Glass effects, perf.js auto-off, or the system Reduce Transparency), the ambient backdrop behind the panel, the panel
+   sitting on the 3D view, the floating tab bar with its sliding bead (#tabBead, moved by tabBead() in boot.js), and the
+   HUD buttons and VIEW tray. Race buttons (.btn.pri/.ok/.danger) keep their chamfer; that's PR 2.
+   Lite budget: the tab bar and the VIEW tray blur; the panel and the HUD buttons over the live 3D view don't (re-blurring
+   a moving canvas every frame is what costs a phone its frame rate), they get a stronger tint instead. */
+:root{
+  --glass-bg:rgba(28,27,25,.52);
+  --glass-bg-strong:rgba(28,27,25,.72);      /* sheets, popups: text-heavy */
+  --glass-blur:20px;--glass-sat:170%;
+  --glass-rim:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.06) 40%,rgba(255,255,255,.02) 70%,rgba(255,255,255,.12));
+  --glass-shine:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(0,0,0,.25);
+  --glass-shadow:0 10px 30px rgba(0,0,0,.45);
+  --glass-tint:217,119,87;                   /* r,g,b: PR 3 drives this from the venue */
+  --glass-heat:0;                            /* 0..1: PR 3 drives this from rpm */
+  --glass-glow:.16;                          /* strength of the ambient backdrop glows */
+  --r-glass:18px;
+  --lap:22px;                                /* how far the panel sits up over the 3D view */
+}
+:root[data-theme=light]{--glass-bg:rgba(255,255,255,.58);--glass-bg-strong:rgba(255,255,255,.78);--glass-rim:linear-gradient(135deg,rgba(255,255,255,.9),rgba(255,255,255,.3) 50%,rgba(20,20,19,.08));--glass-shine:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(20,20,19,.06);--glass-shadow:0 10px 30px rgba(20,20,19,.12);--glass-glow:.12}
+html[data-gfx=lite]{--glass-blur:12px;--glass-sat:150%}
+html[data-gfx=ultra]{--glass-blur:28px}
+/* glass off: solid panels, no blur anywhere */
+html.noglass{--glass-bg:var(--panel);--glass-bg-strong:var(--panel);--glass-blur:0px;--glass-glow:0}
+@media (prefers-reduced-transparency:reduce){:root{--glass-bg:var(--panel);--glass-bg-strong:var(--panel);--glass-blur:0px;--glass-glow:0}}
+
+/* ---- the shared surface: tint, blur, shine, shadow, and a gradient rim drawn by ::before (a masked 1px ring, not a border) */
+.glass,html:not(.desk) #tabs,.hudtray{background:var(--glass-bg);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));box-shadow:var(--glass-shine),var(--glass-shadow);border-radius:var(--r-glass)}
+.glass{position:relative}
+.glass::before,html:not(.desk) #tabs::before,.hudtray::before,.hudbtns>button::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:var(--glass-rim);pointer-events:none;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+html.noglass .glass,html.noglass #tabs,html.noglass .hudtray,html.noglass .hudbtns>button,html.noglass #panel{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+@media (prefers-reduced-transparency:reduce){.glass,#tabs,.hudtray,.hudbtns>button,#panel{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
+
+/* ---- ambient backdrop: two big soft glows (venue tint, steel blue) behind the panel, drifting on a slow loop. z-index -1 inside #app
+   paints them over #app's own background and under everything else; the 3D view's opaque canvas hides them up top. */
+#app::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;opacity:var(--glass-glow);
+  background:radial-gradient(38% 30% at 22% 70%,rgb(var(--glass-tint)),transparent 70%),radial-gradient(34% 28% at 80% 88%,var(--info),transparent 70%),radial-gradient(30% 24% at 70% 52%,rgb(var(--glass-tint)),transparent 72%)}
+@media (prefers-reduced-motion:no-preference){html:not([data-gfx=lite]) #app::before{animation:glassdrift 70s ease-in-out infinite alternate}}
+@keyframes glassdrift{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(6%,-4%,0)}100%{transform:translate3d(-5%,3%,0)}}
+html.noglass #app::before{display:none}
+
+/* ---- the panel sits on the 3D view: pulled up by --lap, rounded top, glass, a bright top rim and a shadow up onto the scene.
+   Phone layout only; the run view (html.onevent) needs its HUD band clear, so no overlap there. */
+html:not(.desk) #panel{position:relative;margin-top:calc(var(--lap) * -1);border-radius:22px 22px 0 0;background:var(--glass-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 -10px 26px rgba(0,0,0,.34)}
+:root[data-theme=light]:not(.desk) #panel{box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 -10px 26px rgba(20,20,19,.14)}
+html:not(.desk):not([data-gfx=lite]) #panel{-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))}
+html[data-gfx=lite]:not(.desk) #panel{background:var(--glass-bg-strong)}
+html.onevent:not(.desk),html.troom{--lap:0px}
+/* the engine card and rpm readout on the view's bottom edge step up clear of the panel's lip */
+html:not(.desk) #tag,html:not(.desk) #rpmbox{translate:0 calc(var(--lap) * -1)}
+html[data-tab]:not([data-tab=build]):not(.desk) #app:not(.mini):not(.td) .hudbtns{translate:0 calc(var(--lap) * -1)}   /* off the Build tab the HUD buttons sit on the bottom edge too */
+
+/* ---- floating tab bar: a glass pill inset from the edges, over the panel; the panel and everything docked at the foot leave
+   room for it through --tabh. The active tab is marked by one sliding glass bead instead of the old top bar. */
+html:not(.desk){--tabgap:max(10px,env(safe-area-inset-bottom,0px));--tabh:calc(58px + var(--tabgap) + 4px)}
+html:not(.desk) #tabs{background:var(--glass-bg-strong);left:10px;right:10px;bottom:var(--tabgap);height:58px;padding:0 4px;border:0;border-radius:26px;overflow:hidden;z-index:12;
+  -webkit-backdrop-filter:blur(calc(var(--glass-blur) + 8px)) saturate(var(--glass-sat));backdrop-filter:blur(calc(var(--glass-blur) + 8px)) saturate(var(--glass-sat))}
+html:not(.desk) #tabs button{z-index:1;font-size:12px;gap:2px}
+:root:not(.desk) #tabs button.on,:root[data-theme]:not(.desk) #tabs button.on{background:none}
+html:not(.desk) #tabs button.on::before{display:none}
+html:not(.desk) #testProg{top:0;left:0;border-radius:2px}
+html:not(.desk) #tabs .dot{top:6px}html:not(.desk) #tabs .dot.n{top:3px}
+#tabBead{display:none}
+html:not(.desk) #tabBead{display:block;position:absolute;top:5px;bottom:5px;left:0;width:var(--bw,0px);transform:translateX(var(--bx,0px));border-radius:21px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(var(--glass-tint),.30),rgba(var(--glass-tint),.10));box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 0 14px rgba(var(--glass-tint),.35),0 2px 8px rgba(0,0,0,.25)}
+:root[data-theme=light] #tabBead{background:linear-gradient(180deg,rgba(var(--glass-tint),.24),rgba(var(--glass-tint),.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 12px rgba(var(--glass-tint),.22)}
+#tabBead.ready{transition:transform .38s cubic-bezier(.34,1.56,.64,1),width .38s cubic-bezier(.34,1.56,.64,1)}
+/* the results sheet docks just above the floating bar, inset to match it */
+html:not(.desk) #rail{left:10px;right:10px;bottom:calc(var(--tabh) - 2px);border-radius:18px 18px 12px 12px}
+
+/* ---- HUD buttons: clear glass pills/circles. "On" is an inner glow in the venue tint instead of an orange border. */
+.hudbtns>button{position:relative;background:rgba(20,20,19,.42);border-color:transparent;box-shadow:var(--glass-shine),0 4px 14px rgba(0,0,0,.3)}
+html:not([data-gfx=lite]) .hudbtns>button{-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))}
+html[data-gfx=lite] .hudbtns>button{background:rgba(20,20,19,.62)}
+.hudbtns>button.on,#viewBtn.open{border-color:transparent;background:rgba(44,26,17,.5);box-shadow:var(--glass-shine),inset 0 0 14px rgba(var(--glass-tint),.55),0 4px 14px rgba(0,0,0,.3)}
+html.noglass .hudbtns>button{background:rgba(20,20,19,.86)}
+/* the VIEW tray: strong glass, scales and fades in from its button */
+.hudtray{background:rgba(28,27,25,.74);border:0;border-radius:18px;transform-origin:top right}   /* it sits in the view, which keeps the dark palette in both themes */
+html.noglass .hudtray{background:#1c1b19}
+.hudtray button{position:relative}
+@media (prefers-reduced-motion:no-preference){.hudtray:not([hidden]){animation:trayin .2s cubic-bezier(.34,1.4,.64,1)}}
+@keyframes trayin{from{opacity:0;transform:scale(.9)}}
+/* First Fire's highlight: a glass ring with an inner glow instead of the hard orange border */
+#ffSpot{border:1px solid rgba(255,255,255,.4);border-radius:14px;box-shadow:0 0 0 9999px rgba(10,10,9,.6),inset 0 0 14px rgba(var(--glass-tint),.55),0 0 14px rgba(var(--glass-tint),.4)}
+@keyframes ffPulse{50%{border-color:rgba(255,255,255,.7);box-shadow:0 0 0 9999px rgba(10,10,9,.6),inset 0 0 20px rgba(var(--glass-tint),.8),0 0 20px 3px rgba(var(--glass-tint),.55)}}
