@@ -51,8 +51,7 @@ function buildGarageMesh(owned){
   }
   buildUpgrades(B, G, extrasPush(lights), W, D, Hh, owned, sandbox);
 
-  /* engine stand */
-  buildStand(B, sandbox);
+  /* the engine stand is not part of the room: api.js fitStand builds it to suit the engine on it */
   /* the workshop monitor beside it (the app draws on it through ENGINE_VIS.setScreen) */
   var mon=buildMonitor(B, G);
 
@@ -117,38 +116,141 @@ function screenCam(dt, tgt){
   return _scrL;
 }
 
-function buildStand(B, sandbox){
-  var pk = sandbox ? "paintGrey" : "paintOrange";
-  var w=6.2, d=9.0, topY=6.0;
-  /* base rails + cross members */
-  B.add(pk, BOX(1.1, 0.9, d, 1/3), -w/2, 0.9, 0);
-  B.add(pk, BOX(1.1, 0.9, d, 1/3),  w/2, 0.9, 0);
-  B.add(pk, BOX(w, 0.8, 1.0, 1/3), 0, 0.9,  d/2-0.8);
-  B.add(pk, BOX(w, 0.8, 1.0, 1/3), 0, 0.9, -d/2+0.8);
-  /* uprights + diagonal braces */
-  var ux=[-w/2, w/2], uz=[-d/2+1.2, d/2-1.2], i, j;
+/* ---- the engine stand ----
+   A welded run stand that fits the engine on it. It is built from the engine's seat (the bottom of its sump or crankcase, which the
+   engine builders leave in G.userData.seat; world units here) each time the engine or the room changes (api.js fitStand), into a group
+   of its own beside the garage. Square tube base, four posts and a top frame, braced and gusseted; two cross members clamped on the top
+   frame carry the cradle: a saddle beam on two posts under the front and the back of the sump, at its exact height, rubber pads where
+   it sits. Shop: Longlight clay paint on swivel casters. Test cell: grey, on levelling feet clamped to the dyno bedplate.
+   f: {x0,x1,z0,z1,y, r} the seat (r: a round bottom, the pads rise to meet it); none = a small-block's. Lengths are rounded to a tenth
+   so the cached tube geometry stays a short list however many engines are tried. */
+var STAND={topY:5.0, tube:0.7, pad:0.32};
+function buildStand(B, sandbox, f){
+  f = f || {x0:-2.6, x1:2.6, z0:-1.5, z1:1.5, y:7.05, r:0};
+  var q=function(v){ return Math.round(v*10)/10; }, V=function(x,y,z){ return new THREE.Vector3(x,y,z); };
+  var pk = sandbox ? "paintGrey" : "paintOrange", t=STAND.tube, h=t/2, i, j;
+  var y0 = sandbox ? 1.2 : 0;                                  /* bedplate top / floor */
+  var cx=(f.x0+f.x1)/2, cz=(f.z0+f.z1)/2, sl=f.x1-f.x0, sw=f.z1-f.z0;
+  var Lx=q(clamp(sl*1.15+1.8, 7.0, 10.0)), Wz=q(clamp(sw+2.8, 5.6, 7.2));
+  var yb = y0 + (sandbox ? 0.62 : 1.16);                       /* underside of the base: levelling feet / casters */
+  var topY=STAND.topY, xs=[cx-Lx/2+h, cx+Lx/2-h], zs=[cz-Wz/2+h, cz+Wz/2-h];
+  var px=[cx-Lx/2+1.0, cx+Lx/2-1.0];                            /* posts */
+  var rt=0.07;
+
+  /* base: side rails, end cross rails, a middle one under the tray */
+  for(j=0;j<2;j++) B.add(pk, RBOX(Lx, t, t, rt, 1/3), cx, yb+h, zs[j]);
+  for(i=0;i<2;i++) B.add(pk, RBOX(t, t*0.9, q(Wz-t*2), rt, 1/3), xs[i], yb+h, cz);
+  B.add(pk, RBOX(t*0.8, t*0.7, q(Wz-t*2), rt, 1/3), cx, yb+t*0.35, cz);
+  /* posts, top side rails, gussets where they meet (a square plate turned 45 degrees: only the corner triangle shows) */
+  var postH=q(topY-t-(yb+t)), railTop=yb+t, topBot=topY-t;
   for(i=0;i<2;i++) for(j=0;j<2;j++){
-    B.add(pk, BOX(0.95, topY-1.2, 0.95, 1/3), ux[i], (topY-1.2)/2+1.3, uz[j]);
+    B.add(pk, RBOX(t*0.9, postH, t*0.9, rt, 1/3), px[i], railTop+postH/2, zs[j]);
+    for(var sd=-1; sd<=1; sd+=2){
+      B.add(pk, BOX(0.62, 0.62, 0.07, 1/3), px[i]+sd*t*0.45, railTop, zs[j], 0,0,PI/4);
+      B.add(pk, BOX(0.62, 0.62, 0.07, 1/3), px[i]+sd*t*0.45, topBot, zs[j], 0,0,PI/4);
+    }
   }
-  for(i=0;i<2;i++){
-    B.add(pk, BOX(0.6, 0.6, d*0.86, 1/3), ux[i], topY*0.55, 0, 0.32, 0, 0);
+  var tL=q(px[1]-px[0]+t*2.2);
+  for(j=0;j<2;j++) B.add(pk, RBOX(tL, t, t, rt, 1/3), cx, topY-h, zs[j]);
+  B.add(pk, RBOX(t*0.8, t*0.8, q(Wz-t*2), rt, 1/3), px[0], topY-h, cz);        /* rear top cross tie */
+  /* braces: an X on each long side, one diagonal on each end */
+  var bR=0.12;
+  for(j=0;j<2;j++){
+    standStrut(B, pk, V(px[0]+h, railTop+0.15, zs[j]), V(px[1]-h, topBot-0.15, zs[j]), bR);
+    standStrut(B, pk, V(px[1]-h, railTop+0.15, zs[j]), V(px[0]+h, topBot-0.15, zs[j]), bR);
   }
-  /* top cradle */
-  B.add(pk, BOX(w+1.4, 0.85, 1.5, 1/3), 0, topY, -d*0.26);
-  B.add(pk, BOX(w+1.4, 0.85, 1.5, 1/3), 0, topY, d*0.26);
-  B.add("plate", BOX(w+1.0, 0.28, 2.6, 1/4), 0, topY+0.55, -d*0.26);
-  B.add("plate", BOX(w+1.0, 0.28, 2.6, 1/4), 0, topY+0.55, d*0.26);
-  /* rubber pads */
-  B.add("rubberFlat", BOX(w+0.6, 0.30, 1.9, 1/3), 0, topY+0.82, -d*0.26);
-  B.add("rubberFlat", BOX(w+0.6, 0.30, 1.9, 1/3), 0, topY+0.82, d*0.26);
-  /* casters */
-  var cx=[-w/2, w/2], cz=[-d/2+1.0, d/2-1.0];
+  for(i=0;i<2;i++) standStrut(B, pk, V(px[i], railTop+0.15, zs[0]+h), V(px[i], topBot-0.15, zs[1]-h), bR);
+
+  /* cradle: two cross members clamped on the top rails, under the front and back of the seat */
+  var reach=tL/2-0.55, mA=clamp(f.x0+sl*0.17, cx-reach, cx+reach), mB=clamp(f.x1-sl*0.17, cx-reach, cx+reach);
+  var padDz=Math.max(0.55, sw*0.32), padTop=f.y;
+  if(f.r) padTop = f.y + f.r - Math.sqrt(Math.max(0, f.r*f.r - padDz*padDz));   /* a round bottom: where it is padDz off its lowest line */
+  var padH=STAND.pad, beamH=0.42, beamTop=padTop-padH, cmTop=topY+0.55;
+  var sPostZ=Math.max(padDz+0.55, sw*0.5+0.35), sPostH=q(Math.max(0.1, beamTop-beamH-cmTop));
+  [mA,mB].forEach(function(mx){
+    B.add(pk, RBOX(0.62, 0.55, q(Wz+0.3), 0.06, 1/3), mx, topY+0.275, cz);     /* cross member */
+    for(j=0;j<2;j++){                                                          /* its clamp blocks and bolts on the rails */
+      B.add("steel", BOX(0.9, 0.16, 0.9, 1/3), mx, topY+0.04, zs[j]);
+      for(var cb=-1; cb<=1; cb+=2) B.add("steel", CYL(0.09,0.09,0.12,6,false,2), mx+cb*0.32, topY+0.16, zs[j]+0.3);
+    }
+    for(j=-1;j<=1;j+=2){                                                       /* saddle posts with their adjuster pins */
+      B.add(pk, RBOX(0.48, sPostH, 0.48, 0.05, 1/3), mx, cmTop+sPostH/2, cz+j*sPostZ);
+      B.add("steel", CYL(0.07,0.07,0.62,8,false,2), mx, cmTop+Math.min(sPostH*0.5, 0.35), cz+j*sPostZ, 0,0,PI/2);
+      B.add("steel", CYL(0.13,0.13,0.08,6,false,2), mx+0.31, cmTop+Math.min(sPostH*0.5, 0.35), cz+j*sPostZ, 0,0,PI/2);
+    }
+    B.add("steel", RBOX(0.66, beamH, q(sPostZ*2+0.6), 0.05, 1/3), mx, beamTop-beamH/2, cz);   /* saddle beam */
+    for(j=-1;j<=1;j+=2){
+      B.add("steel", BOX(0.86, 0.06, 0.86, 1/3), mx, beamTop+0.03, cz+j*padDz);              /* pad plate */
+      B.add("rubberFlat", RBOX(0.78, padH-0.06, 0.78, 0.08, 1/3), mx, beamTop+0.06+(padH-0.06)/2, cz+j*padDz);
+    }
+  });
+
+  /* drip tray on the base cross rails: a shallow pan with a lip */
+  var dL=q(Lx-0.9), dW=q(Wz-t*2-0.1), dy=yb+t*0.9+0.04;
+  B.add("dark", BOX(dL, 0.06, dW, 1/6), cx, dy, cz);
+  B.add("dark", BOX(dL, 0.26, 0.06, 1/6), cx, dy+0.13, cz-dW/2);
+  B.add("dark", BOX(dL, 0.26, 0.06, 1/6), cx, dy+0.13, cz+dW/2);
+  B.add("dark", BOX(0.06, 0.26, dW, 1/6), cx-dL/2, dy+0.13, cz);
+  B.add("dark", BOX(0.06, 0.26, dW, 1/6), cx+dL/2, dy+0.13, cz);
+
+  /* feet */
   for(i=0;i<2;i++) for(j=0;j<2;j++){
-    B.add("steel", BOX(0.7,0.7,0.7,1/2), cx[i], 0.45, cz[j]);
-    B.add("rubberFlat", CYL(0.45,0.45,0.34,14,false,2.0), cx[i], 0.45, cz[j], 0,0,PI/2);
+    var fx=xs[i], fz=zs[j];
+    if(sandbox){
+      /* levelling foot: plate, threaded rod and lock nut, rubber-faced pad; a hold-down clamp to the bedplate T-slot beside it */
+      B.add("steel", BOX(0.9, 0.08, 0.9, 1/3), fx, yb-0.04, fz);
+      B.add("steel", CYL(0.2,0.2,0.12,6,false,2), fx, yb-0.14, fz);
+      B.add("steel", CYL(0.08,0.08,0.38,8,false,2), fx, y0+0.27, fz);
+      B.add("steel", CYL(0.36,0.4,0.1,16,false,2), fx, y0+0.13, fz);
+      B.add("rubberFlat", CYL(0.4,0.4,0.08,16,false,2), fx, y0+0.04, fz);
+      var cs=(j?1:-1);
+      B.add("dark", BOX(0.34, 0.12, 0.9, 1/3), fx, yb-0.02, fz+cs*0.75);
+      B.add("steel", CYL(0.07,0.07,0.7,8,false,2), fx, y0+0.25, fz+cs*0.95);
+      B.add("steel", CYL(0.15,0.15,0.1,6,false,2), fx, yb+0.1, fz+cs*0.95);
+      B.add("dark", BOX(0.4, yb-y0-0.04, 0.3, 1/3), fx, (yb+y0)/2-0.04, fz+cs*1.22);
+    } else {
+      /* swivel caster: top plate, swivel race, fork, wheel on its axle; the front pair have a brake pedal */
+      B.add("steel", BOX(0.86, 0.08, 0.86, 1/3), fx, yb-0.04, fz);
+      B.add("steel", CYL(0.32,0.34,0.12,16,false,2), fx, yb-0.14, fz);
+      var tr=(i?-0.12:0.12);
+      for(var fk=-1; fk<=1; fk+=2) B.add("steel", BOX(0.5, 0.62, 0.06, 1/3), fx+tr, yb-0.5, fz+fk*0.21);
+      B.add("steel", BOX(0.5, 0.06, 0.48, 1/3), fx+tr*0.5, yb-0.22, fz);
+      B.add("rubberFlat", CYL(0.42,0.42,0.3,18,false,2), fx+tr, y0+0.42, fz, PI/2,0,0);
+      B.add("steel", CYL(0.2,0.2,0.33,12,false,2), fx+tr, y0+0.42, fz, PI/2,0,0);
+      B.add("steel", CYL(0.07,0.07,0.52,6,false,2), fx+tr, y0+0.42, fz, PI/2,0,0);
+      if(i===1) B.add("paintOrange", BOX(0.42, 0.07, 0.3, 1/3), fx+0.48, yb-0.3, fz, 0,0,-0.35);
+    }
   }
-  /* drip tray */
-  B.add("steel", BOX(w+2.4, 0.18, d*0.7, 1/4), 0, 0.10, 0);
+
+  /* kill switch box on the front post, the cell's lead to the engine coiled on a hook */
+  var kx=px[1], kz=zs[1]+h+0.26, ky=railTop+postH*0.55;
+  B.add("blackPlast", RBOX(0.9, 1.1, 0.5, 0.08, 1/3), kx, ky, kz);
+  B.add("filterRed", CYL(0.2,0.24,0.18,14,false,2), kx, ky+0.18, kz+0.32, PI/2,0,0);
+  B.add("paintOrange", BOX(0.5, 0.12, 0.04, 1/3), kx, ky-0.3, kz+0.27);
+  B.add("steel", CYL(0.05,0.05,0.5,6,false,2), px[0], ky, zs[1]+h+0.25, PI/2,0,0);
+  B.add("rubberFlat", TOR(0.36, 0.05, 6, 20, 2), px[0], ky-0.3, zs[1]+h+0.45, 0,0,0);
+}
+/* a round brace tube from a to b */
+function standStrut(B, key, a, b, r){
+  var d=new THREE.Vector3().subVectors(b,a), L=Math.round(d.length()*10)/10;
+  var m=new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize()), new THREE.Vector3(1,1,1));
+  B.addM(key, CYL(r, r, L, 10, false, 1/3), m);
+}
+/* the test cell's dyno bedplate (and photo mode's, photo.js): a cast-iron plate with machined T-slots on a painted plinth and
+   four isolation mounts; its top is at 1.2, where the stand's levelling feet stand */
+function buildDynoBed(B){
+  B.add("panel", RBOX(17.2, 0.72, 27.2, 0.12, 1/6), 0, 0.36, 0);               /* plinth */
+  B.add("iron", RBOX(16.0, 0.5, 26.0, 0.05, 1/4), 0, 0.95, 0);                 /* bedplate */
+  for(var ts=0; ts<7; ts++){                                                   /* T-slots: a dark slot with bright machined lips */
+    B.add("blackPlast", BOX(0.36, 0.03, 25.4, 1/4), -6.0+ts*2.0, 1.2, 0);
+    B.add("malu", BOX(0.08, 0.035, 25.4, 1/4), -6.22+ts*2.0, 1.2, 0);
+    B.add("malu", BOX(0.08, 0.035, 25.4, 1/4), -5.78+ts*2.0, 1.2, 0);
+  }
+  for(var c=0;c<4;c++){                                                        /* isolation mounts at the corners */
+    var mx=(c%2?1:-1)*7.6, mz=(c<2?1:-1)*12.4;
+    B.add("rubberFlat", CYL(0.55,0.62,0.3,14,false,2), mx, 0.15, mz);
+    B.add("steel", CYL(0.2,0.2,0.1,6,false,2), mx, 1.25, mz);
+  }
 }
 
 function buildShop(B, G, addLight, W, D, Hh, owned, bay){
@@ -265,13 +367,8 @@ function buildTestCell(B, G, addLight, W, D, Hh){
   /* cable tray to the engine */
   B.add("panel", BOX(1.6, 0.35, 14, 1/6), rx-4.2, 0.4, -8);
 
-  /* dyno bed under the stand */
-  B.add("plate", BOX(16, 1.2, 26, 1/4), 0, 0.6, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6), -6.6, 2.4, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6),  6.6, 2.4, 0);
-  /* T-slots */
-  for(var ts=0; ts<7; ts++)
-    B.add("blackPlast", BOX(0.5, 0.3, 25, 1/4), -6.0+ts*2.0, 1.25, 0);
+  /* dyno bedplate under the stand */
+  buildDynoBed(B);
 
   /* extraction hood overhead */
   B.add("panel", CONE(1.8, 4.4, 4.0, 20, 1/8), W*0.34, Hh-6.4, -14);

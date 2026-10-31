@@ -2,7 +2,13 @@
    7e. FRONT ACCESSORY DRIVE
    One serpentine plane (beltX) in front of the timing cover (tcF); accessory bodies
    live between the two. Every pulley on the loop is on the belt's ribbed side, so it
-   turns the same way as the crank at k = crank belt radius / its belt radius.
+   turns the same way as the crank at k = crank belt radius / its belt radius, both
+   measured to the belt's centre line (bp: the Lite round belt and the Full flat belt
+   sit at different heights), so pulley rims and the belt's print move together.
+   Every pulley carries a paint stripe (paintMark) so you can see it turn; the small
+   fast ones (alternator, idlers) have a centre nut, not a ring of bolts that strobes.
+   A blower or a centrifugal supercharger runs on a belt of its own off a second crank
+   pulley ahead of the damper, so the serpentine is the same loop on every engine.
    ==========================================================================*/
 function buildFAD(B, p, extras){
   var bore=p.bore, bankLen=p.bankLen, caseW=p.caseW, caseH=p.caseH, L=p.L, deckH=p.deckH;
@@ -10,6 +16,7 @@ function buildFAD(B, p, extras){
   var tcF   = bankLen*0.5 + bore*0.16;      /* timing-cover front face */
   var beltX = bankLen*0.5 + bore*0.78;      /* the serpentine plane */
   var bt    = bore*0.045;                   /* belt tube radius */
+  var bp    = DET ? bore*0.025 : bt;        /* belt centre line above a pulley rim: half the flat belt (Full), the tube radius (Lite) */
   var cool  = pick(p.cfg.cooling,"std");
   var i, j;
 
@@ -34,11 +41,13 @@ function buildFAD(B, p, extras){
     var nDb = p.damper==="none" ? 3 : 6, rDb = dR*(p.damper==="none"?0.55:0.36);
     for(i=0;i<nDb;i++){ var aDb=i/nDb*TAU; steelItems.push({g:CYL(bore*0.036,bore*0.036,bore*0.03,6,false,6), m:mkM(dW*0.5+(p.damper!=="none"?dW*0.15:0)+bore*0.012, Math.cos(aDb)*rDb, Math.sin(aDb)*rDb, 0,0,PI/2)}); }
     steelItems.push({g:CYL(bore*0.075,bore*0.075,bore*0.05,6,false,6), m:mkM(dW*0.5+(p.damper!=="none"?dW*0.15:0)+bore*0.025,0,0,0,0,PI/2)});
-    steelItems.push({g:BOX(dW*0.7, bore*0.012, bore*0.03, 8), m:mkM(0, dR+bore*0.004, 0)});
     /* grooved crank belt track round the rim */
     for(i=0;i<4;i++) steelItems.push({g:TOR(dR, bore*0.008, 4, 36, 4), m:mkM(-dW*0.30+i*dW*0.2, 0,0, 0,PI/2,0)});
   }
   damper.add(new THREE.Mesh(mergeGeos(steelItems), MAT.steel));
+  /* timing mark: a painted line across the rim and on round onto the front face (every tier: it is how the damper shows it turns) */
+  var tmk=new THREE.Mesh(new THREE.BoxGeometry(dW*0.72, bore*0.010, bore*0.032), MAT.paintMark); tmk.position.set(0, dR+bore*0.004, 0); damper.add(tmk);
+  paintMark(damper, dW*0.5, dR*(p.damper==="none"?0.70:0.66), dR*0.98);
   if(p.damper==="rubber"){
     /* the bonded elastomer ring shows as a black line between hub and inertia ring */
     var rub=new THREE.Mesh(TOR(dR*0.60, dW*0.10, 6, 30, 2.4), MAT.rubberFlat); rub.rotation.y=PI/2; rub.position.x=dW*0.5; damper.add(rub);
@@ -46,9 +55,9 @@ function buildFAD(B, p, extras){
   damper.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
   damper.position.set(beltX, 0, 0); damper.userData.isDamper=true;
   extras.push(damper); anim.spin.push({o:damper, axis:"x", k:1});
-  var Rc=dR+bt;                               /* belt pitch radius on the crank */
+  var Rc=dR+bp;                               /* belt centre-line radius on the crank */
   var serp=[{y:0, z:0, r:dR, side:1}];
-  function spinK(r){ return Rc/(r+bt); }
+  function spinK(r){ return Rc/(r+bp); }
 
   /* ---- layout of the serpentine ---- */
   var altY = (ve||bx) ? caseH*1.15 : deckH*0.62;
@@ -75,7 +84,7 @@ function buildFAD(B, p, extras){
   }
   B.add("steel", CYL(bore*0.10,bore*0.10,bore*0.12,10), beltX-bore*0.08, altY, altZ, 0,0,PI/2);             /* shaft nose */
   B.add("calu", BOX(bore*0.08, bore*0.26, Math.abs(altZ)*0.55), tcF+bore*0.04, altY-bore*0.10, altZ*0.62);  /* mounting ear */
-  var altP=pulleyMesh(bore*0.22, bore*0.14, null, {fan:true}); altP.position.set(beltX, altY, altZ);
+  var altP=pulleyMesh(bore*0.22, bore*0.14, null, {fan:true, bolts:0}); altP.position.set(beltX, altY, altZ);
   extras.push(altP); anim.spin.push({o:altP, axis:"x", k:spinK(bore*0.22)});
   serp.push({y:altY, z:altZ, r:bore*0.22, side:1});
 
@@ -97,19 +106,41 @@ function buildFAD(B, p, extras){
     for(i=0;i<3;i++) pitems.push({g:TOR(wpR*(0.62+i*0.10), bore*0.012, 6, 28, 1.6),
         m:new THREE.Matrix4().compose(V3(bore*0.075,0,0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0,PI/2,0)), V3(1,1,1))});
     var wpp=new THREE.Mesh(mergeGeos(pitems), MAT.steel); wpp.castShadow=true; wpp.receiveShadow=true;
+    paintMark(wpp, bore*0.085, wpR*0.30, wpR*0.95);   /* over the rings */
     wpp.position.set(beltX, wpY, wpZ); extras.push(wpp); anim.spin.push({o:wpp, axis:"x", k:spinK(wpR)});
     serp.push({y:wpY, z:wpZ, r:wpR, side:1});
   } else {
     wpR=bore*0.20;
     B.add("calu", CYL(bore*0.12,bore*0.12,beltX-tcF,10), (beltX+tcF)/2-bore*0.05, wpY, wpZ, 0,0,PI/2);
-    var wpi=pulleyMesh(wpR, bore*0.13); wpi.position.set(beltX, wpY, wpZ);
+    var wpi=pulleyMesh(wpR, bore*0.13, null, {bolts:0}); wpi.position.set(beltX, wpY, wpZ);
     extras.push(wpi); anim.spin.push({o:wpi, axis:"x", k:spinK(wpR)});
     serp.push({y:wpY, z:wpZ, r:wpR, side:1});
     B.add("dark", CYL(bore*0.24,bore*0.24,bore*0.55,14), bankLen*0.30, bx? p.panTop-bore*0.35 : p.panTop+bore*0.55, bx? caseW*0.30 : caseW*0.5+bore*0.30, 0,0,PI/2);  /* electric pump */
   }
 
-  /* centrifugal head unit: pulley on the belt, step-up gearbox, volute behind with the inlet facing forward */
+  /* spring tensioner on the exhaust side */
   var cd = p.aspInfo && p.aspInfo.crankDriven;
+  var pvY=tnY+bore*0.34, pvZ=tnZ-bore*0.30;
+  B.add("calu", CYL(bore*0.12,bore*0.12,beltX-tcF-bore*0.06,12), (beltX-bore*0.06+tcF)/2, pvY, pvZ, 0,0,PI/2);
+  var dy=tnY-pvY, dz=tnZ-pvZ, al=Math.sqrt(dy*dy+dz*dz);
+  B.add("calu", BOX(bore*0.07, bore*0.14, al), beltX-bore*0.11, (pvY+tnY)/2, (pvZ+tnZ)/2, Math.atan2(-dy,dz),0,0);
+  if(DET){
+    /* the torsion spring coiled round the pivot, its anchor tang, and the pivot bolt */
+    var spR=bore*0.15, spPts=[], nTurn=3.2, sx0=tcF+bore*0.10, sx1=beltX-bore*0.18;
+    for(i=0;i<=40;i++){ var fs=i/40, as=fs*nTurn*TAU; spPts.push(V3(sx0+(sx1-sx0)*fs, pvY+Math.cos(as)*spR, pvZ+Math.sin(as)*spR)); }
+    B.addW("steel", TUBE(spPts, bore*0.018, 90, 5));
+    B.add("calu", CYL(bore*0.20,bore*0.20,bore*0.04,16), sx1+bore*0.03, pvY, pvZ, 0,0,PI/2);
+    B.add("calu", BOX(bore*0.05,bore*0.12,bore*0.05), sx0+bore*0.02, pvY-spR-bore*0.04, pvZ);
+    B.hw("hex", beltX-bore*0.06, pvY, pvZ, 0,0,-PI/2, bore*0.10);
+  }
+  var idl=pulleyMesh(tnR, bore*0.13, null, {bolts:0}); idl.position.set(beltX, tnY, tnZ);
+  extras.push(idl); anim.spin.push({o:idl, axis:"x", k:spinK(tnR)});
+  serp.push({y:tnY, z:tnZ, r:tnR, side:1});
+  extras.push(beltMesh(beltX, serp, bt, bt, {w:bore*0.12}));
+
+  /* ---- centrifugal head unit: step-up gearbox and volute behind the belt plane on the exhaust side, inlet facing forward,
+     driven as the kits do it, by its own belt off a second crank pulley ahead of the damper. (On the serpentine its pulley sat
+     level with the alternator and the water pump fell inside the loop between them: the belt was drawn wrapped right round it.) ---- */
   if(cd && cd.kind==="centri"){
     var s=bore*0.92, hz=caseW*0.44+bore*0.34, hy=altY, cpR=bore*0.26;
     var vx=tcF+s*0.22, vy=hy+cpR+bore*0.12+s*0.56;
@@ -117,40 +148,28 @@ function buildFAD(B, p, extras){
     B.add("malu", BOX(bore*0.08, bore*0.30, hz*0.55), tcF+bore*0.04, hy, hz*0.62);                       /* bracket to the front cover */
     var sOut=buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
     if(cd.cout) cd.cout.push(sOut);
-    var cp=pulleyMesh(cpR, bore*0.15); cp.position.set(beltX, hy, hz);
-    extras.push(cp); anim.spin.push({o:cp, axis:"x", k:spinK(cpR)});
-    serp.push({y:hy, z:hz, r:cpR, side:1});
-  } else {
-    /* spring tensioner on the exhaust side */
-    var pvY=tnY+bore*0.34, pvZ=tnZ-bore*0.30;
-    B.add("calu", CYL(bore*0.12,bore*0.12,beltX-tcF-bore*0.06,12), (beltX-bore*0.06+tcF)/2, pvY, pvZ, 0,0,PI/2);
-    var dy=tnY-pvY, dz=tnZ-pvZ, al=Math.sqrt(dy*dy+dz*dz);
-    B.add("calu", BOX(bore*0.07, bore*0.14, al), beltX-bore*0.11, (pvY+tnY)/2, (pvZ+tnZ)/2, Math.atan2(-dy,dz),0,0);
-    if(DET){
-      /* the torsion spring coiled round the pivot, its anchor tang, and the pivot bolt */
-      var spR=bore*0.15, spPts=[], nTurn=3.2, sx0=tcF+bore*0.10, sx1=beltX-bore*0.18;
-      for(i=0;i<=40;i++){ var fs=i/40, as=fs*nTurn*TAU; spPts.push(V3(sx0+(sx1-sx0)*fs, pvY+Math.cos(as)*spR, pvZ+Math.sin(as)*spR)); }
-      B.addW("steel", TUBE(spPts, bore*0.018, 90, 5));
-      B.add("calu", CYL(bore*0.20,bore*0.20,bore*0.04,16), sx1+bore*0.03, pvY, pvZ, 0,0,PI/2);
-      B.add("calu", BOX(bore*0.05,bore*0.12,bore*0.05), sx0+bore*0.02, pvY-spR-bore*0.04, pvZ);
-      B.hw("hex", beltX-bore*0.06, pvY, pvZ, 0,0,-PI/2, bore*0.10);
-    }
-    var idl=pulleyMesh(tnR, bore*0.13); idl.position.set(beltX, tnY, tnZ);
-    extras.push(idl); anim.spin.push({o:idl, axis:"x", k:spinK(tnR)});
-    serp.push({y:tnY, z:tnZ, r:tnR, side:1});
+    var xC=beltX+dW*0.62+bore*0.16, rCC=bore*0.40, pC=DET ? bore*0.025 : bt;
+    B.add("steel", CYL(bore*0.20,bore*0.20, xC-(beltX+dW*0.5), 14), (xC+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer on the damper */
+    B.add("steel", CYL(bore*0.07,bore*0.07, xC-(beltX-bore*0.09), 10), (xC+beltX-bore*0.09)/2, hy, hz, 0,0,PI/2);   /* gearbox input shaft */
+    var ccp=pulleyMesh(rCC, bore*0.15, null, {bolts:6}); ccp.position.set(xC, 0, 0); extras.push(ccp); anim.spin.push({o:ccp, axis:"x", k:1});
+    var cp=pulleyMesh(cpR, bore*0.15, null, {bolts:0}); cp.position.set(xC, hy, hz); extras.push(cp); anim.spin.push({o:cp, axis:"x", k:(rCC+pC)/(cpR+pC)});
+    extras.push(beltMesh(xC, [{y:0,z:0,r:rCC,side:1},{y:hy,z:hz,r:cpR,side:1}], bt, bt, {w:bore*0.12}));
   }
-  extras.push(beltMesh(beltX, serp, bt, bt, {w:bore*0.12}));
 
   /* ---- Roots / screw blower: its own cogged belt in a plane ahead of the damper ---- */
   if(cd && cd.kind==="blower"){
-    var xB=beltX+dW*0.62+bore*0.16, rCB=bore*0.50, rB=Math.max(bore*0.15, rCB/cd.ratio), rI=bore*0.15;
+    var xB=beltX+dW*0.62+bore*0.16, rCB=bore*0.50, rB=Math.max(bore*0.15, rCB/cd.ratio), rI=bore*0.15, pB=DET ? bore*0.0225 : bore*0.02;
     B.add("steel", CYL(bore*0.22,bore*0.22, xB-(beltX+dW*0.5), 14), (xB+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer */
     var cbp=pulleyMesh(rCB, bore*0.20, null, {cog:true, bolts:6}); cbp.position.set(xB,0,0); extras.push(cbp); anim.spin.push({o:cbp, axis:"x", k:1});
     if(xB>cd.snoutX) B.add("malu", CYL(bore*0.16,bore*0.20, xB-cd.snoutX, 14), (xB+cd.snoutX)/2-bore*0.06, cd.y, cd.z, 0,0,PI/2);  /* snout extension */
-    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:rCB/rB});
-    var iy=cd.y*0.52, iz=cd.z*0.5 + (rCB+rB)*0.5 + bore*0.30;
-    B.add("malu", BOX(bore*0.08, cd.y-iy+bore*0.20, bore*0.26), xB-bore*0.16, (cd.y+iy)/2, (cd.z+iz)/2+bore*0.05);   /* idler bracket off the snout */
-    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:rCB/rI});
+    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:(rCB+pB)/(rB+pB)});
+    /* idler: out to the side of the crank-to-blower line, square to it, so it always pushes the belt outward. (It used to sit off the
+       centreline by a fixed sideways step; a rotary's blower sits off to one side, the idler fell inside the loop and the belt was
+       drawn wrapped right round it.) */
+    var bL=Math.sqrt(cd.y*cd.y+cd.z*cd.z)||1, nz=cd.y/bL, ny=-cd.z/bL, off=(rCB+rB)*0.5+bore*0.30;
+    var iy=cd.y*0.5+ny*off, iz=cd.z*0.5+nz*off, ady=cd.y-iy, adz=cd.z-iz, aL=Math.sqrt(ady*ady+adz*adz);
+    B.add("malu", BOX(bore*0.08, aL+bore*0.20, bore*0.26), xB-bore*0.16, (cd.y+iy)/2, (cd.z+iz)/2, Math.atan2(adz,ady),0,0);   /* idler bracket off the snout */
+    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:(rCB+pB)/(rI+pB)});
     extras.push(beltMesh(xB, [{y:0,z:0,r:rCB,side:1},{y:cd.y,z:cd.z,r:rB,side:1},{y:iy,z:iz,r:rI,side:1}], bore*0.02, bore*0.055, {w:bore*0.17, t:bore*0.045, cog:bore*0.06}));
   }
 
@@ -166,7 +185,7 @@ function buildFAD(B, p, extras){
     var xD=tcF+bore*0.14, rPD=bore*0.24;
     B.add("steel", CYL(bore*0.08,bore*0.08,xD-pFront+bore*0.04,10), (xD+pFront)/2, pY, pZ, 0,0,PI/2);
     var dcp=pulleyMesh(bore*0.26, bore*0.12, null, {cog:true, bolts:0}); dcp.position.set(xD,0,0); extras.push(dcp); anim.spin.push({o:dcp, axis:"x", k:1});
-    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:(bore*0.26)/rPD});
+    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:(bore*0.28)/(rPD+bore*0.02)});   /* belt centre line 0.02 bore above both rims */
     extras.push(beltMesh(xD, [{y:0,z:0,r:bore*0.26,side:1},{y:pY,z:pZ,r:rPD,side:1}], bore*0.02, bore*0.04, {w:bore*0.10, t:bore*0.04, cog:bore*0.06}));
     /* remote tank + lines */
     var tX = bx ? -(bankLen*0.5+bore*0.95) : -bankLen*0.12;

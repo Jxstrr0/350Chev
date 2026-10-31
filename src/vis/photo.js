@@ -49,15 +49,15 @@ function phRestoreStandLights(s){
   phLightPut(hemi,s.h); phLightPut(keyLight,s.k); phLightPut(fillLight,s.f); phLightPut(rimLight,s.r);
   renderer.toneMappingExposure=s.ex; s.gl.forEach(function(p){ p[0].intensity=p[1]; });
 }
-/* the stand, the dyno bed and a floor on their own (the garage group is hidden for any backdrop but "garage") */
+/* a floor on its own, and in the test cell the dyno bedplate (the garage group is hidden for any backdrop but "garage"; the stand is
+   not in it, api.js fitStand keeps it under the engine either way) */
 function phBuildGroup(){
-  if(PH.group) return PH.group;
+  var sb=!!lastOwned.sandbox;
+  if(PH.group && PH.group.userData.sb===sb) return PH.group;
+  if(PH.group){ disposeTree(PH.group); scene.remove(PH.group); }
   var g=new THREE.Group(), B=new Builder();
-  buildStand(B, !!lastOwned.sandbox);
-  B.add("plate", BOX(16, 1.2, 26, 1/4), 0, 0.6, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6), -6.6, 2.4, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6),  6.6, 2.4, 0);
-  for(var ts=0; ts<7; ts++) B.add("blackPlast", BOX(0.5, 0.3, 25, 1/4), -6.0+ts*2.0, 1.25, 0);
+  g.userData.sb=sb;
+  if(sb) buildDynoBed(B);
   B.flush(g, {}, true);
   var fl=new THREE.Mesh(new THREE.CircleGeometry(150, 48), new THREE.MeshStandardMaterial({color:0x888888, roughness:0.9, metalness:0}));
   fl.rotation.x=-PI/2; fl.receiveShadow=true; fl.name="photoFloor"; g.add(fl);

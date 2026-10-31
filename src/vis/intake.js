@@ -907,8 +907,10 @@ function flatBeltGeo(x, pl, o){
 }
 /* belt texture u counts crank-pulley angle (BELT_UV per radian at the pulley it is cut for, pl[0], the crank in every caller),
    rounded to whole repeats so the loop has no seam: scrolling the map by BELT_UV x crank angle (loop.js) then moves every belt
-   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. */
-var BELT_UV = 1.5;
+   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. 0.75 puts the print about 1.3 crank radians
+   apart, so at the fastest the frame loop draws (VIS_SPIN, ~0.3 rad a frame) it moves a quarter of the gap a frame and reads as
+   running forward; at 1.5 it moved nearly half the gap and could look like it was creeping backwards. */
+var BELT_UV = 0.75;
 function beltUvU(a, len, R0){
   var rep=Math.max(1, Math.round(len/R0*BELT_UV)), i, n=a.count;
   for(i=0;i<n;i++) a.setX(i, a.getX(i)*rep);
@@ -921,10 +923,19 @@ function pulleyMesh(r, w, mat, o){
              {g:CYL(r*1.10,r*1.10,w*0.12,26,false,2.4), m:new THREE.Matrix4().compose(V3( w*0.47,0,0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,PI/2)), V3(1,1,1))},
              {g:CYL(r*1.10,r*1.10,w*0.12,26,false,2.4), m:new THREE.Matrix4().compose(V3(-w*0.47,0,0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,PI/2)), V3(1,1,1))},
              {g:CYL(r*0.30,r*0.30,w*1.3,12,false,2.4), m:new THREE.Matrix4().makeRotationZ(PI/2)}];
-  var m=new THREE.Mesh(mergeGeos(items), mat||MAT.steel); m.castShadow=true; m.receiveShadow=true; return m;
+  var m=new THREE.Mesh(mergeGeos(items), mat||MAT.steel); m.castShadow=true; m.receiveShadow=true;
+  if(!o || o.mark!==false) paintMark(m, w*0.53, r*0.36, r*0.95);
+  return m;
+}
+/* a pale paint stripe across a pulley's front face, the torque mark an engine builder pens on: the one thing on a turned
+   pulley that is not the same all the way round, so its turning shows. One stripe repeats once a turn, so at the speeds
+   loop.js draws (VIS_SPIN) it never strobes the way a ring of bolts does. A child of the spinning mesh: it turns with it. */
+function paintMark(m, x, r0, r1){
+  var b=DCTX?DCTX.bore:1, k=new THREE.Mesh(new THREE.BoxGeometry(b*0.008, r1-r0, b*0.032), MAT.paintMark);
+  k.position.set(x+b*0.004, (r0+r1)/2, 0); m.add(k); return k;
 }
 /* Full / Ultra pulley: lathe-turned body with flanges, poly-V grooves (or cog teeth) where the belt runs, a hub boss
-   and bolt heads (they spin with it). o: {cog, bolts, fan} */
+   and bolt heads (they spin with it). o: {cog, bolts, fan, mark:false = no paint stripe} */
 function pulleyHi(r, w, mat, o){
   var b=DCTX.bore, V2=function(x,y){ return new THREE.Vector2(x,y); }, i, pr=[], ribs=o.cog?0:5, gd=Math.min(r*0.05, b*0.012);
   pr.push(V2(0.001, w*0.62), V2(r*0.30, w*0.62), V2(r*0.34, w*0.50), V2(r*0.80, w*0.50), V2(r*0.86, w*0.44),
@@ -939,11 +950,13 @@ function pulleyHi(r, w, mat, o){
     for(i=0;i<nT;i++){ var an=i/nT*TAU; items.push({g:BOX(w*0.72, b*0.022, b*0.028, 6), m:mkM(0, Math.cos(an)*(r+b*0.008), Math.sin(an)*(r+b*0.008), an,0,0)}); } }
   var nb=o.bolts===undefined ? (r>b*0.3?4:3) : o.bolts;
   for(i=0;i<nb;i++){ var ab=i/nb*TAU+0.3, rb=r*(r>b*0.3?0.44:0.52);
-    items.push({g:CYL(b*0.034,b*0.034,b*0.03,6,false,6), m:mkM(w*0.62+b*0.012, Math.cos(ab)*rb, Math.sin(ab)*rb, 0,0,PI/2)}); }
+    items.push({g:CYL(b*0.034,b*0.034,b*0.03,6,false,6), m:mkM(w*0.50+b*0.015, Math.cos(ab)*rb, Math.sin(ab)*rb, 0,0,PI/2)}); }   /* heads on the web face */
   items.push({g:CYL(b*0.05,b*0.05,b*0.04,6,false,6), m:mkM(w*0.62+b*0.02, 0,0, 0,0,PI/2)});   /* centre nut */
   if(o.fan){ /* alternator cooling fan between pulley and case */
     var nf=10; for(i=0;i<nf;i++){ var af=i/nf*TAU; items.push({g:BOX(b*0.022, b*0.12, b*0.028, 6), m:mkM(-w*0.62-b*0.016, Math.cos(af)*r*1.08, Math.sin(af)*r*1.08, af+0.35,0,0)}); }
     items.push({g:CYL(r*0.62,r*0.62,b*0.012,20,false,6), m:mkM(-w*0.62-b*0.016,0,0,0,0,PI/2)}); }
-  var m=new THREE.Mesh(mergeGeos(items), mat||MATHI.lathe||MAT.steel); m.castShadow=true; m.receiveShadow=true; return m;   /* turned steel: rings round the axis, not brushed streaks */
+  var m=new THREE.Mesh(mergeGeos(items), mat||MATHI.lathe||MAT.steel); m.castShadow=true; m.receiveShadow=true;   /* turned steel: rings round the axis, not brushed streaks */
+  if(o.mark!==false) paintMark(m, w*0.50, r*0.36, r*0.78);
+  return m;
 }
 
