@@ -11,7 +11,7 @@ A physics-based engine builder with a career mode, by Longlight Interactive. The
 1. **Build.** Pick a layout and set 73 settings (`DEFAULT_CFG`): bore and stroke, materials, pistons, rods, crank, valvetrain, induction, boost, exhaust, fuel, launch control, oiling, cooling, sealing and finish. A 3D engine on a stand follows every choice.
 2. **Test.** Run a dyno pull, an endurance run to failure or an over-rev test (`DYNO_T`). Read power and torque curves, the verdict, the failure that stopped it, and the engineer's notes.
 3. **Race.** Take the engine to an event. Each one has its own time-stepped sim, classes, rivals, a 3D scene and a live HUD.
-4. **Career.** Certify engines on the dyno, take contracts, sell to market segments, pay crew, buy upgrades, chase reputation. Or skip the money in the Test cell (sandbox) and build anything. Or play **Pit Crew**: supply one race team's engines for an 8-round season and let race day judge them.
+4. **Career.** Supply one race team's engines a season at a time, race your own engines at the events for purses and rep, pay crew, buy upgrades, chase reputation. Or skip the money in the Test cell (sandbox) and build anything.
 
 The results rail (`app/rail.js`) keeps build, dyno and verdict in sight so the build-dyno-build loop never leaves the tab: a third column on desktop, a peek sheet over the tab bar on a phone.
 
@@ -20,21 +20,22 @@ The results rail (`app/rail.js`) keeps build, dyno and verdict in sight so the b
 The intro screen (`html/body.html`) asks for a layout, Phone or Desktop, then a mode:
 
 - **Test cell**: everything unlocked, no money, for testing theories.
-- **Career**: $20,000, a chassis dyno and five stock starter engines. Sell certified engines, survive warranty claims, grow.
-- **Pit Crew** (`app/pitcrew.js`, 1.76.31.0; seasons since 1.76.32.0): you are the engine supplier for one team over an 8-round season. Each season three teams offer a contract: a driver with a style (steady hand, hot shoe, rookie, veteran), one series for the whole season (street, gasser, outlaw radial, pro stock or pro mod drags, or a Street Stock, Late Model or Open oval on clay or pavement) and one parts budget for the season. The first build comes out of that budget; after it, an engine change (15% teardown plus any parts that cost more), a freshen-up (15% of the engine) or a rebuild after a breakage (30%) comes out of what is left. Each round wears the engine (reliability drops 4 points a round, more for a hot shoe). Race day is auto-simulated through the real drag and oval physics against the series' fixed rivals, who find a little more power every round; every car scores points (drag 20/14/9/4, oval 20 down to 2). After round 8 the championship pays a title bonus and rep, and a top-two finish brings the same team back with 20% more money. Rep opens the bigger classes. Pit Crew plays by test-cell rules: every part is open.
+- **Career**: $20,000, a chassis dyno and five stock starter engines. Build engines for race teams a season at a time, race the events, grow the shop.
+
+Until 1.76.32 there was a third mode, Pit Crew; since 1.76.33.0 its team seasons are the heart of the career (below), and a Pit Crew save opens as a fresh career with its titles in the log. Careers from before 1.76.33.0 (contracts, the buyer market, warranty, build bays, Dyno day) also start fresh.
 
 An onboarding tour and "First Fire" walk a new player through the first engine (`app/help.js`). The help file also holds a tap-to-explain glossary and 17 guided lessons (`LESSONS`).
 
 ## Screens
 
-Six tabs (`#tab-*` in `html/body.html`): **Build**, **Test**, **Events**, **Analysis**, **Market**, **Shop**.
+Six tabs (`#tab-*` in `html/body.html`): **Build**, **Test**, **Events**, **Analysis**, **Team**, **Shop**.
 
 - **Build**: 14 accordion groups (`FORM`): Engine layout, Bore & stroke, Rotors & housings, Block & head materials, Pistons & rings, Rods & crank, Valvetrain, Induction & boost, Exhaust system, Fuel & tune, Launch control, Lubrication & cooling, Sealing, Finish. Base-engine list (presets), blueprints, and Build > Swap for putting the engine in a car.
 - **Test**: the dyno. Environment panel (ambient, altitude), the three tests, charts, the dyno tune map editor.
 - **Events**: a chip picker for the ten events, then Setup, Advanced and Results panes. Running an event turns the page into the run view (`app/runview.js`): the 3D scene fills the screen with a live HUD.
 - **Analysis**: combo interactions (part pairings that help or hurt), telemetry, achievements, records, the teardown panel after a failure.
-- **Market** (career): jobs (contracts), sponsors and rivals, the shop's reputation board, Close week.
-- **Shop**: in career, upgrades, staff, R&D, prestige items, build bays, Dyno day, Saves. In the Test cell it is a bench (current build next to every blueprint) and a parts catalogue (`app/shopsb.js`).
+- **Team** (career; `#tab-market` in the markup): a strip with the engine's state for the team, the next round and Close week, then three sections: Team (offers, the season card, standings, the last race day), Sponsors & Rivals, and Log (ledger and goals).
+- **Shop**: in career, upgrades, staff, R&D, prestige items, the bank, Saves. In the Test cell it is a bench (current build next to every blueprint) and a parts catalogue (`app/shopsb.js`).
 
 Also: a Settings pane (sound, display, graphics tier, theme, haptics, save slots, install), **photo mode** (free camera, light and backdrop presets, a still frame out, with a build sheet card), and the **trophy room** (a 3D mezzanine of what the shop has won).
 
@@ -74,17 +75,18 @@ Fuels cover pump grades, race grades, oxygenated fuels, E85 and flex blends, met
 
 Engine swaps (`swap.js`): 20 vehicles in 5 groups and 15 fixes; one fit check shared by the road test, the strip, the salt and the 24 Hours. Pull and bog keep their class trucks.
 
-### Career (`src/app/state.js`, `career.js`, `market.js` and the files named below)
+### Career (`src/app/state.js`, `career.js`, `team.js` and the files named below)
 
 - **Reputation** tiers (`REP_TIERS`): Backyard 0, Local shop 40, Known builder 120, Regional supplier 300, OEM partner 700, Legend 1500, Dynasty 3000.
-- **Contracts**: 7 categories (`CATS`) over 44 market segments (`SEGMENTS`), each with a hp window, economy, fuel, reliability, weight and noise requirement. At most 2 active (`MAX_ACTIVE`), a 10% deposit, contracts expire after 8 weeks. The weekly pool draws from segments whose tier is at or below the shop's reputation tier and no more than two tiers back; the outlaw and top-tier segments (tier 5 and 6) also need the race shop upgrade (`market.js`).
-- **Certification**: a dyno pass that makes an engine sellable. The dyno ladder is the starter chassis dyno (400 hp), then the Engine dyno (1,000 hp), Pro dyno cell (2,000 hp, climate control), Outlaw dyno cell (3,500 hp) and Monster dyno cell (15,000 hp / 14,000 rpm), bought as upgrades `dyno2` to `dyno5`. 47 certification sites in 15 groups (`SITES`), each with its own climate and altitude, grouped by what the engine is for (sedan, taxi, van, pump, truck, genset, tractor, rally, endurance, pickup, medium truck, workboat and more).
-- **Shop**: 17 upgrades (`UPGRADES`), 4 staff roles (`STAFF`) that become named crew with levels 1 to 5, traits and morale (`crew.js`), 12 R&D projects (`RND`), 3 prestige items (`PRESTIGE`), 13 goals (`GOALS`), a loan, warranty claims, rebuilds and cores, Dyno day.
-- **Build bays** (`bays.js`): 2 late-game bays, each with a lead who builds a contract in the background over several weeks.
+- **Team seasons** (`team.js`, since 1.76.33.0): the main job. Each season up to three teams call (four with the Showroom hall), each with a driver style (steady hand, hot shoe, rookie, veteran), one series for 8 rounds, a parts budget and a season fee. Series (`PC_EVENTS`) open with rep and only call once the dyno can read the power their field makes: Street drags and Street Stock oval at 0 rep; Gasser drags and Late Model oval at 40; Outlaw radial, Pro stock (naturally aspirated) and Open oval at 120; Pro mod at 300; Funny car at 700; Top dragster at 1,500. The budget pays for the engine: the first build, then any engine change (15% teardown plus any parts that cost more), freshen-up (15%) or rebuild after a breakage (30%); the Tooling hall takes 25% off changes and rebuilds. A new engine needs a certified pull of that exact build. A round runs every other week: race it from the Team tab once it is due, or Close week races it with the season engine as it stands (a broken or missing engine sits it out). Race day is auto-simulated through the real drag and oval physics against the series' fixed rivals, who find 1.5% more power every round; every car scores points (drag 20/14/9/4, oval 20 down to 2). Each round wears the engine 4 reliability points times the style (the Quality lab takes 30% off).
+- **Team pay** (shares of the season fee, `PC_RETAIN`, `PC_RBONUS`, `PC_CBONUS`): 4% for each round raced, a podium bonus of 8/4/2%, a title bonus of 25/12/6% for the top three. Season fees by tier: $60–80k, $130–170k, $280–380k, $600–780k, $1.2–1.6M, $2.4–3.2M. Rep per round and for the title is scaled by the tier (x1, 1.5, 2.5, 4, 6, 9). A top-two finish brings the same team back with 20% more budget and fee.
+- **Events** are side income: the purses, records and rep at all ten events are as before, and sponsors and rivals count them.
+- **Certification**: a clean dyno pull in the standard cell. It lets an engine race the events and go to a team. The dyno ladder is the starter chassis dyno (400 hp), then the Engine dyno (1,000 hp), Pro dyno cell (2,000 hp, climate control), Outlaw dyno cell (3,500 hp) and Monster dyno cell (15,000 hp / 14,000 rpm), bought as upgrades `dyno2` to `dyno5`.
+- **Shop**: 15 upgrades (`UPGRADES`), 3 staff roles (`STAFF`) that become named crew with levels 1 to 5, traits and morale (`crew.js`), 12 R&D projects (`RND`), 3 prestige items (`PRESTIGE`), 32 goals (`GOALS`), a loan.
 - **Sponsors** (`career.js`): never ask for an event the shop cannot enter; track day counts as an event.
 - **Rival shops** (`rivals.js`): three made-up shops on the reputation board that throw down head-to-head challenges at the strip, the pull, Pikes Peak, the bog, the boats, the oval, track day, the salt and the 24 Hours.
 - **Legacy** (`legacy.js`): at Legend rep the owner can sell the shop. The sale value becomes Legacy points under their own storage key; points buy permanent perks for the next career.
-- **Achievements**: 85 (`ACH`) in 13 groups, bronze, silver and gold. **Trophy room** (`trophy.js`): a dated log of wins per mode.
+- **Achievements**: 95 (`ACH`) in 14 groups, bronze, silver and gold. **Trophy room** (`trophy.js`): a dated log of wins per mode.
 
 ### Graphics (`src/vis/`, `ENGINE_VIS`)
 
@@ -119,15 +121,14 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Event types | 10 | `EV_T` |
 | Dyno tests | 3 | `DYNO_T` |
 | Swap vehicles | 20 in 5 groups | `VEHICLES`, `VEH_GROUPS` |
-| Market segments / categories | 44 / 7 | `SEGMENTS`, `CATS` |
-| Certification sites | 47 in 15 groups | `SITES` |
-| Shop upgrades / staff roles / R&D / prestige / goals | 17 / 4 / 12 / 3 / 13 | `state.js` tables |
+| Team series | 10 (7 drag, 3 oval) | `PC_EVENTS` |
+| Shop upgrades / staff roles / R&D / prestige / goals | 15 / 3 / 12 / 3 / 32 | `state.js` tables |
 | Reputation tiers | 7 | `REP_TIERS` |
-| Achievements | 85 in 13 groups | `ACH`, `ACH_GROUPS` |
+| Achievements | 95 in 14 groups | `ACH`, `ACH_GROUPS` |
 | Guided lessons | 17 | `LESSONS` |
 | Engine recordings | 51 | `sounds/` |
 | Source files in the build | 111 | `src/manifest.txt` |
-| Built page | 3.66 MB (1.19 MB gzipped) | `node build.js` |
+| Built page | 3.57 MB (1.16 MB gzipped) | `node build.js` |
 
 ## Loose ends found in the code (as of 1.76.28.1)
 

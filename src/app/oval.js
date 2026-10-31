@@ -114,7 +114,7 @@ function ovalRunBtn(){if(S.env.testType!=="oval"||testing)return;const k=ovalEnv
   b.textContent=txt+(cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":""):"");$("dynoHint").innerHTML=ovalHint();}
 function ovalCost(){if(!career())return 0;const k=ovalEnvFix(),n=ovalNight(k);if(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))return 0;return(n.stage==="heat"?ovalFee(k):0)+fuelBill();}
 /* the gate in front of the run: false lets it run (the toast says why not) */
-function ovalGate(){if(S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return true;}
+function ovalGate(){
   const k=ovalEnvFix(),o=ovalOpen(),l=clsLocked(SIM.OVAL_CLASSES,k),lg=ovalLegal(k),n=ovalNight(k);
   if(o){toast(`The oval opens at ${o} rep`);return true;}if(l){toast(`${SIM.OVAL_CLASSES[k].n} opens at ${l} rep`);return true;}
   if(!lg.ok){toast(`Not legal for ${SIM.OVAL_CLASSES[k].n} — ${lg.why}`);return true;}

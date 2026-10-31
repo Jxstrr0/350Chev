@@ -1,6 +1,6 @@
 /* ===================== RIVAL SHOPS (career) =====================
    Three made-up shops share the reputation board with you. Their rep grows week by week (a little noisy, and pulled toward
-   yours so the table stays a race), the Market tab shows the standings, and now and then one of them throws down a
+   yours so the table stays a race), the Team tab shows the standings, and now and then one of them throws down a
    head-to-head: a real result in a real event (the strip, the truck pull, Pikes Peak, the mud bog, the boat drags, the 24 Hours,
    the oval). The track day, the salt and Pikes Peak are run against the clock, so there the rival posts a number a little past
    your own best and your next lap (that car, that circuit) or run (that class) has to beat it; on the mountain their car runs
@@ -114,7 +114,7 @@ function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
   const beat=RIV_BEAT.includes(ev),need=beat?"beat":ev==="endurance"?"ahead":ev==="drag"||ahead?"win":"podium";
   const win=Math.round((3+tier*RIV_WIN_TIER)*(need==="win"||(need!=="podium"&&ahead)?1.3:1)),purse=Math.min(RIV_PURSE_CAP,Math.round((150+pl*7)/50)*50);
   s.ch=Object.assign({id:Math.floor(rivRng()*1e9),rv:v.id,ev,need,st:"offer",wk:c.week,exp:c.week+2,win,lose:Math.max(2,Math.round(win*RIV_LOSE_PCT)),purse},beat?rivPost(ev,ahead):need==="ahead"?{ah:ahead?1:0}:{});
-  logEvent(beat?`${v.name} posted ${rivTgtTxt(s.ch)} — ${rivWhere(s.ch)} — and dares you to beat it. See Market`:`${v.name} challenges you at ${RIV_EV_TXT[ev]} — see Market`,"");toastAfter(`${v.name} wants a head-to-head`);}
+  logEvent(beat?`${v.name} posted ${rivTgtTxt(s.ch)} — ${rivWhere(s.ch)} — and dares you to beat it. See Team`:`${v.name} challenges you at ${RIV_EV_TXT[ev]} — see Market`,"");toastAfter(`${v.name} wants a head-to-head`);}
 /* a result in the field: the open challenge, if it is on and about this event */
 function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!==kind)return;
   if(kind==="drag"){const d=S.last&&S.last.res&&S.last.res.drag;if(!(d&&d.race)||(typeof DR!=="undefined"&&DR&&DR.night))return;}   // a heads-up pass only: not a solo pass, not race night

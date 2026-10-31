@@ -40,23 +40,20 @@ const UPGRADES=[
   {id:"boost",name:"Boost bench",desc:"Turbochargers, superchargers, intercoolers and the fuels that like them.",price:24000},
   {id:"bay1",name:"Second bay",desc:"Room for inline-5, inline-6, V8 (cross or flat-plane), flat-6 and three-rotor blocks.",price:36000},
   {id:"shop2",name:"Machine shop II",desc:"Billet cranks, titanium, 300M, coated bearings, dry sumps, exotic fuels \u2014 and the pulling parts: billet TBC pistons, drag-gap rings, 9/16 studs, compound turbos and 250 hp sticks.",price:60000,needs:"shop1"},
-  {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Contracts still certify in the standard cell.",price:90000,needs:"dyno2"},
-  {id:"bay2",name:"Race bay",desc:"V10, V12, four-rotor and Deltic blocks and the contracts that want them.",price:140000,needs:"bay1"},
+  {id:"dyno3",name:"Pro dyno cell",desc:"Reads to 2,000 hp / 12,500 rpm, with climate control: test hot, cold or at altitude. Certification still runs in the standard cell.",price:90000,needs:"dyno2"},
+  {id:"bay2",name:"Race bay",desc:"V10, V12, four-rotor and Deltic blocks.",price:140000,needs:"bay1"},
   {id:"race",name:"Outlaw shop",desc:"Billet blocks and heads, 88 and 98 mm turbo frames, screw blowers, nitrous and aluminium rods \u2014 and the bore, stroke and boost limits that go with them.",price:280000,needs:"shop2"},
-  {id:"bay3",name:"Build bay C",desc:"A third bay that builds market contracts on its own. Hire a bay lead; $5,000 a week to run once staffed.",price:350000,needs:"bay2"},
-  {id:"bay4",name:"Build bay D",desc:"A fourth bay for a second contract at a time. Its own bay lead; $8,000 a week to run once staffed.",price:900000,needs:"bay3"},
-  {id:"tool",name:"Tooling hall",desc:"Fixtures, jigs and a second mill. Bay jobs of three weeks or more finish a week sooner and QC improves a little. Opens at 300 rep; adds a little to weekly overhead.",price:250000,needs:"race",rep:300,oh:0.4},
-  {id:"qlab",name:"Quality lab",desc:"CMM bench and a bore-gauge wall. Bay builds pass QC more often and the pay for them improves. Opens at 700 rep.",price:450000,needs:"tool",rep:700,oh:0.4},
-  {id:"acad",name:"Training academy",desc:"A classroom over the shop. Staff and bay-lead courses run a week shorter and teach 25% more. Opens at 700 rep.",price:800000,needs:"race",rep:700,oh:0.4},
-  {id:"hall",name:"Showroom hall",desc:"A glass-fronted hall for finished engines. +5 rep a week and a steady trickle of visitors. Opens at the Legend tier (1,500 rep).",price:2500000,needs:"qlab",rep:1500,oh:0.3},
+  {id:"tool",name:"Tooling hall",desc:"Fixtures, jigs and a second mill. A team's engine changes and rebuilds cost 25% less of its budget. Opens at 300 rep; adds a little to weekly overhead.",price:250000,needs:"race",rep:300,oh:0.4},
+  {id:"qlab",name:"Quality lab",desc:"CMM bench and a bore-gauge wall. Team engines wear 30% less each round. Opens at 700 rep.",price:450000,needs:"tool",rep:700,oh:0.4},
+  {id:"acad",name:"Training academy",desc:"A classroom over the shop. Staff courses run a week shorter and teach 25% more. Opens at 700 rep.",price:800000,needs:"race",rep:700,oh:0.4},
+  {id:"hall",name:"Showroom hall",desc:"A glass-fronted hall for finished engines. +5 rep a week, and a fourth team calls each season. Opens at the Legend tier (1,500 rep).",price:2500000,needs:"qlab",rep:1500,oh:0.3},
   {id:"dyno4",name:"Outlaw dyno cell",desc:"Reads to 3,500 hp. Nothing below it will hold a car making this kind of power.",price:240000,needs:"dyno3"},
   {id:"dyno5",name:"Monster dyno cell",desc:"Water-brake cell that reads to 15,000 hp / 14,000 rpm. Built for the four-figure-boost builds that overload the Outlaw cell.",price:400000,needs:"dyno4"}
 ];
 const STAFF=[
-  {id:"machinist",name:"Machinist",wage:350,desc:"Runs the mill and the hone. Unit cost −8%, machining R&D 25% faster."},
+  {id:"machinist",name:"Machinist",wage:350,desc:"Runs the mill and the hone. Parts cost −8%, machining R&D 25% faster."},
   {id:"tuner",name:"Calibration engineer",wage:420,desc:"Maps timing and fuel properly. +1 octane number of knock margin on every build."},
-  {id:"dynotech",name:"Dyno technician",wage:300,desc:"Owns the test cell. Dyno pulls, endurance and over-rev runs are free."},
-  {id:"sales",name:"Sales rep",wage:380,desc:"Works the phones. Contracts pay +6% and every category shows a third offer."}
+  {id:"dynotech",name:"Dyno technician",wage:300,desc:"Owns the test cell. Dyno pulls, endurance and over-rev runs are free."}
 ];
 const RND=[
   {id:"peen",name:"Shot-peened rods",cost:9000,weeks:4,mach:true,desc:"Compressive surface stress on the beam. Every rod's fatigue limit +12%.",effect:{rodFat:1.12}},
@@ -75,24 +72,24 @@ const RND=[
 ];
 const PRESTIGE=[
   {id:"sign",name:"Illuminated shop sign",price:10000,rep:1,desc:"Your name over the door, lit. +1 rep a week."},
-  {id:"trophy",name:"Trophy wall",price:30000,rep:2,desc:"A wall of certified builds and client plaques. +2 rep a week."},
-  {id:"display",name:"Show engine plinth",price:60000,rep:4,desc:"A polished display engine in the front window. +4 rep a week and contracts pay +3%."}
+  {id:"trophy",name:"Trophy wall",price:30000,rep:2,desc:"A wall of certified builds and team plaques. +2 rep a week."},
+  {id:"display",name:"Show engine plinth",price:60000,rep:4,desc:"A polished display engine in the front window. +4 rep a week and teams pay +3%."}
 ];
 const REP_TIERS=[[0,"Backyard"],[40,"Local shop"],[120,"Known builder"],[300,"Regional supplier"],[700,"OEM partner"],[1500,"Legend"],[3000,"Dynasty"]];
 const GOALS=[
-  {id:"first",name:"First sale",desc:"Deliver any contract.",cash:1000,check:c=>c.sold>0},
+  {id:"first",name:"Green flag",desc:"Race your first round as a team's engine supplier.",cash:1000,check:c=>!!c.pc&&c.pc.raced>0},
   {id:"hp200",name:"Two hundred",desc:"Certify a 200 hp engine.",cash:3000,check:c=>c.bestHp>=200},
   {id:"rel95",name:"Bulletproof",desc:"Certify an engine with reliability 95 or better.",cash:5000,check:c=>c.bestRel>=95},
-  {id:"sold50",name:"Fifty out the door",desc:"Sell 50 engines.",cash:8000,check:c=>c.sold>=50},
+  {id:"podium",name:"On the box",desc:"A top-three finish for your team in a round.",cash:3000,check:c=>!!c.pc&&c.pc.podiums>0},
   {id:"endur",name:"Hundred-hour man",desc:"Finish a 100 h endurance run in career with nothing broken.",cash:4000,check:c=>!!c.enduranceOk},
   {id:"boost",name:"Under pressure",desc:"Certify a boosted engine.",cash:6000,check:c=>!!c.boostedCert},
-  {id:"repeat",name:"They came back",desc:"Deliver a repeat order from a happy client.",cash:5000,check:c=>c.repeats>0},
-  {id:"clean",name:"Zero defects",desc:"Ten straight weeks with engines in the field and no warranty claim.",cash:10000,check:c=>c.cleanWeeks>=10},
+  {id:"rwin",name:"Race winner",desc:"Win a round with your team.",cash:5000,check:c=>!!c.pc&&c.pc.wins>0},
+  {id:"season",name:"Full season",desc:"See a team through all eight rounds of a season.",cash:6000,check:c=>!!c.pc&&c.pc.seasons>0},
   {id:"hp500",name:"Five hundred",desc:"Certify a 500 hp engine.",cash:15000,check:c=>c.bestHp>=500},
-  {id:"sold200",name:"Production line",desc:"Sell 200 engines.",cash:30000,check:c=>c.sold>=200},
+  {id:"back",name:"Asked back",desc:"Finish a season in the top two, so the team calls you back.",cash:8000,check:c=>!!c.pc&&c.pc.backs>0},
+  {id:"title",name:"Champions",desc:"Win a team championship.",cash:15000,check:c=>!!c.pc&&c.pc.titles>0},
   {id:"hp1000",name:"Four figures",desc:"Certify a 1,000 hp engine.",cash:40000,check:c=>c.bestHp>=1000},
-  {id:"dd5",name:"Dyno day",desc:"Fix five customers' engines on Dyno day.",cash:3000,check:c=>!!c.dd&&c.dd.passed>=5},
-  {id:"dd25",name:"Shop doctor",desc:"Fix twenty-five customers' engines on Dyno day.",cash:12000,check:c=>!!c.dd&&c.dd.passed>=25}
+  {id:"titles3",name:"Three-time champions",desc:"Win three team championships.",cash:40000,check:c=>!!c.pc&&c.pc.titles>=3}
 ];
 const LOAN_STEP=10000,LOAN_MAX=50000,LOAN_RATE=0.02,LOAN_PAY=0.04,LOAN_MIN_PAY=250,FORECLOSE_AT=-25000;
 /* the bank: every week-close takes the interest and a slice of the balance (LOAN_PAY, at least LOAN_MIN_PAY) out of cash.
@@ -102,123 +99,12 @@ function loanRate(){return typeof lgLoanRate==="function"?lgLoanRate():LOAN_RATE
 function loanInt(){return Math.round((C().loan||0)*loanRate());}
 function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loanPay();c.cash-=i+p;c.loan-=p;c.loanPaid=(c.loanPaid||0)+i+p;
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
-const MAX_ACTIVE=2,DEPOSIT=0.10,EXPIRE_REP=8;
-const CATS=[
-  {id:"prod",name:"Production run",sub:"volume · economy · warranty",segs:["hatch","sedan","taxi","flagship"],rep:0},
-  {id:"truck",name:"Truck & industrial",sub:"torque low down · long life",segs:["van","pump","truck","genset","tractor"],rep:0},
-  {id:"perf",name:"Performance",sub:"road-going power",segs:["hot","streetcup","sport","gt","super","hyper"],rep:40},
-  {id:"diesel",name:"Diesel & heavy",sub:"torque · long life · smoke limits",segs:["hdpickup","mdtruck","workboat","dtractor","minegen","class8","puller"],rep:40},
-  {id:"race",name:"Motorsport",sub:"race fuel · class rules",segs:["club","rally","drift","specgt","endur","attack","hillclimb","lsr","hydro","unlpull"],rep:120},
-  {id:"altfuel",name:"Fleet & alt-fuel",sub:"propane · CNG · depot-fuelled fleets",segs:["forklift","cngvan","lpgbus","wellsite"],rep:20},
-  {id:"outlaw",name:"Outlaw & drag",sub:"strip cars with a target ET",segs:["stripcar","drag","smallblock","grudge","radial","promod","topalc","funny"],rep:700,needs:"race"}
-];
-const CLIENTS=["Kestrel Automotive","Bison Truck Co.","Aurora Compact","Northwind Racing","Meridian Motors","Tamarack Vans","Saskatoon Speed Shop","Halcyon GT","Coulee Ag Equipment","Prairie Fire Motorsport","Redwater Fleet","Glacier Coachworks"];
-const FUEL_RANK={r87:0,r91:1,r94:2,race100:3,e85:4,methanol:5,
-  race104u:2.5,race110:3.2,ox112:3.4,ox116:3.6};   // race grades sit between pump premium and alcohol; flex ranks by its blend (fuelRank)
-const SEGMENTS=[
-  /* tier 0 — Backyard: everything here is reachable with the five starter engines and base-shop parts */
-  {id:"hatch",name:"City hatchback",tier:0,units:[3,8],price:2100,req:{hp:[50,75],econ:[6.2,5.6],fuel:"r87",rel:85,kg:140,noise:74}},
-  {id:"sedan",name:"Family sedan",tier:0,units:[2,6],price:2500,req:{hp:[90,125],econ:[6.8,6.2],fuel:"r87",rel:82,smooth:45,kg:175,noise:74}},
-  {id:"van",name:"Delivery van",tier:0,dsl:true,gas:true,units:[2,5],price:2800,req:{tq:[170,230],tqrpm:4000,fuel:"r87",rel:88,econ:[7.6,7.0],noise:77}},
-  {id:"pump",name:"Irrigation pump set",tier:0,dsl:true,gas:true,units:[2,4],price:2600,req:{tq:[120,200],tqrpm:3600,rel:90,life:3000,fuel:"r87"}},
-  /* tier 1 — Local shop */
-  {id:"truck",name:"Half-ton pickup",tier:1,dsl:true,gas:true,units:[2,5],price:3800,req:{tq:[300,420],tqrpm:4400,fuel:"r87",rel:86,noise:78}},
-  {id:"hot",name:"Hot hatch",tier:1,units:[2,4],price:5200,req:{hp:[150,220],kg:165,econ:[7.4,6.6],fuel:"r91",rel:80,noise:76,road:{ch:"hatch"},zero100:[7.4,8.8]}},
-  {id:"taxi",name:"Taxi fleet",tier:1,dsl:true,gas:true,units:[3,7],price:3600,req:{hp:[100,140],life:5000,rel:92,econ:[6.5,6.0],fuel:"r87",noise:74}},
-  {id:"streetcup",name:"Street-circuit cup car",tier:1,units:[2,4],price:5800,req:{hp:[180,260],kg:170,fuel:"r91",rel:78,noise:77,road:{ch:"hatch",trk:"street"},lap:[105.2,107.8]}},
-  {id:"sport",name:"Sports coupé",tier:1,units:[1,3],price:6200,req:{hp:[220,320],smooth:70,fuel:"r91",rel:78,noise:78,road:{ch:"coupe",trk:"club"},lap:[75.5,78.5]}},
-  /* tier 2 — Known builder */
-  {id:"club",name:"Club racer · 2.0 L class",tier:2,units:[1,2],price:11000,req:{hp:[240,330],disp:2.0,rel:60,fuel:"race100"}},
-  {id:"gt",name:"Grand tourer",tier:2,units:[1,3],price:14000,req:{hp:[400,550],smooth:85,fuel:"r94",rel:80,econ:[11.5,9.5],noise:79}},
-  {id:"rally",name:"Rally car · 1.6 T",tier:2,units:[1,2],price:13000,req:{hp:[280,340],tq:[320,400],disp:1.6,rel:70,fuel:"race100"}},
-  {id:"drift",name:"Drift car",tier:2,units:[1,2],price:12000,req:{tq:[500,700],smooth:55,rel:65,fuel:"e85"}},
-  {id:"genset",name:"Standby generator set",tier:2,dsl:true,gas:true,units:[1,3],price:6800,req:{tq:[380,560],tqrpm:3200,life:5000,rel:92,fuel:"r87"}},
-  {id:"tractor",name:"Row-crop tractor",tier:3,dsl:true,gas:true,units:[1,3],price:16500,req:{tq:[700,1000],tqrpm:2600,life:4000,rel:90,fuel:"r87"}},
-  /* tier 3 — Regional supplier */
-  {id:"super",name:"Supercar",tier:3,units:[1,2],price:22000,req:{hp:[600,850],cyl:8,smooth:85,fuel:"r94",rel:75,noise:80,road:{ch:"super",trk:"gp"},lap:[113.0,117.0]}},
-  {id:"endur",name:"Endurance prototype",tier:3,units:[1,2],price:28000,req:{hp:[500,700],rel:92,fuel:"race100",kg:210,life:300}},
-  {id:"attack",name:"Time attack",tier:3,units:[1,2],price:30000,req:{hp:[700,900],kg:200,rel:60,fuel:"e85"}},
-  {id:"drag",name:"Pro-mod drag",tier:3,units:[1,2],price:34000,req:{hp:[1200,1800],rel:35,fuel:"methanol",life:5}},
-  /* tier 4 — OEM partner */
-  {id:"hyper",name:"Hypercar",tier:4,units:[1,2],price:48000,req:{hp:[1000,1400],cyl:8,smooth:88,fuel:"r94",rel:70,noise:82,road:{ch:"super",trk:"gp"},lap:[109.5,112.5],zero100:[3.15,3.45]}},
-  {id:"flagship",name:"OEM V12 flagship",tier:4,units:[2,4],price:24000,req:{hp:[600,750],cyl:12,smooth:95,rel:88,econ:[11.5,10],fuel:"r94",noise:80}},
-  /* tiers 4–5 — Outlaw racing. The Outlaw & drag category opens at 700 rep (OEM partner) with the Outlaw shop, so the
-     street-tyre cars sit at tier 4 and only the big-tyre outlaws (radial, pro mod) wait for Legend */
-  {id:"stripcar",name:"Street/strip coupe",tier:4,units:[1,2],price:20000,req:{hp:[450,650],rel:60,car:{body:"street",mass:1500,tyre:"radial"},et:[11.0,12.2]}},
-  {id:"grudge",name:"Grudge car · no time",tier:4,units:[1,2],price:44000,req:{hp:[1500,1900],cyl:8,passes:25,rel:30,car:{body:"street",mass:1500,tyre:"radial"},et:[9.4,10.4]}},
-  {id:"radial",name:"Radial outlaw",tier:5,units:[1,2],price:58000,req:{hp:[2000,2400],cyl:8,kg:340,passes:30,rel:35,car:{body:"outlaw",mass:1450,tyre:"radial"},et:[7.9,8.4]}},
-  {id:"promod",name:"Pro mod door car",tier:5,units:[1,1],price:60000,req:{hp:[2500,2900],cyl:8,passes:20,fuel:"methanol",car:{body:"promod",mass:1150,tyre:"slick"},et:[6.8,7.3]}},
-  {id:"smallblock",name:"Small-tyre outlaw",tier:4,units:[1,2],price:52000,req:{hp:[1600,2100],disp:6.0,passes:25,rel:30}},
-  /* tier 6 — Dynasty (3,000 rep). The only contracts that need the Monster cell: the Outlaw cell stops reading at 3,500 hp.
-     No ET or lap targets here; a twelve-cylinder compound-boosted engine is the only thing that gets there (3,500–3,600 hp) */
-  {id:"topalc",name:"Top alcohol dragster",tier:6,units:[1,1],price:110000,req:{hp:[3100,3500],passes:15,rel:30,fuel:"methanol"}},
-  {id:"funny",name:"Alcohol funny car",tier:6,units:[1,1],price:90000,req:{hp:[2700,3200],passes:20,rel:35,fuel:"methanol"}},
-  {id:"hydro",name:"Unlimited hydroplane",tier:6,units:[1,1],price:100000,req:{hp:[2600,3100],cyl:12,rel:45,life:10}},
-  {id:"unlpull",name:"Unlimited modified puller",tier:6,units:[1,1],price:85000,req:{hp:[2800,3300],passes:30,rel:40,fuel:"methanol"}},
-  /* Diesel & heavy (rep 40+): diesel only. On-road buyers cap the smoke (opacity at full load, lower is better); off-road and marine don't.
-     Road segments also cap drive-by noise (dBA, judged with any cutout shut) */
-  {id:"hdpickup",name:"Heavy-duty pickup",tier:1,units:[2,5],price:6800,req:{tq:[650,850],tqrpm:2400,rel:86,smoke:25,fuel:"diesel",noise:80}},
-  {id:"mdtruck",name:"Medium-duty delivery truck",tier:1,units:[2,4],price:6200,req:{tq:[450,650],tqrpm:2400,rel:88,life:3000,econ:[9.5,8.5],smoke:30,fuel:"diesel",noise:80}},
-  {id:"workboat",name:"Marine workboat",tier:2,units:[1,3],price:9400,req:{tq:[600,900],tqrpm:2600,life:4000,rel:92,fuel:"diesel"}},
-  {id:"dtractor",name:"Four-wheel-drive farm tractor",tier:2,units:[1,3],price:11800,req:{tq:[800,1200],tqrpm:1900,life:3000,rel:88,fuel:"diesel"}},
-  {id:"minegen",name:"Mine standby genset · prime power",tier:3,units:[1,3],price:21000,req:{tq:[1200,1800],tqrpm:1900,life:4500,rel:92,fuel:"diesel"}},
-  {id:"class8",name:"Class-8 highway truck",tier:3,units:[1,3],price:15000,req:{tq:[1900,2300],tqrpm:1600,life:1500,rel:78,econ:[14.5,13],smoke:20,fuel:"diesel",noise:80}},
-  /* Fleet & alt-fuel (rep 20+): buyers who fuel at their own depot and want propane or CNG only (fuel "lpg"/"cng" is
-     an exact family). gas:true on the truck & industrial segments means a gas engine is welcome there too. */
-  {id:"forklift",name:"Warehouse forklift · propane",tier:0,units:[3,7],price:2300,req:{tq:[110,160],tqrpm:3200,life:3000,rel:88,fuel:"lpg"}},
-  {id:"cngvan",name:"City fleet van · CNG",tier:1,units:[2,6],price:4200,req:{tq:[220,300],tqrpm:4000,rel:88,econ:[9.0,8.0],fuel:"cng",noise:77}},
-  {id:"lpgbus",name:"Propane school bus",tier:2,units:[1,3],price:9800,req:{tq:[450,600],tqrpm:3600,life:3000,rel:90,fuel:"lpg",noise:78}},
-  {id:"wellsite",name:"Wellsite compressor drive · CNG",tier:2,units:[1,3],price:12500,req:{tq:[350,500],tqrpm:3000,life:5000,rel:92,fuel:"cng"}},
-  /* race gas: a control-fuel series where everyone runs the same drum (spec:true = exactly that fuel), and a hill climb
-     that allows anything up to oxygenated 116 */
-  {id:"specgt",name:"Spec GT series · control fuel",tier:2,spec:true,units:[1,3],price:15500,req:{hp:[300,380],rel:75,life:400,fuel:"race104u"}},
-  {id:"hillclimb",name:"Hill-climb special",tier:3,units:[1,2],price:26000,req:{hp:[450,650],kg:190,rel:65,fuel:"ox116"}},
-  {id:"puller",name:"Pulling truck · sled-ready",tier:3,units:[1,2],price:24000,req:{hp:[700,1200],passes:150,rel:55,fuel:"diesel"}},
-  /* land speed: their car on the salt, your engine — they want a mile speed in it (estimated with a steady driver, long course) */
-  {id:"lsr",name:"Land-speed team · lakester",tier:3,units:[1,2],price:20000,req:{hp:[450,800],rel:55,lsr:{body:"lakester"},mph:[215,250]}}
-];
-/* site briefs: some clients say where the engine will live and re-run your certified engine in that air before they pay.
-   [name, ambient °C, altitude m, premium]. Cold air packs the cylinder (more load, boost overshoots), heat eats knock margin,
-   thin air costs an NA engine over a quarter of its torque at 3,000 m. All inside the Pro dyno cell's range so it can be previewed. */
-/* rotary buyers: they want a Wankel and nothing else. Classes count a rotary at 1.5x its quoted displacement (the FIA factor). */
-SEGMENTS.push(
-  {id:"rotsport",name:"Rotary sports coupé",tier:1,units:[1,3],price:6500,req:{hp:[180,260],kg:160,smooth:80,fuel:"r94",rel:76,rot:1}},
-  {id:"rotclub",name:"Club racer · rotary class",tier:2,units:[1,2],price:10500,req:{hp:[260,320],rot:1,rel:62,passes:200,fuel:"race100"}});
-CATS.find(c=>c.id==="perf").segs.push("rotsport");CATS.find(c=>c.id==="race").segs.push("rotclub");
-/* two-stroke buyers: they want an engine that fires every turn (ts:1) and judge it on the usual figures */
-SEGMENTS.push(
-  {id:"ts_vintage",name:"Vintage rally restorer · two-stroke",tier:0,units:[1,3],price:2000,req:{hp:[34,46],disp:0.9,ts:1,rel:80,fuel:"r87"}},
-  {id:"ts_mx",name:"Motocross team · 250 two-stroke",tier:2,units:[2,4],price:4600,req:{hp:[44,54],disp:0.25,kg:32,ts:1,rel:60,fuel:"r94"}},
-  {id:"ts_sled",name:"Snowmobile maker · 800 class",tier:2,units:[2,5],price:7200,req:{hp:[140,175],disp:0.85,kg:70,ts:1,rel:80,econ:[9.5,8.0],fuel:"r91"}},
-  {id:"ts_outboard",name:"Outboard maker · V6 two-stroke",tier:2,units:[2,4],price:8600,req:{hp:[180,230],life:2500,rel:84,ts:1,fuel:"r91"}},
-  {id:"ts_detroit",name:"Detroit rebuild · fleet & marine",tier:1,units:[1,3],price:7400,req:{tq:[820,960],tqrpm:1600,life:3000,rel:88,ts:1,fuel:"diesel"}});
-CATS.find(c=>c.id==="prod").segs.push("ts_vintage");CATS.find(c=>c.id==="race").segs.push("ts_mx");
-CATS.find(c=>c.id==="perf").segs.push("ts_sled","ts_outboard");CATS.find(c=>c.id==="diesel").segs.push("ts_detroit");
-const ROT_DISP=1.5;
-const SITE_P=0.3;
-const SITES={
-  sedan:[["Winnipeg winter commuter",-25,250,.14],["Phoenix commuter car",44,350,.12],["Denver family car",22,1600,.14],["Mexico City family car",18,2250,.18]],
-  taxi:[["Yellowknife winter taxi",-25,200,.16],["Las Vegas airport taxi",43,650,.12],["Bogotá city taxi",14,2600,.18],["Quito city taxi",13,2850,.20]],
-  van:[["Iqaluit courier van",-25,50,.16],["Mojave parcel van",42,300,.12],["Calgary winter courier",-20,1050,.14],["Mexico City courier van",18,2250,.18]],
-  pump:[["Imperial Valley canal pump",45,0,.12],["Andean terrace pump",12,2800,.18],["Altiplano well pump",8,3500,.20]],
-  truck:[["Ice-road pickup",-25,300,.16],["Death Valley pickup",45,0,.14],["Rockies mine pickup",5,2400,.18]],
-  genset:[["Andean mine genset",8,3200,.20],["Arctic camp genset",-25,100,.16],["Desert telecom genset",45,300,.14]],
-  tractor:[["Harvest tractor",42,300,.12],["Ethiopian highland tractor",24,2400,.18],["Andean potato tractor",14,3400,.20]],
-  rally:[["Swedish snow stage",-20,200,.16],["Greek gravel stage",38,600,.14],["Kenyan safari stage",32,1900,.16],["Mexican mountain stage",22,2700,.18]],
-  endur:[["Desert 24-hour",40,300,.16],["Winter 24-hour",-10,400,.14],["Mexico City 6-hour",24,2250,.18]],
-  hdpickup:[["Yukon ice-road pickup",-25,600,.16],["Atacama mine pickup",30,3000,.20],["Texas oilfield pickup",42,800,.12]],
-  mdtruck:[["Winnipeg winter route",-25,250,.14],["Phoenix summer route",44,350,.12],["La Paz city route",12,3500,.20]],
-  workboat:[["Gulf of Mexico crew boat",35,0,.12],["Bering Sea crabber",-15,0,.16]],
-  dtractor:[["Saskatchewan spring seeding",-10,550,.12],["Altiplano quinoa farm",10,3500,.20]],
-  minegen:[["Andean copper mine",8,3500,.20],["Arctic diamond mine",-25,450,.18],["Pilbara iron mine",45,400,.14]],
-  class8:[["Alaska Highway hauler",-25,700,.16],["Death Valley hauler",45,0,.14],["Rockies grade hauler",5,2400,.18]]
-};
-
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.32.0";
+const VERSION="1.76.33.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
-function freshCareer(){return{cash:20000,rep:0,week:1,sold:0,profit:0,owned:{},contracts:[],offers:null,inbox:[],shipped:0,cat:"prod",seed:Math.floor(Math.random()*1e9),cert:null,fleet:[],loan:0,log:[],goals:{},bestHp:0,bestRel:0,repeats:0,cleanWeeks:0,warranty:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{}};}
+/* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
+function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
 function applySoundQuality(){const q=S.soundQ||(S.layoutMode==="desktop"?"full":null)||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_SOUND.setQuality(q);document.querySelectorAll("#sqSeg button").forEach(b=>b.classList.toggle("on",b.dataset.sq===q));}
 /* pressure units: everything is stored and simulated in bar. PSI is a display layer — text nodes that read "N bar"
    (also "A of B bar", "A–B bar", "A / B bar") are rewritten in place and remembered, so switching back restores them. */
@@ -239,20 +125,20 @@ function applyTheme(){const t=S.theme||"dark";const eff=t==="auto"?(window.match
   if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();}
 function buzz(ms){if(S.haptics===false||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
 function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false,psi:false};}
-function save(){try{if(typeof lgSync==="function")lgSync();const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});if(S.bay)ddSaveAs(o);localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
+function save(){try{if(typeof lgSync==="function")lgSync();const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
-function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});if(S.bay)ddSaveAs(o);return o;}
-/* a customer engine on the dyno is never saved as the player's build: the build, its last pull and pin go to storage, the customer rides in o.bay */
-function ddSaveAs(o){const B=S.bay,w=B.own;Object.assign(o,{cfg:w.cfg,last:w.last?slimRes(w.last):null,base:w.base?slimRes(w.base):null,env:Object.assign({},S.env,{testType:w.testType||"pull"}),profileId:w.profileId,name:w.name,bay:{job:B.job,practice:!!B.practice,cur:S.cfg}});}
-function ddLoad(o){const b=o.bay;S.bay=null;if(!b||!b.job||!b.cur||typeof b.cur!=="object"||!b.job.cfg)return;
-  S.bay={job:b.job,practice:!!b.practice,own:{cfg:S.cfg,last:S.last,base:S.base,testType:S.env.testType,profileId:S.profileId,name:S.name}};S.cfg=Object.assign({},SIM.DEFAULT_CFG,b.cur);S.last=null;S.base=null;S.env.testType="pull";S.name=ddLabel(b.job);}
-function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suC=null;Object.assign(S,o);S.career=Object.assign(freshCareer(),o.career||{});
+function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});return o;}
+function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suC=null;Object.assign(S,o);delete S.bay;delete S.pit;
+  /* 1.76.33: the career became team seasons. A career from before (no cv:2) starts over, and a Pit Crew game becomes a career;
+     boot() applies the Legacy perks and tells the player once (S.careerNew) */
+  const old=o.career&&typeof o.career==="object"?o.career:null,pit=o.mode==="pit",was=!!old&&old.cv!==2&&(o.mode==="career"||(+old.week||1)>1);
+  S.career=old&&old.cv===2?Object.assign(freshCareer(),old):freshCareer();
+  if(pit){S.mode="career";const P=o.pit&&typeof o.pit==="object"?o.pit:{};S.career.log=[{w:1,t:`Pit Crew record: ${Math.max(0,(+P.season||1)-1)} season${(+P.season||1)===2?"":"s"}, ${+P.titles||0} title${+P.titles===1?"":"s"}, ${+P.wins||0} round win${+P.wins===1?"":"s"}. Team seasons now run in the career, from the Team tab.`,k:"good"}];}
+  if(pit||was)S.careerNew=pit?"pit":"reset";
   try{fuelMigrate();}catch(e){}
-  if(Array.isArray(S.career.log)&&S.career.log.some(e=>typeof e==="string")){
-    S.career.log=S.career.log.map((e,i)=>{if(typeof e!=="string")return {e,i};const m=/^W(\d+):\s*([\s\S]*)$/.exec(e);const t=m?m[2]:e;return {e:{w:m?+m[1]:S.career.week,t:"Strip: "+t,k:/BLACK-FLAGGED|lost to|red light|cooked|cracked/.test(t)?"bad":/purse \$[1-9]/.test(t)?"good":""},i,str:true};})
-      .filter(x=>x.e&&typeof x.e==="object").sort((a,b)=>((+b.e.w||0)-(+a.e.w||0))||(a.str&&b.str?b.i-a.i:a.i-b.i)).map(x=>x.e).slice(0,16);}if(S.career.contracts.length>MAX_ACTIVE){S.career.contracts.forEach(k=>{if(!k.deposit)k.deposit=0;});S.career.contracts=S.career.contracts.slice(0,MAX_ACTIVE);}for(const f of ["wear","dragBest"]){const m=S.career[f];if(m)for(const k of Object.keys(m))if(k.length>24){m[hKey(k)]=m[k];delete m[k];}}S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});if(S.env.dragDrive!=="auto")S.env.dragDrive="you";S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];try{ddLoad(o);}catch(e){S.bay=null;}return true;}
+  S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});if(S.env.dragDrive!=="auto")S.env.dragDrive="you";S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];return true;}
 /* fuel system: a build saved before injectors and pumps existed gets the smallest set that feeds it (SIM.fitFuel), so a
-   600 hp save doesn't suddenly lean out. Certs, strip bests, wear and the fleet are keyed by the cfg hash, so they follow
+   600 hp save doesn't suddenly lean out. Certs, strip bests and wear are keyed by the cfg hash, so they follow
    it. In career a fitted part the shop hasn't unlocked comes with the build (an R&D-style unlock), so nothing certified
    turns up locked. Runs on the raw save inside hydrate(), before the cfg is merged with the defaults. */
 function fuelFit(c){if(!c||typeof c!=="object"||(c.injectors&&c.fuelPump))return null;
@@ -264,7 +150,6 @@ function fuelMigrate(){const m={},fitted=[];
   if(!fitted.length)return;
   if(S.last&&m[S.last.hash])S.last.hash=m[S.last.hash];
   const K=S.career;if(K.cert&&m[K.cert.hash])K.cert.hash=m[K.cert.hash];
-  if(Array.isArray(K.fleet))K.fleet.forEach(f=>{if(f&&m[f.hash])f.hash=m[f.hash];});
   for(const fld of ["wear","dragBest"]){const w=K[fld];if(!w||typeof w!=="object")continue;
     for(const o in m)for(const [a,b] of [[o,m[o]],[hKey(o),hKey(m[o])]])if(a in w&&!(b in w)){w[b]=w[a];delete w[a];}}
   if(S.mode==="career")for(const c of fitted)for(const k of ["injectors","fuelPump"]){const o=OPT[k][c[k]];if(locked(o))(K.unlocks=K.unlocks||{})[o._id]=true;}}
@@ -275,7 +160,7 @@ function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?JSON.
 function writeSlot(i){try{const o=snapshot();o.savedAt=Date.now();localStorage.setItem(slotKey(i),JSON.stringify(o));return true;}catch(e){return false;}}
 function clearSlot(i){try{localStorage.removeItem(slotKey(i));}catch(e){}}
 function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt):null;const when=d?d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-CA",{hour:"2-digit",minute:"2-digit"}):"";
-  const head=o.mode==="career"?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:o.mode==="pit"?`Pit Crew · season ${o.pit?.season??1} · ${fmt$(o.pit?.cash??0)}`:"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
+  const head=o.mode==="career"||o.mode==="pit"?(o.career?.cv===2?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:"Career (from before team seasons: loads as a new career)"):"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
 function decodeSave(t){t=(t||"").trim();if(t.startsWith("PEW2:"))t=t.slice(5);const o=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,"")))));if(!o||!o.cfg)throw new Error("bad");return o;}
 function renderSaves(){const box=$("slots");if(!box)return;let h="";for(let i=1;i<=SLOTS;i++){const o=readSlot(i);h+=`<div class="slot ${o?"full":""}"><div><h3>Slot ${i}${o?"":"<small>empty</small>"}</h3><p>${slotSummary(o)}</p></div><div class="acts"><button class="pri" data-save="${i}">Save</button><button data-load="${i}" ${o?"":"disabled"}>Load</button><button class="del" data-clear="${i}" ${o?"":"disabled"}>Clear</button></div></div>`;}box.innerHTML=h;}
 function applyLoaded(o,msg){if(testing){toast("Let the run finish first");return;}if(!hydrate(o)){toast("That save didn't read right.");return;}save();curTab="shop";boot();toast(msg);}
@@ -288,14 +173,14 @@ function locked(o){return career()&&!dev()&&o&&o.req&&!C().owned[o.req]&&!(C().u
 function staffed(id){return career()&&(dev()||!!(C().staff&&C().staff[id]&&crewOn(id)));}   // a person on a course is out of the shop (app/crew.js)
 function shopBonus(){if(!career())return{};const b={octane:0,rodFat:1,crkFat:1,costFac:1};if(staffed("tuner"))b.octane+=1+0.15*crewL("tuner");if(staffed("machinist"))b.costFac*=0.92-0.01*crewL("machinist");b.costFac*=crewCostK();if(typeof lgCostK==="function")b.costFac*=lgCostK();
   for(const r of RND){if(C().rnd[r.id]&&r.effect){if(r.effect.octane)b.octane+=r.effect.octane;if(r.effect.rodFat)b.rodFat*=r.effect.rodFat;if(r.effect.crkFat)b.crkFat*=r.effect.crkFat;if(r.effect.costFac)b.costFac*=r.effect.costFac;}}return b;}
-function syncShop(){S.env.shop=shopBonus();deltaCache.clear();fixCache.clear();}
+function syncShop(){S.env.shop=shopBonus();deltaCache.clear();}
 function wages(){return career()?STAFF.reduce((a,st)=>a+(C().staff[st.id]?crewWage(st):0),0):0;}
 function dynoCap(){if(!career())return{hp:15000,rpm:14000,n:"Test cell dyno"};return has("dyno5")?{hp:15000,rpm:14000,n:"Monster cell"}:has("dyno4")?{hp:3500,rpm:12500,n:"Outlaw cell"}:has("dyno3")?{hp:2000,rpm:12500,n:"Pro cell"}:has("dyno2")?{hp:1000,rpm:10000,n:"Engine dyno"}:{hp:400,rpm:8000,n:"Chassis dyno"};}
 function repTier(){let t=REP_TIERS[0];for(const r of REP_TIERS)if(C().rep>=r[0])t=r;return t;}
 function repTierIdx(){let i=0;REP_TIERS.forEach((r,k)=>{if(C().rep>=r[0])i=k;});return i;}
 /* test-cell climate. Sandbox: whatever S.env says. Career: the standard cell (20 °C, 500 m), unless the Pro dyno
    cell's climate control is installed, in which case the career's own cell settings (C().cell). Only a pull in
-   the standard cell certifies for contracts, and the strip runs in standard weather. */
+   the standard cell certifies, and the strip runs in standard weather. */
 const CELL_KEYS=["ambientC","altitudeM","coolantC","oilC"];
 function stdCell(){const d=SIM.DEFAULT_ENV,o={};CELL_KEYS.forEach(k=>o[k]=d[k]);return o;}
 function careerCell(){const c=C();if(!c.cell||typeof c.cell!=="object")c.cell=stdCell();return c.cell;}
@@ -419,9 +304,8 @@ function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==
   return `<b>${cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
   if(res.fails&&res.fails.length)return (S.ranH||[]).includes(h)?{cls:"bad",txt:"✗ BREAKS"}:{cls:"",txt:"○ NOT RUN YET",nr:true};
-  if(career()){const inField=C().fleet.filter(f=>f.hash===h&&C().week-f.week<=10).reduce((a,f)=>a+f.units,0);if(inField)return{cls:"fld",txt:`◆ ${inField} IN FIELD`};
+  if(career()){const T=pcTeam();if(T&&h===cfgHash(S.cfg)){const k=pcChecks(T);if(k.need>pcLeft(T))return{cls:"bad",txt:"✗ OVER BUDGET"};if(k.ok)return{cls:"ok",txt:`✓ READY FOR ROUND ${T.round+1}`};}
     const c=C().cert;if(c&&c.hash===h&&c.ok)return{cls:"ok",txt:"✓ CERTIFIED"};return{cls:"",txt:"○ UNCERTIFIED"};}
-  if(pcMode()){const T=pcTeam();if(!T||h!==cfgHash(S.cfg))return{cls:"ok",txt:"● PIT CREW"};const c=pcChecks(T),n=T.round+1;return c.ok?{cls:"ok",txt:`✓ READY FOR ROUND ${n}`}:c.need>pcLeft(T)?{cls:"bad",txt:"✗ OVER BUDGET"}:{cls:"",txt:`○ ROUND ${n}`};}
   return{cls:"ok",txt:"● TEST CELL"};}
 function engineCard(cfg,res,o){o=o||{};const st=engineStatus(cfg,res);const name=o.name||engineName();
   const nums=`<b>${Math.round(res.peakHp)}</b>hp<i>·</i><b>${Math.round(res.peakTq)}</b>Nm<i>·</i>rel <b>${st.nr?"—":Math.round(res.rel)}</b><i>·</i><b>${fmt$(res.cost)}</b>`;
@@ -436,18 +320,16 @@ function stripFlash(id,d,fmt,lowGood){const el=$(id).parentElement;let t=el.quer
   if(!d){t.classList.remove("show");return;}t.textContent=(d>0?"▲":"▼")+fmt(Math.abs(d));t.classList.toggle("dn",lowGood?d>0:d<0);t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
 function recompute(){
   if(rcRaf){cancelAnimationFrame(rcRaf);rcRaf=0;}   // a direct call covers the pending frame
-  if(S.bay)ddGuard();   // dyno day: only the parts the customer OK'd
   altFuelFill(S.cfg);   // flex needs a blend and a gas fuel a gas system before the engine is run
   prevQuick=quick;
-  quick=SIM.simulate(S.cfg,simEnv(Object.assign({testType:"pull"},ddEnvX())));
+  quick=SIM.simulate(S.cfg,simEnv({testType:"pull"}));
   if(prevQuick&&prevQuick!==quick){stripFlash("sHp",Math.round(quick.peakHp-prevQuick.peakHp),v=>v);stripFlash("sKg",Math.round(quick.kg-prevQuick.kg),v=>v,true);stripFlash("sCost",Math.round(quick.cost-prevQuick.cost),v=>"$"+v.toLocaleString("en-CA"),true);stripFlash("sDisp",+(quick.Vd/1000-prevQuick.Vd/1000).toFixed(1),v=>v.toFixed(1));}
-  combosNow=SIM.combos(S.cfg,simEnv(Object.assign({testType:"pull"},ddEnvX())),quick);
+  combosNow=SIM.combos(S.cfg,simEnv({testType:"pull"}),quick);
   if(S.heat)applyHeat();
   if(document.activeElement&&document.activeElement.id==="nameIn"){/* don't clobber while typing */}else $("tag").innerHTML=engineCard(S.cfg,quick,{editable:true});
-  {const cc=quick.Vd<1000;$("sDisp").textContent=cc?Math.round(quick.Vd):(quick.Vd/1000).toFixed(1);$("sDisp").nextElementSibling.textContent=cc?"cc":"Litres";}$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);if(pcMode())pcHud();
+  {const cc=quick.Vd<1000;$("sDisp").textContent=cc?Math.round(quick.Vd):(quick.Vd/1000).toFixed(1);$("sDisp").nextElementSibling.textContent=cc?"cc":"Litres";}$("sHp").textContent=Math.round(quick.peakHp);$("sKg").textContent=Math.round(quick.kg);$("sCost").textContent=fmt$(quick.cost);if(career())pcHud();
   const worst=Math.max(...quick.tests.map(t=>t.util));$("sHp").className=worst>1?"critc":worst>.8?"warnc":"";
-  const cert=C().cert;
-  $("mktDot").classList.toggle("on",career()&&!!cert&&cert.ok&&cert.hash===cfgHash(S.cfg)&&(C().contracts.some(k=>fits(k,cert.res).ok)||offersFor(C().cat).some(k=>fits(k,cert.res).ok)));if(typeof tabBadges==="function")tabBadges();
+  if(typeof tabBadges==="function")tabBadges();
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
@@ -455,8 +337,7 @@ function recompute(){
 }
 function hud(){
   if(typeof tabBadges==="function")tabBadges();
-  if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;$("weekLbl").textContent=`WEEK ${C().week} · ${(has("bay4")?"BAYS A–D":has("bay3")?"BAYS A–C":["BAY A","BAYS A+B","RACE SHOP"][has("bay2")?2:has("bay1")?1:0])}${dev()?" · DEV":""}`;}
-  else if(pcMode())pcHud();
+  if(career()){$("cashLbl").textContent=fmt$(C().cash);$("cashLbl").style.color=C().cash<0?"var(--crit)":"";$("repLbl").textContent=`Rep ${C().rep} · ${repTier()[1]}`;pcHud();}
   else{$("cashLbl").textContent="Test cell";$("cashLbl").style.color="var(--chalk)";$("repLbl").textContent="all parts unlocked";$("weekLbl").textContent="SANDBOX";}
   if(typeof lgHud==="function")lgHud();
 }
