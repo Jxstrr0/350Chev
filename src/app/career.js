@@ -164,13 +164,13 @@ function renderShop(){
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<span>Dyno reads to <b>${dc.hp.toLocaleString()} hp</b></span>${C().loan>0?`<span>Bank loan <b>${fmt$(C().loan)}</b></span>`:""}${C().cash<0?`<span><b class="warnc">${fmt$(C().cash)}</b> in the red</span>`:""}`;   // cash is in the header; the upgrade count sits in the list heading
   {const eng=engineName(),st=pcStrip();$("mkEng").textContent=eng;$("mkEng").title=eng;$("mkCert").className="mkc "+st.cls;$("mkCert").textContent=st.txt;$("mkCert").title=st.tip;$("mkBoard").textContent=st.when;$("mkBoard").title=st.whenTip||"";
-    const p=pcS();$("mkLine").innerHTML=`<span>Week <b>${C().week}</b></span><span>Season <b>${p.season}</b></span><span><b>${p.titles}</b> title${p.titles===1?"":"s"}</span><span><b>${fmt$(p.earned)}</b> team pay</span>`;}
+    const sk=pcSkip();$("nextWeek").textContent=sk?"To race week":"Close week";$("nextWeek").title=sk?`Closes ${sk} weeks: overhead for each, then round ${pcTeam().round+1} is due`:"";$("oneWeek").hidden=!sk;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(loanRate()*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
   $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Sign a team, or race an event.</div>`;
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
   $("goals").innerHTML=goalsHtml();
-  $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). A team round runs every other week: race it from the Team section, or Close week races it with the season engine as it stands.`;
+  $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). A team round runs every other week: race it from the Team section, or Close week races it with the season engine as it stands. After a round, To race week closes the off week and the race week in one tap; 1 wk closes just one.`;
   mkLayout();
   $("staffCnt").textContent=wages()?`${fmt$(wages())}/wk`:"";
   crewRender();   // people, levels, traits, training: app/crew.js
@@ -189,7 +189,17 @@ function setClose(){if(!setOn())return;$("setOpen").classList.remove("open");$("
 $("setOpen").addEventListener("click",()=>{if(setOn()){setClose();return;}renderShop();setOpen();});$("setClose").addEventListener("click",setClose);$("scrim").addEventListener("click",setClose);
 $("setPane").addEventListener("click",e=>{if(e.target.closest("#glOpen,#lessonsOpen,#kbHelpBtn,#sndCredBtn,#replayTour,#replayFF,#modeBox button"))setClose();});
 $("mkOh").addEventListener("click",()=>{const h=$("overheadHint"),on=h.hidden;h.hidden=!on;$("mkOh").setAttribute("aria-expanded",String(on));});
-$("nextWeek").addEventListener("click",()=>{if(testing){toast("Let the run finish first");return;}const due=pcDue();if(due&&!confirm(due))return;advanceWeek();save();hud();renderShop();toast(`WEEK ${C().week} · OVERHEAD ${fmt$(overhead())}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);});
+/* Close week, or To race week: the off week after a round has nothing on it for the team, so one tap closes it and
+   the race week too (pcSkip). It stops early if the bank calls, a sponsor phones or an R&D project finishes in between.
+   "1 wk" (#oneWeek) closes just one, for a shop that wants the off week's event nights. */
+function closeWeeks(n){if(testing){toast("Let the run finish first");return;}const due=pcDue();if(due&&!confirm(due))return;
+  const w0=C().week;let oh=0;
+  for(let i=0;i<n;i++){const so=spS().offers.length,rd=C().rndActive;advanceWeek();oh+=overhead();
+    if(C().cash<FORECLOSE_AT||spS().offers.length>so||(rd&&!C().rndActive))break;}
+  save();hud();renderShop();const k=C().week-w0;
+  toast(`${k>1?`WEEKS ${w0+1}–${C().week}`:`WEEK ${C().week}`} · OVERHEAD ${fmt$(oh)}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);}
+$("nextWeek").addEventListener("click",()=>closeWeeks(pcSkip()||1));
+$("oneWeek").addEventListener("click",()=>closeWeeks(1));
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
   if(h){const st=STAFF.find(x=>x.id===h.dataset.hire);if(C().cash<st.wage*2){toast(`Need ${fmt$(st.wage*2-C().cash)} more`);return;}C().cash-=st.wage*2;C().staff[st.id]=crewNew(st.id);syncShop();logEvent(`Hired ${C().staff[st.id].nm} as ${st.name.toLowerCase()} at ${fmt$(st.wage)}/week`,"");save();hud();renderShop();renderBuild();recompute();toast(`${st.name.toUpperCase()} · ON PAYROLL`);buzz(20);}
   if(f){const st=STAFF.find(x=>x.id===f.dataset.fire);const who=(crewP(st.id)||{}).nm;if(!confirm(`Let ${who?who+", your "+st.name.toLowerCase()+",":"the "+st.name.toLowerCase()} go?`))return;delete C().staff[st.id];syncShop();

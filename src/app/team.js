@@ -43,13 +43,13 @@ const PC_PTS_DRAG={1:20,2:14,3:9,5:4,9:0},PC_PTS_OVAL=[20,16,13,11,9,8,7,6,5,4,3
 /* the shop's pay, as shares of the season fee: a retainer each round raced, a bonus for a top-three round, a bigger one for
    the championship. Rep per round and for the title is scaled by the series tier (PC_REPK). */
 const PC_RETAIN=0.04,PC_RBONUS=[0.08,0.04,0.02],PC_CBONUS=[0.25,0.12,0.06],PC_CREP=[15,9,5],PC_REPK=[1,1.5,2.5,4,6,9];
-function pcFresh(){return{v:3,season:1,seed:Math.floor(Math.random()*1e9)+1,nid:1,offers:[],team:null,last:null,log:[],raced:0,wins:0,podiums:0,titles:0,seasons:0,backs:0,clean:0,earned:0,nitro:0};}
+function pcFresh(){return{v:3,season:1,seed:Math.floor(Math.random()*1e9)+1,nid:1,offers:[],team:null,last:null,raced:0,wins:0,podiums:0,titles:0,seasons:0,backs:0,clean:0,earned:0,nitro:0};}
 const pcOkT=T=>!!T&&typeof T==="object"&&!!PC_EVENTS[T.ev]&&!!PC_STYLES[T.style]&&T.budget>0&&T.pay>0;
 /* C().pc, made whole: a new career, or a damaged save, gets the missing pieces */
 function pcS(){const c=C();if(!c.pc||typeof c.pc!=="object"||c.pc.v!==3)c.pc=pcFresh();const p=c.pc,f=pcFresh();
   for(const k in f)if(typeof f[k]==="number"&&(typeof p[k]!=="number"||!isFinite(p[k])))p[k]=f[k];
   if(!Array.isArray(p.offers))p.offers=[];if(!p.offers.every(pcOkT))p.offers=p.offers.filter(pcOkT);
-  if(!Array.isArray(p.log))p.log=[];
+  delete p.log;   // the Race log fold went in 1.76.34: the team card's round list and the ledger carry it
   if(p.team!=null){const T=p.team;if(!pcOkT(T)||!Array.isArray(T.rivals)||typeof T.round!=="number")p.team=null;
     else{for(const k of ["spent","pts","wear","cost"])if(typeof T[k]!=="number"||!isFinite(T[k]))T[k]=0;if(!Array.isArray(T.hist))T.hist=[];if(typeof T.due!=="number")T.due=c.week;}}
   return p;}
@@ -78,8 +78,10 @@ function pcMake(){const p=pcS(),r=pcRand,pick=a=>a[Math.floor(r()*a.length)];
   if(E.ev==="drag"){T.fieldHp=Math.round(Math.min(base/pcHpPer(E)*(0.9+0.2*r()),dynoCap().hp*0.9));T.car=pick(RN_CARS[E.body]||RN_CARS.street);}
   else{T.track=r()<0.35?"paved":"clay";T.num=1+Math.floor(r()*98);}
   return T;}
-/* the Showroom hall brings a fourth team to the table */
-function pcRefill(){const p=pcS();if(p.team)return;p.offers=p.offers.filter(T=>!(T.exp<C().week));const n=PC_OFFERS+(has("hall")&&!dev()?1:0);while(p.offers.length<n)p.offers.push(pcMake());}
+/* the Showroom hall brings a fourth team to the table. A passed offer leaves its slot empty until the week closes
+   (p.passW, p.passN), so Pass is a choice and not a free reroll. */
+function pcRefill(){const p=pcS();if(p.team)return;p.offers=p.offers.filter(T=>!(T.exp<C().week));
+  const n=PC_OFFERS+(has("hall")&&!dev()?1:0)-(p.passW===C().week?p.passN:0);while(p.offers.length<n)p.offers.push(pcMake());}
 /* sign a contract: the season's rivals are fixed now, so the points table means something. Round 1 is next week. */
 function pcSign(T){const p=pcS(),E=PC_EVENTS[T.ev],r=rnRng((T.seed^0x7EA)>>>0);
   const t=Object.assign({},T,{round:0,spent:0,pts:0,wear:0,cost:0,hash:null,cfg:null,broken:false,hist:[],w0:C().week,due:C().week+1});delete t.exp;
@@ -198,7 +200,6 @@ function pcSettle(T,chk,out,res,auto){const p=pcS(),E=PC_EVENTS[T.ev],st=PC_STYL
   if(out.broke){T.broken=true;T.breaks=(T.breaks||0)+1;}
   const txt=pcPlaceTxt(out,E.ev),rd=T.round+1;T.hist.push({r:rd,t:txt,pts,k:pl===1?"good":out.broke?"bad":""});
   p.last={team:T.team,name:T.name,ev:T.ev,eng:auto?(T.eng||engineName()):engineName(),round:rd,season:p.season,txt,lines:out.lines,broke:out.broke,spent:chk?chk.need:0,fee,bonus,rep,pts,win:pl===1,auto:!!auto,w:C().week};
-  p.log.unshift({w:p.season,r:rd,t:`${T.team}, ${E.n}: ${txt}. ${pts} pts, ${fmt$(fee+bonus)}, rep ${rep>=0?"+":""}${rep}`,k:pl===1?"good":out.broke?"bad":""});p.log=p.log.slice(0,40);
   logEvent(`Team round ${rd} (${T.team}, ${E.n.toLowerCase()}): ${txt.toLowerCase()} — ${pts} pts, ${fmt$(fee+bonus)}, ${rep>=0?"+":""}${rep} rep`,pl===1?"good":out.broke?"bad":"");
   if(!out.sat){spEvent("team",{win:pl===1,finish:podium!=null});crewWork("team",{win:pl===1});}
   T.round++;T.due=C().week+PC_GAP;if(T.round>=PC_ROUNDS)pcSeasonEnd(T);
@@ -209,9 +210,8 @@ function pcSeasonEnd(T){const p=pcS(),st=PC_STYLES[T.style],mult=pcRepK(T),tab=p
   const clean=!T.breaks&&T.hist.every(h=>h.t!=="Sat out");C().cash+=bonus;C().rep+=rep;p.earned+=bonus;p.seasons++;if(pos===1)p.titles++;if(pos<=2)p.backs++;if(clean)p.clean++;
   if(pos===1)(C().pcTitles=C().pcTitles||[]).push({ev:T.ev,team:T.team,season:p.season,w:C().week});
   p.last.end={pos,of:tab.length,bonus,rep,pts:T.pts,top:tab.slice(0,5),spent:T.spent,budget:T.budget,back:pos<=2,clean};
-  p.log.unshift({w:p.season,r:PC_ROUNDS,t:`Season ${p.season} with ${T.team}: ${pos===1?"champions":"P"+pos+" of "+tab.length} on ${T.pts} pts. ${fmt$(bonus)}, rep ${rep>=0?"+":""}${rep}`,k:pos===1?"good":""});
   logEvent(`Season ${p.season} with ${T.team}: ${pos===1?"CHAMPIONS":"P"+pos+" of "+tab.length} — ${fmt$(bonus)} title bonus, +${rep} rep`,pos===1?"good":"");
-  p.team=null;p.season++;p.offers=[];
+  p.team=null;p.season++;p.offers=[];p.passN=0;
   if(pos<=2){const n={id:p.nid++,team:T.team,name:T.name,style:T.style,ev:T.ev,budget:Math.round(T.budget*1.2/500)*500,pay:Math.round(T.pay*1.2/1000)*1000,skill:T.skill,seed:Math.floor(pcRand()*1e9)+1,back:true,exp:C().week+PC_OPEN};
     if(T.fieldHp){n.fieldHp=Math.round(Math.min(T.fieldHp*1.12,dynoCap().hp*0.95));n.car=T.car;}else{n.track=T.track;n.num=T.num;}p.offers.push(n);}
   pcRefill();}
@@ -234,6 +234,8 @@ function pcDue(){const T=pcTeam();if(!T||C().week<T.due)return "";const ok=T.has
     :`Round ${T.round+1} for ${T.team} is this week and ${T.hash==null?"there's no engine built for it":"the engine is broken"}. Close the week and sit it out?`;}
 function pcWeek(){const T=pcTeam();if(!T||C().week<T.due)return "";const ok=T.hash!=null&&!T.broken&&T.cfg;
   if(!pcRun(T,null,!ok,true))return "";const L=pcS().last;return L.end?`Season over: ${L.end.pos===1?"champions":"P"+L.end.pos}`:`Round ${L.round}: ${L.txt.toLowerCase()}`;}
+/* the weeks Close week can skip to race week: two or more until the round, none due now (career.js closeWeeks) */
+function pcSkip(){const T=pcTeam();if(!T)return 0;const n=T.due-C().week;return n>=2?n:0;}
 function pcWeekAfter(){if(!career())return;pcRefill();}
 /* the Team tab's dot: a round due this week, or teams calling */
 function pcWaiting(){if(!career())return "";const p=pcS(),T=p.team;if(T)return C().week>=T.due?`Round ${T.round+1} is due this week`:"";return p.offers.length?`${p.offers.length} team${p.offers.length===1?"":"s"} calling`:"";}
@@ -260,7 +262,7 @@ function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(
   if(T.hash!=null)s+=`<p class="hint">Season engine: ${fmt$(T.cost)} of parts${T.broken?`. <b class="pcbad">Broken in the last round: it needs a ${fmt$(Math.round(T.cost*PC_FIX*pcToolK()))} rebuild.</b>`:T.wear>0?`, reliability down ${Math.round(T.wear)}% from wear. A freshen-up costs ${fmt$(fresh)}.`:", fresh."}${same?"":" The bench has a different build: racing it counts as an engine change."}</p>`;
   else s+=`<p class="hint">Build the engine for the season and certify it on the dyno. Whatever is left of the budget pays for freshen-ups, rebuilds and changes later.</p>`;
   s+=`<div class="pcchk">${c.o.map(x=>`<div class="${x.ok?"ok":"no"}">${x.ok?"✓":"✗"} ${esc(x.t)}</div>`).join("")}</div>
-    ${due?"":`<p class="hint">Race week ${T.due}: close the week${T.due-C().week>1?"s":""} until then. Close week on race week races it with the season engine as it stands.</p>`}
+    ${due?"":`<p class="hint">Race week ${T.due}: ${T.due-C().week>1?"To race week gets you there in one tap (1 wk closes just one, for the event nights)":"close the week to get there"}. Close week on race week races it with the season engine as it stands.</p>`}
     <div class="row"><button class="btn${c.ok&&due?"":" ghost"}" id="pcGo" ${c.ok&&due?"":"disabled"}>${due?`Race round ${rd}`:`Round ${rd} · week ${T.due}`}</button>`;
   if(same&&!T.broken&&T.wear>0)s+=`<button class="btn sm" data-pcfresh ${fresh>left?"disabled":""}>Freshen up · ${fmt$(fresh)}</button>`;
   if(T.hash!=null&&!same)s+=`<button class="btn sm ghost" data-pcback>Put the season engine back</button>`;
@@ -272,7 +274,7 @@ function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(
 /* the engine tag over the garage reads the team state ("READY FOR ROUND n"), so a race day, a signing or a walk-out redraws it */
 function pcTag(){const t=$("tag");if(t&&quick&&!(document.activeElement&&document.activeElement.id==="nameIn"))t.innerHTML=engineCard(S.cfg,quick,{editable:true});}
 function pcRender(){if(!$("mkTeam")||!career())return;const p=pcS();pcRefill();const T=p.team;pcTag();
-  $("pcStats").innerHTML=`<span>Season <b>${p.season}</b></span><span><b>${p.raced}</b> raced</span><span><b>${p.wins}</b> won</span><span><b>${p.titles}</b> title${p.titles===1?"":"s"}</span>`;
+  $("pcStats").innerHTML=`<span>Season <b>${p.season}</b></span><span><b>${p.raced}</b> raced</span><span><b>${p.wins}</b> won</span><span><b>${p.titles}</b> title${p.titles===1?"":"s"}</span><span><b>${fmt$(p.earned)}</b> team pay</span>`;
   $("pcJob").innerHTML=T?`<div class="sec"><h2>Your team</h2>${pcTeamCard(T)}</div>`:"";
   const L=p.last;let lh="";
   if(L){lh=`<div class="card pcres${L.win?" win":L.broke?" bad":""}"><h3>${esc(L.txt)}<span>season ${L.season} · round ${L.round}</span></h3><div class="client">${esc(L.team)} · ${esc(L.name)} · ${PC_EVENTS[L.ev].n} · ${esc(L.eng)}${L.auto?(L.txt==="Sat out"?" · at Close week":" · raced at Close week"):""}</div>
@@ -285,9 +287,9 @@ function pcRender(){if(!$("mkTeam")||!career())return;const p=pcS();pcRefill();c
     lh+=`<button class="btn sm ghost" data-pcok>OK</button></div>`;}
   $("pcLast").innerHTML=lh;
   $("pcOfSec").style.display=T?"none":"";$("pcCnt").textContent=p.offers.length;
-  $("pcNext").textContent=`Season ${p.season}: pick a team to supply for ${PC_ROUNDS} rounds. ${pcNextTxt()}`;
+  $("pcNext").textContent=`Season ${p.season}: pick a team to supply for ${PC_ROUNDS} rounds. ${pcNextTxt()}${p.passW===C().week&&p.passN?` A passed team's place fills when the week closes.`:""}`;
   $("pcRoster").innerHTML=T?"":p.offers.map(pcOffer).join("");
-  $("pcLog").innerHTML=p.log.length?p.log.map(e=>`<div class="${e.k||""}">S${e.w} R${e.r}: ${esc(e.t)}</div>`).join(""):"<div>No race days yet.</div>";}
+}
 /* the header's week line, and the build cost in red when it is more than the team has left */
 function pcHud(){if(!career())return;const T=pcTeam();let over=false,t=`WEEK ${C().week}`;
   if(T){const nd=pcNeed(T,quick?Math.round(quick.cost):0),left=pcLeft(T);over=nd.need>left;t+=` · R${T.round+1}/${PC_ROUNDS} ${C().week>=T.due?"THIS WEEK":"WK "+T.due}`;}
@@ -296,10 +298,11 @@ function pcHud(){if(!career())return;const T=pcTeam();let over=false,t=`WEEK ${C
 $("mkTeam").addEventListener("click",e=>{if(!career())return;const p=pcS(),T=p.team;
   if(e.target.closest("#pcGo")){pcRace(false);return;}
   const g=e.target.closest("[data-pcsign]");if(g){if(T)return;const o=p.offers.find(x=>x.id==g.dataset.pcsign);if(!o)return;const t=pcSign(o);save();hud();renderShop();showTab("build");toast(`Signed with ${t.team} · round 1 is week ${t.due}`);if(tourStep>=0)setTimeout(()=>tourAdvance(0),60);return;}
-  const ps=e.target.closest("[data-pcpass]");if(ps){p.offers=p.offers.filter(x=>x.id!=ps.dataset.pcpass);pcRefill();save();pcRender();return;}
+  const ps=e.target.closest("[data-pcpass]");if(ps){if(T)return;const n0=p.offers.length;p.offers=p.offers.filter(x=>x.id!=ps.dataset.pcpass);if(p.offers.length===n0)return;
+    if(p.passW!==C().week){p.passW=C().week;p.passN=0;}p.passN++;save();pcRender();toast("Passed · another team calls when the week closes");return;}
   if(!T){if(e.target.closest("[data-pcok]")){p.last=null;save();pcRender();}return;}
   if(e.target.closest("[data-pcfresh]")){const f=pcFreshCost(T);if(f>pcLeft(T)||T.hash!==cfgHash(S.cfg))return;T.spent+=f;T.wear=0;save();hud();pcRender();toast(`Freshened up · ${fmt$(f)}`);return;}
   if(e.target.closest("[data-pcback]")){if(testing||!T.cfg){toast("Let the run finish first");return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,T.cfg);S.profileId=null;S.name=T.eng||null;afterCfgChange(true);pcRender();toast("The season engine is back on the bench");return;}
   if(e.target.closest("[data-pcsit]")){if(!confirm(`Sit out round ${T.round+1}? No points and no retainer for it.`))return;pcRace(true);return;}
-  if(e.target.closest("[data-pcdrop]")){if(!confirm(`Walk away from ${T.team}? The season ends here with no title bonus, and it costs ${Math.round(3*pcRepK(T))} rep.`))return;C().rep=Math.max(0,C().rep-Math.round(3*pcRepK(T)));logEvent(`Walked away from ${T.team} after ${T.round} round${T.round===1?"":"s"}`,"bad");p.team=null;p.season++;p.offers=[];pcRefill();save();hud();renderShop();return;}
+  if(e.target.closest("[data-pcdrop]")){if(!confirm(`Walk away from ${T.team}? The season ends here with no title bonus, and it costs ${Math.round(3*pcRepK(T))} rep.`))return;C().rep=Math.max(0,C().rep-Math.round(3*pcRepK(T)));logEvent(`Walked away from ${T.team} after ${T.round} round${T.round===1?"":"s"}`,"bad");p.team=null;p.season++;p.offers=[];p.passN=0;pcRefill();save();hud();renderShop();return;}
   if(e.target.closest("[data-pcok]")){p.last=null;save();pcRender();}});
