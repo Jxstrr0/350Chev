@@ -100,7 +100,6 @@ function showResult(res,env){
   else if(env.testType==="salt"&&res.salt)v=saltVerdict(res);
   else if(env.testType==="bog"&&res.bog)v=bogVerdict(res);
   else if(env.testType==="boat"&&res.boat)v=boatVerdict(res);
-  else if(S.bay&&env.testType==="pull"&&!over&&!res.fails.length)v=ddVerdict(res);
   else if(over)v=`<div class="verdict fail"><div><div class="big">DYNO OVERLOADED</div><p>${dynoCap().n} can't hold ${Math.round(res.peakHp)} hp / ${S.cfg.redline} rpm. It cannot be certified here — ${has("dyno5")?"no cell reads higher; pull some power out.":"upgrade the dyno in the Shop."}</p></div></div>`;
   else if(res.fails.length)v=`<div class="verdict fail"><div><div class="big">FAILED</div><p>${res.fails.length===1?"One subsystem":res.fails.length+" subsystems"} went past its limit.</p>${res.fails.map(n=>{const t=res.tests.find(x=>x.name===n)||{};return `<div class="failnote"><b>${n}</b>${t.sub?` <small>${t.sub}</small>`:""} — ${t.physics||""} <i>${t.fix||""}</i></div>`;}).join("")}</div></div>`;
   else if(env.testType==="endurance"&&res.endurance&&res.endurance.failedAtHour!=null)v=`<div class="verdict fail"><div><div class="big">FAILED AT ${res.endurance.failedAtHour} H</div><p>First to go: ${(res.tests.find(t=>t.id===res.firstToFail)||{}).name||res.firstToFail}. It passed the pull but not the hours.</p></div></div>`;
@@ -183,12 +182,9 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="road"&&career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}
   if(S.env.testType==="pull_sled"){const k=pullEnvFix(),lg=pullLegal(k),l=pullClsLocked(k);if(l){toast(`${SIM.PULL_CLASSES[k].n} needs the ${pullLockTxt(k)}`);return;}if(!lg.ok){toast(`Not legal for ${SIM.PULL_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(pullHookedWk(k)){toast(`Already hooked in ${SIM.PULL_CLASSES[k].n} this week — next pull night is week ${C().week+1}`);return;}}
   if(pullGate())return;
-  if(S.env.testType==="bog"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}   // dyno day: no mud bog with a customer's engine
   if(S.env.testType==="bog"){const k=bogEnvFix(),l=clsLocked(SIM.BOG_CLASSES,k);if(l){toast(`${SIM.BOG_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(bogHookedWk(k)){toast(`Already ran ${SIM.BOG_CLASSES[wkCls("bogWk")].n} this week — one class a week; the next mud bog is week ${C().week+1}`);return;}}
-  if(S.env.testType==="hill"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
   if(S.env.testType==="hill"){const k=hillEnvFix(),l=clsLocked(SIM.HILL_CLASSES,k);if(l){toast(`${SIM.HILL_CLASSES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(hillRanWk(k)){toast(`Already ran ${SIM.HILL_CLASSES[wkCls("hillWk")].n} this week — one class a week; the next running is week ${C().week+1}`);return;}}
   if(S.env.testType==="oval"&&ovalGate())return;
-  if(S.env.testType==="boat"&&S.bay){toast(`${S.bay.practice?"Practice":"Customer"} engine on the dyno — hand it back or walk away first`);return;}
   if(S.env.testType==="boat"){const k=boatEnvFix(),l=clsLocked(SIM.BOAT_CLASSES,k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(boatRanWk(k)&&!(boatLive()&&boatLive().cls===k)){toast(`Already ran ${SIM.BOAT_CLASSES[wkCls("boatWk")].n} this week — one class a week; the next night is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
   if(career()){C().cash-=cost;hud();}
@@ -211,7 +207,7 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="oval"){ovalStart();return;}
   if(S.env.testType==="boat"){boatStart();return;}
   const snap=testSnap(),cfg0=snap.cfg;
-  const env=simEnv(ddEnvX());const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
+  const env=simEnv();const res=SIM.simulate(cfg0,env);const N=res.rpms.length;const t0=performance.now();
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";
   let failed=false,failAt=Infinity,dur,hold,label="";
   const failKind=failKindOf(res,env);const rpmDecay={rod:420,crank:520,valve:360,seize:80,knock:45,steam:30,turbo:70}[failKind]||160;
@@ -233,18 +229,18 @@ $("runTest").addEventListener("click",()=>{
     else{testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
       S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
-      if(same&&!ff&&!career()&&env.testType==="pull"&&!failing&&!S.bay)pbPull(res);
-      if(career()&&env.testType==="pull"&&!offStd&&!S.bay){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const bad=!res.fails.length&&!overCap&&!lk&&crewBadRead(),ok=!res.fails.length&&!overCap&&!lk&&!bad;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:bad?"a sensor read wrong (clumsy with sensors) — pull it again":lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
-        if(ok)tourAdvance(1);
+      if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
+      if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const bad=!res.fails.length&&!overCap&&!lk&&crewBadRead(),ok=!res.fails.length&&!overCap&&!lk&&!bad;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:bad?"a sensor read wrong (clumsy with sensors) — pull it again":lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
+        if(ok)tourAdvance(2);
         if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(cfg0.asp!=="na")C().boostedCert=true;}
         else if(bad){logEvent(`Bad reading on the dyno — a sensor knocked loose; pull it again`,"bad");setTimeout(()=>toast("BAD READING · a sensor knocked loose — pull it again"),2700);}
         else if(lk)setTimeout(()=>toast(`NO CERT — needs ${lk}`),2700);else if(overCap)setTimeout(()=>toast(`NO CERT — ${cap.n} caps at ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`),2700);}
       if(career())crewWork("dyno",{tt:env.testType});
-      if(career()&&same&&!S.bay)addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40,hKey(snap.h));
+      if(career()&&same)addWear(env.testType==="pull"?0.15:env.testType==="overrev"?1:env.hours/40,hKey(snap.h));
       if(career()&&env.testType==="endurance"&&env.hours>=100&&!res.fails.length&&!failing&&!offStd)C().enduranceOk=true;
       if(career()&&same)checkGoals();
-      if(!S.bay)achCheck({type:"dyno",res,env,failing,offStd});   // a customer's engine earns the shop nothing on the dyno
+      achCheck({type:"dyno",res,env,failing,offStd});
       save();recompute();renderTest();
       revealVerdict();
       if(ff&&ff.ending);else if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
@@ -317,22 +313,21 @@ const ACH=[
   {g:"endure",id:"e24fin",name:"Saw the flag",desc:"Be classified at the end of the 24 Hours of Prairie Sky.",ic:"clock",tier:"bronze",check:x=>!!x.e24Fin},
   {g:"endure",id:"e24pod",name:"Sunday morning podium",desc:"Finish the 24 Hours on the class podium.",ic:"flag",tier:"silver",check:x=>!!x.e24Pod},
   {g:"endure",id:"e24win",name:"Prairie Sky winner",desc:"Win your class at the 24 Hours.",ic:"trophy",tier:"gold",check:x=>!!x.e24Win},
-  {g:"shop",id:"sale",name:"First sale",desc:"Deliver a contract or sell on the open market.",ic:"coin",tier:"bronze",check:()=>career()&&C().sold>0},
-  {g:"shop",id:"repeat",name:"Repeat customer",desc:"Deliver a repeat order from a happy client.",ic:"people",tier:"silver",check:()=>career()&&C().repeats>0},
-  {g:"shop",id:"sold50",name:"Fifty out the door",desc:"Sell 50 engines.",ic:"engine",tier:"silver",check:()=>career()&&C().sold>=50},
-  {g:"shop",id:"sold200",name:"Production line",desc:"Sell 200 engines.",ic:"engine",tier:"gold",check:()=>career()&&C().sold>=200},
+  {g:"shop",id:"teamsign",name:"On the payroll",desc:"Sign your first race team.",ic:"people",tier:"bronze",check:()=>career()&&!!C().pc&&(!!C().pc.team||(C().pc.seasons||0)>0)},
+  {g:"shop",id:"teampod",name:"Podium engine",desc:"Put a team on the podium at a round.",ic:"trophy",tier:"bronze",check:()=>career()&&!!C().pc&&(C().pc.podiums||0)>0},
+  {g:"shop",id:"teamwin",name:"Round winner",desc:"Win a round with a team's engine.",ic:"flag",tier:"silver",check:()=>career()&&!!C().pc&&(C().pc.wins||0)>0},
+  {g:"shop",id:"teamchamp",name:"Champions",desc:"Win a team championship.",ic:"trophy",tier:"silver",check:()=>career()&&!!C().pc&&(C().pc.titles||0)>0},
+  {g:"shop",id:"teamback",name:"Asked back",desc:"Finish a season in the top two, so the team wants you again.",ic:"people",tier:"silver",check:()=>career()&&!!C().pc&&(C().pc.backs||0)>0},
+  {g:"shop",id:"teamclean",name:"Bulletproof",desc:"Run all eight rounds of a season without a breakage.",ic:"shield",tier:"gold",check:()=>career()&&!!C().pc&&(C().pc.clean||0)>0},
+  {g:"shop",id:"nitro",name:"Nitro money",desc:"Sign a funny car or top dragster team.",ic:"bolt",tier:"gold",check:()=>career()&&!!C().pc&&(C().pc.nitro||0)>0},
   {g:"shop",id:"legend",name:"Legend",desc:"Reach the Legend reputation tier.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=5},
   {g:"shop",id:"dynasty",name:"Dynasty",desc:"Reach the Dynasty reputation tier, 3,000 rep.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=6},
-  {g:"shop",id:"zero",name:"Zero defects",desc:"Ten straight weeks in the field with no warranty claim.",ic:"shield",tier:"silver",check:()=>career()&&C().cleanWeeks>=10},
   {g:"shop",id:"debtfree",name:"Debt-free",desc:"Take a loan, then pay the bank back in full.",ic:"coin",tier:"bronze",check:()=>career()&&!!(S.achN||{}).loan&&C().loan<=0},
   {g:"shop",id:"cash100",name:"Six figures",desc:"Hold $100,000 in cash.",ic:"coin",tier:"silver",check:()=>career()&&C().cash>=1e5},
   {g:"shop",id:"year",name:"A full year",desc:"Survive to week 52.",ic:"cal",tier:"silver",check:()=>career()&&C().week>=52},
   {g:"shop",id:"spon1",name:"Sponsored",desc:"Sign your first sponsor.",ic:"star",tier:"bronze",check:()=>career()&&spS().hist.signed>0},
   {g:"shop",id:"spondone",name:"Good for the brand",desc:"Finish a sponsorship with every obligation met.",ic:"tick",tier:"silver",check:()=>career()&&spS().hist.done>0},
   {g:"shop",id:"sponfull",name:"Full livery",desc:"Carry three sponsors at once.",ic:"trophy",tier:"gold",check:()=>career()&&spS().hist.max>=3},
-  {g:"shop",id:"ddfirst",name:"Diagnosed",desc:"Find and fix a sick engine on Dyno day (practice counts).",ic:"tick",tier:"bronze",check:x=>!!x.ddPass},
-  {g:"shop",id:"ddclean",name:"No hints needed",desc:"Fix a Dyno day job with no hints, on budget.",ic:"bolt",tier:"silver",check:x=>!!x.ddClean},
-  {g:"shop",id:"dd10",name:"House calls",desc:"Fix ten customers' engines in one career.",ic:"shield",tier:"gold",check:()=>career()&&!!C().dd&&C().dd.passed>=10},
   // salt, oval and road course: the facts come from the run just finished (achFacts salt/oval/road) or the record book (retro)
   {g:"salt",id:"salt1",name:"Salt flat",desc:"Post a timed mile on the salt.",ic:"flag",tier:"bronze",check:x=>x.saltMph>0},
   {g:"salt",id:"salt200",name:"200 MPH Club",desc:"Average 200 mph or better over the timed mile.",ic:"star",tier:"silver",check:x=>x.saltMph>=200},
@@ -381,7 +376,6 @@ function achFacts(x){
     if(R.lsr&&typeof R.lsr==="object"){const pb=R.lsr.pb&&typeof R.lsr.pb==="object"?Object.values(R.lsr.pb):[];if(pb.length)f.saltMph=Math.max.apply(null,pb.map(e=>e&&e.mph||0));if(R.lsr.rec&&Object.values(R.lsr.rec).some(e=>e&&e.mph))f.saltRec=true;}
     for(const k in R)if(k==="oval"||k.indexOf("oval_")===0){const O=R[k];if(O&&typeof O==="object")for(const e of Object.values(O))if(e){if(e.feats>0)f.ovalFin=true;if(e.wins>0)f.ovalWin=true;}}
     if(R.road&&typeof R.road==="object")for(const e of Object.values(R.road))if(e&&e.t>0){f.roadT=e.t;if(e.z>0&&!(f.roadZ<e.z))f.roadZ=e.z;}}
-  else if(x.type==="dd"){f.ddPass=!!x.pass;f.ddClean=!!x.clean;}
   else if(x.type==="ff")f.firstfire=true;
   else if(x.type==="swap")Object.assign(f,x.f||{});
   f.nightsWon=R.nightsWon||0;

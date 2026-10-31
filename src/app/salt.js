@@ -227,12 +227,4 @@ function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).
   const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length){lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});return `<div class="rtop saltrec"><span>Salt flats · class records</span><div><span>working out the class records…</span></div></div>`;}
   const rows=[...keys].map(k=>{const r=saltRecord(k),pb=L.pb[k];return{k,r,pb};}).filter(o=>o.r).sort((a,b)=>(b.pb?1:0)-(a.pb?1:0)||(b.r.mph-a.r.mph)).slice(0,10);
   return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
-/* land-speed buyers: their car, your engine, the same salt — the mile they need, estimated with a steady driver */
-const lsrFitCache=new Map();
-function lsrFitMph(res,cfg,body){const key=cfgHash(cfg)+"|"+body;if(lsrFitCache.has(key))return lsrFitCache.get(key);
-  const asp=(SIM.OPT.asp[cfg.asp]||{}).kind||"na",f=asp==="na"?0.87:0.92;const r=Object.assign({},res,{torque:res.torque.map(t=>t*f),peakHp:res.peakHp*f,peakTq:res.peakTq*f,saltEnv:{rho:1.0,ambientC:32}});
-  const veh={body,redline:cfg.redline,course:"long",cooling:body==="streamliner"||body==="lakester"?"ice":"radiator",chute:"dual",aero:body==="altered"||body==="roadster",noFail:true,noSpin:true,h:0.005};
-  const B=SIM.LSR_BODIES[body],m=B.mass+(r.kg||200),P=0.9*r.peakHp*745.7;let vb=20;for(let i=0;i<30;i++)vb=Math.pow(Math.max(1,P-0.015*m*9.81*vb)/(0.5*1.0*B.cdA),1/3);
-  veh.topMph=Math.round(vb*2.23694*cfg.redline/Math.max(1,r.peakHpRpm||cfg.redline*0.85));
-  const out=SIM.lsrPass(r,veh).mileMph||0;if(lsrFitCache.size>300)lsrFitCache.clear();lsrFitCache.set(key,out);return out;}
 

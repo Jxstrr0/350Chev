@@ -59,12 +59,6 @@ function suEnvHtml(sl,hill){const e=S.env;suFix(e);
     <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. Stock is the chassis as designed.</p>`;}
 $("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;S.env.suSt=50;S.env.suSp=0;S.env.suWg=0;renderEnv();save();buzz(6);});
 function roadKey(ch,trk){return ch+"|"+trk;}
-/* market: a buyer's road figures for an engine, in the buyer's car (cached like the site runs) */
-const roadCache=new Map();
-function roadFor(res,cfg,road,tag){const ch=road&&SIM.CHASSIS[road.ch]?road.ch:"coupe",trk=road&&SIM.ROAD_TRACKS[road.trk]?road.trk:null,ty=road&&road.tyre||null;
-  const key=cfgHash(cfg)+"|"+(tag||"")+"|"+ch+"|"+(ty||"")+"|"+(trk||"");let r=roadCache.get(key);
-  if(!r){if(roadCache.size>800)roadCache.clear();const p=SIM.roadPrep(cfg,res),o={ch,tyre:ty||undefined},a=SIM.roadRun(p,o),L=trk?SIM.lapSim(p,o,trk):null;r={z100:a.zero100,top:a.top.kmh,lap:L?L.time:null};roadCache.set(key,r);}
-  return r;}
 function roadCarTxt(road){const c=(road&&road.car)||SIM.CHASSIS[road&&road.ch]||SIM.CHASSIS.coupe;return `${/^[AEIOU]/.test(c.n)?"an":"a"} ${c.n.toLowerCase().replace("gt","GT").replace("awd","AWD")}`;}
 function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry. Needs a certified engine. Bolt it into a car, run the straight-line figures and a flying lap — performance buyers judge 0–100 and lap times in their own car. Every lap is a little wear on the build.`
   :`<b>Road test</b> · the engine goes into the chassis you pick. 0–100, the quarter, 80–120 and top speed come off a straight; then one flying lap, played back on the circuit. <b>Space</b> skips the lap.`;}

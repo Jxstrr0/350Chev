@@ -1,6 +1,6 @@
 /* ===================== TROPHY ROOM =====================
    What the shop has won, set and kept, in one room. The game already keeps records (recs()), achievements (S.ach), goals
-   (C().goals), sponsors (spS()) and Dyno day counts (DD()); what it didn't keep is a dated history of wins, so this adds
+   (C().goals), sponsors (spS()) and team seasons (pcS()); what it didn't keep is a dated history of wins, so this adds
    one: an additive log per mode (career C().trophies, sandbox S.sbTrophies = {v, log:[...], retired:[...]}), filled
    from the achCheck() hook at the end of every event and seeded from the records the first time a save meets it.
    Events are data: TROPHY_EV lists each with its achCheck types, its trophy shape and how to read a win; an event with
@@ -30,9 +30,8 @@ const TROPHY_EV=[
     return{t:`${r.clsName||"Dirt oval"} feature — first`,what:`Won the ${r.N}-lap feature on ${r.night} ${r.surf==="asphalt"?"asphalt":"clay"} from ${ordN(r.gridMe)} on the grid, against ${r.of-1} others.`,nums:[["Time",fmtOvRace(r.time)],["Best lap",fmtOv(r.best)+" s"],["Started",ordN(r.gridMe)],["Field",r.of]],veh:r.clsName||"",u:"ovf"+(r.at||Date.now())};},
     extra:x=>{const r=x.r;if(x.failed||!r||r.stage!=="heat"||r.place!==1)return null;return{t:`${r.clsName||"Dirt oval"} heat — first`,tier:"bronze",what:`Won the ${r.N}-lap heat, which put the car on the front row for the feature.`,nums:[["Time",fmtOvRace(r.time)],["Best lap",fmtOv(r.best)+" s"],["Field",r.of]],veh:r.clsName||"",u:"ovh"+(r.at||Date.now())};}},
   {k:"boat",n:"Boat drags",shape:"prop",types:["boat","boatdrag","boat_drag"]},
-  {k:"dd",n:"Dyno day",shape:"gauge",types:["dd"],win:x=>{if(!career()||!x.pass)return null;const d=DD(),n=d.passed,T=tropBook();const mk=[1,5,10,25,50,100];
-    if(x.clean&&!T.log.some(e=>e.ev==="dd"&&e.clean))return{t:"Clean fix",clean:true,tier:"silver",what:"Found and fixed a customer's engine with no hints, on budget.",nums:[["Fixed",n],["Streak",d.streak||"—"],["Earned",fmt$(d.earned||0)]]};
-    if(!mk.includes(n))return null;return{t:n===1?"First customer fixed":`${n} customers fixed`,tier:n>=25?"gold":n>=5?"silver":"bronze",what:"Dyno day: a sick engine in, a healthy one handed back.",nums:[["Fixed",n],["Failed",d.failed||0],["Earned",fmt$(d.earned||0)]],u:"dd"+n};}},
+  {k:"team",n:"Team championships",shape:"title",types:["team"],win:()=>{if(!career())return null;const L=pcS().last,X=L&&L.end;if(!X||X.pos!==1)return null;const E=PC_EVENTS[L.ev];
+    return{t:`${E.n} champions`,what:`Supplied ${L.team} and ${L.name} to the ${E.n.toLowerCase()} title, season ${L.season}.`,nums:[["Points",X.pts],["Title bonus",fmt$(X.bonus)],["Budget used",`${fmt$(X.spent)} of ${fmt$(X.budget)}`]],veh:E.n,u:"tm"+L.season+L.ev};}},
   {k:"spon",n:"Sponsors",shape:"pennant",types:["sponsor"],win:()=>{if(!career())return null;const s=spS(),a=s.active[s.active.length-1];if(!a)return null;const b=spBrand(a.b),T=tropBook();if(T.log.some(e=>e.ev==="spon"&&e.brand===b.id))return null;
     return{t:b.name,brand:b.id,slot:"pennant",what:`${b.tag} — signed for ${a.weeks} weeks${a.ret?", "+fmt$(a.ret)+" a week":""}.`,nums:[["Signed",s.hist.signed],["Completed",s.hist.done],["Earned",fmt$(s.hist.earned||0)]]};}}
 ];
@@ -56,7 +55,7 @@ function tropSeed(T){if(ff)return;const R=recs(),L=T.log,cut=tropSeed.cut||0;let
   if(R.lsr&&R.lsr.rec)Object.keys(R.lsr.rec).forEach(k=>{const e=R.lsr.rec[k];if(e&&e.mph)add({ev:"salt",t:`Class record · ${k}`,what:`Two-way average over the mile${e.was?`, beating ${trF(e.was,3)} mph`:""}.`,nums:[["Record",trF(e.mph,3)+" mph"],["Runs",Array.isArray(e.runs)?e.runs.map(v=>trF(v,1)).join(" / "):"—"]]},e);});
   if(R.e24Best&&R.e24Best<=3)add({ev:"e24",tier:R.e24Best===1?"gold":R.e24Best===2?"silver":"bronze",t:R.e24Best===1?"Class win":`${ordN(R.e24Best)} in class`,what:"Best class finish at the 24 Hours of Prairie Sky.",nums:[["Best",ordN(R.e24Best)],["Starts",R.e24Runs||"—"]]},{});
   if(career()){const s=spS();s.active.forEach(a=>{const b=spBrand(a.b);add({ev:"spon",slot:"pennant",brand:b.id,t:b.name,what:`${b.tag} — on the car now.`,nums:[["Signed",s.hist.signed],["Earned",fmt$(s.hist.earned||0)]]},{w:a.w0!=null?a.w0:C().week});});
-    const d=C().dd;if(d&&d.passed>0)add({ev:"dd",tier:d.passed>=25?"gold":d.passed>=5?"silver":"bronze",t:`${d.passed} customer${d.passed>1?"s":""} fixed`,what:"Dyno day: sick engines in, healthy ones handed back.",nums:[["Fixed",d.passed],["Failed",d.failed||0],["Earned",fmt$(d.earned||0)]]},{});}
+    }
   T.seeded=Date.now();}
 /* the hook: achCheck({type, r, ...}) at the end of every event */
 function tropHook(x){if(!x||ff||!S||!S.mode)return;
@@ -107,7 +106,7 @@ function tropBest(name,h){const R=recs(),out=[],mine=e=>e&&(e.n===name||(h&&e.h=
   if(R.hill)Object.keys(R.hill).forEach(k=>{const e=R.hill[k];if(mine(e)&&e.t)out.push(["Pikes Peak · "+trHill(k),fmtHill(e.t)]);});
   const wins=tropBook().log.filter(e=>!e.seed&&e.slot!=="pennant"&&(e.h===h||e.eng===name)).length;if(wins)out.unshift(["Trophies",wins]);
   return out.slice(0,6);}
-function tropRetire(){if(testing){toast("Let the run finish first");return;}if(S.bay){toast("That's a customer's engine — hand it back first");return;}
+function tropRetire(){if(testing){toast("Let the run finish first");return;}
   const T=tropBook(),h=cfgHash(S.cfg),name=engineName(),cert=career()&&C().cert&&C().cert.ok&&C().cert.hash===h?C().cert.res:null,q=cert||quick||{};
   const snap={id:Date.now().toString(36),name:name.slice(0,40),cfg:Object.assign({},S.cfg),h,hp:Math.round(q.peakHp||0),tq:Math.round(q.peakTq||0),rel:q.rel,label:cfgLbl(S.cfg),best:tropBest(name,h),cert:!!cert};
   tropStamp(snap);const i=T.retired.findIndex(e=>e.h===h);
@@ -115,7 +114,7 @@ function tropRetire(){if(testing){toast("Let the run finish first");return;}if(S
   else{if(T.retired.length>=TROPHY_RET_MAX){toast(`The room holds ${TROPHY_RET_MAX} retired engines — take one down first`);return;}T.retired.unshift(snap);toast(`RETIRED · ${snap.name} goes on a stand`);}
   if(career())logEvent(`Retired ${snap.name} to the trophy room — ${snap.hp.toLocaleString("en-CA")} hp`,"good");
   save();tropCountSync();if(TR.open){tropRefresh();setTimeout(()=>tropPick("E"+snap.id),300);}}
-function tropLoad(id){const T=tropBook(),e=T.retired.find(x=>x.id===id);if(!e)return;if(testing){toast("Let the run finish first");return;}if(S.bay){toast("A customer's engine is on the dyno — hand it back first");return;}
+function tropLoad(id){const T=tropBook(),e=T.retired.find(x=>x.id===id);if(!e)return;if(testing){toast("Let the run finish first");return;}
   if(career()&&presetLocked(e.cfg)){toast(`Needs the ${presetLocked(e.cfg)} upgrade`);return;}
   S.cfg=Object.assign({},SIM.DEFAULT_CFG,e.cfg);S.profileId=null;S.name=e.name||null;afterCfgChange(true);tropClose();showTab("build");toast(`LOADED · ${e.name}`);}
 function tropFront(id){const T=tropBook(),i=T.retired.findIndex(x=>x.id===id);if(i<0)return;const [e]=T.retired.splice(i,1);T.retired.unshift(e);save();tropRefresh();setTimeout(()=>tropPick("E"+id),300);}
@@ -136,7 +135,7 @@ function tropRefresh(){const items=tropItems(),eng=tropEngines(),cr=career();TR.
   const c=tropCounts(),med=items.filter(i=>i.slot==="medal").length,sl=items.filter(i=>i.slot==="slip").length;
   $("trSub").textContent=`${cr?"Career · week "+C().week:"Test cell"} · ${c.shelf} troph${c.shelf===1?"y":"ies"} · ${sl} slip${sl===1?"":"s"} · ${med} medal${med===1?"":"s"}${c.eng?" · "+c.eng+" retired":""}`;
   const note=$("trNote");note.hidden=cr&&c.shelf>0;
-  note.innerHTML=!cr?`<b>Test cell shelf.</b> Practice wins, test-cell records and your achievements. Goals, sponsors and Dyno day hang in the career room.`:`<b>Empty shelf — go win something.</b> Race nights, pull and bog wins, salt records, 24 h podiums and Dyno day milestones land here.`;
+  note.innerHTML=!cr?`<b>Test cell shelf.</b> Practice wins, test-cell records and your achievements. Goals, sponsors and team titles hang in the career room.`:`<b>Empty shelf — go win something.</b> Race nights, pull and bog wins, salt records, 24 h podiums and Dyno day milestones land here.`;
   if(TR.gl)TR.gl=ENGINE_VIS.setTrophy({on:true,items,engines:eng,onPick:tropPick})!==false;
   tropListRender(items,eng);if(TR.sel&&TR.map[TR.sel])tropCard(TR.sel);}
 function tropPick(id){if(!TR.open)return;if(!id||!TR.map[id]){tropCard(null);if(TR.gl)ENGINE_VIS.trophyFocus(null);return;}tropCard(id);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(id);}

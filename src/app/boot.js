@@ -123,7 +123,7 @@ function tick(now){
 
 /* ===================== TABS & BOOT ===================== */
 let curTab="build";
-/* each tab keeps its own place in the panel: a quick look at Market doesn't throw you back to the top of Build */
+/* each tab keeps its own place in the panel: a quick look at Team doesn't throw you back to the top of Build */
 const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
 /* A tap on the tab bar swaps the page and lets it paint first; the renders (bench, events, analysis, shop) run right after
    that frame. Anything else that calls showTab (tour, links, loading a build) still renders at once. */
@@ -250,7 +250,7 @@ function kbHelp(){if($("sheet").classList.contains("on")&&$("sheetBody").querySe
   const K=(k,t)=>`<kbd>${k}</kbd><span>${t}</span>`;$("sheetTitle").textContent="Keyboard & mouse";
   $("sheetBody").innerHTML=`<div class="kbd"><h3>Driving</h3>${K("Space","hold: burnout, stage, two-step, launch on green, shift · truck pull throttle")}${K("P","hold: nitrous purge on the line · elsewhere a puff from the purge nozzle")}${K("K","truck pull: the kill switch when a diesel runs away")}
     <h3>Engine</h3>${K("I / E","start or stop the idle")}${K("S","engine sound on / off")}${K("R","run the test or the event (Test and Events tabs)")}${K("V","view options")}
-    <h3>Panel</h3>${K("1 – 6","Build · Test · Events · Analysis · Market · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("G","the glossary")}${K("?","this list")}
+    <h3>Panel</h3>${K("1 – 6","Build · Test · Events · Analysis · Team · Shop")}${K("← →","nudge the slider you last touched")}${K("Esc","close this, a sheet or the view tray")}${K("G","the glossary")}${K("?","this list")}
     ${COARSE?`<h3>Touch</h3>${K("Drag","orbit the engine")}${K("Pinch","zoom")}${K("Tap a slider","then use the − + buttons to nudge it")}`:`<h3>Mouse</h3>${K("Drag","orbit the engine")}${K("Right-drag","pan (or Shift + drag)")}${K("Wheel","zoom · on a slider you clicked, nudge it")}${K("Double-click","reframe the engine")}${K("Sidebar edge","drag to resize, double-click to reset")}`}</div>`;
   $("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetClose").focus({preventScroll:true});}
 $("kbHelpBtn").addEventListener("click",kbHelp);
@@ -281,6 +281,8 @@ window.addEventListener("blur",()=>{if(spaceHeld)spaceUp(true);});
 let visReady=false;
 function boot(){
   if(!S.mode)S.mode="sandbox";
+  /* 1.76.33: an old career or a Pit Crew game loaded as a fresh team-season career (state.js hydrate): Legacy perks, once, and say so */
+  if(S.careerNew){const k=S.careerNew;delete S.careerNew;lgApply();benchUnlock();save();if(S.seen)setTimeout(()=>toast(k==="pit"?"Pit Crew is part of the career now: a fresh career, with your titles in the log":"The career is team seasons now: a fresh shop. Sign a team in the Team tab"),600);}
   if(S.layoutMode==null)S.layoutMode=detectLayout();applyLayout(true);
   for(const k in tabScroll)delete tabScroll[k];$("panel").scrollTop=0; // new shop, new pages: every tab starts at the top
   if(!visReady){ENGINE_VIS.init($("gl"));visReady=true;requestAnimationFrame(tick);}
@@ -292,7 +294,7 @@ function boot(){
   advSet($("abSec"),!!(S.advOpen&&S.advOpen.ab));
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();if(career())refillContracts();spLivery();showTab(curTab);glApply();ddBar();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
   if(typeof lgBoot==="function")lgBoot();

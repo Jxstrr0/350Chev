@@ -35,8 +35,8 @@ function load() {
     SLOTS: 3, slotKey: i => "pew2-slot" + i, LG_KEY: "pew2-legacy", VERSION: "test",
     S: null, suC: null, LG: null, live: null,
     snapshot() { return JSON.parse(JSON.stringify(ctx.live)); },
-    /* like the real hydrate: false without a cfg, and it trips over a career whose contracts aren't a list */
-    hydrate(o) { if (!o || !o.cfg) return false; ctx.S = Object.assign({}, o); const c = Object.assign({ contracts: [] }, o.career || {}); if (c.contracts.length > 99) c.contracts = []; return true; },
+    /* like the real hydrate: false without a cfg, and it trips over a career whose log isn't a list */
+    hydrate(o) { if (!o || !o.cfg) return false; ctx.S = Object.assign({}, o); const c = Object.assign({ log: [] }, o.career || {}); if (c.log.length > 99) c.log = []; return true; },
     fmt$: n => "$" + Math.round(n)
   };
   vm.createContext(ctx);
@@ -51,8 +51,9 @@ function game(over) {
     cfg: { layout: "V8", bore: 101.6, stroke: 88.4, heads: "alu", injectors: "inj42", fuelPump: "p255" },
     env: { testType: "drag", ambientC: 20, altitudeM: 500 },
     blueprints: [{ name: "Torque monster", cfg: { layout: "I6", bore: 95 } }],
-    career: { cash: 48250, rep: 312, week: 27, loan: 0, owned: { dyno2: true, flow: true }, contracts: [{ id: "c1", deposit: 0 }],
-      log: [{ w: 26, t: "Strip: 11.92 @ 114", k: "good" }], fleet: [], inbox: [], goals: {}, staff: {}, rnd: {}, unlocks: {}, prestige: {} },
+    career: { cv: 2, cash: 48250, rep: 312, week: 27, loan: 0, owned: { dyno2: true, flow: true },
+      log: [{ w: 26, t: "Strip: 11.92 @ 114", k: "good" }], goals: {}, staff: {}, rnd: {}, unlocks: {}, prestige: {},
+      pc: { v: 3, season: 2, team: { team: "Penner Racing", ev: "gasser", round: 3, due: 28, budget: 9500, spent: 6200, pay: 150000, rivals: [] }, offers: [], log: [] } },
     last: { hash: "abc123", cfg: { layout: "V8" }, label: "383 stroker", res: { hp: 612.4, tq: 588.1, curve: Array.from({ length: 60 }, (_, i) => [1000 + i * 100, 300 + i * 4.25]) } }
   }, over || {});
 }
@@ -152,7 +153,8 @@ check("a well-formed code with a broken save inside is refused and nothing is wr
     { v: 1, save: game(), slots: [null, null, null, null], legacy: null },                      // too many slots
     { v: 1, save: game(), slots: [{ cfg: "V8" }], legacy: null },                               // slot cfg not an object
     { v: 1, save: game({ career: { cash: "lots" } }), slots: [], legacy: null },                // cash not a number
-    { v: 1, save: game({ career: { contracts: { 0: 1 } } }), slots: [], legacy: null },          // contracts not a list
+    { v: 1, save: game({ career: { log: { 0: 1 } } }), slots: [], legacy: null },                // log not a list
+    { v: 1, save: game({ career: { pc: "season" } }), slots: [], legacy: null },                 // team seasons not an object
     { v: 1, save: game({ blueprints: "none" }), slots: [], legacy: null },
     { v: 1, save: game(), slots: [], legacy: { pts: -5 } },
     { v: 1, save: game(), slots: [], legacy: [1, 2] },
