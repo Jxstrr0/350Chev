@@ -14,7 +14,32 @@ function wkCls(key){if(!career())return null;const w=C()[key]||{};return Object.
 function evFee(purse,pay,tier){return Math.round(purse*(pay[tier]||1)*0.15/5)*5;}
 /* the full-screen flash: a colour, then back to clear after ms */
 function screenFlash(bg,ms){const f=$("flash");if(!f)return;f.style.background=bg;setTimeout(()=>f.style.background="rgba(238,90,94,0)",ms);}
-function failFlash(ms){screenFlash("rgba(238,90,94,.45)",ms||250);sfx("fail");buzz([80,40,120]);}
+function failFlash(ms,sev){screenFlash("rgba(238,90,94,.45)",ms||250);sfx("fail");buzz([80,40,120]);try{crackGlass(sev||CRACK.KIND[typeof run!=="undefined"&&run.failKind]||2);}catch(e){}}
+/* Shop Glass PR 3: a failure cracks the glass. Cracks spread from just above the panel's lip in the 3D view's middle, drawn as
+   random jagged arms (so no two look alike) that run out in ~250 ms, with a short shake and a white flash on the glass rims, then
+   fade over ~1.4 s. Never takes a tap. Severity 1-3 from the failure's visual kind (FAIL_VISUAL in results.js): an engine that's
+   gone (rod, crank) gets the big one, a steam or turbo failure a small one. Reduced motion: no shake, the crack just appears. */
+const CRACK={KIND:{rod:3,crank:3,knock:2,valve:2,seize:2,steam:1,turbo:1},
+  SEV:{1:{arms:4,len:.22,branch:1,ring:0},2:{arms:7,len:.4,branch:2,ring:1},3:{arms:11,len:.7,branch:3,ring:2}},SPREAD:250,HOLD:500,FADE:1400};
+function crackGlass(sev){const app=$("app"),view=$("view");if(!app||!view)return;const P=CRACK.SEV[Math.max(1,Math.min(3,sev|0))]||CRACK.SEV[2];
+  const ar=app.getBoundingClientRect(),vr=view.getBoundingClientRect(),W=ar.width,H=ar.height,D=Math.hypot(W,H);
+  const ox=vr.left-ar.left+vr.width*(.5+(Math.random()-.5)*.3),oy=Math.max(20,vr.bottom-ar.top-vr.height*.18);
+  const R=n=>Math.round(n*10)/10,paths=[];
+  const arm=(x,y,ang,len,depth)=>{let d=`M${R(x)} ${R(y)}`;const segs=4+Math.floor(Math.random()*4);
+    for(let i=1;i<=segs;i++){ang+=(Math.random()-.5)*.6;const l=len/segs*(.6+Math.random()*.8);x+=Math.cos(ang)*l;y+=Math.sin(ang)*l;d+=` L${R(x)} ${R(y)}`;
+      if(depth>0&&Math.random()<.35)arm(x,y,ang+(Math.random()<.5?-1:1)*(.5+Math.random()*.6),len*.45,depth-1);}
+    paths.push(d);};
+  for(let i=0;i<P.arms;i++)arm(ox,oy,(i/P.arms)*Math.PI*2+Math.random()*.5,D*P.len*(.6+Math.random()*.5),P.branch);
+  for(let k=1;k<=P.ring;k++){const r=D*.035*k*(1+Math.random()*.3);let d="";const n=P.arms+3;   // the spider-web ring round the strike
+    for(let i=0;i<=n;i++){const a=i/n*Math.PI*2,rr=r*(.8+Math.random()*.4);d+=(i?" L":"M")+R(ox+Math.cos(a)*rr)+" "+R(oy+Math.sin(a)*rr);}paths.push(d);}
+  let sv=$("crack");if(sv)sv.remove();
+  sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.id="crack";sv.setAttribute("viewBox",`0 0 ${R(W)} ${R(H)}`);sv.setAttribute("aria-hidden","true");
+  sv.innerHTML=`<circle cx="${R(ox)}" cy="${R(oy)}" r="${3+P.ring*2}" class="ck-hit"/>`+paths.map(d=>`<path d="${d}" pathLength="1" class="ck-s"/><path d="${d}" pathLength="1"/>`).join("");
+  app.appendChild(sv);sv.getBoundingClientRect();sv.classList.add("on");
+  const de=document.documentElement;de.classList.add("glassflash");setTimeout(()=>de.classList.remove("glassflash"),220);
+  if(!matchMedia("(prefers-reduced-motion: reduce)").matches){app.classList.remove("shake");void app.offsetWidth;app.classList.add("shake");setTimeout(()=>app.classList.remove("shake"),320);}
+  clearTimeout(crackGlass.t1);clearTimeout(crackGlass.t2);
+  crackGlass.t1=setTimeout(()=>sv.classList.add("out"),CRACK.SPREAD+CRACK.HOLD);crackGlass.t2=setTimeout(()=>sv.remove(),CRACK.SPREAD+CRACK.HOLD+CRACK.FADE+100);}
 function winFlash(){screenFlash("rgba(92,191,138,.35)",400);}
 /* scroll the panel so an event's control strip sits above the tabs */
 function scrollCtlIntoView(id){requestAnimationFrame(()=>{const pn=$("panel"),el=$(id);if(!pn||!el)return;const r=el.getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;
@@ -101,7 +126,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.37.0";
+const VERSION="1.76.38.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -247,6 +272,26 @@ function heatZones(){if(!quick)return null;const worst={};for(const t of quick.t
 function applyGfx(){const q=S.gfx||deskGfx()||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_VIS.setQuality(q);document.documentElement.dataset.gfx=q;document.querySelectorAll("#gfxSeg button").forEach(b=>b.classList.toggle("on",b.dataset.gfx===q));applyGlass();}
 /* Shop Glass (css/ui-glass.css): S.glass false, or perf.js giving it up on a phone that still stutters at Lite, puts html.noglass (solid panels, no blur) */
 function applyGlass(){const off=S.glass===false||!!(typeof PERF!=="undefined"&&PERF.noglass&&S.glass!==true);document.documentElement.classList.toggle("noglass",off);document.querySelectorAll("#glassSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.glass==="1")===!off));}
+/* Shop Glass PR 3: the glass takes on the light of the scene that's up (the garage when no event scene is showing). --glass-tint
+   tints the panel glows, rims, bead and picks; it eases from one venue's light to the next over VENUE_TINT_MS.
+   Called from rvSync (runview.js), which already watches the scene come and go. */
+const VENUE_TINT={garage:[217,119,87],drag:[232,168,104],dragNight:[132,160,240],pull_sled:[214,150,82],bog:[156,124,80],salt:[196,212,232],
+  road:[118,186,136],hill:[146,178,222],oval:[232,120,72],boat:[78,168,212],race24:[196,112,156]};
+function glassVenue(){if(!S)return;const de=document.documentElement,tt=S.env&&S.env.testType;let k=de.classList.contains("onevent")?tt:"garage";
+  if(k==="drag"&&S.night)k="dragNight";const to=VENUE_TINT[k]||VENUE_TINT.garage;if(glassVenue.to===to)return;glassVenue.to=to;
+  const from=(glassVenue.cur||VENUE_TINT.garage).slice(),t0=performance.now(),calm=matchMedia("(prefers-reduced-motion: reduce)").matches;cancelAnimationFrame(glassVenue.raf);
+  const step=now=>{const k=calm?1:Math.min(1,(now-t0)/VENUE_TINT_MS),e=k*k*(3-2*k);glassVenue.cur=from.map((f,i)=>Math.round(f+(to[i]-f)*e));
+    de.style.setProperty("--glass-tint",glassVenue.cur.join(","));if(k<1)glassVenue.raf=requestAnimationFrame(step);};
+  step(t0);}
+const VENUE_TINT_MS=800;   // how long the glass takes to change light
+/* Shop Glass PR 3: the glass warms with the revs. tick() hands in the shown rpm; ~15 times a second it eases --glass-heat (0 at
+   idle, 1 at redline) and writes it only when it moves by more than 0.02, so a steady idle or a stopped engine costs nothing.
+   html.redheat over 0.9 swaps the glow to the warning red with a pulse. */
+const HEAT={HZ:15,EASE:.45,STEP:.02,RED:.9,IDLE:900,t:0,v:0,w:-1};
+function glassHeat(now,rpm,red){if(!S||now-HEAT.t<1000/HEAT.HZ)return;HEAT.t=now;
+  const tgt=rpm>0&&red>HEAT.IDLE?Math.max(0,Math.min(1,(rpm-HEAT.IDLE)/(red-HEAT.IDLE))):0;HEAT.v+=(tgt-HEAT.v)*HEAT.EASE;if(tgt===0&&HEAT.v<.01)HEAT.v=0;
+  if(Math.abs(HEAT.v-HEAT.w)<=HEAT.STEP&&!(HEAT.v===0&&HEAT.w!==0))return;HEAT.w=HEAT.v;const de=document.documentElement;
+  de.style.setProperty("--glass-heat",HEAT.v.toFixed(2));de.classList.toggle("redheat",HEAT.v>HEAT.RED);}
 $("glassSeg").addEventListener("click",e=>{const b=e.target.closest("[data-glass]");if(!b)return;S.glass=b.dataset.glass==="1";applyGlass();save();toast(S.glass?"GLASS ON · frosted panels":"GLASS OFF · solid panels");});
 (()=>{const cs=$("camSeg");if(cs&&!$("nightSeg"))cs.insertAdjacentHTML("afterend",`<div class="lbl"><span>Night racing</span></div><div class="seg n2" id="nightSeg"><button data-night="0">Day<small>afternoon at the strip</small></button><button data-night="1">Night<small>under the lights</small></button></div>`);})();
 function applyNight(){document.querySelectorAll("#nightSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.night==="1")===!!S.night));}
