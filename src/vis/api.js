@@ -439,6 +439,7 @@ const ENGINE_VIS = {
              r:+camState.r.toFixed(2), target:camState.target.toArray().map(function(v){return +v.toFixed(2);}),
              cam:camera.position.toArray().map(function(v){return +v.toFixed(2);}),
              aspect:+camera.aspect.toFixed(3),
+             scr:(function(){ if(!SCREEN.mesh) return null; var v=SCREEN.mesh.getWorldPosition(new THREE.Vector3()).project(camera); return [+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(3)]; })(),
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
                 if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
              belt:(function(){ var n=0, a=MAT.belt&&MAT.belt.map, b=MATHI.beltFlat&&MATHI.beltFlat.map;
