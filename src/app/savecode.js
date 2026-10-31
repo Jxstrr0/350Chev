@@ -82,7 +82,8 @@ function buSaveOk(o){
   if(!buObj(o)||!buObj(o.cfg))return false;
   if("env" in o&&!buObj(o.env))return false;
   if("blueprints" in o&&!Array.isArray(o.blueprints))return false;
-  if(o.mode!=null&&o.mode!=="career"&&o.mode!=="sandbox")return false;
+  if(o.mode!=null&&o.mode!=="career"&&o.mode!=="sandbox"&&o.mode!=="pit")return false;
+  if("pit" in o&&o.pit!=null&&!buObj(o.pit))return false;
   if("career" in o){const c=o.career;if(!buObj(c))return false;
     for(const k of ["contracts","log","fleet","inbox"])if(k in c&&!Array.isArray(c[k]))return false;
     for(const k of ["owned","staff","rnd","unlocks","prestige","goals"])if(k in c&&!buObj(c[k]))return false;

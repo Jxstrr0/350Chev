@@ -401,9 +401,9 @@ $("spons").addEventListener("click",e=>{if(!career())return;const s=spS();
 const mkX=new Set();
 function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
-  $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
+  const pit=pcMode();$("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";$("sandboxBox").classList.toggle("pit",pit);renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()||pit?"none":"";$("pitBox").style.display=pit?"":"none";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
-  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
+  spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){if(pit)pcRender();renderSbShop();return;}
   refillContracts();spRender();rivalsRender();
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<span>Dyno reads to <b>${dc.hp.toLocaleString()} hp</b></span>${C().loan>0?`<span>Bank loan <b>${fmt$(C().loan)}</b></span>`:""}${C().cash<0?`<span><b class="warnc">${fmt$(C().cash)}</b> in the red</span>`:""}`;   // cash is in the header; the upgrade count sits in the list heading
