@@ -15,6 +15,7 @@ css/ui-market.css
 css/ui-folds.css
 css/ui-analysis.css
 css/ui-team.css
+css/ui-glass.css
 html/body.html
 html/ld-libs.html
 sim/opt.js
