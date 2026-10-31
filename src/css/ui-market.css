@@ -5,7 +5,8 @@
 .mkc{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.06em;line-height:1;padding:4px 8px;border:1px solid currentColor;border-radius:10px;white-space:nowrap;color:var(--dim)}
 .mkc.ok{color:var(--good)}.mkc.bad{color:var(--crit)}.mkc.none{color:var(--warn)}.mkc.bay{color:var(--info)}
 .mkb{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
-.mkstrip #nextWeek{flex:0 0 auto;width:auto;min-height:44px;padding:8px 16px;white-space:nowrap}
+.mkstrip #nextWeek{flex:0 0 auto;width:auto;min-height:44px;padding:8px 14px;white-space:nowrap}
+.mkstrip #oneWeek{flex:0 0 auto;width:auto;min-height:44px;padding:8px 10px;white-space:nowrap}
 .mkoh{flex:0 0 auto;position:relative;width:28px;height:28px;border:1px solid var(--rule);border-radius:50%;font-family:Georgia,serif;font-style:italic;font-size:14px;line-height:1;color:var(--muted)}
 .mkoh::after{content:"";position:absolute;inset:-8px}
 .mkoh[aria-expanded=true]{border-color:var(--orange);color:var(--orange2)}
