@@ -84,7 +84,7 @@ function tick(dt, t){
     camera.position.y += Math.sin(t*83)*sh*0.7;
     camera.position.z += Math.cos(t*47)*sh;
   }
-  camera.lookAt(camState.target);
+  camera.lookAt(screenCam(dt, camState.target));   /* Ultra: the dyno-pull move toward the workshop monitor (garage.js) */
   camState.shake *= Math.max(0, 1-dt*3.2);
 
   /* --- running parts --- */

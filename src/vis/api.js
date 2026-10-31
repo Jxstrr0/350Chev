@@ -346,6 +346,25 @@ const ENGINE_VIS = {
     return G;
   },
 
+  /* the workshop monitor (garage.js): {canvas} hands over the app's 2D canvas (a new one replaces and frees the old texture), {dirty:true}
+     uploads it again after the app drew on it, {dolly:true|false} starts / ends the Ultra camera move toward it (other tiers ignore it).
+     The app does the drawing; this side never draws on the canvas. */
+  setScreen: function(o){
+    o=o||{};
+    if(o.canvas && o.canvas!==SCREEN.canvas){
+      var old=SCREEN.tex, t=new THREE.CanvasTexture(o.canvas);
+      t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;
+      t.generateMipmaps=false; t.minFilter=THREE.LinearFilter;   /* no mip chain to rebuild on every upload */
+      SCREEN.canvas=o.canvas; SCREEN.tex=t;
+      if(MAT.dynoLive){ MAT.dynoLive.map=t; MAT.dynoLive.needsUpdate=true; }
+      if(old) old.dispose();
+    } else if(o.dirty && SCREEN.tex){ SCREEN.tex.needsUpdate=true; SCREEN.uploads++; }
+    if(o.dolly!==undefined){ SCREEN.dolly=!!o.dolly; if(!SCREEN.dolly) SCREEN.skip=false; }
+    return ENGINE_VIS.screen();
+  },
+  screen: function(){ return {canvas:SCREEN.canvas?SCREEN.canvas.width+"x"+SCREEN.canvas.height:null, uploads:SCREEN.uploads, mesh:!!(SCREEN.mesh&&SCREEN.mesh.parent),
+    live:!!(MAT.dynoLive&&SCREEN.tex&&MAT.dynoLive.map===SCREEN.tex), dolly:SCREEN.dolly, k:+SCREEN.k.toFixed(2), skip:SCREEN.skip}; },   /* harness */
+
   setRun: function(s){
     s=s||{};
     if(s.on!==undefined) run.on=!!s.on;
