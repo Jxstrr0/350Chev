@@ -150,8 +150,78 @@ document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
-function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
+function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);if(miniView)$("app").classList.remove("peek");if(typeof detentLabel==="function")detentLabel();$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
 $("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;save();buzz(8);});
+/* ===================== GESTURES (UI-GLASS-PLAN PR 5) =====================
+   Phone layout only (html.desk keeps the mouse and keyboard exactly as they were), touch and pen only, pointer events throughout.
+   1. Swipe the panel sideways to move to the next or previous tab (same path as a tab tap or the 1-6 keys), with a light rubber band
+      at the first and last tab. Never from the 3D view, a slider or any input, a chart canvas, the tune map, a row that scrolls
+      sideways, the results sheet, an open sheet or Settings, a tour, or while a test or an event scene is running.
+   2. The grabber on the panel's top lip drags the panel between three heights: tall panel (the small engine view, #app.mini, the same
+      state as the VIEW > Size button), half (the default) and peek (#app.peek: a tall engine view). Tap it to step through them.
+      The view resizes live while you drag; the ResizeObserver on #view above keeps ENGINE_VIS in step. */
+const SWIPE_PX=60;
+function swipeTabs(){return [...document.querySelectorAll("#tabs button[data-tab]")].filter(b=>b.offsetParent!==null).map(b=>b.dataset.tab);}
+function swipeOff(t){const h=document.documentElement.classList;
+  if(deskOn()||testing||h.contains("onevent")||h.contains("photo")||h.contains("troom"))return true;
+  if($("sheet").classList.contains("on")||setOn()||$("intro").style.display!=="none"||tourStep>=0||ff)return true;
+  if(t.closest("input,select,textarea,canvas,#rail,.mapt,.nud,.hlbtns,.boatbtns,#killBtn,#dragBtn,#pullBtn,[data-noswipe]"))return true;
+  for(let el=t;el&&el!==$("panel");el=el.parentElement){if(el.scrollWidth>el.clientWidth+2){const ox=getComputedStyle(el).overflowX;if(ox==="auto"||ox==="scroll")return true;}}   // a row that scrolls sideways keeps its own swipe
+  return false;}
+let swipeSkipClick=0;
+document.addEventListener("click",e=>{if(Date.now()<swipeSkipClick){e.preventDefault();e.stopPropagation();}},true);
+(function swipeInit(){const pn=$("panel");let g=null;
+  const page=()=>$("tab-"+curTab);
+  const band=(dx,has)=>has?Math.max(-70,Math.min(70,dx*0.45)):Math.sign(dx)*28*(1-Math.exp(-Math.abs(dx)/80));   // follows the finger with resistance; at the ends it barely gives
+  function settle(el,spring){if(!el)return;if(!spring||matchMedia("(prefers-reduced-motion: reduce)").matches){el.style.transition="";el.style.transform="";return;}
+    el.style.transition="transform .3s cubic-bezier(.34,1.56,.64,1)";el.style.transform="";setTimeout(()=>{if(el.style.transform==="")el.style.transition="";},320);}
+  function end(commit){if(!g)return;const s=g;g=null;const el=s.el;
+    if(s.lock){
+      if(commit&&s.to){const dir=s.dx<0?1:-1;el.style.transition="";el.style.transform="";const b=document.querySelector(`#tabs [data-tab="${s.to}"]`);if(b)b.click();buzz(6);
+        const np=$("tab-"+s.to);if(np&&np.animate&&!matchMedia("(prefers-reduced-motion: reduce)").matches)np.animate([{transform:`translateX(${dir*32}px)`,opacity:.35},{transform:"none",opacity:1}],{duration:240,easing:"cubic-bezier(.2,.8,.2,1)"});}
+      else settle(el,true);
+      swipeSkipClick=Date.now()+350;}}   // after the tab click above, so only the stray click from lifting the finger is eaten
+  pn.addEventListener("pointerdown",e=>{if(g){end(false);return;}
+    if(e.pointerType==="mouse"||!e.isPrimary||!e.target.closest||swipeOff(e.target))return;
+    g={x:e.clientX,y:e.clientY,t:e.timeStamp,id:e.pointerId,lock:false,dx:0,v:0,el:page(),to:null};});
+  pn.addEventListener("pointermove",e=>{if(!g||e.pointerId!==g.id)return;const dx=e.clientX-g.x,dy=e.clientY-g.y,ax=Math.abs(dx),ay=Math.abs(dy);
+    if(!g.lock){if(ay>10&&ay>ax){g=null;return;}   // it is a scroll
+      if(ax<12||ax<ay*1.6)return;
+      g.lock=true;g.el.style.transition="none";}
+    const list=swipeTabs(),i=list.indexOf(curTab),to=list[i+(dx<0?1:-1)]||null;g.dx=dx;g.to=to;g.v=dx/Math.max(1,e.timeStamp-g.t);
+    g.el.style.transform=`translateX(${band(dx,!!to).toFixed(1)}px)`;});
+  pn.addEventListener("pointerup",e=>{if(!g||e.pointerId!==g.id)return;const ax=Math.abs(g.dx);end(g.lock&&!!g.to&&(ax>=SWIPE_PX||(ax>=36&&Math.abs(g.v)>0.55)));});
+  pn.addEventListener("pointercancel",e=>{if(g&&e.pointerId===g.id)end(false);});
+  window.addEventListener("blur",()=>end(false));})();
+
+/* panel heights */
+const DETENTS=["half","tall","peek"];   // tap order; "tall" = a tall panel under the small engine view
+function detentNow(){return miniView?"tall":$("app").classList.contains("peek")?"peek":"half";}
+function detentSet(d){setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";detentLabel();}
+function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Panel height: "+detentNow()+". Tap or drag to change");}
+(function detentInit(){const g=$("pgrab"),v=$("view"),app=$("app");if(!g)return;
+  let d=null,moved=false,swallow=0;
+  /* the engine view's height in each state, measured once per drag with the transition off */
+  function measure(){const H={},keep=[app.classList.contains("mini"),app.classList.contains("peek")],tr=v.style.transition;v.style.transition="none";
+    for(const k of ["tall","half","peek"]){app.classList.toggle("mini",k==="tall");app.classList.toggle("peek",k==="peek");H[k]=v.getBoundingClientRect().height;}
+    app.classList.toggle("mini",keep[0]);app.classList.toggle("peek",keep[1]);v.getBoundingClientRect();v.style.transition=tr;return H;}
+  g.addEventListener("pointerdown",e=>{if(e.button>0||testing)return;try{g.setPointerCapture(e.pointerId);}catch(x){}
+    d={id:e.pointerId,y:e.clientY,h0:v.getBoundingClientRect().height,H:measure(),raf:0,h:0,last:[e.clientY,e.timeStamp],vel:0};moved=false;});
+  g.addEventListener("pointermove",e=>{if(!d||e.pointerId!==d.id)return;const dy=e.clientY-d.y;
+    if(!moved&&Math.abs(dy)<6)return;if(!moved){moved=true;v.style.transition="none";g.classList.add("drag");tipHide();}
+    d.vel=(e.clientY-d.last[0])/Math.max(1,e.timeStamp-d.last[1]);d.last=[e.clientY,e.timeStamp];
+    d.h=Math.max(d.H.tall,Math.min(d.H.peek,d.h0+dy));
+    if(!d.raf)d.raf=requestAnimationFrame(()=>{if(!d)return;d.raf=0;v.style.flexBasis=d.h+"px";v.style.minHeight=Math.min(d.h,d.H.tall)+"px";});});   // min-height drops to the small view's so the drag can go that low
+  function done(cancel){if(!d)return;const s=d;d=null;if(s.raf)cancelAnimationFrame(s.raf);g.classList.remove("drag");
+    if(!moved){v.style.transition="";return;}
+    const was=detentNow();let pick=was;
+    if(!cancel){const proj=s.h+s.vel*140;let best=1e9;for(const k of ["tall","half","peek"]){const dd=Math.abs(proj-s.H[k]);if(dd<best){best=dd;pick=k;}}}
+    v.style.transition="";v.style.flexBasis="";v.style.minHeight="";detentSet(pick);if(pick!==was){buzz(8);save();}
+    swallow=Date.now()+300;}
+  g.addEventListener("pointerup",e=>{if(d&&e.pointerId===d.id)done(false);});
+  g.addEventListener("pointercancel",e=>{if(d&&e.pointerId===d.id)done(true);});
+  g.addEventListener("click",()=>{if(swallow>Date.now()||testing)return;detentSet(DETENTS[(DETENTS.indexOf(detentNow())+1)%3]);buzz(8);save();});
+  detentLabel();})();
 /* HUD toggles mirror their .on class into aria-pressed however they get flipped; START reads STOP
    while the engine idles, and VIEW wears a dot when anything in its tray is on */
 function hudSync(){const on=id=>$(id).classList.contains("on");["sndBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>$(id).setAttribute("aria-pressed",on(id)));

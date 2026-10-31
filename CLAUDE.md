@@ -85,7 +85,7 @@ When changing physics, run a before/after comparison on the affected events and 
 - Real design decisions get asked, not guessed.
 - The site and the game use the name Kelbo only, never a real name. Studio name: Longlight Interactive.
 
-## Current status (1.76.39.0, October 2026)
+## Current status (1.76.40.0, October 2026)
 
 - Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply one race team for 8 rounds; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), certification, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, offline PWA, save codes.
 - Known loose ends: `docs/fastest-drag-car.md` is stale (it says so).

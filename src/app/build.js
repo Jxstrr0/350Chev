@@ -45,7 +45,7 @@ $("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");i
 /* live deltas: what each option would do to hp / reliability / unit cost, from a real simulate() call (cached) */
 const deltaCache=new Map();
 function probe(k,v){const key=cfgHash(S.cfg)+"|"+envHash()+"|"+k+"="+v;let r=deltaCache.get(key);if(r)return r;
-  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel),S.cfg.fuel);clampCfgLimits(cfg);const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,fails:q.fails.length};
+  const cfg=Object.assign({},S.cfg,{[k]:v});if(k==="fuel")fuelFamilyDefaults(cfg,isCI(S.cfg.fuel),S.cfg.fuel);clampCfgLimits(cfg);const q=SIM.simulate(cfg,simEnv({testType:"pull"}));r={hp:q.peakHp,rel:q.rel,cost:q.cost,kg:q.kg,fails:q.fails.length};
   if(deltaCache.size>1500)deltaCache.clear();deltaCache.set(key,r);return r;}
 const money=n=>{const a=Math.abs(n);return (n<0?"−$":"+$")+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+"k":String(Math.round(a)));};
 function fmtDelta(r,base){if(!base)return"";const dh=Math.round(r.hp-base.peakHp),dr=Math.round(r.rel-base.rel),dc=Math.round(r.cost-base.cost);
@@ -142,6 +142,45 @@ $("buildForm").addEventListener("click",e=>{
   const b=e.target.closest("button[data-k]");if(!b)return;autoFocus(b.dataset.k);
   if(b.classList.contains("lock")){toast(`Needs the ${b.dataset.req} upgrade`);return;}
   applyOpt(b.dataset.k,b.dataset.v);});
+/* ---- long-press compare (UI-GLASS-PLAN PR 5): hold a part option (Build segments, or an option in a parts sheet) for ~450 ms and a glass
+   card shows it against the fitted part: peak power, reliability, build cost and weight, from the same probe() the delta line uses.
+   Let go to close it. Touch and pen only (a mouse has the tooltips); moving more than 8 px or scrolling cancels; the click that
+   follows is swallowed so the part is not fitted. */
+const CMP_MS=450,CMP_SLOP=8;
+let cmpEl=null,cmpTimer=0,cmpDown=null,cmpEat=0;
+function cmpHide(){clearTimeout(cmpTimer);cmpTimer=0;cmpDown=null;if(cmpEl){cmpEl.remove();cmpEl=null;}}
+function cmpRows(key,v){const f=sliderField(key);if(!f||!quick)return null;const tbl=f.optTable||f.key,opts=OPT[tbl],o=opts&&opts[v],cur=opts&&opts[S.cfg[key]];if(!o)return null;
+  const r=probe(key,v),b=quick,fitted=S.cfg[key]===v;
+  const row=(lab,a,z,unit,dl,goodUp)=>{const d=z-a,q=unit==="kg"?+d.toFixed(1):Math.round(d),s=q===0?"":`${q>0?"+":"−"}${Math.abs(q)}`;
+    return `<div class="cr"><span>${lab}</span><b>${dl(a)} → ${dl(z)}</b><i class="${!s?"":(d>0)===goodUp?"up":"dn"}">${s||"same"}</i></div>`;};
+  const cost=r.cost-b.cost,cs=Math.abs(cost)<5?"same":money(Math.round(cost/5)*5);
+  let h=`<div class="ch"><b>${o.name}</b><small>${fitted?"fitted now":cur?"vs "+cur.name+" (fitted)":""}</small></div>`;
+  if(!fitted){
+    h+=row("Peak power",b.peakHp,r.hp,"hp",x=>Math.round(x)+" hp",true)
+      +(b.rel>0||r.rel>0?row("Reliability",b.rel,r.rel,"",x=>Math.round(x),true):"")
+      +`<div class="cr"><span>Build cost</span><b>${fmt$(Math.round(b.cost))} → ${fmt$(Math.round(r.cost))}</b><i class="${Math.abs(cost)<5?"":cost<0?"up":"dn"}">${cs}</i></div>`
+      +(b.kg!=null&&r.kg!=null?row("Weight",b.kg,r.kg,"kg",x=>x.toFixed(1)+" kg",false):"");
+    if(r.fails&&!b.fails.length)h+=`<div class="cw">This would break something at this load.</div>`;}
+  else h+=`<div class="cr"><span>Peak power</span><b>${Math.round(b.peakHp)} hp</b></div><div class="cr"><span>Reliability</span><b>${Math.round(b.rel)}</b></div><div class="cr"><span>Weight</span><b>${b.kg!=null?b.kg.toFixed(1)+" kg":"-"}</b></div>`;
+  const price=priceOf(tbl,o);if(price)h+=`<div class="cr cp"><span>Part price</span><b>${price}</b></div>`;
+  if(locked(o)){const req=UPGRADES.find(u=>u.id===o.req);h+=`<div class="cw">Needs ${req?req.name:"an upgrade"}</div>`;}
+  return h;}
+function cmpShow(anchor,key,v){const h=cmpRows(key,v);if(!h)return false;if(cmpEl){cmpEl.remove();cmpEl=null;}
+  const el=document.createElement("div");el.id="cmpPop";el.className="glass";el.setAttribute("aria-hidden","true");el.innerHTML=h;document.body.appendChild(el);cmpEl=el;
+  const r=anchor.getBoundingClientRect(),w=el.offsetWidth,ht=el.offsetHeight;let top=r.top-ht-12;if(top<10)top=Math.min(innerHeight-ht-10,r.bottom+12);
+  el.style.left=Math.round(Math.max(10,Math.min(innerWidth-w-10,r.left+r.width/2-w/2)))+"px";el.style.top=Math.round(top)+"px";
+  buzz(10);return true;}
+(function cmpInit(){const SEL="#buildForm .seg button[data-k][data-v],#sheetBody .opt[data-ck]";
+  document.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"||!e.isPrimary||!e.target.closest)return;const a=e.target.closest(SEL);if(!a||testing)return;
+    cmpHide();const key=a.dataset.k||a.dataset.ck,v=a.dataset.v||a.dataset.ov;cmpDown={x:e.clientX,y:e.clientY,id:e.pointerId};
+    cmpTimer=setTimeout(()=>{cmpTimer=0;if(cmpDown&&cmpShow(a,key,v))cmpEat=Date.now()+1500;},CMP_MS);},true);
+  document.addEventListener("pointermove",e=>{if(!cmpDown||e.pointerId!==cmpDown.id)return;if(Math.hypot(e.clientX-cmpDown.x,e.clientY-cmpDown.y)>CMP_SLOP&&!cmpEl)cmpHide();},true);
+  const up=e=>{if(!cmpDown||e.pointerId!==cmpDown.id)return;const shown=!!cmpEl;cmpHide();if(shown)cmpEat=Date.now()+400;};
+  document.addEventListener("pointerup",up,true);document.addEventListener("pointercancel",e=>{if(cmpDown&&e.pointerId===cmpDown.id){const shown=!!cmpEl;cmpHide();cmpEat=shown?Date.now()+400:0;}},true);
+  document.addEventListener("scroll",()=>{if(cmpTimer||cmpEl)cmpHide();},true);
+  document.addEventListener("contextmenu",e=>{if(cmpTimer||cmpEl||Date.now()<cmpEat)e.preventDefault();},true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cmpEl)cmpHide();});
+  document.addEventListener("click",e=>{if(Date.now()<cmpEat&&e.target.closest&&e.target.closest(SEL)){e.preventDefault();e.stopPropagation();cmpEat=0;}},true);})();
 /* fit one option (shared by the Build segments and the sandbox Shop parts catalogue) */
 function applyOpt(k,v){
   if(testing){toast("Let the run finish first");return;}
@@ -383,7 +422,7 @@ function openSheet(title,tbl,cfgKey){const opts=OPT[tbl]||tbl;const cur=cfgKey?S
       :lk?`<span class="tag lk">Needs ${req?req.name:"an upgrade"}</span>`
       :`<span class="tag">${priceOf(tbl,o)}</span>`;
     const chips=chipsFor(tbl,o).map(([l,v])=>`<i><em>${l}</em>${v}</i>`).join("");
-    return `<div class="opt${k===cur?" cur":""}"><div class="oh"><b>${o.name}</b>${tag}</div>`
+    return `<div class="opt${k===cur?" cur":""}"${cfgKey&&typeof tbl==="string"?` data-ck="${cfgKey}" data-ov="${k}"`:""}><div class="oh"><b>${o.name}</b>${tag}</div>`
       + (chips?`<div class="chips">${chips}</div>`:"")
       + (o.info?`<p>${o.info}</p>`:"") + `</div>`;}).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
