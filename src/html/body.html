@@ -182,7 +182,7 @@
     </section>
   </div>
 
-  <nav id="tabs"><div id="testProg"></div>
+  <nav id="tabs"><div id="testProg"></div><i id="tabBead" aria-hidden="true"></i>
     <button data-tab="build" class="on"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L9 22l-3-3L16.7 8.3a4 4 0 0 0-2-2z"/><path d="M3 3l5 5"/></svg>Build</button>
     <button data-tab="test"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 0 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1"/></svg>Test</button>
     <button data-tab="events"><span class="dot" id="evDot"></span><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/><path d="M9.5 4v9M14 4v4.5H5M9.5 8.5H18"/></svg>Events</button>
@@ -232,6 +232,8 @@
         <div class="seg n3" id="gfxSeg"><button data-gfx="lite">Lite<small>phone · no bloom</small></button><button data-gfx="full">Full<small>bloom, sharper shadows</small></button><button data-gfx="ultra">Ultra<small>+ ambient occlusion</small></button></div>
         <div class="lbl"><span>Auto-adjust graphics</span></div>
         <div class="seg n2" id="gfxAutoSeg"><button data-gauto="1" class="on">On<small>drops a tier if it stutters</small></button><button data-gauto="0">Off<small>keep my pick</small></button></div>
+        <div class="lbl"><span>Glass effects</span></div>
+        <div class="seg n2" id="glassSeg"><button data-glass="1" class="on">On<small>frosted panels</small></button><button data-glass="0">Off<small>solid, lighter on the phone</small></button></div>
         <div class="lbl"><span>Camera follows edits</span></div>
         <div class="seg n2" id="camSeg"><button data-cam="1">On<small>flies to the part you touch</small></button><button data-cam="0">Off</button></div>
         <div id="layBox"><div class="lbl"><span>Layout</span></div>

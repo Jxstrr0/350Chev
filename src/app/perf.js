@@ -24,7 +24,8 @@ function perfPoll(){
   const el=Math.min(now-PERF.sAt,1000);PERF.sAt=now;
   if(fps>0&&fps<PERF.LOW)PERF.low+=el;else PERF.low=Math.max(0,PERF.low-2*el);
   if(PERF.low<PERF.NEED)return;
-  PERF.low=0;const i=PERF.T.indexOf(tier);if(i<1)return;     // already Lite: nothing lower to give
+  PERF.low=0;const i=PERF.T.indexOf(tier);
+  if(i<1){if(!PERF.noglass&&S.glass==null){PERF.noglass=true;applyGlass();perfReset(true);toast("Glass effects off to keep things smooth — change in Settings");}return;}   // already Lite: the last thing to give is the glass (this session; a pick in Settings wins)
   const n=PERF.T[i-1];PERF.dropped=true;S.gfx=n;applyGfx();save();perfReset(true);
   toast(`Graphics lowered to ${n[0].toUpperCase()+n.slice(1)} to keep things smooth — change in Settings`);}
 setInterval(perfPoll,500);
