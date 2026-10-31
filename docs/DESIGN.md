@@ -92,7 +92,9 @@ Engine swaps (`swap.js`): 20 vehicles in 5 groups and 15 fixes; one fit check sh
 
 three.js r128. The engine mesh is built from the config: banks, heads, intake, turbos and blowers, exhaust, accessory drive, belts that move with the pulleys, lettering and wiring at higher detail. Scenes: the garage and workshop, the strip (venue, crowd, cars per class, nitro classes), pits, pull track, bog (trucks per class, mud FX, heightfield pit), boats, road course, salt flats (Speed Week pit town), Pikes Peak (heightfield mountain with LOD), the oval, the trophy room, photo mode, and a teardown view after a failure.
 
-Three tiers, `lite`, `full`, `ultra` (`app/perf.js`). Lite is the phone default. Auto-adjust watches the frame rate and steps one tier down if it stays under about 27 fps for about 8 s; it never steps up. Bloom and SSAO addons load only for Full and Ultra.
+Three tiers, `lite`, `full`, `ultra` (`app/perf.js`). Lite is the phone default. Auto-adjust watches the frame rate and steps one tier down if it stays under about 27 fps for about 8 s; it never steps up. Bloom and SSAO addons load only for Full and Ultra. If it is already on Lite and still stutters, it turns the glass effects off for the session.
+
+**Shop Glass** (`css/ui-glass.css`, plan in `docs/UI-GLASS-PLAN.md`): frosted, translucent surfaces with a bright rim over a dim ambient glow. On a phone the panel sits on the bottom edge of the 3D view with a rounded glass top, and the tab bar floats as a glass pill with a bead that slides to the active tab. The HUD buttons are clear glass, with an inner glow when on. Blur scales by tier (12 px Lite, 20 Full, 28 Ultra); on Lite the panel and the HUD buttons over the live view get a stronger tint instead of a blur. Settings › Display › Glass effects turns it all solid, and so does the system Reduce Transparency setting. Race buttons keep their chamfer.
 
 ### Sound (`src/sound/`)
 
