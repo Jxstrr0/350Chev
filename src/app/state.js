@@ -101,7 +101,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.36.0";
+const VERSION="1.76.38.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -244,7 +244,10 @@ function heatZones(){if(!quick)return null;const worst={};for(const t of quick.t
     if(!worst[z]||t.util>worst[z])worst[z]=t.util;}
   return Object.keys(worst).map(z=>{const u=worst[z];let c,a,pulse=false;if(u>1){c=[0.95,0.18,0.12];a=0.62;pulse=true;}else if(u>0.8){c=[1,0.66,0.15];a=0.28+0.3*(u-0.8)/0.2;}else{c=[0.25,0.85,0.5];a=0.10+0.18*Math.max(0,(u-0.4)/0.4);}
     return{zone:+z,r:c[0],g:c[1],b:c[2],amount:a,pulse};});}
-function applyGfx(){const q=S.gfx||deskGfx()||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_VIS.setQuality(q);document.querySelectorAll("#gfxSeg button").forEach(b=>b.classList.toggle("on",b.dataset.gfx===q));}
+function applyGfx(){const q=S.gfx||deskGfx()||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full");ENGINE_VIS.setQuality(q);document.documentElement.dataset.gfx=q;document.querySelectorAll("#gfxSeg button").forEach(b=>b.classList.toggle("on",b.dataset.gfx===q));applyGlass();}
+/* Shop Glass (css/ui-glass.css): S.glass false, or perf.js giving it up on a phone that still stutters at Lite, puts html.noglass (solid panels, no blur) */
+function applyGlass(){const off=S.glass===false||!!(typeof PERF!=="undefined"&&PERF.noglass&&S.glass!==true);document.documentElement.classList.toggle("noglass",off);document.querySelectorAll("#glassSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.glass==="1")===!off));}
+$("glassSeg").addEventListener("click",e=>{const b=e.target.closest("[data-glass]");if(!b)return;S.glass=b.dataset.glass==="1";applyGlass();save();toast(S.glass?"GLASS ON · frosted panels":"GLASS OFF · solid panels");});
 (()=>{const cs=$("camSeg");if(cs&&!$("nightSeg"))cs.insertAdjacentHTML("afterend",`<div class="lbl"><span>Night racing</span></div><div class="seg n2" id="nightSeg"><button data-night="0">Day<small>afternoon at the strip</small></button><button data-night="1">Night<small>under the lights</small></button></div>`);})();
 function applyNight(){document.querySelectorAll("#nightSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.night==="1")===!!S.night));}
 $("nightSeg").addEventListener("click",e=>{const b=e.target.closest("[data-night]");if(!b)return;S.night=b.dataset.night==="1";applyNight();save();toast(S.night?"NIGHT RACING · strip lights on":"DAY RACING");});
