@@ -134,6 +134,7 @@ function buildEngineMesh(cfg, layoutObj){
   else { panH = stroke*0.88; panKey="steel"; }
   var panTop = L.boxer ? -bore*0.72 : caseBot;
   B.add(panKey, RBOX(bankLen*0.94, panH, caseW*0.86, 0.03), 0, panTop - panH/2, 0);
+  G.userData.seat = {x0:-bankLen*0.47, x1:bankLen*0.47, z0:-caseW*0.43, z1:caseW*0.43, y:panTop-panH};   /* where the stand's cradle pads meet it (api.js fitStand) */
   /* sump plug + rail flange */
   B.add("steel", CYL(bore*0.075,bore*0.075,0.04,10), bankLen*0.28, panTop-panH+0.01, caseW*0.20);
   if(oilSys==="baffled"){
@@ -600,6 +601,7 @@ function buildRotaryMesh(cfg, L, B, G, extras, t0){
   setZone(6);
   var panTop=-Hh*0.90, panH = oilSys==="dry" ? bore*0.26 : bore*0.70;
   B.add(oilSys==="dry" ? "malu" : "steel", RBOX(stackLen*0.92, panH, Hw*1.60, 0.03), 0, panTop-panH/2, 0);
+  G.userData.seat = {x0:-stackLen*0.46, x1:stackLen*0.46, z0:-Hw*0.80, z1:Hw*0.80, y:panTop-panH};
   B.add("steel", CYL(bore*0.075,bore*0.075,0.04,10), stackLen*0.25, panTop-panH+0.01, Hw*0.30);
 
   /* ---------- spark plugs: leading and trailing per rotor, low on the -Z flank; coils on a rail above ---------- */
@@ -807,11 +809,13 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
     B.add("wrinkle", CYL(caseR*1.02, caseR*1.06, bore*0.26, 28), -bankLen/2-bore*0.12, -caseR*0.25, -caseR*0.55, 0,0,PI/2);  /* clutch cover */
     B.add("steel", CYL(bore*0.10, bore*0.10, bore*0.14, 10), bankLen/2+bore*0.30, -caseR*0.05, -caseR*0.10, 0,0,PI/2);
     panBot=-caseR*1.0;
+    G.userData.seat = {x0:-bankLen*0.44, x1:bankLen*0.44, z0:-caseR*1.6, z1:-caseR*0.45, y:-caseR*0.925};   /* under the gearbox lump, clear of the round flywheel case */
   } else {
     B.add(blockKey, RBOX(bankLen+bore*0.30, caseR*2.0, caseW, 0.04), 0, -caseR*0.05, 0);
     B.add(blockKey, BOX(bore*0.16, caseR*2.1, caseW*1.05), -(bankLen+bore*0.30)/2-bore*0.06, -caseR*0.05, 0);
     if(dsl){ setZone(6); var panH=stroke*0.9; B.add("steel", RBOX(bankLen*0.94, panH, caseW*0.86, 0.03), 0, -caseR*1.05-panH/2, 0); panBot=-caseR*1.05-panH; setZone(1); }
     else panBot=-caseR*1.05;
+    G.userData.seat = {x0:-bankLen*0.47, x1:bankLen*0.47, z0:-caseW*0.43, z1:caseW*0.43, y:panBot};
   }
 
   /* ---------- banks: barrels, ports, heads ---------- */
@@ -1088,6 +1092,7 @@ function buildDelticMesh(cfg, L, B, G, extras, t0){
   /* crankcases at the corners and the triangular phasing-gear case at the rear */
   setZone(1);
   for(i=0;i<3;i++) B.add(blockKey, CYL(caseR, caseR, bankLen+bore*0.3, 28), 0, corners[i].y, corners[i].z, 0,0,PI/2);
+  G.userData.seat = {x0:-bankLen*0.45, x1:bankLen*0.45, z0:-caseR*0.7, z1:caseR*0.7, y:-Rt-caseR, r:caseR};   /* r: a round bottom, the pads rise to meet it */
   B.add(blockKey, CYL(Rt+caseR*1.05, Rt+caseR*1.05, bore*0.7, 3), -bankLen/2-bore*0.5, 0, 0, PI/2,0,PI/2);   /* three-sided gear case */
   B.add("wrinkle", CYL(Rt+caseR*0.85, Rt+caseR*0.85, bore*0.12, 3), -bankLen/2-bore*0.92, 0, 0, PI/2,0,PI/2);
   /* the banks: each side of the triangle is a block of six cylinders; exhaust belt toward one crank, air belt toward the other */

@@ -13750,6 +13750,7 @@ function buildMaterials(){
   MAT.chrome     =new THREE.MeshStandardMaterial({color:sc(0xbcc2c8), roughness:0.16, metalness:1.0});
   MAT.copper     =new THREE.MeshStandardMaterial({color:sc(0xc07434), roughness:0.34, metalness:1.0});
   MAT.filterRed  =new THREE.MeshStandardMaterial({color:sc(0xa3241d), roughness:0.86, metalness:0.0, envMapIntensity:0.4});   /* oiled cotton filter element */
+  MAT.paintMark  =new THREE.MeshStandardMaterial({color:sc(0xd9d0a0), roughness:0.62, metalness:0.0, envMapIntensity:0.4});   /* torque-stripe paint on the pulleys and the damper's timing mark */
 
   /* signage */
   MAT.sign = drawMat(1024,256,function(x,w,h){
@@ -14327,7 +14328,7 @@ function buildEnvMap(renderer){
    ==========================================================================*/
 var renderer=null, scene=null, camera=null, canvasEl=null, clock=null;
 var envMap=null;
-var garageRoot=null, engineRoot=null, engineShake=null, fxRoot=null;
+var garageRoot=null, engineRoot=null, engineShake=null, fxRoot=null, standRoot=null;
 var keyLight=null, fillLight=null, rimLight=null, hemi=null;
 var running=true, rafId=0;
 var lastOwned={}, lastCfg=null, lastLayout=null;
@@ -14500,6 +14501,7 @@ function buildEngineMesh(cfg, layoutObj){
   else { panH = stroke*0.88; panKey="steel"; }
   var panTop = L.boxer ? -bore*0.72 : caseBot;
   B.add(panKey, RBOX(bankLen*0.94, panH, caseW*0.86, 0.03), 0, panTop - panH/2, 0);
+  G.userData.seat = {x0:-bankLen*0.47, x1:bankLen*0.47, z0:-caseW*0.43, z1:caseW*0.43, y:panTop-panH};   /* where the stand's cradle pads meet it (api.js fitStand) */
   /* sump plug + rail flange */
   B.add("steel", CYL(bore*0.075,bore*0.075,0.04,10), bankLen*0.28, panTop-panH+0.01, caseW*0.20);
   if(oilSys==="baffled"){
@@ -14966,6 +14968,7 @@ function buildRotaryMesh(cfg, L, B, G, extras, t0){
   setZone(6);
   var panTop=-Hh*0.90, panH = oilSys==="dry" ? bore*0.26 : bore*0.70;
   B.add(oilSys==="dry" ? "malu" : "steel", RBOX(stackLen*0.92, panH, Hw*1.60, 0.03), 0, panTop-panH/2, 0);
+  G.userData.seat = {x0:-stackLen*0.46, x1:stackLen*0.46, z0:-Hw*0.80, z1:Hw*0.80, y:panTop-panH};
   B.add("steel", CYL(bore*0.075,bore*0.075,0.04,10), stackLen*0.25, panTop-panH+0.01, Hw*0.30);
 
   /* ---------- spark plugs: leading and trailing per rotor, low on the -Z flank; coils on a rail above ---------- */
@@ -15173,11 +15176,13 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
     B.add("wrinkle", CYL(caseR*1.02, caseR*1.06, bore*0.26, 28), -bankLen/2-bore*0.12, -caseR*0.25, -caseR*0.55, 0,0,PI/2);  /* clutch cover */
     B.add("steel", CYL(bore*0.10, bore*0.10, bore*0.14, 10), bankLen/2+bore*0.30, -caseR*0.05, -caseR*0.10, 0,0,PI/2);
     panBot=-caseR*1.0;
+    G.userData.seat = {x0:-bankLen*0.44, x1:bankLen*0.44, z0:-caseR*1.6, z1:-caseR*0.45, y:-caseR*0.925};   /* under the gearbox lump, clear of the round flywheel case */
   } else {
     B.add(blockKey, RBOX(bankLen+bore*0.30, caseR*2.0, caseW, 0.04), 0, -caseR*0.05, 0);
     B.add(blockKey, BOX(bore*0.16, caseR*2.1, caseW*1.05), -(bankLen+bore*0.30)/2-bore*0.06, -caseR*0.05, 0);
     if(dsl){ setZone(6); var panH=stroke*0.9; B.add("steel", RBOX(bankLen*0.94, panH, caseW*0.86, 0.03), 0, -caseR*1.05-panH/2, 0); panBot=-caseR*1.05-panH; setZone(1); }
     else panBot=-caseR*1.05;
+    G.userData.seat = {x0:-bankLen*0.47, x1:bankLen*0.47, z0:-caseW*0.43, z1:caseW*0.43, y:panBot};
   }
 
   /* ---------- banks: barrels, ports, heads ---------- */
@@ -15454,6 +15459,7 @@ function buildDelticMesh(cfg, L, B, G, extras, t0){
   /* crankcases at the corners and the triangular phasing-gear case at the rear */
   setZone(1);
   for(i=0;i<3;i++) B.add(blockKey, CYL(caseR, caseR, bankLen+bore*0.3, 28), 0, corners[i].y, corners[i].z, 0,0,PI/2);
+  G.userData.seat = {x0:-bankLen*0.45, x1:bankLen*0.45, z0:-caseR*0.7, z1:caseR*0.7, y:-Rt-caseR, r:caseR};   /* r: a round bottom, the pads rise to meet it */
   B.add(blockKey, CYL(Rt+caseR*1.05, Rt+caseR*1.05, bore*0.7, 3), -bankLen/2-bore*0.5, 0, 0, PI/2,0,PI/2);   /* three-sided gear case */
   B.add("wrinkle", CYL(Rt+caseR*0.85, Rt+caseR*0.85, bore*0.12, 3), -bankLen/2-bore*0.92, 0, 0, PI/2,0,PI/2);
   /* the banks: each side of the triangle is a block of six cylinders; exhaust belt toward one crank, air belt toward the other */
@@ -17378,8 +17384,10 @@ function flatBeltGeo(x, pl, o){
 }
 /* belt texture u counts crank-pulley angle (BELT_UV per radian at the pulley it is cut for, pl[0], the crank in every caller),
    rounded to whole repeats so the loop has no seam: scrolling the map by BELT_UV x crank angle (loop.js) then moves every belt
-   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. */
-var BELT_UV = 1.5;
+   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. 0.75 puts the print about 1.3 crank radians
+   apart, so at the fastest the frame loop draws (VIS_SPIN, ~0.3 rad a frame) it moves a quarter of the gap a frame and reads as
+   running forward; at 1.5 it moved nearly half the gap and could look like it was creeping backwards. */
+var BELT_UV = 0.75;
 function beltUvU(a, len, R0){
   var rep=Math.max(1, Math.round(len/R0*BELT_UV)), i, n=a.count;
   for(i=0;i<n;i++) a.setX(i, a.getX(i)*rep);
@@ -17392,10 +17400,19 @@ function pulleyMesh(r, w, mat, o){
              {g:CYL(r*1.10,r*1.10,w*0.12,26,false,2.4), m:new THREE.Matrix4().compose(V3( w*0.47,0,0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,PI/2)), V3(1,1,1))},
              {g:CYL(r*1.10,r*1.10,w*0.12,26,false,2.4), m:new THREE.Matrix4().compose(V3(-w*0.47,0,0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,PI/2)), V3(1,1,1))},
              {g:CYL(r*0.30,r*0.30,w*1.3,12,false,2.4), m:new THREE.Matrix4().makeRotationZ(PI/2)}];
-  var m=new THREE.Mesh(mergeGeos(items), mat||MAT.steel); m.castShadow=true; m.receiveShadow=true; return m;
+  var m=new THREE.Mesh(mergeGeos(items), mat||MAT.steel); m.castShadow=true; m.receiveShadow=true;
+  if(!o || o.mark!==false) paintMark(m, w*0.53, r*0.36, r*0.95);
+  return m;
+}
+/* a pale paint stripe across a pulley's front face, the torque mark an engine builder pens on: the one thing on a turned
+   pulley that is not the same all the way round, so its turning shows. One stripe repeats once a turn, so at the speeds
+   loop.js draws (VIS_SPIN) it never strobes the way a ring of bolts does. A child of the spinning mesh: it turns with it. */
+function paintMark(m, x, r0, r1){
+  var b=DCTX?DCTX.bore:1, k=new THREE.Mesh(new THREE.BoxGeometry(b*0.008, r1-r0, b*0.032), MAT.paintMark);
+  k.position.set(x+b*0.004, (r0+r1)/2, 0); m.add(k); return k;
 }
 /* Full / Ultra pulley: lathe-turned body with flanges, poly-V grooves (or cog teeth) where the belt runs, a hub boss
-   and bolt heads (they spin with it). o: {cog, bolts, fan} */
+   and bolt heads (they spin with it). o: {cog, bolts, fan, mark:false = no paint stripe} */
 function pulleyHi(r, w, mat, o){
   var b=DCTX.bore, V2=function(x,y){ return new THREE.Vector2(x,y); }, i, pr=[], ribs=o.cog?0:5, gd=Math.min(r*0.05, b*0.012);
   pr.push(V2(0.001, w*0.62), V2(r*0.30, w*0.62), V2(r*0.34, w*0.50), V2(r*0.80, w*0.50), V2(r*0.86, w*0.44),
@@ -17410,19 +17427,27 @@ function pulleyHi(r, w, mat, o){
     for(i=0;i<nT;i++){ var an=i/nT*TAU; items.push({g:BOX(w*0.72, b*0.022, b*0.028, 6), m:mkM(0, Math.cos(an)*(r+b*0.008), Math.sin(an)*(r+b*0.008), an,0,0)}); } }
   var nb=o.bolts===undefined ? (r>b*0.3?4:3) : o.bolts;
   for(i=0;i<nb;i++){ var ab=i/nb*TAU+0.3, rb=r*(r>b*0.3?0.44:0.52);
-    items.push({g:CYL(b*0.034,b*0.034,b*0.03,6,false,6), m:mkM(w*0.62+b*0.012, Math.cos(ab)*rb, Math.sin(ab)*rb, 0,0,PI/2)}); }
+    items.push({g:CYL(b*0.034,b*0.034,b*0.03,6,false,6), m:mkM(w*0.50+b*0.015, Math.cos(ab)*rb, Math.sin(ab)*rb, 0,0,PI/2)}); }   /* heads on the web face */
   items.push({g:CYL(b*0.05,b*0.05,b*0.04,6,false,6), m:mkM(w*0.62+b*0.02, 0,0, 0,0,PI/2)});   /* centre nut */
   if(o.fan){ /* alternator cooling fan between pulley and case */
     var nf=10; for(i=0;i<nf;i++){ var af=i/nf*TAU; items.push({g:BOX(b*0.022, b*0.12, b*0.028, 6), m:mkM(-w*0.62-b*0.016, Math.cos(af)*r*1.08, Math.sin(af)*r*1.08, af+0.35,0,0)}); }
     items.push({g:CYL(r*0.62,r*0.62,b*0.012,20,false,6), m:mkM(-w*0.62-b*0.016,0,0,0,0,PI/2)}); }
-  var m=new THREE.Mesh(mergeGeos(items), mat||MATHI.lathe||MAT.steel); m.castShadow=true; m.receiveShadow=true; return m;   /* turned steel: rings round the axis, not brushed streaks */
+  var m=new THREE.Mesh(mergeGeos(items), mat||MATHI.lathe||MAT.steel); m.castShadow=true; m.receiveShadow=true;   /* turned steel: rings round the axis, not brushed streaks */
+  if(o.mark!==false) paintMark(m, w*0.50, r*0.36, r*0.78);
+  return m;
 }
 
 /* ===========================================================================
    7e. FRONT ACCESSORY DRIVE
    One serpentine plane (beltX) in front of the timing cover (tcF); accessory bodies
    live between the two. Every pulley on the loop is on the belt's ribbed side, so it
-   turns the same way as the crank at k = crank belt radius / its belt radius.
+   turns the same way as the crank at k = crank belt radius / its belt radius, both
+   measured to the belt's centre line (bp: the Lite round belt and the Full flat belt
+   sit at different heights), so pulley rims and the belt's print move together.
+   Every pulley carries a paint stripe (paintMark) so you can see it turn; the small
+   fast ones (alternator, idlers) have a centre nut, not a ring of bolts that strobes.
+   A blower or a centrifugal supercharger runs on a belt of its own off a second crank
+   pulley ahead of the damper, so the serpentine is the same loop on every engine.
    ==========================================================================*/
 function buildFAD(B, p, extras){
   var bore=p.bore, bankLen=p.bankLen, caseW=p.caseW, caseH=p.caseH, L=p.L, deckH=p.deckH;
@@ -17430,6 +17455,7 @@ function buildFAD(B, p, extras){
   var tcF   = bankLen*0.5 + bore*0.16;      /* timing-cover front face */
   var beltX = bankLen*0.5 + bore*0.78;      /* the serpentine plane */
   var bt    = bore*0.045;                   /* belt tube radius */
+  var bp    = DET ? bore*0.025 : bt;        /* belt centre line above a pulley rim: half the flat belt (Full), the tube radius (Lite) */
   var cool  = pick(p.cfg.cooling,"std");
   var i, j;
 
@@ -17454,11 +17480,13 @@ function buildFAD(B, p, extras){
     var nDb = p.damper==="none" ? 3 : 6, rDb = dR*(p.damper==="none"?0.55:0.36);
     for(i=0;i<nDb;i++){ var aDb=i/nDb*TAU; steelItems.push({g:CYL(bore*0.036,bore*0.036,bore*0.03,6,false,6), m:mkM(dW*0.5+(p.damper!=="none"?dW*0.15:0)+bore*0.012, Math.cos(aDb)*rDb, Math.sin(aDb)*rDb, 0,0,PI/2)}); }
     steelItems.push({g:CYL(bore*0.075,bore*0.075,bore*0.05,6,false,6), m:mkM(dW*0.5+(p.damper!=="none"?dW*0.15:0)+bore*0.025,0,0,0,0,PI/2)});
-    steelItems.push({g:BOX(dW*0.7, bore*0.012, bore*0.03, 8), m:mkM(0, dR+bore*0.004, 0)});
     /* grooved crank belt track round the rim */
     for(i=0;i<4;i++) steelItems.push({g:TOR(dR, bore*0.008, 4, 36, 4), m:mkM(-dW*0.30+i*dW*0.2, 0,0, 0,PI/2,0)});
   }
   damper.add(new THREE.Mesh(mergeGeos(steelItems), MAT.steel));
+  /* timing mark: a painted line across the rim and on round onto the front face (every tier: it is how the damper shows it turns) */
+  var tmk=new THREE.Mesh(new THREE.BoxGeometry(dW*0.72, bore*0.010, bore*0.032), MAT.paintMark); tmk.position.set(0, dR+bore*0.004, 0); damper.add(tmk);
+  paintMark(damper, dW*0.5, dR*(p.damper==="none"?0.70:0.66), dR*0.98);
   if(p.damper==="rubber"){
     /* the bonded elastomer ring shows as a black line between hub and inertia ring */
     var rub=new THREE.Mesh(TOR(dR*0.60, dW*0.10, 6, 30, 2.4), MAT.rubberFlat); rub.rotation.y=PI/2; rub.position.x=dW*0.5; damper.add(rub);
@@ -17466,9 +17494,9 @@ function buildFAD(B, p, extras){
   damper.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
   damper.position.set(beltX, 0, 0); damper.userData.isDamper=true;
   extras.push(damper); anim.spin.push({o:damper, axis:"x", k:1});
-  var Rc=dR+bt;                               /* belt pitch radius on the crank */
+  var Rc=dR+bp;                               /* belt centre-line radius on the crank */
   var serp=[{y:0, z:0, r:dR, side:1}];
-  function spinK(r){ return Rc/(r+bt); }
+  function spinK(r){ return Rc/(r+bp); }
 
   /* ---- layout of the serpentine ---- */
   var altY = (ve||bx) ? caseH*1.15 : deckH*0.62;
@@ -17495,7 +17523,7 @@ function buildFAD(B, p, extras){
   }
   B.add("steel", CYL(bore*0.10,bore*0.10,bore*0.12,10), beltX-bore*0.08, altY, altZ, 0,0,PI/2);             /* shaft nose */
   B.add("calu", BOX(bore*0.08, bore*0.26, Math.abs(altZ)*0.55), tcF+bore*0.04, altY-bore*0.10, altZ*0.62);  /* mounting ear */
-  var altP=pulleyMesh(bore*0.22, bore*0.14, null, {fan:true}); altP.position.set(beltX, altY, altZ);
+  var altP=pulleyMesh(bore*0.22, bore*0.14, null, {fan:true, bolts:0}); altP.position.set(beltX, altY, altZ);
   extras.push(altP); anim.spin.push({o:altP, axis:"x", k:spinK(bore*0.22)});
   serp.push({y:altY, z:altZ, r:bore*0.22, side:1});
 
@@ -17517,19 +17545,41 @@ function buildFAD(B, p, extras){
     for(i=0;i<3;i++) pitems.push({g:TOR(wpR*(0.62+i*0.10), bore*0.012, 6, 28, 1.6),
         m:new THREE.Matrix4().compose(V3(bore*0.075,0,0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0,PI/2,0)), V3(1,1,1))});
     var wpp=new THREE.Mesh(mergeGeos(pitems), MAT.steel); wpp.castShadow=true; wpp.receiveShadow=true;
+    paintMark(wpp, bore*0.085, wpR*0.30, wpR*0.95);   /* over the rings */
     wpp.position.set(beltX, wpY, wpZ); extras.push(wpp); anim.spin.push({o:wpp, axis:"x", k:spinK(wpR)});
     serp.push({y:wpY, z:wpZ, r:wpR, side:1});
   } else {
     wpR=bore*0.20;
     B.add("calu", CYL(bore*0.12,bore*0.12,beltX-tcF,10), (beltX+tcF)/2-bore*0.05, wpY, wpZ, 0,0,PI/2);
-    var wpi=pulleyMesh(wpR, bore*0.13); wpi.position.set(beltX, wpY, wpZ);
+    var wpi=pulleyMesh(wpR, bore*0.13, null, {bolts:0}); wpi.position.set(beltX, wpY, wpZ);
     extras.push(wpi); anim.spin.push({o:wpi, axis:"x", k:spinK(wpR)});
     serp.push({y:wpY, z:wpZ, r:wpR, side:1});
     B.add("dark", CYL(bore*0.24,bore*0.24,bore*0.55,14), bankLen*0.30, bx? p.panTop-bore*0.35 : p.panTop+bore*0.55, bx? caseW*0.30 : caseW*0.5+bore*0.30, 0,0,PI/2);  /* electric pump */
   }
 
-  /* centrifugal head unit: pulley on the belt, step-up gearbox, volute behind with the inlet facing forward */
+  /* spring tensioner on the exhaust side */
   var cd = p.aspInfo && p.aspInfo.crankDriven;
+  var pvY=tnY+bore*0.34, pvZ=tnZ-bore*0.30;
+  B.add("calu", CYL(bore*0.12,bore*0.12,beltX-tcF-bore*0.06,12), (beltX-bore*0.06+tcF)/2, pvY, pvZ, 0,0,PI/2);
+  var dy=tnY-pvY, dz=tnZ-pvZ, al=Math.sqrt(dy*dy+dz*dz);
+  B.add("calu", BOX(bore*0.07, bore*0.14, al), beltX-bore*0.11, (pvY+tnY)/2, (pvZ+tnZ)/2, Math.atan2(-dy,dz),0,0);
+  if(DET){
+    /* the torsion spring coiled round the pivot, its anchor tang, and the pivot bolt */
+    var spR=bore*0.15, spPts=[], nTurn=3.2, sx0=tcF+bore*0.10, sx1=beltX-bore*0.18;
+    for(i=0;i<=40;i++){ var fs=i/40, as=fs*nTurn*TAU; spPts.push(V3(sx0+(sx1-sx0)*fs, pvY+Math.cos(as)*spR, pvZ+Math.sin(as)*spR)); }
+    B.addW("steel", TUBE(spPts, bore*0.018, 90, 5));
+    B.add("calu", CYL(bore*0.20,bore*0.20,bore*0.04,16), sx1+bore*0.03, pvY, pvZ, 0,0,PI/2);
+    B.add("calu", BOX(bore*0.05,bore*0.12,bore*0.05), sx0+bore*0.02, pvY-spR-bore*0.04, pvZ);
+    B.hw("hex", beltX-bore*0.06, pvY, pvZ, 0,0,-PI/2, bore*0.10);
+  }
+  var idl=pulleyMesh(tnR, bore*0.13, null, {bolts:0}); idl.position.set(beltX, tnY, tnZ);
+  extras.push(idl); anim.spin.push({o:idl, axis:"x", k:spinK(tnR)});
+  serp.push({y:tnY, z:tnZ, r:tnR, side:1});
+  extras.push(beltMesh(beltX, serp, bt, bt, {w:bore*0.12}));
+
+  /* ---- centrifugal head unit: step-up gearbox and volute behind the belt plane on the exhaust side, inlet facing forward,
+     driven as the kits do it, by its own belt off a second crank pulley ahead of the damper. (On the serpentine its pulley sat
+     level with the alternator and the water pump fell inside the loop between them: the belt was drawn wrapped right round it.) ---- */
   if(cd && cd.kind==="centri"){
     var s=bore*0.92, hz=caseW*0.44+bore*0.34, hy=altY, cpR=bore*0.26;
     var vx=tcF+s*0.22, vy=hy+cpR+bore*0.12+s*0.56;
@@ -17537,40 +17587,28 @@ function buildFAD(B, p, extras){
     B.add("malu", BOX(bore*0.08, bore*0.30, hz*0.55), tcF+bore*0.04, hy, hz*0.62);                       /* bracket to the front cover */
     var sOut=buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
     if(cd.cout) cd.cout.push(sOut);
-    var cp=pulleyMesh(cpR, bore*0.15); cp.position.set(beltX, hy, hz);
-    extras.push(cp); anim.spin.push({o:cp, axis:"x", k:spinK(cpR)});
-    serp.push({y:hy, z:hz, r:cpR, side:1});
-  } else {
-    /* spring tensioner on the exhaust side */
-    var pvY=tnY+bore*0.34, pvZ=tnZ-bore*0.30;
-    B.add("calu", CYL(bore*0.12,bore*0.12,beltX-tcF-bore*0.06,12), (beltX-bore*0.06+tcF)/2, pvY, pvZ, 0,0,PI/2);
-    var dy=tnY-pvY, dz=tnZ-pvZ, al=Math.sqrt(dy*dy+dz*dz);
-    B.add("calu", BOX(bore*0.07, bore*0.14, al), beltX-bore*0.11, (pvY+tnY)/2, (pvZ+tnZ)/2, Math.atan2(-dy,dz),0,0);
-    if(DET){
-      /* the torsion spring coiled round the pivot, its anchor tang, and the pivot bolt */
-      var spR=bore*0.15, spPts=[], nTurn=3.2, sx0=tcF+bore*0.10, sx1=beltX-bore*0.18;
-      for(i=0;i<=40;i++){ var fs=i/40, as=fs*nTurn*TAU; spPts.push(V3(sx0+(sx1-sx0)*fs, pvY+Math.cos(as)*spR, pvZ+Math.sin(as)*spR)); }
-      B.addW("steel", TUBE(spPts, bore*0.018, 90, 5));
-      B.add("calu", CYL(bore*0.20,bore*0.20,bore*0.04,16), sx1+bore*0.03, pvY, pvZ, 0,0,PI/2);
-      B.add("calu", BOX(bore*0.05,bore*0.12,bore*0.05), sx0+bore*0.02, pvY-spR-bore*0.04, pvZ);
-      B.hw("hex", beltX-bore*0.06, pvY, pvZ, 0,0,-PI/2, bore*0.10);
-    }
-    var idl=pulleyMesh(tnR, bore*0.13); idl.position.set(beltX, tnY, tnZ);
-    extras.push(idl); anim.spin.push({o:idl, axis:"x", k:spinK(tnR)});
-    serp.push({y:tnY, z:tnZ, r:tnR, side:1});
+    var xC=beltX+dW*0.62+bore*0.16, rCC=bore*0.40, pC=DET ? bore*0.025 : bt;
+    B.add("steel", CYL(bore*0.20,bore*0.20, xC-(beltX+dW*0.5), 14), (xC+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer on the damper */
+    B.add("steel", CYL(bore*0.07,bore*0.07, xC-(beltX-bore*0.09), 10), (xC+beltX-bore*0.09)/2, hy, hz, 0,0,PI/2);   /* gearbox input shaft */
+    var ccp=pulleyMesh(rCC, bore*0.15, null, {bolts:6}); ccp.position.set(xC, 0, 0); extras.push(ccp); anim.spin.push({o:ccp, axis:"x", k:1});
+    var cp=pulleyMesh(cpR, bore*0.15, null, {bolts:0}); cp.position.set(xC, hy, hz); extras.push(cp); anim.spin.push({o:cp, axis:"x", k:(rCC+pC)/(cpR+pC)});
+    extras.push(beltMesh(xC, [{y:0,z:0,r:rCC,side:1},{y:hy,z:hz,r:cpR,side:1}], bt, bt, {w:bore*0.12}));
   }
-  extras.push(beltMesh(beltX, serp, bt, bt, {w:bore*0.12}));
 
   /* ---- Roots / screw blower: its own cogged belt in a plane ahead of the damper ---- */
   if(cd && cd.kind==="blower"){
-    var xB=beltX+dW*0.62+bore*0.16, rCB=bore*0.50, rB=Math.max(bore*0.15, rCB/cd.ratio), rI=bore*0.15;
+    var xB=beltX+dW*0.62+bore*0.16, rCB=bore*0.50, rB=Math.max(bore*0.15, rCB/cd.ratio), rI=bore*0.15, pB=DET ? bore*0.0225 : bore*0.02;
     B.add("steel", CYL(bore*0.22,bore*0.22, xB-(beltX+dW*0.5), 14), (xB+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer */
     var cbp=pulleyMesh(rCB, bore*0.20, null, {cog:true, bolts:6}); cbp.position.set(xB,0,0); extras.push(cbp); anim.spin.push({o:cbp, axis:"x", k:1});
     if(xB>cd.snoutX) B.add("malu", CYL(bore*0.16,bore*0.20, xB-cd.snoutX, 14), (xB+cd.snoutX)/2-bore*0.06, cd.y, cd.z, 0,0,PI/2);  /* snout extension */
-    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:rCB/rB});
-    var iy=cd.y*0.52, iz=cd.z*0.5 + (rCB+rB)*0.5 + bore*0.30;
-    B.add("malu", BOX(bore*0.08, cd.y-iy+bore*0.20, bore*0.26), xB-bore*0.16, (cd.y+iy)/2, (cd.z+iz)/2+bore*0.05);   /* idler bracket off the snout */
-    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:rCB/rI});
+    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:(rCB+pB)/(rB+pB)});
+    /* idler: out to the side of the crank-to-blower line, square to it, so it always pushes the belt outward. (It used to sit off the
+       centreline by a fixed sideways step; a rotary's blower sits off to one side, the idler fell inside the loop and the belt was
+       drawn wrapped right round it.) */
+    var bL=Math.sqrt(cd.y*cd.y+cd.z*cd.z)||1, nz=cd.y/bL, ny=-cd.z/bL, off=(rCB+rB)*0.5+bore*0.30;
+    var iy=cd.y*0.5+ny*off, iz=cd.z*0.5+nz*off, ady=cd.y-iy, adz=cd.z-iz, aL=Math.sqrt(ady*ady+adz*adz);
+    B.add("malu", BOX(bore*0.08, aL+bore*0.20, bore*0.26), xB-bore*0.16, (cd.y+iy)/2, (cd.z+iz)/2, Math.atan2(adz,ady),0,0);   /* idler bracket off the snout */
+    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:(rCB+pB)/(rI+pB)});
     extras.push(beltMesh(xB, [{y:0,z:0,r:rCB,side:1},{y:cd.y,z:cd.z,r:rB,side:1},{y:iy,z:iz,r:rI,side:1}], bore*0.02, bore*0.055, {w:bore*0.17, t:bore*0.045, cog:bore*0.06}));
   }
 
@@ -17586,7 +17624,7 @@ function buildFAD(B, p, extras){
     var xD=tcF+bore*0.14, rPD=bore*0.24;
     B.add("steel", CYL(bore*0.08,bore*0.08,xD-pFront+bore*0.04,10), (xD+pFront)/2, pY, pZ, 0,0,PI/2);
     var dcp=pulleyMesh(bore*0.26, bore*0.12, null, {cog:true, bolts:0}); dcp.position.set(xD,0,0); extras.push(dcp); anim.spin.push({o:dcp, axis:"x", k:1});
-    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:(bore*0.26)/rPD});
+    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:(bore*0.28)/(rPD+bore*0.02)});   /* belt centre line 0.02 bore above both rims */
     extras.push(beltMesh(xD, [{y:0,z:0,r:bore*0.26,side:1},{y:pY,z:pZ,r:rPD,side:1}], bore*0.02, bore*0.04, {w:bore*0.10, t:bore*0.04, cog:bore*0.06}));
     /* remote tank + lines */
     var tX = bx ? -(bankLen*0.5+bore*0.95) : -bankLen*0.12;
@@ -18090,8 +18128,7 @@ function buildGarageMesh(owned){
   }
   buildUpgrades(B, G, extrasPush(lights), W, D, Hh, owned, sandbox);
 
-  /* engine stand */
-  buildStand(B, sandbox);
+  /* the engine stand is not part of the room: api.js fitStand builds it to suit the engine on it */
   /* the workshop monitor beside it (the app draws on it through ENGINE_VIS.setScreen) */
   var mon=buildMonitor(B, G);
 
@@ -18155,38 +18192,141 @@ function screenCam(dt, tgt){
   return _scrL;
 }
 
-function buildStand(B, sandbox){
-  var pk = sandbox ? "paintGrey" : "paintOrange";
-  var w=6.2, d=9.0, topY=6.0;
-  /* base rails + cross members */
-  B.add(pk, BOX(1.1, 0.9, d, 1/3), -w/2, 0.9, 0);
-  B.add(pk, BOX(1.1, 0.9, d, 1/3),  w/2, 0.9, 0);
-  B.add(pk, BOX(w, 0.8, 1.0, 1/3), 0, 0.9,  d/2-0.8);
-  B.add(pk, BOX(w, 0.8, 1.0, 1/3), 0, 0.9, -d/2+0.8);
-  /* uprights + diagonal braces */
-  var ux=[-w/2, w/2], uz=[-d/2+1.2, d/2-1.2], i, j;
+/* ---- the engine stand ----
+   A welded run stand that fits the engine on it. It is built from the engine's seat (the bottom of its sump or crankcase, which the
+   engine builders leave in G.userData.seat; world units here) each time the engine or the room changes (api.js fitStand), into a group
+   of its own beside the garage. Square tube base, four posts and a top frame, braced and gusseted; two cross members clamped on the top
+   frame carry the cradle: a saddle beam on two posts under the front and the back of the sump, at its exact height, rubber pads where
+   it sits. Shop: Longlight clay paint on swivel casters. Test cell: grey, on levelling feet clamped to the dyno bedplate.
+   f: {x0,x1,z0,z1,y, r} the seat (r: a round bottom, the pads rise to meet it); none = a small-block's. Lengths are rounded to a tenth
+   so the cached tube geometry stays a short list however many engines are tried. */
+var STAND={topY:5.0, tube:0.7, pad:0.32};
+function buildStand(B, sandbox, f){
+  f = f || {x0:-2.6, x1:2.6, z0:-1.5, z1:1.5, y:7.05, r:0};
+  var q=function(v){ return Math.round(v*10)/10; }, V=function(x,y,z){ return new THREE.Vector3(x,y,z); };
+  var pk = sandbox ? "paintGrey" : "paintOrange", t=STAND.tube, h=t/2, i, j;
+  var y0 = sandbox ? 1.2 : 0;                                  /* bedplate top / floor */
+  var cx=(f.x0+f.x1)/2, cz=(f.z0+f.z1)/2, sl=f.x1-f.x0, sw=f.z1-f.z0;
+  var Lx=q(clamp(sl*1.15+1.8, 7.0, 10.0)), Wz=q(clamp(sw+2.8, 5.6, 7.2));
+  var yb = y0 + (sandbox ? 0.62 : 1.16);                       /* underside of the base: levelling feet / casters */
+  var topY=STAND.topY, xs=[cx-Lx/2+h, cx+Lx/2-h], zs=[cz-Wz/2+h, cz+Wz/2-h];
+  var px=[cx-Lx/2+1.0, cx+Lx/2-1.0];                            /* posts */
+  var rt=0.07;
+
+  /* base: side rails, end cross rails, a middle one under the tray */
+  for(j=0;j<2;j++) B.add(pk, RBOX(Lx, t, t, rt, 1/3), cx, yb+h, zs[j]);
+  for(i=0;i<2;i++) B.add(pk, RBOX(t, t*0.9, q(Wz-t*2), rt, 1/3), xs[i], yb+h, cz);
+  B.add(pk, RBOX(t*0.8, t*0.7, q(Wz-t*2), rt, 1/3), cx, yb+t*0.35, cz);
+  /* posts, top side rails, gussets where they meet (a square plate turned 45 degrees: only the corner triangle shows) */
+  var postH=q(topY-t-(yb+t)), railTop=yb+t, topBot=topY-t;
   for(i=0;i<2;i++) for(j=0;j<2;j++){
-    B.add(pk, BOX(0.95, topY-1.2, 0.95, 1/3), ux[i], (topY-1.2)/2+1.3, uz[j]);
+    B.add(pk, RBOX(t*0.9, postH, t*0.9, rt, 1/3), px[i], railTop+postH/2, zs[j]);
+    for(var sd=-1; sd<=1; sd+=2){
+      B.add(pk, BOX(0.62, 0.62, 0.07, 1/3), px[i]+sd*t*0.45, railTop, zs[j], 0,0,PI/4);
+      B.add(pk, BOX(0.62, 0.62, 0.07, 1/3), px[i]+sd*t*0.45, topBot, zs[j], 0,0,PI/4);
+    }
   }
-  for(i=0;i<2;i++){
-    B.add(pk, BOX(0.6, 0.6, d*0.86, 1/3), ux[i], topY*0.55, 0, 0.32, 0, 0);
+  var tL=q(px[1]-px[0]+t*2.2);
+  for(j=0;j<2;j++) B.add(pk, RBOX(tL, t, t, rt, 1/3), cx, topY-h, zs[j]);
+  B.add(pk, RBOX(t*0.8, t*0.8, q(Wz-t*2), rt, 1/3), px[0], topY-h, cz);        /* rear top cross tie */
+  /* braces: an X on each long side, one diagonal on each end */
+  var bR=0.12;
+  for(j=0;j<2;j++){
+    standStrut(B, pk, V(px[0]+h, railTop+0.15, zs[j]), V(px[1]-h, topBot-0.15, zs[j]), bR);
+    standStrut(B, pk, V(px[1]-h, railTop+0.15, zs[j]), V(px[0]+h, topBot-0.15, zs[j]), bR);
   }
-  /* top cradle */
-  B.add(pk, BOX(w+1.4, 0.85, 1.5, 1/3), 0, topY, -d*0.26);
-  B.add(pk, BOX(w+1.4, 0.85, 1.5, 1/3), 0, topY, d*0.26);
-  B.add("plate", BOX(w+1.0, 0.28, 2.6, 1/4), 0, topY+0.55, -d*0.26);
-  B.add("plate", BOX(w+1.0, 0.28, 2.6, 1/4), 0, topY+0.55, d*0.26);
-  /* rubber pads */
-  B.add("rubberFlat", BOX(w+0.6, 0.30, 1.9, 1/3), 0, topY+0.82, -d*0.26);
-  B.add("rubberFlat", BOX(w+0.6, 0.30, 1.9, 1/3), 0, topY+0.82, d*0.26);
-  /* casters */
-  var cx=[-w/2, w/2], cz=[-d/2+1.0, d/2-1.0];
+  for(i=0;i<2;i++) standStrut(B, pk, V(px[i], railTop+0.15, zs[0]+h), V(px[i], topBot-0.15, zs[1]-h), bR);
+
+  /* cradle: two cross members clamped on the top rails, under the front and back of the seat */
+  var reach=tL/2-0.55, mA=clamp(f.x0+sl*0.17, cx-reach, cx+reach), mB=clamp(f.x1-sl*0.17, cx-reach, cx+reach);
+  var padDz=Math.max(0.55, sw*0.32), padTop=f.y;
+  if(f.r) padTop = f.y + f.r - Math.sqrt(Math.max(0, f.r*f.r - padDz*padDz));   /* a round bottom: where it is padDz off its lowest line */
+  var padH=STAND.pad, beamH=0.42, beamTop=padTop-padH, cmTop=topY+0.55;
+  var sPostZ=Math.max(padDz+0.55, sw*0.5+0.35), sPostH=q(Math.max(0.1, beamTop-beamH-cmTop));
+  [mA,mB].forEach(function(mx){
+    B.add(pk, RBOX(0.62, 0.55, q(Wz+0.3), 0.06, 1/3), mx, topY+0.275, cz);     /* cross member */
+    for(j=0;j<2;j++){                                                          /* its clamp blocks and bolts on the rails */
+      B.add("steel", BOX(0.9, 0.16, 0.9, 1/3), mx, topY+0.04, zs[j]);
+      for(var cb=-1; cb<=1; cb+=2) B.add("steel", CYL(0.09,0.09,0.12,6,false,2), mx+cb*0.32, topY+0.16, zs[j]+0.3);
+    }
+    for(j=-1;j<=1;j+=2){                                                       /* saddle posts with their adjuster pins */
+      B.add(pk, RBOX(0.48, sPostH, 0.48, 0.05, 1/3), mx, cmTop+sPostH/2, cz+j*sPostZ);
+      B.add("steel", CYL(0.07,0.07,0.62,8,false,2), mx, cmTop+Math.min(sPostH*0.5, 0.35), cz+j*sPostZ, 0,0,PI/2);
+      B.add("steel", CYL(0.13,0.13,0.08,6,false,2), mx+0.31, cmTop+Math.min(sPostH*0.5, 0.35), cz+j*sPostZ, 0,0,PI/2);
+    }
+    B.add("steel", RBOX(0.66, beamH, q(sPostZ*2+0.6), 0.05, 1/3), mx, beamTop-beamH/2, cz);   /* saddle beam */
+    for(j=-1;j<=1;j+=2){
+      B.add("steel", BOX(0.86, 0.06, 0.86, 1/3), mx, beamTop+0.03, cz+j*padDz);              /* pad plate */
+      B.add("rubberFlat", RBOX(0.78, padH-0.06, 0.78, 0.08, 1/3), mx, beamTop+0.06+(padH-0.06)/2, cz+j*padDz);
+    }
+  });
+
+  /* drip tray on the base cross rails: a shallow pan with a lip */
+  var dL=q(Lx-0.9), dW=q(Wz-t*2-0.1), dy=yb+t*0.9+0.04;
+  B.add("dark", BOX(dL, 0.06, dW, 1/6), cx, dy, cz);
+  B.add("dark", BOX(dL, 0.26, 0.06, 1/6), cx, dy+0.13, cz-dW/2);
+  B.add("dark", BOX(dL, 0.26, 0.06, 1/6), cx, dy+0.13, cz+dW/2);
+  B.add("dark", BOX(0.06, 0.26, dW, 1/6), cx-dL/2, dy+0.13, cz);
+  B.add("dark", BOX(0.06, 0.26, dW, 1/6), cx+dL/2, dy+0.13, cz);
+
+  /* feet */
   for(i=0;i<2;i++) for(j=0;j<2;j++){
-    B.add("steel", BOX(0.7,0.7,0.7,1/2), cx[i], 0.45, cz[j]);
-    B.add("rubberFlat", CYL(0.45,0.45,0.34,14,false,2.0), cx[i], 0.45, cz[j], 0,0,PI/2);
+    var fx=xs[i], fz=zs[j];
+    if(sandbox){
+      /* levelling foot: plate, threaded rod and lock nut, rubber-faced pad; a hold-down clamp to the bedplate T-slot beside it */
+      B.add("steel", BOX(0.9, 0.08, 0.9, 1/3), fx, yb-0.04, fz);
+      B.add("steel", CYL(0.2,0.2,0.12,6,false,2), fx, yb-0.14, fz);
+      B.add("steel", CYL(0.08,0.08,0.38,8,false,2), fx, y0+0.27, fz);
+      B.add("steel", CYL(0.36,0.4,0.1,16,false,2), fx, y0+0.13, fz);
+      B.add("rubberFlat", CYL(0.4,0.4,0.08,16,false,2), fx, y0+0.04, fz);
+      var cs=(j?1:-1);
+      B.add("dark", BOX(0.34, 0.12, 0.9, 1/3), fx, yb-0.02, fz+cs*0.75);
+      B.add("steel", CYL(0.07,0.07,0.7,8,false,2), fx, y0+0.25, fz+cs*0.95);
+      B.add("steel", CYL(0.15,0.15,0.1,6,false,2), fx, yb+0.1, fz+cs*0.95);
+      B.add("dark", BOX(0.4, yb-y0-0.04, 0.3, 1/3), fx, (yb+y0)/2-0.04, fz+cs*1.22);
+    } else {
+      /* swivel caster: top plate, swivel race, fork, wheel on its axle; the front pair have a brake pedal */
+      B.add("steel", BOX(0.86, 0.08, 0.86, 1/3), fx, yb-0.04, fz);
+      B.add("steel", CYL(0.32,0.34,0.12,16,false,2), fx, yb-0.14, fz);
+      var tr=(i?-0.12:0.12);
+      for(var fk=-1; fk<=1; fk+=2) B.add("steel", BOX(0.5, 0.62, 0.06, 1/3), fx+tr, yb-0.5, fz+fk*0.21);
+      B.add("steel", BOX(0.5, 0.06, 0.48, 1/3), fx+tr*0.5, yb-0.22, fz);
+      B.add("rubberFlat", CYL(0.42,0.42,0.3,18,false,2), fx+tr, y0+0.42, fz, PI/2,0,0);
+      B.add("steel", CYL(0.2,0.2,0.33,12,false,2), fx+tr, y0+0.42, fz, PI/2,0,0);
+      B.add("steel", CYL(0.07,0.07,0.52,6,false,2), fx+tr, y0+0.42, fz, PI/2,0,0);
+      if(i===1) B.add("paintOrange", BOX(0.42, 0.07, 0.3, 1/3), fx+0.48, yb-0.3, fz, 0,0,-0.35);
+    }
   }
-  /* drip tray */
-  B.add("steel", BOX(w+2.4, 0.18, d*0.7, 1/4), 0, 0.10, 0);
+
+  /* kill switch box on the front post, the cell's lead to the engine coiled on a hook */
+  var kx=px[1], kz=zs[1]+h+0.26, ky=railTop+postH*0.55;
+  B.add("blackPlast", RBOX(0.9, 1.1, 0.5, 0.08, 1/3), kx, ky, kz);
+  B.add("filterRed", CYL(0.2,0.24,0.18,14,false,2), kx, ky+0.18, kz+0.32, PI/2,0,0);
+  B.add("paintOrange", BOX(0.5, 0.12, 0.04, 1/3), kx, ky-0.3, kz+0.27);
+  B.add("steel", CYL(0.05,0.05,0.5,6,false,2), px[0], ky, zs[1]+h+0.25, PI/2,0,0);
+  B.add("rubberFlat", TOR(0.36, 0.05, 6, 20, 2), px[0], ky-0.3, zs[1]+h+0.45, 0,0,0);
+}
+/* a round brace tube from a to b */
+function standStrut(B, key, a, b, r){
+  var d=new THREE.Vector3().subVectors(b,a), L=Math.round(d.length()*10)/10;
+  var m=new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize()), new THREE.Vector3(1,1,1));
+  B.addM(key, CYL(r, r, L, 10, false, 1/3), m);
+}
+/* the test cell's dyno bedplate (and photo mode's, photo.js): a cast-iron plate with machined T-slots on a painted plinth and
+   four isolation mounts; its top is at 1.2, where the stand's levelling feet stand */
+function buildDynoBed(B){
+  B.add("panel", RBOX(17.2, 0.72, 27.2, 0.12, 1/6), 0, 0.36, 0);               /* plinth */
+  B.add("iron", RBOX(16.0, 0.5, 26.0, 0.05, 1/4), 0, 0.95, 0);                 /* bedplate */
+  for(var ts=0; ts<7; ts++){                                                   /* T-slots: a dark slot with bright machined lips */
+    B.add("blackPlast", BOX(0.36, 0.03, 25.4, 1/4), -6.0+ts*2.0, 1.2, 0);
+    B.add("malu", BOX(0.08, 0.035, 25.4, 1/4), -6.22+ts*2.0, 1.2, 0);
+    B.add("malu", BOX(0.08, 0.035, 25.4, 1/4), -5.78+ts*2.0, 1.2, 0);
+  }
+  for(var c=0;c<4;c++){                                                        /* isolation mounts at the corners */
+    var mx=(c%2?1:-1)*7.6, mz=(c<2?1:-1)*12.4;
+    B.add("rubberFlat", CYL(0.55,0.62,0.3,14,false,2), mx, 0.15, mz);
+    B.add("steel", CYL(0.2,0.2,0.1,6,false,2), mx, 1.25, mz);
+  }
 }
 
 function buildShop(B, G, addLight, W, D, Hh, owned, bay){
@@ -18303,13 +18443,8 @@ function buildTestCell(B, G, addLight, W, D, Hh){
   /* cable tray to the engine */
   B.add("panel", BOX(1.6, 0.35, 14, 1/6), rx-4.2, 0.4, -8);
 
-  /* dyno bed under the stand */
-  B.add("plate", BOX(16, 1.2, 26, 1/4), 0, 0.6, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6), -6.6, 2.4, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6),  6.6, 2.4, 0);
-  /* T-slots */
-  for(var ts=0; ts<7; ts++)
-    B.add("blackPlast", BOX(0.5, 0.3, 25, 1/4), -6.0+ts*2.0, 1.25, 0);
+  /* dyno bedplate under the stand */
+  buildDynoBed(B);
 
   /* extraction hood overhead */
   B.add("panel", CONE(1.8, 4.4, 4.0, 20, 1/8), W*0.34, Hh-6.4, -14);
@@ -18918,17 +19053,18 @@ function tick(dt, t){
   /* --- running parts --- */
   var frac = run.on ? clamp(run.rpm/Math.max(1000, run.redline), 0, 1.25) : 0;
   var spin = run.on ? (run.rpm/60)*TAU*dt : 0;
+  var crank = run.on ? visCrank(run.rpm, dt) : 0;   /* the crank's drawn turn this frame (VIS_SPIN) */
   var i;
   for(i=0;i<anim.spin.length;i++){
-    var sp=anim.spin[i]; sp.o.rotation.x += spin*sp.k*0.16;
+    var sp=anim.spin[i]; sp.o.rotation.x = (sp.o.rotation.x + crank*sp.k) % TAU;
   }
   /* belts: one texture scroll per belt material, in step with the crank (their uv counts crank angle, see beltUvU) */
-  if(spin){ BELT_OFF=(BELT_OFF+spin*0.16*BELT_UV)%1;
+  if(crank){ BELT_OFF=(BELT_OFF+crank*BELT_UV)%1;
     if(MAT.belt) MAT.belt.map.offset.x=BELT_OFF;               /* MATHI.belt is a clone: same texture, so it scrolls too */
     if(MATHI.beltFlat) MATHI.beltFlat.map.offset.x=BELT_OFF; }
   for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
   if(anim.internals){
-    var IN=anim.internals; IN.theta += spin*0.16; IN.crank.rotation.x = IN.theta;
+    var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
     /* rotary: each rotor rides its eccentric lobe and turns at a third of shaft speed (that is what makes the apexes trace the housing) */
     if(XRAY && IN.ports) for(var pi2=0; pi2<IN.ports.length; pi2++){   /* two-stroke: a port window glows while the crown is below its top edge */
       var po=IN.ports[pi2], cy2=po.cyl, f2=IN.theta+cy2.phase, ca2=Math.cos(cy2.ang), sa2=Math.sin(cy2.ang), py2=IN.r*Math.cos(f2), pz2=IN.r*Math.sin(f2), ly2=ca2*py2+sa2*pz2, lz2=-sa2*py2+ca2*pz2, crown=ly2+Math.sqrt(Math.max(0, IN.L*IN.L-lz2*lz2))+IN.ch;
@@ -19061,6 +19197,14 @@ function tick(dt, t){
 }
 var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
 var BELT_OFF=0;
+/* How fast the crank is drawn turning. A real crank turns 13 to 150 times a second, far more than a 30-60 fps screen can show:
+   drawn true to speed (or at the old fixed sixth of it) a pulley's paint mark or a ring of bolts lands almost anywhere each
+   frame, so it looks stopped, jerky or running backwards (the wagon-wheel effect), and a phone at 30 fps gets it worst. So the
+   drawn speed eases from about 1.2 turns a second at idle toward max (rad/s) up the rev range (half of max at `half` rpm), and
+   one frame never turns more than `step` radians, a slow phone drawing it a little slower rather than strobing. The pulleys,
+   belts, damper, flywheel and the X-ray crank and pistons all take this one number, so they stay in step with each other. */
+var VIS_SPIN={max:17, half:1000, step:0.34};
+function visCrank(rpm, dt){ return rpm>0 ? Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SPIN.half)*dt, VIS_SPIN.step) : 0; }
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
@@ -19145,6 +19289,23 @@ function garageShadowGate(now){
 /* ===========================================================================
    12. FRAMING
    ==========================================================================*/
+/* the engine stand (garage.js buildStand), rebuilt to fit whenever the engine or the room changes. The seat the engine builder left
+   (G.userData.seat) goes through the engine's resting transform (engineRoot, not the shake group above it, so a running engine's
+   jiggle at the moment of a rebuild does not move the stand) into scene units. */
+function fitStand(){
+  if(!standRoot) return;
+  disposeTree(standRoot);
+  var f=null, G=engineRoot && engineRoot.children[0], s=G && G.userData.seat;
+  if(s){
+    engineRoot.updateMatrix(); G.updateMatrix();
+    var M=new THREE.Matrix4().multiplyMatrices(engineRoot.matrix, G.matrix);
+    var a=new THREE.Vector3(s.x0, s.y, s.z0).applyMatrix4(M), b=new THREE.Vector3(s.x1, s.y, s.z1).applyMatrix4(M);
+    f={x0:Math.min(a.x,b.x), x1:Math.max(a.x,b.x), z0:Math.min(a.z,b.z), z1:Math.max(a.z,b.z), y:a.y, r:(s.r||0)*G.scale.y};
+  }
+  var B=new Builder();
+  buildStand(B, !!(lastOwned && lastOwned.sandbox), f);
+  B.flush(standRoot, {}, true);
+}
 function frameEngine(){
   if(TD.on){ tdFrame(true); return; }   /* teardown view frames the failed part instead */
   if(!engineRoot) return;
@@ -28457,6 +28618,7 @@ const ENGINE_VIS = {
     rimLight.position.set(-16, 12, -20); scene.add(rimLight);
 
     garageRoot=new THREE.Group(); scene.add(garageRoot);
+    standRoot=new THREE.Group(); scene.add(standRoot);    /* the engine stand, refitted to each engine (fitStand) */
     engineShake=new THREE.Group(); scene.add(engineShake);
     engineRoot=new THREE.Group(); engineRoot.position.y=6.85; engineShake.add(engineRoot);
     fxRoot=new THREE.Group(); scene.add(fxRoot);
@@ -28706,6 +28868,7 @@ const ENGINE_VIS = {
     engineRoot.position.y = 7.05 - bb.min.y;
     engineRoot.updateMatrixWorld(true);
     engBox.setFromObject(G);
+    fitStand();
     if(G.userData.exhaustTip){ exhaustTipW = G.userData.exhaustTip.clone(); G.localToWorld(exhaustTipW); } else exhaustTipW=null;
     cleanupFail();
     frameEngine();
@@ -28725,6 +28888,7 @@ const ENGINE_VIS = {
     disposeTree(garageRoot);
     var G=buildGarageMesh(lastOwned);
     garageRoot.add(G);
+    fitStand();                                            /* shop or test cell: its paint and its feet */
     var W=G.userData.roomW;
     scene.fog.near = W*1.05; scene.fog.far = W*2.2;
     scene.background = sc(lastOwned.sandbox?0x161a1e:0x0d0f12);
@@ -29605,15 +29769,15 @@ function phRestoreStandLights(s){
   phLightPut(hemi,s.h); phLightPut(keyLight,s.k); phLightPut(fillLight,s.f); phLightPut(rimLight,s.r);
   renderer.toneMappingExposure=s.ex; s.gl.forEach(function(p){ p[0].intensity=p[1]; });
 }
-/* the stand, the dyno bed and a floor on their own (the garage group is hidden for any backdrop but "garage") */
+/* a floor on its own, and in the test cell the dyno bedplate (the garage group is hidden for any backdrop but "garage"; the stand is
+   not in it, api.js fitStand keeps it under the engine either way) */
 function phBuildGroup(){
-  if(PH.group) return PH.group;
+  var sb=!!lastOwned.sandbox;
+  if(PH.group && PH.group.userData.sb===sb) return PH.group;
+  if(PH.group){ disposeTree(PH.group); scene.remove(PH.group); }
   var g=new THREE.Group(), B=new Builder();
-  buildStand(B, !!lastOwned.sandbox);
-  B.add("plate", BOX(16, 1.2, 26, 1/4), 0, 0.6, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6), -6.6, 2.4, 0);
-  B.add("panel", BOX(3.0, 3.6, 22, 1/6),  6.6, 2.4, 0);
-  for(var ts=0; ts<7; ts++) B.add("blackPlast", BOX(0.5, 0.3, 25, 1/4), -6.0+ts*2.0, 1.25, 0);
+  g.userData.sb=sb;
+  if(sb) buildDynoBed(B);
   B.flush(g, {}, true);
   var fl=new THREE.Mesh(new THREE.CircleGeometry(150, 48), new THREE.MeshStandardMaterial({color:0x888888, roughness:0.9, metalness:0}));
   fl.rotation.x=-PI/2; fl.receiveShadow=true; fl.name="photoFloor"; g.add(fl);
@@ -30437,7 +30601,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.42.1";
+const VERSION="1.76.43.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

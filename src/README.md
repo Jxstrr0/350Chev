@@ -62,9 +62,9 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `vis/exhaust.js` | 7b exhaust manifolds/headers, 7b' exhaust system (pipes, cutout, muffler) |
 | `vis/intake.js` | 7c intake, 7d aspiration (turbos, blowers, intercooler, blower belt) |
 | `vis/accessories.js` | 7e front accessory drive (`buildFAD`), 7f fidelity detail (lettering, tags, wiring, PCV) |
-| `vis/garage.js` | 8. the garage room |
+| `vis/garage.js` | 8. the garage room, the engine stand (`buildStand`, fitted to each engine by `fitStand` in `loop.js`), the test cell's dyno bedplate (`buildDynoBed`, also used by photo mode) |
 | `vis/particles.js` | 9. particles (haze, smoke, sparks, `emit`/PKIND), 9b failure FX |
-| `vis/loop.js` | 10. orbit controls, 11. frame loop, 12. framing |
+| `vis/loop.js` | 10. orbit controls, 11. frame loop (`VIS_SPIN`: how fast the crank, pulleys and belts are drawn turning), 12. framing, `fitStand` |
 | `vis/strip.js` | drag strip scene: STRIP state, track/ground shaders, sky, prairie and the plant, per-frame scenery |
 | `vis/strip-venue.js` | drag strip venue: billboard crowd (GPU poses/bounce/wave), instanced pit spaces, staging-lane cars, markings atlas, per-tier thinning |
 | `vis/strip-cars.js` | drag cars: materials, sponsor livery, body loft, wheels, chute, body packs |

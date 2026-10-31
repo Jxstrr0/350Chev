@@ -72,6 +72,7 @@ const ENGINE_VIS = {
     rimLight.position.set(-16, 12, -20); scene.add(rimLight);
 
     garageRoot=new THREE.Group(); scene.add(garageRoot);
+    standRoot=new THREE.Group(); scene.add(standRoot);    /* the engine stand, refitted to each engine (fitStand) */
     engineShake=new THREE.Group(); scene.add(engineShake);
     engineRoot=new THREE.Group(); engineRoot.position.y=6.85; engineShake.add(engineRoot);
     fxRoot=new THREE.Group(); scene.add(fxRoot);
@@ -321,6 +322,7 @@ const ENGINE_VIS = {
     engineRoot.position.y = 7.05 - bb.min.y;
     engineRoot.updateMatrixWorld(true);
     engBox.setFromObject(G);
+    fitStand();
     if(G.userData.exhaustTip){ exhaustTipW = G.userData.exhaustTip.clone(); G.localToWorld(exhaustTipW); } else exhaustTipW=null;
     cleanupFail();
     frameEngine();
@@ -340,6 +342,7 @@ const ENGINE_VIS = {
     disposeTree(garageRoot);
     var G=buildGarageMesh(lastOwned);
     garageRoot.add(G);
+    fitStand();                                            /* shop or test cell: its paint and its feet */
     var W=G.userData.roomW;
     scene.fog.near = W*1.05; scene.fog.far = W*2.2;
     scene.background = sc(lastOwned.sandbox?0x161a1e:0x0d0f12);
