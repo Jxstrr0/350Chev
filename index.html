@@ -2453,8 +2453,8 @@ html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
 <script>/* three.js post-processing addons (bloom, SSAO). Only Full and Ultra use them, so a phone on Lite skips these ten CDN round trips at boot:
    they are written in here when the saved tier (or a desktop UA) will want them, else ENGINE_VIS.setQuality loads them on demand through
    window.__pewPost. build.js reads PEW_LIBS so the service worker precaches every URL. Order matters (Composer before the passes). */
-(function(){window.PEW_LIBS=["https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
-var ready=function(){return !!(window.THREE&&THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.SSAOPass);},p=null;
+(function(){window.PEW_LIBS=["https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
+var ready=function(){return !!(window.THREE&&THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.SSAOPass&&THREE.SimplexNoise);},p=null;
 window.__pewPost=function(cb){if(ready()){cb&&cb(true);return;}
  if(!p)p=new Promise(function(res){var i=0;(function next(){if(i>=PEW_LIBS.length){res(ready());return;}var s=document.createElement("script");s.src=PEW_LIBS[i++];s.async=false;s.crossOrigin="anonymous";s.onload=next;s.onerror=function(){p=null;res(false);};document.head.appendChild(s);})();});
  p.then(function(ok){cb&&cb(ok);});};
@@ -30437,7 +30437,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.42.0";
+const VERSION="1.76.42.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
