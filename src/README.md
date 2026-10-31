@@ -119,7 +119,7 @@ Files added after the map above was written (their place in the order is in `man
 | `vis/band.js` | the run view HUD band every event but the strip reports to the 3D view |
 | `app/team.js` | career team seasons (the Team tab): one team a season for 8 rounds, a round every other week (`PC_EVENTS`, `PC_STYLES`, season and pay tables), offers gated by rep and dyno, the team's parts budget and engine wear, auto-simulated race day (drag ladder, oval feature), Close week racing a due round, points table, title, pay and rep, the Market-tab cards (`#pitBox`) |
 | `css/ui-team.css` | the team offer, season and result cards, budget bar, standings |
-| `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders; the rev glow, failure crack overlay and venue tint styling. Last CSS file, so it overrides the rest |
+| `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders; the rev glow, failure crack overlay and venue tint styling; the gestures (grabber, compare card); the results card and holo sheen. Last CSS file, so it overrides the rest |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
 | `vis/props.js` | 8b. workshop polish for Full / Ultra: floor details, props, lamps |
 | `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |
@@ -133,6 +133,7 @@ Files added after the map above was written (their place in the order is in `man
 | `app/trophy.js` | the trophy room's dated log of wins per mode |
 | `app/photo.js` | photo mode controls, gestures, capture and share, the build sheet card |
 | `app/rail.js` | the results rail: a third column on desktop, a peek sheet over the tab bar on a phone |
+| `app/rcard.js` | the full-screen results card after a run the player drives (hero number, verdict chip, delta, dyno ghost curve, Share), its Settings switch, and the holographic tilt for trophy cards |
 | `app/shopsb.js` | the sandbox Shop: bench and parts catalogue |
 | `app/folds.js` | Settings folds, open state remembered in `S.folds` |
 | `app/perf.js` | auto-adjust graphics: steps one tier down (ultra > full > lite) when the frame rate stays low |

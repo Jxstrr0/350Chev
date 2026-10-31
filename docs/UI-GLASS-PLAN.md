@@ -198,6 +198,6 @@ Camera-as-navigation between tabs, tapping the 3D engine to pick parts (pitch it
 - [x] PR 1: Glass foundation, ambient backdrop, floating tab bar, HUD (1.76.36.0). Lite deviation: the panel and the HUD buttons over the live 3D view get a stronger tint, not a blur, to keep frame rate.
 - [x] PR 2: Panels, seg controls, CTAs, popups, sliders (1.76.37.0). Note: the race buttons had lost their chamfer in the v1.66 look refresh, so this PR brings it back on .btn.pri/.ok/.danger only. WebKit sliders show no orange fill (Firefox does): a fill would need JS on every slider.
 - [x] PR 3: Crack on failure, RPM-reactive glass, venue tint (1.76.39.0). Cracks are generated fresh each time instead of 3 fixed SVGs. The tint eases in JS (an `@property` list transition was unreliable). The optional frame-colour sampling was skipped.
-- [ ] PR 4: Results card, holo trophies, share, morph transition
+- [x] PR 4: Results card, holo trophies, share, morph transition (1.76.41.0; the card has its own off switch in Settings, and the ghost is the previous pull unless a baseline is pinned)
 - [x] PR 5: Tab swipe, sheet detents, long-press compare (1.76.40.0; the detents went on the main panel's height, via a grabber on its lip, since parts sheets are short. Peek isn't saved; tall reuses VIEW › Size)
 - [ ] PR 6: Live dyno readout on garage monitor
