@@ -136,7 +136,7 @@
     <section class="tabpage" id="tab-market">
       <div id="marketBox">
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Win at the events or finish the team's season to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
-        <div class="mkstrip" id="mkStrip"><div class="mks"><b id="mkEng"></b><span class="mkc" id="mkCert"></span><span class="mkb" id="mkBoard"></span></div><button class="mkoh" id="mkOh" aria-expanded="false" aria-controls="overheadHint" aria-label="Weekly overhead and race weeks">i</button><button class="btn pri" id="nextWeek">Close week</button></div>
+        <div class="mkstrip" id="mkStrip"><div class="mks"><b id="mkEng"></b><span class="mkc" id="mkCert"></span><span class="mkb" id="mkBoard"></span></div><button class="mkoh" id="mkOh" aria-expanded="false" aria-controls="overheadHint" aria-label="Weekly overhead and race weeks">i</button><button class="btn ghost" id="oneWeek" hidden>1 wk</button><button class="btn pri" id="nextWeek">Close week</button></div>
         <p class="hint mkhint" id="overheadHint" hidden></p>
         <div class="evtabs seg n3 mktabs" id="mkTabs" role="tablist" aria-label="Team sections"><button role="tab" data-mk="team">Team<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="spons">Sponsors &amp; Rivals<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="log">Log<i class="evdot" aria-hidden="true"></i></button></div>
         <div class="mkpane" id="mkTeam">
@@ -144,11 +144,9 @@
           <div id="pcLast"></div>
           <div id="pcJob"></div>
           <div class="sec" id="pcOfSec"><h2>Teams calling <span class="cnt" id="pcCnt"></span></h2><p class="hint" id="pcNext"></p><div id="pcRoster"></div></div>
-          <details class="sfold"><summary>Race log</summary><div class="sfb"><div class="log" id="pcLog"></div></div></details>
         </div>
         <div class="mkpane" id="mkSpons"><div class="sec" id="sponSec"><h2>Sponsors <span class="cnt" id="sponCnt"></span></h2><p class="hint" id="sponHint"></p><div id="spons"></div></div></div>
         <div class="mkpane" id="mkLog">
-          <p class="mkline" id="mkLine"></p>
           <details class="sfold" open><summary>Ledger</summary><div class="sfb"><div class="log ledger" id="ledger"></div></div></details>
           <details class="sfold"><summary>Shop goals <span class="cnt" id="goalCnt"></span></summary><div class="sfb"><div id="goals"></div></div></details>
         </div>
