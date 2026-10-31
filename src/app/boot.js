@@ -66,6 +66,7 @@ function tick(now){
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
   rpm=visRpm;load=visLoad;on=visRpm>40;
+  glassHeat(now,on?rpm:0,S.cfg.redline);   // the glass rims warm with the revs (state.js)
   /* anti-lag: fires on the lift after real load (end of a pull, the spin-down) — bangs in the sound, flame at the tip */
   let alsAct=0;{const a=alsOf(S.cfg);
     if(a&&testing&&DR&&DR.d&&S.env.testType==="drag")alsAct=DR.failed?0:DR.d.st.als||0;

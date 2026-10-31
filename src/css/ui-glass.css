@@ -180,3 +180,29 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:0;border-radiu
 input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
 input[type=range]:disabled{opacity:.45;cursor:default}
 .btn.on:not(.pri):not(.ok):not(.danger):not(.info){color:var(--orange2);box-shadow:var(--glass-shine),inset 0 0 0 1px rgba(var(--glass-tint),.45),inset 0 0 14px rgba(var(--glass-tint),.3)}
+
+/* ===================== PR 3: reactive glass ===================== */
+/* venue light: glassVenue (state.js) eases --glass-tint from one scene's light to the next */
+/* revs: the panel's top rim, the tab bar and the rail warm toward the tint as --glass-heat climbs (glassHeat in state.js); over 90%
+   of redline the glow turns warning red and pulses */
+:root{--heat-rgb:var(--glass-tint)}
+html.redheat{--heat-rgb:238,90,94}
+html:not(.desk) #panel{box-shadow:inset 0 1px 0 rgba(255,255,255,.13),inset 0 1px 0 rgba(var(--heat-rgb),calc(var(--glass-heat) * .9)),0 -2px 22px rgba(var(--heat-rgb),calc(var(--glass-heat) * .4)),0 -10px 26px rgba(0,0,0,.34)}
+html:not(.desk) #tabs{box-shadow:var(--glass-shine),var(--glass-shadow),0 0 0 1px rgba(var(--heat-rgb),calc(.08 + var(--glass-heat) * .35)),0 0 18px rgba(var(--heat-rgb),calc(var(--glass-heat) * .3))}
+html:not(.desk) #rail{box-shadow:var(--glass-shine),var(--glass-shadow),0 0 0 1px rgba(var(--heat-rgb),calc(var(--glass-heat) * .3))}
+@media (prefers-reduced-motion:no-preference){html.redheat:not(.desk) #tabs,html.redheat:not(.desk) #panel{animation:heatpulse 1.1s ease-in-out infinite}}
+@keyframes heatpulse{50%{filter:brightness(1.08)}}
+html.noglass:not(.desk) #panel{box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 -10px 26px rgba(0,0,0,.34)}
+
+/* failure: the crack overlay (crackGlass in state.js) sits over the panels and sheets, under toasts; it never takes a tap */
+#crack{position:absolute;inset:0;width:100%;height:100%;z-index:35;pointer-events:none;overflow:visible;opacity:1;transition:opacity 1.4s ease}
+#crack path{fill:none;stroke:rgba(255,255,255,.85);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .25s cubic-bezier(.2,.7,.3,1)}
+#crack path.ck-s{stroke:rgba(0,0,0,.4);stroke-width:2.8}
+#crack .ck-hit{fill:rgba(255,255,255,.85);filter:drop-shadow(0 0 6px rgba(255,255,255,.8))}
+#crack.on path{stroke-dashoffset:0}
+#crack.out{opacity:0}
+@media (prefers-reduced-motion:reduce){#crack path{stroke-dashoffset:0}}
+#app.shake{animation:glassshake .3s cubic-bezier(.36,.07,.19,.97)}
+@keyframes glassshake{20%{transform:translate3d(-4px,0,0)}40%{transform:translate3d(4px,1px,0)}60%{transform:translate3d(-3px,-1px,0)}80%{transform:translate3d(2px,0,0)}}
+/* the rims flash white for a beat */
+html.glassflash:not(.desk) #panel,html.glassflash:not(.desk) #tabs,html.glassflash .hudbtns>button,html.glassflash:not(.desk) #rail{box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 0 16px rgba(255,255,255,.35)}

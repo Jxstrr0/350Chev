@@ -20,7 +20,7 @@ function rvSync(){const on=rvActive(),de=document.documentElement;
     if(want){const ph=document.createComment("evHud");want.parentNode.insertBefore(ph,want);RV.home=ph;RV.live=want;rvHost().appendChild(want);}}
   const host=$("evHud");if(host)host.hidden=!RV.live;de.classList.toggle("evhud",!!RV.live);
   if(host)host.dataset.ev=RV.live?RV.live.id:"";
-  rvBandSoon();}
+  rvBandSoon();if(typeof glassVenue==="function")glassVenue();}
 /* the band: from the view's bottom edge up to the top of whatever covers its middle (the overlay; on desktop the slim dock too) */
 function rvBandSoon(){if(!RV.raf)RV.raf=requestAnimationFrame(rvBand);}
 function rvBand(){RV.raf=0;if(!ENGINE_VIS.setBand)return;const v=$("view"),vr=v.getBoundingClientRect();let px=0;
