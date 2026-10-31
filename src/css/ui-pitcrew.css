@@ -1,0 +1,16 @@
+/* Pit Crew (app/pitcrew.js): the racer cards and race-day result in the Market tab, and the third mode button */
+.modebox button[data-mode="pit"]{grid-column:1/-1}
+#pitBox .pcst{font-size:14px;line-height:1.45;margin:0 0 6px}
+#pitBox .pcr .row{gap:8px;margin-top:8px}
+#pitBox .pcr.job{border-color:var(--orange)}
+#pitBox .pcchk{font-size:13px;line-height:1.5;margin:6px 0 8px;padding:6px 10px;border-radius:8px;background:var(--soot)}
+#pitBox .pcchk .ok{color:var(--good)}
+#pitBox .pcchk .no{color:var(--warn)}
+#pitBox .pcres.win{border-color:var(--good)}
+#pitBox .pcres.bad{border-color:var(--crit)}
+#pitBox .pcl{font-size:13px;line-height:1.5;color:var(--muted);margin:4px 0 8px}
+#pitBox .pcl div{padding:2px 0;border-bottom:1px dashed var(--rule)}
+#pitBox .pcl div:last-child{border:0}
+#pitBox .log .good{color:var(--good)}
+#pitBox .log .bad{color:var(--crit)}
+#sandboxBox.pit .sbhead{display:none}

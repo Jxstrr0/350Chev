@@ -118,6 +118,8 @@ Files added after the map above was written (their place in the order is in `man
 | `vis/salt-event.js` | Speed Week: the pit town, return road, spectators |
 | `vis/hill-lod.js` | Pikes Peak culling and LOD for Lite and Ultra |
 | `vis/band.js` | the run view HUD band every event but the strip reports to the 3D view |
+| `app/pitcrew.js` | Pit Crew, the third mode: racer roster (`PC_EVENTS`, `PC_STYLES`), delivery checks, auto-simulated race day (drag ladder, oval feature), pay and rep, the Market-tab cards (`#pitBox`) |
+| `css/ui-pitcrew.css` | the Pit Crew racer and result cards, the third mode button |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
 | `vis/props.js` | 8b. workshop polish for Full / Ultra: floor details, props, lamps |
 | `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |

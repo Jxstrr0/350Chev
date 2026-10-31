@@ -14,6 +14,7 @@ css/ui-evtabs.css
 css/ui-market.css
 css/ui-folds.css
 css/ui-analysis.css
+css/ui-pitcrew.css
 html/body.html
 html/ld-libs.html
 sim/opt.js
@@ -104,6 +105,7 @@ app/trophy.js
 app/photo.js
 app/rail.js
 app/shopsb.js
+app/pitcrew.js
 app/help.js
 app/pwa.js
 app/folds.js

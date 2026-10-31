@@ -11,7 +11,7 @@ A physics-based engine builder with a career mode, by Longlight Interactive. The
 1. **Build.** Pick a layout and set 73 settings (`DEFAULT_CFG`): bore and stroke, materials, pistons, rods, crank, valvetrain, induction, boost, exhaust, fuel, launch control, oiling, cooling, sealing and finish. A 3D engine on a stand follows every choice.
 2. **Test.** Run a dyno pull, an endurance run to failure or an over-rev test (`DYNO_T`). Read power and torque curves, the verdict, the failure that stopped it, and the engineer's notes.
 3. **Race.** Take the engine to an event. Each one has its own time-stepped sim, classes, rivals, a 3D scene and a live HUD.
-4. **Career.** Certify engines on the dyno, take contracts, sell to market segments, pay crew, buy upgrades, chase reputation. Or skip the money in the Test cell (sandbox) and build anything.
+4. **Career.** Certify engines on the dyno, take contracts, sell to market segments, pay crew, buy upgrades, chase reputation. Or skip the money in the Test cell (sandbox) and build anything. Or play **Pit Crew**: build to order for local racers and let race day judge the engine.
 
 The results rail (`app/rail.js`) keeps build, dyno and verdict in sight so the build-dyno-build loop never leaves the tab: a third column on desktop, a peek sheet over the tab bar on a phone.
 
@@ -21,6 +21,7 @@ The intro screen (`html/body.html`) asks for a layout, Phone or Desktop, then a 
 
 - **Test cell**: everything unlocked, no money, for testing theories.
 - **Career**: $20,000, a chassis dyno and five stock starter engines. Sell certified engines, survive warranty claims, grow.
+- **Pit Crew** (`app/pitcrew.js`, 1.76.31.0): build engines to order for a roster of four local racers. Each has a budget, a style (steady hand, hot shoe, rookie, veteran) and an event: street, gasser, outlaw radial, pro stock or pro mod drags, or a Street Stock, Late Model or Open oval on clay or pavement. Take one job, dyno-pull an engine that is under budget and meets the class (cubic inches, no boost in pro stock) and the style (reliability floor), then hand it over. Race day is simulated with the event physics: an 8-car heads-up ladder (`SIM.dragPass`, the race-night judging) or a 25-lap feature against the oval night's eleven cars (`SIM.ovalPass`). The racer pays the parts plus a 12% build fee; first, second and third earn a bonus, and the finish sets the rep, which opens bigger classes at 15, 50 and 120. A racer who finishes first or second comes back with 20% more to spend. Test-cell rules otherwise: every part is open. State is `S.pit`.
 
 An onboarding tour and "First Fire" walk a new player through the first engine (`app/help.js`). The help file also holds a tap-to-explain glossary and 17 guided lessons (`LESSONS`).
 
