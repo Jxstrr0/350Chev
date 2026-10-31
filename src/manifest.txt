@@ -103,6 +103,7 @@ app/crew.js
 app/trophy.js
 app/photo.js
 app/rail.js
+app/rcard.js
 app/shopsb.js
 app/team.js
 app/help.js

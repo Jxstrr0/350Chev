@@ -69,7 +69,7 @@ function tropHook(x){if(!x||ff||!S||!S.mode)return;
   for(const z of [e,more]){if(!z)continue;if(z.u&&T.log.some(q=>q.u===z.u))continue;
     const ent=tropStamp(Object.assign({id:"t"+Date.now().toString(36)+(n++),ev:k,eng:engineName().slice(0,28),h:cfgHash(S.cfg)},z));T.log.push(ent);
     if(T.log.length>TROPHY_LOG_MAX)T.log.splice(T.log.findIndex(q=>q.seed)>=0?T.log.findIndex(q=>q.seed):0,1);
-    if(ent.slot!=="pennant"&&k!=="dd")setTimeout(()=>toast(`TROPHY ROOM · ${ent.t}`),5600);}
+    if(ent.slot!=="pennant"&&k!=="dd"){setTimeout(()=>toast(`TROPHY ROOM · ${ent.t}`),5600);if(typeof rcTrophy==="function")rcTrophy(ent);}}
   if(n){tropCountSync();if(TR.open)tropRefresh();}}
 /* ---- the room's contents: one list of items, each with its plaque card ---- */
 const TR_TIER_ACH={gold:"gold",silver:"silver",bronze:"bronze"};
@@ -146,7 +146,7 @@ function tropCard(id){const box=$("trCard");TR.sel=id||null;$("troom").classList
   else{const c=it.card;h=`<div class="trk t-${esc(c.tier||"gold")}">${esc(c.kick)}${c.when?" · "+esc(c.when):""}</div><h3>${esc(c.title)}</h3>${c.what?`<p>${esc(c.what)}</p>`:""}${c.nums&&c.nums.length?`<div class="trnums">${c.nums.map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>`:""}
       ${c.veh||c.eng?`<p class="trveh">${c.veh?`<span>Vehicle</span> ${esc(c.veh)}`:""}${c.veh&&c.eng?" · ":""}${c.eng?`<span>Engine</span> ${esc(c.eng)}`:""}</p>`:""}
       <div class="trbtns"><button class="btn sm pri" data-tra="share" data-id="${esc(id)}">Share plaque</button><button class="btn sm ghost" data-tra="close">Close</button></div>`;}
-  box.innerHTML=h;box.hidden=false;}
+  box.innerHTML=h+`<i class="hsheen" aria-hidden="true"></i>`;box.classList.add("holo");box.dataset.tier=it.eng?"eng":(it.card&&it.card.tier)||"gold";box.dataset.holo="";box.hidden=false;if(typeof holoWire==="function")holoWire(box);}
 function tropListShow(on){TR.list=!!on;$("trList").hidden=!on;$("trListBtn").setAttribute("aria-pressed",String(!!on));$("trListBtn").textContent=on&&TR.gl?"Room":"List";$("trListBtn").hidden=!TR.gl;$("troom").classList.toggle("lst",!!on);}
 function tropListRender(items,eng){const sec=(t,L,f,empty)=>`<div class="trsec"><h4>${t}<span>${L.length}</span></h4>${L.length?`<div class="trgrid">${L.map(f).join("")}</div>`:`<p class="hint">${empty}</p>`}</div>`;
   const card=i=>{const c=i.card;return `<button class="trc t-${esc(c.tier||"gold")}" data-trp="${esc(i.id)}"><svg viewBox="0 0 24 24"><path d="${ACH_ICONS[c.ic]||ACH_ICONS.trophy}"/></svg><b>${esc(c.title)}</b><small>${esc(c.kick)}${c.when?" · "+esc(c.when):""}</small></button>`;};

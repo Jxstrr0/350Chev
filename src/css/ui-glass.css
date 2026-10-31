@@ -236,3 +236,52 @@ html[data-tab]:not(.desk):not(.onevent) #app.peek:not(.mini):not(.td):not(.pits)
 #cmpPop .cw{margin-top:6px;color:var(--warn);font-size:12px}
 @media (prefers-reduced-motion:no-preference){#cmpPop{animation:cmpin .16s cubic-bezier(.34,1.4,.64,1)}}
 @keyframes cmpin{from{opacity:0;transform:scale(.92)}}
+
+/* ===================== RESULTS CARD + HOLO TROPHIES (UI-GLASS-PLAN PR 4) =====================
+   #rcard (app/rcard.js): a full-screen scrim with one strong-glass card after a run the player drives. On a phone it
+   sits over the bottom of the screen like a sheet; on desktop it is centred. view-transition-name "rcmorph" is lent to
+   the engine card and then the results card for the grow-in. Holo cards ([data-holo]): a rainbow sheen and a small 3D
+   tilt from --tilt-x / --tilt-y (-1..1), set by the phone's tilt or a finger; Lite and reduced motion keep it still. */
+#rcard{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:12px 10px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(10,10,9,.45)}
+#rcard[hidden]{display:none}
+html.desk #rcard{align-items:center}
+#rcBox{position:relative;width:min(440px,100%);max-height:calc(100% - 20px);overflow:auto;overscroll-behavior:contain;padding:18px 18px 14px;border-radius:26px;background:var(--glass-bg-strong);color:var(--chalk);box-shadow:var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.18);touch-action:pan-y;transition:translate .2s}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#rcBox{-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))}}
+html[data-gfx=lite] #rcBox{background:var(--glass-pop);-webkit-backdrop-filter:none;backdrop-filter:none}   /* Lite: no blur over the live view */
+html.noglass #rcBox{background:var(--panel);-webkit-backdrop-filter:none;backdrop-filter:none}
+@media (prefers-reduced-motion:no-preference){#rcard:not([hidden]){animation:rcfade .2s ease-out}#rcard:not([hidden]) #rcBox{animation:rcin .34s cubic-bezier(.34,1.3,.64,1)}}
+#rcard.out{opacity:0;transition:opacity .18s}#rcard.out #rcBox{translate:0 30px;transition:translate .18s}
+@keyframes rcfade{from{opacity:0}}@keyframes rcin{from{opacity:0;transform:translateY(40px) scale(.96)}}
+::view-transition-group(rcmorph){animation-duration:.38s;animation-timing-function:cubic-bezier(.3,1.1,.4,1)}
+.rcx{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:var(--muted);font-size:15px;cursor:pointer}
+:root[data-theme=light] .rcx{background:rgba(20,20,19,.06)}
+.rckick{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-right:40px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rchero{display:flex;align-items:baseline;gap:8px;margin:6px 0 0;font-family:"Chakra Petch","Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums;line-height:.95}
+.rchero b{font-size:clamp(64px,24vw,96px);font-weight:700;letter-spacing:-.02em;text-shadow:0 0 30px rgba(var(--glass-tint),.35)}
+.rchero i{font-style:normal;font-size:26px;font-weight:600;color:rgb(var(--glass-tint))}
+.rchero.rctext b{font-size:clamp(30px,9vw,42px);line-height:1.05}
+.rchero.rctext.pass b{color:var(--good)}.rchero.rctext.fail b{color:var(--crit)}.rchero.rctext.marg b{color:var(--warn)}
+.rcsub{font-family:var(--mono);font-size:14px;color:var(--muted);margin-top:4px}
+.rcdelta{margin-top:6px;font-family:var(--mono);font-size:14px;color:var(--dim)}.rcdelta em{font-style:normal;color:var(--muted)}
+.rcdelta.rcup{color:var(--good)}.rcdelta.rcdn{color:var(--crit)}
+.rcchip{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:999px;font-family:"Chakra Petch",sans-serif;font-weight:600;font-size:14px;letter-spacing:.03em;border:1px solid currentColor;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rcchip.pass{color:var(--good);background:rgba(92,191,138,.12)}.rcchip.fail{color:var(--crit);background:rgba(238,90,94,.12)}.rcchip.marg{color:var(--warn);background:rgba(232,193,74,.12)}
+#rcCv{display:block;width:100%;height:150px;margin:12px 0 4px}
+.rcstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.rcstats div{padding:8px 10px;border-radius:14px;background:var(--glass-fill2);box-shadow:inset 0 0 0 1px var(--glass-line)}
+.rcstats b{display:block;font-family:var(--mono);font-weight:500;font-size:16px}.rcstats span{font-size:11.5px;color:var(--muted)}
+.rcp{margin:10px 0 0;font-size:13.5px;line-height:1.4;color:var(--muted)}
+.rcact{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.rcact .btn{flex:1 1 30%;min-width:0}
+.rctrop{margin-top:12px;padding:12px 14px;border-radius:16px;display:flex;flex-direction:column;gap:2px;background:linear-gradient(135deg,rgba(217,169,58,.22),rgba(217,169,58,.06));box-shadow:inset 0 0 0 1px rgba(217,169,58,.45);touch-action:none}
+.rctrop small{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#d9a93a}.rctrop b{font-family:"Chakra Petch",sans-serif;font-size:18px}.rctrop span{font-size:12.5px;color:var(--muted)}
+.rctrop[data-tier=silver]{background:linear-gradient(135deg,rgba(201,206,214,.22),rgba(201,206,214,.06));box-shadow:inset 0 0 0 1px rgba(201,206,214,.45)}.rctrop[data-tier=silver] small{color:#c9ced6}
+.rctrop[data-tier=bronze]{background:linear-gradient(135deg,rgba(176,106,52,.24),rgba(176,106,52,.06));box-shadow:inset 0 0 0 1px rgba(176,106,52,.5)}.rctrop[data-tier=bronze] small{color:#c98448}
+/* holo: the sheen is a child (.hsheen) so it never fights an element's own ::before / ::after */
+.holo{position:relative;isolation:isolate;transform:perspective(700px) rotateY(calc(var(--tilt-x,0) * 7deg)) rotateX(calc(var(--tilt-y,0) * -7deg));transition:transform .12s linear}
+.holo>.hsheen{position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:.5;mix-blend-mode:screen;
+  background:linear-gradient(calc(110deg + var(--tilt-x,0) * 35deg),transparent 25%,rgba(255,255,255,.4) calc(48% + var(--tilt-y,0) * 18%),transparent 72%),
+    linear-gradient(calc(60deg + var(--tilt-y,0) * 50deg),rgba(255,110,140,.35),rgba(255,214,110,.3),rgba(110,255,180,.3),rgba(110,200,255,.35),rgba(200,140,255,.35));
+  background-size:100% 100%,240% 240%;background-position:center,calc(50% + var(--tilt-x,0) * 40%) calc(50% + var(--tilt-y,0) * 40%)}
+:root[data-theme=light] .holo>.hsheen{mix-blend-mode:multiply;opacity:.28}
+html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
+@media (prefers-reduced-motion:reduce){.holo{transform:none}}
