@@ -36,3 +36,6 @@
 /* race morning: the Safe / Race / Hero map (1.76.45) */
 #mkTeam .pcmap{margin:6px 0 8px}
 #mkTeam .pcmap p{font-size:13px;line-height:1.45;color:var(--muted);margin:4px 0 0}
+/* a returning driver; the rival shop's car in the table (1.76.47) */
+#mkTeam .pcret{color:var(--info)}
+#mkTeam .pctab em{font-style:normal;font-size:11px;color:var(--accent2);margin-left:4px}
