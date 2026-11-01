@@ -297,7 +297,7 @@ function pcDragDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],rs
     return{rt,et:+(q.et*(1+rnGauss(r)*(0.002+0.006*(1-sk)))).toFixed(3),mph:q.mph,broke:false};};
   const f3=v=>v==null?"—":v.toFixed(3),rtTxt=v=>v<0?"red light":f3(v).replace(/^0/,"");
   const lines=[`Round ${T.round+1}: ${pcWxTxt(W,false,T)}.`],q0=mine(),Q=[q0].concat(field.map(f=>rnRivalPass(f,r,0))),places=new Array(8).fill(null);
-  let out=q0.broke,broke=q0.broke&&!sat,why=sat?"":q0.why,best=q0.et;
+  let out=q0.broke,broke=q0.broke&&!sat,why=sat?"":q0.why,best=q0.et,wp=sat?null:{rd:"Qualifying",me:q0};   // wp: the last pass it made, for Watch it
   const seeds=[0,1,2,3,4,5,6,7].sort((a,b)=>(Q[a].et==null?99:Q[a].et)-(Q[b].et==null?99:Q[b].et)||a-b);
   if(o.back&&!sat){seeds.splice(seeds.indexOf(0),1);seeds.push(0);}   // the engine past the allowance: seeded last whatever it ran
   const fq=`The field ran ${f3(Math.min(...Q.slice(1).map(x=>x.et||99)))} to ${f3(Math.max(...Q.slice(1).map(x=>x.et||0)))}.`;
@@ -313,12 +313,12 @@ function pcDragDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],rs
         else{const me=mine(),op=solo(rv),j=rnJudge(Object.assign({x:me.broke?200:402,dq:false},me),op,false),won=j.w===0;
           if(me.et!=null)best=Math.min(best,me.et);
           const how=j.why==="red"?(me.rt<0?"red light":"they red-lit"):j.why==="dnf"||j.why==="dnf2"?(me.broke?"broke":"they broke"):`${rtTxt(me.rt)} / ${f3(me.et)} against ${rtTxt(op.rt)} / ${f3(op.et)}${j.holeshot?" (holeshot)":""}`;
-          lines.push(`${RN[ri]} vs ${rv.name}: ${won?"won":"lost"}, ${how}.`);m.win=won?0:oi;
+          lines.push(`${RN[ri]} vs ${rv.name}: ${won?"won":"lost"}, ${how}.`);m.win=won?0:oi;wp={rd:RN[ri],me,op,rv,won};
           if(me.broke){broke=true;out=true;why=me.why;lines.push(me.why);}}}
       places[m.win===m.a?m.b:m.a]=LOSE[ri];}
     if(ri<2)pairs=rnNextPairs(pairs);else places[pairs[0].win]=1;}
   if(q0.broke)places[0]=9;
-  return{place:places[0],of:8,broke,why,lines,best,rpos:T.rivals.map((x,i)=>places[i+1]),sat:!!sat,rel};}
+  return{place:places[0],of:8,broke,why,lines,best,rpos:T.rivals.map((x,i)=>places[i+1]),sat:!!sat,rel,watch:wp?pcwDragRec(T,E,cfg,wp,q0,field):null};}
 /* race day on the oval: the team's driver in the 25-lap feature from a drawn grid spot, against the series' eleven regulars
    (ovalRoster for the season, ovalCarRun for the night, the same cars and sim the oval night uses; their power grows a little
    each round and their luck is drawn fresh). The sim's own failures are on; wear and a hard driver add a worn-out failure. */
@@ -347,7 +347,7 @@ function pcOvalDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,tk=pcTk(T),st=PC
   if(pr.best)lines.push(`Best lap ${pr.best.toFixed(2)} s · top ${Math.round(pr.maxKmh/1.609)} mph · ${pr.coolPeak} °C peak coolant.`);
   if(broke)lines.push(why);else if(pr.reasons&&pr.reasons.length)lines.push(pr.reasons[0]);
   lines.push(top5);
-  return{place,of:rows.length,broke,why,lines,best:pr.best||null,rpos,sat:false,rel};}
+  return{place,of:rows.length,broke,why,lines,best:pr.best||null,rpos,sat:false,rel,watch:pcwOvalRec(T,k,tk,seed,roster,ids,pr)};}
 /* the kinds of series. Each entry:
      needHp(E)               the field's power a series needs the shop's dyno to read before it calls
      make(T,E,base,r,pick)   the kind's own fields on a new offer (the drag field's power and car; the oval track and number)
@@ -415,6 +415,7 @@ function pcSettle(T,chk,out,res,auto){const p=pcS(),E=PC_EVENTS[T.ev],st=PC_STYL
   if(out.broke){T.broken=true;T.breaks=(T.breaks||0)+1;}
   const txt=pcPlaceTxt(out,T),rd=T.round+1;T.hist.push({r:rd,t:txt,pts,k:pl===1?"good":out.broke?"bad":""});
   p.last={team:T.team,name:T.name,ev:T.ev,eng:auto?(T.eng||engineName()):engineName(),round:rd,season:p.season,txt,lines:out.lines,broke:out.broke,spent:chk?chk.need:0,fee,bonus,rep,pts,win:pl===1,auto:!!auto,w:C().week};
+  if(out.watch)p.last.watch=out.watch;   // a few numbers to replay the race in 3D (app/team-watch.js)
   logEvent(`Team round ${rd} (${T.team}, ${E.n.toLowerCase()}): ${txt.toLowerCase()} — ${pts} pts, ${fmt$(fee+bonus)}, ${rep>=0?"+":""}${rep} rep`,pl===1?"good":out.broke?"bad":"");
   if(!out.sat){spEvent("team",{win:pl===1,finish:podium!=null});crewWork("team",{win:pl===1});}
   T.round++;T.due=C().week+PC_GAP;
@@ -527,7 +528,7 @@ function pcRender(){if(!$("mkTeam")||!career())return;const p=pcS();pcRefill();c
       ${X.shop?`<p class="hint">${X.shop.won?`Ahead of ${esc(pcPoss(X.shop.n))} engine in the table: a head-to-head win, +${X.shop.rep} rep.`:`${esc(pcPoss(X.shop.n))} engine finished ahead of yours.`}</p>`:""}
       ${X.back?`<p class="hint">${esc(L.team)} wants you back next season, with more money.</p>`:""}</div>`;
     if(L.mid&&!X)lh+=`<p class="pcmid"><b>Next up.</b> ${esc(L.mid)}</p>`;
-    lh+=`<button class="btn sm ghost" data-pcok>OK</button></div>`;}
+    lh+=`<div class="row">${pcwOk(L)?`<button class="btn sm" data-pcwatch>▶ Watch it</button>`:""}<button class="btn sm ghost" data-pcok>OK</button></div></div>`;}
   $("pcLast").innerHTML=lh;
   const full=pcFull();$("pcOfSec").style.display=full?"none":"";$("pcCnt").textContent=p.offers.length;
   $("pcNext").textContent=(T?`A second team: from ${PC_TWO_REP} rep the shop can supply two at once, in another series, its rounds on the weeks between ${T.team}'s. Each has its own budget and season engine; Put the season engine back swaps them on the bench.`

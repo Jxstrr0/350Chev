@@ -44,3 +44,12 @@
 .pcshowb div{display:grid;grid-template-columns:92px 1fr 28px;align-items:center;gap:8px;font-size:12px}
 .pcshowb i{display:block;height:6px;border-radius:3px;background:var(--info);min-width:2px}
 .pcshowb b{text-align:right;font-family:"IBM Plex Mono",monospace}
+/* Watch it (app/team-watch.js): the result card's buttons, and the Events tab while a team race replays (only its controls show) */
+#mkTeam .pcres .row{gap:8px;margin-top:8px}
+#tab-events.pcw>:not(#evCtls){display:none!important}
+#pcwCtl{margin-bottom:10px}
+#pcwCtl .rdbtns #pcwSkip{flex:1}#pcwCtl .rdbtns #pcwSpd{flex:.6}#pcwCtl .rdbtns #pcwBack{flex:1.6}
+#pcwCtl #pcwLive>.hint{margin:0 0 4px}
+#evHud #pcwLive{display:block}
+html:not(.desk) #evHud[data-ev=pcwLive]{padding-top:8px}
+html:not(.desk) #evHud #pcwLive .hlh .rd-spd b{font-size:24px}html:not(.desk) #evHud #pcwLive .hlh .rd-g b{font-size:19px}html:not(.desk) #evHud #pcwLive .hlh .rd-lt b{font-size:16px}
