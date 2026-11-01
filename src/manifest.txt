@@ -107,6 +107,7 @@ app/rcard.js
 app/shopsb.js
 app/team.js
 app/team-bog.js
+app/team-boat.js
 app/help.js
 app/pwa.js
 app/folds.js
