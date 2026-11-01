@@ -5,6 +5,7 @@
 #mkTeam .pcchk{font-size:13px;line-height:1.5;margin:6px 0 8px;padding:6px 10px;border-radius:8px;background:var(--soot)}
 #mkTeam .pcchk .ok{color:var(--good)}
 #mkTeam .pcchk .no{color:var(--warn)}
+#mkTeam .pcchk .wn{color:var(--orange)}
 #mkTeam .pcres.win{border-color:var(--good)}
 #mkTeam .pcres.bad{border-color:var(--crit)}
 #mkTeam .pcl{font-size:13px;line-height:1.5;color:var(--muted);margin:4px 0 8px}
@@ -32,3 +33,6 @@
 #mkTeam .pcread{color:var(--chalk)}
 #mkTeam .pcmid{font-size:13px;line-height:1.45;margin:6px 0;padding:6px 10px;border-radius:8px;border:1px solid var(--orange);background:var(--soot)}
 #mkTeam .pcmid i{display:block;font-style:normal;color:var(--muted);margin-top:2px}
+/* race morning: the Safe / Race / Hero map (1.76.45) */
+#mkTeam .pcmap{margin:6px 0 8px}
+#mkTeam .pcmap p{font-size:13px;line-height:1.45;color:var(--muted);margin:4px 0 0}

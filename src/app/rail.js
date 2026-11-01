@@ -24,7 +24,7 @@ function rlChipTxt(t){t=String(t||"").replace(/\s+/g," ").trim();const w=t.split
 /* the career team's season: what stands between the bench build and race day (team.js pcChecks, no extra sim run) */
 function rlTeam(){const T=typeof pcTeam==="function"?pcTeam():null;if(!T)return"";let c;try{c=pcChecks(T);}catch(e){return"";}const E=PC_EVENTS[T.ev],due=C().week>=T.due;
   return `<div class="rlsec"><h3>${esc(T.team)} <button class="chip" data-gotab="market">Team</button></h3><div class="rlk"><div class="rlkh"><span>${E.n} · round ${T.round+1} of ${PC_ROUNDS}</span><small>${due?"race week now":"race week "+T.due} · ${fmt$(pcLeft(T))} left</small></div><div class="rlks">${c.ok?'<b class="good">Ready for race day</b>':'<b class="warn">Not ready</b>'}</div>`
-    +c.o.map(q=>`<div class="rlq ${q.ok?"ok":"no"}"><span class="n">${esc(q.t)}</span><span class="v">${q.ok?"✓":"✗"}</span></div>`).join("")+`</div></div>`;}
+    +c.o.map(q=>`<div class="rlq ${q.ok?"ok":"no"}"><span class="n">${esc(q.t)}</span><span class="v">${q.wn?"!":q.ok?"✓":"✗"}</span></div>`).join("")+`</div></div>`;}
 function rlDrag(){const d=RL.drag;if(!d)return"";const old=d.hash!==cfgHash(S.cfg);
   return `<div class="rlsec"><h3>Last drag pass${old?' <em>older build</em>':""}</h3><div class="rld"><div><b>${d.et!=null?d.et.toFixed(2)+"<i>s</i>":"DNF"}</b><span>ET</span></div><div><b>${d.mph!=null?Math.round(d.mph)+"<i>mph</i>":"—"}</b><span>trap</span></div><div><b>${d.sixty?d.sixty.toFixed(3):"—"}</b><span>60 ft</span></div></div>${d.race?`<p class="rlnote">${d.race}</p>`:""}</div>`;}
 function railRender(){const rail=$("rail");if(!rail||!S||!quick)return;
