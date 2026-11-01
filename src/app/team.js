@@ -513,6 +513,7 @@ function pcRender(){if(!$("mkTeam")||!career())return;const p=pcS();pcRefill();c
   $("pcOfSec").style.display=T?"none":"";$("pcCnt").textContent=p.offers.length;
   $("pcNext").textContent=`Season ${p.season}: pick a team to supply for ${PC_ROUNDS} rounds. ${pcNextTxt()}${p.passW===C().week&&p.passN?` A passed team's place fills when the week closes.`:""}`;
   $("pcRoster").innerHTML=T?"":p.offers.map(pcOffer).join("");
+  pcShowRender();
 }
 /* the header's week line, and the build cost in red when it is more than the team has left */
 function pcHud(){if(!career())return;const T=pcTeam();let over=false,t=`WEEK ${C().week}`;
