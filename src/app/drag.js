@@ -71,6 +71,9 @@ function shudStart(){const el=$("stripHud");if(!el)return;clearTimeout(shudStop.
 function shudStop(ms){const g=SHgen;clearTimeout(shudStop.t);shudStop.t=setTimeout(()=>{if(g!==SHgen)return;const el=$("stripHud");if(el){el.hidden=true;el.innerHTML="";}SH=null;document.documentElement.classList.remove("shud");},ms||0);}
 function shudSet(k,node,v,prop){if(SH.m[k]===v)return;SH.m[k]=v;if(prop==="cls")node.className=v;else if(prop)node.style[prop]=v;else node.innerHTML=v;}
 const shSur=n=>{const w=String(n||"").trim().split(/\s+/);return w[w.length-1]||"";},shOpp=n=>String(n||"").length<=12?String(n||""):shSur(n);   // "Halcyon GT" whole, "Dale Kowalchuk" → "Kowalchuk"
+/* one row of cells [key, label, value html, class]: rebuilt only when the set changes, otherwise text in place (also the team replay, app/team-watch.js) */
+function shudRow(c){const keys=c.map(x=>x[0]).join();if(keys!==SH.keys){SH.keys=keys;SH.row.innerHTML=c.map(()=>`<div class="shx"><span></span><b></b></div>`).join("");SH.nodes=Array.from(SH.row.children);SH.m={};}
+  c.forEach((x,i)=>{const nd=SH.nodes[i];shudSet("c"+i,nd,"shx sh-"+x[0]+(x[3]?" "+x[3]:""),"cls");shudSet("l"+i,nd.firstChild,x[1]);shudSet("v"+i,nd.lastChild,x[2]);});}
 function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.night,d=DR.d,ph=st.phase,pre=ph==="burnout"||ph==="staged",c=[];
   const m4=ph==="shutdown"||ph==="done"?st.marks.find(m=>m.n==="1/4 mi"):null,foul=!!(R&&R.foul);
   // the tree: stage beam, three ambers, then green (or red)
@@ -89,9 +92,7 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   const z=st.n2oS;if(z){if(pre){const lp=Math.round(z.psi*(0.55+0.45*z.line));c.push(["n2o",z.purging?"Purging":z.line>=0.5?"N2O purged":"N2O · purge",`${lp}<i>psi</i><u><s style="transform:scaleX(${Math.min(1,z.psi/1100).toFixed(2)})"></s></u>`,z.purging?"info":z.line>=0.5?"good":"warn"]);}
     else c.push(["n2o","Nitrous",z.cut?"CUT":ph==="run"?(st.n2o>0.05?"ON":z.on?"WINDOW":"ARMED"):"OFF",z.cut?"bad":ph==="run"&&st.n2o>0.05?"info":ph==="run"?"":"dim"]);}
   if(DR.res.als&&DR.res.als!=="off"){const on=st.als>0.2;c.push(["als","Anti-lag",on?"ON":(ph==="staged"||ph==="run")&&(st.launch.armed||ph==="run")?"ARMED":"OFF",on?"hot":"dim"]);}
-  // one row of cells: rebuilt only when the set changes, otherwise text in place
-  const keys=c.map(x=>x[0]).join();if(keys!==SH.keys){SH.keys=keys;SH.row.innerHTML=c.map(()=>`<div class="shx"><span></span><b></b></div>`).join("");SH.nodes=Array.from(SH.row.children);SH.m={};}
-  c.forEach((x,i)=>{const nd=SH.nodes[i];shudSet("c"+i,nd,"shx sh-"+x[0]+(x[3]?" "+x[3]:""),"cls");shudSet("l"+i,nd.firstChild,x[1]);shudSet("v"+i,nd.lastChild,x[2]);});
+  shudRow(c);
   // caption: the round and who's in the other lane, then what to do now
   let s="";if(n){s=`${n.label} · vs ${esc(R.name)}`;if(n.dialP!=null)s+=` · dial ${n.dialP.toFixed(2)} vs ${n.dialO.toFixed(2)}`;
     if(ph==="staged"&&R.hcP!=null&&R.otree0==null)s+=R.hcP>0?` · you go ${R.hcP.toFixed(2)} s after them`:R.hcO>0?` · ${R.hcO.toFixed(2)} s head start`:"";}
