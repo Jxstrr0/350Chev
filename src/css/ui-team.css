@@ -39,3 +39,8 @@
 /* a returning driver; the rival shop's car in the table (1.76.47) */
 #mkTeam .pcret{color:var(--info)}
 #mkTeam .pctab em{font-style:normal;font-size:11px;color:var(--accent2);margin-left:4px}
+/* the car show card (team-show.js): four score bars out of 25 */
+.pcshowb{display:grid;gap:4px;margin:8px 0}
+.pcshowb div{display:grid;grid-template-columns:92px 1fr 28px;align-items:center;gap:8px;font-size:12px}
+.pcshowb i{display:block;height:6px;border-radius:3px;background:var(--info);min-width:2px}
+.pcshowb b{text-align:right;font-family:"IBM Plex Mono",monospace}
