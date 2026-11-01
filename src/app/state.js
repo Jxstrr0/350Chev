@@ -126,7 +126,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.52.0";
+const VERSION="1.76.53.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -352,7 +352,7 @@ function engineSpecLine(cfg,res){const L=LAYOUTS[cfg.layout];const asp=cfg.asp==
   return `<b>${cfg.layout}</b><i>·</i>${fmtDisp(res.Vd/1000,"")}<i>·</i>${cfg.bore.toFixed(0)}×${cfg.stroke.toFixed(0)}<i>·</i>${cfg.cr.toFixed(1)}:1<i>·</i>${asp}<i>·</i>${fuelShort(cfg.fuel)}${isCI(cfg.fuel)?" "+(INJ_SHORT[cfg.dInj]||"VE"):""}`;}
 function engineStatus(cfg,res){const h=cfgHash(cfg);
   if(res.fails&&res.fails.length)return (S.ranH||[]).includes(h)?{cls:"bad",txt:"✗ BREAKS"}:{cls:"",txt:"○ NOT RUN YET",nr:true};
-  if(career()){const T=pcTeam();if(T&&h===cfgHash(S.cfg)){const k=pcChecks(T);if(k.need>pcLeft(T))return{cls:"bad",txt:"✗ OVER BUDGET"};if(k.ok)return{cls:"ok",txt:`✓ READY FOR ROUND ${T.round+1}`};}
+  if(career()){const T=pcBenchTeam();if(T&&h===cfgHash(S.cfg)){const k=pcChecks(T);if(k.need>pcLeft(T))return{cls:"bad",txt:"✗ OVER BUDGET"};if(k.ok)return{cls:"ok",txt:`✓ READY FOR ROUND ${T.round+1}`};}
     const c=C().cert;if(c&&c.hash===h&&c.ok)return{cls:"ok",txt:"✓ CERTIFIED"};return{cls:"",txt:"○ UNCERTIFIED"};}
   return{cls:"ok",txt:"● TEST CELL"};}
 function engineCard(cfg,res,o){o=o||{};const st=engineStatus(cfg,res);const name=o.name||engineName();
