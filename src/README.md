@@ -48,7 +48,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `sim/road.js` | road test: CHASSIS, ROAD_TRACKS, `roadTrack`, `roadRun`, `lapSim`, `roadTest` |
 | `sim/e24.js` | 24 Hours of Prairie Sky: `enduroPrep`, `enduroNew`, `enduroStep`, `e24*` |
 | `sim/salt.js` | Bonneville/LSR: LSR_BODIES/COURSES/CHUTES, `lsrClass`, `lsrRun`, `lsrPass`, `lsrRecord` |
-| `sim/hill.js` | Pikes Peak hillclimb: HILL_SECTIONS/CLASSES/TYRES/AERO, `hillCourse` (156 corners, elevation), `hillPrep` (simulate at five altitudes: NA, blower, turbo, carb), `hillCar`, `hillNew` (time-stepped run, cooling, corner calls and offs), `hillPass`, `hillAiPrep` |
+| `sim/hill.js` | hillclimbs: HILL_SECTIONS/CLASSES/TYRES/AERO, HILL_HILLS (Pikes Peak and four made-up hills for the team series; every call takes a hill id, default Pikes), `hillCourse` (Pikes: 156 corners, elevation), `hillPrep` (simulate at five altitudes: NA, blower, turbo, carb), `hillCar`, `hillNew` (time-stepped run, cooling, corner calls and offs), `hillPass`, `hillAiPrep` |
 | `sim/oval.js` | dirt oval: OVAL_CLASSES (class by cubic inches), tyres, grilles, `ovalNight`, `ovalNew` (a time-stepped single-gear lap sim: banked-turn limit, friction circle, throttle response, heat, wear, failures), `ovalPass`, `ovalAiRes`, `ovalSetup` |
 | `sim/tunemap.js` | tune map tools (`mapAxis`, `mapGrid`, `mapAutoTune` …) and **the ENGINE_SIM export object**. Add new exports here |
 | **ENGINE_SOUND** | |
@@ -121,6 +121,7 @@ Files added after the map above was written (their place in the order is in `man
 | `app/team-bog.js` | the mud bog team series: its three `PC_EVENTS` rows, the pits, the round's drawn mud (forecast like weather), race day through the real bog sim, and `PC_KIND.bog` |
 | `app/team-boat.js` | the boat drag team series: four `PC_EVENTS` rows (Outboard, Jet boat, Pro Eliminator, Top Fuel Hydro), each round's water and prop, race night through the real boat sim (qualifying and a heads-up ladder), and `PC_KIND.boat` |
 | `app/team-pull.js` | the truck and tractor pull as a team series: six `PC_EVENTS` rows from the pull classes (gas, street diesel, 2.6 Smoker, Hot Farm tractor, Super Stock, Unlimited), the class tech card as the race-day rule, `PC_KIND.pull` (rivals, per-round dirt, the real pull sim for race day, pull-off, points) |
+| `app/team-hill.js` | the hill climb team series, plugged into `PC_KIND`: its `PC_EVENTS` rows, the rotation of the four made-up hills with Pikes Peak as round 8 (`PC_HILLS`), race day (`pcHillDay`) |
 | `css/ui-team.css` | the team offer, season and result cards, budget bar, standings |
 | `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders; the rev glow, failure crack overlay and venue tint styling; the gestures (grabber, compare card); the results card and holo sheen. Last CSS file, so it overrides the rest |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
