@@ -320,6 +320,8 @@ const ACH=[
   {g:"shop",id:"teamwin",name:"Round winner",desc:"Win a round with a team's engine.",ic:"flag",tier:"silver",check:()=>career()&&!!C().pc&&(C().pc.wins||0)>0},
   {g:"shop",id:"teamchamp",name:"Champions",desc:"Win a team championship.",ic:"trophy",tier:"silver",check:()=>career()&&!!C().pc&&(C().pc.titles||0)>0},
   {g:"shop",id:"teamback",name:"Asked back",desc:"Finish a season in the top two, so the team wants you again.",ic:"people",tier:"silver",check:()=>career()&&!!C().pc&&(C().pc.backs||0)>0},
+  {g:"shop",id:"teamtwo",name:"Two at once",desc:"Supply two race teams in the same weeks.",ic:"people",tier:"silver",check:()=>career()&&!!C().pc&&!!C().pc.team2},
+  {g:"shop",id:"bestshow",name:"Best in show",desc:"Win a car show or a sound-off in an off week.",ic:"trophy",tier:"bronze",check:()=>career()&&!!C().pc&&(C().pc.showWins||0)>0},
   {g:"shop",id:"teamclean",name:"Bulletproof",desc:"Run all eight rounds of a season without a breakage.",ic:"shield",tier:"gold",check:()=>career()&&!!C().pc&&(C().pc.clean||0)>0},
   {g:"shop",id:"nitro",name:"Nitro money",desc:"Sign a funny car or top dragster team.",ic:"bolt",tier:"gold",check:()=>career()&&!!C().pc&&(C().pc.nitro||0)>0},
   {g:"shop",id:"legend",name:"Legend",desc:"Reach the Legend reputation tier.",ic:"star",tier:"gold",check:()=>career()&&repTierIdx()>=5},
