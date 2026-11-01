@@ -9919,10 +9919,12 @@ const ENGINE_SIM = (function () {
     return Object.assign({}, A, { n: rep.V.n, mass: Math.round(rep.mass - rep.ekg), cdA: +(rep.cd * rep.area).toFixed(3), clA: rep.V.cd > 0.6 ? 0.5 : A.clA, rear: +(1 - rep.front).toFixed(3), wb: rep.V.wb, cgH: rep.car.cgH, tyreDia: rep.V.tyre, kRad: +(rep.radKw / 45).toFixed(3), swap: rep.v });
   }
   /* =====================================================================
-     Pikes Peak hillclimb: 19.99 km, 156 turns, 2,862 m at the line to 4,302 m on the summit.
-     The course is a fixed sequence of straights and constant-radius corners, laid out section by
-     section (the corner count, length and climb of each are set; radii, angles and straights come
-     from one fixed seed), with an elevation profile per section. The engine is run through
+     Hillclimbs. Pikes Peak: 19.99 km, 156 turns, 2,862 m at the line to 4,302 m on the summit. Since the team
+     hill climb series, four shorter and lower made-up hills built from the same kit (HILL_HILLS: Badlands Grade,
+     Kettle Butte, Ghost Ridge, Thunder Pass). Every call takes a hill id and defaults to Pikes Peak, so the Pikes
+     event is the same as before. A course is a fixed sequence of straights and constant-radius corners, laid out
+     section by section (the corner count, length and climb of each are set; radii, angles and straights come
+     from the hill's fixed seed), with an elevation profile per section. The engine is run through
      simulate() at five altitudes on the way up: a naturally aspirated engine loses power with the
      air density, a supercharger keeps its pressure ratio (so it loses some), a turbo holds the
      manifold pressure it makes at the shop until the compressor runs out of pressure ratio or flow,
@@ -9947,6 +9949,36 @@ const ENGINE_SIM = (function () {
     { id: "boulder", n: "Boulder Park", km: 2.0, alt: 4235, cor: 18, mix: "tech", bear: 4.3, drop: 0.45, names: [[9, "Boulder Park"]] },
     { id: "summit", n: "Summit", km: 1.59, alt: 4302, cor: 14, mix: "summit", bear: 5.2, drop: 0.5, names: [[3, "Olympic"], [13, "Summit"]] }
   ];
+  /* the hills: Pikes Peak (the event, and the team series' finale) and four made-up climbs for the team series' rounds 1–7,
+     shorter and lower, built from the same section kit. alt0 the start altitude, tree the treeline (dustier calls above it),
+     seed the layout's, secs the sections (as HILL_SECTIONS), edge the named corners that are a sure drop with no guardrail */
+  const HILL_HILLS = {
+    pikes: { n: "Pikes Peak", d: "the big one: nearly 20 km into thin air", alt0: HILL_ALT0, tree: HILL_TREE, seed: HILL_SEED, secs: HILL_SECTIONS, edge: ["Bottomless Pit"] },
+    badlands: { n: "Badlands Grade", d: "up out of a prairie coulee: short, fast and dusty", alt0: 690, tree: 600, seed: 3107, edge: [], secs: [
+      { id: "coulee", n: "Coulee Floor", km: 1.5, alt: 735, cor: 8, mix: "fast", bear: 0.3, drop: 0.05, names: [[3, "Dry Creek Bend"]] },
+      { id: "hoodoo", n: "The Hoodoos", km: 1.6, alt: 830, cor: 12, mix: "mixed", bear: 1.0, drop: 0.15, names: [[5, "The Hoodoos"]] },
+      { id: "breaks", n: "The Breaks", km: 1.3, alt: 930, cor: 9, mix: "hairpins", bear: 1.6, drop: 0.35, names: [[4, "Rattlesnake", 16]] },
+      { id: "rim", n: "Rim Rock", km: 1.0, alt: 985, cor: 6, mix: "fast", bear: 0.6, drop: 0.25, names: [[5, "Rim Rock"]] }] },
+    kettle: { n: "Kettle Butte", d: "a foothills ranch road through the aspens", alt0: 1320, tree: 2400, seed: 5521, edge: [], secs: [
+      { id: "ranch", n: "Ranch Gate", km: 1.8, alt: 1395, cor: 10, mix: "fast", bear: 1.2, drop: 0.05, names: [[2, "Cattle Guard"]] },
+      { id: "aspen", n: "Aspen Grove", km: 2.2, alt: 1560, cor: 17, mix: "forest", bear: 1.9, drop: 0.12, names: [[8, "Aspen Grove"]] },
+      { id: "kettle", n: "The Kettle", km: 1.9, alt: 1730, cor: 15, mix: "tech", bear: 2.5, drop: 0.3, names: [[7, "The Kettle", 19]] },
+      { id: "butte", n: "Butte Top", km: 1.5, alt: 1860, cor: 10, mix: "summit", bear: 1.6, drop: 0.4, names: [[9, "Butte Top"]] }] },
+    ghost: { n: "Ghost Ridge", d: "an old mine road: switchbacks, then a shelf over nothing", alt0: 1700, tree: 2300, seed: 8846, edge: ["Widowmaker"], secs: [
+      { id: "mill", n: "Stamp Mill", km: 1.8, alt: 1810, cor: 12, mix: "forest", bear: 0.8, drop: 0.1, names: [[5, "Stamp Mill"]] },
+      { id: "ladder", n: "The Ladder", km: 2.4, alt: 2040, cor: 22, mix: "hairpins", bear: 1.4, drop: 0.5, names: [[0, "Miner's Turn"], [12, "The Ladder"]] },
+      { id: "slide", n: "Rock Slide", km: 2.1, alt: 2230, cor: 14, mix: "fast", bear: 0.6, drop: 0.45, names: [[7, "Rock Slide"]] },
+      { id: "shelf", n: "The Shelf", km: 1.9, alt: 2400, cor: 16, mix: "edge", bear: 2.2, drop: 0.85, names: [[9, "Widowmaker"]] },
+      { id: "town", n: "Ghost Town", km: 1.4, alt: 2540, cor: 12, mix: "summit", bear: 1.5, drop: 0.5, names: [[11, "Ghost Town"]] }] },
+    thunder: { n: "Thunder Pass", d: "a long pass road over the Divide: timber, then scree", alt0: 2040, tree: 2450, seed: 2290, edge: [], secs: [
+      { id: "gate", n: "Ranger Gate", km: 2.4, alt: 2200, cor: 14, mix: "fast", bear: 2.0, drop: 0.08, names: [[4, "Ranger Gate"]] },
+      { id: "timber", n: "Lodgepole", km: 2.8, alt: 2400, cor: 22, mix: "forest", bear: 2.5, drop: 0.15, names: [[10, "Lodgepole"]] },
+      { id: "falls", n: "Thunder Falls", km: 2.2, alt: 2580, cor: 16, mix: "mixed", bear: 1.8, drop: 0.3, names: [[8, "Thunder Falls"]] },
+      { id: "scree", n: "Scree Slope", km: 2.5, alt: 2850, cor: 22, mix: "hairpins", bear: 1.2, drop: 0.6, names: [[3, "Scree Slope"], [17, "Eagle's Nest"]] },
+      { id: "pass", n: "The Pass", km: 1.9, alt: 3040, cor: 14, mix: "fast", bear: 2.3, drop: 0.5, names: [[13, "The Pass"]] }] }
+  };
+  const hillId = id => HILL_HILLS[id] ? id : "pikes";
+  const hillDef = id => HILL_HILLS[hillId(id)];
   const HILL_TYRES = { street: ROAD_TYRES.street, sport: ROAD_TYRES.sport, semi: ROAD_TYRES.semi, slick: { n: "Hillclimb slick", mu: 1.48, d: "soft race slick" } };
   const HILL_AERO = { none: { n: "None", d: "as the chassis comes", clA: 0, cdA: 0 }, wing: { n: "Wing", d: "rear wing and a lip", clA: 0.55, cdA: 0.07 },
     full: { n: "Splitter + wing", d: "dive planes, big wing", clA: 1.8, cdA: 0.22 }, unl: { n: "Unlimited aero", d: "twin-element wing, floor", clA: 7.2, cdA: 0.65 } };
@@ -9960,9 +9992,11 @@ const ENGINE_SIM = (function () {
   // pressure ratio a compressor wheel can make before it runs out of tip speed (a compound pair multiplies two)
   const HILL_PR = { small: 2.7, medium: 3.0, large: 3.3, s66: 4.4, huge: 3.6, f88: 3.9, f98: 4.1 };
   const HILL_ALTS = [2862, 3222, 3582, 3942, 4302];
+  /* the five altitudes a hill's engine is run at, line to finish (Pikes: HILL_ALTS) */
+  const hillAlts = id => { if (hillId(id) === "pikes") return HILL_ALTS; const H = hillDef(id), a1 = H.secs[H.secs.length - 1].alt; return [0, 1, 2, 3, 4].map(i => Math.round(H.alt0 + (a1 - H.alt0) * i / 4)); };
   const HILL_CALL = { dusty: -0.04, clean: 0, grippy: 0.035 };
   const hillWrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
-  const hillAmbC = alt => 16 - 6.5 * (alt - HILL_ALT0) / 1000;   // a July morning: 16 °C at the line, about 7 °C on top
+  const hillAmbC = alt => 16 - 6.5 * (alt - HILL_ALT0) / 1000;   // a July morning: 16 °C at Pikes' line, about 7 °C on top; one air for every hill (a team round shifts it by its weather: wx.dT)
 
   /* one corner from a section's mix: [radius m, angle deg, hairpin?] */
   function hillMix(mix, r) {
@@ -9977,13 +10011,16 @@ const ENGINE_SIM = (function () {
     if (mix === "tech") return q < 0.12 ? hp() : q < 0.57 ? tight() : med();
     return q < 0.3 ? hp() : q < 0.7 ? tight() : med();   // summit
   }
-  let HILL_COURSE = null;
-  /* the course: samples every 2.5 m with position, heading, curvature (+ left), altitude, grade, section and corner */
-  function hillCourse() {
-    if (HILL_COURSE) return HILL_COURSE;
-    const r = pullRng(HILL_SEED), segs = [], corners = [];
-    let h = HILL_SECTIONS[0].bear, ci = 0;
-    HILL_SECTIONS.forEach((S, si) => {
+  const HILL_COURSE = {};
+  /* a hill's course (id, default Pikes Peak; built once and kept): samples every 2.5 m with position, heading, curvature (+ left),
+     altitude, grade, section and corner */
+  function hillCourse(id) {
+    id = hillId(id);
+    if (HILL_COURSE[id]) return HILL_COURSE[id];
+    const HD = HILL_HILLS[id], SECS = HD.secs;
+    const r = pullRng(HD.seed), segs = [], corners = [];
+    let h = SECS[0].bear, ci = 0;
+    SECS.forEach((S, si) => {
       const L = S.km * 1000, items = [], nm = {}, nR = {};
       S.names.forEach(q => { nm[q[0]] = q[1]; if (q[2]) nR[q[0]] = q[2]; });
       for (let k = 0; k < S.cor; k++) {
@@ -10011,7 +10048,7 @@ const ENGINE_SIM = (function () {
     });
     // sample the plan at HILL_DS
     const X = [], Y = [], H = [], K = [], SEC = [], COR = [];
-    let x = 0, y = 0, hh = HILL_SECTIONS[0].bear, carry = 0, s0 = 0;
+    let x = 0, y = 0, hh = SECS[0].bear, carry = 0, s0 = 0;
     const secEnd = [];
     segs.forEach(sg => {
       const isC = sg[0] === "c", Lg = isC ? sg[1] * Math.abs(sg[2]) : sg[1], k = isC ? Math.sign(sg[2]) / sg[1] : 0;
@@ -10030,8 +10067,8 @@ const ENGINE_SIM = (function () {
     const N = X.length, len = N * HILL_DS;
     // elevation: each section's climb spread with a slow swell in the grade, pinned to the section's end altitude
     const Z = new Float64Array(N), G = new Float32Array(N);
-    let a0 = HILL_ALT0, i0 = 0;
-    HILL_SECTIONS.forEach((S, si) => {
+    let a0 = HD.alt0, i0 = 0;
+    SECS.forEach((S, si) => {
       let i1 = i0; while (i1 < N && SEC[i1] === si) i1++;
       const n = Math.max(1, i1 - i0), ph = r() * 6.28, wv = [];
       let tot = 0; for (let i = 0; i < n; i++) { const q = 1 + 0.3 * Math.sin(ph + i * HILL_DS / 420) + 0.12 * Math.sin(ph * 2 + i * HILL_DS / 130); wv.push(q); tot += q; }
@@ -10042,27 +10079,29 @@ const ENGINE_SIM = (function () {
     // corners: sample range, the drop on the outside (and whether a guardrail stands on it)
     corners.forEach(c => {
       c.i0 = Math.floor(c.s0 / HILL_DS); c.i1 = Math.min(N - 1, Math.ceil(c.s1 / HILL_DS)); c.iA = Math.min(N - 1, Math.round((c.i0 + c.i1) / 2));
-      const S = HILL_SECTIONS[c.sec], q = r(), named = c.name === "Bottomless Pit";
+      const S = SECS[c.sec], q = r(), named = !!c.name && HD.edge.indexOf(c.name) >= 0;
       c.drop = named || q < S.drop; c.rail = c.drop && !named && r() < (c.hp ? 0.7 : 0.5); c.alt = Z[c.iA]; c.side = c.deg > 0 ? 1 : -1;
     });
     let mx = Infinity, Mx = -Infinity, my = Infinity, My = -Infinity; for (let i = 0; i < N; i++) { mx = Math.min(mx, X[i]); Mx = Math.max(Mx, X[i]); my = Math.min(my, Y[i]); My = Math.max(My, Y[i]); }
-    const sections = HILL_SECTIONS.map((S, si) => ({ id: S.id, n: S.n, s0: si ? secEnd[si - 1] : 0, s1: secEnd[si], alt0: si ? HILL_SECTIONS[si - 1].alt : HILL_ALT0, alt1: S.alt, cor: S.cor }));
-    HILL_COURSE = { n: "Pikes Peak", len: len, ds: HILL_DS, N: N, x: Float64Array.from(X), y: Float64Array.from(Y), h: Float64Array.from(H), k: Float64Array.from(K), z: Z, grade: G,
-      sec: Uint8Array.from(SEC), cor: Int16Array.from(COR), corners: corners, sections: sections, box: [mx, my, Mx, My], tree: HILL_TREE };
-    return HILL_COURSE;
+    const sections = SECS.map((S, si) => ({ id: S.id, n: S.n, s0: si ? secEnd[si - 1] : 0, s1: secEnd[si], alt0: si ? SECS[si - 1].alt : HD.alt0, alt1: S.alt, cor: S.cor }));
+    HILL_COURSE[id] = { id: id, n: HD.n, len: len, ds: HILL_DS, N: N, x: Float64Array.from(X), y: Float64Array.from(Y), h: Float64Array.from(H), k: Float64Array.from(K), z: Z, grade: G,
+      sec: Uint8Array.from(SEC), cor: Int16Array.from(COR), corners: corners, sections: sections, box: [mx, my, Mx, My], tree: HD.tree, alts: hillAlts(id) };
+    return HILL_COURSE[id];
   }
   const hillZ = (T, s) => { const f = clamp(s / T.ds, 0, T.N - 1.001), i = f | 0; return T.z[i] + (T.z[i + 1] - T.z[i]) * (f - i); };
 
-  /* the engine on the way up: simulate() at each of HILL_ALTS with the boost and mixture that altitude gets */
-  function hillPrep(cfg, env) {
+  /* the engine on the way up: simulate() at each of the hill's five altitudes (Pikes: HILL_ALTS) with the boost and mixture that
+     altitude gets. id: the hill (default Pikes Peak). wx (a team round's weather): {dT: °C off the standard morning, h: humidity %} */
+  function hillPrep(cfg, env, id, wx) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
-    const asp = OPT.asp[cfg.asp] || OPT.asp.na, kind = asp.kind, base = Object.assign({}, DEFAULT_ENV, env || {}, { testType: "pull", humidity: 30 });
+    const dT = wx && +wx.dT || 0, alts = hillAlts(id);
+    const asp = OPT.asp[cfg.asp] || OPT.asp.na, kind = asp.kind, base = Object.assign({}, DEFAULT_ENV, env || {}, { testType: "pull", humidity: wx && wx.h != null ? +wx.h : 30 });
     const shopEnv = Object.assign({}, base, { altitudeM: 500, ambientC: 20, humidity: 40 }), shop = ambient(shopEnv);
     const ref = simulate(cfg, shopEnv), comp = (ref.tests || []).find(t => t.id === "compressor_map"), cool = (ref.tests || []).find(t => t.id === "cooling");
     const carb = !isDiesel(cfg) && (isTwoStroke(cfg) ? cfg.tsFuel === "carb" : cfg.intake === "carb");
     const prCap = (HILL_PR[cfg.turboSize] || 3.0) * (asp.compound ? 1.55 : 1), pT = shop.p + (+cfg.boost || 0) * 1e5;
-    const pts = HILL_ALTS.map(alt => {
-      const envA = Object.assign({}, base, { altitudeM: alt, ambientC: hillAmbC(alt) }), air = ambient(envA), c2 = Object.assign({}, cfg);
+    const pts = alts.map(alt => {
+      const envA = Object.assign({}, base, { altitudeM: alt, ambientC: hillAmbC(alt) + dT }), air = ambient(envA), c2 = Object.assign({}, cfg);
       let lim = "";
       if (kind === "turbo") {
         // the boost controller holds the shop's manifold pressure: more pressure ratio, more corrected flow through the wheel
@@ -10076,7 +10115,7 @@ const ENGINE_SIM = (function () {
       return { alt: alt, rho: air.rho, p: air.p, T: air.T, ambC: envA.ambientC, boost: kind === "na" ? 0 : c2.boost, lambda: c2.lambda, hp: res.peakHp, tq: res.peakTq, lim: lim, res: res, prep: roadPrep(c2, res) };
     });
     const Qt = ref.peakHp * 0.7457 * 0.82 * 0.62;
-    return { cfg: cfg, kind: kind, carb: carb, efi: !carb, ref: { hp: ref.peakHp, rho: shop.rho, p: shop.p, boost: kind === "na" ? 0 : +cfg.boost || 0, lambda: cfg.lambda },
+    return { hill: hillId(id), dT: dT, cfg: cfg, kind: kind, carb: carb, efi: !carb, ref: { hp: ref.peakHp, rho: shop.rho, p: shop.p, boost: kind === "na" ? 0 : +cfg.boost || 0, lambda: cfg.lambda },
       pts: pts, refRes: ref, coolQ: Qt / 0.62, radKw: Qt / Math.max(0.05, cool ? cool.util : 0.5), VdL: Math.max(0.3, (ref.Vd || 2000) / 1000), kg: ref.kg, fails: ref.fails || [], redline: cfg.redline };
   }
 
@@ -10106,28 +10145,30 @@ const ENGINE_SIM = (function () {
   const hBrake = (car, v, lat, rho) => { const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G; return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - lat * lat)); };
 
   /* the corner calls for one running: dusty, clean or grippy (the spotters' notes), and a little nobody can see */
-  function hillCalls(seed) {
-    const T = hillCourse(), r = pullRng((seed ^ 0x5EED) >>> 0);
-    return T.corners.map(c => { const q = r(), hi = c.alt > HILL_TREE; const call = q < (hi ? 0.22 : 0.15) ? "dusty" : q < 0.78 ? "clean" : "grippy";
+  function hillCalls(seed, id) {
+    const T = hillCourse(id), r = pullRng((seed ^ 0x5EED) >>> 0);
+    return T.corners.map(c => { const q = r(), hi = c.alt > T.tree; const call = q < (hi ? 0.22 : 0.15) ? "dusty" : q < 0.78 ? "clean" : "grippy";
       const g = Math.sqrt(-2 * Math.log(Math.max(1e-6, r()))) * Math.cos(2 * Math.PI * r());
       return { call: call, gk: 1 + HILL_CALL[call] + 0.008 * clamp(g, -2.4, 2.4) }; });
   }
   /* the auto driver's commitment per corner: reads the calls, a touch more over a guardrail than over nothing */
-  function hillPlan(calls, skill, seed) {
-    const T = hillCourse(), r = pullRng((seed ^ 0xA770) >>> 0), sk = clamp(skill == null ? 0.8 : skill, 0, 1);
+  function hillPlan(calls, skill, seed, id) {
+    const T = hillCourse(id), r = pullRng((seed ^ 0xA770) >>> 0), sk = clamp(skill == null ? 0.8 : skill, 0, 1);
     return T.corners.map((c, k) => { const cl = calls[k].call; let v = cl === "grippy" ? 1.03 : cl === "dusty" ? 0.962 : 1.0;
       v += (sk - 0.8) * 0.02 - (c.drop && !c.rail ? 0.012 : 0) + 0.007 * (r() - 0.5) * 2 * (1.4 - sk); return +v.toFixed(4); });
   }
 
-  /* one run up the hill. opt: {cls, ch, tyre, aero, finalK, seed, calls?, plan?, ai?}. step(dt, ctl): ctl = {c} the commitment
-     for corners not yet turned into (1 = the known limit), or null to drive the plan. */
+  /* one run up the hill. opt: {hill?, cls, ch, tyre, aero, finalK, seed, calls?, plan?, ai?}; the hill is opt.hill, else the one
+     the prep was run for, else Pikes Peak. step(dt, ctl): ctl = {c} the commitment for corners not yet turned into (1 = the known
+     limit), or null to drive the plan. */
   function hillNew(prep, opt) {
-    const T = hillCourse(), N = T.N, ds = T.ds, car = hillCar(prep, opt), m = car.m, P = prep.pts, nP = P.length;
-    const E = P.map(p => roadEngine(p.prep, car)), seed = (opt.seed >>> 0) || 1;
-    const calls = opt.calls || hillCalls(seed), plan = opt.plan || hillPlan(calls, 0.8, seed), rnd = pullRng((seed ^ 0x0FF) >>> 0);
+    const hid = hillId(opt.hill || prep.hill), T = hillCourse(hid), N = T.N, ds = T.ds, car = hillCar(prep, opt), m = car.m, P = prep.pts, nP = P.length;
+    const E = P.map(p => roadEngine(p.prep, car)), seed = (opt.seed >>> 0) || 1, dT = +prep.dT || 0;
+    const calls = opt.calls || hillCalls(seed, hid), plan = opt.plan || hillPlan(calls, 0.8, seed, hid), rnd = pullRng((seed ^ 0x0FF) >>> 0);
     // which two altitude runs bracket this altitude (qi) and how far between them (qf): set in place, no allocation in the hot loop
     let qi = 0, qf = 0;
-    const pIdx = alt => { const f = clamp((alt - HILL_ALTS[0]) / (HILL_ALTS[nP - 1] - HILL_ALTS[0]) * (nP - 1), 0, nP - 1.0001); qi = f | 0; qf = f - qi; };
+    const A0 = P[0].alt, A1 = P[nP - 1].alt;
+    const pIdx = alt => { const f = clamp((alt - A0) / (A1 - A0) * (nP - 1), 0, nP - 1.0001); qi = f | 0; qf = f - qi; };
     const rhoAt = alt => { pIdx(alt); return P[qi].rho + (P[qi + 1].rho - P[qi].rho) * qf; };
     const rhoS = new Float32Array(N); for (let i = 0; i < N; i++) rhoS[i] = rhoAt(T.z[i]);
     // grip ceiling per sample at the local air density: v²|k| = μ (g + ½ρ clA v² / m)
@@ -10198,14 +10239,14 @@ const ENGINE_SIM = (function () {
       const Pnow = torque(rpm) * rpm * 2 * Math.PI / 60 / 1000 * pf;
       st.hpNow = (P[qi].hp + (P[qi + 1].hp - P[qi].hp) * qf) * pf;
       // cooling: heat in with the power made; out through the radiator in proportion to the air's density and the airflow
-      const amb = hillAmbC(alt), qIn = prep.coolQ * clamp(Pnow * thr / Math.max(1, prep.ref.hp * 0.7457), 0, 1.6);
+      const amb = hillAmbC(alt) + dT, qIn = prep.coolQ * clamp(Pnow * thr / Math.max(1, prep.ref.hp * 0.7457), 0, 1.6);
       const qOut = prep.radKw * Math.max(0, st.cool - amb) / 85 * Math.pow(rho / prep.ref.rho, 0.8) * clamp(0.3 + 0.7 * v / 30, 0.3, 1.2) * (st.cool < 86 ? 0.15 : st.cool < 92 ? 0.15 + 0.85 * (st.cool - 86) / 6 : 1);
       st.cool += (qIn + 0.03 * prep.coolQ - qOut) * dt / (30 + 25 * prep.VdL); st.coolPeak = Math.max(st.coolPeak, st.cool);
       st.derate = st.cool > 110 ? clamp(1 - 0.025 * (st.cool - 110), 0.65, 1) : 1; if (st.derate < 0.999) st.derateT += dt;
-      if (st.cool > 127) { st.dnf = { kind: "boil", s: st.s, t: st.t, name: HILL_SECTIONS[T.sec[i]].n }; st.done = true; }
+      if (st.cool > 127) { st.dnf = { kind: "boil", s: st.s, t: st.t, name: T.sections[T.sec[i]].n }; st.done = true; }
       // not enough to pull itself up the grade, or flagged off after half an hour
       st.stuckT = st.v < 0.5 ? (st.stuckT || 0) + dt : 0;
-      if (st.stuckT > 20 || st.t > 1800) { st.dnf = { kind: st.stuckT > 20 ? "stall" : "time", s: st.s, t: st.t, name: HILL_SECTIONS[T.sec[i]].n }; st.done = true; }
+      if (st.stuckT > 20 || st.t > 1800) { st.dnf = { kind: st.stuckT > 20 ? "stall" : "time", s: st.s, t: st.t, name: T.sections[T.sec[i]].n }; st.done = true; }
       // a corner's apex: did it hold?
       const c = KC[st.kChk];
       if (c && st.s >= c.s0 + (c.s1 - c.s0) * 0.5) {
@@ -10213,7 +10254,7 @@ const ENGINE_SIM = (function () {
         if (e > 0.012 && e <= 0.03) { st.moments++; st.v *= 1 - 2.2 * e; st.ev = { kind: "moment", k: c.i, t: st.t }; }
         else if (e > 0.03) {
           const big = e > 0.065, kind = big ? (c.drop ? (c.rail ? "rail" : "edge") : "bank") : "gravel";
-          if (kind === "edge") { st.dnf = { kind: "edge", s: st.s, t: st.t, name: c.name || HILL_SECTIONS[c.sec].n, k: c.i }; st.ev = { kind: kind, k: c.i, t: st.t }; st.done = true; }
+          if (kind === "edge") { st.dnf = { kind: "edge", s: st.s, t: st.t, name: c.name || T.sections[c.sec].n, k: c.i }; st.ev = { kind: kind, k: c.i, t: st.t }; st.done = true; }
           else { const T0 = kind === "gravel" ? 2.2 + 70 * (e - 0.03) : kind === "rail" ? 9 + 6 * rnd() : 7 + 4 * rnd(); st.off = { kind: kind, T: T0, t: T0, side: -c.side, k: c.i, t0: st.t };
             st.offs.push({ kind: kind, k: c.i, name: c.name, sec: c.sec, loss: +T0.toFixed(1), at: Math.round(st.s) }); st.ev = { kind: kind, k: c.i, t: st.t }; if (kind === "rail") st.dmg = Math.min(0.15, st.dmg + 0.04); }
         }
@@ -10234,14 +10275,16 @@ const ENGINE_SIM = (function () {
   }
   /* drive a whole run at once (the auto driver, or a skip) */
   function hillPass(prep, opt) { const p = hillNew(prep, opt); let n = 0; const dt = opt.dt || 0.02; while (!p.st.done && n++ < 120000) p.step(dt, null); return Object.assign(p.result(), { calls: p.calls }); }
-  /* a field car: a made-up engine of hp, NA or turbo, its power at each altitude scaled the way the real thing goes */
-  function hillAiPrep(hp, turbo, seed) {
+  /* a field car: a made-up engine of hp, NA or turbo, its power at each altitude scaled the way the real thing goes.
+     id, wx: the hill and a team round's weather, as hillPrep */
+  function hillAiPrep(hp, turbo, seed, id, wx) {
     const base = bogAiRes(hp, false, seed), r = pullRng((seed ^ 0x77) >>> 0), refRho = ambient({ altitudeM: 500, ambientC: 20, humidity: 40 }).rho;
-    const pts = HILL_ALTS.map(alt => { const air = ambient({ altitudeM: alt, ambientC: hillAmbC(alt), humidity: 30 }), dr = air.rho / refRho;
+    const dT = wx && +wx.dT || 0, hum = wx && wx.h != null ? +wx.h : 30;
+    const pts = hillAlts(id).map(alt => { const air = ambient({ altitudeM: alt, ambientC: hillAmbC(alt) + dT, humidity: hum }), dr = air.rho / refRho;
       const k = turbo ? (alt < 3700 ? 0.97 : 0.97 - 0.22 * (alt - 3700) / 600) : Math.pow(dr, 1.12);
       const res = Object.assign({}, base, { torque: base.torque.map(t => t * k), peakHp: base.peakHp * k, peakTq: base.peakTq * k, kg: 160 + hp * 0.12, aspKind: "na" });
       return { alt: alt, rho: air.rho, p: air.p, hp: res.peakHp, boost: 0, lim: "", res: res, prep: roadPrep({ asp: "na", redline: base.redline, cam: 40 }, res) }; });
-    return { kind: turbo ? "turbo" : "na", ref: { hp: hp, rho: refRho }, pts: pts, coolQ: hp * 0.7457 * 0.82, radKw: hp * 0.7457 * 0.82 * 0.62 / (0.3 + 0.25 * r()), VdL: 3 + 3 * r(), redline: base.redline };
+    return { hill: hillId(id), dT: dT, kind: turbo ? "turbo" : "na", ref: { hp: hp, rho: refRho }, pts: pts, coolQ: hp * 0.7457 * 0.82, radKw: hp * 0.7457 * 0.82 * 0.62 / (0.3 + 0.25 * r()), VdL: 3 + 3 * r(), redline: base.redline };
   }
 
   /* =====================================================================
@@ -10633,7 +10676,7 @@ const ENGINE_SIM = (function () {
     lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
     VEHICLES: VEHICLES, VEH_GROUPS: VEH_GROUPS, SWAP_FIX: SWAP_FIX, engineDims: engineDims, swapFit: swapFit, swapFixSet: swapFixSet, swapDragVeh: swapDragVeh, swapLsrBody: swapLsrBody,
     hillCourse: hillCourse, hillPrep: hillPrep, hillCar: hillCar, hillNew: hillNew, hillPass: hillPass, hillCalls: hillCalls, hillPlan: hillPlan, hillAiPrep: hillAiPrep, hillZ: hillZ,
-    HILL_CLASSES: HILL_CLASSES, HILL_TYRES: HILL_TYRES, HILL_AERO: HILL_AERO, HILL_SECTIONS: HILL_SECTIONS, HILL_ALTS: HILL_ALTS, HILL_TREE: HILL_TREE, HILL_ALT0: HILL_ALT0, HILL_ALT1: HILL_ALT1,
+    HILL_CLASSES: HILL_CLASSES, HILL_TYRES: HILL_TYRES, HILL_AERO: HILL_AERO, HILL_SECTIONS: HILL_SECTIONS, HILL_ALTS: HILL_ALTS, HILL_TREE: HILL_TREE, HILL_ALT0: HILL_ALT0, HILL_ALT1: HILL_ALT1, HILL_HILLS: HILL_HILLS, hillAlts: hillAlts, hillAmbC: hillAmbC, HILL_CALL: HILL_CALL,
     ovalPrep: ovalPrep, ovalNew: ovalNew, ovalPass: ovalPass, ovalNight: ovalNight, ovalAiRes: ovalAiRes, ovalSetup: ovalSetup, ovalVlim: ovalVlim, ovalCi: ovalCi, OVAL_CLASSES: OVAL_CLASSES, OVAL_TYRES: OVAL_TYRES, OVAL_GRILLES: OVAL_GRILLES, OVAL: { R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, w: OVAL_W }, OVAL_TRACKS: OVAL_TRACKS, ovalTrack: ovalTrack,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel,
     exhaustNoise: exhaustNoise, exhaustInfo: exhaustInfo, exhSysOf: exhSysOf, exhParts: exhParts
@@ -30610,7 +30653,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.50.0";
+const VERSION="1.76.51.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -37542,6 +37585,86 @@ PC_KIND.pull={
   fieldTxt(T,E){const C0=SIM.PULL_CLASSES[E.cls];return`The field makes about ${Math.round(T.fieldHp*0.8/10)*10}–${Math.round(T.fieldHp*1.15/10)*10} hp and pulls about ${C0.field.med} ft, and finds a little more every round. A full pull ties for the win.`;},
   where:T=>esc(T.rig)+" · #"+T.num};
 function pcPullLegal(E){try{return SIM.PULL_CLASSES[E.cls].legal(S.cfg);}catch(e){return{ok:false,why:"can't be teched"};}}
+/* ===================== TEAM SEASONS: the hill climb series (since 1.76.51; plugs into PC_KIND, app/team.js) =====================
+   A hill climb team runs one class of the hillclimb (Open, Time Attack, Pikes Peak Open, Unlimited: SIM.HILL_CLASSES) for
+   eight rounds. Rounds 1–7 rotate through four shorter, lower made-up hills (SIM.HILL_HILLS: Badlands Grade, Kettle Butte,
+   Ghost Ridge, Thunder Pass), starting at a different one for each team; round 8 is the finale on Pikes Peak. Race day is
+   text only: the team's car (its chassis, the class's best legal tyres and aero) makes one timed run with your engine,
+   run at the hill's five altitudes in the round's weather (SIM.hillPrep), against nine season regulars (SIM.hillAiPrep cars,
+   their power growing a little each round) on the same corner calls, ranked by time. The sim's own DNFs count (over the
+   edge, boiled, couldn't climb), plus a worn engine letting go part way up. An extra engine past the season's allowance
+   runs first, on the dustiest road. Points as the oval's. */
+/* the series rows: the class, and the rep, budget and pay of that tier on the ladder */
+Object.assign(PC_EVENTS,{
+  hillopen:{ev:"hill",cls:"open",n:"Open hill climb",tier:0,rep:0,budget:[2500,5500],pay:[60000,80000],tip:"Street or sport tyres and no aero: grip and gearing win it, not power."},
+  hillta:{ev:"hill",cls:"ta",n:"Time Attack hill climb",tier:1,rep:40,budget:[4500,9500],pay:[130000,170000],tip:"Semi-slicks and a wing. A turbo keeps its breath as the road climbs."},
+  hillppo:{ev:"hill",cls:"ppo",n:"Pikes Peak Open hill climb",tier:2,rep:120,budget:[7000,16000],pay:[280000,360000],tip:"Slicks, splitter and wing on a stripped car; the finale tops out at 4,302 m."},
+  hillunl:{ev:"hill",cls:"unl",n:"Unlimited hill climb",tier:3,rep:300,budget:[14000,30000],pay:[600000,780000],tip:"Anything goes: big aero and as much power as the thin air leaves you."}});
+/* the season's hills: the four rotating ones, then Pikes Peak for the last round. PC_HILL_DT: the field's and your time step */
+const PC_HILLS=["badlands","kettle","ghost","thunder"],PC_HILL_FIN="pikes",PC_HILL_DT=0.04;
+const PC_HILL_K=[0.84,0.89,0.93,0.97,1.0,1.03,1.06,1.1,1.16];   // the nine regulars' power, against the class's field
+/* the cars a series runs (the team's and the regulars'): anything but the pickup; the two fast classes only the cars built to corner */
+const PC_HILL_CH={ppo:["roadster","coupe","rally","super"],unl:["roadster","coupe","rally","super"]};
+const pcHillCh=E=>(PC_HILL_CH[E.cls]||Object.keys(SIM.CHASSIS).filter(c=>c!=="pickup")).filter(c=>SIM.CHASSIS[c]);
+/* the hill for the team's next (or current) round: a different one each round, Pikes Peak for the last */
+function pcHillId(T){return T.round>=PC_ROUNDS-1?PC_HILL_FIN:PC_HILLS[((T.seed>>>0)+T.round)%PC_HILLS.length];}
+function pcHillTxt(id){const H=SIM.HILL_HILLS[id],s=H.secs,km=s.reduce((a,x)=>a+x.km,0),n=s.reduce((a,x)=>a+x.cor,0);
+  return`${km.toFixed(km%1?1:0)} km and ${n} turns up to ${s[s.length-1].alt.toLocaleString("en-CA")} m${id===PC_HILL_FIN?": the finale":""}`;}
+/* the race-morning map on a hill prep: the torque curves the run drives at each altitude, the power read at each, and the
+   reliability for the day (from the shop pull). Returns that reliability */
+function pcHillMap(prep,M){for(const p of prep.pts){pcMapRes(p.prep,M);p.hp*=M.k;p.tq*=M.k;}return pcMapRes(prep.refRes,M).rel;}
+/* the extra engine runs first, before the field has swept the road: grippy corners are only clean, two in five clean ones dusty */
+function pcHillDusty(calls,r){const C0=SIM.HILL_CALL;let n=0;return calls.map(c=>{const to=c.call==="grippy"?"clean":c.call==="clean"&&r()<0.4?"dusty":c.call;if(to===c.call)return c;n++;
+  return{call:to,gk:c.gk+C0[to]-C0[c.call],swept:n};});}
+/* race day on the hill: one timed run each, on the same calls, ranked by time (DNFs after, by how far they got) */
+function pcHillDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.HILL_CLASSES[k],F=C0.field,st=PC_STYLES[T.style],rs=pcRoundSeed(T),r=rnRng((rs^0x41C1)>>>0),W=pcWx(T,true);
+  const hid=W.site&&W.site.id||pcHillId(T),H=SIM.HILL_HILLS[hid],Tc=SIM.hillCourse(hid),up=1+PC_FIELD_UP*T.round,wx={dT:W.t-SIM.hillAmbC(W.alt),h:W.h};
+  const ty=C0.tyres[C0.tyres.length-1],ae=C0.aero[C0.aero.length-1],calls=SIM.hillCalls(rs,hid),run={hill:hid,cls:k,tyre:ty,aero:ae,dt:PC_HILL_DT};
+  const rows=T.rivals.map((rv,i)=>{const hp=Math.round(F.hp*rv.k*up*(0.97+0.06*r())),sd=(rs^(i+1)*2654435761)>>>0,mech=r()<0.04,at=0.1+0.85*r();let q;
+    try{q=SIM.hillPass(SIM.hillAiPrep(hp,rv.turbo,sd,hid,wx),Object.assign({},run,{ch:rv.ch,seed:sd,calls,plan:SIM.hillPlan(calls,rv.sk,sd,hid)}));}catch(e){q={time:null,dnf:{kind:"mech",s:0}};}
+    if(mech&&q.time!=null)q={time:null,dnf:{kind:"mech",s:Tc.len*at}};
+    return{n:rv.n,i,t:q.time,s:q.dnf?q.dnf.s||0:Tc.len,why:q.dnf?q.dnf.kind:""};});
+  const lines=[`Round ${T.round+1}: ${pcWxTxt(W,false,T)}.`],chN=SIM.CHASSIS[T.ch]?SIM.CHASSIS[T.ch].n:"The car";
+  let me=null,pr=null,rel=0,broke=false,why="",swept=0;
+  if(!sat){const prep=SIM.hillPrep(cfg,Object.assign({},S.env,stdCell()),hid,wx);rel=Math.max(0,pcHillMap(prep,o.M)-T.wear);
+    let myCalls=calls;if(o.back){myCalls=pcHillDusty(calls,rnRng((rs^0xD057)>>>0));swept=myCalls.filter(c=>c.swept).length;}
+    const bias=T.style==="hotshoe"?0.006:T.style==="steady"?-0.004:0,plan=SIM.hillPlan(myCalls,o.sk,(rs^0x3E)>>>0,hid).map(v=>+(v+bias).toFixed(4));
+    const haz=(100-rel)/100*0.25*st.wear*pcLuckK(),wornS=r()<haz?Tc.len*(0.15+0.8*r()):null;
+    const altFail=prep.fails.length?{alt:prep.pts[0].alt,why:String(prep.fails[0])}:prep.pts.map(p=>({alt:p.alt,f:p.res&&p.res.fails||[]})).filter(p=>p.f.length).map(p=>({alt:p.alt,why:String(p.f[0])}))[0]||null;
+    const failS=altFail?Math.max(0,Tc.z.findIndex(z=>z>=altFail.alt))*Tc.ds:null,stop=Math.min(wornS==null?Infinity:wornS,failS==null?Infinity:failS);
+    const p=SIM.hillNew(prep,Object.assign({},run,{ch:T.ch,seed:(rs^0x7EA1)>>>0,calls:myCalls,plan}));let n=0,gone=null;
+    while(!p.st.done&&n++<120000){p.step(PC_HILL_DT,null);if(p.st.s>=stop){gone=failS!=null&&failS<=(wornS==null?Infinity:wornS)?"sim":"worn";break;}}
+    pr=p.result();const sec=Tc.sections[Math.min(Tc.sections.length-1,Tc.sec[Math.min(Tc.N-1,Math.floor(p.st.s/Tc.ds))])].n,km=(p.st.s/1000).toFixed(1);
+    if(gone){pr.time=null;broke=true;why=gone==="sim"?`It let go at ${altFail.alt.toLocaleString("en-CA")} m, ${km} km up in ${sec}: ${altFail.why.charAt(0).toLowerCase()+altFail.why.slice(1)}.`
+      :`The engine let go ${km} km up, in ${sec}${T.wear>8?" (it was due a freshen-up)":prep.refRes.firstToFail?` (${prep.refRes.firstToFail.toLowerCase()} was the weak link on the dyno)`:""}.`;}
+    else if(pr.dnf){const d=pr.dnf;broke=d.kind==="edge"||d.kind==="boil";
+      why=d.kind==="edge"?`Too fast into ${d.name} with a drop and no guardrail: over the edge, ${km} km up.`:d.kind==="boil"?`Boiled over in ${d.name}, ${km} km up: thin air through the radiator.`:d.kind==="stall"?`Couldn't pull up the grade in ${d.name}, ${km} km up.`:`Flagged off in ${d.name} at half an hour.`;}
+    me={n:pcFirst(T)+" (yours)",me:true,t:pr.time,s:pr.time!=null?Tc.len:p.st.s};}
+  const all=rows.concat(me?[me]:[]).sort((a,b)=>(a.t==null?1:0)-(b.t==null?1:0)||(a.t!=null?a.t-b.t:b.s-a.s)||(a.me?-1:b.me?1:0));
+  const rpos=T.rivals.map((x,i)=>all.findIndex(y=>!y.me&&y.i===i)+1),top5="Top five: "+all.slice(0,5).map((x,i)=>`${i+1}. ${x.n} ${fmtHill(x.t)}`).join(" · ");
+  if(sat){lines.push(`${H.n}: sat this round out.`);lines.push(top5);return{place:99,of:all.length+1,broke:false,why:"",lines,best:null,rpos,sat:true,rel};}
+  const place=all.indexOf(me)+1,dnf=pr.time==null,lead=all[0];
+  lines.push(`${H.n}${hid===PC_HILL_FIN?" for the finale":""}: the ${chN.toLowerCase().replace("gt","GT").replace("awd","AWD")}, car #${T.num}, on ${SIM.HILL_TYRES[ty].n.toLowerCase()} tyres${ae!=="none"?", "+SIM.HILL_AERO[ae].n.toLowerCase():""}.`);
+  if(o.back)lines.push(`The extra engine runs first, on the dustiest road: ${swept} corner${swept===1?"":"s"} called dustier than the field got them.`);
+  lines.push(dnf?`DNF, P${place} of ${all.length}. ${why}`:`Climbed in ${fmtHill(pr.time)} (${pr.avgKmh} km/h), P${place} of ${all.length}${place>1?`, ${(pr.time-lead.t).toFixed(2)} s off ${lead.n}`:all[1]&&all[1].t!=null?`, ${(all[1].t-pr.time).toFixed(2)} s clear`:""}.`);
+  const hp=pr.hp,offs=pr.offs.length,mo=pr.moments;
+  lines.push(`${Math.round(hp[0].hp).toLocaleString()} hp at the line, ${Math.round(hp[hp.length-1].hp).toLocaleString()} at the top · top ${Math.round(pr.vmax)} km/h · ${pr.coolPeak} °C peak coolant${offs?` · ${offs} off${offs>1?"s":""} (${pr.offs.map(x=>x.name||Tc.sections[x.sec].n).slice(0,2).join(", ")})`:mo?` · ${mo} moment${mo>1?"s":""}`:" · clean"}.`);
+  lines.push(top5);
+  return{place,of:all.length,broke,dnf,why,lines,best:pr.time,rpos,sat:false,rel};}
+PC_KIND.hill={needHp:E=>SIM.HILL_CLASSES[E.cls].field.hp*1.1,
+  make(T,E,base,r,pick){T.ch=pick(pcHillCh(E));T.num=1+Math.floor(r()*98);},
+  rivals(T,E,r){const C0=SIM.HILL_CLASSES[E.cls],F=C0.field,names=HILL_NAMES.slice(),chs=pcHillCh(E),take=a=>a.splice(Math.floor(r()*a.length),1)[0];
+    return PC_HILL_K.map(k=>({n:take(names),k,turbo:r()<F.turbo,ch:chs[Math.floor(r()*chs.length)],sk:+Math.min(0.97,Math.max(0.35,F.skill+(r()-0.5)*0.3)).toFixed(2),pts:0}));},
+  back(n,T){n.ch=T.ch;n.num=T.num;},
+  site:T=>{const id=pcHillId(T),H=SIM.HILL_HILLS[id];return{n:H.n,alt:H.alt0,id};},
+  condTxt:W=>W.site&&W.site.id?pcHillTxt(W.site.id):"",
+  range(T,E){const F=SIM.HILL_CLASSES[E.cls].field;return{lo:F.hp-F.sd,hi:F.hp+F.sd};},
+  but:(T,E,res,hp)=>E.cls==="open"&&hp>450?", though street rubber and no aero won't use much of it":"",
+  rules:()=>[],
+  day:pcHillDay,
+  pts:pl=>PC_PTS_OVAL[pl-1]||0,placeTxt:o=>o.sat?"Sat out":o.dnf?`DNF (P${o.place} of ${o.of})`:o.place===1?"Won the climb":`P${o.place} of ${o.of}`,eff:o=>o.sat||o.dnf?99:o.place,
+  fieldTxt(T,E){const C0=SIM.HILL_CLASSES[E.cls],d=C0.d.replace(/ · /g,", ");return`The field makes about ${C0.field.hp} hp at the shop and loses some of it to the altitude. ${d.charAt(0).toUpperCase()+d.slice(1)}. Rounds 1–7 rotate through four hills; round 8 is Pikes Peak.`;},
+  where:T=>`${SIM.CHASSIS[T.ch]?SIM.CHASSIS[T.ch].n:"Hill car"} · car #${T.num}`};
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
   {tab:"market",sel:"#pcOfSec",title:"Sign a race team",text:"Teams call with an offer for one series and eight rounds. Their parts budget pays for the engine; the season fee is yours, paid as you race, with bonuses for podiums and the title. Sign one to start."},
