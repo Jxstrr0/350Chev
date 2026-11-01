@@ -24,7 +24,7 @@ const pcShowCl=v=>Math.max(0,Math.min(25,v));
 function pcShowNow(){const w=C().week,k=w%2?"sound":"shine",ti=Math.min(PC_SHOW_TOP,repTierIdx()),K=PC_SHOW_KINDS[k];
   return{w,k,ti,K,name:K.names[ti],purse:PC_SHOW_PURSE[ti],fee:Math.round(PC_SHOW_PURSE[ti]*PC_SHOW_FEE/50)*50};}
 /* an off week: no team round due this week */
-function pcShowOff(){const T=pcTeam();return !T||C().week<T.due;}
+function pcShowOff(){return !pcDueNow().length;}
 /* the four scores for an engine (its config and its dyno result) at a kind of show */
 function pcShowScore(cfg,res,k){const L=SIM.LAYOUTS[cfg.layout]||{n:4},D=SIM.OPT.damper[cfg.damper]||{damping:0.5},n=Math.min(12,L.n||4);
   const lope=Math.max(0,Math.min(1,((+cfg.cam||45)/100-0.5)*2)),clat=res.clatter||0,smoke=res.smoke||0;
@@ -56,7 +56,7 @@ function pcShowEnter(){const c=C(),p=pcS(),sh=pcShowNow(),cert=c.cert,h=cfgHash(
   p.show={w:sh.w,k:sh.k,name:sh.name,place:pl,of:rows.length,score:me,prize,fee:sh.fee,rep,top:rows.slice(0,3).map(x=>({n:x.n,s:x.s,me:!!x.me})),says:pcShowSays(me,sh.k,S.cfg)};
   p.shows=(p.shows||0)+1;if(pl===1)p.showWins=(p.showWins||0)+1;
   logEvent(`${sh.name}: ${pl===1?"best in show":"P"+pl+" of "+rows.length} with ${me.tot} points — ${fmt$(prize-sh.fee)}${rep?`, +${rep} rep`:""}`,pl===1?"good":"");
-  save();hud();renderShop();pcRender();toast(pl===1?`BEST IN SHOW · ${fmt$(prize)}`:`${sh.K.n.toUpperCase()} · P${pl} OF ${rows.length}`);buzz(pl===1?[30,40,30]:20);}
+  achCheck({type:"team"});  save();hud();renderShop();pcRender();toast(pl===1?`BEST IN SHOW · ${fmt$(prize)}`:`${sh.K.n.toUpperCase()} · P${pl} OF ${rows.length}`);buzz(pl===1?[30,40,30]:20);}
 function pcShowBars(s){return `<div class="pcshowb">${["fin","smo","idl","snd"].map(x=>`<div><span>${PC_SHOW_LBL[x]}</span><i style="width:${s[x]*4}%"></i><b>${s[x]}</b></div>`).join("")}</div>`;}
 function pcShowRender(){const el=$("pcShow");if(!el)return;const p=pcS(),sh=pcShowNow(),cert=C().cert,h=cfgHash(S.cfg),certOk=!!(cert&&cert.ok&&cert.hash===h&&cert.res),S0=p.show;
   const nx=PC_SHOW_KINDS[sh.k==="sound"?"shine":"sound"].n.toLowerCase();let b;

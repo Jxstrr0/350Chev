@@ -22,7 +22,7 @@ function rlVerdict(L){const v=$("verdict").querySelector(".verdict"),cur=S.last&
   return{k:r.rel>=85?"pass":"marg",t:r.rel>=85?"CLEAR":"MARGINAL",s:`Reliability ${r.rel}`};}
 function rlChipTxt(t){t=String(t||"").replace(/\s+/g," ").trim();const w=t.split(" · ")[0];return w.length>16?w.slice(0,15)+"…":w;}
 /* the career team's season: what stands between the bench build and race day (team.js pcChecks, no extra sim run) */
-function rlTeam(){const T=typeof pcTeam==="function"?pcTeam():null;if(!T)return"";let c;try{c=pcChecks(T);}catch(e){return"";}const E=PC_EVENTS[T.ev],due=C().week>=T.due;
+function rlTeam(){const T=typeof pcBenchTeam==="function"?pcBenchTeam():null;if(!T)return"";let c;try{c=pcChecks(T);}catch(e){return"";}const E=PC_EVENTS[T.ev],due=C().week>=T.due;
   return `<div class="rlsec"><h3>${esc(T.team)} <button class="chip" data-gotab="market">Team</button></h3><div class="rlk"><div class="rlkh"><span>${E.n} · round ${T.round+1} of ${PC_ROUNDS}</span><small>${due?"race week now":"race week "+T.due} · ${fmt$(pcLeft(T))} left</small></div><div class="rlks">${c.ok?'<b class="good">Ready for race day</b>':'<b class="warn">Not ready</b>'}</div>`
     +c.o.map(q=>`<div class="rlq ${q.ok?"ok":"no"}"><span class="n">${esc(q.t)}</span><span class="v">${q.wn?"!":q.ok?"✓":"✗"}</span></div>`).join("")+`</div></div>`;}
 function rlDrag(){const d=RL.drag;if(!d)return"";const old=d.hash!==cfgHash(S.cfg);
