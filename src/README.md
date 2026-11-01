@@ -118,6 +118,7 @@ Files added after the map above was written (their place in the order is in `man
 | `vis/hill-lod.js` | Pikes Peak culling and LOD for Lite and Ultra |
 | `vis/band.js` | the run view HUD band every event but the strip reports to the 3D view |
 | `app/team.js` | career team seasons (the Team tab): one team a season for 8 rounds, a round every other week (`PC_EVENTS`, `PC_STYLES`, season and pay tables), offers gated by rep and dyno, the team's parts budget and engine wear, auto-simulated race day (drag ladder, oval feature), Close week racing a due round, points table, title, pay and rep, the Market-tab cards (`#pitBox`) |
+| `app/team-bog.js` | the mud bog team series: its three `PC_EVENTS` rows, the pits, the round's drawn mud (forecast like weather), race day through the real bog sim, and `PC_KIND.bog` |
 | `css/ui-team.css` | the team offer, season and result cards, budget bar, standings |
 | `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders; the rev glow, failure crack overlay and venue tint styling; the gestures (grabber, compare card); the results card and holo sheen. Last CSS file, so it overrides the rest |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |

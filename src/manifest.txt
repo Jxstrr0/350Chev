@@ -106,6 +106,7 @@ app/rail.js
 app/rcard.js
 app/shopsb.js
 app/team.js
+app/team-bog.js
 app/help.js
 app/pwa.js
 app/folds.js
