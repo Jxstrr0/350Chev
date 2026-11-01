@@ -110,6 +110,7 @@ app/team-bog.js
 app/team-boat.js
 app/team-pull.js
 app/team-hill.js
+app/team-show.js
 app/help.js
 app/pwa.js
 app/folds.js
