@@ -1,10 +1,10 @@
 # Engine sound credits
 
 Real engine recordings used by the **Real recordings** and **Blend** engine voices (Settings › Engine voice).
-Every file below is openly licensed (CC0 / public domain / CC BY / CC BY-SA). Modifications for every clip:
+Every file below is openly licensed (CC0 / public domain / CC BY / CC BY-SA). Modifications for every engine loop:
 trimmed to the listed window, high-passed at 28 Hz, time-warped so the engine holds one steady measured rpm,
 cut to a whole number of engine cycles and looped with an equal-power crossfade, loudness-normalised, mixed to mono
-and encoded as 96 kbps MP3. In the game the loops are pitch-shifted live to the build's rpm and mixed with the synth.
+and encoded as 96 kbps MP3. One-shots (blow-off, backfire, anti-lag) are cut, filtered as listed, faded, peak-normalised and encoded the same way. In the game the loops are pitch-shifted live to the build's rpm and mixed with the synth.
 Freesound clips were taken from the site's public HQ preview MP3; Commons clips from Wikimedia's own MP3 transcode of the original file
 (clips added on 2026-11-02 from the original upload). Loops whose credit says "held as recorded" were already steady and were not time-warped.
 Several Commons sources are audio tracks of YouTube videos their owners published under CC BY 3.0; the YouTube channel is the credited author.
@@ -64,6 +64,9 @@ files derived from CC BY sources are CC BY (same version) with the attribution b
 | `i5_idle.mp3` | Audi RS3 (2.5 TFSI five) engine and exhaust | Jay Chesterman (YouTube) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | [Wikimedia Commons (the original upload)](https://commons.wikimedia.org/wiki/File:Audi_RS3_-_engine_and_exhaust_sound_(YouTube_uuEytKIzqeY).opus) | i5_idle: 998 rpm (5 cyl), 50.0–70.0 s |
 | `i5_rev.mp3` | Audi TT RS (2.5 TFSI five) on board | Speedster Turbo Berlin (YouTube) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | [Wikimedia Commons (the original upload)](https://commons.wikimedia.org/wiki/File:Audi_TT_RS_-_engine_and_exhaust_sound_(YouTube_MH4ek7tBg6I).opus) | i5_rev: 2524 rpm (5 cyl), 121.5–127.5 s |
 | `d5_mid.mp3` | Volvo V70 D5244T five-cylinder diesel, cold drive | Euro Buses NO (YouTube) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | [Wikimedia Commons (the original upload)](https://commons.wikimedia.org/wiki/File:Volvo_V70_-_engine_and_exhaust_sound_(YouTube_IGWL1Lnlsns).opus) | d5_mid: 1861 rpm (5 cyl), 50.0–68.0 s |
+| `bov1.mp3`, `bov2.mp3`, `bov3.mp3`, `bov4.mp3` | Peugeot 406 Turbo with an HKS blow-off valve | nick7100 (YouTube) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | [Wikimedia Commons (the original upload)](https://commons.wikimedia.org/wiki/File:Peugeot_406_Turbo_(turbocharged,_HKS_blow-off_valve)_-_engine_and_exhaust_sound_(YouTube_kx0Tvu4_K04).opus) | one-shots: 9.72, 32.17, 41.87, 66.33 s, 0.7 s each, high-passed at 700 Hz |
+| `bf1.mp3`, `bf2.mp3`, `bf3.mp3`, `bf4.mp3` | Car backfires, reverberant | craigsmith | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/craigsmith/sounds/675723/) | one-shots: 0.01, 1.80, 3.96, 5.02 s, 0.6–0.8 s each, 1639 Hz hum notched |
+| `als1.mp3`, `als2.mp3`, `als3.mp3`, `als4.mp3` | Car anti-lag (raw) | modusmogulus | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/modusmogulus/sounds/797835/) | one-shots: 1.55, 1.76, 2.17, 5.26 s, 0.2–0.25 s each, high-passed at 60 Hz |
 
 ## Raw license fields as read on 2026-10-10
 
@@ -118,4 +121,8 @@ files derived from CC BY sources are CC BY (same version) with the attribution b
 - `cm_ttrs_2` — https://commons.wikimedia.org/wiki/File:Audi_TT_RS_-_engine_and_exhaust_sound_(YouTube_MH4ek7tBg6I).opus — Commons LicenseShortName/LicenseUrl 'CC BY 3.0 https://creativecommons.org/licenses/by/3.0'; Artist='Speedster Turbo Berlin (YouTube)' (read by tools/fetch-sounds.js on 2026-11-02)
 - `cm_v70d5` — https://commons.wikimedia.org/wiki/File:Volvo_V70_-_engine_and_exhaust_sound_(YouTube_IGWL1Lnlsns).opus — Commons LicenseShortName/LicenseUrl 'CC BY 3.0 https://creativecommons.org/licenses/by/3.0'; Artist='Euro Buses NO (YouTube)' (read by tools/fetch-sounds.js on 2026-11-02)
 
-Total size: 2116 KiB in 60 files.
+- `cm_406bov` — https://commons.wikimedia.org/wiki/File:Peugeot_406_Turbo_(turbocharged,_HKS_blow-off_valve)_-_engine_and_exhaust_sound_(YouTube_kx0Tvu4_K04).opus — Commons LicenseShortName/LicenseUrl 'CC BY 3.0 https://creativecommons.org/licenses/by/3.0'; Artist='nick7100 (YouTube)' (read by tools/fetch-sounds.js on 2026-11-02)
+- `fs_675723` — https://freesound.org/people/craigsmith/sounds/675723/ — Freesound page license link → http://creativecommons.org/publicdomain/zero/1.0/ (read by tools/fetch-sounds.js on 2026-11-02)
+- `fs_797835` — https://freesound.org/people/modusmogulus/sounds/797835/ — Freesound page license link → http://creativecommons.org/publicdomain/zero/1.0/ (read by tools/fetch-sounds.js on 2026-11-02)
+
+Total size: 2224 KiB in 72 files.
