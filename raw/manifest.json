@@ -1,0 +1,270 @@
+{
+ "fetched": "2026-11-02T01:55:19.795Z",
+ "manifest": [
+  {
+   "key": "fs_584115",
+   "file": "fs_584115.mp3",
+   "bytes": 559489,
+   "for": "V4: Ducati Panigale V4",
+   "source": "https://freesound.org/people/rsn267/sounds/584115/",
+   "title": "Freesound - Ducati Panigale V4.wav by rsn267",
+   "author": "rsn267",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/584/584115_2251150-hq.mp3"
+  },
+  {
+   "key": "fs_584116",
+   "file": "fs_584116.mp3",
+   "bytes": 516036,
+   "for": "V4: Ducati Panigale V4 sample 2",
+   "source": "https://freesound.org/people/rsn267/sounds/584116/",
+   "title": "Freesound - Ducati Panigale V4 sample 2.wav by rsn267",
+   "author": "rsn267",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/584/584116_2251150-hq.mp3"
+  },
+  {
+   "key": "fs_510231",
+   "file": "fs_510231.mp3",
+   "bytes": 1165584,
+   "for": "I1: Yamaha Tenere 250 idle",
+   "source": "https://freesound.org/people/Singular_Estudio/sounds/510231/",
+   "title": "Freesound - Motorcycle_Yamaha_Tenere_250CC_Enduro_Idle.wav by Singular_Estudio",
+   "author": "Singular_Estudio",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/510/510231_2053141-hq.mp3"
+  },
+  {
+   "key": "fs_450034",
+   "file": "fs_450034.mp3",
+   "bytes": 6331440,
+   "for": "I1: dirt bike start/idle/rev",
+   "source": "https://freesound.org/people/kyles/sounds/450034/",
+   "title": "Freesound - motorcycle dirt bike motocross start idle, rev, stop, kick start, false start, drive off pull away pull up stop.wav by kyles",
+   "author": "kyles",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/450/450034_612689-hq.mp3"
+  },
+  {
+   "key": "fs_724080",
+   "file": "fs_724080.mp3",
+   "bytes": 432566,
+   "for": "I2: BMW F800GS idle",
+   "source": "https://freesound.org/people/brucehep/sounds/724080/",
+   "title": "Freesound - Motorcycle Startup and Idle by brucehep",
+   "author": "brucehep",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/724/724080_5796720-hq.mp3"
+  },
+  {
+   "key": "fs_211668",
+   "file": "fs_211668.mp3",
+   "bytes": 393552,
+   "for": "I4 high-rev: Kawasaki ZX6R",
+   "source": "https://freesound.org/people/Sclolex/sounds/211668/",
+   "title": "Freesound - KawasakiZX6RStart.wav by Sclolex",
+   "author": "Sclolex",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/211/211668_985466-hq.mp3"
+  },
+  {
+   "key": "fs_509627",
+   "file": "fs_509627.mp3",
+   "bytes": 108426,
+   "for": "I4 high-rev: Toyota 4A-GE loop",
+   "source": "https://freesound.org/people/qopsinonstudios/sounds/509627/",
+   "title": "Freesound - 4A-GE Engine Loop 2 by qopsinonstudios",
+   "author": "qopsinonstudios",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/509/509627_3957509-hq.mp3"
+  },
+  {
+   "key": "fs_181165",
+   "file": "fs_181165.mp3",
+   "bytes": 292317,
+   "for": "turbo whistle: Audi A4 1.8T",
+   "source": "https://freesound.org/people/fredless/sounds/181165/",
+   "title": "Freesound - audiwhistle.mp3 by fredless",
+   "author": "fredless",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/181/181165_3376436-hq.mp3"
+  },
+  {
+   "key": "fs_659544",
+   "file": "fs_659544.mp3",
+   "bytes": 99554,
+   "for": "turbo spool + blow-off pass-by",
+   "source": "https://freesound.org/people/EwanPenman11/sounds/659544/",
+   "title": "Freesound - Turbo Spooling and Blow Off.WAV by EwanPenman11",
+   "author": "EwanPenman11",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/659/659544_13241413-hq.mp3"
+  },
+  {
+   "key": "fs_797835",
+   "file": "fs_797835.mp3",
+   "bytes": 244104,
+   "for": "anti-lag raw",
+   "source": "https://freesound.org/people/modusmogulus/sounds/797835/",
+   "title": "Freesound - Car Antilag (No cleanup, 32float) by modusmogulus",
+   "author": "modusmogulus",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/797/797835_15956618-hq.mp3"
+  },
+  {
+   "key": "fs_675723",
+   "file": "fs_675723.mp3",
+   "bytes": 178272,
+   "for": "backfire, reverberant",
+   "source": "https://freesound.org/people/craigsmith/sounds/675723/",
+   "title": "Freesound - S41-25 Car backfires; reverberant.wav by craigsmith",
+   "author": "craigsmith",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/675/675723_2524442-hq.mp3"
+  },
+  {
+   "key": "fs_385935",
+   "file": "fs_385935.mp3",
+   "bytes": 13248,
+   "for": "backfire, mono",
+   "source": "https://freesound.org/people/P%C3%B3l/sounds/385935/",
+   "title": "Freesound - S012_Engine_Backfire_Mono.wav by Pól",
+   "author": "P%C3%B3l",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/385/385935_7097737-hq.mp3"
+  },
+  {
+   "key": "fs_144456",
+   "file": "fs_144456.mp3",
+   "bytes": 1841394,
+   "for": "supercharger whine (Summernats)",
+   "source": "https://freesound.org/people/Ears68/sounds/144456/",
+   "title": "Freesound - Hot-Rod-AngryV8-supercharged-1500HP-Burnout-Demo-xDR023.wav by Ears68",
+   "author": "Ears68",
+   "license": "http://creativecommons.org/licenses/by/3.0/",
+   "via": "https://cdn.freesound.org/previews/144/144456_2214631-hq.mp3"
+  },
+  {
+   "key": "cm_rx7",
+   "file": "cm_rx7.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 4449106,
+   "for": "R2 rotary",
+   "source": "https://commons.wikimedia.org/wiki/File:Mazda_RX-7_-_engine_and_exhaust_sound_(YouTube_4z0y1H2REvE).opus",
+   "title": "Mazda RX-7 - engine and exhaust sound (YouTube 4z0y1H2REvE).opus",
+   "author": "Taz Ringer (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/3/35/Mazda_RX-7_-_engine_and_exhaust_sound_%28YouTube_4z0y1H2REvE%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_rx8",
+   "file": "cm_rx8.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 362813,
+   "for": "R2 rotary",
+   "source": "https://commons.wikimedia.org/wiki/File:Mazda_RX-8_-_engine_and_exhaust_sound_(YouTube_u-Lc2Nt3OR8).opus",
+   "title": "Mazda RX-8 - engine and exhaust sound (YouTube u-Lc2Nt3OR8).opus",
+   "author": "cz125cz125 (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/7/7e/Mazda_RX-8_-_engine_and_exhaust_sound_%28YouTube_u-Lc2Nt3OR8%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_v70d5",
+   "file": "cm_v70d5.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 3574835,
+   "for": "I5 diesel",
+   "source": "https://commons.wikimedia.org/wiki/File:Volvo_V70_-_engine_and_exhaust_sound_(YouTube_IGWL1Lnlsns).opus",
+   "title": "Volvo V70 - engine and exhaust sound (YouTube IGWL1Lnlsns).opus",
+   "author": "Euro Buses NO (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Volvo_V70_-_engine_and_exhaust_sound_%28YouTube_IGWL1Lnlsns%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_rs3",
+   "file": "cm_rs3.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 6630673,
+   "for": "I5 turbo petrol",
+   "source": "https://commons.wikimedia.org/wiki/File:Audi_RS3_-_engine_and_exhaust_sound_(YouTube_uuEytKIzqeY).opus",
+   "title": "Audi RS3 - engine and exhaust sound (YouTube uuEytKIzqeY).opus",
+   "author": "Jay Chesterman (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Audi_RS3_-_engine_and_exhaust_sound_%28YouTube_uuEytKIzqeY%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_ttrs_1",
+   "file": "cm_ttrs_1.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 409597,
+   "for": "I5 turbo petrol",
+   "source": "https://commons.wikimedia.org/wiki/File:Audi_TT_RS_-_engine_and_exhaust_sound_(YouTube_4c7BUfLJOXk).opus",
+   "title": "Audi TT RS - engine and exhaust sound (YouTube 4c7BUfLJOXk).opus",
+   "author": "L’argus (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Audi_TT_RS_-_engine_and_exhaust_sound_%28YouTube_4c7BUfLJOXk%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_ttrs_2",
+   "file": "cm_ttrs_2.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 6203497,
+   "for": "I5 turbo petrol",
+   "source": "https://commons.wikimedia.org/wiki/File:Audi_TT_RS_-_engine_and_exhaust_sound_(YouTube_MH4ek7tBg6I).opus",
+   "title": "Audi TT RS - engine and exhaust sound (YouTube MH4ek7tBg6I).opus",
+   "author": "Speedster Turbo Berlin (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Audi_TT_RS_-_engine_and_exhaust_sound_%28YouTube_MH4ek7tBg6I%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_er5",
+   "file": "cm_er5.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 338400,
+   "for": "I2 parallel twin",
+   "source": "https://commons.wikimedia.org/wiki/File:Kawasaki_ER-5.oga",
+   "title": "Kawasaki ER-5.oga",
+   "author": "OllemanW",
+   "license": "CC BY-SA 3.0 https://creativecommons.org/licenses/by-sa/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/7/79/Kawasaki_ER-5.oga?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_406bov",
+   "file": "cm_406bov.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 871120,
+   "for": "blow-off valve",
+   "source": "https://commons.wikimedia.org/wiki/File:Peugeot_406_Turbo_(turbocharged,_HKS_blow-off_valve)_-_engine_and_exhaust_sound_(YouTube_kx0Tvu4_K04).opus",
+   "title": "Peugeot 406 Turbo (turbocharged, HKS blow-off valve) - engine and exhaust sound (YouTube kx0Tvu4 K04).opus",
+   "author": "nick7100 (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Peugeot_406_Turbo_%28turbocharged%2C_HKS_blow-off_valve%29_-_engine_and_exhaust_sound_%28YouTube_kx0Tvu4_K04%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_coupebov",
+   "file": "cm_coupebov.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 1415041,
+   "for": "blow-off valve",
+   "source": "https://commons.wikimedia.org/wiki/File:Fiat_Coup%C3%A9_Turbo_-_engine_and_exhaust_sound_(YouTube_S1IzD5dTWng).opus",
+   "title": "Fiat Coupé Turbo - engine and exhaust sound (YouTube S1IzD5dTWng).opus",
+   "author": "Witu Tech (SimsonSBL) (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Fiat_Coup%C3%A9_Turbo_-_engine_and_exhaust_sound_%28YouTube_S1IzD5dTWng%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_599",
+   "file": "cm_599.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 789528,
+   "for": "V12 rev, replaces v12_rev.mp3",
+   "source": "https://commons.wikimedia.org/wiki/File:Ferrari_599_GTB_Fiorano_-_engine_and_exhaust_sound_(Flickr_3087503901).flac",
+   "title": "Ferrari 599 GTB Fiorano - engine and exhaust sound (Flickr 3087503901).flac",
+   "author": "CarSpotter (Flickr)",
+   "license": "CC BY-SA 2.0 https://creativecommons.org/licenses/by-sa/2.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Ferrari_599_GTB_Fiorano_-_engine_and_exhaust_sound_%28Flickr_3087503901%29.flac?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  },
+  {
+   "key": "cm_aventador",
+   "file": "cm_aventador.org&utm_campaign=imageinfo&utm_content=original",
+   "bytes": 8787856,
+   "for": "V12 backup",
+   "source": "https://commons.wikimedia.org/wiki/File:Lamborghini_Aventador_-_engine_and_exhaust_sound_(YouTube_oMKxhIcSmZs).opus",
+   "title": "Lamborghini Aventador - engine and exhaust sound (YouTube oMKxhIcSmZs).opus",
+   "author": "Super Cars for you (YouTube)",
+   "license": "CC BY 3.0 https://creativecommons.org/licenses/by/3.0",
+   "via": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Lamborghini_Aventador_-_engine_and_exhaust_sound_%28YouTube_oMKxhIcSmZs%29.opus?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original"
+  }
+ ],
+ "failed": []
+}
