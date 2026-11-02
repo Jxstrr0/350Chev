@@ -47,7 +47,7 @@ const ENGINE_SAMPLES = (function () {
   var SHOT_IDS = ["bov1", "bov2", "bov3", "bov4", "bf1", "bf2", "bf3", "bf4", "als1", "als2", "als3", "als4"];
   var shotN = 0;
 
-  var MODE = "blend";                 // synth | real | blend
+  var MODE = "real";                  // synth | real | blend (Settings default: real)
   var host = null, ctx = null, out = null, lp = null;
   var G = [null, null];               // voice groups: {set, w, vI, vR}
   var cache = {}, loading = {}, failed = {};
