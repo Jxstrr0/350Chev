@@ -101,7 +101,7 @@ Three tiers, `lite`, `full`, `ultra` (`app/perf.js`). Lite is the phone default.
 
 ### Sound (`src/sound/`)
 
-A Web Audio synth derives a voice from the build (firing order, exhaust, intake, mechanical noise). Settings offer **Synth** (your build), **Real** (recordings) or **Blend**, and Lite or Full sound. 51 openly licensed recordings in `sounds/`, looped at a measured rpm and pitch-shifted live; every one is credited in `sounds/CREDITS.md`.
+A Web Audio synth derives a voice from the build (firing order, exhaust, intake, mechanical noise). Settings offer **Synth** (your build), **Real** (recordings) or **Blend**, and Lite or Full sound. 60 openly licensed recordings in `sounds/`, looped at a measured rpm and pitch-shifted live (every piston layout but the Deltic, plus the rotaries, has its own); every one is credited in `sounds/CREDITS.md`.
 
 ### Save system
 
@@ -131,7 +131,7 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Reputation tiers | 7 | `REP_TIERS` |
 | Achievements | 95 in 14 groups | `ACH`, `ACH_GROUPS` |
 | Guided lessons | 17 | `LESSONS` |
-| Engine recordings | 51 | `sounds/` |
+| Engine recordings | 60 | `sounds/` |
 | Source files in the build | 111 | `src/manifest.txt` |
 | Built page | 3.57 MB (1.16 MB gzipped) | `node build.js` |
 

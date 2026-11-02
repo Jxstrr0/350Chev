@@ -62,7 +62,7 @@ async function commonsOne(key, title, why) {
   if (!p.imageinfo) throw new Error("not on Commons: " + title);
   const ii = p.imageinfo[0], md = ii.extmetadata || {};
   const strip = (v) => (v && v.value ? String(v.value).replace(/<[^>]+>/g, "").trim() : "");
-  const file = key + path.extname(ii.url).toLowerCase();
+  const file = key + path.extname(new URL(ii.url).pathname).toLowerCase();
   const bytes = await save(ii.url, file);
   await sleep(1500);
   return { key, file, bytes, for: why, source: ii.descriptionurl, title: title.replace(/^File:/, ""),
