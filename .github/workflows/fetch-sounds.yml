@@ -1,0 +1,36 @@
+# Downloads the raw recordings listed in tools/sound-fetch.json (see tools/fetch-sounds.js) on GitHub's servers,
+# because the cloud dev container is blocked by Freesound and rate-limited by Wikimedia.
+# Runs on a push to a branch named claude/sound-raw..., or by hand (Actions > Fetch raw sounds > Run workflow,
+# choosing that branch), and commits raw/ back to that same branch. Started on any other branch it stops.
+# Those branches are scratch space and are never merged, so the big raw files stay out of main.
+# It does not touch the site: GitHub Pages still deploys straight from main.
+name: Fetch raw sounds
+on:
+  push:
+    branches: ["claude/sound-raw**"]
+    paths: ["tools/sound-fetch.json", "tools/fetch-sounds.js", ".github/workflows/fetch-sounds.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Refuse to run anywhere but a claude/sound-raw... branch (raw audio must never land in main)
+        if: ${{ !startsWith(github.ref_name, 'claude/sound-raw') }}
+        run: |
+          echo "Run this from a claude/sound-raw... branch (Run workflow > Use workflow from)."
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/fetch-sounds.js
+      - name: Commit raw files to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add raw
+          git commit -m "Raw sounds fetched by the Fetch raw sounds workflow" || echo "nothing new"
+          git push
