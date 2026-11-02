@@ -5,6 +5,11 @@ from the cloud container, Freesound answered 403 and Wikimedia answered 429 (rat
 so this is the list to fetch next time. Licenses marked **checked** were read on the file's own page;
 "CC0 (search filter)" means it came up under Freesound's CC0 filter and the page still needs a look before use.
 
+## Decisions (Kelbo, 2 November 2026)
+
+- CC0 and CC BY / CC BY-SA are both fine (credit every CC author in `sounds/CREDITS.md`, as now).
+- Replace `v12_rev.mp3` (Aston V12, license mismatch below). Replacement: Ferrari 599 GTB Fiorano, listed under Engines.
+
 ## What the game is missing
 
 - No recordings at all for: rotaries (R1–R4), Single (I1), Parallel twin (I2), V4, Inline 5 (borrows I4/I6), Deltic.
@@ -21,6 +26,8 @@ so this is the list to fetch next time. Licenses marked **checked** were read on
 | I5 diesel | Volvo V70 D5244T cold drive, 3 min 57 s | Euro Buses NO (YouTube) | CC BY 3.0, **checked** (review pending) | [Commons](https://commons.wikimedia.org/wiki/File:Volvo_V70_-_engine_and_exhaust_sound_(YouTube_IGWL1Lnlsns).opus) |
 | I5 turbo petrol | Audi RS3, Audi TT RS (2.5 TFSI five) | various (YouTube) | CC BY 3.0 (series license; pages not yet read) | [Category: Sounds of automobiles](https://commons.wikimedia.org/wiki/Category:Sounds_of_automobiles) |
 | I5 turbo petrol | Audi Sport Quattro S1 (1985), Goodwood rally stage, 18 s | Edvvc / "Ed Pond" | **Conflict**: page says CC BY-SA 3.0, embedded metadata says CC BY-NC-SA 2.0 UK. Skip unless cleared. | [Commons](https://commons.wikimedia.org/wiki/File:Audi_Sport_Quattro_S1_(1985).ogg) |
+| V12 rev (replaces `v12_rev.mp3`) | Ferrari 599 GTB Fiorano 6.0 V12, start-up and revving at night, 34 s | CarSpotter (Flickr) | CC BY-SA 2.0, **checked**, license reviewed on Commons 24 Oct 2026 | [Commons](https://commons.wikimedia.org/wiki/File:Ferrari_599_GTB_Fiorano_-_engine_and_exhaust_sound_(Flickr_3087503901).flac) |
+| V12 (backup) | Lamborghini Aventador revs and acceleration, 10 min | Super Cars for you (YouTube) | CC BY 3.0, **checked** (review pending) | [Commons](https://commons.wikimedia.org/wiki/File:Lamborghini_Aventador_-_engine_and_exhaust_sound_(YouTube_oMKxhIcSmZs).opus) |
 | I1 single | Yamaha Ténéré 250 enduro idle, close | Singular_Estudio | CC0 (search filter) | [Freesound](https://freesound.org/people/Singular_Estudio/sounds/510231/) |
 | I1 single | Dirt bike start, idle, rev, stall | kyles | CC0 (search filter) | [Freesound](https://freesound.org/people/kyles/sounds/450034/) |
 | I2 parallel twin | BMW F800GS start and idle, near exhaust | brucehep | CC0 (search filter) | [Freesound](https://freesound.org/people/brucehep/sounds/724080/) |
