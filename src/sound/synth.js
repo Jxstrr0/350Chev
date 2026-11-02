@@ -745,6 +745,11 @@
     }, Math.max(50, at * 1000 + 120));
   }
 
+  /* recorded one-shots (ENGINE_SAMPLES): asked first for a blow-off, backfire or anti-lag bang once the synth has
+     decided it happens; returns true when a recording played, and the synthesized version is then skipped */
+  var shotHook = null;
+  function shot(kind, amt) { try { return !!(shotHook && shotHook(kind, amt)); } catch (e) { return false; } }
+
   function noiseVoice(dur, type, freq, q, peak, dest) {
     var src = ctx.createBufferSource();
     src.buffer = makeNoise(ctx); src.loop = true;
@@ -800,6 +805,7 @@
   function alsBang(amp) {
     if (!ctx || !bus) return;
     st.alsN = (st.alsN || 0) + 1;
+    if (shot("als", amp)) return;
     var t = ctx.currentTime;
     var o = ctx.createOscillator(); o.type = "triangle";
     o.frequency.setValueAtTime(110 + Math.random() * 90, t);
@@ -880,6 +886,7 @@
         if (ctx.currentTime - (st.bovT || -9) < 0.45) return;   // one per lift
         st.bovT = ctx.currentTime;
         var amt = clamp(bp / 1.2, 0.25, 1.3);
+        if (shot("bov", amt)) break;
         var t1 = ctx.currentTime;
         var o = ctx.createOscillator(); o.type = "sawtooth";
         o.frequency.setValueAtTime(1500 * amt + 600, t1);
@@ -957,13 +964,13 @@
       }
       case "intakeBang": {
         /* a backfire through the intake: one deep thump and the burst panel letting go */
-        pop(1.0);
-        noiseVoice(0.35, "lowpass", 420, 0.9, 0.30);
+        if (!shot("intake", 1)) { pop(1.0); noiseVoice(0.35, "lowpass", 420, 0.9, 0.30); }   // a recording replaces the thump, not the panel
         setTimeout(function () { if (ctx) noiseVoice(0.5, "highpass", 1800, 0.6, 0.10); }, 40);
         break;
       }
       case "backfire": {
         if (st.diesel) return;
+        if (shot("backfire", 1)) break;
         pop(0.9);
         setTimeout(function () { if (ctx) pop(0.5); }, 70 + Math.random() * 60);
         setTimeout(function () { if (ctx) pop(0.35); }, 170 + Math.random() * 90);
@@ -1022,6 +1029,7 @@
     deriveProfile: deriveProfile,
     // recorded-sample layer hooks (ENGINE_SAMPLES): duck the synth core, and read where to plug in
     setSynthMix: function (m) { m = +m; SYNTH_MIX = isFinite(m) ? clamp(m, 0, 1) : 1; },
+    setShotHook: function (fn) { shotHook = typeof fn === "function" ? fn : null; },
     sampleHost: function () { return { ctx: ctx, bus: bus, running: running && !!N, dead: dead, solo: SOLO, lite: LITE, diesel: !!st.diesel }; },
     get context() { return ctx; },
     get isRunning() { return running; }

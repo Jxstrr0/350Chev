@@ -6,7 +6,7 @@ Prairie Engine Works is a browser engine-builder by Longlight Interactive: pick 
 
 - Plain HTML, CSS and classic (non-module) JavaScript in a few big `<script>` blocks. No package.json, no npm, no bundler, no CI. The two node scripts below are the only checks.
 - three.js **r128** from CDN: `three.min.js` from cdnjs, plus the post-processing addons from jsdelivr `three@0.128.0` (the `PEW_LIBS` list in `src/html/body.html`; a Lite phone loads them on demand). Google Fonts (Chakra Petch, Barlow, IBM Plex Mono). Nothing else external.
-- Sound: a Web Audio synth plus 60 openly licensed engine recordings in `sounds/` (credits in `sounds/CREDITS.md`; keep that file in step with the folder).
+- Sound: a Web Audio synth plus 72 openly licensed recordings (engine loops, and blow-off, backfire and anti-lag one-shots) in `sounds/` (credits in `sounds/CREDITS.md`; keep that file in step with the folder).
 - PWA: `manifest.webmanifest`, `icons/`, and the generated `sw.js`. Installed copies work offline.
 - Node 16 or newer for the scripts (22 is what was last used). Nothing to install.
 

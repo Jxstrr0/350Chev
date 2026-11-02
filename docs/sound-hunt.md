@@ -6,7 +6,11 @@ Openly licensed recordings found to fill the gaps in `sounds/`. Downloaded by th
 **In the game since 1.76.56.0:** V12 (Ferrari F50, two loops, replacing the Aston), rotary (RX-7 idle, RX-8 rev),
 V4 (Ducati idle), single (Yamaha idle), parallel twin (BMW F800GS idle), inline 5 (RS3 idle, TT RS rev) and
 diesel inline 5 (Volvo D5 cruise). Tried and not used: Ferrari 599 and the other V12s (blips and drive-bys, no held rev),
-RX-8 idle, Kawasaki ER-5 (too noisy), ZX6R and 4A-GE (high-rev four already covered). Accessories are next. Licenses marked **checked** were read on the file's own page;
+RX-8 idle, Kawasaki ER-5 (too noisy), ZX6R and 4A-GE (high-rev four already covered).
+
+**In the game since 1.76.57.0:** recorded blow-off (Peugeot 406 HKS, 4 cuts), backfire (craigsmith, 4 cuts, also used slowed for
+intake backfires) and anti-lag bangs (modusmogulus, 4 cuts). Not used yet: the Fiat Coupé (in-cabin, no clean blow-off),
+the pass-by spool, the Audi 1.8T whistle (would need a boost-pitched loop) and the Summernats supercharger clip (whine buried under the V8). Licenses marked **checked** were read on the file's own page;
 "CC0 (search filter)" means it came up under Freesound's CC0 filter and the page still needs a look before use.
 
 ## Decisions (Kelbo, 2 November 2026)
