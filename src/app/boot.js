@@ -150,15 +150,17 @@ document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",
 /* engine view size: manual only. Nothing resizes it while you scroll — it stays where you put it,
    on every tab, across sessions. */
 let miniView=false;
-function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);if(miniView)$("app").classList.remove("peek");if(typeof detentLabel==="function")detentLabel();$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
-$("sizeBtn").addEventListener("click",()=>{setMini(!miniView);S.viewMini=miniView;S.viewPeek=false;save();buzz(8);});
+function setMini(m){miniView=!!m;$("app").classList.toggle("mini",miniView);if(miniView){$("app").classList.remove("peek");viewFree(null);}if(typeof detentLabel==="function")detentLabel();$("sizeBtn").classList.toggle("on",miniView);if(!$("viewTray").hidden){viewTray(true);setTimeout(()=>{if(!$("viewTray").hidden)viewTray(true);},320);}}
+$("sizeBtn").addEventListener("click",()=>{setMini(!miniView);viewFree(null);S.viewMini=miniView;S.viewPeek=false;S.viewF=null;save();buzz(8);});
 /* ===================== GESTURES (UI-GLASS-PLAN PR 5) =====================
    Phone layout only (html.desk keeps the mouse and keyboard exactly as they were), touch and pen only, pointer events throughout.
    1. Swipe the panel sideways to move to the next or previous tab (same path as a tab tap or the 1-6 keys), with a light rubber band
       at the first and last tab. Never from the 3D view, a slider or any input, a chart canvas, the tune map, a row that scrolls
       sideways, the results sheet, an open sheet or Settings, a tour, or while a test or an event scene is running.
-   2. The grabber on the panel's top lip drags the panel between three heights: tall panel (the small engine view, #app.mini, the same
-      state as the VIEW > Size button), half (the default) and peek (#app.peek: a tall engine view). Tap it to step through them.
+   2. The grabber on the panel's top lip drags the panel up and down, and it stays wherever you let go (#app.free: the view's height
+      as a share of the window in --viewf, saved in S.viewF, so it holds across tabs, sessions and a turn of the phone). Letting go near
+      one of the three set heights snaps to it, and so does a quick flick: tall panel (the small engine view, #app.mini, the same state
+      as the VIEW > Size button), half (the default) and peek (#app.peek: a tall engine view). Tap it to step through those three.
       The view resizes live while you drag; the ResizeObserver on #view above keeps ENGINE_VIS in step. */
 const SWIPE_PX=60;
 function swipeTabs(){return [...document.querySelectorAll("#tabs button[data-tab]")].filter(b=>b.offsetParent!==null).map(b=>b.dataset.tab);}
@@ -196,15 +198,18 @@ document.addEventListener("click",e=>{if(Date.now()<swipeSkipClick){e.preventDef
 
 /* panel heights */
 const DETENTS=["half","tall","peek"];   // tap order; "tall" = a tall panel under the small engine view
-function detentNow(){return miniView?"tall":$("app").classList.contains("peek")?"peek":"half";}
-function detentSet(d){setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";S.viewPeek=d==="peek";detentLabel();}   // both saved with S, so the panel comes back at the height it was left
+function detentNow(){return miniView?"tall":$("app").classList.contains("free")?"custom":$("app").classList.contains("peek")?"peek":"half";}
+function detentSet(d){viewFree(null);setMini(d==="tall");$("app").classList.toggle("peek",d==="peek");S.viewMini=d==="tall";S.viewPeek=d==="peek";S.viewF=null;detentLabel();}   // all saved with S, so the panel comes back at the height it was left
+/* a height of your own: f is the view's share of #app's height (null clears it). Kept between 0.12 and 0.8 so neither side vanishes */
+function viewFree(f){const a=$("app");if(f==null){a.classList.remove("free");a.style.removeProperty("--viewf");return;}
+  f=Math.max(0.12,Math.min(0.8,+f));a.style.setProperty("--viewf",f.toFixed(4));a.classList.add("free");a.classList.remove("peek");detentLabel();}
 function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Panel height: "+detentNow()+". Tap or drag to change");}
 (function detentInit(){const g=$("pgrab"),v=$("view"),app=$("app");if(!g)return;
   let d=null,moved=false,swallow=0;
   /* the engine view's height in each state, measured once per drag with the transition off */
-  function measure(){const H={},keep=[app.classList.contains("mini"),app.classList.contains("peek")],tr=v.style.transition;v.style.transition="none";
+  function measure(){const H={},keep=[app.classList.contains("mini"),app.classList.contains("peek"),app.classList.contains("free")],tr=v.style.transition;v.style.transition="none";app.classList.remove("free");
     for(const k of ["tall","half","peek"]){app.classList.toggle("mini",k==="tall");app.classList.toggle("peek",k==="peek");H[k]=v.getBoundingClientRect().height;}
-    app.classList.toggle("mini",keep[0]);app.classList.toggle("peek",keep[1]);v.getBoundingClientRect();v.style.transition=tr;return H;}
+    app.classList.toggle("mini",keep[0]);app.classList.toggle("peek",keep[1]);app.classList.toggle("free",keep[2]);v.getBoundingClientRect();v.style.transition=tr;return H;}
   g.addEventListener("pointerdown",e=>{if(e.button>0||testing)return;try{g.setPointerCapture(e.pointerId);}catch(x){}
     d={id:e.pointerId,y:e.clientY,h0:v.getBoundingClientRect().height,H:measure(),raf:0,h:0,last:[e.clientY,e.timeStamp],vel:0};moved=false;});
   g.addEventListener("pointermove",e=>{if(!d||e.pointerId!==d.id)return;const dy=e.clientY-d.y;
@@ -214,9 +219,14 @@ function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Pane
     if(!d.raf)d.raf=requestAnimationFrame(()=>{if(!d)return;d.raf=0;v.style.flexBasis=d.h+"px";v.style.minHeight=Math.min(d.h,d.H.tall)+"px";});});   // min-height drops to the small view's so the drag can go that low
   function done(cancel){if(!d)return;const s=d;d=null;if(s.raf)cancelAnimationFrame(s.raf);g.classList.remove("drag");
     if(!moved){v.style.transition="";return;}
-    const was=detentNow();let pick=was;
-    if(!cancel){const proj=s.h+s.vel*140;let best=1e9;for(const k of ["tall","half","peek"]){const dd=Math.abs(proj-s.H[k]);if(dd<best){best=dd;pick=k;}}}
-    v.style.transition="";v.style.flexBasis="";v.style.minHeight="";detentSet(pick);if(pick!==was){buzz(8);save();}
+    const was=detentNow(),wasF=S.viewF;let pick=was,best=1e9;
+    if(!cancel){const fast=Math.abs(s.vel)>0.9,at=fast?s.h+s.vel*140:s.h;   // a flick throws to the nearest set height; a slow drag stays put unless it lands within 16 px of one
+      for(const k of ["tall","half","peek"]){const dd=Math.abs(at-s.H[k]);if(dd<best){best=dd;pick=k;}}
+      if(!fast&&best>16)pick="custom";}
+    if(pick==="custom"){const ah=app.clientHeight||1,f=s.h/ah;setMini(false);viewFree(f);S.viewMini=false;S.viewPeek=false;S.viewF=+f.toFixed(4);detentLabel();
+      v.style.flexBasis="";v.style.minHeight="";v.getBoundingClientRect();v.style.transition="";}   // the class holds the same height, so nothing moves
+    else{v.style.transition="";v.style.flexBasis="";v.style.minHeight="";detentSet(pick);}   // glides to the set height
+    if(pick!==was||S.viewF!==wasF){buzz(8);save();}
     swallow=Date.now()+300;}
   g.addEventListener("pointerup",e=>{if(d&&e.pointerId===d.id)done(false);});
   g.addEventListener("pointercancel",e=>{if(d&&e.pointerId===d.id)done(true);});
@@ -369,7 +379,7 @@ function boot(){
   advSet($("abSec"),!!(S.advOpen&&S.advOpen.ab));
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewF)viewFree(S.viewF);else if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
   if(typeof lgBoot==="function")lgBoot();

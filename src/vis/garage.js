@@ -6,8 +6,8 @@ function buildGarageMesh(owned){
   owned = owned || {};
   var sandbox = !!owned.sandbox;
   var bay = owned.bay2 ? 2 : (owned.bay1 ? 1 : 0);
-  var W = [62, 80, 100][bay];       /* room width  (X) */
-  var D = 62;                       /* room depth  (Z) */
+  var W = [70, 88, 108][bay];       /* room width  (X); 8 wider than it was, so a full zoom-out stays inside (loop.js camRoomR) */
+  var D = 70;                       /* room depth  (Z) */
   var Hh= [30, 34, 38][bay];        /* wall height (Y) */
 
   var G=new THREE.Group();
@@ -307,9 +307,9 @@ function buildShop(B, G, addLight, W, D, Hh, owned, bay){
   }
   /* ---- oil drums ---- */
   for(var od=0; od<3; od++){
-    B.add(od===1?"paintBlue":"paintOrange", CYL(2.1,2.1,7.4,20,false,1.2), -W/2+5.5+od*5.0, 3.7, 20);
-    B.add("steel", TOR(2.1,0.22,6,20,1.6), -W/2+5.5+od*5.0, 6.6, 20, PI/2,0,0);
-    B.add("steel", TOR(2.1,0.22,6,20,1.6), -W/2+5.5+od*5.0, 1.4, 20, PI/2,0,0);
+    B.add(od===1?"paintBlue":"paintOrange", CYL(2.1,2.1,7.4,20,false,1.2), -W/2+3.4+od*4.6, 3.7, 20);
+    B.add("steel", TOR(2.1,0.22,6,20,1.6), -W/2+3.4+od*4.6, 6.6, 20, PI/2,0,0);
+    B.add("steel", TOR(2.1,0.22,6,20,1.6), -W/2+3.4+od*4.6, 1.4, 20, PI/2,0,0);
   }
   /* ---- tyre stack ---- */
   for(var ty=0; ty<4; ty++){
