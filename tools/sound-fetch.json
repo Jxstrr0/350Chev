@@ -1,25 +1,37 @@
 [
-  {"key": "fs_584115", "fs": 584115, "for": "V4: Ducati Panigale V4"},
-  {"key": "fs_584116", "fs": 584116, "for": "V4: Ducati Panigale V4 sample 2"},
-  {"key": "fs_510231", "fs": 510231, "for": "I1: Yamaha Tenere 250 idle"},
-  {"key": "fs_450034", "fs": 450034, "for": "I1: dirt bike start/idle/rev"},
-  {"key": "fs_724080", "fs": 724080, "for": "I2: BMW F800GS idle"},
-  {"key": "fs_211668", "fs": 211668, "for": "I4 high-rev: Kawasaki ZX6R"},
-  {"key": "fs_509627", "fs": 509627, "for": "I4 high-rev: Toyota 4A-GE loop"},
-  {"key": "fs_181165", "fs": 181165, "for": "turbo whistle: Audi A4 1.8T"},
-  {"key": "fs_659544", "fs": 659544, "for": "turbo spool + blow-off pass-by"},
-  {"key": "fs_797835", "fs": 797835, "for": "anti-lag raw"},
-  {"key": "fs_675723", "fs": 675723, "for": "backfire, reverberant"},
-  {"key": "fs_385935", "fs": 385935, "for": "backfire, mono"},
-  {"key": "fs_144456", "fs": 144456, "for": "supercharger whine (Summernats)"},
-  {"key": "cm_rx7", "commons": "File:Mazda RX-7 - engine and exhaust sound (YouTube 4z0y1H2REvE).opus", "for": "R2 rotary"},
-  {"key": "cm_rx8", "commons": "File:Mazda RX-8 - engine and exhaust sound (YouTube u-Lc2Nt3OR8).opus", "for": "R2 rotary"},
-  {"key": "cm_v70d5", "commons": "File:Volvo V70 - engine and exhaust sound (YouTube IGWL1Lnlsns).opus", "for": "I5 diesel"},
-  {"key": "cm_rs3", "commonsMatch": "^File:Audi RS3 ", "for": "I5 turbo petrol"},
-  {"key": "cm_ttrs", "commonsMatch": "^File:Audi TT RS", "for": "I5 turbo petrol"},
-  {"key": "cm_er5", "commons": "File:Kawasaki ER-5.oga", "for": "I2 parallel twin"},
-  {"key": "cm_406bov", "commons": "File:Peugeot 406 Turbo (turbocharged, HKS blow-off valve) - engine and exhaust sound (YouTube kx0Tvu4 K04).opus", "for": "blow-off valve"},
-  {"key": "cm_coupebov", "commons": "File:Fiat Coupé Turbo - engine and exhaust sound (YouTube S1IzD5dTWng).opus", "for": "blow-off valve"},
-  {"key": "cm_599", "commons": "File:Ferrari 599 GTB Fiorano - engine and exhaust sound (Flickr 3087503901).flac", "for": "V12 rev, replaces v12_rev.mp3"},
-  {"key": "cm_aventador", "commons": "File:Lamborghini Aventador - engine and exhaust sound (YouTube oMKxhIcSmZs).opus", "for": "V12 backup"}
+ {
+  "key": "cm_vulcan",
+  "commons": "File:Aston Martin Vulcan - engine and exhaust sound (YouTube fUe9t9jj1Go).opus",
+  "for": "V12 rev candidate"
+ },
+ {
+  "key": "cm_f50",
+  "commons": "File:Ferrari F50 - engine and exhaust sound (YouTube lXnOouQrUtM).opus",
+  "for": "V12 rev candidate"
+ },
+ {
+  "key": "cm_12cil",
+  "commons": "File:Ferrari 12Cilindri Spider with Novitec exhaust - engine and exhaust sound (YouTube- Vrgg4q2oJE).opus",
+  "for": "V12 rev candidate"
+ },
+ {
+  "key": "cm_mc12",
+  "commons": "File:Maserati MC12 - engine and exhaust sound (YouTube lbir2sgqIW0).opus",
+  "for": "V12 rev candidate"
+ },
+ {
+  "key": "cm_countach",
+  "commonsMatch": "^File:Lamborghini Countach",
+  "for": "V12 rev candidate"
+ },
+ {
+  "key": "cm_svj",
+  "commonsMatch": "^File:Lamborghini Aventador SVJ",
+  "for": "V12 rev candidate"
+ },
+ {
+  "key": "cm_blackseries",
+  "commonsMatch": "^File:Mercedes-Benz Black Series",
+  "for": "V12 rev candidate"
+ }
 ]
