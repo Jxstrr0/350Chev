@@ -1,8 +1,12 @@
 # Sound hunt — shortlist (2 November 2026)
 
-Openly licensed recordings found to fill the gaps in `sounds/`. Nothing here is downloaded or in the game yet:
-from the cloud container, Freesound answered 403 and Wikimedia answered 429 (rate limit) to file downloads,
-so this is the list to fetch next time. Licenses marked **checked** were read on the file's own page;
+Openly licensed recordings found to fill the gaps in `sounds/`. Downloaded by the Fetch raw sounds job
+(`.github/workflows/fetch-sounds.yml`) onto the scratch branch `claude/sound-raw`.
+
+**In the game since 1.76.56.0:** V12 (Ferrari F50, two loops, replacing the Aston), rotary (RX-7 idle, RX-8 rev),
+V4 (Ducati idle), single (Yamaha idle), parallel twin (BMW F800GS idle), inline 5 (RS3 idle, TT RS rev) and
+diesel inline 5 (Volvo D5 cruise). Tried and not used: Ferrari 599 and the other V12s (blips and drive-bys, no held rev),
+RX-8 idle, Kawasaki ER-5 (too noisy), ZX6R and 4A-GE (high-rev four already covered). Accessories are next. Licenses marked **checked** were read on the file's own page;
 "CC0 (search filter)" means it came up under Freesound's CC0 filter and the page still needs a look before use.
 
 ## Decisions (Kelbo, 2 November 2026)
