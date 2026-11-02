@@ -58,6 +58,19 @@ function setupOrbit(cv){
   cv.addEventListener("dblclick", function(){ frameEngine(); camState.idle=0; camState.auto=false; });
 }
 
+/* the orbit distance the camera can actually use: camState.r, cut short where the line out from the target would leave the clear
+   middle of the garage (10 in from the side and back walls, where the bench, drums and tyres stand; 5.5 under the ceiling, clear of the lamps; 4 short
+   of the open front). camState.r itself is untouched, so swinging back round to open floor zooms back out. Only while the garage
+   is on show: teardown frames a part close in, and a photo with the garage hidden has nothing to hit. */
+function camRoomR(){
+  var r=camState.r, G=garageRoot&&garageRoot.visible&&garageRoot.children[0], u=G&&G.userData;
+  if(!u||!u.roomW) return r;
+  var T=camState.target, sp=Math.sin(camState.phi), d=[sp*Math.sin(camState.theta), Math.cos(camState.phi), sp*Math.cos(camState.theta)],
+      lo=[-u.roomW/2+10, 0.5, -u.roomD/2+10], hi=[u.roomW/2-10, u.roomH-5.5, u.roomD/2-4], p=[T.x, T.y, T.z];
+  for(var i=0;i<3;i++){ if(d[i]>1e-4) r=Math.min(r, (hi[i]-p[i])/d[i]); else if(d[i]<-1e-4) r=Math.min(r, (lo[i]-p[i])/d[i]); }
+  return Math.max(3, r);
+}
+
 /* ===========================================================================
    11. FRAME LOOP
    ==========================================================================*/
@@ -74,11 +87,11 @@ function tick(dt, t){
   }
   if(camState.auto) camState.theta += dt*0.13;
 
-  var sh=camState.shake;
+  var sh=camState.shake, rr=camRoomR();
   camera.position.set(
-    camState.target.x + camState.r*Math.sin(camState.phi)*Math.sin(camState.theta),
-    camState.target.y + camState.r*Math.cos(camState.phi),
-    camState.target.z + camState.r*Math.sin(camState.phi)*Math.cos(camState.theta));
+    camState.target.x + rr*Math.sin(camState.phi)*Math.sin(camState.theta),
+    camState.target.y + rr*Math.cos(camState.phi),
+    camState.target.z + rr*Math.sin(camState.phi)*Math.cos(camState.theta));
   if(sh>0.0001){
     camera.position.x += Math.sin(t*61)*sh;
     camera.position.y += Math.sin(t*83)*sh*0.7;

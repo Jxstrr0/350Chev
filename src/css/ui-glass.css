@@ -224,6 +224,8 @@ html:not(.desk) #panel{touch-action:pan-y}
 html:not(.desk) #panel .seg,html:not(.desk) #panel [data-noswipe]{touch-action:pan-x pan-y}
 /* peek: a tall engine view over a short panel. Outranks the per-tab 200 px view rule; not in a run scene or teardown */
 html[data-tab]:not(.desk):not(.onevent) #app.peek:not(.mini):not(.td):not(.pits) #view{flex-basis:62%;min-height:260px}
+/* free: the height you dragged the grabber to (boot.js viewFree), the same on every tab; same reach as peek */
+html[data-tab]:not(.desk):not(.onevent) #app.free:not(.mini):not(.td):not(.pits) #view{flex-basis:calc(var(--viewf,.4)*100%);min-height:96px}
 #buildForm .seg button{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 /* long-press compare card: a glass popover above the pressed option (the .glass class gives blur, rim and shine; the strong tint keeps text readable) */
 #cmpPop{position:fixed;z-index:75;width:min(284px,calc(100vw - 20px));padding:12px 14px 10px;border-radius:22px;background:var(--glass-bg-strong);color:var(--chalk);pointer-events:none;font-size:13px;line-height:1.35}

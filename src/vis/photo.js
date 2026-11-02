@@ -140,7 +140,7 @@ function phRenderNow(){
 }
 function phCopy(){ var o=document.createElement("canvas"); o.width=canvasEl.width; o.height=canvasEl.height; o.getContext("2d").drawImage(canvasEl,0,0); return o; }
 function phCamPlace(){   /* the orbit camera where the camState says (the frame loop does this each tick; a grab can't wait for it) */
-  camera.position.set(camState.target.x+camState.r*Math.sin(camState.phi)*Math.sin(camState.theta), camState.target.y+camState.r*Math.cos(camState.phi), camState.target.z+camState.r*Math.sin(camState.phi)*Math.cos(camState.theta));
+  var rr=camRoomR(); camera.position.set(camState.target.x+rr*Math.sin(camState.phi)*Math.sin(camState.theta), camState.target.y+rr*Math.cos(camState.phi), camState.target.z+rr*Math.sin(camState.phi)*Math.cos(camState.theta));
   camera.lookAt(camState.target);
 }
 function phCamKeep(){ return {t:camState.theta, p:camState.phi, r:camState.r, tg:camState.target.clone(), a:camState.auto}; }
