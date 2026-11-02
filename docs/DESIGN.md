@@ -101,7 +101,7 @@ Three tiers, `lite`, `full`, `ultra` (`app/perf.js`). Lite is the phone default.
 
 ### Sound (`src/sound/`)
 
-A Web Audio synth derives a voice from the build (firing order, exhaust, intake, mechanical noise). Settings offer **Synth** (your build), **Real** (recordings) or **Blend**, and Lite or Full sound. 72 openly licensed recordings in `sounds/`: engine loops at a measured rpm, pitch-shifted live (every piston layout but the Deltic, plus the rotaries, has its own), and recorded blow-off, backfire and anti-lag one-shots that replace the synth's when loaded; every one is credited in `sounds/CREDITS.md`.
+A Web Audio synth derives a voice from the build (firing order, exhaust, intake, mechanical noise). Settings offer **Synth** (your build), **Real** (recordings, the default) or **Blend**, and Lite or Full sound. 72 openly licensed recordings in `sounds/`: engine loops at a measured rpm, pitch-shifted live (every piston layout but the Deltic, plus the rotaries, has its own), and recorded blow-off, backfire and anti-lag one-shots that replace the synth's when loaded; every one is credited in `sounds/CREDITS.md`.
 
 ### Save system
 
