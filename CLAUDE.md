@@ -73,7 +73,7 @@ When changing physics, run a before/after comparison on the affected events and 
 - `src/vis/`: three.js. Engine mesh and garage, one scene per event, photo mode, trophy room, the Ultra extras.
 - `src/app/`: the UI and game. `state.js` (career tables, state, save, VERSION), one file per tab and event, `savecode.js`, `help.js` (tour and 17 lessons), `pwa.js`, `perf.js`, `boot.js`.
 - `src/css/`: `style.css` plus one `ui-*.css` per feature lane.
-- `docs/DESIGN.md`: the game as built. `docs/fastest-drag-car.md`: build sheets from 1.76.21.0, marked stale.
+- `docs/DESIGN.md`: the game as built.
 - `tools/make-icons.js`: renders `icons/` (needs Playwright; run by hand, output is committed).
 
 ## How Kelbo works
@@ -85,8 +85,8 @@ When changing physics, run a before/after comparison on the affected events and 
 - Real design decisions get asked, not guessed.
 - The site and the game use the name Kelbo only, never a real name. Studio name: Longlight Interactive.
 
-## Current status (1.76.44.0, October 2026)
+## Current status (1.76.59.1, November 2026)
 
-- Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply one race team for 8 rounds; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), certification, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, offline PWA, save codes.
-- Known loose ends: `docs/fastest-drag-car.md` is stale (it says so).
+- Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply a race team for 8 rounds across 27 series in six kinds of racing, two teams at once from 300 rep; five varied offers with shoestring or well-funded budgets and team rules since 1.76.59.0; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), season beats, rescue contracts, returning drivers, Watch it replays, car show and sound-off, a career dev mode in Settings (+$100,000, +100 rep, skip week), certification, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, offline PWA, save codes.
+- Known loose ends: none flagged beyond `docs/DESIGN.md`'s list.
 - What to test on a phone after any change: the loading bar finishes and the garage renders on Lite; Build, Test (a dyno pull) and one event run with touch; in Career, sign a team, certify, race a round and Close week; the results rail opens as a sheet; Back up and Restore round trip; portrait and landscape; no console errors on desktop.
