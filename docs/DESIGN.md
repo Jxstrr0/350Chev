@@ -1,6 +1,6 @@
 # Prairie Engine Works: the game as built
 
-Written from the code at version 1.76.28.1 (October 2026). Every number here was counted in the source. Where a count comes from one table, the table is named so it can be re-checked.
+Written from the code at version 1.76.28.1 (October 2026), and kept up to date since; the counts below were re-checked at 1.76.59.1 (November 2026). Every number here was counted in the source. Where a count comes from one table, the table is named so it can be re-checked.
 
 ## What it is
 
@@ -89,7 +89,8 @@ Engine swaps (`swap.js`): 20 vehicles in 5 groups and 15 fixes; one fit check sh
 - **Sponsors** (`career.js`): never ask for an event the shop cannot enter; track day counts as an event.
 - **Rival shops** (`rivals.js`): three made-up shops on the reputation board that throw down head-to-head challenges at the strip, the pull, Pikes Peak, the bog, the boats, the oval, track day, the salt and the 24 Hours.
 - **Legacy** (`legacy.js`): at Legend rep the owner can sell the shop. The sale value becomes Legacy points under their own storage key; points buy permanent perks for the next career.
-- **Achievements**: 95 (`ACH`) in 14 groups, bronze, silver and gold. **Trophy room** (`trophy.js`): a dated log of wins per mode.
+- **Career dev mode** (Settings, Game; a career save only): a testing switch. While it is on the HUD shows DEV, every upgrade counts as owned (but the Showroom, Tooling and Quality lab team bonuses stay off) and every event class is open whatever the rep. Team series still open with rep. Three buttons add $100,000, add 100 rep, or skip a week.
+- **Achievements**: 97 (`ACH`) in 14 groups, bronze, silver and gold. **Trophy room** (`trophy.js`): a dated log of wins per mode.
 
 ### Graphics (`src/vis/`, `ENGINE_VIS`)
 
@@ -126,20 +127,19 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Event types | 10 | `EV_T` |
 | Dyno tests | 3 | `DYNO_T` |
 | Swap vehicles | 20 in 5 groups | `VEHICLES`, `VEH_GROUPS` |
-| Team series | 10 (7 drag, 3 oval) | `PC_EVENTS` |
+| Team series | 27 (7 drag, 3 oval, 3 bog, 4 boat, 6 pull, 4 hill) | `PC_EVENTS` with `team-*.js` |
 | Shop upgrades / staff roles / R&D / prestige / goals | 15 / 3 / 12 / 3 / 32 | `state.js` tables |
 | Reputation tiers | 7 | `REP_TIERS` |
-| Achievements | 95 in 14 groups | `ACH`, `ACH_GROUPS` |
+| Achievements | 97 in 14 groups | `ACH`, `ACH_GROUPS` |
 | Guided lessons | 17 | `LESSONS` |
 | Engine recordings | 72 (60 loops, 12 one-shots) | `sounds/` |
-| Source files in the build | 111 | `src/manifest.txt` |
-| Built page | 3.57 MB (1.16 MB gzipped) | `node build.js` |
+| Source files in the build | 119 | `src/manifest.txt` |
+| Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.28.1)
+## Loose ends found in the code (as of 1.76.59.1)
 
 Only things the code or docs themselves flag:
 
-- `docs/fastest-drag-car.md` says it is stale: its build sheets were run on 1.76.21.0 before drivetrain tiers, the rev limiter and the strip's engine-weight rule.
 - `app/salt.js` shows a placeholder line in Analysis while a salt record it has not computed yet is being worked out.
 
 Nothing else is stubbed or marked unfinished in `src/`.
