@@ -90,3 +90,27 @@ When changing physics, run a before/after comparison on the affected events and 
 - Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply a race team for 8 rounds across 27 series in six kinds of racing, two teams at once from 300 rep; five varied offers with shoestring or well-funded budgets and team rules since 1.76.59.0; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), season beats, rescue contracts, returning drivers, Watch it replays, car show and sound-off, a career dev mode in Settings (+$100,000, +100 rep, skip week), certification, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, offline PWA, save codes.
 - Known loose ends: none flagged beyond `docs/DESIGN.md`'s list.
 - What to test on a phone after any change: the loading bar finishes and the garage renders on Lite; Build, Test (a dyno pull) and one event run with touch; in Career, sign a team, certify, race a round and Close week; the results rail opens as a sheet; Back up and Restore round trip; portrait and landscape; no console errors on desktop.
+
+## Longlight brand (studio pieces only)
+
+This game keeps its own look. Its fonts, colours and art style stay as they
+are, and game screens are never restyled to match the studio. The Longlight
+brand applies only to studio pieces: the studio logo or splash, the
+"Longlight Interactive" credit line, the studio block on a credits or about
+screen, and any link back to the studio site.
+
+- **Logo:** the horizon lockup, a half-set clay sun on a long horizon line
+  with LONGLIGHT above INTERACTIVE. Use the official files from the studio
+  site's press kit (https://jxstrr0.github.io/Kelbo.Website/press.html; the
+  files are `assets/press/longlight-logo-dark` and `longlight-logo-light`,
+  SVG plus 2x PNG, in `Jxstrr0/Kelbo.Website`). Copy them into this repo;
+  never hotlink, redraw or recolour them, or swap the letters for live text.
+- **Colours, inside studio pieces only:** Clay `#D97757`, Purple `#7B3FC4`,
+  Slate `#141413`, Ivory `#FAF9F5`, Lilac `#B48CE8`. Nothing else in the
+  logo or the studio block.
+- **Font, inside studio pieces only:** Space Grotesk 500/700. If a studio
+  piece uses it, self-host it; don't add a new font host or outside request.
+- **Name:** always "Longlight Interactive" in full. Credit line:
+  "© year Kelbo / Longlight Interactive" (the studio isn't a registered
+  business yet). Never Kelbo's real name or initials.
+- **Studio site:** https://jxstrr0.github.io/Kelbo.Website/
