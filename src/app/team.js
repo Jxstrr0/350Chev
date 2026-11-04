@@ -124,13 +124,16 @@ function pcOpen(k){const E=PC_EVENTS[k];return C().rep>=E.rep&&pcNeedHp(E)<=dyno
 function pcNextTxt(){const ks=Object.keys(PC_EVENTS).filter(k=>!pcOpen(k));if(!ks.length)return "Every series is calling.";
   const k=ks.sort((a,b)=>PC_EVENTS[a].rep-PC_EVENTS[b].rep)[0],E=PC_EVENTS[k],why=C().rep<E.rep?`${E.rep} rep`:`a dyno that reads ${(Math.ceil(pcNeedHp(E)/0.9/100)*100).toLocaleString()} hp`;
   return `${E.n} calls at ${why}.`;}
-/* a contract offer: the series leans to the top of what the shop's rep and dyno have opened */
+/* a contract offer: the series leans to the top of what the shop's rep and dyno have opened. PC_TOP_P of the offers (since
+   1.76.60) come from the top two tiers open; the rest from anything open */
+const PC_TOP_P=0.85;
 function pcMake(){const p=pcS(),r=pcRand,pick=a=>a[Math.floor(r()*a.length)];
   const keys=Object.keys(PC_EVENTS).filter(pcOpen);if(!keys.length)keys.push("street");
-  /* variety (since 1.76.59): a series already on the table is skipped, and a kind of racing not yet on it is preferred */
+  const top=Math.max(...keys.map(k=>PC_EVENTS[k].tier));let pool=r()<PC_TOP_P?keys.filter(k=>PC_EVENTS[k].tier>=top-1):keys;
+  /* variety (since 1.76.59), within that pool: a series already on the table is skipped, and a kind of racing not yet on it is preferred */
   const onK=new Set(p.offers.map(o=>o.ev)),onEv=new Set(p.offers.map(o=>PC_EVENTS[o.ev]&&PC_EVENTS[o.ev].ev));
-  let pool=keys.filter(k=>!onK.has(k));if(!pool.length)pool=keys;const newEv=pool.filter(k=>!onEv.has(PC_EVENTS[k].ev));if(newEv.length&&r()<0.85)pool=newEv;
-  const top=Math.max(...pool.map(k=>PC_EVENTS[k].tier)),near=pool.filter(k=>PC_EVENTS[k].tier>=top-1);let ek=pick(r()<0.6?near:pool);
+  const fresh=pool.filter(k=>!onK.has(k));if(fresh.length)pool=fresh;const newEv=pool.filter(k=>!onEv.has(PC_EVENTS[k].ev));if(newEv.length&&r()<0.85)pool=newEv;
+  let ek=pick(pool);
   let sk=pick(Object.keys(PC_STYLES)),name,n=0;const taken=new Set(p.offers.map(T=>T.name).concat(Object.keys(p.drv)));
   do{name=pick(PC_FIRST)+" "+pick(PC_LAST);}while(taken.has(name)&&n++<40);
   const ret=pcReturning(p,r,keys);if(ret){ek=ret.ek;sk=ret.style;name=ret.d.name;}   // a driver who raced your engines before
@@ -530,8 +533,8 @@ function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(
   if(T.hash!=null)s+=`<p class="hint">Season engine: ${fmt$(T.cost)} of parts${T.broken?`. <b class="pcbad">Broken in the last round: it needs a ${fmt$(Math.round(T.cost*PC_FIX*pcToolK()))} rebuild.</b>`:T.wear>0?`, reliability down ${Math.round(T.wear)}% from wear. A freshen-up costs ${fmt$(fresh)}.`:", fresh."}${same?"":" The bench has a different build: racing it counts as an engine change."}</p>`;
   else s+=`<p class="hint">Build the engine for the season and certify it on the dyno. Whatever is left of the budget pays for freshen-ups, rebuilds and changes later.</p>`;
   s+=`<div class="pcchk">${c.o.map(x=>`<div class="${x.wn?"wn":x.ok?"ok":"no"}">${x.wn?"!":x.ok?"✓":"✗"} ${esc(x.t)}</div>`).join("")}</div>${pcMapHtml(T)}
-    ${due?"":`<p class="hint">Race week ${T.due}: ${T.due-C().week>1?"To race week gets you there in one tap (1 wk closes just one, for the event nights)":"close the week to get there"}. Close week on race week races it with the season engine as it stands.</p>`}
-    <div class="row"><button class="btn${c.ok&&due?"":" ghost"}" data-pcgo ${c.ok&&due?"":"disabled"}>${due?`Race round ${rd}`:`Round ${rd} · week ${T.due}`}</button>`;
+    ${due?"":`<p class="hint">Round ${rd} is race week ${T.due}: ${pcSkip()?"To race week gets you there in one tap (1 wk at the top closes just one, for the event nights)":"close the week to get there"}. Close week on race week races it with the season engine as it stands.</p>`}
+    <div class="row">${due?`<button class="btn${c.ok?"":" ghost"}" data-pcgo ${c.ok?"":"disabled"}>Race round ${rd}</button>`:`<button class="btn pri" data-pcweek>${pcSkip()?"To race week":"Close week"}</button>`}`;
   if(same&&!T.broken&&T.wear>0)s+=`<button class="btn sm" data-pcfresh ${fresh>left||T.dh===T.round?"disabled":""}>${T.dh===T.round?"No time to freshen up":`Freshen up · ${fmt$(fresh)}`}</button>`;
   if(T.hash!=null&&!same)s+=`<button class="btn sm ghost" data-pcback>Put the season engine back</button>`;
   if(due&&!c.ok)s+=`<button class="btn sm ghost" data-pcsit>Sit out round ${rd}</button>`;
@@ -576,6 +579,7 @@ function pcHud(){if(!career())return;const T=pcBenchTeam();let over=false,t=`WEE
   $("weekLbl").textContent=t+(dev()?" · DEV":"");const sc=$("sCost");if(sc)sc.classList.toggle("critc",over);}
 $("mkTeam").addEventListener("click",e=>{if(!career())return;const p=pcS(),ct=e.target.closest("[data-pct]"),T=ct?pcTeams()[+ct.dataset.pct]||null:null;
   const go=e.target.closest("[data-pcgo]");if(go&&T){pcRace(false,T,go);return;}
+  if(e.target.closest("[data-pcweek]")){closeWeeks(pcSkip()||1);return;}   // the strip's Close week / To race week, on the card too (since 1.76.60)
   const g=e.target.closest("[data-pcsign]");if(g){if(pcFull())return;const o=p.offers.find(x=>x.id==g.dataset.pcsign);if(!o)return;const t=pcSign(o);save();hud();renderShop();showTab("build");toast(`Signed with ${t.team} · round 1 is week ${t.due}`);if(tourStep>=0)setTimeout(()=>tourAdvance(0),60);return;}
   const ps=e.target.closest("[data-pcpass]");if(ps){if(pcFull())return;const n0=p.offers.length;p.offers=p.offers.filter(x=>x.id!=ps.dataset.pcpass);if(p.offers.length===n0)return;
     if(p.passW!==C().week){p.passW=C().week;p.passN=0;}p.passN++;save();pcRender();toast("Passed · another team calls when the week closes");return;}
