@@ -76,6 +76,7 @@ vis/band.js
 vis/ultra.js
 vis/api.js
 vis/props.js
+vis/models.js
 vis/trophy.js
 vis/photo.js
 vis/teardown.js

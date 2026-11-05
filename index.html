@@ -2484,11 +2484,11 @@ html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
-<script>/* three.js post-processing addons (bloom, SSAO). Only Full and Ultra use them, so a phone on Lite skips these ten CDN round trips at boot:
+<script>/* three.js post-processing addons (bloom, SSAO) and the glTF loader for the workshop's model props (vis/models.js). Only Full and Ultra use them, so a phone on Lite skips these ten CDN round trips at boot:
    they are written in here when the saved tier (or a desktop UA) will want them, else ENGINE_VIS.setQuality loads them on demand through
    window.__pewPost. build.js reads PEW_LIBS so the service worker precaches every URL. Order matters (Composer before the passes). */
-(function(){window.PEW_LIBS=["https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
-var ready=function(){return !!(window.THREE&&THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.SSAOPass&&THREE.SimplexNoise);},p=null;
+(function(){window.PEW_LIBS=["https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
+var ready=function(){return !!(window.THREE&&THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.SSAOPass&&THREE.SimplexNoise&&THREE.GLTFLoader);},p=null;
 window.__pewPost=function(cb){if(ready()){cb&&cb(true);return;}
  if(!p)p=new Promise(function(res){var i=0;(function next(){if(i>=PEW_LIBS.length){res(ready());return;}var s=document.createElement("script");s.src=PEW_LIBS[i++];s.async=false;s.crossOrigin="anonymous";s.onload=next;s.onerror=function(){p=null;res(false);};document.head.appendChild(s);})();});
  p.then(function(ok){cb&&cb(ok);});};
@@ -29496,6 +29496,7 @@ function scenePolish(G){
   S.flush(P, mm, true);
   Dc.flush(P, mm, false);
   for(i=0;i<P.children.length;i++) if(P.children[i].isMesh && /^(sawcut|scuff|worn|chip|puddle|coolant)$/.test(P.children[i].name)){ P.children[i].castShadow=false; P.children[i].renderOrder=1; }
+  sceneModels(G, P, a);   /* glTF props on top (models.js); they arrive a moment later */
 }
 
 /* a tier change rebuilds the polish only; the room itself is untouched */
@@ -29514,6 +29515,80 @@ function sceneRetier(){
     if(renderer && renderer.info.render.frame<3) setTimeout(go, 1500); else go();
     return r; };
 })();
+/* ===========================================================================
+   8c. MODEL PROPS (Full / Ultra only): small glTF models from models/ dressed into the workshop polish layer.
+   The room, the stand, the engine and every Lite prop stay as code; this only adds detail where a code box would look
+   like a box (a welding cart, a jerry can, a fire extinguisher). Files are packed by tools/pack-model.py and credited
+   in models/CREDITS.md. They load after the room is up, cached once per file, and a tier change or a rebuilt room just
+   drops them with the polish group (geometry and textures are kept for the next one).
+   ==========================================================================*/
+var MODEL_UNITS = 8.4;   /* scene units per metre (an oil drum, 0.88 m, is 7.4 units) */
+/* key: its file in models/ */
+var MODEL_FILES = {
+  weldcart: "models/welding-cart.glb",
+  jerrycan: "models/jerrycan.glb",
+  propane:  "models/propane-tank.glb",
+  extinguisher: "models/extinguisher.glb",
+  spraypaint: "models/spray-paint.glb",
+  lube:     "models/lube-spray.glb"
+};
+/* placements: [key, x, y, z, turn] in scene units; the bench top is at 9.05 */
+function modelSpots(a){
+  var W=a.W, D=a.D, bx=W/2-7;
+  if(a.sandbox) return [
+    ["extinguisher", W*0.30-5.6, 0, -D/2+2.6, 0.2],
+    ["weldcart",    -W/2+6.5, 0, -D/2+6.5, 0.7]
+  ];
+  return [
+    ["weldcart",    -17.5, 0, -D/2+5.0, 0.35],
+    ["propane",     -12.6, 0, -D/2+3.2, 0],
+    ["extinguisher",-W/2+2.4, 0, 1.0, PI/2],
+    ["jerrycan",    -W/2+5.0, 0, 25.6, 1.9],
+    ["spraypaint",   bx-0.2, 9.05, -9.6, -PI/2-0.25],   /* on the bench, between the gooseneck lamp and the toolbox */
+    ["lube",         bx-1.2, 9.05, -13.8, 0.6]
+  ];
+}
+var MODEL_CACHE = {};   /* key -> {scene} once loaded, or a list of waiting callbacks */
+function modelGet(key, cb){
+  var c=MODEL_CACHE[key];
+  if(c && c.scene){ cb(c.scene); return; }
+  if(c){ c.wait.push(cb); return; }
+  c=MODEL_CACHE[key]={wait:[cb]};
+  new THREE.GLTFLoader().load(MODEL_FILES[key], function(g){
+    g.scene.traverse(function(o){
+      if(!o.isMesh) return;
+      o.castShadow=true; o.receiveShadow=true;
+      if(o.geometry) o.geometry.__cached=true;   /* disposeTree keeps it for the next room */
+      if(o.material) o.material.envMapIntensity=0.7;
+    });
+    c.scene=g.scene;
+    var w=c.wait; c.wait=null;
+    for(var i=0;i<w.length;i++) w[i](g.scene);
+  }, null, function(e){
+    if(typeof console!=="undefined") console.warn("model "+key, e && e.message);
+    delete MODEL_CACHE[key];   /* try again with the next room */
+  });
+}
+/* called by scenePolish with the new polish group; anything that lands after the group is replaced is dropped */
+function sceneModels(G, P, a){
+  if(!window.THREE || !MODEL_FILES) return;
+  if(!THREE.GLTFLoader){
+    if(window.__pewPost) window.__pewPost(function(ok){ if(ok && THREE.GLTFLoader && G.userData.polish===P) sceneModels(G, P, a); });
+    return;
+  }
+  var spots=modelSpots(a);
+  spots.forEach(function(s){
+    modelGet(s[0], function(src){
+      if(G.userData.polish!==P) return;
+      var o=src.clone();
+      o.scale.setScalar(MODEL_UNITS);
+      o.position.set(s[1], s[2], s[3]);
+      o.rotation.y=s[4];
+      o.name="model:"+s[0];
+      P.add(o);
+    });
+  });
+}
 /* ===========================================================================
    TROPHY ROOM — the shop's clubhouse mezzanine, a world the view cuts to while
    ENGINE_VIS.setTrophy({on:true, items, engines}) is set. Metres; y up; the
@@ -30738,7 +30813,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.61.0";
+const VERSION="1.76.62.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
