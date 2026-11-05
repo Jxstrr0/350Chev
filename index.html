@@ -1432,6 +1432,14 @@ html:not(.desk) #evHud .e24gp{white-space:normal}html:not(.desk) #evHud .e24gp s
 #setPane .setsec .row,#setPane .setsec>.btn{margin-top:4px}
 #setPane #slots{margin-top:6px}
 #setPane #resetGame{margin-top:2px}
+/* THROTTLE slider beside START (1.76.61.0): a glass pill, shown only while the engine runs; on a phone it stays on the Build tab, where the HUD row has room */
+.hudbtns>.thr{pointer-events:auto;display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:22px;background:rgba(20,20,19,.62);box-shadow:var(--glass-shine),0 4px 14px rgba(0,0,0,.3);color:var(--chalk);font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.05em;flex:0 1 210px;min-width:130px}
+.hudbtns>.thr[hidden]{display:none}
+.thr>span{flex:none}
+.thr input[type=range]{flex:1;min-width:50px;height:44px;margin:0;touch-action:none}
+.thr>b{flex:none;width:4ch;text-align:right;font-family:var(--mono);font-weight:500;color:var(--orange2)}
+html[data-tab]:not([data-tab=build]):not(.desk) .hudbtns>.thr{display:none}
+@media (max-width:400px){.thr>span{display:none}}
 /* ===================== HELP: one-line summary + ⓘ that unfolds the full text (v1.66 UI cleanup) =====================
    Markup (any lane): <details class="more"><summary aria-label="More info">ⓘ</summary><div>full text</div></details>
    placed right after the one-line summary. Inside text (a .hint, a card line) it sits inline after the last word; opened, the
@@ -2185,6 +2193,7 @@ html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
       <div class="hudbtns">
         <button id="sndBtn" aria-label="Engine sound" title="Engine sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wv" d="M16 9a4 4 0 0 1 0 6"/><path class="wv" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span class="lb">Sound</span></button>
         <button id="idleBtn" aria-label="Start engine" title="Start engine"><svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg><span class="lb">Start</span></button>
+        <label class="thr" id="thrWrap" title="Throttle · hold the revs" hidden><span>Throttle</span><input type="range" id="thrRng" min="0" max="100" step="1" value="0" aria-label="Throttle"><b id="thrRpm">800</b></label>
         <button id="viewBtn" aria-label="View options" title="View options" aria-expanded="false" aria-controls="viewTray"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lb">View</span></button>
         <button id="setOpen" aria-label="Settings" title="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="lb">Settings</span></button>
         <div class="hudtray" id="viewTray" role="group" aria-label="View options" hidden>
@@ -30729,7 +30738,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.60.0";
+const VERSION="1.76.61.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -34778,7 +34787,7 @@ function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
   if(r.als)b.push(`ALS ${r.als.type==="air"?"(secondary air)":"(ignition)"} ${r.als.fired.toFixed(1)} s${r.als.shiftMin!=null?` · held ${r.als.shiftMin.toFixed(1)} bar through the shifts`:""}`);
   return b.join(" · ");}
 /* run animation */
-const run={on:false,rpm:0,load:0,fail:false,failKind:null,idle:false};
+const run={on:false,rpm:0,load:0,fail:false,failKind:null,idle:false,thr:0};   // thr: the HUD throttle slider, 0 idle to 1 (free revs to 3/4 of the redline)
 const FAIL_VISUAL={rod_tension:"rod",rod_buckling:"rod",rod_bolts:"rod",bearing_load:"rod",oil_film:"rod",piston_speed:"rod",crown_pressure:"rod",
   crank_fatigue:"crank",torsional:"crank",
   detonation:"knock",preignition_egt:"knock",crown_temp:"knock",hot_clearance:"knock",ring_gap:"knock",slap_blowby:"knock",bore_distortion:"knock",wall_thickness:"knock",
@@ -38766,6 +38775,7 @@ function dieselSmoke(q,rpm,load){
   const k=R[i+1]>R[i]?Math.min(1,Math.max(0,(rpm-R[i])/(R[i+1]-R[i]))):0,v=C[i]+((C[Math.min(i+1,C.length-1)]??C[i])-C[i])*k;
   return (v||0)*Math.min(1,load);
 }
+let thrT=0;   // last time the throttle readout was written
 function tick(now){
   if(!ENGINE_VIS.frameDue(now)){requestAnimationFrame(tick);return;}
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
@@ -38773,7 +38783,8 @@ function tick(now){
   let rpm=run.rpm,load=run.load,on=run.on;
   const rotP=isRot(S.cfg)?(SIM.OPT.rotPort[S.cfg.rotPort]||SIM.OPT.rotPort.side):null,camV=rotP?30+75*rotP.overlap:S.cfg.cam;   // a rotary's port overlap plays the part of a cam
   const tsIdle=!rotP&&isTs(S.cfg)&&quick&&quick.twoStroke?quick.twoStroke.idleRpm:0;
-  if(!testing){const idleBase=rotP?rotP.idle:tsIdle?tsIdle:SIM.isDiesel(S.cfg)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
+  if(!testing){const idleBase=rotP?rotP.idle:tsIdle?tsIdle:SIM.isDiesel(S.cfg)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;const th=run.thr,lope=1-Math.min(1,th*4);idleTarget=run.idle?idleBase+th*Math.max(0,0.75*S.cfg.redline-idleBase)+lope*(Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0)):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08+0.14*th:0;on=idleRpm>150;
+    if(run.idle&&now-thrT>150){thrT=now;$("thrRpm").textContent=Math.round(idleRpm/50)*50;}}
   /* the picture follows the rpm with inertia: a test ending or a stall spins down instead of freezing */
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
@@ -38948,7 +38959,10 @@ function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Pane
    while the engine idles, and VIEW wears a dot when anything in its tray is on */
 function hudSync(){const on=id=>$(id).classList.contains("on");["sndBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>$(id).setAttribute("aria-pressed",on(id)));
   const idling=on("idleBtn");$("idleBtn").querySelector(".lb").textContent=idling?"Stop":"Start";$("idleBtn").setAttribute("aria-label",idling?"Stop engine":"Start engine");
+  $("thrWrap").hidden=!idling;if(!idling&&run.thr){run.thr=0;$("thrRng").value=0;}
   $("viewBtn").classList.toggle("lit",on("sizeBtn")||on("xrayBtn")||on("heatBtn"));}
+/* THROTTLE: beside START while the engine runs; holds the revs from idle up to 3/4 of the redline, back to idle on STOP */
+$("thrRng").addEventListener("input",e=>{run.thr=+e.target.value/100;});
 {const mo=new MutationObserver(hudSync);["sndBtn","idleBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:["class"]}));hudSync();}
 /* VIEW tray: hangs under its button (fixed, so it can drop past a small view); outside tap or Escape closes it */
 function viewTray(open){const t=$("viewTray"),b=$("viewBtn");open=open==null?t.hidden:!!open;t.hidden=!open;b.setAttribute("aria-expanded",open);b.classList.toggle("open",open);if(!open)return;
