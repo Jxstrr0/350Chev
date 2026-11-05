@@ -355,6 +355,7 @@ function pullMats(){
   P.tail=new THREE.MeshStandardMaterial({color:sc(0x5a0808), roughness:0.25, metalness:0.1, emissive:new THREE.Color(0xff1a0a), emissiveIntensity:0});
   P.suit=new THREE.MeshStandardMaterial({color:sc(0x1d2a44), roughness:0.85});
   P.helmet=new THREE.MeshStandardMaterial({color:sc(0xf1ede2), roughness:0.25, metalness:0.1});
+  P.amber=new THREE.MeshStandardMaterial({color:sc(0xd9820f), roughness:0.2, metalness:0.1, emissive:new THREE.Color(0xff8a00), emissiveIntensity:0.35});
   return P;
 }
 /* merge a material-keyed bin into meshes under a parent */
@@ -381,7 +382,7 @@ function pullLivery(U){
 function pullVehicle(kind, color){
   var M=sc_mats(), P=pullMats(), paint=new THREE.MeshStandardMaterial({color:sc(color), roughness:0.36, metalness:0.12, envMapIntensity:0.8}), lite=GFX==="lite";
   var paintDS=new THREE.MeshStandardMaterial({color:paint.color, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
-  var mats={paint:paint, paintDS:paintDS, black:M.black, satin:M.satin, chrome:M.chrome, glass:M.glass, alu:M.alu, cast:P.cast, orange:P.orange, white:P.white, lens:P.lens, tail:P.tail, suit:P.suit, helmet:P.helmet, well:new THREE.MeshStandardMaterial({color:0x0b0b0c, roughness:1, side:THREE.DoubleSide}), decal:pullDecalMat(kind==="tractor"?"4020":String(((color>>>0)%89)+11))};
+  var mats={paint:paint, paintDS:paintDS, black:M.black, satin:M.satin, chrome:M.chrome, glass:M.glass, alu:M.alu, cast:P.cast, orange:P.orange, white:P.white, lens:P.lens, tail:P.tail, amber:P.amber, suit:P.suit, helmet:P.helmet, well:new THREE.MeshStandardMaterial({color:0x0b0b0c, roughness:1, side:THREE.DoubleSide}), decal:pullDecalMat(kind==="tractor"?"4020":String(((color>>>0)%89)+11))};
   var g=new THREE.Group(), pivot=new THREE.Group(), body=new THREE.Group(); g.add(pivot); pivot.add(body);
   var bin=sc_bin(), pb=sc_bin(), bx=PULL.g.box, cy=PULL.g.cyl, i, s;
   function box(b,m,x,y,z,w,h,d,rx,ry,rz){ b.add(m, bx, mkM(x,y,z,rx||0,ry||0,rz||0,w,h,d)); }
@@ -431,6 +432,19 @@ function pullVehicle(kind, color){
     /* hitch: receiver plate and a clevis under the tailgate */
     box(bin,"black",-1.42,0.86,0,0.1,0.5,0.28); box(bin,"black",-1.55,0.66,0,0.36,0.1,0.1); box(bin,"satin",-1.72,0.66,0,0.06,0.14,0.08);
     rod(bin,"black",[-1.4,0.68,0],[-0.2,0.92,0.45],0.035); rod(bin,"black",[-1.4,0.68,0],[-0.2,0.92,-0.45],0.035);
+    /* detail: nerf bars, a headache rack with two lamps, cab roof markers, hood vents, the cab-to-fender seam,
+       tailgate handle, rear bumper, and the bed load (a fuel cell and a row of suitcase weights) */
+    for(s=-1;s<=1;s+=2){ rod(bin,"black",[1.05,1.0,s*1.08],[2.85,1.0,s*1.08],0.035);
+      box(bin,"black",1.4,1.04,s*1.0,0.06,0.05,0.18); box(bin,"black",2.5,1.04,s*1.0,0.06,0.05,0.18);
+      box(bin,"black",2.92,1.48,s*1.003,0.012,0.7,0.012);
+      rod(bin,"black",[0.88,1.72,s*0.86],[0.88,2.5,s*0.86],0.035);
+      for(i=0;i<4;i++) box(bin,"black",3.12+i*0.1,1.897,s*0.62,0.05,0.012,0.3);
+      box(bin,"black",0.88,2.6,s*0.42,0.12,0.16,0.22); box(bin,"lens",0.945,2.6,s*0.42,0.01,0.12,0.18); }
+    rod(bin,"black",[0.88,2.5,-0.86],[0.88,2.5,0.86],0.035); rod(bin,"black",[0.88,2.1,-0.86],[0.88,2.1,0.86],0.03);
+    for(i=0;i<5;i++) box(bin,"amber",2.37,2.5,-0.5+i*0.25,0.05,0.035,0.09);
+    box(bin,"black",-1.372,1.6,0,0.012,0.06,0.24); box(bin,"satin",-1.44,1.0,0,0.16,0.16,1.92);
+    box(bin,"black",-0.6,1.36,0.42,0.5,0.32,0.5); cyl(bin,"chrome",-0.6,1.54,0.42,0.06,0.05);
+    for(i=0;i<6;i++) rbox(bin,i%3===2?"black":"orange",-0.42-i*0.085,1.44,-0.42,0.07,0.46,0.42,0.015);
     /* decals + driver */
     for(s=-1;s<=1;s+=2){ var dg=new THREE.PlaneGeometry(1.05,0.33); if(s<0) dg.rotateY(PI); bin.add("decal", dg, mkM(1.55,1.45,s*1.012)); }
     box(bin,"suit",1.55,1.98,-0.42,0.32,0.4,0.36); bin.add("helmet", PULL.g.sph, mkM(1.6,2.27,-0.42,0,0,0,0.27,0.29,0.27)); box(bin,"black",1.7,2.27,-0.42,0.1,0.08,0.24);
@@ -468,6 +482,20 @@ function pullVehicle(kind, color){
     box(bin,"black",-0.7,0.52,0,0.5,0.1,0.18); box(bin,"satin",-0.98,0.52,0,0.08,0.16,0.08);
     for(s=-1;s<=1;s+=2){ rod(bin,"black",[-0.45,0.72,s*0.42],[-1.7,0.26,s*0.42],0.045); rod(bin,"black",[-0.45,0.48,s*0.42],[-1.5,0.27,s*0.42],0.035);
       cyl(bin,"black",-1.72,0.17,s*0.42,0.12,0.08,PI/2,0,0); }
+    /* detail: a roof beacon, rear work lamps, mirrors on arms, a grab rail and steps up to the cab door,
+       amber and red lamps on the fenders, a fuel tank ahead of the cab, hood trim, and the 3-point lift arms */
+    cyl(bin,"black",-0.45,3.04,0.55,0.08,0.04); cyl(bin,"amber",-0.45,3.12,0.55,0.065,0.13);
+    for(s=-1;s<=1;s+=2){ box(bin,"black",-0.76,2.93,s*0.45,0.08,0.12,0.2); box(bin,"lens",-0.805,2.93,s*0.45,0.01,0.09,0.16);
+      rod(bin,"black",[0.69,2.55,s*0.69],[0.86,2.48,s*1.02],0.02); box(bin,"black",0.87,2.36,s*1.06,0.04,0.3,0.16); box(bin,"glass",0.85,2.36,s*1.06,0.01,0.26,0.13);
+      box(bin,"amber",0.55,1.98,s*1.5,0.12,0.08,0.1); box(bin,"tail",-0.75,1.83,s*1.5,0.1,0.08,0.1,0,0,0.75);
+      box(bin,"chrome",2.0,1.1,s*0.447,2.5,0.025,0.012);
+      rod(bin,"black",[-0.35,1.38,s*0.24],[-0.85,1.05,s*0.3],0.03); }
+    rod(bin,"chrome",[0.75,1.62,0.73],[0.75,2.6,0.73],0.02);
+    for(i=0;i<2;i++){ box(bin,"black",1.18,0.62+i*0.4,0.65,0.26,0.03,0.3); }
+    rod(bin,"black",[1.18,0.55,0.5],[1.18,1.45,0.5],0.02); rod(bin,"black",[1.18,0.55,0.8],[1.18,1.45,0.8],0.02);
+    cyl(bin,"black",1.8,1.0,0.62,0.14,0.7,0,0,PI/2); cyl(bin,"chrome",1.95,1.15,0.62,0.045,0.04);
+    box(bin,"black",0.1,2.18,0.69,0.03,1.4,0.012); box(bin,"black",-0.22,2.3,0.69,0.62,0.03,0.012); box(bin,"chrome",0.02,2.0,0.7,0.1,0.025,0.015);
+    rod(bin,"satin",[-0.45,1.32,0],[-0.95,1.02,0],0.035); box(bin,"orange",-0.62,0.86,0,0.12,0.12,0.3);
     U.hitch=new THREE.Vector3(-1.02,0.52,0); U.front=4.65; U.mid=1.4; U.top=3.9; U.maxPitch=0.105; U.bars=new THREE.Vector3(-1.72,0.05,0);
   }
   /* pivot about the rear axle centre */
