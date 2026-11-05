@@ -1,6 +1,6 @@
 # Model credits
 
-3D models used by the workshop (`src/vis/models.js`) and the pull track (`PULL_PROPS` in `src/vis/pull.js`) on Full and Ultra graphics. Lite never loads them.
+3D models used by the workshop (`src/vis/models.js`) the pull track (`PULL_PROPS` in `src/vis/pull.js`) and the drag pits (`PITS_MODELS` in `src/vis/pits.js`) on Full and Ultra graphics. Lite never loads them.
 Each one is packed for the game with `tools/pack-model.py`: textures cut to 256 px (normal maps 128 px) and vertex data quantized.
 Keep this file in step with the folder: every model listed with its source, author and licence.
 
