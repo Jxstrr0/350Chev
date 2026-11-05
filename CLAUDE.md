@@ -5,8 +5,9 @@ Prairie Engine Works is a browser engine-builder by Longlight Interactive: pick 
 ## Stack
 
 - Plain HTML, CSS and classic (non-module) JavaScript in a few big `<script>` blocks. No package.json, no npm, no bundler, no CI. The two node scripts below are the only checks.
-- three.js **r128** from CDN: `three.min.js` from cdnjs, plus the post-processing addons from jsdelivr `three@0.128.0` (the `PEW_LIBS` list in `src/html/body.html`; a Lite phone loads them on demand). Google Fonts (Chakra Petch, Barlow, IBM Plex Mono). Nothing else external.
+- three.js **r128** from CDN: `three.min.js` from cdnjs, plus the post-processing addons and the GLTFLoader from jsdelivr `three@0.128.0` (the `PEW_LIBS` list in `src/html/body.html`; a Lite phone loads them on demand). Google Fonts (Chakra Petch, Barlow, IBM Plex Mono). Nothing else external.
 - Sound: a Web Audio synth plus 72 openly licensed recordings (engine loops, and blow-off, backfire and anti-lag one-shots) in `sounds/` (credits in `sounds/CREDITS.md`; keep that file in step with the folder).
+- 3D models: a few CC0 glTF props in `models/` (credits in `models/CREDITS.md`; keep it in step), Full and Ultra only, packed with `tools/pack-model.py` (Python with Pillow and numpy). The engine, rooms and Lite props stay as code.
 - PWA: `manifest.webmanifest`, `icons/`, and the generated `sw.js`. Installed copies work offline.
 - Node 16 or newer for the scripts (22 is what was last used). Nothing to install.
 
@@ -74,6 +75,7 @@ When changing physics, run a before/after comparison on the affected events and 
 - `src/app/`: the UI and game. `state.js` (career tables, state, save, VERSION), one file per tab and event, `savecode.js`, `help.js` (tour and 17 lessons), `pwa.js`, `perf.js`, `boot.js`.
 - `src/css/`: `style.css` plus one `ui-*.css` per feature lane.
 - `docs/DESIGN.md`: the game as built.
+- `src/vis/models.js` and `models/`: the glTF workshop props (Full / Ultra) and `tools/pack-model.py`, which packs a downloaded model for them.
 - `tools/make-icons.js`: renders `icons/` (needs Playwright; run by hand, output is committed).
 
 ## How Kelbo works
@@ -85,7 +87,7 @@ When changing physics, run a before/after comparison on the affected events and 
 - Real design decisions get asked, not guessed.
 - The site and the game use the name Kelbo only, never a real name. Studio name: Longlight Interactive.
 
-## Current status (1.76.61.0, November 2026)
+## Current status (1.76.62.0, November 2026)
 
 - Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply a race team for 8 rounds across 27 series in six kinds of racing, two teams at once from 300 rep; five varied offers with shoestring or well-funded budgets and team rules since 1.76.59.0, leaning to the top series opened since 1.76.60.0; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), season beats, rescue contracts, returning drivers, Watch it replays, car show and sound-off, a career dev mode in Settings (+$100,000, +100 rep, skip week), certification, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, offline PWA, save codes.
 - Known loose ends: none flagged beyond `docs/DESIGN.md`'s list.

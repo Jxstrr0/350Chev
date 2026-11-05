@@ -336,6 +336,7 @@ function scenePolish(G){
   S.flush(P, mm, true);
   Dc.flush(P, mm, false);
   for(i=0;i<P.children.length;i++) if(P.children[i].isMesh && /^(sawcut|scuff|worn|chip|puddle|coolant)$/.test(P.children[i].name)){ P.children[i].castShadow=false; P.children[i].renderOrder=1; }
+  sceneModels(G, P, a);   /* glTF props on top (models.js); they arrive a moment later */
 }
 
 /* a tier change rebuilds the polish only; the room itself is untouched */
