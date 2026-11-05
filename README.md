@@ -14,7 +14,7 @@ It runs on phones and desktops. Install it from the browser ("Add to Home Screen
 - **Analysis:** material and combo interactions, telemetry and the engineer's notes.
 - **Career:** run the shop. Certify engines, sell them on the market, hire crew and buy upgrades.
 - **Sound:** a live engine synth, optionally blended with real recordings (credits in [`sounds/CREDITS.md`](sounds/CREDITS.md)).
-- **Models:** a few CC0 workshop props on Full and Ultra graphics (credits in [`models/CREDITS.md`](models/CREDITS.md)).
+- **Models:** a few CC0 props in the workshop and at the pull track on Full and Ultra graphics (credits in [`models/CREDITS.md`](models/CREDITS.md)).
 - **Saves:** back up and restore with a `PEW1:` / `PEW2:` save code.
 
 ## Working on it

@@ -2,7 +2,8 @@
    8c. MODEL PROPS (Full / Ultra only): small glTF models from models/ dressed into the workshop polish layer.
    The room, the stand, the engine and every Lite prop stay as code; this only adds detail where a code box would look
    like a box (a welding cart, a jerry can, a fire extinguisher). Files are packed by tools/pack-model.py and credited
-   in models/CREDITS.md. They load after the room is up, cached once per file, and a tier change or a rebuilt room just
+   in models/CREDITS.md. The pull track uses the same loader for its trackside props (PULL_PROPS in vis/pull.js).
+   They load after the room is up, cached once per file, and a tier change or a rebuilt room just
    drops them with the polish group (geometry and textures are kept for the next one).
    ==========================================================================*/
 var MODEL_UNITS = 8.4;   /* scene units per metre (an oil drum, 0.88 m, is 7.4 units) */
@@ -13,7 +14,15 @@ var MODEL_FILES = {
   propane:  "models/propane-tank.glb",
   extinguisher: "models/extinguisher.glb",
   spraypaint: "models/spray-paint.glb",
-  lube:     "models/lube-spray.glb"
+  lube:     "models/lube-spray.glb",
+  /* pull track (vis/pull.js, PULL_PROPS) */
+  generator: "models/generator.glb",
+  crate:    "models/plastic-crate.glb",
+  barrel:   "models/barrel.glb",
+  toolbox:  "models/toolbox.glb",
+  handtruck:"models/hand-truck.glb",
+  fuelcan:  "models/plastic-jerrycan.glb",
+  tyre:     "models/old-tyre.glb"
 };
 /* placements: [key, x, y, z, turn] in scene units; the bench top is at 9.05 */
 function modelSpots(a){
