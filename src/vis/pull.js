@@ -11,11 +11,34 @@ function pullInit(){ return { on:false, built:false, scene:null, cam:null, sun:n
   veh:{}, cur:null, sled:null, chain:null, board:null, crowd:null, poles:[], spots:[], fx:null, fxDirt:null, fxConf:null,
   camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:44, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false,
   t:0, pullT:0, doneT:0, cheer:0, night:null, tier:null, prev:{}, x0:null, lastT:0, composer:null, exposure:0.92, stats:null,
-  flags:[], wheel:null, ruts:null, horLin:null, sunDir:null, tension:0, shake:0, fixX:0 }; }
+  flags:[], wheel:null, props:null, ruts:null, horLin:null, sunDir:null, tension:0, shake:0, fixX:0 }; }
 var PULL=pullInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var PULL_LINE=91.44, PULL_END=112, PULL_CHAIN=1.4, PULL_BOX0=-8.25, PULL_BOX1=-1.55, PULL_SLED_L=9.9;
 var PULL_WIND=new THREE.Vector3(-1.1,0,-0.75), _sbX=new THREE.Vector3(1,0,0), _pA=new THREE.Vector3(), _pB=new THREE.Vector3(), _pC=new THREE.Vector3(), _pD=new THREE.Vector3(),
   _pw=new THREE.Vector3(), _pt=new THREE.Vector3(), _pr=new THREE.Vector3(), _prt=new THREE.Vector3(), _pM=new THREE.Matrix4(), _pQ=new THREE.Quaternion();
+/* trackside props (Full / Ultra only): glTF models from models/ (vis/models.js), in metres.
+   [key, x, y, z, turn, tilt]: y is what it sits on (each model is lifted so its lowest point lands there), tilt lays it over
+   (a tyre lying flat is PI/2). The far wall hides anything this small from the race cameras, so they sit on the dirt:
+   most in the near-side corner of the run-off at the far end (the right of the stop shot, held after every pull; all
+   behind x 106 so the 300 ft line camera at x 105.4, z 5.6 has clear ground in front of it), and a few in the staging
+   area behind the start (the line and low shots look back at it). Lite keeps the plain code scenery. */
+var PULL_PROPS=[
+  /* far end, near-side corner: the scoreboard's generator and fuel, tyres, milk crates with a toolbox on top,
+     a hand truck, drums */
+  ["generator",106.7,0,4.5,0.6], ["fuelcan",106.2,0,3.4,1.3], ["fuelcan",106.5,0,3.0,0.2],
+  ["tyre",108.1,0,5.4,0,PI/2], ["tyre",108.1,0.165,5.4,0.6,PI/2], ["tyre",108.12,0.33,5.42,1.1,PI/2], ["tyre",108.1,0.495,5.4,1.9,PI/2],
+  ["tyre",108.6,0,4.3,0.3,1.25],
+  ["crate",109.5,0,5.5,0.05], ["crate",109.52,0.264,5.5,-0.08], ["crate",110.0,0,4.8,1.45], ["toolbox",109.5,0.528,5.5,2.9],
+  ["handtruck",110.5,0,3.3,-0.9],
+  ["barrel",111.1,0,5.5,0], ["barrel",111.4,0,4.7,1.2], ["barrel",110.9,0,4.0,2.3],
+  /* far end, far-side corner (behind the vehicle in the stop shot; photo mode finds it) */
+  ["tyre",108.2,0,-4.2,0,PI/2], ["tyre",108.2,0.165,-4.2,0.8,PI/2], ["barrel",110.6,0,-4.6,0.9], ["barrel",111.2,0,-5.3,2.0],
+  /* staging area behind the start, near half, where the next hook waits */
+  ["generator",-16.4,0,4.4,2.4], ["fuelcan",-15.4,0,3.7,1.3],
+  ["tyre",-18.6,0,5.2,0,PI/2], ["tyre",-18.6,0.165,5.2,0.6,PI/2], ["tyre",-18.62,0.33,5.22,1.1,PI/2],
+  ["crate",-21.6,0,5.3,0.05], ["crate",-21.62,0.264,5.3,-0.08], ["toolbox",-21.6,0.528,5.3,2.9],
+  ["handtruck",-23.3,0,4.4,2.6], ["barrel",-26.0,0,5.4,0], ["barrel",-26.8,0,4.7,1.2]
+];
 /* packed dirt: old ruts from earlier hooks, the pan's smooth centre band, lime lines (start, every 50 ft, the 300 ft line) */
 var PULL_GLSL_TRACK=[
   "vec3 stripSurf(vec3 w, out float rough){",
@@ -553,6 +576,27 @@ function pullSetNight(on){
   if(on){ for(var i=0;i<3;i++){ var sp=new THREE.SpotLight(0xfff0d8, 1.5, 130, 0.62, 0.6, 1.5); sp.castShadow=!lite && i===0; if(sp.castShadow){ sp.shadow.mapSize.set(1024,1024); sp.shadow.bias=-0.002; sp.shadow.normalBias=0.05; sp.shadow.camera.near=4; sp.shadow.camera.far=140; }
     S3.add(sp); S3.add(sp.target); PULL.spots.push(sp); } ultraSpots(PULL.spots); }
   if(!lite) ultraShadow(PULL.sun, 2048);
+  pullProps();
+}
+
+/* glTF trackside props on Full / Ultra (PULL_PROPS); a drop to Lite takes them out again. They arrive a moment after the scene. */
+function pullProps(){
+  var S3=PULL.scene, lite=GFX==="lite";
+  if(lite){ if(PULL.props){ S3.remove(PULL.props); PULL.props=null; } return; }
+  if(PULL.props || typeof modelGet!=="function") return;
+  if(!THREE.GLTFLoader){
+    if(window.__pewPost) window.__pewPost(function(ok){ if(ok && THREE.GLTFLoader && PULL.scene===S3 && GFX!=="lite") pullProps(); });
+    return;
+  }
+  var P=new THREE.Group(); P.name="pullProps"; PULL.props=P; S3.add(P);
+  PULL_PROPS.forEach(function(s){
+    modelGet(s[0], function(src){
+      if(PULL.props!==P) return;
+      var o=src.clone(); o.rotation.order="YXZ"; o.rotation.set(s[5]||0, s[4], 0); o.position.set(s[1], 0, s[3]);
+      o.updateMatrixWorld(true); o.position.y=s[2]-new THREE.Box3().setFromObject(o).min.y;   /* sit it on y */
+      o.name="model:"+s[0]; P.add(o);
+    });
+  });
 }
 
 /* --- effects: roost off the rear tyres, dust over the track, black smoke out the stack(s), confetti --- */

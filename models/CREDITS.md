@@ -1,6 +1,6 @@
 # Model credits
 
-3D models used by the workshop on Full and Ultra graphics (`src/vis/models.js`). Lite never loads them.
+3D models used by the workshop (`src/vis/models.js`) and the pull track (`PULL_PROPS` in `src/vis/pull.js`) on Full and Ultra graphics. Lite never loads them.
 Each one is packed for the game with `tools/pack-model.py`: textures cut to 256 px (normal maps 128 px) and vertex data quantized.
 Keep this file in step with the folder: every model listed with its source, author and licence.
 
@@ -12,5 +12,12 @@ Keep this file in step with the folder: every model listed with its source, auth
 | `extinguisher.glb` | Korean Fire Extinguisher 01 | UM JOORIN | [Poly Haven](https://polyhaven.com/a/korean_fire_extinguisher_01) | CC0 |
 | `spray-paint.glb` | Spray Paint Bottles | James Ray Cock | [Poly Haven](https://polyhaven.com/a/spray_paint_bottles) | CC0 |
 | `lube-spray.glb` | Lubricant Spray | James Ray Cock | [Poly Haven](https://polyhaven.com/a/lubricant_spray) | CC0 |
+| `generator.glb` | Portable Generator | James Ray Cock | [Poly Haven](https://polyhaven.com/a/portable_generator) | CC0 |
+| `plastic-crate.glb` | Plastic Crate 01 | PierreB3D | [Poly Haven](https://polyhaven.com/a/plastic_crate_01) | CC0 |
+| `barrel.glb` | Barrel 03 | Serhii Khromov | [Poly Haven](https://polyhaven.com/a/barrel_03) | CC0 |
+| `toolbox.glb` | Metal Toolbox | Mateusz Sadek | [Poly Haven](https://polyhaven.com/a/metal_toolbox) | CC0 |
+| `hand-truck.glb` | Hand Truck | Mutanzom3D | [Poly Haven](https://polyhaven.com/a/hand_truck) | CC0 |
+| `plastic-jerrycan.glb` | Plastic Jerrycan | Ulan Cabanilla | [Poly Haven](https://polyhaven.com/a/plastic_jerrycan) | CC0 |
+| `old-tyre.glb` | Old Tyre | MP | [Poly Haven](https://polyhaven.com/a/old_tyre) | CC0 |
 
 CC0 needs no credit, but we give it anyway. A CC-BY model must be listed here with its author and a link, and the same line goes in the game's credits.
