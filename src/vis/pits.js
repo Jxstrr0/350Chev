@@ -2,11 +2,12 @@
    PITS VIGNETTE — race night, between rounds: your car up on jack stands under
    the hauler's awning (mat, tool cart, floor jack, slicks, crew, work light),
    one fixed camera. ENGINE_VIS.setPits({on, body, color, tyreIn, nightK, heat,
-   poke}); {on:false} leaves. The car is stripCar (geometry shared with the
+   poke}); {on:false} leaves. On Full and Ultra a few glTF props (PITS_MODELS,
+   vis/models.js) stand around the space too. The car is stripCar (geometry shared with the
    strip). Lite draws a frame only when something changed (a still); Full and
    Ultra add hot-tyre smoke and a little crew movement. Built on first use.
    ==========================================================================*/
-var PITS={ on:false, built:false, scene:null, cam:null, car:null, carKey:"", props:null, crew:[], fx:null, spot:null, hemi:null, lamp:null, bg:null,
+var PITS={ on:false, built:false, scene:null, cam:null, car:null, carKey:"", props:null, models:null, mTier:null, crew:[], fx:null, spot:null, hemi:null, lamp:null, bg:null,
   mats:{}, t:0, heat:0, nightK:-1, dirty:2, seen:-1, renders:0, work:{}, wind:new THREE.Vector3(-0.25,0,-0.3), tier:null, stats:null,
   fit:{L:4.6, hw:0.95, H:1.3, rearX:-1.5, rearZ:0.8, rr:0.35, frontX:1.4, tw:0.35} };
 var PITS_LIFT=0.22, _ptA=new THREE.Vector3(), _ptB=new THREE.Vector3(), _ptC=new THREE.Color();
@@ -138,6 +139,30 @@ function pitsProps(car){
   var eng=u._eng.clone(); eng.x+=ox; var Bm=pitsPerson(0x22262c, "lean"); G.add(Bm); Bm.userData.key="launch";
   if(u.body==="rail"){ Bm.position.set(eng.x, 0, -(hw+0.42)); Bm.rotation.y=PI-0.08; } else { Bm.position.set(x1+0.42, 0, 0.3); Bm.rotation.y=PI/2; }   /* over the motor: alongside a rail, over the nose of a car */
   PITS.crew=[A, Bm];
+  pitsModels();
+}
+/* glTF props around the pit space, Full / Ultra (vis/models.js): [key, anchor, dx, y, z, turn, tilt]. anchor "r" counts dx from the car's
+   rear end (wheelie bars included), "f" from its nose, "" from the middle of the awning, so a long dragster never parks on one */
+var PITS_MODELS=[
+  ["generator","r",-3.4,0,-2.3,0.5], ["fuelcan","r",-2.3,0,-2.85,-0.4], ["fuelcan","r",-1.95,0,-3.05,0.9],
+  ["toolbox","r",-1.62,1.13,1.55,0.05], ["lube","r",-1.22,1.13,1.42,0.4], ["extinguisher","r",-0.75,0,1.95,0.6],
+  ["handtruck","r",2.3,0,-3.1,PI*0.5], ["barrel","r",3.5,0,-2.9,0],
+  ["crate","f",0.15,0,-2.7,0.06], ["crate","f",0.17,0.32,-2.68,-0.1]
+];
+function pitsModels(){
+  var S5=PITS.scene; PITS.mTier=GFX;
+  if(GFX==="lite"){ if(PITS.models){ S5.remove(PITS.models); PITS.models=null; PITS.dirty=2; } return; }
+  if(PITS.models){ PITS.models.children.forEach(pitsModelPlace); return; }
+  if(typeof modelGet!=="function") return;
+  if(!THREE.GLTFLoader){ if(!PITS.mWait && window.__pewPost){ PITS.mWait=true; window.__pewPost(function(ok){ PITS.mWait=false; if(ok && THREE.GLTFLoader && PITS.scene===S5 && GFX!=="lite") pitsModels(); }); } return; }
+  var G=new THREE.Group(); G.name="pitsModels"; PITS.models=G; S5.add(G);
+  PITS_MODELS.forEach(function(s){ modelGet(s[0], function(src){ if(PITS.models!==G) return;
+    var o=src.clone(); o.name="model:"+s[0]; o.userData.spot=s; o.rotation.order="YXZ"; o.rotation.set(s[6]||0, s[5], 0); G.add(o); pitsModelPlace(o); PITS.dirty=2; }); });
+}
+/* stand one on the floor (or a cart top) at its spot for the car on the stands now */
+function pitsModelPlace(o){
+  var s=o.userData.spot, F=PITS.fit; o.position.set(s[2]+(s[1]==="r"?F.x0:s[1]==="f"?F.x1:0), 0, s[4]);
+  o.updateMatrixWorld(true); o.position.y=s[3]-new THREE.Box3().setFromObject(o).min.y;
 }
 /* fixed camera: front three-quarter from the near side, fitted to the car and the props around it; room left for the header */
 function pitsFrame(){
@@ -207,6 +232,7 @@ function pitsRender(dt){
   if(PITS.fitKey!==fk){ pitsFrame(); PITS.dirty=2; }
   if(renderer.info.render.frame!==PITS.seen) PITS.dirty=Math.max(PITS.dirty,1);   /* something else drew on the canvas */
   if(GFX==="lite" && PITS.dirty<=0) return;   /* Lite: the last frame stays up */
+  if(PITS.mTier!==GFX) pitsModels();   /* the tier changed: props in or out */
   if(GFX!=="lite") pitsAnimate(dt||0.016);
   var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=1.0;
   var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
