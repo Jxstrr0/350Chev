@@ -21,3 +21,11 @@
 #setPane .setsec .row,#setPane .setsec>.btn{margin-top:4px}
 #setPane #slots{margin-top:6px}
 #setPane #resetGame{margin-top:2px}
+/* THROTTLE slider beside START (1.76.61.0): a glass pill, shown only while the engine runs; on a phone it stays on the Build tab, where the HUD row has room */
+.hudbtns>.thr{pointer-events:auto;display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:22px;background:rgba(20,20,19,.62);box-shadow:var(--glass-shine),0 4px 14px rgba(0,0,0,.3);color:var(--chalk);font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.05em;flex:0 1 210px;min-width:130px}
+.hudbtns>.thr[hidden]{display:none}
+.thr>span{flex:none}
+.thr input[type=range]{flex:1;min-width:50px;height:44px;margin:0;touch-action:none}
+.thr>b{flex:none;width:4ch;text-align:right;font-family:var(--mono);font-weight:500;color:var(--orange2)}
+html[data-tab]:not([data-tab=build]):not(.desk) .hudbtns>.thr{display:none}
+@media (max-width:400px){.thr>span{display:none}}

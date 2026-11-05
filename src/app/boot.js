@@ -54,6 +54,7 @@ function dieselSmoke(q,rpm,load){
   const k=R[i+1]>R[i]?Math.min(1,Math.max(0,(rpm-R[i])/(R[i+1]-R[i]))):0,v=C[i]+((C[Math.min(i+1,C.length-1)]??C[i])-C[i])*k;
   return (v||0)*Math.min(1,load);
 }
+let thrT=0;   // last time the throttle readout was written
 function tick(now){
   if(!ENGINE_VIS.frameDue(now)){requestAnimationFrame(tick);return;}
   const dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
@@ -61,7 +62,8 @@ function tick(now){
   let rpm=run.rpm,load=run.load,on=run.on;
   const rotP=isRot(S.cfg)?(SIM.OPT.rotPort[S.cfg.rotPort]||SIM.OPT.rotPort.side):null,camV=rotP?30+75*rotP.overlap:S.cfg.cam;   // a rotary's port overlap plays the part of a cam
   const tsIdle=!rotP&&isTs(S.cfg)&&quick&&quick.twoStroke?quick.twoStroke.idleRpm:0;
-  if(!testing){const idleBase=rotP?rotP.idle:tsIdle?tsIdle:SIM.isDiesel(S.cfg)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;idleTarget=run.idle?idleBase+Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08:0;on=idleRpm>150;}
+  if(!testing){const idleBase=rotP?rotP.idle:tsIdle?tsIdle:SIM.isDiesel(S.cfg)?(S.cfg.bore*S.cfg.stroke>=9e3?650:700):S.cfg.cam>70?1300:S.cfg.cam>45?1000:800;const th=run.thr,lope=1-Math.min(1,th*4);idleTarget=run.idle?idleBase+th*Math.max(0,0.75*S.cfg.redline-idleBase)+lope*(Math.sin(now/300)*20*(1+camV/50)+(camV>65?Math.random()*60:0)):0;idleRpm+=(idleTarget-idleRpm)*Math.min(1,dt*(run.idle?2.5:4));rpm=idleRpm;load=run.idle?0.08+0.14*th:0;on=idleRpm>150;
+    if(run.idle&&now-thrT>150){thrT=now;$("thrRpm").textContent=Math.round(idleRpm/50)*50;}}
   /* the picture follows the rpm with inertia: a test ending or a stall spins down instead of freezing */
   const tgt=on?rpm:0;visRpm+=(tgt-visRpm)*Math.min(1,dt*(tgt>visRpm?9:1.6));if(!on&&visRpm<60)visRpm=0;
   visLoad+=((on?load:0)-visLoad)*Math.min(1,dt*7);
@@ -236,7 +238,10 @@ function detentLabel(){const g=$("pgrab");if(g)g.setAttribute("aria-label","Pane
    while the engine idles, and VIEW wears a dot when anything in its tray is on */
 function hudSync(){const on=id=>$(id).classList.contains("on");["sndBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>$(id).setAttribute("aria-pressed",on(id)));
   const idling=on("idleBtn");$("idleBtn").querySelector(".lb").textContent=idling?"Stop":"Start";$("idleBtn").setAttribute("aria-label",idling?"Stop engine":"Start engine");
+  $("thrWrap").hidden=!idling;if(!idling&&run.thr){run.thr=0;$("thrRng").value=0;}
   $("viewBtn").classList.toggle("lit",on("sizeBtn")||on("xrayBtn")||on("heatBtn"));}
+/* THROTTLE: beside START while the engine runs; holds the revs from idle up to 3/4 of the redline, back to idle on STOP */
+$("thrRng").addEventListener("input",e=>{run.thr=+e.target.value/100;});
 {const mo=new MutationObserver(hudSync);["sndBtn","idleBtn","sizeBtn","xrayBtn","heatBtn"].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:["class"]}));hudSync();}
 /* VIEW tray: hangs under its button (fixed, so it can drop past a small view); outside tap or Escape closes it */
 function viewTray(open){const t=$("viewTray"),b=$("viewBtn");open=open==null?t.hidden:!!open;t.hidden=!open;b.setAttribute("aria-expanded",open);b.classList.toggle("open",open);if(!open)return;
