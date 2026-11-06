@@ -131,7 +131,7 @@ const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: red
 /* A tap on the tab bar swaps the page and lets it paint first; the renders (bench, events, analysis, shop) run right after
    that frame. Anything else that calls showTab (tour, links, loading a build) still renders at once. */
 let tabTok=0;
-function tabRender(t){if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();}
+function tabRender(t){if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="build"&&buildStale){buildStale=false;renderBuild();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();}
 function showTab(t,defer){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.documentElement.setAttribute("data-tab",t);document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));tabBead();document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
   const tok=++tabTok,fin=()=>{if(tok!==tabTok)return;tabTok++;tabRender(t);$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);};
   if(!defer){fin();return;}
