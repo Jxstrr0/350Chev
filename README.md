@@ -15,7 +15,7 @@ It runs on phones and desktops. Install it from the browser ("Add to Home Screen
 - **Career:** run the shop. Certify engines, sell them on the market, hire crew and buy upgrades.
 - **Sound:** a live engine synth, optionally blended with real recordings (credits in [`sounds/CREDITS.md`](sounds/CREDITS.md)).
 - **Models:** a few CC0 props in the workshop, at the pull track and in the drag pits on Full and Ultra graphics (credits in [`models/CREDITS.md`](models/CREDITS.md)).
-- **Saves:** back up and restore with a `PEW1:` / `PEW2:` save code.
+- **Saves:** back up and restore with a `PEW1:` / `PEW2:` save code, or a backup file holding the same code.
 
 ## Working on it
 

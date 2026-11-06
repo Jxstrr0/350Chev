@@ -275,7 +275,13 @@
           <button class="btn sm info" id="exportSave" style="flex:1" aria-haspopup="dialog">Back up</button>
           <button class="btn sm info" id="importSave" style="flex:1" aria-haspopup="dialog">Restore</button>
         </div>
-        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm ghost" id="bkFileSave" style="flex:1">Save backup file</button>
+          <button class="btn sm ghost" id="bkFileLoad" style="flex:1" aria-haspopup="dialog">Load backup file</button>
+          <input type="file" id="bkFileIn" accept=".txt,text/plain" hidden aria-hidden="true" tabindex="-1">
+        </div>
+        <p class="hint" id="bkStore" hidden></p>
+        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser. A <b>backup file</b> holds the same code, so a copy lives outside the browser.</p>
         <button class="btn danger" id="resetGame">Wipe career</button>
         <p class="hint">A game by Longlight Interactive.</p>
 </div></details>

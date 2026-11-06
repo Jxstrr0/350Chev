@@ -108,6 +108,9 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 
 - Everything lives in the browser's localStorage under five keys: `pew2-save` (the current game, settings included), `pew2-slot1` to `pew2-slot3` (three save slots, `SLOTS`), `pew2-legacy` (Legacy points). All access is wrapped in try/catch.
 - **Back up** turns all five into one text code: `PEW1:` + LZW-packed JSON in base64url + a 6-character checksum. **Restore** checks the whole code first and writes nothing if it is damaged, cut off, from another game (`GG1:`, `RS2:`) or from a newer version (`PEW3:` and up). Older one-game `PEW2:` codes still load. A restore that fails half-way puts every key back.
+- **Save backup file** writes the same `PEW1:` code into `prairie-engine-works-backup-YYYY-MM-DD.txt` (the share sheet where the browser offers it, so iPhone gets "Save to Files"; otherwise a download). **Load backup file** reads one and runs it through Restore, with the same checks and confirm.
+- All Longlight games share one web address, so one storage pot the browser may clear when a phone runs low. After the first save of a session with a game going (or a backup or restore) the game asks the browser to keep its storage (`navigator.storage.persist`, once per page load). Settings › Save shows one line: storage kept or not, and the last backup date.
+- `S.bkAt` (in `pew2-save`, no new key) is when the last backup was taken (code copied or file saved); a restore keeps the newer of the two. With a career past week 3 or two or more blueprints and no backup in 14 days, a quiet bar offers **Saves** once per session, at a calm moment (after Close week, or once the session settles), never over a run, an event, a sheet or Settings.
 - `check-savecode.js` runs these paths in node with a pretend localStorage (15 checks).
 
 ### Offline and install
