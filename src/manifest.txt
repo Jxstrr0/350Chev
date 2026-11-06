@@ -111,6 +111,7 @@ app/team-bog.js
 app/team-boat.js
 app/team-pull.js
 app/team-hill.js
+app/team-fit.js
 app/team-show.js
 app/team-watch.js
 app/help.js
