@@ -344,16 +344,41 @@ function coverDecor(B, p, c){
 function buildDetailPost(B, c){
   var bore=c.bore, L=c.L, bankLen=c.bankLen, i, bi;
   setZone(0);
-  /* ---- harness: every loom tail joins a trunk at the back of the engine, ending in the main connector ---- */
+  /* ---- harness: each bank's loom tails (coils, injectors) gather at a taped junction low on the intake side of its head's
+     rear face, and one trunk per bank runs down that face into the main connector. Everything stays in the plane just behind
+     the heads (a bank's matrix only turns it about the crank axis, so that face is one plane, x = xJ, on every layout).
+     (Every tail used to run on its own from the cover straight to the connector: on a vee that strung a web of looms
+     through the air behind the engine, and on a boxer they arched high over the back of it.) ---- */
   var mc = L.boxer ? V3(-bankLen*0.5-bore*0.25, bore*1.30, 0)
          : L.vee   ? V3(-bankLen*0.5-bore*0.25, c.deckH*Math.cos(c.a)*0.66, 0)
                    : V3(-bankLen*0.5-bore*0.25, c.deckH*0.66, -c.bankW*0.30);
-  var ends=[];
-  for(i=0;i<c.bankInfo.length;i++){ bi=c.bankInfo[i]; if(bi.coilLoomEnd) ends.push(bi.coilLoomEnd); if(bi.injLoomEnd) ends.push(bi.injLoomEnd); }
-  if(ends.length){
-    for(i=0;i<ends.length;i++){
-      var e=ends[i], mid=V3((e.x+mc.x)*0.5-bore*0.08, Math.max(e.y, mc.y)+bore*0.05, (e.z+mc.z)*0.5);
-      B.addW("loom", uvByLength(TUBE([e, mid, mc.clone().add(V3(0, bore*0.10, 0))], bore*(i?0.034:0.042), 18, 6), 1/1.4));
+  var xJ=-bankLen*0.505-bore*0.07, trunks=[], k, be, J;
+  ENGD.harnJ=null;
+  for(i=0;i<c.bankInfo.length;i++){
+    bi=c.bankInfo[i]; be=[];
+    if(bi.coilLoomEnd) be.push(bi.coilLoomEnd);
+    if(bi.injLoomEnd) be.push(bi.injLoomEnd);
+    if(!be.length) continue;
+    J=V3(0, bi.headY+bi.headH*0.25, bi.inZ*0.40).applyMatrix4(bi.matrix); J.x=xJ;
+    if(!ENGD.harnJ) ENGD.harnJ=J;          /* bank 0's: the rear-face sensor wires (engdetail.js) tuck into it */
+    for(k=0;k<be.length;k++){
+      var e=be[k];
+      B.addW("loom", uvByLength(TUBE([e, V3(xJ-bore*0.015, (e.y+J.y)*0.5, (e.z+J.z)*0.5), J], bore*0.034, 14, 6), 1/1.4));
+    }
+    B.add("blackPlast", CYL(bore*0.062,bore*0.062,bore*0.11,10), J.x, J.y, J.z, 0,0,PI/2);   /* taped junction */
+    trunks.push(J);
+  }
+  if(trunks.length){
+    for(i=0;i<trunks.length;i++){
+      J=trunks[i];
+      var sg=(trunks.length>1) ? (J.z<mc.z ? -1 : 1) : 0, tp;
+      if(L.boxer)   /* the heads sit out at the sides, below the connector: in along the face, then up into the connector's flank */
+        tp=[J, V3(xJ-bore*0.02, J.y, J.z*0.45), V3(xJ-bore*0.02, mc.y-bore*0.02, mc.z+sg*bore*0.34), V3(mc.x+bore*0.02, mc.y, mc.z+sg*bore*0.17)];
+      else {        /* down the face from above, into the top of the connector (two trunks side by side on a vee) */
+        var top=V3(mc.x+bore*0.02, mc.y+bore*0.13, mc.z+sg*bore*0.07);
+        tp=[J, V3(xJ-bore*0.02, J.y+(top.y-J.y)*0.55, J.z+(top.z-J.z)*0.70), V3(mc.x+bore*0.02, top.y+bore*0.12, top.z), top];
+      }
+      B.addW("loom", uvByLength(TUBE(tp, bore*0.046, 20, 6), 1/1.4));
     }
     B.add("connGrey", RBOX(bore*0.20, bore*0.26, bore*0.34, 0.02), mc.x, mc.y, mc.z);
     B.add("connGrey", RBOX(bore*0.22, bore*0.10, bore*0.36, 0.02), mc.x-bore*0.12, mc.y, mc.z);

@@ -43,8 +43,9 @@ function engCoolant(B, c, mc){
     B.add("brass", CYL(bore*0.05,bore*0.06,bore*0.12,10), sx, sy, sz, 0,0,PI/2);
     B.add("brass", CYL(bore*0.075,bore*0.075,bore*0.03,6), sx-bore*0.05, sy, sz, 0,0,PI/2);
     B.add("connGrey", BOX(bore*0.08,bore*0.09,bore*0.09), sx-bore*0.11, sy, sz);
-    var w0=B.pt(sx-bore*0.15, sy, sz), w1=B.pt(sx-bore*0.26, sy-bore*0.14, sz);
-    engWire(B, [w0, w1, V3(mc.x-bore*0.20, (w1.y+mc.y)*0.5, (w1.z*0.7+mc.z*0.3)), V3(mc.x-bore*0.14, mc.y+bore*0.06, mc.z+bore*0.05)], bore*0.016);
+    var w0=B.pt(sx-bore*0.15, sy, sz), w1=B.pt(sx-bore*0.26, sy-bore*0.14, sz), J=ENGD.harnJ;
+    if(J){ w1=B.pt(sx-bore*0.17, sy-bore*0.09, sz); engWire(B, [w0, w1, V3(J.x-bore*0.03, (w1.y+J.y)*0.5, (w1.z+J.z)*0.5), J], bore*0.016); }   /* down the face into the bank's harness junction */
+    else engWire(B, [w0, w1, V3(mc.x-bore*0.20, (w1.y+mc.y)*0.5, (w1.z*0.7+mc.z*0.3)), V3(mc.x-bore*0.14, mc.y+bore*0.06, mc.z+bore*0.05)], bore*0.016);
   }
   B.pop();
 }
@@ -69,7 +70,9 @@ function engVacuum(B, c, mc){
   var pe=V3(pn.x-bore*0.08, pn.y, pn.z);
   var mid=V3((vp.x+pe.x)*0.5-bore*0.10, Math.max(vp.y,pe.y)+bore*0.16, (vp.z+pe.z)*0.5);
   hoseMesh([vp, V3(vp.x-bore*0.06, vp.y+bore*0.08, vp.z), mid, V3(pe.x-bore*0.06, pe.y+bore*0.04, pe.z), pe], bore*0.032);
-  engWire(B, [wp, V3(wp.x-bore*0.08, wp.y+bore*0.05, wp.z), V3(mc.x-bore*0.20, (wp.y+mc.y)*0.55, (wp.z+mc.z)*0.5), V3(mc.x-bore*0.14, mc.y+bore*0.07, mc.z-bore*0.05)], bore*0.016);
+  var J=ENGD.harnJ, wq=V3(wp.x-bore*0.06, wp.y+bore*0.04, wp.z);
+  if(J) engWire(B, [wp, wq, V3(J.x-bore*0.03, (wq.y+J.y)*0.5, (wq.z+J.z)*0.5), J], bore*0.016);   /* into bank 0's harness junction */
+  else engWire(B, [wp, V3(wp.x-bore*0.08, wp.y+bore*0.05, wp.z), V3(mc.x-bore*0.20, (wp.y+mc.y)*0.55, (wp.z+mc.z)*0.5), V3(mc.x-bore*0.14, mc.y+bore*0.07, mc.z-bore*0.05)], bore*0.016);
 }
 /* valve-cover flange bolts and timing-case bolts (instanced hex heads, same few draw calls as the existing hardware) */
 function engBolts(B, c){
