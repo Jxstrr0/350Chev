@@ -16220,8 +16220,10 @@ function buildBank(B, p, extras){
     coilLoom = [B.pt(bankLen*0.46, covY+coverH*1.56+bore*0.02, Z(bore*0.16)), B.pt(0, covY+coverH*1.57+bore*0.02, Z(bore*0.16)), B.pt(-bankLen*0.46, covY+coverH*1.56+bore*0.02, Z(bore*0.16))];
   }
   if(DET && coilLoom && !DZ){
-    var rearDrop = coilLoom[2].clone().add(V3(-bore*0.30, -coverH*0.9, 0));
-    coilLoom.push(rearDrop);
+    /* over the cover's rear edge, then straight down the head's rear face in the bank's own frame (it used to drop straight down in
+       engine space, which on a tilted bank swung it off the face), ending where the harness trunk picks it up (buildDetailPost) */
+    var lc = coilLoom[2].clone().applyMatrix4(new THREE.Matrix4().copy(B.top()).invert());
+    coilLoom.push(B.pt(-bankLen*0.49-bore*0.08, lc.y, lc.z), B.pt(-bankLen*0.505-bore*0.06, covY+coverH*0.10, lc.z));
     B.addW("loom", uvByLength(TUBE(coilLoom, bore*0.036, 30, 6), 1/1.4));
   }
   if(DET){ coverDecor(B, p, { covY:covY, covW:covW, covL:covL, coverH:coverH, headW:headW, zs:zs }); setZone(0); }
@@ -17912,16 +17914,41 @@ function coverDecor(B, p, c){
 function buildDetailPost(B, c){
   var bore=c.bore, L=c.L, bankLen=c.bankLen, i, bi;
   setZone(0);
-  /* ---- harness: every loom tail joins a trunk at the back of the engine, ending in the main connector ---- */
+  /* ---- harness: each bank's loom tails (coils, injectors) gather at a taped junction low on the intake side of its head's
+     rear face, and one trunk per bank runs down that face into the main connector. Everything stays in the plane just behind
+     the heads (a bank's matrix only turns it about the crank axis, so that face is one plane, x = xJ, on every layout).
+     (Every tail used to run on its own from the cover straight to the connector: on a vee that strung a web of looms
+     through the air behind the engine, and on a boxer they arched high over the back of it.) ---- */
   var mc = L.boxer ? V3(-bankLen*0.5-bore*0.25, bore*1.30, 0)
          : L.vee   ? V3(-bankLen*0.5-bore*0.25, c.deckH*Math.cos(c.a)*0.66, 0)
                    : V3(-bankLen*0.5-bore*0.25, c.deckH*0.66, -c.bankW*0.30);
-  var ends=[];
-  for(i=0;i<c.bankInfo.length;i++){ bi=c.bankInfo[i]; if(bi.coilLoomEnd) ends.push(bi.coilLoomEnd); if(bi.injLoomEnd) ends.push(bi.injLoomEnd); }
-  if(ends.length){
-    for(i=0;i<ends.length;i++){
-      var e=ends[i], mid=V3((e.x+mc.x)*0.5-bore*0.08, Math.max(e.y, mc.y)+bore*0.05, (e.z+mc.z)*0.5);
-      B.addW("loom", uvByLength(TUBE([e, mid, mc.clone().add(V3(0, bore*0.10, 0))], bore*(i?0.034:0.042), 18, 6), 1/1.4));
+  var xJ=-bankLen*0.505-bore*0.07, trunks=[], k, be, J;
+  ENGD.harnJ=null;
+  for(i=0;i<c.bankInfo.length;i++){
+    bi=c.bankInfo[i]; be=[];
+    if(bi.coilLoomEnd) be.push(bi.coilLoomEnd);
+    if(bi.injLoomEnd) be.push(bi.injLoomEnd);
+    if(!be.length) continue;
+    J=V3(0, bi.headY+bi.headH*0.25, bi.inZ*0.40).applyMatrix4(bi.matrix); J.x=xJ;
+    if(!ENGD.harnJ) ENGD.harnJ=J;          /* bank 0's: the rear-face sensor wires (engdetail.js) tuck into it */
+    for(k=0;k<be.length;k++){
+      var e=be[k];
+      B.addW("loom", uvByLength(TUBE([e, V3(xJ-bore*0.015, (e.y+J.y)*0.5, (e.z+J.z)*0.5), J], bore*0.034, 14, 6), 1/1.4));
+    }
+    B.add("blackPlast", CYL(bore*0.062,bore*0.062,bore*0.11,10), J.x, J.y, J.z, 0,0,PI/2);   /* taped junction */
+    trunks.push(J);
+  }
+  if(trunks.length){
+    for(i=0;i<trunks.length;i++){
+      J=trunks[i];
+      var sg=(trunks.length>1) ? (J.z<mc.z ? -1 : 1) : 0, tp;
+      if(L.boxer)   /* the heads sit out at the sides, below the connector: in along the face, then up into the connector's flank */
+        tp=[J, V3(xJ-bore*0.02, J.y, J.z*0.45), V3(xJ-bore*0.02, mc.y-bore*0.02, mc.z+sg*bore*0.34), V3(mc.x+bore*0.02, mc.y, mc.z+sg*bore*0.17)];
+      else {        /* down the face from above, into the top of the connector (two trunks side by side on a vee) */
+        var top=V3(mc.x+bore*0.02, mc.y+bore*0.13, mc.z+sg*bore*0.07);
+        tp=[J, V3(xJ-bore*0.02, J.y+(top.y-J.y)*0.55, J.z+(top.z-J.z)*0.70), V3(mc.x+bore*0.02, top.y+bore*0.12, top.z), top];
+      }
+      B.addW("loom", uvByLength(TUBE(tp, bore*0.046, 20, 6), 1/1.4));
     }
     B.add("connGrey", RBOX(bore*0.20, bore*0.26, bore*0.34, 0.02), mc.x, mc.y, mc.z);
     B.add("connGrey", RBOX(bore*0.22, bore*0.10, bore*0.36, 0.02), mc.x-bore*0.12, mc.y, mc.z);
@@ -18030,8 +18057,9 @@ function engCoolant(B, c, mc){
     B.add("brass", CYL(bore*0.05,bore*0.06,bore*0.12,10), sx, sy, sz, 0,0,PI/2);
     B.add("brass", CYL(bore*0.075,bore*0.075,bore*0.03,6), sx-bore*0.05, sy, sz, 0,0,PI/2);
     B.add("connGrey", BOX(bore*0.08,bore*0.09,bore*0.09), sx-bore*0.11, sy, sz);
-    var w0=B.pt(sx-bore*0.15, sy, sz), w1=B.pt(sx-bore*0.26, sy-bore*0.14, sz);
-    engWire(B, [w0, w1, V3(mc.x-bore*0.20, (w1.y+mc.y)*0.5, (w1.z*0.7+mc.z*0.3)), V3(mc.x-bore*0.14, mc.y+bore*0.06, mc.z+bore*0.05)], bore*0.016);
+    var w0=B.pt(sx-bore*0.15, sy, sz), w1=B.pt(sx-bore*0.26, sy-bore*0.14, sz), J=ENGD.harnJ;
+    if(J){ w1=B.pt(sx-bore*0.17, sy-bore*0.09, sz); engWire(B, [w0, w1, V3(J.x-bore*0.03, (w1.y+J.y)*0.5, (w1.z+J.z)*0.5), J], bore*0.016); }   /* down the face into the bank's harness junction */
+    else engWire(B, [w0, w1, V3(mc.x-bore*0.20, (w1.y+mc.y)*0.5, (w1.z*0.7+mc.z*0.3)), V3(mc.x-bore*0.14, mc.y+bore*0.06, mc.z+bore*0.05)], bore*0.016);
   }
   B.pop();
 }
@@ -18056,7 +18084,9 @@ function engVacuum(B, c, mc){
   var pe=V3(pn.x-bore*0.08, pn.y, pn.z);
   var mid=V3((vp.x+pe.x)*0.5-bore*0.10, Math.max(vp.y,pe.y)+bore*0.16, (vp.z+pe.z)*0.5);
   hoseMesh([vp, V3(vp.x-bore*0.06, vp.y+bore*0.08, vp.z), mid, V3(pe.x-bore*0.06, pe.y+bore*0.04, pe.z), pe], bore*0.032);
-  engWire(B, [wp, V3(wp.x-bore*0.08, wp.y+bore*0.05, wp.z), V3(mc.x-bore*0.20, (wp.y+mc.y)*0.55, (wp.z+mc.z)*0.5), V3(mc.x-bore*0.14, mc.y+bore*0.07, mc.z-bore*0.05)], bore*0.016);
+  var J=ENGD.harnJ, wq=V3(wp.x-bore*0.06, wp.y+bore*0.04, wp.z);
+  if(J) engWire(B, [wp, wq, V3(J.x-bore*0.03, (wq.y+J.y)*0.5, (wq.z+J.z)*0.5), J], bore*0.016);   /* into bank 0's harness junction */
+  else engWire(B, [wp, V3(wp.x-bore*0.08, wp.y+bore*0.05, wp.z), V3(mc.x-bore*0.20, (wp.y+mc.y)*0.55, (wp.z+mc.z)*0.5), V3(mc.x-bore*0.14, mc.y+bore*0.07, mc.z-bore*0.05)], bore*0.016);
 }
 /* valve-cover flange bolts and timing-case bolts (instanced hex heads, same few draw calls as the existing hardware) */
 function engBolts(B, c){
@@ -30927,7 +30957,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.66.0";
+const VERSION="1.76.67.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

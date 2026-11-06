@@ -567,8 +567,10 @@ function buildBank(B, p, extras){
     coilLoom = [B.pt(bankLen*0.46, covY+coverH*1.56+bore*0.02, Z(bore*0.16)), B.pt(0, covY+coverH*1.57+bore*0.02, Z(bore*0.16)), B.pt(-bankLen*0.46, covY+coverH*1.56+bore*0.02, Z(bore*0.16))];
   }
   if(DET && coilLoom && !DZ){
-    var rearDrop = coilLoom[2].clone().add(V3(-bore*0.30, -coverH*0.9, 0));
-    coilLoom.push(rearDrop);
+    /* over the cover's rear edge, then straight down the head's rear face in the bank's own frame (it used to drop straight down in
+       engine space, which on a tilted bank swung it off the face), ending where the harness trunk picks it up (buildDetailPost) */
+    var lc = coilLoom[2].clone().applyMatrix4(new THREE.Matrix4().copy(B.top()).invert());
+    coilLoom.push(B.pt(-bankLen*0.49-bore*0.08, lc.y, lc.z), B.pt(-bankLen*0.505-bore*0.06, covY+coverH*0.10, lc.z));
     B.addW("loom", uvByLength(TUBE(coilLoom, bore*0.036, 30, 6), 1/1.4));
   }
   if(DET){ coverDecor(B, p, { covY:covY, covW:covW, covL:covL, coverH:coverH, headW:headW, zs:zs }); setZone(0); }
