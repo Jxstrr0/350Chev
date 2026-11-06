@@ -44,18 +44,55 @@ function pitsSky(k){
   g.addColorStop(0,"#"+top.getHexString()); g.addColorStop(0.55,"#"+mid.getHexString()); g.addColorStop(0.82,"#"+hor.getHexString()); g.addColorStop(1,"#"+hor.getHexString());
   x.fillStyle=g; x.fillRect(0,0,4,256); PITS.bg.needsUpdate=true; return hor;
 }
-/* a crew member: legs + upper body (pivot at the hips) as two vertex-coloured batches; pose "kneel" or "lean" */
-function pitsPerson(shirt, pose){
-  var M=pitsMats(), G=new THREE.Group(), up=new THREE.Group(), PANTS=0x2b3442, SKIN=0xc39274, CAP=0x15171b, BOOT=0x1a1a1a;
-  var L=new StripBatch(), U=new StripBatch(), hip=pose==="kneel"?0.52:0.92;
-  if(pose==="kneel"){ L.box("s", 0.11, 0.26, 0, 0.17, 0.5, 0.17, PANTS); L.box("s", -0.11, 0.1, 0.2, 0.17, 0.17, 0.5, PANTS); L.box("s", -0.11, 0.07, 0.48, 0.15, 0.12, 0.12, BOOT); L.box("s", 0.11, 0.06, 0.08, 0.15, 0.12, 0.26, BOOT); L.box("s", 0, 0.48, 0.02, 0.36, 0.14, 0.24, PANTS); }
-  else { L.add("s","cyl",[0.11,0.46,0],[0.17,0.9,0.17],PANTS); L.add("s","cyl",[-0.11,0.46,0],[0.17,0.9,0.17],PANTS); L.box("s", 0.11, 0.05, -0.05, 0.14, 0.1, 0.28, BOOT); L.box("s", -0.11, 0.05, -0.05, 0.14, 0.1, 0.28, BOOT); }
-  U.add("s","cyl",[0,0.3,0],[0.42,0.6,0.26],shirt); U.box("s", 0, 0.47, -0.135, 0.3, 0.1, 0.02, 0xf4efe2);
-  U.add("s","cyl",[0,0.7,0],[0.22,0.24,0.22],SKIN); U.add("s","cyl",[0,0.81,0],[0.235,0.07,0.235],CAP); U.box("s", 0, 0.79, -0.15, 0.2, 0.025, 0.12, CAP);
-  U.add("s","cyl",[0.25,0.32,-0.16],[0.1,0.5,0.1],shirt,[0.9,0,0]); U.add("s","cyl",[-0.25,0.32,-0.16],[0.1,0.5,0.1],shirt,[0.9,0,0]);
-  U.box("s", 0.25, 0.2, -0.38, 0.09, 0.09, 0.1, SKIN); U.box("s", -0.25, 0.2, -0.38, 0.09, 0.09, 0.1, SKIN);
+/* a crew member: legs + upper body (pivot at the hips) as two vertex-coloured batches; pose "kneel" or "lean". Faces -z. Rounded limbs (tapered
+   tubes with ball joints), gloves, work boots, a team shirt with a contrast stripe, collar and cuffs, and a cap. The joints for each pose are in PITS_POSE */
+var PITS_POSE={
+  lean:{ hip:0.92, lean0:-0.55,
+    legs:[[[-0.1,0.92,0],[-0.115,0.5,-0.03],[-0.13,0.11,0]], [[0.1,0.92,0],[0.115,0.5,-0.03],[0.13,0.11,0]]],
+    arms:[[[-0.2,0.44,0],[-0.24,0.22,-0.15],[-0.19,0.11,-0.38]], [[0.2,0.44,0],[0.24,0.22,-0.15],[0.19,0.11,-0.38]]] },
+  kneel:{ hip:0.52, lean0:-0.18,
+    legs:[[[-0.11,0.52,0],[-0.12,0.52,-0.42],[-0.12,0.11,-0.38]], [[0.11,0.52,0],[0.12,0.08,0.05],[0.12,0.09,0.46],[0.12,0.03,0.66]]],
+    arms:[[[-0.2,0.44,0],[-0.25,0.21,-0.1],[-0.13,0.23,-0.35]], [[0.2,0.44,0],[0.25,0.2,-0.12],[0.12,0.2,-0.38]]], gauge:true } };
+var _pcY=new THREE.Vector3(0,1,0), _pcD=new THREE.Vector3(), _pcQ=new THREE.Quaternion(), _pcE=new THREE.Euler();
+/* a tube from a to b (narrower at b), radius r at a */
+function pitsLimb(S, a, b, r, col, g){
+  _pcD.set(b[0]-a[0], b[1]-a[1], b[2]-a[2]); var l=_pcD.length(); _pcQ.setFromUnitVectors(_pcY, _pcD.multiplyScalar(1/l)); _pcE.setFromQuaternion(_pcQ);
+  S.add("s", g||"taper", [(a[0]+b[0])/2, (a[1]+b[1])/2, (a[2]+b[2])/2], [2*r, l, 2*r], col, [_pcE.x, _pcE.y, _pcE.z]);
+}
+function pitsBall(S, p, r, col, sx, sy, sz){ S.add("s", "sph", p, [2*r*(sx||1), 2*r*(sy||1), 2*r*(sz||1)], col); }
+function pitsLerp(a, b, t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+function pitsPerson(shirt, pose, trim){
+  var M=pitsMats(), G=new THREE.Group(), up=new THREE.Group(), P=PITS_POSE[pose]||PITS_POSE.lean, i;
+  var PANTS=0x2b3442, SKIN=0xc39274, CAP=0x15171b, BOOT=0x2a2018, SOLE=0x111111, GLOVE=0x26282c, TRIM=trim||0xf4efe2;
+  var L=new StripBatch(), U=new StripBatch(), hip=P.hip;
+  /* legs: seat, thighs, knees, shins, boots (a planted foot points forward; a kneeling one has its toe tucked under, behind) */
+  pitsBall(L, [0, hip-0.02, 0.01], 0.17, PANTS, 1.05, 0.62, 0.72);
+  L.box("s", 0.095, hip-0.11, 0.115, 0.08, 0.13, 0.012, 0xb3261e);   /* the rag in the back pocket */
+  for(i=0;i<2;i++){ var g=P.legs[i], hp=g[0], kn=g[1], an=g[2];
+    pitsLimb(L, hp, kn, 0.085, PANTS); pitsBall(L, kn, 0.07, PANTS); pitsLimb(L, kn, an, 0.068, PANTS);
+    if(g[3]){ pitsBall(L, kn, 0.075, 0x3a3f46, 1, 0.8, 1); pitsLimb(L, an, g[3], 0.06, BOOT, "box"); pitsBall(L, g[3], 0.058, SOLE, 1, 0.8, 1); }
+    else { var ax=an[0], az=an[2];
+      L.add("s", "cyl", [ax, an[1]+0.02, az], [0.13, 0.1, 0.13], BOOT); L.box("s", ax, 0.075, az-0.04, 0.115, 0.1, 0.2, BOOT);
+      pitsBall(L, [ax, 0.07, az-0.14], 0.06, BOOT, 1, 0.85, 1.25); L.box("s", ax, 0.02, az-0.05, 0.125, 0.04, 0.3, SOLE); } }
+  /* upper body: belt, torso widening to the shoulders, stripe, collar, name patch, neck, head, cap */
+  U.add("s", "cyl", [0, 0.02, 0], [0.345, 0.06, 0.215], 0x1c1c1c); U.box("s", 0, 0.02, -0.108, 0.05, 0.04, 0.012, 0x9a9ea4);
+  U.add("s", "taper", [0, 0.25, 0], [0.36, 0.44, 0.22], shirt, [0, 0, PI]); pitsBall(U, [0, 0.44, 0], 0.22, shirt, 1, 0.45, 0.55);
+  U.add("s", "cyl", [0, 0.32, 0], [0.37, 0.05, 0.228], TRIM); U.add("s", "cyl", [0, 0.53, 0], [0.15, 0.04, 0.13], TRIM);
+  U.box("s", 0.075, 0.4, -0.118, 0.08, 0.035, 0.01, 0xf4efe2);
+  U.add("s", "cyl", [0, 0.58, 0], [0.1, 0.1, 0.1], SKIN);
+  pitsBall(U, [0, 0.705, 0], 0.11, SKIN, 0.86, 1.04, 0.95); pitsBall(U, [0, 0.69, -0.105], 0.02, SKIN, 0.9, 1.3, 1);
+  pitsBall(U, [-0.094, 0.7, 0.01], 0.022, SKIN, 0.6, 1.1, 0.9); pitsBall(U, [0.094, 0.7, 0.01], 0.022, SKIN, 0.6, 1.1, 0.9);
+  pitsBall(U, [0, 0.765, 0.005], 0.104, CAP, 1, 0.68, 1.06); U.add("s", "box", [0, 0.765, -0.14], [0.17, 0.016, 0.12], CAP, [-0.12, 0, 0]);
+  pitsBall(U, [0, 0.8, -0.098], 0.016, TRIM, 1, 1, 0.5);   /* the cap badge */
+  /* arms: short sleeves with a cuff, bare forearms, gloves */
+  for(i=0;i<2;i++){ var a=P.arms[i], sh=a[0], el=a[1], wr=a[2], mid=pitsLerp(sh, el, 0.55);
+    pitsBall(U, sh, 0.07, shirt); pitsLimb(U, sh, mid, 0.064, shirt, "cyl"); pitsLimb(U, pitsLerp(sh, el, 0.5), pitsLerp(sh, el, 0.6), 0.067, TRIM, "cyl");
+    pitsLimb(U, mid, el, 0.047, SKIN); pitsBall(U, el, 0.042, SKIN); pitsLimb(U, el, wr, 0.043, SKIN);
+    var hd=pitsLerp(el, wr, 1.18); pitsBall(U, hd, 0.045, GLOVE, 0.9, 0.75, 1.35); pitsLimb(U, pitsLerp(el, wr, 0.92), pitsLerp(el, wr, 1.02), 0.047, GLOVE, "cyl"); }
+  if(P.gauge){ var w=P.arms[1][2], e=P.arms[1][1], gp=pitsLerp(e, w, 1.3);   /* the tyre gauge in his right hand */
+    U.add("s", "cyl", [gp[0], gp[1]+0.03, gp[2]], [0.07, 0.025, 0.07], 0xd8d6cc, [PI/2-0.3, 0, 0]); pitsLimb(U, gp, pitsLerp(e, w, 1.6), 0.008, 0x9a9ea4, "cyl"); }
   pitsBuild(L, "s", M.solid, true, G); up.position.y=hip; pitsBuild(U, "s", M.solid, true, up); G.add(up);
-  G.userData={up:up, pose:pose, lean0:pose==="lean"?-0.55:-0.18, ph:Math.random()*6};
+  G.userData={up:up, pose:pose, lean0:P.lean0, ph:Math.random()*6};
   up.rotation.x=G.userData.lean0; return G;
 }
 function buildPitsScene(){
@@ -134,9 +171,9 @@ function pitsProps(car){
   pitsBuild(B, "solid", M.solid, true, G); pitsBuild(B, "metal", M.metal, true, G); pitsBuild(B, "glow", M.glow, false, G);
   PITS.spot.position.set(wx-0.1, 1.95, wz-0.05); PITS.spot.target.position.set((x0+x1)/2-0.4, 0.4, 0); PITS.spot.target.updateMatrixWorld();
   /* crew: one on the rear tyre with the gauge, one leaning into the engine bay */
-  var A=pitsPerson(0xe5562b, "kneel"); A.position.set(rearX+0.05, 0, -(rearZ+F.tw*0.5+0.62)); A.rotation.y=PI+0.12;   /* r8: far side of the rear tyre: on the near side he stood in front of the rear wheel and the bars */
+  var A=pitsPerson(0xe5562b, "kneel", 0x22262c); A.position.set(rearX+0.05, 0, -(rearZ+F.tw*0.5+0.62)); A.rotation.y=PI+0.12;   /* r8: far side of the rear tyre: on the near side he stood in front of the rear wheel and the bars */
    G.add(A); A.userData.key="psi";
-  var eng=u._eng.clone(); eng.x+=ox; var Bm=pitsPerson(0x22262c, "lean"); G.add(Bm); Bm.userData.key="launch";
+  var eng=u._eng.clone(); eng.x+=ox; var Bm=pitsPerson(0x22262c, "lean", 0xe5562b); G.add(Bm); Bm.userData.key="launch";
   if(u.body==="rail"){ Bm.position.set(eng.x, 0, -(hw+0.42)); Bm.rotation.y=PI-0.08; } else { Bm.position.set(x1+0.42, 0, 0.3); Bm.rotation.y=PI/2; }   /* over the motor: alongside a rail, over the nose of a car */
   PITS.crew=[A, Bm];
   pitsModels();
