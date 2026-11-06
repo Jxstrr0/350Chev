@@ -121,7 +121,7 @@ $("replayFF").addEventListener("click",()=>{ensureSound();ffStart(S.mode);});
 // a new player's first tap on the intro runs First Fire before the mode they picked (capture beats the handler above)
 $("intro").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b||S.firstFireDone)return;e.stopPropagation();$("intro").style.display="none";S.seen=true;ensureSound();ffStart(b.dataset.mode);},true);
 // buttons that swap the whole game end First Fire first, so they act on the player's own save
-function ffGuard(e){if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
+function ffGuard(e){if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave,#bkFileSave,#bkFileLoad");if(!b)return;
   if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));}
 $("panel").addEventListener("click",ffGuard,true);$("setPane").addEventListener("click",ffGuard,true);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)ffSafeSave();});window.addEventListener("pagehide",ffSafeSave);
@@ -466,7 +466,7 @@ const LESSONS=[
   {tab:"test",sel:"#rlRun",title:"Pull it",text:"Arm the dyno and pull. Look for the step in the curve where the pipe comes in and how narrow the band above it is. Lowering the exhaust port or retuning the pipe widens it at the cost of the peak."}]}
 ];
 let LS=null;
-const LS_WALK=["#modeBox button","#replayTour","#resetGame","#foreclose [data-restart]","#slots button","#importSave","#exportSave"].join(",");
+const LS_WALK=["#modeBox button","#replayTour","#resetGame","#foreclose [data-restart]","#slots button","#importSave","#exportSave","#bkFileSave","#bkFileLoad"].join(",");
 function lsEl(st){const all=document.querySelectorAll(st.sel);let el=[...all].find(e=>e.offsetParent)||all[0];if(!el)return null;if(st.wrap)el=el.closest(st.wrap)||el;for(let i=0;i<(st.up||0)&&el.parentElement;i++)el=el.parentElement;return el;}
 function lsRect(st){const el=lsEl(st);if(!el||!el.offsetParent&&getComputedStyle(el).position!=="fixed")return null;let r=el.getBoundingClientRect();
   if(st.lbl&&el.previousElementSibling&&el.previousElementSibling.classList.contains("lbl")){const a=el.previousElementSibling.getBoundingClientRect();r={left:Math.min(a.left,r.left),right:Math.max(a.right,r.right),top:a.top,bottom:r.bottom,width:0,height:0};r.width=r.right-r.left;r.height=r.bottom-r.top;}
