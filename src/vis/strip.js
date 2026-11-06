@@ -27,7 +27,8 @@ var SB_GEO=null;
 function sbGeo(){
   if(SB_GEO) return SB_GEO;
   SB_GEO={ box:new THREE.BoxGeometry(1,1,1).toNonIndexed(), cyl:new THREE.CylinderGeometry(0.5,0.5,1,10).toNonIndexed(), cyl6:new THREE.CylinderGeometry(0.5,0.5,1,6).toNonIndexed(),
-    cone:new THREE.CylinderGeometry(0,0.5,1,4).toNonIndexed(), plane:new THREE.PlaneGeometry(1,1).toNonIndexed(), prism:null, beam:new THREE.CylinderGeometry(0.08,0.5,1,12,1,true).toNonIndexed(), tcone:new THREE.CylinderGeometry(0.11,0.5,1,12).toNonIndexed(), ico:new THREE.IcosahedronGeometry(1,0) };
+    cone:new THREE.CylinderGeometry(0,0.5,1,4).toNonIndexed(), plane:new THREE.PlaneGeometry(1,1).toNonIndexed(), prism:null, beam:new THREE.CylinderGeometry(0.08,0.5,1,12,1,true).toNonIndexed(), tcone:new THREE.CylinderGeometry(0.11,0.5,1,12).toNonIndexed(), ico:new THREE.IcosahedronGeometry(1,0),
+    sph:new THREE.SphereGeometry(0.5,12,8).toNonIndexed(), taper:new THREE.CylinderGeometry(0.4,0.5,1,10).toNonIndexed() };   /* sph, taper: the pits crew (rounded heads, joints, limbs) */
   /* gable roof: triangular prism, 1×1×1, ridge along x */
   var p=new THREE.BufferGeometry(), v=[-.5,0,-.5, .5,0,-.5, .5,.5,0,  -.5,0,-.5, .5,.5,0, -.5,.5,0,   .5,0,.5, -.5,0,.5, -.5,.5,0,  .5,0,.5, -.5,.5,0, .5,.5,0,
     -.5,0,.5, -.5,0,-.5, -.5,.5,0,   .5,0,-.5, .5,0,.5, .5,.5,0];
