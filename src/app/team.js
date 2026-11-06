@@ -517,8 +517,8 @@ function pcOffer(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],k=pcPayK(null)
     ${T.ret?`<p class="hint pcret" data-nofold>${pcRetTxt(T)}</p>`:""}${T.rescue?`<p class="pcmid"><b>Rescue.</b> Their engine supplier went bust after round ${T.rescue}. Take over for rounds ${T.rescue+1} to ${PC_ROUNDS}: they have ${T.rpts} pts and are near the back. The fee is ${Math.round((PC_RESCUE.pay-1)*100)}% richer for the trouble; the budget is what's left of theirs.</p>`:""}
     <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.purse&&PC_PURSE[T.purse]?`<p class="pcst"><b>${PC_PURSE[T.purse].n}.</b> ${PC_PURSE[T.purse].d}</p>`:""}${T.rule&&PC_RULES[T.rule]?`<p class="pcmid"><b>Team rule.</b> ${esc(pcRuleTxt(T))}. They pay ${Math.round((PC_RULES[T.rule].payK-1)*100)}% more on the fee for it.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}
     <p class="mkline"><span>Parts budget <b>${fmt$(T.budget)}</b></span><span>A round raced <b>${fmt$(Math.round(T.pay*PC_RETAIN*k/50)*50)}</b></span><span>Title <b>${fmt$(Math.round(T.pay*PC_CBONUS[0]*(st.winK||1)*k/50)*50)}</b></span></p>
-    <p class="hint">${T.rescue?`${PC_ROUNDS-T.rescue} rounds left`:`${PC_ROUNDS} rounds`}, one every ${PC_GAP} weeks. The budget pays for the engine; the fee is yours, with a bonus for every podium. Offer open till week ${T.exp}.</p>
-    <div class="row"><button class="btn sm" data-pcsign="${T.id}">Sign with ${esc(T.team)}</button><button class="btn sm ghost" data-pcpass="${T.id}">Pass</button></div></div>`;}
+    <p class="hint">${T.rescue?`${PC_ROUNDS-T.rescue} rounds left`:`${PC_ROUNDS} rounds`}, one every ${PC_GAP} weeks. The budget pays for the engine; the fee is yours, with a bonus for every podium. ${T.fit?"Open while this engine is the certified one.":`Offer open till week ${T.exp}.`}</p>
+    <div class="row"><button class="btn sm" data-pcsign="${T.id}">Sign with ${esc(T.team)}</button>${T.fit?"":`<button class="btn sm ghost" data-pcpass="${T.id}">Pass</button>`}</div></div>`;}
 /* where the driver's ask stands with the engine on the bench (the veteran's podium can't be known till race day) */
 function pcMidNow(T,c){if(T.mid!=="ask"||!c.res)return"";const same=T.hash!=null&&T.hash===cfgHash(S.cfg),wear=same?T.wear:0,ok=x=>x?"✓ ":"✗ ";
   if(T.style==="steady"){const r=Math.round(c.res.rel-wear);return`<i>${ok(r>=90)}Now ${r}%${same&&T.wear>0?" with the wear":""}.</i>`;}
@@ -570,7 +570,7 @@ function pcRender(){if(!$("mkTeam")||!career())return;const p=pcS();pcRefill();c
   $("pcNext").textContent=(T?`A second team: from ${PC_TWO_REP} rep the shop can supply two at once, in another series, its rounds on the weeks between ${T.team}'s. Each has its own budget and season engine; Put the season engine back swaps them on the bench.`
     :`Season ${p.season}: pick a team to supply for ${PC_ROUNDS} rounds. ${pcNextTxt()}`)+(p.passW===C().week&&p.passN?` A passed team's place fills when the week closes.`:"");
   $("pcRoster").innerHTML=full?"":p.offers.map(pcOffer).join("");
-  pcShowRender();
+  pcShowRender();pcFitRender();
 }
 /* the header's week line, and the build cost in red when it is more than the team has left */
 function pcHud(){if(!career())return;const T=pcBenchTeam();let over=false,t=`WEEK ${C().week}`;
@@ -580,7 +580,7 @@ function pcHud(){if(!career())return;const T=pcBenchTeam();let over=false,t=`WEE
 $("mkTeam").addEventListener("click",e=>{if(!career())return;const p=pcS(),ct=e.target.closest("[data-pct]"),T=ct?pcTeams()[+ct.dataset.pct]||null:null;
   const go=e.target.closest("[data-pcgo]");if(go&&T){pcRace(false,T,go);return;}
   if(e.target.closest("[data-pcweek]")){closeWeeks(pcSkip()||1);return;}   // the strip's Close week / To race week, on the card too (since 1.76.60)
-  const g=e.target.closest("[data-pcsign]");if(g){if(pcFull())return;const o=p.offers.find(x=>x.id==g.dataset.pcsign);if(!o)return;const t=pcSign(o);save();hud();renderShop();showTab("build");toast(`Signed with ${t.team} · round 1 is week ${t.due}`);if(tourStep>=0)setTimeout(()=>tourAdvance(0),60);return;}
+  const g=e.target.closest("[data-pcsign]");if(g){if(pcFull())return;const o=p.offers.find(x=>x.id==g.dataset.pcsign)||pcFitFind(g.dataset.pcsign);if(!o)return;const t=pcSign(o);save();hud();renderShop();showTab("build");toast(`Signed with ${t.team} · round 1 is week ${t.due}`);if(tourStep>=0)setTimeout(()=>tourAdvance(0),60);return;}
   const ps=e.target.closest("[data-pcpass]");if(ps){if(pcFull())return;const n0=p.offers.length;p.offers=p.offers.filter(x=>x.id!=ps.dataset.pcpass);if(p.offers.length===n0)return;
     if(p.passW!==C().week){p.passW=C().week;p.passN=0;}p.passN++;save();pcRender();toast("Passed · another team calls when the week closes");return;}
   if(!T){if(e.target.closest("[data-pcok]")){p.last=null;save();pcRender();}return;}
