@@ -126,7 +126,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.69.0";
+const VERSION="1.76.70.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -214,7 +214,9 @@ function trackEvt(t){return t==="drag"||t==="pull_sled"||t==="salt"||t==="road"|
 function simEnv(extra){return Object.assign({},S.env,career()?(climateCtl()&&!trackEvt(S.env.testType)?careerCell():stdCell()):{},extra||{});}
 function stdEnv(extra){return Object.assign({},S.env,career()?stdCell():{},extra||{});}
 function isStdCell(e){const d=SIM.DEFAULT_ENV;return CELL_KEYS.every(k=>+e[k]===+d[k]);}
-function envStore(k){return career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
+/* the two-step rpm and launch retard are engine settings (S.cfg) but also sit in the drag setup, so the strip's sliders write them there */
+const CFG_ENV_KEYS=["twoStepRpm","launchRetard"];let buildStale=false;
+function envStore(k){return CFG_ENV_KEYS.includes(k)?S.cfg:career()&&CELL_KEYS.includes(k)?careerCell():S.env;}
 function envHash(){const e=simEnv();return [e.ambientC,e.altitudeM,e.coolantC,e.oilC,e.shop?JSON.stringify(e.shop):""].join(",");}
 const HASH_SKIP={cover:1,twoStepRpm:1,launchRetard:1};   // colour and the launch tune don't make it a different engine
 const ROT_KEYS={ecc:1,rotPort:1,apexSeal:1,rotHousing:1,sidePlate:1,eshaft:1,oilMeter:1};   // Wankel parts: no part of a piston engine (and no change to its hash)
