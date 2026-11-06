@@ -12,7 +12,8 @@
    paste can never leave a half-restored game.
    "PEW2:" already belongs to the older one-game codes (plain base64 JSON, decodeSave in app/state.js). Restore still reads
    those, so the next version of THIS format must be PEW3:, not PEW2:.
-   UI: Shop tab -> Saves -> Back up / Restore (buttons #exportSave / #importSave, hooked up in app/career.js).
+   UI: Shop tab -> Saves -> Back up / Restore (buttons #exportSave / #importSave, hooked up in app/career.js), plus the backup
+   file buttons and the reminder at the end of this file.
    Tests: `node check-savecode.js` in the repo root. */
 const BU_V=1,BU_PREFIX="PEW"+BU_V+":";
 const BU_B64="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",BU_MAXCODES=65536;
@@ -138,8 +139,9 @@ function buWrite(d){
 function buSheet(title,html){$("sheetTitle").textContent=title;$("sheetBody").innerHTML=html;$("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetBody").scrollTop=0;}
 function buSelect(ta){try{ta.select();ta.setSelectionRange(0,ta.value.length);}catch(e){}}
 async function buCopy(ta){
-  try{await navigator.clipboard.writeText(ta.value);toast("Copied. Paste it somewhere safe.");return;}catch(e){}   // no clipboard access: select it instead
+  try{await navigator.clipboard.writeText(ta.value);buMarkBackup();toast("Copied. Paste it somewhere safe.");return;}catch(e){}   // no clipboard access: select it instead
   ta.focus();buSelect(ta);let ok=false;try{ok=document.execCommand("copy");}catch(e){}
+  if(ok)buMarkBackup();
   toast(ok?"Copied. Paste it somewhere safe.":"Code selected. Long-press it and tap Copy.");}
 function buBackupOpen(){let code="";try{code=buCode();}catch(e){}
   if(!code){toast("Couldn't make a backup code on this device");return;}
@@ -168,10 +170,80 @@ function buRestore(text,err){
   err.textContent="";
   if(testing){say("busy");return;}
   let r;try{r=buRead(text);}catch(e){say(e&&e.bu||"damaged");return;}
+  {const o=r.kind==="one"?r.save:r.data.save,bk=S&&buNum(S.bkAt)?S.bkAt:0;if(bk>(buNum(o.bkAt)?o.bkAt:0))o.bkAt=bk;}   // this device's last-backup time survives a restore
   if(r.kind==="one"){
     if(!confirm("This is an older save code that holds one game, not a full backup.\n\nLoad it as your current game? Your save slots and Legacy points stay as they are."))return;
-    closeSheet();applyLoaded(r.save,"Save code loaded");return;}
+    closeSheet();applyLoaded(r.save,"Save code loaded");buPersist();return;}
   if(!confirm(buAsk(r.data)))return;
   if(!buWrite(r.data)){say("store");return;}
   LG=null;   // the Legacy record is cached in memory (app/legacy.js): read the restored one next time
-  closeSheet();applyLoaded(r.data.save,"Backup restored");}
+  closeSheet();applyLoaded(r.data.save,"Backup restored");buPersist();}
+
+/* ===================== SAVE SAFETY: backup files, keep-my-storage, the backup reminder (1.76.66) =====================
+   Every Longlight game lives at jxstrr0.github.io, so they share one browser storage pot. When a phone runs short of
+   space the browser may clear all of it at once. Three things guard against that:
+     buPersist()   asks the browser to keep this site's storage (navigator.storage.persist). Once per page load, only after a
+                   save write with a game going (save() in app/state.js calls it) or after a backup/restore. Firefox may ask
+                   the player; Chrome and Safari decide quietly. Missing API: nothing happens.
+     buFileSave()  the same PEW1: code as Back up, in a text file. Share sheet with the file where the browser can
+                   (iPhone: "Save to Files", also from the Home Screen app), else a normal download.
+     buFileLoad()  reads a backup file and runs it through the Restore sheet, so the same checks and the same confirm happen.
+   S.bkAt = when the last backup was taken (a code copied or a file saved). It rides in the save (pew2-save), so no new
+   localStorage key; a restore keeps whichever time is newer. buRemind() shows a quiet bar (once per session, at a calm
+   moment) when there is real progress and no backup in BU_REMIND_DAYS days. UI: Settings › Save (buttons wired in app/career.js). */
+const BU_REMIND_DAYS=14,BU_FILE_MAX=4e6;
+let buPersistAsked=false,buReminded=false;
+function buPersist(){if(buPersistAsked)return;buPersistAsked=true;
+  try{const st=typeof navigator!=="undefined"&&navigator.storage;if(!st||!st.persist||!st.persisted)return;
+    st.persisted().then(p=>p||st.persist()).then(()=>buStoreLine(),()=>{});}catch(e){}}
+/* the one status line in Settings › Save: is the storage kept, and when was the last backup */
+function buStoreLine(){const el=typeof document!=="undefined"&&document.getElementById("bkStore");if(!el)return;
+  const last=S&&buNum(S.bkAt)?"Last backup "+new Date(S.bkAt).toLocaleDateString("en-CA",{month:"short",day:"numeric"})+".":"No backup yet.";
+  let st=null;try{st=navigator.storage;}catch(e){}
+  if(!st||!st.persisted){el.textContent=last;el.hidden=false;return;}
+  st.persisted().then(p=>{el.textContent=(p?"Storage: kept on this device. ":"Storage: the browser may clear saves if the phone runs low. Keep a backup file. ")+last;el.hidden=false;},
+    ()=>{el.textContent=last;el.hidden=false;});}
+function buMarkBackup(){if(!S)return;S.bkAt=Date.now();try{save();}catch(e){}buPersist();buStoreLine();buRemindHide();}
+function buFileName(){const d=new Date(),p=n=>String(n).padStart(2,"0");return`prairie-engine-works-backup-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}.txt`;}
+async function buFileSave(){let code="";try{code=buCode();}catch(e){}
+  if(!code){toast("Couldn't make a backup on this device");return;}
+  const name=buFileName(),text=code+"\n";
+  let file=null;try{file=new File([text],name,{type:"text/plain"});}catch(e){}
+  if(file&&navigator.canShare&&navigator.share){let can=false;try{can=navigator.canShare({files:[file]});}catch(e){}
+    if(can){try{await navigator.share({files:[file]});buMarkBackup();toast("Backup file saved");return;}
+      catch(e){if(e&&e.name==="AbortError")return;}}}   // cancelled: not saved. Any other refusal falls back to a download
+  try{const url=URL.createObjectURL(new Blob([text],{type:"text/plain"})),a=document.createElement("a");
+    a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+    buMarkBackup();toast("Backup file saved: "+name);}
+  catch(e){toast("Couldn't save a file here. Use Back up and copy the code.");}}
+function buFileLoad(){if(testing){toast("Let the run finish first");return;}const inp=$("bkFileIn");if(inp){inp.value="";inp.click();}}
+async function buFileRead(inp){const f=inp.files&&inp.files[0];inp.value="";if(!f)return;
+  let text="";
+  if(f.size>BU_FILE_MAX)text="\u0000";   // far too big to be a backup: the Restore sheet says it isn't a code
+  else{try{text=await f.text();}catch(e){text=await new Promise(res=>{try{const r=new FileReader();r.onload=()=>res(String(r.result||""));r.onerror=()=>res("");r.readAsText(f);}catch(_){res("");}});}}
+  text=String(text).trim();
+  buRestoreOpen();$("codeIn").value=text;
+  buRestore(text||"\u0000",$("codeErr"));}
+/* the reminder: real progress (a career past week 3, or a few saved blueprints) and no backup in BU_REMIND_DAYS days.
+   Once per session, never over an event, a run, a sheet, Settings, a tour or the intro; it tries again later if busy. */
+function buRemindDue(){if(!S||!S.mode)return false;
+  const prog=(S.mode==="career"&&S.career&&(+S.career.week||1)>=4)||(Array.isArray(S.blueprints)&&S.blueprints.length>=2);
+  return prog&&(!buNum(S.bkAt)||Date.now()-S.bkAt>=BU_REMIND_DAYS*864e5);}
+function buBusy(){const h=document.documentElement.classList;
+  return testing||h.contains("onevent")||h.contains("photo")||h.contains("troom")||$("sheet").classList.contains("on")||(typeof setOn==="function"&&setOn())
+    ||$("intro").style.display!=="none"||(typeof tourStep!=="undefined"&&tourStep>=0)||(typeof ff!=="undefined"&&!!ff)||(typeof LS!=="undefined"&&!!LS)
+    ||!!document.querySelector("#pwaBar.on,#rcard:not([hidden]),#troom:not([hidden])");}
+function buRemind(tries){if(buReminded||!buRemindDue())return;
+  if(buBusy()){if((tries|0)<20)setTimeout(()=>buRemind((tries|0)+1),30000);return;}
+  buReminded=true;
+  let bar=$("bkBar");
+  if(!bar){bar=document.createElement("div");bar.id="bkBar";bar.setAttribute("role","status");
+    bar.innerHTML='<span id="bkBarTxt"></span><button type="button" class="btn sm pri" id="bkBarGo">Saves</button><button type="button" class="pwalater" id="bkBarLater" aria-label="Dismiss the backup reminder">Later</button>';
+    ($("app")||document.body).appendChild(bar);
+    $("bkBarLater").addEventListener("click",buRemindHide);
+    $("bkBarGo").addEventListener("click",()=>{buRemindHide();if(buBusy())return;try{renderShop();}catch(e){}setOpen();const f=$("set-save");if(f){f.open=true;setTimeout(()=>f.scrollIntoView({block:"start"}),60);}buStoreLine();});}
+  const d=buNum(S.bkAt)?Math.floor((Date.now()-S.bkAt)/864e5):-1;
+  $("bkBarTxt").textContent=d<0?"No backup yet. Keep a copy off this phone.":`Last backup ${d} days ago. Time for a fresh one.`;
+  requestAnimationFrame(()=>bar.classList.add("on"));
+  clearTimeout(buRemind.t);buRemind.t=setTimeout(buRemindHide,20000);}
+function buRemindHide(){const b=typeof document!=="undefined"&&document.getElementById("bkBar");if(b)b.classList.remove("on");}

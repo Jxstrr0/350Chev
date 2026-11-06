@@ -197,7 +197,8 @@ function closeWeeks(n){if(testing){toast("Let the run finish first");return;}con
   for(let i=0;i<n;i++){const so=spS().offers.length,rd=C().rndActive;advanceWeek();oh+=overhead();
     if(C().cash<FORECLOSE_AT||spS().offers.length>so||(rd&&!C().rndActive))break;}
   save();hud();renderShop();const k=C().week-w0;
-  toast(`${k>1?`WEEKS ${w0+1}–${C().week}`:`WEEK ${C().week}`} · OVERHEAD ${fmt$(oh)}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);}
+  toast(`${k>1?`WEEKS ${w0+1}–${C().week}`:`WEEK ${C().week}`} · OVERHEAD ${fmt$(oh)}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);
+  setTimeout(()=>buRemind(),3200);}   // between weeks is a calm moment for the backup reminder (app/savecode.js)
 $("nextWeek").addEventListener("click",()=>closeWeeks(pcSkip()||1));
 $("oneWeek").addEventListener("click",()=>closeWeeks(1));
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
@@ -249,6 +250,11 @@ $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   else if(b.dataset.clear){const i=+b.dataset.clear;if(!confirm(`Clear slot ${i}?`))return;clearSlot(i);renderSaves();toast(`SLOT ${i} CLEARED`);}});
 $("exportSave").addEventListener("click",buBackupOpen);   // Back up / Restore: save codes, app/savecode.js
 $("importSave").addEventListener("click",buRestoreOpen);
+$("bkFileSave").addEventListener("click",buFileSave);   // backup files, the storage line and the reminder: end of app/savecode.js
+$("bkFileLoad").addEventListener("click",buFileLoad);
+$("bkFileIn").addEventListener("change",e=>buFileRead(e.currentTarget));
+$("setOpen").addEventListener("click",()=>setTimeout(buStoreLine,0));
+setTimeout(()=>buRemind(),45000);   // a calm look at the backup age once the session has settled; Close week checks again
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=pcS().raced;o.pullCups=(C().pullTitles||[]).length;}return o;}

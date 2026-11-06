@@ -1672,16 +1672,17 @@ html.troom #phBtn{display:none!important}
 @media (prefers-reduced-motion:no-preference){.card.rvch{transition:box-shadow .2s}}
 .goalsec{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--edge);font-family:var(--display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--orange2)}
 .goalsec span{font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;font-weight:400;color:var(--dim);text-align:right}
-/* ===================== PWA (app/pwa.js): "new version ready" bar, Install row in Settings ===================== */
-#pwaBar{position:absolute;left:50%;bottom:calc(var(--tabh) + 84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(16px);z-index:60;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 24px);box-sizing:border-box;padding:8px 8px 8px 14px;border-radius:10px;background:#1c1b19;color:#faf9f5;border:1px solid #d97757;box-shadow:0 6px 24px rgba(0,0,0,.45);font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
-#pwaBar.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
-#pwaBar span{min-width:0;line-height:1.25}
-#pwaBar .btn{flex:0 0 auto;min-height:44px;min-width:44px;width:auto}
-#pwaBar .pwalater{flex:0 0 auto;min-height:44px;min-width:44px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#b4b1aa;font:inherit;font-weight:500}
-#pwaBar .pwalater:hover{color:#faf9f5}
-html.desk #pwaBar{left:calc((100% - var(--sbw))/2);bottom:20px}
-html.photo #pwaBar{display:none}
-@media (prefers-reduced-motion:reduce){#pwaBar{transition:none}}
+/* ===================== PWA (app/pwa.js): "new version ready" bar, Install row in Settings =====================
+   #bkBar, the backup reminder (app/savecode.js), shares the bar's look */
+#pwaBar,#bkBar{position:absolute;left:50%;bottom:calc(var(--tabh) + 84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(16px);z-index:60;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100% - 24px);box-sizing:border-box;padding:8px 8px 8px 14px;border-radius:10px;background:#1c1b19;color:#faf9f5;border:1px solid #d97757;box-shadow:0 6px 24px rgba(0,0,0,.45);font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#pwaBar.on,#bkBar.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#pwaBar span,#bkBar span{min-width:0;line-height:1.25}
+#pwaBar .btn,#bkBar .btn{flex:0 0 auto;min-height:44px;min-width:44px;width:auto}
+#pwaBar .pwalater,#bkBar .pwalater{flex:0 0 auto;min-height:44px;min-width:44px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#b4b1aa;font:inherit;font-weight:500}
+#pwaBar .pwalater:hover,#bkBar .pwalater:hover{color:#faf9f5}
+html.desk #pwaBar,html.desk #bkBar{left:calc((100% - var(--sbw))/2);bottom:20px}
+html.photo #pwaBar,html.photo #bkBar,html.onevent #bkBar{display:none}
+@media (prefers-reduced-motion:reduce){#pwaBar,#bkBar{transition:none}}
 /* v1.71 perf lane: the Events tile that reports a live race night ("Heads-up eliminations · on now") keeps its status on ONE line
    under the title (two lines in all): the status drops under the icon and takes the full tile width instead of the narrow text column */
 .evpick button.live svg{grid-row:1}
@@ -2457,7 +2458,13 @@ html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
           <button class="btn sm info" id="exportSave" style="flex:1" aria-haspopup="dialog">Back up</button>
           <button class="btn sm info" id="importSave" style="flex:1" aria-haspopup="dialog">Restore</button>
         </div>
-        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser.</p>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm ghost" id="bkFileSave" style="flex:1">Save backup file</button>
+          <button class="btn sm ghost" id="bkFileLoad" style="flex:1" aria-haspopup="dialog">Load backup file</button>
+          <input type="file" id="bkFileIn" accept=".txt,text/plain" hidden aria-hidden="true" tabindex="-1">
+        </div>
+        <p class="hint" id="bkStore" hidden></p>
+        <p class="hint">Autosave keeps your current game on this device. Slots are manual snapshots: save before a risky build, load to roll back. <b>Back up</b> gives you one code with all of it, and <b>Restore</b> brings it back on any phone or browser. A <b>backup file</b> holds the same code, so a copy lives outside the browser.</p>
         <button class="btn danger" id="resetGame">Wipe career</button>
         <p class="hint">A game by Longlight Interactive.</p>
 </div></details>
@@ -30920,7 +30927,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.65.0";
+const VERSION="1.76.66.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -30944,7 +30951,7 @@ function applyTheme(){const t=S.theme||"dark";const eff=t==="auto"?(window.match
   if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();}
 function buzz(ms){if(S.haptics===false||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
 function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({},SIM.DEFAULT_CFG),env:Object.assign({},SIM.DEFAULT_ENV),blueprints:[],last:null,base:null,vol:60,sound:true,seen:false,name:null,heat:false,theme:"dark",haptics:true,viewMini:false,psi:false};}
-function save(){try{if(typeof lgSync==="function")lgSync();const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));}catch(e){}}
+function save(){try{if(typeof lgSync==="function")lgSync();const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));if(S.mode&&typeof buPersist==="function")buPersist();}catch(e){}}   // buPersist: app/savecode.js asks the browser to keep the storage, once
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
 function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});return o;}
 function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suC=null;Object.assign(S,o);delete S.bay;delete S.pit;
@@ -35689,7 +35696,8 @@ function closeWeeks(n){if(testing){toast("Let the run finish first");return;}con
   for(let i=0;i<n;i++){const so=spS().offers.length,rd=C().rndActive;advanceWeek();oh+=overhead();
     if(C().cash<FORECLOSE_AT||spS().offers.length>so||(rd&&!C().rndActive))break;}
   save();hud();renderShop();const k=C().week-w0;
-  toast(`${k>1?`WEEKS ${w0+1}–${C().week}`:`WEEK ${C().week}`} · OVERHEAD ${fmt$(oh)}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);}
+  toast(`${k>1?`WEEKS ${w0+1}–${C().week}`:`WEEK ${C().week}`} · OVERHEAD ${fmt$(oh)}${C().loan>0?" · BANK "+fmt$(loanInt()+loanPay()):""}`);
+  setTimeout(()=>buRemind(),3200);}   // between weeks is a calm moment for the backup reminder (app/savecode.js)
 $("nextWeek").addEventListener("click",()=>closeWeeks(pcSkip()||1));
 $("oneWeek").addEventListener("click",()=>closeWeeks(1));
 $("staff").addEventListener("click",e=>{const h=e.target.closest("[data-hire]"),f=e.target.closest("[data-fire]");
@@ -35741,6 +35749,11 @@ $("slots").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   else if(b.dataset.clear){const i=+b.dataset.clear;if(!confirm(`Clear slot ${i}?`))return;clearSlot(i);renderSaves();toast(`SLOT ${i} CLEARED`);}});
 $("exportSave").addEventListener("click",buBackupOpen);   // Back up / Restore: save codes, app/savecode.js
 $("importSave").addEventListener("click",buRestoreOpen);
+$("bkFileSave").addEventListener("click",buFileSave);   // backup files, the storage line and the reminder: end of app/savecode.js
+$("bkFileLoad").addEventListener("click",buFileLoad);
+$("bkFileIn").addEventListener("change",e=>buFileRead(e.currentTarget));
+$("setOpen").addEventListener("click",()=>setTimeout(buStoreLine,0));
+setTimeout(()=>buRemind(),45000);   // a calm look at the backup age once the session has settled; Close week checks again
 $("vol").addEventListener("input",e=>{S.vol=+e.target.value;$("volLbl").textContent=S.vol+"%";ENGINE_SOUND.setVolume(S.vol/100);});
 $("vol").addEventListener("change",save);
 function garageOwned(){const o=Object.assign({},C().owned);if(!career())o.sandbox=true;else{for(const k in C().prestige)o["prestige_"+k]=true;o.week=C().week;o.deliveries=pcS().raced;o.pullCups=(C().pullTitles||[]).length;}return o;}
@@ -36031,7 +36044,8 @@ function renderLegacy(){const el=$("legacyBox");if(!el)return;const r=lgRec(),le
    paste can never leave a half-restored game.
    "PEW2:" already belongs to the older one-game codes (plain base64 JSON, decodeSave in app/state.js). Restore still reads
    those, so the next version of THIS format must be PEW3:, not PEW2:.
-   UI: Shop tab -> Saves -> Back up / Restore (buttons #exportSave / #importSave, hooked up in app/career.js).
+   UI: Shop tab -> Saves -> Back up / Restore (buttons #exportSave / #importSave, hooked up in app/career.js), plus the backup
+   file buttons and the reminder at the end of this file.
    Tests: `node check-savecode.js` in the repo root. */
 const BU_V=1,BU_PREFIX="PEW"+BU_V+":";
 const BU_B64="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",BU_MAXCODES=65536;
@@ -36157,8 +36171,9 @@ function buWrite(d){
 function buSheet(title,html){$("sheetTitle").textContent=title;$("sheetBody").innerHTML=html;$("sheet").classList.add("on");$("scrim").classList.add("on");$("sheetBody").scrollTop=0;}
 function buSelect(ta){try{ta.select();ta.setSelectionRange(0,ta.value.length);}catch(e){}}
 async function buCopy(ta){
-  try{await navigator.clipboard.writeText(ta.value);toast("Copied. Paste it somewhere safe.");return;}catch(e){}   // no clipboard access: select it instead
+  try{await navigator.clipboard.writeText(ta.value);buMarkBackup();toast("Copied. Paste it somewhere safe.");return;}catch(e){}   // no clipboard access: select it instead
   ta.focus();buSelect(ta);let ok=false;try{ok=document.execCommand("copy");}catch(e){}
+  if(ok)buMarkBackup();
   toast(ok?"Copied. Paste it somewhere safe.":"Code selected. Long-press it and tap Copy.");}
 function buBackupOpen(){let code="";try{code=buCode();}catch(e){}
   if(!code){toast("Couldn't make a backup code on this device");return;}
@@ -36187,13 +36202,83 @@ function buRestore(text,err){
   err.textContent="";
   if(testing){say("busy");return;}
   let r;try{r=buRead(text);}catch(e){say(e&&e.bu||"damaged");return;}
+  {const o=r.kind==="one"?r.save:r.data.save,bk=S&&buNum(S.bkAt)?S.bkAt:0;if(bk>(buNum(o.bkAt)?o.bkAt:0))o.bkAt=bk;}   // this device's last-backup time survives a restore
   if(r.kind==="one"){
     if(!confirm("This is an older save code that holds one game, not a full backup.\n\nLoad it as your current game? Your save slots and Legacy points stay as they are."))return;
-    closeSheet();applyLoaded(r.save,"Save code loaded");return;}
+    closeSheet();applyLoaded(r.save,"Save code loaded");buPersist();return;}
   if(!confirm(buAsk(r.data)))return;
   if(!buWrite(r.data)){say("store");return;}
   LG=null;   // the Legacy record is cached in memory (app/legacy.js): read the restored one next time
-  closeSheet();applyLoaded(r.data.save,"Backup restored");}
+  closeSheet();applyLoaded(r.data.save,"Backup restored");buPersist();}
+
+/* ===================== SAVE SAFETY: backup files, keep-my-storage, the backup reminder (1.76.66) =====================
+   Every Longlight game lives at jxstrr0.github.io, so they share one browser storage pot. When a phone runs short of
+   space the browser may clear all of it at once. Three things guard against that:
+     buPersist()   asks the browser to keep this site's storage (navigator.storage.persist). Once per page load, only after a
+                   save write with a game going (save() in app/state.js calls it) or after a backup/restore. Firefox may ask
+                   the player; Chrome and Safari decide quietly. Missing API: nothing happens.
+     buFileSave()  the same PEW1: code as Back up, in a text file. Share sheet with the file where the browser can
+                   (iPhone: "Save to Files", also from the Home Screen app), else a normal download.
+     buFileLoad()  reads a backup file and runs it through the Restore sheet, so the same checks and the same confirm happen.
+   S.bkAt = when the last backup was taken (a code copied or a file saved). It rides in the save (pew2-save), so no new
+   localStorage key; a restore keeps whichever time is newer. buRemind() shows a quiet bar (once per session, at a calm
+   moment) when there is real progress and no backup in BU_REMIND_DAYS days. UI: Settings › Save (buttons wired in app/career.js). */
+const BU_REMIND_DAYS=14,BU_FILE_MAX=4e6;
+let buPersistAsked=false,buReminded=false;
+function buPersist(){if(buPersistAsked)return;buPersistAsked=true;
+  try{const st=typeof navigator!=="undefined"&&navigator.storage;if(!st||!st.persist||!st.persisted)return;
+    st.persisted().then(p=>p||st.persist()).then(()=>buStoreLine(),()=>{});}catch(e){}}
+/* the one status line in Settings › Save: is the storage kept, and when was the last backup */
+function buStoreLine(){const el=typeof document!=="undefined"&&document.getElementById("bkStore");if(!el)return;
+  const last=S&&buNum(S.bkAt)?"Last backup "+new Date(S.bkAt).toLocaleDateString("en-CA",{month:"short",day:"numeric"})+".":"No backup yet.";
+  let st=null;try{st=navigator.storage;}catch(e){}
+  if(!st||!st.persisted){el.textContent=last;el.hidden=false;return;}
+  st.persisted().then(p=>{el.textContent=(p?"Storage: kept on this device. ":"Storage: the browser may clear saves if the phone runs low. Keep a backup file. ")+last;el.hidden=false;},
+    ()=>{el.textContent=last;el.hidden=false;});}
+function buMarkBackup(){if(!S)return;S.bkAt=Date.now();try{save();}catch(e){}buPersist();buStoreLine();buRemindHide();}
+function buFileName(){const d=new Date(),p=n=>String(n).padStart(2,"0");return`prairie-engine-works-backup-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}.txt`;}
+async function buFileSave(){let code="";try{code=buCode();}catch(e){}
+  if(!code){toast("Couldn't make a backup on this device");return;}
+  const name=buFileName(),text=code+"\n";
+  let file=null;try{file=new File([text],name,{type:"text/plain"});}catch(e){}
+  if(file&&navigator.canShare&&navigator.share){let can=false;try{can=navigator.canShare({files:[file]});}catch(e){}
+    if(can){try{await navigator.share({files:[file]});buMarkBackup();toast("Backup file saved");return;}
+      catch(e){if(e&&e.name==="AbortError")return;}}}   // cancelled: not saved. Any other refusal falls back to a download
+  try{const url=URL.createObjectURL(new Blob([text],{type:"text/plain"})),a=document.createElement("a");
+    a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+    buMarkBackup();toast("Backup file saved: "+name);}
+  catch(e){toast("Couldn't save a file here. Use Back up and copy the code.");}}
+function buFileLoad(){if(testing){toast("Let the run finish first");return;}const inp=$("bkFileIn");if(inp){inp.value="";inp.click();}}
+async function buFileRead(inp){const f=inp.files&&inp.files[0];inp.value="";if(!f)return;
+  let text="";
+  if(f.size>BU_FILE_MAX)text="\u0000";   // far too big to be a backup: the Restore sheet says it isn't a code
+  else{try{text=await f.text();}catch(e){text=await new Promise(res=>{try{const r=new FileReader();r.onload=()=>res(String(r.result||""));r.onerror=()=>res("");r.readAsText(f);}catch(_){res("");}});}}
+  text=String(text).trim();
+  buRestoreOpen();$("codeIn").value=text;
+  buRestore(text||"\u0000",$("codeErr"));}
+/* the reminder: real progress (a career past week 3, or a few saved blueprints) and no backup in BU_REMIND_DAYS days.
+   Once per session, never over an event, a run, a sheet, Settings, a tour or the intro; it tries again later if busy. */
+function buRemindDue(){if(!S||!S.mode)return false;
+  const prog=(S.mode==="career"&&S.career&&(+S.career.week||1)>=4)||(Array.isArray(S.blueprints)&&S.blueprints.length>=2);
+  return prog&&(!buNum(S.bkAt)||Date.now()-S.bkAt>=BU_REMIND_DAYS*864e5);}
+function buBusy(){const h=document.documentElement.classList;
+  return testing||h.contains("onevent")||h.contains("photo")||h.contains("troom")||$("sheet").classList.contains("on")||(typeof setOn==="function"&&setOn())
+    ||$("intro").style.display!=="none"||(typeof tourStep!=="undefined"&&tourStep>=0)||(typeof ff!=="undefined"&&!!ff)||(typeof LS!=="undefined"&&!!LS)
+    ||!!document.querySelector("#pwaBar.on,#rcard:not([hidden]),#troom:not([hidden])");}
+function buRemind(tries){if(buReminded||!buRemindDue())return;
+  if(buBusy()){if((tries|0)<20)setTimeout(()=>buRemind((tries|0)+1),30000);return;}
+  buReminded=true;
+  let bar=$("bkBar");
+  if(!bar){bar=document.createElement("div");bar.id="bkBar";bar.setAttribute("role","status");
+    bar.innerHTML='<span id="bkBarTxt"></span><button type="button" class="btn sm pri" id="bkBarGo">Saves</button><button type="button" class="pwalater" id="bkBarLater" aria-label="Dismiss the backup reminder">Later</button>';
+    ($("app")||document.body).appendChild(bar);
+    $("bkBarLater").addEventListener("click",buRemindHide);
+    $("bkBarGo").addEventListener("click",()=>{buRemindHide();if(buBusy())return;try{renderShop();}catch(e){}setOpen();const f=$("set-save");if(f){f.open=true;setTimeout(()=>f.scrollIntoView({block:"start"}),60);}buStoreLine();});}
+  const d=buNum(S.bkAt)?Math.floor((Date.now()-S.bkAt)/864e5):-1;
+  $("bkBarTxt").textContent=d<0?"No backup yet. Keep a copy off this phone.":`Last backup ${d} days ago. Time for a fresh one.`;
+  requestAnimationFrame(()=>bar.classList.add("on"));
+  clearTimeout(buRemind.t);buRemind.t=setTimeout(buRemindHide,20000);}
+function buRemindHide(){const b=typeof document!=="undefined"&&document.getElementById("bkBar");if(b)b.classList.remove("on");}
 /* ===================== CREW PROGRESSION (career) =====================
    Every STAFF hire is a named person: C().staff[role] = {nm, role, lvl 1-5, xp, tr:[{id,rv}], mor, away, crs, h:{...}, hired}.
    The role's STAFF effect is the base; each level past 1 adds a little to it (and to the wage). Traits (CREW_TRAITS) roll
@@ -38350,7 +38435,7 @@ $("replayFF").addEventListener("click",()=>{ensureSound();ffStart(S.mode);});
 // a new player's first tap on the intro runs First Fire before the mode they picked (capture beats the handler above)
 $("intro").addEventListener("click",e=>{const b=e.target.closest("[data-mode]");if(!b||S.firstFireDone)return;e.stopPropagation();$("intro").style.display="none";S.seen=true;ensureSound();ffStart(b.dataset.mode);},true);
 // buttons that swap the whole game end First Fire first, so they act on the player's own save
-function ffGuard(e){if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave");if(!b)return;
+function ffGuard(e){if(!ff)return;const b=e.target.closest("#modeBox button,#replayTour,#resetGame,#foreclose [data-restart],#slots button,#importSave,#exportSave,#bkFileSave,#bkFileLoad");if(!b)return;
   if(testing){e.stopPropagation();toast("Let the dyno finish first");return;}ffFinish(!b.matches("#modeBox button,#replayTour"));}
 $("panel").addEventListener("click",ffGuard,true);$("setPane").addEventListener("click",ffGuard,true);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)ffSafeSave();});window.addEventListener("pagehide",ffSafeSave);
@@ -38695,7 +38780,7 @@ const LESSONS=[
   {tab:"test",sel:"#rlRun",title:"Pull it",text:"Arm the dyno and pull. Look for the step in the curve where the pipe comes in and how narrow the band above it is. Lowering the exhaust port or retuning the pipe widens it at the cost of the peak."}]}
 ];
 let LS=null;
-const LS_WALK=["#modeBox button","#replayTour","#resetGame","#foreclose [data-restart]","#slots button","#importSave","#exportSave"].join(",");
+const LS_WALK=["#modeBox button","#replayTour","#resetGame","#foreclose [data-restart]","#slots button","#importSave","#exportSave","#bkFileSave","#bkFileLoad"].join(",");
 function lsEl(st){const all=document.querySelectorAll(st.sel);let el=[...all].find(e=>e.offsetParent)||all[0];if(!el)return null;if(st.wrap)el=el.closest(st.wrap)||el;for(let i=0;i<(st.up||0)&&el.parentElement;i++)el=el.parentElement;return el;}
 function lsRect(st){const el=lsEl(st);if(!el||!el.offsetParent&&getComputedStyle(el).position!=="fixed")return null;let r=el.getBoundingClientRect();
   if(st.lbl&&el.previousElementSibling&&el.previousElementSibling.classList.contains("lbl")){const a=el.previousElementSibling.getBoundingClientRect();r={left:Math.min(a.left,r.left),right:Math.max(a.right,r.right),top:a.top,bottom:r.bottom,width:0,height:0};r.width=r.right-r.left;r.height=r.bottom-r.top;}
