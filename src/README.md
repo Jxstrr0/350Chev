@@ -95,7 +95,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/oval.js` | dirt oval race night: heat then feature, the rivals' laps, the live strip and PUSH / SAVE, classification, purses, records |
 | `app/results.js` | datalog `dl*`, `showResult`, achievements, teardown panel, `renderAnalysis`, `renderRecords` |
 | `app/career.js` | `advanceWeek` (Close week), overhead, sponsors, the Team tab's strip and sections, `renderShop`, upgrades, goals |
-| `app/savecode.js` | save codes: **Back up** / **Restore** in Shop → Saves (`buCode`, `buRead`, `buWrite`, the two sheets). See "Save codes" below |
+| `app/savecode.js` | save codes: **Back up** / **Restore** in Shop → Saves (`buCode`, `buRead`, `buWrite`, the two sheets), backup files, the storage line and the backup reminder. See "Save codes" below |
 | `app/help.js` | onboarding tour, First Fire, glossary/tap-to-explain, guided lessons |
 | `app/pwa.js` | PWA: service worker registration (https non-localhost, or `?sw=1`; never file://), the "New version ready — Reload" bar (`css/ui-pwa.css`), Settings › App: Install app / iOS Add to Home Screen tip |
 | `app/boot.js` | sound & idle, sound bench (AB), `tick`, tabs `showTab`, desktop layout, tooltips, keyboard, `boot`/`start`, `</script>` |
@@ -154,6 +154,7 @@ Everything the game keeps is in the browser's localStorage, under five keys: `pe
 - A code looks like `PEW1:` + letters, numbers, `-` and `_` + a 6-character checksum. Inside, it's the saves as JSON, squeezed with LZW (the same idea as Garage to Glory's `GG1:` codes).
 - Restore checks the whole code before it changes anything. A code that's cut off, has a typo, comes from another game or from a newer version gets a plain message and nothing is written.
 - Older `PEW2:` codes (one game, from the old Export button) still work in Restore. They load as the current game and leave slots and Legacy alone. Because `PEW2:` is taken, the next version of the backup format should be `PEW3:`.
+- **Save backup file** / **Load backup file** (Settings › Save) put the same code in a `.txt` file and read one back through the Restore sheet. The end of `app/savecode.js` also holds `buPersist` (asks the browser to keep the storage), `buStoreLine` (the status line) and `buRemind` (the backup reminder bar). The last backup time is `S.bkAt`, inside the save.
 - If you add a new localStorage key, add it to `buMake` and `buWrite` in `app/savecode.js` so backups carry it.
 - Check it with `node check-savecode.js` (repo root, no install needed). It runs the code in plain node with a pretend localStorage: round trip, damaged and cut-off codes, codes from other games or newer versions, empty saves, a full storage halfway through a restore.
 
