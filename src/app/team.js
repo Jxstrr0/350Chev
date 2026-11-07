@@ -397,7 +397,7 @@ function pcOvalDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,tk=pcTk(T),st=PC
      pts(place)              the points for a place; placeTxt(out) the result in a few words
      slot(i,n)?              the place of the car that finished i-th (from 0) of n, if places aren't 1..n (the drag ladder)
      eff(out)                the place that counts for the podium, bonus and rep (99: nothing)
-     fieldTxt(T,E), where(T) the offer card's lines; mids? extra mid-season beats */
+     fieldTxt(T,E), where(T) the offer card's lines; mids? extra mid-season beats; setupTxt(T)? whose setup the team runs */
 const PC_KIND={
   drag:{needHp:E=>E.budget[0]/pcHpPer(E)*0.9,
     make(T,E,base,r,pick){T.fieldHp=Math.round(Math.min(base/pcHpPer(E)*(0.9+0.2*r()),dynoCap().hp*0.9));T.car=pick(RN_CARS[E.body]||RN_CARS.street);},
@@ -528,7 +528,7 @@ function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(
   const fresh=pcFreshCost(T),tab=pcTable(T),pos=tab.findIndex(x=>x.me)+1,W=pcWx(T,false);
   let s=`<div class="card pcr job"><h3>${esc(T.team)}<span>Round ${rd} of ${PC_ROUNDS} · ${due?"this week":`week ${T.due}`}</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}</div>
     <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.rule&&PC_RULES[T.rule]?`<p class="hint"><b>Team rule:</b> ${esc(pcRuleTxt(T))}.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}
-    <p class="hint pcwx" data-nofold>Round ${rd} forecast, ${W.mon}: ${pcWxTxt(W,true,T)}.</p>${pcMidOn(T)?`<p class="pcmid"><b>This round.</b> ${esc(pcMidTxt(T))}${pcMidNow(T,c)}</p>`:""}${pcSub(T)?`<p class="hint">${esc(pcSub(T).n)} drives in place of ${esc(pcFirst(T))}, who is hurt.</p>`:""}
+    <p class="hint pcwx" data-nofold>Round ${rd} forecast, ${W.mon}: ${pcWxTxt(W,true,T)}.</p>${pcK(T).setupTxt?`<p class="hint" data-nofold>${pcK(T).setupTxt(T)}</p>`:""}${pcMidOn(T)?`<p class="pcmid"><b>This round.</b> ${esc(pcMidTxt(T))}${pcMidNow(T,c)}</p>`:""}${pcSub(T)?`<p class="hint">${esc(pcSub(T).n)} drives in place of ${esc(pcFirst(T))}, who is hurt.</p>`:""}
     <div class="pcbud"><div class="pcbar"><i style="width:${Math.min(100,T.spent/T.budget*100).toFixed(1)}%"></i></div><p class="mkline"><span>Budget <b>${fmt$(T.budget)}</b></span><span>Spent <b>${fmt$(T.spent)}</b></span><span>Left <b>${fmt$(left)}</b></span></p></div>`;
   if(T.hash!=null)s+=`<p class="hint">Season engine: ${fmt$(T.cost)} of parts${T.broken?`. <b class="pcbad">Broken in the last round: it needs a ${fmt$(Math.round(T.cost*PC_FIX*pcToolK()))} rebuild.</b>`:T.wear>0?`, reliability down ${Math.round(T.wear)}% from wear. A freshen-up costs ${fmt$(fresh)}.`:", fresh."}${same?"":" The bench has a different build: racing it counts as an engine change."}</p>`;
   else s+=`<p class="hint">Build the engine for the season and certify it on the dyno. Whatever is left of the budget pays for freshen-ups, rebuilds and changes later.</p>`;
