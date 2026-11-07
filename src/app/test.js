@@ -26,6 +26,7 @@ function renderEnv(){
     ${rnTuneEnvHtml(sl)}
     <p class="hint">Rear-drive on a prepped strip. Gears are spaced evenly between 1st and top unless you set them yourself. Wheel force is the engine's torque × gear × final ÷ tyre radius; grip is μ × rear weight, with weight transfer helping the launch. Tyres, body and launch rpm are what a ${career()?"racer":"tuner"} actually changes between rounds. Body sets aero drag and how hard the chassis can plant the tyre — bars and a four-link put the power down; a stock shell cannot.</p>`;}
   if(t==="drag"&&n2oKit())h+=n2oEnvHtml();
+  if(WX_EVT[t])h+=wxHtml(t);   // the day: air, rain, dirt (app/weather.js)
   if(t==="pull_sled")h+=pullEnvHtml(sl);
   if(t==="road")h+=roadEnvHtml(sl);
   if(t==="race24"&&!ER)h+=e24EnvHtml();
@@ -139,7 +140,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-lp]");i
 const DYNO_T=["pull","endurance","overrev"],EV_T=["drag","bracket","pull_sled","salt","bog","boat","road","hill","oval","race24"];
 /* Bracket night is the drag strip in its quick bracket format (S.env.dragFmt "bracket" + dragQuick): the picker shows it as its own tile */
 function evCur(){return S.env.testType==="drag"&&S.env.dragFmt==="bracket"&&S.env.dragQuick?"bracket":S.env.testType;}
-function evApply(t){if(t==="bracket"){S.env.dragFmt="bracket";S.env.dragQuick=true;S.env.testType="drag";}else{if(t==="drag"&&S.env.dragQuick){S.env.dragQuick=false;if(S.env.dragFmt==="bracket")S.env.dragFmt="test";}S.env.testType=t;}}
+function evApply(t){if(t!==S.env.testType)wxVisit(t);if(t==="bracket"){S.env.dragFmt="bracket";S.env.dragQuick=true;S.env.testType="drag";}else{if(t==="drag"&&S.env.dragQuick){S.env.dragQuick=false;if(S.env.dragFmt==="bracket")S.env.dragFmt="test";}S.env.testType=t;}}
 function pickTest(t){if(testing&&t!==S.env.testType){toast("Let the run finish first");return;}S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));renderEnv();if(climateCtl())recompute();renderTest();save();}
 $("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;pickTest(b.dataset.t);});
 $("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===evCur();if(!same&&testing){toast("Let the run finish first");return;}if(!same&&b.dataset.t!=="bracket"&&evBlockPick(b.dataset.t))return;evApply(b.dataset.t);pickTest(S.env.testType);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});

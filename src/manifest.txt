@@ -84,6 +84,7 @@ html/ld-vis.html
 app/state.js
 app/build.js
 app/test.js
+app/weather.js
 app/drag.js
 app/pull.js
 app/bog.js
