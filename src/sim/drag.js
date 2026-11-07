@@ -131,14 +131,23 @@
     let mu = TY.mu;
     if (veh && veh.body && !(veh.wheelbase > 0)) v.wheelbase = (AERO[veh.body] || AERO.street).wb;
     if (veh && veh.body && !(veh.cgH > 0) && AERO[veh.body] && AERO[veh.body].cgH) v.cgH = AERO[veh.body].cgH;   // v3 classes only
+    /* ride height (veh.rideH, mm off where the body sits as delivered): up raises the centre of gravity (more weight onto
+       the rear tyres at the hit, but more lift) and lets more air under the car; down the reverse. 0 or unset: no change. */
+    const rideMm = clamp(+v.rideH || 0, -60, 100);
+    if (rideMm) v.cgH = clamp(v.cgH + rideMm / 1000, 0.2, 0.9);
     const I = 0.12 + 0.06 * ((res.VdEq || res.Vd) / 1000), peakTq = res.peakTq, clutchCap = peakTq * 1.8;
-    const BODY = AERO[v.body] || AERO.street, cdA0 = v.cdA > 0 ? v.cdA : BODY.cdA, bite = BODY.bite, crr = 0.014, rho = 1.2, limiter = v.redline * 1.02, shiftAt = v.shiftRpm || v.redline - 200;
+    const BODY = AERO[v.body] || AERO.street, cdA0 = (v.cdA > 0 ? v.cdA : BODY.cdA) * (1 + 0.002 * rideMm), bite = BODY.bite, crr = 0.014, rho = 1.2, limiter = v.redline * 1.02, shiftAt = v.shiftRpm || v.redline - 200;
 
     /* ---- launch tech ---- */
     const lc = OPT.launchCtl[v.launchCtl] ? v.launchCtl : "none", tbk = OPT.transBrake[v.transBrake] ? v.transBrake : "none";
     const twoStep = lc !== "none", retardOn = lc === "two_step_retard", transBrake = tbk === "trans_brake", lineLock = tbk === "line_lock";
     const retard = retardOn ? clamp(+v.launchRetard || 0, 0, 35) : 0;
-    const holdRpm = twoStep && v.twoStepRpm > 0 ? Math.min(v.redline, v.twoStepRpm) : v.launchRpm;
+    /* converter stall (veh.stallRpm, trans-brake cars only, which leave on a converter): on the brake the engine can't pull
+       past stall, and off it the converter flashes to stall before it couples. A looser (higher) converter slips more
+       all the way down the track. 0 or unset: the converter matches the brake rpm, as before. */
+    const stall = transBrake && v.stallRpm > 0 ? clamp(+v.stallRpm, 1500, v.redline) : 0;
+    const hold0 = twoStep && v.twoStepRpm > 0 ? Math.min(v.redline, v.twoStepRpm) : v.launchRpm, holdRpm = Math.min(hold0, stall || Infinity);
+    const flashRpm = stall || holdRpm, loose = stall ? clamp((stall - hold0) / (0.4 * v.redline), 0, 1) : 0, cpl = 0.96 - 0.015 * loose;
     /* anti-lag: off throttle (staging, shifts, the lift at the stripe) it keeps burning fuel ahead of the turbine,
        so the wheel keeps its speed. Only a turbo car with it fitted; "off" leaves every line below as it was. */
     const ALS = res.als && res.als !== "off" && OPT.als[res.als] && res.aspKind === "turbo" ? OPT.als[res.als] : null;
@@ -316,13 +325,13 @@
          once the wheels are driving the engine at the limiter (coupled, or the converter all but locked) there is nothing left
          to push with — the cut is total, and the car can go no faster in that gear. The limiter never set the road speed before:
          the 15% of a big engine's torque kept pushing at any speed, so a short-geared car ran past the stripe on the cut alone. */
-      if (st.rpm >= limiter) { st.limiterTime += dt; Teng = (st.conv ? driveRpm0 / 0.96 : !st.slipping ? driveRpm0 : 0) >= limiter ? 0 : Teng * 0.15; }
+      if (st.rpm >= limiter) { st.limiterTime += dt; Teng = (st.conv ? driveRpm0 / cpl : !st.slipping ? driveRpm0 : 0) >= limiter ? 0 : Teng * 0.15; }
       let Ttrans;
       if (st.conv) {
         // torque converter off the trans-brake: multiplies torque while it slips, never lets the engine fall below stall
         const SR = clamp(driveRpm0 / Math.max(1, st.rpm), 0, 1);
         const TR = SR >= 0.85 ? 1 : Math.min(2.1, 1 + 1.1 * (1 - SR / 0.85));
-        Ttrans = inShift ? 0 : Teng * TR * 0.97;
+        Ttrans = inShift ? 0 : Teng * TR * (0.97 - 0.015 * loose);
       } else {
         // clutch bite ramps in over 0.35 s; a slipping clutch transmits its capacity, so the engine is pulled down toward wheel speed (bog risk)
         st.bite = Math.min(1, (st.bite || 0) + dt / (st.dump ? 0.2 : 0.35));
@@ -359,7 +368,7 @@
       /* the converter flashes past the brake rpm, then couples. The flash never reaches the shift point: a brake rpm set close
          to it would otherwise hold the engine above shiftAt off the line, so the box ran up through every gear in the first
          half-second and the pass was made in top gear (or, above the limiter, on 15% of the engine) */
-      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(Math.min(holdRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), shiftAt * 0.97), driveRpm / 0.96); st.slipping = false; }
+      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(Math.min(flashRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), shiftAt * 0.97), driveRpm / cpl); st.slipping = false; }
       else if (st.slipping) { st.rpm += (Teng - Ttrans) / I * dt * 60 / (2 * Math.PI); if (st.rpm < driveRpm) { st.rpm = driveRpm; st.slipping = false; } }
       else st.rpm = Math.max(v.idle, driveRpm);
       if (st.rpm > limiter + 40) st.rpm = Math.min(st.rpm, limiter + 300);
