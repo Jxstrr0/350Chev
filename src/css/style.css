@@ -384,7 +384,7 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:8px 10px;min-width:0}
 .saltcls span{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
 .saltcls small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-bar .zone{position:absolute;top:0;bottom:0;background:rgba(232,193,74,.22);border-left:1px solid var(--warn);border-right:1px solid var(--warn)}
-.rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}
+.rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}.rtop.saltrec div.wait{opacity:.6}
 .pfield{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .pfield b{color:var(--orange2);font-weight:500}.pfield .me{color:var(--chalk);font-weight:600}.pfield .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* pulling extras: series standings, the pull-off banner, the runaway warning and the kill switch */

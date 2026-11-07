@@ -405,7 +405,7 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:8px 10px;min-width:0}
 .saltcls span{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
 .saltcls small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-bar .zone{position:absolute;top:0;bottom:0;background:rgba(232,193,74,.22);border-left:1px solid var(--warn);border-right:1px solid var(--warn)}
-.rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}
+.rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}.rtop.saltrec div.wait{opacity:.6}
 .pfield{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .pfield b{color:var(--orange2);font-weight:500}.pfield .me{color:var(--chalk);font-weight:600}.pfield .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* pulling extras: series standings, the pull-off banner, the runaway warning and the kill switch */
@@ -31017,7 +31017,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.74.0";
+const VERSION="1.76.75.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -34141,7 +34141,7 @@ function saltSheet(res){const r=res.salt,v=r.veh||{},c=r.cls||{};
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div></div>`;}
 /* perf: a seeded class record costs a few hundred ms on a phone the first time (SIM caches it), and Analysis
    draws up to ten. They are worked out one per idle slot (never during a run): after boot for this build, and on
-   demand when Analysis needs one it hasn't got, which then shows a placeholder line until they're in. */
+   demand when Analysis needs one it hasn't got: that class's row shows "looking up the record" until it is in. */
 const LSRW={done:new Set(),q:[],cbs:[],busy:false};
 function lsrWarm(keys,cb){if(!keys){keys=[];try{keys=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){return;}}
   for(const k of keys)if(!LSRW.done.has(k)&&!LSRW.q.includes(k))LSRW.q.push(k);if(cb)LSRW.cbs.push(cb);if(LSRW.busy)return;LSRW.busy=true;
@@ -34150,9 +34150,11 @@ function lsrWarm(keys,cb){if(!keys){keys=[];try{keys=Object.keys(SIM.LSR_BODIES)
     if(LSRW.q.length){ric(go);return;}LSRW.busy=false;const cbs=LSRW.cbs.splice(0);cbs.forEach(f=>{try{f();}catch(e){}});};ric(go);}
 /* records: the class records you have set or are chasing, and your best per class */
 function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).concat(Object.keys(L.pb)));let cur=[];try{cur=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){}cur.forEach(k=>keys.add(k));if(!keys.size)return"";
-  const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length){lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});return `<div class="rtop saltrec"><span>Salt flats · class records</span><div><span>working out the class records…</span></div></div>`;}
-  const rows=[...keys].map(k=>{const r=saltRecord(k),pb=L.pb[k];return{k,r,pb};}).filter(o=>o.r).sort((a,b)=>(b.pb?1:0)-(a.pb?1:0)||(b.r.mph-a.r.mph)).slice(0,10);
-  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
+  const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length)lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});
+  // the records already worked out show now; a class still in the queue keeps its row, with your best, until its record is in
+  const rows=[...keys].map(k=>{const wait=!LSRW.done.has(k),r=wait?null:saltRecord(k),pb=L.pb[k];return{k,r,pb,wait};}).filter(o=>o.r||o.wait).sort((a,b)=>(a.wait?1:0)-(b.wait?1:0)||(b.pb?1:0)-(a.pb?1:0)||(a.r&&b.r?b.r.mph-a.r.mph:0)).slice(0,10);
+  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>o.wait?`<div class="wait"><b>·</b><span class="et">…</span><span>${esc(o.k)}</span><span class="nm">looking up the record</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`
+    :`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
 
 /* ===================== PIKES PEAK: the hillclimb ===================== */
 /* 19.99 km, 156 turns, 2,862 m to 4,302 m. The engine is run at five altitudes on the way up (SIM.hillPrep); the car is the
