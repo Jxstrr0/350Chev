@@ -220,7 +220,7 @@ function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envB
   (A.x||[]).forEach(q=>{const b=box.querySelector(q);if(b)add(b.closest(".row")||b,q);});
   if(A.paint){const p=box.querySelector(".paints");if(p){const l=p.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l,"paint");add(p,"paint");}}
   if(evT){(A.m||[]).forEach(q=>{const b=box.querySelector(q);if(!b)return;
-      if(b.matches(".su-grid")){const l=b.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l,q);add(b,q);const lv=$("suLive");if(lv&&box.contains(lv))add(lv,q);const n=lv&&lv.nextElementSibling;if(n&&n.matches("p.hint"))add(n,q);}else seg(b,q);});
+      if(b.matches(".su-grid")){const l=b.previousElementSibling;if(l&&l.classList.contains("lbl"))add(l,q);add(b,q);const lv=$("suLive");if(lv&&box.contains(lv))add(lv,q);for(let n=lv&&lv.nextElementSibling;n;n=n.nextElementSibling){add(n,q);if(n.matches("p.hint"))break;}}else seg(b,q);});
     box.querySelectorAll("[data-evadv]").forEach(add);}
   if(A.hint)box.querySelectorAll(":scope > p.hint").forEach(p=>{if(p.textContent.trim().startsWith(A.hint))add(p,"hint");});
   if(!nodes.length)return;nodes.sort((a,b)=>a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
