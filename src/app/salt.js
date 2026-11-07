@@ -215,7 +215,7 @@ function saltSheet(res){const r=res.salt,v=r.veh||{},c=r.cls||{};
     ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div></div>`;}
 /* perf: a seeded class record costs a few hundred ms on a phone the first time (SIM caches it), and Analysis
    draws up to ten. They are worked out one per idle slot (never during a run): after boot for this build, and on
-   demand when Analysis needs one it hasn't got, which then shows a placeholder line until they're in. */
+   demand when Analysis needs one it hasn't got: that class's row shows "looking up the record" until it is in. */
 const LSRW={done:new Set(),q:[],cbs:[],busy:false};
 function lsrWarm(keys,cb){if(!keys){keys=[];try{keys=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){return;}}
   for(const k of keys)if(!LSRW.done.has(k)&&!LSRW.q.includes(k))LSRW.q.push(k);if(cb)LSRW.cbs.push(cb);if(LSRW.busy)return;LSRW.busy=true;
@@ -224,7 +224,9 @@ function lsrWarm(keys,cb){if(!keys){keys=[];try{keys=Object.keys(SIM.LSR_BODIES)
     if(LSRW.q.length){ric(go);return;}LSRW.busy=false;const cbs=LSRW.cbs.splice(0);cbs.forEach(f=>{try{f();}catch(e){}});};ric(go);}
 /* records: the class records you have set or are chasing, and your best per class */
 function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).concat(Object.keys(L.pb)));let cur=[];try{cur=Object.keys(SIM.LSR_BODIES).map(b=>saltCls(b).key);}catch(e){}cur.forEach(k=>keys.add(k));if(!keys.size)return"";
-  const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length){lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});return `<div class="rtop saltrec"><span>Salt flats · class records</span><div><span>working out the class records…</span></div></div>`;}
-  const rows=[...keys].map(k=>{const r=saltRecord(k),pb=L.pb[k];return{k,r,pb};}).filter(o=>o.r).sort((a,b)=>(b.pb?1:0)-(a.pb?1:0)||(b.r.mph-a.r.mph)).slice(0,10);
-  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
+  const miss=[...keys].filter(k=>!LSRW.done.has(k));if(miss.length)lsrWarm(miss,()=>{if(curTab==="analysis")renderRecords();});
+  // the records already worked out show now; a class still in the queue keeps its row, with your best, until its record is in
+  const rows=[...keys].map(k=>{const wait=!LSRW.done.has(k),r=wait?null:saltRecord(k),pb=L.pb[k];return{k,r,pb,wait};}).filter(o=>o.r||o.wait).sort((a,b)=>(a.wait?1:0)-(b.wait?1:0)||(b.pb?1:0)-(a.pb?1:0)||(a.r&&b.r?b.r.mph-a.r.mph:0)).slice(0,10);
+  return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>o.wait?`<div class="wait"><b>·</b><span class="et">…</span><span>${esc(o.k)}</span><span class="nm">looking up the record</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`
+    :`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
 
