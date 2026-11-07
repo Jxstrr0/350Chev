@@ -15,7 +15,7 @@ function logEvent(t,kind){C().log.unshift({w:C().week,t,k:kind||""});if(C().log.
 function advanceWeek(){const rd=pcWeek();C().week++;ENGINE_VIS.setMood(C().week);const oh=overhead();C().cash-=oh;let t=`Overhead ${fmt$(oh)}`;
   t+=loanWeek();
   if(wages())t+=` (wages ${fmt$(wages())})`;
-  logEvent(t,"");crewWeek();rndPass();prestigePass();spWeek();rivalsWeek();pcWeekAfter();checkGoals();achCheck({type:"week"});
+  logEvent(t,"");crewWeek();rndPass();prestigePass();spWeek();crateWeek();rivalsWeek();pcWeekAfter();checkGoals();achCheck({type:"week"});
   {const so=spS().offers.length;const msg=[rd||"",so?`${so} sponsor offer${so>1?"s":""} in Team`:""].filter(Boolean).join(" · ");if(msg)toastAfter(msg);}
   if(C().cash<FORECLOSE_AT)logEvent("The bank has called the loan. The shop is in receivership.","bad");
   else if(C().cash<-5000)toast("The bank is calling. Win something.");}
@@ -160,7 +160,7 @@ function renderShop(){
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
   $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
   spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
-  pcRender();spRender();rivalsRender();
+  pcRender();crateRender();spRender();rivalsRender();
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
   const dc=dynoCap();$("sStats").innerHTML=`<span>Dyno reads to <b>${dc.hp.toLocaleString()} hp</b></span>${C().loan>0?`<span>Bank loan <b>${fmt$(C().loan)}</b></span>`:""}${C().cash<0?`<span><b class="warnc">${fmt$(C().cash)}</b> in the red</span>`:""}`;   // cash is in the header; the upgrade count sits in the list heading
   {const eng=engineName(),st=pcStrip();$("mkEng").textContent=eng;$("mkEng").title=eng;$("mkCert").className="mkc "+st.cls;$("mkCert").textContent=st.txt;$("mkCert").title=st.tip;$("mkBoard").textContent=st.when;$("mkBoard").title=st.whenTip||"";
