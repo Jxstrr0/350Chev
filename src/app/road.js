@@ -5,7 +5,7 @@ const ROAD_FEE=200,ROAD_CAMS=[["auto","Auto","director"],["chase","Chase","behin
 const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(d||1).padStart(d===2?5:4,"0")}`;
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt(),wet:wxWet("road")});}   // a chosen swap car (app/swap.js) stands in for the chassis
 /* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
    diff lock and ride height. Saved in S.env (suSt/suSp/suWg/suBb/suPs/suDf/suRh), stock = 50/0/0/0/32/0/0 (SU_F) ---- */
 /* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = the SU_F values in order
@@ -166,7 +166,7 @@ function roadAt(L,tt){const t=L.trace.t,N=L.N;tt=((tt%L.time)+L.time)%L.time;let
   const f=clamp((tt-t[a])/Math.max(1e-6,t[a+1]-t[a]),0,1),j=(a+1)%N,T=L.trace;
   return{i:a,s:(a+f)*L.ds,v:T.v[a]+(T.v[j]-T.v[a])*f,g:T.g[a],rpm:T.rpm[a]+(T.rpm[j]-T.rpm[a])*f,thr:T.thr[a],brk:T.brk[a],ax:T.ax[a],ay:T.ay[a],bst:T.bst[a],lim:T.lim[a]};}
 function roadStart(){
-  const env=stdEnv(),opt=roadOpt(),trk=S.env.roadTrk,snap=testSnap();
+  const env=stdEnv(wxEnv("road")),opt=roadOpt(),trk=S.env.roadTrk,snap=testSnap();
   const res=SIM.simulate(snap.cfg,env);
   if(res.fails.length){testing=false;toast(`It wouldn't last a lap — ${String(res.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
@@ -207,7 +207,7 @@ function roadFinish(){
   if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}else if(RT.brk&&opt.dtMsg)r.dtBroke={msg:opt.dtMsg,t:RT.brk.t,corner:RT.brk.corner};
   if(!r.swapBroke&&!r.dtBroke)r.tip=suTipRoad(SIM.roadPrep(snap.cfg,res),opt,trk,lap.time);
   if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=recBucket("road"),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk,gh:roadGhostRec(lap)},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
-  res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  r.wx=wxSnap("road");res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
   // a track day counts like any other event: sponsors see it (form, record bonus, offers), the crew learn from it, a rival's posted lap is decided — spEvent does all of that
   if(career()&&same){addWear(0.35,hKey(snap.h));logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");
@@ -232,7 +232,7 @@ function roadSheet(res){const r=res.road,b=recBucket("road")[roadKey(r.ch+(r.swa
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
     <div><b>Car</b>${esc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
     ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${suSg(r.su.sp)} (${suBalWord(r.suBal)}) · wing ${suSg(r.su.wg)}${r.su.ps!=null?` · diff ${suSg(r.su.df)} · brakes ${suSg(r.su.bb)} · ${r.su.ps} psi · ride ${suSg(r.su.rh)}`:""}</div>`:""}
-    ${r.tip!==undefined?suTipHtml(r,false):""}
+    ${wxLine(r)}${r.tip!==undefined?suTipHtml(r,false):""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */

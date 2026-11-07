@@ -61,6 +61,8 @@ Fuels cover pump grades, race grades, oxygenated fuels, E85 and flex blends, met
 
 `EV_T` lists ten: `drag`, `bracket`, `pull_sled`, `salt`, `bog`, `boat`, `road`, `hill`, `oval`, `race24`.
 
+Weather (`app/weather.js`, since 1.76.83.0): the road test, the hill climb and the pull each get a day, a new one each visit in the test cell and one a week in a career. The day sets the air temperature and humidity the engine breathes. On the road and the hill it can rain (wet 0–1 takes grip off the tyres through `SIM.roadWetMu`, slicks most; the hill's rivals slow in it too), and on the pull it makes the dirt damp or dry. The test cell has New day and a Standard day switch; a career always has weather.
+
 | Event | Sim | Classes and content |
 |---|---|---|
 | Drag strip (heads-up) and bracket racing | `drag.js`: tyres, aero, turbo heat soak, nitrous bottle, launch tech, gearing (even or custom ratios, a shift point), ride height, converter stall on trans-brake cars, three saved tunes per game (setup plus two-step rpm and retard; paid kit and paint left alone), an auto driver, drivetrain tiers, engine weight counted | 3 tyre types, 7 aero bodies, 4 drivetrain tiers; race nights with a ladder; top-five passes per body class; the timing slip prints each split's change from your last clean pass |
@@ -140,6 +142,6 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.82.0)
+## Loose ends found in the code (as of 1.76.83.0)
 
 Nothing in `src/` is stubbed or marked unfinished. (The salt flats placeholder in Analysis went in 1.76.75.0: the records already worked out show at once, and a class still being looked up keeps its row with your best.)

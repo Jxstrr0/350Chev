@@ -21,7 +21,8 @@ function pullTrkAdj(f,t){const k=1-0.1*Math.max(0,0.5-t.moist)-0.16*t.cut,o=Obje
 const poTrack=()=>PO&&PO.ev&&PO.ev.track?{moist:+Math.min(0.95,PO.ev.track.moist+0.06).toFixed(2),cut:0.12}:null;   // re-worked for the pull-off
 /* the class on the night: practice is the old neutral hook; a pull night draws you a slot in the order and the dirt that comes with it */
 function pullEvent(k,fseed,live){const fmt=pullFmt(),s=fmt==="series"?(live?pullSerCur(k):pullSerPeek(k)):null;let field=s?pullSerField(k,s):pullField(k,fseed),track=null,draw=null;const n=field.length+1;
-  if(fmt!=="practice"){const night=pullNight(k,fseed,n),rd=pullRand((fseed^0x3C6EF372)>>>0);draw=Math.floor(rd()*n);let j=0;field=field.map(f=>{if(j===draw)j++;return pullTrkAdj(f,night[j++]);});track=night[draw];}
+  if(fmt!=="practice"){const night=pullNight(k,fseed,n).map(wxTrack),rd=pullRand((fseed^0x3C6EF372)>>>0);draw=Math.floor(rd()*n);let j=0;field=field.map(f=>{if(j===draw)j++;return pullTrkAdj(f,night[j++]);});track=night[draw];}
+  else if(wxDirt()){track=wxTrack(null);field=field.map(f=>pullTrkAdj(f,track));}   // practice on the day's dirt
   return{fmt,field,track,draw,n,ser:s};}
 function pullRaRisk(){if(!quick||!SIM.isDiesel(S.cfg)||!SIM.pullRunaway)return null;const wi=wearInfo(quick);return SIM.pullRunaway(quick,S.cfg,wi?wi.w:0);}
 /* ---- points series: the same named rivals all season, points by place plus a bonus for a full pull ---- */
@@ -66,10 +67,10 @@ function poConcede(why){if(!PO)return;const P0=PO;PO=null;const r=Object.assign(
 function pullRunBtn(){if(testing)return;const b=$("runTest");if(PO)b.textContent="Hook up · PULL-OFF · sled +15%";else if(pullFmt()==="series"){const s=pullSerPeek(S.env.pullCls);b.textContent=b.textContent.replace("truck pull",`series round ${s.round+1} of ${PULL_SER_N}`);}}
 function pullEnvTop(k){const fmt=pullFmt(),dk=document.documentElement.classList.contains("desk");let h="";
   if(PO)h+=`<div class="pobanner"><b>PULL-OFF — the sled is heavier</b>${PO.n} other${PO.n>1?"s":""} full-pulled too. The box is set 15% heavier and the longest pull-off wins. Pits are open: gear, driveline, tyres, hitch and ballast. Class and engine are locked — leaving the dirt or swapping the engine concedes.</div>`;
-  const F=career()?[["night","Pull night","purse · changing dirt"],["series","Points series",PULL_SER_N+" rounds · one a week"]]:[["practice","Practice","neutral dirt"],["night","Pull night","draw · changing dirt"],["series","Points series",PULL_SER_N+" rounds"]];
+  const F=career()?[["night","Pull night","purse · changing dirt"],["series","Points series",PULL_SER_N+" rounds · one a week"]]:[["practice","Practice",wxOn("pull_sled")?"the day's dirt":"neutral dirt"],["night","Pull night","draw · changing dirt"],["series","Points series",PULL_SER_N+" rounds"]];
   if(!PO)h+=`<div class="lbl"><span>Format</span></div><div class="seg">${F.map(([id,n,d])=>`<button data-pk="pullFmt" data-pv="${id}" class="${fmt===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   const pv=PO?{track:poTrack()}:pullEvent(k,pullSeed(k,true),false),t=pv.track;
-  h+=`<p class="hint">${t?`<b>Track: ${pullTrkName(t)}</b> · ${PO?"re-worked for the pull-off":`you draw ${ordN(pv.draw+1)} of ${pv.n}`} · moisture ${Math.round(t.moist*100)}% · cut ${Math.round(t.cut*100)}%. ${PO?"":pv.draw<pv.n/3?"Early, on fresh wet dirt: more bite, less speed.":pv.draw>=pv.n*2/3?"Late: the dirt has dried and the ruts are in — less grip at the heavy end.":"Middle of the order."} The crew re-preps between classes.`:`<b>Track: practice · neutral</b> — the same dirt every hook.`}${pv.ser?` <b>Series</b> · season ${pv.ser.season}, round ${pv.ser.round+1} of ${PULL_SER_N}${career()&&pv.ser.lastWeek===C().week?" — the next round is next week":""}.`:""}</p>`;
+  h+=`<p class="hint">${t?`<b>Track: ${pullTrkName(t)}</b> · ${PO?"re-worked for the pull-off":pv.draw==null?"practice on the day's dirt":`you draw ${ordN(pv.draw+1)} of ${pv.n}`} · moisture ${Math.round(t.moist*100)}% · cut ${Math.round(t.cut*100)}%. ${PO||pv.draw==null?"":pv.draw<pv.n/3?"Early, on fresh wet dirt: more bite, less speed.":pv.draw>=pv.n*2/3?"Late: the dirt has dried and the ruts are in — less grip at the heavy end.":"Middle of the order."} The crew re-preps between classes.`:`<b>Track: practice · neutral</b> — the same dirt every hook.`}${pv.ser?` <b>Series</b> · season ${pv.ser.season}, round ${pv.ser.round+1} of ${PULL_SER_N}${career()&&pv.ser.lastWeek===C().week?" — the next round is next week":""}.`:""}</p>`;
   const ra=pullRaRisk();if(ra&&ra.p>0)h+=`<p class="hint"><b style="color:${ra.lvl==="high"?"var(--crit)":ra.lvl==="moderate"?"var(--warn)":"var(--muted)"}">Runaway risk: ${ra.lvl}</b> — ${ra.why.join(" / ")}. If it runs away on its own oil the pedal does nothing: hit KILL${dk?" (or K)":""} within about ${(Math.round(pClamp(2.4-1.2*ra.p,1.5,2.4)*10)/10).toFixed(1)} s or it grenades. The kill switch is also on a cable to the sled: if the hitch ever breaks away, it pulls itself.</p>`;
   if(pv.ser&&pv.ser.round>0)h+=pullStandHtml(pullStand(pv.ser),{short:true,title:"Series standings"});
   return h;}
@@ -103,7 +104,7 @@ function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.da
 function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");failFlash();}
 function pullStart(){
   $("app").classList.add("onstrip");
-  const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
+  const k=pullEnvFix(),env=stdEnv(wxEnv("pull_sled"));const res=SIM.dragPrep(S.cfg,env);
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const snap=testSnap(),hk=hKey(snap.h),veh=pullVeh(k),fseed=PO?PO.fseed:pullSeed(k);if(career()&&!PO&&pullFmt()==="night")(C().pullWk=C().pullWk||{})[k]=C().week;veh.seed=career()?(fseed+7919*(C().pullHooks=(C().pullHooks||0)+1))>>>0:Math.floor(Math.random()*1e9);
   if(wi&&wi.w>=1)veh.wornAt=2+Math.random()*4;
@@ -195,7 +196,7 @@ function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame
   if(failed){r.broke=r.broke||c.failKind;r.failKind=r.failKind||c.failKind;}
   if(!c.isPO&&same)pullPb(r,failed);
   if(!r.poPending&&c.fmt==="series"&&same)pullSerScore(k,rows,r);
-  res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?c.failKind:null;S.last=sn?{hash:sn.h,cfg:sn.cfg,env,res}:{hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  r.wx=wxSnap("pull_sled");res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?c.failKind:null;S.last=sn?{hash:sn.h,cfg:sn.cfg,env,res}:{hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
   const pl=ordN(r.place)+" of "+r.of,dist=f1.full?"FULL PULL":f1.distFt.toFixed(1)+" ft",kill=r.runaway&&r.runaway.killed;
   if(career()&&same){if(!c.conceded)addWear(0.6+Math.min(1,r.time/30)*0.4+(r.peakEgt>850?0.3:0),c.hk);
     if(r.poPending){logEvent(`Pull: ${C0.n} — FULL PULL, pull-off against ${r.poN}`,"good");toast(`FULL PULL · PULL-OFF against ${r.poN}`);}
@@ -261,7 +262,7 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
     ${r.auto?`<div><b>Driver</b>Auto driver${r.auto.took!=null?` — you took over ${r.auto.took>0?"at "+r.auto.took.toFixed(1)+" ft":"on the hook"}`:" — the whole hook"}</div>`:""}
     <div><b>Setup</b>${r.clsName} · ${r.gearName} (${r.mphGear} mph) · ${v.trans==="clutch"?"clutch":"converter"} · ${r.tyre.toLowerCase()} · ${v.hitch} in hitch · ${v.ballast} kg ${v.ballPos>0?Math.round(v.ballPos*100)+"% back":"front"} · ${r.psi} psi${r.thrMax<1?" · stop "+Math.round(r.thrMax*100)+"%":""} · ${r.ratio}:1 overall</div>
     <div><b>Tyres</b>peak slip ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s spinning${r.hopT>0?" · hopped "+r.hopT.toFixed(1)+" s":""}</div>
-    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
+    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${wxLine(r)}${pullLog(r)}
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}</span><span class="${f.me?"me":""}">${f.dq?"DQ":f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):f.me&&r.poPending?" · pull-off next":""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>${r.ser?pullSerCard(r.ser):""}`;}
 
 
