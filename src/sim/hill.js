@@ -201,6 +201,7 @@
 
   /* the gearing target speed: 57 m/s for everything up to about a thousand horsepower (vPow past ~100 m/s), then a slow climb that flattens out around 77 m/s (277 km/h),
      so monster builds keep getting quicker on the straights but the mountain's corners and the downforce drag, not a flat cap, set the end of it */
+  const HILL_BUMP = 0.6;   // the mountain road's roughness for a low car (road.js tracks run 0.2 to 1)
   const hillVTop = vPow => vPow <= 100 ? Math.min(vPow, 57) : 57 + 20 * (1 - Math.exp(-(vPow - 100) / 60));
   /* the class car: the road-test chassis with this engine, stripped to the class weight, on its tyres and aero, geared for the mountain */
   function hillCar(prep, opt) {
@@ -213,16 +214,16 @@
     // top gear on the power peak at about the fastest the mountain allows, not the flat-out top speed
     const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = hillVTop(car.vPow);
     car.fdAuto = clamp((pkR * 2 * Math.PI / 60) * car.rw / (vTop * top), 0.9, 7.5); car.fd = clamp(car.fdAuto * clamp(+opt.finalK || 1, 0.6, 1.6), 0.7, 9);
-    return roadSetup(car, opt.setup);
+    return roadSetup(car, opt.setup, HILL_BUMP);
   }
   const hDrag = (car, v, rho) => 0.5 * rho * car.cdA * v * v + car.crr;
   function hTrac(car, v, lat, rho) {
-    const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - lat * lat)) * (car.tK ? 1 - car.tK * lat : 1), hw = car.h / car.wb;
+    const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - lat * lat)) * (car.tK ? 1 - car.tK * lat : 1) * (car.kD ? 1 + car.kD * lat : 1), hw = car.h / car.wb;
     if (car.drive === "awd") return mu * (mg + DF) * 0.98;
     if (car.drive === "fwd") return mu * (mg * car.front + DF * 0.45) / (1 + mu * hw);
     return mu * (mg * (1 - car.front) + DF * 0.55) / Math.max(0.3, 1 - mu * hw);
   }
-  const hBrake = (car, v, lat, rho) => { const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G; return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - lat * lat)); };
+  const hBrake = (car, v, lat, rho) => { const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G; return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - lat * lat)) * (car.kB || 1); };
 
   /* the corner calls for one running: dusty, clean or grippy (the spotters' notes), and a little nobody can see */
   function hillCalls(seed, id) {

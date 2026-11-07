@@ -8658,15 +8658,15 @@ const ENGINE_SIM = (function () {
   };
   /* tracks: a closed polygon of [x, y, corner radius, name] (metres, driven clockwise); each vertex is filleted with
      its radius, the straights run tangent to tangent. start = metres into the main straight (vertex 0 → 1);
-     sec = sector lines as lap fractions; scale stretches the whole map. */
+     sec = sector lines as lap fractions; scale stretches the whole map; bump = how rough the surface is for a low car (0 smooth .. 1 street). */
   const ROAD_TRACKS = {
-    club: { n: "Coulee Park", d: "club circuit · 7 turns", start: 250, sec: [0.36, 0.7], scale: 1, pts: [
+    club: { n: "Coulee Park", d: "club circuit · 7 turns", bump: 0.35, start: 250, sec: [0.36, 0.7], scale: 1, pts: [
       [-350, 215, 60, "Pit bend"], [330, 215, 30, "Elevator"], [410, -60, 80, "Section Line"], [330, -280, 19, "Gopher hairpin"], [130, -90, 50, "Coulee"],
       [-120, -230, 38, "Slough"], [-390, -130, 110, "Canola sweep"]] },
-    gp: { n: "Prairie Sky Raceway", d: "GP circuit · 12 turns", start: 380, sec: [0.33, 0.67], scale: 1, pts: [
+    gp: { n: "Prairie Sky Raceway", d: "GP circuit · 12 turns", bump: 0.2, start: 380, sec: [0.33, 0.67], scale: 1, pts: [
       [-760, 330, 90, "Coulee"], [560, 330, 26, "Elevator"], [640, 60, 150, "Chinook kink"], [560, -170, 60, "Badlands"], [330, -170, 42, "Canola esses"],
       [190, -330, 42, ""], [-420, -380, 21, "Grain Bin hairpin"], [-140, -200, 160, "Big Sky sweeper"], [-80, 30, 52, "Gopher"], [-420, 60, 36, "Slough"], [-600, -120, 70, "Badger"], [-860, -60, 120, ""]] },
-    street: { n: "Grain Exchange Street Circuit", d: "street circuit · 13 turns", no24: true, start: 150, sec: [0.33, 0.67], scale: 1, pts: [
+    street: { n: "Grain Exchange Street Circuit", d: "street circuit · 13 turns", no24: true, bump: 1, start: 150, sec: [0.33, 0.67], scale: 1, pts: [
       [-230, 190, 26, "Depot Street"], [220, 190, 24, "Grain Exchange"], [220, 120, 20, ""], [300, 120, 20, "Stockyard"], [300, -180, 28, "Elevator Row"],
       [120, -180, 20, "Bank Street"], [120, -60, 20, "Courthouse"], [-110, -60, 14, "Mill hairpin"], [-30, -120, 18, ""], [-30, -240, 22, "Rail Crossing"],
       [-280, -240, 26, "Depot Yard"], [-280, -60, 18, "Weigh Station"], [-230, -60, 18, ""]] }
@@ -8710,7 +8710,7 @@ const ENGINE_SIM = (function () {
     const len = n * ROAD_DS, sh = i0 * ROAD_DS;
     corners.forEach(c => { c.s0 = ((c.s0 - sh) % len + len) % len; c.s1 = ((c.s1 - sh) % len + len) % len; });
     corners.sort((p, q) => p.s0 - q.s0);
-    const out = { id: T === ROAD_TRACKS[id] ? id : "club", n: T.n, d: T.d, len: len, ds: ROAD_DS, N: n, x: Xr, y: Yr, h: Hr, k: Kr, seg: Sr, corners: corners, sec: T.sec.slice(), size: [Mx - mx, My - my] };
+    const out = { id: T === ROAD_TRACKS[id] ? id : "club", n: T.n, d: T.d, bump: T.bump || 0, len: len, ds: ROAD_DS, N: n, x: Xr, y: Yr, h: Hr, k: Kr, seg: Sr, corners: corners, sec: T.sec.slice(), size: [Mx - mx, My - my] };
     TRACK_CACHE[id] = out; return out;
   }
 
@@ -8756,7 +8756,7 @@ const ENGINE_SIM = (function () {
       cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1) * dtShiftK(opt.dtId), engKg: ekg, vPow: vPow,   // a dog box (the drivetrain tier, sim/drag.js) shifts quicker
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
-    return roadSetup(RC, opt.setup);
+    return roadSetup(RC, opt.setup, +opt.bump || 0);
   }
 
   /* the setup sheet: roll stiffness (soft..stiff, springs + bars together, 0..100, 50 stock), the front/rear split of it
@@ -8764,22 +8764,35 @@ const ENGINE_SIM = (function () {
      the weaker axle's: the stiffer end of the car sheds more grip to load transfer, so a front-stiff car pushes (under) and a
      rear-stiff one comes round (over). The chassis' own nose-weight bias (`bias`, + = pushes) is already in the stock numbers,
      so the stock setup is the reference and leaves the car exactly as it was; moving toward neutral gains a little, past it
-     loses. The wing trades downforce (clA) for drag (cdA) and loads the tail. Absent / stock = no change at all. */
+     loses. The wing trades downforce (clA) for drag (cdA) and loads the tail.
+     Since 1.76.77.0 four more: brake bias (bb, -100 rear .. +100 front, 0 stock), tyre pressure (ps, 24..40 psi, 32 stock),
+     differential lock (df, -100 open .. +100 locked, 0 stock) and ride height (rh, -100 slammed .. +100 raised, 0 stock).
+     Absent / stock = no change at all, field by field. */
   // wing: +100 adds a (+ b per m² the chassis already makes) of downforce at d drag per unit of it (L/D 2.5): it pays in the corners
   // (a little at club speeds, more on the hill's fast sweepers) and costs top speed on the straights
   const WK = { bal: 0.05, a: 2.6, b: 0.3, d: 0.4 };
-  const SETUP_STOCK = { st: 50, sp: 0, wg: 0 };
+  /* the four newer settings. Brake bias: the stock split is a safe road setting; on track the best sits bbBase back from it,
+     a little forward on a nose-heavy car and further back on one with downforce (bbW per unit of front-weight shift, bbCl per m²
+     of downforce); off it the brakes lose bbF of their hold per unit², a rear-heavy split bbR more (the rears lock). Pressure: grip peaks a few psi under stock on a light car and at about stock on a heavy one
+     (psSo at 1,400 kg, psM per kg), falls psK per unit² either side (8 psi = one unit), and a soft tyre rolls psRr heavier.
+     Diff: it moves the balance like the springs do (dfBal at full travel: locked pushes, open lets it turn), so it can cure a car
+     that pushes or one that is loose; and exit drive gains dfX × how hard it is cornering (an open diff spins the inside wheel),
+     which only counts when the tyres, not the engine, are the limit: a big engine wants it tighter. Ride height: low adds rhCl m² of downforce (more on a car built for it) and lowers the centre of
+     gravity by rhH; from rhBot down it hits the bumps (rhBump × the track's roughness at full low); raised rolls rhHi more. */
+  const SU_K = { bbBase: -0.25, bbW: 4, bbCl: 0.08, bbF: 0.18, bbR: 0.12, psStock: 32, psSo: 0.45, psM: 2500, psK: 0.05, psRr: 0.2,
+    dfBal: 0.2, dfX: { rwd: 0.3, fwd: 0.25, awd: 0.12 }, rhCl: 0.25, rhH: 0.06, rhBot: 0.3, rhBump: 0.10, rhHi: 0.02 };
+  const SETUP_STOCK = { st: 50, sp: 0, wg: 0, bb: 0, ps: 32, df: 0, rh: 0 };
   function setupNorm(su) {
     if (!su) return null;
-    const st = clamp(Math.round(+su.st), 0, 100), sp = clamp(Math.round(+su.sp), -100, 100), wg = clamp(Math.round(+su.wg), -100, 100);
-    const o = { st: isFinite(st) ? st : 50, sp: isFinite(sp) ? sp : 0, wg: isFinite(wg) ? wg : 0 };
-    return o.st === 50 && o.sp === 0 && o.wg === 0 ? null : o;
+    const f = (k, a, b) => { const v = clamp(Math.round(+su[k]), a, b); return isFinite(v) ? v : SETUP_STOCK[k]; };
+    const o = { st: f("st", 0, 100), sp: f("sp", -100, 100), wg: f("wg", -100, 100), bb: f("bb", -100, 100), ps: f("ps", 24, 40), df: f("df", -100, 100), rh: f("rh", -100, 100) };
+    return Object.keys(SETUP_STOCK).every(k => o[k] === SETUP_STOCK[k]) ? null : o;
   }
-  function roadSetup(car, setup) {
+  function roadSetup(car, setup, bump) {
     const bias = clamp(car.dFront * 8, -0.6, 0.6);
     car.bias = bias; car.su = null; car.bi = bias;
     const su = setupNorm(setup); if (!su) return car;
-    const amp = 0.6 + 0.8 * su.st / 100, r = su.sp / 100 * amp + WK.bal * su.wg / 100, g = r + bias;
+    const amp = 0.6 + 0.8 * su.st / 100, r = su.sp / 100 * amp + WK.bal * su.wg / 100, g = r + bias + SU_K.dfBal * su.df / 100;
     const kSt = 1 - 1.25e-5 * (Math.pow(su.st - 65, 2) - 225);   // best near 65 (a touch firmer than stock): soft rolls onto its camber, very stiff skips over bumps
     car.muLat *= kSt * (1 - 0.10 * (Math.abs(g) - Math.abs(bias)));
     const dCl = su.wg / 100 * (WK.a + WK.b * Math.min(2, Math.max(0, car.clA)));
@@ -8787,6 +8800,22 @@ const ENGINE_SIM = (function () {
     car.cdA = Math.max(0.3, car.cdA + WK.d * (cl1 - car.clA)); car.clA = cl1;
     if (r < 0 && car.drive !== "fwd") car.tK = 0.10 * Math.min(1, -r);   // tail-happy: the rear lets go on the throttle out of a corner
     else if (r > 0 && car.drive === "fwd") car.tK = 0.08 * Math.min(1, r);   // front-drive and front-stiff: it pushes wide on the power
+    const K = SU_K;
+    if (su.rh) {   // ride height first: the downforce it makes moves the best brake bias
+      const h = su.rh / 100, lo = Math.max(0, -h), bot = Math.max(0, lo - K.rhBot) / (1 - K.rhBot);
+      car.clA += -h * K.rhCl * (1 + Math.min(2, Math.max(0, car.clA)));
+      car.h *= 1 + K.rhH * h;
+      car.muLat *= (1 - K.rhBump * clamp(bump || 0, 0, 1) * bot * bot) * (1 - K.rhHi * Math.max(0, h));
+    }
+    if (su.bb) {
+      const bo = clamp(K.bbBase + car.dFront * K.bbW - K.bbCl * clamp(car.clA, 0, 2), -0.6, 0.2), pen = x => K.bbF * x * x + (x < 0 ? K.bbR * x * x : 0);
+      car.kB = 1 - (pen(su.bb / 100 - bo) - pen(-bo));
+    }
+    if (su.ps !== K.psStock) {
+      const soft = (K.psStock - su.ps) / 8, so = clamp(K.psSo - (car.m - 1400) / K.psM, -0.2, 0.7), kP = 1 - K.psK * (Math.pow(soft - so, 2) - so * so);
+      car.muLat *= kP; car.muLong *= kP; car.crr *= 1 + K.psRr * soft;
+    }
+    if (su.df) car.kD = (K.dfX[car.drive] || K.dfX.rwd) * su.df / 100;
     car.su = su; car.bi = clamp(g, -1, 1);
     return car;
   }
@@ -8854,14 +8883,14 @@ const ENGINE_SIM = (function () {
   const gearPull = (car, E, v, g) => { const r = rpmOf(car, v, g); return r > car.redline ? 0 : E.steadyTq(Math.max(r, car.idle)) * car.gears[g]; };
   // most force the tyres take for drive (a = 0 weight transfer handled implicitly), and for braking, at speed v with lateral use latF (0..1)
   function tractionF(car, v, latF) {
-    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - latF * latF)) * (car.tK ? 1 - car.tK * latF : 1), hw = car.h / car.wb;
+    const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - latF * latF)) * (car.tK ? 1 - car.tK * latF : 1) * (car.kD ? 1 + car.kD * latF : 1), hw = car.h / car.wb;
     if (car.drive === "awd") return mu * (mg + DF) * 0.98;
     if (car.drive === "fwd") return mu * (mg * car.front + DF * 0.45) / (1 + mu * hw);
     return mu * (mg * (1 - car.front) + DF * 0.55) / Math.max(0.3, 1 - mu * hw);
   }
   function brakeF(car, v, latF) {
     const DF = 0.5 * ROAD_RHO * car.clA * v * v, mg = car.m * ROAD_G;
-    return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - latF * latF));
+    return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - latF * latF)) * (car.kB || 1);
   }
   // flywheel, gears and wheels have to be spun up too: the usual 1.04 + k·N² effective-mass factor on the overall ratio N
   const mEff = (car, g) => { const N = car.gears[g] * car.fd; return 1.04 + (car.sw ? 0.0006 : 0.0008) * N * N; };
@@ -8927,7 +8956,7 @@ const ENGINE_SIM = (function () {
 
   /* one lap, flying start. Returns the lap time, sectors and a dense trace (one sample per ROAD_DS metres). */
   function lapSim(res, opt, trackId) {
-    const T = roadTrack(trackId), N = T.N, ds = T.ds, car = roadCar(res, opt), E = roadEngine(res, car), m = car.m;
+    const T = roadTrack(trackId), N = T.N, ds = T.ds, car = roadCar(res, T.bump ? Object.assign({}, opt, { bump: T.bump }) : opt), E = roadEngine(res, car), m = car.m;
     // grip ceiling: v²|k| = μ (g + ½ρ clA v² / m)
     const vc = new Float64Array(N); let iMin = 0;
     const aero = 0.5 * ROAD_RHO * car.clA / m;
@@ -10185,6 +10214,7 @@ const ENGINE_SIM = (function () {
 
   /* the gearing target speed: 57 m/s for everything up to about a thousand horsepower (vPow past ~100 m/s), then a slow climb that flattens out around 77 m/s (277 km/h),
      so monster builds keep getting quicker on the straights but the mountain's corners and the downforce drag, not a flat cap, set the end of it */
+  const HILL_BUMP = 0.6;   // the mountain road's roughness for a low car (road.js tracks run 0.2 to 1)
   const hillVTop = vPow => vPow <= 100 ? Math.min(vPow, 57) : 57 + 20 * (1 - Math.exp(-(vPow - 100) / 60));
   /* the class car: the road-test chassis with this engine, stripped to the class weight, on its tyres and aero, geared for the mountain */
   function hillCar(prep, opt) {
@@ -10197,16 +10227,16 @@ const ENGINE_SIM = (function () {
     // top gear on the power peak at about the fastest the mountain allows, not the flat-out top speed
     const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = hillVTop(car.vPow);
     car.fdAuto = clamp((pkR * 2 * Math.PI / 60) * car.rw / (vTop * top), 0.9, 7.5); car.fd = clamp(car.fdAuto * clamp(+opt.finalK || 1, 0.6, 1.6), 0.7, 9);
-    return roadSetup(car, opt.setup);
+    return roadSetup(car, opt.setup, HILL_BUMP);
   }
   const hDrag = (car, v, rho) => 0.5 * rho * car.cdA * v * v + car.crr;
   function hTrac(car, v, lat, rho) {
-    const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - lat * lat)) * (car.tK ? 1 - car.tK * lat : 1), hw = car.h / car.wb;
+    const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G, mu = car.muLong * Math.sqrt(Math.max(0, 1 - lat * lat)) * (car.tK ? 1 - car.tK * lat : 1) * (car.kD ? 1 + car.kD * lat : 1), hw = car.h / car.wb;
     if (car.drive === "awd") return mu * (mg + DF) * 0.98;
     if (car.drive === "fwd") return mu * (mg * car.front + DF * 0.45) / (1 + mu * hw);
     return mu * (mg * (1 - car.front) + DF * 0.55) / Math.max(0.3, 1 - mu * hw);
   }
-  const hBrake = (car, v, lat, rho) => { const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G; return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - lat * lat)); };
+  const hBrake = (car, v, lat, rho) => { const DF = 0.5 * rho * car.clA * v * v, mg = car.m * ROAD_G; return Math.min(car.brake * mg, car.muLong * (mg + Math.max(0, DF))) * Math.sqrt(Math.max(0, 1 - lat * lat)) * (car.kB || 1); };
 
   /* the corner calls for one running: dusty, clean or grippy (the spotters' notes), and a little nobody can see */
   function hillCalls(seed, id) {
@@ -31025,7 +31055,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.76.0";
+const VERSION="1.76.77.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -31941,8 +31971,8 @@ const ADV={cell:{e:["ambientC","altitudeM","coolantC","oilC"]},
   salt:{e:["saltTop","saltBallast"],k:[["sk","saltAero"],["sk","saltCool"],["sk","saltChute"]],m:['[data-sk="saltShift"]'],x:["[data-saltgear]"],paint:1,s:[["Gearing",["e:saltTop","e:saltBallast","[data-saltgear]",'[data-sk="saltShift"]']],["Body",["paint","sk:saltAero","sk:saltCool","sk:saltChute"]]],sum:"gearing · ballast · aero · cooling · chutes · paint"},
   bog:{k:[["bk","bogGear"],["bk","bogTyre"]],sum:"gear · tyres"},
   boat:{e:["boatPitch","boatGear","boatTrim"],k:[["tk","boatImp"]],hint:"Boat drags:",sum:"prop pitch · gear · trim · prop shop"},
-  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],m:['[data-rk="roadCh"]','[data-ek="drv"]',".su-grid"],s:[["Chassis",['[data-rk="roadCh"]','[data-ek="drv"]']],["Suspension",[".su-grid"]],["Drive & view",["e:roadFinal","rk:roadCam","rk:roadSpd"]]],sum:"final drive · camera · playback"},
-  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],m:['[data-hk="hillCh"]','[data-hk="hillAero"]',".su-grid"],s:[["Car",['[data-hk="hillCh"]','[data-hk="hillAero"]']],["Suspension",[".su-grid"]],["Drive & view",["e:hillFinal","hk:hillCam","hk:hillSpd"]]],sum:"final drive · camera · playback"},
+  road:{e:["roadFinal"],k:[["rk","roadCam"],["rk","roadSpd"]],m:['[data-rk="roadCh"]','[data-ek="drv"]',".su-grid"],s:[["Chassis",['[data-rk="roadCh"]','[data-ek="drv"]']],["Suspension",[".su-grid"]],["Drive & view",["e:roadFinal","rk:roadCam","rk:roadSpd"]]],sum:"springs · diff · brakes · tyre psi · ride height · final drive"},
+  hill:{e:["hillFinal"],k:[["hk","hillCam"],["hk","hillSpd"]],m:['[data-hk="hillCh"]','[data-hk="hillAero"]',".su-grid"],s:[["Car",['[data-hk="hillCh"]','[data-hk="hillAero"]']],["Suspension",[".su-grid"]],["Drive & view",["e:hillFinal","hk:hillCam","hk:hillSpd"]]],sum:"springs · diff · brakes · tyre psi · ride height · final drive"},
   oval:{e:["ovalFinal"],k:[["ok","ovalGrille"],["ok","ovalCam"],["ok","ovalSpd"]],sum:"rear end · grille · camera · playback"},
   race24:{k:[["e24k","e24Fuel"],["e24k","e24Chg"],["e24k","e24SC"]],m:['[data-rk="roadCh"]'],sum:"fuel · tyre changes · safety cars"}};
 function envFold(t){const key=DYNO_T.includes(t)?"cell":t,A=ADV[key],box=$("envBox");if(!A)return;const nodes=[],kof=new Map,add=(n,kk)=>{if(n&&!nodes.includes(n)){nodes.push(n);if(kk)kof.set(n,kk);}};
@@ -33517,32 +33547,38 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
-/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
-/* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = [stiffness, balance, wing]
-   (newest 24 kept; none = stock). Tweaking the build sliders keeps the id; loading another build (preset, blueprint, trophy, save
-   slot...) swaps S.cfg for a new object, which files the outgoing id under its hash (S.suHm) and picks up the id last filed under
-   the incoming hash, else a fresh stock id. The sliders live in S.env (a working copy) and are filed back under the id here.
-   An older save (setup keyed by build hash, or a single S.env setup) moves onto the build on the bench the first time this runs. */
+/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
+   diff lock and ride height. Saved in S.env (suSt/suSp/suWg/suBb/suPs/suDf/suRh), stock = 50/0/0/0/32/0/0 (SU_F) ---- */
+/* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = the SU_F values in order
+   (newest 24 kept; none = stock; an older 3-number entry reads the newer four as stock). Tweaking the build sliders keeps the id; loading
+   another build (preset, blueprint, trophy, save slot...) swaps S.cfg for a new object, which files the outgoing id under its hash (S.suHm)
+   and picks up the id last filed under the incoming hash, else a fresh stock id. The sliders live in S.env (a working copy) and are filed
+   back under the id here. An older save (setup keyed by build hash, or a single S.env setup) moves onto the build on the bench the first time this runs. */
+const SU_F=[["suSt",50,0,100,"st"],["suSp",0,-100,100,"sp"],["suWg",0,-100,100,"wg"],["suBb",0,-100,100,"bb"],["suPs",32,24,40,"ps"],["suDf",0,-100,100,"df"],["suRh",0,-100,100,"rh"]];
 let suC=null;
 const suNew=()=>"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;};
+function suSet(e,v){SU_F.forEach((f,i)=>{e[f[0]]=Array.isArray(v)&&v[i]!==undefined?v[i]:f[1];});}
+const suSg=v=>(v>0?"+":"")+v;
+function suStock(e){return SU_F.every(f=>e[f[0]]===f[1]);}
+function suFix(e){const clampAll=()=>SU_F.forEach(([k,d,a,b])=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;});
   let h=null;try{h=cfgHash(S.cfg);}catch(x){}
   if(h!=null){
     const objMap=S.suMap&&typeof S.suMap==="object"&&!Array.isArray(S.suMap);
     if(typeof S.suId!=="string"||!objMap){const old=objMap&&Array.isArray(S.suMap[h])?S.suMap[h]:null;S.suId=suNew();S.suMap={};S.suHm={};suC=S.cfg;
-      if(old){e.suSt=old[0];e.suSp=old[1];e.suWg=old[2];}
-      else if(!objMap&&(e.suSt!==undefined||e.suSp!==undefined||e.suWg!==undefined)){c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);}
-      else{e.suSt=50;e.suSp=0;e.suWg=0;}}
+      if(old)suSet(e,old);
+      else if(!objMap&&(e.suSt!==undefined||e.suSp!==undefined||e.suWg!==undefined))clampAll();
+      else suSet(e,null);}
     else if(suC!==S.cfg){
       if(suC){const m=S.suMap;if(!S.suHm||typeof S.suHm!=="object"||Array.isArray(S.suHm))S.suHm={};let oh=null;try{oh=cfgHash(suC);}catch(x){}
         if(oh!=null&&Array.isArray(m[S.suId])){delete S.suHm[oh];S.suHm[oh]=S.suId;const k=Object.keys(S.suHm);if(k.length>24)delete S.suHm[k[0]];}
         const nid=S.suHm&&S.suHm[h];S.suId=typeof nid==="string"&&Array.isArray(m[nid])?nid:suNew();
-        const v=Array.isArray(m[S.suId])?m[S.suId]:[50,0,0];e.suSt=v[0];e.suSp=v[1];e.suWg=v[2];}
+        suSet(e,Array.isArray(m[S.suId])?m[S.suId]:null);}
       suC=S.cfg;}
   }
-  c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);
-  if(h!=null&&S.suMap&&typeof S.suId==="string"){const m=S.suMap,id=S.suId;if(e.suSt===50&&e.suSp===0&&e.suWg===0)delete m[id];else{const was=m[id];if(!was||was[0]!==e.suSt||was[1]!==e.suSp||was[2]!==e.suWg){delete m[id];m[id]=[e.suSt,e.suSp,e.suWg];const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}}}
-function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
+  clampAll();
+  if(h!=null&&S.suMap&&typeof S.suId==="string"){const m=S.suMap,id=S.suId,now=SU_F.map(f=>e[f[0]]);
+    if(suStock(e))delete m[id];else{const was=m[id];if(!Array.isArray(was)||now.some((v,i)=>(was[i]===undefined?SU_F[i][1]:was[i])!==v)){delete m[id];m[id]=now;const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}}}
+function suOpt(){const e=S.env;suFix(e);const o={};SU_F.forEach(f=>{o[f[4]]=e[f[0]];});return SIM.setupNorm(o);}
 const suLapCache=new Map();
 function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
 function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0)+"|"+(o.dtId||"");let r=suLapCache.get(k);
@@ -33565,10 +33601,10 @@ function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType
     <div class="su-row"><b class="su-w su-${w}">${w==="neutral"?"Neutral":w==="understeer"?"Understeer":"Oversteer"}</b><span>${dl}</span></div><p class="hint su-txt">${txt}</p>`;}
 function suEnvHtml(sl,hill){const e=S.env;suFix(e);
   return `<div class="lbl"><span>Setup</span><button class="chip su-rst" data-su-reset>Reset to stock</button></div>
-    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}</div>
+    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}${sl("suDf","Differential · open ↔ locked",-100,100,5,"",e.suDf)}${sl("suBb","Brake bias · rear ↔ front",-100,100,5,"",e.suBb)}${sl("suPs","Tyre pressure",24,40,1," psi",e.suPs)}${sl("suRh","Ride height · low ↔ high",-100,100,5,"",e.suRh)}</div>
     <div id="suLive" class="su-live"></div>
-    <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. Stock is the chassis as designed.</p>`;}
-$("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;S.env.suSt=50;S.env.suSp=0;S.env.suWg=0;renderEnv();save();buzz(6);});
+    <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. A locked diff pushes but drives out hard; an open one turns in but spins a wheel. Stock brakes are set safe and a bit forward: a touch rearward stops shorter, too far and the rears lock. A few psi under stock grips more, but a soft tyre rolls heavy and a heavy car wants more air. Low makes downforce until it bottoms on the bumps${hill?"":" (the street circuit is the roughest)"}. Stock is the chassis as designed.</p>`;}
+$("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;suSet(S.env,null);renderEnv();save();buzz(6);});
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadCarTxt(road){const c=(road&&road.car)||SIM.CHASSIS[road&&road.ch]||SIM.CHASSIS.coupe;return `${/^[AEIOU]/.test(c.n)?"an":"a"} ${c.n.toLowerCase().replace("gt","GT").replace("awd","AWD")}`;}
 function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry. Needs a certified engine. Bolt it into a car, run the straight-line figures and a flying lap — performance buyers judge 0–100 and lap times in their own car. Every lap is a little wear on the build.`
@@ -33680,7 +33716,7 @@ function roadSheet(res){const r=res.road,b=recBucket("road")[roadKey(r.ch+(r.swa
     <div><b>Corners</b>${r.apex.map(a=>`${esc(a.name)} ${Math.round(a.kmh)}`).join(" · ")} km/h</div>
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
     <div><b>Car</b>${esc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
-    ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${r.su.sp>0?"+":""}${r.su.sp} (${suBalWord(r.suBal)}) · wing ${r.su.wg>0?"+":""}${r.su.wg}</div>`:""}
+    ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${suSg(r.su.sp)} (${suBalWord(r.suBal)}) · wing ${suSg(r.su.wg)}${r.su.ps!=null?` · diff ${suSg(r.su.df)} · brakes ${suSg(r.su.bb)} · ${r.su.ps} psi · ride ${suSg(r.su.rh)}`:""}</div>`:""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */
@@ -38920,7 +38956,7 @@ const LESSONS=[
   {tab:"events",sel:'#envBox [data-rk="roadTyre"]',up:1,lbl:1,title:"Tyres",text:"Eco, street, sport and semi-slick. The number is the grip, so more of it means a quicker corner and a better launch. Sport is the stock fitment."},
   {tab:"events",sel:'#envBox [data-rk="roadTrk"]',up:1,lbl:1,title:"Pick a circuit",text:"Coulee Park is short and tight, Prairie Sky Raceway is long with 12 turns, and Grain Exchange is a walled downtown street circuit that rewards torque and brakes. The same car laps differently on each, and each keeps its own best."},
   {tab:"events",sel:'#envBox [data-rk="roadCh"]',up:1,lbl:1,title:"Pick the chassis",text:"Under Advanced, in Chassis. A 1,000 kg roadster, a front-drive hatch, a muscle car, a pickup. The line under it says what the engine adds and how the weight balances front to back."},
-  {tab:"events",sel:"#er-suSt",wrap:".su-grid",title:"Springs and wing",text:"Under Advanced, in Suspension. Stiffer at one end and that end loses grip first: a stiff front pushes wide, a stiff rear comes round. A steeper wing adds downforce, and top speed pays for it."},
+  {tab:"events",sel:"#er-suSt",wrap:".su-grid",title:"Setup",text:"Under Advanced, in Suspension. Stiffer at one end and that end loses grip first: a stiff front pushes wide, a stiff rear comes round. A steeper wing adds downforce, and top speed pays for it. The diff, brake bias, tyre pressure and ride height sit below: watch the lap time against stock as you slide them."},
   {tab:"events",sel:"#er-roadFinal",wrap:".env",title:"Final drive",text:"Under Advanced, in Drive & view. A shorter ratio pulls harder out of corners. A taller one runs out the straight. The line under the chassis shows where top gear lands against the power peak."},
   {tab:"events",sel:"#runTest",title:"Roll out",text:"Start the test. The straight-line runs happen first, then the lap. Space skips the lap playback if you only want the numbers."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the lap",text:"The straight-line numbers show whether the engine is strong. The lap shows whether the car can use it. A quick straight with a slow lap points at grip or balance, not power."}]},
