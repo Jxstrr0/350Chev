@@ -15,6 +15,15 @@
     race: { n: "Race", shift: 0.11, eta: 0.92, cost: 9500, d: "multi-disc clutch, dog box, 9-inch / 14-bolt · fast shifts, less loss" },
     pro: { n: "Pro", shift: 0.08, eta: 0.935, cost: 24000, d: "triple-disc, straight-cut dog box, spooled 14-bolt · snap shifts, least loss" } };
   const drivetrain = id => DRIVETRAIN[id] || DRIVETRAIN.stock;
+  /* the box's ratios: spaced evenly (geometrically) from 1st to top, unless veh.ratios gives every gear (custom spacing).
+     Custom ratios are kept in order: each gear sits between the one before it and top. */
+  function gearRatios(v) {
+    const n = Math.max(1, v.gears | 0), r = [];
+    for (let i = 0; i < n; i++) r.push(n === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (n - 1)));
+    if (n > 2 && Array.isArray(v.ratios) && v.ratios.length === n)
+      for (let i = 1; i < n - 1; i++) { const x = +v.ratios[i]; if (x > 0) r[i] = Math.min(r[i - 1], Math.max(r[n - 1], x)); }
+    return r;
+  }
   const dtCapOf = id => 0;   // a tier never limits (0 = no cap); kept so the call sites read the same as any other rated driveline
   const dtShiftK = id => drivetrain(id).shift / DRIVETRAIN.stock.shift, dtEtaK = id => drivetrain(id).eta / DRIVETRAIN.stock.eta;   // against Stock, for sims with their own base figures
   /* the strip car's weight is set with a typical 230 kg V8 in it; the engine actually fitted adds or saves the difference */
@@ -116,7 +125,7 @@
     const rpms = res.rpms, tq = res.torque, N = rpms.length;
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const torqueAt = r => { if (r <= rpms[0]) return tq[0] * Math.max(0.3, r / rpms[0]); if (r >= rpms[N - 1]) return tq[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return tq[i - 1] + f * (tq[i] - tq[i - 1]); };
-    const ratios = []; for (let i = 0; i < v.gears; i++) ratios.push(v.gears === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (v.gears - 1)));
+    const ratios = gearRatios(v);
     const DT = drivetrain(v.dtId), shiftTime = v.shiftTime > 0 ? +v.shiftTime : DT.shift;   // the tier's box and driveline (veh.dtId); veh.eta / veh.shiftTime override
     const rw = v.tyreDia * 0.0254 / 2 * rollK, g = 9.81, eta = v.eta > 0 ? +v.eta : DT.eta, TY = TYRES[v.tyre] || TYRES.street;
     let mu = TY.mu;
@@ -517,8 +526,7 @@
     const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.0 : 3.4) + 0.5 * r() : 1.0 + 0.6 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.9 + 0.5 * r(),
       beat: 0.6 + 0.6 * r(), hold: 1.0 + 0.4 * r(), rt: +rt.toFixed(4), shift: [], ideal: [] };
     // shift points: the rpm where the next gear's wheel torque (after the drop) matches this one's, or the redline if it never does
-    const n = Math.max(1, v.gears | 0), rat = [];
-    for (let i = 0; i < n; i++) rat.push(n === 1 ? v.first : v.first * Math.pow(v.top / v.first, i / (n - 1)));
+    const n = Math.max(1, v.gears | 0), rat = gearRatios(v);
     const rp = res && res.rpms, tq = res && res.torque, N = rp ? rp.length : 0;
     const T = x => { if (!N) return 1; if (x <= rp[0]) return tq[0]; if (x >= rp[N - 1]) return tq[N - 1]; let i = 1; while (rp[i] < x) i++; return tq[i - 1] + (x - rp[i - 1]) / (rp[i] - rp[i - 1]) * (tq[i] - tq[i - 1]); };
     for (let i = 0; i < n - 1; i++) {
