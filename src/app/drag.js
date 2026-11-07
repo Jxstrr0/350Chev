@@ -9,7 +9,7 @@ function pwTxt(hp){const r=pwRatio(hp),d=r.m-(S.env.mass||0)-(wbarOn()?WBAR_KG:0
 function pwUpd(){const el=$("evPw");if(el&&quick)el.textContent=pwTxt(quick.peakHp);}
 /* the engine as built, for its weight on the strip (the live result when it is current) */
 function engKgNow(){if(quick&&quick.kg>0)return quick.kg;try{return SIM.simulate(S.cfg,simEnv({testType:"pull"})).kg||0;}catch(e){return 0;}}
-function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg),ekg=engKgNow();return swapDragOv({mass:SIM.dragMass(e.mass,ekg)+(wbarOn(e)?WBAR_KG:0),engKg:Math.round(ekg),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
+function dragVeh(){const e=S.env,lt=SIM.launchTech(S.cfg),ekg=engKgNow();return swapDragOv({mass:SIM.dragMass(e.mass,ekg)+(wbarOn(e)?WBAR_KG:0),engKg:Math.round(ekg),wbar:wbarOn(e),rearBias:e.rearBias,tyre:e.tyre,tyreDia:e.tyreDia,gears:e.gears,first:e.first,top:e.top,final:e.final,ratios:dragRatios(),shiftRpm:e.shiftRpm>0?Math.min(e.shiftRpm,S.cfg.redline):0,launchRpm:lt.launchCtl!=="none"?lt.twoStepRpm:Math.min(e.launchRpm,S.cfg.redline),auto:e.shiftMode!=="manual",redline:S.cfg.redline,body:e.body||"street",chute:e.chute==="yes",launchCtl:lt.launchCtl,twoStepRpm:lt.twoStepRpm,launchRetard:lt.launchRetard,transBrake:lt.transBrake,dtCap:SIM.dtCapOf(drvId()),dtId:drvId()});}   // a chosen swap car (app/swap.js) brings its own weight, tyres and drag
 /* launch hardware, in words, only when something is fitted */
 /* anti-lag that will actually fire: a petrol turbo with it fitted */
 function alsOf(cfg){const a=cfg&&cfg.als;return a&&a!=="off"&&OPT.als&&OPT.als[a]&&(OPT.asp[cfg.asp]||{}).kind==="turbo"&&!isCI(cfg.fuel)?a:null;}
@@ -683,6 +683,18 @@ function pitsPlace(){const ov=$("pitsOv");if(!ov||ov.hidden)return;const svg=ov.
     lines+=`<line x1="${a[0]}" y1="${a[1]}" x2="${Math.round(x+w/2)}" y2="${Math.round(y+h/2)}"/><circle cx="${a[0]}" cy="${a[1]}" r="3.5"/>`;});
   svg.innerHTML=lines;}
 /* Driver: you, or the auto driver (S.env.dragDrive; env only, never cfg or cfgHash). On a race night it is set once and drives every pass. */
+/* custom gear spacing: 1st and top come from their own sliders, the gears between from g2..g6 (S.env); unset ones sit where even spacing puts them */
+const DRAG_MID_G=["g2","g3","g4","g5","g6"];
+function dragRatios(){const e=S.env;if(e.gearSet!=="custom"||!(e.gears>=3))return undefined;const r=SIM.gearRatios(e);for(let i=1;i<r.length-1;i++){const x=+e["g"+(i+1)];if(x>0)r[i]=x;}return r;}
+function dragGearFill(){const e=S.env,r=SIM.gearRatios(e);DRAG_MID_G.forEach(k=>delete e[k]);for(let i=1;i<r.length-1;i++)e["g"+(i+1)]=+r[i].toFixed(2);}
+function dragEvenTxt(){return SIM.gearRatios(S.env).map(x=>x.toFixed(2)).join(" · ");}
+function dragGearHtml(sl){const e=S.env,n=e.gears|0;if(n<3)return"";const cus=e.gearSet==="custom",r=cus?dragRatios():SIM.gearRatios(e);
+  let h=`<div class="lbl"><span>Gear spacing</span></div><div class="seg">${[["even","Even","spaced evenly from 1st to top"],["custom","Custom","set each gear in between"]].map(([k,nm,d])=>`<button data-lp="${k}" data-ek="gearSet" class="${(cus?"custom":"even")===k?"on":""}">${nm}<small>${d}</small></button>`).join("")}</div>`;
+  if(cus){h+=`<div class="envgrid">`;for(let i=1;i<n-1;i++)h+=sl("g"+(i+1),["2nd","3rd","4th","5th","6th"][i-1]+" gear",0.3,6,0.01,":1",+r[i].toFixed(2));h+=`</div><p class="hint" style="margin-top:-4px">Each gear stays between the one before it and top gear. Close ratios keep the engine near its power; a big drop pulls it down the curve.</p>`;}
+  else h+=`<p class="hint" id="dgEven" style="margin-top:-4px">${dragEvenTxt()}</p>`;
+  return h;}
+function dragShiftHtml(sl){const e=S.env;if(e.shiftMode==="manual")return"";const red=S.cfg.redline,def=red-200,lo=Math.min(def,Math.max(2000,Math.round(red*0.5/50)*50));
+  return`<div class="envgrid">${sl("shiftRpm","Shift rpm",lo,red,50,"",e.shiftRpm>0?Math.min(red,Math.max(lo,e.shiftRpm)):def)}</div><p class="hint" style="margin-top:-4px">Where the box changes up. Out of the box it is ${def} (redline less 200); shift where the next gear pulls harder than this one to go quicker.</p>`;}
 function dragDriveHtml(night){const on=dragAuto();
   return driverToggle(k=>`data-lp="${k}" data-ek="dragDrive"`,on?"auto":"you","burnout, stage, the light, the shifts","a steady hand · watch the pass")
     +(on?`<p class="hint">The auto driver does the burnout, stages${n2oKit()?", purges the nitrous":""}${(()=>{const lt=SIM.launchTech(S.cfg);return lt.launchCtl!=="none"||lt.transBrake==="trans_brake"||alsOf(S.cfg);})()?", arms the launch on the ambers":""} and leaves on the green with a good, human light — a red is rare. ${S.env.shiftMode==="manual"?"It shifts near the best point for this engine's curve. ":""}Launch rpm${n2oKit()?", the nitrous switch":""} and the chute stay as you set them. Steady, not perfect: a sharp light and good shifts beat it.${night?" It drives every pass of the night.":""} Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during a pass to take over.</p>`:"");}
