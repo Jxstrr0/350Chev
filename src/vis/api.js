@@ -245,10 +245,10 @@ const ENGINE_VIS = {
   setLivery: function(L){ var h=L&&L.hood||null, sd=(L&&L.sides||[]).filter(Boolean); LIVERY.hood=h; LIVERY.sides=h?sd:[]; LIVERY.key=h?[h.id].concat(sd.map(function(q){ return q.id; })).join(","):""; return LIVERY.key; },
   livery: function(){ return {key:LIVERY.key, hood:LIVERY.hood&&LIVERY.hood.id, sides:LIVERY.sides.map(function(q){ return q.id; })}; },   /* harness */
   logoCanvas: function(sp, w, h){ return spLogoCanvas(sp, w, h); },   /* the app's sponsor cards and slips draw the same cached logo */   /* cut straight to the stop framing (sled + board) */
-  /* ROAD COURSE: fed every frame {on, track (ENGINE_SIM.roadTrack), s (m from the line), v (m/s), g, rpm, thr, brk, ax, ay (g), slip, ch (chassis id), night, cam:"auto"|"chase"|"side"|"onboard", pre (approaching the line)}; {on:false} leaves */
+  /* ROAD COURSE: fed every frame {on, track (ENGINE_SIM.roadTrack), s (m from the line), v (m/s), g, rpm, thr, brk, ax, ay (g), slip, ch (chassis id), ghost (s of your best lap's ghost, or null), night, cam:"auto"|"chase"|"side"|"onboard", pre (approaching the line)}; {on:false} leaves */
   setRoad: function(o){
     if(!renderer) return;
-    if(!o || o.on===false){ if(ROAD.on){ ROAD.on=false; ROAD.minMs=0; if(ROAD.W && ROAD.W.fx) ROAD.W.fx.clear(); if(ROAD.W) roadFieldHide(ROAD.W); } return; }
+    if(!o || o.on===false){ if(ROAD.on){ ROAD.on=false; ROAD.minMs=0; if(ROAD.W && ROAD.W.fx) ROAD.W.fx.clear(); if(ROAD.W){ roadFieldHide(ROAD.W); if(ROAD.W.ghost) ROAD.W.ghost.visible=false; } } return; }
     ROAD.minMs=+o.minMs||0;   // time-lapse: the app asks for a few frames a second
     var now=performance.now();
     if(!ROAD.on){ ROAD.on=true; ROAD.snap=true; ROAD.shot=null; ROAD.lastT=now; if(!ROAD.cam) ROAD.cam=new THREE.PerspectiveCamera(50, 1, 0.3, 5200); ENGINE_VIS.resize(); }

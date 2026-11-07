@@ -378,6 +378,18 @@ function roadRender(){
   ROAD.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX, shot:ROAD.shot, track:W.T.id}; inf.autoReset=ar;
   renderer.toneMappingExposure=ex;
 }
+/* the ghost of your best lap: a see-through pale blue car at s (m), or hidden when s is null */
+function roadGhost(W, T, s){
+  var g=W.ghost;
+  if(s==null || !isFinite(s)){ if(g) g.visible=false; return; }
+  if(!g){
+    var m=new THREE.MeshBasicMaterial({color:0x9fd3ff, transparent:true, opacity:0.35, depthWrite:false});
+    var bodyG=new THREE.BoxGeometry(4.4,0.72,1.86); bodyG.translate(0,0.56,0);
+    var cabG=new THREE.BoxGeometry(2.0,0.52,1.5); cabG.translate(-0.4,1.17,0);
+    g=W.ghost=new THREE.Group(); g.add(new THREE.Mesh(bodyG, m)); g.add(new THREE.Mesh(cabG, m)); W.scene.add(g);
+  }
+  var N=T.N, fi=((s/T.ds)%N+N)%N; g.visible=true; roadPt(T, fi, 0, 0, g.position); g.rotation.set(0, roadHd(T, fi), 0);
+}
 function roadUpdate(o, dt){
   var T=o.track; if(!T) return;
   var W=ROAD.worlds[T.id]; if(!W){ W=ROAD.worlds[T.id]=buildRoadWorld(T); }
@@ -385,6 +397,7 @@ function roadUpdate(o, dt){
   if(o.sky!=null) roadSetSky(W, clamp(+o.sky,0,1), clamp(+o.warm||0,0,1), !!o.dawn);
   else { if(W.skyKey!=null) roadSkyReset(W); if(W.tier!==GFX || W.night!==!!o.night) roadSetNight(W, !!o.night); }
   if(o.field) roadFieldUpdate(W, T, o.field, +o.sky||0); else roadFieldHide(W);
+  roadGhost(W, T, o.ghost);
   var ch=o.ch||"coupe"; if(!ROAD.cars[ch]) ROAD.cars[ch]=roadCarMesh(ch);
   var car=ROAD.cars[ch]; if(ROAD.carKey!==ch || car.parent!==W.scene){ if(ROAD.car && ROAD.car.parent) ROAD.car.parent.remove(ROAD.car); W.scene.add(car); ROAD.car=car; ROAD.carKey=ch; }
   var N=T.N, fi=((o.s||0)/T.ds%N+N)%N; if(o.pit) fi=((W.pit[0]+18.4)%N+N)%N;   // in the pits: parked at the first garage
