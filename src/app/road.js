@@ -87,6 +87,29 @@ function suTuneAct(i,a){const T=suTunes(),t=T[i];
 $("envBox").addEventListener("click",e=>{const s=e.target.closest("[data-sut]"),a=e.target.closest("[data-sutact]");if(!s&&!a)return;
   if(a){if(SUTSEL>=0)suTuneAct(SUTSEL,a.dataset.sutact);return;}
   const i=+s.dataset.sut;if(!suTunes()[i]){suTuneAct(i,"save");return;}SUTSEL=SUTSEL===i?-1:i;renderEnv();});
+/* ---- setup tip after a run: nudge one slider at a time, re-run the lap (Pikes Peak: the climb, a few a tick in the background),
+   and name the single change that gains most. r.tip = {i,d,v,gain} or {none:true}; "Use it" on the sheet loads v into the sliders. ---- */
+const SU_TRY=[[1,25],[1,-25],[5,25],[5,-25],[2,25],[2,-25],[4,-3],[4,3],[6,-20],[0,20],[0,-20],[3,-15],[3,15],[6,20]],SU_TRY_HILL=9;
+const SU_TIP={"0+":"stiffer springs","0-":"softer springs","1+":"move the roll balance forward","1-":"move the roll balance rearward","2+":"more wing","2-":"less wing",
+  "3+":"brake bias forward","3-":"brake bias rearward","4+":"more air in the tyres","4-":"let some air out of the tyres","5+":"lock the diff more","5-":"open the diff","6+":"raise the car","6-":"lower the car"};
+function suOf(v){const o={};SU_F.forEach((f,i)=>{o[f[4]]=v[i];});return SIM.setupNorm(o);}
+function suTipCands(su,n){const b=SU_F.map(f=>su&&su[f[4]]!=null?su[f[4]]:f[1]);
+  return SU_TRY.slice(0,n||SU_TRY.length).map(([i,d])=>{const v=b.slice();v[i]=Math.min(SU_F[i][3],Math.max(SU_F[i][2],v[i]+d));return v[i]===b[i]?null:{i,d,v};}).filter(Boolean);}
+const suTipBest=(L,min)=>{let w=null;for(const c of L)if(c.gain>=min&&(!w||c.gain>w.gain))w=c;return w?{i:w.i,d:w.d,v:w.v,gain:+w.gain.toFixed(2)}:{none:true};};
+function suTipRoad(prep,opt,trk,t0){try{const L=suTipCands(opt.setup);for(const c of L)c.gain=t0-SIM.lapSim(prep,Object.assign({},opt,{setup:suOf(c.v)}),trk).time;return suTipBest(L,0.03);}catch(e){return null;}}
+function suTipHill(r,prep,opt){const L=suTipCands(opt.setup,SU_TRY_HILL),pass=o=>SIM.hillPass(prep,Object.assign({},opt,{seed:5},o)).time;let t0=null,k=0;
+  const step=()=>{try{if(t0==null)t0=pass({});else{const c=L[k++],t=pass({setup:suOf(c.v)});c.gain=t0!=null&&t!=null?t0-t:-1;}}catch(e){r.tip=null;return;}
+    if(t0==null){r.tip=null;return;}if(k<L.length){setTimeout(step,30);return;}r.tip=suTipBest(L,0.2);const box=$("suTipBox");if(box)box.outerHTML=suTipHtml(r,true);};
+  r.tip=undefined;setTimeout(step,2200);}
+function suTipHtml(r,hill){const t=r.tip;if(t===null)return"";if(t===undefined)return`<div id="suTipBox"><b>Try</b><span class="dim">working out a setup tip…</span></div>`;
+  if(t.none)return`<div id="suTipBox"><b>Try</b>No single setup change finds more than ${hill?"a couple of tenths":"a few hundredths"} here. The setup suits this car and ${hill?"hill":"circuit"}.</div>`;
+  const f=SU_F[t.i],nv=t.v[t.i],val=f[4]==="ps"?nv+" psi":f[4]==="st"?"roll "+nv:{sp:"balance ",wg:"wing ",bb:"brakes ",df:"diff ",rh:"ride "}[f[4]]+suSg(nv);
+  const b=r.suBal!=null?r.suBal:0,lo=!hill&&r.apex&&r.apex.length?r.apex.reduce((a,x)=>x.kmh<a.kmh?x:a).name:null,w=suBalWord(b);
+  const why=w==="understeer"?(lo?`It pushes wide in ${esc(lo)}. `:"It pushes wide in the tight stuff. "):w==="oversteer"?(lo?`The tail steps out of ${esc(lo)}. `:"The tail steps out on exit. "):"";
+  const tx=SU_TIP[t.i+(t.d>0?"+":"-")];
+  return`<div id="suTipBox"><b>Try</b>${why}${tx[0].toUpperCase()+tx.slice(1)} (${val}): about ${t.gain.toFixed(hill?1:2)} s ${hill?"up the hill":"a lap"}. <button class="chip" data-sutip="${t.v.join(",")}">Use it</button></div>`;}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-sutip]");if(!b)return;const v=b.dataset.sutip.split(",").map(Number);if(v.length!==SU_F.length||v.some(x=>!isFinite(x)))return;
+  suSet(S.env,v);suFix(S.env);renderEnv();save();buzz(6);toast("Setup changed. Roll out again to try it");b.disabled=true;b.textContent="In the setup";});
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadCarTxt(road){const c=(road&&road.car)||SIM.CHASSIS[road&&road.ch]||SIM.CHASSIS.coupe;return `${/^[AEIOU]/.test(c.n)?"an":"a"} ${c.n.toLowerCase().replace("gt","GT").replace("awd","AWD")}`;}
 function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry. Needs a certified engine. Bolt it into a car, run the straight-line figures and a flying lap — performance buyers judge 0–100 and lap times in their own car. Every lap is a little wear on the build.`
@@ -173,6 +196,7 @@ function roadFinish(){
     lapT:+lap.time.toFixed(3),sectors:lap.sectors.map(x=>+x.toFixed(3)),vmax:+lap.vmax.toFixed(1),vmin:+lap.vmin.toFixed(1),apex:lap.apex,shifts:lap.shifts,fullPct:lap.fullPct,ayPk:lap.ayPk,brakePk:lap.brakePk,tracT:lap.tractionT,trace:dec};
   /* records: best lap per chassis × circuit, best 0–100 per chassis */
   if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}else if(RT.brk&&opt.dtMsg)r.dtBroke={msg:opt.dtMsg,t:RT.brk.t,corner:RT.brk.corner};
+  if(!r.swapBroke&&!r.dtBroke)r.tip=suTipRoad(SIM.roadPrep(snap.cfg,res),opt,trk,lap.time);
   if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=recBucket("road"),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
   res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
@@ -199,6 +223,7 @@ function roadSheet(res){const r=res.road,b=recBucket("road")[roadKey(r.ch+(r.swa
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
     <div><b>Car</b>${esc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
     ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${suSg(r.su.sp)} (${suBalWord(r.suBal)}) · wing ${suSg(r.su.wg)}${r.su.ps!=null?` · diff ${suSg(r.su.df)} · brakes ${suSg(r.su.bb)} · ${r.su.ps} psi · ride ${suSg(r.su.rh)}`:""}</div>`:""}
+    ${r.tip!==undefined?suTipHtml(r,false):""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */
