@@ -33,7 +33,7 @@ Six tabs (`#tab-*` in `html/body.html`): **Build**, **Test**, **Events**, **Anal
 - **Build**: 14 accordion groups (`FORM`): Engine layout, Bore & stroke, Rotors & housings, Block & head materials, Pistons & rings, Rods & crank, Valvetrain, Induction & boost, Exhaust system, Fuel & tune, Launch control, Lubrication & cooling, Sealing, Finish. Base-engine list (presets), blueprints, and Build > Swap for putting the engine in a car.
 - **Test**: the dyno. Environment panel (ambient, altitude), the three tests, charts, the dyno tune map editor.
 - **Events**: a chip picker for the ten events, then Setup, Advanced and Results panes. Running an event turns the page into the run view (`app/runview.js`): the 3D scene fills the screen with a live HUD.
-- **Analysis**: combo interactions (part pairings that help or hurt), telemetry, achievements, records, the teardown panel after a failure.
+- **Analysis**: combo interactions (part pairings that help or hurt), telemetry, achievements, records, the teardown panel after a failure (it names the one change that clears the failed part without breaking anything else, trying every part table and a few slider steps, with a "Use it" button that fits it).
 - **Team** (career; `#tab-market` in the markup): a strip with the engine's state for the team, the next round and Close week (after a round it reads To race week and closes the off week too, with 1 wk beside it to close just one), then three sections: Team (the season numbers, offers, the season card (which carries its own Close week / To race week button until the round is due, then Race round), standings, the last race day), Sponsors & Rivals, and Log (ledger and goals).
 - **Shop**: in career, upgrades, staff, R&D, prestige items, the bank, Saves. In the Test cell it is a bench (current build next to every blueprint) and a parts catalogue (`app/shopsb.js`).
 
@@ -140,6 +140,6 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.81.0)
+## Loose ends found in the code (as of 1.76.82.0)
 
 Nothing in `src/` is stubbed or marked unfinished. (The salt flats placeholder in Analysis went in 1.76.75.0: the records already worked out show at once, and a class still being looked up keeps its row with your best.)
