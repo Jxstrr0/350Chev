@@ -156,6 +156,7 @@ function hillFinish(){
   Object.assign(r,{field:rows,place:rows.indexOf(me)+1,of:rows.length,clsName:C0.n,tier:C0.tier,auto:HC.auto&&HC.took==null,took:HC.took,handed:HC.handed||null,chName:SIM.CHASSIS[opt.ch].n,tyreName:SIM.HILL_TYRES[opt.tyre].n,aeroName:SIM.HILL_AERO[opt.aero].n,
     secNames:T.sections.map(s=>s.n),lead:HC.lead?{n:HC.lead.n,t:HC.lead.t,splits:HC.lead.splits}:null});
   if(r.dnf)r.place=rows.indexOf(me)+1;
+  r.suBal=+SIM.hillCar(prep,opt).bi.toFixed(2);if(!r.dnf)suTipHill(r,prep,opt);
   if(same&&!r.dnf&&!ff){const RR=recBucket("hill"),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
   const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:r.dnf.kind==="boil"?"boiled over in "+r.dnf.name:r.dnf.kind==="stall"?"couldn't climb the grade":"flagged off in "+r.dnf.name):fmtHill(r.time);
@@ -185,7 +186,7 @@ function hillSheet(res){const r=res.hill,b=recBucket("hill")[r.cls],L=r.lead;let
     <div><b>Power</b>${hp} hp — ${r.refHp} hp at the shop${r.carb?" · carburettor running rich up top":""}</div>
     <div><b>Driving</b>${r.auto?"Auto driver all the way":r.took!=null?`Auto to ${(r.took/1000).toFixed(1)} km, then you`:"You drove"}${r.handed?` to ${(r.handed/1000).toFixed(1)} km, then the auto driver took the rest`:""} · ${r.moments} moment${r.moments===1?"":"s"}${offs?" · "+offs:" · no offs"}</div>
     <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · on top the air is ${Math.round(100*(1-0.69))}% thinner, so the radiator sheds about ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less heat per degree</div>
-    <div><b>Car</b>${esc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}</div>
+    <div><b>Car</b>${esc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}${"tip" in r?suTipHtml(r,true):""}</div>
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}${f.rv?" · rival":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
 function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
