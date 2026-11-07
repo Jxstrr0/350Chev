@@ -139,11 +139,12 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");i
    style + layout every frame right after the HUD text was written */
 function cvBox(cv){const de=document.documentElement,k=innerWidth+"x"+innerHeight+"|"+de.className+"|"+(de.getAttribute("data-theme")||""),m=cv._box;if(m&&m.k===k)return m;
   const W=cv.clientWidth,H=cv.clientHeight,b={k:W&&H?k:"",W:W||120,H:H||90,ink:getComputedStyle(cv).color||"#faf9f5"};cv._box=b;return b;}
-function roadMapDraw(cv,T,s){if(!cv)return;const B=cvBox(cv),dpr=Math.min(devicePixelRatio||1,2),W=B.W,H=B.H;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+function roadMapDraw(cv,T,s,gs){if(!cv)return;const B=cvBox(cv),dpr=Math.min(devicePixelRatio||1,2),W=B.W,H=B.H;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const sc=Math.min((W-12)/T.size[0],(H-12)/T.size[1]),P=i=>[W/2+T.x[i]*sc,H/2-T.y[i]*sc];
   const ink=B.ink;x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.22;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
   x.globalAlpha=.75;x.lineWidth=1.6;x.stroke();x.globalAlpha=1;
   const p0=P(0),h0=T.h[0];x.strokeStyle="#d97757";x.lineWidth=2;x.beginPath();x.moveTo(p0[0]-Math.sin(h0)*6,p0[1]-Math.cos(h0)*6);x.lineTo(p0[0]+Math.sin(h0)*6,p0[1]+Math.cos(h0)*6);x.stroke();
+  if(gs!=null){const i=Math.floor(((gs/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#9fd3ff";x.globalAlpha=.8;x.beginPath();x.arc(p[0],p[1],3.5,0,7);x.fill();x.globalAlpha=1;}
   if(s!=null){const i=Math.floor(((s/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#d97757";x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();x.strokeStyle="#141413";x.lineWidth=1.2;x.stroke();}}
 function roadHudInit(){const L=$("roadLive");L.innerHTML=`<div class="rdh"><div class="rd-spd"><b id="rdV">0</b><i>km/h</i></div><div class="rd-g"><b id="rdG">–</b><i>gear</i></div><div class="rd-lt"><b id="rdT">0:00.0</b><i id="rdTi">lap</i></div><canvas id="rdMap" class="rd-map"></canvas></div>
   <div class="ph-bar rd-rpm"><i class="fill" id="rdR"></i><i class="mk" style="left:${Math.round(100*(RT.redline*0.9)/(RT.redline*1.04))}%"></i></div><div class="ph-lbl" style="margin-top:4px"><span id="rdRpm">0 rpm</span><span id="rdPd"></span></div>
@@ -155,8 +156,11 @@ function roadHud(f){if(!RT)return;const v=$("rdV");if(!v)return;
   const sec=RT.lap.sectors,cut=RT.secCut,best=RT.best&&RT.best.sec;let h="";
   for(let k=0;k<3;k++){const done=!f.pre&&f.lapT>=cut[k+1]-1e-6,t=sec[k],d=best&&done?t-best[k]:null;
     h+=`<div class="${done?"on":""}"><span>S${k+1}</span><b>${done?t.toFixed(2):k===0||(!f.pre&&f.lapT>=cut[k])?"…":"—"}</b>${d!=null?`<i class="${d<=0?"up":"dn"}">${d<=0?"−":"+"}${Math.abs(d).toFixed(2)}</i>`:""}</div>`;}
-  $("rdS").innerHTML=h;roadMapDraw($("rdMap"),RT.T,f.s);}
+  $("rdS").innerHTML=h;roadMapDraw($("rdMap"),RT.T,f.s,RT.ghost);}
 function roadBtnText(){const b=$("roadSkip");if(b)b.textContent=RT&&RT.finished?"…":"SKIP ▸▸";const s=$("roadSpd");if(s&&RT)s.textContent=RT.speed+"×";}
+/* the ghost of your best lap: its distance every gd seconds, saved with the record (about 240 numbers a lap) */
+function roadGhostRec(L){const gd=Math.max(0.5,Math.ceil(L.time/240*2)/2),o=[gd];for(let t=0;t<L.time;t+=gd)o.push(Math.round(roadAt(L,t).s));o.push(Math.round(L.N*L.ds));return o;}
+function roadGhostAt(B,t){const g=B&&B.gh;if(!Array.isArray(g)||g.length<3||!(t>=0)||t>=B.t)return null;const gd=g[0],x=t/gd,i=Math.floor(x),a=g[1+i],b=g[2+i];if(a==null)return null;return b==null?a:a+(b-a)*(x-i);}
 /* sample the lap trace at lap time tt */
 function roadAt(L,tt){const t=L.trace.t,N=L.N;tt=((tt%L.time)+L.time)%L.time;let a=0,b=N;while(b-a>1){const m=(a+b)>>1;if(t[m]<=tt)a=m;else b=m;}
   const f=clamp((tt-t[a])/Math.max(1e-6,t[a+1]-t[a]),0,1),j=(a+1)%N,T=L.trace;
@@ -174,10 +178,10 @@ function roadStart(){
   $("testProg").classList.remove("done");sfx("start");
   scrollCtlIntoView("roadCtl");
   const step=()=>{if(!RT||RT.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-RT.last)/1000);RT.last=now;
-    RT.t+=dt*RT.speed;const L=RT.lap,pre=RT.t<0,f=roadAt(L,RT.t),done=RT.t>=L.time;
+    RT.t+=dt*RT.speed;const L=RT.lap,pre=RT.t<0,f=roadAt(L,RT.t),done=RT.t>=L.time;RT.ghost=pre?null:roadGhostAt(RT.best,RT.t);
     f.pre=pre;f.done=done;f.lapT=pre?0:Math.min(RT.t,L.time);
     RT.bst=f.bst;RT.slip=f.lim&&f.v<30?0.6:f.lim&&f.v<45?0.3:0;
-    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,su:RT.suVis,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
+    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,su:RT.suVis,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,ghost:RT.ghost,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
     roadHud(f);run.on=true;run.rpm=f.rpm;run.load=Math.max(0.05,f.thr);$("rpmLbl").textContent=Math.round(f.rpm/10)*10;
     $("testProg").style.width=Math.min(100,100*Math.max(0,RT.t)/L.time)+"%";
     if(done&&!RT.crossed){RT.crossed=true;buzz([20,30,20]);}
@@ -202,7 +206,7 @@ function roadFinish(){
   /* records: best lap per chassis × circuit, best 0–100 per chassis */
   if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}else if(RT.brk&&opt.dtMsg)r.dtBroke={msg:opt.dtMsg,t:RT.brk.t,corner:RT.brk.corner};
   if(!r.swapBroke&&!r.dtBroke)r.tip=suTipRoad(SIM.roadPrep(snap.cfg,res),opt,trk,lap.time);
-  if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=recBucket("road"),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
+  if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=recBucket("road"),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk,gh:roadGhostRec(lap)},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
   res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
   // a track day counts like any other event: sponsors see it (form, record bonus, offers), the crew learn from it, a rival's posted lap is decided — spEvent does all of that
