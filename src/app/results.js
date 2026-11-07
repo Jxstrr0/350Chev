@@ -466,8 +466,36 @@ function tdOpen(){const L=S.last,f=tdFail(L);if(!f||testing||!ENGINE_VIS.teardow
   $("tdRun").textContent=tdRunName(L);$("tdPart").textContent=tx.part;$("tdWhat").textContent=tx.what+".";
   $("tdMeas").textContent=meas;$("tdMeas").hidden=!meas;
   $("tdFix").innerHTML=`<i>Fix:</i> `+(t&&t.fix?t.fix:tx.fix).replace(/</g,"&lt;");
+  $("tdTry").hidden=true;tdPick=null;setTimeout(()=>{if(tdIsOpen&&S.last===L)tdTryShow(L,f);},120);   // the search takes a moment on a phone: show the view first
   $("tdSpin").classList.remove("on");$("tdSpin").setAttribute("aria-pressed","false");
   $("tdCap").hidden=false;tdPadSync();setTimeout(()=>{tdPadSync();$("tdBack").focus({preventScroll:true});},350);}
+/* the one change that cures it: every part table (not the layout, cycle, induction or fuel family) and a few
+   slider steps (not with a tune map, which the sliders reshape) are tried on the failed engine; the winner clears the failed test without adding a new failure,
+   then costs the least power and money. Only offered while the build is still the one that broke. */
+const TD_SKIP={layout:1,cycle:1,asp:1,cover:1,scav:1,induct:1,lube:1,launchCtl:1,transBrake:1,cutout:1};
+const TD_STEPS={redline:[-250,-500,-750,-1000,-1500,-2000],boost:[-0.1,-0.2,-0.3,-0.5,-0.75,-1],cr:[-0.25,-0.5,-1,-1.5,-2],timing:[-1,-2,-3,-5],lambda:[-0.02,-0.04,-0.06,-0.08]};
+function tdTry(L,f){
+  const c0=L.cfg,env=simEnv(L.env||{}),base=SIM.simulate(c0,env),bt=base.tests.find(t=>t.id===f.id);
+  if(!bt||bt.status!=="crit")return null;
+  const bad=new Set(base.tests.filter(t=>t.status==="crit").map(t=>t.id)),out=[];
+  const test=(k,v,label)=>{const c=Object.assign({},c0,{[k]:v});if(k==="fuel"&&fuelFamilyDefaults0(c,isCI(c0.fuel)))return;if(clampCfgLimits(c))return;
+    const q=SIM.simulate(c,env),t=q.tests.find(x=>x.id===f.id);if(!t||t.status==="crit")return;
+    let worse=false,cured=0;for(const x of q.tests){if(x.status==="crit"&&!bad.has(x.id))worse=true;}for(const id of bad)if(!q.tests.some(x=>x.id===id&&x.status==="crit"))cured++;
+    if(!worse)out.push({k,v,label,cured,hp:Math.round(base.peakHp-q.peakHp),cost:Math.round(q.cost-base.cost)});};
+  for(const k in OPT){if(TD_SKIP[k]||!(k in c0))continue;for(const v in OPT[k]){const o=OPT[k][v];if(v===c0[k]||locked(o))continue;test(k,v,o.name);}}
+  if(!mapHas())for(const k in TD_STEPS){const fl=sliderField(k);if(!fl||c0[k]==null||(fl.showIf&&!fl.showIf(c0)))continue;
+    for(const d of TD_STEPS[k]){const v=+snapVal(fl,c0[k]+d);if(v===c0[k])continue;test(k,v,`${fLabel(fl,c0)} ${v}${fl.unit?" "+fl.unit:""}`);}}
+  out.sort((a,b)=>b.cured-a.cured||Math.max(0,a.hp)-Math.max(0,b.hp)||a.cost-b.cost);
+  return out[0]||null;}
+let tdPick=null;
+function tdTryShow(L,f){const el=$("tdTry");tdPick=null;el.hidden=true;
+  if(!L.cfg||cfgHash(L.cfg)!==cfgHash(S.cfg))return;let w=null;try{w=tdTry(L,f);}catch(e){w=null;}
+  if(!w)return;tdPick=w;const more=w.cured>1?` (and ${w.cured-1} more)`:"",hp=w.hp>0?`, −${w.hp} hp`:w.hp<0?`, +${-w.hp} hp`:"",$c=w.cost?`, ${money(w.cost)}`:"";
+  el.innerHTML=`<i>Try:</i> ${w.label.replace(/</g,"&lt;")}, which clears it${more}${hp}${$c}. <button class="btn sm" data-tdtry>Use it</button>`;el.hidden=false;tdPadSync();}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-tdtry]")||!tdPick)return;e.preventDefault();const w=tdPick;tdPick=null;
+  if(testing){toast("Let the run finish first");return;}tdClose();
+  if(w.k in TD_STEPS){S.cfg[w.k]=w.v;S.profileId=null;clampCfgLimits();afterCfgChange(true);}else applyOpt(w.k,w.v);
+  toast(`${w.label} fitted · run it again to check`);});
 function tdPadSync(){if(!tdIsOpen)return;const v=$("view").getBoundingClientRect(),c=$("tdCap").getBoundingClientRect();const h=document.querySelector("#hud .hudbtns"),hb=h?h.getBoundingClientRect().bottom:v.top;
   if(v.height>0)ENGINE_VIS.teardownPad(deskOn()?0.1:Math.max(0,(v.bottom-c.top)/v.height),Math.max(0,(hb-v.top)/v.height));}
 function tdClose(){if(!tdIsOpen)return;tdIsOpen=false;$("tdCap").hidden=true;$("app").classList.remove("td");ENGINE_VIS.teardown(null);}
