@@ -1783,6 +1783,7 @@ html:not(.desk) #evSlot .e24ev{display:none}
 .rvrow.pend{box-shadow:inset 3px 0 0 var(--warn)}
 .rvrow.pend .rvh{color:var(--chalk)}
 .rvchip{display:inline-block;margin-right:6px;padding:2px 7px;font-size:11px;vertical-align:1px;color:var(--warn)}
+.rvchip.rvfeud{color:var(--crit);margin:0 0 0 6px}
 /* r13: Settings folds, Dyno day one-line rows, the Pin-baseline chip */
 #setPane .setfold{margin-bottom:10px}
 #setPane .setfold>summary{min-height:50px}
@@ -31074,7 +31075,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.83.0";
+const VERSION="1.76.84.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -36157,7 +36158,11 @@ function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.
    the oval). The track day, the salt and Pikes Peak are run against the clock, so there the rival posts a number a little past
    your own best and your next lap (that car, that circuit) or run (that class) has to beat it; on the mountain their car runs
    in the field with that time. At the 24 Hours they enter a car in your class and you have to finish ahead of it.
-   Nothing here touches S.cfg or the dyno. State lives on C().riv; rivS() fills its defaults, so old saves load clean. */
+   Nothing here touches S.cfg or the dyno. State lives on C().riv; rivS() fills its defaults, so old saves load clean.
+   Feuds (since 1.76.84.0): beat or pass a shop and it may start one (RIV_FEUD_P). While it runs that shop talks about you in
+   the week's log, throws down more often, and a season after it started (RIV_FEUD_COPY weeks) it rolls out a copy of the
+   engine you had certified. It never touches your offers. Beat it in RIV_FEUD_WINS head-to-heads and it ends with a rep bonus;
+   left alone it fizzles out after RIV_FEUD_MAX weeks with nothing. State: C().riv.feud {rv, wk, wins, cert, copied}. */
 const RIV_EV={drag:"drag",pull:"pull_sled",hill:"hill",bog:"bog",boat:"boat",endurance:"race24",oval:"oval",road:"road",salt:"salt"};   // spEvent kind -> Events tab key
 const RIV_EV_TXT={drag:"a heads-up pass at the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt flats"};
 const RIV_EV_BTN={drag:"Take it to the strip",pull:"Go to the truck pull",hill:"Go to Pikes Peak",bog:"Go to the mud bog",boat:"Go to the boat drags",endurance:"Go to the 24 Hours",oval:"Go to the oval",road:"Go to the track day",salt:"Go to the salt"};
@@ -36194,6 +36199,24 @@ const RIVALS=[
 /* tuning (round 6): a rival used to stop at 1800 while your rep has no ceiling, so the board was dead by about week 100 (a good shop is #1 by week 5 and 4x the field by week 80).
    Now a rival's weekly gain is (RIV_GAIN[0] + rep * RIV_GAIN[1]) * pace * noise; behind you it multiplies by 1 + min(RIV_CATCH[1], gap * RIV_CATCH[0]), ahead of you it eases off to RIV_EASE at the least,
    so the three shops hold roughly 60-100% of a good player's rep all career instead of falling away. The ceiling only stops a runaway. */
+/* each shop's feud voice: start, talk (weekly), copy ({n} the engine, {hp} its power), gloat (they beat you), end */
+const RIV_FEUD={
+  hollis:{start:["Dale Hollis has decided you are the problem. He told three people at the gas station.","Hollis Hot Rods is taking it personally. Somebody painted your shop's name on their dartboard."],
+    talk:["Hollis on the local radio: \"Their stuff looks good on a dyno sheet. So does a lawn mower.\"","Dale Hollis posted a photo of your cert sheet with a big red question mark on it.","Hollis Hot Rods: \"We're not worried. We've seen their tyres.\"","Word from the strip: Hollis has been telling people you buy your horsepower by the pound.","Hollis taped your shop's logo to the bottom of their creeper. \"So I can look at it all day.\""],
+    copy:["Hollis Hot Rods rolled out \"their own\" engine. It is your {n}, {hp} hp, with a Hollis sticker on the valve cover.","Dale Hollis is running a copy of your {n} and calling it a Hollis original. The dyno sheet says {hp} hp."],
+    gloat:["Hollis had the result printed on T-shirts by morning.","Dale Hollis did a lap of the pits with the timeslip held over his head."],
+    end:["Dale Hollis shook your hand in front of everybody. \"All right. All right. You're quick.\" The feud is over.","Hollis Hot Rods scraped your name off the dartboard. The feud is done, and he bought the tyres."]},
+  marlow:{start:["Marlow & Daughters opened a file on your shop. It already has tabs.","The Marlows sent a letter: they will be \"following your results with interest\". It is not a friendly letter."],
+    talk:["Marlow & Daughters published a technical note on why your intake is wrong. It has footnotes.","A Marlow newsletter went out with your dyno curve in it, annotated in red.","The middle Marlow daughter told a magazine your numbers are \"optimistic, at best\".","Marlow & Daughters asked the series for your test conditions. Again.","\"We do not have rivals,\" said a Marlow. \"We have reference points.\" They meant you."],
+    copy:["Marlow & Daughters built a copy of your {n} \"for comparison\". Theirs makes {hp} hp and came with a 12-page report.","The Marlows are running your {n} now, measured to the tenth: {hp} hp. The report says it can be improved."],
+    gloat:["The Marlows mailed you the timing sheet with the gap highlighted.","Marlow & Daughters sent a short note: \"As predicted.\""],
+    end:["Marlow & Daughters closed your file and sent a card: \"Measured fairly, beaten fairly.\" The feud is over.","The Marlows asked for a photo with your crew, for the wall. The feud is done."]},
+  tidewater:{start:["Tidewater Diesel & Marine has a new favourite topic: you. The whole dock knows your name now.","The Tidewater foreman spat in the bilge and said your shop's name. Feud on."],
+    talk:["Tidewater painted \"TORQUE DOESN'T LIE\" on a billboard facing your road.","The Tidewater crew says your engines couldn't pull a crab pot out of a bathtub.","A Tidewater truck rolled past your shop at walking pace, black smoke and all, just to make a point.","Tidewater's foreman told the feed store you run your tractors on hairspray.","Tidewater left a dead outboard on your doorstep with a note: \"Your next build?\""],
+    copy:["Tidewater rolled out a copy of your {n}. They added a snorkel and some rust. {hp} hp, they say.","The Tidewater crew is running your {n} in a work boat now, {hp} hp, and telling everyone they did it first."],
+    gloat:["Tidewater towed the trophy past your shop twice.","The Tidewater crew honked the boat horn for a full minute."],
+    end:["The Tidewater foreman showed up with a thermos and two mugs. \"Fair's fair.\" The feud is over.","Tidewater painted over the billboard. It just says \"Good engines\" now. The feud is done."]}};
+const RIV_FEUD_P=0.5,RIV_FEUD_PASS_P=0.2,RIV_FEUD_REP=60,RIV_FEUD_WINS=2,RIV_FEUD_COPY=16,RIV_FEUD_MAX=40,RIV_FEUD_COOL=12,RIV_FEUD_TALK=0.45;
 const RIV_MAX=40000,RIV_GAIN=[2,0.005],RIV_CATCH=[2,6],RIV_EASE=0.25;
 const RIV_WIN_TIER=5,RIV_LOSE_PCT=0.3,RIV_PURSE_CAP=40000,RIV_FLIP=0.03;   // stakes grow with tier and rep (they were a flat +3..13 rep, -2 rep and $2,500 at any size of shop); a rival passes you only by a 3% margin so the log doesn't chatter
 const rivTier=r=>{let i=0;for(let j=0;j<REP_TIERS.length;j++)if(r>=REP_TIERS[j][0])i=j;return i;};
@@ -36201,7 +36224,7 @@ function rivS(){const c=C();const s=c.riv&&typeof c.riv==="object"?c.riv:(c.riv=
   if(!s.r||typeof s.r!=="object")s.r={};if(!s.pos||typeof s.pos!=="object")s.pos={};if(!s.tier||typeof s.tier!=="object")s.tier={};
   if(!s.hist||typeof s.hist!=="object")s.hist={};for(const k of ["won","lost","declined","forfeit"])s.hist[k]=+s.hist[k]||0;
   if(!Array.isArray(s.rh))s.rh=[];if(!s.last||typeof s.last!=="object")s.last={};if(!s.ack||typeof s.ack!=="object")s.ack={};s.top=+s.top||0;   // r13: 4-week rep ring, last head-to-head per rival, #1 streak and the one-time late-game words
-  if(!s.seed)s.seed=((c.seed||1)^0x2c9277b5)>>>0||11;if(!(s.cool>=0))s.cool=0;
+  if(!s.seed)s.seed=((c.seed||1)^0x2c9277b5)>>>0||11;if(!(s.cool>=0))s.cool=0;if(!(s.fcool>=0))s.fcool=0;if(s.feud&&(typeof s.feud!=="object"||!RIV_FEUD[s.feud.rv]))s.feud=null;s.hist.feuds=+s.hist.feuds||0;
   for(const v of RIVALS)if(!(s.r[v.id]>=0))s.r[v.id]=Math.round(Math.max(v.base,(c.rep||0)*v.share));
   return s;}
 function rivRng(){const s=rivS();s.seed=(s.seed*1664525+1013904223)>>>0;return s.seed/4294967296;}
@@ -36213,7 +36236,7 @@ function rivalsPos(){if(!career())return;const s=rivS(),pl=C().rep;
   for(const v of RIVALS){const r=s.r[v.id];let p=s.pos[v.id];
     if(p==null){s.pos[v.id]=pl>=r?1:-1;continue;}
     const mg=Math.max(2,pl*RIV_FLIP);if(p===1&&r>=pl+mg){s.pos[v.id]=-1;logEvent(rivPick(v.up),"bad");}
-    else if(p===-1&&pl>=r+mg){s.pos[v.id]=1;logEvent(rivPick(v.down),"good");toastAfter(`You passed ${v.name}`);}}}
+    else if(p===-1&&pl>=r+mg){s.pos[v.id]=1;logEvent(rivPick(v.down),"good");toastAfter(`You passed ${v.name}`);rivFeudMaybe(v,RIV_FEUD_PASS_P);}}}
 function rivalsWeek(){if(!career())return;const s=rivS(),c=C(),pl=c.rep;
   for(const v of RIVALS){let r=s.r[v.id];
     let g=(RIV_GAIN[0]+r*RIV_GAIN[1])*v.pace*(0.4+rivRng()*1.2);
@@ -36227,7 +36250,7 @@ function rivalsWeek(){if(!career())return;const s=rivS(),c=C(),pl=c.rep;
       s.last[v.id]={w:c.week,pw:0,ev:ch.ev,ns:1};logEvent(`You never showed for ${v.name}'s challenge — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`Challenge forfeited · −${ch.lose} rep`);s.ch=null;s.cool=3;}}
   else if(s.cool>0)s.cool--;
   else if(c.rep>=30&&rivRng()<0.45)rivIssue();
-  rivalsPos();rivRing();rivTopWeek();}
+  rivalsPos();rivRing();rivTopWeek();rivFeudWeek();}
 /* r13: a short ring of the board (the last 8 weeks, rounded) so the table can show a 4-week trend; the #1 streak and the once-only late-game words */
 function rivRing(){const s=rivS(),c=C(),e={w:c.week,p:Math.round(c.rep),r:{}};for(const v of RIVALS)e.r[v.id]=Math.round(s.r[v.id]);
   if(s.rh.length&&s.rh[s.rh.length-1].w===c.week)s.rh.pop();s.rh.push(e);if(s.rh.length>8)s.rh.splice(0,s.rh.length-8);}
@@ -36261,7 +36284,7 @@ function rivE24Car(R){if(!career())return null;const ch=rivS().ch;if(!ch||ch.st!
 function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
   const cand=RIVALS.map(v=>({v,evs:v.evs.filter(rivEvOpen)})).filter(x=>x.evs.length);if(!cand.length)return;
   // lean toward a rival who is close to you in the table
-  const w=cand.map(x=>1/(0.4+Math.abs(Math.log((s.r[x.v.id]+10)/(pl+10)))));let t=w.reduce((a,b)=>a+b,0)*rivRng(),i=0;while(i<w.length-1&&t>w[i]){t-=w[i];i++;}
+  const w=cand.map(x=>(s.feud&&s.feud.rv===x.v.id?4:1)/(0.4+Math.abs(Math.log((s.r[x.v.id]+10)/(pl+10)))));   // a shop in a feud with you throws down morelet t=w.reduce((a,b)=>a+b,0)*rivRng(),i=0;while(i<w.length-1&&t>w[i]){t-=w[i];i++;}
   const v=cand[i].v,ev=rivPick(cand[i].evs),tier=repTierIdx(),ahead=s.r[v.id]>pl;
   const beat=RIV_BEAT.includes(ev),need=beat?"beat":ev==="endurance"?"ahead":ev==="drag"||ahead?"win":"podium";
   const win=Math.round((3+tier*RIV_WIN_TIER)*(need==="win"||(need!=="podium"&&ahead)?1.3:1)),purse=Math.min(RIV_PURSE_CAP,Math.round((150+pl*7)/50)*50);
@@ -36279,10 +36302,28 @@ function rivalsEvent(kind,o){const s=rivS(),ch=s.ch;if(!ch||ch.st!=="on"||ch.ev!
   const vs=ch.need==="beat"?` (${val!=null?(kind==="road"?fmtLap(val,2):kind==="hill"?fmtHill(val):val.toFixed(2)+" mph"):"no time"} against ${rivTgtTxt(ch)})`:o.rvTxt?` (${o.rvTxt})`:"";
   s.last[v.id]={w:c.week,pw:won?1:0,ev:ch.ev};
   if(won){s.hist.won++;if(!s.hist.beat||typeof s.hist.beat!=="object")s.hist.beat={};s.hist.beat[v.id]=(s.hist.beat[v.id]||0)+1;c.rep+=ch.win;c.cash+=ch.purse;s.r[v.id]=Math.max(0,s.r[v.id]-Math.max(3,s.r[v.id]*0.04));
-    logEvent(`Head-to-head beat ${v.name} at ${RIV_EV_TXT[ch.ev]}${vs} — ${fmt$(ch.purse)} side bet, +${ch.win} rep. ${rivPick(v.lost)}`,"good");toastAfter(`BEAT ${v.name.toUpperCase()} · +${ch.win} REP · ${fmt$(ch.purse)}`);}
+    logEvent(`Head-to-head beat ${v.name} at ${RIV_EV_TXT[ch.ev]}${vs} — ${fmt$(ch.purse)} side bet, +${ch.win} rep. ${rivPick(v.lost)}`,"good");toastAfter(`BEAT ${v.name.toUpperCase()} · +${ch.win} REP · ${fmt$(ch.purse)}`);
+    if(s.feud&&s.feud.rv===v.id)rivFeudWin(v);else rivFeudMaybe(v,RIV_FEUD_P);}
   else{s.hist.lost++;c.rep=Math.max(0,c.rep-ch.lose);s.r[v.id]=Math.min(RIV_MAX,s.r[v.id]+Math.max(2,s.r[v.id]*0.02));
-    logEvent(`Head-to-head lost to ${v.name} at ${RIV_EV_TXT[ch.ev]}${vs} — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`${v.name} won the head-to-head · −${ch.lose} rep`);}
+    logEvent(`Head-to-head lost to ${v.name} at ${RIV_EV_TXT[ch.ev]}${vs} — −${ch.lose} rep. ${rivPick(v.won)}`,"bad");toastAfter(`${v.name} won the head-to-head · −${ch.lose} rep`);
+    if(s.feud&&s.feud.rv===v.id)logEvent(rivPick(RIV_FEUD[v.id].gloat),"bad");}
   rivalsPos();}
+/* ---- feuds ---- */
+const rivCertSnap=()=>{const c=C().cert;return c&&c.ok&&c.res?{n:String(engineName()||"engine").slice(0,40),hp:Math.round(c.res.peakHp||0)}:null;};
+function rivFeudMaybe(v,p){const s=rivS(),c=C();if(s.feud||s.fcool>0||c.rep<RIV_FEUD_REP||rivRng()>=p)return;
+  s.feud={rv:v.id,wk:c.week,wins:0,cert:rivCertSnap(),copied:0};s.hist.feuds++;logEvent(`Feud: ${rivPick(RIV_FEUD[v.id].start)} Beat them in ${RIV_FEUD_WINS} head-to-heads to settle it.`,"bad");toastAfter(`${v.name} has started a feud`);}
+function rivFeudWeek(){const s=rivS(),f=s.feud,c=C();if(!f){if(s.fcool>0)s.fcool--;return;}const v=RIVALS.find(x=>x.id===f.rv),T=RIV_FEUD[f.rv];
+  if(c.week-f.wk>=RIV_FEUD_MAX){logEvent(`${v.name} has found somebody else to talk about. The feud fizzled out.`,"");s.feud=null;s.fcool=RIV_FEUD_COOL;return;}
+  if(!f.cert)f.cert=rivCertSnap();   // nothing certified when it started: they wait for something worth copying
+  if(!f.copied&&f.cert&&c.week-f.wk>=RIV_FEUD_COPY){f.copied=c.week;logEvent(rivPick(T.copy).replace("{n}",f.cert.n).replace("{hp}",f.cert.hp.toLocaleString("en-CA")),"bad");return;}
+  if(rivRng()<RIV_FEUD_TALK)logEvent(rivPick(T.talk),"");}
+function rivFeudWin(v){const s=rivS(),f=s.feud,c=C();f.wins++;
+  if(f.wins<RIV_FEUD_WINS){logEvent(`Feud with ${v.name}: ${f.wins} of ${RIV_FEUD_WINS} head-to-heads won. One more settles it.`,"");return;}
+  const bonus=rivFeudBonus();c.rep+=bonus;s.feud=null;s.fcool=RIV_FEUD_COOL;if(!s.hist.ended)s.hist.ended=0;s.hist.ended++;
+  logEvent(`${rivPick(RIV_FEUD[v.id].end)} +${bonus} rep.`,"good");toastAfter(`FEUD SETTLED · ${v.name.toUpperCase()} · +${bonus} REP`);}
+const rivFeudBonus=()=>Math.round((5+repTierIdx()*RIV_WIN_TIER)*1.5);
+function rivFeudHtml(){const f=rivS().feud;if(!f)return"";const v=RIVALS.find(x=>x.id===f.rv),left=RIV_FEUD_WINS-f.wins;
+  return`<p class="hint rvhint rvfeudtxt"><b>Feud with ${v.name}:</b> beat them in ${left} more head-to-head${left===1?"":"s"} to settle it (+${rivFeudBonus()} rep). Since week ${f.wk} they talk about you in the week's news${f.copied?` and are running a copy of your ${esc(f.cert.n)}`:f.cert?`, and a season in they will copy your ${esc(f.cert.n)}`:""}. They can't touch your teams.</p>`;}
 function rivalsRender(){let sec=$("rivSec");
   if(!career()){if(sec)sec.hidden=true;return;}
   if(!sec){const anchor=$("mkSpons");if(!anchor)return;
@@ -36296,7 +36337,7 @@ function rivalsRender(){let sec=$("rivSec");
     return`<em class="rvt ${t.k}" role="img" aria-label="${t.n?`${w}, ${t.d>0?"+":""}${t.d} rep over ${t.n} weeks`:"no trend yet"}" title="${t.n?`${t.d>0?"+":""}${t.d} rep in ${t.n} wk`:"no trend yet"}">${a}</em>`;};
   const last=v=>{const L=s.last[v.id];return!L?"No head-to-head yet":L.ns?`You never showed, wk ${L.w}`:`${L.pw?"Lost to you":"Beat you"} at ${RIV_EV_SHORT[L.ev]||"the track"}, wk ${L.w}`;};
   const board=rows.map((x,i)=>x.v
-    ?`<div class="rvrow${x.v.id===chv?" pend":""}"><b class="rvn">${i+1}</b><span class="rvnm"><b>${x.v.name}</b><i>${REP_TIERS[rivTier(x.r)][1]} · ${x.v.town}</i><i class="rvh">${x.v.id===chv?`<span class="mkc rvchip">${s.ch.st==="on"?"Challenge on":"Challenge"}</span>${s.ch.st==="on"?"run it":"answer"} by wk ${s.ch.exp}`:last(x.v)}</i></span><span class="rvp">${x.r}${trend(x.v.id)}</span></div>`
+    ?`<div class="rvrow${x.v.id===chv?" pend":""}"><b class="rvn">${i+1}</b><span class="rvnm"><b>${x.v.name}${s.feud&&s.feud.rv===x.v.id?` <span class="mkc rvchip rvfeud">Feud</span>`:""}</b><i>${REP_TIERS[rivTier(x.r)][1]} · ${x.v.town}</i><i class="rvh">${x.v.id===chv?`<span class="mkc rvchip">${s.ch.st==="on"?"Challenge on":"Challenge"}</span>${s.ch.st==="on"?"run it":"answer"} by wk ${s.ch.exp}`:last(x.v)}</i></span><span class="rvp">${x.r}${trend(x.v.id)}</span></div>`
     :`<div class="rvrow you"><b class="rvn">${i+1}</b><span class="rvnm"><b>Your shop</b><i>${repTier()[1]}</i></span><span class="rvp">${x.r}${trend(null)}</span></div>`).join("");
   const near=RIVALS.slice().sort((a,b)=>Math.abs(s.r[a.id]-pl)-Math.abs(s.r[b.id]-pl))[0];
   const ch=s.ch;let card="";
@@ -36307,7 +36348,7 @@ function rivalsRender(){let sec=$("rivSec");
       <div class="cstat off">${ch.need==="ahead"?`${v.name} enter a car in your class at your next 24 Hours. Finish ahead of it in the classification; if your class has no other car, a podium will do.`:ch.need==="beat"?(ch.ev==="road"?`${v.name} lapped ${rivWhere(ch)} in ${rivTgtTxt(ch)}. Your next lap in that car on that circuit decides it; a swap car doesn't count.`:ch.ev==="hill"?`${v.name} climbed ${rivWhere(ch)} in ${rivTgtTxt(ch)}, and their car runs in the field on that time. Your next climb in that class decides it; a DNF loses.`:`${v.name} ran ${rivTgtTxt(ch)} through the mile in ${ch.k}. Your next run in that class decides it; a run that breaks or books no time loses.`)
         :`${ch.need==="win"?"Win it outright":"Finish on the podium (top three)"}${ch.ev==="drag"?" in a heads-up pass (Events · Drag strip · race the other lane)":ch.ev==="oval"?" in the feature (the heat doesn't count)":""}.${ch.ev==="drag"?" Solo runs and race nights don't count.":""}`}</div>
       ${on?`<button class="btn pri" data-rvgo="${ch.ev}">${RIV_EV_BTN[ch.ev]} ›</button>`:`<div class="rvbtns"><button class="btn pri" data-rvacc="1">Accept</button><button class="btn ghost" data-rvno="1">Turn it down</button></div>`}</div>`;}
-  $("rivBox").innerHTML=`<div class="rvboard">${board}</div><p class="hint rvhint">${near.name}: ${near.tag}</p>${card}<p class="hint rvhint">Head-to-heads: ${h.won} won · ${h.lost} lost${h.declined?" · "+h.declined+" turned down":""}. A rival throws down every few weeks once you are past 30 rep. Arrows: rep against 4 weeks ago.</p>`;}
+  $("rivBox").innerHTML=`<div class="rvboard">${board}</div><p class="hint rvhint">${near.name}: ${near.tag}</p>${rivFeudHtml()}${card}<p class="hint rvhint">Head-to-heads: ${h.won} won · ${h.lost} lost${h.declined?" · "+h.declined+" turned down":""}. A rival throws down every few weeks once you are past 30 rep. Arrows: rep against 4 weeks ago.</p>`;}
 function rivClick(e){const s=rivS(),ch=s.ch;
   const go=e.target.closest("[data-rvgo]");if(go){if(!ch||ch.st!=="on")return;evGo(RIV_EV[ch.ev],ch.ev==="drag"?{race:"heads"}:ch.ev==="road"?{roadCh:ch.car,roadTrk:ch.trk}:ch.ev==="hill"?{hillCls:ch.k}:{});return;}
   if(!ch)return;const v=RIVALS.find(x=>x.id===ch.rv);
