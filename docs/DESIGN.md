@@ -143,6 +143,6 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.85.0)
+## Loose ends found in the code (as of 1.76.86.0)
 
 Nothing in `src/` is stubbed or marked unfinished. (The salt flats placeholder in Analysis went in 1.76.75.0: the records already worked out show at once, and a class still being looked up keeps its row with your best.)

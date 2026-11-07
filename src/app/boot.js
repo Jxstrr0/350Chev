@@ -395,7 +395,7 @@ function start(hot){
   boot();
   window.claude?.hot?.snapshot?.(()=>({S:Object.assign({},S,{last:null,base:S.base}),tab:curTab}));
   window.addEventListener("resize",()=>{ENGINE_VIS.resize();if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();});
-  setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle
+  if(perfTier()!=="lite")setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle. Not on Lite: each blocks a phone for a few hundred ms just as the garage opens, and Analysis and the salt look them up when they need them
   ENGINE_VIS.resize();   // the observer on #view fired before boot, while there was no renderer to size
   if(window.__ldDone)__ldDone();
 }
