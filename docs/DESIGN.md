@@ -67,7 +67,7 @@ Fuels cover pump grades, race grades, oxygenated fuels, E85 and flex blends, met
 | Truck and tractor pull | `pull.js` | 6 classes, 5 tyres, pull nights and a points series, runaway sled; setup: gear, driveline, tyre, hitch height, ballast weight and how far back it sits, tyre pressure, throttle stop |
 | Mud bog | `bog.js` | 3 classes with sized radiators, 3 tyres, bog nights, AI results |
 | Boat drags | `boat.js`: prop or jet pump, hump then plane, wind and chop | 4 classes, 3 hulls, eight-boat ladder nights |
-| Road test and track day | `road.js` | 7 chassis, 3 tracks, 4 tyres; a setup sheet shared with Pikes Peak (roll stiffness and balance, wing, diff, brake bias, tyre pressure, ride height) with three named saved-setup slots, and after a lap or climb the sheet names the one setup change that gains most (a "Use it" button loads it); track day is the career event (entry fee, needs a certified engine) |
+| Road test and track day | `road.js` | 7 chassis, 3 tracks, 4 tyres; a setup sheet shared with Pikes Peak (roll stiffness and balance, wing, diff, brake bias, tyre pressure, ride height) with three named saved-setup slots, a see-through pale blue ghost of your best lap on that track (and a pale dot on the map) to race against, and after a lap or climb the sheet names the one setup change that gains most (a "Use it" button loads it); track day is the career event (entry fee, needs a certified engine) |
 | Salt flats (Bonneville) | `salt.js` | 4 bodies, 2 courses, 3 chutes, meets and records |
 | Pikes Peak hill climb | `hill.js`: 156 corners in 8 sections, power at five altitudes, cooling, offs; four shorter made-up hills from the same kit (`HILL_HILLS`) for the team series | 4 classes, 4 tyres, 4 aero |
 | Dirt oval | `oval.js`: banked-turn limit, friction circle, heat, wear | 3 classes by cubic inches, 2 tracks (clay and paved half-mile), heat then feature |
@@ -140,6 +140,6 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.80.0)
+## Loose ends found in the code (as of 1.76.81.0)
 
 Nothing in `src/` is stubbed or marked unfinished. (The salt flats placeholder in Analysis went in 1.76.75.0: the records already worked out show at once, and a class still being looked up keeps its row with your best.)
