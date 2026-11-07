@@ -64,7 +64,7 @@ Fuels cover pump grades, race grades, oxygenated fuels, E85 and flex blends, met
 | Event | Sim | Classes and content |
 |---|---|---|
 | Drag strip (heads-up) and bracket racing | `drag.js`: tyres, aero, turbo heat soak, nitrous bottle, launch tech, gearing (even or custom ratios, a shift point), ride height, converter stall on trans-brake cars, three saved tunes per game (setup plus two-step rpm and retard; paid kit and paint left alone), an auto driver, drivetrain tiers, engine weight counted | 3 tyre types, 7 aero bodies, 4 drivetrain tiers; race nights with a ladder; top-five passes per body class; the timing slip prints each split's change from your last clean pass |
-| Truck and tractor pull | `pull.js` | 6 classes, 5 tyres, pull nights and a points series, runaway sled |
+| Truck and tractor pull | `pull.js` | 6 classes, 5 tyres, pull nights and a points series, runaway sled; setup: gear, driveline, tyre, hitch height, ballast weight and how far back it sits, tyre pressure, throttle stop |
 | Mud bog | `bog.js` | 3 classes with sized radiators, 3 tyres, bog nights, AI results |
 | Boat drags | `boat.js`: prop or jet pump, hump then plane, wind and chop | 4 classes, 3 hulls, eight-boat ladder nights |
 | Road test and track day | `road.js` | 7 chassis, 3 tracks, 4 tyres; track day is the career event (entry fee, needs a certified engine) |
@@ -140,6 +140,6 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.75.0)
+## Loose ends found in the code (as of 1.76.76.0)
 
 Nothing in `src/` is stubbed or marked unfinished. (The salt flats placeholder in Analysis went in 1.76.75.0: the records already worked out show at once, and a class still being looked up keeps its row with your best.)
