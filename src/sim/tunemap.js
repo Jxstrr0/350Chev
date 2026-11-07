@@ -127,7 +127,7 @@
     isDiesel: isDiesel,
     isRotary: isRotary, isTwoStroke: isTwoStroke,
     n2oBottle: n2oBottle,
-    pullRun: pullRun, pullPass: pullPass, pullDriver: pullDriver, pullGears: pullGears, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
+    pullRun: pullRun, pullPass: pullPass, pullDriver: pullDriver, pullGears: pullGears, pullPsi: pullPsi, PULL_CLASSES: PULL_CLASSES, PULL_TYRES: PULL_TYRES, PULL_FULL: PULL_FULL,
     pullTrackK: pullTrackK, pullTrackName: pullTrackName, pullRunaway: pullRunaway,
     bogPrep: bogPrep, bogRun: bogRun, bogPass: bogPass, bogNight: bogNight, bogDepth: bogDepth, bogGears: bogGears, bogAiRes: bogAiRes, bogMudName: bogMudName, BOG_CLASSES: BOG_CLASSES, BOG_TYRES: BOG_TYRES,
     boatPrep: boatPrep, boatRun: boatRun, boatPass: boatPass, boatTune: boatTune, boatGuess: boatGuess, boatWater: boatWater, boatTrimRange: boatTrimRange, BOAT_CLASSES: BOAT_CLASSES, BOAT_HULLS: BOAT_HULLS, BOAT_IMP: BOAT_IMP, BOAT_FT: BOAT_FT,

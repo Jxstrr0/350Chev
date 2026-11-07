@@ -91,6 +91,10 @@
   for (const k in PULL_CLASSES) PULL_CLASSES[k].id = k;
   // the gear ladder a class pulls in: name and road speed at the governor with no slip
   function pullGears(cls) { const c = PULL_CLASSES[cls] || PULL_CLASSES.street; return c.gears || (c.veh.kind === "tractor" ? PULL_TRACTOR_GEARS : PULL_TRUCK_GEARS); }
+  /* tyre pressure: a pickup pulls at about 18 psi and a tractor's big ag tyres at about 12. The default is neutral; lower lays more
+     lug on the dirt (more bite, the tyre floats instead of digging) but the soft sidewall winds up and hops the nose sooner;
+     higher is the other way round. min / max are what the slider offers. */
+  function pullPsi(kind) { return kind === "tractor" ? { def: 12, min: 6, max: 20 } : { def: 18, min: 8, max: 30 }; }
   /* the dirt on the night: moisture 0 (dust) … 1 (mud), cut 0 (fresh prep) … 1 (chewed up). A wet track bites harder at
      less slip but drags at the tyres and the pan; a dry one is slick and wants more wheel speed; ruts take the grip away
      at the heavy end, where the box is up on the pan. No track (practice) is neutral: every factor exactly 1 / 0. */
@@ -132,7 +136,9 @@
   function pullRun(res, veh) {
     const C0 = PULL_CLASSES[veh && veh.cls] || PULL_CLASSES.street, CV = C0.veh;
     const v = Object.assign({ cls: C0.id, mass: CV.mass, ballast: 0, wb: CV.wb, cgH: CV.cgH, front: CV.front, hitch: CV.hitchMax - 2, tyre: CV.tyres[0], tyreDia: CV.tyreDia, gear: 1, trans: "conv", drive: CV.drive, kind: CV.kind,
-      redline: 3200, idle: 750, sled: C0.sled, sledK: 1, seed: 1, noFail: false, flyK: CV.flyK }, veh || {});
+      redline: 3200, idle: 750, sled: C0.sled, sledK: 1, seed: 1, noFail: false, flyK: CV.flyK, ballPos: 0, thrMax: 1 }, veh || {});
+    const PS = pullPsi(v.kind), psi = v.psi != null && isFinite(+v.psi) ? clamp(+v.psi, PS.min, PS.max) : PS.def, soft = (PS.def - psi) / PS.def;   // >0 aired down
+    const thrMax = clamp(+v.thrMax || 1, 0.4, 1);   // the throttle stop: a screw on the pump or the linkage, the pedal can't go past it
     const rpms = res.rpms, tq = res.torque, N = rpms.length, rng = pullRng(v.seed);
     const interp = (arr, r) => { if (r <= rpms[0]) return arr[0]; if (r >= rpms[N - 1]) return arr[N - 1]; let i = 1; while (rpms[i] < r) i++; const f = (r - rpms[i - 1]) / (rpms[i] - rpms[i - 1]); return arr[i - 1] + f * (arr[i] - arr[i - 1]); };
     const torqueAt = r => r <= rpms[0] ? tq[0] * Math.max(0.35, r / rpms[0]) : interp(tq, r);
@@ -144,7 +150,8 @@
     const conv = v.trans !== "clutch", etaL = Math.min(0.99, (conv ? 0.91 : 0.95) * dtEtaK(v.dtId));   // the drivetrain tier (sim/drag.js) wastes a little less of the engine
     const VdL = Math.max(0.5, (res.VdEq || res.Vd || 2000) / 1000);
     const Ie = (0.12 + 0.07 * VdL) * (v.flyK || 1), Iw = (v.kind === "tractor" ? 2 * 260 : 4 * 32) * rw * rw * 0.6;   // flywheel + crank; tyres and rims
-    const m = v.mass + v.ballast, crr = 0.03 * TK.crr, ballX = 0.75;               // ballast hangs ~0.75 m ahead of the front axle
+    // ballast on the front bracket hangs ~0.75 m ahead of the front axle; ballPos slides it back, to over the rear axle at 1
+    const m = v.mass + v.ballast, crr = 0.03 * TK.crr, ballX = 0.75 - clamp(+v.ballPos || 0, 0, 1) * (0.75 + v.wb);
     const hh = v.hitch * 0.0254;
     const Nf0 = (v.mass * g * v.front * v.wb + v.ballast * g * (v.wb + ballX)) / v.wb;   // static front-axle load
     const floorFull = conv ? clamp(0.5 * (res.peakTqRpm || v.redline * 0.55) + 0.25 * v.redline, v.idle + 300, v.redline * 0.8) : clamp(0.62 * v.redline, v.idle + 400, v.redline * 0.85);
@@ -187,7 +194,7 @@
     function mu(s) {
       const a = Math.abs(s);
       const base = a < SP ? Math.pow(Math.sin(Math.PI / 2 * a / SP), 0.7) : 1 - TY.fall * Math.pow((a - SP) / (1 - SP), 0.8);
-      return TY.mu * TK.mu * base * (1 - 0.25 * st.dig * TY.dig) * Math.sign(s || 1) * (TK.cut ? 1 - 0.18 * TK.cut * clamp(st.x / SL.travel, 0, 1) : 1);
+      return TY.mu * TK.mu * (1 + 0.10 * soft) * base * (1 - 0.25 * st.dig * TY.dig) * Math.sign(s || 1) * (TK.cut ? 1 - 0.18 * TK.cut * clamp(st.x / SL.travel, 0, 1) : 1);
     }
     const hasEgt = Array.isArray(res.egtCurve) && res.egtCurve.length === N;
     const hasSmoke = Array.isArray(res.smokeCurve) && res.smokeCurve.length === N;
@@ -210,7 +217,7 @@
     function sub(dt) {
       st.foot += (clamp(st.thr, 0, 1) > st.foot ? 1 / 0.45 : -1 / 0.25) * dt;   // the pedal goes down in about half a second, comes up quicker
       st.foot = clamp(st.foot, 0, 1);
-      const thr = st.killed ? 0 : st.raOn ? 1 : st.foot;   // killed: nothing; running away: the pedal no longer matters
+      const thr = st.killed ? 0 : st.raOn ? 1 : Math.min(st.foot, thrMax);   // killed: nothing; running away: the pedal no longer matters
       if (st.phase === "stage") {
         st.t = 0; st.rpm += (v.idle + 250 * st.foot - st.rpm) * Math.min(1, dt * 4); boostStep(dt, st.rpm, 0.05);
         if (st.thr > 0.05) st.phase = "pull";
@@ -239,7 +246,7 @@
       // torque spikes kick the nose: the axle winds up against its springs
       const dTw = (Tw - prevTw) / Math.max(dt, 1e-4); prevTw = Tw;
       st.lift = clamp(1 - Nf / Math.max(1, Nf0), 0, 1.5);
-      const hopDrive = clamp((st.lift - 0.55) / 0.3, 0, 1) + clamp(dTw / (G * (res.peakTq || 500) * 6), 0, 0.6) * (st.lift > 0.5 ? 1 : 0.3);
+      const hopDrive = clamp((st.lift - 0.55 + 0.25 * soft) / 0.3, 0, 1) + clamp(dTw / (G * (res.peakTq || 500) * 6), 0, 0.6) * (st.lift > 0.5 ? 1 : 0.3);
       st.hopAmp += (Math.min(1, hopDrive) - st.hopAmp) * Math.min(1, dt * (hopDrive > st.hopAmp ? 6 : 1.5));
       st.hop = st.hopAmp * Math.abs(Math.sin(st.t * 2 * Math.PI * (v.kind === "tractor" ? 1.6 : 2.3)));
       Nf = Math.max(0, Nf * (1 - 0.8 * st.hop));
@@ -264,7 +271,7 @@
       if (st.slip > st.sweet[1] + 0.12) st.spinT += dt; else if (st.slip >= st.sweet[0] && st.slip <= st.sweet[1]) st.sweetT += dt;
       st.slipT += dt;
       // spinning hard digs a hole under the tyre; easing off lets it climb out onto fresh dirt as the truck moves
-      if (st.slip > 0.5) st.dig = Math.min(1, st.dig + dt * (st.slip - 0.5) * 0.6 * TK.dig); else st.dig = Math.max(0, st.dig - dt * st.v * 0.12);
+      if (st.slip > 0.5) st.dig = Math.min(1, st.dig + dt * (st.slip - 0.5) * 0.6 * TK.dig * (1 - 0.6 * soft)); else st.dig = Math.max(0, st.dig - dt * st.v * 0.12);
       if (st.hop > 0.3) st.hopT += dt;
       // heat and smoke
       const egtT = (hasEgt ? interp(res.egtCurve, st.rpm) : 800) * (0.5 + 0.5 * thr) + 40 * thr * clamp(st.t / 12, 0, 1);
@@ -309,17 +316,18 @@
       if (v.track) reasons.push(`Track: ${pullTrackName(v.track)} (moisture ${Math.round(v.track.moist * 100)}%, cut ${Math.round((v.track.cut || 0) * 100)}%).`);
       if (st.spinT > 1.5) reasons.push(`Spun the tyres for ${st.spinT.toFixed(1)} s past ${Math.round(100 * (sw[1] + 0.12))}% slip — ${tn}s dig instead of bite. Feather the pedal to hold ${Math.round(sw[0] * 100)}–${Math.round(sw[1] * 100)}% slip, or a taller gear.`);
       if (st.dig > 0.5) reasons.push("Dug in — the hole under the tyres cost grip for the rest of the pull.");
-      if (st.hopT > 1) reasons.push(`Hopped for ${st.hopT.toFixed(1)} s — the ${v.hitch}" hitch lifts the front faster than ${Math.round(v.ballast)} kg of front weight holds it. Lower the hitch or hang more weight on the bracket.`);
+      if (st.hopT > 1) reasons.push(`Hopped for ${st.hopT.toFixed(1)} s — the ${v.hitch}" hitch lifts the front faster than ${Math.round(v.ballast)} kg of ${v.ballPos > 0.5 ? "ballast set back" : "front weight"} holds it. Lower the hitch${v.ballPos > 0.2 ? ", move the weight forward" : " or hang more weight on the bracket"}${soft > 0.15 ? `, or air the tyres up from ${psi} psi: a soft sidewall winds up and bounces` : ""}.`);
       else if (st.frontUpT > 0.8) reasons.push(`Front wheels off the dirt for ${st.frontUpT.toFixed(1)} s — the chain is lifting the nose. More front ballast.`);
       if (!st.full && !st.broke && st.stopWhy === "bogged") reasons.push(`Bogged to a stop at ${Math.round(st.rpm).toLocaleString()} rpm with the pedal down — the sled outweighed the engine. ${st.slip < 0.1 ? "The tyres still had grip: more torque, a lower gear, or a converter for the multiplication." : ""}`);
       if (!st.full && st.stopWhy === "spun") reasons.push("Stopped with the tyres still turning — out of traction. More weight on the driven tyres, a hitch that plants them harder, or a bitier tyre.");
       if (!st.full && st.stopWhy === "lifted") reasons.push("Lifted with the truck nearly stopped — the sled won. Keep some pedal in to the end.");
       if (st.sweetT > 4 && !st.full) reasons.push(`${st.sweetT.toFixed(1)} s in the slip sweet spot — the tyres were working.`);
       if (isTurbo && trans && st.maxV > 0) { const lag = st.trace.findIndex(p => p.t > 0); if (lag >= 0 && st.boost < 0.6 * bT && !st.broke) reasons.push(`Only ${st.boost.toFixed(1)} of ${bT.toFixed(1)} bar at the stop — the turbo was falling off with the rpm.`); }
+      if (thrMax < 1 && st.bogT > 1.5 && !st.full && !st.broke) reasons.push(`The throttle stop held it to ${Math.round(thrMax * 100)}% while it bogged — open the stop up if the tyres had grip to spare.`);
       if (st.smokeMax > 0.7) reasons.push("Black smoke all the way — more fuel than air. It looks the part; it is also heat in the pistons.");
       return { distM: +st.x.toFixed(2), distFt: ft, full: st.full, maxMph: +(st.maxV * 2.23694).toFixed(1), peakSlip: +st.peakSlip.toFixed(3), peakEgt: Math.round(st.egtPeak), broke: st.broke, failKind: st.broke ? st.failKind : null,
         trace: st.trace, smokeMax: +st.smokeMax.toFixed(2), time: +st.t.toFixed(1), stopWhy: st.stopWhy, spinT: +st.spinT.toFixed(1), sweetT: +st.sweetT.toFixed(1), hopT: +st.hopT.toFixed(1), frontUpT: +st.frontUpT.toFixed(1), dig: +st.dig.toFixed(2),
-        boxFrac: +st.boxFrac.toFixed(3), endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, dtMsg: st.dtMsg || undefined, veh: v, tyre: TY.n, sledK: sk,
+        boxFrac: +st.boxFrac.toFixed(3), psi: psi, thrMax: thrMax, endRpm: Math.round(st.rpm), ratio: +G.toFixed(1), mphGear: mph, sweet: sw, reasons: reasons, cls: v.cls, dtMsg: st.dtMsg || undefined, veh: v, tyre: TY.n, sledK: sk,
         runaway: st.raOn ? { ftAt: Math.round(st.raX * 3.28084 * 10) / 10, killed: st.killed, react: st.killed ? +st.raT.toFixed(2) : null, win: +st.raWin.toFixed(2), grenade: st.broke === "runaway" } : null, killed: st.killed, track: v.track || null };
     }
     return { st: st, step: step, result: result, kill: kill, ratio: G, sweet: st.sweet, full: PULL_FULL };
