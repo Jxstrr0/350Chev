@@ -9,6 +9,10 @@
   // μ by tyre class (peak, dry, warm). Lateral and longitudinal share one friction circle.
   const ROAD_TYRES = { eco: { n: "Eco", mu: 0.86, d: "hard, low rolling drag" }, street: { n: "Street", mu: 1.0, d: "all-round summer tyre" },
     sport: { n: "Sport", mu: 1.1, d: "soft, warm-up quick" }, semi: { n: "Semi-slick", mu: 1.26, d: "track tyre, road legal" } };
+  /* rain (since 1.76.83.0): wet 0 (dry) … 1 (a downpour) takes this share of a tyre's grip at full wet. Treaded tyres clear
+     the water; the stickier and balder the tyre, the more it loses (a slick on a wet road is close to a street tyre) */
+  const ROAD_WET_K = { eco: 0.2, street: 0.22, sport: 0.27, semi: 0.36, slick: 0.48 };
+  const roadWetMu = (tyre, wet) => 1 - clamp(+wet || 0, 0, 1) * (ROAD_WET_K[tyre] != null ? ROAD_WET_K[tyre] : 0.3);
   /* generic chassis archetypes. mass includes a baseline engine of `eng` kg sitting at xE (fraction of the wheelbase
      forward of the rear axle: ~1 = over the front axle, ~0.25 = behind the seats). front = static front weight share.
      cdA m², clA = downforce coefficient × area (m², + is down), brake = what the brakes can hold in g, ratios = gearbox. */
@@ -116,8 +120,9 @@
     let fd = ((sw ? Math.max(pkR, redline * 1.05) : pkR) * 2 * Math.PI / 60) * rw / (vPow * top);
     fd = clamp(fd, 0.9, 6.5);
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.6, 1.6), 0.7, 8);
-    const RC = { sw: !!sw, ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
-      muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
+    const tyK = opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu = ty.mu * roadWetMu(tyK, opt.wet);   // opt.wet: rain on the track
+    const RC = { sw: !!sw, ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: tyK, mu: mu, wet: clamp(+opt.wet || 0, 0, 1), m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
+      muLat: mu * kBal * kLoad * 0.97, muLong: mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
       cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1) * dtShiftK(opt.dtId), engKg: ekg, vPow: vPow,   // a dog box (the drivetrain tier, sim/drag.js) shifts quicker
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit

@@ -209,7 +209,8 @@
     const cls = HILL_CLASSES[opt.cls] || HILL_CLASSES.open, a = HILL_AERO[opt.aero] || HILL_AERO.none, ty = HILL_TYRES[opt.tyre] || HILL_TYRES.sport;
     const r0 = prep.pts[0].prep, car = roadCar(r0, { ch: opt.ch, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : "semi" });
     car.m = (car.m - 75) * cls.massK + 75; car.crr = car.C.rr * car.m * ROAD_G;
-    car.mu = ty.mu; car.muLat = ty.mu * car.kBal * car.kLoad * 0.97; car.muLong = ty.mu * car.kLoad * 1.12;
+    const mu = ty.mu * roadWetMu(opt.tyre in HILL_TYRES ? opt.tyre : "sport", opt.wet);   // opt.wet: rain on the mountain
+    car.mu = mu; car.muLat = mu * car.kBal * car.kLoad * 0.97; car.muLong = mu * car.kLoad * 1.12;
     car.clA = car.C.clA + a.clA; car.cdA = car.C.cdA + a.cdA; car.tyre = opt.tyre in HILL_TYRES ? opt.tyre : "sport"; car.aero = opt.aero in HILL_AERO ? opt.aero : "none"; car.cls = opt.cls in HILL_CLASSES ? opt.cls : "open";
     // top gear on the power peak at about the fastest the mountain allows, not the flat-out top speed
     const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = hillVTop(car.vPow);

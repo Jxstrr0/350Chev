@@ -12,7 +12,7 @@ function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCl
   if(!SIM.CHASSIS[e.hillCh])e.hillCh="coupe";if(!c.tyres.includes(e.hillTyre))e.hillTyre=c.tyres[c.tyres.length-1];if(!c.aero.includes(e.hillAero))e.hillAero=c.aero[c.aero.length-1];
   if(!(+e.hillFinal>=0.6&&+e.hillFinal<=1.6))e.hillFinal=1;if(![1,2,4,8].includes(+e.hillSpd))e.hillSpd=4;if(!HILL_CAMS.some(q=>q[0]===e.hillCam))e.hillCam="auto";
   if(e.hillDrive!=="you")e.hillDrive="auto";suFix(e);return e.hillCls;}
-function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt()};}
+function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt(),wet:wxWet("hill")};}
 /* race day: one running per class per week in career (the same calls all week, the same field); a fresh mountain every run in the sandbox */
 function hillSeed(k){const ix=Object.keys(SIM.HILL_CLASSES).indexOf(k)+1;if(!career())return HILL_SB[ix]||(HILL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().hillSeed)C().hillSeed=Math.floor(Math.random()*1e9)+1;return(C().hillSeed^(C().week*7919)^(ix*104729))>>>0;}
 /* career: one climb a week, in one class. The class run this week, or null */
@@ -21,7 +21,7 @@ function hillRanWk(k){return !!wkCls("hillWk");}
 function hillFee(k){return evFee(HILL_PURSE[0],HILL_PAY,(SIM.HILL_CLASSES[k]||SIM.HILL_CLASSES.open).tier);}
 /* the engine at altitude, cached by build: five dyno runs up the mountain */
 const hillPrepCache=new Map();
-function hillPrepFor(cfg){const k=cfgHash(cfg);let p=hillPrepCache.get(k);if(!p){if(hillPrepCache.size>6)hillPrepCache.clear();p=SIM.hillPrep(cfg,stdEnv());hillPrepCache.set(k,p);}return p;}
+function hillPrepFor(cfg){const wx=wxHillWx(),k=cfgHash(cfg)+(wx?"|"+wx.dT+"|"+wx.h:"");let p=hillPrepCache.get(k);if(!p){if(hillPrepCache.size>6)hillPrepCache.clear();p=SIM.hillPrep(cfg,stdEnv(),undefined,wx);hillPrepCache.set(k,p);}return p;}   // the day's air (app/weather.js)
 /* the rest of the class: 7–9 cars, each a made-up engine and driver run up the same mountain on the same calls */
 /* each car is a whole run up the mountain, so the field is driven a car at a time between frames (hillField returns null
    until it is done and re-renders the panel); a run that starts before then drives the rest at once */
@@ -56,7 +56,7 @@ function hillAltLine(p){const pk=p.pts,top=pk[pk.length-1],dn=Math.round(100*(1-
   else if(p.kind!=="na")s+=" The blower keeps its pressure ratio, so it makes the same ratio of thinner air.";else s+=" Atmospheric: the power follows the air.";
   s+=p.carb?` Carburettor: it meters by air speed, so it runs rich as the air thins (λ ${(+p.ref.lambda).toFixed(2)} → ${(+top.lambda).toFixed(2)} on top).`:" Injection trims the mixture for the altitude.";
   return s;}
-function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=clsLocked(SIM.HILL_CLASSES,k),seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed)),R=recBucket("hill"),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
+function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=clsLocked(SIM.HILL_CLASSES,k),seed=hillSeed(k),field=wxField(hillWithRv(k,hillField(k,seed)),k),R=recBucket("hill"),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
   const fin=field?field.filter(f=>f.t!=null).length:0;
   let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?esc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.HILL_CLASSES,id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
@@ -113,7 +113,7 @@ function hillStart(){
   try{prep=hillPrepFor(snap.cfg);}catch(err){testing=false;renderTest();toast("The engine wouldn't run at altitude");return;}
   if(prep.fails.length){testing=false;toast(`It wouldn't make the summit — ${String(prep.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
-  const seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed,true)),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
+  const seed=hillSeed(k),field=wxField(hillWithRv(k,hillField(k,seed,true)),k),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
   const rs=career()?(seed+7919*(C().hillRuns=(C().hillRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);
   const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,0.86,rs)},opt));
   const lead=field.filter(f=>f.t!=null).sort(hillCmp)[0]||null;
@@ -158,7 +158,7 @@ function hillFinish(){
   if(r.dnf)r.place=rows.indexOf(me)+1;
   r.suBal=+SIM.hillCar(prep,opt).bi.toFixed(2);if(!r.dnf)suTipHill(r,prep,opt);
   if(same&&!r.dnf&&!ff){const RR=recBucket("hill"),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
-  const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  r.wx=wxSnap("hill");const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:r.dnf.kind==="boil"?"boiled over in "+r.dnf.name:r.dnf.kind==="stall"?"couldn't climb the grade":"flagged off in "+r.dnf.name):fmtHill(r.time);
   if(career()&&same){addWear(0.6+(r.coolPeak>112?0.4:0)+(r.dmg>0?0.3:0),hKey(snap.h));
     if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Pikes Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
@@ -186,7 +186,7 @@ function hillSheet(res){const r=res.hill,b=recBucket("hill")[r.cls],L=r.lead;let
     <div><b>Power</b>${hp} hp — ${r.refHp} hp at the shop${r.carb?" · carburettor running rich up top":""}</div>
     <div><b>Driving</b>${r.auto?"Auto driver all the way":r.took!=null?`Auto to ${(r.took/1000).toFixed(1)} km, then you`:"You drove"}${r.handed?` to ${(r.handed/1000).toFixed(1)} km, then the auto driver took the rest`:""} · ${r.moments} moment${r.moments===1?"":"s"}${offs?" · "+offs:" · no offs"}</div>
     <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · on top the air is ${Math.round(100*(1-0.69))}% thinner, so the radiator sheds about ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less heat per degree</div>
-    <div><b>Car</b>${esc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}${"tip" in r?suTipHtml(r,true):""}</div>
+    <div><b>Car</b>${esc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}${wxLine(r)}${"tip" in r?suTipHtml(r,true):""}</div>
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}${f.rv?" · rival":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
 function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";

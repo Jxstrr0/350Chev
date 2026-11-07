@@ -8644,6 +8644,10 @@ const ENGINE_SIM = (function () {
   // μ by tyre class (peak, dry, warm). Lateral and longitudinal share one friction circle.
   const ROAD_TYRES = { eco: { n: "Eco", mu: 0.86, d: "hard, low rolling drag" }, street: { n: "Street", mu: 1.0, d: "all-round summer tyre" },
     sport: { n: "Sport", mu: 1.1, d: "soft, warm-up quick" }, semi: { n: "Semi-slick", mu: 1.26, d: "track tyre, road legal" } };
+  /* rain (since 1.76.83.0): wet 0 (dry) … 1 (a downpour) takes this share of a tyre's grip at full wet. Treaded tyres clear
+     the water; the stickier and balder the tyre, the more it loses (a slick on a wet road is close to a street tyre) */
+  const ROAD_WET_K = { eco: 0.2, street: 0.22, sport: 0.27, semi: 0.36, slick: 0.48 };
+  const roadWetMu = (tyre, wet) => 1 - clamp(+wet || 0, 0, 1) * (ROAD_WET_K[tyre] != null ? ROAD_WET_K[tyre] : 0.3);
   /* generic chassis archetypes. mass includes a baseline engine of `eng` kg sitting at xE (fraction of the wheelbase
      forward of the rear axle: ~1 = over the front axle, ~0.25 = behind the seats). front = static front weight share.
      cdA m², clA = downforce coefficient × area (m², + is down), brake = what the brakes can hold in g, ratios = gearbox. */
@@ -8751,8 +8755,9 @@ const ENGINE_SIM = (function () {
     let fd = ((sw ? Math.max(pkR, redline * 1.05) : pkR) * 2 * Math.PI / 60) * rw / (vPow * top);
     fd = clamp(fd, 0.9, 6.5);
     const fdAuto = fd; fd = clamp(fd * clamp(+opt.finalK || 1, 0.6, 1.6), 0.7, 8);
-    const RC = { sw: !!sw, ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu: ty.mu, m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
-      muLat: ty.mu * kBal * kLoad * 0.97, muLong: ty.mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
+    const tyK = opt.tyre in ROAD_TYRES ? opt.tyre : C0.tyre, mu = ty.mu * roadWetMu(tyK, opt.wet);   // opt.wet: rain on the track
+    const RC = { sw: !!sw, ch: opt.ch in CHASSIS ? opt.ch : "coupe", C: C0, tyre: tyK, mu: mu, wet: clamp(+opt.wet || 0, 0, 1), m: m, front: front, dFront: dF, kBal: kBal, kLoad: kLoad,
+      muLat: mu * kBal * kLoad * 0.97, muLong: mu * kLoad * 1.12, rw: rw, eta: eta, gears: gears, fd: fd, fdAuto: fdAuto, redline: redline, idle: res.idle || 850,
       cdA: C0.cdA, clA: C0.clA, crr: crr, h: C0.cgH, wb: C0.wb, drive: C0.drive, brake: C0.brake, shift: C0.shift * (sw ? 0.6 : 1) * dtShiftK(opt.dtId), engKg: ekg, vPow: vPow,   // a dog box (the drivetrain tier, sim/drag.js) shifts quicker
       bal: dF > 0.025 ? "under" : dF < -0.025 ? "over" : "neutral" };
     if (+opt.dtCap > 0) RC.dtCap = +opt.dtCap;   // a drivetrain tier (sim/drag.js); absent = no limit
@@ -10222,7 +10227,8 @@ const ENGINE_SIM = (function () {
     const cls = HILL_CLASSES[opt.cls] || HILL_CLASSES.open, a = HILL_AERO[opt.aero] || HILL_AERO.none, ty = HILL_TYRES[opt.tyre] || HILL_TYRES.sport;
     const r0 = prep.pts[0].prep, car = roadCar(r0, { ch: opt.ch, tyre: opt.tyre in ROAD_TYRES ? opt.tyre : "semi" });
     car.m = (car.m - 75) * cls.massK + 75; car.crr = car.C.rr * car.m * ROAD_G;
-    car.mu = ty.mu; car.muLat = ty.mu * car.kBal * car.kLoad * 0.97; car.muLong = ty.mu * car.kLoad * 1.12;
+    const mu = ty.mu * roadWetMu(opt.tyre in HILL_TYRES ? opt.tyre : "sport", opt.wet);   // opt.wet: rain on the mountain
+    car.mu = mu; car.muLat = mu * car.kBal * car.kLoad * 0.97; car.muLong = mu * car.kLoad * 1.12;
     car.clA = car.C.clA + a.clA; car.cdA = car.C.cdA + a.cdA; car.tyre = opt.tyre in HILL_TYRES ? opt.tyre : "sport"; car.aero = opt.aero in HILL_AERO ? opt.aero : "none"; car.cls = opt.cls in HILL_CLASSES ? opt.cls : "open";
     // top gear on the power peak at about the fastest the mountain allows, not the flat-out top speed
     const pkR = Math.min(r0.peakHpRpm || car.redline * 0.85, car.redline), top = car.gears[car.gears.length - 1], vTop = hillVTop(car.vPow);
@@ -10763,7 +10769,7 @@ const ENGINE_SIM = (function () {
     pullTrackK: pullTrackK, pullTrackName: pullTrackName, pullRunaway: pullRunaway,
     bogPrep: bogPrep, bogRun: bogRun, bogPass: bogPass, bogNight: bogNight, bogDepth: bogDepth, bogGears: bogGears, bogAiRes: bogAiRes, bogMudName: bogMudName, BOG_CLASSES: BOG_CLASSES, BOG_TYRES: BOG_TYRES,
     boatPrep: boatPrep, boatRun: boatRun, boatPass: boatPass, boatTune: boatTune, boatGuess: boatGuess, boatWater: boatWater, boatTrimRange: boatTrimRange, BOAT_CLASSES: BOAT_CLASSES, BOAT_HULLS: BOAT_HULLS, BOAT_IMP: BOAT_IMP, BOAT_FT: BOAT_FT,
-    roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, setupVis: setupVis, setupNorm: setupNorm, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
+    roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, roadWetMu: roadWetMu, setupVis: setupVis, setupNorm: setupNorm, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
     enduroPrep: enduroPrep, e24AiPrep: e24Ai, enduroNew: enduroNew, enduroStep: enduroStep, enduroWhere: enduroWhere, enduroResult: enduroResult, enduroClasses: enduroClasses, enduroClassOf: enduroClassOf,
     e24Rates: e24Rates, e24Sky: e24Sky, e24Amb: e24Amb, e24Hour: e24Hour, e24Pos: e24Pos, e24Order: e24Order, e24Need: e24Need, e24Clock: e24Clock, e24Lap: e24Lap,
     E24_MODES: E24_MODES, E24_TYRES: E24_TYRES, E24_CLASSES: E24_CLASSES, E24_CLS_ORDER: E24_CLS_ORDER, E24_FIX: E24_FIX, E24_K: E24_K, E24_TANK: E24_TANK, E24_DUR: E24_DUR,
@@ -31068,7 +31074,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.82.0";
+const VERSION="1.76.83.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -31802,6 +31808,7 @@ function renderEnv(){
     ${rnTuneEnvHtml(sl)}
     <p class="hint">Rear-drive on a prepped strip. Gears are spaced evenly between 1st and top unless you set them yourself. Wheel force is the engine's torque × gear × final ÷ tyre radius; grip is μ × rear weight, with weight transfer helping the launch. Tyres, body and launch rpm are what a ${career()?"racer":"tuner"} actually changes between rounds. Body sets aero drag and how hard the chassis can plant the tyre — bars and a four-link put the power down; a stock shell cannot.</p>`;}
   if(t==="drag"&&n2oKit())h+=n2oEnvHtml();
+  if(WX_EVT[t])h+=wxHtml(t);   // the day: air, rain, dirt (app/weather.js)
   if(t==="pull_sled")h+=pullEnvHtml(sl);
   if(t==="road")h+=roadEnvHtml(sl);
   if(t==="race24"&&!ER)h+=e24EnvHtml();
@@ -31915,7 +31922,7 @@ $("envBox").addEventListener("click",e=>{const b=e.target.closest("[data-lp]");i
 const DYNO_T=["pull","endurance","overrev"],EV_T=["drag","bracket","pull_sled","salt","bog","boat","road","hill","oval","race24"];
 /* Bracket night is the drag strip in its quick bracket format (S.env.dragFmt "bracket" + dragQuick): the picker shows it as its own tile */
 function evCur(){return S.env.testType==="drag"&&S.env.dragFmt==="bracket"&&S.env.dragQuick?"bracket":S.env.testType;}
-function evApply(t){if(t==="bracket"){S.env.dragFmt="bracket";S.env.dragQuick=true;S.env.testType="drag";}else{if(t==="drag"&&S.env.dragQuick){S.env.dragQuick=false;if(S.env.dragFmt==="bracket")S.env.dragFmt="test";}S.env.testType=t;}}
+function evApply(t){if(t!==S.env.testType)wxVisit(t);if(t==="bracket"){S.env.dragFmt="bracket";S.env.dragQuick=true;S.env.testType="drag";}else{if(t==="drag"&&S.env.dragQuick){S.env.dragQuick=false;if(S.env.dragFmt==="bracket")S.env.dragFmt="test";}S.env.testType=t;}}
 function pickTest(t){if(testing&&t!==S.env.testType){toast("Let the run finish first");return;}S.env.testType=t;document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));renderEnv();if(climateCtl())recompute();renderTest();save();}
 $("testType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;pickTest(b.dataset.t);});
 $("evPick").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;const same=b.dataset.t===evCur();if(!same&&testing){toast("Let the run finish first");return;}if(!same&&b.dataset.t!=="bracket"&&evBlockPick(b.dataset.t))return;evApply(b.dataset.t);pickTest(S.env.testType);if(!same&&!testing)requestAnimationFrame(()=>{const pn=$("panel"),r=$("evPick").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(r.top<pr.top)pn.scrollTo({top:pn.scrollTop+r.top-pr.top-8,behavior:calmScroll()});});});
@@ -32305,6 +32312,56 @@ $("mapBox").addEventListener("keydown",e=>{if(e.target.id!=="mapWrap"||!mapHas()
 $("mapBox").addEventListener("wheel",e=>{const td=e.target.closest&&e.target.closest("#mapWrap td.c.sel");if(!td||testing)return;e.preventDefault();MV.wheel+=e.deltaY;
   if(Math.abs(MV.wheel)>=50){mapNudge(MV.wheel<0?1:-1);MV.wheel=0;}},{passive:false});
 function delta(a,b,f=v=>Math.round(v)){if(b==null)return"";const d=a-b;if(Math.abs(d)<0.5)return"";return `<span class="delta ${d>0?"up":"dn"}">${d>0?"+":""}${f(d)}</span>`;}
+/* ===================== WEATHER (since 1.76.83.0) =====================
+   The road test, the hill climb and the tractor pull each get a day. In the test cell a new day is rolled every
+   time you go to one of those events (and with New day); in a career the day holds for the week, so you can't
+   shop for a dry one. A day is the air (temperature and humidity, which the engine feels) and:
+     road and hill  a chance of rain: wet 0 … 1, which takes grip off the tyres (SIM.roadWetMu: slicks lose most);
+                    the hill's rivals slow down in it too
+     pull           damp or dry dirt: moisture added to (or taken off) the night's track, which the rivals feel too
+   Test cell only: S.env.wxOn false is a standard day every time (20 °C, 40% humidity, dry; the game before weather).
+   A career always has weather, so there is no standard-day way round the rain.
+   The days live in wxStore().wxDay[event] = {t, h, rain, dirt, wk}. */
+const WX_EVT={road:1,hill:1,pull_sled:1};
+function wxOn(t){return !!WX_EVT[t||S.env.testType]&&(career()||S.env.wxOn!==false);}   // a career always has weather
+function wxStore(){const o=career()?C():S;if(!o.wxDay||typeof o.wxDay!=="object")o.wxDay={};return o.wxDay;}
+/* a fresh day: the season's temperature (career: by the week; test cell: any week of the year), then rain or the dirt */
+function wxRoll(t){const r=Math.random,g=()=>Math.sqrt(-2*Math.log(Math.max(1e-6,r())))*Math.cos(2*Math.PI*r());
+  const woy=career()?pcWoy(C().week):Math.floor(r()*52),c=Math.cos(2*Math.PI*(woy-28.5)/52);
+  let tC=Math.max(5,4+17*c)+g()*5,h=45+12*c+g()*15,rain=0,dirt=0;
+  if(t==="pull_sled"){const w=r();dirt=w<0.22?0.08+r()*0.1:(tC>=24&&h<50&&w<0.6)?-(0.06+r()*0.09):(r()-0.5)*0.08;}
+  else if(r()<0.12+0.18*Math.max(0,Math.min(1,(h-45)/40))){rain=0.35+r()*0.65;tC-=3;h=Math.max(h,78+r()*12);}
+  const d={t:Math.round(Math.min(38,Math.max(-2,tC))),h:Math.round(Math.min(95,Math.max(15,h))),rain:+rain.toFixed(2),dirt:+dirt.toFixed(2)};
+  if(career())d.wk=C().week;
+  wxStore()[t]=d;return d;}
+/* going to an event: a new day in the test cell (a career keeps the week's) */
+function wxVisit(t){if(WX_EVT[t]&&!career())wxRoll(t);}
+function wxDay(t){t=t||S.env.testType;if(!wxOn(t))return null;const d=wxStore()[t];return d&&(!career()||d.wk===C().week)?d:wxRoll(t);}
+/* what the run uses: the engine's air, the rain on the tyres, the pull's dirt */
+function wxEnv(t){const d=wxDay(t);return d?{ambientC:d.t,humidity:d.h}:{};}
+function wxWet(t){const d=wxDay(t);return d?d.rain||0:0;}
+function wxHillWx(){const d=wxDay("hill");return d?{dT:d.t-20,h:d.h}:null;}   // the hill's air is a July morning at each altitude; the day moves it
+function wxDirt(){const d=wxDay("pull_sled");return d?d.dirt||0:0;}
+function wxTrack(tr){const k=wxDirt();if(!k)return tr;const b=tr||{moist:0.5,cut:0};return Object.assign({},b,{moist:+Math.min(0.95,Math.max(0.08,b.moist+k)).toFixed(2)});}
+/* the hill's rivals in the rain: fitted to SIM.hillPass on the class tyres (a slick loses far more as it gets wetter) */
+function wxHillSlow(w,slick){return 1+(slick?0.09*w+0.2*w*w:0.08*w+0.06*w*w);}
+function wxField(f,k){const w=wxWet("hill");if(!w||!f)return f;const C0=SIM.HILL_CLASSES[k],sl=C0&&C0.tyres[C0.tyres.length-1]==="slick",m=wxHillSlow(w,sl);
+  return f.map(x=>x.t==null?x:Object.assign({},x,{t:x.t*m,splits:(x.splits||[]).map(s=>s==null?s:s*m),wet:m}));}
+const wxRain=w=>w<0.6?"light rain":w<0.85?"steady rain":"heavy rain";
+function wxAir(d){const k=pcRho(d.t,d.h,500)/pcRho(20,40,500),p=Math.round((k-1)*100);return Math.abs(p)<2?"":` · the air is ${p>0?"dense":"thin"}, about ${Math.abs(p)}% ${p>0?"more":"less"} power from an atmospheric engine`;}
+function wxTxt(t){const d=wxDay(t);if(!d)return"";
+  if(t==="pull_sled"){const m=d.dirt>0.05?"damp dirt: it bites harder but drags at the sled":d.dirt<-0.05?"dry, dusty dirt: less bite, more wheel speed":"good dirt";return`${d.t} °C, ${d.h}% humidity · ${m}${wxAir(d)}`;}
+  const ty=t==="hill"?S.env.hillTyre:S.env.roadTyre||(SIM.CHASSIS[S.env.roadCh]||{}).tyre,tn=((t==="hill"?SIM.HILL_TYRES:SIM.ROAD_TYRES)||{})[ty],loss=d.rain?Math.round((1-SIM.roadWetMu(ty,d.rain))*100):0;
+  return`${d.t} °C, ${d.h}% humidity · ${d.rain?`${wxRain(d.rain)}: about ${loss}% less grip${tn?` on ${tn.n.toLowerCase()} tyres`:""}`:"dry"}${t==="road"?wxAir(d):""}`;}
+function wxHtml(t){if(!WX_EVT[t])return"";
+  if(!wxOn(t))return`<p class="hint wxday" data-nofold><b>Standard day</b> · 20 °C, 40% humidity, dry. <button class="btn sm ghost" data-wx="on">Real weather</button></p>`;
+  const d=wxDay(t);return`<p class="hint wxday${d.rain?" wet":""}" data-nofold><b>${d.rain?"Rain today":career()?"This week's day":"Today"}</b> · ${wxTxt(t)}. ${career()?"":`<button class="btn sm ghost" data-wx="new">New day</button> <button class="btn sm ghost" data-wx="off">Standard day</button>`}</p>`;}
+/* the result sheet's line */
+function wxLine(r){const w=r&&r.wx;if(!w)return"";return`<p class="hint">${w.rain?`<b>Wet:</b> ${wxRain(w.rain)}, `:""}${w.t} °C, ${w.h}% humidity${w.dirt>0.05?", damp dirt":w.dirt<-0.05?", dry dirt":""}.</p>`;}
+const wxSnap=t=>{const d=wxDay(t);return d?{t:d.t,h:d.h,rain:d.rain,dirt:d.dirt}:null;};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-wx]");if(!b)return;e.preventDefault();if(testing){toast("Let the run finish first");return;}
+  const a=b.dataset.wx,t=S.env.testType;if(career())return;if(a==="off")S.env.wxOn=false;else if(a==="on")S.env.wxOn=true;else if(a==="new"&&!career())wxRoll(t);
+  if(t==="hill")hillPrepCache.clear();renderEnv();renderTest();save();});
 /* ---- drag pass driver ---- */
 let DR=null;
 /* bolt-on wheelie bars: only for bodies that do not already have them; ~10 kg on the tail */
@@ -33123,7 +33180,8 @@ function pullTrkAdj(f,t){const k=1-0.1*Math.max(0,0.5-t.moist)-0.16*t.cut,o=Obje
 const poTrack=()=>PO&&PO.ev&&PO.ev.track?{moist:+Math.min(0.95,PO.ev.track.moist+0.06).toFixed(2),cut:0.12}:null;   // re-worked for the pull-off
 /* the class on the night: practice is the old neutral hook; a pull night draws you a slot in the order and the dirt that comes with it */
 function pullEvent(k,fseed,live){const fmt=pullFmt(),s=fmt==="series"?(live?pullSerCur(k):pullSerPeek(k)):null;let field=s?pullSerField(k,s):pullField(k,fseed),track=null,draw=null;const n=field.length+1;
-  if(fmt!=="practice"){const night=pullNight(k,fseed,n),rd=pullRand((fseed^0x3C6EF372)>>>0);draw=Math.floor(rd()*n);let j=0;field=field.map(f=>{if(j===draw)j++;return pullTrkAdj(f,night[j++]);});track=night[draw];}
+  if(fmt!=="practice"){const night=pullNight(k,fseed,n).map(wxTrack),rd=pullRand((fseed^0x3C6EF372)>>>0);draw=Math.floor(rd()*n);let j=0;field=field.map(f=>{if(j===draw)j++;return pullTrkAdj(f,night[j++]);});track=night[draw];}
+  else if(wxDirt()){track=wxTrack(null);field=field.map(f=>pullTrkAdj(f,track));}   // practice on the day's dirt
   return{fmt,field,track,draw,n,ser:s};}
 function pullRaRisk(){if(!quick||!SIM.isDiesel(S.cfg)||!SIM.pullRunaway)return null;const wi=wearInfo(quick);return SIM.pullRunaway(quick,S.cfg,wi?wi.w:0);}
 /* ---- points series: the same named rivals all season, points by place plus a bonus for a full pull ---- */
@@ -33168,10 +33226,10 @@ function poConcede(why){if(!PO)return;const P0=PO;PO=null;const r=Object.assign(
 function pullRunBtn(){if(testing)return;const b=$("runTest");if(PO)b.textContent="Hook up · PULL-OFF · sled +15%";else if(pullFmt()==="series"){const s=pullSerPeek(S.env.pullCls);b.textContent=b.textContent.replace("truck pull",`series round ${s.round+1} of ${PULL_SER_N}`);}}
 function pullEnvTop(k){const fmt=pullFmt(),dk=document.documentElement.classList.contains("desk");let h="";
   if(PO)h+=`<div class="pobanner"><b>PULL-OFF — the sled is heavier</b>${PO.n} other${PO.n>1?"s":""} full-pulled too. The box is set 15% heavier and the longest pull-off wins. Pits are open: gear, driveline, tyres, hitch and ballast. Class and engine are locked — leaving the dirt or swapping the engine concedes.</div>`;
-  const F=career()?[["night","Pull night","purse · changing dirt"],["series","Points series",PULL_SER_N+" rounds · one a week"]]:[["practice","Practice","neutral dirt"],["night","Pull night","draw · changing dirt"],["series","Points series",PULL_SER_N+" rounds"]];
+  const F=career()?[["night","Pull night","purse · changing dirt"],["series","Points series",PULL_SER_N+" rounds · one a week"]]:[["practice","Practice",wxOn("pull_sled")?"the day's dirt":"neutral dirt"],["night","Pull night","draw · changing dirt"],["series","Points series",PULL_SER_N+" rounds"]];
   if(!PO)h+=`<div class="lbl"><span>Format</span></div><div class="seg">${F.map(([id,n,d])=>`<button data-pk="pullFmt" data-pv="${id}" class="${fmt===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   const pv=PO?{track:poTrack()}:pullEvent(k,pullSeed(k,true),false),t=pv.track;
-  h+=`<p class="hint">${t?`<b>Track: ${pullTrkName(t)}</b> · ${PO?"re-worked for the pull-off":`you draw ${ordN(pv.draw+1)} of ${pv.n}`} · moisture ${Math.round(t.moist*100)}% · cut ${Math.round(t.cut*100)}%. ${PO?"":pv.draw<pv.n/3?"Early, on fresh wet dirt: more bite, less speed.":pv.draw>=pv.n*2/3?"Late: the dirt has dried and the ruts are in — less grip at the heavy end.":"Middle of the order."} The crew re-preps between classes.`:`<b>Track: practice · neutral</b> — the same dirt every hook.`}${pv.ser?` <b>Series</b> · season ${pv.ser.season}, round ${pv.ser.round+1} of ${PULL_SER_N}${career()&&pv.ser.lastWeek===C().week?" — the next round is next week":""}.`:""}</p>`;
+  h+=`<p class="hint">${t?`<b>Track: ${pullTrkName(t)}</b> · ${PO?"re-worked for the pull-off":pv.draw==null?"practice on the day's dirt":`you draw ${ordN(pv.draw+1)} of ${pv.n}`} · moisture ${Math.round(t.moist*100)}% · cut ${Math.round(t.cut*100)}%. ${PO||pv.draw==null?"":pv.draw<pv.n/3?"Early, on fresh wet dirt: more bite, less speed.":pv.draw>=pv.n*2/3?"Late: the dirt has dried and the ruts are in — less grip at the heavy end.":"Middle of the order."} The crew re-preps between classes.`:`<b>Track: practice · neutral</b> — the same dirt every hook.`}${pv.ser?` <b>Series</b> · season ${pv.ser.season}, round ${pv.ser.round+1} of ${PULL_SER_N}${career()&&pv.ser.lastWeek===C().week?" — the next round is next week":""}.`:""}</p>`;
   const ra=pullRaRisk();if(ra&&ra.p>0)h+=`<p class="hint"><b style="color:${ra.lvl==="high"?"var(--crit)":ra.lvl==="moderate"?"var(--warn)":"var(--muted)"}">Runaway risk: ${ra.lvl}</b> — ${ra.why.join(" / ")}. If it runs away on its own oil the pedal does nothing: hit KILL${dk?" (or K)":""} within about ${(Math.round(pClamp(2.4-1.2*ra.p,1.5,2.4)*10)/10).toFixed(1)} s or it grenades. The kill switch is also on a cable to the sled: if the hitch ever breaks away, it pulls itself.</p>`;
   if(pv.ser&&pv.ser.round>0)h+=pullStandHtml(pullStand(pv.ser),{short:true,title:"Series standings"});
   return h;}
@@ -33205,7 +33263,7 @@ function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.da
 function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");failFlash();}
 function pullStart(){
   $("app").classList.add("onstrip");
-  const k=pullEnvFix(),env=stdEnv();const res=SIM.dragPrep(S.cfg,env);
+  const k=pullEnvFix(),env=stdEnv(wxEnv("pull_sled"));const res=SIM.dragPrep(S.cfg,env);
   const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
   const snap=testSnap(),hk=hKey(snap.h),veh=pullVeh(k),fseed=PO?PO.fseed:pullSeed(k);if(career()&&!PO&&pullFmt()==="night")(C().pullWk=C().pullWk||{})[k]=C().week;veh.seed=career()?(fseed+7919*(C().pullHooks=(C().pullHooks||0)+1))>>>0:Math.floor(Math.random()*1e9);
   if(wi&&wi.w>=1)veh.wornAt=2+Math.random()*4;
@@ -33297,7 +33355,7 @@ function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame
   if(failed){r.broke=r.broke||c.failKind;r.failKind=r.failKind||c.failKind;}
   if(!c.isPO&&same)pullPb(r,failed);
   if(!r.poPending&&c.fmt==="series"&&same)pullSerScore(k,rows,r);
-  res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?c.failKind:null;S.last=sn?{hash:sn.h,cfg:sn.cfg,env,res}:{hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  r.wx=wxSnap("pull_sled");res.pull=r;res.pullFailed=failed;res.pullFailKind=failed?c.failKind:null;S.last=sn?{hash:sn.h,cfg:sn.cfg,env,res}:{hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
   const pl=ordN(r.place)+" of "+r.of,dist=f1.full?"FULL PULL":f1.distFt.toFixed(1)+" ft",kill=r.runaway&&r.runaway.killed;
   if(career()&&same){if(!c.conceded)addWear(0.6+Math.min(1,r.time/30)*0.4+(r.peakEgt>850?0.3:0),c.hk);
     if(r.poPending){logEvent(`Pull: ${C0.n} — FULL PULL, pull-off against ${r.poN}`,"good");toast(`FULL PULL · PULL-OFF against ${r.poN}`);}
@@ -33363,7 +33421,7 @@ function pullSheet(res){const r=res.pull,v=r.veh||{};const why={full:"full pull"
     ${r.auto?`<div><b>Driver</b>Auto driver${r.auto.took!=null?` — you took over ${r.auto.took>0?"at "+r.auto.took.toFixed(1)+" ft":"on the hook"}`:" — the whole hook"}</div>`:""}
     <div><b>Setup</b>${r.clsName} · ${r.gearName} (${r.mphGear} mph) · ${v.trans==="clutch"?"clutch":"converter"} · ${r.tyre.toLowerCase()} · ${v.hitch} in hitch · ${v.ballast} kg ${v.ballPos>0?Math.round(v.ballPos*100)+"% back":"front"} · ${r.psi} psi${r.thrMax<1?" · stop "+Math.round(r.thrMax*100)+"%":""} · ${r.ratio}:1 overall</div>
     <div><b>Tyres</b>peak slip ${Math.round(r.peakSlip*100)}% · ${r.sweetT.toFixed(1)} s in the ${Math.round(r.sweet[0]*100)}–${Math.round(r.sweet[1]*100)}% band · ${r.spinT.toFixed(1)} s spinning${r.hopT>0?" · hopped "+r.hopT.toFixed(1)+" s":""}</div>
-    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${pullLog(r)}
+    ${r.reasons.map(x=>`<div>${x}</div>`).join("")}${wear}</div>${wxLine(r)}${pullLog(r)}
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}</span><span class="${f.me?"me":""}">${f.dq?"DQ":f.full?"FULL"+(f.po!=null?" · "+f.po.toFixed(1):f.me&&r.poPending?" · pull-off next":""):f.ft.toFixed(1)+" ft"}</span>`).join("")}</div></div>${r.ser?pullSerCard(r.ser):""}`;}
 
 
@@ -33559,7 +33617,7 @@ const ROAD_FEE=200,ROAD_CAMS=[["auto","Auto","director"],["chase","Chase","behin
 const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).toFixed(d||1).padStart(d===2?5:4,"0")}`;
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
-function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
+function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt(),wet:wxWet("road")});}   // a chosen swap car (app/swap.js) stands in for the chassis
 /* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
    diff lock and ride height. Saved in S.env (suSt/suSp/suWg/suBb/suPs/suDf/suRh), stock = 50/0/0/0/32/0/0 (SU_F) ---- */
 /* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = the SU_F values in order
@@ -33720,7 +33778,7 @@ function roadAt(L,tt){const t=L.trace.t,N=L.N;tt=((tt%L.time)+L.time)%L.time;let
   const f=clamp((tt-t[a])/Math.max(1e-6,t[a+1]-t[a]),0,1),j=(a+1)%N,T=L.trace;
   return{i:a,s:(a+f)*L.ds,v:T.v[a]+(T.v[j]-T.v[a])*f,g:T.g[a],rpm:T.rpm[a]+(T.rpm[j]-T.rpm[a])*f,thr:T.thr[a],brk:T.brk[a],ax:T.ax[a],ay:T.ay[a],bst:T.bst[a],lim:T.lim[a]};}
 function roadStart(){
-  const env=stdEnv(),opt=roadOpt(),trk=S.env.roadTrk,snap=testSnap();
+  const env=stdEnv(wxEnv("road")),opt=roadOpt(),trk=S.env.roadTrk,snap=testSnap();
   const res=SIM.simulate(snap.cfg,env);
   if(res.fails.length){testing=false;toast(`It wouldn't last a lap — ${String(res.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
@@ -33761,7 +33819,7 @@ function roadFinish(){
   if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}else if(RT.brk&&opt.dtMsg)r.dtBroke={msg:opt.dtMsg,t:RT.brk.t,corner:RT.brk.corner};
   if(!r.swapBroke&&!r.dtBroke)r.tip=suTipRoad(SIM.roadPrep(snap.cfg,res),opt,trk,lap.time);
   if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=recBucket("road"),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk,gh:roadGhostRec(lap)},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
-  res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  r.wx=wxSnap("road");res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
   // a track day counts like any other event: sponsors see it (form, record bonus, offers), the crew learn from it, a rival's posted lap is decided — spEvent does all of that
   if(career()&&same){addWear(0.35,hKey(snap.h));logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");
@@ -33786,7 +33844,7 @@ function roadSheet(res){const r=res.road,b=recBucket("road")[roadKey(r.ch+(r.swa
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
     <div><b>Car</b>${esc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
     ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${suSg(r.su.sp)} (${suBalWord(r.suBal)}) · wing ${suSg(r.su.wg)}${r.su.ps!=null?` · diff ${suSg(r.su.df)} · brakes ${suSg(r.su.bb)} · ${r.su.ps} psi · ride ${suSg(r.su.rh)}`:""}</div>`:""}
-    ${r.tip!==undefined?suTipHtml(r,false):""}
+    ${wxLine(r)}${r.tip!==undefined?suTipHtml(r,false):""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */
@@ -34289,7 +34347,7 @@ function hillEnvFix(){const e=S.env,H=SIM.HILL_CLASSES;if(!H[e.hillCls])e.hillCl
   if(!SIM.CHASSIS[e.hillCh])e.hillCh="coupe";if(!c.tyres.includes(e.hillTyre))e.hillTyre=c.tyres[c.tyres.length-1];if(!c.aero.includes(e.hillAero))e.hillAero=c.aero[c.aero.length-1];
   if(!(+e.hillFinal>=0.6&&+e.hillFinal<=1.6))e.hillFinal=1;if(![1,2,4,8].includes(+e.hillSpd))e.hillSpd=4;if(!HILL_CAMS.some(q=>q[0]===e.hillCam))e.hillCam="auto";
   if(e.hillDrive!=="you")e.hillDrive="auto";suFix(e);return e.hillCls;}
-function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt()};}
+function hillOpt(){const e=S.env;hillEnvFix();return{cls:e.hillCls,ch:e.hillCh,tyre:e.hillTyre,aero:e.hillAero,finalK:+e.hillFinal,setup:suOpt(),wet:wxWet("hill")};}
 /* race day: one running per class per week in career (the same calls all week, the same field); a fresh mountain every run in the sandbox */
 function hillSeed(k){const ix=Object.keys(SIM.HILL_CLASSES).indexOf(k)+1;if(!career())return HILL_SB[ix]||(HILL_SB[ix]=Math.floor(Math.random()*1e9)+1);if(!C().hillSeed)C().hillSeed=Math.floor(Math.random()*1e9)+1;return(C().hillSeed^(C().week*7919)^(ix*104729))>>>0;}
 /* career: one climb a week, in one class. The class run this week, or null */
@@ -34298,7 +34356,7 @@ function hillRanWk(k){return !!wkCls("hillWk");}
 function hillFee(k){return evFee(HILL_PURSE[0],HILL_PAY,(SIM.HILL_CLASSES[k]||SIM.HILL_CLASSES.open).tier);}
 /* the engine at altitude, cached by build: five dyno runs up the mountain */
 const hillPrepCache=new Map();
-function hillPrepFor(cfg){const k=cfgHash(cfg);let p=hillPrepCache.get(k);if(!p){if(hillPrepCache.size>6)hillPrepCache.clear();p=SIM.hillPrep(cfg,stdEnv());hillPrepCache.set(k,p);}return p;}
+function hillPrepFor(cfg){const wx=wxHillWx(),k=cfgHash(cfg)+(wx?"|"+wx.dT+"|"+wx.h:"");let p=hillPrepCache.get(k);if(!p){if(hillPrepCache.size>6)hillPrepCache.clear();p=SIM.hillPrep(cfg,stdEnv(),undefined,wx);hillPrepCache.set(k,p);}return p;}   // the day's air (app/weather.js)
 /* the rest of the class: 7–9 cars, each a made-up engine and driver run up the same mountain on the same calls */
 /* each car is a whole run up the mountain, so the field is driven a car at a time between frames (hillField returns null
    until it is done and re-renders the panel); a run that starts before then drives the rest at once */
@@ -34333,7 +34391,7 @@ function hillAltLine(p){const pk=p.pts,top=pk[pk.length-1],dn=Math.round(100*(1-
   else if(p.kind!=="na")s+=" The blower keeps its pressure ratio, so it makes the same ratio of thinner air.";else s+=" Atmospheric: the power follows the air.";
   s+=p.carb?` Carburettor: it meters by air speed, so it runs rich as the air thins (λ ${(+p.ref.lambda).toFixed(2)} → ${(+top.lambda).toFixed(2)} on top).`:" Injection trims the mixture for the altitude.";
   return s;}
-function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=clsLocked(SIM.HILL_CLASSES,k),seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed)),R=recBucket("hill"),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
+function hillEnvHtml(sl){const e=S.env,k=hillEnvFix(),C0=SIM.HILL_CLASSES[k],lk=clsLocked(SIM.HILL_CLASSES,k),seed=hillSeed(k),field=wxField(hillWithRv(k,hillField(k,seed)),k),R=recBucket("hill"),pb=R[k],lead=field?field.slice().sort(hillCmp)[0]:null,q=quick&&quick.rpms?quick:null;
   const fin=field?field.filter(f=>f.t!=null).length:0;
   let h=`<div class="saltcls"><div><span>The mountain</span><b>19.99 km</b><small>156 turns · 2,862 → 4,302 m</small></div><div><span>To beat</span><b>${lead&&lead.t!=null?fmtHill(lead.t):"…"}</b><small>${field?`${lead?esc(lead.n):""} · ${fin} of ${field.length} finished`:"the field is warming up"}</small></div><div><span>Your best</span><b>${pb?fmtHill(pb.t):"—"}</b><small>${pb?"in "+C0.n:"no run yet"}</small></div></div>${hillProfileSvg()}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.HILL_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.HILL_CLASSES,id);return `<button data-hk="hillCls" data-hv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
@@ -34390,7 +34448,7 @@ function hillStart(){
   try{prep=hillPrepFor(snap.cfg);}catch(err){testing=false;renderTest();toast("The engine wouldn't run at altitude");return;}
   if(prep.fails.length){testing=false;toast(`It wouldn't make the summit — ${String(prep.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
   $("app").classList.add("onstrip");
-  const seed=hillSeed(k),field=hillWithRv(k,hillField(k,seed,true)),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
+  const seed=hillSeed(k),field=wxField(hillWithRv(k,hillField(k,seed,true)),k),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
   const rs=career()?(seed+7919*(C().hillRuns=(C().hillRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);
   const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,0.86,rs)},opt));
   const lead=field.filter(f=>f.t!=null).sort(hillCmp)[0]||null;
@@ -34435,7 +34493,7 @@ function hillFinish(){
   if(r.dnf)r.place=rows.indexOf(me)+1;
   r.suBal=+SIM.hillCar(prep,opt).bi.toFixed(2);if(!r.dnf)suTipHill(r,prep,opt);
   if(same&&!r.dnf&&!ff){const RR=recBucket("hill"),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
-  const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  r.wx=wxSnap("hill");const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:r.dnf.kind==="boil"?"boiled over in "+r.dnf.name:r.dnf.kind==="stall"?"couldn't climb the grade":"flagged off in "+r.dnf.name):fmtHill(r.time);
   if(career()&&same){addWear(0.6+(r.coolPeak>112?0.4:0)+(r.dmg>0?0.3:0),hKey(snap.h));
     if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Pikes Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
@@ -34463,7 +34521,7 @@ function hillSheet(res){const r=res.hill,b=recBucket("hill")[r.cls],L=r.lead;let
     <div><b>Power</b>${hp} hp — ${r.refHp} hp at the shop${r.carb?" · carburettor running rich up top":""}</div>
     <div><b>Driving</b>${r.auto?"Auto driver all the way":r.took!=null?`Auto to ${(r.took/1000).toFixed(1)} km, then you`:"You drove"}${r.handed?` to ${(r.handed/1000).toFixed(1)} km, then the auto driver took the rest`:""} · ${r.moments} moment${r.moments===1?"":"s"}${offs?" · "+offs:" · no offs"}</div>
     <div><b>Heat</b>water ${r.coolPeak} °C peak${r.derateT>0?` · ${r.derateT.toFixed(0)} s pulling power to save itself`:""} · on top the air is ${Math.round(100*(1-0.69))}% thinner, so the radiator sheds about ${Math.round(100*(1-Math.pow(0.69,0.8)))}% less heat per degree</div>
-    <div><b>Car</b>${esc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}${"tip" in r?suTipHtml(r,true):""}</div>
+    <div><b>Car</b>${esc(r.chName)} · ${r.m.toLocaleString("en-CA")} kg · ${r.tyreName} · ${r.aeroName} · final ${r.fd.toFixed(2)}:1${r.dmg>0?` · bodywork damaged (−${Math.round(r.dmg*100)}% power through the rest)`:""}</div>${wear}${wxLine(r)}${"tip" in r?suTipHtml(r,true):""}</div>
     <div class="pfield" style="margin-top:10px">${r.field.map((f,i)=>`<b>${i+1}</b><span class="nm${f.me?" me":""}">${f.me?"▶ ":""}${esc(f.n)}${f.me?"":` <small style="opacity:.6">${f.hp} hp${f.turbo?" turbo":""}${f.rv?" · rival":""}</small>`}</span><span class="${f.me?"me":""}">${f.t!=null?fmtHill(f.t):f.dnf==="edge"?"DNF · edge":"DNF"}</span>`).join("")}</div></div>`;}
 /* the chart: power against altitude — this engine, what an atmospheric engine of the same shop power would make, the shop line */
 function drawHillChart(r){const css=getComputedStyle(document.documentElement),INK=css.getPropertyValue("--ink").trim()||"#edeae1",soft=INK.startsWith("#1")?"rgba(20,20,19,.45)":"rgba(237,234,225,.45)";
