@@ -63,7 +63,7 @@ Fuels cover pump grades, race grades, oxygenated fuels, E85 and flex blends, met
 
 | Event | Sim | Classes and content |
 |---|---|---|
-| Drag strip (heads-up) and bracket racing | `drag.js`: tyres, aero, turbo heat soak, nitrous bottle, launch tech, gearing (even or custom ratios, a shift point), ride height, converter stall on trans-brake cars, an auto driver, drivetrain tiers, engine weight counted | 3 tyre types, 7 aero bodies, 4 drivetrain tiers; race nights with a ladder; top-five passes per body class |
+| Drag strip (heads-up) and bracket racing | `drag.js`: tyres, aero, turbo heat soak, nitrous bottle, launch tech, gearing (even or custom ratios, a shift point), ride height, converter stall on trans-brake cars, an auto driver, drivetrain tiers, engine weight counted | 3 tyre types, 7 aero bodies, 4 drivetrain tiers; race nights with a ladder; top-five passes per body class; the timing slip prints each split's change from your last clean pass |
 | Truck and tractor pull | `pull.js` | 6 classes, 5 tyres, pull nights and a points series, runaway sled |
 | Mud bog | `bog.js` | 3 classes with sized radiators, 3 tyres, bog nights, AI results |
 | Boat drags | `boat.js`: prop or jet pump, hump then plane, wind and chop | 4 classes, 3 hulls, eight-boat ladder nights |
