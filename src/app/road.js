@@ -110,6 +110,11 @@ function suTipHtml(r,hill){const t=r.tip;if(t===null)return"";if(t===undefined)r
   return`<div id="suTipBox"><b>Try</b>${why}${tx[0].toUpperCase()+tx.slice(1)} (${val}): about ${t.gain.toFixed(hill?1:2)} s ${hill?"up the hill":"a lap"}. <button class="chip" data-sutip="${t.v.join(",")}">Use it</button></div>`;}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-sutip]");if(!b)return;const v=b.dataset.sutip.split(",").map(Number);if(v.length!==SU_F.length||v.some(x=>!isFinite(x)))return;
   suSet(S.env,v);suFix(S.env);renderEnv();save();buzz(6);toast("Setup changed. Roll out again to try it");b.disabled=true;b.textContent="In the setup";});
+/* the setup filed for a build (by hash): the sliders if it is the engine on the bench, else what was filed when it left; null = stock.
+   Team seasons on the hill run it (app/team-hill.js), so the setup tuned on that engine goes racing with it. */
+function suForHash(h){try{if(h==null)return null;if(h===cfgHash(S.cfg))return suOpt();const id=S.suHm&&S.suHm[h],v=id&&S.suMap&&S.suMap[id];
+  return Array.isArray(v)?suOf(SU_F.map((f,i)=>v[i]===undefined?f[1]:v[i])):null;}catch(e){return null;}}
+const suArr=su=>SU_F.map(f=>su&&su[f[4]]!=null?su[f[4]]:f[1]);
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadCarTxt(road){const c=(road&&road.car)||SIM.CHASSIS[road&&road.ch]||SIM.CHASSIS.coupe;return `${/^[AEIOU]/.test(c.n)?"an":"a"} ${c.n.toLowerCase().replace("gt","GT").replace("awd","AWD")}`;}
 function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry. Needs a certified engine. Bolt it into a car, run the straight-line figures and a flying lap — performance buyers judge 0–100 and lap times in their own car. Every lap is a little wear on the build.`

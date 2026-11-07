@@ -45,7 +45,7 @@ function pcHillDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.HILL_CLAS
     const haz=(100-rel)/100*0.25*st.wear*pcLuckK(),wornS=r()<haz?Tc.len*(0.15+0.8*r()):null;
     const altFail=prep.fails.length?{alt:prep.pts[0].alt,why:String(prep.fails[0])}:prep.pts.map(p=>({alt:p.alt,f:p.res&&p.res.fails||[]})).filter(p=>p.f.length).map(p=>({alt:p.alt,why:String(p.f[0])}))[0]||null;
     const failS=altFail?Math.max(0,Tc.z.findIndex(z=>z>=altFail.alt))*Tc.ds:null,stop=Math.min(wornS==null?Infinity:wornS,failS==null?Infinity:failS);
-    const p=SIM.hillNew(prep,Object.assign({},run,{ch:T.ch,seed:(rs^0x7EA1)>>>0,calls:myCalls,plan}));let n=0,gone=null;
+    const p=SIM.hillNew(prep,Object.assign({},run,{ch:T.ch,seed:(rs^0x7EA1)>>>0,calls:myCalls,plan,setup:suForHash(cfgHash(cfg))}));let n=0,gone=null;
     while(!p.st.done&&n++<120000){p.step(PC_HILL_DT,null);if(p.st.s>=stop){gone=failS!=null&&failS<=(wornS==null?Infinity:wornS)?"sim":"worn";break;}}
     pr=p.result();const sec=Tc.sections[Math.min(Tc.sections.length-1,Tc.sec[Math.min(Tc.N-1,Math.floor(p.st.s/Tc.ds))])].n,km=(p.st.s/1000).toFixed(1);
     if(gone){pr.time=null;broke=true;why=gone==="sim"?`It let go at ${altFail.alt.toLocaleString("en-CA")} m, ${km} km up in ${sec}: ${altFail.why.charAt(0).toLowerCase()+altFail.why.slice(1)}.`
@@ -75,6 +75,7 @@ PC_KIND.hill={needHp:E=>SIM.HILL_CLASSES[E.cls].field.hp*1.1,
   but:(T,E,res,hp)=>E.cls==="open"&&hp>450?", though street rubber and no aero won't use much of it":"",
   rules:()=>[],
   day:pcHillDay,
+  setupTxt(T){const su=suForHash(T.hash!=null?T.hash:cfgHash(S.cfg));return su?`<b>Setup:</b> yours, from the setup sheet for this engine (${esc(suTuneSum({v:suArr(su)}))}).`:"<b>Setup:</b> stock. Tune this engine's setup on the road test or Pikes Peak and the team runs it.";},
   pts:pl=>PC_PTS_OVAL[pl-1]||0,placeTxt:o=>o.sat?"Sat out":o.dnf?`DNF (P${o.place} of ${o.of})`:o.place===1?"Won the climb":`P${o.place} of ${o.of}`,eff:o=>o.sat||o.dnf?99:o.place,
   fieldTxt(T,E){const C0=SIM.HILL_CLASSES[E.cls],d=C0.d.replace(/ · /g,", ");return`The field makes about ${C0.field.hp} hp at the shop and loses some of it to the altitude. ${d.charAt(0).toUpperCase()+d.slice(1)}. Rounds 1–7 rotate through four hills; round 8 is Pikes Peak.`;},
   where:T=>`${SIM.CHASSIS[T.ch]?SIM.CHASSIS[T.ch].n:"Hill car"} · car #${T.num}`};
