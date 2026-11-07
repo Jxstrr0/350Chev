@@ -35,3 +35,4 @@
 .rvrow.pend{box-shadow:inset 3px 0 0 var(--warn)}
 .rvrow.pend .rvh{color:var(--chalk)}
 .rvchip{display:inline-block;margin-right:6px;padding:2px 7px;font-size:11px;vertical-align:1px;color:var(--warn)}
+.rvchip.rvfeud{color:var(--crit);margin:0 0 0 6px}

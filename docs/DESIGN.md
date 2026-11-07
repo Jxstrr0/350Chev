@@ -90,7 +90,7 @@ Engine swaps (`swap.js`): 20 vehicles in 5 groups and 15 fixes; one fit check sh
 - **Certification**: a clean dyno pull in the standard cell. It lets an engine race the events and go to a team. The dyno ladder is the starter chassis dyno (400 hp), then the Engine dyno (1,000 hp), Pro dyno cell (2,000 hp, climate control), Outlaw dyno cell (3,500 hp) and Monster dyno cell (15,000 hp / 14,000 rpm), bought as upgrades `dyno2` to `dyno5`.
 - **Shop**: 15 upgrades (`UPGRADES`), 3 staff roles (`STAFF`) that become named crew with levels 1 to 5, traits and morale (`crew.js`), 12 R&D projects (`RND`), 3 prestige items (`PRESTIGE`), 32 goals (`GOALS`), a loan.
 - **Sponsors** (`career.js`): never ask for an event the shop cannot enter; track day counts as an event.
-- **Rival shops** (`rivals.js`): three made-up shops on the reputation board that throw down head-to-head challenges at the strip, the pull, Pikes Peak, the bog, the boats, the oval, track day, the salt and the 24 Hours.
+- **Rival shops** (`rivals.js`): three made-up shops on the reputation board that throw down head-to-head challenges at the strip, the pull, Pikes Peak, the bog, the boats, the oval, track day, the salt and the 24 Hours. Since 1.76.84.0 a rival can start a feud (half the time it loses a head-to-head to you, a fifth of the time you pass it on the board; one feud at a time, 12 weeks' rest after one ends): it trash-talks in the week report, issues more of the challenges, gloats when it beats you, and a season (16 weeks) after the feud starts it runs a copy of your certified build. It never poaches team offers. Beat it in 2 more head-to-heads to settle the feud for 1.5 times the usual win's rep; it burns out on its own after 40 weeks. The board marks the shop with a Feud chip.
 - **Legacy** (`legacy.js`): at Legend rep the owner can sell the shop. The sale value becomes Legacy points under their own storage key; points buy permanent perks for the next career.
 - **Career dev mode** (Settings, Game; a career save only): a testing switch. While it is on the HUD shows DEV, every upgrade counts as owned (but the Showroom, Tooling and Quality lab team bonuses stay off) and every event class is open whatever the rep. Team series still open with rep. Three buttons add $100,000, add 100 rep, or skip a week.
 - **Achievements**: 97 (`ACH`) in 14 groups, bronze, silver and gold. **Trophy room** (`trophy.js`): a dated log of wins per mode.
@@ -142,6 +142,6 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.83.0)
+## Loose ends found in the code (as of 1.76.84.0)
 
 Nothing in `src/` is stubbed or marked unfinished. (The salt flats placeholder in Analysis went in 1.76.75.0: the records already worked out show at once, and a class still being looked up keeps its row with your best.)
