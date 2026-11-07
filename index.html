@@ -183,6 +183,8 @@ html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
 .seg.n11 button,.seg.n15 button{flex:1 1 22%;font-size:13px;letter-spacing:-.005em}
 .seg.n8 button{flex:1 1 22%}
+.seg.dtunes button small{white-space:normal;line-height:1.25}.seg.dtunes button.sel{outline:2px solid var(--info);outline-offset:1px}
+.dtact{display:flex;gap:6px;margin:-4px 0 10px}.dtact button{flex:1 1 0;min-height:40px;border:1px solid var(--edge);background:var(--panel);border-radius:8px;font-size:13px;color:var(--chalk)}
 /* the drag body picker (7 classes): a compact grid, two across on a phone, the note wrapping instead of clipping */
 .seg.segbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}html.desk .seg.segbody{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .seg.segbody button{padding:8px 6px;min-height:46px}.seg.segbody button small{white-space:normal;font-size:12px;line-height:1.25;overflow:visible}
@@ -31015,7 +31017,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.73.0";
+const VERSION="1.76.74.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -31734,7 +31736,7 @@ function renderEnv(){
     h+=`<div class="envgrid">${sl("ambientC","Ambient",-25,45,1," °C",e.ambientC)}${sl("altitudeM","Altitude",0,3500,50," m",e.altitudeM)}${sl("coolantC","Coolant",70,118,1," °C",e.coolantC)}${sl("oilC","Oil temp",70,150,1," °C",e.oilC)}</div>`;
   }
   if(t==="drag"&&rnCur()){h+=rnPanel();$("envBox").innerHTML=h;pitsSync();return;}
-  if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass).replace(/<\/div>$/,`<div class="pwr" id="evPw">${quick?pwTxt(quick.peakHp):""}</div></div>`)}${sl("rearBias","Rear weight",0.4,e.body==="rail"?0.85:0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",0.75,6,0.05,":1",e.first)}${sl("top","Top gear",0.3,1.5,0.05,":1",e.top)}${sl("final","Final drive",1,7,0.05,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?sl("twoStepRpm","Two-step rpm",2000,Math.max(2000,S.cfg.redline),100,"",Math.min(Math.max(2000,S.cfg.redline),Math.max(2000,S.cfg.twoStepRpm||4000)))+(S.cfg.launchCtl==="two_step_retard"?sl("launchRetard","Launch retard",0,35,1,"°",Math.round(S.cfg.launchRetard||0)):""):sl("launchRpm","Launch rpm",1000,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
+  if(t==="drag"){h+=rnFmtHtml()+swapEnvNote()+dragTuneHtml()+`<div class="envgrid">${sl("mass","Car weight",800,2200,10," kg",e.mass).replace(/<\/div>$/,`<div class="pwr" id="evPw">${quick?pwTxt(quick.peakHp):""}</div></div>`)}${sl("rearBias","Rear weight",0.4,e.body==="rail"?0.85:0.7,0.01,"",e.rearBias)}${sl("gears","Gears",1,7,1,"",e.gears)}${sl("first","1st gear",0.75,6,0.05,":1",e.first)}${sl("top","Top gear",0.3,1.5,0.05,":1",e.top)}${sl("final","Final drive",1,7,0.05,":1",e.final)}${sl("tyreDia","Tyre height",22,36,0.25,'"',e.tyreDia)}${S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?sl("twoStepRpm","Two-step rpm",2000,Math.max(2000,S.cfg.redline),100,"",Math.min(Math.max(2000,S.cfg.redline),Math.max(2000,S.cfg.twoStepRpm||4000)))+(S.cfg.launchCtl==="two_step_retard"?sl("launchRetard","Launch retard",0,35,1,"°",Math.round(S.cfg.launchRetard||0)):""):sl("launchRpm","Launch rpm",1000,Math.max(2000,S.cfg.redline),100,"",e.launchRpm)}</div>
     ${dragGearHtml(sl)}
     ${dragChassisHtml(sl)}
     <p class="hint"><b>Launch</b> · ${launchLine(S.cfg)?launchLine(S.cfg)+(S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?" — the two-step sets the launch rpm, tuned with the sliders above":"")+". Change the parts in Build › Launch control.":"nothing fitted — a foot on the throttle at the launch rpm below. A two-step, line lock or trans-brake go on in Build › Launch control."}</p>
@@ -32364,6 +32366,30 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   const rl=DR.veh.redline||8000,rpm=Math.max(0,run.rpm||0),f=Math.min(1,rpm/rl);
   shudSet("rpm",SH.rpm,`${ph==="run"?"G"+st.gear+" · ":""}${(Math.round(rpm/10)*10).toLocaleString("en-CA")} rpm`);
   shudSet("bar",SH.bi,`scaleX(${f.toFixed(3)})`,"transform");shudSet("lim",SH.bar,f>0.965?"shr lim":"shr","cls");}
+/* ---- saved drag tunes: three named slots of the strip setup (S.dragTunes sandbox / C().dragTunes career).
+   A tune is the setup sliders and picks below plus the two-step rpm and retard from the build; paid-for kit (drivetrain,
+   wheelie bars), paint and the race format are left alone. Loading a tune never buys anything. ---- */
+const DTUNE_ENV=["mass","rearBias","gears","first","top","final","tyreDia","tyre","body","chute","launchRpm","shiftMode","shiftRpm","gearSet","g2","g3","g4","g5","g6","rideH","stallRpm","tyrePsi","shocks"],DTUNE_CFG=["twoStepRpm","launchRetard"],DTUNE_N=3;
+let DTSEL=-1;   // the slot whose actions are open
+function dragTunes(){const o=career()?C():S;if(!Array.isArray(o.dragTunes))o.dragTunes=[];while(o.dragTunes.length<DTUNE_N)o.dragTunes.push(null);return o.dragTunes;}
+function dragTuneNow(){const e={},c={};for(const k of DTUNE_ENV)if(S.env[k]!==undefined)e[k]=S.env[k];for(const k of DTUNE_CFG)if(S.cfg[k]!==undefined)c[k]=S.cfg[k];return{env:e,cfg:c};}
+function dragTuneSame(t){if(!t)return false;const n=dragTuneNow();return DTUNE_ENV.every(k=>t.env[k]===n.env[k])&&DTUNE_CFG.every(k=>t.cfg[k]===undefined||t.cfg[k]===n.cfg[k]);}
+function dragTuneSum(t){const e=t.env,ty=SIM.TYRES[e.tyre],a=SIM.AERO[e.body];return[ty&&ty.n,a&&a.n,(t.cfg.twoStepRpm&&S.cfg.launchCtl&&S.cfg.launchCtl!=="none"?t.cfg.twoStepRpm:e.launchRpm)+" rpm launch"].filter(Boolean).join(" · ");}
+function dragTuneHtml(){const T=dragTunes();
+  return`<div class="lbl"><span>Saved tunes</span></div><div class="seg n3 dtunes">${T.map((t,i)=>`<button data-dtune="${i}" class="${t&&dragTuneSame(t)?"on":""}${DTSEL===i?" sel":""}">${t?esc(t.n):"Empty slot"}<small>${t?esc(dragTuneSum(t)):"tap to save this setup"}</small></button>`).join("")}</div>
+  ${DTSEL>=0&&T[DTSEL]?`<div class="dtact"><button data-dtact="load">Load</button><button data-dtact="save">Save over</button><button data-dtact="name">Rename</button><button data-dtact="clear">Clear</button></div>`:""}`;}
+function dragTuneName(def){let n=null;try{n=prompt("Name this tune",def);}catch(e){}if(n==null)return null;n=String(n).trim().slice(0,24);return n||def;}
+function dragTuneAct(i,a){const T=dragTunes(),t=T[i];
+  if(a==="save"||!t){const n=t?t.n:dragTuneName(`Tune ${i+1}`);if(n==null)return;T[i]=Object.assign({n,at:Date.now()},dragTuneNow());DTSEL=-1;toast(`Saved “${n}”`);}
+  else if(a==="load"){Object.assign(S.env,t.env);for(const k of DTUNE_CFG)if(t.cfg[k]!==undefined&&S.cfg[k]!==t.cfg[k]){S.cfg[k]=t.cfg[k];buildStale=true;}
+    S.env.launchRpm=Math.min(S.env.launchRpm,S.cfg.redline);if(S.env.shiftRpm>0)S.env.shiftRpm=Math.min(S.env.shiftRpm,S.cfg.redline);
+    DTSEL=-1;recompute();toast(`Loaded “${t.n}”`);}
+  else if(a==="name"){const n=dragTuneName(t.n);if(n==null)return;t.n=n;DTSEL=-1;}
+  else if(a==="clear"){T[i]=null;DTSEL=-1;toast("Slot cleared");}
+  renderEnv();save();}
+$("envBox").addEventListener("click",e=>{const s=e.target.closest("[data-dtune]"),a=e.target.closest("[data-dtact]");if(!s&&!a)return;
+  if(a){if(DTSEL>=0)dragTuneAct(DTSEL,a.dataset.dtact);return;}
+  const i=+s.dataset.dtune;if(!dragTunes()[i]){dragTuneAct(i,"save");return;}DTSEL=DTSEL===i?-1:i;renderEnv();});
 /* ---- the thermal timing slip: the same card on the Test tab and in the share image ---- */
 let SLIPN=false;   // notes tab: stays as you left it for the session
 document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("tsn"))SLIPN=t.open;},true);
