@@ -62,6 +62,7 @@ function pcPullDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.PULL_CLAS
   if(!sat){
     const trk=night[slot],dsl=SIM.isDiesel(cfg),sk=o.sk,
       veh={cls:k,gear:2,trans:"conv",tyre:V.tyres[0],hitch:V.hitchMax-4,ballast:Math.round((V.maxMass-V.mass)/20)*10,redline:cfg.redline,idle:dsl?720:Math.max(750,cfg.cam>70?1100:850),seed:(rs^0xB011)>>>0,track:trk};
+    Object.assign(veh,pcPullMine(k)||{});   // your truck pull sheet, when it is set to this class; the crew still picks tyre and gear
     setup=pcPullSetup(res,veh,C0,sk);veh.tyre=setup.tyre;veh.gear=setup.gear;
     if(r()<(100-rel)/100*PC_PULL_HAZ*st.wear*pcLuckK())veh.wornAt=1+r()*5;   // a tired engine gives up under load
     const ra=SIM.pullRunaway?SIM.pullRunaway(res,cfg,T.wear/20):{p:0};if(ra.p>0)veh.runaway={p:ra.p};
@@ -81,7 +82,13 @@ function pcPullDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.PULL_CLAS
   if(broke)lines.push(dq?`Disqualified: ${why}`:why);else{const rs=(pr.reasons||[]).filter(x=>!/^Track:/.test(x));if(rs.length&&!pr.full)lines.push(rs[0]);}
   lines.push(`Finished P${place>N?N:place} of ${N}${dq?" (disqualified)":""}.`,top3);
   return{place,of:N,broke,why,lines,best:pr.distFt,rpos,sat:false,rel};}
+/* the hitch, ballast, tyre pressure, throttle stop and ballast position from the truck pull's own sheet, when it is on this class */
+function pcPullMine(k){const e=S.env;if(e.pullCls!==k)return null;const n=x=>x!=null&&x!==""&&isFinite(+x)?+x:null,o={hitch:n(e.pullHitch),ballast:n(e.pullBallast),psi:n(e.pullPsi),thrMax:n(e.pullThr)!=null?n(e.pullThr)/100:null,ballPos:n(e.pullBallPos)!=null?n(e.pullBallPos)/100:null};
+  for(const x in o)if(o[x]==null)delete o[x];return o;}
 PC_KIND.pull={
+  setupTxt(T){const k=PC_EVENTS[T.ev].cls,m=pcPullMine(k),cn=SIM.PULL_CLASSES[k].n;
+    return m?`<b>Setup:</b> yours, from the truck pull sheet (${m.hitch}" hitch, ${Math.round(m.ballast)} kg ballast ${Math.round(m.ballPos*100)}% back, ${m.psi} psi, throttle stop ${Math.round(m.thrMax*100)}%). The crew picks the tyre and gear for the dirt.`
+      :`<b>Setup:</b> the crew's. Set the truck pull to the ${esc(cn)} class and tune it, and the team runs your hitch, ballast, tyre pressure and throttle stop.`;},
   needHp:E=>PC_PULL[E.cls].m*0.7,
   make(T,E,base,r,pick){const P=PC_PULL[E.cls],f=(base-E.budget[0])/Math.max(1,E.budget[1]-E.budget[0]);
     T.fieldHp=Math.round(Math.min(P.m*(0.9+0.2*f),dynoCap().hp*0.9)/5)*5;T.rig=pick(PC_PULL_RIGS[P.rig]);T.num=1+Math.floor(r()*98);},
