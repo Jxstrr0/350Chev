@@ -1043,6 +1043,8 @@ html.desk.evhud .rdbtns{margin-top:0}html.desk.evhud .hlbtns{margin-top:0}html.d
 .tslip .tsw b.w{color:#1d7a4a}.tslip .tsw b.l{color:#b3261a}
 .tslip .stamp{display:table;margin:12px auto 2px;transform:rotate(-5deg);border:2px solid #d0402e;color:#d0402e;padding:2px 7px;font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.06em;line-height:1.15;text-align:center;opacity:.88;border-radius:3px;background:rgba(244,241,230,.7)}
 .tslip .stamp s{opacity:.8}
+.tslip td .dl{font-style:normal;font-size:10.5px;font-weight:500;color:var(--ink2);margin-right:5px}.tslip td .dl.b{color:#1d7a4a}.tslip td .dl.w{color:#b3261a}
+.tslip .tsd{margin-top:5px;font-size:11px;color:var(--ink2);text-align:right}
 .tslip .tsf{margin-top:8px;text-align:center;font-size:12px;letter-spacing:.06em;color:var(--ink2);text-transform:none}
 .tsact{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%;max-width:360px;margin:16px 0 0}
 .tsact .btn{min-height:44px}
