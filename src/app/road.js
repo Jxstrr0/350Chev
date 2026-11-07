@@ -6,32 +6,38 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt()});}   // a chosen swap car (app/swap.js) stands in for the chassis
-/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing. Saved in S.env (suSt/suSp/suWg), stock = 50/0/0 ---- */
-/* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = [stiffness, balance, wing]
-   (newest 24 kept; none = stock). Tweaking the build sliders keeps the id; loading another build (preset, blueprint, trophy, save
-   slot...) swaps S.cfg for a new object, which files the outgoing id under its hash (S.suHm) and picks up the id last filed under
-   the incoming hash, else a fresh stock id. The sliders live in S.env (a working copy) and are filed back under the id here.
-   An older save (setup keyed by build hash, or a single S.env setup) moves onto the build on the bench the first time this runs. */
+/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
+   diff lock and ride height. Saved in S.env (suSt/suSp/suWg/suBb/suPs/suDf/suRh), stock = 50/0/0/0/32/0/0 (SU_F) ---- */
+/* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = the SU_F values in order
+   (newest 24 kept; none = stock; an older 3-number entry reads the newer four as stock). Tweaking the build sliders keeps the id; loading
+   another build (preset, blueprint, trophy, save slot...) swaps S.cfg for a new object, which files the outgoing id under its hash (S.suHm)
+   and picks up the id last filed under the incoming hash, else a fresh stock id. The sliders live in S.env (a working copy) and are filed
+   back under the id here. An older save (setup keyed by build hash, or a single S.env setup) moves onto the build on the bench the first time this runs. */
+const SU_F=[["suSt",50,0,100,"st"],["suSp",0,-100,100,"sp"],["suWg",0,-100,100,"wg"],["suBb",0,-100,100,"bb"],["suPs",32,24,40,"ps"],["suDf",0,-100,100,"df"],["suRh",0,-100,100,"rh"]];
 let suC=null;
 const suNew=()=>"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-function suFix(e){const c=(k,d,a,b)=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;};
+function suSet(e,v){SU_F.forEach((f,i)=>{e[f[0]]=Array.isArray(v)&&v[i]!==undefined?v[i]:f[1];});}
+const suSg=v=>(v>0?"+":"")+v;
+function suStock(e){return SU_F.every(f=>e[f[0]]===f[1]);}
+function suFix(e){const clampAll=()=>SU_F.forEach(([k,d,a,b])=>{const v=Math.round(+e[k]);e[k]=isFinite(v)?Math.min(b,Math.max(a,v)):d;});
   let h=null;try{h=cfgHash(S.cfg);}catch(x){}
   if(h!=null){
     const objMap=S.suMap&&typeof S.suMap==="object"&&!Array.isArray(S.suMap);
     if(typeof S.suId!=="string"||!objMap){const old=objMap&&Array.isArray(S.suMap[h])?S.suMap[h]:null;S.suId=suNew();S.suMap={};S.suHm={};suC=S.cfg;
-      if(old){e.suSt=old[0];e.suSp=old[1];e.suWg=old[2];}
-      else if(!objMap&&(e.suSt!==undefined||e.suSp!==undefined||e.suWg!==undefined)){c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);}
-      else{e.suSt=50;e.suSp=0;e.suWg=0;}}
+      if(old)suSet(e,old);
+      else if(!objMap&&(e.suSt!==undefined||e.suSp!==undefined||e.suWg!==undefined))clampAll();
+      else suSet(e,null);}
     else if(suC!==S.cfg){
       if(suC){const m=S.suMap;if(!S.suHm||typeof S.suHm!=="object"||Array.isArray(S.suHm))S.suHm={};let oh=null;try{oh=cfgHash(suC);}catch(x){}
         if(oh!=null&&Array.isArray(m[S.suId])){delete S.suHm[oh];S.suHm[oh]=S.suId;const k=Object.keys(S.suHm);if(k.length>24)delete S.suHm[k[0]];}
         const nid=S.suHm&&S.suHm[h];S.suId=typeof nid==="string"&&Array.isArray(m[nid])?nid:suNew();
-        const v=Array.isArray(m[S.suId])?m[S.suId]:[50,0,0];e.suSt=v[0];e.suSp=v[1];e.suWg=v[2];}
+        suSet(e,Array.isArray(m[S.suId])?m[S.suId]:null);}
       suC=S.cfg;}
   }
-  c("suSt",50,0,100);c("suSp",0,-100,100);c("suWg",0,-100,100);
-  if(h!=null&&S.suMap&&typeof S.suId==="string"){const m=S.suMap,id=S.suId;if(e.suSt===50&&e.suSp===0&&e.suWg===0)delete m[id];else{const was=m[id];if(!was||was[0]!==e.suSt||was[1]!==e.suSp||was[2]!==e.suWg){delete m[id];m[id]=[e.suSt,e.suSp,e.suWg];const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}}}
-function suOpt(){const e=S.env;suFix(e);return SIM.setupNorm({st:e.suSt,sp:e.suSp,wg:e.suWg});}
+  clampAll();
+  if(h!=null&&S.suMap&&typeof S.suId==="string"){const m=S.suMap,id=S.suId,now=SU_F.map(f=>e[f[0]]);
+    if(suStock(e))delete m[id];else{const was=m[id];if(!Array.isArray(was)||now.some((v,i)=>(was[i]===undefined?SU_F[i][1]:was[i])!==v)){delete m[id];m[id]=now;const k=Object.keys(m);if(k.length>24)delete m[k[0]];}}}}
+function suOpt(){const e=S.env;suFix(e);const o={};SU_F.forEach(f=>{o[f[4]]=e[f[0]];});return SIM.setupNorm(o);}
 const suLapCache=new Map();
 function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
 function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0)+"|"+(o.dtId||"");let r=suLapCache.get(k);
@@ -54,10 +60,10 @@ function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType
     <div class="su-row"><b class="su-w su-${w}">${w==="neutral"?"Neutral":w==="understeer"?"Understeer":"Oversteer"}</b><span>${dl}</span></div><p class="hint su-txt">${txt}</p>`;}
 function suEnvHtml(sl,hill){const e=S.env;suFix(e);
   return `<div class="lbl"><span>Setup</span><button class="chip su-rst" data-su-reset>Reset to stock</button></div>
-    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}</div>
+    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}${sl("suDf","Differential · open ↔ locked",-100,100,5,"",e.suDf)}${sl("suBb","Brake bias · rear ↔ front",-100,100,5,"",e.suBb)}${sl("suPs","Tyre pressure",24,40,1," psi",e.suPs)}${sl("suRh","Ride height · low ↔ high",-100,100,5,"",e.suRh)}</div>
     <div id="suLive" class="su-live"></div>
-    <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. Stock is the chassis as designed.</p>`;}
-$("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;S.env.suSt=50;S.env.suSp=0;S.env.suWg=0;renderEnv();save();buzz(6);});
+    <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. A locked diff pushes but drives out hard; an open one turns in but spins a wheel. Stock brakes are set safe and a bit forward: a touch rearward stops shorter, too far and the rears lock. A few psi under stock grips more, but a soft tyre rolls heavy and a heavy car wants more air. Low makes downforce until it bottoms on the bumps${hill?"":" (the street circuit is the roughest)"}. Stock is the chassis as designed.</p>`;}
+$("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;suSet(S.env,null);renderEnv();save();buzz(6);});
 function roadKey(ch,trk){return ch+"|"+trk;}
 function roadCarTxt(road){const c=(road&&road.car)||SIM.CHASSIS[road&&road.ch]||SIM.CHASSIS.coupe;return `${/^[AEIOU]/.test(c.n)?"an":"a"} ${c.n.toLowerCase().replace("gt","GT").replace("awd","AWD")}`;}
 function roadHint(){return career()?`<b>Track day</b> · ${fmt$(ROAD_FEE)} entry. Needs a certified engine. Bolt it into a car, run the straight-line figures and a flying lap — performance buyers judge 0–100 and lap times in their own car. Every lap is a little wear on the build.`
@@ -169,7 +175,7 @@ function roadSheet(res){const r=res.road,b=recBucket("road")[roadKey(r.ch+(r.swa
     <div><b>Corners</b>${r.apex.map(a=>`${esc(a.name)} ${Math.round(a.kmh)}`).join(" · ")} km/h</div>
     <div><b>Grip</b>${r.ayPk.toFixed(2)} g cornering · ${r.brakePk.toFixed(2)} g braking · ${r.tracT.toFixed(1)} s grip-limited on the power${r.spinT>0.3?` · wheelspin for ${r.spinT.toFixed(1)} s off the line`:""}</div>
     <div><b>Car</b>${esc(r.chName)} · ${drv} · ${r.m.toLocaleString("en-CA")} kg · ${balTxt}</div>
-    ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${r.su.sp>0?"+":""}${r.su.sp} (${suBalWord(r.suBal)}) · wing ${r.su.wg>0?"+":""}${r.su.wg}</div>`:""}
+    ${r.su?`<div><b>Setup</b>roll stiffness ${r.su.st} · balance ${suSg(r.su.sp)} (${suBalWord(r.suBal)}) · wing ${suSg(r.su.wg)}${r.su.ps!=null?` · diff ${suSg(r.su.df)} · brakes ${suSg(r.su.bb)} · ${r.su.ps} psi · ride ${suSg(r.su.rh)}`:""}</div>`:""}
     <div><b>Gearing</b>${r.gears}-speed · final ${r.fd.toFixed(2)}:1${Math.abs(r.finalK-1)>0.005?` (fitted ${r.fdAuto.toFixed(2)})`:" (fitted)"} · top speed ${r.top.limit==="redline"?"on the rev limiter in "+ordN(r.top.gear):"held by drag in "+ordN(r.top.gear)}</div>
     ${r.zero200!=null?`<div><b>Straight</b>0–200 km/h ${r.zero200.toFixed(1)} s${r.quarter?` · 1/4 mile ${r.quarter.t.toFixed(2)} s @ ${Math.round(r.quarter.kmh)} km/h`:""}</div>`:""}</div></div>`;}
 /* the speed trace: km/h against distance, throttle (green) and brake (red) bands underneath, sector lines, gear steps */
