@@ -162,6 +162,8 @@ html.desk .dockslot{bottom:-28px}html.desk #runDock{margin:14px -16px 0;padding:
 .seg.n4 button,.seg.n5 button,.seg.n6 button{flex:1 1 30%}.seg.n2 button,.seg.n3 button{flex:1 1 28%}
 .seg.n11 button,.seg.n15 button{flex:1 1 22%;font-size:13px;letter-spacing:-.005em}
 .seg.n8 button{flex:1 1 22%}
+.seg.dtunes button small{white-space:normal;line-height:1.25}.seg.dtunes button.sel{outline:2px solid var(--info);outline-offset:1px}
+.dtact{display:flex;gap:6px;margin:-4px 0 10px}.dtact button{flex:1 1 0;min-height:40px;border:1px solid var(--edge);background:var(--panel);border-radius:8px;font-size:13px;color:var(--chalk)}
 /* the drag body picker (7 classes): a compact grid, two across on a phone, the note wrapping instead of clipping */
 .seg.segbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}html.desk .seg.segbody{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .seg.segbody button{padding:8px 6px;min-height:46px}.seg.segbody button small{white-space:normal;font-size:12px;line-height:1.25;overflow:visible}
