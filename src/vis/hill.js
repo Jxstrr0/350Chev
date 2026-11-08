@@ -8,7 +8,8 @@
    it, the mountain's fall line away from it, cliffs off the drops), a road
    ribbon with gravel verges, guardrails on the railed drops, sparse pines
    below the treeline giving way to boulders, a start gantry and the summit
-   house. The sky deepens and the haze clears as the car climbs.
+   house. The sky deepens and the haze clears as the car climbs. On Full and
+   Ultra the Blender props (hillModels, at the end) dress it further.
    ==========================================================================*/
 var HILL={ on:false, W:null, cam:null, cars:{}, car:null, carKey:"", camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:50, shot:null, shotT:0, snap:true, lastT:0, stats:null, st:-1,
   chP:new THREE.Vector3(), chT:new THREE.Vector3(), roll:0, steer:0, heliA:0, tier:null };
@@ -140,21 +141,26 @@ function buildHillWorld(T){
     var rm=new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:sc(STEEL), roughness:0.35, metalness:0.75, side:THREE.DoubleSide})); rm.castShadow=!lite; S5.add(rm); if(lite||ultra) hillSplit(W, S5, rm, "rail"); })();
   /* start: a timing gantry over the road; summit: the summit house, a car park, the finish banner */
   (function(){ var h0=T.h[0];
-    [-1,1].forEach(function(sd){ hillPt(W, 2, sd*(hw+1.4), 0, _hA); B.add("metal","box",[_hA.x,_hA.y+2.8,_hA.z],[0.3,5.6,0.3],0x2b2d30); });
-    hillPt(W, 2, 0, 5.4, _hA); B.add("solid","box",[_hA.x,_hA.y,_hA.z],[0.5,1.1,HILL_RW+3.2],0xe8e4da,[0,h0,0]);
+    /* the start gantry and the timing hut, and the summit house below, go in batches of their own ("…S", "…H"): on Full / Ultra the
+       Blender models (hillModels) take their place when they arrive, and these stay only if the files can't be had */
+    [-1,1].forEach(function(sd){ hillPt(W, 2, sd*(hw+1.4), 0, _hA); B.add("metalS","box",[_hA.x,_hA.y+2.8,_hA.z],[0.3,5.6,0.3],0x2b2d30); });
+    hillPt(W, 2, 0, 5.4, _hA); B.add("solidS","box",[_hA.x,_hA.y,_hA.z],[0.5,1.1,HILL_RW+3.2],0xe8e4da,[0,h0,0]);
     var st=stripLabel("START", HILL_RW+2.6, 0.9); hillPt(W, 1.85, 0, 5.4, _hA); st.position.copy(_hA); st.rotation.y=h0-PI/2; S5.add(st); W.startSign=st;
-    hillPt(W, -6, -(hw+6), 0, _hA); B.box("solid", _hA.x,_hA.y+1.3,_hA.z, 3.2,2.6,2.4, 0xc9c1ad, h0); B.add("solid","prism",[_hA.x,_hA.y+2.6,_hA.z],[3.6,1.0,2.8],0x5a3a2a,[0,h0,0]);
+    hillPt(W, -6, -(hw+6), 0, _hA); B.box("solidS", _hA.x,_hA.y+1.3,_hA.z, 3.2,2.6,2.4, 0xc9c1ad, h0); B.add("solidS","prism",[_hA.x,_hA.y+2.6,_hA.z],[3.6,1.0,2.8],0x5a3a2a,[0,h0,0]);
+    hillPt(W, 2, 0, 0, _hA); W.startAt={p:_hA.clone(), h:h0};
     var iF=N-1, hF=T.h[iF], i9=Math.max(0,N-1-Math.round(14/ds));
     [-1,1].forEach(function(sd){ hillPt(W, i9, sd*(hw+1.4), 0, _hA); B.add("metal","box",[_hA.x,_hA.y+2.8,_hA.z],[0.3,5.6,0.3],0x2b2d30); });
     var fin=stripLabel("SUMMIT · FINISH", HILL_RW+2.6, 0.9); hillPt(W, i9-0.15, 0, 5.4, _hA); fin.position.copy(_hA); fin.rotation.y=hillHd(T,i9)-PI/2; S5.add(fin);
     hillPt(W, i9, 0, 5.4, _hA); B.add("solid","box",[_hA.x,_hA.y,_hA.z],[0.5,1.1,HILL_RW+3.2],0x1a1a1c,[0,hillHd(T,i9),0]);
     /* the summit house beyond the line, a stone base and a long low roof */
     hillPt(W, iF, 34, 0, _hA); var by=T.z[iF]-W.z0, hx=_hA.x+Math.cos(hF)*28, hz=_hA.z-Math.sin(hF)*28;
-    B.box("solid", hx, by+2.2, hz, 30, 4.4, 14, 0x9a8f80, hF); B.box("solid", hx, by+4.75, hz, 31.5, 0.7, 15.5, 0x4c4f53, hF);
-    for(var w=-12;w<=12;w+=3){ B.box("solid", hx+Math.cos(hF)*w+Math.sin(hF)*7.02, by+2.6, hz-Math.sin(hF)*w+Math.cos(hF)*7.02, 1.8, 1.4, 0.06, 0x2a3a48, hF); }
+    B.box("solidH", hx, by+2.2, hz, 30, 4.4, 14, 0x9a8f80, hF); B.box("solidH", hx, by+4.75, hz, 31.5, 0.7, 15.5, 0x4c4f53, hF);
+    for(var w=-12;w<=12;w+=3){ B.box("solidH", hx+Math.cos(hF)*w+Math.sin(hF)*7.02, by+2.6, hz-Math.sin(hF)*w+Math.cos(hF)*7.02, 1.8, 1.4, 0.06, 0x2a3a48, hF); }
+    W.houseAt={p:new THREE.Vector3(hx, by, hz), h:hF};
     hillPt(W, iF, 14, 0, _hA); B.box("solid", _hA.x+Math.cos(hF)*12, by-0.15, _hA.z-Math.sin(hF)*12, 56, 0.4, 34, 0x6b675f, hF);   // the car park
     W.summit=new THREE.Vector3(hx, by+3, hz); })();
-  var keep=STRIP.scene; STRIP.scene=S5; B.build("solid", M.solid, !lite); B.build("metal", M.metal, !lite); STRIP.scene=keep;
+  var keep=STRIP.scene; STRIP.scene=S5; B.build("solid", M.solid, !lite); B.build("metal", M.metal, !lite);
+  W.fb={start:[B.build("solidS", M.solid, !lite), B.build("metalS", M.metal, !lite)], summit:[B.build("solidH", M.solid, !lite)]}; STRIP.scene=keep;
   /* sparse pines below the treeline, boulders above it */
   (function(){ var nT=lite?300:ultra?2400:1600, nR=lite?140:ultra?900:520, tp=[], rp=[], s, tries=0;
     while((tp.length<nT||rp.length<nR) && tries++<(nT+nR)*12){ s=tries*1.37;
@@ -174,6 +180,7 @@ function buildHillWorld(T){
       rp.forEach(function(p,j){ mm.compose(_hA.set(p[0],p[1]+p[3]*0.25,p[2]), qq.setFromEuler(e.set(rng(j)*3,rng(j+1)*3,rng(j+2)*3)), _hB.set(p[3]*(0.8+rng(j+3)*0.6),p[3]*(0.55+rng(j+4)*0.4),p[3]*(0.8+rng(j+5)*0.5)));
         rocks.setMatrixAt(j,mm); cc.setHSL(0.07,0.08+rng(j+6)*0.06,0.3+rng(j+7)*0.12).convertSRGBToLinear(); rocks.setColorAt(j,cc); });
       rocks.castShadow=!lite; instCull(rocks); S5.add(rocks); W.rocks=rp.length; }
+    W.inst={foliage:foliage, trunk:trunk, rocks:rocks};
     if(lite||ultra) hillTreeCells(W, S5, tp, rp, foliage, trunk, rocks, ultra); })();
   /* the Front Range on the horizon: a ring of peaks, snow on the tops */
   (function(){ var seg=lite?96:160, R0=W.span*0.62+2500, pos=[], col=[], idx=[], cx=0, cz=0, c1=sc(0x5a5e5c), c2=sc(0x8a8e92), c3=sc(0xe8ecf0);
@@ -187,7 +194,39 @@ function buildHillWorld(T){
   T.corners.forEach(function(cn, ci){ if(!(cn.name || ci%5===2)) return; var d=cn.side*(hw+16+(ci%3)*6); hillPt(W, cn.iA, d, 0, _hA); var gy=W.gH(_hA.x+W.ox, -_hA.z+W.oy)-W.z0;
     W.stations.push({i:cn.iA, d:d, y:Math.max(gy, T.z[cn.iA]-W.z0)+2.5+(ci%2)*2}); });
   W.fx=new StripFx(lite?120:320, "smoke", stripPuffTex()); S5.add(W.fx.mesh);
+  if(!lite) hillModels(W);
   return W;
+}
+/* ===========================================================================
+   FULL / ULTRA: THE BLENDER MODELS
+   Five props modelled in Blender (tools/blender/hill-props.py, files in models/hill-*.glb, flat colours, no textures):
+   the summit visitor centre and the start gantry with its timing hut replace their code boxes when they arrive; a
+   marshal post goes on the inside of every named corner; the granite boulder and the two-level fir are geometry only,
+   swapped into the instanced rocks and trees (Full and Ultra's far trees take FirLo, Ultra's near trees FirHi), keeping
+   their own materials, colours, placements and culling spheres. Lite never loads them; the code shapes stay as they are.
+   ==========================================================================*/
+function hillModels(W){
+  if(typeof modelGet!=="function") return;
+  if(!THREE.GLTFLoader){ if(window.__pewPost) window.__pewPost(function(ok){ if(ok && THREE.GLTFLoader && HILL.W===W) hillModels(W); }); return; }
+  var live=function(){ return HILL.W===W && W.tier!=="lite"; };
+  var place=function(key, at, fb){ if(!at) return; modelGet(key, function(src){ if(!live()) return;
+      var o=src.clone(); o.position.copy(at.p); o.rotation.y=at.h; o.name="model:"+key; W.scene.add(o);
+      if(fb) fb.forEach(function(m){ if(m){ W.scene.remove(m); m.geometry.dispose(); } }); }); };
+  place("hillSummit", W.houseAt, W.fb.summit);
+  place("hillStart", W.startAt, W.fb.start);
+  /* marshal posts: a canopy, bales and a flag on the inside of each named corner, the bales toward the road */
+  modelGet("hillMarshal", function(src){ if(!live()) return; var T=W.T, hw=HILL_RW/2;
+    T.corners.forEach(function(cn){ if(!cn.name || cn.i1>=T.N-8) return; var ii=Math.round((cn.i0+cn.iA)/2), d=cn.side*(hw+6.2); hillPt(W, ii, d, 0, _hA);
+      var o=src.clone(); o.position.set(_hA.x, W.gH(_hA.x+W.ox, -_hA.z+W.oy)-W.z0, _hA.z); o.rotation.y=hillHd(T, ii)+(cn.side>0?0:PI); o.name="model:hillMarshal"; W.scene.add(o); }); });
+  /* trees and rocks: new shapes for the instanced meshes already placed (Full: one mesh each; Ultra: the ground cells) */
+  var geoOf=function(src, name){ var g=null; src.traverse(function(o){ if(o.isMesh && o.name===name) g=o.geometry; }); return g; };
+  var swap=function(m, g){ if(!m || !g) return; var sph=m.geometry.boundingSphere; m.geometry=hillCellGeo(g, sph); };
+  var cells=W.lod?W.lod.cells:null, I=W.inst||{};
+  modelGet("hillRock", function(src){ if(!live()) return; var g=geoOf(src, "Rock"); if(!g) return;
+    if(cells) cells.forEach(function(c){ if(c.kind==="rock") swap(c.lo, g); }); else swap(I.rocks, g); });
+  modelGet("hillFir", function(src){ if(!live()) return; var fl=geoOf(src, "FirLo"), tl=geoOf(src, "TrunkLo"), fh=geoOf(src, "FirHi"), th=geoOf(src, "TrunkHi"); if(!fl||!tl) return;
+    if(cells) cells.forEach(function(c){ if(c.kind!=="tree") return; swap(c.lo, fl); swap(c.loT, tl); if(c.hi){ swap(c.hi, fh||fl); swap(c.hiT, th||tl); } });
+    else { swap(I.foliage, fl); swap(I.trunk, tl); } });
 }
 var SIM_TREE=3560;
 function mergeHillGeos(list){ var pos=[], nor=[], idx=[], off=0; list.forEach(function(g){ var gg=g.index?g:g; var P=gg.attributes.position, Nn=gg.attributes.normal; for(var j=0;j<P.count;j++){ pos.push(P.getX(j),P.getY(j),P.getZ(j)); nor.push(Nn.getX(j),Nn.getY(j),Nn.getZ(j)); }
