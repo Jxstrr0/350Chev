@@ -120,7 +120,7 @@ function swSource(page) {
    Sounds alone hash as they always did, so adding models/ only changes the name once. */
 function soundsHash() {
   const h = require("crypto").createHash("sha256");
-  for (const dir of ["sounds", "models"]) {   /* models/ (Full / Ultra props) is cached the same way */
+  for (const dir of ["sounds", "sounds/announcer", "models"]) {   /* models/ (Full / Ultra props) and the announcer's lines are cached the same way */
     const d = path.join(ROOT, dir);
     if (fs.existsSync(d)) for (const n of fs.readdirSync(d).sort()) { const st = fs.statSync(path.join(d, n)); if (st.isFile()) h.update((dir === "sounds" ? "" : dir + "/") + n + "\0" + st.size + "\0"); }
   }

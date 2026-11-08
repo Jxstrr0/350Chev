@@ -226,6 +226,7 @@ function dragStart(){
   n2oStart();
   ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);
   if(env.race==="night")rnRace();   // race night: the rival in the other lane
+  annPass();   // the announcer: the night and the round, then the matchup (src/app/announcer.js)
   // phone: bring the button and the live numbers up to the top of the panel, clear of the tab bar, with room for the HUD to grow
   if(!document.documentElement.classList.contains("desk"))setTimeout(()=>{try{$("dragCtl").scrollIntoView({block:"start",behavior:"smooth"});}catch(e){}},60);
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("dragCtl").style.display="";$("dragBtn").dataset.k="";dragBtnText("HOLD TO BURN OUT","tap to skip straight to the line");$("dragBtn").disabled=false;$("dragLive").innerHTML="";shudStart();
@@ -237,11 +238,13 @@ function dragStart(){
   const step=()=>{const now=performance.now();const dt=(now-DR.last)/1000;DR.last=now;const st=DR.auto?dragAutoStep(now):d.step(dt);const R=DR.race;
     {const dn=!!st.done,fl=!!DR.failed;DR.hudOn=dn!==DR.hudD||st.phase!==DR.hudPh||fl!==DR.hudF||now-(DR.hudT||0)>=100;if(DR.hudOn){DR.hudT=now;DR.hudD=dn;DR.hudPh=st.phase;DR.hudF=fl;}}   // phones: the live HUD redraws at ~10 Hz; a phase change, a failure and the finish go through at once
     if(R&&st.phase==="staged"&&st.rolled&&R.tree0==null)R.tree0=now+1200+Math.random()*1800;
+    if(st.phase==="staged"&&st.rolled)annStaged();else if(st.phase==="run")annSpin(st);
     const dtT=R&&R.tree0!=null?(now-R.tree0)/1000:-1;if(R&&dtT>=1.5&&R.green==null)R.green=R.tree0+1500;
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
     if(st.phase==="run"&&!DR.failed&&(st.t>DR.breakAt||(st.overrev>1.12&&res.overrev&&!res.overrev.survived))){dragBreak();st.done=true;st.phase="done";}
     if(DR.pb===undefined&&(st.phase==="shutdown"||st.phase==="done")){DR.pb=dragPbCheck(st.marks.find(m=>m.n==="1/4 mi"));if(DR.pb)ENGINE_VIS.stripPb(DR.pb.kind);}
     if(DR.night)rnFrame(now,st,dtT);
+    if(DR.failed||st.phase==="shutdown"||st.phase==="done")annResult(st);   // after rnFrame: the night's verdict is in
     {const pre=st.phase==="burnout"||(st.phase==="staged"&&!st.rolled);const ox=R?(pre?st.x:oppX(now)):0;const ov=dt>0?Math.max(0,(ox-DR.lox)/dt):0;const acc=dt>0?(st.v-DR.lv)/dt:0;DR.lv=st.v;DR.lox=ox;
       const m4=st.phase==="shutdown"||st.phase==="done"?st.marks.find(m=>m.n==="1/4 mi"):null;
       // test & tune heads-up: the other lane's RT once it leaves, its ET/MPH once it's through the traps, and the same verdict as the slip
@@ -303,6 +306,7 @@ function dragGo(now){const d=DR.d;if(d.st.phase!=="staged")return;const R=DR.rac
   if(R){if(R.green==null){R.foul=true;R.rt0=R.tree0!=null?+((now-(R.tree0+1500))/1000).toFixed(3):-9.999;}
     else{let rt=(now-R.green)/1000;if(DR.veh.transBrake==="trans_brake")rt=Math.max(0.001,rt-0.020);   // a trans-brake lets go quicker and the same every time
       R.rt0=+rt.toFixed(3);}}
+  annLight(R);
   d.launch();DR.last=now;buzz([30]);}
 function dragPress(){if(!DR||!DR.d||DR.failed)return;const d=DR.d,st=d.st,now=performance.now();
   if(DR.auto&&(st.phase==="burnout"||st.phase==="staged"||st.phase==="run")){dragTakeOver();return;}
@@ -369,7 +373,7 @@ function dragFinish(){
     const won=!failed&&mine!=null&&(theirs==null||mine<theirs);r.race={name:R.name,rt:R.rt0,oppRt:+R.rt.toFixed(3),oppEt:R.et,oppMph:R.mph,foul:R.foul,won,margin:mine!=null&&theirs!=null?+(theirs-mine).toFixed(3):null};}
   if(failed&&!r.broke&&(DR.failKind==="turbo"||DR.failKind==="manifold"))r.broke=DR.failKind;
   if(r.race)r.race.om=dhudOppMarks(DR.race);r.at=Date.now();shudStop(2200);   // the slip prints both lanes' splits
-  if(DR.night&&same)rnAfterPass(r,failed);
+  if(DR.night&&same){rnAfterPass(r,failed);annNight(DR.night.stage);}
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
   if(same)pbPass(r,failed);
   if(DR.veh&&DR.veh.dlCap)r.swap=swapTag();
