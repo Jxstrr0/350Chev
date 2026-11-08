@@ -2,6 +2,7 @@
 const chart=$("chart");const curves={power:true,torque:true,boost:false,ve:false,egt:false,base:false};
 let envStdShown=null;
 function renderEnv(){
+  evWarmSoon();   /* warm the event's scene and shaders while the setup screen is up (warm.js) */
   const e=S.env,t=e.testType;let h="";
   const sl=(k,l,min,max,step,unit,val)=>`<div class="env"><div class="lbl"><span>${l}</span><b id="ev-${k}" class="tap" data-enum="${k}" data-unit="${unit}">${val}${unit}</b></div><div class="srow"><button class="nud" data-enud="-1" data-ek="${k}">−</button><input type="range" id="er-${k}" data-e="${k}" min="${min}" max="${max}" step="${step}" value="${val}"><button class="nud" data-enud="1" data-ek="${k}">+</button></div></div>`;
   if(career()&&!trackEvt(t)){const ce=simEnv(),std=isStdCell(ce);envStdShown=std;

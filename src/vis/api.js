@@ -19,6 +19,23 @@ function sceneFree(n){
   else if(n==="pull") PULL=pullInit(); else if(n==="bog") BOG=bogInit(); else if(n==="boat") BOAT=boatInit();
   else { var lk=SALT.look; SALT=saltInit(); SALT.look=lk; }   /* the look the app chose for the next run stays */
 }
+/* event warm-up (ENGINE_VIS.warm): the first frame of an event used to stall on its shader compiles, once per page load. While the event's
+   setup screen is up the app hands over a still frame like the run's first; the scene and the car are built through the event's own
+   setter, every material is compiled for the target the event draws into (the composer's buffer off Lite, the screen on Lite and the
+   hill), and the event is switched off again before any frame is drawn. With the error check off (init) the browser links the programs
+   in the background, so the call itself is short. WARM.k remembers what is already warm; a tier change or a rebuilt world warms again. */
+var WARM={k:{}, rt:null};
+function warmTarget(kind){
+  if(GFX==="lite" || kind==="hill" || !(THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass)) return null;
+  if(!WARM.rt) WARM.rt=new THREE.WebGLRenderTarget(4, 4, {minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat});
+  return WARM.rt;
+}
+function warmScene(kind, o){   /* the scene the frame o draws in, if it is built (road and hill go by the track the frame names) */
+  var X=kind==="strip"?STRIP:kind==="pull"?PULL:kind==="bog"?BOG:kind==="boat"?BOAT:kind==="salt"?SALT:kind==="oval"?OVAL:null;
+  if(X) return X.built ? X.scene : null;
+  if(kind==="hill") return HILL.W&&HILL.W.T===(o&&o.course)&&HILL.W.tier===GFX ? HILL.W.scene : null;
+  var W=o&&o.track&&ROAD.worlds[o.track.id]; return W ? W.scene : null;
+}
 function freeOthers(keep){ if(GFX!=="lite") return; ["strip","pull","bog","boat","salt"].forEach(function(n){ if(n!==keep) sceneFree(n); }); }
 const ENGINE_VIS = {
 
@@ -42,6 +59,10 @@ const ENGINE_VIS = {
     renderer.toneMappingExposure=0.95;
     renderer.shadowMap.enabled=true;
     renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    /* the shader error check reads every program's link status straight after linking, which makes the browser finish each compile on the
+       spot, one after another. Off on the live site, so programs link in parallel and the warm-up above runs in the background; a local
+       copy (localhost, a file, or ?shaders=1) keeps the check and its console errors. */
+    try{ renderer.debug.checkShaderErrors=/^(localhost|127\.0\.0\.1|)$/.test(location.hostname) || /[?&]shaders=1/.test(location.search); }catch(e){}
     try{ MAXANISO=Math.min(8, renderer.capabilities.getMaxAnisotropy()); }catch(e){ MAXANISO=4; }
 
     scene=new THREE.Scene();
@@ -87,6 +108,24 @@ const ENGINE_VIS = {
     return ENGINE_VIS;
   },
 
+  /* event warm-up, see WARM above: kind = strip | pull | bog | boat | salt | road | hill | oval, o = a still frame shaped like the run's first.
+     Does nothing while an event or the teardown owns the canvas. Returns true when something was compiled. */
+  warm: function(kind, o){
+    var set={strip:ENGINE_VIS.setStrip, pull:ENGINE_VIS.setPull, bog:ENGINE_VIS.setBog, boat:ENGINE_VIS.setBoat, salt:ENGINE_VIS.setSalt,
+             road:ENGINE_VIS.setRoad, hill:ENGINE_VIS.setHill, oval:ENGINE_VIS.setOval}[kind];
+    if(!renderer || !set || ENGINE_VIS.eventScene() || TD.on || (TROPHY.on&&TROPHY.built) || PITS.on) return false;
+    var sc=warmScene(kind, o); if(sc && WARM.k[kind+"|"+GFX+"|"+sc.uuid]) return false;   /* already warm: nothing to build or compile */
+    var ok=false, rt=renderer.getRenderTarget();
+    try{ set(Object.assign({}, o||{}, {on:true, dt:0.016})); }catch(e){}   /* builds the world and the car exactly as Go will (a frame field it trips on still leaves the world built) */
+    try{
+      sc=warmScene(kind, o); var cam={strip:STRIP, pull:PULL, bog:BOG, boat:BOAT, salt:SALT, oval:OVAL, hill:HILL, road:ROAD}[kind].cam;
+      if(sc && cam){ sc.updateMatrixWorld(true); renderer.setRenderTarget(warmTarget(kind)); renderer.compile(sc, cam); WARM.k[kind+"|"+GFX+"|"+sc.uuid]=1; ok=true; }
+    }catch(e){}
+    try{ renderer.setRenderTarget(rt); }catch(e){}
+    try{ set({on:false}); }catch(e){}
+    return ok;
+  },
+  warmed: function(){ return Object.keys(WARM.k); },   /* harness */
   reframe: function(){ frameEngine(); },
   /* heat map: zones = [{zone, r,g,b, amount, pulse}] or null to clear */
   setHeat: function(zones){

@@ -79,6 +79,7 @@ html.desk #stripCap{left:18px;top:16px}
 #app.mini #hud .brand small{display:none}
 #app.mini #rpmbox b{font-size:24px}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#gl{transition:opacity .32s ease-out}#gl.evcut{opacity:0;transition:none}   /* entering an event: black for a frame, then fade in (vis/loop.js evCut) */
 #hud{position:absolute;left:0;right:0;top:0;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:space-between;align-items:flex-start;pointer-events:none;background:linear-gradient(180deg,rgba(20,20,19,.85),rgba(20,20,19,0))}
 #hud .brand{flex:none;font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);line-height:1}
 #hud .brand small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.06em;color:var(--muted);margin-top:3px}
@@ -19488,6 +19489,17 @@ function fpsCount(now){
   if(now-w.t0>=500){ fpsStat={fps:w.n*1000/(now-w.t0), ms:(now-w.t0)/w.n}; w.t0=now; w.n=0; }
 }
 
+/* entering an event: a clean cut instead of a stutter. The frame an event scene first owns the canvas draws nothing and the view goes
+   black (#gl.evcut); the event's first frame (any texture upload or shader compile left after the warm-up) draws behind the black, and
+   the frame after that the view fades back in (style.css). Leaving an event, the pits and the trophy room keep the plain cut. */
+var EVCUT={last:"", n:0};
+function evCut(){
+  var es=ENGINE_VIS.eventScene(), was=EVCUT.last; EVCUT.last=es;
+  if(es && !was && es!=="pits" && es!=="trophy"){ EVCUT.n=2; canvasEl.classList.add("evcut"); return true; }
+  if(EVCUT.n>0 && --EVCUT.n===0) canvasEl.classList.remove("evcut");
+  if(!es && canvasEl.classList.contains("evcut")){ EVCUT.n=0; canvasEl.classList.remove("evcut"); }
+  return false;
+}
 function loop(now){
   rafId=requestAnimationFrame(loop);
   if(!renderer) return;
@@ -19501,6 +19513,7 @@ function loop(now){
   if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
+  if(evCut()) return;   /* entering an event: this frame only blacks the view out, the event draws from the next one */
   if(ROAD.on && ROAD.W){ if(ROAD.minMs && now-ROAD.lastR<ROAD.minMs && now>=ROAD.lastR) return; ROAD.lastR=now; roadRender(); return; }
   if(HILL.on && HILL.W){ hillRender(); return; }
   if(OVAL.on && OVAL.built){ ovalRender(); return; }
@@ -29010,6 +29023,23 @@ function sceneFree(n){
   else if(n==="pull") PULL=pullInit(); else if(n==="bog") BOG=bogInit(); else if(n==="boat") BOAT=boatInit();
   else { var lk=SALT.look; SALT=saltInit(); SALT.look=lk; }   /* the look the app chose for the next run stays */
 }
+/* event warm-up (ENGINE_VIS.warm): the first frame of an event used to stall on its shader compiles, once per page load. While the event's
+   setup screen is up the app hands over a still frame like the run's first; the scene and the car are built through the event's own
+   setter, every material is compiled for the target the event draws into (the composer's buffer off Lite, the screen on Lite and the
+   hill), and the event is switched off again before any frame is drawn. With the error check off (init) the browser links the programs
+   in the background, so the call itself is short. WARM.k remembers what is already warm; a tier change or a rebuilt world warms again. */
+var WARM={k:{}, rt:null};
+function warmTarget(kind){
+  if(GFX==="lite" || kind==="hill" || !(THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass && THREE.ShaderPass)) return null;
+  if(!WARM.rt) WARM.rt=new THREE.WebGLRenderTarget(4, 4, {minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat});
+  return WARM.rt;
+}
+function warmScene(kind, o){   /* the scene the frame o draws in, if it is built (road and hill go by the track the frame names) */
+  var X=kind==="strip"?STRIP:kind==="pull"?PULL:kind==="bog"?BOG:kind==="boat"?BOAT:kind==="salt"?SALT:kind==="oval"?OVAL:null;
+  if(X) return X.built ? X.scene : null;
+  if(kind==="hill") return HILL.W&&HILL.W.T===(o&&o.course)&&HILL.W.tier===GFX ? HILL.W.scene : null;
+  var W=o&&o.track&&ROAD.worlds[o.track.id]; return W ? W.scene : null;
+}
 function freeOthers(keep){ if(GFX!=="lite") return; ["strip","pull","bog","boat","salt"].forEach(function(n){ if(n!==keep) sceneFree(n); }); }
 const ENGINE_VIS = {
 
@@ -29033,6 +29063,10 @@ const ENGINE_VIS = {
     renderer.toneMappingExposure=0.95;
     renderer.shadowMap.enabled=true;
     renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    /* the shader error check reads every program's link status straight after linking, which makes the browser finish each compile on the
+       spot, one after another. Off on the live site, so programs link in parallel and the warm-up above runs in the background; a local
+       copy (localhost, a file, or ?shaders=1) keeps the check and its console errors. */
+    try{ renderer.debug.checkShaderErrors=/^(localhost|127\.0\.0\.1|)$/.test(location.hostname) || /[?&]shaders=1/.test(location.search); }catch(e){}
     try{ MAXANISO=Math.min(8, renderer.capabilities.getMaxAnisotropy()); }catch(e){ MAXANISO=4; }
 
     scene=new THREE.Scene();
@@ -29078,6 +29112,24 @@ const ENGINE_VIS = {
     return ENGINE_VIS;
   },
 
+  /* event warm-up, see WARM above: kind = strip | pull | bog | boat | salt | road | hill | oval, o = a still frame shaped like the run's first.
+     Does nothing while an event or the teardown owns the canvas. Returns true when something was compiled. */
+  warm: function(kind, o){
+    var set={strip:ENGINE_VIS.setStrip, pull:ENGINE_VIS.setPull, bog:ENGINE_VIS.setBog, boat:ENGINE_VIS.setBoat, salt:ENGINE_VIS.setSalt,
+             road:ENGINE_VIS.setRoad, hill:ENGINE_VIS.setHill, oval:ENGINE_VIS.setOval}[kind];
+    if(!renderer || !set || ENGINE_VIS.eventScene() || TD.on || (TROPHY.on&&TROPHY.built) || PITS.on) return false;
+    var sc=warmScene(kind, o); if(sc && WARM.k[kind+"|"+GFX+"|"+sc.uuid]) return false;   /* already warm: nothing to build or compile */
+    var ok=false, rt=renderer.getRenderTarget();
+    try{ set(Object.assign({}, o||{}, {on:true, dt:0.016})); }catch(e){}   /* builds the world and the car exactly as Go will (a frame field it trips on still leaves the world built) */
+    try{
+      sc=warmScene(kind, o); var cam={strip:STRIP, pull:PULL, bog:BOG, boat:BOAT, salt:SALT, oval:OVAL, hill:HILL, road:ROAD}[kind].cam;
+      if(sc && cam){ sc.updateMatrixWorld(true); renderer.setRenderTarget(warmTarget(kind)); renderer.compile(sc, cam); WARM.k[kind+"|"+GFX+"|"+sc.uuid]=1; ok=true; }
+    }catch(e){}
+    try{ renderer.setRenderTarget(rt); }catch(e){}
+    try{ set({on:false}); }catch(e){}
+    return ok;
+  },
+  warmed: function(){ return Object.keys(WARM.k); },   /* harness */
   reframe: function(){ frameEngine(); },
   /* heat map: zones = [{zone, r,g,b, amount, pulse}] or null to clear */
   setHeat: function(zones){
@@ -31137,7 +31189,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.88.0";
+const VERSION="1.76.89.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -31847,6 +31899,7 @@ $("saveBp").addEventListener("click",()=>{if(S.blueprints.length>=12){toast("Blu
 const chart=$("chart");const curves={power:true,torque:true,boost:false,ve:false,egt:false,base:false};
 let envStdShown=null;
 function renderEnv(){
+  evWarmSoon();   /* warm the event's scene and shaders while the setup screen is up (warm.js) */
   const e=S.env,t=e.testType;let h="";
   const sl=(k,l,min,max,step,unit,val)=>`<div class="env"><div class="lbl"><span>${l}</span><b id="ev-${k}" class="tap" data-enum="${k}" data-unit="${unit}">${val}${unit}</b></div><div class="srow"><button class="nud" data-enud="-1" data-ek="${k}">−</button><input type="range" id="er-${k}" data-e="${k}" min="${min}" max="${max}" step="${step}" value="${val}"><button class="nud" data-enud="1" data-ek="${k}">+</button></div></div>`;
   if(career()&&!trackEvt(t)){const ce=simEnv(),std=isStdCell(ce);envStdShown=std;
@@ -39702,6 +39755,29 @@ setInterval(perfPoll,500);
 $("gfxSeg").addEventListener("click",e=>{if(e.target.closest("[data-gfx]")){PERF.manual=true;perfReset(true);}});
 $("gfxAutoSeg").addEventListener("click",e=>{const b=e.target.closest("[data-gauto]");if(!b)return;S.gfxAuto=b.dataset.gauto==="1";PERF.dropped=PERF.manual=false;perfReset(true);perfUi();save();
   toast(S.gfxAuto?"AUTO-ADJUST ON · lowers graphics if it stutters":"AUTO-ADJUST OFF");});
+/* ===================== EVENT WARM-UP: no stall on Go ===================== */
+/* The first run of each event used to freeze for a moment before the car appeared: the graphics card was compiling that event's shaders
+   (the small programs that draw each surface), once per page load. While an event's setup screen is up and nothing is running, this hands
+   the 3D view a still frame shaped like the run's first one (ENGINE_VIS.warm), so the track and the car are built and their shaders compiled
+   ahead of time. renderEnv calls evWarmSoon; it waits for the screen to settle, and the 3D side skips a scene it has already warmed. */
+let evWarmT=0;
+function evWarmSoon(){clearTimeout(evWarmT);evWarmT=setTimeout(evWarmNow,900);}
+/* the still frame for the event on the setup screen: [scene, frame], or null for the dyno tests */
+function evWarmFrame(t){const night=!!S.night,color=carPaint();
+  if(t==="drag"){const v=dragVeh();return["strip",{phase:"burnout",x:0,v:0,ox:0,ov:0,acc:0,body:v.body,wbar:!!v.wbar,tyreIn:v.tyreDia,color,hw:stripHw(S.cfg),tree:{},launch:{},rpm:900,redline:v.redline||S.cfg.redline,gear:1,noPost:true}];}
+  if(t==="pull_sled"){const k=pullEnvFix(),v=pullVeh(k);return["pull",{phase:"stage",x:0,v:0,boxFrac:0,slip:0,vehicle:SIM.PULL_CLASSES[k].veh.kind,cls:k,night,hitch:v.hitch,ballast:v.ballast,tyre:v.tyre,throttle:0,rpm:800,distFt:0}];}
+  if(t==="bog"){const k=bogEnvFix(),v=bogVeh(k),n=bogNight(bogSeed(k));return["bog",{phase:"stage",x:0,v:0,cls:k,tyre:v.tyre,color,night,len:n.len,cons:n.cons,pit:{seed:n.seed,len:n.len,cons:n.cons,depth:n.depth,hz:n.hz},throttle:0,rpm:800}];}
+  if(t==="boat"){const k=boatEnvFix(),C0=SIM.BOAT_CLASSES[k];return["boat",{phase:"tree",cls:k,hull:C0.hull,drive:C0.drive,night,water:{wind:0,chop:0},tree:{},me:{x:0,v:0,color},opp:{x:0,v:0,color:0x2a6db5}}];}
+  if(t==="salt"){const k=saltEnvFix(),v=saltVeh(k);return["salt",{phase:"stage",x:0,v:0,body:k,aero:v.aero,color,night,throttle:0,rpm:800}];}
+  if(t==="road")return["road",{track:SIM.roadTrack(S.env.roadTrk),s:0,v:0,ch:roadOpt().ch,night,cam:S.env.roadCam||"auto",pre:true}];
+  if(t==="race24")return["road",{track:SIM.roadTrack(e24EnvFix().e24Trk),s:0,v:0,ch:roadOpt().ch,night:false,cam:"auto",pre:true}];
+  if(t==="hill"){const o=hillOpt();return["hill",{course:SIM.hillCourse(),s:0,v:0,ch:o.ch,aero:o.aero,color,cam:S.env.hillCam||"auto",pre:true}];}
+  if(t==="oval")return["oval",{track:SIM.ovalTrack(ovalTk()),cars:[{s:0,v:0,color,me:true,num:1}],pre:true,cam:"auto",night}];
+  return null;}
+function evWarmNow(){
+  if(testing||curTab!=="events"||document.hidden||typeof ENGINE_VIS==="undefined"||!ENGINE_VIS.warm)return;
+  let w=null;try{w=evWarmFrame(S.env.testType);}catch(e){return;}
+  if(w)try{ENGINE_VIS.warm(w[0],w[1]);}catch(e){}}
 /* ===================== SOUND & IDLE ===================== */
 let soundReady=false;
 /* one-shot sound events (start, fail, bov) only when sound is on: event("start") builds the graph and sets it running */
