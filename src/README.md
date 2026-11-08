@@ -131,7 +131,7 @@ Files added after the map above was written (their place in the order is in `man
 | `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders; the rev glow, failure crack overlay and venue tint styling; the gestures (grabber, compare card); the results card and holo sheen. Last CSS file, so it overrides the rest |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
 | `vis/props.js` | 8b. workshop polish for Full / Ultra: floor details, props, lamps |
-| `vis/models.js` | 8c. glTF model props from `models/` dressed into the polish layer on Full / Ultra (`MODEL_FILES`, `modelSpots`, `modelGet`, also used by the pull track and the pits) |
+| `vis/models.js` | 8c. glTF model props from `models/` dressed into the polish layer on Full / Ultra (`MODEL_FILES`, `modelSpots`, `modelGet`, also used by the pull track, the pits and Pikes Peak; the `hill-*` files come from `tools/blender/hill-props.py`) |
 | `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |
 | `vis/photo.js` | photo mode camera, lighting and backdrop presets, still frame out |
 | `app/boat.js` | boat drags UI (BT): eight-boat ladder nights |
