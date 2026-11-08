@@ -216,7 +216,14 @@ html:not(.desk) .seg.segbody button small{display:none}
 .envgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 14px;margin-bottom:4px}   /* minmax(0,…): a long line under one slider must not widen its column and push the other off the screen */
 .su-grid{grid-template-columns:1fr}.su-grid .nud{flex-basis:44px;height:44px}.su-grid input[type=range]{height:44px}
 .lbl .su-rst{min-height:44px;padding:0 14px;font-size:12px}
-.su-live{margin:2px 0 6px}.su-bal{display:flex;align-items:center;gap:8px;font-family:var(--body);font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.su-live{margin:2px 0 6px}
+/* the read-out sits over the sliders and stays pinned to the top of the panel while they scroll (top is counted inside
+   #panel's 16 px top padding, so -4 px leaves room for the sheet's grab handle), the change against stock in a coloured pill */
+#envBox .advf{overflow:clip}   /* clip, not hidden: same rounded corners, but sticky still finds #panel */
+#envBox .su-live:not(:empty){position:sticky;top:-4px;z-index:5;margin:2px -16px 8px;padding:8px 16px 6px;background:var(--soot);border-bottom:1px solid var(--rule);box-shadow:0 8px 16px -10px rgba(0,0,0,.45)}
+html.desk #envBox .su-live:not(:empty){top:-16px}
+.su-row b.su-up,.su-row b.su-dn,.su-row b.su-eq{display:inline-block;padding:1px 8px;border-radius:6px;font-family:var(--mono);font-size:14px;background:var(--panel2)}
+.su-row b.su-up{background:color-mix(in srgb,var(--good) 20%,transparent)}.su-row b.su-dn{background:color-mix(in srgb,var(--crit) 20%,transparent)}.su-row b.su-eq{color:var(--muted)}.su-bal{display:flex;align-items:center;gap:8px;font-family:var(--body);font-size:12px;letter-spacing:.06em;color:var(--muted)}
 .su-track{position:relative;flex:1;height:12px;border-radius:8px;border:1px solid var(--rule);background:linear-gradient(90deg,var(--info),var(--panel2) 38%,var(--panel2) 62%,var(--warn))}
 .su-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--dim)}.su-pin{position:absolute;top:-4px;width:6px;height:18px;margin-left:-3px;border-radius:3px;background:var(--orange);box-shadow:0 0 0 2px var(--panel);transition:left .15s}
 .su-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;margin:8px 0 0;font-size:13px}

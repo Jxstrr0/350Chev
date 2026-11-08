@@ -22,7 +22,13 @@ var MODEL_FILES = {
   toolbox:  "models/toolbox.glb",
   handtruck:"models/hand-truck.glb",
   fuelcan:  "models/plastic-jerrycan.glb",
-  tyre:     "models/old-tyre.glb"
+  tyre:     "models/old-tyre.glb",
+  /* Pikes Peak (vis/hill.js, hillModels), made in Blender by tools/blender/hill-props.py */
+  hillSummit: "models/hill-summit.glb",
+  hillStart:  "models/hill-start.glb",
+  hillMarshal:"models/hill-marshal.glb",
+  hillRock:   "models/hill-rock.glb",
+  hillFir:    "models/hill-fir.glb"
 };
 /* placements: [key, x, y, z, turn] in scene units; the bench top is at 9.05 */
 function modelSpots(a){
