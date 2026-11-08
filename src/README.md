@@ -147,6 +147,7 @@ Files added after the map above was written (their place in the order is in `man
 | `app/shopsb.js` | the sandbox Shop: bench and parts catalogue |
 | `app/folds.js` | Settings folds, open state remembered in `S.folds` |
 | `app/perf.js` | auto-adjust graphics: steps one tier down (ultra > full > lite) when the frame rate stays low |
+| `app/warm.js` | event warm-up: while an event's setup screen is up, builds its scene and compiles its shaders (`ENGINE_VIS.warm`) so Go doesn't stall |
 
 To find code, grep `src/`: `grep -rn "function pullRun" src/`.
 
