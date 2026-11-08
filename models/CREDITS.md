@@ -1,7 +1,7 @@
 # Model credits
 
-3D models used by the workshop (`src/vis/models.js`) the pull track (`PULL_PROPS` in `src/vis/pull.js`) and the drag pits (`PITS_MODELS` in `src/vis/pits.js`) on Full and Ultra graphics. Lite never loads them.
-Each one is packed for the game with `tools/pack-model.py`: textures cut to 256 px (normal maps 128 px) and vertex data quantized.
+3D models used by the workshop (`src/vis/models.js`), the pull track (`PULL_PROPS` in `src/vis/pull.js`), the drag pits (`PITS_MODELS` in `src/vis/pits.js`) and Pikes Peak (`hillModels` in `src/vis/hill.js`) on Full and Ultra graphics. Lite never loads them.
+Each downloaded one is packed for the game with `tools/pack-model.py`: textures cut to 256 px (normal maps 128 px) and vertex data quantized. The `hill-*` files are our own, modelled in Blender by `tools/blender/hill-props.py` (flat colours, no textures); edit that script and re-run it to change them.
 Keep this file in step with the folder: every model listed with its source, author and licence.
 
 | File | Model | Author | Source | Licence |
@@ -19,5 +19,10 @@ Keep this file in step with the folder: every model listed with its source, auth
 | `hand-truck.glb` | Hand Truck | Mutanzom3D | [Poly Haven](https://polyhaven.com/a/hand_truck) | CC0 |
 | `plastic-jerrycan.glb` | Plastic Jerrycan | Ulan Cabanilla | [Poly Haven](https://polyhaven.com/a/plastic_jerrycan) | CC0 |
 | `old-tyre.glb` | Old Tyre | MP | [Poly Haven](https://polyhaven.com/a/old_tyre) | CC0 |
+| `hill-summit.glb` | Summit visitor centre | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
+| `hill-start.glb` | Start gantry and timing hut | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
+| `hill-marshal.glb` | Corner marshal post | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
+| `hill-rock.glb` | Granite boulder | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
+| `hill-fir.glb` | Fir, two levels of detail | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
 
 CC0 needs no credit, but we give it anyway. A CC-BY model must be listed here with its author and a link, and the same line goes in the game's credits.
