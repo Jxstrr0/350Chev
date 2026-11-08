@@ -121,5 +121,6 @@ app/help.js
 app/pwa.js
 app/folds.js
 app/perf.js
+app/warm.js
 app/boot.js
 html/end.html

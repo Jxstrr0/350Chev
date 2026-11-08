@@ -281,6 +281,17 @@ function fpsCount(now){
   if(now-w.t0>=500){ fpsStat={fps:w.n*1000/(now-w.t0), ms:(now-w.t0)/w.n}; w.t0=now; w.n=0; }
 }
 
+/* entering an event: a clean cut instead of a stutter. The frame an event scene first owns the canvas draws nothing and the view goes
+   black (#gl.evcut); the event's first frame (any texture upload or shader compile left after the warm-up) draws behind the black, and
+   the frame after that the view fades back in (style.css). Leaving an event, the pits and the trophy room keep the plain cut. */
+var EVCUT={last:"", n:0};
+function evCut(){
+  var es=ENGINE_VIS.eventScene(), was=EVCUT.last; EVCUT.last=es;
+  if(es && !was && es!=="pits" && es!=="trophy"){ EVCUT.n=2; canvasEl.classList.add("evcut"); return true; }
+  if(EVCUT.n>0 && --EVCUT.n===0) canvasEl.classList.remove("evcut");
+  if(!es && canvasEl.classList.contains("evcut")){ EVCUT.n=0; canvasEl.classList.remove("evcut"); }
+  return false;
+}
 function loop(now){
   rafId=requestAnimationFrame(loop);
   if(!renderer) return;
@@ -294,6 +305,7 @@ function loop(now){
   if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
+  if(evCut()) return;   /* entering an event: this frame only blacks the view out, the event draws from the next one */
   if(ROAD.on && ROAD.W){ if(ROAD.minMs && now-ROAD.lastR<ROAD.minMs && now>=ROAD.lastR) return; ROAD.lastR=now; roadRender(); return; }
   if(HILL.on && HILL.W){ hillRender(); return; }
   if(OVAL.on && OVAL.built){ ovalRender(); return; }
