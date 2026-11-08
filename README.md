@@ -2,7 +2,7 @@
 
 Design, tune and race engines in the browser. Prairie Engine Works is a physics-based engine builder with a career mode: pick a layout, choose the parts, put it on the dyno, then take it to the strip, the sled, the salt or the track.
 
-**Play it: <https://jxstrr0.github.io/350Chev/>**
+**Play it: <https://pew.longlight.games/>**
 
 It runs on phones and desktops. Install it from the browser ("Add to Home Screen" or the install button) and it works offline.
 

@@ -31077,7 +31077,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.87.0";
+const VERSION="1.76.87.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -36734,8 +36734,9 @@ function buRestore(text,err){
   closeSheet();applyLoaded(r.data.save,"Backup restored");buPersist();}
 
 /* ===================== SAVE SAFETY: backup files, keep-my-storage, the backup reminder (1.76.66) =====================
-   Every Longlight game lives at jxstrr0.github.io, so they share one browser storage pot. When a phone runs short of
-   space the browser may clear all of it at once. Three things guard against that:
+   The game lives at its own address (pew.longlight.games), so it has its own browser storage pot; saves from before the
+   move stay on the old shared jxstrr0.github.io origin, and the pew2- prefix keeps them apart from the other games there.
+   When a phone runs short of space the browser may clear the site's storage at once. Three things guard against that:
      buPersist()   asks the browser to keep this site's storage (navigator.storage.persist). Once per page load, only after a
                    save write with a game going (save() in app/state.js calls it) or after a backup/restore. Firefox may ask
                    the player; Chrome and Safari decide quietly. Missing API: nothing happens.
