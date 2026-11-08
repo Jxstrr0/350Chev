@@ -42,26 +42,26 @@ const suLapCache=new Map();
 function suBalWord(b){return b>0.2?"understeer":b<-0.2?"oversteer":"neutral";}
 function suLapFor(p,o,trk){const k=cfgHash(S.cfg)+"|"+o.ch+"|"+o.tyre+"|"+o.finalK+"|"+trk+"|"+JSON.stringify(o.setup||0)+"|"+(o.rk||"")+"|"+(o.dtCap||0)+"|"+(o.dtId||"");let r=suLapCache.get(k);
   if(!r){if(suLapCache.size>60)suLapCache.clear();const L=SIM.lapSim(p,o,trk);let w=null;for(const a of L.apex)if(!w||a.kmh<w.kmh)w=a;r={t:L.time,low:w&&w.name,ay:L.ayPk};suLapCache.set(k,r);}return r;}
-/* the live read-out under the sliders: balance bar, lap-time change against stock (Road) or the car's figures (Hill), a plain line */
+/* the live read-out over the sliders, pinned to the top of the panel while they scroll (css .su-live): balance bar, lap-time change against stock (Road) or the car's figures (Hill), a plain line */
 function suLive(){const box=$("suLive");if(!box)return;const hill=S.env.testType==="hill";let car,txt="",dl="";
   try{
     if(hill){if(!(quick&&quick.rpms)){box.innerHTML="";return;}const p=hillPrepFor(S.cfg);car=SIM.hillCar(p,hillOpt());const c0=SIM.hillCar(p,Object.assign(hillOpt(),{setup:null}));
       const hk=o=>cfgHash(S.cfg)+"|"+JSON.stringify(o),hp=o=>{const k=hk(o);let t=suLapCache.get(k);if(t===undefined){if(suLapCache.size>60)suLapCache.clear();const q=SIM.hillPass(p,Object.assign({seed:5},o));t=q.time;suLapCache.set(k,t);}return t;};
       const ho=hillOpt(),ta=hp(ho),tb=ho.setup?hp(Object.assign({},ho,{setup:null})):ta,d=ta!=null&&tb!=null?ta-tb:null;
-      dl=`climb <b>${fmtHill(ta)}</b> <b class="${d==null||Math.abs(d)<0.05?"":d<0?"su-up":"su-dn"}">${d==null||Math.abs(d)<0.05?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(1)+" s"}</b> <span class="dim">vs stock · downforce ${car.clA.toFixed(2)} m² · drag ${car.cdA.toFixed(2)} m²</span>`;}
+      dl=`climb <b>${fmtHill(ta)}</b> <b class="${d==null||Math.abs(d)<0.05?"su-eq":d<0?"su-up":"su-dn"}">${d==null||Math.abs(d)<0.05?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(1)+" s"}</b> <span class="dim">vs stock · downforce ${car.clA.toFixed(2)} m² · drag ${car.cdA.toFixed(2)} m²</span>`;}
     else{const o=roadOpt(),q=quick&&quick.rpms?quick:null;if(!q){box.innerHTML="";return;}const p=SIM.roadPrep(S.cfg,q);car=SIM.roadCar(p,o);const trk=S.env.roadTrk;
       const a=suLapFor(p,o,trk),b=o.setup?suLapFor(p,Object.assign({},o,{setup:null}),trk):a,d=a.t-b.t;
-      dl=`lap <b>${fmtLap(a.t,2)}</b> <b class="${Math.abs(d)<0.005?"":d<0?"su-up":"su-dn"}">${Math.abs(d)<0.005?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(2)+" s"}</b> <span class="dim">vs stock setup</span>`;
+      dl=`lap <b>${fmtLap(a.t,2)}</b> <b class="${Math.abs(d)<0.005?"su-eq":d<0?"su-up":"su-dn"}">${Math.abs(d)<0.005?"= stock":(d<0?"−":"+")+Math.abs(d).toFixed(2)+" s"}</b> <span class="dim">vs stock setup</span>`;
       if(b&&a.low&&suBalWord(car.bi)!=="neutral")txt=car.bi>0?`Pushing wide in ${esc(a.low)} — the fronts run out first.`:`The tail steps out on the way out of ${esc(a.low)}.`;
       else txt=`Neutral — front and rear let go together.`;}
   }catch(err){box.innerHTML="";return;}
   const b=car.bi,w=suBalWord(b);if(hill){txt=w==="neutral"?"Neutral — front and rear let go together.":w==="understeer"?"It pushes wide in the tight stuff — the fronts run out first.":"The tail steps out on exit — the rears run out first.";}
-  box.innerHTML=`<div class="su-bal" id="suBal" role="img" aria-label="Balance: ${w}"><span>UNDER</span><div class="su-track"><i class="su-mid"></i><i class="su-pin" style="left:${(50+50*Math.max(-1,Math.min(1,b))).toFixed(1)}%"></i></div><span>OVER</span></div>
+  box.innerHTML=`<div class="su-bal" id="suBal" role="img" aria-label="Balance: ${w}"><span>UNDER</span><div class="su-track"><i class="su-mid"></i><i class="su-pin" style="left:${(50-50*Math.max(-1,Math.min(1,b))).toFixed(1)}%"></i></div><span>OVER</span></div>
     <div class="su-row"><b class="su-w su-${w}">${w==="neutral"?"Neutral":w==="understeer"?"Understeer":"Oversteer"}</b><span>${dl}</span></div><p class="hint su-txt">${txt}</p>`;}
 function suEnvHtml(sl,hill){const e=S.env;suFix(e);
   return `<div class="lbl"><span>Setup</span><button class="chip su-rst" data-su-reset>Reset to stock</button></div>
-    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}${sl("suDf","Differential · open ↔ locked",-100,100,5,"",e.suDf)}${sl("suBb","Brake bias · rear ↔ front",-100,100,5,"",e.suBb)}${sl("suPs","Tyre pressure",24,40,1," psi",e.suPs)}${sl("suRh","Ride height · low ↔ high",-100,100,5,"",e.suRh)}</div>
-    <div id="suLive" class="su-live"></div>${suTuneHtml()}
+    <div id="suLive" class="su-live"></div>
+    <div class="envgrid su-grid">${sl("suSt","Roll stiffness · soft ↔ stiff",0,100,5,"",e.suSt)}${sl("suSp","Roll balance · rear ↔ front",-100,100,5,"",e.suSp)}${sl("suWg","Wing angle · flat ↔ steep",-100,100,5,"",e.suWg)}${sl("suDf","Differential · open ↔ locked",-100,100,5,"",e.suDf)}${sl("suBb","Brake bias · rear ↔ front",-100,100,5,"",e.suBb)}${sl("suPs","Tyre pressure",24,40,1," psi",e.suPs)}${sl("suRh","Ride height · low ↔ high",-100,100,5,"",e.suRh)}</div>${suTuneHtml()}
     <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. A locked diff pushes but drives out hard; an open one turns in but spins a wheel. Stock brakes are set safe and a bit forward: a touch rearward stops shorter, too far and the rears lock. A few psi under stock grips more, but a soft tyre rolls heavy and a heavy car wants more air. Low makes downforce until it bottoms on the bumps${hill?"":" (the street circuit is the roughest)"}. Stock is the chassis as designed.</p>`;}
 $("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;suSet(S.env,null);renderEnv();save();buzz(6);});
 /* ---- saved setups: three named slots of the setup sheet above (S.suTunes in the Test cell, C().suTunes in career), shared by the
