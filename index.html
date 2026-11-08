@@ -42,6 +42,14 @@ setTimeout(function(){if(!fin&&!bad)m.textContent="Still loading… slow connect
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{margin:0;background:var(--soot);color:var(--chalk);font-family:var(--body);font-size:16px;line-height:1.45;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
+/* Phone touch: no double-tap zoom and no hold-to-highlight anywhere in the game.
+   touch-action isn't inherited, so it goes on every element (* has the lowest
+   specificity, so any rule that sets touch-action:none or pan-y still wins).
+   Pinch zoom still works. Text boxes stay selectable so names, search and
+   backup codes can still be typed, copied and pasted. */
+*{touch-action:manipulation}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select,pre,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px solid var(--orange2);outline-offset:2px}
 h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance;letter-spacing:.01em}
@@ -31077,7 +31085,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.87.1";
+const VERSION="1.76.87.2";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
