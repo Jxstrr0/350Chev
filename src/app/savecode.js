@@ -180,8 +180,9 @@ function buRestore(text,err){
   closeSheet();applyLoaded(r.data.save,"Backup restored");buPersist();}
 
 /* ===================== SAVE SAFETY: backup files, keep-my-storage, the backup reminder (1.76.66) =====================
-   Every Longlight game lives at jxstrr0.github.io, so they share one browser storage pot. When a phone runs short of
-   space the browser may clear all of it at once. Three things guard against that:
+   The game lives at its own address (pew.longlight.games), so it has its own browser storage pot; saves from before the
+   move stay on the old shared jxstrr0.github.io origin, and the pew2- prefix keeps them apart from the other games there.
+   When a phone runs short of space the browser may clear the site's storage at once. Three things guard against that:
      buPersist()   asks the browser to keep this site's storage (navigator.storage.persist). Once per page load, only after a
                    save write with a game going (save() in app/state.js calls it) or after a backup/restore. Firefox may ask
                    the player; Chrome and Safari decide quietly. Missing API: nothing happens.
