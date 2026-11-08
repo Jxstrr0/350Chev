@@ -58,6 +58,7 @@ html.desk #stripCap{left:18px;top:16px}
 #app.mini #hud .brand small{display:none}
 #app.mini #rpmbox b{font-size:24px}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#gl{transition:opacity .32s ease-out}#gl.evcut{opacity:0;transition:none}   /* entering an event: black for a frame, then fade in (vis/loop.js evCut) */
 #hud{position:absolute;left:0;right:0;top:0;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px 10px;justify-content:space-between;align-items:flex-start;pointer-events:none;background:linear-gradient(180deg,rgba(20,20,19,.85),rgba(20,20,19,0))}
 #hud .brand{flex:none;font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk);line-height:1}
 #hud .brand small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:.06em;color:var(--muted);margin-top:3px}
