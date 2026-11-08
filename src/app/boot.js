@@ -384,7 +384,7 @@ function boot(){
   advSet($("abSec"),!!(S.advOpen&&S.advOpen.ab));
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewF)viewFree(S.viewF);else if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyAnn();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewF)viewFree(S.viewF);else if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
   if(typeof lgBoot==="function")lgBoot();

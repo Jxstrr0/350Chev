@@ -86,6 +86,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/build.js` | Build tab: `renderBuild`, segRow/sliderRow, SPECS, sheets, blueprints |
 | `app/test.js` | Test and Events tabs: env panel, car bodies/paint/rival looks, test/event picker (`evPickRender`, EV_T), Advanced folds, charts, `renderTest`, dyno tune map editor (MV, `renderMap`) |
 | `app/drag.js` | drag pass driver (DR, `dragStart`/`dragFinish`), strip HUD, timing slip, nitrous, race nights `rn*` |
+| `app/announcer.js` | drag announcer (Ed): line pools, rival engine table, lazy fetch/decode cache, matchup stitcher, `ann*` hooks called from `drag.js`, the Settings toggle |
 | `app/pull.js` | truck pull driver (PR), pull nights, points series |
 | `app/bog.js` | mud bog UI (BR) |
 | `app/road.js` | road test UI (RT) |
