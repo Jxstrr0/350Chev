@@ -108,6 +108,8 @@ Three tiers, `lite`, `full`, `ultra` (`app/perf.js`). Lite is the phone default.
 
 A Web Audio synth derives a voice from the build (firing order, exhaust, intake, mechanical noise). Settings offer **Synth** (your build), **Real** (recordings, the default) or **Blend**, and Lite or Full sound. 72 openly licensed recordings in `sounds/`: engine loops at a measured rpm, pitch-shifted live (every piston layout but the Deltic, plus the rotaries, has its own), and recorded blow-off, backfire and anti-lag one-shots that replace the synth's when loaded; every one is credited in `sounds/CREDITS.md`.
 
+**Drag announcer** (`src/app/announcer.js`, since 1.76.87.0): Ed, an ElevenLabs-generated voice, calls the strip. 143 lines in `sounds/announcer/` (script sheet `docs/announcer-script.csv`): 73 race calls in 33 pools (the night opening, each round, staging, a great, perfect or late light, wheelspin in the first 60 ft, red light, win and loss with close and big margins, the other car breaking, your engine or driveline breaking, break-out, centreline, black flag, PB, a clean time trial, qualified, did not qualify, and how the night ended), plus 70 matchup parts stitched into engine-against-engine calls: aspiration, litres, Hemi or two-stroke, fuel, layout, nitrous ("twin turbo two point oh litre inline four, versus Roots blown eight point two litre Hemi methanol V8"). Every rival car and test & tune name has an engine for the call (`ANN_RIVAL`; flavour only, the sim does not read it). A line never repeats back to back. Only the lines picked for the next pass are fetched and decoded (about 20 kB each; a cache keeps the last 28 decoded); the engine ducks while he talks; a red light, wheelspin or the result cuts off whatever he was saying. Settings › Sound › Drag announcer turns him off.
+
 ### Save system
 
 - Everything lives in the browser's localStorage under five keys: `pew2-save` (the current game, settings included), `pew2-slot1` to `pew2-slot3` (three save slots, `SLOTS`), `pew2-legacy` (Legacy points). All access is wrapped in try/catch.
@@ -140,9 +142,10 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Achievements | 97 in 14 groups | `ACH`, `ACH_GROUPS` |
 | Guided lessons | 17 | `LESSONS` |
 | Engine recordings | 72 (60 loops, 12 one-shots) | `sounds/` |
+| Announcer lines | 143 (73 race calls, 70 matchup parts) | `sounds/announcer/`, `ANN_POOLS`, `ANN_CALL` |
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 
-## Loose ends found in the code (as of 1.76.86.0)
+## Loose ends found in the code (as of 1.76.87.0)
 
 Nothing in `src/` is stubbed or marked unfinished. (The salt flats placeholder in Analysis went in 1.76.75.0: the records already worked out show at once, and a class still being looked up keeps its row with your best.)

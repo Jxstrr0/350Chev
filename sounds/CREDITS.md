@@ -68,6 +68,15 @@ files derived from CC BY sources are CC BY (same version) with the attribution b
 | `bf1.mp3`, `bf2.mp3`, `bf3.mp3`, `bf4.mp3` | Car backfires, reverberant | craigsmith | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/craigsmith/sounds/675723/) | one-shots: 0.01, 1.80, 3.96, 5.02 s, 0.6–0.8 s each, 1639 Hz hum notched |
 | `als1.mp3`, `als2.mp3`, `als3.mp3`, `als4.mp3` | Car anti-lag (raw) | modusmogulus | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/modusmogulus/sounds/797835/) | one-shots: 1.55, 1.76, 2.17, 5.26 s, 0.2–0.25 s each, high-passed at 60 Hz |
 
+## Drag announcer (sounds/announcer/)
+
+143 voice lines for the drag-strip announcer (src/app/announcer.js): 73 race calls (`pew_announcer_pew-ann-0001` to `-0073`) and 70 matchup parts (`pew_announcer_pew-call-0001` to `-0070`) that the game stitches into engine-against-engine calls.
+
+- Generated with ElevenLabs text to speech (model eleven_v4) in November 2026, voice "Ed, the Late Night Announcer" from the ElevenLabs voice library, under Longlight Interactive's ElevenLabs plan, which grants commercial use of the output. Lines written for the game by Kelbo / Longlight Interactive.
+- Take 1 of each line, silence trimmed, converted to mono 48 kbps MP3 at 32 kHz with ffmpeg.
+- The script sheet (line, trigger, text, file name) is `docs/announcer-script.csv`.
+- Total size: about 2.7 MB in 143 files. Loaded only when a drag pass starts with sound and the announcer on, a line at a time.
+
 ## Raw license fields as read on 2026-10-10
 
 - `fs_584878` — https://freesound.org/people/rodrigocswm/sounds/584878/ — Freesound page license link: "Creative Commons 0" → http://creativecommons.org/publicdomain/zero/1.0/
