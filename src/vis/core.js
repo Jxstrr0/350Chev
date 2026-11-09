@@ -1725,7 +1725,7 @@ var heatZones=null, _ndc=new THREE.Vector2(), _ray=new THREE.Raycaster();
 var engBox = new THREE.Box3(new THREE.Vector3(-3,6,-2), new THREE.Vector3(3,12,2));
 var run = { on:false, rpm:0, load:0, fail:false, redline:7000, smooth:70, first:0.05, second:0.85, n:4, angle:0, stroke:86, rodRatio:1.7, cam:40, smoke:0 };
 /* mount dynamics state: roll about the crank axis is a real spring-damper so blips rock and settle */
-var mnt = { roll:0, rollV:0, lope:0, lopeT:0, nz:[0,0,0], buzz:[0,0,0] };
+var mnt = { roll:0, rollV:0, lope:0, lopeT:0, nz:[0,0,0,0], buzz:[0,0,0] };
 var particles=[];
 var camState = { theta:0.72, phi:1.06, r:15, target:new THREE.Vector3(0,7.6,0),
                  auto:true, autoForce:null, idle:0, dragging:false, shake:0 };
