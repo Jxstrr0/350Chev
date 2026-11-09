@@ -156,6 +156,7 @@ function hillFinish(){
   Object.assign(r,{field:rows,place:rows.indexOf(me)+1,of:rows.length,clsName:C0.n,tier:C0.tier,auto:HC.auto&&HC.took==null,took:HC.took,handed:HC.handed||null,chName:SIM.CHASSIS[opt.ch].n,tyreName:SIM.HILL_TYRES[opt.tyre].n,aeroName:SIM.HILL_AERO[opt.aero].n,
     secNames:T.sections.map(s=>s.n),lead:HC.lead?{n:HC.lead.n,t:HC.lead.t,splits:HC.lead.splits}:null});
   if(r.dnf)r.place=rows.indexOf(me)+1;
+  if(typeof crowdAfter==="function")crowdAfter("hill",{broke:!!r.dnf,edge:!!(r.dnf&&r.dnf.kind==="edge")});   // app/ambience.js
   r.suBal=+SIM.hillCar(prep,opt).bi.toFixed(2);if(!r.dnf)suTipHill(r,prep,opt);
   if(same&&!r.dnf&&!ff){const RR=recBucket("hill"),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
   r.wx=wxSnap("hill");const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};

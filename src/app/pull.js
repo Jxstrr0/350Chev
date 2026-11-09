@@ -186,6 +186,7 @@ function pullFinish(){
     PO={k,r1:r,res,env,field:PR.field,fseed:PR.fseed,ev:PR.ev,fmt:PR.fmt,veh:PR.veh,hash:PR.snap.h,snap:PR.snap,hk:PR.hk,n:fulls.length};}
   else if(isPO)PO=null;
   const ctx={k,res,env,field:isPO?P0.field:PR.field,isPO,first:isPO?P0.r1:r,po:isPO?(failed?0:r.distFt):null,failed,failKind:PR.failKind,fmt:PR.fmt,ev:PR.ev,veh:PR.veh,fseed:PR.fseed,pending:!!PO&&!isPO,snap:PR.snap,hk:PR.hk};
+  if(typeof crowdAfter==="function")crowdAfter("pull",{broke:failed,full:r.full&&!failed});   // app/ambience.js
   PR.p=null;pullSettle(r,ctx);
 }
 function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame(sn),C0=SIM.PULL_CLASSES[k],f1=c.first,dq=r.broke==="runaway"&&!c.isPO;   // grenaded on a hook: disqualified

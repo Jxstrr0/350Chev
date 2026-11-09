@@ -77,6 +77,14 @@ files derived from CC BY sources are CC BY (same version) with the attribution b
 - The script sheet (line, trigger, text, file name) is `docs/announcer-script.csv`.
 - Total size: about 2.7 MB in 143 files. Loaded only when a drag pass starts with sound and the announcer on, a line at a time.
 
+## Ambience and crowd (sounds/amb/, sounds/crowd/)
+
+Ambience beds and crowd reactions for src/app/ambience.js, generated with ElevenLabs sound effects (eleven_text_to_sound_v2) for Longlight Interactive from prompts written for the game. Three takes of each were made and Kelbo picked one.
+
+- `sounds/amb/`: ten 18-second loops, one per venue: `strip`, `pull`, `bog`, `boat`, `salt`, `road`, `hill`, `oval`, `e24` and `shop`. Each was cut to 18 s with its last 2 s crossfaded into its head, level-matched, converted to mono 64 kbps MP3, and saved with 0.25 s of wrap-around either side (the game loops from 0.25 s to 18.25 s).
+- `sounds/crowd/`: eight one-shots, `cheer`, `applause`, `groan`, `ooh`, `fullpull`, `bog`, `summit` and `dynoclap`: trimmed, faded out, level-matched, mono MP3.
+- Total size: about 1.7 MB in 18 files. Nothing is fetched until sound is on and the Ambience & crowd slider is above zero, then only the bed for where you are.
+
 ## Raw license fields as read on 2026-10-10
 
 - `fs_584878` — https://freesound.org/people/rodrigocswm/sounds/584878/ — Freesound page license link: "Creative Commons 0" → http://creativecommons.org/publicdomain/zero/1.0/
