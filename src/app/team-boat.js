@@ -37,11 +37,11 @@ function pcBoatDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],C0=pcBoatCls(E),F=C0.fie
     let q=null;try{q=SIM.boatPass(ai,veh,rv.sk);}catch(e){}
     const mean=q&&q.et?q.et:+(SIM.BOAT_FT/(0.6*vEst)).toFixed(3),mph=q&&q.mph?q.mph:+(vEst/0.44704).toFixed(1);
     return{name:rv.n,boat:rv.boat,hp,mean,mph,sd:+(mean*(0.004+0.012*(1-rv.sk)+0.02*water.chop)).toFixed(3),rt:rv.rt,rtSd:+(0.012+0.02*(1-rv.sk)).toFixed(3),brk:+(0.02+0.04*r()).toFixed(3),red:rv.red,dial:null};});
-  const haz=(100-rel)/100*0.12*st.wear*pcLuckK(),rtM=0.06+0.12*(1-sk)-(T.style==="hotshoe"?0.012:0),rtSd=0.01+0.02*(1-sk),redK=0.008+0.03*(1-sk)+(T.style==="hotshoe"?0.012:0);let pn=0;
+  const haz=(100-rel)/100*0.12*st.wear*pcLuckK(),rtM=0.06+0.12*(1-sk)-(T.style==="hotshoe"?0.012:0),rtSd=0.01+0.02*(1-sk),redK=0.008+0.03*(1-sk)+(T.style==="hotshoe"?0.012:0);let pn=0,lastQ=null,wt=null;
   const mine=()=>{if(sat)return{rt:0.5,et:null,broke:true,why:"Sat out."};
     const rt=r()<redK?-+(0.002+0.03*r()).toFixed(3):+Math.max(0.005,rtM+rnGauss(r)*rtSd).toFixed(3),veh=Object.assign({},mv,{water,seed:(rs^(++pn*104729))>>>0,rt:Math.max(0,rt)});
     if(r()<haz)veh.wornAt=0.6+r()*3;   // worn out: the wear and a hard driver find the weak part
-    let q=null;try{q=SIM.boatPass(res,veh,sk);}catch(e){}
+    let q=null;try{q=SIM.boatPass(res,veh,sk);}catch(e){}lastQ=q;
     const why=q&&q.reasons&&q.reasons[0]?q.reasons[0]:"It didn't make it down the course.";
     if(!q||q.broke)return{rt,et:null,broke:true,why:q&&q.broke==="worn"&&T.wear>8?why+" (it was due a freshen-up)":why,x:q?q.dist:0};
     if(q.et==null)return{rt,et:null,broke:false,why,x:q.dist};   // blew over, hooked or stuffed it: the boat is fine, the round is lost
@@ -49,7 +49,8 @@ function pcBoatDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],C0=pcBoatCls(E),F=C0.fie
   const f3=v=>v==null?"—":v.toFixed(3),rtTxt=v=>v<0?"red light":f3(v).replace(/^0/,"");
   const lines=[`Round ${T.round+1}: ${pcWxTxt(W,false,T)}.`];
   if(prop)lines.push(`The crew picked ${pcBoatPropTxt(prop,C0)} for the forecast (${Wf.water.name} water).`);
-  const q0=mine(),Q=[q0].concat(field.map(f=>rnRivalPass(f,r,0))),places=new Array(8).fill(null);
+  const q0=mine();if(!sat)wt=pcwBoatRec(E,lastQ,q0,"Qualifying",null,null,water,res,null);   // the last pass the boat makes is kept for Watch it (app/team-watch.js)
+  const Q=[q0].concat(field.map(f=>rnRivalPass(f,r,0))),places=new Array(8).fill(null);
   let out=q0.broke,broke=q0.broke&&!sat,why=sat||!q0.broke?"":q0.why,best=q0.et;
   const seeds=[0,1,2,3,4,5,6,7].sort((a,b)=>(Q[a].et==null?99:Q[a].et)-(Q[b].et==null?99:Q[b].et)||a-b);
   if(o.back&&!sat){seeds.splice(seeds.indexOf(0),1);seeds.push(0);}   // the extra engine: seeded last, so it meets the top seed first
@@ -65,7 +66,7 @@ function pcBoatDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],C0=pcBoatCls(E),F=C0.fie
       if(m.a!==0&&m.b!==0){const j=rnJudge(solo(field[m.a-1]),solo(field[m.b-1]),false);m.win=j.w===0?m.a:m.b;}
       else{const oi=m.a===0?m.b:m.a,rv=field[oi-1];
         if(out){m.win=oi;if(!q0.broke)lines.push(`${RN[ri]} vs ${rv.name}: out, no boat to race.`);}
-        else{const me=mine(),op=solo(rv),j=rnJudge(Object.assign({x:me.x!=null?me.x:SIM.BOAT_FT,dq:false},me),op,false),won=j.w===0;
+        else{const me=mine(),op=solo(rv),j=rnJudge(Object.assign({x:me.x!=null?me.x:SIM.BOAT_FT,dq:false},me),op,false),won=j.w===0;wt=pcwBoatRec(E,lastQ,me,RN[ri],op,rv,water,res,won);
           if(me.et!=null)best=best==null?me.et:Math.min(best,me.et);
           const how=j.why==="red"?(me.rt<0?"red light":"they red-lit"):j.why==="dnf"||j.why==="dnf2"?(me.et==null?(me.broke?"broke":"didn't finish"):"they broke"):`${rtTxt(me.rt)} / ${f3(me.et)} against ${rtTxt(op.rt)} / ${f3(op.et)}${j.holeshot?" (holeshot)":""}`;
           lines.push(`${RN[ri]} vs ${rv.name}: ${won?"won":"lost"}, ${how}.`);m.win=won?0:oi;
@@ -73,7 +74,7 @@ function pcBoatDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],C0=pcBoatCls(E),F=C0.fie
       places[m.win===m.a?m.b:m.a]=LOSE[ri];}
     if(ri<2)pairs=rnNextPairs(pairs);else places[pairs[0].win]=1;}
   if(q0.broke&&!sat)places[0]=9;
-  return{place:places[0],of:8,broke,why,lines,best,rpos:T.rivals.map((x,i)=>places[i+1]),sat:!!sat,rel};}
+  return{place:places[0],of:8,broke,why,lines,best,rpos:T.rivals.map((x,i)=>places[i+1]),sat:!!sat,rel,watch:wt};}
 PC_KIND.boat={needHp:E=>pcBoatCls(E).field.hp*0.85,
   make(T,E,base,r,pick){const C0=pcBoatCls(E),f=(base-E.budget[0])/Math.max(1,E.budget[1]-E.budget[0]);
     T.fieldHp=Math.round(Math.min(C0.field.hp*(0.88+0.24*f)*(0.97+0.06*r()),dynoCap().hp*0.9));T.boat=pick(BOAT_HN[E.cls]||BOAT_HN.outboard);},

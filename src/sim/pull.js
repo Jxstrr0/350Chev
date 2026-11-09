@@ -292,7 +292,7 @@
         else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : "piston";
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
       }
-      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2), egt: Math.round(st.egt), boost: +(st.boost || 0).toFixed(2) }); if (st.raOn) st.trace[st.trace.length - 1].ra = +st.ra.toFixed(2); }
+      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), boxFrac: +st.boxFrac.toFixed(3), throttle: +thr.toFixed(2), egt: Math.round(st.egt), boost: +(st.boost || 0).toFixed(2), hop: +st.hop.toFixed(2) }); if (st.raOn) st.trace[st.trace.length - 1].ra = +st.ra.toFixed(2); }
       st.thrNow = thr;
       if (st.x >= PULL_FULL) { st.x = PULL_FULL; st.full = true; st.stopWhy = "full"; finish(); return; }
       if (st.broke) { finish(); return; }

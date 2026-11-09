@@ -141,7 +141,7 @@
           if (st.broke) st.failKind = st.broke;
         }
       }
-      if (st.t - st.lastTr >= 0.05) { st.lastTr = st.t; st.trace.push({ t: +st.t.toFixed(2), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), thr: +thr.toFixed(2), trim: +st.trim.toFixed(2), lr: +st.Lr.toFixed(2), b: st.blown ? 1 : 0 }); }
+      if (st.t - st.lastTr >= 0.05) { st.lastTr = st.t; st.trace.push({ t: +st.t.toFixed(2), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), thr: +thr.toFixed(2), trim: +st.trim.toFixed(2), lr: +st.Lr.toFixed(2), b: st.blown ? 1 : 0, bow: +st.bow.toFixed(1), air: +st.air.toFixed(2) }); }
       if (!st.done && (st.finished || st.dnf || st.broke)) { st.done = true; st.doneT = st.t; }
       if (!st.done && st.t > 25) { st.done = true; st.doneT = st.t; st.dnf = st.dnf || "time"; }
     }

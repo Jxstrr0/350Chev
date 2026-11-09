@@ -54,7 +54,7 @@ function pcBogDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.BOG_CLASSE
   lines.push(broke?`Out ${pr?pr.distM.toFixed(1):"0"} m into the pit, P${place} of ${all.length}.`:cleared?`Through in ${pr.pitT.toFixed(2)} s, P${place} of ${all.length}.`:`Stuck ${pr.distM.toFixed(1)} m into the pit, P${place} of ${all.length}.`);
   if(pr){const why2=broke?why:pr.reasons[cleared?1:0];if(why2)lines.push(why2);}
   lines.push(top3(all));
-  return{place,of:all.length,broke,why,lines,best:cleared?pr.pitT:null,rpos:rows.map(x=>all.indexOf(x)+1),sat:false,rel};}
+  return{place,of:all.length,broke,why,lines,best:cleared?pr.pitT:null,rpos:rows.map(x=>all.indexOf(x)+1),sat:false,rel,watch:pcwBogRec(k,veh,pr,res,pcBogSeed(T),!!o.back)};}
 PC_KIND.bog={needHp:E=>SIM.BOG_CLASSES[E.cls].field.hp,
   make(T,E,base,r,pick){const F=SIM.BOG_CLASSES[E.cls].field,f=(base-E.budget[0])/(E.budget[1]-E.budget[0]);
     T.fieldHp=Math.round(Math.min(F.hp*(0.92+0.16*f),dynoCap().hp*0.9));T.truck=pick(BOG_NAMES);T.num=1+Math.floor(r()*98);},

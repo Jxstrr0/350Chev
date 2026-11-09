@@ -38,7 +38,7 @@ function pcHillDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.HILL_CLAS
     if(mech&&q.time!=null)q={time:null,dnf:{kind:"mech",s:Tc.len*at}};
     return{n:rv.n,i,t:q.time,s:q.dnf?q.dnf.s||0:Tc.len,why:q.dnf?q.dnf.kind:""};});
   const lines=[`Round ${T.round+1}: ${pcWxTxt(W,false,T)}.`],chN=SIM.CHASSIS[T.ch]?SIM.CHASSIS[T.ch].n:"The car";
-  let me=null,pr=null,rel=0,broke=false,why="",swept=0;
+  let me=null,pr=null,rel=0,broke=false,why="",swept=0,wt=null;
   if(!sat){const prep=SIM.hillPrep(cfg,Object.assign({},S.env,stdCell()),hid,wx);rel=Math.max(0,pcHillMap(prep,o.M)-T.wear);
     let myCalls=calls;if(o.back){myCalls=pcHillDusty(calls,rnRng((rs^0xD057)>>>0));swept=myCalls.filter(c=>c.swept).length;}
     const bias=T.style==="hotshoe"?0.006:T.style==="steady"?-0.004:0,plan=SIM.hillPlan(myCalls,o.sk,(rs^0x3E)>>>0,hid).map(v=>+(v+bias).toFixed(4));
@@ -52,6 +52,7 @@ function pcHillDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.HILL_CLAS
       :`The engine let go ${km} km up, in ${sec}${T.wear>8?" (it was due a freshen-up)":prep.refRes.firstToFail?` (${prep.refRes.firstToFail.toLowerCase()} was the weak link on the dyno)`:""}.`;}
     else if(pr.dnf){const d=pr.dnf;broke=d.kind==="edge"||d.kind==="boil";
       why=d.kind==="edge"?`Too fast into ${d.name} with a drop and no guardrail: over the edge, ${km} km up.`:d.kind==="boil"?`Boiled over in ${d.name}, ${km} km up: thin air through the radiator.`:d.kind==="stall"?`Couldn't pull up the grade in ${d.name}, ${km} km up.`:`Flagged off in ${d.name} at half an hour.`;}
+    wt=pcwHillRec(T,k,hid,ae,pr,p.st,gone,cfg.redline);   // the climb, kept for Watch it (app/team-watch.js)
     me={n:pcFirst(T)+" (yours)",me:true,t:pr.time,s:pr.time!=null?Tc.len:p.st.s};}
   const all=rows.concat(me?[me]:[]).sort((a,b)=>(a.t==null?1:0)-(b.t==null?1:0)||(a.t!=null?a.t-b.t:b.s-a.s)||(a.me?-1:b.me?1:0));
   const rpos=T.rivals.map((x,i)=>all.findIndex(y=>!y.me&&y.i===i)+1),top5="Top five: "+all.slice(0,5).map((x,i)=>`${i+1}. ${x.n} ${fmtHill(x.t)}`).join(" · ");
@@ -63,7 +64,7 @@ function pcHillDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.HILL_CLAS
   const hp=pr.hp,offs=pr.offs.length,mo=pr.moments;
   lines.push(`${Math.round(hp[0].hp).toLocaleString()} hp at the line, ${Math.round(hp[hp.length-1].hp).toLocaleString()} at the top · top ${Math.round(pr.vmax)} km/h · ${pr.coolPeak} °C peak coolant${offs?` · ${offs} off${offs>1?"s":""} (${pr.offs.map(x=>x.name||Tc.sections[x.sec].n).slice(0,2).join(", ")})`:mo?` · ${mo} moment${mo>1?"s":""}`:" · clean"}.`);
   lines.push(top5);
-  return{place,of:all.length,broke,dnf,why,lines,best:pr.time,rpos,sat:false,rel};}
+  return{place,of:all.length,broke,dnf,why,lines,best:pr.time,rpos,sat:false,rel,watch:wt};}
 PC_KIND.hill={needHp:E=>SIM.HILL_CLASSES[E.cls].field.hp*1.1,
   make(T,E,base,r,pick){T.ch=pick(pcHillCh(E));T.num=1+Math.floor(r()*98);},
   rivals(T,E,r){const C0=SIM.HILL_CLASSES[E.cls],F=C0.field,names=HILL_NAMES.slice(),chs=pcHillCh(E),take=a=>a.splice(Math.floor(r()*a.length),1)[0];
