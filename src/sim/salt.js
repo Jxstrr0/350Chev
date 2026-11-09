@@ -312,6 +312,7 @@
   /* the record book: every class has a standing record, seeded from what a well-built entry of that class
      runs on this same physics, discounted by how contested the class is (some are soft, some are stout) */
   const LSR_HOLDERS = ["Wendover Flyers", "Silver Island Speed", "Blue Mist Racing", "Salt Shaker Garage", "Floating Island Team", "Prairie Lakester Co.", "Northwind Racing", "Bitter Lake Hot Rods", "Coulee Fuels Special", "Old Ironsides Racing", "Tamarack Speed Shop", "Glacier Streamliner Group", "Kestrel Salt Racing", "Halcyon GT", "Redwater Rodders", "Mile Seven Motorsport"];
+  const LSR_REC_UP = 1.07, LSR_REC_TOP = 0.99;   // how far the seeded book was raised, and the most of a class's limit a seeded record may sit at
   const lsrRecCache = {};
   function lsrSynth(L, fuel, blown) {
     const hpL = fuel === "D" ? (blown ? 125 : 42) : fuel === "F" ? (blown ? 290 : 135) : (blown ? 190 : 108);
@@ -331,7 +332,8 @@
     const res = lsrSynth(L, mt[3], !!mt[2]), veh = { body: body, redline: res.red, aero: true, ballast: body === "streamliner" ? 150 : 60, cooling: body === "streamliner" || body === "lakester" ? "ice" : "radiator", chute: "dual", course: LSR_BODIES[body].course };
     veh.topMph = lsrGearing(res, veh);
     const r = lsrPass(res, Object.assign({}, veh, { noFail: true, noSpin: true, h: 0.004 }));
-    const hsh = lsrHash(key), hot = clamp((res.peakHp - 600) / 1200, 0, 1), soft = 0.70 + 0.2 * hot + (0.27 - 0.17 * hot) * ((hsh % 1000) / 1000);   // the big blown classes are contested: their records sit close to the limit
+    const hsh = lsrHash(key), hot = clamp((res.peakHp - 600) / 1200, 0, 1), soft0 = 0.70 + 0.2 * hot + (0.27 - 0.17 * hot) * ((hsh % 1000) / 1000);   // the big blown classes are contested: their records sit close to the limit
+    const soft = Math.max(soft0, Math.min(LSR_REC_TOP, soft0 * LSR_REC_UP));   // since 1.76.103.0 the whole book is 7% faster, short of the limit itself
     const mph = Math.round((r.mileMph || r.peakMph) * soft * 1000) / 1000;
     const rec = { key: key, mph: mph, holder: LSR_HOLDERS[(hsh >>> 10) % LSR_HOLDERS.length], year: 1958 + ((hsh >>> 4) % 67), seeded: true };
     lsrRecCache[key] = rec; return rec;
