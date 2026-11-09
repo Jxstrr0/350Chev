@@ -2,16 +2,20 @@
    The Team tab's race-day result card (p.last, app/team.js) has a "Watch it" button that replays the team's race in the
    event's own 3D scene: the drag series' last pass of the night on the strip (ENGINE_VIS.setStrip and the strip HUD), the
    oval series' last laps of the feature on the oval (ENGINE_VIS.setOval and the run view's HUD band).
-   Race day keeps only a few numbers for it, in p.last.watch (out.watch from pcDragDay / pcOvalDay, copied by pcSettle):
+   Race day keeps only a few numbers for it, in p.last.watch (out.watch from each kind's race day, copied by pcSettle):
      drag  the round, each lane's reaction time, ET and mph (a lane that broke: the pace it was on), the car's hardware and
            the rival's car. The motion is rebuilt from those: x = L·(t/ET)^p, with p set so the speed at the stripe is the trap mph.
      oval  the round's seed, the grid, the rivals' power and luck, your lap times and where it broke. The rivals' races run
            again through the same sim (ovalCarRun is deterministic); your car follows your lap times on a rival's lap shape.
+     pull, bog, boat, hill  the sim's own trace of the team's run, thinned to whole numbers (pcwPack; the hill's by distance), and
+           the few facts the scene needs. The pull replays the hook that settled it (the pull-off if there was one), the boat
+           drags the team's last pass of the night with the other lane rebuilt from its slip, the hill the whole climb at 4×.
    Watching only reads: no money, rep, wear, records or achievements move, and the real events' nights are left alone.
    A kind with no watch recorded, and any older save, shows no button. Controls: #pcwCtl in the Events tab (html/body.html),
    styles in css/ui-team.css. */
 let PCW=null;
-const PCW_LAPS=3,PCW_KINDS={drag:1,oval:1},PCW_RV=RV_LIVE.find(x=>x[0]==="pcwCtl");
+const PCW_OFF={oval:"setOval",pull:"setPull",bog:"setBog",boat:"setBoat",hill:"setHill"},PCW_SPD={oval:4,hill:8};   // each kind's scene; the kinds with a speed button and their top speed
+const PCW_LAPS=3,PCW_KINDS={drag:1,oval:1,pull:1,bog:1,boat:1,hill:1},PCW_RV=RV_LIVE.find(x=>x[0]==="pcwCtl");
 const pcwOk=L=>!!(L&&L.watch&&PCW_KINDS[L.watch.kind]);
 const pcw3=v=>v==null?null:+(+v).toFixed(3),pcw1=v=>v==null?null:+(+v).toFixed(1);
 /* ---- race day: what to keep ---- */
@@ -33,14 +37,14 @@ function pcwOvalRec(T,k,tk,seed,roster,ids,pr){try{
 /* ---- the replay ---- */
 function pcWatch(){const L=pcS().last;if(!pcwOk(L)||PCW)return;if(testing){toast("Let the run finish first");return;}
   const w=L.watch;PCW_RV[1]=w.kind==="drag"?null:"pcwLive";   // the strip brings its own HUD; the oval's card goes on the view
-  testing=true;PCW={kind:w.kind,w,L,t:0,last:performance.now(),speed:w.kind==="oval"?2:1};
-  $("app").classList.add("onstrip");$("tab-events").classList.add("pcw");$("pcwSpd").hidden=w.kind!=="oval";$("pcwSpd").textContent="2×";
+  testing=true;PCW={kind:w.kind,w,L,t:0,last:performance.now(),speed:w.kind==="oval"?2:w.kind==="hill"?4:1};
+  $("app").classList.add("onstrip");$("tab-events").classList.add("pcw");$("pcwSpd").hidden=!PCW_SPD[w.kind];$("pcwSpd").textContent=PCW.speed+"×";
   $("pcwLive").innerHTML=`<p class="hint">${esc(L.team)} · round ${L.round}: loading the race…</p>`;$("pcwCtl").style.display="";
   ENGINE_VIS.setAutoRotate(false);showTab("events");$("panel").scrollTop=0;
-  try{if(w.kind==="drag")pcwDragGo(PCW);else pcwOvalGo(PCW);}catch(e){pcwFail(e);}}
+  try{if(w.kind==="drag")pcwDragGo(PCW);else if(w.kind==="oval")pcwOvalGo(PCW);else if(w.kind==="hill")pcwHillGo(PCW);else pcwRunGo(PCW);}catch(e){pcwFail(e);}}
 function pcwFail(e){if(e&&window.console)console.warn("Watch it:",e);pcwEnd();toast("Couldn't replay that race");}
 function pcwEnd(){const P=PCW;if(!P)return;PCW=null;
-  if(P.kind==="drag"){ENGINE_VIS.setStrip({on:false});shudStop(0);}else if(ENGINE_VIS.setOval)ENGINE_VIS.setOval({on:false});
+  if(P.kind==="drag"){ENGINE_VIS.setStrip({on:false});shudStop(0);}else{const off=ENGINE_VIS[PCW_OFF[P.kind]];if(off)off({on:false});}
   $("app").classList.remove("onstrip");$("pcwCtl").style.display="none";$("tab-events").classList.remove("pcw");$("pcwLive").innerHTML="";
   testing=false;run.on=false;run.rpm=0;run.load=0;ENGINE_VIS.setAutoRotate(null);renderTest();
   if(curTab==="events"){showTab("market");requestAnimationFrame(()=>{const c=$("pcLast");if(c&&c.scrollIntoView)c.scrollIntoView({block:"start"});});}}
@@ -50,7 +54,7 @@ function pcwSkip(){const P=PCW;if(!P||P.tEnd==null)return;
 /* ---- the strip: both lanes rebuilt from the slip ---- */
 const PCW_GREEN=2.6;   // staged at 0, the ambers from 1.1 s, green 1.5 s later
 /* one lane t s after it left: x = L·(t/ET)^p, then the chute or the brakes; brk: the time it broke (then a coast) */
-function pcwLane(t,et,mph,brk,chute){const L=402.336,p=Math.min(2.2,Math.max(1.15,mph/2.23694*et/L)),tc=brk!=null?Math.min(brk,et):et;
+function pcwLane(t,et,mph,brk,chute,len){const L=len||402.336,p=Math.min(2.2,Math.max(1.15,mph/2.23694*et/L)),tc=brk!=null?Math.min(brk,et):et;
   const at=u=>({x:L*Math.pow(u/et,p),v:p*L/et*Math.pow(u/et,p-1)});
   if(t<=0)return{x:0,v:0,end:tc+at(tc).v/(brk!=null&&brk<et?2.5:chute?9:6)};
   const a=at(Math.min(t,tc)),dec=brk!=null&&brk<et?2.5:chute?9:6,end=tc+at(tc).v/dec;if(t<=tc)return Object.assign(a,{end});
@@ -154,8 +158,127 @@ function pcwOvalStep(){const P=PCW;if(!P||P.kind!=="oval")return;const now=perfo
     const nn=$("pcwN");if(nn.dataset.k!==st){nn.dataset.k=st;nn.innerHTML=st;}}
   if(done&&t>=P.tEnd){pcwEnd();return;}
   requestAnimationFrame(pcwOvalStep);}
+/* ---- the pull, the bog, the boat drags and the hill climb: the sim's own trace, kept thin ----
+   Each of those sims already logs its run (the trace on its result). Race day thins that onto an even clock (pcwPack: whole
+   numbers, five a second) and keeps it with the few facts the scene needs; the replay reads it back (pcwAtT) and feeds the
+   event's scene every frame, the same fields the live event sends. The hill's trace is by distance (one row every 50 m), so
+   its clock is rebuilt from the speeds and squared up to the real time. */
+const PCW_DT=0.2,PCW_COLS={
+  pull:{x:["x",100],r:["rpm",0.1],s:["slip",100],b:["boxFrac",100],f:["throttle",10],o:["boost",10],h:["hop",100],a:["ra",10]},
+  bog:{x:["x",100],r:["rpm",0.1],s:["slip",100],f:["throttle",10],k:["sink",100],y:["y",100],w:["w",10],p:["pack",100],g:["dig",100]},
+  boat:{x:["x",100],r:["rpm",0.1],s:["slip",100],f:["thr",10],m:["trim",10],l:["lr",100],b:["b",1],w:["bow",10],a:["air",1]}};
+function pcwPack(kind,tr){if(!tr||tr.length<2)return null;const C=PCW_COLS[kind],te=+tr[tr.length-1].t,n=Math.ceil(te/PCW_DT-1e-9),q={};let j=0;
+  for(const c in C)q[c]=[];
+  for(let i=0;i<=n;i++){const t=Math.min(te,i*PCW_DT);while(j<tr.length-2&&tr[j+1].t<t)j++;
+    const a=tr[j],b=tr[j+1],f=b.t>a.t?Math.max(0,Math.min(1,(t-a.t)/(b.t-a.t))):0;
+    for(const c in C){const k=C[c][0],va=+a[k]||0,vb=+b[k]||0;q[c].push(Math.round((va+(vb-va)*f)*C[c][1]));}}
+  for(const c in q)if(q[c].every(v=>v===0))delete q[c];   // a channel that never moved (no boost, no runaway) is left out
+  return{te:+te.toFixed(2),q};}
+/* the trace at time t, back in the sim's units and names, with the speed from the distance */
+function pcwAtT(w,t){const C=PCW_COLS[w.kind],n=(w.q.x||[]).length,u=Math.max(0,Math.min(w.te,t)),i=Math.max(0,Math.min(n-2,Math.floor(u/PCW_DT))),t0=i*PCW_DT,t1=Math.min(w.te,t0+PCW_DT),
+    f=t1>t0?Math.max(0,Math.min(1,(u-t0)/(t1-t0))):1,o={};
+  for(const c in C){const a=w.q[c];o[C[c][0]]=a?(a[i]+(a[i+1]-a[i])*f)/C[c][1]:0;}
+  o.v=t>=w.te||t<=0||!w.q.x?0:Math.max(0,(w.q.x[i+1]-w.q.x[i])/100/Math.max(0.02,t1-t0));return o;}
+const pcwFailK=k=>FAIL_VISUAL[k]||(k==="turbo"?"turbo":k==="piston"?"knock":"rod");
+function pcwPullRec(k,veh,pr,po,res){try{const tr=pcwPack("pull",pr.trace);if(!tr)return null;
+  return Object.assign(tr,{kind:"pull",cls:k,tyre:veh.tyre,hitch:veh.hitch,ballast:veh.ballast,trk:veh.track||null,hp:Math.round(res.peakHp||0),idle:veh.idle,rl:veh.redline,dsl:res.diesel?1:0,
+    po:po?1:0,full:pr.full?1:0,ft:pcw1(pr.distFt),why:pr.stopWhy||null,brk:pr.broke||null,kill:pr.killed?1:0});}catch(e){return null;}}
+function pcwBogRec(k,veh,pr,res,seed,churn){try{const tr=pcwPack("bog",pr.trace);if(!tr)return null;
+  return Object.assign(tr,{kind:"bog",cls:k,tyre:veh.tyre,ns:seed,cons:veh.night.cons,churn:churn?1:0,idle:veh.idle,rl:veh.redline,dsl:res.diesel?1:0,
+    clr:pr.cleared&&!pr.broke?1:0,pt:pcw3(pr.pitT),m:pcw1(pr.distM),why:pr.stopWhy||null,brk:pr.broke||null});}catch(e){return null;}}
+/* q: the sim's pass, me: what race day made of it (the light, the ET), rd: the round, op and rv: the other lane's pass and boat */
+function pcwBoatRec(E,q,me,rd,op,rv,water,res,won){try{const tr=pcwPack("boat",q.trace);if(!tr)return null;const ok=op&&op.et!=null&&!op.broke;
+  return Object.assign(tr,{kind:"boat",cls:E.cls,rd,water:{seed:water.seed,wind:water.wind,chop:water.chop,name:water.name},rl:res.redline||0,dsl:res.diesel?1:0,
+    rt:pcw3(me.rt),et:pcw3(me.et),mph:pcw1(me.mph),dnf:q.dnf||null,brk:q.broke||null,fin:q.et!=null?1:0,
+    on:rv?rv.name:null,ort:op?pcw3(op.rt):null,oet:ok?pcw3(op.et):null,omph:ok?pcw1(op.mph):null,oat:op&&!ok?op.at||0.5:null,ope:rv?[pcw3(rv.mean),pcw1(rv.mph)]:null,won:won==null?null:!!won});}catch(e){return null;}}
+/* the climb: v km/h, p the pedal (throttle 1..10, brake -1..-10) and g the gear at every 50 m; se and T where and when it ended;
+   offs [kind, metres, seconds lost]; end: null (the top), the sim's DNF kind, or "mech" (the engine let go) */
+function pcwHillRec(T,k,hid,ae,pr,st,gone,rl){try{const tr=pr.trace||[];if(tr.length<2)return null;
+  return{kind:"hill",cls:k,hid,ch:T.ch,ae,num:T.num||0,rl:rl||7000,v:tr.map(x=>Math.round(x[1])),p:tr.map(x=>x[5]>0.05?-Math.round(x[5]*10):Math.round(x[4]*10)),g:tr.map(x=>x[6]),
+    se:Math.round(st.s),T:+(+st.t).toFixed(2),tm:pcw3(pr.time),offs:(pr.offs||[]).map(o=>[o.kind,o.at,o.loss]),end:gone?"mech":pr.dnf?pr.dnf.kind:null,nm:pr.dnf&&pr.dnf.name||null};}catch(e){return null;}}
+/* the card on the view for those four: three numbers and a line under them */
+function pcwHudInit(a,b,c){$("pcwLive").innerHTML=`<div class="rdh hlh"><div class="rd-spd"><b id="pcwV">0</b><i>${a}</i></div><div class="rd-g"><b id="pcwP">–</b><i>${b}</i></div><div class="rd-lt"><b id="pcwLap">–</b><i>${c}</i></div><div class="rd-lt"><b id="pcwT">0.0</b><i>clock</i></div></div><div class="hl-next" id="pcwN"></div>`;}
+function pcwHud(P,dt,done,a,b,c,t,st){if((P.hudT=(P.hudT||0)+dt)<0.1&&!done)return;P.hudT=0;
+  $("pcwV").textContent=a;$("pcwP").textContent=b;$("pcwLap").textContent=c;$("pcwT").textContent=t;const nn=$("pcwN");if(nn.dataset.k!==st){nn.dataset.k=st;nn.innerHTML=st;}}
+const pcwEv=(cls,txt)=>`<div class="hl-ev${cls?" "+cls:""}">${txt}</div>`,pcwLine=(P,txt)=>`<div class="hl-c">${txt} · ${esc(P.L.txt||"")}</div>`;
+/* one clock for the three trace replays: a beat on the line, the run, then a few seconds on the result */
+function pcwRunGo(P){const w=P.w;P.pre=w.kind==="boat"?3:1.4;P.tEnd=w.te+4;P.vs=0;P.doneAt=null;P.failed=false;
+  if(w.kind==="bog"){const n=SIM.bogNight(w.ns),C0=SIM.BOG_CLASSES[w.cls],pitK=C0.veh.pitK||1;
+    P.night=Object.assign({},n,{cons:w.cons,name:SIM.bogMudName(w.cons),depth:w.churn?n.depth.map(d=>+(d*1.15).toFixed(3)):n.depth});
+    P.pit={seed:n.seed,len:n.len,cons:w.cons,depth:P.night.depth,hz:n.hz,pitK};P.pitK=pitK;P.rw=C0.veh.tyreDia*0.0254/2;pcwHudInit("km/h","metres","mud");}
+  else if(w.kind==="pull")pcwHudInit("ft","mph","slip");
+  else{P.o=w.ort!=null?pcwLane(0,w.oet!=null?w.oet:w.ope[0],w.oet!=null?w.omph:w.ope[1],w.oet!=null?null:w.oat*w.ope[0],false,SIM.BOAT_FT):null;
+    if(P.o)P.tEnd=Math.max(P.tEnd,Math.min(w.te+8,Math.max(0,w.ort)+(w.oet!=null?w.oet:w.oat*w.ope[0])+3));pcwHudInit("mph","ft","race");}
+  run.on=true;P.last=performance.now();requestAnimationFrame(pcwRunStep);}
+function pcwRunStep(){const P=PCW;if(!P||!PCW_COLS[P.kind])return;const now=performance.now(),dt=Math.min(0.1,(now-P.last)/1000);P.last=now;
+  try{if(P.pre>0)P.pre-=dt;else P.t+=dt;
+    const w=P.w,pre=P.pre>0,t=pre?0:P.t,a=pcwAtT(w,t),done=!pre&&t>=w.te;P.vs+=(a.v-P.vs)*Math.min(1,dt*8);const v=done?0:P.vs;
+    if(done&&P.doneAt==null){P.doneAt=now;const good=w.kind==="pull"?w.full&&!w.brk:w.kind==="bog"?!!w.clr:w.won!==false&&w.fin&&!w.brk;if(w.brk){P.failed=true;failFlash(300);}else if(good){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
+    const failed=P.failed,rpm=failed?Math.max(0,run.rpm-380*dt*60):done?run.rpm+((w.idle||850)-run.rpm)*Math.min(1,dt*3):pre?(w.idle||850)+500*Math.max(0,Math.sin(now/190)):Math.max(300,a.rpm);
+    if(w.kind==="pull")pcwPullFrame(P,w,a,v,pre,done,failed,rpm,dt);else if(w.kind==="bog")pcwBogFrame(P,w,a,v,pre,done,failed,rpm,dt,t);else pcwBoatFrame(P,w,a,v,pre,done,failed,rpm,dt,t);
+    run.rpm=rpm;run.load=failed||done?0:pre?0.05:Math.max(0.05,a.throttle||a.thr||0);
+    if(!pre&&t>=P.tEnd){pcwEnd();return;}}catch(e){pcwFail(e);return;}
+  requestAnimationFrame(pcwRunStep);}
+function pcwPullFrame(P,w,a,v,pre,done,failed,rpm,dt){const ra=a.ra>0&&!done;
+  if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:pre?"stage":done?"done":"pull",x:a.x,v,boxFrac:a.boxFrac,slip:a.slip,hop:a.hop,smoke:w.dsl?Math.min(1,0.25+0.6*a.throttle):0,rpm,vehicle:SIM.PULL_CLASSES[w.cls].veh.kind,
+    full:done&&!!w.full,night:!!S.night,cls:w.cls,distFt:a.x*3.28084,dt,throttle:a.throttle,boost:a.boost,failed,failKind:failed?pcwFailK(w.brk):null,hitch:w.hitch,ballast:w.ballast,tyre:w.tyre,hp:w.hp,track:w.trk||undefined,
+    runaway:ra?Math.max(0.2,a.ra):0,killed:done&&!!w.kill});
+  const st=done?(w.brk?pcwEv("bad",w.brk==="runaway"&&!w.kill?"RUNAWAY · DQ":"BROKE · "+w.ft.toFixed(1)+" ft"):w.full?pcwEv("good","FULL PULL"):pcwEv("",w.ft.toFixed(1)+" ft"+(w.why?" · "+({bogged:"bogged down",spun:"spun out",lifted:"lifted",killed:"killed"}[w.why]||"stopped"):"")))
+    :pre?pcwEv("","HOOKED UP…"):ra?pcwEv("bad","RUNAWAY"):pcwLine(P,w.po?"The pull-off, on the heavier sled":"The hook");
+  pcwHud(P,dt,done,done?w.ft.toFixed(1):(a.x*3.28084).toFixed(0),(v*2.237).toFixed(1),Math.round(100*Math.min(1,a.slip))+"%",Math.min(w.te,Math.max(0,P.t)).toFixed(1),st);}
+function pcwBogFrame(P,w,a,v,pre,done,failed,rpm,dt,t){const L=P.night.len,x=Math.max(-50,a.x),inPit=!pre&&a.x>=0,now=performance.now();let slap=0;
+  if(inPit&&!P.inPit){P.inPit=true;slap=1;}
+  if(slap){sfx("mudslap");if(typeof foley==="function")foley("mud",{gain:1});}else if(inPit&&!done&&a.slip>0.2&&now-(P.slapT||0)>Math.max(140,520-600*a.slip)){P.slapT=now;sfx("mudslap");}
+  const y0=P.y0||0;P.y0=a.y;
+  if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:true,phase:pre?"stage":done?"done":inPit?"pit":"runup",x:a.x,v,wspd:done&&!w.clr?a.w*P.rw*0.6:a.w*P.rw,slip:a.slip,sink:a.sink,y:a.y,vy:(a.y-y0)/Math.max(0.01,dt),
+    dFront:SIM.bogDepth(P.night,x)*P.pitK,dRear:SIM.bogDepth(P.night,x-3.6)*P.pitK,rpm,throttle:a.throttle,smoke:w.dsl?0.5:0.1,cls:w.cls,tyre:w.tyre,color:BOG_COLORS[w.cls],night:!!S.night,len:L,cons:w.cons,pit:P.pit,
+    mudKg:70*a.pack,pack:a.pack,slap,cleared:done&&!!w.clr,failed,belly:0,dig:a.dig,why:done?w.why:null,rw:P.rw,dt});
+  const st=done?(w.brk?pcwEv("bad","BROKE · "+w.m.toFixed(1)+" m in"):w.clr?pcwEv("good","THROUGH · "+(w.pt!=null?w.pt.toFixed(2)+" s":"")):pcwEv("warn","STUCK · "+w.m.toFixed(1)+" m in"))
+    :pre?pcwEv("","ON THE LINE…"):pcwLine(P,inPit?"In the pit":"The run-up");
+  pcwHud(P,dt,done,Math.round(v*3.6),inPit?Math.min(L,Math.max(0,a.x)).toFixed(1):"–",P.night.name,Math.min(w.te,Math.max(0,t)).toFixed(1),st);}
+function pcwBoatFrame(P,w,a,v,pre,done,failed,rpm,dt,t){const C0=SIM.BOAT_CLASSES[w.cls],tl=3-Math.max(0,P.pre),L=SIM.BOAT_FT,pl=u=>Math.min(1,Math.max(0,u/9-0.6));
+  const tree={pre:tl>0.6,stage:tl>1.0,amb:pre?Math.max(0,Math.min(3,Math.floor((tl-1.5)/0.5)+1)):0,green:!pre,redMe:w.rt!=null&&w.rt<0,redOpp:w.ort!=null&&w.ort<0};
+  let o={x:0,v:0},oDone=false;if(P.o&&!pre){const ob=w.oet==null;o=pcwLane(t-Math.max(0,w.ort),w.oet!=null?w.oet:w.ope[0],w.oet!=null?w.omph:w.ope[1],ob?w.oat*w.ope[0]:null,false,L);
+    oDone=ob?!!o.broke:o.x>=L-0.5;if(!ob&&o.x>L+60){o.x=L+60;o.v=0;}}
+  if(!P.roost&&v>1){P.roost=true;if(typeof foley==="function")foley("rooster");}
+  const fin=done&&!!w.fin,air=a.air>0.5;if(air&&!P.air)sfx("mudslap");P.air=air;
+  if(ENGINE_VIS.setBoat)ENGINE_VIS.setBoat({on:true,phase:pre?"tree":done?"done":"run",cls:w.cls,hull:C0.hull,drive:C0.drive,dt,night:!!S.night,water:w.water,tree,
+    me:{x:a.x,v:done&&fin?P.vs:v,rpm,thr:done?0:a.thr,trim:a.trim,bow:a.bow,pl:pl(P.vs),slip:a.slip,blown:a.b>0.5,air:air?1:0,porp:0,walk:0,lr:a.lr,hop:0,flip:done&&w.dnf==="blowover",hook:done&&w.dnf==="hooked",stuff:done&&w.dnf==="stuffed",failed,color:0xff7a1a,smoke:w.dsl?0.5:0.08},
+    opp:{x:o.x,v:o.v,bow:o.v>1?Math.max(0,6.5*Math.exp(-Math.pow((o.v/9-1)/0.8,2)))+2:0,pl:pl(o.v),thr:oDone||pre||!P.o?0:1,color:0x2a6fdb,name:w.on||"",flip:false},
+    finish:fin,meEt:fin?w.et:null,meMph:fin?w.mph:null,oppEt:oDone&&w.oet!=null?w.oet:null,oppMph:oDone&&w.oet!=null?w.omph:null,won:done&&w.won!=null&&(oDone||t>w.te+1.2)?w.won:null,skip:false});
+  const say=w.brk?"BROKE":w.dnf?({blowover:"BLEW OVER",hooked:"HOOKED",stuffed:"STUFFED IT",time:"STUCK ON THE HUMP"}[w.dnf]||"NO TIME"):w.rt<0?"RED LIGHT":w.et!=null?w.et.toFixed(3)+" s · "+Math.round(w.mph)+" mph":"NO TIME";
+  const st=done?pcwEv(w.brk||w.dnf||w.rt<0?"bad":w.won===false?"warn":"good",(w.won==null?"":w.won?"WON · ":"LOST · ")+say):pre?pcwEv("",tl>1.5?"AMBERS…":"STAGED"):pcwLine(P,esc(w.rd)+(w.on?" vs "+esc(w.on):""));
+  pcwHud(P,dt,done,Math.round((done&&fin?w.mph/2.237:v)*2.237),Math.round(Math.min(L,a.x)*3.28084),!P.o?"solo":o.x>a.x+1?"behind":"ahead",fin?w.et.toFixed(3):Math.min(w.te,Math.max(0,t)).toFixed(1),st);}
+/* ---- the hill: the whole climb from the 50 m rows ---- */
+function pcwHillGo(P){const w=P.w,Tc=SIM.hillCourse(w.hid),n=w.v.length,S0=[],V=w.v.map(x=>x/3.6),tt=[0];
+  for(let i=0;i<n;i++)S0.push(Math.min(w.se,i*50));if(w.se>S0[n-1]+1){S0.push(w.se);V.push(w.end?0:V[n-1]);}
+  const loss=new Array(S0.length).fill(0);let lost=0;w.offs.forEach(o=>{let i=1;while(i<S0.length-1&&S0[i]<o[1])i++;loss[i]+=o[2];lost+=o[2];});
+  for(let i=1;i<S0.length;i++)tt.push(tt[i-1]+(S0[i]-S0[i-1])/Math.max(2,(V[i]+V[i-1])/2));
+  const k=Math.max(0.2,(w.T-lost))/Math.max(1,tt[tt.length-1]);let acc=0;for(let i=1;i<tt.length;i++){acc+=loss[i];tt[i]=tt[i]*k+acc;}   // squared up to the real time, the offs put back where they happened
+  const vg={};w.g.forEach((g,i)=>{vg[g]=Math.max(vg[g]||1,V[i]);});
+  Object.assign(P,{Tc,S0,V,tt,vg,su:SIM.setupVis(null),color:carPaint(),pre:2.5,tEnd:w.T+4,doneAt:null,i:0,hudT:0,evAt:-9,evK:null,offI:0,idle:900});
+  pcwHudInit("km/h","gear","to go");run.on=true;P.last=performance.now();requestAnimationFrame(pcwHillStep);}
+function pcwHillStep(){const P=PCW;if(!P||P.kind!=="hill")return;const now=performance.now(),dt=Math.min(0.1,(now-P.last)/1000);P.last=now;
+  try{const w=P.w,{S0,V,tt,Tc}=P,n=tt.length,pre=P.pre>0;if(pre)P.pre-=dt;else P.t+=dt*(P.t>=w.T?1:P.speed);
+    const t=pre?0:Math.min(P.t,w.T),done=!pre&&P.t>=w.T;while(P.i<n-2&&tt[P.i+1]<t)P.i++;while(P.i>0&&tt[P.i]>t)P.i--;
+    const i=P.i,f=tt[i+1]>tt[i]?Math.max(0,Math.min(1,(t-tt[i])/(tt[i+1]-tt[i]))):1,s=done?w.se:S0[i]+(S0[i+1]-S0[i])*f,gi=Math.min(w.g.length-1,i),g=w.g[gi]||1,ped=(w.p[gi]||0)/10;
+    /* an off between two rows: the car sits in it for the seconds it lost, then gets going again */
+    let off=null;const o=w.offs.find(x=>x[1]>=S0[i]&&x[1]<S0[i+1]+0.01);if(o&&!done){const span=tt[i+1]-tt[i],mv=Math.max(0.5,span-o[2]),u=t-tt[i];if(u>mv*0.5&&u<mv*0.5+o[2])off=o[0];
+      if(off&&P.evK!==o){P.evK=o;P.evAt=now;buzz([60,30,60]);sfx("mudslap");if(o[0]!=="rail"&&typeof foley==="function")foley("gravel");}}
+    const v=done||pre?0:off?1.5:V[i]+(V[i+1]-V[i])*f,rpm=done?run.rpm+(P.idle-run.rpm)*Math.min(1,dt*3):pre?P.idle+800*Math.max(0,Math.sin(now/180)):Math.max(P.idle,Math.min(w.rl,w.rl*(0.5+0.47*Math.min(1,v/Math.max(4,P.vg[g]||v)))));
+    if(done&&P.doneAt==null){P.doneAt=now;if(w.end)failFlash(300);else{winFlash();buzz([30,40,30,40,90]);}}
+    const edge=done&&w.end==="edge";
+    if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:true,su:P.su,course:Tc,s,v,d:0,g,rpm,thr:off||done?0:Math.max(0,ped),brk:Math.max(0,-ped),lat:0,off,dnf:done&&w.end&&w.end!=="mech"?w.end:null,ev:now-P.evAt<1000&&P.evK?P.evK[0]:edge&&now-P.doneAt<1000?"edge":null,
+      ch:w.ch,aero:w.ae,color:P.color,cam:"auto",pre,done,night:false,dt:dt*(pre||done?1:P.speed)});
+    run.rpm=rpm;run.load=done?0:pre?0.05:Math.max(0.05,ped);
+    const sec=Tc.sections[Math.min(Tc.sections.length-1,Tc.sec[Math.min(Tc.N-1,Math.floor(s/Tc.ds))])].n,km=(w.se/1000).toFixed(1);
+    const st=done?(w.end==="mech"?pcwEv("bad","BROKE · "+km+" km up"):w.end==="edge"?pcwEv("bad","OVER THE EDGE"):w.end==="boil"?pcwEv("bad","BOILED OVER"):w.end?pcwEv("warn","DID NOT FINISH"):pcwEv("good","THE TOP · "+fmtHill(w.tm)))
+      :pre?pcwEv("","GREEN IN "+Math.ceil(P.pre)+"…"):off?pcwEv("warn",off==="rail"?"INTO THE RAIL":off==="gravel"?"IN THE GRAVEL":"OFF"):pcwLine(P,esc(sec));
+    pcwHud(P,dt,done,Math.round(v*3.6),g,((Tc.len-s)/1000).toFixed(1)+" km",fmtHill(t),st);
+    if(done&&P.t>=P.tEnd){pcwEnd();return;}}catch(e){pcwFail(e);return;}
+  requestAnimationFrame(pcwHillStep);}
 /* ---- the buttons ---- */
 $("mkTeam").addEventListener("click",e=>{if(career()&&e.target.closest("[data-pcwatch]"))pcWatch();});
 $("pcwBack").addEventListener("click",()=>pcwEnd());
 $("pcwSkip").addEventListener("click",()=>pcwSkip());
-$("pcwSpd").addEventListener("click",()=>{const P=PCW;if(!P||P.kind!=="oval")return;P.speed=P.speed>=4?1:P.speed*2;$("pcwSpd").textContent=P.speed+"×";buzz(4);});
+$("pcwSpd").addEventListener("click",()=>{const P=PCW;if(!P||!PCW_SPD[P.kind])return;P.speed=P.speed>=PCW_SPD[P.kind]?1:P.speed*2;$("pcwSpd").textContent=P.speed+"×";buzz(4);});
