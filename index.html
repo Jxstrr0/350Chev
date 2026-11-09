@@ -10356,11 +10356,15 @@ const ENGINE_SIM = (function () {
       const g = Math.sqrt(-2 * Math.log(Math.max(1e-6, r()))) * Math.cos(2 * Math.PI * r());
       return { call: call, gk: 1 + HILL_CALL[call] + 0.008 * clamp(g, -2.4, 2.4) }; });
   }
-  /* the auto driver's commitment per corner: reads the calls, a touch more over a guardrail than over nothing */
+  /* the auto driver's commitment per corner: reads the calls, a touch more over a guardrail than over nothing. Up to skill 0.8
+     a driver reads the calls a little timidly (grippy short, dusty long) with a hand that wanders; from 0.8 to 1 that sharpens
+     to the best line found in the node harness: exactly the call's grip plus 1%, a hair less over a drop, no wander. The hidden
+     variance tops out at ±1.9%, so at 1 the apex can be at most 3.0% over (a moment, never the gravel or the edge) */
   function hillPlan(calls, skill, seed, id) {
-    const T = hillCourse(id), r = pullRng((seed ^ 0xA770) >>> 0), sk = clamp(skill == null ? 0.8 : skill, 0, 1);
-    return T.corners.map((c, k) => { const cl = calls[k].call; let v = cl === "grippy" ? 1.03 : cl === "dusty" ? 0.962 : 1.0;
-      v += (sk - 0.8) * 0.02 - (c.drop && !c.rail ? 0.012 : 0) + 0.007 * (r() - 0.5) * 2 * (1.4 - sk); return +v.toFixed(4); });
+    const T = hillCourse(id), r = pullRng((seed ^ 0xA770) >>> 0), sk = clamp(skill == null ? 0.8 : skill, 0, 1), f = clamp((sk - 0.8) / 0.2, 0, 1);
+    return T.corners.map((c, k) => { const cl = calls[k].call; let v = cl === "grippy" ? 1.03 + 0.005 * f : cl === "dusty" ? 0.962 - 0.002 * f : 1.0;
+      const wob = sk <= 0.8 ? 1.4 - sk : 0.6 * (1 - f);
+      v += (sk - 0.8) * 0.02 + 0.0065 * f - (c.drop && !c.rail ? 0.012 - 0.009 * f : 0) + 0.007 * (r() - 0.5) * 2 * wob; return +v.toFixed(4); });
   }
 
   /* one run up the hill. opt: {hill?, cls, ch, tyre, aero, finalK, seed, calls?, plan?, ai?}; the hill is opt.hill, else the one
@@ -10706,12 +10710,15 @@ const ENGINE_SIM = (function () {
       while (n-- > 0 && !st.done) sub(h);
       return st;
     }
-    /* the auto driver: a pace from his skill and a bit of lap-to-lap noise; he eases when the water is hot or the tyres are gone */
+    /* the auto driver: a pace from his skill and a bit of lap-to-lap noise; he eases when the water is hot or the tyres are gone.
+       From skill 0.75 to 0.9 he learns the pace the node harness found quickest over a race (0.998 of the limit at skill 1,
+       0.995 at 0.9: a slide now and then is cheaper than lifting), and saves the water only once it is near trouble (117 °C,
+       then harder) rather than from 106 */
     function auto(skill) {
       const k = skill == null ? 0.88 : skill, lapNow = Math.max(0, Math.floor(st.s / L));
-      const e = (1 - clamp(k, 0.2, 1)) * 0.028;
-      let c = 1 - 1.2 * e - 0.006 + lapNoise(lapNow) * e * 0.5;
-      if (st.cool > 106) c -= 0.006 + 0.0016 * (st.cool - 106); if (st.wear > 0.8) c -= 0.006;
+      const e = (1 - clamp(k, 0.2, 1)) * 0.028, f = clamp((k - 0.75) / 0.15, 0, 1), hot = 106 + 11 * f;
+      let c = 1 - 1.2 * e - 0.006 + 0.004 * f + lapNoise(lapNow) * e * 0.5;
+      if (st.cool > hot) c -= 0.006 * (1 - f) + (0.0016 + 0.0044 * f) * (st.cool - hot); if (st.wear > 0.8) c -= 0.006;
       return clamp(c, 0.9, 1.04);
     }
     function result() {
@@ -34927,7 +34934,7 @@ function hillStart(){
   $("app").classList.add("onstrip");
   const seed=hillSeed(k),field=wxField(hillWithRv(k,hillField(k,seed,true)),k),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
   const rs=career()?(seed+7919*(C().hillRuns=(C().hillRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);
-  const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,0.86,rs)},opt));
+  const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,1,rs)},opt));
   const lead=field.filter(f=>f.t!=null).sort(hillCmp)[0]||null;
   HC={suVis:SIM.setupVis(opt.setup),run,prep,opt,k,snap,env,seed,field,lead,auto:S.env.hillDrive!=="you",took:null,speed:+S.env.hillSpd||4,cam:S.env.hillCam||"auto",push:false,lift:false,pre:2.5,last:performance.now(),finished:false,skip:false,doneAt:null,lastPtr:0,acc:0,color:carPaint()};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("hillCtl").style.display="";hillHudInit();$("hillPush").dataset.k="";hillHud();
@@ -35118,7 +35125,7 @@ function ovalEnvHtml(sl){const e=S.env,k=ovalEnvFix(),tk=ovalTk(),TT=ovalTT(tk),
   let h=`<div class="saltcls"><div><span>Tonight's track</span><b>${TT.dist}</b><small>${TT.bankDeg}° bank · ${esc(SIM.ovalNight(n.seed,tk).name)}${TT.surf==="asphalt"?" asphalt":""}</small></div><div><span>The night</span><b>${n.stage==="done"?"over":n.stage==="feature"?"feature":"heat"}</b><small>${n.stage==="feature"?`starts ${ordN(n.gridMe+1)} of 12`:n.stage==="done"?(n.feat?`finished ${ordN(n.feat.place)}`:"—"):`${OVAL_HEAT} laps, then ${OVAL_FEAT}`}</small></div><div><span>Your best</span><b>${rec&&rec.lap?fmtOv(rec.lap)+" s":"—"}</b><small>${rec?(rec.wins?rec.wins+" feature win"+(rec.wins===1?"":"s"):"best finish "+ordN(rec.best)):"no night yet"}</small></div></div>${ovalTrackSvg()}${ovalLadder(n,k)}`;
   h+=`<div class="lbl"><span>Track</span></div><div class="seg n2">${OVAL_TRK.map(id=>{const t=SIM.OVAL_TRACKS[id];return `<button data-ok="ovalTrack" data-ov="${id}" class="${tk===id?"on":""}">${t.n}<small>${t.dist} · ${t.bankDeg}° · ${t.surf}</small></button>`;}).join("")}</div>`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.OVAL_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.OVAL_CLASSES,id),ok=ovalCiNow()<=c.ci;return `<button data-ok="ovalCls" data-ov="${id}" class="${k===id?"on":""}${l||!ok?" lock":""}">${c.n}<small>${l?l+" rep":c.ci>=9999?"no ci limit":"up to "+c.ci+" ci"+(ok?"":" · too big")}</small></button>`;}).join("")}</div>`;
-  h+=driverToggle(id=>`data-ok="ovalDrive" data-ov="${id}"`,e.ovalDrive,"hold PUSH or SAVE for the pace","a steady driver · watch the race");
+  h+=driverToggle(id=>`data-ok="ovalDrive" data-ov="${id}"`,e.ovalDrive,"hold PUSH or SAVE for the pace","races near the limit · watch the race");
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${Object.entries(SIM.OVAL_TYRES).map(([id,t])=>`<button data-ok="ovalTyre" data-ov="${id}" class="${e.ovalTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Grille</span></div><div class="seg">${Object.entries(SIM.OVAL_GRILLES).map(([id,t])=>`<button data-ok="ovalGrille" data-ov="${id}" class="${e.ovalGrille===id?"on":""}">${t.n}<small>${t.d}</small></button>`).join("")}</div>`;
   h+=`<div class="envgrid">${sl("ovalFinal","Rear end ratio",0.6,1.6,0.01," × fitted",(+e.ovalFinal).toFixed(2))}</div>`;
@@ -35198,7 +35205,7 @@ function ovalStart(){
   if(career()&&stage==="heat"){n.hash=hKey(cfgHash(S.cfg));}
   const winAi=Math.min(...cars.filter(c=>!c.dnf&&c.fin!=null).map(c=>c.fin));
   const veh={cls:k,track:tk,tyre:e.ovalTyre,grille:e.ovalGrille,finalK:+e.ovalFinal,redline:S.cfg.redline,idle:SIM.isDiesel&&SIM.isDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),seed:career()?(n.seed+7919*(C().ovalRuns=(C().ovalRuns||0)+1))>>>0:Math.floor(Math.random()*1e9),laps,off:ovalGridOff(gridMe),night:SIM.ovalNight(n.seed,tk),
-    moist:stage==="heat"?0.9:0.6,lap0:stage==="heat"?0:OVAL_HEAT,skill:0.9};
+    moist:stage==="heat"?0.9:0.6,lap0:stage==="heat"?0:OVAL_HEAT,skill:e.ovalDrive!=="you"?1:0.9};   // the auto driver has the sharpest hands; driving it yourself, yours are a good club racer's
   if(wi&&wi.w>=1)veh.wornAt=Math.max(2,Math.round(laps*(0.3+0.5*Math.random())));
   veh.gap=(s,t)=>{let g=Infinity;for(let i=0;i<cars.length;i++){const a=ovalAt(cars[i],t);if(!a)continue;const d=(((a.s-s)%L)+L)%L;if(d<g&&d>1.2)g=d;}return g;};
   const p=SIM.ovalNew(res,veh);

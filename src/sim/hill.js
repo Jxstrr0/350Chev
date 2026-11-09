@@ -233,11 +233,15 @@
       const g = Math.sqrt(-2 * Math.log(Math.max(1e-6, r()))) * Math.cos(2 * Math.PI * r());
       return { call: call, gk: 1 + HILL_CALL[call] + 0.008 * clamp(g, -2.4, 2.4) }; });
   }
-  /* the auto driver's commitment per corner: reads the calls, a touch more over a guardrail than over nothing */
+  /* the auto driver's commitment per corner: reads the calls, a touch more over a guardrail than over nothing. Up to skill 0.8
+     a driver reads the calls a little timidly (grippy short, dusty long) with a hand that wanders; from 0.8 to 1 that sharpens
+     to the best line found in the node harness: exactly the call's grip plus 1%, a hair less over a drop, no wander. The hidden
+     variance tops out at ±1.9%, so at 1 the apex can be at most 3.0% over (a moment, never the gravel or the edge) */
   function hillPlan(calls, skill, seed, id) {
-    const T = hillCourse(id), r = pullRng((seed ^ 0xA770) >>> 0), sk = clamp(skill == null ? 0.8 : skill, 0, 1);
-    return T.corners.map((c, k) => { const cl = calls[k].call; let v = cl === "grippy" ? 1.03 : cl === "dusty" ? 0.962 : 1.0;
-      v += (sk - 0.8) * 0.02 - (c.drop && !c.rail ? 0.012 : 0) + 0.007 * (r() - 0.5) * 2 * (1.4 - sk); return +v.toFixed(4); });
+    const T = hillCourse(id), r = pullRng((seed ^ 0xA770) >>> 0), sk = clamp(skill == null ? 0.8 : skill, 0, 1), f = clamp((sk - 0.8) / 0.2, 0, 1);
+    return T.corners.map((c, k) => { const cl = calls[k].call; let v = cl === "grippy" ? 1.03 + 0.005 * f : cl === "dusty" ? 0.962 - 0.002 * f : 1.0;
+      const wob = sk <= 0.8 ? 1.4 - sk : 0.6 * (1 - f);
+      v += (sk - 0.8) * 0.02 + 0.0065 * f - (c.drop && !c.rail ? 0.012 - 0.009 * f : 0) + 0.007 * (r() - 0.5) * 2 * wob; return +v.toFixed(4); });
   }
 
   /* one run up the hill. opt: {hill?, cls, ch, tyre, aero, finalK, seed, calls?, plan?, ai?}; the hill is opt.hill, else the one
