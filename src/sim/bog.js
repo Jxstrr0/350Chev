@@ -211,13 +211,15 @@
     function finish() { st.done = true; st.phase = "done"; st.distM = clamp(st.x, 0, L); }
     function step(dt, throttle) { if (throttle != null) st.thr = clamp(+throttle || 0, 0, 1); dt = Math.min(0.25, Math.max(0, dt)); while (dt > 1e-9 && !st.done) { const h = Math.min(0.002, dt); dt -= h; sub(h); } return st; }
     /* the auto driver: flat on the run-up unless it's spinning; in the mud it holds the slip near the tyre's sweet spot and the rpm
-       out of the bog band — on with it when the rpm sags, off when the slip runs past the dig point. skill 0..1 blurs it. */
+       out of the bog band — on with it when the rpm sags, off when the slip runs past the dig point. skill 0..1 blurs it: at 1
+       it lets the tyres spin right up to the dig point and only leans in once the rpm is actually in the bog band; a lesser
+       driver lifts a little early and leans in before it needs to. */
     function auto(skill) {
       const k = skill == null ? 1 : skill;
       if (st.phase === "stage") return 1;
       if (st.phase === "runup") { st.ai = st.slip > 0.22 ? Math.max(0.5, st.ai - 0.04) : Math.min(1, st.ai + 0.05); return st.ai; }
-      const tgt = sw[1] + 0.04 + 0.12 * (1 - k), rpmLow = st.rpm < bogHi * (1.08 + 0.1 * k);
-      if (st.slip > digS - 0.04 * k && !rpmLow) st.ai = Math.max(0.35, st.ai - 0.05 * (0.5 + k));
+      const tgt = sw[1] + 0.04 + 0.12 * (1 - k), rpmLow = st.rpm < bogHi * (1 + 0.18 * (1 - k));
+      if (st.slip > digS - 0.04 * (1 - k) && !rpmLow) st.ai = Math.max(0.35, st.ai - 0.05 * (0.5 + k));
       else if (rpmLow || st.slip < tgt) st.ai = Math.min(1, st.ai + 0.06);
       return st.ai;
     }
