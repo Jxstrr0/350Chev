@@ -53,6 +53,7 @@ function bogStart(){
     if(st.done&&BR.doneAt==null){BR.doneAt=now;if(st.cleared&&!BR.failed){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
     // mud slaps: the pit entry, a ridge, a rut, a landing — and the wheels throwing it while they spin
     let slap=0;if(st.phase==="pit"&&BR.ph!=="pit")slap=1;if(st.hzHit.length>BR.hz){BR.hz=st.hzHit.length;slap=Math.max(slap,0.8);}if(st.slaps>BR.slaps){BR.slaps=st.slaps;slap=Math.max(slap,0.9);}
+    if(slap&&typeof foley==="function")foley("mud",{gain:0.6+0.4*slap});   // the recording on the big moments, rate-limited in app/foley.js
     if(slap)sfx("mudslap");else if(st.phase==="pit"&&!st.done&&st.slip>0.2&&now-BR.slapT>Math.max(140,520-600*st.slip)){BR.slapT=now;sfx("mudslap");}
     BR.ph=st.phase;
     const x=Math.max(-50,st.x),dF=SIM.bogDepth(BR.night,x)*BR.pitK,dR=SIM.bogDepth(BR.night,x-3.6)*BR.pitK;

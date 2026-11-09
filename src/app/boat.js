@@ -81,6 +81,7 @@ function boatStart(){
     else if(BT.down&&!BT.foul&&!BT.auto){BT.foul=true;buzz([60,30,60]);}
     if(st.broke&&!BT.failed)boatBreak(st.broke);
     if(st.hops>BT.hops){BT.hops=st.hops;sfx("mudslap");}
+    if(!BT.rooster&&st.v>1){BT.rooster=true;if(typeof foley==="function")foley("rooster");}
     if(st.blown&&!BT.blown)buzz([12]);BT.blown=st.blown;
     const og=now<BT.green?0:st.t,o=boatOppAt(og);BT.ox=o.x;BT.ov=o.v;BT.oDone=o.done;
     if(st.done&&BT.doneAt==null&&(BT.oDone||st.t-st.doneT>1.2)){BT.doneAt=now;const w=boatWinNow();if(w===true){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}

@@ -112,6 +112,8 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 
 **Ambience and crowd** (`src/app/ambience.js`, since 1.76.90.0): ten 18-second ElevenLabs ambience loops in `sounds/amb/`, one per venue plus the shop, and eight crowd one-shots in `sounds/crowd/`. The Events tab plays the bed for the event that is set up, every other tab plays the shop; beds crossfade when you move and stop when the page is hidden. Each event's finish calls `crowdAfter` (a win cheers, a loss claps or gasps if it was close, a breakage groans, a full pull, a cleared bog pit and a summit have their own), and a certified career dyno pull gets a shop clap. Its own level in Settings › Sound › Ambience & crowd (`S.ambVol`, 40 by default); while a bed plays the synth does not idle-suspend the audio (`ENGINE_SOUND.holdAwake`).
 
+**Foley** (`src/app/foley.js`, since 1.76.91.0): ten short ElevenLabs one-shots in `sounds/fx/`. A Build change gets a workshop tool: the torque wrench for fasteners (rod bolts, head studs, gasket, bearings), the impact gun for big swaps (layout, block, heads, crank, induction, fuel, exhaust), the ratchet for machining and other parts, a socket click for a slider; one tool sound per 250 ms at most, and sliders only when let go. The dyno rollers spin up when a dyno test starts and spin down when it ends; the drag and salt parachute pops; a hill climb car throws gravel when it runs wide, slides onto the bank or goes over the edge; a drag boat leaves with a rooster tail; the mud bog layers a mud splat on the synth's slaps at the pit entry, ridges, ruts and landings. Clips use the ambience cache (`ambLoad`), are fetched ahead for the tab or event you are on, follow the main Sound volume (`S.vol`), play two at a time at most, and vary a little in pitch and level.
+
 ### Save system
 
 - Everything lives in the browser's localStorage under five keys: `pew2-save` (the current game, settings included), `pew2-slot1` to `pew2-slot3` (three save slots, `SLOTS`), `pew2-legacy` (Legacy points). All access is wrapped in try/catch.
@@ -146,8 +148,9 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Engine recordings | 72 (60 loops, 12 one-shots) | `sounds/` |
 | Announcer lines | 143 (73 race calls, 70 matchup parts) | `sounds/announcer/`, `ANN_POOLS`, `ANN_CALL` |
 | Ambience and crowd | 10 beds, 8 crowd one-shots | `sounds/amb/`, `sounds/crowd/`, `AMB_FOR`, `CROWD_FOR` |
-| Source files in the build | 119 | `src/manifest.txt` |
-| Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
+| Foley | 10 one-shots | `sounds/fx/`, `FOLEY`, `FOLEY_FOR` |
+| Source files in the build | 127 | `src/manifest.txt` |
+| Built page | 3.93 MB (1.29 MB gzipped) | `node build.js` |
 
 ## Loose ends found in the code (as of 1.76.87.0)
 

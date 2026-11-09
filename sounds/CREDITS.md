@@ -85,6 +85,14 @@ Ambience beds and crowd reactions for src/app/ambience.js, generated with Eleven
 - `sounds/crowd/`: eight one-shots, `cheer`, `applause`, `groan`, `ooh`, `fullpull`, `bog`, `summit` and `dynoclap`: trimmed, faded out, level-matched, mono MP3.
 - Total size: about 1.7 MB in 18 files. Nothing is fetched until sound is on and the Ambience & crowd slider is above zero, then only the bed for where you are.
 
+## Foley (sounds/fx/)
+
+Workshop and vehicle one-shots for src/app/foley.js, generated with ElevenLabs sound effects (eleven_text_to_sound_v2) for Longlight Interactive from prompts written for the game. Two takes of each were made and Kelbo picked one.
+
+- Ten clips: `impact` (impact wrench), `ratchet`, `socket` (socket click), `torque` (torque-wrench click), `dynoup` and `dynodown` (dyno rollers spinning up and down), `chute` (drag parachute), `gravel` (gravel spray), `rooster` (boat rooster tail) and `mud` (mud splatter).
+- Each was decoded to mono 44.1 kHz, trimmed of leading and trailing silence, given a short fade-out, level-matched on its loud part (the workshop clicks sit below the crowd clips, with their peaks held to -6 dB), and converted to mono 64 kbps MP3.
+- Total size: about 140 kB in 10 files. Nothing is fetched until sound is on, then only the clips for the tab or event you are on.
+
 ## Raw license fields as read on 2026-10-10
 
 - `fs_584878` — https://freesound.org/people/rodrigocswm/sounds/584878/ — Freesound page license link: "Creative Commons 0" → http://creativecommons.org/publicdomain/zero/1.0/

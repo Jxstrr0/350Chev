@@ -184,6 +184,7 @@ function cmpShow(anchor,key,v){const h=cmpRows(key,v);if(!h)return false;if(cmpE
 /* fit one option (shared by the Build segments and the sandbox Shop parts catalogue) */
 function applyOpt(k,v){
   if(testing){toast("Let the run finish first");return;}
+  if(String(S.cfg[k])!==String(v)&&typeof foleyPart==="function")foleyPart(k);   // a spanner sound for the change (app/foley.js)
   const wasD=isCI(S.cfg.fuel),wasF=S.cfg.fuel,wasR=isRot(S.cfg),wasT=isTs(S.cfg);S.cfg[k]=v;S.profileId=null;
   const fam=k==="fuel"?fuelFamilyDefaults(S.cfg,wasD,wasF):k==="layout"?rotaryFamilyDefaults(S.cfg,wasR):k==="cycle"?twoStrokeFamilyDefaults(S.cfg,wasT):null;if(fam)delete S.cfg.map;
   if(fam&&k==="fuel"&&isTs(S.cfg)&&isCI(S.cfg.fuel)){S.cfg.induct="blower";S.cfg.scav="uniflow";S.cfg.xpipe="muffled";}   // a two-stroke diesel needs a blower to breathe
@@ -228,14 +229,14 @@ function commitSlider(){recomputeFlush();S.profileId=null;if(mapFitAxis())recomp
 function sliderField(k){return FORM.flatMap(s=>s.fields).find(x=>x.key===k);}
 function snapVal(f,v){const st=f.step||1,lo=fMin(f),hi=fMax(f);v=Math.round((v-lo)/st)*st+lo;v=Math.min(hi,Math.max(lo,v));return +v.toFixed(4);}
 $("buildForm").addEventListener("input",e=>{const r=e.target;if(!r.dataset||!r.dataset.k||r.type!=="range")return;autoFocus(r.dataset.k);applySlider(r.dataset.k,parseFloat(r.value),r);});
-$("buildForm").addEventListener("change",e=>{if(e.target.type==="range")commitSlider();});
+$("buildForm").addEventListener("change",e=>{if(e.target.type==="range"){commitSlider();if(typeof foleyPart==="function")foleyPart(e.target.dataset.k,true);}});
 // ± nudge buttons: one field-sized step per tap, hold to repeat
 (()=>{let hold=null;const stop=()=>{if(hold){clearTimeout(hold.t);clearInterval(hold.i);hold=null;}};
   let n=0;
   const step=(k,dir,light)=>{const f=sliderField(k);if(!f)return;const r=$("r-"+k);const nv=snapVal(f,S.cfg[k]+dir*(f.nudge||f.step||1));if(nv===S.cfg[k])return;holdBase(k);
     if(light&&(++n%4)){mapShiftTo(k,nv);S.cfg[k]=nv;if(r)r.value=nv;const lab=$("v-"+k);if(lab)lab.textContent=(f.fmt?f.fmt(nv):nv)+(f.unit?" "+f.unit:"");}else applySlider(k,nv,r);buzz(3);};
   $("buildForm").addEventListener("pointerdown",e=>{const b=e.target.closest(".nud");if(!b)return;e.preventDefault();const k=b.dataset.nk,dir=+b.dataset.nud;stop();step(k,dir);n=0;hold={k,t:setTimeout(()=>{hold.i=setInterval(()=>step(k,dir,true),110);},420)};});
-  const end=e=>{if(!hold)return;const k=hold.k;stop();applySlider(k,S.cfg[k],$("r-"+k));commitSlider();};
+  const end=e=>{if(!hold)return;const k=hold.k;stop();applySlider(k,S.cfg[k],$("r-"+k));commitSlider();if(typeof foleyPart==="function")foleyPart(k,true);};
   ["pointerup","pointercancel","pointerleave"].forEach(ev=>$("buildForm").addEventListener(ev,e=>{if(e.target.closest&&e.target.closest(".nud"))end(e);}));
   window.addEventListener("pointerup",end);window.addEventListener("blur",()=>{if(hold){stop();commitSlider();}});})();
 // Tap the value to type it
