@@ -215,7 +215,7 @@ $("runTest").addEventListener("click",()=>{
   if(env.testType==="pull"){dur=2800;hold=1400;if(res.fails.length)failAt=dur+hold*0.5;}
   else if(env.testType==="endurance"){dur=4200;hold=600;if(failing)failAt=dur*Math.max(0.15,Math.min(0.95,(res.endurance.failedAtHour||env.hours)/env.hours));}
   else{dur=1800;hold=1200;if(failing)failAt=dur+hold*0.45;}
-  sfx("start");
+  sfx("start");if(typeof foley==="function")foley("dynoup");
   $("testProg").classList.remove("done");
   if(env.testType==="pull"&&monDollyOk())ENGINE_VIS.setScreen({dolly:true});   // Ultra: the camera eases toward the garage monitor
   const step=()=>{const t=performance.now()-t0;let i=N;$("testProg").style.width=Math.min(100,100*t/(dur+hold))+"%";
@@ -228,7 +228,7 @@ $("runTest").addEventListener("click",()=>{
     if(env.testType==="pull")drawChart(res,Math.min(N,i+1));
     monLive({res,upto:env.testType==="pull"?Math.min(N,i+1):null,rpm:run.rpm,right:label||Math.round(res.power[Math.min(N-1,i)]||0)+" HP",fail:failed});   // the garage monitor, throttled inside
     if(t<dur+hold)requestAnimationFrame(step);
-    else{testing=false;run.on=false;run.fail=false;run.rpm=0;ENGINE_VIS.setScreen({dolly:false});$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");
+    else{testing=false;run.on=false;run.fail=false;run.rpm=0;ENGINE_VIS.setScreen({dolly:false});$("rpmbox").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);if(env.testType==="pull")sfx("bov");if(typeof foley==="function")foley("dynodown",{stop:"dynoup"});
       S.last={hash:snap.h,cfg:cfg0,env,res};const same=testSame(snap);
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
       if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);

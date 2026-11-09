@@ -88,6 +88,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/drag.js` | drag pass driver (DR, `dragStart`/`dragFinish`), strip HUD, timing slip, nitrous, race nights `rn*` |
 | `app/announcer.js` | drag announcer (Ed): line pools, rival engine table, lazy fetch/decode cache, matchup stitcher, `ann*` hooks called from `drag.js`, the Settings toggle |
 | `app/ambience.js` | ambience beds per venue and crowd reactions: lazy fetch/decode, crossfade by tab and event, `crowdAfter` called from each event's finish, the Ambience & crowd slider, `ENGINE_SOUND.holdAwake` |
+| `app/foley.js` | workshop and vehicle one-shots (`sounds/fx/`): `foley(id,opts)` on the ambience cache at the main Sound volume, `foleyPart` for Build changes, the dyno rollers, chute, hill gravel, boat rooster tail, bog mud; prefetch by tab |
 | `app/pull.js` | truck pull driver (PR), pull nights, points series |
 | `app/bog.js` | mud bog UI (BR) |
 | `app/road.js` | road test UI (RT) |
