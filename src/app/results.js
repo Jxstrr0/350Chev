@@ -155,7 +155,7 @@ function launchSlip(r){const L=r.launch;if(!L)return"";const b=[];
   if(r.als)b.push(`ALS ${r.als.type==="air"?"(secondary air)":"(ignition)"} ${r.als.fired.toFixed(1)} s${r.als.shiftMin!=null?` · held ${r.als.shiftMin.toFixed(1)} bar through the shifts`:""}`);
   return b.join(" · ");}
 /* run animation */
-const run={on:false,rpm:0,load:0,fail:false,failKind:null,idle:false,thr:0};   // thr: the HUD throttle slider, 0 idle to 1 (free revs to 3/4 of the redline)
+const run={on:false,rpm:0,load:0,fail:false,failKind:null,idle:false,thr:0};   // thr: the HUD throttle slider, 0 idle to 1 (free revs to the redline; it springs back, see THR in boot.js)
 const FAIL_VISUAL={rod_tension:"rod",rod_buckling:"rod",rod_bolts:"rod",bearing_load:"rod",oil_film:"rod",piston_speed:"rod",crown_pressure:"rod",
   crank_fatigue:"crank",torsional:"crank",
   detonation:"knock",preignition_egt:"knock",crown_temp:"knock",hot_clearance:"knock",ring_gap:"knock",slap_blowby:"knock",bore_distortion:"knock",wall_thickness:"knock",
