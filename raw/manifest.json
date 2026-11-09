@@ -1,0 +1,72 @@
+{
+ "fetched": "2026-11-09T21:48:47.954Z",
+ "manifest": [
+  {
+   "key": "fs_181165",
+   "file": "fs_181165.mp3",
+   "bytes": 292317,
+   "for": "turbo whistle: Audi A4 1.8T",
+   "source": "https://freesound.org/people/fredless/sounds/181165/",
+   "title": "Freesound - audiwhistle.mp3 by fredless",
+   "author": "fredless",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/181/181165_3376436-hq.mp3"
+  },
+  {
+   "key": "fs_659544",
+   "file": "fs_659544.mp3",
+   "bytes": 99554,
+   "for": "turbo spool + blow-off pass-by",
+   "source": "https://freesound.org/people/EwanPenman11/sounds/659544/",
+   "title": "Freesound - Turbo Spooling and Blow Off.WAV by EwanPenman11",
+   "author": "EwanPenman11",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/659/659544_13241413-hq.mp3"
+  },
+  {
+   "key": "fs_144456",
+   "file": "fs_144456.mp3",
+   "bytes": 1841394,
+   "for": "supercharger whine (Summernats)",
+   "source": "https://freesound.org/people/Ears68/sounds/144456/",
+   "title": "Freesound - Hot-Rod-AngryV8-supercharged-1500HP-Burnout-Demo-xDR023.wav by Ears68",
+   "author": "Ears68",
+   "license": "http://creativecommons.org/licenses/by/3.0/",
+   "via": "https://cdn.freesound.org/previews/144/144456_2214631-hq.mp3"
+  },
+  {
+   "key": "fs_277412",
+   "file": "fs_277412.mp3",
+   "bytes": 355612,
+   "for": "nitrous: Nitrous PD_001",
+   "source": "https://freesound.org/people/AlienXXX/sounds/277412/",
+   "title": "Freesound - Nitrous PD_001.wav by AlienXXX",
+   "author": "AlienXXX",
+   "license": "https://creativecommons.org/licenses/by/4.0/",
+   "via": "https://cdn.freesound.org/previews/277/277412_97763-hq.mp3"
+  },
+  {
+   "key": "fs_234782",
+   "file": "fs_234782.mp3",
+   "bytes": 37150,
+   "for": "nitrous: air pressure release hiss",
+   "source": "https://freesound.org/people/wubitog/sounds/234782/",
+   "title": "Freesound - Steam/hiss by wubitog",
+   "author": "wubitog",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/234/234782_3501487-hq.mp3"
+  },
+  {
+   "key": "fs_457294",
+   "file": "fs_457294.mp3",
+   "bytes": 405723,
+   "for": "nitrous: air pressure release",
+   "source": "https://freesound.org/people/brunoboselli/sounds/457294/",
+   "title": "Freesound - Air (or steam) pressure release by brunoboselli",
+   "author": "brunoboselli",
+   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+   "via": "https://cdn.freesound.org/previews/457/457294_300738-hq.mp3"
+  }
+ ],
+ "failed": []
+}
