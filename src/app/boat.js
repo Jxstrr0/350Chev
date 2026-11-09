@@ -96,7 +96,7 @@ function boatStart(){
   requestAnimationFrame(step);
 }
 /* the inputs this moment: the auto driver's, or the button and the trim switches */
-function boatCtl(st){if(BT.failed)return{thr:0,trim:0};if(BT.auto){const a=BT.p.auto(0.95);return a;}return{thr:BT.down?1:0,trim:BT.tc};}
+function boatCtl(st){if(BT.failed)return{thr:0,trim:0};if(BT.auto){const a=BT.p.auto(1);return a;}return{thr:BT.down?1:0,trim:BT.tc};}
 /* the other lane, from its trace (time from the green); a boat that broke coasts off the plane */
 function boatOppAt(t){const tr=BT.opp.trace||[];if(t<=0||!tr.length)return{x:0,v:0,done:false,bow:0,pl:0};
   const cut=BT.opp.dnf&&BT.opp.cut!=null?tr[Math.min(tr.length-1,Math.floor(tr.length*BT.opp.cut))].t:Infinity;
@@ -145,7 +145,7 @@ function boatRelease(){if(!BT)return;BT.down=false;}
 function boatTrim(d){if(!BT||BT.finished)return;if(BT.auto){if(performance.now()<BT.green)return;boatTakeOver();}BT.tc=d;}
 /* skip: run out the rest of the pass at once (the auto driver's inputs, or yours held where they were) */
 function boatSkip(){if(!BT||BT.finished)return;const p=BT.p,st=p.st;
-  if(!st.done){if(performance.now()<BT.green)BT.green=performance.now();let n=0;while(!st.done&&n++<3000){const c=BT.auto?p.auto(0.95):{thr:BT.down?1:p.auto(0.95).thr,trim:BT.tc};p.step(0.02,c.thr,c.trim);}if(st.broke&&!BT.failed)boatBreak(st.broke);}
+  if(!st.done){if(performance.now()<BT.green)BT.green=performance.now();let n=0;while(!st.done&&n++<3000){const c=BT.auto?p.auto(1):{thr:BT.down?1:p.auto(1).thr,trim:BT.tc};p.step(0.02,c.thr,c.trim);}if(st.broke&&!BT.failed)boatBreak(st.broke);}
   if(ENGINE_VIS.boatSkip)ENGINE_VIS.boatSkip();BT.skip=true;if(BT.doneAt==null)BT.doneAt=performance.now()-2600;}
 (()=>{const b=$("boatBtn"),tI=$("boatTrimIn"),tO=$("boatTrimOut");
   holdBtn(b,()=>BT,boatPress,boatRelease,r=>{if(!r.p)return;boatPress();setTimeout(boatRelease,60);});
@@ -210,7 +210,7 @@ function boatEnvHtml(sl){const e=S.env,k=boatEnvFix(),C0=SIM.BOAT_CLASSES[k],HU=
     else h+=`<p class="hint">${BOAT_PLACE[N.place]||"Night over"}${N.purse?" · "+fmt$(N.purse):""}. ${career()&&boatRanWk(k)?`The next ${C0.n} night is week ${C().week+1}.`:"Run again to start a new night."}</p>`;}
   else h+=`<div class="saltcls"><div><span>Course</span><b>1,000 ft</b><small>river · two lanes · a tree</small></div><div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div><div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOAT_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.BOAT_CLASSES,id);return `<button data-tk="boatCls" data-tv="${id}" class="${k===id?"on":""}${l?" lock":""}"${live&&live.cls!==id?" disabled":""}>${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
-  h+=driverToggle(id=>`data-tk="boatDrive" data-tv="${id}"`,e.boatDrive,"throttle, trim · feather the hump","a steady hand · tap to take over");
+  h+=driverToggle(id=>`data-tk="boatDrive" data-tv="${id}"`,e.boatDrive,"throttle, trim · feather the hump","a sharp hand · tap to take over");
   if(C0.drive==="jet")h+=`<div class="lbl"><span>Impeller</span></div><div class="seg">${SIM.BOAT_IMP.map(([c,n,cj,d],i)=>`<button data-tk="boatImp" data-tv="${i}" class="${e.boatImp===i?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   else h+=`<div class="envgrid">${sl("boatPitch","Prop pitch",C0.pitch[0],C0.pitch[1],1,'"',e.boatPitch)}</div>`;
   h+=`<div class="envgrid">${sl("boatGear",C0.drive==="jet"?"Drive ratio":C0.id==="outboard"?"Lower-unit gear":"V-drive box",C0.gear[0],C0.gear[1],0.05,":1",e.boatGear)}${sl("boatTrim","Trim at the start",SIM.boatTrimRange()[0],SIM.boatTrimRange()[1],0.5,"°",e.boatTrim)}</div>`;

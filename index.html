@@ -8430,15 +8430,18 @@ const ENGINE_SIM = (function () {
     while (!p.st.done) { if (foot === "feather") { const s = p.st.slip, sw = p.st.sweet; thr = s > sw[1] + 0.04 ? Math.max(0, thr - 0.08) : s < sw[1] ? Math.min(1, thr + 0.05) : thr; } p.step(0.02, thr); }
     return p.result();
   }
-  /* The auto driver: a steady foot read every 20 ms. It feeds the pedal in off the line, aims the slip low in the sweet
-     spot (the grip peaks in the middle: a skilled foot rides closer to it and goes further), backs off hard past the band,
-     eases a hopping nose, and keeps some pedal in to the end. On a runaway it goes for the kill switch after a
-     human reaction (0.6-1.0 s), now and then a fumble that a short window does not forgive. Deterministic for a seed, on
-     its own random stream so the hook's other seeded moments stay where they were. foot(st) gives 0..1, kill(st) is
-     true once the hand reaches the switch. */
-  function pullDriver(seed) {
-    const r = pullRng(((seed >>> 0) ^ 0x5BD1E995) >>> 0);
-    const aim = 0.10 + 0.12 * r(), gain = 0.9 + 0.2 * r(), react = 0.6 + 0.4 * r(), fu = r(), fuAdd = 0.5 + 0.9 * r();
+  /* The auto driver: a steady foot read every 20 ms. It feeds the pedal in off the line, aims the slip into the middle of the
+     sweet spot where the grip peaks, backs off hard past the band, eases a hopping nose, and never lifts below about 60%
+     (a lift stops the truck). On a runaway it hits the kill switch in 0.6-0.8 s and never fumbles it: safe in any window,
+     and late enough to keep the feet the runaway drags out. skill 0..1 (default 1, the player's auto driver) blurs it: at
+     0 it is the old human foot, aiming low in the band, correcting lazily, lifting further, 0.6-1.0 s to the switch and now
+     and then a fumble that a short window does not forgive (the team-pull crew drives from there). Deterministic for a
+     seed, on its own random stream so the hook's other seeded moments stay where they were. foot(st) gives 0..1, kill(st)
+     is true once the hand reaches the switch. */
+  function pullDriver(seed, skill) {
+    const r = pullRng(((seed >>> 0) ^ 0x5BD1E995) >>> 0), k = clamp(skill == null ? 1 : +skill, 0, 1), L = (a, b) => a + (b - a) * k;
+    const aim = L(0.10 + 0.12 * r(), 0.45), gain = L(0.9 + 0.2 * r(), 2), q = r(), react = L(0.6 + 0.4 * q, 0.6 + 0.2 * q), fu = r(), fuAdd = 0.5 + 0.9 * r();
+    const floor0 = L(0.4, 0.6), floor1 = L(0.3, 0.6);
     let thr = 0, reach = null;
     function foot(st) {
       if (st.done || st.raOn || st.killed) return 0;   // running away the pedal does nothing: the foot comes off while the hand finds the switch
@@ -8448,12 +8451,12 @@ const ENGINE_SIM = (function () {
       else if (s > tgt && st.v > 0.4) thr -= 0.012 * gain;                     // in the band, above the aim: a touch less (unless it is bogging: then lean in)
       else thr += (st.t < 1.2 ? 0.035 : 0.025) * gain;                         // grip to spare: lean in
       if (st.hop > 0.3 || st.lift > 0.95) thr -= 0.03;                         // the nose is coming up
-      thr = clamp(thr, st.t > 1 ? 0.3 : 0.4, 1);                               // never all the way off: a lift stops the truck
+      thr = clamp(thr, st.t > 1 ? floor1 : floor0, 1);                         // never all the way off: a lift stops the truck
       return thr;
     }
     function kill(st) {
       if (!st.raOn || st.killed || st.done) return false;
-      if (reach == null) reach = react + (fu < 0.06 + 0.24 * clamp((2.1 - st.raWin) / 0.6, 0, 1) ? fuAdd : 0);   // a fumble: the hand misses the switch the first time
+      if (reach == null) reach = react + (fu < (1 - k) * (0.06 + 0.24 * clamp((2.1 - st.raWin) / 0.6, 0, 1)) ? fuAdd : 0);   // a fumble: the hand misses the switch the first time
       return st.raT >= reach;
     }
     return { foot: foot, kill: kill, react: () => reach };
@@ -8672,13 +8675,15 @@ const ENGINE_SIM = (function () {
     function finish() { st.done = true; st.phase = "done"; st.distM = clamp(st.x, 0, L); }
     function step(dt, throttle) { if (throttle != null) st.thr = clamp(+throttle || 0, 0, 1); dt = Math.min(0.25, Math.max(0, dt)); while (dt > 1e-9 && !st.done) { const h = Math.min(0.002, dt); dt -= h; sub(h); } return st; }
     /* the auto driver: flat on the run-up unless it's spinning; in the mud it holds the slip near the tyre's sweet spot and the rpm
-       out of the bog band — on with it when the rpm sags, off when the slip runs past the dig point. skill 0..1 blurs it. */
+       out of the bog band — on with it when the rpm sags, off when the slip runs past the dig point. skill 0..1 blurs it: at 1
+       it lets the tyres spin right up to the dig point and only leans in once the rpm is actually in the bog band; a lesser
+       driver lifts a little early and leans in before it needs to. */
     function auto(skill) {
       const k = skill == null ? 1 : skill;
       if (st.phase === "stage") return 1;
       if (st.phase === "runup") { st.ai = st.slip > 0.22 ? Math.max(0.5, st.ai - 0.04) : Math.min(1, st.ai + 0.05); return st.ai; }
-      const tgt = sw[1] + 0.04 + 0.12 * (1 - k), rpmLow = st.rpm < bogHi * (1.08 + 0.1 * k);
-      if (st.slip > digS - 0.04 * k && !rpmLow) st.ai = Math.max(0.35, st.ai - 0.05 * (0.5 + k));
+      const tgt = sw[1] + 0.04 + 0.12 * (1 - k), rpmLow = st.rpm < bogHi * (1 + 0.18 * (1 - k));
+      if (st.slip > digS - 0.04 * (1 - k) && !rpmLow) st.ai = Math.max(0.35, st.ai - 0.05 * (0.5 + k));
       else if (rpmLow || st.slip < tgt) st.ai = Math.min(1, st.ai + 0.06);
       return st.ai;
     }
@@ -9900,14 +9905,16 @@ const ENGINE_SIM = (function () {
     }
     function step(dt, throttle, trimCmd) { if (throttle != null) st.thr = clamp(+throttle || 0, 0, 1); if (trimCmd != null) st.trimCmd = clamp(+trimCmd || 0, -1, 1); dt = Math.min(0.25, Math.max(0, dt)); while (dt > 1e-9) { const h = Math.min(0.005, dt); dt -= h; sub(h); } return st; }
     /* the auto driver: leaves on its light, feathers to keep the prop hooked through the hump, lifts over a hop,
-       trims in for the hump and out with speed — but backs it in when it porpoises, walks or the nose gets light */
+       trims in for the hump and out with speed — but backs it in when it porpoises, walks or the nose gets light.
+       At skill 1 it picks the pedal straight back up after a blowout or a hop and carries its trim a little under the
+       hull's best (a hair of trim costs less than a porpoise); a lesser driver is slower back on it and trims out further. */
     function auto(skill) {
       const k = skill == null ? 1 : skill;
       if (st.done) return { thr: 0, trim: 0 };
       if (st.phase === "line") return { thr: st.t >= (v.rt != null ? v.rt : 0.08) ? 1 : 0, trim: 0 };
-      const f = st.v / HU.vh, tOpt = boatLerp(-2, opt, boatSm(0.8, 2.2, f)), aim = tOpt - 0.3 - 0.6 * (1 - k) + (k > 0.9 ? 0.25 * Math.min(1, st.v / 60) : 0);
+      const f = st.v / HU.vh, tOpt = boatLerp(-2, opt, boatSm(0.8, 2.2, f)), aim = tOpt - 0.9 + 0.25 * Math.min(1, st.v / 60) + 0.7 * (1 - k);
       let thr = st.foot;
-      if (st.blown) thr = Math.max(0.3, thr - 0.08 * (0.6 + k)); else if (st.air) thr = Math.max(0.5, thr - 0.08 * k); else thr = Math.min(1, thr + 0.04 + 0.04 * k);
+      if (st.blown) thr = Math.max(0.3, thr - 0.08 * (0.6 + k)); else if (st.air) thr = Math.max(0.5, thr - 0.08 * k); else thr = Math.min(1, thr + 0.04 + 0.16 * k * k * k);
       if (st.t - st.rt < 0.05) thr = 1;
       if (st.rpm > v.redline * 1.01) thr = Math.min(thr, 0.85);
       if (st.Lr > 0.82 || st.walk > 0.9) thr = Math.min(thr, 0.7);
@@ -31319,7 +31326,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.97.0";
+const VERSION="1.76.98.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -33867,8 +33874,8 @@ function pullEnvHtml(sl){const e=S.env,k=pullEnvFix(),C0=SIM.PULL_CLASSES[k],V=C
   h+=`<div class="lbl"><span>Driveline</span></div><div class="seg">${[["conv","Converter","multiplies torque when it bogs"],["clutch","Clutch","direct · less heat, no help low"]].map(([id,n,d])=>`<button data-pk="pullTrans" data-pv="${id}" class="${e.pullTrans===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=drvHtml();
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.PULL_TYRES[id];return `<button data-pk="pullTyre" data-pv="${id}" class="${e.pullTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
-  h+=driverToggle(id=>`data-pk="pullDrive" data-pv="${id}"`,e.pullDrive,"hold to pull, let go to ease off","a steady foot · watch the hook");
-  if(e.pullDrive==="auto")h+=`<p class="hint">The auto driver holds the slip low in the green band and keeps some pedal in to the end — steady, a little cautious; a good foot can beat it. If it runs away it goes for the kill switch like anyone would, in under a second most hooks. Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during the hook to take over.</p>`;
+  h+=driverToggle(id=>`data-pk="pullDrive" data-pv="${id}"`,e.pullDrive,"hold to pull, let go to ease off","a sharp foot · watch the hook");
+  if(e.pullDrive==="auto")h+=`<p class="hint">The auto driver holds the slip in the middle of the green band, where the dirt bites hardest, and never lifts below about 60% — it is hard to out-pull. If it runs away it hits the kill switch in under a second, every time. Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during the hook to take over.</p>`;
   h+=`<div class="envgrid">${sl("pullHitch","Hitch height",12,V.hitchMax,1," in",e.pullHitch)}${sl("pullBallast","Ballast",0,V.maxMass-V.mass,10," kg",e.pullBallast)}${sl("pullBallPos","Ballast set back",0,100,10,"%",e.pullBallPos)}${sl("pullPsi","Tyre pressure",SIM.pullPsi(V.kind).min,SIM.pullPsi(V.kind).max,1," psi",e.pullPsi)}${sl("pullThr","Throttle stop",50,100,5,"%",e.pullThr)}</div>`;
   h+=`<p class="hint">A higher hitch plants the rear tyres but lifts the nose — past a point the front hops and the grip goes with it. Weight on the front bracket holds it down${V.drive==="rwd"?", though on a two-wheel-drive tractor it takes a little off the rear":" and the front axle pulls too"}; set it back toward the rear axle and it plants the rear tyres instead, but stops holding the nose. Air the tyres down from ${SIM.pullPsi(V.kind).def} psi for more bite and less digging, at the cost of a sidewall that winds up and hops sooner. A throttle stop caps the pedal, so a big engine can't spin the tyres into a hole even flat out. A tall gear carries speed into the heavy end; a short one digs if you stay flat on it.</p>`;
   return h;}
@@ -33977,7 +33984,7 @@ function bogStart(){
   requestAnimationFrame(step);
 }
 /* the driver's foot: yours (the button), or the auto driver every 20 ms */
-function bogThr(st){if(!BR.auto)return BR.down&&!BR.failed?1:0;if(st.phase==="stage")return BR.go?1:0;return BR.failed?0:BR.p.auto(0.92);}
+function bogThr(st){if(!BR.auto)return BR.down&&!BR.failed?1:0;if(st.phase==="stage")return BR.go?1:0;return BR.failed?0:BR.p.auto(1);}
 /* the live card: distance (or the clock once through), the pit with the field on it, then the two things the foot manages — wheel speed and rpm */
 function bogHud(st,force){if(!BR||!hudDue(BR,st,force))return;const L=BR.night.len,x=Math.max(0,st.x),pc=v=>Math.min(100,100*v/L);
   const stat=BR.failed?"broke":st.cleared?"full":"";
@@ -34006,7 +34013,7 @@ function bogPress(){if(!BR||BR.finished)return;const st=BR.p.st;if(st.done||BR.f
 function bogRelease(){if(!BR)return;BR.down=false;}
 /* skip: the rest of the run is driven at once (the auto driver's foot, or yours held where it was) */
 function bogSkip(){if(!BR||BR.finished)return;const p=BR.p,st=p.st;if(st.phase==="stage"&&!BR.auto)return;
-  if(!st.done){let n=0;while(!st.done&&n++<20000)p.step(0.02,BR.auto?p.auto(0.92):BR.down?1:p.auto(0.92));if(st.broke&&!BR.failed)bogBreak(st.broke);}
+  if(!st.done){let n=0;while(!st.done&&n++<20000)p.step(0.02,BR.auto?p.auto(1):BR.down?1:p.auto(1));if(st.broke&&!BR.failed)bogBreak(st.broke);}
   if(ENGINE_VIS.bogSkip)ENGINE_VIS.bogSkip();BR.skip=true;if(BR.doneAt==null)BR.doneAt=performance.now()-2000;}
 (()=>{const b=$("bogBtn");
   holdBtn(b,()=>BR,bogPress,bogRelease,r=>{if(!r.p)return;bogPress();setTimeout(bogRelease,60);});})();
@@ -34053,7 +34060,7 @@ function bogEnvHtml(sl){const e=S.env,k=bogEnvFix(),C0=SIM.BOG_CLASSES[k],V=C0.v
   const thru=field.filter(f=>f.cleared).length,lead=field.slice().sort(bogCmp)[0];
   let h=`<div class="saltcls"><div><span>Tonight's pit</span><b>${night.len} m</b><small>${esc(night.name)} · ${Math.round(night.d0*(V.pitK||1)*100)} cm deep</small></div><div><span>To beat</span><b>${lead?bogScore(lead):"—"}</b><small>${thru} of ${field.length} got through</small></div><div><span>Your best</span><b>${pb?(pb.c?pb.t.toFixed(2)+" s":pb.m.toFixed(1)+" m"):"—"}</b><small>${pb?(pb.c?"through the pit":"farthest"):"no run yet"}</small></div></div>${bogPitSvg(night,V.pitK||1,field)}`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOG_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.BOG_CLASSES,id);return `<button data-bk="bogCls" data-bv="${id}" class="${k===id?"on":""}${l?" lock":""}">${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
-  h+=driverToggle(id=>`data-bk="bogDrive" data-bv="${id}"`,e.bogDrive,"hold for throttle, feather the spin","a steady foot · watch the run");
+  h+=driverToggle(id=>`data-bk="bogDrive" data-bv="${id}"`,e.bogDrive,"hold for throttle, feather the spin","a sharp foot · watch the run");
   h+=`<div class="lbl"><span>Gear</span></div><div class="seg">${G.map(([n,mph],i)=>`<button data-bk="bogGear" data-bv="${i}" class="${+e.bogGear===i?"on":""}">${n}<small>${mph} mph at redline</small></button>`).join("")}</div>`;
   h+=`<div class="lbl"><span>Tyres</span></div><div class="seg">${V.tyres.map(id=>{const t=SIM.BOG_TYRES[id];return `<button data-bk="bogTyre" data-bv="${id}" class="${e.bogTyre===id?"on":""}">${t.n}<small>${t.d}</small></button>`;}).join("")}</div>`;
   h+=`<p class="hint">${C0.n}: ${V.mass.toLocaleString("en-CA")} kg truck, ${V.tyreDia}" tyres, ${V.driveN}, ${V.trans==="clutch"?"clutch — it can stall":"automatic"}, ${Math.round(V.clear*100)} cm under the frame. ${V.runup} m run-up. A tall gear carries more speed into the mud but bogs sooner in the deep end; a short one keeps the engine up in its band and spins easier. ${night.cons>0.6?"Sticky clay grabs the tyres and packs slow lugs solid":"Soupy mud lets the tyres sink to the floor but lets go of them"}.${lk?` <b>Opens at ${lk} rep.</b>`:""}${bogHookedWk(k)?` <b>Run this week — the next mud bog is week ${C().week+1}.</b>`:""}</p>`;
@@ -35423,7 +35430,7 @@ function boatStart(){
   requestAnimationFrame(step);
 }
 /* the inputs this moment: the auto driver's, or the button and the trim switches */
-function boatCtl(st){if(BT.failed)return{thr:0,trim:0};if(BT.auto){const a=BT.p.auto(0.95);return a;}return{thr:BT.down?1:0,trim:BT.tc};}
+function boatCtl(st){if(BT.failed)return{thr:0,trim:0};if(BT.auto){const a=BT.p.auto(1);return a;}return{thr:BT.down?1:0,trim:BT.tc};}
 /* the other lane, from its trace (time from the green); a boat that broke coasts off the plane */
 function boatOppAt(t){const tr=BT.opp.trace||[];if(t<=0||!tr.length)return{x:0,v:0,done:false,bow:0,pl:0};
   const cut=BT.opp.dnf&&BT.opp.cut!=null?tr[Math.min(tr.length-1,Math.floor(tr.length*BT.opp.cut))].t:Infinity;
@@ -35472,7 +35479,7 @@ function boatRelease(){if(!BT)return;BT.down=false;}
 function boatTrim(d){if(!BT||BT.finished)return;if(BT.auto){if(performance.now()<BT.green)return;boatTakeOver();}BT.tc=d;}
 /* skip: run out the rest of the pass at once (the auto driver's inputs, or yours held where they were) */
 function boatSkip(){if(!BT||BT.finished)return;const p=BT.p,st=p.st;
-  if(!st.done){if(performance.now()<BT.green)BT.green=performance.now();let n=0;while(!st.done&&n++<3000){const c=BT.auto?p.auto(0.95):{thr:BT.down?1:p.auto(0.95).thr,trim:BT.tc};p.step(0.02,c.thr,c.trim);}if(st.broke&&!BT.failed)boatBreak(st.broke);}
+  if(!st.done){if(performance.now()<BT.green)BT.green=performance.now();let n=0;while(!st.done&&n++<3000){const c=BT.auto?p.auto(1):{thr:BT.down?1:p.auto(1).thr,trim:BT.tc};p.step(0.02,c.thr,c.trim);}if(st.broke&&!BT.failed)boatBreak(st.broke);}
   if(ENGINE_VIS.boatSkip)ENGINE_VIS.boatSkip();BT.skip=true;if(BT.doneAt==null)BT.doneAt=performance.now()-2600;}
 (()=>{const b=$("boatBtn"),tI=$("boatTrimIn"),tO=$("boatTrimOut");
   holdBtn(b,()=>BT,boatPress,boatRelease,r=>{if(!r.p)return;boatPress();setTimeout(boatRelease,60);});
@@ -35537,7 +35544,7 @@ function boatEnvHtml(sl){const e=S.env,k=boatEnvFix(),C0=SIM.BOAT_CLASSES[k],HU=
     else h+=`<p class="hint">${BOAT_PLACE[N.place]||"Night over"}${N.purse?" · "+fmt$(N.purse):""}. ${career()&&boatRanWk(k)?`The next ${C0.n} night is week ${C().week+1}.`:"Run again to start a new night."}</p>`;}
   else h+=`<div class="saltcls"><div><span>Course</span><b>1,000 ft</b><small>river · two lanes · a tree</small></div><div><span>Field</span><b>${C0.field.hp.toLocaleString()}</b><small>hp, give or take ${C0.field.sd}</small></div><div><span>Your best</span><b>${pb?pb.et.toFixed(2):"—"}</b><small>${pb?Math.round(pb.mph)+" mph":"no pass yet"}</small></div></div>`;
   h+=`<div class="lbl"><span>Class</span></div><div class="seg wide">${Object.entries(SIM.BOAT_CLASSES).map(([id,c])=>{const l=clsLocked(SIM.BOAT_CLASSES,id);return `<button data-tk="boatCls" data-tv="${id}" class="${k===id?"on":""}${l?" lock":""}"${live&&live.cls!==id?" disabled":""}>${c.n}<small>${l?l+" rep":c.d}</small></button>`;}).join("")}</div>`;
-  h+=driverToggle(id=>`data-tk="boatDrive" data-tv="${id}"`,e.boatDrive,"throttle, trim · feather the hump","a steady hand · tap to take over");
+  h+=driverToggle(id=>`data-tk="boatDrive" data-tv="${id}"`,e.boatDrive,"throttle, trim · feather the hump","a sharp hand · tap to take over");
   if(C0.drive==="jet")h+=`<div class="lbl"><span>Impeller</span></div><div class="seg">${SIM.BOAT_IMP.map(([c,n,cj,d],i)=>`<button data-tk="boatImp" data-tv="${i}" class="${e.boatImp===i?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   else h+=`<div class="envgrid">${sl("boatPitch","Prop pitch",C0.pitch[0],C0.pitch[1],1,'"',e.boatPitch)}</div>`;
   h+=`<div class="envgrid">${sl("boatGear",C0.drive==="jet"?"Drive ratio":C0.id==="outboard"?"Lower-unit gear":"V-drive box",C0.gear[0],C0.gear[1],0.05,":1",e.boatGear)}${sl("boatTrim","Trim at the start",SIM.boatTrimRange()[0],SIM.boatTrimRange()[1],0.5,"°",e.boatTrim)}</div>`;
@@ -38818,9 +38825,10 @@ const PC_PULL_RIGS={gas:["'79 Ford F-250 4x4","'84 Chevy K20","'76 Dodge Ramchar
   truck:["'98 Dodge Ram 2500","'03 Ford F-250 Power Stroke","'95 Chevy K2500","'01 Duramax crew cab","'88 Dodge W250","'99 Ford F-350","'92 Chevy K3500","'06 Ram 3500 Mega Cab"],
   tractor:["Farmall 1206","John Deere 4430","Case IH 1370","Oliver 1855","Allis-Chalmers 220","Massey Ferguson 1155","International 1066","Minneapolis-Moline G1000"]};
 const PC_PULL_SLOTS=8,PC_PULL_PO=1.15,PC_PULL_HAZ=0.25;
-/* the hook, with a driver of this skill: the stock auto driver's foot and kill switch, with a sloppy pedal that grows as the
-   skill falls and a hand that is slower to the switch */
-function pcPullPass(res,veh,sk){const p=SIM.pullRun(res,veh),d=SIM.pullDriver(veh.seed),w=rnRng((veh.seed^0x51AB)>>>0),sl=1-sk;let n=0,nz=0;
+/* the hook, with a driver of this skill: the auto driver at its human floor (SIM.pullDriver skill 0: a low aim in the band,
+   a 0.6-1.0 s hand) for foot and kill switch, with a sloppy pedal that grows as the skill falls and a hand that is slower
+   to the switch */
+function pcPullPass(res,veh,sk){const p=SIM.pullRun(res,veh),d=SIM.pullDriver(veh.seed,0),w=rnRng((veh.seed^0x51AB)>>>0),sl=1-sk;let n=0,nz=0;
   while(!p.st.done){const st=p.st;if(st.phase!=="stage"&&n++%15===0)nz=rnGauss(w)*sl*0.26;
     if(d.kill(st)&&st.raT>=(d.react()||0)+sl*0.35)p.kill();
     const f=d.foot(st);p.step(0.02,st.phase==="stage"||f<=0?f:Math.max(0.3,Math.min(1,f+nz)));}

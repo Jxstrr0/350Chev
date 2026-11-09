@@ -340,15 +340,18 @@
     while (!p.st.done) { if (foot === "feather") { const s = p.st.slip, sw = p.st.sweet; thr = s > sw[1] + 0.04 ? Math.max(0, thr - 0.08) : s < sw[1] ? Math.min(1, thr + 0.05) : thr; } p.step(0.02, thr); }
     return p.result();
   }
-  /* The auto driver: a steady foot read every 20 ms. It feeds the pedal in off the line, aims the slip low in the sweet
-     spot (the grip peaks in the middle: a skilled foot rides closer to it and goes further), backs off hard past the band,
-     eases a hopping nose, and keeps some pedal in to the end. On a runaway it goes for the kill switch after a
-     human reaction (0.6-1.0 s), now and then a fumble that a short window does not forgive. Deterministic for a seed, on
-     its own random stream so the hook's other seeded moments stay where they were. foot(st) gives 0..1, kill(st) is
-     true once the hand reaches the switch. */
-  function pullDriver(seed) {
-    const r = pullRng(((seed >>> 0) ^ 0x5BD1E995) >>> 0);
-    const aim = 0.10 + 0.12 * r(), gain = 0.9 + 0.2 * r(), react = 0.6 + 0.4 * r(), fu = r(), fuAdd = 0.5 + 0.9 * r();
+  /* The auto driver: a steady foot read every 20 ms. It feeds the pedal in off the line, aims the slip into the middle of the
+     sweet spot where the grip peaks, backs off hard past the band, eases a hopping nose, and never lifts below about 60%
+     (a lift stops the truck). On a runaway it hits the kill switch in 0.6-0.8 s and never fumbles it: safe in any window,
+     and late enough to keep the feet the runaway drags out. skill 0..1 (default 1, the player's auto driver) blurs it: at
+     0 it is the old human foot, aiming low in the band, correcting lazily, lifting further, 0.6-1.0 s to the switch and now
+     and then a fumble that a short window does not forgive (the team-pull crew drives from there). Deterministic for a
+     seed, on its own random stream so the hook's other seeded moments stay where they were. foot(st) gives 0..1, kill(st)
+     is true once the hand reaches the switch. */
+  function pullDriver(seed, skill) {
+    const r = pullRng(((seed >>> 0) ^ 0x5BD1E995) >>> 0), k = clamp(skill == null ? 1 : +skill, 0, 1), L = (a, b) => a + (b - a) * k;
+    const aim = L(0.10 + 0.12 * r(), 0.45), gain = L(0.9 + 0.2 * r(), 2), q = r(), react = L(0.6 + 0.4 * q, 0.6 + 0.2 * q), fu = r(), fuAdd = 0.5 + 0.9 * r();
+    const floor0 = L(0.4, 0.6), floor1 = L(0.3, 0.6);
     let thr = 0, reach = null;
     function foot(st) {
       if (st.done || st.raOn || st.killed) return 0;   // running away the pedal does nothing: the foot comes off while the hand finds the switch
@@ -358,12 +361,12 @@
       else if (s > tgt && st.v > 0.4) thr -= 0.012 * gain;                     // in the band, above the aim: a touch less (unless it is bogging: then lean in)
       else thr += (st.t < 1.2 ? 0.035 : 0.025) * gain;                         // grip to spare: lean in
       if (st.hop > 0.3 || st.lift > 0.95) thr -= 0.03;                         // the nose is coming up
-      thr = clamp(thr, st.t > 1 ? 0.3 : 0.4, 1);                               // never all the way off: a lift stops the truck
+      thr = clamp(thr, st.t > 1 ? floor1 : floor0, 1);                         // never all the way off: a lift stops the truck
       return thr;
     }
     function kill(st) {
       if (!st.raOn || st.killed || st.done) return false;
-      if (reach == null) reach = react + (fu < 0.06 + 0.24 * clamp((2.1 - st.raWin) / 0.6, 0, 1) ? fuAdd : 0);   // a fumble: the hand misses the switch the first time
+      if (reach == null) reach = react + (fu < (1 - k) * (0.06 + 0.24 * clamp((2.1 - st.raWin) / 0.6, 0, 1)) ? fuAdd : 0);   // a fumble: the hand misses the switch the first time
       return st.raT >= reach;
     }
     return { foot: foot, kill: kill, react: () => reach };
