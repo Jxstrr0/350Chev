@@ -131,7 +131,8 @@ function rivE24Car(R){if(!career())return null;const ch=rivS().ch;if(!ch||ch.st!
 function rivIssue(){const s=rivS(),c=C(),pl=c.rep;
   const cand=RIVALS.map(v=>({v,evs:v.evs.filter(rivEvOpen)})).filter(x=>x.evs.length);if(!cand.length)return;
   // lean toward a rival who is close to you in the table
-  const w=cand.map(x=>(s.feud&&s.feud.rv===x.v.id?4:1)/(0.4+Math.abs(Math.log((s.r[x.v.id]+10)/(pl+10)))));   // a shop in a feud with you throws down morelet t=w.reduce((a,b)=>a+b,0)*rivRng(),i=0;while(i<w.length-1&&t>w[i]){t-=w[i];i++;}
+  const w=cand.map(x=>(s.feud&&s.feud.rv===x.v.id?4:1)/(0.4+Math.abs(Math.log((s.r[x.v.id]+10)/(pl+10)))));   // a shop in a feud with you throws down more
+  let t=w.reduce((a,b)=>a+b,0)*rivRng(),i=0;while(i<w.length-1&&t>w[i]){t-=w[i];i++;}
   const v=cand[i].v,ev=rivPick(cand[i].evs),tier=repTierIdx(),ahead=s.r[v.id]>pl;
   const beat=RIV_BEAT.includes(ev),need=beat?"beat":ev==="endurance"?"ahead":ev==="drag"||ahead?"win":"podium";
   const win=Math.round((3+tier*RIV_WIN_TIER)*(need==="win"||(need!=="podium"&&ahead)?1.3:1)),purse=Math.min(RIV_PURSE_CAP,Math.round((150+pl*7)/50)*50);
