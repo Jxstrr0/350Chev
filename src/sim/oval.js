@@ -22,13 +22,13 @@
      The clay track's numbers are the originals, untouched.
      ===================================================================== */
   const OVAL_R = 52, OVAL_LEN = 600, OVAL_LS = (OVAL_LEN - 2 * Math.PI * OVAL_R) / 2, OVAL_BANK = 22 * Math.PI / 180, OVAL_W = 18, OVAL_G = 9.81;
-  /* the tracks: geometry (R turn radius m, len lap m, ls straight m, bank rad, w width m) and what the surface does
+  /* the tracks: n what it is, v the venue's name (since 1.76.106.0), geometry (R turn radius m, len lap m, ls straight m, bank rad, w width m) and what the surface does
      (crr rolling, scrub cornering scrub, dirtyK pace lost in the car ahead's air, dust radiator clogging, brakeK braking grip, vTopK the speed the rear end is
      sized for, lapRef seconds a lap for the failure clock, wearMu how much worn tyres lose) */
   const OVAL_TRACKS = {
-    clay: { id: "clay", n: "Clay 3/8", surf: "clay", dist: "3/8 mile", R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, bankDeg: 22, w: OVAL_W,
+    clay: { id: "clay", n: "Clay 3/8", v: "Grid Road Speedway", surf: "clay", dist: "3/8 mile", R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, bankDeg: 22, w: OVAL_W,
       crr: 0.05, scrub: 0.10, dirtyK: 0.014, dust: 1, brakeK: 1, vTopK: 1, lapRef: 19, wearMu: 0.22 },
-    paved: { id: "paved", n: "Paved half-mile", surf: "asphalt", dist: "1/2 mile", R: 70, len: 805, ls: (805 - 2 * Math.PI * 70) / 2, bank: 13 * Math.PI / 180, bankDeg: 13, w: 20,
+    paved: { id: "paved", n: "Paved half-mile", v: "Sundog Speedway", surf: "asphalt", dist: "1/2 mile", R: 70, len: 805, ls: (805 - 2 * Math.PI * 70) / 2, bank: 13 * Math.PI / 180, bankDeg: 13, w: 20,
       crr: 0.022, scrub: 0.07, dirtyK: 0.006, dust: 0.12, brakeK: 1.35, vTopK: 1.1, lapRef: 21, wearMu: 0.2 }
   };
   const ovalTrack = t => typeof t === "object" && t ? t : OVAL_TRACKS[t] || OVAL_TRACKS.clay;
