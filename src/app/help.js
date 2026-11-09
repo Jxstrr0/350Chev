@@ -22,6 +22,7 @@ function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("to
   accReveal(document.querySelector(st.sel));anaReveal(document.querySelector(st.sel));
   const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){const go=n=>{if(tourStep!==i)return;if(st.pre2)st.pre2();const t2=document.querySelector(st.sel)||target,pr=$("panel").getBoundingClientRect(),tr=t2.getBoundingClientRect(),dy=(tr.top-pr.top)-(pr.height*0.38);$("panel").scrollTop+=dy;tourPlace();if(n>0&&Math.abs(dy)>3)setTimeout(()=>go(n-1),350);else setTimeout(tourPlace,380);};setTimeout(()=>go(16),60);}
   $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text.replace("{n}",tourStarters());$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
+  $("tourNext").style.display=i===0&&career()&&!pcTeam()?"none":"";   // step 1 asks for a signature: signing moves the tour on (team.js), so a Next here only skipped it
   if(target&&!$("panel").contains(target)){setTimeout(tourPlace,380);setTimeout(tourPlace,700);}   // the results rail is not in the panel: its layout settles a beat after the tab switch
   requestAnimationFrame(()=>requestAnimationFrame(tourPlace));}
 function tourEnd(){tourStep=-1;$("tour").hidden=true;S.tourDone=true;save();touchHint();}

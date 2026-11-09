@@ -517,10 +517,15 @@ function pcBan(T){return PC_EVENTS[T.ev]?`<div class="pcban"><img src="banners/$
 function pcOffer(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],k=pcPayK(null);
   return`<div class="card pcr">${pcBan(T)}<h3>${esc(T.team)}<span>${fmt$(T.pay)} fee</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}${T.back?" · asking you back":""}</div>
     ${T.ret?`<p class="hint pcret" data-nofold>${pcRetTxt(T)}</p>`:""}${T.rescue?`<p class="pcmid"><b>Rescue.</b> Their engine supplier went bust after round ${T.rescue}. Take over for rounds ${T.rescue+1} to ${PC_ROUNDS}: they have ${T.rpts} pts and are near the back. The fee is ${Math.round((PC_RESCUE.pay-1)*100)}% richer for the trouble; the budget is what's left of theirs.</p>`:""}
-    <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.purse&&PC_PURSE[T.purse]?`<p class="pcst"><b>${PC_PURSE[T.purse].n}.</b> ${PC_PURSE[T.purse].d}</p>`:""}${T.rule&&PC_RULES[T.rule]?`<p class="pcmid"><b>Team rule.</b> ${esc(pcRuleTxt(T))}. They pay ${Math.round((PC_RULES[T.rule].payK-1)*100)}% more on the fee for it.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}
+    <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.purse&&PC_PURSE[T.purse]?`<p class="pcst"><b>${PC_PURSE[T.purse].n}.</b> ${PC_PURSE[T.purse].d}</p>`:""}${T.rule&&PC_RULES[T.rule]?`<p class="pcmid"><b>Team rule.</b> ${esc(pcRuleTxt(T))}. They pay ${Math.round((PC_RULES[T.rule].payK-1)*100)}% more on the fee for it.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}${pcOfferRules(T,E)}
     <p class="mkline"><span>Parts budget <b>${fmt$(T.budget)}</b></span><span>A round raced <b>${fmt$(Math.round(T.pay*PC_RETAIN*k/50)*50)}</b></span><span>Title <b>${fmt$(Math.round(T.pay*PC_CBONUS[0]*(st.winK||1)*k/50)*50)}</b></span></p>
     <p class="hint">${T.rescue?`${PC_ROUNDS-T.rescue} rounds left`:`${PC_ROUNDS} rounds`}, one every ${PC_GAP} weeks. The budget pays for the engine; the fee is yours, with a bonus for every podium. ${T.fit?"Open while this engine is the certified one.":`Offer open till week ${T.exp}.`}</p>
     <div class="row"><button class="btn sm" data-pcsign="${T.id}">Sign with ${esc(T.team)}</button>${T.fit?"":`<button class="btn sm ghost" data-pcpass="${T.id}">Pass</button>`}</div></div>`;}
+/* the class rules an offer's series sets, checked against the certified engine, so a rule the engine breaks shows before
+   signing, not only on race morning (a play-tester signed, built and certified a 3.8 L engine for a 3.3 L class) */
+function pcOfferRules(T,E){const cert=C().cert,h=cfgHash(S.cfg);if(!(cert&&cert.ok&&cert.hash===h&&cert.res))return"";
+  let r=[];try{r=pcK(T).rules(T,E,cert.res).filter(x=>!x.ok);}catch(e){return"";}
+  return r.length?`<p class="pcmid" data-nofold><b>Class rule.</b> Your certified engine doesn't fit yet: ${esc(r.map(x=>x.t).join("; "))}.</p>`:"";}
 /* where the driver's ask stands with the engine on the bench (the veteran's podium can't be known till race day) */
 function pcMidNow(T,c){if(T.mid!=="ask"||!c.res)return"";const same=T.hash!=null&&T.hash===cfgHash(S.cfg),wear=same?T.wear:0,ok=x=>x?"✓ ":"✗ ";
   if(T.style==="steady"){const r=Math.round(c.res.rel-wear);return`<i>${ok(r>=90)}Now ${r}%${same&&T.wear>0?" with the wear":""}.</i>`;}
@@ -536,6 +541,7 @@ function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(
   else s+=`<p class="hint">Build the engine for the season and certify it on the dyno. Whatever is left of the budget pays for freshen-ups, rebuilds and changes later.</p>`;
   s+=`<div class="pcchk">${c.o.map(x=>`<div class="${x.wn?"wn":x.ok?"ok":"no"}">${x.wn?"!":x.ok?"✓":"✗"} ${esc(x.t)}</div>`).join("")}</div>${pcMapHtml(T)}
     ${due?"":`<p class="hint">Round ${rd} is race week ${T.due}: ${pcSkip()?"To race week gets you there in one tap (1 wk at the top closes just one, for the event nights)":"close the week to get there"}. Close week on race week races it with the season engine as it stands.</p>`}
+    ${due&&!c.ok?`<p class="hint pcbad" data-nofold>Can't race yet: ${esc(c.o.filter(x=>!x.ok&&!x.wn).map(x=>x.t).join("; "))}.</p>`:""}
     <div class="row">${due?`<button class="btn${c.ok?"":" ghost"}" data-pcgo ${c.ok?"":"disabled"}>Race round ${rd}</button>`:`<button class="btn pri" data-pcweek>${pcSkip()?"To race week":"Close week"}</button>`}`;
   if(same&&!T.broken&&T.wear>0)s+=`<button class="btn sm" data-pcfresh ${fresh>left||T.dh===T.round?"disabled":""}>${T.dh===T.round?"No time to freshen up":`Freshen up · ${fmt$(fresh)}`}</button>`;
   if(T.hash!=null&&!same)s+=`<button class="btn sm ghost" data-pcback>Put the season engine back</button>`;
