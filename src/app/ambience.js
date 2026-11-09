@@ -29,7 +29,7 @@ function ambFile(id){return "sounds/amb/"+id+".mp3";}
 function crowdFile(id){return "sounds/crowd/"+id+".mp3";}
 /* where you are decides the bed: the event that is set up in Events, the shop everywhere else */
 function ambWant(){if(!ambCtx()||!ambLvl()||document.hidden||!S.mode)return null;
-  return curTab==="events"?(AMB_FOR[S.env.testType]||null):"shop";}
+  return curTab==="events"&&!evhubOn()?(AMB_FOR[S.env.testType]||null):"shop";}
 function ambFade(g,to,t){const ctx=g.context,now=ctx.currentTime;try{g.gain.cancelScheduledValues(now);g.gain.setValueAtTime(g.gain.value,now);g.gain.linearRampToValueAtTime(to,now+t);}catch(e){g.gain.value=to;}}
 function ambStop(t){const s=AMB.src,g=AMB.g;AMB.src=null;AMB.g=null;AMB.id=null;if(!s)return;
   if(g&&t){ambFade(g,0,t);setTimeout(()=>{try{s.stop();s.disconnect();g.disconnect();}catch(e){}},t*1000+80);}else{try{s.stop();s.disconnect();if(g)g.disconnect();}catch(e){}}}

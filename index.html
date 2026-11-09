@@ -1913,6 +1913,58 @@ html.desk details.combo>summary:hover h3{color:var(--orange2,var(--orange))}
 #evHud #pcwLive{display:block}
 html:not(.desk) #evHud[data-ev=pcwLive]{padding-top:8px}
 html:not(.desk) #evHud #pcwLive .hlh .rd-spd b{font-size:24px}html:not(.desk) #evHud #pcwLive .hlh .rd-g b{font-size:19px}html:not(.desk) #evHud #pcwLive .hlh .rd-lt b{font-size:16px}
+/* Events landing (app/evhub.js): the full-screen venue programme (#evHub), one card per event, and the event page's header bar (#evHead) with its Back button.
+   html.evin is on while an event is entered; the landing shows on the Events tab without it. The chip row (#evPick) stays in the page, hidden. */
+#evPick{display:none}
+/* the event page: a header bar with Back */
+#evHead{display:none}
+html.evin #evHead{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+#tab-events.pcw #evHead{display:none}
+#evBack{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 14px 0 8px;font-family:var(--display);font-weight:600;letter-spacing:.04em}
+#evBack svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#tab-events.evbusy #evBack{opacity:.4;pointer-events:none}   /* no leaving mid-run */
+#evHead .evht{min-width:0;flex:1 1 auto}
+#evHead .evht b{display:block;font-family:var(--display);font-size:19px;font-weight:700;line-height:1.15;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#evHead .evht small{display:block;font-size:12px;line-height:1.3;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the landing: over the whole app (below the tab bar), the page behind it hidden from taps and readers */
+#evHub{display:none;position:absolute;inset:0;z-index:11;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:var(--soot);padding:max(18px,env(safe-area-inset-top)) 16px calc(var(--tabh) + 28px)}
+html[data-tab=events]:not(.evin) #evHub{display:block}
+#app:has(#tab-events.pcw) #evHub{display:none!important}
+html[data-tab=events]:not(.evin) #tab-events:not(.pcw){visibility:hidden}
+html.desk #evHub{padding-top:68px;padding-left:28px;padding-right:28px}
+html.desk[data-tab=events]:not(.evin) #tabs{z-index:12}
+.evh-in{max-width:1180px;margin:0 auto}
+.evh-hd{margin:0 0 16px;padding-bottom:12px;border-bottom:2px solid var(--orange)}
+.evh-hd small{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange2)}
+.evh-hd h2{margin:2px 0 0;font-size:34px;line-height:1.05;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.evh-hd p{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.evgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:14px}
+/* a card: banner, then the programme lines */
+.evc{position:relative;display:flex;flex-direction:column;text-align:left;padding:0;overflow:hidden;background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.22);color:var(--chalk);transition:transform .12s ease,border-color .2s}
+.evc:hover{border-color:var(--orange)}
+.evc:active{transform:scale(.985)}
+.evb{position:relative;display:block;aspect-ratio:3/1;overflow:hidden;color:#faf9f5;background:repeating-linear-gradient(115deg,rgba(255,255,255,.045) 0 2px,transparent 2px 16px),linear-gradient(135deg,hsl(var(--h) 38% 30%),hsl(var(--h) 32% 11%))}
+.evb::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,rgba(20,20,19,.55),rgba(20,20,19,0));pointer-events:none}
+.evb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.8) brightness(.85)}
+.evi{position:absolute;right:14px;top:50%;width:min(44%,120px);height:auto;aspect-ratio:1;transform:translateY(-50%);fill:none;stroke:currentColor;stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;opacity:.3}
+.evno{position:absolute;left:12px;top:9px;z-index:1;font-family:var(--mono);font-style:normal;font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.evon{position:absolute;right:10px;top:8px;z-index:1;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--orange);color:var(--orange-ink)}
+.evx{display:flex;flex-direction:column;gap:2px;padding:10px 14px 14px}
+.evn{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.15;letter-spacing:.02em;text-transform:uppercase}
+.evv{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--orange2)}
+.evd{margin-top:2px;font-size:14px;line-height:1.35;color:var(--muted)}
+.evs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule)}
+.evs>span{min-width:0}
+.evs i{display:block;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.evs b{display:block;font-family:var(--display);font-size:14px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+/* locked: dimmed, with the reason over the banner */
+.evc.lock .evb,.evc.lock .evx{filter:grayscale(.75);opacity:.5}
+.evlk{position:absolute;left:50%;top:calc(100% / 8);transform:translate(-50%,0);display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 24px);padding:6px 12px;border-radius:99px;background:rgba(20,20,19,.88);border:1px solid var(--steel);color:#faf9f5;font-size:13px}
+.evlk svg{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.evlk b{font-family:var(--display);font-weight:600;letter-spacing:.03em}
+.evc.live{border-color:var(--orange)}
+@media (max-width:380px){.evs{grid-template-columns:1fr 1fr}.evs>span:last-child{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){.evc{transition:none}}
 /* ===================== SHOP GLASS (UI-GLASS-PLAN PR 1) =====================
    Frosted, translucent surfaces with a bright rim, over an ambient glow, so the UI reads as glass in an engine shop at night.
    Loaded last of the CSS, so it overrides the base rules without editing them. Holds: the glass tokens, the shared .glass
@@ -2310,6 +2362,7 @@ html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
 
     <!-- EVENTS: the strip, the sled, the salt, the road and the 24 Hours (the test core moves here with them) -->
     <section class="tabpage" id="tab-events">
+      <div class="evhead" id="evHead"><button class="btn sm ghost" id="evBack" aria-label="Back to all events"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Back</button><div class="evht"><b id="evHeadName"></b><small id="evHeadSub"></small></div></div>
       <div class="evpick" id="evPick" role="radiogroup" aria-label="Event"></div>
       <div class="evtabs seg n3" id="evTabs" role="tablist" aria-label="Event panel"><button role="tab" data-evt="setup">Setup</button><button role="tab" data-evt="adv">Advanced</button><button role="tab" data-evt="res">Results<i class="evdot" aria-hidden="true"></i></button></div>
       <p class="hint tbusy" id="evBusy" hidden></p>
@@ -2399,6 +2452,12 @@ html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
     <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Team</button>
     <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
   </nav>
+
+  <!-- EVENTS landing (app/evhub.js): one card per event; covers the app while the Events tab has no event entered -->
+  <div id="evHub" role="region" aria-label="Events"><div class="evh-in">
+    <header class="evh-hd" id="evHubHd"><small>Prairie Engine Works</small><h2>Events</h2><p id="evHubMode"></p></header>
+    <div class="evgrid" id="evGrid"></div>
+  </div></div>
 
   <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
   <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
@@ -31224,7 +31283,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.92.0";
+const VERSION="1.76.93.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -32093,7 +32152,7 @@ function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"t
   busy("evBusy",!ev,`A <b>${(EV_NAME[t]||"dyno").toLowerCase()}</b> ${testing?"is running":"is set up"} in Test. <button class="chip" data-gotab="test">Open Test</button>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-gotab]");if(!b)return;showTab(b.dataset.gotab);});
 /* a brief judged on the road, the strip or the salt: straight to that event (in the buyer's car and circuit for the road) */
-function evGo(t,patch){if(testing){toast("Let the run finish first");return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
+function evGo(t,patch){if(testing){toast("Let the run finish first");return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();evhubSet(evCur());evhubPush();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-evgo]");if(!b)return;const t=b.dataset.evgo,p={};if(t==="road"){if(b.dataset.ch)p.roadCh=b.dataset.ch;if(b.dataset.trk)p.roadTrk=b.dataset.trk;}evGo(t,p);});
 /* the picker cards: icon, name and one line of where you stand */
 const BR_REP=5;   // bracket night: rep to enter in career
@@ -32132,7 +32191,8 @@ function evBlock(t){if(!career()||!trackEvt(t))return"";
 function evPickRender(){const box=$("evPick");if(!box)return;const cur=evCur();
   const h=EV_T.map(t=>{const st=evStatus(t),on=t===cur;return `<button data-t="${t}" role="radio" aria-checked="${on}" class="${on?"on":""}${st.k?" "+st.k:""}" title="${EV_NAME[t]}${st.s?" · "+st.s:""}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><b>${EV_NAME[t]}</b><small>${st.s||"&nbsp;"}</small></button>`;}).join("");
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
-  const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));}
+  const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));
+  evhubRender();}
 /* Advanced: the settings a racer rarely touches fold away under the essentials (open state per test in S.advOpen) */
 /* ADV: what folds away under an event's essentials. e = sliders, k = [data-attr, key] segs (label + seg + its note), x = extra selectors,
    m = selectors for more groups the Events tab moves out of Setup (a .seg's label and note, or the suspension grid with its read-out),
@@ -33468,7 +33528,7 @@ function ambFile(id){return "sounds/amb/"+id+".mp3";}
 function crowdFile(id){return "sounds/crowd/"+id+".mp3";}
 /* where you are decides the bed: the event that is set up in Events, the shop everywhere else */
 function ambWant(){if(!ambCtx()||!ambLvl()||document.hidden||!S.mode)return null;
-  return curTab==="events"?(AMB_FOR[S.env.testType]||null):"shop";}
+  return curTab==="events"&&!evhubOn()?(AMB_FOR[S.env.testType]||null):"shop";}
 function ambFade(g,to,t){const ctx=g.context,now=ctx.currentTime;try{g.gain.cancelScheduledValues(now);g.gain.setValueAtTime(g.gain.value,now);g.gain.linearRampToValueAtTime(to,now+t);}catch(e){g.gain.value=to;}}
 function ambStop(t){const s=AMB.src,g=AMB.g;AMB.src=null;AMB.g=null;AMB.id=null;if(!s)return;
   if(g&&t){ambFade(g,0,t);setTimeout(()=>{try{s.stop();s.disconnect();g.disconnect();}catch(e){}},t*1000+80);}else{try{s.stop();s.disconnect();if(g)g.disconnect();}catch(e){}}}
@@ -39237,13 +39297,85 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-crate]");i
   if(b.dataset.crate==="list"){if(s.l&&!confirm(`Stop selling the ${s.l.name} and list this one?`))return;if(crList()){toast("LISTED · CRATE ENGINE");buzz(20);}}
   else if(b.dataset.crate==="stop"){if(!s.l||!confirm(`Stop selling the ${s.l.name}?`))return;logEvent(`Crate engines: stopped selling the ${s.l.name}`,"");s.l=null;}
   save();renderShop();});
+/* ===================== EVENTS LANDING: the venue picker ===================== */
+/* Tapping Events with no event entered shows a full-screen programme (#evHub, css/ui-evhub.css): one big card per event
+   with its banner, venue, classes, purse and where you stand. A card enters that event through the same evApply + pickTest
+   path the old chip row used, so setup, Go and results behave as before. The event page then opens with a header bar
+   (#evHead) and a Back button, and the chip row (#evPick) stays in the page, hidden.
+   EH.t is the event entered this session ("" = the landing). It is not saved: a fresh load starts on the grid, and
+   switching tabs and back keeps you where you were. html.evin mirrors it for the CSS. Back is held while a run is going.
+   The browser's own Back button (Android) steps out of an event too, through one history entry per visit.
+   Banner art: a later PR drops one 3:1 image per event into EV_BANNER (a path, e.g. "banners/drag.webp"); the card then
+   draws it lazily over the gradient and icon, which stay as the fallback. */
+var EH={t:""};   // var: evPickRender can run before this file has on boot
+const EV_BANNER={drag:null,bracket:null,pull_sled:null,salt:null,bog:null,boat:null,road:null,hill:null,oval:null,race24:null};
+/* h: the banner's hue; v: the venue; d: one line on what it is; cls: what the classes cell says */
+const EVH={
+  drag:{h:16,v:"Prairie Dragway",d:"Quarter-mile passes and heads-up race nights on a prepped strip.",cls:()=>Object.keys(SIM.AERO).length+" body classes"},
+  bracket:{h:42,v:"Prairie Dragway",d:"Dial in your ET and race heads-up: run under your dial and you break out.",cls:()=>Object.keys(SIM.AERO).length+" body classes"},
+  pull_sled:{h:95,v:"County Fairgrounds",d:"A truck drags a weighted sled down 300 ft of dirt.",cls:()=>Object.keys(SIM.PULL_CLASSES).length+" classes"},
+  salt:{h:200,v:"Bonneville Salt Flats",d:"One timed mile at full speed, then the chute. Thin air costs power.",cls:()=>Object.keys(SIM.LSR_BODIES).length+" body classes"},
+  bog:{h:75,v:"The mud pit",d:"Hit the mud with speed and keep the wheels turning: through scores time, stuck scores distance.",cls:()=>Object.keys(SIM.BOG_CLASSES).length+" classes"},
+  boat:{h:190,v:"The river course",d:"Heads-up over 1,000 ft of water: a slipping prop, the hump, then the plane.",cls:()=>Object.keys(SIM.BOAT_CLASSES).length+" classes"},
+  road:{h:215,v:"Prairie Sky Raceway",d:"Your engine in a chassis: 0-100, the quarter, top speed and a flying lap.",cls:()=>Object.keys(SIM.ROAD_TRACKS).length+" circuits"},
+  hill:{h:265,v:"Pikes Peak",d:"19.99 km and 156 turns, from 2,862 m up into thin air.",cls:()=>Object.keys(SIM.HILL_CLASSES).length+" classes"},
+  oval:{h:8,v:"Clay 3/8 and paved half-mile",d:"A heat race, then the feature, in one gear on a banked oval.",cls:()=>Object.keys(SIM.OVAL_CLASSES).length+" classes"},
+  race24:{h:235,v:"Prairie Sky Raceway",d:"A day and a night against twenty cars in three classes.",cls:()=>Object.keys(SIM.E24_CLASSES).length+" classes"}};
+/* the money cell: [label, text]. Career reads the same tables the payouts do; the sandbox has no entry fees */
+const evhRange=a=>{const lo=Math.min(...a),hi=Math.max(...a);return lo===hi?fmt$(lo):fmt$(lo)+"–"+fmt$(hi);};
+const evhTier=(T,top,pay)=>Object.values(T).map(c=>top*(pay[c.tier]||1));
+function evhMoney(t){if(!career())return["Entry","Free"];
+  if(t==="drag"||t==="bracket")return["Purse","by your ET"];
+  if(t==="pull_sled")return["Winner",evhRange(evhTier(SIM.PULL_CLASSES,PULL_PURSE[0],PULL_PAY))];
+  if(t==="bog")return["Winner",evhRange(evhTier(SIM.BOG_CLASSES,BOG_PURSE[0],BOG_PAY))];
+  if(t==="hill")return["Winner",evhRange(evhTier(SIM.HILL_CLASSES,HILL_PURSE[0],HILL_PAY))];
+  if(t==="oval")return["Feature",evhRange(evhTier(SIM.OVAL_CLASSES,OVAL_FPURSE[0],OVAL_PAY))];
+  if(t==="boat")return["Winner",evhRange(Object.values(SIM.BOAT_CLASSES).map(c=>c.purse))];
+  if(t==="salt")return["Record",evhRange(Object.values(SALT_PURSE))];
+  if(t==="race24")return["Class win",evhRange(Object.values(SIM.E24_CLASSES).map(c=>c.prize[0]))];
+  return["Entry",fmt$(ROAD_FEE)];}
+const evhCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):"";
+function evhCard(t,i){const st=evStatus(t),H=EVH[t],lock=st.k==="lock",img=EV_BANNER[t],m=evhMoney(t);let cls="";try{cls=H.cls();}catch(e){}
+  return `<button class="evc${lock?" lock":""}${st.k==="live"?" live":""}" data-t="${t}" style="--h:${H.h}"${lock?` aria-disabled="true"`:""}>`
+    +`<span class="evb">${img?`<img src="${esc(img)}" alt="" loading="lazy" decoding="async">`:""}<svg class="evi" viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><i class="evno">No. ${String(i+1).padStart(2,"0")}</i>${st.k==="live"?`<em class="evon">On now</em>`:""}</span>`
+    +`<span class="evx"><b class="evn">${EV_NAME[t]}</b><span class="evv">${H.v}</span><span class="evd">${H.d}</span>`
+    +`<span class="evs"><span><i>Classes</i><b>${cls}</b></span><span><i>${m[0]}</i><b>${m[1]}</b></span><span><i>Status</i><b>${esc(evhCap(st.s))||"Open"}</b></span></span></span>`
+    +(lock?`<span class="evlk"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><b>${esc(evhCap(st.s))}</b></span>`:"")+`</button>`;}
+/* paint the grid and the event header, and keep html.evin and EH.t in step with what is really set up */
+function evhubRender(){if(!EH)return;try{
+  const pcw=$("tab-events").classList.contains("pcw"),inEv=trackEvt(S.env.testType);
+  if(!EH.t&&testing&&inEv&&!pcw)EH.t=evCur();                    // an event run is going: the page is the event's
+  else if(EH.t&&!testing&&inEv)EH.t=evCur();                      // a lock or a mode switch moved the pick: follow it
+  document.documentElement.classList.toggle("evin",!!EH.t);
+  const g=$("evGrid"),h=EV_T.map(evhCard).join("");if(g.dataset.h!==h){g.dataset.h=h;g.innerHTML=h;}
+  const md=career()?"Career: entries cost money and the purses and rep pay out.":"Test cell: free entry, nothing on the books.";if($("evHubMode").textContent!==md)$("evHubMode").textContent=md;
+  if(EH.t){const st=evStatus(EH.t),nm=EV_NAME[EH.t],sb=[EVH[EH.t].v,evhCap(st.s)].filter(Boolean).join(" · ");
+    if($("evHeadName").textContent!==nm)$("evHeadName").textContent=nm;if($("evHeadSub").textContent!==sb)$("evHeadSub").textContent=sb;}
+  }catch(e){}}
+/* is the landing the page on show? (no run going: keys and sounds that belong to an event page stand down) */
+function evhubOn(){return curTab==="events"&&!EH.t&&!testing;}
+function evhubSet(t){EH.t=t||"";evhubRender();}
+function evhubPush(){try{if(!(history.state&&history.state.pewEv))history.pushState({pewEv:1},"");}catch(e){}}
+/* go into an event: the old chip's path (evApply, then pickTest renders the page). force skips the lock check (lessons) */
+function evhubEnter(t,force){if(testing){toast("Let the run finish first");return;}
+  const st=evStatus(t);if(st.k==="lock"&&!force){toast(`${EV_NAME[t]}: ${st.s}`);buzz(8);return;}
+  evApply(t);EH.t=t;pickTest(S.env.testType);evhubPush();tabScroll.events=0;$("panel").scrollTop=0;}
+/* back to the grid. The Back button goes through history when this visit pushed an entry, so the entry is spent too */
+function evhubLeave(){if(!EH.t)return;EH.t="";evhubRender();}
+function evhubBack(){if(testing){toast("Let the run finish first");return;}
+  try{if(history.state&&history.state.pewEv){history.back();return;}}catch(e){}
+  evhubLeave();}
+function evhubGrid(){evhubSet("");}   // the tour: show the landing
+$("evGrid").addEventListener("click",e=>{const b=e.target.closest(".evc");if(b)evhubEnter(b.dataset.t);});
+$("evBack").addEventListener("click",evhubBack);
+window.addEventListener("popstate",()=>{if(!EH.t)return;if(testing){evhubPush();toast("Let the run finish first");return;}evhubLeave();});
 /* ---- career onboarding tour: three callouts anchored to the real controls ---- */
 const TOUR=[
   {tab:"market",sel:"#pcOfSec",title:"Sign a race team",text:"Teams call with an offer for one series and eight rounds. Their parts budget pays for the engine; the season fee is yours, paid as you race, with bonuses for podiums and the title. Sign one to start."},
   {tab:"build",sel:'#presets [data-id="22re"]',pre:tourPresetPrep,pre2:tourPresetRow,title:"Build the team's engine",text:"The {n} green-tagged Starter engines use only parts your bay already has. Start from one that suits the series (the Two-four is a cheap first try) and keep the build cost under the team's budget."},
   {tab:"test",sel:"#rlRun",title:"Certify it on the dyno",text:"A team only races a certified engine. Arm the dyno and pull ($75). No failures and under the dyno's cap means it's certified."},
   {tab:"market",sel:"#pcJob",title:"Race day",text:"A round runs every other week. When it's due, race it from here. Close week (at the top, or on the team card) moves the calendar on, and races a due round with the season engine as it stands. After a round, To race week skips the off week. Wear, breakages and engine changes come out of the team's budget."},
-  {tab:"events",sel:"#evPick",title:"Race your own in Events",text:"On top of the team: the strip, race nights, the sled pull, the salt, the bog, the lake, the road course, the hill, the dirt oval and the 24 Hours. Each one is a different car around your engine. Wins pay purses and rep, set records, and the brands are watching."},
+  {tab:"events",sel:"#evHubHd",pre:evhubGrid,title:"Race your own in Events",text:"On top of the team: the strip, race nights, the sled pull, the salt, the bog, the lake, the road course, the hill, the dirt oval and the 24 Hours. Each one is a different car around your engine, and a tap on its card goes in. Wins pay purses and rep, set records, and the brands are watching."},
   {tab:"analysis",sel:"#teleFold",title:"Read it in Analysis",text:"Telemetry from the last pull, how your parts and materials interact, the engineer's notes on what to change next, your records and your achievements. When a build disappoints, the answer is usually in here."},
   {tab:"market",sel:"#sponSec",title:"Sponsors and rivals",text:"Brands notice shops that race and win. A deal pays a retainer and bonuses for a set number of weeks, and only ever asks for what you already do. Once your rep reaches the board (10), rival shops show up here to challenge you."},
   {tab:"shop",sel:"#upSec",title:"Grow the shop",text:"Upgrades open new bays, the boost bench, the machine shop and bigger dynos: a series only calls once your dyno can read the power its field makes. Staff are named people who level up. R&D funds one project at a time while you close weeks, and the bank will lend against the shop."}
@@ -39564,12 +39696,12 @@ const LESSONS=[
   {tab:"build",sel:'[data-info="fuel"]',up:1,title:"Octane matters more",text:"The extra oxygen makes the cylinder hotter and faster, so knock margin gets thin. High-octane or alcohol fuel protects pistons that a shot would otherwise melt."},
   {tab:"build",sel:"#r-timing",up:1,lbl:1,title:"Retard the timing",text:"Nitrous burns fast. Pull a few degrees of ignition timing back for a bigger shot. The Detonation margin test in the stress report shows whether you went far enough."},
   {tab:"build",sel:'[data-k="launchCtl"]',up:1,lbl:1,title:"Launch control",text:"A two-step holds rpm on the line, launch retard builds boost while holding it, and a trans-brake keeps the car still until you release. They are strip-only and add no power by themselves."},
-  {tab:"events",sel:'#evPick [data-t="drag"]',title:"Take it to the strip",text:"Events holds the strip, the sled, the salt, the road and the 24 Hours. Drag strip is the 1/4 mile. Your nitrous kit only arrives when the throttle is wide open, and it comes on at the point you choose below."},
+  {tab:"events",sel:'#evHead',title:"Take it to the strip",text:"Events holds the strip, the sled, the salt, the road and the 24 Hours. Drag strip is the 1/4 mile. Your nitrous kit only arrives when the throttle is wide open, and it comes on at the point you choose below."},
   {tab:"events",sel:'#envBox [data-ek="n2oHeater"]',up:1,lbl:1,title:"Bottle pressure and purge",text:"The shot is jetted for about 950 psi, so a heater keeps passes the same. On the line, hold PURGE (or press P) until it spits white so the first spray is liquid."},
   {tab:"events",sel:"#runTest",title:"Stage and launch",text:"Stage the car and launch on the green. A strong launch counts for more than top-end power, and a shot that comes on too early only spins the tyres."},
   {tab:"events",sel:"#dynoHint",title:"Read the timing slip",text:"After a pass, the slip lists reaction time, 60 ft, the eighth and quarter mile ET with trap speed. If the 60 ft is slow but the trap speed is high, the power is there and the launch is the problem."}]},
  {id:"pulling",name:"Pulling 101",sub:"the sled, hitch, tyres and throttle",preset:"smoker26",env:{testType:"pull_sled"},steps:[
-  {tab:"events",sel:'#evPick [data-t="pull_sled"]',title:"The sled pull",text:"Truck pull lives on the Events tab. A truck drags a sled down 300 feet of dirt. A heavy box slides forward as it goes, pressing the sled's pan into the track, so the load grows every foot. Farthest wins; a full pull gets a pull-off."},
+  {tab:"events",sel:'#evHead',title:"The sled pull",text:"Truck pull lives on the Events tab. A truck drags a sled down 300 feet of dirt. A heavy box slides forward as it goes, pressing the sled's pan into the track, so the load grows every foot. Farthest wins; a full pull gets a pull-off."},
   {tab:"events",sel:'#envBox [data-pk="pullCls"]',up:1,lbl:1,title:"Pick a class",text:"Each class has its own weight limit, tyres and rules. Your build has to be legal for the class, and the legal line is shown under each button."},
   {tab:"events",sel:'#envBox [data-pk="pullGear"]',up:1,lbl:1,title:"Choose a gear",text:"A tall gear carries speed into the heavy end of the track; a short one gives more pull but digs the tyres if you stay flat on it."},
   {tab:"events",sel:'#envBox [data-pk="pullTyre"]',up:1,lbl:1,title:"Tyres and slip",text:"Some slip is good: there is a sweet spot where the tyres pull hardest. Too little and the engine bogs, too much and the tyres dig a hole. The pull sheet reports the time you spent in that band."},
@@ -39579,7 +39711,7 @@ const LESSONS=[
   {tab:"events",sel:"#dynoHint",title:"Read the pull sheet",text:"The sheet lists distance, setup, tyre slip and the reasons the pull ended. If the truck stopped bogged, you need torque or gear; if it spun, you need grip or less throttle."}]},
  /* the Events lessons below: Setup controls show by default; Advanced ones are revealed by accReveal (tab + section). "#dynoHint,#verdict" = whichever result block is showing */
  {id:"bracket",name:"Bracket night 101",sub:"dial-in, breakouts, tyres, the tree",preset:"sbc350",env:{testType:"drag",dragFmt:"bracket",dragQuick:true},steps:[
-  {tab:"events",sel:'#evPick [data-t="bracket"]',title:"Consistent beats quick",text:"Bracket racing is not won by the fastest car. Before the round you dial in the ET you expect. The slower dial leaves first, and the first car to the stripe wins, unless it ran quicker than its dial. That is a breakout, and it loses."},
+  {tab:"events",sel:'#evHead',title:"Consistent beats quick",text:"Bracket racing is not won by the fastest car. Before the round you dial in the ET you expect. The slower dial leaves first, and the first car to the stripe wins, unless it ran quicker than its dial. That is a breakout, and it loses."},
   {tab:"events",sel:'#envBox [data-ek="dragFmt"]',up:1,lbl:1,title:"Three ways to race",text:"Test & tune is one pass. Eliminations is a heads-up ladder where a quick light beats a quick car. Bracket is the dial-in night. The Bracket night tile above skips the time trials and goes straight to round one, up to three rounds."},
   {tab:"events",sel:'#envBox [data-ek="tyre"]',up:1,lbl:1,title:"Grip is repeatability",text:"Street radial, drag radial or slick. A tyre that spins one pass in three gives you a different ET each round, and your dial is worthless. Pick the grip that lets the car do the same thing every time."},
   {tab:"events",sel:"#er-launchRpm",wrap:".env",title:"Launch rpm",text:"Where the clutch lets go. Too high and the tyres spin, too low and the engine bogs. You are chasing a number you can repeat, so find a launch rpm you can hit every pass."},
@@ -39589,7 +39721,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"Enter the night",text:"Tap to enter. Leave on the green of your own tree. A red light loses outright, and running quicker than your dial is a breakout. Entry is free in the sandbox."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the slip",text:"After each round the slip shows your ET against your dial, your rival's ET and dial, and who went through. Ran a hair over your dial is a good round. Ran under it, and you broke out and lost, however quick it was."}]},
  {id:"salt",name:"Salt flats 101",sub:"thin air, gearing, body, chutes",preset:"2jzgte",env:{testType:"salt"},steps:[
-  {tab:"events",sel:'#evPick [data-t="salt"]',title:"A mile at full speed",text:"Salt flats is a top-speed run. You roll to the line, push off, and hold the throttle while the clocks time one mile that starts well down the course. Salt grips about half as well as a prepped strip, so the wheels let go early."},
+  {tab:"events",sel:'#evHead',title:"A mile at full speed",text:"Salt flats is a top-speed run. You roll to the line, push off, and hold the throttle while the clocks time one mile that starts well down the course. Salt grips about half as well as a prepped strip, so the wheels let go early."},
   {tab:"events",sel:"#envBox>p.hint",title:"Thin air costs power",text:"Bonneville is high and warm, so the engine makes less than it did on the dyno. A boosted engine gets most of it back. A naturally aspirated one does not."},
   {tab:"events",sel:'#envBox [data-sk="saltBody"]',up:1,lbl:1,title:"Pick a body",text:"From the altered, with its street body and big radiator, to the streamliner with its wheels enclosed. Less drag is more top speed, but the streamliner is the twitchy one."},
   {tab:"events",sel:'#envBox [data-sk="saltCourse"]',up:1,lbl:1,title:"Short or long course",text:"The short course has a one-mile run-up and the long one four. A longer run-up gives the car more road to climb to its top speed before the clocks start."},
@@ -39598,7 +39730,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"Roll to the line",text:"Hold the button for the push, then keep holding for throttle. Let go to feather it if the wheels spin. The chute comes out after the timed mile."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the run",text:"The result shows your speed through the timed mile and how the run ended. If it topped out on the limiter, gear taller. If it was still climbing at the clocks, try the long course. If it spun, ease the throttle."}]},
  {id:"bog",name:"Mud bog 101",sub:"class, torque, gear, wheelspin",preset:"godzilla73",env:{testType:"bog"},steps:[
-  {tab:"events",sel:'#evPick [data-t="bog"]',title:"Through, or stuck",text:"Mud bog is a truck and a pit of mud. If you get through, the stopwatch scores the time. If you stick, the distance you reached is your score. The wheels have to keep turning."},
+  {tab:"events",sel:'#evHead',title:"Through, or stuck",text:"Mud bog is a truck and a pit of mud. If you get through, the stopwatch scores the time. If you stick, the distance you reached is your score. The wheels have to keep turning."},
   {tab:"events",sel:'#envBox [data-bk="bogCls"]',up:1,lbl:1,title:"Pick a class",text:"Street 4×4, Modified or Open. Each is a different truck with its own tyres, drivetrain and weight, and the line under the buttons says what you have."},
   {tab:"build",sel:'[data-k="asp"]',up:1,lbl:1,title:"Torque, not top speed",text:"The pit loads the wheels hard at low speed, so what counts is torque at low revs. Big displacement or boost holds the engine up in its band when the mud grabs the tyres."},
   {tab:"events",sel:'#envBox [data-bk="bogGear"]',up:1,lbl:1,title:"Choose a gear",text:"Under Advanced. A tall gear carries more speed into the mud but bogs sooner in the deep end. A short gear keeps the engine up in its band, and spins the wheels more easily."},
@@ -39606,7 +39738,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"Hold for throttle",text:"Carry speed off the run-up, then keep the wheels turning in the mud. A little wheelspin cleans the lugs, too much digs a hole. Hold the button (or Space) for throttle and let go to feather."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the run",text:"A run that stuck early needs a shorter gear or less wheelspin. A truck that dug a hole needed the throttle feathered. A clean run through is scored on time, so a taller gear is the next thing to try."}]},
  {id:"boat",name:"Boat drags 101",sub:"class, prop pitch, gear, trim",preset:"merc25",env:{testType:"boat"},steps:[
-  {tab:"events",sel:'#evPick [data-t="boat"]',title:"1,000 feet of river",text:"Boat drags are heads-up over a thousand feet of water. Wait for the green, then hold for throttle. The engine turns a prop, and a prop slips, so it behaves nothing like a car."},
+  {tab:"events",sel:'#evHead',title:"1,000 feet of river",text:"Boat drags are heads-up over a thousand feet of water. Wait for the green, then hold for throttle. The engine turns a prop, and a prop slips, so it behaves nothing like a car."},
   {tab:"events",sel:'#envBox [data-tk="boatCls"]',up:1,lbl:1,title:"Pick a class",text:"A stock outboard V-bottom, a jet boat with a pump instead of a prop, a blown Pro Eliminator or a Top Fuel hydro. The class sets the hull, the drive and the limit on the engine."},
   {tab:"events",sel:"#er-boatPitch",wrap:".env",title:"Prop pitch",text:"Under Advanced. Pitch is how far one turn of the prop would push the boat with no slip. More pitch is more top speed and more load, so the engine revs lower and the prop slips more off the line."},
   {tab:"events",sel:"#er-boatGear",wrap:".env",title:"Lower-unit gear",text:"Under Advanced. The gear in the lower unit turns engine revs into prop revs. It works against pitch: between them they decide where the engine sits in its rev range down the course."},
@@ -39614,7 +39746,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"Wait for the green",text:"Enter the drags, wait for the green, then hold for throttle. If the prop blows out off the line, feather it. Trim in for the hump and out once the boat is planing."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the pass",text:"The result shows your time over the course. A lazy start with a strong finish usually means too much pitch for the launch. A quick start that stops pulling means too little. Change one thing and run again."}]},
  {id:"road",name:"Road test 101",sub:"tyres, circuit, chassis, final drive",preset:"k20a",env:{testType:"road"},steps:[
-  {tab:"events",sel:'#evPick [data-t="road"]',title:"Your engine in a car",text:"The road test puts your engine into the chassis you pick. It measures 0–100, the quarter mile, 80–120 and top speed on a straight, then runs one flying lap of the circuit and plays it back."},
+  {tab:"events",sel:'#evHead',title:"Your engine in a car",text:"The road test puts your engine into the chassis you pick. It measures 0–100, the quarter mile, 80–120 and top speed on a straight, then runs one flying lap of the circuit and plays it back."},
   {tab:"events",sel:'#envBox [data-rk="roadTyre"]',up:1,lbl:1,title:"Tyres",text:"Eco, street, sport and semi-slick. The number is the grip, so more of it means a quicker corner and a better launch. Sport is the stock fitment."},
   {tab:"events",sel:'#envBox [data-rk="roadTrk"]',up:1,lbl:1,title:"Pick a circuit",text:"Coulee Park is short and tight, Prairie Sky Raceway is long with 12 turns, and Grain Exchange is a walled downtown street circuit that rewards torque and brakes. The same car laps differently on each, and each keeps its own best."},
   {tab:"events",sel:'#envBox [data-rk="roadCh"]',up:1,lbl:1,title:"Pick the chassis",text:"Under Advanced, in Chassis. A 1,000 kg roadster, a front-drive hatch, a muscle car, a pickup. The line under it says what the engine adds and how the weight balances front to back."},
@@ -39623,7 +39755,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"Roll out",text:"Start the test. The straight-line runs happen first, then the lap. Space skips the lap playback if you only want the numbers."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the lap",text:"The straight-line numbers show whether the engine is strong. The lap shows whether the car can use it. A quick straight with a slow lap points at grip or balance, not power."}]},
  {id:"hill",name:"Pikes Peak 101",sub:"thin air, class, tyres, final drive",preset:"4g63",env:{testType:"hill"},steps:[
-  {tab:"events",sel:'#evPick [data-t="hill"]',title:"Up the mountain",text:"Pikes Peak is a 19.99 km hill climb with 156 turns. It runs from 2,862 m to 4,302 m, so the air gets steadily thinner as you climb and the engine gets weaker."},
+  {tab:"events",sel:'#evHead',title:"Up the mountain",text:"Pikes Peak is a 19.99 km hill climb with 156 turns. It runs from 2,862 m to 4,302 m, so the air gets steadily thinner as you climb and the engine gets weaker."},
   {tab:"events",sel:"#envBox>p.hint",title:"The power you lose",text:"This line shows what the engine makes at the shop, at the start line and on the summit. An atmospheric engine's power follows the air down. Boost holds more of it."},
   {tab:"events",sel:'#envBox [data-hk="hillCls"]',up:1,lbl:1,title:"Pick a class",text:"Open is a street car on street tyres with no aero. Time Attack adds semi-slicks and a wing. Pikes Peak Open and Unlimited allow slicks and big aero."},
   {tab:"events",sel:'#envBox [data-hk="hillTyre"]',up:1,lbl:1,title:"Tyres",text:"The tyres on offer depend on the class. Grip decides how hard you can push through the 156 turns. In You drive, dusty corners want a LIFT."},
@@ -39632,7 +39764,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"To the line",text:"Start the climb. Auto reads the corner calls for you. In You drive, hold PUSH into grippy corners and LIFT into dusty ones. Too fast is a moment, or a trip through the gravel."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the climb",text:"The result shows your time for the climb. If the engine is weak up high, boost or a shorter gear helps. If you lose time in the corners, look at the tyres, the car and the suspension."}]},
  {id:"oval",name:"Dirt oval 101",sub:"class, one gear, tyres, grille",preset:"sbc350",env:{testType:"oval"},steps:[
-  {tab:"events",sel:'#evPick [data-t="oval"]',title:"Heat race, then feature",text:"The oval is a heat race and then the feature, on the clay 3/8 mile or the paved half-mile (pick the track first). Clay starts tacky and dries out slick as the laps pile up; pavement grips steadily and rewards gearing, top end and cooling. The rivals' lap times come from the same sim you drive."},
+  {tab:"events",sel:'#evHead',title:"Heat race, then feature",text:"The oval is a heat race and then the feature, on the clay 3/8 mile or the paved half-mile (pick the track first). Clay starts tacky and dries out slick as the laps pile up; pavement grips steadily and rewards gearing, top end and cooling. The rivals' lap times come from the same sim you drive."},
   {tab:"events",sel:'#envBox [data-ok="ovalCls"]',up:1,lbl:1,title:"Class by cubic inches",text:"Street Stock takes up to 360 ci, Late Model up to 430, and Open has no limit. Your engine's size decides which class it can enter."},
   {tab:"events",sel:"#er-ovalFinal",wrap:".env",title:"One gear",text:"Under Advanced, in Rear end. The car has no gearbox to speak of: engine speed is road speed times the rear end. The corner exit wants torque, not peak power. A taller ratio trades exit for the straight."},
   {tab:"events",sel:'#envBox [data-ok="ovalTyre"]',up:1,lbl:1,title:"Tyres and the track",text:"Soft tyres bite early and fade late. Hard ones last and bite less. The track dries out (or greases up) as the laps pile up, so match the tyre to how long the race is."},
@@ -39640,7 +39772,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"Take the green",text:"Hold PUSH to attack and SAVE to cool the engine and the tyres. Space pushes. If the heat is already safe, save the engine for the feature."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the night",text:"The heat sets the feature grid, so a good heat gets you a good start. Watch the lap times fall off as the tyres fade and the track changes. That is when to SAVE."}]},
  {id:"race24",name:"24 Hours 101",sub:"circuit, engine mode, stints, tyres",preset:"gt3r",env:{testType:"race24"},steps:[
-  {tab:"events",sel:'#evPick [data-t="race24"]',title:"A day and a night",text:"The 24 Hours puts your engine in the road-test car against twenty others in three classes. A full day and night runs in accelerated time. Pace matters, and so does making it to the end."},
+  {tab:"events",sel:'#evHead',title:"A day and a night",text:"The 24 Hours puts your engine in the road-test car against twenty others in three classes. A full day and night runs in accelerated time. Pace matters, and so does making it to the end."},
   {tab:"events",sel:'#envBox [data-e24k="e24Trk"]',up:1,lbl:1,title:"Pick a circuit",text:"Coulee Park is a short-course 24. Prairie Sky Raceway is the 24 Hours itself, on a 4.48 km lap."},
   {tab:"events",sel:'#envBox [data-e24k="e24Mode"]',up:1,lbl:1,title:"Engine mode",text:"Push uses everything the engine has. Race short-shifts at 96% torque. Conserve cruises lean at 92%. Over a whole day, the gentler modes are how an engine lasts."},
   {tab:"events",sel:'#envBox [data-e24k="e24Stint"]',up:1,lbl:1,title:"Stint length",text:"How long a driver stays out between stops: to the fuel, 45, 60 or 90 minutes. Short stints are light, but every stop costs time in the pits."},
@@ -39650,7 +39782,7 @@ const LESSONS=[
   {tab:"events",sel:"#runTest",title:"Take the green",text:"Set the strategy, then start. Watch it at 1× or time-lapse to the next event."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the result",text:"The result ranks the car among the twenty. If it lost places in the night, look at the engine mode and the tyres. If the engine failed, back off the mode."}]},
  {id:"racenight",name:"Race night 101",sub:"heads-up ladder, the tree, launch, tyres",preset:"ls3",env:{testType:"drag",dragFmt:"elim"},steps:[
-  {tab:"events",sel:'#evPick [data-t="drag"]',title:"Heads-up is the quick car",text:"A race night on the strip. Heads-up eliminations is the simplest form of drag racing: both cars leave on the same green, and the first one to the stripe wins. No dial-in, no breakout. Quick helps, but a slow light throws it away."},
+  {tab:"events",sel:'#evHead',title:"Heads-up is the quick car",text:"A race night on the strip. Heads-up eliminations is the simplest form of drag racing: both cars leave on the same green, and the first one to the stripe wins. No dial-in, no breakout. Quick helps, but a slow light throws it away."},
   {tab:"events",sel:'#envBox [data-ek="dragFmt"]',up:1,lbl:1,title:"Eliminations",text:"Two qualifying passes seed an eight-car ladder: quarter-final, semi, final. The rivals come from your own body class. One of them is the car to beat, and the rest are spread either side of what you run, so the ladder is only as hard as your qualifying number."},
   {tab:"events",sel:'#envBox [data-ek="tyre"]',up:1,lbl:1,title:"Grip first",text:"Street radial, drag radial or slick. A heads-up round is won in the first sixty feet: a tyre that spins on the launch gives the lane next to you a car length you will not get back."},
   {tab:"events",sel:"#er-launchRpm",wrap:".env",title:"Launch rpm",text:"Where the clutch lets go. Too high and the tyres spin, too low and the engine bogs off the line. Find the highest rpm the tyre will take and leave there every round."},
@@ -39670,7 +39802,7 @@ const LESSONS=[
   {tab:"build",sel:"#swapBody",title:"Groups and cars",text:"Cars come in groups: muscle, compact and light, trucks, heavy iron and the oddballs. In the sandbox every car is yours; in the career you buy one, and the car comes with you from engine to engine."},
   {tab:"build",sel:"#swapBody",title:"The fit report",text:"Length, width, height, mass, radiator and driveline rating of the car against the engine. A red line is a problem: too long for the bay, too heavy on the nose, a driveline that will not take the torque. Each one lists the fix and what it costs, from a tunnel notch to a stronger axle. A swap that does not fit still runs, but badly."},
   {tab:"build",sel:"#swapBody",title:"What the swap predicts",text:"Below the report: 0 to 100, the quarter mile, top speed and power to weight for this engine in this car, from the same physics as the events. Compare it with the stock event car before you commit money to fixes."},
-  {tab:"events",sel:'#evPick [data-t="road"]',title:"Where it runs",text:"A swapped car runs the strip and race nights, the salt, the road course, the hill and the 24 Hours. The sled pull and the bog keep their class trucks, and boats stay boats. Pick the road course and run it to see the swap in a result."},
+  {tab:"events",sel:'#evHead',title:"Where it runs",text:"A swapped car runs the strip and race nights, the salt, the road course, the hill and the 24 Hours. The sled pull and the bog keep their class trucks, and boats stay boats. Pick the road course and run it to see the swap in a result."},
   {tab:"events",sel:"#runTest",title:"Run it",text:"The result is the swapped car's, and the verdict says if the driveline survived. A broken driveline is the fix report telling you what it already told you."}]},
  {id:"boost",name:"Turbos and blowers 101",sub:"aspiration, sizing, boost, cooling, fuel",preset:"2jzgte",env:{testType:"pull"},steps:[
   {tab:"build",sel:'[data-k="asp"]',up:1,lbl:1,title:"Ways to force air in",text:"A single turbo, twin turbos, a Roots blower, a centrifugal, a twin-screw, or a turbo and blower compounded. Turbos run on exhaust energy and spool late; blowers are belt-driven, instant and cost power to turn. This 2JZ runs a pair of parallel turbos."},
@@ -39720,6 +39852,7 @@ function lsPlace(){if(!LS)return;const st=LS.L.steps[LS.i];if(!st)return;const a
   deskBox(box,r);}
 function lsShow(i){if(!LS)return;LS.i=i;const L=LS.L,st=L.steps[i];if(!st){lsEnd(false);return;}glPopClose();
   if((st.tab==="test"||st.tab==="events")&&S.env.testType!==L.env.testType&&!testing)pickTest(L.env.testType);
+  if(st.tab==="events"&&trackEvt(S.env.testType))evhubSet(evCur());   // a lesson step on an event page goes inside that event
   if(curTab!==st.tab)showTab(st.tab);
   accReveal(document.querySelector(st.sel));anaReveal(document.querySelector(st.sel));if(st.sel.startsWith("#swap")&&typeof swapRender==="function")swapRender();   // the swap body only fills on its own header click
   const last=i===L.steps.length-1;
@@ -39931,7 +40064,7 @@ function evWarmFrame(t){const night=!!S.night,color=carPaint();
   if(t==="oval")return["oval",{track:SIM.ovalTrack(ovalTk()),cars:[{s:0,v:0,color,me:true,num:1}],pre:true,cam:"auto",night}];
   return null;}
 function evWarmNow(){
-  if(testing||curTab!=="events"||document.hidden||typeof ENGINE_VIS==="undefined"||!ENGINE_VIS.warm)return;
+  if(testing||curTab!=="events"||evhubOn()||document.hidden||typeof ENGINE_VIS==="undefined"||!ENGINE_VIS.warm)return;
   let w=null;try{w=evWarmFrame(S.env.testType);}catch(e){return;}
   if(w)try{ENGINE_VIS.warm(w[0],w[1]);}catch(e){}}
 /* ===================== SOUND & IDLE ===================== */
@@ -40301,7 +40434,7 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
   else if(lk==="i"||lk==="e")$("idleBtn").click();
   else if(lk==="v")$("viewBtn").click();
   else if(lk==="g")glBrowse();
-  else if(lk==="r"&&(curTab==="test"||curTab==="events")&&!testing&&!$("runTest").disabled)$("runTest").click();});
+  else if(lk==="r"&&(curTab==="test"||curTab==="events")&&!evhubOn()&&!testing&&!$("runTest").disabled)$("runTest").click();});
 document.addEventListener("keyup",e=>{if((e.key===" "||e.key==="Spacebar")&&spaceHeld){e.preventDefault();spaceUp(false);}});
 window.addEventListener("blur",()=>{if(spaceHeld)spaceUp(true);});
 let visReady=false;
@@ -40320,7 +40453,7 @@ function boot(){
   advSet($("abSec"),!!(S.advOpen&&S.advOpen.ab));
   document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===S.env.testType));
   $("sndBtn").classList.toggle("on",!!S.sound);
-  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyAnn();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewF)viewFree(S.viewF);else if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();showTab(curTab);glApply();
+  if(S.psi)psiWalk(document.body,true);applyTheme();applySoundQuality();applySoundSrc();applyAnn();applyGfx();applyXray();applyCam();applyNight();setMini(!!S.viewMini);if(!S.viewMini&&S.viewF)viewFree(S.viewF);else if(!S.viewMini&&S.viewPeek)$("app").classList.add("peek");syncShop();recompute();applyHeat();hud();renderPresets();renderBuild();spLivery();evhubSet("");showTab(curTab);glApply();
   $("intro").style.display=S.seen?"none":"flex";
   if(S.seen)achCheck({type:"retro"});achRefresh();
   if(typeof lgBoot==="function")lgBoot();
