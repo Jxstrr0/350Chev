@@ -1,8 +1,8 @@
 /* ===================== RIVAL SHOPS (career) =====================
    Three made-up shops share the reputation board with you. Their rep grows week by week (a little noisy, and pulled toward
    yours so the table stays a race), the Team tab shows the standings, and now and then one of them throws down a
-   head-to-head: a real result in a real event (the strip, the truck pull, Pikes Peak, the mud bog, the boat drags, the 24 Hours,
-   the oval). The track day, the salt and Pikes Peak are run against the clock, so there the rival posts a number a little past
+   head-to-head: a real result in a real event (the strip, the truck pull, Cloudsplitter Peak, the mud bog, the boat drags, the 24 Hours,
+   the oval). The track day, the salt and Cloudsplitter Peak are run against the clock, so there the rival posts a number a little past
    your own best and your next lap (that car, that circuit) or run (that class) has to beat it; on the mountain their car runs
    in the field with that time. At the 24 Hours they enter a car in your class and you have to finish ahead of it.
    Nothing here touches S.cfg or the dyno. State lives on C().riv; rivS() fills its defaults, so old saves load clean.
@@ -11,9 +11,9 @@
    engine you had certified. It never touches your offers. Beat it in RIV_FEUD_WINS head-to-heads and it ends with a rep bonus;
    left alone it fizzles out after RIV_FEUD_MAX weeks with nothing. State: C().riv.feud {rv, wk, wins, cert, copied}. */
 const RIV_EV={drag:"drag",pull:"pull_sled",hill:"hill",bog:"bog",boat:"boat",endurance:"race24",oval:"oval",road:"road",salt:"salt"};   // spEvent kind -> Events tab key
-const RIV_EV_TXT={drag:"a heads-up pass at the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt flats"};
-const RIV_EV_BTN={drag:"Take it to the strip",pull:"Go to the truck pull",hill:"Go to Pikes Peak",bog:"Go to the mud bog",boat:"Go to the boat drags",endurance:"Go to the 24 Hours",oval:"Go to the oval",road:"Go to the track day",salt:"Go to the salt"};
-const RIV_EV_SHORT={drag:"the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt"};   // the board's last-head-to-head line
+const RIV_EV_TXT={drag:"a heads-up pass at the strip",pull:"the truck pull",hill:"Cloudsplitter Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt flats"};
+const RIV_EV_BTN={drag:"Take it to the strip",pull:"Go to the truck pull",hill:"Go to Cloudsplitter Peak",bog:"Go to the mud bog",boat:"Go to the boat drags",endurance:"Go to the 24 Hours",oval:"Go to the oval",road:"Go to the track day",salt:"Go to the salt"};
+const RIV_EV_SHORT={drag:"the strip",pull:"the truck pull",hill:"Cloudsplitter Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt"};   // the board's last-head-to-head line
 const RIV_BEAT=["road","salt","hill"];   // posted-number challenges: beat the time or the speed, not a field
 const RIV_TOP_WEEKS=40;   // weeks at #1 over all three before each shop says its piece (once)
 const RIVALS=[
@@ -118,8 +118,8 @@ function rivBests(ev){
 function rivPost(ev,ahead){const x=rivPick(rivBests(ev)),m=ahead?0.012+rivRng()*0.01:0.004+rivRng()*0.008;
   return ev==="road"?{car:x.car,trk:x.trk,tgt:Math.floor(x.b*(1-m)*10)/10}:ev==="hill"?{k:x.k,tgt:Math.floor(x.b*(1-m)*10)/10}:{k:x.k,tgt:Math.ceil(x.b*(1+m)*10)/10};}
 const rivTgtTxt=ch=>ch.ev==="road"?fmtLap(ch.tgt,1):ch.ev==="hill"?fmtHill(ch.tgt):ch.tgt.toFixed(1)+" mph";
-const rivWhere=ch=>ch.ev==="road"?`${(SIM.ROAD_TRACKS[ch.trk]||{}).n||"the circuit"} in ${roadCarTxt({ch:ch.car})}`:ch.ev==="hill"?`${(SIM.HILL_CLASSES[ch.k]||{}).n||"the class"} at Pikes Peak`:`class ${ch.k} on the salt`;
-/* Pikes Peak: the rival's car in the field, on the posted time (splits paced off your own record in that class) */
+const rivWhere=ch=>ch.ev==="road"?`${(SIM.ROAD_TRACKS[ch.trk]||{}).n||"the circuit"} in ${roadCarTxt({ch:ch.car})}`:ch.ev==="hill"?`${(SIM.HILL_CLASSES[ch.k]||{}).n||"the class"} at Cloudsplitter Peak`:`class ${ch.k} on the salt`;
+/* Cloudsplitter Peak: the rival's car in the field, on the posted time (splits paced off your own record in that class) */
 function rivHillRow(k){if(!career())return null;const ch=rivS().ch;if(!ch||ch.st!=="on"||ch.ev!=="hill"||ch.k!==k)return null;
   const v=RIVALS.find(x=>x.id===ch.rv),pb=recBucket("hill")[k],F=SIM.HILL_CLASSES[k].field,sp=pb&&pb.t>0&&pb.splits?pb.splits.map(x=>+(x*ch.tgt/pb.t).toFixed(3)):[];
   return{n:v.name,rv:true,hp:Math.round(F.hp*1.05),turbo:F.turbo>=0.5,ch:pb&&pb.ch||"coupe",skill:0.9,t:ch.tgt,dnf:null,splits:sp,offs:0,paint:HILL_PAINT[2]};}
