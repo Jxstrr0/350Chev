@@ -52,6 +52,7 @@ function saltStart(){
     const wp=st.phase==="run"||st.phase==="shutdown"?SR.warp:1;let left=rdt*wp;
     while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,saltThr(st));}
     if(st.broke&&!SR.failed)saltBreak(st.broke);
+    if((st.chuteOut||st.drogueOut)&&!SR.chuteFx){SR.chuteFx=true;if(typeof foley==="function")foley("chute");}
     if(st.phase==="spin"&&!SR.spun){SR.spun=true;buzz([60,30,60]);sfx("fail");}
     if(st.tOut!=null&&!SR.miled){SR.miled=true;buzz([20,30,20]);}
     if(st.done&&SR.doneAt==null){SR.doneAt=now;buzz([40]);}

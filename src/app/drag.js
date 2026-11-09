@@ -241,6 +241,7 @@ function dragStart(){
     if(st.phase==="staged"&&st.rolled)annStaged();else if(st.phase==="run")annSpin(st);
     const dtT=R&&R.tree0!=null?(now-R.tree0)/1000:-1;if(R&&dtT>=1.5&&R.green==null)R.green=R.tree0+1500;
     if(st.broke&&!DR.failed){DR.failKind=st.broke;dragBreak();}
+    if(st.chuteOut&&!DR.chuteFx){DR.chuteFx=true;if(typeof foley==="function")foley("chute");}
     if(st.phase==="run"&&!DR.failed&&(st.t>DR.breakAt||(st.overrev>1.12&&res.overrev&&!res.overrev.survived))){dragBreak();st.done=true;st.phase="done";}
     if(DR.pb===undefined&&(st.phase==="shutdown"||st.phase==="done")){DR.pb=dragPbCheck(st.marks.find(m=>m.n==="1/4 mi"));if(DR.pb)ENGINE_VIS.stripPb(DR.pb.kind);}
     if(DR.night)rnFrame(now,st,dtT);
