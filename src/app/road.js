@@ -6,7 +6,7 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt(),wet:wxWet("road")});}   // a chosen swap car (app/swap.js) stands in for the chassis
-/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
+/* ---- setup sheet (Road Test + Cloudsplitter Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
    diff lock and ride height. Saved in S.env (suSt/suSp/suWg/suBb/suPs/suDf/suRh), stock = 50/0/0/0/32/0/0 (SU_F) ---- */
 /* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = the SU_F values in order
    (newest 24 kept; none = stock; an older 3-number entry reads the newer four as stock). Tweaking the build sliders keeps the id; loading
@@ -65,7 +65,7 @@ function suEnvHtml(sl,hill){const e=S.env;suFix(e);
     <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. A locked diff pushes but drives out hard; an open one turns in but spins a wheel. Stock brakes are set safe and a bit forward: a touch rearward stops shorter, too far and the rears lock. A few psi under stock grips more, but a soft tyre rolls heavy and a heavy car wants more air. Low makes downforce until it bottoms on the bumps${hill?"":" (the street circuit is the roughest)"}. Stock is the chassis as designed.</p>`;}
 $("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;suSet(S.env,null);renderEnv();save();buzz(6);});
 /* ---- saved setups: three named slots of the setup sheet above (S.suTunes in the Test cell, C().suTunes in career), shared by the
-   road test and Pikes Peak like the sheet itself. A slot is the SU_F values in order; loading one files it under the engine on the bench. ---- */
+   road test and Cloudsplitter Peak like the sheet itself. A slot is the SU_F values in order; loading one files it under the engine on the bench. ---- */
 const SUT_N=3;let SUTSEL=-1;   // the slot whose actions are open
 function suTunes(){const o=career()?C():S;if(!Array.isArray(o.suTunes))o.suTunes=[];while(o.suTunes.length<SUT_N)o.suTunes.push(null);
   o.suTunes.length=SUT_N;o.suTunes.forEach((t,i)=>{if(t&&!(typeof t.n==="string"&&Array.isArray(t.v)))o.suTunes[i]=null;});return o.suTunes;}
@@ -87,7 +87,7 @@ function suTuneAct(i,a){const T=suTunes(),t=T[i];
 $("envBox").addEventListener("click",e=>{const s=e.target.closest("[data-sut]"),a=e.target.closest("[data-sutact]");if(!s&&!a)return;
   if(a){if(SUTSEL>=0)suTuneAct(SUTSEL,a.dataset.sutact);return;}
   const i=+s.dataset.sut;if(!suTunes()[i]){suTuneAct(i,"save");return;}SUTSEL=SUTSEL===i?-1:i;renderEnv();});
-/* ---- setup tip after a run: nudge one slider at a time, re-run the lap (Pikes Peak: the climb, a few a tick in the background),
+/* ---- setup tip after a run: nudge one slider at a time, re-run the lap (Cloudsplitter Peak: the climb, a few a tick in the background),
    and name the single change that gains most. r.tip = {i,d,v,gain} or {none:true}; "Use it" on the sheet loads v into the sliders. ---- */
 const SU_TRY=[[1,25],[1,-25],[5,25],[5,-25],[2,25],[2,-25],[4,-3],[4,3],[6,-20],[0,20],[0,-20],[3,-15],[3,15],[6,20]],SU_TRY_HILL=9;
 const SU_TIP={"0+":"stiffer springs","0-":"softer springs","1+":"move the roll balance forward","1-":"move the roll balance rearward","2+":"more wing","2-":"less wing",

@@ -1,4 +1,4 @@
-/* ---- Bonneville: salt-flat land-speed runs. A push off the line, a run-up, the timed mile, the chute.
+/* ---- Bitterwater: salt-flat land-speed runs. A push off the line, a run-up, the timed mile, the chute.
    A class record (body × displacement letter × fuel, B for blown) stands until a run beats it AND the backup run
    at the same meet does too: the record is the average of the two. Career meet = the week; sandbox meet = until "New meet". ---- */
 let SR=null;
@@ -16,7 +16,7 @@ function saltEnvFix(){const e=S.env,B=SIM.LSR_BODIES;if(!B[e.saltBody])e.saltBod
   e.saltTop=isFinite(+e.saltTop)&&+e.saltTop>0?Math.max(60,Math.min(650,Math.round(+e.saltTop/5)*5)):0;
   return swapLive()?"altered":k;}   // a swap car runs in an altered class
 const saltCache=new Map();
-/* the engine at Bonneville's 1,290 m and 32 °C — simulate() re-run in that air, cached per build */
+/* the engine at Bitterwater's 1,290 m and 32 °C — simulate() re-run in that air, cached per build */
 function saltRes(){const h=cfgHash(S.cfg);let r=saltCache.get(h);if(!r){if(saltCache.size>24)saltCache.clear();r=SIM.lsrPrep(S.cfg,stdEnv());saltCache.set(h,r);}return r;}
 function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCourse,redline:S.cfg.redline,aero:e.saltAero==="on",ballast:+e.saltBallast,cooling:e.saltCool,chute:e.saltChute,shift:e.saltDrive==="auto"?"auto":e.saltShift,autoLift:e.saltDrive==="auto",idle:SIM.isDiesel(S.cfg)?720:Math.max(800,S.cfg.cam>70?1100:850)};
   swapSaltOv(v);if(!e.saltTop){e.saltTop=SIM.lsrGearing(res,v);}v.topMph=+e.saltTop;return v;}
@@ -157,7 +157,7 @@ function saltTopEst(k){const v=saltVeh(k),key=[cfgHash(S.cfg),k,v.course,v.topMp
 function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_BODIES[k],cls=saltCls(k),rec=saltRecord(cls.key),L=saltBook(),pb=L.pb[cls.key],meet=saltMeet(),res=saltRes(),cell=quick,lk=saltBodyLocked(k);
   const loss=cell&&cell.peakHp>0?Math.round((1-res.peakHp/cell.peakHp)*100):0;
   let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+esc(rec.holder||""):esc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
-  h+=`<p class="hint">At Bonneville — ${SIM.SALT_ENV.altitudeM.toLocaleString("en-CA")} m and ${SIM.SALT_ENV.ambientC} °C — this engine makes <b>${Math.round(res.peakHp)} hp</b>${loss>0?`, ${loss}% down on the cell`:""}${cls.blown?" (boost makes up most of the thin air)":" (no boost to make up the thin air)"}.</p>`;
+  h+=`<p class="hint">At Bitterwater — ${SIM.SALT_ENV.altitudeM.toLocaleString("en-CA")} m and ${SIM.SALT_ENV.ambientC} °C — this engine makes <b>${Math.round(res.peakHp)} hp</b>${loss>0?`, ${loss}% down on the cell`:""}${cls.blown?" (boost makes up most of the thin air)":" (no boost to make up the thin air)"}.</p>`;
   h+=swapEnvNote();if(!swapLive())h+=`<div class="lbl"><span>Body</span></div><div class="seg wide">${Object.entries(SIM.LSR_BODIES).map(([id,b])=>{const l=saltBodyLocked(id);return `<button data-sk="saltBody" data-sv="${id}" class="${k===id?"on":""}${l?" lock":""}">${b.n}<small>${l?l+" rep":b.d}</small></button>`;}).join("")}</div>`;
   h+=paintHtml();   /* the strip's paint: the salt car wears it too */
   h+=`<div class="lbl"><span>Course</span></div><div class="seg">${Object.entries(SIM.LSR_COURSES).map(([id,c])=>`<button data-sk="saltCourse" data-sv="${id}" class="${e.saltCourse===id?"on":""}">${c.n}<small>${c.d}${career()?" · $"+SALT_FEE[id]:""}</small></button>`).join("")}</div>`;

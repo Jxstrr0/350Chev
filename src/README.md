@@ -47,8 +47,8 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `sim/bog.js` | mud bog: BOG_CLASSES/TYRES, `bogNight`, `bogRun`, `bogPass`, `bogAiRes` |
 | `sim/road.js` | road test: CHASSIS, ROAD_TRACKS, `roadTrack`, `roadRun`, `lapSim`, `roadTest` |
 | `sim/e24.js` | 24 Hours of Prairie Sky: `enduroPrep`, `enduroNew`, `enduroStep`, `e24*` |
-| `sim/salt.js` | Bonneville/LSR: LSR_BODIES/COURSES/CHUTES, `lsrClass`, `lsrRun`, `lsrPass`, `lsrRecord` |
-| `sim/hill.js` | hillclimbs: HILL_SECTIONS/CLASSES/TYRES/AERO, HILL_HILLS (Pikes Peak and four made-up hills for the team series; every call takes a hill id, default Pikes), `hillCourse` (Pikes: 156 corners, elevation), `hillPrep` (simulate at five altitudes: NA, blower, turbo, carb), `hillCar`, `hillNew` (time-stepped run, cooling, corner calls and offs), `hillPass`, `hillAiPrep` |
+| `sim/salt.js` | Bitterwater/LSR: LSR_BODIES/COURSES/CHUTES, `lsrClass`, `lsrRun`, `lsrPass`, `lsrRecord` |
+| `sim/hill.js` | hillclimbs: HILL_SECTIONS/CLASSES/TYRES/AERO, HILL_HILLS (Cloudsplitter Peak and four made-up hills for the team series; every call takes a hill id, default Cloudsplitter), `hillCourse` (Pikes: 156 corners, elevation), `hillPrep` (simulate at five altitudes: NA, blower, turbo, carb), `hillCar`, `hillNew` (time-stepped run, cooling, corner calls and offs), `hillPass`, `hillAiPrep` |
 | `sim/oval.js` | dirt oval: OVAL_CLASSES (class by cubic inches), tyres, grilles, `ovalNight`, `ovalNew` (a time-stepped single-gear lap sim: banked-turn limit, friction circle, throttle response, heat, wear, failures), `ovalPass`, `ovalAiRes`, `ovalSetup` |
 | `sim/tunemap.js` | tune map tools (`mapAxis`, `mapGrid`, `mapAutoTune` …) and **the ENGINE_SIM export object**. Add new exports here |
 | **ENGINE_SOUND** | |
@@ -78,7 +78,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `vis/bog-pit.js` | mud bog pit: the sim's pit as a heightfield (depth, ridges, ruts, water), ruts, mud shader detail, berms |
 | `vis/road.js` | road course scene |
 | `vis/salt.js` | salt flats scene |
-| `vis/hill.js` | Pikes Peak scene: heightfield mountain round the road, verges, guardrails, pines and boulders, summit house, thin-air sky, chase/heli/trackside cameras |
+| `vis/hill.js` | Cloudsplitter Peak scene: heightfield mountain round the road, verges, guardrails, pines and boulders, summit house, thin-air sky, chase/heli/trackside cameras |
 | `vis/oval.js` | dirt oval scene: banked clay ribbon and one ground shader, wall and fence, grandstand and crowd, light towers, infield pits, scoreboard, stock cars with lane finding, dust, the director (`ENGINE_VIS.setOval`) |
 | `vis/api.js` | **the `ENGINE_VIS` public object** (`setStrip`, `setPull`, `setSalt` …, and `_state`/`_root` debug hooks) |
 | `vis/teardown.js` | teardown/exploded view after a failure, `window.ENGINE_VIS=`, IIFE close, `</script>` |
@@ -94,8 +94,8 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/bog.js` | mud bog UI (BR) |
 | `app/road.js` | road test UI (RT) |
 | `app/e24.js` | 24 Hours UI (ER): live race, flag, records |
-| `app/salt.js` | Bonneville UI: meets, records, `lsrWarm` |
-| `app/hill.js` | Pikes Peak UI (HC): classes, field, live card with corner calls, PUSH/LIFT, splits sheet, power-vs-altitude chart, records |
+| `app/salt.js` | Bitterwater UI: meets, records, `lsrWarm` |
+| `app/hill.js` | Cloudsplitter Peak UI (HC): classes, field, live card with corner calls, PUSH/LIFT, splits sheet, power-vs-altitude chart, records |
 | `app/oval.js` | dirt oval race night: heat then feature, the rivals' laps, the live strip and PUSH / SAVE, classification, purses, records |
 | `app/results.js` | datalog `dl*`, `showResult`, achievements, teardown panel, `renderAnalysis`, `renderRecords` |
 | `app/career.js` | `advanceWeek` (Close week), overhead, sponsors, the Team tab's strip and sections, `renderShop`, upgrades, goals |
@@ -116,16 +116,16 @@ Files added after the map above was written (their place in the order is in `man
 | `vis/bog-trucks.js` | one real-size truck per mud bog class |
 | `vis/bog-fx.js` | the bog's mud: clods, spray, rooster tails, splats |
 | `vis/boat.js` | boat drags scene: the river course, water shader, both boats |
-| `vis/salt-cars.js` | the Bonneville cars (altered, roadster, lakester, streamliner) |
+| `vis/salt-cars.js` | the Bitterwater cars (altered, roadster, lakester, streamliner) |
 | `vis/salt-look.js` | salt flats light, mountains, heat shimmer / mirage post pass |
 | `vis/salt-event.js` | Speed Week: the pit town, return road, spectators |
-| `vis/hill-lod.js` | Pikes Peak culling and LOD for Lite and Ultra |
+| `vis/hill-lod.js` | Cloudsplitter Peak culling and LOD for Lite and Ultra |
 | `vis/band.js` | the run view HUD band every event but the strip reports to the 3D view |
 | `app/team.js` | career team seasons (the Team tab): one team a season for 8 rounds, a round every other week (`PC_EVENTS`, `PC_STYLES`, season and pay tables), a second team from 300 rep (`p.team2`, `pcTeams`, `pcBenchTeam`), offers gated by rep and dyno, the team's parts budget and engine wear, auto-simulated race day (drag ladder, oval feature), Close week racing a due round, points table, title, pay and rep, the Market-tab cards (`#pitBox`) |
 | `app/team-bog.js` | the mud bog team series: its three `PC_EVENTS` rows, the pits, the round's drawn mud (forecast like weather), race day through the real bog sim, and `PC_KIND.bog` |
 | `app/team-boat.js` | the boat drag team series: four `PC_EVENTS` rows (Outboard, Jet boat, Pro Eliminator, Top Fuel Hydro), each round's water and prop, race night through the real boat sim (qualifying and a heads-up ladder), and `PC_KIND.boat` |
 | `app/team-pull.js` | the truck and tractor pull as a team series: six `PC_EVENTS` rows from the pull classes (gas, street diesel, 2.6 Smoker, Hot Farm tractor, Super Stock, Unlimited), the class tech card as the race-day rule, `PC_KIND.pull` (rivals, per-round dirt, the real pull sim for race day, pull-off, points) |
-| `app/team-hill.js` | the hill climb team series, plugged into `PC_KIND`: its `PC_EVENTS` rows, the rotation of the four made-up hills with Pikes Peak as round 8 (`PC_HILLS`), race day (`pcHillDay`) |
+| `app/team-hill.js` | the hill climb team series, plugged into `PC_KIND`: its `PC_EVENTS` rows, the rotation of the four made-up hills with Cloudsplitter Peak as round 8 (`PC_HILLS`), race day (`pcHillDay`) |
 | `app/team-fit.js` | offers built around the certified bench engine (Team tab, `#pcFitSec`): which series suit it (`PC_FIT_REL`, class rules, mid-pack power, parts cost, up to one tier past rep), the offers drawn from the build's hash, `pcFitRender` |
 | `app/team-show.js` | the car show and sound-off in the off weeks (Team tab): `PC_SHOW_KINDS` and the purse and field tables, the four scores (finish, smoothness, idle, sound), entering with the certified bench engine |
 | `app/team-watch.js` | Watch it: the result card's button replays the team's race in the event's own 3D scene (the drag series' last pass on the strip, the oval's last laps of the feature, and the pull, bog, boat and hill runs from the sim's own trace) from the few numbers race day keeps in `p.last.watch`; read-only, nothing on the books moves; controls `#pcwCtl` in the Events tab |
@@ -136,7 +136,7 @@ Files added after the map above was written (their place in the order is in `man
 | `css/ui-glass.css` | Shop Glass: glass tokens and the `.glass` class, blur by tier, the off switch (`html.noglass`), ambient backdrop, the panel on the 3D view, the floating tab bar and its bead, HUD buttons and tray; build rows, cards, option and race buttons, the rail, engine card, popups, toasts and sliders; the rev glow, failure crack overlay and venue tint styling; the gestures (grabber, compare card); the results card and holo sheen. Last CSS file, so it overrides the rest |
 | `vis/ultra.js` | everything Ultra adds over Full in the event scenes (`ULT()` checks) |
 | `vis/props.js` | 8b. workshop polish for Full / Ultra: floor details, props, lamps |
-| `vis/models.js` | 8c. glTF model props from `models/` dressed into the polish layer on Full / Ultra (`MODEL_FILES`, `modelSpots`, `modelGet`, also used by the pull track, the pits and Pikes Peak; the `hill-*` files come from `tools/blender/hill-props.py`) |
+| `vis/models.js` | 8c. glTF model props from `models/` dressed into the polish layer on Full / Ultra (`MODEL_FILES`, `modelSpots`, `modelGet`, also used by the pull track, the pits and Cloudsplitter Peak; the `hill-*` files come from `tools/blender/hill-props.py`) |
 | `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |
 | `vis/photo.js` | photo mode camera, lighting and backdrop presets, still frame out |
 | `app/boat.js` | boat drags UI (BT): eight-boat ladder nights |

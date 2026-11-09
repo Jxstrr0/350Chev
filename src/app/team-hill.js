@@ -1,7 +1,7 @@
 /* ===================== TEAM SEASONS: the hill climb series (since 1.76.51; plugs into PC_KIND, app/team.js) =====================
-   A hill climb team runs one class of the hillclimb (Open, Time Attack, Pikes Peak Open, Unlimited: SIM.HILL_CLASSES) for
+   A hill climb team runs one class of the hillclimb (Open, Time Attack, Cloudsplitter Peak Open, Unlimited: SIM.HILL_CLASSES) for
    eight rounds. Rounds 1–7 rotate through four shorter, lower made-up hills (SIM.HILL_HILLS: Badlands Grade, Kettle Butte,
-   Ghost Ridge, Thunder Pass), starting at a different one for each team; round 8 is the finale on Pikes Peak. Race day is
+   Ghost Ridge, Thunder Pass), starting at a different one for each team; round 8 is the finale on Cloudsplitter Peak. Race day is
    text only: the team's car (its chassis, the class's best legal tyres and aero) makes one timed run with your engine,
    run at the hill's five altitudes in the round's weather (SIM.hillPrep), against nine season regulars (SIM.hillAiPrep cars,
    their power growing a little each round) on the same corner calls, ranked by time. The sim's own DNFs count (over the
@@ -11,15 +11,15 @@
 Object.assign(PC_EVENTS,{
   hillopen:{ev:"hill",cls:"open",n:"Open hill climb",tier:0,rep:0,budget:[2500,5500],pay:[60000,80000],tip:"Street or sport tyres and no aero: grip and gearing win it, not power."},
   hillta:{ev:"hill",cls:"ta",n:"Time Attack hill climb",tier:1,rep:40,budget:[4500,9500],pay:[130000,170000],tip:"Semi-slicks and a wing. A turbo keeps its breath as the road climbs."},
-  hillppo:{ev:"hill",cls:"ppo",n:"Pikes Peak Open hill climb",tier:2,rep:120,budget:[7000,16000],pay:[280000,360000],tip:"Slicks, splitter and wing on a stripped car; the finale tops out at 4,302 m."},
+  hillppo:{ev:"hill",cls:"ppo",n:"Cloudsplitter Peak Open hill climb",tier:2,rep:120,budget:[7000,16000],pay:[280000,360000],tip:"Slicks, splitter and wing on a stripped car; the finale tops out at 4,302 m."},
   hillunl:{ev:"hill",cls:"unl",n:"Unlimited hill climb",tier:3,rep:300,budget:[14000,30000],pay:[600000,780000],tip:"Anything goes: big aero and as much power as the thin air leaves you."}});
-/* the season's hills: the four rotating ones, then Pikes Peak for the last round. PC_HILL_DT: the field's and your time step */
+/* the season's hills: the four rotating ones, then Cloudsplitter Peak for the last round. PC_HILL_DT: the field's and your time step */
 const PC_HILLS=["badlands","kettle","ghost","thunder"],PC_HILL_FIN="pikes",PC_HILL_DT=0.04;
 const PC_HILL_K=[0.84,0.89,0.93,0.97,1.0,1.03,1.06,1.1,1.16];   // the nine regulars' power, against the class's field
 /* the cars a series runs (the team's and the regulars'): anything but the pickup; the two fast classes only the cars built to corner */
 const PC_HILL_CH={ppo:["roadster","coupe","rally","super"],unl:["roadster","coupe","rally","super"]};
 const pcHillCh=E=>(PC_HILL_CH[E.cls]||Object.keys(SIM.CHASSIS).filter(c=>c!=="pickup")).filter(c=>SIM.CHASSIS[c]);
-/* the hill for the team's next (or current) round: a different one each round, Pikes Peak for the last */
+/* the hill for the team's next (or current) round: a different one each round, Cloudsplitter Peak for the last */
 function pcHillId(T){return T.round>=PC_ROUNDS-1?PC_HILL_FIN:PC_HILLS[((T.seed>>>0)+T.round)%PC_HILLS.length];}
 function pcHillTxt(id){const H=SIM.HILL_HILLS[id],s=H.secs,km=s.reduce((a,x)=>a+x.km,0),n=s.reduce((a,x)=>a+x.cor,0);
   return`${km.toFixed(km%1?1:0)} km and ${n} turns up to ${s[s.length-1].alt.toLocaleString("en-CA")} m${id===PC_HILL_FIN?": the finale":""}`;}
@@ -76,7 +76,7 @@ PC_KIND.hill={needHp:E=>SIM.HILL_CLASSES[E.cls].field.hp*1.1,
   but:(T,E,res,hp)=>E.cls==="open"&&hp>450?", though street rubber and no aero won't use much of it":"",
   rules:()=>[],
   day:pcHillDay,
-  setupTxt(T){const su=suForHash(T.hash!=null?T.hash:cfgHash(S.cfg));return su?`<b>Setup:</b> yours, from the setup sheet for this engine (${esc(suTuneSum({v:suArr(su)}))}).`:"<b>Setup:</b> stock. Tune this engine's setup on the road test or Pikes Peak and the team runs it.";},
+  setupTxt(T){const su=suForHash(T.hash!=null?T.hash:cfgHash(S.cfg));return su?`<b>Setup:</b> yours, from the setup sheet for this engine (${esc(suTuneSum({v:suArr(su)}))}).`:"<b>Setup:</b> stock. Tune this engine's setup on the road test or Cloudsplitter Peak and the team runs it.";},
   pts:pl=>PC_PTS_OVAL[pl-1]||0,placeTxt:o=>o.sat?"Sat out":o.dnf?`DNF (P${o.place} of ${o.of})`:o.place===1?"Won the climb":`P${o.place} of ${o.of}`,eff:o=>o.sat||o.dnf?99:o.place,
-  fieldTxt(T,E){const C0=SIM.HILL_CLASSES[E.cls],d=C0.d.replace(/ · /g,", ");return`The field makes about ${C0.field.hp} hp at the shop and loses some of it to the altitude. ${d.charAt(0).toUpperCase()+d.slice(1)}. Rounds 1–7 rotate through four hills; round 8 is Pikes Peak.`;},
+  fieldTxt(T,E){const C0=SIM.HILL_CLASSES[E.cls],d=C0.d.replace(/ · /g,", ");return`The field makes about ${C0.field.hp} hp at the shop and loses some of it to the altitude. ${d.charAt(0).toUpperCase()+d.slice(1)}. Rounds 1–7 rotate through four hills; round 8 is Cloudsplitter Peak.`;},
   where:T=>`${SIM.CHASSIS[T.ch]?SIM.CHASSIS[T.ch].n:"Hill car"} · car #${T.num}`};
