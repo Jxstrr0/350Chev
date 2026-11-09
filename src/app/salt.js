@@ -22,8 +22,9 @@ function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCou
   swapSaltOv(v);if(!e.saltTop){e.saltTop=SIM.lsrGearing(res,v);}v.topMph=+e.saltTop;return v;}
 function saltCls(k){const r=quick||saltRes();return SIM.lsrClass(S.cfg,r,k||S.env.saltBody);}
 function saltBook(){const L=recBucket("lsr");if(!L.rec||typeof L.rec!=="object")L.rec={};if(!L.pb||typeof L.pb!=="object")L.pb={};return L;}
-/* the standing record for a class: yours if you set it, otherwise the seeded book */
-function saltRecord(key){const L=saltBook(),mine=L.rec[key],seed=SIM.lsrRecord(key);return mine&&(!seed||mine.mph>seed.mph)?Object.assign({mine:true,holder:mine.n},mine):seed;}
+/* the standing record for a class: yours if you set it, otherwise the seeded book. A record you hold stands even where
+   the book was later raised past it (1.76.103.0 made the seeded records about 7% faster): it was the record when you set it. */
+function saltRecord(key){const L=saltBook(),mine=L.rec[key],seed=SIM.lsrRecord(key);return mine&&mine.mph>0?Object.assign({mine:true,holder:mine.n},mine):seed;}
 function saltMeet(){const L=saltBook(),id=career()?"w"+C().week:"s"+(S.saltMeetId||(S.saltMeetId=1));if(!L.meet||L.meet.id!==id)L.meet={id,runs:0,best:{},imp:null};return L.meet;}
 /* the car's number for this meet: drawn when you sign in, the same for every run of the meet */
 function saltNum(meet){let h=2166136261;const s="lsrnum|"+meet.id+"|"+(career()?C().name||"":"sandbox");for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}h>>>=0;return h%10<3?String(10+(h>>>4)%90):String(100+(h>>>4)%900);}
