@@ -125,6 +125,7 @@ function saltFinish(){
     meet.imp=null;}
   else if(valid&&rec&&r.mileMph>rec.mph){outcome="impound";meet.imp={key:cls.key,hk,mph:r.mileMph};}
   r.outcome=outcome;
+  if(typeof crowdAfter==="function")crowdAfter("salt",{broke:failed,record:outcome==="record"});   // app/ambience.js
   // personal best for the class
   const pb=L.pb[cls.key];if(valid&&(!pb||r.mileMph>pb.mph)){L.pb[cls.key]=Object.assign({mph:r.mileMph,km:r.kmMph,peak:r.peakMph},recTag());r.pb=pb?{was:pb.mph}:{first:true};}
   if(failed){r.broke=r.broke||SR.failKind;r.failKind=r.failKind||SR.failKind;}

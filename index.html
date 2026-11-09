@@ -2425,6 +2425,7 @@ html[data-gfx=lite] .holo,html.noglass .holo{transform:none}
 </div>
 <details class="sfold setfold" id="set-sound" data-fold="sound"><summary>Sound <span class="cnt" id="setSumSound"></span></summary><div class="sfb">
 <div class="lbl"><span>Sound volume</span><b id="volLbl">60%</b></div><input type="range" id="vol" min="0" max="100" value="60">
+        <div class="lbl"><span>Ambience &amp; crowd</span><b id="ambLbl">40%</b></div><input type="range" id="ambVol" min="0" max="100" value="40">
         <div class="lbl"><span>Engine sound</span></div>
         <div class="seg n2" id="sqSeg"><button data-sq="lite">Lite<small>phone speaker, no reverb</small></button><button data-sq="full">Full<small>headphones / desktop</small></button></div>
         <div class="lbl"><span>Engine voice</span><b id="srcLbl">—</b></div>
@@ -11566,7 +11567,7 @@ const ENGINE_SOUND = (function () {
 
   /* phones: with the engine off (the app feeds rpm 0) and no sound effect for a few seconds, the context is suspended so the DSP graph stops
      costing battery; the next rpm > 0, event or gesture resumes it. iOS unlocks only inside a gesture, which the start tap and the wake listeners are. */
-  var idleAt = 0, selfSusp = false, selfResume = false;
+  var idleAt = 0, selfSusp = false, selfResume = false, holdAwake = false;   /* holdAwake: the ambience bed is playing, so no idle suspend */
   function resume() {
     if (ctx && ctx.state === "suspended" && ctx.resume) {
       if (selfSusp) { selfSusp = false; idleAt = 0; selfResume = true; }   /* our own idle suspend: the graph is intact, no rebuild on the way back */
@@ -11849,7 +11850,7 @@ const ENGINE_SOUND = (function () {
     o = o || {};
     var rpm0 = num(o.rpm, 0);
     if (rpm0 > 0) { idleAt = 0; if (selfSusp) resume(); }
-    else { var tn = Date.now(); if (!idleAt) idleAt = tn; else if (!selfSusp && tn - idleAt > 3000 && ctx.state === "running") { selfSusp = true; try { ctx.suspend(); } catch (e) {} } }
+    else { var tn = Date.now(); if (!idleAt) idleAt = tn; else if (!selfSusp && !holdAwake && tn - idleAt > 3000 && ctx.state === "running") { selfSusp = true; try { ctx.suspend(); } catch (e) {} } }
     // a failure silences the engine; spinning back up brings it back, so a failed
     // pull does not leave the idle mute until the player toggles the sound
     if (dead) { if (num(o.rpm, 0) > 400) dead = false; else return; }
@@ -12498,6 +12499,7 @@ const ENGINE_SOUND = (function () {
     deriveProfile: deriveProfile,
     // recorded-sample layer hooks (ENGINE_SAMPLES): duck the synth core, and read where to plug in
     setSynthMix: function (m) { m = +m; SYNTH_MIX = isFinite(m) ? clamp(m, 0, 1) : 1; },
+    holdAwake: function (on) { holdAwake = !!on; if (holdAwake && selfSusp) resume(); },   // ambience: keep the context running while a bed plays
     setShotHook: function (fn) { shotHook = typeof fn === "function" ? fn : null; },
     sampleHost: function () { return { ctx: ctx, bus: bus, running: running && !!N, dead: dead, solo: SOLO, lite: LITE, diesel: !!st.diesel }; },
     get context() { return ctx; },
@@ -31189,7 +31191,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.89.0";
+const VERSION="1.76.90.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -31395,7 +31397,7 @@ setInterval(()=>{const el=$("srcLbl");if(!el||!setOn()||typeof ENGINE_SAMPLES===
   el.textContent=t.mode==="synth"?"synth only":t.set?`${t.setName}${t.set2?" + "+t.set2Name:""} · ${Math.round(t.cover*100)}% recorded`:t.errors&&!t.decoded?"recordings unavailable · synth":t.slow&&t.mode!=="real"?"slow connection · synth":"loads when sound starts";},500);
 function sndCredits(){
   const L=(typeof ENGINE_SAMPLES!=="undefined"&&ENGINE_SAMPLES.credits)||[];$("sheetTitle").textContent="Sound credits";
-  $("sheetBody").innerHTML=`<p class="hint">Real recordings used by the Real and Blend sound modes: engine loops, plus blow-off, backfire and anti-lag bangs. All are openly licensed. Engine clips were trimmed, looped, level-matched, converted to mono MP3 and are pitch-shifted live; the bangs were cut, faded and level-matched. Full list: <a href="sounds/CREDITS.md" target="_blank" rel="noopener" style="color:var(--orange)">sounds/CREDITS.md</a>.</p><p class="hint">Drag announcer: the voice of Ed, the Late Night Announcer, generated with ElevenLabs text to speech for Longlight Interactive; lines written for the game.</p>`
+  $("sheetBody").innerHTML=`<p class="hint">Real recordings used by the Real and Blend sound modes: engine loops, plus blow-off, backfire and anti-lag bangs. All are openly licensed. Engine clips were trimmed, looped, level-matched, converted to mono MP3 and are pitch-shifted live; the bangs were cut, faded and level-matched. Full list: <a href="sounds/CREDITS.md" target="_blank" rel="noopener" style="color:var(--orange)">sounds/CREDITS.md</a>.</p><p class="hint">Drag announcer: the voice of Ed, the Late Night Announcer, generated with ElevenLabs text to speech for Longlight Interactive; lines written for the game.</p><p class="hint">Ambience and crowd: venue beds and crowd reactions generated with ElevenLabs sound effects for Longlight Interactive.</p>`
     +L.map(c=>`<div class="opt"><div class="oh"><b>${esc(c.title)}</b><span class="tag">${esc(c.license)}</span></div><p>${esc(c.use)} · by ${esc(c.author)} · <a href="${esc(c.src)}" target="_blank" rel="noopener" style="color:var(--orange)">source</a>${c.licUrl?` · <a href="${esc(c.licUrl)}" target="_blank" rel="noopener" style="color:var(--orange)">license</a>`:""}${c.mods?`<br><small>${esc(c.mods)}</small>`:""}</p></div>`).join("");
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
 $("sndCredBtn").addEventListener("click",sndCredits);
@@ -32856,6 +32858,7 @@ function dragFinish(){
   if(DR.night&&same){rnAfterPass(r,failed);annNight(DR.night.stage);}
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
   if(same)pbPass(r,failed);
+  if(typeof crowdAfter==="function")crowdAfter("drag",{broke:failed,won:r.race?r.race.won:undefined,close:!!(r.race&&r.race.margin!=null&&Math.abs(r.race.margin)<0.05),pb:!!r.pb});   // app/ambience.js
   if(DR.veh&&DR.veh.dlCap)r.swap=swapTag();
   {const pv=dragPrev();if(!failed&&r.et!=null){if(pv)r.prev=pv;DPREV={m:dragMarks(r),mode:S.mode,car:S.career};}}   // the slip prints the change from the last clean pass
   res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
@@ -33399,6 +33402,74 @@ function annNight(s0){const N=rnCur();if(!N||!annCtx())return;let p=null;
 /* Settings › Sound › Drag announcer */
 function applyAnn(){const on=S.ann!==false;document.querySelectorAll("#annSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.ann==="1")===on));if(!on){ANN.q.length=0;annStop();}}
 $("annSeg").addEventListener("click",e=>{const b=e.target.closest("[data-ann]");if(!b)return;S.ann=b.dataset.ann==="1";applyAnn();save();toast(S.ann?"ANNOUNCER ON · Ed calls the strip":"ANNOUNCER OFF");});
+/* ---- ambience beds and crowd reactions ----
+   Ten 18-second ambience loops (sounds/amb/: strip, pull, bog, boat, salt, road, hill, oval, e24 and the shop) and eight crowd
+   one-shots (sounds/crowd/: cheer, applause, groan, ooh, fullpull, bog, summit, dynoclap), generated with ElevenLabs sound effects
+   for Longlight Interactive (credits in sounds/CREDITS.md). Each loop was cut so its tail crossfades into its head and saved with a
+   quarter second of wrap-around either side, so the loop points sit inside clean audio whatever the decoder does with MP3 padding.
+   Which bed plays: the Events tab plays the venue of the event that is set up; every other tab plays the shop. Nothing is fetched
+   until sound is on and the slider is above zero; then only the bed for where you are is fetched (the service worker caches it)
+   and decoded, with a 1.5 s crossfade when you move. Crowd reactions are fetched when the Events tab opens on that event and are
+   called from each event's finish (crowdAfter), and from a certified dyno pull in the shop.
+   Ambience and crowd play through the engine's audio context straight to the speakers, past the engine EQ, on their own level:
+   Settings › Sound › Ambience & crowd (S.ambVol, 0–100, 40 unless set). While a bed plays the engine sound is asked not to
+   idle-suspend the audio (ENGINE_SOUND.holdAwake). A hidden tab, sound off or the slider at zero stops the bed. */
+const AMB_FOR={drag:"strip",bracket:"strip",pull_sled:"pull",bog:"bog",boat:"boat",salt:"salt",road:"road",hill:"hill",oval:"oval",race24:"e24"};
+const AMB_LEN=18,AMB_ROLL=0.25,AMB_GAIN=0.9,CROWD_GAIN=1.1;
+const CROWD_FOR={strip:["cheer","applause","groan","ooh"],pull:["fullpull","applause","groan"],bog:["bog","applause","groan"],boat:["cheer","applause","groan"],
+  salt:["cheer"],hill:["summit","ooh","groan"],oval:["cheer","applause","groan"],e24:["cheer","applause"],shop:["dynoclap"]};
+const AMB={id:null,src:null,g:null,out:null,bufs:new Map(),bytes:{},n:0,stat:{fetched:0,errors:0}};
+function ambLvl(){return S.ambVol==null?40:Math.max(0,Math.min(100,+S.ambVol||0));}
+function ambCtx(){if(typeof soundReady==="undefined"||!soundReady||!S||!S.sound||typeof ENGINE_SOUND==="undefined"||!ENGINE_SOUND.sampleHost)return null;const h=ENGINE_SOUND.sampleHost();return h&&h.ctx||null;}
+function ambOut(ctx){if(!AMB.out||AMB.out.context!==ctx){AMB.out=ctx.createGain();AMB.out.connect(ctx.destination);}AMB.out.gain.value=ambLvl()/100;return AMB.out;}
+/* fetch (kept compressed) and decode (a few beds and the crowd clips kept decoded; a bed is ~3 MB decoded) */
+function ambLoad(f){const ctx=ambCtx();if(!ctx)return Promise.resolve(null);
+  if(AMB.bufs.has(f)){const b=AMB.bufs.get(f);AMB.bufs.delete(f);AMB.bufs.set(f,b);return Promise.resolve(b);}
+  const got=AMB.bytes[f]||(AMB.bytes[f]=fetch(f).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.arrayBuffer();}).then(ab=>{AMB.stat.fetched++;return ab;}));
+  return got.then(ab=>new Promise((res,rej)=>{const p=ctx.decodeAudioData(ab.slice(0),res,rej);if(p&&p.catch)p.catch(rej);})).then(b=>{AMB.bufs.set(f,b);
+    let beds=[...AMB.bufs.keys()].filter(k=>k.includes("/amb/"));while(beds.length>3){AMB.bufs.delete(beds.shift());}return b;})
+    .catch(e=>{delete AMB.bytes[f];AMB.stat.errors++;if(console.debug)console.debug("[ambience] clip unavailable:",f,e&&e.message);return null;});}
+function ambFile(id){return "sounds/amb/"+id+".mp3";}
+function crowdFile(id){return "sounds/crowd/"+id+".mp3";}
+/* where you are decides the bed: the event that is set up in Events, the shop everywhere else */
+function ambWant(){if(!ambCtx()||!ambLvl()||document.hidden||!S.mode)return null;
+  return curTab==="events"?(AMB_FOR[S.env.testType]||null):"shop";}
+function ambFade(g,to,t){const ctx=g.context,now=ctx.currentTime;try{g.gain.cancelScheduledValues(now);g.gain.setValueAtTime(g.gain.value,now);g.gain.linearRampToValueAtTime(to,now+t);}catch(e){g.gain.value=to;}}
+function ambStop(t){const s=AMB.src,g=AMB.g;AMB.src=null;AMB.g=null;AMB.id=null;if(!s)return;
+  if(g&&t){ambFade(g,0,t);setTimeout(()=>{try{s.stop();s.disconnect();g.disconnect();}catch(e){}},t*1000+80);}else{try{s.stop();s.disconnect();if(g)g.disconnect();}catch(e){}}}
+function ambSync(){const want=ambWant();
+  if(typeof ENGINE_SOUND!=="undefined"&&ENGINE_SOUND.holdAwake)ENGINE_SOUND.holdAwake(!!want);
+  if(want===AMB.id&&(AMB.src||!want)){if(AMB.out)AMB.out.gain.value=ambLvl()/100;return;}
+  if(!want){ambStop(0.8);return;}
+  const n=++AMB.n;ambStop(1.5);AMB.id=want;
+  ambLoad(ambFile(want)).then(b=>{const ctx=ambCtx();if(!b||!ctx||n!==AMB.n||ambWant()!==want)return;
+    const s=ctx.createBufferSource(),g=ctx.createGain();s.buffer=b;s.loop=true;
+    const a=Math.min(AMB_ROLL,b.duration/4),e=Math.min(b.duration-0.01,a+AMB_LEN);s.loopStart=a;s.loopEnd=e;
+    g.gain.value=0;s.connect(g);g.connect(ambOut(ctx));s.start(ctx.currentTime+0.02,a+Math.random()*(e-a)*0.9);ambFade(g,AMB_GAIN,1.5);AMB.src=s;AMB.g=g;});
+  if(CROWD_FOR[want])CROWD_FOR[want].forEach(c=>ambLoad(crowdFile(c)));}
+/* a crowd one-shot, a beat after the moment; at most two at once */
+let crowdN=0;
+function crowd(id,delay){const ctx=ambCtx();if(!ctx||!ambLvl()||!id)return;
+  ambLoad(crowdFile(id)).then(b=>{const c=ambCtx();if(!b||!c||crowdN>=2)return;crowdN++;
+    const s=c.createBufferSource(),g=c.createGain();s.buffer=b;g.gain.value=CROWD_GAIN*(0.9+Math.random()*0.2);s.playbackRate.value=0.96+Math.random()*0.08;
+    s.connect(g);g.connect(ambOut(c));s.start(c.currentTime+(delay==null?0.6:delay));s.onended=()=>{crowdN--;try{s.disconnect();g.disconnect();}catch(e){}};});}
+/* what the crowd makes of a finished run: each event's finish passes its own outcome */
+function crowdAfter(ev,o){o=o||{};if(o.skip)return;let id=null;
+  if(o.broke)id=ev==="hill"&&o.edge?"ooh":"groan";
+  else if(ev==="drag")id=o.won===true?"cheer":o.won===false?(o.close?"ooh":"applause"):o.pb?"applause":null;
+  else if(ev==="pull")id=o.full?"fullpull":"applause";
+  else if(ev==="bog")id=o.cleared?"bog":"applause";
+  else if(ev==="boat"||ev==="oval")id=o.won?"cheer":"applause";
+  else if(ev==="salt")id=o.record?"cheer":null;
+  else if(ev==="hill")id="summit";
+  else if(ev==="e24")id=o.won?"cheer":o.classified?"applause":null;
+  else if(ev==="dyno")id="dynoclap";
+  crowd(id,o.delay);}
+function ambUi(){const v=ambLvl();$("ambVol").value=v;$("ambLbl").textContent=v+"%";}
+$("ambVol").addEventListener("input",e=>{S.ambVol=+e.target.value;$("ambLbl").textContent=S.ambVol+"%";ambSync();});
+$("ambVol").addEventListener("change",save);
+document.addEventListener("visibilitychange",()=>ambSync());
+setInterval(ambSync,1000);
 /* ---- truck pull driver: a sled, a class, a field of local pullers ---- */
 let PR=null;
 const PULL_PURSE=[4000,2000,1200,600,300],PULL_PAY={1:1,2:1.5,3:2,4:3,5:4},PULL_REP=[3,2,1];
@@ -33587,6 +33658,7 @@ function pullFinish(){
     PO={k,r1:r,res,env,field:PR.field,fseed:PR.fseed,ev:PR.ev,fmt:PR.fmt,veh:PR.veh,hash:PR.snap.h,snap:PR.snap,hk:PR.hk,n:fulls.length};}
   else if(isPO)PO=null;
   const ctx={k,res,env,field:isPO?P0.field:PR.field,isPO,first:isPO?P0.r1:r,po:isPO?(failed?0:r.distFt):null,failed,failKind:PR.failKind,fmt:PR.fmt,ev:PR.ev,veh:PR.veh,fseed:PR.fseed,pending:!!PO&&!isPO,snap:PR.snap,hk:PR.hk};
+  if(typeof crowdAfter==="function")crowdAfter("pull",{broke:failed,full:r.full&&!failed});   // app/ambience.js
   PR.p=null;pullSettle(r,ctx);
 }
 function pullSettle(r,c){const {k,res,env,failed}=c,sn=c.snap,same=!sn||testSame(sn),C0=SIM.PULL_CLASSES[k],f1=c.first,dq=r.broke==="runaway"&&!c.isPO;   // grenaded on a hook: disqualified
@@ -33780,6 +33852,7 @@ function bogFinish(){
   r.field=rows;r.place=rows.indexOf(me)+1;r.of=rows.length;r.clsName=C0.n;r.tier=C0.tier;r.auto=BR.auto;r.cleared=me.cleared;
   if(failed){r.broke=r.broke||BR.failKind;r.failKind=r.failKind||BR.failKind;}
   if(same)bogPb(r,failed);
+  if(typeof crowdAfter==="function")crowdAfter("bog",{broke:failed,cleared:r.cleared});   // app/ambience.js
   res.bog=r;res.bogFailed=failed;res.bogFailKind=failed?BR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,sc=r.cleared?`THROUGH · ${r.pitT.toFixed(2)} s`:`${r.distM.toFixed(1)} m`;
   if(career()&&same){addWear(0.5+Math.min(1,r.time/25)*0.5+(r.coolPeak>115?0.4:0),hk);
@@ -34290,6 +34363,7 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
     classified:!!mine.classified,dnf:me.dnf?{h:+me.dnf.h.toFixed(1),id:me.dnf.id,name:me.dnf.name}:null,best:me.best,bestLap:me.bestLap,avg,pits:me.pits,pitT:Math.round(me.pitT),fuel:Math.round(me.fuelUsed),
     stints,trace:dec,sc:R.scN,field:all.map(x=>({no:x.no,team:x.team,cls:x.cls,eng:x.eng,laps:x.laps,best:x.best!=null?+x.best.toFixed(2):null,out:x.out,dnf:x.dnf,me:x.me,cl:x.classified,pc:x.posCls})),
     clsBest:Math.min(...inCls.filter(x=>x.best!=null).map(x=>x.best)),win:inCls[0]?inCls[0].laps:0,hrs:+hrs.toFixed(1)};
+  if(typeof crowdAfter==="function")crowdAfter("e24",{won:r.classified&&r.posCls===1,classified:r.classified});   // app/ambience.js
   /* career money and standing */
   if(career()&&!ff&&same){const g=e24C();g.live=null;g.runs=(g.runs||0)+1;const K=SIM.E24_CLASSES[cls],fu=SIM.fuelOf(cfg0)||SIM.OPT.fuel.r91;
     const prize=r.classified?(K.prize[r.posCls-1]||0)+3000:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.35)/* series fuel, at the trade price */;let rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
@@ -34470,6 +34544,7 @@ function saltFinish(){
     meet.imp=null;}
   else if(valid&&rec&&r.mileMph>rec.mph){outcome="impound";meet.imp={key:cls.key,hk,mph:r.mileMph};}
   r.outcome=outcome;
+  if(typeof crowdAfter==="function")crowdAfter("salt",{broke:failed,record:outcome==="record"});   // app/ambience.js
   // personal best for the class
   const pb=L.pb[cls.key];if(valid&&(!pb||r.mileMph>pb.mph)){L.pb[cls.key]=Object.assign({mph:r.mileMph,km:r.kmMph,peak:r.peakMph},recTag());r.pb=pb?{was:pb.mph}:{first:true};}
   if(failed){r.broke=r.broke||SR.failKind;r.failKind=r.failKind||SR.failKind;}
@@ -34733,6 +34808,7 @@ function hillFinish(){
   Object.assign(r,{field:rows,place:rows.indexOf(me)+1,of:rows.length,clsName:C0.n,tier:C0.tier,auto:HC.auto&&HC.took==null,took:HC.took,handed:HC.handed||null,chName:SIM.CHASSIS[opt.ch].n,tyreName:SIM.HILL_TYRES[opt.tyre].n,aeroName:SIM.HILL_AERO[opt.aero].n,
     secNames:T.sections.map(s=>s.n),lead:HC.lead?{n:HC.lead.n,t:HC.lead.t,splits:HC.lead.splits}:null});
   if(r.dnf)r.place=rows.indexOf(me)+1;
+  if(typeof crowdAfter==="function")crowdAfter("hill",{broke:!!r.dnf,edge:!!(r.dnf&&r.dnf.kind==="edge")});   // app/ambience.js
   r.suBal=+SIM.hillCar(prep,opt).bi.toFixed(2);if(!r.dnf)suTipHill(r,prep,opt);
   if(same&&!r.dnf&&!ff){const RR=recBucket("hill"),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
   r.wx=wxSnap("hill");const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
@@ -35021,6 +35097,7 @@ function ovalFinish(){
   rows.push(me);ovalSortRows(rows);const place=rows.indexOf(me)+1;
   Object.assign(r,{stage,cls:k,clsName:C0.n,tier:C0.tier,place,of:rows.length,field:rows,N,lapsDone:meLaps,auto:OV.auto&&OV.took==null,took:OV.took,gridMe:OV.gridMe+1,posLaps:OV.posLaps.slice(),finished:!failed,tyreName:SIM.OVAL_TYRES[env.ovalTyre]?SIM.OVAL_TYRES[env.ovalTyre].n:"",track:tk,trackName:TT.n,surf:TT.surf,night:SIM.ovalNight(n.seed,tk).name,ci:Math.round(SIM.ovalCi(res)),final:+(OV.veh.finalK||1).toFixed(2),muStart:+(SIM.ovalNight(n.seed,tk).mu).toFixed(2),dnfLap:failed?meLaps+1:null});
   r.time=meT;r.best=me.best;
+  if(typeof crowdAfter==="function")crowdAfter("oval",{broke:failed,won:place===1&&!failed});   // app/ambience.js
   const pl=ordN(place)+" of "+rows.length,sc=failed?`DNF · lap ${meLaps+1}`:`${ordN(place)}`;
   // money, rep, wear
   if(same&&career()){addWear((stage==="heat"?0.4:0.9)+(r.coolPeak>112?0.4:0),hk);
@@ -35242,6 +35319,7 @@ function boatFinish(){
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("boatCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
   const me={rt:BT.foul?-0.01:r.rt,et:failed||r.dnf?null:r.et,mph:r.mph,dist:r.dist,dnf:failed?"broke":r.dnf};
   const op=BT.opp,won=boatJudge(me,op)==="a";
+  if(typeof crowdAfter==="function")crowdAfter("boat",{broke:failed,won:won&&!failed});   // app/ambience.js
   const mm=boatMyMatch(N);if(mm){mm.win=won?0:oi;mm.pa=mm.a===0?me:op;mm.pb=mm.a===0?op:me;}
   r.match={label:BT.label,stage,opp:BT.of.name,boat:BT.of.boat,hp:BT.of.hp,oppRt:op.rt,oppEt:op.et,oppMph:op.mph,oppDnf:op.dnf,won,foul:BT.foul,margin:me.et!=null&&op.et!=null&&!BT.foul&&!(op.rt<0)?+(boatTot(me)-boatTot(op)).toFixed(3):null};
   r.clsName=C0.n;r.tier=C0.tier;r.auto=BT.auto||BT.took!=null?{took:BT.took}:null;r.at=Date.now();
@@ -35621,7 +35699,7 @@ $("runTest").addEventListener("click",()=>{
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
       if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
       if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const bad=!res.fails.length&&!overCap&&!lk&&crewBadRead(),ok=!res.fails.length&&!overCap&&!lk&&!bad;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:bad?"a sensor read wrong (clumsy with sensors) — pull it again":lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
-        if(ok)tourAdvance(2);
+        if(ok){tourAdvance(2);if(typeof crowdAfter==="function")crowdAfter("dyno",{delay:0.3});}
         if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(cfg0.asp!=="na")C().boostedCert=true;}
         else if(bad){logEvent(`Bad reading on the dyno — a sensor knocked loose; pull it again`,"bad");setTimeout(()=>toast("BAD READING · a sensor knocked loose — pull it again"),2700);}
@@ -36252,7 +36330,7 @@ $("spons").addEventListener("click",e=>{if(!career())return;const s=spS();
 function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
-  $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
+  $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;if(typeof ambUi==="function")ambUi();renderSaves();
   spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
   pcRender();crateRender();spRender();rivalsRender();
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";

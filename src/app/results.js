@@ -233,7 +233,7 @@ $("runTest").addEventListener("click",()=>{
       const offStd=career()&&(!same||!isStdCell(env));if(offStd&&(env.testType==="pull"||env.testType==="endurance"))env.testOnly=true;
       if(same&&!ff&&!career()&&env.testType==="pull"&&!failing)pbPull(res);
       if(career()&&env.testType==="pull"&&!offStd){const cap=dynoCap(),lk=presetLocked(cfg0);const overCap=res.peakHp>cap.hp||cfg0.redline>cap.rpm;const bad=!res.fails.length&&!overCap&&!lk&&crewBadRead(),ok=!res.fails.length&&!overCap&&!lk&&!bad;C().cert={hash:snap.h,cfg:cfg0,ok,res,why:bad?"a sensor read wrong (clumsy with sensors) — pull it again":lk?`needs the ${lk} upgrade`:overCap?`${cap.n} only reads to ${cap.hp.toLocaleString()} hp / ${cap.rpm.toLocaleString()} rpm`:res.fails.length?"it broke":""};
-        if(ok)tourAdvance(2);
+        if(ok){tourAdvance(2);if(typeof crowdAfter==="function")crowdAfter("dyno",{delay:0.3});}
         if(ok)pbPull(res);
         if(ok){C().bestHp=Math.max(C().bestHp||0,res.peakHp);C().bestRel=Math.max(C().bestRel||0,res.rel);if(cfg0.asp!=="na")C().boostedCert=true;}
         else if(bad){logEvent(`Bad reading on the dyno — a sensor knocked loose; pull it again`,"bad");setTimeout(()=>toast("BAD READING · a sensor knocked loose — pull it again"),2700);}
