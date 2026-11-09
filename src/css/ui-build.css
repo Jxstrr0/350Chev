@@ -2,7 +2,7 @@
 #presetAcc .pbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:0;margin:0 0 6px}
 #pAvail{margin:0;flex:0 0 auto;flex-wrap:nowrap}
 #pAvail[hidden]{display:none}
-#pAvail .chip{min-height:40px;margin:0}
+#pAvail .chip{min-height:44px;margin:0}
 #presetAcc .pbar .cnt{flex:1 1 120px;min-width:0}
 .pmore{margin:0 0 8px}
 .pmore>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}

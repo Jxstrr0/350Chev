@@ -1727,6 +1727,8 @@ var run = { on:false, rpm:0, load:0, fail:false, redline:7000, smooth:70, first:
 /* mount dynamics state: roll about the crank axis is a real spring-damper so blips rock and settle */
 var mnt = { roll:0, rollV:0, lope:0, lopeT:0, nz:[0,0,0,0], buzz:[0,0,0] };
 var particles=[];
+/* CALM: the phone or computer asks for reduced motion, so no camera shake in the garage or at any event. */
+var CALM = false; try{ CALM = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){}
 var camState = { theta:0.72, phi:1.06, r:15, target:new THREE.Vector3(0,7.6,0),
                  auto:true, autoForce:null, idle:0, dragging:false, shake:0 };
 var engineBounds = new THREE.Box3();

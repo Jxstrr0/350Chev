@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.100.0*/
+/*pew-scenes 1.76.101.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -3177,7 +3177,7 @@ function stripDirect(o, dt, P, O){
   STRIP.camPos.copy(_cw); STRIP.camTgt.copy(_ct);
   /* hard cut, then a 0.15 s ease-in: start 6% further out and settle */
   var ease=1-smoothstep(0,0.15,STRIP.cutT); if(ease>0) STRIP.camPos.addScaledVector(_sfD.subVectors(_cw,_ct), 0.06*ease);
-  STRIP.shake*=Math.exp(-dt*3.2); var sh=STRIP.shake;
+  STRIP.shake*=Math.exp(-dt*3.2); var sh=CALM?0:STRIP.shake;
   if(sh>0.002){ STRIP.camPos.x+=(Math.random()-0.5)*sh*0.22; STRIP.camPos.y+=(Math.random()-0.5)*sh*0.22; STRIP.camPos.z+=(Math.random()-0.5)*sh*0.18; STRIP.camTgt.y+=(Math.random()-0.5)*sh*0.1; }
   var cam=STRIP.cam; cam.position.copy(STRIP.camPos); cam.lookAt(STRIP.camTgt); cam.fov=STRIP.fov; cam.updateProjectionMatrix();
   stripLens(cam);
@@ -4470,7 +4470,7 @@ function pullDirect(o, dt, V){
   /* the look point is eased so world-fixed shots pan smoothly after the vehicle */
   PULL.camPos.copy(_pw); if(rel) PULL.camTgt.copy(_pt); else PULL.camTgt.lerp(_pt, 1-Math.exp(-8*dt));
   var ease=1-smoothstep(0,0.15,PULL.cutT); if(ease>0) PULL.camPos.addScaledVector(_pD.subVectors(PULL.camPos,PULL.camTgt), 0.06*ease);
-  PULL.shake*=Math.exp(-dt*3.5); var sh=PULL.shake; if(sh>0.002){ PULL.camPos.x+=(Math.random()-0.5)*sh*0.2; PULL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
+  PULL.shake*=Math.exp(-dt*3.5); var sh=CALM?0:PULL.shake; if(sh>0.002){ PULL.camPos.x+=(Math.random()-0.5)*sh*0.2; PULL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
   var cam=PULL.cam; cam.position.copy(PULL.camPos); cam.lookAt(PULL.camTgt); cam.fov=PULL.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function pullComposer(){
@@ -4838,7 +4838,7 @@ function bogDirect(o, dt, V){
     _bw.copy(_br); _bt.copy(_brt); _bw.x+=ax; _bt.x+=ax; BOG.relOn=true; } else BOG.relOn=false;
   if(BOG.snap){ BOG.fov=fov; BOG.snap=false; BOG.camTgt.copy(_bt); } else BOG.fov+=(fov-BOG.fov)*(1-Math.exp(-6*dt));
   BOG.camPos.copy(_bw); if(rel) BOG.camTgt.copy(_bt); else BOG.camTgt.lerp(_bt, 1-Math.exp(-8*dt));
-  BOG.shake*=Math.exp(-dt*3.5); var sh=BOG.shake; if(sh>0.002){ BOG.camPos.x+=(Math.random()-0.5)*sh*0.25; BOG.camPos.y+=(Math.random()-0.5)*sh*0.25; }
+  BOG.shake*=Math.exp(-dt*3.5); var sh=CALM?0:BOG.shake; if(sh>0.002){ BOG.camPos.x+=(Math.random()-0.5)*sh*0.25; BOG.camPos.y+=(Math.random()-0.5)*sh*0.25; }
   var cam=BOG.cam; cam.position.copy(BOG.camPos); cam.lookAt(BOG.camTgt); cam.fov=BOG.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function bogComposer(){
@@ -6262,7 +6262,7 @@ function boatDirect(o, dt){
     _btw.copy(_btr); _btt.copy(_btrt); _btw.x+=ax; _btt.x+=ax; BOAT.relOn=true; } else BOAT.relOn=false;
   if(BOAT.snap){ BOAT.fov=fov; BOAT.snap=false; BOAT.camTgt.copy(_btt); } else BOAT.fov+=(fov-BOAT.fov)*(1-Math.exp(-6*dt));
   BOAT.camPos.copy(_btw); if(rel) BOAT.camTgt.copy(_btt); else BOAT.camTgt.lerp(_btt, 1-Math.exp(-7*dt));
-  BOAT.shake*=Math.exp(-dt*3.5); var sh=BOAT.shake; if(sh>0.002){ BOAT.camPos.x+=(Math.random()-0.5)*sh*0.3; BOAT.camPos.y+=(Math.random()-0.5)*sh*0.3; }
+  BOAT.shake*=Math.exp(-dt*3.5); var sh=CALM?0:BOAT.shake; if(sh>0.002){ BOAT.camPos.x+=(Math.random()-0.5)*sh*0.3; BOAT.camPos.y+=(Math.random()-0.5)*sh*0.3; }
   BOAT.camPos.y=Math.max(0.6,BOAT.camPos.y);
   var cam=BOAT.cam; cam.position.copy(BOAT.camPos); cam.lookAt(BOAT.camTgt); cam.fov=BOAT.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
@@ -7050,7 +7050,7 @@ function saltDirect(o, dt, V){
   SALT.snap=false;
   SALT.camPos.copy(_sw); if(rel||lens) SALT.camTgt.copy(_st); else SALT.camTgt.lerp(_st, 1-Math.exp(-9*dt));
   if(SALT.camPos.y<0.25) SALT.camPos.y=0.25;
-  SALT.shake*=Math.exp(-dt*4); var sh=SALT.shake; if(sh>0.002){ SALT.camPos.y+=(Math.random()-0.5)*sh*0.25; SALT.camPos.z+=(Math.random()-0.5)*sh*0.25; }
+  SALT.shake*=Math.exp(-dt*4); var sh=CALM?0:SALT.shake; if(sh>0.002){ SALT.camPos.y+=(Math.random()-0.5)*sh*0.25; SALT.camPos.z+=(Math.random()-0.5)*sh*0.25; }
   /* buffeting at speed: a low, uneven shudder (not white noise) and a touch of roll */
   SALT.buffet=(SALT.buffet||0)+(buf-(SALT.buffet||0))*(1-Math.exp(-3*dt)); var bf=SALT.buffet, tt=SALT.t;
   if(bf>0.002){ var by=Math.sin(tt*13.1)+0.6*Math.sin(tt*29.7+1.3)+0.35*Math.sin(tt*53.3+0.4), bz=Math.sin(tt*11.3+2.1)+0.5*Math.sin(tt*31.9+0.7);
@@ -8934,7 +8934,7 @@ function ovalDirect(o, dt, me, V){
     pos.copy(OVAL.rp); tgt.copy(OVAL.rt); OVAL.relOn=true; } else OVAL.relOn=false;
   if(OVAL.snap){ OVAL.fov=fov; OVAL.snap=false; OVAL.camTgt.copy(tgt); } else OVAL.fov+=(fov-OVAL.fov)*(1-Math.exp(-5*dt));
   OVAL.camPos.copy(pos); if(rel) OVAL.camTgt.copy(tgt); else OVAL.camTgt.lerp(tgt,1-Math.exp(-7*dt));
-  OVAL.shake*=Math.exp(-dt*3); var sh=OVAL.shake; if(sh>0.002){ OVAL.camPos.x+=(Math.random()-0.5)*sh*0.2; OVAL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
+  OVAL.shake*=Math.exp(-dt*3); var sh=CALM?0:OVAL.shake; if(sh>0.002){ OVAL.camPos.x+=(Math.random()-0.5)*sh*0.2; OVAL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
   var cam=OVAL.cam; cam.position.copy(OVAL.camPos); cam.lookAt(OVAL.camTgt); cam.fov=OVAL.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function ovalComposer(){
