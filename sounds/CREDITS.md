@@ -4,7 +4,7 @@ Real engine recordings used by the **Real recordings** and **Blend** engine voic
 Every file below is openly licensed (CC0 / public domain / CC BY / CC BY-SA). Modifications for every engine loop:
 trimmed to the listed window, high-passed at 28 Hz, time-warped so the engine holds one steady measured rpm,
 cut to a whole number of engine cycles and looped with an equal-power crossfade, loudness-normalised, mixed to mono
-and encoded as 96 kbps MP3. One-shots (blow-off, backfire, anti-lag) are cut, filtered as listed, faded, peak-normalised and encoded the same way. In the game the loops are pitch-shifted live to the build's rpm and mixed with the synth.
+and encoded as 96 kbps MP3. One-shots (blow-off, backfire, anti-lag, nitrous hiss) are cut, filtered as listed, faded, peak-normalised and encoded the same way. In the game the loops are pitch-shifted live to the build's rpm and mixed with the synth.
 Freesound clips were taken from the site's public HQ preview MP3; Commons clips from Wikimedia's own MP3 transcode of the original file
 (clips added on 2026-11-02 from the original upload). Loops whose credit says "held as recorded" were already steady and were not time-warped.
 Several Commons sources are audio tracks of YouTube videos their owners published under CC BY 3.0; the YouTube channel is the credited author.
@@ -67,6 +67,8 @@ files derived from CC BY sources are CC BY (same version) with the attribution b
 | `bov1.mp3`, `bov2.mp3`, `bov3.mp3`, `bov4.mp3` | Peugeot 406 Turbo with an HKS blow-off valve | nick7100 (YouTube) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | [Wikimedia Commons (the original upload)](https://commons.wikimedia.org/wiki/File:Peugeot_406_Turbo_(turbocharged,_HKS_blow-off_valve)_-_engine_and_exhaust_sound_(YouTube_kx0Tvu4_K04).opus) | one-shots: 9.72, 32.17, 41.87, 66.33 s, 0.7 s each, high-passed at 700 Hz |
 | `bf1.mp3`, `bf2.mp3`, `bf3.mp3`, `bf4.mp3` | Car backfires, reverberant | craigsmith | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/craigsmith/sounds/675723/) | one-shots: 0.01, 1.80, 3.96, 5.02 s, 0.6–0.8 s each, 1639 Hz hum notched |
 | `als1.mp3`, `als2.mp3`, `als3.mp3`, `als4.mp3` | Car anti-lag (raw) | modusmogulus | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/modusmogulus/sounds/797835/) | one-shots: 1.55, 1.76, 2.17, 5.26 s, 0.2–0.25 s each, high-passed at 60 Hz |
+| `n2o1.mp3`, `n2o2.mp3`, `n2o3.mp3` | Air (or steam) pressure release | brunoboselli | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/brunoboselli/sounds/457294/) | one-shots (nitrous purge and shot hiss): 0.02, 9.60, 10.50 s, 0.85 s each, high-passed at 500 Hz |
+| `n2o4.mp3` | Steam/hiss | wubitog | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) | [Freesound (HQ preview MP3)](https://freesound.org/people/wubitog/sounds/234782/) | one-shot (nitrous purge and shot hiss): 0.50 s, 0.75 s, high-passed at 500 Hz |
 
 ## Drag announcer (sounds/announcer/)
 

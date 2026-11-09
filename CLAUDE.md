@@ -6,7 +6,7 @@ Prairie Engine Works is a browser engine-builder by Longlight Interactive: pick 
 
 - Plain HTML, CSS and classic (non-module) JavaScript in a few big `<script>` blocks. No package.json, no npm, no bundler, no CI. The two node scripts below are the only checks.
 - three.js **r128** from CDN: `three.min.js` from cdnjs, plus the post-processing addons and the GLTFLoader from jsdelivr `three@0.128.0` (the `PEW_LIBS` list in `src/html/body.html`; a Lite phone loads them on demand). Google Fonts (Chakra Petch, Barlow, IBM Plex Mono). Nothing else external.
-- Sound: a Web Audio synth plus 72 openly licensed recordings (engine loops, and blow-off, backfire and anti-lag one-shots) in `sounds/`, and 143 ElevenLabs announcer lines in `sounds/announcer/` (credits in `sounds/CREDITS.md`; keep that file in step with the folder).
+- Sound: a Web Audio synth plus 76 openly licensed recordings (engine loops, and blow-off, backfire, anti-lag and nitrous hiss one-shots) in `sounds/`, and 143 ElevenLabs announcer lines in `sounds/announcer/` (credits in `sounds/CREDITS.md`; keep that file in step with the folder).
 - 3D models: a few CC0 glTF props in `models/` (the workshop, the pull track and the drag pits) (credits in `models/CREDITS.md`; keep it in step), Full and Ultra only, packed with `tools/pack-model.py` (Python with Pillow and numpy). The Pikes Peak props (`models/hill-*.glb`) are our own, built in Blender by `tools/blender/hill-props.py` (`pip install bpy` on Python 3.11, then run it). The engine, rooms and Lite props stay as code.
 - PWA: `manifest.webmanifest`, `icons/`, and the generated `sw.js`. Installed copies work offline.
 - Node 16 or newer for the scripts (22 is what was last used). Nothing to install.
@@ -90,7 +90,7 @@ When changing physics, run `node tools/sim-test.js` (it covers every event, not 
 - Real design decisions get asked, not guessed.
 - The site and the game use the name Kelbo only, never a real name. Studio name: Longlight Interactive.
 
-## Current status (1.76.104.0, November 2026)
+## Current status (1.76.105.0, November 2026)
 
 - Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply a race team for 8 rounds across 27 series in six kinds of racing, two teams at once from 300 rep; five varied offers with shoestring or well-funded budgets and team rules since 1.76.59.0, leaning to the top series opened since 1.76.60.0; offers built around the certified engine since 1.76.69.0; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), season beats, rescue contracts, returning drivers, Watch it replays (drag, oval, and since 1.76.100.0 pull, bog, boat and hill), a crew chief who can call the 24 Hours strategy (since 1.76.102.0), car show and sound-off, a career dev mode in Settings (+$100,000, +100 rep, skip week), certification, crate engine sales, rival feuds, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, a drag announcer (Ed, 143 ElevenLabs lines in `sounds/announcer/`, matchup calls stitched from parts, since 1.76.87.0), offline PWA, save codes with backup files and a backup reminder.
 - Known loose ends: none flagged beyond `docs/DESIGN.md`'s list.
