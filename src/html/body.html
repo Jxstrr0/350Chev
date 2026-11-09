@@ -106,6 +106,7 @@
 
     <!-- EVENTS: the strip, the sled, the salt, the road and the 24 Hours (the test core moves here with them) -->
     <section class="tabpage" id="tab-events">
+      <div class="evhead" id="evHead"><button class="btn sm ghost" id="evBack" aria-label="Back to all events"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Back</button><div class="evht"><b id="evHeadName"></b><small id="evHeadSub"></small></div></div>
       <div class="evpick" id="evPick" role="radiogroup" aria-label="Event"></div>
       <div class="evtabs seg n3" id="evTabs" role="tablist" aria-label="Event panel"><button role="tab" data-evt="setup">Setup</button><button role="tab" data-evt="adv">Advanced</button><button role="tab" data-evt="res">Results<i class="evdot" aria-hidden="true"></i></button></div>
       <p class="hint tbusy" id="evBusy" hidden></p>
@@ -195,6 +196,12 @@
     <button data-tab="market"><span class="dot" id="mktDot"></span><svg viewBox="0 0 24 24"><path d="M3 7h18l-1.5 4H4.5z"/><path d="M5 11v9h14v-9"/><path d="M9 20v-5h6v5"/><path d="M12 3v4"/></svg>Team</button>
     <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v10H3z"/><path d="M7 21v-8h10v8"/><path d="M7 16h10"/></svg>Shop</button>
   </nav>
+
+  <!-- EVENTS landing (app/evhub.js): one card per event; covers the app while the Events tab has no event entered -->
+  <div id="evHub" role="region" aria-label="Events"><div class="evh-in">
+    <header class="evh-hd" id="evHubHd"><small>Prairie Engine Works</small><h2>Events</h2><p id="evHubMode"></p></header>
+    <div class="evgrid" id="evGrid"></div>
+  </div></div>
 
   <div id="tour" hidden><div id="tourSpot"></div><div id="tourBox"><div class="step" id="tourStep"></div><h3 id="tourTitle"></h3><p id="tourText"></p><div class="row"><button class="btn sm ghost" id="tourSkip">Skip</button><button class="btn sm pri" id="tourNext" style="flex:1">Next</button></div></div></div>
   <div id="ff" hidden><div id="ffSpot"></div><div id="ffBox" role="dialog" aria-labelledby="ffTitle" aria-live="polite"><div class="step" id="ffStep"></div><h3 id="ffTitle"></h3><p id="ffText"></p><div class="row"><button class="btn sm ghost" id="ffSkip">Skip</button><button class="btn sm" id="ffShow">Show me</button><button class="btn sm pri" id="ffNext" style="flex:1">Next</button></div></div></div>
