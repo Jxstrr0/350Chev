@@ -322,68 +322,6 @@ function sc_decalMat(num, color, kind){
   SC.tex[key]=q; return q;
 }
 
-/* --- SPONSOR LIVERY (career sponsors, fictional brands) ----------------------
-   LIVERY {key, hood, sides:[...]} comes from the app (ENGINE_VIS.setLivery); a sponsor is {id, name, tag, shape, c1 plate, c2 mark, c3 word}.
-   Each logo is drawn once per sponsor on a canvas and cached (spLogoCanvas also feeds the app's cards and slips). The strip
-   car keeps its own decal meshes and only swaps materials; the pull and salt vehicles get a hood plane and a few side planes. */
-var LIVERY={key:"", hood:null, sides:[]}, LIV_CV={}, LIV_MAT={}, LIV_PG=null;
-function spRRect(x, x0, y0, w, h, r){ x.beginPath(); x.moveTo(x0+r,y0); x.lineTo(x0+w-r,y0); x.quadraticCurveTo(x0+w,y0,x0+w,y0+r); x.lineTo(x0+w,y0+h-r); x.quadraticCurveTo(x0+w,y0+h,x0+w-r,y0+h); x.lineTo(x0+r,y0+h); x.quadraticCurveTo(x0,y0+h,x0,y0+h-r); x.lineTo(x0,y0+r); x.quadraticCurveTo(x0,y0,x0+r,y0); x.closePath(); }
-function spShape(x, shape, cx, cy, r, col, bg){
-  var i, a, q; x.save(); x.translate(cx, cy); x.fillStyle=col; x.strokeStyle=col; x.lineJoin="round"; x.beginPath();
-  if(shape==="drop"){ x.moveTo(0,-r); x.bezierCurveTo(r*0.5,-r*0.4, r*0.78,r*0.0, r*0.78,r*0.3); x.arc(0,r*0.3,r*0.78,0,PI); x.bezierCurveTo(-r*0.78,r*0.0,-r*0.5,-r*0.4,0,-r); x.fill(); }
-  else if(shape==="ring"){ x.lineWidth=r*0.34; x.arc(0,0,r*0.8,0,TAU); x.stroke(); x.beginPath(); x.arc(0,0,r*0.3,0,TAU); x.fill(); }
-  else if(shape==="gear"){ for(i=0;i<16;i++){ a=i/16*TAU; q=(i%2)?r*0.76:r; x.lineTo(Math.cos(a)*q, Math.sin(a)*q); x.lineTo(Math.cos(a+TAU/16)*q, Math.sin(a+TAU/16)*q); } x.closePath(); x.fill(); x.fillStyle=bg; x.beginPath(); x.arc(0,0,r*0.36,0,TAU); x.fill(); }
-  else if(shape==="diamond"){ x.moveTo(0,-r); x.lineTo(r*0.8,0); x.lineTo(0,r); x.lineTo(-r*0.8,0); x.closePath(); x.fill(); x.fillStyle=bg; x.beginPath(); x.moveTo(0,-r*0.45); x.lineTo(r*0.36,0); x.lineTo(0,r*0.45); x.lineTo(-r*0.36,0); x.closePath(); x.fill(); }
-  else if(shape==="leaf"){ x.moveTo(0,r); x.quadraticCurveTo(-r*1.05,0,0,-r); x.quadraticCurveTo(r*1.05,0,0,r); x.fill(); x.strokeStyle=bg; x.lineWidth=r*0.12; x.beginPath(); x.moveTo(0,r*0.85); x.lineTo(0,-r*0.7); x.stroke(); }
-  else if(shape==="shield"){ x.moveTo(-r*0.8,-r*0.85); x.lineTo(r*0.8,-r*0.85); x.lineTo(r*0.8,0); x.quadraticCurveTo(r*0.7,r*0.7,0,r); x.quadraticCurveTo(-r*0.7,r*0.7,-r*0.8,0); x.closePath(); x.fill(); x.fillStyle=bg; x.fillRect(-r*0.12,-r*0.6,r*0.24,r*1.1); x.fillRect(-r*0.5,-r*0.25,r,r*0.24); }
-  else if(shape==="bolt"){ x.moveTo(r*0.25,-r); x.lineTo(-r*0.6,r*0.12); x.lineTo(-r*0.02,r*0.12); x.lineTo(-r*0.3,r); x.lineTo(r*0.62,-r*0.2); x.lineTo(r*0.04,-r*0.2); x.closePath(); x.fill(); }
-  else if(shape==="wing"){ for(i=0;i<3;i++){ x.beginPath(); x.moveTo(-r,-r*0.55+i*r*0.5); x.lineTo(r*0.95,-r*0.55+i*r*0.5); x.lineTo(r*0.65-i*r*0.3,-r*0.2+i*r*0.5); x.lineTo(-r*0.85+i*r*0.1,-r*0.2+i*r*0.5); x.closePath(); x.fill(); } }
-  else { for(i=0;i<10;i++){ a=-PI/2+i/10*TAU; q=(i%2)?r*0.42:r; x.lineTo(Math.cos(a)*q, Math.sin(a)*q); } x.closePath(); x.fill(); }   /* star */
-  x.restore();
-}
-/* the logo: a plate in the brand colour, the brand's emblem (sponsors/<id>.png, ElevenLabs image art picked by Kelbo, credits in
-   sponsors/CREDITS.md) on a light badge at the left, the name in the game's display font and the tag line. The emblem is fetched the
-   first time a logo is drawn; until it (and the font) arrive the old drawn mark stands in, then every cached logo canvas is redrawn
-   in place and its textures and the composites built from it (door decals) are refreshed. Wild Oat's art carries its own name, so it
-   is drawn whole on a dark plate with no wordmark. */
-var SP_EMB={}, SP_FULL={wildoat:1}, LIV_FX=[], spFontOk=false;
-function spEmblem(id){
-  var e=SP_EMB[id]; if(e) return e.ok?e.img:null;
-  if(typeof Image==="undefined") return null;
-  e=SP_EMB[id]={img:new Image(), ok:false}; e.img.decoding="async";
-  e.img.onload=function(){ e.ok=true; livRedraw(); };
-  e.img.onerror=function(){ if(console.debug) console.debug("[sponsors] emblem unavailable:", id); };
-  e.img.src="sponsors/"+id+".png";
-  if(!spFontOk && typeof document!=="undefined" && document.fonts && document.fonts.load){ spFontOk=true; document.fonts.load("700 40px 'Chakra Petch'").then(livRedraw, function(){}); }
-  return null;
-}
-var livRedrawT=0;
-function livRedraw(){ if(livRedrawT) return; livRedrawT=setTimeout(function(){ livRedrawT=0;
-  Object.keys(LIV_CV).forEach(function(k){ var c=LIV_CV[k]; spLogoDraw(c, c.__sp); });
-  Object.keys(LIV_MAT).forEach(function(k){ var m=LIV_MAT[k]; if(m && m.map) m.map.needsUpdate=true; });
-  LIV_FX.forEach(function(f){ try{ f(); }catch(e){} });
-  if(typeof window!=="undefined" && typeof window.spLogosChanged==="function") window.spLogosChanged(); }, 60); }
-function spLogoDraw(c, sp){
-  var w=c.width, h=c.height, x=c.getContext("2d"), F="'Barlow Condensed','Arial Narrow',Arial,sans-serif", D="'Chakra Petch','Barlow Condensed','Arial Narrow',Arial,sans-serif",
-    m=Math.round(h*0.05), r=h*0.16, img=spEmblem(sp.id), full=img && SP_FULL[sp.id];
-  x.clearRect(0,0,w,h); spRRect(x, m, m, w-2*m, h-2*m, r); x.fillStyle=full?"#1d1f22":sp.c1; x.fill();
-  x.lineWidth=Math.max(2,h*0.03); x.strokeStyle=full?sp.c1:sp.c2; spRRect(x, m*2.4, m*2.4, w-4.8*m, h-4.8*m, r*0.7); x.stroke();
-  if(full){ var fk=Math.min((w-10*m)/img.width, (h-5.6*m)/img.height), fw=img.width*fk, fh=img.height*fk; x.drawImage(img, (w-fw)/2, (h-fh)/2, fw, fh); return; }
-  var tx;
-  if(img){
-    var k=Math.min(h*0.95/img.width, h*0.56/img.height), iw=img.width*k, ih=img.height*k, pad=h*0.07, bx=m*3.6, bw=iw+2*pad, bh=Math.max(ih+2*pad, h*0.5), by=(h-bh)/2;
-    x.fillStyle="#f4f1e8"; spRRect(x, bx, by, bw, bh, h*0.08); x.fill();
-    x.drawImage(img, bx+pad, (h-ih)/2, iw, ih); tx=bx+bw+h*0.14;
-  }else{ spShape(x, sp.shape, h*0.52, h*0.5, h*0.27, sp.c2, sp.c1); tx=h*0.92; }
-  var tw=w-tx-h*0.18, word=String(sp.name||"").toUpperCase();
-  x.textAlign="left"; x.textBaseline="alphabetic"; x.fillStyle=sp.c3; x.font=(img?"700 "+Math.round(h*0.34)+"px "+D:"italic 700 "+Math.round(h*0.4)+"px "+F); x.fillText(word, tx, h*0.58, tw);
-  x.fillStyle=sp.c2; x.font="600 "+Math.round(h*0.15)+"px "+F; x.fillText(String(sp.tag||"").toUpperCase(), tx+2, h*0.8, tw);
-}
-function spLogoCanvas(sp, w, h){
-  w=w||512; h=h||192; var key=sp.id+"|"+w+"x"+h; if(LIV_CV[key]) return LIV_CV[key];
-  var c=newCanvas(w,h); c.__sp=sp; spLogoDraw(c, sp);
-  LIV_CV[key]=c; return c;
-}
 function livMat(sp){
   if(LIV_MAT[sp.id]) return LIV_MAT[sp.id];
   var t=new THREE.CanvasTexture(spLogoCanvas(sp,512,192)); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO;

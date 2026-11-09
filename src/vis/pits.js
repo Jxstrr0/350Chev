@@ -7,9 +7,6 @@
    strip). Lite draws a frame only when something changed (a still); Full and
    Ultra add hot-tyre smoke and a little crew movement. Built on first use.
    ==========================================================================*/
-var PITS={ on:false, built:false, scene:null, cam:null, car:null, carKey:"", props:null, models:null, mTier:null, crew:[], fx:null, spot:null, hemi:null, lamp:null, bg:null,
-  mats:{}, t:0, heat:0, nightK:-1, dirty:2, seen:-1, renders:0, work:{}, wind:new THREE.Vector3(-0.25,0,-0.3), tier:null, stats:null,
-  fit:{L:4.6, hw:0.95, H:1.3, rearX:-1.5, rearZ:0.8, rr:0.35, frontX:1.4, tw:0.35} };
 var PITS_LIFT=0.22, _ptA=new THREE.Vector3(), _ptB=new THREE.Vector3(), _ptC=new THREE.Color();
 function pitsBuild(B, key, mat, shadow, into){ var keep=STRIP.scene; STRIP.scene=into; var m=B.build(key, mat, shadow); STRIP.scene=keep; return m; }
 function pitsMats(){

@@ -28,18 +28,6 @@ var SL_SPONSORS=[
 var SL_RIVAL_PAINT=[0x1d4787,0xd9a52b,0xb7261d,0xe9e6dc,0x16181b,0x2c6b3a,0xd85f14,0x2b8a9e,0x5b2a86,0xa9aeb5,0xc23b6e,0x7a1f1f];
 
 /* --- the look ------------------------------------------------------------ */
-/* what the car's engine shows, read off a build cfg */
-function slEngOf(cfg, layoutObj){
-  cfg=cfg||{}; var SIMO=(typeof ENGINE_SIM!=="undefined")?ENGINE_SIM:null;
-  var LO=layoutObj || (SIMO && SIMO.LAYOUTS && SIMO.LAYOUTS[cfg.layout]) || null, L=normLayout(cfg, LO);
-  var a=String(cfg.asp||"na"), asp=a==="na"?"na":(a==="roots"||a==="screw")?"blower":a==="centrifugal"?"centri":(a==="twin_turbo"||a==="compound")?"twin":"turbo";
-  var rot=isRotaryCfg(cfg), two=!rot && isTwoStrokeCfg(cfg), dsl=isDieselCfg(cfg), fuel=String(cfg.fuel||"");
-  var kind=rot?"rotary":two?"two":L.banks>1?(L.boxer?"flat":"v"):"i";
-  var rotors=rot?(+String(cfg.layout||"R2").slice(1)||2):0;
-  var inj=asp==="na" && !dsl && (cfg.intake==="itb" || /meth|e85|nitro|ethan/.test(fuel));
-  return {kind:kind, n:Math.max(1,L.n||4), rotors:rotors, asp:asp, screw:a==="screw", diesel:dsl, inj:inj, carb:cfg.intake==="carb",
-    ic:!!cfg.ic && cfg.ic!=="none", n2o:!!cfg.nitrous && cfg.nitrous!=="none", cover:(COVER_COLORS[cfg.cover]||COVER_COLORS.red)};
-}
 function slEngKey(E){ return E?[E.kind,E.n,E.rotors,E.asp,E.screw?1:0,E.diesel?1:0,E.inj?1:0,E.carb?1:0,E.cover>>>0].join(","):"-"; }
 function slHash(s){ var h=2166136261; s=String(s); for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 function slRng(seed){ var a=(seed>>>0)||1; return function(){ a=(a+0x6D2B79F5)>>>0; var t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
