@@ -41,7 +41,7 @@ function saltStart(){
   if(ENGINE_VIS.saltLook)ENGINE_VIS.saltLook({color:carPaint(),num:saltNum(meet),cls:cls.key,cfg:S.cfg});   /* your paint, this meet's number, the class plate, the engine you see */
   if(meet.imp&&(meet.imp.key!==cls.key||meet.imp.hk!==hk)){toast("Left impound — that record attempt is void");meet.imp=null;}
   const backup=!!meet.imp;
-  SR={p,res,env,veh,k,hk,snap,cls,rec:saltRecord(cls.key),backup,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,warp:1,auto:S.env.saltDrive==="auto",thrAI:1,color:SALT_COLORS[k]};
+  SR={p,res,env,veh,k,hk,snap,cls,rec:saltRecord(cls.key),backup,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,warp:1,auto:S.env.saltDrive==="auto",foot:SIM.lsrFoot(),color:SALT_COLORS[k]};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("saltCtl").style.display="";$("saltBtn").dataset.k="";$("saltBtn").disabled=false;
   $("saltShiftBtn").style.display=!SR.auto&&veh.shift==="manual"?"":"none";saltWarpUi();
   saltBtnText(SR.auto?"START THE PUSH":"HOLD TO RUN",SR.auto?"the driver takes it from here":"push off · hold for throttle, let go to feather");
@@ -50,7 +50,7 @@ function saltStart(){
   const course={x0:p.x0,x1:p.x1,k0:p.k0,k1:p.k1,xEnd:p.xEnd};
   const step=()=>{if(!SR||SR.finished)return;const now=performance.now();const rdt=Math.min(0.25,(now-SR.last)/1000);SR.last=now;const st=p.st;
     const wp=st.phase==="run"||st.phase==="shutdown"?SR.warp:1;let left=rdt*wp;
-    while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,saltThr(st));}
+    while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,saltThr(st,d));}
     if(st.broke&&!SR.failed)saltBreak(st.broke);
     if((st.chuteOut||st.drogueOut)&&!SR.chuteFx){SR.chuteFx=true;if(typeof foley==="function")foley("chute");}
     if(st.phase==="spin"&&!SR.spun){SR.spun=true;buzz([60,30,60]);sfx("fail");}
@@ -67,9 +67,8 @@ function saltStart(){
     if(!st.done||(now-SR.doneAt<2200&&!SR.skip))requestAnimationFrame(step);else saltFinish();};
   requestAnimationFrame(step);
 }
-/* the driver's foot: yours (the button), or the auto driver feathering wheelspin and a light nose every 20 ms */
-function saltThr(st){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="stage")return SR.go?1:0;if(st.phase!=="run")return 1;
-  const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;SR.thrAI=bad?Math.max(0.04,SR.thrAI*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,SR.thrAI+0.03);return SR.thrAI;}
+/* the driver's foot: yours (the button), or the auto driver (SIM.lsrFoot) holding the tyres on their best slip and minding a light nose */
+function saltThr(st,dt){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="stage")return SR.go?1:0;return SR.foot(st,dt);}
 function saltWarpUi(){document.querySelectorAll("#saltWarp [data-warp]").forEach(b=>b.classList.toggle("on",+b.dataset.warp===(SR?SR.warp:1)));}
 /* the live card: speed first, then the course with the timed mile on it, then what the driver is managing */
 function saltHud(st,force){if(!SR||!hudDue(SR,st,force))return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
@@ -101,7 +100,7 @@ function saltRelease(){if(!SR)return;SR.down=false;}
 function saltShift(){if(!SR||SR.finished||!SR.p)return;SR.p.shift();buzz([8]);}
 /* skip: the rest of the run is simulated at once (same seed, same driver's foot) */
 function saltSkip(){if(!SR||SR.finished)return;const p=SR.p,st=p.st;if(st.phase==="stage"&&!SR.auto)return;
-  if(!st.done){p.autoShift();let thr=1,n=0;while(!st.done&&n++<20000){if(st.phase==="run"){const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;thr=bad?Math.max(0.04,thr*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,thr+0.03);}else thr=1;p.step(0.02,thr);}
+  if(!st.done){p.autoShift();const f=SR.auto?SR.foot:SIM.lsrFoot();let n=0;while(!st.done&&n++<20000)p.step(0.02,f(st,0.02));
     if(st.broke&&!SR.failed)saltBreak(st.broke);}
   if(ENGINE_VIS.saltSkip)ENGINE_VIS.saltSkip();SR.skip=true;if(SR.doneAt==null)SR.doneAt=performance.now()-2000;}
 (()=>{const b=$("saltBtn");
@@ -168,7 +167,7 @@ function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_
   {const est=saltTopEst(k),rated=SIM.lsrChuteMax(e.saltChute)*2.23694;
    if(e.saltChute==="none"&&est>175)h+=`<p class="hint" style="color:var(--warn)">⚠ This car can do ~${Math.round(est)} mph — over 175 mph tech wants a parachute, or the run won't count.</p>`;
    else if(e.saltChute!=="none"&&est>rated*0.98)h+=`<p class="hint" style="color:var(--warn)">⚠ Chute rated ${Math.round(rated)} mph, this car can do ~${Math.round(est)}. It has to coast down to ${Math.round(rated)} before the chute can open — a long shutdown, and the auto driver lifts early if the course would run out${e.saltChute==="single"?"; the drogue + main pack opens far higher":""}.</p>`;}
-  h+=driverToggle(id=>`data-sk="saltDrive" data-sv="${id}"`,e.saltDrive,"hold to run, let go to feather","a steady hand · watch the run");
+  h+=driverToggle(id=>`data-sk="saltDrive" data-sv="${id}"`,e.saltDrive,"hold to run, let go to feather","holds the tyres right on the slip where the salt grips best, eases off a light nose · watch the run");
   if(e.saltDrive!=="auto")h+=`<div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts at the power peak"],["manual","Manual","SHIFT, ↑ or G — four gears"]].map(([id,n,d])=>`<button data-sk="saltShift" data-sv="${id}" class="${e.saltShift===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=hintMore(`${B.n}: ${B.d}.`,`Car ${Math.round(B.mass+res.kg)} kg with this engine · CdA ${(B.cdA+(e.saltAero==="on"?B.aero.cd:0)+(e.saltCool==="ice"?0:B.radDrag)).toFixed(2)} m². Top gear is the road speed at the redline in fourth. Tall gearing is free speed only if the engine can pull it — too tall and it runs out of power below the peak; too short and it sits on the limiter. Lift at speed unloads the front: past half its weight the car wanders. Ballast plants the rear tyres but has to be pushed through the air like everything else.${lk?` <b>Opens at ${lk} rep.</b>`:""}${career()?"":` <button class="chip" data-saltmeet style="margin-left:4px">New meet</button>`}`,"data-evadv");
   return h;}

@@ -7981,9 +7981,11 @@ const ENGINE_SIM = (function () {
     d.launch(); while (!d.st.done) d.step(0.002); return d.result();
   }
   /* The auto driver for a drag pass: the player's own buttons, pressed on a fixed 4 ms clock. A burnout of the right
-     length for the tyre, roll in, purge a nitrous line, arm the two-step / trans-brake / anti-lag on the ambers, leave on
-     the green with a human light (most .04-.10, now and then a slow one, a red very rarely), and on a manual box shift
-     near where the next gear pulls harder, read off the build's own torque curve, give or take a hand. Launch rpm, the
+     length for the tyre (about 3.4 s with a line lock, just under 4 s without, before the rubber goes greasy; a quick one
+     on street tyres), roll in, purge a nitrous line until it is liquid, arm the two-step / trans-brake / anti-lag on the
+     ambers, leave on the green with a sharp light (.020-.045, never red), and on a manual box shift where the pass is
+     quickest: past where the next gear's wheel torque catches up, because a shift costs drive, and up to just short of
+     the limiter when it never does (measured on the build's own curve in node, worth .01-.03 s a pass). Launch rpm, the
      nitrous switch and the chute are the car's set-up, not the driver's, so they stay as set; there is no pedal on a
      drag pass, for the player or for it. Deterministic for a seed, on its own random stream.
      tick(d, h, tree) runs before each step of the runner d and returns one press or null: "burn" / "unburn" / "stage" /
@@ -7995,19 +7997,20 @@ const ENGINE_SIM = (function () {
     const gs = () => { let u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * r()); };
     const v = Object.assign({ tyre: "street", gears: 4, first: 2.9, top: 1.0, final: 3.7, redline: 7000, auto: true, tyreDia: 27, transBrake: "none" }, veh || {});
     const hot = v.tyre === "radial" || v.tyre === "slick", ll = v.transBrake === "line_lock", red = v.redline;
-    const jump = r() < 0.0025, slow = r() < 0.05, g0 = gs(), sl = r(), jr = r();
-    let rt = 0.072 + 0.022 * g0; if (slow) rt += 0.04 + 0.12 * sl; if (jump) rt = -(0.004 + 0.03 * jr);
-    const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.0 : 3.4) + 0.5 * r() : 1.0 + 0.6 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.9 + 0.5 * r(),
+    const rt = clamp(0.032 + 0.006 * gs(), 0.02, 0.045);
+    const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.3 : 3.85) + 0.1 * r() : 0.9 + 0.2 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.7 + 0.1 * r(),
       beat: 0.6 + 0.6 * r(), hold: 1.0 + 0.4 * r(), rt: +rt.toFixed(4), shift: [], ideal: [] };
-    // shift points: the rpm where the next gear's wheel torque (after the drop) matches this one's, or the redline if it never does
-    const n = Math.max(1, v.gears | 0), rat = gearRatios(v);
+    // shift points: find where the next gear's wheel torque (after the drop) matches this one's, then go 40% of the way from
+    // there to the top (just short of the limiter, which sits at 2% over the redline): the shift itself costs drive, so the
+    // quickest pass shifts later than the crossover. Never crossing: shift at the top.
+    const n = Math.max(1, v.gears | 0), rat = gearRatios(v), top = Math.round(1.017 * red);
     const rp = res && res.rpms, tq = res && res.torque, N = rp ? rp.length : 0;
     const T = x => { if (!N) return 1; if (x <= rp[0]) return tq[0]; if (x >= rp[N - 1]) return tq[N - 1]; let i = 1; while (rp[i] < x) i++; return tq[i - 1] + (x - rp[i - 1]) / (rp[i] - rp[i - 1]) * (tq[i] - tq[i - 1]); };
     for (let i = 0; i < n - 1; i++) {
-      const k = rat[i + 1] / rat[i]; let s = red;
-      for (let x = Math.round(0.55 * red); x <= red; x += 25) if (T(x) * rat[i] <= T(x * k) * rat[i + 1]) { s = x; break; }
-      let x = s + 70 * gs(); if (r() < 0.04) x += 150 + 150 * r();   // now and then a hand that is late on the lever
-      plan.ideal.push(s); plan.shift.push(Math.round(clamp(x, 0.6 * red, 1.015 * red)));
+      const k = rat[i + 1] / rat[i]; let s = top;
+      for (let x = Math.round(0.55 * red); x <= top; x += 25) if (T(x) * rat[i] <= T(x * k) * rat[i + 1]) { s = x; break; }
+      const x = Math.round(s + 0.4 * (top - s));
+      plan.ideal.push(x); plan.shift.push(x);
     }
     let t = 0, offAt = null, rolledT = null, readyT = null, purged = false;
     function goIn(d, tree) {   // seconds until it means to leave
@@ -9675,6 +9678,23 @@ const ENGINE_SIM = (function () {
     }
     return { st: st, step: step, shift: shift, autoShift: autoShift, chute: chute, result: result, ratios: ratios, shiftRpm: shiftRpm, mass: m, x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd };
   }
+  /* the auto driver's foot (the app's Auto driver, and the rest of a skipped run): flat out, but once the tyres slip it holds
+     them on the slip where the salt grips hardest (8%, the peak of mu() above) instead of waiting for 13% and chopping the
+     throttle; off a little more for a light nose, off hard when the car is getting loose. f(st, dt) gives 0..1 for the next dt
+     seconds (20 ms steps, shorter on a frame). Worth 4-6 mph through the mile on cars with more power than grip (an outlaw
+     or pro-mod motor in an altered, a roadster or a lakester); the same on a car that never spins. lsrPass keeps the old
+     foot, so the seeded record book and the Top gear helper are where they were. */
+  function lsrFoot() {
+    let thr = 1;
+    return function (st, dt) {
+      if (st.phase !== "run") return 1;
+      const k = clamp((dt || 0.02) / 0.02, 0, 12.5), sT = 0.08;
+      if (st.slip > sT || thr < 1) thr += 0.6 * (sT - st.slip) * k; else thr += 0.05 * k;
+      if (st.light < 0.5) thr -= 0.05 * k;
+      if (st.loose > 0.3) thr *= Math.pow(st.loose > 0.5 ? 0.75 : 0.88, k);
+      thr = clamp(thr, 0.04, 1); return thr;
+    };
+  }
   /* a run with a sensible driver: flat out, feathering wheelspin and a light front end; the node harness and the record book use it */
   function lsrPass(res, veh) {
     const p = lsrRun(res, Object.assign({ autoLift: true }, veh, { shift: "auto" })); let thr = 1;
@@ -10858,7 +10878,7 @@ const ENGINE_SIM = (function () {
     enduroPrep: enduroPrep, e24AiPrep: e24Ai, enduroNew: enduroNew, enduroStep: enduroStep, enduroWhere: enduroWhere, enduroResult: enduroResult, enduroClasses: enduroClasses, enduroClassOf: enduroClassOf,
     e24Rates: e24Rates, e24Sky: e24Sky, e24Amb: e24Amb, e24Hour: e24Hour, e24Pos: e24Pos, e24Order: e24Order, e24Need: e24Need, e24Clock: e24Clock, e24Lap: e24Lap,
     E24_MODES: E24_MODES, E24_TYRES: E24_TYRES, E24_CLASSES: E24_CLASSES, E24_CLS_ORDER: E24_CLS_ORDER, E24_FIX: E24_FIX, E24_K: E24_K, E24_TANK: E24_TANK, E24_DUR: E24_DUR,
-    lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
+    lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrFoot: lsrFoot, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
     VEHICLES: VEHICLES, VEH_GROUPS: VEH_GROUPS, SWAP_FIX: SWAP_FIX, engineDims: engineDims, swapFit: swapFit, swapFixSet: swapFixSet, swapDragVeh: swapDragVeh, swapLsrBody: swapLsrBody,
     hillCourse: hillCourse, hillPrep: hillPrep, hillCar: hillCar, hillNew: hillNew, hillPass: hillPass, hillCalls: hillCalls, hillPlan: hillPlan, hillAiPrep: hillAiPrep, hillZ: hillZ,
     HILL_CLASSES: HILL_CLASSES, HILL_TYRES: HILL_TYRES, HILL_AERO: HILL_AERO, HILL_SECTIONS: HILL_SECTIONS, HILL_ALTS: HILL_ALTS, HILL_TREE: HILL_TREE, HILL_ALT0: HILL_ALT0, HILL_ALT1: HILL_ALT1, HILL_HILLS: HILL_HILLS, hillAlts: hillAlts, hillAmbC: hillAmbC, HILL_CALL: HILL_CALL,
@@ -33322,8 +33342,8 @@ function dragShiftHtml(sl){const e=S.env;if(e.shiftMode==="manual")return"";cons
 function dragChassisHtml(sl){const e=S.env;
   return `<div class="envgrid">${sl("rideH","Ride height",-50,75,5," mm",+e.rideH||0)}</div><p class="hint" style="margin-top:-4px"><b>Ride height</b> · 0 is the body as delivered. Up puts more weight on the rear tyres at the hit but lifts the nose sooner and catches more air; down is the reverse.</p>`;}
 function dragDriveHtml(night){const on=dragAuto();
-  return driverToggle(k=>`data-lp="${k}" data-ek="dragDrive"`,on?"auto":"you","burnout, stage, the light, the shifts","a steady hand · watch the pass")
-    +(on?`<p class="hint">The auto driver does the burnout, stages${n2oKit()?", purges the nitrous":""}${(()=>{const lt=SIM.launchTech(S.cfg);return lt.launchCtl!=="none"||lt.transBrake==="trans_brake"||alsOf(S.cfg);})()?", arms the launch on the ambers":""} and leaves on the green with a good, human light — a red is rare. ${S.env.shiftMode==="manual"?"It shifts near the best point for this engine's curve. ":""}Launch rpm${n2oKit()?", the nitrous switch":""} and the chute stay as you set them. Steady, not perfect: a sharp light and good shifts beat it.${night?" It drives every pass of the night.":""} Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during a pass to take over.</p>`:"");}
+  return driverToggle(k=>`data-lp="${k}" data-ek="dragDrive"`,on?"auto":"you","burnout, stage, the light, the shifts","a sharp light and the quickest shifts · watch the pass")
+    +(on?`<p class="hint">The auto driver does the burnout, stages${n2oKit()?", purges the nitrous":""}${(()=>{const lt=SIM.launchTech(S.cfg);return lt.launchCtl!=="none"||lt.transBrake==="trans_brake"||alsOf(S.cfg);})()?", arms the launch on the ambers":""} and leaves on the green with a sharp light, .02 to .045, never red. It does the burnout the right length for the tyres${S.env.shiftMode==="manual"?", and shifts where this engine's curve makes the pass quickest":""}. Launch rpm${n2oKit()?", the nitrous switch":""} and the chute stay as you set them. It drives close to as well as the car allows: beating it takes a light under .030${S.env.shiftMode==="manual"?" and shifts right on the mark":""}.${night?" It drives every pass of the night.":""} Tap ${document.documentElement.classList.contains("desk")?"the button or Space":"the button"} during a pass to take over.</p>`:"");}
 function rnFmtHtml(){const f=RN_FMT[S.env.dragFmt]?S.env.dragFmt:"test";
   let h=`<div class="lbl"><span>Race format</span></div><div class="seg n3">${[["test","Test & tune","single pass"],["elim","Eliminations","8-car ladder"],["bracket","Bracket","dial-in"]].map(([k,n,d])=>`<button data-lp="${k}" data-ek="dragFmt" class="${f===k&&!(k==="bracket"&&S.env.dragQuick)?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   if(f==="bracket"&&S.env.dragQuick)h+=`<p class="hint" style="margin-top:-4px"><b>Bracket night</b> · dial in the ET you expect — run quicker than your dial and you break out and lose. Three rounds, no time trials; the slower dial leaves first, so tap on the green of your own tree. ${career()?`Entry about 8% of the winner's purse (from $150), opens at ${BR_REP} rep.`:"Free in the sandbox."}</p>`;
@@ -34600,7 +34620,7 @@ function saltStart(){
   if(ENGINE_VIS.saltLook)ENGINE_VIS.saltLook({color:carPaint(),num:saltNum(meet),cls:cls.key,cfg:S.cfg});   /* your paint, this meet's number, the class plate, the engine you see */
   if(meet.imp&&(meet.imp.key!==cls.key||meet.imp.hk!==hk)){toast("Left impound — that record attempt is void");meet.imp=null;}
   const backup=!!meet.imp;
-  SR={p,res,env,veh,k,hk,snap,cls,rec:saltRecord(cls.key),backup,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,warp:1,auto:S.env.saltDrive==="auto",thrAI:1,color:SALT_COLORS[k]};
+  SR={p,res,env,veh,k,hk,snap,cls,rec:saltRecord(cls.key),backup,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,warp:1,auto:S.env.saltDrive==="auto",foot:SIM.lsrFoot(),color:SALT_COLORS[k]};
   ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("saltCtl").style.display="";$("saltBtn").dataset.k="";$("saltBtn").disabled=false;
   $("saltShiftBtn").style.display=!SR.auto&&veh.shift==="manual"?"":"none";saltWarpUi();
   saltBtnText(SR.auto?"START THE PUSH":"HOLD TO RUN",SR.auto?"the driver takes it from here":"push off · hold for throttle, let go to feather");
@@ -34609,7 +34629,7 @@ function saltStart(){
   const course={x0:p.x0,x1:p.x1,k0:p.k0,k1:p.k1,xEnd:p.xEnd};
   const step=()=>{if(!SR||SR.finished)return;const now=performance.now();const rdt=Math.min(0.25,(now-SR.last)/1000);SR.last=now;const st=p.st;
     const wp=st.phase==="run"||st.phase==="shutdown"?SR.warp:1;let left=rdt*wp;
-    while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,saltThr(st));}
+    while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,saltThr(st,d));}
     if(st.broke&&!SR.failed)saltBreak(st.broke);
     if((st.chuteOut||st.drogueOut)&&!SR.chuteFx){SR.chuteFx=true;if(typeof foley==="function")foley("chute");}
     if(st.phase==="spin"&&!SR.spun){SR.spun=true;buzz([60,30,60]);sfx("fail");}
@@ -34626,9 +34646,8 @@ function saltStart(){
     if(!st.done||(now-SR.doneAt<2200&&!SR.skip))requestAnimationFrame(step);else saltFinish();};
   requestAnimationFrame(step);
 }
-/* the driver's foot: yours (the button), or the auto driver feathering wheelspin and a light nose every 20 ms */
-function saltThr(st){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="stage")return SR.go?1:0;if(st.phase!=="run")return 1;
-  const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;SR.thrAI=bad?Math.max(0.04,SR.thrAI*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,SR.thrAI+0.03);return SR.thrAI;}
+/* the driver's foot: yours (the button), or the auto driver (SIM.lsrFoot) holding the tyres on their best slip and minding a light nose */
+function saltThr(st,dt){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="stage")return SR.go?1:0;return SR.foot(st,dt);}
 function saltWarpUi(){document.querySelectorAll("#saltWarp [data-warp]").forEach(b=>b.classList.toggle("on",+b.dataset.warp===(SR?SR.warp:1)));}
 /* the live card: speed first, then the course with the timed mile on it, then what the driver is managing */
 function saltHud(st,force){if(!SR||!hudDue(SR,st,force))return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
@@ -34660,7 +34679,7 @@ function saltRelease(){if(!SR)return;SR.down=false;}
 function saltShift(){if(!SR||SR.finished||!SR.p)return;SR.p.shift();buzz([8]);}
 /* skip: the rest of the run is simulated at once (same seed, same driver's foot) */
 function saltSkip(){if(!SR||SR.finished)return;const p=SR.p,st=p.st;if(st.phase==="stage"&&!SR.auto)return;
-  if(!st.done){p.autoShift();let thr=1,n=0;while(!st.done&&n++<20000){if(st.phase==="run"){const bad=st.slip>0.13||st.light<0.5||st.loose>0.3;thr=bad?Math.max(0.04,thr*(st.slip>0.2||st.loose>0.5?0.7:0.88)):Math.min(1,thr+0.03);}else thr=1;p.step(0.02,thr);}
+  if(!st.done){p.autoShift();const f=SR.auto?SR.foot:SIM.lsrFoot();let n=0;while(!st.done&&n++<20000)p.step(0.02,f(st,0.02));
     if(st.broke&&!SR.failed)saltBreak(st.broke);}
   if(ENGINE_VIS.saltSkip)ENGINE_VIS.saltSkip();SR.skip=true;if(SR.doneAt==null)SR.doneAt=performance.now()-2000;}
 (()=>{const b=$("saltBtn");
@@ -34727,7 +34746,7 @@ function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_
   {const est=saltTopEst(k),rated=SIM.lsrChuteMax(e.saltChute)*2.23694;
    if(e.saltChute==="none"&&est>175)h+=`<p class="hint" style="color:var(--warn)">⚠ This car can do ~${Math.round(est)} mph — over 175 mph tech wants a parachute, or the run won't count.</p>`;
    else if(e.saltChute!=="none"&&est>rated*0.98)h+=`<p class="hint" style="color:var(--warn)">⚠ Chute rated ${Math.round(rated)} mph, this car can do ~${Math.round(est)}. It has to coast down to ${Math.round(rated)} before the chute can open — a long shutdown, and the auto driver lifts early if the course would run out${e.saltChute==="single"?"; the drogue + main pack opens far higher":""}.</p>`;}
-  h+=driverToggle(id=>`data-sk="saltDrive" data-sv="${id}"`,e.saltDrive,"hold to run, let go to feather","a steady hand · watch the run");
+  h+=driverToggle(id=>`data-sk="saltDrive" data-sv="${id}"`,e.saltDrive,"hold to run, let go to feather","holds the tyres right on the slip where the salt grips best, eases off a light nose · watch the run");
   if(e.saltDrive!=="auto")h+=`<div class="lbl"><span>Shifting</span></div><div class="seg">${[["auto","Auto","shifts at the power peak"],["manual","Manual","SHIFT, ↑ or G — four gears"]].map(([id,n,d])=>`<button data-sk="saltShift" data-sv="${id}" class="${e.saltShift===id?"on":""}">${n}<small>${d}</small></button>`).join("")}</div>`;
   h+=hintMore(`${B.n}: ${B.d}.`,`Car ${Math.round(B.mass+res.kg)} kg with this engine · CdA ${(B.cdA+(e.saltAero==="on"?B.aero.cd:0)+(e.saltCool==="ice"?0:B.radDrag)).toFixed(2)} m². Top gear is the road speed at the redline in fourth. Tall gearing is free speed only if the engine can pull it — too tall and it runs out of power below the peak; too short and it sits on the limiter. Lift at speed unloads the front: past half its weight the car wanders. Ballast plants the rear tyres but has to be pushed through the air like everything else.${lk?` <b>Opens at ${lk} rep.</b>`:""}${career()?"":` <button class="chip" data-saltmeet style="margin-left:4px">New meet</button>`}`,"data-evadv");
   return h;}
@@ -39724,7 +39743,7 @@ const LESSONS=[
   {tab:"events",sel:'#envBox [data-ek="dragFmt"]',up:1,lbl:1,title:"Three ways to race",text:"Test & tune is one pass. Eliminations is a heads-up ladder where a quick light beats a quick car. Bracket is the dial-in night. The Bracket night tile above skips the time trials and goes straight to round one, up to three rounds."},
   {tab:"events",sel:'#envBox [data-ek="tyre"]',up:1,lbl:1,title:"Grip is repeatability",text:"Street radial, drag radial or slick. A tyre that spins one pass in three gives you a different ET each round, and your dial is worthless. Pick the grip that lets the car do the same thing every time."},
   {tab:"events",sel:"#er-launchRpm",wrap:".env",title:"Launch rpm",text:"Where the clutch lets go. Too high and the tyres spin, too low and the engine bogs. You are chasing a number you can repeat, so find a launch rpm you can hit every pass."},
-  {tab:"events",sel:'#envBox [data-ek="dragDrive"]',up:2,title:"You drive, or Auto",text:"Auto stages and leaves on the green with a good, human light, and drives every pass of the night. Drive it yourself and you tap on the green of your own tree, because the slower dial leaves first."},
+  {tab:"events",sel:'#envBox [data-ek="dragDrive"]',up:2,title:"You drive, or Auto",text:"Auto stages and leaves on the green with a sharp light, never red, and drives every pass of the night. Drive it yourself and you tap on the green of your own tree, because the slower dial leaves first."},
   {tab:"events",sel:"#er-mass",wrap:".env",title:"Weight",text:"Under Advanced, in Car. Car weight is the car with a typical 230 kg V8 in it; a heavier engine adds the difference and a lighter one saves it. Car weight and the rear weight split both change the ET. For a dial it matters less how light the car is than that it stays the same between rounds."},
   {tab:"events",sel:"#er-tyrePsi",wrap:".env",title:"Pressure and shocks",text:"Under Advanced, in Driveline. Tyre pressure and the shocks are what a tuner changes between rounds: soft shocks bite harder and lift the nose, firm ones keep it flat but may spin."},
   {tab:"events",sel:"#runTest",title:"Enter the night",text:"Tap to enter. Leave on the green of your own tree. A red light loses outright, and running quicker than your dial is a breakout. Entry is free in the sandbox."},

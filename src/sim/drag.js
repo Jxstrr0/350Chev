@@ -512,9 +512,11 @@
     d.launch(); while (!d.st.done) d.step(0.002); return d.result();
   }
   /* The auto driver for a drag pass: the player's own buttons, pressed on a fixed 4 ms clock. A burnout of the right
-     length for the tyre, roll in, purge a nitrous line, arm the two-step / trans-brake / anti-lag on the ambers, leave on
-     the green with a human light (most .04-.10, now and then a slow one, a red very rarely), and on a manual box shift
-     near where the next gear pulls harder, read off the build's own torque curve, give or take a hand. Launch rpm, the
+     length for the tyre (about 3.4 s with a line lock, just under 4 s without, before the rubber goes greasy; a quick one
+     on street tyres), roll in, purge a nitrous line until it is liquid, arm the two-step / trans-brake / anti-lag on the
+     ambers, leave on the green with a sharp light (.020-.045, never red), and on a manual box shift where the pass is
+     quickest: past where the next gear's wheel torque catches up, because a shift costs drive, and up to just short of
+     the limiter when it never does (measured on the build's own curve in node, worth .01-.03 s a pass). Launch rpm, the
      nitrous switch and the chute are the car's set-up, not the driver's, so they stay as set; there is no pedal on a
      drag pass, for the player or for it. Deterministic for a seed, on its own random stream.
      tick(d, h, tree) runs before each step of the runner d and returns one press or null: "burn" / "unburn" / "stage" /
@@ -526,19 +528,20 @@
     const gs = () => { let u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * r()); };
     const v = Object.assign({ tyre: "street", gears: 4, first: 2.9, top: 1.0, final: 3.7, redline: 7000, auto: true, tyreDia: 27, transBrake: "none" }, veh || {});
     const hot = v.tyre === "radial" || v.tyre === "slick", ll = v.transBrake === "line_lock", red = v.redline;
-    const jump = r() < 0.0025, slow = r() < 0.05, g0 = gs(), sl = r(), jr = r();
-    let rt = 0.072 + 0.022 * g0; if (slow) rt += 0.04 + 0.12 * sl; if (jump) rt = -(0.004 + 0.03 * jr);
-    const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.0 : 3.4) + 0.5 * r() : 1.0 + 0.6 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.9 + 0.5 * r(),
+    const rt = clamp(0.032 + 0.006 * gs(), 0.02, 0.045);
+    const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.3 : 3.85) + 0.1 * r() : 0.9 + 0.2 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.7 + 0.1 * r(),
       beat: 0.6 + 0.6 * r(), hold: 1.0 + 0.4 * r(), rt: +rt.toFixed(4), shift: [], ideal: [] };
-    // shift points: the rpm where the next gear's wheel torque (after the drop) matches this one's, or the redline if it never does
-    const n = Math.max(1, v.gears | 0), rat = gearRatios(v);
+    // shift points: find where the next gear's wheel torque (after the drop) matches this one's, then go 40% of the way from
+    // there to the top (just short of the limiter, which sits at 2% over the redline): the shift itself costs drive, so the
+    // quickest pass shifts later than the crossover. Never crossing: shift at the top.
+    const n = Math.max(1, v.gears | 0), rat = gearRatios(v), top = Math.round(1.017 * red);
     const rp = res && res.rpms, tq = res && res.torque, N = rp ? rp.length : 0;
     const T = x => { if (!N) return 1; if (x <= rp[0]) return tq[0]; if (x >= rp[N - 1]) return tq[N - 1]; let i = 1; while (rp[i] < x) i++; return tq[i - 1] + (x - rp[i - 1]) / (rp[i] - rp[i - 1]) * (tq[i] - tq[i - 1]); };
     for (let i = 0; i < n - 1; i++) {
-      const k = rat[i + 1] / rat[i]; let s = red;
-      for (let x = Math.round(0.55 * red); x <= red; x += 25) if (T(x) * rat[i] <= T(x * k) * rat[i + 1]) { s = x; break; }
-      let x = s + 70 * gs(); if (r() < 0.04) x += 150 + 150 * r();   // now and then a hand that is late on the lever
-      plan.ideal.push(s); plan.shift.push(Math.round(clamp(x, 0.6 * red, 1.015 * red)));
+      const k = rat[i + 1] / rat[i]; let s = top;
+      for (let x = Math.round(0.55 * red); x <= top; x += 25) if (T(x) * rat[i] <= T(x * k) * rat[i + 1]) { s = x; break; }
+      const x = Math.round(s + 0.4 * (top - s));
+      plan.ideal.push(x); plan.shift.push(x);
     }
     let t = 0, offAt = null, rolledT = null, readyT = null, purged = false;
     function goIn(d, tree) {   // seconds until it means to leave
