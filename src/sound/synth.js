@@ -97,7 +97,7 @@
 
   /* phones: with the engine off (the app feeds rpm 0) and no sound effect for a few seconds, the context is suspended so the DSP graph stops
      costing battery; the next rpm > 0, event or gesture resumes it. iOS unlocks only inside a gesture, which the start tap and the wake listeners are. */
-  var idleAt = 0, selfSusp = false, selfResume = false;
+  var idleAt = 0, selfSusp = false, selfResume = false, holdAwake = false;   /* holdAwake: the ambience bed is playing, so no idle suspend */
   function resume() {
     if (ctx && ctx.state === "suspended" && ctx.resume) {
       if (selfSusp) { selfSusp = false; idleAt = 0; selfResume = true; }   /* our own idle suspend: the graph is intact, no rebuild on the way back */
@@ -380,7 +380,7 @@
     o = o || {};
     var rpm0 = num(o.rpm, 0);
     if (rpm0 > 0) { idleAt = 0; if (selfSusp) resume(); }
-    else { var tn = Date.now(); if (!idleAt) idleAt = tn; else if (!selfSusp && tn - idleAt > 3000 && ctx.state === "running") { selfSusp = true; try { ctx.suspend(); } catch (e) {} } }
+    else { var tn = Date.now(); if (!idleAt) idleAt = tn; else if (!selfSusp && !holdAwake && tn - idleAt > 3000 && ctx.state === "running") { selfSusp = true; try { ctx.suspend(); } catch (e) {} } }
     // a failure silences the engine; spinning back up brings it back, so a failed
     // pull does not leave the idle mute until the player toggles the sound
     if (dead) { if (num(o.rpm, 0) > 400) dead = false; else return; }
@@ -1029,6 +1029,7 @@
     deriveProfile: deriveProfile,
     // recorded-sample layer hooks (ENGINE_SAMPLES): duck the synth core, and read where to plug in
     setSynthMix: function (m) { m = +m; SYNTH_MIX = isFinite(m) ? clamp(m, 0, 1) : 1; },
+    holdAwake: function (on) { holdAwake = !!on; if (holdAwake && selfSusp) resume(); },   // ambience: keep the context running while a bed plays
     setShotHook: function (fn) { shotHook = typeof fn === "function" ? fn : null; },
     sampleHost: function () { return { ctx: ctx, bus: bus, running: running && !!N, dead: dead, solo: SOLO, lite: LITE, diesel: !!st.diesel }; },
     get context() { return ctx; },

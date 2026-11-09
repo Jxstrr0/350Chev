@@ -159,6 +159,7 @@ function boatFinish(){
   testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("boatCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
   const me={rt:BT.foul?-0.01:r.rt,et:failed||r.dnf?null:r.et,mph:r.mph,dist:r.dist,dnf:failed?"broke":r.dnf};
   const op=BT.opp,won=boatJudge(me,op)==="a";
+  if(typeof crowdAfter==="function")crowdAfter("boat",{broke:failed,won:won&&!failed});   // app/ambience.js
   const mm=boatMyMatch(N);if(mm){mm.win=won?0:oi;mm.pa=mm.a===0?me:op;mm.pb=mm.a===0?op:me;}
   r.match={label:BT.label,stage,opp:BT.of.name,boat:BT.of.boat,hp:BT.of.hp,oppRt:op.rt,oppEt:op.et,oppMph:op.mph,oppDnf:op.dnf,won,foul:BT.foul,margin:me.et!=null&&op.et!=null&&!BT.foul&&!(op.rt<0)?+(boatTot(me)-boatTot(op)).toFixed(3):null};
   r.clsName=C0.n;r.tier=C0.tier;r.auto=BT.auto||BT.took!=null?{took:BT.took}:null;r.at=Date.now();

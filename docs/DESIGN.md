@@ -110,6 +110,8 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 
 **Drag announcer** (`src/app/announcer.js`, since 1.76.87.0): Ed, an ElevenLabs-generated voice, calls the strip. 143 lines in `sounds/announcer/` (script sheet `docs/announcer-script.csv`): 73 race calls in 33 pools (the night opening, each round, staging, a great, perfect or late light, wheelspin in the first 60 ft, red light, win and loss with close and big margins, the other car breaking, your engine or driveline breaking, break-out, centreline, black flag, PB, a clean time trial, qualified, did not qualify, and how the night ended), plus 70 matchup parts stitched into engine-against-engine calls: aspiration, litres, Hemi or two-stroke, fuel, layout, nitrous ("twin turbo two point oh litre inline four, versus Roots blown eight point two litre Hemi methanol V8"). Every rival car and test & tune name has an engine for the call (`ANN_RIVAL`; flavour only, the sim does not read it). A line never repeats back to back. Only the lines picked for the next pass are fetched and decoded (about 20 kB each; a cache keeps the last 28 decoded); the engine ducks while he talks; a red light, wheelspin or the result cuts off whatever he was saying. Settings › Sound › Drag announcer turns him off.
 
+**Ambience and crowd** (`src/app/ambience.js`, since 1.76.90.0): ten 18-second ElevenLabs ambience loops in `sounds/amb/`, one per venue plus the shop, and eight crowd one-shots in `sounds/crowd/`. The Events tab plays the bed for the event that is set up, every other tab plays the shop; beds crossfade when you move and stop when the page is hidden. Each event's finish calls `crowdAfter` (a win cheers, a loss claps or gasps if it was close, a breakage groans, a full pull, a cleared bog pit and a summit have their own), and a certified career dyno pull gets a shop clap. Its own level in Settings › Sound › Ambience & crowd (`S.ambVol`, 40 by default); while a bed plays the synth does not idle-suspend the audio (`ENGINE_SOUND.holdAwake`).
+
 ### Save system
 
 - Everything lives in the browser's localStorage under five keys: `pew2-save` (the current game, settings included), `pew2-slot1` to `pew2-slot3` (three save slots, `SLOTS`), `pew2-legacy` (Legacy points). All access is wrapped in try/catch.
@@ -143,6 +145,7 @@ A Web Audio synth derives a voice from the build (firing order, exhaust, intake,
 | Guided lessons | 17 | `LESSONS` |
 | Engine recordings | 72 (60 loops, 12 one-shots) | `sounds/` |
 | Announcer lines | 143 (73 race calls, 70 matchup parts) | `sounds/announcer/`, `ANN_POOLS`, `ANN_CALL` |
+| Ambience and crowd | 10 beds, 8 crowd one-shots | `sounds/amb/`, `sounds/crowd/`, `AMB_FOR`, `CROWD_FOR` |
 | Source files in the build | 119 | `src/manifest.txt` |
 | Built page | 3.80 MB (1.23 MB gzipped) | `node build.js` |
 

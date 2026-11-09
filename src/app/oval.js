@@ -231,6 +231,7 @@ function ovalFinish(){
   rows.push(me);ovalSortRows(rows);const place=rows.indexOf(me)+1;
   Object.assign(r,{stage,cls:k,clsName:C0.n,tier:C0.tier,place,of:rows.length,field:rows,N,lapsDone:meLaps,auto:OV.auto&&OV.took==null,took:OV.took,gridMe:OV.gridMe+1,posLaps:OV.posLaps.slice(),finished:!failed,tyreName:SIM.OVAL_TYRES[env.ovalTyre]?SIM.OVAL_TYRES[env.ovalTyre].n:"",track:tk,trackName:TT.n,surf:TT.surf,night:SIM.ovalNight(n.seed,tk).name,ci:Math.round(SIM.ovalCi(res)),final:+(OV.veh.finalK||1).toFixed(2),muStart:+(SIM.ovalNight(n.seed,tk).mu).toFixed(2),dnfLap:failed?meLaps+1:null});
   r.time=meT;r.best=me.best;
+  if(typeof crowdAfter==="function")crowdAfter("oval",{broke:failed,won:place===1&&!failed});   // app/ambience.js
   const pl=ordN(place)+" of "+rows.length,sc=failed?`DNF · lap ${meLaps+1}`:`${ordN(place)}`;
   // money, rep, wear
   if(same&&career()){addWear((stage==="heat"?0.4:0.9)+(r.coolPeak>112?0.4:0),hk);

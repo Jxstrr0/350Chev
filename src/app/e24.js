@@ -181,6 +181,7 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
     classified:!!mine.classified,dnf:me.dnf?{h:+me.dnf.h.toFixed(1),id:me.dnf.id,name:me.dnf.name}:null,best:me.best,bestLap:me.bestLap,avg,pits:me.pits,pitT:Math.round(me.pitT),fuel:Math.round(me.fuelUsed),
     stints,trace:dec,sc:R.scN,field:all.map(x=>({no:x.no,team:x.team,cls:x.cls,eng:x.eng,laps:x.laps,best:x.best!=null?+x.best.toFixed(2):null,out:x.out,dnf:x.dnf,me:x.me,cl:x.classified,pc:x.posCls})),
     clsBest:Math.min(...inCls.filter(x=>x.best!=null).map(x=>x.best)),win:inCls[0]?inCls[0].laps:0,hrs:+hrs.toFixed(1)};
+  if(typeof crowdAfter==="function")crowdAfter("e24",{won:r.classified&&r.posCls===1,classified:r.classified});   // app/ambience.js
   /* career money and standing */
   if(career()&&!ff&&same){const g=e24C();g.live=null;g.runs=(g.runs||0)+1;const K=SIM.E24_CLASSES[cls],fu=SIM.fuelOf(cfg0)||SIM.OPT.fuel.r91;
     const prize=r.classified?(K.prize[r.posCls-1]||0)+3000:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.35)/* series fuel, at the trade price */;let rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
