@@ -73,7 +73,7 @@ Weather (`app/weather.js`, since 1.76.83.0): the road test, the hill climb and t
 | Salt flats (Bonneville) | `salt.js` | 4 bodies, 2 courses, 3 chutes, meets and records |
 | Pikes Peak hill climb | `hill.js`: 156 corners in 8 sections, power at five altitudes, cooling, offs; four shorter made-up hills from the same kit (`HILL_HILLS`) for the team series | 4 classes, 4 tyres, 4 aero |
 | Dirt oval | `oval.js`: banked-turn limit, friction circle, heat, wear | 3 classes by cubic inches, 2 tracks (clay and paved half-mile), heat then feature |
-| 24 Hours of Prairie Sky | `e24.js`: time-stepped endurance with weather, fuel and fixes | 3 classes, 3 modes, a live race with a flag and records |
+| 24 Hours of Prairie Sky | `e24.js`: time-stepped endurance with weather, fuel and fixes | 3 classes, 3 modes, a live race with a flag and records; Pit wall: you call the strategy, or a crew chief does (`e24Chief`, `E24_CHIEF` in `sim/e24.js`, since 1.76.102.0) |
 
 Engine swaps (`swap.js`): 20 vehicles in 5 groups and 15 fixes; one fit check shared by the road test, the strip, the salt and the 24 Hours. Pull and bog keep their class trucks.
 
