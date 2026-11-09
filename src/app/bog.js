@@ -111,6 +111,7 @@ function bogFinish(){
   r.field=rows;r.place=rows.indexOf(me)+1;r.of=rows.length;r.clsName=C0.n;r.tier=C0.tier;r.auto=BR.auto;r.cleared=me.cleared;
   if(failed){r.broke=r.broke||BR.failKind;r.failKind=r.failKind||BR.failKind;}
   if(same)bogPb(r,failed);
+  if(typeof crowdAfter==="function")crowdAfter("bog",{broke:failed,cleared:r.cleared});   // app/ambience.js
   res.bog=r;res.bogFailed=failed;res.bogFailKind=failed?BR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,sc=r.cleared?`THROUGH · ${r.pitT.toFixed(2)} s`:`${r.distM.toFixed(1)} m`;
   if(career()&&same){addWear(0.5+Math.min(1,r.time/25)*0.5+(r.coolPeak>115?0.4:0),hk);

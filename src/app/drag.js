@@ -376,6 +376,7 @@ function dragFinish(){
   if(DR.night&&same){rnAfterPass(r,failed);annNight(DR.night.stage);}
   if(r.heat)HOTLAP[DR.hk]={t:Date.now(),egt:Math.max(600,r.heat.egtLine||0)};
   if(same)pbPass(r,failed);
+  if(typeof crowdAfter==="function")crowdAfter("drag",{broke:failed,won:r.race?r.race.won:undefined,close:!!(r.race&&r.race.margin!=null&&Math.abs(r.race.margin)<0.05),pb:!!r.pb});   // app/ambience.js
   if(DR.veh&&DR.veh.dlCap)r.swap=swapTag();
   {const pv=dragPrev();if(!failed&&r.et!=null){if(pv)r.prev=pv;DPREV={m:dragMarks(r),mode:S.mode,car:S.career};}}   // the slip prints the change from the last clean pass
   res.drag=r;res.dragFailed=failed;res.dragFailKind=failed?DR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};

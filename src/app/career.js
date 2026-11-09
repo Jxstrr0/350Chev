@@ -158,7 +158,7 @@ $("spons").addEventListener("click",e=>{if(!career())return;const s=spS();
 function renderShop(){
   document.querySelectorAll("#modeBox button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
   $("careerBox").style.display=career()?"":"none";$("sandboxBox").style.display=career()?"none":"";renderDev();$("marketBox").style.display=career()?"":"none";$("marketSandbox").style.display=career()?"none":"";
-  $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;renderSaves();
+  $("volLbl").textContent=S.vol+"%";$("vol").value=S.vol;if(typeof ambUi==="function")ambUi();renderSaves();
   spLivery();if(typeof renderLegacy==="function")renderLegacy();if(!career()){renderSbShop();return;}
   pcRender();crateRender();spRender();rivalsRender();
   $("foreclose").style.display=C().cash<FORECLOSE_AT?"":"none";
