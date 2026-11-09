@@ -63,6 +63,8 @@ Fuels cover pump grades, race grades, oxygenated fuels, E85 and flex blends, met
 
 Weather (`app/weather.js`, since 1.76.83.0): the road test, the hill climb and the pull each get a day, a new one each visit in the test cell and one a week in a career. The day sets the air temperature and humidity the engine breathes. On the road and the hill it can rain (wet 0–1 takes grip off the tyres through `SIM.roadWetMu`, slicks most; the hill's rivals slow in it too), and on the pull it makes the dirt damp or dry. The test cell has New day and a Standard day switch; a career always has weather.
 
+Home venues (the names on the event cards, since 1.76.106.0): Section Line Dragway (the strip), Elevator Row Fairgrounds (the pull), Gumbo Flats (the bog), Cutbank Reach (the boats), Grid Road Speedway (the clay 3/8) and Sundog Speedway (the paved half-mile), with the road circuits Prairie Sky Raceway, Coulee Park and Grain Exchange. Team seasons also travel to other made-up sites (the `PC_*` site tables in `app/team*.js`).
+
 | Event | Sim | Classes and content |
 |---|---|---|
 | Drag strip (heads-up) and bracket racing | `drag.js`: tyres, aero, turbo heat soak, nitrous bottle, launch tech, gearing (even or custom ratios, a shift point), ride height, three saved tunes per game (setup plus two-step rpm and retard; paid kit and paint left alone), an auto driver (it never shifts above the redline, since 1.76.103.0), drivetrain tiers, engine weight counted | 3 tyre types, 7 aero bodies, 4 drivetrain tiers; race nights with a ladder; top-five passes per body class; the timing slip prints each split's change from your last clean pass |

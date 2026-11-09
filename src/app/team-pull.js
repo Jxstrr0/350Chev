@@ -29,7 +29,7 @@ Object.assign(PC_EVENTS,{
   photfarm:{ev:"pull",cls:"hotfarm",n:"Hot Farm tractor pull",tier:2,rep:120,budget:[8000,15000],pay:[280000,360000],tip:"Two-wheel-drive tractors on ag tyres, one turbo under 3.0 inches."},
   psuper:{ev:"pull",cls:"superstock",n:"Super Stock pull",tier:3,rep:300,budget:[16000,32000],pay:[600000,780000],tip:"Compound turbos and no limits, on a heavy sled and paddle tyres: it takes a four-figure diesel to win."},
   punl:{ev:"pull",cls:"unlimited",n:"Unlimited Modified pull",tier:5,rep:1500,budget:[60000,96000],pay:[2400000,3200000],tip:"Diesel or alcohol and no limits: the sled was built to beat 5,000 hp."}});
-const PC_PULL_SITES=[{n:"County Fairgrounds",alt:180},{n:"Prairie Stampede Grounds",alt:420},{n:"Hay Days Arena",alt:600},{n:"Red Butte Pull Pit",alt:760},{n:"Coulee Tractor Park",alt:1050},{n:"Bow River Fairgrounds",alt:1100}];
+const PC_PULL_SITES=[{n:"Elevator Row Fairgrounds",alt:180},{n:"Prairie Stampede Grounds",alt:420},{n:"Hay Days Arena",alt:600},{n:"Red Butte Pull Pit",alt:760},{n:"Coulee Tractor Park",alt:1050},{n:"Bow River Fairgrounds",alt:1100}];
 const PC_PULL_RIGS={gas:["'79 Ford F-250 4x4","'84 Chevy K20","'76 Dodge Ramcharger","'72 GMC K25","'88 Jeep J20","'81 Bronco 4x4","'86 Chevy K30","'78 Ford F-350"],
   truck:["'98 Dodge Ram 2500","'03 Ford F-250 Power Stroke","'95 Chevy K2500","'01 Duramax crew cab","'88 Dodge W250","'99 Ford F-350","'92 Chevy K3500","'06 Ram 3500 Mega Cab"],
   tractor:["Farmall 1206","John Deere 4430","Case IH 1370","Oliver 1855","Allis-Chalmers 220","Massey Ferguson 1155","International 1066","Minneapolis-Moline G1000"]};

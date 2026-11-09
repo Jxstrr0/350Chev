@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.105.0*/
+/*pew-scenes 1.76.106.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -8753,7 +8753,7 @@ function ovalFlagTex(kind){
 function ovalBoardTex(){ var c=newCanvas(256,512), t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=MAXANISO; t.userData={cv:c}; return t; }
 function ovalBoardDraw(t, rows, head){
   var c=t.userData.cv, x=c.getContext("2d"), F="'Chakra Petch','Arial Narrow',Arial,sans-serif";
-  x.fillStyle="#1c1b19"; x.fillRect(0,0,256,512); x.fillStyle="#d97757"; x.fillRect(0,0,256,46); x.fillStyle="#141413"; x.font="700 26px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(head||"PRAIRIE SPEEDWAY",128,24,240);
+  x.fillStyle="#1c1b19"; x.fillRect(0,0,256,512); x.fillStyle="#d97757"; x.fillRect(0,0,256,46); x.fillStyle="#141413"; x.font="700 26px "+F; x.textAlign="center"; x.textBaseline="middle"; x.fillText(head||OVAL.venue||"SPEEDWAY",128,24,240);
   x.textAlign="left"; x.font="700 25px "+F;
   for(var i=0;i<Math.min(12,rows.length);i++){ var r=rows[i], y=60+i*37; x.fillStyle=r.me?"#d97757":i%2?"#161a1e":"#1b2025"; if(r.me) x.fillRect(4,y-17,248,34); else x.fillRect(4,y-17,248,34);
     x.fillStyle=r.me?"#141413":"#f2c22c"; x.fillText(String(i+1),12,y+1); x.fillStyle=r.me?"#141413":"#f0ece2"; x.fillText(String(r.num).padStart(2," "),52,y+1);
@@ -8852,7 +8852,7 @@ function buildOvalScene(G){
     instCull(bodyM,1.5); instCull(headM,1.5); S3.add(bodyM); S3.add(headM);
     OVAL.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q2){ return rng(q2*9.1)*TAU; }), excite:base.map(function(p,q2){ return rng(q2*5.3); }), live:false}; })();
   /* scoreboard in the infield, facing the stand */
-  (function(){ var t=ovalBoardTex(); ovalBoardDraw(t,[],"PRAIRIE SPEEDWAY"); var mat=new THREE.MeshBasicMaterial({map:t, toneMapped:false}); OVAL.board={tex:t, mat:mat, key:""};
+  (function(){ var t=ovalBoardTex(); ovalBoardDraw(t,[],""); var mat=new THREE.MeshBasicMaterial({map:t, toneMapped:false}); OVAL.board={tex:t, mat:mat, key:""};
     var mesh=new THREE.Mesh(new THREE.PlaneGeometry(10,20), mat); mesh.position.set(-ls*0.18, 12, -8); mesh.rotation.y=0; S3.add(mesh);
     var post=new THREE.Mesh(new THREE.BoxGeometry(0.5,12,0.5), new THREE.MeshStandardMaterial({color:0x4a4f55})); post.position.set(-ls*0.18,6,-8.4); S3.add(post); OVAL.boardMesh=mesh; })();
   /* the flag */
@@ -8967,6 +8967,8 @@ function ovalSetFlag(kind){
 }
 /* o: {on, track:{R, ls, w, bank, len}, cars:[{s (total m, + along), v, color, me, num, n, groove, gone, slide (0..1), thr}], pre, done, flag:"green"|"white"|"checker"|"yellow", cam, night, lastLap, toFlag, order:[{num,n,me}], boardHead, cheer, dt} */
 function ovalUpdate(o, dt){
+  OVAL.venue=(o.track&&o.track.v)?String(o.track.v).toUpperCase():"";   /* the venue's name heads the scoreboard until a race puts HEAT or FEATURE there */
+  if(OVAL.board && OVAL.board.v!==OVAL.venue){ OVAL.board.v=OVAL.venue; if(!OVAL.board.key) ovalBoardDraw(OVAL.board.tex,[],""); }
   var T=o.track||{}, G={R:+T.R||52, ls:+T.ls||136.6, w:+T.w||18, bank:+T.bank||0.384, surf:T.surf==="asphalt"?"asphalt":"clay"}; G.L=2*G.ls+2*Math.PI*G.R;
   var gk=[G.R,G.ls,G.w,G.bank,G.surf,GFX].join("|");
   if(!OVAL.built||OVAL.gkey!==gk){ if(OVAL.scene){ OVAL.list.forEach(function(c){ if(c.parent) c.parent.remove(c); }); disposeTree(OVAL.scene); OVAL.composer=null; } OVAL.gkey=gk; buildOvalScene(G); }
