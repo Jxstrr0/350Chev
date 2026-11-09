@@ -125,7 +125,7 @@ function hillStart(){
   const step=()=>{if(!HC||HC.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-HC.last)/1000);HC.last=now;const st=HC.run.st;
     if(HC.pre>0)HC.pre-=dt;else if(!st.done){HC.acc+=dt*HC.speed;let n=0;while(HC.acc>=0.02&&!st.done&&n++<800){HC.run.step(0.02,hillCtl());HC.acc-=0.02;}if(n>=800)HC.acc=0;}
     if(st.done&&HC.doneAt==null){HC.doneAt=now;if(st.dnf){failFlash(300);}else{winFlash();buzz([30,40,30,40,90]);}}
-    if(st.ev&&st.ev!==HC.lastEv){HC.lastEv=st.ev;if(st.ev.kind!=="moment"){buzz([60,30,60]);sfx("mudslap");}else buzz([25]);}
+    if(st.ev&&st.ev!==HC.lastEv){HC.lastEv=st.ev;if(st.ev.kind!=="moment"){buzz([60,30,60]);sfx("mudslap");if(st.ev.kind!=="rail"&&typeof foley==="function")foley("gravel");}else buzz([25]);}
     if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:true,su:HC.suVis,course:HC.run.T,s:st.s,v:st.v,d:st.d,g:st.g+1,rpm:st.rpm,thr:st.thr,brk:st.brk,lat:st.latUse,off:st.off?st.off.kind:null,dnf:st.dnf?st.dnf.kind:null,ev:st.ev&&st.t-st.ev.t<1?st.ev.kind:null,
       ch:HC.opt.ch,aero:HC.opt.aero,color:HC.color,cam:HC.cam,pre:HC.pre>0,done:st.done,night:false,dt:dt*(HC.pre>0||st.done?1:HC.speed)});
     if((hudT+=dt)>0.08||st.done){hudT=0;hillHud();}
