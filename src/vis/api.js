@@ -125,6 +125,10 @@ const ENGINE_VIS = {
     try{ set({on:false}); }catch(e){}
     return ok;
   },
+  /* the event scenes (vis/scn.js): scenes(url, tag, cb) names the file and starts nothing; scenesLoad() fetches it; scenesReady() */
+  scenes: function(url, tag, cb){ SCNL.url=url||""; SCNL.tag=tag||""; SCNL.cb=cb||null; },
+  scenesLoad: function(){ scnLoad(); },
+  scenesReady: function(){ return SCNL.ok; },
   warmed: function(){ return Object.keys(WARM.k); },   /* harness */
   reframe: function(){ frameEngine(); },
   /* heat map: zones = [{zone, r,g,b, amount, pulse}] or null to clear */
@@ -205,6 +209,7 @@ const ENGINE_VIS = {
   setStrip: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(STRIP.on){ stripPostEnd(); STRIP.on=false; STRIP.honour=0; STRIP.rec=null; STRIP.recPre=null; stripReset(); } document.documentElement.classList.remove("onstrip"); return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     if(!STRIP.on){ freeOthers("strip"); STRIP.on=true; document.documentElement.classList.add("onstrip"); if(!STRIP.built) buildStripScene(); STRIP.shot=null; STRIP.snap=true; ENGINE_VIS.resize(); }
     if(STRIP.post){ if(o.phase==="done") return STRIP.stats||null; stripPostEnd(); }
     if(STRIP.rn) for(var rk in STRIP.rn) if(o[rk]===undefined) o[rk]=STRIP.rn[rk];   /* race night extras: round, dials, the other lane's tree/RT/ET, win */
@@ -235,12 +240,13 @@ const ENGINE_VIS = {
   setPits: function(o){
     if(!renderer) return null;
     if(!o || o.on===false){ if(PITS.on){ PITS.on=false; if(PITS.fx) PITS.fx.clear(); } return null; }
+    if(!scnNeed()) return null;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     if(!PITS.on){ PITS.on=true; PITS.dirty=2; PITS.fitKey=""; }
     pitsUpdate(o); return PITS.stats;
   },
   /* fix pack: which event scene owns the canvas ("" = the engine stand, where orbiting works); the app hides the orbit hint otherwise */
   eventScene: function(){ return (TROPHY.on&&TROPHY.built)?"trophy":(OVAL.on&&OVAL.built)?"oval":(ROAD.on&&ROAD.W)?"road":(HILL.on&&HILL.W)?"hill":(BOAT.on&&BOAT.built)?"boat":(SALT.on&&SALT.built)?"salt":(BOG.on&&BOG.built)?"bog":(PULL.on&&PULL.built)?"pull":(STRIP.on&&STRIP.built)?"strip":(PITS.on&&PITS.built&&!TD.on)?"pits":""; },
-  pitsAnchors: function(){ return pitsAnchors(); },   /* {w, h, launch|wear|gear|psi|shocks|dial: [x, y, inFront]} in canvas CSS px */
+  pitsAnchors: function(){ return SCNL.ok ? pitsAnchors() : null; },   /* {w, h, launch|wear|gear|psi|shocks|dial: [x, y, inFront]} in canvas CSS px */
   pitsState: function(){ return {on:PITS.on, built:PITS.built, renders:PITS.renders, stats:PITS.stats, nightK:PITS.nightK, heat:+PITS.heat.toFixed(2), car:PITS.carKey,
     cam:PITS.cam?PITS.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null}; },   /* harness */
   /* DIESEL pulling scene: fed every frame {on, phase:"stage"|"pull"|"done", x, v, boxFrac, slip, hop, smoke, rpm, vehicle, full, night, cls, distFt, color?, dt?,
@@ -248,6 +254,7 @@ const ENGINE_VIS = {
   setPull: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(PULL.on){ PULL.on=false; pullReset(); } return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     var now=performance.now(); if(!PULL.on){ freeOthers("pull"); PULL.on=true; if(!PULL.built) buildPullScene(); pullReset(); PULL.snap=true; PULL.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-PULL.lastT)/1000; PULL.lastT=now; pullUpdate(o, clamp(rdt||0, 0, 0.1));
     return PULL.stats||null;
@@ -259,6 +266,7 @@ const ENGINE_VIS = {
   setBog: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(BOG.on){ BOG.on=false; bogReset(); } return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     var now=performance.now(); if(!BOG.on){ freeOthers("bog"); BOG.on=true; if(!BOG.built) buildBogScene(); bogReset(); BOG.snap=true; BOG.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-BOG.lastT)/1000; BOG.lastT=now; bogUpdate(o, clamp(rdt||0, 0, 0.1));
     return BOG.stats||null;
@@ -270,6 +278,7 @@ const ENGINE_VIS = {
   setBoat: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(BOAT.on){ BOAT.on=false; boatReset(); } return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     var now=performance.now(); if(!BOAT.on){ freeOthers("boat"); BOAT.on=true; if(!BOAT.built) buildBoatScene(); boatReset(); BOAT.snap=true; BOAT.lastT=now; ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-BOAT.lastT)/1000; BOAT.lastT=now; boatUpdate(o, clamp(rdt||0, 0, 0.1));
     return BOAT.stats||null;
@@ -288,6 +297,7 @@ const ENGINE_VIS = {
   setRoad: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(ROAD.on){ ROAD.on=false; ROAD.minMs=0; if(ROAD.W && ROAD.W.fx) ROAD.W.fx.clear(); if(ROAD.W){ roadFieldHide(ROAD.W); if(ROAD.W.ghost) ROAD.W.ghost.visible=false; } } return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     ROAD.minMs=+o.minMs||0;   // time-lapse: the app asks for a few frames a second
     var now=performance.now();
     if(!ROAD.on){ ROAD.on=true; ROAD.snap=true; ROAD.shot=null; ROAD.lastT=now; if(!ROAD.cam) ROAD.cam=new THREE.PerspectiveCamera(50, 1, 0.3, 5200); ENGINE_VIS.resize(); }
@@ -298,6 +308,7 @@ const ENGINE_VIS = {
   setHill: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(HILL.on){ HILL.on=false; if(HILL.W && HILL.W.fx) HILL.W.fx.clear(); } return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     var now=performance.now();
     if(!HILL.on){ HILL.on=true; HILL.snap=true; HILL.shot=null; HILL.lastT=now; if(!HILL.cam) HILL.cam=new THREE.PerspectiveCamera(50, 1, 0.3, 14000); ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-HILL.lastT)/1000; HILL.lastT=now; hillUpdate(o, clamp(rdt||0, 0, 0.4));
@@ -307,6 +318,7 @@ const ENGINE_VIS = {
   setOval: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(OVAL.on){ OVAL.on=false; if(OVAL.fx) OVAL.fx.clear(); } return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     var now=performance.now();
     if(!OVAL.on){ OVAL.on=true; OVAL.snap=true; OVAL.shot=null; OVAL.lastT=now; if(!OVAL.cam) OVAL.cam=new THREE.PerspectiveCamera(50, 1, 0.3, 4200); ENGINE_VIS.resize(); }
     var rdt=o.dt!=null ? +o.dt : (now-OVAL.lastT)/1000; OVAL.lastT=now; ovalUpdate(o, clamp(rdt||0, 0, 0.2));
@@ -319,13 +331,15 @@ const ENGINE_VIS = {
   setSalt: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(SALT.on){ SALT.on=false; saltReset(); } return; }
+    if(!scnNeed()) return;   /* the event scenes are still on their way (vis/scn.js): the app feeds this every frame, so the scene cuts in when they land */
     var now=performance.now(); if(!SALT.on){ freeOthers("salt"); SALT.on=true; if(!SALT.built) buildSaltScene(); saltReset(); SALT.snap=true; SALT.lastT=now; ENGINE_VIS.resize(); }
     if(SALT.tier!==GFX && SALT.built){ saltRebuild(); ENGINE_VIS.resize(); }   /* a new quality tier: build the flats again at it */
     var rdt=o.dt!=null ? +o.dt : (now-SALT.lastT)/1000; SALT.lastT=now; saltUpdate(o, clamp(rdt||0, 0, 0.1));
     return SALT.stats||null;
   },
   /* the player's car for the next run: {color, num, cls, cfg} (or {rival:seed, body} for any other car); null clears */
-  saltLook: function(o){ if(!renderer) return null; if(o && o.rival!=null && o.rival!==true) return (SALT.look=saltRivalLook(o.rival, o.body)); return saltSetLook(o); },
+  saltLook: function(o){ if(!renderer) return null; if(!SCNL.ok){ SCNL.look=o; scnLoad(); return null; }   /* kept, and set when the scenes land */
+    if(o && o.rival!=null && o.rival!==true) return (SALT.look=saltRivalLook(o.rival, o.body)); return saltSetLook(o); },
   saltSkip: function(){ if(SALT.on) SALT.skip=true; },   /* cut straight to the stopped car */
   saltState: function(){ return {on:SALT.on, built:SALT.built, shot:SALT.shot, cam:SALT.cam?SALT.cam.position.toArray().map(function(v){ return Math.round(v*100)/100; }):null, cars:Object.keys(SALT.cars), parts:SALT.fx?SALT.fx.P.length:0, fx:SALT.fx?SALT.fx.mesh:null}; },   /* harness */
   setXray: function(on){

@@ -398,6 +398,19 @@ function start(hot){
   if(perfTier()!=="lite")setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle. Not on Lite: each blocks a phone for a few hundred ms just as the garage opens, and Analysis and the salt look them up when they need them
   ENGINE_VIS.resize();   // the observer on #view fired before boot, while there was no renderer to size
   if(window.__ldDone)__ldDone();
+  scenesFetch();
+}
+/* The event scenes (the strip, the pull track, the mud pit and the rest: about a quarter of the game's code) are not in the page.
+   They sit in scenes.js, fetched here in the background once the garage is up, so a first visit shows the workshop sooner. Installed
+   copies have the file in the offline cache. If an event is opened before it lands the 3D view asks for it at once and says so. */
+function scenesFetch(){
+  if(typeof ENGINE_VIS==="undefined"||!ENGINE_VIS.scenes)return;
+  ENGINE_VIS.scenes("scenes.js?v="+VERSION,"/*pew-scenes "+VERSION+"*/",s=>{
+    if(s==="wait")toast("Loading the track…");
+    else if(s==="fail")toast("Couldn't load the track. Check your connection.");
+    else if(s==="ok"&&typeof evWarmSoon==="function")evWarmSoon();});
+  const go=()=>ENGINE_VIS.scenesLoad();
+  setTimeout(()=>{if(window.requestIdleCallback)requestIdleCallback(go,{timeout:2000});else go();},600);
 }
 (window.__ldGo||(f=>f()))(()=>{window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});});
 
