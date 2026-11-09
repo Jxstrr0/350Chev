@@ -401,7 +401,7 @@ const LESSONS=[
   {tab:"events",sel:'#envBox [data-ok="ovalGrille"]',up:1,lbl:1,title:"Grille",text:"Under Advanced. An open grille cools best but adds drag and clogs with dirt. Taping it up is slippery on the straight, and the engine runs hot."},
   {tab:"events",sel:"#runTest",title:"Take the green",text:"Hold PUSH to attack and SAVE to cool the engine and the tyres. Space pushes. If the heat is already safe, save the engine for the feature."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the night",text:"The heat sets the feature grid, so a good heat gets you a good start. Watch the lap times fall off as the tyres fade and the track changes. That is when to SAVE."}]},
- {id:"race24",name:"24 Hours 101",sub:"circuit, engine mode, stints, tyres",preset:"gt3r",env:{testType:"race24"},steps:[
+ {id:"race24",name:"24 Hours 101",sub:"circuit, engine mode, stints, tyres",preset:"gt3r",env:{testType:"race24",e24Drive:"you"},steps:[
   {tab:"events",sel:'#evHead',title:"A day and a night",text:"The 24 Hours puts your engine in the road-test car against twenty others in three classes. A full day and night runs in accelerated time. Pace matters, and so does making it to the end."},
   {tab:"events",sel:'#envBox [data-e24k="e24Trk"]',up:1,lbl:1,title:"Pick a circuit",text:"Coulee Park is a short-course 24. Prairie Sky Raceway is the 24 Hours itself, on a 4.48 km lap."},
   {tab:"events",sel:'#envBox [data-e24k="e24Mode"]',up:1,lbl:1,title:"Engine mode",text:"Push uses everything the engine has. Race short-shifts at 96% torque. Conserve cruises lean at 92%. Over a whole day, the gentler modes are how an engine lasts."},
@@ -409,6 +409,7 @@ const LESSONS=[
   {tab:"events",sel:'#envBox [data-e24k="e24Tyre"]',up:1,lbl:1,title:"Tyres",text:"Soft is 3.5% quicker and lasts 170 km. Medium is the base and lasts 270. Hard is 3.5% slower and lasts 420. The longer the stint, the more a hard tyre is worth."},
   {tab:"events",sel:'#envBox [data-e24k="e24Fuel"]',up:1,lbl:1,title:"Fuel at the stops",text:"Under Advanced. A full tank is 100 L and goes further. Just enough for the stint is lighter, so the car is quicker."},
   {tab:"events",sel:'#envBox [data-e24k="e24Chg"]',up:1,lbl:1,title:"Tyre changes",text:"Under Advanced. Fresh rubber at every stop, or a double stint that skips the change at every other stop and saves 22 seconds. It pays only if the tyre can last."},
+  {tab:"events",sel:'#envBox [data-e24k="e24Drive"]',up:1,title:"The pit wall",text:"You call it, or hand the strategy to the crew chief. The chief picks the tyres, conserves behind the safety car and when nobody is close, and pushes only when the engine is safe. Tap any choice during the race to take over."},
   {tab:"events",sel:"#runTest",title:"Take the green",text:"Set the strategy, then start. Watch it at 1× or time-lapse to the next event."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the result",text:"The result ranks the car among the twenty. If it lost places in the night, look at the engine mode and the tyres. If the engine failed, back off the mode."}]},
  {id:"racenight",name:"Race night 101",sub:"heads-up ladder, the tree, launch, tyres",preset:"ls3",env:{testType:"drag",dragFmt:"elim"},steps:[
