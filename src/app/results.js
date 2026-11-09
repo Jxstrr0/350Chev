@@ -244,6 +244,7 @@ $("runTest").addEventListener("click",()=>{
       if(career()&&same)checkGoals();
       achCheck({type:"dyno",res,env,failing,offStd});
       save();recompute();renderTest();
+      if(career())renderShop();   // the Team card and the car show read the cert too: redraw them now, not at the next Close week
       revealVerdict();
       if(ff&&ff.ending);else if(res.fails.length)toast(`FAIL · ${String(res.fails[0]).toUpperCase()}`);else if(failing)toast("FAIL · BROKE BEFORE THE END");else toast(`${Math.round(res.peakHp)} HP · ${env.testOnly?(env.testType==="pull"?"TEST ONLY — NOT CERTIFIED":"TEST ONLY"):"REL "+res.rel}`);}
   };
