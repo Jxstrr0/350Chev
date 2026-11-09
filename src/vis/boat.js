@@ -309,7 +309,7 @@ function boatDirect(o, dt){
     _btw.copy(_btr); _btt.copy(_btrt); _btw.x+=ax; _btt.x+=ax; BOAT.relOn=true; } else BOAT.relOn=false;
   if(BOAT.snap){ BOAT.fov=fov; BOAT.snap=false; BOAT.camTgt.copy(_btt); } else BOAT.fov+=(fov-BOAT.fov)*(1-Math.exp(-6*dt));
   BOAT.camPos.copy(_btw); if(rel) BOAT.camTgt.copy(_btt); else BOAT.camTgt.lerp(_btt, 1-Math.exp(-7*dt));
-  BOAT.shake*=Math.exp(-dt*3.5); var sh=BOAT.shake; if(sh>0.002){ BOAT.camPos.x+=(Math.random()-0.5)*sh*0.3; BOAT.camPos.y+=(Math.random()-0.5)*sh*0.3; }
+  BOAT.shake*=Math.exp(-dt*3.5); var sh=CALM?0:BOAT.shake; if(sh>0.002){ BOAT.camPos.x+=(Math.random()-0.5)*sh*0.3; BOAT.camPos.y+=(Math.random()-0.5)*sh*0.3; }
   BOAT.camPos.y=Math.max(0.6,BOAT.camPos.y);
   var cam=BOAT.cam; cam.position.copy(BOAT.camPos); cam.lookAt(BOAT.camTgt); cam.fov=BOAT.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }

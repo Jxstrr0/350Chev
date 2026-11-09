@@ -298,7 +298,7 @@ input[type=range]{width:100%;height:40px;margin:0 0 6px;accent-color:var(--orang
 #chartwrap{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:8px 6px 4px;margin-bottom:8px}
 #chart{width:100%;height:210px;display:block}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.chip{padding:9px 14px;min-height:36px;border-radius:16px;border:1px solid var(--edge);font-size:13px;color:var(--muted);background:var(--panel)}
+.chip{padding:9px 14px;min-height:44px;border-radius:16px;border:1px solid var(--edge);font-size:13px;color:var(--muted);background:var(--panel)}
 .chip.on{border-color:var(--orange);color:var(--chalk)}
 .peaks{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
 .peak{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:10px 10px}
@@ -421,7 +421,7 @@ html.desk .rd-map{width:150px;height:104px}html.desk .rd-spd b{font-size:52px}
 .saltcls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}.saltcls>div{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:8px 10px;min-width:0}
 .saltcls span{display:block;font-size:12px;letter-spacing:.06em;text-transform:none;color:var(--muted)}.saltcls b{display:block;font-family:var(--display);font-size:22px;color:var(--chalk);font-variant-numeric:tabular-nums;white-space:nowrap}
 .saltcls small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph-bar .zone{position:absolute;top:0;bottom:0;background:rgba(232,193,74,.22);border-left:1px solid var(--warn);border-right:1px solid var(--warn)}
-.rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}.rtop.saltrec div.wait{opacity:.6}
+.rtop.saltrec div{grid-template-columns:14px 58px 72px minmax(0,1fr) auto}.rtop.saltrec div.wait{opacity:.82}
 .pfield{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .pfield b{color:var(--orange2);font-weight:500}.pfield .me{color:var(--chalk);font-weight:600}.pfield .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* pulling extras: series standings, the pull-off banner, the runaway warning and the kill switch */
@@ -591,7 +591,7 @@ div.up.crew.away{opacity:.82;border-style:dashed}
 .crew .cwho{display:flex;align-items:center;gap:10px;min-width:0}
 .crew .cwho>div{flex:1;min-width:0}
 .crew .cav{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.04em;color:var(--cc);background:color-mix(in srgb,var(--cc) 16%,transparent);box-shadow:inset 0 0 0 2px var(--cc)}
-.crew .cav.off{opacity:.6;box-shadow:inset 0 0 0 2px var(--rule)}
+.crew .cav.off{opacity:.8;box-shadow:inset 0 0 0 2px var(--rule)}
 .crew .csub{margin:1px 0 0;font-size:12px;color:var(--muted)}
 .crew .clv{font-family:var(--display);font-size:15px;color:var(--orange2);white-space:nowrap}
 .crew .cbar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden}
@@ -1502,7 +1502,7 @@ div.up p.uneed{margin-top:1px;font-size:12px}div.up p.uneed b{color:var(--warn)}
 #presetAcc .pbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:0;margin:0 0 6px}
 #pAvail{margin:0;flex:0 0 auto;flex-wrap:nowrap}
 #pAvail[hidden]{display:none}
-#pAvail .chip{min-height:40px;margin:0}
+#pAvail .chip{min-height:44px;margin:0}
 #presetAcc .pbar .cnt{flex:1 1 120px;min-width:0}
 .pmore{margin:0 0 8px}
 .pmore>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -1827,7 +1827,7 @@ html:not(.desk) #evSlot .e24ev{display:none}
 #sbMore:empty{display:none}
 .sthead{display:flex;align-items:center;gap:8px;margin-top:-4px}
 .sthead .hint{flex:1 1 auto;min-width:0;margin:0}
-.sthead .chip{flex:0 0 auto;min-height:40px}
+.sthead .chip{flex:0 0 auto;min-height:44px}
 .ddhint{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;margin-top:-4px}
 .ddhint details.more{flex:0 0 auto}.ddhint details.more[open]{flex:1 0 100%}
 .sthead .chip{padding:0 14px}
@@ -1968,7 +1968,7 @@ html.desk[data-tab=events]:not(.evin) #tabs{z-index:12}
 .evs i{display:block;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .evs b{display:block;font-family:var(--display);font-size:14px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
 /* locked: dimmed, with the reason over the banner */
-.evc.lock .evb,.evc.lock .evx{filter:grayscale(.75);opacity:.5}
+.evc.lock .evb,.evc.lock .evx{filter:grayscale(.75);opacity:.72}
 .evlk{position:absolute;left:50%;top:calc(100% / 8);transform:translate(-50%,0);display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 24px);padding:6px 12px;border-radius:99px;background:rgba(20,20,19,.88);border:1px solid var(--steel);color:#faf9f5;font-size:13px}
 .evlk svg{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .evlk b{font-family:var(--display);font-weight:600;letter-spacing:.03em}
@@ -14657,6 +14657,8 @@ var run = { on:false, rpm:0, load:0, fail:false, redline:7000, smooth:70, first:
 /* mount dynamics state: roll about the crank axis is a real spring-damper so blips rock and settle */
 var mnt = { roll:0, rollV:0, lope:0, lopeT:0, nz:[0,0,0,0], buzz:[0,0,0] };
 var particles=[];
+/* CALM: the phone or computer asks for reduced motion, so no camera shake in the garage or at any event. */
+var CALM = false; try{ CALM = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){}
 var camState = { theta:0.72, phi:1.06, r:15, target:new THREE.Vector3(0,7.6,0),
                  auto:true, autoForce:null, idle:0, dragging:false, shake:0 };
 var engineBounds = new THREE.Box3();
@@ -19396,7 +19398,7 @@ function tick(dt, t){
   }
   if(camState.auto) camState.theta += dt*0.13;
 
-  var sh=camState.shake, rr=camRoomR();
+  var sh=CALM?0:camState.shake, rr=camRoomR();
   camera.position.set(
     camState.target.x + rr*Math.sin(camState.phi)*Math.sin(camState.theta),
     camState.target.y + rr*Math.cos(camState.phi),
@@ -22368,7 +22370,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.100.0";
+const VERSION="1.76.101.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

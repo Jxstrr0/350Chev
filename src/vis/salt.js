@@ -311,7 +311,7 @@ function saltDirect(o, dt, V){
   SALT.snap=false;
   SALT.camPos.copy(_sw); if(rel||lens) SALT.camTgt.copy(_st); else SALT.camTgt.lerp(_st, 1-Math.exp(-9*dt));
   if(SALT.camPos.y<0.25) SALT.camPos.y=0.25;
-  SALT.shake*=Math.exp(-dt*4); var sh=SALT.shake; if(sh>0.002){ SALT.camPos.y+=(Math.random()-0.5)*sh*0.25; SALT.camPos.z+=(Math.random()-0.5)*sh*0.25; }
+  SALT.shake*=Math.exp(-dt*4); var sh=CALM?0:SALT.shake; if(sh>0.002){ SALT.camPos.y+=(Math.random()-0.5)*sh*0.25; SALT.camPos.z+=(Math.random()-0.5)*sh*0.25; }
   /* buffeting at speed: a low, uneven shudder (not white noise) and a touch of roll */
   SALT.buffet=(SALT.buffet||0)+(buf-(SALT.buffet||0))*(1-Math.exp(-3*dt)); var bf=SALT.buffet, tt=SALT.t;
   if(bf>0.002){ var by=Math.sin(tt*13.1)+0.6*Math.sin(tt*29.7+1.3)+0.35*Math.sin(tt*53.3+0.4), bz=Math.sin(tt*11.3+2.1)+0.5*Math.sin(tt*31.9+0.7);

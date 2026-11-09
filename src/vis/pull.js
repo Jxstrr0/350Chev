@@ -704,7 +704,7 @@ function pullDirect(o, dt, V){
   /* the look point is eased so world-fixed shots pan smoothly after the vehicle */
   PULL.camPos.copy(_pw); if(rel) PULL.camTgt.copy(_pt); else PULL.camTgt.lerp(_pt, 1-Math.exp(-8*dt));
   var ease=1-smoothstep(0,0.15,PULL.cutT); if(ease>0) PULL.camPos.addScaledVector(_pD.subVectors(PULL.camPos,PULL.camTgt), 0.06*ease);
-  PULL.shake*=Math.exp(-dt*3.5); var sh=PULL.shake; if(sh>0.002){ PULL.camPos.x+=(Math.random()-0.5)*sh*0.2; PULL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
+  PULL.shake*=Math.exp(-dt*3.5); var sh=CALM?0:PULL.shake; if(sh>0.002){ PULL.camPos.x+=(Math.random()-0.5)*sh*0.2; PULL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
   var cam=PULL.cam; cam.position.copy(PULL.camPos); cam.lookAt(PULL.camTgt); cam.fov=PULL.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function pullComposer(){
