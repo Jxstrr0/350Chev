@@ -18,6 +18,6 @@ function evWarmFrame(t){const night=!!S.night,color=carPaint();
   if(t==="oval")return["oval",{track:SIM.ovalTrack(ovalTk()),cars:[{s:0,v:0,color,me:true,num:1}],pre:true,cam:"auto",night}];
   return null;}
 function evWarmNow(){
-  if(testing||curTab!=="events"||document.hidden||typeof ENGINE_VIS==="undefined"||!ENGINE_VIS.warm)return;
+  if(testing||curTab!=="events"||evhubOn()||document.hidden||typeof ENGINE_VIS==="undefined"||!ENGINE_VIS.warm)return;
   let w=null;try{w=evWarmFrame(S.env.testType);}catch(e){return;}
   if(w)try{ENGINE_VIS.warm(w[0],w[1]);}catch(e){}}
