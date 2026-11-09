@@ -34,9 +34,10 @@ const PC_PULL_RIGS={gas:["'79 Ford F-250 4x4","'84 Chevy K20","'76 Dodge Ramchar
   truck:["'98 Dodge Ram 2500","'03 Ford F-250 Power Stroke","'95 Chevy K2500","'01 Duramax crew cab","'88 Dodge W250","'99 Ford F-350","'92 Chevy K3500","'06 Ram 3500 Mega Cab"],
   tractor:["Farmall 1206","John Deere 4430","Case IH 1370","Oliver 1855","Allis-Chalmers 220","Massey Ferguson 1155","International 1066","Minneapolis-Moline G1000"]};
 const PC_PULL_SLOTS=8,PC_PULL_PO=1.15,PC_PULL_HAZ=0.25;
-/* the hook, with a driver of this skill: the stock auto driver's foot and kill switch, with a sloppy pedal that grows as the
-   skill falls and a hand that is slower to the switch */
-function pcPullPass(res,veh,sk){const p=SIM.pullRun(res,veh),d=SIM.pullDriver(veh.seed),w=rnRng((veh.seed^0x51AB)>>>0),sl=1-sk;let n=0,nz=0;
+/* the hook, with a driver of this skill: the auto driver at its human floor (SIM.pullDriver skill 0: a low aim in the band,
+   a 0.6-1.0 s hand) for foot and kill switch, with a sloppy pedal that grows as the skill falls and a hand that is slower
+   to the switch */
+function pcPullPass(res,veh,sk){const p=SIM.pullRun(res,veh),d=SIM.pullDriver(veh.seed,0),w=rnRng((veh.seed^0x51AB)>>>0),sl=1-sk;let n=0,nz=0;
   while(!p.st.done){const st=p.st;if(st.phase!=="stage"&&n++%15===0)nz=rnGauss(w)*sl*0.26;
     if(d.kill(st)&&st.raT>=(d.react()||0)+sl*0.35)p.kill();
     const f=d.foot(st);p.step(0.02,st.phase==="stage"||f<=0?f:Math.max(0.3,Math.min(1,f+nz)));}
