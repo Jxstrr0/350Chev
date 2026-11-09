@@ -1,0 +1,52 @@
+/* Events landing (app/evhub.js): the full-screen venue programme (#evHub), one card per event, and the event page's header bar (#evHead) with its Back button.
+   html.evin is on while an event is entered; the landing shows on the Events tab without it. The chip row (#evPick) stays in the page, hidden. */
+#evPick{display:none}
+/* the event page: a header bar with Back */
+#evHead{display:none}
+html.evin #evHead{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+#tab-events.pcw #evHead{display:none}
+#evBack{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 14px 0 8px;font-family:var(--display);font-weight:600;letter-spacing:.04em}
+#evBack svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#tab-events.evbusy #evBack{opacity:.4;pointer-events:none}   /* no leaving mid-run */
+#evHead .evht{min-width:0;flex:1 1 auto}
+#evHead .evht b{display:block;font-family:var(--display);font-size:19px;font-weight:700;line-height:1.15;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#evHead .evht small{display:block;font-size:12px;line-height:1.3;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the landing: over the whole app (below the tab bar), the page behind it hidden from taps and readers */
+#evHub{display:none;position:absolute;inset:0;z-index:11;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:var(--soot);padding:max(18px,env(safe-area-inset-top)) 16px calc(var(--tabh) + 28px)}
+html[data-tab=events]:not(.evin) #evHub{display:block}
+#app:has(#tab-events.pcw) #evHub{display:none!important}
+html[data-tab=events]:not(.evin) #tab-events:not(.pcw){visibility:hidden}
+html.desk #evHub{padding-top:68px;padding-left:28px;padding-right:28px}
+html.desk[data-tab=events]:not(.evin) #tabs{z-index:12}
+.evh-in{max-width:1180px;margin:0 auto}
+.evh-hd{margin:0 0 16px;padding-bottom:12px;border-bottom:2px solid var(--orange)}
+.evh-hd small{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange2)}
+.evh-hd h2{margin:2px 0 0;font-size:34px;line-height:1.05;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.evh-hd p{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.evgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:14px}
+/* a card: banner, then the programme lines */
+.evc{position:relative;display:flex;flex-direction:column;text-align:left;padding:0;overflow:hidden;background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.22);color:var(--chalk);transition:transform .12s ease,border-color .2s}
+.evc:hover{border-color:var(--orange)}
+.evc:active{transform:scale(.985)}
+.evb{position:relative;display:block;aspect-ratio:3/1;overflow:hidden;color:#faf9f5;background:repeating-linear-gradient(115deg,rgba(255,255,255,.045) 0 2px,transparent 2px 16px),linear-gradient(135deg,hsl(var(--h) 38% 30%),hsl(var(--h) 32% 11%))}
+.evb::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,rgba(20,20,19,.55),rgba(20,20,19,0));pointer-events:none}
+.evb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.8) brightness(.85)}
+.evi{position:absolute;right:14px;top:50%;width:min(44%,120px);height:auto;aspect-ratio:1;transform:translateY(-50%);fill:none;stroke:currentColor;stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;opacity:.3}
+.evno{position:absolute;left:12px;top:9px;z-index:1;font-family:var(--mono);font-style:normal;font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.evon{position:absolute;right:10px;top:8px;z-index:1;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--orange);color:var(--orange-ink)}
+.evx{display:flex;flex-direction:column;gap:2px;padding:10px 14px 14px}
+.evn{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.15;letter-spacing:.02em;text-transform:uppercase}
+.evv{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--orange2)}
+.evd{margin-top:2px;font-size:14px;line-height:1.35;color:var(--muted)}
+.evs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule)}
+.evs>span{min-width:0}
+.evs i{display:block;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.evs b{display:block;font-family:var(--display);font-size:14px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+/* locked: dimmed, with the reason over the banner */
+.evc.lock .evb,.evc.lock .evx{filter:grayscale(.75);opacity:.5}
+.evlk{position:absolute;left:50%;top:calc(100% / 8);transform:translate(-50%,0);display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 24px);padding:6px 12px;border-radius:99px;background:rgba(20,20,19,.88);border:1px solid var(--steel);color:#faf9f5;font-size:13px}
+.evlk svg{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.evlk b{font-family:var(--display);font-weight:600;letter-spacing:.03em}
+.evc.live{border-color:var(--orange)}
+@media (max-width:380px){.evs{grid-template-columns:1fr 1fr}.evs>span:last-child{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){.evc{transition:none}}

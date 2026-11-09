@@ -160,7 +160,7 @@ function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"t
   busy("evBusy",!ev,`A <b>${(EV_NAME[t]||"dyno").toLowerCase()}</b> ${testing?"is running":"is set up"} in Test. <button class="chip" data-gotab="test">Open Test</button>`);}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-gotab]");if(!b)return;showTab(b.dataset.gotab);});
 /* a brief judged on the road, the strip or the salt: straight to that event (in the buyer's car and circuit for the road) */
-function evGo(t,patch){if(testing){toast("Let the run finish first");return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
+function evGo(t,patch){if(testing){toast("Let the run finish first");return;}Object.assign(S.env,patch||{});evApply(t);S.evPick=evCur();evhubSet(evCur());evhubPush();if(climateCtl())recompute();save();showTab("events");$("panel").scrollTop=0;}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-evgo]");if(!b)return;const t=b.dataset.evgo,p={};if(t==="road"){if(b.dataset.ch)p.roadCh=b.dataset.ch;if(b.dataset.trk)p.roadTrk=b.dataset.trk;}evGo(t,p);});
 /* the picker cards: icon, name and one line of where you stand */
 const BR_REP=5;   // bracket night: rep to enter in career
@@ -199,7 +199,8 @@ function evBlock(t){if(!career()||!trackEvt(t))return"";
 function evPickRender(){const box=$("evPick");if(!box)return;const cur=evCur();
   const h=EV_T.map(t=>{const st=evStatus(t),on=t===cur;return `<button data-t="${t}" role="radio" aria-checked="${on}" class="${on?"on":""}${st.k?" "+st.k:""}" title="${EV_NAME[t]}${st.s?" · "+st.s:""}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><b>${EV_NAME[t]}</b><small>${st.s||"&nbsp;"}</small></button>`;}).join("");
   if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h;}
-  const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));}
+  const dot=$("evDot");if(dot)dot.classList.toggle("on",curTab!=="events"&&!!(rnLive()||ER||PO||boatLive()));
+  evhubRender();}
 /* Advanced: the settings a racer rarely touches fold away under the essentials (open state per test in S.advOpen) */
 /* ADV: what folds away under an event's essentials. e = sliders, k = [data-attr, key] segs (label + seg + its note), x = extra selectors,
    m = selectors for more groups the Events tab moves out of Setup (a .seg's label and note, or the suspension grid with its read-out),
