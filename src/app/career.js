@@ -105,7 +105,10 @@ function spSign(id){const s=spS();const o=s.offers.find(x=>x.id==id);if(!o||s.ac
   const a=Object.assign({},o,{w0:C().week,end:C().week+o.weeks,earned:0,obl:o.obl.map(q=>({k:q.k,n:q.n,have:0}))});delete a.exp;delete a.why;
   s.active.push(a);s.offers=s.offers.filter(x=>x!==o);s.hist.signed++;s.hist.max=Math.max(s.hist.max,s.active.length);if(!spPrimary()||s.active.length===1)s.primary=a.b;
   logEvent(`Signed with ${spBrand(a.b).name} for ${a.weeks} weeks${a.ret?" — "+fmt$(a.ret)+"/week":""}`,"good");spLivery();achCheck({type:"sponsor"});return true;}
-const spLogoUrl=(()=>{const m={};return b=>m[b.id]||(m[b.id]=ENGINE_VIS.logoCanvas(b,512,192).toDataURL());})();
+let spLogoMemo={};
+const spLogoUrl=b=>spLogoMemo[b.id]||(spLogoMemo[b.id]=ENGINE_VIS.logoCanvas(b,512,192).toDataURL());
+/* the emblems arrive after the first draw (src/vis/strip-cars.js): forget the old pictures and redraw the sponsor cards */
+window.spLogosChanged=()=>{spLogoMemo={};try{if(career())spRender();}catch(e){}};
 /* Team tab sections: Team | Sponsors & Rivals | Log. S.mkTab remembers the open one; an old save (jobs, shop) opens Team. */
 const MK_TABS=["team","spons","log"];
 function mkTabNow(){const t=S.mkTab;return MK_TABS.includes(t)?t:"team";}
