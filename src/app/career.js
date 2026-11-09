@@ -43,7 +43,7 @@ const SP_OBL={oil:["nights","pulls"],parts:["rounds"],feed:["pulls"],tyre:["nigh
 const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
   rounds:n=>`Supply your team for at least ${n} round${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
 const SP_SLOT_REP=[0,120,300];
-const SP_EVT={hill:"Pikes Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",team:"your team's results",oval:"the oval",road:"the track day"};
+const SP_EVT={hill:"Cloudsplitter Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",team:"your team's results",oval:"the oval",road:"the track day"};
 /* an obligation the shop can actually meet: a brand never asks for race nights before the Outlaw shop opens the strip, pulls before
    a pull class is open, or salt runs before the salt is open — the same gates the rivals use (rivEvOpen). rounds/nodiesel always fit */
 function spOblOpen(k){try{if(k==="nights")return evStatus("drag").k!=="lock";if(k==="pulls")return Object.keys(SIM.PULL_CLASSES).some(c=>!pullClsLocked(c));if(k==="salt")return evStatus("salt").k!=="lock";}catch(e){return false;}return true;}
@@ -274,7 +274,7 @@ GOALS.push(
   {id:"top",name:"Top of the board",desc:"Hold more reputation than all three rival shops (from 60 rep up).",cash:8000,check:c=>c.rep>=60&&rivTop(c)});
 /* late game (round 9): long targets for a rich shop. Wins per discipline are a lazily-filled counter, C().dw (old saves start at zero and fill as they race);
    rivals beaten one by one live in C().riv.hist.beat. Cash is small next to a late team's pay, and the rep rungs pay cash only. */
-const DW_KINDS=[["drag","drag or race night"],["pull","truck pull"],["bog","mud bog"],["hill","Pikes Peak"],["oval","dirt oval"],["boat","boat drags"],["endurance","24 Hours"],["salt","Bonneville record"]];
+const DW_KINDS=[["drag","drag or race night"],["pull","truck pull"],["bog","mud bog"],["hill","Cloudsplitter Peak"],["oval","dirt oval"],["boat","boat drags"],["endurance","24 Hours"],["salt","Bitterwater record"]];
 function dwinCount(kind,o){if(!o||!(o.win||(kind==="salt"&&o.record)))return;const k=kind==="night"?"drag":kind;if(!DW_KINDS.some(d=>d[0]===k))return;const c=C();if(!c.dw||typeof c.dw!=="object")c.dw={};c.dw[k]=(c.dw[k]||0)+1;}
 const dwN=c=>DW_KINDS.filter(d=>c.dw&&c.dw[d[0]]>0).length;
 const rivBeaten=c=>RIVALS.filter(v=>c.riv&&c.riv.hist&&c.riv.hist.beat&&c.riv.hist.beat[v.id]>0).length;
@@ -286,7 +286,7 @@ GOALS.push(
   {id:"rep1000",late:1,name:"Household name",desc:"Reach 1,000 reputation.",cash:60000,rep:0,check:c=>c.rep>=1000,prog:lateProg(c=>c.rep,1000)},
   {id:"rep1500",late:1,name:"Legend",desc:"Reach 1,500 reputation, the Legend tier.",cash:100000,rep:0,check:c=>c.rep>=1500,prog:lateProg(c=>c.rep,1500)},
   {id:"rep3000",late:1,name:"Dynasty",desc:"Reach 3,000 reputation, the Dynasty tier, where the alcohol cars and unlimited pullers come knocking.",cash:150000,rep:0,check:c=>c.rep>=3000,prog:lateProg(c=>c.rep,3000)},
-  {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Pikes Peak, dirt oval, boat drags and the 24 Hours, and set a Bonneville record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
+  {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Cloudsplitter Peak, dirt oval, boat drags and the 24 Hours, and set a Bitterwater record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
   {id:"hp2000",late:1,name:"Two thousand",desc:"Certify a 2,000 hp engine.",cash:80000,rep:30,check:c=>c.bestHp>=2000,prog:lateProg(c=>c.bestHp||0,2000)},
   {id:"titles5",late:1,name:"Dynasty builder",desc:"Win five team championships.",cash:70000,rep:25,check:c=>pcN(c,"titles")>=5,prog:lateProg(c=>pcN(c,"titles"),5)},
   {id:"nitro",late:1,name:"Nitro money",desc:"Supply a funny car or a top dragster team for a season.",cash:40000,rep:15,check:c=>pcN(c,"nitro")>=1},

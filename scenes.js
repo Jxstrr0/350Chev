@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.106.0*/
+/*pew-scenes 1.76.107.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -6738,7 +6738,7 @@ function roadUpdate(o, dt){
 }
 
 /* ===========================================================================
-   SALT FLATS SCENE — Bonneville land-speed runs, a fourth world the view cuts
+   SALT FLATS SCENE — Bitterwater land-speed runs, a fourth world the view cuts
    to while ENGINE_VIS.setSalt({on:true, ...}) is fed every frame.
    Units metres. x = distance down the course from the start line (the timed
    mile sits a mile or three out), y up, z across: pits and timing stands on
@@ -7160,7 +7160,7 @@ function saltUpdate(o, dt){
 }
 
 /* ===========================================================================
-   SALT CARS (v2) — the Bonneville cars, built like the real ones.
+   SALT CARS (v2) — the Bitterwater cars, built like the real ones.
    Streamliner: flat sides, flat bottom, wheels behind skirts, a chisel or
    needle nose, canopy, headrest fairing, tail fin, chute tubes.
    Lakester: a belly tank on a narrow track, Moon discs on tall skinny tyres.
@@ -7245,7 +7245,7 @@ function slAtlas(L){
   x.font="700 74px "+F; x.fillText(L.cls||"—", R[0]+R[2]/2+16, R[1]+R[3]/2+5, R[2]-60);
   /* tech sticker and a meet sticker */
   R=A.tech; x.fillStyle="#e8b21b"; x.beginPath(); x.arc(R[0]+R[2]/2, R[1]+R[3]/2, 46, 0, TAU); x.fill(); x.fillStyle="#141414"; x.font="700 26px "+F; x.fillText("TECH", R[0]+R[2]/2, R[1]+R[3]/2-10); x.font="700 22px "+F; x.fillText("✓ OK", R[0]+R[2]/2, R[1]+R[3]/2+16);
-  R=A.club; x.fillStyle="#1d3f8f"; spRRect(x, R[0]+6, R[1]+10, R[2]-12, R[3]-20, 10); x.fill(); x.fillStyle="#f4efe2"; x.font="italic 700 34px "+F; x.fillText("SPEED WEEK", R[0]+R[2]/2, R[1]+R[3]/2-6, R[2]-24); x.font="600 18px "+F; x.fillText("BONNEVILLE · SALT FLATS", R[0]+R[2]/2, R[1]+R[3]/2+22, R[2]-24);
+  R=A.club; x.fillStyle="#1d3f8f"; spRRect(x, R[0]+6, R[1]+10, R[2]-12, R[3]-20, 10); x.fill(); x.fillStyle="#f4efe2"; x.font="italic 700 34px "+F; x.fillText("SPEED WEEK", R[0]+R[2]/2, R[1]+R[3]/2-6, R[2]-24); x.font="600 18px "+F; x.fillText("BITTERWATER · SALT FLATS", R[0]+R[2]/2, R[1]+R[3]/2+22, R[2]-24);
   /* sponsor blocks */
   for(i=0;i<A.sp.length;i++){ R=A.sp[i]; slSponsor(x, SL_SPONSORS[L.sponsors[i%L.sponsors.length]], R[0], R[1], R[2], R[3]); }
   /* the rail: a row of small sponsor blocks */
@@ -8281,7 +8281,7 @@ function saltEventUpdate(o, dt, V, ph){
   if(SALT.town && SALT.cam) for(var i=0;i<SALT.town.length;i++){ var T=SALT.town[i], on=SALT.camPos.distanceTo(T.c)<3200; if(T.on!==on){ T.on=on; T.ms.forEach(function(m){ m.visible=on; }); } }
 }
 /* ===========================================================================
-   PIKES PEAK SCENE — the hillclimb, a world the view cuts to while
+   CLOUDSPLITTER PEAK SCENE — the hillclimb, a world the view cuts to while
    ENGINE_VIS.setHill({on:true, course, s, v, d, ...}) is fed every frame.
    Units metres. The course comes from ENGINE_SIM.hillCourse (x, y, heading,
    curvature, altitude per 2.5 m sample); world x = course x − ox, world z =
@@ -8351,7 +8351,7 @@ function hillTerrainFn(W){
 }
 function hillTerrColor(alt, slope, n, out){   /* forest floor → alpine tundra → bare granite, by altitude and steepness */
   var tl=smoothstep(3460,3640,alt+n*90), hi=smoothstep(3950,4250,alt+n*60), st=smoothstep(0.55,1.1,slope);
-  var r=lerp(0.17,0.30,tl), g=lerp(0.22,0.26,tl), b=lerp(0.11,0.17,tl);   /* pine duff and grass → tundra and Pikes Peak granite, pinkish grey */
+  var r=lerp(0.17,0.30,tl), g=lerp(0.22,0.26,tl), b=lerp(0.11,0.17,tl);   /* pine duff and grass → tundra and Cloudsplitter Peak granite, pinkish grey */
   r=lerp(r,0.36,hi); g=lerp(g,0.30,hi); b=lerp(b,0.27,hi);
   r=lerp(r,0.38,st*0.7); g=lerp(g,0.31,st*0.7); b=lerp(b,0.28,st*0.7);
   var k=0.86+0.28*n; return out.setRGB(r*k,g*k,b*k).convertSRGBToLinear(); }
@@ -8589,7 +8589,7 @@ function hillUpdate(o, dt){
   var c=_hA.copy(car.position); W.sun.position.copy(c).addScaledVector(W.sunDir, 200); W.sun.target.position.copy(c); W.sun.target.updateMatrixWorld();
 }
 /* ===========================================================================
-   PIKES PEAK, LITE AND ULTRA: CULLING AND LOD
+   CLOUDSPLITTER PEAK, LITE AND ULTRA: CULLING AND LOD
    The course is 20 km of road on an 11 × 7 km mountain, and Full draws it as a
    handful of whole-map meshes (one terrain grid, one road ribbon, one verge
    strip, one instanced forest), so every frame draws and shadows all of it.

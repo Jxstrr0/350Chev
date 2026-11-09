@@ -23,7 +23,7 @@ var MODEL_FILES = {
   handtruck:"models/hand-truck.glb",
   fuelcan:  "models/plastic-jerrycan.glb",
   tyre:     "models/old-tyre.glb",
-  /* Pikes Peak (vis/hill.js, hillModels), made in Blender by tools/blender/hill-props.py */
+  /* Cloudsplitter Peak (vis/hill.js, hillModels), made in Blender by tools/blender/hill-props.py */
   hillSummit: "models/hill-summit.glb",
   hillStart:  "models/hill-start.glb",
   hillMarshal:"models/hill-marshal.glb",

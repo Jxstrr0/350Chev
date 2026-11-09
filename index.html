@@ -9464,7 +9464,7 @@ const ENGINE_SIM = (function () {
   }
 
   /* =====================================================================
-     BONNEVILLE — land-speed runs on the salt.
+     BITTERWATER — land-speed runs on the salt.
      A push truck rolls the car to ~27 mph, then the driver has a run-up (one mile on the
      short course, two on the long) to the timed mile, then shuts off and pulls the chute.
      The run is straight-line physics at the event's air: the engine curve comes from
@@ -9477,7 +9477,7 @@ const ENGINE_SIM = (function () {
        lift   = ½ ρ ClA v², mostly over the front: past half the front's static load the
                 car wanders, near none of it the car is flying — the driver has to lift
        roll   = Crr (salt, rising with speed) × weight
-     A minute or more at full load is what Bonneville asks of an engine: coolant heat
+     A minute or more at full load is what Bitterwater asks of an engine: coolant heat
      builds against a radiator (or soaks into an ice tank), the exhaust heat-soaks, and
      every second near the redline is a small chance for the build's weakest part to let
      go — larger the closer the sim's own tests put that part to its limit.
@@ -9522,7 +9522,7 @@ const ENGINE_SIM = (function () {
   }
   function lsrRng(seed) { let a = (seed >>> 0) || 1; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   function lsrHash(s) { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
-  /* the engine curve at the salt: simulate() again in Bonneville's thin, hot air (plus what a pass needs from dragPrep) */
+  /* the engine curve at the salt: simulate() again in Bitterwater's thin, hot air (plus what a pass needs from dragPrep) */
   function lsrPrep(cfg, env) {
     const e = Object.assign({}, DEFAULT_ENV, env || {}, SALT_ENV, { testType: "pull" });
     const res = dragPrep(cfg, e);
@@ -10178,9 +10178,9 @@ const ENGINE_SIM = (function () {
     return Object.assign({}, A, { n: rep.V.n, mass: Math.round(rep.mass - rep.ekg), cdA: +(rep.cd * rep.area).toFixed(3), clA: rep.V.cd > 0.6 ? 0.5 : A.clA, rear: +(1 - rep.front).toFixed(3), wb: rep.V.wb, cgH: rep.car.cgH, tyreDia: rep.V.tyre, kRad: +(rep.radKw / 45).toFixed(3), swap: rep.v });
   }
   /* =====================================================================
-     Hillclimbs. Pikes Peak: 19.99 km, 156 turns, 2,862 m at the line to 4,302 m on the summit. Since the team
+     Hillclimbs. Cloudsplitter Peak: 19.99 km, 156 turns, 2,862 m at the line to 4,302 m on the summit. Since the team
      hill climb series, four shorter and lower made-up hills built from the same kit (HILL_HILLS: Badlands Grade,
-     Kettle Butte, Ghost Ridge, Thunder Pass). Every call takes a hill id and defaults to Pikes Peak, so the Pikes
+     Kettle Butte, Ghost Ridge, Thunder Pass). Every call takes a hill id and defaults to Cloudsplitter Peak, so the Cloudsplitter
      event is the same as before. A course is a fixed sequence of straights and constant-radius corners, laid out
      section by section (the corner count, length and climb of each are set; radii, angles and straights come
      from the hill's fixed seed), with an elevation profile per section. The engine is run through
@@ -10208,11 +10208,11 @@ const ENGINE_SIM = (function () {
     { id: "boulder", n: "Boulder Park", km: 2.0, alt: 4235, cor: 18, mix: "tech", bear: 4.3, drop: 0.45, names: [[9, "Boulder Park"]] },
     { id: "summit", n: "Summit", km: 1.59, alt: 4302, cor: 14, mix: "summit", bear: 5.2, drop: 0.5, names: [[3, "Olympic"], [13, "Summit"]] }
   ];
-  /* the hills: Pikes Peak (the event, and the team series' finale) and four made-up climbs for the team series' rounds 1–7,
+  /* the hills: Cloudsplitter Peak (the event, and the team series' finale) and four made-up climbs for the team series' rounds 1–7,
      shorter and lower, built from the same section kit. alt0 the start altitude, tree the treeline (dustier calls above it),
      seed the layout's, secs the sections (as HILL_SECTIONS), edge the named corners that are a sure drop with no guardrail */
   const HILL_HILLS = {
-    pikes: { n: "Pikes Peak", d: "the big one: nearly 20 km into thin air", alt0: HILL_ALT0, tree: HILL_TREE, seed: HILL_SEED, secs: HILL_SECTIONS, edge: ["Bottomless Pit"] },
+    pikes: { n: "Cloudsplitter Peak", d: "the big one: nearly 20 km into thin air", alt0: HILL_ALT0, tree: HILL_TREE, seed: HILL_SEED, secs: HILL_SECTIONS, edge: ["Bottomless Pit"] },
     badlands: { n: "Badlands Grade", d: "up out of a prairie coulee: short, fast and dusty", alt0: 690, tree: 600, seed: 3107, edge: [], secs: [
       { id: "coulee", n: "Coulee Floor", km: 1.5, alt: 735, cor: 8, mix: "fast", bear: 0.3, drop: 0.05, names: [[3, "Dry Creek Bend"]] },
       { id: "hoodoo", n: "The Hoodoos", km: 1.6, alt: 830, cor: 12, mix: "mixed", bear: 1.0, drop: 0.15, names: [[5, "The Hoodoos"]] },
@@ -10245,17 +10245,17 @@ const ENGINE_SIM = (function () {
   const HILL_CLASSES = {
     open: { n: "Open", d: "street car · street or sport tyres · no aero", tier: 1, rep: 0, tyres: ["street", "sport"], aero: ["none"], massK: 1, field: { hp: 260, sd: 70, turbo: 0.35, skill: 0.55 } },
     ta: { n: "Time Attack", d: "production car · semi-slicks · a wing", tier: 2, rep: 25, tyres: ["sport", "semi"], aero: ["none", "wing"], massK: 1, field: { hp: 420, sd: 90, turbo: 0.6, skill: 0.65 } },
-    ppo: { n: "Pikes Peak Open", d: "modified · slicks · splitter and wing", tier: 3, rep: 70, tyres: ["semi", "slick"], aero: ["none", "wing", "full"], massK: 0.93, field: { hp: 600, sd: 110, turbo: 0.75, skill: 0.75 } },
+    ppo: { n: "Cloudsplitter Peak Open", d: "modified · slicks · splitter and wing", tier: 3, rep: 70, tyres: ["semi", "slick"], aero: ["none", "wing", "full"], massK: 0.93, field: { hp: 600, sd: 110, turbo: 0.75, skill: 0.75 } },
     unl: { n: "Unlimited", d: "anything goes · big aero", tier: 4, rep: 160, tyres: ["slick"], aero: ["full", "unl"], massK: 0.78, field: { hp: 880, sd: 160, turbo: 0.85, skill: 0.85 } }
   };
   // pressure ratio a compressor wheel can make before it runs out of tip speed (a compound pair multiplies two)
   const HILL_PR = { small: 2.7, medium: 3.0, large: 3.3, s66: 4.4, huge: 3.6, f88: 3.9, f98: 4.1 };
   const HILL_ALTS = [2862, 3222, 3582, 3942, 4302];
-  /* the five altitudes a hill's engine is run at, line to finish (Pikes: HILL_ALTS) */
+  /* the five altitudes a hill's engine is run at, line to finish (Cloudsplitter: HILL_ALTS) */
   const hillAlts = id => { if (hillId(id) === "pikes") return HILL_ALTS; const H = hillDef(id), a1 = H.secs[H.secs.length - 1].alt; return [0, 1, 2, 3, 4].map(i => Math.round(H.alt0 + (a1 - H.alt0) * i / 4)); };
   const HILL_CALL = { dusty: -0.04, clean: 0, grippy: 0.035 };
   const hillWrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
-  const hillAmbC = alt => 16 - 6.5 * (alt - HILL_ALT0) / 1000;   // a July morning: 16 °C at Pikes' line, about 7 °C on top; one air for every hill (a team round shifts it by its weather: wx.dT)
+  const hillAmbC = alt => 16 - 6.5 * (alt - HILL_ALT0) / 1000;   // a July morning: 16 °C at Cloudsplitter's line, about 7 °C on top; one air for every hill (a team round shifts it by its weather: wx.dT)
 
   /* one corner from a section's mix: [radius m, angle deg, hairpin?] */
   function hillMix(mix, r) {
@@ -10271,7 +10271,7 @@ const ENGINE_SIM = (function () {
     return q < 0.3 ? hp() : q < 0.7 ? tight() : med();   // summit
   }
   const HILL_COURSE = {};
-  /* a hill's course (id, default Pikes Peak; built once and kept): samples every 2.5 m with position, heading, curvature (+ left),
+  /* a hill's course (id, default Cloudsplitter Peak; built once and kept): samples every 2.5 m with position, heading, curvature (+ left),
      altitude, grade, section and corner */
   function hillCourse(id) {
     id = hillId(id);
@@ -10349,8 +10349,8 @@ const ENGINE_SIM = (function () {
   }
   const hillZ = (T, s) => { const f = clamp(s / T.ds, 0, T.N - 1.001), i = f | 0; return T.z[i] + (T.z[i + 1] - T.z[i]) * (f - i); };
 
-  /* the engine on the way up: simulate() at each of the hill's five altitudes (Pikes: HILL_ALTS) with the boost and mixture that
-     altitude gets. id: the hill (default Pikes Peak). wx (a team round's weather): {dT: °C off the standard morning, h: humidity %} */
+  /* the engine on the way up: simulate() at each of the hill's five altitudes (Cloudsplitter: HILL_ALTS) with the boost and mixture that
+     altitude gets. id: the hill (default Cloudsplitter Peak). wx (a team round's weather): {dT: °C off the standard morning, h: humidity %} */
   function hillPrep(cfg, env, id, wx) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     const dT = wx && +wx.dT || 0, alts = hillAlts(id);
@@ -10424,7 +10424,7 @@ const ENGINE_SIM = (function () {
   }
 
   /* one run up the hill. opt: {hill?, cls, ch, tyre, aero, finalK, seed, calls?, plan?, ai?}; the hill is opt.hill, else the one
-     the prep was run for, else Pikes Peak. step(dt, ctl): ctl = {c} the commitment for corners not yet turned into (1 = the known
+     the prep was run for, else Cloudsplitter Peak. step(dt, ctl): ctl = {c} the commitment for corners not yet turned into (1 = the known
      limit), or null to drive the plan. */
   function hillNew(prep, opt) {
     const hid = hillId(opt.hill || prep.hill), T = hillCourse(hid), N = T.N, ds = T.ds, car = hillCar(prep, opt), m = car.m, P = prep.pts, nP = P.length;
@@ -20535,7 +20535,7 @@ const ENGINE_VIS = {
     var rdt=o.dt!=null ? +o.dt : (now-ROAD.lastT)/1000; ROAD.lastT=now; roadUpdate(o, clamp(rdt||0, 0, 0.1));
     return ROAD.stats||null;
   },
-  /* PIKES PEAK: fed every frame {on, course (ENGINE_SIM.hillCourse), s, v, d (lateral m), g, rpm, thr, brk, lat, off, dnf, ev, ch, aero, color, cam:"auto"|"chase"|"heli"|"onboard", pre, done, dt}; {on:false} leaves */
+  /* CLOUDSPLITTER PEAK: fed every frame {on, course (ENGINE_SIM.hillCourse), s, v, d (lateral m), g, rpm, thr, brk, lat, off, dnf, ev, ch, aero, color, cam:"auto"|"chase"|"heli"|"onboard", pre, done, dt}; {on:false} leaves */
   setHill: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(HILL.on){ HILL.on=false; if(HILL.W && HILL.W.fx) HILL.W.fx.clear(); } return; }
@@ -20557,7 +20557,7 @@ const ENGINE_VIS = {
   },
   ovalState: function(){ return {on:OVAL.on, built:OVAL.built, shot:OVAL.shot, stats:OVAL.stats, cars:OVAL.list.length, cam:OVAL.cam?OVAL.cam.position.toArray().map(function(v){ return Math.round(v); }):null}; },   /* harness */
   hillState: function(){ return {on:HILL.on, built:!!HILL.W, shot:HILL.shot, stats:HILL.stats, cam:HILL.cam?HILL.cam.position.toArray().map(function(v){ return Math.round(v); }):null}; },   /* harness */
-  /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
+  /* BITTERWATER salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
      failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
   setSalt: function(o){
     if(!renderer) return;
@@ -21142,7 +21142,7 @@ var MODEL_FILES = {
   handtruck:"models/hand-truck.glb",
   fuelcan:  "models/plastic-jerrycan.glb",
   tyre:     "models/old-tyre.glb",
-  /* Pikes Peak (vis/hill.js, hillModels), made in Blender by tools/blender/hill-props.py */
+  /* Cloudsplitter Peak (vis/hill.js, hillModels), made in Blender by tools/blender/hill-props.py */
   hillSummit: "models/hill-summit.glb",
   hillStart:  "models/hill-start.glb",
   hillMarshal:"models/hill-marshal.glb",
@@ -22430,7 +22430,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.106.0";
+const VERSION="1.76.107.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -23291,7 +23291,7 @@ function evSync(tab){if(testing)return;
   if(tab==="events"){const cur=ev?evCur():S.evPick;t=EV_T.includes(cur)&&evStatus(cur).k!=="lock"?cur:(EV_T.find(x=>evStatus(x).k!=="lock")||"drag");if(t===evCur())t=null;}else if(tab==="test"&&ev)t=DYNO_T.includes(S.testPick)?S.testPick:"pull";
   if(!t)return;evApply(t);document.querySelectorAll("#testType button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));if(climateCtl())recompute();save();}
 /* the test core (set-up, chart, results) and the run dock live in whichever tab owns the current test type */
-const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Oval racing",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
+const EV_NAME={drag:"Drag strip",bracket:"Bracket night",pull_sled:"Truck pull",salt:"Salt flats",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Cloudsplitter Peak",oval:"Oval racing",race24:"24 Hours",pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev"};
 function corePlace(){const t=S.env.testType,ev=trackEvt(t),slot=$(ev?"evSlot":"testSlot"),dock=$(ev?"evDock":"testDock"),core=$("testCore"),rd=$("runDock");
   if(core.parentElement!==slot)slot.appendChild(core);if(rd.parentElement!==dock)dock.appendChild(rd);
   const busy=(id,on,txt)=>{const el=$(id);if(el.hidden!==!on)el.hidden=!on;if(on&&el.dataset.k!==txt){el.dataset.k=txt;el.innerHTML=txt;}};
@@ -23486,7 +23486,7 @@ function renderTest(){
   const last=chartRedraw();
   monIdle();
   const blk=testing?"":evBlock(S.env.testType);$("runTest").disabled=testing||!!blk;$("runTest").classList.toggle("pri",!blk);const cost=testCost();
-  $("runTest").textContent=testing?"Test in progress":blk?blk:`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Pikes Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
+  $("runTest").textContent=testing?"Test in progress":blk?blk:`${{pull:"Arm dyno · pull",endurance:"Arm cell · endurance",overrev:"Arm cell · over-rev",drag:"Stage the car · drag pass",pull_sled:"Hook to the sled · truck pull",salt:"Roll to the line · salt run",bog:"Roll to the pit · mud bog",boat:"To the line · boat drags",road:"Roll out · road test",hill:"To the line · Cloudsplitter Peak",race24:ER?"Racing":"Take the green · 24 Hours"}[S.env.testType]}${cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":fuelBill()>=50?" fuel":""):""}`;
   $("pinBase").disabled=!last;$("baseChip").style.display=S.base?"":"none";$("baseChip").textContent=S.base?`vs ${S.base.label}`:"";
   const dc=dynoCap();$("dynoHint").innerHTML=S.env.testType==="hill"?hillHint():S.env.testType==="race24"?e24Hint():S.env.testType==="road"?roadHint():S.env.testType==="salt"?saltHint():S.env.testType==="bog"?bogHint():S.env.testType==="boat"?boatHint():S.env.testType==="pull_sled"?pullHint():S.env.testType==="drag"?(career()?`<b>Strip night</b> · $250 entry. Needs a certified engine and the ${(UPGRADES.find(u=>u.id==="race")||{}).name} upgrade. Purse by ET (sub-10 pays $1,500, sub-7 $25,000) plus reputation. Every pass is wear on the build — past its pass budget, parts start letting go.`:`<b>Strip</b> · hold the button in the water box to burn out, tap to stage. With a two-step or trans-brake, hold on the ambers and let go on the green; otherwise tap to launch. Tap SHIFT in manual mode.`):career()
     ? `<b>${dc.n}</b> · reads to ${dc.hp.toLocaleString()} hp and ${dc.rpm.toLocaleString()} rpm. A pull with no failures, inside those limits, certifies the engine for sale.`
@@ -25211,7 +25211,7 @@ const fmtLap=(t,d)=>t==null||!isFinite(t)?"—":`${Math.floor(t/60)}:${(t%60).to
 function roadEnvFix(){const e=S.env;if(!SIM.CHASSIS[e.roadCh])e.roadCh="coupe";if(!SIM.ROAD_TRACKS[e.roadTrk])e.roadTrk="club";if(e.roadTyre!=null&&!SIM.ROAD_TYRES[e.roadTyre])e.roadTyre=null;
   if(!(+e.roadFinal>=0.6&&+e.roadFinal<=1.6))e.roadFinal=1;if(![1,2,4].includes(+e.roadSpd))e.roadSpd=2;if(!ROAD_CAMS.some(c=>c[0]===e.roadCam))e.roadCam="auto";suFix(e);return e;}
 function roadOpt(){const e=roadEnvFix();return swapRoadOpt({ch:e.roadCh,tyre:e.roadTyre||SIM.CHASSIS[e.roadCh].tyre,finalK:+e.roadFinal,dtCap:SIM.dtCapOf(drvId()),dtId:drvId(),setup:suOpt(),wet:wxWet("road")});}   // a chosen swap car (app/swap.js) stands in for the chassis
-/* ---- setup sheet (Road Test + Pikes Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
+/* ---- setup sheet (Road Test + Cloudsplitter Peak share it): roll stiffness, front/rear split, wing, and since 1.76.77.0 brake bias, tyre pressure,
    diff lock and ride height. Saved in S.env (suSt/suSp/suWg/suBb/suPs/suDf/suRh), stock = 50/0/0/0/32/0/0 (SU_F) ---- */
 /* the setup belongs to the engine on the bench, not to its numbers: S.suId names it, S.suMap[id] = the SU_F values in order
    (newest 24 kept; none = stock; an older 3-number entry reads the newer four as stock). Tweaking the build sliders keeps the id; loading
@@ -25270,7 +25270,7 @@ function suEnvHtml(sl,hill){const e=S.env;suFix(e);
     <p class="hint">Springs and bars decide how the weight rolls. Stiffer at one end and that end loses grip first: stiff front pushes, stiff rear comes round — the car corners at the weaker axle's limit. A steeper wing adds downforce and drag${hill?"":" (top speed pays)"}. A locked diff pushes but drives out hard; an open one turns in but spins a wheel. Stock brakes are set safe and a bit forward: a touch rearward stops shorter, too far and the rears lock. A few psi under stock grips more, but a soft tyre rolls heavy and a heavy car wants more air. Low makes downforce until it bottoms on the bumps${hill?"":" (the street circuit is the roughest)"}. Stock is the chassis as designed.</p>`;}
 $("envBox").addEventListener("click",e=>{if(!e.target.closest("[data-su-reset]"))return;suSet(S.env,null);renderEnv();save();buzz(6);});
 /* ---- saved setups: three named slots of the setup sheet above (S.suTunes in the Test cell, C().suTunes in career), shared by the
-   road test and Pikes Peak like the sheet itself. A slot is the SU_F values in order; loading one files it under the engine on the bench. ---- */
+   road test and Cloudsplitter Peak like the sheet itself. A slot is the SU_F values in order; loading one files it under the engine on the bench. ---- */
 const SUT_N=3;let SUTSEL=-1;   // the slot whose actions are open
 function suTunes(){const o=career()?C():S;if(!Array.isArray(o.suTunes))o.suTunes=[];while(o.suTunes.length<SUT_N)o.suTunes.push(null);
   o.suTunes.length=SUT_N;o.suTunes.forEach((t,i)=>{if(t&&!(typeof t.n==="string"&&Array.isArray(t.v)))o.suTunes[i]=null;});return o.suTunes;}
@@ -25292,7 +25292,7 @@ function suTuneAct(i,a){const T=suTunes(),t=T[i];
 $("envBox").addEventListener("click",e=>{const s=e.target.closest("[data-sut]"),a=e.target.closest("[data-sutact]");if(!s&&!a)return;
   if(a){if(SUTSEL>=0)suTuneAct(SUTSEL,a.dataset.sutact);return;}
   const i=+s.dataset.sut;if(!suTunes()[i]){suTuneAct(i,"save");return;}SUTSEL=SUTSEL===i?-1:i;renderEnv();});
-/* ---- setup tip after a run: nudge one slider at a time, re-run the lap (Pikes Peak: the climb, a few a tick in the background),
+/* ---- setup tip after a run: nudge one slider at a time, re-run the lap (Cloudsplitter Peak: the climb, a few a tick in the background),
    and name the single change that gains most. r.tip = {i,d,v,gain} or {none:true}; "Use it" on the sheet loads v into the sliders. ---- */
 const SU_TRY=[[1,25],[1,-25],[5,25],[5,-25],[2,25],[2,-25],[4,-3],[4,3],[6,-20],[0,20],[0,-20],[3,-15],[3,15],[6,20]],SU_TRY_HILL=9;
 const SU_TIP={"0+":"stiffer springs","0-":"softer springs","1+":"move the roll balance forward","1-":"move the roll balance rearward","2+":"more wing","2-":"less wing",
@@ -25704,7 +25704,7 @@ function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).ge
   if(W>520){x.fillStyle=soft;x.textAlign="right";x.fillText(`${r.trkName} · ${r.laps} laps`,W-padR,13);}}
 function e24RecHtml(){const P=recBucket("e24"),ks=Object.keys(P).filter(k=>P[k]&&P[k].km);if(!ks.length)return"";ks.sort((a,b)=>P[b].km-P[a].km);
   return `<div class="rtop e24rec"><span>24 Hours · longest distance per car and circuit</span>${ks.map(k=>{const e=P[k],c=e.sw&&SIM.VEHICLES[e.sw]||SIM.CHASSIS[e.ch],t=SIM.ROAD_TRACKS[e.trk];if(!c||!t)return"";return `<div><b>${e.trk==="gp"?"GP":e.trk==="street"?"ST":"C"}</b><span class="et">${Math.round(e.km).toLocaleString("en-CA")} km</span><span>${e.pc?ordN(e.pc)+" "+e24Cls(e.cls):"DNF"}</span><span class="nm" title="${esc(e.n)}">${esc(c.n)} · ${esc(t.n)}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
-/* ---- Bonneville: salt-flat land-speed runs. A push off the line, a run-up, the timed mile, the chute.
+/* ---- Bitterwater: salt-flat land-speed runs. A push off the line, a run-up, the timed mile, the chute.
    A class record (body × displacement letter × fuel, B for blown) stands until a run beats it AND the backup run
    at the same meet does too: the record is the average of the two. Career meet = the week; sandbox meet = until "New meet". ---- */
 let SR=null;
@@ -25722,7 +25722,7 @@ function saltEnvFix(){const e=S.env,B=SIM.LSR_BODIES;if(!B[e.saltBody])e.saltBod
   e.saltTop=isFinite(+e.saltTop)&&+e.saltTop>0?Math.max(60,Math.min(650,Math.round(+e.saltTop/5)*5)):0;
   return swapLive()?"altered":k;}   // a swap car runs in an altered class
 const saltCache=new Map();
-/* the engine at Bonneville's 1,290 m and 32 °C — simulate() re-run in that air, cached per build */
+/* the engine at Bitterwater's 1,290 m and 32 °C — simulate() re-run in that air, cached per build */
 function saltRes(){const h=cfgHash(S.cfg);let r=saltCache.get(h);if(!r){if(saltCache.size>24)saltCache.clear();r=SIM.lsrPrep(S.cfg,stdEnv());saltCache.set(h,r);}return r;}
 function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCourse,redline:S.cfg.redline,aero:e.saltAero==="on",ballast:+e.saltBallast,cooling:e.saltCool,chute:e.saltChute,shift:e.saltDrive==="auto"?"auto":e.saltShift,autoLift:e.saltDrive==="auto",idle:SIM.isDiesel(S.cfg)?720:Math.max(800,S.cfg.cam>70?1100:850)};
   swapSaltOv(v);if(!e.saltTop){e.saltTop=SIM.lsrGearing(res,v);}v.topMph=+e.saltTop;return v;}
@@ -25863,7 +25863,7 @@ function saltTopEst(k){const v=saltVeh(k),key=[cfgHash(S.cfg),k,v.course,v.topMp
 function saltEnvHtml(sl){const e=S.env,k=saltEnvFix(),B=swapSaltBody()||SIM.LSR_BODIES[k],cls=saltCls(k),rec=saltRecord(cls.key),L=saltBook(),pb=L.pb[cls.key],meet=saltMeet(),res=saltRes(),cell=quick,lk=saltBodyLocked(k);
   const loss=cell&&cell.peakHp>0?Math.round((1-res.peakHp/cell.peakHp)*100):0;
   let h=`<div class="saltcls"><div><span>Class</span><b>${cls.key}</b><small>${cls.litres.toFixed(2)} L · ${cls.blown?"blown":"unblown"} · ${cls.fuelName}${cls.n2o?" (nitrous)":""}</small></div><div><span>Record</span><b>${rec?rec.mph.toFixed(3):"—"}</b><small>${rec?(rec.mine?"you · "+esc(rec.holder||""):esc(rec.holder)+" · "+rec.year):""}</small></div><div><span>Your best</span><b>${pb?pb.mph.toFixed(3):"—"}</b><small>${meet.imp&&meet.imp.key===cls.key?`<em style="color:var(--warn);font-style:normal">IMPOUND · back up ${meet.imp.mph.toFixed(3)}</em>`:pb?"mile mph":"no run yet"}</small></div></div>`;
-  h+=`<p class="hint">At Bonneville — ${SIM.SALT_ENV.altitudeM.toLocaleString("en-CA")} m and ${SIM.SALT_ENV.ambientC} °C — this engine makes <b>${Math.round(res.peakHp)} hp</b>${loss>0?`, ${loss}% down on the cell`:""}${cls.blown?" (boost makes up most of the thin air)":" (no boost to make up the thin air)"}.</p>`;
+  h+=`<p class="hint">At Bitterwater — ${SIM.SALT_ENV.altitudeM.toLocaleString("en-CA")} m and ${SIM.SALT_ENV.ambientC} °C — this engine makes <b>${Math.round(res.peakHp)} hp</b>${loss>0?`, ${loss}% down on the cell`:""}${cls.blown?" (boost makes up most of the thin air)":" (no boost to make up the thin air)"}.</p>`;
   h+=swapEnvNote();if(!swapLive())h+=`<div class="lbl"><span>Body</span></div><div class="seg wide">${Object.entries(SIM.LSR_BODIES).map(([id,b])=>{const l=saltBodyLocked(id);return `<button data-sk="saltBody" data-sv="${id}" class="${k===id?"on":""}${l?" lock":""}">${b.n}<small>${l?l+" rep":b.d}</small></button>`;}).join("")}</div>`;
   h+=paintHtml();   /* the strip's paint: the salt car wears it too */
   h+=`<div class="lbl"><span>Course</span></div><div class="seg">${Object.entries(SIM.LSR_COURSES).map(([id,c])=>`<button data-sk="saltCourse" data-sv="${id}" class="${e.saltCourse===id?"on":""}">${c.n}<small>${c.d}${career()?" · $"+SALT_FEE[id]:""}</small></button>`).join("")}</div>`;
@@ -25938,7 +25938,7 @@ function saltRecHtml(){const L=saltBook();const keys=new Set(Object.keys(L.rec).
   return `<div class="rtop saltrec"><span>Salt flats · class records</span>${rows.map(o=>o.wait?`<div class="wait"><b>·</b><span class="et">…</span><span>${esc(o.k)}</span><span class="nm">looking up the record</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`
     :`<div><b>${o.r.mine?"★":"·"}</b><span class="et">${o.r.mph.toFixed(2)}</span><span>${esc(o.k)}</span><span class="nm" title="${esc(o.r.holder)}">${o.r.mine?"you":esc(o.r.holder)+" '"+String(o.r.year).slice(2)}</span><span>${o.pb?"PB "+o.pb.mph.toFixed(1):"—"}</span></div>`).join("")}</div>`;}
 
-/* ===================== PIKES PEAK: the hillclimb ===================== */
+/* ===================== CLOUDSPLITTER PEAK: the hillclimb ===================== */
 /* 19.99 km, 156 turns, 2,862 m to 4,302 m. The engine is run at five altitudes on the way up (SIM.hillPrep); the car is the
    road test's chassis on the class's tyres and aero. Auto drives the corner calls; You drive holds PUSH or LIFT into each corner. */
 let HC=null;
@@ -25981,8 +25981,8 @@ function hillFieldJob(k,seed){const key=k+"|"+seed;
   return J;}
 const hillDnfWord=k=>({edge:"OVER THE EDGE",boil:"BOILED OVER",stall:"COULDN'T CLIMB",time:"FLAGGED OFF"})[k]||"DNF";
 const hillCmp=(a,b)=>(a.t==null?1:0)-(b.t==null?1:0)||(a.t!=null?a.t-b.t:0)||(a.me?-1:b.me?1:0);
-function hillHint(){const c=SIM.HILL_CLASSES;return career()?`<b>Pikes Peak</b> · ${fmt$(hillFee("open"))}–${fmt$(hillFee("unl"))} entry, one run a week in one class. Needs a certified engine. ${c.open.n} is open to anyone; ${c.ta.n} at ${c.ta.rep} rep, ${c.ppo.n} at ${c.ppo.rep}, ${c.unl.n} at ${c.unl.rep}. Purse by placing, up to ${fmt$(HILL_PURSE[0]*HILL_PAY[4])} in ${c.unl.n}. Thin air costs an atmospheric engine about a third of its power; a turbo holds on.`
-  :`<b>Pikes Peak</b> · 19.99 km, 156 turns, 2,862 m to 4,302 m. Auto reads the corner calls for you; in <b>You drive</b>, hold <b>PUSH</b> into grippy corners and <b>LIFT</b> into dusty ones. Too fast is a moment, a trip through the gravel, or — where there's a drop and no rail — the end of the run. <b>Space</b> pushes.`;}
+function hillHint(){const c=SIM.HILL_CLASSES;return career()?`<b>Cloudsplitter Peak</b> · ${fmt$(hillFee("open"))}–${fmt$(hillFee("unl"))} entry, one run a week in one class. Needs a certified engine. ${c.open.n} is open to anyone; ${c.ta.n} at ${c.ta.rep} rep, ${c.ppo.n} at ${c.ppo.rep}, ${c.unl.n} at ${c.unl.rep}. Purse by placing, up to ${fmt$(HILL_PURSE[0]*HILL_PAY[4])} in ${c.unl.n}. Thin air costs an atmospheric engine about a third of its power; a turbo holds on.`
+  :`<b>Cloudsplitter Peak</b> · 19.99 km, 156 turns, 2,862 m to 4,302 m. Auto reads the corner calls for you; in <b>You drive</b>, hold <b>PUSH</b> into grippy corners and <b>LIFT</b> into dusty ones. Too fast is a moment, a trip through the gravel, or — where there's a drop and no rail — the end of the run. <b>Space</b> pushes.`;}
 /* the mountain in profile: altitude against distance, the sections, the treeline, where you are */
 function hillProfileSvg(cls,mark){const T=SIM.hillCourse(),W=320,H=64,a0=2800,a1=4360,X=s=>(s/T.len*W).toFixed(1),Y=z=>(H-4-(z-a0)/(a1-a0)*(H-10)).toFixed(1);
   let p=`M0,${H} `;for(let i=0;i<T.N;i+=40)p+=`L${X(i*T.ds)},${Y(T.z[i])} `;p+=`L${W},${Y(T.z[T.N-1])} L${W},${H} Z`;
@@ -26102,9 +26102,9 @@ function hillFinish(){
   r.wx=wxSnap("hill");const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
   const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:r.dnf.kind==="boil"?"boiled over in "+r.dnf.name:r.dnf.kind==="stall"?"couldn't climb the grade":"flagged off in "+r.dnf.name):fmtHill(r.time);
   if(career()&&same){addWear(0.6+(r.coolPeak>112?0.4:0)+(r.dmg>0?0.3:0),hKey(snap.h));
-    if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Pikes Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
+    if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Cloudsplitter Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
     else{const purse=Math.round((HILL_PURSE[r.place-1]||0)*(HILL_PAY[C0.tier]||1)/10)*10,rep=(HILL_REP[r.place-1]||0)+1;r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
-      logEvent(`Pikes Peak: ${C0.n} — ${sc}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${sc} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
+      logEvent(`Cloudsplitter Peak: ${C0.n} — ${sc}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${sc} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
     spEvent("hill",{win:!r.dnf&&r.place===1,finish:!r.dnf&&r.place>1&&r.place<=3,record:!!(r.pb&&r.pb.was),k,t:r.dnf?null:r.time});hud();checkGoals();}
   else toast(r.dnf?`DNF · ${sc}`:`${sc} · ${pl}`);
   if(!career())delete HILL_SB[Object.keys(SIM.HILL_CLASSES).indexOf(k)+1];   // a fresh mountain next run
@@ -26151,7 +26151,7 @@ function drawHillChart(r){const css=getComputedStyle(document.documentElement),I
   x.fillStyle=soft;x.textAlign="right";if(W>420)x.fillText(`hp vs altitude · ${r.dnf?"DNF":fmtHill(r.time)}`,W-padR,13);}
 function hillRedraw(){const l=lastForChart();if(S.env.testType==="hill"&&l&&l.hill)drawHillChart(l.hill);}
 function hillRecHtml(){const P=recBucket("hill"),ks=Object.keys(SIM.HILL_CLASSES).filter(k=>P[k]&&P[k].t);if(!ks.length)return "";
-  return `<div class="rtop"><span>Pikes Peak · best per class</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch];return `<div><b>▲</b><span class="et">${fmtHill(e.t)}</span><span></span><span class="nm" title="${esc(e.n)}">${esc(SIM.HILL_CLASSES[k].n)}${c?" · "+esc(c.n):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
+  return `<div class="rtop"><span>Cloudsplitter Peak · best per class</span>${ks.map(k=>{const e=P[k],c=SIM.CHASSIS[e.ch];return `<div><b>▲</b><span class="et">${fmtHill(e.t)}</span><span></span><span class="nm" title="${esc(e.n)}">${esc(SIM.HILL_CLASSES[k].n)}${c?" · "+esc(c.n):""}</span><span>${e.w!=null?"wk "+e.w:e.d?new Date(e.d).toLocaleDateString("en-CA",{month:"short",day:"numeric"}):""}</span></div>`;}).join("")}</div>`;}
 /* ===================== OVAL: race night on the clay, or on the paved half-mile ===================== */
 /* A heat race (8 laps) against seven rivals sets the feature grid, then the feature (25 laps) against the whole night's field.
    The rivals are made-up engines and drivers run through the same lap sim (SIM.ovalNew) the car runs on; their laps are done
@@ -27012,7 +27012,7 @@ $("runTest").addEventListener("click",()=>{
    ({id:{d:ms,w:week|null}}) - shared by sandbox and career. Shop badges read the career state directly. */
 const ACH_ICONS={flame:"M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",bolt:"M13 2 5 14h6l-1 8 8-12h-6z",gauge:"M4 17a8 8 0 1 1 16 0M12 17l4-6",clock:"M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",flag:"M5 21V4M5 4h11l-2 4 2 4H5",shield:"M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z",coin:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M9 10c0-2 6-2 6 0s-6 2-6 4 6 2 6 0",star:"M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",cloud:"M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.5-1A4.5 4.5 0 0 1 17 18z",snow:"M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7",drop:"M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z",hook:"M12 3v11a3.5 3.5 0 1 1-3.5-3.5",trophy:"M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8",chev:"M6 7l6 5-6 5M12 7l6 5-6 5",wheel:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 3v6.5M12 14.5V21M3.5 8l6.5 4M14 12l6.5 4",tree:"M12 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 16.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",cal:"M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",tick:"M5 12l5 5 9-10",engine:"M4 9h14l2 3v5H4zM8 9V6h6v3",target:"M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",people:"M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 10a2.5 2.5 0 1 0 0-5M18 15c2 .5 3 2.5 3 5"};
 const ACH_TIER={bronze:"Bronze",silver:"Silver",gold:"Gold"};
-const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["bog","Mud bog"],["boat","Boat drags"],["hill","Pikes Peak"],["salt","Salt"],["oval","Oval"],["road","Road course"],["endure","Endurance"],["shop","Shop & career"]];
+const ACH_GROUPS=[["dyno","Dyno"],["diesel","Diesel"],["strip","Strip"],["n2o","Nitrous"],["pull","Pulling"],["bog","Mud bog"],["boat","Boat drags"],["hill","Cloudsplitter Peak"],["salt","Salt"],["oval","Oval"],["road","Road course"],["endure","Endurance"],["shop","Shop & career"]];
 const ACH=[
   {g:"dyno",id:"firstfire",name:"First fire",desc:"Light an engine for the first time.",ic:"flame",tier:"bronze",check:x=>!!x.firstfire},
   {g:"dyno",id:"certified",name:"Certified",desc:"Pull a clean engine (career: certify one).",ic:"tick",tier:"bronze",check:x=>!!x.ok},
@@ -27061,8 +27061,8 @@ const ACH=[
   {g:"pull",id:"hotfarm",name:"Hot Farm hero",desc:"Win the Hot Farm class.",ic:"flame",tier:"gold",check:x=>!!x.hotfarm},
   {g:"bog",id:"bogthru",name:"Through the pit",desc:"Get a truck all the way through a mud pit.",ic:"wheel",tier:"bronze",check:x=>!!x.bogThru},
   {g:"bog",id:"bogwin",name:"King of the pit",desc:"Win a mud-bog class.",ic:"trophy",tier:"silver",check:x=>!!x.bogWin},
-  {g:"hill",id:"hillsum",name:"To the clouds",desc:"Reach the summit of Pikes Peak.",ic:"flag",tier:"bronze",check:x=>!!x.hillFin},
-  {g:"hill",id:"hillwin",name:"King of the Mountain",desc:"Win a Pikes Peak class.",ic:"trophy",tier:"silver",check:x=>!!x.hillWin},
+  {g:"hill",id:"hillsum",name:"To the clouds",desc:"Reach the summit of Cloudsplitter Peak.",ic:"flag",tier:"bronze",check:x=>!!x.hillFin},
+  {g:"hill",id:"hillwin",name:"King of the Mountain",desc:"Win a Cloudsplitter Peak class.",ic:"trophy",tier:"silver",check:x=>!!x.hillWin},
   {g:"hill",id:"hill10",name:"Under ten",desc:"Reach the summit in under 10 minutes.",ic:"clock",tier:"gold",check:x=>x.hillT>0&&x.hillT<600},
   {g:"boat",id:"boatpass",name:"On plane",desc:"Make a clean 1,000 ft pass on the river.",ic:"flag",tier:"bronze",check:x=>!!x.boatPass},
   {g:"boat",id:"boatwin",name:"River king",desc:"Win a boat-drag night.",ic:"trophy",tier:"silver",check:x=>!!x.boatWin},
@@ -27505,7 +27505,7 @@ const SP_OBL={oil:["nights","pulls"],parts:["rounds"],feed:["pulls"],tyre:["nigh
 const SP_OBL_TXT={nights:n=>`Run at least ${n} race night${n>1?"s":""}`,pulls:n=>`Enter at least ${n} truck pull${n>1?"s":""}`,salt:n=>`Make at least ${n} run${n>1?"s":""} on the salt`,
   rounds:n=>`Supply your team for at least ${n} round${n>1?"s":""}`,nodiesel:()=>"No diesel builds at the track",rep:n=>`Keep reputation at ${n} or better`};
 const SP_SLOT_REP=[0,120,300];
-const SP_EVT={hill:"Pikes Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",team:"your team's results",oval:"the oval",road:"the track day"};
+const SP_EVT={hill:"Cloudsplitter Peak",boat:"the boat drags",bog:"the mud bog",endurance:"the 24 Hours",night:"a race night",pull:"the pull",salt:"the salt",drag:"the strip",team:"your team's results",oval:"the oval",road:"the track day"};
 /* an obligation the shop can actually meet: a brand never asks for race nights before the Outlaw shop opens the strip, pulls before
    a pull class is open, or salt runs before the salt is open — the same gates the rivals use (rivEvOpen). rounds/nodiesel always fit */
 function spOblOpen(k){try{if(k==="nights")return evStatus("drag").k!=="lock";if(k==="pulls")return Object.keys(SIM.PULL_CLASSES).some(c=>!pullClsLocked(c));if(k==="salt")return evStatus("salt").k!=="lock";}catch(e){return false;}return true;}
@@ -27736,7 +27736,7 @@ GOALS.push(
   {id:"top",name:"Top of the board",desc:"Hold more reputation than all three rival shops (from 60 rep up).",cash:8000,check:c=>c.rep>=60&&rivTop(c)});
 /* late game (round 9): long targets for a rich shop. Wins per discipline are a lazily-filled counter, C().dw (old saves start at zero and fill as they race);
    rivals beaten one by one live in C().riv.hist.beat. Cash is small next to a late team's pay, and the rep rungs pay cash only. */
-const DW_KINDS=[["drag","drag or race night"],["pull","truck pull"],["bog","mud bog"],["hill","Pikes Peak"],["oval","dirt oval"],["boat","boat drags"],["endurance","24 Hours"],["salt","Bonneville record"]];
+const DW_KINDS=[["drag","drag or race night"],["pull","truck pull"],["bog","mud bog"],["hill","Cloudsplitter Peak"],["oval","dirt oval"],["boat","boat drags"],["endurance","24 Hours"],["salt","Bitterwater record"]];
 function dwinCount(kind,o){if(!o||!(o.win||(kind==="salt"&&o.record)))return;const k=kind==="night"?"drag":kind;if(!DW_KINDS.some(d=>d[0]===k))return;const c=C();if(!c.dw||typeof c.dw!=="object")c.dw={};c.dw[k]=(c.dw[k]||0)+1;}
 const dwN=c=>DW_KINDS.filter(d=>c.dw&&c.dw[d[0]]>0).length;
 const rivBeaten=c=>RIVALS.filter(v=>c.riv&&c.riv.hist&&c.riv.hist.beat&&c.riv.hist.beat[v.id]>0).length;
@@ -27748,7 +27748,7 @@ GOALS.push(
   {id:"rep1000",late:1,name:"Household name",desc:"Reach 1,000 reputation.",cash:60000,rep:0,check:c=>c.rep>=1000,prog:lateProg(c=>c.rep,1000)},
   {id:"rep1500",late:1,name:"Legend",desc:"Reach 1,500 reputation, the Legend tier.",cash:100000,rep:0,check:c=>c.rep>=1500,prog:lateProg(c=>c.rep,1500)},
   {id:"rep3000",late:1,name:"Dynasty",desc:"Reach 3,000 reputation, the Dynasty tier, where the alcohol cars and unlimited pullers come knocking.",cash:150000,rep:0,check:c=>c.rep>=3000,prog:lateProg(c=>c.rep,3000)},
-  {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Pikes Peak, dirt oval, boat drags and the 24 Hours, and set a Bonneville record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
+  {id:"allround",late:1,name:"Win everywhere",desc:"Win at the strip (or a race night), the truck pull, mud bog, Cloudsplitter Peak, dirt oval, boat drags and the 24 Hours, and set a Bitterwater record. Counts from this save on.",cash:75000,rep:50,check:c=>dwN(c)>=DW_KINDS.length,prog:lateProg(dwN,DW_KINDS.length)},
   {id:"hp2000",late:1,name:"Two thousand",desc:"Certify a 2,000 hp engine.",cash:80000,rep:30,check:c=>c.bestHp>=2000,prog:lateProg(c=>c.bestHp||0,2000)},
   {id:"titles5",late:1,name:"Dynasty builder",desc:"Win five team championships.",cash:70000,rep:25,check:c=>pcN(c,"titles")>=5,prog:lateProg(c=>pcN(c,"titles"),5)},
   {id:"nitro",late:1,name:"Nitro money",desc:"Supply a funny car or a top dragster team for a season.",cash:40000,rep:15,check:c=>pcN(c,"nitro")>=1},
@@ -27766,8 +27766,8 @@ function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.
 /* ===================== RIVAL SHOPS (career) =====================
    Three made-up shops share the reputation board with you. Their rep grows week by week (a little noisy, and pulled toward
    yours so the table stays a race), the Team tab shows the standings, and now and then one of them throws down a
-   head-to-head: a real result in a real event (the strip, the truck pull, Pikes Peak, the mud bog, the boat drags, the 24 Hours,
-   the oval). The track day, the salt and Pikes Peak are run against the clock, so there the rival posts a number a little past
+   head-to-head: a real result in a real event (the strip, the truck pull, Cloudsplitter Peak, the mud bog, the boat drags, the 24 Hours,
+   the oval). The track day, the salt and Cloudsplitter Peak are run against the clock, so there the rival posts a number a little past
    your own best and your next lap (that car, that circuit) or run (that class) has to beat it; on the mountain their car runs
    in the field with that time. At the 24 Hours they enter a car in your class and you have to finish ahead of it.
    Nothing here touches S.cfg or the dyno. State lives on C().riv; rivS() fills its defaults, so old saves load clean.
@@ -27776,9 +27776,9 @@ function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.
    engine you had certified. It never touches your offers. Beat it in RIV_FEUD_WINS head-to-heads and it ends with a rep bonus;
    left alone it fizzles out after RIV_FEUD_MAX weeks with nothing. State: C().riv.feud {rv, wk, wins, cert, copied}. */
 const RIV_EV={drag:"drag",pull:"pull_sled",hill:"hill",bog:"bog",boat:"boat",endurance:"race24",oval:"oval",road:"road",salt:"salt"};   // spEvent kind -> Events tab key
-const RIV_EV_TXT={drag:"a heads-up pass at the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt flats"};
-const RIV_EV_BTN={drag:"Take it to the strip",pull:"Go to the truck pull",hill:"Go to Pikes Peak",bog:"Go to the mud bog",boat:"Go to the boat drags",endurance:"Go to the 24 Hours",oval:"Go to the oval",road:"Go to the track day",salt:"Go to the salt"};
-const RIV_EV_SHORT={drag:"the strip",pull:"the truck pull",hill:"Pikes Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt"};   // the board's last-head-to-head line
+const RIV_EV_TXT={drag:"a heads-up pass at the strip",pull:"the truck pull",hill:"Cloudsplitter Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt flats"};
+const RIV_EV_BTN={drag:"Take it to the strip",pull:"Go to the truck pull",hill:"Go to Cloudsplitter Peak",bog:"Go to the mud bog",boat:"Go to the boat drags",endurance:"Go to the 24 Hours",oval:"Go to the oval",road:"Go to the track day",salt:"Go to the salt"};
+const RIV_EV_SHORT={drag:"the strip",pull:"the truck pull",hill:"Cloudsplitter Peak",bog:"the mud bog",boat:"the boat drags",endurance:"the 24 Hours",oval:"the oval",road:"the track day",salt:"the salt"};   // the board's last-head-to-head line
 const RIV_BEAT=["road","salt","hill"];   // posted-number challenges: beat the time or the speed, not a field
 const RIV_TOP_WEEKS=40;   // weeks at #1 over all three before each shop says its piece (once)
 const RIVALS=[
@@ -27883,8 +27883,8 @@ function rivBests(ev){
 function rivPost(ev,ahead){const x=rivPick(rivBests(ev)),m=ahead?0.012+rivRng()*0.01:0.004+rivRng()*0.008;
   return ev==="road"?{car:x.car,trk:x.trk,tgt:Math.floor(x.b*(1-m)*10)/10}:ev==="hill"?{k:x.k,tgt:Math.floor(x.b*(1-m)*10)/10}:{k:x.k,tgt:Math.ceil(x.b*(1+m)*10)/10};}
 const rivTgtTxt=ch=>ch.ev==="road"?fmtLap(ch.tgt,1):ch.ev==="hill"?fmtHill(ch.tgt):ch.tgt.toFixed(1)+" mph";
-const rivWhere=ch=>ch.ev==="road"?`${(SIM.ROAD_TRACKS[ch.trk]||{}).n||"the circuit"} in ${roadCarTxt({ch:ch.car})}`:ch.ev==="hill"?`${(SIM.HILL_CLASSES[ch.k]||{}).n||"the class"} at Pikes Peak`:`class ${ch.k} on the salt`;
-/* Pikes Peak: the rival's car in the field, on the posted time (splits paced off your own record in that class) */
+const rivWhere=ch=>ch.ev==="road"?`${(SIM.ROAD_TRACKS[ch.trk]||{}).n||"the circuit"} in ${roadCarTxt({ch:ch.car})}`:ch.ev==="hill"?`${(SIM.HILL_CLASSES[ch.k]||{}).n||"the class"} at Cloudsplitter Peak`:`class ${ch.k} on the salt`;
+/* Cloudsplitter Peak: the rival's car in the field, on the posted time (splits paced off your own record in that class) */
 function rivHillRow(k){if(!career())return null;const ch=rivS().ch;if(!ch||ch.st!=="on"||ch.ev!=="hill"||ch.k!==k)return null;
   const v=RIVALS.find(x=>x.id===ch.rv),pb=recBucket("hill")[k],F=SIM.HILL_CLASSES[k].field,sp=pb&&pb.t>0&&pb.splits?pb.splits.map(x=>+(x*ch.tgt/pb.t).toFixed(3)):[];
   return{n:v.name,rv:true,hp:Math.round(F.hp*1.05),turbo:F.turbo>=0.5,ch:pb&&pb.ch||"coupe",skill:0.9,t:ch.tgt,dnf:null,splits:sp,offs:0,paint:HILL_PAINT[2]};}
@@ -28444,14 +28444,14 @@ ACH.push(
 const TROPHY_LOG_MAX=240,TROPHY_RET_MAX=24,TR_STANDS=6;   // TR_STANDS matches the vis room's stand count
 const trF=(v,d)=>v==null||!isFinite(v)?"—":(+v).toFixed(d);
 const trCls=(T,k)=>T&&T[k]&&T[k].n||k||"";
-const trHill=k=>trCls(SIM.HILL_CLASSES,k),trCh=e=>e&&SIM.CHASSIS&&SIM.CHASSIS[e.ch]?SIM.CHASSIS[e.ch].n:"";   // Pikes Peak: class name, and the car the record was set in
+const trHill=k=>trCls(SIM.HILL_CLASSES,k),trCh=e=>e&&SIM.CHASSIS&&SIM.CHASSIS[e.ch]?SIM.CHASSIS[e.ch].n:"";   // Cloudsplitter Peak: class name, and the car the record was set in
 const TROPHY_EV=[
   {k:"drag",n:"Drag racing",shape:"cup",types:["drag"],win:x=>{const r=x.r,nt=r&&r.night;if(x.failed||!nt||nt.place!==1)return null;const car=(SIM.AERO[r.body]||{}).n||"";
     return{t:"Won the night",what:`${RN_FMT[nt.fmt]||"Race night"} at Section Line Dragway — beat ${nt.opp||"the field"} in the final.`,nums:[["ET",r.et!=null?trF(r.et,3)+" s":"—"],["Trap",r.mph!=null?Math.round(r.mph)+" mph":"—"],["Reaction",r.race&&r.race.rt!=null?trF(r.race.rt,3):"—"],["Class",car]],veh:car,u:"d"+(r.at||Date.now())};}},
   {k:"pull",n:"Truck & tractor pull",shape:"wrench",types:["pull"],win:x=>{const r=x.r;if(x.failed||r.poPending||r.dq||r.place!==1)return null;
     return{t:`${r.clsName||"Pull"} — first`,what:`Longest pull of the night${r.pullOff!=null?", settled in a pull-off":""}${r.of?" against "+(r.of-1)+" others":""}.`,nums:[["Distance",r.full?"FULL · 300 ft":trF(r.distFt,1)+" ft"],["Pull-off",r.pullOff!=null?trF(r.pullOff,1)+" ft":"—"],["Gear",r.gearName||"—"],["Field",r.of||"—"]],veh:r.clsName||""};},
     extra:x=>{const r=x.r,s=r&&r.ser;if(x.failed||!s||!s.done||!s.champMe)return null;return{t:"Series champion",shape:"title",what:`${r.clsName||"Pulling"} series, season ${s.season} — ${s.pts} points over ${s.n} rounds.`,nums:[["Points",(s.stand.find(q=>q.me)||{}).pts||"—"],["Season",s.season],["Rounds",s.n]],veh:r.clsName||"",u:"ps"+s.season+(r.cls||"")};}},
-  {k:"salt",n:"Bonneville",shape:"salt",types:["salt"],win:x=>{const r=x.r;if(x.failed||!r||r.outcome!=="record")return null;
+  {k:"salt",n:"Bitterwater",shape:"salt",types:["salt"],win:x=>{const r=x.r;if(x.failed||!r||r.outcome!=="record")return null;
     return{t:`Class record · ${r.cls&&r.cls.key||""}`,what:`Two-way average over the mile on the ${r.courseName||"salt"}${r.rec?`, beating ${trF(r.rec.mph,3)} mph`:""}.${r.club?" Into the 200 MPH Club.":""}`,nums:[["Record",trF(r.avg,3)+" mph"],["Runs",r.firstMph!=null?trF(r.firstMph,1)+" / "+trF(r.mileMph,1):"—"],["Peak",r.peakMph!=null?Math.round(r.peakMph)+" mph":"—"],["Body",r.clsName||"—"]],veh:r.clsName||""};}},
   {k:"bog",n:"Mud bog",shape:"boot",types:["bog"],win:x=>{const r=x.r;if(x.failed||r.place!==1)return null;
     return{t:`${r.clsName||"Mud bog"} — first`,what:r.cleared?"Through the pit quickest of the night.":"Farthest into the pit of the night.",nums:[["Result",r.cleared?trF(r.pitT,2)+" s":trF(r.distM,1)+" m"],["Field",r.of||"—"],["Driver",r.auto?"auto":"you"]],veh:r.clsName||""};}},
@@ -28459,8 +28459,8 @@ const TROPHY_EV=[
     return{t:r.rivBeat?`Head-to-head · ${r.trkName||"the circuit"}`:`Lap record · ${r.trkName||"the circuit"}`,tier:r.rivBeat?"gold":"silver",what:r.rivBeat?`Beat a rival's posted lap at ${r.trkName||"the circuit"} in ${r.chName||"their car"}.`:`A new best around ${r.trkName||"the circuit"} in ${r.chName||"the car"}, ${trF(r.pb.was-r.lapT,2)} s under the old mark.`,nums:[["Lap",fmtLap(r.lapT,2)],["0–100",r.zero100!=null?trF(r.zero100,1)+" s":"—"],["Top",r.top&&r.top.kmh?Math.round(r.top.kmh)+" km/h":"—"],["Tyres",r.tyreName||"—"]],veh:r.chName||""};}},
   {k:"e24",n:"24 Hours of Prairie Sky",shape:"tallcup",types:["e24"],win:x=>{const r=x.r;if(!r||!r.classified||!(r.posCls<=3))return null;
     return{t:r.posCls===1?`Class win · ${r.clsName}`:`${ordN(r.posCls)} in ${r.clsName}`,tier:r.posCls===1?"gold":r.posCls===2?"silver":"bronze",what:`${r.laps} laps of ${r.trkName}, ${ordN(r.pos)} overall of ${r.of}.`,nums:[["Distance",Math.round(r.km||0).toLocaleString("en-CA")+" km"],["Laps",r.laps],["Best lap",fmtLap(r.bestLap!=null?r.bestLap:r.best,2)],["Pits",r.pits!=null?r.pits:"—"]],veh:r.chName||""};}},
-  {k:"pikes",n:"Pikes Peak",shape:"peak",types:["pikes","hill","hillclimb","pikes_peak"],win:x=>{const r=x.r;if(!r||r.dnf||r.place!==1)return null;
-    return{t:`${r.clsName||"Pikes Peak"} — King of the Mountain`,what:`To the summit in ${fmtHill(r.time)}, quickest of ${r.of}.`,nums:[["Time",fmtHill(r.time)],["Average",r.avgKmh!=null?r.avgKmh+" km/h":"—"],["Field",r.of||"—"],["Driver",r.auto?"auto":"you"]],veh:r.chName||""};}},
+  {k:"pikes",n:"Cloudsplitter Peak",shape:"peak",types:["pikes","hill","hillclimb","pikes_peak"],win:x=>{const r=x.r;if(!r||r.dnf||r.place!==1)return null;
+    return{t:`${r.clsName||"Cloudsplitter Peak"} — King of the Mountain`,what:`To the summit in ${fmtHill(r.time)}, quickest of ${r.of}.`,nums:[["Time",fmtHill(r.time)],["Average",r.avgKmh!=null?r.avgKmh+" km/h":"—"],["Field",r.of||"—"],["Driver",r.auto?"auto":"you"]],veh:r.chName||""};}},
   {k:"oval",n:"Dirt oval",shape:"cup",types:["oval"],win:x=>{const r=x.r;if(x.failed||!r||r.stage!=="feature"||r.place!==1)return null;
     return{t:`${r.clsName||"Dirt oval"} feature — first`,what:`Won the ${r.N}-lap feature on ${r.night} ${r.surf==="asphalt"?"asphalt":"clay"} from ${ordN(r.gridMe)} on the grid, against ${r.of-1} others.`,nums:[["Time",fmtOvRace(r.time)],["Best lap",fmtOv(r.best)+" s"],["Started",ordN(r.gridMe)],["Field",r.of]],veh:r.clsName||"",u:"ovf"+(r.at||Date.now())};},
     extra:x=>{const r=x.r;if(x.failed||!r||r.stage!=="heat"||r.place!==1)return null;return{t:`${r.clsName||"Dirt oval"} heat — first`,tier:"bronze",what:`Won the ${r.N}-lap heat, which put the car on the front row for the feature.`,nums:[["Time",fmtOvRace(r.time)],["Best lap",fmtOv(r.best)+" s"],["Field",r.of]],veh:r.clsName||"",u:"ovh"+(r.at||Date.now())};}},
@@ -28486,7 +28486,7 @@ function tropSeed(T){if(ff)return;const R=recs(),L=T.log,cut=tropSeed.cut||0;let
   (Array.isArray(R.pullTitles)?R.pullTitles:[]).forEach(p=>add({ev:"pull",shape:"title",t:"Series champion",what:`${trCls(SIM.PULL_CLASSES,p.k)} series, season ${p.season}.`,nums:[["Points",p.pts],["Season",p.season]],veh:trCls(SIM.PULL_CLASSES,p.k)},p));
   if(R.pull&&typeof R.pull==="object")Object.keys(R.pull).forEach(k=>{const e=R.pull[k];if(e&&e.full)add({ev:"pull",tier:"silver",t:`Full pull · ${trCls(SIM.PULL_CLASSES,k)}`,what:"Dragged the sled the whole 300 ft.",nums:[["Distance","300 ft"]],veh:trCls(SIM.PULL_CLASSES,k)},e);});
   if(R.bog&&typeof R.bog==="object")Object.keys(R.bog).forEach(k=>{const e=R.bog[k];if(e&&e.c)add({ev:"bog",tier:"silver",t:`Through the pit · ${trCls(SIM.BOG_CLASSES,k)}`,what:"Cleared the whole pit.",nums:[["Best",trF(e.t,2)+" s"]],veh:trCls(SIM.BOG_CLASSES,k)},e);});
-  if(R.hill&&typeof R.hill==="object")Object.keys(R.hill).forEach(k=>{const e=R.hill[k];if(e&&e.t)add({ev:"pikes",tier:"silver",t:`To the summit · ${trHill(k)}`,what:"Ran Pikes Peak clean, bottom to top.",nums:[["Best",fmtHill(e.t)]],veh:trCh(e)},e);});
+  if(R.hill&&typeof R.hill==="object")Object.keys(R.hill).forEach(k=>{const e=R.hill[k];if(e&&e.t)add({ev:"pikes",tier:"silver",t:`To the summit · ${trHill(k)}`,what:"Ran Cloudsplitter Peak clean, bottom to top.",nums:[["Best",fmtHill(e.t)]],veh:trCh(e)},e);});
   if(R.lsr&&R.lsr.rec)Object.keys(R.lsr.rec).forEach(k=>{const e=R.lsr.rec[k];if(e&&e.mph)add({ev:"salt",t:`Class record · ${k}`,what:`Two-way average over the mile${e.was?`, beating ${trF(e.was,3)} mph`:""}.`,nums:[["Record",trF(e.mph,3)+" mph"],["Runs",Array.isArray(e.runs)?e.runs.map(v=>trF(v,1)).join(" / "):"—"]]},e);});
   if(R.e24Best&&R.e24Best<=3)add({ev:"e24",tier:R.e24Best===1?"gold":R.e24Best===2?"silver":"bronze",t:R.e24Best===1?"Class win":`${ordN(R.e24Best)} in class`,what:"Best class finish at the 24 Hours of Prairie Sky.",nums:[["Best",ordN(R.e24Best)],["Starts",R.e24Runs||"—"]]},{});
   if(career()){const s=spS();s.active.forEach(a=>{const b=spBrand(a.b);add({ev:"spon",slot:"pennant",brand:b.id,t:b.name,what:`${b.tag} — on the car now.`,nums:[["Signed",s.hist.signed],["Earned",fmt$(s.hist.earned||0)]]},{w:a.w0!=null?a.w0:C().week});});
@@ -28523,7 +28523,7 @@ function tropItems(){const T=tropBook(),R=recs(),cr=career(),items=[];
   if(R.bog&&typeof R.bog==="object")Object.keys(R.bog).forEach(k=>{const e=R.bog[k];if(e)slip("b"+k,"Bog · "+trCls(SIM.BOG_CLASSES,k),e.c?trF(e.t,2):trF(e.m,1),e.c?"s through":"m","Best run in the class.",e,[[e.c?"Through":"Got to",e.c?trF(e.t,2)+" s":trF(e.m,1)+" m"]],trCls(SIM.BOG_CLASSES,k));});
   if(R.lsr&&R.lsr.pb)Object.keys(R.lsr.pb).forEach(k=>{const e=R.lsr.pb[k];if(e&&e.mph)slip("s"+k,"Salt · "+k,trF(e.mph,2),"mph","Best timed mile in the class.",e,[["Mile",trF(e.mph,3)+" mph"],["Kilo",e.km!=null?trF(e.km,2)+" mph":"—"],["Peak",e.peak!=null?Math.round(e.peak)+" mph":"—"]]);});
   if(R.road&&typeof R.road==="object")Object.keys(R.road).forEach(k=>{const e=R.road[k],c=e&&SIM.CHASSIS[e.ch],t=e&&SIM.ROAD_TRACKS[e.trk];if(e&&e.t&&c&&t)slip("r"+k,"Lap · "+t.n,fmtLap(e.t,2),"","Best lap for the car on this circuit.",e,[["Lap",fmtLap(e.t,2)],["0–100",e.z!=null?trF(e.z,1)+" s":"—"]],c.n);});
-  if(R.hill&&typeof R.hill==="object")Object.keys(SIM.HILL_CLASSES).forEach(k=>{const e=R.hill[k];if(e&&e.t)slip("h"+k,"Pikes Peak · "+trHill(k),fmtHill(e.t),"","Quickest run to the summit in the class.",e,[["Time",fmtHill(e.t)],["Car",trCh(e)||"—"]],trCh(e));});
+  if(R.hill&&typeof R.hill==="object")Object.keys(SIM.HILL_CLASSES).forEach(k=>{const e=R.hill[k];if(e&&e.t)slip("h"+k,"Cloudsplitter Peak · "+trHill(k),fmtHill(e.t),"","Quickest run to the summit in the class.",e,[["Time",fmtHill(e.t)],["Car",trCh(e)||"—"]],trCh(e));});
   if(R.oval&&typeof R.oval==="object")Object.keys(SIM.OVAL_CLASSES).forEach(k=>{const e=R.oval[k];if(e&&e.lap)slip("o"+k,"Dirt oval · "+trCls(SIM.OVAL_CLASSES,k),trF(e.lap,2),"s lap","Quickest lap in the class.",e,[["Lap",trF(e.lap,2)+" s"],["Feature wins",e.wins||0],["Best finish",e.best?ordN(e.best):"—"]],trCls(SIM.OVAL_CLASSES,k));});
   if(R.e24&&typeof R.e24==="object")Object.keys(R.e24).forEach(k=>{const e=R.e24[k],c=e&&SIM.CHASSIS[e.ch],t=e&&SIM.ROAD_TRACKS[e.trk];if(e&&e.km&&c&&t)slip("e"+k,"24 h · "+t.n,Math.round(e.km).toLocaleString("en-CA"),"km","Longest distance in 24 hours.",e,[["Distance",Math.round(e.km).toLocaleString("en-CA")+" km"],["Laps",e.laps],["Finish",e.pc?ordN(e.pc)+" in class":"DNF"]],c.n);});
   /* medals: achievements (shared by both modes) */
@@ -28538,7 +28538,7 @@ function tropBest(name,h){const R=recs(),out=[],mine=e=>e&&(e.n===name||(h&&e.h=
   if(R.bog)Object.keys(R.bog).forEach(k=>{const e=R.bog[k];if(mine(e))out.push(["Bog · "+trCls(SIM.BOG_CLASSES,k),e.c?trF(e.t,2)+" s":trF(e.m,1)+" m"]);});
   if(R.lsr&&R.lsr.pb)Object.keys(R.lsr.pb).forEach(k=>{const e=R.lsr.pb[k];if(mine(e))out.push(["Salt · "+k,trF(e.mph,2)+" mph"]);});
   if(R.road)Object.keys(R.road).forEach(k=>{const e=R.road[k],t2=e&&SIM.ROAD_TRACKS[e.trk];if(mine(e)&&t2)out.push(["Lap · "+t2.n,fmtLap(e.t,2)]);});
-  if(R.hill)Object.keys(R.hill).forEach(k=>{const e=R.hill[k];if(mine(e)&&e.t)out.push(["Pikes Peak · "+trHill(k),fmtHill(e.t)]);});
+  if(R.hill)Object.keys(R.hill).forEach(k=>{const e=R.hill[k];if(mine(e)&&e.t)out.push(["Cloudsplitter Peak · "+trHill(k),fmtHill(e.t)]);});
   const wins=tropBook().log.filter(e=>!e.seed&&e.slot!=="pennant"&&(e.h===h||e.eng===name)).length;if(wins)out.unshift(["Trophies",wins]);
   return out.slice(0,6);}
 function tropRetire(){if(testing){toast("Let the run finish first");return;}
@@ -28958,7 +28958,7 @@ function railDyno(){if(testing)return;pickTest(railDynoT());$("runTest").click()
    Hooks: resultReveal() in test.js calls rcSeen(); tropHook() in trophy.js calls rcTrophy(); tropCard() calls holoWire(). */
 const RC={armed:false,open:false,res:null,env:null,ghost:null,lastDyno:null,prev:{},cmp:null,trop:null,tropAt:0,wait:0,tries:0};
 const RC_DELAY=450,RC_WAIT=250,RC_TRIES=48;   // ms after a dyno test; events wait for the scene to end, checking every 250 ms for up to 12 s
-const RC_KICK={pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev",drag:"Drag pass",pull_sled:"Truck pull",salt:"Salt run",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Dirt oval",race24:"24 Hours"};
+const RC_KICK={pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev",drag:"Drag pass",pull_sled:"Truck pull",salt:"Salt run",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Cloudsplitter Peak",oval:"Dirt oval",race24:"24 Hours"};
 /* the hero number for each test: v (shown), u (unit), n (number for the delta), lo (lower is better), key (only compare runs with the same key), d (delta decimals) */
 const RC_HERO={
   pull:res=>({v:Math.round(res.peakHp),u:"hp",n:res.peakHp,key:"dyno",d:0}),
@@ -30026,9 +30026,9 @@ PC_KIND.pull={
   where:T=>esc(T.rig)+" · #"+T.num};
 function pcPullLegal(E){try{return SIM.PULL_CLASSES[E.cls].legal(S.cfg);}catch(e){return{ok:false,why:"can't be teched"};}}
 /* ===================== TEAM SEASONS: the hill climb series (since 1.76.51; plugs into PC_KIND, app/team.js) =====================
-   A hill climb team runs one class of the hillclimb (Open, Time Attack, Pikes Peak Open, Unlimited: SIM.HILL_CLASSES) for
+   A hill climb team runs one class of the hillclimb (Open, Time Attack, Cloudsplitter Peak Open, Unlimited: SIM.HILL_CLASSES) for
    eight rounds. Rounds 1–7 rotate through four shorter, lower made-up hills (SIM.HILL_HILLS: Badlands Grade, Kettle Butte,
-   Ghost Ridge, Thunder Pass), starting at a different one for each team; round 8 is the finale on Pikes Peak. Race day is
+   Ghost Ridge, Thunder Pass), starting at a different one for each team; round 8 is the finale on Cloudsplitter Peak. Race day is
    text only: the team's car (its chassis, the class's best legal tyres and aero) makes one timed run with your engine,
    run at the hill's five altitudes in the round's weather (SIM.hillPrep), against nine season regulars (SIM.hillAiPrep cars,
    their power growing a little each round) on the same corner calls, ranked by time. The sim's own DNFs count (over the
@@ -30038,15 +30038,15 @@ function pcPullLegal(E){try{return SIM.PULL_CLASSES[E.cls].legal(S.cfg);}catch(e
 Object.assign(PC_EVENTS,{
   hillopen:{ev:"hill",cls:"open",n:"Open hill climb",tier:0,rep:0,budget:[2500,5500],pay:[60000,80000],tip:"Street or sport tyres and no aero: grip and gearing win it, not power."},
   hillta:{ev:"hill",cls:"ta",n:"Time Attack hill climb",tier:1,rep:40,budget:[4500,9500],pay:[130000,170000],tip:"Semi-slicks and a wing. A turbo keeps its breath as the road climbs."},
-  hillppo:{ev:"hill",cls:"ppo",n:"Pikes Peak Open hill climb",tier:2,rep:120,budget:[7000,16000],pay:[280000,360000],tip:"Slicks, splitter and wing on a stripped car; the finale tops out at 4,302 m."},
+  hillppo:{ev:"hill",cls:"ppo",n:"Cloudsplitter Peak Open hill climb",tier:2,rep:120,budget:[7000,16000],pay:[280000,360000],tip:"Slicks, splitter and wing on a stripped car; the finale tops out at 4,302 m."},
   hillunl:{ev:"hill",cls:"unl",n:"Unlimited hill climb",tier:3,rep:300,budget:[14000,30000],pay:[600000,780000],tip:"Anything goes: big aero and as much power as the thin air leaves you."}});
-/* the season's hills: the four rotating ones, then Pikes Peak for the last round. PC_HILL_DT: the field's and your time step */
+/* the season's hills: the four rotating ones, then Cloudsplitter Peak for the last round. PC_HILL_DT: the field's and your time step */
 const PC_HILLS=["badlands","kettle","ghost","thunder"],PC_HILL_FIN="pikes",PC_HILL_DT=0.04;
 const PC_HILL_K=[0.84,0.89,0.93,0.97,1.0,1.03,1.06,1.1,1.16];   // the nine regulars' power, against the class's field
 /* the cars a series runs (the team's and the regulars'): anything but the pickup; the two fast classes only the cars built to corner */
 const PC_HILL_CH={ppo:["roadster","coupe","rally","super"],unl:["roadster","coupe","rally","super"]};
 const pcHillCh=E=>(PC_HILL_CH[E.cls]||Object.keys(SIM.CHASSIS).filter(c=>c!=="pickup")).filter(c=>SIM.CHASSIS[c]);
-/* the hill for the team's next (or current) round: a different one each round, Pikes Peak for the last */
+/* the hill for the team's next (or current) round: a different one each round, Cloudsplitter Peak for the last */
 function pcHillId(T){return T.round>=PC_ROUNDS-1?PC_HILL_FIN:PC_HILLS[((T.seed>>>0)+T.round)%PC_HILLS.length];}
 function pcHillTxt(id){const H=SIM.HILL_HILLS[id],s=H.secs,km=s.reduce((a,x)=>a+x.km,0),n=s.reduce((a,x)=>a+x.cor,0);
   return`${km.toFixed(km%1?1:0)} km and ${n} turns up to ${s[s.length-1].alt.toLocaleString("en-CA")} m${id===PC_HILL_FIN?": the finale":""}`;}
@@ -30103,9 +30103,9 @@ PC_KIND.hill={needHp:E=>SIM.HILL_CLASSES[E.cls].field.hp*1.1,
   but:(T,E,res,hp)=>E.cls==="open"&&hp>450?", though street rubber and no aero won't use much of it":"",
   rules:()=>[],
   day:pcHillDay,
-  setupTxt(T){const su=suForHash(T.hash!=null?T.hash:cfgHash(S.cfg));return su?`<b>Setup:</b> yours, from the setup sheet for this engine (${esc(suTuneSum({v:suArr(su)}))}).`:"<b>Setup:</b> stock. Tune this engine's setup on the road test or Pikes Peak and the team runs it.";},
+  setupTxt(T){const su=suForHash(T.hash!=null?T.hash:cfgHash(S.cfg));return su?`<b>Setup:</b> yours, from the setup sheet for this engine (${esc(suTuneSum({v:suArr(su)}))}).`:"<b>Setup:</b> stock. Tune this engine's setup on the road test or Cloudsplitter Peak and the team runs it.";},
   pts:pl=>PC_PTS_OVAL[pl-1]||0,placeTxt:o=>o.sat?"Sat out":o.dnf?`DNF (P${o.place} of ${o.of})`:o.place===1?"Won the climb":`P${o.place} of ${o.of}`,eff:o=>o.sat||o.dnf?99:o.place,
-  fieldTxt(T,E){const C0=SIM.HILL_CLASSES[E.cls],d=C0.d.replace(/ · /g,", ");return`The field makes about ${C0.field.hp} hp at the shop and loses some of it to the altitude. ${d.charAt(0).toUpperCase()+d.slice(1)}. Rounds 1–7 rotate through four hills; round 8 is Pikes Peak.`;},
+  fieldTxt(T,E){const C0=SIM.HILL_CLASSES[E.cls],d=C0.d.replace(/ · /g,", ");return`The field makes about ${C0.field.hp} hp at the shop and loses some of it to the altitude. ${d.charAt(0).toUpperCase()+d.slice(1)}. Rounds 1–7 rotate through four hills; round 8 is Cloudsplitter Peak.`;},
   where:T=>`${SIM.CHASSIS[T.ch]?SIM.CHASSIS[T.ch].n:"Hill car"} · car #${T.num}`};
 /* ===================== OFFERS BUILT AROUND YOUR ENGINE (Team tab, since 1.76.69) =====================
    Build any engine you like: once it holds a clean, certified pull, a team in a series it suits makes an offer for it, so
@@ -30606,11 +30606,11 @@ const EVH={
   drag:{h:16,v:"Section Line Dragway",d:"Quarter-mile passes and heads-up race nights on a prepped strip.",cls:()=>Object.keys(SIM.AERO).length+" body classes"},
   bracket:{h:42,v:"Section Line Dragway",d:"Dial in your ET and race heads-up: run under your dial and you break out.",cls:()=>Object.keys(SIM.AERO).length+" body classes"},
   pull_sled:{h:95,v:"Elevator Row Fairgrounds",d:"A truck drags a weighted sled down 300 ft of dirt.",cls:()=>Object.keys(SIM.PULL_CLASSES).length+" classes"},
-  salt:{h:200,v:"Bonneville Salt Flats",d:"One timed mile at full speed, then the chute. Thin air costs power.",cls:()=>Object.keys(SIM.LSR_BODIES).length+" body classes"},
+  salt:{h:200,v:"Bitterwater Salt Flats",d:"One timed mile at full speed, then the chute. Thin air costs power.",cls:()=>Object.keys(SIM.LSR_BODIES).length+" body classes"},
   bog:{h:75,v:"Gumbo Flats",d:"Hit the mud with speed and keep the wheels turning: through scores time, stuck scores distance.",cls:()=>Object.keys(SIM.BOG_CLASSES).length+" classes"},
   boat:{h:190,v:"Cutbank Reach",d:"Heads-up over 1,000 ft of water: a slipping prop, the hump, then the plane.",cls:()=>Object.keys(SIM.BOAT_CLASSES).length+" classes"},
   road:{h:215,v:"Prairie Sky Raceway",d:"Your engine in a chassis: 0-100, the quarter, top speed and a flying lap.",cls:()=>Object.keys(SIM.ROAD_TRACKS).length+" circuits"},
-  hill:{h:265,v:"Pikes Peak",d:"19.99 km and 156 turns, from 2,862 m up into thin air.",cls:()=>Object.keys(SIM.HILL_CLASSES).length+" classes"},
+  hill:{h:265,v:"Cloudsplitter Peak",d:"19.99 km and 156 turns, from 2,862 m up into thin air.",cls:()=>Object.keys(SIM.HILL_CLASSES).length+" classes"},
   oval:{h:8,v:"Grid Road and Sundog Speedways",d:"A heat race, then the feature, in one gear on a banked oval.",cls:()=>Object.keys(SIM.OVAL_CLASSES).length+" classes"},
   race24:{h:235,v:"Prairie Sky Raceway",d:"A day and a night against twenty cars in three classes.",cls:()=>Object.keys(SIM.E24_CLASSES).length+" classes"}};
 /* the money cell: [label, text]. Career reads the same tables the payouts do; the sandbox has no entry fees */
@@ -31015,7 +31015,7 @@ const LESSONS=[
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the slip",text:"After each round the slip shows your ET against your dial, your rival's ET and dial, and who went through. Ran a hair over your dial is a good round. Ran under it, and you broke out and lost, however quick it was."}]},
  {id:"salt",name:"Salt flats 101",sub:"thin air, gearing, body, chutes",preset:"2jzgte",env:{testType:"salt"},steps:[
   {tab:"events",sel:'#evHead',title:"A mile at full speed",text:"Salt flats is a top-speed run. You roll to the line, push off, and hold the throttle while the clocks time one mile that starts well down the course. Salt grips about half as well as a prepped strip, so the wheels let go early."},
-  {tab:"events",sel:"#envBox>p.hint",title:"Thin air costs power",text:"Bonneville is high and warm, so the engine makes less than it did on the dyno. A boosted engine gets most of it back. A naturally aspirated one does not."},
+  {tab:"events",sel:"#envBox>p.hint",title:"Thin air costs power",text:"Bitterwater is high and warm, so the engine makes less than it did on the dyno. A boosted engine gets most of it back. A naturally aspirated one does not."},
   {tab:"events",sel:'#envBox [data-sk="saltBody"]',up:1,lbl:1,title:"Pick a body",text:"From the altered, with its street body and big radiator, to the streamliner with its wheels enclosed. Less drag is more top speed, but the streamliner is the twitchy one."},
   {tab:"events",sel:'#envBox [data-sk="saltCourse"]',up:1,lbl:1,title:"Short or long course",text:"The short course has a one-mile run-up and the long one four. A longer run-up gives the car more road to climb to its top speed before the clocks start."},
   {tab:"events",sel:"#er-saltTop",wrap:".env",title:"Top gear",text:"Under Advanced, in Gearing. This is the road speed at redline in top gear. Too short and you hit the limiter early. Too tall and the engine never reaches its power. The Suggest gearing button below it picks one for this engine and body."},
@@ -31047,10 +31047,10 @@ const LESSONS=[
   {tab:"events",sel:"#er-roadFinal",wrap:".env",title:"Final drive",text:"Under Advanced, in Drive & view. A shorter ratio pulls harder out of corners. A taller one runs out the straight. The line under the chassis shows where top gear lands against the power peak."},
   {tab:"events",sel:"#runTest",title:"Roll out",text:"Start the test. The straight-line runs happen first, then the lap. Space skips the lap playback if you only want the numbers."},
   {tab:"events",sel:"#dynoHint,#verdict",title:"Read the lap",text:"The straight-line numbers show whether the engine is strong. The lap shows whether the car can use it. A quick straight with a slow lap points at grip or balance, not power."}]},
- {id:"hill",name:"Pikes Peak 101",sub:"thin air, class, tyres, final drive",preset:"4g63",env:{testType:"hill"},steps:[
-  {tab:"events",sel:'#evHead',title:"Up the mountain",text:"Pikes Peak is a 19.99 km hill climb with 156 turns. It runs from 2,862 m to 4,302 m, so the air gets steadily thinner as you climb and the engine gets weaker."},
+ {id:"hill",name:"Cloudsplitter Peak 101",sub:"thin air, class, tyres, final drive",preset:"4g63",env:{testType:"hill"},steps:[
+  {tab:"events",sel:'#evHead',title:"Up the mountain",text:"Cloudsplitter Peak is a 19.99 km hill climb with 156 turns. It runs from 2,862 m to 4,302 m, so the air gets steadily thinner as you climb and the engine gets weaker."},
   {tab:"events",sel:"#envBox>p.hint",title:"The power you lose",text:"This line shows what the engine makes at the shop, at the start line and on the summit. An atmospheric engine's power follows the air down. Boost holds more of it."},
-  {tab:"events",sel:'#envBox [data-hk="hillCls"]',up:1,lbl:1,title:"Pick a class",text:"Open is a street car on street tyres with no aero. Time Attack adds semi-slicks and a wing. Pikes Peak Open and Unlimited allow slicks and big aero."},
+  {tab:"events",sel:'#envBox [data-hk="hillCls"]',up:1,lbl:1,title:"Pick a class",text:"Open is a street car on street tyres with no aero. Time Attack adds semi-slicks and a wing. Cloudsplitter Peak Open and Unlimited allow slicks and big aero."},
   {tab:"events",sel:'#envBox [data-hk="hillTyre"]',up:1,lbl:1,title:"Tyres",text:"The tyres on offer depend on the class. Grip decides how hard you can push through the 156 turns. In You drive, dusty corners want a LIFT."},
   {tab:"events",sel:'#envBox [data-hk="hillCh"]',up:1,lbl:1,title:"Pick the car",text:"Under Advanced, in Car. A 1,000 kg roadster up to a 2,100 kg pickup, with rear, front or all-wheel drive. The line at the top of Setup updates with its weight and gearing."},
   {tab:"events",sel:"#er-hillFinal",wrap:".env",title:"Final drive",text:"Under Advanced, in Drive & view. A shorter ratio pulls harder out of the many slow corners. A taller one runs out of revs on the fast sections. The line at the top of Setup shows the speed it is geared for."},

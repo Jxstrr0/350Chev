@@ -16,11 +16,11 @@ const EVH={
   drag:{h:16,v:"Section Line Dragway",d:"Quarter-mile passes and heads-up race nights on a prepped strip.",cls:()=>Object.keys(SIM.AERO).length+" body classes"},
   bracket:{h:42,v:"Section Line Dragway",d:"Dial in your ET and race heads-up: run under your dial and you break out.",cls:()=>Object.keys(SIM.AERO).length+" body classes"},
   pull_sled:{h:95,v:"Elevator Row Fairgrounds",d:"A truck drags a weighted sled down 300 ft of dirt.",cls:()=>Object.keys(SIM.PULL_CLASSES).length+" classes"},
-  salt:{h:200,v:"Bonneville Salt Flats",d:"One timed mile at full speed, then the chute. Thin air costs power.",cls:()=>Object.keys(SIM.LSR_BODIES).length+" body classes"},
+  salt:{h:200,v:"Bitterwater Salt Flats",d:"One timed mile at full speed, then the chute. Thin air costs power.",cls:()=>Object.keys(SIM.LSR_BODIES).length+" body classes"},
   bog:{h:75,v:"Gumbo Flats",d:"Hit the mud with speed and keep the wheels turning: through scores time, stuck scores distance.",cls:()=>Object.keys(SIM.BOG_CLASSES).length+" classes"},
   boat:{h:190,v:"Cutbank Reach",d:"Heads-up over 1,000 ft of water: a slipping prop, the hump, then the plane.",cls:()=>Object.keys(SIM.BOAT_CLASSES).length+" classes"},
   road:{h:215,v:"Prairie Sky Raceway",d:"Your engine in a chassis: 0-100, the quarter, top speed and a flying lap.",cls:()=>Object.keys(SIM.ROAD_TRACKS).length+" circuits"},
-  hill:{h:265,v:"Pikes Peak",d:"19.99 km and 156 turns, from 2,862 m up into thin air.",cls:()=>Object.keys(SIM.HILL_CLASSES).length+" classes"},
+  hill:{h:265,v:"Cloudsplitter Peak",d:"19.99 km and 156 turns, from 2,862 m up into thin air.",cls:()=>Object.keys(SIM.HILL_CLASSES).length+" classes"},
   oval:{h:8,v:"Grid Road and Sundog Speedways",d:"A heat race, then the feature, in one gear on a banked oval.",cls:()=>Object.keys(SIM.OVAL_CLASSES).length+" classes"},
   race24:{h:235,v:"Prairie Sky Raceway",d:"A day and a night against twenty cars in three classes.",cls:()=>Object.keys(SIM.E24_CLASSES).length+" classes"}};
 /* the money cell: [label, text]. Career reads the same tables the payouts do; the sandbox has no entry fees */

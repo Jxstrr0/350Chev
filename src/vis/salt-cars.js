@@ -1,5 +1,5 @@
 /* ===========================================================================
-   SALT CARS (v2) — the Bonneville cars, built like the real ones.
+   SALT CARS (v2) — the Bitterwater cars, built like the real ones.
    Streamliner: flat sides, flat bottom, wheels behind skirts, a chisel or
    needle nose, canopy, headrest fairing, tail fin, chute tubes.
    Lakester: a belly tank on a narrow track, Moon discs on tall skinny tyres.
@@ -84,7 +84,7 @@ function slAtlas(L){
   x.font="700 74px "+F; x.fillText(L.cls||"—", R[0]+R[2]/2+16, R[1]+R[3]/2+5, R[2]-60);
   /* tech sticker and a meet sticker */
   R=A.tech; x.fillStyle="#e8b21b"; x.beginPath(); x.arc(R[0]+R[2]/2, R[1]+R[3]/2, 46, 0, TAU); x.fill(); x.fillStyle="#141414"; x.font="700 26px "+F; x.fillText("TECH", R[0]+R[2]/2, R[1]+R[3]/2-10); x.font="700 22px "+F; x.fillText("✓ OK", R[0]+R[2]/2, R[1]+R[3]/2+16);
-  R=A.club; x.fillStyle="#1d3f8f"; spRRect(x, R[0]+6, R[1]+10, R[2]-12, R[3]-20, 10); x.fill(); x.fillStyle="#f4efe2"; x.font="italic 700 34px "+F; x.fillText("SPEED WEEK", R[0]+R[2]/2, R[1]+R[3]/2-6, R[2]-24); x.font="600 18px "+F; x.fillText("BONNEVILLE · SALT FLATS", R[0]+R[2]/2, R[1]+R[3]/2+22, R[2]-24);
+  R=A.club; x.fillStyle="#1d3f8f"; spRRect(x, R[0]+6, R[1]+10, R[2]-12, R[3]-20, 10); x.fill(); x.fillStyle="#f4efe2"; x.font="italic 700 34px "+F; x.fillText("SPEED WEEK", R[0]+R[2]/2, R[1]+R[3]/2-6, R[2]-24); x.font="600 18px "+F; x.fillText("BITTERWATER · SALT FLATS", R[0]+R[2]/2, R[1]+R[3]/2+22, R[2]-24);
   /* sponsor blocks */
   for(i=0;i<A.sp.length;i++){ R=A.sp[i]; slSponsor(x, SL_SPONSORS[L.sponsors[i%L.sponsors.length]], R[0], R[1], R[2], R[3]); }
   /* the rail: a row of small sponsor blocks */

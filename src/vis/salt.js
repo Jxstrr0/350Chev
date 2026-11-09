@@ -1,5 +1,5 @@
 /* ===========================================================================
-   SALT FLATS SCENE — Bonneville land-speed runs, a fourth world the view cuts
+   SALT FLATS SCENE — Bitterwater land-speed runs, a fourth world the view cuts
    to while ENGINE_VIS.setSalt({on:true, ...}) is fed every frame.
    Units metres. x = distance down the course from the start line (the timed
    mile sits a mile or three out), y up, z across: pits and timing stands on

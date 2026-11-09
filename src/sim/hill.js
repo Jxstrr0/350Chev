@@ -1,7 +1,7 @@
   /* =====================================================================
-     Hillclimbs. Pikes Peak: 19.99 km, 156 turns, 2,862 m at the line to 4,302 m on the summit. Since the team
+     Hillclimbs. Cloudsplitter Peak: 19.99 km, 156 turns, 2,862 m at the line to 4,302 m on the summit. Since the team
      hill climb series, four shorter and lower made-up hills built from the same kit (HILL_HILLS: Badlands Grade,
-     Kettle Butte, Ghost Ridge, Thunder Pass). Every call takes a hill id and defaults to Pikes Peak, so the Pikes
+     Kettle Butte, Ghost Ridge, Thunder Pass). Every call takes a hill id and defaults to Cloudsplitter Peak, so the Cloudsplitter
      event is the same as before. A course is a fixed sequence of straights and constant-radius corners, laid out
      section by section (the corner count, length and climb of each are set; radii, angles and straights come
      from the hill's fixed seed), with an elevation profile per section. The engine is run through
@@ -29,11 +29,11 @@
     { id: "boulder", n: "Boulder Park", km: 2.0, alt: 4235, cor: 18, mix: "tech", bear: 4.3, drop: 0.45, names: [[9, "Boulder Park"]] },
     { id: "summit", n: "Summit", km: 1.59, alt: 4302, cor: 14, mix: "summit", bear: 5.2, drop: 0.5, names: [[3, "Olympic"], [13, "Summit"]] }
   ];
-  /* the hills: Pikes Peak (the event, and the team series' finale) and four made-up climbs for the team series' rounds 1–7,
+  /* the hills: Cloudsplitter Peak (the event, and the team series' finale) and four made-up climbs for the team series' rounds 1–7,
      shorter and lower, built from the same section kit. alt0 the start altitude, tree the treeline (dustier calls above it),
      seed the layout's, secs the sections (as HILL_SECTIONS), edge the named corners that are a sure drop with no guardrail */
   const HILL_HILLS = {
-    pikes: { n: "Pikes Peak", d: "the big one: nearly 20 km into thin air", alt0: HILL_ALT0, tree: HILL_TREE, seed: HILL_SEED, secs: HILL_SECTIONS, edge: ["Bottomless Pit"] },
+    pikes: { n: "Cloudsplitter Peak", d: "the big one: nearly 20 km into thin air", alt0: HILL_ALT0, tree: HILL_TREE, seed: HILL_SEED, secs: HILL_SECTIONS, edge: ["Bottomless Pit"] },
     badlands: { n: "Badlands Grade", d: "up out of a prairie coulee: short, fast and dusty", alt0: 690, tree: 600, seed: 3107, edge: [], secs: [
       { id: "coulee", n: "Coulee Floor", km: 1.5, alt: 735, cor: 8, mix: "fast", bear: 0.3, drop: 0.05, names: [[3, "Dry Creek Bend"]] },
       { id: "hoodoo", n: "The Hoodoos", km: 1.6, alt: 830, cor: 12, mix: "mixed", bear: 1.0, drop: 0.15, names: [[5, "The Hoodoos"]] },
@@ -66,17 +66,17 @@
   const HILL_CLASSES = {
     open: { n: "Open", d: "street car · street or sport tyres · no aero", tier: 1, rep: 0, tyres: ["street", "sport"], aero: ["none"], massK: 1, field: { hp: 260, sd: 70, turbo: 0.35, skill: 0.55 } },
     ta: { n: "Time Attack", d: "production car · semi-slicks · a wing", tier: 2, rep: 25, tyres: ["sport", "semi"], aero: ["none", "wing"], massK: 1, field: { hp: 420, sd: 90, turbo: 0.6, skill: 0.65 } },
-    ppo: { n: "Pikes Peak Open", d: "modified · slicks · splitter and wing", tier: 3, rep: 70, tyres: ["semi", "slick"], aero: ["none", "wing", "full"], massK: 0.93, field: { hp: 600, sd: 110, turbo: 0.75, skill: 0.75 } },
+    ppo: { n: "Cloudsplitter Peak Open", d: "modified · slicks · splitter and wing", tier: 3, rep: 70, tyres: ["semi", "slick"], aero: ["none", "wing", "full"], massK: 0.93, field: { hp: 600, sd: 110, turbo: 0.75, skill: 0.75 } },
     unl: { n: "Unlimited", d: "anything goes · big aero", tier: 4, rep: 160, tyres: ["slick"], aero: ["full", "unl"], massK: 0.78, field: { hp: 880, sd: 160, turbo: 0.85, skill: 0.85 } }
   };
   // pressure ratio a compressor wheel can make before it runs out of tip speed (a compound pair multiplies two)
   const HILL_PR = { small: 2.7, medium: 3.0, large: 3.3, s66: 4.4, huge: 3.6, f88: 3.9, f98: 4.1 };
   const HILL_ALTS = [2862, 3222, 3582, 3942, 4302];
-  /* the five altitudes a hill's engine is run at, line to finish (Pikes: HILL_ALTS) */
+  /* the five altitudes a hill's engine is run at, line to finish (Cloudsplitter: HILL_ALTS) */
   const hillAlts = id => { if (hillId(id) === "pikes") return HILL_ALTS; const H = hillDef(id), a1 = H.secs[H.secs.length - 1].alt; return [0, 1, 2, 3, 4].map(i => Math.round(H.alt0 + (a1 - H.alt0) * i / 4)); };
   const HILL_CALL = { dusty: -0.04, clean: 0, grippy: 0.035 };
   const hillWrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
-  const hillAmbC = alt => 16 - 6.5 * (alt - HILL_ALT0) / 1000;   // a July morning: 16 °C at Pikes' line, about 7 °C on top; one air for every hill (a team round shifts it by its weather: wx.dT)
+  const hillAmbC = alt => 16 - 6.5 * (alt - HILL_ALT0) / 1000;   // a July morning: 16 °C at Cloudsplitter's line, about 7 °C on top; one air for every hill (a team round shifts it by its weather: wx.dT)
 
   /* one corner from a section's mix: [radius m, angle deg, hairpin?] */
   function hillMix(mix, r) {
@@ -92,7 +92,7 @@
     return q < 0.3 ? hp() : q < 0.7 ? tight() : med();   // summit
   }
   const HILL_COURSE = {};
-  /* a hill's course (id, default Pikes Peak; built once and kept): samples every 2.5 m with position, heading, curvature (+ left),
+  /* a hill's course (id, default Cloudsplitter Peak; built once and kept): samples every 2.5 m with position, heading, curvature (+ left),
      altitude, grade, section and corner */
   function hillCourse(id) {
     id = hillId(id);
@@ -170,8 +170,8 @@
   }
   const hillZ = (T, s) => { const f = clamp(s / T.ds, 0, T.N - 1.001), i = f | 0; return T.z[i] + (T.z[i + 1] - T.z[i]) * (f - i); };
 
-  /* the engine on the way up: simulate() at each of the hill's five altitudes (Pikes: HILL_ALTS) with the boost and mixture that
-     altitude gets. id: the hill (default Pikes Peak). wx (a team round's weather): {dT: °C off the standard morning, h: humidity %} */
+  /* the engine on the way up: simulate() at each of the hill's five altitudes (Cloudsplitter: HILL_ALTS) with the boost and mixture that
+     altitude gets. id: the hill (default Cloudsplitter Peak). wx (a team round's weather): {dT: °C off the standard morning, h: humidity %} */
   function hillPrep(cfg, env, id, wx) {
     cfg = Object.assign({}, DEFAULT_CFG, cfg || {});
     const dT = wx && +wx.dT || 0, alts = hillAlts(id);
@@ -245,7 +245,7 @@
   }
 
   /* one run up the hill. opt: {hill?, cls, ch, tyre, aero, finalK, seed, calls?, plan?, ai?}; the hill is opt.hill, else the one
-     the prep was run for, else Pikes Peak. step(dt, ctl): ctl = {c} the commitment for corners not yet turned into (1 = the known
+     the prep was run for, else Cloudsplitter Peak. step(dt, ctl): ctl = {c} the commitment for corners not yet turned into (1 = the known
      limit), or null to drive the plan. */
   function hillNew(prep, opt) {
     const hid = hillId(opt.hill || prep.hill), T = hillCourse(hid), N = T.N, ds = T.ds, car = hillCar(prep, opt), m = car.m, P = prep.pts, nP = P.length;

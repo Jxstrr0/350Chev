@@ -1,5 +1,5 @@
   /* =====================================================================
-     BONNEVILLE — land-speed runs on the salt.
+     BITTERWATER — land-speed runs on the salt.
      A push truck rolls the car to ~27 mph, then the driver has a run-up (one mile on the
      short course, two on the long) to the timed mile, then shuts off and pulls the chute.
      The run is straight-line physics at the event's air: the engine curve comes from
@@ -12,7 +12,7 @@
        lift   = ½ ρ ClA v², mostly over the front: past half the front's static load the
                 car wanders, near none of it the car is flying — the driver has to lift
        roll   = Crr (salt, rising with speed) × weight
-     A minute or more at full load is what Bonneville asks of an engine: coolant heat
+     A minute or more at full load is what Bitterwater asks of an engine: coolant heat
      builds against a radiator (or soaks into an ice tank), the exhaust heat-soaks, and
      every second near the redline is a small chance for the build's weakest part to let
      go — larger the closer the sim's own tests put that part to its limit.
@@ -57,7 +57,7 @@
   }
   function lsrRng(seed) { let a = (seed >>> 0) || 1; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   function lsrHash(s) { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
-  /* the engine curve at the salt: simulate() again in Bonneville's thin, hot air (plus what a pass needs from dragPrep) */
+  /* the engine curve at the salt: simulate() again in Bitterwater's thin, hot air (plus what a pass needs from dragPrep) */
   function lsrPrep(cfg, env) {
     const e = Object.assign({}, DEFAULT_ENV, env || {}, SALT_ENV, { testType: "pull" });
     const res = dragPrep(cfg, e);

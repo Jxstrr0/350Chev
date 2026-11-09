@@ -1,5 +1,5 @@
 /* ===========================================================================
-   PIKES PEAK SCENE — the hillclimb, a world the view cuts to while
+   CLOUDSPLITTER PEAK SCENE — the hillclimb, a world the view cuts to while
    ENGINE_VIS.setHill({on:true, course, s, v, d, ...}) is fed every frame.
    Units metres. The course comes from ENGINE_SIM.hillCourse (x, y, heading,
    curvature, altitude per 2.5 m sample); world x = course x − ox, world z =
@@ -69,7 +69,7 @@ function hillTerrainFn(W){
 }
 function hillTerrColor(alt, slope, n, out){   /* forest floor → alpine tundra → bare granite, by altitude and steepness */
   var tl=smoothstep(3460,3640,alt+n*90), hi=smoothstep(3950,4250,alt+n*60), st=smoothstep(0.55,1.1,slope);
-  var r=lerp(0.17,0.30,tl), g=lerp(0.22,0.26,tl), b=lerp(0.11,0.17,tl);   /* pine duff and grass → tundra and Pikes Peak granite, pinkish grey */
+  var r=lerp(0.17,0.30,tl), g=lerp(0.22,0.26,tl), b=lerp(0.11,0.17,tl);   /* pine duff and grass → tundra and Cloudsplitter Peak granite, pinkish grey */
   r=lerp(r,0.36,hi); g=lerp(g,0.30,hi); b=lerp(b,0.27,hi);
   r=lerp(r,0.38,st*0.7); g=lerp(g,0.31,st*0.7); b=lerp(b,0.28,st*0.7);
   var k=0.86+0.28*n; return out.setRGB(r*k,g*k,b*k).convertSRGBToLinear(); }

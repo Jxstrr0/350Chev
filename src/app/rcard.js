@@ -8,7 +8,7 @@
    Hooks: resultReveal() in test.js calls rcSeen(); tropHook() in trophy.js calls rcTrophy(); tropCard() calls holoWire(). */
 const RC={armed:false,open:false,res:null,env:null,ghost:null,lastDyno:null,prev:{},cmp:null,trop:null,tropAt:0,wait:0,tries:0};
 const RC_DELAY=450,RC_WAIT=250,RC_TRIES=48;   // ms after a dyno test; events wait for the scene to end, checking every 250 ms for up to 12 s
-const RC_KICK={pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev",drag:"Drag pass",pull_sled:"Truck pull",salt:"Salt run",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Pikes Peak",oval:"Dirt oval",race24:"24 Hours"};
+const RC_KICK={pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev",drag:"Drag pass",pull_sled:"Truck pull",salt:"Salt run",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Cloudsplitter Peak",oval:"Dirt oval",race24:"24 Hours"};
 /* the hero number for each test: v (shown), u (unit), n (number for the delta), lo (lower is better), key (only compare runs with the same key), d (delta decimals) */
 const RC_HERO={
   pull:res=>({v:Math.round(res.peakHp),u:"hp",n:res.peakHp,key:"dyno",d:0}),
