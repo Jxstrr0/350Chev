@@ -26,6 +26,7 @@ There are no dependencies and no package.json, only node (16 or newer).
   ```
   node build.js            # rebuild index.html, scenes.js and sw.js from src/
   node build.js --check    # fails if index.html, scenes.js or sw.js is out of date
+  node tools/sim-test.js   # after a physics change: shows every sim number that moved
   node check-savecode.js   # save-code round-trip checks
   ```
 

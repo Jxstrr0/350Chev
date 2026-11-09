@@ -17,9 +17,10 @@ Prairie Engine Works is a browser engine-builder by Longlight Interactive: pick 
 node build.js            # rebuild index.html, scenes.js and sw.js from src/
 node build.js --check    # exit 1 if either is stale, a script block does not compile, or a function is declared twice
 node check-savecode.js   # 15 save-code checks: round trip, damaged and cut-off codes, storage full, old PEW2 codes
+node tools/sim-test.js   # 480 sim numbers (ten engines, the dyno and all ten events) against tools/sim-baseline.json
 ```
 
-Run all three before every commit. To play a local copy: `python3 -m http.server` in the repo root and open it in a browser. The service worker only registers on a real host (or with `?sw=1`), so local testing is never cached.
+Run the first three before every commit. Run `node tools/sim-test.js` whenever `src/sim/` changes: it lists every number that moved. If the move was meant, `node tools/sim-test.js --update` and paste the list into the commit message; if it was not, you just found a bug. To play a local copy: `python3 -m http.server` in the repo root and open it in a browser. The service worker only registers on a real host (or with `?sw=1`), so local testing is never cached.
 
 ## Source and build
 
@@ -59,7 +60,7 @@ require("fs").writeFileSync("/tmp/sim.js",h.slice(h.lastIndexOf("<script>",i)+8,
 node -e 'const SIM=require("/tmp/sim.js"); console.log(Object.keys(SIM))'
 ```
 
-When changing physics, run a before/after comparison on the affected events and put the numbers in the commit message.
+When changing physics, run `node tools/sim-test.js` (it covers every event, not just the one you meant to change) and put what moved in the commit message. For a closer look at one event, load the sim as above and compare before and after by hand.
 
 ## Save codes
 
@@ -77,6 +78,7 @@ When changing physics, run a before/after comparison on the affected events and 
 - `src/css/`: `style.css` plus one `ui-*.css` per feature lane.
 - `docs/DESIGN.md`: the game as built.
 - `src/vis/models.js` and `models/`: the glTF props for the workshop, the pull track (`PULL_PROPS` in `src/vis/pull.js`) and the drag pits (`PITS_MODELS` in `src/vis/pits.js`), Full / Ultra, and `tools/pack-model.py`, which packs a downloaded model for them.
+- `tools/sim-test.js` and `tools/sim-baseline.json`: the sim regression check (see Commands).
 - `tools/make-icons.js`: renders `icons/` (needs Playwright; run by hand, output is committed).
 
 ## How Kelbo works
