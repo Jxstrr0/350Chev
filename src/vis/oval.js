@@ -258,7 +258,7 @@ function ovalDirect(o, dt, me, V){
     pos.copy(OVAL.rp); tgt.copy(OVAL.rt); OVAL.relOn=true; } else OVAL.relOn=false;
   if(OVAL.snap){ OVAL.fov=fov; OVAL.snap=false; OVAL.camTgt.copy(tgt); } else OVAL.fov+=(fov-OVAL.fov)*(1-Math.exp(-5*dt));
   OVAL.camPos.copy(pos); if(rel) OVAL.camTgt.copy(tgt); else OVAL.camTgt.lerp(tgt,1-Math.exp(-7*dt));
-  OVAL.shake*=Math.exp(-dt*3); var sh=OVAL.shake; if(sh>0.002){ OVAL.camPos.x+=(Math.random()-0.5)*sh*0.2; OVAL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
+  OVAL.shake*=Math.exp(-dt*3); var sh=CALM?0:OVAL.shake; if(sh>0.002){ OVAL.camPos.x+=(Math.random()-0.5)*sh*0.2; OVAL.camPos.y+=(Math.random()-0.5)*sh*0.2; }
   var cam=OVAL.cam; cam.position.copy(OVAL.camPos); cam.lookAt(OVAL.camTgt); cam.fov=OVAL.fov; cam.updateProjectionMatrix(); bandLens(cam);
 }
 function ovalComposer(){

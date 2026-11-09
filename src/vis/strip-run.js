@@ -601,7 +601,7 @@ function stripDirect(o, dt, P, O){
   STRIP.camPos.copy(_cw); STRIP.camTgt.copy(_ct);
   /* hard cut, then a 0.15 s ease-in: start 6% further out and settle */
   var ease=1-smoothstep(0,0.15,STRIP.cutT); if(ease>0) STRIP.camPos.addScaledVector(_sfD.subVectors(_cw,_ct), 0.06*ease);
-  STRIP.shake*=Math.exp(-dt*3.2); var sh=STRIP.shake;
+  STRIP.shake*=Math.exp(-dt*3.2); var sh=CALM?0:STRIP.shake;
   if(sh>0.002){ STRIP.camPos.x+=(Math.random()-0.5)*sh*0.22; STRIP.camPos.y+=(Math.random()-0.5)*sh*0.22; STRIP.camPos.z+=(Math.random()-0.5)*sh*0.18; STRIP.camTgt.y+=(Math.random()-0.5)*sh*0.1; }
   var cam=STRIP.cam; cam.position.copy(STRIP.camPos); cam.lookAt(STRIP.camTgt); cam.fov=STRIP.fov; cam.updateProjectionMatrix();
   stripLens(cam);

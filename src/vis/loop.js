@@ -87,7 +87,7 @@ function tick(dt, t){
   }
   if(camState.auto) camState.theta += dt*0.13;
 
-  var sh=camState.shake, rr=camRoomR();
+  var sh=CALM?0:camState.shake, rr=camRoomR();
   camera.position.set(
     camState.target.x + rr*Math.sin(camState.phi)*Math.sin(camState.theta),
     camState.target.y + rr*Math.cos(camState.phi),
