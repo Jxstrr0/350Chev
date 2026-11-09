@@ -13,6 +13,16 @@
     }
     if (N && N.rawG) ap(N.rawG.gain, SOLO === "raw" ? 0.35 : 0, 0.05);
   }
+  /* the extra induction layers (air rush, drive gears, firing throb): rush level, gear pitch and level, how hard
+     the firing pulse leans on the blower (0..1 of its level) and on the gears, and the whistle wobble in cents */
+  function boostExtras(rush, rushF, gearF, gear, throb, rattle, wob, blowLvl, tc) {
+    if (!N || !N.rushG) return;
+    ap(N.rushG.gain, Math.max(0.0001, rush), tc); if (rushF) ap(N.rushBP.frequency, rushF, 0.06);
+    if (gearF) { ap(N.blowC.frequency, gearF, 0.03); ap(N.blowCLP.frequency, clamp(gearF * 3, 600, 12000), 0.05); }
+    ap(N.blowCG.gain, Math.max(0.0001, gear), tc);
+    ap(N.blowAM.gain, blowLvl * throb, tc); ap(N.gearAM.gain, gear * rattle, tc);
+    ap(N.blowWob.gain, wob, 0.1);
+  }
   function soloGain(layer) { if (SOLO === "all" || SOLO === "nolimiter") return SYNTH_MIX; if (SOLO === "raw") return 0; return SOLO === layer ? 1 : 0; }
   /* ENGINE_SAMPLES (recorded layer) ducks the synth's core voice (exhaust, sub, intake, mech) by this; 1 = synth alone */
   var SYNTH_MIX = 1;
@@ -233,6 +243,24 @@
     g.blowG = ctx.createGain(); g.blowG.gain.value = 0;
     g.blowA.connect(g.blowBP); g.blowB.connect(g.blowBP);
     g.blowBP.connect(g.blowG); g.blowG.connect(bus);
+    // a slow wobble on the whistle (shaft whirl, belt flutter), so it is never a dead-steady test tone
+    g.blowLfo = ctx.createOscillator(); g.blowLfo.type = "sine"; g.blowLfo.frequency.value = 5.3;
+    g.blowWob = ctx.createGain(); g.blowWob.gain.value = 0;                 // depth in cents
+    g.blowLfo.connect(g.blowWob); g.blowWob.connect(g.blowA.detune); g.blowWob.connect(g.blowB.detune);
+    // the air itself: a band of the shared noise that swells as the compressor moves more of it
+    g.rushBP = ctx.createBiquadFilter(); g.rushBP.type = "bandpass"; g.rushBP.frequency.value = 1500; g.rushBP.Q.value = 0.7;
+    g.rushG = ctx.createGain(); g.rushG.gain.value = 0;
+    g.noise.connect(g.rushBP); g.rushBP.connect(g.rushG); g.rushG.connect(bus);
+    // drive gears: a blower's timing gears and belt, a centrifugal's step-up box
+    g.blowC = ctx.createOscillator(); g.blowC.type = "sawtooth"; g.blowC.frequency.value = 900;
+    g.blowCLP = ctx.createBiquadFilter(); g.blowCLP.type = "lowpass"; g.blowCLP.frequency.value = 2700; g.blowCLP.Q.value = 0.7;
+    g.blowCG = ctx.createGain(); g.blowCG.gain.value = 0;
+    g.blowC.connect(g.blowCLP); g.blowCLP.connect(g.blowCG); g.blowCG.connect(bus);
+    // the engine's firing pulse leaning on the blower and its gears (a Roots throbs, idle gears rattle)
+    g.blowAM = ctx.createGain(); g.blowAM.gain.value = 0;
+    g.exhOsc.connect(g.blowAM); g.blowAM.connect(g.blowG.gain);
+    g.gearAM = ctx.createGain(); g.gearAM.gain.value = 0;
+    g.exhOsc.connect(g.gearAM); g.gearAM.connect(g.blowCG.gain);
 
     /* --- wastegate flutter / boost hiss --------------------------------- */
     g.wgHP = ctx.createBiquadFilter(); g.wgHP.type = "bandpass";
@@ -252,7 +280,7 @@
     var t = nowT();
     g.exhOsc.start(t); g.subOsc.start(t); g.noise.start(t);
     g.mechOsc.start(t); g.gearOsc.start(t); g.clOsc.start(t); g.clNoise.start(t); g.brOsc.start(t);
-    g.blowA.start(t); g.blowB.start(t); g.lfo.start(t);
+    g.blowA.start(t); g.blowB.start(t); g.lfo.start(t); g.blowLfo.start(t); g.blowC.start(t);
 
     N = g;
     curWaveKey = "";
@@ -263,7 +291,7 @@
     if (!N) return;
     var g = N; N = null;
     var t = nowT();
-    ["exhOsc", "subOsc", "noise", "mechOsc", "gearOsc", "clOsc", "clNoise", "blowA", "blowB", "lfo", "brOsc"]
+    ["exhOsc", "subOsc", "noise", "mechOsc", "gearOsc", "clOsc", "clNoise", "blowA", "blowB", "blowC", "blowLfo", "lfo", "brOsc"]
       .forEach(function (k) { try { g[k].stop(t + 0.02); } catch (e) {} });
     setTimeout(function () {
       for (var k in g) { try { g[k].disconnect(); } catch (e) {} }
@@ -620,7 +648,7 @@
     var ind = ind0, bt = bt0;
     if (bt === "na" || rpm < 400 || !live) {
       st.spoolV = 0;
-      ap(N.blowG.gain, 0.0001, 0.08);
+      ap(N.blowG.gain, 0.0001, 0.08); boostExtras(0, 0, 0, 0, 0, 0, 0, 0, 0.08);
       // an armed bottle hisses through the jets even with no blower fitted
       ap(N.wgHP.frequency, 3400, 0.1);
       ap(N.wgG.gain, n2oBite > 0 ? 0.004 + 0.022 * n2oBite : 0.0001, 0.08);
@@ -637,7 +665,14 @@
       if (N.blowBP.Q.value !== (screw ? 5.5 : 0.8)) N.blowBP.Q.value = screw ? 5.5 : 0.8;
       var pd = clamp(0.45 + boost * 0.40, 0.45, 1.9);   // it screams harder with boost
       var dd = p.tsBlower ? 1 : 0;                         // a Detroit's scavenge blower: geared high, always working, the scream
-      ap(N.blowG.gain, (0.10 + 0.22 * load) * clamp(rpm / (dd ? 2300 : 5000), 0.25, 1.1) * (screw ? 0.72 : 0.5) * pd * (dd ? 2.4 : 1), 0.05);
+      var rLvl = (0.10 + 0.22 * load) * clamp(rpm / (dd ? 2300 : 5000), 0.25, 1.1) * (screw ? 0.72 : 0.5) * pd * (dd ? 2.4 : 1);
+      ap(N.blowG.gain, rLvl, 0.05);
+      /* under the lobes: the roar of the air being shoved through, the whine of the timing gears and belt, and
+         (a Roots far more than a screw) the whole note throbbing with each cylinder that draws on it */
+      var rRpm = clamp(rpm / 5000, 0.2, 1.1);
+      boostExtras((0.008 + 0.040 * load) * rRpm * pd * (screw ? 0.6 : 1), clamp(lobe * (screw ? 0.9 : 1.3), 300, 2600),
+                  clamp(rpm / 60 * ind.pulley * 21, 250, 8000), (0.006 + 0.010 * load) * rRpm * (screw ? 0.7 : 1),
+                  screw ? 0.10 : 0.32, 0.25, 4, rLvl, 0.05);
       // a blower has a relief valve, not a wastegate, but it does bark on a lift
       ap(N.wgG.gain, screw ? 0.004 + 0.012 * clamp(boost / 2, 0, 1) * (1 - load) : 0.0001, 0.1);
       ap(N.lfoG.gain, 0, 0.1);
@@ -646,8 +681,14 @@
       ap(N.blowA.frequency, cf, 0.03);
       ap(N.blowB.frequency, cf * 1.008, 0.03);
       ap(N.blowBP.frequency, cf, 0.04); if (N.blowBP.Q.value !== 2.2) N.blowBP.Q.value = 2.2;
-      ap(N.blowG.gain, (0.05 + 0.20 * load) * clamp(rpm / 6000, 0.1, 1.1) * 0.4
-                        * clamp(0.5 + boost * 0.45, 0.5, 1.8), 0.05);
+      var cLvl = (0.05 + 0.20 * load) * clamp(rpm / 6000, 0.1, 1.1) * 0.4 * clamp(0.5 + boost * 0.45, 0.5, 1.8);
+      ap(N.blowG.gain, cLvl, 0.05);
+      /* the step-up gearbox: straight-cut gears that whine with revs and, lightly loaded at idle, rattle on every
+         firing pulse; plus the rush of air once it is moving some */
+      var cRat = clamp((2600 - rpm) / 1600, 0, 1);
+      boostExtras((0.004 + 0.045 * load) * clamp(rpm / 6000, 0.1, 1.1) * clamp(0.5 + boost * 0.45, 0.5, 1.8), clamp(cf * 0.45, 500, 3600),
+                  clamp(rpm / 60 * ind.pulley * 14, 200, 7000), 0.009 + (0.004 + 0.012 * load) * clamp(rpm / 5000, 0.2, 1.1),
+                  0.05, 0.25 + 0.6 * cRat, 5, cLvl, 0.05);
       ap(N.wgG.gain, 0.0001, 0.1); ap(N.lfoG.gain, 0, 0.1);
     } else {
       // turbo / twin / compound — whine tracks a turbo-speed proxy
@@ -668,9 +709,15 @@
       ap(N.blowBP.frequency, bt === "comp" ? clamp(wf * 0.62, 500, 9000) : wf, 0.06);
       var wq = bt === "comp" ? 1.6 : (dz ? 1.9 : 3.0); if (N.blowBP.Q.value !== wq) N.blowBP.Q.value = wq;
       var spooled = clamp(boost / (0.5 / Math.max(0.3, ts.spool / 0.7)), 0, 1);
-      ap(N.blowG.gain, (0.018 * clamp(boost / 0.15, 0, 1) + 0.075 * spooled + 0.05 * load * spooled)
+      ap(N.blowG.gain, (0.018 * clamp(boost / 0.15, 0, 1) + 0.075 * spooled + 0.075 * load * spooled)
                         * clamp(rpm / 4000, 0.15, 1.3) * 0.6 * (bt === "comp" ? 1.25 : 1)
                         * (ts2 ? 1 + 0.5 * clamp(boost / 1.5, 0, 1) : 1) + 0.035 * clamp(coast * 1.5, 0, 1), 0.06);
+      /* most of what a turbo sounds like is air, not whistle: a rush that swells and rises as the wheel winds up
+         (a big frame moves more of it, lower down), and hangs on for a moment as it coasts */
+      var sv1 = clamp(st.spoolV, 0, 1.8), big = Math.sqrt(Math.max(0.6, ts.wg));
+      boostExtras((0.006 * sv1 + 0.050 * spooled * (0.45 + 0.55 * load) * clamp(rpm / 4000, 0.3, 1.2) + 0.020 * clamp(coast * 1.5, 0, 1))
+                    * big * (bt === "comp" ? 1.2 : 1),
+                  clamp((800 + 1500 * sv1) * Math.sqrt(ts.base / 4200), 600, 4200), 0, 0, 0, 0, 7 + 5 * sv1, 0, 0.07);
       // wastegate: a big frame vents through a far bigger valve
       var wgAmt = clamp((boost - 0.55) / 1.6, 0, 1);
       ap(N.wgHP.frequency, clamp((1800 + boost * 900) / Math.max(0.6, ts.wg), 700, 6000), 0.08);
@@ -962,7 +1009,7 @@
         var kf = ctx.createBiquadFilter(); kf.type = "lowpass"; kf.frequency.value = 420;
         ko.connect(kf); kf.connect(kg); kg.connect(bus); ko.start(tk); ko.stop(tk + 0.2); reap([ko, kf, kg], 0.25);
         noiseVoice(0.12, "lowpass", 600, 0.8, 0.22);
-        if (N) { dead = true; ap(N.exhG.gain, 0.0001, 0.04); ap(N.subG.gain, 0.0001, 0.06); ap(N.inG.gain, 0.0001, 0.03); ap(N.blowG.gain, 0.0001, 0.15); ap(N.wgG.gain, 0.0001, 0.15); ap(N.mechG.gain, 0.0001, 0.5); ap(N.gearG.gain, 0.0001, 0.6); ap(N.clG.gain, 0.0001, 0.04); if (N.tyreG) ap(N.tyreG.gain, 0.0001, 0.4); }
+        if (N) { dead = true; ap(N.exhG.gain, 0.0001, 0.04); ap(N.subG.gain, 0.0001, 0.06); ap(N.inG.gain, 0.0001, 0.03); ap(N.blowG.gain, 0.0001, 0.15); boostExtras(0, 0, 0, 0, 0, 0, 0, 0, 0.15); ap(N.wgG.gain, 0.0001, 0.15); ap(N.mechG.gain, 0.0001, 0.5); ap(N.gearG.gain, 0.0001, 0.6); ap(N.clG.gain, 0.0001, 0.04); if (N.tyreG) ap(N.tyreG.gain, 0.0001, 0.4); }
         break;
       }
       case "intakeBang": {
@@ -1004,7 +1051,7 @@
         // engine dies
         dead = true;
         ap(N.exhG.gain, 0.0001, 0.28); ap(N.subG.gain, 0.0001, 0.28); ap(N.inG.gain, 0.0001, 0.22);
-        ap(N.blowG.gain, 0.0001, 0.5); ap(N.wgG.gain, 0.0001, 0.5); ap(N.mechG.gain, 0.0001, 0.6); ap(N.gearG.gain, 0.0001, 0.4); ap(N.clG.gain, 0.0001, 0.3);
+        ap(N.blowG.gain, 0.0001, 0.5); boostExtras(0, 0, 0, 0, 0, 0, 0, 0, 0.3); ap(N.wgG.gain, 0.0001, 0.5); ap(N.mechG.gain, 0.0001, 0.6); ap(N.gearG.gain, 0.0001, 0.4); ap(N.clG.gain, 0.0001, 0.3);
         if (N.tyreG) ap(N.tyreG.gain, 0.0001, 0.3);
         break;
       }
