@@ -482,7 +482,7 @@
     if (st.n2oGate != null) n2oOn = (n2oHp > 0 && live && st.n2oGate > 0.05 && load > 0.55) ? 1 : 0;   // the strip says when the shot is actually in
     var n2oBite = n2oOn ? clamp(n2oHp / Math.max(600, (p.cyl || 500) * n * 1.2), 0, 1.3)
                         * (p.n2oProg ? clamp((rpm - n2oWin) / (0.28 * (p.redline || 7000)), 0.25, 1) : 1) : 0;
-    if (n2oOn && !st.n2oWas) { solenoid(); }
+    if (n2oOn && !st.n2oWas) { solenoid(); shot("n2ohit", clamp(0.5 + 0.6 * n2oBite, 0.5, 1.2)); }   // the solenoids clack open and the shot hisses in (a recording, when one is loaded)
     st.n2oWas = n2oOn;
     if (st.n2oGate != null && n2oBite > 0) n2oBite *= clamp(st.n2oGate, 0.3, 1.1) * 1.15;   // a fatter bark while the shot is in
     if (n2oBite > 0) {
@@ -919,9 +919,12 @@
         break;
       }
       case "purge": {
-        /* nitrous purge: a hard, wide hiss of liquid flashing to gas at the nozzle, with a little whistle on top */
-        noiseVoice(0.75, "highpass", 2600 + Math.random() * 500, 0.5, 0.20);
-        noiseVoice(0.65, "bandpass", 6200, 1.6, 0.07);
+        /* nitrous purge: a hard, wide hiss of liquid flashing to gas at the nozzle, with a little whistle on top.
+           The hiss is a recording of a pressure line venting when one is loaded (Real and Blend voices); else noise. */
+        if (!shot("purge", 1)) {
+          noiseVoice(0.75, "highpass", 2600 + Math.random() * 500, 0.5, 0.20);
+          noiseVoice(0.65, "bandpass", 6200, 1.6, 0.07);
+        }
         var tp = ctx.currentTime, po = ctx.createOscillator(); po.type = "sine";
         po.frequency.setValueAtTime(5200, tp); po.frequency.linearRampToValueAtTime(4700, tp + 0.6);
         var pg = ctx.createGain(); pg.gain.setValueAtTime(0, tp); pg.gain.linearRampToValueAtTime(0.012, tp + 0.04); pg.gain.exponentialRampToValueAtTime(0.0001, tp + 0.65);
@@ -1031,7 +1034,7 @@
     setSynthMix: function (m) { m = +m; SYNTH_MIX = isFinite(m) ? clamp(m, 0, 1) : 1; },
     holdAwake: function (on) { holdAwake = !!on; if (holdAwake && selfSusp) resume(); },   // ambience: keep the context running while a bed plays
     setShotHook: function (fn) { shotHook = typeof fn === "function" ? fn : null; },
-    sampleHost: function () { return { ctx: ctx, bus: bus, running: running && !!N, dead: dead, solo: SOLO, lite: LITE, diesel: !!st.diesel }; },
+    sampleHost: function () { return { ctx: ctx, bus: bus, running: running && !!N, dead: dead, solo: SOLO, lite: LITE, diesel: !!st.diesel, n2o: !!(curProf && curProf.n2o) }; },
     get context() { return ctx; },
     get isRunning() { return running; }
   };
