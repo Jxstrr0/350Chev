@@ -147,14 +147,16 @@
     }
     function step(dt, throttle, trimCmd) { if (throttle != null) st.thr = clamp(+throttle || 0, 0, 1); if (trimCmd != null) st.trimCmd = clamp(+trimCmd || 0, -1, 1); dt = Math.min(0.25, Math.max(0, dt)); while (dt > 1e-9) { const h = Math.min(0.005, dt); dt -= h; sub(h); } return st; }
     /* the auto driver: leaves on its light, feathers to keep the prop hooked through the hump, lifts over a hop,
-       trims in for the hump and out with speed — but backs it in when it porpoises, walks or the nose gets light */
+       trims in for the hump and out with speed — but backs it in when it porpoises, walks or the nose gets light.
+       At skill 1 it picks the pedal straight back up after a blowout or a hop and carries its trim a little under the
+       hull's best (a hair of trim costs less than a porpoise); a lesser driver is slower back on it and trims out further. */
     function auto(skill) {
       const k = skill == null ? 1 : skill;
       if (st.done) return { thr: 0, trim: 0 };
       if (st.phase === "line") return { thr: st.t >= (v.rt != null ? v.rt : 0.08) ? 1 : 0, trim: 0 };
-      const f = st.v / HU.vh, tOpt = boatLerp(-2, opt, boatSm(0.8, 2.2, f)), aim = tOpt - 0.3 - 0.6 * (1 - k) + (k > 0.9 ? 0.25 * Math.min(1, st.v / 60) : 0);
+      const f = st.v / HU.vh, tOpt = boatLerp(-2, opt, boatSm(0.8, 2.2, f)), aim = tOpt - 0.9 + 0.25 * Math.min(1, st.v / 60) + 0.7 * (1 - k);
       let thr = st.foot;
-      if (st.blown) thr = Math.max(0.3, thr - 0.08 * (0.6 + k)); else if (st.air) thr = Math.max(0.5, thr - 0.08 * k); else thr = Math.min(1, thr + 0.04 + 0.04 * k);
+      if (st.blown) thr = Math.max(0.3, thr - 0.08 * (0.6 + k)); else if (st.air) thr = Math.max(0.5, thr - 0.08 * k); else thr = Math.min(1, thr + 0.04 + 0.16 * k * k * k);
       if (st.t - st.rt < 0.05) thr = 1;
       if (st.rpm > v.redline * 1.01) thr = Math.min(thr, 0.85);
       if (st.Lr > 0.82 || st.walk > 0.9) thr = Math.min(thr, 0.7);

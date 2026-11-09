@@ -212,12 +212,15 @@
       while (n-- > 0 && !st.done) sub(h);
       return st;
     }
-    /* the auto driver: a pace from his skill and a bit of lap-to-lap noise; he eases when the water is hot or the tyres are gone */
+    /* the auto driver: a pace from his skill and a bit of lap-to-lap noise; he eases when the water is hot or the tyres are gone.
+       From skill 0.75 to 0.9 he learns the pace the node harness found quickest over a race (0.998 of the limit at skill 1,
+       0.995 at 0.9: a slide now and then is cheaper than lifting), and saves the water only once it is near trouble (117 °C,
+       then harder) rather than from 106 */
     function auto(skill) {
       const k = skill == null ? 0.88 : skill, lapNow = Math.max(0, Math.floor(st.s / L));
-      const e = (1 - clamp(k, 0.2, 1)) * 0.028;
-      let c = 1 - 1.2 * e - 0.006 + lapNoise(lapNow) * e * 0.5;
-      if (st.cool > 106) c -= 0.006 + 0.0016 * (st.cool - 106); if (st.wear > 0.8) c -= 0.006;
+      const e = (1 - clamp(k, 0.2, 1)) * 0.028, f = clamp((k - 0.75) / 0.15, 0, 1), hot = 106 + 11 * f;
+      let c = 1 - 1.2 * e - 0.006 + 0.004 * f + lapNoise(lapNow) * e * 0.5;
+      if (st.cool > hot) c -= 0.006 * (1 - f) + (0.0016 + 0.0044 * f) * (st.cool - hot); if (st.wear > 0.8) c -= 0.006;
       return clamp(c, 0.9, 1.04);
     }
     function result() {
