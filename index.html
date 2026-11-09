@@ -1452,13 +1452,18 @@ html:not(.desk) #evHud .e24gp{white-space:normal}html:not(.desk) #evHud .e24gp s
 #setPane .setsec .row,#setPane .setsec>.btn{margin-top:4px}
 #setPane #slots{margin-top:6px}
 #setPane #resetGame{margin-top:2px}
-/* THROTTLE slider beside START (1.76.61.0): a glass pill, shown only while the engine runs; on a phone it stays on the Build tab, where the HUD row has room */
+/* THROTTLE slider beside START (1.76.61.0): a glass pill, shown only while the engine runs; on a phone off Build it floats above the button row */
 .hudbtns>.thr{pointer-events:auto;display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:22px;background:rgba(20,20,19,.62);box-shadow:var(--glass-shine),0 4px 14px rgba(0,0,0,.3);color:var(--chalk);font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.05em;flex:0 1 210px;min-width:130px}
 .hudbtns>.thr[hidden]{display:none}
 .thr>span{flex:none}
 .thr input[type=range]{flex:1;min-width:50px;height:44px;margin:0;touch-action:none}
 .thr>b{flex:none;width:4ch;text-align:right;font-family:var(--mono);font-weight:500;color:var(--orange2)}
-html[data-tab]:not([data-tab=build]):not(.desk) .hudbtns>.thr{display:none}
+@media (max-width:600px){html[data-tab]:not([data-tab=build]):not(.desk) .hudbtns>.thr{display:none}}   /* a narrow phone off Build: no room in the row (landscape has room, so the pill sits in it there) */
+/* phone, off Build (1.76.97.0): the four-button row has no room beside it, so a short pill floats just above the row's right end instead */
+@media (max-width:600px){
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns>.thr:not([hidden]){display:flex;position:absolute;right:0;bottom:calc(100% + 8px);width:176px;min-width:0;flex:none;padding:0 12px 0 14px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns>.thr>span{display:none}
+}
 @media (max-width:400px){.thr>span{display:none}}
 /* ===================== HELP: one-line summary + ⓘ that unfolds the full text (v1.66 UI cleanup) =====================
    Markup (any lane): <details class="more"><summary aria-label="More info">ⓘ</summary><div>full text</div></details>
@@ -31287,7 +31292,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.96.0";
+const VERSION="1.76.97.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
