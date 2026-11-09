@@ -1,5 +1,5 @@
 /* ===========================================================================
-   PIKES PEAK, LITE AND ULTRA: CULLING AND LOD
+   CLOUDSPLITTER PEAK, LITE AND ULTRA: CULLING AND LOD
    The course is 20 km of road on an 11 × 7 km mountain, and Full draws it as a
    handful of whole-map meshes (one terrain grid, one road ribbon, one verge
    strip, one instanced forest), so every frame draws and shadows all of it.

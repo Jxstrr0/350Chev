@@ -304,7 +304,7 @@ const ENGINE_VIS = {
     var rdt=o.dt!=null ? +o.dt : (now-ROAD.lastT)/1000; ROAD.lastT=now; roadUpdate(o, clamp(rdt||0, 0, 0.1));
     return ROAD.stats||null;
   },
-  /* PIKES PEAK: fed every frame {on, course (ENGINE_SIM.hillCourse), s, v, d (lateral m), g, rpm, thr, brk, lat, off, dnf, ev, ch, aero, color, cam:"auto"|"chase"|"heli"|"onboard", pre, done, dt}; {on:false} leaves */
+  /* CLOUDSPLITTER PEAK: fed every frame {on, course (ENGINE_SIM.hillCourse), s, v, d (lateral m), g, rpm, thr, brk, lat, off, dnf, ev, ch, aero, color, cam:"auto"|"chase"|"heli"|"onboard", pre, done, dt}; {on:false} leaves */
   setHill: function(o){
     if(!renderer) return;
     if(!o || o.on===false){ if(HILL.on){ HILL.on=false; if(HILL.W && HILL.W.fx) HILL.W.fx.clear(); } return; }
@@ -326,7 +326,7 @@ const ENGINE_VIS = {
   },
   ovalState: function(){ return {on:OVAL.on, built:OVAL.built, shot:OVAL.shot, stats:OVAL.stats, cars:OVAL.list.length, cam:OVAL.cam?OVAL.cam.position.toArray().map(function(v){ return Math.round(v); }):null}; },   /* harness */
   hillState: function(){ return {on:HILL.on, built:!!HILL.W, shot:HILL.shot, stats:HILL.stats, cam:HILL.cam?HILL.cam.position.toArray().map(function(v){ return Math.round(v); }):null}; },   /* harness */
-  /* BONNEVILLE salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
+  /* BITTERWATER salt flats: fed every frame {on, phase:"stage"|"push"|"run"|"shutdown"|"spin"|"done", x, v, acc, slip, rpm, throttle, body, aero, color?, chute, chutes, chuteBlown,
      failed, smoke, course:{x0,x1,k0,k1,xEnd}, shot? (force a camera), dt?}; {on:false} leaves */
   setSalt: function(o){
     if(!renderer) return;
