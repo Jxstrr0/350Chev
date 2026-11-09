@@ -515,8 +515,9 @@
      length for the tyre (about 3.4 s with a line lock, just under 4 s without, before the rubber goes greasy; a quick one
      on street tyres), roll in, purge a nitrous line until it is liquid, arm the two-step / trans-brake / anti-lag on the
      ambers, leave on the green with a sharp light (.020-.045, never red), and on a manual box shift where the pass is
-     quickest: past where the next gear's wheel torque catches up, because a shift costs drive, and up to just short of
-     the limiter when it never does (measured on the build's own curve in node, worth .01-.03 s a pass). Launch rpm, the
+     quickest: past where the next gear's wheel torque catches up, because a shift costs drive, and at the redline when
+     it never does (never above it: since 1.76.103.0 the redline caps every shift point. That costs .01-.03 s a pass on
+     most builds, and up to .2 s on one that is spinning its tyres at the top of a gear, which now changes up sooner). Launch rpm, the
      nitrous switch and the chute are the car's set-up, not the driver's, so they stay as set; there is no pedal on a
      drag pass, for the player or for it. Deterministic for a seed, on its own random stream.
      tick(d, h, tree) runs before each step of the runner d and returns one press or null: "burn" / "unburn" / "stage" /
@@ -532,9 +533,10 @@
     const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.3 : 3.85) + 0.1 * r() : 0.9 + 0.2 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.7 + 0.1 * r(),
       beat: 0.6 + 0.6 * r(), hold: 1.0 + 0.4 * r(), rt: +rt.toFixed(4), shift: [], ideal: [] };
     // shift points: find where the next gear's wheel torque (after the drop) matches this one's, then go 40% of the way from
-    // there to the top (just short of the limiter, which sits at 2% over the redline): the shift itself costs drive, so the
-    // quickest pass shifts later than the crossover. Never crossing: shift at the top.
-    const n = Math.max(1, v.gears | 0), rat = gearRatios(v), top = Math.round(1.017 * red);
+    // there to the top: the shift itself costs drive, so the quickest pass shifts later than the crossover. The top is the
+    // redline (since 1.76.103.0; it used to be just short of the limiter, 2% over it): the driver never asks for a shift
+    // above the line on the tach. Never crossing: shift at the redline.
+    const n = Math.max(1, v.gears | 0), rat = gearRatios(v), top = Math.round(red);
     const rp = res && res.rpms, tq = res && res.torque, N = rp ? rp.length : 0;
     const T = x => { if (!N) return 1; if (x <= rp[0]) return tq[0]; if (x >= rp[N - 1]) return tq[N - 1]; let i = 1; while (rp[i] < x) i++; return tq[i - 1] + (x - rp[i - 1]) / (rp[i] - rp[i - 1]) * (tq[i] - tq[i - 1]); };
     for (let i = 0; i < n - 1; i++) {
@@ -543,7 +545,7 @@
       const x = Math.round(s + 0.4 * (top - s));
       plan.ideal.push(x); plan.shift.push(x);
     }
-    let t = 0, offAt = null, rolledT = null, readyT = null, purged = false;
+    let t = 0, offAt = null, rolledT = null, readyT = null, purged = false, lastRpm = 0;
     function goIn(d, tree) {   // seconds until it means to leave
       if (tree === null) return readyT == null ? Infinity : readyT + plan.beat + (d.canArm ? plan.hold : 0) - t;
       return tree !== tree ? Infinity : plan.rt - tree;
@@ -572,8 +574,8 @@
       }
       if (st.phase === "run") {
         if (v.auto || st.gear >= n || st.shiftT > 0) return null;
-        const tgt = plan.shift[st.gear - 1];
-        if (st.rpm < tgt) return null;
+        const tgt = plan.shift[st.gear - 1], rise = Math.max(0, st.rpm - (lastRpm || st.rpm)); lastRpm = st.rpm;
+        if (st.rpm + rise < tgt) return null;   // press one tick early, so the change lands on the shift point and not past it
         if (st.slipping && !st.conv && st.v / (Math.PI * v.tyreDia * 0.0254) * 60 * rat[st.gear - 1] * v.final < 0.85 * tgt) return null;   // a slipping clutch revs the engine, not the car
         return "shift";
       }

@@ -7984,8 +7984,9 @@ const ENGINE_SIM = (function () {
      length for the tyre (about 3.4 s with a line lock, just under 4 s without, before the rubber goes greasy; a quick one
      on street tyres), roll in, purge a nitrous line until it is liquid, arm the two-step / trans-brake / anti-lag on the
      ambers, leave on the green with a sharp light (.020-.045, never red), and on a manual box shift where the pass is
-     quickest: past where the next gear's wheel torque catches up, because a shift costs drive, and up to just short of
-     the limiter when it never does (measured on the build's own curve in node, worth .01-.03 s a pass). Launch rpm, the
+     quickest: past where the next gear's wheel torque catches up, because a shift costs drive, and at the redline when
+     it never does (never above it: since 1.76.103.0 the redline caps every shift point. That costs .01-.03 s a pass on
+     most builds, and up to .2 s on one that is spinning its tyres at the top of a gear, which now changes up sooner). Launch rpm, the
      nitrous switch and the chute are the car's set-up, not the driver's, so they stay as set; there is no pedal on a
      drag pass, for the player or for it. Deterministic for a seed, on its own random stream.
      tick(d, h, tree) runs before each step of the runner d and returns one press or null: "burn" / "unburn" / "stage" /
@@ -8001,9 +8002,10 @@ const ENGINE_SIM = (function () {
     const plan = { wait: 0.3 + 0.4 * r(), burn: hot ? (ll ? 3.3 : 3.85) + 0.1 * r() : 0.9 + 0.2 * r(), settle: 0.5 + 0.5 * r(), purgeAt: 0.25 + 0.3 * r(), purge: 0.7 + 0.1 * r(),
       beat: 0.6 + 0.6 * r(), hold: 1.0 + 0.4 * r(), rt: +rt.toFixed(4), shift: [], ideal: [] };
     // shift points: find where the next gear's wheel torque (after the drop) matches this one's, then go 40% of the way from
-    // there to the top (just short of the limiter, which sits at 2% over the redline): the shift itself costs drive, so the
-    // quickest pass shifts later than the crossover. Never crossing: shift at the top.
-    const n = Math.max(1, v.gears | 0), rat = gearRatios(v), top = Math.round(1.017 * red);
+    // there to the top: the shift itself costs drive, so the quickest pass shifts later than the crossover. The top is the
+    // redline (since 1.76.103.0; it used to be just short of the limiter, 2% over it): the driver never asks for a shift
+    // above the line on the tach. Never crossing: shift at the redline.
+    const n = Math.max(1, v.gears | 0), rat = gearRatios(v), top = Math.round(red);
     const rp = res && res.rpms, tq = res && res.torque, N = rp ? rp.length : 0;
     const T = x => { if (!N) return 1; if (x <= rp[0]) return tq[0]; if (x >= rp[N - 1]) return tq[N - 1]; let i = 1; while (rp[i] < x) i++; return tq[i - 1] + (x - rp[i - 1]) / (rp[i] - rp[i - 1]) * (tq[i] - tq[i - 1]); };
     for (let i = 0; i < n - 1; i++) {
@@ -8012,7 +8014,7 @@ const ENGINE_SIM = (function () {
       const x = Math.round(s + 0.4 * (top - s));
       plan.ideal.push(x); plan.shift.push(x);
     }
-    let t = 0, offAt = null, rolledT = null, readyT = null, purged = false;
+    let t = 0, offAt = null, rolledT = null, readyT = null, purged = false, lastRpm = 0;
     function goIn(d, tree) {   // seconds until it means to leave
       if (tree === null) return readyT == null ? Infinity : readyT + plan.beat + (d.canArm ? plan.hold : 0) - t;
       return tree !== tree ? Infinity : plan.rt - tree;
@@ -8041,8 +8043,8 @@ const ENGINE_SIM = (function () {
       }
       if (st.phase === "run") {
         if (v.auto || st.gear >= n || st.shiftT > 0) return null;
-        const tgt = plan.shift[st.gear - 1];
-        if (st.rpm < tgt) return null;
+        const tgt = plan.shift[st.gear - 1], rise = Math.max(0, st.rpm - (lastRpm || st.rpm)); lastRpm = st.rpm;
+        if (st.rpm + rise < tgt) return null;   // press one tick early, so the change lands on the shift point and not past it
         if (st.slipping && !st.conv && st.v / (Math.PI * v.tyreDia * 0.0254) * 60 * rat[st.gear - 1] * v.final < 0.85 * tgt) return null;   // a slipping clutch revs the engine, not the car
         return "shift";
       }
@@ -9773,6 +9775,7 @@ const ENGINE_SIM = (function () {
   /* the record book: every class has a standing record, seeded from what a well-built entry of that class
      runs on this same physics, discounted by how contested the class is (some are soft, some are stout) */
   const LSR_HOLDERS = ["Wendover Flyers", "Silver Island Speed", "Blue Mist Racing", "Salt Shaker Garage", "Floating Island Team", "Prairie Lakester Co.", "Northwind Racing", "Bitter Lake Hot Rods", "Coulee Fuels Special", "Old Ironsides Racing", "Tamarack Speed Shop", "Glacier Streamliner Group", "Kestrel Salt Racing", "Halcyon GT", "Redwater Rodders", "Mile Seven Motorsport"];
+  const LSR_REC_UP = 1.07, LSR_REC_TOP = 0.99;   // how far the seeded book was raised, and the most of a class's limit a seeded record may sit at
   const lsrRecCache = {};
   function lsrSynth(L, fuel, blown) {
     const hpL = fuel === "D" ? (blown ? 125 : 42) : fuel === "F" ? (blown ? 290 : 135) : (blown ? 190 : 108);
@@ -9792,7 +9795,8 @@ const ENGINE_SIM = (function () {
     const res = lsrSynth(L, mt[3], !!mt[2]), veh = { body: body, redline: res.red, aero: true, ballast: body === "streamliner" ? 150 : 60, cooling: body === "streamliner" || body === "lakester" ? "ice" : "radiator", chute: "dual", course: LSR_BODIES[body].course };
     veh.topMph = lsrGearing(res, veh);
     const r = lsrPass(res, Object.assign({}, veh, { noFail: true, noSpin: true, h: 0.004 }));
-    const hsh = lsrHash(key), hot = clamp((res.peakHp - 600) / 1200, 0, 1), soft = 0.70 + 0.2 * hot + (0.27 - 0.17 * hot) * ((hsh % 1000) / 1000);   // the big blown classes are contested: their records sit close to the limit
+    const hsh = lsrHash(key), hot = clamp((res.peakHp - 600) / 1200, 0, 1), soft0 = 0.70 + 0.2 * hot + (0.27 - 0.17 * hot) * ((hsh % 1000) / 1000);   // the big blown classes are contested: their records sit close to the limit
+    const soft = Math.max(soft0, Math.min(LSR_REC_TOP, soft0 * LSR_REC_UP));   // since 1.76.103.0 the whole book is 7% faster, short of the limit itself
     const mph = Math.round((r.mileMph || r.peakMph) * soft * 1000) / 1000;
     const rec = { key: key, mph: mph, holder: LSR_HOLDERS[(hsh >>> 10) % LSR_HOLDERS.length], year: 1958 + ((hsh >>> 4) % 67), seeded: true };
     lsrRecCache[key] = rec; return rec;
@@ -22413,7 +22417,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.102.0";
+const VERSION="1.76.103.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -25711,8 +25715,9 @@ function saltVeh(k){const e=S.env,res=saltRes();const v={body:k,course:e.saltCou
   swapSaltOv(v);if(!e.saltTop){e.saltTop=SIM.lsrGearing(res,v);}v.topMph=+e.saltTop;return v;}
 function saltCls(k){const r=quick||saltRes();return SIM.lsrClass(S.cfg,r,k||S.env.saltBody);}
 function saltBook(){const L=recBucket("lsr");if(!L.rec||typeof L.rec!=="object")L.rec={};if(!L.pb||typeof L.pb!=="object")L.pb={};return L;}
-/* the standing record for a class: yours if you set it, otherwise the seeded book */
-function saltRecord(key){const L=saltBook(),mine=L.rec[key],seed=SIM.lsrRecord(key);return mine&&(!seed||mine.mph>seed.mph)?Object.assign({mine:true,holder:mine.n},mine):seed;}
+/* the standing record for a class: yours if you set it, otherwise the seeded book. A record you hold stands even where
+   the book was later raised past it (1.76.103.0 made the seeded records about 7% faster): it was the record when you set it. */
+function saltRecord(key){const L=saltBook(),mine=L.rec[key],seed=SIM.lsrRecord(key);return mine&&mine.mph>0?Object.assign({mine:true,holder:mine.n},mine):seed;}
 function saltMeet(){const L=saltBook(),id=career()?"w"+C().week:"s"+(S.saltMeetId||(S.saltMeetId=1));if(!L.meet||L.meet.id!==id)L.meet={id,runs:0,best:{},imp:null};return L.meet;}
 /* the car's number for this meet: drawn when you sign in, the same for every run of the meet */
 function saltNum(meet){let h=2166136261;const s="lsrnum|"+meet.id+"|"+(career()?C().name||"":"sandbox");for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}h>>>=0;return h%10<3?String(10+(h>>>4)%90):String(100+(h>>>4)%900);}
