@@ -21,11 +21,11 @@ It runs on phones and desktops. Install it from the browser ("Add to Home Screen
 
 There are no dependencies and no package.json, only node (16 or newer).
 
-- `index.html` and `sw.js` are generated. Edit the files in `src/`, then rebuild:
+- `index.html`, `scenes.js` (the event scenes, fetched after the garage is up) and `sw.js` are generated. Edit the files in `src/`, then rebuild:
 
   ```
-  node build.js            # rebuild index.html and sw.js from src/
-  node build.js --check    # fails if index.html or sw.js is out of date
+  node build.js            # rebuild index.html, scenes.js and sw.js from src/
+  node build.js --check    # fails if index.html, scenes.js or sw.js is out of date
   node check-savecode.js   # save-code round-trip checks
   ```
 

@@ -9,8 +9,6 @@
    grandstands, trees, the coulee hills. Scenery goes through StripBatch like
    the strip and the pull; the car is the strip's door car, scaled per chassis.
    ==========================================================================*/
-var ROAD={ on:false, worlds:{}, W:null, cam:null, cars:{}, car:null, carKey:"", camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:50, shot:null, shotT:0, cutT:9,
-  snap:true, skip:false, night:null, tier:null, exposure:0.92, composer:null, stats:null, lastT:0, st:-1, chP:new THREE.Vector3(), chT:new THREE.Vector3(), roll:0, steer:0, mode:"auto" };
 var ROAD_W=12, _rA=new THREE.Vector3(), _rB=new THREE.Vector3(), _rC=new THREE.Vector3(), _rF=new THREE.Vector3(), _rW=new THREE.Vector3(0.6,0,-0.4);
 var ROAD_GLSL_GROUND=[
   "vec3 stripSurf(vec3 w, out float rough){",
