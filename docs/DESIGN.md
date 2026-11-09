@@ -65,7 +65,7 @@ Weather (`app/weather.js`, since 1.76.83.0): the road test, the hill climb and t
 
 | Event | Sim | Classes and content |
 |---|---|---|
-| Drag strip (heads-up) and bracket racing | `drag.js`: tyres, aero, turbo heat soak, nitrous bottle, launch tech, gearing (even or custom ratios, a shift point), ride height, converter stall on trans-brake cars, three saved tunes per game (setup plus two-step rpm and retard; paid kit and paint left alone), an auto driver, drivetrain tiers, engine weight counted | 3 tyre types, 7 aero bodies, 4 drivetrain tiers; race nights with a ladder; top-five passes per body class; the timing slip prints each split's change from your last clean pass |
+| Drag strip (heads-up) and bracket racing | `drag.js`: tyres, aero, turbo heat soak, nitrous bottle, launch tech, gearing (even or custom ratios, a shift point), ride height, three saved tunes per game (setup plus two-step rpm and retard; paid kit and paint left alone), an auto driver, drivetrain tiers, engine weight counted | 3 tyre types, 7 aero bodies, 4 drivetrain tiers; race nights with a ladder; top-five passes per body class; the timing slip prints each split's change from your last clean pass |
 | Truck and tractor pull | `pull.js` | 6 classes, 5 tyres, pull nights and a points series, runaway sled; setup: gear, driveline, tyre, hitch height, ballast weight and how far back it sits, tyre pressure, throttle stop |
 | Mud bog | `bog.js` | 3 classes with sized radiators, 3 tyres, bog nights, AI results |
 | Boat drags | `boat.js`: prop or jet pump, hump then plane, wind and chop | 4 classes, 3 hulls, eight-boat ladder nights |

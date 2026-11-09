@@ -142,12 +142,8 @@
     const lc = OPT.launchCtl[v.launchCtl] ? v.launchCtl : "none", tbk = OPT.transBrake[v.transBrake] ? v.transBrake : "none";
     const twoStep = lc !== "none", retardOn = lc === "two_step_retard", transBrake = tbk === "trans_brake", lineLock = tbk === "line_lock";
     const retard = retardOn ? clamp(+v.launchRetard || 0, 0, 35) : 0;
-    /* converter stall (veh.stallRpm, trans-brake cars only, which leave on a converter): on the brake the engine can't pull
-       past stall, and off it the converter flashes to stall before it couples. A looser (higher) converter slips more
-       all the way down the track. 0 or unset: the converter matches the brake rpm, as before. */
-    const stall = transBrake && v.stallRpm > 0 ? clamp(+v.stallRpm, 1500, v.redline) : 0;
-    const hold0 = twoStep && v.twoStepRpm > 0 ? Math.min(v.redline, v.twoStepRpm) : v.launchRpm, holdRpm = Math.min(hold0, stall || Infinity);
-    const flashRpm = stall || holdRpm, loose = stall ? clamp((stall - hold0) / (0.4 * v.redline), 0, 1) : 0, cpl = 0.96 - 0.015 * loose;
+    /* a trans-brake car leaves on the converter, which flashes just past the brake rpm, then couples */
+    const holdRpm = twoStep && v.twoStepRpm > 0 ? Math.min(v.redline, v.twoStepRpm) : v.launchRpm, cpl = 0.96;
     /* anti-lag: off throttle (staging, shifts, the lift at the stripe) it keeps burning fuel ahead of the turbine,
        so the wheel keeps its speed. Only a turbo car with it fitted; "off" leaves every line below as it was. */
     const ALS = res.als && res.als !== "off" && OPT.als[res.als] && res.aspKind === "turbo" ? OPT.als[res.als] : null;
@@ -328,10 +324,10 @@
       if (st.rpm >= limiter) { st.limiterTime += dt; Teng = (st.conv ? driveRpm0 / cpl : !st.slipping ? driveRpm0 : 0) >= limiter ? 0 : Teng * 0.15; }
       let Ttrans;
       if (st.conv) {
-        // torque converter off the trans-brake: multiplies torque while it slips, never lets the engine fall below stall
+        // torque converter off the trans-brake: multiplies torque while it slips
         const SR = clamp(driveRpm0 / Math.max(1, st.rpm), 0, 1);
         const TR = SR >= 0.85 ? 1 : Math.min(2.1, 1 + 1.1 * (1 - SR / 0.85));
-        Ttrans = inShift ? 0 : Teng * TR * (0.97 - 0.015 * loose);
+        Ttrans = inShift ? 0 : Teng * TR * 0.97;
       } else {
         // clutch bite ramps in over 0.35 s; a slipping clutch transmits its capacity, so the engine is pulled down toward wheel speed (bog risk)
         st.bite = Math.min(1, (st.bite || 0) + dt / (st.dump ? 0.2 : 0.35));
@@ -368,7 +364,7 @@
       /* the converter flashes past the brake rpm, then couples. The flash never reaches the shift point: a brake rpm set close
          to it would otherwise hold the engine above shiftAt off the line, so the box ran up through every gear in the first
          half-second and the pass was made in top gear (or, above the limiter, on 15% of the engine) */
-      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(Math.min(flashRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), shiftAt * 0.97), driveRpm / cpl); st.slipping = false; }
+      if (st.conv) { const SRn = clamp(driveRpm / Math.max(1, st.rpm), 0, 1); st.rpm = Math.max(Math.min(holdRpm * (inShift ? 0.85 : 1.06 + 0.18 * SRn), shiftAt * 0.97), driveRpm / cpl); st.slipping = false; }
       else if (st.slipping) { st.rpm += (Teng - Ttrans) / I * dt * 60 / (2 * Math.PI); if (st.rpm < driveRpm) { st.rpm = driveRpm; st.slipping = false; } }
       else st.rpm = Math.max(v.idle, driveRpm);
       if (st.rpm > limiter + 40) st.rpm = Math.min(st.rpm, limiter + 300);
