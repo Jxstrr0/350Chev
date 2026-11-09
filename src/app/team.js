@@ -512,8 +512,10 @@ function pcStrip(){const T=pcBenchTeam(),cert=C().cert,h=cfgHash(S.cfg),certOk=!
     when:due?`R${N.round+1} this week`:`R${N.round+1} in ${wk} wk`,whenTip:`${two?N.team+": ":""}Round ${N.round+1} of ${PC_ROUNDS} · race week ${N.due}`};}
 const pcFieldTxt=T=>pcK(T).fieldTxt(T,PC_EVENTS[T.ev]);
 const pcWhere=T=>pcK(T).where(T);
+/* the series banner across the top of an offer or a team's card (banners/<PC_EVENTS key>.webp, credits in banners/CREDITS.md) */
+function pcBan(T){return PC_EVENTS[T.ev]?`<div class="pcban"><img src="banners/${T.ev}.webp" alt="" loading="lazy" decoding="async" onerror="this.parentNode.remove()"></div>`:"";}
 function pcOffer(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],k=pcPayK(null);
-  return`<div class="card pcr"><h3>${esc(T.team)}<span>${fmt$(T.pay)} fee</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}${T.back?" · asking you back":""}</div>
+  return`<div class="card pcr">${pcBan(T)}<h3>${esc(T.team)}<span>${fmt$(T.pay)} fee</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}${T.back?" · asking you back":""}</div>
     ${T.ret?`<p class="hint pcret" data-nofold>${pcRetTxt(T)}</p>`:""}${T.rescue?`<p class="pcmid"><b>Rescue.</b> Their engine supplier went bust after round ${T.rescue}. Take over for rounds ${T.rescue+1} to ${PC_ROUNDS}: they have ${T.rpts} pts and are near the back. The fee is ${Math.round((PC_RESCUE.pay-1)*100)}% richer for the trouble; the budget is what's left of theirs.</p>`:""}
     <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.purse&&PC_PURSE[T.purse]?`<p class="pcst"><b>${PC_PURSE[T.purse].n}.</b> ${PC_PURSE[T.purse].d}</p>`:""}${T.rule&&PC_RULES[T.rule]?`<p class="pcmid"><b>Team rule.</b> ${esc(pcRuleTxt(T))}. They pay ${Math.round((PC_RULES[T.rule].payK-1)*100)}% more on the fee for it.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}
     <p class="mkline"><span>Parts budget <b>${fmt$(T.budget)}</b></span><span>A round raced <b>${fmt$(Math.round(T.pay*PC_RETAIN*k/50)*50)}</b></span><span>Title <b>${fmt$(Math.round(T.pay*PC_CBONUS[0]*(st.winK||1)*k/50)*50)}</b></span></p>
@@ -526,7 +528,7 @@ function pcMidNow(T,c){if(T.mid!=="ask"||!c.res)return"";const same=T.hash!=null
   if(T.style==="rookie")return`<i>${ok(!same||!T.wear)}${same&&T.wear?"The season engine is worn: freshen it up.":"Fresh."}</i>`;return"";}
 function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(T),rd=T.round+1,left=pcLeft(T),h=cfgHash(S.cfg),same=T.hash!=null&&T.hash===h,due=C().week>=T.due;
   const fresh=pcFreshCost(T),tab=pcTable(T),pos=tab.findIndex(x=>x.me)+1,W=pcWx(T,false);
-  let s=`<div class="card pcr job"><h3>${esc(T.team)}<span>Round ${rd} of ${PC_ROUNDS} · ${due?"this week":`week ${T.due}`}</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}</div>
+  let s=`<div class="card pcr job">${pcBan(T)}<h3>${esc(T.team)}<span>Round ${rd} of ${PC_ROUNDS} · ${due?"this week":`week ${T.due}`}</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}</div>
     <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.rule&&PC_RULES[T.rule]?`<p class="hint"><b>Team rule:</b> ${esc(pcRuleTxt(T))}.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}
     <p class="hint pcwx" data-nofold>Round ${rd} forecast, ${W.mon}: ${pcWxTxt(W,true,T)}.</p>${pcK(T).setupTxt?`<p class="hint" data-nofold>${pcK(T).setupTxt(T)}</p>`:""}${pcMidOn(T)?`<p class="pcmid"><b>This round.</b> ${esc(pcMidTxt(T))}${pcMidNow(T,c)}</p>`:""}${pcSub(T)?`<p class="hint">${esc(pcSub(T).n)} drives in place of ${esc(pcFirst(T))}, who is hurt.</p>`:""}
     <div class="pcbud"><div class="pcbar"><i style="width:${Math.min(100,T.spent/T.budget*100).toFixed(1)}%"></i></div><p class="mkline"><span>Budget <b>${fmt$(T.budget)}</b></span><span>Spent <b>${fmt$(T.spent)}</b></span><span>Left <b>${fmt$(left)}</b></span></p></div>`;
