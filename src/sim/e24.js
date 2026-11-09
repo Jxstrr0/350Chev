@@ -27,6 +27,10 @@
     hot_clearance: [0.4, 6, "scuffed piston — oil topped up"], coolant_seal: [0.4, 12, "O-ring weep — coolant topped up"], carbon_seals: [0.7, 5, "carbon cleared with a hot lap"], oil_metering: [0.8, 5, "oil metering pump changed"] };
   /* a wet sump in the 24 h: the oil-surge rate is multiplied by k and never below floor per hour (race mode) */
   const E24_WET = { k: 3, floor: 0.04 };
+  /* the crew chief's judgement: wear = the most any part may be worn by the flag; dSave / dPush = how much failure risk per hour
+     Conserve must save, or Push may add, to be worth it; cruise / reach = how far beyond what the pace could win or lose over the
+     hours left a gap must be before it stops mattering; margin = seconds, about a pit stop; punct = seconds a puncture costs */
+  const E24_CHIEF = { wear: 0.8, dSave: 0.008, dPush: 0.0015, cruise: 1.5, reach: 1.5, margin: 120, punct: 150 };
   const E24_K = 2.5, E24_DUR = 86400, E24_START = 14, E24_TANK = 100, E24_SC_RATE = 0.16;
   const E24_CLASSES = {
     proto: { n: "Proto", ch: "super", k: 0.96, pool: ["v12_65", "valkyrie", "r26b", "dfv", "v10_52", "1lr", "s85", "hellcat"], prize: [30000, 18000, 10000, 5000, 3000], rep: [34, 22, 15] },
@@ -143,6 +147,7 @@
     e24Feed(R, 0, "start", `Green flag — ${R.cars.length} cars, ${me.no} starts P${me.grid} (${E24_CLASSES[myCls].n} P${R.cars.filter(c => c.cls === myCls && c.grid < me.grid).length + 1})`, true, true);
     me.stints.push({ drv: me.drv[0], c: me.tyre.c, t0: 0, laps: 0, fuel: 0, modeT: { push: 0, race: 0, save: 0 } });
     R.prevPos = e24Pos(R, me);
+    if (R.plan.auto) { e24Chief(R, me, 0); me.tyre.c = R.plan.tyre; me.stints[0].c = me.tyre.c; }   // the crew chief picks the starting tyres and mode too
     return R;
   }
   function e24Feed(R, t, k, txt, me, stop) { R.feed.push({ t: t, k: k, txt: txt, me: !!me, n: ++R.seq }); if (stop) R.stopN = R.seq; if (R.feed.length > 500) R.feed.splice(0, R.feed.length - 500); }
@@ -202,6 +207,7 @@
         if (R.scOn && !R.sc && lost > 30 && R.r() < 0.35) e24ScGo(R, t, "a car beached in the gravel"); }
       else if (x < pP + pO + pK) { c.pend = { why: "fix", mins: 3 + R.r() * 7, what: "bodywork after contact" }; e24Feed(R, t, me ? "inc" : "ai", me ? "Contact in traffic — the nose is hanging off" : `${e24Name(c)} — contact, pitting for a nose`, me, me); }
     }
+    if (me && R.plan.auto) e24Chief(R, c, t);
     // pits
     let box = !!c.pend;
     const lf = P.modes[c.mode].fuel, left = R.dur - t, lapNow = P.modes[c.mode].lap * c.pace;
@@ -223,6 +229,43 @@
       lap = Math.max(lap, R.sc.lapT - Math.min(R.sc.lapT * 0.6, 0.8 * Math.max(0, g - 1.4))); c.scLap = true; }
     c.lapDur = lap; c.tNext = t + lap;
     if (me) e24Check(R, c);
+  }
+  /* the crew chief (plan.auto, since 1.76.102.0): calls the player's strategy at each of their line crossings, with the same switches the
+     player has. Engine mode: Race, unless (a) the safety car is out, where Conserve costs no time; (b) the engine is running hot enough
+     that Conserve buys real reliability, or a part would wear out before the flag; (c) nobody in class is close enough ahead or behind
+     for the pace to matter over the hours left, so it nurses the car home; or (d) the engine is safe and a place is in reach, and it
+     pushes. Tyres: the compound, and single or double stints, that cost the least time over a tank of fuel, counting the grip lost as
+     they wear, the 22 s change and the puncture risk past their life. Stints run to the fuel on a full tank. Tunables in E24_CHIEF. */
+  function e24Chief(R, c, t) {
+    const P = c.P, pl = R.plan, K = E24_CHIEF, sky = e24Sky(t), left = Math.max(0, R.dur - t), hrs = left / 3600, md = P.modes;
+    const rt = { push: e24Rates(P, sky.amb, "push"), race: e24Rates(P, sky.amb, "race"), save: e24Rates(P, sky.amb, "save") };
+    const wearOk = m => { for (let i = 0; i < rt[m].r.length; i++) if (c.dmg[i] + rt[m].r[i] * hrs >= K.wear) return false; return true; };
+    let mode = "race", why = "race", say = "";
+    if (R.sc) { mode = "save"; why = "sc"; say = "conserve behind the safety car"; }
+    else {
+      const pos = e24Pos(R, c), lapsLeft = left / (md.race.lap * c.pace), gap = (a, b) => (a.laps - b.laps) * md.race.lap * c.pace + (b.tLast - a.tLast);   // a leads b by this many seconds
+      const run = o => o && !o.out && !o.fin, gA = run(pos.ahead) ? gap(pos.ahead, c) : Infinity, gB = run(pos.behind) ? gap(c, pos.behind) : Infinity;
+      const dS = (md.save.lap - md.race.lap) * c.pace * lapsLeft, dP = (md.race.lap - md.push.lap) * c.pace * lapsLeft;
+      const far = (dS * K.cruise + K.margin) * (c.chiefWhy === "cruise" ? 0.6 : 1), near = K.margin * (c.chiefWhy === "push" ? 1.5 : 1);   // a call sticks until the gap has clearly changed
+      if (!wearOk("race")) { mode = "save"; why = "wear"; say = "conserve, nursing a worn part to the flag"; }
+      else if (rt.race.haz - rt.save.haz > K.dSave) { mode = "save"; why = "hot"; say = "conserve, it is running too close to the edge"; }
+      else if (gB > far && gA > far) { mode = "save"; why = "cruise"; say = "conserve, nobody close enough to race"; }
+      else if (wearOk("push") && rt.push.haz - rt.race.haz < K.dPush && (gA < dP * K.reach + near || gB < near)) { mode = "push"; why = "push"; say = gB < near && !(gA < gB) ? "push, #" + pos.behind.no + " is right behind" : "push, #" + pos.ahead.no + " is in reach"; }
+      else say = "back to race pace";
+    }
+    if (why !== c.chiefWhy) { if (c.chiefWhy != null && t > 0) e24Feed(R, t, "chief", "Crew chief: " + say, true, false); c.chiefWhy = why; }
+    pl.mode = mode; c.mode = mode;
+    // tyres for the next stop, per lap: grip lost to wear, the change, punctures past the tyre's life
+    const lf = md[mode].fuel, laps = Math.max(1, Math.floor(E24_TANK / lf - 1.25)), km = laps * R.len / 1000, tf = clamp(1 - 0.012 * (sky.amb - 20), 0.7, 1.25) / E24_MODES[mode].tyre;
+    const grip = w => w <= 1 ? 1 - 0.0175 * w : (0.9825 + (w - 1) * 0.965 - 0.06 * (w - 1) * (w - 1)) / w;   // the mean of the wear curve in e24Lap from new to w
+    let best = null;
+    for (const ty in E24_TYRES) for (const chg of ["every", "double"]) { const Ty = E24_TYRES[ty], n = chg === "double" ? 2 : 1, w = km * n / (Ty.km * tf);
+      if (chg === "double" && km / Ty.km > 0.8) continue;   // the crew changes a set that worn anyway
+      const lapS = md[mode].lap * c.pace, over = Math.max(0, w - 1) / w * laps * n * lapS / 3600;   // hours run past the tyre's life
+      const cost = (P.slope * ROAD_TYRES.semi.mu * (Ty.mu * grip(w) - 1) * laps * n + 22 + 0.066 * over * K.punct) / (laps * n);
+      if (!best || cost < best.cost) best = { cost: cost, ty: ty, chg: chg }; }
+    if (best) { pl.tyre = best.ty; pl.chg = best.chg; }
+    pl.stint = 0; pl.fuel = "full"; pl.scPit = true;
   }
   /* a pit stop at the line: what it does and how long it takes (lane + stationary) */
   function e24Stop(R, c, t) {

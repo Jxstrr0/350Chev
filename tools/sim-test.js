@@ -89,7 +89,8 @@ const CASES = {
   e24(cfg, env) {
     const me = SIM.enduroPrep(cfg, env, { ch: "coupe", tyre: SIM.CHASSIS.coupe.tyre, finalK: 1 }, "club", true), R = SIM.enduroNew({ seed: 7, track: "club", me });
     SIM.enduroStep(R, 2 * 3600); const mine = R.cars.find(c => c.me), res = SIM.enduroResult(R);
-    return { laps2h: mine.laps, best: mine.best, pos2h: (Array.isArray(res) ? res : res.res || []).findIndex(x => x.me) + 1 };
+    const Rc = SIM.enduroNew({ seed: 7, track: "club", me, plan: { auto: true } }); SIM.enduroStep(Rc, 2 * 3600); const mc = Rc.cars.find(c => c.me);   // the same two hours with the crew chief on the pit wall
+    return { laps2h: mine.laps, best: mine.best, pos2h: (Array.isArray(res) ? res : res.res || []).findIndex(x => x.me) + 1, chiefLaps2h: mc.laps, chiefTyre: mc.tyre.c };
   },
 };
 

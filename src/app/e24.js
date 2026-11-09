@@ -7,7 +7,7 @@ const E24_FEE=3500,E24_GAP=6,E24_REP=120,E24_SPEEDS=[1,60,600,3600],E24_CAMS=[["
 const E24_STINTS=[[0,"Max","to the fuel"],[45,"45 min","short, light"],[60,"60 min","an hour"],[90,"90 min","long"]];
 function e24EnvFix(){const e=S.env;if(!SIM.ROAD_TRACKS[e.e24Trk]||SIM.ROAD_TRACKS[e.e24Trk].no24)e.e24Trk="gp";if(!SIM.E24_MODES[e.e24Mode])e.e24Mode="race";if(!E24_STINTS.some(s=>s[0]===+e.e24Stint))e.e24Stint=0;
   if(e.e24Fuel!=="full"&&e.e24Fuel!=="stint")e.e24Fuel="full";if(!SIM.E24_TYRES[e.e24Tyre])e.e24Tyre="medium";if(e.e24Chg!=="every"&&e.e24Chg!=="double")e.e24Chg="every";
-  if(typeof e.e24SC!=="boolean")e.e24SC=true;if(!E24_SPEEDS.includes(+e.e24Spd))e.e24Spd=600;if(!E24_CAMS.some(c=>c[0]===e.e24Cam))e.e24Cam="auto";roadEnvFix();return e;}
+  if(typeof e.e24SC!=="boolean")e.e24SC=true;if(e.e24Drive!=="auto")e.e24Drive="you";if(!E24_SPEEDS.includes(+e.e24Spd))e.e24Spd=600;if(!E24_CAMS.some(c=>c[0]===e.e24Cam))e.e24Cam="auto";roadEnvFix();return e;}
 function e24C(){const c=C();if(!c.e24||typeof c.e24!=="object")c.e24={next:0,runs:0,live:null};return c.e24;}
 const e24TrkName=trk=>(SIM.ROAD_TRACKS[trk]||SIM.ROAD_TRACKS.gp).n;
 const e24Cls=c=>(SIM.E24_CLASSES[c]||{n:c}).n;
@@ -39,7 +39,11 @@ function e24Hint(){return career()?`<b>24 Hours of Prairie Sky</b> · ${fmt$(E24
 function e24Seg(k,cur,opts,cls){return `<div class="seg ${cls||""}">${opts.map(([v,n,d])=>`<button data-e24k="${k}" data-e24v="${v}" class="${String(cur)===String(v)?"on":""}">${n}${d?`<small>${d}</small>`:""}</button>`).join("")}</div>`;}
 function e24StratHtml(live,P){const e=S.env,pl=live?ER.R.plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg},M=SIM.E24_MODES,Ty=SIM.E24_TYRES;
   const md=k=>{if(!P)return M[k].d;const m=P.modes[k],b=P.modes.race;return `${k==="race"?fmtLap(m.lap):(m.lap>=b.lap?"+":"−")+Math.abs(m.lap-b.lap).toFixed(1)+" s"} · ${m.fuel.toFixed(1)} L`;};
-  let h=`<div class="lbl"><span>Engine mode${live?" · now":""}</span></div>${e24Seg("e24Mode",pl.mode,["push","race","save"].map(k=>[k,M[k].n,md(k)]),"n3")}`;
+  const auto=live?!!ER.R.plan.auto:e.e24Drive==="auto";
+  let h=`<div class="drvrow"><span class="dl">Pit wall</span><div class="seg n2 drvseg">${[["you","You call it"],["auto","Crew chief"]].map(([id,n])=>`<button data-e24k="e24Drive" data-e24v="${id}" class="${(auto?"auto":"you")===id?"on":""}">${n}</button>`).join("")}</div>${moreI("<b>You call it</b> · engine mode, stints, fuel and tyres are yours, before the race and during it<br><b>Crew chief</b> · calls them lap by lap: the tyre that is quickest over a tank of fuel, Conserve behind the safety car and when nobody is close enough to race, Push only when the engine is safe and a place is in reach","About the pit wall")}</div>`;
+  if(auto&&!live)return h+`<p class="hint">The crew chief calls engine mode, tyres and stops for the whole race. During the race, tap any strategy choice to take over.</p><div class="lbl"><span>Safety cars</span></div>${e24Seg("e24SC",String(e.e24SC),[["true","On","debris, crashes, bunched field"],["false","Off","green all day"]])}`;
+  if(auto)h+=`<p class="hint">The crew chief has the pit wall. Tap any choice below to take over.</p>`;
+  h+=`<div class="lbl"><span>Engine mode${live?" · now":""}</span></div>${e24Seg("e24Mode",pl.mode,["push","race","save"].map(k=>[k,M[k].n,md(k)]),"n3")}`;
   h+=`<div class="lbl"><span>Stint length${live?" · next stint":""}</span></div>${e24Seg("e24Stint",pl.stint,E24_STINTS,"n4")}`;
   h+=`<div class="lbl"><span>Fuel at the stops</span></div>${e24Seg("e24Fuel",pl.fuel,[["full","Full tank",`${SIM.E24_TANK} L`],["stint","Just enough","for the stint, lighter"]])}`;
   h+=`<div class="lbl"><span>Tyres${live?" · next set":""}</span></div>${e24Seg("e24Tyre",pl.tyre,Object.entries(Ty).map(([k,t])=>[k,t.n,`${t.mu>1?"+":t.mu<1?"−":""}${Math.round(Math.abs(t.mu-1)*1000)/10||""}${t.mu===1?"base":"%"} · ${t.km} km`]),"n3")}`;
@@ -67,7 +71,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-e24k]");if
   const v=k==="e24Stint"?+raw:k==="e24SC"?raw==="true":raw;
   if(k==="e24Trk"&&ER)return;
   S.env[k]=v;e24EnvFix();
-  if(ER&&!ER.finished){const pl=ER.R.plan,me=ER.R.cars[0],key={e24Mode:"mode",e24Stint:"stint",e24Fuel:"fuel",e24Tyre:"tyre",e24Chg:"chg"}[k];if(key){pl[key]=v;if(key==="mode"&&!me.out)me.mode=v;}e24StratRender();e24Hud();}
+  if(ER&&!ER.finished){const pl=ER.R.plan,me=ER.R.cars[0],key={e24Mode:"mode",e24Stint:"stint",e24Fuel:"fuel",e24Tyre:"tyre",e24Chg:"chg"}[k];
+    if(k==="e24Drive"){pl.auto=v==="auto";if(pl.auto)ER.took=null;else if(ER.took==null)ER.took=ER.R.t;toast(pl.auto?"The crew chief has the pit wall":"You have the pit wall");}
+    else if(key&&pl.auto){pl.auto=false;ER.took=ER.R.t;toast("You have the pit wall");}   // a tap on the strategy takes over, as at the other events
+    if(key){pl[key]=v;if(key==="mode"&&!me.out)me.mode=v;}e24StratRender();e24Hud();}
   else if(S.env.testType==="race24")renderEnv();
   save();buzz(6);});
 /* ---- the live race ---- */
@@ -82,11 +89,11 @@ function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roa
   const snap=e24Snap||testSnap();e24Snap=null;
   try{P=e24Prep(trk,snap.cfg);}catch(err){testing=false;renderTest();toast("The car would not pass scrutineering");return;}
   const seed=career()?rnHash([C().seed,C().week,"e24",trk].join(":")):rnHash(Date.now()+":"+Math.random());
-  const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true}});
+  const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true,auto:e.e24Drive==="auto"}});
   if(career()&&crewPitK()!==1)R.pitK=crewPitK();   // fast hands on the crew: quicker stops (app/crew.js)
   const rv=rivE24Car(R);   // a rival's head-to-head: their car in your class
   if(career()){if(!dev())C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${dev()?"free (dev)":fmt$(E24_FEE)+" entry"}`);hud();save();}
-  ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0,rv};
+  ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0,rv,chief:e.e24Drive==="auto",took:null,sg:""};
   renderEnv();$("app").classList.add("onstrip");ENGINE_VIS.setAutoRotate(false);$("e24Ctl").style.display="";$("e24Side").style.display="";e24HudInit();e24StratRender();e24FeedRender();e24Hud();
   $("testProg").classList.remove("done");sfx("start");buzz([20,30,20]);toast(`GREEN FLAG · ${e24TrkName(trk).toUpperCase()}`);
   requestAnimationFrame(()=>{const pn=$("panel"),r=$("e24Ctl").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(!deskOn()&&(r.top<pr.top||r.top>pr.top+pr.height*0.5))pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
@@ -98,7 +105,7 @@ function e24Frame(now){if(!ER||ER.finished)return;const R=ER.R,me=R.cars[0];
   else if(!ER.toEnd){const target=R.t+dt*ER.speed;while(performance.now()-t0<9&&!R.done&&R.t<target){if(!SIM.enduroStep(R,target,150))break;}}
   if((me.out||me.fin)&&!ER.toEnd){ER.toEnd=now+(me.out?1800:900);ER.jump=false;if(me.out&&me.dnf&&me.dnf.id){failFlash();}e24SpdRender();e24StratRender();}
   if(R.done){e24Hud();e24FeedRender();e24Finish();return;}
-  if(now-ER.lastHud>150){ER.lastHud=now;e24Hud();}
+  if(now-ER.lastHud>150){ER.lastHud=now;e24Hud();const pl=R.plan,sg=pl.auto?pl.mode+pl.tyre+pl.chg:"";if(sg!==ER.sg){ER.sg=sg;if(sg)e24StratRender();}}   // the crew chief changed the plan: show it
   if(me.pits!==ER.pits){ER.pits=me.pits;e24StratRender();}   // a stop clears "box this lap" and starts a stint
   const lf=R.feed[R.feed.length-1];if(lf&&lf.n!==ER.feedN)e24FeedRender();
   const visMs=ER.speed>=600||ER.jump||ER.toEnd?110:ER.speed>=60?70:0;
@@ -157,7 +164,7 @@ function e24MapDraw(){const cv=$("e24Map");if(!cv||!ER)return;const T=ER.T,R=ER.
 function e24StratRender(){const el=$("e24Side");if(!el||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
   el.innerHTML=`<div class="sec e24strat"><h2>Strategy <span class="cnt">${end?"race over":`stint ${me.stints.length} · ${me.drv[me.drvI%3]}`}</span></h2>${end?`<p class="hint">${me.out?(me.dnf&&me.dnf.id?"Out of the race. The rest of the field runs to the flag.":"Retired. The rest of the field runs to the flag."):"Chequered flag. The field is finishing its last laps."}</p>`:e24StratHtml(true,ER.P)+`<div class="row e24act"><button class="btn${R.plan.box?" on":""}" data-e24a="box">${R.plan.box?"Boxing this lap":"Box this lap"}</button><button class="btn" data-e24a="swap">Box · swap driver</button><button class="btn danger" data-e24a="retire">Retire</button></div>`}</div>
     <div class="sec e24feedsec"><h2>Race feed <span class="cnt" id="e24FeedCnt"></span></h2><div class="e24feed" id="e24Feed"></div></div>`;e24FeedRender(true);}
-const E24_FEEDK={pit:"pit",pass:"pass",fail:"warn",inc:"warn",dnf:"crit",ai:"aif",sc:"sc",sky:"sky",hour:"hour",start:"sky",flag:"sky"};
+const E24_FEEDK={chief:"pit",pit:"pit",pass:"pass",fail:"warn",inc:"warn",dnf:"crit",ai:"aif",sc:"sc",sky:"sky",hour:"hour",start:"sky",flag:"sky"};
 function e24FeedRender(force){const el=$("e24Feed");if(!el||!ER)return;const F=ER.R.feed,lf=F[F.length-1];if(!force&&lf&&lf.n===ER.feedN)return;ER.feedN=lf?lf.n:0;
   el.innerHTML=F.slice(-40).reverse().map(f=>`<div class="e24f ${E24_FEEDK[f.k]||""}${f.me?" me":""}"><time>${SIM.e24Clock(f.t)}</time><span>${esc(f.txt)}</span></div>`).join("");const c=$("e24FeedCnt");if(c)c.textContent=F.length+" events";}
 document.addEventListener("click",e=>{const s=e.target.closest("[data-e24s]"),a=e.target.closest("[data-e24a]");if(!ER||ER.finished||(!s&&!a))return;
@@ -181,6 +188,7 @@ function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me
     classified:!!mine.classified,dnf:me.dnf?{h:+me.dnf.h.toFixed(1),id:me.dnf.id,name:me.dnf.name}:null,best:me.best,bestLap:me.bestLap,avg,pits:me.pits,pitT:Math.round(me.pitT),fuel:Math.round(me.fuelUsed),
     stints,trace:dec,sc:R.scN,field:all.map(x=>({no:x.no,team:x.team,cls:x.cls,eng:x.eng,laps:x.laps,best:x.best!=null?+x.best.toFixed(2):null,out:x.out,dnf:x.dnf,me:x.me,cl:x.classified,pc:x.posCls})),
     clsBest:Math.min(...inCls.filter(x=>x.best!=null).map(x=>x.best)),win:inCls[0]?inCls[0].laps:0,hrs:+hrs.toFixed(1)};
+  if(ER.chief||R.plan.auto)r.chief=R.plan.auto?(ER.chief&&ER.took==null?"all":"end"):Math.round(ER.took||0);   // who had the pit wall: the crew chief all race, at the flag, or until this second
   if(typeof crowdAfter==="function")crowdAfter("e24",{won:r.classified&&r.posCls===1,classified:r.classified});   // app/ambience.js
   /* career money and standing */
   if(career()&&!ff&&same){const g=e24C();g.live=null;g.runs=(g.runs||0)+1;const K=SIM.E24_CLASSES[cls],fu=SIM.fuelOf(cfg0)||SIM.OPT.fuel.r91;
@@ -213,6 +221,7 @@ function e24Sheet(res){const r=res.e24,TY=SIM.E24_TYRES,MO=SIM.E24_MODES;
     <div><b>Pace</b>fastest ${fmtLap(r.best,2)} on lap ${r.bestLap||"—"}${r.avg?` · average green lap ${fmtLap(r.avg,2)}`:""} · class best ${fmtLap(r.clsBest,2)}</div>
     <div><b>Pits</b>${r.pits} stops · ${e24Min(r.pitT)} lost in the lane and the box · ${r.stints.length} stints · ${r.sc} safety car${r.sc===1?"":"s"}</div>
     <div><b>Fuel</b>${r.fuel.toLocaleString("en-CA")} L · ${r.laps?(r.fuel/r.laps).toFixed(2):"—"} L a lap${r.fuelBill!=null?` · bill ${fmt$(r.fuelBill)}`:""}</div>
+    ${r.chief!=null?`<div><b>Pit wall</b>${r.chief==="all"?"The crew chief called the whole race":r.chief==="end"?"You, then the crew chief to the flag":`The crew chief to ${SIM.e24Clock(r.chief)}, then you`}</div>`:""}
     ${r.dnf?`<div><b>Out</b>${esc(r.dnf.name)} after ${r.dnf.h} h${r.dnf.id?" — open the teardown to see it":""}</div>`:""}</div>
     <h3 class="e24h3">Stints</h3><div class="e24tbl e24st"><div class="hd"><b>#</b><span>Driver</span><span>Tyre</span><span>Mode</span><span>Laps</span><span>Fuel</span><span>Out</span></div>${st}</div>
     <h3 class="e24h3">Classification</h3><div class="e24tbl e24cl"><div class="hd"><b>Pos</b><span>Class</span><span>Car</span><span>Laps</span><span>Best</span></div>${fieldRows}</div></div>`;}
