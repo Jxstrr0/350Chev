@@ -59,7 +59,7 @@ function pcPullDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.PULL_CLAS
     f=pullTrkAdj({n:rv.n,i,full,ft:full?300:Math.round(pClamp(ft,110,299.5)*10)/10},night[Math.min(N-1,rvSlot[i])]);
     f.po=f.full?Math.round((232+rr()*58)*10)/10:null;return f;});
   const lines=[`Round ${T.round+1}: ${pcWxTxt(W,false,T)}.`],res=sat?null:pcMapRes(SIM.dragPrep(cfg,env),o.M),rel=res?Math.max(0,res.rel-T.wear):0;
-  let me=null,pr=null,broke=false,why="",dq=false,setup=null,poR=null;
+  let me=null,pr=null,broke=false,why="",dq=false,setup=null,poR=null,wt=null;
   if(!sat){
     const trk=night[slot],dsl=SIM.isDiesel(cfg),sk=o.sk,
       veh={cls:k,gear:2,trans:"conv",tyre:V.tyres[0],hitch:V.hitchMax-4,ballast:Math.round((V.maxMass-V.mass)/20)*10,redline:cfg.redline,idle:dsl?720:Math.max(750,cfg.cam>70?1100:850),seed:(rs^0xB011)>>>0,track:trk};
@@ -71,7 +71,8 @@ function pcPullDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.PULL_CLAS
     me={n:pcFirst(T)+" (yours)",me:true,full:pr.full,ft:pr.distFt,po:null,dq};
     /* full pulls tie: the same truck on a heavier sled, and the dirt re-worked, for those who stayed full */
     if(pr.full&&!broke&&field.some(f=>f.full)){const v2=Object.assign({},veh,{sledK:PC_PULL_PO,track:{moist:+Math.min(0.95,trk.moist+0.06).toFixed(2),cut:0.12},seed:(veh.seed+99)>>>0});delete v2.wornAt;delete v2.runaway;
-      poR=pcPullPass(res,v2,sk);me.po=poR.distFt;if(poR.broke){broke=true;why=(poR.reasons&&poR.reasons[0])||"The engine let go in the pull-off.";}}}
+      poR=pcPullPass(res,v2,sk);me.po=poR.distFt;if(poR.broke){broke=true;why=(poR.reasons&&poR.reasons[0])||"The engine let go in the pull-off.";}}
+    wt=pcwPullRec(k,veh,poR||pr,!!poR,res);}   // the hook that settled it, kept for Watch it (app/team-watch.js)
   const rows=field.concat(me?[me]:[]).sort((a,b)=>(a.dq?1:0)-(b.dq?1:0)||b.ft-a.ft||((b.po||0)-(a.po||0))||(a.me?-1:b.me?1:0));
   const rpos=T.rivals.map((x,i)=>1+rows.findIndex(y=>!y.me&&y.i===i));   // a DQ'd team sits last, so the rivals' places are their rows
   const top3="Top three: "+rows.slice(0,3).map((x,i)=>`${i+1}. ${x.me?pcFirst(T):x.n} ${x.full?"(full)":Math.round(x.ft)+" ft"}`).join(" · ");
@@ -82,7 +83,7 @@ function pcPullDay(T,sat,cfg,o){const E=PC_EVENTS[T.ev],k=E.cls,C0=SIM.PULL_CLAS
   if(poR)lines.push(`Pull-off against ${field.filter(f=>f.full).length} full ${field.filter(f=>f.full).length===1?"pull":"pulls"} on a heavier sled: ${poR.full?"full again":poR.distFt.toFixed(1)+" ft"}.`);
   if(broke)lines.push(dq?`Disqualified: ${why}`:why);else{const rs=(pr.reasons||[]).filter(x=>!/^Track:/.test(x));if(rs.length&&!pr.full)lines.push(rs[0]);}
   lines.push(`Finished P${place>N?N:place} of ${N}${dq?" (disqualified)":""}.`,top3);
-  return{place,of:N,broke,why,lines,best:pr.distFt,rpos,sat:false,rel};}
+  return{place,of:N,broke,why,lines,best:pr.distFt,rpos,sat:false,rel,watch:wt};}
 /* the hitch, ballast, tyre pressure, throttle stop and ballast position from the truck pull's own sheet, when it is on this class */
 function pcPullMine(k){const e=S.env;if(e.pullCls!==k)return null;const n=x=>x!=null&&x!==""&&isFinite(+x)?+x:null,o={hitch:n(e.pullHitch),ballast:n(e.pullBallast),psi:n(e.pullPsi),thrMax:n(e.pullThr)!=null?n(e.pullThr)/100:null,ballPos:n(e.pullBallPos)!=null?n(e.pullBallPos)/100:null};
   for(const x in o)if(o[x]==null)delete o[x];return o;}

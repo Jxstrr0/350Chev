@@ -198,7 +198,7 @@
         else if (st.egtDose > egtTrip) st.broke = isTurbo && (res.egtLimitC || 0) <= st.egt ? "turbo" : res.diesel ? "piston" : "crown_temp";
         if (st.broke) { st.failKind = st.broke; st.stopWhy = "broke"; }
       }
-      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), throttle: +thr.toFixed(2), d: +st.depth.toFixed(2), cool: Math.round(st.cool), egt: Math.round(st.egt), pack: +st.pack.toFixed(2), dig: +st.dig.toFixed(2) }); }
+      if (st.t - lastTrace >= 0.1) { lastTrace = st.t; st.trace.push({ t: +st.t.toFixed(1), x: +st.x.toFixed(2), v: +st.v.toFixed(2), rpm: Math.round(st.rpm), slip: +st.slip.toFixed(3), throttle: +thr.toFixed(2), d: +st.depth.toFixed(2), cool: Math.round(st.cool), egt: Math.round(st.egt), pack: +st.pack.toFixed(2), dig: +st.dig.toFixed(2), sink: +st.sink.toFixed(2), y: +st.y.toFixed(2), w: +st.w.toFixed(1) }); }
       st.thrNow = thr;
       if (st.x >= L) { st.cleared = true; st.tOut = st.t; st.stopWhy = "cleared"; finish(); return; }
       if (st.broke) { finish(); return; }
