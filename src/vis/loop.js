@@ -157,7 +157,9 @@ function tick(dt, t){
          (b) mean torque reaction rolling the block against the mounts (blips rock it),
          (c) per-cycle torque ripple: lumpy idle on a big cam, worse with few cylinders,
          (d) a failure = something inside is now out of balance.
-         Units: 1 = 100 mm. A rough four buzzes ~2 mm; a cammed V8 rolls a few degrees at idle. --- */
+         Units: 1 = 100 mm. A rough four buzzes ~2 mm; a cammed V8 rolls a few degrees at idle.
+         The 1st-order couple turns the block (an angle, ends moving ±x1 on a ~250 mm half-length), so it skips the ×4 that
+         translation gets: a single rocks ~2° at idle, a triple under 1°, before 1.76.96.0 they rocked 20° and 8°. --- */
   var smooth = clamp(run.smooth===undefined?70:run.smooth, 0, 100);
   var rpm = run.on ? Math.max(0, run.rpm) : 0;
   var fHz = rpm/60;
@@ -170,7 +172,7 @@ function tick(dt, t){
   var x2 = run.second * mScale * (1.7/(run.rodRatio||1.7)) * w2 * trans(2*fHz) * 0.060; /* 2× vertical */
   var xc = 0.0018 * clamp(run.load,0,1.2) * (1-smooth/100);                     /* combustion roughness floor */
   var VIS = 4.0;                                    /* on a phone 1 mm is half a pixel: exaggerate translation, keep the ratios */
-  x1*=rough*VIS; x2*=rough*VIS; xc*=VIS;
+  x1*=rough/2.5; x2*=rough*VIS; xc*=VIS;           /* x1 → radians about the mounts' centre */
   /* render: real sine below ~15 Hz (you can see it), smoothed noise above (a buzz at 60 fps) */
   function osc(f, k, phase){ var wgt=clamp((f-10)/8,0,1); var sn=Math.sin(TAU*f*t+phase);
     mnt.nz[k] += ((Math.random()*2-1) - mnt.nz[k]) * 0.75; return sn*(1-wgt) + mnt.nz[k]*wgt; }
@@ -178,7 +180,8 @@ function tick(dt, t){
   /* 2nd-order force acts along the cylinder axes: vertical for inlines, split along both banks for a vee, cancels to lateral for a boxer */
   var s2y = x2 * osc(2*fHz,0,0) * (vee>=170 ? 0.15 : Math.cos(ang));
   var s2z = x2 * osc(2*fHz,1,1.1) * (vee>=170 ? 0.8 : Math.sin(ang)*0.7);
-  var s1  = x1 * osc(fHz,2,2.3);                    /* 1st-order couple → pitch/yaw about the mounts */
+  /* 1st-order couple → pitch and yaw about the mounts, a quarter turn apart (it rotates with the crank), pitch the bigger */
+  var s1p = x1 * osc(fHz,2,2.3), s1y = x1 * osc(fHz,3,2.3+Math.PI/2) * 0.6;
   var rc  = xc * (Math.random()*2-1);
   /* torque reaction: mean torque leans the block; spring-damper so it rocks and settles */
   var nCyl = run.n||4, frac = run.on ? clamp(rpm/Math.max(1000, run.redline), 0, 1.25) : 0;
@@ -188,7 +191,7 @@ function tick(dt, t){
   var cycleHz = Math.max(0.5, rpm/120);
   mnt.lopeT += dt;
   if(mnt.lopeT > 1/cycleHz){ mnt.lopeT = 0; var overlap = clamp(((run.cam||40)-45)/55, 0, 1);
-    var lopeAmp = deg(0.9) * (1+0.5*(run.wear||0)) * (0.25+overlap) * Math.pow(Math.max(0,1-frac*1.8),2) * (4/nCyl) * (run.on?1:0);
+    var lopeAmp = deg(0.9) * (1+0.5*(run.wear||0)) * (0.25+overlap) * Math.pow(Math.max(0,1-frac*1.8),2) * Math.min(2, 4/nCyl) * (run.on?1:0);   /* a single lopes twice a four, not four times */
     mnt.lope = (Math.random()*2-1) * lopeAmp; }
   var target = run.on ? (lean + mnt.lope) : 0;
   var kR = Math.pow(TAU*6.0,2), cR = 2*0.35*TAU*6.0;   /* ~6 Hz roll mode on the mounts, ζ 0.35 */
@@ -206,7 +209,7 @@ function tick(dt, t){
   } else if(failFx.started) cleanupFail();
   if(engineShake){
     engineShake.position.set(rc*0.6, s2y + rc + fy, s2z + rc*0.8 + fz);
-    engineShake.rotation.set(mnt.roll + fr, s1*0.9, s1*0.5);
+    engineShake.rotation.set(mnt.roll + fr, s1y, s1p);
   }
   if(heatZones){ var pulse=0.5+0.5*Math.sin(t*5.0); for(i=0;i<heatZones.length;i++){ var hz=heatZones[i]; if(hz.pulse&&hz.zone<16) HEAT_UNIFORM.value[hz.zone].w = hz.amount*(0.7+0.3*pulse); } }
   /* --- header glow --- */
