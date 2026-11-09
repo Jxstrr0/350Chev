@@ -9,7 +9,7 @@
    Banner art: a later PR drops one 3:1 image per event into EV_BANNER (a path, e.g. "banners/drag.webp"); the card then
    draws it lazily over the gradient and icon, which stay as the fallback. */
 var EH={t:""};   // var: evPickRender can run before this file has on boot
-const EV_BANNER={drag:null,bracket:null,pull_sled:null,salt:null,bog:null,boat:null,road:null,hill:null,oval:null,race24:null};
+const EV_BANNER={drag:"banners/street.webp",bracket:"banners/gasser.webp",pull_sled:"banners/photfarm.webp",salt:null,bog:"banners/bmod.webp",boat:"banners/boutboard.webp",road:null,hill:"banners/hillppo.webp",oval:"banners/olate.webp",race24:null};   /* each a team series' banner (banners/<PC_EVENTS key>.webp); salt, road and the 24 Hours have no series yet */
 /* h: the banner's hue; v: the venue; d: one line on what it is; cls: what the classes cell says */
 const EVH={
   drag:{h:16,v:"Prairie Dragway",d:"Quarter-mile passes and heads-up race nights on a prepped strip.",cls:()=>Object.keys(SIM.AERO).length+" body classes"},
@@ -38,7 +38,7 @@ function evhMoney(t){if(!career())return["Entry","Free"];
 const evhCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):"";
 function evhCard(t,i){const st=evStatus(t),H=EVH[t],lock=st.k==="lock",img=EV_BANNER[t],m=evhMoney(t);let cls="";try{cls=H.cls();}catch(e){}
   return `<button class="evc${lock?" lock":""}${st.k==="live"?" live":""}" data-t="${t}" style="--h:${H.h}"${lock?` aria-disabled="true"`:""}>`
-    +`<span class="evb">${img?`<img src="${esc(img)}" alt="" loading="lazy" decoding="async">`:""}<svg class="evi" viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><i class="evno">No. ${String(i+1).padStart(2,"0")}</i>${st.k==="live"?`<em class="evon">On now</em>`:""}</span>`
+    +`<span class="evb">${img?`<img src="${esc(img)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:""}<svg class="evi" viewBox="0 0 24 24" aria-hidden="true"><path d="${EV_IC[t]}"/></svg><i class="evno">No. ${String(i+1).padStart(2,"0")}</i>${st.k==="live"?`<em class="evon">On now</em>`:""}</span>`
     +`<span class="evx"><b class="evn">${EV_NAME[t]}</b><span class="evv">${H.v}</span><span class="evd">${H.d}</span>`
     +`<span class="evs"><span><i>Classes</i><b>${cls}</b></span><span><i>${m[0]}</i><b>${m[1]}</b></span><span><i>Status</i><b>${esc(evhCap(st.s))||"Open"}</b></span></span></span>`
     +(lock?`<span class="evlk"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><b>${esc(evhCap(st.s))}</b></span>`:"")+`</button>`;}

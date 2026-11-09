@@ -30,7 +30,8 @@ html.desk[data-tab=events]:not(.evin) #tabs{z-index:12}
 .evc:active{transform:scale(.985)}
 .evb{position:relative;display:block;aspect-ratio:3/1;overflow:hidden;color:#faf9f5;background:repeating-linear-gradient(115deg,rgba(255,255,255,.045) 0 2px,transparent 2px 16px),linear-gradient(135deg,hsl(var(--h) 38% 30%),hsl(var(--h) 32% 11%))}
 .evb::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,rgba(20,20,19,.55),rgba(20,20,19,0));pointer-events:none}
-.evb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.8) brightness(.85)}
+.evb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}   /* the banners come darkened and desaturated (q_banner=flat), so no filter here */
+.evb img~.evi{display:none}
 .evi{position:absolute;right:14px;top:50%;width:min(44%,120px);height:auto;aspect-ratio:1;transform:translateY(-50%);fill:none;stroke:currentColor;stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;opacity:.3}
 .evno{position:absolute;left:12px;top:9px;z-index:1;font-family:var(--mono);font-style:normal;font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
 .evon{position:absolute;right:10px;top:8px;z-index:1;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--orange);color:var(--orange-ink)}
