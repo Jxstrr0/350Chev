@@ -24,12 +24,19 @@
 const fs = require("fs"), path = require("path"), os = require("os"), cp = require("child_process");
 const ROOT = __dirname, SRC = path.join(ROOT, "src"), OUT = path.join(ROOT, "index.html"), MAN = path.join(SRC, "manifest.txt");
 const NL = 10;
+/* the one lazy chunk: the event scenes. Manifest lines "scenes.js: <path>" go into it; the page fetches it once the garage is up and
+   runs it inside the ENGINE_VIS closure (src/vis/scn.js). It is not a script the page could load with a tag: it only makes sense there. */
+const CHUNK = "scenes.js", CHUNK_OUT = path.join(ROOT, CHUNK), INCHUNK = new Set();
 
 function die(msg, code) { console.error("build.js: " + msg); process.exit(code || 1); }
 
 function manifest() {
   if (!fs.existsSync(MAN)) die("missing " + path.relative(ROOT, MAN));
-  const list = fs.readFileSync(MAN, "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+  const list = fs.readFileSync(MAN, "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => {
+    const m = l.match(/^([\w.-]+):\s*(\S+)$/);   /* "scenes.js: vis/strip.js" = this file goes into scenes.js, not the page */
+    if (m) { if (m[1] !== CHUNK) die("manifest: unknown output file " + m[1] + " (only " + CHUNK + ")"); INCHUNK.add(m[2]); return m[2]; }
+    return l;
+  });
   const seen = new Set();
   for (const p of list) { if (seen.has(p)) die("manifest lists " + p + " twice"); seen.add(p); }
   return list;
@@ -49,7 +56,12 @@ function orphans(list) {
 }
 
 const MARK = /^(<<<<<<<|>>>>>>>) /m;
-function parts(list) {
+/* parts() = the files that make index.html; chunkParts() = the ones that make scenes.js */
+function parts(list) { return allParts(list).filter(x => !INCHUNK.has(x.p)); }
+function chunkParts(list) { return allParts(list).filter(x => INCHUNK.has(x.p)); }
+let ALL = null;
+function allParts(list) {
+  if (ALL && !list) return ALL;
   list = list || manifest();
   const lost = orphans(list);
   if (lost.length) die("src files not in src/manifest.txt (add them or delete them): " + lost.join(", "));
@@ -62,6 +74,42 @@ function parts(list) {
     if (MARK.test(b.toString("latin1"))) die("src/" + p + " has merge-conflict markers; resolve them first");
     return { p, b };
   });
+}
+function version() {
+  const vf = fs.readdirSync(path.join(SRC, "app")).map(n => path.join(SRC, "app", n)).find(f => /const VERSION="/.test(fs.readFileSync(f, "latin1")));
+  return vf ? fs.readFileSync(vf, "latin1").match(/const VERSION="([^"]+)"/)[1] : "0";
+}
+/* scenes.js: a tag line carrying the version (the loader refuses a copy from another version), the scene files byte for byte, then one
+   line that hands the core the functions it calls (SCN_NAMES in src/vis/scn.js) */
+function scnNames(page) { const m = page.toString("latin1").match(/^var SCN_NAMES="([^"]*)"\.split\(" "\);$/m); if (!m) die("src/vis/scn.js: the SCN_NAMES line is missing"); return m[1].split(" ").filter(Boolean); }
+function buildChunk(page) {
+  const names = scnNames(page);
+  return Buffer.concat([Buffer.from("/*pew-scenes " + version() + "*/\n")].concat(chunkParts().map(x => x.b),
+    [Buffer.from(";({" + names.map(n => n + ":" + n).join(",") + "})\n//# sourceURL=" + CHUNK + "\n")]));
+}
+/* the chunk must compile, must not redeclare a core function, and the core's list of scene functions must be right */
+function lintChunk(ps, page, chunk) {
+  const vm = require("vm"), names = scnNames(page), src = chunk.toString("latin1"), cps = chunkParts();
+  try { new vm.Script('"use strict";(function(){' + src + "\n})", { filename: CHUNK }); }
+  catch (e) { const ln = +((e.stack || "").match(/scenes\.js:(\d+)/) || [0, 1])[1]; let at = 1; for (const x of cps) { const n = lines(x.b).length; if (ln - 1 <= at + n - 1) die(CHUNK + " does not compile: " + e.message + "\n  at src/" + x.p + " line " + (ln - at)); at += n; } die(CHUNK + " does not compile: " + e.message); }
+  const core = ps.filter(x => x.p.startsWith("vis/")).map(x => x.b.toString("latin1")).join("");
+  const coreFns = new Set([...core.matchAll(/^function\s+([A-Za-z_$][\w$]*)\s*\(/gm)].map(m => m[1]));
+  const coreVars = new Set([...core.matchAll(/^var\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1]).concat([...coreFns]));
+  const code = core.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|\s)\/\/[^\n]*/g, "$1");
+  const decl = new Map();
+  for (const x of cps) for (const m of x.b.toString("latin1").matchAll(/^(?:function\s+([A-Za-z_$][\w$]*)\s*\(|var\s+([A-Za-z_$][\w$]*))/gm)) {
+    const n = m[1] || m[2];
+    if (coreVars.has(n) && !names.includes(n)) die("src/" + x.p + " declares " + n + " at the top level, and so does the page's 3D code: inside " + CHUNK + " that is a separate copy, not the same variable. Rename one.");
+    if (m[1] && coreFns.has(n)) die("function " + n + " is declared in the page and again in " + CHUNK + " (src/" + x.p + ")");
+    if (m[1] && decl.has(n)) die("function " + n + " is declared twice in " + CHUNK + ": src/" + decl.get(n) + " and src/" + x.p);
+    decl.set(n, x.p);
+  }
+  const esc = n => n.replace(/\$/g, "\\$");
+  for (const n of names) if (!new RegExp("^(?:function\\s+" + esc(n) + "\\s*\\(|var\\s[^\\n]*(?<![\\w$.])" + esc(n) + "(?![\\w$]))", "m").test(src)) die("SCN_NAMES (src/vis/scn.js) lists " + n + ", which no scene file declares at the top level");
+  const want = "var " + names.join(", ") + ";", take = "function scnTake(o){ " + names.map(n => n + "=o." + n + ";").join(" ") + " }";
+  const miss = [...decl.keys()].filter(n => !names.includes(n) && new RegExp("(?<![\\w$.])" + esc(n) + "(?![\\w$])(?!\\s*:\\s*function)").test(code)   /* "name: function" is an ENGINE_VIS method of the same name, not a use */);
+  if (miss.length) die("the page's 3D code uses " + miss.join(", ") + " from " + CHUNK + " (src/" + decl.get(miss[0]) + "): add " + (miss.length > 1 ? "them" : "it") + " to SCN_NAMES in src/vis/scn.js");
+  if (!core.includes("\n" + want + "\n") || !core.includes("\n" + take + "\n")) die("src/vis/scn.js: the two lines under SCN_NAMES are out of step with it. They must read:\n" + want + "\n" + take);
 }
 function build(ps) { ps = ps || parts(); return Buffer.concat(ps.map(x => x.b)); }
 
@@ -86,18 +134,18 @@ function lint(ps, out) {
   }
   return n;
 }
-function sizes(ps, out) {
+function sizes(ps, out, chunk) {
   const zlib = require("zlib"), by = {};
   for (const x of ps) { const k = x.p.split("/")[0]; (by[k] = by[k] || []).push(x.b); }
   const row = (k, b) => k.padEnd(6) + String(b.length).padStart(9) + String(zlib.gzipSync(b, { level: 9 }).length).padStart(9);
-  return ["       " + "raw".padStart(8) + "gzip".padStart(9)].concat(Object.keys(by).map(k => row(k, Buffer.concat(by[k])))).concat([row("total", out)]).join("\n");
+  return ["       " + "raw".padStart(8) + "gzip".padStart(9)].concat(Object.keys(by).map(k => row(k, Buffer.concat(by[k])))).concat([row("page", out)], chunk ? [row("scenes", chunk)] : []).join("\n");
 }
 
 /* ---- sw.js: the service worker, generated so its cache name carries the version and a hash of everything it precaches ----
    PRECACHE = every file this build emits (index.html now; add lazy chunks here if the build starts emitting more) + manifest + icons.
    Any change to those bytes changes the hash, so sw.js changes, so browsers install it as an update (and show the "New version ready" bar). */
 const SW_OUT = path.join(ROOT, "sw.js");
-const EMITTED = ["index.html"];   /* files build.js writes besides sw.js; the service worker precaches each */
+const EMITTED = ["index.html", CHUNK];   /* files build.js writes besides sw.js; the service worker precaches each */
 function precacheList() {
   const list = EMITTED.concat(["manifest.webmanifest"]);
   const icons = path.join(ROOT, "icons");
@@ -108,8 +156,7 @@ function swSource(page) {
   const list = precacheList(), h = require("crypto").createHash("sha256");
   for (const f of list) { h.update(f + "\0"); h.update(f === "index.html" ? page : fs.readFileSync(path.join(ROOT, f))); h.update("\0"); }
   const hash = h.digest("hex").slice(0, 10);
-  const vf = fs.readdirSync(path.join(SRC, "app")).map(n => path.join(SRC, "app", n)).find(f => /const VERSION="/.test(fs.readFileSync(f, "latin1")));
-  const ver = vf ? fs.readFileSync(vf, "latin1").match(/const VERSION="([^"]+)"/)[1] : "0";
+  const ver = version();
   /* third-party scripts the page loads (three.js and its examples): kept in a separate, long-lived cache so the game also boots offline.
      <script src> tags plus the PEW_LIBS array in body.html (the post-processing addons a Lite phone loads on demand). */
   const txt = page.toString("latin1"), libs = txt.match(/PEW_LIBS=(\[[^\]]*\])/);
@@ -225,22 +272,27 @@ function where(ps, off) {
 function cmdBuild() {
   const ps = parts(), out = build(ps);
   lint(ps, out);
+  const chunk = buildChunk(out); lintChunk(ps, out, chunk);
+  if (!(fs.existsSync(CHUNK_OUT) && fs.readFileSync(CHUNK_OUT).equals(chunk))) { fs.writeFileSync(CHUNK_OUT, chunk); console.log(`${CHUNK} written (${chunk.length} bytes, ${chunkParts().length} files)`); }
+  else console.log(`${CHUNK} unchanged (${chunk.length} bytes, ${chunkParts().length} files)`);
   const old = fs.existsSync(OUT) ? fs.readFileSync(OUT) : null;
   const sw0 = fs.existsSync(SW_OUT) ? fs.readFileSync(SW_OUT, "utf8") : null;
   if (!(old && old.equals(out))) { fs.writeFileSync(OUT, out); console.log(`index.html written (${out.length} bytes, ${ps.length} files)`); }
   else console.log(`index.html unchanged (${out.length} bytes, ${ps.length} files)`);
   const sw = writeSw(out); console.log(sw === sw0 ? "sw.js unchanged" : "sw.js written (" + (sw.match(/pew-shell-[^"]+/) || [""])[0] + ")");
-  console.log(sizes(ps, out));
+  console.log(sizes(ps, out, chunk));
 }
 
 function cmdCheck() {
   const ps = parts(), out = build(ps);
   lint(ps, out);
+  const chunk = buildChunk(out); lintChunk(ps, out, chunk);
+  if (!fs.existsSync(CHUNK_OUT) || !fs.readFileSync(CHUNK_OUT).equals(chunk)) { console.error("build.js --check: " + CHUNK + " is missing or stale (it is built from the \"" + CHUNK + ": ...\" lines of src/manifest.txt); run node build.js"); process.exit(1); }
   if (!fs.existsSync(OUT)) die("index.html is missing; run node build.js");
   const cur = fs.readFileSync(OUT), d = firstDiff(out, cur);
   if (d < 0) {
     if (!fs.existsSync(SW_OUT) || fs.readFileSync(SW_OUT, "utf8") !== swSource(out)) { console.error("build.js --check: sw.js is missing or stale (it is generated from index.html, manifest.webmanifest and icons/); run node build.js"); process.exit(1); }
-    console.log(`ok: index.html and sw.js match src/ (${out.length} bytes, ${ps.length} files)`); return;
+    console.log(`ok: index.html, ${CHUNK} and sw.js match src/ (${out.length} + ${chunk.length} bytes, ${ps.length} + ${chunkParts().length} files)`); return;
   }
   const w = where(ps, d);
   console.error(`build.js --check: index.html differs from the src/ build (built ${out.length} bytes, index.html ${cur.length}).`);
@@ -332,7 +384,7 @@ function cmdAbsorb(editedPath, basePath) {
   const out = Buffer.concat(next.map(x => x.b));
   if (!out.equals(target)) die("internal: the absorbed src/ does not rebuild the target page byte for byte; nothing written");
   for (const x of next) if (x.changed) fs.writeFileSync(path.join(SRC, x.p), x.b);
-  fs.writeFileSync(OUT, out); writeSw(out);
+  fs.writeFileSync(OUT, out); ALL = null; fs.writeFileSync(CHUNK_OUT, buildChunk(out)); writeSw(out);
   for (const n of notes) console.log("note: " + n);
   console.log(`absorbed ${hunks.length} hunk(s) into: ${next.filter(x => x.changed).map(x => "src/" + x.p).join(", ")}`);
   console.log(`index.html rebuilt (${out.length} bytes) and equals the ${target === edited ? "edited page" : "merged page"} byte for byte`);

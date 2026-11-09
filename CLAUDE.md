@@ -14,7 +14,7 @@ Prairie Engine Works is a browser engine-builder by Longlight Interactive: pick 
 ## Commands (repo root)
 
 ```
-node build.js            # rebuild index.html and sw.js from src/
+node build.js            # rebuild index.html, scenes.js and sw.js from src/
 node build.js --check    # exit 1 if either is stale, a script block does not compile, or a function is declared twice
 node check-savecode.js   # 15 save-code checks: round trip, damaged and cut-off codes, storage full, old PEW2 codes
 ```
@@ -23,8 +23,9 @@ Run all three before every commit. To play a local copy: `python3 -m http.server
 
 ## Source and build
 
-- **Edit `src/`, never `index.html` or `sw.js`.** Both are generated: `node build.js` concatenates the files listed in `src/manifest.txt`, byte for byte, then writes `sw.js`.
-- Commit `src/`, `index.html` and `sw.js` together.
+- **Edit `src/`, never `index.html`, `scenes.js` or `sw.js`.** All three are generated: `node build.js` concatenates the files listed in `src/manifest.txt`, byte for byte, then writes `sw.js`.
+- `scenes.js` is the nine event scenes (the manifest lines marked `scenes.js:`). They are not in the page: it fetches the file in the background once the garage is up and runs it inside the `ENGINE_VIS` closure (`src/vis/scn.js`), so a first visit downloads about a quarter less. When the page's 3D code calls a new scene function, add its name to `SCN_NAMES` in `src/vis/scn.js`; the build says so if you forget.
+- Commit `src/`, `index.html`, `scenes.js` and `sw.js` together.
 - `src/README.md` has the file map (which file holds what) and the merge-conflict and `--absorb` workflows. Read it before moving code or adding a file.
 - `src/` files are slices of one page, so a file may open or close mid-IIFE. `node --check` on one file means nothing; test the built page.
 - A new `src/` file must go into `src/manifest.txt` at the right position, or the build refuses to run.

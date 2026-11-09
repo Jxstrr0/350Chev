@@ -11,13 +11,6 @@
    (Full/Ultra). The cars are built in vis/salt-cars.js (the Altered on the
    strip's muscle shell). Built on first use.
    ==========================================================================*/
-var LSR_MILE_V=1609.344, SALT_PUSH_COL=0x56707e;   /* the push truck: weathered slate, clear of every class colour */
-function saltInit(){ var o={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, sky:null, ground:null, mats:{}, cars:{}, cur:null, curKey:"", push:null,
-  camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:46, shot:null, shotT:0, cutT:9, snap:true, relOn:false, skip:false, horLin:null,
-  t:0, runT:0, doneT:0, prev:{}, composer:null, shimmer:null, exposure:0.74, stats:null, tier:null, fx:null, flags:[], fixX:0, fixZ:0, seq:0,
-  course:null, crowd:null, shake:0, pushX:0, pushZ:0, pushV:0 };
-  o.course={x0:LSR_MILE_V, x1:2*LSR_MILE_V, k0:1.5*LSR_MILE_V-500, k1:1.5*LSR_MILE_V+500, xEnd:3.5*LSR_MILE_V}; return o; }
-var SALT=saltInit();   /* phones: vis/api.js takes a fresh one when Lite frees the scene */
 var _sA=new THREE.Vector3(), _sB=new THREE.Vector3(), _sC=new THREE.Vector3(), _sw=new THREE.Vector3(), _st=new THREE.Vector3(), _sr=new THREE.Vector3(), _srt=new THREE.Vector3(), _sM=new THREE.Matrix4(), _sQ=new THREE.Quaternion(), _sS=new THREE.Vector3();
 var SALT_SUN=new THREE.Vector3(0.42,0.66,0.62).normalize(), SALT_HOR=[0.56,0.64,0.74], SALT_WIND=new THREE.Vector3(-1.6,0,0.7);
 /* salt: warm cream crust of small, uneven polygons with raised edges (lit on the sun side, a shadow on the lee), low ridges further

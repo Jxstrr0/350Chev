@@ -11,8 +11,6 @@
    house. The sky deepens and the haze clears as the car climbs. On Full and
    Ultra the Blender props (hillModels, at the end) dress it further.
    ==========================================================================*/
-var HILL={ on:false, W:null, cam:null, cars:{}, car:null, carKey:"", camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:50, shot:null, shotT:0, snap:true, lastT:0, stats:null, st:-1,
-  chP:new THREE.Vector3(), chT:new THREE.Vector3(), roll:0, steer:0, heliA:0, tier:null };
 var HILL_RW=8, _hA=new THREE.Vector3(), _hB=new THREE.Vector3(), _hC=new THREE.Vector3(), _hW=new THREE.Vector3(0.8,0,-0.3);
 function hillSkyMat(){
   return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:new THREE.Vector3(-0.35,0.62,0.7).normalize()}, uAlt:{value:0} },

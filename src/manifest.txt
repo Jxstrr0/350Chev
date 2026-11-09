@@ -1,4 +1,5 @@
 # build order for index.html: one src/ path per line (node build.js concatenates them)
+# a line "scenes.js: path" goes into scenes.js instead (the event scenes, fetched after the garage is up; see src/vis/scn.js)
 html/head.html
 css/style.css
 css/ui-head.css
@@ -51,28 +52,29 @@ vis/engdetail.js
 vis/garage.js
 vis/particles.js
 vis/loop.js
-vis/strip.js
-vis/strip-venue.js
-vis/strip-cars.js
-vis/strip-cars-shells.js
-vis/strip-cars-classes.js
-vis/strip-ground.js
-vis/strip-run.js
-vis/pits.js
-vis/pull.js
-vis/bog.js
-vis/bog-trucks.js
-vis/bog-fx.js
-vis/bog-pit.js
-vis/boat.js
-vis/road.js
-vis/salt.js
-vis/salt-cars.js
-vis/salt-look.js
-vis/salt-event.js
-vis/hill.js
-vis/hill-lod.js
-vis/oval.js
+vis/scn.js
+scenes.js: vis/strip.js
+scenes.js: vis/strip-venue.js
+scenes.js: vis/strip-cars.js
+scenes.js: vis/strip-cars-shells.js
+scenes.js: vis/strip-cars-classes.js
+scenes.js: vis/strip-ground.js
+scenes.js: vis/strip-run.js
+scenes.js: vis/pits.js
+scenes.js: vis/pull.js
+scenes.js: vis/bog.js
+scenes.js: vis/bog-trucks.js
+scenes.js: vis/bog-fx.js
+scenes.js: vis/bog-pit.js
+scenes.js: vis/boat.js
+scenes.js: vis/road.js
+scenes.js: vis/salt.js
+scenes.js: vis/salt-cars.js
+scenes.js: vis/salt-look.js
+scenes.js: vis/salt-event.js
+scenes.js: vis/hill.js
+scenes.js: vis/hill-lod.js
+scenes.js: vis/oval.js
 vis/band.js
 vis/ultra.js
 vis/api.js

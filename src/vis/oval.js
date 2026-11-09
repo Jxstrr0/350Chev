@@ -8,9 +8,6 @@
    grandstand on the front straight with a crowd, press box, flag stand, scoreboard, light towers, pits in the infield,
    a pack of stock cars (the sim's positions; lanes found here so cars never overlap) and the dust they throw.
    ==========================================================================*/
-var OVAL={ on:false, built:false, scene:null, cam:null, sun:null, hemi:null, flood:null, sky:null, fog:null, mats:{}, cars:{}, list:[], fx:null, G:null, gkey:"",
-  camPos:new THREE.Vector3(), camTgt:new THREE.Vector3(), fov:50, shot:null, shotT:0, cutT:0, snap:true, relOn:false, t:0, night:null, tier:null, prev:{}, lastT:0,
-  composer:null, exposure:0.92, stats:null, horLin:null, sunDir:null, shake:0, crowd:null, poles:[], spots:[], board:null, lane:{}, flagMesh:null, flagKey:"", cheer:0, lapSeen:0, tvA:0 };
 var OVAL_WIND=new THREE.Vector3(-0.8,0,0.6), _oA=new THREE.Vector3(), _oB=new THREE.Vector3(), _oC=new THREE.Vector3(), _oD=new THREE.Vector3(),
   _oPt={x:0,z:0,psi:0,nx:0,nz:0,y:0,bank:0};
 function ovalSmooth(a,b,x){ var t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }
