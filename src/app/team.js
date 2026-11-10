@@ -457,7 +457,9 @@ function pcSettle(T,chk,out,res,auto){const p=pcS(),E=PC_EVENTS[T.ev],st=PC_STYL
   if(T.round<PC_ROUNDS&&PC_BEAT_AT.includes(T.round)&&T.midRd!==T.round&&!(T.beats==null&&T.mid)&&pcBeat(T)){p.last.mid=pcMidTxt(T);logEvent(`${T.team}: ${p.last.mid}`,"");}
   {const O=pcTeams().find(x=>x!==T);if(O&&O.due===T.due&&T.dh!==T.round&&T.round<PC_ROUNDS)T.due++;}   // two teams: a rained-out round can't land on the other team's week
   if(T.round>=PC_ROUNDS)pcSeasonEnd(T);
-  achCheck({type:"team"});checkGoals();}
+  achCheck({type:"team"});
+  // a goal met by this round pays on top: note it on the result card, so the header and the card agree
+  {const r0=C().rep,c0=C().cash;checkGoals();if(C().rep!==r0||C().cash!==c0)p.last.goal={cash:C().cash-c0,rep:C().rep-r0};}}
 /* the end of round 8: the championship bonus and rep, then next season's offers (a top-two team asks you back with more money) */
 function pcSeasonEnd(T){const p=pcS(),st=PC_STYLES[T.style],mult=pcRepK(T),tab=pcTable(T),pos=tab.findIndex(x=>x.me)+1;
   const bonus=pos<=3?Math.round(T.pay*PC_CBONUS[pos-1]*(pos===1?(st.winK||1):1)*pcPayK(null)/50)*50:0,rep=Math.round((pos<=3?PC_CREP[pos-1]:pos<=tab.length/2?2:0)*mult);
@@ -563,7 +565,7 @@ function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(
   s+=`<div class="pcchk">${c.o.map(x=>`<div class="${x.wn?"wn":x.ok?"ok":"no"}">${x.wn?"!":x.ok?"✓":"✗"} ${esc(x.t)}</div>`).join("")}</div>${pcMapHtml(T)}
     ${due?"":`<p class="hint">Round ${rd} is race week ${T.due}: ${pcSkip()?"To race week gets you there in one tap (1 wk at the top closes just one, for the event nights)":"close the week to get there"}. Close week on race week races it with the season engine as it stands.</p>`}
     ${due&&!c.ok?`<p class="hint pcbad" data-nofold>Can't race yet: ${esc(c.o.filter(x=>!x.ok&&!x.wn).map(x=>x.t).join("; "))}.</p>`:""}
-    <div class="row">${due?`<button class="btn${c.ok?"":" ghost"}" data-pcgo ${c.ok?"":"disabled"}>Race round ${rd}</button>`:`<button class="btn pri" data-pcweek>${pcSkip()?"To race week":"Close week"}</button>`}`;
+    <div class="row">${due?`<button class="btn${c.ok?" pri":" ghost"}" data-pcgo ${c.ok?"":"disabled"}>Race round ${rd}</button>`:`<button class="btn pri" data-pcweek>${pcSkip()?"To race week":"Close week"}</button>`}`;
   if(same&&!T.broken&&T.wear>0)s+=`<button class="btn sm" data-pcfresh ${fresh>left||T.dh===T.round?"disabled":""}>${T.dh===T.round?"No time to freshen up":`Freshen up · ${fmt$(fresh)}`}</button>`;
   if(T.hash!=null&&!same)s+=`<button class="btn sm ghost" data-pcback>Put the season engine back</button>`;
   if(due&&!c.ok)s+=`<button class="btn sm ghost" data-pcsit>Sit out round ${rd}</button>`;
@@ -586,7 +588,7 @@ function pcRender(){if(!$("mkTeam")||!career())return;const p=pcS();pcRefill();c
   const L=p.last;let lh="";
   if(L){lh=`<div class="card pcres${L.win?" win":L.broke?" bad":""}"><h3>${esc(L.txt)}<span>season ${L.season} · round ${L.round}</span></h3><div class="client">${esc(L.team)} · ${esc(L.name)} · ${PC_EVENTS[L.ev].n} · ${esc(L.eng)}${L.auto?(L.txt==="Sat out"?" · at Close week":" · raced at Close week"):""}</div>
     <div class="pcl">${L.lines.map(x=>`<div>${esc(x)}</div>`).join("")}</div>
-    <p class="mkline"><span>Points <b>${L.pts}</b></span>${L.spent?`<span>Engine work <b>${fmt$(L.spent)}</b></span>`:""}<span>Pay <b>${fmt$(L.fee+L.bonus)}</b></span><span>Rep <b>${L.rep>=0?"+":""}${L.rep}</b></span></p>`;
+    <p class="mkline"><span>Points <b>${L.pts}</b></span>${L.spent?`<span>Engine work <b>${fmt$(L.spent)}</b></span>`:""}<span>Pay <b>${fmt$(L.fee+L.bonus)}</b></span><span>Rep for the round <b>${L.rep>=0?"+":""}${L.rep}</b></span>${L.goal?`<span>Goal bonus <b>${L.goal.cash?"+"+fmt$(L.goal.cash):""}${L.goal.cash&&L.goal.rep?" · ":""}${L.goal.rep?"+"+L.goal.rep+" rep":""}</b></span>`:""}</p>`;
     const X=L.end;if(X)lh+=`<div class="pcend${X.pos===1?" win":""}"><h3>${X.pos===1?"Champions!":`Season over: P${X.pos} of ${X.of}`}</h3>
       <div class="pctab">${X.top.map((x,i)=>`<div class="${x.me?"me":""}"><span>${i+1}</span><span>${esc(x.n)}</span><b>${x.pts}</b></div>`).join("")}</div>
       <p class="mkline"><span>Title bonus <b>${fmt$(X.bonus)}</b></span><span>Rep <b>+${X.rep}</b></span><span>Spent <b>${fmt$(X.spent)}</b> of ${fmt$(X.budget)}</span></p>
