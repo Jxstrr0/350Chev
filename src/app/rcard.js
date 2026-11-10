@@ -61,8 +61,9 @@ function rcPaint(){const t=RC.env.testType,res=RC.res,h=rcHero(),v=rcVerdict(),d
   const stats=dy?`<div class="rcstats"><div><b>${Math.round(res.peakTq)}</b><span>Nm @ ${res.peakTqRpm.toLocaleString()}</span></div><div><b>${Math.round(res.rel)}</b><span>reliability</span></div><div><b>${res.peakHpRpm.toLocaleString()}</b><span>rpm at peak</span></div></div>`
     :v&&v.p?`<p class="rcp">${esc(v.p.length>170?v.p.slice(0,168)+"…":v.p)}</p>`:"";
   const trop=rcTrop(),tr=trop?`<div class="rctrop holo" data-tier="${esc(trop.tier||"gold")}" data-holo tabindex="0" aria-label="Trophy: ${esc(trop.t)}"><small>TROPHY ROOM</small><b>${esc(trop.t)}</b>${trop.nums&&trop.nums.length?`<span>${trop.nums.slice(0,2).map(([k,x])=>`${esc(k)} ${esc(x)}`).join(" · ")}</span>`:""}<i class="hsheen" aria-hidden="true"></i></div>`:"";
+  const CL=t==="pull"&&typeof pcLimitLine==="function"?pcLimitLine():null,cl=CL&&CL.bad?`<p class="clsline bad">${CL.html}</p>`:"";   // certified, but not for the signed team's class: say so beside the chip
   const again=$("runTest");
-  $("rcBox").innerHTML=`<button class="rcx" data-rc="close" aria-label="Close">✕</button><div class="rckick">${kick}</div>${hero}${chip}${dy?`<canvas id="rcCv" aria-hidden="true"></canvas>`:""}${stats}${tr}
+  $("rcBox").innerHTML=`<button class="rcx" data-rc="close" aria-label="Close">✕</button><div class="rckick">${kick}</div>${hero}${chip}${cl}${dy?`<canvas id="rcCv" aria-hidden="true"></canvas>`:""}${stats}${tr}
     <div class="rcact"><button class="btn pri" data-rc="again"${again&&again.disabled?" disabled":""}>Run it again</button><button class="btn" data-rc="build">Back to build</button><button class="btn" data-rc="share">Share</button></div>`;
 }
 /* the dyno curve, with the ghost behind: drawChart draws S.base as its dashed baseline, so lend it the ghost for one draw */

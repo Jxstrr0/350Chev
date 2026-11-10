@@ -57,3 +57,15 @@ html:not(.desk) #evHud #pcwLive .hlh .rd-spd b{font-size:24px}html:not(.desk) #e
 /* series banner across the top of a team offer or season card (1.76.94.0) */
 .pcr .pcban{margin:calc(-1*var(--s4,12px)) calc(-1*var(--s4,14px)) 10px;aspect-ratio:3/1;overflow:hidden;border-radius:var(--r-lg,8px) var(--r-lg,8px) 0 0;background:var(--soot)}
 .pcr .pcban img{display:block;width:100%;height:100%;object-fit:cover}
+/* class rules, ticked or crossed for the bench engine: on an offer and at the top of a team's card (never folded) */
+#mkTeam .pcrules{font-size:13px;line-height:1.5;margin:6px 0 8px;padding:6px 10px;border-radius:8px;background:var(--soot);border:1px solid var(--rule)}
+#mkTeam .pcrules.bad{border-color:var(--crit)}
+#mkTeam .pcrules small{color:var(--muted);font-size:12px}
+#mkTeam .pcrules .ok{color:var(--good)}
+#mkTeam .pcrules .no{color:var(--crit);font-weight:600}
+/* why the team strip says NOT READY, right under it */
+.mkwhy{margin:-2px 0 8px;font-size:13px;line-height:1.4;color:var(--warn)}
+/* the signed team's class limit on Build (under the numbers), on Test (above the run button) and in the results rail */
+.clsline{margin:4px 0 8px;font-size:13px;line-height:1.4;color:var(--muted)}
+.clsline.bad{padding:6px 10px;border-radius:8px;border:1px solid var(--crit);background:var(--soot);color:var(--chalk)}
+.clsline.bad b{color:var(--crit)}
