@@ -217,7 +217,7 @@ function trLayout(items, engines){
     g.add(trStand());
     var plate=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.24), trTexMat(trCanvasTex(384,150,"#c59a4a",[[e.name,34,700,"#2a1d12",0.36],[e.sub,23,600,"#3b2a16",0.7]],"#7a5a28")));
     plate.position.set(0,0.27,0.356); plate.userData.ownGeo=true; g.add(plate);
-    var shd=new THREE.Mesh(trGeo("shad", function(){ var q=new THREE.PlaneGeometry(1.25,0.95); q.rotateX(-Math.PI/2); return q; }), trMat("shadow")); shd.position.y=0.008; g.add(shd);
+    contactShadow(g, 0, 0, 0, 1.14, 0.76, 0.8, 0, 0.008);   /* baked soft shadow round the plinth (core.js) */
     D.add(trTag(g, e.id)); TROPHY.engQ.push({g:g, e:e}); });
 }
 function trStand(){   /* a display plinth: dark box, brass trim, two red cradle rails the engine sits on */
