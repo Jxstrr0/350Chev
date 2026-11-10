@@ -271,9 +271,12 @@ function stripPatchSh(sh, glsl){
 }
 
 /* a textured material (road asphalt, kerbs, gravel, the pits floor) with the same Full / Ultra detail: stripSurf returns a multiplier on the map,
-   world-space so a repeating canvas gets macro variation and a real bump. Lite gets the material back untouched. key names the program. */
-function stripMapMat(m, glsl, key){
-  if(GFX==="lite") return m;
+   world-space so a repeating canvas gets macro variation and a real bump. key names the program. Lite gets the material back untouched,
+   unless liteBk is given: then it is an asphalt surface and Lite multiplies in the baked asphalt picture at that strength (one texture read). */
+function stripMapMat(m, glsl, key, liteBk){
+  if(GFX==="lite"){ if(!liteBk) return m;
+    var lg="vec3 stripSurf(vec3 w, out float rough){ rough="+m.roughness.toFixed(3)+"; return bkAsph(w.xz,"+liteBk.toFixed(2)+"); }";
+    m.defines.STRIP_TIER=0; m.onBeforeCompile=function(sh){ stripPatchSh(sh, lg); }; m.customProgramCacheKey=function(){ return "stripmapL_"+key; }; return m; }
   m.defines.STRIP_TIER=GFX==="ultra"?2:1; m.extensions={ derivatives:true };
   m.onBeforeCompile=function(sh){ stripPatchSh(sh, glsl); };
   m.customProgramCacheKey=function(){ return "stripmap_"+key; };
