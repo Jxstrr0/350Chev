@@ -13,6 +13,10 @@ re-run. Keep this list in step with the folder.
 | `gr-concrete.jpg` | Ground-smooth concrete, one seamless 2.3 m tile: sand and stone speckle in pale cement, air-bubble pits | `tools/blender/ground-bake.py` | `bkConc` in `src/vis/strip.js` (every tier) |
 | `gr-dirt.jpg` | Packed track clay, one seamless 1.4 m tile: a lumpy bed with crumbs, loose clods and the odd pebble | `tools/blender/ground-bake.py` | `bkDirt` in `src/vis/strip.js` (every tier): the pull track and its worn infield, the dirt oval, the mud bog's dirt |
 | `gr-dirt-n.jpg` | The slope of that same patch, so each clod catches the sun | `tools/blender/ground-bake.py` | `bkDirt`, Full / Ultra only |
+| `gr-salt.jpg` | Salt-flat crust, one seamless 1.6 m tile: plates a hand or two across, low white ridges where they meet, loose crystals | `tools/blender/ground-bake.py` | `bkSalt` in `src/vis/strip.js` (every tier): the salt flats |
+| `gr-salt-n.jpg` | The slope of that same patch, so the ridges catch the sun | `tools/blender/ground-bake.py` | `bkSalt`, Full / Ultra only |
+| `gr-grass.jpg` | Mown grass from above, one seamless 1 m tile: a dense lawn of blades with soil and thatch in the gaps, grey only | `tools/blender/ground-bake.py` | `bkGrass` in `src/vis/strip.js` (every tier): the grass at the strip, road course, ovals, pull, bog and boat ramp |
+| `gr-shop.jpg` | Power-trowelled workshop concrete, one seamless 2 m tile: sand speckle, trowel mottle, the odd pore | `tools/blender/ground-bake.py` | `MAT.concrete` (the career workshop floor) via `aaPatch` in `src/vis/core.js` (every tier) |
 
 To re-render: `python3.11 -m pip install bpy pillow numpy`, then `python3.11 tools/blender/workshop-env.py` (about
 five minutes on four cores) or `python3.11 tools/blender/ground-bake.py` (under a minute a surface; `--only asphalt`

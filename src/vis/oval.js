@@ -28,6 +28,7 @@ var OVAL_GLSL=[
   "  vec2 p=w.xz; float dc=length(p-cameraPosition.xz); float fine=1.0-smoothstep(18.0,110.0,dc), mid=1.0-smoothstep(100.0,900.0,dc);",
   "  float rho=uR-length(vec2(max(abs(p.x)-uLs*0.5,0.0),p.y));",
   "  vec3 grass=vec3(0.10,0.15,0.05)*(0.8+0.35*sn(p*0.07))*(0.9+0.2*sn(p*1.7)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float mow=smoothstep(0.5,0.8,sn(p*0.045+2.0)); grass=mix(grass,vec3(0.13,0.19,0.065),mow*0.5);",
   "  vec3 clay=vec3(0.30,0.20,0.125)*(0.78+0.4*sn(p*0.35))+vec3(0.035,0.025,0.015)*(sn(p*5.0)-0.5)*fine;",
   "  float groove=exp(-pow((rho+1.5)/2.6,2.0)), cush=exp(-pow((rho+uW*0.4)/1.8,2.0));",

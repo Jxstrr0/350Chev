@@ -273,10 +273,106 @@ def dirt(tile):
     add_mesh("bed", *binder(tile, 0.0, clay, 0.0005, 13, n=420, mottle=0.10, pits=500, pit_r=(0.003, 0.009), pit_d=0.003, pit_dark=0.3, swell=0.0014))
 
 
+def grid_mesh(x, y, h, col):
+    """A height field on the grid x, y (as binder makes): triangles between neighbours, a colour per point."""
+    m = x.shape[0]
+    i = np.arange(m * m).reshape(m, m)
+    a, b, c, d = i[:-1, :-1].ravel(), i[:-1, 1:].ravel(), i[1:, 1:].ravel(), i[1:, :-1].ravel()
+    f = np.concatenate([np.stack([a, b, c], 1), np.stack([a, c, d], 1)])
+    return np.stack([x.ravel(), y.ravel(), h.ravel()], 1), f, col.reshape(-1, 3)
+
+
+def salt(tile):
+    """Bonneville crust: plates of salt a hand or two across, pushed up into low ridges where they meet (the ridges dry
+    whiter), each plate a shade lighter or darker than the next, with loose crystals and grit on top."""
+    n, ext = 640, 0.04
+    step = tile / n
+    u = (np.arange(int(round(n * (tile + 2 * ext) / tile)) + 1) - round(ext / step)) * step
+    x, y = np.meshgrid(u, u)
+    r = np.random.default_rng(61)
+    g = 8                                              # plate centres on a jittered 8 x 8 grid: random points bunch up into slivers
+    gi, gj = np.meshgrid(np.arange(g), np.arange(g))
+    px = ((gi + 0.5 + r.uniform(-0.38, 0.38, gi.shape)) * tile / g).ravel(); py = ((gj + 0.5 + 0.5 * (gi % 2) + r.uniform(-0.38, 0.38, gi.shape)) * tile / g).ravel() % tile
+    k = len(px)
+    D = np.stack([(((x - cx + tile / 2) % tile - tile / 2) ** 2 + ((y - cy + tile / 2) % tile - tile / 2) ** 2).astype(np.float32) for cx, cy in zip(px, py)])
+    o = np.argsort(D, 0)[:2]; a, b = o[0], o[1]                # nearest and second-nearest plate centre, wrapping round the tile
+    del D
+    ex = (px[b] - px[a] + tile / 2) % tile - tile / 2; ey = (py[b] - py[a] + tile / 2) % tile - tile / 2
+    mx = (x - px[a] + tile / 2) % tile - tile / 2; my = (y - py[a] + tile / 2) % tile - tile / 2
+    el = np.sqrt(ex * ex + ey * ey)
+    gap = el / 2 - (mx * ex + my * ey) / el                    # true distance to the border with the next plate
+    wob = 0.0015 * pnoise(x % tile, y % tile, tile, 63, 2, 6)
+    edge = np.clip(1 - (gap + wob) / 0.011, 0, 1) ** 1.6       # 1 on the ridge line, 0 inside a plate
+    grain = r.uniform(-1, 1, x.shape)
+    h = 0.0045 * edge + 0.0003 * grain
+    shade = 1 + 0.10 * edge + 0.05 * grain + 0.04 * r.uniform(-1, 1, k)[a]
+    col = np.array([0.80, 0.76, 0.68])[None, None, :] * shade[:, :, None]
+    add_mesh("crust", *grid_mesh(x, y, h, col))
+    pal = [(0.7, 0.86, 0.83, 0.76, 0.06), (0.3, 0.62, 0.58, 0.52, 0.12)]       # loose crystals, and blown grit
+    add_mesh("crystals", *stones(tile, 0.016, 0.0010, 0.0024, 1, 69, 0.55, pal, (0.2, 0.9), 0.003, np.array([0.8, 0.76, 0.68]), coat=1.0, cut=0.05))
+
+
+def blades(tile, spacing, length, width, seed, palette, lean=(0.25, 1.1)):
+    """Grass: a blade on every point of a jittered grid, a tapered strip in three bends, leaning a random way.
+    palette: rows of (share, r, g, b, spread), darker at the root and lighter towards the tip."""
+    r = np.random.default_rng(seed)
+    m = int(round(tile / spacing))
+    gx, gy = np.meshgrid(np.arange(m), np.arange(m))
+    pos = np.stack([((gx + r.uniform(0, 1, gx.shape)) * tile / m).ravel(), ((gy + r.uniform(0, 1, gy.shape)) * tile / m).ravel()], 1)
+    nb = len(pos)
+    ln = length * r.uniform(0.55, 1.2, nb)
+    ang = r.uniform(0, 6.283, nb); lv = r.uniform(lean[0], lean[1], nb)
+    pal = np.array(palette, float)
+    which = r.choice(len(pal), nb, p=pal[:, 0] / pal[:, 0].sum())
+    col = pal[which, 1:4] * (1 + pal[which, 4:5] * r.uniform(-1, 1, (nb, 1)))
+    t = np.array([0.0, 0.35, 0.7, 1.0])                # bends along the blade
+    V, F, C, base = [], [], [], 0
+    for idx, dx, dy in wrap_copies(pos, length * 1.3, tile):
+        if not len(idx):
+            continue
+        L, A, LV = ln[idx][:, None], ang[idx][:, None], lv[idx][:, None]
+        bend = LV * t[None, :] ** 1.4                  # lean grows towards the tip
+        cx = pos[idx, 0][:, None] + dx + np.cos(A) * L * np.sin(bend) * t[None, :]
+        cy = pos[idx, 1][:, None] + dy + np.sin(A) * L * np.sin(bend) * t[None, :]
+        cz = L * t[None, :] * np.cos(bend) - 0.01
+        hw = width * 0.5 * (1 - t[None, :] * 0.95)
+        ox, oy = -np.sin(A) * hw, np.cos(A) * hw
+        v = np.stack([np.stack([cx - ox, cy - oy, cz], 2), np.stack([cx + ox, cy + oy, cz], 2)], 2).reshape(len(idx), 8, 3)
+        tone = (0.55 + 0.45 * t)[None, :, None]
+        c = np.repeat(col[idx][:, None, :] * tone, 2, axis=1).reshape(len(idx), 8, 3)
+        q = np.array([[0, 1, 3], [0, 3, 2], [2, 3, 5], [2, 5, 4], [4, 5, 7], [4, 7, 6]])
+        F.append((q[None] + (base + np.arange(len(idx)) * 8)[:, None, None]).reshape(-1, 3))
+        V.append(v.reshape(-1, 3)); C.append(c.reshape(-1, 3)); base += len(idx) * 8
+    return np.concatenate(V), np.concatenate(F), np.concatenate(C)
+
+
+def grass(tile):
+    """Mown prairie grass seen from above: a dense lawn of blades, some yellowed, a few longer stems, dark soil and thatch
+    showing in the gaps. The game's own green (and its sun-cured patches) supplies the colour."""
+    pal = [(0.55, 0.20, 0.30, 0.10, 0.18),       # green
+           (0.25, 0.26, 0.34, 0.12, 0.18),       # fresh, lighter
+           (0.20, 0.36, 0.34, 0.16, 0.2)]        # yellowed
+    add_mesh("lawn", *blades(tile, 0.0072, 0.045, 0.0032, 71, pal))
+    add_mesh("stems", *blades(tile, 0.03, 0.085, 0.0026, 73, pal, lean=(0.6, 1.4)))
+    add_mesh("thatch", *binder(tile, 0.0, (0.10, 0.09, 0.05), 0.002, 75, n=300, mottle=0.2))
+
+
+def shop(tile):
+    """A workshop floor: power-trowelled concrete, smooth and slightly burnished, with only the sand in the mix showing,
+    trowel swirls in the cement and the odd pore. Far quieter than the drag strip's ground pad."""
+    paste = np.array([0.40, 0.392, 0.375])
+    pal = [(0.5, 0.36, 0.35, 0.33, 0.15), (0.3, 0.46, 0.44, 0.40, 0.1), (0.2, 0.27, 0.26, 0.25, 0.15)]
+    add_mesh("sand", *stones(tile, 0.0065, 0.0009, 0.0018, 1, 81, 0.35, pal, (0.3, 0.95), 0.0, paste, coat=0.35))
+    add_mesh("bed", *binder(tile, -0.0002, paste, 0.00012, 83, n=900, mottle=0.06, pits=260, pit_r=(0.0015, 0.004), pit_d=0.0015, pit_dark=0.4))
+
+
 # name: (builder, tile size in metres, slope picture too?). Ground-smooth concrete is so nearly flat that its slope picture
-# is mostly JPEG noise (and 190 KB once amplified enough to beat it), so it ships colour only.
-# Keep the tile sizes and the slope flags in step with STRIP_BAKES in src/vis/strip.js.
-SURFACES = {"asphalt": (asphalt, 1.9, True), "concrete": (concrete, 2.3, False), "dirt": (dirt, 1.4, True)}
+# is mostly JPEG noise (and 190 KB once amplified enough to beat it), so it ships colour only; so do the shop floor and the
+# grass (blades lean every way, so their slope averages out; the soft shadow in the colour carries them).
+# Keep the tile sizes and the slope flags in step with STRIP_BAKES in src/vis/strip.js (shop: MAT.concrete in src/vis/core.js).
+SURFACES = {"asphalt": (asphalt, 1.9, True), "concrete": (concrete, 2.3, False), "dirt": (dirt, 1.4, True),
+            "salt": (salt, 1.6, True), "grass": (grass, 1.0, False), "shop": (shop, 2.0, False)}
+GREY = ("grass",)
 
 
 # ---------- render and pack ----------
@@ -309,6 +405,8 @@ def bake(name):
     nrm = render_to(tmp + "n.png", mat_normal())[:, :, :3]
     # colour: divide out the average so the picture only says "lighter / darker than the venue's own colour"
     mult = col / col.mean(axis=(0, 1), keepdims=True)
+    if name in GREY:                  # tinted blades over dark soil would tint the venue's green: keep only light and dark, softened
+        mult = np.repeat(1 + 0.6 * (mult.mean(axis=2, keepdims=True) - 1), 3, axis=2)
     lum = mult.mean(axis=2)
     c8 = np.clip(mult * 0.5, 0, 1)
     # slope: re-normalise after the anti-alias blur, keep x and y, drop z (the shader rebuilds it)
