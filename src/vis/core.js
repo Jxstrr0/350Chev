@@ -1733,6 +1733,25 @@ function bakeUni(name){
   }, undefined, function(){});
   return u;
 }
+/* Baked soft contact shadows (tex/sh-contact.jpg, made by tools/blender/contact-shadow.py): the darkening a cabinet, a bench or a drum
+   leaves on the floor round its feet, rendered in Blender under a room's soft light. Three cells: 0 box, 1 legs (a top on legs), 2 round.
+   contactShadow(parent, kind, x, z, w, d, k, ry, y) lays one on the floor under a w x d footprint (the quad is twice that, as the cell is)
+   and multiplies the floor by it at strength k. Every tier: one 13 KB picture and a quad per prop, drawn after the floor, no lighting.
+   Until the picture loads (or offline before it was cached) it is plain white: no change. */
+var CSH={u:null, mats:{}};
+function contactShadow(parent, kind, x, z, w, d, k, ry, y){
+  if(!CSH.u){ var ph=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1,THREE.RGBAFormat); ph.needsUpdate=true; CSH.u={value:ph};
+    new THREE.TextureLoader().load("tex/sh-contact.jpg", function(t){ t.encoding=THREE.LinearEncoding; CSH.u.value=t; ph.dispose(); }, undefined, function(){}); }
+  k=k==null?0.85:k; var key=k.toFixed(2), m=CSH.mats[key];
+  if(!m) m=CSH.mats[key]=new THREE.ShaderMaterial({ uniforms:{ map:CSH.u, k:{value:k} }, transparent:true, premultipliedAlpha:true, blending:THREE.MultiplyBlending,
+    depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2,
+    vertexShader:"varying vec2 vU; void main(){ vU=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    fragmentShader:"uniform sampler2D map; uniform float k; varying vec2 vU; void main(){ gl_FragColor=vec4(mix(vec3(1.0),vec3(texture2D(map,vU).r),k),1.0); }" });
+  var g=new THREE.PlaneGeometry(w*2, d*2), uv=g.attributes.uv;
+  for(var i=0;i<uv.count;i++) uv.setX(i, (kind+uv.getX(i))/3);
+  var q=new THREE.Mesh(g, m); q.rotation.set(-Math.PI/2, 0, ry||0); q.position.set(x, y==null?0.02:y, z); q.renderOrder=1; q.userData.ownGeo=true;
+  parent.add(q); return q;
+}
 var ENV_LOG=8, ENV_PANO={ files:{workshop:"tex/env-workshop.jpg", testcell:"tex/env-testcell.jpg"}, gain:{workshop:1.0, testcell:1.0}, got:{}, want:null };
 function envPanoBuild(tex, gain){
   var s=new THREE.Scene(), g=new THREE.SphereGeometry(50, 48, 24);

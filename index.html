@@ -14793,6 +14793,25 @@ function bakeUni(name){
   }, undefined, function(){});
   return u;
 }
+/* Baked soft contact shadows (tex/sh-contact.jpg, made by tools/blender/contact-shadow.py): the darkening a cabinet, a bench or a drum
+   leaves on the floor round its feet, rendered in Blender under a room's soft light. Three cells: 0 box, 1 legs (a top on legs), 2 round.
+   contactShadow(parent, kind, x, z, w, d, k, ry, y) lays one on the floor under a w x d footprint (the quad is twice that, as the cell is)
+   and multiplies the floor by it at strength k. Every tier: one 13 KB picture and a quad per prop, drawn after the floor, no lighting.
+   Until the picture loads (or offline before it was cached) it is plain white: no change. */
+var CSH={u:null, mats:{}};
+function contactShadow(parent, kind, x, z, w, d, k, ry, y){
+  if(!CSH.u){ var ph=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1,THREE.RGBAFormat); ph.needsUpdate=true; CSH.u={value:ph};
+    new THREE.TextureLoader().load("tex/sh-contact.jpg", function(t){ t.encoding=THREE.LinearEncoding; CSH.u.value=t; ph.dispose(); }, undefined, function(){}); }
+  k=k==null?0.85:k; var key=k.toFixed(2), m=CSH.mats[key];
+  if(!m) m=CSH.mats[key]=new THREE.ShaderMaterial({ uniforms:{ map:CSH.u, k:{value:k} }, transparent:true, premultipliedAlpha:true, blending:THREE.MultiplyBlending,
+    depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2,
+    vertexShader:"varying vec2 vU; void main(){ vU=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    fragmentShader:"uniform sampler2D map; uniform float k; varying vec2 vU; void main(){ gl_FragColor=vec4(mix(vec3(1.0),vec3(texture2D(map,vU).r),k),1.0); }" });
+  var g=new THREE.PlaneGeometry(w*2, d*2), uv=g.attributes.uv;
+  for(var i=0;i<uv.count;i++) uv.setX(i, (kind+uv.getX(i))/3);
+  var q=new THREE.Mesh(g, m); q.rotation.set(-Math.PI/2, 0, ry||0); q.position.set(x, y==null?0.02:y, z); q.renderOrder=1; q.userData.ownGeo=true;
+  parent.add(q); return q;
+}
 var ENV_LOG=8, ENV_PANO={ files:{workshop:"tex/env-workshop.jpg", testcell:"tex/env-testcell.jpg"}, gain:{workshop:1.0, testcell:1.0}, got:{}, want:null };
 function envPanoBuild(tex, gain){
   var s=new THREE.Scene(), g=new THREE.SphereGeometry(50, 48, 24);
@@ -18932,6 +18951,14 @@ function buildShop(B, G, addLight, W, D, Hh, owned, bay){
 
   /* ---- floor oil-stain decals ---- */
   addStainDecals(G, W, D);
+  /* ---- soft contact shadows round the furniture (tex/sh-contact.jpg, contactShadow in core.js) ---- */
+  contactShadow(G, 0, -W/2+7.5, -14, 7.4, 5.8);                     /* tool chest */
+  contactShadow(G, 0, W/2-7, -8, 4.6, 26.4, 0.75);                  /* workbench */
+  contactShadow(G, 1, W/2-3.4, 16, 5.2, 17, 0.7);                   /* shelving */
+  for(var cs=0; cs<3; cs++) contactShadow(G, 2, -W/2+3.4+cs*4.6, 20, 4.3, 4.3, 0.75);   /* oil drums */
+  contactShadow(G, 2, -W/2+6.0, -26, 7.4, 7.4, 0.8);                /* tyre stack */
+  contactShadow(G, 0, -W*0.30, 16.8, 9.2, 8.8, 0.45);               /* diamond-plate step */
+  contactShadow(G, 1, 0, 0, 9.0, 6.6, 0.75);                         /* engine stand (its size follows the engine; this is the middle size) */
 
   /* ---- lighting fixtures ---- */
   var rows = bay>=1 ? 3 : 2;
@@ -18978,7 +19005,7 @@ function buildTestCell(B, G, addLight, W, D, Hh){
   B.add("panel", BOX(1.6, 0.35, 14, 1/6), rx-4.2, 0.4, -8);
 
   /* dyno bedplate under the stand */
-  buildDynoBed(B);
+  buildDynoBed(B); contactShadow(G, 0, 0, 0, 17.2, 27.2, 0.45);   /* the bed's soft shadow on the tile (core.js) */
 
   /* extraction hood overhead */
   B.add("panel", CONE(1.8, 4.4, 4.0, 20, 1/8), W*0.34, Hh-6.4, -14);
@@ -21553,7 +21580,7 @@ function trLayout(items, engines){
     g.add(trStand());
     var plate=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.24), trTexMat(trCanvasTex(384,150,"#c59a4a",[[e.name,34,700,"#2a1d12",0.36],[e.sub,23,600,"#3b2a16",0.7]],"#7a5a28")));
     plate.position.set(0,0.27,0.356); plate.userData.ownGeo=true; g.add(plate);
-    var shd=new THREE.Mesh(trGeo("shad", function(){ var q=new THREE.PlaneGeometry(1.25,0.95); q.rotateX(-Math.PI/2); return q; }), trMat("shadow")); shd.position.y=0.008; g.add(shd);
+    contactShadow(g, 0, 0, 0, 1.14, 0.76, 0.8, 0, 0.008);   /* baked soft shadow round the plinth (core.js) */
     D.add(trTag(g, e.id)); TROPHY.engQ.push({g:g, e:e}); });
 }
 function trStand(){   /* a display plinth: dark box, brass trim, two red cradle rails the engine sits on */
@@ -22558,7 +22585,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.118.0";
+const VERSION="1.76.119.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

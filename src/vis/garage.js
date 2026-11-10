@@ -322,6 +322,14 @@ function buildShop(B, G, addLight, W, D, Hh, owned, bay){
 
   /* ---- floor oil-stain decals ---- */
   addStainDecals(G, W, D);
+  /* ---- soft contact shadows round the furniture (tex/sh-contact.jpg, contactShadow in core.js) ---- */
+  contactShadow(G, 0, -W/2+7.5, -14, 7.4, 5.8);                     /* tool chest */
+  contactShadow(G, 0, W/2-7, -8, 4.6, 26.4, 0.75);                  /* workbench */
+  contactShadow(G, 1, W/2-3.4, 16, 5.2, 17, 0.7);                   /* shelving */
+  for(var cs=0; cs<3; cs++) contactShadow(G, 2, -W/2+3.4+cs*4.6, 20, 4.3, 4.3, 0.75);   /* oil drums */
+  contactShadow(G, 2, -W/2+6.0, -26, 7.4, 7.4, 0.8);                /* tyre stack */
+  contactShadow(G, 0, -W*0.30, 16.8, 9.2, 8.8, 0.45);               /* diamond-plate step */
+  contactShadow(G, 1, 0, 0, 9.0, 6.6, 0.75);                         /* engine stand (its size follows the engine; this is the middle size) */
 
   /* ---- lighting fixtures ---- */
   var rows = bay>=1 ? 3 : 2;
@@ -368,7 +376,7 @@ function buildTestCell(B, G, addLight, W, D, Hh){
   B.add("panel", BOX(1.6, 0.35, 14, 1/6), rx-4.2, 0.4, -8);
 
   /* dyno bedplate under the stand */
-  buildDynoBed(B);
+  buildDynoBed(B); contactShadow(G, 0, 0, 0, 17.2, 27.2, 0.45);   /* the bed's soft shadow on the tile (core.js) */
 
   /* extraction hood overhead */
   B.add("panel", CONE(1.8, 4.4, 4.0, 20, 1/8), W*0.34, Hh-6.4, -14);
