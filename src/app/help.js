@@ -1,14 +1,17 @@
-/* ---- career onboarding tour: three callouts anchored to the real controls ---- */
+/* ---- career onboarding tour: four callouts anchored to the real controls, each one a thing to do. The words name the buttons as they read.
+   Since 1.76.114.0 the old descriptive steps (Events, Analysis, Sponsors, Shop) are one line in the last step, which ends on the
+   button that moves the season on (To race week / Close week, or Race round N once it is due). text may be a function. ---- */
 const TOUR=[
-  {tab:"market",sel:"#pcOfSec",title:"Sign a race team",text:"Teams call with an offer for one series and eight rounds. Their parts budget pays for the engine; the season fee is yours, paid as you race, with bonuses for podiums and the title. Sign one to start."},
-  {tab:"build",sel:'#presets [data-id="22re"]',pre:tourPresetPrep,pre2:tourPresetRow,title:"Build the team's engine",text:"The {n} green-tagged Starter engines use only parts your bay already has. Start from one that suits the series (the Two-four is a cheap first try) and keep the build cost under the team's budget."},
-  {tab:"test",sel:"#rlRun",title:"Certify it on the dyno",text:"A team only races a certified engine. Arm the dyno and pull ($75). No failures and under the dyno's cap means it's certified."},
-  {tab:"market",sel:"#pcJob",title:"Race day",text:"A round runs every other week. When it's due, race it from here. Close week (at the top, or on the team card) moves the calendar on, and races a due round with the season engine as it stands. After a round, To race week skips the off week. Wear, breakages and engine changes come out of the team's budget."},
-  {tab:"events",sel:"#evHubHd",pre:evhubGrid,title:"Race your own in Events",text:"On top of the team: the strip, race nights, the sled pull, the salt, the bog, the lake, the road course, the hill, the dirt oval and the 24 Hours. Each one is a different car around your engine, and a tap on its card goes in. Wins pay purses and rep, set records, and the brands are watching."},
-  {tab:"analysis",sel:"#teleFold",title:"Read it in Analysis",text:"Telemetry from the last pull, how your parts and materials interact, the engineer's notes on what to change next, your records and your achievements. When a build disappoints, the answer is usually in here."},
-  {tab:"market",sel:"#sponSec",title:"Sponsors and rivals",text:"Brands notice shops that race and win. A deal pays a retainer and bonuses for a set number of weeks, and only ever asks for what you already do. Once your rep reaches the board (10), rival shops show up here to challenge you."},
-  {tab:"shop",sel:"#upSec",title:"Grow the shop",text:"Upgrades open new bays, the boost bench, the machine shop and bigger dynos: a series only calls once your dyno can read the power its field makes. Staff are named people who level up. R&D funds one project at a time while you close weeks, and the bank will lend against the shop."}
+  {tab:"market",sel:"#pcOfSec",title:"Sign a race team",text:"Teams call with an offer: one series, eight rounds. The team's parts budget pays for the engine; the season fee is yours, paid as you race. Tap Sign with… on the one you like."},
+  {tab:"build",sel:'#presets [data-id="22re"]',pre:tourPresetPrep,pre2:tourPresetRow,title:"Build the team's engine",text:"The {n} green-tagged Starter engines use only parts your bay already has. Tap one that passes the team's class rules (listed on its card) and keep the build cost under its budget. For a gas series the Two-four is a cheap first try."},
+  {tab:"test",sel:"#rlRun",title:"Certify it on the dyno",text:()=>`A team only races a certified engine. Tap Run for a dyno pull${career()?` (${fmt$(testCost())}, the price is on the button)`:""}. No failures and under the dyno's cap means it's certified.`},
+  {tab:"market",sel:"#pcJob [data-pcgo],#pcJob [data-pcweek]",title:"Now go racing",text:tourRaceText}
 ];
+/* the last step: what's next for the team, in the words on its buttons, and where the rest of the game lives */
+function tourRaceText(){const T=typeof pcTeam==="function"&&pcTeam(),later=" Events, Analysis, Sponsors & Rivals and the Shop are there when you want more: race your own engine, read the data, grow the shop.";
+  if(!T)return "Sign a team first: its offers are on this tab."+later;
+  const rd=T.round+1,due=C().week>=T.due;
+  return (due?`Round ${rd} is due. Tap Race round ${rd} on the team card.`:`Round ${rd} is race week ${T.due}. Tap ${typeof pcSkip==="function"&&pcSkip()?"To race week":"Close week"} to get there, then Race round ${rd}.`)+later;}
 let tourStep=-1;
 function tourPresetPrep(){S.pSort="layout";S.pFam="all";S.pCls="all";renderPresets();tourPresetRow();}
 function tourPresetRow(){const c=document.querySelector('#presets [data-id="22re"]');if(c){const row=c.parentElement,rr=row.getBoundingClientRect(),cr=c.getBoundingClientRect();row.scrollLeft+=cr.left-rr.left-16;}}
@@ -21,7 +24,7 @@ function tourPlace(){const st=TOUR[tourStep];if(!st)return;let el=document.query
 function tourShow(i){tourStep=i;const st=TOUR[i];if(!st){tourEnd();return;}$("tour").hidden=false;showTab(st.tab);if(st.pre)st.pre();
   accReveal(document.querySelector(st.sel));anaReveal(document.querySelector(st.sel));
   const target=document.querySelector(st.sel);if(target&&$("panel").contains(target)){const go=n=>{if(tourStep!==i)return;if(st.pre2)st.pre2();const t2=document.querySelector(st.sel)||target,pr=$("panel").getBoundingClientRect(),tr=t2.getBoundingClientRect(),dy=(tr.top-pr.top)-(pr.height*0.38);$("panel").scrollTop+=dy;tourPlace();if(n>0&&Math.abs(dy)>3)setTimeout(()=>go(n-1),350);else setTimeout(tourPlace,380);};setTimeout(()=>go(16),60);}
-  $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=st.text.replace("{n}",tourStarters());$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
+  $("tourStep").textContent=`Step ${i+1} of ${TOUR.length}`;$("tourTitle").textContent=st.title;$("tourText").textContent=(typeof st.text==="function"?st.text():st.text).replace("{n}",tourStarters());$("tourNext").textContent=i===TOUR.length-1?"Got it":"Next";
   $("tourNext").style.display=i===0&&career()&&!pcTeam()?"none":"";   // step 1 asks for a signature: signing moves the tour on (team.js), so a Next here only skipped it
   if(target&&!$("panel").contains(target)){setTimeout(tourPlace,380);setTimeout(tourPlace,700);}   // the results rail is not in the panel: its layout settles a beat after the tab switch
   requestAnimationFrame(()=>requestAnimationFrame(tourPlace));}
@@ -58,14 +61,14 @@ const FFT={idle:{under:"view",get:()=>ffRect($("idleBtn"))},view:{get:()=>ffRect
     const l=Math.min(a.left,c.left),r=Math.max(a.right,c.right);return{left:l,right:r,width:r-l,top:a.top,bottom:c.bottom,height:c.bottom-a.top};}}};
 const FF_RUN={t:"Find the limit",x:()=>"Watch the tach — it's going all the way to redline.",tgt:"view",d:1e9};
 const FF={
-  fire:{go:{t:"Fire it up",x:()=>`${ff.rig.p.name}, straight off the stand. Tap START up top to turn it over.`,tgt:"idle",d:2500},
+  fire:{go:{t:"Fire it up",x:()=>`${ff.rig.p.name}, straight off the stand. Tap Start (the power button up top) to turn it over.`,tgt:"idle",d:2500},
     ok:{t:"Fire it up",x:()=>"It's alive. Now let's find out where it breaks.",tgt:"view",auto:2600}},
-  limit:{go:{t:"Find the limit",x:()=>`The redline's at ${S.cfg.redline.toLocaleString()} rpm on the stock single valve springs. Arm the dyno and pull it.`,tgt:"run",d:3000},run:FF_RUN,
+  limit:{go:{t:"Find the limit",x:()=>`The redline's at ${S.cfg.redline.toLocaleString()} rpm on the stock single valve springs. Tap Run to pull it on the dyno.`,tgt:"run",d:3000},run:FF_RUN,
     broke:{t:"Valve float",x:()=>`Past about ${ffFloat(S.last.res,S.last.cfg)} rpm the springs can't close the valves in time — they float and hit the pistons.`,tgt:"verdict",n:"Fix it"},
     held:{t:"It held",x:()=>"You changed something and it survived. Next shows the one-part fix anyway.",tgt:"verdict"}},
   fix:{go:{t:"Fix it with one change",x:()=>"Valve float is a spring problem. Under Valve springs, fit a stiffer one — try the Beehive.",tgt:"springs",d:3500},
     ok:{t:"Fix it with one change",x:()=>`${S.cfg.springs!=="single"?OPT.springs[S.cfg.springs].name+" fitted. ":""}The valves now follow the cam to about ${ffFloat(quick,S.cfg)} rpm — past the ${S.cfg.redline.toLocaleString()} redline.`,tgt:"springs",auto:2600}},
-  cert:{go:{t:"Certify it",x:()=>"Same pull, one part changed. Arm the dyno and run it again.",tgt:"run",d:3000},run:Object.assign({},FF_RUN,{t:"Certify it"}),
+  cert:{go:{t:"Certify it",x:()=>"Same pull, one part changed. Tap Run again.",tgt:"run",d:3000},run:Object.assign({},FF_RUN,{t:"Certify it"}),
     done:{t:"Build, break, fix",x:()=>`${S.last&&S.last.res.rel<85?"Certified — marginal, but it holds. ":"Certified. "}That's the game — build it, break it on the dyno, fix the weak link.`,tgt:"verdict",n:()=>ff.to==="career"?"Open my shop":"Open the test cell",last:1},
     still:{t:"Still breaking",x:()=>"Something else let go — the red bars in the stress report say what. Fix it and pull again, or finish here.",tgt:"verdict",n:"Finish"}}};
 const ffCur=()=>FF[FF_STEPS[ff.step]][ff.phase];
@@ -79,9 +82,11 @@ function ffShow(){if(!ff)return;const t=FFT[ffCur().tgt];if(t.tab&&curTab!==t.ta
   if(t.sec){const a=document.querySelector(`#buildForm [data-sec="${t.sec}"]`);if(a&&!openSec[t.sec])toggleSec(a);}
   if(t===FFT.run&&!testing&&S.env.testType!=="pull"){S.env.testType="pull";renderTest();}
   setTimeout(()=>{if(!ff)return;const r=t.tab&&t.get();if(r){const pn=$("panel"),pr=pn.getBoundingClientRect();pn.scrollTop+=(r.top-pr.top)-pr.height*0.3;}ffPlace();},60);}
+// the target sits in the scrolling panel (clip it to what shows) or outside it, like the results rail's Run button over the tab bar (never clipped: Show me can't scroll to it)
+function ffInPanel(t){const el=t===FFT.run?([$("runTest"),$("rlRun")].find(e=>e&&e.getClientRects().length)):null;return !el||$("panel").contains(el);}
 function ffPlace(){if(!ff||ff.ending)return;const app=$("app").getBoundingClientRect(),spot=$("ffSpot"),box=$("ffBox"),t=FFT[ffCur().tgt];
   const tabT=tabsTop()-app.top;let r=t.get();
-  if(r&&t.tab){const pr=$("panel").getBoundingClientRect(),top=Math.max(r.top,pr.top),bot=Math.min(r.bottom,app.top+tabT);r=bot-top>=Math.min(28,r.height*0.5)?{left:r.left,width:r.width,top,bottom:bot,height:bot-top}:null;}
+  if(r&&t.tab&&ffInPanel(t)){const pr=$("panel").getBoundingClientRect(),top=Math.max(r.top,pr.top),bot=Math.min(r.bottom,app.top+tabT);r=bot-top>=Math.min(28,r.height*0.5)?{left:r.left,width:r.width,top,bottom:bot,height:bot-top}:null;}
   $("ff").style.visibility=$("sheet").classList.contains("on")?"hidden":"";$("ffShow").style.display=!r&&t.tab?"":"none";
   const w=$("weekLbl");if(w&&w.textContent!=="FIRST FIRE")w.textContent="FIRST FIRE";
   const boxH=box.offsetHeight||150;let top=null;

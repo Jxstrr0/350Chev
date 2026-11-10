@@ -24,7 +24,7 @@ The intro screen (`html/body.html`) asks for a layout, Phone or Desktop, then a 
 
 Until 1.76.32 there was a third mode, Pit Crew; since 1.76.33.0 its team seasons are the heart of the career (below), and a Pit Crew save opens as a fresh career with its titles in the log. Careers from before 1.76.33.0 (contracts, the buyer market, warranty, build bays, Dyno day) also start fresh.
 
-An onboarding tour and "First Fire" walk a new player through the first engine (`app/help.js`). The help file also holds a tap-to-explain glossary and 17 guided lessons (`LESSONS`).
+An onboarding tour and "First Fire" walk a new player through the first engine (`app/help.js`). Since 1.76.114.0 the career tour is four steps, each a thing to do (sign a team, pick a starter engine, certify it, go racing), worded with the names on the buttons; the last step names the button that moves the season on and says in one line where Events, Analysis, Sponsors and the Shop are. The help file also holds a tap-to-explain glossary and 17 guided lessons (`LESSONS`).
 
 ## Screens
 
