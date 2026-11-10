@@ -79,7 +79,7 @@ var BOAT_LOOK={
   tfh:{len:8.4, beam:3.8, prop:[-0.7,-0.05], rt:1.6, k:1.0}};
 function boatModel(cls, color){
   var L=BOAT_LOOK[cls]||BOAT_LOOK.outboard, G=new THREE.Group(), pivot=new THREE.Group(); G.add(pivot);
-  var M=BOAT.mats, paint=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.32, metalness:0.15}), dark=new THREE.MeshStandardMaterial({color:sc(0x1a1c1f), roughness:0.6, metalness:0.3}),
+  var M=BOAT.mats, paint=GFX!=="lite"?new THREE.MeshPhysicalMaterial({vertexColors:true, roughness:0.4, metalness:0.1, clearcoat:1, clearcoatRoughness:0.05}):new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.32, metalness:0.15}),   /* gelcoat: a clear coat on Full / Ultra */ dark=new THREE.MeshStandardMaterial({color:sc(0x1a1c1f), roughness:0.6, metalness:0.3}),
       chrome=new THREE.MeshStandardMaterial({color:sc(0xc8ccd2), roughness:0.18, metalness:0.9}), glass=new THREE.MeshStandardMaterial({color:sc(0x26323c), roughness:0.05, metalness:0.2, transparent:true, opacity:0.55}),
       white=new THREE.MeshStandardMaterial({color:sc(0xeeeae0), roughness:0.5}), lite=GFX==="lite";
   var box=function(m,x,y,z,w,h,d,rz){ var o=new THREE.Mesh(sbGeo().box,m); o.scale.set(w,h,d); o.position.set(x,y,z); if(rz) o.rotation.z=rz; o.castShadow=!lite; pivot.add(o); return o; };

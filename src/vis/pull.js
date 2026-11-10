@@ -376,7 +376,7 @@ function pullLivery(U){
   livPlanes(U.body, U, U.livSpots);
 }
 function pullVehicle(kind, color){
-  var M=sc_mats(), P=pullMats(), paint=new THREE.MeshStandardMaterial({color:sc(color), roughness:0.36, metalness:0.12, envMapIntensity:0.8}), lite=GFX==="lite";
+  var M=sc_mats(), P=pullMats(), paint=sc_paintNew(color), lite=GFX==="lite";
   var paintDS=new THREE.MeshStandardMaterial({color:paint.color, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
   var mats={paint:paint, paintDS:paintDS, black:M.black, satin:M.satin, chrome:M.chrome, glass:M.glass, alu:M.alu, cast:P.cast, orange:P.orange, white:P.white, lens:P.lens, tail:P.tail, amber:P.amber, suit:P.suit, helmet:P.helmet, well:new THREE.MeshStandardMaterial({color:0x0b0b0c, roughness:1, side:THREE.DoubleSide}), decal:pullDecalMat(kind==="tractor"?"4020":String(((color>>>0)%89)+11))};
   var g=new THREE.Group(), pivot=new THREE.Group(), body=new THREE.Group(); g.add(pivot); pivot.add(body);

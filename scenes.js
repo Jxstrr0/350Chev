@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.121.0*/
+/*pew-scenes 1.76.122.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -1122,13 +1122,17 @@ function sc_mats(){
   SC.mat=M; return M;
 }
 function sc_paint(color){
-  var cc=GFX!=="lite", key=String(color>>>0)+(cc?"c":""); if(SC.paint[key]) return SC.paint[key];
-  var c=new THREE.Color(color).convertSRGBToLinear(), lum=0.2126*c.r+0.7152*c.g+0.0722*c.b;
+  var key=String(color>>>0)+(GFX!=="lite"?"c":""); if(SC.paint[key]) return SC.paint[key];
+  return (SC.paint[key]=sc_paintNew(color));
+}
+/* a paint of its own (not shared through the cache), for a vehicle that changes its colour in play: mud, a repaint */
+function sc_paintNew(color){
+  var cc=GFX!=="lite", c=new THREE.Color(color).convertSRGBToLinear(), lum=0.2126*c.r+0.7152*c.g+0.0722*c.b;
   /* v3: Full / Ultra paint is a clear coat over a satin base (a second, sharp highlight); Lite keeps the single-lobe paint */
   var q=cc?new THREE.MeshPhysicalMaterial({color:c, roughness:0.42, metalness:lum<0.02?0.3:0.12, envMapIntensity:lum<0.02?1.45:1.1, clearcoat:1, clearcoatRoughness:0.06})
     :new THREE.MeshStandardMaterial({color:c, roughness:0.2, metalness:lum<0.02?0.35:0.22, envMapIntensity:lum<0.02?1.5:1.15});
   var env=sc_env(); if(env) q.envMap=env;
-  SC.paint[key]=q; return q;
+  return q;
 }
 function sc_canvas(w,h){ var c=document.createElement("canvas"); c.width=w; c.height=h; return c; }
 function sc_ctex(c, srgb){ return ctex(c, srgb, 4); }
@@ -4221,7 +4225,7 @@ function pullLivery(U){
   livPlanes(U.body, U, U.livSpots);
 }
 function pullVehicle(kind, color){
-  var M=sc_mats(), P=pullMats(), paint=new THREE.MeshStandardMaterial({color:sc(color), roughness:0.36, metalness:0.12, envMapIntensity:0.8}), lite=GFX==="lite";
+  var M=sc_mats(), P=pullMats(), paint=sc_paintNew(color), lite=GFX==="lite";
   var paintDS=new THREE.MeshStandardMaterial({color:paint.color, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
   var mats={paint:paint, paintDS:paintDS, black:M.black, satin:M.satin, chrome:M.chrome, glass:M.glass, alu:M.alu, cast:P.cast, orange:P.orange, white:P.white, lens:P.lens, tail:P.tail, amber:P.amber, suit:P.suit, helmet:P.helmet, well:new THREE.MeshStandardMaterial({color:0x0b0b0c, roughness:1, side:THREE.DoubleSide}), decal:pullDecalMat(kind==="tractor"?"4020":String(((color>>>0)%89)+11))};
   var g=new THREE.Group(), pivot=new THREE.Group(), body=new THREE.Group(); g.add(pivot); pivot.add(body);
@@ -5165,7 +5169,7 @@ function bogtWheel(r, w, rimR, kind, side, style, hub, mats, lite){
 }
 function bogtMats(color, spec, cls, kind, dia, wIn, lite){
   var M=sc_mats(), P=pullMats(), num=String(((color>>>0)%89)+11);
-  var paint=new THREE.MeshStandardMaterial({color:sc(color), roughness:0.34, metalness:0.12, envMapIntensity:0.8});
+  var paint=sc_paintNew(color);   /* the strip cars' paint (a clear coat on Full / Ultra), one per truck: the bog muds it */
   return { paint:paint, black:M.black, satin:M.satin, glass:M.glass, lens:P.lens, tail:P.tail, cast:P.cast, orange:P.orange, white:P.white, suit:P.suit, helmet:P.helmet, alu:M.alu,
     chrome:new THREE.MeshStandardMaterial({color:0xffffff, map:bogtChromeTex(), roughness:0.12, metalness:0.92, envMapIntensity:1.25}),
     tube:new THREE.MeshStandardMaterial({color:sc(cls==="super"?0xb3b8be:0x16171a), roughness:0.36, metalness:cls==="super"?0.7:0.3}),
@@ -6115,7 +6119,7 @@ var BOAT_LOOK={
   tfh:{len:8.4, beam:3.8, prop:[-0.7,-0.05], rt:1.6, k:1.0}};
 function boatModel(cls, color){
   var L=BOAT_LOOK[cls]||BOAT_LOOK.outboard, G=new THREE.Group(), pivot=new THREE.Group(); G.add(pivot);
-  var M=BOAT.mats, paint=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.32, metalness:0.15}), dark=new THREE.MeshStandardMaterial({color:sc(0x1a1c1f), roughness:0.6, metalness:0.3}),
+  var M=BOAT.mats, paint=GFX!=="lite"?new THREE.MeshPhysicalMaterial({vertexColors:true, roughness:0.4, metalness:0.1, clearcoat:1, clearcoatRoughness:0.05}):new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.32, metalness:0.15}),   /* gelcoat: a clear coat on Full / Ultra */ dark=new THREE.MeshStandardMaterial({color:sc(0x1a1c1f), roughness:0.6, metalness:0.3}),
       chrome=new THREE.MeshStandardMaterial({color:sc(0xc8ccd2), roughness:0.18, metalness:0.9}), glass=new THREE.MeshStandardMaterial({color:sc(0x26323c), roughness:0.05, metalness:0.2, transparent:true, opacity:0.55}),
       white=new THREE.MeshStandardMaterial({color:sc(0xeeeae0), roughness:0.5}), lite=GFX==="lite";
   var box=function(m,x,y,z,w,h,d,rz){ var o=new THREE.Mesh(sbGeo().box,m); o.scale.set(w,h,d); o.position.set(x,y,z); if(rz) o.rotation.z=rz; o.castShadow=!lite; pivot.add(o); return o; };
