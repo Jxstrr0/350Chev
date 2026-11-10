@@ -1713,6 +1713,21 @@ function buildEnvMap(renderer){
    The room drawn by buildEnvMap above stays as the first frame's reflection, the trophy room's, and the fallback when the
    picture cannot be fetched (offline on a first visit). Every tier gets it: one small image and one blur pass, the same
    work the drawn room costs. The picture stores bright lights on a log curve; ENV_LOG is LOG_RANGE in the Blender script. */
+/* Baked ground pictures (tex/gr-*.jpg, made by tools/blender/ground-bake.py). bakeUni("asphalt") hands a ground shader a uniform that
+   holds flat grey ("change nothing") until the picture has loaded and the picture from then on. If it never loads (offline before it was
+   cached) the grey stays and the surface looks as it did before the bakes. Every tier; the "-n" slope pictures are asked for on Full / Ultra only. */
+var BAKE={};
+function bakeUni(name){
+  if(BAKE[name]) return BAKE[name];
+  var ph=new THREE.DataTexture(new Uint8Array(/-n$/.test(name)?[128,128,255,255]:[128,128,128,255]), 1, 1, THREE.RGBAFormat); ph.needsUpdate=true;
+  var u=BAKE[name]={value:ph};
+  new THREE.TextureLoader().load("tex/gr-"+name+".jpg", function(t){
+    t.encoding=THREE.LinearEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    t.anisotropy=Math.min(GFX==="lite"?4:8, renderer?renderer.capabilities.getMaxAnisotropy():1);
+    u.value=t; ph.dispose();
+  }, undefined, function(){});
+  return u;
+}
 var ENV_LOG=8, ENV_PANO={ files:{workshop:"tex/env-workshop.jpg", testcell:"tex/env-testcell.jpg"}, gain:{workshop:1.0, testcell:1.0}, got:{}, want:null };
 function envPanoBuild(tex, gain){
   var s=new THREE.Scene(), g=new THREE.SphereGeometry(50, 48, 24);

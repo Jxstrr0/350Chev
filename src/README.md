@@ -56,7 +56,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `sound/synth.js` | module state, `init`, voice graph `buildGraph`, `applyProfile`, start/stop, `set()` hot path, `event()` transients, public API |
 | `sound/samples.js` | the ENGINE_SAMPLES module between `<!-- ENGINE_SAMPLES:BEGIN/END -->` (the whole `<script>` block) |
 | **ENGINE_VIS** (three.js) | |
-| `vis/core.js` | `<script>`, 0–6: math/noise, canvas textures, procedural materials (MAT), geometry helpers + merge, environment (the drawn room, and `envPanoUse` for the Blender-rendered room pictures in `tex/`), module state, cfg helpers |
+| `vis/core.js` | `<script>`, 0–6: math/noise, canvas textures, procedural materials (MAT), geometry helpers + merge, environment (the drawn room, `envPanoUse` for the Blender-rendered room pictures in `tex/`, `bakeUni` for the baked ground tiles), module state, cfg helpers |
 | `vis/engine.js` | 7. engine builder (`buildEngineMesh`), 7r Wankel rotary, 7t two-stroke barrels |
 | `vis/bank.js` | 7a-d diesel fuel hardware (injectors, glow plugs, pump), 7a one cylinder bank (`buildBank`) |
 | `vis/exhaust.js` | 7b exhaust manifolds/headers, 7b' exhaust system (pipes, cutout, muffler) |
