@@ -300,11 +300,30 @@ function stripSkyLate(sky){
   return sky;
 }
 
-/* --- sky dome: gradient, sun, prairie cumulus; night: stars, moon, town glow on the horizon --- */
+/* The prairie horizon (tex/hz-prairie.jpg, tools/blender/horizon.py): a full circle of shelterbelts, farmsteads, far elevator towns and a
+   low ridge, baked in Blender and drawn by the sky shader in the three degrees round the horizon line, so it costs no meshes, sits behind
+   everything and shows in the reflections (stripEnv renders this sky). Top half of the picture: colour; bottom half: coverage (red) and
+   haze (green). The shader hazes it toward its own sky colour and darkens it for dusk and night, so one picture serves every time of day.
+   HZ_LAT is the band in degrees (LAT in the script). Until it loads it is a black pixel: no coverage, the sky as before. */
+var HZ_LAT=[-0.6,2.4], HZ={u:null};
+function hzUni(){
+  if(HZ.u) return HZ.u;
+  var ph=new THREE.DataTexture(new Uint8Array([0,0,0,255]),1,1,THREE.RGBAFormat); ph.needsUpdate=true; HZ.u={value:ph};
+  new THREE.TextureLoader().load("tex/hz-prairie.jpg", function(t){ t.encoding=THREE.LinearEncoding; t.generateMipmaps=false; t.minFilter=THREE.LinearFilter;
+    t.wrapS=THREE.RepeatWrapping; t.wrapT=THREE.ClampToEdgeWrapping; HZ.u.value=t; ph.dispose(); if(STRIP.env) STRIP.env={}; }, undefined, function(){});   /* reflections built before it came are rebuilt on the next stripEnv */
+  return HZ.u;
+}
+var STRIP_GLSL_HZ=[
+  " float hzE=asin(clamp(h,-1.0,1.0))*57.29578;",
+  " if(hzE>"+HZ_LAT[0].toFixed(2)+" && hzE<"+HZ_LAT[1].toFixed(2)+"){ float hzU=0.5+atan(d.x,-d.z)*0.15915494, hzV=clamp((hzE-("+HZ_LAT[0].toFixed(2)+"))/"+(HZ_LAT[1]-HZ_LAT[0]).toFixed(2)+",0.008,0.992)*0.5;",
+  "  vec3 hzC=texture2D(uHz,vec2(hzU,0.5+hzV)).rgb; vec2 hzM=texture2D(uHz,vec2(hzU,hzV)).rg; hzC*=hzC;",
+  "  float hzL=mix(1.0,0.02,uNight)*mix(1.0,0.25,smoothstep(0.0,0.3,uDusk));",
+  "  col=mix(col, mix(hzC*hzL, col, hzM.g*0.92), hzM.r); }"].join("\n");
+/* --- sky dome: gradient, sun, prairie cumulus; night: stars, moon, town glow on the horizon; the baked horizon band --- */
 function stripSkyMat(){
-  return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:STRIP_SUN_DAY.clone()}, uMoon:{value:STRIP_MOON.clone()}, uNight:{value:0}, uGain:{value:1}, uHor:{value:new THREE.Vector3().fromArray(STRIP_HOR)}, uHorN:{value:new THREE.Vector3().fromArray(STRIP_HOR_N)}, uDusk:{value:0}, uDuskSun:{value:STRIP_SUN_DUSK.clone()} },
+  return new THREE.ShaderMaterial({ uniforms:{ uHz:hzUni(), uSun:{value:STRIP_SUN_DAY.clone()}, uMoon:{value:STRIP_MOON.clone()}, uNight:{value:0}, uGain:{value:1}, uHor:{value:new THREE.Vector3().fromArray(STRIP_HOR)}, uHorN:{value:new THREE.Vector3().fromArray(STRIP_HOR_N)}, uDusk:{value:0}, uDuskSun:{value:STRIP_SUN_DUSK.clone()} },
     vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position.z=gl_Position.w; }",
-    fragmentShader:[ "uniform vec3 uSun; uniform vec3 uMoon; uniform float uNight; uniform float uGain; uniform vec3 uHor; uniform vec3 uHorN; uniform float uDusk; uniform vec3 uDuskSun; varying vec3 vDir;", STRIP_GLSL_NOISE,
+    fragmentShader:[ "uniform sampler2D uHz; uniform vec3 uSun; uniform vec3 uMoon; uniform float uNight; uniform float uGain; uniform vec3 uHor; uniform vec3 uHorN; uniform float uDusk; uniform vec3 uDuskSun; varying vec3 vDir;", STRIP_GLSL_NOISE,
       "float h3(vec3 p){ p=fract(p*0.1031); p+=dot(p,p.zyx+31.32); return fract((p.x+p.y)*p.z); }",
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
       " vec3 zen=vec3(0.075,0.19,0.48);",
@@ -335,6 +354,7 @@ function stripSkyMat(){
       "  vec3 dcl=mix(vec3(0.03,0.026,0.045),vec3(0.9,0.36,0.18)*(0.15+0.85*pow(aw,2.0)),clamp((n-0.45)*1.8,0.0,1.0)*(1.0-smoothstep(0.05,0.4,hb))+0.12);",
       "  dk=mix(dk,dcl,cov*0.9); dk*=0.22+0.78*uDusk;",
       "  col=mix(col,dk,smoothstep(0.0,0.3,uDusk)); }",
+      STRIP_GLSL_HZ,
       " gl_FragColor=vec4(col*uGain,1.0);",
       " gl_FragColor=linearToOutputTexel(gl_FragColor); }"].join("\n"),
     side:THREE.BackSide, depthWrite:false, fog:false, toneMapped:false });
