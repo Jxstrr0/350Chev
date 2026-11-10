@@ -1708,6 +1708,42 @@ function buildEnvMap(renderer){
   return env;
 }
 
+/* v1.76.109: the garage's reflections come from a picture of the room, rendered in Blender (tools/blender/workshop-env.py)
+   and seen from where the engine sits: tex/env-workshop.jpg for the career workshop, tex/env-testcell.jpg for the test cell.
+   The room drawn by buildEnvMap above stays as the first frame's reflection, the trophy room's, and the fallback when the
+   picture cannot be fetched (offline on a first visit). Every tier gets it: one small image and one blur pass, the same
+   work the drawn room costs. The picture stores bright lights on a log curve; ENV_LOG is LOG_RANGE in the Blender script. */
+var ENV_LOG=8, ENV_PANO={ files:{workshop:"tex/env-workshop.jpg", testcell:"tex/env-testcell.jpg"}, gain:{workshop:1.0, testcell:1.0}, got:{}, want:null };
+function envPanoBuild(tex, gain){
+  var s=new THREE.Scene(), g=new THREE.SphereGeometry(50, 48, 24);
+  var m=new THREE.ShaderMaterial({ side:THREE.BackSide, depthWrite:false, uniforms:{ map:{value:tex}, gain:{value:gain} },
+    vertexShader:"varying vec3 vD; void main(){ vD=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    fragmentShader:"uniform sampler2D map; uniform float gain; varying vec3 vD;\nvoid main(){ vec3 d=normalize(vD);\n"+
+      "  vec2 uv=vec2(0.5+atan(d.x,-d.z)*0.15915494, 0.5+asin(clamp(d.y,-1.0,1.0))*0.31830989);\n"+
+      "  gl_FragColor=vec4((exp2(texture2D(map,uv).rgb*"+ENV_LOG.toFixed(1)+")-1.0)*0.0625*gain, 1.0);\n  #include <encodings_fragment>\n}" });
+  s.add(new THREE.Mesh(g, m));
+  var pm=new THREE.PMREMGenerator(renderer), rt=pm.fromScene(s, 0, 0.1, 100);
+  pm.dispose(); g.dispose(); m.dispose(); tex.dispose();
+  return rt.texture;
+}
+/* key: "workshop" or "testcell". Swaps the garage scene's reflections to that room's picture, fetching it the first time. */
+function envPanoUse(key){
+  ENV_PANO.want=key;
+  if(!renderer || !scene || !ENV_PANO.files[key]) return;
+  var c=ENV_PANO.got[key];
+  if(c && c!==1){ scene.environment=c; return; }
+  if(c===1) return;                                   /* on its way */
+  ENV_PANO.got[key]=1;
+  new THREE.TextureLoader().load(ENV_PANO.files[key], function(tex){
+    try{
+      tex.encoding=THREE.LinearEncoding; tex.generateMipmaps=false; tex.minFilter=THREE.LinearFilter; tex.magFilter=THREE.LinearFilter;
+      tex.wrapS=THREE.RepeatWrapping; tex.needsUpdate=true;
+      ENV_PANO.got[key]=envPanoBuild(tex, ENV_PANO.gain[key]);
+      if(ENV_PANO.want===key && scene) scene.environment=ENV_PANO.got[key];
+    }catch(e){ ENV_PANO.got[key]=null; }
+  }, undefined, function(){ ENV_PANO.got[key]=null; });   /* offline: keep the drawn room, try again at the next rebuild */
+}
+
 /* ===========================================================================
    5. MODULE STATE
    ==========================================================================*/
