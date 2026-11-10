@@ -4,7 +4,10 @@
           and a fill direction, an ambient and up to four point lights (the night floods, the exhaust flash), with
           forward scattering so smoke between the camera and a light glows at its thin edges (backlit). Sprites that
           fill the lens fade out so a cloud never whites out the shot. Uniforms are fed by stripFxLight().
-     str: emit(..., {sx,sy,sz}) stretches a particle along that world vector (metres): flame cones, jets, purge plumes. */
+     str: emit(..., {sx,sy,sz}) stretches a particle along that world vector (metres): flame cones, jets, purge plumes.
+     flip: Full / Ultra smoke. Once tex/fx-smoke.jpg arrives (16 frames of one puff rendered as a real volume in Blender,
+          tools/blender/smoke-flipbook.py) each particle plays it over its life, blending frame to frame, lit as baked;
+          until then, and on Lite, the drawn puff. */
 function StripFx(cap, mode, tex, opt){
   opt=opt||{}; var additive=(mode==="add"); this.cap=cap; this.additive=additive; this.P=[]; this.opt=opt;
   var q=new THREE.PlaneGeometry(1,1), g=new THREE.InstancedBufferGeometry();
@@ -13,6 +16,7 @@ function StripFx(cap, mode, tex, opt){
   this.aCol=new THREE.InstancedBufferAttribute(new Float32Array(cap*4),4); this.aRot=new THREE.InstancedBufferAttribute(new Float32Array(cap),1);
   var at=[this.aPos,this.aSz,this.aCol,this.aRot];
   if(opt.str){ this.aStr=new THREE.InstancedBufferAttribute(new Float32Array(cap*3),3); g.setAttribute("iStr",this.aStr); at.push(this.aStr); }
+  if(opt.flip){ this.aAge=new THREE.InstancedBufferAttribute(new Float32Array(cap),1); g.setAttribute("iAge",this.aAge); at.push(this.aAge); }
   if(opt.lit){ this.aSeed=new THREE.InstancedBufferAttribute(new Float32Array(cap),1); g.setAttribute("iSeed",this.aSeed); at.push(this.aSeed); }
   at.forEach(function(a){ a.setUsage(THREE.DynamicDrawUsage); });
   g.setAttribute("iPos",this.aPos); g.setAttribute("iSz",this.aSz); g.setAttribute("iCol",this.aCol); g.setAttribute("iRot",this.aRot); g.instanceCount=0;
@@ -29,7 +33,9 @@ function StripFx(cap, mode, tex, opt){
       "varying vec2 vUv; varying vec4 vCol; varying float vDepth; varying float vShade;",
       "#ifdef STR\nattribute vec3 iStr; varying float vAlong; varying float vStr;\n#endif",
       "#ifdef VOL\nattribute float iSeed; varying vec3 vC; varying vec2 vCS; varying float vCover;\n#endif",
+      "#ifdef FLIP\nattribute float iAge; varying float vAge; varying float vMir;\n#endif",
       "void main(){ vec4 mv=modelViewMatrix*vec4(iPos,1.0); float c=cos(iRot), s=sin(iRot);",
+      "#ifdef FLIP\n c=cos(iRot*0.12); s=sin(iRot*0.12); vAge=clamp(iAge+fract(iRot*1.7)*0.1,0.0,1.0); vMir=step(0.5,fract(iRot*3.1));\n#endif",
       "#ifdef STR\n vec3 sv3=(modelViewMatrix*vec4(iStr,0.0)).xyz; float L=length(sv3.xy); vStr=0.0; vAlong=0.5;",
       " if(L>0.001){ vec2 ax=sv3.xy/L, pp=vec2(-ax.y,ax.x); mv.xyz+=sv3*0.5; mv.xy+=ax*position.x*(L+iSz*0.5)+pp*position.y*iSz; vStr=1.0; vAlong=position.x+0.5; c=1.0; s=0.0; }",
       " else\n#endif",
@@ -41,6 +47,7 @@ function StripFx(cap, mode, tex, opt){
     fragmentShader:["uniform sampler2D map; uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uLit; uniform float uAmb;",
       "varying vec2 vUv; varying vec4 vCol; varying float vDepth; varying float vShade;",
       "#ifdef STR\nvarying float vAlong; varying float vStr;\n#endif",
+      "#ifdef FLIP\nvarying float vAge; varying float vMir;\n#endif",
       "#ifdef VOL\nvarying vec3 vC; varying vec2 vCS; varying float vCover;",
       "uniform vec3 uKeyV; uniform vec3 uKeyC; uniform vec3 uFillV; uniform vec3 uFillC; uniform vec3 uAmbC; uniform float uBack; uniform float uCover;",
       "uniform vec3 uPtP[4]; uniform vec3 uPtC[4]; uniform vec4 uPtR;",
@@ -56,9 +63,13 @@ function StripFx(cap, mode, tex, opt){
       "  li+=uPtC[i]*att*wrapL(n,l)*0.7; sc+=uPtC[i]*att*pow(max(dot(vd,l),0.0),3.0)*thin; }",
       " vec3 col=vCol.rgb*li+sc*uBack*mix(0.55,1.0,vCol.r); col=col/(1.0+max(0.0,max(col.r,max(col.g,col.b))-0.8)*0.9);   /* soft knee: lit smoke never burns out to a white blob */",
       "#else\n vec4 t=texture2D(map,vUv);",
+      "#ifdef FLIP\n float fr=vAge*14.999, f0=floor(fr), fb=fr-f0, f1=min(f0+1.0,15.0); vec2 fu=vec2(mix(vUv.x,1.0-vUv.x,vMir),vUv.y);",
+      " vec2 t0=texture2D(map,(vec2(mod(f0,4.0),3.0-floor(f0/4.0))+fu)*0.25).rg, t1=texture2D(map,(vec2(mod(f1,4.0),3.0-floor(f1/4.0))+fu)*0.25).rg, tt=mix(t0,t1,fb);",
+      " t=vec4(1.0,1.0,1.0,tt.r*0.8); float fl=tt.g*tt.g*1.4;\n#endif",
       "#ifdef STR\n float wd=mix(1.0, 0.38+0.62*vAlong, vStr); t=texture2D(map, vec2(vUv.x, 0.5+(vUv.y-0.5)/wd)); t.a*=mix(1.0, 1.0-0.45*vAlong, vStr);\n#endif",
       " float a=t.a*vCol.a*smoothstep(0.35,2.0,vDepth);",
-      " vec3 col=vCol.rgb*mix(1.0,(0.52+0.62*vShade)*uAmb,uLit);",
+      "#ifdef FLIP\n vec3 col=vCol.rgb*mix(1.0,(0.25+0.85*fl)*uAmb,uLit);\n#else",
+      " vec3 col=vCol.rgb*mix(1.0,(0.52+0.62*vShade)*uAmb,uLit);\n#endif",
       "#ifdef STR\n col=mix(col, mix(vec3(0.85,0.92,1.0)*1.25, col, smoothstep(0.0,0.42,vAlong)), vStr*0.75);\n#endif",
       "#endif",
       " float f=smoothstep(uFogN,uFogF,vDepth);",
@@ -67,6 +78,16 @@ function StripFx(cap, mode, tex, opt){
       " gl_FragColor=linearToOutputTexel(vec4(col,a)); }"].join("\n"),
     transparent:true, depthWrite:false, blending:additive?THREE.AdditiveBlending:THREE.NormalBlending });
   this.mesh=new THREE.Mesh(g,this.mat); this.mesh.frustumCulled=false; this.mesh.renderOrder=additive?8:(mode==="fire"?7:6);
+  if(opt.flip) stripFlipUse(this.mat);
+}
+/* the baked smoke flipbook, fetched once and handed to every flip system that asks (they draw the old puff until it lands) */
+var FX_FLIP={t:null, wait:[], asked:false};
+function stripFlipUse(mat){
+  function on(m){ m.uniforms.map.value=FX_FLIP.t; m.defines.FLIP=1; m.needsUpdate=true; }
+  if(FX_FLIP.t){ on(mat); return; }
+  FX_FLIP.wait.push(mat); if(FX_FLIP.asked) return; FX_FLIP.asked=true;
+  new THREE.TextureLoader().load("tex/fx-smoke.jpg", function(t){ t.generateMipmaps=true; t.minFilter=THREE.LinearMipmapLinearFilter; t.magFilter=THREE.LinearFilter;
+    FX_FLIP.t=t; FX_FLIP.wait.forEach(on); FX_FLIP.wait.length=0; }, undefined, function(){ FX_FLIP.asked=false; FX_FLIP.wait.length=0; });
 }
 /* o: {drag, buoy, grav, fin (fade-in fraction), spin, sx/sy/sz (stretch, str systems), fout (fade-out power)} */
 StripFx.prototype.emit=function(x,y,z, vx,vy,vz, life, s0,s1, r,g,b,a, o){
@@ -86,15 +107,15 @@ StripFx.prototype.step=function(dt, wind){
     p.x+=p.vx*dt; p.y+=p.vy*dt; p.z+=p.vz*dt; if(p.y<0.05){ p.y=0.05; if(p.vy<0) p.vy=0; } p.rot+=p.vr*dt;
     P[n++]=p; }
   P.length=n;
-  var pos=this.aPos.array, sz=this.aSz.array, col=this.aCol.array, rot=this.aRot.array, st=this.aStr?this.aStr.array:null, sd=this.aSeed?this.aSeed.array:null;
+  var pos=this.aPos.array, sz=this.aSz.array, col=this.aCol.array, rot=this.aRot.array, st=this.aStr?this.aStr.array:null, sd=this.aSeed?this.aSeed.array:null, ag=this.aAge?this.aAge.array:null;
   for(i=0;i<n;i++){ p=P[i]; var f=p.t/p.life, e=1-Math.pow(1-f,2.2);
     pos[i*3]=p.x; pos[i*3+1]=p.y; pos[i*3+2]=p.z; sz[i]=p.s0+(p.s1-p.s0)*e; rot[i]=p.rot;
     col[i*4]=p.r; col[i*4+1]=p.g; col[i*4+2]=p.b; col[i*4+3]=p.a*Math.min(1,f/Math.max(0.001,p.fin))*Math.pow(1-f,p.fo);
     if(st){ var sk=1-0.35*f; st[i*3]=p.sx*sk; st[i*3+1]=p.sy*sk; st[i*3+2]=p.sz*sk; }
-    if(sd) sd[i]=p.seed; }
+    if(sd) sd[i]=p.seed; if(ag) ag[i]=f; }
   this.geo.instanceCount=n;
   this.aPos.needsUpdate=this.aSz.needsUpdate=this.aCol.needsUpdate=this.aRot.needsUpdate=true;
-  if(st) this.aStr.needsUpdate=true; if(sd) this.aSeed.needsUpdate=true;
+  if(st) this.aStr.needsUpdate=true; if(sd) this.aSeed.needsUpdate=true; if(ag) this.aAge.needsUpdate=true;
 };
 /* the strip's lit-smoke atlas: 2x2 cauliflower puffs, RGB = tangent-space normal, A = density (built once) */
 var STRIP_SMOKE_TEX=null;

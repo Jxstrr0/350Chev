@@ -188,7 +188,7 @@ function buildOvalScene(G){
   /* the flag */
   (function(){ var pole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,3,6), new THREE.MeshStandardMaterial({color:0xcfd2d6})); pole.position.set(-4.5,5.2,R+hw+2.6); S3.add(pole);
     var fl=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.2), new THREE.MeshBasicMaterial({map:ovalFlagTex("green"), side:THREE.DoubleSide, toneMapped:false})); fl.position.set(-4.5+0.95,5.6,R+hw+2.6); fl.rotation.y=PI/2; fl.rotation.set(0,0,0); S3.add(fl); OVAL.flagMesh=fl; OVAL.flagKey="green"; OVAL.flagTex={}; })();
-  OVAL.fx=new StripFx(lite?260:620,"smoke",stripPuffTex()); S3.add(OVAL.fx.mesh);
+  OVAL.fx=new StripFx(lite?260:620,"smoke",stripPuffTex(), lite?null:{flip:1}); S3.add(OVAL.fx.mesh);
   OVAL.cam=OVAL.cam||new THREE.PerspectiveCamera(50,1,0.3,4200); OVAL.built=true; OVAL.night=null; OVAL.snap=true; ovalSetNight(false);
 }
 function ovalSetNight(on){
