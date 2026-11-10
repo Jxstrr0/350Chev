@@ -1220,6 +1220,11 @@ html.desk #troom.lst #trCard{right:calc(min(460px,40vw) + 16px)}
 #app.rkon #panel{padding-bottom:calc(var(--tabh) + var(--rkh) + 24px)}
 html:not(.desk) #app.rkon #toast{bottom:var(--tbot,calc(var(--tabh) + var(--rkh) + 14px))}
 html:not(.desk) #app.rkon #achToast{bottom:var(--abot,calc(var(--tabh) + var(--rkh) + 66px))}
+/* phone, portrait: the achievement banner drops in at the top, over the 3D view, so it never covers the list you are reading (offers, engines, results) */
+@media (max-width:600px){
+  html:not(.desk) #app #achToast,html:not(.desk) #app.rkon #achToast{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 48px);transform:translateX(-50%) translateY(-14px)}
+  html:not(.desk) #app #achToast.on,html:not(.desk) #app.rkon #achToast.on{transform:translateX(-50%)}
+}
 .rlhead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"pk chip run";align-items:center;gap:8px;min-height:var(--rkh);padding:8px 12px 8px 14px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
 .rlgrab{position:absolute;left:50%;top:0;width:72px;height:14px;margin-left:-36px;padding:0;background:none;border:0}
 .rlgrab i{display:block;width:36px;height:4px;margin:4px auto 0;border-radius:2px;background:var(--steel)}
@@ -1316,15 +1321,18 @@ html.desk #app.rkon #panel{padding-bottom:calc(var(--rkh) + 28px)}
   /* the HUD folds to two corners: brand + cash on top, the engine card and icon-only SOUND / START / VIEW along the foot */
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #hud{bottom:0;padding:8px 12px}
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #hud .brand small{display:none}
-  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns{position:absolute;right:12px;bottom:8px;flex:none;gap:4px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns{position:absolute;right:12px;bottom:16px;flex:none;gap:4px}
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns>button{width:44px;height:44px;padding:0;justify-content:center}
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) .hudbtns>button .lb{display:none}
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #viewBtn.lit::after{position:absolute;margin:0;top:6px;right:6px}
-  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{bottom:8px;left:12px;right:166px;max-width:none}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag{bottom:16px;left:12px;right:166px;max-width:none}   /* 16 px (was 8): a clear strip of scene between the card and buttons and the panel's lip, so they never look like they sit on the list */
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag .ecard{grid-template-columns:minmax(0,1fr);padding:3px 8px;gap:0;justify-items:start}
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag .ecard .badge{justify-self:start;margin-top:-4px}
   html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #tag .ecard .spec{display:none}
-  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #rpmbox{bottom:auto;top:44px}html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #rpmbox b{font-size:22px}
+  html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #rpmbox{bottom:auto;top:72px}html[data-tab]:not([data-tab=build]):not(.onevent):not(.desk) #app:not(.mini):not(.td) #rpmbox b{font-size:22px}
+  /* the rpm under the cash and rep (72 px less the panel's 22 px lap = 50 px down), not on top of them; with the small engine view there is no room
+     clear of the buttons, so it stays off (the Run bar says Running and the curve draws in the results) */
+  html:not(.desk) #app.mini #rpmbox{display:none!important}
   /* 3. touch targets */
   html:not(.desk) .nud{flex:0 0 44px;height:44px}
   html:not(.desk) .btn.sm{min-height:44px}
@@ -22545,7 +22553,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.112.0";
+const VERSION="1.76.113.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -22662,7 +22670,8 @@ function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.e
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");toastPlace();clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
 /* the toast and the achievement banner share the foot of the screen. Phone: the toast sits just above whatever is docked there
    (the tab bar, or the results sheet, measured: it can be taller than its peek line) and the banner stacks above the toast.
-   Desktop: the toast sits at the top of the view and the banner drops below it. Neither ever hides the other. */
+   Desktop: the toast sits at the top of the view and the banner drops below it. Neither ever hides the other.
+   A portrait phone (max-width 600px) puts the banner at the top of the 3D view instead (style.css), clear of the list being read. */
 function toastPlace(){const t=$("toast"),a=$("achToast");if(!t||!a)return;
   if(!toastPlace.raf&&(t.classList.contains("on")||a.classList.contains("on")))toastPlace.raf=requestAnimationFrame(()=>{toastPlace.raf=0;toastPlace();});   // follow the dock while either is showing (the sheet can resize under them)
   if(document.documentElement.classList.contains("desk")){t.style.removeProperty("--tbot");a.style.removeProperty("--abot");

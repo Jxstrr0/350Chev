@@ -126,7 +126,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.112.0";
+const VERSION="1.76.113.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -243,7 +243,8 @@ function testCost(){if(dev()||(PO&&S.env.testType==="pull_sled"))return 0;if(S.e
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");toastPlace();clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600);toast.until=Date.now()+2600;}
 /* the toast and the achievement banner share the foot of the screen. Phone: the toast sits just above whatever is docked there
    (the tab bar, or the results sheet, measured: it can be taller than its peek line) and the banner stacks above the toast.
-   Desktop: the toast sits at the top of the view and the banner drops below it. Neither ever hides the other. */
+   Desktop: the toast sits at the top of the view and the banner drops below it. Neither ever hides the other.
+   A portrait phone (max-width 600px) puts the banner at the top of the 3D view instead (style.css), clear of the list being read. */
 function toastPlace(){const t=$("toast"),a=$("achToast");if(!t||!a)return;
   if(!toastPlace.raf&&(t.classList.contains("on")||a.classList.contains("on")))toastPlace.raf=requestAnimationFrame(()=>{toastPlace.raf=0;toastPlace();});   // follow the dock while either is showing (the sheet can resize under them)
   if(document.documentElement.classList.contains("desk")){t.style.removeProperty("--tbot");a.style.removeProperty("--abot");
