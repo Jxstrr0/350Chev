@@ -397,6 +397,7 @@ function addStainDecals(G, W, D){
       }
     },{transparent:true, rough:0.35});
     MAT.stainDecal.depthWrite=false;
+    MAT.stainDecal.envMapIntensity=0.22;   /* a dull sheen: with the rendered room (core.js envPanoUse) a full mirror of the roof lights read as spilt milk */
     MAT.stainDecal.polygonOffset=true;
     MAT.stainDecal.polygonOffsetFactor=-2;
   }
