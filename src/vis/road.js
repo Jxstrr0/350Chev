@@ -135,10 +135,10 @@ function buildRoadWorld(T){
   gm.customProgramCacheKey=function(){ return "road_ground_"+T.id; };
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), gm); ground.rotation.x=-PI/2; ground.position.y=-0.05; ground.receiveShadow=true; S4.add(ground);
   /* asphalt, kerbs, gravel, start line */
-  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "road_asph");
+  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "road_asph", 0.8);
   M.kerb=stripMapMat(new THREE.MeshStandardMaterial({map:roadKerbTex(), roughness:0.7, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-3}), ROAD_GLSL_KERB, "road_kerb");
   M.grav=stripMapMat(new THREE.MeshStandardMaterial({map:roadGravelTex(), roughness:1, color:0xd8ccb4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_GRAV, "road_grav");
-  M.verge=stripMapMat(new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_VERGE, "road_verge");
+  M.verge=stripMapMat(new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_VERGE, "road_verge", 0.6);
   M.sign=new THREE.MeshStandardMaterial({map:roadAtlas(T.n), roughness:0.72});
   M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.86}); M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.42, metalness:0.65});
   M.lamp=new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false, color:0x777777});

@@ -44,6 +44,10 @@ var OVAL_GLSL=[
   /* asphalt instead of clay: dark grey with a rubbered racing line, tar snakes, white edge lines inside and out, a faint lighter apron */
   "  if(uAsph>0.5){ vec3 asp=vec3(0.092,0.095,0.102)*(0.8+0.36*sn(p*0.31))+vec3(0.02)*(sn(p*6.0)-0.5)*fine;",
   "    asp=mix(asp,asp*0.7,groove*0.75); asp=mix(asp,vec3(0.15,0.15,0.16),smoothstep(0.62,0.8,sn(p*0.9+4.0))*0.35*(1.0-groove));",
+  "    asp*=bkAsph(p,0.8);",
+  "#if STRIP_TIER>=1",
+  "    gBn=gBk*onT;",
+  "#endif",
   "    float eIn=1.0-smoothstep(0.12,0.3,abs(rho-(uW*0.5-0.9))), eOut=1.0-smoothstep(0.12,0.3,abs(rho+(uW*0.5-0.9)));",
   "    asp=mix(asp,vec3(0.72,0.72,0.69),0.85*max(eIn,eOut));",
   "    clay=asp; }",

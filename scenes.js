@@ -272,9 +272,12 @@ function stripPatchSh(sh, glsl){
 }
 
 /* a textured material (road asphalt, kerbs, gravel, the pits floor) with the same Full / Ultra detail: stripSurf returns a multiplier on the map,
-   world-space so a repeating canvas gets macro variation and a real bump. Lite gets the material back untouched. key names the program. */
-function stripMapMat(m, glsl, key){
-  if(GFX==="lite") return m;
+   world-space so a repeating canvas gets macro variation and a real bump. key names the program. Lite gets the material back untouched,
+   unless liteBk is given: then it is an asphalt surface and Lite multiplies in the baked asphalt picture at that strength (one texture read). */
+function stripMapMat(m, glsl, key, liteBk){
+  if(GFX==="lite"){ if(!liteBk) return m;
+    var lg="vec3 stripSurf(vec3 w, out float rough){ rough="+m.roughness.toFixed(3)+"; return bkAsph(w.xz,"+liteBk.toFixed(2)+"); }";
+    m.defines.STRIP_TIER=0; m.onBeforeCompile=function(sh){ stripPatchSh(sh, lg); }; m.customProgramCacheKey=function(){ return "stripmapL_"+key; }; return m; }
   m.defines.STRIP_TIER=GFX==="ultra"?2:1; m.extensions={ derivatives:true };
   m.onBeforeCompile=function(sh){ stripPatchSh(sh, glsl); };
   m.customProgramCacheKey=function(){ return "stripmap_"+key; };
@@ -3529,7 +3532,7 @@ function pitsMats(){
   for(i=0;i<2600;i++){ var g=30+Math.random()*40|0; x.fillStyle="rgba("+g+","+g+","+(g+2)+","+(0.35+Math.random()*0.5)+")"; x.fillRect(Math.random()*256, Math.random()*256, 1+Math.random()*2, 1+Math.random()*2); }
   for(i=0;i<5;i++){ var px=Math.random()*256, py=Math.random()*256, r=10+Math.random()*26, gr=x.createRadialGradient(px,py,0,px,py,r); gr.addColorStop(0,"rgba(8,8,10,0.45)"); gr.addColorStop(1,"rgba(8,8,10,0)"); x.fillStyle=gr; x.fillRect(px-r,py-r,2*r,2*r); }
   var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(30,30); t.encoding=THREE.sRGBEncoding; t.anisotropy=4;
-  M.ground=stripMapMat(new THREE.MeshStandardMaterial({map:t, roughness:0.92}), ROAD_GLSL_ASPH, "pits_floor");   /* Full / Ultra: world-space grain, cracks, patches and a macro tint over the 5 m tile */
+  M.ground=stripMapMat(new THREE.MeshStandardMaterial({map:t, roughness:0.92}), ROAD_GLSL_ASPH, "pits_floor", 0.8);   /* Full / Ultra: world-space grain, cracks, patches and a macro tint over the 5 m tile */
   /* the hauler's side: the shop's colours and name */
   c=newCanvas(1024,256); x=c.getContext("2d"); var gg=x.createLinearGradient(0,0,0,256); gg.addColorStop(0,"#25303f"); gg.addColorStop(1,"#141a23"); x.fillStyle=gg; x.fillRect(0,0,1024,256);
   x.fillStyle="#e5562b"; x.beginPath(); x.moveTo(0,212); x.bezierCurveTo(300,204,620,190,1024,180); x.lineTo(1024,200); x.bezierCurveTo(620,210,300,224,0,234); x.fill();
@@ -6488,10 +6491,10 @@ function buildRoadWorld(T){
   gm.customProgramCacheKey=function(){ return "road_ground_"+T.id; };
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), gm); ground.rotation.x=-PI/2; ground.position.y=-0.05; ground.receiveShadow=true; S4.add(ground);
   /* asphalt, kerbs, gravel, start line */
-  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "road_asph");
+  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:roadAsphaltTex(), roughness:0.88, metalness:0, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "road_asph", 0.8);
   M.kerb=stripMapMat(new THREE.MeshStandardMaterial({map:roadKerbTex(), roughness:0.7, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-3}), ROAD_GLSL_KERB, "road_kerb");
   M.grav=stripMapMat(new THREE.MeshStandardMaterial({map:roadGravelTex(), roughness:1, color:0xd8ccb4, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_GRAV, "road_grav");
-  M.verge=stripMapMat(new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_VERGE, "road_verge");
+  M.verge=stripMapMat(new THREE.MeshStandardMaterial({color:0x5a5d5e, roughness:0.92, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_VERGE, "road_verge", 0.6);
   M.sign=new THREE.MeshStandardMaterial({map:roadAtlas(T.n), roughness:0.72});
   M.solid=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.86}); M.metal=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.42, metalness:0.65});
   M.lamp=new THREE.MeshBasicMaterial({vertexColors:true, toneMapped:false, color:0x777777});
@@ -8419,7 +8422,7 @@ function buildHillWorld(T){
     if(!lite) mat.customProgramCacheKey=function(){ return "hill_terr"; };
     var tm=new THREE.Mesh(g, mat); tm.receiveShadow=!lite; S5.add(tm); W.terr=tm; if(lite||ultra) hillTiles(W, S5, tm, G); })();
   /* road, centre lines, gravel verges sloping out to the terrain */
-  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:hillAsphaltTex(), roughness:0.86, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "hill_asph");
+  M.asph=stripMapMat(new THREE.MeshStandardMaterial({map:hillAsphaltTex(), roughness:0.86, metalness:0, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}), ROAD_GLSL_ASPH, "hill_asph", 0.8);
   M.verge=stripMapMat(new THREE.MeshStandardMaterial({vertexColors:true, roughness:1, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1}), ROAD_GLSL_GRAV, "hill_verge");
   (function(){ var step=lite?2:1, n=Math.floor((N-1)/step)+1, pos=new Float32Array(n*6), nor=new Float32Array(n*6), uv=new Float32Array(n*4), idx=[];
     for(q=0;q<n;q++){ var ii=Math.min(N-1,q*step); hillPt(W, ii, hw, 0.04, _hA); hillPt(W, ii, -hw, 0.04, _hB);
@@ -8752,6 +8755,10 @@ var OVAL_GLSL=[
   /* asphalt instead of clay: dark grey with a rubbered racing line, tar snakes, white edge lines inside and out, a faint lighter apron */
   "  if(uAsph>0.5){ vec3 asp=vec3(0.092,0.095,0.102)*(0.8+0.36*sn(p*0.31))+vec3(0.02)*(sn(p*6.0)-0.5)*fine;",
   "    asp=mix(asp,asp*0.7,groove*0.75); asp=mix(asp,vec3(0.15,0.15,0.16),smoothstep(0.62,0.8,sn(p*0.9+4.0))*0.35*(1.0-groove));",
+  "    asp*=bkAsph(p,0.8);",
+  "#if STRIP_TIER>=1",
+  "    gBn=gBk*onT;",
+  "#endif",
   "    float eIn=1.0-smoothstep(0.12,0.3,abs(rho-(uW*0.5-0.9))), eOut=1.0-smoothstep(0.12,0.3,abs(rho+(uW*0.5-0.9)));",
   "    asp=mix(asp,vec3(0.72,0.72,0.69),0.85*max(eIn,eOut));",
   "    clay=asp; }",
