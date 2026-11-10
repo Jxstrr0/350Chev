@@ -250,11 +250,16 @@ function aaNoise(){
   }, false));
 }
 var AA_GLSL_PRE="uniform sampler2D uAAN;\nuniform vec4 uAAk;\n";
-function aaPatch(mat, albedo, detail, rough){
+/* bk (optional): [baked ground picture, tiles per uv unit, strength]: a tex/gr-*.jpg picture (bakeUni) multiplied into the map on every
+   tier, the same tile plus a turned copy six times larger as the bk* helpers in vis/strip.js. The garage floor uses the shop bake. */
+function aaPatch(mat, albedo, detail, rough, bk){
   if(!mat) return mat;
   var k=new THREE.Vector4(albedo, detail, rough, 0);
   mat.userData.aa=true;
   mat.onBeforeCompile=function(sh){
+    if(bk){ sh.uniforms.uBkF=bakeUni(bk[0]);
+      sh.fragmentShader="uniform sampler2D uBkF;\n"+sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n#ifdef USE_MAP\n"+
+        "  diffuseColor.rgb *= mix(vec3(1.0), texture2D(uBkF, vUv*"+bk[1].toFixed(3)+").rgb*2.0*(0.62+0.76*texture2D(uBkF, vec2(vUv.y,-vUv.x)*"+(bk[1]/5.9).toFixed(4)+"+0.37).g), "+bk[2].toFixed(2)+");\n#endif"); }
     if(GFX==="lite") return;
     sh.uniforms.uAAN={value:aaNoise()}; sh.uniforms.uAAk={value:k};
     sh.fragmentShader=AA_GLSL_PRE+sh.fragmentShader
@@ -267,7 +272,7 @@ function aaPatch(mat, albedo, detail, rough){
       .replace("#include <roughnessmap_fragment>",
         "#include <roughnessmap_fragment>\n  roughnessFactor = clamp(roughnessFactor + (aaA.b-0.5)*uAAk.z + (aaB.r-0.5)*uAAk.z*0.6, 0.04, 1.0);");
   };
-  mat.customProgramCacheKey=function(){ return "aa"+(GFX==="lite"?"0":"1"); };
+  mat.customProgramCacheKey=function(){ return "aa"+(GFX==="lite"?"0":"1")+(bk?bk[0]:""); };
   AA_MATS.push(mat); mat.needsUpdate=true;
   return mat;
 }
@@ -1119,7 +1124,7 @@ function buildMaterials(){
   MAT.woodDark    = tint(MAT.wood,  0x9a7a52);
 
   /* anti-tiling layer (Full / Ultra) on the garage's repeating surfaces: (macro tint, mid-scale breakup, roughness) */
-  aaPatch(MAT.concrete, 0.26, 0.15, 0.20); aaPatch(MAT.tile, 0.12, 0.08, 0.12); aaPatch(MAT.block, 0.20, 0.12, 0.14);
+  aaPatch(MAT.concrete, 0.26, 0.15, 0.20, ["shop", 1.5, 0.8]);   /* floor uv: 1 per 3 m (vis/garage.js), the shop tile is 2 m */ aaPatch(MAT.tile, 0.12, 0.08, 0.12); aaPatch(MAT.block, 0.20, 0.12, 0.14);
   aaPatch(MAT.blockPaint, 0.20, 0.12, 0.14); aaPatch(MAT.blockWhite, 0.16, 0.10, 0.14);
   aaPatch(MAT.door, 0.14, 0.08, 0.14); aaPatch(MAT.plate, 0.14, 0.08, 0.12); aaPatch(MAT.peg, 0.16, 0.10, 0.10);
   aaPatch(MAT.wood, 0.20, 0.10, 0.10); aaPatch(MAT.woodDark, 0.20, 0.10, 0.10); aaPatch(MAT.panel, 0.12, 0.08, 0.12);
