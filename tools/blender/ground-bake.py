@@ -17,7 +17,7 @@ import bpy, sys, os, math
 import numpy as np
 from PIL import Image
 
-ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+ARGS = [a for i, a in enumerate(sys.argv[1:]) if not a.startswith("--") and sys.argv[i] not in ("--only", "--preview")]
 OUT = ARGS[0] if ARGS else "tex"
 ONLY = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None
 PREVIEW = sys.argv[sys.argv.index("--preview") + 1] if "--preview" in sys.argv else None
@@ -150,10 +150,12 @@ def pnoise(x, y, tile, seed, octaves=3, base=2):
     return s / 4.0
 
 
-def stones(tile, spacing, rmin, rmax, sub, seed, drop, palette, sink, wear, film):
+def stones(tile, spacing, rmin, rmax, sub, seed, drop, palette, sink, wear, film, coat=0.12, cut=None):
     """A layer of crushed stone on a jittered honeycomb grid, pressed into the binder and worn flat on top.
     palette: rows of (share, r, g, b, spread). sink: how far (0..1 of its radius) a stone sits below the wear plane.
-    wear: the height everything above is ground off at. film: the binder colour that still coats a stone's flanks."""
+    wear: the height everything above is ground off at. film: the binder colour that still coats a stone's flanks.
+    coat: how much of its own colour a flank keeps (1 = an uncoated lump, as in dirt).
+    cut: grind the tops off at this height instead of at `wear` (set it above everything for lumps left whole)."""
     r = np.random.default_rng(seed)
     nx = int(round(tile / spacing)); sx = tile / nx
     ny = int(round(tile / (spacing * 0.866) / 2)) * 2; sy = tile / ny
@@ -176,7 +178,7 @@ def stones(tile, spacing, rmin, rmax, sub, seed, drop, palette, sink, wear, film
     sc = np.stack([rad * r.uniform(0.75, 1.25, n), rad * r.uniform(0.75, 1.25, n), rad * r.uniform(0.55, 1.0, n)], 1)
     ang = r.uniform(0, 6.283, n); ca, sa = np.cos(ang), np.sin(ang)
     cz = wear - sc[:, 2] * (sink[0] + (sink[1] - sink[0]) * r.uniform(0, 1, n))
-    top = wear - r.uniform(0, 0.0007, n)          # each stone polished to its own height, within 0.7 mm
+    top = (wear if cut is None else cut) - r.uniform(0, 0.0007, n)          # each stone polished to its own height, within 0.7 mm
     V, F, C = [], [], []
     base = 0
     for idx, dx, dy in wrap_copies(pos, rmax * 2.5, tile):
@@ -188,7 +190,7 @@ def stones(tile, spacing, rmin, rmax, sub, seed, drop, palette, sink, wear, film
         y = v[:, :, 0] * sa[idx][:, None] + v[:, :, 1] * ca[idx][:, None] + pos[idx, 1][:, None] + dy
         z = np.minimum(v[:, :, 2] + cz[idx][:, None], top[idx][:, None])
         worn = np.clip((z - (top[idx][:, None] - 0.0012)) / 0.0012, 0, 1)      # 1 on the ground-off face, 0 on the coated flank
-        c = film[None, None, :] + (col[idx][:, None, :] - film[None, None, :]) * (0.12 + 0.88 * worn[:, :, None])
+        c = film[None, None, :] + (col[idx][:, None, :] - film[None, None, :]) * (coat + (1 - coat) * worn[:, :, None])
         m, k = v.shape[0], v.shape[1]
         V.append(np.stack([x, y, z], 2).reshape(-1, 3)); C.append(c.reshape(-1, 3))
         F.append((bf[None, :, :] + (base + np.arange(m) * k)[:, None, None]).reshape(-1, 3))
@@ -196,9 +198,10 @@ def stones(tile, spacing, rmin, rmax, sub, seed, drop, palette, sink, wear, film
     return np.concatenate(V), np.concatenate(F), np.concatenate(C)
 
 
-def binder(tile, z, colour, grain, seed, n=360, mottle=0.0, pits=0, pit_r=(0.002, 0.004), pit_d=0.0015, pit_dark=0.5):
+def binder(tile, z, colour, grain, seed, n=360, mottle=0.0, pits=0, pit_r=(0.002, 0.004), pit_d=0.0015, pit_dark=0.5, swell=0.0):
     """The bed between the stones: a fine grid, a little bigger than the tile, with a sandy ripple. mottle: slow light and
-    dark clouds in its colour. pits: how many small round holes (air bubbles, popped stones) to press into it."""
+    dark clouds in its colour. pits: how many small round holes (air bubbles, popped stones) to press into it.
+    swell: the height of slow lumps in the bed itself (packed dirt is never flat)."""
     ext = 0.04
     cells = int(round(n * (tile + 2 * ext) / tile))
     step = tile / n                                   # a whole number of cells per tile, so the ripple repeats too
@@ -207,7 +210,7 @@ def binder(tile, z, colour, grain, seed, n=360, mottle=0.0, pits=0, pit_r=(0.002
     r = np.random.default_rng(seed)
     rip = r.uniform(-1, 1, (n, n))
     ix = np.round(x / step).astype(int) % n; iy = np.round(y / step).astype(int) % n
-    h = z + grain * rip[iy, ix]
+    h = z + grain * rip[iy, ix] + (swell * pnoise(x % tile, y % tile, tile, seed + 5, 3, 6) if swell else 0)
     shade = 1 + 0.12 * rip[(iy + 7) % n, (ix + 3) % n] + mottle * pnoise(x % tile, y % tile, tile, seed + 3, 3, 5)
     if pits:
         px, py = r.uniform(0, tile, pits), r.uniform(0, tile, pits)
@@ -256,10 +259,24 @@ def concrete(tile):
     add_mesh("bed", *binder(tile, -0.00035, paste, 0.00025, 9, n=900, mottle=0.035, pits=900, pit_r=(0.0025, 0.0065), pit_d=0.0024, pit_dark=0.55))
 
 
+def dirt(tile):
+    """Packed track clay: a lumpy bed with lighter and darker clouds and small dimples, crumbs everywhere, loose clods
+    sitting proud of it and the odd pale pebble. Nothing is worn flat, so the cut height sits above every lump."""
+    clay = np.array([0.30, 0.21, 0.13])
+    pal = [(0.55, 0.30, 0.21, 0.13, 0.22),      # the clay itself
+           (0.25, 0.22, 0.15, 0.09, 0.25),      # damp, darker
+           (0.20, 0.38, 0.28, 0.18, 0.2)]       # dried pale
+    peb = [(0.6, 0.42, 0.33, 0.24, 0.2), (0.4, 0.26, 0.20, 0.14, 0.25)]
+    add_mesh("clods", *stones(tile, 0.024, 0.0045, 0.0105, 2, 41, 0.18, pal, (-0.2, 0.7), 0.0, clay, coat=1.0, cut=0.05))
+    add_mesh("crumbs", *stones(tile, 0.0068, 0.0015, 0.0034, 1, 43, 0.08, pal, (0.0, 0.9), 0.0, clay, coat=1.0, cut=0.05))
+    add_mesh("pebbles", *stones(tile, 0.055, 0.003, 0.006, 2, 47, 0.45, peb, (0.1, 0.8), 0.0, clay, coat=1.0, cut=0.05))
+    add_mesh("bed", *binder(tile, 0.0, clay, 0.0005, 13, n=420, mottle=0.10, pits=500, pit_r=(0.003, 0.009), pit_d=0.003, pit_dark=0.3, swell=0.0014))
+
+
 # name: (builder, tile size in metres, slope picture too?). Ground-smooth concrete is so nearly flat that its slope picture
 # is mostly JPEG noise (and 190 KB once amplified enough to beat it), so it ships colour only.
 # Keep the tile sizes and the slope flags in step with STRIP_BAKES in src/vis/strip.js.
-SURFACES = {"asphalt": (asphalt, 1.9, True), "concrete": (concrete, 2.3, False)}
+SURFACES = {"asphalt": (asphalt, 1.9, True), "concrete": (concrete, 2.3, False), "dirt": (dirt, 1.4, True)}
 
 
 # ---------- render and pack ----------

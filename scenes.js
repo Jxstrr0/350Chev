@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.116.0*/
+/*pew-scenes 1.76.117.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -204,7 +204,7 @@ var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0
    turned copy six times larger so the tiling never shows. Full / Ultra also read the slope picture into gBk; the caller copies or blends
    that into gBn, which leans the lit normal (stripPatchSh). Mip-mapping fades both out with distance, so nothing shimmers far away.
    A shader that calls one of these gets its pictures from stripPatchSh (STRIP_BAKES: function name, uniform, file, 1 / tile size, 1 if it has a slope picture). */
-var STRIP_BAKES=[["bkAsph","uBkA","asphalt",0.5263,1], ["bkConc","uBkC","concrete",0.4348,0]];
+var STRIP_BAKES=[["bkAsph","uBkA","asphalt",0.5263,1], ["bkConc","uBkC","concrete",0.4348,0], ["bkDirt","uBkD","dirt",0.7143,1]];
 var STRIP_GLSL_BAKE="vec2 gBk=vec2(0.0);\n"+STRIP_BAKES.map(function(b){ var u=b[1], f=b[3].toFixed(4), g=(b[3]/5.9).toFixed(4);
   return "uniform sampler2D "+u+";\n"+(b[4]?"#if STRIP_TIER>=1\nuniform sampler2D "+u+"n;\n#endif\n":"")+
     "vec3 "+b[0]+"(vec2 p, float k){ vec3 a=texture2D("+u+",p*"+f+").rgb*2.0; float b=texture2D("+u+",vec2(p.y,-p.x)*"+g+"+0.37).g*2.0;\n"+
@@ -3850,10 +3850,11 @@ var PULL_GLSL_TRACK=[
   "  c=mix(c,c*1.14+vec3(0.025,0.018,0.01),pan*0.45*(1.0-rut*0.6));",
   "  float berm=exp(-pow((az-1.7)/0.12,2.0))*smoothstep(-8.0,-2.0,x)*(0.6+0.4*n2);",
   "  c=mix(c,c*0.78,berm*0.6);",
+  "  c*=bkDirt(w.xz,0.8);",
   /* Full/Ultra: loose clods at the edges, a packed smooth pan band, ruts sunk with lugged floors, throw-berms along them */
   "#if STRIP_TIER>=1",
   "  float dh; vec3 dm=sfDirtFx(w.xz,clamp(0.3+0.7*smoothstep(1.6,4.5,az)-0.55*pan,0.0,1.0),dh); c*=mix(vec3(1.0),dm,0.75);",
-  "  c*=1.0-0.14*rut; gH=dh-0.065*rut+0.045*berm+0.014*(lug-0.55)*rut; gHK=1.0;",
+  "  c*=1.0-0.14*rut; gH=dh-0.065*rut+0.045*berm+0.014*(lug-0.55)*rut; gHK=1.0; gBn=gBk;",
   "#endif",
   "  float edge=smoothstep(4.4,6.1,az); c=mix(c,c*vec3(0.72,0.7,0.68)+vec3(0.0,0.0,0.0),edge*(0.6+0.4*n1));",
   "  float ln=1.0-smoothstep(0.06,0.09,abs(x));",
@@ -3869,9 +3870,9 @@ var PULL_GLSL_GROUND=[
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(20.0,120.0,d), mid=1.0-smoothstep(100.0,900.0,d);",
   "  vec3 grass=vec3(0.11,0.155,0.055)*(0.8+0.35*sn(p*0.08))*(0.9+0.2*sn(p*1.9)*fine);",
   "  float worn=smoothstep(0.5,0.8,sn(p*0.06+3.0))*0.6;",
-  "  vec3 c=mix(grass,vec3(0.27,0.21,0.14)*(0.85+0.3*sn(p*0.7)),worn);",
+  "  vec3 c=mix(grass,vec3(0.27,0.21,0.14)*(0.85+0.3*sn(p*0.7))*bkDirt(p,0.8),worn);",
   "#if STRIP_TIER>=1",
-  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.5,dh); c*=mix(vec3(1.0),mix(gm,dm,worn/0.6),0.75); gH=mix(gh,dh,worn/0.6); gHK=1.0;",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.5,dh); c*=mix(vec3(1.0),mix(gm,dm,worn/0.6),0.75); gH=mix(gh,dh,worn/0.6); gHK=1.0; gBn=gBk*(worn/0.6);",
   "#endif",
   "  float apron=(1.0-smoothstep(9.0,9.5,abs(p.y)))*smoothstep(-36.0,-35.0,p.x)*(1.0-smoothstep(128.0,129.0,p.x));",
   "  c=mix(c,vec3(0.34,0.31,0.27)*(0.8+0.4*sn(p*2.3)),apron);",
@@ -4628,10 +4629,11 @@ var BOG_GLSL_GROUND=[
   "  dirt=mix(dirt,dirt*0.7,tr);",
   "  float wet=(1.0-smoothstep(7.0,10.0,abs(p.y)))*smoothstep(-4.0,0.0,p.x)*(1.0-smoothstep(uLen,uLen+8.0,p.x));",
   "  dirt=mix(dirt,vec3(0.16,0.11,0.07)*(0.85+0.3*sn(p*1.3)),wet*0.8);",
+  "  dirt*=bkDirt(p,0.8);",
   "  c=mix(c,dirt,max(lane,wet*0.9));",
   /* Full/Ultra: grass tufts, a lumpy rutted run-up, standing puddles in the wet lane */
   "#if STRIP_TIER>=1",
-  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.75,dh); float wd=max(lane,wet*0.9); c*=mix(mix(gm,dm,worn/0.6),dm,wd); gH=mix(mix(gh,dh,worn/0.6),dh,wd); gHK=1.0;",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.75,dh); float wd=max(lane,wet*0.9); c*=mix(mix(gm,dm,worn/0.6),dm,wd); gH=mix(mix(gh,dh,worn/0.6),dh,wd); gHK=1.0; gBn=gBk*wd;",
   "  gH-=0.05*tr*lane; float pud=wet*smoothstep(0.6,0.68,sn(p*0.85+4.0)+0.12*sn(p*4.0)); c*=1.0-0.45*pud; gH*=1.0-pud;",
   "#endif",
   "  float lot=smoothstep(16.0,17.0,p.y)*(1.0-smoothstep(46.0,47.0,p.y))*smoothstep(-50.0,-49.0,p.x)*(1.0-smoothstep(uLen+20.0,uLen+21.0,p.x));",
@@ -8745,12 +8747,13 @@ var OVAL_GLSL=[
   "  clay=mix(clay,clay*0.62,groove*(1.0-uDry*0.5)); clay=mix(clay,vec3(0.38,0.27,0.18),cush*(0.5+uDry*0.4));",
   "  float rut=sn(vec2(p.x*0.6+p.y*0.6,rho*3.0)); clay*=1.0-0.18*smoothstep(0.55,0.8,rut)*groove*fine;",
   "  float onT=1.0-smoothstep(uW*0.5,uW*0.5+0.5,abs(rho));",
+  "  clay*=bkDirt(p,0.8);",
   /* Full / Ultra: harrow lines and a packed, rubbered groove, loose marbles and clods up by the cushion, the seam where the bank begins, tufted grass */
   "#if STRIP_TIER>=1",
   "  float gh, dh; vec3 gm=sfGrassFx(p,gh); vec3 dm=sfDirtFx(p,clamp(0.2+0.85*cush+0.4*(1.0-groove),0.0,1.0),dh);",
   "  float ln=0.5+0.5*sin(rho*13.0+2.5*sn(p*0.4)), sm=1.0-smoothstep(0.0,0.4,abs(abs(p.x)-uLs*0.5)), mb=smoothstep(0.62,0.82,sn(p*3.1+8.0))*aaf(0.3)*(1.0-groove);",
   "  dm*=(1.0+0.09*(ln-0.5)*groove*aaf(0.2))*(1.0-0.12*sm*(1.0-0.5*groove))*(1.0+0.16*mb); dh+=0.011*ln*groove*aaf(0.2)-0.01*sm+0.012*mb;",
-  "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0;",
+  "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0; gBn=gBk*onT;",
   "#endif",
   /* asphalt instead of clay: dark grey with a rubbered racing line, tar snakes, white edge lines inside and out, a faint lighter apron */
   "  if(uAsph>0.5){ vec3 asp=vec3(0.092,0.095,0.102)*(0.8+0.36*sn(p*0.31))+vec3(0.02)*(sn(p*6.0)-0.5)*fine;",

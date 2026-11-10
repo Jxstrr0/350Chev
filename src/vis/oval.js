@@ -34,12 +34,13 @@ var OVAL_GLSL=[
   "  clay=mix(clay,clay*0.62,groove*(1.0-uDry*0.5)); clay=mix(clay,vec3(0.38,0.27,0.18),cush*(0.5+uDry*0.4));",
   "  float rut=sn(vec2(p.x*0.6+p.y*0.6,rho*3.0)); clay*=1.0-0.18*smoothstep(0.55,0.8,rut)*groove*fine;",
   "  float onT=1.0-smoothstep(uW*0.5,uW*0.5+0.5,abs(rho));",
+  "  clay*=bkDirt(p,0.8);",
   /* Full / Ultra: harrow lines and a packed, rubbered groove, loose marbles and clods up by the cushion, the seam where the bank begins, tufted grass */
   "#if STRIP_TIER>=1",
   "  float gh, dh; vec3 gm=sfGrassFx(p,gh); vec3 dm=sfDirtFx(p,clamp(0.2+0.85*cush+0.4*(1.0-groove),0.0,1.0),dh);",
   "  float ln=0.5+0.5*sin(rho*13.0+2.5*sn(p*0.4)), sm=1.0-smoothstep(0.0,0.4,abs(abs(p.x)-uLs*0.5)), mb=smoothstep(0.62,0.82,sn(p*3.1+8.0))*aaf(0.3)*(1.0-groove);",
   "  dm*=(1.0+0.09*(ln-0.5)*groove*aaf(0.2))*(1.0-0.12*sm*(1.0-0.5*groove))*(1.0+0.16*mb); dh+=0.011*ln*groove*aaf(0.2)-0.01*sm+0.012*mb;",
-  "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0;",
+  "  grass*=gm; clay*=dm; gH=mix(gh,dh,onT); gHK=1.0; gBn=gBk*onT;",
   "#endif",
   /* asphalt instead of clay: dark grey with a rubbered racing line, tar snakes, white edge lines inside and out, a faint lighter apron */
   "  if(uAsph>0.5){ vec3 asp=vec3(0.092,0.095,0.102)*(0.8+0.36*sn(p*0.31))+vec3(0.02)*(sn(p*6.0)-0.5)*fine;",

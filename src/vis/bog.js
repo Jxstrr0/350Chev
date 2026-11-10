@@ -21,10 +21,11 @@ var BOG_GLSL_GROUND=[
   "  dirt=mix(dirt,dirt*0.7,tr);",
   "  float wet=(1.0-smoothstep(7.0,10.0,abs(p.y)))*smoothstep(-4.0,0.0,p.x)*(1.0-smoothstep(uLen,uLen+8.0,p.x));",
   "  dirt=mix(dirt,vec3(0.16,0.11,0.07)*(0.85+0.3*sn(p*1.3)),wet*0.8);",
+  "  dirt*=bkDirt(p,0.8);",
   "  c=mix(c,dirt,max(lane,wet*0.9));",
   /* Full/Ultra: grass tufts, a lumpy rutted run-up, standing puddles in the wet lane */
   "#if STRIP_TIER>=1",
-  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.75,dh); float wd=max(lane,wet*0.9); c*=mix(mix(gm,dm,worn/0.6),dm,wd); gH=mix(mix(gh,dh,worn/0.6),dh,wd); gHK=1.0;",
+  "  float gh, dh; vec3 gm=sfGrassFx(p,gh), dm=sfDirtFx(p,0.75,dh); float wd=max(lane,wet*0.9); c*=mix(mix(gm,dm,worn/0.6),dm,wd); gH=mix(mix(gh,dh,worn/0.6),dh,wd); gHK=1.0; gBn=gBk*wd;",
   "  gH-=0.05*tr*lane; float pud=wet*smoothstep(0.6,0.68,sn(p*0.85+4.0)+0.12*sn(p*4.0)); c*=1.0-0.45*pud; gH*=1.0-pud;",
   "#endif",
   "  float lot=smoothstep(16.0,17.0,p.y)*(1.0-smoothstep(46.0,47.0,p.y))*smoothstep(-50.0,-49.0,p.x)*(1.0-smoothstep(uLen+20.0,uLen+21.0,p.x));",
