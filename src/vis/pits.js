@@ -118,7 +118,7 @@ function buildPitsScene(){
   for(i=0;i<7;i++){ var lx=-60+i*20, lz=-55-((i*37)%11); B.box("metal", lx, 9, lz, 0.3, 18, 0.3, 0x4a4e54); B.box("glow", lx, 18.2, lz+0.3, 2.2, 0.8, 0.2, 0xfff1d6); }
   pitsBuild(B, "solid", M.solid, true, S5); pitsBuild(B, "metal", M.metal, true, S5); pitsBuild(B, "glow", M.glow, false, S5);
   PITS.props=new THREE.Group(); S5.add(PITS.props);
-  if(GFX!=="lite"){ PITS.fx=new StripFx(GFX==="ultra"?90:60, "smoke", stripPuffTex()); PITS.fx.mat.uniforms.uAmb.value=0.5; PITS.fx.mat.uniforms.uFogN.value=22; PITS.fx.mat.uniforms.uFogF.value=95; S5.add(PITS.fx.mesh); }
+  if(GFX!=="lite"){ PITS.fx=new StripFx(GFX==="ultra"?90:60, "smoke", stripPuffTex(), {flip:1}); PITS.fx.mat.uniforms.uAmb.value=0.5; PITS.fx.mat.uniforms.uFogN.value=22; PITS.fx.mat.uniforms.uFogF.value=95; S5.add(PITS.fx.mesh); }
   PITS.cam=new THREE.PerspectiveCamera(42, 1, 0.2, 400);
   PITS.built=true;
 }

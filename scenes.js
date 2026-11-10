@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.120.0*/
+/*pew-scenes 1.76.121.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -2637,7 +2637,10 @@ function stripGlare(){
           and a fill direction, an ambient and up to four point lights (the night floods, the exhaust flash), with
           forward scattering so smoke between the camera and a light glows at its thin edges (backlit). Sprites that
           fill the lens fade out so a cloud never whites out the shot. Uniforms are fed by stripFxLight().
-     str: emit(..., {sx,sy,sz}) stretches a particle along that world vector (metres): flame cones, jets, purge plumes. */
+     str: emit(..., {sx,sy,sz}) stretches a particle along that world vector (metres): flame cones, jets, purge plumes.
+     flip: Full / Ultra smoke. Once tex/fx-smoke.jpg arrives (16 frames of one puff rendered as a real volume in Blender,
+          tools/blender/smoke-flipbook.py) each particle plays it over its life, blending frame to frame, lit as baked;
+          until then, and on Lite, the drawn puff. */
 function StripFx(cap, mode, tex, opt){
   opt=opt||{}; var additive=(mode==="add"); this.cap=cap; this.additive=additive; this.P=[]; this.opt=opt;
   var q=new THREE.PlaneGeometry(1,1), g=new THREE.InstancedBufferGeometry();
@@ -2646,6 +2649,7 @@ function StripFx(cap, mode, tex, opt){
   this.aCol=new THREE.InstancedBufferAttribute(new Float32Array(cap*4),4); this.aRot=new THREE.InstancedBufferAttribute(new Float32Array(cap),1);
   var at=[this.aPos,this.aSz,this.aCol,this.aRot];
   if(opt.str){ this.aStr=new THREE.InstancedBufferAttribute(new Float32Array(cap*3),3); g.setAttribute("iStr",this.aStr); at.push(this.aStr); }
+  if(opt.flip){ this.aAge=new THREE.InstancedBufferAttribute(new Float32Array(cap),1); g.setAttribute("iAge",this.aAge); at.push(this.aAge); }
   if(opt.lit){ this.aSeed=new THREE.InstancedBufferAttribute(new Float32Array(cap),1); g.setAttribute("iSeed",this.aSeed); at.push(this.aSeed); }
   at.forEach(function(a){ a.setUsage(THREE.DynamicDrawUsage); });
   g.setAttribute("iPos",this.aPos); g.setAttribute("iSz",this.aSz); g.setAttribute("iCol",this.aCol); g.setAttribute("iRot",this.aRot); g.instanceCount=0;
@@ -2662,7 +2666,9 @@ function StripFx(cap, mode, tex, opt){
       "varying vec2 vUv; varying vec4 vCol; varying float vDepth; varying float vShade;",
       "#ifdef STR\nattribute vec3 iStr; varying float vAlong; varying float vStr;\n#endif",
       "#ifdef VOL\nattribute float iSeed; varying vec3 vC; varying vec2 vCS; varying float vCover;\n#endif",
+      "#ifdef FLIP\nattribute float iAge; varying float vAge; varying float vMir;\n#endif",
       "void main(){ vec4 mv=modelViewMatrix*vec4(iPos,1.0); float c=cos(iRot), s=sin(iRot);",
+      "#ifdef FLIP\n c=cos(iRot*0.12); s=sin(iRot*0.12); vAge=clamp(iAge+fract(iRot*1.7)*0.1,0.0,1.0); vMir=step(0.5,fract(iRot*3.1));\n#endif",
       "#ifdef STR\n vec3 sv3=(modelViewMatrix*vec4(iStr,0.0)).xyz; float L=length(sv3.xy); vStr=0.0; vAlong=0.5;",
       " if(L>0.001){ vec2 ax=sv3.xy/L, pp=vec2(-ax.y,ax.x); mv.xyz+=sv3*0.5; mv.xy+=ax*position.x*(L+iSz*0.5)+pp*position.y*iSz; vStr=1.0; vAlong=position.x+0.5; c=1.0; s=0.0; }",
       " else\n#endif",
@@ -2674,6 +2680,7 @@ function StripFx(cap, mode, tex, opt){
     fragmentShader:["uniform sampler2D map; uniform vec3 uFog; uniform float uFogN; uniform float uFogF; uniform float uLit; uniform float uAmb;",
       "varying vec2 vUv; varying vec4 vCol; varying float vDepth; varying float vShade;",
       "#ifdef STR\nvarying float vAlong; varying float vStr;\n#endif",
+      "#ifdef FLIP\nvarying float vAge; varying float vMir;\n#endif",
       "#ifdef VOL\nvarying vec3 vC; varying vec2 vCS; varying float vCover;",
       "uniform vec3 uKeyV; uniform vec3 uKeyC; uniform vec3 uFillV; uniform vec3 uFillC; uniform vec3 uAmbC; uniform float uBack; uniform float uCover;",
       "uniform vec3 uPtP[4]; uniform vec3 uPtC[4]; uniform vec4 uPtR;",
@@ -2689,9 +2696,13 @@ function StripFx(cap, mode, tex, opt){
       "  li+=uPtC[i]*att*wrapL(n,l)*0.7; sc+=uPtC[i]*att*pow(max(dot(vd,l),0.0),3.0)*thin; }",
       " vec3 col=vCol.rgb*li+sc*uBack*mix(0.55,1.0,vCol.r); col=col/(1.0+max(0.0,max(col.r,max(col.g,col.b))-0.8)*0.9);   /* soft knee: lit smoke never burns out to a white blob */",
       "#else\n vec4 t=texture2D(map,vUv);",
+      "#ifdef FLIP\n float fr=vAge*14.999, f0=floor(fr), fb=fr-f0, f1=min(f0+1.0,15.0); vec2 fu=vec2(mix(vUv.x,1.0-vUv.x,vMir),vUv.y);",
+      " vec2 t0=texture2D(map,(vec2(mod(f0,4.0),3.0-floor(f0/4.0))+fu)*0.25).rg, t1=texture2D(map,(vec2(mod(f1,4.0),3.0-floor(f1/4.0))+fu)*0.25).rg, tt=mix(t0,t1,fb);",
+      " t=vec4(1.0,1.0,1.0,tt.r*0.8); float fl=tt.g*tt.g*1.4;\n#endif",
       "#ifdef STR\n float wd=mix(1.0, 0.38+0.62*vAlong, vStr); t=texture2D(map, vec2(vUv.x, 0.5+(vUv.y-0.5)/wd)); t.a*=mix(1.0, 1.0-0.45*vAlong, vStr);\n#endif",
       " float a=t.a*vCol.a*smoothstep(0.35,2.0,vDepth);",
-      " vec3 col=vCol.rgb*mix(1.0,(0.52+0.62*vShade)*uAmb,uLit);",
+      "#ifdef FLIP\n vec3 col=vCol.rgb*mix(1.0,(0.25+0.85*fl)*uAmb,uLit);\n#else",
+      " vec3 col=vCol.rgb*mix(1.0,(0.52+0.62*vShade)*uAmb,uLit);\n#endif",
       "#ifdef STR\n col=mix(col, mix(vec3(0.85,0.92,1.0)*1.25, col, smoothstep(0.0,0.42,vAlong)), vStr*0.75);\n#endif",
       "#endif",
       " float f=smoothstep(uFogN,uFogF,vDepth);",
@@ -2700,6 +2711,16 @@ function StripFx(cap, mode, tex, opt){
       " gl_FragColor=linearToOutputTexel(vec4(col,a)); }"].join("\n"),
     transparent:true, depthWrite:false, blending:additive?THREE.AdditiveBlending:THREE.NormalBlending });
   this.mesh=new THREE.Mesh(g,this.mat); this.mesh.frustumCulled=false; this.mesh.renderOrder=additive?8:(mode==="fire"?7:6);
+  if(opt.flip) stripFlipUse(this.mat);
+}
+/* the baked smoke flipbook, fetched once and handed to every flip system that asks (they draw the old puff until it lands) */
+var FX_FLIP={t:null, wait:[], asked:false};
+function stripFlipUse(mat){
+  function on(m){ m.uniforms.map.value=FX_FLIP.t; m.defines.FLIP=1; m.needsUpdate=true; }
+  if(FX_FLIP.t){ on(mat); return; }
+  FX_FLIP.wait.push(mat); if(FX_FLIP.asked) return; FX_FLIP.asked=true;
+  new THREE.TextureLoader().load("tex/fx-smoke.jpg", function(t){ t.generateMipmaps=true; t.minFilter=THREE.LinearMipmapLinearFilter; t.magFilter=THREE.LinearFilter;
+    FX_FLIP.t=t; FX_FLIP.wait.forEach(on); FX_FLIP.wait.length=0; }, undefined, function(){ FX_FLIP.asked=false; FX_FLIP.wait.length=0; });
 }
 /* o: {drag, buoy, grav, fin (fade-in fraction), spin, sx/sy/sz (stretch, str systems), fout (fade-out power)} */
 StripFx.prototype.emit=function(x,y,z, vx,vy,vz, life, s0,s1, r,g,b,a, o){
@@ -2719,15 +2740,15 @@ StripFx.prototype.step=function(dt, wind){
     p.x+=p.vx*dt; p.y+=p.vy*dt; p.z+=p.vz*dt; if(p.y<0.05){ p.y=0.05; if(p.vy<0) p.vy=0; } p.rot+=p.vr*dt;
     P[n++]=p; }
   P.length=n;
-  var pos=this.aPos.array, sz=this.aSz.array, col=this.aCol.array, rot=this.aRot.array, st=this.aStr?this.aStr.array:null, sd=this.aSeed?this.aSeed.array:null;
+  var pos=this.aPos.array, sz=this.aSz.array, col=this.aCol.array, rot=this.aRot.array, st=this.aStr?this.aStr.array:null, sd=this.aSeed?this.aSeed.array:null, ag=this.aAge?this.aAge.array:null;
   for(i=0;i<n;i++){ p=P[i]; var f=p.t/p.life, e=1-Math.pow(1-f,2.2);
     pos[i*3]=p.x; pos[i*3+1]=p.y; pos[i*3+2]=p.z; sz[i]=p.s0+(p.s1-p.s0)*e; rot[i]=p.rot;
     col[i*4]=p.r; col[i*4+1]=p.g; col[i*4+2]=p.b; col[i*4+3]=p.a*Math.min(1,f/Math.max(0.001,p.fin))*Math.pow(1-f,p.fo);
     if(st){ var sk=1-0.35*f; st[i*3]=p.sx*sk; st[i*3+1]=p.sy*sk; st[i*3+2]=p.sz*sk; }
-    if(sd) sd[i]=p.seed; }
+    if(sd) sd[i]=p.seed; if(ag) ag[i]=f; }
   this.geo.instanceCount=n;
   this.aPos.needsUpdate=this.aSz.needsUpdate=this.aCol.needsUpdate=this.aRot.needsUpdate=true;
-  if(st) this.aStr.needsUpdate=true; if(sd) this.aSeed.needsUpdate=true;
+  if(st) this.aStr.needsUpdate=true; if(sd) this.aSeed.needsUpdate=true; if(ag) this.aAge.needsUpdate=true;
 };
 /* the strip's lit-smoke atlas: 2x2 cauliflower puffs, RGB = tangent-space normal, A = density (built once) */
 var STRIP_SMOKE_TEX=null;
@@ -3652,7 +3673,7 @@ function buildPitsScene(){
   for(i=0;i<7;i++){ var lx=-60+i*20, lz=-55-((i*37)%11); B.box("metal", lx, 9, lz, 0.3, 18, 0.3, 0x4a4e54); B.box("glow", lx, 18.2, lz+0.3, 2.2, 0.8, 0.2, 0xfff1d6); }
   pitsBuild(B, "solid", M.solid, true, S5); pitsBuild(B, "metal", M.metal, true, S5); pitsBuild(B, "glow", M.glow, false, S5);
   PITS.props=new THREE.Group(); S5.add(PITS.props);
-  if(GFX!=="lite"){ PITS.fx=new StripFx(GFX==="ultra"?90:60, "smoke", stripPuffTex()); PITS.fx.mat.uniforms.uAmb.value=0.5; PITS.fx.mat.uniforms.uFogN.value=22; PITS.fx.mat.uniforms.uFogF.value=95; S5.add(PITS.fx.mesh); }
+  if(GFX!=="lite"){ PITS.fx=new StripFx(GFX==="ultra"?90:60, "smoke", stripPuffTex(), {flip:1}); PITS.fx.mat.uniforms.uAmb.value=0.5; PITS.fx.mat.uniforms.uFogN.value=22; PITS.fx.mat.uniforms.uFogF.value=95; S5.add(PITS.fx.mesh); }
   PITS.cam=new THREE.PerspectiveCamera(42, 1, 0.2, 400);
   PITS.built=true;
 }
@@ -4121,7 +4142,7 @@ function buildPullScene(){
     PULL.ruts=R; })();
 
   /* effects: smoke + dust (lit), thrown dirt (lit), confetti (flat colour) */
-  PULL.fx=new StripFx(lite?380:760, "smoke", stripPuffTex()); S3.add(PULL.fx.mesh);
+  PULL.fx=new StripFx(lite?380:760, "smoke", stripPuffTex(), lite?null:{flip:1}); S3.add(PULL.fx.mesh);
   PULL.fxDirt=new StripFx(lite?240:520, "smoke", stripFlameTex(true)); S3.add(PULL.fxDirt.mesh);
   PULL.fxConf=new StripFx(lite?160:320, "fire", stripFlameTex(true)); S3.add(PULL.fxConf.mesh);
 
@@ -6222,7 +6243,7 @@ function buildBoatScene(){
     instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM); BOAT.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
   /* spray: droplets (unlit, sharp) on every tier, a soft lit mist on Full/Ultra; wakes for both lanes */
   BOAT.fx=new StripFx(lite?220:900, "fire", stripPuffTex()); BOAT.fx.mat.blending=THREE.NormalBlending; S3.add(BOAT.fx.mesh);
-  BOAT.fxMist=lite?null:new StripFx(GFX==="ultra"?500:300, "smoke", stripPuffTex()); if(BOAT.fxMist) S3.add(BOAT.fxMist.mesh);
+  BOAT.fxMist=lite?null:new StripFx(GFX==="ultra"?500:300, "smoke", stripPuffTex(), {flip:1}); if(BOAT.fxMist) S3.add(BOAT.fxMist.mesh);
   BOAT.wakeMe=boatWakeMesh(); BOAT.wakeOpp=boatWakeMesh(); S3.add(BOAT.wakeMe); S3.add(BOAT.wakeOpp);
   BOAT.cam=new THREE.PerspectiveCamera(45, 1, 0.3, 3600); BOAT.built=true;
   BOAT.night=null; boatSetLight(false);
@@ -6357,7 +6378,7 @@ function boatReset(){
 function boatGet(cls, color, lane){ var key=cls+":"+color+":"+lane; if(!BOAT.boats[key]){ BOAT.boats[key]=boatModel(cls, color); BOAT.scene.add(BOAT.boats[key]); } return BOAT.boats[key]; }
 function boatUpdate(o, dt){
   if(!BOAT.built) buildBoatScene();
-  BOAT.t+=dt; if(BOAT.tier!==GFX){ var lite=GFX==="lite"; if(!lite&&!BOAT.fxMist){ BOAT.fxMist=new StripFx(GFX==="ultra"?500:300,"smoke",stripPuffTex()); BOAT.scene.add(BOAT.fxMist.mesh); } BOAT.wMat=null; }
+  BOAT.t+=dt; if(BOAT.tier!==GFX){ var lite=GFX==="lite"; if(!lite&&!BOAT.fxMist){ BOAT.fxMist=new StripFx(GFX==="ultra"?500:300,"smoke",stripPuffTex(),{flip:1}); BOAT.scene.add(BOAT.fxMist.mesh); } BOAT.wMat=null; }
   if(!BOAT.wMat){ BOAT.wMat=boatWaterMat(GFX==="lite"); BOAT.water.material=BOAT.wMat; BOAT.night=null; }
   boatSetLight(!!o.night);
   var ph=o.phase||"tree", cls=BOAT_LOOK[o.cls]?o.cls:"outboard", me=o.me||{}, op=o.opp||{};
@@ -6624,7 +6645,7 @@ function buildRoadWorld(T){
   /* trackside cameras: one per corner (above), a couple down each long straight, the gantry */
   for(q=0;q<N;q+=Math.round(330/ds)){ if(Math.abs(T.k[q])<1e-6) W.stations.push({i:q, d:(q%2?1:-1)*(hw+14), y:2.6}); }
   W.stations.sort(function(a,b){ return a.i-b.i; });
-  W.fx=new StripFx(lite?160:360, "smoke", stripPuffTex()); S4.add(W.fx.mesh);
+  W.fx=new StripFx(lite?160:360, "smoke", stripPuffTex(), lite?null:{flip:1}); S4.add(W.fx.mesh);
   return W;
 }
 /* door car scaled per chassis: [length, height, width, tyre inches, wing] */
@@ -6978,7 +6999,7 @@ function buildSaltScene(){
   /* the push truck: saltMakePush (vis/salt-event.js) builds a real pickup with a crew member in the bed; the pit town has the people */
   SALT.push=(typeof saltMakePush==="function"?saltMakePush:saltPushTruck)(); S4.add(SALT.push);   /* hook: saltMakePush() may build a different truck */
   /* effects: salt thrown off the tyres and hanging behind the car; exhaust */
-  SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1600:1100), "smoke", stripPuffTex()); S4.add(SALT.fx.mesh);
+  SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1600:1100), "smoke", stripPuffTex(), lite?null:{flip:1}); S4.add(SALT.fx.mesh);
   SALT.fx.mat.uniforms.uFogN.value=S4.fog.near; SALT.fx.mat.uniforms.uFogF.value=S4.fog.far;
   SALT.cam=new THREE.PerspectiveCamera(46, 1, 0.4, 34000); SALT.built=true;
   SALT.sunDir=SALT_SUN.clone(); SALT.lightK=-1;   /* saltLightPick applies the light on the next update */
@@ -8541,7 +8562,7 @@ function buildHillWorld(T){
   /* trackside camera spots: inside of the named corners and every few others, up on the bank */
   T.corners.forEach(function(cn, ci){ if(!(cn.name || ci%5===2)) return; var d=cn.side*(hw+16+(ci%3)*6); hillPt(W, cn.iA, d, 0, _hA); var gy=W.gH(_hA.x+W.ox, -_hA.z+W.oy)-W.z0;
     W.stations.push({i:cn.iA, d:d, y:Math.max(gy, T.z[cn.iA]-W.z0)+2.5+(ci%2)*2}); });
-  W.fx=new StripFx(lite?120:320, "smoke", stripPuffTex()); S5.add(W.fx.mesh);
+  W.fx=new StripFx(lite?120:320, "smoke", stripPuffTex(), lite?null:{flip:1}); S5.add(W.fx.mesh);
   if(!lite) hillModels(W);
   return W;
 }
@@ -8932,7 +8953,7 @@ function buildOvalScene(G){
   /* the flag */
   (function(){ var pole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,3,6), new THREE.MeshStandardMaterial({color:0xcfd2d6})); pole.position.set(-4.5,5.2,R+hw+2.6); S3.add(pole);
     var fl=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.2), new THREE.MeshBasicMaterial({map:ovalFlagTex("green"), side:THREE.DoubleSide, toneMapped:false})); fl.position.set(-4.5+0.95,5.6,R+hw+2.6); fl.rotation.y=PI/2; fl.rotation.set(0,0,0); S3.add(fl); OVAL.flagMesh=fl; OVAL.flagKey="green"; OVAL.flagTex={}; })();
-  OVAL.fx=new StripFx(lite?260:620,"smoke",stripPuffTex()); S3.add(OVAL.fx.mesh);
+  OVAL.fx=new StripFx(lite?260:620,"smoke",stripPuffTex(), lite?null:{flip:1}); S3.add(OVAL.fx.mesh);
   OVAL.cam=OVAL.cam||new THREE.PerspectiveCamera(50,1,0.3,4200); OVAL.built=true; OVAL.night=null; OVAL.snap=true; ovalSetNight(false);
 }
 function ovalSetNight(on){

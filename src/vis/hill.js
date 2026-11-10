@@ -191,7 +191,7 @@ function buildHillWorld(T){
   /* trackside camera spots: inside of the named corners and every few others, up on the bank */
   T.corners.forEach(function(cn, ci){ if(!(cn.name || ci%5===2)) return; var d=cn.side*(hw+16+(ci%3)*6); hillPt(W, cn.iA, d, 0, _hA); var gy=W.gH(_hA.x+W.ox, -_hA.z+W.oy)-W.z0;
     W.stations.push({i:cn.iA, d:d, y:Math.max(gy, T.z[cn.iA]-W.z0)+2.5+(ci%2)*2}); });
-  W.fx=new StripFx(lite?120:320, "smoke", stripPuffTex()); S5.add(W.fx.mesh);
+  W.fx=new StripFx(lite?120:320, "smoke", stripPuffTex(), lite?null:{flip:1}); S5.add(W.fx.mesh);
   if(!lite) hillModels(W);
   return W;
 }
