@@ -126,7 +126,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.122.0";
+const VERSION="1.76.123.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -383,6 +383,7 @@ function recompute(){
   if(typeof tabBadges==="function")tabBadges();
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
+  if(typeof rnBuildWarn==="function")rnBuildWarn();   // the race-night warning on Build follows it (app/drag.js)
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
   if(typeof monIdle==="function")monIdle();   // so does the garage monitor (app/test.js), only when its picture changed
   if(rcAfter.size){const a=[...rcAfter.values()];rcAfter.clear();a.forEach(f=>f());}   // what recomputeSoon callers queued

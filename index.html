@@ -22585,7 +22585,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.122.0";
+const VERSION="1.76.123.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -22842,6 +22842,7 @@ function recompute(){
   if(typeof tabBadges==="function")tabBadges();
   fuelHdr();
   if(typeof swapRender==="function"&&$("swapAcc"))swapRender();   // the swap fit follows the engine
+  if(typeof rnBuildWarn==="function")rnBuildWarn();   // the race-night warning on Build follows it (app/drag.js)
   if(typeof railSched==="function")railSched();   // the results rail follows it too (app/rail.js)
   if(typeof monIdle==="function")monIdle();   // so does the garage monitor (app/test.js), only when its picture changed
   if(rcAfter.size){const a=[...rcAfter.values()];rcAfter.clear();a.forEach(f=>f());}   // what recomputeSoon callers queued
@@ -22981,7 +22982,7 @@ function renderBuild(){
     for(const f of sec.fields){if(f.showIf&&!f.showIf(S.cfg))continue;h+=f.type==="seg"?segRow(f):f.type==="slider"?sliderRow(f):swatchRow(f);}h+=`</div></div>`;}
   $("buildForm").innerHTML=h;renderBlueprints();
   document.querySelectorAll("#buildForm .acc.open").forEach(fillDeltas);   // perf: closed sections fill when opened (toggleSec)
-  fuelHdr();swapRender();
+  fuelHdr();swapRender();if(typeof rnBuildWarn==="function")rnBuildWarn();
 }
 // Base engines and the FORM sections share one accordion: opening one closes the rest
 function syncOpenSec(){const k=S.bOpen||"";for(const x in openSec)openSec[x]=false;if(k)openSec[k]=true;
@@ -24376,6 +24377,14 @@ function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
   if(qk){N.quick=true;N.stage=2;N.seeds=rnSeeds(N);N.rounds=[rnPairs(N.seeds).map(([a,b])=>({a,b,win:null}))];rnResolve(N,0);const lb=(C0=>C0&&C0.dragBest&&C0.dragBest[hKey(cfgHash(S.cfg))])(career()?C():null);if(lb&&lb<b.et+0.5)N.dial=Math.floor((lb-0.01)*100)/100;}   // quick bracket: straight to round 1, dial defaults to your best ET with this engine (else the predicted one)
   if(career()){(C().rnDone=C().rnDone||{})[rnKey]=C().week;C().cash-=entry;logEvent(`Race night: entered ${RN_FMT[fmt].toLowerCase()} (${SIM.AERO[body].n}) — ${fmt$(entry)} entry`);hud();}
   rnSetN(N);save();renderTest();toast(`${qk?"BRACKET NIGHT":RN_FMT[fmt].toUpperCase()} · ${SIM.AERO[body].n.toUpperCase()} · 8 CARS`);buzz([20,30,20]);}
+/* Build tab: a line above the form while a race night is on, so a change is flagged when it is made and not
+   only when Stage refuses it (playtest, 1.76.123.0). Called whenever the engine changes. */
+function rnBuildWarn(){const f=$("buildForm");if(!f)return;let w=$("rnBuildWarn");const N=rnLive();
+  if(!N){if(w)w.remove();return;}
+  if(!w){w=document.createElement("p");w.id="rnBuildWarn";w.className="hint";w.setAttribute("role","status");f.parentNode.insertBefore(w,f);}
+  const off=cfgHash(S.cfg)!==N.hash;w.style.color=off?"var(--warn)":"";
+  w.textContent=off?"This is not the engine you entered tonight's race night with. It can't stage until you put the changes back, or leave the night on the Test tab."
+    :"You're entered in a race night with this engine. Change it here and it can't race tonight until you put it back.";}
 /* runTest on the drag tab: true when the race night took the click */
 function rnGate(){const N=rnCur();
   if(!N){if(RN_FMT[S.env.dragFmt]){rnEnter();return true;}return false;}
@@ -31686,7 +31695,7 @@ const tabScroll={};const calmScroll=()=>matchMedia("(prefers-reduced-motion: red
    that frame. Anything else that calls showTab (tour, links, loading a build) still renders at once. */
 let tabTok=0;
 function tabRender(t){if(t==="test"||t==="events"){evSync(t);renderTest();}else{pitsSync();evPickRender();}if(t==="build"&&buildStale){buildStale=false;renderBuild();}if(t==="analysis")renderAnalysis();if(t==="shop"||t==="market")renderShop();}
-function showTab(t,defer){setClose();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.documentElement.setAttribute("data-tab",t);document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));tabBead();document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
+function showTab(t,defer){setClose();if(t==="build"&&typeof rnBuildWarn==="function")rnBuildWarn();tabScroll[curTab]=$("panel").scrollTop;if(t!=="test"&&AB.playing)abStop();curTab=t;document.documentElement.setAttribute("data-tab",t);document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));tabBead();document.querySelectorAll(".tabpage").forEach(p=>p.classList.toggle("on",p.id==="tab-"+t));
   const tok=++tabTok,fin=()=>{if(tok!==tabTok)return;tabTok++;tabRender(t);$("panel").scrollTop=tabScroll[t]||0;if(tourStep>=0)requestAnimationFrame(tourPlace);};
   if(!defer){fin();return;}
   const pn=$("panel");if(pn.scrollTop||tabScroll[t])pn.scrollTop=tabScroll[t]||0;   // (a page both at the top needs no scroll, so no forced layout here)
