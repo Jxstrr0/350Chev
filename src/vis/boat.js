@@ -151,7 +151,7 @@ function buildBoatScene(){
   var hemi=new THREE.HemisphereLight(0xcfdcf0, 0x5a6a44, 0.3); S3.add(hemi); BOAT.hemi=hemi;
   var sun=new THREE.DirectionalLight(0xffe6c4, 1.5); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-30; shc.right=30; shc.top=30; shc.bottom=-30; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S3.add(sun); S3.add(sun.target); BOAT.sun=sun;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); BOAT.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); BOAT.sky=sky;
   S3.fog=new THREE.Fog(0xffffff, 200, 2700); BOAT.fog=S3.fog;
   BOAT.wMat=boatWaterMat(lite); var water=new THREE.Mesh(new THREE.PlaneGeometry(4000,130), BOAT.wMat); water.rotation.x=-PI/2; water.position.set(300,0,0); S3.add(water); BOAT.water=water;
   var gm=stripSurfMat(BOAT_GLSL_GROUND); gm.customProgramCacheKey=function(){ return "boat_ground"; };

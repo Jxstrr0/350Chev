@@ -112,7 +112,7 @@ function buildBogScene(){
   var shc=sun.shadow.camera; shc.left=-24; shc.right=24; shc.top=24; shc.bottom=-24; shc.near=1; shc.far=260; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S3.add(sun); S3.add(sun.target); BOG.sun=sun;
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,40,30); S3.add(flood); S3.add(flood.target); BOG.flood=flood;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); BOG.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); BOG.sky=sky;
   S3.fog=new THREE.Fog(0xffffff, 150, 2700); BOG.fog=S3.fog;
   var uLen={value:75}, gm=stripSurfMat(BOG_GLSL_GROUND, null, {uLen:uLen}); gm.userData.uLen=uLen; gm.customProgramCacheKey=function(){ return "bog_ground"; }; BOG.groundMat=gm;
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), gm); ground.rotation.x=-PI/2; ground.position.set(40,-0.02,0); ground.receiveShadow=true; S3.add(ground);

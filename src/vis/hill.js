@@ -14,7 +14,7 @@
 var HILL_RW=8, _hA=new THREE.Vector3(), _hB=new THREE.Vector3(), _hC=new THREE.Vector3(), _hW=new THREE.Vector3(0.8,0,-0.3);
 function hillSkyMat(){
   return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:new THREE.Vector3(-0.35,0.62,0.7).normalize()}, uAlt:{value:0} },
-    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position.z=gl_Position.w; }",
     fragmentShader:["uniform vec3 uSun; uniform float uAlt; varying vec3 vDir;",
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
       /* thin air: less scattering, so the zenith goes a deeper, darker blue and the horizon haze thins as the car climbs */
@@ -82,7 +82,7 @@ function buildHillWorld(T){
   var sun=new THREE.DirectionalLight(0xfff0d8, 1.6); sun.shadow.mapSize.set(lite?512:2048,lite?512:2048); var shc=sun.shadow.camera; shc.left=-34; shc.right=34; shc.top=34; shc.bottom=-34; shc.near=1; shc.far=400; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.04; sun.castShadow=!lite;
   if(ultra){ sun.shadow.mapSize.set(4096,4096); shc.left=shc.bottom=-48; shc.right=shc.top=48; }   /* Ultra: a sharper, wider sun shadow */
   S5.add(sun); S5.add(sun.target); W.sun=sun; W.sunDir=new THREE.Vector3(-0.35,0.62,0.7).normalize();
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), hillSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S5.add(sky); W.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), hillSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S5.add(sky); W.sky=sky;
   S5.fog=new THREE.Fog(0xa8b8c8, 500, 6000); W.fog=S5.fog; W.horLin=new THREE.Color(0.6,0.68,0.76);
   S5.environment=stripEnv(false);
   /* terrain grid over the course box plus a margin */

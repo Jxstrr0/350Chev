@@ -147,7 +147,7 @@ function buildPullScene(){
   S3.add(sun); S3.add(sun.target); PULL.sun=sun;
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,40,30); S3.add(flood); S3.add(flood.target); PULL.flood=flood;
   /* sky, fog, ground, track */
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); PULL.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); PULL.sky=sky;
   S3.fog=new THREE.Fog(0xffffff, 160, 2700); PULL.fog=S3.fog;
   var gm=stripSurfMat(PULL_GLSL_GROUND); gm.customProgramCacheKey=function(){ return "pull_ground"; };
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), gm); ground.rotation.x=-PI/2; ground.position.set(40,-0.12,0); ground.receiveShadow=true; S3.add(ground);
