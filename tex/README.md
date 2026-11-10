@@ -11,6 +11,8 @@ re-run. Keep this list in step with the folder.
 | `gr-asphalt.jpg` | Road asphalt from straight above, one seamless 1.9 m tile: about 60,000 crushed stones in black binder, worn flat on top | `tools/blender/ground-bake.py` | `bkAsph` in `src/vis/strip.js` (every tier): the drag strip, the road course, the hill road, the pits floor and the paved oval |
 | `gr-asphalt-n.jpg` | The slope of that same patch (a normal map), so each stone catches the sun | `tools/blender/ground-bake.py` | `bkAsph`, Full / Ultra only |
 | `gr-concrete.jpg` | Ground-smooth concrete, one seamless 2.3 m tile: sand and stone speckle in pale cement, air-bubble pits | `tools/blender/ground-bake.py` | `bkConc` in `src/vis/strip.js` (every tier) |
+| `gr-dirt.jpg` | Packed track clay, one seamless 1.4 m tile: a lumpy bed with crumbs, loose clods and the odd pebble | `tools/blender/ground-bake.py` | `bkDirt` in `src/vis/strip.js` (every tier): the pull track and its worn infield, the dirt oval, the mud bog's dirt |
+| `gr-dirt-n.jpg` | The slope of that same patch, so each clod catches the sun | `tools/blender/ground-bake.py` | `bkDirt`, Full / Ultra only |
 
 To re-render: `python3.11 -m pip install bpy pillow numpy`, then `python3.11 tools/blender/workshop-env.py` (about
 five minutes on four cores) or `python3.11 tools/blender/ground-bake.py` (under a minute a surface; `--only asphalt`
