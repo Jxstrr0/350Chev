@@ -41,6 +41,7 @@
         <div><b id="sKg">0</b><span>kg</span></div>
         <div><b id="sCost">$0</b><span>unit cost</span></div>
       </div>
+      <p class="clsline" id="clsBuild" hidden></p>
       <div class="sec acc" id="presetAcc"><button class="acch" data-sec="Base engines" aria-expanded="false"><span class="t">Base engines</span><span class="sum" id="presetSum"></span><span class="chev"></span></button><div class="accb">
         <div class="pbar"><div class="chips" id="pAvail"><button class="chip on" data-pa="avail">Available</button><button class="chip" data-pa="all">All</button></div><span class="cnt" id="presetCnt"></span><button class="preset-reset" id="pReset" hidden>Reset</button></div>
         <details class="pmore" id="pMore"><summary>Sort &amp; filter <span id="pMoreSum"></span></summary>
@@ -59,6 +60,7 @@
 
     <!-- TEST -->
     <section class="tabpage" id="tab-test">
+      <p class="clsline" id="clsTest" hidden></p>
       <div class="seg n3" id="testType">
         <button data-t="pull" class="on">Dyno pull<small>WOT sweep</small></button>
         <button data-t="endurance">Endurance<small>hours to failure</small></button>
@@ -141,6 +143,7 @@
       <div id="marketBox">
         <div class="card fore" id="foreclose" style="display:none"><h3>Receivership</h3><p class="hint" style="margin:6px 0 10px">The account is past the bank's limit. Win at the events or finish the team's season to climb out, or hand back the keys.</p><button class="btn danger" data-restart>Hand back the keys</button></div>
         <div class="mkstrip" id="mkStrip"><div class="mks"><b id="mkEng"></b><span class="mkc" id="mkCert"></span><span class="mkb" id="mkBoard"></span></div><button class="mkoh" id="mkOh" aria-expanded="false" aria-controls="overheadHint" aria-label="Weekly overhead and race weeks">i</button><button class="btn ghost" id="oneWeek" hidden>1 wk</button><button class="btn pri" id="nextWeek">Close week</button></div>
+        <p class="mkwhy" id="mkWhy" hidden></p>
         <p class="hint mkhint" id="overheadHint" hidden></p>
         <div class="evtabs seg n3 mktabs" id="mkTabs" role="tablist" aria-label="Team sections"><button role="tab" data-mk="team">Team<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="spons">Sponsors &amp; Rivals<i class="evdot" aria-hidden="true"></i></button><button role="tab" data-mk="log">Log<i class="evdot" aria-hidden="true"></i></button></div>
         <div class="mkpane" id="mkTeam">
