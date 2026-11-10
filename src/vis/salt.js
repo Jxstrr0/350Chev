@@ -67,7 +67,7 @@ var SALT_GLSL_GROUND=[
 function saltSkyMat(){
   return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:SALT_SUN.clone()}, uHor:{value:new THREE.Vector3().fromArray(SALT_HOR)}, uHorS:{value:new THREE.Vector3().fromArray(SALT_HOR)},
       uZen:{value:new THREE.Vector3(0.045,0.14,0.42)}, uSunC:{value:new THREE.Vector3(1.0,0.86,0.62)}, uBelt:{value:0} },
-    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position.z=gl_Position.w; }",
     fragmentShader:["uniform vec3 uSun; uniform vec3 uHor; uniform vec3 uHorS; uniform vec3 uZen; uniform vec3 uSunC; uniform float uBelt; varying vec3 vDir;", STRIP_GLSL_NOISE, SALT_GLSL_HOR,
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
       " vec3 hor=saltHorC(d,uSun,uHor,uHorS); vec3 col=mix(hor,uZen,pow(up,0.42));",
@@ -140,7 +140,7 @@ function buildSaltScene(){
   var sun=new THREE.DirectionalLight(0xfff0dc, 1.6); sun.castShadow=!lite; sun.shadow.mapSize.set(GFX==="ultra"?4096:2048, GFX==="ultra"?4096:2048);
   var shc=sun.shadow.camera; shc.left=-24; shc.right=24; shc.top=24; shc.bottom=-24; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S4.add(sun); S4.add(sun.target); SALT.sun=sun;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), saltSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S4.add(sky); SALT.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), saltSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S4.add(sky); SALT.sky=sky;
   SALT.horLin=new THREE.Color(SALT_HOR[0], SALT_HOR[1], SALT_HOR[2]);
   S4.fog=new THREE.Fog(0xffffff, 1800, 30000);
   S4.environment=stripEnv(false);

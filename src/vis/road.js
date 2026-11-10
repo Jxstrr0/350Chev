@@ -129,7 +129,7 @@ function buildRoadWorld(T){
   var hemi=new THREE.HemisphereLight(0xcfdcf0, 0x5a5a3c, 0.22); S4.add(hemi); W.hemi=hemi;
   var sun=new THREE.DirectionalLight(0xffe6c4, 1.45); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-30; shc.right=30; shc.top=30; shc.bottom=-30; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S4.add(sun); S4.add(sun.target); W.sun=sun;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S4.add(sky); W.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S4.add(sky); W.sky=sky;
   S4.fog=new THREE.Fog(0xffffff, 300, 3200); W.fog=S4.fog;
   var gm=stripSurfMat(ROAD_GLSL_GROUND.replace(/uR/g,"60.0").replace(/uHx/g,(T.size[0]/2+90).toFixed(1)).replace(/uHy/g,(T.size[1]/2+90).toFixed(1)));
   gm.customProgramCacheKey=function(){ return "road_ground_"+T.id; };
