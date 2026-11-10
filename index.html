@@ -22585,7 +22585,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.123.0";
+const VERSION="1.76.123.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -24385,6 +24385,12 @@ function rnBuildWarn(){const f=$("buildForm");if(!f)return;let w=$("rnBuildWarn"
   const off=cfgHash(S.cfg)!==N.hash;w.style.color=off?"var(--warn)":"";
   w.textContent=off?"This is not the engine you entered tonight's race night with. It can't stage until you put the changes back, or leave the night on the Test tab."
     :"You're entered in a race night with this engine. Change it here and it can't race tonight until you put it back.";}
+/* before a paid dyno pull: a race night is on and this isn't the engine it was entered with, so the night will refuse it.
+   Asked once per build (playtest, Nov 2026: the refusal only came at Stage, after paying for the pull). */
+let rnPullAsked=null;
+function rnPullGate(cost){const N=rnLive();if(!N||!career())return true;const h=cfgHash(S.cfg);if(h===N.hash||rnPullAsked===h)return true;
+  if(!confirm(`You're entered in tonight's race night with a different engine. This one can't stage there until you put the changes back.\n\nThe pull costs ${fmt$(cost)}. Pull anyway?`))return false;
+  rnPullAsked=h;return true;}
 /* runTest on the drag tab: true when the race night took the click */
 function rnGate(){const N=rnCur();
   if(!N){if(RN_FMT[S.env.dragFmt]){rnEnter();return true;}return false;}
@@ -27108,7 +27114,8 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="oval"&&ovalGate())return;
   if(S.env.testType==="boat"){const k=boatEnvFix(),l=clsLocked(SIM.BOAT_CLASSES,k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(boatRanWk(k)&&!(boatLive()&&boatLive().cls===k)){toast(`Already ran ${SIM.BOAT_CLASSES[wkCls("boatWk")].n} this week — one class a week; the next night is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
-  if(S.env.testType==="pull"&&!pcLimitGate(cost))return;   // this build can't race for the signed team: ask before the pull is paid for
+  if(S.env.testType==="pull"&&!pcLimitGate(cost))return;
+  if(S.env.testType==="pull"&&!rnPullGate(cost))return;   // a race night is on with another engine: it will refuse this one (app/drag.js)   // this build can't race for the signed team: ask before the pull is paid for
   if(career()){C().cash-=cost;hud();}
   testing=true;abStop();renderTest();ensureSound();
   if(S.env.testType!=="drag"){ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);}
