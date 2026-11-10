@@ -418,7 +418,7 @@ const PC_KIND={
     back(n,T){n.track=T.track;n.num=T.num;},
     range(T,E){const F=SIM.OVAL_CLASSES[E.cls].field;return{lo:F.hp-F.sd,hi:F.hp+F.sd};},
     but(T,E,res){const C0=SIM.OVAL_CLASSES[E.cls],ci=Math.round(SIM.ovalCi(res));return ci>C0.ci?`, but at ${ci} ci it's over the class's ${C0.ci}`:"";},
-    rules(T,E,res){const C0=SIM.OVAL_CLASSES[E.cls],ci=Math.round(SIM.ovalCi(res));return C0.ci<9999?[{ok:ci<=C0.ci,t:`${ci} of ${C0.ci} ci`}]:[];},
+    rules(T,E,res){const C0=SIM.OVAL_CLASSES[E.cls],ci=Math.round(SIM.ovalCi(res));return C0.ci<9999?[{ok:ci<=C0.ci,lim:true,t:`Engine size ${ci} ci (the class takes ${C0.ci} ci and under)`}]:[];},
     day:pcOvalDay,
     pts:pl=>PC_PTS_OVAL[pl-1]||0,placeTxt:o=>o.sat?"Sat out":o.broke?`DNF (P${o.place} of ${o.of})`:o.place===1?"Won the feature":`P${o.place} of ${o.of}`,eff:o=>o.sat||o.broke?99:o.place,
     fieldTxt(T,E){const C0=SIM.OVAL_CLASSES[E.cls],d=C0.d.replace(/ · /g,", ");return`The field makes about ${C0.field.hp} hp. ${d.charAt(0).toUpperCase()+d.slice(1)}.`;},
@@ -508,7 +508,8 @@ function pcWaiting(){if(!career())return "";const p=pcS(),d=pcDueNow();if(d.leng
 function pcStrip(){const T=pcBenchTeam(),cert=C().cert,h=cfgHash(S.cfg),certOk=!!(cert&&cert.ok&&cert.hash===h);
   if(!T)return{cls:certOk?"ok":"none",txt:certOk?"CERTIFIED":"NO CERT",tip:certOk?"Certified on the dyno: it can race the events and go to a team.":"Run a dyno pull in Test to certify this build.",when:"No team",whenTip:"Sign a team below"};
   const c=pcChecks(T),N=pcTeam(),due=C().week>=N.due,wk=N.due-C().week,two=pcTeams().length>1;
-  return{cls:c.ok?"ok":c.need>pcLeft(T)?"bad":"none",txt:c.ok?"READY":c.need>pcLeft(T)?"OVER BUDGET":"NOT READY",tip:(two?T.team+": ":"")+((c.o.find(x=>!x.ok)||{}).t||"Ready for race day"),
+  const hard=c.res?pcHard(T,c.res):[],why=c.o.find(x=>!x.ok);
+  return{cls:c.ok?"ok":hard.length||c.need>pcLeft(T)?"bad":"none",txt:c.ok?"READY":hard.length?pcHardWord(hard):c.need>pcLeft(T)?"OVER BUDGET":"NOT READY",why:c.ok||!why?"":(two?T.team+": ":"")+(hard.length?hard[0].t:why.t),tip:(two?T.team+": ":"")+((c.o.find(x=>!x.ok)||{}).t||"Ready for race day"),
     when:due?`R${N.round+1} this week`:`R${N.round+1} in ${wk} wk`,whenTip:`${two?N.team+": ":""}Round ${N.round+1} of ${PC_ROUNDS} · race week ${N.due}`};}
 const pcFieldTxt=T=>pcK(T).fieldTxt(T,PC_EVENTS[T.ev]);
 const pcWhere=T=>pcK(T).where(T);
@@ -517,15 +518,35 @@ function pcBan(T){return PC_EVENTS[T.ev]?`<div class="pcban"><img src="banners/$
 function pcOffer(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],k=pcPayK(null);
   return`<div class="card pcr">${pcBan(T)}<h3>${esc(T.team)}<span>${fmt$(T.pay)} fee</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}${T.back?" · asking you back":""}</div>
     ${T.ret?`<p class="hint pcret" data-nofold>${pcRetTxt(T)}</p>`:""}${T.rescue?`<p class="pcmid"><b>Rescue.</b> Their engine supplier went bust after round ${T.rescue}. Take over for rounds ${T.rescue+1} to ${PC_ROUNDS}: they have ${T.rpts} pts and are near the back. The fee is ${Math.round((PC_RESCUE.pay-1)*100)}% richer for the trouble; the budget is what's left of theirs.</p>`:""}
-    <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.purse&&PC_PURSE[T.purse]?`<p class="pcst"><b>${PC_PURSE[T.purse].n}.</b> ${PC_PURSE[T.purse].d}</p>`:""}${T.rule&&PC_RULES[T.rule]?`<p class="pcmid"><b>Team rule.</b> ${esc(pcRuleTxt(T))}. They pay ${Math.round((PC_RULES[T.rule].payK-1)*100)}% more on the fee for it.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}${pcOfferRules(T,E)}
+    <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.purse&&PC_PURSE[T.purse]?`<p class="pcst"><b>${PC_PURSE[T.purse].n}.</b> ${PC_PURSE[T.purse].d}</p>`:""}${T.rule&&PC_RULES[T.rule]?`<p class="pcmid"><b>Team rule.</b> ${esc(pcRuleTxt(T))}. They pay ${Math.round((PC_RULES[T.rule].payK-1)*100)}% more on the fee for it.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}${pcRulesHtml(T)}
     <p class="mkline"><span>Parts budget <b>${fmt$(T.budget)}</b></span><span>A round raced <b>${fmt$(Math.round(T.pay*PC_RETAIN*k/50)*50)}</b></span><span>Title <b>${fmt$(Math.round(T.pay*PC_CBONUS[0]*(st.winK||1)*k/50)*50)}</b></span></p>
     <p class="hint">${T.rescue?`${PC_ROUNDS-T.rescue} rounds left`:`${PC_ROUNDS} rounds`}, one every ${PC_GAP} weeks. The budget pays for the engine; the fee is yours, with a bonus for every podium. ${T.fit?"Open while this engine is the certified one.":`Offer open till week ${T.exp}.`}</p>
     <div class="row"><button class="btn sm" data-pcsign="${T.id}">Sign with ${esc(T.team)}</button>${T.fit?"":`<button class="btn sm ghost" data-pcpass="${T.id}">Pass</button>`}</div></div>`;}
-/* the class rules an offer's series sets, checked against the certified engine, so a rule the engine breaks shows before
-   signing, not only on race morning (a play-tester signed, built and certified a 3.8 L engine for a 3.3 L class) */
-function pcOfferRules(T,E){const cert=C().cert,h=cfgHash(S.cfg);if(!(cert&&cert.ok&&cert.hash===h&&cert.res))return"";
-  let r=[];try{r=pcK(T).rules(T,E,cert.res).filter(x=>!x.ok);}catch(e){return"";}
-  return r.length?`<p class="pcmid" data-nofold><b>Class rule.</b> Your certified engine doesn't fit yet: ${esc(r.map(x=>x.t).join("; "))}.</p>`:"";}
+/* the hard rules a build must meet to race for a team at all: the series' class rules (displacement, cubic inches, the pull
+   classes' tech), a naturally aspirated class, the team's own rule. All checked against the engine on the bench (res: its
+   live estimate or certified pull). Each is {ok,t,lim}: lim marks a size limit, so a broken one reads "over class limit". */
+function pcHardAll(T,res){const E=PC_EVENTS[T.ev],o=[];if(!E||!res)return o;
+  try{for(const x of pcK(T).rules(T,E,res))o.push(x);}catch(e){}
+  if(E.na)o.push({ok:pcIsNA(S.cfg),t:"Naturally aspirated, no nitrous"});
+  try{const ak=pcRuleChk(T,res);if(ak)o.push(ak);}catch(e){}
+  return o;}
+const pcHard=(T,res)=>pcHardAll(T,res).filter(x=>!x.ok);
+const pcHardWord=bad=>bad.some(x=>x.lim)?"OVER CLASS LIMIT":"NOT CLASS LEGAL";
+/* the class rules on an offer and at the top of a team's card, each ticked or crossed for the bench engine, so a limit shows
+   before signing, building and paying for a pull (a play-tester certified a 3.8 L engine for a 3.3 L class). Never folded. */
+function pcRulesHtml(T){if(!quick)return"";const r=pcHardAll(T,quick);if(!r.length)return"";const bad=r.some(x=>!x.ok);
+  return`<div class="pcrules${bad?" bad":""}" data-nofold><b>Class rules</b> <small>against the engine on your bench</small>${r.map(x=>`<div class="${x.ok?"ok":"no"}">${x.ok?"✓":"✗"} ${esc(x.t)}</div>`).join("")}</div>`;}
+/* asked once per build before a certifying pull is paid for: this build can't race for the signed team */
+let pcLimAsked=null;
+function pcLimitGate(cost){if(!career()||!quick)return true;const T=pcBenchTeam();if(!T)return true;const bad=pcHard(T,quick);if(!bad.length)return true;
+  const h=cfgHash(S.cfg);if(pcLimAsked===h)return true;
+  if(!confirm(`This build can't race for ${T.team} (${PC_EVENTS[T.ev].n}):\n${bad.map(x=>"✗ "+x.t).join("\n")}\n\nThe pull costs ${fmt$(cost)} either way. It can still certify the engine for the Events, but not for this team. Pull anyway?`))return false;
+  pcLimAsked=h;return true;}
+/* the one-line class warning on Build and Test while a team is signed: red when the bench build breaks a rule, quiet when a size limit is met */
+function pcLimitLine(){if(!career()||!quick)return{bad:false,html:""};const T=pcBenchTeam();if(!T)return{bad:false,html:""};
+  const all=pcHardAll(T,quick),bad=all.filter(x=>!x.ok),lim=all.filter(x=>x.ok&&x.lim);
+  if(bad.length)return{bad:true,lim:bad.some(x=>x.lim),html:`<b>✗ ${pcHardWord(bad)==="OVER CLASS LIMIT"?"Over class limit":"Not class legal"}</b> for ${esc(T.team)} (${esc(PC_EVENTS[T.ev].n)}): ${esc(bad.map(x=>x.t).join("; "))}. It can't race there as built.`};
+  return{bad:false,html:lim.length?`✓ ${esc(T.team)}'s class: ${esc(lim.map(x=>x.t).join("; "))}.`:""};}
 /* where the driver's ask stands with the engine on the bench (the veteran's podium can't be known till race day) */
 function pcMidNow(T,c){if(T.mid!=="ask"||!c.res)return"";const same=T.hash!=null&&T.hash===cfgHash(S.cfg),wear=same?T.wear:0,ok=x=>x?"✓ ":"✗ ";
   if(T.style==="steady"){const r=Math.round(c.res.rel-wear);return`<i>${ok(r>=90)}Now ${r}%${same&&T.wear>0?" with the wear":""}.</i>`;}
@@ -534,7 +555,7 @@ function pcMidNow(T,c){if(T.mid!=="ask"||!c.res)return"";const same=T.hash!=null
 function pcTeamCard(T){const E=PC_EVENTS[T.ev],st=PC_STYLES[T.style],c=pcChecks(T),rd=T.round+1,left=pcLeft(T),h=cfgHash(S.cfg),same=T.hash!=null&&T.hash===h,due=C().week>=T.due;
   const fresh=pcFreshCost(T),tab=pcTable(T),pos=tab.findIndex(x=>x.me)+1,W=pcWx(T,false);
   let s=`<div class="card pcr job">${pcBan(T)}<h3>${esc(T.team)}<span>Round ${rd} of ${PC_ROUNDS} · ${due?"this week":`week ${T.due}`}</span></h3><div class="client">${esc(T.name)} · ${E.n} · ${pcWhere(T)}</div>
-    <p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.rule&&PC_RULES[T.rule]?`<p class="hint"><b>Team rule:</b> ${esc(pcRuleTxt(T))}.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}
+    ${pcRulesHtml(T)}<p class="pcst"><b>${st.n}.</b> ${st.d}${st.rel?` Asks for ${st.rel}% reliability.`:""}</p>${T.rule&&PC_RULES[T.rule]?`<p class="hint"><b>Team rule:</b> ${esc(pcRuleTxt(T))}.</p>`:""}<p class="hint">${pcFieldTxt(T)}${E.tip?" "+E.tip:""}</p>${pcRead(T)?`<p class="hint pcread" data-nofold>${pcRead(T)}</p>`:""}
     <p class="hint pcwx" data-nofold>Round ${rd} forecast, ${W.mon}: ${pcWxTxt(W,true,T)}.</p>${pcK(T).setupTxt?`<p class="hint" data-nofold>${pcK(T).setupTxt(T)}</p>`:""}${pcMidOn(T)?`<p class="pcmid"><b>This round.</b> ${esc(pcMidTxt(T))}${pcMidNow(T,c)}</p>`:""}${pcSub(T)?`<p class="hint">${esc(pcSub(T).n)} drives in place of ${esc(pcFirst(T))}, who is hurt.</p>`:""}
     <div class="pcbud"><div class="pcbar"><i style="width:${Math.min(100,T.spent/T.budget*100).toFixed(1)}%"></i></div><p class="mkline"><span>Budget <b>${fmt$(T.budget)}</b></span><span>Spent <b>${fmt$(T.spent)}</b></span><span>Left <b>${fmt$(left)}</b></span></p></div>`;
   if(T.hash!=null)s+=`<p class="hint">Season engine: ${fmt$(T.cost)} of parts${T.broken?`. <b class="pcbad">Broken in the last round: it needs a ${fmt$(Math.round(T.cost*PC_FIX*pcToolK()))} rebuild.</b>`:T.wear>0?`, reliability down ${Math.round(T.wear)}% from wear. A freshen-up costs ${fmt$(fresh)}.`:", fresh."}${same?"":" The bench has a different build: racing it counts as an engine change."}</p>`;
@@ -584,7 +605,10 @@ function pcRender(){if(!$("mkTeam")||!career())return;const p=pcS();pcRefill();c
 function pcHud(){if(!career())return;const T=pcBenchTeam();let over=false,t=`WEEK ${C().week}`;
   if(T){const nd=pcNeed(T,quick?Math.round(quick.cost):0),left=pcLeft(T);over=nd.need>left;const TT=pcTeams().sort((a,b)=>a.due-b.due),two=TT.length>1;t+=" · "+TT.map(x=>`R${x.round+1}${two?"":"/"+PC_ROUNDS} ${C().week>=x.due?"THIS WEEK":"WK "+x.due}`).join(" · ");}
   else t+=" · NO TEAM";
-  $("weekLbl").textContent=t+(dev()?" · DEV":"");const sc=$("sCost");if(sc)sc.classList.toggle("critc",over);}
+  $("weekLbl").textContent=t+(dev()?" · DEV":"");const sc=$("sCost");if(sc)sc.classList.toggle("critc",over);
+  /* the class limit, on Build under the numbers and on Test above the run button */
+  const L=pcLimitLine(),sd=$("sDisp");if(sd)sd.classList.toggle("critc",!!(L.bad&&L.lim));
+  for(const id of ["clsBuild","clsTest"]){const el=$(id);if(!el)continue;el.hidden=!L.html||(id==="clsTest"&&!L.bad);el.classList.toggle("bad",L.bad);if(el._h!==L.html){el._h=L.html;el.innerHTML=L.html;}}}
 $("mkTeam").addEventListener("click",e=>{if(!career())return;const p=pcS(),ct=e.target.closest("[data-pct]"),T=ct?pcTeams()[+ct.dataset.pct]||null:null;
   const go=e.target.closest("[data-pcgo]");if(go&&T){pcRace(false,T,go);return;}
   if(e.target.closest("[data-pcweek]")){closeWeeks(pcSkip()||1);return;}   // the strip's Close week / To race week, on the card too (since 1.76.60)
