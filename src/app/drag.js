@@ -496,6 +496,14 @@ function rnEnter(){const fmt=S.env.dragFmt;if(!RN_FMT[fmt])return;
   if(qk){N.quick=true;N.stage=2;N.seeds=rnSeeds(N);N.rounds=[rnPairs(N.seeds).map(([a,b])=>({a,b,win:null}))];rnResolve(N,0);const lb=(C0=>C0&&C0.dragBest&&C0.dragBest[hKey(cfgHash(S.cfg))])(career()?C():null);if(lb&&lb<b.et+0.5)N.dial=Math.floor((lb-0.01)*100)/100;}   // quick bracket: straight to round 1, dial defaults to your best ET with this engine (else the predicted one)
   if(career()){(C().rnDone=C().rnDone||{})[rnKey]=C().week;C().cash-=entry;logEvent(`Race night: entered ${RN_FMT[fmt].toLowerCase()} (${SIM.AERO[body].n}) — ${fmt$(entry)} entry`);hud();}
   rnSetN(N);save();renderTest();toast(`${qk?"BRACKET NIGHT":RN_FMT[fmt].toUpperCase()} · ${SIM.AERO[body].n.toUpperCase()} · 8 CARS`);buzz([20,30,20]);}
+/* Build tab: a line above the form while a race night is on, so a change is flagged when it is made and not
+   only when Stage refuses it (playtest, 1.76.123.0). Called whenever the engine changes. */
+function rnBuildWarn(){const f=$("buildForm");if(!f)return;let w=$("rnBuildWarn");const N=rnLive();
+  if(!N){if(w)w.remove();return;}
+  if(!w){w=document.createElement("p");w.id="rnBuildWarn";w.className="hint";w.setAttribute("role","status");f.parentNode.insertBefore(w,f);}
+  const off=cfgHash(S.cfg)!==N.hash;w.style.color=off?"var(--warn)":"";
+  w.textContent=off?"This is not the engine you entered tonight's race night with. It can't stage until you put the changes back, or leave the night on the Test tab."
+    :"You're entered in a race night with this engine. Change it here and it can't race tonight until you put it back.";}
 /* runTest on the drag tab: true when the race night took the click */
 function rnGate(){const N=rnCur();
   if(!N){if(RN_FMT[S.env.dragFmt]){rnEnter();return true;}return false;}
