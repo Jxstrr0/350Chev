@@ -504,6 +504,12 @@ function rnBuildWarn(){const f=$("buildForm");if(!f)return;let w=$("rnBuildWarn"
   const off=cfgHash(S.cfg)!==N.hash;w.style.color=off?"var(--warn)":"";
   w.textContent=off?"This is not the engine you entered tonight's race night with. It can't stage until you put the changes back, or leave the night on the Test tab."
     :"You're entered in a race night with this engine. Change it here and it can't race tonight until you put it back.";}
+/* before a paid dyno pull: a race night is on and this isn't the engine it was entered with, so the night will refuse it.
+   Asked once per build (playtest, Nov 2026: the refusal only came at Stage, after paying for the pull). */
+let rnPullAsked=null;
+function rnPullGate(cost){const N=rnLive();if(!N||!career())return true;const h=cfgHash(S.cfg);if(h===N.hash||rnPullAsked===h)return true;
+  if(!confirm(`You're entered in tonight's race night with a different engine. This one can't stage there until you put the changes back.\n\nThe pull costs ${fmt$(cost)}. Pull anyway?`))return false;
+  rnPullAsked=h;return true;}
 /* runTest on the drag tab: true when the race night took the click */
 function rnGate(){const N=rnCur();
   if(!N){if(RN_FMT[S.env.dragFmt]){rnEnter();return true;}return false;}
