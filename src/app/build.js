@@ -41,7 +41,7 @@ $("pFam").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(
 $("pCls").addEventListener("click",e=>{const b=e.target.closest("[data-pc]");if(!b)return;S.pCls=b.dataset.pc;renderPresets();save();});
 $("pReset").addEventListener("click",()=>{S.pSort="layout";S.pFam="all";S.pCls="all";renderPresets();save();toast("Filters reset");});
 function presetLocked(cfg){for(const k in OPT){if(k==="layout")continue;const o=OPT[k][cfg[k]];if(locked(o))return (UPGRADES.find(u=>u.id===o.req)||{}).name;}const L=OPT.layout[cfg.layout];if(locked(L))return (UPGRADES.find(u=>u.id===L.req)||{}).name;return null;}
-$("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;if(testing){toast("Let the run finish first");return;}const p=PRESETS[+b.dataset.p];const lk=career()&&presetLocked(p.cfg);if(lk){toast(`Needs the ${lk} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg);S.profileId=p.soundProfile;S.name=p.name;resetBase();afterCfgChange(true);toast(`${p.name} loaded — ${p.blurb}`);tourAdvance(0);});
+$("presets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;if(testing){toast("Let the run finish first");return;}const p=PRESETS[+b.dataset.p];const lk=career()&&presetLocked(p.cfg);if(lk){toast(`Needs the ${lk} upgrade`);return;}S.cfg=Object.assign({},SIM.DEFAULT_CFG,p.cfg);S.profileId=p.soundProfile;S.name=p.name;resetBase();afterCfgChange(true);toast(`${p.name} loaded — ${p.blurb}`);tourAdvance(1);});
 /* live deltas: what each option would do to hp / reliability / unit cost, from a real simulate() call (cached) */
 const deltaCache=new Map();
 function probe(k,v){const key=cfgHash(S.cfg)+"|"+envHash()+"|"+k+"="+v;let r=deltaCache.get(key);if(r)return r;
