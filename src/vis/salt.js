@@ -175,7 +175,7 @@ function buildSaltScene(){
   /* the push truck: saltMakePush (vis/salt-event.js) builds a real pickup with a crew member in the bed; the pit town has the people */
   SALT.push=(typeof saltMakePush==="function"?saltMakePush:saltPushTruck)(); S4.add(SALT.push);   /* hook: saltMakePush() may build a different truck */
   /* effects: salt thrown off the tyres and hanging behind the car; exhaust */
-  SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1600:1100), "smoke", stripPuffTex()); S4.add(SALT.fx.mesh);
+  SALT.fx=new StripFx(lite?320:(GFX==="ultra"?1600:1100), "smoke", stripPuffTex(), lite?null:{flip:1}); S4.add(SALT.fx.mesh);
   SALT.fx.mat.uniforms.uFogN.value=S4.fog.near; SALT.fx.mat.uniforms.uFogF.value=S4.fog.far;
   SALT.cam=new THREE.PerspectiveCamera(46, 1, 0.4, 34000); SALT.built=true;
   SALT.sunDir=SALT_SUN.clone(); SALT.lightK=-1;   /* saltLightPick applies the light on the next update */

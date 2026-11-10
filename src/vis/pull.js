@@ -297,7 +297,7 @@ function buildPullScene(){
     PULL.ruts=R; })();
 
   /* effects: smoke + dust (lit), thrown dirt (lit), confetti (flat colour) */
-  PULL.fx=new StripFx(lite?380:760, "smoke", stripPuffTex()); S3.add(PULL.fx.mesh);
+  PULL.fx=new StripFx(lite?380:760, "smoke", stripPuffTex(), lite?null:{flip:1}); S3.add(PULL.fx.mesh);
   PULL.fxDirt=new StripFx(lite?240:520, "smoke", stripFlameTex(true)); S3.add(PULL.fxDirt.mesh);
   PULL.fxConf=new StripFx(lite?160:320, "fire", stripFlameTex(true)); S3.add(PULL.fxConf.mesh);
 
