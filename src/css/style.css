@@ -55,6 +55,12 @@ html[data-tab=shop] #stripCap,html[data-tab=market] #stripCap,html[data-tab=anal
 #stripCap span{font-size:12px;font-weight:600;color:#faf9f5;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 html.desk #stripCap{left:18px;top:16px}
 #dragCtl{scroll-margin:8px 0 calc(var(--tabh) + 12px)}
+/* burnout › stage › launch over the drag button: the step you're on is lit, the ones done are ticked off */
+.dsteps{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 0 6px;font:600 12px/1 var(--display);letter-spacing:.08em}
+.dsteps i{font-style:normal;padding:5px 8px;border-radius:6px;border:1px solid var(--rule);color:var(--dim)}
+.dsteps i.on{color:var(--orange-ink);background:var(--orange);border-color:var(--orange)}
+.dsteps i.done{color:var(--muted);text-decoration:line-through}
+.dsteps b{color:var(--dim);font-weight:400}
 #app.mini #hud .brand small{display:none}
 #app.mini #rpmbox b{font-size:24px}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -1056,7 +1062,7 @@ html.desk.evhud .rdbtns{margin-top:0}html.desk.evhud .hlbtns{margin-top:0}html.d
 .tslip th.you{color:var(--ink)}.tslip th small{display:block;font-size:12px;color:var(--ink2);letter-spacing:.06em}.tslip th{color:var(--ink);font-weight:600;font-size:12px}
 .tslip .lamp{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0;background:#cfcabd;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
 .tslip .lamp.on{background:#e8392a;box-shadow:0 0 0 2px rgba(232,57,42,.22),0 0 7px #ff5a3c}
-.tslip .tsw{margin-top:8px;padding-top:7px;border-top:1px dashed rgba(45,43,54,.45);display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink2)}
+.tslip .tsw{margin-top:8px;padding-top:7px;border-top:1px dashed rgba(45,43,54,.45);display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;font-size:12px;color:var(--ink2)}
 .tslip .tsw b{font-family:var(--display);font-weight:700;letter-spacing:.06em;color:var(--ink);font-size:13px}
 .tslip .tsw b.w{color:#1d7a4a}.tslip .tsw b.l{color:#b3261a}
 .tslip .stamp{display:table;margin:12px auto 2px;transform:rotate(-5deg);border:2px solid #d0402e;color:#d0402e;padding:2px 7px;font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.06em;line-height:1.15;text-align:center;opacity:.88;border-radius:3px;background:rgba(244,241,230,.7)}

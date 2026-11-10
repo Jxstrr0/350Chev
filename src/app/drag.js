@@ -32,7 +32,11 @@ function testSame(s){return!!s&&S.mode===s.mode&&S.career===s.car;}
 function freshenCost(res){return Math.max(500,Math.round(res.cost*0.15/50)*50);}
 function rnFreshCost(res){const c=freshenCost(res),k=career()?crewRnFreshK():1;return k===1?c:Math.round(c*k/50)*50;}   // race-night pits: the crew's fast hands or nerves (app/crew.js)
 function oppX(now){const R=DR&&DR.race,g0=R&&(R.ogreen!=null?R.ogreen:R.green);if(!R||g0==null)return 0;const tt=((now-g0)/1000-R.rt)/R.k;const tr=R.trace;if(tt<=0||!tr.length)return 0;let i=1;while(i<tr.length&&tr[i][0]<tt)i++;const a=tr[Math.max(0,i-1)],b=tr[Math.min(tr.length-1,i)];const f=b[0]>a[0]?(tt-a[0])/(b[0]-a[0]):0;return a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,f));}
-function dragBtnText(t,sub){const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+/* the three steps before a pass (burnout, stage, launch): the strip over the big button lights the one you're on */
+function dragStepsShow(){const el=$("dragSteps");if(!el)return;const st=DR&&DR.d&&!DR.failed?DR.d.st:null,ph=st&&st.phase;
+  const k=!st?0:ph==="burnout"?(st.burning||!(st.burnT>0)?1:2):ph==="staged"?(st.rolled?3:2):0;
+  if(el.dataset.k===String(k))return;el.dataset.k=k;el.hidden=!k;el.querySelectorAll("i").forEach((x,j)=>{x.className=j+1<k?"done":j+1===k?"on":"";});}
+function dragBtnText(t,sub){dragStepsShow();const b=$("dragBtn");if(DR&&DR.auto&&!DR.failed&&DR.d&&/^(burnout|staged|run)$/.test(DR.d.st.phase)){t="AUTO";sub="auto driver on it — tap to take over";}const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
 /* personal bests: quickest passes and biggest pulls, kept per mode (career on C().rec, sandbox on S.sbRecords) */
 function recs(){const o=career()?C():S,k=career()?"rec":"sbRecords";let R=o[k];if(!R||typeof R!=="object")R=o[k]={};if(!Array.isArray(R.top))R.top=[];if(!R.topBy||typeof R.topBy!=="object")R.topBy={};if(!career()&&(!R.eng||typeof R.eng!=="object"))R.eng={};return R;}
 /* the strip's per-body book: top five passes in each body class (R.topBy[body]); R.top stays the all-bodies top five that older saves carry */
@@ -159,8 +163,10 @@ function slipData(r,res){const R=r.race,n=r.night,o=R&&R.om,br=!!(n&&n.dialP!=nu
   if(br)rows.push(["DIAL",n.dialP.toFixed(2),n.dialO.toFixed(2)]);
   if(!R)rows.shift();   // no tree on a time trial
   const win=R&&(!n||n.stage>=2)?!!R.won:null;
-  const verdict=failed?"BROKE":R&&R.foul?"RED LIGHT":win===true?"WIN":win===false?"LOSS":n?"QUALIFYING":R?"—":"TIME TRIAL";
-  const margin=R&&R.margin!=null&&win!=null&&!R.foul?`by ${Math.abs(R.margin).toFixed(3)} s`:n&&n.stage<2&&et!=null?(br?"time trial":"counts toward your seed"):"";
+  // a qualifying pass: the seed is what counts, but say who crossed first in the pair too (it doesn't knock anyone out)
+  const q=n&&n.stage<2&&!failed&&!(R&&R.foul),lane=q&&R&&R.margin!=null?`${R.won?"beat":"behind"} the other lane by ${Math.abs(R.margin).toFixed(2)} s · doesn't count`:"";
+  const verdict=failed?"BROKE":R&&R.foul?"RED LIGHT":win===true?"WIN":win===false?"LOSS":q&&n.seed?`SEEDED #${n.seed} OF 8`:n?"QUALIFYING":R?"—":"TIME TRIAL";
+  const margin=R&&R.margin!=null&&win!=null&&!R.foul?`by ${Math.abs(R.margin).toFixed(3)} s`:q&&n.seed?(n.stage===0?"so far · ":"")+(lane||"your seed for the ladder"):n&&n.stage<2&&et!=null?(br?"time trial"+(lane?" · "+lane:""):"counts toward your seed"):"";
   const when=new Date(r.at||Date.now());
   return{R,n,rows,win,verdict,margin,prev:p&&p.et!=null?`± vs last pass · ${p.et.toFixed(3)} @ ${(+p.mph).toFixed(1)} mph`:"",opp:R?shOpp(R.name):null,round:n?n.label:R?"TEST & TUNE · HEADS-UP":"TEST & TUNE",
     date:when.toLocaleDateString("en-CA")+" "+String(when.getHours()).padStart(2,"0")+":"+String(when.getMinutes()).padStart(2,"0"),
@@ -197,7 +203,8 @@ function slipCanvas(l){const r=l.res.drag,res=l.res,D=slipData(r,res),W=1080,H=1
     x.textAlign="left";x.fillStyle=ink2;x.font=M(28);x.fillText(row[0],L+50,y);x.textAlign="right";x.fillStyle=sub?ink2:ink;x.font=M(big?44:32,big?600:500);x.fillText(row[1],cx1,y);if(two){x.fillText(row[2]==null?"—":row[2],cx2,y);}
     y+=big?62:sub?60:52;}
   dash(y-18);y+=44;x.textAlign="left";x.font=F(54,700);x.fillStyle=D.win===true?"#1d7a4a":D.win===false||D.verdict==="RED LIGHT"||D.verdict==="BROKE"?"#b3261a":ink;x.fillText(D.verdict,L+50,y);
-  x.textAlign="right";x.fillStyle=ink2;x.font=M(26);x.fillText(D.margin,Rt-50,y);
+  {const vw=x.measureText(D.verdict).width;x.font=M(26);x.fillStyle=ink2;   // a long verdict pushes the line underneath
+    if(L+50+vw+30+x.measureText(D.margin).width>Rt-50){x.textAlign="left";x.fillText(fit(D.margin,M(26),Rt-L-100),L+50,y+40);}else{x.textAlign="right";x.fillText(D.margin,Rt-50,y);}}
   // the launch in two lines of small print (one when the PB stamp needs the room)
   let ly=y;{const plain=h=>String(h||"").replace(/<[^>]+>/g,"");const t=[plain(launchSlip(r)),r.shifts.length?"shifts "+r.shifts.map(s=>s.rpm.toLocaleString("en-CA")).join(" · "):""].filter(Boolean).join(" · ");
     x.textAlign="left";x.font=M(21);x.fillStyle=ink2;const mx=r.pb?1:2;let yy=y+48,cur="",ln=0;for(const w of t.split(" ")){const s=cur?cur+" "+w:w;if(x.measureText(s).width>Rt-L-100){x.fillText(cur,L+50,yy);yy+=30;cur=w;if(++ln>=mx){cur="";break;}}else cur=s;}if(cur&&ln<mx)x.fillText(cur,L+50,yy);ly=yy;}
@@ -561,6 +568,7 @@ function rnAfterPass(r,failed){const N=rnLive(),n=DR.night;if(!N||!n||n.stage!==
   if(N.stage<2){N.q[N.stage][0]=p;for(let i=1;i<8;i++)N.q[N.stage][i]=rnRivalAt(N,N.stage,i);
     text=failed?"Broke on the qualifying pass — out of the night":bf?"Black-flagged at tech — no parachute over 150 mph":`${p.et!=null?p.et.toFixed(3)+" @ "+Math.round(p.mph):"no time"}${br?"":" — "+(p.et!=null?"it counts toward your seed":"keep the other run")}`;
     N.hist.push({stage:N.stage,label:n.label,opp:n.opp,p,o:n.op,text});
+    if(!out&&!br&&p.et!=null)n.seed=rnSeeds(N).indexOf(0)+1;   // where the best time so far sits among the eight
     if(out){rnFinish(N,9);}
     else if(++N.stage===2){N.seeds=rnSeeds(N);if(br)N.dial=rnSuggest(N);N.rounds=[rnPairs(N.seeds).map(([a,b])=>({a,b,win:null}))];rnResolve(N,0);}}
   else{const ri=N.stage-2,m=N.rounds[ri].find(x=>x.a===0||x.b===0);win=!out&&v.win;if(out&&!v.win)win=false;
@@ -571,7 +579,7 @@ function rnAfterPass(r,failed){const N=rnLive(),n=DR.night;if(!N||!n||n.stage!==
     if(!win||out){for(let k=ri;k<3;k++){rnResolve(N,k);if(k<2&&!N.rounds[k+1])N.rounds[k+1]=rnNextPairs(N.rounds[k]);}rnFinish(N,ri===0?5:ri===1?3:2);}
     else if(ri===2)rnFinish(N,1);
     else{N.stage++;N.rounds[ri+1]=rnNextPairs(N.rounds[ri]);rnResolve(N,ri+1);if(br)N.dial=N.dial||rnSuggest(N);}}
-  r.night={fmt:N.fmt,stage:p.stage,label:n.label,opp:opName,car:rv.car,win,text,dialP:n.dialP,dialO:n.dialO,oppRt:n.op.rt,oppEt:n.op.et,oppMph:n.op.mph,oppBroke:!!n.op.broke,place:N.done?N.place:null};
+  r.night={fmt:N.fmt,stage:p.stage,seed:n.seed||null,label:n.label,opp:opName,car:rv.car,win,text,dialP:n.dialP,dialO:n.dialO,oppRt:n.op.rt,oppEt:n.op.et,oppMph:n.op.mph,oppBroke:!!n.op.broke,place:N.done?N.place:null};
   if(r.race){r.race.won=win===true;if(v.margin!=null)r.race.margin=win?v.margin:-v.margin;}
   rnSetN(N);const msg=N.done?`${RN_PLACE[N.place].toUpperCase()}${N.paid?" · "+fmt$(N.paid):""}`:p.stage<2?`${n.label} · ${p.et!=null?p.et.toFixed(3):"NO TIME"}`:`${win?"WON":"OUT"} · ${n.label}`;
   setTimeout(()=>{if(r.pb)setTimeout(()=>toast(msg),2800);else toast(msg);},0);}   // after the pass's own toast (and a PB's)
