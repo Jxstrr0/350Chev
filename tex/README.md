@@ -8,7 +8,7 @@ re-run. Keep this list in step with the folder.
 |---|---|---|---|
 | `env-workshop.jpg` | The career workshop seen from the engine stand, all the way round: what chrome and paint mirror | `tools/blender/workshop-env.py` | `envPanoUse` in `src/vis/core.js` |
 | `env-testcell.jpg` | The same for the test cell | `tools/blender/workshop-env.py` | `envPanoUse` in `src/vis/core.js` |
-| `gr-asphalt.jpg` | Road asphalt from straight above, one seamless 1.9 m tile: about 60,000 crushed stones in black binder, worn flat on top | `tools/blender/ground-bake.py` | `bkAsph` in `src/vis/strip.js` (every tier) |
+| `gr-asphalt.jpg` | Road asphalt from straight above, one seamless 1.9 m tile: about 60,000 crushed stones in black binder, worn flat on top | `tools/blender/ground-bake.py` | `bkAsph` in `src/vis/strip.js` (every tier): the drag strip, the road course, the hill road, the pits floor and the paved oval |
 | `gr-asphalt-n.jpg` | The slope of that same patch (a normal map), so each stone catches the sun | `tools/blender/ground-bake.py` | `bkAsph`, Full / Ultra only |
 | `gr-concrete.jpg` | Ground-smooth concrete, one seamless 2.3 m tile: sand and stone speckle in pale cement, air-bubble pits | `tools/blender/ground-bake.py` | `bkConc` in `src/vis/strip.js` (every tier) |
 
