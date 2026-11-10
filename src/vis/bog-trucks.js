@@ -137,7 +137,7 @@ function bogtWheel(r, w, rimR, kind, side, style, hub, mats, lite){
 }
 function bogtMats(color, spec, cls, kind, dia, wIn, lite){
   var M=sc_mats(), P=pullMats(), num=String(((color>>>0)%89)+11);
-  var paint=new THREE.MeshStandardMaterial({color:sc(color), roughness:0.34, metalness:0.12, envMapIntensity:0.8});
+  var paint=sc_paintNew(color);   /* the strip cars' paint (a clear coat on Full / Ultra), one per truck: the bog muds it */
   return { paint:paint, black:M.black, satin:M.satin, glass:M.glass, lens:P.lens, tail:P.tail, cast:P.cast, orange:P.orange, white:P.white, suit:P.suit, helmet:P.helmet, alu:M.alu,
     chrome:new THREE.MeshStandardMaterial({color:0xffffff, map:bogtChromeTex(), roughness:0.12, metalness:0.92, envMapIntensity:1.25}),
     tube:new THREE.MeshStandardMaterial({color:sc(cls==="super"?0xb3b8be:0x16171a), roughness:0.36, metalness:cls==="super"?0.7:0.3}),

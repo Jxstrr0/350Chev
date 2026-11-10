@@ -248,13 +248,17 @@ function sc_mats(){
   SC.mat=M; return M;
 }
 function sc_paint(color){
-  var cc=GFX!=="lite", key=String(color>>>0)+(cc?"c":""); if(SC.paint[key]) return SC.paint[key];
-  var c=new THREE.Color(color).convertSRGBToLinear(), lum=0.2126*c.r+0.7152*c.g+0.0722*c.b;
+  var key=String(color>>>0)+(GFX!=="lite"?"c":""); if(SC.paint[key]) return SC.paint[key];
+  return (SC.paint[key]=sc_paintNew(color));
+}
+/* a paint of its own (not shared through the cache), for a vehicle that changes its colour in play: mud, a repaint */
+function sc_paintNew(color){
+  var cc=GFX!=="lite", c=new THREE.Color(color).convertSRGBToLinear(), lum=0.2126*c.r+0.7152*c.g+0.0722*c.b;
   /* v3: Full / Ultra paint is a clear coat over a satin base (a second, sharp highlight); Lite keeps the single-lobe paint */
   var q=cc?new THREE.MeshPhysicalMaterial({color:c, roughness:0.42, metalness:lum<0.02?0.3:0.12, envMapIntensity:lum<0.02?1.45:1.1, clearcoat:1, clearcoatRoughness:0.06})
     :new THREE.MeshStandardMaterial({color:c, roughness:0.2, metalness:lum<0.02?0.35:0.22, envMapIntensity:lum<0.02?1.5:1.15});
   var env=sc_env(); if(env) q.envMap=env;
-  SC.paint[key]=q; return q;
+  return q;
 }
 function sc_canvas(w,h){ var c=document.createElement("canvas"); c.width=w; c.height=h; return c; }
 function sc_ctex(c, srgb){ return ctex(c, srgb, 4); }
