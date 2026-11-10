@@ -399,6 +399,7 @@ const ENGINE_VIS = {
     var W=G.userData.roomW;
     scene.fog.near = W*1.05; scene.fog.far = W*2.2;
     scene.background = sc(lastOwned.sandbox?0x161a1e:0x0d0f12);
+    envPanoUse(lastOwned.sandbox?"testcell":"workshop");   /* the room the chrome mirrors (core.js) */
     return G;
   },
 

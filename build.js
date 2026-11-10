@@ -167,7 +167,7 @@ function swSource(page) {
    Sounds alone hash as they always did, so adding models/ only changes the name once. */
 function soundsHash() {
   const h = require("crypto").createHash("sha256");
-  for (const dir of ["sounds", "sounds/announcer", "sounds/amb", "sounds/crowd", "sounds/fx", "models", "sponsors", "banners"]) {   /* models/ (Full / Ultra props) and the announcer's lines are cached the same way */
+  for (const dir of ["sounds", "sounds/announcer", "sounds/amb", "sounds/crowd", "sounds/fx", "models", "tex", "sponsors", "banners"]) {   /* models/ (Full / Ultra props) and the announcer's lines are cached the same way */
     const d = path.join(ROOT, dir);
     if (fs.existsSync(d)) for (const n of fs.readdirSync(d).sort()) { const st = fs.statSync(path.join(d, n)); if (st.isFile()) h.update((dir === "sounds" ? "" : dir + "/") + n + "\0" + st.size + "\0"); }
   }
@@ -232,7 +232,7 @@ self.addEventListener("fetch", e => {
       if (m) return m;
       try {
         const r = await fetch(q);
-        if (r.status === 200 && !q.headers.has("range") && /\\/(sounds|models|sponsors|banners)\\//.test(u.pathname)) e.waitUntil(put(MEDIA, q, r.clone()));
+        if (r.status === 200 && !q.headers.has("range") && /\\/(sounds|models|tex|sponsors|banners)\\//.test(u.pathname)) e.waitUntil(put(MEDIA, q, r.clone()));
         return r;
       } catch (err) {
         if (q.mode === "navigate") { const h = await (await caches.open(CACHE)).match("index.html"); if (h) return h; }
