@@ -74,7 +74,7 @@ files derived from CC BY sources are CC BY (same version) with the attribution b
 
 143 voice lines for the drag-strip announcer (src/app/announcer.js): 73 race calls (`pew_announcer_pew-ann-0001` to `-0073`) and 70 matchup parts (`pew_announcer_pew-call-0001` to `-0070`) that the game stitches into engine-against-engine calls.
 
-- Generated with ElevenLabs text to speech (model eleven_v4) in November 2026, voice "Ed, the Late Night Announcer" from the ElevenLabs voice library, under Longlight Interactive's ElevenLabs plan, which grants commercial use of the output. Lines written for the game by Kelbo / Longlight Interactive.
+- Generated with ElevenLabs text to speech (model eleven_v4) in November 2026, voice "Hassan - YouTube Commentary" from the ElevenLabs voice library (recast from "Ed, the Late Night Announcer" in 1.76.125.0; each clip trimmed of silence, sped up 1.15x and loudness-matched by `tools/trim-announcer.sh`), under Longlight Interactive's ElevenLabs plan, which grants commercial use of the output. Lines written for the game by Kelbo / Longlight Interactive.
 - Take 1 of each line, silence trimmed, converted to mono 48 kbps MP3 at 32 kHz with ffmpeg.
 - The script sheet (line, trigger, text, file name) is `docs/announcer-script.csv`.
 - Total size: about 2.7 MB in 143 files. Loaded only when a drag pass starts with sound and the announcer on, a line at a time.
