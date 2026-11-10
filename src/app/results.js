@@ -187,7 +187,8 @@ $("runTest").addEventListener("click",()=>{
   if(S.env.testType==="oval"&&ovalGate())return;
   if(S.env.testType==="boat"){const k=boatEnvFix(),l=clsLocked(SIM.BOAT_CLASSES,k),lg=boatLegal(k);if(l){toast(`${SIM.BOAT_CLASSES[k].n} opens at ${l} rep`);return;}if(!lg.ok){toast(`Not legal for ${SIM.BOAT_CLASSES[k].n} — ${lg.why}`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}if(boatRanWk(k)&&!(boatLive()&&boatLive().cls===k)){toast(`Already ran ${SIM.BOAT_CLASSES[wkCls("boatWk")].n} this week — one class a week; the next night is week ${C().week+1}`);return;}}
   if(S.env.testType==="salt"){const k=saltEnvFix(),l=saltBodyLocked(k);if(l){toast(`${SIM.LSR_BODIES[k].n} opens at ${l} rep`);return;}if(career()&&!(C().cert&&C().cert.ok&&C().cert.hash===cfgHash(S.cfg))){toast("Certify this engine on the dyno first");return;}}
-  if(S.env.testType==="pull"&&!pcLimitGate(cost))return;   // this build can't race for the signed team: ask before the pull is paid for
+  if(S.env.testType==="pull"&&!pcLimitGate(cost))return;
+  if(S.env.testType==="pull"&&!rnPullGate(cost))return;   // a race night is on with another engine: it will refuse this one (app/drag.js)   // this build can't race for the signed team: ask before the pull is paid for
   if(career()){C().cash-=cost;hud();}
   testing=true;abStop();renderTest();ensureSound();
   if(S.env.testType!=="drag"){ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);}
