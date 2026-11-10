@@ -14765,6 +14765,21 @@ function buildEnvMap(renderer){
    The room drawn by buildEnvMap above stays as the first frame's reflection, the trophy room's, and the fallback when the
    picture cannot be fetched (offline on a first visit). Every tier gets it: one small image and one blur pass, the same
    work the drawn room costs. The picture stores bright lights on a log curve; ENV_LOG is LOG_RANGE in the Blender script. */
+/* Baked ground pictures (tex/gr-*.jpg, made by tools/blender/ground-bake.py). bakeUni("asphalt") hands a ground shader a uniform that
+   holds flat grey ("change nothing") until the picture has loaded and the picture from then on. If it never loads (offline before it was
+   cached) the grey stays and the surface looks as it did before the bakes. Every tier; the "-n" slope pictures are asked for on Full / Ultra only. */
+var BAKE={};
+function bakeUni(name){
+  if(BAKE[name]) return BAKE[name];
+  var ph=new THREE.DataTexture(new Uint8Array(/-n$/.test(name)?[128,128,255,255]:[128,128,128,255]), 1, 1, THREE.RGBAFormat); ph.needsUpdate=true;
+  var u=BAKE[name]={value:ph};
+  new THREE.TextureLoader().load("tex/gr-"+name+".jpg", function(t){
+    t.encoding=THREE.LinearEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    t.anisotropy=Math.min(GFX==="lite"?4:8, renderer?renderer.capabilities.getMaxAnisotropy():1);
+    u.value=t; ph.dispose();
+  }, undefined, function(){});
+  return u;
+}
 var ENV_LOG=8, ENV_PANO={ files:{workshop:"tex/env-workshop.jpg", testcell:"tex/env-testcell.jpg"}, gain:{workshop:1.0, testcell:1.0}, got:{}, want:null };
 function envPanoBuild(tex, gain){
   var s=new THREE.Scene(), g=new THREE.SphereGeometry(50, 48, 24);
@@ -22530,7 +22545,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.110.0";
+const VERSION="1.76.111.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

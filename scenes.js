@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.110.0*/
+/*pew-scenes 1.76.111.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -75,13 +75,16 @@ var STRIP_GLSL_TRACK=[
   "  vec3 cr=vec3(0.19,0.187,0.178)*(0.86+0.2*n1+(n2-0.5)*0.12*fine);",
   "  float jx=abs(fract(x/4.57+0.5)-0.5)*4.57, jz=abs(fract((z+7.5)/3.75+0.5)-0.5)*3.75;",
   "  cr*=1.0-0.4*max(1.0-smoothstep(0.012,0.04,jx),1.0-smoothstep(0.012,0.04,jz))*(1.0-smoothstep(12.0,55.0,d));",
+  "#if STRIP_TIER<1",
+  "  asph*=bkAsph(w.xz,0.8); cr*=bkConc(w.xz,0.9);",
+  "#endif",
   "  vec3 c=mix(asph,cr,conc); rough=mix(0.9,0.8,conc);",
   /* Full/Ultra: aggregate grain + tar snakes + repair patches on the asphalt, slab-by-slab tone and grooved joints on the concrete, a tar-sealed ragged seam
      where the two meet with a patched strip behind it */
   "#if STRIP_TIER>=1",
   "  float aH; vec3 am=sfAsphFx(w.xz,fine,aH); float slab=sh(vec2(floor(x/4.57),floor((z+7.5)/3.75))), jm=max(1.0-smoothstep(0.012,0.04,jx),1.0-smoothstep(0.012,0.04,jz))*(1.0-smoothstep(12.0,70.0,d));",
-  "  vec3 cm=vec3(1.0+0.1*(slab-0.5)+0.12*(sn(w.xz*47.0)-0.5)*aaf(0.021))*(1.0-0.3*sfBlot(w.xz*vec2(0.6,2.0),0.5,0.6,0.85,4.0));",
-  "  c*=mix(am,cm,conc); gH=mix(aH,0.0026*sn(w.xz*61.0)*aaf(0.0165)-0.008*jm,conc); gHK=0.6;",
+  "  vec3 cm=vec3(1.0+0.1*(slab-0.5)+0.04*(sn(w.xz*47.0)-0.5)*aaf(0.021))*(1.0-0.3*sfBlot(w.xz*vec2(0.6,2.0),0.5,0.6,0.85,4.0));",
+  "  cm*=bkConc(w.xz,0.9); gBn=mix(gBn,gBk,conc); c*=mix(am,cm,conc); gH=mix(aH,0.0026*sn(w.xz*61.0)*aaf(0.0165)-0.008*jm,conc); gHK=0.6;",
   "  float sx=x-100.0+(sn(vec2(z*2.3,5.0))-0.5)*0.07, seam=1.0-smoothstep(0.012,0.032,abs(sx)), rp=step(0.03,sx)*(1.0-smoothstep(1.1,1.3,sx))*(1.0-conc);",
   "  c*=1.0-0.5*seam-0.16*rp; gH-=0.009*seam; gH*=1.0-0.6*rp;",
   "#endif",
@@ -145,6 +148,7 @@ var STRIP_GLSL_TRACK=[
   /* a mirror-wet or rubber-glazed surface shows its grain as flicker, not relief: let the bump die out where it is glossy */
   "#if STRIP_TIER>=1",
   "  gH*=(1.0-0.92*gWet)*(1.0-0.8*shn)*(1.0-0.6*prep)*(1.0-0.7*vht)*(1.0-0.9*gMir);",
+  "  gBn*=(1.0-0.8*rub)*(1.0-0.92*gWet)*(1.0-0.8*shn)*(1.0-0.6*prep)*(1.0-0.7*vht)*(1.0-0.9*gMir)*(1.0-ln);",
   "#endif",
   "  return c; }"].join("\n");
 var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
@@ -180,7 +184,7 @@ var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "  float tf=smoothstep(736.0,738.0,p.x)*(1.0-smoothstep(772.0,774.0,p.x))*smoothstep(6.8,7.2,p.y)*(1.0-smoothstep(11.0,11.6,p.y));",
   "  c=mix(c,vec3(0.07,0.07,0.075)*(0.85+0.3*sn(p*0.4)),max(ap,tf));",
   "#if STRIP_TIER>=1",
-  "  float ah=max(rr,max(ap,tf)); float rh; vec3 rm=sfAsphFx(p,fine,rh); c*=mix(vec3(1.0),rm,ah); gH=mix(gH,rh,ah);",
+  "  float ah=max(rr,max(ap,tf)); float rh; vec3 rm=sfAsphFx(p,fine,rh); c*=mix(vec3(1.0),rm,ah); gH=mix(gH,rh,ah); gBn*=ah;",
   "#endif",
   "  float sand=smoothstep(783.0,785.0,p.x)*(1.0-smoothstep(855.0,857.0,p.x))*(1.0-smoothstep(8.6,9.1,abs(p.y)));",
   "  c=mix(c,vec3(0.44,0.36,0.24)*(0.82+0.3*sn(p*0.7)+0.12*(sn(p*6.0)-0.5)*fine)*(1.0+0.09*sin(p.y*21.0)*fine),sand);",
@@ -195,6 +199,17 @@ var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "  rough=0.96; return c; }"].join("\n");
 var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0.0,gRip.y,0.0)).xyz);", emissive:"totalEmissiveRadiance+=uHorC*(gMir+gRefl)+uGlareC*gGlare;",
   light:"reflectedLight.directSpecular=min(reflectedLight.directSpecular, vec3(mix(64.0,0.14,uGlare))); reflectedLight.indirectSpecular=min(reflectedLight.indirectSpecular, vec3(mix(64.0,0.3,uGlare)));" };
+/* Baked surfaces (tex/gr-*.jpg, tools/blender/ground-bake.py; every tier). Each bk*(p,k) is a real patch of that surface built and
+   photographed in Blender, returned as a multiplier on the venue's own colour (k = strength): one tile every couple of metres, times a
+   turned copy six times larger so the tiling never shows. Full / Ultra also read the slope picture into gBk; the caller copies or blends
+   that into gBn, which leans the lit normal (stripPatchSh). Mip-mapping fades both out with distance, so nothing shimmers far away.
+   A shader that calls one of these gets its pictures from stripPatchSh (STRIP_BAKES: function name, uniform, file, 1 / tile size, 1 if it has a slope picture). */
+var STRIP_BAKES=[["bkAsph","uBkA","asphalt",0.5263,1], ["bkConc","uBkC","concrete",0.4348,0]];
+var STRIP_GLSL_BAKE="vec2 gBk=vec2(0.0);\n"+STRIP_BAKES.map(function(b){ var u=b[1], f=b[3].toFixed(4), g=(b[3]/5.9).toFixed(4);
+  return "uniform sampler2D "+u+";\n"+(b[4]?"#if STRIP_TIER>=1\nuniform sampler2D "+u+"n;\n#endif\n":"")+
+    "vec3 "+b[0]+"(vec2 p, float k){ vec3 a=texture2D("+u+",p*"+f+").rgb*2.0; float b=texture2D("+u+",vec2(p.y,-p.x)*"+g+"+0.37).g*2.0;\n"+
+    (b[4]?"#if STRIP_TIER>=1\n  gBk=(texture2D("+u+"n,p*"+f+").rg*2.0-1.0)*k;\n#endif\n":"  gBk=vec2(0.0);\n")+
+    "  return mix(vec3(1.0), a*(0.62+0.38*b), k); }"; }).join("\n");
 /* Full / Ultra ground detail (STRIP_TIER 1 / 2; Lite is tier 0 and compiles none of it). A surface's stripSurf() may set gH (a height in
    metres) and gHK (its strength) and the material perturbs the lit normal from the screen-space slope of gH, so grain, ruts, clods and
    crust edges catch the sun; gFP is the world size of a pixel here, so a fine octave can fade out before it shimmers (aaf). stripMacro is
@@ -223,13 +238,13 @@ var STRIP_GLSL_DETAIL=[
   "  float v=1.0+0.34*(s1-0.5)*fa+0.3*(s2-0.5)*fb; return vec3(v)*(1.0+0.1*(sn(p*3.0)-0.5)); }",
   /* road asphalt: grain bump, tar snakes, repair patches, oil. Multiplier on the asphalt colour; h = surface height; fine 0..1 near-camera weight */
   "vec3 sfAsphFx(vec2 p, float fine, out float h){ float g1=sn(p*13.0), g2=sn(p*47.0), g3=sn(p*131.0), fa=aaf(0.077), fb=aaf(0.021), fc=aaf(0.0076);",
-  "  h=0.0036*g1*fa+0.0036*g2*fb+0.002*g3*fc; float v=1.0+0.2*(g2-0.5)*fb+0.16*(g3-0.5)*fc+0.07*(g1-0.5)*fa;",
+  "  h=0.0036*g1*fa+0.0014*g2*fb+0.0008*g3*fc; float v=1.0+0.05*(g2-0.5)*fb+0.07*(g1-0.5)*fa; vec3 bk=bkAsph(p,BK_FULL);",
   "  float snake=sfLine(p*vec2(0.22,0.8),1.0,0.016,5.0)*smoothstep(0.52,0.72,sn(p*0.07+9.0))*aaf(0.022);",
   "  float web=sfLine(p*1.6,1.0,0.014,17.0)*smoothstep(0.66,0.8,sn(p*0.11+4.0))*aaf(0.018);",
   "  float cr=max(snake,web); v*=1.0-0.62*cr; h-=0.006*cr;",
   "  float pat=sfPatch(p,vec2(23.0,31.0),11.0,0.34); v*=1.0-0.2*pat; h-=0.0025*pat; h*=1.0-0.5*pat;",
   "  float oil=sfBlot(p*vec2(1.0,2.2),0.23,0.62,0.86,3.0)*0.5+sfBlot(p,1.1,0.66,0.9,8.0)*0.25; v*=1.0-0.4*oil;",
-  "  return vec3(v); }"].join("\n");
+  "  gBn=gBk*(1.0-0.8*cr)*(1.0-0.5*pat); return v*mix(bk,vec3(1.0),0.6*cr+0.35*oil); }"].join("\n").replace(/BK_FULL/g,"0.85");
 function stripSurfMat(glsl, extra, uni, post){
   var tier=GFX==="ultra"?2:GFX==="lite"?0:1;
   var m=new THREE.MeshStandardMaterial(Object.assign({color:0xffffff, roughness:0.9, metalness:0}, extra||{}));
@@ -247,11 +262,13 @@ function stripSurfMat(glsl, extra, uni, post){
 /* the shared shader patch: world position varying, the noise kit, the surface function (a colour that multiplies diffuse, or a multiplier on a map),
    roughness, and (tier 1+) the macro tint + bump. The bump is added before any post.normal so the ripples sit on top of it. */
 function stripPatchSh(sh, glsl){
+  STRIP_BAKES.forEach(function(b){ if(glsl.indexOf(b[0])<0 && !(b[0]==="bkAsph" && GFX!=="lite" && glsl.indexOf("sfAsphFx")>=0)) return;
+    sh.uniforms[b[1]]=bakeUni(b[2]); if(b[4] && GFX!=="lite") sh.uniforms[b[1]+"n"]=bakeUni(b[2]+"-n"); });
   sh.vertexShader=sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;").replace("#include <project_vertex>", "#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;");
-  sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nfloat gRough; float gH=0.0, gHK=0.0, gFP=0.0, gMacroK=1.0;\n"+STRIP_GLSL_NOISE+"\n#if STRIP_TIER>=1\n"+STRIP_GLSL_DETAIL+"\n#endif\n"+glsl)
+  sh.fragmentShader=sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWp;\nfloat gRough; float gH=0.0, gHK=0.0, gFP=0.0, gMacroK=1.0; vec2 gBn=vec2(0.0);\n"+STRIP_GLSL_NOISE+"\n"+STRIP_GLSL_BAKE+"\n#if STRIP_TIER>=1\n"+STRIP_GLSL_DETAIL+"\n#endif\n"+glsl)
     .replace("#include <color_fragment>", "#include <color_fragment>\n#if STRIP_TIER>=1\ngFP=length(fwidth(vWp));\n#endif\ndiffuseColor.rgb*=stripSurf(vWp,gRough);\n#if STRIP_TIER>=1\ndiffuseColor.rgb*=mix(vec3(1.0),stripMacro(vWp.xz),gMacroK);\n#endif")
     .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor=gRough;")
-    .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n#if STRIP_TIER>=1\nif(gHK>0.0){ vec3 bSx=dFdx(-vViewPosition), bSy=dFdy(-vViewPosition); vec3 bR1=cross(bSy,normal), bR2=cross(normal,bSx); float bDet=dot(bSx,bR1)*faceDirection;\n  vec3 bGr=sign(bDet)*(dFdx(gH)*gHK*bR1+dFdy(gH)*gHK*bR2); float bL=length(bGr), bM=0.35*abs(bDet); if(bL>bM) bGr*=bM/bL; normal=normalize(abs(bDet)*normal-bGr); }\n#endif");
+    .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n#if STRIP_TIER>=1\nif(gHK>0.0){ vec3 bSx=dFdx(-vViewPosition), bSy=dFdy(-vViewPosition); vec3 bR1=cross(bSy,normal), bR2=cross(normal,bSx); float bDet=dot(bSx,bR1)*faceDirection;\n  vec3 bGr=sign(bDet)*(dFdx(gH)*gHK*bR1+dFdy(gH)*gHK*bR2); float bL=length(bGr), bM=0.35*abs(bDet); if(bL>bM) bGr*=bM/bL; normal=normalize(abs(bDet)*normal-bGr); }\nnormal=normalize(normal+(viewMatrix*vec4(gBn.x,0.0,gBn.y,0.0)).xyz);\n#endif");
 }
 
 /* a textured material (road asphalt, kerbs, gravel, the pits floor) with the same Full / Ultra detail: stripSurf returns a multiplier on the map,
