@@ -15,6 +15,7 @@ var ROAD_GLSL_GROUND=[
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(30.0,160.0,d), mid=1.0-smoothstep(150.0,1100.0,d);",
   "  float mow=step(0.5,fract((p.x*0.7+p.y*0.7)/9.0));",
   "  vec3 grass=vec3(0.10,0.155,0.052)*(0.82+0.32*sn(p*0.05))*(1.0+(mow-0.5)*0.18*mid)*(0.9+0.2*sn(p*1.9)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float inf=1.0-smoothstep(uR,uR+60.0,max(abs(p.x)-uHx,abs(p.y)-uHy)+uR);",
   "  vec2 q=(p+vec2(402.0,402.0))/805.0; vec2 cell=floor(q); float h=sh(cell+23.0);",
   "  vec3 fc= h<0.22?vec3(0.40,0.30,0.11): h<0.40?vec3(0.50,0.42,0.03): h<0.56?vec3(0.11,0.17,0.05): h<0.72?vec3(0.30,0.23,0.12): h<0.86?vec3(0.18,0.13,0.08):vec3(0.16,0.19,0.08);",

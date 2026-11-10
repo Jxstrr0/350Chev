@@ -156,6 +156,7 @@ var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "  float inf=(1.0-smoothstep(70.0,80.0,abs(p.y)))*smoothstep(-300.0,-290.0,p.x)*(1.0-smoothstep(1020.0,1030.0,p.x));",
   "  float mow=step(0.5,fract(p.x/8.0));",
   "  vec3 grass=vec3(0.105,0.15,0.05)*(0.82+0.35*sn(p*0.06))*(1.0+(mow-0.5)*0.16*mid)*(0.9+0.2*sn(p*1.7)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  vec2 q=(p+vec2(402.0,402.0))/805.0; vec2 cell=floor(q); float h=sh(cell+17.0);",
   "  vec3 fc= h<0.22?vec3(0.40,0.30,0.11): h<0.40?vec3(0.50,0.42,0.03): h<0.56?vec3(0.11,0.17,0.05): h<0.72?vec3(0.30,0.23,0.12): h<0.86?vec3(0.18,0.13,0.08):vec3(0.16,0.19,0.08);",
   "  float dir=step(0.5,sh(cell+3.0)); float co=mix(p.x,p.y,dir);",
@@ -203,7 +204,8 @@ var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0
    turned copy six times larger so the tiling never shows. Full / Ultra also read the slope picture into gBk; the caller copies or blends
    that into gBn, which leans the lit normal (stripPatchSh). Mip-mapping fades both out with distance, so nothing shimmers far away.
    A shader that calls one of these gets its pictures from stripPatchSh (STRIP_BAKES: function name, uniform, file, 1 / tile size, 1 if it has a slope picture). */
-var STRIP_BAKES=[["bkAsph","uBkA","asphalt",0.5263,1], ["bkConc","uBkC","concrete",0.4348,0], ["bkDirt","uBkD","dirt",0.7143,1]];
+var STRIP_BAKES=[["bkAsph","uBkA","asphalt",0.5263,1], ["bkConc","uBkC","concrete",0.4348,0], ["bkDirt","uBkD","dirt",0.7143,1],
+  ["bkSalt","uBkS","salt",0.625,1], ["bkGrass","uBkG","grass",1.0,0]];
 var STRIP_GLSL_BAKE="vec2 gBk=vec2(0.0);\n"+STRIP_BAKES.map(function(b){ var u=b[1], f=b[3].toFixed(4), g=(b[3]/5.9).toFixed(4);
   return "uniform sampler2D "+u+";\n"+(b[4]?"#if STRIP_TIER>=1\nuniform sampler2D "+u+"n;\n#endif\n":"")+
     "vec3 "+b[0]+"(vec2 p, float k){ vec3 a=texture2D("+u+",p*"+f+").rgb*2.0; float b=texture2D("+u+",vec2(p.y,-p.x)*"+g+"+0.37).g*2.0;\n"+

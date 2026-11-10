@@ -13,6 +13,7 @@ var BOG_GLSL_GROUND=[
   "  vec2 p=w.xz; if(p.x>0.0 && p.x<uLen && abs(p.y)<5.0) discard;",
   "  float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(20.0,120.0,d), mid=1.0-smoothstep(100.0,900.0,d);",
   "  vec3 grass=vec3(0.11,0.155,0.055)*(0.8+0.35*sn(p*0.08))*(0.9+0.2*sn(p*1.9)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float worn=smoothstep(0.5,0.8,sn(p*0.06+3.0))*0.6;",
   "  vec3 c=mix(grass,vec3(0.27,0.21,0.14)*(0.85+0.3*sn(p*0.7)),worn);",
   "  float lane=(1.0-smoothstep(5.0,6.5,abs(p.y)))*smoothstep(-58.0,-55.0,p.x)*(1.0-smoothstep(uLen+26.0,uLen+30.0,p.x));",
