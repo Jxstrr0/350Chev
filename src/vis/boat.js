@@ -41,6 +41,7 @@ var BOAT_GLSL_GROUND=[
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(20.0,140.0,d), mid=1.0-smoothstep(100.0,900.0,d);",
   "  vec3 grass=vec3(0.12,0.17,0.06)*(0.8+0.35*sn(p*0.07))*(0.9+0.2*sn(p*1.7)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float edge=1.0-smoothstep(58.0,63.0,abs(p.y)); vec3 sand=vec3(0.36,0.31,0.22)*(0.85+0.3*sn(p*0.9));",
   "  vec3 c=mix(grass,sand,edge);",
   "  float lot=smoothstep(80.0,81.0,p.y)*(1.0-smoothstep(110.0,111.0,p.y))*smoothstep(-60.0,-59.0,p.x)*(1.0-smoothstep(380.0,381.0,p.x));",

@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.117.0*/
+/*pew-scenes 1.76.118.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -157,6 +157,7 @@ var STRIP_GLSL_GROUND=[ STRIP_GLSL_DECAL,
   "  float inf=(1.0-smoothstep(70.0,80.0,abs(p.y)))*smoothstep(-300.0,-290.0,p.x)*(1.0-smoothstep(1020.0,1030.0,p.x));",
   "  float mow=step(0.5,fract(p.x/8.0));",
   "  vec3 grass=vec3(0.105,0.15,0.05)*(0.82+0.35*sn(p*0.06))*(1.0+(mow-0.5)*0.16*mid)*(0.9+0.2*sn(p*1.7)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  vec2 q=(p+vec2(402.0,402.0))/805.0; vec2 cell=floor(q); float h=sh(cell+17.0);",
   "  vec3 fc= h<0.22?vec3(0.40,0.30,0.11): h<0.40?vec3(0.50,0.42,0.03): h<0.56?vec3(0.11,0.17,0.05): h<0.72?vec3(0.30,0.23,0.12): h<0.86?vec3(0.18,0.13,0.08):vec3(0.16,0.19,0.08);",
   "  float dir=step(0.5,sh(cell+3.0)); float co=mix(p.x,p.y,dir);",
@@ -204,7 +205,8 @@ var STRIP_TRACK_POST={ normal:"normal=normalize(normal+(viewMatrix*vec4(gRip.x,0
    turned copy six times larger so the tiling never shows. Full / Ultra also read the slope picture into gBk; the caller copies or blends
    that into gBn, which leans the lit normal (stripPatchSh). Mip-mapping fades both out with distance, so nothing shimmers far away.
    A shader that calls one of these gets its pictures from stripPatchSh (STRIP_BAKES: function name, uniform, file, 1 / tile size, 1 if it has a slope picture). */
-var STRIP_BAKES=[["bkAsph","uBkA","asphalt",0.5263,1], ["bkConc","uBkC","concrete",0.4348,0], ["bkDirt","uBkD","dirt",0.7143,1]];
+var STRIP_BAKES=[["bkAsph","uBkA","asphalt",0.5263,1], ["bkConc","uBkC","concrete",0.4348,0], ["bkDirt","uBkD","dirt",0.7143,1],
+  ["bkSalt","uBkS","salt",0.625,1], ["bkGrass","uBkG","grass",1.0,0]];
 var STRIP_GLSL_BAKE="vec2 gBk=vec2(0.0);\n"+STRIP_BAKES.map(function(b){ var u=b[1], f=b[3].toFixed(4), g=(b[3]/5.9).toFixed(4);
   return "uniform sampler2D "+u+";\n"+(b[4]?"#if STRIP_TIER>=1\nuniform sampler2D "+u+"n;\n#endif\n":"")+
     "vec3 "+b[0]+"(vec2 p, float k){ vec3 a=texture2D("+u+",p*"+f+").rgb*2.0; float b=texture2D("+u+",vec2(p.y,-p.x)*"+g+"+0.37).g*2.0;\n"+
@@ -3869,6 +3871,7 @@ var PULL_GLSL_GROUND=[
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(20.0,120.0,d), mid=1.0-smoothstep(100.0,900.0,d);",
   "  vec3 grass=vec3(0.11,0.155,0.055)*(0.8+0.35*sn(p*0.08))*(0.9+0.2*sn(p*1.9)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float worn=smoothstep(0.5,0.8,sn(p*0.06+3.0))*0.6;",
   "  vec3 c=mix(grass,vec3(0.27,0.21,0.14)*(0.85+0.3*sn(p*0.7))*bkDirt(p,0.8),worn);",
   "#if STRIP_TIER>=1",
@@ -4621,6 +4624,7 @@ var BOG_GLSL_GROUND=[
   "  vec2 p=w.xz; if(p.x>0.0 && p.x<uLen && abs(p.y)<5.0) discard;",
   "  float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(20.0,120.0,d), mid=1.0-smoothstep(100.0,900.0,d);",
   "  vec3 grass=vec3(0.11,0.155,0.055)*(0.8+0.35*sn(p*0.08))*(0.9+0.2*sn(p*1.9)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float worn=smoothstep(0.5,0.8,sn(p*0.06+3.0))*0.6;",
   "  vec3 c=mix(grass,vec3(0.27,0.21,0.14)*(0.85+0.3*sn(p*0.7)),worn);",
   "  float lane=(1.0-smoothstep(5.0,6.5,abs(p.y)))*smoothstep(-58.0,-55.0,p.x)*(1.0-smoothstep(uLen+26.0,uLen+30.0,p.x));",
@@ -6031,6 +6035,7 @@ var BOAT_GLSL_GROUND=[
   "vec3 stripSurf(vec3 w, out float rough){",
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(20.0,140.0,d), mid=1.0-smoothstep(100.0,900.0,d);",
   "  vec3 grass=vec3(0.12,0.17,0.06)*(0.8+0.35*sn(p*0.07))*(0.9+0.2*sn(p*1.7)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float edge=1.0-smoothstep(58.0,63.0,abs(p.y)); vec3 sand=vec3(0.36,0.31,0.22)*(0.85+0.3*sn(p*0.9));",
   "  vec3 c=mix(grass,sand,edge);",
   "  float lot=smoothstep(80.0,81.0,p.y)*(1.0-smoothstep(110.0,111.0,p.y))*smoothstep(-60.0,-59.0,p.x)*(1.0-smoothstep(380.0,381.0,p.x));",
@@ -6373,6 +6378,7 @@ var ROAD_GLSL_GROUND=[
   "  vec2 p=w.xz; float d=length(p-cameraPosition.xz); float fine=1.0-smoothstep(30.0,160.0,d), mid=1.0-smoothstep(150.0,1100.0,d);",
   "  float mow=step(0.5,fract((p.x*0.7+p.y*0.7)/9.0));",
   "  vec3 grass=vec3(0.10,0.155,0.052)*(0.82+0.32*sn(p*0.05))*(1.0+(mow-0.5)*0.18*mid)*(0.9+0.2*sn(p*1.9)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float inf=1.0-smoothstep(uR,uR+60.0,max(abs(p.x)-uHx,abs(p.y)-uHy)+uR);",
   "  vec2 q=(p+vec2(402.0,402.0))/805.0; vec2 cell=floor(q); float h=sh(cell+23.0);",
   "  vec3 fc= h<0.22?vec3(0.40,0.30,0.11): h<0.40?vec3(0.50,0.42,0.03): h<0.56?vec3(0.11,0.17,0.05): h<0.72?vec3(0.30,0.23,0.12): h<0.86?vec3(0.18,0.13,0.08):vec3(0.16,0.19,0.08);",
@@ -6803,6 +6809,10 @@ var SALT_GLSL_GROUND=[
   "  float ridge=(pow(r1,7.0)+0.6*pow(r2,9.0))*(1.0-fine)*mid*0.5;",
   "  vec3 c=vec3(0.84,0.785,0.685)*(0.95+0.08*(n2-0.5)*mid+0.06*(n3-0.5)*fine+0.07*(n4-0.5));",
   "  float sk=uStreak*(1.0-smoothstep(2.0,30.0,d)), sH=0.0;",
+  "  c*=bkSalt(p,0.75);",
+  "#if STRIP_TIER>=1",
+  "  gBn=gBk*(1.0-0.75*sk);",
+  "#endif",
   "  if(fine>0.0){ vec2 pv=p*1.7+vec2(sn(p*0.6),sn(p*0.6+5.3))*1.3; float cx=cameraPosition.x*1.7; pv.x=cx+(pv.x-cx)/(1.0+sk*5.0);",
   "    vec2 vv=saltVor(pv); float e=1.0-smoothstep(0.0,0.075,vv.y-vv.x); vec2 v2=saltVor(pv+uRelief); float e2=1.0-smoothstep(0.0,0.075,v2.y-v2.x);",
   "    float fk=fine*(1.0-0.75*sk); c*=1.0+fk*(0.11*e-0.09*e2*(1.0-e)); c*=1.0-fk*0.05*smoothstep(0.2,0.6,vv.x);",
@@ -8741,6 +8751,7 @@ var OVAL_GLSL=[
   "  vec2 p=w.xz; float dc=length(p-cameraPosition.xz); float fine=1.0-smoothstep(18.0,110.0,dc), mid=1.0-smoothstep(100.0,900.0,dc);",
   "  float rho=uR-length(vec2(max(abs(p.x)-uLs*0.5,0.0),p.y));",
   "  vec3 grass=vec3(0.10,0.15,0.05)*(0.8+0.35*sn(p*0.07))*(0.9+0.2*sn(p*1.7)*fine);",
+  "  grass*=bkGrass(p,0.55);",
   "  float mow=smoothstep(0.5,0.8,sn(p*0.045+2.0)); grass=mix(grass,vec3(0.13,0.19,0.065),mow*0.5);",
   "  vec3 clay=vec3(0.30,0.20,0.125)*(0.78+0.4*sn(p*0.35))+vec3(0.035,0.025,0.015)*(sn(p*5.0)-0.5)*fine;",
   "  float groove=exp(-pow((rho+1.5)/2.6,2.0)), cush=exp(-pow((rho+uW*0.4)/1.8,2.0));",
