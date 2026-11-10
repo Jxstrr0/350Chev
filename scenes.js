@@ -281,10 +281,25 @@ function stripMapMat(m, glsl, key){
   return m;
 }
 
+/* Draw order that saves fill without changing a pixel (every event scene's sky goes through here). The sky used to be drawn first and
+   then painted over by the ground and everything on it: more than half its cloud shader's work thrown away. Now its shader pins it to the
+   far plane (gl_Position.z = w) and it is drawn last among the solid things, so it only fills pixels nothing else covered. The ground
+   shaders (anything stripSurfMat / stripMapMat made) are the dearest solid pixels on screen, so they go second to last: cars, walls and
+   stands first, and the ground skips what they hide. r128 otherwise sorts solid meshes by shader, not by distance. Depth decides every
+   pixel either way, so the picture is the same. The ground pass is redone if the tier changes (new materials). */
+function stripSkyLate(sky){
+  sky.renderOrder=1000;
+  sky.onBeforeRender=function(r, sc){
+    if(sc.userData.lateKey===GFX) return; sc.userData.lateKey=GFX;
+    sc.traverse(function(o){ var m=o.material; if(!o.isMesh || !m || !m.defines || m.defines.STRIP_TIER===undefined || m.transparent || o.userData.late) return; o.userData.late=1; o.renderOrder+=100; });
+  };
+  return sky;
+}
+
 /* --- sky dome: gradient, sun, prairie cumulus; night: stars, moon, town glow on the horizon --- */
 function stripSkyMat(){
   return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:STRIP_SUN_DAY.clone()}, uMoon:{value:STRIP_MOON.clone()}, uNight:{value:0}, uGain:{value:1}, uHor:{value:new THREE.Vector3().fromArray(STRIP_HOR)}, uHorN:{value:new THREE.Vector3().fromArray(STRIP_HOR_N)}, uDusk:{value:0}, uDuskSun:{value:STRIP_SUN_DUSK.clone()} },
-    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position.z=gl_Position.w; }",
     fragmentShader:[ "uniform vec3 uSun; uniform vec3 uMoon; uniform float uNight; uniform float uGain; uniform vec3 uHor; uniform vec3 uHorN; uniform float uDusk; uniform vec3 uDuskSun; varying vec3 vDir;", STRIP_GLSL_NOISE,
       "float h3(vec3 p){ p=fract(p*0.1031); p+=dot(p,p.zyx+31.32); return fract((p.x+p.y)*p.z); }",
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
@@ -381,7 +396,7 @@ function buildStripScene(){
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,40,30); S2.add(flood); S2.add(flood.target); STRIP.flood=flood;
   var flash=new THREE.PointLight(0xff8a30, 0, 9, 2); flash.position.set(0,-50,0); S2.add(flash); STRIP.flash=flash;
   /* sky + fog + big world */
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S2.add(sky); STRIP.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S2.add(sky); STRIP.sky=sky;
   S2.fog=new THREE.Fog(0xffffff, 170, 3400); STRIP.fog=S2.fog;
   var decal={value:stripDecalTex()};   /* painted markings (lane numbers, staging lanes, return road) sampled by both surface shaders */
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), stripSurfMat(STRIP_GLSL_GROUND, null, {uDecal:decal})); ground.rotation.x=-PI/2; ground.position.set(350,-0.03,0); ground.receiveShadow=true; S2.add(ground);
@@ -3930,7 +3945,7 @@ function buildPullScene(){
   S3.add(sun); S3.add(sun.target); PULL.sun=sun;
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,40,30); S3.add(flood); S3.add(flood.target); PULL.flood=flood;
   /* sky, fog, ground, track */
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); PULL.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); PULL.sky=sky;
   S3.fog=new THREE.Fog(0xffffff, 160, 2700); PULL.fog=S3.fog;
   var gm=stripSurfMat(PULL_GLSL_GROUND); gm.customProgramCacheKey=function(){ return "pull_ground"; };
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), gm); ground.rotation.x=-PI/2; ground.position.set(40,-0.12,0); ground.receiveShadow=true; S3.add(ground);
@@ -4701,7 +4716,7 @@ function buildBogScene(){
   var shc=sun.shadow.camera; shc.left=-24; shc.right=24; shc.top=24; shc.bottom=-24; shc.near=1; shc.far=260; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S3.add(sun); S3.add(sun.target); BOG.sun=sun;
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,40,30); S3.add(flood); S3.add(flood.target); BOG.flood=flood;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); BOG.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); BOG.sky=sky;
   S3.fog=new THREE.Fog(0xffffff, 150, 2700); BOG.fog=S3.fog;
   var uLen={value:75}, gm=stripSurfMat(BOG_GLSL_GROUND, null, {uLen:uLen}); gm.userData.uLen=uLen; gm.customProgramCacheKey=function(){ return "bog_ground"; }; BOG.groundMat=gm;
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), gm); ground.rotation.x=-PI/2; ground.position.set(40,-0.02,0); ground.receiveShadow=true; S3.add(ground);
@@ -6121,7 +6136,7 @@ function buildBoatScene(){
   var hemi=new THREE.HemisphereLight(0xcfdcf0, 0x5a6a44, 0.3); S3.add(hemi); BOAT.hemi=hemi;
   var sun=new THREE.DirectionalLight(0xffe6c4, 1.5); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-30; shc.right=30; shc.top=30; shc.bottom=-30; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S3.add(sun); S3.add(sun.target); BOAT.sun=sun;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); BOAT.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); BOAT.sky=sky;
   S3.fog=new THREE.Fog(0xffffff, 200, 2700); BOAT.fog=S3.fog;
   BOAT.wMat=boatWaterMat(lite); var water=new THREE.Mesh(new THREE.PlaneGeometry(4000,130), BOAT.wMat); water.rotation.x=-PI/2; water.position.set(300,0,0); S3.add(water); BOAT.water=water;
   var gm=stripSurfMat(BOAT_GLSL_GROUND); gm.customProgramCacheKey=function(){ return "boat_ground"; };
@@ -6467,7 +6482,7 @@ function buildRoadWorld(T){
   var hemi=new THREE.HemisphereLight(0xcfdcf0, 0x5a5a3c, 0.22); S4.add(hemi); W.hemi=hemi;
   var sun=new THREE.DirectionalLight(0xffe6c4, 1.45); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-30; shc.right=30; shc.top=30; shc.bottom=-30; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S4.add(sun); S4.add(sun.target); W.sun=sun;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S4.add(sky); W.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S4.add(sky); W.sky=sky;
   S4.fog=new THREE.Fog(0xffffff, 300, 3200); W.fog=S4.fog;
   var gm=stripSurfMat(ROAD_GLSL_GROUND.replace(/uR/g,"60.0").replace(/uHx/g,(T.size[0]/2+90).toFixed(1)).replace(/uHy/g,(T.size[1]/2+90).toFixed(1)));
   gm.customProgramCacheKey=function(){ return "road_ground_"+T.id; };
@@ -6823,7 +6838,7 @@ var SALT_GLSL_GROUND=[
 function saltSkyMat(){
   return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:SALT_SUN.clone()}, uHor:{value:new THREE.Vector3().fromArray(SALT_HOR)}, uHorS:{value:new THREE.Vector3().fromArray(SALT_HOR)},
       uZen:{value:new THREE.Vector3(0.045,0.14,0.42)}, uSunC:{value:new THREE.Vector3(1.0,0.86,0.62)}, uBelt:{value:0} },
-    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position.z=gl_Position.w; }",
     fragmentShader:["uniform vec3 uSun; uniform vec3 uHor; uniform vec3 uHorS; uniform vec3 uZen; uniform vec3 uSunC; uniform float uBelt; varying vec3 vDir;", STRIP_GLSL_NOISE, SALT_GLSL_HOR,
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
       " vec3 hor=saltHorC(d,uSun,uHor,uHorS); vec3 col=mix(hor,uZen,pow(up,0.42));",
@@ -6896,7 +6911,7 @@ function buildSaltScene(){
   var sun=new THREE.DirectionalLight(0xfff0dc, 1.6); sun.castShadow=!lite; sun.shadow.mapSize.set(GFX==="ultra"?4096:2048, GFX==="ultra"?4096:2048);
   var shc=sun.shadow.camera; shc.left=-24; shc.right=24; shc.top=24; shc.bottom=-24; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S4.add(sun); S4.add(sun.target); SALT.sun=sun;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), saltSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S4.add(sky); SALT.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600, 40, 20), saltSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S4.add(sky); SALT.sky=sky;
   SALT.horLin=new THREE.Color(SALT_HOR[0], SALT_HOR[1], SALT_HOR[2]);
   S4.fog=new THREE.Fog(0xffffff, 1800, 30000);
   S4.environment=stripEnv(false);
@@ -8313,7 +8328,7 @@ function saltEventUpdate(o, dt, V, ph){
 var HILL_RW=8, _hA=new THREE.Vector3(), _hB=new THREE.Vector3(), _hC=new THREE.Vector3(), _hW=new THREE.Vector3(0.8,0,-0.3);
 function hillSkyMat(){
   return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:new THREE.Vector3(-0.35,0.62,0.7).normalize()}, uAlt:{value:0} },
-    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position.z=gl_Position.w; }",
     fragmentShader:["uniform vec3 uSun; uniform float uAlt; varying vec3 vDir;",
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
       /* thin air: less scattering, so the zenith goes a deeper, darker blue and the horizon haze thins as the car climbs */
@@ -8381,7 +8396,7 @@ function buildHillWorld(T){
   var sun=new THREE.DirectionalLight(0xfff0d8, 1.6); sun.shadow.mapSize.set(lite?512:2048,lite?512:2048); var shc=sun.shadow.camera; shc.left=-34; shc.right=34; shc.top=34; shc.bottom=-34; shc.near=1; shc.far=400; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.04; sun.castShadow=!lite;
   if(ultra){ sun.shadow.mapSize.set(4096,4096); shc.left=shc.bottom=-48; shc.right=shc.top=48; }   /* Ultra: a sharper, wider sun shadow */
   S5.add(sun); S5.add(sun.target); W.sun=sun; W.sunDir=new THREE.Vector3(-0.35,0.62,0.7).normalize();
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), hillSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S5.add(sky); W.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), hillSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S5.add(sky); W.sky=sky;
   S5.fog=new THREE.Fog(0xa8b8c8, 500, 6000); W.fog=S5.fog; W.horLin=new THREE.Color(0.6,0.68,0.76);
   S5.environment=stripEnv(false);
   /* terrain grid over the course box plus a margin */
@@ -8786,7 +8801,7 @@ function buildOvalScene(G){
   var sun=new THREE.DirectionalLight(0xffe6c4, 1.45); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-34; shc.right=34; shc.top=34; shc.bottom=-34; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S3.add(sun); S3.add(sun.target); OVAL.sun=sun;
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,60,40); S3.add(flood); S3.add(flood.target); OVAL.flood=flood;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); OVAL.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); OVAL.sky=sky;
   S3.fog=new THREE.Fog(0xffffff,150,2700); OVAL.fog=S3.fog;
   var U={ uR:{value:R}, uLs:{value:ls}, uW:{value:W}, uDry:{value:0}, uAsph:{value:G.surf==="asphalt"?1:0} };
   var gm=stripSurfMat(OVAL_GLSL, null, U); gm.customProgramCacheKey=function(){ return "oval_ground"; }; gm.userData.U=U; M.ground=gm;

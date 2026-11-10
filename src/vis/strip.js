@@ -280,10 +280,25 @@ function stripMapMat(m, glsl, key){
   return m;
 }
 
+/* Draw order that saves fill without changing a pixel (every event scene's sky goes through here). The sky used to be drawn first and
+   then painted over by the ground and everything on it: more than half its cloud shader's work thrown away. Now its shader pins it to the
+   far plane (gl_Position.z = w) and it is drawn last among the solid things, so it only fills pixels nothing else covered. The ground
+   shaders (anything stripSurfMat / stripMapMat made) are the dearest solid pixels on screen, so they go second to last: cars, walls and
+   stands first, and the ground skips what they hide. r128 otherwise sorts solid meshes by shader, not by distance. Depth decides every
+   pixel either way, so the picture is the same. The ground pass is redone if the tier changes (new materials). */
+function stripSkyLate(sky){
+  sky.renderOrder=1000;
+  sky.onBeforeRender=function(r, sc){
+    if(sc.userData.lateKey===GFX) return; sc.userData.lateKey=GFX;
+    sc.traverse(function(o){ var m=o.material; if(!o.isMesh || !m || !m.defines || m.defines.STRIP_TIER===undefined || m.transparent || o.userData.late) return; o.userData.late=1; o.renderOrder+=100; });
+  };
+  return sky;
+}
+
 /* --- sky dome: gradient, sun, prairie cumulus; night: stars, moon, town glow on the horizon --- */
 function stripSkyMat(){
   return new THREE.ShaderMaterial({ uniforms:{ uSun:{value:STRIP_SUN_DAY.clone()}, uMoon:{value:STRIP_MOON.clone()}, uNight:{value:0}, uGain:{value:1}, uHor:{value:new THREE.Vector3().fromArray(STRIP_HOR)}, uHorN:{value:new THREE.Vector3().fromArray(STRIP_HOR_N)}, uDusk:{value:0}, uDuskSun:{value:STRIP_SUN_DUSK.clone()} },
-    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
+    vertexShader:"varying vec3 vDir; void main(){ vDir=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position.z=gl_Position.w; }",
     fragmentShader:[ "uniform vec3 uSun; uniform vec3 uMoon; uniform float uNight; uniform float uGain; uniform vec3 uHor; uniform vec3 uHorN; uniform float uDusk; uniform vec3 uDuskSun; varying vec3 vDir;", STRIP_GLSL_NOISE,
       "float h3(vec3 p){ p=fract(p*0.1031); p+=dot(p,p.zyx+31.32); return fract((p.x+p.y)*p.z); }",
       "void main(){ vec3 d=normalize(vDir); float h=d.y, up=clamp(h,0.0,1.0);",
@@ -380,7 +395,7 @@ function buildStripScene(){
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,40,30); S2.add(flood); S2.add(flood.target); STRIP.flood=flood;
   var flash=new THREE.PointLight(0xff8a30, 0, 9, 2); flash.position.set(0,-50,0); S2.add(flash); STRIP.flash=flash;
   /* sky + fog + big world */
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S2.add(sky); STRIP.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S2.add(sky); STRIP.sky=sky;
   S2.fog=new THREE.Fog(0xffffff, 170, 3400); STRIP.fog=S2.fog;
   var decal={value:stripDecalTex()};   /* painted markings (lane numbers, staging lanes, return road) sampled by both surface shaders */
   var ground=new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), stripSurfMat(STRIP_GLSL_GROUND, null, {uDecal:decal})); ground.rotation.x=-PI/2; ground.position.set(350,-0.03,0); ground.receiveShadow=true; S2.add(ground);

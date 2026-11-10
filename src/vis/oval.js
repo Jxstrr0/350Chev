@@ -93,7 +93,7 @@ function buildOvalScene(G){
   var sun=new THREE.DirectionalLight(0xffe6c4, 1.45); sun.shadow.mapSize.set(2048,2048); var shc=sun.shadow.camera; shc.left=-34; shc.right=34; shc.top=34; shc.bottom=-34; shc.near=1; shc.far=300; sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
   S3.add(sun); S3.add(sun.target); OVAL.sun=sun;
   var flood=new THREE.DirectionalLight(0xfff2dc, 0); flood.position.set(0,60,40); S3.add(flood); S3.add(flood.target); OVAL.flood=flood;
-  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; sky.renderOrder=-10; S3.add(sky); OVAL.sky=sky;
+  var sky=new THREE.Mesh(new THREE.SphereGeometry(2600,40,20), stripSkyMat()); sky.frustumCulled=false; stripSkyLate(sky); S3.add(sky); OVAL.sky=sky;
   S3.fog=new THREE.Fog(0xffffff,150,2700); OVAL.fog=S3.fog;
   var U={ uR:{value:R}, uLs:{value:ls}, uW:{value:W}, uDry:{value:0}, uAsph:{value:G.surf==="asphalt"?1:0} };
   var gm=stripSurfMat(OVAL_GLSL, null, U); gm.customProgramCacheKey=function(){ return "oval_ground"; }; gm.userData.U=U; M.ground=gm;
