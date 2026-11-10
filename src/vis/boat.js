@@ -207,7 +207,7 @@ function buildBoatScene(){
     instCull(bodyM, 1.5); instCull(headM, 1.5); S3.add(bodyM); S3.add(headM); BOAT.crowd={body:bodyM, head:headM, base:base, n:n, phase:base.map(function(p,q){ return rng(q*9.1)*TAU; }), excite:base.map(function(p,q){ return rng(q*5.3); }), live:false}; })();
   /* spray: droplets (unlit, sharp) on every tier, a soft lit mist on Full/Ultra; wakes for both lanes */
   BOAT.fx=new StripFx(lite?220:900, "fire", stripPuffTex()); BOAT.fx.mat.blending=THREE.NormalBlending; S3.add(BOAT.fx.mesh);
-  BOAT.fxMist=lite?null:new StripFx(GFX==="ultra"?500:300, "smoke", stripPuffTex()); if(BOAT.fxMist) S3.add(BOAT.fxMist.mesh);
+  BOAT.fxMist=lite?null:new StripFx(GFX==="ultra"?500:300, "smoke", stripPuffTex(), {flip:1}); if(BOAT.fxMist) S3.add(BOAT.fxMist.mesh);
   BOAT.wakeMe=boatWakeMesh(); BOAT.wakeOpp=boatWakeMesh(); S3.add(BOAT.wakeMe); S3.add(BOAT.wakeOpp);
   BOAT.cam=new THREE.PerspectiveCamera(45, 1, 0.3, 3600); BOAT.built=true;
   BOAT.night=null; boatSetLight(false);
@@ -342,7 +342,7 @@ function boatReset(){
 function boatGet(cls, color, lane){ var key=cls+":"+color+":"+lane; if(!BOAT.boats[key]){ BOAT.boats[key]=boatModel(cls, color); BOAT.scene.add(BOAT.boats[key]); } return BOAT.boats[key]; }
 function boatUpdate(o, dt){
   if(!BOAT.built) buildBoatScene();
-  BOAT.t+=dt; if(BOAT.tier!==GFX){ var lite=GFX==="lite"; if(!lite&&!BOAT.fxMist){ BOAT.fxMist=new StripFx(GFX==="ultra"?500:300,"smoke",stripPuffTex()); BOAT.scene.add(BOAT.fxMist.mesh); } BOAT.wMat=null; }
+  BOAT.t+=dt; if(BOAT.tier!==GFX){ var lite=GFX==="lite"; if(!lite&&!BOAT.fxMist){ BOAT.fxMist=new StripFx(GFX==="ultra"?500:300,"smoke",stripPuffTex(),{flip:1}); BOAT.scene.add(BOAT.fxMist.mesh); } BOAT.wMat=null; }
   if(!BOAT.wMat){ BOAT.wMat=boatWaterMat(GFX==="lite"); BOAT.water.material=BOAT.wMat; BOAT.night=null; }
   boatSetLight(!!o.night);
   var ph=o.phase||"tree", cls=BOAT_LOOK[o.cls]?o.cls:"outboard", me=o.me||{}, op=o.opp||{};

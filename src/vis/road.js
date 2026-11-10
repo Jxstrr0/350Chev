@@ -240,7 +240,7 @@ function buildRoadWorld(T){
   /* trackside cameras: one per corner (above), a couple down each long straight, the gantry */
   for(q=0;q<N;q+=Math.round(330/ds)){ if(Math.abs(T.k[q])<1e-6) W.stations.push({i:q, d:(q%2?1:-1)*(hw+14), y:2.6}); }
   W.stations.sort(function(a,b){ return a.i-b.i; });
-  W.fx=new StripFx(lite?160:360, "smoke", stripPuffTex()); S4.add(W.fx.mesh);
+  W.fx=new StripFx(lite?160:360, "smoke", stripPuffTex(), lite?null:{flip:1}); S4.add(W.fx.mesh);
   return W;
 }
 /* door car scaled per chassis: [length, height, width, tyre inches, wing] */
