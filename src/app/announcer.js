@@ -1,11 +1,11 @@
-/* ---- drag announcer: Ed, the voice of the strip ----
-   143 voice lines generated with ElevenLabs (voice "Ed, the Late Night Announcer"; credits in sounds/CREDITS.md), mono MP3 in
+/* ---- drag announcer: Hassan, the voice of the strip ----
+   143 voice lines generated with ElevenLabs (voice "Hassan - YouTube Commentary"; trimmed and sped up by tools/trim-announcer.sh; credits in sounds/CREDITS.md), mono MP3 in
    sounds/announcer/: 73 race calls (night opens, rounds, staging, the light, wheelspin, red light, win and loss by margin,
    breakage, break-out, centreline, black flag, PB, qualifying and how the night ended) and 70 matchup parts that are stitched
    into "Here's your matchup! twin turbo two point oh litre inline four, versus Roots blown eight point two litre Hemi methanol V8".
    Nothing loads until a drag pass starts with sound and the announcer on; then only the lines picked for that pass are fetched
    (the service worker caches the files) and decoded, and a small cache keeps the last few dozen decoded clips.
-   Ed plays through the engine's audio context straight to the speakers, past the engine EQ, with the engine ducked while he talks.
+   Hassan plays through the engine's audio context straight to the speakers, past the engine EQ, with the engine ducked while he talks.
    Settings › Sound › Drag announcer: On / Off (S.ann; on unless set false). Hooks: annPass / annStaged / annLight / annSpin /
    annResult / annNight, called from src/app/drag.js. */
 const ANN_POOLS={openHeads:[1,2,3,48],openBr:[4,5,48],q1:[6,49],q2:[7,50],tt:[8],qf:[9,51],sf:[10,52],fin:[11,53],
@@ -20,7 +20,7 @@ const ANN_CALL=(()=>{const m={},put=(keys,from)=>keys.forEach((k,i)=>{m[k]=from+
   put(["I1","I2","I3","I4","I5","I6","V4","V6","V8","V8F","V10","V12","F4","F6","R1","R2","R3","R4","D18"],28);
   for(let i=1;i<=14;i++)m["n"+i]=46+i;for(let i=0;i<=9;i++)m["p"+i]=61+i;return m;})();
 /* the other lane's engine for the call: "litres layout aspiration [fuel] [hemi] [n2o]" per rival car (race nights) and per
-   test & tune name. Flavour for Ed only: the sim's rival model does not read it. */
+   test & tune name. Flavour for Hassan only: the sim's rival model does not read it. */
 const ANN_RIVAL=(()=>{const t={
   "'69 Camaro":"5.7 V8 na","Fox-body Mustang":"5.0 V8 na","'72 Nova":"5.7 V8 na","Civic hatch":"1.6 I4 turbo","'87 Grand National":"3.8 V6 turbo","'71 Duster":"5.6 V8 na",
   "'99 Trans Am":"5.7 V8 na","Duramax crew cab":"6.6 V8 turbo diesel","'66 Chevelle":"6.5 V8 na","Supra Mk IV":"3.0 I6 twin_turbo","'70 Challenger":"7.0 V8 na hemi","'86 Monte Carlo SS":"5.0 V8 na",
@@ -52,7 +52,7 @@ function annPick(pool){const a=ANN_POOLS[pool];if(!a)return null;const c=a.lengt
 function annPrep(pools){if(!annCtx())return;pools.forEach(p=>{if(ANN.next[p]==null)ANN.next[p]=annPick(p);annLoad(ANN.next[p]);});}
 function annTake(pool){const id=ANN.next[pool]!=null?ANN.next[pool]:annPick(pool);ANN.last[pool]=id;ANN.next[pool]=null;return id;}
 /* a phrase is a list of clip ids (with "|" for a breath between sections); urgent cuts off what's playing, otherwise a phrase
-   that can't start within `wait` seconds is dropped, so Ed never runs late on the action */
+   that can't start within `wait` seconds is dropped, so Hassan never runs late on the action */
 function annSay(ids,o){o=o||{};const ctx=annCtx();if(!ctx||!ids||!ids.length)return;const at=performance.now();
   Promise.all(ids.map(i=>i==="|"?Promise.resolve("|"):annLoad(i))).then(bs=>{
     if(!annCtx())return;const late=(performance.now()-at)/1000;if(late>(o.load||2.5))return;
@@ -65,9 +65,9 @@ function annNext(){const ctx=annCtx();let job=ANN.q.shift();while(job&&(performa
   if(!job||!ctx){ANN.busy=false;annDuck(false);return;}
   ANN.busy=true;annDuck(true);const g=ctx.createGain();g.gain.value=Math.min(1.5,1.15*S.vol/100+0.1);g.connect(ctx.destination);
   let t=ctx.currentTime+0.05,srcs=[];
-  job.bs.forEach(b=>{if(b==="|"){t+=0.22;return;}const s=ctx.createBufferSource();s.buffer=b;s.connect(g);s.start(t);t+=b.duration+0.04;srcs.push(s);});
-  ANN.src=srcs;const end=srcs[srcs.length-1];end.onended=()=>{if(ANN.src!==srcs)return;ANN.src=null;setTimeout(annNext,120);};}
-/* how Ed says an engine: [aspiration] [litres] [Hemi | two-stroke] [fuel] [layout] [on nitrous] */
+  job.bs.forEach(b=>{if(b==="|"){t+=0.15;return;}const s=ctx.createBufferSource();s.buffer=b;s.connect(g);s.start(t);t+=b.duration;srcs.push(s);});
+  ANN.src=srcs;const end=srcs[srcs.length-1];end.onended=()=>{if(ANN.src!==srcs)return;ANN.src=null;setTimeout(annNext,60);};}
+/* how Hassan says an engine: [aspiration] [litres] [Hemi | two-stroke] [fuel] [layout] [on nitrous] */
 const ANN_FUEL={diesel:1,b100:1,methanol:1,e85:1,lpg:1,cng:1};
 function annLitres(L){const out=[];if(!(L>0)||L>=14.95)return out;const w=Math.floor(L+0.05),p=Math.round((L-w)*10);
   if(w>=1){out.push("n"+w);out.push("p"+Math.max(0,Math.min(9,p)));}else out.push("p"+Math.max(1,Math.min(9,p)));return out;}
@@ -90,7 +90,7 @@ function annPass(){ANN.said={};if(!annCtx()||!DR)return;const R=DR.race,n=DR.nig
   if(say.length)annSay(say,{wait:6,load:5});}
 /* both cars in the beams (or yours, on a solo pass) */
 function annStaged(){if(ANN.said.stage||!annCtx())return;ANN.said.stage=1;annSay([annTake(DR.race?"stage":"ttStage")],{drop:true,wait:0.6});}
-/* the light: a red light cuts Ed off; a great or late one gets a word */
+/* the light: a red light cuts Hassan off; a great or late one gets a word */
 function annLight(R){if(!R||!annCtx())return;
   if(R.foul){annSay([annTake("red")],{urgent:true});return;}
   const rt=R.rt0;if(rt==null)return;const p=rt<0.02?"rtPerfect":rt<0.05?"rtGreat":rt>0.25?"rtLate":null;if(p)annSay([annTake(p)],{urgent:true,wait:0.8});}
@@ -119,4 +119,4 @@ function annNight(s0){const N=rnCur();if(!N||!annCtx())return;let p=null;
   if(p)annSay([annTake(p)],{wait:8,load:4});}
 /* Settings › Sound › Drag announcer */
 function applyAnn(){const on=S.ann!==false;document.querySelectorAll("#annSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.ann==="1")===on));if(!on){ANN.q.length=0;annStop();}}
-$("annSeg").addEventListener("click",e=>{const b=e.target.closest("[data-ann]");if(!b)return;S.ann=b.dataset.ann==="1";applyAnn();save();toast(S.ann?"ANNOUNCER ON · Ed calls the strip":"ANNOUNCER OFF");});
+$("annSeg").addEventListener("click",e=>{const b=e.target.closest("[data-ann]");if(!b)return;S.ann=b.dataset.ann==="1";applyAnn();save();toast(S.ann?"ANNOUNCER ON · Hassan calls the strip":"ANNOUNCER OFF");});
