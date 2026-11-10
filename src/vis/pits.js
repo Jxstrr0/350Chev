@@ -166,6 +166,7 @@ function pitsProps(car){
   B.add("metal","cyl",[wx, 1.3, wz],[0.04,1.2,0.04],0x2a2c30); B.box("metal", wx, 1.95, wz, 0.42, 0.3, 0.14, 0xf2b61f, -0.75);
   B.box("glow", wx-0.05, 1.95, wz-0.06, 0.36, 0.24, 0.04, 0xfff6e2, -0.75);
   pitsBuild(B, "solid", M.solid, true, G); pitsBuild(B, "metal", M.metal, true, G); pitsBuild(B, "glow", M.glow, false, G);
+  contactShadow(G, 0, cx, cz, 1.09, 0.59, 0.6); contactShadow(G, 0, x0-0.2, -2.7, 0.72, 0.44, 0.55);   /* soft baked shadow under the tool cart and the cooler (core.js) */
   PITS.spot.position.set(wx-0.1, 1.95, wz-0.05); PITS.spot.target.position.set((x0+x1)/2-0.4, 0.4, 0); PITS.spot.target.updateMatrixWorld();
   /* crew: one on the rear tyre with the gauge, one leaning into the engine bay */
   var A=pitsPerson(0xe5562b, "kneel", 0x22262c); A.position.set(rearX+0.05, 0, -(rearZ+F.tw*0.5+0.62)); A.rotation.y=PI+0.12;   /* r8: far side of the rear tyre: on the near side he stood in front of the rear wheel and the bars */
