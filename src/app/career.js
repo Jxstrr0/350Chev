@@ -295,7 +295,7 @@ GOALS.push(
 /* goals pay their cash and rep (default 10) once; then a look at the rival board */
 function checkGoals(){let hit=[];for(const g of GOALS){if(C().goals[g.id])continue;let ok=false;try{ok=g.check(C());}catch(e){}
     if(ok){const rp=g.rep!=null?g.rep:10;C().goals[g.id]=C().week;C().cash+=g.cash;C().rep+=rp;logEvent(`Goal: ${g.name} — ${fmt$(g.cash)} bonus${rp?`, +${rp} rep`:""}`,"good");hit.push(g);}}
-  if(hit.length){toastAfter(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}`);buzz([30,30,30]);}
+  if(hit.length){toastAfter(`Goal: ${hit[0].name} · +${fmt$(hit[0].cash)}${(hit[0].rep!=null?hit[0].rep:10)?` · +${hit[0].rep!=null?hit[0].rep:10} rep`:""}`);buzz([30,30,30]);}
   rivalsPos();return hit.length;}
 function goalsHtml(){const one=g=>{const w=C().goals[g.id];let pg=null;if(!w&&g.prog){try{pg=g.prog(C());}catch(e){}}
     return `<div class="goal ${w?"done":""}"><div><h3>${g.name}</h3><p>${g.desc}</p>${pg?`<div class="gprog"><i style="width:${Math.round(100*pg[0]/pg[1])}%"></i></div>`:""}</div><div class="price">${w?"✓ wk "+w:pg?`<small>${Math.floor(pg[0])} / ${pg[1]}</small>${fmt$(g.cash)}`:fmt$(g.cash)}</div></div>`;};
