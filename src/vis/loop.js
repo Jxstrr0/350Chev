@@ -108,10 +108,8 @@ function tick(dt, t){
   for(i=0;i<anim.spin.length;i++){
     var sp=anim.spin[i]; sp.o.rotation.x = (sp.o.rotation.x + crank*sp.k) % TAU;
   }
-  /* belts: one texture scroll per belt material, in step with the crank (their uv counts crank angle, see beltUvU) */
-  if(crank){ BELT_OFF=(BELT_OFF+crank*BELT_UV)%1;
-    if(MAT.belt) MAT.belt.map.offset.x=BELT_OFF;               /* MATHI.belt is a clone: same texture, so it scrolls too */
-    if(MATHI.beltFlat) MATHI.beltFlat.map.offset.x=BELT_OFF; }
+  /* belts: each one's print, and a toothed belt's teeth, move with the crank at that belt's own rate (beltAnim, intake.js) */
+  if(crank) for(i=0;i<anim.belts.length;i++){ var bl=anim.belts[i]; bl.u.value=(bl.u.value+crank*bl.k)%1; if(bl.t) bl.t.value=(bl.t.value+crank*bl.kt)%1; }
   for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
   if(anim.internals){
     var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
@@ -249,7 +247,6 @@ function tick(dt, t){
   }
 }
 var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
-var BELT_OFF=0;
 /* How fast the crank is drawn turning. A real crank turns 13 to 150 times a second, far more than a 30-60 fps screen can show:
    drawn true to speed (or at the old fixed sixth of it) a pulley's paint mark or a ring of bolts lands almost anywhere each
    frame, so it looks stopped, jerky or running backwards (the wagon-wheel effect), and a phone at 30 fps gets it worst. So the
