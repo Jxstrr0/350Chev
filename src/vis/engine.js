@@ -93,12 +93,15 @@ function buildEngineMesh(cfg, layoutObj){
   if(!L.boxer){
     var ofZ = caseW*0.52+bore*0.24, ofY = caseBot+caseSpan*0.34;
     B.add("calu", CYL(bore*0.22,bore*0.22,bore*0.14,14,false,2.4), bankLen*0.16, ofY, caseW*0.5+bore*0.06, PI/2,0,0);
-    B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.14, PI/2,0,0);
-    B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.05,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.46, PI/2,0,0);
+    if(!partAdd(B, "oilFilter", bankLen*0.16, ofY, ofZ+bore*0.1575, PI/2,0,0, bore*0.32, bore*0.655, bore*0.32)){   /* the modelled filter (engparts.js) */
+      B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.14, PI/2,0,0);
+      B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.05,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.46, PI/2,0,0);
+    }
   } else {
     var obZ = caseW*0.43+bore*0.36, obY = -bankW*0.5;
     B.add("calu", CYL(bore*0.22,bore*0.22,bore*0.12,14,false,2.4), bankLen*0.30, obY-bore*0.06, obZ);
-    B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.30, obY-bore*0.43, obZ);
+    if(!partAdd(B, "oilFilter", bankLen*0.30, obY-bore*0.43, obZ, PI,0,0, bore*0.32, bore*0.62, bore*0.32))
+      B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.30, obY-bore*0.43, obZ);
   }
   /* starter (the only one): bolted to the bell-housing flange, motor forward along the block with the solenoid piggy-backed
      and the nose through the flange to the ring gear; a boxer carries it on the transmission side, above the flywheel */
@@ -594,7 +597,8 @@ function buildRotaryMesh(cfg, L, B, G, extras, t0){
   }
   if(cfg.oilMeter==="premix") B.add("blackPlast", CYL(bore*0.06,bore*0.06,bore*0.04,8), ompX, ompY+bore*0.26, bore*0.30);   /* capped off */
   /* oil filter on the front cover, low on the +Z side; water outlet + thermostat on top */
-  B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.58,20,false,1.8), xF+coverT*0.5, -Hh*0.60, Hw*0.55+bore*0.30, PI/2,0,0);
+  if(!partAdd(B, "oilFilter", xF+coverT*0.5, -Hh*0.60, Hw*0.55+bore*0.30, PI/2,0,0, bore*0.30, bore*0.58, bore*0.30))
+    B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.58,20,false,1.8), xF+coverT*0.5, -Hh*0.60, Hw*0.55+bore*0.30, PI/2,0,0);
   B.add("calu", CYL(bore*0.13,bore*0.13,bore*0.40,12), xF-bore*0.10, Hh+bore*0.16, -bore*0.30, 0,0,0);
 
   /* ---------- sump ---------- */
