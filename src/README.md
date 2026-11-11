@@ -112,7 +112,7 @@ Files added after the map above was written (their place in the order is in `man
 | `sim/boat.js` | boat drags: 1,000 ft of river, prop or jet pump, hump then plane, wind and chop; BOAT_CLASSES/HULLS, `boatRun`, `boatPass` |
 | `sim/swap.js` | engine swaps: the VEHICLES catalogue (20 cars in 5 groups), `engineDims`, `swapFit`, SWAP_FIX; shared by road, drag, salt and the 24 Hours |
 | `vis/engdetail.js` | 7g. engine detail for Full / Ultra: coolant plumbing, MAP sensor, senders, flange bolts |
-| `vis/engparts.js` | 7h. modelled small parts for Full / Ultra: loads `models/eng-parts.glb` (bolts, clamp, coils, plug boot, wiring plug, oil filter, injector, built by `tools/blender/engine-parts.py`) and places them where the builder drew a plain box (`partAdd`; `hwGeo` in `core.js` for the instanced hardware) |
+| `vis/engparts.js` | 7h. modelled small parts for Full / Ultra: loads `models/eng-parts.glb` (bolts, clamp, coils, plug boot, wiring plug, oil filter, injector, alternator, starter, water pump, built by `tools/blender/engine-parts.py`) and places them where the builder drew a plain box (`partAdd`; `hwGeo` in `core.js` for the instanced hardware) |
 | `vis/strip-ground.js` | drag cars grounded: contact-shadow decals and tyre patches under each car |
 | `vis/bog-trucks.js` | one real-size truck per mud bog class |
 | `vis/bog-fx.js` | the bog's mud: clods, spray, rooster tails, splats |
