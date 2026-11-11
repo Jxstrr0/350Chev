@@ -1264,7 +1264,7 @@ function buildHiMaterials(){
   MATHI.calu.userData.sf=["castalu", 1.0, 1.3];
   /* machined aluminium wears tool marks (4th number -1: turned round the crank's axis), sprayed paint its orange peel (4th number: how much it chips along the edges) */
   MATHI.malu.userData.sf=["machined", 0.8, 1.0, -1];   /* -1: turned, not painted */
-  ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key].userData.sf=["paint", 1.0, 1.0, 0.6]; });
+  ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key].userData.sf=["paint", 1.0, 0.55, 0.6]; });
   /* new surfaces */
   MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:0.75,env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
   MATHI.turned    = hiFlag(pmat(S, fnTurned,      {ns:0.7, env:1.3}));

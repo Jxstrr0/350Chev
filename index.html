@@ -14330,7 +14330,7 @@ function buildHiMaterials(){
   MATHI.calu.userData.sf=["castalu", 1.0, 1.3];
   /* machined aluminium wears tool marks (4th number -1: turned round the crank's axis), sprayed paint its orange peel (4th number: how much it chips along the edges) */
   MATHI.malu.userData.sf=["machined", 0.8, 1.0, -1];   /* -1: turned, not painted */
-  ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key].userData.sf=["paint", 1.0, 1.0, 0.6]; });
+  ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key].userData.sf=["paint", 1.0, 0.55, 0.6]; });
   /* new surfaces */
   MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:0.75,env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
   MATHI.turned    = hiFlag(pmat(S, fnTurned,      {ns:0.7, env:1.3}));
@@ -15026,12 +15026,15 @@ function buildEngineMesh(cfg, layoutObj){
   if(!L.boxer){
     var ofZ = caseW*0.52+bore*0.24, ofY = caseBot+caseSpan*0.34;
     B.add("calu", CYL(bore*0.22,bore*0.22,bore*0.14,14,false,2.4), bankLen*0.16, ofY, caseW*0.5+bore*0.06, PI/2,0,0);
-    B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.14, PI/2,0,0);
-    B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.05,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.46, PI/2,0,0);
+    if(!partAdd(B, "oilFilter", bankLen*0.16, ofY, ofZ+bore*0.1575, PI/2,0,0, bore*0.32, bore*0.655, bore*0.32)){   /* the modelled filter (engparts.js) */
+      B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.14, PI/2,0,0);
+      B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.05,20,false,1.8), bankLen*0.16, ofY, ofZ+bore*0.46, PI/2,0,0);
+    }
   } else {
     var obZ = caseW*0.43+bore*0.36, obY = -bankW*0.5;
     B.add("calu", CYL(bore*0.22,bore*0.22,bore*0.12,14,false,2.4), bankLen*0.30, obY-bore*0.06, obZ);
-    B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.30, obY-bore*0.43, obZ);
+    if(!partAdd(B, "oilFilter", bankLen*0.30, obY-bore*0.43, obZ, PI,0,0, bore*0.32, bore*0.62, bore*0.32))
+      B.add("paintBlue", CYL(bore*0.32,bore*0.32,bore*0.62,20,false,1.8), bankLen*0.30, obY-bore*0.43, obZ);
   }
   /* starter (the only one): bolted to the bell-housing flange, motor forward along the block with the solenoid piggy-backed
      and the nose through the flange to the ring gear; a boxer carries it on the transmission side, above the flywheel */
@@ -15527,7 +15530,8 @@ function buildRotaryMesh(cfg, L, B, G, extras, t0){
   }
   if(cfg.oilMeter==="premix") B.add("blackPlast", CYL(bore*0.06,bore*0.06,bore*0.04,8), ompX, ompY+bore*0.26, bore*0.30);   /* capped off */
   /* oil filter on the front cover, low on the +Z side; water outlet + thermostat on top */
-  B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.58,20,false,1.8), xF+coverT*0.5, -Hh*0.60, Hw*0.55+bore*0.30, PI/2,0,0);
+  if(!partAdd(B, "oilFilter", xF+coverT*0.5, -Hh*0.60, Hw*0.55+bore*0.30, PI/2,0,0, bore*0.30, bore*0.58, bore*0.30))
+    B.add("paintBlue", CYL(bore*0.30,bore*0.30,bore*0.58,20,false,1.8), xF+coverT*0.5, -Hh*0.60, Hw*0.55+bore*0.30, PI/2,0,0);
   B.add("calu", CYL(bore*0.13,bore*0.13,bore*0.40,12), xF-bore*0.10, Hh+bore*0.16, -bore*0.30, 0,0,0);
 
   /* ---------- sump ---------- */
@@ -16579,7 +16583,8 @@ function buildBank(B, p, extras){
     B.add("malu", CYL(bore*0.055*railK,bore*0.055*railK,bankLen*0.94,12,false,3.0), 0, headY+headH*0.72, inZ+Z(-bore*0.16), 0,0,PI/2);
     for(i=0;i<per;i++){
       var ix=-bankLen/2 + bspace*(i+0.5);
-      B.add("blackPlast", CYL(bore*0.048*injK,bore*0.038*injK,bore*0.20*injK,10), ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0);   /* nozzle tipped toward the port */
+      if(!partAdd(B, "injector", ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0, bore*0.052*injK, bore*0.20*injK, bore*0.052*injK))   /* the modelled injector (engparts.js) */
+        B.add("blackPlast", CYL(bore*0.048*injK,bore*0.038*injK,bore*0.20*injK,10), ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0);   /* nozzle tipped toward the port */
       B.add("dark", BOX(bore*0.09*injK,bore*0.07,bore*0.06*injK), ix, headY+headH*0.78, inZ+Z(-bore*0.16));
       if(DET>=2){
         B.add("steel", BOX(bore*0.022, bore*0.05, bore*0.075), ix+bore*0.055, headY+headH*0.70, inZ+Z(-bore*0.15));    /* retaining clip */
@@ -18803,8 +18808,8 @@ function tsDelticEnds(B, o){
   setZone(0);
 }
 /* ===========================================================================
-   7h. MODELLED SMALL PARTS (Full / Ultra): the engine's fasteners, hose clamp, ignition coils, plug boot and wiring
-   plug as real shapes, modelled in Blender by tools/blender/engine-parts.py and kept in one file, models/eng-parts.glb
+   7h. MODELLED SMALL PARTS (Full / Ultra): the engine's fasteners, hose clamp, ignition coils, plug boot, wiring
+   plug, oil filter and fuel injectors as real shapes, modelled in Blender by tools/blender/engine-parts.py and kept in one file, models/eng-parts.glb
    (geometry only: the engine's own materials go on). The engine is still built in code; these only stand in where
    code drew a plain box or cylinder that is looked at up close.
    The file loads once, after the first Full / Ultra engine is asked for. Until it lands (or if it never does: offline
@@ -22849,7 +22854,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.130.0";
+const VERSION="1.76.131.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

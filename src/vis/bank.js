@@ -488,7 +488,8 @@ function buildBank(B, p, extras){
     B.add("malu", CYL(bore*0.055*railK,bore*0.055*railK,bankLen*0.94,12,false,3.0), 0, headY+headH*0.72, inZ+Z(-bore*0.16), 0,0,PI/2);
     for(i=0;i<per;i++){
       var ix=-bankLen/2 + bspace*(i+0.5);
-      B.add("blackPlast", CYL(bore*0.048*injK,bore*0.038*injK,bore*0.20*injK,10), ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0);   /* nozzle tipped toward the port */
+      if(!partAdd(B, "injector", ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0, bore*0.052*injK, bore*0.20*injK, bore*0.052*injK))   /* the modelled injector (engparts.js) */
+        B.add("blackPlast", CYL(bore*0.048*injK,bore*0.038*injK,bore*0.20*injK,10), ix, headY+headH*0.60, inZ+Z(-bore*0.13), RX(-0.30),0,0);   /* nozzle tipped toward the port */
       B.add("dark", BOX(bore*0.09*injK,bore*0.07,bore*0.06*injK), ix, headY+headH*0.78, inZ+Z(-bore*0.16));
       if(DET>=2){
         B.add("steel", BOX(bore*0.022, bore*0.05, bore*0.075), ix+bore*0.055, headY+headH*0.70, inZ+Z(-bore*0.15));    /* retaining clip */
