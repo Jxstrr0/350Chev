@@ -266,6 +266,21 @@ var N2O_PURGE=null;       /* nitrous purge nozzle marker (an Object3D in the eng
 var LAST_PLEN=null;       /* plenum / blower-manifold box {x, z, top, bot, len, w} (filled by buildIntake) */
 var TURBO_MM = { small:46, medium:54, large:64, s66:66, huge:76, f88:88, f98:98 };        /* compressor inducer, mm */
 var FLOW_LB  = { small:26, medium:40, large:58, s66:115, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
+/* what turns a compressor or turbine wheel (read by wheelStep, loop.js).
+   turboWheel: mm = compressor inducer, bar = boost one stage makes. The wheel's rim has to reach a speed set by the
+   pressure ratio (about 390 m/s for 1 bar, 520 for 2); a small wheel turns faster to get there. 54 mm at 1 bar: ~139,000 rpm.
+   gearWheel: a centrifugal blower, belt ratio times the 4.1:1 step-up gears in the head unit. */
+function turboWheel(mm, bar, stages){
+  var wk={mm:mm, st:stages||1, tau:clamp(0.25+(mm-40)/60, 0.25, 1.3), n:0, w:0, rpm:0};
+  turboBoost(wk, bar); return wk;
+}
+/* set a turbo's full-boost shaft speed from the boost dial. Two stages (a compound) each make the square root of the total
+   pressure ratio. Also called when the boost slider moves and nothing else did, so the engine is not rebuilt for it (api.js). */
+function turboBoost(wk, bar){
+  var pr=Math.pow(1+clamp(+bar||0, 0.2, 4), 1/wk.st), U=Math.min(560, Math.sqrt(1005*293*(Math.pow(pr,0.2857)-1)/0.42));
+  wk.n=U/(PI*wk.mm/1000)*60;
+}
+function gearWheel(ratio){ return {k:ratio*4.1, rpm:0}; }
 function turboScale(tsz){ return (TURBO_MM[tsz]||54)*0.019; }   /* housing unit s (scene units): compressor cover OD = 1.6 s, absolute size */
 
 /* a pipe must not run through a cone filter or a compressor cover: sample its route, push every sample out of each
@@ -519,6 +534,7 @@ function buildCompressorSnail(B, extras, p, x, y, z, s, matKey, zs, dir){
   /* compressor wheel (spins), nose toward the inlet */
   var wheel=makeWheelMesh(s*0.32, 6, MAT.palu);
   wheel.position.copy(B.pt(x+e*s*0.39, y, z)); wheel.rotation.z=d*PI/2;
+  wheel.userData.wk=gearWheel(blowerDrive("centrifugal", p.boost));
   extras.push(wheel); anim.turbos.push(wheel);
   return {pt:V3(x, y+dL, z+cR), dir:V3(0,1,0)};
 }
@@ -677,8 +693,11 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
   /* wheels (turbine first, so turboPoint() lands on the hot side) */
   var tw=makeWheelMesh(s*0.30, 10, MAT.steel);
   tw.position.copy(B.pt(-s*0.08,0,0)); tw.rotation.z=cdir*PI/2;
+  /* both wheels are on one shaft, so they share one speed */
+  var wk=turboWheel(s/0.019, p.boost, p.asp==="compound"?2:1);
+  tw.userData.wk=wk;
   extras.push(tw); anim.turbos.push(tw);
-  var cw=makeWheelMesh(s*0.32, 6, MAT.palu);
+  var cw=makeWheelMesh(s*0.32, 6, MAT.palu); cw.userData.wk=wk;
   cw.position.copy(B.pt(s*1.25,0,0)); cw.rotation.z=-cdir*PI/2;
   extras.push(cw); anim.turbos.push(cw);
   var r = {
