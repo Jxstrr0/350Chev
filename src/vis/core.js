@@ -1480,7 +1480,9 @@ function mergeGeos(items){
   for(i=0;i<prep.length;i++){
     var P=prep[i].ni.attributes.position, N=prep[i].ni.attributes.normal, U=prep[i].ni.attributes.uv;
     var M=prep[i].m; _m3.getNormalMatrix(M); var zv=items[i].z||0;
-    for(var v=0; v<P.count; v++){
+    var flip=!!items[i].mir;                 /* a mirrored part (partAdd with a negative scale): swap two corners of each triangle so it still faces out */
+    for(var v0=0; v0<P.count; v0++){
+      var v = flip ? v0-v0%3+(v0%3===1?2:v0%3===2?1:0) : v0;
       zn[oz++]=zv;
       _v3.fromBufferAttribute(P,v).applyMatrix4(M);
       pos[o]=_v3.x; pos[o+1]=_v3.y; pos[o+2]=_v3.z;
@@ -1591,6 +1593,8 @@ var HW_MAT = { hex:"zinc", stud:"steel", clamp:"chrome", nutA:"zinc", pbolt:"ste
 var HW_GEO = {};
 function hwGeo(t){
   if(HW_GEO[t]) return HW_GEO[t];
+  var mp=ENGP.parts && ENGP.parts[t];                    /* the modelled bolt, stud, clamp, nut or rivet, once the parts file is in (engparts.js) */
+  if(mp && mp.length===1){ HW_GEO[t]=mp[0].g; return mp[0].g; }
   var I=function(x,y,z,rx,ry,rz){ return mkM(x,y,z,rx,ry,rz); }, g;
   if(t==="hex")        /* flange-head bolt, axis +Y, unit = head across corners */
     g=mergeGeos([{g:CYL(0.5,0.5,0.34,6,false,8),m:I(0,0.24,0)},{g:CYL(0.62,0.66,0.08,12,false,8),m:I(0,0.04,0)}]);
