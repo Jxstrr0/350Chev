@@ -1563,6 +1563,50 @@ function heatPatchHi(mat){
   };
   mat.customProgramCacheKey = function(){ return sf ? "heatHiSf" : "heatHi"; };
 }
+/* The same baked skins for things that are not the engine (Full / Ultra): the cars' paint and bare metal. The engine's patch
+   samples in the engine's own space and carries its heat map; this one samples in the mesh's own space, so the grain rides
+   with a car as it moves and with a wheel as it turns, and it leaves any patch the material already has in place.
+   tile: units of the mesh one tile covers. mode: 0 plain, above 0 how much paint chips along edges, below 0 turned (faces
+   across the mesh's Y axis, a wheel's axle, wear rings round it). Lite materials are left alone. */
+function skinPatch(mat, name, tile, colK, slopeK, mode){
+  if(GFX==="lite" || !mat || mat.userData.skin) return mat;
+  mat.userData.skin=true;
+  var prevO=mat.onBeforeCompile, prevK=mat.customProgramCacheKey;
+  mat.onBeforeCompile=function(shader){
+    if(prevO) prevO.call(this, shader);
+    shader.uniforms.uSkC=bakeUni("sf-"+name); shader.uniforms.uSkN=bakeUni("sf-"+name+"-n");
+    shader.uniforms.uSkK={value:new THREE.Vector4(1/tile, colK, slopeK, mode||0)};
+    shader.vertexShader="varying vec3 vSkP;\nvarying vec3 vSkN;\nvarying mat3 vSkM;\n"+shader.vertexShader.replace("#include <begin_vertex>",
+      "#include <begin_vertex>\nvSkP = position; vSkN = normal; vSkM = normalMatrix;");
+    shader.fragmentShader="uniform sampler2D uSkC;\nuniform sampler2D uSkN;\nuniform vec4 uSkK;\nvarying vec3 vSkP;\nvarying vec3 vSkN;\nvarying mat3 vSkM;\n"+
+      shader.fragmentShader.replace("#include <clearcoat_normal_fragment_maps>",
+        "#include <clearcoat_normal_fragment_maps>\n#ifdef CLEARCOAT\n clearcoatNormal = normalize(mix(clearcoatNormal, normal, 0.8));\n#endif").replace("#include <normal_fragment_maps>",
+        "#include <normal_fragment_maps>\n{ vec3 kN = normalize(vSkN), kA = abs(kN), kU, kV; vec2 kP;\n"+
+        "  if(kA.y>=kA.x && kA.y>=kA.z){ kP=vSkP.xz; kU=vec3(1.0,0.0,0.0); kV=vec3(0.0,0.0,1.0);\n"+
+        "    if(uSkK.w < 0.0){ float kR = max(length(vSkP.xz), 0.0001); kU = vec3(vSkP.x, 0.0, vSkP.z)/kR; kV = vec3(-kU.z, 0.0, kU.x); kP = vec2(kR, atan(vSkP.z, vSkP.x)*0.3/uSkK.x); } }\n"+
+        "  else if(kA.x>=kA.z){ kP=vSkP.zy; kU=vec3(0.0,0.0,1.0); kV=vec3(0.0,1.0,0.0); }\n"+
+        "  else { kP=vSkP.xy; kU=vec3(1.0,0.0,0.0); kV=vec3(0.0,1.0,0.0); }\n"+
+        "  kP *= uSkK.x; vec2 kS = texture2D(uSkN, kP).xy*2.0-1.0;\n"+
+        "  vec3 kD = vSkM*(kS.x*kU + kS.y*kV); normal = normalize(normal - uSkK.z*kD*inversesqrt(max(dot(vSkM[0],vSkM[0]), 1e-8)));\n"+
+        "  diffuseColor.rgb *= mix(vec3(1.0), texture2D(uSkC, kP).rgb*2.0, uSkK.y);\n"+
+        "  if(uSkK.w > 0.0){ float kE = clamp(length(fwidth(geometryNormal))*2.6-0.12, 0.0, 1.0);\n"+
+        "    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.34,0.34,0.35), uSkK.w*kE*step(0.5, fract(sin(dot(floor(vSkP*uSkK.x*40.0), vec3(12.9898,78.233,37.719)))*43758.5453))); } }");
+  };
+  mat.customProgramCacheKey=function(){ return "skin"+(prevK ? prevK.call(this) : ""); };
+  mat.needsUpdate=true;
+  return mat;
+}
+/* The workshop's own painted and machined things (the stand, the tool chests, the dado stripe, the bed's T-slot lips) wear the
+   engine's skins on Full / Ultra: a material map for Builder.flush, empty on Lite. The room's parts are all heat zone 0. */
+var ROOM_SKINS=null;
+function roomSkins(){
+  if(GFX==="lite") return {};
+  if(ROOM_SKINS) return ROOM_SKINS;
+  var R={}, sk={paint:["paint",1.0,0.5,0.9], paintOrange:["paint",1.0,0.5,0.9], paintBlue:["paint",1.0,0.5,0.9], paintGrey:["paint",1.0,0.5,0.9],
+                malu:["machined",0.8,0.9,0], iron:["castiron",1.0,0.8]}, k;
+  for(k in sk){ R[k]=MAT[k].clone(); R[k].userData={hi:true, sf:sk[k]}; }
+  return (ROOM_SKINS=R);
+}
 function heatPatch(mat){
   if(!mat || mat.userData.heat) return mat;
   mat.userData.heat = true;

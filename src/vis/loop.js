@@ -394,7 +394,7 @@ function fitStand(){
   }
   var B=new Builder();
   buildStand(B, !!(lastOwned && lastOwned.sandbox), f);
-  B.flush(standRoot, {}, true);
+  B.flush(standRoot, roomSkins(), true);
 }
 function frameEngine(){
   if(TD.on){ tdFrame(true); return; }   /* teardown view frames the failed part instead */
