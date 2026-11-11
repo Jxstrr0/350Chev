@@ -6,8 +6,8 @@
 
 The engine itself is built in code (src/vis/). These are the parts that code draws as a plain box or cylinder and that
 are looked at up close on Full and Ultra: the fasteners, the hose clamp, the ignition coils, the plug boot, the
-wiring plug, the oil filter and the fuel injectors. Each is modelled here in code, so a change is an edit to this file and a re-run, not a .blend to keep.
-No textures: the game puts its own materials on the shapes. The file is geometry only, a few tens of KB.
+wiring plug, the oil filter, the fuel injectors, the alternator, the starter motor and the water pump. Each is modelled here in code, so a change is an edit to this file and a re-run, not a .blend to keep.
+No textures: the game puts its own materials on the shapes. The file is geometry only, a few hundred KB.
 
 Every object is named  <part>__<material key>  (the game's material table: zinc, steel, blackPlast, connGrey ...).
 A part made of two materials is two objects. src/vis/engparts.js loads the file and hands the shapes to the engine
@@ -31,6 +31,10 @@ Sizes follow the plain shapes they replace, so a part drops in at the same place
   oilFilter spin-on oil filter. Axis +Y from y = -0.5 (the base, against the block) to 0.5 (the domed end with its
           wrench flutes), radius 1 at the seam (the builder stretches it).
   injector port fuel injector. Axis +Y from y = -0.5 (the nozzle) to 0.5 (the end in the rail), radius 1 at the coil body.
+  alternator Axis +Y from y = -0.5 (the plastic rear cover) to 0.5 (the front bearing hub, behind the pulley), radius 1 at
+          the end frames; the pivot lug is on +X. Vented frames with the copper windings showing through.
+  starter starter motor, in the builder's own axes, unit = the bore: flange face at x = 0, motor to +X, solenoid on top.
+  waterPump belt-driven water pump body. Axis +X from x = 0 (flange) to 1 (bearing nose); across it the unit is the bore.
 
 Shapes are written in the game's axes (three.js: Y up) and turned into Blender's (Z up) as they are made, so the
 numbers here read the same as the builder's.
@@ -271,6 +275,75 @@ def injector():
     lathe(bm_of("injector", "rubberFlat"), [(0.70, -0.345), (0.76, -0.325), (0.70, -0.305)], 12, cap=False)   # lower O-ring
 
 
+def spokes(bm, n, r0, y0, r1, y1, w, t, phase=0.0):
+    """n flat spokes round +Y, each from (r0, y0) to (r1, y1): the windows of a vented end frame are the gaps."""
+    ln = math.hypot(r1 - r0, y1 - y0)
+    for i in range(n):
+        rbox(bm, ln, t, w, t * 0.25, T(ry=phase + i / n * TAU) @ T((r0 + r1) / 2, (y0 + y1) / 2, 0, rz=math.atan2(y1 - y0, r1 - r0)))
+
+
+def alternator():
+    c, cu = bm_of("alternator", "calu"), bm_of("alternator", "copper")
+    # the laminated stator, clamped between the two cast end frames
+    lathe(bm_of("alternator", "steel"), [(0.0, -0.13), (0.955, -0.13), (0.955, 0.13), (0.0, 0.13)], 24)
+    for s in (1, -1):
+        ring = [(0.90, 0.12), (1.0, 0.12), (1.0, 0.21), (0.97, 0.25), (0.90, 0.25), (0.90, 0.12)]
+        lathe(c, [(r, y * s) for (r, y) in ring], 24, cap=False)
+    # front frame: spokes over the windings to the bearing hub
+    spokes(c, 8, 0.97, 0.21, 0.38, 0.45, 0.20, 0.07)
+    lathe(c, [(0.0, 0.36), (0.42, 0.36), (0.42, 0.44), (0.34, 0.50), (0.0, 0.50)], 20)
+    lathe(cu, [(0.0, 0.10), (0.86, 0.10), (0.90, 0.22), (0.80, 0.32), (0.50, 0.35), (0.0, 0.35)], 24)
+    # rear frame: shorter ribs down to the plastic cover over the rectifier and regulator
+    spokes(c, 8, 0.97, -0.21, 0.72, -0.40, 0.20, 0.07, TAU / 16)
+    lathe(cu, [(0.0, -0.34), (0.80, -0.34), (0.90, -0.24), (0.86, -0.10), (0.0, -0.10)], 24)
+    lathe(bm_of("alternator", "blackPlast"), [(0.0, -0.50), (0.66, -0.50), (0.74, -0.46), (0.74, -0.30), (0.0, -0.30)], 20)
+    # the four through-bolts that hold the frames together, in bosses on the rim
+    for i in range(4):
+        a = TAU / 8 + i * TAU / 4
+        m = T(math.cos(a) * 0.99, 0, -math.sin(a) * 0.99)
+        lathe(c, [(0.085, -0.25), (0.085, 0.25)], 8, m)
+        hexprof(bm_of("alternator", "zinc"), [(0.075, 0.25, 0.0), (0.075, 0.29, 0.5)], m)
+    # pivot lug (+X, toward the bracket) and the adjuster lug opposite
+    for (sx, r) in ((1, 0.17), (-1, 0.13)):
+        lathe(c, [(r, 0.10), (r, 0.36)], 12, T(sx * 1.17, 0, 0))
+        rbox(c, 0.30, 0.22, r * 1.5, 0.02, T(sx * 1.02, 0.23, 0))
+
+
+def starter():
+    """Game axes, unit = the bore: the flange face is x = 0, the motor runs to +X, the solenoid rides on top."""
+    ax = lambda x=0, y=0, z=0: T(x, y, z, rz=-math.pi / 2)
+    c = bm_of("starter", "calu")
+    lathe(bm_of("starter", "dark"), [(0.0, 0.04), (0.25, 0.04), (0.25, 0.62), (0.0, 0.62)], 20, ax())          # field case
+    lathe(c, [(0.0, 0.62), (0.256, 0.62), (0.256, 0.68), (0.22, 0.72), (0.10, 0.735), (0.0, 0.735)], 20, ax())   # brush end cap
+    lathe(c, [(0.0, -0.17), (0.07, -0.17), (0.14, -0.15), (0.18, -0.10), (0.21, -0.02), (0.27, 0.0), (0.27, 0.05), (0.0, 0.05)], 20, ax())   # drive-end housing, the nose through the flange
+    for sz in (1, -1):
+        hexprof(bm_of("starter", "zinc"), [(0.032, 0.72, 0.0), (0.032, 0.755, 0.5)], ax(0, 0, sz * 0.17))       # through-bolt heads
+    # solenoid, its saddle on the drive housing, the terminal cap with two studs and the strap down to the field case
+    lathe(bm_of("starter", "steel"), [(0.0, 0.08), (0.13, 0.08), (0.13, 0.46), (0.115, 0.48), (0.0, 0.48)], 16, ax(0, 0.33))
+    lathe(c, [(0.0, -0.05), (0.08, -0.05), (0.135, -0.025), (0.145, 0.01), (0.145, 0.09), (0.0, 0.09)], 16, ax(0, 0.33))
+    rbox(c, 0.11, 0.26, 0.24, 0.02, T(0.035, 0.20, 0))
+    lathe(bm_of("starter", "blackPlast"), [(0.0, 0.48), (0.118, 0.48), (0.118, 0.54), (0.09, 0.56), (0.0, 0.56)], 16, ax(0, 0.33))
+    for sy in (1, -1):
+        lathe(bm_of("starter", "brass"), [(0.02, 0.55), (0.02, 0.63)], 8, ax(0, 0.33 + sy * 0.058))
+        hexprof(bm_of("starter", "zinc"), [(0.036, 0.565, 0.3), (0.036, 0.595, 0.3)], ax(0, 0.33 + sy * 0.058))
+    rbox(bm_of("starter", "copper"), 0.012, 0.12, 0.05, 0.0, T(0.585, 0.262, 0))
+
+
+def water_pump():
+    """Axis +X from x = 0 (the flange on the front cover) to x = 1 (the bearing nose behind the pulley); across it the
+    unit is the bore. The builder stretches x to the gap it has, and puts the flange bolts in itself."""
+    c = bm_of("waterPump", "calu")
+    ax = lambda x=0, y=0, z=0: T(x, y, z, rz=-math.pi / 2)
+    lathe(c, [(0.0, 0.0), (0.36, 0.0), (0.36, 0.10), (0.325, 0.15), (0.34, 0.24), (0.34, 0.44), (0.30, 0.55), (0.20, 0.64),
+              (0.17, 0.70), (0.17, 0.95), (0.145, 1.0), (0.0, 1.0)], 24, ax())
+    for i in range(5):                                                                              # bolt bosses round the flange
+        a = TAU / 10 + i * TAU / 5
+        lathe(c, [(0.062, 0.0), (0.062, 0.13)], 10, ax(0, math.cos(a) * 0.375, math.sin(a) * 0.375))
+    for i in range(4):                                                                              # gussets from the volute up the bearing snout
+        a = TAU / 8 + i * TAU / 4
+        rbox(c, 0.42, 0.20, 0.035, 0.008, T(rx=a) @ T(0.66, 0.20, 0, rz=-0.52))
+
+
 # ---------------------------------------------------------------------------------------------- write
 def write():
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -310,4 +383,5 @@ if __name__ == "__main__":
     hex_bolt(); stud_nut(); pulley_bolt(); rivet(); an_nut(); hose_clamp()
     coil_on_plug(); coil_near_plug(); wiring_plug(); plug_boot()
     oil_filter(); injector()
+    alternator(); starter(); water_pump()
     write()

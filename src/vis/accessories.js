@@ -73,13 +73,17 @@ function buildFAD(B, p, extras){
   /* alternator: pulley on the belt plane, body behind it against the front cover */
   var altLen = Math.max(bore*0.40, beltX - bore*0.10 - tcF);
   var altCx  = beltX - bore*0.10 - altLen/2;
-  B.add("calu", CYL(bore*0.40,bore*0.40,altLen*0.84,20,false,2.2), altCx+altLen*0.08, altY, altZ, 0,0,PI/2);
-  var nF=Math.max(3, Math.round(altLen/(bore*0.11)));
-  for(i=0;i<nF;i++) B.add("calu", TOR(bore*0.41, bore*0.028, 5, 20, 2.4), altCx-altLen*0.30+i*(altLen*0.70/(nF-1)), altY, altZ, 0, PI/2, 0);
-  B.add("blackPlast", CYL(bore*0.30,bore*0.30,altLen*0.16,14), altCx-altLen*0.42, altY, altZ, 0,0,PI/2);   /* rear cap */
+  /* the modelled alternator (vented end frames, windings showing, through-bolts) stands in for the finned drum where it is loaded */
+  var altM=partAdd(B, "alternator", altCx, altY, altZ, 0,0,-PI/2, bore*0.41, altLen, bore*0.41);
+  if(!altM){
+    B.add("calu", CYL(bore*0.40,bore*0.40,altLen*0.84,20,false,2.2), altCx+altLen*0.08, altY, altZ, 0,0,PI/2);
+    var nF=Math.max(3, Math.round(altLen/(bore*0.11)));
+    for(i=0;i<nF;i++) B.add("calu", TOR(bore*0.41, bore*0.028, 5, 20, 2.4), altCx-altLen*0.30+i*(altLen*0.70/(nF-1)), altY, altZ, 0, PI/2, 0);
+    B.add("blackPlast", CYL(bore*0.30,bore*0.30,altLen*0.16,14), altCx-altLen*0.42, altY, altZ, 0,0,PI/2);   /* rear cap */
+  }
   if(DET){
     /* vented rear housing, B+ stud with its boot, and the regulator plug */
-    for(i=0;i<8;i++){ var av=i/8*TAU; B.add("dark", BOX(altLen*0.30, bore*0.05, bore*0.022), altCx-altLen*0.24, altY+Math.cos(av)*bore*0.405, altZ+Math.sin(av)*bore*0.405, av,0,0); }
+    if(!altM) for(i=0;i<8;i++){ var av=i/8*TAU; B.add("dark", BOX(altLen*0.30, bore*0.05, bore*0.022), altCx-altLen*0.24, altY+Math.cos(av)*bore*0.405, altZ+Math.sin(av)*bore*0.405, av,0,0); }
     B.add("wireRed", CYL(bore*0.045,bore*0.06,bore*0.10,8), altCx-altLen*0.52, altY+bore*0.14, altZ-bore*0.12, 0,0,PI/2);
     B.add("connGrey", BOX(bore*0.10,bore*0.12,bore*0.16), altCx-altLen*0.50, altY-bore*0.12, altZ-bore*0.10);
     B.hw("hex", tcF+bore*0.09, altY-bore*0.10, altZ*0.40, 0,0,-PI/2, bore*0.11);
@@ -92,6 +96,10 @@ function buildFAD(B, p, extras){
 
   /* water pump on the centreline above the crank (race pack = electric pump, an idler keeps the belt shape) */
   if(cool!=="race"){
+    /* the modelled pump (flange with bolt bosses, volute, gusseted bearing snout) where it is loaded, else a plain drum */
+    if(partAdd(B, "waterPump", tcF, wpY, wpZ, 0,0,0, beltX-bore*0.10-tcF, bore, bore)){
+      for(i=0;i<5;i++){ var wa=TAU/10+i*TAU/5; B.hw("hex", tcF+(beltX-bore*0.10-tcF)*0.13, wpY+Math.cos(wa)*bore*0.375, wpZ+Math.sin(wa)*bore*0.375, 0,0,-PI/2, bore*0.085); }
+    } else
     B.add("calu", CYL(bore*0.28,bore*0.34,beltX-bore*0.10-tcF,18,false,2.2), (beltX-bore*0.10+tcF)/2, wpY, wpZ, 0,0,PI/2);
     B.add("calu", CYL(bore*0.11,bore*0.11,bore*0.42,10), tcF+bore*0.20, wpY+bore*0.30, wpZ+bore*0.18, 0,0,0);   /* outlet neck */
     if(DET){

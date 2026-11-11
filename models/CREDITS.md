@@ -24,6 +24,6 @@ Keep this file in step with the folder: every model listed with its source, auth
 | `hill-marshal.glb` | Corner marshal post | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
 | `hill-rock.glb` | Granite boulder | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
 | `hill-fir.glb` | Fir, two levels of detail | Longlight Interactive | `tools/blender/hill-props.py` | CC0 |
-| `eng-parts.glb` | The engine's small parts: flange bolt, stud and nut, pulley bolt, rivet, AN nut, hose clamp, two ignition coils, plug boot, wiring plug, oil filter, fuel injector (geometry only) | Longlight Interactive | `tools/blender/engine-parts.py` | CC0 |
+| `eng-parts.glb` | The engine's small parts: flange bolt, stud and nut, pulley bolt, rivet, AN nut, hose clamp, two ignition coils, plug boot, wiring plug, oil filter, fuel injector, alternator, starter motor, water pump (geometry only) | Longlight Interactive | `tools/blender/engine-parts.py` | CC0 |
 
 CC0 needs no credit, but we give it anyway. A CC-BY model must be listed here with its author and a link, and the same line goes in the game's credits.

@@ -15042,9 +15042,11 @@ function buildEngineMesh(cfg, layoutObj){
   var stX = L.boxer ? -(bankLen/2) - bore*0.28 : -(bankLen/2) - bore*0.11;
   var stY = L.boxer ? bore*0.78 : caseBot + caseSpan*0.24;
   var stZ = L.boxer ? -bore*1.00 : -(caseW*0.5 + bore*0.22);
-  B.add("dark",  CYL(bore*0.25,bore*0.25,bore*0.70,16,false,2.0), stX + sdir*bore*0.37, stY, stZ, 0,0,PI/2);
-  B.add("steel", CYL(bore*0.13,bore*0.13,bore*0.44,12,false,2.4), stX + sdir*bore*0.30, stY + bore*0.33, stZ, 0,0,PI/2);
-  B.add("calu",  CYL(bore*0.17,bore*0.21,bore*0.14,14,false,2.4), stX - sdir*bore*0.05, stY, stZ, 0,0,PI/2);
+  if(!partAdd(B, "starter", stX, stY, stZ, 0,0,0, sdir*bore, bore, bore)){   /* modelled: field case, end caps, solenoid with its terminals */
+    B.add("dark",  CYL(bore*0.25,bore*0.25,bore*0.70,16,false,2.0), stX + sdir*bore*0.37, stY, stZ, 0,0,PI/2);
+    B.add("steel", CYL(bore*0.13,bore*0.13,bore*0.44,12,false,2.4), stX + sdir*bore*0.30, stY + bore*0.33, stZ, 0,0,PI/2);
+    B.add("calu",  CYL(bore*0.17,bore*0.21,bore*0.14,14,false,2.4), stX - sdir*bore*0.05, stY, stZ, 0,0,PI/2);
+  }
   /* knock sensor + oil pressure sender */
   B.add("dark", CYL(bore*0.09,bore*0.09,bore*0.10,10,false,3.0), bankLen*0.02, caseBot+caseSpan*0.62, -sideZ-bore*0.05, PI/2,0,0);
   B.add("steel", CYL(bore*0.07,bore*0.07,bore*0.16,8,false,3.0), -bankLen*0.30, caseBot+caseSpan*0.66, sideZ+bore*0.08, PI/2,0,0);
@@ -18191,13 +18193,17 @@ function buildFAD(B, p, extras){
   /* alternator: pulley on the belt plane, body behind it against the front cover */
   var altLen = Math.max(bore*0.40, beltX - bore*0.10 - tcF);
   var altCx  = beltX - bore*0.10 - altLen/2;
-  B.add("calu", CYL(bore*0.40,bore*0.40,altLen*0.84,20,false,2.2), altCx+altLen*0.08, altY, altZ, 0,0,PI/2);
-  var nF=Math.max(3, Math.round(altLen/(bore*0.11)));
-  for(i=0;i<nF;i++) B.add("calu", TOR(bore*0.41, bore*0.028, 5, 20, 2.4), altCx-altLen*0.30+i*(altLen*0.70/(nF-1)), altY, altZ, 0, PI/2, 0);
-  B.add("blackPlast", CYL(bore*0.30,bore*0.30,altLen*0.16,14), altCx-altLen*0.42, altY, altZ, 0,0,PI/2);   /* rear cap */
+  /* the modelled alternator (vented end frames, windings showing, through-bolts) stands in for the finned drum where it is loaded */
+  var altM=partAdd(B, "alternator", altCx, altY, altZ, 0,0,-PI/2, bore*0.41, altLen, bore*0.41);
+  if(!altM){
+    B.add("calu", CYL(bore*0.40,bore*0.40,altLen*0.84,20,false,2.2), altCx+altLen*0.08, altY, altZ, 0,0,PI/2);
+    var nF=Math.max(3, Math.round(altLen/(bore*0.11)));
+    for(i=0;i<nF;i++) B.add("calu", TOR(bore*0.41, bore*0.028, 5, 20, 2.4), altCx-altLen*0.30+i*(altLen*0.70/(nF-1)), altY, altZ, 0, PI/2, 0);
+    B.add("blackPlast", CYL(bore*0.30,bore*0.30,altLen*0.16,14), altCx-altLen*0.42, altY, altZ, 0,0,PI/2);   /* rear cap */
+  }
   if(DET){
     /* vented rear housing, B+ stud with its boot, and the regulator plug */
-    for(i=0;i<8;i++){ var av=i/8*TAU; B.add("dark", BOX(altLen*0.30, bore*0.05, bore*0.022), altCx-altLen*0.24, altY+Math.cos(av)*bore*0.405, altZ+Math.sin(av)*bore*0.405, av,0,0); }
+    if(!altM) for(i=0;i<8;i++){ var av=i/8*TAU; B.add("dark", BOX(altLen*0.30, bore*0.05, bore*0.022), altCx-altLen*0.24, altY+Math.cos(av)*bore*0.405, altZ+Math.sin(av)*bore*0.405, av,0,0); }
     B.add("wireRed", CYL(bore*0.045,bore*0.06,bore*0.10,8), altCx-altLen*0.52, altY+bore*0.14, altZ-bore*0.12, 0,0,PI/2);
     B.add("connGrey", BOX(bore*0.10,bore*0.12,bore*0.16), altCx-altLen*0.50, altY-bore*0.12, altZ-bore*0.10);
     B.hw("hex", tcF+bore*0.09, altY-bore*0.10, altZ*0.40, 0,0,-PI/2, bore*0.11);
@@ -18210,6 +18216,10 @@ function buildFAD(B, p, extras){
 
   /* water pump on the centreline above the crank (race pack = electric pump, an idler keeps the belt shape) */
   if(cool!=="race"){
+    /* the modelled pump (flange with bolt bosses, volute, gusseted bearing snout) where it is loaded, else a plain drum */
+    if(partAdd(B, "waterPump", tcF, wpY, wpZ, 0,0,0, beltX-bore*0.10-tcF, bore, bore)){
+      for(i=0;i<5;i++){ var wa=TAU/10+i*TAU/5; B.hw("hex", tcF+(beltX-bore*0.10-tcF)*0.13, wpY+Math.cos(wa)*bore*0.375, wpZ+Math.sin(wa)*bore*0.375, 0,0,-PI/2, bore*0.085); }
+    } else
     B.add("calu", CYL(bore*0.28,bore*0.34,beltX-bore*0.10-tcF,18,false,2.2), (beltX-bore*0.10+tcF)/2, wpY, wpZ, 0,0,PI/2);
     B.add("calu", CYL(bore*0.11,bore*0.11,bore*0.42,10), tcF+bore*0.20, wpY+bore*0.30, wpZ+bore*0.18, 0,0,0);   /* outlet neck */
     if(DET){
@@ -18809,7 +18819,7 @@ function tsDelticEnds(B, o){
 }
 /* ===========================================================================
    7h. MODELLED SMALL PARTS (Full / Ultra): the engine's fasteners, hose clamp, ignition coils, plug boot, wiring
-   plug, oil filter and fuel injectors as real shapes, modelled in Blender by tools/blender/engine-parts.py and kept in one file, models/eng-parts.glb
+   plug, oil filter, fuel injectors, alternator, starter motor and water pump as real shapes, modelled in Blender by tools/blender/engine-parts.py and kept in one file, models/eng-parts.glb
    (geometry only: the engine's own materials go on). The engine is still built in code; these only stand in where
    code drew a plain box or cylinder that is looked at up close.
    The file loads once, after the first Full / Ultra engine is asked for. Until it lands (or if it never does: offline
@@ -22854,7 +22864,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.131.0";
+const VERSION="1.76.132.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
