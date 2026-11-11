@@ -8,7 +8,9 @@
    Every pulley carries a paint stripe (paintMark) so you can see it turn; the small
    fast ones (alternator, idlers) have a centre nut, not a ring of bolts that strobes.
    A blower or a centrifugal supercharger runs on a belt of its own off a second crank
-   pulley ahead of the damper, so the serpentine is the same loop on every engine.
+   pulley ahead of the damper, so the serpentine is the same loop on every engine; its
+   driven pulley is sized by the boost (blowerDrive, intake.js). Toothed belts (blower,
+   dry-sump pump) turn their pulleys by tooth count and mesh with them (cogFit, cogBelt).
    ==========================================================================*/
 function buildFAD(B, p, extras){
   var bore=p.bore, bankLen=p.bankLen, caseW=p.caseW, caseH=p.caseH, L=p.L, deckH=p.deckH;
@@ -142,13 +144,14 @@ function buildFAD(B, p, extras){
      driven as the kits do it, by its own belt off a second crank pulley ahead of the damper. (On the serpentine its pulley sat
      level with the alternator and the water pump fell inside the loop between them: the belt was drawn wrapped right round it.) ---- */
   if(cd && cd.kind==="centri"){
-    var s=bore*0.92, hz=caseW*0.44+bore*0.34, hy=altY, cpR=bore*0.26;
+    var rCC=bore*0.40, pC=DET ? bore*0.025 : bt;
+    var s=bore*0.92, hz=caseW*0.44+bore*0.34, hy=altY, cpR=Math.max(bore*0.18, (rCC+pC)/cd.ratio-pC);   /* more boost, a smaller head-unit pulley (blowerDrive) */
     var vx=tcF+s*0.22, vy=hy+cpR+bore*0.12+s*0.56;
     B.add("malu", RBOX(bore*0.30, vy-hy+bore*0.40, bore*0.66, 0.04), beltX-bore*0.24, (vy+hy)/2, hz);   /* gearbox */
     B.add("malu", BOX(bore*0.08, bore*0.30, hz*0.55), tcF+bore*0.04, hy, hz*0.62);                       /* bracket to the front cover */
     var sOut=buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
     if(cd.cout) cd.cout.push(sOut);
-    var xC=beltX+dW*0.62+bore*0.16, rCC=bore*0.40, pC=DET ? bore*0.025 : bt;
+    var xC=beltX+dW*0.62+bore*0.16;
     B.add("steel", CYL(bore*0.20,bore*0.20, xC-(beltX+dW*0.5), 14), (xC+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer on the damper */
     B.add("steel", CYL(bore*0.07,bore*0.07, xC-(beltX-bore*0.09), 10), (xC+beltX-bore*0.09)/2, hy, hz, 0,0,PI/2);   /* gearbox input shaft */
     var ccp=pulleyMesh(rCC, bore*0.15, null, {bolts:6}); ccp.position.set(xC, 0, 0); extras.push(ccp); anim.spin.push({o:ccp, axis:"x", k:1});
@@ -158,19 +161,23 @@ function buildFAD(B, p, extras){
 
   /* ---- Roots / screw blower: its own cogged belt in a plane ahead of the damper ---- */
   if(cd && cd.kind==="blower"){
-    var xB=beltX+dW*0.62+bore*0.16, rCB=bore*0.50, rB=Math.max(bore*0.15, rCB/cd.ratio), rI=bore*0.15, pB=DET ? bore*0.0225 : bore*0.02;
+    /* toothed drive: every pulley has a whole number of teeth and its radius is cut to carry them at the belt's pitch, so the
+       pulleys turn by tooth count (crank teeth / own teeth) and stay in mesh with the belt (flatBeltGeo) */
+    var xB=beltX+dW*0.62+bore*0.16, pB=bore*0.0225, pitB=bore*0.06;
+    var cB=cogFit(bore*0.50, pB, pitB), bB=cogFit(Math.max(bore*0.15, (bore*0.50+pB)/cd.ratio-pB), pB, pitB), iB=cogFit(bore*0.15, pB, pitB);
+    var rCB=cB.r, rB=bB.r, rI=iB.r;
     B.add("steel", CYL(bore*0.22,bore*0.22, xB-(beltX+dW*0.5), 14), (xB+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer */
-    var cbp=pulleyMesh(rCB, bore*0.20, null, {cog:true, bolts:6}); cbp.position.set(xB,0,0); extras.push(cbp); anim.spin.push({o:cbp, axis:"x", k:1});
+    var cbp=pulleyMesh(rCB, bore*0.20, null, {cog:true, teeth:cB.n, bolts:6}); cbp.position.set(xB,0,0); extras.push(cbp); anim.spin.push({o:cbp, axis:"x", k:1});
     if(xB>cd.snoutX) B.add("malu", CYL(bore*0.16,bore*0.20, xB-cd.snoutX, 14), (xB+cd.snoutX)/2-bore*0.06, cd.y, cd.z, 0,0,PI/2);  /* snout extension */
-    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:(rCB+pB)/(rB+pB)});
+    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true, teeth:bB.n}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:cB.n/bB.n});
     /* idler: out to the side of the crank-to-blower line, square to it, so it always pushes the belt outward. (It used to sit off the
        centreline by a fixed sideways step; a rotary's blower sits off to one side, the idler fell inside the loop and the belt was
        drawn wrapped right round it.) */
     var bL=Math.sqrt(cd.y*cd.y+cd.z*cd.z)||1, nz=cd.y/bL, ny=-cd.z/bL, off=(rCB+rB)*0.5+bore*0.30;
     var iy=cd.y*0.5+ny*off, iz=cd.z*0.5+nz*off, ady=cd.y-iy, adz=cd.z-iz, aL=Math.sqrt(ady*ady+adz*adz);
     B.add("malu", BOX(bore*0.08, aL+bore*0.20, bore*0.26), xB-bore*0.16, (cd.y+iy)/2, (cd.z+iz)/2, Math.atan2(adz,ady),0,0);   /* idler bracket off the snout */
-    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:(rCB+pB)/(rI+pB)});
-    extras.push(beltMesh(xB, [{y:0,z:0,r:rCB,side:1},{y:cd.y,z:cd.z,r:rB,side:1},{y:iy,z:iz,r:rI,side:1}], bore*0.02, bore*0.055, {w:bore*0.17, t:bore*0.045, cog:bore*0.06}));
+    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, teeth:iB.n, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:cB.n/iB.n});
+    cogBelt(extras, xB, [{y:0,z:0,r:rCB,side:1,n:cB.n,o:cbp},{y:cd.y,z:cd.z,r:rB,side:1,n:bB.n,o:bpl},{y:iy,z:iz,r:rI,side:1,n:iB.n,o:bil}], pB, bore*0.055, {w:bore*0.17, t:bore*0.045, cog:pitB, teeth:cB.n});
   }
 
   /* ---- dry sump: pump stack along the crank axis, low on the intake side, cog-belt driven off the nose ---- */
@@ -182,11 +189,11 @@ function buildFAD(B, p, extras){
       B.add("malu", CYL(pr,pr,stL,16), pFront-stL*(i+0.5), pY, pZ, 0,0,PI/2);
       B.add("malu", BOX(bore*0.04, pr*2.3, pr*2.3), pFront-stL*i, pY, pZ);
     }
-    var xD=tcF+bore*0.14, rPD=bore*0.24;
+    var xD=tcF+bore*0.14, pD=bore*0.02, pitD=bore*0.06, cD=cogFit(bore*0.26, pD, pitD), dD=cogFit(bore*0.24, pD, pitD), rPD=dD.r;
     B.add("steel", CYL(bore*0.08,bore*0.08,xD-pFront+bore*0.04,10), (xD+pFront)/2, pY, pZ, 0,0,PI/2);
-    var dcp=pulleyMesh(bore*0.26, bore*0.12, null, {cog:true, bolts:0}); dcp.position.set(xD,0,0); extras.push(dcp); anim.spin.push({o:dcp, axis:"x", k:1});
-    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:(bore*0.28)/(rPD+bore*0.02)});   /* belt centre line 0.02 bore above both rims */
-    extras.push(beltMesh(xD, [{y:0,z:0,r:bore*0.26,side:1},{y:pY,z:pZ,r:rPD,side:1}], bore*0.02, bore*0.04, {w:bore*0.10, t:bore*0.04, cog:bore*0.06}));
+    var dcp=pulleyMesh(cD.r, bore*0.12, null, {cog:true, teeth:cD.n, bolts:0}); dcp.position.set(xD,0,0); extras.push(dcp); anim.spin.push({o:dcp, axis:"x", k:1});
+    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true, teeth:dD.n}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:cD.n/dD.n});   /* by tooth count */
+    cogBelt(extras, xD, [{y:0,z:0,r:cD.r,side:1,n:cD.n,o:dcp},{y:pY,z:pZ,r:rPD,side:1,n:dD.n,o:dpp}], pD, bore*0.04, {w:bore*0.10, t:bore*0.04, cog:pitD, teeth:cD.n});
     /* remote tank + lines */
     var tX = bx ? -(bankLen*0.5+bore*0.95) : -bankLen*0.12;
     var tZ = bx ? -bore*1.55 : -(caseW*0.72+bore*0.42);
@@ -204,6 +211,15 @@ function buildFAD(B, p, extras){
     var tTop=deckH*ca*0.62+bore*0.30, tBot=-caseH*0.62;
     B.add("calu", RBOX(bore*0.16, tTop-tBot, bore*1.50, 0.04), bankLen*0.5+bore*0.08, (tTop+tBot)/2, 0);
   }
+}
+
+/* a toothed pulley for a belt of this pitch: the whole number of teeth nearest the wanted radius, and the radius that carries
+   them (pB: the belt's centre line above the rim) */
+function cogFit(r, pB, pitch){ var n=Math.max(12, Math.round(TAU*(r+pB)/pitch)); return {n:n, r:n*pitch/TAU-pB}; }
+/* a toothed belt round pulleys pl ({y,z,r,side,n teeth,o mesh}, crank first), then each pulley turned into mesh with it */
+function cogBelt(extras, x, pl, pB, rad, o){
+  extras.push(beltMesh(x, pl, pB, rad, o));
+  for(var i=0;i<pl.length;i++) if(pl[i].rot!==undefined && pl[i].o) pl[i].o.rotation.x=pl[i].rot;
 }
 
 /* ===========================================================================

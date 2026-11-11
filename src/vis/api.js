@@ -1,10 +1,12 @@
 /* phones: buildEngine is asked for after every committed slider, yet most sliders (compression, cam, redline, boost, timing...) change nothing the
-   model shows. The visual key is the cfg minus the keys the model never reads; an unchanged key skips the rebuild. A key not in VIS_SKIP counts
+   model shows. The visual key is the cfg minus the keys the model never reads (plus a blower's pulley ratio, which boost sets); an unchanged key skips the rebuild. A key not in VIS_SKIP counts
    as visual, so a new cfg field is safe by default; a tier change (force), a blown engine and an empty stand always rebuild. */
 var lastVisKey="";
 var VIS_SKIP={cr:1, cam:1, lift:1, redline:1, boost:1, timing:1, lambda:1, pistonClearance:1, deck:1, valveMat:1, springs:1, piston:1, rings:1, rod:1, rodBolts:1, crank:1, bearings:1, gasket:1, studs:1,
   fuelPump:1, dNoz:1, oilGrade:1, oilSquirters:1, launchCtl:1, twoStepRpm:1, launchRetard:1, transBrake:1, apexSeal:1, eshaft:1, turbine:1, als:1, pv:1, lube:1, premix:1, ccr:1};
-function visKey(cfg){ var o={}, ks=Object.keys(cfg||{}).sort(); for(var i=0;i<ks.length;i++) if(!VIS_SKIP[ks[i]]) o[ks[i]]=cfg[ks[i]]; return JSON.stringify(o)+"|"+GFX; }
+function visKey(cfg){ var o={}, ks=Object.keys(cfg||{}).sort(); for(var i=0;i<ks.length;i++) if(!VIS_SKIP[ks[i]]) o[ks[i]]=cfg[ks[i]];
+  var asp=cfg&&cfg.asp; if(asp==="roots"||asp==="screw"||asp==="centrifugal") o._drive=blowerDrive(asp, cfg.boost);   /* boost sizes a blower's pulley, a tenth of a ratio at a time */
+  return JSON.stringify(o)+"|"+GFX; }
 /* phones (Lite): the event scenes are heavy and a career evening walks through several of them. On Lite only one of strip / pull / bog / boat /
    salt stays built: entering one frees the others (off-path first, then the composer, the shadow maps and the tree), and a scene entered again
    later builds from its factory. The road and hill worlds, the oval, the pits and the trophy room keep their own lifecycles. */
@@ -485,6 +487,12 @@ const ENGINE_VIS = {
     if(phi!==undefined) camState.phi=phi;
     if(rk!==undefined) camState.r=clamp(camState.r*rk, 7, 30);
   },
+  /* harness: aim the garage camera at a point in engine space (0,0,0 = the crank's middle) from r away, for close-up checks */
+  _look: function(x, y, z, r){
+    camState.autoForce=false; camState.auto=false;
+    camState.target.set(x||0, (y||0)+engineRoot.position.y, z||0);
+    if(r>0) camState.r=r;
+  },
   /* the engine layout the vis reads off a cfg {kind,n,rotors}: the drag cars size their pipes from it */
   engOf: function(cfg){ return slEngOf(cfg); },
 
@@ -499,9 +507,9 @@ const ENGINE_VIS = {
              scr:(function(){ if(!SCREEN.mesh) return null; var v=SCREEN.mesh.getWorldPosition(new THREE.Vector3()).project(camera); return [+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(3)]; })(),
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
                 if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
-             belt:(function(){ var n=0, a=MAT.belt&&MAT.belt.map, b=MATHI.beltFlat&&MATHI.beltFlat.map;
-                engineRoot.traverse(function(m){ var t=m.material&&m.material.map; if(t&&(t===a||t===b)) n++; });
-                return { off:+BELT_OFF.toFixed(3), meshes:n }; })() };
+             spin:anim.spin.map(function(q){ return +q.k.toFixed(4); }),
+             cogs:anim.spin.filter(function(q){ return q.o.userData.teeth; }).map(function(q){ return {n:q.o.userData.teeth, k:q.k, y:q.o.position.y, z:q.o.position.z, rot:q.o.rotation.x}; }),   /* harness: toothed pulleys, to check they mesh with their belt */
+             belt:anim.belts.map(function(q){ return {k:+q.k.toFixed(4), u:+q.u.value.toFixed(3), teeth:q.kt?Math.round(q.kt*TAU):0, t:q.t?q.t.value:0}; }) };
   },
   start: function(){ if(!running){ running=true; clock.getDelta(); loop(); } },
   stop:  function(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=0; },
