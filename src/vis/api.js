@@ -348,7 +348,7 @@ const ENGINE_VIS = {
     XRAY=!!on;
     if(!engineRoot) return;
     engineRoot.traverse(function(o){
-      if(!o.isMesh || !o.material) return;
+      if(!o.isMesh || !o.material || o.userData.ghost) return;
       var inInternals=false; for(var q=o; q; q=q.parent){ if(q.name==="internals"){ inInternals=true; break; } }
       if(inInternals) return;
       if(XRAY){
