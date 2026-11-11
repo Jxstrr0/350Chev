@@ -1259,6 +1259,9 @@ function buildHiMaterials(){
   /* painted parts get a real clear coat; bare castings stay rough */
   ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key]=hiFlag(toPhysical(MATHI[key], 0.55, 0.22)); });
   MATHI.iron.normalScale.set(0.8,0.8); MATHI.stainless.normalScale.set(0.35,0.35); MATHI.calu.normalScale.set(0.42,0.42); MATHI.castexh.normalScale.set(1.4,1.4);
+  /* the castings wear a baked skin over their painted maps (heatPatchHi): [picture, colour strength, slope strength] */
+  MATHI.iron.userData.sf=["castiron", 1.0, 0.9]; MATHI.cgi.userData.sf=["castiron", 0.9, 0.8]; MATHI.castexh.userData.sf=["castiron", 1.0, 1.0];
+  MATHI.calu.userData.sf=["castalu", 1.0, 1.3];
   /* new surfaces */
   MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:0.75,env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
   MATHI.turned    = hiFlag(pmat(S, fnTurned,      {ns:0.7, env:1.3}));
@@ -1510,8 +1513,28 @@ var GRIME_HI_GLSL =
   "float pewN(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);\n"+
   "  return mix(mix(mix(pewH(i),pewH(i+vec3(1.,0.,0.)),f.x), mix(pewH(i+vec3(0.,1.,0.)),pewH(i+vec3(1.,1.,0.)),f.x), f.y),\n"+
   "             mix(mix(pewH(i+vec3(0.,0.,1.)),pewH(i+vec3(1.,0.,1.)),f.x), mix(pewH(i+vec3(0.,1.,1.)),pewH(i+vec3(1.,1.,1.)),f.x), f.y), f.z); }\n";
+/* Baked cast skins (Full / Ultra): tex/sf-castiron.jpg and sf-castalu.jpg, each with a slope picture, are 60 mm of a real
+   casting's surface rendered in Blender (tools/blender/ground-bake.py). A material that carries userData.sf = [name, colour
+   strength, slope strength] gets the skin laid over its own painted maps: sampled in the engine's own space (vGP), on whichever
+   of the three axis planes the surface faces most, so the grain is the same size on every part whatever its texture
+   coordinates are. The colour picture multiplies the albedo (grey = no change), the slope picture leans the normal.
+   Until the pictures load (or offline before they were cached) both are neutral and the casting looks as it did. */
+var SF_TILE = 0.6;   /* scene units a tile covers: 60 mm (1 unit = 100 mm) */
 function heatPatchHi(mat){
+  var sf = mat.userData.sf;
   mat.onBeforeCompile = function(shader){
+    if(sf){
+      shader.uniforms.uSfC = bakeUni("sf-"+sf[0]); shader.uniforms.uSfN = bakeUni("sf-"+sf[0]+"-n");
+      shader.uniforms.uSfK = {value:new THREE.Vector3(1/SF_TILE, sf[1], sf[2])};
+      shader.fragmentShader = "uniform sampler2D uSfC;\nuniform sampler2D uSfN;\nuniform vec3 uSfK;\n" + shader.fragmentShader.replace("#include <normal_fragment_maps>",
+        "#include <normal_fragment_maps>\n{ vec3 sN = normalize((vec4(normal,0.0)*viewMatrix).xyz), sA = abs(sN), sU, sV; vec2 sP;\n"+
+        "  if(sA.y>=sA.x && sA.y>=sA.z){ sP=vGP.xz; sU=vec3(1.0,0.0,0.0); sV=vec3(0.0,0.0,1.0); }\n"+
+        "  else if(sA.x>=sA.z){ sP=vGP.zy; sU=vec3(0.0,0.0,1.0); sV=vec3(0.0,1.0,0.0); }\n"+
+        "  else { sP=vGP.xy; sU=vec3(1.0,0.0,0.0); sV=vec3(0.0,1.0,0.0); }\n"+
+        "  sP *= uSfK.x; vec2 sS = texture2D(uSfN, sP).xy*2.0-1.0;\n"+
+        "  sN = normalize(sN - uSfK.z*(sS.x*sU + sS.y*sV)); normal = normalize((viewMatrix*vec4(sN,0.0)).xyz);\n"+
+        "  diffuseColor.rgb *= mix(vec3(1.0), texture2D(uSfC, sP).rgb*2.0, uSfK.y); }");
+    }
     shader.uniforms.uHeat = HEAT_UNIFORM; shader.uniforms.uGrime = GRIME_UNIFORM;
     shader.vertexShader = "attribute float zone;\nvarying float vZone;\nvarying vec3 vGP;\n" + shader.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvZone = zone; vGP = position;");
     shader.fragmentShader = "varying float vZone;\nvarying vec3 vGP;\nuniform vec4 uHeat[16];\nuniform float uGrime;\n" + GRIME_HI_GLSL + shader.fragmentShader.replace("#include <dithering_fragment>",
@@ -1527,7 +1550,7 @@ function heatPatchHi(mat){
       "}\n"+
       "vec4 h = uHeat[int(vZone + 0.5)]; gl_FragColor.rgb = mix(gl_FragColor.rgb, h.rgb, h.a); }");
   };
-  mat.customProgramCacheKey = function(){ return "heatHi"; };
+  mat.customProgramCacheKey = function(){ return sf ? "heatHiSf" : "heatHi"; };
 }
 function heatPatch(mat){
   if(!mat || mat.userData.heat) return mat;
@@ -1730,7 +1753,7 @@ function bakeUni(name){
   if(BAKE[name]) return BAKE[name];
   var ph=new THREE.DataTexture(new Uint8Array(/-n$/.test(name)?[128,128,255,255]:[128,128,128,255]), 1, 1, THREE.RGBAFormat); ph.needsUpdate=true;
   var u=BAKE[name]={value:ph};
-  new THREE.TextureLoader().load("tex/gr-"+name+".jpg", function(t){
+  new THREE.TextureLoader().load("tex/"+(/^sf-/.test(name)?name:"gr-"+name)+".jpg", function(t){   /* sf-: the cast-metal skins (heatPatchHi) */
     t.encoding=THREE.LinearEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping;
     t.anisotropy=Math.min(GFX==="lite"?4:8, renderer?renderer.capabilities.getMaxAnisotropy():1);
     u.value=t; ph.dispose();
