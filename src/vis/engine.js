@@ -898,6 +898,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
       B.add("steel", CYL(bore*0.16, bore*0.16, bore*0.30, 12), tX-bore*0.27, tY, bZ, 0,0,PI/2);
       extras.push(hoseMesh([V3(tX+bore*0.25, tY, bZ), V3(tX+bore*0.6, tY-bore*0.3, bZ), V3(bLen*0.18, aiY+bore*0.45, bZ)], bore*0.18, MAT.hose));
       var tw=new THREE.Group(), wm=makeWheelMesh(bore*0.32, 9, MAT.palu); wm.rotation.z=PI/2; tw.add(wm); tw.position.set(tX+bore*0.22, tY, bZ);
+      tw.userData.wk=turboWheel(76, cfg.boost);
       extras.push(tw); anim.turbos.push(tw);
     }
   } else {
