@@ -401,7 +401,10 @@ var _gs={sig:"", hold:0, t:-1e9, a:0, b:0, n:0, f:0};
 function gsCaster(o){
   if(!o.castShadow) return;
   var e=o.matrixWorld.elements, g=o.geometry, k=++_gs.n, v=e[12]*1.31+e[13]*1.73+e[14]*2.11+e[0]*0.37+e[5]*0.53+e[10]*0.71+e[1]*0.19+e[4]*0.29+e[8]*0.43;
-  if(g){ v+=g.id*0.01; if(g.drawRange) v+=g.drawRange.count*1e-3; if(g.attributes&&g.attributes.position) v+=g.attributes.position.version*0.5; }
+  /* only finite numbers: a whole-geometry draw range counts Infinity, and a glTF prop's interleaved positions have no version
+     (NaN). Either one poisoned the whole sum, so from 1.76.80 to 1.76.135 no change ever showed and the map waited for its once-a-second redraw */
+  if(g){ v+=g.id*0.01; var dc=g.drawRange&&g.drawRange.count, pv=g.attributes&&g.attributes.position&&g.attributes.position.version;
+    if(isFinite(dc)) v+=dc*1e-3; if(pv>0) v+=pv*0.5; }
   if(o.isInstancedMesh) v+=o.count*0.7+(o.instanceMatrix?o.instanceMatrix.version:0)*0.3;
   _gs.a+=v; _gs.b+=v*k;
 }
