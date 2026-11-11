@@ -16173,7 +16173,9 @@ function gasHardware(B, p){
 /* hex nut / fitting at a line end, axis along `dir` */
 function dzNut(B, pos, dir, r, len){
   var q=new THREE.Quaternion().setFromUnitVectors(_UP, dir.clone().normalize());
-  B.addM("steel", CYL(r,r,len,6,false,3.0), new THREE.Matrix4().compose(pos, q, new THREE.Vector3(1,1,1)));
+  /* pos is already in engine space (it comes off the line's own points), so the nut goes in as-is: through
+     addM it picked up the bank's tilt a second time and hung in the air beside the head */
+  B.addW("steel", CYL(r,r,len,6,false,3.0).clone().applyMatrix4(new THREE.Matrix4().compose(pos, q, new THREE.Vector3(1,1,1))));
 }
 /* a steel pressure line through engine-space points, with a nut at each end in Ultra */
 function dzLine(B, pts, rad, key){
@@ -16215,7 +16217,13 @@ function dieselHead(B, p, g){
   var retEnd=null;
   if(DET && retPts.length){   /* return line: one rubber hose along the row, dropping off the rear end */
     var q0=B.pt(-p.bankLen/2-bore*0.20, by+hI*0.95, iz+zs*(rI+bore*0.11)), q1=B.pt(-p.bankLen/2-bore*0.28, by-bore*0.12, iz+zs*(rI+bore*0.16));
-    B.addW("hose", TUBE([B.pt(p.bankLen/2-bspace*0.25, by+hI*0.95, iz+zs*(rI+bore*0.11))].concat(retPts, [q0, q1]), bore*0.022, 40, 6)); retEnd=q1;
+    var retTail=[q0, q1];
+    if(di==="cr_gen1"||di==="cr_piezo"){   /* common rail: nothing picks the hose up at the pump, so it turns in to a fitting on the head's rear face instead of ending in the air */
+      var rfy=g.headY+g.headH*0.22, rfz=iz+zs*(rI+bore*0.16), rfx=-p.bankLen*0.505;
+      retTail=[q0, B.pt(-p.bankLen/2-bore*0.27, (by+rfy)/2, rfz), B.pt(-p.bankLen/2-bore*0.20, rfy+bore*0.03, rfz), B.pt(rfx-bore*0.04, rfy, rfz)];
+      B.add("steel", CYL(bore*0.038,bore*0.042,bore*0.08,6,false,3.0), rfx-bore*0.03, rfy, rfz, 0,0,PI/2);
+    }
+    B.addW("hose", TUBE([B.pt(p.bankLen/2-bspace*0.25, by+hI*0.95, iz+zs*(rI+bore*0.11))].concat(retPts, retTail), bore*0.022, 48, 6)); retEnd=q1;
   }
   /* glow plugs tilt out of the exhaust-side head flank between the ports; a bus bar ties the terminals */
   var hy=g.headY+g.headH*0.86, hz=Z(g.headW*0.5), tl=0.55, d=V3(0, Math.cos(tl), zs*Math.sin(tl)), tips=[], gx, rxg=zs*tl;
@@ -18574,8 +18582,12 @@ function buildDetailPost(B, c){
     B.add("steel", BOX(bore*0.36, bore*0.03, bore*0.30), mc.x+bore*0.18, mc.y-bore*0.15, mc.z);   /* bracket to the block's rear face */
     B.add("steel", BOX(bore*0.03, bore*0.22, bore*0.30), mc.x+bore*0.35, mc.y-bore*0.05, mc.z);
     B.hw("hex", mc.x+bore*0.26, mc.y-bore*0.13, mc.z, 0,0,0, bore*0.08);
-    /* chassis-side pigtail out of the connector, dropping toward the bulkhead */
-    B.addW("loom", uvByLength(TUBE([mc.clone().add(V3(-bore*0.20,0,0)), mc.clone().add(V3(-bore*0.24,-bore*0.18,0)), mc.clone().add(V3(-bore*0.20,-bore*0.60,0))], bore*0.045, 10, 6), 1/1.4));
+    /* chassis-side pigtail out of the connector, running back toward the bulkhead and ending in a plug. It used to
+       drop straight down, which put its loose end through the top of the flywheel */
+    var pgE=mc.clone().add(V3(-bore*0.66,-bore*0.05,0));
+    B.addW("loom", uvByLength(TUBE([mc.clone().add(V3(-bore*0.20,0,0)), mc.clone().add(V3(-bore*0.42,bore*0.01,0)), pgE], bore*0.045, 10, 6), 1/1.4));
+    B.add("blackPlast", CYL(bore*0.06,bore*0.06,bore*0.12,10), pgE.x-bore*0.05, pgE.y, pgE.z, 0,0,PI/2);
+    B.add("connGrey", CYL(bore*0.066,bore*0.066,bore*0.03,10), pgE.x-bore*0.02, pgE.y, pgE.z, 0,0,PI/2);
   }
   /* ---- PCV: valve in the bank-0 cover, hose to the plenum (or a breather filter when there is none) ---- */
   bi=c.bankInfo[0];
@@ -21278,6 +21290,7 @@ const ENGINE_VIS = {
 };
 
 Object.defineProperty(ENGINE_VIS,"_root",{get:function(){return scene;}});
+Object.defineProperty(ENGINE_VIS,"_camera",{get:function(){return camera;}});   /* harness: lets a test ask which part is under a pixel */
 ENGINE_VIS._state=function(){return {gfx:GFX,xray:XRAY,grime:GRIME_UNIFORM.value,wear:run.wear,composer:!!composer,hot:anim.hot?anim.hot.length:0,glow:anim.glowMats?anim.glowMats.map(function(m){return +m.emissiveIntensity.toFixed(2);}):null};};
 Object.defineProperty(ENGINE_VIS,"_shake",{get:function(){return engineShake;}});
 /* ===========================================================================
@@ -22950,7 +22963,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.134.0";
+const VERSION="1.76.134.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

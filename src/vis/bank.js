@@ -32,7 +32,9 @@ function gasHardware(B, p){
 /* hex nut / fitting at a line end, axis along `dir` */
 function dzNut(B, pos, dir, r, len){
   var q=new THREE.Quaternion().setFromUnitVectors(_UP, dir.clone().normalize());
-  B.addM("steel", CYL(r,r,len,6,false,3.0), new THREE.Matrix4().compose(pos, q, new THREE.Vector3(1,1,1)));
+  /* pos is already in engine space (it comes off the line's own points), so the nut goes in as-is: through
+     addM it picked up the bank's tilt a second time and hung in the air beside the head */
+  B.addW("steel", CYL(r,r,len,6,false,3.0).clone().applyMatrix4(new THREE.Matrix4().compose(pos, q, new THREE.Vector3(1,1,1))));
 }
 /* a steel pressure line through engine-space points, with a nut at each end in Ultra */
 function dzLine(B, pts, rad, key){
@@ -74,7 +76,13 @@ function dieselHead(B, p, g){
   var retEnd=null;
   if(DET && retPts.length){   /* return line: one rubber hose along the row, dropping off the rear end */
     var q0=B.pt(-p.bankLen/2-bore*0.20, by+hI*0.95, iz+zs*(rI+bore*0.11)), q1=B.pt(-p.bankLen/2-bore*0.28, by-bore*0.12, iz+zs*(rI+bore*0.16));
-    B.addW("hose", TUBE([B.pt(p.bankLen/2-bspace*0.25, by+hI*0.95, iz+zs*(rI+bore*0.11))].concat(retPts, [q0, q1]), bore*0.022, 40, 6)); retEnd=q1;
+    var retTail=[q0, q1];
+    if(di==="cr_gen1"||di==="cr_piezo"){   /* common rail: nothing picks the hose up at the pump, so it turns in to a fitting on the head's rear face instead of ending in the air */
+      var rfy=g.headY+g.headH*0.22, rfz=iz+zs*(rI+bore*0.16), rfx=-p.bankLen*0.505;
+      retTail=[q0, B.pt(-p.bankLen/2-bore*0.27, (by+rfy)/2, rfz), B.pt(-p.bankLen/2-bore*0.20, rfy+bore*0.03, rfz), B.pt(rfx-bore*0.04, rfy, rfz)];
+      B.add("steel", CYL(bore*0.038,bore*0.042,bore*0.08,6,false,3.0), rfx-bore*0.03, rfy, rfz, 0,0,PI/2);
+    }
+    B.addW("hose", TUBE([B.pt(p.bankLen/2-bspace*0.25, by+hI*0.95, iz+zs*(rI+bore*0.11))].concat(retPts, retTail), bore*0.022, 48, 6)); retEnd=q1;
   }
   /* glow plugs tilt out of the exhaust-side head flank between the ports; a bus bar ties the terminals */
   var hy=g.headY+g.headH*0.86, hz=Z(g.headW*0.5), tl=0.55, d=V3(0, Math.cos(tl), zs*Math.sin(tl)), tips=[], gx, rxg=zs*tl;

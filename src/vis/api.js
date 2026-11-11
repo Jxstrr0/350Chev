@@ -542,5 +542,6 @@ const ENGINE_VIS = {
 };
 
 Object.defineProperty(ENGINE_VIS,"_root",{get:function(){return scene;}});
+Object.defineProperty(ENGINE_VIS,"_camera",{get:function(){return camera;}});   /* harness: lets a test ask which part is under a pixel */
 ENGINE_VIS._state=function(){return {gfx:GFX,xray:XRAY,grime:GRIME_UNIFORM.value,wear:run.wear,composer:!!composer,hot:anim.hot?anim.hot.length:0,glow:anim.glowMats?anim.glowMats.map(function(m){return +m.emissiveIntensity.toFixed(2);}):null};};
 Object.defineProperty(ENGINE_VIS,"_shake",{get:function(){return engineShake;}});
