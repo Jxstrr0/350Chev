@@ -95,11 +95,14 @@ function ultraSSAO(S, cam, w, h, o){
   if(o.ms && ultraMSOk()){
     var m=new THREE.WebGLMultisampleRenderTarget(Math.max(1,w), Math.max(1,h), {minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat}); m.samples=4;
     ao.beautyRenderTarget.dispose(); ao.beautyRenderTarget=m; U.tDiffuse.value=m.texture; }
-  var hidden=[], orig=ao.renderOverride, r0=ao.render;
+  var hidden=[], orig=ao.renderOverride, r0=ao.render, rp0=ao.renderPass;
+  /* ao.reuse (the garage's frame saver sets it for one draw): keep last draw's contact shading, so no normal/depth, SSAO or blur pass */
+  ao.renderPass=function(rn, m){ if(this.reuse && (m===this.ssaoMaterial || m===this.blurMaterial)) return; rp0.apply(this, arguments); };
   ao.render=function(){   /* the stock pass reads the lens once; an event camera's fov and lens shift change every frame */
     var u=this.ssaoMaterial.uniforms, c=this.camera; u.cameraProjectionMatrix.value.copy(c.projectionMatrix); u.cameraInverseProjectionMatrix.value.copy(c.projectionMatrixInverse);
     u.cameraNear.value=c.near; u.cameraFar.value=c.far; r0.apply(this, arguments); };
   ao.renderOverride=function(){   /* the normal/depth pass: no smoke, glass or other see-through bits, and the shadow maps stay as the beauty pass drew them */
+    if(this.reuse) return;
     hidden.length=0; this.scene.traverseVisible(function(q){ var m=q.material; if((q.isMesh||q.isPoints||q.isSprite) && m && (m.transparent || m.depthWrite===false || q.isPoints)){ hidden.push(q); } });
     hidden.forEach(function(q){ q.visible=false; }); var au=renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate=false;
     orig.apply(this, arguments);
@@ -268,11 +271,13 @@ function ultraFloorFind(){
   if(ULTRA_FLOOR.mat){ ULTRA_FLOOR.mat.dispose(); ULTRA_FLOOR.mat=null; }
   ULTRA_FLOOR.mesh=f; ULTRA_FLOOR.base=f?f.material:null; return f;
 }
-/* call just before the workshop composer draws: on Ultra the mirror pass and the sealed material, off Ultra the stock floor back */
-function ultraFloor(){
+/* call just before the workshop composer draws: on Ultra the mirror pass and the sealed material, off Ultra the stock floor back.
+   keep = the frame saver says last draw's reflection still stands (it stays pinned to the floor: R.tm maps world points into it) */
+function ultraFloor(keep){
   var f=ultraFloorFind(); if(!f) return;
   if(!ULT() || !garageRoot.visible || XRAY){ if(f.material!==ULTRA_FLOOR.base) f.material=ULTRA_FLOOR.base; return; }
   if(!ULTRA_FLOOR.mat) ULTRA_FLOOR.mat=ultraFloorMat(ULTRA_FLOOR.base);
+  if(keep && f.material===ULTRA_FLOOR.mat) return;
   var R=ultraFloorState(), M=ULTRA_FLOOR.mat, ds=renderer.getDrawingBufferSize(new THREE.Vector2()), w=Math.max(2,Math.round(ds.x/2)), h=Math.max(2,Math.round(ds.y/2)), sk=w+"x"+h;
   if(R.size!==sk){ R.rt.setSize(w,h); R.size=sk; }
   var on=ultraMirror(R, scene, camera, f.position.y, [f]);
