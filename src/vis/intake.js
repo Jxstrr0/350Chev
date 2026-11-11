@@ -453,7 +453,7 @@ function buildAspiration(B, p, extras){
       if(DET) for(var gb=0; gb<6; gb++){ var ag=gb/6*TAU;
         B.hw("hex", cx+caseL*0.5+bore*0.21, vy+Math.cos(ag)*caseH2*0.34, cz+Math.sin(ag)*caseW2*0.33, 0,0,-PI/2, bore*0.07); }
     }
-    out.crankDriven={ kind:"blower", y:vy, z:cz, snoutX:cx+snX+bore*0.30, ratio:(screw?3.2:2.6) };
+    out.crankDriven={ kind:"blower", y:vy, z:cz, snoutX:cx+snX+bore*0.30, ratio:blowerDrive(p.asp, p.boost) };
     var rearIn = screw || inl, rx0 = cx-caseL*0.5, iy = vy+caseH2*0.08;
     if(p.intake==="carb"){
       /* carb(s) on a hat: on top of a V Roots, on a riser at the rear inlet otherwise */
@@ -484,7 +484,7 @@ function buildAspiration(B, p, extras){
 
   if(asp==="centrifugal"){
     /* head unit, bracket and pulley are built in buildFAD, which also fills cd.cout (the discharge) */
-    out.crankDriven={ kind:"centri", ratio:3.4, cout:out.cout };
+    out.crankDriven={ kind:"centri", ratio:blowerDrive("centrifugal", p.boost), cout:out.cout };
     out.rc = bore*0.26;
     addIntercooler(B,p,extras,true,out);
     return out;
@@ -830,6 +830,15 @@ function buildChargeAir(B, p, extras, ai){
   B.add("dark", CYL(bore*0.16,bore*0.16,bore*0.09,12), tA.x, tA.y+rc+bore*0.28, tA.z);
 }
 
+/* How many turns the blower's pulley makes for one of the crank's, set by the boost the way a pulley swap sets it: more boost,
+   a smaller blower pulley. (A centrifugal's number is its pulley pair only; the head unit's own gears step it up again inside.)
+   In steps of a tenth, so a boost slider only redraws the engine when the pulley actually changes (visKey, api.js).
+   Looks only: the physics takes boost straight from the slider. Around 2.4 at a stock supercharged V8's boost, as theirs are. */
+function blowerDrive(asp, boost){
+  var bb=Math.max(0, +boost||0), cen=(asp==="centrifugal");
+  var r = cen ? 1.25+0.35*bb : asp==="screw" ? 1.45+0.95*bb : 1.70+1.20*bb;
+  return Math.round(clamp(r, 1.3, cen?2.0:3.3)*10)/10;
+}
 /* ---- belt loop: straight tangent spans + wrap arcs, all in the plane x ----
    pl: [{y,z,r,side}] side +1 = belt runs round the outside (pulley inside the loop),
    -1 = backside idler outside the loop. Points run counter-clockwise in (z,y). */
@@ -848,6 +857,7 @@ function beltLoop(x, pl, bt){
     var a0=Math.atan2(tin[1]-P.y, tin[0]-P.z), a1=Math.atan2(tout[1]-P.y, tout[0]-P.z), da=a1-a0;
     if(P.side>0){ while(da<0) da+=TAU; } else { while(da>0) da-=TAU; }
     var st=Math.max(2, Math.ceil(Math.abs(da)/0.16));
+    P._a0=a0; P._i0=out.length;                 /* where this pulley's wrap starts (flatBeltGeo meshes the teeth from it) */
     for(j=0;j<=st;j++){ var t=a0+da*j/st; out.push(V3(x, P.y+Math.sin(t)*R, P.z+Math.cos(t)*R)); }
     var nb=tn[i].b;
     for(j=1;j<=3;j++){ var f=j/4; out.push(V3(x, tout[1]+(nb[1]-tout[1])*f, tout[0]+(nb[0]-tout[0])*f)); }
@@ -861,37 +871,89 @@ function ccwOrder(pl){
   cy/=pl.length; cz/=pl.length;
   return pl.slice().sort(function(A,C){ return Math.atan2(A.y-cy,A.z-cz)-Math.atan2(C.y-cy,C.z-cz); });
 }
+/* ---- belts ----
+   Every belt is a mesh of its own with a material of its own (a clone: the painted maps are shared), because every belt has
+   its own speed. The frame loop turns the crank by an angle (loop.js, VIS_SPIN); a belt's print has to move that angle times
+   the crank pulley's belt radius along the loop. The print repeats a whole number of times round the loop, so there is no
+   seam, and the scroll each belt needs per crank radian (rep x Rc / len) rides on its material: beltAnim keeps the number,
+   loop.js steps it. Before 1.76.126.0 all belts shared one scroll and the rounding to whole repeats let a short belt's print
+   run up to a tenth fast or slow against its own pulleys.
+   A toothed belt (blower, dry-sump pump) also slides its teeth: they are pushed out of a flat belt in the vertex shader
+   (attribute beltT), one tooth past any point for each tooth the crank pulley turns, and its pulleys turn by tooth count, so
+   belt and pulleys stay in mesh at any speed. (The teeth used to be fixed in the mesh: they stood still while the pulleys
+   turned under them.) */
+function beltAnim(k, teeth){
+  var bl={u:{value:0}, k:k, t:teeth?{value:0}:null, kt:teeth?teeth/TAU:0};
+  anim.belts.push(bl); return bl;
+}
+function beltMat(base, bl, slope, xray){
+  var m=base.clone(); m.userData.perBuild=true; delete m.userData.heat;
+  if(xray){ m.userData={perBuild:true}; m.transparent=true; m.opacity=0.22; m.depthWrite=false; m.envMapIntensity=(m.envMapIntensity||1)*0.5; }   /* as setXray makes them */
+  heatPatch(m);
+  var prevO=m.onBeforeCompile, prevK=m.customProgramCacheKey;
+  m.onBeforeCompile=function(sh){
+    prevO.call(this, sh);
+    sh.uniforms.uBeltU=bl.u;
+    var vs="uniform float uBeltU;\n"+sh.vertexShader.replace("#include <uv_vertex>", "#include <uv_vertex>\n#ifdef USE_UV\nvUv.x += uBeltU;\n#endif");
+    if(bl.t){
+      /* beltT: x = place along the loop in teeth, yz = the belt's outward direction there, w = tooth height (0 on the back).
+         A tooth is a rounded trapezoid, half a pitch wide; the normal leans with its flanks so the teeth catch the light. */
+      sh.uniforms.uBeltT=bl.t; sh.uniforms.uBeltS={value:slope||0.4};
+      vs="attribute vec4 beltT;\nuniform float uBeltT;\nuniform float uBeltS;\n"+
+         "float pewTooth(float f){ return smoothstep(0.0,0.2,f)-smoothstep(0.5,0.7,f); }\n"+
+         "float pewToothD(float f){ float a=clamp(f*5.0,0.0,1.0), b=clamp((f-0.5)*5.0,0.0,1.0); return 30.0*(a*(1.0-a)-b*(1.0-b)); }\n"+
+         vs.replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nif(beltT.w>0.0){ float bf=fract(beltT.x+uBeltT); vec2 bn=-beltT.yz-vec2(beltT.z,-beltT.y)*(pewToothD(bf)*uBeltS); objectNormal=normalize(vec3(objectNormal.x, normalize(bn)*max(0.3,length(objectNormal.yz)))); }")
+           .replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed.yz -= beltT.yz*(beltT.w*pewTooth(fract(beltT.x+uBeltT)));");
+    }
+    sh.vertexShader=vs;
+  };
+  m.customProgramCacheKey=function(){ return prevK.call(this)+(bl.t?"|beltT":"|belt"); };
+  m.needsUpdate=true;
+  return m;
+}
+/* o: {w width, t thickness, ribs, cog: tooth pitch, teeth: the crank pulley's tooth count} in scene units; pl[0] is the crank
+   pulley. A toothed belt hands each pulley in pl the turn (rot) that puts its teeth in the belt's gaps. */
 function beltMesh(x, pl, bt, rad, o){
-  if(DET && CUR_B){ CUR_B.addW("beltFlat", flatBeltGeo(x, pl, o||{})); return null; }
-  var pts=beltLoop(x, ccwOrder(pl), bt);
-  var curve=new THREE.CatmullRomCurve3(pts, true, "centripetal");
-  var g=new THREE.TubeGeometry(curve, Math.max(96, pts.length*2), rad, 6, true);
-  beltUvU(g.attributes.uv, curve.getLength(), pl[0].r+bt);
-  if(CUR_B){ CUR_B.addW("belt", g); return null; }
-  var m=new THREE.Mesh(g, MAT.belt);
-  m.castShadow=true; return m;
+  o=o||{};
+  var g, k, teeth=0, slope=0, flat=!!(DET && CUR_B && MATHI.beltFlat);
+  if(flat){ g=flatBeltGeo(x, pl, o); k=g.userData.k; teeth=g.userData.teeth||0; slope=g.userData.slope||0; }
+  else {
+    var pts=beltLoop(x, ccwOrder(pl), bt);
+    var curve=new THREE.CatmullRomCurve3(pts, true, "centripetal"), len=curve.getLength();
+    g=new THREE.TubeGeometry(curve, Math.max(96, pts.length*2), rad, 6, true);
+    k=beltUvU(g.attributes.uv, len, pl[0].r+bt)*(pl[0].r+bt)/len;
+  }
+  var bl=beltAnim(k, teeth), base=flat?MATHI.beltFlat:MAT.belt;
+  var m=new THREE.Mesh(g, beltMat(base, bl, slope));
+  m.userData.solidMat=m.material; m.userData.xrayMat=beltMat(base, bl, slope, true);
+  m.castShadow=true; m.receiveShadow=true; m.name="belt";
+  return m;
 }
 /* Full / Ultra: a real flat belt. Back is plain fabric-backed rubber; the inside carries poly-V ribs (serpentine) or
-   square cogs (blower / dry-sump drive). o: {w width, t thickness, ribs, cog pitch} in scene units. */
+   teeth (blower / dry-sump drive: a whole number of them round the loop, the pitch stretched a hair to fit). */
 function flatBeltGeo(x, pl, o){
   var b=DCTX.bore, t=o.t||b*0.05, w=o.w||b*0.13, ribs=o.ribs===undefined?(o.cog?0:5):o.ribs, cog=o.cog||0;
-  var P=beltLoop(x, ccwOrder(pl), t*0.5);
-  var curve=new THREE.CatmullRomCurve3(P, true, "centripetal"), len=curve.getLength();
-  var N=Math.max(120, Math.min(420, Math.ceil(len/(cog?cog*0.25:t*0.9))));
+  var ord=ccwOrder(pl), P=beltLoop(x, ord, t*0.5);
+  var curve=new THREE.CatmullRomCurve3(P, true, "centripetal");
+  curve.arcLengthDivisions=cog?1200:400;
+  var len=curve.getLength();
+  var nT=cog ? Math.max(8, Math.round(len/cog)) : 0, per=cog ? Math.max(6, Math.min(10, Math.floor(2400/nT))) : 0;
+  var N=cog ? nT*per : Math.max(120, Math.min(420, Math.ceil(len/(t*0.9))));
   /* cross-section (a across the width, d outward from the pulleys), closed loop */
-  var prof=[], i, j, rd=t*0.32;
+  var prof=[], i, j, rd=t*0.32, th=t*0.55;
   prof.push([-w/2, t*0.5],[w/2, t*0.5],[w/2,-t*0.5]);
   if(ribs){ for(i=0;i<ribs;i++){ var a0=w/2-(i+0.5)*w/ribs; prof.push([a0,-t*0.5-rd],[a0-w/ribs*0.5,-t*0.5]); } }
   prof.push([-w/2,-t*0.5]);
-  var M=prof.length, pos=[], uv=[], idx=[], tan=new THREE.Vector3(), nrm=new THREE.Vector3(), X=new THREE.Vector3(1,0,0);
+  var M=prof.length, pos=[], uv=[], idx=[], bT=[], ring=[], tan=new THREE.Vector3(), nrm=new THREE.Vector3();
   for(j=0;j<=N;j++){                                    /* N+1 rings: the last sits on the first, so u runs 0..1 with no seam */
-    var u=j/N, c=curve.getPointAt(u%1); curve.getTangentAt(u, tan);
+    var u=j/N, c=curve.getPointAt(u%1); curve.getTangentAt(u%1, tan);
     nrm.set(0, -tan.z, tan.y).normalize();               /* outward, in the belt plane (loop runs ccw in z,y) */
-    var tooth = cog ? (((u%1)*len/cog)%1 < 0.5 ? 1 : 0) : 0;
+    ring.push(c.y, c.z);
     for(i=0;i<M;i++){
-      var d=prof[i][1]; if(cog && d<0) d-=tooth*t*0.55;
+      var d=prof[i][1];
       pos.push(c.x+prof[i][0], c.y+nrm.y*d, c.z+nrm.z*d);
       uv.push(u, i===0?0:0.5+0.5*(i-1)/(M-2));   /* the back face gets v 0..0.5 (where the print runs), the ribs the rest */
+      if(cog) bT.push(u*nT, nrm.y, nrm.z, d<0?th:0);
     }
   }
   for(j=0;j<N;j++) for(i=0;i<M;i++){
@@ -901,20 +963,33 @@ function flatBeltGeo(x, pl, o){
   var g=new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv,2));
+  if(cog) g.setAttribute("beltT", new THREE.Float32BufferAttribute(bT,4));
   g.setIndex(idx); g.computeVertexNormals();
-  beltUvU(g.attributes.uv, len, pl[0].r+t*0.5);
+  var R0=pl[0].r+t*0.5, rep=beltUvU(g.attributes.uv, len, R0);
+  if(cog){
+    var nC=o.teeth||Math.max(8, Math.round(TAU*R0/cog));
+    g.userData={k:rep*nC/(TAU*nT), teeth:nC, slope:th/(len/nT), nT:nT};
+    /* mesh the pulleys: at each one's wrap start find the belt's tooth phase, step on to the middle of the next gap (0.85 of a
+       pitch: pewTooth) and turn the pulley so a tooth of its own (they start at the +Y side, see pulleyHi) stands there */
+    for(i=0;i<ord.length;i++){
+      var Q=ord[i], q=P[Q._i0], best=0, bd=1e9;
+      for(j=0;j<N;j++){ var dy=ring[j*2]-q.y, dz=ring[j*2+1]-q.z, dd=dy*dy+dz*dz; if(dd<bd){ bd=dd; best=j; } }
+      var s0=best/N*nT, ds=((0.85-s0)%1+1)%1, nQ=Q.n||Math.max(8, Math.round(TAU*(Q.r+t*0.5)/cog));
+      Q.rot=PI/2-(Q._a0+Q.side*ds*TAU/nQ);
+    }
+  } else g.userData={k:rep*R0/len};
   return g;
 }
-/* belt texture u counts crank-pulley angle (BELT_UV per radian at the pulley it is cut for, pl[0], the crank in every caller),
-   rounded to whole repeats so the loop has no seam: scrolling the map by BELT_UV x crank angle (loop.js) then moves every belt
-   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. 0.75 puts the print about 1.3 crank radians
-   apart, so at the fastest the frame loop draws (VIS_SPIN, ~0.3 rad a frame) it moves a quarter of the gap a frame and reads as
-   running forward; at 1.5 it moved nearly half the gap and could look like it was creeping backwards. */
+/* belt texture u: a whole number of repeats of the print round the loop (no seam), as near BELT_UV per crank radian as the
+   loop's length allows; returns that number. 0.75 puts the print about 1.3 crank radians apart, so at the fastest the frame
+   loop draws (VIS_SPIN, ~0.3 rad a frame) it moves a quarter of the gap a frame and reads as running forward; at 1.5 it moved
+   nearly half the gap and could look like it was creeping backwards. u in: 0..1 round the loop. */
 var BELT_UV = 0.75;
 function beltUvU(a, len, R0){
   var rep=Math.max(1, Math.round(len/R0*BELT_UV)), i, n=a.count;
   for(i=0;i<n;i++) a.setX(i, a.getX(i)*rep);
   a.needsUpdate=true;
+  return rep;
 }
 /* a spinning pulley on the X axis: plain disc with a flange lip each side */
 function pulleyMesh(r, w, mat, o){
@@ -935,7 +1010,7 @@ function paintMark(m, x, r0, r1){
   k.position.set(x+b*0.004, (r0+r1)/2, 0); m.add(k); return k;
 }
 /* Full / Ultra pulley: lathe-turned body with flanges, poly-V grooves (or cog teeth) where the belt runs, a hub boss
-   and bolt heads (they spin with it). o: {cog, bolts, fan, mark:false = no paint stripe} */
+   and bolt heads (they spin with it). o: {cog, teeth: how many, bolts, fan, mark:false = no paint stripe} */
 function pulleyHi(r, w, mat, o){
   var b=DCTX.bore, V2=function(x,y){ return new THREE.Vector2(x,y); }, i, pr=[], ribs=o.cog?0:5, gd=Math.min(r*0.05, b*0.012);
   pr.push(V2(0.001, w*0.62), V2(r*0.30, w*0.62), V2(r*0.34, w*0.50), V2(r*0.80, w*0.50), V2(r*0.86, w*0.44),
@@ -946,7 +1021,7 @@ function pulleyHi(r, w, mat, o){
   pr.reverse();                                         /* lathe faces point outward for a bottom-to-top profile */
   var lathe=new THREE.LatheGeometry(pr, 30); lathe.rotateZ(-PI/2);
   var items=[{g:lathe, m:new THREE.Matrix4()}];
-  if(o.cog){ var nT=Math.max(14, Math.round(TAU*r/(b*0.06)));
+  if(o.cog){ var nT=o.teeth||Math.max(14, Math.round(TAU*r/(b*0.06)));   /* tooth 0 stands at +Y: flatBeltGeo meshes the belt to it */
     for(i=0;i<nT;i++){ var an=i/nT*TAU; items.push({g:BOX(w*0.72, b*0.022, b*0.028, 6), m:mkM(0, Math.cos(an)*(r+b*0.008), Math.sin(an)*(r+b*0.008), an,0,0)}); } }
   var nb=o.bolts===undefined ? (r>b*0.3?4:3) : o.bolts;
   for(i=0;i<nb;i++){ var ab=i/nb*TAU+0.3, rb=r*(r>b*0.3?0.44:0.52);
@@ -956,6 +1031,7 @@ function pulleyHi(r, w, mat, o){
     var nf=10; for(i=0;i<nf;i++){ var af=i/nf*TAU; items.push({g:BOX(b*0.022, b*0.12, b*0.028, 6), m:mkM(-w*0.62-b*0.016, Math.cos(af)*r*1.08, Math.sin(af)*r*1.08, af+0.35,0,0)}); }
     items.push({g:CYL(r*0.62,r*0.62,b*0.012,20,false,6), m:mkM(-w*0.62-b*0.016,0,0,0,0,PI/2)}); }
   var m=new THREE.Mesh(mergeGeos(items), mat||MATHI.lathe||MAT.steel); m.castShadow=true; m.receiveShadow=true;   /* turned steel: rings round the axis, not brushed streaks */
+  if(o.cog) m.userData.teeth=nT;
   if(o.mark!==false) paintMark(m, w*0.50, r*0.36, r*0.78);
   return m;
 }

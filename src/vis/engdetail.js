@@ -160,10 +160,19 @@ function tsDetroitFront(B, extras, o){
   var b=o.bore, j, ful=DET>=2, xF=o.bankLen*0.5+b*0.15, dR=o.caseR*0.60;
   setZone(1);
   B.add("calu", RBOX(b*0.22, o.caseR*1.9, o.caseW*0.98, 0.03), xF+b*0.11, -o.caseR*0.05, 0);          /* front cover */
-  B.add("steel", CYL(dR, dR, b*0.20, 28, false, 1.6), xF+b*0.32, 0, 0, 0,0,PI/2);                      /* viscous damper */
-  B.add("dark", CYL(dR*0.70, dR*0.70, b*0.12, 24, false, 1.6), xF+b*0.48, 0, 0, 0,0,PI/2);             /* belt pulley */
-  B.add("steel", CYL(b*0.16, b*0.14, b*0.16, 12), xF+b*0.62, 0, 0, 0,0,PI/2);                           /* crank nose */
-  for(j=0;j<6;j++){ var fa=j/6*TAU; B.hw("pbolt", xF+b*0.42, Math.cos(fa)*dR*0.84, Math.sin(fa)*dR*0.84, 0,0,0, b*0.09); }
+  /* viscous damper, accessory pulley, crank nose and the damper's bolts: one group on the crank's axis that turns with it, a
+     paint stripe and a timing mark on it so the turning shows (they were part of the fixed casting and stood still) */
+  var dg=new THREE.Group(), rz=new THREE.Matrix4().makeRotationZ(PI/2), st=[
+    {g:CYL(dR, dR, b*0.20, 28, false, 1.6), m:mkM(0.32*b,0,0, 0,0,PI/2)},
+    {g:CYL(b*0.16, b*0.14, b*0.16, 12), m:mkM(0.62*b,0,0, 0,0,PI/2)}];
+  for(j=0;j<6;j++){ var fa=j/6*TAU; st.push({g:CYL(b*0.045,b*0.045,b*0.03,6,false,6), m:mkM(0.42*b+b*0.015, Math.cos(fa)*dR*0.84, Math.sin(fa)*dR*0.84, 0,0,PI/2)}); }
+  dg.add(new THREE.Mesh(mergeGeos(st), MAT.steel));
+  var dpl=new THREE.Mesh(CYL(dR*0.70, dR*0.70, b*0.12, 24, false, 1.6), MAT.dark); dpl.rotation.z=PI/2; dpl.position.x=0.48*b; dg.add(dpl);
+  var dtm=new THREE.Mesh(new THREE.BoxGeometry(b*0.16, b*0.010, b*0.032), MAT.paintMark); dtm.position.set(0.32*b, dR+b*0.004, 0); dg.add(dtm);
+  paintMark(dg, 0.54*b, b*0.17, dR*0.68);
+  dg.traverse(function(q){ if(q.isMesh){ q.castShadow=true; q.receiveShadow=true; } });
+  dg.position.set(xF, 0, 0); dg.userData.isDamper=true;
+  extras.push(dg); anim.spin.push({o:dg, axis:"x", k:1});
   /* spin-on oil filter on the exhaust side low down, with a pair of lines to the block */
   setZone(2);
   var fz=o.caseW*0.5+b*0.42, fy=-o.caseR*0.15, fx=o.bankLen*0.28;

@@ -234,7 +234,7 @@ function buildEngineMesh(cfg, layoutObj){
   var aspInfo = buildAspiration(B, {
     L:L, per:per, banks:banks, bore:bore, stroke:stroke, bankLen:bankLen, bankW:bankW,
     deckH:deckH, headH:headH, coverH:coverH, caseH:caseH, caseW:caseW, panTop:panTop,
-    asp:asp, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
+    asp:asp, boost:cfg.boost, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
     intake:intake, a:a, bankInfo:bankInfo, exh:exh,
     panBot:panTop-panH, caseBot:caseBot, tb:LAST_TB, plen:LAST_PLEN
   }, extras);
@@ -693,7 +693,7 @@ function buildRotaryMesh(cfg, L, B, G, extras, t0){
   var aspInfo = buildAspiration(B, {
     L:L, per:n, banks:1, bore:bore, stroke:bore, bankLen:bankLen, bankW:Hw*2,
     deckH:Hh, headH:iHeadH, coverH:bore*0.30, caseH:caseH, caseW:caseW, panTop:panTop,
-    asp:asp, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
+    asp:asp, boost:cfg.boost, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
     intake:intake, a:0, bankInfo:bankInfo, exh:exh,
     panBot:panTop-panH, caseBot:panTop, tb:LAST_TB, plen:LAST_PLEN
   }, extras);

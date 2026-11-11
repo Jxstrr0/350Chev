@@ -15129,7 +15129,7 @@ function buildEngineMesh(cfg, layoutObj){
   var aspInfo = buildAspiration(B, {
     L:L, per:per, banks:banks, bore:bore, stroke:stroke, bankLen:bankLen, bankW:bankW,
     deckH:deckH, headH:headH, coverH:coverH, caseH:caseH, caseW:caseW, panTop:panTop,
-    asp:asp, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
+    asp:asp, boost:cfg.boost, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
     intake:intake, a:a, bankInfo:bankInfo, exh:exh,
     panBot:panTop-panH, caseBot:caseBot, tb:LAST_TB, plen:LAST_PLEN
   }, extras);
@@ -15588,7 +15588,7 @@ function buildRotaryMesh(cfg, L, B, G, extras, t0){
   var aspInfo = buildAspiration(B, {
     L:L, per:n, banks:1, bore:bore, stroke:bore, bankLen:bankLen, bankW:Hw*2,
     deckH:Hh, headH:iHeadH, coverH:bore*0.30, caseH:caseH, caseW:caseW, panTop:panTop,
-    asp:asp, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
+    asp:asp, boost:cfg.boost, tsz:tsz, ic:ic, turbineMat:pick(cfg.turbineMat,"cast_iron"),
     intake:intake, a:0, bankInfo:bankInfo, exh:exh,
     panBot:panTop-panH, caseBot:panTop, tb:LAST_TB, plen:LAST_PLEN
   }, extras);
@@ -17460,7 +17460,7 @@ function buildAspiration(B, p, extras){
       if(DET) for(var gb=0; gb<6; gb++){ var ag=gb/6*TAU;
         B.hw("hex", cx+caseL*0.5+bore*0.21, vy+Math.cos(ag)*caseH2*0.34, cz+Math.sin(ag)*caseW2*0.33, 0,0,-PI/2, bore*0.07); }
     }
-    out.crankDriven={ kind:"blower", y:vy, z:cz, snoutX:cx+snX+bore*0.30, ratio:(screw?3.2:2.6) };
+    out.crankDriven={ kind:"blower", y:vy, z:cz, snoutX:cx+snX+bore*0.30, ratio:blowerDrive(p.asp, p.boost) };
     var rearIn = screw || inl, rx0 = cx-caseL*0.5, iy = vy+caseH2*0.08;
     if(p.intake==="carb"){
       /* carb(s) on a hat: on top of a V Roots, on a riser at the rear inlet otherwise */
@@ -17491,7 +17491,7 @@ function buildAspiration(B, p, extras){
 
   if(asp==="centrifugal"){
     /* head unit, bracket and pulley are built in buildFAD, which also fills cd.cout (the discharge) */
-    out.crankDriven={ kind:"centri", ratio:3.4, cout:out.cout };
+    out.crankDriven={ kind:"centri", ratio:blowerDrive("centrifugal", p.boost), cout:out.cout };
     out.rc = bore*0.26;
     addIntercooler(B,p,extras,true,out);
     return out;
@@ -17837,6 +17837,15 @@ function buildChargeAir(B, p, extras, ai){
   B.add("dark", CYL(bore*0.16,bore*0.16,bore*0.09,12), tA.x, tA.y+rc+bore*0.28, tA.z);
 }
 
+/* How many turns the blower's pulley makes for one of the crank's, set by the boost the way a pulley swap sets it: more boost,
+   a smaller blower pulley. (A centrifugal's number is its pulley pair only; the head unit's own gears step it up again inside.)
+   In steps of a tenth, so a boost slider only redraws the engine when the pulley actually changes (visKey, api.js).
+   Looks only: the physics takes boost straight from the slider. Around 2.4 at a stock supercharged V8's boost, as theirs are. */
+function blowerDrive(asp, boost){
+  var bb=Math.max(0, +boost||0), cen=(asp==="centrifugal");
+  var r = cen ? 1.25+0.35*bb : asp==="screw" ? 1.45+0.95*bb : 1.70+1.20*bb;
+  return Math.round(clamp(r, 1.3, cen?2.0:3.3)*10)/10;
+}
 /* ---- belt loop: straight tangent spans + wrap arcs, all in the plane x ----
    pl: [{y,z,r,side}] side +1 = belt runs round the outside (pulley inside the loop),
    -1 = backside idler outside the loop. Points run counter-clockwise in (z,y). */
@@ -17855,6 +17864,7 @@ function beltLoop(x, pl, bt){
     var a0=Math.atan2(tin[1]-P.y, tin[0]-P.z), a1=Math.atan2(tout[1]-P.y, tout[0]-P.z), da=a1-a0;
     if(P.side>0){ while(da<0) da+=TAU; } else { while(da>0) da-=TAU; }
     var st=Math.max(2, Math.ceil(Math.abs(da)/0.16));
+    P._a0=a0; P._i0=out.length;                 /* where this pulley's wrap starts (flatBeltGeo meshes the teeth from it) */
     for(j=0;j<=st;j++){ var t=a0+da*j/st; out.push(V3(x, P.y+Math.sin(t)*R, P.z+Math.cos(t)*R)); }
     var nb=tn[i].b;
     for(j=1;j<=3;j++){ var f=j/4; out.push(V3(x, tout[1]+(nb[1]-tout[1])*f, tout[0]+(nb[0]-tout[0])*f)); }
@@ -17868,37 +17878,89 @@ function ccwOrder(pl){
   cy/=pl.length; cz/=pl.length;
   return pl.slice().sort(function(A,C){ return Math.atan2(A.y-cy,A.z-cz)-Math.atan2(C.y-cy,C.z-cz); });
 }
+/* ---- belts ----
+   Every belt is a mesh of its own with a material of its own (a clone: the painted maps are shared), because every belt has
+   its own speed. The frame loop turns the crank by an angle (loop.js, VIS_SPIN); a belt's print has to move that angle times
+   the crank pulley's belt radius along the loop. The print repeats a whole number of times round the loop, so there is no
+   seam, and the scroll each belt needs per crank radian (rep x Rc / len) rides on its material: beltAnim keeps the number,
+   loop.js steps it. Before 1.76.126.0 all belts shared one scroll and the rounding to whole repeats let a short belt's print
+   run up to a tenth fast or slow against its own pulleys.
+   A toothed belt (blower, dry-sump pump) also slides its teeth: they are pushed out of a flat belt in the vertex shader
+   (attribute beltT), one tooth past any point for each tooth the crank pulley turns, and its pulleys turn by tooth count, so
+   belt and pulleys stay in mesh at any speed. (The teeth used to be fixed in the mesh: they stood still while the pulleys
+   turned under them.) */
+function beltAnim(k, teeth){
+  var bl={u:{value:0}, k:k, t:teeth?{value:0}:null, kt:teeth?teeth/TAU:0};
+  anim.belts.push(bl); return bl;
+}
+function beltMat(base, bl, slope, xray){
+  var m=base.clone(); m.userData.perBuild=true; delete m.userData.heat;
+  if(xray){ m.userData={perBuild:true}; m.transparent=true; m.opacity=0.22; m.depthWrite=false; m.envMapIntensity=(m.envMapIntensity||1)*0.5; }   /* as setXray makes them */
+  heatPatch(m);
+  var prevO=m.onBeforeCompile, prevK=m.customProgramCacheKey;
+  m.onBeforeCompile=function(sh){
+    prevO.call(this, sh);
+    sh.uniforms.uBeltU=bl.u;
+    var vs="uniform float uBeltU;\n"+sh.vertexShader.replace("#include <uv_vertex>", "#include <uv_vertex>\n#ifdef USE_UV\nvUv.x += uBeltU;\n#endif");
+    if(bl.t){
+      /* beltT: x = place along the loop in teeth, yz = the belt's outward direction there, w = tooth height (0 on the back).
+         A tooth is a rounded trapezoid, half a pitch wide; the normal leans with its flanks so the teeth catch the light. */
+      sh.uniforms.uBeltT=bl.t; sh.uniforms.uBeltS={value:slope||0.4};
+      vs="attribute vec4 beltT;\nuniform float uBeltT;\nuniform float uBeltS;\n"+
+         "float pewTooth(float f){ return smoothstep(0.0,0.2,f)-smoothstep(0.5,0.7,f); }\n"+
+         "float pewToothD(float f){ float a=clamp(f*5.0,0.0,1.0), b=clamp((f-0.5)*5.0,0.0,1.0); return 30.0*(a*(1.0-a)-b*(1.0-b)); }\n"+
+         vs.replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nif(beltT.w>0.0){ float bf=fract(beltT.x+uBeltT); vec2 bn=-beltT.yz-vec2(beltT.z,-beltT.y)*(pewToothD(bf)*uBeltS); objectNormal=normalize(vec3(objectNormal.x, normalize(bn)*max(0.3,length(objectNormal.yz)))); }")
+           .replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed.yz -= beltT.yz*(beltT.w*pewTooth(fract(beltT.x+uBeltT)));");
+    }
+    sh.vertexShader=vs;
+  };
+  m.customProgramCacheKey=function(){ return prevK.call(this)+(bl.t?"|beltT":"|belt"); };
+  m.needsUpdate=true;
+  return m;
+}
+/* o: {w width, t thickness, ribs, cog: tooth pitch, teeth: the crank pulley's tooth count} in scene units; pl[0] is the crank
+   pulley. A toothed belt hands each pulley in pl the turn (rot) that puts its teeth in the belt's gaps. */
 function beltMesh(x, pl, bt, rad, o){
-  if(DET && CUR_B){ CUR_B.addW("beltFlat", flatBeltGeo(x, pl, o||{})); return null; }
-  var pts=beltLoop(x, ccwOrder(pl), bt);
-  var curve=new THREE.CatmullRomCurve3(pts, true, "centripetal");
-  var g=new THREE.TubeGeometry(curve, Math.max(96, pts.length*2), rad, 6, true);
-  beltUvU(g.attributes.uv, curve.getLength(), pl[0].r+bt);
-  if(CUR_B){ CUR_B.addW("belt", g); return null; }
-  var m=new THREE.Mesh(g, MAT.belt);
-  m.castShadow=true; return m;
+  o=o||{};
+  var g, k, teeth=0, slope=0, flat=!!(DET && CUR_B && MATHI.beltFlat);
+  if(flat){ g=flatBeltGeo(x, pl, o); k=g.userData.k; teeth=g.userData.teeth||0; slope=g.userData.slope||0; }
+  else {
+    var pts=beltLoop(x, ccwOrder(pl), bt);
+    var curve=new THREE.CatmullRomCurve3(pts, true, "centripetal"), len=curve.getLength();
+    g=new THREE.TubeGeometry(curve, Math.max(96, pts.length*2), rad, 6, true);
+    k=beltUvU(g.attributes.uv, len, pl[0].r+bt)*(pl[0].r+bt)/len;
+  }
+  var bl=beltAnim(k, teeth), base=flat?MATHI.beltFlat:MAT.belt;
+  var m=new THREE.Mesh(g, beltMat(base, bl, slope));
+  m.userData.solidMat=m.material; m.userData.xrayMat=beltMat(base, bl, slope, true);
+  m.castShadow=true; m.receiveShadow=true; m.name="belt";
+  return m;
 }
 /* Full / Ultra: a real flat belt. Back is plain fabric-backed rubber; the inside carries poly-V ribs (serpentine) or
-   square cogs (blower / dry-sump drive). o: {w width, t thickness, ribs, cog pitch} in scene units. */
+   teeth (blower / dry-sump drive: a whole number of them round the loop, the pitch stretched a hair to fit). */
 function flatBeltGeo(x, pl, o){
   var b=DCTX.bore, t=o.t||b*0.05, w=o.w||b*0.13, ribs=o.ribs===undefined?(o.cog?0:5):o.ribs, cog=o.cog||0;
-  var P=beltLoop(x, ccwOrder(pl), t*0.5);
-  var curve=new THREE.CatmullRomCurve3(P, true, "centripetal"), len=curve.getLength();
-  var N=Math.max(120, Math.min(420, Math.ceil(len/(cog?cog*0.25:t*0.9))));
+  var ord=ccwOrder(pl), P=beltLoop(x, ord, t*0.5);
+  var curve=new THREE.CatmullRomCurve3(P, true, "centripetal");
+  curve.arcLengthDivisions=cog?1200:400;
+  var len=curve.getLength();
+  var nT=cog ? Math.max(8, Math.round(len/cog)) : 0, per=cog ? Math.max(6, Math.min(10, Math.floor(2400/nT))) : 0;
+  var N=cog ? nT*per : Math.max(120, Math.min(420, Math.ceil(len/(t*0.9))));
   /* cross-section (a across the width, d outward from the pulleys), closed loop */
-  var prof=[], i, j, rd=t*0.32;
+  var prof=[], i, j, rd=t*0.32, th=t*0.55;
   prof.push([-w/2, t*0.5],[w/2, t*0.5],[w/2,-t*0.5]);
   if(ribs){ for(i=0;i<ribs;i++){ var a0=w/2-(i+0.5)*w/ribs; prof.push([a0,-t*0.5-rd],[a0-w/ribs*0.5,-t*0.5]); } }
   prof.push([-w/2,-t*0.5]);
-  var M=prof.length, pos=[], uv=[], idx=[], tan=new THREE.Vector3(), nrm=new THREE.Vector3(), X=new THREE.Vector3(1,0,0);
+  var M=prof.length, pos=[], uv=[], idx=[], bT=[], ring=[], tan=new THREE.Vector3(), nrm=new THREE.Vector3();
   for(j=0;j<=N;j++){                                    /* N+1 rings: the last sits on the first, so u runs 0..1 with no seam */
-    var u=j/N, c=curve.getPointAt(u%1); curve.getTangentAt(u, tan);
+    var u=j/N, c=curve.getPointAt(u%1); curve.getTangentAt(u%1, tan);
     nrm.set(0, -tan.z, tan.y).normalize();               /* outward, in the belt plane (loop runs ccw in z,y) */
-    var tooth = cog ? (((u%1)*len/cog)%1 < 0.5 ? 1 : 0) : 0;
+    ring.push(c.y, c.z);
     for(i=0;i<M;i++){
-      var d=prof[i][1]; if(cog && d<0) d-=tooth*t*0.55;
+      var d=prof[i][1];
       pos.push(c.x+prof[i][0], c.y+nrm.y*d, c.z+nrm.z*d);
       uv.push(u, i===0?0:0.5+0.5*(i-1)/(M-2));   /* the back face gets v 0..0.5 (where the print runs), the ribs the rest */
+      if(cog) bT.push(u*nT, nrm.y, nrm.z, d<0?th:0);
     }
   }
   for(j=0;j<N;j++) for(i=0;i<M;i++){
@@ -17908,20 +17970,33 @@ function flatBeltGeo(x, pl, o){
   var g=new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv,2));
+  if(cog) g.setAttribute("beltT", new THREE.Float32BufferAttribute(bT,4));
   g.setIndex(idx); g.computeVertexNormals();
-  beltUvU(g.attributes.uv, len, pl[0].r+t*0.5);
+  var R0=pl[0].r+t*0.5, rep=beltUvU(g.attributes.uv, len, R0);
+  if(cog){
+    var nC=o.teeth||Math.max(8, Math.round(TAU*R0/cog));
+    g.userData={k:rep*nC/(TAU*nT), teeth:nC, slope:th/(len/nT), nT:nT};
+    /* mesh the pulleys: at each one's wrap start find the belt's tooth phase, step on to the middle of the next gap (0.85 of a
+       pitch: pewTooth) and turn the pulley so a tooth of its own (they start at the +Y side, see pulleyHi) stands there */
+    for(i=0;i<ord.length;i++){
+      var Q=ord[i], q=P[Q._i0], best=0, bd=1e9;
+      for(j=0;j<N;j++){ var dy=ring[j*2]-q.y, dz=ring[j*2+1]-q.z, dd=dy*dy+dz*dz; if(dd<bd){ bd=dd; best=j; } }
+      var s0=best/N*nT, ds=((0.85-s0)%1+1)%1, nQ=Q.n||Math.max(8, Math.round(TAU*(Q.r+t*0.5)/cog));
+      Q.rot=PI/2-(Q._a0+Q.side*ds*TAU/nQ);
+    }
+  } else g.userData={k:rep*R0/len};
   return g;
 }
-/* belt texture u counts crank-pulley angle (BELT_UV per radian at the pulley it is cut for, pl[0], the crank in every caller),
-   rounded to whole repeats so the loop has no seam: scrolling the map by BELT_UV x crank angle (loop.js) then moves every belt
-   at its own surface speed, give or take the rounding. u in: 0..1 round the loop. 0.75 puts the print about 1.3 crank radians
-   apart, so at the fastest the frame loop draws (VIS_SPIN, ~0.3 rad a frame) it moves a quarter of the gap a frame and reads as
-   running forward; at 1.5 it moved nearly half the gap and could look like it was creeping backwards. */
+/* belt texture u: a whole number of repeats of the print round the loop (no seam), as near BELT_UV per crank radian as the
+   loop's length allows; returns that number. 0.75 puts the print about 1.3 crank radians apart, so at the fastest the frame
+   loop draws (VIS_SPIN, ~0.3 rad a frame) it moves a quarter of the gap a frame and reads as running forward; at 1.5 it moved
+   nearly half the gap and could look like it was creeping backwards. u in: 0..1 round the loop. */
 var BELT_UV = 0.75;
 function beltUvU(a, len, R0){
   var rep=Math.max(1, Math.round(len/R0*BELT_UV)), i, n=a.count;
   for(i=0;i<n;i++) a.setX(i, a.getX(i)*rep);
   a.needsUpdate=true;
+  return rep;
 }
 /* a spinning pulley on the X axis: plain disc with a flange lip each side */
 function pulleyMesh(r, w, mat, o){
@@ -17942,7 +18017,7 @@ function paintMark(m, x, r0, r1){
   k.position.set(x+b*0.004, (r0+r1)/2, 0); m.add(k); return k;
 }
 /* Full / Ultra pulley: lathe-turned body with flanges, poly-V grooves (or cog teeth) where the belt runs, a hub boss
-   and bolt heads (they spin with it). o: {cog, bolts, fan, mark:false = no paint stripe} */
+   and bolt heads (they spin with it). o: {cog, teeth: how many, bolts, fan, mark:false = no paint stripe} */
 function pulleyHi(r, w, mat, o){
   var b=DCTX.bore, V2=function(x,y){ return new THREE.Vector2(x,y); }, i, pr=[], ribs=o.cog?0:5, gd=Math.min(r*0.05, b*0.012);
   pr.push(V2(0.001, w*0.62), V2(r*0.30, w*0.62), V2(r*0.34, w*0.50), V2(r*0.80, w*0.50), V2(r*0.86, w*0.44),
@@ -17953,7 +18028,7 @@ function pulleyHi(r, w, mat, o){
   pr.reverse();                                         /* lathe faces point outward for a bottom-to-top profile */
   var lathe=new THREE.LatheGeometry(pr, 30); lathe.rotateZ(-PI/2);
   var items=[{g:lathe, m:new THREE.Matrix4()}];
-  if(o.cog){ var nT=Math.max(14, Math.round(TAU*r/(b*0.06)));
+  if(o.cog){ var nT=o.teeth||Math.max(14, Math.round(TAU*r/(b*0.06)));   /* tooth 0 stands at +Y: flatBeltGeo meshes the belt to it */
     for(i=0;i<nT;i++){ var an=i/nT*TAU; items.push({g:BOX(w*0.72, b*0.022, b*0.028, 6), m:mkM(0, Math.cos(an)*(r+b*0.008), Math.sin(an)*(r+b*0.008), an,0,0)}); } }
   var nb=o.bolts===undefined ? (r>b*0.3?4:3) : o.bolts;
   for(i=0;i<nb;i++){ var ab=i/nb*TAU+0.3, rb=r*(r>b*0.3?0.44:0.52);
@@ -17963,6 +18038,7 @@ function pulleyHi(r, w, mat, o){
     var nf=10; for(i=0;i<nf;i++){ var af=i/nf*TAU; items.push({g:BOX(b*0.022, b*0.12, b*0.028, 6), m:mkM(-w*0.62-b*0.016, Math.cos(af)*r*1.08, Math.sin(af)*r*1.08, af+0.35,0,0)}); }
     items.push({g:CYL(r*0.62,r*0.62,b*0.012,20,false,6), m:mkM(-w*0.62-b*0.016,0,0,0,0,PI/2)}); }
   var m=new THREE.Mesh(mergeGeos(items), mat||MATHI.lathe||MAT.steel); m.castShadow=true; m.receiveShadow=true;   /* turned steel: rings round the axis, not brushed streaks */
+  if(o.cog) m.userData.teeth=nT;
   if(o.mark!==false) paintMark(m, w*0.50, r*0.36, r*0.78);
   return m;
 }
@@ -17977,7 +18053,9 @@ function pulleyHi(r, w, mat, o){
    Every pulley carries a paint stripe (paintMark) so you can see it turn; the small
    fast ones (alternator, idlers) have a centre nut, not a ring of bolts that strobes.
    A blower or a centrifugal supercharger runs on a belt of its own off a second crank
-   pulley ahead of the damper, so the serpentine is the same loop on every engine.
+   pulley ahead of the damper, so the serpentine is the same loop on every engine; its
+   driven pulley is sized by the boost (blowerDrive, intake.js). Toothed belts (blower,
+   dry-sump pump) turn their pulleys by tooth count and mesh with them (cogFit, cogBelt).
    ==========================================================================*/
 function buildFAD(B, p, extras){
   var bore=p.bore, bankLen=p.bankLen, caseW=p.caseW, caseH=p.caseH, L=p.L, deckH=p.deckH;
@@ -18111,13 +18189,14 @@ function buildFAD(B, p, extras){
      driven as the kits do it, by its own belt off a second crank pulley ahead of the damper. (On the serpentine its pulley sat
      level with the alternator and the water pump fell inside the loop between them: the belt was drawn wrapped right round it.) ---- */
   if(cd && cd.kind==="centri"){
-    var s=bore*0.92, hz=caseW*0.44+bore*0.34, hy=altY, cpR=bore*0.26;
+    var rCC=bore*0.40, pC=DET ? bore*0.025 : bt;
+    var s=bore*0.92, hz=caseW*0.44+bore*0.34, hy=altY, cpR=Math.max(bore*0.18, (rCC+pC)/cd.ratio-pC);   /* more boost, a smaller head-unit pulley (blowerDrive) */
     var vx=tcF+s*0.22, vy=hy+cpR+bore*0.12+s*0.56;
     B.add("malu", RBOX(bore*0.30, vy-hy+bore*0.40, bore*0.66, 0.04), beltX-bore*0.24, (vy+hy)/2, hz);   /* gearbox */
     B.add("malu", BOX(bore*0.08, bore*0.30, hz*0.55), tcF+bore*0.04, hy, hz*0.62);                       /* bracket to the front cover */
     var sOut=buildCompressorSnail(B, extras, p, vx, vy, hz, s, "palu", 1, -1);
     if(cd.cout) cd.cout.push(sOut);
-    var xC=beltX+dW*0.62+bore*0.16, rCC=bore*0.40, pC=DET ? bore*0.025 : bt;
+    var xC=beltX+dW*0.62+bore*0.16;
     B.add("steel", CYL(bore*0.20,bore*0.20, xC-(beltX+dW*0.5), 14), (xC+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer on the damper */
     B.add("steel", CYL(bore*0.07,bore*0.07, xC-(beltX-bore*0.09), 10), (xC+beltX-bore*0.09)/2, hy, hz, 0,0,PI/2);   /* gearbox input shaft */
     var ccp=pulleyMesh(rCC, bore*0.15, null, {bolts:6}); ccp.position.set(xC, 0, 0); extras.push(ccp); anim.spin.push({o:ccp, axis:"x", k:1});
@@ -18127,19 +18206,23 @@ function buildFAD(B, p, extras){
 
   /* ---- Roots / screw blower: its own cogged belt in a plane ahead of the damper ---- */
   if(cd && cd.kind==="blower"){
-    var xB=beltX+dW*0.62+bore*0.16, rCB=bore*0.50, rB=Math.max(bore*0.15, rCB/cd.ratio), rI=bore*0.15, pB=DET ? bore*0.0225 : bore*0.02;
+    /* toothed drive: every pulley has a whole number of teeth and its radius is cut to carry them at the belt's pitch, so the
+       pulleys turn by tooth count (crank teeth / own teeth) and stay in mesh with the belt (flatBeltGeo) */
+    var xB=beltX+dW*0.62+bore*0.16, pB=bore*0.0225, pitB=bore*0.06;
+    var cB=cogFit(bore*0.50, pB, pitB), bB=cogFit(Math.max(bore*0.15, (bore*0.50+pB)/cd.ratio-pB), pB, pitB), iB=cogFit(bore*0.15, pB, pitB);
+    var rCB=cB.r, rB=bB.r, rI=iB.r;
     B.add("steel", CYL(bore*0.22,bore*0.22, xB-(beltX+dW*0.5), 14), (xB+beltX+dW*0.5)/2, 0, 0, 0,0,PI/2);   /* pulley spacer */
-    var cbp=pulleyMesh(rCB, bore*0.20, null, {cog:true, bolts:6}); cbp.position.set(xB,0,0); extras.push(cbp); anim.spin.push({o:cbp, axis:"x", k:1});
+    var cbp=pulleyMesh(rCB, bore*0.20, null, {cog:true, teeth:cB.n, bolts:6}); cbp.position.set(xB,0,0); extras.push(cbp); anim.spin.push({o:cbp, axis:"x", k:1});
     if(xB>cd.snoutX) B.add("malu", CYL(bore*0.16,bore*0.20, xB-cd.snoutX, 14), (xB+cd.snoutX)/2-bore*0.06, cd.y, cd.z, 0,0,PI/2);  /* snout extension */
-    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:(rCB+pB)/(rB+pB)});
+    var bpl=pulleyMesh(rB, bore*0.20, null, {cog:true, teeth:bB.n}); bpl.position.set(xB, cd.y, cd.z); extras.push(bpl); anim.spin.push({o:bpl, axis:"x", k:cB.n/bB.n});
     /* idler: out to the side of the crank-to-blower line, square to it, so it always pushes the belt outward. (It used to sit off the
        centreline by a fixed sideways step; a rotary's blower sits off to one side, the idler fell inside the loop and the belt was
        drawn wrapped right round it.) */
     var bL=Math.sqrt(cd.y*cd.y+cd.z*cd.z)||1, nz=cd.y/bL, ny=-cd.z/bL, off=(rCB+rB)*0.5+bore*0.30;
     var iy=cd.y*0.5+ny*off, iz=cd.z*0.5+nz*off, ady=cd.y-iy, adz=cd.z-iz, aL=Math.sqrt(ady*ady+adz*adz);
     B.add("malu", BOX(bore*0.08, aL+bore*0.20, bore*0.26), xB-bore*0.16, (cd.y+iy)/2, (cd.z+iz)/2, Math.atan2(adz,ady),0,0);   /* idler bracket off the snout */
-    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:(rCB+pB)/(rI+pB)});
-    extras.push(beltMesh(xB, [{y:0,z:0,r:rCB,side:1},{y:cd.y,z:cd.z,r:rB,side:1},{y:iy,z:iz,r:rI,side:1}], bore*0.02, bore*0.055, {w:bore*0.17, t:bore*0.045, cog:bore*0.06}));
+    var bil=pulleyMesh(rI, bore*0.18, null, {cog:true, teeth:iB.n, bolts:0}); bil.position.set(xB, iy, iz); extras.push(bil); anim.spin.push({o:bil, axis:"x", k:cB.n/iB.n});
+    cogBelt(extras, xB, [{y:0,z:0,r:rCB,side:1,n:cB.n,o:cbp},{y:cd.y,z:cd.z,r:rB,side:1,n:bB.n,o:bpl},{y:iy,z:iz,r:rI,side:1,n:iB.n,o:bil}], pB, bore*0.055, {w:bore*0.17, t:bore*0.045, cog:pitB, teeth:cB.n});
   }
 
   /* ---- dry sump: pump stack along the crank axis, low on the intake side, cog-belt driven off the nose ---- */
@@ -18151,11 +18234,11 @@ function buildFAD(B, p, extras){
       B.add("malu", CYL(pr,pr,stL,16), pFront-stL*(i+0.5), pY, pZ, 0,0,PI/2);
       B.add("malu", BOX(bore*0.04, pr*2.3, pr*2.3), pFront-stL*i, pY, pZ);
     }
-    var xD=tcF+bore*0.14, rPD=bore*0.24;
+    var xD=tcF+bore*0.14, pD=bore*0.02, pitD=bore*0.06, cD=cogFit(bore*0.26, pD, pitD), dD=cogFit(bore*0.24, pD, pitD), rPD=dD.r;
     B.add("steel", CYL(bore*0.08,bore*0.08,xD-pFront+bore*0.04,10), (xD+pFront)/2, pY, pZ, 0,0,PI/2);
-    var dcp=pulleyMesh(bore*0.26, bore*0.12, null, {cog:true, bolts:0}); dcp.position.set(xD,0,0); extras.push(dcp); anim.spin.push({o:dcp, axis:"x", k:1});
-    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:(bore*0.28)/(rPD+bore*0.02)});   /* belt centre line 0.02 bore above both rims */
-    extras.push(beltMesh(xD, [{y:0,z:0,r:bore*0.26,side:1},{y:pY,z:pZ,r:rPD,side:1}], bore*0.02, bore*0.04, {w:bore*0.10, t:bore*0.04, cog:bore*0.06}));
+    var dcp=pulleyMesh(cD.r, bore*0.12, null, {cog:true, teeth:cD.n, bolts:0}); dcp.position.set(xD,0,0); extras.push(dcp); anim.spin.push({o:dcp, axis:"x", k:1});
+    var dpp=pulleyMesh(rPD, bore*0.12, null, {cog:true, teeth:dD.n}); dpp.position.set(xD,pY,pZ); extras.push(dpp); anim.spin.push({o:dpp, axis:"x", k:cD.n/dD.n});   /* by tooth count */
+    cogBelt(extras, xD, [{y:0,z:0,r:cD.r,side:1,n:cD.n,o:dcp},{y:pY,z:pZ,r:rPD,side:1,n:dD.n,o:dpp}], pD, bore*0.04, {w:bore*0.10, t:bore*0.04, cog:pitD, teeth:cD.n});
     /* remote tank + lines */
     var tX = bx ? -(bankLen*0.5+bore*0.95) : -bankLen*0.12;
     var tZ = bx ? -bore*1.55 : -(caseW*0.72+bore*0.42);
@@ -18173,6 +18256,15 @@ function buildFAD(B, p, extras){
     var tTop=deckH*ca*0.62+bore*0.30, tBot=-caseH*0.62;
     B.add("calu", RBOX(bore*0.16, tTop-tBot, bore*1.50, 0.04), bankLen*0.5+bore*0.08, (tTop+tBot)/2, 0);
   }
+}
+
+/* a toothed pulley for a belt of this pitch: the whole number of teeth nearest the wanted radius, and the radius that carries
+   them (pB: the belt's centre line above the rim) */
+function cogFit(r, pB, pitch){ var n=Math.max(12, Math.round(TAU*(r+pB)/pitch)); return {n:n, r:n*pitch/TAU-pB}; }
+/* a toothed belt round pulleys pl ({y,z,r,side,n teeth,o mesh}, crank first), then each pulley turned into mesh with it */
+function cogBelt(extras, x, pl, pB, rad, o){
+  extras.push(beltMesh(x, pl, pB, rad, o));
+  for(var i=0;i<pl.length;i++) if(pl[i].rot!==undefined && pl[i].o) pl[i].o.rotation.x=pl[i].rot;
 }
 
 /* ===========================================================================
@@ -18573,10 +18665,19 @@ function tsDetroitFront(B, extras, o){
   var b=o.bore, j, ful=DET>=2, xF=o.bankLen*0.5+b*0.15, dR=o.caseR*0.60;
   setZone(1);
   B.add("calu", RBOX(b*0.22, o.caseR*1.9, o.caseW*0.98, 0.03), xF+b*0.11, -o.caseR*0.05, 0);          /* front cover */
-  B.add("steel", CYL(dR, dR, b*0.20, 28, false, 1.6), xF+b*0.32, 0, 0, 0,0,PI/2);                      /* viscous damper */
-  B.add("dark", CYL(dR*0.70, dR*0.70, b*0.12, 24, false, 1.6), xF+b*0.48, 0, 0, 0,0,PI/2);             /* belt pulley */
-  B.add("steel", CYL(b*0.16, b*0.14, b*0.16, 12), xF+b*0.62, 0, 0, 0,0,PI/2);                           /* crank nose */
-  for(j=0;j<6;j++){ var fa=j/6*TAU; B.hw("pbolt", xF+b*0.42, Math.cos(fa)*dR*0.84, Math.sin(fa)*dR*0.84, 0,0,0, b*0.09); }
+  /* viscous damper, accessory pulley, crank nose and the damper's bolts: one group on the crank's axis that turns with it, a
+     paint stripe and a timing mark on it so the turning shows (they were part of the fixed casting and stood still) */
+  var dg=new THREE.Group(), rz=new THREE.Matrix4().makeRotationZ(PI/2), st=[
+    {g:CYL(dR, dR, b*0.20, 28, false, 1.6), m:mkM(0.32*b,0,0, 0,0,PI/2)},
+    {g:CYL(b*0.16, b*0.14, b*0.16, 12), m:mkM(0.62*b,0,0, 0,0,PI/2)}];
+  for(j=0;j<6;j++){ var fa=j/6*TAU; st.push({g:CYL(b*0.045,b*0.045,b*0.03,6,false,6), m:mkM(0.42*b+b*0.015, Math.cos(fa)*dR*0.84, Math.sin(fa)*dR*0.84, 0,0,PI/2)}); }
+  dg.add(new THREE.Mesh(mergeGeos(st), MAT.steel));
+  var dpl=new THREE.Mesh(CYL(dR*0.70, dR*0.70, b*0.12, 24, false, 1.6), MAT.dark); dpl.rotation.z=PI/2; dpl.position.x=0.48*b; dg.add(dpl);
+  var dtm=new THREE.Mesh(new THREE.BoxGeometry(b*0.16, b*0.010, b*0.032), MAT.paintMark); dtm.position.set(0.32*b, dR+b*0.004, 0); dg.add(dtm);
+  paintMark(dg, 0.54*b, b*0.17, dR*0.68);
+  dg.traverse(function(q){ if(q.isMesh){ q.castShadow=true; q.receiveShadow=true; } });
+  dg.position.set(xF, 0, 0); dg.userData.isDamper=true;
+  extras.push(dg); anim.spin.push({o:dg, axis:"x", k:1});
   /* spin-on oil filter on the exhaust side low down, with a pair of lines to the block */
   setZone(2);
   var fz=o.caseW*0.5+b*0.42, fy=-o.caseR*0.15, fx=o.bankLen*0.28;
@@ -19639,10 +19740,8 @@ function tick(dt, t){
   for(i=0;i<anim.spin.length;i++){
     var sp=anim.spin[i]; sp.o.rotation.x = (sp.o.rotation.x + crank*sp.k) % TAU;
   }
-  /* belts: one texture scroll per belt material, in step with the crank (their uv counts crank angle, see beltUvU) */
-  if(crank){ BELT_OFF=(BELT_OFF+crank*BELT_UV)%1;
-    if(MAT.belt) MAT.belt.map.offset.x=BELT_OFF;               /* MATHI.belt is a clone: same texture, so it scrolls too */
-    if(MATHI.beltFlat) MATHI.beltFlat.map.offset.x=BELT_OFF; }
+  /* belts: each one's print, and a toothed belt's teeth, move with the crank at that belt's own rate (beltAnim, intake.js) */
+  if(crank) for(i=0;i<anim.belts.length;i++){ var bl=anim.belts[i]; bl.u.value=(bl.u.value+crank*bl.k)%1; if(bl.t) bl.t.value=(bl.t.value+crank*bl.kt)%1; }
   for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
   if(anim.internals){
     var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
@@ -19780,7 +19879,6 @@ function tick(dt, t){
   }
 }
 var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
-var BELT_OFF=0;
 /* How fast the crank is drawn turning. A real crank turns 13 to 150 times a second, far more than a 30-60 fps screen can show:
    drawn true to speed (or at the old fixed sixth of it) a pulley's paint mark or a ring of bolts lands almost anywhere each
    frame, so it looks stopped, jerky or running backwards (the wagon-wheel effect), and a phone at 30 fps gets it worst. So the
@@ -20390,12 +20488,14 @@ function ultraPits(){
   C.render(); if(f) f.color.copy(keep); return true;
 }
 /* phones: buildEngine is asked for after every committed slider, yet most sliders (compression, cam, redline, boost, timing...) change nothing the
-   model shows. The visual key is the cfg minus the keys the model never reads; an unchanged key skips the rebuild. A key not in VIS_SKIP counts
+   model shows. The visual key is the cfg minus the keys the model never reads (plus a blower's pulley ratio, which boost sets); an unchanged key skips the rebuild. A key not in VIS_SKIP counts
    as visual, so a new cfg field is safe by default; a tier change (force), a blown engine and an empty stand always rebuild. */
 var lastVisKey="";
 var VIS_SKIP={cr:1, cam:1, lift:1, redline:1, boost:1, timing:1, lambda:1, pistonClearance:1, deck:1, valveMat:1, springs:1, piston:1, rings:1, rod:1, rodBolts:1, crank:1, bearings:1, gasket:1, studs:1,
   fuelPump:1, dNoz:1, oilGrade:1, oilSquirters:1, launchCtl:1, twoStepRpm:1, launchRetard:1, transBrake:1, apexSeal:1, eshaft:1, turbine:1, als:1, pv:1, lube:1, premix:1, ccr:1};
-function visKey(cfg){ var o={}, ks=Object.keys(cfg||{}).sort(); for(var i=0;i<ks.length;i++) if(!VIS_SKIP[ks[i]]) o[ks[i]]=cfg[ks[i]]; return JSON.stringify(o)+"|"+GFX; }
+function visKey(cfg){ var o={}, ks=Object.keys(cfg||{}).sort(); for(var i=0;i<ks.length;i++) if(!VIS_SKIP[ks[i]]) o[ks[i]]=cfg[ks[i]];
+  var asp=cfg&&cfg.asp; if(asp==="roots"||asp==="screw"||asp==="centrifugal") o._drive=blowerDrive(asp, cfg.boost);   /* boost sizes a blower's pulley, a tenth of a ratio at a time */
+  return JSON.stringify(o)+"|"+GFX; }
 /* phones (Lite): the event scenes are heavy and a career evening walks through several of them. On Lite only one of strip / pull / bog / boat /
    salt stays built: entering one frees the others (off-path first, then the composer, the shadow maps and the tree), and a scene entered again
    later builds from its factory. The road and hill worlds, the oval, the pits and the trophy room keep their own lifecycles. */
@@ -20876,6 +20976,12 @@ const ENGINE_VIS = {
     if(phi!==undefined) camState.phi=phi;
     if(rk!==undefined) camState.r=clamp(camState.r*rk, 7, 30);
   },
+  /* harness: aim the garage camera at a point in engine space (0,0,0 = the crank's middle) from r away, for close-up checks */
+  _look: function(x, y, z, r){
+    camState.autoForce=false; camState.auto=false;
+    camState.target.set(x||0, (y||0)+engineRoot.position.y, z||0);
+    if(r>0) camState.r=r;
+  },
   /* the engine layout the vis reads off a cfg {kind,n,rotors}: the drag cars size their pipes from it */
   engOf: function(cfg){ return slEngOf(cfg); },
 
@@ -20890,9 +20996,9 @@ const ENGINE_VIS = {
              scr:(function(){ if(!SCREEN.mesh) return null; var v=SCREEN.mesh.getWorldPosition(new THREE.Vector3()).project(camera); return [+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(3)]; })(),
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
                 if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
-             belt:(function(){ var n=0, a=MAT.belt&&MAT.belt.map, b=MATHI.beltFlat&&MATHI.beltFlat.map;
-                engineRoot.traverse(function(m){ var t=m.material&&m.material.map; if(t&&(t===a||t===b)) n++; });
-                return { off:+BELT_OFF.toFixed(3), meshes:n }; })() };
+             spin:anim.spin.map(function(q){ return +q.k.toFixed(4); }),
+             cogs:anim.spin.filter(function(q){ return q.o.userData.teeth; }).map(function(q){ return {n:q.o.userData.teeth, k:q.k, y:q.o.position.y, z:q.o.position.z, rot:q.o.rotation.x}; }),   /* harness: toothed pulleys, to check they mesh with their belt */
+             belt:anim.belts.map(function(q){ return {k:+q.k.toFixed(4), u:+q.u.value.toFixed(3), teeth:q.kt?Math.round(q.kt*TAU):0, t:q.t?q.t.value:0}; }) };
   },
   start: function(){ if(!running){ running=true; clock.getDelta(); loop(); } },
   stop:  function(){ running=false; if(rafId) cancelAnimationFrame(rafId); rafId=0; },
@@ -22591,7 +22697,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.125.1";
+const VERSION="1.76.126.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
