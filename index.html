@@ -14328,6 +14328,9 @@ function buildHiMaterials(){
   /* the castings wear a baked skin over their painted maps (heatPatchHi): [picture, colour strength, slope strength] */
   MATHI.iron.userData.sf=["castiron", 1.0, 0.9]; MATHI.cgi.userData.sf=["castiron", 0.9, 0.8]; MATHI.castexh.userData.sf=["castiron", 1.0, 1.0];
   MATHI.calu.userData.sf=["castalu", 1.0, 1.3];
+  /* machined aluminium wears tool marks (4th number -1: turned round the crank's axis), sprayed paint its orange peel (4th number: how much it chips along the edges) */
+  MATHI.malu.userData.sf=["machined", 0.8, 1.0, -1];   /* -1: turned, not painted */
+  ["paint","paintOrange","paintBlue","paintGrey"].forEach(function(key){ MATHI[key].userData.sf=["paint", 1.0, 1.0, 0.6]; });
   /* new surfaces */
   MATHI.turbine   = hiFlag(pmat(S, fnTurbineHi,   {ns:0.75,env:0.8, emissive:0xff3a06, emissiveIntensity:0}));
   MATHI.turned    = hiFlag(pmat(S, fnTurned,      {ns:0.7, env:1.3}));
@@ -14339,6 +14342,7 @@ function buildHiMaterials(){
   MATHI.gasket    = hiFlag(pmat(128,fnGasket,     {ns:0.6, env:0.5}));
   MATHI.shield    = hiFlag(pmat(S, fnShield,      {ns:1.6, env:0.75}));
   MATHI.enamel    = hiFlag(pmat(S, fnPaintSmooth, {ns:0.35,env:0.9}));
+  MATHI.enamel.userData.sf=["paint", 1.0, 0.8, 0.5];
   MATHI.zinc      = hiFlag(pmat(64, fnZinc,       {ns:0.4, env:1.2}));
   MATHI.beltFlat  = hiFlag(pmat(128,fnBeltFlat,   {ns:1.0, env:0.4}));
   MATHI.hoseWrap  = hiFlag(pmat(128,fnHoseWrap,   {ns:0.9, env:0.45}));
@@ -14360,6 +14364,7 @@ function coverFinish(name, hex){
   else if(f==="cast"){ m=MATHI.calu.clone(); m.color=sc(0xffffff); m.envMapIntensity=1.25; }
   else { m=MATHI.anod.clone(); m.color=sc(0xc9a24a); m.envMapIntensity=1.3; }
   m.userData={hi:true, perBuild:true};
+  if(f==="gloss") m.userData.sf=["paint", 1.0, 0.7, 0.4]; else if(f==="satin") m.userData.sf=["paint", 1.0, 0.6, 0.5]; else if(f==="cast") m.userData.sf=MATHI.calu.userData.sf;
   return m;
 }
 
@@ -14579,7 +14584,9 @@ var GRIME_HI_GLSL =
   "float pewN(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);\n"+
   "  return mix(mix(mix(pewH(i),pewH(i+vec3(1.,0.,0.)),f.x), mix(pewH(i+vec3(0.,1.,0.)),pewH(i+vec3(1.,1.,0.)),f.x), f.y),\n"+
   "             mix(mix(pewH(i+vec3(0.,0.,1.)),pewH(i+vec3(1.,0.,1.)),f.x), mix(pewH(i+vec3(0.,1.,1.)),pewH(i+vec3(1.,1.,1.)),f.x), f.y), f.z); }\n";
-/* Baked cast skins (Full / Ultra): tex/sf-castiron.jpg and sf-castalu.jpg, each with a slope picture, are 60 mm of a real
+/* Baked skins (Full / Ultra). Besides the two cast ones below, sf-machined (lathe and mill marks on machined aluminium) and
+   sf-paint (the orange peel of sprayed enamel, which also wears thin along edges) go on the same way.
+   tex/sf-castiron.jpg and sf-castalu.jpg, each with a slope picture, are 60 mm of a real
    casting's surface rendered in Blender (tools/blender/ground-bake.py). A material that carries userData.sf = [name, colour
    strength, slope strength] gets the skin laid over its own painted maps: sampled in the engine's own space (vGP), on whichever
    of the three axis planes the surface faces most, so the grain is the same size on every part whatever its texture
@@ -14591,15 +14598,19 @@ function heatPatchHi(mat){
   mat.onBeforeCompile = function(shader){
     if(sf){
       shader.uniforms.uSfC = bakeUni("sf-"+sf[0]); shader.uniforms.uSfN = bakeUni("sf-"+sf[0]+"-n");
-      shader.uniforms.uSfK = {value:new THREE.Vector3(1/SF_TILE, sf[1], sf[2])};
-      shader.fragmentShader = "uniform sampler2D uSfC;\nuniform sampler2D uSfN;\nuniform vec3 uSfK;\n" + shader.fragmentShader.replace("#include <normal_fragment_maps>",
+      shader.uniforms.uSfK = {value:new THREE.Vector4(1/SF_TILE, sf[1], sf[2], sf[3]||0)};
+      shader.fragmentShader = "uniform sampler2D uSfC;\nuniform sampler2D uSfN;\nuniform vec4 uSfK;\n" + shader.fragmentShader.replace("#include <clearcoat_normal_fragment_maps>",
+        "#include <clearcoat_normal_fragment_maps>\n#ifdef CLEARCOAT\n clearcoatNormal = normalize(mix(clearcoatNormal, normal, 0.7));\n#endif").replace("#include <normal_fragment_maps>",
         "#include <normal_fragment_maps>\n{ vec3 sN = normalize((vec4(normal,0.0)*viewMatrix).xyz), sA = abs(sN), sU, sV; vec2 sP;\n"+
         "  if(sA.y>=sA.x && sA.y>=sA.z){ sP=vGP.xz; sU=vec3(1.0,0.0,0.0); sV=vec3(0.0,0.0,1.0); }\n"+
-        "  else if(sA.x>=sA.z){ sP=vGP.zy; sU=vec3(0.0,0.0,1.0); sV=vec3(0.0,1.0,0.0); }\n"+
+        "  else if(sA.x>=sA.z){ sP=vGP.zy; sU=vec3(0.0,0.0,1.0); sV=vec3(0.0,1.0,0.0);\n"+
+        "    if(uSfK.w < 0.0){ float sR = max(length(vGP.yz), 0.001); sU = vec3(0.0, vGP.y, vGP.z)/sR; sV = vec3(0.0, -sU.z, sU.y); sP = vec2(sR, atan(vGP.z, vGP.y)*0.3); } }\n"+   /* turned: a face across the crank's axis wears arcs round it */
         "  else { sP=vGP.xy; sU=vec3(1.0,0.0,0.0); sV=vec3(0.0,1.0,0.0); }\n"+
         "  sP *= uSfK.x; vec2 sS = texture2D(uSfN, sP).xy*2.0-1.0;\n"+
         "  sN = normalize(sN - uSfK.z*(sS.x*sU + sS.y*sV)); normal = normalize((viewMatrix*vec4(sN,0.0)).xyz);\n"+
-        "  diffuseColor.rgb *= mix(vec3(1.0), texture2D(uSfC, sP).rgb*2.0, uSfK.y); }");
+        "  diffuseColor.rgb *= mix(vec3(1.0), texture2D(uSfC, sP).rgb*2.0, uSfK.y);\n"+
+        "  if(uSfK.w > 0.0){ float sE = clamp(length(fwidth(geometryNormal))*2.6-0.12, 0.0, 1.0);\n"+          /* paint: worn thin and chipped along the edges */
+        "    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.34,0.34,0.35), uSfK.w*sE*smoothstep(0.42,0.66,pewN(vGP*34.0))); } }");
     }
     shader.uniforms.uHeat = HEAT_UNIFORM; shader.uniforms.uGrime = GRIME_UNIFORM;
     shader.vertexShader = "attribute float zone;\nvarying float vZone;\nvarying vec3 vGP;\n" + shader.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvZone = zone; vGP = position;");
@@ -22838,7 +22849,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.129.0";
+const VERSION="1.76.130.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
