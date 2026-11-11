@@ -19,6 +19,10 @@ re-run. Keep this list in step with the folder.
 | `gr-grass.jpg` | Mown grass from above, one seamless 1 m tile: a dense lawn of blades with soil and thatch in the gaps, grey only | `tools/blender/ground-bake.py` | `bkGrass` in `src/vis/strip.js` (every tier): the grass at the strip, road course, ovals, pull, bog and boat ramp |
 | `gr-shop.jpg` | Power-trowelled workshop concrete, one seamless 2 m tile: sand speckle, trowel mottle, the odd pore | `tools/blender/ground-bake.py` | `MAT.concrete` (the career workshop floor) via `aaPatch` in `src/vis/core.js` (every tier) |
 | `hz-prairie.jpg` | The far prairie all the way round from eye height, three degrees tall: shelterbelts, farmsteads, elevator towns, a low ridge; colour on top, coverage and distance haze below | `tools/blender/horizon.py` | `stripSkyMat` in `src/vis/strip.js` (every tier): behind every outdoor venue and in their reflections |
+| `sf-castiron.jpg` | The skin a sand mould leaves on cast iron, one seamless 60 mm tile: lumps a millimetre or two across, a gritty tooth, fused sand grains, gas pits; grey only | `tools/blender/ground-bake.py` | `heatPatchHi` in `src/vis/core.js` (Full / Ultra): iron and CGI blocks and heads, cast exhaust manifolds |
+| `sf-castiron-n.jpg` | The slope of that same patch, so each lump catches the light | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
+| `sf-castalu.jpg` | The finer skin a metal mould leaves on cast aluminium, one seamless 60 mm tile: soft lumps, a satin tooth, the odd pore; grey only | `tools/blender/ground-bake.py` | `heatPatchHi` (Full / Ultra): cast aluminium blocks, heads and covers |
+| `sf-castalu-n.jpg` | The slope of that same patch | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
 | `sh-contact.jpg` | Soft contact shadows, three cells: a box standing on the floor, a top on four legs, a drum; white = open floor | `tools/blender/contact-shadow.py` | `contactShadow` in `src/vis/core.js` (every tier): workshop furniture, the dyno bed, trophy plinths, the pits' cart and cooler |
 
 To re-render: `python3.11 -m pip install bpy pillow numpy`, then `python3.11 tools/blender/workshop-env.py` (about
