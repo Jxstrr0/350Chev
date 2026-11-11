@@ -5,8 +5,8 @@
   python3.11 tools/blender/engine-parts.py [OUT_DIR]        # default OUT_DIR: models/
 
 The engine itself is built in code (src/vis/). These are the parts that code draws as a plain box or cylinder and that
-are looked at up close on Full and Ultra: the fasteners, the hose clamp, the ignition coils, the plug boot and the
-wiring plug. Each is modelled here in code, so a change is an edit to this file and a re-run, not a .blend to keep.
+are looked at up close on Full and Ultra: the fasteners, the hose clamp, the ignition coils, the plug boot, the
+wiring plug, the oil filter and the fuel injectors. Each is modelled here in code, so a change is an edit to this file and a re-run, not a .blend to keep.
 No textures: the game puts its own materials on the shapes. The file is geometry only, a few tens of KB.
 
 Every object is named  <part>__<material key>  (the game's material table: zinc, steel, blackPlast, connGrey ...).
@@ -27,6 +27,10 @@ Sizes follow the plain shapes they replace, so a part drops in at the same place
           lead's tower to +Z.
   plug    wiring plug, same unit box: the wires leave toward -Z, the latch is on top.
   boot    spark-plug boot. Axis +Y from y = -0.5 to 0.5, radius 1 at its widest (the builder stretches it).
+
+  oilFilter spin-on oil filter. Axis +Y from y = -0.5 (the base, against the block) to 0.5 (the domed end with its
+          wrench flutes), radius 1 at the seam (the builder stretches it).
+  injector port fuel injector. Axis +Y from y = -0.5 (the nozzle) to 0.5 (the end in the rail), radius 1 at the coil body.
 
 Shapes are written in the game's axes (three.js: Y up) and turned into Blender's (Z up) as they are made, so the
 numbers here read the same as the builder's.
@@ -245,6 +249,28 @@ def plug_boot():
     lathe(b, prof, 16)
 
 
+# ---------------------------------------------------------------------------------------------- oil and fuel
+def oil_filter():
+    b = bm_of("oilFilter", "paintBlue")
+    lathe(b, [(0.0, -0.50), (0.90, -0.50)], 28, cap=False)                                          # base plate end
+    # the rolled seam where the can is crimped to its base, then the plain wall
+    lathe(b, [(0.90, -0.50), (1.00, -0.47), (1.00, -0.43), (0.955, -0.40), (0.955, 0.26)], 28, cap=False)
+    # wrench flutes round the outer end: every other station pulled in
+    lathe(b, [(0.955, 0.26), (0.955, 0.44)], 28, cap=False, sides=lambda i: 1.0 - 0.055 * (i % 2))
+    lathe(b, [(0.955, 0.44), (0.89, 0.44)], 28, cap=False)
+    lathe(b, [(0.89, 0.44), (0.80, 0.475), (0.50, 0.50), (0.0, 0.50)], 28, cap=False)                # the domed end
+
+
+def injector():
+    # nozzle end (-Y): the spray tip, the lower O-ring land and the steel body that sits in the port
+    lathe(bm_of("injector", "steel"), [(0.34, -0.50), (0.46, -0.47), (0.46, -0.38), (0.66, -0.36), (0.66, -0.29), (0.52, -0.27),
+                                       (0.52, -0.12)], 12)
+    # the moulded coil body, a waist, and the upper O-ring land that pushes into the rail
+    lathe(bm_of("injector", "blackPlast"), [(0.52, -0.12), (0.92, -0.08), (0.92, 0.20), (0.62, 0.24), (0.62, 0.34), (0.74, 0.36),
+                                            (0.74, 0.45), (0.54, 0.50), (0.0, 0.50)], 12, cap=False)
+    lathe(bm_of("injector", "rubberFlat"), [(0.70, -0.345), (0.76, -0.325), (0.70, -0.305)], 12, cap=False)   # lower O-ring
+
+
 # ---------------------------------------------------------------------------------------------- write
 def write():
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -283,4 +309,5 @@ def write():
 if __name__ == "__main__":
     hex_bolt(); stud_nut(); pulley_bolt(); rivet(); an_nut(); hose_clamp()
     coil_on_plug(); coil_near_plug(); wiring_plug(); plug_boot()
+    oil_filter(); injector()
     write()

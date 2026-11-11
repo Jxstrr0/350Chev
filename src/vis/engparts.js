@@ -1,6 +1,6 @@
 /* ===========================================================================
-   7h. MODELLED SMALL PARTS (Full / Ultra): the engine's fasteners, hose clamp, ignition coils, plug boot and wiring
-   plug as real shapes, modelled in Blender by tools/blender/engine-parts.py and kept in one file, models/eng-parts.glb
+   7h. MODELLED SMALL PARTS (Full / Ultra): the engine's fasteners, hose clamp, ignition coils, plug boot, wiring
+   plug, oil filter and fuel injectors as real shapes, modelled in Blender by tools/blender/engine-parts.py and kept in one file, models/eng-parts.glb
    (geometry only: the engine's own materials go on). The engine is still built in code; these only stand in where
    code drew a plain box or cylinder that is looked at up close.
    The file loads once, after the first Full / Ultra engine is asked for. Until it lands (or if it never does: offline
