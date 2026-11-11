@@ -109,9 +109,11 @@ function buildEngineMesh(cfg, layoutObj){
   var stX = L.boxer ? -(bankLen/2) - bore*0.28 : -(bankLen/2) - bore*0.11;
   var stY = L.boxer ? bore*0.78 : caseBot + caseSpan*0.24;
   var stZ = L.boxer ? -bore*1.00 : -(caseW*0.5 + bore*0.22);
-  B.add("dark",  CYL(bore*0.25,bore*0.25,bore*0.70,16,false,2.0), stX + sdir*bore*0.37, stY, stZ, 0,0,PI/2);
-  B.add("steel", CYL(bore*0.13,bore*0.13,bore*0.44,12,false,2.4), stX + sdir*bore*0.30, stY + bore*0.33, stZ, 0,0,PI/2);
-  B.add("calu",  CYL(bore*0.17,bore*0.21,bore*0.14,14,false,2.4), stX - sdir*bore*0.05, stY, stZ, 0,0,PI/2);
+  if(!partAdd(B, "starter", stX, stY, stZ, 0,0,0, sdir*bore, bore, bore)){   /* modelled: field case, end caps, solenoid with its terminals */
+    B.add("dark",  CYL(bore*0.25,bore*0.25,bore*0.70,16,false,2.0), stX + sdir*bore*0.37, stY, stZ, 0,0,PI/2);
+    B.add("steel", CYL(bore*0.13,bore*0.13,bore*0.44,12,false,2.4), stX + sdir*bore*0.30, stY + bore*0.33, stZ, 0,0,PI/2);
+    B.add("calu",  CYL(bore*0.17,bore*0.21,bore*0.14,14,false,2.4), stX - sdir*bore*0.05, stY, stZ, 0,0,PI/2);
+  }
   /* knock sensor + oil pressure sender */
   B.add("dark", CYL(bore*0.09,bore*0.09,bore*0.10,10,false,3.0), bankLen*0.02, caseBot+caseSpan*0.62, -sideZ-bore*0.05, PI/2,0,0);
   B.add("steel", CYL(bore*0.07,bore*0.07,bore*0.16,8,false,3.0), -bankLen*0.30, caseBot+caseSpan*0.66, sideZ+bore*0.08, PI/2,0,0);
