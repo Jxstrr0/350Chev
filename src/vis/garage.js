@@ -55,7 +55,7 @@ function buildGarageMesh(owned){
   /* the workshop monitor beside it (the app draws on it through ENGINE_VIS.setScreen) */
   var mon=buildMonitor(B, G);
 
-  B.flush(G, {}, true);
+  B.flush(G, roomSkins(), true);                /* Full / Ultra: paint and machined metal wear their baked skins */
   G.userData.liveScreen=mon; SCREEN.mesh=mon;
   for(var li=0; li<lights.length; li++) G.add(lights[li]);
   G.userData.roomW=W; G.userData.roomD=D; G.userData.roomH=Hh;

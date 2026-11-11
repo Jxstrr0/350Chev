@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.132.0*/
+/*pew-scenes 1.76.133.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -880,7 +880,7 @@ function stripVenueTier(){
    by both lanes; only paint, lamps and door decals are per car.
    stripCarAnim() animates wheels, tyre wrinkle, pitch, chute and lamps.
    -------------------------------------------------------------------------*/
-var SC = { geo:{}, tex:{}, mat:null, paint:{}, env:null };
+var SC = { geo:{}, tex:{}, mat:null, mats:{}, paint:{}, env:null };
 var SC_F = ["zb","ys","yt","w","wt","cr"];
 var _scA=new THREE.Vector3(), _scB=new THREE.Vector3(), _scC=new THREE.Vector3(), _scX=new THREE.Vector3(1,0,0), _scY=new THREE.Vector3(0,1,0), _scO=new THREE.Vector3();
 function stripCar(body, color, tyreIn, hw){
@@ -1085,7 +1085,8 @@ function sc_env(){
   g.dispose(); return SC.env;
 }
 function sc_mats(){
-  if(SC.mat) return SC.mat;
+  var tier=GFX!=="lite"?"hi":"lo";            /* one set per tier: the Full / Ultra metals carry a baked skin */
+  if(SC.mats[tier]) return (SC.mat=SC.mats[tier]);
   var env=sc_env();
   function m(c, r, mt, ei, o){ var q=new THREE.MeshStandardMaterial({color:sc(c), roughness:r, metalness:mt, envMapIntensity:ei===undefined?1:ei}); if(env) q.envMap=env; if(o) for(var k in o) q[k]=o[k]; return q; }
   var M={};
@@ -1119,7 +1120,9 @@ function sc_mats(){
   M.cabin=m(0x232427, 0.85, 0.05, 0.4);
   M.seat=m(0x1a1b1e, 0.7, 0.0, 0.45);
   M.suit=m(0x2b3242, 0.85, 0.0, 0.4);
-  SC.mat=M; return M;
+  /* Full / Ultra: the wheels and brake discs are turned (rings round the axle), bare tube is drawn */
+  skinPatch(M.alu, "machined", 0.2, 0.7, 0.55, -1); skinPatch(M.barrel, "machined", 0.2, 0.8, 0.7, -1); skinPatch(M.rotor, "machined", 0.14, 0.9, 0.9, -1);
+  SC.mats[tier]=M; SC.mat=M; return M;
 }
 function sc_paint(color){
   var key=String(color>>>0)+(GFX!=="lite"?"c":""); if(SC.paint[key]) return SC.paint[key];
@@ -1132,6 +1135,7 @@ function sc_paintNew(color){
   var q=cc?new THREE.MeshPhysicalMaterial({color:c, roughness:0.42, metalness:lum<0.02?0.3:0.12, envMapIntensity:lum<0.02?1.45:1.1, clearcoat:1, clearcoatRoughness:0.06})
     :new THREE.MeshStandardMaterial({color:c, roughness:0.2, metalness:lum<0.02?0.35:0.22, envMapIntensity:lum<0.02?1.5:1.15});
   var env=sc_env(); if(env) q.envMap=env;
+  skinPatch(q, "paint", 0.16, 0.45, 0.28, 0);       /* Full / Ultra: the orange peel of sprayed paint, seen in the clear coat's reflections */
   return q;
 }
 function sc_canvas(w,h){ var c=document.createElement("canvas"); c.width=w; c.height=h; return c; }
