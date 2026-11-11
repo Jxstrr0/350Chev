@@ -11,6 +11,8 @@ The game samples them in world space (src/vis/strip.js, stripPatchSh and the bk*
 
 Two more are not ground at all: sf-castiron.jpg and sf-castalu.jpg (with -n) are the skin a mould leaves on cast iron and
 cast aluminium, 60 mm of each, laid over the engine's castings on Full / Ultra (heatPatchHi in src/vis/core.js).
+sf-machined.jpg and sf-paint.jpg (with -n) are tool marks on machined aluminium and the orange peel of sprayed enamel, same size,
+same place.
 
 Run from the repo root:   python3.11 tools/blender/ground-bake.py [OUT_DIR] [--only asphalt] [--preview DIR]
 Needs:  python3.11 -m pip install bpy pillow numpy      (bpy 5.0 was used; Cycles on the CPU, about a minute a surface)
@@ -425,16 +427,64 @@ def castalu(tile):
     add_mesh("alu", *grid_mesh(x, y, h, np.array([0.55, 0.55, 0.56])[None, None, :] * shade[:, :, None]))
 
 
+def machined(tile):
+    """A machined aluminium face, as a pulley rim or a bracket leaves the lathe or the mill: straight, even tool marks
+    just under a millimetre apart (64 across the tile, a whole number so it repeats), each cut a touch deeper or shallower than the
+    last, a slow chatter along the cut, and a few fine handling scratches across it. 60 mm of it. The marks run up
+    the picture (they change along u), which heatPatchHi lays round a part turned on the crank's axis."""
+    n, lines = 640, 64
+    step = tile / n
+    u = (np.arange(n + 13) - 6) * step
+    x, y = np.meshgrid(u, u)
+    r = np.random.default_rng(113)
+    ix = np.round(x / step).astype(int) % n; iy = np.round(y / step).astype(int) % n
+    ph = (x / tile * lines) % 1.0
+    li = np.floor(x / tile * lines).astype(int) % lines
+    depth = r.uniform(0.6, 1.0, lines)[li]                 # each pass of the tool
+    cut = (1 - np.abs(2 * ph - 1)) ** 1.6                  # a shallow scallop with a crisp ridge between passes
+    chat = band_noise(n, 115, 3, 9)[iy, ix]                # chatter and feed wander
+    h = 0.000060 * depth * cut + 0.000008 * chat
+    shade = 1 + 0.10 * (depth - 0.8) / 0.2 * (0.5 + 0.5 * cut) + 0.05 * chat
+    for _ in range(12):                                    # handling scratches: short, straight, mostly across the marks
+        cx, cy, ang, ln = r.uniform(0, tile), r.uniform(0, tile), r.normal(0.0, 0.5), r.uniform(0.004, 0.018)
+        dx = (x - cx + tile / 2) % tile - tile / 2; dy = (y - cy + tile / 2) % tile - tile / 2
+        al = dx * np.cos(ang) + dy * np.sin(ang); ac = -dx * np.sin(ang) + dy * np.cos(ang)
+        sc = np.clip(1 - np.abs(ac) / 0.00018, 0, 1) * np.clip(1 - np.abs(al) / ln, 0, 1) ** 0.5
+        h -= 0.000020 * sc; shade *= 1 + 0.12 * sc
+    add_mesh("machined", *grid_mesh(x, y, h, np.array([0.60, 0.60, 0.61])[None, None, :] * shade[:, :, None]))
+
+
+def paint(tile):
+    """Sprayed enamel, as on an oil filter or a gloss cam cover: orange peel (soft, shallow lumps about a millimetre
+    and a half across, where the wet coat did not quite level), the odd dust nib under the coat, and next to no change
+    in colour. 60 mm of it."""
+    n = 520
+    step = tile / n
+    u = (np.arange(n + 13) - 6) * step
+    x, y = np.meshgrid(u, u)
+    r = np.random.default_rng(127)
+    ix = np.round(x / step).astype(int) % n; iy = np.round(y / step).astype(int) % n
+    peel = band_noise(n, 129, 24, 52)[iy, ix]
+    slow = band_noise(n, 131, 2, 6)[iy, ix]
+    h = 0.000030 * peel + 0.000030 * slow
+    shade = 1 + 0.025 * peel + 0.03 * slow
+    for cx, cy, rr in zip(r.uniform(0, tile, 14), r.uniform(0, tile, 14), r.uniform(0.0003, 0.0007, 14)):   # dust nibs
+        dx = (x - cx + tile / 2) % tile - tile / 2; dy = (y - cy + tile / 2) % tile - tile / 2
+        h += 0.00007 * np.exp(-(dx * dx + dy * dy) / (rr * rr))
+    add_mesh("paint", *grid_mesh(x, y, h, np.array([0.5, 0.5, 0.5])[None, None, :] * shade[:, :, None]))
+
+
 # name: (builder, tile size in metres, slope picture too?). Ground-smooth concrete is so nearly flat that its slope picture
 # is mostly JPEG noise (and 190 KB once amplified enough to beat it), so it ships colour only; so do the shop floor and the
 # grass (blades lean every way, so their slope averages out; the soft shadow in the colour carries them).
 # Keep the tile sizes and the slope flags in step with STRIP_BAKES in src/vis/strip.js (shop: MAT.concrete in src/vis/core.js).
 SURFACES = {"asphalt": (asphalt, 1.9, True), "concrete": (concrete, 2.3, False), "dirt": (dirt, 1.4, True),
             "salt": (salt, 1.6, True), "grass": (grass, 1.0, False), "shop": (shop, 2.0, False)}
-# The two cast skins are not ground: they go on the engine's castings (heatPatchHi in src/vis/core.js, Full / Ultra), sampled
+# The cast skins, the machined face and the sprayed paint are not ground: they go on the engine's castings (heatPatchHi in src/vis/core.js, Full / Ultra), sampled
 # in the engine's own space, and are written as sf-<name>.jpg. Keep their tile size in step with SF_TILE there.
-SURFACES.update({"castiron": (castiron, 0.06, True), "castalu": (castalu, 0.06, True)})
-METAL = ("castiron", "castalu")
+SURFACES.update({"castiron": (castiron, 0.06, True), "castalu": (castalu, 0.06, True),
+                 "machined": (machined, 0.06, True), "paint": (paint, 0.06, True)})
+METAL = ("castiron", "castalu", "machined", "paint")
 GREY = ("grass",) + METAL
 
 
