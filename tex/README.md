@@ -23,6 +23,10 @@ re-run. Keep this list in step with the folder.
 | `sf-castiron-n.jpg` | The slope of that same patch, so each lump catches the light | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
 | `sf-castalu.jpg` | The finer skin a metal mould leaves on cast aluminium, one seamless 60 mm tile: soft lumps, a satin tooth, the odd pore; grey only | `tools/blender/ground-bake.py` | `heatPatchHi` (Full / Ultra): cast aluminium blocks, heads and covers |
 | `sf-castalu-n.jpg` | The slope of that same patch | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
+| `sf-machined.jpg` | Machined aluminium, one seamless 60 mm tile: straight tool marks just under a millimetre apart, a little chatter, a few handling scratches; goes on pulleys, brackets and other machined parts | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
+| `sf-machined-n.jpg` | The slope of that same patch | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
+| `sf-paint.jpg` | Sprayed enamel, one seamless 60 mm tile: orange peel and the odd dust nib; goes on painted parts and gloss or satin cam covers | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
+| `sf-paint-n.jpg` | The slope of that same patch | `tools/blender/ground-bake.py` | `heatPatchHi`, Full / Ultra |
 | `sh-contact.jpg` | Soft contact shadows, three cells: a box standing on the floor, a top on four legs, a drum; white = open floor | `tools/blender/contact-shadow.py` | `contactShadow` in `src/vis/core.js` (every tier): workshop furniture, the dyno bed, trophy plinths, the pits' cart and cooler |
 
 To re-render: `python3.11 -m pip install bpy pillow numpy`, then `python3.11 tools/blender/workshop-env.py` (about
