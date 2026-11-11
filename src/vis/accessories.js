@@ -410,8 +410,12 @@ function buildDetailPost(B, c){
     B.add("steel", BOX(bore*0.36, bore*0.03, bore*0.30), mc.x+bore*0.18, mc.y-bore*0.15, mc.z);   /* bracket to the block's rear face */
     B.add("steel", BOX(bore*0.03, bore*0.22, bore*0.30), mc.x+bore*0.35, mc.y-bore*0.05, mc.z);
     B.hw("hex", mc.x+bore*0.26, mc.y-bore*0.13, mc.z, 0,0,0, bore*0.08);
-    /* chassis-side pigtail out of the connector, dropping toward the bulkhead */
-    B.addW("loom", uvByLength(TUBE([mc.clone().add(V3(-bore*0.20,0,0)), mc.clone().add(V3(-bore*0.24,-bore*0.18,0)), mc.clone().add(V3(-bore*0.20,-bore*0.60,0))], bore*0.045, 10, 6), 1/1.4));
+    /* chassis-side pigtail out of the connector, running back toward the bulkhead and ending in a plug. It used to
+       drop straight down, which put its loose end through the top of the flywheel */
+    var pgE=mc.clone().add(V3(-bore*0.66,-bore*0.05,0));
+    B.addW("loom", uvByLength(TUBE([mc.clone().add(V3(-bore*0.20,0,0)), mc.clone().add(V3(-bore*0.42,bore*0.01,0)), pgE], bore*0.045, 10, 6), 1/1.4));
+    B.add("blackPlast", CYL(bore*0.06,bore*0.06,bore*0.12,10), pgE.x-bore*0.05, pgE.y, pgE.z, 0,0,PI/2);
+    B.add("connGrey", CYL(bore*0.066,bore*0.066,bore*0.03,10), pgE.x-bore*0.02, pgE.y, pgE.z, 0,0,PI/2);
   }
   /* ---- PCV: valve in the bank-0 cover, hose to the plenum (or a breather filter when there is none) ---- */
   bi=c.bankInfo[0];
