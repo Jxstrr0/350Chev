@@ -106,13 +106,14 @@ function tick(dt, t){
   var crank = run.on ? visCrank(run.rpm, dt) : 0;   /* the crank's drawn turn this frame (VIS_SPIN) */
   var i;
   for(i=0;i<anim.spin.length;i++){
-    var sp=anim.spin[i]; sp.o.rotation.x = (sp.o.rotation.x + crank*sp.k) % TAU;
+    var sp=anim.spin[i], st=Math.min(crank*sp.k, VIS_SPIN.stepK*(DET?VIS_SPIN.blur:VIS_SPIN.step)); sp.o.rotation.x = (sp.o.rotation.x + st) % TAU;
+    spinSmear(sp, sp.o, st);
   }
   /* belts: each one's print, and a toothed belt's teeth, move with the crank at that belt's own rate (beltAnim, intake.js) */
   if(crank) for(i=0;i<anim.belts.length;i++){ var bl=anim.belts[i]; bl.u.value=(bl.u.value+crank*bl.k)%1; if(bl.t) bl.t.value=(bl.t.value+crank*bl.kt)%1; }
   /* forced-induction wheels: a turbo's shaft follows the exhaust (revs x load) with spool lag, a geared blower wheel follows the crank (wheelStep, below) */
   WHEEL_TICK++;
-  for(i=0;i<anim.turbos.length;i++){ var tb=anim.turbos[i]; tb.rotation.x = (tb.rotation.x + wheelStep(tb.userData.wk, frac, dt)) % TAU; }
+  for(i=0;i<anim.turbos.length;i++){ var tb=anim.turbos[i]; var ws=wheelStep(tb.userData.wk, frac, dt); tb.rotation.x = (tb.rotation.x + ws) % TAU; spinSmear(tb.userData, tb, ws); }
   if(anim.internals){
     var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
     /* rotary: each rotor rides its eccentric lobe and turns at a third of shaft speed (that is what makes the apexes trace the housing) */
@@ -254,9 +255,49 @@ var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
    frame, so it looks stopped, jerky or running backwards (the wagon-wheel effect), and a phone at 30 fps gets it worst. So the
    drawn speed eases from about 1.2 turns a second at idle toward max (rad/s) up the rev range (half of max at `half` rpm), and
    one frame never turns more than `step` radians, a slow phone drawing it a little slower rather than strobing. The pulleys,
-   belts, damper, flywheel and the X-ray crank and pistons all take this one number, so they stay in step with each other. */
-var VIS_SPIN={max:17, half:1000, step:0.34};
-function visCrank(rpm, dt){ return rpm>0 ? Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SPIN.half)*dt, VIS_SPIN.step) : 0; }
+   belts, damper, flywheel and the X-ray crank and pistons all take this one number, so they stay in step with each other.
+   That is Lite. Full / Ultra smear a fast part the way a camera does (spinSmear, below), so there the drawn speed runs about
+   four times higher (maxHi rad/s, half of it at halfHi rpm, up to `blur` radians a frame) and keeps climbing with the revs.
+   A small pulley turns faster than the crank; its own turn is held to stepK times the frame limit. */
+var VIS_SPIN={max:17, half:1000, step:0.34, blur:0.95, stepK:1.5, maxHi:70, halfHi:5000};
+function visCrank(rpm, dt){
+  if(!(rpm>0)) return 0;
+  return DET ? Math.min(VIS_SPIN.maxHi*rpm/(rpm+VIS_SPIN.halfHi)*dt, VIS_SPIN.blur) : Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SPIN.half)*dt, VIS_SPIN.step);
+}
+/* Motion smear, Full / Ultra. A camera's shutter is open for part of each frame, so a fast pulley or turbo wheel films as a
+   smear: the round body stays sharp, the bolts, paint mark and blades streak. That smear is what lets the part be drawn turning
+   several times faster than the slow speeds above without its bolts strobing. Each spinning part gets a few see-through copies (five on Ultra, three on Full)
+   of itself ("ghosts") laid back along the arc it turned through this frame, weighted 1/2, 1/3, 1/4 and on so every position counts the
+   same. They show only while a frame's turn is big enough to need them, never in X-ray, and cast no shadow. `h` holds the ghosts
+   (the anim.spin entry, or a wheel's userData), `o` is the part, `st` this frame's turn in radians. */
+var SMEAR={on:0.10, mats:{}};
+function smearMat(src, j){
+  var k=src.uuid+"|"+j, m=SMEAR.mats[k];
+  if(!m){ m=src.clone(); m.userData={}; m.transparent=true; m.opacity=1/(j+1); m.depthWrite=false; m.polygonOffset=true; m.polygonOffsetFactor=-1; m.polygonOffsetUnits=-2;
+    m.addEventListener("dispose", function(){ delete SMEAR.mats[k]; }); SMEAR.mats[k]=m; }
+  return m;
+}
+function spinSmear(h, o, st){
+  var on = DET>0 && !XRAY && o.visible && o.parent && Math.abs(st)>SMEAR.on, gh=h.gh, j;
+  if(!on){ if(gh) for(j=0;j<gh.length;j++) gh[j].visible=false; return; }
+  if(!gh || gh[0].parent!==o.parent){
+    gh=h.gh=[]; var n=DET>1?5:3; o.updateMatrixWorld(true);
+    var inv=new THREE.Matrix4().copy(o.matrixWorld).invert();
+    for(j=1;j<=n;j++){
+      var g=new THREE.Group(); g.renderOrder=j;
+      o.traverse(function(m){
+        if(!m.isMesh || !m.geometry) return;
+        var src=m.userData.solidMat||m.material; if(!src || Array.isArray(src)) return;
+        var c=new THREE.Mesh(m.geometry, smearMat(src, j)); c.userData.ghost=true; c.renderOrder=j; c.matrixAutoUpdate=false;
+        c.matrix.multiplyMatrices(inv, m.matrixWorld); g.add(c);
+      });
+      o.parent.add(g); gh.push(g);
+    }
+  }
+  for(j=0;j<gh.length;j++){
+    var q=gh[j]; q.visible=true; q.position.copy(o.position); q.scale.copy(o.scale); q.rotation.copy(o.rotation); q.rotation.x -= st*(j+1)/(gh.length+1);
+  }
+}
 /* How fast a compressor or turbine wheel is drawn turning. Two kinds, set where the wheel is built (wheelKind, intake.js):
      turbo  the shaft is not geared to anything. Its speed comes from the exhaust: revs times load, up to the speed the
             compressor needs for the boost the build asks for (`n`, rpm: a small wheel has to turn faster than a big one for
@@ -265,7 +306,7 @@ function visCrank(rpm, dt){ return rpm>0 ? Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SP
      gear   a centrifugal blower: the crank, times the belt ratio, times the step-up gears in the head unit (`k`).
    Real wheels turn 10,000 to 200,000 rpm, a blur. Drawn, the speed eases toward WHEEL_SPIN.max (rad/s, half of it at `half`
    rpm) and one frame never turns more than `step`, under half the gap between two blades, so it reads as running forward. */
-var WHEEL_SPIN={max:13, half:35000, step:0.22, idle:0.07, coast:3};
+var WHEEL_SPIN={max:13, half:35000, step:0.22, idle:0.07, coast:3, maxHi:95, halfHi:60000, blur:1.5};   /* maxHi, halfHi, blur: Full / Ultra, where the smear (spinSmear) hides the strobing */
 var WHEEL_TICK=0;
 function wheelStep(wk, frac, dt){
   if(!wk) return 0;
@@ -281,7 +322,8 @@ function wheelStep(wk, frac, dt){
     n = wk.w;
   }
   wk.rpm=n;
-  return (wk.step = n>0 ? Math.min(WHEEL_SPIN.max*n/(n+WHEEL_SPIN.half)*dt, WHEEL_SPIN.step) : 0);
+  if(!(n>0)) return (wk.step=0);
+  return (wk.step = DET ? Math.min(WHEEL_SPIN.maxHi*n/(n+WHEEL_SPIN.halfHi)*dt, WHEEL_SPIN.blur) : Math.min(WHEEL_SPIN.max*n/(n+WHEEL_SPIN.half)*dt, WHEEL_SPIN.step));
 }
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
