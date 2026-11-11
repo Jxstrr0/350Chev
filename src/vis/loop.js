@@ -111,6 +111,7 @@ function tick(dt, t){
   /* belts: each one's print, and a toothed belt's teeth, move with the crank at that belt's own rate (beltAnim, intake.js) */
   if(crank) for(i=0;i<anim.belts.length;i++){ var bl=anim.belts[i]; bl.u.value=(bl.u.value+crank*bl.k)%1; if(bl.t) bl.t.value=(bl.t.value+crank*bl.kt)%1; }
   /* forced-induction wheels: a turbo's shaft follows the exhaust (revs x load) with spool lag, a geared blower wheel follows the crank (wheelStep, below) */
+  WHEEL_TICK++;
   for(i=0;i<anim.turbos.length;i++){ var tb=anim.turbos[i]; tb.rotation.x = (tb.rotation.x + wheelStep(tb.userData.wk, frac, dt)) % TAU; }
   if(anim.internals){
     var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
@@ -265,8 +266,11 @@ function visCrank(rpm, dt){ return rpm>0 ? Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SP
    Real wheels turn 10,000 to 200,000 rpm, a blur. Drawn, the speed eases toward WHEEL_SPIN.max (rad/s, half of it at `half`
    rpm) and one frame never turns more than `step`, under half the gap between two blades, so it reads as running forward. */
 var WHEEL_SPIN={max:13, half:35000, step:0.22, idle:0.07, coast:3};
+var WHEEL_TICK=0;
 function wheelStep(wk, frac, dt){
   if(!wk) return 0;
+  if(wk.tick===WHEEL_TICK) return wk.step;   /* a turbo's two wheels share one shaft: worked out once a frame */
+  wk.tick=WHEEL_TICK;
   var n;
   if(wk.k){ n = run.on ? run.rpm*wk.k : 0; }
   else {
@@ -277,7 +281,7 @@ function wheelStep(wk, frac, dt){
     n = wk.w;
   }
   wk.rpm=n;
-  return n>0 ? Math.min(WHEEL_SPIN.max*n/(n+WHEEL_SPIN.half)*dt, WHEEL_SPIN.step) : 0;
+  return (wk.step = n>0 ? Math.min(WHEEL_SPIN.max*n/(n+WHEEL_SPIN.half)*dt, WHEEL_SPIN.step) : 0);
 }
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
