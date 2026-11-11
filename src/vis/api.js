@@ -364,7 +364,10 @@ const ENGINE_VIS = {
     lastCfg=cfg; lastLayout=layoutObj;
     if(!renderer) return;
     var vk=visKey(cfg);
-    if(!force && vk===lastVisKey && engineRoot && engineRoot.children.length && !failFx.started && !run.fail) return 0;   /* nothing the model shows changed */
+    if(!force && vk===lastVisKey && engineRoot && engineRoot.children.length && !failFx.started && !run.fail){   /* nothing the model shows changed */
+      for(var ti=0; ti<anim.turbos.length; ti++){ var tk=anim.turbos[ti].userData.wk; if(tk && tk.mm) turboBoost(tk, cfg&&cfg.boost); }   /* but more boost means a faster turbo shaft */
+      return 0;
+    }
     lastVisKey=vk;
     if(GFX!=="lite") engPartsLoad();          /* the modelled small parts (engparts.js): fetched once, the engine is rebuilt when they land */
     disposeTree(engineRoot);
@@ -509,6 +512,7 @@ const ENGINE_VIS = {
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
                 if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
              spin:anim.spin.map(function(q){ return +q.k.toFixed(4); }),
+             wheels:anim.turbos.map(function(q){ var w=q.userData.wk||{}; return {k:w.k||0, n:Math.round(w.n||0), tau:w.tau||0, rpm:Math.round(w.rpm||0), rot:+q.rotation.x.toFixed(3)}; }),   /* harness: turbo and blower wheels */
              parts:ENGP.parts?Object.keys(ENGP.parts).length:(ENGP.failed?-1:0),   /* modelled small parts loaded (engparts.js) */
              cogs:anim.spin.filter(function(q){ return q.o.userData.teeth; }).map(function(q){ return {n:q.o.userData.teeth, k:q.k, y:q.o.position.y, z:q.o.position.z, rot:q.o.rotation.x}; }),   /* harness: toothed pulleys, to check they mesh with their belt */
              belt:anim.belts.map(function(q){ return {k:+q.k.toFixed(4), u:+q.u.value.toFixed(3), teeth:q.kt?Math.round(q.kt*TAU):0, t:q.t?q.t.value:0}; }) };

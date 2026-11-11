@@ -15820,6 +15820,7 @@ function buildTwoStrokeMesh(cfg, L, B, G, extras, t0){
       B.add("steel", CYL(bore*0.16, bore*0.16, bore*0.30, 12), tX-bore*0.27, tY, bZ, 0,0,PI/2);
       extras.push(hoseMesh([V3(tX+bore*0.25, tY, bZ), V3(tX+bore*0.6, tY-bore*0.3, bZ), V3(bLen*0.18, aiY+bore*0.45, bZ)], bore*0.18, MAT.hose));
       var tw=new THREE.Group(), wm=makeWheelMesh(bore*0.32, 9, MAT.palu); wm.rotation.z=PI/2; tw.add(wm); tw.position.set(tX+bore*0.22, tY, bZ);
+      tw.userData.wk=turboWheel(76, cfg.boost);
       extras.push(tw); anim.turbos.push(tw);
     }
   } else {
@@ -17310,6 +17311,21 @@ var N2O_PURGE=null;       /* nitrous purge nozzle marker (an Object3D in the eng
 var LAST_PLEN=null;       /* plenum / blower-manifold box {x, z, top, bot, len, w} (filled by buildIntake) */
 var TURBO_MM = { small:46, medium:54, large:64, s66:66, huge:76, f88:88, f98:98 };        /* compressor inducer, mm */
 var FLOW_LB  = { small:26, medium:40, large:58, s66:115, huge:84, f88:125, f98:165 };      /* OPT.turboSize maxFlow */
+/* what turns a compressor or turbine wheel (read by wheelStep, loop.js).
+   turboWheel: mm = compressor inducer, bar = boost one stage makes. The wheel's rim has to reach a speed set by the
+   pressure ratio (about 390 m/s for 1 bar, 520 for 2); a small wheel turns faster to get there. 54 mm at 1 bar: ~139,000 rpm.
+   gearWheel: a centrifugal blower, belt ratio times the 4.1:1 step-up gears in the head unit. */
+function turboWheel(mm, bar, stages){
+  var wk={mm:mm, st:stages||1, tau:clamp(0.25+(mm-40)/60, 0.25, 1.3), n:0, w:0, rpm:0};
+  turboBoost(wk, bar); return wk;
+}
+/* set a turbo's full-boost shaft speed from the boost dial. Two stages (a compound) each make the square root of the total
+   pressure ratio. Also called when the boost slider moves and nothing else did, so the engine is not rebuilt for it (api.js). */
+function turboBoost(wk, bar){
+  var pr=Math.pow(1+clamp(+bar||0, 0.2, 4), 1/wk.st), U=Math.min(560, Math.sqrt(1005*293*(Math.pow(pr,0.2857)-1)/0.42));
+  wk.n=U/(PI*wk.mm/1000)*60;
+}
+function gearWheel(ratio){ return {k:ratio*4.1, rpm:0}; }
 function turboScale(tsz){ return (TURBO_MM[tsz]||54)*0.019; }   /* housing unit s (scene units): compressor cover OD = 1.6 s, absolute size */
 
 /* a pipe must not run through a cone filter or a compressor cover: sample its route, push every sample out of each
@@ -17563,6 +17579,7 @@ function buildCompressorSnail(B, extras, p, x, y, z, s, matKey, zs, dir){
   /* compressor wheel (spins), nose toward the inlet */
   var wheel=makeWheelMesh(s*0.32, 6, MAT.palu);
   wheel.position.copy(B.pt(x+e*s*0.39, y, z)); wheel.rotation.z=d*PI/2;
+  wheel.userData.wk=gearWheel(blowerDrive("centrifugal", p.boost));
   extras.push(wheel); anim.turbos.push(wheel);
   return {pt:V3(x, y+dL, z+cR), dir:V3(0,1,0)};
 }
@@ -17721,8 +17738,11 @@ function buildTurbo(B, extras, p, T, s, cdir, aim, coDir, o){
   /* wheels (turbine first, so turboPoint() lands on the hot side) */
   var tw=makeWheelMesh(s*0.30, 10, MAT.steel);
   tw.position.copy(B.pt(-s*0.08,0,0)); tw.rotation.z=cdir*PI/2;
+  /* both wheels are on one shaft, so they share one speed */
+  var wk=turboWheel(s/0.019, p.boost, p.asp==="compound"?2:1);
+  tw.userData.wk=wk;
   extras.push(tw); anim.turbos.push(tw);
-  var cw=makeWheelMesh(s*0.32, 6, MAT.palu);
+  var cw=makeWheelMesh(s*0.32, 6, MAT.palu); cw.userData.wk=wk;
   cw.position.copy(B.pt(s*1.25,0,0)); cw.rotation.z=-cdir*PI/2;
   extras.push(cw); anim.turbos.push(cw);
   var r = {
@@ -19829,7 +19849,9 @@ function tick(dt, t){
   }
   /* belts: each one's print, and a toothed belt's teeth, move with the crank at that belt's own rate (beltAnim, intake.js) */
   if(crank) for(i=0;i<anim.belts.length;i++){ var bl=anim.belts[i]; bl.u.value=(bl.u.value+crank*bl.k)%1; if(bl.t) bl.t.value=(bl.t.value+crank*bl.kt)%1; }
-  for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
+  /* forced-induction wheels: a turbo's shaft follows the exhaust (revs x load) with spool lag, a geared blower wheel follows the crank (wheelStep, below) */
+  WHEEL_TICK++;
+  for(i=0;i<anim.turbos.length;i++){ var tb=anim.turbos[i]; tb.rotation.x = (tb.rotation.x + wheelStep(tb.userData.wk, frac, dt)) % TAU; }
   if(anim.internals){
     var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
     /* rotary: each rotor rides its eccentric lobe and turns at a third of shaft speed (that is what makes the apexes trace the housing) */
@@ -19974,6 +19996,32 @@ var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
    belts, damper, flywheel and the X-ray crank and pistons all take this one number, so they stay in step with each other. */
 var VIS_SPIN={max:17, half:1000, step:0.34};
 function visCrank(rpm, dt){ return rpm>0 ? Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SPIN.half)*dt, VIS_SPIN.step) : 0; }
+/* How fast a compressor or turbine wheel is drawn turning. Two kinds, set where the wheel is built (wheelKind, intake.js):
+     turbo  the shaft is not geared to anything. Its speed comes from the exhaust: revs times load, up to the speed the
+            compressor needs for the boost the build asks for (`n`, rpm: a small wheel has to turn faster than a big one for
+            the same boost). It takes `tau` seconds to spool up, longer for a big wheel, and coasts down about three times
+            slower, so it keeps turning for a moment after the throttle shuts or the engine stops.
+     gear   a centrifugal blower: the crank, times the belt ratio, times the step-up gears in the head unit (`k`).
+   Real wheels turn 10,000 to 200,000 rpm, a blur. Drawn, the speed eases toward WHEEL_SPIN.max (rad/s, half of it at `half`
+   rpm) and one frame never turns more than `step`, under half the gap between two blades, so it reads as running forward. */
+var WHEEL_SPIN={max:13, half:35000, step:0.22, idle:0.07, coast:3};
+var WHEEL_TICK=0;
+function wheelStep(wk, frac, dt){
+  if(!wk) return 0;
+  if(wk.tick===WHEEL_TICK) return wk.step;   /* a turbo's two wheels share one shaft: worked out once a frame */
+  wk.tick=WHEEL_TICK;
+  var n;
+  if(wk.k){ n = run.on ? run.rpm*wk.k : 0; }
+  else {
+    var e = run.on ? clamp(frac,0,1.1)*(0.15+0.85*clamp(run.load,0,1.2)) : 0;
+    var tgt = run.on ? wk.n*(WHEEL_SPIN.idle+(1-WHEEL_SPIN.idle)*Math.min(1, Math.pow(e,0.7))) : 0;
+    var tau = tgt>wk.w ? wk.tau : wk.tau*WHEEL_SPIN.coast;
+    wk.w += (tgt-wk.w)*Math.min(1, dt/tau); if(wk.w<50) wk.w=0;
+    n = wk.w;
+  }
+  wk.rpm=n;
+  return (wk.step = n>0 ? Math.min(WHEEL_SPIN.max*n/(n+WHEEL_SPIN.half)*dt, WHEEL_SPIN.step) : 0);
+}
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
@@ -20940,7 +20988,10 @@ const ENGINE_VIS = {
     lastCfg=cfg; lastLayout=layoutObj;
     if(!renderer) return;
     var vk=visKey(cfg);
-    if(!force && vk===lastVisKey && engineRoot && engineRoot.children.length && !failFx.started && !run.fail) return 0;   /* nothing the model shows changed */
+    if(!force && vk===lastVisKey && engineRoot && engineRoot.children.length && !failFx.started && !run.fail){   /* nothing the model shows changed */
+      for(var ti=0; ti<anim.turbos.length; ti++){ var tk=anim.turbos[ti].userData.wk; if(tk && tk.mm) turboBoost(tk, cfg&&cfg.boost); }   /* but more boost means a faster turbo shaft */
+      return 0;
+    }
     lastVisKey=vk;
     if(GFX!=="lite") engPartsLoad();          /* the modelled small parts (engparts.js): fetched once, the engine is rebuilt when they land */
     disposeTree(engineRoot);
@@ -21085,6 +21136,7 @@ const ENGINE_VIS = {
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
                 if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
              spin:anim.spin.map(function(q){ return +q.k.toFixed(4); }),
+             wheels:anim.turbos.map(function(q){ var w=q.userData.wk||{}; return {k:w.k||0, n:Math.round(w.n||0), tau:w.tau||0, rpm:Math.round(w.rpm||0), rot:+q.rotation.x.toFixed(3)}; }),   /* harness: turbo and blower wheels */
              parts:ENGP.parts?Object.keys(ENGP.parts).length:(ENGP.failed?-1:0),   /* modelled small parts loaded (engparts.js) */
              cogs:anim.spin.filter(function(q){ return q.o.userData.teeth; }).map(function(q){ return {n:q.o.userData.teeth, k:q.k, y:q.o.position.y, z:q.o.position.z, rot:q.o.rotation.x}; }),   /* harness: toothed pulleys, to check they mesh with their belt */
              belt:anim.belts.map(function(q){ return {k:+q.k.toFixed(4), u:+q.u.value.toFixed(3), teeth:q.kt?Math.round(q.kt*TAU):0, t:q.t?q.t.value:0}; }) };
@@ -22786,7 +22838,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.128.0";
+const VERSION="1.76.129.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

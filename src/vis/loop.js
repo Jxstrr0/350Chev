@@ -110,7 +110,9 @@ function tick(dt, t){
   }
   /* belts: each one's print, and a toothed belt's teeth, move with the crank at that belt's own rate (beltAnim, intake.js) */
   if(crank) for(i=0;i<anim.belts.length;i++){ var bl=anim.belts[i]; bl.u.value=(bl.u.value+crank*bl.k)%1; if(bl.t) bl.t.value=(bl.t.value+crank*bl.kt)%1; }
-  for(i=0;i<anim.turbos.length;i++) anim.turbos[i].rotation.x += spin*(1.4+frac*5.0)*0.16;
+  /* forced-induction wheels: a turbo's shaft follows the exhaust (revs x load) with spool lag, a geared blower wheel follows the crank (wheelStep, below) */
+  WHEEL_TICK++;
+  for(i=0;i<anim.turbos.length;i++){ var tb=anim.turbos[i]; tb.rotation.x = (tb.rotation.x + wheelStep(tb.userData.wk, frac, dt)) % TAU; }
   if(anim.internals){
     var IN=anim.internals; IN.theta += crank; IN.crank.rotation.x = IN.theta;
     /* rotary: each rotor rides its eccentric lobe and turns at a third of shaft speed (that is what makes the apexes trace the housing) */
@@ -255,6 +257,32 @@ var exhaustTipW=null, smokeAcc=0, smokeP=new THREE.Vector3();
    belts, damper, flywheel and the X-ray crank and pistons all take this one number, so they stay in step with each other. */
 var VIS_SPIN={max:17, half:1000, step:0.34};
 function visCrank(rpm, dt){ return rpm>0 ? Math.min(VIS_SPIN.max*rpm/(rpm+VIS_SPIN.half)*dt, VIS_SPIN.step) : 0; }
+/* How fast a compressor or turbine wheel is drawn turning. Two kinds, set where the wheel is built (wheelKind, intake.js):
+     turbo  the shaft is not geared to anything. Its speed comes from the exhaust: revs times load, up to the speed the
+            compressor needs for the boost the build asks for (`n`, rpm: a small wheel has to turn faster than a big one for
+            the same boost). It takes `tau` seconds to spool up, longer for a big wheel, and coasts down about three times
+            slower, so it keeps turning for a moment after the throttle shuts or the engine stops.
+     gear   a centrifugal blower: the crank, times the belt ratio, times the step-up gears in the head unit (`k`).
+   Real wheels turn 10,000 to 200,000 rpm, a blur. Drawn, the speed eases toward WHEEL_SPIN.max (rad/s, half of it at `half`
+   rpm) and one frame never turns more than `step`, under half the gap between two blades, so it reads as running forward. */
+var WHEEL_SPIN={max:13, half:35000, step:0.22, idle:0.07, coast:3};
+var WHEEL_TICK=0;
+function wheelStep(wk, frac, dt){
+  if(!wk) return 0;
+  if(wk.tick===WHEEL_TICK) return wk.step;   /* a turbo's two wheels share one shaft: worked out once a frame */
+  wk.tick=WHEEL_TICK;
+  var n;
+  if(wk.k){ n = run.on ? run.rpm*wk.k : 0; }
+  else {
+    var e = run.on ? clamp(frac,0,1.1)*(0.15+0.85*clamp(run.load,0,1.2)) : 0;
+    var tgt = run.on ? wk.n*(WHEEL_SPIN.idle+(1-WHEEL_SPIN.idle)*Math.min(1, Math.pow(e,0.7))) : 0;
+    var tau = tgt>wk.w ? wk.tau : wk.tau*WHEEL_SPIN.coast;
+    wk.w += (tgt-wk.w)*Math.min(1, dt/tau); if(wk.w<50) wk.w=0;
+    n = wk.w;
+  }
+  wk.rpm=n;
+  return (wk.step = n>0 ? Math.min(WHEEL_SPIN.max*n/(n+WHEEL_SPIN.half)*dt, WHEEL_SPIN.step) : 0);
+}
 function exhaustPoint(){
   if(exhaustTipW) return _tmpV.copy(exhaustTipW);
   return _tmpV.set(camState.target.x-2.2, camState.target.y-2.4, camState.target.z+3.4);
