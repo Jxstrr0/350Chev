@@ -400,6 +400,9 @@ const ENGINE_VIS = {
     if(!renderer) return;
     disposeTree(garageRoot);
     var G=buildGarageMesh(lastOwned);
+    /* the room's solid surfaces draw after the engine and stand: whatever those cover (a good part of the floor and walls) fails the depth test
+       before its shader runs. three.js sorts solid things by shader first and distance last, so left alone the floor often went first. */
+    G.traverse(function(o){ var m=o.material; if(o.isMesh && m && !Array.isArray(m) && !m.transparent && m.depthWrite!==false && m.depthTest!==false && o.renderOrder===0) o.renderOrder=1; });
     garageRoot.add(G);
     fitStand();                                            /* shop or test cell: its paint and its feet */
     var W=G.userData.roomW;
@@ -523,6 +526,9 @@ const ENGINE_VIS = {
   setFpsCap: function(f){ capMs = f>0 ? 1000/f : 0; },
   frameDue: function(t){ return frameDue(t); },
   fps: function(){ return fpsStat; },
+  /* Ultra frame saver (loop.js ultraSaver): the governor's switch, and what it is doing right now */
+  setSaver: function(on){ USAVE.on=!!on; if(!on){ USAVE.half=false; USAVE.low=0; } },
+  saver: function(){ return {on:USAVE.on, half:USAVE.half, ultra:GFX==="ultra"}; },
   info:  function(){
     var tris=0, calls=0;
     scene.traverse(function(o){
@@ -542,6 +548,7 @@ const ENGINE_VIS = {
 };
 
 Object.defineProperty(ENGINE_VIS,"_root",{get:function(){return scene;}});
-Object.defineProperty(ENGINE_VIS,"_camera",{get:function(){return camera;}});   /* harness: lets a test ask which part is under a pixel */
+Object.defineProperty(ENGINE_VIS,"_camera",{get:function(){return camera;}});
+Object.defineProperty(ENGINE_VIS,"_renderer",{get:function(){return renderer;}});   /* harness: lets a test ask which part is under a pixel */
 ENGINE_VIS._state=function(){return {gfx:GFX,xray:XRAY,grime:GRIME_UNIFORM.value,wear:run.wear,composer:!!composer,hot:anim.hot?anim.hot.length:0,glow:anim.glowMats?anim.glowMats.map(function(m){return +m.emissiveIntensity.toFixed(2);}):null};};
 Object.defineProperty(ENGINE_VIS,"_shake",{get:function(){return engineShake;}});
