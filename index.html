@@ -14546,7 +14546,9 @@ function mergeGeos(items){
   for(i=0;i<prep.length;i++){
     var P=prep[i].ni.attributes.position, N=prep[i].ni.attributes.normal, U=prep[i].ni.attributes.uv;
     var M=prep[i].m; _m3.getNormalMatrix(M); var zv=items[i].z||0;
-    for(var v=0; v<P.count; v++){
+    var flip=!!items[i].mir;                 /* a mirrored part (partAdd with a negative scale): swap two corners of each triangle so it still faces out */
+    for(var v0=0; v0<P.count; v0++){
+      var v = flip ? v0-v0%3+(v0%3===1?2:v0%3===2?1:0) : v0;
       zn[oz++]=zv;
       _v3.fromBufferAttribute(P,v).applyMatrix4(M);
       pos[o]=_v3.x; pos[o+1]=_v3.y; pos[o+2]=_v3.z;
@@ -14657,6 +14659,8 @@ var HW_MAT = { hex:"zinc", stud:"steel", clamp:"chrome", nutA:"zinc", pbolt:"ste
 var HW_GEO = {};
 function hwGeo(t){
   if(HW_GEO[t]) return HW_GEO[t];
+  var mp=ENGP.parts && ENGP.parts[t];                    /* the modelled bolt, stud, clamp, nut or rivet, once the parts file is in (engparts.js) */
+  if(mp && mp.length===1){ HW_GEO[t]=mp[0].g; return mp[0].g; }
   var I=function(x,y,z,rx,ry,rz){ return mkM(x,y,z,rx,ry,rz); }, g;
   if(t==="hex")        /* flange-head bolt, axis +Y, unit = head across corners */
     g=mergeGeos([{g:CYL(0.5,0.5,0.34,6,false,8),m:I(0,0.24,0)},{g:CYL(0.62,0.66,0.08,12,false,8),m:I(0,0.04,0)}]);
@@ -16482,6 +16486,7 @@ function buildBank(B, p, extras){
     /* coil-on-plug packs sunk into the saddle */
     for(i=0;i<per && !DZ;i++){
       var cx=-bankLen/2 + bspace*(i+0.5);
+      if(partAdd(B, "coilCop", cx, covY+coverH*0.84, 0, 0,0,0, bspace*0.34, coverH*0.34, zs*covW*0.24)) continue;   /* the modelled coil (engparts.js) */
       B.add("blackPlast", BOX(bspace*0.34, coverH*0.34, covW*0.24), cx, covY+coverH*0.84, 0);
       B.add("blackPlast", BOX(bspace*0.16, coverH*0.16, covW*0.30), cx+bspace*0.10, covY+coverH*0.92, Z(covW*0.06));
     }
@@ -16582,17 +16587,23 @@ function buildBank(B, p, extras){
     B.add("steel", BOX(bankLen*0.88, bore*0.035, bore*0.24), 0, shY+bore*0.018, Z(cpZ));
     for(i=0;i<per;i++){
       var wx=-bankLen/2 + bspace*(i+0.5);
-      B.add("blackPlast", BOX(bspace*0.40, bore*0.24, bore*0.22), wx, shY+bore*0.155, Z(cpZ));
-      B.add("blackPlast", CYL(bore*0.05,bore*0.05,bore*0.10,8), wx, shY+bore*0.155, Z(cpZ+bore*0.15), RX(PI/2),0,0);
+      var mdl=partAdd(B, "coilNear", wx, shY+bore*0.155, Z(cpZ), 0,0,0, bspace*0.40, bore*0.24, zs*bore*0.22);   /* the modelled coil (engparts.js) */
+      if(!mdl){
+        B.add("blackPlast", BOX(bspace*0.40, bore*0.24, bore*0.22), wx, shY+bore*0.155, Z(cpZ));
+        B.add("blackPlast", CYL(bore*0.05,bore*0.05,bore*0.10,8), wx, shY+bore*0.155, Z(cpZ+bore*0.15), RX(PI/2),0,0);
+      }
       var a0=B.pt(wx, covY-headH*0.20, Z(covW*0.70));
       var a1=B.pt(wx, covY+coverH*0.30, Z(covW*0.78+bore*0.06));
       var a2=B.pt(wx, shY+bore*0.155, Z(cpZ+bore*0.20));
       extras.push(meshB(TUBE([a0,a1,a2], bore*0.045, 12, 7), MAT.wireRed));
-      B.add("blackPlast", CYL(bore*0.065,bore*0.065,bore*0.14,10), wx, covY-headH*0.20, Z(covW*0.66), RX(PI/2),0,0);
+      if(!partAdd(B, "boot", wx, covY-headH*0.20, Z(covW*0.66), RX(PI/2),0,0, bore*0.07, bore*0.17, bore*0.07))
+        B.add("blackPlast", CYL(bore*0.065,bore*0.065,bore*0.14,10), wx, covY-headH*0.20, Z(covW*0.66), RX(PI/2),0,0);
       if(DET){
-        B.add("connGrey", BOX(bspace*0.14, bore*0.05, bore*0.10), wx-bspace*0.06, shY+bore*0.30, Z(cpZ-bore*0.04));
+        if(!partAdd(B, "plug", wx-bspace*0.06, shY+bore*0.31, Z(cpZ-bore*0.04), 0,0,0, bspace*0.15, bore*0.075, zs*bore*0.12))
+          B.add("connGrey", BOX(bspace*0.14, bore*0.05, bore*0.10), wx-bspace*0.06, shY+bore*0.30, Z(cpZ-bore*0.04));
         if(DET>=2) B.addW("wireBlk", TUBE([B.pt(wx-bspace*0.06, shY+bore*0.32, Z(cpZ-bore*0.08)), B.pt(wx-bspace*0.02, shY+bore*0.34, Z(cpZ-bore*0.13)), B.pt(wx+bspace*0.06, shY+bore*0.33, Z(cpZ-bore*0.16))], bore*0.011, 6, 4));
-        B.hw("hex", wx+bspace*0.15, shY+bore*0.035, Z(cpZ+bore*0.07), 0,0,0, bore*0.07);
+        if(mdl){ B.hw("hex", wx+bspace*0.22, shY+bore*0.118, Z(cpZ+bore*0.022), 0,0,0, bore*0.06); B.hw("hex", wx-bspace*0.22, shY+bore*0.118, Z(cpZ+bore*0.022), 0,0,0, bore*0.06); }   /* a bolt through each lug */
+        else B.hw("hex", wx+bspace*0.15, shY+bore*0.035, Z(cpZ+bore*0.07), 0,0,0, bore*0.07);
       }
     }
     if(DET) coilLoom = [B.pt(bankLen*0.45, shY+bore*0.33, Z(cpZ-bore*0.17)), B.pt(0, shY+bore*0.34, Z(cpZ-bore*0.17)), B.pt(-bankLen*0.45, shY+bore*0.33, Z(cpZ-bore*0.17))];
@@ -16603,16 +16614,19 @@ function buildBank(B, p, extras){
     /* coil-on-plug: a connector on every coil, pigtails into a loom along the saddle */
     for(i=0;i<per;i++){
       var ccx=-bankLen/2 + bspace*(i+0.5);
-      B.add("connGrey", BOX(bspace*0.14, bore*0.05, covW*0.10), ccx-bspace*0.03, covY+coverH*1.01+bore*0.022, Z(-covW*0.07));
+      if(!partAdd(B, "plug", ccx-bspace*0.03, covY+coverH*1.01+bore*0.03, Z(-covW*0.07), 0,0,0, bspace*0.15, bore*0.075, zs*covW*0.11))
+        B.add("connGrey", BOX(bspace*0.14, bore*0.05, covW*0.10), ccx-bspace*0.03, covY+coverH*1.01+bore*0.022, Z(-covW*0.07));
       if(DET>=2) B.addW("wireBlk", TUBE([B.pt(ccx-bspace*0.03, covY+coverH*1.01+bore*0.045, Z(-covW*0.11)), B.pt(ccx, covY+coverH*1.01+bore*0.05, Z(-covW*0.16)), B.pt(ccx+bspace*0.08, covY+coverH*1.0+bore*0.04, Z(-covW*0.19))], bore*0.011, 6, 4));
-      B.hw("hex", ccx+bspace*0.14, covY+coverH*1.01, Z(covW*0.05), 0,0,0, bore*0.06);
+      if(ENGP.parts) B.hw("hex", ccx+bspace*0.19, covY+coverH*0.785, Z(covW*0.05), 0,0,0, bore*0.06);   /* through the modelled coil's ear and bush */
+      else B.hw("hex", ccx+bspace*0.14, covY+coverH*1.01, Z(covW*0.05), 0,0,0, bore*0.06);
     }
     coilLoom = [B.pt(bankLen*0.46, covY+coverH*1.0+bore*0.04, Z(-covW*0.19)), B.pt(0, covY+coverH*1.0+bore*0.045, Z(-covW*0.19)), B.pt(-bankLen*0.46, covY+coverH*1.0+bore*0.04, Z(-covW*0.19))];
   }
   if(DET && p.head==="billet_hemi" && !DZ){
     for(i=0;i<per;i++){
       var hcx=-bankLen/2 + bspace*(i+0.5);
-      B.add("connGrey", BOX(bore*0.10, bore*0.05, bore*0.10), hcx, covY+coverH*1.56+bore*0.025, 0);
+      if(!partAdd(B, "plug", hcx, covY+coverH*1.56+bore*0.032, 0, 0,0,0, bore*0.12, bore*0.075, -zs*bore*0.12))
+        B.add("connGrey", BOX(bore*0.10, bore*0.05, bore*0.10), hcx, covY+coverH*1.56+bore*0.025, 0);
       if(DET>=2) B.addW("wireBlk", TUBE([B.pt(hcx, covY+coverH*1.56+bore*0.05, Z(bore*0.03)), B.pt(hcx+bore*0.04, covY+coverH*1.58+bore*0.04, Z(bore*0.10)), B.pt(hcx+bore*0.10, covY+coverH*1.56+bore*0.03, Z(bore*0.16))], bore*0.011, 6, 4));
     }
     for(i=0;i<per;i+=2) B.add("steel", BOX(bore*0.03, coverH*0.30, bore*0.03), -bankLen/2 + bspace*(i+1), covY+coverH*1.40, Z(bore*0.16));
@@ -18735,6 +18749,56 @@ function tsDelticEnds(B, o){
   setZone(0);
 }
 /* ===========================================================================
+   7h. MODELLED SMALL PARTS (Full / Ultra): the engine's fasteners, hose clamp, ignition coils, plug boot and wiring
+   plug as real shapes, modelled in Blender by tools/blender/engine-parts.py and kept in one file, models/eng-parts.glb
+   (geometry only: the engine's own materials go on). The engine is still built in code; these only stand in where
+   code drew a plain box or cylinder that is looked at up close.
+   The file loads once, after the first Full / Ultra engine is asked for. Until it lands (or if it never does: offline
+   on a first visit, an old browser) the plain shapes are drawn, and the engine is rebuilt once when it arrives.
+   A part is a list of {mat: the builder's material key, g: geometry}; partAdd places one like Builder.add places a
+   box, and hwGeo (core.js) hands the bolts, studs, clamps, nuts and rivets to the instanced hardware.
+   Lite never loads the file.
+   ==========================================================================*/
+var ENGP = { file:"models/eng-parts.glb", parts:null, loading:false, failed:false };
+function engPartsLoad(){
+  if(ENGP.parts || ENGP.loading || ENGP.failed || !window.THREE) return;
+  if(!THREE.GLTFLoader){
+    if(!window.__pewPost) return;
+    ENGP.loading=true;
+    window.__pewPost(function(ok){ ENGP.loading=false; if(ok && THREE.GLTFLoader) engPartsLoad(); else ENGP.failed=true; });
+    return;
+  }
+  ENGP.loading=true;
+  new THREE.GLTFLoader().load(ENGP.file, function(g){
+    var P={};
+    g.scene.updateMatrixWorld(true);
+    g.scene.traverse(function(o){
+      if(!o.isMesh || !o.geometry) return;
+      var nm=String(o.userData.name||o.name).split("__"); if(nm.length<2) return;   /* <part>__<material key> */
+      var geo=o.geometry; geo.applyMatrix4(o.matrixWorld); geo.__cached=true;        /* kept across engine rebuilds (disposeTree) */
+      (P[nm[0]]||(P[nm[0]]=[])).push({mat:nm[1].replace(/[^A-Za-z].*$/,""), g:geo});
+    });
+    ENGP.parts=P; ENGP.loading=false;
+    HW_GEO={};                                             /* the instanced hardware picks the modelled shapes up */
+    if(GFX!=="lite" && lastCfg && engineRoot && engineRoot.children.length && !failFx.started && !run.fail)
+      ENGINE_VIS.buildEngine(lastCfg, lastLayout, true);
+  }, null, function(e){
+    ENGP.loading=false; ENGP.failed=true;
+    if(typeof console!=="undefined") console.warn("engine parts", e && e.message);
+  });
+}
+/* place a modelled part: the arguments after the name are Builder.add's (a negative sz mirrors it for the other bank).
+   Returns false when the parts are not there, so the caller draws its plain shape instead. */
+function partAdd(B, name, x,y,z, rx,ry,rz, sx,sy,sz){
+  var P=DET && ENGP.parts && ENGP.parts[name]; if(!P) return false;
+  var mir=(sx===undefined?1:sx)*(sy===undefined?1:sy)*(sz===undefined?1:sz)<0, i, bk;
+  for(i=0;i<P.length;i++){
+    B.add(P[i].mat, P[i].g, x,y,z, rx,ry,rz, sx,sy,sz);
+    if(mir){ bk=B.buckets[P[i].mat]; bk[bk.length-1].mir=true; }   /* mergeGeos turns its triangles back the right way round */
+  }
+  return true;
+}
+/* ===========================================================================
    8. GARAGE
    ==========================================================================*/
 function buildGarageMesh(owned){
@@ -20855,6 +20919,7 @@ const ENGINE_VIS = {
     var vk=visKey(cfg);
     if(!force && vk===lastVisKey && engineRoot && engineRoot.children.length && !failFx.started && !run.fail) return 0;   /* nothing the model shows changed */
     lastVisKey=vk;
+    if(GFX!=="lite") engPartsLoad();          /* the modelled small parts (engparts.js): fetched once, the engine is rebuilt when they land */
     disposeTree(engineRoot);
     anim={ spin:[], turbos:[], belts:[], hot:[], fans:[], glowMats:[], internals:null };
     var G=buildEngineMesh(cfg, layoutObj);
@@ -20997,6 +21062,7 @@ const ENGINE_VIS = {
              mats:(function(){ var o=[]; engineRoot.traverse(function(m){
                 if(m.material&&m.name) o.push(m.name+"="+m.material.color.getHexString()); }); return o; })(),
              spin:anim.spin.map(function(q){ return +q.k.toFixed(4); }),
+             parts:ENGP.parts?Object.keys(ENGP.parts).length:(ENGP.failed?-1:0),   /* modelled small parts loaded (engparts.js) */
              cogs:anim.spin.filter(function(q){ return q.o.userData.teeth; }).map(function(q){ return {n:q.o.userData.teeth, k:q.k, y:q.o.position.y, z:q.o.position.z, rot:q.o.rotation.x}; }),   /* harness: toothed pulleys, to check they mesh with their belt */
              belt:anim.belts.map(function(q){ return {k:+q.k.toFixed(4), u:+q.u.value.toFixed(3), teeth:q.kt?Math.round(q.kt*TAU):0, t:q.t?q.t.value:0}; }) };
   },
@@ -22697,7 +22763,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.126.0";
+const VERSION="1.76.127.0";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}

@@ -430,6 +430,7 @@ function buildBank(B, p, extras){
     /* coil-on-plug packs sunk into the saddle */
     for(i=0;i<per && !DZ;i++){
       var cx=-bankLen/2 + bspace*(i+0.5);
+      if(partAdd(B, "coilCop", cx, covY+coverH*0.84, 0, 0,0,0, bspace*0.34, coverH*0.34, zs*covW*0.24)) continue;   /* the modelled coil (engparts.js) */
       B.add("blackPlast", BOX(bspace*0.34, coverH*0.34, covW*0.24), cx, covY+coverH*0.84, 0);
       B.add("blackPlast", BOX(bspace*0.16, coverH*0.16, covW*0.30), cx+bspace*0.10, covY+coverH*0.92, Z(covW*0.06));
     }
@@ -530,17 +531,23 @@ function buildBank(B, p, extras){
     B.add("steel", BOX(bankLen*0.88, bore*0.035, bore*0.24), 0, shY+bore*0.018, Z(cpZ));
     for(i=0;i<per;i++){
       var wx=-bankLen/2 + bspace*(i+0.5);
-      B.add("blackPlast", BOX(bspace*0.40, bore*0.24, bore*0.22), wx, shY+bore*0.155, Z(cpZ));
-      B.add("blackPlast", CYL(bore*0.05,bore*0.05,bore*0.10,8), wx, shY+bore*0.155, Z(cpZ+bore*0.15), RX(PI/2),0,0);
+      var mdl=partAdd(B, "coilNear", wx, shY+bore*0.155, Z(cpZ), 0,0,0, bspace*0.40, bore*0.24, zs*bore*0.22);   /* the modelled coil (engparts.js) */
+      if(!mdl){
+        B.add("blackPlast", BOX(bspace*0.40, bore*0.24, bore*0.22), wx, shY+bore*0.155, Z(cpZ));
+        B.add("blackPlast", CYL(bore*0.05,bore*0.05,bore*0.10,8), wx, shY+bore*0.155, Z(cpZ+bore*0.15), RX(PI/2),0,0);
+      }
       var a0=B.pt(wx, covY-headH*0.20, Z(covW*0.70));
       var a1=B.pt(wx, covY+coverH*0.30, Z(covW*0.78+bore*0.06));
       var a2=B.pt(wx, shY+bore*0.155, Z(cpZ+bore*0.20));
       extras.push(meshB(TUBE([a0,a1,a2], bore*0.045, 12, 7), MAT.wireRed));
-      B.add("blackPlast", CYL(bore*0.065,bore*0.065,bore*0.14,10), wx, covY-headH*0.20, Z(covW*0.66), RX(PI/2),0,0);
+      if(!partAdd(B, "boot", wx, covY-headH*0.20, Z(covW*0.66), RX(PI/2),0,0, bore*0.07, bore*0.17, bore*0.07))
+        B.add("blackPlast", CYL(bore*0.065,bore*0.065,bore*0.14,10), wx, covY-headH*0.20, Z(covW*0.66), RX(PI/2),0,0);
       if(DET){
-        B.add("connGrey", BOX(bspace*0.14, bore*0.05, bore*0.10), wx-bspace*0.06, shY+bore*0.30, Z(cpZ-bore*0.04));
+        if(!partAdd(B, "plug", wx-bspace*0.06, shY+bore*0.31, Z(cpZ-bore*0.04), 0,0,0, bspace*0.15, bore*0.075, zs*bore*0.12))
+          B.add("connGrey", BOX(bspace*0.14, bore*0.05, bore*0.10), wx-bspace*0.06, shY+bore*0.30, Z(cpZ-bore*0.04));
         if(DET>=2) B.addW("wireBlk", TUBE([B.pt(wx-bspace*0.06, shY+bore*0.32, Z(cpZ-bore*0.08)), B.pt(wx-bspace*0.02, shY+bore*0.34, Z(cpZ-bore*0.13)), B.pt(wx+bspace*0.06, shY+bore*0.33, Z(cpZ-bore*0.16))], bore*0.011, 6, 4));
-        B.hw("hex", wx+bspace*0.15, shY+bore*0.035, Z(cpZ+bore*0.07), 0,0,0, bore*0.07);
+        if(mdl){ B.hw("hex", wx+bspace*0.22, shY+bore*0.118, Z(cpZ+bore*0.022), 0,0,0, bore*0.06); B.hw("hex", wx-bspace*0.22, shY+bore*0.118, Z(cpZ+bore*0.022), 0,0,0, bore*0.06); }   /* a bolt through each lug */
+        else B.hw("hex", wx+bspace*0.15, shY+bore*0.035, Z(cpZ+bore*0.07), 0,0,0, bore*0.07);
       }
     }
     if(DET) coilLoom = [B.pt(bankLen*0.45, shY+bore*0.33, Z(cpZ-bore*0.17)), B.pt(0, shY+bore*0.34, Z(cpZ-bore*0.17)), B.pt(-bankLen*0.45, shY+bore*0.33, Z(cpZ-bore*0.17))];
@@ -551,16 +558,19 @@ function buildBank(B, p, extras){
     /* coil-on-plug: a connector on every coil, pigtails into a loom along the saddle */
     for(i=0;i<per;i++){
       var ccx=-bankLen/2 + bspace*(i+0.5);
-      B.add("connGrey", BOX(bspace*0.14, bore*0.05, covW*0.10), ccx-bspace*0.03, covY+coverH*1.01+bore*0.022, Z(-covW*0.07));
+      if(!partAdd(B, "plug", ccx-bspace*0.03, covY+coverH*1.01+bore*0.03, Z(-covW*0.07), 0,0,0, bspace*0.15, bore*0.075, zs*covW*0.11))
+        B.add("connGrey", BOX(bspace*0.14, bore*0.05, covW*0.10), ccx-bspace*0.03, covY+coverH*1.01+bore*0.022, Z(-covW*0.07));
       if(DET>=2) B.addW("wireBlk", TUBE([B.pt(ccx-bspace*0.03, covY+coverH*1.01+bore*0.045, Z(-covW*0.11)), B.pt(ccx, covY+coverH*1.01+bore*0.05, Z(-covW*0.16)), B.pt(ccx+bspace*0.08, covY+coverH*1.0+bore*0.04, Z(-covW*0.19))], bore*0.011, 6, 4));
-      B.hw("hex", ccx+bspace*0.14, covY+coverH*1.01, Z(covW*0.05), 0,0,0, bore*0.06);
+      if(ENGP.parts) B.hw("hex", ccx+bspace*0.19, covY+coverH*0.785, Z(covW*0.05), 0,0,0, bore*0.06);   /* through the modelled coil's ear and bush */
+      else B.hw("hex", ccx+bspace*0.14, covY+coverH*1.01, Z(covW*0.05), 0,0,0, bore*0.06);
     }
     coilLoom = [B.pt(bankLen*0.46, covY+coverH*1.0+bore*0.04, Z(-covW*0.19)), B.pt(0, covY+coverH*1.0+bore*0.045, Z(-covW*0.19)), B.pt(-bankLen*0.46, covY+coverH*1.0+bore*0.04, Z(-covW*0.19))];
   }
   if(DET && p.head==="billet_hemi" && !DZ){
     for(i=0;i<per;i++){
       var hcx=-bankLen/2 + bspace*(i+0.5);
-      B.add("connGrey", BOX(bore*0.10, bore*0.05, bore*0.10), hcx, covY+coverH*1.56+bore*0.025, 0);
+      if(!partAdd(B, "plug", hcx, covY+coverH*1.56+bore*0.032, 0, 0,0,0, bore*0.12, bore*0.075, -zs*bore*0.12))
+        B.add("connGrey", BOX(bore*0.10, bore*0.05, bore*0.10), hcx, covY+coverH*1.56+bore*0.025, 0);
       if(DET>=2) B.addW("wireBlk", TUBE([B.pt(hcx, covY+coverH*1.56+bore*0.05, Z(bore*0.03)), B.pt(hcx+bore*0.04, covY+coverH*1.58+bore*0.04, Z(bore*0.10)), B.pt(hcx+bore*0.10, covY+coverH*1.56+bore*0.03, Z(bore*0.16))], bore*0.011, 6, 4));
     }
     for(i=0;i<per;i+=2) B.add("steel", BOX(bore*0.03, coverH*0.30, bore*0.03), -bankLen/2 + bspace*(i+1), covY+coverH*1.40, Z(bore*0.16));
