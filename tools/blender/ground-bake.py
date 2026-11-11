@@ -9,6 +9,9 @@ Each surface comes out as two seamless square pictures in tex/:
 
 The game samples them in world space (src/vis/strip.js, stripPatchSh and the bk* helpers), one tile every TILE metres.
 
+Two more are not ground at all: sf-castiron.jpg and sf-castalu.jpg (with -n) are the skin a mould leaves on cast iron and
+cast aluminium, 60 mm of each, laid over the engine's castings on Full / Ultra (heatPatchHi in src/vis/core.js).
+
 Run from the repo root:   python3.11 tools/blender/ground-bake.py [OUT_DIR] [--only asphalt] [--preview DIR]
 Needs:  python3.11 -m pip install bpy pillow numpy      (bpy 5.0 was used; Cycles on the CPU, about a minute a surface)
 --preview DIR also writes a 2x2 tiled PNG of each picture there, to check the seams by eye.
@@ -366,13 +369,73 @@ def shop(tile):
     add_mesh("bed", *binder(tile, -0.0002, paste, 0.00012, 83, n=900, mottle=0.06, pits=260, pit_r=(0.0015, 0.004), pit_d=0.0015, pit_dark=0.4))
 
 
+def band_noise(n, seed, k0, k1):
+    """Random lumps that repeat exactly every n cells: white noise with only the waves between k0 and k1 cycles per tile
+    kept (so the lumps are all about one size but fall anywhere, unlike pnoise's few sine waves, which weave). About -1..1."""
+    r = np.random.default_rng(seed)
+    f = np.fft.fft2(r.normal(size=(n, n)))
+    k = np.hypot(*np.meshgrid(np.fft.fftfreq(n) * n, np.fft.fftfreq(n) * n))
+    f *= np.exp(-((k - (k0 + k1) / 2) / ((k1 - k0) / 2)) ** 2)
+    a = np.real(np.fft.ifft2(f))
+    return a / (2.2 * a.std())
+
+
+def cast_skin(tile, seed, n, lump, lump_k, grain, pits, pit_r, pit_d, pit_dark, mottle, sand=0.0):
+    """The skin a mould leaves on a casting, as a height field: lumps on two scales (the sand's own grain pressed into
+    the metal), a fine tooth over them, round gas pits, and slow clouds in the colour. lump: lump height in metres,
+    lump_k: how many lumps across the tile (a whole number, so it repeats), sand: extra sharp grains standing proud."""
+    step = tile / n
+    u = (np.arange(n + 13) - 6) * step
+    x, y = np.meshgrid(u, u)
+    r = np.random.default_rng(seed)
+    xt, yt = x % tile, y % tile
+    rip = r.uniform(-1, 1, (n, n))
+    ix = np.round(x / step).astype(int) % n; iy = np.round(y / step).astype(int) % n
+    big = band_noise(n, seed + 1, lump_k * 0.6, lump_k * 1.5)[iy, ix]
+    h = lump * (big + 0.55 * band_noise(n, seed + 2, lump_k * 2, lump_k * 4.5)[iy, ix]) + grain * rip[iy, ix]
+    shade = 1 + 0.10 * rip[(iy + 5) % n, (ix + 9) % n] + mottle * pnoise(xt, yt, tile, seed + 3, 3, 3) + 0.10 * big
+    if sand:                                               # the odd grain of mould sand fused on: a small bright bump
+        k = int(n * n * 0.004)
+        gx, gy = r.integers(0, n, k), r.integers(0, n, k)
+        bump = np.zeros((n, n)); bump[gy, gx] = 1.0
+        bump = bump + 0.5 * (np.roll(bump, 1, 0) + np.roll(bump, -1, 0) + np.roll(bump, 1, 1) + np.roll(bump, -1, 1))
+        h += sand * bump[iy, ix]; shade *= 1 + 0.25 * bump[iy, ix]
+    px, py = r.uniform(0, tile, pits), r.uniform(0, tile, pits)
+    pr = r.uniform(pit_r[0], pit_r[1], pits)
+    dent = np.zeros_like(h)
+    for cx, cy, rr in zip(px, py, pr):
+        dx = (x - cx + tile / 2) % tile - tile / 2; dy = (y - cy + tile / 2) % tile - tile / 2
+        dent = np.maximum(dent, np.clip(1 - (dx * dx + dy * dy) / (rr * rr), 0, 1))
+    h -= pit_d * dent ** 0.6
+    shade *= 1 - pit_dark * dent
+    return x, y, h, shade
+
+
+def castiron(tile):
+    """Sand-cast grey iron, as a block or a manifold comes out of the mould: orange-peel lumps a millimetre or two
+    across, a gritty tooth, grains of sand fused on, and gas pits. 60 mm of it."""
+    x, y, h, shade = cast_skin(tile, 91, 520, 0.00016, 18, 0.000035, 70, (0.0004, 0.0011), 0.00035, 0.55, 0.05, sand=0.00012)
+    add_mesh("iron", *grid_mesh(x, y, h, np.array([0.30, 0.30, 0.31])[None, None, :] * shade[:, :, None]))
+
+
+def castalu(tile):
+    """Cast aluminium, as a head or a front cover comes out of a metal mould: a finer, shallower skin than iron, soft
+    lumps three or four millimetres across, a satin tooth and the odd pore. 60 mm of it."""
+    x, y, h, shade = cast_skin(tile, 97, 520, 0.00009, 9, 0.000018, 26, (0.0003, 0.0008), 0.00025, 0.45, 0.035)
+    add_mesh("alu", *grid_mesh(x, y, h, np.array([0.55, 0.55, 0.56])[None, None, :] * shade[:, :, None]))
+
+
 # name: (builder, tile size in metres, slope picture too?). Ground-smooth concrete is so nearly flat that its slope picture
 # is mostly JPEG noise (and 190 KB once amplified enough to beat it), so it ships colour only; so do the shop floor and the
 # grass (blades lean every way, so their slope averages out; the soft shadow in the colour carries them).
 # Keep the tile sizes and the slope flags in step with STRIP_BAKES in src/vis/strip.js (shop: MAT.concrete in src/vis/core.js).
 SURFACES = {"asphalt": (asphalt, 1.9, True), "concrete": (concrete, 2.3, False), "dirt": (dirt, 1.4, True),
             "salt": (salt, 1.6, True), "grass": (grass, 1.0, False), "shop": (shop, 2.0, False)}
-GREY = ("grass",)
+# The two cast skins are not ground: they go on the engine's castings (heatPatchHi in src/vis/core.js, Full / Ultra), sampled
+# in the engine's own space, and are written as sf-<name>.jpg. Keep their tile size in step with SF_TILE there.
+SURFACES.update({"castiron": (castiron, 0.06, True), "castalu": (castalu, 0.06, True)})
+METAL = ("castiron", "castalu")
+GREY = ("grass",) + METAL
 
 
 # ---------- render and pack ----------
@@ -414,9 +477,10 @@ def bake(name):
     n /= np.maximum(np.linalg.norm(n, axis=2, keepdims=True), 1e-6)
     n8 = np.clip(n * 0.5 + 0.5, 0, 1)
     os.makedirs(OUT, exist_ok=True)
-    Image.fromarray((c8 * 255 + 0.5).astype(np.uint8)).save(os.path.join(OUT, "gr-%s.jpg" % name), quality=80, subsampling=2, optimize=True)
+    pre = "sf" if name in METAL else "gr"
+    Image.fromarray((c8 * 255 + 0.5).astype(np.uint8)).save(os.path.join(OUT, "%s-%s.jpg" % (pre, name)), quality=80, subsampling=2, optimize=True)
     if slope:
-        Image.fromarray((n8 * 255 + 0.5).astype(np.uint8)).save(os.path.join(OUT, "gr-%s-n.jpg" % name), quality=82, subsampling=0, optimize=True)
+        Image.fromarray((n8 * 255 + 0.5).astype(np.uint8)).save(os.path.join(OUT, "%s-%s-n.jpg" % (pre, name)), quality=82, subsampling=0, optimize=True)
     print("[ground-bake] %s: tile %.2f m, detail x%.2f..x%.2f (5th..95th), mean slope %.3f" % (
         name, tile, np.percentile(lum, 5), np.percentile(lum, 95), np.abs(n[:, :, :2]).mean()))
     if PREVIEW:
