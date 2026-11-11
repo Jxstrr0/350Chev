@@ -387,14 +387,17 @@ function loop(now){
   if(PITS.on && PITS.built && !TD.on){ pitsRender(dt); return; }   /* race night: the pits between rounds */
   idleMs = (capMs && !garageLive() && !camState.dragging) ? 1000/30 : 0;   /* phones: engine off, nothing but the slow orbit moving and a cap set: the garage draws at ~30 fps */
   garageShadowGate(now);   /* every tier: the key light's shadow map is redrawn only when a caster, the light or the tier changed (or once a second) */
-  ultraFloor();   /* Ultra: the sealed floor's mirror pass (and the stock floor back when the tier drops) */
+  var sv=ultraSaver(now), ao=composer&&composer.aoPass;   /* Ultra: which of the two extra passes can keep last draw's result */
+  ultraFloor(!!(sv&1));   /* Ultra: the sealed floor's mirror pass (and the stock floor back when the tier drops) */
+  if(ao) ao.reuse=!!(sv&2);
   if(GFX!=="lite"&&composer) composer.render(); else renderer.render(scene, camera);
+  if(ao) ao.reuse=false;   /* photo, resize and every other draw path get the full passes */
   renderer.shadowMap.autoUpdate=true;   /* photo, resize and every other draw path see the stock behaviour */
 }
 /* Garage shadow gate, every tier (Ultra's 4096 map was the first reason; a phone's 1024 map is the same share of its frame). The map costs ~a quarter of the frame's draws and nearly all of its fill, yet a still room never changes it.
    Fingerprint every visible shadow caster (world matrix, instance matrices, geometry, draw range) plus the light and tier; on any change
    redraw for a few frames, and always while the engine runs, a part build/teardown is in flight, or an effect is live. Safety net: once a second. */
-var _gs={sig:"", hold:0, t:-1e9, a:0, b:0, n:0};
+var _gs={sig:"", hold:0, t:-1e9, a:0, b:0, n:0, f:0};
 function gsCaster(o){
   if(!o.castShadow) return;
   var e=o.matrixWorld.elements, g=o.geometry, k=++_gs.n, v=e[12]*1.31+e[13]*1.73+e[14]*2.11+e[0]*0.37+e[5]*0.53+e[10]*0.71+e[1]*0.19+e[4]*0.29+e[8]*0.43;
@@ -413,9 +416,53 @@ function garageShadowGate(now){
   if(sig!==_gs.sig){ _gs.sig=sig; _gs.hold=4; }
   var live = garageLive();
   var draw = live || _gs.hold>0 || now-_gs.t>=1000 || now<_gs.t;
+  if(draw && live && USAVE.half && ULT() && run.on && !run.fail && ((++_gs.f)&1)) draw=false;   /* frame saver holding the rate: a running engine's shadows every second draw */
   if(_gs.hold>0) _gs.hold--;
   if(draw) _gs.t=now;
   sm.autoUpdate=draw;
+}
+/* Ultra frame saver (garage). Ultra draws the room three times a frame: the picture, the floor's mirror image, and a normal/depth
+   copy for the contact shading. Two ways to skip the two extra ones without changing the picture you get:
+   - still view (camera has not moved, nothing running, no part changed): both extra passes would come out the same, so last draw's are
+     kept; the mirror is redrawn four times a second and the shading once a second in case a colour or a light changed.
+   - governor (on unless Settings turns it off): the frame rate is watched, and while it sits under the target (the cap, else 60) the
+     two passes take turns, one per draw, and a running engine's shadow map is redrawn every second draw. It goes back to full when
+     the rate has held for a while, and waits longer each time full quality turns out too slow again. */
+var USAVE={on:true, half:false, low:0, back:8000, tHalf:0, tFull:-1e9, seen:null, skip:false, n:0, cam:new Float64Array(32), key:"", ao:null, tM:-1e9, tA:-1e9, okM:false, okA:false};
+var _usV=new THREE.Vector2();
+function ultraSaver(now){
+  var U=USAVE, ao=composer&&composer.aoPass;
+  if(!ULT() || !ao || XRAY || !garageRoot.visible){ U.okM=U.okA=false; U.half=false; U.low=0; return 0; }
+  var ds=renderer.getDrawingBufferSize(_usV), key=ds.x+"x"+ds.y;
+  if(key!==U.key || ao!==U.ao){ U.key=key; U.ao=ao; U.okM=U.okA=false; }
+  camera.updateMatrixWorld();
+  var e=camera.matrixWorld.elements, p=camera.projectionMatrix.elements, c=U.cam, same=true, i;
+  for(i=0;i<16;i++){ if(c[i]!==e[i] || c[16+i]!==p[i]) same=false; c[i]=e[i]; c[16+i]=p[i]; }
+  var still = same && _gs.hold<=0 && !camState.dragging && !garageLive();
+  if(still || idleMs>0) U.skip=true;   /* a cheap or slowed stretch says nothing about what a full frame costs */
+  ultraGov(now);
+  var m=false, a=false;   /* true = keep last draw's */
+  if(still){ m = now>=U.tM && now-U.tM<250; a = now>=U.tA && now-U.tA<1000; }
+  else if(U.half){ if((++U.n)&1) m=true; else a=true; }
+  if(!U.okM) m=false;
+  if(!U.okA) a=false;
+  if(!m){ U.tM=now; U.okM=true; }
+  if(!a){ U.tA=now; U.okA=true; }
+  return (m?1:0)|(a?2:0);
+}
+function ultraGov(now){
+  var U=USAVE;
+  if(fpsStat===U.seen) return;
+  U.seen=fpsStat; var skip=U.skip; U.skip=false;
+  if(!U.on){ U.half=false; U.low=0; return; }
+  var f=fpsStat.fps, tgt=capMs?1000/capMs:60;
+  if(skip || !f) return;
+  if(!U.half){
+    if(f<tgt*0.9){ if(++U.low>=3){ U.half=true; U.low=0; U.tHalf=now; if(now-U.tFull<6000) U.back=Math.min(U.back*2, 64000); } }   /* 1.5 s under target */
+    else { U.low=0; if(now-U.tFull>12000) U.back=8000; }
+  }
+  else if(f<tgt*0.96) U.tHalf=now;   /* still short of the target: no point trying full */
+  else if(now-U.tHalf>U.back){ U.half=false; U.tFull=now; }   /* held the target for a while: try full again */
 }
 
 /* ===========================================================================
