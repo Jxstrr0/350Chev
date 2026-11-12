@@ -13,7 +13,7 @@ function fail(s){if(bad)return;bad=1;b.classList.add("err");m.textContent=s;rl.h
 /* Reload: if a newer worker is installed and waiting (it may carry the fix for whatever broke), let it take over first */
 rl.onclick=function(){var go=function(){location.reload();},sw=navigator.serviceWorker;if(!sw||!sw.getRegistration)return go();
  sw.getRegistration().then(function(r){if(!r||!r.waiting)return go();sw.addEventListener("controllerchange",go);r.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(go,3000);},go);};
-window.addEventListener("error",function(e){if(fin)return;var t=e.target;if(t&&t.tagName==="SCRIPT")fail("Couldn't load "+(/three/.test(t.src)?"the 3D library":"a game library")+". Check your connection and reload.");else if(e.message)fail("Something went wrong while loading. Reload to try again.");},true);
+window.addEventListener("error",function(e){if(fin)return;var t=e.target;if(t&&t.tagName==="SCRIPT"&&!t.hasAttribute("data-cf-beacon"))fail("Couldn't load "+(/three/.test(t.src)?"the 3D library":"a game library")+". Check your connection and reload.");else if(e.message)fail("Something went wrong while loading. Reload to try again.");},true);
 setTimeout(function(){if(!fin&&!bad)m.textContent="Still loading… slow connection?";},9000);
 })();</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23029,7 +23029,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.135.3";
+const VERSION="1.76.135.4";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
