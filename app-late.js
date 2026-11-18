@@ -1,4 +1,4 @@
-/*pew-late 1.76.140.0*/
+/*pew-late 1.76.141.0*/
 /* ===== DRAG RUN: the pass itself (app-late.js, since 1.76.140.0) =====
    Moved out of app/drag.js so a first visit downloads less: the pass (dragStart, the burnout › stage › launch button, the tree, the
    auto driver, nitrous, the finish), the race and bracket nights as they are run (rnRace, rnAfterPass, rnLeave…), the strip HUD and
@@ -407,6 +407,606 @@ async function shareSlip(l){try{await document.fonts.ready;}catch(e){}const c=sl
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="timing-slip.png";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
 /* drag button: see dragPress / dragRelease above */
 
+/* ---- truck pull: the pull as it is run (app-late.js, since 1.76.141.0): start, the hold button and kill switch, live card, finish.
+   The setup screen, nights, series, records and the verdict are in app/pull.js ---- */
+function pullRunBtn(){if(testing)return;const b=$("runTest");if(PO)b.textContent="Hook up · PULL-OFF · sled +15%";else if(pullFmt()==="series"){const s=pullSerPeek(S.env.pullCls);b.textContent=b.textContent.replace("truck pull",`series round ${s.round+1} of ${PULL_SER_N}`);}}
+function pullBtnText(t,sub){const b=$("pullBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+function pullBreak(kind){PR.failed=true;PR.failKind=kind;if(kind==="driveline"&&PR.p&&PR.p.st&&PR.p.st.dtMsg)toast(PR.p.st.dtMsg.toUpperCase()+" · the engine is fine");run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");failFlash();}
+function pullStart(){
+  $("app").classList.add("onstrip");
+  const k=pullEnvFix(),env=stdEnv(wxEnv("pull_sled"));const res=SIM.dragPrep(S.cfg,env);
+  const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
+  const snap=testSnap(),hk=hKey(snap.h),veh=pullVeh(k),fseed=PO?PO.fseed:pullSeed(k);if(career()&&!PO&&pullFmt()==="night")(C().pullWk=C().pullWk||{})[k]=C().week;veh.seed=career()?(fseed+7919*(C().pullHooks=(C().pullHooks||0)+1))>>>0:Math.floor(Math.random()*1e9);
+  if(wi&&wi.w>=1)veh.wornAt=2+Math.random()*4;
+  const ev=PO?{fmt:PO.fmt,field:PO.field,track:poTrack(),draw:null,n:PO.field.length+1}:pullEvent(k,fseed,true);
+  if(ev.track)veh.track=ev.track;if(PO)veh.sledK=1.15;   // the night's dirt; the pull-off sled
+  const ra=SIM.pullRunaway?SIM.pullRunaway(res,snap.cfg,wi?wi.w:0):{p:0};if(ra.p>0)veh.runaway={p:ra.p};if(window.PULL_FORCE_RA===false)delete veh.runaway;else if(window.PULL_FORCE_RA!=null)veh.runaway={p:1,at:+window.PULL_FORCE_RA};   // PULL_FORCE_RA: test hook — seconds of load, or false for never
+  const p=SIM.pullRun(res,veh),field=ev.field;
+  PR={p,res,env,veh,k,hk,field,fseed,snap,ev,fmt:ev.fmt,po:!!PO,trk:ev.track,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,lead:Math.max(...field.map(f=>f.ft)),kind:SIM.PULL_CLASSES[k].veh.kind};
+  if(S.env.pullDrive==="auto"){PR.auto=true;PR.drv=SIM.pullDriver(veh.seed);PR.goAt=performance.now()+900;}   // the auto driver: its own seeded foot and hand, a beat on the hook before it goes
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("pullCtl").style.display="";$("pullBtn").dataset.k="";if(PR.auto)pullBtnText("AUTO","hooked up — tap to drive it yourself");else pullBtnText("HOLD TO PULL","let go to ease off — keep the slip in the green");$("pullBtn").disabled=false;
+  $("testProg").classList.remove("done");sfx("start");pullHud(p.st);
+  // the button and the card have to be under the thumb: bring them up above the tab bar
+  scrollCtlIntoView("pullCtl");
+  const step=()=>{if(!PR||PR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-PR.last)/1000);PR.last=now;
+    let st=p.st;
+    if(!PR.auto)st=p.step(dt,PR.down&&!PR.failed?1:0);
+    else if(st.phase==="stage"&&now<PR.goAt)st=p.step(dt,0);
+    else{let left=dt;while(left>1e-9&&!st.done&&PR.auto){const h=Math.min(0.02,left);left-=h;if(PR.drv.kill(st))pullKill();st=p.step(h,PR.failed?0:PR.drv.foot(st));}   // the auto driver reads the truck every 20 ms
+      if(left>1e-9&&!st.done)st=p.step(left,PR.down&&!PR.failed?1:0);}   // taken over part way through the frame
+    if(st.broke&&!PR.failed)pullBreak(st.broke);
+    if(st.raOn&&!PR.raSeen&&!st.killed&&!st.done&&!PR.failed){PR.raSeen=true;sfx("runaway");buzz([120,60,120,60,120]);
+      pullHud(st,true);const pn=$("panel"),kb=$("killBtn").getBoundingClientRect(),pr=pn.getBoundingClientRect(),bot=Math.min(pr.bottom,tabsTop())-8;if(kb.bottom>bot||kb.top<pr.top)pn.scrollTop+=kb.bottom>bot?kb.bottom-bot:kb.top-pr.top-4;}   // the kill switch has to be under the thumb now
+    if(st.done&&PR.doneAt==null){PR.doneAt=now;if(st.full&&!PR.failed){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:true,phase:st.phase,x:st.x,v:st.v,boxFrac:st.boxFrac,slip:st.slip,hop:st.hop,smoke:st.smoke||0,rpm:PR.failed||PR.killed?run.rpm:st.rpm,vehicle:PR.kind,full:st.full,night:!!S.night,cls:k,distFt:st.x*3.28084,
+      dt,throttle:st.foot,boost:st.boost,sweet:st.sweet,failed:PR.failed,failKind:PR.failed?run.failKind:null,hitch:veh.hitch,ballast:veh.ballast,tyre:veh.tyre,hp:PR.res&&PR.res.peakHp||0,track:PR.trk||undefined,runaway:st.raOn&&!st.killed&&!PR.failed?Math.max(0.2,st.ra):0,killed:!!st.killed});
+    pullHud(st);
+    run.on=true;
+    if(PR.failed||PR.killed)run.rpm=Math.max(0,run.rpm-380);else if(st.done)run.rpm+=(veh.idle-run.rpm)*Math.min(1,dt*3);else run.rpm=st.rpm;
+    run.load=PR.failed||st.done?0:st.foot;
+    $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*st.x/SIM.PULL_FULL)+"%";
+    const hold=st.full?2600:1800;
+    if(!st.done||(now-PR.doneAt<hold&&!PR.skip)||(PR.failed&&run.rpm>0&&!PR.skip))requestAnimationFrame(step);else pullFinish();};
+  requestAnimationFrame(step);
+}
+/* the live card: distance first, then the two things the driver's foot is managing — slip and the box */
+function pullHud(st,force){if(!PR||!hudDue(PR,st,force))return;const ft=st.x*3.28084,sw=st.sweet,lo=Math.round(sw[0]*100),hi=Math.round(sw[1]*100),sp=Math.round(st.slip*100);
+  const stat=PR.failed?"broke":st.full?"full":"";
+  const say=PR.failed?(PR.failKind==="runaway"?"GRENADED":"BROKE"):st.killed?(st.done?"killed":"KILLED — rolling"):st.raOn?"RUNAWAY":st.full?"FULL PULL":st.done?(st.stopWhy==="spun"?"spun out":st.stopWhy==="lifted"?"lifted":"stopped"):st.phase==="stage"?"hooked to the sled":Math.round(st.v*2.237)+" mph";
+  const marks=PR.field.map(f=>`<i class="mk${f.ft===PR.lead?" lead":""}" style="left:${Math.min(99.5,f.ft/3)}%"></i>`).join("");
+  const bT=PR.res.boostTarget||0;
+  const raOn=st.raOn&&!st.killed&&!st.done&&!PR.failed,rl=PR.veh.redline;
+  $("pullLive").innerHTML=`${PR.po?`<div class="ph pobanner"><b>PULL-OFF</b>the sled is heavier — +15% on the box</div>`:""}${raOn?`<div class="ph rawarn"><div class="ph-lbl" style="margin-top:0"><span><b>RUNAWAY</b> · ${Math.round(st.rpm/10)*10} rpm</span><span>redline ${rl}</span></div><div class="ph-bar"><i class="fill ra" style="width:${Math.min(100,Math.round(100*(st.rpm-rl*0.8)/(rl*0.75)))}%"></i><i class="mk lead" style="left:${Math.round(100*0.2/0.75)}%"></i></div><div class="ph-lbl"><span>pedal does nothing — hit KILL${document.documentElement.classList.contains("desk")?" (K)":""}</span><span><b>${Math.max(0,st.raWin-st.raT).toFixed(1)} s</b></span></div></div>`:""}<div class="ph"><div class="ph-top ${stat}"><b>${ft.toFixed(1)}<i>ft</i></b><span>${say}${st.phase!=="stage"&&!st.done?"<br>"+st.t.toFixed(1)+" s":""}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${Math.min(100,ft/3)}%"></i>${marks}</div><div class="ph-lbl"><span>0</span><span>leader <b>${PR.lead>=300?"FULL":PR.lead.toFixed(1)+" ft"}</b></span><span>300 ft</span></div>${PR.trk?`<div class="ph-lbl"><span>Track <b>${pullTrkName(PR.trk)}</b></span><span>${PR.po?"re-worked":"draw "+ordN((PR.ev.draw||0)+1)+" of "+PR.ev.n}</span></div>`:""}</div>
+    <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>Wheel slip <b>${sp}%</b></span><span>sweet ${lo}–${hi}%</span></div>
+    <div class="ph-bar"><i class="sw" style="left:${lo}%;width:${hi-lo}%"></i><i class="nd ${st.slip>sw[1]+0.1?"hot":st.slip>=sw[0]&&st.slip<=sw[1]+0.02?"ok":""}" style="left:${Math.min(99,sp)}%"></i>${PR.auto?`<i class="pd" style="width:${Math.round(st.foot*100)}%"></i>`:""}</div>${PR.auto?`<div class="ph-lbl"><span>Auto · pedal <b>${Math.round(st.foot*100)}%</b></span><span>${st.raOn&&!st.killed&&!st.done?"going for KILL":st.done?"":st.slip>sw[1]+0.03?"backing off":st.slip<sw[0]?"leaning in":"holding it"}</span></div>`:""}
+    <div class="ph-lbl"><span>Sled box <b>${Math.round(st.boxFrac*100)}%</b> to the pan</span><span>${st.hop>0.3?`<b style="color:var(--warn)">HOPPING</b>`:st.lift>0.85?`<b style="color:var(--warn)">front light</b>`:""}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${Math.round(st.boxFrac*100)}%"></i></div></div>
+    <div class="ph-row"><div class="peak"><b>${Math.round(st.rpm/10)*10}</b><span>rpm</span></div><div class="peak"><b>${bT>0?bv(st.boost):"—"}<i>${bT>0?pU():""}</i></b><span>boost</span></div><div class="peak"><b style="color:${st.egt>900?"var(--crit)":st.egt>780?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>EGT</span></div></div>`;
+  const kb=$("killBtn");if(kb.style.display!==(raOn?"":"none"))kb.style.display=raOn?"":"none";
+  if(PR.failed)pullBtnText(PR.failKind==="runaway"?"GRENADED · DQ":PR.failKind==="turbo"?"TURBO GONE":PR.failKind==="piston"?"MELTED A PISTON":"BROKE","tap to skip");
+  else if(st.killed)pullBtnText(st.done?`KILLED · ${ft.toFixed(1)} FT`:"KILLED","good kill — tap to skip");
+  else if(raOn)pullBtnText("RUNAWAY","the pedal does nothing — hit the kill switch");
+  else if(st.done)pullBtnText(st.full?"FULL PULL!":`${ft.toFixed(1)} FT`,"tap to skip");
+  else if(PR.auto)pullBtnText("AUTO",st.phase==="stage"?"hooked up — tap to drive it yourself":"auto driver on it — tap to take over");
+  else if(st.phase==="stage")pullBtnText("HOLD TO PULL","let go to ease off — keep the slip in the green");
+  else if(PR.down)pullBtnText(st.slip>sw[1]+0.1?"SPINNING — EASE OFF":"ON IT",st.slip>sw[1]+0.1?"let go a moment, then back on":"hold the slip in the green");
+  else pullBtnText("EASED OFF","hold to get back on it");}
+function pullPress(){if(!PR||PR.finished)return;const st=PR.p.st;if(st.done||PR.failed){pullSkip();return;}if(PR.auto){PR.auto=false;PR.took=st.phase==="stage"?0:st.x*3.28084;toast(st.raOn&&!st.killed?"You have it — hit KILL":"You have it — hold to pull");}PR.down=true;if(st.phase==="stage")buzz([20]);}
+function pullRelease(){if(!PR)return;PR.down=false;}
+/* the kill switch: only live while it is running away. Air and fuel off — the truck rolls to a stop and is scored there */
+function pullKill(){if(!PR||PR.finished||!PR.p)return false;const st=PR.p.st;if(!st.raOn||st.killed||st.done||PR.failed||!PR.p.kill())return false;
+  PR.killed=true;run.rpm=0;run.load=0;sfx("kill");buzz([90]);screenFlash("rgba(240,236,226,.3)",160);pullHud(st,true);return true;}
+function pullRedraw(){const l=lastForChart();if(S.env.testType==="pull_sled"&&l&&l.pull)drawPullTrace(l.pull);}
+function pullSkip(){if(!PR||PR.finished)return;if(ENGINE_VIS.pullSkip)ENGINE_VIS.pullSkip();PR.skip=true;}
+function pullFinish(){
+  if(!PR||PR.finished)return;PR.finished=true;const {p,res,env,k,snap}=PR;const r=p.result();if(PR.drv)r.auto=PR.took!=null?{took:Math.round(PR.took*10)/10}:{};const failed=PR.failed;const C0=SIM.PULL_CLASSES[k];const same=testSame(snap);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});$("app").classList.remove("onstrip");}},2200);
+  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("pullCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  // a full pull against other full pulls goes to a pull-off: the same truck on a sled set 15% heavier — and the player drives it
+  const isPO=!!PR.po,P0=PO,fulls=PR.field.filter(f=>f.full);
+  if(!isPO&&r.full&&!failed&&fulls.length){const rr=pullRand(PR.fseed+99);fulls.forEach(f=>{f.po=Math.round((232+rr()*58)*10)/10;});
+    PO={k,r1:r,res,env,field:PR.field,fseed:PR.fseed,ev:PR.ev,fmt:PR.fmt,veh:PR.veh,hash:PR.snap.h,snap:PR.snap,hk:PR.hk,n:fulls.length};}
+  else if(isPO)PO=null;
+  const ctx={k,res,env,field:isPO?P0.field:PR.field,isPO,first:isPO?P0.r1:r,po:isPO?(failed?0:r.distFt):null,failed,failKind:PR.failKind,fmt:PR.fmt,ev:PR.ev,veh:PR.veh,fseed:PR.fseed,pending:!!PO&&!isPO,snap:PR.snap,hk:PR.hk};
+  if(typeof crowdAfter==="function")crowdAfter("pull",{broke:failed,full:r.full&&!failed});   // app/ambience.js
+  PR.p=null;pullSettle(r,ctx);
+}
+$("killBtn").addEventListener("pointerdown",e=>{e.preventDefault();pullKill();});
+$("killBtn").addEventListener("click",()=>pullKill());
+(()=>{const b=$("pullBtn");
+  holdBtn(b,()=>PR,pullPress,pullRelease,r=>{if(!r.p)return;if(r.p.st.done||r.failed)pullSkip();});})();
+/* ---- mud bog: the run itself (app-late.js, since 1.76.141.0): start, the hold button, live card, finish. The setup screen, nights, records and the verdict are in app/bog.js ---- */
+function bogBtnText(t,sub){const b=$("bogBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+function bogBreak(kind){BR.failed=true;BR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":"rod");failFlash();}
+function bogStart(){
+  $("app").classList.add("onstrip");
+  const k=bogEnvFix(),env=stdEnv();const res=SIM.bogPrep(S.cfg,env);
+  const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
+  const snap=testSnap(),hk=hKey(snap.h),veh=bogVeh(k),seed=bogSeed(k),night=bogNight(seed),field=bogField(k,seed);
+  if(career())(C().bogWk=C().bogWk||{})[k]=C().week;
+  veh.seed=career()?(seed+7919*(C().bogRuns=(C().bogRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);veh.night=night;if(wi&&wi.w>=1)veh.wornAt=1.5+Math.random()*4;
+  const p=SIM.bogRun(res,veh),C0=SIM.BOG_CLASSES[k],pitK=C0.veh.pitK||1;
+  const lead=field.slice().sort(bogCmp)[0];
+  BR={p,res,env,veh,k,hk,snap,seed,night,field,lead,pitK,pit:{seed:night.seed,len:night.len,cons:night.cons,depth:night.depth,hz:night.hz,pitK},auto:S.env.bogDrive==="auto",last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,slaps:0,hz:0,slapT:0,color:BOG_COLORS[k]};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("bogCtl").style.display="";$("bogBtn").dataset.k="";$("bogBtn").disabled=false;
+  bogBtnText(BR.auto?"START THE RUN":"HOLD TO DRIVE",BR.auto?"the driver takes it from here":"hold for throttle · let go to feather the wheelspin");
+  $("testProg").classList.remove("done");sfx("start");bogHud(p.st);
+  scrollCtlIntoView("bogCtl");
+  const step=()=>{if(!BR||BR.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-BR.last)/1000);BR.last=now;const st=p.st;
+    let left=dt;while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,bogThr(st));}
+    if(st.broke&&!BR.failed)bogBreak(st.broke);
+    if(st.done&&BR.doneAt==null){BR.doneAt=now;if(st.cleared&&!BR.failed){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
+    // mud slaps: the pit entry, a ridge, a rut, a landing — and the wheels throwing it while they spin
+    let slap=0;if(st.phase==="pit"&&BR.ph!=="pit")slap=1;if(st.hzHit.length>BR.hz){BR.hz=st.hzHit.length;slap=Math.max(slap,0.8);}if(st.slaps>BR.slaps){BR.slaps=st.slaps;slap=Math.max(slap,0.9);}
+    if(slap&&typeof foley==="function")foley("mud",{gain:0.6+0.4*slap});   // the recording on the big moments, rate-limited in app/foley.js
+    if(slap)sfx("mudslap");else if(st.phase==="pit"&&!st.done&&st.slip>0.2&&now-BR.slapT>Math.max(140,520-600*st.slip)){BR.slapT=now;sfx("mudslap");}
+    BR.ph=st.phase;
+    const x=Math.max(-50,st.x),dF=SIM.bogDepth(BR.night,x)*BR.pitK,dR=SIM.bogDepth(BR.night,x-3.6)*BR.pitK;
+    if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:true,phase:st.phase,x:st.x,v:st.v,wspd:st.w*SIM.BOG_CLASSES[k].veh.tyreDia*0.0254/2,slip:st.slip,sink:st.sink,y:st.y,vy:st.vy,dFront:dF,dRear:dR,rpm:BR.failed?run.rpm:st.rpm,throttle:st.foot,
+      smoke:BR.res.diesel?Math.min(1,(BR.res.smoke||0)/60):0.1,cls:k,tyre:veh.tyre,color:BR.color,night:!!S.night,len:BR.night.len,cons:BR.night.cons,pit:BR.pit,mudKg:st.mudKg,pack:st.pack,slap,cleared:st.cleared,failed:BR.failed,belly:st.belly,dig:st.dig,why:st.stopWhy,rw:SIM.BOG_CLASSES[k].veh.tyreDia*0.0254/2,dt});
+    bogHud(st);
+    run.on=true;
+    if(BR.failed)run.rpm=Math.max(0,run.rpm-380);else if(st.done||st.stalled)run.rpm=st.stalled?Math.max(0,run.rpm-260):run.rpm+(veh.idle-run.rpm)*Math.min(1,dt*3);else run.rpm=st.rpm;
+    run.load=BR.failed||st.done?0:st.foot;
+    $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*Math.max(0,st.x)/BR.night.len)+"%";
+    const hold=st.cleared?2400:1800;
+    if(!st.done||(now-BR.doneAt<hold&&!BR.skip)||(BR.failed&&run.rpm>0&&!BR.skip))requestAnimationFrame(step);else bogFinish();};
+  requestAnimationFrame(step);
+}
+/* the driver's foot: yours (the button), or the auto driver every 20 ms */
+function bogThr(st){if(!BR.auto)return BR.down&&!BR.failed?1:0;if(st.phase==="stage")return BR.go?1:0;return BR.failed?0:BR.p.auto(1);}
+/* the live card: distance (or the clock once through), the pit with the field on it, then the two things the foot manages — wheel speed and rpm */
+function bogHud(st,force){if(!BR||!hudDue(BR,st,force))return;const L=BR.night.len,x=Math.max(0,st.x),pc=v=>Math.min(100,100*v/L);
+  const stat=BR.failed?"broke":st.cleared?"full":"";
+  const say=BR.failed?"BROKE":st.cleared?"THROUGH!":st.done?({stalled:"stalled",highcentre:"high-centred",dug:"dug in",bogged:"bogged down",packed:"packed up",lifted:"lifted"}[st.stopWhy]||"stuck"):st.phase==="stage"?"at the line":st.phase==="runup"?`${Math.round(-st.x)} m to the mud`:Math.round(st.v*2.237)+" mph";
+  const pitT=st.tPit!=null?(st.cleared?st.tOut:st.t)-st.tPit:0,big=st.cleared?`${pitT.toFixed(2)}<i>s</i>`:`${x.toFixed(1)}<i>m</i>`;
+  const marks=BR.field.map(f=>`<i class="mk${f===BR.lead?" lead":""}" style="left:${Math.min(99.5,pc(f.cleared?L:f.m))}%"></i>`).join("");
+  const sw=st.sweet,sp=Math.round(st.slip*100),dg=Math.round(BR.p.digS*100),band=st.bogBand,rl=BR.veh.redline,rpmP=Math.min(100,Math.round(100*st.rpm/(rl*1.05))),bandP=Math.round(100*band[1]/(rl*1.05));
+  const d=st.phase==="pit"?st.depth:0,lead=BR.lead;
+  $("bogLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${say}${st.phase==="pit"&&!st.done?"<br>"+pitT.toFixed(1)+" s in the mud":""}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${pc(x)}%"></i>${marks}</div><div class="ph-lbl"><span>0</span><span>leader <b>${lead?bogScore(lead):"—"}</b></span><span>${L} m</span></div>
+    <div class="ph-lbl"><span>Mud <b>${esc(BR.night.name)}</b></span><span>${st.phase==="pit"?`depth <b>${Math.round(d*100)} cm</b>`:`${SIM.BOG_CLASSES[BR.k].n}`}</span></div></div>
+    <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>Wheelspin <b>${sp}%</b></span><span>${st.pack>0.5?`<b style="color:var(--warn)">LUGS PACKED</b>`:st.dig>0.4?`<b style="color:var(--crit)">DIGGING</b>`:st.belly>0.3?`<b style="color:var(--crit)">ON THE FRAME</b>`:st.air?`<b style="color:var(--info)">AIRBORNE</b>`:`dig past ${dg}%`}</span></div>
+    <div class="ph-bar"><i class="sw" style="left:${Math.round(sw[0]*100)}%;width:${Math.round((sw[1]-sw[0])*100)}%"></i><i class="mk" style="left:${dg}%"></i><i class="nd ${st.slip>BR.p.digS?"hot":st.slip>=sw[0]&&st.slip<=sw[1]+0.06?"ok":""}" style="left:${Math.min(99,sp)}%"></i></div>
+    <div class="ph-lbl"><span>rpm <b style="color:${st.phase==="pit"&&st.rpm<band[1]?"var(--crit)":""}">${Math.round(st.rpm/10)*10}</b></span><span>${st.stalled?`<b style="color:var(--crit)">STALLED</b>`:st.phase==="pit"&&st.rpm<band[1]?`<b style="color:var(--warn)">BOGGING</b>`:`bog under ${band[1].toLocaleString()}`}</span></div>
+    <div class="ph-bar"><i class="zone" style="left:0;width:${bandP}%"></i><i class="fill" style="width:${rpmP}%"></i></div></div>
+    <div class="ph-row"><div class="peak"><b>${Math.round(st.v*2.237)}</b><span>mph</span></div><div class="peak"><b style="color:${st.cool>118?"var(--crit)":st.cool>108?"var(--warn)":""}">${Math.round(st.cool)}<i>°C</i></b><span>water</span></div><div class="peak"><b style="color:${st.egt>900?"var(--crit)":st.egt>800?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>EGT</span></div></div>`;
+  if(BR.failed)bogBtnText(BR.failKind==="head_lift"?"COOKED IT":BR.failKind==="turbo"?"TURBO GONE":BR.failKind==="piston"||BR.failKind==="crown_temp"?"MELTED A PISTON":"GRENADED","tap to skip");
+  else if(st.done)bogBtnText(st.cleared?`THROUGH · ${pitT.toFixed(2)} S`:`${x.toFixed(1)} M`,"tap to skip");
+  else if(BR.auto)bogBtnText(st.phase==="stage"?"START THE RUN":"AUTO DRIVER",st.phase==="stage"?"the driver takes it from here":"tap to skip to the result");
+  else if(st.phase==="stage")bogBtnText("HOLD TO DRIVE","hold for throttle · let go to feather the wheelspin");
+  else if(BR.down)bogBtnText(st.phase==="runup"?"BUILD SPEED":st.slip>BR.p.digS?"DIGGING — FEATHER":st.rpm<band[1]?"BOGGING — STAY IN IT":"IN THE MUD",st.phase==="runup"?"momentum is free":st.slip>BR.p.digS?"let go a moment, then back on":"keep the wheels turning");
+  else bogBtnText("FEATHERED","hold to get back on it");}
+function bogPress(){if(!BR||BR.finished)return;const st=BR.p.st;if(st.done||BR.failed){bogSkip();return;}
+  if(BR.auto){if(st.phase==="stage"){BR.go=true;buzz([20]);}else bogSkip();return;}
+  BR.down=true;if(st.phase==="stage")buzz([20]);}
+function bogRelease(){if(!BR)return;BR.down=false;}
+/* skip: the rest of the run is driven at once (the auto driver's foot, or yours held where it was) */
+function bogSkip(){if(!BR||BR.finished)return;const p=BR.p,st=p.st;if(st.phase==="stage"&&!BR.auto)return;
+  if(!st.done){let n=0;while(!st.done&&n++<20000)p.step(0.02,BR.auto?p.auto(1):BR.down?1:p.auto(1));if(st.broke&&!BR.failed)bogBreak(st.broke);}
+  if(ENGINE_VIS.bogSkip)ENGINE_VIS.bogSkip();BR.skip=true;if(BR.doneAt==null)BR.doneAt=performance.now()-2000;}
+function bogFinish(){
+  if(!BR||BR.finished)return;BR.finished=true;const {p,res,env,k,snap,hk}=BR;const r=p.result();const failed=BR.failed,C0=SIM.BOG_CLASSES[k];const same=testSame(snap);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});$("app").classList.remove("onstrip");}},2200);
+  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("bogCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const me={n:engineName().slice(0,26),me:true,cleared:r.cleared&&!failed,t:r.pitT,m:r.distM,broke:failed};
+  const rows=BR.field.map(f=>Object.assign({},f)).concat([me]).sort(bogCmp);
+  r.field=rows;r.place=rows.indexOf(me)+1;r.of=rows.length;r.clsName=C0.n;r.tier=C0.tier;r.auto=BR.auto;r.cleared=me.cleared;
+  if(failed){r.broke=r.broke||BR.failKind;r.failKind=r.failKind||BR.failKind;}
+  if(same)bogPb(r,failed);
+  if(typeof crowdAfter==="function")crowdAfter("bog",{broke:failed,cleared:r.cleared});   // app/ambience.js
+  res.bog=r;res.bogFailed=failed;res.bogFailKind=failed?BR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  const pl=ordN(r.place)+" of "+r.of,sc=r.cleared?`THROUGH · ${r.pitT.toFixed(2)} s`:`${r.distM.toFixed(1)} m`;
+  if(career()&&same){addWear(0.5+Math.min(1,r.time/25)*0.5+(r.coolPeak>115?0.4:0),hk);
+    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Mud bog: ${C0.n} — ${r.broke==="head_lift"?"cooked it":r.broke==="turbo"?"turbo let go":"grenaded"} ${r.distM.toFixed(0)} m into the pit`,"bad");toast(`GRENADED IN THE MUD · ${r.distM.toFixed(0)} m`);}
+    else{const purse=Math.round((BOG_PURSE[r.place-1]||0)*(BOG_PAY[C0.tier]||1)/10)*10,rep=(BOG_REP[r.place-1]||0)+(r.cleared?1:0);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
+      logEvent(`Mud bog: ${C0.n} — ${sc}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${sc} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
+    spEvent("bog",{win:!failed&&r.place===1,finish:!failed&&r.place>1&&r.place<=3});
+    hud();checkGoals();}
+  else toast(failed?`GRENADED IN THE MUD · ${r.distM.toFixed(0)} m`:`${sc} · ${pl}`);
+  if(!career())delete BOG_SB[Object.keys(SIM.BOG_CLASSES).indexOf(k)+1];   // a new pit next run
+  achCheck({type:"bog",r,failed});
+  BR.p=null;save();recompute();renderTest();
+  revealVerdict();
+}
+/* records: per class, the quickest time through, or the farthest anyone got */
+function bogPb(r,failed){if(ff||failed)return;const P=recBucket("bog"),was=P[r.cls];
+  const better=!was||(r.cleared&&(!was.c||r.pitT<was.t))||(!r.cleared&&!was.c&&r.distM>was.m);if(!better)return;
+  P[r.cls]=Object.assign({c:!!r.cleared,t:r.cleared?r.pitT:null,m:r.distM,len:r.len},recTag());
+  if(was){r.pb={was:was.c?was.t.toFixed(2)+" s":was.m.toFixed(1)+" m"};setTimeout(()=>toast(`CLASS BEST · ${r.cleared?r.pitT.toFixed(2)+" s":r.distM.toFixed(1)+" m"} (was ${r.pb.was})`),2700);}}
+function bogRedraw(){const l=lastForChart();if(S.env.testType==="bog"&&l&&l.bog)drawBogTrace(l.bog);}
+(()=>{const b=$("bogBtn");
+  holdBtn(b,()=>BR,bogPress,bogRelease,r=>{if(!r.p)return;bogPress();setTimeout(bogRelease,60);});})();
+/* ---- Bitterwater: the run itself (app-late.js, since 1.76.141.0): start, push, shift and chute, time warp, live card, finish. Meets, records and the setup screen are in app/salt.js ---- */
+const SALT_COLORS={altered:0x2c6b3a,roadster:0xb7261d,lakester:0xd9a52b,streamliner:0x1d4787};
+/* the car's number for this meet: drawn when you sign in, the same for every run of the meet */
+function saltNum(meet){let h=2166136261;const s="lsrnum|"+meet.id+"|"+(career()?C().name||"":"sandbox");for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}h>>>=0;return h%10<3?String(10+(h>>>4)%90):String(100+(h>>>4)%900);}
+function saltBtnText(t,sub){const b=$("saltBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small style="display:block;font-size:12px;letter-spacing:.5px;opacity:.75;margin-top:2px">${sub}</small>`:"");}
+function saltBreak(kind){if(kind==="driveline"){if(!SR.dl){SR.dl=true;sfx("fail");buzz([80,40,120]);toast("DRIVELINE LET GO · the engine is fine");}return;}   // a swap car's gearbox or axle
+  SR.failed=true;SR.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||(kind==="turbo"?"turbo":kind==="piston"?"knock":kind==="steam"?"steam":"rod");failFlash();}
+function saltStart(){
+  $("app").classList.add("onstrip");
+  const k=saltEnvFix(),env=stdEnv(),base=saltRes();
+  const res=Object.assign({},base);const wi=wearInfo(res);
+  if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=base.torque.map(t=>t*f);res.peakTq=base.peakTq*f;res.peakHp=base.peakHp*f;res.wornBy=Math.round((1-f)*100);}
+  const snap=testSnap(),veh=saltVeh(k),hk=hKey(snap.h);veh.seed=Math.floor(Math.random()*1e9);if(wi&&wi.w>=1)veh.wornAt=8+Math.random()*30;
+  const p=SIM.lsrRun(res,veh),cls=SIM.lsrClass(S.cfg,res,k),meet=saltMeet();
+  if(ENGINE_VIS.saltLook)ENGINE_VIS.saltLook({color:carPaint(),num:saltNum(meet),cls:cls.key,cfg:S.cfg});   /* your paint, this meet's number, the class plate, the engine you see */
+  if(meet.imp&&(meet.imp.key!==cls.key||meet.imp.hk!==hk)){toast("Left impound — that record attempt is void");meet.imp=null;}
+  const backup=!!meet.imp;
+  SR={p,res,env,veh,k,hk,snap,cls,rec:saltRecord(cls.key),backup,last:performance.now(),down:false,failed:false,failKind:null,doneAt:null,lastPtr:0,warp:1,auto:S.env.saltDrive==="auto",foot:SIM.lsrFoot(),color:SALT_COLORS[k]};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("saltCtl").style.display="";$("saltBtn").dataset.k="";$("saltBtn").disabled=false;
+  $("saltShiftBtn").style.display=!SR.auto&&veh.shift==="manual"?"":"none";saltWarpUi();
+  saltBtnText(SR.auto?"START THE PUSH":"HOLD TO RUN",SR.auto?"the driver takes it from here":"push off · hold for throttle, let go to feather");
+  $("testProg").classList.remove("done");sfx("start");saltHud(p.st);
+  scrollCtlIntoView("saltCtl");
+  const course={x0:p.x0,x1:p.x1,k0:p.k0,k1:p.k1,xEnd:p.xEnd};
+  const step=()=>{if(!SR||SR.finished)return;const now=performance.now();const rdt=Math.min(0.25,(now-SR.last)/1000);SR.last=now;const st=p.st;
+    const wp=st.phase==="run"||st.phase==="shutdown"?SR.warp:1;let left=rdt*wp;
+    while(left>1e-6&&!st.done){const d=Math.min(0.02,left);left-=d;p.step(d,saltThr(st,d));}
+    if(st.broke&&!SR.failed)saltBreak(st.broke);
+    if((st.chuteOut||st.drogueOut)&&!SR.chuteFx){SR.chuteFx=true;if(typeof foley==="function")foley("chute");}
+    if(st.phase==="spin"&&!SR.spun){SR.spun=true;buzz([60,30,60]);sfx("fail");}
+    if(st.tOut!=null&&!SR.miled){SR.miled=true;buzz([20,30,20]);}
+    if(st.done&&SR.doneAt==null){SR.doneAt=now;buzz([40]);}
+    if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:true,phase:st.phase,x:st.x,v:st.v,acc:st.acc,slip:Math.max(0,st.slip),rpm:SR.failed?run.rpm:st.rpm,throttle:st.foot,body:k,aero:veh.aero,color:SR.color,
+      chute:st.chuteOut||st.drogueOut,chutes:veh.chute==="dual"?2:veh.chute==="single"?1:0,chuteMask:veh.chute==="dual"?(st.drogueOut?1:0)|(st.chuteOut?2:0):(st.chuteOut?1:0),chuteBlown:st.chuteBlown,night:!!S.night,failed:SR.failed,smoke:SR.res.diesel?Math.min(1,(SR.res.smoke||0)/60)*st.foot:0,course,lightness:1-Math.min(1,st.light),dt:rdt*wp});
+    saltHud(st);
+    run.on=true;
+    if(SR.failed)run.rpm=Math.max(0,run.rpm-380);else if(st.done)run.rpm+=(veh.idle-run.rpm)*Math.min(1,rdt*3);else run.rpm=st.rpm;
+    run.load=SR.failed||st.done?0:(st.phase==="run"?st.foot:0.1);
+    $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*st.x/p.xEnd)+"%";
+    if(!st.done||(now-SR.doneAt<2200&&!SR.skip))requestAnimationFrame(step);else saltFinish();};
+  requestAnimationFrame(step);
+}
+/* the driver's foot: yours (the button), or the auto driver (SIM.lsrFoot) holding the tyres on their best slip and minding a light nose */
+function saltThr(st,dt){if(!SR.auto)return SR.down&&!SR.failed?1:0;if(st.phase==="stage")return SR.go?1:0;return SR.foot(st,dt);}
+function saltWarpUi(){document.querySelectorAll("#saltWarp [data-warp]").forEach(b=>b.classList.toggle("on",+b.dataset.warp===(SR?SR.warp:1)));}
+/* the live card: speed first, then the course with the timed mile on it, then what the driver is managing */
+function saltHud(st,force){if(!SR||!hudDue(SR,st,force))return;const p=SR.p,mph=st.v*2.23694,mi=st.x/SIM.LSR_MILE,xe=p.xEnd,pc=x=>Math.min(100,100*x/xe);
+  const stat=SR.failed?"broke":st.phase==="spin"?"broke":st.tOut!=null&&!SR.failed?"full":"";
+  const say=SR.failed?"BROKE":st.phase==="spin"?"SPUN":st.phase==="stage"?"on the line":st.phase==="push"?"push truck":st.phase==="run"?(st.x<p.x0?`${((p.x0-st.x)/SIM.LSR_MILE).toFixed(2)} mi to the clocks`:"IN THE MILE"):st.phase==="shutdown"?(st.chuteWait?"coasting to chute speed":st.chuteBlown?"chute tore off":st.chuteOut?"chute out":st.drogueOut?"drogue out":"shut off"):"stopped";
+  const split=st.tIn!=null&&st.tOut==null&&st.t>st.tIn?`${(SIM.LSR_MILE*Math.min(1,(st.x-p.x0)/SIM.LSR_MILE)/Math.max(0.01,st.t-st.tIn)*2.23694).toFixed(1)} avg`:st.mileMph!=null?`<b>${st.mileMph.toFixed(3)}</b>`:"—";
+  const rec=SR.rec,need=SR.backup?"backup run":"record";
+  const lt=Math.round(st.light*100),sp=Math.round(Math.max(0,st.slip)*100),loose=Math.min(100,Math.round(st.loose*100));
+  $("saltLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${mph.toFixed(1)}<i>mph</i></b><span>${say}<br>${st.phase==="stage"?SR.cls.key:mi.toFixed(2)+" mi · gear "+(st.gear+1)}</span></div>
+    <div class="ph-bar"><i class="zone" style="left:${pc(p.x0)}%;width:${pc(p.x1)-pc(p.x0)}%"></i><i class="fill" style="width:${pc(st.x)}%"></i>${[1,2,3,4,5,6].filter(m=>m*SIM.LSR_MILE<xe).map(m=>`<i class="mk" style="left:${pc(m*SIM.LSR_MILE)}%"></i>`).join("")}</div>
+    <div class="ph-lbl"><span>start</span><span>mile ${split}</span><span>${need} <b>${rec?rec.mph.toFixed(3):"—"}</b></span></div></div>
+    <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>Wheelspin <b>${sp}%</b></span><span>${loose>30?`<b style="color:var(--crit)">LOOSE ${loose}%</b>`:lt<55&&st.phase==="run"?`<b style="color:var(--warn)">FRONT LIGHT ${lt}%</b>`:`front ${lt}%`}</span></div>
+    <div class="ph-bar"><i class="sw" style="left:0;width:13%"></i><i class="nd ${sp>22?"hot":sp<=13?"ok":""}" style="left:${Math.min(99,sp*2)}%"></i></div></div>
+    <div class="ph-row"><div class="peak"><b>${Math.round(st.rpm/10)*10}</b><span>rpm</span></div><div class="peak"><b style="color:${st.coolC>118?"var(--crit)":st.coolC>108?"var(--warn)":""}">${Math.round(st.coolC)}<i>°C</i></b><span>water</span></div><div class="peak"><b style="color:${st.egt>950?"var(--crit)":st.egt>880?"var(--warn)":""}">${Math.round(st.egt)}<i>°C</i></b><span>EGT</span></div></div>`;
+  if(SR.failed)saltBtnText(SR.failKind==="steam"?"BLEW THE HEAD GASKET":SR.failKind==="turbo"?"TURBO GONE":SR.failKind==="piston"?"MELTED A PISTON":"BROKE","tap to skip");
+  else if(st.phase==="spin")saltBtnText("SPUN","tap to skip");
+  else if(st.done)saltBtnText(st.mileMph!=null?`${st.mileMph.toFixed(3)} MPH`:"NO TIME","tap to skip");
+  else if(SR.auto)saltBtnText(st.phase==="stage"?"START THE PUSH":"AUTO DRIVER",st.phase==="stage"?"the driver takes it from here":"tap to skip to the result");
+  else if(st.phase==="stage")saltBtnText("HOLD TO RUN","push off · hold for throttle, let go to feather");
+  else if(st.phase==="push")saltBtnText("PUSHING","hold — the clutch goes out at 27 mph");
+  else if(st.phase==="shutdown")saltBtnText(st.chuteOut?"CHUTE OUT":st.drogueOut?"DROGUE OUT":st.chuteWait?"COASTING":"SHUT OFF",st.chuteOut?"tap to skip":st.chuteWait?"chute comes out at its rated speed":"tap for the chute");
+  else if(SR.down)saltBtnText(st.loose>0.3?"LOOSE — LIFT":st.light<0.5?"FRONT LIGHT — LIFT":sp>15?"SPINNING — FEATHER":"FLAT OUT",SR.veh.shift==="manual"?"SHIFT with ↑ or G":"let go to feather");
+  else saltBtnText("FEATHERED","hold to get back on it");}
+function saltPress(){if(!SR||SR.finished)return;const st=SR.p.st;if(st.done||SR.failed||st.phase==="spin"){saltSkip();return;}
+  if(SR.auto){if(st.phase==="stage"){SR.go=true;buzz([20]);}else saltSkip();return;}
+  if(st.phase==="shutdown"){if(!st.chuteOut&&!st.chuteWait)SR.p.chute();else saltSkip();return;}
+  SR.down=true;if(st.phase==="stage")buzz([20]);}
+function saltRelease(){if(!SR)return;SR.down=false;}
+function saltShift(){if(!SR||SR.finished||!SR.p)return;SR.p.shift();buzz([8]);}
+/* skip: the rest of the run is simulated at once (same seed, same driver's foot) */
+function saltSkip(){if(!SR||SR.finished)return;const p=SR.p,st=p.st;if(st.phase==="stage"&&!SR.auto)return;
+  if(!st.done){p.autoShift();const f=SR.auto?SR.foot:SIM.lsrFoot();let n=0;while(!st.done&&n++<20000)p.step(0.02,f(st,0.02));
+    if(st.broke&&!SR.failed)saltBreak(st.broke);}
+  if(ENGINE_VIS.saltSkip)ENGINE_VIS.saltSkip();SR.skip=true;if(SR.doneAt==null)SR.doneAt=performance.now()-2000;}
+(()=>{const b=$("saltBtn");
+  holdBtn(b,()=>SR,saltPress,saltRelease,r=>{if(!r.p)return;saltPress();setTimeout(saltRelease,60);});
+  $("saltShiftBtn").addEventListener("pointerdown",e=>{e.preventDefault();saltShift();});
+  $("saltWarp").addEventListener("click",e=>{const w=e.target.closest("[data-warp]");if(!w||!SR)return;SR.warp=+w.dataset.warp;saltWarpUi();buzz(6);});
+  document.addEventListener("keydown",e=>{if(!SR||SR.finished||e.repeat||e.ctrlKey||e.metaKey||e.altKey||typingIn(e.target))return;if(e.key==="ArrowUp"||e.key.toLowerCase()==="g"){e.preventDefault();saltShift();}});})();
+function saltFinish(){
+  if(!SR||SR.finished)return;SR.finished=true;const {p,res,env,k,cls,hk,snap}=SR;const r=p.result();const failed=SR.failed,B=SIM.LSR_BODIES[k];const same=testSame(snap);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});$("app").classList.remove("onstrip");}},2200);
+  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("saltCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const L=saltBook(),meet=saltMeet(),rec=saltRecord(cls.key),dq=r.noChuteFast;
+  const valid=same&&r.mileMph!=null&&!dq&&!(r.brokeX!=null&&r.brokeX<r.x1);   // (a run whose mode/career changed underneath books no time)   // broke before the last light: no time
+  r.cls=cls;r.rec=rec?{mph:rec.mph,holder:rec.holder,year:rec.year,mine:!!rec.mine}:null;r.clsName=B.n;r.courseName=SIM.LSR_COURSES[r.course].n;r.dq=dq;r.valid=valid;r.backup=SR.backup;
+  meet.runs++;if(valid&&(!meet.best[cls.key]||r.mileMph>meet.best[cls.key]))meet.best[cls.key]=r.mileMph;r.meetBest=meet.best[cls.key]||null;r.meetRuns=meet.runs;
+  // the record book: a qualifying run over the record goes to impound; the backup run decides it
+  let outcome="run";
+  if(SR.backup&&meet.imp){const a=meet.imp.mph;if(valid){const avg=(a+r.mileMph)/2;r.avg=+avg.toFixed(3);r.firstMph=a;
+      if(rec&&avg>rec.mph){outcome="record";L.rec[cls.key]=Object.assign({mph:+avg.toFixed(3),runs:[a,r.mileMph],was:rec.mph,wasHolder:rec.holder},recTag());}
+      else outcome="backupslow";}
+    else outcome="backupfail";
+    meet.imp=null;}
+  else if(valid&&rec&&r.mileMph>rec.mph){outcome="impound";meet.imp={key:cls.key,hk,mph:r.mileMph};}
+  r.outcome=outcome;
+  if(typeof crowdAfter==="function")crowdAfter("salt",{broke:failed,record:outcome==="record"});   // app/ambience.js
+  // personal best for the class
+  const pb=L.pb[cls.key];if(valid&&(!pb||r.mileMph>pb.mph)){L.pb[cls.key]=Object.assign({mph:r.mileMph,km:r.kmMph,peak:r.peakMph},recTag());r.pb=pb?{was:pb.mph}:{first:true};}
+  if(failed){r.broke=r.broke||SR.failKind;r.failKind=r.failKind||SR.failKind;}
+  if(SR.veh&&SR.veh.bodyObj){r.swap=swapTag();setTimeout(()=>swapAfter(r),0);}
+  res.salt=r;res.saltFailed=failed;res.saltFailKind=failed?SR.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  const mphTxt=r.mileMph!=null?r.mileMph.toFixed(3)+" mph":"no time";
+  if(career()&&same){addWear(1+Math.min(1.5,r.time/60),hk);let cash=0,rep=0;
+    if(failed){C().cert=null;rep-=2;logEvent(`Salt: ${cls.key} — ${r.broke==="steam"?"cooked it":r.broke==="turbo"?"turbo let go":"broke"} at ${(r.trace.length?(r.trace[r.trace.length-1].x/SIM.LSR_MILE).toFixed(1):"0")} mi`,"bad");}
+    if(r.stopWhy==="spun"){cash-=800;rep-=1;logEvent(`Salt: ${cls.key} — spun at ${Math.round(r.peakMph)} mph, $800 in body repairs`,"bad");}
+    if(r.offEnd||r.chute.blown){cash-=500;}
+    if(outcome==="record"){const club=r.avg>=200&&!C().club200;cash+=Math.round(SALT_PURSE[k]*(1+r.avg/300)/10)*10;rep+=SALT_REP[k]+(club?15:0);if(club)C().club200=C().week;r.purse=cash;r.club=club;
+      logEvent(`RECORD · ${cls.key} at ${r.avg.toFixed(3)} mph (was ${r.rec.mph.toFixed(3)})${club?" — into the 200 MPH Club":""}`,"good");}
+    else if(outcome==="impound")logEvent(`Salt: ${cls.key} — ${mphTxt}, over the record. Impounded for a backup run`,"good");
+    else if(!failed&&r.stopWhy!=="spun")logEvent(`Salt: ${cls.key} — ${mphTxt}${r.pb&&!r.pb.first?" (class best)":""}`,"");
+    if(r.pb&&!r.pb.first&&outcome!=="record")rep+=1;
+    C().cash+=cash;C().rep=Math.max(0,C().rep+rep);r.cash=cash;r.repD=rep;spEvent("salt",{record:outcome==="record",k:cls.key,mph:valid?r.mileMph:null});hud();checkGoals();}
+  toast(outcome==="record"?`NEW RECORD · ${r.avg.toFixed(3)} MPH`:outcome==="impound"?`${mphTxt} · OVER THE RECORD — IMPOUND`:failed?"BROKE ON THE SALT":r.stopWhy==="spun"?"SPUN ON THE SALT":dq?`${mphTxt} · NOT ACCEPTED — NO CHUTE`:`${mphTxt}`);
+  achCheck({type:"salt",r,failed});   // salt badges (timed mile, 200 and 300 mph, a class record); the trophy room books the record
+  SR.p=null;save();recompute();renderTest();
+  revealVerdict();
+}
+function saltRedraw(){const l=lastForChart();if(S.env.testType==="salt"&&l&&l.salt)drawSaltTrace(l.salt);}
+/* ---- Cloudsplitter Peak: the climb as it is run (app-late.js, since 1.76.141.0): live card with corner calls, PUSH/LIFT, start, finish.
+   Classes, the field, the splits sheet, the chart and records are in app/hill.js ---- */
+const HILL_C={lift:0.962,steady:1.0,push:1.035};
+/* the live card */
+function hillHudInit(){$("hillLive").innerHTML=`<div class="rdh hlh"><div class="rd-spd"><b id="hlV">0</b><i>km/h</i></div><div class="rd-g"><b id="hlG">–</b><i>gear</i></div><div class="rd-lt"><b id="hlT">0:00.00</b><i id="hlTi">clock</i></div><div class="rd-lt"><b id="hlA">2,862</b><i>metres</i></div></div>
+  <div class="ph-bar hl-bar"><i class="fill" id="hlF"></i>${SIM.hillCourse().sections.slice(0,-1).map(s=>`<i class="mk" style="left:${(100*s.s1/SIM.hillCourse().len).toFixed(2)}%"></i>`).join("")}<i class="mk lead" id="hlL" style="left:0"></i></div>
+  <div class="ph-lbl" style="margin-top:4px"><span id="hlSec">Engineer's</span><span id="hlD"></span></div>
+  <div class="hl-next" id="hlN"></div><div class="hl-meters" id="hlM"></div>`;}
+function hillLeadS(t){const L=HC.lead;if(!L||!L.splits||!L.splits.length)return null;const T=SIM.hillCourse(),S0=T.sections;let pt=0;
+  for(let i=0;i<L.splits.length;i++){const st=L.splits[i];if(t<=st){const f=(t-pt)/Math.max(0.01,st-pt);return S0[i].s0+(S0[i].s1-S0[i].s0)*f;}pt=st;}return T.len;}
+function hillCornerTxt(c,call){const dir=c.deg>0?"left":"right",kind=c.hp?"hairpin":c.R<40?"tight":c.R<110?"":"fast",cl=call&&call.call;
+  return `<b>${c.name?esc(c.name):kind?kind[0].toUpperCase()+kind.slice(1)+" "+dir:dir[0].toUpperCase()+dir.slice(1)}</b><span>${c.name?(kind?kind+" ":"")+dir+" · ":""}R ${Math.round(c.R)} m${c.drop?c.rail?" · drop, railed":` · <em class="dr">DROP · no rail</em>`:""}</span><i class="call ${cl}">${cl==="dusty"?"DUSTY — lift":cl==="grippy"?"GRIPPY — push":"clean"}</i>`;}
+function hillHud(){if(!HC)return;const st=HC.run.st,T=HC.run.T,v=$("hlV");if(!v)return;
+  v.textContent=Math.round(st.v*3.6);$("hlG").textContent=st.off?"–":st.g+1;$("hlT").textContent=fmtHill(st.t);$("hlA").textContent=Math.round(st.alt).toLocaleString("en-CA");
+  $("hlTi").textContent=HC.pre>0?"on the line":st.done?(st.dnf?"DNF":"summit"):"clock";
+  $("hlF").style.width=(100*st.s/T.len).toFixed(2)+"%";const ls=hillLeadS(st.t);if(ls!=null)$("hlL").style.left=(100*Math.min(1,ls/T.len)).toFixed(2)+"%";
+  const sec=T.sections[Math.min(T.sections.length-1,st.sec)];$("hlSec").innerHTML=`<b>${esc(sec.n)}</b> · ${(st.s/1000).toFixed(2)} km`;
+  const L=HC.lead,ns=st.splits.length;let gap="";if(L&&L.splits&&ns&&L.splits[ns-1]!=null){const d=st.splits[ns-1]-L.splits[ns-1];gap=`split ${ns} <b style="color:${d<=0?"var(--good)":"var(--crit)"}">${d<=0?"−":"+"}${Math.abs(d).toFixed(2)}</b> vs ${esc(L.n)}`;}
+  $("hlD").innerHTML=gap;
+  // the next two corners and their calls; the event of the moment over them
+  const K=T.corners,c0=K[Math.min(K.length-1,st.k)],c1=K[Math.min(K.length-1,st.k+1)],ev=st.ev&&st.t-st.ev.t<2.5?st.ev:null;
+  let nx="";if(st.dnf)nx=`<div class="hl-ev bad">${hillDnfWord(st.dnf.kind)} · ${esc(st.dnf.name)}</div>`;
+  else if(st.off)nx=`<div class="hl-ev bad">${st.off.kind==="rail"?"INTO THE GUARDRAIL":st.off.kind==="bank"?"INTO THE BANK":"OFF · GRAVEL"} · +${st.off.T.toFixed(1)} s</div>`;
+  else if(ev&&ev.kind==="moment")nx=`<div class="hl-ev warn">MOMENT! · ${esc(K[ev.k].name||"held it")}</div>`;
+  else if(st.done)nx=`<div class="hl-ev good">SUMMIT · ${fmtHill(st.t)}</div>`;
+  else nx=`<div class="hl-c">${hillCornerTxt(c0,HC.run.calls[c0.i])}</div>${c1!==c0?`<div class="hl-c dim">${hillCornerTxt(c1,HC.run.calls[c1.i])}</div>`:""}`;
+  const nk=nx;if($("hlN").dataset.k!==nk){$("hlN").dataset.k=nk;$("hlN").innerHTML=nk;}
+  const pc=Math.round(100*st.hpNow/HC.prep.ref.hp),cc=st.cool,mode=HC.auto?"auto":HC.push?"push":HC.lift?"lift":"steady";
+  $("hlM").innerHTML=`<div class="peak"><b>${Math.round(st.hpNow)}</b><span>hp · ${pc}% of shop</span></div><div class="peak"><b style="color:${cc>112?"var(--crit)":cc>104?"var(--warn)":""}">${Math.round(cc)}<i>°C</i></b><span>water${st.derate<0.999?" · derate":""}</span></div><div class="peak"><b class="hl-mode ${mode}">${mode==="auto"?"AUTO":mode.toUpperCase()}</b><span>${HC.auto?"tap to take over":"commitment"}</span></div>`;
+  hillBtnText();}
+function hillBtnText(){const p=$("hillPush"),l=$("hillLift");if(!p||!HC||!HC.run)return;const st=HC.run.st,k=(HC.auto?"a":"m")+(st.done?"d":"")+(HC.push?"p":"")+(HC.lift?"l":"");if(p.dataset.k===k)return;p.dataset.k=k;
+  if(st.done){p.innerHTML=`SUMMIT<small>tap to skip</small>`;l.innerHTML=`—<small>&nbsp;</small>`;}
+  else if(HC.auto){p.innerHTML=`AUTO DRIVER<small>tap to take over</small>`;l.innerHTML=`LIFT<small>take over</small>`;}
+  else{p.innerHTML=`PUSH<small>${HC.push?"committed":"hold into grippy corners"}</small>`;l.innerHTML=`LIFT<small>${HC.lift?"easing it in":"hold into dusty ones"}</small>`;}
+  p.classList.toggle("on",!!HC.push);l.classList.toggle("on",!!HC.lift);
+  const s=$("hillSpdB");if(s)s.textContent=HC.speed+"×";}
+function hillCtl(){if(!HC||HC.auto)return null;return{c:HC.push?HILL_C.push:HC.lift?HILL_C.lift:HILL_C.steady};}
+function hillTakeOver(){if(!HC||!HC.auto||HC.run.st.done)return;HC.auto=false;HC.took=Math.round(HC.run.st.s);buzz([20]);toast("You have it — hold PUSH or LIFT into each corner");}
+function hillStart(){
+  const k=hillEnvFix(),opt=hillOpt(),snap=testSnap(),env=stdEnv();let prep;
+  try{prep=hillPrepFor(snap.cfg);}catch(err){testing=false;renderTest();toast("The engine wouldn't run at altitude");return;}
+  if(prep.fails.length){testing=false;toast(`It wouldn't make the summit — ${String(prep.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
+  $("app").classList.add("onstrip");
+  const seed=hillSeed(k),field=wxField(hillWithRv(k,hillField(k,seed,true)),k),calls=SIM.hillCalls(seed);if(career())(C().hillWk=C().hillWk||{})[k]=C().week;
+  const rs=career()?(seed+7919*(C().hillRuns=(C().hillRuns||0)+1))>>>0:Math.floor(Math.random()*1e9);
+  const run=SIM.hillNew(prep,Object.assign({seed:rs,calls,plan:SIM.hillPlan(calls,1,rs)},opt));
+  const lead=field.filter(f=>f.t!=null).sort(hillCmp)[0]||null;
+  HC={suVis:SIM.setupVis(opt.setup),run,prep,opt,k,snap,env,seed,field,lead,auto:S.env.hillDrive!=="you",took:null,speed:+S.env.hillSpd||4,cam:S.env.hillCam||"auto",push:false,lift:false,pre:2.5,last:performance.now(),finished:false,skip:false,doneAt:null,lastPtr:0,acc:0,color:carPaint()};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("hillCtl").style.display="";hillHudInit();$("hillPush").dataset.k="";hillHud();
+  $("testProg").classList.remove("done");sfx("start");
+  scrollCtlIntoView("hillCtl");
+  let hudT=0;
+  const step=()=>{if(!HC||HC.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-HC.last)/1000);HC.last=now;const st=HC.run.st;
+    if(HC.pre>0)HC.pre-=dt;else if(!st.done){HC.acc+=dt*HC.speed;let n=0;while(HC.acc>=0.02&&!st.done&&n++<800){HC.run.step(0.02,hillCtl());HC.acc-=0.02;}if(n>=800)HC.acc=0;}
+    if(st.done&&HC.doneAt==null){HC.doneAt=now;if(st.dnf){failFlash(300);}else{winFlash();buzz([30,40,30,40,90]);}}
+    if(st.ev&&st.ev!==HC.lastEv){HC.lastEv=st.ev;if(st.ev.kind!=="moment"){buzz([60,30,60]);sfx("mudslap");if(st.ev.kind!=="rail"&&typeof foley==="function")foley("gravel");}else buzz([25]);}
+    if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:true,su:HC.suVis,course:HC.run.T,s:st.s,v:st.v,d:st.d,g:st.g+1,rpm:st.rpm,thr:st.thr,brk:st.brk,lat:st.latUse,off:st.off?st.off.kind:null,dnf:st.dnf?st.dnf.kind:null,ev:st.ev&&st.t-st.ev.t<1?st.ev.kind:null,
+      ch:HC.opt.ch,aero:HC.opt.aero,color:HC.color,cam:HC.cam,pre:HC.pre>0,done:st.done,night:false,dt:dt*(HC.pre>0||st.done?1:HC.speed)});
+    if((hudT+=dt)>0.08||st.done){hudT=0;hillHud();}
+    run.on=true;run.rpm=st.done?run.rpm+(HC.run.car.idle-run.rpm)*Math.min(1,dt*3):HC.pre>0?HC.run.car.idle+800*Math.max(0,Math.sin(now/180)):st.rpm;run.load=st.done?0:Math.max(0.05,st.thr);$("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*st.s/HC.run.T.len)+"%";
+    if(st.done&&(HC.skip||now-HC.doneAt>(st.dnf?2200:2600)))hillFinish();else requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
+function hillPress(which){if(!HC||HC.finished)return;const st=HC.run.st;if(st.done){hillSkip();return;}
+  if(HC.auto){hillTakeOver();if(which==="lift")HC.lift=true;return;}
+  if(which==="lift"){HC.lift=true;HC.push=false;}else{HC.push=true;HC.lift=false;}buzz(6);hillBtnText();}
+function hillRelease(which){if(!HC)return;if(which==="lift")HC.lift=false;else HC.push=false;hillBtnText();}
+/* skip: the auto driver takes the rest of the climb at once (a run you were driving keeps what you did up to here) */
+function hillSkip(){if(!HC||HC.finished)return;const st=HC.run.st;HC.pre=0;if(!HC.auto&&HC.took==null&&st.s>1)HC.handed=Math.round(st.s);let n=0;while(!st.done&&n++<120000)HC.run.step(0.02,null);HC.skip=true;if(HC.doneAt==null)HC.doneAt=performance.now()-3000;}
+(()=>{const bind=(id,w)=>{const b=$(id);
+  holdBtn(b,()=>HC,()=>hillPress(w),()=>hillRelease(w),()=>{hillPress(w);setTimeout(()=>hillRelease(w),400);});};
+  bind("hillPush","push");bind("hillLift","lift");
+  $("hillSkip").addEventListener("click",()=>hillSkip());
+  $("hillSpdB").addEventListener("click",()=>{if(!HC)return;HC.speed=HC.speed>=8?1:HC.speed*2;S.env.hillSpd=HC.speed;hillBtnText();$("hillSpdB").textContent=HC.speed+"×";save();});
+  $("hillCamB").addEventListener("click",()=>{const ids=HILL_CAMS.map(c=>c[0]),cur=HC?HC.cam:S.env.hillCam,nx=ids[(ids.indexOf(cur)+1)%ids.length];S.env.hillCam=nx;if(HC)HC.cam=nx;$("hillCamB").textContent="Cam · "+HILL_CAMS.find(c=>c[0]===nx)[1];save();});})();
+function hillFinish(){
+  if(!HC||HC.finished)return;HC.finished=true;const {run:R0,prep,opt,k,snap,env,field}=HC,C0=SIM.HILL_CLASSES[k],same=testSame(snap);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setHill)ENGINE_VIS.setHill({on:false});$("app").classList.remove("onstrip");}},HC.skip?300:1800);
+  testing=false;run.on=false;run.rpm=0;$("rpmbox").style.display="none";$("hillCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const r=R0.result(),T=R0.T;
+  const me={n:engineName().slice(0,26),me:true,t:r.time,dnf:r.dnf?r.dnf.kind:null,splits:r.splits,hp:Math.round(prep.ref.hp),turbo:prep.kind==="turbo",ch:opt.ch};
+  const rows=field.map(f=>Object.assign({},f)).concat([me]).sort(hillCmp);
+  Object.assign(r,{field:rows,place:rows.indexOf(me)+1,of:rows.length,clsName:C0.n,tier:C0.tier,auto:HC.auto&&HC.took==null,took:HC.took,handed:HC.handed||null,chName:SIM.CHASSIS[opt.ch].n,tyreName:SIM.HILL_TYRES[opt.tyre].n,aeroName:SIM.HILL_AERO[opt.aero].n,
+    secNames:T.sections.map(s=>s.n),lead:HC.lead?{n:HC.lead.n,t:HC.lead.t,splits:HC.lead.splits}:null});
+  if(r.dnf)r.place=rows.indexOf(me)+1;
+  if(typeof crowdAfter==="function")crowdAfter("hill",{broke:!!r.dnf,edge:!!(r.dnf&&r.dnf.kind==="edge")});   // app/ambience.js
+  r.suBal=+SIM.hillCar(prep,opt).bi.toFixed(2);if(!r.dnf)suTipHill(r,prep,opt);
+  if(same&&!r.dnf&&!ff){const RR=recBucket("hill"),was=RR[k];if(!was||r.time<was.t){RR[k]=Object.assign({t:r.time,splits:r.splits.slice(),ch:opt.ch},recTag());r.pb=was?{was:was.t}:{first:true};if(was)setTimeout(()=>toast(`CLASS RECORD · ${fmtHill(r.time)} (was ${fmtHill(was.t)})`),2700);}}
+  r.wx=wxSnap("hill");const res=Object.assign({},prep.refRes,{hill:r});S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  const pl=ordN(r.place)+" of "+r.of,sc=r.dnf?(r.dnf.kind==="edge"?"over the edge at "+r.dnf.name:r.dnf.kind==="boil"?"boiled over in "+r.dnf.name:r.dnf.kind==="stall"?"couldn't climb the grade":"flagged off in "+r.dnf.name):fmtHill(r.time);
+  if(career()&&same){addWear(0.6+(r.coolPeak>112?0.4:0)+(r.dmg>0?0.3:0),hKey(snap.h));
+    if(r.dnf){C().rep=Math.max(0,C().rep-(r.dnf.kind==="edge"?2:1));logEvent(`Cloudsplitter Peak: ${C0.n} — DNF, ${sc}`,"bad");toast(`DNF · ${sc}`);}
+    else{const purse=Math.round((HILL_PURSE[r.place-1]||0)*(HILL_PAY[C0.tier]||1)/10)*10,rep=(HILL_REP[r.place-1]||0)+1;r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
+      logEvent(`Cloudsplitter Peak: ${C0.n} — ${sc}, ${pl}${purse?", purse "+fmt$(purse):""}`,r.place<=3?"good":"");toast(`${sc} · ${ordN(r.place)}${purse?" · "+fmt$(purse):""}`);}
+    spEvent("hill",{win:!r.dnf&&r.place===1,finish:!r.dnf&&r.place>1&&r.place<=3,record:!!(r.pb&&r.pb.was),k,t:r.dnf?null:r.time});hud();checkGoals();}
+  else toast(r.dnf?`DNF · ${sc}`:`${sc} · ${pl}`);
+  if(!career())delete HILL_SB[Object.keys(SIM.HILL_CLASSES).indexOf(k)+1];   // a fresh mountain next run
+  achCheck({type:"hill",r});
+  HC.run=null;HC.prep=null;save();recompute();renderTest();revealVerdict();
+}
+function hillRedraw(){const l=lastForChart();if(S.env.testType==="hill"&&l&&l.hill)drawHillChart(l.hill);}
+/* ---- boat drags: the night as it is run (app-late.js, since 1.76.141.0): rivals, start, the hold button and trim, live card, finish, the boat shop.
+   Night tables, the setup screen, records and the verdict are in app/boat.js ---- */
+const BOAT_COLORS=[0x1d4787,0xb7261d,0x2c6b3a,0xe8c14a,0x6b3d8f,0x0e8a8a,0xd94e8f,0x8e8e8e];
+function boatIdle(){return SIM.isDiesel(S.cfg)?650:Math.max(750,S.cfg.cam>70?1100:850);}
+function boatVeh(k){const e=S.env;return{cls:k,pitch:e.boatPitch,imp:e.boatImp,gear:e.boatGear,trim:e.boatTrim,redline:S.cfg.redline,idle:boatIdle()};}
+function boatSetN(n){if(career())C().boatN=n;else S.boatSb=n;}
+function boatGauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307*r());}
+function boatNew(k){const ix=Object.keys(SIM.BOAT_CLASSES).indexOf(k)+1;
+  const seed=career()?(((C().boatSeed||(C().boatSeed=Math.floor(Math.random()*1e9)+1))^(C().week*7919)^(ix*104729))>>>0):(Math.floor(Math.random()*1e9)+1)>>>0;
+  const C0=SIM.BOAT_CLASSES[k],F=C0.field,r=pullRand((seed^0x51AB0A7)>>>0),names=BOAT_DRV.slice(),hulls=(BOAT_HN[k]||BOAT_HN.outboard).slice(),pick=a=>a.splice(Math.floor(r()*a.length),1)[0],field=[];
+  for(let i=0;i<7;i++){const skill=+(0.55+0.45*r()).toFixed(2);field.push({name:pick(names),boat:pick(hulls),hp:Math.round(Math.max(F.hp*0.6,F.hp+boatGauss(r)*F.sd)),dsl:r()<F.dsl,skill,
+    rs:(seed+(i+1)*977)>>>0,rt:+(0.035+0.12*(1-skill)+0.05*r()).toFixed(3),red:r()<0.025,col:BOAT_COLORS[i%BOAT_COLORS.length]});}
+  const d=[0,1,2,3,4,5,6,7];for(let i=7;i>0;i--){const j=Math.floor(r()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
+  const rounds=[[0,1,2,3].map(m=>({a:d[m*2],b:d[m*2+1],win:null}))];
+  return{v:1,cls:k,seed,stage:0,field,rounds,rp:{},passes:[],done:false,place:null,wk:career()?C().week:null};}
+/* a rival's engine and its prop-shop setup (cached for the session; the night only keeps the numbers) */
+const boatRivC=new Map();
+function boatRival(N,i){const key=N.seed+":"+i;let R=boatRivC.get(key);if(R)return R;const f=N.field[i-1],C0=SIM.BOAT_CLASSES[N.cls];
+  const res=SIM.bogAiRes(f.hp,f.dsl,f.rs);res.kg=Math.round((f.dsl?420:130)+f.hp*(f.dsl?0.9:0.07));
+  if(C0.field.red){const rr=pullRand(f.rs^0x77);res.redline=C0.field.red[0]+Math.round(rr()*(C0.field.red[1]-C0.field.red[0])/100)*100;}
+  const base={redline:res.redline,idle:f.dsl?650:850};let set=f.set;
+  if(!set){const b=SIM.boatGuess(res,N.cls);set=f.set={gear:b.gear,trim:+(0.4*(f.skill-0.7)).toFixed(1)};if(b.pitch!=null)set.pitch=b.pitch;if(b.imp!=null)set.imp=b.imp;}
+  R={res,veh:Object.assign({cls:N.cls},base,set)};if(boatRivC.size>40)boatRivC.clear();boatRivC.set(key,R);return R;}
+/* a rival's pass in a round: fixed by the night's seed, the round's water and the driver */
+function boatRivalPass(N,stage,i,keepTrace){const k=stage+":"+i,f=N.field[i-1];if(N.rp[k]&&!keepTrace)return N.rp[k];
+  const R=boatRival(N,i),q=SIM.boatPass(R.res,Object.assign({},R.veh,{seed:(N.seed^(stage*131+i*7))>>>0,water:boatWaterAt(N,stage),rt:f.red&&stage===0?0:f.rt,noFail:true}),f.skill);
+  const red=f.red&&stage===0,out={rt:red?-0.02:q.rt,et:q.et,mph:q.mph,dnf:q.dnf||null};
+  if(!q.dnf&&q.et!=null&&pullRand((N.seed^(stage*977+i))>>>0)()<0.04)out.dnf="broke",out.et=null;   // now and then a rival lets go
+  N.rp[k]=out;return keepTrace?Object.assign({trace:q.trace,cut:out.dnf==="broke"?0.3+0.5*pullRand(N.seed^i)():null},out):out;}
+function boatTot(p){return p.rt!=null&&p.rt<0?Infinity:p.et==null?1e6+(p.dist?-p.dist:0):p.rt+p.et;}
+/* who won: a red light loses (both red: the earlier one), then a boat that finished beats one that didn't, then rt + et */
+function boatJudge(a,b){const ra=a.rt!=null&&a.rt<0,rb=b.rt!=null&&b.rt<0;if(ra&&rb)return a.rt<b.rt?"b":"a";if(ra)return "b";if(rb)return "a";
+  const ta=boatTot(a),tb=boatTot(b);return ta<=tb?"a":"b";}
+function boatResolve(N,ri){for(const m of N.rounds[ri]){if(m.win!=null||m.a===0||m.b===0)continue;const pa=boatRivalPass(N,ri,m.a),pb=boatRivalPass(N,ri,m.b);m.pa=pa;m.pb=pb;m.win=boatJudge(pa,pb)==="a"?m.a:m.b;}}
+function boatNext(N){const prev=N.rounds[N.stage],w=prev.map(m=>m.win),out=[];for(let i=0;i<w.length;i+=2)out.push({a:w[i],b:w[i+1],win:null});return out;}
+function boatBtnText(t,sub){const b=$("boatBtn");const k=t+"|"+(sub||"");if(b.dataset.k===k)return;b.dataset.k=k;b.innerHTML=t+(sub?`<small>${sub}</small>`:"");}
+function boatBreak(kind){BT.failed=true;BT.failKind=kind;run.fail=true;run.failKind=FAIL_VISUAL[kind]||"rod";failFlash();}
+function boatStart(){
+  $("app").classList.add("onstrip");
+  const k=boatEnvFix();let N=boatLive();
+  if(!N||N.cls!==k){N=boatNew(k);boatSetN(N);if(career())(C().boatWk=C().boatWk||{})[k]=C().week;}
+  const env=stdEnv(),res=SIM.boatPrep(S.cfg,env);
+  const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
+  boatResolve(N,N.stage);
+  const m=boatMyMatch(N),oi=m.a===0?m.b:m.a,stage=N.stage,water=boatWaterAt(N,stage),opp=boatRivalPass(N,stage,oi,true),of=N.field[oi-1];
+  const snap=testSnap(),hk=hKey(snap.h),veh=boatVeh(k);veh.water=water;veh.seed=career()?(N.seed^(stage*7919+(C().boatRuns=(C().boatRuns||0)+1)))>>>0:Math.floor(Math.random()*1e9);if(wi&&wi.w>=1)veh.wornAt=0.6+Math.random()*3;
+  const p=SIM.boatRun(res,veh),C0=SIM.BOAT_CLASSES[k];
+  BT={p,res,env,veh,k,hk,snap,N,stage,water,oi,opp,of,auto:S.env.boatDrive==="auto",took:null,t0:performance.now(),green:null,last:performance.now(),down:false,tc:0,foul:false,failed:false,failKind:null,doneAt:null,lastPtr:0,hops:0,blown:false,color:0xff7a1a,
+    label:BOAT_RND[stage],ox:0,ov:0,oDone:false};
+  BT.green=BT.t0+3000;
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("boatCtl").style.display="";$("boatBtn").dataset.k="";$("boatBtn").disabled=false;
+  $("testProg").classList.remove("done");sfx("start");boatHud();
+  scrollCtlIntoView("boatCtl");
+  const step=()=>{if(!BT||BT.finished)return;const now=performance.now();const dt=Math.min(0.25,(now-BT.last)/1000);BT.last=now;const st=p.st;
+    if(now>=BT.green){let left=Math.min(dt,(now-BT.green)/1000);while(left>1e-6&&st.t<60){const d=Math.min(0.02,left);left-=d;const c=boatCtl(st);p.step(d,c.thr,c.trim);}}
+    else if(BT.down&&!BT.foul&&!BT.auto){BT.foul=true;buzz([60,30,60]);}
+    if(st.broke&&!BT.failed)boatBreak(st.broke);
+    if(st.hops>BT.hops){BT.hops=st.hops;sfx("mudslap");}
+    if(!BT.rooster&&st.v>1){BT.rooster=true;if(typeof foley==="function")foley("rooster");}
+    if(st.blown&&!BT.blown)buzz([12]);BT.blown=st.blown;
+    const og=now<BT.green?0:st.t,o=boatOppAt(og);BT.ox=o.x;BT.ov=o.v;BT.oDone=o.done;
+    if(st.done&&BT.doneAt==null&&(BT.oDone||st.t-st.doneT>1.2)){BT.doneAt=now;const w=boatWinNow();if(w===true){winFlash();buzz([30,40,30,40,90]);}else buzz([40]);}
+    if(ENGINE_VIS.setBoat)ENGINE_VIS.setBoat(boatVisFrame(now,dt));
+    boatHud();
+    run.on=true;
+    if(BT.failed)run.rpm=Math.max(0,run.rpm-380);else run.rpm=st.rpm;
+    run.load=BT.failed||st.done?0:st.foot;
+    $("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*st.x/SIM.BOAT_FT)+"%";
+    if(BT.doneAt==null||(now-BT.doneAt<2600&&!BT.skip))requestAnimationFrame(step);else boatFinish();};
+  requestAnimationFrame(step);
+}
+/* the inputs this moment: the auto driver's, or the button and the trim switches */
+function boatCtl(st){if(BT.failed)return{thr:0,trim:0};if(BT.auto){const a=BT.p.auto(1);return a;}return{thr:BT.down?1:0,trim:BT.tc};}
+/* the other lane, from its trace (time from the green); a boat that broke coasts off the plane */
+function boatOppAt(t){const tr=BT.opp.trace||[];if(t<=0||!tr.length)return{x:0,v:0,done:false,bow:0,pl:0};
+  const cut=BT.opp.dnf&&BT.opp.cut!=null?tr[Math.min(tr.length-1,Math.floor(tr.length*BT.opp.cut))].t:Infinity;
+  let i=1;const tt=Math.min(t,cut);while(i<tr.length&&tr[i].t<tt)i++;const a=tr[i-1],b=tr[Math.min(i,tr.length-1)],f=b.t>a.t?Math.max(0,Math.min(1,(tt-a.t)/(b.t-a.t))):0;
+  let x=a.x+(b.x-a.x)*f,v=a.v+(b.v-a.v)*f;const end=tr[tr.length-1];
+  if(t>cut){const dt=t-cut,v1=Math.max(0,v-dt*9);x+=(v+v1)/2*Math.min(dt,v/9);v=v1;}
+  else if(t>end.t){const dt=t-end.t,v1=Math.max(0,end.v-dt*12);x=end.x+(end.v+v1)/2*Math.min(dt,end.v/12);v=v1;}
+  return{x,v,done:t>=Math.min(cut,end.t)};}
+function boatWinNow(){const st=BT.p.st;const me={rt:BT.foul?-0.01:st.rt,et:BT.failed||st.dnf?null:st.et,dist:st.x};return boatJudge(me,BT.opp)==="a";}
+/* what the river scene gets every frame */
+function boatVisFrame(now,dt){const st=BT.p.st,o=BT.opp,og=now<BT.green?0:st.t,tl=(now-BT.t0)/1000,pre=now<BT.green;
+  const tree={pre:tl>0.6,stage:tl>1.0,amb:pre?Math.max(0,Math.min(3,Math.floor((tl-1.5)/0.5)+1)):0,green:!pre,redMe:BT.foul,redOpp:!!(o.rt!=null&&o.rt<0)};
+  const oo=boatOppAt(og),C0=SIM.BOAT_CLASSES[BT.k];
+  return{on:true,phase:pre?"tree":st.done?"done":"run",cls:BT.k,hull:C0.hull,drive:C0.drive,dt,night:!!S.night,water:BT.water,tree,
+    me:{x:st.x,v:st.v,rpm:BT.failed?run.rpm:st.rpm,thr:st.foot,trim:st.trim,bow:st.bow,pl:st.pl,slip:st.slip,blown:st.blown,air:st.air,porp:st.porp,walk:st.walk,lr:st.Lr,hop:st.hopV,flip:st.dnf==="blowover",hook:st.dnf==="hooked",stuff:st.dnf==="stuffed",failed:BT.failed,color:BT.color,smoke:BT.res.diesel?0.5:0.08},
+    opp:{x:oo.x,v:oo.v,bow:oo.v>1?Math.max(0,6.5*Math.exp(-Math.pow((oo.v/9-1)/0.8,2)))+2:0,pl:Math.min(1,Math.max(0,(oo.v/9-0.6))),thr:oo.done?0:og>(o.rt||0)?1:0,color:BT.of.col,name:BT.of.name,flip:o.dnf==="blowover"&&oo.done},
+    finish:st.finished,meEt:st.et,meMph:st.mph,oppEt:oo.done?o.et:null,oppMph:oo.done?o.mph:null,won:BT.doneAt!=null?boatWinNow():null,skip:!!BT.skip};}
+/* the live card: the clock (or the far buoys), both lanes on the course, the prop's load against blowout, trim against the hull's sweet spot */
+function boatHud(){if(!BT)return;const st=BT.p.st,now=performance.now(),pre=now<BT.green,L=SIM.BOAT_FT,pc=v=>Math.min(100,100*Math.max(0,v)/L);
+  const t=pre?0:Math.max(0,st.t-(st.rt||st.t)),stat=BT.failed||st.dnf||BT.foul?"broke":st.finished?"full":"";
+  const say=BT.failed?"BROKE":BT.foul?"RED LIGHT":st.dnf?({blowover:"blew over",hooked:"hooked",stuffed:"stuffed it",time:"stuck on the hump"}[st.dnf]||"DNF"):st.finished?`${st.mph.toFixed(1)} mph`:pre?(now>BT.t0+1500?"ambers…":"staged"):st.phase==="line"?"GREEN!":Math.round(st.v*2.237)+" mph";
+  const big=st.finished?`${st.et.toFixed(3)}<i>s</i>`:`${Math.round(st.x*3.28084)}<i>ft</i>`;
+  const ratio=st.T/Math.max(1,BT.p.Tc0*(1+Math.pow(st.v/12,2))),lp=Math.min(100,Math.round(ratio/1.4*100)),tr=SIM.boatTrimRange(),tp=v=>Math.round(100*(v-tr[0])/(tr[1]-tr[0]));
+  const f=st.v/(SIM.BOAT_HULLS[BT.p.hull].vh),opt=f<0.8?-2:f>2.2?BT.p.opt:-2+(BT.p.opt+2)*Math.min(1,Math.max(0,(f-0.8)/1.4));
+  const warn=st.dnf?"":st.Lr>0.75?`<b style="color:var(--crit)">NOSE LIGHT</b>`:st.walk>0.4?`<b style="color:var(--crit)">CHINE WALK</b>`:st.porp>0.3?`<b style="color:var(--warn)">PORPOISING</b>`:st.blown?`<b style="color:var(--crit)">BLOWN OUT</b>`:st.air?`<b style="color:var(--info)">AIRBORNE</b>`:st.debris?`<b style="color:var(--warn)">${st.debris.kind==="grate"?"STICK IN THE GRATE":"WEED"}</b>`:`blowout past 100%`;
+  $("boatLive").innerHTML=`<div class="ph"><div class="ph-top ${stat}"><b>${big}</b><span>${BT.label} · vs ${esc(BT.of.name)}<br>${say}</span></div>
+    <div class="ph-bar"><i class="fill" style="width:${pc(st.x)}%"></i><i class="mk lead" style="left:${pc(BT.ox)}%"></i></div><div class="ph-lbl"><span>0</span><span>${esc(BT.of.boat)} <b>${Math.round(BT.ox*3.28084)} ft</b></span><span>1,000 ft</span></div>
+    <div class="ph-lbl"><span>Water <b>${esc(BT.water.name)}</b></span><span>${BT.water.wind>=0?"head":"tail"}wind <b>${Math.abs(BT.water.wind).toFixed(1)} m/s</b></span></div></div>
+    <div class="ph"><div class="ph-lbl" style="margin-top:0"><span>${BT.p.jet?"Pump":"Prop"} load <b>${Math.round(ratio*100)}%</b></span><span>${warn}</span></div>
+    <div class="ph-bar"><i class="zone" style="left:${Math.round(100/1.4)}%;width:${100-Math.round(100/1.4)}%"></i><i class="fill${st.blown?" ra":""}" style="width:${lp}%"></i></div>
+    <div class="ph-lbl"><span>Trim <b>${st.trim>=0?"+":""}${st.trim.toFixed(1)}°</b></span><span>${f<1?"in for the hump":"out with speed"}</span></div>
+    <div class="ph-bar"><i class="sw" style="left:${Math.max(0,tp(opt-0.6))}%;width:${tp(opt+0.6)-tp(opt-0.6)}%"></i><i class="nd ${st.porp>0.3||st.walk>0.3||st.Lr>0.7?"hot":Math.abs(st.trim-opt)<0.7?"ok":""}" style="left:${Math.min(99,Math.max(1,tp(st.trim)))}%"></i></div></div>
+    <div class="ph-row"><div class="peak"><b>${Math.round(st.v*2.237)}</b><span>mph</span></div><div class="peak"><b>${Math.round(st.slip*100)}<i>%</i></b><span>slip</span></div><div class="peak"><b style="color:${st.cool>100?"var(--crit)":st.cool>80?"var(--warn)":""}">${Math.round(st.cool)}<i>°C</i></b><span>water</span></div></div>`;
+  const tIn=$("boatTrimIn"),tOut=$("boatTrimOut");if(tIn){tIn.classList.toggle("on",BT.tc<0);tOut.classList.toggle("on",BT.tc>0);}
+  if(BT.failed)boatBtnText("BROKE","tap to skip");
+  else if(BT.doneAt!=null||st.done){const w=BT.doneAt!=null?boatWinNow():null;boatBtnText(w===true?"WIN":w===false?"LOSS":st.finished?`${st.et.toFixed(3)} S`:"DNF","tap to skip");}
+  else if(BT.auto)boatBtnText(pre?"AUTO DRIVER":"AUTO",pre?"it leaves on the green":"tap throttle or trim to take over");
+  else if(pre)boatBtnText(BT.foul?"RED LIGHT":"WAIT FOR THE GREEN",BT.foul?"you left early — run it out":"then hold for throttle");
+  else if(BT.down)boatBtnText(st.blown?"BLOWN OUT — FEATHER":st.air?"AIRBORNE — LIFT":f<1.1?"THROUGH THE HUMP":"ON PLANE",st.blown?"ease off until it hooks up":"trim out with speed");
+  else boatBtnText(st.phase==="line"?"GO!":"FEATHERED","hold for throttle");}
+function boatTakeOver(){if(!BT||!BT.auto)return;const st=BT.p.st;BT.auto=false;BT.took=st.phase==="line"?0:Math.round(st.x*3.28084);BT.down=st.foot>0.5;toast("You have it");}
+function boatPress(){if(!BT||BT.finished)return;const st=BT.p.st,now=performance.now();if(st.done||BT.failed||BT.doneAt!=null){boatSkip();return;}
+  if(BT.auto){if(now<BT.green){toast("The auto driver has the light");return;}boatTakeOver();}
+  BT.down=true;if(now<BT.green&&!BT.foul){BT.foul=true;buzz([60,30,60]);}}
+function boatRelease(){if(!BT)return;BT.down=false;}
+function boatTrim(d){if(!BT||BT.finished)return;if(BT.auto){if(performance.now()<BT.green)return;boatTakeOver();}BT.tc=d;}
+/* skip: run out the rest of the pass at once (the auto driver's inputs, or yours held where they were) */
+function boatSkip(){if(!BT||BT.finished)return;const p=BT.p,st=p.st;
+  if(!st.done){if(performance.now()<BT.green)BT.green=performance.now();let n=0;while(!st.done&&n++<3000){const c=BT.auto?p.auto(1):{thr:BT.down?1:p.auto(1).thr,trim:BT.tc};p.step(0.02,c.thr,c.trim);}if(st.broke&&!BT.failed)boatBreak(st.broke);}
+  if(ENGINE_VIS.boatSkip)ENGINE_VIS.boatSkip();BT.skip=true;if(BT.doneAt==null)BT.doneAt=performance.now()-2600;}
+function boatFinish(){
+  if(!BT||BT.finished)return;BT.finished=true;const {p,res,env,k,snap,hk,N,stage,oi}=BT;const r=p.result(),failed=BT.failed,C0=SIM.BOAT_CLASSES[k],same=testSame(snap);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setBoat)ENGINE_VIS.setBoat({on:false});$("app").classList.remove("onstrip");}},2200);
+  testing=false;run.on=false;run.fail=false;run.rpm=0;$("rpmbox").style.display="none";$("boatCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const me={rt:BT.foul?-0.01:r.rt,et:failed||r.dnf?null:r.et,mph:r.mph,dist:r.dist,dnf:failed?"broke":r.dnf};
+  const op=BT.opp,won=boatJudge(me,op)==="a";
+  if(typeof crowdAfter==="function")crowdAfter("boat",{broke:failed,won:won&&!failed});   // app/ambience.js
+  const mm=boatMyMatch(N);if(mm){mm.win=won?0:oi;mm.pa=mm.a===0?me:op;mm.pb=mm.a===0?op:me;}
+  r.match={label:BT.label,stage,opp:BT.of.name,boat:BT.of.boat,hp:BT.of.hp,oppRt:op.rt,oppEt:op.et,oppMph:op.mph,oppDnf:op.dnf,won,foul:BT.foul,margin:me.et!=null&&op.et!=null&&!BT.foul&&!(op.rt<0)?+(boatTot(me)-boatTot(op)).toFixed(3):null};
+  r.clsName=C0.n;r.tier=C0.tier;r.auto=BT.auto||BT.took!=null?{took:BT.took}:null;r.at=Date.now();
+  if(failed){r.broke=r.broke||BT.failKind;r.failKind=r.failKind||BT.failKind;}
+  N.passes.push({stage,et:me.et,mph:me.mph,rt:me.rt,dnf:me.dnf||null,won});
+  let place=null;if(!won||failed)place=stage===2?2:stage===1?3:5;else if(stage===2)place=1;
+  if(place){N.done=true;N.place=place;}else{const nx=boatNext(N);N.stage++;N.rounds[N.stage]=nx;}
+  if(N.stage<3&&!N.done)boatResolve(N,N.stage);
+  r.night={place,stage,label:BT.label,cls:k,done:N.done};
+  if(same)boatPb(r,failed||BT.foul);
+  res.boat=r;res.boatFailed=failed;res.boatFailKind=failed?BT.failKind:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  const sc=me.et!=null?`${me.et.toFixed(3)} @ ${Math.round(me.mph)}`:failed?"broke":"DNF";
+  if(career()&&same){addWear(0.45+0.15*C0.tier,hk);
+    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-2);logEvent(`Boat drags: ${C0.n} — ${r.broke==="valve_float"?"floated the valves":"let go"} ${r.distFt} ft down the river`,"bad");toast(`BROKE ON THE RIVER · ${r.distFt} ft`);}
+    else toast(`${BT.label} · ${won?"WIN":"LOSS"} · ${sc}`);
+    if(place){const purse=Math.round(C0.purse*(BOAT_PAY[place]||0)/10)*10,rep=BOAT_REPS[place]||0;N.purse=purse;r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
+      logEvent(`Boat drags: ${C0.n} — ${BOAT_PLACE[place].toLowerCase()}${purse?", purse "+fmt$(purse):""}`,place<=2?"good":"");if(purse)setTimeout(()=>toast(`${BOAT_PLACE[place]} · ${fmt$(purse)}`),2700);
+      spEvent("boat",{win:place===1,finish:place===2||place===3});}
+    hud();checkGoals();}
+  else toast(failed?`BROKE ON THE RIVER · ${r.distFt} ft`:`${BT.label} · ${won?"WIN":"LOSS"} · ${sc}`);
+  achCheck({type:"boat",r,failed,place});
+  BT.p=null;save();recompute();renderTest();
+  revealVerdict();
+}
+/* records: per class, the quickest clean pass and the top speed anyone saw */
+function boatPb(r,bad){if(ff||bad||r.et==null)return;const P=recBucket("boat"),was=P[r.cls];
+  if(was&&!(r.et<was.et)){if(r.mph>(was.top||0))was.top=r.mph;return;}
+  P[r.cls]=Object.assign({et:r.et,mph:r.mph,top:Math.max(r.mph,was&&was.top||0)},recTag());
+  if(was){r.pb={was:was.et.toFixed(3)};setTimeout(()=>toast(`CLASS BEST · ${r.et.toFixed(3)} s (was ${r.pb.was})`),3200);}}
+function boatShop(){const k=boatEnvFix(),key=k+"|"+cfgHash(S.cfg);if(boatShopC.has(key))return boatShopC.get(key);const res=SIM.boatPrep(S.cfg,stdEnv());
+  const b=SIM.boatTune(res,k,{redline:S.cfg.redline,idle:boatIdle(),trim:S.env.boatTrim});if(boatShopC.size>20)boatShopC.clear();boatShopC.set(key,b);return b;}
+$("envBox").addEventListener("click",e=>{
+  if(e.target.closest("[data-boatleave]")){const N=boatLive();if(!N||testing)return;if(!confirm("Leave the night? You forfeit this round."))return;N.done=true;N.place=[5,3,2][N.stage]||5;N.purse=0;save();renderTest();return;}
+  if(e.target.closest("[data-boatshop]")){const k=boatEnvFix(),key=k+"|"+cfgHash(S.cfg),C0=SIM.BOAT_CLASSES[k];
+    if(!boatShopC.has(key)){const b=e.target.closest("[data-boatshop]");b.textContent="Prop shop is running the numbers…";b.disabled=true;setTimeout(()=>{boatShop();renderEnv();},30);return;}
+    const s=boatShopC.get(key);if(s){if(C0.drive==="jet")S.env.boatImp=s.imp;else S.env.boatPitch=s.pitch;S.env.boatGear=s.gear;boatEnvFix();renderEnv();save();toast("Fitted · "+boatShopTxt(s,C0).split(" → ")[0]);}return;}
+  const b=e.target.closest("[data-tk]");if(!b)return;const k=b.dataset.tk,v=b.dataset.tv;
+  if(k==="boatCls"){const l=clsLocked(SIM.BOAT_CLASSES,v);if(l){toast(`${SIM.BOAT_CLASSES[v].n} opens at ${l} rep`);return;}if(v!==S.env.boatCls){S.env.boatPitch=null;S.env.boatGear=null;S.env.boatImp=null;}}
+  S.env[k]=k==="boatImp"?+v:v;boatEnvFix();renderEnv();save();buzz(6);evPickRender();});
+function boatRunBtn(){const N=boatLive(),b=$("runTest");if(testing)return;const k=S.env.boatCls;
+  if(N&&N.cls===k){const m=boatMyMatch(N),oi=m?(m.a===0?m.b:m.a):null;b.textContent=`To the line · ${BOAT_RND[N.stage].toLowerCase()}${oi?" vs "+N.field[oi-1].name.split(" ").pop():""}`;}
+  else{const c=testCost();b.textContent=`Enter the boat drags${c?" · "+fmt$(c):""}`;}}
+function boatRedraw(){const l=lastForChart();if(S.env.testType==="boat"&&l&&l.boat)drawBoatTrace(l.boat);}
+(()=>{const b=$("boatBtn"),tI=$("boatTrimIn"),tO=$("boatTrimOut");
+  holdBtn(b,()=>BT,boatPress,boatRelease,r=>{if(!r.p)return;boatPress();setTimeout(boatRelease,60);});
+  [[tI,-1],[tO,1]].forEach(([el,d])=>{el.addEventListener("pointerdown",e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(x){}boatTrim(d);});
+    ["pointerup","pointercancel"].forEach(ev=>el.addEventListener(ev,()=>{if(BT&&BT.tc===d)BT.tc=0;}));el.addEventListener("contextmenu",e=>e.preventDefault());});
+  /* arrow keys trim while a boat is on the course: up = out (bow up), down = in */
+  document.addEventListener("keydown",e=>{if(!BT||BT.finished||$("boatCtl").style.display==="none"||e.ctrlKey||e.metaKey||e.altKey)return;if(e.key==="ArrowUp"||e.key==="ArrowDown"){e.preventDefault();if(!e.repeat)boatTrim(e.key==="ArrowUp"?1:-1);}});
+  document.addEventListener("keyup",e=>{if(!BT)return;if(e.key==="ArrowUp"||e.key==="ArrowDown"){if(BT.tc===(e.key==="ArrowUp"?1:-1))BT.tc=0;}});})();
 /* ===================== TROPHY ROOM =====================
    What the shop has won, set and kept, in one room. The game already keeps records (recs()), achievements (S.ach), goals
    (C().goals), sponsors (spS()) and team seasons (pcS()); what it didn't keep is a dated history of wins, so this adds

@@ -99,19 +99,23 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/announcer.js` | drag announcer (Ed): line pools, rival engine table, lazy fetch/decode cache, matchup stitcher, `ann*` hooks called from `drag.js`, the Settings toggle |
 | `app/ambience.js` | ambience beds per venue and crowd reactions: lazy fetch/decode, crossfade by tab and event, `crowdAfter` called from each event's finish, the Ambience & crowd slider, `ENGINE_SOUND.holdAwake` |
 | `app/foley.js` | workshop and vehicle one-shots (`sounds/fx/`): `foley(id,opts)` on the ambience cache at the main Sound volume, `foleyPart` for Build changes, the dyno rollers, chute, hill gravel, boat rooster tail, bog mud; prefetch by tab |
-| `app/pull.js` | truck pull driver (PR), pull nights, points series |
-| `app/bog.js` | mud bog UI (BR) |
+| `app/pull.js` | truck pull, what the page reads: PR, the setup screen, pull nights and points series tables, records, the verdict and sheet |
+| `app/pull-run.js` | (`app-late.js`) the pull as it is run: `pullStart`, the hold button and kill switch, live card, `pullFinish`, the Run button's words |
+| `app/bog.js` | mud bog, what the page reads: BR, the setup screen, bog nights, records, the verdict and sheet |
+| `app/bog-run.js` | (`app-late.js`) the bog run: `bogStart`, the hold button, live card, `bogFinish` |
 | `app/road.js` | road test UI (RT) |
 | `app/e24.js` | 24 Hours UI (ER): live race, flag, records |
-| `app/salt.js` | Bitterwater UI: meets, records, `lsrWarm` |
-| `app/hill.js` | Cloudsplitter Peak UI (HC): classes, field, live card with corner calls, PUSH/LIFT, splits sheet, power-vs-altitude chart, records |
+| `app/salt.js` | Bitterwater, what the page reads: SR, meets, records, the setup screen, `lsrWarm` |
+| `app/salt-run.js` | (`app-late.js`) the salt run: `saltStart`, push, shift and chute, time warp, live card, `saltFinish` |
+| `app/hill.js` | Cloudsplitter Peak, what the page reads (HC): classes, field, splits sheet, power-vs-altitude chart, records |
+| `app/hill-run.js` | (`app-late.js`) the climb as it is run: live card with corner calls, PUSH/LIFT, `hillStart`, `hillFinish` |
 | `app/oval.js` | dirt oval race night: heat then feature, the rivals' laps, the live strip and PUSH / SAVE, classification, purses, records |
 | `app/results.js` | datalog `dl*`, `showResult`, achievements, teardown panel, `renderAnalysis`, `renderRecords` |
 | `app/career.js` | `advanceWeek` (Close week), overhead, sponsors, the Team tab's strip and sections, `renderShop`, upgrades, goals |
 | `app/savecode.js` | save codes: **Back up** / **Restore** in Shop → Saves (`buCode`, `buRead`, `buWrite`, the two sheets), backup files, the storage line and the backup reminder. See "Save codes" below |
 | `app/help.js` | onboarding tour, First Fire, help folds (the ⓘ on long hints) |
 | `app/glossary.js` | (`app-late.js`, not in the page) glossary, tap-to-explain and the 17 guided lessons |
-| `app/simlate.js` | loader for `sim-late.js` and its gates: `simNeeds`, `simTeamNeeds`, `simWait`, "Loading the track…" / Try again on the setup screen; `LATE_EVTS`, the events whose setup screen also waits for `app-late.js` |
+| `app/simlate.js` | loader for `sim-late.js` and its gates: `simNeeds`, `simTeamNeeds`, `simWait`, "Loading the track…" / Try again on the setup screen; `LATE_EVTS`, the events whose setup screen also waits for `app-late.js`; `evRunBtn`, the Run button's words for drag, pull and boat once both have landed |
 | `app/late.js` | loader for `app-late.js`: `LATE_FNS` stand-ins, "Loading…" / Try again in the sheet, the Glossary, Lessons and glossary On/Off buttons |
 | `app/pwa.js` | PWA: service worker registration (https non-localhost, or `?sw=1`; never file://), the "New version ready — Reload" bar (`css/ui-pwa.css`), Settings › App: Install app / iOS Add to Home Screen tip |
 | `app/boot.js` | sound & idle, sound bench (AB), `tick`, tabs `showTab`, desktop layout, tooltips, keyboard, `boot`/`start`, `</script>` |
@@ -153,7 +157,8 @@ Files added after the map above was written (their place in the order is in `man
 | `vis/models.js` | 8c. glTF model props from `models/` dressed into the polish layer on Full / Ultra (`MODEL_FILES`, `modelSpots`, `modelGet`, also used by the pull track, the pits and Cloudsplitter Peak; the `hill-*` files come from `tools/blender/hill-props.py`) |
 | `vis/trophy.js` | the trophy room scene (`ENGINE_VIS.setTrophy`) |
 | `vis/photo.js` | photo mode camera, lighting and backdrop presets, still frame out |
-| `app/boat.js` | boat drags UI (BT): eight-boat ladder nights |
+| `app/boat.js` | boat drags, what the page reads (BT): eight-boat ladder night tables, the setup screen, records, the verdict and sheet |
+| `app/boat-run.js` | (`app-late.js`) the night as it is run: rivals, `boatStart`, hold button and trim, live card, `boatFinish`, the boat shop |
 | `app/runview.js` | the run view: `html.onevent`, the big 3D view and HUD band during every event |
 | `app/swap.js` | Build > Swap: pick a car, read the fit, buy the fixes |
 | `app/rivals.js` | the three rival shops, the reputation board, head-to-head challenges |
