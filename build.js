@@ -3,9 +3,9 @@
  *
  *   Edit src/, run `node build.js`, commit both src/ and index.html. Never hand-edit index.html.
  *
- *   node build.js                 concatenate the files listed in src/manifest.txt into index.html (and the two background files,
- *                                 scenes.js and app-late.js), then write sw.js (the PWA service worker)
- *   node build.js --check         exit 1 if index.html, scenes.js, app-late.js or sw.js is not exactly what src/ builds (names the first differing src file)
+ *   node build.js                 concatenate the files listed in src/manifest.txt into index.html (and the three background files,
+ *                                 scenes.js, app-late.js and sim-late.js), then write sw.js (the PWA service worker)
+ *   node build.js --check         exit 1 if index.html, scenes.js, app-late.js, sim-late.js or sw.js is not exactly what src/ builds (names the first differing src file)
  *                                 both also refuse a script block that does not compile, or that declares a function twice
  *   node build.js --absorb <edited.html> <base.html>
  *                                 port a branch that still edits the old single-file index.html: diff base -> edited,
@@ -32,6 +32,10 @@ const CHUNK = "scenes.js", CHUNK_OUT = path.join(ROOT, CHUNK), INCHUNK = new Set
    into it; the page fetches it once the garage is up and runs it as a classic <script> (src/app/late.js), so it joins the page's
    top-level names. Checks: lintLate below. */
 const LATE = "app-late.js", LATE_OUT = path.join(ROOT, LATE), INLATE = new Set();
+/* the third lazy file: event physics the garage does not need (since 1.76.138.0). Manifest lines "sim-late.js: <path>" go into it;
+   the app fetches it once the garage is up (src/app/simlate.js) and ENGINE_SIM runs it inside its own closure (simLateRun in
+   src/sim/tunemap.js), the way scenes.js runs inside ENGINE_VIS. Checks: lintSimLate below. */
+const SIMC = "sim-late.js", SIMC_OUT = path.join(ROOT, SIMC), INSIM = new Set();
 
 function die(msg, code) { console.error("build.js: " + msg); process.exit(code || 1); }
 
@@ -39,7 +43,7 @@ function manifest() {
   if (!fs.existsSync(MAN)) die("missing " + path.relative(ROOT, MAN));
   const list = fs.readFileSync(MAN, "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => {
     const m = l.match(/^([\w.-]+):\s*(\S+)$/);   /* "scenes.js: vis/strip.js" = this file goes into scenes.js, not the page */
-    if (m) { if (m[1] === CHUNK) INCHUNK.add(m[2]); else if (m[1] === LATE) INLATE.add(m[2]); else die("manifest: unknown output file " + m[1] + " (only " + CHUNK + " or " + LATE + ")"); return m[2]; }
+    if (m) { if (m[1] === CHUNK) INCHUNK.add(m[2]); else if (m[1] === LATE) INLATE.add(m[2]); else if (m[1] === SIMC) INSIM.add(m[2]); else die("manifest: unknown output file " + m[1] + " (only " + CHUNK + ", " + LATE + " or " + SIMC + ")"); return m[2]; }
     return l;
   });
   const seen = new Set();
@@ -61,10 +65,12 @@ function orphans(list) {
 }
 
 const MARK = /^(<<<<<<<|>>>>>>>) /m;
-/* parts() = the files that make index.html; chunkParts() = the ones that make scenes.js; lateParts() = the ones that make app-late.js */
-function parts(list) { return allParts(list).filter(x => !INCHUNK.has(x.p) && !INLATE.has(x.p)); }
+/* parts() = the files that make index.html; chunkParts() = the ones that make scenes.js; lateParts() = the ones that make app-late.js;
+   simParts() = the ones that make sim-late.js */
+function parts(list) { return allParts(list).filter(x => !INCHUNK.has(x.p) && !INLATE.has(x.p) && !INSIM.has(x.p)); }
 function chunkParts(list) { return allParts(list).filter(x => INCHUNK.has(x.p)); }
 function lateParts(list) { return allParts(list).filter(x => INLATE.has(x.p)); }
+function simParts(list) { return allParts(list).filter(x => INSIM.has(x.p)); }
 let ALL = null;
 function allParts(list) {
   if (ALL && !list) return ALL;
@@ -168,6 +174,55 @@ function lintLate(ps, page, late) {
     }
   }
 }
+/* sim-late.js: a tag line carrying the version, the physics files byte for byte, then one line that hands ENGINE_SIM the functions
+   it exports from them (SIM_LATE in src/sim/tunemap.js: "name", or "export:local" for one exported under another name) */
+function simLateList(page) {
+  const m = page.toString("latin1").match(/^  var SIM_LATE = "([^"]*)"\.split\(" "\)/m);
+  if (!m) die("src/sim/tunemap.js: the SIM_LATE line is missing");
+  return m[1].split(" ").filter(Boolean).map(e => { const [k, l] = e.split(":"); return { k, l: l || k }; });
+}
+function buildSimLate(page) {
+  const list = simLateList(page);
+  return Buffer.concat([Buffer.from("/*pew-simlate " + version() + "*/\n")].concat(simParts().map(x => x.b),
+    [Buffer.from(";({" + list.map(e => e.k + ":" + e.l).join(",") + "})\n//# sourceURL=" + SIMC + "\n")]));
+}
+/* the closure's own declarations (two-space indent: the physics files are the body of the ENGINE_SIM function), with the
+   other names of a "const a = 1, b = 2" line */
+function simDecls(txt) {
+  const out = [];
+  for (const l of codeOnly(txt).split("\n")) {
+    const m = l.match(/^ {2}(?:async\s+)?(?:function\s*\*?\s*|const\s+|let\s+|var\s+|class\s+)([A-Za-z_$][\w$]*)/);
+    if (!m) continue;
+    out.push(m[1]);
+    if (/^\s*(?:const|let|var)\s/.test(l)) { let d = 0; for (let i = 0; i < l.length; i++) { const c = l[i]; if ("([{".includes(c)) d++; else if (")]}".includes(c)) d--; else if (c === "," && d === 0) { const mm = l.slice(i + 1).match(/^\s*([A-Za-z_$][\w$]*)\s*=/); if (mm) out.push(mm[1]); } } }
+  }
+  return out;
+}
+/* sim-late.js must compile (strict, inside a function, as ENGINE_SIM runs it); must not declare a name the page's physics declares
+   (inside the eval that would be a second copy, not the same thing); the page's physics must not use any of its names (they do not
+   exist there until it lands, and then only through the export); and every SIM_LATE function must be declared in it. */
+function lintSimLate(ps, page, sl) {
+  const vm = require("vm"), src = sl.toString("latin1"), sps = simParts(), list = simLateList(page);
+  try { new vm.Script('"use strict";(function(){' + src + "\n})", { filename: SIMC }); }
+  catch (e) { const ln = +((e.stack || "").match(/sim-late\.js:(\d+)/) || [0, 1])[1]; let at = 1; for (const x of sps) { const n = lines(x.b).length; if (ln - 1 <= at + n - 1) die(SIMC + " does not compile: " + e.message + "\n  at src/" + x.p + " line " + (ln - at)); at += n; } die(SIMC + " does not compile: " + e.message); }
+  const core = ps.filter(x => x.p.startsWith("sim/"));
+  const coreDecl = new Map();
+  for (const x of core) for (const n of simDecls(x.b.toString("latin1"))) coreDecl.set(n, x.p);
+  const decl = new Map();
+  for (const x of sps) for (const n of simDecls(x.b.toString("latin1"))) {
+    if (coreDecl.has(n)) die("src/" + x.p + " declares " + n + ", and so does src/" + coreDecl.get(n) + ": inside " + SIMC + " that is a second copy, not the same thing. Rename one.");
+    if (decl.has(n)) die(n + " is declared twice in " + SIMC + ": src/" + decl.get(n) + " and src/" + x.p);
+    decl.set(n, x.p);
+  }
+  for (const x of core) {
+    const L = codeOnly(x.b.toString("latin1")).split("\n");
+    for (const [n, from] of decl) {
+      const use = new RegExp("(?<![\\w$.])" + n.replace(/\$/g, "\\$") + "(?![\\w$])(?!\\s*:[^:])");
+      L.forEach((l, i) => { if (use.test(l)) die("src/" + x.p + " line " + (i + 1) + " uses " + n + " from " + SIMC + " (src/" + from + "), which the page's physics does not have.\n  Move the code that uses it into " + SIMC + " too, or keep " + n + " in the page."); });
+    }
+  }
+  for (const e of list) if (!decl.has(e.l) || !new RegExp("^ {2}(?:async\\s+)?(?:function\\s+" + e.l + "\\s*\\(|const\\s+" + e.l + "\\s*=)", "m").test(src)) die("SIM_LATE (src/sim/tunemap.js) lists " + e.l + ", which no " + SIMC + " file declares as a top-level function");
+}
 function build(ps) { ps = ps || parts(); return Buffer.concat(ps.map(x => x.b)); }
 
 /* ---- lint the built page: every inline <script> must compile (vm.Script parses, runs nothing), and no block may declare the same
@@ -191,18 +246,18 @@ function lint(ps, out) {
   }
   return n;
 }
-function sizes(ps, out, chunk, late) {
+function sizes(ps, out, chunk, late, sl) {
   const zlib = require("zlib"), by = {};
   for (const x of ps) { const k = x.p.split("/")[0]; (by[k] = by[k] || []).push(x.b); }
   const row = (k, b) => k.padEnd(6) + String(b.length).padStart(9) + String(zlib.gzipSync(b, { level: 9 }).length).padStart(9);
-  return ["       " + "raw".padStart(8) + "gzip".padStart(9)].concat(Object.keys(by).map(k => row(k, Buffer.concat(by[k])))).concat([row("page", out)], chunk ? [row("scenes", chunk)] : [], late ? [row("late", late)] : []).join("\n");
+  return ["       " + "raw".padStart(8) + "gzip".padStart(9)].concat(Object.keys(by).map(k => row(k, Buffer.concat(by[k])))).concat([row("page", out)], chunk ? [row("scenes", chunk)] : [], late ? [row("late", late)] : [], sl ? [row("simlt", sl)] : []).join("\n");
 }
 
 /* ---- sw.js: the service worker, generated so its cache name carries the version and a hash of everything it precaches ----
-   PRECACHE = every file this build emits (index.html, scenes.js, app-late.js: EMITTED) + manifest + icons.
+   PRECACHE = every file this build emits (index.html, scenes.js, app-late.js, sim-late.js: EMITTED) + manifest + icons.
    Any change to those bytes changes the hash, so sw.js changes, so browsers install it as an update (and show the "New version ready" bar). */
 const SW_OUT = path.join(ROOT, "sw.js");
-const EMITTED = ["index.html", CHUNK, LATE];   /* files build.js writes besides sw.js; the service worker precaches each */
+const EMITTED = ["index.html", CHUNK, LATE, SIMC];   /* files build.js writes besides sw.js; the service worker precaches each */
 function precacheList() {
   const list = EMITTED.concat(["manifest.webmanifest"]);
   const icons = path.join(ROOT, "icons");
@@ -331,16 +386,19 @@ function cmdBuild() {
   lint(ps, out);
   const chunk = buildChunk(out); lintChunk(ps, out, chunk);
   const late = buildLate(); lintLate(ps, out, late);
+  const sl = buildSimLate(out); lintSimLate(ps, out, sl);
   if (!(fs.existsSync(CHUNK_OUT) && fs.readFileSync(CHUNK_OUT).equals(chunk))) { fs.writeFileSync(CHUNK_OUT, chunk); console.log(`${CHUNK} written (${chunk.length} bytes, ${chunkParts().length} files)`); }
   else console.log(`${CHUNK} unchanged (${chunk.length} bytes, ${chunkParts().length} files)`);
   if (!(fs.existsSync(LATE_OUT) && fs.readFileSync(LATE_OUT).equals(late))) { fs.writeFileSync(LATE_OUT, late); console.log(`${LATE} written (${late.length} bytes, ${lateParts().length} files)`); }
   else console.log(`${LATE} unchanged (${late.length} bytes, ${lateParts().length} files)`);
+  if (!(fs.existsSync(SIMC_OUT) && fs.readFileSync(SIMC_OUT).equals(sl))) { fs.writeFileSync(SIMC_OUT, sl); console.log(`${SIMC} written (${sl.length} bytes, ${simParts().length} files)`); }
+  else console.log(`${SIMC} unchanged (${sl.length} bytes, ${simParts().length} files)`);
   const old = fs.existsSync(OUT) ? fs.readFileSync(OUT) : null;
   const sw0 = fs.existsSync(SW_OUT) ? fs.readFileSync(SW_OUT, "utf8") : null;
   if (!(old && old.equals(out))) { fs.writeFileSync(OUT, out); console.log(`index.html written (${out.length} bytes, ${ps.length} files)`); }
   else console.log(`index.html unchanged (${out.length} bytes, ${ps.length} files)`);
   const sw = writeSw(out); console.log(sw === sw0 ? "sw.js unchanged" : "sw.js written (" + (sw.match(/pew-shell-[^"]+/) || [""])[0] + ")");
-  console.log(sizes(ps, out, chunk, late));
+  console.log(sizes(ps, out, chunk, late, sl));
 }
 
 function cmdCheck() {
@@ -348,13 +406,15 @@ function cmdCheck() {
   lint(ps, out);
   const chunk = buildChunk(out); lintChunk(ps, out, chunk);
   const late = buildLate(); lintLate(ps, out, late);
+  const sl = buildSimLate(out); lintSimLate(ps, out, sl);
+  if (!fs.existsSync(SIMC_OUT) || !fs.readFileSync(SIMC_OUT).equals(sl)) { console.error("build.js --check: " + SIMC + " is missing or stale (it is built from the \"" + SIMC + ": ...\" lines of src/manifest.txt); run node build.js"); process.exit(1); }
   if (!fs.existsSync(LATE_OUT) || !fs.readFileSync(LATE_OUT).equals(late)) { console.error("build.js --check: " + LATE + " is missing or stale (it is built from the \"" + LATE + ": ...\" lines of src/manifest.txt); run node build.js"); process.exit(1); }
   if (!fs.existsSync(CHUNK_OUT) || !fs.readFileSync(CHUNK_OUT).equals(chunk)) { console.error("build.js --check: " + CHUNK + " is missing or stale (it is built from the \"" + CHUNK + ": ...\" lines of src/manifest.txt); run node build.js"); process.exit(1); }
   if (!fs.existsSync(OUT)) die("index.html is missing; run node build.js");
   const cur = fs.readFileSync(OUT), d = firstDiff(out, cur);
   if (d < 0) {
     if (!fs.existsSync(SW_OUT) || fs.readFileSync(SW_OUT, "utf8") !== swSource(out)) { console.error("build.js --check: sw.js is missing or stale (it is generated from index.html, manifest.webmanifest and icons/); run node build.js"); process.exit(1); }
-    console.log(`ok: index.html, ${CHUNK}, ${LATE} and sw.js match src/ (${out.length} + ${chunk.length} + ${late.length} bytes, ${ps.length} + ${chunkParts().length} + ${lateParts().length} files)`); return;
+    console.log(`ok: index.html, ${CHUNK}, ${LATE}, ${SIMC} and sw.js match src/ (${out.length} + ${chunk.length} + ${late.length} + ${sl.length} bytes, ${ps.length} + ${chunkParts().length} + ${lateParts().length} + ${simParts().length} files)`); return;
   }
   const w = where(ps, d);
   console.error(`build.js --check: index.html differs from the src/ build (built ${out.length} bytes, index.html ${cur.length}).`);
@@ -446,7 +506,7 @@ function cmdAbsorb(editedPath, basePath) {
   const out = Buffer.concat(next.map(x => x.b));
   if (!out.equals(target)) die("internal: the absorbed src/ does not rebuild the target page byte for byte; nothing written");
   for (const x of next) if (x.changed) fs.writeFileSync(path.join(SRC, x.p), x.b);
-  fs.writeFileSync(OUT, out); ALL = null; fs.writeFileSync(CHUNK_OUT, buildChunk(out)); fs.writeFileSync(LATE_OUT, buildLate()); writeSw(out);
+  fs.writeFileSync(OUT, out); ALL = null; fs.writeFileSync(CHUNK_OUT, buildChunk(out)); fs.writeFileSync(LATE_OUT, buildLate()); fs.writeFileSync(SIMC_OUT, buildSimLate(out)); writeSw(out);
   for (const n of notes) console.log("note: " + n);
   console.log(`absorbed ${hunks.length} hunk(s) into: ${next.filter(x => x.changed).map(x => "src/" + x.p).join(", ")}`);
   console.log(`index.html rebuilt (${out.length} bytes) and equals the ${target === edited ? "edited page" : "merged page"} byte for byte`);

@@ -411,7 +411,8 @@ function start(hot){
   if(perfTier()!=="lite")setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle. Not on Lite: each blocks a phone for a few hundred ms just as the garage opens, and Analysis and the salt look them up when they need them
   ENGINE_VIS.resize();   // the observer on #view fired before boot, while there was no renderer to size
   if(window.__ldDone)__ldDone();
-  lateSoon();   // the glossary and lessons (app-late.js, app/late.js): smaller, so asked for first
+  simLateSoon();   // event physics (sim-late.js, app/simlate.js): an event screen waits on it, so asked for first
+  lateSoon();   // the glossary and lessons (app-late.js, app/late.js): smaller than the scenes, so asked for before them
   scenesFetch();
 }
 /* The event scenes (the strip, the pull track, the mud pit and the rest: about a quarter of the game's code) are not in the page.

@@ -195,7 +195,9 @@ $("mkOh").addEventListener("click",()=>{const h=$("overheadHint"),on=h.hidden;h.
 /* Close week, or To race week: the off week after a round has nothing on it for the team, so one tap closes it and
    the race week too (pcSkip). It stops early if the bank calls, a sponsor phones or an R&D project finishes in between.
    "1 wk" (#oneWeek) closes just one, for a shop that wants the off week's event nights. */
-function closeWeeks(n){if(testing){toast("Let the run finish first");return;}const due=pcDue();if(due&&!confirm(due))return;
+function closeWeeks(n){if(testing){toast("Let the run finish first");return;}
+  if(simTeamNeeds()&&simWait(()=>closeWeeks(n),"Loading the race…"))return;   // a team's race day may fall in these weeks (app/simlate.js)
+  const due=pcDue();if(due&&!confirm(due))return;
   const w0=C().week;let oh=0;
   for(let i=0;i<n;i++){const so=spS().offers.length,rd=C().rndActive;advanceWeek();oh+=overhead();
     if(C().cash<FORECLOSE_AT||spS().offers.length>so||(rd&&!C().rndActive))break;}

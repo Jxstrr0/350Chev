@@ -117,7 +117,7 @@
     return { map: m, before: before, after: after, sims: sims, backedOff: backed, egtMax: egtMax };
   }
 
-  return {
+  const SIM_OUT = {
     LAYOUTS: LAYOUTS, OPT: OPT, FORM: FORM,
     mapFromSliders: mapFromSliders, mapGrid: mapGrid, mapCell: mapCell, mapAutoTune: mapAutoTune, mapRespace: mapRespace, mapAxis: mapAxis, mapOk: mapOk, mapLook: mapLook, MAP_LOADS: MAP_LOADS,
     DEFAULT_CFG: DEFAULT_CFG, DEFAULT_ENV: DEFAULT_ENV, PRESETS: PRESETS, dragRun: dragRun, dragPass: dragPass, dragDriver: dragDriver, DRAG_TICK: DRAG_TICK, TYRES: TYRES, AERO: AERO, DRIVETRAIN: DRIVETRAIN, drivetrain: drivetrain, dtCapOf: dtCapOf, dragMass: dragMass, DRAG_ENG_REF: DRAG_ENG_REF, dtPart: dtPart,
@@ -132,17 +132,37 @@
     bogPrep: bogPrep, bogRun: bogRun, bogPass: bogPass, bogNight: bogNight, bogDepth: bogDepth, bogGears: bogGears, bogAiRes: bogAiRes, bogMudName: bogMudName, BOG_CLASSES: BOG_CLASSES, BOG_TYRES: BOG_TYRES,
     boatPrep: boatPrep, boatRun: boatRun, boatPass: boatPass, boatTune: boatTune, boatGuess: boatGuess, boatWater: boatWater, boatTrimRange: boatTrimRange, BOAT_CLASSES: BOAT_CLASSES, BOAT_HULLS: BOAT_HULLS, BOAT_IMP: BOAT_IMP, BOAT_FT: BOAT_FT,
     roadRun: roadRun, lapSim: lapSim, roadTest: roadTest, roadPrep: roadPrep, roadTrack: roadTrack, roadCar: roadCar, roadWetMu: roadWetMu, setupVis: setupVis, setupNorm: setupNorm, CHASSIS: CHASSIS, ROAD_TYRES: ROAD_TYRES, ROAD_TRACKS: ROAD_TRACKS,
-    enduroPrep: enduroPrep, e24AiPrep: e24Ai, enduroNew: enduroNew, enduroStep: enduroStep, enduroWhere: enduroWhere, enduroResult: enduroResult, enduroClasses: enduroClasses, enduroClassOf: enduroClassOf,
-    e24Rates: e24Rates, e24Sky: e24Sky, e24Amb: e24Amb, e24Hour: e24Hour, e24Pos: e24Pos, e24Order: e24Order, e24Need: e24Need, e24Clock: e24Clock, e24Lap: e24Lap,
+    e24Hour: e24Hour, e24Clock: e24Clock,
     E24_MODES: E24_MODES, E24_TYRES: E24_TYRES, E24_CLASSES: E24_CLASSES, E24_CLS_ORDER: E24_CLS_ORDER, E24_FIX: E24_FIX, E24_CHIEF: E24_CHIEF, E24_K: E24_K, E24_TANK: E24_TANK, E24_DUR: E24_DUR,
     lsrRun: lsrRun, lsrChuteMax: lsrChuteMax, lsrPass: lsrPass, lsrFoot: lsrFoot, lsrPrep: lsrPrep, lsrGearing: lsrGearing, lsrClass: lsrClass, lsrRecord: lsrRecord, LSR_BODIES: LSR_BODIES, LSR_COURSES: LSR_COURSES, LSR_CHUTES: LSR_CHUTES, LSR_DISP: LSR_DISP, LSR_MILE: LSR_MILE, SALT_ENV: SALT_ENV,
     VEHICLES: VEHICLES, VEH_GROUPS: VEH_GROUPS, SWAP_FIX: SWAP_FIX, engineDims: engineDims, swapFit: swapFit, swapFixSet: swapFixSet, swapDragVeh: swapDragVeh, swapLsrBody: swapLsrBody,
-    hillCourse: hillCourse, hillPrep: hillPrep, hillCar: hillCar, hillNew: hillNew, hillPass: hillPass, hillCalls: hillCalls, hillPlan: hillPlan, hillAiPrep: hillAiPrep, hillZ: hillZ,
-    HILL_CLASSES: HILL_CLASSES, HILL_TYRES: HILL_TYRES, HILL_AERO: HILL_AERO, HILL_SECTIONS: HILL_SECTIONS, HILL_ALTS: HILL_ALTS, HILL_TREE: HILL_TREE, HILL_ALT0: HILL_ALT0, HILL_ALT1: HILL_ALT1, HILL_HILLS: HILL_HILLS, hillAlts: hillAlts, hillAmbC: hillAmbC, HILL_CALL: HILL_CALL,
+    hillZ: hillZ, HILL_CLASSES: HILL_CLASSES, HILL_TYRES: HILL_TYRES, HILL_AERO: HILL_AERO, HILL_SECTIONS: HILL_SECTIONS, HILL_ALTS: HILL_ALTS, HILL_TREE: HILL_TREE, HILL_ALT0: HILL_ALT0, HILL_ALT1: HILL_ALT1, HILL_HILLS: HILL_HILLS, hillAlts: hillAlts, hillAmbC: hillAmbC, HILL_CALL: HILL_CALL,
     ovalPrep: ovalPrep, ovalNew: ovalNew, ovalPass: ovalPass, ovalNight: ovalNight, ovalAiRes: ovalAiRes, ovalSetup: ovalSetup, ovalVlim: ovalVlim, ovalCi: ovalCi, OVAL_CLASSES: OVAL_CLASSES, OVAL_TYRES: OVAL_TYRES, OVAL_GRILLES: OVAL_GRILLES, OVAL: { R: OVAL_R, len: OVAL_LEN, ls: OVAL_LS, bank: OVAL_BANK, w: OVAL_W }, OVAL_TRACKS: OVAL_TRACKS, ovalTrack: ovalTrack,
     simulate: simulate, combos: combos, cfgLabel: cfgLabel,
     exhaustNoise: exhaustNoise, exhaustInfo: exhaustInfo, exhSysOf: exhSysOf, exhParts: exhParts
   };
+
+  /* ---------- sim-late.js: event physics that is not in the page (since 1.76.138.0) ----------
+     The races themselves for the 24 Hours and the hill climbs (sim/e24-run.js, sim/hill-run.js: the manifest lines marked
+     "sim-late.js:") are not in index.html. build.js writes them to sim-late.js; the app fetches it once the garage is up
+     (app/simlate.js) and hands the text to simLateRun, which runs it here, inside this closure, with a direct eval, so it sees
+     every physics name exactly as if it were still in the page. Its last line (build.js writes it) hands back the SIM_LATE
+     functions, which then join the export. Until then each is a stand-in that throws, and simLateOk is false: the app checks
+     simLateOk before it opens those events (simNeeds in app/simlate.js).
+     SIM_LATE: each export name, or "export:local" where the function is exported under another name. build.js checks the list:
+     every name in it is declared in sim-late.js, and nothing in the page's physics uses a name from that file.
+     Node (tools/sim-test.js) loads it the same way. */
+  var SIM_LATE = "e24Amb e24Sky enduroPrep e24Rates e24AiPrep:e24Ai enduroClasses enduroClassOf enduroNew e24Need e24Lap e24Order e24Pos enduroStep enduroWhere enduroResult hillCourse hillPrep hillCar hillCalls hillPlan hillNew hillPass hillAiPrep".split(" ").map(function (e) { return e.split(":")[0]; });
+  SIM_LATE.forEach(function (n) { SIM_OUT[n] = function () { throw new Error("ENGINE_SIM." + n + " is in sim-late.js, which has not loaded yet"); }; });
+  SIM_OUT.simLateOk = false;
+  SIM_OUT.simLateRun = function (txt) {
+    if (SIM_OUT.simLateOk) return;
+    const o = eval(txt);
+    SIM_LATE.forEach(function (n) { if (typeof o[n] !== "function") throw new Error("sim-late.js did not hand back " + n); });
+    SIM_LATE.forEach(function (n) { SIM_OUT[n] = o[n]; });
+    SIM_OUT.simLateOk = true;
+  };
+  return SIM_OUT;
 })();
 
 if (typeof module !== "undefined") module.exports = ENGINE_SIM;
