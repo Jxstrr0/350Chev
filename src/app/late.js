@@ -1,7 +1,7 @@
 /* ===== APP-LATE: the second background file (since 1.76.136.0) =====
    Code the garage does not need at first paint is not in index.html. build.js writes it to app-late.js (the manifest lines marked
    "app-late.js:"; so far the trophy room, photo mode and the build sheet (app/trophy.js, app/photo.js, since 1.76.137.0) and the
-   glossary, tap-to-explain and the 17 lessons (app/glossary.js), and since 1.76.140.0 the drag run (app/drag-run.js)), and lateSoon() fetches it once the garage
+   glossary, tap-to-explain and the 17 lessons (app/glossary.js), since 1.76.140.0 the drag run (app/drag-run.js), and since 1.76.141.0 the pull, bog, salt, boat and hill runs), and lateSoon() fetches it once the garage
    is up (boot.js start), just ahead of scenes.js. It runs as a classic <script>, so it sees every top-level name of the page and its
    functions become page globals, exactly as if it were still in the page.
    LATE_FNS: the late functions the page calls. Until the file has run, each is a stand-in (lateStub):
@@ -14,8 +14,10 @@
    build.js stops if the page uses any other app-late.js name without a typeof guard, or if a name is declared on both sides.
    Installed copies have app-late.js in the offline cache (sw.js precaches it). */
 /* the drag run (app/drag-run.js, since 1.76.140.0): the setup screen waits for this file too (simNeeds in app/simlate.js), so dragStart,
-   dragPress, dragRelease and shareSlip are only reached early by a stray tap; rnRunBtn is only called once simNeeds("drag") is false */
-const LATE_FNS={glApply:"",tropHook:"",glBrowse:"Glossary",lsMenu:"Lessons",tropOpen:"toast:Opening the trophy room…",dragStart:"toast:Loading the race…",dragPress:"toast:Loading the race…",dragRelease:"toast:Loading the race…",shareSlip:"toast:Loading the slip…",rnRunBtn:""};
+   dragPress, dragRelease and shareSlip are only reached early by a stray tap; rnRunBtn is only called once simNeeds("drag") is false.
+   The same goes for the pull, bog, salt, boat and hill runs (app/<event>-run.js, since 1.76.141.0): Start, Press and Release toast,
+   Redraw (a result drawn at boot) waits for the file, and the Run button's words (pullRunBtn, boatRunBtn) come from evRunBtn */
+const LATE_FNS={glApply:"",tropHook:"",glBrowse:"Glossary",lsMenu:"Lessons",tropOpen:"toast:Opening the trophy room…",dragStart:"toast:Loading the race…",dragPress:"toast:Loading the race…",dragRelease:"toast:Loading the race…",shareSlip:"toast:Loading the slip…",rnRunBtn:"",pullStart:"toast:Loading the race…",pullPress:"toast:Loading the race…",pullRelease:"toast:Loading the race…",pullRedraw:"",bogStart:"toast:Loading the race…",bogPress:"toast:Loading the race…",bogRelease:"toast:Loading the race…",bogRedraw:"",saltStart:"toast:Loading the race…",saltPress:"toast:Loading the race…",saltRelease:"toast:Loading the race…",saltRedraw:"",boatStart:"toast:Loading the race…",boatPress:"toast:Loading the race…",boatRelease:"toast:Loading the race…",boatRedraw:"",hillStart:"toast:Loading the race…",hillPress:"toast:Loading the race…",hillRelease:"toast:Loading the race…",hillRedraw:"",pullRunBtn:"",boatRunBtn:""};
 const LATE={ok:false,st:0,t:0,q:[],ask:null,stubs:{},retry:0};   // st: 0 idle, 1 fetching, 2 failed (try again), 3 broken (ran but did not finish)
 function lateStub(n,how){const toast1=how.startsWith("toast:")?how.slice(6):"";
   return (...a)=>{if(!how){LATE.q.push([n,a]);lateLoad(false);return;}

@@ -372,7 +372,7 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
   if(e.repeat)return;
   if(k==="?"){kbHelp();e.preventDefault();return;}
   const lk=k.toLowerCase();
-  if(lk==="k"&&pullKill()){e.preventDefault();}
+  if(lk==="k"&&typeof pullKill==="function"&&pullKill()){e.preventDefault();}
   else if(/^[1-6]$/.test(k)){const b=document.querySelector(`#tabs [data-tab="${TAB_KEYS[+k-1]}"]`);if(b){b.click();e.preventDefault();}}
   else if(lk==="s")$("sndBtn").click();
   else if(lk==="i"||lk==="e")$("idleBtn").click();

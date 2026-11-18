@@ -106,13 +106,18 @@ app/announcer.js
 app/ambience.js
 app/foley.js
 app/pull.js
+app-late.js: app/pull-run.js
 app/bog.js
+app-late.js: app/bog-run.js
 app/road.js
 app/e24.js
 app/salt.js
+app-late.js: app/salt-run.js
 app/hill.js
+app-late.js: app/hill-run.js
 app/oval.js
 app/boat.js
+app-late.js: app/boat-run.js
 app/runview.js
 app/results.js
 app/swap.js

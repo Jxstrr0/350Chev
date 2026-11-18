@@ -17,7 +17,9 @@
    simLateFail when it lands or fails. */
 const SIMLATE_EVTS=["race24","hill","drag","pull_sled","bog","road","salt","boat","oval"];   // events (S.env.testType) whose physics is in sim-late.js
 const SIMLATE_PC=["hill","drag","oval","pull","bog","boat"];   // team series kinds (PC_EVENTS[].ev) whose race day and replay need it
-const LATE_EVTS=["drag"];   // events whose run screen is in app-late.js (app/<event>-run.js, since 1.76.140.0): their setup screen waits for that file too
+const LATE_EVTS=["drag","pull_sled","bog","salt","boat","hill"];   // events whose run screen is in app-late.js (app/<event>-run.js, since 1.76.140.0): their setup screen waits for that file too
+/* the Run button's words for the events that set them from their run file (a race night, a pull series, a boat night), once nothing is missing */
+function evRunBtn(){const t=S.env.testType;if(simNeeds(t))return;if(t==="drag")rnRunBtn();else if(t==="pull_sled")pullRunBtn();else if(t==="boat")boatRunBtn();}
 const SIMLATE={st:0,t:0,retry:0,ask:null,chart:false};   // st: 0 idle, 1 fetching, 2 failed (try again), 3 broken (ran but did not finish)
 function simNeeds(t){return (!SIM.simLateOk&&SIMLATE_EVTS.includes(t))||(!LATE.ok&&LATE_EVTS.includes(t));}
 function simTeamNeeds(){return !SIM.simLateOk&&pcTeams().some(T=>PC_EVENTS[T.ev]&&SIMLATE_PC.includes(PC_EVENTS[T.ev].ev));}
@@ -27,7 +29,7 @@ function simWaitHtml(){return `<p class="hint" id="simWait">Loading the track…
 function simWait(fn,msg){if(SIM.simLateOk)return false;SIMLATE.ask={fn,t:Date.now()};toast(msg||"Loading the race…");simLateLoad(true);return true;}
 /* sim-late.js has run, or (late) app-late.js has: draw the setup screen that was waiting, once nothing it needs is missing */
 function simLateDone(late){
-  if($("simWait")&&!simNeeds(S.env.testType)){renderEnv();if(S.env.testType==="drag")rnRunBtn();}   // the setup, and the race night's words on the Run button
+  if($("simWait")&&!simNeeds(S.env.testType)){renderEnv();evRunBtn();}   // the setup, and the race night's words on the Run button
   if(late)return;
   if(typeof swapRender==="function")swapRender();   // the swap section's 0–100, top speed and quarter
   if(SIMLATE.chart){SIMLATE.chart=false;try{chartRedraw();}catch(e){console.error("[sim-late]",e);}}
