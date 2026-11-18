@@ -94,7 +94,8 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/state.js` | `<script>`, SIM aliases, `$`, career tables (UPGRADES, STAFF, RND, PRESTIGE, GOALS, loans), `S` state, **VERSION**, psi display, `save`/`hydrate`/`fuelMigrate`/save slots, `C()`/`career()`, env helpers, `cfgHash` (+HASH_SKIP), live compute (`recompute`, `hud`), engine card |
 | `app/build.js` | Build tab: `renderBuild`, segRow/sliderRow, SPECS, sheets, blueprints |
 | `app/test.js` | Test and Events tabs: env panel, car bodies/paint/rival looks, test/event picker (`evPickRender`, EV_T), Advanced folds, charts, `renderTest`, dyno tune map editor (MV, `renderMap`) |
-| `app/drag.js` | drag pass driver (DR, `dragStart`/`dragFinish`), strip HUD, timing slip, nitrous, race nights `rn*` |
+| `app/drag.js` | drag, what the page reads: the setup screen (`dragTuneHtml`, `rnPanel`…), wear and records (`recs`, `wearInfo`, `addWear`, `testSnap`), the timing slip card, race-night tables and helpers (`RN_*`, `rnRng`, `rnGauss`, `rnCur`) |
+| `app/drag-run.js` | (`app-late.js`) the drag pass itself (DR, `dragStart`/`dragFinish`, the hold button, the tree, nitrous), strip HUD, the slip picture and Share, race nights as they are run (`rnRace`, `rnAfterPass`, `rnLeave`); the page reaches it through `dragStart`, `dragPress`, `dragRelease`, `shareSlip`, `rnRunBtn` in `LATE_FNS`, and the drag setup screen waits for it (`LATE_EVTS`) |
 | `app/announcer.js` | drag announcer (Ed): line pools, rival engine table, lazy fetch/decode cache, matchup stitcher, `ann*` hooks called from `drag.js`, the Settings toggle |
 | `app/ambience.js` | ambience beds per venue and crowd reactions: lazy fetch/decode, crossfade by tab and event, `crowdAfter` called from each event's finish, the Ambience & crowd slider, `ENGINE_SOUND.holdAwake` |
 | `app/foley.js` | workshop and vehicle one-shots (`sounds/fx/`): `foley(id,opts)` on the ambience cache at the main Sound volume, `foleyPart` for Build changes, the dyno rollers, chute, hill gravel, boat rooster tail, bog mud; prefetch by tab |
@@ -110,7 +111,7 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/savecode.js` | save codes: **Back up** / **Restore** in Shop → Saves (`buCode`, `buRead`, `buWrite`, the two sheets), backup files, the storage line and the backup reminder. See "Save codes" below |
 | `app/help.js` | onboarding tour, First Fire, help folds (the ⓘ on long hints) |
 | `app/glossary.js` | (`app-late.js`, not in the page) glossary, tap-to-explain and the 17 guided lessons |
-| `app/simlate.js` | loader for `sim-late.js` and its gates: `simNeeds`, `simTeamNeeds`, `simWait`, "Loading the track…" / Try again on the setup screen |
+| `app/simlate.js` | loader for `sim-late.js` and its gates: `simNeeds`, `simTeamNeeds`, `simWait`, "Loading the track…" / Try again on the setup screen; `LATE_EVTS`, the events whose setup screen also waits for `app-late.js` |
 | `app/late.js` | loader for `app-late.js`: `LATE_FNS` stand-ins, "Loading…" / Try again in the sheet, the Glossary, Lessons and glossary On/Off buttons |
 | `app/pwa.js` | PWA: service worker registration (https non-localhost, or `?sw=1`; never file://), the "New version ready — Reload" bar (`css/ui-pwa.css`), Settings › App: Install app / iOS Add to Home Screen tip |
 | `app/boot.js` | sound & idle, sound bench (AB), `tick`, tabs `showTab`, desktop layout, tooltips, keyboard, `boot`/`start`, `</script>` |
