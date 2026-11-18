@@ -1,6 +1,8 @@
 /* ===================== PHOTO MODE + BUILD SHEET =====================
    Photo mode (html.photo): the view goes full screen, the panels fold away and the 3D camera is free (vis/photo.js does the camera, lights and
-   backdrop; this file is the controls, the gestures, the capture and the share/download). A dock holds light presets, backdrops and a few looks
+   backdrop; this file is the controls, the gestures, the capture and the share/download). Not in the page: it is in app-late.js
+   (app/late.js, since 1.76.137.0), so the camera button appears once that lands. phoSlug, phoFit and phoSave live in app/rcard.js,
+   which shares them. A dock holds light presets, backdrops and a few looks
    (vignette, caption, turntable, 2x). Venue scenes (strip, pull, salt, bog, boats, road, hill) take the camera as an offset on their own director;
    light there is an exposure change plus a colour grade laid over the picture. Esc or the X leaves.
    The build sheet is a 1200x1600 spec card: the engine in a studio, peak numbers, the hp / torque curve, key parts, best results. It works from
@@ -10,7 +12,6 @@ const PHO_ICON={cam:'<svg viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3
   doc:'<svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg>',x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>'};
 /* venue "light": a colour laid over the frame (CSS blend in the preview, the same canvas blend in the saved picture) */
 const PHO_GRADE={golden:{col:"rgba(255,150,60,.42)",op:"soft-light"},night:{col:"rgba(28,52,140,.55)",op:"multiply"}};
-const phoSlug=s=>String(s||"engine").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,32)||"engine";
 const phoCanShare=()=>{try{return !!(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([new Blob(["x"])],"a.png",{type:"image/png"})]}));}catch(e){return false;}};
 function phoBuild(){
   const v=$("view");if(!v||$("phUi"))return;
@@ -76,16 +77,6 @@ function phoCompose(cv){
     x.fillStyle="rgba(255,255,255,.92)";x.font=`700 ${u*2.6}px "Chakra Petch","Barlow Condensed","Arial Narrow",sans-serif`;x.fillText(phoFit(x,engineName().toUpperCase(),w-pad*2),pad,h-pad-u*2.4);
     x.fillStyle="rgba(255,255,255,.7)";x.font=`500 ${u*1.7}px "IBM Plex Mono",Menlo,Consolas,monospace`;x.fillText("PRAIRIE ENGINE WORKS",pad,h-pad);x.restore();}
   return out;
-}
-function phoFit(x,s,max){s=String(s==null?"":s);while(s.length>3&&x.measureText(s).width>max)s=s.slice(0,-2)+"…";return s;}
-/* a canvas to a file: the host's download service, the phone's share sheet when asked, or a download link */
-async function phoSave(c,fn,title,share){
-  const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob){toast("Couldn't make the picture here");return false;}
-  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
-  if(dl){try{await dl.save({filename:fn,data:blob});toast("Picture saved");return true;}catch(e){if(e&&e.code!=="declined")toast("Couldn't save the picture here");return false;}}
-  if(share){const file=new File([blob],fn,{type:"image/png"});
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});return true;}catch(e){if(e&&e.name==="AbortError")return false;}}}
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000);toast("Picture saved");return true;
 }
 async function phoShot(share){
   if(PHO.busy||!PHO.on)return;PHO.busy=true;const b=$(share?"phShare":"phShot");b.disabled=true;

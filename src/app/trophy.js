@@ -5,7 +5,9 @@
    from the achCheck() hook at the end of every event and seeded from the records the first time a save meets it.
    Events are data: TROPHY_EV lists each with its achCheck types, its trophy shape and how to read a win; an event with
    no entry still lands on the shelf when its result has place 1 (an obelisk until someone gives it a shape).
-   Retired engines are snapshots (cfg, name, peak hp, best results) shown on stands in the room and loadable again. */
+   Retired engines are snapshots (cfg, name, peak hp, best results) shown on stands in the room and loadable again.
+   Not in the page: this file is in app-late.js (app/late.js, since 1.76.137.0). The page reaches it through LATE_FNS: tropHook
+   (every call before it lands is kept and made once it does) and tropOpen (the Records button, wired in app/late.js). */
 const TROPHY_LOG_MAX=240,TROPHY_RET_MAX=24,TR_STANDS=6;   // TR_STANDS matches the vis room's stand count
 const trF=(v,d)=>v==null||!isFinite(v)?"—":(+v).toFixed(d);
 const trCls=(T,k)=>T&&T[k]&&T[k].n||k||"";
@@ -197,8 +199,8 @@ function tropPhotoCanvas(){const W=1080,H=1350,c=document.createElement("canvas"
   x.fillText(`${c2.shelf} troph${c2.shelf===1?"y":"ies"} · ${med} medal${med===1?"":"s"} · ${T.retired.length} retired engine${T.retired.length===1?"":"s"}`,W/2,1195);
   x.fillText(career()?"Career · week "+C().week:"Test cell",W/2,1240);return c;}
 /* ---- wiring ---- */
-document.addEventListener("click",e=>{const o=e.target.closest("[data-trophy]");if(o){e.preventDefault();tropOpen();return;}
-  if(!TR.open)return;const p=e.target.closest("[data-trp]");if(p){tropCard(p.dataset.trp);if(TR.gl&&window.matchMedia&&!deskOn())tropListShow(false);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(p.dataset.trp);return;}
+document.addEventListener("click",e=>{if(!TR.open)return;   // the [data-trophy] buttons that open the room are wired in app/late.js
+  const p=e.target.closest("[data-trp]");if(p){tropCard(p.dataset.trp);if(TR.gl&&window.matchMedia&&!deskOn())tropListShow(false);if(TR.gl&&!TR.list)ENGINE_VIS.trophyFocus(p.dataset.trp);return;}
   const a=e.target.closest("[data-tra]");if(!a)return;const k=a.dataset.tra,id=a.dataset.id;
   if(k==="close"){tropPick(null);}else if(k==="load")tropLoad(id);else if(k==="front")tropFront(id);else if(k==="remove")tropRemove(id);else if(k==="retire")tropRetire();
   else if(k==="share"){(async()=>{try{await document.fonts.ready;}catch(err){}const c=tropPlaqueCanvas(id);if(c)tropShareCanvas(c,"trophy-plaque.png","Trophy plaque");})();}});
@@ -207,3 +209,4 @@ $("trListBtn").addEventListener("click",()=>tropListShow(!TR.list));
 $("trPhoto").addEventListener("click",async()=>{try{await document.fonts.ready;}catch(e){}tropShareCanvas(tropPhotoCanvas(),"trophy-room.png","Trophy room");});
 document.addEventListener("keydown",e=>{if(!TR.open)return;if(e.key!=="Escape"){e.stopPropagation();return;}e.preventDefault();e.stopPropagation();if(TR.sel)tropPick(null);else tropClose();},true);   // the bench's single-key shortcuts sleep while the room is open
 {const f=renderRecords;renderRecords=function(){f();tropCountSync();};const g=renderShop;renderShop=function(){g.apply(this,arguments);tropCountSync();};}
+tropCountSync();   // the shelf count on the Records and Shop buttons, now that this file has landed
