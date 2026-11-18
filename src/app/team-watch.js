@@ -36,6 +36,7 @@ function pcwOvalRec(T,k,tk,seed,roster,ids,pr){try{
     b:pr.finished?null:last?[last[0],last[1],last[2]]:[0,0,0],rk:q.length?pcw1(q.reduce((a,b)=>a+b,0)/q.length):60};}catch(e){return null;}}
 /* ---- the replay ---- */
 function pcWatch(){const L=pcS().last;if(!pcwOk(L)||PCW)return;if(testing){toast("Let the run finish first");return;}
+  if(SIMLATE_PC.includes(L.watch.kind)&&simWait(pcWatch,"Loading the replay…"))return;   // app/simlate.js
   const w=L.watch;PCW_RV[1]=w.kind==="drag"?null:"pcwLive";   // the strip brings its own HUD; the oval's card goes on the view
   testing=true;PCW={kind:w.kind,w,L,t:0,last:performance.now(),speed:w.kind==="oval"?2:w.kind==="hill"?4:1};
   $("app").classList.add("onstrip");$("tab-events").classList.add("pcw");$("pcwSpd").hidden=!PCW_SPD[w.kind];$("pcwSpd").textContent=PCW.speed+"×";

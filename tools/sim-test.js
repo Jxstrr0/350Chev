@@ -26,6 +26,8 @@ function loadSim() {
   if (i < 0) throw new Error("index.html has no physics block; run node build.js");
   const m = { exports: {} };
   vm.runInThisContext("(function(module,exports){" + h.slice(h.lastIndexOf("<script>", i) + 8, h.indexOf("</script>", i)) + "\n})", { filename: "sim (index.html)" })(m, m.exports);
+  /* the event physics the page fetches later (sim-late.js, since 1.76.138.0), run inside the physics closure as the page does */
+  m.exports.simLateRun(fs.readFileSync(path.join(ROOT, "sim-late.js"), "utf8"));
   return m.exports;
 }
 const SIM = loadSim();

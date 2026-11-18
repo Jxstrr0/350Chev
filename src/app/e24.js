@@ -232,7 +232,8 @@ function drawE24Trace(r){const INK=getComputedStyle(document.documentElement).ge
   const padL=40,padR=12,padT=22,padB=24,cw=W-padL-padR,ch=H-padT-padB,X=t=>padL+cw*Math.min(1,t/86400);
   const green=tr.filter(l=>!l[2]).map(l=>l[1]).sort((a,b)=>a-b),lo=green.length?green[0]:Math.min(...tr.map(l=>l[1])),p97=green.length?green[Math.floor(green.length*0.97)]:lo+6,hi=Math.max(lo+4,p97+2),Y=v=>padT+ch*(1-Math.max(0,Math.min(1,(v-lo+1)/(hi-lo+1))));   // y to the 97th percentile: an off or a puncture lap pins to the top
   const F=getComputedStyle(document.body).fontFamily;x.font="10px "+F;
-  for(let t=0;t<=86400;t+=60){const s=SIM.e24Sky(t);if(s.n>0.05){x.fillStyle=`rgba(95,120,200,${0.12*s.n})`;x.fillRect(X(t),padT,cw/1440+0.6,ch);}}
+  if(!SIM.simLateOk){SIMLATE.chart=true;simLateLoad(false);}   // the night shading needs the race physics (app/simlate.js): drawn again when it lands
+  else for(let t=0;t<=86400;t+=60){const s=SIM.e24Sky(t);if(s.n>0.05){x.fillStyle=`rgba(95,120,200,${0.12*s.n})`;x.fillRect(X(t),padT,cw/1440+0.6,ch);}}
   x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--grid").trim()||"rgba(255,255,255,.07)";x.lineWidth=1;
   const stp=hi-lo>12?5:hi-lo>5?2:1;for(let v=Math.ceil(lo);v<=hi;v+=stp){const py=Y(v);x.beginPath();x.moveTo(padL,py);x.lineTo(W-padR,py);x.stroke();x.fillStyle=soft;x.textAlign="right";x.fillText(fmtLap(v,0).replace(/\.0$/,""),padL-4,py+3);}
   x.textAlign="center";for(let h=0;h<=24;h+=W>520?3:6){x.fillStyle=soft;x.fillText(SIM.e24Clock(h*3600),X(h*3600),H-6);}

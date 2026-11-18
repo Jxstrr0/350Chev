@@ -21,11 +21,11 @@ It runs on phones and desktops. Install it from the browser ("Add to Home Screen
 
 There are no dependencies and no package.json, only node (16 or newer).
 
-- `index.html`, `scenes.js` (the event scenes, fetched after the garage is up), `app-late.js` (the glossary, lessons, trophy room and photo mode, fetched the same way) and `sw.js` are generated. Edit the files in `src/`, then rebuild:
+- `index.html`, `scenes.js` (the event scenes, fetched after the garage is up), `app-late.js` (the glossary, lessons, trophy room and photo mode, fetched the same way), `sim-late.js` (the 24 Hours and hill climb physics, fetched the same way) and `sw.js` are generated. Edit the files in `src/`, then rebuild:
 
   ```
-  node build.js            # rebuild index.html, scenes.js, app-late.js and sw.js from src/
-  node build.js --check    # fails if index.html, scenes.js, app-late.js or sw.js is out of date
+  node build.js            # rebuild index.html, scenes.js, app-late.js, sim-late.js and sw.js from src/
+  node build.js --check    # fails if index.html, scenes.js, app-late.js, sim-late.js or sw.js is out of date
   node tools/sim-test.js   # after a physics change: shows every sim number that moved
   node check-savecode.js   # save-code round-trip checks
   ```

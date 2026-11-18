@@ -175,6 +175,7 @@ function failKindOf(res,env){
   return FAIL_VISUAL[id]||"rod";
 }
 $("runTest").addEventListener("click",()=>{
+  if(simNeeds(S.env.testType)){if(!testing){toast("Loading the track… a moment");simLateLoad(true);}return;}   // app/simlate.js
   if(!testing&&S.env.testType==="drag"&&rnGate())return;   // race night: enter, close, or the wrong engine
   if(S.env.testType==="race24"){if(!testing)e24Click();return;}   // the 24 Hours: its own gate, entry and fuel bill
   if(testing)return;const cost=testCost();if(career()&&C().cash<cost){toast("Not enough cash for dyno time");return;}

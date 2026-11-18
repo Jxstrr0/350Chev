@@ -486,6 +486,7 @@ function pcRun(T,chk,sat,auto){let cfg=auto?Object.assign({},SIM.DEFAULT_CFG,T.c
   if(res&&(T.hp==null||(chk&&(chk.kind==="build"||chk.kind==="change"))))T.hp=Math.round(res.peakHp);   // the season engine's power, for a hot shoe's ask
   pcSettle(T,chk,out,res,auto);return true;}
 function pcRace(sat,T,b){T=T||pcTeam();if(!T||testing)return;if(C().week<T.due){toast(`Round ${T.round+1} is race week ${T.due}`);return;}
+  if(simTeamNeeds()&&simWait(()=>pcRace(sat,T,b),"Loading the race…"))return;   // the series' physics is still on its way (app/simlate.js)
   const chk=sat?null:pcChecks(T);if(chk&&!chk.ok){toast("Not ready: "+(chk.o.find(x=>!x.ok)||{}).t);return;}
   if(b){b.disabled=true;b.textContent="Race day…";}
   setTimeout(()=>{if(!pcRun(T,chk,sat,false)){toast("Race day was rained out: try again");pcRender();return;}

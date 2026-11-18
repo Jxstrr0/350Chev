@@ -2,6 +2,7 @@
 const chart=$("chart");const curves={power:true,torque:true,boost:false,ve:false,egt:false,base:false};
 let envStdShown=null;
 function renderEnv(){
+  if(simNeeds(S.env.testType)){$("envBox").innerHTML=simWaitHtml();simLateLoad(true);return;}   // this event's physics is still on its way (app/simlate.js)
   evWarmSoon();   /* warm the event's scene and shaders while the setup screen is up (warm.js) */
   const e=S.env,t=e.testType;let h="";
   const sl=(k,l,min,max,step,unit,val)=>`<div class="env"><div class="lbl"><span>${l}</span><b id="ev-${k}" class="tap" data-enum="${k}" data-unit="${unit}">${val}${unit}</b></div><div class="srow"><button class="nud" data-enud="-1" data-ek="${k}">−</button><input type="range" id="er-${k}" data-e="${k}" min="${min}" max="${max}" step="${step}" value="${val}"><button class="nud" data-enud="1" data-ek="${k}">+</button></div></div>`;
