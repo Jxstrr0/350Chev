@@ -1,4 +1,4 @@
-/*pew-late 1.76.138.0*/
+/*pew-late 1.76.139.0*/
 /* ===================== TROPHY ROOM =====================
    What the shop has won, set and kept, in one room. The game already keeps records (recs()), achievements (S.ach), goals
    (C().goals), sponsors (spS()) and team seasons (pcS()); what it didn't keep is a dated history of wins, so this adds
