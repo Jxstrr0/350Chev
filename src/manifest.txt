@@ -110,8 +110,8 @@ app/rivals.js
 app/legacy.js
 app/savecode.js
 app/crew.js
-app/trophy.js
-app/photo.js
+app-late.js: app/trophy.js
+app-late.js: app/photo.js
 app/rail.js
 app/rcard.js
 app/shopsb.js

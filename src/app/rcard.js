@@ -6,6 +6,18 @@
    card gets the same sheen. Share draws the card to a picture and hands it to phoSave. Where the browser has View
    Transitions the engine card (.ecard) grows into the results card. Settings › Display › Results card turns it off (S.rcOff).
    Hooks: resultReveal() in test.js calls rcSeen(); tropHook() in trophy.js calls rcTrophy(); tropCard() calls holoWire(). */
+/* picture helpers shared with photo mode (app/photo.js, which loads later in app-late.js): a file-safe slug, a line cut to fit, and a canvas to a file */
+const phoSlug=s=>String(s||"engine").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,32)||"engine";
+function phoFit(x,s,max){s=String(s==null?"":s);while(s.length>3&&x.measureText(s).width>max)s=s.slice(0,-2)+"…";return s;}
+/* a canvas to a file: the host's download service, the phone's share sheet when asked, or a download link */
+async function phoSave(c,fn,title,share){
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob){toast("Couldn't make the picture here");return false;}
+  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  if(dl){try{await dl.save({filename:fn,data:blob});toast("Picture saved");return true;}catch(e){if(e&&e.code!=="declined")toast("Couldn't save the picture here");return false;}}
+  if(share){const file=new File([blob],fn,{type:"image/png"});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});return true;}catch(e){if(e&&e.name==="AbortError")return false;}}}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000);toast("Picture saved");return true;
+}
 const RC={armed:false,open:false,res:null,env:null,ghost:null,lastDyno:null,prev:{},cmp:null,trop:null,tropAt:0,wait:0,tries:0};
 const RC_DELAY=450,RC_WAIT=250,RC_TRIES=48;   // ms after a dyno test; events wait for the scene to end, checking every 250 ms for up to 12 s
 const RC_KICK={pull:"Dyno pull",endurance:"Endurance",overrev:"Over-rev",drag:"Drag pass",pull_sled:"Truck pull",salt:"Salt run",bog:"Mud bog",boat:"Boat drags",road:"Road test",hill:"Cloudsplitter Peak",oval:"Dirt oval",race24:"24 Hours"};

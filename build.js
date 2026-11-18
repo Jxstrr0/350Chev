@@ -127,7 +127,7 @@ function buildLate() {
 function lateFns(ps) {
   const m = ps.map(x => x.b.toString("latin1")).join("").match(/^const LATE_FNS=\{([^}]*)\};/m);
   if (!m) die("src/app/late.js: the LATE_FNS line is missing");
-  return [...m[1].matchAll(/([A-Za-z_$][\w$]*)\s*:/g)].map(x => x[1]);
+  return [...m[1].replace(/"(?:[^"\\]|\\.)*"/g, '""').matchAll(/([A-Za-z_$][\w$]*)\s*:/g)].map(x => x[1]);   /* keys only: "toast:..." in a value is not a name */
 }
 const TOPDECL = /^(?:async\s+)?(?:function\s*\*?\s*|const\s+|let\s+|var\s+|class\s+)([A-Za-z_$][\w$]*)/gm;
 /* comments become blank lines and string literals empty quotes, so a name is only found where it is code (line numbers kept) */

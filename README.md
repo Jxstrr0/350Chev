@@ -21,7 +21,7 @@ It runs on phones and desktops. Install it from the browser ("Add to Home Screen
 
 There are no dependencies and no package.json, only node (16 or newer).
 
-- `index.html`, `scenes.js` (the event scenes, fetched after the garage is up), `app-late.js` (the glossary and lessons, fetched the same way) and `sw.js` are generated. Edit the files in `src/`, then rebuild:
+- `index.html`, `scenes.js` (the event scenes, fetched after the garage is up), `app-late.js` (the glossary, lessons, trophy room and photo mode, fetched the same way) and `sw.js` are generated. Edit the files in `src/`, then rebuild:
 
   ```
   node build.js            # rebuild index.html, scenes.js, app-late.js and sw.js from src/
