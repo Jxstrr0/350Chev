@@ -1,5 +1,6 @@
 # build order for index.html: one src/ path per line (node build.js concatenates them)
 # a line "scenes.js: path" goes into scenes.js instead (the event scenes, fetched after the garage is up; see src/vis/scn.js)
+# a line "app-late.js: path" goes into app-late.js (app code the garage does not need at first paint, fetched after it is up; see src/app/late.js)
 html/head.html
 css/style.css
 css/ui-head.css
@@ -125,6 +126,8 @@ app/team-watch.js
 app/crate.js
 app/evhub.js
 app/help.js
+app-late.js: app/glossary.js
+app/late.js
 app/pwa.js
 app/folds.js
 app/perf.js

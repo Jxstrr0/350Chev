@@ -15,7 +15,7 @@ Prairie Engine Works is a browser engine-builder by Longlight Interactive: pick 
 ## Commands (repo root)
 
 ```
-node build.js            # rebuild index.html, scenes.js and sw.js from src/
+node build.js            # rebuild index.html, scenes.js, app-late.js and sw.js from src/
 node build.js --check    # exit 1 if either is stale, a script block does not compile, or a function is declared twice
 node check-savecode.js   # 15 save-code checks: round trip, damaged and cut-off codes, storage full, old PEW2 codes
 node tools/sim-test.js   # 500 sim numbers (ten engines, the dyno and all ten events) against tools/sim-baseline.json
@@ -25,9 +25,10 @@ Run the first three before every commit. Run `node tools/sim-test.js` whenever `
 
 ## Source and build
 
-- **Edit `src/`, never `index.html`, `scenes.js` or `sw.js`.** All three are generated: `node build.js` concatenates the files listed in `src/manifest.txt`, byte for byte, then writes `sw.js`.
+- **Edit `src/`, never `index.html`, `scenes.js`, `app-late.js` or `sw.js`.** All four are generated: `node build.js` concatenates the files listed in `src/manifest.txt`, byte for byte, then writes `sw.js`.
 - `scenes.js` is the nine event scenes (the manifest lines marked `scenes.js:`). They are not in the page: it fetches the file in the background once the garage is up and runs it inside the `ENGINE_VIS` closure (`src/vis/scn.js`), so a first visit downloads about a quarter less. When the page's 3D code calls a new scene function, add its name to `SCN_NAMES` in `src/vis/scn.js`; the build says so if you forget.
-- Commit `src/`, `index.html`, `scenes.js` and `sw.js` together.
+- `app-late.js` is app code the garage does not need at first paint (the manifest lines marked `app-late.js:`; so far `src/app/glossary.js`, the glossary and the 17 lessons, since 1.76.136.0). The page fetches it once the garage is up and runs it as a classic script, so it shares the app's top-level names (`src/app/late.js`). The page may only call its functions through `LATE_FNS` in `src/app/late.js` (stand-ins that say "Loading…" and make the call once it lands) or behind a `typeof` guard; the build stops on anything else, and on a top-level name declared on both sides. More of the app (event screens, results, photo and trophy) is meant to move there in later small PRs.
+- Commit `src/`, `index.html`, `scenes.js`, `app-late.js` and `sw.js` together.
 - `src/README.md` has the file map (which file holds what) and the merge-conflict and `--absorb` workflows. Read it before moving code or adding a file.
 - `src/` files are slices of one page, so a file may open or close mid-IIFE. `node --check` on one file means nothing; test the built page.
 - A new `src/` file must go into `src/manifest.txt` at the right position, or the build refuses to run.
@@ -75,7 +76,7 @@ When changing physics, run `node tools/sim-test.js` (it covers every event, not 
 - `src/sim/`: physics. `opt.js` tables and the build form; `simulate.js` and `tests.js` the dyno model, loads, tests and reliability; `combos.js` part interactions; `presets.js` the 96 base engines; one file per event (`drag`, `pull`, `bog`, `road`, `e24`, `salt`, `boat`, `swap`, `hill`, `oval`); `tunemap.js` the tune map and the export object.
 - `src/sound/`: the synth (`profile.js`, `synth.js`) and the recordings module (`samples.js`).
 - `src/vis/`: three.js. Engine mesh and garage, one scene per event, photo mode, trophy room, the Ultra extras.
-- `src/app/`: the UI and game. `state.js` (career tables, state, save, VERSION), one file per tab and event, `savecode.js`, `help.js` (tour and 17 lessons), `pwa.js`, `perf.js`, `boot.js`.
+- `src/app/`: the UI and game. `state.js` (career tables, state, save, VERSION), one file per tab and event, `savecode.js`, `help.js` (tour and First Fire), `glossary.js` (glossary and 17 lessons, in `app-late.js`), `late.js` (its loader), `pwa.js`, `perf.js`, `boot.js`.
 - `src/css/`: `style.css` plus one `ui-*.css` per feature lane.
 - `docs/DESIGN.md`: the game as built.
 - `src/vis/models.js` and `models/`: the glTF props for the workshop, the pull track (`PULL_PROPS` in `src/vis/pull.js`) and the drag pits (`PITS_MODELS` in `src/vis/pits.js`), Full / Ultra, and `tools/pack-model.py`, which packs a downloaded model for them.
@@ -92,7 +93,7 @@ When changing physics, run `node tools/sim-test.js` (it covers every event, not 
 - Real design decisions get asked, not guessed.
 - The site and the game use the name Kelbo only, never a real name. Studio name: Longlight Interactive.
 
-## Current status (1.76.135.4, November 2026)
+## Current status (1.76.136.0, November 2026)
 
 - Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply a race team for 8 rounds across 27 series in six kinds of racing, two teams at once from 300 rep; five varied offers with shoestring or well-funded budgets and team rules since 1.76.59.0, leaning to the top series opened since 1.76.60.0; offers built around the certified engine since 1.76.69.0; class rules shown on offers, Build and Test before a pull is paid for since 1.76.110.0; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), season beats, rescue contracts, returning drivers, Watch it replays (drag, oval, and since 1.76.100.0 pull, bog, boat and hill), a crew chief who can call the 24 Hours strategy (since 1.76.102.0), car show and sound-off, a career dev mode in Settings (+$100,000, +100 rep, skip week), certification, crate engine sales, rival feuds, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, a qualifying slip stamped with your seed and the lane result, a burnout › stage › launch strip over the drag button (since 1.76.124.0), a drag announcer (Hassan since 1.76.125.0, 143 ElevenLabs lines in `sounds/announcer/`, matchup calls stitched from parts, since 1.76.87.0), offline PWA, save codes with backup files and a backup reminder.
 - Known loose ends: none flagged beyond `docs/DESIGN.md`'s list.

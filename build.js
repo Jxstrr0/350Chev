@@ -3,8 +3,9 @@
  *
  *   Edit src/, run `node build.js`, commit both src/ and index.html. Never hand-edit index.html.
  *
- *   node build.js                 concatenate the files listed in src/manifest.txt into index.html, then write sw.js (the PWA service worker)
- *   node build.js --check         exit 1 if index.html or sw.js is not exactly what src/ builds (names the first differing src file)
+ *   node build.js                 concatenate the files listed in src/manifest.txt into index.html (and the two background files,
+ *                                 scenes.js and app-late.js), then write sw.js (the PWA service worker)
+ *   node build.js --check         exit 1 if index.html, scenes.js, app-late.js or sw.js is not exactly what src/ builds (names the first differing src file)
  *                                 both also refuse a script block that does not compile, or that declares a function twice
  *   node build.js --absorb <edited.html> <base.html>
  *                                 port a branch that still edits the old single-file index.html: diff base -> edited,
@@ -27,6 +28,10 @@ const NL = 10;
 /* the one lazy chunk: the event scenes. Manifest lines "scenes.js: <path>" go into it; the page fetches it once the garage is up and
    runs it inside the ENGINE_VIS closure (src/vis/scn.js). It is not a script the page could load with a tag: it only makes sense there. */
 const CHUNK = "scenes.js", CHUNK_OUT = path.join(ROOT, CHUNK), INCHUNK = new Set();
+/* the second lazy file: app code the garage does not need at first paint (since 1.76.136.0). Manifest lines "app-late.js: <path>" go
+   into it; the page fetches it once the garage is up and runs it as a classic <script> (src/app/late.js), so it joins the page's
+   top-level names. Checks: lintLate below. */
+const LATE = "app-late.js", LATE_OUT = path.join(ROOT, LATE), INLATE = new Set();
 
 function die(msg, code) { console.error("build.js: " + msg); process.exit(code || 1); }
 
@@ -34,7 +39,7 @@ function manifest() {
   if (!fs.existsSync(MAN)) die("missing " + path.relative(ROOT, MAN));
   const list = fs.readFileSync(MAN, "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => {
     const m = l.match(/^([\w.-]+):\s*(\S+)$/);   /* "scenes.js: vis/strip.js" = this file goes into scenes.js, not the page */
-    if (m) { if (m[1] !== CHUNK) die("manifest: unknown output file " + m[1] + " (only " + CHUNK + ")"); INCHUNK.add(m[2]); return m[2]; }
+    if (m) { if (m[1] === CHUNK) INCHUNK.add(m[2]); else if (m[1] === LATE) INLATE.add(m[2]); else die("manifest: unknown output file " + m[1] + " (only " + CHUNK + " or " + LATE + ")"); return m[2]; }
     return l;
   });
   const seen = new Set();
@@ -56,9 +61,10 @@ function orphans(list) {
 }
 
 const MARK = /^(<<<<<<<|>>>>>>>) /m;
-/* parts() = the files that make index.html; chunkParts() = the ones that make scenes.js */
-function parts(list) { return allParts(list).filter(x => !INCHUNK.has(x.p)); }
+/* parts() = the files that make index.html; chunkParts() = the ones that make scenes.js; lateParts() = the ones that make app-late.js */
+function parts(list) { return allParts(list).filter(x => !INCHUNK.has(x.p) && !INLATE.has(x.p)); }
 function chunkParts(list) { return allParts(list).filter(x => INCHUNK.has(x.p)); }
+function lateParts(list) { return allParts(list).filter(x => INLATE.has(x.p)); }
 let ALL = null;
 function allParts(list) {
   if (ALL && !list) return ALL;
@@ -111,6 +117,57 @@ function lintChunk(ps, page, chunk) {
   if (miss.length) die("the page's 3D code uses " + miss.join(", ") + " from " + CHUNK + " (src/" + decl.get(miss[0]) + "): add " + (miss.length > 1 ? "them" : "it") + " to SCN_NAMES in src/vis/scn.js");
   if (!core.includes("\n" + want + "\n") || !core.includes("\n" + take + "\n")) die("src/vis/scn.js: the two lines under SCN_NAMES are out of step with it. They must read:\n" + want + "\n" + take);
 }
+/* app-late.js: a tag line carrying the version (the loader refuses a copy from another version), the late files byte for byte, then
+   one line that tells the loader the whole file ran (a script that throws part way leaves it unset) */
+function buildLate() {
+  return Buffer.concat([Buffer.from("/*pew-late " + version() + "*/\n")].concat(lateParts().map(x => x.b),
+    [Buffer.from(";window.__pewLate=1;\n//# sourceURL=" + LATE + "\n")]));
+}
+/* LATE_FNS in src/app/late.js: the late functions the page may call (stand-ins until the file has run) */
+function lateFns(ps) {
+  const m = ps.map(x => x.b.toString("latin1")).join("").match(/^const LATE_FNS=\{([^}]*)\};/m);
+  if (!m) die("src/app/late.js: the LATE_FNS line is missing");
+  return [...m[1].matchAll(/([A-Za-z_$][\w$]*)\s*:/g)].map(x => x[1]);
+}
+const TOPDECL = /^(?:async\s+)?(?:function\s*\*?\s*|const\s+|let\s+|var\s+|class\s+)([A-Za-z_$][\w$]*)/gm;
+/* comments become blank lines and string literals empty quotes, so a name is only found where it is code (line numbers kept) */
+function codeOnly(t) {
+  return t.replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, " ")).replace(/(^|[^:"'\\])\/\/[^\n]*/g, "$1")
+    .replace(/"(?:[^"\\\n]|\\.)*"/g, '""').replace(/'(?:[^'\\\n]|\\.)*'/g, "''");
+}
+/* app-late.js must:
+   - compile as a classic script;
+   - declare no top-level name the page also declares. V8 itself checks this: every page <script> block, then app-late.js, is run in
+     one sandbox with a "throw" in front, so only the declarations happen (exactly as in a browser) and nothing executes. A let/const
+     clash is a SyntaxError there; a function that would quietly replace a page function or var is caught by name;
+   - declare every LATE_FNS name as a top-level function;
+   - not be used by the page except through LATE_FNS, or behind a typeof guard on the same line (the name does not exist until it lands). */
+function lintLate(ps, page, late) {
+  const vm = require("vm"), src = late.toString("latin1"), lps = lateParts();
+  try { new vm.Script(src, { filename: LATE }); }
+  catch (e) { const ln = +((e.stack || "").match(/app-late\.js:(\d+)/) || [0, 1])[1]; let at = 1; for (const x of lps) { const n = lines(x.b).length; if (ln - 1 <= at + n - 1) die(LATE + " does not compile: " + e.message + "\n  at src/" + x.p + " line " + (ln - at)); at += n; } die(LATE + " does not compile: " + e.message); }
+  const ctx = vm.createContext({}), txt = page.toString("latin1"), re = /<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g;
+  let m;
+  while ((m = re.exec(txt))) { try { vm.runInContext("throw 0;" + m[1], ctx); } catch (e) { if (e !== 0) die("internal: a page script block failed to set up in the sandbox: " + e.message); } }
+  try { vm.runInContext("throw 0;" + src, ctx); } catch (e) { if (e !== 0) die(LATE + " declares a top-level name the page already declares: " + e.message + "\n  Rename it in " + lps.map(x => "src/" + x.p).join(" or ")); }
+  const fns = lateFns(ps), app = ps.filter(x => x.p.startsWith("app/"));
+  const pageFn = new Map();
+  for (const x of app) for (const d of x.b.toString("latin1").matchAll(/^(?:async\s+)?(?:function\s*\*?\s*|var\s+)([A-Za-z_$][\w$]*)/gm)) pageFn.set(d[1], x.p);
+  const decl = new Map();
+  for (const x of lps) for (const d of x.b.toString("latin1").matchAll(TOPDECL)) {
+    if (pageFn.has(d[1])) die("src/" + x.p + " declares " + d[1] + ", which src/" + pageFn.get(d[1]) + " declares too: in " + LATE + " it would quietly replace the page's. Rename one.");
+    decl.set(d[1], x.p);
+  }
+  for (const n of fns) if (!new RegExp("^(?:async\\s+)?function\\s+" + n.replace(/\$/g, "\\$") + "\\s*\\(", "m").test(src)) die("LATE_FNS (src/app/late.js) lists " + n + ", which no " + LATE + " file declares as a top-level function");
+  for (const x of app) {
+    const L = codeOnly(x.b.toString("latin1")).split("\n");
+    for (const [n, from] of decl) {
+      if (fns.includes(n)) continue;
+      const use = new RegExp("(?<![\\w$.])" + n.replace(/\$/g, "\\$") + "(?![\\w$])(?!\\s*:[^:])"), guard = new RegExp("typeof\\s+" + n.replace(/\$/g, "\\$") + "(?![\\w$])");
+      L.forEach((l, i) => { if (use.test(l) && !guard.test(l)) die("src/" + x.p + " line " + (i + 1) + " uses " + n + " from " + LATE + " (src/" + from + "), which does not exist until that file has loaded.\n  Call it through LATE_FNS in src/app/late.js, or guard the line with typeof " + n + "."); });
+    }
+  }
+}
 function build(ps) { ps = ps || parts(); return Buffer.concat(ps.map(x => x.b)); }
 
 /* ---- lint the built page: every inline <script> must compile (vm.Script parses, runs nothing), and no block may declare the same
@@ -134,18 +191,18 @@ function lint(ps, out) {
   }
   return n;
 }
-function sizes(ps, out, chunk) {
+function sizes(ps, out, chunk, late) {
   const zlib = require("zlib"), by = {};
   for (const x of ps) { const k = x.p.split("/")[0]; (by[k] = by[k] || []).push(x.b); }
   const row = (k, b) => k.padEnd(6) + String(b.length).padStart(9) + String(zlib.gzipSync(b, { level: 9 }).length).padStart(9);
-  return ["       " + "raw".padStart(8) + "gzip".padStart(9)].concat(Object.keys(by).map(k => row(k, Buffer.concat(by[k])))).concat([row("page", out)], chunk ? [row("scenes", chunk)] : []).join("\n");
+  return ["       " + "raw".padStart(8) + "gzip".padStart(9)].concat(Object.keys(by).map(k => row(k, Buffer.concat(by[k])))).concat([row("page", out)], chunk ? [row("scenes", chunk)] : [], late ? [row("late", late)] : []).join("\n");
 }
 
 /* ---- sw.js: the service worker, generated so its cache name carries the version and a hash of everything it precaches ----
-   PRECACHE = every file this build emits (index.html now; add lazy chunks here if the build starts emitting more) + manifest + icons.
+   PRECACHE = every file this build emits (index.html, scenes.js, app-late.js: EMITTED) + manifest + icons.
    Any change to those bytes changes the hash, so sw.js changes, so browsers install it as an update (and show the "New version ready" bar). */
 const SW_OUT = path.join(ROOT, "sw.js");
-const EMITTED = ["index.html", CHUNK];   /* files build.js writes besides sw.js; the service worker precaches each */
+const EMITTED = ["index.html", CHUNK, LATE];   /* files build.js writes besides sw.js; the service worker precaches each */
 function precacheList() {
   const list = EMITTED.concat(["manifest.webmanifest"]);
   const icons = path.join(ROOT, "icons");
@@ -273,26 +330,31 @@ function cmdBuild() {
   const ps = parts(), out = build(ps);
   lint(ps, out);
   const chunk = buildChunk(out); lintChunk(ps, out, chunk);
+  const late = buildLate(); lintLate(ps, out, late);
   if (!(fs.existsSync(CHUNK_OUT) && fs.readFileSync(CHUNK_OUT).equals(chunk))) { fs.writeFileSync(CHUNK_OUT, chunk); console.log(`${CHUNK} written (${chunk.length} bytes, ${chunkParts().length} files)`); }
   else console.log(`${CHUNK} unchanged (${chunk.length} bytes, ${chunkParts().length} files)`);
+  if (!(fs.existsSync(LATE_OUT) && fs.readFileSync(LATE_OUT).equals(late))) { fs.writeFileSync(LATE_OUT, late); console.log(`${LATE} written (${late.length} bytes, ${lateParts().length} files)`); }
+  else console.log(`${LATE} unchanged (${late.length} bytes, ${lateParts().length} files)`);
   const old = fs.existsSync(OUT) ? fs.readFileSync(OUT) : null;
   const sw0 = fs.existsSync(SW_OUT) ? fs.readFileSync(SW_OUT, "utf8") : null;
   if (!(old && old.equals(out))) { fs.writeFileSync(OUT, out); console.log(`index.html written (${out.length} bytes, ${ps.length} files)`); }
   else console.log(`index.html unchanged (${out.length} bytes, ${ps.length} files)`);
   const sw = writeSw(out); console.log(sw === sw0 ? "sw.js unchanged" : "sw.js written (" + (sw.match(/pew-shell-[^"]+/) || [""])[0] + ")");
-  console.log(sizes(ps, out, chunk));
+  console.log(sizes(ps, out, chunk, late));
 }
 
 function cmdCheck() {
   const ps = parts(), out = build(ps);
   lint(ps, out);
   const chunk = buildChunk(out); lintChunk(ps, out, chunk);
+  const late = buildLate(); lintLate(ps, out, late);
+  if (!fs.existsSync(LATE_OUT) || !fs.readFileSync(LATE_OUT).equals(late)) { console.error("build.js --check: " + LATE + " is missing or stale (it is built from the \"" + LATE + ": ...\" lines of src/manifest.txt); run node build.js"); process.exit(1); }
   if (!fs.existsSync(CHUNK_OUT) || !fs.readFileSync(CHUNK_OUT).equals(chunk)) { console.error("build.js --check: " + CHUNK + " is missing or stale (it is built from the \"" + CHUNK + ": ...\" lines of src/manifest.txt); run node build.js"); process.exit(1); }
   if (!fs.existsSync(OUT)) die("index.html is missing; run node build.js");
   const cur = fs.readFileSync(OUT), d = firstDiff(out, cur);
   if (d < 0) {
     if (!fs.existsSync(SW_OUT) || fs.readFileSync(SW_OUT, "utf8") !== swSource(out)) { console.error("build.js --check: sw.js is missing or stale (it is generated from index.html, manifest.webmanifest and icons/); run node build.js"); process.exit(1); }
-    console.log(`ok: index.html, ${CHUNK} and sw.js match src/ (${out.length} + ${chunk.length} bytes, ${ps.length} + ${chunkParts().length} files)`); return;
+    console.log(`ok: index.html, ${CHUNK}, ${LATE} and sw.js match src/ (${out.length} + ${chunk.length} + ${late.length} bytes, ${ps.length} + ${chunkParts().length} + ${lateParts().length} files)`); return;
   }
   const w = where(ps, d);
   console.error(`build.js --check: index.html differs from the src/ build (built ${out.length} bytes, index.html ${cur.length}).`);
@@ -384,7 +446,7 @@ function cmdAbsorb(editedPath, basePath) {
   const out = Buffer.concat(next.map(x => x.b));
   if (!out.equals(target)) die("internal: the absorbed src/ does not rebuild the target page byte for byte; nothing written");
   for (const x of next) if (x.changed) fs.writeFileSync(path.join(SRC, x.p), x.b);
-  fs.writeFileSync(OUT, out); ALL = null; fs.writeFileSync(CHUNK_OUT, buildChunk(out)); writeSw(out);
+  fs.writeFileSync(OUT, out); ALL = null; fs.writeFileSync(CHUNK_OUT, buildChunk(out)); fs.writeFileSync(LATE_OUT, buildLate()); writeSw(out);
   for (const n of notes) console.log("note: " + n);
   console.log(`absorbed ${hunks.length} hunk(s) into: ${next.filter(x => x.changed).map(x => "src/" + x.p).join(", ")}`);
   console.log(`index.html rebuilt (${out.length} bytes) and equals the ${target === edited ? "edited page" : "merged page"} byte for byte`);
