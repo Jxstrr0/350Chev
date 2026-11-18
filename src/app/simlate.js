@@ -11,18 +11,24 @@
        lands, if that is within 8 s of the tap; only for a team in a series that needs it (SIMLATE_PC);
      - the swap section (Build) shows its road numbers as "—" and fills them in when it lands;
      - the 24 Hours lap chart leaves out the night shading and is drawn again when it lands.
-   If the download fails the setup screen says so and offers Try again; installed copies have sim-late.js in the offline cache. */
+   If the download fails the setup screen says so and offers Try again; installed copies have sim-late.js in the offline cache.
+   LATE_EVTS (since 1.76.140.0): events whose run code is in app-late.js (app/<event>-run.js). simNeeds is true for them until that
+   file has landed too, so their setup screen waits for both; simLateLoad asks for it, and app/late.js calls simLateDone(true) and
+   simLateFail when it lands or fails. */
 const SIMLATE_EVTS=["race24","hill","drag","pull_sled","bog","road","salt","boat","oval"];   // events (S.env.testType) whose physics is in sim-late.js
 const SIMLATE_PC=["hill","drag","oval","pull","bog","boat"];   // team series kinds (PC_EVENTS[].ev) whose race day and replay need it
+const LATE_EVTS=["drag"];   // events whose run screen is in app-late.js (app/<event>-run.js, since 1.76.140.0): their setup screen waits for that file too
 const SIMLATE={st:0,t:0,retry:0,ask:null,chart:false};   // st: 0 idle, 1 fetching, 2 failed (try again), 3 broken (ran but did not finish)
-function simNeeds(t){return !SIM.simLateOk&&SIMLATE_EVTS.includes(t);}
+function simNeeds(t){return (!SIM.simLateOk&&SIMLATE_EVTS.includes(t))||(!LATE.ok&&LATE_EVTS.includes(t));}
 function simTeamNeeds(){return !SIM.simLateOk&&pcTeams().some(T=>PC_EVENTS[T.ev]&&SIMLATE_PC.includes(PC_EVENTS[T.ev].ev));}
 /* the setup screen's stand-in while the file is on its way */
 function simWaitHtml(){return `<p class="hint" id="simWait">Loading the track…</p>`;}
 /* a tap that needs the file: say so, and make the call once it lands, if that is soon */
 function simWait(fn,msg){if(SIM.simLateOk)return false;SIMLATE.ask={fn,t:Date.now()};toast(msg||"Loading the race…");simLateLoad(true);return true;}
-function simLateDone(){
-  if($("simWait"))renderEnv();
+/* sim-late.js has run, or (late) app-late.js has: draw the setup screen that was waiting, once nothing it needs is missing */
+function simLateDone(late){
+  if($("simWait")&&!simNeeds(S.env.testType)){renderEnv();if(S.env.testType==="drag")rnRunBtn();}   // the setup, and the race night's words on the Run button
+  if(late)return;
   if(typeof swapRender==="function")swapRender();   // the swap section's 0–100, top speed and quarter
   if(SIMLATE.chart){SIMLATE.chart=false;try{chartRedraw();}catch(e){console.error("[sim-late]",e);}}
   const a=SIMLATE.ask;SIMLATE.ask=null;if(a&&Date.now()-a.t<8000)try{a.fn();}catch(e){console.error("[sim-late]",e);}}
@@ -34,6 +40,7 @@ function simLateFail(stale){
   if(r)r.addEventListener("click",()=>{w.textContent="Loading the track…";simLateLoad(true);});
   if(u)u.addEventListener("click",()=>location.reload());}
 function simLateLoad(force){
+  if(!LATE.ok&&LATE_EVTS.includes(S.env.testType))lateLoad(force);   // this event's run screen comes in app-late.js (app/late.js)
   if(SIM.simLateOk||SIMLATE.st===1||SIMLATE.st===3||typeof fetch!=="function")return;
   if(SIMLATE.st===2&&!force&&performance.now()-SIMLATE.t<3000)return;
   SIMLATE.st=1;const url="sim-late.js?v="+VERSION,tag="/*pew-simlate "+VERSION+"*/";

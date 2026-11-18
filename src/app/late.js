@@ -1,7 +1,7 @@
 /* ===== APP-LATE: the second background file (since 1.76.136.0) =====
    Code the garage does not need at first paint is not in index.html. build.js writes it to app-late.js (the manifest lines marked
    "app-late.js:"; so far the trophy room, photo mode and the build sheet (app/trophy.js, app/photo.js, since 1.76.137.0) and the
-   glossary, tap-to-explain and the 17 lessons (app/glossary.js)), and lateSoon() fetches it once the garage
+   glossary, tap-to-explain and the 17 lessons (app/glossary.js), and since 1.76.140.0 the drag run (app/drag-run.js)), and lateSoon() fetches it once the garage
    is up (boot.js start), just ahead of scenes.js. It runs as a classic <script>, so it sees every top-level name of the page and its
    functions become page globals, exactly as if it were still in the page.
    LATE_FNS: the late functions the page calls. Until the file has run, each is a stand-in (lateStub):
@@ -13,7 +13,9 @@
        within 8 s of the tap. If the download fails a toast says so.
    build.js stops if the page uses any other app-late.js name without a typeof guard, or if a name is declared on both sides.
    Installed copies have app-late.js in the offline cache (sw.js precaches it). */
-const LATE_FNS={glApply:"",tropHook:"",glBrowse:"Glossary",lsMenu:"Lessons",tropOpen:"toast:Opening the trophy room…"};
+/* the drag run (app/drag-run.js, since 1.76.140.0): the setup screen waits for this file too (simNeeds in app/simlate.js), so dragStart,
+   dragPress, dragRelease and shareSlip are only reached early by a stray tap; rnRunBtn is only called once simNeeds("drag") is false */
+const LATE_FNS={glApply:"",tropHook:"",glBrowse:"Glossary",lsMenu:"Lessons",tropOpen:"toast:Opening the trophy room…",dragStart:"toast:Loading the race…",dragPress:"toast:Loading the race…",dragRelease:"toast:Loading the race…",shareSlip:"toast:Loading the slip…",rnRunBtn:""};
 const LATE={ok:false,st:0,t:0,q:[],ask:null,stubs:{},retry:0};   // st: 0 idle, 1 fetching, 2 failed (try again), 3 broken (ran but did not finish)
 function lateStub(n,how){const toast1=how.startsWith("toast:")?how.slice(6):"";
   return (...a)=>{if(!how){LATE.q.push([n,a]);lateLoad(false);return;}
@@ -21,7 +23,8 @@ function lateStub(n,how){const toast1=how.startsWith("toast:")?how.slice(6):"";
 Object.keys(LATE_FNS).forEach(n=>{LATE.stubs[n]=window[n]=lateStub(n,LATE_FNS[n]);});
 function lateWait(title){$("sheetTitle").textContent=title;$("sheetBody").innerHTML=`<p class="hint" id="lateWait" style="margin-top:0">Loading…</p>`;
   $("sheet").classList.add("on");$("scrim").classList.add("on");}
-function lateFail(stale){if(LATE.ask&&LATE.ask.toast){LATE.ask=null;toast(stale?"The game was updated: reload to open this":"Couldn't load that. Check your connection.");return;}
+function lateFail(stale){if($("simWait")&&LATE_EVTS.includes(S.env.testType))simLateFail(stale);   // an event screen waiting on this file
+  if(LATE.ask&&LATE.ask.toast){LATE.ask=null;toast(stale?"The game was updated: reload to open this":"Couldn't load that. Check your connection.");return;}
   const w=$("lateWait");if(!w)return;
   w.innerHTML=stale?`The game was updated while this page was open. <button class="btn sm" id="lateReload">Reload</button>`:`Couldn't load this. Check your connection. <button class="btn sm" id="lateRetry">Try again</button>`;
   const r=$("lateRetry"),u=$("lateReload");
@@ -41,7 +44,7 @@ function lateLoad(force){
   get(false).then(t=>{
     const s=document.createElement("script");s.text=t;window.__pewLate=0;document.head.appendChild(s);s.remove();   // runs here and now; a classic script, so its names join the page's
     if(!window.__pewLate){LATE.st=3;throw new Error("app-late.js stopped part way (see the error above)");}
-    LATE.ok=true;LATE.st=0;lateFlush();
+    LATE.ok=true;LATE.st=0;lateFlush();if(typeof simLateDone==="function")simLateDone(true);   // an event screen waiting on this file (app/simlate.js)
   }).catch(e=>{if(LATE.st!==3){LATE.st=2;LATE.t=performance.now();}console.error("[late]",e);lateFail(!!e.stale);
     if(LATE.st===2&&!e.stale&&LATE.retry++<2)setTimeout(()=>lateLoad(),10000*LATE.retry);});   // a background try: twice more, 10 s then 20 s later
 }
