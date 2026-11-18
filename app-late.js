@@ -754,7 +754,7 @@ function hillHud(){if(!HC)return;const st=HC.run.st,T=HC.run.T,v=$("hlV");if(!v)
   const pc=Math.round(100*st.hpNow/HC.prep.ref.hp),cc=st.cool,mode=HC.auto?"auto":HC.push?"push":HC.lift?"lift":"steady";
   $("hlM").innerHTML=`<div class="peak"><b>${Math.round(st.hpNow)}</b><span>hp · ${pc}% of shop</span></div><div class="peak"><b style="color:${cc>112?"var(--crit)":cc>104?"var(--warn)":""}">${Math.round(cc)}<i>°C</i></b><span>water${st.derate<0.999?" · derate":""}</span></div><div class="peak"><b class="hl-mode ${mode}">${mode==="auto"?"AUTO":mode.toUpperCase()}</b><span>${HC.auto?"tap to take over":"commitment"}</span></div>`;
   hillBtnText();}
-function hillBtnText(){const p=$("hillPush"),l=$("hillLift");if(!p||!HC)return;const st=HC.run.st,k=(HC.auto?"a":"m")+(st.done?"d":"")+(HC.push?"p":"")+(HC.lift?"l":"");if(p.dataset.k===k)return;p.dataset.k=k;
+function hillBtnText(){const p=$("hillPush"),l=$("hillLift");if(!p||!HC||!HC.run)return;const st=HC.run.st,k=(HC.auto?"a":"m")+(st.done?"d":"")+(HC.push?"p":"")+(HC.lift?"l":"");if(p.dataset.k===k)return;p.dataset.k=k;
   if(st.done){p.innerHTML=`SUMMIT<small>tap to skip</small>`;l.innerHTML=`—<small>&nbsp;</small>`;}
   else if(HC.auto){p.innerHTML=`AUTO DRIVER<small>tap to take over</small>`;l.innerHTML=`LIFT<small>take over</small>`;}
   else{p.innerHTML=`PUSH<small>${HC.push?"committed":"hold into grippy corners"}</small>`;l.innerHTML=`LIFT<small>${HC.lift?"easing it in":"hold into dusty ones"}</small>`;}
