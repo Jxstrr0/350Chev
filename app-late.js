@@ -1062,7 +1062,7 @@ function ovalHud(rk){if(!OV||!$("ovV"))return;const st=OV.p.st,t=st.t,pos=rk.fin
   const cc=st.cool,wr=Math.round(100*Math.min(1.2,st.wear)),mode=OV.auto?"auto":OV.push?"push":OV.save?"save":"steady";
   $("ovM").innerHTML=`<div class="peak"><b style="color:${cc>112?"var(--crit)":cc>104?"var(--warn)":""}">${Math.round(cc)}<i>°C</i></b><span>water${st.derate<0.999?" · derate":""}${st.radPack>0.35?" · clogged":""}</span></div><div class="peak"><b style="color:${wr>80?"var(--crit)":wr>55?"var(--warn)":""}">${wr}<i>%</i></b><span>tyres worn</span></div><div class="peak"><b class="hl-mode ${mode==="push"?"push":mode==="save"?"lift":mode==="auto"?"auto":""}">${mode.toUpperCase()}</b><span>${OV.auto?"tap to take over":st.slideT>0?"SLIDING":"pace"}</span></div>`;
   ovalBtnText();}
-function ovalBtnText(){const p=$("ovalPush"),l=$("ovalSave");if(!p||!OV)return;const st=OV.p.st,k=(OV.auto?"a":"m")+(st.done?"d":"")+(OV.push?"p":"")+(OV.save?"s":"");if(p.dataset.k===k)return;p.dataset.k=k;
+function ovalBtnText(){const p=$("ovalPush"),l=$("ovalSave");if(!p||!OV||!OV.p)return;const st=OV.p.st,k=(OV.auto?"a":"m")+(st.done?"d":"")+(OV.push?"p":"")+(OV.save?"s":"");if(p.dataset.k===k)return;p.dataset.k=k;
   if(st.done){p.innerHTML=`${st.broke?"OUT":"FLAG"}<small>tap to skip</small>`;l.innerHTML=`—<small>&nbsp;</small>`;}
   else if(OV.auto){p.innerHTML=`AUTO DRIVER<small>tap to take over</small>`;l.innerHTML=`SAVE<small>take over</small>`;}
   else{p.innerHTML=`PUSH<small>${OV.push?"attacking":"hold to attack the corners"}</small>`;l.innerHTML=`SAVE<small>${OV.save?"easing it":"hold to cool the engine"}</small>`;}
