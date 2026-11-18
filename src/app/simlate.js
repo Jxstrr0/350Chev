@@ -17,9 +17,9 @@
    simLateFail when it lands or fails. */
 const SIMLATE_EVTS=["race24","hill","drag","pull_sled","bog","road","salt","boat","oval"];   // events (S.env.testType) whose physics is in sim-late.js
 const SIMLATE_PC=["hill","drag","oval","pull","bog","boat"];   // team series kinds (PC_EVENTS[].ev) whose race day and replay need it
-const LATE_EVTS=["drag","pull_sled","bog","salt","boat","hill"];   // events whose run screen is in app-late.js (app/<event>-run.js, since 1.76.140.0): their setup screen waits for that file too
-/* the Run button's words for the events that set them from their run file (a race night, a pull series, a boat night), once nothing is missing */
-function evRunBtn(){const t=S.env.testType;if(simNeeds(t))return;if(t==="drag")rnRunBtn();else if(t==="pull_sled")pullRunBtn();else if(t==="boat")boatRunBtn();}
+const LATE_EVTS=["drag","pull_sled","bog","salt","boat","hill","oval","road","race24"];   // events whose run screen is in app-late.js (app/<event>-run.js, since 1.76.140.0): their setup screen waits for that file too
+/* the Run button's words for the events that set them from their run file (a race night, a pull series, a boat night, an oval night), once nothing is missing */
+function evRunBtn(){const t=S.env.testType;if(simNeeds(t))return;if(t==="drag")rnRunBtn();else if(t==="pull_sled")pullRunBtn();else if(t==="boat")boatRunBtn();else if(t==="oval")ovalRunBtn();}
 const SIMLATE={st:0,t:0,retry:0,ask:null,chart:false};   // st: 0 idle, 1 fetching, 2 failed (try again), 3 broken (ran but did not finish)
 function simNeeds(t){return (!SIM.simLateOk&&SIMLATE_EVTS.includes(t))||(!LATE.ok&&LATE_EVTS.includes(t));}
 function simTeamNeeds(){return !SIM.simLateOk&&pcTeams().some(T=>PC_EVENTS[T.ev]&&SIMLATE_PC.includes(PC_EVENTS[T.ev].ev));}

@@ -1,4 +1,4 @@
-/*pew-late 1.76.141.0*/
+/*pew-late 1.76.142.0*/
 /* ===== DRAG RUN: the pass itself (app-late.js, since 1.76.140.0) =====
    Moved out of app/drag.js so a first visit downloads less: the pass (dragStart, the burnout › stage › launch button, the tree, the
    auto driver, nitrous, the finish), the race and bracket nights as they are run (rnRace, rnAfterPass, rnLeave…), the strip HUD and
@@ -68,20 +68,6 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   const rl=DR.veh.redline||8000,rpm=Math.max(0,run.rpm||0),f=Math.min(1,rpm/rl);
   shudSet("rpm",SH.rpm,`${ph==="run"?"G"+st.gear+" · ":""}${(Math.round(rpm/10)*10).toLocaleString("en-CA")} rpm`);
   shudSet("bar",SH.bi,`scaleX(${f.toFixed(3)})`,"transform");shudSet("lim",SH.bar,f>0.965?"shr lim":"shr","cls");}
-function dragTuneNow(){const e={},c={};for(const k of DTUNE_ENV)if(S.env[k]!==undefined)e[k]=S.env[k];for(const k of DTUNE_CFG)if(S.cfg[k]!==undefined)c[k]=S.cfg[k];return{env:e,cfg:c};}
-function dragTuneSame(t){if(!t)return false;const n=dragTuneNow();return DTUNE_ENV.every(k=>t.env[k]===n.env[k])&&DTUNE_CFG.every(k=>t.cfg[k]===undefined||t.cfg[k]===n.cfg[k]);}
-function dragTuneName(def){let n=null;try{n=prompt("Name this tune",def);}catch(e){}if(n==null)return null;n=String(n).trim().slice(0,24);return n||def;}
-function dragTuneAct(i,a){const T=dragTunes(),t=T[i];
-  if(a==="save"||!t){const n=t?t.n:dragTuneName(`Tune ${i+1}`);if(n==null)return;T[i]=Object.assign({n,at:Date.now()},dragTuneNow());DTSEL=-1;toast(`Saved “${n}”`);}
-  else if(a==="load"){Object.assign(S.env,t.env);for(const k of DTUNE_CFG)if(t.cfg[k]!==undefined&&S.cfg[k]!==t.cfg[k]){S.cfg[k]=t.cfg[k];buildStale=true;}
-    S.env.launchRpm=Math.min(S.env.launchRpm,S.cfg.redline);if(S.env.shiftRpm>0)S.env.shiftRpm=Math.min(S.env.shiftRpm,S.cfg.redline);
-    DTSEL=-1;recompute();toast(`Loaded “${t.n}”`);}
-  else if(a==="name"){const n=dragTuneName(t.n);if(n==null)return;t.n=n;DTSEL=-1;}
-  else if(a==="clear"){T[i]=null;DTSEL=-1;toast("Slot cleared");}
-  renderEnv();save();}
-$("envBox").addEventListener("click",e=>{const s=e.target.closest("[data-dtune]"),a=e.target.closest("[data-dtact]");if(!s&&!a)return;
-  if(a){if(DTSEL>=0)dragTuneAct(DTSEL,a.dataset.dtact);return;}
-  const i=+s.dataset.dtune;if(!dragTunes()[i]){dragTuneAct(i,"save");return;}DTSEL=DTSEL===i?-1:i;renderEnv();});
 /* the other lane's splits from its trace (the trace runs in its own time; R.k stretches it to the pass it made) */
 function dhudOppMarks(R){if(!R||!R.trace||!R.trace.length)return null;const tr=R.trace,k=R.k||1;
   const at=x=>{for(let i=1;i<tr.length;i++)if(tr[i][1]>=x){const a=tr[i-1],b=tr[i],dt=Math.max(1e-3,(b[0]-a[0])*k),f=b[1]>a[1]?(x-a[1])/(b[1]-a[1]):0;return{t:+((a[0]+(b[0]-a[0])*f)*k).toFixed(3),mph:+((b[1]-a[1])/dt*2.23694).toFixed(1)};}return null;};
@@ -600,6 +586,214 @@ function bogPb(r,failed){if(ff||failed)return;const P=recBucket("bog"),was=P[r.c
 function bogRedraw(){const l=lastForChart();if(S.env.testType==="bog"&&l&&l.bog)drawBogTrace(l.bog);}
 (()=>{const b=$("bogBtn");
   holdBtn(b,()=>BR,bogPress,bogRelease,r=>{if(!r.p)return;bogPress();setTimeout(bogRelease,60);});})();
+/* ---- road test: the lap as it is run (app-late.js, since 1.76.142.0): the live map and card, the ghost, finish, the setup tip worked
+   out after a run, and the redraw. The setup screen, setup sheet, saved setups, records and the verdict are in app/road.js ---- */
+/* ---- setup tip after a run: nudge one slider at a time, re-run the lap (Cloudsplitter Peak: the climb, a few a tick in the background),
+   and name the single change that gains most. r.tip = {i,d,v,gain} or {none:true}; "Use it" on the sheet loads v into the sliders. ---- */
+const SU_TRY=[[1,25],[1,-25],[5,25],[5,-25],[2,25],[2,-25],[4,-3],[4,3],[6,-20],[0,20],[0,-20],[3,-15],[3,15],[6,20]],SU_TRY_HILL=9;
+function suTipCands(su,n){const b=SU_F.map(f=>su&&su[f[4]]!=null?su[f[4]]:f[1]);
+  return SU_TRY.slice(0,n||SU_TRY.length).map(([i,d])=>{const v=b.slice();v[i]=Math.min(SU_F[i][3],Math.max(SU_F[i][2],v[i]+d));return v[i]===b[i]?null:{i,d,v};}).filter(Boolean);}
+const suTipBest=(L,min)=>{let w=null;for(const c of L)if(c.gain>=min&&(!w||c.gain>w.gain))w=c;return w?{i:w.i,d:w.d,v:w.v,gain:+w.gain.toFixed(2)}:{none:true};};
+function suTipRoad(prep,opt,trk,t0){try{const L=suTipCands(opt.setup);for(const c of L)c.gain=t0-SIM.lapSim(prep,Object.assign({},opt,{setup:suOf(c.v)}),trk).time;return suTipBest(L,0.03);}catch(e){return null;}}
+function suTipHill(r,prep,opt){const L=suTipCands(opt.setup,SU_TRY_HILL),pass=o=>SIM.hillPass(prep,Object.assign({},opt,{seed:5},o)).time;let t0=null,k=0;
+  const step=()=>{try{if(t0==null)t0=pass({});else{const c=L[k++],t=pass({setup:suOf(c.v)});c.gain=t0!=null&&t!=null?t0-t:-1;}}catch(e){r.tip=null;return;}
+    if(t0==null){r.tip=null;return;}if(k<L.length){setTimeout(step,30);return;}r.tip=suTipBest(L,0.2);const box=$("suTipBox");if(box)box.outerHTML=suTipHtml(r,true);};
+  r.tip=undefined;setTimeout(step,2200);}
+function roadMapDraw(cv,T,s,gs){if(!cv)return;const B=cvBox(cv),dpr=Math.min(devicePixelRatio||1,2),W=B.W,H=B.H;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const sc=Math.min((W-12)/T.size[0],(H-12)/T.size[1]),P=i=>[W/2+T.x[i]*sc,H/2-T.y[i]*sc];
+  const ink=B.ink;x.lineJoin="round";x.strokeStyle=ink;x.globalAlpha=.22;x.lineWidth=5;x.beginPath();for(let i=0;i<T.N;i+=2){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.closePath();x.stroke();
+  x.globalAlpha=.75;x.lineWidth=1.6;x.stroke();x.globalAlpha=1;
+  const p0=P(0),h0=T.h[0];x.strokeStyle="#d97757";x.lineWidth=2;x.beginPath();x.moveTo(p0[0]-Math.sin(h0)*6,p0[1]-Math.cos(h0)*6);x.lineTo(p0[0]+Math.sin(h0)*6,p0[1]+Math.cos(h0)*6);x.stroke();
+  if(gs!=null){const i=Math.floor(((gs/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#9fd3ff";x.globalAlpha=.8;x.beginPath();x.arc(p[0],p[1],3.5,0,7);x.fill();x.globalAlpha=1;}
+  if(s!=null){const i=Math.floor(((s/T.ds)%T.N+T.N)%T.N),p=P(i);x.fillStyle="#d97757";x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();x.strokeStyle="#141413";x.lineWidth=1.2;x.stroke();}}
+function roadHudInit(){const L=$("roadLive");L.innerHTML=`<div class="rdh"><div class="rd-spd"><b id="rdV">0</b><i>km/h</i></div><div class="rd-g"><b id="rdG">–</b><i>gear</i></div><div class="rd-lt"><b id="rdT">0:00.0</b><i id="rdTi">lap</i></div><canvas id="rdMap" class="rd-map"></canvas></div>
+  <div class="ph-bar rd-rpm"><i class="fill" id="rdR"></i><i class="mk" style="left:${Math.round(100*(RT.redline*0.9)/(RT.redline*1.04))}%"></i></div><div class="ph-lbl" style="margin-top:4px"><span id="rdRpm">0 rpm</span><span id="rdPd"></span></div>
+  <div class="rd-sec" id="rdS"></div>`;}
+function roadHud(f){if(!RT)return;const v=$("rdV");if(!v)return;
+  v.textContent=Math.round(f.v*3.6);$("rdG").textContent=f.g||"–";$("rdT").textContent=fmtLap(Math.max(0,f.lapT));$("rdTi").textContent=f.pre?"flying start":f.done?"lap":"lap time";
+  $("rdR").style.width=Math.min(100,100*f.rpm/(RT.redline*1.04))+"%";$("rdR").style.background=f.rpm>RT.redline*0.97?"linear-gradient(90deg,rgba(238,90,94,.4),rgba(238,90,94,.9))":"";
+  $("rdRpm").textContent=`${(Math.round(f.rpm/10)*10).toLocaleString("en-CA")} rpm${RT.boostT>0?` · ${bv(f.bst)} ${pU()}`:""}`;$("rdPd").innerHTML=f.brk>0.05?`<b style="color:var(--crit)">BRAKE ${Math.round(f.brk*100)}%</b>`:`throttle <b>${Math.round(f.thr*100)}%</b>${f.lim?` · <b style="color:var(--warn)">grip</b>`:""}`;
+  const sec=RT.lap.sectors,cut=RT.secCut,best=RT.best&&RT.best.sec;let h="";
+  for(let k=0;k<3;k++){const done=!f.pre&&f.lapT>=cut[k+1]-1e-6,t=sec[k],d=best&&done?t-best[k]:null;
+    h+=`<div class="${done?"on":""}"><span>S${k+1}</span><b>${done?t.toFixed(2):k===0||(!f.pre&&f.lapT>=cut[k])?"…":"—"}</b>${d!=null?`<i class="${d<=0?"up":"dn"}">${d<=0?"−":"+"}${Math.abs(d).toFixed(2)}</i>`:""}</div>`;}
+  $("rdS").innerHTML=h;roadMapDraw($("rdMap"),RT.T,f.s,RT.ghost);}
+function roadBtnText(){const b=$("roadSkip");if(b)b.textContent=RT&&RT.finished?"…":"SKIP ▸▸";const s=$("roadSpd");if(s&&RT)s.textContent=RT.speed+"×";}
+/* the ghost of your best lap: its distance every gd seconds, saved with the record (about 240 numbers a lap) */
+function roadGhostRec(L){const gd=Math.max(0.5,Math.ceil(L.time/240*2)/2),o=[gd];for(let t=0;t<L.time;t+=gd)o.push(Math.round(roadAt(L,t).s));o.push(Math.round(L.N*L.ds));return o;}
+function roadGhostAt(B,t){const g=B&&B.gh;if(!Array.isArray(g)||g.length<3||!(t>=0)||t>=B.t)return null;const gd=g[0],x=t/gd,i=Math.floor(x),a=g[1+i],b=g[2+i];if(a==null)return null;return b==null?a:a+(b-a)*(x-i);}
+function roadStart(){
+  const env=stdEnv(wxEnv("road")),opt=roadOpt(),trk=S.env.roadTrk,snap=testSnap();
+  const res=SIM.simulate(snap.cfg,env);
+  if(res.fails.length){testing=false;toast(`It wouldn't last a lap — ${String(res.fails[0]).toLowerCase()} on the dyno first`);if(career()){C().cash+=testCost();hud();}renderTest();return;}
+  $("app").classList.add("onstrip");
+  if(opt.dtCap>0&&res.peakTq/opt.dtCap>1.3){opt.dtBrk=true;opt.dtMsg=SIM.dtPart(res.peakTq/opt.dtCap);}   // a big overload breaks a part on the first hard exit
+  const prep=SIM.roadPrep(snap.cfg,res),run0=SIM.roadRun(prep,opt),lap=SIM.lapSim(prep,opt,trk),T=SIM.roadTrack(trk);
+  const best=recBucket("road")[roadKey(opt.rk||opt.ch,trk)]||null,secCut=[0,lap.sectors[0],lap.sectors[0]+lap.sectors[1],lap.time];
+  RT={suVis:SIM.setupVis(opt.setup),brk:swapRoadBreak(lap,T,opt),res,env,opt,trk,snap,run:run0,lap,T,best,secCut,t:-3.5,speed:+S.env.roadSpd||2,cam:S.env.roadCam||"auto",last:performance.now(),finished:false,skip:false,redline:snap.cfg.redline,boostT:prep.boostTarget||0,lastPtr:0,bst:0,slip:0};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("roadCtl").style.display="";roadHudInit();roadBtnText();
+  $("testProg").classList.remove("done");sfx("start");
+  scrollCtlIntoView("roadCtl");
+  const step=()=>{if(!RT||RT.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-RT.last)/1000);RT.last=now;
+    RT.t+=dt*RT.speed;const L=RT.lap,pre=RT.t<0,f=roadAt(L,RT.t),done=RT.t>=L.time;RT.ghost=pre?null:roadGhostAt(RT.best,RT.t);
+    f.pre=pre;f.done=done;f.lapT=pre?0:Math.min(RT.t,L.time);
+    RT.bst=f.bst;RT.slip=f.lim&&f.v<30?0.6:f.lim&&f.v<45?0.3:0;
+    if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:true,su:RT.suVis,track:RT.T,s:f.s,v:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:f.brk,ax:f.ax,ay:f.ay,slip:RT.slip,ch:RT.opt.ch,ghost:RT.ghost,night:!!S.night,cam:RT.cam,pre:pre&&RT.t>-2.2,dt:dt*RT.speed});
+    roadHud(f);run.on=true;run.rpm=f.rpm;run.load=Math.max(0.05,f.thr);$("rpmLbl").textContent=Math.round(f.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*Math.max(0,RT.t)/L.time)+"%";
+    if(done&&!RT.crossed){RT.crossed=true;buzz([20,30,20]);}
+    if(RT.brk&&!RT.brkHit&&!pre&&RT.t>=RT.brk.t){RT.brkHit=true;RT.skip=true;sfx("fail");buzz([80,40,120]);toast(RT.opt.dtMsg?RT.opt.dtMsg.toUpperCase()+" · the engine is fine":"DRIVELINE LET GO · the engine is fine");}   // a swap's driveline over its rating
+    if(RT.skip||RT.t>=L.time+1.6*RT.speed)roadFinish();else requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
+function roadSkip(){if(!RT||RT.finished)return;RT.skip=true;}
+(()=>{$("roadSkip").addEventListener("click",()=>roadSkip());
+  $("roadSpd").addEventListener("click",()=>{if(!RT)return;RT.speed=RT.speed>=4?1:RT.speed*2;S.env.roadSpd=RT.speed;roadBtnText();save();});
+  $("roadCamB").addEventListener("click",()=>{const ids=ROAD_CAMS.map(c=>c[0]);const cur=RT?RT.cam:S.env.roadCam;const nx=ids[(ids.indexOf(cur)+1)%ids.length];S.env.roadCam=nx;if(RT)RT.cam=nx;$("roadCamB").textContent="Cam · "+ROAD_CAMS.find(c=>c[0]===nx)[1];save();});})();
+function roadFinish(){
+  if(!RT||RT.finished)return;RT.finished=true;const {res,env,opt,trk,run:a,lap,snap}=RT;const same=testSame(snap);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:false});$("app").classList.remove("onstrip");}},RT.skip?250:1600);
+  testing=false;run.on=false;run.rpm=0;$("rpmbox").style.display="none";$("roadCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const C0=opt.car||SIM.CHASSIS[opt.ch],car=lap.car,tr=lap.trace,dec={d:[],v:[],thr:[],brk:[],g:[]};
+  for(let i=0;i<lap.N;i+=4){dec.d.push(Math.round(i*lap.ds));dec.v.push(+(tr.v[i]*3.6).toFixed(1));dec.thr.push(+tr.thr[i].toFixed(2));dec.brk.push(+tr.brk[i].toFixed(2));dec.g.push(tr.g[i]);}
+  const r={ch:opt.ch,chName:C0.n,tyre:opt.tyre,tyreName:SIM.ROAD_TYRES[opt.tyre].n,trk,trkName:lap.trackName,len:Math.round(lap.len),finalK:opt.finalK,fd:+car.fd.toFixed(2),fdAuto:+car.fdAuto.toFixed(2),gears:car.gears.length,
+    m:Math.round(car.m),front:+car.front.toFixed(3),bal:car.bal,su:opt.setup||null,suBal:+car.bi.toFixed(2),engKg:Math.round(car.engKg),drive:car.drive,
+    zero60:a.zero60,zero100:a.zero100,zero200:a.zero200,quarter:a.quarter,roll:a.roll80120,brake100:a.brake100,top:a.top,spinT:a.spinT,
+    lapT:+lap.time.toFixed(3),sectors:lap.sectors.map(x=>+x.toFixed(3)),vmax:+lap.vmax.toFixed(1),vmin:+lap.vmin.toFixed(1),apex:lap.apex,shifts:lap.shifts,fullPct:lap.fullPct,ayPk:lap.ayPk,brakePk:lap.brakePk,tracT:lap.tractionT,trace:dec};
+  /* records: best lap per chassis × circuit, best 0–100 per chassis */
+  if(opt.sw){r.swap=swapTag();if(RT.brk)r.swapBroke=RT.brk;}else if(RT.brk&&opt.dtMsg)r.dtBroke={msg:opt.dtMsg,t:RT.brk.t,corner:RT.brk.corner};
+  if(!r.swapBroke&&!r.dtBroke)r.tip=suTipRoad(SIM.roadPrep(snap.cfg,res),opt,trk,lap.time);
+  if(!ff&&same&&!r.swapBroke&&!r.dtBroke){const RR=recBucket("road"),k=roadKey(opt.rk||opt.ch,trk),was=RR[k];if(!was||r.lapT<was.t){RR[k]=Object.assign({t:r.lapT,sec:r.sectors.slice(),z:r.zero100,ch:opt.ch,trk,gh:roadGhostRec(lap)},opt.sw?{sw:opt.sw}:{},recTag());if(was){r.pb={was:was.t};setTimeout(()=>toast(`LAP RECORD · ${fmtLap(r.lapT,2)} (was ${fmtLap(was.t,2)})`),2700);}else r.pb={first:true};}}
+  r.wx=wxSnap("road");res.road=r;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  const line=`${r.trkName} ${fmtLap(r.lapT)} · 0–100 ${r.zero100!=null?r.zero100.toFixed(1)+" s":"—"} · top ${Math.round(r.top.kmh)} km/h`;
+  // a track day counts like any other event: sponsors see it (form, record bonus, offers), the crew learn from it, a rival's posted lap is decided — spEvent does all of that
+  if(career()&&same){addWear(0.35,hKey(snap.h));logEvent(`Track day in ${roadCarTxt(opt)}: ${line}`,r.pb&&r.pb.was?"good":"");
+    if(!ff){const won0=(rivS().hist&&rivS().hist.won)||0;spEvent("road",{ch:opt.ch,trk,sw:!!opt.sw,t:r.swapBroke||r.dtBroke?null:r.lapT,record:!!(r.pb&&r.pb.was)});r.rivBeat=((rivS().hist&&rivS().hist.won)||0)>won0;}
+    hud();checkGoals();}
+  if(same&&!ff)achCheck({type:"road",r,failed:!!(r.swapBroke||r.dtBroke)});
+  toast(`${fmtLap(r.lapT)} · ${r.trkName}`);
+  if(r.swap)swapAfter(r);
+  RT.lap=null;save();recompute();renderTest();revealVerdict();
+}
+function roadRedraw(){const l=lastForChart();if(S.env.testType==="road"&&l&&l.road)drawRoadTrace(l.road);}
+/* ---- 24 Hours: the race as it is run (app-late.js, since 1.76.142.0): the strategy taps, the start, the accelerated clock, camera,
+   live card, map, race feed, the pit wall and finish. The setup screen, the gate, the career marker, records and the verdict are in app/e24.js ---- */
+/* strategy clicks: env before, plan during */
+document.addEventListener("click",e=>{const b=e.target.closest("[data-e24k]");if(!b)return;const k=b.dataset.e24k,raw=b.dataset.e24v;
+  const v=k==="e24Stint"?+raw:k==="e24SC"?raw==="true":raw;
+  if(k==="e24Trk"&&ER)return;
+  S.env[k]=v;e24EnvFix();
+  if(ER&&!ER.finished){const pl=ER.R.plan,me=ER.R.cars[0],key={e24Mode:"mode",e24Stint:"stint",e24Fuel:"fuel",e24Tyre:"tyre",e24Chg:"chg"}[k];
+    if(k==="e24Drive"){pl.auto=v==="auto";if(pl.auto)ER.took=null;else if(ER.took==null)ER.took=ER.R.t;toast(pl.auto?"The crew chief has the pit wall":"You have the pit wall");}
+    else if(key&&pl.auto){pl.auto=false;ER.took=ER.R.t;toast("You have the pit wall");}   // a tap on the strategy takes over, as at the other events
+    if(key){pl[key]=v;if(key==="mode"&&!me.out)me.mode=v;}e24StratRender();e24Hud();}
+  else if(S.env.testType==="race24")renderEnv();
+  save();buzz(6);});
+/* ---- the live race ---- */
+let e24Snap=null;   // the build, mode and career the flag dropped on (testSnap)
+function e24Click(){const gate=e24Gate();if(gate){toast(gate);return;}
+  const res=SIM.simulate(S.cfg,stdEnv({testType:"pull"}));if(res.fails.length){toast(`Scrutineering says no — ${String(res.fails[0]).toLowerCase()} on the dyno`);return;}
+  testing=true;e24Snap=testSnap();abStop();renderTest();ensureSound();
+  ENGINE_VIS.setStrip({on:false});ENGINE_VIS.stripRace&&ENGINE_VIS.stripRace(null);if(ENGINE_VIS.setPull)ENGINE_VIS.setPull({on:false});if(ENGINE_VIS.setSalt)ENGINE_VIS.setSalt({on:false});if(ENGINE_VIS.setBog)ENGINE_VIS.setBog({on:false});if(ENGINE_VIS.setBoat)ENGINE_VIS.setBoat({on:false});   // a leftover strip/sled/salt scene
+  if(!E24W.done[S.env.e24Trk])toast("Scrutineering the field…");
+  e24Warm(S.env.e24Trk,e24Go);}
+function e24Go(){if(!testing||ER)return;const e=e24EnvFix(),trk=e.e24Trk,opt=roadOpt();let P;
+  const snap=e24Snap||testSnap();e24Snap=null;
+  try{P=e24Prep(trk,snap.cfg);}catch(err){testing=false;renderTest();toast("The car would not pass scrutineering");return;}
+  const seed=career()?rnHash([C().seed,C().week,"e24",trk].join(":")):rnHash(Date.now()+":"+Math.random());
+  const R=SIM.enduroNew({track:trk,me:P,seed,sc:e.e24SC,number:55,name:"Prairie Engine Works",plan:{mode:e.e24Mode,stint:+e.e24Stint,fuel:e.e24Fuel,tyre:e.e24Tyre,chg:e.e24Chg,scPit:true,auto:e.e24Drive==="auto"}});
+  if(career()&&crewPitK()!==1)R.pitK=crewPitK();   // fast hands on the crew: quicker stops (app/crew.js)
+  const rv=rivE24Car(R);   // a rival's head-to-head: their car in your class
+  if(career()){if(!dev())C().cash-=E24_FEE;const g=e24C();g.next=C().week+E24_GAP;g.live={w:C().week,trk,ch:opt.ch};logEvent(`24 Hours of Prairie Sky: entered in ${roadCarTxt(opt)} at ${e24TrkName(trk)} — ${dev()?"free (dev)":fmt$(E24_FEE)+" entry"}`);hud();save();}
+  ER={R,P,opt,trk,snap,T:SIM.roadTrack(trk),L:P.lap,speed:+e.e24Spd,cam:e.e24Cam,last:performance.now(),lastVis:0,lastHud:0,feedN:0,jump:false,toEnd:0,finished:false,field:null,flash:0,pits:0,rv,chief:e.e24Drive==="auto",took:null,sg:""};
+  renderEnv();$("app").classList.add("onstrip");ENGINE_VIS.setAutoRotate(false);$("e24Ctl").style.display="";$("e24Side").style.display="";e24HudInit();e24StratRender();e24FeedRender();e24Hud();
+  $("testProg").classList.remove("done");sfx("start");buzz([20,30,20]);toast(`GREEN FLAG · ${e24TrkName(trk).toUpperCase()}`);
+  requestAnimationFrame(()=>{const pn=$("panel"),r=$("e24Ctl").getBoundingClientRect(),pr=pn.getBoundingClientRect();if(!deskOn()&&(r.top<pr.top||r.top>pr.top+pr.height*0.5))pn.scrollTo({top:pn.scrollTop+r.top-pr.top-6,behavior:calmScroll()});});
+  ER.last=performance.now();requestAnimationFrame(e24Frame);}
+function e24Frame(now){if(!ER||ER.finished)return;const R=ER.R,me=R.cars[0];
+  const dt=Math.min(0.1,Math.max(0,(now-ER.last)/1000));ER.last=now;const t0=performance.now();
+  if(ER.toEnd&&now>=ER.toEnd){while(performance.now()-t0<11&&!R.done)SIM.enduroStep(R,R.dur+14400,300);}
+  else if(ER.jump){const n0=R.stopN||0;while(performance.now()-t0<9&&!R.done){SIM.enduroStep(R,R.dur+14400,150,true);if((R.stopN||0)>n0){ER.jump=false;e24SpdRender();break;}}}
+  else if(!ER.toEnd){const target=R.t+dt*ER.speed;while(performance.now()-t0<9&&!R.done&&R.t<target){if(!SIM.enduroStep(R,target,150))break;}}
+  if((me.out||me.fin)&&!ER.toEnd){ER.toEnd=now+(me.out?1800:900);ER.jump=false;if(me.out&&me.dnf&&me.dnf.id){failFlash();}e24SpdRender();e24StratRender();}
+  if(R.done){e24Hud();e24FeedRender();e24Finish();return;}
+  if(now-ER.lastHud>150){ER.lastHud=now;e24Hud();const pl=R.plan,sg=pl.auto?pl.mode+pl.tyre+pl.chg:"";if(sg!==ER.sg){ER.sg=sg;if(sg)e24StratRender();}}   // the crew chief changed the plan: show it
+  if(me.pits!==ER.pits){ER.pits=me.pits;e24StratRender();}   // a stop clears "box this lap" and starts a stint
+  const lf=R.feed[R.feed.length-1];if(lf&&lf.n!==ER.feedN)e24FeedRender();
+  const visMs=ER.speed>=600||ER.jump||ER.toEnd?110:ER.speed>=60?70:0;
+  if(now-ER.lastVis>=visMs*0.9){e24Vis(Math.min(0.1,(now-(ER.lastVis||now))/1000)||dt);ER.lastVis=now;}
+  $("testProg").style.width=Math.min(100,100*R.t/R.dur)+"%";
+  requestAnimationFrame(e24Frame);}
+function e24CamMode(){return ER.cam==="auto"?(ER.speed>1||ER.jump||ER.toEnd?"tower":"auto"):ER.cam;}
+/* the 3D: the player's car from the race lap's trace, the field as instanced cars, the sky from the race clock */
+function e24Vis(dt){if(!ENGINE_VIS.setRoad)return;const R=ER.R,t=R.t,W=SIM.enduroWhere(R,t),L=ER.L,sky=SIM.e24Sky(t),me=R.cars[0],w0=W[0];
+  const inPit=!!(w0.pit||w0.out||w0.fin);let f={s:0,v:0,g:1,rpm:900,thr:0,brk:0,ax:0,ay:0};
+  if(!inPit){f=roadAt(L,w0.f*L.time);f.v*=L.time/Math.max(1,me.lapDur);}
+  if(!ER.field)ER.field=R.cars.slice(1).map((c,k)=>({cls:Math.max(0,SIM.E24_CLS_ORDER.indexOf(c.cls)),k,s:0,d:0,pit:false,slot:k+1,hide:false}));
+  for(let k=1;k<R.cars.length;k++){const o=ER.field[k-1],w=W[k];o.hide=!!w.out;o.pit=!!(w.pit||w.fin);if(!o.pit&&!o.hide){o.s=roadAt(L,w.f*L.time).s;o.d=[-2.7,2.7,-1.3,1.3][k%4];}}
+  const fast=ER.speed>1||ER.jump||ER.toEnd;
+  ENGINE_VIS.setRoad({on:true,track:ER.T,s:f.s,v:fast?0:f.v,g:f.g,rpm:f.rpm,thr:f.thr,brk:fast?0:f.brk,ax:fast?0:f.ax,ay:fast?0:f.ay,slip:0,ch:ER.opt.ch,night:sky.n>0.45,sky:sky.n,warm:sky.warm,dawn:sky.h<12,cam:e24CamMode(),pre:false,dt:fast?0.05:dt,pit:inPit,field:ER.field,minMs:fast?((S.gfx||(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"lite":"full"))==="lite"?140:110):0});
+  const live=!fast&&!inPit&&!me.out;run.on=live;run.rpm=live?f.rpm:0;run.load=live?Math.max(0.05,f.thr):0;$("rpmbox").style.display=live?"block":"none";if(live)$("rpmLbl").textContent=Math.round(f.rpm/10)*10;}
+/* HUD: clock, positions, gaps, laps, fuel, tyres, temps, the hazard gauge, a live map */
+function e24HudInit(){$("e24Hud").innerHTML=`<div class="e24h"><div class="e24c"><b id="e24Clk">14:00</b><i id="e24El">race 0:00</i></div><div class="e24p"><b id="e24P">P–</b><i id="e24Pc">—</i></div>
+  <div class="e24gp"><span>ahead <b id="e24Ga">—</b></span><span>behind <b id="e24Gb">—</b></span></div><canvas id="e24Map" class="e24map" aria-label="Track map"></canvas></div>
+  <div class="ph-bar e24prog"><i class="fill" id="e24Pr"></i><i class="mk" style="left:33.3%"></i><i class="mk" style="left:66.6%"></i></div><div id="e24Sc" class="e24sc" hidden>SAFETY CAR</div>
+  <div class="e24g"><div><span>Laps</span><b id="e24Lp">0</b><i id="e24Lt">—</i></div>
+  <div><span>Fuel</span><b id="e24Fu">—</b><i id="e24Fl">—</i><div class="ph-bar"><i class="fill" id="e24Fb"></i></div></div>
+  <div><span>Tyres</span><b id="e24Ty">—</b><i id="e24Tl">—</i><div class="ph-bar"><i class="fill" id="e24Tb"></i></div></div>
+  <div><span>Engine</span><b id="e24En">—</b><i id="e24Et">—</i></div>
+  <div class="e24hz"><span data-s="Risk">Failure risk</span><b id="e24Hz">—</b><i id="e24Hw">—</i><div class="ph-bar"><i class="fill" id="e24Hb"></i></div></div>
+  <div><span>Track</span><b id="e24Am">—</b><i id="e24Sk">—</i></div></div>`;e24SpdRender();}
+function e24SpdRender(){const b=$("e24Spd");if(!b||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
+  b.innerHTML=end?`<button class="btn pri" data-e24a="end" style="flex:1">${ER.toEnd?"Running the race to the flag…":"Skip to flag ▸▸"}</button>`
+    :E24_SPEEDS.map(s=>`<button class="btn ${!ER.jump&&ER.speed===s?"on":""}" data-e24s="${s}">${s===1?"1×":s+"×"}</button>`).join("")+`<button class="btn pri e24nx${ER.jump?" on":""}" data-e24a="next">${ER.jump?"Running…":"Next event ▸▸"}</button><button class="btn e24cam" data-e24a="cam">Cam · ${E24_CAMS.find(c=>c[0]===ER.cam)[1]}</button>`;}
+function e24StratRender(){const el=$("e24Side");if(!el||!ER)return;const R=ER.R,me=R.cars[0],end=me.out||me.fin;
+  el.innerHTML=`<div class="sec e24strat"><h2>Strategy <span class="cnt">${end?"race over":`stint ${me.stints.length} · ${me.drv[me.drvI%3]}`}</span></h2>${end?`<p class="hint">${me.out?(me.dnf&&me.dnf.id?"Out of the race. The rest of the field runs to the flag.":"Retired. The rest of the field runs to the flag."):"Chequered flag. The field is finishing its last laps."}</p>`:e24StratHtml(true,ER.P)+`<div class="row e24act"><button class="btn${R.plan.box?" on":""}" data-e24a="box">${R.plan.box?"Boxing this lap":"Box this lap"}</button><button class="btn" data-e24a="swap">Box · swap driver</button><button class="btn danger" data-e24a="retire">Retire</button></div>`}</div>
+    <div class="sec e24feedsec"><h2>Race feed <span class="cnt" id="e24FeedCnt"></span></h2><div class="e24feed" id="e24Feed"></div></div>`;e24FeedRender(true);}
+const E24_FEEDK={chief:"pit",pit:"pit",pass:"pass",fail:"warn",inc:"warn",dnf:"crit",ai:"aif",sc:"sc",sky:"sky",hour:"hour",start:"sky",flag:"sky"};
+function e24FeedRender(force){const el=$("e24Feed");if(!el||!ER)return;const F=ER.R.feed,lf=F[F.length-1];if(!force&&lf&&lf.n===ER.feedN)return;ER.feedN=lf?lf.n:0;
+  el.innerHTML=F.slice(-40).reverse().map(f=>`<div class="e24f ${E24_FEEDK[f.k]||""}${f.me?" me":""}"><time>${SIM.e24Clock(f.t)}</time><span>${esc(f.txt)}</span></div>`).join("");const c=$("e24FeedCnt");if(c)c.textContent=F.length+" events";}
+document.addEventListener("click",e=>{const s=e.target.closest("[data-e24s]"),a=e.target.closest("[data-e24a]");if(!ER||ER.finished||(!s&&!a))return;
+  if(s){ER.speed=+s.dataset.e24s;ER.jump=false;S.env.e24Spd=ER.speed;e24SpdRender();save();buzz(6);return;}
+  const k=a.dataset.e24a,R=ER.R;
+  if(k==="next"){ER.jump=!ER.jump;e24SpdRender();}
+  else if(k==="cam"){const ids=E24_CAMS.map(c=>c[0]);ER.cam=ids[(ids.indexOf(ER.cam)+1)%ids.length];S.env.e24Cam=ER.cam;e24SpdRender();save();}
+  else if(k==="box"){R.plan.box=!R.plan.box;R.plan.swap=false;e24StratRender();}
+  else if(k==="swap"){R.plan.box=true;R.plan.swap=true;e24StratRender();toast("Driver change at the next stop");}
+  else if(k==="retire"){if(!confirm("Retire the car? The engine comes home in one piece, but there is no prize money."))return;const me=R.cars[0];if(me.out||me.fin)return;me.out=true;me.tNext=Infinity;me.dnf={t:R.t,id:null,name:"Retired by the team",h:R.t/3600};
+    R.feed.push({t:R.t,k:"dnf",txt:`Retired by the team after ${me.laps} laps`,me:true,n:++R.seq});e24StratRender();}
+  else if(k==="end"){ER.toEnd=performance.now();e24SpdRender();}
+  buzz(6);});
+/* ---- the flag: classification, money, records, wear ---- */
+function e24Finish(){if(!ER||ER.finished)return;ER.finished=true;const R=ER.R,me=R.cars[0],P=ER.P,trk=ER.trk,opt=ER.opt,snap=ER.snap,same=!snap||testSame(snap),cfg0=snap?snap.cfg:S.cfg;
+  const all=SIM.enduroResult(R),mine=all.find(x=>x.me),cls=me.cls,inCls=all.filter(x=>x.cls===cls),hrs=Math.min(24,(me.dnf?me.dnf.t:R.dur)/3600);
+  const dec=[],LL=me.lapLog,step=Math.max(1,Math.ceil(LL.length/360));for(let i=0;i<LL.length;i+=step)dec.push(LL[i]);
+  const stints=me.stints.filter(s=>s.laps>0).map(s=>{const mt=s.modeT,mm=Object.keys(mt).sort((a,b)=>mt[b]-mt[a])[0];return{drv:s.drv,c:s.c,laps:s.laps,fuel:Math.round(s.fuel),t0:Math.round(s.t0),t1:Math.round(s.t1!=null?s.t1:me.tLast),mode:mm};});
+  const lapsGreen=LL.filter(l=>!l[2]).map(l=>l[1]),avg=lapsGreen.length?lapsGreen.reduce((a,b)=>a+b,0)/lapsGreen.length:null;
+  const r={trk,trkName:e24TrkName(trk),len:Math.round(R.len),ch:opt.ch,chName:(opt.car||SIM.CHASSIS[opt.ch]).n,swap:opt.sw?swapTag():undefined,cls,clsName:e24Cls(cls),pos:mine.pos,posCls:mine.posCls,of:all.length,ofCls:inCls.length,laps:me.laps,km:mine.km,
+    classified:!!mine.classified,dnf:me.dnf?{h:+me.dnf.h.toFixed(1),id:me.dnf.id,name:me.dnf.name}:null,best:me.best,bestLap:me.bestLap,avg,pits:me.pits,pitT:Math.round(me.pitT),fuel:Math.round(me.fuelUsed),
+    stints,trace:dec,sc:R.scN,field:all.map(x=>({no:x.no,team:x.team,cls:x.cls,eng:x.eng,laps:x.laps,best:x.best!=null?+x.best.toFixed(2):null,out:x.out,dnf:x.dnf,me:x.me,cl:x.classified,pc:x.posCls})),
+    clsBest:Math.min(...inCls.filter(x=>x.best!=null).map(x=>x.best)),win:inCls[0]?inCls[0].laps:0,hrs:+hrs.toFixed(1)};
+  if(ER.chief||R.plan.auto)r.chief=R.plan.auto?(ER.chief&&ER.took==null?"all":"end"):Math.round(ER.took||0);   // who had the pit wall: the crew chief all race, at the flag, or until this second
+  if(typeof crowdAfter==="function")crowdAfter("e24",{won:r.classified&&r.posCls===1,classified:r.classified});   // app/ambience.js
+  /* career money and standing */
+  if(career()&&!ff&&same){const g=e24C();g.live=null;g.runs=(g.runs||0)+1;const K=SIM.E24_CLASSES[cls],fu=SIM.fuelOf(cfg0)||SIM.OPT.fuel.r91;
+    const prize=r.classified?(K.prize[r.posCls-1]||0)+3000:0,fuelBill=Math.round(me.fuelUsed*(fu.costL||1.5)*0.35)/* series fuel, at the trade price */;let rep=r.classified?(K.rep[r.posCls-1]||6)+(r.pos===1?10:0):0;
+    if(r.dnf&&r.dnf.id&&r.dnf.id!=="swap_driveline"){C().cert=null;rep-=2;}   // a swap gearbox is not the engine
+    C().cash+=prize-fuelBill;C().rep=Math.max(0,C().rep+rep);r.prize=prize;r.fuelBill=fuelBill;r.rep=rep;
+    addWear(+(hrs/40*({push:1.6,race:1.25,save:0.95}[stints.length?stints[stints.length-1].mode:"race"]||1.25)).toFixed(2),snap?hKey(snap.h):undefined);
+    logEvent(`24 Hours of Prairie Sky: ${r.dnf?(r.dnf.id?"out after "+r.dnf.h+" h — "+r.dnf.name.toLowerCase():"retired after "+r.dnf.h+" h"):r.classified?`${ordN(r.posCls)} in ${r.clsName}, ${ordN(r.pos)} overall`:"not classified"} — ${r.laps} laps${prize?", "+fmt$(prize)+" prize":""}, fuel ${fmt$(fuelBill)}${rep?", "+(rep>0?"+":"")+rep+" rep":""}`,r.classified&&r.posCls<=3?"good":r.dnf&&r.dnf.id?"bad":"");
+    const rx=ER.rv&&all.find(x=>x.i===ER.rv.i),cp=x=>x.classified?ordN(x.posCls)+" in class":"not classified";
+    spEvent("endurance",Object.assign({finish:r.classified&&r.posCls<=3,win:r.classified&&r.posCls===1},rx?{ahead:all.indexOf(mine)<all.indexOf(rx),rvTxt:`you ${cp(mine)}, ${ER.rv.n} ${cp(rx)}`}:{}));hud();checkGoals();}
+  /* records: the longest distance per car and circuit */
+  if(!ff&&same){const E=recBucket("e24"),k=roadKey(opt.rk||opt.ch,trk),was=E[k];if(!was||r.km>was.km){E[k]=Object.assign({km:r.km,laps:r.laps,pc:r.classified?r.posCls:null,cls,ch:opt.ch,trk},opt.sw?{sw:opt.sw}:{},recTag());r.pb=was?{was:was.km}:{first:true};}
+    const RR=recs();RR.e24Runs=(RR.e24Runs||0)+1;if(r.classified&&!(RR.e24Best<=r.posCls))RR.e24Best=r.posCls;
+    achCheck({type:"e24",r});if(r.swap)swapAfter(r);}
+  const env=Object.assign(stdEnv(),{testType:"race24"});const res=Object.assign({},P.res,{e24:r});
+  S.last=snap?{hash:snap.h,cfg:snap.cfg,env,res}:{hash:cfgHash(S.cfg),cfg:Object.assign({},S.cfg),env,res};
+  testing=false;run.on=false;run.rpm=0;$("rpmbox").style.display="none";$("e24Ctl").style.display="none";$("e24Side").style.display="none";$("e24Side").innerHTML="";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setRoad)ENGINE_VIS.setRoad({on:false});$("app").classList.remove("onstrip");}},1400);
+  toast(r.dnf?(r.dnf.id?`OUT · ${r.dnf.name.toUpperCase()}`:"RETIRED"):r.classified?`${ordN(r.posCls).toUpperCase()} IN ${r.clsName.toUpperCase()} · ${r.laps} LAPS`:`NOT CLASSIFIED · ${r.laps} LAPS`);
+  ER=null;save();recompute();renderTest();revealVerdict();}
 /* ---- Bitterwater: the run itself (app-late.js, since 1.76.141.0): start, push, shift and chute, time warp, live card, finish. Meets, records and the setup screen are in app/salt.js ---- */
 const SALT_COLORS={altered:0x2c6b3a,roadster:0xb7261d,lakester:0xd9a52b,streamliner:0x1d4787};
 /* the car's number for this meet: drawn when you sign in, the same for every run of the meet */
@@ -826,6 +1020,160 @@ function hillFinish(){
   HC.run=null;HC.prep=null;save();recompute();renderTest();revealVerdict();
 }
 function hillRedraw(){const l=lastForChart();if(S.env.testType==="hill"&&l&&l.hill)drawHillChart(l.hill);}
+/* ---- oval: race night as it is run (app-late.js, since 1.76.142.0): the heat and feature field, the live card, the throttle, flags,
+   Watch it, finish and the redraw. The setup screen, nights, the gate, records and the verdict are in app/oval.js ---- */
+const ovalLabel=t=>(t||ovalTk())==="clay"?"Dirt oval":"Paved oval";
+/* the order the flag comes out in: laps first, then the clock; the ones that broke last */
+function ovalSortRows(rows){return rows.sort((a,b)=>(a.dnf?1:0)-(b.dnf?1:0)||b.laps-a.laps||(a.dnf?0:a.time-b.time)||(a.me?-1:b.me?1:0));}
+/* the feature's field is eleven whole races: run them one at a time in the idle moments after the heat, so the green is not a pause */
+function ovalWarm(k,n,tk){if(!n||!n.grid||n.stage!=="feature")return;const R=ovalRoster(k,n.seed),q=n.grid.map((id,g)=>[id,g]).filter(x=>x[0]!=="me");let i=0;
+  const nx=()=>{if(i>=q.length||testing||n.stage!=="feature")return;const[id,g]=q[i++];try{ovalCarRun(R[id],k,n.seed,"feature",OVAL_FEAT,ovalGridOff(g),OVAL_HEAT,0.6,tk);}catch(e){}setTimeout(nx,50);};nx();}
+/* the other heat: four rivals racing without us, to interleave with ours for the feature grid */
+function ovalHeatB(k,seed,tk){const R=ovalRoster(k,seed),ids=ovalSplit(seed).b,g=ids.slice();const cars=g.map((id,gi)=>ovalCarRun(R[id],k,seed,"heatB",OVAL_HEAT,ovalGridOff(gi),0,0.9,tk));
+  const win=Math.min(...cars.filter(c=>!c.dnf).map(c=>c.fin));return ovalSortRows(cars.map(c=>Object.assign({id:c.id},ovalCutAt(c,win,OVAL_HEAT)))).map(r=>r.id);}
+function ovalSplit(seed){const r=pullRand((seed^0x5E17)>>>0),ids=[0,1,2,3,4,5,6,7,8,9,10];for(let i=ids.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]];}return{a:ids.slice(0,7),b:ids.slice(7)};}
+function ovalHint(){const pv=ovalTT().surf==="asphalt",lb=ovalLabel();return career()?`<b>${lb}</b> · ${fmt$(ovalFee("street"))}–${fmt$(ovalFee("open"))} entry for the night: a ${OVAL_HEAT}-lap heat, then the ${OVAL_FEAT}-lap feature from the grid the heat sets. Needs a certified engine; one night a week, in one class, on either track. Opens at ${OVAL_REP} rep: ${SIM.OVAL_CLASSES.street.n} ${SIM.OVAL_CLASSES.street.rep}, ${SIM.OVAL_CLASSES.late.n} ${SIM.OVAL_CLASSES.late.rep}, ${SIM.OVAL_CLASSES.open.n} ${SIM.OVAL_CLASSES.open.rep}. Purses by finish, up to ${fmt$(OVAL_FPURSE[0]*OVAL_PAY[3])} in the feature. ${pv?"Heat and the long straights are the hard part: there is little dust, but the engine works flat out.":"Heat and radiator dust are the hard part: running in the car ahead's dirt clogs the grille."}`
+  :`<b>${lb}</b> · a heat race, then the feature. It is one gear and a lot of throttle: hold <b>PUSH</b> to attack, <b>SAVE</b> to cool the engine and the tyres. <b>Space</b> pushes. Class by cubic inches.`;}
+/* the dock button: the stage that is up, the price */
+function ovalRunBtn(){if(S.env.testType!=="oval"||testing)return;const k=ovalEnvFix(),n=ovalNight(k),b=$("runTest");if(b.disabled)return;const cost=testCost();
+  if(career()&&(n.stage==="done"||(n.stage==="heat"&&ovalOther(k)))){b.textContent=`Night over · next night wk ${C().week+1}`;$("dynoHint").innerHTML=ovalHint();return;}
+  const txt=n.stage==="feature"?`Take the green · feature, from ${ordN(n.gridMe+1)}`:"Take the green · heat race";
+  b.textContent=txt+(cost?" · "+fmt$(cost)+(fuelBill()>=50&&fuelBill()<cost?" (fuel "+fmt$(fuelBill())+")":""):"");$("dynoHint").innerHTML=ovalHint();}
+/* ---- the live card ---- */
+function ovalHudInit(){$("ovalLive").innerHTML=`<div class="rdh hlh"><div class="rd-spd"><b id="ovV">0</b><i>km/h</i></div><div class="rd-g"><b id="ovP">–</b><i id="ovPi">place</i></div><div class="rd-lt"><b id="ovLap">0/${OV.laps}</b><i>lap</i></div><div class="rd-lt"><b id="ovT">0:00.0</b><i id="ovTi">clock</i></div></div>
+  <div class="ph-bar hl-bar"><i class="fill" id="ovF"></i><i class="mk lead" id="ovL" style="left:0"></i></div>
+  <div class="ph-lbl" style="margin-top:4px"><span id="ovA">—</span><span id="ovB"></span></div>
+  <div class="hl-next" id="ovN"></div><div class="hl-meters" id="ovM"></div>`;}
+function ovalRanks(t){const me=OV.p.st,L=OV.L,out=[{me:true,key:ovalMeProg(),c:null,t:OV.meCut?OV.meCut.t:0}];
+  OV.cars.forEach(c=>{const a=ovalAt(c,t);if(!a){out.push({key:-1e9+(c.dnf?c.dnf.lap:0),c,out:true,t:0});return;}out.push({key:c.cut&&t>=c.cut.t?c.cut.s+1e-3*(1-c.cut.t/1e4):a.s,c,s:a.s,v:a.v,t:c.cut?c.cut.t:0});});
+  out.sort((x,y)=>y.key-x.key);return out;}
+function ovalMeProg(){const st=OV.p.st;return OV.meCut?Math.min(st.s,OV.meCut.s)+1e-3*(1-OV.meCut.t/1e4):st.s;}
+function ovalHud(rk){if(!OV||!$("ovV"))return;const st=OV.p.st,t=st.t,pos=rk.findIndex(r=>r.me)+1,N=OV.laps,L=OV.L;
+  $("ovV").textContent=Math.round(st.v*3.6);$("ovP").textContent=pos||"–";$("ovPi").textContent=`of ${OV.cars.length+1}`;
+  $("ovLap").textContent=`${Math.min(N,st.lap+1)}/${N}`;$("ovT").textContent=fmtOvRace(t);$("ovTi").textContent=OV.pre>0?"on the grid":st.done?(st.broke?"out":"flag"):OV.stageName;
+  $("ovF").style.width=(100*Math.min(1,Math.max(0,st.s)/(N*L))).toFixed(2)+"%";
+  const leader=rk[0];$("ovL").style.left=(100*Math.min(1,Math.max(0,leader.me?st.s:(leader.s||0))/(N*L))).toFixed(2)+"%";
+  const ahead=pos>1?rk[pos-2]:null,behind=pos<rk.length?rk[pos]:null,vv=Math.max(8,st.v),gp=(a,b)=>Math.abs((a.me?st.s:a.s||0)-(b.me?st.s:b.s||0))/vv;
+  $("ovA").innerHTML=ahead&&!ahead.out?`<b>#${ahead.c?ahead.c.num:"—"}</b> ${ahead.c?esc(ahead.c.n):""} <b style="color:var(--crit)">+${gp(rk[pos-1],ahead).toFixed(1)}s</b>`:`<b>leading</b>`;
+  $("ovB").innerHTML=behind&&!behind.out?`<b>#${behind.c?behind.c.num:"—"}</b> <b style="color:var(--good)">−${gp(rk[pos-1],behind).toFixed(1)}s</b>`:"";
+  const fd=OV.feed.slice(-2).map(x=>`<div class="hl-c">${x}</div>`).join("");
+  let nx=st.broke?`<div class="hl-ev bad">${ovalFailWord(st.broke)}</div>`:st.done?`<div class="hl-ev good">CHEQUERED · ${ordN(pos)}</div>`:OV.pre>0?`<div class="hl-ev">GREEN IN ${Math.ceil(OV.pre)}…</div>`:fd||`<div class="hl-c dim">Green flag. ${OV.stage==="heat"?"Eight laps":"Twenty-five laps"} to go.</div>`;
+  if($("ovN").dataset.k!==nx){$("ovN").dataset.k=nx;$("ovN").innerHTML=nx;}
+  const cc=st.cool,wr=Math.round(100*Math.min(1.2,st.wear)),mode=OV.auto?"auto":OV.push?"push":OV.save?"save":"steady";
+  $("ovM").innerHTML=`<div class="peak"><b style="color:${cc>112?"var(--crit)":cc>104?"var(--warn)":""}">${Math.round(cc)}<i>°C</i></b><span>water${st.derate<0.999?" · derate":""}${st.radPack>0.35?" · clogged":""}</span></div><div class="peak"><b style="color:${wr>80?"var(--crit)":wr>55?"var(--warn)":""}">${wr}<i>%</i></b><span>tyres worn</span></div><div class="peak"><b class="hl-mode ${mode==="push"?"push":mode==="save"?"lift":mode==="auto"?"auto":""}">${mode.toUpperCase()}</b><span>${OV.auto?"tap to take over":st.slideT>0?"SLIDING":"pace"}</span></div>`;
+  ovalBtnText();}
+function ovalBtnText(){const p=$("ovalPush"),l=$("ovalSave");if(!p||!OV)return;const st=OV.p.st,k=(OV.auto?"a":"m")+(st.done?"d":"")+(OV.push?"p":"")+(OV.save?"s":"");if(p.dataset.k===k)return;p.dataset.k=k;
+  if(st.done){p.innerHTML=`${st.broke?"OUT":"FLAG"}<small>tap to skip</small>`;l.innerHTML=`—<small>&nbsp;</small>`;}
+  else if(OV.auto){p.innerHTML=`AUTO DRIVER<small>tap to take over</small>`;l.innerHTML=`SAVE<small>take over</small>`;}
+  else{p.innerHTML=`PUSH<small>${OV.push?"attacking":"hold to attack the corners"}</small>`;l.innerHTML=`SAVE<small>${OV.save?"easing it":"hold to cool the engine"}</small>`;}
+  p.classList.toggle("on",!!OV.push);l.classList.toggle("on",!!OV.save);const s=$("ovalSpdB");if(s)s.textContent=OV.speed+"×";}
+function ovalTakeOver(){if(!OV||!OV.auto||OV.p.st.done)return;OV.auto=false;OV.took=Math.round(OV.p.st.lap);buzz([20]);toast("You have it — hold PUSH to attack, SAVE to cool it");}
+function ovalPress(which){if(!OV||OV.finished)return;const st=OV.p.st;if(st.done){ovalSkip();return;}
+  if(OV.auto){ovalTakeOver();if(which==="save")OV.save=true;return;}
+  if(which==="save"){OV.save=true;OV.push=false;}else{OV.push=true;OV.save=false;}buzz(6);ovalBtnText();}
+function ovalRelease(which){if(!OV)return;if(which==="save")OV.save=false;else OV.push=false;ovalBtnText();}
+/* ---- the race ---- */
+function ovalStart(){
+  const k=ovalEnvFix(),e=S.env,C0=SIM.OVAL_CLASSES[k],n=ovalNight(k),stage=n.stage==="feature"?"feature":"heat",env=stdEnv();
+  let res;try{res=SIM.ovalPrep(S.cfg,env);}catch(err){testing=false;renderTest();toast("The engine wouldn't run");return;}
+  const wi=wearInfo(res);if(wi&&wi.w>0){const f=1-0.05*Math.min(1,wi.w);res.torque=res.torque.map(t=>t*f);if(res.naTorque)res.naTorque=res.naTorque.map(t=>t*f);res.power=res.power.map(t=>t*f);res.peakTq*=f;res.peakHp*=f;res.wornBy=Math.round((1-f)*100);}
+  $("app").classList.add("onstrip");
+  const tk=ovalTk(),snap=testSnap(),hk=hKey(snap.h),roster=ovalRoster(k,n.seed),laps=stage==="heat"?OVAL_HEAT:OVAL_FEAT,L=SIM.ovalTrack(tk).len;let cars,gridMe,order;
+  if(stage==="heat"){const sp=ovalSplit(n.seed),ids=sp.a.slice(),r=pullRand((n.seed^0x6A1D)>>>0);ids.push("me");for(let i=ids.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]];}
+    order=ids;gridMe=ids.indexOf("me");cars=[];ids.forEach((id,g)=>{if(id!=="me")cars.push(ovalCarRun(roster[id],k,n.seed,"heat",laps,ovalGridOff(g),0,0.9,tk));});}
+  else{order=n.grid.slice();gridMe=order.indexOf("me");cars=[];order.forEach((id,g)=>{if(id!=="me")cars.push(ovalCarRun(roster[id],k,n.seed,"feature",laps,ovalGridOff(g),OVAL_HEAT,0.6,tk));});}
+  cars.forEach(c=>{c.cut=null;});
+  if(career()&&stage==="heat"){n.hash=hKey(cfgHash(S.cfg));}
+  const winAi=Math.min(...cars.filter(c=>!c.dnf&&c.fin!=null).map(c=>c.fin));
+  const veh={cls:k,track:tk,tyre:e.ovalTyre,grille:e.ovalGrille,finalK:+e.ovalFinal,redline:S.cfg.redline,idle:SIM.isDiesel&&SIM.isDiesel(S.cfg)?720:Math.max(750,S.cfg.cam>70?1100:850),seed:career()?(n.seed+7919*(C().ovalRuns=(C().ovalRuns||0)+1))>>>0:Math.floor(Math.random()*1e9),laps,off:ovalGridOff(gridMe),night:SIM.ovalNight(n.seed,tk),
+    moist:stage==="heat"?0.9:0.6,lap0:stage==="heat"?0:OVAL_HEAT,skill:e.ovalDrive!=="you"?1:0.9};   // the auto driver has the sharpest hands; driving it yourself, yours are a good club racer's
+  if(wi&&wi.w>=1)veh.wornAt=Math.max(2,Math.round(laps*(0.3+0.5*Math.random())));
+  veh.gap=(s,t)=>{let g=Infinity;for(let i=0;i<cars.length;i++){const a=ovalAt(cars[i],t);if(!a)continue;const d=(((a.s-s)%L)+L)%L;if(d<g&&d>1.2)g=d;}return g;};
+  const p=SIM.ovalNew(res,veh);
+  let meNum=(parseInt(hk,36)%97)+2;while(roster.some(q=>q.num===meNum))meNum=meNum%98+1;
+  OV={p,res,env,veh,k,tk,L,stage,stageName:stage==="heat"?"heat":"feature",snap,hk,night:n,laps,cars,order,gridMe,winT:winAi,flagged:false,cutDone:false,meCut:null,auto:e.ovalDrive!=="you",took:null,push:false,save:false,speed:+e.ovalSpd||4,cam:e.ovalCam||"auto",pre:3,last:performance.now(),finished:false,skip:false,doneAt:null,acc:0,feed:[],posLaps:[],lapSeen:0,meNum,color:carPaint(),roster};
+  ENGINE_VIS.setAutoRotate(false);$("rpmbox").style.display="block";$("ovalCtl").style.display="";ovalHudInit();$("ovalPush").dataset.k="";
+  $("testProg").classList.remove("done");sfx("start");
+  scrollCtlIntoView("ovalCtl");
+  let hudT=0;
+  const step=()=>{if(!OV||OV.finished)return;const now=performance.now(),dt=Math.min(0.1,(now-OV.last)/1000);OV.last=now;const st=OV.p.st;
+    if(OV.pre>0)OV.pre-=dt;
+    else if(!st.done){OV.acc+=dt*OV.speed;let nn=0;while(OV.acc>=0.02&&!st.done&&nn++<800){OV.p.step(0.02,ovalCtl());OV.acc-=0.02;ovalWatch();}if(nn>=800)OV.acc=0;}
+    if(st.done&&OV.doneAt==null){OV.doneAt=now;if(st.broke){failFlash(300);}else{winFlash();buzz([30,40,30,40,90]);}}
+    const t=st.t,rk=ovalRanks(t),L2=OV.L,after=st.done?(now-OV.doneAt)/1000:0;
+    const meS=st.done?(OV.meCut?OV.meCut.s+(st.broke?0:20)*after:st.s+(st.broke?0:20*after)):st.s;
+    const carsV=[{me:true,s:meS,v:st.done?(st.broke?Math.max(0,st.v-8*after):20):st.v,color:OV.color,num:OV.meNum,n:engineName().slice(0,12),groove:1.6,slide:st.slideT>0?Math.min(1,st.slideT+0.2):0,thr:st.tf,brk:st.thr<0.02&&st.acc<-2?1:0,spin:Math.min(1,Math.max(0,st.spin-1))}];
+    OV.cars.forEach(c=>{const a=OV.pre>0?{s:-ovalGridOff(OV.order.indexOf(c.id)),v:0}:ovalAt(c,t);carsV.push(a?{s:a.s,v:a.v,color:c.color,num:c.num,n:c.n,groove:c.groove,thr:0.6,brk:0}:{gone:true,s:0,v:0,color:c.color});});
+    if(OV.pre>0){carsV[0].s=-OV.veh.off;carsV[0].v=0;}
+    const top=rk.filter(r=>!r.out).slice(0,12).map(r=>r.me?{num:OV.meNum,n:"YOU",me:true}:{num:r.c.num,n:r.c.n.split(" ").pop()});
+    if(ENGINE_VIS.setOval)ENGINE_VIS.setOval({on:true,track:SIM.ovalTrack(OV.tk),cars:carsV,pre:OV.pre>0,done:st.done&&after>0.4,flag:st.done?"checker":OV.pre>0?"yellow":st.lap>=OV.laps-1?"white":"green",cam:OV.cam,night:!!S.night,lastLap:st.lap>=OV.laps-1,toFlag:(OV.laps*L2-st.s)/Math.max(10,st.v),order:top,boardHead:OV.stage==="heat"?"HEAT RACE":"FEATURE",dt:dt*(OV.pre>0||st.done?1:OV.speed)});
+    if((hudT+=dt)>0.1||st.done){hudT=0;ovalHud(rk);}
+    run.on=true;run.rpm=st.done?run.rpm+(OV.veh.idle-run.rpm)*Math.min(1,dt*3):OV.pre>0?OV.veh.idle+900*Math.max(0,Math.sin(now/200)):st.rpm;run.load=st.done?0:Math.max(0.05,st.tf);$("rpmLbl").textContent=Math.round(run.rpm/10)*10;
+    $("testProg").style.width=Math.min(100,100*Math.max(0,st.s)/(OV.laps*L2))+"%";
+    if(st.done&&(OV.skip||now-OV.doneAt>(st.broke?2600:3400)))ovalFinish();else requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
+/* what the flag, the line and the pit board do each step */
+function ovalFlag(Tw){OV.cars.forEach(c=>ovalCutAt(c,Tw,OV.laps));OV.winT=Tw;OV.cutDone=true;}
+function ovalWatch(){const st=OV.p.st,L=OV.L;
+  if(!OV.cutDone&&!st.done&&isFinite(OV.winT)&&st.t>=OV.winT){OV.flagged=true;ovalFlag(OV.winT);}
+  if(st.lap>OV.lapSeen){OV.lapSeen=st.lap;const rk=ovalRanks(st.t),pos=rk.findIndex(r=>r.me)+1,prev=OV.posLaps.length?OV.posLaps[OV.posLaps.length-1]:OV.gridMe+1;OV.posLaps.push(pos);
+    const lt=st.laps[st.laps.length-1],best=Math.min.apply(null,st.laps),ah=pos>1?rk[pos-2]:null,gp=ah&&!ah.out?Math.abs(st.s-(ah.s||st.s))/Math.max(8,st.v):null;
+    OV.feed.push(`<b>L${st.lap}</b> · <b>P${pos}</b>${pos<prev?` <span style="color:var(--good)">▲${prev-pos}</span>`:pos>prev?` <span style="color:var(--crit)">▼${pos-prev}</span>`:""} · ${lt.toFixed(2)}${lt<=best+1e-6?" <b style=\"color:var(--good)\">best</b>":""}${gp!=null?` · +${gp.toFixed(1)} s to P${pos-1}`:""}`);if(OV.feed.length>8)OV.feed.shift();
+    if(OV.flagged&&!st.done){st.done=true;st.finish=st.t;st.stopWhy="flag";}}
+  if(st.done&&!st.broke&&!OV.meCut)OV.meCut={t:st.t,s:st.lap*L};
+  if(st.done&&!OV.cutDone)ovalFlag(st.broke?OV.winT:Math.min(OV.winT,st.t));}
+function ovalSkip(){if(!OV||OV.finished)return;const p=OV.p,st=p.st;OV.pre=0;if(!OV.auto&&OV.took==null&&st.lap>0)OV.handed=st.lap;let n=0;while(!st.done&&n++<200000){p.step(0.04,OV.auto?null:ovalCtl());ovalWatch();}OV.skip=true;if(OV.doneAt==null)OV.doneAt=performance.now()-4000;}
+(()=>{const bind=(id,w)=>{const b=$(id);
+  holdBtn(b,()=>OV,()=>ovalPress(w),()=>ovalRelease(w),()=>{ovalPress(w);setTimeout(()=>ovalRelease(w),400);});};
+  bind("ovalPush","push");bind("ovalSave","save");
+  $("ovalSkip").addEventListener("click",()=>ovalSkip());
+  $("ovalSpdB").addEventListener("click",()=>{if(!OV)return;OV.speed=OV.speed>=8?1:OV.speed*2;S.env.ovalSpd=OV.speed;ovalBtnText();$("ovalSpdB").textContent=OV.speed+"×";save();});
+  $("ovalCamB").addEventListener("click",()=>{const ids=OVAL_CAMS.map(c=>c[0]),cur=OV?OV.cam:S.env.ovalCam,nx=ids[(ids.indexOf(cur)+1)%ids.length];S.env.ovalCam=nx;if(OV)OV.cam=nx;$("ovalCamB").textContent="Cam · "+OVAL_CAMS.find(c=>c[0]===nx)[1];save();});
+  document.addEventListener("keydown",e=>{if(e.defaultPrevented||!OV||OV.finished||$("ovalCtl").style.display==="none"||typingIn(e.target)||e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.key===" "||e.key==="Spacebar"){e.preventDefault();if(!e.repeat&&!OV.spaceHeld){OV.spaceHeld=true;OV.lastPtr=performance.now();ovalPress("push");}}});
+  document.addEventListener("keyup",e=>{if(!OV||!OV.spaceHeld)return;if(e.key===" "||e.key==="Spacebar"){OV.spaceHeld=false;ovalRelease("push");}});})();
+/* ---- the flag: classification, money, records ---- */
+function ovalFinish(){
+  if(!OV||OV.finished)return;OV.finished=true;const {p,res,env,k,tk,stage,snap,hk,night:n,laps:N}=OV,TT=SIM.ovalTrack(tk),C0=SIM.OVAL_CLASSES[k],same=testSame(snap),st=p.st,r=p.result(),failed=!!st.broke;
+  setTimeout(()=>{if(!testing){if(ENGINE_VIS.setOval)ENGINE_VIS.setOval({on:false});$("app").classList.remove("onstrip");}},OV.skip?300:1800);
+  testing=false;run.on=false;run.rpm=0;$("rpmbox").style.display="none";$("ovalCtl").style.display="none";$("testProg").classList.add("done");setTimeout(()=>{$("testProg").style.width="0";},700);ENGINE_VIS.setAutoRotate(null);
+  const meLaps=st.lap,meT=failed?null:st.t;
+  const win=Math.min(...OV.cars.filter(c=>!c.dnf&&c.fin!=null).map(c=>c.fin),(!failed&&meLaps>=N)?st.t:Infinity);
+  const rows=OV.cars.map(c=>{const q=ovalCutAt(c,win,N);return{n:c.n,num:c.num,hp:c.hp,id:c.id,laps:q.laps,time:q.time,dnf:q.dnf,best:c.best};});
+  const me={n:engineName().slice(0,26),num:OV.meNum,me:true,id:"me",laps:meLaps,time:meT,dnf:failed,best:isFinite(st.bestLap)?st.bestLap:null};
+  rows.push(me);ovalSortRows(rows);const place=rows.indexOf(me)+1;
+  Object.assign(r,{stage,cls:k,clsName:C0.n,tier:C0.tier,place,of:rows.length,field:rows,N,lapsDone:meLaps,auto:OV.auto&&OV.took==null,took:OV.took,gridMe:OV.gridMe+1,posLaps:OV.posLaps.slice(),finished:!failed,tyreName:SIM.OVAL_TYRES[env.ovalTyre]?SIM.OVAL_TYRES[env.ovalTyre].n:"",track:tk,trackName:TT.n,surf:TT.surf,night:SIM.ovalNight(n.seed,tk).name,ci:Math.round(SIM.ovalCi(res)),final:+(OV.veh.finalK||1).toFixed(2),muStart:+(SIM.ovalNight(n.seed,tk).mu).toFixed(2),dnfLap:failed?meLaps+1:null});
+  r.time=meT;r.best=me.best;
+  if(typeof crowdAfter==="function")crowdAfter("oval",{broke:failed,won:place===1&&!failed});   // app/ambience.js
+  const pl=ordN(place)+" of "+rows.length,sc=failed?`DNF · lap ${meLaps+1}`:`${ordN(place)}`;
+  // money, rep, wear
+  if(same&&career()){addWear((stage==="heat"?0.4:0.9)+(r.coolPeak>112?0.4:0),hk);
+    if(failed){C().cert=null;C().rep=Math.max(0,C().rep-(stage==="feature"?2:1));logEvent(`${ovalLabel(tk)} ${stage}: ${C0.n} — ${r.broke==="head_lift"?"cooked it":"engine failed"} on lap ${meLaps+1}`,"bad");toast(`OUT · ${ovalFailWord(r.broke)}`);}
+    else{const tab=stage==="heat"?OVAL_HPURSE:OVAL_FPURSE,purse=Math.round((tab[place-1]||0)*(OVAL_PAY[C0.tier]||1)/10)*10,rep=stage==="heat"?(place===1?1:0):((OVAL_FREP[place-1]||0)+1);r.purse=purse;r.rep=rep;C().cash+=purse;C().rep+=rep;
+      logEvent(`${ovalLabel(tk)} ${stage}: ${C0.n} — ${ordN(place)} of ${rows.length}${purse?", purse "+fmt$(purse):""}`,place<=3?"good":"");toast(`${stage==="heat"?"Heat":"Feature"} · ${ordN(place)}${purse?" · "+fmt$(purse):""}`);}
+    spEvent("oval",{win:!failed&&stage==="feature"&&place===1,finish:!failed&&stage==="feature"&&place>1&&place<=3,heat:stage==="heat"});hud();checkGoals();}
+  else toast(failed?`OUT · ${ovalFailWord(r.broke)}`:`${stage==="heat"?"Heat":"Feature"} · ${pl}`);
+  // the night moves on
+    if(stage==="heat"){n.heat={place,of:rows.length,dnf:failed,time:meT,best:r.best,purse:r.purse||0};
+    const bIds=ovalHeatB(k,n.seed,tk),aIds=rows.map(q=>q.id),g=[];
+    for(let i=0;i<Math.max(aIds.length,bIds.length);i++){if(i<aIds.length)g.push(aIds[i]);if(i<bIds.length)g.push(bIds[i]);}
+    n.grid=g;n.gridMe=g.indexOf("me");n.stage="feature";n.hash=hKey(cfgHash(S.cfg));r.nextGrid=n.gridMe+1;
+    if(!failed)setTimeout(()=>toast(`Heat ${ordN(place)} — feature starts ${ordN(n.gridMe+1)}`),2800);
+    setTimeout(()=>ovalWarm(k,n,tk),1500);}
+  else{n.feat={place,of:rows.length,dnf:failed,time:meT,best:r.best,purse:r.purse||0};n.stage="done";}
+  // records: best lap per class, best finish, feature wins
+  if(same&&!ff&&!failed){const RR=ovalRecs(tk),was=RR[k]||{};const nw=Object.assign({},was);
+    if(r.best&&(!was.lap||r.best<was.lap)){nw.lap=+r.best.toFixed(3);r.pb={lap:was.lap||null};if(was.lap)setTimeout(()=>toast(`CLASS BEST LAP · ${r.best.toFixed(2)} s (was ${was.lap.toFixed(2)})`),2700);}
+    if(stage==="feature"){nw.best=Math.min(was.best||99,place);if(place===1)nw.wins=(was.wins||0)+1;nw.feats=(was.feats||0)+1;}
+    RR[k]=Object.assign(nw,recTag());}
+  res.oval=r;res.ovalFailed=failed;res.ovalFailKind=failed?r.broke:null;S.last={hash:snap.h,cfg:snap.cfg,env,res};
+  achCheck({type:"oval",r,failed});
+  if(stage==="feature"&&!career())delete OVAL_SB[ovalBK(k,tk)];
+  OV.p=null;save();recompute();renderTest();
+  revealVerdict();
+}
+function ovalRedraw(){const l=lastForChart();if(S.env.testType==="oval"&&l&&l.oval)drawOvalChart(l.oval);}
 /* ---- boat drags: the night as it is run (app-late.js, since 1.76.141.0): rivals, start, the hold button and trim, live card, finish, the boat shop.
    Night tables, the setup screen, records and the verdict are in app/boat.js ---- */
 const BOAT_COLORS=[0x1d4787,0xb7261d,0x2c6b3a,0xe8c14a,0x6b3d8f,0x0e8a8a,0xd94e8f,0x8e8e8e];

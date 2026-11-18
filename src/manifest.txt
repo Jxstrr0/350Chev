@@ -110,12 +110,15 @@ app-late.js: app/pull-run.js
 app/bog.js
 app-late.js: app/bog-run.js
 app/road.js
+app-late.js: app/road-run.js
 app/e24.js
+app-late.js: app/e24-run.js
 app/salt.js
 app-late.js: app/salt-run.js
 app/hill.js
 app-late.js: app/hill-run.js
 app/oval.js
+app-late.js: app/oval-run.js
 app/boat.js
 app-late.js: app/boat-run.js
 app/runview.js
