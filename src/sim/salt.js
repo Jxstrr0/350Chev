@@ -17,6 +17,7 @@
      every second near the redline is a small chance for the build's weakest part to let
      go — larger the closer the sim's own tests put that part to its limit.
      ===================================================================== */
+  /* the auto driver (lsrFoot) is in sim/salt-run.js, which goes into sim-late.js (since 1.76.139.0); the run stays here: the class records (lsrRecord, read by Records and warmed at boot) are set by timing a salt pass */
   const SALT_ENV = { ambientC: 32, altitudeM: 1290, humidity: 20 };
   const LSR_MILE = 1609.344;
   const LSR_COURSES = {
@@ -265,23 +266,6 @@
     }
     return { st: st, step: step, shift: shift, autoShift: autoShift, chute: chute, result: result, ratios: ratios, shiftRpm: shiftRpm, mass: m, x0: x0, x1: x1, k0: k0, k1: k1, xEnd: xEnd };
   }
-  /* the auto driver's foot (the app's Auto driver, and the rest of a skipped run): flat out, but once the tyres slip it holds
-     them on the slip where the salt grips hardest (8%, the peak of mu() above) instead of waiting for 13% and chopping the
-     throttle; off a little more for a light nose, off hard when the car is getting loose. f(st, dt) gives 0..1 for the next dt
-     seconds (20 ms steps, shorter on a frame). Worth 4-6 mph through the mile on cars with more power than grip (an outlaw
-     or pro-mod motor in an altered, a roadster or a lakester); the same on a car that never spins. lsrPass keeps the old
-     foot, so the seeded record book and the Top gear helper are where they were. */
-  function lsrFoot() {
-    let thr = 1;
-    return function (st, dt) {
-      if (st.phase !== "run") return 1;
-      const k = clamp((dt || 0.02) / 0.02, 0, 12.5), sT = 0.08;
-      if (st.slip > sT || thr < 1) thr += 0.6 * (sT - st.slip) * k; else thr += 0.05 * k;
-      if (st.light < 0.5) thr -= 0.05 * k;
-      if (st.loose > 0.3) thr *= Math.pow(st.loose > 0.5 ? 0.75 : 0.88, k);
-      thr = clamp(thr, 0.04, 1); return thr;
-    };
-  }
   /* a run with a sensible driver: flat out, feathering wheelspin and a light front end; the node harness and the record book use it */
   function lsrPass(res, veh) {
     const p = lsrRun(res, Object.assign({ autoLift: true }, veh, { shift: "auto" })); let thr = 1;
@@ -338,5 +322,6 @@
     const rec = { key: key, mph: mph, holder: LSR_HOLDERS[(hsh >>> 10) % LSR_HOLDERS.length], year: 1958 + ((hsh >>> 4) % 67), seeded: true };
     lsrRecCache[key] = rec; return rec;
   }
+
 
 

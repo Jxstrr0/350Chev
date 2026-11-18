@@ -28,17 +28,24 @@ sim/tests.js
 sim/combos.js
 sim/presets.js
 sim/drag.js
+sim-late.js: sim/drag-run.js
 sim/pull.js
+sim-late.js: sim/pull-run.js
 sim/bog.js
+sim-late.js: sim/bog-run.js
 sim/road.js
+sim-late.js: sim/road-run.js
 sim/e24.js
 sim-late.js: sim/e24-run.js
 sim/salt.js
+sim-late.js: sim/salt-run.js
 sim/boat.js
+sim-late.js: sim/boat-run.js
 sim/swap.js
 sim/hill.js
 sim-late.js: sim/hill-run.js
 sim/oval.js
+sim-late.js: sim/oval-run.js
 sim/tunemap.js
 html/ld-sim.html
 sound/profile.js
