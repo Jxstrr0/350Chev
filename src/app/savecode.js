@@ -71,7 +71,7 @@ function buSum(body){let h=2166136261;for(let i=0;i<body.length;i++){h^=body.cha
   let s="";for(let i=0;i<6;i++){s+=BU_B64[h&63];h=Math.floor(h/64);}return s;}
 
 /* ---- making a code ---- */
-function buStored(k){try{const j=localStorage.getItem(k);if(!j)return null;const o=JSON.parse(j);return o&&typeof o==="object"&&!Array.isArray(o)?o:null;}catch(e){return null;}}
+function buStored(k){try{const j=localStorage.getItem(k);if(!j)return null;const o=JSON.parse(j);return o&&typeof o==="object"&&!Array.isArray(o)?cleanText(o):null;}catch(e){return null;}}
 function buMake(){const slots=[];for(let i=1;i<=SLOTS;i++)slots.push(buStored(slotKey(i)));
   return{v:BU_V,at:Date.now(),ver:VERSION,save:snapshot(),slots,legacy:buStored(LG_KEY)};}
 function buCode(d){const body=buZip(new TextEncoder().encode(JSON.stringify(d||buMake())));return BU_PREFIX+body+buSum(body);}
@@ -127,6 +127,7 @@ function buRead(text){
 
 /* ---- writing a checked backup: all five keys, or none of them ---- */
 function buWrite(d){
+  cleanText(d);   // a code can come from anyone: what goes into storage only ever holds plain words (app/state.js)
   const keys=[["pew2-save",d.save]];for(let i=1;i<=SLOTS;i++)keys.push([slotKey(i),d.slots[i-1]||null]);keys.push([LG_KEY,d.legacy||null]);
   const old=[];
   try{for(const [k] of keys)old.push([k,localStorage.getItem(k)]);}catch(e){return false;}

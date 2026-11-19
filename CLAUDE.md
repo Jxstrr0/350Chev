@@ -17,7 +17,7 @@ Prairie Engine Works is a browser engine-builder by Longlight Interactive: pick 
 ```
 node build.js            # rebuild index.html, scenes.js, app-late.js, sim-late.js and sw.js from src/
 node build.js --check    # exit 1 if either is stale, a script block does not compile, or a function is declared twice
-node check-savecode.js   # 15 save-code checks: round trip, damaged and cut-off codes, storage full, old PEW2 codes
+node check-savecode.js   # 16 save-code checks: round trip, damaged and cut-off codes, storage full, old PEW2 codes, hidden markup
 node tools/sim-test.js   # 500 sim numbers (ten engines, the dyno and all ten events) against tools/sim-baseline.json
 ```
 
@@ -68,6 +68,7 @@ When changing physics, run `node tools/sim-test.js` (it covers every event, not 
 ## Save codes
 
 - **Back up** / **Restore** (Shop, Saves) in `src/app/savecode.js`. A code is `PEW1:` + the five localStorage keys as JSON, LZW-squeezed, base64url, + a 6-character checksum. Restore checks the whole code before writing anything. Older one-game `PEW2:` codes still load. `PEW2:` is taken, so the next format is `PEW3:`.
+- A save can come from anyone, so nothing in one may reach the page as markup (1.76.142.1). `cleanText` (`src/app/state.js`) runs wherever a save is read (`hydrate`, `readSlot`, the Legacy record, `buStored`, `buWrite`): it swaps `<` and `>` in every text and key, and a double quote when the text also holds an `=`. Engine fingerprints (`cfgHash`) are full of quotes and must pass unchanged, which is why a quote alone is left. A new place that reads a stored save must call it; new screens still `esc()` what they write.
 - A new localStorage key must be added to `buMake` and `buWrite`, or backups will not carry it. `check-savecode.js` runs `savecode.js` in node with a pretend localStorage.
 - Players may paste their codes to debug a car. That is their personal data: decode and run it locally only, never send it to an outside service, and don't commit it.
 
@@ -94,7 +95,7 @@ When changing physics, run `node tools/sim-test.js` (it covers every event, not 
 - Real design decisions get asked, not guessed.
 - The site and the game use the name Kelbo only, never a real name. Studio name: Longlight Interactive.
 
-## Current status (1.76.142.0, November 2026)
+## Current status (1.76.142.1, November 2026)
 
 - Built and live: the whole loop, in two modes (Test cell, Career). 19 layouts, 56 part tables (268 options), 96 base engines, three dyno tests, ten event types with classes and rivals, career built around team seasons (supply a race team for 8 rounds across 27 series in six kinds of racing, two teams at once from 300 rep; five varied offers with shoestring or well-funded budgets and team rules since 1.76.59.0, leaning to the top series opened since 1.76.60.0; offers built around the certified engine since 1.76.69.0; class rules shown on offers, Build and Test before a pull is paid for since 1.76.110.0; the old Pit Crew mode folded in, selling to buyers removed in 1.76.33.0), season beats, rescue contracts, returning drivers, Watch it replays (drag, oval, and since 1.76.100.0 pull, bog, boat and hill), a crew chief who can call the 24 Hours strategy (since 1.76.102.0), car show and sound-off, a career dev mode in Settings (+$100,000, +100 rep, skip week), certification, crate engine sales, rival feuds, sponsors, crew, R&D, prestige, rival shops, Legacy, achievements, trophy room, photo mode, door cars with open windows and a cabin on Full/Ultra, sound synth with real recordings, a qualifying slip stamped with your seed and the lane result, a burnout › stage › launch strip over the drag button (since 1.76.124.0), a drag announcer (Hassan since 1.76.125.0, 143 ElevenLabs lines in `sounds/announcer/`, matchup calls stitched from parts, since 1.76.87.0), offline PWA, save codes with backup files and a backup reminder. First-load diet (since 1.76.136.0): the glossary, lessons, trophy room, photo mode and every event's run comes in `app-late.js`, the event runs in `sim-late.js`, both fetched once the garage is up.
 - Known loose ends: none flagged beyond `docs/DESIGN.md`'s list.

@@ -30,6 +30,8 @@ function load() {
   const code = fs.readFileSync(SRC, "utf8");
   const dec = /^function decodeSave\(.*$/m.exec(fs.readFileSync(STATE, "utf8"));
   if (!dec) throw new Error("decodeSave not found in src/app/state.js");
+  const cln = /^function cleanText\(.*$/m.exec(fs.readFileSync(STATE, "utf8"));
+  if (!cln) throw new Error("cleanText not found in src/app/state.js");
   const ctx = {
     localStorage: fakeStorage(), TextEncoder, TextDecoder, Uint8Array, atob, btoa, escape, unescape,
     SLOTS: 3, slotKey: i => "pew2-slot" + i, LG_KEY: "pew2-legacy", VERSION: "test",
@@ -40,7 +42,7 @@ function load() {
     fmt$: n => "$" + Math.round(n)
   };
   vm.createContext(ctx);
-  vm.runInContext(dec[0] + "\n" + code, ctx, { filename: "savecode.js" });
+  vm.runInContext(dec[0] + "\n" + cln[0] + "\n" + code, ctx, { filename: "savecode.js" });
   return ctx;
 }
 
@@ -203,6 +205,27 @@ check("packing survives big, varied saves (LZW dictionary fills up)", () => {
   const bytes = new TextEncoder().encode("abababababababababab");
   assert.deepStrictEqual(Array.from(a.buUnzip(a.buZip(bytes))), Array.from(bytes), "KwKwK case");
   assert.deepStrictEqual(plain(a.buUnzip(a.buZip(new Uint8Array(0)))), []);
+});
+check("a code that hides markup is made harmless: nothing restored keeps < or >, or a double quote next to an =", () => {
+  const a = load(); seed(a.localStorage);
+  const H = "\"><img src=x onerror=alert(1)>";
+  const g = game({ name: "383 \"Mouse\" <hot>" + H });
+  g.career.log[0] = { w: 26, t: "Strip" + H, k: "good" + H }; g.career.owned["dyno" + H] = true;
+  g.cfg.heads = "alu" + H; g.blueprints[0].name = H; g.career.pc.team.team = "Penner" + H;
+  const d = { v: 1, at: 1760000000000, ver: "test", save: g, slots: [plain(g), null, null], legacy: { pts: 3, total: 3, resets: 1, best: { ["x" + H]: 1 }, perk: {} } };
+  const code = "PEW1:" + (body => body + a.buSum(body))(a.buZip(new TextEncoder().encode(JSON.stringify(d))));
+  const r = a.buRead(code); assert.strictEqual(r.kind, "full");
+  assert.strictEqual(a.buWrite(r.data), true);
+  const risky = t => /[<>]/.test(t) || (t.includes("\"") && t.includes("=")), walk = (v, where) => {
+    if (typeof v === "string") assert(!risky(v), where + " still holds markup characters: " + v.slice(0, 60));
+    else if (v && typeof v === "object") for (const k of Object.keys(v)) { assert(!risky(k), where + " has a risky key"); walk(v[k], where + "." + k); }
+  };
+  for (const k of Object.keys(a.localStorage.dump())) walk(JSON.parse(a.localStorage.getItem(k)), k);
+  assert.strictEqual(JSON.parse(a.localStorage.getItem("pew2-save")).name, "383 ”Mouse” ‹hot›”›‹img src=x onerror=alert(1)›");
+  /* and a save the game wrote itself comes through untouched: engine fingerprints (full of quotes) and a quoted name too */
+  const own = game({ name: "383 \"Mouse\"" }); own.last.hash = JSON.stringify(["na", "bimetal", "grey_iron", 0.6, 83, { map: [1, 2] }]);
+  own.career.wear = { [own.last.hash]: 0.2 }; own.career.cert = { hash: own.last.hash };
+  assert.deepStrictEqual(plain(a.cleanText(plain(own))), own);
 });
 
 let bad = 0;

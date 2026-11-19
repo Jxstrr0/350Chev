@@ -3,6 +3,14 @@
 const SIM=ENGINE_SIM,{LAYOUTS,OPT,FORM,PRESETS}=SIM;
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+/* nothing from a save may reach the page as markup (1.76.142.1). A save, a slot, the Legacy record or a save code can come
+   from anyone, and the screens write many of their values straight into the page. cleanText(o) walks one and, in every
+   piece of text and every key, swaps < and > for look-alikes (so no tag can open), and swaps the double quote too when the
+   text also holds an = (so nothing can close an attribute and start one of its own). A quote with no = is left alone:
+   it can't do harm, and the engine fingerprints (cfgHash, kept in certs, wear and records) are full of them and must not
+   change. Numbers, true/false and null pass through. It changes o and returns it; a save the game wrote itself comes
+   through unchanged. Kept on one line: check-savecode.js lifts it out of this file. */
+function cleanText(o){const sw=s=>{if(s.indexOf("<")>=0||s.indexOf(">")>=0)s=s.replace(/[<>]/g,c=>c==="<"?"\u2039":"\u203A");return s.indexOf('"')>=0&&s.indexOf("=")>=0?s.replace(/"/g,"\u201D"):s;};if(Array.isArray(o)){for(let i=0;i<o.length;i++){const v=o[i];if(typeof v==="string")o[i]=sw(v);else if(v&&typeof v==="object")cleanText(v);}return o;}if(!o||typeof o!=="object")return o;for(const k of Object.keys(o)){let v=o[k];if(typeof v==="string")v=o[k]=sw(v);else if(v&&typeof v==="object")cleanText(v);const k2=sw(k);if(k2!==k){delete o[k];o[k2]=v;}}return o;}
 /* ---- helpers every event shares (drag, pull, bog, boat, salt, hill, oval, road, e24) ---- */
 /* one bucket of records per event, created on first use */
 function recBucket(k){const R=recs();if(!R[k]||typeof R[k]!=="object")R[k]={};return R[k];}
@@ -126,7 +134,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.142.0";
+const VERSION="1.76.142.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -153,7 +161,7 @@ function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({}
 function save(){try{if(typeof lgSync==="function")lgSync();const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));if(S.mode&&typeof buPersist==="function")buPersist();}catch(e){}}   // buPersist: app/savecode.js asks the browser to keep the storage, once
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
 function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});return o;}
-function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suC=null;Object.assign(S,o);delete S.bay;delete S.pit;
+function hydrate(o){if(!o||!o.cfg)return false;cleanText(o);S=freshState();suC=null;Object.assign(S,o);delete S.bay;delete S.pit;
   /* 1.76.33: the career became team seasons. A career from before (no cv:2) starts over, and a Pit Crew game becomes a career;
      boot() applies the Legacy perks and tells the player once (S.careerNew) */
   const old=o.career&&typeof o.career==="object"?o.career:null,pit=o.mode==="pit",was=!!old&&old.cv!==2&&(o.mode==="career"||(+old.week||1)>1);
@@ -181,7 +189,7 @@ function fuelMigrate(){const m={},fitted=[];
 function load(){S=freshState();try{const j=localStorage.getItem("pew2-save");if(j)hydrate(JSON.parse(j));}catch(e){}}
 /* manual save slots, plus the older one-game "PEW2:" save codes (Restore still reads them; Back up codes are app/savecode.js) */
 const SLOTS=3,slotKey=i=>"pew2-slot"+i;
-function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?JSON.parse(j):null;}catch(e){return null;}}
+function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?cleanText(JSON.parse(j)):null;}catch(e){return null;}}
 function writeSlot(i){try{const o=snapshot();o.savedAt=Date.now();localStorage.setItem(slotKey(i),JSON.stringify(o));return true;}catch(e){return false;}}
 function clearSlot(i){try{localStorage.removeItem(slotKey(i));}catch(e){}}
 function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt):null;const when=d?d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-CA",{hour:"2-digit",minute:"2-digit"}):"";
