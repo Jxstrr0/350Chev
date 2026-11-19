@@ -134,7 +134,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.142.1";
+const VERSION="1.76.142.2";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -169,7 +169,41 @@ function hydrate(o){if(!o||!o.cfg)return false;cleanText(o);S=freshState();suC=n
   if(pit){S.mode="career";const P=o.pit&&typeof o.pit==="object"?o.pit:{};S.career.log=[{w:1,t:`Pit Crew record: ${Math.max(0,(+P.season||1)-1)} season${(+P.season||1)===2?"":"s"}, ${+P.titles||0} title${+P.titles===1?"":"s"}, ${+P.wins||0} round win${+P.wins===1?"":"s"}. Team seasons now run in the career, from the Team tab.`,k:"good"}];}
   if(pit||was)S.careerNew=pit?"pit":"reset";
   try{fuelMigrate();}catch(e){}
-  S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});if(S.env.dragDrive!=="auto")S.env.dragDrive="you";S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];return true;}
+  S.cfg=Object.assign({},SIM.DEFAULT_CFG,o.cfg);S.env=Object.assign({},SIM.DEFAULT_ENV,o.env||{});
+  try{cfgGuard(S.cfg);envGuard(S.env);}catch(e){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.env=Object.assign({},SIM.DEFAULT_ENV);}   // an engine the game can't run goes back to stock (below)
+  if(S.env.dragDrive!=="auto")S.env.dragDrive="you";S.blueprints=Array.isArray(o.blueprints)?o.blueprints:[];return true;}
+/* cfgGuard (1.76.142.2): a save, a slot or a backup code can come from anyone. An engine the game can't run (a bore of 0,
+   a part that isn't in the parts table) used to stop the page at "Something went wrong while loading" for good, because
+   the same save was read again on every visit. So every engine setting is checked wherever a save is read (hydrate):
+     - a number has to be a real number inside CFG_BAND, a wide band round what the sliders and the stock engines use;
+     - a part has to be one its parts table has;
+     - and the finished engine has to get through one pull of the dyno maths without an error.
+   A setting that fails goes back to the stock engine's; an engine that still can't run becomes the stock engine.
+   Engines built in the game pass all three, so nobody's own build is changed. Returns true if anything was put back. */
+const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const CFG_BAND=(()=>{const b={};   // setting -> [lowest, highest] its number may be
+  const widen=(k,v)=>{if(typeof v!=="number"||!isFinite(v))return;const r=b[k]=b[k]||[v,v];if(v<r[0])r[0]=v;if(v>r[1])r[1]=v;};
+  for(const f of FORM.flatMap(x=>x.fields))if(f.type==="slider"){widen(f.key,f.min);widen(f.key,f.max);}
+  for(const p of PRESETS)for(const k in b)widen(k,p.cfg[k]);   // some stock engines sit outside the sliders (a 54 mm bore, a 1,500 rpm redline)
+  for(const k in b){const r=b[k];b[k]=[r[0]>0?r[0]/2:r[0],r[1]*2];}   // then half the smallest to twice the biggest: room for billet parts and perks
+  return b;})();
+function cfgGuard(c){const D=SIM.DEFAULT_CFG;let fixed=false;
+  const back=k=>{if(hasOwn(D,k))c[k]=D[k];else delete c[k];fixed=true;};   // put one setting back to stock (or drop it if stock has none)
+  for(const k of Object.keys(c)){const v=c[k];
+    if(hasOwn(OPT,k)){if(typeof v!=="string"||!hasOwn(OPT[k],v))back(k);}   // a part
+    else if(hasOwn(CFG_BAND,k)||typeof D[k]==="number"){const r=CFG_BAND[k];if(typeof v!=="number"||!isFinite(v)||(r&&(v<r[0]||v>r[1])))back(k);}}   // a number
+  if(!hasOwn(LAYOUTS,c.layout))back("layout");
+  let runs=false;
+  try{const r=SIM.simulate(Object.assign({},c),Object.assign({},SIM.DEFAULT_ENV,{testType:"pull"}));runs=!!r&&typeof r.peakHp==="number"&&isFinite(r.peakHp);}catch(e){}
+  if(!runs){for(const k of Object.keys(c))delete c[k];Object.assign(c,D);fixed=true;}
+  return fixed;}
+/* the test and event settings (S.env) get the plain half of the same check: a number has to be a real number and a
+   choice has to be text, or it goes back to the default. (A number typed into a box may arrive as text; that is left.) */
+function envGuard(v){const D=SIM.DEFAULT_ENV;let fixed=false;
+  for(const k of Object.keys(D)){const d=D[k],x=v[k];
+    const ok=typeof d==="number"?(typeof x==="number"||(typeof x==="string"&&x.trim()!==""))&&isFinite(+x):typeof x===typeof d;
+    if(!ok){v[k]=d;fixed=true;}}
+  return fixed;}
 /* fuel system: a build saved before injectors and pumps existed gets the smallest set that feeds it (SIM.fitFuel), so a
    600 hp save doesn't suddenly lean out. Certs, strip bests and wear are keyed by the cfg hash, so they follow
    it. In career a fitted part the shop hasn't unlocked comes with the build (an R&D-style unlock), so nothing certified
@@ -196,7 +230,7 @@ function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt
   const head=o.mode==="career"||o.mode==="pit"?(o.career?.cv===2?`Career · wk ${o.career?.week??1} · ${fmt$(o.career?.cash??0)}`:"Career (from before team seasons: loads as a new career)"):"Test cell";return`${head} · ${(o.blueprints||[]).length} bp<br>${cfgLbl(Object.assign({},SIM.DEFAULT_CFG,o.cfg))}${when?"<br>"+when:""}`;}
 function decodeSave(t){t=(t||"").trim();if(t.startsWith("PEW2:"))t=t.slice(5);const o=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,"")))));if(!o||!o.cfg)throw new Error("bad");return o;}
 function renderSaves(){const box=$("slots");if(!box)return;let h="";for(let i=1;i<=SLOTS;i++){const o=readSlot(i);h+=`<div class="slot ${o?"full":""}"><div><h3>Slot ${i}${o?"":"<small>empty</small>"}</h3><p>${slotSummary(o)}</p></div><div class="acts"><button class="pri" data-save="${i}">Save</button><button data-load="${i}" ${o?"":"disabled"}>Load</button><button class="del" data-clear="${i}" ${o?"":"disabled"}>Clear</button></div></div>`;}box.innerHTML=h;}
-function applyLoaded(o,msg){if(testing){toast("Let the run finish first");return;}if(!hydrate(o)){toast("That save didn't read right.");return;}save();curTab="shop";boot();toast(msg);}
+function applyLoaded(o,msg){if(testing){toast("Let the run finish first");return;}if(!hydrate(o)){toast("That save didn't read right.");return;}save();curTab="shop";bootSafe();toast(msg);}
 const C=()=>S.career;
 function rng(){C().seed=(C().seed*1664525+1013904223)>>>0;return C().seed/4294967296;}
 const career=()=>S.mode==="career";
