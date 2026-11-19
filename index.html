@@ -20691,6 +20691,14 @@ if(typeof window!=="undefined")window.ENGINE_VIS=ENGINE_VIS;
 const SIM=ENGINE_SIM,{LAYOUTS,OPT,FORM,PRESETS}=SIM;
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+/* nothing from a save may reach the page as markup (1.76.142.1). A save, a slot, the Legacy record or a save code can come
+   from anyone, and the screens write many of their values straight into the page. cleanText(o) walks one and, in every
+   piece of text and every key, swaps < and > for look-alikes (so no tag can open), and swaps the double quote too when the
+   text also holds an = (so nothing can close an attribute and start one of its own). A quote with no = is left alone:
+   it can't do harm, and the engine fingerprints (cfgHash, kept in certs, wear and records) are full of them and must not
+   change. Numbers, true/false and null pass through. It changes o and returns it; a save the game wrote itself comes
+   through unchanged. Kept on one line: check-savecode.js lifts it out of this file. */
+function cleanText(o){const sw=s=>{if(s.indexOf("<")>=0||s.indexOf(">")>=0)s=s.replace(/[<>]/g,c=>c==="<"?"\u2039":"\u203A");return s.indexOf('"')>=0&&s.indexOf("=")>=0?s.replace(/"/g,"\u201D"):s;};if(Array.isArray(o)){for(let i=0;i<o.length;i++){const v=o[i];if(typeof v==="string")o[i]=sw(v);else if(v&&typeof v==="object")cleanText(v);}return o;}if(!o||typeof o!=="object")return o;for(const k of Object.keys(o)){let v=o[k];if(typeof v==="string")v=o[k]=sw(v);else if(v&&typeof v==="object")cleanText(v);const k2=sw(k);if(k2!==k){delete o[k];o[k2]=v;}}return o;}
 /* ---- helpers every event shares (drag, pull, bog, boat, salt, hill, oval, road, e24) ---- */
 /* one bucket of records per event, created on first use */
 function recBucket(k){const R=recs();if(!R[k]||typeof R[k]!=="object")R[k]={};return R[k];}
@@ -20814,7 +20822,7 @@ function loanWeek(){const c=C();if(!(c.loan>0))return "";const i=loanInt(),p=loa
   if(c.loan<=0){c.loan=0;achCheck({type:"loan"});}return ` · loan interest ${fmt$(i)} + repayment ${fmt$(p)}${c.loan>0?"":" — loan cleared"}`;}
 /* ===================== state ===================== */
 let S=null,quick=null,combosNow=[];
-const VERSION="1.76.142.0";
+const VERSION="1.76.142.1";
 (()=>{const set=()=>{const v=$("verLbl");if(v)v.textContent="v"+VERSION;};set();document.addEventListener("DOMContentLoaded",set);})();
 /* a new career. cv:2 = the team-season career (1.76.33); a save from before it starts over (hydrate) */
 function freshCareer(){return{cv:2,cash:20000,rep:0,week:1,owned:{},seed:Math.floor(Math.random()*1e9),cert:null,loan:0,log:[],goals:{},bestHp:0,bestRel:0,enduranceOk:false,boostedCert:false,staff:{},rnd:{},rndActive:null,unlocks:{},prestige:{},pc:null};}
@@ -20841,7 +20849,7 @@ function freshState(){return{mode:null,career:freshCareer(),cfg:Object.assign({}
 function save(){try{if(typeof lgSync==="function")lgSync();const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});localStorage.setItem("pew2-save",JSON.stringify(o));if(S.mode&&typeof buPersist==="function")buPersist();}catch(e){}}   // buPersist: app/savecode.js asks the browser to keep the storage, once
 function slimRes(r){return{hash:r.hash,cfg:r.cfg,env:r.env,label:r.label,res:r.res};}
 function snapshot(){const o=Object.assign({},S,{last:S.last?slimRes(S.last):null,base:S.base?slimRes(S.base):null});return o;}
-function hydrate(o){if(!o||!o.cfg)return false;S=freshState();suC=null;Object.assign(S,o);delete S.bay;delete S.pit;
+function hydrate(o){if(!o||!o.cfg)return false;cleanText(o);S=freshState();suC=null;Object.assign(S,o);delete S.bay;delete S.pit;
   /* 1.76.33: the career became team seasons. A career from before (no cv:2) starts over, and a Pit Crew game becomes a career;
      boot() applies the Legacy perks and tells the player once (S.careerNew) */
   const old=o.career&&typeof o.career==="object"?o.career:null,pit=o.mode==="pit",was=!!old&&old.cv!==2&&(o.mode==="career"||(+old.week||1)>1);
@@ -20869,7 +20877,7 @@ function fuelMigrate(){const m={},fitted=[];
 function load(){S=freshState();try{const j=localStorage.getItem("pew2-save");if(j)hydrate(JSON.parse(j));}catch(e){}}
 /* manual save slots, plus the older one-game "PEW2:" save codes (Restore still reads them; Back up codes are app/savecode.js) */
 const SLOTS=3,slotKey=i=>"pew2-slot"+i;
-function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?JSON.parse(j):null;}catch(e){return null;}}
+function readSlot(i){try{const j=localStorage.getItem(slotKey(i));return j?cleanText(JSON.parse(j)):null;}catch(e){return null;}}
 function writeSlot(i){try{const o=snapshot();o.savedAt=Date.now();localStorage.setItem(slotKey(i),JSON.stringify(o));return true;}catch(e){return false;}}
 function clearSlot(i){try{localStorage.removeItem(slotKey(i));}catch(e){}}
 function slotSummary(o){if(!o)return"Empty";const d=o.savedAt?new Date(o.savedAt):null;const when=d?d.toLocaleDateString("en-CA",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-CA",{hour:"2-digit",minute:"2-digit"}):"";
@@ -24719,7 +24727,7 @@ function renderShop(){
     const sk=pcSkip();$("nextWeek").textContent=sk?"To race week":"Close week";$("nextWeek").title=sk?`Closes ${sk} weeks: overhead for each, then round ${pcTeam().round+1} is due`:"";$("oneWeek").hidden=!sk;}
   const canBorrow=C().loan+LOAN_STEP<=LOAN_MAX;$("borrow").disabled=!canBorrow;$("borrow").textContent=canBorrow?`Draw ${fmt$(LOAN_STEP)}`:"Line maxed";$("repay").disabled=!(C().loan>0&&C().cash>0);$("repay").textContent=C().loan>0?`Repay ${fmt$(Math.min(C().loan,Math.max(0,C().cash)))}`:"Nothing owed";
   $("bankHint").textContent=`Draw up to ${fmt$(LOAN_MAX)} in ${fmt$(LOAN_STEP)} steps. Each week the bank takes ${(loanRate()*100).toFixed(1)}% interest and repays ${(LOAN_PAY*100).toFixed(0)}% of the balance (at least ${fmt$(LOAN_MIN_PAY)}) from cash${C().loan>0?` — ${fmt$(loanInt())} interest + ${fmt$(loanPay())} repayment = ${fmt$(loanInt()+loanPay())} this week`:` — a full ${fmt$(LOAN_MAX)} would cost ${fmt$(Math.round(LOAN_MAX*LOAN_RATE)+Math.round(LOAN_MAX*LOAN_PAY))} the first week`}. Repay early to save interest. Below ${fmt$(FORECLOSE_AT)} cash the bank takes the shop.`;
-  $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${e.k}"><b>wk ${e.w}</b>${e.t}</div>`).join(""):`<div>Nothing yet. Sign a team, or race an event.</div>`;
+  $("ledger").innerHTML=C().log.length?C().log.map(e=>`<div class="${esc(e.k)}"><b>wk ${esc(e.w)}</b>${esc(e.t)}</div>`).join(""):`<div>Nothing yet. Sign a team, or race an event.</div>`;
   const done=GOALS.filter(g=>C().goals[g.id]).length;$("goalCnt").textContent=`${done} / ${GOALS.length}`;
   $("goals").innerHTML=goalsHtml();
   $("overheadHint").textContent=`Weekly overhead: ${fmt$(overhead())} (${fmt$(500)} base + ${fmt$(overhead()-500-wages())} for the plant you own, 2% of what upgrades cost${wages()?`, + ${fmt$(wages())} wages`:""}). A team round runs every other week: race it from the Team section, or Close week races it with the season engine as it stands. After a round, To race week closes the off week and the race week in one tap; 1 wk closes just one.`;
@@ -25076,7 +25084,7 @@ const LG_PERKS=[
 ];
 let LG=null;
 function lgBlank(){return{v:1,pts:0,total:0,resets:0,best:{cash:0,rep:0,hp:0,sold:0,week:0,value:0},perk:{},pick:{},pending:false};}
-function lgRec(){if(LG)return LG;let o=null;try{const j=localStorage.getItem(LG_KEY);if(j)o=JSON.parse(j);}catch(e){}
+function lgRec(){if(LG)return LG;let o=null;try{const j=localStorage.getItem(LG_KEY);if(j)o=cleanText(JSON.parse(j));}catch(e){}
   LG=Object.assign(lgBlank(),o&&typeof o==="object"?o:{});LG.best=Object.assign(lgBlank().best,LG.best||{});if(!LG.perk||typeof LG.perk!=="object")LG.perk={};if(!LG.pick||typeof LG.pick!=="object")LG.pick={};return LG;}
 function lgSave(){try{localStorage.setItem(LG_KEY,JSON.stringify(lgRec()));}catch(e){}}
 function lgTier(id){return Math.max(0,Math.min(3,lgRec().perk[id]|0));}
@@ -25199,7 +25207,7 @@ function buSum(body){let h=2166136261;for(let i=0;i<body.length;i++){h^=body.cha
   let s="";for(let i=0;i<6;i++){s+=BU_B64[h&63];h=Math.floor(h/64);}return s;}
 
 /* ---- making a code ---- */
-function buStored(k){try{const j=localStorage.getItem(k);if(!j)return null;const o=JSON.parse(j);return o&&typeof o==="object"&&!Array.isArray(o)?o:null;}catch(e){return null;}}
+function buStored(k){try{const j=localStorage.getItem(k);if(!j)return null;const o=JSON.parse(j);return o&&typeof o==="object"&&!Array.isArray(o)?cleanText(o):null;}catch(e){return null;}}
 function buMake(){const slots=[];for(let i=1;i<=SLOTS;i++)slots.push(buStored(slotKey(i)));
   return{v:BU_V,at:Date.now(),ver:VERSION,save:snapshot(),slots,legacy:buStored(LG_KEY)};}
 function buCode(d){const body=buZip(new TextEncoder().encode(JSON.stringify(d||buMake())));return BU_PREFIX+body+buSum(body);}
@@ -25255,6 +25263,7 @@ function buRead(text){
 
 /* ---- writing a checked backup: all five keys, or none of them ---- */
 function buWrite(d){
+  cleanText(d);   // a code can come from anyone: what goes into storage only ever holds plain words (app/state.js)
   const keys=[["pew2-save",d.save]];for(let i=1;i<=SLOTS;i++)keys.push([slotKey(i),d.slots[i-1]||null]);keys.push([LG_KEY,d.legacy||null]);
   const old=[];
   try{for(const [k] of keys)old.push([k,localStorage.getItem(k)]);}catch(e){return false;}

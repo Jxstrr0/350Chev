@@ -18,7 +18,7 @@ const LG_PERKS=[
 ];
 let LG=null;
 function lgBlank(){return{v:1,pts:0,total:0,resets:0,best:{cash:0,rep:0,hp:0,sold:0,week:0,value:0},perk:{},pick:{},pending:false};}
-function lgRec(){if(LG)return LG;let o=null;try{const j=localStorage.getItem(LG_KEY);if(j)o=JSON.parse(j);}catch(e){}
+function lgRec(){if(LG)return LG;let o=null;try{const j=localStorage.getItem(LG_KEY);if(j)o=cleanText(JSON.parse(j));}catch(e){}
   LG=Object.assign(lgBlank(),o&&typeof o==="object"?o:{});LG.best=Object.assign(lgBlank().best,LG.best||{});if(!LG.perk||typeof LG.perk!=="object")LG.perk={};if(!LG.pick||typeof LG.pick!=="object")LG.pick={};return LG;}
 function lgSave(){try{localStorage.setItem(LG_KEY,JSON.stringify(lgRec()));}catch(e){}}
 function lgTier(id){return Math.max(0,Math.min(3,lgRec().perk[id]|0));}
