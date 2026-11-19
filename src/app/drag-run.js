@@ -67,20 +67,6 @@ function shudFrame(st,now,dtT){if(!SH||!DR||!DR.d)return;const R=DR.race,n=DR.ni
   const rl=DR.veh.redline||8000,rpm=Math.max(0,run.rpm||0),f=Math.min(1,rpm/rl);
   shudSet("rpm",SH.rpm,`${ph==="run"?"G"+st.gear+" · ":""}${(Math.round(rpm/10)*10).toLocaleString("en-CA")} rpm`);
   shudSet("bar",SH.bi,`scaleX(${f.toFixed(3)})`,"transform");shudSet("lim",SH.bar,f>0.965?"shr lim":"shr","cls");}
-function dragTuneNow(){const e={},c={};for(const k of DTUNE_ENV)if(S.env[k]!==undefined)e[k]=S.env[k];for(const k of DTUNE_CFG)if(S.cfg[k]!==undefined)c[k]=S.cfg[k];return{env:e,cfg:c};}
-function dragTuneSame(t){if(!t)return false;const n=dragTuneNow();return DTUNE_ENV.every(k=>t.env[k]===n.env[k])&&DTUNE_CFG.every(k=>t.cfg[k]===undefined||t.cfg[k]===n.cfg[k]);}
-function dragTuneName(def){let n=null;try{n=prompt("Name this tune",def);}catch(e){}if(n==null)return null;n=String(n).trim().slice(0,24);return n||def;}
-function dragTuneAct(i,a){const T=dragTunes(),t=T[i];
-  if(a==="save"||!t){const n=t?t.n:dragTuneName(`Tune ${i+1}`);if(n==null)return;T[i]=Object.assign({n,at:Date.now()},dragTuneNow());DTSEL=-1;toast(`Saved “${n}”`);}
-  else if(a==="load"){Object.assign(S.env,t.env);for(const k of DTUNE_CFG)if(t.cfg[k]!==undefined&&S.cfg[k]!==t.cfg[k]){S.cfg[k]=t.cfg[k];buildStale=true;}
-    S.env.launchRpm=Math.min(S.env.launchRpm,S.cfg.redline);if(S.env.shiftRpm>0)S.env.shiftRpm=Math.min(S.env.shiftRpm,S.cfg.redline);
-    DTSEL=-1;recompute();toast(`Loaded “${t.n}”`);}
-  else if(a==="name"){const n=dragTuneName(t.n);if(n==null)return;t.n=n;DTSEL=-1;}
-  else if(a==="clear"){T[i]=null;DTSEL=-1;toast("Slot cleared");}
-  renderEnv();save();}
-$("envBox").addEventListener("click",e=>{const s=e.target.closest("[data-dtune]"),a=e.target.closest("[data-dtact]");if(!s&&!a)return;
-  if(a){if(DTSEL>=0)dragTuneAct(DTSEL,a.dataset.dtact);return;}
-  const i=+s.dataset.dtune;if(!dragTunes()[i]){dragTuneAct(i,"save");return;}DTSEL=DTSEL===i?-1:i;renderEnv();});
 /* the other lane's splits from its trace (the trace runs in its own time; R.k stretches it to the pass it made) */
 function dhudOppMarks(R){if(!R||!R.trace||!R.trace.length)return null;const tr=R.trace,k=R.k||1;
   const at=x=>{for(let i=1;i<tr.length;i++)if(tr[i][1]>=x){const a=tr[i-1],b=tr[i],dt=Math.max(1e-3,(b[0]-a[0])*k),f=b[1]>a[1]?(x-a[1])/(b[1]-a[1]):0;return{t:+((a[0]+(b[0]-a[0])*f)*k).toFixed(3),mph:+((b[1]-a[1])/dt*2.23694).toFixed(1)};}return null;};

@@ -63,6 +63,20 @@ function dragTuneSum(t){const e=t.env,ty=SIM.TYRES[e.tyre],a=SIM.AERO[e.body];re
 function dragTuneHtml(){const T=dragTunes();
   return`<div class="lbl"><span>Saved tunes</span></div><div class="seg n3 dtunes">${T.map((t,i)=>`<button data-dtune="${i}" class="${t&&dragTuneSame(t)?"on":""}${DTSEL===i?" sel":""}">${t?esc(t.n):"Empty slot"}<small>${t?esc(dragTuneSum(t)):"tap to save this setup"}</small></button>`).join("")}</div>
   ${DTSEL>=0&&T[DTSEL]?`<div class="dtact"><button data-dtact="load">Load</button><button data-dtact="save">Save over</button><button data-dtact="name">Rename</button><button data-dtact="clear">Clear</button></div>`:""}`;}
+function dragTuneNow(){const e={},c={};for(const k of DTUNE_ENV)if(S.env[k]!==undefined)e[k]=S.env[k];for(const k of DTUNE_CFG)if(S.cfg[k]!==undefined)c[k]=S.cfg[k];return{env:e,cfg:c};}
+function dragTuneSame(t){if(!t)return false;const n=dragTuneNow();return DTUNE_ENV.every(k=>t.env[k]===n.env[k])&&DTUNE_CFG.every(k=>t.cfg[k]===undefined||t.cfg[k]===n.cfg[k]);}
+function dragTuneName(def){let n=null;try{n=prompt("Name this tune",def);}catch(e){}if(n==null)return null;n=String(n).trim().slice(0,24);return n||def;}
+function dragTuneAct(i,a){const T=dragTunes(),t=T[i];
+  if(a==="save"||!t){const n=t?t.n:dragTuneName(`Tune ${i+1}`);if(n==null)return;T[i]=Object.assign({n,at:Date.now()},dragTuneNow());DTSEL=-1;toast(`Saved “${n}”`);}
+  else if(a==="load"){Object.assign(S.env,t.env);for(const k of DTUNE_CFG)if(t.cfg[k]!==undefined&&S.cfg[k]!==t.cfg[k]){S.cfg[k]=t.cfg[k];buildStale=true;}
+    S.env.launchRpm=Math.min(S.env.launchRpm,S.cfg.redline);if(S.env.shiftRpm>0)S.env.shiftRpm=Math.min(S.env.shiftRpm,S.cfg.redline);
+    DTSEL=-1;recompute();toast(`Loaded “${t.n}”`);}
+  else if(a==="name"){const n=dragTuneName(t.n);if(n==null)return;t.n=n;DTSEL=-1;}
+  else if(a==="clear"){T[i]=null;DTSEL=-1;toast("Slot cleared");}
+  renderEnv();save();}
+$("envBox").addEventListener("click",e=>{const s=e.target.closest("[data-dtune]"),a=e.target.closest("[data-dtact]");if(!s&&!a)return;
+  if(a){if(DTSEL>=0)dragTuneAct(DTSEL,a.dataset.dtact);return;}
+  const i=+s.dataset.dtune;if(!dragTunes()[i]){dragTuneAct(i,"save");return;}DTSEL=DTSEL===i?-1:i;renderEnv();});
 /* ---- the thermal timing slip: the same card on the Test tab and in the share image ---- */
 let SLIPN=false;   // notes tab: stays as you left it for the session
 document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("tsn"))SLIPN=t.open;},true);
