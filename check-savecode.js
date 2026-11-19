@@ -228,6 +228,67 @@ check("a code that hides markup is made harmless: nothing restored keeps < or >,
   assert.deepStrictEqual(plain(a.cleanText(plain(own))), own);
 });
 
+check("a short code built to unpack to gigabytes is stopped early and reads as damaged", () => {
+  const a = load();
+  /* 40 MB of one letter packs to a few thousand characters; buZip is the game's own packer, fed in pieces so this check stays light */
+  const big = new Uint8Array(40e6).fill(97), body = a.buZip(big), code = "PEW1:" + body + a.buSum(body);
+  assert(code.length < 40000, "the test code should be short, it is " + code.length);
+  const t = Date.now(), before = process.memoryUsage().heapUsed;
+  let n = 0; try { n = a.buUnzip(body).length; } catch (e) { n = -1; }
+  assert.strictEqual(n, -1, "unpacked " + n + " bytes instead of stopping");
+  assert.throws(() => a.buRead(code), e => e && e.bu === "damaged");
+  assert(Date.now() - t < 5000, "took " + (Date.now() - t) + " ms");
+  const small = new Uint8Array(2e6).fill(97); assert.strictEqual(a.buUnzip(a.buZip(small)).length, 2e6);   // a big real backup still unpacks
+});
+
+/* ---- the engine guard (cfgGuard and envGuard in src/app/state.js), run against the real physics cut out of index.html ---- */
+function loadGuard() {
+  const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8"), at = html.indexOf("Prairie Engine Works v2 \u2014 physics core");
+  if (at < 0) throw new Error("physics core not found in index.html");
+  const mod = { exports: {} };
+  vm.runInNewContext(html.slice(html.lastIndexOf("<script>", at) + 8, html.indexOf("</script>", at)), { module: mod, console }, { filename: "sim.js" });
+  const SIM = mod.exports;
+  const src = /^const hasOwn=[\s\S]*?^function envGuard[\s\S]*?^  return fixed;}$/m.exec(fs.readFileSync(STATE, "utf8"));
+  if (!src) throw new Error("cfgGuard / envGuard not found in src/app/state.js");
+  const ctx = { SIM, FORM: SIM.FORM, OPT: SIM.OPT, PRESETS: SIM.PRESETS, LAYOUTS: SIM.LAYOUTS, isFinite, Object };
+  vm.createContext(ctx);
+  vm.runInContext(src[0] + "\nthis.cfgGuard = cfgGuard; this.envGuard = envGuard; this.CFG_BAND = CFG_BAND;", ctx, { filename: "state.js" });
+  return ctx;
+}
+check("the engine guard leaves every stock engine, and every slider at its limits, exactly as it was", () => {
+  const g = loadGuard(), SIM = g.SIM, sliders = SIM.FORM.flatMap(x => x.fields).filter(f => f.type === "slider");
+  let n = 0;
+  for (const p of SIM.PRESETS) {
+    const base = Object.assign({}, SIM.DEFAULT_CFG, p.cfg), tries = [base];
+    for (const f of sliders) for (const end of ["min", "max"]) {   // the same engine with one slider at each end of what its hardware allows
+      const c = Object.assign({}, base), lim = f[end + "If"] ? f[end + "If"](c) : f[end];
+      if (typeof lim === "number" && isFinite(lim)) { c[f.key] = lim; tries.push(c); }
+    }
+    for (const c of tries) { const was = plain(c); assert.strictEqual(g.cfgGuard(c), false, p.name + " was changed"); assert.deepStrictEqual(plain(c), was); n++; }
+  }
+  assert(n > 2000, "only " + n + " engines tried");
+  const env = Object.assign({}, SIM.DEFAULT_ENV, { tyreDia: "28", testType: "drag" });
+  assert.strictEqual(g.envGuard(env), false); assert.strictEqual(env.tyreDia, "28");
+});
+check("the engine guard puts back what the game can't run: zeros, huge and missing numbers, text for a number, unknown parts", () => {
+  const g = loadGuard(), SIM = g.SIM, D = SIM.DEFAULT_CFG;
+  const nums = Object.keys(D).filter(k => typeof D[k] === "number");
+  for (const v of [0, -1e9, 1e9, NaN, Infinity, null, "83", {}, []]) {
+    const c = Object.assign({}, D); for (const k of nums) c[k] = v;
+    const sent = plain(c); g.cfgGuard(c);
+    for (const k of nums) { const r = g.CFG_BAND[k]; assert(typeof c[k] === "number" && isFinite(c[k]) && (!r || (c[k] >= r[0] && c[k] <= r[1])), k + " = " + JSON.stringify(sent[k]) + " came through as " + c[k]); }
+    SIM.simulate(Object.assign({}, c), Object.assign({}, SIM.DEFAULT_ENV, { testType: "pull" }));   // and the result runs
+  }
+  for (const k of ["bore", "stroke", "redline", "cr"]) { const c = Object.assign({}, D, { [k]: 0 }); assert.strictEqual(g.cfgGuard(c), true); assert.strictEqual(c[k], D[k]); }
+  for (const bad of ["nope", "__proto__", "constructor", "", 7, null, { a: 1 }]) for (const k of ["head", "layout", "fuel", "asp"]) {
+    const c = Object.assign({}, D, { [k]: bad }); assert.strictEqual(g.cfgGuard(c), true, k + " = " + JSON.stringify(bad) + " was kept"); assert.strictEqual(c[k], D[k]);
+  }
+  const c = Object.assign({}, D, { ethanolPct: "<img>", gasSys: "nope", note: "kept" }); g.cfgGuard(c);
+  assert(!("ethanolPct" in c) && !("gasSys" in c) && c.note === "kept");
+  const env = Object.assign({}, SIM.DEFAULT_ENV, { mass: NaN, tyreDia: "big", final: null, tyre: 7, gears: {} });
+  assert.strictEqual(g.envGuard(env), true); assert.deepStrictEqual(plain(env), plain(SIM.DEFAULT_ENV));
+});
+
 let bad = 0;
 for (const [name, fn] of checks) {
   try { fn(); console.log("ok   " + name); }

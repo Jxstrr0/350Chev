@@ -1,4 +1,4 @@
-/*pew-late 1.76.142.1*/
+/*pew-late 1.76.142.2*/
 /* ===== DRAG RUN: the pass itself (app-late.js, since 1.76.140.0) =====
    Moved out of app/drag.js so a first visit downloads less: the pass (dragStart, the burnout › stage › launch button, the tree, the
    auto driver, nitrous, the finish), the race and bracket nights as they are run (rnRace, rnAfterPass, rnLeave…), the strip HUD and

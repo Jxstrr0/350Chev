@@ -382,6 +382,13 @@ document.addEventListener("keydown",e=>{if(e.defaultPrevented||e.ctrlKey||e.meta
 document.addEventListener("keyup",e=>{if((e.key===" "||e.key==="Spacebar")&&spaceHeld){e.preventDefault();spaceUp(false);}});
 window.addEventListener("blur",()=>{if(spaceHeld)spaceUp(true);});
 let visReady=false;
+/* bootSafe (1.76.142.2): the last line of defence behind cfgGuard (state.js). If starting the game with the loaded engine
+   throws, start once more with the stock engine and the default test settings, so the loading screen can't stay stuck on
+   a save. The stored save is left alone; it is only written over when the player next changes something. */
+function bootSafe(){
+  try{boot();}
+  catch(e){S.cfg=Object.assign({},SIM.DEFAULT_CFG);S.env=Object.assign({},SIM.DEFAULT_ENV);S.last=null;S.base=null;S.profileId=null;S.name=null;
+    boot();setTimeout(()=>toast("That engine couldn't be loaded: the stock engine is on the stand"),600);}}
 function boot(){
   if(!S.mode)S.mode="sandbox";
   /* 1.76.33: an old career or a Pit Crew game loaded as a fresh team-season career (state.js hydrate): Legacy perks, once, and say so */
@@ -405,7 +412,7 @@ function boot(){
 function start(hot){
   load();
   if(hot&&hot.S){Object.assign(S,hot.S);curTab=hot.tab||"build";}
-  boot();
+  bootSafe();
   window.claude?.hot?.snapshot?.(()=>({S:Object.assign({},S,{last:null,base:S.base}),tab:curTab}));
   window.addEventListener("resize",()=>{ENGINE_VIS.resize();if(curTab==="test")drawChart(lastForChart(),null);else if(curTab==="events")chartRedraw();});
   if(perfTier()!=="lite")setTimeout(()=>lsrWarm(),2500);   // perf: the salt class records for this build, while idle. Not on Lite: each blocks a phone for a few hundred ms just as the garage opens, and Analysis and the salt look them up when they need them

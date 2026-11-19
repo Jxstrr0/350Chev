@@ -4,10 +4,26 @@
    Same-origin sounds/ and models/ are cached as they are fetched (the cache name hashes those listings); three.js (CDN) and the Google fonts are cached
    cache-first in a long-lived cache. Only good (2xx, CORS-readable) responses are cached: an opaque or failed CDN reply must never stick.
    The library cache is v2: workers before 1.76.24.0 stored three.js opaque in v1, and the page now loads it with crossorigin, which an
-   opaque copy fails. A worker that finds such a copy takes over at once instead of waiting, because that page cannot boot to offer it. */
+   opaque copy fails. A worker that finds such a copy takes over at once instead of waiting, because that page cannot boot to offer it.
+   1.76.142.2: a media file is saved once, under its plain address (anything after a "?" is ignored, and opening a file as a page
+   saves nothing), so the cache can't be filled with copies of one file. A library is checked against the page's own fingerprint
+   (SRI) before it is saved and before a saved copy is served: a copy that doesn't match is thrown out and fetched again, so one
+   bad copy can't keep the game from starting on every visit. */
 "use strict";
-const CACHE = "pew-shell-v1.76.142.1-22b61c6dd5", MEDIA = "pew-media-v1-02b92bd0", LIBS = "pew-libs-v2";
+const CACHE = "pew-shell-v1.76.142.2-285536435a", MEDIA = "pew-media-v1-02b92bd0", LIBS = "pew-libs-v2";
 const PRECACHE = ["index.html","scenes.js","app-late.js","sim-late.js","manifest.webmanifest","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512-maskable.png","icons/icon-512.png"], CDN = ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://static.cloudflareinsights.com/beacon.min.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"];
+const SRI = {"https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js":"sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js":"sha384-nhO9toQuMo5osCuA0l+YFpSqscZWxDu251Bnho2gD3kSPv1neEwHg0LyEmrA+mPj","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js":"sha384-mY+ii969jnDCI2HjRHftH2NZVkIO5ZGUkcnGCg3oVJ3kVstWQXwerYWBg+nbUG4R","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js":"sha384-oolHSqfhyZ93/WnHwbxKVk50Dzix102iutPlvXoWoxH7ZBXC8+fLQ8UnR9+gP9DA","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js":"sha384-GkidzTYmQg24v13sa3xhBBbvOLbVLO1QxfyKLdOWweQqNqS/iWwUst2T1fER2Xrg","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js":"sha384-pG/SGpuNNuluvSd84K35qyRFdMxn8P8MyqIQuxjUb0wPPRgJ7yDLRQT64nLuT8CR","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js":"sha384-I3lsvPeDJYFrEAzn/TA0yhc/SCYKwpyfyq8lKzHYKohu43H9f7xc/Q9ZWgSVUDl3","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js":"sha384-2EpLreWSFuZsk4hcSplXLhlHd/wzvDNF907bTGIXSXM0SlhJNzy4YK0DhBFvkFEs","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js":"sha384-aVQ2QnWkoxhOefDB0YZB64OPVzujvccydpcC7UqMDJUK0ChwA382zOHmrWHGDRRa","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js":"sha384-fljlqkjWlmSFjkESkQvm77heIZpoWmXEOzlCA7kOpGUH+95Zk0yGfQieWM2q136E","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js":"sha384-o5gViontwLwU3Z8McqwM/rtuxIptKAXp3BJdeyXdEukqzlSLHsAUP27WxNrvg5zM","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js":"sha384-QJHOkdPsx51pQSATTCNMomyvcOrMD34+38JFwM0qCSHO9AORZ75psXd+BqTj/uhg","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js":"sha384-FOfA/KeY2vXqB0oljp5J+SZ+W3EoTNj5gACDurc3L8eAONa77OY1YvI0YCg2eoeM"};
+/* true when these bytes match the fingerprint the page will check them against (or the page has none for this address) */
+async function sound(url, r) {
+  const want = SRI[url];
+  if (!want) return true;
+  try {
+    const cut = want.indexOf("-"), alg = { sha256: "SHA-256", sha384: "SHA-384", sha512: "SHA-512" }[want.slice(0, cut)];
+    const sum = new Uint8Array(await crypto.subtle.digest(alg, await r.clone().arrayBuffer()));
+    let s = ""; for (const b of sum) s += String.fromCharCode(b);
+    return btoa(s) === want.slice(cut + 1);
+  } catch (_) { return true; }   /* no way to check here: leave it to the page, which checks every time */
+}
 const LIB_HOSTS = ["cdnjs.cloudflare.com", "cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 const BASE = new URL("./", self.location).pathname;
 /* an opaque script in any library cache means the page that cache serves cannot load three.js (see above) */
@@ -30,7 +46,7 @@ self.addEventListener("install", e => {
       await c.put(f, r);
     }));
     const l = await caches.open(LIBS);   /* best effort: a CDN hiccup must not block the app from installing; the fetch handler fills gaps */
-    await Promise.all(CDN.map(async u => { try { const h = await l.match(u); if (h && h.type !== "opaque") return; const r = await fetch(u, { mode: "cors" }); if (r.ok) await l.put(u, r); } catch (_) {} }));
+    await Promise.all(CDN.map(async u => { try { const h = await l.match(u); if (h && h.type !== "opaque" && await sound(u, h)) return; const r = await fetch(u, { mode: "cors" }); if (r.ok && await sound(u, r)) await l.put(u, r); } catch (_) {} }));
   })());
 });
 self.addEventListener("activate", e => {
@@ -53,11 +69,12 @@ self.addEventListener("fetch", e => {
     e.respondWith((async () => {
       const hit = await (await caches.open(CACHE)).match(shell ? "index.html" : q, { ignoreSearch: true });
       if (hit) return hit;
-      const m = await (await caches.open(MEDIA)).match(q);
+      const m = await (await caches.open(MEDIA)).match(q, { ignoreSearch: true });
       if (m) return m;
       try {
         const r = await fetch(q);
-        if (r.status === 200 && !q.headers.has("range") && /\/(sounds|models|tex|sponsors|banners)\//.test(u.pathname)) e.waitUntil(put(MEDIA, q, r.clone()));
+        /* saved once, under the plain address: never for a page navigation, and whatever follows a "?" is dropped */
+        if (r.status === 200 && !q.headers.has("range") && q.mode !== "navigate" && /\/(sounds|models|tex|sponsors|banners)\//.test(u.pathname)) e.waitUntil(put(MEDIA, u.origin + u.pathname, r.clone()));
         return r;
       } catch (err) {
         if (q.mode === "navigate") { const h = await (await caches.open(CACHE)).match("index.html"); if (h) return h; }
@@ -66,10 +83,13 @@ self.addEventListener("fetch", e => {
     })());
   } else if (LIB_HOSTS.includes(u.hostname)) {
     e.respondWith((async () => {
-      const hit = await (await caches.open(LIBS)).match(q);
-      if (hit && (hit.type !== "opaque" || q.mode === "no-cors")) return hit;   /* an opaque copy would fail a crossorigin script */
+      const l = await caches.open(LIBS), hit = await l.match(q);
+      if (hit && (hit.type !== "opaque" || q.mode === "no-cors")) {   /* an opaque copy would fail a crossorigin script */
+        if (hit.type === "opaque" || await sound(q.url, hit)) return hit;
+        await l.delete(q);   /* the saved copy no longer matches its fingerprint: the page would refuse it, so fetch a fresh one */
+      }
       const r = await fetch(q);
-      if (r.ok && r.type !== "opaque") e.waitUntil(put(LIBS, q, r.clone()));
+      if (r.ok && r.type !== "opaque" && await sound(q.url, r)) e.waitUntil(put(LIBS, q, r.clone()));
       return r;
     })());
   }
