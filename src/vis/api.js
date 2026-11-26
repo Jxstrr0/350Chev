@@ -156,7 +156,7 @@ const ENGINE_VIS = {
     var w = host? host.clientWidth : canvasEl.clientWidth;
     var h = host? host.clientHeight : canvasEl.clientHeight;
     if(!w||!h){ w=canvasEl.clientWidth||400; h=canvasEl.clientHeight||340; }
-    var pr=ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5)), rk=w+"x"+h+"@"+pr+(composer?composer.userData_tier+(composer.aoPass?"a":""):"-");
+    var pr=evGovPR(ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5))), rk=w+"x"+h+"@"+pr+(composer?composer.userData_tier+(composer.aoPass?"a":""):"-");
     if(RSZ.k!==rk){   /* same size, ratio and passes as last time: the buffers are already right (a tab swap that doesn't move the view costs nothing) */
       RSZ.k=rk;
       renderer.setPixelRatio(pr);
@@ -165,7 +165,7 @@ const ENGINE_VIS = {
     }
     camera.aspect=w/h;
     camera.updateProjectionMatrix();
-    if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; stripBandRead(); }
+    if(STRIP.cam){ STRIP.cam.aspect=w/h; STRIP.cam.updateProjectionMatrix(); STRIP.viewH=h; stripBandRead(); stripLens(STRIP.cam); }   /* the lens shift again: updateProjectionMatrix dropped it, and the next draw may come before the next camera update (the strip frame saver resizes mid-pass) */
     if(PULL.cam){ PULL.cam.aspect=w/h; PULL.cam.updateProjectionMatrix(); }
     if(BOG.cam){ BOG.cam.aspect=w/h; BOG.cam.updateProjectionMatrix(); }
     if(BOAT.cam){ BOAT.cam.aspect=w/h; BOAT.cam.updateProjectionMatrix(); }
@@ -526,9 +526,9 @@ const ENGINE_VIS = {
   setFpsCap: function(f){ capMs = f>0 ? 1000/f : 0; },
   frameDue: function(t){ return frameDue(t); },
   fps: function(){ return fpsStat; },
-  /* Ultra frame saver (loop.js ultraSaver): the governor's switch, and what it is doing right now */
+  /* frame saver: the switch for the Ultra garage governor (loop.js ultraSaver) and the strip frame saver (loop.js evGov), and what they are doing right now */
   setSaver: function(on){ USAVE.on=!!on; if(!on){ USAVE.half=false; USAVE.low=0; } },
-  saver: function(){ return {on:USAVE.on, half:USAVE.half, ultra:GFX==="ultra"}; },
+  saver: function(){ return {on:USAVE.on, half:USAVE.half, ultra:GFX==="ultra", lite:GFX==="lite", strip:EVGOV.on?EVGOV.lvl:-1}; },   /* strip: the strip frame saver's level (-1 = not on the strip) */
   info:  function(){
     var tris=0, calls=0;
     scene.traverse(function(o){

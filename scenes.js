@@ -1,4 +1,4 @@
-/*pew-scenes 1.76.143.0*/
+/*pew-scenes 1.76.144.0*/
 /* ===========================================================================
    DRAG STRIP SCENE — a second world the view cuts to during a pass.
    Units are metres. x = distance down the track (start line 0, 1/4 mile 402.336),
@@ -3387,7 +3387,9 @@ function stripRender(){
   stripFxLight();
   var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=STRIP.exposure;
   var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  var ao=C&&C.passes[0]; if(ao&&ao.ultraAO) ao.reuse=evGovAO();   /* the strip frame saver (vis/loop.js), level 1: contact shading every second draw */
   if(C) C.render(); else renderer.render(S2, cam);
+  if(ao) ao.reuse=false;
   STRIP.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX}; inf.autoReset=ar;
   renderer.toneMappingExposure=ex;
 }
@@ -9117,5 +9119,5 @@ function ovalUpdate(o, dt){
     OVAL.spots.forEach(function(sp,j){ var pp=poles[j]; if(!pp) return; sp.position.copy(pp); sp.target.position.set(cc.x,0,cc.z); sp.target.updateMatrixWorld(); }); }
   OVAL.prev={ph:ph};
 }
-;({roadRender:roadRender,hillRender:hillRender,ovalRender:ovalRender,saltRender:saltRender,bogRender:bogRender,boatRender:boatRender,pullRender:pullRender,stripPostStep:stripPostStep,stripRender:stripRender,pitsRender:pitsRender,_sbP:_sbP,_sbS:_sbS,stripBandRead:stripBandRead,saltBandRead:saltBandRead,stripPostEnd:stripPostEnd,stripReset:stripReset,buildStripScene:buildStripScene,stripUpdate:stripUpdate,stripPostStart:stripPostStart,stripPostLeft:stripPostLeft,stripPostLeave:stripPostLeave,stripPostEnter:stripPostEnter,pitsUpdate:pitsUpdate,pitsAnchors:pitsAnchors,pullReset:pullReset,buildPullScene:buildPullScene,pullUpdate:pullUpdate,bogReset:bogReset,buildBogScene:buildBogScene,bogUpdate:bogUpdate,boatReset:boatReset,buildBoatScene:buildBoatScene,boatUpdate:boatUpdate,roadFieldHide:roadFieldHide,roadUpdate:roadUpdate,hillUpdate:hillUpdate,ovalUpdate:ovalUpdate,saltReset:saltReset,buildSaltScene:buildSaltScene,saltRebuild:saltRebuild,saltUpdate:saltUpdate,saltRivalLook:saltRivalLook,saltSetLook:saltSetLook})
+;({roadRender:roadRender,hillRender:hillRender,ovalRender:ovalRender,saltRender:saltRender,bogRender:bogRender,boatRender:boatRender,pullRender:pullRender,stripPostStep:stripPostStep,stripRender:stripRender,pitsRender:pitsRender,_sbP:_sbP,_sbS:_sbS,stripBandRead:stripBandRead,saltBandRead:saltBandRead,stripPostEnd:stripPostEnd,stripReset:stripReset,buildStripScene:buildStripScene,stripUpdate:stripUpdate,stripPostStart:stripPostStart,stripPostLeft:stripPostLeft,stripPostLeave:stripPostLeave,stripPostEnter:stripPostEnter,pitsUpdate:pitsUpdate,pitsAnchors:pitsAnchors,pullReset:pullReset,buildPullScene:buildPullScene,pullUpdate:pullUpdate,bogReset:bogReset,buildBogScene:buildBogScene,bogUpdate:bogUpdate,boatReset:boatReset,buildBoatScene:buildBoatScene,boatUpdate:boatUpdate,roadFieldHide:roadFieldHide,roadUpdate:roadUpdate,hillUpdate:hillUpdate,ovalUpdate:ovalUpdate,saltReset:saltReset,buildSaltScene:buildSaltScene,saltRebuild:saltRebuild,saltUpdate:saltUpdate,saltRivalLook:saltRivalLook,saltSetLook:saltSetLook,stripLens:stripLens})
 //# sourceURL=scenes.js

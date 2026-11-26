@@ -372,6 +372,8 @@ function loop(now){
   idleMs=0;   /* every drawn frame decides again; only the still garage below slows the next one */
   renderer.shadowMap.autoUpdate=true;   /* only the garage shadow gate below turns it off, and only around its own draw */
   var dt=Math.min(clock.getDelta(), 0.05);
+  evGov(now);   /* the strip's frame saver: watches the rate on the strip, puts everything back when it is left. Before tick, so a step's resize
+                   (which resets the strip camera's lens shift) is followed by the camera update; a remembered level lands behind the entry's black frame */
   if(TROPHY.on && TROPHY.built){ trophyFrame(now); return; }   /* trophy room: its own scene, drawn only when something moved */
   tick(dt, clock.elapsedTime);
   if(TD.on) tdStep(dt, clock.elapsedTime);   /* teardown view: pulse the failed part */
@@ -466,6 +468,73 @@ function ultraGov(now){
   }
   else if(f<tgt*0.96) U.tHalf=now;   /* still short of the target: no point trying full */
   else if(now-U.tHalf>U.back){ U.half=false; U.tFull=now; }   /* held the target for a while: try full again */
+}
+
+/* Strip frame saver (Full and Ultra; the same Settings switch as the Ultra frame saver). The drag strip is the dearest picture the game
+   draws: open sky, the procedural track and the crowd fill every pixel, and Ultra draws it at 1.5x on a 1x screen, multisampled, with a
+   second pass for the contact shading. A desktop that holds the garage could sit in the 30s there, and the tier only drops under ~27 fps.
+   While the strip is on, the frame rate is watched: 1.5 s under 90% of the target (the cap, else 60) steps one level down, holding the
+   target for a while steps one back up (and waits longer each time full quality turns out too slow again).
+     level 1 (Ultra): the contact shading is redrawn every second frame, as the garage's governor does
+     level 2, 3: the strip is drawn at 85% / 70% of the pixel ratio, never under 85% of a 1x screen (so a 1x screen on Full gets level 2 only)
+   A level that would change nothing is skipped. A step down that does not lift the rate is taken back: the shading step is then left
+   out, and after a resolution step (a 30 Hz screen, a busy CPU: the pixels were not the problem) the saver stops stepping down. Leaving
+   the strip puts everything back; the next pass on the same tier starts at the level the last one ended on. */
+var EVGOV={on:false, tier:"", mem:{}, lvl:0, low:0, t:0, tHold:0, tUp:-1e9, back:8000, seen:null, hist:[], post:[], chk:-1, f0:0, stuck:false, no1:false, n:0, aoKey:""};
+var EVGOV_PR=[1, 1, 0.85, 0.7];
+function evGovBase(){ return ultraPR(Math.min(window.devicePixelRatio||1, GFX!=="lite"?2:1.5)); }   /* the ratio resize() uses without the saver */
+function evGovAt(pr, l){ var k=EVGOV_PR[l]; return k<1 ? Math.max(Math.min(1, pr)*0.85, pr*k) : pr; }   /* never under 85% of a 1x screen */
+function evGovPR(pr){ return EVGOV.on ? evGovAt(pr, EVGOV.lvl) : pr; }
+function evGovCan(l){
+  if(l===1) return ULT() && !EVGOV.no1 && !!(STRIP.composer && STRIP.composer.passes[0] && STRIP.composer.passes[0].ultraAO);
+  var b=evGovBase(); return l>=2 && l<EVGOV_PR.length && evGovAt(b, l)<evGovAt(b, l-1)-0.01;   /* a level that draws no fewer pixels than the one above is skipped */
+}
+function evGovSet(l, now){
+  var was=EVGOV.lvl; EVGOV.lvl=l; EVGOV.t=now; EVGOV.n=0; EVGOV.hist.length=0;
+  if(EVGOV_PR[was]!==EVGOV_PR[l]) ENGINE_VIS.resize();
+}
+function evGovReset(){ var was=EVGOV.lvl; if(EVGOV.on) EVGOV.mem[EVGOV.tier]={lvl:EVGOV.chk>=0?EVGOV.chk:was, stuck:EVGOV.stuck, no1:EVGOV.no1, back:EVGOV.back}; EVGOV.on=false; EVGOV.lvl=0; EVGOV.low=0; EVGOV.chk=-1; EVGOV.stuck=EVGOV.no1=false; EVGOV.back=8000; EVGOV.seen=null; EVGOV.hist.length=0; if(EVGOV_PR[was]!==1) ENGINE_VIS.resize(); }
+function evGovMean(a){ var s=0; for(var i=0;i<a.length;i++) s+=a[i]; return a.length ? s/a.length : 0; }
+function evGov(now){
+  var G=EVGOV, want=STRIP.on && STRIP.built && GFX!=="lite" && USAVE.on;
+  if(!want){ if(G.on) evGovReset(); return; }
+  if(!G.on || G.tier!==GFX){ if(G.on) evGovReset(); G.on=true; G.tier=GFX; G.t=G.tHold=now; G.tUp=-1e9;
+    var m=G.mem[GFX]; if(m){ G.stuck=m.stuck; G.no1=m.no1; G.back=m.back; if(m.lvl>0) evGovSet(m.lvl, now); } }   /* the next pass starts where the last one left off (on the entry's black frame), and steps back up from there if it can */
+  if(fpsStat===G.seen) return;
+  G.seen=fpsStat;
+  var f=fpsStat.fps, tgt=capMs?1000/capMs:60, l;
+  if(!f || now-G.t<1500) return;   /* the first second and a half on the strip, or after a step (and its resize), says nothing */
+  if(G.chk>=0){   /* the last step down: 2 s of rate after it settled, against the 2 s before it. A resolution step with no lift: the pixels were not the problem */
+    G.post.push(f); if(G.post.length<4) return;
+    var fm=evGovMean(G.post);
+    if(fm<tgt*0.9 && fm<G.f0*1.05){ if(G.lvl===1) G.no1=true; else G.stuck=true; evGovSet(G.chk, now); }   /* the shading step alone not helping says little: skip it and go on to the resolution next time */
+    G.chk=-1; G.low=0; G.tHold=now; return;
+  }
+  G.hist.push(f); if(G.hist.length>4) G.hist.shift();
+  if(f<tgt*0.9){
+    G.tHold=now;
+    if(++G.low<3 || G.stuck) return;   /* 1.5 s under target */
+    G.low=0;
+    for(l=G.lvl+1; l<EVGOV_PR.length && !evGovCan(l); l++);
+    if(l>=EVGOV_PR.length) return;   /* nothing left to give: the tier auto-adjust (app/perf.js) takes it from here */
+    if(now-G.tUp<6000) G.back=Math.min(G.back*2, 64000);   /* the last step up did not hold */
+    G.chk=G.lvl; G.f0=evGovMean(G.hist); G.post=[]; evGovSet(l, now);
+  } else {
+    G.low=0;
+    if(f<tgt*0.96){ G.tHold=now; return; }   /* still short of the target: no point trying more */
+    if(G.lvl>0 && now-G.tHold>G.back){
+      for(l=G.lvl-1; l>0 && !evGovCan(l); l--);
+      G.tUp=now; G.tHold=now; evGovSet(l, now);
+    }
+  }
+}
+/* level 1: whether this draw keeps last draw's contact shading. Never twice running, and never on the first draw after a step or a
+   resize (the shading's targets were just made and hold nothing yet). */
+function evGovAO(){
+  var G=EVGOV, ds=renderer.getDrawingBufferSize(_usV), key=ds.x+"x"+ds.y;
+  if(key!==G.aoKey){ G.aoKey=key; G.n=0; }
+  if(!G.on || G.lvl<1 || G.no1) return false;
+  return ((++G.n)&1)===0;
 }
 
 /* ===========================================================================

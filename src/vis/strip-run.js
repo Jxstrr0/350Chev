@@ -746,7 +746,9 @@ function stripRender(){
   stripFxLight();
   var ex=renderer.toneMappingExposure; renderer.toneMappingExposure=STRIP.exposure;
   var inf=renderer.info, ar=inf.autoReset; inf.autoReset=false; inf.reset();
+  var ao=C&&C.passes[0]; if(ao&&ao.ultraAO) ao.reuse=evGovAO();   /* the strip frame saver (vis/loop.js), level 1: contact shading every second draw */
   if(C) C.render(); else renderer.render(S2, cam);
+  if(ao) ao.reuse=false;
   STRIP.stats={calls:inf.render.calls, tris:inf.render.triangles, tier:GFX}; inf.autoReset=ar;
   renderer.toneMappingExposure=ex;
 }
