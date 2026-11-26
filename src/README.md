@@ -117,6 +117,8 @@ One place: `src/app/state.js`, `const VERSION="x.y.z.w";` (major.minor.feature.h
 | `app/career.js` | `advanceWeek` (Close week), overhead, sponsors, the Team tab's strip and sections, `renderShop`, upgrades, goals |
 | `app/savecode.js` | save codes: **Back up** / **Restore** in Shop → Saves (`buCode`, `buRead`, `buWrite`, the two sheets), backup files, the storage line and the backup reminder. See "Save codes" below |
 | `app/help.js` | onboarding tour, First Fire, help folds (the ⓘ on long hints) |
+| `app/passport-stamp.js` | the Longlight Passport kit, copied unchanged from Kelbo.Website `passport/kit/` (sets `LonglightPassport`) |
+| `app/passport.js` | builds the Passport stamp from the save (`ppMake`), keeps it under `pew2-passport` on every save (`ppSync`), the "Add to Longlight Passport" button |
 | `app/glossary.js` | (`app-late.js`, not in the page) glossary, tap-to-explain and the 17 guided lessons |
 | `app/simlate.js` | loader for `sim-late.js` and its gates: `simNeeds`, `simTeamNeeds`, `simWait`, "Loading the track…" / Try again on the setup screen; `LATE_EVTS`, the events whose setup screen also waits for `app-late.js`; `evRunBtn`, the Run button's words for drag, pull, boat and oval once both have landed |
 | `app/late.js` | loader for `app-late.js`: `LATE_FNS` stand-ins, "Loading…" / Try again in the sheet, the Glossary, Lessons and glossary On/Off buttons |

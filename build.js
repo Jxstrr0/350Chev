@@ -260,6 +260,7 @@ const SW_OUT = path.join(ROOT, "sw.js");
 const EMITTED = ["index.html", CHUNK, LATE, SIMC];   /* files build.js writes besides sw.js; the service worker precaches each */
 function precacheList() {
   const list = EMITTED.concat(["manifest.webmanifest"]);
+  if (fs.existsSync(path.join(ROOT, "passport-stamp.html"))) list.push("passport-stamp.html");   /* the Longlight Passport bridge page: served from the cache, so offline it never falls back to the whole game in a hidden frame */
   const icons = path.join(ROOT, "icons");
   if (fs.existsSync(icons)) for (const f of fs.readdirSync(icons).sort()) if (/\.(png|svg|ico)$/i.test(f)) list.push("icons/" + f);
   return list;
