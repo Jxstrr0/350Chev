@@ -145,6 +145,8 @@ app/team-watch.js
 app/crate.js
 app/evhub.js
 app/help.js
+app/passport-stamp.js
+app/passport.js
 app-late.js: app/glossary.js
 app/late.js
 app/simlate.js

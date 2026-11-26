@@ -1,4 +1,4 @@
-/*pew-simlate 1.76.142.2*/
+/*pew-simlate 1.76.143.0*/
   /* =====================================================================
      DRAG STRIP, THE PASS ITSELF: in sim-late.js, not in the page (since 1.76.139.0).
      Here: the time-stepped pass (dragRun, dragPass), the auto driver (dragDriver, dragAutoPass) and the shift and drivetrain stress helpers.

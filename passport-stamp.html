@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xudwJM7/DgnYrRXS6CZcCxVNtCf3gvUWlAu+wn/+7Pw='; base-uri 'none'; form-action 'none'">
+<meta name="robots" content="noindex">
+<!-- Longlight Passport bridge page. A game copies this file to its own
+     site root, unchanged except for the stamp key below (the game's own
+     localStorage key, from .github/PASSPORT.md section 4). The Passport
+     at https://longlight.games/passport opens it in a hidden frame; it
+     reads the game's stamp and posts it to the Passport, and only there.
+     Opened on its own, it does nothing. Nothing else is read or sent. -->
+<meta name="llp-stamp-key" content="pew2-passport">
+<title>Longlight Passport bridge</title>
+</head>
+<body>
+<script>
+(function () {
+  "use strict";
+  if (window.parent === window) return;
+  var meta = document.querySelector('meta[name="llp-stamp-key"]');
+  var key = meta ? meta.getAttribute("content") : "";
+  var stamp = null;
+  try {
+    var raw = key ? localStorage.getItem(key) : null;
+    if (raw && raw.length <= 4096) stamp = JSON.parse(raw);
+  } catch (e) {
+    stamp = null;
+  }
+  window.parent.postMessage({ type: "llp-stamp", v: 1, stamp: stamp }, "https://longlight.games");
+})();
+</script>
+</body>
+</html>
